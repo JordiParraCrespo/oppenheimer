@@ -1,5 +1,6 @@
 import { ApiExtraModels, ApiProperty, getSchemaPath } from '@nestjs/swagger';
 import {
+  BOT_APPROVAL_EVENT_STAGES,
   BOT_EVENT_OUTCOMES,
   BOT_GOAL_ACTIVITIES,
   BOT_MESSAGE_ROLES,
@@ -8,6 +9,7 @@ import {
   BOT_ROUTINE_ACTIVITIES,
   BOT_SESSION_EVENT_STATES,
   BOT_SUBAGENT_STATUSES,
+  type BotApprovalEventStage,
   type BotEventOutcome,
   type BotGoalActivity,
   type BotMessageRole,
@@ -139,6 +141,14 @@ export class BotApprovalEventResponseDto {
       'The card it decided, as the stream’s `approval_resolved` named it; absent on older lines.',
   })
   approvalId?: string;
+
+  @ApiProperty({
+    enum: BOT_APPROVAL_EVENT_STAGES,
+    required: false,
+    description:
+      'Which of an approved call’s two lines this is: `started` is the yes, written while the call runs, and opens the turn where the bot says it is on it; `finished` opens the turn that reports how it went. Absent on a no and on older lines.',
+  })
+  stage?: BotApprovalEventStage;
 }
 
 /** A card of questions decided (`ask_user`, `25-bots.md` §3.2): how, its line, and each answer. */

@@ -34,6 +34,7 @@ import { BotTurnBudget } from '../domain/bot-turn-budget.policy';
 import { composeTurnContext, withTurnContext } from '../domain/bot-turn-context.policy';
 import type { OwnerHost, OwnerHostsPort } from '../infrastructure/owner-hosts.port';
 import { BotApprovalRequestFactory } from './bot-approval-request.factory';
+import { BotApprovalStartedPolicy, type BotTurnShape } from './bot-approval-started.policy';
 import { BotModelAccessResolver } from './bot-model-access.resolver';
 import { BotOwnerPermissionsResolver } from './bot-owner-permissions.resolver';
 import { BotOwnerScopeResolver } from './bot-owner-scope.resolver';
@@ -46,8 +47,8 @@ import { BotTurnOpeningResolver } from './bot-turn-opening.resolver';
 
 const ENGINE_EFFORTS: readonly string[] = ['low', 'medium', 'high', 'xhigh', 'max'];
 
-/** What a turn is run with, but the abort signal and the scratch directory its runner owns. */
-export type BotTurnContext = Omit<BotTurnRequest, 'signal' | 'scratchDir'>;
+/** What a turn is run with, but the abort signal, the scratch directory and the steering its runner owns. */
+export type BotTurnContext = Omit<BotTurnRequest, 'signal' | 'scratchDir' | 'steering'>;
 
 /**
  * Model round trips in one chat turn. Below the engine's default: a chat
@@ -89,12 +90,13 @@ export class BotTurnContextResolver {
     private readonly subagents: BotSubagentRunnerFactory,
     private readonly settings: BotPermissionsResolver,
     private readonly reviewers: BotRuleReviewerFactory,
+    private readonly approvalStarted: BotApprovalStartedPolicy,
   ) {}
 
   private readonly logger = new Logger(BotTurnContextResolver.name);
 
-  async resolve(turn: BotTurnEntity, now: Date): Promise<BotTurnContext> {
-    const { prompt, images, command } = await this.opening.resolve(turn);
+  async resolve(turn: BotTurnEntity, now: Date): Promise<BotTurnShape<BotTurnContext> | null> {
+    const { prompt, images, command, message } = await this.opening.resolve(turn);
     const bot = await this.access.bot(turn.organizationId, turn.botId);
     const credential = await this.access.credential(turn.organizationId, turn.provider, now);
     const owner = await this.owners.resolve(turn.organizationId, bot.createdByUserId);
@@ -153,7 +155,7 @@ export class BotTurnContextResolver {
     const inMind = memoryInMind(facts, BOT_MEMORY_PROFILE_IN_PROMPT_MAX);
     const documentText = (name: string) =>
       documents.find((document) => document.name === name)?.content ?? '';
-    return {
+    const request: BotTurnContext = {
       ...model,
       systemPrompt: composeBotSystemPrompt({
         name: bot.name,
@@ -188,6 +190,7 @@ export class BotTurnContextResolver {
       tools,
       maxSteps: BOT_TURN_MAX_STEPS,
     };
+    return this.approvalStarted.shape(message, request);
   }
 
   /**

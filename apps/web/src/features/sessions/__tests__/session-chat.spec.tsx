@@ -60,7 +60,7 @@ describe('SessionChat', () => {
     const chat = new Chat();
     const send = vi.fn();
     chat.connect(send);
-    render(<SessionChat chat={chat} readOnly={false} />);
+    render(<SessionChat chat={chat} agent="claude-code" readOnly={false} />);
     expect(screen.getByText('sessions.chat.empty.title')).toBeTruthy();
 
     act(() =>
@@ -83,7 +83,9 @@ describe('SessionChat', () => {
     expect(screen.getByText('Fix the flaky test')).toBeTruthy();
     expect(screen.getByText('it')).toBeTruthy();
 
-    const field = screen.getByPlaceholderText('sessions.chat.composer.placeholder');
+    const field = screen.getByPlaceholderText(
+      'sessions.chat.composer.placeholder{"agent":"Claude Code"}',
+    );
     fireEvent.change(field, { target: { value: 'Now ship it' } });
     fireEvent.keyDown(field, { key: 'Enter' });
     expect(send).toHaveBeenCalledWith('Now ship it');
@@ -105,14 +107,16 @@ describe('SessionChat', () => {
       entries: [entry({ type: 'user', uuid: 'u', message: { role: 'user', content: 'Go' } })],
     });
     chat.connect(send);
-    render(<SessionChat chat={chat} readOnly={false} />);
+    render(<SessionChat chat={chat} agent="claude-code" readOnly={false} />);
     fireEvent.click(screen.getByRole('button', { name: 'sessions.chat.composer.stop' }));
     expect(send).toHaveBeenCalledWith('\u001b');
   });
 
   it('offers no composer to a watcher', () => {
-    render(<SessionChat chat={new Chat()} readOnly />);
-    expect(screen.queryByPlaceholderText('sessions.chat.composer.placeholder')).toBeNull();
+    render(<SessionChat chat={new Chat()} agent="claude-code" readOnly />);
+    expect(
+      screen.queryByPlaceholderText('sessions.chat.composer.placeholder{"agent":"Claude Code"}'),
+    ).toBeNull();
   });
 });
 
@@ -161,7 +165,7 @@ describe('a settled turn', () => {
       }),
     ];
     chat.apply({ reset: true, entries: turn });
-    render(<SessionChat chat={chat} readOnly />);
+    render(<SessionChat chat={chat} agent="claude-code" readOnly />);
     expect(screen.getByText('sessions.chat.changes{"count":1}')).toBeTruthy();
     expect(screen.getByText('sessions.chat.thoughtFor{"seconds":4}')).toBeTruthy();
 
@@ -181,7 +185,7 @@ describe('a command the CLI answers itself', () => {
   // Regression: `/context` drew its prompt and nothing under it.
   it('draws what it printed under its prompt, spacing kept and colours gone', () => {
     const chat = new Chat();
-    render(<SessionChat chat={chat} readOnly />);
+    render(<SessionChat chat={chat} agent="claude-code" readOnly />);
     act(() =>
       chat.apply({
         reset: true,
@@ -224,12 +228,14 @@ describe('a command the CLI answers itself', () => {
 describe('dictation', () => {
   it('offers the mic beside send only where the workspace can hear', () => {
     voiceAvailable = false;
-    const { unmount } = render(<SessionChat chat={new Chat()} readOnly={false} />);
+    const { unmount } = render(
+      <SessionChat chat={new Chat()} agent="claude-code" readOnly={false} />,
+    );
     expect(screen.queryByRole('button', { name: 'common.dictation.dictate' })).toBeNull();
     unmount();
 
     voiceAvailable = true;
-    render(<SessionChat chat={new Chat()} readOnly={false} />);
+    render(<SessionChat chat={new Chat()} agent="claude-code" readOnly={false} />);
     expect(screen.getByRole('button', { name: 'common.dictation.dictate' })).toBeTruthy();
   });
 });
@@ -275,7 +281,14 @@ describe('files on a message', () => {
     const typed: string[] = [];
     chat.connect((data) => typed.push(data));
     const files = createFileHandOff();
-    render(<SessionChat chat={chat} readOnly={false} attach={{ sessionId: 's1', files }} />);
+    render(
+      <SessionChat
+        chat={chat}
+        agent="claude-code"
+        readOnly={false}
+        attach={{ sessionId: 's1', files }}
+      />,
+    );
     return { files, typed };
   }
 
@@ -288,7 +301,9 @@ describe('files on a message', () => {
     expect(screen.getByText('b.png')).toBeTruthy();
 
     vi.useFakeTimers();
-    const field = screen.getByPlaceholderText('sessions.chat.composer.placeholder');
+    const field = screen.getByPlaceholderText(
+      'sessions.chat.composer.placeholder{"agent":"Claude Code"}',
+    );
     fireEvent.change(field, { target: { value: 'What is in these?' } });
     fireEvent.keyDown(field, { key: 'Enter' });
     await act(async () => {});
@@ -324,7 +339,9 @@ describe('files on a message', () => {
     pasteFile.mockReset().mockRejectedValue(new Error('The host is offline'));
     const { files, typed } = renderAttaching();
     act(() => files.deliver([png('trace.png')]));
-    const field = screen.getByPlaceholderText('sessions.chat.composer.placeholder');
+    const field = screen.getByPlaceholderText(
+      'sessions.chat.composer.placeholder{"agent":"Claude Code"}',
+    );
     fireEvent.change(field, { target: { value: 'Look at this' } });
     fireEvent.keyDown(field, { key: 'Enter' });
 
@@ -345,7 +362,9 @@ describe('files on a message', () => {
     );
     const { files, typed } = renderAttaching();
     act(() => files.deliver([png('trace.png')]));
-    const field = screen.getByPlaceholderText('sessions.chat.composer.placeholder');
+    const field = screen.getByPlaceholderText(
+      'sessions.chat.composer.placeholder{"agent":"Claude Code"}',
+    );
     fireEvent.change(field, { target: { value: 'Look at this' } });
     fireEvent.keyDown(field, { key: 'Enter' });
     fireEvent.change(field, { target: { value: 'Look at this, and the log' } });
@@ -367,7 +386,7 @@ describe('files on a message', () => {
   });
 
   it('offers no paperclip to a reader who cannot put files on the host', () => {
-    render(<SessionChat chat={new Chat()} readOnly={false} />);
+    render(<SessionChat chat={new Chat()} agent="claude-code" readOnly={false} />);
     expect(screen.queryByRole('button', { name: 'sessions.chat.composer.attach' })).toBeNull();
   });
 });
@@ -424,10 +443,12 @@ describe('questions the agent asks', () => {
     const typed: string[] = [];
     chat.connect((data) => typed.push(data));
     chat.apply({ reset: true, entries: [prompt, ask] });
-    render(<SessionChat chat={chat} readOnly={false} />);
+    render(<SessionChat chat={chat} agent="claude-code" readOnly={false} />);
     // The picker holds the terminal's input: a message typed now would land in it.
     expect(
-      screen.getByPlaceholderText('sessions.chat.composer.placeholder').closest('[hidden]'),
+      screen
+        .getByPlaceholderText('sessions.chat.composer.placeholder{"agent":"Claude Code"}')
+        .closest('[hidden]'),
     ).not.toBeNull();
     expect(screen.getByText('What should it cover?')).toBeTruthy();
 
@@ -451,7 +472,7 @@ describe('questions the agent asks', () => {
     const typed: string[] = [];
     chat.connect((data) => typed.push(data));
     chat.apply({ reset: true, entries: [prompt, ask] });
-    render(<SessionChat chat={chat} readOnly={false} />);
+    render(<SessionChat chat={chat} agent="claude-code" readOnly={false} />);
     fireEvent.change(screen.getByLabelText('common.chat.question.ownAnswerLabel'), {
       target: { value: 'Only icons' },
     });
@@ -474,11 +495,13 @@ describe('questions the agent asks', () => {
         ),
       ],
     });
-    const { unmount } = render(<SessionChat chat={chat} readOnly={false} />);
+    const { unmount } = render(<SessionChat chat={chat} agent="claude-code" readOnly={false} />);
     expect(screen.getByText('Components')).toBeTruthy();
     expect(screen.getByText('Web, Linux')).toBeTruthy();
     expect(
-      screen.getByPlaceholderText('sessions.chat.composer.placeholder').closest('[hidden]'),
+      screen
+        .getByPlaceholderText('sessions.chat.composer.placeholder{"agent":"Claude Code"}')
+        .closest('[hidden]'),
     ).toBeNull();
     unmount();
 
@@ -487,7 +510,7 @@ describe('questions the agent asks', () => {
       reset: true,
       entries: [prompt, ask, result("The user doesn't want to proceed with this tool use.", true)],
     });
-    render(<SessionChat chat={declined} readOnly={false} />);
+    render(<SessionChat chat={declined} agent="claude-code" readOnly={false} />);
     expect(screen.getByText('sessions.chat.question.dismissed')).toBeTruthy();
   });
 
@@ -522,7 +545,7 @@ describe('questions the agent asks', () => {
     const typed: string[] = [];
     chat.connect((data) => typed.push(data));
     chat.apply({ reset: true, entries: [prompt, lone] });
-    render(<SessionChat chat={chat} readOnly={false} />);
+    render(<SessionChat chat={chat} agent="claude-code" readOnly={false} />);
     expect(screen.getByText('Scope')).toBeTruthy();
     // Focus is on the first option, so the number keys answer without a click.
     const first = screen.getByRole('button', { name: /Tokens/ });
@@ -541,7 +564,7 @@ describe('questions the agent asks', () => {
     const typed: string[] = [];
     chat.connect((data) => typed.push(data));
     chat.apply({ reset: true, entries: [prompt, lone] });
-    render(<SessionChat chat={chat} readOnly={false} />);
+    render(<SessionChat chat={chat} agent="claude-code" readOnly={false} />);
     const own = screen.getByLabelText('common.chat.question.ownAnswerLabel');
     fireEvent.keyDown(own, { key: 'Enter' });
     expect(typed).toEqual([]);
@@ -555,7 +578,7 @@ describe('questions the agent asks', () => {
   it('keeps the answers to send again when nothing is there to type them', () => {
     const chat = new Chat();
     chat.apply({ reset: true, entries: [prompt, lone] });
-    render(<SessionChat chat={chat} readOnly={false} />);
+    render(<SessionChat chat={chat} agent="claude-code" readOnly={false} />);
     fireEvent.click(screen.getByRole('button', { name: /Components/ }));
     expect(screen.queryByText('common.chat.question.sending')).toBeNull();
     const submit = screen.getByRole('button', { name: 'common.chat.question.submit' });
@@ -565,7 +588,7 @@ describe('questions the agent asks', () => {
   it('shows a watcher that the agent is waiting, with nothing to answer it with', () => {
     const chat = new Chat();
     chat.apply({ reset: true, entries: [prompt, ask] });
-    render(<SessionChat chat={chat} readOnly />);
+    render(<SessionChat chat={chat} agent="claude-code" readOnly />);
     expect(screen.getByText('sessions.chat.question.waiting')).toBeTruthy();
     expect(screen.queryByText('What should it cover?')).toBeNull();
   });
@@ -584,7 +607,7 @@ describe('a long conversation', () => {
   it('draws its latest turns and the earlier ones on asking, a page at a time', () => {
     const chat = new Chat();
     chat.apply({ reset: true, entries: Array.from({ length: 90 }, (_, i) => turn(i + 1)).flat() });
-    render(<SessionChat chat={chat} readOnly={false} />);
+    render(<SessionChat chat={chat} agent="claude-code" readOnly={false} />);
     expect(screen.getByText('Prompt 90')).toBeTruthy();
     expect(screen.getByText('Prompt 51')).toBeTruthy();
     expect(screen.queryByText('Prompt 50')).toBeNull();
@@ -602,7 +625,7 @@ describe('a long conversation', () => {
   it('keeps the turns a reader scrolled up to while new ones arrive, and follows again at the end', () => {
     const chat = new Chat();
     chat.apply({ reset: true, entries: Array.from({ length: 90 }, (_, i) => turn(i + 1)).flat() });
-    const { container } = render(<SessionChat chat={chat} readOnly={false} />);
+    const { container } = render(<SessionChat chat={chat} agent="claude-code" readOnly={false} />);
     const box = container.querySelector<HTMLElement>('.overflow-y-auto');
     if (!box) throw new Error('no scrolling column');
     // jsdom lays nothing out: a column taller than its box, read from the end, then from the top.
@@ -672,7 +695,7 @@ describe('the work in a turn', () => {
         }),
       ],
     });
-    render(<SessionChat chat={chat} readOnly={false} />);
+    render(<SessionChat chat={chat} agent="claude-code" readOnly={false} />);
     const explored = screen.getByRole('button', { name: /sessions\.chat\.explored\.title/ });
     expect(explored.textContent).toContain('common.chat.explored.read a.ts');
     expect(explored.textContent).toContain('common.chat.explored.search cancel');
@@ -710,7 +733,7 @@ describe('the work in a turn', () => {
         }),
       ],
     });
-    render(<SessionChat chat={chat} readOnly={false} />);
+    render(<SessionChat chat={chat} agent="claude-code" readOnly={false} />);
     // The two done are one folded line naming them; the one in flight says so under it.
     const summary = screen.getByRole('button', { name: /sessions\.chat\.exploring/ });
     expect(summary.getAttribute('aria-expanded')).toBe('false');
@@ -743,8 +766,9 @@ describe('the queue and the context', () => {
     const typed: string[] = [];
     chat.connect((data) => typed.push(data));
     chat.apply({ reset: true, entries: [prompt] });
-    render(<SessionChat chat={chat} readOnly={false} />);
-    const composer = () => screen.getByPlaceholderText('sessions.chat.composer.placeholder');
+    render(<SessionChat chat={chat} agent="claude-code" readOnly={false} />);
+    const composer = () =>
+      screen.getByPlaceholderText('sessions.chat.composer.placeholder{"agent":"Claude Code"}');
 
     const field = composer();
     for (const words of ['Then run the tests', 'And open a PR']) {
@@ -778,7 +802,7 @@ describe('the queue and the context', () => {
     const typed: string[] = [];
     chat.connect((data) => typed.push(data));
     chat.apply({ reset: true, entries: [prompt, answer('a1')] });
-    render(<SessionChat chat={chat} readOnly={false} />);
+    render(<SessionChat chat={chat} agent="claude-code" readOnly={false} />);
     // Counted off the transcript until the status line says otherwise.
     const meter = screen.getByRole('button', { name: /common\.chat\.usage\.open/ });
     expect(meter.textContent).toContain('25%');
@@ -813,10 +837,41 @@ describe('the queue and the context', () => {
     vi.useRealTimers();
   });
 
+  // An OpenCode session's lines come from the host in the transcript's shape,
+  // the model being whichever OpenCode ran. The composer names OpenCode, and
+  // a model whose window the chat cannot know gets no meter at all.
+  // Regression: an OpenCode chat signed "Claude Code", or a GPT turn's
+  // tokens measured against a Claude window.
+  it('names OpenCode on its chat, and measures no window it cannot know', () => {
+    const chat = new Chat();
+    chat.apply({
+      reset: true,
+      entries: [
+        prompt,
+        JSON.stringify({
+          type: 'assistant',
+          uuid: 'prt-1',
+          message: {
+            role: 'assistant',
+            model: 'gpt-6.1-sol',
+            content: [{ type: 'text', text: 'Done.' }],
+            usage: { input_tokens: 50_000, output_tokens: 10 },
+          },
+        }),
+      ],
+    });
+    render(<SessionChat chat={chat} agent="opencode" readOnly={false} />);
+    expect(
+      screen.getByPlaceholderText('sessions.chat.composer.placeholder{"agent":"OpenCode"}'),
+    ).toBeTruthy();
+    expect(screen.getByText('OpenCode')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: /common\.chat\.usage\.open/ })).toBeNull();
+  });
+
   it('shows no meter until the host sends the counts', () => {
     const chat = new Chat();
     chat.apply({ reset: true, entries: [prompt] });
-    render(<SessionChat chat={chat} readOnly={false} />);
+    render(<SessionChat chat={chat} agent="claude-code" readOnly={false} />);
     expect(screen.queryByRole('button', { name: /common\.chat\.usage\.open/ })).toBeNull();
   });
 });

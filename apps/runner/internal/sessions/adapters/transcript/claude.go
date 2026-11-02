@@ -10,6 +10,8 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+
+	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/domain"
 )
 
 // readLimit bounds how much of a transcript is read looking for the first
@@ -175,3 +177,16 @@ func typedText(text string) string {
 	}
 	return text
 }
+
+// finder implements chatSource: the conversation's file, by its name.
+func (c claudeReader) finder(session domain.Session) (func() string, bool) {
+	conversation := session.Launch.Conversation
+	if !conversationPattern.MatchString(conversation) {
+		return nil, false
+	}
+	return func() string { return c.path(conversation) }, true
+}
+
+// transcriber implements chatSource: each line of Claude Code's transcript
+// is one entry, compacted (claude_chat.go).
+func (c claudeReader) transcriber() chatTranscriber { return lineByLine(c.chatEntry) }

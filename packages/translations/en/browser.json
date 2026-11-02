@@ -827,6 +827,7 @@
         "empty": "No model matches “{{query}}”.",
         "favourites": "Favourites",
         "favouritesEmpty": "Star a model to keep it here.",
+        "moreModels": "More models",
         "addFavourite": "Add {{model}} to favourites",
         "removeFavourite": "Remove {{model}} from favourites",
         "auto": "Auto"
@@ -1189,13 +1190,13 @@
       },
       "empty": {
         "title": "Nothing said yet",
-        "description": "Claude's words and work appear here as it goes."
+        "description": "The agent's words and work appear here as it goes."
       },
       "composer": {
-        "placeholder": "Message Claude",
+        "placeholder": "Message {{agent}}",
+        "placeholderAnyAgent": "Message the agent",
         "send": "Send",
         "stop": "Stop",
-        "agent": "Claude Code",
         "attach": "Attach files",
         "removeAttachment": "Remove {{name}}",
         "attachTooLarge": "{{name}} is over 5 MB. Save a smaller copy, then attach it again.",
@@ -1584,6 +1585,9 @@
         "denied": "You denied: {{summary}}",
         "stopped": "You denied and stopped the turn: {{summary}}",
         "failed": "You approved, and it failed: {{summary}}",
+        "running": "Running: {{summary}}",
+        "finished": "Done: {{summary}}",
+        "finishedFailed": "It failed: {{summary}}",
         "routine": "Routine · {{name}}",
         "routineSaved": "Created routine “{{name}}”",
         "routineChanged": "Changed routine “{{name}}”",

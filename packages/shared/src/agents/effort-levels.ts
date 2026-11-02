@@ -9,6 +9,8 @@ export function levels(
 }
 
 export const CLAUDE_LEVELS = ['low', 'medium', 'high', 'xhigh', 'max'] as const;
+/** Opus 4.6 and Sonnet 4.6: Claude's levels before `xhigh`, which arrived with Opus 4.7. */
+export const CLAUDE_4_6_LEVELS = ['low', 'medium', 'high', 'max'] as const;
 export const CODEX_LEVELS = ['low', 'medium', 'high', 'xhigh', 'max'] as const;
 /**
  * Grok's reasoning menus, one fact wherever a Grok model is reached: grok

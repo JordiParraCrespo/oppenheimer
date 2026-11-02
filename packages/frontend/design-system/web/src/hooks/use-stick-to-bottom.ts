@@ -3,6 +3,12 @@ import { type RefObject, useEffect, useRef, useState } from 'react';
 /** How close to the bottom counts as reading the latest, in pixels. */
 const NEAR_BOTTOM_PX = 80;
 
+/** Follows the end or stops: scroll anchoring only while it does not. */
+function follow(pinned: { current: boolean }, box: HTMLElement, on: boolean): void {
+  pinned.current = on;
+  box.style.overflowAnchor = on ? 'none' : '';
+}
+
 /**
  * Keeps a scrolling chat on its latest line while the reader is there: when
  * what is inside `content` grows (a message lands, a reply streams) or the
@@ -19,6 +25,11 @@ const NEAR_BOTTOM_PX = 80;
  * watching and on every resize, and a `true` pins. Between `hold(true)` and
  * `hold(false)` something else owns the scroll (an animation of the chat's
  * own) and this hook does not follow. The first layout opens at the bottom.
+ *
+ * While it follows, the scroller has no scroll anchoring: what leaves the top
+ * of a chat that keeps a window of its latest lines would otherwise move the
+ * view up by its height, and that move reads as the reader leaving the end.
+ * Away from the end, anchoring is back, and keeps the reader's place.
  */
 export function useStickToBottom({ repin }: { repin?: (content: HTMLElement) => boolean } = {}): {
   scroller: RefObject<HTMLDivElement | null>;
@@ -43,17 +54,18 @@ export function useStickToBottom({ repin }: { repin?: (content: HTMLElement) => 
     let lastTop = box.scrollTop;
     const near = () => box.scrollHeight - box.scrollTop - box.clientHeight < NEAR_BOTTOM_PX;
     const onScroll = () => {
-      if (box.scrollTop < lastTop) pinned.current = near();
-      else if (near()) pinned.current = true;
+      if (box.scrollTop < lastTop) follow(pinned, box, near());
+      else if (near()) follow(pinned, box, true);
       lastTop = box.scrollTop;
       setAtLatest(pinned.current || near());
     };
     const observer = new ResizeObserver(() => {
-      if (shouldRepin?.(inner)) pinned.current = true;
+      if (shouldRepin?.(inner)) follow(pinned, box, true);
       if (pinned.current && !held.current) box.scrollTop = box.scrollHeight;
       setAtLatest(pinned.current || near());
     });
     shouldRepin?.(inner);
+    follow(pinned, box, pinned.current);
     box.addEventListener('scroll', onScroll, { passive: true });
     observer.observe(inner);
     observer.observe(box);
@@ -71,7 +83,7 @@ export function useStickToBottom({ repin }: { repin?: (content: HTMLElement) => 
   const toLatest = () => {
     const box = scroller.current;
     if (!box) return;
-    pinned.current = true;
+    follow(pinned, box, true);
     setAtLatest(true);
     const instant = globalThis.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
     box.scrollTo({ top: box.scrollHeight, behavior: instant ? 'auto' : 'smooth' });

@@ -463,6 +463,11 @@ branch"), up to 2,000 characters.
   - its continuations run out;
   - a turn of it (the one that set it, or a continuation) fails or is
     stopped. A person's Stop is a stop, and a failure would only fail again.
+    The one exception is a turn stopped at the 4-minute limit for one turn
+    (2026-11-02): a goal is the way past that limit, so the turn is reviewed
+    like one that completed, and the next continuation picks its work up on
+    a fresh clock, told to take a smaller step. Its continuations still
+    bound it.
 
   Each of these is a line in the chat outside any turn, with the
   reviewer's reason where it gave one. However a goal ends, or is replaced
@@ -572,7 +577,7 @@ agent's, in a session, where Claude Code ships them.
 | `list_hosts` | Hosts, online or not, and the agents they can run | auto |
 | `list_sessions` / `get_session` | Sessions and their state, each with its project and the group the console's dot shows; filtered by project, host, state or group; `get_session` also shows a pending question or permission dialog with its id and options (built 2026-10-27, issue #493) | auto |
 | `start_session` | Start an agent on a host, in a new worktree or a folder, with a task; the session's origin is `bot` and it always launches at `auto` (decided 2026-10-18: nobody sits at a bot's terminal, so `ask` would wait forever) | ask |
-| `start_cloud_session` | Start a Claude Code cloud session (claude.ai/code) on a project's repository: the sessions' own create with `cloud`, so a host's runner runs `claude --cloud <task>` in a scratch checkout, exactly as the console's *Claude Code cloud* and a `claude-cloud` automation do; host chosen as `start_session`'s, scope `sessions:write`, origin `bot`. It waits (at most 120 s, the runner's own limit) for the host to report the `session_…` id and answers with its claude.ai URL; `get_session` shows the URL after. Claude Code only; no watch, since a cloud session is followed on claude.ai (added 2026-10-30) | ask |
+| `start_cloud_session` | Start a session in a vendor's cloud on a project's repository; `agent` picks the cloud. `claude-code` (default, claude.ai/code) and `codex` (chatgpt.com/codex, with an optional `codex_environment`) go through the sessions' own create with `cloud`, so a host's runner runs `claude --cloud` or `codex cloud exec` in a scratch checkout, exactly as the console's cloud place and a `claude-cloud` automation do; host chosen as `start_session`'s. It waits (at most 120 s, the runner's own limit) for the host to report the session's id and answers with its URL. `cursor` goes through `StartCloudSessionCommand` (`POST /sessions/cloud`'s), on the owner's own Cursor key with no host and an optional `model`; the card says it runs on that key, and a missing key is the call's error (`CLOUD_AGENTS_004`). Scope `sessions:write`, origin `bot`; `get_session` shows the URL after. No watch, since a cloud session is followed at its vendor (added 2026-10-30; Codex and Cursor 2026-11-02) | ask |
 | `watch_session` / `unwatch_session` / `list_watches` | Follow a session, so its task needing input or ending wakes the bot (`start_session` follows its own session); built 2026-10-22, note 27. A `pattern` wakes it when the terminal prints a matching line, matched on the host (2026-10-29) | auto |
 | `wait_for_session` | Wait up to 120 s inside the turn for a session's task to need input or end, at most 3 times a turn (2026-10-29) | auto |
 | `send_to_session` | Type a follow-up prompt into a running session whose agent waits at its prompt; logged as `prompt.sent` with the bot as sender, and it opens a `follow_up` turn the bot then watches (built 2026-10-27) | ask |
@@ -828,6 +833,19 @@ How the card works (built 2026-10-15, `bot_approval`):
   once. The bot reads the words, then and in later history, as a note from
   Oppenheimer and not as your words, and is told not to route around a
   denial.
+- **A yes is answered at once, the way a person would.** The approval
+  queues, with the yes, a short turn of the bot's own (its event's
+  `stage` is `started`): "On it, archiving those 25 now.", in its own
+  voice, while the call runs. That turn is offered the bot's usual tools so
+  the provider's cache of the conversation holds, but each refuses to run,
+  it has two round trips, and it takes no steer: a message sent meanwhile
+  waits for a turn that can act on it. Meanwhile the chat holds the call as a live
+  line with its clock ("Running: Archive 25 threads…") under that sentence.
+  The call's answer opens the report's turn as before, its event `finished`,
+  drawn as "Done: …" (or "It failed: …") rather than a second "You
+  approved". If the call ran before the "on it" turn started, that turn ends
+  without a word: an "on it" after the fact, or after the report, reads
+  backwards. A no is unchanged: one turn, which already starts at once.
 - **Writing to the bot instead expires the card.** The new turn starts
   fresh; nobody decided, and the bot is not told.
 - **Not built yet:** a card for a bot-to-bot or background turn (they
@@ -1145,6 +1163,14 @@ The decisions it produced:
   to end (at most 600 ms). From Codex's `available_decisions`,
   `serverRequest/resolved` and its deferred approval modals. It refines
   2026-10-15's card, whose no always gave the bot a turn.
+- 2026-11-02: **a yes gets an answer before the work.** Approving a card
+  queued no turn until the call had run, so the chat stayed silent through
+  the call and then through a model call over the whole conversation. A
+  yes now queues a short "on it" turn at once (`stage: started`), the chat
+  shows the call running under it, and the report follows as its own turn
+  (`stage: finished`, drawn "Done: …"). Each yes costs one more model call,
+  over a cached prefix. It refines 2026-10-15's card, whose yes gave the
+  bot one turn, after the call.
 - 2026-10-31: **a chat that reconnects mid-turn loses no text** (§2,
   Streaming). The stream dropped what was published while the browser's
   connection was down, and the console drew a hole until the next stored

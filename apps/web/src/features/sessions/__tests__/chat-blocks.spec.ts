@@ -132,5 +132,9 @@ describe('the turn header', () => {
     expect(modelName('claude-haiku-5')).toBe('Haiku 5');
     expect(modelName('gpt-5.6')).toBe('gpt-5.6');
     expect(modelName(null)).toBeNull();
+    // Codex's and OpenCode's models by the catalog's names, OpenCode's
+    // without the provider it puts in front.
+    expect(modelName('gpt-6.1-sol')).toBe('GPT-6.1 Sol');
+    expect(modelName('glm-5.3')).toBe('GLM-5.3');
   });
 });

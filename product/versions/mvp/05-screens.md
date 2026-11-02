@@ -178,7 +178,10 @@
   win over them). The
   agent lives in the engine button, not a chip: opening it
   lists the harnesses, choosing one slides to its models with a search,
-  and a blank terminal is picked outright. Effort is a slider over the
+  and a blank terminal is picked outright. An agent's earlier generations
+  (the catalog's `legacy` models) wait behind a "More models" row at the
+  foot of its tab, as Claude's own picker keeps them; a search finds them
+  and a session already on one opens with them shown. Effort is a slider over the
   model's own levels in a popover, not a list (changed 2026-09-29; it
   was five product stops, Minimal to Max, for every agent).
 
@@ -187,7 +190,7 @@
 
   | Agent | Models (default first in bold) | Permission chip | Effort |
   |---|---|---|---|
-  | Claude Code | **Opus 5.5**, Fable 5.1, Sonnet 5.5, Haiku 4.5 (`claude-opus-5-5` and siblings) | yes | the model's levels; none for Haiku |
+  | Claude Code | **Opus 5.5**, Fable 5.1, Sonnet 5.5, Haiku 5.5 (`claude-opus-5-5` and siblings), then under "More models" Haiku 4.5, Sonnet 5, Opus 5, Fable 5, Opus 4.8, 4.7, 4.6 and Sonnet 4.6 (changed 2026-11-02; it was the newest four with Haiku 4.5) | yes | the model's levels: low to max, to max without extra high on the 4.6 pair; none for Haiku 4.5 |
   | Codex | **GPT-6.1 Sol**, GPT-6.1 Terra, GPT-6 Astra, GPT-6 Sol, GPT-6 Luna, then GPT-5.6 Sol, Terra, Luna | yes | the model's levels |
   | OpenCode | Opus 5.5, Fable 5.1, Sonnet 5.5, Haiku 5.5 under `anthropic/` (**`anthropic/claude-opus-5-5`**), Codex's eight under `openai/`, Grok 4.7 and 4.6 under `xai/`, Gemini 4 Argon and 3.8 Flash under `google/` | yes | the model's levels, OpenCode's variants per provider |
   | Grok | Grok 4.7, **Grok 4.6** (the CLI's own default), Grok 4.5 | yes | the model's levels: low to extra high, to high on 4.5 |

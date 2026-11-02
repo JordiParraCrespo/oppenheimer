@@ -7,7 +7,7 @@ import {
   useStickToBottom,
 } from '@oppenheimer/design-system-web';
 import { ArrowDown, ChevronUp } from '@oppenheimer/design-system-web/icons';
-import type { SessionChat as Chat } from '@oppenheimer/frontend-consumer';
+import type { SessionChat as Chat, SessionAgent } from '@oppenheimer/frontend-consumer';
 import { useState } from 'react';
 import { flushSync } from 'react-dom';
 import { useTranslation } from 'react-i18next';
@@ -54,10 +54,13 @@ function keepingPlace(box: HTMLElement | null, grow: () => void): void {
  */
 export function SessionChat({
   chat,
+  agent,
   readOnly,
   attach,
 }: {
   chat: Chat;
+  /** Whose conversation it is; none where the reader is not told (a guest on a share). */
+  agent: SessionAgent | null;
   readOnly: boolean;
   attach?: ChatAttach;
 }) {
@@ -86,14 +89,23 @@ export function SessionChat({
   return (
     <div className="relative flex size-full flex-col">
       <div className="relative flex min-h-0 flex-1 flex-col">
-        <div ref={scroller} className="min-h-0 flex-1 overflow-y-auto pt-6 pb-4">
+        {/* No scroll anchoring: the turns that leave the top as the drawn
+            window follows the end would move the reader up, and the follow
+            takes any move up as the reader leaving the end. The chat keeps
+            its place itself (`keepingPlace`, the held window). */}
+        <div
+          ref={scroller}
+          className="min-h-0 flex-1 overflow-y-auto pt-6 pb-4 [overflow-anchor:none]"
+        >
           <TerminalColumn ref={content} className="flex min-h-full flex-col">
             {ids.length === 0 ? (
               <EmptyState className="flex-1">
                 <EmptyState.Header>
-                  <EmptyState.Media>
-                    <AgentMark agent="claude-code" className="size-10" />
-                  </EmptyState.Media>
+                  {agent ? (
+                    <EmptyState.Media>
+                      <AgentMark agent={agent} className="size-10" />
+                    </EmptyState.Media>
+                  ) : null}
                   <EmptyState.Title>{t('sessions.chat.empty.title')}</EmptyState.Title>
                   <EmptyState.Description>
                     {t('sessions.chat.empty.description')}
@@ -127,9 +139,9 @@ export function SessionChat({
       {readOnly ? null : (
         <TerminalColumn className="pb-3">
           {attach ? (
-            <SessionChatAttachingSend chat={chat} attach={attach} onSent={toLatest} />
+            <SessionChatAttachingSend chat={chat} agent={agent} attach={attach} onSent={toLatest} />
           ) : (
-            <SessionChatSend chat={chat} onSent={toLatest} />
+            <SessionChatSend chat={chat} agent={agent} onSent={toLatest} />
           )}
         </TerminalColumn>
       )}

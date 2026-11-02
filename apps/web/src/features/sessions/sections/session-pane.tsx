@@ -104,16 +104,23 @@ export function SessionPane({
   // Made once: the terminal delivers the files it catches over the chat, the
   // chat's composer takes them.
   const [files] = useState(createFileHandOff);
+  const { data: session, error } = useSuspenseSession(sessionId);
   const reading: PaneReading = {
     chat,
     view,
     onViewChange: setView,
-    cover: <SessionChat chat={chat} readOnly={false} attach={{ sessionId, files }} />,
+    cover: (
+      <SessionChat
+        chat={chat}
+        agent={session.agent}
+        readOnly={false}
+        attach={{ sessionId, files }}
+      />
+    ),
     files,
   };
   // Whether the transcript has come, so the view switch is offered.
   const { offered: chatOffered } = useChatReading(reading);
-  const { data: session, error } = useSuspenseSession(sessionId);
   // The way back from a stopped session. Held here because this screen is the
   // one that branches on the lifecycle; the pane below it takes props only.
   const restart = useRestartSession();

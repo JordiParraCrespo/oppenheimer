@@ -133,6 +133,8 @@ export interface BotModel {
   readonly label: string;
   readonly default?: true;
   readonly effort?: CodingAgentEffort;
+  /** An earlier generation, offered behind "More models" (`CodingAgentModel.legacy`). */
+  readonly legacy?: true;
 }
 
 /**
@@ -506,7 +508,18 @@ export interface BotApprovalEvent {
    * Absent on lines written before it was kept.
    */
   approvalId?: string;
+  /**
+   * Which of an approved call's two lines this is (`25-bots.md` §5):
+   * `started` opens the short turn where the bot says it is on it, written
+   * with the yes while the call runs; `finished` opens the turn that reports
+   * how it went. Absent on a no, and on lines written before the call had two.
+   */
+  stage?: BotApprovalEventStage;
 }
+
+/** An approved call's two lines: the yes, while it runs, and how it went. */
+export const BOT_APPROVAL_EVENT_STAGES = ['started', 'finished'] as const;
+export type BotApprovalEventStage = (typeof BOT_APPROVAL_EVENT_STAGES)[number];
 
 /** How a card of questions was decided: answered, or dismissed. */
 export const BOT_QUESTION_OUTCOMES = ['answered', 'dismissed'] as const;

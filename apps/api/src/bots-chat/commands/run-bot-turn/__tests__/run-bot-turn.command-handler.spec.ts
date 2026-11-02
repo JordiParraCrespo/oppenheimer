@@ -30,7 +30,8 @@ import { RunBotTurnCommandHandler } from '../run-bot-turn.command-handler';
  * reading what the turn needs fails it with words; Stop aborts the engine; and
  * a turn found running is failed rather than run twice. What its sender
  * steers in is taken at each tool call, by the steer policy, and put after
- * the line of the call that carried it.
+ * the line of the call that carried it, unless what was read says the turn
+ * takes none. A turn with nothing left to say ends without running the engine.
  */
 function queued(status: 'queued' | 'running' = 'queued') {
   const turn = BotTurnEntity.queue({
@@ -54,6 +55,10 @@ function setup(
     cancel?: boolean;
     resolve?: Error;
     steers?: BotTurnEntity[][];
+    /** What was read says the turn has nothing left to say. */
+    nothingToSay?: boolean;
+    /** Whether the turn may take what the person sends meanwhile; it may unless said. */
+    takesSteers?: boolean;
   } = {},
 ) {
   const waiting = [...(options.steers ?? [])];
@@ -98,15 +103,19 @@ function setup(
   const context = {
     resolve: vi.fn(async () => {
       if (options.resolve) throw options.resolve;
+      if (options.nothingToSay) return null;
       return {
-        provider: 'glm' as const,
-        apiKey: 'key',
-        model: 'glm-5.3',
-        effort: null,
-        systemPrompt: 'You are a bot.',
-        history: [],
-        message: 'Hi',
-        tools: [],
+        request: {
+          provider: 'glm' as const,
+          apiKey: 'key',
+          model: 'glm-5.3',
+          effort: null,
+          systemPrompt: 'You are a bot.',
+          history: [],
+          message: 'Hi',
+          tools: [],
+        },
+        takesSteers: options.takesSteers ?? true,
       };
     }),
   };
@@ -124,7 +133,7 @@ function setup(
     new BotSteeringFactory(turns as unknown as BotTurnRepositoryPort, new BotMessageMapper()),
     new TurnWriteFactory(messages as unknown as BotMessageRepositoryPort, stream),
   );
-  return { handler, turns, messages, stream, summaries, heard };
+  return { handler, turns, messages, stream, summaries, heard, context };
 }
 
 const run = (handler: RunBotTurnCommandHandler, turnId: string) =>
@@ -152,6 +161,18 @@ describe('RunBotTurnCommandHandler', () => {
     expect(heard).toEqual(['turn', 'write 0 Hello', 'message', 'settle', 'forget', 'turn']);
   });
 
+  // Regression: an "on it" after the call ran, or after its report, reads backwards.
+  it('ends a turn with nothing left to say (a yes whose call already ran) without a word', async () => {
+    const turn = queued();
+    const engine = vi.fn(() => [{ type: 'text.done' as const, text: 'On it.' }]);
+    const { handler, messages, summaries } = setup(turn, engine, { nothingToSay: true });
+    await run(handler, turn.id);
+    expect(engine).not.toHaveBeenCalled();
+    expect(messages.insert).not.toHaveBeenCalled();
+    expect(turn).toMatchObject({ status: 'completed' });
+    expect(summaries.afterTurn).toHaveBeenCalledWith(turn, expect.any(String));
+  });
+
   it('stores a tool call as an activity line whose step fills in when the call finishes', async () => {
     const turn = queued();
     const { handler, messages } = setup(turn, () => [
@@ -171,6 +192,25 @@ describe('RunBotTurnCommandHandler', () => {
         steps: [expect.objectContaining({ callId: 'c1', output: 'found', isError: false })],
       }),
     );
+    expect(turn).toMatchObject({ status: 'completed' });
+  });
+
+  // Regression: the "on it" turn a yes opens took the person's message at a
+  // refused call, and that message, its turn gone, was never acted on.
+  it('hands no steering to a turn that cannot take a message, so the message waits for its own turn', async () => {
+    const turn = queued();
+    let delivered: unknown = 'not run';
+    const { handler, turns } = setup(
+      turn,
+      (request) => {
+        delivered = request.steering;
+        return [{ type: 'text.done', text: 'On it.' }];
+      },
+      { takesSteers: false },
+    );
+    await run(handler, turn.id);
+    expect(delivered).toBeUndefined();
+    expect(turns.takeSteers).not.toHaveBeenCalled();
     expect(turn).toMatchObject({ status: 'completed' });
   });
 

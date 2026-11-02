@@ -170,6 +170,7 @@
       "empty": "Ningún modelo coincide con «{{query}}».",
       "favourites": "Favoritos",
       "favouritesEmpty": "Marca un modelo con la estrella para tenerlo aquí.",
+      "moreModels": "Más modelos",
       "addFavourite": "Añadir {{model}} a favoritos",
       "removeFavourite": "Quitar {{model}} de favoritos",
       "auto": "Auto"
@@ -535,13 +536,13 @@
     },
     "empty": {
       "title": "Todavía no se ha dicho nada",
-      "description": "Lo que Claude dice y hace aparece aquí mientras trabaja."
+      "description": "Lo que el agente dice y hace aparece aquí mientras trabaja."
     },
     "composer": {
-      "placeholder": "Escribe a Claude",
+      "placeholder": "Escribe a {{agent}}",
+      "placeholderAnyAgent": "Escribe al agente",
       "send": "Enviar",
       "stop": "Detener",
-      "agent": "Claude Code",
       "attach": "Adjuntar archivos",
       "removeAttachment": "Quitar {{name}}",
       "attachTooLarge": "{{name}} pesa más de 5 MB. Guarda una copia más pequeña y vuelve a adjuntarlo.",

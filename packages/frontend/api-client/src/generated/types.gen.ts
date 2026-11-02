@@ -3890,6 +3890,10 @@ export type BotApprovalEventResponseDto = {
      * The card it decided, as the stream’s `approval_resolved` named it; absent on older lines.
      */
     approvalId?: string;
+    /**
+     * Which of an approved call’s two lines this is: `started` is the yes, written while the call runs, and opens the turn where the bot says it is on it; `finished` opens the turn that reports how it went. Absent on a no and on older lines.
+     */
+    stage?: 'started' | 'finished';
 };
 
 export type BotAnsweredQuestionResponseDto = {

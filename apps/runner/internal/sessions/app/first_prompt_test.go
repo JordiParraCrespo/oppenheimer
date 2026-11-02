@@ -29,7 +29,7 @@ func (t *typedTranscripts) FirstPrompt(_ domain.Agent, conversation string) stri
 	return t.typed[conversation]
 }
 
-func (t *typedTranscripts) Follow(context.Context, domain.Agent, string, int, int, func(app.ChatBatch) error) error {
+func (t *typedTranscripts) Follow(context.Context, domain.Session, int, int, func(app.ChatBatch) error) error {
 	return app.ErrNoChat
 }
 
