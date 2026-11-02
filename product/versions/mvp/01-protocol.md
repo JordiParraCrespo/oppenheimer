@@ -352,6 +352,22 @@ grounds can still fetch, verify and install the version that fixes it
 - A runner below the control plane's `min_supported` is refused at
   hello **with** `update_required` rather than dropped, and the
   supported window is N-2 minor versions (03).
+- **The link only grows within a protocol version** (2026-11-02). Every
+  runner out there was built against the schema of the release it came
+  from, so `packages/shared/protocol-schema/released.schema.json` keeps
+  that schema as the last `runner-v*` release shipped it, and a spec in
+  `packages/shared` fails on any change that would break one of those
+  runners: a message type or property removed, a property newly required
+  or no longer required, a type changed, an enum value removed, a bound
+  tightened, a default or a link constant changed. The schema does not
+  say which way a message travels, so the rules hold both peers to every
+  message. Growing passes: a new message, a new optional field, a looser
+  bound, a new enum value (the runner decodes enums as plain strings; a
+  new value the control plane sends still needs gating on
+  `hello.capabilities`). A real break is a `PROTOCOL_VERSION` bump on
+  purpose. The snapshot is refreshed when a runner release is cut
+  (`pnpm --filter @oppenheimer/shared protocol:release`), never to make
+  the spec pass. The idea is herdr-core's `released.openrpc.json`.
 
 ### Flow control and reconnect
 

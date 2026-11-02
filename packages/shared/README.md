@@ -70,6 +70,17 @@ what the Go structs for the runner are generated from, so a wire change shows up
 as a reviewable diff in it, and the spec in `src/protocol/__tests__/` fails if the
 committed file has drifted from the schemas.
 
+`protocol-schema/released.schema.json` is the same artifact frozen at the last
+runner release. `released-protocol.spec.ts` fails on any change that would break
+a runner built against it (a field removed or newly required, an enum value
+dropped, a bound tightened, …; `src/protocol/compatibility.ts` has the full
+list) unless `PROTOCOL_VERSION` was bumped for it. Refresh it when a runner
+release is cut, and only then:
+
+```bash
+pnpm --filter @oppenheimer/shared protocol:release   # build, then copy protocol.schema.json to released.schema.json
+```
+
 ## Consumed by
 
 `apps/api`, `apps/web`, `packages/auth`, `packages/backend/core`, and the
