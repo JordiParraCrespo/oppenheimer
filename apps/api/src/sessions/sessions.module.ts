@@ -18,6 +18,7 @@ import { GithubPullWakesDomainEventHandler } from './application/event-handlers/
 import { HostUnpairedStopsSessionsDomainEventHandler } from './application/event-handlers/host-unpaired.domain-event-handler';
 import { HostUnpairedClosesSessionsDomainEventHandler } from './application/event-handlers/host-unpaired-wipe.domain-event-handler';
 import { SessionTerminalMatchedDomainEventHandler } from './application/event-handlers/session-terminal-matched.domain-event-handler';
+import { SessionWakeRequestedDomainEventHandler } from './application/event-handlers/session-wake-requested.domain-event-handler';
 import { RecordSessionEventsResolver } from './application/record-session-events.resolver';
 import { RepositoryTokenFactory } from './application/repository-token.factory';
 import { SessionAccountErasure } from './application/session-account-erasure.resolver';
@@ -281,6 +282,7 @@ const adapters: Provider[] = [
     HostUnpairedStopsSessionsDomainEventHandler,
     SessionTerminalMatchedDomainEventHandler,
     GithubPullWakesDomainEventHandler,
+    SessionWakeRequestedDomainEventHandler,
     SessionPromptTyperResolver,
     SessionWakesProcessor,
     { provide: SESSION_WAKES, useClass: OutboxSessionWakesAdapter },

@@ -103,6 +103,24 @@ The line is the host's, never the reviewer's words: read the comments with
 Watch the pull requests you opened and want to see through; you can watch
 up to ten.
 
+## Sleep, and be woken
+
+```sh
+runner sessions wake-in 20m "Check whether the staging deploy finished: gh run list -L1"
+runner sessions wake-in 2h "Look at PR #128 again; ping the person if nobody reviewed it."
+```
+
+Instead of polling something slow, set a wake and end your turn. When it
+is due, the note is typed into your input once you are at your prompt:
+
+```
+<oppenheimer from="schedule" wake="3f9a…">Check whether the staging deploy finished: gh run list -L1</oppenheimer>
+```
+
+From a minute to 7 days (`90s` is too soon; `30m`, `2h`, `1d` are fine).
+Write the note for yourself as you will be then: say what to check and how.
+The host must be up when it is due.
+
 ## What the person sees
 
 Every session, children included, is a terminal on this host. The console

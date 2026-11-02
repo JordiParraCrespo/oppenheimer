@@ -74,3 +74,14 @@ export function githubWakeText(
   }
   return `<oppenheimer from="github" event="${type}" pull="${number}">Pull request #${number}: ${what}. Read it with \`gh pr view ${number} --comments\` before you act on it.</oppenheimer>`;
 }
+
+/**
+ * The line a wake the agent set for itself types back into its session
+ * (`product/next-steps/agent-tools.md` §4): its own words, framed as the
+ * host's so it reads them as a reminder and not as the person speaking. A
+ * frame's end inside the words is taken out, so the words cannot close it.
+ */
+export function scheduledWakeText(wakeId: string, text: string): string {
+  const words = text.replaceAll('</oppenheimer>', '').trim();
+  return `<oppenheimer from="schedule" wake="${wakeId}">${words}</oppenheimer>`;
+}

@@ -157,3 +157,44 @@ test('a failed check on the pull request a session watches is typed into it', as
   );
   expect(wakes).toHaveLength(1);
 });
+
+test('a wake an agent set for itself is typed back into its session when it is due', async () => {
+  test.setTimeout(240_000);
+  const { api } = await signedUpContext('fleetwakelater');
+  const installation = await connect(api);
+  const [box] = await pairedHosts(api, 1, 'wakelater');
+  const sessionId = await createSession(api, box.id, installation.id);
+
+  await expect
+    .poll(
+      () => {
+        try {
+          return box.host.exec(
+            `OPPENHEIMER_SESSION=${sessionId} runner sessions wake-in 1m "Check whether the deploy finished."`,
+          );
+        } catch {
+          return 'not yet';
+        }
+      },
+      { timeout: 120_000, intervals: [2_000] },
+    )
+    .toContain('you will be woken at');
+
+  await expect
+    .poll(
+      async () =>
+        (await log(api, sessionId)).find(
+          (entry) => entry.kind === 'prompt.sent' && entry.payload.sender?.kind === 'wake',
+        ),
+      { timeout: 150_000, intervals: [5_000] },
+    )
+    .toMatchObject({
+      source: 'api',
+      payload: {
+        text: expect.stringMatching(
+          /^<oppenheimer from="schedule" wake="[0-9a-f]+">Check whether the deploy finished\.<\/oppenheimer>$/,
+        ),
+        sender: { kind: 'wake', source: 'schedule' },
+      },
+    });
+});
