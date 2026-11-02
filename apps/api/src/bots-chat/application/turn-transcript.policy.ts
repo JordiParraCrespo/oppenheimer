@@ -12,6 +12,7 @@ import {
 } from '../domain/bot-message.entity';
 import { SHOWN_IMAGES_DATA_KEY } from '../domain/bot-shown-image.policy';
 import { SUBAGENT_DATA_KEY } from '../domain/bot-subagent.policy';
+import { startOf } from '../domain/bot-tool-text.policy';
 import {
   BOT_TURN_TIME_LIMIT_MS,
   type BotTurnContext,
@@ -190,7 +191,7 @@ export class TurnTranscript {
     if (!line || !step) return [];
     this.running.delete(callId);
     step.output =
-      output.length > BOT_TOOL_OUTPUT_MAX ? `${output.slice(0, BOT_TOOL_OUTPUT_MAX)}…` : output;
+      output.length > BOT_TOOL_OUTPUT_MAX ? `${startOf(output, BOT_TOOL_OUTPUT_MAX)}…` : output;
     step.isError = isError;
     step.sessionId = isError ? null : (data?.sessionId ?? null);
     step.subagents = isError ? null : toSubagentRuns(data?.[SUBAGENT_DATA_KEY]);

@@ -167,7 +167,9 @@ export function failed(
  * The kind of failure an error thrown by a provider's client is, read from
  * the HTTP status it carries (both SDKs' API errors have `status`) or, with
  * none, from a network failure's name or code. A `429` that names a spent
- * quota (`insufficient_quota`) is the account's limit, not a rate limit.
+ * quota (`insufficient_quota`) is the account's limit, not a rate limit; a
+ * `400` that says the body could not be parsed is our request broken, not
+ * one the provider refused.
  */
 export function failureOf(error: unknown): BotEngineFailure {
   if (!error || typeof error !== 'object') return 'other';
@@ -181,6 +183,7 @@ export function failureOf(error: unknown): BotEngineFailure {
     if (status === 429) return code === 'insufficient_quota' ? 'usage_limit' : 'rate_limit';
     if (status === 402) return 'usage_limit';
     if (status === 401 || status === 403) return 'credential';
+    if (status === 400 && MALFORMED_REQUEST.test(describeError(error))) return 'other';
     if (status === 400 || status === 404 || status === 413 || status === 422) return 'refused';
     if (status >= 500) return 'unavailable';
     return 'other';
@@ -193,6 +196,14 @@ export function failureOf(error: unknown): BotEngineFailure {
   if ([...NETWORK_CODES].some((spelled) => message.includes(spelled))) return 'unavailable';
   return 'other';
 }
+
+/**
+ * How a provider says it could not read the request's body at all: our
+ * request was broken, not its content refused, so changing the message or
+ * the model (what `refused` tells the person) would not help.
+ */
+const MALFORMED_REQUEST =
+  /failed to (?:parse|deserialize)|could not parse|unable to parse|malformed|invalid json/i;
 
 const NETWORK_CODES = new Set([
   'ECONNREFUSED',
@@ -228,8 +239,9 @@ export function resetFromHeaders(
  * contract's shape, becomes an error result the model reads; it never ends
  * the turn. The result is what both the model and `tool.finished` see, so
  * the request's key is redacted from it here, before either does: a tool
- * failure can echo a key the way a provider error can. Its `data` is kept
- * only when it is strings by name.
+ * failure can echo a key the way a provider error can, and a character a
+ * tool cut in two is mended (`wellFormed`). Its `data` is kept only when it
+ * is strings by name.
  */
 export async function runTool(
   tool: BotEngineTool,
@@ -249,9 +261,23 @@ export async function runTool(
     content = describeError(error) || 'The tool failed.';
     isError = true;
   }
-  const redacted = redactSecret(content, context.apiKey);
+  const redacted = wellFormed(redactSecret(content, context.apiKey));
   return data ? { content: redacted, isError, data } : { content: redacted, isError };
 }
+
+/**
+ * `text` with every lone surrogate half (an emoji a tool cut in two) made
+ * U+FFFD. The SDKs serialise a lone half as a `\uD83D` escape with nothing
+ * after it, which xAI's JSON parser refuses with a 400 for the whole turn
+ * ("unexpected end of hex escape"); one broken character in one tool's
+ * answer must not cost the turn. (`String.prototype.toWellFormed`, past the
+ * ES2022 lib this package compiles against.)
+ */
+function wellFormed(text: string): string {
+  return text.replace(LONE_SURROGATE, '\uFFFD');
+}
+
+const LONE_SURROGATE = /[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/g;
 
 function toolData(raw: unknown): BotToolData | undefined {
   if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return undefined;
