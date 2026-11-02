@@ -183,8 +183,8 @@ export function failureOf(error: unknown): BotEngineFailure {
     if (status === 429) return code === 'insufficient_quota' ? 'usage_limit' : 'rate_limit';
     if (status === 402) return 'usage_limit';
     if (status === 401 || status === 403) return 'credential';
-    if (status === 400 && MALFORMED_REQUEST.test(describeError(error))) return 'other';
-    if (status === 400 || status === 404 || status === 413 || status === 422) return 'refused';
+    if (status === 400) return isMalformedRequest(error) ? 'other' : 'refused';
+    if (status === 404 || status === 413 || status === 422) return 'refused';
     if (status >= 500) return 'unavailable';
     return 'other';
   }
@@ -198,10 +198,16 @@ export function failureOf(error: unknown): BotEngineFailure {
 }
 
 /**
- * How a provider says it could not read the request's body at all: our
- * request was broken, not its content refused, so changing the message or
- * the model (what `refused` tells the person) would not help.
+ * Whether a `400` says the provider could not read the request's body at
+ * all: our request was broken, not its content refused, so changing the
+ * message or the model (what `refused` tells the person) would not help.
+ * Only the message tells the two apart; a provider's new phrasing goes in
+ * `MALFORMED_REQUEST`.
  */
+function isMalformedRequest(error: unknown): boolean {
+  return MALFORMED_REQUEST.test(describeError(error));
+}
+
 const MALFORMED_REQUEST =
   /failed to (?:parse|deserialize)|could not parse|unable to parse|malformed|invalid json/i;
 
