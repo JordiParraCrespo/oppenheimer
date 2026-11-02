@@ -78,9 +78,10 @@ export class RunBotTurnCommandHandler implements ICommandHandler<RunBotTurnComma
         return;
       }
       scratchDir = await mkdtemp(join(tmpdir(), 'bot-'));
-      const context = await this.context.resolve(turn, new Date());
+      const { takesSteers, ...context } = await this.context.resolve(turn, new Date());
       const transcript = new TurnTranscript(turn);
-      const steering = this.steering.steering(turn);
+      // A message sent meanwhile that this turn cannot take waits for its own turn.
+      const steering = takesSteers ? this.steering.steering(turn) : undefined;
       const signal = watch.signal;
       const write = this.writes.writer(turn);
       for await (const event of this.engine.run({ ...context, signal, scratchDir, steering })) {

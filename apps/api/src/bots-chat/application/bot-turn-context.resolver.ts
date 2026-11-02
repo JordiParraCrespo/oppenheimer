@@ -47,7 +47,13 @@ import { BotTurnOpeningResolver } from './bot-turn-opening.resolver';
 const ENGINE_EFFORTS: readonly string[] = ['low', 'medium', 'high', 'xhigh', 'max'];
 
 /** What a turn is run with, but the abort signal and the scratch directory its runner owns. */
-export type BotTurnContext = Omit<BotTurnRequest, 'signal' | 'scratchDir'>;
+export type BotTurnContext = Omit<BotTurnRequest, 'signal' | 'scratchDir' | 'steering'> & {
+  /**
+   * Whether what the person sends meanwhile may steer this turn. Not the
+   * turn a yes opens: it cannot act, so a message it took would be lost.
+   */
+  takesSteers: boolean;
+};
 
 /**
  * Model round trips in one chat turn. Below the engine's default: a chat
@@ -209,6 +215,7 @@ export class BotTurnContextResolver {
       images,
       tools: approvalStarted ? refusingTools(tools) : tools,
       maxSteps: approvalStarted ? BOT_APPROVAL_STARTED_MAX_STEPS : BOT_TURN_MAX_STEPS,
+      takesSteers: !approvalStarted,
     };
   }
 

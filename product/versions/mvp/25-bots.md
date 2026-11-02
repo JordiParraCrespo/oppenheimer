@@ -833,7 +833,8 @@ How the card works (built 2026-10-15, `bot_approval`):
   `stage` is `started`): "On it, archiving those 25 now.", in its own
   voice, while the call runs. That turn is offered the bot's usual tools so
   the provider's cache of the conversation holds, but each refuses to run,
-  and it has two round trips. Meanwhile the chat holds the call as a live
+  it has two round trips, and it takes no steer: a message sent meanwhile
+  waits for a turn that can act on it. Meanwhile the chat holds the call as a live
   line with its clock ("Running: Archive 25 threads…") under that sentence.
   The call's answer opens the report's turn as before, its event `finished`,
   drawn as "Done: …" (or "It failed: …") rather than a second "You

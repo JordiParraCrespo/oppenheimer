@@ -156,16 +156,18 @@ describe('BotTurnContextResolver', () => {
   // What breaks this: the "on it" turn acting before the call it approved
   // reports, or archiving a second time; or, offered no tools at all, losing
   // the provider's cached conversation and paying for it whole.
-  it('offers a yes’s turn the same tools, each refusing to run, and two round trips', async () => {
+  it('offers a yes’s turn the same tools, each refusing to run, two round trips and no steer', async () => {
     const quiet = await setup(async () => [], { approvalStarted: true }).resolve();
     expect(quiet.tools.map((tool) => tool.name)).toEqual(['archive_mail']);
     expect(quiet.maxSteps).toBe(BOT_APPROVAL_STARTED_MAX_STEPS);
+    expect(quiet.takesSteers).toBe(false);
     await expect(
       quiet.tools[0]?.run({}, { signal: new AbortController().signal }),
     ).resolves.toEqual({ content: APPROVAL_STARTED_REFUSAL, isError: true });
 
     const usual = await setup(async () => []).resolve();
     expect(usual.maxSteps).toBe(BOT_TURN_MAX_STEPS);
+    expect(usual.takesSteers).toBe(true);
     await expect(
       usual.tools[0]?.run({}, { signal: new AbortController().signal }),
     ).resolves.toEqual({ content: 'Archived 25 threads.' });

@@ -58,6 +58,8 @@ function setup(
     steers?: BotTurnEntity[][];
     /** The turn opens on a yes whose call already ran. */
     overtaken?: boolean;
+    /** Whether the turn may take what the person sends meanwhile; it may unless said. */
+    takesSteers?: boolean;
   } = {},
 ) {
   const waiting = [...(options.steers ?? [])];
@@ -111,6 +113,7 @@ function setup(
         history: [],
         message: 'Hi',
         tools: [],
+        takesSteers: options.takesSteers ?? true,
       };
     }),
   };
@@ -192,6 +195,25 @@ describe('RunBotTurnCommandHandler', () => {
         steps: [expect.objectContaining({ callId: 'c1', output: 'found', isError: false })],
       }),
     );
+    expect(turn).toMatchObject({ status: 'completed' });
+  });
+
+  // Regression: the "on it" turn a yes opens took the person's message at a
+  // refused call, and that message, its turn gone, was never acted on.
+  it('hands no steering to a turn that cannot take a message, so the message waits for its own turn', async () => {
+    const turn = queued();
+    let delivered: unknown = 'not run';
+    const { handler, turns } = setup(
+      turn,
+      (request) => {
+        delivered = request.steering;
+        return [{ type: 'text.done', text: 'On it.' }];
+      },
+      { takesSteers: false },
+    );
+    await run(handler, turn.id);
+    expect(delivered).toBeUndefined();
+    expect(turns.takeSteers).not.toHaveBeenCalled();
     expect(turn).toMatchObject({ status: 'completed' });
   });
 
