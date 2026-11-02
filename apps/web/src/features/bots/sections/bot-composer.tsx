@@ -6,7 +6,7 @@ import {
   ComposerStackRow,
   FieldError,
 } from '@oppenheimer/design-system-web';
-import { KeyRound } from '@oppenheimer/design-system-web/icons';
+import { KeyRound, Target } from '@oppenheimer/design-system-web/icons';
 import type { BotWaitingMessage } from '@oppenheimer/frontend-consumer';
 import {
   useBotActiveTurn,
@@ -77,7 +77,8 @@ import { BotGoalNotice } from '@/features/bots/sections/bot-goal-notice';
  * field; while one uploads or failed, or the bot's model reads no images,
  * send is off and says why, and nothing written is lost.
  * `/goal clear` stops the bot's goal, as the notice's Stop does, and sends
- * nothing; `/goal` with no condition keeps send off and says what it lacks.
+ * nothing; `/goal` with no condition keeps send off and says, on the box's
+ * top edge, what it lacks.
  */
 export function BotComposer({
   botId,
@@ -180,6 +181,7 @@ export function BotComposer({
   const top = composerTopOf({
     waiting: waiting.length,
     noKey: Boolean(noKey),
+    goalCommand: goalCommand?.kind === 'show',
     goal: Boolean(goal),
   });
   const tops: Record<ComposerTop, () => ReactNode> = {
@@ -210,6 +212,9 @@ export function BotComposer({
       <ComposerNotice icon={<KeyRound />} action={addKey}>
         {noKey}
       </ComposerNotice>
+    ),
+    goalCommand: () => (
+      <ComposerNotice icon={<Target />}>{t('bots.chat.goal.needsCondition')}</ComposerNotice>
     ),
     goal: () => (goal ? <BotGoalNotice botId={botId} goal={goal} /> : null),
   };

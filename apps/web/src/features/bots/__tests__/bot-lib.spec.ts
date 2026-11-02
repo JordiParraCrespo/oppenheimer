@@ -196,10 +196,12 @@ describe('firstBot', () => {
 });
 
 describe('composerTopOf', () => {
-  it('puts one thing on the composer’s top edge: the queue, else the missing key, else the goal', () => {
-    expect(composerTopOf({ waiting: 2, noKey: true, goal: true })).toBe('queue');
-    expect(composerTopOf({ waiting: 0, noKey: true, goal: true })).toBe('noKey');
-    expect(composerTopOf({ waiting: 0, noKey: false, goal: true })).toBe('goal');
-    expect(composerTopOf({ waiting: 0, noKey: false, goal: false })).toBeNull();
+  it('puts one thing on the composer’s top edge: the queue, else the missing key, else a /goal’s missing condition, else the goal', () => {
+    const none = { waiting: 0, noKey: false, goalCommand: false, goal: false };
+    expect(composerTopOf({ ...none, waiting: 2, noKey: true, goal: true })).toBe('queue');
+    expect(composerTopOf({ ...none, noKey: true, goalCommand: true, goal: true })).toBe('noKey');
+    expect(composerTopOf({ ...none, goalCommand: true, goal: true })).toBe('goalCommand');
+    expect(composerTopOf({ ...none, goal: true })).toBe('goal');
+    expect(composerTopOf(none)).toBeNull();
   });
 });
