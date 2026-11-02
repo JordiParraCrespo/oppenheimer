@@ -15,12 +15,7 @@ import {
 import { FindSessionQuery } from '../../sessions/queries/find-session/find-session.query';
 import { FindSessionEventsQuery } from '../../sessions/queries/find-session-events/find-session-events.query';
 import { FindSessionsQuery } from '../../sessions/queries/find-sessions/find-sessions.query';
-import {
-  cloudSessionUrl,
-  describeDecision,
-  groupScanOf,
-  SESSION_GROUP_PHRASES,
-} from '../bot-session-tool.mapper';
+import { describeDecision, groupScanOf, SESSION_GROUP_PHRASES } from '../bot-session-tool.mapper';
 import { describeSessionActivity } from '../domain/bot-session-activity.policy';
 import {
   cut,
@@ -28,6 +23,7 @@ import {
   formatToolList,
   formatToolTime,
 } from '../domain/bot-tool-text.policy';
+import { describeCloudSession } from './bot-cloud-session.policy';
 import {
   type BotToolArea,
   type BotToolCallContext,
@@ -202,13 +198,8 @@ export class BotHostToolsFactory implements BotToolArea {
           `- last activity: ${formatToolTime(session.lastEventAt, context.timeZone)}`,
           `- stopped: ${session.stoppedAt ? formatToolTime(session.stoppedAt, context.timeZone) : 'no'}`,
         ];
-        if (session.cloudSessionId) {
-          lines.push(`- cloud session: ${cloudSessionUrl(session.agent, session.cloudSessionId)}`);
-        } else if (session.cloudRun) {
-          lines.push(
-            `- cloud session: ${session.cloudRun.url ?? 'no link yet'} (${session.cloudRun.status}${session.cloudRun.pullRequestUrl ? `, pull request ${session.cloudRun.pullRequestUrl}` : ''})`,
-          );
-        }
+        const cloud = describeCloudSession(session);
+        if (cloud) lines.push(cloud);
         if (turn) lines.push(...describeTurn(turn));
         if (session.pendingDecision) {
           lines.push(

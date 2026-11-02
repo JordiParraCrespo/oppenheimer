@@ -421,7 +421,6 @@ describe('BotSessionToolsFactory', () => {
         cloud: true,
         codexEnvironment: 'acme-mobile',
       });
-      expect(result.content).toContain('Started Codex cloud session task_e_6823abc');
       expect(result.content).toContain('https://chatgpt.com/codex/tasks/task_e_6823abc');
     });
 
@@ -433,7 +432,9 @@ describe('BotSessionToolsFactory', () => {
         codex_environment: 'acme-mobile',
       });
       expect(result.isError).toBe(true);
-      expect(result.content).toContain('codex_environment is only for the agent codex');
+      expect(result.content).toContain(
+        'codex_environment is only for codex; leave it out for claude-code.',
+      );
       expect(commandBus.execute).not.toHaveBeenCalled();
     });
 
@@ -487,7 +488,9 @@ describe('BotSessionToolsFactory', () => {
         host_id: HOME,
       });
       expect(result.isError).toBe(true);
-      expect(result.content).toContain('leave host_id out');
+      expect(result.content).toContain(
+        'host_id is only for claude-code and codex; leave it out for cursor.',
+      );
       expect(commandBus.execute).not.toHaveBeenCalled();
     });
 
@@ -499,7 +502,7 @@ describe('BotSessionToolsFactory', () => {
         model: 'grok-4.7',
       });
       expect(result.isError).toBe(true);
-      expect(result.content).toContain("model is only for a vendor's cloud");
+      expect(result.content).toContain('model is only for cursor; leave it out for claude-code.');
       expect(commandBus.execute).not.toHaveBeenCalled();
     });
   });

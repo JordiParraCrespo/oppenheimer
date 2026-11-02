@@ -1,12 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
-import {
-  CLOUD_AGENT_PROVIDER_LABELS,
-  type CloudAgentProviderId,
-  FIELD_BOUNDS,
-  fitsPromptBound,
-} from '@oppenheimer/shared';
-import { CODING_AGENT_IDS, CODING_AGENTS } from '@oppenheimer/shared/agents';
+import { FIELD_BOUNDS, fitsPromptBound } from '@oppenheimer/shared';
+import { CODING_AGENT_IDS } from '@oppenheimer/shared/agents';
 import { z } from 'zod/v4';
 import { FindHostQuery } from '../../hosts/queries/find-host/find-host.query';
 import type { ProjectEntity } from '../../projects/domain/project.entity';
@@ -20,26 +15,24 @@ import type { SessionCommandResult } from '../../sessions/domain/session-command
 import type { WorkSessionEntity } from '../../sessions/domain/work-session.entity';
 import { FindSessionQuery } from '../../sessions/queries/find-session/find-session.query';
 import {
-  CLOUD_SESSION_AGENTS,
-  CLOUD_SITE,
-  cloudAgentOf,
-  cloudSessionSummary,
-  cloudSessionUrl,
-  cloudStartHint,
   decisionAnswerOf,
   decisionAnswerSummary,
-  isLaunchedCloud,
-  planCloudSession,
-  planLaunchedCloudSession,
   planSession,
   promptSummary,
   readAfterHint,
-  type StartCloudSessionInput,
   sentTurnOf,
   sessionHostId,
   sessionSummary,
 } from '../bot-session-tool.mapper';
 import { idempotencyKeyOf } from '../domain/bot-tool-idempotency.policy';
+import {
+  CLOUD_SESSION_AGENTS,
+  type CloudSessionPlan,
+  cloudSessionHostId,
+  cloudSessionSummary,
+  cloudStartAnswer,
+  planCloudSession,
+} from './bot-cloud-session.policy';
 import { BotSessionWaitResolver } from './bot-session-wait.resolver';
 import { BotSessionWatchResolver } from './bot-session-watch.resolver';
 import {
@@ -260,96 +253,30 @@ export class BotSessionToolsFactory implements BotToolArea {
           .max(CLOUD_START_WAIT_MAX_SECONDS)
           .default(60)
           .describe(
-            'claude-code and codex: how long to wait for the host to start it before answering without its URL.',
+            "How long to wait for the session's link at its vendor before answering without it.",
           ),
       }),
       summarize: async (input, context) => {
         const project = await this.project(context, input.project_id).catch(() => null);
-        if (isLaunchedCloud(cloudAgentOf(input))) return cloudSessionSummary(input, project, null);
-        const hostId = sessionHostId(input, project, context.homeHostId);
+        const hostId = cloudSessionHostId(input, project, context.homeHostId);
         const host = hostId ? await this.hostName(context, hostId) : null;
         return cloudSessionSummary(input, project, host);
       },
       run: async (input, context, signal) => {
         const project = await this.project(context, input.project_id);
-        const agent = cloudAgentOf(input);
-        if (isLaunchedCloud(agent)) return this.launchCloudSession(input, agent, project, context);
         const plan = planCloudSession(input, project, context.homeHostId);
         if ('refusal' in plan) throw new BotToolRefusal(plan.refusal);
-        const { body, hostId } = plan;
-        const label = CODING_AGENTS[agent].label;
-        const site = CLOUD_SITE[agent];
-        const result = await this.commandBus.execute<CreateSessionCommand, SessionCommandResult>(
-          new CreateSessionCommand({
-            scope: context.owner,
-            userId: context.owner.userId,
-            input: body,
-            idempotencyKey: idempotencyKeyOf(context.turnId, body, context.approvalId),
-            origin: 'bot',
-          }),
-        );
+        const result = await this.commandBus.execute<
+          CreateSessionCommand | StartCloudSessionCommand,
+          SessionCommandResult
+        >(cloudSessionCommand(plan, context));
         const { sessionId } = result;
-        if (result.hints.includes('host_offline')) {
-          return {
-            content: `Created session ${sessionId}, but host ${hostId} is offline: its ${label} cloud session starts when the host comes back. get_session shows its ${site} URL once it has one.`,
-            sessionId,
-          };
-        }
-        const session = await this.waits.cloudStart(context, sessionId, input.wait_seconds, signal);
-        if (session.cloudSessionId) {
-          const url = cloudSessionUrl(session.agent, session.cloudSessionId);
-          return {
-            content: `Started ${label} cloud session ${session.cloudSessionId} from host ${hostId} (session ${sessionId}): ${url} It runs on ${site} on its own; give the person that link, and follow it there or with get_session.`,
-            sessionId,
-          };
-        }
-        if (session.state === 'failed' || session.isResolved) {
-          return {
-            content: `Session ${sessionId}: host ${hostId} could not start the ${label} cloud session (it is ${session.state}). read_session says why; ${cloudStartHint(agent)}.`,
-            sessionId,
-          };
-        }
-        return {
-          content: `Session ${sessionId} is starting its ${label} cloud session on host ${hostId}, which has not named it yet. get_session shows its ${site} URL once it has one.`,
-          sessionId,
-        };
+        const session = result.hints.includes('host_offline')
+          ? null
+          : await this.waits.cloudStart(context, sessionId, input.wait_seconds, signal);
+        return { content: cloudStartAnswer(plan, sessionId, session), sessionId };
       },
     });
-  }
-
-  /**
-   * A vendor's cloud session, launched by the control plane on the owner's
-   * key: the vendor is asked before anything is stored, so a missing key or a
-   * refusal is the call's error, in the catalog's words.
-   */
-  private async launchCloudSession(
-    input: StartCloudSessionInput,
-    provider: CloudAgentProviderId,
-    project: ProjectEntity,
-    context: BotToolCallContext & { approvalId?: string },
-  ): Promise<{ content: string; sessionId: string }> {
-    const plan = planLaunchedCloudSession(input, provider, project);
-    if ('refusal' in plan) throw new BotToolRefusal(plan.refusal);
-    const { body } = plan;
-    const label = CLOUD_AGENT_PROVIDER_LABELS[provider];
-    const { sessionId } = await this.commandBus.execute<
-      StartCloudSessionCommand,
-      SessionCommandResult
-    >(
-      new StartCloudSessionCommand({
-        scope: context.owner,
-        userId: context.owner.userId,
-        input: body,
-        idempotencyKey: idempotencyKeyOf(context.turnId, body, context.approvalId),
-        origin: 'bot',
-      }),
-    );
-    const url = (await this.session(context, sessionId).catch(() => null))?.cloudRun?.url ?? null;
-    const link = url ? `: ${url}` : '.';
-    return {
-      content: `Started ${label} cloud session ${sessionId} on the owner's ${label} key${link} It runs at ${label} on its own; give the person that link, and follow it there or with get_session.`,
-      sessionId,
-    };
   }
 
   private sendToSession(): BotToolDefinition {
@@ -515,4 +442,20 @@ export class BotSessionToolsFactory implements BotToolArea {
       new FindProjectQuery({ scope: context.owner, projectId }),
     );
   }
+}
+
+/** The sessions' own command that starts what a cloud plan says, as the owner, marked as the bot's. */
+function cloudSessionCommand(
+  plan: CloudSessionPlan,
+  context: BotToolCallContext & { approvalId?: string },
+): CreateSessionCommand | StartCloudSessionCommand {
+  const props = {
+    scope: context.owner,
+    userId: context.owner.userId,
+    idempotencyKey: idempotencyKeyOf(context.turnId, plan.body, context.approvalId),
+    origin: 'bot' as const,
+  };
+  return plan.kind === 'host'
+    ? new CreateSessionCommand({ ...props, input: plan.body })
+    : new StartCloudSessionCommand({ ...props, input: plan.body });
 }
