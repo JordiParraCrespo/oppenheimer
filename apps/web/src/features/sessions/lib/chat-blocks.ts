@@ -70,6 +70,8 @@ export type ChatBlock =
   | { kind: 'plan'; id: string; call: ChatToolCall }
   | { kind: 'question'; id: string; call: ChatToolCall }
   | { kind: 'notice'; id: string; notice: 'interrupted' | 'compacted' }
+  /** What a command the CLI answered itself printed (`/context`). */
+  | { kind: 'output'; id: string; text: string; failed: boolean }
   | { kind: 'task'; id: string; status: ChatTaskStatus; summary: string | null }
   | { kind: 'changes'; id: string; files: ChangedFile[] }
   /** What the call read them from, a path or a URL, when it says. */
@@ -132,6 +134,8 @@ function blockOf(step: ChatStep, next: ChatStep | undefined): ChatBlock | null {
       };
     case 'notice':
       return { kind: 'notice', id: step.id, notice: step.notice };
+    case 'output':
+      return { kind: 'output', id: step.id, text: step.text, failed: step.failed };
     case 'task':
       return { kind: 'task', id: step.id, status: step.status, summary: step.summary };
     case 'tool':

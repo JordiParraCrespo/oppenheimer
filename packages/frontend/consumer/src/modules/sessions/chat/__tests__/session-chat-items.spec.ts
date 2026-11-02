@@ -117,4 +117,20 @@ describe('sessionChatItems', () => {
   it('is what the shared schema accepts', () => {
     for (const turn of turns) expect(chatItemTurnSchema.safeParse(turn).success).toBe(true);
   });
+
+  it('reads what a slash command printed as a command_output event the schema accepts', () => {
+    const turns = sessionChatItems(
+      toTurns([
+        user('c', '<command-name>/context</command-name>\n<command-args></command-args>'),
+        user('o', '<local-command-stdout>\u001b[1mContext Usage\u001b[22m</local-command-stdout>'),
+        user('m', '<command-name>/model</command-name>\n<command-args>nope</command-args>'),
+        user('e', '<local-command-stderr>Unknown model: nope</local-command-stderr>'),
+      ]),
+    );
+    expect(turns.map((turn) => turn.items.at(-1))).toMatchObject([
+      { type: 'event', event: 'command_output', status: 'completed', text: 'Context Usage' },
+      { type: 'event', event: 'command_output', status: 'failed', text: 'Unknown model: nope' },
+    ]);
+    for (const turn of turns) expect(chatItemTurnSchema.parse(turn)).toEqual(turn);
+  });
 });

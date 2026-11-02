@@ -12,6 +12,7 @@ import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { ChatBlock } from '../lib/chat-blocks';
 import { ChatChanges } from './chat-changes';
+import { ChatCommandOutput } from './chat-command-output';
 import { ChatImages } from './chat-images';
 import { ChatQuestionRecord } from './chat-question-record';
 import { ChatReplyText } from './chat-reply-text';
@@ -27,10 +28,11 @@ const TASK_ICONS: Record<ChatTaskStatus, ReactNode> = {
 /**
  * One block of an agent's turn, drawn as what it is: words as markdown, a
  * plan, what it asked and the files changed as cards, the images a call
- * read as tiles that open, thinking as a fold that is open while
- * it is what the agent is doing, calls as a group (the ones that only looked
- * around as an Explored one), a stop, a compaction or a
- * background task that ended as a note. `live` and `last` say whether this is the work in flight.
+ * read as tiles that open, what a slash command printed in the terminal's
+ * font, thinking as a fold that is open while it is what the agent is
+ * doing, calls as a group (the ones that only looked around as an Explored
+ * one), a stop, a compaction or a background task that ended as a note.
+ * `live` and `last` say whether this is the work in flight.
  */
 export function ChatTurnBlock({
   block,
@@ -88,6 +90,8 @@ export function ChatTurnBlock({
           {t(`sessions.chat.notice.${block.notice}`)}
         </ChatMarker>
       );
+    case 'output':
+      return <ChatCommandOutput text={block.text} failed={block.failed} />;
     case 'task':
       return (
         <ChatMarker icon={TASK_ICONS[block.status]}>

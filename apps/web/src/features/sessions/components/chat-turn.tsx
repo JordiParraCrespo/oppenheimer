@@ -16,9 +16,14 @@ import { ChatImages } from './chat-images';
 import { ChatTurnBlock } from './chat-turn-block';
 import { ElapsedClock } from './elapsed-clock';
 
-/** What a folded turn keeps: its words, its cards and its pictures, what was asked and answered among them. */
+/**
+ * What a folded turn keeps: its words, its cards and its pictures, what was
+ * asked and answered among them, and what a slash command printed, which is
+ * that command's whole answer.
+ */
 const SETTLED_KINDS = new Set<ChatBlock['kind']>([
   'reply',
+  'output',
   'plan',
   'question',
   'changes',
