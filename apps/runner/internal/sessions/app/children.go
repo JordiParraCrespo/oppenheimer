@@ -4,17 +4,74 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/domain"
 )
 
-// Agents run agents (`product/research/lessons-from-herdr.md`): an agent in a
-// session starts helpers as sessions of their own, sends them work, hears
-// back from them and waits for them, through the runner on its own host. A
-// child is recorded with its parent; it tells its parent when it needs
-// attention or ends, and it ends with its parent unless it was asked to
+// Children is how agents run agents (`product/research/lessons-from-herdr.md`):
+// an agent in a session starts helpers as sessions of their own, sends them
+// work, hears back from them and waits for them, through the runner on its
+// own host. A child is recorded with its parent; it tells its parent when it
+// needs attention or ends, and it ends with its parent unless it was asked to
 // outlive it.
+//
+// It is a collaborator of the session lifecycle, not part of it: it uses the
+// service's own operations (Create, Get, Refresh, Stop, List), types into a
+// window through the terminals, reads what agents report, and hears every
+// change as a Listener.
+type Children struct {
+	sessions  *Service
+	terminals Terminals
+	// program is nil on a runner that wraps no agent: readiness is then the
+	// screen's, and nothing can say whether a message set an agent working.
+	program ProgramStatus
+	now     func() time.Time
+
+	mu sync.Mutex
+	// worked holds the sessions seen working since they started, which is
+	// what tells a child that finished from one not started yet.
+	worked map[string]bool
+}
+
+// ChildrenOptions configures Children.
+type ChildrenOptions struct {
+	Sessions      *Service
+	Terminals     Terminals
+	ProgramStatus ProgramStatus
+}
+
+// NewChildren builds the protocol and has the service tell it every change.
+func NewChildren(opts ChildrenOptions) *Children {
+	c := &Children{
+		sessions: opts.Sessions, terminals: opts.Terminals, program: opts.ProgramStatus,
+		now: opts.Sessions.now, worked: map[string]bool{},
+	}
+	opts.Sessions.Listen(c)
+	return c
+}
+
+// SessionMoved implements Listener: a session seen working has started its
+// work; a child that needs the person or is through tells its parent; a
+// session that ended takes its children with it.
+func (c *Children) SessionMoved(session domain.Session, stateChanged bool) {
+	c.mu.Lock()
+	switch {
+	case !session.State.Live():
+		delete(c.worked, session.ID)
+	case session.State == domain.StateWorking:
+		c.worked[session.ID] = true
+	}
+	c.mu.Unlock()
+	if !stateChanged {
+		return
+	}
+	c.noteParent(session)
+	if !session.State.Live() {
+		c.endChildren(session.ID)
+	}
+}
 
 const (
 	// readyWithin bounds how long a message waits for its agent to be up:
@@ -52,8 +109,8 @@ type DelegateInput struct {
 }
 
 // Delegate starts a child session for a live parent.
-func (s *Service) Delegate(ctx context.Context, in DelegateInput) (domain.Session, error) {
-	parent, err := s.recorded(in.Parent)
+func (c *Children) Delegate(ctx context.Context, in DelegateInput) (domain.Session, error) {
+	parent, err := c.sessions.Get(in.Parent)
 	if err != nil {
 		return domain.Session{}, err
 	}
@@ -76,13 +133,13 @@ func (s *Service) Delegate(ctx context.Context, in DelegateInput) (domain.Sessio
 	} else {
 		create.Folder = parent.Cwd()
 	}
-	return s.Create(ctx, create)
+	return c.sessions.Create(ctx, create)
 }
 
-// Children lists a session's children, newest first.
-func (s *Service) Children(id string) []domain.Session {
+// Of lists a session's children, newest first.
+func (c *Children) Of(id string) []domain.Session {
 	var out []domain.Session
-	for _, session := range s.List() {
+	for _, session := range c.sessions.List() {
 		if session.Parent == id {
 			out = append(out, session)
 		}
@@ -100,8 +157,8 @@ type Told struct {
 // Tell types a message into a session's agent the way another program
 // should: once the agent is up, as a paste, then the agent's own submit key
 // after its paste gap (domain.Agent.Input).
-func (s *Service) Tell(ctx context.Context, id, text string) (Told, error) {
-	session, err := s.recorded(id)
+func (c *Children) Tell(ctx context.Context, id, text string) (Told, error) {
+	session, err := c.sessions.Get(id)
 	if err != nil {
 		return Told{}, err
 	}
@@ -112,52 +169,52 @@ func (s *Service) Tell(ctx context.Context, id, text string) (Told, error) {
 	if text == "" {
 		return Told{}, domain.ErrInvalidInput.WithDetail("nothing to send")
 	}
-	if err := s.awaitReady(ctx, id); err != nil {
+	if err := c.awaitReady(ctx, id); err != nil {
 		return Told{}, err
 	}
-	turn := s.turnOf(id)
+	turn := c.turnOf(id)
 	input := session.Agent.Input()
 	// A paste cannot end itself early: the closing bracket is the terminal's.
 	text = strings.ReplaceAll(text, "\x1b[201~", "")
-	if err := s.terminals.Paste(ctx, session.Target(0), "tell-"+id+fmt.Sprint(s.now().UnixNano()), text); err != nil {
+	if err := c.terminals.Paste(ctx, session.Target(0), "tell-"+id+fmt.Sprint(c.now().UnixNano()), text); err != nil {
 		return Told{}, err
 	}
 	if !sleep(ctx, input.PasteGap) {
 		return Told{}, ctx.Err()
 	}
-	if err := s.terminals.SendKeys(ctx, session.Target(0), input.Submit); err != nil {
+	if err := c.terminals.SendKeys(ctx, session.Target(0), input.Submit); err != nil {
 		return Told{}, err
 	}
-	return Told{Started: s.started(ctx, id, turn)}, nil
+	return Told{Started: c.started(ctx, id, turn)}, nil
 }
 
 // Report is a child's message to its parent, delivered into the parent's
 // input marked as the child's, so the parent's agent reads it as a report
 // rather than as the person typing.
-func (s *Service) Report(ctx context.Context, childID, text string) (Told, error) {
-	child, err := s.recorded(childID)
+func (c *Children) Report(ctx context.Context, childID, text string) (Told, error) {
+	child, err := c.sessions.Get(childID)
 	if err != nil {
 		return Told{}, err
 	}
 	if child.Parent == "" {
 		return Told{}, domain.ErrNotFound.WithDetail("session %s has no parent to report to", childID)
 	}
-	return s.Tell(ctx, child.Parent, note(child.ID, "", text))
+	return c.Tell(ctx, child.Parent, note(child.ID, "", text))
 }
 
 // Wait returns once each of the children has settled: ended, blocked on the
 // person, or finished a turn it started. ids empty waits for all of them.
-func (s *Service) Wait(ctx context.Context, parent string, ids []string) ([]domain.Session, error) {
-	if _, err := s.recorded(parent); err != nil {
+func (c *Children) Wait(ctx context.Context, parent string, ids []string) ([]domain.Session, error) {
+	if _, err := c.sessions.Get(parent); err != nil {
 		return nil, err
 	}
 	if len(ids) == 0 {
-		for _, child := range s.Children(parent) {
+		for _, child := range c.Of(parent) {
 			ids = append(ids, child.ID)
 		}
 	}
 	for _, id := range ids {
-		child, err := s.recorded(id)
+		child, err := c.sessions.Get(id)
 		if err != nil {
 			return nil, err
 		}
@@ -169,12 +226,12 @@ func (s *Service) Wait(ctx context.Context, parent string, ids []string) ([]doma
 		out := make([]domain.Session, 0, len(ids))
 		settled := true
 		for _, id := range ids {
-			child, err := s.Refresh(ctx, id)
+			child, err := c.sessions.Refresh(ctx, id)
 			if err != nil {
-				child, _ = s.recorded(id)
+				child, _ = c.sessions.Get(id)
 			}
 			out = append(out, child)
-			settled = settled && s.settled(child)
+			settled = settled && c.settled(child)
 		}
 		if settled {
 			return out, nil
@@ -186,30 +243,30 @@ func (s *Service) Wait(ctx context.Context, parent string, ids []string) ([]doma
 }
 
 // settled is a child the parent can act on.
-func (s *Service) settled(child domain.Session) bool {
+func (c *Children) settled(child domain.Session) bool {
 	switch {
 	case !child.State.Live(), child.State == domain.StateBlocked:
 		return true
 	case child.State == domain.StateDone, child.State == domain.StateIdle:
 		// Idle before its first turn is a child that has not started yet.
-		s.mu.Lock()
-		defer s.mu.Unlock()
-		return s.worked[child.ID]
+		c.mu.Lock()
+		defer c.mu.Unlock()
+		return c.worked[child.ID]
 	}
 	return false
 }
 
 // awaitReady waits for a session's agent to be up: its first report, or a
 // screen the classifier reads as anything but starting.
-func (s *Service) awaitReady(ctx context.Context, id string) error {
+func (c *Children) awaitReady(ctx context.Context, id string) error {
 	deadline := time.Now().Add(readyWithin)
 	for {
-		if s.program != nil {
-			if report, ok := s.program.Read(id); ok && report.Reported {
+		if c.program != nil {
+			if report, ok := c.program.Read(id); ok && report.Reported {
 				return nil
 			}
 		}
-		session, err := s.Refresh(ctx, id)
+		session, err := c.sessions.Refresh(ctx, id)
 		if err == nil {
 			switch session.State {
 			case domain.StateWorking, domain.StateBlocked, domain.StateIdle, domain.StateDone:
@@ -230,11 +287,11 @@ func (s *Service) awaitReady(ctx context.Context, id string) error {
 }
 
 // turnOf is the agent's turn counter, or -1 when it reports none.
-func (s *Service) turnOf(id string) int {
-	if s.program == nil {
+func (c *Children) turnOf(id string) int {
+	if c.program == nil {
 		return -1
 	}
-	report, ok := s.program.Read(id)
+	report, ok := c.program.Read(id)
 	if !ok {
 		return -1
 	}
@@ -243,13 +300,13 @@ func (s *Service) turnOf(id string) int {
 
 // started watches whether a message set the agent working: its report says
 // working, or its turn moved on (a turn that was over before the next look).
-func (s *Service) started(ctx context.Context, id string, turn int) *bool {
+func (c *Children) started(ctx context.Context, id string, turn int) *bool {
 	if turn < 0 {
 		return nil
 	}
 	deadline := time.Now().Add(startedWithin)
 	for {
-		if report, ok := s.program.Read(id); ok {
+		if report, ok := c.program.Read(id); ok {
 			root, _ := report.Root()
 			if root.State == "working" || report.Turn > turn {
 				yes := true
@@ -267,7 +324,7 @@ func (s *Service) started(ctx context.Context, id string, turn int) *bool {
 // the person (blocked) or is through (done, ended), and the parent wants
 // notes. It runs on its own: a parent that is busy, or not up, must not hold
 // the refresh that noticed.
-func (s *Service) noteParent(child domain.Session) {
+func (c *Children) noteParent(child domain.Session) {
 	if child.Parent == "" || child.Quiet {
 		return
 	}
@@ -282,39 +339,26 @@ func (s *Service) noteParent(child domain.Session) {
 	}
 	text := ""
 	if child.Program != nil {
-		text = strings.TrimSpace(strings.Join(nonEmpty(child.Program.Kind, child.Program.Message), ": "))
+		text = child.Program.Says()
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), readyWithin+startedWithin)
 	go func() {
 		defer cancel()
-		_, _ = s.Tell(ctx, child.Parent, note(child.ID, said, text))
+		_, _ = c.Tell(ctx, child.Parent, note(child.ID, said, text))
 	}()
 }
 
 // endChildren stops a session's children that were not asked to outlive it,
 // once it has ended. Their checkouts stay, as any stop leaves them.
-func (s *Service) endChildren(parent string) {
-	for _, child := range s.Children(parent) {
+func (c *Children) endChildren(parent string) {
+	for _, child := range c.Of(parent) {
 		if child.OutliveParent || !child.State.Live() {
 			continue
 		}
 		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-		_, _ = s.Stop(ctx, child.ID)
+		_, _ = c.sessions.Stop(ctx, child.ID)
 		cancel()
 	}
-}
-
-// ended is everything a session owes once it is no longer live, whichever
-// way it ended: a refresh that found it gone, or a stop or close.
-func (s *Service) ended(session domain.Session) {
-	if s.program != nil {
-		s.program.Forget(session.ID)
-	}
-	s.mu.Lock()
-	delete(s.worked, session.ID)
-	s.mu.Unlock()
-	s.noteParent(session)
-	s.endChildren(session.ID)
 }
 
 // note is a child's message as its parent reads it: marked as the child's,
@@ -325,16 +369,6 @@ func note(from, state, text string) string {
 		attrs += fmt.Sprintf(" state=%q", state)
 	}
 	return fmt.Sprintf("<oppenheimer %s>%s</oppenheimer>", attrs, text)
-}
-
-func nonEmpty(words ...string) []string {
-	var out []string
-	for _, word := range words {
-		if word != "" {
-			out = append(out, word)
-		}
-	}
-	return out
 }
 
 // sleep waits d unless ctx ends first, and says whether it waited.

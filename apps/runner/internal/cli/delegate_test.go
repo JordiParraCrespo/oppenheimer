@@ -45,7 +45,8 @@ func TestDelegationCommandsReachTheDaemon(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	app := &App{Sessions: svc, Version: "test"}
+	children := sessionsapp.NewChildren(sessionsapp.ChildrenOptions{Sessions: svc, Terminals: terminals})
+	app := &App{Sessions: svc, Children: children, Version: "test"}
 	server := &http.Server{Handler: app.localRouter("", slog.New(slog.NewTextHandler(io.Discard, nil)))} //nolint:gosec // a test server on a private socket
 	go func() { _ = server.Serve(listener) }()
 	t.Cleanup(func() { _ = server.Close() })

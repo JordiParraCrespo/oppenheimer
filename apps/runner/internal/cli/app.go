@@ -59,6 +59,8 @@ type App struct {
 	Service *svcapp.Service
 	// Sessions is the worktree-plus-tmux lifecycle.
 	Sessions *sessionsapp.Service
+	// Children is how a session's agent starts, tells and waits on others.
+	Children *sessionsapp.Children
 	// Updates is nil on a host that is not paired: the release URL and the
 	// channel come from the identity, so there is nothing to build from.
 	Updates *updapp.Service
@@ -178,6 +180,7 @@ func New(version string) (*App, error) {
 	}
 	app.Devices = devices
 	app.Ports = ports.New()
+	programStatus := statuspty.New(statuspty.Options{Executable: runnerExecutable(), Dir: programStatusDir(paths)})
 	trust := agenttrust.New(agenttrust.Options{ClaudeConfig: claudeConfigPath(paths)})
 	sessions, err := sessionsapp.New(sessionsapp.Options{
 		Terminals:  terminals,
@@ -215,12 +218,16 @@ func New(version string) (*App, error) {
 		// The agent runs under `runner pty`, which answers its OSC 7501
 		// probe and keeps what it reports: its own word on what it does,
 		// ahead of the screen classifier.
-		ProgramStatus: statuspty.New(statuspty.Options{Executable: runnerExecutable(), Dir: programStatusDir(paths)}),
+		ProgramStatus: programStatus,
 	})
 	if err != nil {
 		return nil, err
 	}
 	app.Sessions = sessions
+	// Agents run agents: children of a session's agent, on this host.
+	app.Children = sessionsapp.NewChildren(sessionsapp.ChildrenOptions{
+		Sessions: sessions, Terminals: terminals, ProgramStatus: programStatus,
+	})
 	app.Worktrees = worktrees
 	app.Cloud = cloud.Starter{
 		Trust: func(dir string) error { return trust.Trust(sessionsdomain.AgentClaude, dir) },

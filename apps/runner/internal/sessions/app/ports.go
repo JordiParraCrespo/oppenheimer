@@ -192,6 +192,13 @@ type Publisher interface {
 	TerminalMatched(sessionID, watchID string, count int)
 }
 
+// Listener hears each session the service saw move, after the change is
+// written: a new state, or the end of it (a state that is not live). It runs
+// on the caller's goroutine, so it must hand anything slow to one of its own.
+type Listener interface {
+	SessionMoved(session domain.Session, stateChanged bool)
+}
+
 // ProgramStatus is the agent's own word on what it is doing (OSC 7501),
 // kept by the `pty` wrapper its window runs under. It outranks what the
 // screen classifier reads, which stays the fallback for an agent that says

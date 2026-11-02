@@ -19,6 +19,7 @@ import (
 
 type family struct {
 	svc       *app.Service
+	children  *app.Children
 	terminals *fake.Terminals
 	reports   *heldReports
 	parent    domain.Session
@@ -42,7 +43,8 @@ func newFamily(t *testing.T) family {
 	// The parent's checkout is a folder on the host, which a child may run in.
 	places.Folders[parent.Cwd()] = true
 	reports.say(parent.ID, "state=idle")
-	return family{svc: svc, terminals: terminals, reports: reports, parent: parent}
+	children := app.NewChildren(app.ChildrenOptions{Sessions: svc, Terminals: terminals, ProgramStatus: reports})
+	return family{svc: svc, children: children, terminals: terminals, reports: reports, parent: parent}
 }
 
 func (f family) child(t *testing.T, in app.DelegateInput) domain.Session {
@@ -51,7 +53,7 @@ func (f family) child(t *testing.T, in app.DelegateInput) domain.Session {
 	if in.Task == "" {
 		in.Task = "review src/x.go, read-only"
 	}
-	child, err := f.svc.Delegate(context.Background(), in)
+	child, err := f.children.Delegate(context.Background(), in)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -79,7 +81,7 @@ func TestADelegatedChildRunsInItsParentsFolder(t *testing.T) {
 	if launched.Dir != f.parent.Cwd() || !strings.Contains(launched.Command, "review src/x.go") {
 		t.Fatalf("launched %+v", launched)
 	}
-	if children := f.svc.Children(f.parent.ID); len(children) != 1 || children[0].ID != child.ID {
+	if children := f.children.Of(f.parent.ID); len(children) != 1 || children[0].ID != child.ID {
 		t.Fatalf("children %v", children)
 	}
 }
@@ -94,7 +96,7 @@ func TestTellPastesThenSubmits(t *testing.T) {
 		time.Sleep(300 * time.Millisecond)
 		f.reports.say(f.parent.ID, "state=working")
 	}()
-	told, err := f.svc.Tell(context.Background(), f.parent.ID, "focus on the error path")
+	told, err := f.children.Tell(context.Background(), f.parent.ID, "focus on the error path")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -140,14 +142,14 @@ func TestAChildReportsToItsParent(t *testing.T) {
 		time.Sleep(200 * time.Millisecond)
 		f.reports.say(f.parent.ID, "state=working")
 	}()
-	if _, err := f.svc.Report(context.Background(), child.ID, "two bugs, both in parse()"); err != nil {
+	if _, err := f.children.Report(context.Background(), child.ID, "two bugs, both in parse()"); err != nil {
 		t.Fatal(err)
 	}
 	want := `<oppenheimer from="` + child.ID + `">two bugs, both in parse()</oppenheimer>`
 	if !slices.Contains(f.terminals.PastesSoFar(), want) {
 		t.Fatalf("pastes %q", f.terminals.PastesSoFar())
 	}
-	if _, err := f.svc.Report(context.Background(), f.parent.ID, "x"); err == nil {
+	if _, err := f.children.Report(context.Background(), f.parent.ID, "x"); err == nil {
 		t.Fatal("a session with no parent reported to one")
 	}
 }
@@ -176,7 +178,7 @@ func TestWaitReturnsOnceTheChildFinished(t *testing.T) {
 	f.reports.say(child.ID, "state=idle")
 
 	short, cancel := context.WithTimeout(context.Background(), 600*time.Millisecond)
-	_, err := f.svc.Wait(short, f.parent.ID, nil)
+	_, err := f.children.Wait(short, f.parent.ID, nil)
 	cancel()
 	if err == nil {
 		t.Fatal("a child that has not started counted as finished")
@@ -188,7 +190,7 @@ func TestWaitReturnsOnceTheChildFinished(t *testing.T) {
 		time.Sleep(300 * time.Millisecond)
 		f.reports.say(child.ID, "state=done:msg=ZG9uZQ==")
 	}()
-	got, err := f.svc.Wait(context.Background(), f.parent.ID, nil)
+	got, err := f.children.Wait(context.Background(), f.parent.ID, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

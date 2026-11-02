@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"reflect"
+	"slices"
 	"sort"
 	"strings"
 	"sync"
@@ -85,17 +86,17 @@ type Service struct {
 	// decisions, under mu, is the id of the decision last reported for each
 	// session whose agent waits on one (reportDecision).
 	decisions map[string]string
-	// worked, under mu, holds the sessions seen working since they started,
-	// which is what tells a child that finished from one not started yet.
-	worked map[string]bool
-	// lost, under mu, holds the kept sessions a reboot stopped, until each
-	// is back (keep.go).
-	lost map[string]*recovery
+	// listeners, under mu, hear each change after it is written (Listen).
+	listeners []Listener
+	// keeper holds the kept sessions a reboot stopped (keep.go).
+	keeper *keeper
+	// observer says what an agent is doing: its own word, or its screen
+	// (observer.go).
+	observer observer
 	// watches is each session's terminal watches (watches.go).
 	watches     *watchBook
 	terminals   Terminals
 	worktrees   Worktrees
-	classifier  Classifier
 	store       Store
 	publisher   Publisher
 	files       Files
@@ -106,7 +107,6 @@ type Service struct {
 	trust       Trust
 	transcripts Transcripts
 	statusLine  string
-	program     ProgramStatus
 	now         func() time.Time
 }
 
@@ -126,12 +126,13 @@ func New(opts Options) (*Service, error) {
 	}
 	s := &Service{
 		sessions: map[string]domain.Session{}, creating: map[string]*creation{},
-		revs: map[string]uint64{}, busy: map[string]int{}, inFlight: map[string]bool{}, confirmed: map[string]bool{}, decisions: map[string]string{}, worked: map[string]bool{}, lost: map[string]*recovery{},
+		revs: map[string]uint64{}, busy: map[string]int{}, inFlight: map[string]bool{}, confirmed: map[string]bool{}, decisions: map[string]string{},
+		keeper: newKeeper(), observer: observer{classifier: opts.Classifier, program: opts.ProgramStatus},
 		watches:   newWatchBook(),
 		terminals: opts.Terminals, worktrees: opts.Worktrees,
-		classifier: opts.Classifier, store: opts.Store, publisher: publisher,
+		store: opts.Store, publisher: publisher,
 		files: opts.Files, places: opts.Places, layout: opts.Layout, env: env, gate: opts.Gate, trust: opts.Trust,
-		transcripts: opts.Transcripts, statusLine: opts.StatusLine, program: opts.ProgramStatus, now: now,
+		transcripts: opts.Transcripts, statusLine: opts.StatusLine, now: now,
 	}
 	if opts.Store != nil {
 		loaded, err := opts.Store.Load()
@@ -146,7 +147,7 @@ func New(opts Options) (*Service, error) {
 			}
 			s.sessions[session.ID] = session.Clone()
 			if opts.Rebooted && session.Keep && session.State.Live() {
-				s.lost[session.ID] = &recovery{}
+				s.keeper.lose(session.ID)
 			}
 		}
 	}
@@ -377,8 +378,7 @@ func (s *Service) Refresh(ctx context.Context, id string) (domain.Session, error
 		return session, err
 	}
 	s.scanWatches(session.ID, screen.Body)
-	state, loginURL := s.classifier.Classify(screen, session.Agent)
-	next := s.observe(session, rev, s.heard(session, state, loginURL))
+	next := s.observe(session, rev, s.observer.observe(session, screen))
 	s.reportDecision(next, screen.Body)
 	return next, nil
 }
@@ -437,8 +437,8 @@ func (s *Service) RefreshAll(ctx context.Context) ([]domain.Session, error) {
 			continue
 		}
 		s.scanWatches(session.ID, body)
-		state, loginURL := s.classifier.Classify(Screen{Body: body, Title: titles[name]}, session.Agent)
-		s.reportDecision(s.observe(session, item.rev, s.heard(session, state, loginURL)), body)
+		obs := s.observer.observe(session, Screen{Body: body, Title: titles[name]})
+		s.reportDecision(s.observe(session, item.rev, obs), body)
 	}
 	return s.List(), errors.Join(errs...)
 }
@@ -530,7 +530,7 @@ func (s *Service) Restart(ctx context.Context, id string) (domain.Session, error
 	launch := session.Launch
 	launch.Resume = true
 	launch.StatusLine = s.statusLine
-	launch.Wrap = s.wrap(session.ID)
+	launch.Wrap = s.observer.wrap(session.ID)
 	s.trustFolder(session.Agent, session.Cwd())
 	release := s.holdLaunch(ctx, session.Agent)
 	err = s.terminals.Create(ctx, session.TmuxName(), session.Cwd(), launch.CommandLine(session.Agent), s.env(session))
@@ -805,7 +805,7 @@ func (s *Service) decide(session domain.Session, state domain.State, loginURL st
 		publisher.SessionChanged(next)
 	}
 	if ended {
-		s.ended(next)
+		s.announced(next, true)
 	}
 	return next
 }
@@ -861,11 +861,6 @@ func (s *Service) observe(session domain.Session, seen uint64, obs observation) 
 	if !changed {
 		return next
 	}
-	if state == domain.StateWorking {
-		s.mu.Lock()
-		s.worked[next.ID] = true
-		s.mu.Unlock()
-	}
 	// Only a live session is ever observed, so a non-live state here is
 	// the moment it ended.
 	if !state.Live() {
@@ -873,60 +868,30 @@ func (s *Service) observe(session domain.Session, seen uint64, obs observation) 
 		s.watches.drop(next.ID)
 	}
 	publisher.SessionChanged(next)
-	if !state.Live() {
-		s.ended(next)
-	} else if stateChanged {
-		s.noteParent(next)
-	}
+	s.announced(next, stateChanged)
 	return next
 }
 
-// observation is what one refresh saw of a session: the state, the vendor
-// login the screen showed, and the agent's own word when it gave one.
-type observation struct {
-	state    domain.State
-	loginURL string
-	program  *domain.ProgramStatus
+// Listen adds a listener: it hears every change of state, and every end, of
+// every session from then on.
+func (s *Service) Listen(l Listener) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.listeners = append(s.listeners, l)
 }
 
-// heard settles what a refresh observed. The agent's own report (OSC 7501)
-// outranks the screen classifier while the agent holds one: it is the agent
-// saying what it does, where the classifier guesses from its screen. The
-// screen keeps two things: a vendor login, which no report describes and
-// which is the one link the console offers (F3), and every agent that says
-// nothing, or has cleared what it said.
-func (s *Service) heard(session domain.Session, state domain.State, loginURL string) observation {
-	screen := observation{state: state, loginURL: loginURL}
-	if s.program == nil || loginURL != "" {
-		return screen
+// announced tells the listeners a session moved, after it was written, and
+// lets go of what an ended session's agent reported.
+func (s *Service) announced(next domain.Session, stateChanged bool) {
+	if !next.State.Live() {
+		s.observer.forget(next.ID)
 	}
-	report, ok := s.program.Read(session.ID)
-	if !ok {
-		return screen
+	s.mu.Lock()
+	listeners := slices.Clone(s.listeners)
+	s.mu.Unlock()
+	for _, l := range listeners {
+		l.SessionMoved(next, stateChanged)
 	}
-	root, ok := report.Root()
-	if !ok {
-		return screen
-	}
-	return observation{state: root.SessionState(), program: &root}
-}
-
-// sameWord reports whether two reports say the same thing to the person:
-// progress alone moving is not news worth an event, so it rides along with
-// the next one.
-func sameWord(a, b *domain.ProgramStatus) bool {
-	if a == nil || b == nil {
-		return a == b
-	}
-	return a.State == b.State && a.Kind == b.Kind && a.Message == b.Message && a.Title == b.Title
-}
-
-// wrap is the words a session's agent runs under, or none.
-func (s *Service) wrap(sessionID string) []string {
-	if s.program == nil {
-		return nil
-	}
-	return s.program.Wrap(sessionID)
 }
 
 // reportDecision tells the control plane what a session's agent waits on the

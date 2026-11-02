@@ -398,18 +398,14 @@ export function foldSessionEvent(fold: SessionFold, event: SessionLogEntry): Ses
       return opened(next, event);
     }
     case SESSION_EVENT_KINDS.FAILED:
-      next.pendingDecision = null;
-      next.agentReport = null;
-      return transition(next, 'failed');
+      return transition(withoutAgentFacts(next), 'failed');
     case SESSION_EVENT_KINDS.STOPPED:
       if (next.state === 'resolved') return next;
       // Stopping ends the processes and leaves the worktrees, so the work is
       // exactly as unfinished as it was: the lifecycle does not move, and
       // `stoppedAt` is the whole of what changed. Nothing waits on an answer.
       next.stoppedAt = event.occurredAt;
-      next.pendingDecision = null;
-      next.agentReport = null;
-      return next;
+      return withoutAgentFacts(next);
     case SESSION_EVENT_KINDS.CLOSE_REQUESTED:
       if (next.state === 'resolved') return next;
       // A new request replaces whatever the last one ended in: a refusal is
@@ -445,9 +441,7 @@ export function foldSessionEvent(fold: SessionFold, event: SessionLogEntry): Ses
       closed.stoppedAt = closed.stoppedAt ?? event.occurredAt;
       closed.closeRequest = null;
       closed.closeRefusal = null;
-      closed.pendingDecision = null;
-      closed.agentReport = null;
-      return closed;
+      return withoutAgentFacts(closed);
     }
     case SESSION_EVENT_KINDS.NAMED: {
       const name = stringField(event.payload, 'name');
@@ -534,13 +528,24 @@ export function foldSessionLog(
   return events.reduce(foldSessionEvent, initial);
 }
 
+/**
+ * The fold with every fact that lives only as long as one run of the agent
+ * cleared: what it waits on the person for, and what it last said it is
+ * doing. A session that stops, fails, closes or starts again has neither;
+ * a new fact of that kind joins this list rather than every case above.
+ */
+function withoutAgentFacts(fold: SessionFold): SessionFold {
+  fold.pendingDecision = null;
+  fold.agentReport = null;
+  return fold;
+}
+
 /** A session that is running again: open, not stopped, and carrying the agent's id. */
 function opened(fold: SessionFold, event: SessionLogEntry): SessionFold {
   const next = transition(fold, 'open');
   next.stoppedAt = null;
   // A fresh agent waits on nothing the last one asked, and has said nothing yet.
-  next.pendingDecision = null;
-  next.agentReport = null;
+  withoutAgentFacts(next);
   next.agentSessionId = stringField(event.payload, 'agentSessionId') ?? next.agentSessionId;
   return next;
 }

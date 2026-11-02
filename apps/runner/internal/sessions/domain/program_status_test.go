@@ -81,3 +81,18 @@ func TestProgramStatusSessionState(t *testing.T) {
 }
 
 func b64(s string) string { return base64.StdEncoding.EncodeToString([]byte(s)) }
+
+// What a report tells the person in one line, which a parent's note and
+// `runner sessions children` both print.
+func TestProgramStatusSays(t *testing.T) {
+	for payload, want := range map[string]string{
+		"state=blocked:kind=permission:msg=" + b64("approve Bash"): "permission: approve Bash",
+		"state=blocked:kind=question":                              "question",
+		"state=done:msg=" + b64("two bugs"):                        "two bugs",
+		"state=working":                                            "",
+	} {
+		if got := report(t, payload).Says(); got != want {
+			t.Errorf("%s says %q, want %q", payload, got, want)
+		}
+	}
+}

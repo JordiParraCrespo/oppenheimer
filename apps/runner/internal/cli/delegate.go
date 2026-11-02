@@ -10,7 +10,6 @@ import (
 	"net"
 	"net/http"
 	"os"
-	"strings"
 	"text/tabwriter"
 	"time"
 
@@ -89,7 +88,7 @@ func (a *App) delegateRoutes(router *httpx.Router) {
 		if err := httpx.DecodeJSON(r, &in); err != nil {
 			return err
 		}
-		child, err := a.Sessions.Delegate(r.Context(), sessionsapp.DelegateInput{
+		child, err := a.Children.Delegate(r.Context(), sessionsapp.DelegateInput{
 			Parent: r.PathValue("id"), Agent: sessionsdomain.Agent(in.Agent), Task: in.Task, Name: in.Name,
 			Repo: in.Repo, BaseBranch: in.Base, OutliveParent: in.OutliveParent, Quiet: in.Quiet, Keep: in.Keep,
 		})
@@ -110,14 +109,14 @@ func (a *App) delegateRoutes(router *httpx.Router) {
 		return httpx.WriteJSON(w, http.StatusOK, viewOf(session))
 	})
 	router.HandleFunc("GET /v1/sessions/{id}/children", func(w http.ResponseWriter, r *http.Request) error {
-		return httpx.WriteJSON(w, http.StatusOK, map[string]any{"children": viewsOf(a.Sessions.Children(r.PathValue("id")))})
+		return httpx.WriteJSON(w, http.StatusOK, map[string]any{"children": viewsOf(a.Children.Of(r.PathValue("id")))})
 	})
 	router.HandleFunc("POST /v1/sessions/{id}/messages", func(w http.ResponseWriter, r *http.Request) error {
 		var in textRequest
 		if err := httpx.DecodeJSON(r, &in); err != nil {
 			return err
 		}
-		told, err := a.Sessions.Tell(r.Context(), r.PathValue("id"), in.Text)
+		told, err := a.Children.Tell(r.Context(), r.PathValue("id"), in.Text)
 		if err != nil {
 			return err
 		}
@@ -128,7 +127,7 @@ func (a *App) delegateRoutes(router *httpx.Router) {
 		if err := httpx.DecodeJSON(r, &in); err != nil {
 			return err
 		}
-		told, err := a.Sessions.Report(r.Context(), r.PathValue("id"), in.Text)
+		told, err := a.Children.Report(r.Context(), r.PathValue("id"), in.Text)
 		if err != nil {
 			return err
 		}
@@ -145,7 +144,7 @@ func (a *App) delegateRoutes(router *httpx.Router) {
 		}
 		ctx, cancel := context.WithTimeout(r.Context(), timeout)
 		defer cancel()
-		children, err := a.Sessions.Wait(ctx, r.PathValue("id"), in.Children)
+		children, err := a.Children.Wait(ctx, r.PathValue("id"), in.Children)
 		settled := err == nil
 		if err != nil && !errors.Is(err, context.DeadlineExceeded) {
 			return err
@@ -320,7 +319,7 @@ func (d Delegation) table(children []childView) error {
 	for _, c := range children {
 		says := ""
 		if c.Program != nil {
-			says = strings.Join(nonEmptyWords(c.Program.Kind, c.Program.Message), ": ")
+			says = c.Program.Says()
 		}
 		p.printf("%s\t%s\t%s\t%s\n", c.ID, c.State, c.Agent, says)
 	}
@@ -328,16 +327,6 @@ func (d Delegation) table(children []childView) error {
 		return p.err
 	}
 	return tw.Flush()
-}
-
-func nonEmptyWords(words ...string) []string {
-	var out []string
-	for _, w := range words {
-		if w != "" {
-			out = append(out, w)
-		}
-	}
-	return out
 }
 
 // call is one request to the daemon; a problem it answers comes back as the

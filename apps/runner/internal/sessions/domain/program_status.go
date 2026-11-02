@@ -157,6 +157,18 @@ func (r ProgramReport) Root() (ProgramStatus, bool) {
 	return status, ok
 }
 
+// Says is what the report tells the person, in one line: why the program
+// waits and its message, as "permission: approve Bash".
+func (s ProgramStatus) Says() string {
+	switch {
+	case s.Kind != "" && s.Message != "":
+		return s.Kind + ": " + s.Message
+	case s.Kind != "":
+		return s.Kind
+	}
+	return s.Message
+}
+
 // SessionState maps a program's own word onto the runner's session states.
 // `error` is a turn that ended in an error: the agent is no longer working and
 // waits for the person, which is what `done` means to the sidebar; the
