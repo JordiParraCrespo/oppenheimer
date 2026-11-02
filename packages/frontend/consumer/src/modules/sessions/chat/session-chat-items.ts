@@ -81,6 +81,16 @@ function itemOf(step: ChatStep): ChatItem {
         event: step.notice,
         text: null,
       };
+    case 'output':
+      return {
+        type: 'event',
+        id: step.id,
+        status: step.failed ? 'failed' : 'completed',
+        startedAt: at,
+        completedAt: at,
+        event: 'notice',
+        text: step.text,
+      };
     case 'task':
       return {
         type: 'event',

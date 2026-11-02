@@ -177,6 +177,42 @@ describe('a settled turn', () => {
   });
 });
 
+describe('a command the CLI answers itself', () => {
+  // Regression: `/context` drew its prompt and nothing under it.
+  it('draws what it printed under its prompt, spacing kept and colours gone', () => {
+    const chat = new Chat();
+    render(<SessionChat chat={chat} readOnly />);
+    act(() =>
+      chat.apply({
+        reset: true,
+        entries: [
+          entry({
+            type: 'user',
+            uuid: 'c',
+            message: {
+              role: 'user',
+              content: '<command-name>/context</command-name>\n<command-args></command-args>',
+            },
+          }),
+          entry({
+            type: 'user',
+            uuid: 'o',
+            message: {
+              role: 'user',
+              content:
+                '<local-command-stdout>\u001b[1mContext Usage\u001b[22m\n⛁ ⛀   \u001b[2mOpus 5.5\u001b[22m</local-command-stdout>',
+            },
+          }),
+        ],
+      }),
+    );
+    expect(screen.getByText('/context')).toBeTruthy();
+    const output = screen.getByText(/Context Usage/);
+    expect(output.textContent).toBe('Context Usage\n⛁ ⛀   Opus 5.5');
+    expect(output.closest('pre')).toBeTruthy();
+  });
+});
+
 describe('dictation', () => {
   it('offers the mic beside send only where the workspace can hear', () => {
     voiceAvailable = false;

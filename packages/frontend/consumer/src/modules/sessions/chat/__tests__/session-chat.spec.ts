@@ -241,7 +241,7 @@ describe('toTurns', () => {
         },
       ),
       user('m', '<command-name>/review</command-name>\n<command-args>142</command-args>'),
-      user('o', '<local-command-stdout>ok</local-command-stdout>'),
+      user('o', '<local-command-stdout></local-command-stdout>'),
       { ...assistant('s', [{ type: 'text', text: 'subagent' }]), isSidechain: true },
       { type: 'attachment', attachment: {} },
       'not an object',
@@ -306,8 +306,43 @@ describe('toTurns', () => {
       ]),
     ]);
     expect(turns).toHaveLength(1);
-    expect(kinds(turns[0]?.steps ?? [])).toEqual(['task', 'tool:command']);
+    expect(kinds(turns[0]?.steps ?? [])).toEqual(['output', 'task', 'tool:command']);
     expect(turns[0]?.working).toBe(true);
+  });
+
+  // Regression: `/context` showed its prompt and nothing under it, because
+  // the CLI's answer only settled the turn and its text was dropped.
+  it("shows what a command the CLI answered printed, without the terminal's colours", () => {
+    const [turn] = toTurns([
+      user('c', '<command-name>/context</command-name>\n<command-args></command-args>'),
+      user(
+        'o',
+        '<local-command-stdout>\u001b[1mContext Usage\u001b[22m\r\n\u001b[38;2;136;136;136m⛁ ⛀ \u001b[39m\u001b[38;2;153;153;153mOpus 5.5\u001b[39m\n  ⛶ ⛶   118.6k/1m tokens (12%)\n</local-command-stdout>',
+      ),
+    ]);
+    expect(turn?.prompt?.text).toBe('/context');
+    expect(turn?.working).toBe(false);
+    expect(turn?.steps).toEqual([
+      {
+        kind: 'output',
+        id: 'o',
+        at: new Date('2026-10-21T09:00:00.000Z'),
+        text: 'Context Usage\n⛁ ⛀ Opus 5.5\n  ⛶ ⛶   118.6k/1m tokens (12%)',
+        failed: false,
+      },
+    ]);
+  });
+
+  it('reads what a command wrote to stderr as a failed output', () => {
+    const [turn] = toTurns([
+      user('c', '<command-name>/model</command-name>\n<command-args>nope</command-args>'),
+      user('o', '<local-command-stderr>Unknown model: nope</local-command-stderr>'),
+    ]);
+    expect(turn?.steps[0]).toMatchObject({
+      kind: 'output',
+      text: 'Unknown model: nope',
+      failed: true,
+    });
   });
 });
 

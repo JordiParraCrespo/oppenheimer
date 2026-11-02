@@ -90,6 +90,18 @@ export type ChatStep =
   | { kind: 'thinking'; id: string; at: Date | null; text: string }
   | { kind: 'tool'; id: string; at: Date | null; call: ChatToolCall }
   | { kind: 'notice'; id: string; at: Date | null; notice: 'interrupted' | 'compacted' }
+  /**
+   * What a command the CLI answers itself printed (`/context`, `/cost`), as
+   * text with the terminal's colours taken out; `failed` when it wrote to
+   * stderr.
+   */
+  | {
+      kind: 'output';
+      id: string;
+      at: Date | null;
+      text: string;
+      failed: boolean;
+    }
   /** A background task finished: the line Claude Code hands the agent, not a prompt. */
   | { kind: 'task'; id: string; at: Date | null; status: ChatTaskStatus; summary: string | null };
 
@@ -427,8 +439,11 @@ type Reading =
       contextTokens?: number | null;
     }
   | { kind: 'results'; results: ChatResult[]; at: Date | null }
-  /** A command the CLI answered itself (`/cost`): its output ends the turn it opened. */
-  | { kind: 'answered'; at: Date | null }
+  /**
+   * A command the CLI answered itself (`/cost`): its output ends the turn it
+   * opened, and is a step of it when it printed something.
+   */
+  | { kind: 'answered'; at: Date | null; output: ChatStep | null }
   | null;
 
 interface ChatResult {
@@ -489,8 +504,8 @@ export function classify(value: unknown, index: number): Reading {
   );
   if (results.length > 0) return { kind: 'results', results, at };
   if (entry.isMeta === true) return null;
-  if (typeof content === 'string' && /^\s*<local-command-std(out|err)>/.test(content)) {
-    return { kind: 'answered', at };
+  if (typeof content === 'string' && LOCAL_COMMAND.test(content)) {
+    return { kind: 'answered', at, output: localOutput(content, id, at) };
   }
   const said =
     typeof content === 'string'
@@ -508,6 +523,39 @@ export function classify(value: unknown, index: number): Reading {
   ).length;
   const images = blocks.flatMap((block) => (block?.type === 'image' ? [imageOf(block)] : []));
   return { kind: 'prompt', prompt: { id, text: typed, files, images, at } };
+}
+
+const LOCAL_COMMAND = /^\s*<local-command-std(?:out|err)>/;
+const LOCAL_OUTPUT =
+  /<local-command-std(out|err)>([\s\S]*?)(?:<\/local-command-std(?:out|err)>|$)/g;
+/** A control sequence (a colour, a cursor move) or an OSC string (a link, a title). */
+const ANSI =
+  // biome-ignore lint/suspicious/noControlCharactersInRegex: the escapes are what it removes
+  /\u001b\[[0-?]*[ -/]*[@-~]|\u001b\][^\u0007\u001b]*(?:\u0007|\u001b\\)|\u001b[@-Z\\-_]/g;
+
+/** A command's output as the terminal printed it, with its escapes and carriage returns removed. */
+function plainOutput(raw: string): string {
+  return raw
+    .replace(ANSI, '')
+    .replace(/\r(?!\n)/g, '')
+    .replace(/\r\n/g, '\n');
+}
+
+/**
+ * The step a `<local-command-stdout>` line stands for: what the command
+ * printed, or none when it printed nothing (`/clear`, a setting changed in a
+ * picker). The host may have cut the line, losing its closing tag.
+ */
+function localOutput(content: string, id: string, at: Date | null): ChatStep | null {
+  let failed = false;
+  const parts: string[] = [];
+  for (const [, stream, body = ''] of content.matchAll(LOCAL_OUTPUT)) {
+    if (stream === 'err') failed = true;
+    parts.push(body);
+  }
+  const output = plainOutput(parts.join('\n')).replace(/^\n+|\s+$/g, '');
+  if (output.trim() === '') return null;
+  return { kind: 'output', id, at, text: output, failed };
 }
 
 /** The media types an image's preview may come as: what an `img` shows and never runs. */
@@ -624,6 +672,7 @@ function buildTurns(
         const turn = turns.at(-1);
         if (turn) {
           answered.add(turn);
+          if (reading.output) turn.steps.push(reading.output);
           if (reading.at) turn.lastAt = reading.at;
         }
         continue;
@@ -669,7 +718,7 @@ function isWorking(turn: ChatTurn): boolean {
   if (tail === undefined) return true;
   if (turn.steps.some((step) => step.kind === 'tool' && step.call.status === 'running'))
     return true;
-  return tail.kind !== 'reply' && tail.kind !== 'notice';
+  return tail.kind !== 'reply' && tail.kind !== 'notice' && tail.kind !== 'output';
 }
 
 /**
