@@ -46,13 +46,14 @@ export class VoicePolishResolver {
       const completion = await llm.complete({
         system: VOICE_POLISH_SYSTEM_PROMPT,
         messages: [{ role: 'user', content: voicePolishMessage(raw, vocabulary) }],
-        // `VOICE_POLISH_MODEL` is a model on a provider's credential; the
-        // deployment's LLM keeps its own `LLM_MODEL`.
-        model: model ? this.polishModel : undefined,
-        temperature: 0,
-        // Two minutes of fast speech is about 400 words; the answer is no longer.
-        maxTokens: 2048,
         timeoutMs: this.timeoutMs,
+        // On a provider's credential, `VOICE_POLISH_MODEL` and the engine's own
+        // settings (low effort, `PolishLlmAdapter`); a bot engine takes no
+        // sampling settings. The deployment's LLM keeps its own `LLM_MODEL`.
+        ...(model
+          ? { model: this.polishModel }
+          : // Two minutes of fast speech is about 400 words; the answer is no longer.
+            { temperature: 0, maxTokens: 2048 }),
       });
       return cleanPolished(completion.text, raw);
     } catch (error) {

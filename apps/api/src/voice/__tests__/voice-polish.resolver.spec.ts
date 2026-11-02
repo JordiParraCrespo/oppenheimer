@@ -113,10 +113,11 @@ describe('VoicePolishResolver', () => {
     expect(polished).toBe('Fix the login page.');
     expect(deployment.seen).toHaveLength(1);
     expect(deployment.seen[0]).toMatchObject({
-      model: undefined,
       temperature: 0,
+      maxTokens: 2048,
       timeoutMs: 5_000,
     });
+    expect(deployment.seen[0]?.model).toBeUndefined();
   });
 
   it('answers null without a call when the deployment has no LLM', async () => {

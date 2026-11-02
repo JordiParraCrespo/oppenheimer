@@ -49,8 +49,8 @@ export function redactSecret(text: string, secret: string): string {
  * `text` with the turn's scratch directory replaced: the path names the
  * machine the control plane runs on, and a bot has no business repeating it.
  */
-export function redactPath(text: string, path: string): string {
-  return path.length >= 4 ? text.split(path).join('[workspace]') : text;
+export function redactPath(text: string, path: string | undefined): string {
+  return path && path.length >= 4 ? text.split(path).join('[workspace]') : text;
 }
 
 /** What a turn's events may carry: the key and the scratch directory, both redacted. */
@@ -69,7 +69,9 @@ class DeltaScrubber {
   private readonly secrets: string[];
 
   constructor(private readonly request: Pick<BotTurnRequest, 'apiKey' | 'scratchDir'>) {
-    this.secrets = [request.apiKey, request.scratchDir].filter((secret) => secret.length >= 4);
+    this.secrets = [request.apiKey, request.scratchDir].filter(
+      (secret): secret is string => secret !== undefined && secret.length >= 4,
+    );
   }
 
   /** What of `text` (after what was held) can go out now. */

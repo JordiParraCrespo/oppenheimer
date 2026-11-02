@@ -154,8 +154,13 @@ bot engine's `complete` behind `@oppenheimer/backend-llm`'s `LlmService`, so
 a caller that runs on a workspace's own credential or on the deployment's
 LLM holds one interface: voice's polish does
 (`apps/api/src/voice/infrastructure/polish-llm.adapter.ts`). One user
-message, no history; the scratch directory a turn needs is made and removed
-per call.
+message, no history. A bot engine has no temperature or token cap, so a
+request that sets `temperature` or `maxTokens` is refused rather than run
+without them.
+
+`scratchDir` is optional on a turn and on a completion: only the Claude
+engine needs one, and without one it makes its own for the turn and removes
+it afterwards.
 
 ## Scripts
 

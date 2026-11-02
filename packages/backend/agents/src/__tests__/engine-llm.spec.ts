@@ -2,10 +2,9 @@
  * `engineLlm`, a bot engine behind the `LlmService` contract: what a caller
  * that may run on either model stack (voice's polish) holds instead of both.
  * It must hand the engine the binding's credential and the request's words,
- * clean up the directory it made for the turn, and reject a rate limit as the
- * same `LlmRateLimitError` the deployment's LLM raises.
+ * refuse what an engine cannot honour rather than drop it, and reject a rate
+ * limit as the same `LlmRateLimitError` the deployment's LLM raises.
  */
-import { existsSync } from 'node:fs';
 import { LlmError, LlmRateLimitError } from '@oppenheimer/backend-llm';
 import { describe, expect, it } from 'vitest';
 import type { BotTurnRequest } from '../bot-engine';
@@ -52,8 +51,8 @@ describe('engineLlm', () => {
       systemPrompt: 'Tidy it.',
       message: 'tidy this',
     });
-    // The turn's directory is the bridge's to make and remove.
-    expect(seen?.scratchDir && existsSync(seen.scratchDir)).toBe(false);
+    // Which engine needs a directory is the engine's business, not the bridge's.
+    expect(seen?.scratchDir).toBeUndefined();
   });
 
   it("runs on the binding's model when the request names none", async () => {
@@ -81,6 +80,20 @@ describe('engineLlm', () => {
 
     expect(failure).toBeInstanceOf(LlmRateLimitError);
     expect(failure).toMatchObject({ code: 'rate_limited', provider: 'chatgpt', resetAt });
+  });
+
+  it('refuses temperature and maxTokens before calling, rather than dropping them', async () => {
+    let called = false;
+    const engine = new FakeBotEngine(() => {
+      called = true;
+      return [{ type: 'text.done', text: 'ok' }];
+    });
+    const llm = engineLlm(engine, BINDING);
+    const messages = [{ role: 'user' as const, content: 'hi' }];
+
+    await expect(llm.complete({ messages, temperature: 0 })).rejects.toThrow(TypeError);
+    await expect(llm.complete({ messages, maxTokens: 10 })).rejects.toThrow(TypeError);
+    expect(called).toBe(false);
   });
 
   it('is not configured without a credential, and refuses before calling', async () => {
