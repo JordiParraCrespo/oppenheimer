@@ -1,4 +1,4 @@
-import { defineResource } from '../authz/domain/resource-definition.types';
+import { defineResource } from '@oppenheimer/backend-authz';
 
 /**
  * Organizations and the membership machinery around them.

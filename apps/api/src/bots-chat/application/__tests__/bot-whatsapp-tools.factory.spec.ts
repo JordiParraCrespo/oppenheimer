@@ -1,5 +1,5 @@
 import type { CommandBus, QueryBus } from '@nestjs/cqrs';
-import { emptyScope } from '../../../authz/domain/access-scope.types';
+import { emptyScope } from '@oppenheimer/backend-authz';
 import { WhatsappAccountEntity } from '../../../whatsapp/domain/whatsapp-account.entity';
 import type { WhatsappMessage } from '../../../whatsapp/domain/whatsapp-message.types';
 import { FindWhatsappAccountsQuery } from '../../../whatsapp/queries/find-whatsapp-accounts/find-whatsapp-accounts.query';

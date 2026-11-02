@@ -1,8 +1,8 @@
 import { randomUUID } from 'node:crypto';
+import type { AccessScope } from '@oppenheimer/backend-authz';
 import type { MailPlan } from '@oppenheimer/shared';
 import { DataSource } from 'typeorm';
 import { useTestDatabase } from '../../__tests__/integration-services';
-import type { AccessScope } from '../../authz/domain/access-scope.types';
 import { GmailConnectionOrmEntity } from '../database/gmail-connection.orm-entity';
 import { GmailConnectionRepository } from '../database/gmail-connection.repository';
 import { MailSendOrmEntity } from '../database/mail-send.orm-entity';

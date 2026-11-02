@@ -1,5 +1,5 @@
+import type { AccessScope } from '@oppenheimer/backend-authz';
 import { QueryBase } from '@oppenheimer/backend-ddd';
-import type { AccessScope } from '../../../authz/domain/access-scope.types';
 
 /** A host's Codex cloud environments, listed by its runner, those linked to `repository` marked. */
 export class FindHostCodexEnvironmentsQuery extends QueryBase {

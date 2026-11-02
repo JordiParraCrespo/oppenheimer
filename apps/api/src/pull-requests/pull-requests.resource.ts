@@ -1,4 +1,4 @@
-import { defineResource } from '../authz/domain/resource-definition.types';
+import { defineResource } from '@oppenheimer/backend-authz';
 
 /**
  * The Pull requests area. A pull request has no row — it is GitHub's, read

@@ -1,4 +1,4 @@
-import { defineResource } from '../authz/domain/resource-definition.types';
+import { defineResource } from '@oppenheimer/backend-authz';
 
 /**
  * A host is a **person's** machine: `ownerUserId` is the owner column and there is no

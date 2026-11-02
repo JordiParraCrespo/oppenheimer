@@ -1,4 +1,4 @@
-import type { AccessScope } from '../../authz/domain/access-scope.types';
+import type { AccessScope } from '@oppenheimer/backend-authz';
 
 /**
  * Whether a caller may put work on a host.

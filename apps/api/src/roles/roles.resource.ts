@@ -1,4 +1,4 @@
-import { defineResource } from '../authz/domain/resource-definition.types';
+import { defineResource } from '@oppenheimer/backend-authz';
 
 /**
  * Role definitions themselves. Editing these is how every other capability is

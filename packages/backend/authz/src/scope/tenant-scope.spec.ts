@@ -1,5 +1,6 @@
-import { requireOrganization, requireTenant } from '../application/tenant-scope.policy';
-import { emptyScope } from '../domain/access-scope.types';
+import { describe, expect, it } from 'vitest';
+import { emptyScope } from './access-scope';
+import { requireOrganization, requireTenant } from './tenant-scope';
 
 /**
  * The one tenancy check every tenant use case makes: a scope with an
