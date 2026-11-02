@@ -1,7 +1,7 @@
 import { BotSkillEntity } from '@oppenheimer/frontend-consumer';
 import { describe, expect, it } from 'vitest';
 import { skillRowModel } from '../lib/skill-row';
-import { matchingCommands, slashQuery } from '../lib/slash-menu';
+import { matchingCommands, slashMenuItems, slashQuery } from '../lib/slash-menu';
 
 /**
  * What the `/` menu reads of the draft and how a skill's row reads. What breaks
@@ -36,6 +36,22 @@ describe('matchingCommands', () => {
   it('lists at most eight', () => {
     const many = Array.from({ length: 12 }, (_, i) => skill(`s${i}`));
     expect(matchingCommands(many, '')).toHaveLength(8);
+  });
+});
+
+describe('slashMenuItems', () => {
+  const goal = { id: 'built-in:goal', name: 'goal', command: '/goal', description: '' };
+
+  it('lists the built-ins first, and leaves out a skill under a built-in’s name', () => {
+    const { builtIns, skills } = slashMenuItems([goal], [skill('goal'), skill('go-live')], 'go');
+    expect(builtIns.map((found) => found.name)).toEqual(['goal']);
+    expect(skills.map((found) => found.name)).toEqual(['go-live']);
+  });
+
+  it('keeps the two together within the menu’s cap', () => {
+    const many = Array.from({ length: 12 }, (_, i) => skill(`s${i}`));
+    const { builtIns, skills } = slashMenuItems([goal], many, '');
+    expect(builtIns.length + skills.length).toBe(8);
   });
 });
 

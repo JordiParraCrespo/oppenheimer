@@ -12,6 +12,7 @@ import { BotAutomationToolsFactory } from './application/bot-automation-tools.fa
 import { BotPeerToolsFactory } from './application/bot-bots-tools.factory';
 import { BotGithubToolsFactory } from './application/bot-github-tools.factory';
 import { BotGoalResolver } from './application/bot-goal.resolver';
+import { BotGoalReviewResolver } from './application/bot-goal-review.resolver';
 import { BotGoalToolsFactory } from './application/bot-goal-tools.factory';
 import { BotHostToolsFactory } from './application/bot-host-tools.factory';
 import { BotIssueToolsFactory } from './application/bot-issue-tools.factory';
@@ -313,6 +314,7 @@ const queryHandlers: Provider[] = [
     BotGoalToolsFactory,
     BotQuestionToolsFactory,
     BotGoalResolver,
+    BotGoalReviewResolver,
     BotSelfToolsFactory,
     BotSkillToolsFactory,
     BotPlanToolsFactory,

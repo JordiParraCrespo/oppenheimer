@@ -415,14 +415,34 @@ that did not cover the tool never runs.
 | `ask_user` | Up to 4 questions on a card of their own, each with 2 to 4 likely answers; the turn ends and the answers open the next. Only on a turn someone is waiting on (§3.2, built 2026-10-29) | auto |
 
 **Goals** (2026-10-29, from Grok Bot's goals,
-`research/lessons-from-grok-bot.md` §9 row 10). A goal is for work that
-takes several steps on the bot's own: "get the release branch green". When
-a turn of the bot ends and the goal is still open, one continuation turn is
-queued. It runs in the background lane, after your messages and other bots',
-and it is opened by a line: "Goal · continuation 2 of 5".
+`research/lessons-from-grok-bot.md` §9 row 10; reviewed and set with `/goal`
+since 2026-11-02, from Claude Code's `/goal`). A goal is for work that
+takes several steps on the bot's own: "get the release branch green". The
+person sets one by typing `/goal <condition>` (below, "Built-in commands");
+the bot sets one with `set_goal`. Either way it is written as a condition
+with the check that proves it ("`pnpm test` exits 0 on the release
+branch"), up to 2,000 characters.
 
-- **Bounds.** A goal takes at most 5 continuations unless the bot asks for
-  up to 10. A bot has one goal at a time; setting another replaces it.
+- **A reviewer decides when it is done.** After each turn of the goal (the
+  one that set it, and each continuation), the bot's own model, with no
+  tools and its least effort, reads the condition and the conversation
+  (the newest that fits 12,000 tokens, the turn's own words last) and says
+  one of three things, with a reason in a sentence: *met*, *not met*, or
+  *impossible* without the person. The bot is told it is judged only on
+  what its words show, so it runs the check the condition names and says
+  what it answered. Claude Code's evaluator is the model for this: the one
+  doing the work is not the one that says it is finished.
+- **What the verdict does.** Met or impossible ends the goal, with a line
+  saying so and why. Not met queues one continuation turn, opened by
+  "Goal · continuation 2 of 20" and the reviewer's reason, which the bot
+  reads as its guidance. A reviewer that fails (no key, a refusal, a rate
+  limit, an answer with no verdict in it) is no verdict: the goal goes on,
+  and the limit still bounds it.
+- **Bounds.** A goal the person sets takes at most 20 continuations; one the
+  bot sets takes 5 unless it asks for up to 20. The limit is the bound on
+  the spend, not a guess at how long the work takes: the reviewer is what
+  stops a goal that is done. A bot has one goal at a time; setting another
+  replaces it, and the continuation the old one left waiting is cancelled.
 - **Who it runs as.** A continuation runs as the owner, with the reach of
   the turn that set the goal (its credential scopes and zone), as a
   subscription keeps them.
@@ -433,22 +453,28 @@ and it is opened by a line: "Goal · continuation 2 of 5".
   ending in between changes nothing. The continuation is keyed by the goal
   and its number, so an end delivered twice queues one, and its count is
   claimed in the same transaction that queues it. A Stop that won the race
-  leaves nothing to queue.
+  leaves nothing to queue, and a goal ended or replaced while the reviewer
+  answered is left as it is: the goal is read again after the review.
 - **How it ends.** The bot ends it with `end_goal`, and the call is the
   record. The goal also ends when:
-  - the owner presses Stop on the goal above the composer, which also
-    cancels a continuation still waiting;
+  - the reviewer finds it met, or impossible without the person;
+  - the owner presses Stop on the goal above the composer, or types
+    `/goal clear`, which also cancels a continuation still waiting;
   - its continuations run out;
   - a turn of it (the one that set it, or a continuation) fails or is
     stopped. A person's Stop is a stop, and a failure would only fail again.
 
-  Each of these is a line in the chat outside any turn. However a goal
-  ends, or is replaced by a new one, a continuation of it still waiting is
-  cancelled with it.
+  Each of these is a line in the chat outside any turn, with the
+  reviewer's reason where it gave one. However a goal ends, or is replaced
+  by a new one, a continuation of it still waiting is cancelled with it.
 - **Clearing the chat** deletes the goal, since a continuation would read a
   history that no longer exists.
 - **No card.** Neither tool asks. The spend is bounded, every continuation
   is a line, and Stop is one click.
+- **Not built.** Claude Code's waiting on background work (a goal turn that
+  started a session is judged when it ends, not when the session finishes;
+  the bot watches the session instead) and its pause on a rate limit, which
+  here fails the continuation and so stops the goal.
 
 **Memory has a tier and a scope** (2026-10-29, from Grok Bot's memory,
 `research/lessons-from-grok-bot.md` §9 row 11). Each fact is still one row
@@ -486,7 +512,8 @@ one row of `bot_skill`, the bot's own, at most 50 a bot.
 | `delete_skill` | Delete a skill and its command | auto |
 
 - **Its name is its command.** Lowercase letters, digits and hyphens, at
-  most 32 (OpenClaw's cap); `skill` is reserved. Settings types a name into
+  most 32 (OpenClaw's cap); `skill` is reserved, and so is each built-in's
+  name (below). Settings types a name into
   that shape as it is written.
 - **Who may run it is two switches**, at least one on: `userInvocable`, the
   person runs it as `/<name>` (OpenClaw's `user-invocable`), and
@@ -513,6 +540,31 @@ one row of `bot_skill`, the bot's own, at most 50 a bot.
 - **Not built.** Grok Bot's library shared by all of a person's bots, a
   registry like OpenClaw's ClawHub, and skills that dispatch straight to a
   tool.
+
+**Built-in commands** (2026-11-02, from Claude Code's commands,
+`code.claude.com/docs/en/commands`). A built-in is a `/<name>` Oppenheimer
+runs itself, for every bot, whatever skills it has. A skill only puts
+words in front of the bot; a built-in drives a feature the product owns,
+which is why `/goal` could not be a skill: the words of one cannot promise
+the goal starts, is judged after each turn, or stops. Their names are
+reserved (`BOT_BUILT_IN_COMMANDS`), so no skill takes one; a skill saved
+under one before it was reserved keeps its row and the bot may still use
+it, but its `/<name>` runs the built-in. The composer's `/` menu lists the
+built-ins first, under Commands, then the skills.
+
+The owner chose them in this order. Only the first is built:
+
+| Command | Does | State |
+|---------|------|-------|
+| `/goal <condition>` | Sets the bot's goal and starts on it (above). `/goal` alone keeps send off and says the condition is missing; `/goal clear` (or `stop`, `off`, `reset`, `none`, `cancel`) stops the goal, as Stop does, and sends nothing. The API refuses both as messages (`GENERIC.ARGUMENT_INVALID`): they are `GET` and `DELETE /bots/:id/goal` | Built |
+| `/usage` | What the chat has cost: tokens by turn, the plan windows on a sign-in, how full the context is | Next |
+| `/loop [interval] <prompt>` or `/schedule` | Run a prompt on an interval, or on a schedule, as a routine of the bot's (26) | Planned |
+| `/plan <idea>` | Think before acting: break the idea into steps, or tasks on the plan, and ask before starting | Planned |
+| `/grill-me` | Interview the person about a plan, one branch of the decision tree at a time, until it holds (from this repo's own `grill-me` skill) | Planned |
+
+Built-ins that change the bot's code tools are not here: a bot has no
+shell, so `/code-review`, `/simplify` and their kind stay the coding
+agent's, in a session, where Claude Code ships them.
 
 ### 4.2 Sessions: its hands on hosts
 | Tool | Does | Default |
@@ -1105,3 +1157,15 @@ The decisions it produced:
   conversation holds that many of the turn's assistant messages with text
   (Codex's rule that the completed item is authoritative). That replaced
   the console's matching of streamed text against stored text.
+- 2026-11-02: **built-in commands, and `/goal` the first** (§4.1). The
+  owner asked for bots to come with basic skills like Claude Code's
+  `/goal`, and chose `/goal`, `/usage`, `/loop` or `/schedule`, `/plan`
+  and `/grill-me`, in that order. A built-in is product code, not a skill
+  row: a skill cannot start, judge or stop a goal. `/goal <condition>` sets
+  the bot's goal as the person, and a reviewer on the bot's own model
+  judges it after every turn (met, not met, impossible), as Claude Code's
+  evaluator does. It replaces 2026-10-29's "the bot ends it with
+  `end_goal`" as the only way a goal is found done, and its bound of 5
+  continuations, up to 10: a person's goal takes 20, a bot's 5 unless it
+  asks for up to 20, and the condition holds 2,000 characters, not 500.
+

@@ -9,12 +9,12 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 
-/** A goal a bot set itself (`1791004900000-AddBotGoals`). */
+/** A bot's goal (`1791004900000-AddBotGoals`, widened by `1793609253967-WidenBotGoals`). */
 @Entity('bot_goal')
 @Index('UQ_bot_goal_bot', ['organizationId', 'botId'], { unique: true })
 @Index('IDX_bot_goal_origin_turn', ['organizationId', 'originTurnId'])
 @Check('CHK_bot_goal_objective', `char_length(objective) > 0`)
-@Check('CHK_bot_goal_limit', `"limit" BETWEEN 1 AND 10`)
+@Check('CHK_bot_goal_limit', `"limit" BETWEEN 1 AND 20`)
 @Check('CHK_bot_goal_continuations', `continuations BETWEEN 0 AND "limit"`)
 @Check(
   'CHK_bot_goal_credential_scopes',
@@ -34,7 +34,7 @@ export class BotGoalOrmEntity {
   @Column({ type: 'uuid' })
   originTurnId!: string;
 
-  @Column({ type: 'varchar', length: 500 })
+  @Column({ type: 'varchar', length: 2000 })
   objective!: string;
 
   @Column({ type: 'integer' })

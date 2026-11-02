@@ -34,6 +34,16 @@ export class BotGoalResolver {
     private readonly owners: BotOwnerScopeResolver,
   ) {}
 
+  /**
+   * Sets the goal, in place of the one there is: the one it replaces goes
+   * with its waiting continuation. Answers the goal replaced, if any.
+   */
+  async set(goal: BotGoalEntity): Promise<BotGoalEntity | null> {
+    const replaced = await this.goals.set(goal);
+    if (replaced) await this.cancelWaiting(replaced, null);
+    return replaced;
+  }
+
   /** Ends the goal once, with its line, and cancels its waiting continuations; false when it had ended. */
   async end(
     goal: BotGoalEntity,

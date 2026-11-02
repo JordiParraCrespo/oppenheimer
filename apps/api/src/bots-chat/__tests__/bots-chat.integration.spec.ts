@@ -2243,6 +2243,7 @@ describe('bots chat (integration)', () => {
         },
         goal,
         goal.advance(),
+        null,
       );
     }
 

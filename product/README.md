@@ -957,6 +957,16 @@ earlier note:
   check: five minutes after `start_session` or `send_to_session`, a job
   reads the task and wakes the bot once, as `stalled`, only if it never
   started or its agent was never seen working (27 §4.1).
+- `versions/mvp/25-bots.md` §4.1 (2026-10-29) had a goal end only when the
+  bot called `end_goal`, the owner stopped it, a turn of it failed or its 5
+  continuations (up to 10) ran out. On 2026-11-02 the owner asked for bots
+  to come with basic commands like Claude Code's `/goal`, in the order
+  `/goal`, `/usage`, `/loop` or `/schedule`, `/plan`, `/grill-me`. They are
+  built-ins, product code with reserved names, not skills. `/goal
+  <condition>` sets the goal as the person, and a reviewer on the bot's own
+  model judges it after every turn (met, not met, impossible), as Claude
+  Code's evaluator does; a person's goal takes up to 20 continuations, a
+  bot's 5 unless it asks for up to 20 (25 §4.1, "Built-in commands").
 - 2026-10-31: the owner took the six chat slices drawn from a read of Codex
   and Grok (`research/lessons-from-codex-and-grok-chat.md`); they are listed
   in `next-steps/0.7-chat-protocol.md`.

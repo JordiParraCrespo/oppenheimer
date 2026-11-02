@@ -1,15 +1,25 @@
-import type { BotGoalActivity, BotTurnStatus } from '@oppenheimer/shared';
-import type { BotGoalEntity } from './bot-goal.entity';
+import { ArgumentInvalidException } from '@oppenheimer/backend-ddd';
+import {
+  BOT_GOAL_CONTINUATIONS_PERSON,
+  type BotGoalActivity,
+  type BotTurnStatus,
+  botGoalCommandOf,
+  parseBotSlashCommand,
+  type Scope,
+} from '@oppenheimer/shared';
+import { BotGoalEntity } from './bot-goal.entity';
+import type { BotGoalVerdict } from './bot-goal-review.policy';
 import { BotMessageEntity } from './bot-message.entity';
 import { BotTurnEntity } from './bot-turn.entity';
 
 /**
  * A goal keeps a bot going (`25-bots.md` §4.1; from Grok Bot's goals,
- * `research/lessons-from-grok-bot.md` §9 row 10). When a turn of the bot
- * ends and the goal is still open, one continuation turn is queued, keyed by
- * the goal and its number, so an end delivered twice queues one. A person's
- * message, a routine or a wake may run in between: the continuation waits
- * its lane, and only the goal's own turns move it on.
+ * `research/lessons-from-grok-bot.md` §9 row 10, and Claude Code's `/goal`).
+ * When a turn of the goal ends, a reviewer says whether its condition holds
+ * (`bot-goal-review.policy.ts`); while it does not, one continuation turn is
+ * queued, keyed by the goal and its number, so an end delivered twice queues
+ * one. A person's message, a routine or a wake may run in between: the
+ * continuation waits its lane, and only the goal's own turns move it on.
  */
 
 /** The key of a goal's `step`th continuation turn. */
@@ -32,12 +42,54 @@ export interface EndedTurn {
   status: BotTurnStatus;
 }
 
+/** The turn a person's message queued, as the goal it sets keeps it. */
+export interface GoalSettingTurn {
+  organizationId: string;
+  botId: string;
+  id: string;
+  credentialScopes: readonly Scope[] | null;
+  timeZone: string | null;
+}
+
+/**
+ * The goal a person's message sets (`25-bots.md` §4.1, "Built-in
+ * commands"): `/goal <condition>` sets one on the turn it queues, with the
+ * whole of the limit; null for any other message. `/goal` alone and
+ * `/goal clear` are refused: they show and stop the goal, which the console
+ * does with `GET` and `DELETE /bots/:id/goal`, and as a message they would
+ * spend a turn to say what the notice already shows.
+ */
+export function goalFromMessage(content: string, turn: GoalSettingTurn): BotGoalEntity | null {
+  const command = botGoalCommandOf(parseBotSlashCommand(content));
+  if (!command) return null;
+  if (command.kind !== 'set') {
+    throw new ArgumentInvalidException(
+      '/goal alone and /goal clear are not messages: read the goal with GET /bots/:id/goal and stop it with DELETE /bots/:id/goal',
+    );
+  }
+  return BotGoalEntity.set({
+    organizationId: turn.organizationId,
+    botId: turn.botId,
+    originTurnId: turn.id,
+    objective: command.condition,
+    limit: BOT_GOAL_CONTINUATIONS_PERSON,
+    credentialScopes: turn.credentialScopes,
+    timeZone: turn.timeZone,
+  });
+}
+
+/** What the end of a turn means for the goal, before the reviewer is asked. */
 export type GoalDecision =
-  | { kind: 'continue' }
+  | { kind: 'review' }
   | { kind: 'skip' }
+  | { kind: 'end'; activity: 'stopped'; reason: string | null };
+
+/** What the goal does once the reviewer has answered, or could not. */
+export type GoalOutcome =
+  | { kind: 'continue'; reason: string | null }
   | {
       kind: 'end';
-      activity: Extract<BotGoalActivity, 'exhausted' | 'stopped'>;
+      activity: Extract<BotGoalActivity, 'met' | 'impossible' | 'exhausted'>;
       reason: string | null;
     };
 
@@ -59,7 +111,8 @@ export function isGoalTurn(
 /**
  * What the end of one of the goal's turns means for it. One that failed or
  * was stopped stops it: a person's Stop is a stop, and a failure would only
- * fail again. Past its limit, it ends. Another turn's end changes nothing.
+ * fail again. One that completed is reviewed. Another turn's end changes
+ * nothing.
  */
 export function goalDecision(goal: BotGoalEntity, ended: EndedTurn): GoalDecision {
   if (!isGoalTurn(goal, ended)) return { kind: 'skip' };
@@ -67,15 +120,50 @@ export function goalDecision(goal: BotGoalEntity, ended: EndedTurn): GoalDecisio
     return { kind: 'end', activity: 'stopped', reason: ended.status };
   }
   if (ended.status !== 'completed') return { kind: 'skip' };
-  if (goal.exhausted) return { kind: 'end', activity: 'exhausted', reason: null };
-  return { kind: 'continue' };
+  return { kind: 'review' };
 }
 
-/** What a continuation tells the bot: the goal, where it is in its count, and how to stop. */
-export function goalContinuationText(goal: BotGoalEntity, step: number): string {
+/**
+ * What the reviewer's verdict does to the goal: met or out of reach ends it;
+ * otherwise it goes on while it has continuations left, the reason handed to
+ * the next one. No verdict (the reviewer failed, or answered nothing
+ * readable) goes on too: the limit still bounds it, and the bot can end it.
+ */
+export function goalOutcome(goal: BotGoalEntity, verdict: BotGoalVerdict | null): GoalOutcome {
+  if (verdict?.verdict === 'met') return { kind: 'end', activity: 'met', reason: verdict.reason };
+  if (verdict?.verdict === 'impossible') {
+    return { kind: 'end', activity: 'impossible', reason: verdict.reason };
+  }
+  const reason = verdict?.reason ?? null;
+  if (goal.exhausted) return { kind: 'end', activity: 'exhausted', reason };
+  return { kind: 'continue', reason };
+}
+
+/**
+ * The turn's message when the person runs `/goal <condition>`: the goal is
+ * already set (`SendBotMessageCommandHandler`), so the turn starts on it with
+ * the condition as its directive, and says how it will be judged.
+ */
+export function goalSetPrompt(condition: string): string {
+  return [
+    `The person set you a goal with /goal. Work toward it now: ${condition}`,
+    "After each of your turns a reviewer reads what you showed and decides whether the condition holds. While it does not, you get another turn to go on, with the reviewer's reason. It judges only what your words show, so run the check the condition names and say what it answered: a claim with no shown check does not count.",
+    'If the goal cannot be met without the person, say so and why, and call end_goal.',
+  ].join('\n');
+}
+
+/** What a continuation tells the bot: the goal, where it is in its count, the reviewer's reason, and how to stop. */
+export function goalContinuationText(
+  goal: BotGoalEntity,
+  step: number,
+  reason: string | null,
+): string {
   return [
     `Continue toward your goal (continuation ${step} of ${goal.limit}): ${goal.objective}`,
-    'Nobody wrote to you: you set this goal, and this turn exists to make progress on it. Read what your last turns did, take the next step, and say in a line where it stands.',
+    reason
+      ? `A reviewer read your last turn and says it is not met yet: ${reason}`
+      : 'Nobody wrote to you: this turn exists to make progress on the goal.',
+    'Read what your last turns did, take the next step, run the check the goal names, and say what it showed.',
     'When the goal is met, or it cannot be met without the person, call end_goal and say why. Do not stretch the work to fill the continuations left.',
   ].join('\n');
 }
@@ -89,6 +177,7 @@ export function goalContinuationTurn(
   props: Omit<Parameters<typeof BotTurnEntity.queue>[0], 'origin' | 'sourceKey' | 'lane'>,
   goal: BotGoalEntity,
   step: number,
+  reason: string | null,
 ): { turn: BotTurnEntity; opening: BotMessageEntity } {
   const turn = BotTurnEntity.queue({
     ...props,
@@ -101,7 +190,7 @@ export function goalContinuationTurn(
     botId: props.botId,
     turnId: turn.id,
     role: 'event',
-    content: goalContinuationText(goal, step),
+    content: goalContinuationText(goal, step, reason),
     event: {
       kind: 'goal',
       activity: 'continued',
@@ -109,7 +198,7 @@ export function goalContinuationTurn(
       objective: goal.objective,
       step,
       limit: goal.limit,
-      reason: null,
+      reason,
     },
     steps: [],
     position: 0,
@@ -118,6 +207,8 @@ export function goalContinuationTurn(
 }
 
 const END_WORDS: Record<Exclude<BotGoalActivity, 'continued'>, string> = {
+  met: 'A reviewer found your goal met',
+  impossible: 'A reviewer found your goal cannot be met without the person',
   cleared: 'The person stopped your goal',
   exhausted: 'Your goal used all its continuations and stopped',
   stopped: 'Your goal stopped because a turn of it failed or was stopped',
@@ -134,7 +225,12 @@ export function goalEndLine(
     botId: goal.botId,
     turnId: null,
     role: 'event',
-    content: `${END_WORDS[activity]} (${goal.continuations} of ${goal.limit} continuations): ${goal.objective}`,
+    content: [
+      `${END_WORDS[activity]} (${goal.continuations} of ${goal.limit} continuations): ${goal.objective}`,
+      activity === 'stopped' || !reason ? null : `Reason: ${reason}`,
+    ]
+      .filter(Boolean)
+      .join('\n'),
     event: {
       kind: 'goal',
       activity,

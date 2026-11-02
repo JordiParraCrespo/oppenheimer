@@ -11,10 +11,12 @@ import {
 import type { ModelProviderCredentialRepositoryPort } from '../../../bots/database/model-provider-credential.repository.port';
 import { BotErrors } from '../../../bots/domain/bots.errors';
 import type { ProviderKeySealerPort } from '../../../bots/infrastructure/provider-key-sealer.port';
+import { BotGoalResolver } from '../../application/bot-goal.resolver';
 import { BotMessageAttachmentsResolver } from '../../application/bot-message-attachments.resolver';
 import { BotWaitingCardResolver } from '../../application/bot-waiting-card.resolver';
 import { BOT_STREAM, BOT_TURN_REPOSITORY } from '../../bots-chat.di-tokens';
 import type { BotTurnRepositoryPort } from '../../database/bot-turn.repository.port';
+import { goalFromMessage } from '../../domain/bot-goal.policy';
 import { BotMessageEntity } from '../../domain/bot-message.entity';
 import { maySteer } from '../../domain/bot-steer.policy';
 import { BotTurnEntity } from '../../domain/bot-turn.entity';
@@ -30,7 +32,9 @@ import { SendBotMessageCommand } from './send-bot-message.command';
  * running turn would not read images and a `/<name>` runs its skill as a turn
  * of its own. A provider with no key is refused here,
  * where the person can fix it, rather than failing in the worker. A card the
- * bot is waiting on expires: the person moved on.
+ * bot is waiting on expires: the person moved on. `/goal <condition>` sets
+ * the bot's goal on the turn it queues (`goalFromMessage`), checked before
+ * anything is written and set once the turn is.
  */
 /** The turn a send queued, and the message that opens it, which a steer's lookup follows. */
 export interface SentBotMessage {
@@ -51,6 +55,7 @@ export class SendBotMessageCommandHandler
     @Inject(BOT_STREAM) private readonly stream: BotStreamPort,
     private readonly cards: BotWaitingCardResolver,
     private readonly images: BotMessageAttachmentsResolver,
+    private readonly goals: BotGoalResolver,
   ) {}
 
   async execute({
@@ -85,6 +90,7 @@ export class SendBotMessageCommandHandler
       credentialScopes,
       steer: maySteer(steer, content, attachments.length),
     });
+    const goal = goalFromMessage(content, turn);
     const message = BotMessageEntity.createNew({
       organizationId: bot.organizationId,
       botId: bot.id,
@@ -98,6 +104,7 @@ export class SendBotMessageCommandHandler
     const outcome = await this.turns.enqueue(turn, message, metadata.correlationId);
     if (outcome === 'missing') throw new AppError(BotErrors.NOT_FOUND);
     if (outcome === 'attachments_taken') throw new AppError(BotErrors.ATTACHMENT_UNSENDABLE);
+    if (goal) await this.goals.set(goal);
     await this.stream.publish(bot.id, { type: 'turn', turnId: turn.id, status: 'queued' });
     await this.cards.retire(bot.organizationId, bot.id);
     return { turnId: turn.id, messageId: message.id };

@@ -6,6 +6,7 @@ import type { BotLookupResolver } from '../../../../bots/application/bot-lookup.
 import type { ModelProviderCredentialRepositoryPort } from '../../../../bots/database/model-provider-credential.repository.port';
 import { BotEntity } from '../../../../bots/domain/bot.entity';
 import type { ProviderKeySealerPort } from '../../../../bots/infrastructure/provider-key-sealer.port';
+import type { BotGoalResolver } from '../../../application/bot-goal.resolver';
 import { BotMessageAttachmentsResolver } from '../../../application/bot-message-attachments.resolver';
 import { BotWaitingCardResolver } from '../../../application/bot-waiting-card.resolver';
 import type { BotApprovalRepositoryPort } from '../../../database/bot-approval.repository.port';
@@ -24,6 +25,8 @@ import { SendBotMessageCommandHandler } from '../send-bot-message.command-handle
  * they are now, with your message first, or a refusal where the person can
  * fix it — no key for the provider, no sealing key on the server — with
  * nothing queued. A card the bot is waiting on expires with the message.
+ * `/goal <condition>` sets the bot's goal on the turn it queues; `/goal`
+ * alone or `/goal clear` is refused before anything is written.
  */
 const scope: AccessScope = {
   userId: randomUUID(),
@@ -54,6 +57,7 @@ function setup(
     provider: options.provider ?? 'glm',
   });
   const turns = { enqueue: vi.fn<BotTurnRepositoryPort['enqueue']>(async () => 'staged') };
+  const goals = { set: vi.fn<BotGoalResolver['set']>(async () => null) };
   const uploads: BotAttachmentEntity[] = [];
   const attachments = {
     findManyForBot: vi.fn(async (_org: string, _bot: string, ids: readonly string[]) =>
@@ -110,6 +114,7 @@ function setup(
       stream,
     ),
     new BotMessageAttachmentsResolver(attachments as unknown as BotAttachmentRepositoryPort),
+    goals as unknown as BotGoalResolver,
   );
   const upload = () => {
     const created = BotAttachmentEntity.upload(
@@ -126,7 +131,7 @@ function setup(
     uploads.push(created);
     return created;
   };
-  return { handler, turns, bot, approvals, card, questions, asked, stream, upload };
+  return { handler, turns, goals, bot, approvals, card, questions, asked, stream, upload };
 }
 
 const send = (
@@ -135,12 +140,13 @@ const send = (
   timeZone: string | null = null,
   credentialScopes: Scope[] | null = null,
   attachmentIds: string[] = [],
+  content = 'Ship it',
 ) =>
   handler.execute(
     new SendBotMessageCommand({
       scope,
       botId,
-      content: 'Ship it',
+      content,
       attachmentIds,
       timeZone,
       credentialScopes,
@@ -265,5 +271,38 @@ describe('SendBotMessageCommandHandler', () => {
       bot.id,
       expect.objectContaining({ type: 'question' }),
     );
+  });
+
+  it('sets the bot’s goal on the turn a /goal <condition> queues, with that turn’s reach', async () => {
+    const { handler, turns, goals, bot } = setup();
+    await send(handler, bot.id, 'Europe/Madrid', ['bots:write'], [], '/goal pnpm test exits 0');
+    const [turn, message] = vi.mocked(turns.enqueue).mock.calls[0];
+    expect(message.content).toBe('/goal pnpm test exits 0');
+    expect(goals.set.mock.calls[0][0]).toMatchObject({
+      botId: bot.id,
+      originTurnId: turn.id,
+      objective: 'pnpm test exits 0',
+      credentialScopes: ['bots:write'],
+      timeZone: 'Europe/Madrid',
+    });
+  });
+
+  it('sets no goal for any other message', async () => {
+    const { handler, goals, bot } = setup();
+    await send(handler, bot.id);
+    expect(goals.set).not.toHaveBeenCalled();
+  });
+
+  // What breaks this: `/goal clear` typed through the API queuing a turn that
+  // spends a model call to say the goal is cleared, without clearing it.
+  it('refuses /goal alone and /goal clear with a generic 400, queuing nothing', async () => {
+    const { handler, turns, goals, bot } = setup();
+    for (const content of ['/goal', '/goal clear']) {
+      await expect(send(handler, bot.id, null, null, [], content)).rejects.toMatchObject({
+        code: 'GENERIC.ARGUMENT_INVALID',
+      });
+    }
+    expect(turns.enqueue).not.toHaveBeenCalled();
+    expect(goals.set).not.toHaveBeenCalled();
   });
 });

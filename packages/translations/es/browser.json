@@ -1618,6 +1618,8 @@
         },
         "goal": {
           "continued": "Objetivo · continuación {{step}} de {{limit}}",
+          "met": "Objetivo cumplido: «{{objective}}»",
+          "impossible": "El objetivo «{{objective}}» no se puede cumplir sin ti",
           "cleared": "Has detenido el objetivo «{{objective}}»",
           "exhausted": "El objetivo «{{objective}}» usó sus {{limit}} continuaciones",
           "stopped": "El objetivo «{{objective}}» se detuvo: uno de sus turnos falló o se detuvo"
@@ -1638,12 +1640,17 @@
         "title": "Objetivo: {{objective}}",
         "progress": "{{step}} de {{limit}} continuaciones",
         "stop": "Detener objetivo",
-        "stopFailed": "No se pudo detener el objetivo. Inténtalo de nuevo."
+        "stopFailed": "No se pudo detener el objetivo. Inténtalo de nuevo.",
+        "needsCondition": "Escribe tras /goal cómo sabremos que está hecho, o /goal clear para detener el objetivo."
       },
       "slash": {
         "label": "Habilidades",
-        "menu": "Habilidades que puedes ejecutar",
-        "pick": "Usar /{{name}}"
+        "menu": "Comandos y habilidades que puedes ejecutar",
+        "pick": "Usar /{{name}}",
+        "builtInLabel": "Comandos",
+        "builtIn": {
+          "goal": "Sigue trabajando hasta que se cumpla una condición, revisada tras cada turno. /goal clear lo detiene."
+        }
       }
     },
     "settings": {

@@ -1,14 +1,18 @@
 /**
  * A turn of a goal ended (`25-bots.md` §4.1). What breaks this: a goal past
- * its limit, or one whose turn failed, queuing one more; a goal going on for
- * an owner who left the workspace; a continuation counted apart from the turn
+ * its limit, or one whose turn failed, queuing one more; a goal going on
+ * after the reviewer found it met or out of reach; a goal ended or replaced
+ * while the reviewer answered being continued anyway; a goal going on for an
+ * owner who left the workspace; a continuation counted apart from the turn
  * it queues (the repository claims both at once: `enqueueContinuation`).
  */
 import { Some } from 'oxide.ts';
 import type { BotGoalResolver } from '../../../application/bot-goal.resolver';
+import type { BotGoalReviewResolver } from '../../../application/bot-goal-review.resolver';
 import type { BotGoalRepositoryPort } from '../../../database/bot-goal.repository.port';
 import type { BotTurnRepositoryPort } from '../../../database/bot-turn.repository.port';
 import { BotGoalEntity } from '../../../domain/bot-goal.entity';
+import type { BotGoalVerdict } from '../../../domain/bot-goal-review.policy';
 import { BotTurnEntity } from '../../../domain/bot-turn.entity';
 import type { BotStreamPort } from '../../../infrastructure/bot-stream.port';
 import { ContinueBotGoalCommand } from '../continue-bot-goal.command';
@@ -48,10 +52,18 @@ function ended(status: 'completed' | 'failed' | 'cancelled', step = 1): BotTurnE
   return turn;
 }
 
-function setup(stored: BotGoalEntity | null, turn: BotTurnEntity, owned = true) {
+function setup(
+  stored: BotGoalEntity | null,
+  turn: BotTurnEntity,
+  owned = true,
+  verdict: BotGoalVerdict | null = { verdict: 'not_met', reason: 'Two checks still fail' },
+) {
   const goals = {
     findForBot: vi.fn<BotGoalRepositoryPort['findForBot']>(async () => stored),
   } satisfies Partial<BotGoalRepositoryPort>;
+  const reviewer = {
+    review: vi.fn<BotGoalReviewResolver['review']>(async () => verdict),
+  } satisfies Pick<BotGoalReviewResolver, 'review'>;
   const turns = {
     findForRun: vi.fn<BotTurnRepositoryPort['findForRun']>(async () => Some(turn)),
     enqueueContinuation: vi.fn<BotTurnRepositoryPort['enqueueContinuation']>(async () => 'staged'),
@@ -68,17 +80,20 @@ function setup(stored: BotGoalEntity | null, turn: BotTurnEntity, owned = true) 
     goals as unknown as BotGoalRepositoryPort,
     stream,
     goalsOf as unknown as BotGoalResolver,
+    reviewer as unknown as BotGoalReviewResolver,
   );
   const run = () => handler.execute(new ContinueBotGoalCommand({ turnId: turn.id }));
-  return { goals, turns, stream, goalsOf, run };
+  return { goals, turns, stream, goalsOf, reviewer, run };
 }
 
 describe('ContinueBotGoalCommandHandler', () => {
   it('queues the next continuation as the owner, claiming its count with it', async () => {
     const stored = goal(1);
-    const { turns, stream, run } = setup(stored, ended('completed'));
+    const last = ended('completed');
+    const { turns, stream, reviewer, run } = setup(stored, last);
     await run();
 
+    expect(reviewer.review).toHaveBeenCalledWith(stored, last.id);
     const [turn, opening, , claimed] = turns.enqueueContinuation.mock.calls[0];
     expect(turn).toMatchObject({
       origin: 'goal',
@@ -87,7 +102,12 @@ describe('ContinueBotGoalCommandHandler', () => {
       credentialScopes: ['bots:read'],
       timeZone: 'Europe/Madrid',
     });
-    expect(opening.event).toMatchObject({ kind: 'goal', activity: 'continued', step: 2 });
+    expect(opening.event).toMatchObject({
+      kind: 'goal',
+      activity: 'continued',
+      step: 2,
+      reason: 'Two checks still fail',
+    });
     expect(claimed).toBe(stored);
     expect(stream.publish).toHaveBeenCalledWith('bot-1', {
       type: 'turn',
@@ -112,16 +132,49 @@ describe('ContinueBotGoalCommandHandler', () => {
     expect(turns.enqueueContinuation).not.toHaveBeenCalled();
     expect(goalsOf.end).toHaveBeenCalledWith(
       stored,
-      { activity: 'exhausted', reason: null },
+      { activity: 'exhausted', reason: 'Two checks still fail' },
       expect.anything(),
     );
   });
 
-  it('stops the goal when its own continuation was stopped, and queues nothing', async () => {
+  it('ends the goal met, or out of reach, when the reviewer says so, and queues nothing', async () => {
+    for (const kind of ['met', 'impossible'] as const) {
+      const stored = goal(1);
+      const verdict = { verdict: kind, reason: 'Because' };
+      const { turns, goalsOf, run } = setup(stored, ended('completed'), true, verdict);
+      await run();
+
+      expect(turns.enqueueContinuation).not.toHaveBeenCalled();
+      expect(goalsOf.end).toHaveBeenCalledWith(
+        stored,
+        { activity: kind, reason: 'Because' },
+        expect.anything(),
+      );
+    }
+  });
+
+  it('goes on without a reason when the reviewer could not say', async () => {
+    const { turns, run } = setup(goal(1), ended('completed'), true, null);
+    await run();
+    expect(turns.enqueueContinuation.mock.calls[0][1].event).toMatchObject({ reason: null });
+  });
+
+  // What breaks this: the bot's end_goal, a Stop or a new /goal landing while
+  // the reviewer answered, and the old goal queuing a continuation anyway.
+  it('leaves the goal alone when it ended or was replaced while the reviewer answered', async () => {
+    const { goals, turns, goalsOf, run } = setup(goal(1), ended('completed'));
+    goals.findForBot.mockResolvedValueOnce(goal(1)).mockResolvedValueOnce(null);
+    await run();
+    expect(turns.enqueueContinuation).not.toHaveBeenCalled();
+    expect(goalsOf.end).not.toHaveBeenCalled();
+  });
+
+  it('stops the goal when its own continuation was stopped, without a review, and queues nothing', async () => {
     const stored = goal(1);
-    const { turns, goalsOf, run } = setup(stored, ended('cancelled'));
+    const { turns, goalsOf, reviewer, run } = setup(stored, ended('cancelled'));
     await run();
 
+    expect(reviewer.review).not.toHaveBeenCalled();
     expect(turns.enqueueContinuation).not.toHaveBeenCalled();
     expect(goalsOf.end).toHaveBeenCalledWith(
       stored,

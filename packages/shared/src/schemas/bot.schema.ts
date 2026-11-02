@@ -599,25 +599,41 @@ export interface BotSessionEvent {
 }
 
 /**
- * A goal a bot set itself keeps it going (`25-bots.md` §4.1; from Grok Bot's
- * goals, `research/lessons-from-grok-bot.md` §9 row 10): after a turn ends
- * with the goal still open, a continuation turn is queued, up to the goal's
- * limit. One goal per bot at a time; an ended goal is deleted. This is the
- * longest objective, in the bot's words.
+ * A goal keeps a bot going (`25-bots.md` §4.1; from Grok Bot's goals,
+ * `research/lessons-from-grok-bot.md` §9 row 10, and Claude Code's `/goal`):
+ * the person sets one with `/goal <condition>`, or the bot with `set_goal`.
+ * After each turn of it a reviewer, the bot's own model with no tools, reads
+ * what the turn showed and says whether the condition holds; while it does
+ * not, a continuation turn is queued, up to the goal's limit. One goal per
+ * bot at a time; an ended goal is deleted. This is the longest condition.
  */
-export const BOT_GOAL_OBJECTIVE_MAX = 500;
-/** The continuations a goal may queue: at most this many, and five unless the bot asks for fewer or more. */
-export const BOT_GOAL_CONTINUATIONS_MAX = 10;
+export const BOT_GOAL_OBJECTIVE_MAX = 2_000;
+/** The continuations a goal may queue: never more than this, whoever set it. */
+export const BOT_GOAL_CONTINUATIONS_MAX = 20;
+/** What a goal the bot sets takes unless it asks for fewer or more. */
 export const BOT_GOAL_CONTINUATIONS_DEFAULT = 5;
+/**
+ * What a goal the person sets with `/goal` takes: the reviewer ends it once
+ * the condition holds, so the limit is only the bound on the spend.
+ */
+export const BOT_GOAL_CONTINUATIONS_PERSON = BOT_GOAL_CONTINUATIONS_MAX;
 
 /**
- * What a goal line says: a continuation opens a turn (`continued`); the
- * others say, outside any turn, how the goal ended when the bot did not end
- * it itself (its `end_goal` call is the record of that): the owner stopped
- * it (`cleared`), its continuations ran out (`exhausted`), or a turn of it
- * failed or was stopped (`stopped`).
+ * What a goal line says: a continuation opens a turn (`continued`, with the
+ * reviewer's reason for going on); the others say, outside any turn, how the
+ * goal ended when the bot did not end it itself (its `end_goal` call is the
+ * record of that): the reviewer found the condition met (`met`) or out of
+ * reach (`impossible`), the owner stopped it (`cleared`), its continuations
+ * ran out (`exhausted`), or a turn of it failed or was stopped (`stopped`).
  */
-export const BOT_GOAL_ACTIVITIES = ['continued', 'cleared', 'exhausted', 'stopped'] as const;
+export const BOT_GOAL_ACTIVITIES = [
+  'continued',
+  'met',
+  'impossible',
+  'cleared',
+  'exhausted',
+  'stopped',
+] as const;
 export type BotGoalActivity = (typeof BOT_GOAL_ACTIVITIES)[number];
 
 export interface BotGoalEvent {
@@ -630,7 +646,11 @@ export interface BotGoalEvent {
   step: number;
   /** The goal's limit of continuations. */
   limit: number;
-  /** Why, as a code, for `stopped`: the status of the turn that ended it. */
+  /**
+   * Why: for `continued`, `met` and `impossible` the reviewer's reason in its
+   * words (null when it could not say); for `stopped` a code, the status of
+   * the turn that ended it.
+   */
   reason: string | null;
 }
 

@@ -13,6 +13,7 @@ import {
   useBotGoal,
   useBotWaitingMessages,
   useCancelBotTurn,
+  useClearBotGoal,
   useModelProviders,
   useSendBotMessage,
   useVoiceDictation,
@@ -31,6 +32,7 @@ import {
   botModelOf,
   botTakesImages,
 } from '@oppenheimer/shared/schemas/bot';
+import { botGoalCommandOf, parseBotSlashCommand } from '@oppenheimer/shared/schemas/bot-skill';
 import { useNavigate } from '@tanstack/react-router';
 import type { ClipboardEvent, ReactNode } from 'react';
 import { useRef } from 'react';
@@ -74,6 +76,8 @@ import { BotGoalNotice } from '@/features/bots/sections/bot-goal-notice';
  * alone. A file it will not hold, or one the API refused, is said under the
  * field; while one uploads or failed, or the bot's model reads no images,
  * send is off and says why, and nothing written is lost.
+ * `/goal clear` stops the bot's goal, as the notice's Stop does, and sends
+ * nothing; `/goal` with no condition keeps send off and says what it lacks.
  */
 export function BotComposer({
   botId,
@@ -114,14 +118,17 @@ export function BotComposer({
     },
   });
   const cancel = useCancelBotTurn();
+  const clearGoal = useClearBotGoal();
   // The goal is drawn in `above`, fused onto the box, so the box has to know whether there is one.
   const { data: goal } = useBotGoal(botId);
   const noKey = keyed === false ? t('bots.chat.noKey', { provider: providerLabel }) : undefined;
   const imagesBlock = heldImagesBlock(images.images, takesImages);
+  const goalCommand = botGoalCommandOf(parseBotSlashCommand(draft));
   const blocked =
     noKey ??
-    (imagesBlock ? t(`bots.chat.images.${imagesBlock}`, { model: modelLabel }) : undefined);
-  const failure = send.error ?? cancel.error;
+    (imagesBlock ? t(`bots.chat.images.${imagesBlock}`, { model: modelLabel }) : undefined) ??
+    (goalCommand?.kind === 'show' ? t('bots.chat.goal.needsCondition') : undefined);
+  const failure = send.error ?? cancel.error ?? clearGoal.error;
   const running = active?.status === 'running';
   const message = (steer: boolean) => ({
     id: botId,
@@ -153,6 +160,15 @@ export function BotComposer({
         },
       },
     );
+  }
+
+  // `/goal clear` stops the goal here, as the notice's Stop does; nothing is sent to the bot.
+  function submit(steer: boolean) {
+    if (goalCommand?.kind === 'clear') {
+      clearGoal.mutate({ id: botId }, { onSuccess: () => setBotDraft(botId, '') });
+      return;
+    }
+    send.mutate(message(steer));
   }
 
   function onPaste(event: ClipboardEvent<HTMLDivElement>) {
@@ -216,23 +232,35 @@ export function BotComposer({
       />
       <ErrorAlert
         error={failure}
-        fallback={send.error ? t('bots.chat.sendFailed') : t('bots.chat.stopFailed')}
+        fallback={
+          send.error
+            ? t('bots.chat.sendFailed')
+            : clearGoal.error
+              ? t('bots.chat.goal.stopFailed')
+              : t('bots.chat.stopFailed')
+        }
         onDismiss={() => {
           send.reset();
           cancel.reset();
+          clearGoal.reset();
         }}
       />
       <div className="relative">
         {slash.open ? (
-          <BotSlashMenu items={slash.items} highlighted={slash.highlighted} onPick={slash.pick} />
+          <BotSlashMenu
+            builtIns={slash.groups.builtIns}
+            skills={slash.groups.skills}
+            highlighted={slash.highlighted}
+            onPick={slash.pick}
+          />
         ) : null}
         <ChatComposer
           onKeyDownCapture={slash.onKeyDownCapture}
           value={draft}
           onValueChange={setDraft}
           inputRef={field}
-          onSubmit={() => send.mutate(message(running))}
-          onAltSubmit={running ? () => send.mutate(message(false)) : undefined}
+          onSubmit={() => submit(running)}
+          onAltSubmit={running ? () => submit(false) : undefined}
           onStop={() => active && cancel.mutate({ id: botId, turnId: active.id })}
           busy={
             (active !== null || send.isPending) && draft.trim() === '' && images.images.length === 0
