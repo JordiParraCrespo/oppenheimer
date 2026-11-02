@@ -210,6 +210,14 @@ describe('a command the CLI answers itself', () => {
     const output = screen.getByText(/Context Usage/);
     expect(output.textContent).toBe('Context Usage\n⛁ ⛀   Opus 5.5');
     expect(output.closest('pre')).toBeTruthy();
+
+    // It is the command's whole answer: the turn keeps it once the next prompt folds it.
+    act(() =>
+      chat.apply({
+        entries: [entry({ type: 'user', uuid: 'u2', message: { role: 'user', content: 'Next' } })],
+      }),
+    );
+    expect(screen.getByText(/Context Usage/)).toBeTruthy();
   });
 });
 
