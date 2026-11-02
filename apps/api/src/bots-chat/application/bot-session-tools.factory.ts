@@ -9,16 +9,14 @@ import { FindProjectQuery } from '../../projects/queries/find-project/find-proje
 import { AnswerSessionDecisionCommand } from '../../sessions/commands/answer-session-decision/answer-session-decision.command';
 import { CreateSessionCommand } from '../../sessions/commands/create-session/create-session.command';
 import { SendSessionPromptCommand } from '../../sessions/commands/send-session-prompt/send-session-prompt.command';
+import { StartCloudSessionCommand } from '../../sessions/commands/start-cloud-session/start-cloud-session.command';
 import { StopSessionCommand } from '../../sessions/commands/stop-session/stop-session.command';
 import type { SessionCommandResult } from '../../sessions/domain/session-command.types';
 import type { WorkSessionEntity } from '../../sessions/domain/work-session.entity';
 import { FindSessionQuery } from '../../sessions/queries/find-session/find-session.query';
 import {
-  cloudSessionSummary,
-  cloudSessionUrl,
   decisionAnswerOf,
   decisionAnswerSummary,
-  planCloudSession,
   planSession,
   promptSummary,
   readAfterHint,
@@ -27,6 +25,15 @@ import {
   sessionSummary,
 } from '../bot-session-tool.mapper';
 import { idempotencyKeyOf } from '../domain/bot-tool-idempotency.policy';
+import {
+  CLOUD_SESSION_AGENTS,
+  type CloudSessionPlan,
+  cloudFieldRefusal,
+  cloudSessionHostId,
+  cloudSessionSummary,
+  cloudStartAnswer,
+  planCloudSession,
+} from './bot-cloud-session.policy';
 import { BotSessionWaitResolver } from './bot-session-wait.resolver';
 import { BotSessionWatchResolver } from './bot-session-watch.resolver';
 import {
@@ -42,7 +49,8 @@ const CLOUD_START_WAIT_MAX_SECONDS = 120;
 
 /**
  * Sessions, the writes (`25-bots.md` §4.2): start a coding agent on a host
- * with a task, or in Claude Code's cloud from a host, give a running one a follow-up prompt or answer what it asks,
+ * with a task, or in a vendor's cloud (Claude Code's or Codex's from a host,
+ * Cursor's on the owner's key), give a running one a follow-up prompt or answer what it asks,
  * or stop one. Each reaches outside Oppenheimer (they run things on the
  * owner's machine), so under Approve for me they ask first, and each says on
  * the card what it will do, by name. A bot's session is the owner's, started
@@ -167,12 +175,13 @@ export class BotSessionToolsFactory implements BotToolArea {
   }
 
   /**
-   * A Claude Code cloud session (claude.ai/code), started the one way the
-   * product starts one: the sessions' own create with `cloud`, which has the
-   * host's runner run `claude --cloud <task>` in a scratch checkout of the
-   * repository and report the session it printed. Same scope, card and
-   * owner's scope as `start_session`; it waits for that report so it can
-   * hand back the session's URL.
+   * A session in a vendor's cloud, started the one way the product starts
+   * each: Claude Code's or Codex's through the sessions' own create with
+   * `cloud`, which has the host's runner run `claude --cloud` or `codex cloud
+   * exec` in a scratch checkout and report the session it started; a
+   * vendor's (Cursor's) through `StartCloudSessionCommand`, on the owner's
+   * own key with no host. Same scope, card and owner's scope as
+   * `start_session`; it hands back the session's URL at the vendor.
    */
   private startCloudSession(): BotToolDefinition {
     return defineBotTool({
@@ -188,7 +197,7 @@ export class BotSessionToolsFactory implements BotToolArea {
         };
       },
       description:
-        "Starts a Claude Code cloud session (claude.ai/code) with a task on one of a project's repositories: a host whose claude is signed in runs `claude --cloud` from the repository, and the session then runs in Anthropic's cloud, not on the host. Use it when the person asks for a cloud session, or for work that should not hold a host. It waits for the session to exist and returns its claude.ai URL; follow-ups happen on claude.ai, not with send_to_session. The host defaults to the project's default host, then your home host.",
+        "Starts a coding agent in a vendor's cloud with a task on one of a project's repositories, so it runs on the vendor's machines, not on a host. agent picks the cloud: claude-code (default; claude.ai/code) or codex (chatgpt.com/codex) are started by a host whose claude or codex CLI is signed in, and that account runs it; cursor is launched at Cursor on the owner's own Cursor key (Settings → Cloud agents), bills their Cursor plan and takes no host. Use it when the person asks for a cloud session, or for work that should not hold a host. It returns the session's URL at the vendor once it exists; follow-ups happen there, not with send_to_session or answer_session. A host defaults to the project's default host, then your home host.",
       input: z.object({
         task: z
           .string()
@@ -211,12 +220,32 @@ export class BotSessionToolsFactory implements BotToolArea {
           .describe(
             "owner/name of one of the project's repositories; its default one when omitted.",
           ),
+        agent: z
+          .enum(CLOUD_SESSION_AGENTS)
+          .optional()
+          .describe('Which cloud: claude-code when omitted, codex, or cursor.'),
         host_id: z
           .uuid()
           .optional()
           .describe(
-            'The host that starts it (from list_hosts); its claude account runs the session.',
+            'claude-code and codex only: the host that starts it (from list_hosts); its CLI account runs the session.',
           ),
+        codex_environment: z
+          .string()
+          .trim()
+          .min(1)
+          .max(200)
+          .optional()
+          .describe(
+            'codex only: the Codex cloud environment, by id or label; the one linked to the repository when omitted.',
+          ),
+        model: z
+          .string()
+          .trim()
+          .min(1)
+          .max(128)
+          .optional()
+          .describe("cursor only: one of Cursor's models; Cursor's own pick when omitted."),
         name: z.string().min(1).max(80).optional().describe('A short name for the session.'),
         wait_seconds: z
           .number()
@@ -225,12 +254,16 @@ export class BotSessionToolsFactory implements BotToolArea {
           .max(CLOUD_START_WAIT_MAX_SECONDS)
           .default(60)
           .describe(
-            'How long to wait for the cloud session to exist before answering without its URL.',
+            "How long to wait for the session's link at its vendor before answering without it.",
           ),
       }),
       summarize: async (input, context) => {
         const project = await this.project(context, input.project_id).catch(() => null);
-        const hostId = sessionHostId(input, project, context.homeHostId);
+        // A call that cannot start is refused here, before it interrupts the owner with a card.
+        const plan = project ? planCloudSession(input, project, context.homeHostId) : null;
+        const refusal = plan && 'refusal' in plan ? plan.refusal : cloudFieldRefusal(input);
+        if (refusal) throw new BotToolRefusal(refusal);
+        const hostId = cloudSessionHostId(input, project, context.homeHostId);
         const host = hostId ? await this.hostName(context, hostId) : null;
         return cloudSessionSummary(input, project, host);
       },
@@ -238,41 +271,15 @@ export class BotSessionToolsFactory implements BotToolArea {
         const project = await this.project(context, input.project_id);
         const plan = planCloudSession(input, project, context.homeHostId);
         if ('refusal' in plan) throw new BotToolRefusal(plan.refusal);
-        const { body, hostId } = plan;
-        const result = await this.commandBus.execute<CreateSessionCommand, SessionCommandResult>(
-          new CreateSessionCommand({
-            scope: context.owner,
-            userId: context.owner.userId,
-            input: body,
-            idempotencyKey: idempotencyKeyOf(context.turnId, body, context.approvalId),
-            origin: 'bot',
-          }),
-        );
+        const result = await this.commandBus.execute<
+          CreateSessionCommand | StartCloudSessionCommand,
+          SessionCommandResult
+        >(cloudSessionCommand(plan, context));
         const { sessionId } = result;
-        if (result.hints.includes('host_offline')) {
-          return {
-            content: `Created session ${sessionId}, but host ${hostId} is offline: its cloud session starts when the host comes back. get_session shows its claude.ai URL once it has one.`,
-            sessionId,
-          };
-        }
-        const session = await this.waits.cloudStart(context, sessionId, input.wait_seconds, signal);
-        if (session.cloudSessionId) {
-          const url = cloudSessionUrl(session.agent, session.cloudSessionId);
-          return {
-            content: `Started Claude Code cloud session ${session.cloudSessionId} from host ${hostId} (session ${sessionId}): ${url} It runs on claude.ai on its own; give the person that link, and follow it there or with get_session.`,
-            sessionId,
-          };
-        }
-        if (session.state === 'failed' || session.isResolved) {
-          return {
-            content: `Session ${sessionId}: host ${hostId} could not start the cloud session (it is ${session.state}). read_session says why; most often the host's claude is not installed or not signed in.`,
-            sessionId,
-          };
-        }
-        return {
-          content: `Session ${sessionId} is starting its cloud session on host ${hostId}, which has not named it yet. get_session shows its claude.ai URL once it has one.`,
-          sessionId,
-        };
+        const session = result.hints.includes('host_offline')
+          ? null
+          : await this.waits.cloudStart(context, sessionId, input.wait_seconds, signal);
+        return { content: cloudStartAnswer(plan, sessionId, session), sessionId };
       },
     });
   }
@@ -440,4 +447,20 @@ export class BotSessionToolsFactory implements BotToolArea {
       new FindProjectQuery({ scope: context.owner, projectId }),
     );
   }
+}
+
+/** The sessions' own command that starts what a cloud plan says, as the owner, marked as the bot's. */
+function cloudSessionCommand(
+  plan: CloudSessionPlan,
+  context: BotToolCallContext & { approvalId?: string },
+): CreateSessionCommand | StartCloudSessionCommand {
+  const props = {
+    scope: context.owner,
+    userId: context.owner.userId,
+    idempotencyKey: idempotencyKeyOf(context.turnId, plan.body, context.approvalId),
+    origin: 'bot' as const,
+  };
+  return plan.kind === 'host'
+    ? new CreateSessionCommand({ ...props, input: plan.body })
+    : new StartCloudSessionCommand({ ...props, input: plan.body });
 }
