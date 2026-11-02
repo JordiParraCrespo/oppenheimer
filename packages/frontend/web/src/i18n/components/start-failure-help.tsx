@@ -1,4 +1,4 @@
-import { Callout } from '@oppenheimer/design-system-web';
+import { Callout, Link } from '@oppenheimer/design-system-web';
 import type { FailureHelp } from '../lib/start-failure';
 
 /**
@@ -9,9 +9,9 @@ export function StartFailureHelp({ help, className }: { help: FailureHelp; class
   return (
     <Callout className={className}>
       {help.body}{' '}
-      <a href={help.href} target="_blank" rel="noreferrer" className="text-link hover:underline">
+      <Link href={help.href} target="_blank" rel="noreferrer">
         {help.link}
-      </a>
+      </Link>
     </Callout>
   );
 }
