@@ -9,7 +9,7 @@ import { BotUsageReport } from '@/features/bots/components/bot-usage-report';
  * holds. A refetch that fails keeps the figures it has and says so above
  * them.
  */
-export function BotUsageSummary({ botId }: { botId: string }) {
+export function BotUsageSummary({ botId, onClose }: { botId: string; onClose: () => void }) {
   const { t } = useTranslation();
   const { data: usage, error } = useSuspenseBotUsage(botId);
   const { context, planLimits } = useBotRoomLeft(botId);
@@ -21,6 +21,7 @@ export function BotUsageSummary({ botId }: { botId: string }) {
         context={context}
         fiveHour={planLimits?.fiveHour ?? null}
         sevenDay={planLimits?.sevenDay ?? null}
+        onClose={onClose}
       />
     </>
   );

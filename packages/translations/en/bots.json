@@ -303,16 +303,19 @@
       "output": "Output",
       "cacheRead": "Cache read",
       "cacheWrite": "Cache write",
-      "outside": "Outside its turns",
       "purpose": {
-        "goalReview": "Goal reviews",
-        "summary": "Summaries",
-        "ruleReview": "Rule reviews"
+        "goalReview_one": "{{count}} goal review",
+        "goalReview_other": "{{count}} goal reviews",
+        "summary_one": "{{count}} summary",
+        "summary_other": "{{count}} summaries",
+        "ruleReview_one": "{{count}} rule review",
+        "ruleReview_other": "{{count}} rule reviews"
       },
-      "calls_one": "{{count}} call",
-      "calls_other": "{{count}} calls",
       "empty": "Nothing spent in this chat yet.",
-      "loadFailed": "Could not load the usage. Try again."
+      "loadFailed": "Could not load the usage. Try again.",
+      "includes": "Includes {{calls}}, made outside its turns.",
+      "models_one": "{{count}} model",
+      "models_other": "{{count}} models"
     }
   },
   "settings": {

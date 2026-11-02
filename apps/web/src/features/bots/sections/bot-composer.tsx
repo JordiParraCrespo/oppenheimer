@@ -37,7 +37,6 @@ import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { BotComposerImage } from '@/features/bots/components/bot-composer-image';
 import { BotSlashMenu } from '@/features/bots/components/bot-slash-menu';
-import { BotUsageDialog } from '@/features/bots/dialogs/bot-usage';
 import { useBotDraft } from '@/features/bots/hooks/use-bot-draft';
 import { useBotImages } from '@/features/bots/hooks/use-bot-images';
 import { useBuiltInCommand } from '@/features/bots/hooks/use-built-in-command';
@@ -77,7 +76,7 @@ import { BotGoalNotice } from '@/features/bots/sections/bot-goal-notice';
  * field; while one uploads or failed, or the bot's model reads no images,
  * send is off and says why, and nothing written is lost.
  * A built-in command the console runs itself (`/goal clear`, `/usage`, which
- * opens the usage card) sends nothing,
+ * puts the usage card in the chat) sends nothing,
  * and one that cannot be sent as typed (`/goal` with no condition) keeps send
  * off and says why on the box's top edge (`useBuiltInCommand`).
  */
@@ -297,7 +296,6 @@ export function BotComposer({
         />
       </div>
       {images.problem ? <FieldError className="mx-5">{images.problem}</FieldError> : null}
-      {builtIn.usageOpen ? <BotUsageDialog botId={botId} onClose={builtIn.closeUsage} /> : null}
     </>
   );
 }

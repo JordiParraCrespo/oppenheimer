@@ -4,8 +4,8 @@ import { provisionedUser, signInAs } from '../../support/web';
 /**
  * The built-in `/usage` in a browser, against the real control plane
  * (`product/versions/mvp/25-bots.md` §4.1, "Built-in commands"): the chat's
- * `/` menu offers it, running it opens the usage card without sending the
- * bot a message, and the API answers the chat's usage and refuses `/usage`
+ * `/` menu offers it, running it puts the usage card in the chat without
+ * sending the bot a message, Close takes it away, and the API answers the chat's usage and refuses `/usage`
  * as a message. What a turn and a goal review add to the figures is the
  * API's integration spec, since a real model is not run here.
  */
@@ -40,10 +40,12 @@ test('the /usage command opens the usage card and sends nothing', async ({ page 
   await expect(composer).toHaveValue('/usage ');
   await composer.press('Enter');
 
-  const card = page.getByRole('dialog', { name: 'Usage' });
-  await expect(card.getByText('This chat')).toBeVisible();
-  await expect(card.getByText('Nothing spent in this chat yet.')).toBeVisible();
+  // The card is in the chat, below its last message; Close takes it away.
+  await expect(page.getByRole('heading', { name: 'Usage' })).toBeVisible();
+  await expect(page.getByText('Nothing spent in this chat yet.')).toBeVisible();
   await expect(composer).toHaveValue('');
+  await page.getByRole('button', { name: 'Close' }).click();
+  await expect(page.getByRole('heading', { name: 'Usage' })).toBeHidden();
   const conversation = (await (
     await owner.api.get(`/api/v1/bots/${bot.id}/conversation`)
   ).json()) as { messages?: unknown[] };

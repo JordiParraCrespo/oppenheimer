@@ -562,29 +562,30 @@ The owner chose them in this order. Only the first is built:
 | Command | Does | State |
 |---------|------|-------|
 | `/goal <condition>` | Sets the bot's goal and starts on it (above). `/goal` alone keeps send off and says the condition is missing; `/goal clear` (or `stop`, `off`, `reset`, `none`, `cancel`) stops the goal, as Stop does, and sends nothing. The API refuses both as messages (`GENERIC.ARGUMENT_INVALID`): they are `GET` and `DELETE /bots/:id/goal` | Built |
-| `/usage` | Opens the usage card: what the chat has spent, in tokens (below). The API refuses it as a message, as it does `/goal` alone | Built |
+| `/usage` | Puts the usage card in the chat: what the chat has spent, in tokens (below). The API refuses it as a message, as it does `/goal` alone | Built |
 | `/loop [interval] <prompt>` or `/schedule` | Run a prompt on an interval, or on a schedule, as a routine of the bot's (26) | Planned |
 | `/plan <idea>` | Think before acting: break the idea into steps, or tasks on the plan, and ask before starting | Planned |
 | `/grill-me` | Interview the person about a plan, one branch of the decision tree at a time, until it holds (from this repo's own `grill-me` skill) | Planned |
 
 **`/usage`** (2026-11-02, from Claude Code's `/usage` and its usage card).
-The console opens a card over the chat and sends the bot nothing
-(`GET /bots/:id/usage`). It reads top to bottom:
+The console puts a card in the chat, below its last message, and sends the
+bot nothing (`GET /bots/:id/usage`). It stays until Close, and goes with the
+tab: it is never part of the conversation. It reads top to bottom:
 
 - **Room left**, the composer meter's popover written out: the context
   against the model's window, and on a ChatGPT sign-in the 5-hour and weekly
   windows with when each resets.
-- **This chat**, since its first turn: turns that ran, time at work (each
-  turn's start to its end, summed), tokens in and out, the cache hit rate
-  (the share of the input read from the provider's prompt cache), and each
-  model's share of what the turns spent. Copy puts the card on the clipboard
-  as text.
-- **Breakdown**, one block per model the turns ran on: Input (sent fresh),
-  Output, Cache read and Cache write, which add up to what the turns sent.
-- **Outside its turns**: the calls the bot makes on its owner's key that are
-  not a turn, by purpose (goal reviews, summaries, rule reviews), each with
-  its calls and tokens. Without them a long goal would look cheaper than it
-  is.
+- **This chat**, since its first turn, in one grid: turns that ran, time at
+  work (each turn's start to its end, summed), cache hit rate (the share of
+  the input read from the provider's prompt cache), tokens in and out, and
+  each model's share of what the turns spent.
+- **Breakdown**, every token the chat spent in one table: Input (sent
+  fresh), Output, Cache read and Cache write. The calls the bot makes on its
+  owner's key that are not a turn (goal reviews, summaries, rule reviews)
+  are in it, and named in a line under it, so a long goal does not look
+  cheaper than it is.
+
+Copy puts the card on the clipboard as text.
 
 Where it comes from:
 
@@ -1213,7 +1214,8 @@ The decisions it produced:
   continuations, up to 10: a person's goal takes 20, a bot's 5 unless it
   asks for up to 20, and the condition holds 2,000 characters, not 500.
 - 2026-11-02: **`/usage` is built** (§4.1). The owner asked for a card like
-  Claude Code's: room left, this chat's figures, a breakdown by model. It
+  Claude Code's, in the chat and simple: room left, this chat's figures, one
+  breakdown. It
   counts tokens only, with cache reads and writes kept per turn, and it
   counts the calls a bot makes outside its turns (goal reviews, summaries,
   rule reviews), which nothing recorded before. Money is left out until

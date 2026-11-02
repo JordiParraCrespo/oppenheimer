@@ -2,6 +2,7 @@ import { BotSkillEntity } from '@oppenheimer/frontend-consumer';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { botDraft, setBotDraft } from '../lib/bot-drafts';
+import { closeUsageCard, usageCardOpen } from '../lib/usage-cards';
 import { BotComposer } from '../sections/bot-composer';
 
 /**
@@ -13,7 +14,7 @@ import { BotComposer } from '../sections/bot-composer';
  * offered as a command; `/goal` missing from the menu, or a skill named
  * `goal` offered in its place; `/goal clear` sent to the bot as a message
  * instead of stopping the goal; `/goal` with no condition sent at all;
- * `/usage` sent to the bot instead of opening the usage card.
+ * `/usage` sent to the bot instead of putting the usage card in the chat.
  */
 
 vi.mock('react-i18next', () => ({
@@ -61,11 +62,6 @@ vi.mock('@oppenheimer/frontend-consumer/react', () => ({
   useSendBotMessage: () => ({ mutate: state.send, reset: vi.fn(), error: null, isPending: false }),
   useUploadBotImage: () => ({ mutateAsync: vi.fn() }),
   useCancelBotTurn: () => ({ mutate: vi.fn(), reset: vi.fn(), error: null, isPending: false }),
-  useSuspenseBotUsage: () => ({
-    data: { since: null, turns: 0, activeMs: 0, models: [], background: [] },
-    error: null,
-  }),
-  useBotRoomLeft: () => ({ context: null, planLimits: null }),
   useClearBotGoal: () => ({
     mutate: state.clearGoal,
     reset: vi.fn(),
@@ -203,15 +199,15 @@ describe('BotComposer’s / menu', () => {
     expect(screen.getAllByText('bots.chat.goal.needsCondition').length).toBeGreaterThan(0);
   });
 
-  it('opens the usage card on /usage, sending the bot nothing', () => {
+  it('puts the usage card in the chat on /usage, sending the bot nothing', () => {
     const field = composer();
     type(field, '/usage');
     // The menu is open on the command: Enter picks it, a second Enter runs it.
     fireEvent.keyDown(field, { key: 'Enter' });
     fireEvent.keyDown(field, { key: 'Enter' });
     expect(state.send).not.toHaveBeenCalled();
-    expect(screen.getByRole('dialog', { name: 'bots.chat.usage.title' })).toBeTruthy();
-    expect(screen.getByText('bots.chat.usage.empty')).toBeTruthy();
+    expect(usageCardOpen('b1')).toBe(true);
     expect(botDraft('b1')).toBe('');
+    closeUsageCard('b1');
   });
 });

@@ -28,9 +28,10 @@ spent, in tokens (`product/versions/mvp/25-bots.md` §4.1).
 - `@oppenheimer/frontend-web`: `ChatUsageDetails`, the context and plan
   windows the context meter's popover shows, for a card to draw too;
   `formatTokens`.
-- `@oppenheimer/web`: `/usage` in the `/` menu opens the usage card: room
-  left, this chat, a breakdown by model, and the calls outside its turns,
-  with Copy.
+- `@oppenheimer/web`: `/usage` in the `/` menu puts the usage card in the
+  chat, below its last message: room left, this chat's figures and each
+  model's share, and one breakdown of every token, the calls outside its
+  turns included and named under it, with Copy and Close.
 - `@oppenheimer/translations`: `bots.chat.usage.*` and
   `bots.chat.slash.builtIn.usage`.
 - `@oppenheimer/api-client`: `findBotUsage`.

@@ -1673,16 +1673,19 @@
         "output": "Salida",
         "cacheRead": "Lectura de caché",
         "cacheWrite": "Escritura de caché",
-        "outside": "Fuera de sus turnos",
         "purpose": {
-          "goalReview": "Revisiones del objetivo",
-          "summary": "Resúmenes",
-          "ruleReview": "Revisiones de reglas"
+          "goalReview_one": "{{count}} revisión del objetivo",
+          "goalReview_other": "{{count}} revisiones del objetivo",
+          "summary_one": "{{count}} resumen",
+          "summary_other": "{{count}} resúmenes",
+          "ruleReview_one": "{{count}} revisión de reglas",
+          "ruleReview_other": "{{count}} revisiones de reglas"
         },
-        "calls_one": "{{count}} llamada",
-        "calls_other": "{{count}} llamadas",
         "empty": "Este chat aún no ha gastado nada.",
-        "loadFailed": "No se pudo cargar el uso. Inténtalo de nuevo."
+        "loadFailed": "No se pudo cargar el uso. Inténtalo de nuevo.",
+        "includes": "Incluye {{calls}}, hechas fuera de sus turnos.",
+        "models_one": "{{count}} modelo",
+        "models_other": "{{count}} modelos"
       }
     },
     "settings": {
