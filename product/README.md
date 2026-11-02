@@ -1029,3 +1029,8 @@ earlier note:
   session, a member's and a guest's: the terminal shows until the
   transcript arrives and stays the view for an agent with none, and the
   Terminal tab is still there to type into the PTY.
+- `versions/mvp/05-screens.md` listed Claude Code's models as the newest
+  of each line, Haiku 4.5 among them. On 2026-11-02 the owner asked for
+  the list Claude's own picker shows: Opus 5.5, Fable 5.1, Sonnet 5.5 and
+  Haiku 5.5, then Haiku 4.5, Sonnet 5, Opus 5, Fable 5, Opus 4.8, 4.7, 4.6
+  and Sonnet 4.6 behind "More models" — the catalog's `legacy` models.

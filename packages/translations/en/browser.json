@@ -827,6 +827,7 @@
         "empty": "No model matches “{{query}}”.",
         "favourites": "Favourites",
         "favouritesEmpty": "Star a model to keep it here.",
+        "moreModels": "More models",
         "addFavourite": "Add {{model}} to favourites",
         "removeFavourite": "Remove {{model}} from favourites",
         "auto": "Auto"

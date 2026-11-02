@@ -1,6 +1,12 @@
 'use client';
 
-import { CircleQuestionMarkIcon, SearchIcon, StarIcon } from 'lucide-react';
+import {
+  ChevronDownIcon,
+  ChevronRightIcon,
+  CircleQuestionMarkIcon,
+  SearchIcon,
+  StarIcon,
+} from 'lucide-react';
 import * as React from 'react';
 
 import { cn } from '../lib/utils';
@@ -11,7 +17,8 @@ import { EffortSlider, type EffortStop } from './effort-slider';
 import { Input } from './input';
 import { Popover, PopoverTrigger } from './popover';
 
-type AgentModel = { value: string; label: string };
+/** `legacy`: an earlier generation, kept behind the agent's "More models" row. */
+type AgentModel = { value: string; label: string; legacy?: boolean };
 
 type AgentOption = {
   id: string;
@@ -37,6 +44,7 @@ type AgentModelSelectLabels = {
   faster: string;
   smarter: string;
   effortHint: string;
+  moreModels: string;
 };
 
 const DEFAULT_LABELS: AgentModelSelectLabels = {
@@ -49,6 +57,7 @@ const DEFAULT_LABELS: AgentModelSelectLabels = {
   smarter: 'Smarter',
   effortHint:
     'How long the agent may think before it answers. Higher effort costs more and takes longer.',
+  moreModels: 'More models',
 };
 
 /** Rows visible before the list scrolls. */
@@ -83,25 +92,38 @@ function rowKey(row: Row): string {
  * the list from the whole set the mode draws from, so a search does not
  * resize it under the cursor; `mixed` says the rows are from several agents
  * and each should wear its mark.
+ *
+ * An agent's tab lists its current models, then — when it has any — the
+ * "More models" row, `more`, and its legacy models under that once
+ * `expanded`. A search and Favourites reach legacy models like any other.
  */
 function rowsFor(
   agents: readonly AgentOption[],
-  { term, tab, favourites }: { term: string; tab: string; favourites: readonly string[] },
-): { rows: Row[]; total: number; mixed: boolean } {
+  {
+    term,
+    tab,
+    favourites,
+    expanded,
+  }: { term: string; tab: string; favourites: readonly string[]; expanded: boolean },
+): { rows: Row[]; total: number; mixed: boolean; more: Row[] | null } {
   const all = agents.flatMap(rowsOf);
   if (term) {
     const rows = all.filter(({ agent, model }) =>
       `${model?.label ?? ''} ${agent.label}`.toLowerCase().includes(term),
     );
-    return { rows, total: all.length, mixed: true };
+    return { rows, total: all.length, mixed: true, more: null };
   }
   if (tab === FAVOURITES) {
     const rows = all.filter((row) => favourites.includes(rowKey(row)));
-    return { rows, total: rows.length, mixed: true };
+    return { rows, total: rows.length, mixed: true, more: null };
   }
   const agent = agents.find((candidate) => candidate.id === tab);
-  const rows = agent ? rowsOf(agent) : [];
-  return { rows, total: rows.length, mixed: false };
+  const own = agent ? rowsOf(agent) : [];
+  const rows = own.filter((row) => !row.model?.legacy);
+  const legacy = own.filter((row) => row.model?.legacy);
+  if (legacy.length === 0) return { rows, total: rows.length, mixed: false, more: null };
+  const more = expanded ? legacy : [];
+  return { rows, total: rows.length + 1 + more.length, mixed: false, more };
 }
 
 /** The tab strip: Favourites when the caller keeps them, then one tab per agent's mark. */
@@ -243,6 +265,10 @@ function AgentModelEffortFoot<V extends string>({
  * that agent's mark. Picking a model picks its agent with it, so the pair is
  * always valid.
  *
+ * An agent's earlier generations, its `legacy` models, wait behind a "More
+ * models" row at the foot of its tab, open from the start when one of them is
+ * the current model; a search finds them like any other.
+ *
  * Two parts are the caller's to switch on. With `onFavouritesChange`, a
  * Favourites tab leads the strip and each row ends in a star; the caller keeps
  * the list, as `engineKey`s. With `effort`, the popup ends in the effort
@@ -296,12 +322,24 @@ function AgentModelSelect<V extends string = string>({
   const [open, setOpen] = React.useState(false);
   const [tab, setTab] = React.useState<string | null>(null);
   const [query, setQuery] = React.useState('');
+  // Null until the reader toggles it: open when the current model is a legacy one.
+  const [moreOpen, setMoreOpen] = React.useState<boolean | null>(null);
 
   const current = agents.find((agent) => agent.id === value.agent);
   const currentModel = current?.models.find((model) => model.value === value.model);
   const term = query.trim().toLowerCase();
   const shownTab = tab ?? value.agent;
-  const { rows, total, mixed } = rowsFor(agents, { term, tab: shownTab, favourites });
+  const shownAgent = agents.find((agent) => agent.id === shownTab);
+  const expanded =
+    moreOpen ??
+    (shownTab === value.agent &&
+      Boolean(shownAgent?.models.some((model) => model.legacy && model.value === value.model)));
+  const { rows, total, mixed, more } = rowsFor(agents, {
+    term,
+    tab: shownTab,
+    favourites,
+    expanded,
+  });
   const tabs = [
     ...(onFavouritesChange ? [{ id: FAVOURITES, label: label.favourites }] : []),
     ...agents.map((agent) => ({ id: agent.id, label: agent.label })),
@@ -312,7 +350,48 @@ function AgentModelSelect<V extends string = string>({
     if (!next) {
       setTab(null);
       setQuery('');
+      setMoreOpen(null);
     }
+  }
+
+  function renderRow(row: Row) {
+    const key = rowKey(row);
+    // A mark is aria-hidden: where agents mix, the name says whose row it is,
+    // since two agents can offer the same model.
+    const name = mixed && row.model
+      ? `${row.model.label} · ${row.agent.label}`
+      : (row.model?.label ?? row.agent.label);
+    return (
+      <div key={key} className="flex items-center">
+        <ChipSelectItem
+          density="engine"
+          selected={value.agent === row.agent.id && value.model === (row.model?.value ?? null)}
+          leading={mixed ? <AgentMark agent={row.agent.id} /> : undefined}
+          className="min-w-0 flex-1"
+          aria-label={name}
+          onClick={() => {
+            onValueChange({ agent: row.agent.id, model: row.model?.value ?? null });
+            onOpenChange(false);
+          }}
+        >
+          {row.model?.label ?? row.agent.label}
+        </ChipSelectItem>
+        {onFavouritesChange ? (
+          <AgentModelStar
+            starred={favourites.includes(key)}
+            name={name}
+            labels={label}
+            onToggle={() =>
+              onFavouritesChange(
+                favourites.includes(key)
+                  ? favourites.filter((kept) => kept !== key)
+                  : [...favourites, key],
+              )
+            }
+          />
+        ) : null}
+      </div>
+    );
   }
 
   return (
@@ -354,6 +433,7 @@ function AgentModelSelect<V extends string = string>({
           onSelect={(id) => {
             setTab(id);
             setQuery('');
+            setMoreOpen(null);
           }}
           aria-label={ariaLabel}
         />
@@ -382,45 +462,26 @@ function AgentModelSelect<V extends string = string>({
           // 6px under the last row, so it never sits on the effort foot's hairline.
           className="px-1 pt-1 pb-1.5"
         >
-          {rows.map((row) => {
-            const key = rowKey(row);
-            // A mark is aria-hidden: where agents mix, the name says whose row it is,
-            // since two agents can offer the same model.
-            const name = mixed && row.model
-              ? `${row.model.label} · ${row.agent.label}`
-              : (row.model?.label ?? row.agent.label);
-            return (
-              <div key={key} className="flex items-center">
-                <ChipSelectItem
-                  density="engine"
-                  selected={value.agent === row.agent.id && value.model === (row.model?.value ?? null)}
-                  leading={mixed ? <AgentMark agent={row.agent.id} /> : undefined}
-                  className="min-w-0 flex-1"
-                  aria-label={name}
-                  onClick={() => {
-                    onValueChange({ agent: row.agent.id, model: row.model?.value ?? null });
-                    onOpenChange(false);
-                  }}
-                >
-                  {row.model?.label ?? row.agent.label}
-                </ChipSelectItem>
-                {onFavouritesChange ? (
-                  <AgentModelStar
-                    starred={favourites.includes(key)}
-                    name={name}
-                    labels={label}
-                    onToggle={() =>
-                      onFavouritesChange(
-                        favourites.includes(key)
-                          ? favourites.filter((kept) => kept !== key)
-                          : [...favourites, key],
-                      )
-                    }
-                  />
-                ) : null}
-              </div>
-            );
-          })}
+          {rows.map(renderRow)}
+          {more ? (
+            <ChipSelectItem
+              density="engine"
+              role="button"
+              aria-expanded={expanded}
+              className="text-fg-muted"
+              trailing={
+                expanded ? (
+                  <ChevronDownIcon className="size-3.5 shrink-0" aria-hidden />
+                ) : (
+                  <ChevronRightIcon className="size-3.5 shrink-0" aria-hidden />
+                )
+              }
+              onClick={() => setMoreOpen(!expanded)}
+            >
+              {label.moreModels}
+            </ChipSelectItem>
+          ) : null}
+          {more?.map(renderRow)}
         </ChipSelectList>
         {effort ? <AgentModelEffortFoot effort={effort} labels={label} /> : null}
       </ChipSelectPopup>

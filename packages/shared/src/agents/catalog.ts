@@ -21,6 +21,7 @@
  */
 
 import {
+  CLAUDE_4_6_LEVELS,
   CLAUDE_LEVELS,
   CODEX_LEVELS,
   GROK_4_5_LEVELS,
@@ -138,6 +139,13 @@ export interface CodingAgentModel {
    * slider.
    */
   readonly effort?: CodingAgentEffort;
+  /**
+   * An earlier generation the CLI still takes: offered behind "More models"
+   * rather than in the agent's own list, the way the vendor's own picker
+   * keeps it, so the everyday choices stay a short list. A session can still
+   * run on one, and one already chosen stays chosen.
+   */
+  readonly legacy?: true;
 }
 
 /**
@@ -431,9 +439,14 @@ export const CODING_AGENTS: Readonly<Record<CodingAgentId, CodingAgentDefinition
     // A pinned id can only go stale in the open.
     //
     // The newest of each line, in the order Claude's own model picker lists
-    // them; Opus 5.5, the everyday model of the four, is the default.
-    // Each effort default is what claude runs the model at unasked; Haiku has
-    // none, since `--effort` changes nothing claude sends for it.
+    // them; Opus 5.5, the everyday model of the four, is the default. Then,
+    // marked `legacy`, the earlier generations the picker keeps under "More
+    // models", in its order.
+    //
+    // Each effort default is what claude runs the model at unasked. Opus 4.6
+    // and Sonnet 4.6 stop short of `xhigh`, which arrived with Opus 4.7, and
+    // Haiku 4.5 has no effort at all, since `--effort` changes nothing claude
+    // sends for it.
     models: Object.freeze([
       Object.freeze({
         id: 'claude-opus-5-5',
@@ -451,7 +464,54 @@ export const CODING_AGENTS: Readonly<Record<CodingAgentId, CodingAgentDefinition
         label: 'Sonnet 5.5',
         effort: levels(CLAUDE_LEVELS, 'medium'),
       }),
-      Object.freeze({ id: 'claude-haiku-4-5', label: 'Haiku 4.5' }),
+      Object.freeze({
+        id: 'claude-haiku-5-5',
+        label: 'Haiku 5.5',
+        effort: levels(CLAUDE_LEVELS, 'medium'),
+      }),
+      Object.freeze({ id: 'claude-haiku-4-5', label: 'Haiku 4.5', legacy: true as const }),
+      Object.freeze({
+        id: 'claude-sonnet-5',
+        label: 'Sonnet 5',
+        legacy: true as const,
+        effort: levels(CLAUDE_LEVELS, 'xhigh'),
+      }),
+      Object.freeze({
+        id: 'claude-opus-5',
+        label: 'Opus 5',
+        legacy: true as const,
+        effort: levels(CLAUDE_LEVELS, 'high'),
+      }),
+      Object.freeze({
+        id: 'claude-fable-5',
+        label: 'Fable 5',
+        legacy: true as const,
+        effort: levels(CLAUDE_LEVELS, 'xhigh'),
+      }),
+      Object.freeze({
+        id: 'claude-opus-4-8',
+        label: 'Opus 4.8',
+        legacy: true as const,
+        effort: levels(CLAUDE_LEVELS, 'xhigh'),
+      }),
+      Object.freeze({
+        id: 'claude-opus-4-7',
+        label: 'Opus 4.7',
+        legacy: true as const,
+        effort: levels(CLAUDE_LEVELS, 'xhigh'),
+      }),
+      Object.freeze({
+        id: 'claude-opus-4-6',
+        label: 'Opus 4.6',
+        legacy: true as const,
+        effort: levels(CLAUDE_4_6_LEVELS, 'high'),
+      }),
+      Object.freeze({
+        id: 'claude-sonnet-4-6',
+        label: 'Sonnet 4.6',
+        legacy: true as const,
+        effort: levels(CLAUDE_4_6_LEVELS, 'high'),
+      }),
     ]),
     launch: Object.freeze({
       model: Object.freeze(['--model', '<model>']),
