@@ -2,7 +2,9 @@
  * Which bots' chats show the usage card (`/usage`, `25-bots.md` §4.1): it is
  * the console's alone, never a message, so it lives here and not in the
  * conversation, until it is closed or the tab goes. A store outside React
- * because the composer opens it and the chat column draws it.
+ * because the composer opens it and the chat column draws it. It is the only
+ * card of its kind: a second one makes this one store keyed by card, not a
+ * second store beside it.
  */
 
 const open = new Set<string>();
