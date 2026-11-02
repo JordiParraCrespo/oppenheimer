@@ -97,6 +97,14 @@ func SaveShared(filesDir, sessionID, path, caption string, now time.Time) (Share
 	if err != nil {
 		return Shared{}, err
 	}
+	if len(encoded) > SharedEntryMax {
+		// Text JSON escapes (`<` is six bytes) can outgrow the raw size the
+		// text was allowed at; the file then goes by name, as a large one does.
+		shared.Text, shared.Preview = nil, nil
+		if encoded, err = json.Marshal(shared); err != nil {
+			return Shared{}, err
+		}
+	}
 	dir := filepath.Join(filesDir, sessionID, sharedDir)
 	if err := os.MkdirAll(dir, 0o700); err != nil {
 		return Shared{}, err
@@ -198,16 +206,14 @@ func clip(s string, max int) string {
 	return s[:max]
 }
 
-// sharedEntries is every entry saved under dir, in the order they were
-// shared, by file name; a name already in seen is left out and the ones
-// read are added to it.
-func sharedEntries(dir string, seen map[string]bool) []string {
-	names, err := os.ReadDir(dir)
+// sharedEntries is every entry saved under dir that seen does not hold, in
+// the order they were shared, with the file name of each.
+func sharedEntries(dir string, seen map[string]bool) (entries, names []string) {
+	items, err := os.ReadDir(dir)
 	if err != nil {
-		return nil
+		return nil, nil
 	}
-	var entries []string
-	for _, item := range names {
+	for _, item := range items {
 		name := item.Name()
 		if seen[name] || !strings.HasSuffix(name, ".json") || strings.HasPrefix(name, ".") {
 			continue
@@ -216,10 +222,9 @@ func sharedEntries(dir string, seen map[string]bool) []string {
 		if err != nil || len(raw) > SharedEntryMax || !json.Valid(raw) {
 			continue
 		}
-		seen[name] = true
-		entries = append(entries, string(raw))
+		entries, names = append(entries, string(raw)), append(names, name)
 	}
-	return entries
+	return entries, names
 }
 
 // SharedDir is where a session's shared entries are kept under filesDir.
