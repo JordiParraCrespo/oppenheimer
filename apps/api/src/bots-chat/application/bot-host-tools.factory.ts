@@ -195,7 +195,7 @@ export class BotHostToolsFactory implements BotToolArea {
           `- group: ${group} (${SESSION_GROUP_PHRASES[group]})`,
           `- state: ${session.state}`,
           `- project: ${projectLabel(session.projectId, projects)}`,
-          `- host: ${session.hostId}`,
+          `- host: ${session.hostId ?? "none (it runs in its vendor's cloud)"}`,
           `- agent: ${session.agent}`,
           `- started by: ${session.origin}`,
           `- where: ${session.folderPath ? `folder ${session.folderPath}` : `branch ${session.branch ?? 'none yet'}`}`,
@@ -204,6 +204,10 @@ export class BotHostToolsFactory implements BotToolArea {
         ];
         if (session.cloudSessionId) {
           lines.push(`- cloud session: ${cloudSessionUrl(session.agent, session.cloudSessionId)}`);
+        } else if (session.cloudRun) {
+          lines.push(
+            `- cloud session: ${session.cloudRun.url ?? 'no link yet'} (${session.cloudRun.status}${session.cloudRun.pullRequestUrl ? `, pull request ${session.cloudRun.pullRequestUrl}` : ''})`,
+          );
         }
         if (turn) lines.push(...describeTurn(turn));
         if (session.pendingDecision) {
