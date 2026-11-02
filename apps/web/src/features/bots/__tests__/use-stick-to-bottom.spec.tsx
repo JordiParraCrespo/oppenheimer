@@ -77,4 +77,23 @@ describe('useStickToBottom', () => {
     act(() => grow?.());
     expect(box.scrollTop).toBe(1000);
   });
+
+  it('turns scroll anchoring off while it follows the end, and back on while you read', () => {
+    // What breaks this: anchoring left on while following, so messages that
+    // leave the top of a full window move the view up, which reads as the
+    // reader leaving the end, and the chat stops following; or anchoring
+    // left off while reading, so the same messages move the reader's place.
+    const view = render(<Harness sent={['m1', 'm2', 'm3']} />);
+    const box = view.getByTestId('scroller');
+    measure(box);
+    act(() => grow?.());
+    expect(box.style.overflowAnchor).toBe('none');
+
+    scrollUp(box);
+    expect(box.style.overflowAnchor).toBe('');
+
+    view.rerender(<Harness sent={['m2', 'm3', 'm4']} />);
+    act(() => grow?.());
+    expect(box.style.overflowAnchor).toBe('none');
+  });
 });
