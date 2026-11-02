@@ -372,6 +372,8 @@ export class BotTurnRepository
           failure: turn.failure,
           inputTokens: turn.inputTokens,
           outputTokens: turn.outputTokens,
+          cacheReadTokens: turn.cacheReadTokens,
+          cacheWriteTokens: turn.cacheWriteTokens,
           contextTokens: record.contextTokens,
           contextWindow: record.contextWindow,
           planLimits: record.planLimits,
@@ -482,6 +484,12 @@ export class BotTurnRepository
         organizationId,
         botId,
       ]);
+      // What the chat spent outside its turns goes with them: `/usage` counts one chat
+      // (IDX_bot_model_call_bot).
+      await manager.query(
+        `DELETE FROM bot_model_call WHERE "organizationId" = $1 AND "botId" = $2`,
+        [organizationId, botId],
+      );
       return 'cleared';
     });
   }

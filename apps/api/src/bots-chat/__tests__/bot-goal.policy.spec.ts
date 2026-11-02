@@ -19,6 +19,7 @@ import {
   goalKeyPrefix,
   goalOutcome,
   goalSourceKey,
+  refuseConsoleCommand,
 } from '../domain/bot-goal.policy';
 
 function goal(continuations = 0, limit = 3): BotGoalEntity {
@@ -179,9 +180,20 @@ describe('goalFromMessage', () => {
     expect(goalFromMessage('what is the goal?', turn)).toBeNull();
   });
 
-  it('refuses /goal alone and /goal clear, which the console runs without a turn', () => {
-    expect(() => goalFromMessage('/goal', turn)).toThrow(ArgumentInvalidException);
-    expect(() => goalFromMessage('/goal stop', turn)).toThrow(ArgumentInvalidException);
+  it('sets nothing for /goal alone or /goal clear, which the console runs', () => {
+    expect(goalFromMessage('/goal', turn)).toBeNull();
+    expect(goalFromMessage('/goal stop', turn)).toBeNull();
+  });
+});
+
+describe('refuseConsoleCommand', () => {
+  it('refuses /goal alone, /goal clear and /usage as messages, and lets the rest through', () => {
+    for (const content of ['/goal', '/goal stop', '/usage', '/usage today']) {
+      expect(() => refuseConsoleCommand(content)).toThrow(ArgumentInvalidException);
+    }
+    for (const content of ['/goal CI is green', '/usages', 'what is my usage?']) {
+      expect(() => refuseConsoleCommand(content)).not.toThrow();
+    }
   });
 });
 

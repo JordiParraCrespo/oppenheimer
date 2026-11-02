@@ -562,10 +562,49 @@ The owner chose them in this order. Only the first is built:
 | Command | Does | State |
 |---------|------|-------|
 | `/goal <condition>` | Sets the bot's goal and starts on it (above). `/goal` alone keeps send off and says the condition is missing; `/goal clear` (or `stop`, `off`, `reset`, `none`, `cancel`) stops the goal, as Stop does, and sends nothing. The API refuses both as messages (`GENERIC.ARGUMENT_INVALID`): they are `GET` and `DELETE /bots/:id/goal` | Built |
-| `/usage` | What the chat has cost: tokens by turn, the plan windows on a sign-in, how full the context is | Next |
+| `/usage` | Opens the usage card: what the chat has spent, in tokens (below). The API refuses it as a message, as it does `/goal` alone | Built |
 | `/loop [interval] <prompt>` or `/schedule` | Run a prompt on an interval, or on a schedule, as a routine of the bot's (26) | Planned |
 | `/plan <idea>` | Think before acting: break the idea into steps, or tasks on the plan, and ask before starting | Planned |
 | `/grill-me` | Interview the person about a plan, one branch of the decision tree at a time, until it holds (from this repo's own `grill-me` skill) | Planned |
+
+**`/usage`** (2026-11-02, from Claude Code's `/usage` and its usage card).
+The console opens a card over the chat and sends the bot nothing
+(`GET /bots/:id/usage`). It reads top to bottom:
+
+- **Room left**, the composer meter's popover written out: the context
+  against the model's window, and on a ChatGPT sign-in the 5-hour and weekly
+  windows with when each resets.
+- **This chat**, since its first turn: turns that ran, time at work (each
+  turn's start to its end, summed), tokens in and out, the cache hit rate
+  (the share of the input read from the provider's prompt cache), and each
+  model's share of what the turns spent. Copy puts the card on the clipboard
+  as text.
+- **Breakdown**, one block per model the turns ran on: Input (sent fresh),
+  Output, Cache read and Cache write, which add up to what the turns sent.
+- **Outside its turns**: the calls the bot makes on its owner's key that are
+  not a turn, by purpose (goal reviews, summaries, rule reviews), each with
+  its calls and tokens. Without them a long goal would look cheaper than it
+  is.
+
+Where it comes from:
+
+- Each engine reports a turn's cache reads and writes beside its input
+  (Anthropic's `cache_read_input_tokens` and `cache_creation_input_tokens`,
+  the Responses API's `cached_tokens`; OpenAI's cache has no writes), and the
+  turn keeps them (`bot_turn."cacheReadTokens"`, `"cacheWriteTokens"`). They
+  are part of the input, never on top of it. A subagent's tokens count in
+  its turn, its cache share does not.
+- A call outside a turn is one row of `bot_model_call`, written after it
+  answers, when the provider said what it spent (`BotCompletionResolver`).
+  A record that fails is logged and the call stands.
+- Clearing the chat clears both, so the card always counts one chat.
+
+**Not built:** money. Nothing in Oppenheimer knows a model's prices, a
+price depends on caching the card would have to price per provider, and a
+ChatGPT sign-in pays nothing per token. Prices are a table of their own,
+added on top of these counts. Nor a chart over time (Claude Code's card has
+none either); the counts are kept per turn, so a day-by-day view can come
+from the same rows.
 
 Built-ins that change the bot's code tools are not here: a bot has no
 shell, so `/code-review`, `/simplify` and their kind stay the coding
@@ -1173,4 +1212,9 @@ The decisions it produced:
   `end_goal`" as the only way a goal is found done, and its bound of 5
   continuations, up to 10: a person's goal takes 20, a bot's 5 unless it
   asks for up to 20, and the condition holds 2,000 characters, not 500.
-
+- 2026-11-02: **`/usage` is built** (§4.1). The owner asked for a card like
+  Claude Code's: room left, this chat's figures, a breakdown by model. It
+  counts tokens only, with cache reads and writes kept per turn, and it
+  counts the calls a bot makes outside its turns (goal reviews, summaries,
+  rule reviews), which nothing recorded before. Money is left out until
+  Oppenheimer keeps prices.

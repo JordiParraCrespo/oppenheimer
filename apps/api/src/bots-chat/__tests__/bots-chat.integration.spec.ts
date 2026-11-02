@@ -58,12 +58,14 @@ import { BotGoalOrmEntity } from '../database/bot-goal.orm-entity';
 import { BotGoalRepository } from '../database/bot-goal.repository';
 import { BotMessageOrmEntity } from '../database/bot-message.orm-entity';
 import { BotMessageRepository } from '../database/bot-message.repository';
+import { BotModelCallOrmEntity } from '../database/bot-model-call.orm-entity';
 import { BotQuestionOrmEntity } from '../database/bot-question.orm-entity';
 import { BotQuestionRepository } from '../database/bot-question.repository';
 import { BotSubscriptionOrmEntity } from '../database/bot-subscription.orm-entity';
 import { BotSubscriptionRepository } from '../database/bot-subscription.repository';
 import { BotTurnOrmEntity } from '../database/bot-turn.orm-entity';
 import { BotTurnRepository } from '../database/bot-turn.repository';
+import { BotUsageRepository } from '../database/bot-usage.repository';
 import { BotApprovalEntity } from '../domain/bot-approval.entity';
 import { stoppedLine } from '../domain/bot-approval.policy';
 import { BotAttachmentEntity } from '../domain/bot-attachment.entity';
@@ -121,6 +123,7 @@ describe('bots chat (integration)', () => {
   let attachments: BotAttachmentRepository;
   let subscriptions: BotSubscriptionRepository;
   let goals: BotGoalRepository;
+  let usage: BotUsageRepository;
   let organizationId: string;
   let userId: string;
 
@@ -154,6 +157,7 @@ describe('bots chat (integration)', () => {
         BotAttachmentOrmEntity,
         BotSubscriptionOrmEntity,
         BotGoalOrmEntity,
+        BotModelCallOrmEntity,
         OutboxMessageSchema,
       ],
       synchronize: false,
@@ -233,6 +237,7 @@ describe('bots chat (integration)', () => {
       new BotGoalMapper(),
       new BotMessageMapper(),
     );
+    usage = new BotUsageRepository(dataSource.getRepository(BotModelCallOrmEntity));
   }, 180000);
 
   afterAll(async () => {
@@ -2205,6 +2210,97 @@ describe('bots chat (integration)', () => {
   // continuation (two would run); an ended goal ending again with a second
   // line; a turn's end owing the goal's job when the bot has no goal, or not
   // owing it when the goal was set in that very turn.
+  // What breaks this: a turn's cache tokens lost on the way to the row; a
+  // queued turn that never ran counted; a sum read as a string; what a goal
+  // review spent missing from /usage, or outliving the chat it was for.
+  describe('usage (25-bots.md §4.1, /usage)', () => {
+    it('sums the turns that ran by model, and the calls outside them by purpose', async () => {
+      const bot = await create('Spender');
+      const ran = await runningTurn(bot);
+      ran.end('completed', new Date((ran.startedAt ?? new Date()).getTime() + 2_000), {
+        inputTokens: 1_000,
+        outputTokens: 40,
+        cacheReadTokens: 800,
+        cacheWriteTokens: 100,
+      });
+      expect(await turns.finish(ran, null)).toBe(true);
+      const waiting = sent(bot, 'Not yet');
+      await turns.enqueue(waiting.turn, waiting.message, null);
+      const call = {
+        organizationId: bot.organizationId,
+        botId: bot.id,
+        provider: 'glm' as const,
+        model: 'glm-5.3',
+        inputTokens: 300,
+        outputTokens: 5,
+        cacheReadTokens: 200,
+        cacheWriteTokens: 0,
+      };
+      await usage.recordCall({ ...call, purpose: 'goal_review' });
+      await usage.recordCall({ ...call, purpose: 'goal_review' });
+      await usage.recordCall({ ...call, purpose: 'summary' });
+
+      const found = await usage.findForBot(bot.organizationId, bot.id);
+      expect(found).toMatchObject({ turns: 1, activeMs: 2_000 });
+      expect(found.since).not.toBeNull();
+      expect(found.models).toEqual([
+        {
+          provider: ran.provider,
+          model: ran.model,
+          turns: 1,
+          inputTokens: 1_000,
+          outputTokens: 40,
+          cacheReadTokens: 800,
+          cacheWriteTokens: 100,
+        },
+      ]);
+      expect(found.background).toEqual([
+        {
+          purpose: 'goal_review',
+          calls: 2,
+          inputTokens: 600,
+          outputTokens: 10,
+          cacheReadTokens: 400,
+          cacheWriteTokens: 0,
+        },
+        {
+          purpose: 'summary',
+          calls: 1,
+          inputTokens: 300,
+          outputTokens: 5,
+          cacheReadTokens: 200,
+          cacheWriteTokens: 0,
+        },
+      ]);
+    });
+
+    it('starts again with the chat: clearing the conversation clears what it spent', async () => {
+      const bot = await create('Fresh');
+      const ran = await runningTurn(bot);
+      ran.end('completed', new Date(), { inputTokens: 10, outputTokens: 1 });
+      await turns.finish(ran, null);
+      await usage.recordCall({
+        organizationId: bot.organizationId,
+        botId: bot.id,
+        purpose: 'summary',
+        provider: 'glm',
+        model: 'glm-5.3',
+        inputTokens: 1,
+        outputTokens: 1,
+        cacheReadTokens: 0,
+        cacheWriteTokens: 0,
+      });
+      expect(await turns.clearConversation(bot.organizationId, bot.id)).toBe('cleared');
+      expect(await usage.findForBot(bot.organizationId, bot.id)).toEqual({
+        since: null,
+        turns: 0,
+        activeMs: 0,
+        models: [],
+        background: [],
+      });
+    });
+  });
+
   describe('goals (25-bots.md §4.1)', () => {
     function goalFor(bot: BotEntity, originTurnId: string, objective = 'Ship it') {
       return BotGoalEntity.set({

@@ -139,7 +139,12 @@ export class BotTurnContextResolver {
         approvals: this.approvals,
         permissions,
         // The owner's rules are read on the turn's own model, only when there are some.
-        ...(permissions.rules.length > 0 && { reviewer: this.reviewers.create(model) }),
+        ...(permissions.rules.length > 0 && {
+          reviewer: this.reviewers.create(model, {
+            organizationId: turn.organizationId,
+            botId: bot.id,
+          }),
+        }),
       };
       // A child runs on the turn's model and key, with the turn's read-only
       // tools and its budget: it reaches no further than the bot does.

@@ -77,9 +77,10 @@ export function parseBotSlashCommand(message: string): BotSlashCommand | null {
  * The commands Oppenheimer runs itself, whatever skills the bot has
  * (`25-bots.md` §4.1, "Built-in commands"; from Claude Code's): a built-in
  * drives a feature the product owns, where a skill only puts words in front
- * of the bot. `goal` sets, shows or clears the bot's goal.
+ * of the bot. `goal` sets, shows or clears the bot's goal; `usage` shows
+ * what the chat has spent, and is the console's alone.
  */
-export const BOT_BUILT_IN_COMMANDS = ['goal'] as const;
+export const BOT_BUILT_IN_COMMANDS = ['goal', 'usage'] as const;
 export type BotBuiltInCommand = (typeof BOT_BUILT_IN_COMMANDS)[number];
 
 /**
@@ -102,6 +103,17 @@ export type BotGoalCommand =
   | { kind: 'show' }
   | { kind: 'clear' }
   | { kind: 'set'; condition: string };
+
+/**
+ * Whether a message is a built-in the console runs itself and never sends:
+ * `/goal` alone, `/goal clear` (and its aliases), and `/usage`, whatever
+ * follows it. `/goal <condition>` is a message: the API sets the goal.
+ */
+export function isBotConsoleCommand(command: BotSlashCommand | null): boolean {
+  if (command?.name === 'usage') return true;
+  const goal = botGoalCommandOf(command);
+  return goal !== null && goal.kind !== 'set';
+}
 
 export function botGoalCommandOf(command: BotSlashCommand | null): BotGoalCommand | null {
   if (command?.name !== 'goal') return null;

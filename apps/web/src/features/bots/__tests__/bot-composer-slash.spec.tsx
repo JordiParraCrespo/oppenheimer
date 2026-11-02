@@ -12,13 +12,15 @@ import { BotComposer } from '../sections/bot-composer';
  * letting the person send what they typed; a skill only the bot may use
  * offered as a command; `/goal` missing from the menu, or a skill named
  * `goal` offered in its place; `/goal clear` sent to the bot as a message
- * instead of stopping the goal; `/goal` with no condition sent at all.
+ * instead of stopping the goal; `/goal` with no condition sent at all;
+ * `/usage` sent to the bot instead of opening the usage card.
  */
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
     t: (key: string, options?: { name?: string }) =>
       options?.name === undefined ? key : `${key}:${options.name}`,
+    i18n: { resolvedLanguage: 'en', language: 'en' },
   }),
   initReactI18next: { type: '3rdParty', init: () => {} },
 }));
@@ -59,6 +61,11 @@ vi.mock('@oppenheimer/frontend-consumer/react', () => ({
   useSendBotMessage: () => ({ mutate: state.send, reset: vi.fn(), error: null, isPending: false }),
   useUploadBotImage: () => ({ mutateAsync: vi.fn() }),
   useCancelBotTurn: () => ({ mutate: vi.fn(), reset: vi.fn(), error: null, isPending: false }),
+  useSuspenseBotUsage: () => ({
+    data: { since: null, turns: 0, activeMs: 0, models: [], background: [] },
+    error: null,
+  }),
+  useBotRoomLeft: () => ({ context: null, planLimits: null }),
   useClearBotGoal: () => ({
     mutate: state.clearGoal,
     reset: vi.fn(),
@@ -115,6 +122,7 @@ describe('BotComposer’s / menu', () => {
     expect(screen.getByRole('listbox', { name: 'bots.chat.slash.menu' })).toBeTruthy();
     expect(options()).toEqual([
       '/goalbots.chat.slash.builtIn.goal',
+      '/usagebots.chat.slash.builtIn.usage',
       '/release-notesDoes release-notes.',
       '/reviewDoes review.',
       '/triageDoes triage.',
@@ -193,5 +201,17 @@ describe('BotComposer’s / menu', () => {
     fireEvent.keyDown(field, { key: 'Enter' });
     expect(state.send).not.toHaveBeenCalled();
     expect(screen.getAllByText('bots.chat.goal.needsCondition').length).toBeGreaterThan(0);
+  });
+
+  it('opens the usage card on /usage, sending the bot nothing', () => {
+    const field = composer();
+    type(field, '/usage');
+    // The menu is open on the command: Enter picks it, a second Enter runs it.
+    fireEvent.keyDown(field, { key: 'Enter' });
+    fireEvent.keyDown(field, { key: 'Enter' });
+    expect(state.send).not.toHaveBeenCalled();
+    expect(screen.getByRole('dialog', { name: 'bots.chat.usage.title' })).toBeTruthy();
+    expect(screen.getByText('bots.chat.usage.empty')).toBeTruthy();
+    expect(botDraft('b1')).toBe('');
   });
 });

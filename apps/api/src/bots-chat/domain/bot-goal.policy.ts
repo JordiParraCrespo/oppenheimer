@@ -5,6 +5,7 @@ import {
   type BotTurnFailure,
   type BotTurnStatus,
   botGoalCommandOf,
+  isBotConsoleCommand,
   parseBotSlashCommand,
   type Scope,
 } from '@oppenheimer/shared';
@@ -57,19 +58,12 @@ export interface GoalSettingTurn {
 /**
  * The goal a person's message sets (`25-bots.md` §4.1, "Built-in
  * commands"): `/goal <condition>` sets one on the turn it queues, with the
- * whole of the limit; null for any other message. `/goal` alone and
- * `/goal clear` are refused: they show and stop the goal, which the console
- * does with `GET` and `DELETE /bots/:id/goal`, and as a message they would
- * spend a turn to say what the notice already shows.
+ * whole of the limit; null for any other message, `/goal` alone and
+ * `/goal clear` included, which `refuseConsoleCommand` refuses first.
  */
 export function goalFromMessage(content: string, turn: GoalSettingTurn): BotGoalEntity | null {
   const command = botGoalCommandOf(parseBotSlashCommand(content));
-  if (!command) return null;
-  if (command.kind !== 'set') {
-    throw new ArgumentInvalidException(
-      '/goal alone and /goal clear are not messages: read the goal with GET /bots/:id/goal and stop it with DELETE /bots/:id/goal',
-    );
-  }
+  if (command?.kind !== 'set') return null;
   return BotGoalEntity.set({
     organizationId: turn.organizationId,
     botId: turn.botId,
@@ -79,6 +73,19 @@ export function goalFromMessage(content: string, turn: GoalSettingTurn): BotGoal
     credentialScopes: turn.credentialScopes,
     timeZone: turn.timeZone,
   });
+}
+
+/**
+ * Refuses a message that is a built-in the console runs itself (`/goal`
+ * alone, `/goal clear`, `/usage`): as a message it would spend a turn to say
+ * what the console shows, and do nothing it asks.
+ */
+export function refuseConsoleCommand(content: string): void {
+  if (isBotConsoleCommand(parseBotSlashCommand(content))) {
+    throw new ArgumentInvalidException(
+      '/goal alone, /goal clear and /usage are not messages: read the goal with GET /bots/:id/goal, stop it with DELETE /bots/:id/goal, and read the usage with GET /bots/:id/usage',
+    );
+  }
 }
 
 /** What the end of a turn means for the goal, before the reviewer is asked. */

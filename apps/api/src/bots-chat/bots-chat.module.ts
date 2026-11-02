@@ -65,6 +65,7 @@ import { BotQuestionMapper } from './bot-question.mapper';
 import { BotSubscriptionMapper } from './bot-subscription.mapper';
 import { BotToolPermissionMapper } from './bot-tool-permission.mapper';
 import { BotTurnMapper } from './bot-turn.mapper';
+import { BotUsageMapper } from './bot-usage.mapper';
 import {
   BOT_APPROVAL_REPOSITORY,
   BOT_ATTACHMENT_FILES,
@@ -81,6 +82,7 @@ import {
   BOT_SUBSCRIPTION_REPOSITORY,
   BOT_TOOL_PERMISSION_REPOSITORY,
   BOT_TURN_REPOSITORY,
+  BOT_USAGE_REPOSITORY,
   OWNER_HOSTS,
   WEB_PAGE,
 } from './bots-chat.di-tokens';
@@ -128,6 +130,7 @@ import { BotGoalOrmEntity } from './database/bot-goal.orm-entity';
 import { BotGoalRepository } from './database/bot-goal.repository';
 import { BotMessageOrmEntity } from './database/bot-message.orm-entity';
 import { BotMessageRepository } from './database/bot-message.repository';
+import { BotModelCallOrmEntity } from './database/bot-model-call.orm-entity';
 import { BotPermissionRuleOrmEntity } from './database/bot-permission-rule.orm-entity';
 import { BotPermissionRuleRepository } from './database/bot-permission-rule.repository';
 import { BotQuestionOrmEntity } from './database/bot-question.orm-entity';
@@ -138,6 +141,7 @@ import { BotToolPermissionOrmEntity } from './database/bot-tool-permission.orm-e
 import { BotToolPermissionRepository } from './database/bot-tool-permission.repository';
 import { BotTurnOrmEntity } from './database/bot-turn.orm-entity';
 import { BotTurnRepository } from './database/bot-turn.repository';
+import { BotUsageRepository } from './database/bot-usage.repository';
 import { BotApprovalsProcessor } from './infrastructure/bot-approvals.processor';
 import { BotAttachmentRetentionProcessor } from './infrastructure/bot-attachment-retention.processor';
 import { BotRoutineTarget } from './infrastructure/bot-routine-target.adapter';
@@ -163,6 +167,8 @@ import { FindBotPermissionsHttpController } from './queries/find-bot-permissions
 import { FindBotPermissionsQueryHandler } from './queries/find-bot-permissions/find-bot-permissions.query-handler';
 import { FindBotQuestionQueryHandler } from './queries/find-bot-question/find-bot-question.query-handler';
 import { FindBotTurnQueryHandler } from './queries/find-bot-turn/find-bot-turn.query-handler';
+import { FindBotUsageHttpController } from './queries/find-bot-usage/find-bot-usage.http.controller';
+import { FindBotUsageQueryHandler } from './queries/find-bot-usage/find-bot-usage.query-handler';
 import { FindPendingBotQuestionHttpController } from './queries/find-pending-bot-question/find-pending-bot-question.http.controller';
 import { FindPendingBotQuestionQueryHandler } from './queries/find-pending-bot-question/find-pending-bot-question.query-handler';
 import { FindWorkspaceBotApprovalsHttpController } from './queries/find-workspace-bot-approvals/find-workspace-bot-approvals.http.controller';
@@ -183,6 +189,7 @@ const httpControllers = [
   CancelBotTurnHttpController,
   ClearBotGoalHttpController,
   FindBotGoalHttpController,
+  FindBotUsageHttpController,
   StreamBotHttpController,
   FindBotApprovalsHttpController,
   FindWorkspaceBotApprovalsHttpController,
@@ -216,6 +223,7 @@ const commandHandlers: Provider[] = [
   ContinueBotGoalCommandHandler,
   ClearBotGoalCommandHandler,
   FindBotGoalQueryHandler,
+  FindBotUsageQueryHandler,
   SetBotToolDecisionCommandHandler,
   CreateBotPermissionRuleCommandHandler,
   DeleteBotPermissionRuleCommandHandler,
@@ -263,6 +271,7 @@ const queryHandlers: Provider[] = [
       BotAttachmentOrmEntity,
       BotSubscriptionOrmEntity,
       BotGoalOrmEntity,
+      BotModelCallOrmEntity,
       BotToolPermissionOrmEntity,
       BotPermissionRuleOrmEntity,
     ]),
@@ -289,6 +298,7 @@ const queryHandlers: Provider[] = [
     BotAttachmentMapper,
     BotSubscriptionMapper,
     BotGoalMapper,
+    BotUsageMapper,
     BotTurnContextResolver,
     BotTurnOpeningResolver,
     BotMessageAttachmentsResolver,
@@ -356,6 +366,7 @@ const queryHandlers: Provider[] = [
     { provide: BOT_SUBSCRIPTION_REPOSITORY, useClass: BotSubscriptionRepository },
     { provide: BOT_STALL_CHECKS, useClass: OutboxBotStallChecksAdapter },
     { provide: BOT_GOAL_REPOSITORY, useClass: BotGoalRepository },
+    { provide: BOT_USAGE_REPOSITORY, useClass: BotUsageRepository },
     { provide: BOT_TOOL_PERMISSION_REPOSITORY, useClass: BotToolPermissionRepository },
     { provide: BOT_PERMISSION_RULE_REPOSITORY, useClass: BotPermissionRuleRepository },
     { provide: BOT_ATTACHMENT_FILES, useClass: StorageBotAttachmentFilesAdapter },

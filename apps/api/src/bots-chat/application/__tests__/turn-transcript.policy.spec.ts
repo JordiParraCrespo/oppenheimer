@@ -45,7 +45,7 @@ describe('TurnTranscript', () => {
       { type: 'text.delta', text: 'Hel' },
       { type: 'text.delta', text: 'lo' },
       { type: 'text.done', text: 'Hello' },
-      { type: 'usage', inputTokens: 10, outputTokens: 2 },
+      { type: 'usage', inputTokens: 10, outputTokens: 2, cacheReadTokens: 6, cacheWriteTokens: 1 },
       { type: 'done', reason: 'completed' },
     ]);
     expect(writes.filter((write) => write.kind === 'text')).toHaveLength(2);
@@ -58,6 +58,8 @@ describe('TurnTranscript', () => {
       failure: null,
       inputTokens: 10,
       outputTokens: 2,
+      cacheReadTokens: 6,
+      cacheWriteTokens: 1,
       context: null,
       planLimits: null,
     });
