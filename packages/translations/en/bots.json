@@ -291,18 +291,16 @@
     },
     "usage": {
       "title": "Usage",
-      "thisChat": "This chat",
       "since": "since {{date}}",
       "copy": "Copy usage",
-      "turns": "Turns",
-      "active": "Active",
-      "tokens": "Tokens",
-      "cacheHit": "Cache hit",
-      "breakdown": "Breakdown",
-      "input": "Input",
-      "output": "Output",
-      "cacheRead": "Cache read",
-      "cacheWrite": "Cache write",
+      "summary_one": "{{count}} turn · {{active}} at work · {{tokens}} tokens",
+      "summary_other": "{{count}} turns · {{active}} at work · {{tokens}} tokens",
+      "cacheHit": "{{percent}}% cache hit",
+      "input": "Input {{tokens}}",
+      "output": "Output {{tokens}}",
+      "cacheRead": "Cache read {{tokens}}",
+      "cacheWrite": "Cache write {{tokens}}",
+      "includes": "includes {{calls}} outside its turns",
       "purpose": {
         "goalReview_one": "{{count}} goal review",
         "goalReview_other": "{{count}} goal reviews",
@@ -312,10 +310,7 @@
         "ruleReview_other": "{{count}} rule reviews"
       },
       "empty": "Nothing spent in this chat yet.",
-      "loadFailed": "Could not load the usage. Try again.",
-      "includes": "Includes {{calls}}, made outside its turns.",
-      "models_one": "{{count}} model",
-      "models_other": "{{count}} models"
+      "loadFailed": "Could not load the usage. Try again."
     }
   },
   "settings": {

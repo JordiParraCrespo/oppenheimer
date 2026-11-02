@@ -570,22 +570,21 @@ The owner chose them in this order. Only the first is built:
 **`/usage`** (2026-11-02, from Claude Code's `/usage` and its usage card).
 The console puts a card in the chat, below its last message, and sends the
 bot nothing (`GET /bots/:id/usage`). It stays until Close, and goes with the
-tab: it is never part of the conversation. It reads top to bottom:
+tab: it is never part of the conversation. It is three lines under its
+title and the date of the chat's first turn:
 
-- **Room left**, the composer meter's popover written out: the context
-  against the model's window, and on a ChatGPT sign-in the 5-hour and weekly
-  windows with when each resets.
-- **This chat**, since its first turn, in one grid: turns that ran, time at
-  work (each turn's start to its end, summed), cache hit rate (the share of
-  the input read from the provider's prompt cache), tokens in and out, and
-  each model's share of what the turns spent.
-- **Breakdown**, every token the chat spent in one table: Input (sent
-  fresh), Output, Cache read and Cache write. The calls the bot makes on its
-  owner's key that are not a turn (goal reviews, summaries, rule reviews)
-  are in it, and named in a line under it, so a long goal does not look
-  cheaper than it is.
+- turns that ran, time at work (each turn's start to its end, summed),
+  tokens in and out, and the cache hit rate (the share of the input read
+  from the provider's prompt cache);
+- those tokens split into Input (sent fresh), Output, Cache read and Cache
+  write;
+- each model's share of what the turns spent, and the calls the bot made
+  on its owner's key that are not a turn (goal reviews, summaries, rule
+  reviews), which the totals include, so a long goal does not look cheaper
+  than it is.
 
-Copy puts the card on the clipboard as text.
+The context and the plan windows are not repeated: the composer's meter
+shows them. Copy puts the lines on the clipboard as text.
 
 Where it comes from:
 
@@ -1214,8 +1213,9 @@ The decisions it produced:
   continuations, up to 10: a person's goal takes 20, a bot's 5 unless it
   asks for up to 20, and the condition holds 2,000 characters, not 500.
 - 2026-11-02: **`/usage` is built** (§4.1). The owner asked for a card like
-  Claude Code's, in the chat and simple: room left, this chat's figures, one
-  breakdown. It
+  Claude Code's, then asked for it in the chat and small: three lines of
+  this chat's figures, the context and plan windows left to the composer's
+  meter. It
   counts tokens only, with cache reads and writes kept per turn, and it
   counts the calls a bot makes outside its turns (goal reviews, summaries,
   rule reviews), which nothing recorded before. Money is left out until
