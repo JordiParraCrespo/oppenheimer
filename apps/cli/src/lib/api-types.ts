@@ -1,5 +1,5 @@
-import type { PermissionGroup, Scope } from '@oppenheimer/shared';
 import type { CodingAgentId } from '@oppenheimer/shared/agents';
+import type { PermissionGroup, Scope } from '@oppenheimer/shared/scopes';
 
 /**
  * Response shapes the CLI consumes, narrowed to the fields it reads. They

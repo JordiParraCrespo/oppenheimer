@@ -1,5 +1,5 @@
 import { hostname } from 'node:os';
-import { normalizeScopes, type Scope, sortScopes } from '@oppenheimer/shared';
+import { normalizeScopes, type Scope, sortScopes } from '@oppenheimer/shared/scopes';
 import { Command } from 'commander';
 import type { CreatedApiToken, CurrentCredential, PermissionCatalog } from '../lib/api-types';
 import { ApiClient } from '../lib/client';

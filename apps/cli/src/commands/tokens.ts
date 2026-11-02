@@ -1,4 +1,9 @@
-import { normalizeScopes, PERMISSION_GROUPS, type Scope, sortScopes } from '@oppenheimer/shared';
+import {
+  normalizeScopes,
+  PERMISSION_GROUPS,
+  type Scope,
+  sortScopes,
+} from '@oppenheimer/shared/scopes';
 import { Command } from 'commander';
 import type {
   ApiToken,

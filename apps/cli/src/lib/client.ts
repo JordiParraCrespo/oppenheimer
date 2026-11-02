@@ -1,4 +1,4 @@
-import { isProblemDetails, type ProblemDetails } from '@oppenheimer/shared';
+import { isProblemDetails, type ProblemDetails } from '@oppenheimer/shared/types';
 import { CliError, ExitCode } from './errors';
 
 export interface ApiClientOptions {
