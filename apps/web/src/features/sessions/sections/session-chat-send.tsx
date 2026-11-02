@@ -1,4 +1,4 @@
-import type { SessionChat as Chat } from '@oppenheimer/frontend-consumer';
+import type { SessionChat as Chat, SessionAgent } from '@oppenheimer/frontend-consumer';
 import { useVoiceDictation } from '@oppenheimer/frontend-consumer/react';
 import { ChatQuestionPicker, ErrorAlert } from '@oppenheimer/frontend-web';
 import { useState } from 'react';
@@ -47,11 +47,14 @@ const FILES_SETTLE_MS = 1500;
  */
 export function SessionChatSend({
   chat,
+  agent,
   files,
   upload,
   onSent,
 }: {
   chat: Chat;
+  /** Whose conversation it is, named on the composer; none for a guest. */
+  agent: SessionAgent | null;
   /** The pane's hand-off of the files it catches, when this reader can send files. */
   files?: FileHandOff;
   /** Puts one file in the agent's prompt; resolves once the host has pasted its path. */
@@ -123,6 +126,7 @@ export function SessionChatSend({
       ) : null}
       <div hidden={question !== null} className={question ? undefined : 'contents'}>
         <SessionChatComposer
+          agent={agent}
           busy={last?.working ?? false}
           todos={last ? latestTodos(last) : null}
           model={modelName(latestModel(state.turns))}

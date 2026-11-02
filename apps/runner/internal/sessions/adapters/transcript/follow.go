@@ -28,9 +28,18 @@ const (
 
 // Follow implements app.Transcripts: it sends the conversation's chat
 // entries to emit until ctx ends — the history first, under Reset, then each
-// line as the CLI appends it. A batch emit refuses (the link's queue is full)
+// line as the CLI appends it. OpenCode's conversation is read through its
+// own API instead (`opencode.go`). A batch emit refuses (the link's queue is full)
 // is offered again on the next check, so nothing is skipped.
-func (r *Reader) Follow(ctx context.Context, agent domain.Agent, conversation string, entryMax, batchMax int, emit func(app.ChatBatch) error) error {
+func (r *Reader) Follow(ctx context.Context, agent domain.Agent, launch domain.Launch, entryMax, batchMax int, emit func(app.ChatBatch) error) error {
+	if agent.ServesConversation() {
+		if launch.Server == nil {
+			return app.ErrNoChat
+		}
+		followOpenCode(ctx, *launch.Server, entryMax, batchMax, emit)
+		return nil
+	}
+	conversation := launch.Conversation
 	reader, ok := r.agents[agent]
 	if !ok || !conversationPattern.MatchString(conversation) {
 		return app.ErrNoChat

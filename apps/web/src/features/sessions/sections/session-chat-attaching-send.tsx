@@ -1,4 +1,4 @@
-import type { SessionChat as Chat } from '@oppenheimer/frontend-consumer';
+import type { SessionChat as Chat, SessionAgent } from '@oppenheimer/frontend-consumer';
 import { usePasteSessionFile } from '@oppenheimer/frontend-consumer/react';
 import type { ChatAttach } from '../lib/chat-blocks';
 import { SessionChatSend } from './session-chat-send';
@@ -13,10 +13,12 @@ const AGENT_WINDOW = 0;
  */
 export function SessionChatAttachingSend({
   chat,
+  agent,
   attach,
   onSent,
 }: {
   chat: Chat;
+  agent: SessionAgent | null;
   attach: ChatAttach;
   onSent: () => void;
 }) {
@@ -24,6 +26,7 @@ export function SessionChatAttachingSend({
   return (
     <SessionChatSend
       chat={chat}
+      agent={agent}
       files={attach.files}
       upload={(file) => paste.mutateAsync(file)}
       onSent={onSent}

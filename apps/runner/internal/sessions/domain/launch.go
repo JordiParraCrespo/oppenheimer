@@ -1,9 +1,12 @@
 package domain
 
 import (
+	"crypto/rand"
+	"encoding/base64"
 	"encoding/json"
 	"slices"
 	"sort"
+	"strconv"
 	"strings"
 )
 
@@ -34,6 +37,13 @@ type Launch struct {
 	// in the process's arguments before it starts (02-runner §5). It is kept
 	// for restart only and never logged.
 	Prompt string `json:"prompt,omitempty"`
+	// Server is the agent's own local API, for an agent that keeps its
+	// conversation behind one rather than in a file (OpenCode, whose TUI
+	// serves it on a loopback port when it is given one). The chat view
+	// follows the conversation through it (0.7). It is saved, so a runner
+	// that restarted while the agent ran can still reach it, and chosen
+	// again at each launch, since the port may be another process's by then.
+	Server *AgentServer `json:"server,omitempty"`
 	// StatusLine is the command Claude Code runs for its status line, the
 	// runner's own `statusline`, which keeps the figures the CLI hands it
 	// (the context, the plan's usage) for the chat. It is this host's, so it
@@ -44,6 +54,36 @@ type Launch struct {
 	// reports. It names this host's binary, so it is set at each launch and
 	// never saved.
 	Wrap []string `json:"-"`
+}
+
+// AgentServer is where an agent's local API listens and the password it
+// asks for. The port is on 127.0.0.1 only, and the password is the session's
+// own, so another account on the host cannot drive the agent through it.
+type AgentServer struct {
+	Port     int    `json:"port"`
+	Password string `json:"password"`
+	// Since is when the session first launched, in Unix milliseconds: a
+	// conversation of the agent's not touched since then is an older one in
+	// the same folder, never this session's.
+	Since int64 `json:"since,omitempty"`
+}
+
+// AgentServerUser is the user name the agent's API takes with the password.
+const AgentServerUser = "opencode"
+
+// ServesConversation says whether the agent keeps its conversation behind a
+// local API the runner opens for it at launch.
+func (a Agent) ServesConversation() bool {
+	return a == AgentOpenCode
+}
+
+// NewAgentServer mints a password for an agent's API on port.
+func NewAgentServer(port int, since int64) (AgentServer, error) {
+	raw := make([]byte, 24)
+	if _, err := rand.Read(raw); err != nil {
+		return AgentServer{}, err
+	}
+	return AgentServer{Port: port, Password: base64.RawURLEncoding.EncodeToString(raw), Since: since}, nil
 }
 
 // launchMap is one agent's `launch` entry of the catalog
@@ -118,6 +158,9 @@ func (l Launch) Args(agent Agent) []string {
 	if l.StatusLine != "" && agent == AgentClaude {
 		args = append(args, "--settings", statusLineSettings(l.StatusLine))
 	}
+	if l.Server != nil && agent.ServesConversation() {
+		args = append(args, "--port", strconv.Itoa(l.Server.Port), "--hostname", "127.0.0.1")
+	}
 	if l.Model != "" && m.model != nil {
 		args = append(args, substitute(m.model, "<model>", l.Model)...)
 	}
@@ -183,18 +226,25 @@ func (l Launch) effortLevel(m launchMap) launchLevel {
 // agent's process, or nil. The catalog spec holds that the two never name the
 // same variable; if they ever did, the permission level wins, because an
 // effort must not be able to loosen what the agent may do.
+//
+// The agent's API password (Server) rides here too, beside the levels.
 func (l Launch) Env(agent Agent) map[string]string {
 	m := launchCatalog[agent.CatalogID()]
 	permission, effort := m.permission[l.Permission].env, l.effortLevel(m).env
-	if len(effort) == 0 {
+	server := l.Server != nil && agent.ServesConversation()
+	if len(effort) == 0 && !server {
 		return permission
 	}
-	env := make(map[string]string, len(permission)+len(effort))
+	env := make(map[string]string, len(permission)+len(effort)+2)
 	for name, value := range effort {
 		env[name] = value
 	}
 	for name, value := range permission {
 		env[name] = value
+	}
+	if server {
+		env["OPENCODE_SERVER_USERNAME"] = AgentServerUser
+		env["OPENCODE_SERVER_PASSWORD"] = l.Server.Password
 	}
 	return env
 }

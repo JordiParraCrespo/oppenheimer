@@ -27,7 +27,7 @@ export function replaySessionChat(jsonl: string, { readOnly = false } = {}) {
   // What the host had when the chat attached: the first batch, as a reset.
   const [opening, ...rest] = chunks;
   chat.apply({ reset: true, entries: opening?.entries ?? [] });
-  const view = render(<SessionChat chat={chat} readOnly={readOnly} />);
+  const view = render(<SessionChat chat={chat} agent="claude-code" readOnly={readOnly} />);
   let next = 0;
 
   /** Sends each stretch of lines between marks as one batch, until the chat stands at `mark`. */

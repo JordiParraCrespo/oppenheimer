@@ -1047,3 +1047,12 @@ earlier note:
   herdr-core: an agent in a session starts, tells and waits on child
   sessions with `runner sessions run|send|wait|report` (`runner --skill`).
   The control-plane half, a child the console lists, is still 0.6's.
+- `next-steps/0.7-chat-protocol.md` kept the agent's transcript file the
+  one source of the session chat, and `0.7-terminal-and-chat.md` named a
+  second file reader as how another agent joins. OpenCode keeps no such
+  file: its conversations are in a database whose tables move between its
+  versions. On 2026-11-02 OpenCode sessions got the chat by another source:
+  the runner launches OpenCode serving its own API on a loopback port with
+  a password of the session's, and follows the conversation through that
+  API, writing each finished part as a line in the transcript shape the
+  console already reads. Claude Code still reads its file.

@@ -96,8 +96,9 @@ export const RUNNER_CAPABILITIES = [
   /** Answers `fs.list` with `fs.listing`: the folder picker's directories. */
   'fs.list',
   /**
-   * Sends `attachment.chat` beside a Claude Code session's PTY frames: the
-   * agent's own transcript, compacted, for the console's chat view (0.7).
+   * Sends `attachment.chat` beside a Claude Code or OpenCode session's PTY
+   * frames: the agent's own transcript, compacted, for the console's chat
+   * view (0.7). OpenCode's is read off its API into the same lines.
    */
   'attachment.chat',
   /**

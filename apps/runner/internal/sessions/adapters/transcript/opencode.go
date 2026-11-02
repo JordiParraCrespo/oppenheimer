@@ -1,0 +1,580 @@
+package transcript
+
+import (
+	"bufio"
+	"bytes"
+	"context"
+	"encoding/json"
+	"errors"
+	"fmt"
+	"io"
+	"net/http"
+	"net/url"
+	"regexp"
+	"strconv"
+	"time"
+
+	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/app"
+	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/domain"
+)
+
+// OpenCode keeps its conversations in a database of its own, whose tables
+// move between its versions, so the chat view reads them where OpenCode
+// itself promises a shape: the API its TUI serves on a loopback port when it
+// is launched with one (domain.AgentServer). The session's conversation is
+// the newest root conversation OpenCode has for the folder, touched since the
+// session first launched, so `/new` in the TUI is followed and an older
+// conversation in the same folder never is.
+//
+// Each part of a message is sent once it is finished, as a line of the
+// transcript the chat already reads (Claude Code's shape, `claude_chat.go`):
+// the person's words as a user line, a reply or a thought as an assistant
+// line, a tool call as `tool_use` once it runs and its result as
+// `tool_result` once it ends. OpenCode's tools are given the names the chat
+// knows them by (`bash` is `Bash`, `filePath` is `file_path`); one the chat
+// does not know keeps its own name.
+//
+// What it costs OpenCode: one read of the session list and of the last few
+// messages per check, a check at most every openCodeCheckEvery while its
+// event stream says something changed and every openCodePollEvery while it
+// says nothing, only while a browser is attached. The whole history is read
+// once per attachment, and again only when the window no longer reaches what
+// was already sent.
+const (
+	openCodeCheckEvery = 300 * time.Millisecond
+	openCodePollEvery  = 2 * time.Second
+	openCodeRetryEvery = time.Second
+	openCodeWindow     = 20
+	openCodeTimeout    = 10 * time.Second
+	openCodeReadMax    = 64 << 20
+)
+
+// openCodeIDPattern is the shape of OpenCode's own ids (`ses_…`): anything
+// else is never put in a path.
+var openCodeIDPattern = regexp.MustCompile(`^[0-9A-Za-z_-]{1,128}$`)
+
+// errOpenCodeAnswer is an answer from OpenCode's API that is not a 200.
+var errOpenCodeAnswer = errors.New("opencode answered")
+
+// interruptedText is the line the chat reads as a turn the person stopped.
+const interruptedText = "[Request interrupted by user]"
+
+// followOpenCode follows the session's conversation through OpenCode's API
+// until ctx ends. While OpenCode is not answering (starting, restarting) it
+// is asked again every openCodeRetryEvery, and each new connection starts the
+// history over.
+func followOpenCode(ctx context.Context, server domain.AgentServer, entryMax, batchMax int, emit func(app.ChatBatch) error) {
+	api := openCodeAPI{base: "http://127.0.0.1:" + strconv.Itoa(server.Port), server: server, http: &http.Client{}}
+	for {
+		f := newOpenCodeFollower(api, server.Since, entryMax, batchMax, emit)
+		_ = f.run(ctx)
+		select {
+		case <-ctx.Done():
+			return
+		case <-time.After(openCodeRetryEvery):
+		}
+	}
+}
+
+// openCodeAPI is the few calls the chat makes on OpenCode's local API.
+type openCodeAPI struct {
+	base   string
+	server domain.AgentServer
+	http   *http.Client
+}
+
+func (a openCodeAPI) request(ctx context.Context, path string, query url.Values) (*http.Request, error) {
+	target := a.base + path
+	if len(query) > 0 {
+		target += "?" + query.Encode()
+	}
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, target, nil)
+	if err != nil {
+		return nil, err
+	}
+	req.SetBasicAuth(domain.AgentServerUser, a.server.Password)
+	return req, nil
+}
+
+func (a openCodeAPI) get(ctx context.Context, path string, query url.Values, out any) error {
+	ctx, cancel := context.WithTimeout(ctx, openCodeTimeout)
+	defer cancel()
+	req, err := a.request(ctx, path, query)
+	if err != nil {
+		return err
+	}
+	resp, err := a.http.Do(req)
+	if err != nil {
+		return err
+	}
+	defer func() { _ = resp.Body.Close() }()
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("%w %d for %s", errOpenCodeAnswer, resp.StatusCode, path)
+	}
+	return json.NewDecoder(io.LimitReader(resp.Body, openCodeReadMax)).Decode(out)
+}
+
+// events reads OpenCode's event stream until it ends, calling changed for
+// each event about a session or a message. Only an event's first bytes are
+// looked at: a part's event carries the whole part.
+func (a openCodeAPI) events(ctx context.Context, changed func()) error {
+	req, err := a.request(ctx, "/event", nil)
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Accept", "text/event-stream")
+	resp, err := a.http.Do(req)
+	if err != nil {
+		return err
+	}
+	defer func() { _ = resp.Body.Close() }()
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("%w %d for /event", errOpenCodeAnswer, resp.StatusCode)
+	}
+	reader := bufio.NewReaderSize(resp.Body, 16<<10)
+	continued := false
+	for {
+		line, prefix, err := reader.ReadLine()
+		if err != nil {
+			return err
+		}
+		head := !continued
+		continued = prefix
+		if !head || !bytes.HasPrefix(line, []byte("data:")) {
+			continue
+		}
+		if bytes.Contains(line, []byte(`"type":"message.`)) || bytes.Contains(line, []byte(`"type":"session.`)) {
+			changed()
+		}
+	}
+}
+
+// The parts of OpenCode's API the chat reads, loosely: each part type uses a
+// few of these fields.
+type (
+	openCodeSession struct {
+		ID       string `json:"id"`
+		ParentID string `json:"parentID"`
+		Time     struct {
+			Updated int64 `json:"updated"`
+		} `json:"time"`
+	}
+	openCodeMessage struct {
+		Info  openCodeInfo   `json:"info"`
+		Parts []openCodePart `json:"parts"`
+	}
+	openCodeInfo struct {
+		ID   string `json:"id"`
+		Role string `json:"role"`
+		Time struct {
+			Created   int64 `json:"created"`
+			Completed int64 `json:"completed"`
+		} `json:"time"`
+		ModelID string `json:"modelID"`
+		Tokens  *struct {
+			Input  int64 `json:"input"`
+			Output int64 `json:"output"`
+			Cache  struct {
+				Read  int64 `json:"read"`
+				Write int64 `json:"write"`
+			} `json:"cache"`
+		} `json:"tokens"`
+		Error *struct {
+			Name string `json:"name"`
+			Data struct {
+				Message string `json:"message"`
+			} `json:"data"`
+		} `json:"error"`
+	}
+	openCodePart struct {
+		ID        string        `json:"id"`
+		Type      string        `json:"type"`
+		Text      string        `json:"text"`
+		Synthetic bool          `json:"synthetic"`
+		Ignored   bool          `json:"ignored"`
+		Time      *openCodeTime `json:"time"`
+		CallID    string        `json:"callID"`
+		Tool      string        `json:"tool"`
+		State     *struct {
+			Status string          `json:"status"`
+			Input  json.RawMessage `json:"input"`
+			Output string          `json:"output"`
+			Error  string          `json:"error"`
+			Time   *openCodeTime   `json:"time"`
+		} `json:"state"`
+		Mime string `json:"mime"`
+	}
+	openCodeTime struct {
+		Start int64 `json:"start"`
+		End   int64 `json:"end"`
+	}
+)
+
+// How far a part has been sent: a part sent whole, or a tool call whose call
+// went and whose result has not.
+const (
+	sentCall = 1
+	sentAll  = 2
+)
+
+// openCodeFollower is one connection's read of the conversation.
+type openCodeFollower struct {
+	api      openCodeAPI
+	since    int64
+	entryMax int
+	out      *follower
+
+	session string
+	// sent is how far each message and part has been sent.
+	sent map[string]int
+	// newest is the newest message id read, and full asks the next check for
+	// the whole history rather than its last openCodeWindow messages.
+	newest string
+	full   bool
+	// windowed is off once a window read did not reach the newest message
+	// already read: an OpenCode that pages from the oldest, read whole.
+	windowed bool
+}
+
+func newOpenCodeFollower(api openCodeAPI, since int64, entryMax, batchMax int, emit func(app.ChatBatch) error) *openCodeFollower {
+	return &openCodeFollower{
+		api: api, since: since, entryMax: entryMax,
+		out:  &follower{entryMax: entryMax, batchMax: batchMax, emit: emit, reset: true},
+		sent: map[string]int{}, windowed: true,
+	}
+}
+
+// run checks the conversation when the event stream says it changed, and on
+// a slower clock without it, until ctx ends or OpenCode stops answering.
+func (f *openCodeFollower) run(ctx context.Context) error {
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+	changed := make(chan struct{}, 1)
+	go func() {
+		_ = f.api.events(ctx, func() {
+			select {
+			case changed <- struct{}{}:
+			default:
+			}
+		})
+	}()
+	poll := time.NewTicker(openCodePollEvery)
+	defer poll.Stop()
+	for {
+		if err := f.check(ctx); err != nil {
+			return err
+		}
+		select {
+		case <-ctx.Done():
+			return nil
+		case <-poll.C:
+		case <-changed:
+			// Several events in a burst are one read.
+			select {
+			case <-ctx.Done():
+				return nil
+			case <-time.After(openCodeCheckEvery):
+			}
+		}
+	}
+}
+
+// check reads what changed and sends it. An error is OpenCode not answering.
+func (f *openCodeFollower) check(ctx context.Context) error {
+	if len(f.out.pending) > 0 && !f.out.flush() {
+		return nil
+	}
+	session, err := f.conversation(ctx)
+	if err != nil {
+		return err
+	}
+	if session != f.session {
+		// Another conversation (the first, or `/new`): its history from the top.
+		f.session, f.sent, f.newest, f.full = session, map[string]int{}, "", true
+		f.out.pending, f.out.reset = nil, true
+	}
+	if session == "" {
+		// Nothing said yet: say so once, so the view can wait for it.
+		f.out.flush()
+		return nil
+	}
+	messages, err := f.messages(ctx)
+	if err != nil {
+		return err
+	}
+	for _, message := range messages {
+		f.read(message)
+	}
+	f.out.flush()
+	return nil
+}
+
+// conversation is the session's conversation: the newest root one touched
+// since the session launched, or "" while there is none.
+func (f *openCodeFollower) conversation(ctx context.Context) (string, error) {
+	var sessions []openCodeSession
+	if err := f.api.get(ctx, "/session", url.Values{"roots": {"true"}}, &sessions); err != nil {
+		return "", err
+	}
+	var newest openCodeSession
+	for _, s := range sessions {
+		if s.ParentID != "" || s.Time.Updated < f.since || !openCodeIDPattern.MatchString(s.ID) {
+			continue
+		}
+		if newest.ID == "" || s.Time.Updated > newest.Time.Updated {
+			newest = s
+		}
+	}
+	return newest.ID, nil
+}
+
+// messages is the conversation's messages, oldest first: its last few once
+// the history is in, the whole of it when the last few do not reach back to
+// what was already read.
+func (f *openCodeFollower) messages(ctx context.Context) ([]openCodeMessage, error) {
+	path := "/session/" + url.PathEscape(f.session) + "/message"
+	if !f.full && f.windowed {
+		var window []openCodeMessage
+		if err := f.api.get(ctx, path, url.Values{"limit": {strconv.Itoa(openCodeWindow)}}, &window); err != nil {
+			return nil, err
+		}
+		switch {
+		case len(window) == 0:
+		case window[len(window)-1].Info.ID < f.newest:
+			f.windowed = false
+		case len(window) < openCodeWindow || f.sent[window[0].Info.ID] > 0:
+			f.note(window)
+			return window, nil
+		}
+	}
+	var all []openCodeMessage
+	if err := f.api.get(ctx, path, nil, &all); err != nil {
+		return nil, err
+	}
+	f.full = false
+	f.note(all)
+	return all, nil
+}
+
+func (f *openCodeFollower) note(messages []openCodeMessage) {
+	if n := len(messages); n > 0 && messages[n-1].Info.ID > f.newest {
+		f.newest = messages[n-1].Info.ID
+	}
+}
+
+// read queues what in one message is finished and not yet sent.
+func (f *openCodeFollower) read(message openCodeMessage) {
+	switch message.Info.Role {
+	case "user":
+		f.readUser(message)
+	case "assistant":
+		f.readAssistant(message)
+	}
+}
+
+func (f *openCodeFollower) readUser(message openCodeMessage) {
+	info := message.Info
+	if f.sent[info.ID] == sentAll || len(message.Parts) == 0 {
+		return
+	}
+	f.sent[info.ID] = sentAll
+	at := openCodeStamp(info.Time.Created)
+	var blocks []chatBlock
+	for _, part := range message.Parts {
+		switch part.Type {
+		case "text":
+			if part.Synthetic || part.Ignored || part.Text == "" {
+				continue
+			}
+			text, cut := truncate(part.Text, chatTextMax)
+			blocks = append(blocks, chatBlock{Type: "text", Text: text, Truncated: cut})
+		case "file":
+			if len(part.Mime) > 6 && part.Mime[:6] == "image/" {
+				blocks = append(blocks, chatBlock{Type: "image"})
+			} else {
+				blocks = append(blocks, chatBlock{Type: "document"})
+			}
+		case "compaction":
+			f.add(chatEntry{
+				Type: "user", UUID: part.ID, Timestamp: at, IsCompactSummary: true,
+				Message: chatMessage{Role: "user", Content: "compacted"},
+			})
+		}
+	}
+	if len(blocks) > 0 {
+		f.add(chatEntry{Type: "user", UUID: info.ID, Timestamp: at, Message: chatMessage{Role: "user", Content: blocks}})
+	}
+}
+
+func (f *openCodeFollower) readAssistant(message openCodeMessage) {
+	info := message.Info
+	settled := info.Time.Completed != 0 || info.Error != nil
+	var usage *chatUsage
+	if t := info.Tokens; t != nil && t.Input+t.Cache.Read+t.Cache.Write > 0 {
+		usage = &chatUsage{
+			InputTokens: t.Input, CacheReadInputTokens: t.Cache.Read,
+			CacheCreationInputTokens: t.Cache.Write, OutputTokens: t.Output,
+		}
+	}
+	say := func(id string, at int64, block chatBlock) {
+		if at == 0 {
+			at = info.Time.Created
+		}
+		f.add(chatEntry{
+			Type: "assistant", UUID: id, Timestamp: openCodeStamp(at),
+			Message: chatMessage{ID: info.ID, Role: "assistant", Model: info.ModelID, Content: []chatBlock{block}, Usage: usage},
+		})
+	}
+	for _, part := range message.Parts {
+		if f.sent[part.ID] == sentAll {
+			continue
+		}
+		start, ended := int64(0), settled
+		if part.Time != nil {
+			start, ended = part.Time.Start, ended || part.Time.End != 0
+		}
+		switch part.Type {
+		case "text", "reasoning":
+			if !ended || part.Synthetic || part.Ignored {
+				continue
+			}
+			f.sent[part.ID] = sentAll
+			if part.Text == "" {
+				continue
+			}
+			if part.Type == "text" {
+				text, cut := truncate(part.Text, chatTextMax)
+				say(part.ID, start, chatBlock{Type: "text", Text: text, Truncated: cut})
+			} else {
+				text, cut := truncate(part.Text, chatThinkingMax)
+				say(part.ID, start, chatBlock{Type: "thinking", Thinking: text, Truncated: cut})
+			}
+		case "tool":
+			f.readTool(part, say)
+		}
+	}
+	if info.Error != nil && f.sent["error:"+info.ID] == 0 {
+		f.sent["error:"+info.ID] = sentAll
+		at := openCodeStamp(info.Time.Completed)
+		if info.Error.Name == "MessageAbortedError" {
+			f.add(chatEntry{Type: "user", UUID: "error:" + info.ID, Timestamp: at, Message: chatMessage{Role: "user", Content: interruptedText}})
+		} else {
+			reason := info.Error.Data.Message
+			if reason == "" {
+				reason = info.Error.Name
+			}
+			text, _ := truncate("**"+info.Error.Name+"**: "+reason, chatTextMax)
+			say("error:"+info.ID, info.Time.Completed, chatBlock{Type: "text", Text: text})
+		}
+	}
+}
+
+// readTool sends a call once it runs, as `tool_use`, and its result once it
+// has ended, as `tool_result` on a user line, which is where the chat pairs
+// them.
+func (f *openCodeFollower) readTool(part openCodePart, say func(id string, at int64, block chatBlock)) {
+	state := part.State
+	if state == nil || state.Status == "pending" || part.CallID == "" {
+		return
+	}
+	var start, end int64
+	if state.Time != nil {
+		start, end = state.Time.Start, state.Time.End
+	}
+	if f.sent[part.ID] < sentCall {
+		var input any
+		_ = json.Unmarshal(state.Input, &input)
+		name, input := openCodeTool(part.Tool, input)
+		input, cut := compactValue(input, chatToolInputMax)
+		say(part.ID, start, chatBlock{Type: "tool_use", ID: part.CallID, Name: name, Input: input, Truncated: cut})
+		f.sent[part.ID] = sentCall
+	}
+	if state.Status != "completed" && state.Status != "error" {
+		return
+	}
+	f.sent[part.ID] = sentAll
+	output, failed := state.Output, state.Status == "error"
+	if failed {
+		output = state.Error
+	}
+	text, cut := truncate(output, chatToolResultMax)
+	f.add(chatEntry{
+		Type: "user", UUID: part.ID + ":result", Timestamp: openCodeStamp(end),
+		Message: chatMessage{Role: "user", Content: []chatBlock{{
+			Type: "tool_result", ToolUseID: part.CallID, IsError: failed, Content: text, Truncated: cut,
+		}}},
+	})
+}
+
+// add queues one entry, leaving out one that does not fit in a frame.
+func (f *openCodeFollower) add(entry chatEntry) {
+	encoded, err := json.Marshal(entry)
+	if err != nil || len(encoded) > f.entryMax {
+		return
+	}
+	f.out.pending = append(f.out.pending, string(encoded))
+}
+
+// openCodeStamp is a time OpenCode keeps in Unix milliseconds as the chat
+// reads one; "" for none.
+func openCodeStamp(ms int64) string {
+	if ms <= 0 {
+		return ""
+	}
+	return time.UnixMilli(ms).UTC().Format(time.RFC3339Nano)
+}
+
+// openCodeTools are OpenCode's tools by the names the chat knows them by.
+var openCodeTools = map[string]string{
+	"bash":      "Bash",
+	"read":      "Read",
+	"edit":      "Edit",
+	"multiedit": "MultiEdit",
+	"write":     "Write",
+	"glob":      "Glob",
+	"grep":      "Grep",
+	"list":      "LS",
+	"todowrite": "TodoWrite",
+	"webfetch":  "WebFetch",
+	"websearch": "WebSearch",
+	"task":      "Task",
+}
+
+// openCodeFields are the input fields OpenCode spells its own way, by the
+// names the chat reads.
+var openCodeFields = map[string]string{
+	"filePath":   "file_path",
+	"oldString":  "old_string",
+	"newString":  "new_string",
+	"replaceAll": "replace_all",
+}
+
+// openCodeTool is a call's tool and input as the chat reads them: a tool it
+// knows by its name there and its fields renamed, any other as it came.
+func openCodeTool(name string, input any) (string, any) {
+	known, ok := openCodeTools[name]
+	if !ok {
+		return name, input
+	}
+	return known, renameFields(input)
+}
+
+func renameFields(value any) any {
+	switch v := value.(type) {
+	case map[string]any:
+		out := make(map[string]any, len(v))
+		for key, item := range v {
+			if renamed, ok := openCodeFields[key]; ok {
+				key = renamed
+			}
+			out[key] = renameFields(item)
+		}
+		return out
+	case []any:
+		for i, item := range v {
+			v[i] = renameFields(item)
+		}
+		return v
+	}
+	return value
+}

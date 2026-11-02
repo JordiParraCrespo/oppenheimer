@@ -228,6 +228,8 @@ func (s *Service) create(ctx context.Context, in CreateInput, session domain.Ses
 		if err != nil {
 			return err
 		}
+		session.Launch.Server = s.agentServer(session.Agent, nil)
+		launch.Server = session.Launch.Server
 		launch.StatusLine = s.statusLine
 		launch.Wrap = s.observer.wrap(session.ID)
 		s.trustFolder(session.Agent, session.Cwd())
