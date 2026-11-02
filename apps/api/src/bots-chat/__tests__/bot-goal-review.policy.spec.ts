@@ -34,6 +34,20 @@ describe('goalVerdict', () => {
     }
   });
 
+  // What breaks this: a greedy match from the first `{` to the last `}`
+  // reading two objects, or a brace in the prose, as one broken verdict.
+  it('reads a fenced answer, and the first object that holds a verdict among several', () => {
+    expect(goalVerdict('```json\n{"verdict":"met","reason":"done"}\n```')).toEqual({
+      verdict: 'met',
+      reason: 'done',
+    });
+    expect(
+      goalVerdict(
+        'Checked {the tests}. {"verdict":"not_met","reason":"a } in a string"} and {"verdict":"met"}',
+      ),
+    ).toEqual({ verdict: 'not_met', reason: 'a } in a string' });
+  });
+
   it('cuts a long reason to what a goal line holds', () => {
     const verdict = goalVerdict(JSON.stringify({ verdict: 'not_met', reason: 'x'.repeat(5_000) }));
     expect(verdict?.reason).toHaveLength(BOT_GOAL_REASON_MAX);

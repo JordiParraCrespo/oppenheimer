@@ -88,24 +88,63 @@ export function composeGoalReview(objective: string, transcript: readonly Histor
 }
 
 /**
- * The verdict in the reviewer's answer, or null when there is none to read:
- * no JSON, or a verdict that is not one of the three. A reason that is not a
- * string is left out rather than failing the verdict.
+ * The verdict in the reviewer's answer, or null when there is none to read.
+ * The answer is asked to be JSON only: it is read whole first, then inside a
+ * code fence, and only then is each balanced `{…}` in the prose tried in
+ * turn, the first that holds a verdict winning. A verdict that is not one of
+ * the three is none; a reason that is not a string is left out rather than
+ * failing the verdict.
  */
 export function goalVerdict(answer: string): BotGoalVerdict | null {
-  const json = /\{[\s\S]*\}/.exec(answer)?.[0];
-  if (!json) return null;
-  let parsed: { verdict?: unknown; reason?: unknown };
+  for (const candidate of verdictCandidates(answer)) {
+    const parsed = parseObject(candidate);
+    const verdict = BOT_GOAL_VERDICTS.find((kind) => kind === parsed?.verdict);
+    if (!verdict) continue;
+    const reason =
+      typeof parsed?.reason === 'string' && parsed.reason.trim()
+        ? parsed.reason.trim().replace(/\s+/g, ' ').slice(0, BOT_GOAL_REASON_MAX)
+        : null;
+    return { verdict, reason };
+  }
+  return null;
+}
+
+/** The texts an answer's JSON may be: the whole, a fenced block, then each balanced object. */
+function verdictCandidates(answer: string): string[] {
+  const whole = answer.trim();
+  const fenced = /^```(?:json)?\s*([\s\S]*?)\s*```$/.exec(whole)?.[1];
+  return [whole, ...(fenced ? [fenced] : []), ...balancedObjects(whole)];
+}
+
+/** Each top-level `{…}` in the text, braces inside strings not counted. */
+function balancedObjects(text: string): string[] {
+  const found: string[] = [];
+  let depth = 0;
+  let start = -1;
+  let inString = false;
+  for (let index = 0; index < text.length; index += 1) {
+    const char = text[index];
+    if (inString) {
+      if (char === '\\') index += 1;
+      else if (char === '"') inString = false;
+    } else if (char === '"') {
+      inString = depth > 0;
+    } else if (char === '{') {
+      if (depth === 0) start = index;
+      depth += 1;
+    } else if (char === '}' && depth > 0) {
+      depth -= 1;
+      if (depth === 0) found.push(text.slice(start, index + 1));
+    }
+  }
+  return found;
+}
+
+function parseObject(text: string): { verdict?: unknown; reason?: unknown } | null {
   try {
-    parsed = JSON.parse(json) as typeof parsed;
+    const parsed: unknown = JSON.parse(text);
+    return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : null;
   } catch {
     return null;
   }
-  const verdict = BOT_GOAL_VERDICTS.find((kind) => kind === parsed.verdict);
-  if (!verdict) return null;
-  const reason =
-    typeof parsed.reason === 'string' && parsed.reason.trim()
-      ? parsed.reason.trim().replace(/\s+/g, ' ').slice(0, BOT_GOAL_REASON_MAX)
-      : null;
-  return { verdict, reason };
 }

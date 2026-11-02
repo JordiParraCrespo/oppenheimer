@@ -75,13 +75,15 @@ describe('goalDecision', () => {
 });
 
 describe('goalOutcome', () => {
+  const PROPS = { owner: 'owner-1' };
+
   it('ends the goal when the reviewer finds it met or out of reach, with its reason', () => {
-    expect(goalOutcome(goal(1), { verdict: 'met', reason: 'CI is green' })).toEqual({
+    expect(goalOutcome(goal(1), { verdict: 'met', reason: 'CI is green' }, PROPS)).toEqual({
       kind: 'end',
       activity: 'met',
       reason: 'CI is green',
     });
-    expect(goalOutcome(goal(1), { verdict: 'impossible', reason: 'No access' })).toEqual({
+    expect(goalOutcome(goal(1), { verdict: 'impossible', reason: 'No access' }, PROPS)).toEqual({
       kind: 'end',
       activity: 'impossible',
       reason: 'No access',
@@ -91,20 +93,39 @@ describe('goalOutcome', () => {
   // What breaks this: a reviewer that fails taking the goal down with it,
   // or a goal going past its limit because the reviewer keeps saying no.
   it('goes on with the reason while it is not met, or with none when there is no verdict', () => {
-    expect(goalOutcome(goal(1), { verdict: 'not_met', reason: 'Two tests fail' })).toEqual({
+    expect(goalOutcome(goal(1), { verdict: 'not_met', reason: 'Two tests fail' }, PROPS)).toEqual({
       kind: 'continue',
+      props: PROPS,
       reason: 'Two tests fail',
     });
-    expect(goalOutcome(goal(1), null)).toEqual({ kind: 'continue', reason: null });
-    expect(goalOutcome(goal(3, 3), { verdict: 'not_met', reason: 'Two tests fail' })).toEqual({
+    expect(goalOutcome(goal(1), null, PROPS)).toEqual({
+      kind: 'continue',
+      props: PROPS,
+      reason: null,
+    });
+    expect(
+      goalOutcome(goal(3, 3), { verdict: 'not_met', reason: 'Two tests fail' }, PROPS),
+    ).toEqual({
       kind: 'end',
       activity: 'exhausted',
       reason: 'Two tests fail',
     });
   });
 
+  // What breaks this: a goal going on for an owner who left the workspace.
+  it('stops a goal that would go on when its owner can no longer act, and only then', () => {
+    expect(goalOutcome(goal(1), { verdict: 'not_met', reason: 'x' }, null)).toEqual({
+      kind: 'end',
+      activity: 'stopped',
+      reason: 'access_lost',
+    });
+    expect(goalOutcome(goal(1), { verdict: 'met', reason: 'done' }, null)).toMatchObject({
+      activity: 'met',
+    });
+  });
+
   it('ends met rather than exhausted when the last continuation met it', () => {
-    expect(goalOutcome(goal(3, 3), { verdict: 'met', reason: null })).toMatchObject({
+    expect(goalOutcome(goal(3, 3), { verdict: 'met', reason: null }, PROPS)).toMatchObject({
       activity: 'met',
     });
   });

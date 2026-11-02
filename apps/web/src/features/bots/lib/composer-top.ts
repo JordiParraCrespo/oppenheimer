@@ -1,21 +1,22 @@
 /**
  * What sits on the composer's top edge (`ChatComposer`'s `above`), one at a
  * time and in this order: the messages waiting their turn (with the missing
- * key on top of them, when it is missing), else the missing key, else what a
- * `/goal` typed with no condition lacks, else the goal the bot works toward.
- * Null leaves the box's top edge its own.
+ * key on top of them, when it is missing), else the missing key, else what
+ * a built-in command typed cannot be sent without (`/goal` with no
+ * condition), else the goal the bot works toward. Null leaves the box's top
+ * edge its own.
  */
-export type ComposerTop = 'queue' | 'noKey' | 'goalCommand' | 'goal';
+export type ComposerTop = 'queue' | 'noKey' | 'command' | 'goal';
 
 export function composerTopOf(state: {
   waiting: number;
   noKey: boolean;
-  goalCommand: boolean;
+  command: boolean;
   goal: boolean;
 }): ComposerTop | null {
   if (state.waiting > 0) return 'queue';
   if (state.noKey) return 'noKey';
-  if (state.goalCommand) return 'goalCommand';
+  if (state.command) return 'command';
   if (state.goal) return 'goal';
   return null;
 }

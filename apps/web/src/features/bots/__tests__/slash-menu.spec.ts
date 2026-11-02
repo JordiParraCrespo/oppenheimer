@@ -1,5 +1,6 @@
 import { BotSkillEntity } from '@oppenheimer/frontend-consumer';
 import { describe, expect, it } from 'vitest';
+import { builtInCommandActionOf } from '../lib/built-in-command';
 import { skillRowModel } from '../lib/skill-row';
 import { matchingCommands, slashMenuItems, slashQuery } from '../lib/slash-menu';
 
@@ -52,6 +53,18 @@ describe('slashMenuItems', () => {
     const many = Array.from({ length: 12 }, (_, i) => skill(`s${i}`));
     const { builtIns, skills } = slashMenuItems([goal], many, '');
     expect(builtIns.length + skills.length).toBe(8);
+  });
+});
+
+describe('builtInCommandActionOf', () => {
+  it('holds /goal with no condition, runs /goal clear here, and sends everything else', () => {
+    expect(builtInCommandActionOf('/goal ')).toEqual({
+      kind: 'notice',
+      notice: 'goalNeedsCondition',
+    });
+    expect(builtInCommandActionOf('/goal off')).toEqual({ kind: 'local', action: 'clearGoal' });
+    expect(builtInCommandActionOf('/goal CI is green')).toBeNull();
+    expect(builtInCommandActionOf('/release-notes v2')).toBeNull();
   });
 });
 

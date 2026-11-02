@@ -84,14 +84,20 @@ export type GoalDecision =
   | { kind: 'skip' }
   | { kind: 'end'; activity: 'stopped'; reason: string | null };
 
-/** What the goal does once the reviewer has answered, or could not. */
-export type GoalOutcome =
-  | { kind: 'continue'; reason: string | null }
-  | {
-      kind: 'end';
-      activity: Extract<BotGoalActivity, 'met' | 'impossible' | 'exhausted'>;
-      reason: string | null;
-    };
+/** How a goal ends, as its line says it. */
+export interface GoalEnding {
+  activity: Exclude<BotGoalActivity, 'continued'>;
+  reason: string | null;
+}
+
+/**
+ * What the goal does once the reviewer has answered, or could not: end, or
+ * queue its next continuation as `props` say (the owner, the engine, the
+ * reach), with the reviewer's reason.
+ */
+export type GoalOutcome<Props> =
+  | { kind: 'continue'; props: Props; reason: string | null }
+  | ({ kind: 'end' } & GoalEnding);
 
 /**
  * Whether a turn is one of the goal's: the turn that set it, or one of its
@@ -128,15 +134,22 @@ export function goalDecision(goal: BotGoalEntity, ended: EndedTurn): GoalDecisio
  * otherwise it goes on while it has continuations left, the reason handed to
  * the next one. No verdict (the reviewer failed, or answered nothing
  * readable) goes on too: the limit still bounds it, and the bot can end it.
+ * A goal that would go on whose owner can no longer act in the workspace
+ * (`props` null) stops, as `access_lost`.
  */
-export function goalOutcome(goal: BotGoalEntity, verdict: BotGoalVerdict | null): GoalOutcome {
+export function goalOutcome<Props>(
+  goal: BotGoalEntity,
+  verdict: BotGoalVerdict | null,
+  props: Props | null,
+): GoalOutcome<Props> {
   if (verdict?.verdict === 'met') return { kind: 'end', activity: 'met', reason: verdict.reason };
   if (verdict?.verdict === 'impossible') {
     return { kind: 'end', activity: 'impossible', reason: verdict.reason };
   }
   const reason = verdict?.reason ?? null;
   if (goal.exhausted) return { kind: 'end', activity: 'exhausted', reason };
-  return { kind: 'continue', reason };
+  if (props === null) return { kind: 'end', activity: 'stopped', reason: 'access_lost' };
+  return { kind: 'continue', props, reason };
 }
 
 /**

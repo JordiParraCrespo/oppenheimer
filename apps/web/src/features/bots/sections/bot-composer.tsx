@@ -6,14 +6,13 @@ import {
   ComposerStackRow,
   FieldError,
 } from '@oppenheimer/design-system-web';
-import { KeyRound, Target } from '@oppenheimer/design-system-web/icons';
+import { KeyRound, SquareSlash } from '@oppenheimer/design-system-web/icons';
 import type { BotWaitingMessage } from '@oppenheimer/frontend-consumer';
 import {
   useBotActiveTurn,
   useBotGoal,
   useBotWaitingMessages,
   useCancelBotTurn,
-  useClearBotGoal,
   useModelProviders,
   useSendBotMessage,
   useVoiceDictation,
@@ -32,7 +31,6 @@ import {
   botModelOf,
   botTakesImages,
 } from '@oppenheimer/shared/schemas/bot';
-import { botGoalCommandOf, parseBotSlashCommand } from '@oppenheimer/shared/schemas/bot-skill';
 import { useNavigate } from '@tanstack/react-router';
 import type { ClipboardEvent, ReactNode } from 'react';
 import { useRef } from 'react';
@@ -41,6 +39,7 @@ import { BotComposerImage } from '@/features/bots/components/bot-composer-image'
 import { BotSlashMenu } from '@/features/bots/components/bot-slash-menu';
 import { useBotDraft } from '@/features/bots/hooks/use-bot-draft';
 import { useBotImages } from '@/features/bots/hooks/use-bot-images';
+import { useBuiltInCommand } from '@/features/bots/hooks/use-built-in-command';
 import { useComposerFocus } from '@/features/bots/hooks/use-composer-focus';
 import { useSlashMenu } from '@/features/bots/hooks/use-slash-menu';
 import { botDraft, fillBotDraft, setBotDraft } from '@/features/bots/lib/bot-drafts';
@@ -76,9 +75,9 @@ import { BotGoalNotice } from '@/features/bots/sections/bot-goal-notice';
  * alone. A file it will not hold, or one the API refused, is said under the
  * field; while one uploads or failed, or the bot's model reads no images,
  * send is off and says why, and nothing written is lost.
- * `/goal clear` stops the bot's goal, as the notice's Stop does, and sends
- * nothing; `/goal` with no condition keeps send off and says, on the box's
- * top edge, what it lacks.
+ * A built-in command the console runs itself (`/goal clear`) sends nothing,
+ * and one that cannot be sent as typed (`/goal` with no condition) keeps send
+ * off and says why on the box's top edge (`useBuiltInCommand`).
  */
 export function BotComposer({
   botId,
@@ -119,17 +118,16 @@ export function BotComposer({
     },
   });
   const cancel = useCancelBotTurn();
-  const clearGoal = useClearBotGoal();
+  const builtIn = useBuiltInCommand(botId, draft);
   // The goal is drawn in `above`, fused onto the box, so the box has to know whether there is one.
   const { data: goal } = useBotGoal(botId);
   const noKey = keyed === false ? t('bots.chat.noKey', { provider: providerLabel }) : undefined;
   const imagesBlock = heldImagesBlock(images.images, takesImages);
-  const goalCommand = botGoalCommandOf(parseBotSlashCommand(draft));
   const blocked =
     noKey ??
     (imagesBlock ? t(`bots.chat.images.${imagesBlock}`, { model: modelLabel }) : undefined) ??
-    (goalCommand?.kind === 'show' ? t('bots.chat.goal.needsCondition') : undefined);
-  const failure = send.error ?? cancel.error ?? clearGoal.error;
+    builtIn.notice;
+  const failure = send.error ?? cancel.error ?? builtIn.error;
   const running = active?.status === 'running';
   const message = (steer: boolean) => ({
     id: botId,
@@ -163,12 +161,9 @@ export function BotComposer({
     );
   }
 
-  // `/goal clear` stops the goal here, as the notice's Stop does; nothing is sent to the bot.
+  // A built-in the console runs itself (`/goal clear`) sends the bot nothing.
   function submit(steer: boolean) {
-    if (goalCommand?.kind === 'clear') {
-      clearGoal.mutate({ id: botId }, { onSuccess: () => setBotDraft(botId, '') });
-      return;
-    }
+    if (builtIn.runLocally(() => setBotDraft(botId, ''))) return;
     send.mutate(message(steer));
   }
 
@@ -181,7 +176,7 @@ export function BotComposer({
   const top = composerTopOf({
     waiting: waiting.length,
     noKey: Boolean(noKey),
-    goalCommand: goalCommand?.kind === 'show',
+    command: Boolean(builtIn.notice),
     goal: Boolean(goal),
   });
   const tops: Record<ComposerTop, () => ReactNode> = {
@@ -213,9 +208,7 @@ export function BotComposer({
         {noKey}
       </ComposerNotice>
     ),
-    goalCommand: () => (
-      <ComposerNotice icon={<Target />}>{t('bots.chat.goal.needsCondition')}</ComposerNotice>
-    ),
+    command: () => <ComposerNotice icon={<SquareSlash />}>{builtIn.notice}</ComposerNotice>,
     goal: () => (goal ? <BotGoalNotice botId={botId} goal={goal} /> : null),
   };
 
@@ -240,14 +233,14 @@ export function BotComposer({
         fallback={
           send.error
             ? t('bots.chat.sendFailed')
-            : clearGoal.error
-              ? t('bots.chat.goal.stopFailed')
+            : builtIn.error
+              ? builtIn.failure
               : t('bots.chat.stopFailed')
         }
         onDismiss={() => {
           send.reset();
           cancel.reset();
-          clearGoal.reset();
+          builtIn.reset();
         }}
       />
       <div className="relative">

@@ -5,7 +5,12 @@ import { BotGoalReviewResolver } from '../../application/bot-goal-review.resolve
 import { BOT_GOAL_REPOSITORY, BOT_STREAM, BOT_TURN_REPOSITORY } from '../../bots-chat.di-tokens';
 import type { BotGoalRepositoryPort } from '../../database/bot-goal.repository.port';
 import type { BotTurnRepositoryPort } from '../../database/bot-turn.repository.port';
-import { goalContinuationTurn, goalDecision, goalOutcome } from '../../domain/bot-goal.policy';
+import {
+  type GoalEnding,
+  goalContinuationTurn,
+  goalDecision,
+  goalOutcome,
+} from '../../domain/bot-goal.policy';
 import type { BotStreamPort } from '../../infrastructure/bot-stream.port';
 import { ContinueBotGoalCommand } from './continue-bot-goal.command';
 
@@ -43,8 +48,7 @@ export class ContinueBotGoalCommandHandler
     const decision = goalDecision(goal, ended);
     if (decision.kind === 'skip') return;
     if (decision.kind === 'end') {
-      const ending = { activity: decision.activity, reason: decision.reason };
-      await this.goalsOf.end(goal, ending, metadata.correlationId);
+      await this.goalsOf.end(goal, endingOf(decision), metadata.correlationId);
       return;
     }
     const verdict = await this.reviewer.review(goal, ended.id);
@@ -53,18 +57,18 @@ export class ContinueBotGoalCommandHandler
     // continuation beside the first.
     const current = await this.goals.findForBot(goal.organizationId, goal.botId);
     if (current?.id !== goal.id || current.continuations !== goal.continuations) return;
-    const outcome = goalOutcome(goal, verdict);
-    const props = outcome.kind === 'continue' ? await this.goalsOf.continuationProps(goal) : null;
-    if (!props) {
-      const ending =
-        outcome.kind === 'end'
-          ? { activity: outcome.activity, reason: outcome.reason }
-          : { activity: 'stopped' as const, reason: 'access_lost' };
-      await this.goalsOf.end(goal, ending, metadata.correlationId);
+    const outcome = goalOutcome(goal, verdict, await this.goalsOf.continuationProps(goal));
+    if (outcome.kind === 'end') {
+      await this.goalsOf.end(goal, endingOf(outcome), metadata.correlationId);
       return;
     }
 
-    const { turn, opening } = goalContinuationTurn(props, goal, goal.advance(), outcome.reason);
+    const { turn, opening } = goalContinuationTurn(
+      outcome.props,
+      goal,
+      goal.advance(),
+      outcome.reason,
+    );
     const queued = await this.turns.enqueueContinuation(
       turn,
       opening,
@@ -75,4 +79,9 @@ export class ContinueBotGoalCommandHandler
       await this.stream.publish(turn.botId, { type: 'turn', turnId: turn.id, status: 'queued' });
     }
   }
+}
+
+/** A decision to end, as the goal's line takes it. */
+function endingOf({ activity, reason }: GoalEnding): GoalEnding {
+  return { activity, reason };
 }

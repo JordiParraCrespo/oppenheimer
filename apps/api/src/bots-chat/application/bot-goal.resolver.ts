@@ -1,19 +1,18 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
-import { type BotGoalActivity, botDefaultModel } from '@oppenheimer/shared';
+import { botDefaultModel } from '@oppenheimer/shared';
 import { BOT_GOAL_REPOSITORY, BOT_STREAM, BOT_TURN_REPOSITORY } from '../bots-chat.di-tokens';
 import type { BotGoalRepositoryPort } from '../database/bot-goal.repository.port';
 import type { BotTurnRepositoryPort } from '../database/bot-turn.repository.port';
 import type { BotGoalEntity } from '../domain/bot-goal.entity';
-import { type goalContinuationTurn, goalEndLine, goalKeyPrefix } from '../domain/bot-goal.policy';
+import {
+  type GoalEnding,
+  type goalContinuationTurn,
+  goalEndLine,
+  goalKeyPrefix,
+} from '../domain/bot-goal.policy';
 import type { BotStreamPort } from '../infrastructure/bot-stream.port';
 import { BotModelAccessResolver } from './bot-model-access.resolver';
 import { BotOwnerScopeResolver } from './bot-owner-scope.resolver';
-
-/** How a goal ended, for its line; null when the call that ended it is the record. */
-export type GoalEnding = {
-  activity: Exclude<BotGoalActivity, 'continued'>;
-  reason: string | null;
-} | null;
 
 /**
  * A bot's goal, as everything that ends or continues it shares it
@@ -47,7 +46,8 @@ export class BotGoalResolver {
   /** Ends the goal once, with its line, and cancels its waiting continuations; false when it had ended. */
   async end(
     goal: BotGoalEntity,
-    ending: GoalEnding,
+    /** How it ended, for its line; null when the call that ended it is the record. */
+    ending: GoalEnding | null,
     correlationId: string | null,
   ): Promise<boolean> {
     const line = ending ? goalEndLine(goal, ending.activity, ending.reason) : null;
