@@ -395,6 +395,36 @@ describe('SessionChat', () => {
     const first = chat.snapshot().turns[0]?.steps[0];
     expect(first?.kind === 'tool' && first.call.status).toBe('failed');
   });
+
+  it('builds again from the turn a late result lands on, keeping the turns before it', () => {
+    // What breaks this: a late result that rebuilds the whole conversation
+    // (every turn a new object, a long chat's every line redrawn), or one
+    // that rebuilds from the wrong turn and loses the result or a turn.
+    const entries = [
+      user('u1', 'One'),
+      assistant('a1', [{ type: 'text', text: 'Hi.' }]),
+      user('u2', 'Two'),
+      assistant('a2', [
+        { type: 'tool_use', id: 'bg', name: 'Bash', input: { command: 'pnpm build' } },
+      ]),
+      assistant('a3', [{ type: 'text', text: 'Building.' }]),
+      user('u3', 'Three'),
+      assistant('a4', [{ type: 'text', text: 'Sure.' }]),
+      user('u4', 'Four'),
+      // The second turn's build ends while the fourth turn runs.
+      user('r1', [{ type: 'tool_result', tool_use_id: 'bg', content: 'built' }]),
+    ];
+    const chat = new SessionChat();
+    chat.apply({ entries: entries.slice(0, -1).map((entry) => JSON.stringify(entry)) });
+    const before = chat.snapshot().turns;
+    chat.apply({ entries: [JSON.stringify(entries.at(-1))] });
+    const after = chat.snapshot().turns;
+
+    expect(after).toEqual(toTurns(entries));
+    expect(after[0]).toBe(before[0]);
+    const build = after[1]?.steps[0];
+    expect(build?.kind === 'tool' && build.call.status).toBe('done');
+  });
 });
 
 describe('classify', () => {
