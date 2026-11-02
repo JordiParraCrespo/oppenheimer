@@ -25,7 +25,8 @@ import { cn } from '../lib/utils';
  *   a line too long to read cut to its head and tail, and "+N lines" under
  *   it, which shows the whole output as it came.
  * - `ToolCallLive`: the call in flight, in place of the summary: a spinner,
- *   the verb and target breathing, the elapsed time.
+ *   the verb and target breathing, the elapsed time. One line, like a row:
+ *   a long command cuts its target rather than widening the chat.
  * - `ReasoningRow`: "Thought for 9s", folded; open, the thinking reads in
  *   the muted tone behind a hairline.
  *
@@ -195,15 +196,16 @@ function ToolCallLive({
     <div
       data-slot="tool-call-live"
       role="status"
-      className={cn('inline-flex items-center gap-1.75 text-[13.5px] text-fg-muted', className)}
+      className={cn('flex min-w-0 items-center gap-1.75 text-[13.5px] text-fg-muted', className)}
     >
-      <span aria-hidden className="flex w-4 justify-center">
+      <span aria-hidden className="flex w-4 shrink-0 justify-center">
         <LoaderIcon className="size-3.5 motion-safe:animate-spin" />
       </span>
-      <span className="motion-safe:animate-shimmer">
-        {verb} {target ? <span className="font-mono text-[12px] text-fg">{target}</span> : null}
+      <span className="flex min-w-0 items-baseline gap-1 motion-safe:animate-shimmer">
+        <span className="shrink-0">{verb}</span>
+        {target ? <span className="min-w-0 truncate font-mono text-[12px] text-fg">{target}</span> : null}
       </span>
-      {elapsed ? <span className="figures font-mono text-[11.5px] text-fg-subtle">{elapsed}</span> : null}
+      {elapsed ? <span className="figures shrink-0 font-mono text-[11.5px] text-fg-subtle">{elapsed}</span> : null}
     </div>
   );
 }
