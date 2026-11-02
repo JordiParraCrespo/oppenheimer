@@ -22,7 +22,10 @@ export class GithubPullWakesDomainEventHandler {
     private readonly wakes: SessionWakesPort,
   ) {}
 
-  @OnEvent(ExternalEventReceivedDomainEvent.name)
+  // `suppressErrors: false`: by default Nest logs a listener's rejection and
+  // the outbox marks the event delivered, so a wake whose stage failed would
+  // be lost; rethrown, the outbox delivers the event again.
+  @OnEvent(ExternalEventReceivedDomainEvent.name, { suppressErrors: false })
   async handle(
     event: Pick<
       ExternalEventReceivedDomainEvent,

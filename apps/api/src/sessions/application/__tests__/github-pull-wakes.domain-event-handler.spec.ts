@@ -75,3 +75,17 @@ describe('GithubPullWakesDomainEventHandler', () => {
     }
   });
 });
+
+describe('GithubPullWakesDomainEventHandler, delivered by the outbox', () => {
+  // The regression: a wake whose stage failed, swallowed by the listener, so
+  // the outbox marked the event delivered and the session was never woken.
+  it('lets a failure reach the outbox relay, which delivers the event again', () => {
+    const listeners = Reflect.getMetadata(
+      'EVENT_LISTENER_METADATA',
+      GithubPullWakesDomainEventHandler.prototype.handle,
+    );
+    expect(listeners).toEqual([
+      { event: 'ExternalEventReceivedDomainEvent', options: { suppressErrors: false } },
+    ]);
+  });
+});
