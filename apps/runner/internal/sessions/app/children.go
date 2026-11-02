@@ -247,8 +247,17 @@ func (c *Children) settled(child domain.Session) bool {
 	switch {
 	case !child.State.Live(), child.State == domain.StateBlocked:
 		return true
-	case child.State == domain.StateDone, child.State == domain.StateIdle:
+	case child.State == domain.StateDone:
+		// A turn ended, whether or not a refresh saw it running.
+		return true
+	case child.State == domain.StateIdle:
 		// Idle before its first turn is a child that has not started yet.
+		// It has, when a refresh saw it working or when its own report has
+		// counted a turn, which outlives a turn shorter than a refresh and a
+		// runner restart.
+		if c.turnOf(child.ID) > 0 {
+			return true
+		}
 		c.mu.Lock()
 		defer c.mu.Unlock()
 		return c.worked[child.ID]

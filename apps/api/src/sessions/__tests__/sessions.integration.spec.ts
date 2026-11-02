@@ -716,6 +716,45 @@ describe('sessions: the log, the fold and the keys (integration)', () => {
       expect(row.pendingDecision).toBeNull();
     });
 
+    it('stores what the agent said it is doing, reads it back, and drops it once the screen speaks', async () => {
+      const work = session();
+      await repository.createIfUnclaimed(work, requested());
+      await repository.appendEventsForHost(hostId, work.id, [
+        { idempotencyKey: 'run-2:1', source: 'runner', kind: SESSION_EVENT_KINDS.STARTED },
+        {
+          idempotencyKey: 'run-2:2',
+          source: 'runner',
+          kind: SESSION_EVENT_KINDS.AGENT_OBSERVED,
+          payload: {
+            state: 'blocked',
+            program: { state: 'blocked', kind: 'permission', message: 'approve Bash: pnpm test' },
+          },
+        },
+      ]);
+      const stored = (await repository.findOneById(scope(), work.id)).unwrap();
+      expect(stored.agentReport).toEqual({
+        state: 'blocked',
+        kind: 'permission',
+        progress: null,
+        message: 'approve Bash: pnpm test',
+        title: null,
+      });
+
+      await repository.appendEventsForHost(hostId, work.id, [
+        {
+          idempotencyKey: 'run-2:3',
+          source: 'runner',
+          kind: SESSION_EVENT_KINDS.AGENT_OBSERVED,
+          payload: { state: 'working' },
+        },
+      ]);
+      const [row] = await dataSource.query(
+        `SELECT "agentReport" FROM "work_session" WHERE "id" = $1`,
+        [work.id],
+      );
+      expect(row.agentReport).toBeNull();
+    });
+
     it('lets one of two answers to the same decision append, never both', async () => {
       const work = session();
       await repository.createIfUnclaimed(work, requested());

@@ -199,6 +199,21 @@ func TestWaitReturnsOnceTheChildFinished(t *testing.T) {
 	}
 }
 
+// A child whose whole turn fell between two refreshes has still finished
+// it: its own report counted the turn, which no refresh had to see.
+func TestWaitCountsATurnNoRefreshSaw(t *testing.T) {
+	f := newFamily(t)
+	child := f.child(t, app.DelegateInput{})
+	f.reports.say(child.ID, "state=working")
+	f.reports.say(child.ID, "state=idle")
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+	got, err := f.children.Wait(ctx, f.parent.ID, []string{child.ID})
+	if err != nil || len(got) != 1 || got[0].State != domain.StateIdle {
+		t.Fatalf("waited for %+v: %v", got, err)
+	}
+}
+
 func waitUntil(t *testing.T, cond func() bool) {
 	t.Helper()
 	deadline := time.Now().Add(5 * time.Second)
