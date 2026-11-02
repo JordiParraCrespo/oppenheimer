@@ -81,6 +81,9 @@ type Service struct {
 	// decisions, under mu, is the id of the decision last reported for each
 	// session whose agent waits on one (reportDecision).
 	decisions map[string]string
+	// worked, under mu, holds the sessions seen working since they started,
+	// which is what tells a child that finished from one not started yet.
+	worked map[string]bool
 	// watches is each session's terminal watches (watches.go).
 	watches     *watchBook
 	terminals   Terminals
@@ -116,7 +119,7 @@ func New(opts Options) (*Service, error) {
 	}
 	s := &Service{
 		sessions: map[string]domain.Session{}, creating: map[string]*creation{},
-		revs: map[string]uint64{}, busy: map[string]int{}, inFlight: map[string]bool{}, confirmed: map[string]bool{}, decisions: map[string]string{},
+		revs: map[string]uint64{}, busy: map[string]int{}, inFlight: map[string]bool{}, confirmed: map[string]bool{}, decisions: map[string]string{}, worked: map[string]bool{},
 		watches:   newWatchBook(),
 		terminals: opts.Terminals, worktrees: opts.Worktrees,
 		classifier: opts.Classifier, store: opts.Store, publisher: publisher,
@@ -791,6 +794,9 @@ func (s *Service) decide(session domain.Session, state domain.State, loginURL st
 	if announce {
 		publisher.SessionChanged(next)
 	}
+	if ended {
+		s.ended(next)
+	}
 	return next
 }
 
@@ -809,7 +815,7 @@ const blockedConfirmAfter = 15 * time.Second
 // the refresh's copy, so a window opened meanwhile is kept, and announced.
 func (s *Service) observe(session domain.Session, seen uint64, obs observation) domain.Session {
 	state, loginURL := obs.state, obs.loginURL
-	var confirm bool
+	var confirm, stateChanged bool
 	next, changed, publisher := s.commit(session.ID, func(cur domain.Session, known bool) (domain.Session, bool) {
 		switch {
 		case !known:
@@ -825,7 +831,7 @@ func (s *Service) observe(session domain.Session, seen uint64, obs observation) 
 			return cur, false
 		}
 		delete(s.confirmed, session.ID)
-		stateChanged := cur.State != state
+		stateChanged = cur.State != state
 		cur.State = state
 		if loginURL != "" {
 			cur.LoginURL = loginURL
@@ -845,16 +851,23 @@ func (s *Service) observe(session domain.Session, seen uint64, obs observation) 
 	if !changed {
 		return next
 	}
+	if state == domain.StateWorking {
+		s.mu.Lock()
+		s.worked[next.ID] = true
+		s.mu.Unlock()
+	}
 	// Only a live session is ever observed, so a non-live state here is
 	// the moment it ended.
 	if !state.Live() {
 		s.discardFiles(next.ID)
 		s.watches.drop(next.ID)
-		if s.program != nil {
-			s.program.Forget(next.ID)
-		}
 	}
 	publisher.SessionChanged(next)
+	if !state.Live() {
+		s.ended(next)
+	} else if stateChanged {
+		s.noteParent(next)
+	}
 	return next
 }
 

@@ -35,6 +35,28 @@ func programStatusDir(paths Paths) string {
 	return filepath.Join(paths.State(), "program-status")
 }
 
+// linkRunner points `<bin>/path/runner` at this binary, best effort: a
+// session without it still runs, its agent just cannot call `runner` by name.
+func linkRunner(paths Paths) {
+	executable := runnerExecutable()
+	if executable == "" {
+		return
+	}
+	dir := paths.Commands()
+	if err := os.MkdirAll(dir, 0o700); err != nil {
+		return
+	}
+	link := filepath.Join(dir, "runner")
+	if target, err := os.Readlink(link); err == nil && target == executable {
+		return
+	}
+	tmp := link + ".new"
+	_ = os.Remove(tmp)
+	if os.Symlink(executable, tmp) == nil {
+		_ = os.Rename(tmp, link)
+	}
+}
+
 // runnerExecutable is this binary, for the commands a session runs back
 // into it; empty when it cannot name itself.
 func runnerExecutable() string {

@@ -195,6 +195,10 @@ func (p Paths) Bin() string { return filepath.Join(p.Home, DirBin) }
 // Current is the symlink the service unit executes.
 func (p Paths) Current() string { return filepath.Join(p.Bin(), "current") }
 
+// Commands holds a `runner` link to this binary, on every session's PATH,
+// so an agent types `runner` whatever the versioned file is called.
+func (p Paths) Commands() string { return filepath.Join(p.Bin(), "path") }
+
 // Log is the log directory.
 func (p Paths) Log() string { return filepath.Join(p.Home, DirLog) }
 

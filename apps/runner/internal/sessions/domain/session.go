@@ -194,6 +194,13 @@ type Session struct {
 	// agent's transcript and handed to the link as `prompt.first`, so a
 	// runner that restarts never reports it a second time.
 	PromptReported bool `json:"promptReported,omitempty"`
+	// Parent is the session whose agent started this one, and empty for a
+	// session a person or the control plane started. A child tells its
+	// parent when it needs attention or ends, unless Quiet, and ends with
+	// its parent unless OutliveParent.
+	Parent        string `json:"parent,omitempty"`
+	OutliveParent bool   `json:"outliveParent,omitempty"`
+	Quiet         bool   `json:"quiet,omitempty"`
 }
 
 var (

@@ -2,6 +2,7 @@ package app_test
 
 import (
 	"context"
+	"maps"
 	"strings"
 	"sync"
 	"testing"
@@ -28,6 +29,8 @@ func (h *heldReports) Read(id string) (domain.ProgramReport, bool) {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 	r, ok := h.reports[id]
+	// A copy, as the wrapper's file is read afresh each time.
+	r.Records = maps.Clone(r.Records)
 	return r, ok
 }
 
@@ -42,6 +45,7 @@ func (h *heldReports) say(id, payload string) {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 	r := h.reports[id]
+	r.Records = maps.Clone(r.Records)
 	status, _ := domain.ParseProgramStatus(payload)
 	r.Apply(status)
 	h.reports[id] = r

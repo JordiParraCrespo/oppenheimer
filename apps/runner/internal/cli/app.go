@@ -112,6 +112,7 @@ func New(version string) (*App, error) {
 	if err := paths.Ensure(); err != nil {
 		return nil, err
 	}
+	linkRunner(paths)
 
 	store := pairfile.New(paths.Home)
 	// The directory the user chose at install lives in config.json; the
@@ -256,6 +257,12 @@ func sessionEnv(paths Paths, session sessionsdomain.Session) map[string]string {
 		"OPPENHEIMER_SESSION": session.ID,
 		"OPPENHEIMER_SOCKET":  paths.Socket(),
 	}
+	// `runner` by name, for the agent's own commands (`runner --skill`).
+	env["PATH"] = WithDir(os.Getenv("PATH"), paths.Commands())
+	// A child's own commands (`runner sessions report`) find its parent.
+	if session.Parent != "" {
+		env["OPPENHEIMER_PARENT"] = session.Parent
+	}
 	if session.Place == sessionsdomain.PlaceFolder {
 		return env
 	}
@@ -360,6 +367,15 @@ func WithInstallBins(path, home string) string {
 		}
 	}
 	return strings.Join(entries, string(os.PathListSeparator))
+}
+
+// WithDir is path with dir appended, once.
+func WithDir(path, dir string) string {
+	entries := filepath.SplitList(path)
+	if slices.Contains(entries, dir) {
+		return path
+	}
+	return strings.Join(append(entries, dir), string(os.PathListSeparator))
 }
 
 // ServicePATH is the installer's PATH as the service should carry it: only
