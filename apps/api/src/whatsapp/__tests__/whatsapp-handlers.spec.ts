@@ -1,8 +1,8 @@
 import 'reflect-metadata';
-import type { AccessScope } from '@oppenheimer/backend-authz';
 import { AppError } from '@oppenheimer/backend-core';
 import { None, Some } from 'oxide.ts';
 import { describe, expect, it, vi } from 'vitest';
+import type { AccessScope } from '../../authz/domain/access-scope.types';
 import type { HostAccessPort } from '../../hosts/application/host-access.port';
 import type { WhatsappDevicePort } from '../application/whatsapp-device.port';
 import { LinkWhatsappCommand } from '../commands/link-whatsapp/link-whatsapp.command';
