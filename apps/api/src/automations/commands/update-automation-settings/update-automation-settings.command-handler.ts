@@ -1,6 +1,6 @@
 import { Inject } from '@nestjs/common';
 import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
-import { requireOrganization } from '../../../authz/application/tenant-scope.policy';
+import { requireOrganization } from '@oppenheimer/backend-authz';
 import { AUTOMATION_SETTINGS_REPOSITORY } from '../../automations.di-tokens';
 import type { AutomationSettingsRepositoryPort } from '../../database/automation-settings.repository.port';
 import { UpdateAutomationSettingsCommand } from './update-automation-settings.command';

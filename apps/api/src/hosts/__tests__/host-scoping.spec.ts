@@ -1,13 +1,6 @@
-import {
-  type AbilityContext,
-  defineAbilitiesFromPermissions,
-  type PermissionDefinition,
-  SYSTEM_ROLE_PERMISSIONS,
-} from '@oppenheimer/shared';
+import { type AccessScope, applyAccessScope, expectAbility } from '@oppenheimer/backend-authz';
+import { SYSTEM_ROLE_PERMISSIONS } from '@oppenheimer/shared';
 import { describe, expect, it } from 'vitest';
-import { canAccessRow } from '../../authz/application/can-access-row.policy';
-import { applyAccessScope } from '../../authz/database/scoped.repository';
-import type { AccessScope } from '../../authz/domain/access-scope.types';
 import { HostResource } from '../hosts.resource';
 
 /**
@@ -78,48 +71,19 @@ describe('host row scoping (SQL)', () => {
   });
 });
 
-/**
- * Whether `permissions`, built for `userId` with `scope` behind the
- * `${scope.*}` placeholders, allow `action` on one concrete row.
- */
-function allows(
-  permissions: readonly PermissionDefinition[],
-  userId: string,
-  scope: AccessScope,
-  action: string,
-  subjectName: string,
-  row: Record<string, unknown>,
-): boolean {
-  const ability = defineAbilitiesFromPermissions([...permissions], {
-    user: { id: userId },
-    scope: {
-      organizationId: scope.organizationId,
-      teamIds: scope.teamIds,
-      grants: Object.fromEntries(
-        [...scope.grants].map(([subject, grant]) => [
-          subject,
-          grant === 'all' ? 'all' : [...grant],
-        ]),
-      ),
-    },
-  } as AbilityContext);
-  return canAccessRow(ability, action, subjectName, row);
-}
-
 describe('host capabilities (CASL)', () => {
   it('lets a person manage their own machine', () => {
-    for (const action of ['read', 'update', 'delete']) {
-      expect(allows(USER_ROLE, 'jordi', scope(), action, 'Host', { ownerUserId: 'jordi' })).toBe(
-        true,
-      );
-    }
+    expectAbility(USER_ROLE, { user: { id: 'jordi' }, scope: scope() })
+      .canOn('read', 'Host', { ownerUserId: 'jordi' })
+      .canOn('update', 'Host', { ownerUserId: 'jordi' })
+      .canOn('delete', 'Host', { ownerUserId: 'jordi' });
   });
 
   it('does not let them touch somebody else’s', () => {
     // The ability has to refuse it too, or the UI would offer a button the
     // scoped query then reports as a missing host.
-    expect(allows(USER_ROLE, 'jordi', scope(), 'update', 'Host', { ownerUserId: 'alex' })).toBe(
-      false,
-    );
+    expectAbility(USER_ROLE, { user: { id: 'jordi' }, scope: scope() }).cannotOn('update', 'Host', {
+      ownerUserId: 'alex',
+    });
   });
 });

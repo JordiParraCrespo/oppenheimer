@@ -1,6 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
+import type { AccessScope } from '@oppenheimer/backend-authz';
 import { AppError } from '@oppenheimer/backend-core';
-import type { AccessScope } from '../../authz/domain/access-scope.types';
 import type { WhatsappAccountRepositoryPort } from '../database/whatsapp-account.repository.port';
 import type { WhatsappMessageRepositoryPort } from '../database/whatsapp-message.repository.port';
 import { WhatsappErrors } from '../domain/whatsapp.errors';

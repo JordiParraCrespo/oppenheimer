@@ -1,11 +1,11 @@
 import type { CommandBus, QueryBus } from '@nestjs/cqrs';
+import { emptyScope } from '@oppenheimer/backend-authz';
 import { AppError } from '@oppenheimer/backend-core';
 import {
   BOT_SKILL_BODY_MAX,
   BOT_SKILL_DESCRIPTION_MAX,
   BOT_SKILL_NAME_MAX,
 } from '@oppenheimer/shared';
-import { emptyScope } from '../../../authz/domain/access-scope.types';
 import { CreateBotSkillCommand } from '../../../bots/commands/create-bot-skill/create-bot-skill.command';
 import { DeleteBotSkillCommand } from '../../../bots/commands/delete-bot-skill/delete-bot-skill.command';
 import { UpdateBotSkillCommand } from '../../../bots/commands/update-bot-skill/update-bot-skill.command';

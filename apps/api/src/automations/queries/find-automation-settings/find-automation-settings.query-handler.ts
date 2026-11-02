@@ -1,5 +1,5 @@
 import { type IQueryHandler, QueryHandler } from '@nestjs/cqrs';
-import { requireTenant } from '../../../authz/application/tenant-scope.policy';
+import { requireTenant } from '@oppenheimer/backend-authz';
 import { AutomationLimitsResolver } from '../../application/automation-limits.resolver';
 import type { AutomationLimits } from '../../domain/automation-limits.policy';
 import { FindAutomationSettingsQuery } from './find-automation-settings.query';

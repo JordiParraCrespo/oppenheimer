@@ -1,4 +1,4 @@
-import type { AccessScope } from './access-scope.types';
+import type { AccessScope } from '../scope/access-scope';
 
 export interface AccessGrantInput {
   organizationId: string;

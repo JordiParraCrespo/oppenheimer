@@ -1,4 +1,4 @@
-import { emptyScope } from '../../../../authz/domain/access-scope.types';
+import { emptyScope } from '@oppenheimer/backend-authz';
 import type { MailSendRepositoryPort } from '../../../database/mail-send.repository.port';
 import { CancelScheduledMailCommand } from '../cancel-scheduled-mail.command';
 import { CancelScheduledMailCommandHandler } from '../cancel-scheduled-mail.command-handler';

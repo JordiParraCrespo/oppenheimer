@@ -1,7 +1,7 @@
 import { randomBytes, randomUUID } from 'node:crypto';
+import type { AccessScope } from '@oppenheimer/backend-authz';
 import { DataSource } from 'typeorm';
 import { useTestDatabase } from '../../__tests__/integration-services';
-import type { AccessScope } from '../../authz/domain/access-scope.types';
 import type { GoogleConnectStateResolver } from '../application/google-connect-state.resolver';
 import { CalendarConnectionMapper } from '../calendar-connection.mapper';
 import { CalendarEventMapper } from '../calendar-event.mapper';
