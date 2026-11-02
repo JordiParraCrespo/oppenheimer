@@ -1056,3 +1056,9 @@ earlier note:
   a password of the session's, and follows the conversation through that
   API, writing each finished part as a line in the transcript shape the
   console already reads. Claude Code still reads its file.
+- `versions/mvp/25-bots.md` §4.1 stopped a goal when any turn of it
+  failed, since a failure would only fail again. A turn stopped at the
+  4-minute limit for one turn is the exception, decided on 2026-11-02 after
+  a mail-cleaning goal stopped at its first long turn: the goal is the way
+  past that limit, so that turn is reviewed and the next continuation goes
+  on, told to take a smaller step.
