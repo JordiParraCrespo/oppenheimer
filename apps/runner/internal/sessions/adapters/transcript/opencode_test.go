@@ -157,7 +157,7 @@ func followOpenCode(t *testing.T, server domain.AgentServer, sink *batches) {
 	go func() {
 		defer close(done)
 		_ = transcript.New(transcript.Options{}).
-			Follow(ctx, domain.AgentOpenCode, domain.Launch{Server: &server}, 64<<10, 256, sink.emit)
+			Follow(ctx, domain.Session{Agent: domain.AgentOpenCode, Launch: domain.Launch{Server: &server}}, 64<<10, 256, sink.emit)
 	}()
 	t.Cleanup(func() { cancel(); <-done })
 }

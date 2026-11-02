@@ -31,26 +31,29 @@ const (
 // line as the CLI appends it. OpenCode's conversation is read through its
 // own API instead (`opencode.go`). A batch emit refuses (the link's queue is full)
 // is offered again on the next check, so nothing is skipped.
-func (r *Reader) Follow(ctx context.Context, agent domain.Agent, launch domain.Launch, entryMax, batchMax int, emit func(app.ChatBatch) error) error {
-	if agent.ServesConversation() {
-		if launch.Server == nil {
+func (r *Reader) Follow(ctx context.Context, session domain.Session, entryMax, batchMax int, emit func(app.ChatBatch) error) error {
+	if session.Agent.ServesConversation() {
+		if session.Launch.Server == nil {
 			return app.ErrNoChat
 		}
-		followOpenCode(ctx, *launch.Server, entryMax, batchMax, emit)
+		followOpenCode(ctx, *session.Launch.Server, entryMax, batchMax, emit)
 		return nil
 	}
-	conversation := launch.Conversation
-	reader, ok := r.agents[agent]
-	if !ok || !conversationPattern.MatchString(conversation) {
+	source, ok := r.chats[session.Agent]
+	if !ok {
+		return app.ErrNoChat
+	}
+	find, ok := source.finder(session)
+	if !ok {
 		return app.ErrNoChat
 	}
 	f := &follower{
-		find:     func() string { return reader.path(conversation) },
-		entry:    reader.chatEntry,
+		find: find, fresh: source.transcriber,
 		entryMax: entryMax, batchMax: batchMax, emit: emit, reset: true,
 	}
-	if r.statusDir != "" && agent == domain.AgentClaude {
-		f.status = statusPath(r.statusDir, conversation)
+	f.t = f.fresh()
+	if r.statusDir != "" && session.Agent == domain.AgentClaude {
+		f.status = statusPath(r.statusDir, session.Launch.Conversation)
 	}
 	ticker := time.NewTicker(followEvery)
 	defer ticker.Stop()
@@ -65,10 +68,51 @@ func (r *Reader) Follow(ctx context.Context, agent domain.Agent, launch domain.L
 	}
 }
 
+// chatSource is where an agent keeps a session's conversation as a file the
+// chat follows, and how the file's lines read as the chat's entries. Claude
+// Code's (`claude.go`), Codex's (`codex.go`) and Grok's (`grok.go`).
+type chatSource interface {
+	// finder is how the session's file is found, asked at each check: its
+	// path, or "" while there is none yet. False when this session can have
+	// none (a conversation with no name to find it by).
+	finder(session domain.Session) (func() string, bool)
+	// transcriber reads one file from its start; a new one is made each time
+	// the history starts over.
+	transcriber() chatTranscriber
+}
+
+// chatTranscriber turns a conversation file's lines into the chat's entries,
+// each the JSON of one line of the transcript the console reads (Claude
+// Code's shape, `claude_chat.go`).
+type chatTranscriber interface {
+	// line is the entries one complete line stands for: none, one or several.
+	line(line []byte, max int) [][]byte
+	// quiet is what the transcriber still holds once the file has not grown
+	// for since: a reply an agent writes in pieces is whole only when the
+	// pieces stop.
+	quiet(since time.Duration, max int) [][]byte
+}
+
+// lineByLine is the transcriber of a file whose every line is complete and
+// stands for at most one entry.
+type lineByLine func(line []byte, max int) ([]byte, bool)
+
+func (l lineByLine) line(raw []byte, max int) [][]byte {
+	if entry, ok := l(raw, max); ok {
+		return [][]byte{entry}
+	}
+	return nil
+}
+
+func (lineByLine) quiet(time.Duration, int) [][]byte { return nil }
+
 // follower is one conversation's read position.
 type follower struct {
-	find     func() string
-	entry    func(line []byte, max int) ([]byte, bool)
+	find  func() string
+	fresh func() chatTranscriber
+	t     chatTranscriber
+	// grew is when the file last grew, for what the transcriber holds back.
+	grew     time.Time
 	entryMax int
 	batchMax int
 	emit     func(app.ChatBatch) error
@@ -139,11 +183,13 @@ func (f *follower) check() {
 		// A new file, or one that shrank: the CLI replaced it, so the
 		// history is read again from its start.
 		f.path, f.offset, f.partial, f.reset = path, 0, nil, true
+		f.t = f.fresh()
 	}
 	if info.Size() == f.offset {
-		if f.reset {
-			f.flush()
+		if !f.reset {
+			f.queue(f.t.quiet(time.Since(f.grew), f.entryMax))
 		}
+		f.flush()
 		return
 	}
 	file, err := os.Open(path) //nolint:gosec // a conversation file found under Claude Code's own folder, its name checked by conversationPattern
@@ -159,6 +205,7 @@ func (f *follower) check() {
 		return
 	}
 	f.offset += int64(len(chunk))
+	f.grew = time.Now()
 	data := append(append([]byte(nil), f.partial...), chunk...)
 	end := bytes.LastIndexByte(data, '\n')
 	if end < 0 {
@@ -171,13 +218,18 @@ func (f *follower) check() {
 	}
 	f.partial = append([]byte(nil), data[end+1:]...)
 	for _, line := range bytes.Split(data[:end], []byte{'\n'}) {
-		entry, ok := f.entry(line, f.entryMax)
-		if !ok || len(entry) > f.entryMax {
-			continue
-		}
-		f.pending = append(f.pending, string(entry))
+		f.queue(f.t.line(line, f.entryMax))
 	}
 	f.flush()
+}
+
+// queue holds entries for the next batch, leaving out one over entryMax.
+func (f *follower) queue(entries [][]byte) {
+	for _, entry := range entries {
+		if len(entry) <= f.entryMax {
+			f.pending = append(f.pending, string(entry))
+		}
+	}
 }
 
 // flush emits the pending entries in batches, and reports whether all of

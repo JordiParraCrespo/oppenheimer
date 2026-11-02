@@ -212,6 +212,8 @@ func New(version string) (*App, error) {
 		Transcripts: transcript.New(transcript.Options{
 			ClaudeProjects: claudeProjectsPath(paths),
 			StatusDir:      StatusDir(paths),
+			CodexSessions:  agentSessionsPath(paths, "CODEX_HOME", ".codex"),
+			GrokSessions:   agentSessionsPath(paths, "GROK_HOME", ".grok"),
 		}),
 		// Claude Code hands its status line the context and the plan's usage,
 		// which the chat shows; the runner's own takes them on the way.
@@ -525,6 +527,19 @@ func claudeProjectsPath(paths Paths) string {
 		return ""
 	}
 	return filepath.Join(paths.UserHome, ".claude", "projects")
+}
+
+// agentSessionsPath is an agent CLI's `sessions/` folder: under the home its
+// variable names (`CODEX_HOME`, `GROK_HOME`), else under its folder in the
+// user's home. "" when there is no home to look in.
+func agentSessionsPath(paths Paths, homeEnv, folder string) string {
+	if dir := os.Getenv(homeEnv); dir != "" {
+		return filepath.Join(dir, "sessions")
+	}
+	if paths.UserHome == "" {
+		return ""
+	}
+	return filepath.Join(paths.UserHome, folder, "sessions")
 }
 
 // freeLoopbackPort is a port on 127.0.0.1 nothing listens on now, which the

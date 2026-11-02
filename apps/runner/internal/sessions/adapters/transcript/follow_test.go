@@ -60,7 +60,7 @@ func follow(t *testing.T, projects string, sink *batches) {
 	go func() {
 		defer close(done)
 		_ = transcript.New(transcript.Options{ClaudeProjects: projects}).
-			Follow(ctx, domain.AgentClaude, domain.Launch{Conversation: conversation}, 64<<10, 256, sink.emit)
+			Follow(ctx, domain.Session{Agent: domain.AgentClaude, Launch: domain.Launch{Conversation: conversation}}, 64<<10, 256, sink.emit)
 	}()
 	t.Cleanup(func() { cancel(); <-done })
 }
@@ -190,15 +190,22 @@ func TestTheChatCarriesTheTokensAnAnswerWasSent(t *testing.T) {
 	}
 }
 
-func TestOnlyClaudeAndAServedOpenCodeHaveAChatToFollow(t *testing.T) {
+func TestAnAgentWithNothingToFindHasNoChatToFollow(t *testing.T) {
 	reader := transcript.New(transcript.Options{ClaudeProjects: t.TempDir()})
-	err := reader.Follow(context.Background(), domain.AgentCodex, domain.Launch{Conversation: conversation}, 1, 1, func(app.ChatBatch) error { return nil })
+	none := func(app.ChatBatch) error { return nil }
+	// A runner told nowhere Codex keeps its rollouts has none to read.
+	err := reader.Follow(context.Background(), domain.Session{Agent: domain.AgentCodex, Worktree: t.TempDir()}, 1, 1, none)
 	if !errors.Is(err, app.ErrNoChat) {
-		t.Fatalf("codex: %v", err)
+		t.Fatalf("codex without its folder: %v", err)
 	}
 	// An OpenCode launched before the runner served its API has none to read.
-	err = reader.Follow(context.Background(), domain.AgentOpenCode, domain.Launch{}, 1, 1, func(app.ChatBatch) error { return nil })
+	err = reader.Follow(context.Background(), domain.Session{Agent: domain.AgentOpenCode}, 1, 1, none)
 	if !errors.Is(err, app.ErrNoChat) {
 		t.Fatalf("opencode without a server: %v", err)
+	}
+	// The blank terminal keeps no conversation at all.
+	err = reader.Follow(context.Background(), domain.Session{Agent: domain.AgentShell}, 1, 1, none)
+	if !errors.Is(err, app.ErrNoChat) {
+		t.Fatalf("shell: %v", err)
 	}
 }

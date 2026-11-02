@@ -341,7 +341,7 @@ func (s *Service) FollowChat(ctx context.Context, id string, entryMax, batchMax 
 	if err != nil {
 		return err
 	}
-	return s.transcripts.Follow(ctx, session.Agent, session.Launch, entryMax, batchMax, emit)
+	return s.transcripts.Follow(ctx, session, entryMax, batchMax, emit)
 }
 
 // Send types into a window, which is how the browser's keystrokes arrive

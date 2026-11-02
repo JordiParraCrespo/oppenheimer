@@ -10,6 +10,7 @@ import type {
   SessionChat,
 } from '@oppenheimer/frontend-consumer';
 import type { ChatUsageContext } from '@oppenheimer/frontend-web';
+import { CODING_AGENTS } from '@oppenheimer/shared/agents';
 import type { TFunction } from 'i18next';
 import type { ReactNode } from 'react';
 import { exploredRuns } from './explored';
@@ -350,11 +351,29 @@ export function elapsedOf(turn: ChatTurn): string | null {
 }
 
 /**
- * A model id as people say it: `claude-opus-5-5` reads "Opus 5.5". Anything
- * that is not a Claude id is shown as it came.
+ * The agent catalog's models by id, as people say them ("GPT-6.1 Sol"):
+ * each id as the CLI takes it, and without the provider OpenCode puts in
+ * front of it (`anthropic/`), which is how OpenCode names the model that
+ * answered.
+ */
+const MODEL_LABELS: ReadonlyMap<string, string> = new Map(
+  Object.values(CODING_AGENTS).flatMap((agent) =>
+    agent.models.flatMap((model): [string, string][] => [
+      [model.id, model.label],
+      [model.id.slice(model.id.indexOf('/') + 1), model.label],
+    ]),
+  ),
+);
+
+/**
+ * A model id as people say it: the catalog's name for it ("GPT-6.1 Sol"),
+ * else a Claude id read as one (`claude-opus-5-5` reads "Opus 5.5"). Any
+ * other is shown as it came.
  */
 export function modelName(model: string | null): string | null {
   if (!model) return null;
+  const known = MODEL_LABELS.get(model);
+  if (known) return known;
   const match = /^claude-([a-z]+)-(\d+)(?:-(\d+))?/.exec(model);
   if (!match) return model;
   const [, family = '', major, minor] = match;
