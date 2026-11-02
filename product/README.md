@@ -1068,3 +1068,8 @@ earlier note:
   a mail-cleaning goal stopped at its first long turn: the goal is the way
   past that limit, so that turn is reviewed and the next continuation goes
   on, told to take a smaller step.
+- `versions/mvp/05-screens.md` listed Claude Code's models as the newest
+  of each line, Haiku 4.5 among them. On 2026-11-02 the owner asked for
+  the list Claude's own picker shows: Opus 5.5, Fable 5.1, Sonnet 5.5 and
+  Haiku 5.5, then Haiku 4.5, Sonnet 5, Opus 5, Fable 5, Opus 4.8, 4.7, 4.6
+  and Sonnet 4.6 behind "More models" — the catalog's `legacy` models.

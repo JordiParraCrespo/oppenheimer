@@ -6,7 +6,11 @@ export function toAgentOptions(): AgentOption[] {
   return CODING_AGENT_IDS.map((id) => ({
     id,
     label: CODING_AGENTS[id].label,
-    models: CODING_AGENTS[id].models.map((model) => ({ value: model.id, label: model.label })),
+    models: CODING_AGENTS[id].models.map((model) => ({
+      value: model.id,
+      label: model.label,
+      legacy: model.legacy,
+    })),
   }));
 }
 

@@ -79,6 +79,7 @@ export function AgentSelect({
         faster: t('sessions.new.effort.faster'),
         smarter: t('sessions.new.effort.smarter'),
         effortHint: t('sessions.new.effort.hint'),
+        moreModels: t('sessions.new.agent.moreModels'),
       }}
     />
   );

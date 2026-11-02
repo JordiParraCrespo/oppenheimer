@@ -133,6 +133,8 @@ export interface BotModel {
   readonly label: string;
   readonly default?: true;
   readonly effort?: CodingAgentEffort;
+  /** An earlier generation, offered behind "More models" (`CodingAgentModel.legacy`). */
+  readonly legacy?: true;
 }
 
 /**
