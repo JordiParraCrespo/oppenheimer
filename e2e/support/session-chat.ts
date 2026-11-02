@@ -1,4 +1,4 @@
-import { expect, type Locator, type Page } from '@playwright/test';
+import { errors, expect, type Locator, type Page } from '@playwright/test';
 
 /** Where a host's Claude Code keeps conversations; the runner finds one in any project folder. */
 const FOLDER = '~/.claude/projects/-w-sessions-xrp-mobile';
@@ -138,13 +138,21 @@ export async function expectComposerClickable(page: Page): Promise<Locator> {
  * the chat is not offered the pane is the terminal already.
  */
 export async function showTerminal(page: Page): Promise<void> {
+  // The English `sessions.chat.view.label` and `sessions.chat.view.terminal`.
   const terminal = page
     .getByRole('group', { name: 'How to read this session' })
     .getByRole('button', { name: 'Terminal' });
   // `isVisible` answers at once (its `timeout` is ignored), which races the
   // host's first chat batch; nothing on the page says the chat will never
-  // come, so an absent switch is known only once this wait runs out.
-  await terminal.waitFor({ timeout: 10_000 }).catch(() => {});
-  if (await terminal.isVisible()) await terminal.click();
+  // come, so an absent switch is known only once this wait runs out. Only
+  // that timeout means "not offered"; any other failure is the test's.
+  const offered = await terminal.waitFor({ timeout: 10_000 }).then(
+    () => true,
+    (error: unknown) => {
+      if (error instanceof errors.TimeoutError) return false;
+      throw error;
+    },
+  );
+  if (offered) await terminal.click();
   await expect(page.locator('[data-slot="chat-transcript"]')).toHaveCount(0);
 }
