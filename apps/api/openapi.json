@@ -34926,6 +34926,14 @@
           "outputTokens": {
             "type": "number"
           },
+          "cacheReadTokens": {
+            "type": "number",
+            "description": "How much of its input it read from the prompt cache."
+          },
+          "cacheWriteTokens": {
+            "type": "number",
+            "description": "How much of its input it wrote to the prompt cache."
+          },
           "durationMs": {
             "type": "number",
             "description": "How long it ran, in milliseconds."

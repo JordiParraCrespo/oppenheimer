@@ -760,6 +760,12 @@ export interface BotSubagentRun {
   toolCalls: string[];
   inputTokens: number;
   outputTokens: number;
+  /**
+   * How much of `inputTokens` it read from the provider's prompt cache, and
+   * wrote to it; absent on a run recorded before they were kept.
+   */
+  cacheReadTokens?: number;
+  cacheWriteTokens?: number;
   durationMs: number;
 }
 

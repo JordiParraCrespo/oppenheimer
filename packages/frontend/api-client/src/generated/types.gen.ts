@@ -4029,6 +4029,14 @@ export type BotSubagentRunResponseDto = {
     inputTokens: number;
     outputTokens: number;
     /**
+     * How much of its input it read from the prompt cache.
+     */
+    cacheReadTokens?: number;
+    /**
+     * How much of its input it wrote to the prompt cache.
+     */
+    cacheWriteTokens?: number;
+    /**
      * How long it ran, in milliseconds.
      */
     durationMs: number;

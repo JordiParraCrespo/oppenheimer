@@ -205,6 +205,8 @@ export class TurnTranscript {
     for (const run of step.subagents ?? []) {
       this.outcome.inputTokens += run.inputTokens;
       this.outcome.outputTokens += run.outputTokens;
+      this.outcome.cacheReadTokens += run.cacheReadTokens ?? 0;
+      this.outcome.cacheWriteTokens += run.cacheWriteTokens ?? 0;
     }
     const writes: TranscriptWrite[] = [{ kind: 'steps', message: line }];
     const images = isError ? [] : toShownImages(data?.[SHOWN_IMAGES_DATA_KEY]);
