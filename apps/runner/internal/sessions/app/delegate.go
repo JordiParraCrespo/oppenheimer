@@ -47,6 +47,8 @@ type DelegateInput struct {
 	OutliveParent bool
 	// Quiet sends the parent no notes about the child.
 	Quiet bool
+	// Keep brings the child back on its own after a reboot.
+	Keep bool
 }
 
 // Delegate starts a child session for a live parent.
@@ -63,7 +65,7 @@ func (s *Service) Delegate(ctx context.Context, in DelegateInput) (domain.Sessio
 	}
 	create := CreateInput{
 		Agent: in.Agent, Name: in.Name, Launch: domain.Launch{Prompt: in.Task},
-		Parent: parent.ID, OutliveParent: in.OutliveParent, Quiet: in.Quiet,
+		Parent: parent.ID, OutliveParent: in.OutliveParent, Quiet: in.Quiet, Keep: in.Keep,
 		Tenant: domain.Tenant{Account: parent.AccountID, Workspace: parent.WorkspaceID},
 	}
 	if in.Repo != "" {

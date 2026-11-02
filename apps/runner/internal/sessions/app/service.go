@@ -45,7 +45,11 @@ type Options struct {
 	// ProgramStatus keeps what an agent reports through OSC 7501; nil reads
 	// the screen alone.
 	ProgramStatus ProgramStatus
-	Now           func() time.Time
+	// Rebooted says the host started after the session map was last
+	// saved: every session it holds as live was lost to that reboot, and a
+	// kept one is brought back (RecoverKept).
+	Rebooted bool
+	Now      func() time.Time
 }
 
 // Service is the session lifecycle.
@@ -84,6 +88,9 @@ type Service struct {
 	// worked, under mu, holds the sessions seen working since they started,
 	// which is what tells a child that finished from one not started yet.
 	worked map[string]bool
+	// lost, under mu, holds the kept sessions a reboot stopped, until each
+	// is back (keep.go).
+	lost map[string]*recovery
 	// watches is each session's terminal watches (watches.go).
 	watches     *watchBook
 	terminals   Terminals
@@ -119,7 +126,7 @@ func New(opts Options) (*Service, error) {
 	}
 	s := &Service{
 		sessions: map[string]domain.Session{}, creating: map[string]*creation{},
-		revs: map[string]uint64{}, busy: map[string]int{}, inFlight: map[string]bool{}, confirmed: map[string]bool{}, decisions: map[string]string{}, worked: map[string]bool{},
+		revs: map[string]uint64{}, busy: map[string]int{}, inFlight: map[string]bool{}, confirmed: map[string]bool{}, decisions: map[string]string{}, worked: map[string]bool{}, lost: map[string]*recovery{},
 		watches:   newWatchBook(),
 		terminals: opts.Terminals, worktrees: opts.Worktrees,
 		classifier: opts.Classifier, store: opts.Store, publisher: publisher,
@@ -138,6 +145,9 @@ func New(opts Options) (*Service, error) {
 				continue
 			}
 			s.sessions[session.ID] = session.Clone()
+			if opts.Rebooted && session.Keep && session.State.Live() {
+				s.lost[session.ID] = &recovery{}
+			}
 		}
 	}
 	return s, nil

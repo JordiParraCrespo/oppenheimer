@@ -36,6 +36,11 @@ type childRequest struct {
 	Base          string `json:"base,omitempty"`
 	OutliveParent bool   `json:"outliveParent,omitempty"`
 	Quiet         bool   `json:"quiet,omitempty"`
+	Keep          bool   `json:"keep,omitempty"`
+}
+
+type keepRequest struct {
+	Keep bool `json:"keep"`
 }
 
 type textRequest struct {
@@ -86,12 +91,23 @@ func (a *App) delegateRoutes(router *httpx.Router) {
 		}
 		child, err := a.Sessions.Delegate(r.Context(), sessionsapp.DelegateInput{
 			Parent: r.PathValue("id"), Agent: sessionsdomain.Agent(in.Agent), Task: in.Task, Name: in.Name,
-			Repo: in.Repo, BaseBranch: in.Base, OutliveParent: in.OutliveParent, Quiet: in.Quiet,
+			Repo: in.Repo, BaseBranch: in.Base, OutliveParent: in.OutliveParent, Quiet: in.Quiet, Keep: in.Keep,
 		})
 		if err != nil {
 			return err
 		}
 		return httpx.WriteJSON(w, http.StatusCreated, viewOf(child))
+	})
+	router.HandleFunc("POST /v1/sessions/{id}/keep", func(w http.ResponseWriter, r *http.Request) error {
+		var in keepRequest
+		if err := httpx.DecodeJSON(r, &in); err != nil {
+			return err
+		}
+		session, err := a.Sessions.Keep(r.PathValue("id"), in.Keep)
+		if err != nil {
+			return err
+		}
+		return httpx.WriteJSON(w, http.StatusOK, viewOf(session))
 	})
 	router.HandleFunc("GET /v1/sessions/{id}/children", func(w http.ResponseWriter, r *http.Request) error {
 		return httpx.WriteJSON(w, http.StatusOK, map[string]any{"children": viewsOf(a.Sessions.Children(r.PathValue("id")))})
@@ -171,6 +187,24 @@ type ChildOptions struct {
 	Base          string
 	OutliveParent bool
 	Quiet         bool
+	Keep          bool
+}
+
+// Keep sets whether a session comes back on its own after a reboot.
+func (d Delegation) Keep(ctx context.Context, id string, keep bool) error {
+	id, err := d.self(id)
+	if err != nil {
+		return err
+	}
+	if err := d.call(ctx, http.MethodPost, "/v1/sessions/"+id+"/keep", keepRequest{Keep: keep}, nil); err != nil {
+		return err
+	}
+	word := "kept: it comes back on its own after a reboot"
+	if !keep {
+		word = "not kept: after a reboot it waits for Restart"
+	}
+	_, err = fmt.Fprintf(d.Out, "%s %s\n", id, word)
+	return err
 }
 
 // Run starts a child session and prints its id.
@@ -182,7 +216,7 @@ func (d Delegation) Run(ctx context.Context, opts ChildOptions, task string) err
 	var child childView
 	if err := d.call(ctx, http.MethodPost, "/v1/sessions/"+parent+"/children", childRequest{
 		Agent: opts.Agent, Task: task, Name: opts.Name, Repo: opts.Repo, Base: opts.Base,
-		OutliveParent: opts.OutliveParent, Quiet: opts.Quiet,
+		OutliveParent: opts.OutliveParent, Quiet: opts.Quiet, Keep: opts.Keep,
 	}, &child); err != nil {
 		return err
 	}

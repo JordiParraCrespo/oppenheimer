@@ -201,6 +201,8 @@ type Session struct {
 	Parent        string `json:"parent,omitempty"`
 	OutliveParent bool   `json:"outliveParent,omitempty"`
 	Quiet         bool   `json:"quiet,omitempty"`
+	// Keep brings the session back on its own after a reboot (app/keep.go).
+	Keep bool `json:"keep,omitempty"`
 }
 
 var (

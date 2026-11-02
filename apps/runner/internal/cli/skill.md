@@ -22,6 +22,9 @@ It prints the child's id. The task is the child's first message.
   cut from a branch that is already pushed.
 - `--agent` is `claude` (default), `codex`, `opencode`, `grok` or `shell`.
 - Children end when you end. `--outlive-parent` keeps one running.
+- `--keep` brings it back on its own after the host reboots, reopening its
+  conversation (`runner sessions keep [<id>] [--off]` sets it later; with no
+  id, for your own session).
 
 ## Talk to it, and hear back
 

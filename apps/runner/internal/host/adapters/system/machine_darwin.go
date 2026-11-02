@@ -72,3 +72,8 @@ func probe(ctx context.Context, name string, args ...string) string {
 // to a number that means what MemAvailable means on Linux, and a wrong
 // "memory is full" is worse than none.
 func AvailableMemory() uint64 { return 0 }
+
+// BootTime is when this host's kernel started.
+func BootTime(ctx context.Context) (time.Time, bool) {
+	return DarwinBootTime(sysctl(ctx, "kern.boottime"))
+}

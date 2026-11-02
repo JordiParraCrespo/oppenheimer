@@ -67,6 +67,8 @@ type CreateInput struct {
 	Parent        string
 	OutliveParent bool
 	Quiet         bool
+	// Keep brings the session back on its own after a reboot.
+	Keep bool
 	// Progress, when set, hears each stage start and land, in order, with the
 	// session as it stands at each. StageTerminal landing is what says the
 	// session has a pane to attach to. It must not block.
@@ -142,6 +144,7 @@ func (s *Service) Create(ctx context.Context, in CreateInput) (domain.Session, e
 	now := s.now().UTC()
 	session.ID, session.Agent, session.Launch = id, agent, in.Launch
 	session.Parent, session.OutliveParent, session.Quiet = in.Parent, in.OutliveParent, in.Quiet
+	session.Keep = in.Keep
 	session.State, session.Created, session.Updated = domain.StateCreating, now, now
 	session.Windows = []domain.Window{{Index: 0, Name: string(agent), Agent: true}}
 	// Idempotent by session id: a create redelivered after a reconnect finds

@@ -365,6 +365,7 @@ func sessions(ctx context.Context, args []string) (int, error) {
 		fs.StringVar(&opts.Parent, "parent", "", "the parent session (default: the session this runs in)")
 		fs.BoolVar(&opts.OutliveParent, "outlive-parent", false, "keep running when the parent ends")
 		fs.BoolVar(&opts.Quiet, "quiet", false, "send the parent no notes when the child is blocked or ends")
+		fs.BoolVar(&opts.Keep, "keep", false, "bring the child back on its own after a reboot")
 		rest, err := parse(fs, args)
 		if err != nil {
 			return cli.ExitUsage, err
@@ -392,6 +393,18 @@ func sessions(ctx context.Context, args []string) (int, error) {
 			return cli.ExitUsage, err
 		}
 		return withDelegation(func(d cli.Delegation) error { return d.Wait(ctx, *parent, rest, *timeout) })
+	case "keep":
+		fs := flag.NewFlagSet("sessions keep", flag.ContinueOnError)
+		off := fs.Bool("off", false, "stop keeping it: after a reboot it waits for Restart")
+		rest, err := parse(fs, args)
+		if err != nil {
+			return cli.ExitUsage, err
+		}
+		id := ""
+		if len(rest) > 0 {
+			id = rest[0]
+		}
+		return withDelegation(func(d cli.Delegation) error { return d.Keep(ctx, id, !*off) })
 	case "children":
 		fs := flag.NewFlagSet("sessions children", flag.ContinueOnError)
 		parent := fs.String("parent", "", "the parent session (default: the session this runs in)")
@@ -532,6 +545,7 @@ func usage(w *os.File) {
   runner sessions wait [<id>...]  wait for this session's children to finish, block or end
   runner sessions report "msg"    from inside a child: send the parent a message
   runner sessions children        this session's children and what each one says
+  runner sessions keep [<id>] [--off]  bring a session back on its own after a reboot
   runner --skill                  the manual for an agent in a session (helpers, messages, waits)
   runner pty [--report F] -- CMD  run CMD on a terminal that speaks OSC 7501 (a session's agent runs under it)
   runner selfcheck                what a staged binary must pass to be activated

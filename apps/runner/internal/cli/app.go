@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"context"
 	"net/http"
 	"os"
 	"os/user"
@@ -183,9 +184,11 @@ func New(version string) (*App, error) {
 		Worktrees:  worktrees,
 		Classifier: manifest.New(manifest.Options{Dir: paths.Manifests()}),
 		Store:      sessionstate.New(paths.State()),
-		Files:      filestore.New(paths.Files()),
-		Places:     places,
-		Layout:     layout,
+		// A kept session lost to a reboot comes back on its own.
+		Rebooted: rebootedSinceSaved(sessionstate.New(paths.State()).Path()),
+		Files:    filestore.New(paths.Files()),
+		Places:   places,
+		Layout:   layout,
 		Env: func(session sessionsdomain.Session) map[string]string {
 			env := sessionEnv(paths, session)
 			pinned, device := pinDevice(devices, session)
@@ -367,6 +370,19 @@ func WithInstallBins(path, home string) string {
 		}
 	}
 	return strings.Join(entries, string(os.PathListSeparator))
+}
+
+// rebootedSinceSaved reports whether the host booted after the session map
+// at path was last written. The runner writes it whenever a session ends,
+// so a map older than the boot holds as live exactly the sessions that were
+// running when the host went down.
+func rebootedSinceSaved(path string) bool {
+	info, err := os.Stat(path)
+	if err != nil {
+		return false
+	}
+	booted, ok := system.BootTime(context.Background())
+	return ok && booted.After(info.ModTime())
 }
 
 // WithDir is path with dir appended, once.

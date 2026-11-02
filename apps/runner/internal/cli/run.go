@@ -280,6 +280,10 @@ func (a *App) sessionLoop(ctx context.Context, logger *slog.Logger) {
 		if _, err := a.Sessions.RefreshAll(ctx); err != nil {
 			logger.Warn("could not refresh every session", slog.Any("error", err))
 		}
+		// A kept session the host's reboot stopped is brought back.
+		for _, session := range a.Sessions.RecoverKept(ctx) {
+			logger.Info("kept session restarted after a reboot", slog.String("session", session.ID))
+		}
 		// A session started with no task is named from the first message
 		// typed into its agent, read off the agent's own transcript.
 		a.Sessions.ReportFirstPrompts()
