@@ -5,7 +5,9 @@ import { FindHostQuery } from '../../../hosts/queries/find-host/find-host.query'
 import { AnswerSessionDecisionCommand } from '../../../sessions/commands/answer-session-decision/answer-session-decision.command';
 import { CreateSessionCommand } from '../../../sessions/commands/create-session/create-session.command';
 import { SendSessionPromptCommand } from '../../../sessions/commands/send-session-prompt/send-session-prompt.command';
+import { StartCloudSessionCommand } from '../../../sessions/commands/start-cloud-session/start-cloud-session.command';
 import { StopSessionCommand } from '../../../sessions/commands/stop-session/stop-session.command';
+import { SessionCloudRunEntity } from '../../../sessions/domain/session-cloud-run.entity';
 import { SESSION_EVENT_KINDS } from '../../../sessions/domain/session-state.policy';
 import { WorkSessionEntity } from '../../../sessions/domain/work-session.entity';
 import { FindSessionQuery } from '../../../sessions/queries/find-session/find-session.query';
@@ -95,15 +97,48 @@ function blockedSession(): WorkSessionEntity {
   return session;
 }
 
-/** A Claude Code cloud session its host has started, or not yet when `cloudSessionId` is null. */
-function cloudSession(cloudSessionId: string | null): WorkSessionEntity {
+/** A session Cursor launched on the owner's key, its agent's page at Cursor. */
+function cursorSession(): WorkSessionEntity {
+  return WorkSessionEntity.requestCloud({
+    id: 'session-1',
+    cloudRun: SessionCloudRunEntity.launched(
+      {
+        organizationId: 'org-1',
+        sessionId: 'session-1',
+        provider: 'cursor',
+        externalId: 'bc-session-1',
+        url: 'https://cursor.com/agents?id=bc-session-1',
+        repositoryUrl: 'https://github.com/acme/xrp-mobile',
+        run: {
+          runId: 'run-1',
+          status: 'starting',
+          branch: null,
+          pullRequestUrl: null,
+          summary: null,
+        },
+      },
+      new Date(),
+    ),
+    organizationId: 'org-1',
+    projectId: PROJECT,
+    createdByUserId: 'owner-1',
+    slug: 'calm-heron-2k8d4q',
+    agent: 'cursor',
+  });
+}
+
+/** A cloud session its host has started, or not yet when `cloudSessionId` is null. */
+function cloudSession(
+  cloudSessionId: string | null,
+  agent: 'claude-code' | 'codex' = 'claude-code',
+): WorkSessionEntity {
   const session = WorkSessionEntity.request({
     organizationId: 'org-1',
     projectId: PROJECT,
     createdByUserId: 'owner-1',
     hostId: HOME,
     slug: 'bold-otter-3f9a7k',
-    agent: 'claude-code',
+    agent,
     place: 'cloud',
   });
   if (cloudSessionId) {
@@ -367,6 +402,134 @@ describe('BotSessionToolsFactory', () => {
       });
       expect(result.isError).toBe(true);
       expect(result.content).toContain('The project has no repository acme/other');
+      expect(commandBus.execute).not.toHaveBeenCalled();
+    });
+    it('starts Codex’s cloud the same way, from the host, in the environment named, and returns its chatgpt.com URL', async () => {
+      const { commandBus, queryBus, call } = setup('full');
+      readsBack(queryBus, cloudSession('task_e_6823abc', 'codex'));
+      const result = await call('start_cloud_session', {
+        task: 'Fix the failing test',
+        project_id: PROJECT,
+        agent: 'codex',
+        codex_environment: 'acme-mobile',
+      });
+      const command = commandBus.execute.mock.calls[0][0] as CreateSessionCommand;
+      expect(command).toBeInstanceOf(CreateSessionCommand);
+      expect(command.input).toMatchObject({
+        hostId: HOME,
+        agent: 'codex',
+        cloud: true,
+        codexEnvironment: 'acme-mobile',
+      });
+      expect(result.content).toContain('https://chatgpt.com/codex/tasks/task_e_6823abc');
+    });
+
+    it('refuses a Codex environment for Claude Code, starting nothing', async () => {
+      const { commandBus, call } = setup('full');
+      const result = await call('start_cloud_session', {
+        task: 'x',
+        project_id: PROJECT,
+        codex_environment: 'acme-mobile',
+      });
+      expect(result.isError).toBe(true);
+      expect(result.content).toContain(
+        'codex_environment is only for codex; leave it out for claude-code.',
+      );
+      expect(commandBus.execute).not.toHaveBeenCalled();
+    });
+
+    it('asks first for Cursor, the card naming no host and the owner’s Cursor key it bills', async () => {
+      const { commandBus, approvals, queryBus, call } = setup('auto');
+      await call('start_cloud_session', {
+        task: 'Fix the test',
+        project_id: PROJECT,
+        agent: 'cursor',
+        model: 'grok-4.7',
+      });
+      expect(approvals.request.mock.calls[0][0]).toMatchObject({
+        tool: 'start_cloud_session',
+        summary:
+          'Start a Cursor cloud session in acme/xrp-mobile, on your Cursor key, model grok-4.7: Fix the test',
+      });
+      expect(queryBus.execute).not.toHaveBeenCalledWith(expect.any(FindHostQuery));
+      expect(commandBus.execute).not.toHaveBeenCalled();
+    });
+
+    it('launches Cursor through the sessions’ own cloud command, with no host, and returns its Cursor URL', async () => {
+      const { commandBus, queryBus, call } = setup('full');
+      readsBack(queryBus, cursorSession());
+      const result = await call('start_cloud_session', {
+        task: 'Fix the failing test',
+        project_id: PROJECT,
+        agent: 'cursor',
+        model: 'grok-4.7',
+      });
+      const command = commandBus.execute.mock.calls[0][0] as StartCloudSessionCommand;
+      expect(command).toBeInstanceOf(StartCloudSessionCommand);
+      expect(command).toMatchObject({ scope: owner, userId: 'owner-1', origin: 'bot' });
+      expect(command.input).toEqual({
+        provider: 'cursor',
+        projectId: PROJECT,
+        checkout: { installationId: INSTALLATION, githubRepoId: 42, baseBranch: 'main' },
+        prompt: 'Fix the failing test',
+        model: 'grok-4.7',
+      });
+      expect(command.idempotencyKey).toMatch(/^bot:turn-1:[0-9a-f]{32}$/);
+      expect(result.content).toContain('https://cursor.com/agents?id=bc-session-1');
+      expect(result.data).toEqual({ sessionId: 'session-1' });
+    });
+
+    it('refuses a field its cloud does not take before any card, so the owner is never asked to approve what cannot start', async () => {
+      const { commandBus, approvals, call } = setup('auto');
+      const result = await call('start_cloud_session', {
+        task: 'x',
+        project_id: PROJECT,
+        agent: 'cursor',
+        host_id: HOME,
+      });
+      expect(result.isError).toBe(true);
+      expect(result.content).toContain('host_id is only for claude-code and codex');
+      expect(approvals.request).not.toHaveBeenCalled();
+      expect(commandBus.execute).not.toHaveBeenCalled();
+    });
+
+    it('refuses a repository the project does not hold before any card', async () => {
+      const { approvals, call } = setup('auto');
+      const result = await call('start_cloud_session', {
+        task: 'x',
+        project_id: PROJECT,
+        agent: 'codex',
+        repository: 'acme/other',
+      });
+      expect(result.isError).toBe(true);
+      expect(result.content).toContain('The project has no repository acme/other');
+      expect(approvals.request).not.toHaveBeenCalled();
+    });
+
+    it('refuses a host for Cursor, which runs with none, launching nothing', async () => {
+      const { commandBus, call } = setup('full');
+      const result = await call('start_cloud_session', {
+        task: 'x',
+        project_id: PROJECT,
+        agent: 'cursor',
+        host_id: HOME,
+      });
+      expect(result.isError).toBe(true);
+      expect(result.content).toContain(
+        'host_id is only for claude-code and codex; leave it out for cursor.',
+      );
+      expect(commandBus.execute).not.toHaveBeenCalled();
+    });
+
+    it('refuses a model for a cloud a host starts, starting nothing', async () => {
+      const { commandBus, call } = setup('full');
+      const result = await call('start_cloud_session', {
+        task: 'x',
+        project_id: PROJECT,
+        model: 'grok-4.7',
+      });
+      expect(result.isError).toBe(true);
+      expect(result.content).toContain('model is only for cursor; leave it out for claude-code.');
       expect(commandBus.execute).not.toHaveBeenCalled();
     });
   });

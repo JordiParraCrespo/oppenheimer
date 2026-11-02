@@ -979,6 +979,12 @@ earlier note:
   line outside any turn, and stops the asking turn if it still runs. Every
   decision is broadcast as `approval_resolved`, so every open tab takes the
   card down at once (25 §5).
+- `versions/mvp/25-bots.md` §5 (2026-10-15) gave the bot one turn after a
+  yes, once the approved call had run, so the chat was silent for the
+  call's whole run and the model's first token after it. On 2026-11-02 the
+  owner asked for the bot to answer first, as a person does: a yes now
+  queues a short "on it" turn at once, the chat shows the call running
+  under it, and the report is its own turn after, drawn "Done: …" (25 §5).
 - `versions/mvp/25-bots.md` §3 had a message written while a bot works
   wait over the composer for the turn after. On 2026-10-31, from Codex's
   `turn/steer`, Enter steers the running turn instead: the turn takes the

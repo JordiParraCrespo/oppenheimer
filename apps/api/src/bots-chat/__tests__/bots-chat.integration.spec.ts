@@ -29,6 +29,7 @@ import { ModelProviderCredentialEntity } from '../../bots/domain/model-provider-
 import type { ProviderKeySealerPort } from '../../bots/infrastructure/provider-key-sealer.port';
 import { ModelProviderCredentialMapper } from '../../bots/model-provider-credential.mapper';
 import type { BotApprovalRequestFactory } from '../application/bot-approval-request.factory';
+import { BotApprovalStartedPolicy } from '../application/bot-approval-started.policy';
 import { BotModelAccessResolver } from '../application/bot-model-access.resolver';
 import type { BotOwnerPermissionsResolver } from '../application/bot-owner-permissions.resolver';
 import type { BotOwnerScopeResolver } from '../application/bot-owner-scope.resolver';
@@ -758,7 +759,15 @@ describe('bots chat (integration)', () => {
       {
         create: () => ({ review: async () => ({ effect: 'none' }) }),
       } as unknown as BotRuleReviewerFactory,
+      new BotApprovalStartedPolicy(approvals),
     );
+  }
+
+  /** What the engine is sent for a turn that runs. */
+  async function requestFor(turn: BotTurnEntity) {
+    const shape = await contextResolver().resolve(turn, new Date());
+    if (!shape) throw new Error('the turn had nothing to say');
+    return shape.request;
   }
 
   it("reads a turn's bot, documents and memory in the turn's workspace, and never another's", async () => {
@@ -793,7 +802,7 @@ describe('bots chat (integration)', () => {
 
     const mine = await create('Mine');
     const { turn } = sent(mine, 'Hi');
-    const context = await contextResolver().resolve(turn, new Date());
+    const context = await requestFor(turn);
     expect(context.apiKey).toBe('my-key-1234');
     expect(context.systemPrompt).toContain('You are Mine.');
     expect(context.systemPrompt).not.toContain('their secret');
@@ -820,7 +829,7 @@ describe('bots chat (integration)', () => {
     const { turn, message } = sent(mine, '/triage the nightly build');
     await turns.enqueue(turn, message, null);
 
-    const context = await contextResolver().resolve(turn, new Date());
+    const context = await requestFor(turn);
     expect(context.message).toContain(
       'The person ran your skill /triage. Follow it for this request. What they wrote after the command is its input.\n\n<skill name="triage">\nRead the log, then label it.\n</skill>\n\n/triage the nightly build',
     );

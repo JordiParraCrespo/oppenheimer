@@ -1,4 +1,5 @@
-import type { BotMessageEvent } from '@oppenheimer/shared';
+import type { BotApprovalEventStage, BotMessageEvent } from '@oppenheimer/shared';
+import { approvalAsk } from './bot-approval.policy';
 import { eventNote, type HistoryMessage } from './bot-history.policy';
 import { peerMessagePrompt, peerReplyPrompt } from './bot-peer-message.policy';
 import { type BotSkillView, skillsPromptSection } from './bot-skill.policy';
@@ -197,13 +198,10 @@ function firstSentence(text: string): string {
   return end === -1 ? trimmed : trimmed.slice(0, end + 1);
 }
 
-/** What an approval's decision turn is asked: the outcome, then what to tell the person. */
-function approvalPrompt(content: string): string {
-  return `${eventNote(content)}\n\n${APPROVAL_ASK}`;
+/** What an approval's turn is asked: what came of the card, then what to do about it. */
+function approvalPrompt(content: string, stage?: BotApprovalEventStage): string {
+  return `${eventNote(content)}\n\n${approvalAsk(stage)}`;
 }
-
-const APPROVAL_ASK =
-  'This is what came of the approval card you raised. Tell the person in a sentence or two what happened, with the ids and details the answer gives. If it was denied, do not try the same thing another way: follow their note if they left one, or ask what they want instead. If it ran and failed, say why and what would fix it.';
 
 const QUESTION_ASK =
   'This is what came of the questions you asked. If they answered, carry on with what you were doing, as their answers say, without asking the same thing again. If they dismissed them, do what you can without the answer, or say what you need and stop.';
@@ -222,7 +220,7 @@ type EventPrompts = {
  * (`goalContinuationText`), so each is read as the note it is.
  */
 const EVENT_PROMPTS: EventPrompts = {
-  approval: (_event, content) => approvalPrompt(content),
+  approval: (event, content) => approvalPrompt(content, event.stage),
   question: (_event, content) => `${eventNote(content)}\n\n${QUESTION_ASK}`,
   routine: (_event, content) => eventNote(content),
   bot_message: peerMessagePrompt,

@@ -40,11 +40,14 @@ import { runningStep } from '@/features/bots/lib/tool-activity';
  * sit above its bubble, and the ones the bot showed (`show_image`) in its
  * answer where it showed them, both drawn by `images`, which reads them. A
  * message you steered in while it worked sits in the answer where the bot
- * took it (`BotSteerMessage`).
+ * took it (`BotSteerMessage`). Work the turn started that still runs after
+ * it is the caller's to draw (`working`), in place of the live line; a turn
+ * that never reached its model has no trail.
  */
 export function BotTurn({
   block,
   live,
+  working,
   waitingOn,
   subagents,
   images,
@@ -54,6 +57,11 @@ export function BotTurn({
 }: {
   block: ChatTurnBlock;
   live: string | undefined;
+  /**
+   * What still runs for this turn after it, drawn in place of its own live
+   * line: an approved call the turn said it is on (`ApprovedCallLive`).
+   */
+  working?: ReactNode;
   /** Why the running turn waits to try a refused call again; none while it does not. */
   waitingOn?: 'rate_limit' | 'unavailable';
   /** Where each running `delegate` call's children are, by the call's id. */
@@ -74,7 +82,9 @@ export function BotTurn({
   const active = turn?.isActive ?? false;
   const text = replyText(block);
   const step = active ? runningStep(block.answer) : undefined;
+  // A turn that ended without a word or a token never reached its model: nothing to trail.
   const tokens = turn ? turn.inputTokens + turn.outputTokens : 0;
+  const silent = phase === 'completed' && block.answer.length === 0 && tokens === 0;
   const ran = turn ? turnDurationMs(turn) : null;
   const meta = turn
     ? [
@@ -128,17 +138,18 @@ export function BotTurn({
           ),
         )}
         {live ? <BotReply content={live} streaming /> : null}
-        {turn && active ? (
-          <BotTurnLive
-            queued={turn.status === 'queued'}
-            step={step}
-            subagents={step ? subagents[step.callId] : undefined}
-            writing={Boolean(live)}
-            waitingOn={waitingOn}
-            provider={BOT_PROVIDER_CATALOG[turn.provider].label}
-            since={turn.startedAt}
-          />
-        ) : null}
+        {working ??
+          (turn && active ? (
+            <BotTurnLive
+              queued={turn.status === 'queued'}
+              step={step}
+              subagents={step ? subagents[step.callId] : undefined}
+              writing={Boolean(live)}
+              waitingOn={waitingOn}
+              provider={BOT_PROVIDER_CATALOG[turn.provider].label}
+              since={turn.startedAt}
+            />
+          ) : null)}
         {turn && phase === 'failed' ? (
           <BotTurnFailure
             turn={turn}
@@ -147,7 +158,7 @@ export function BotTurn({
             onOpenProviders={onOpenProviders}
           />
         ) : null}
-        {turn && !active ? (
+        {turn && !active && !silent ? (
           <MessageTrail
             actions={
               <>

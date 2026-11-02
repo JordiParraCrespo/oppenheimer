@@ -158,6 +158,33 @@ describe('events from Oppenheimer', () => {
     expect(prompt).toContain('do not try the same thing another way');
   });
 
+  // What breaks this: the turn a yes opens reporting a result it has not got,
+  // or saying nothing and leaving the person waiting through the call.
+  it('asks the turn a yes opens to say it is on it, and the one after to report how it went', () => {
+    const approval = {
+      kind: 'approval' as const,
+      outcome: 'approved' as const,
+      tool: 'archive_mail',
+      summary: 'Archive 25 threads',
+      sessionId: null,
+      approvalId: 'a-1',
+    };
+    const started = botTurnPrompt({
+      role: 'event',
+      content: 'Ana approved: Archive 25 threads\nIt is running now.',
+      event: { ...approval, stage: 'started' },
+    });
+    expect(started).toContain('that you are on it');
+    expect(started).toContain('do not call any tool');
+    expect(started).not.toContain('what came of the approval card');
+    const finished = botTurnPrompt({
+      role: 'event',
+      content: 'The approved call finished: Archive 25 threads\nIt ran: Archived 25.',
+      event: { ...approval, stage: 'finished' },
+    });
+    expect(finished).toContain('what came of the approval card');
+  });
+
   // What breaks this: a routine's turn told to report on "the approval card
   // you raised", which it never raised.
   it('reads a routine run as the note it is, and a followed session by its state', () => {
