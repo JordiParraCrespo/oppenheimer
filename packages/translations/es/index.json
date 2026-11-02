@@ -1780,6 +1780,7 @@
           "description": "Una habilidad es una receta que el bot sigue: cuándo se aplica, los pasos, cómo comprobar el resultado y qué contar.",
           "name": "Nombre",
           "nameHint": "Minúsculas, dígitos y guiones. La ejecutas como /{{name}}.",
+          "nameHintCommand": "nombre",
           "summary": "Descripción",
           "summaryHint": "Una frase sobre qué hace y cuándo usarla. El bot la lee en cada chat.",
           "summaryPlaceholder": "Escribe las notas de versión a partir de las pull requests fusionadas desde la última etiqueta",

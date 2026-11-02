@@ -9,7 +9,9 @@ export function SkillCommandHint({ control }: { control: Control<BotSkillDto> })
   const name = useWatch({ control, name: 'name' });
   return (
     <FieldDescription>
-      {t('bots.settings.skills.dialog.nameHint', { name: name || 'name' })}
+      {t('bots.settings.skills.dialog.nameHint', {
+        name: name || t('bots.settings.skills.dialog.nameHintCommand'),
+      })}
     </FieldDescription>
   );
 }

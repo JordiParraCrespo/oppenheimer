@@ -432,6 +432,7 @@
         "description": "A skill is a recipe the bot follows: when it applies, the steps, how to check the result and what to report.",
         "name": "Name",
         "nameHint": "Lowercase letters, digits and hyphens. You run it as /{{name}}.",
+        "nameHintCommand": "name",
         "summary": "Description",
         "summaryHint": "One sentence on what it does and when to use it. The bot reads this in every chat.",
         "summaryPlaceholder": "Writes release notes from the pull requests merged since the last tag",
