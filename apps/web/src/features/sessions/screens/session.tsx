@@ -55,7 +55,13 @@ export function SessionScreen({
   return (
     <QueryState>
       <QueryState.Pending>
-        {bar ? <PageBar title={<Skeleton className="h-4 w-40" />} /> : null}
+        {bar ? (
+          <PageBar
+            title={<Skeleton className="h-4 w-40" />}
+            // The session bar's ground and edge, so nothing changes colour when it answers.
+            className="border-b border-border-subtle bg-term-bg"
+          />
+        ) : null}
         <SessionSkeleton />
       </QueryState.Pending>
       <QueryState.Error>

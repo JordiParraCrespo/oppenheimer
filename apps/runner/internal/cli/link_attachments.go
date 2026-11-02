@@ -62,13 +62,24 @@ func (h *linkHandler) attach(ctx context.Context, m link.SessionAttach, epoch ui
 // than dropping it. An agent with no transcript to follow sends nothing.
 func (h *linkHandler) chat(ctx context.Context, att *attachment) {
 	err := h.app.Sessions.FollowChat(ctx, att.sessionID, link.ChatEntryMaxBytes, link.ChatBatchMaxEntries, func(batch sessionsapp.ChatBatch) error {
-		return h.client.Send(link.AttachmentChat{
-			Type: link.TypeAttachmentChat, AttachmentID: att.id, Reset: batch.Reset, Entries: batch.Entries,
-		})
+		return h.client.Send(attachmentChat(att.id, batch))
 	})
 	if err != nil && !errors.Is(err, sessionsapp.ErrNoChat) {
 		h.logger.Debug("could not follow the session's transcript", slog.String("session", att.sessionID), slog.Any("error", err))
 	}
+}
+
+// attachmentChat is one batch on the wire. Its entries are always a list:
+// the follower's first word on a conversation with nothing written yet is a
+// reset with no entries, and a nil slice would go as `null`, which the
+// control plane refuses, so the console would never learn the chat is there
+// and would show the terminal until the agent's first line.
+func attachmentChat(id uint32, batch sessionsapp.ChatBatch) link.AttachmentChat {
+	entries := batch.Entries
+	if entries == nil {
+		entries = []string{}
+	}
+	return link.AttachmentChat{Type: link.TypeAttachmentChat, AttachmentID: id, Reset: batch.Reset, Entries: entries}
 }
 
 // inputPump is the one goroutine writing an attachment's keystrokes to its
