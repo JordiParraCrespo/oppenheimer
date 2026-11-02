@@ -451,6 +451,18 @@ export class SessionPreviewResponseDto {
   expiresAt!: Date;
 }
 
+/** `POST /sessions/{id}/prompt`: where the prompt landed in the log, and the session. */
+export class SentSessionPromptResponseDto {
+  @ApiProperty({
+    description:
+      "The `seq` of the `prompt.sent` entry this request recorded. What follows it in the session's log (`GET /sessions/{id}/events?afterSeq=`) is the agent's answer: a caller waiting on the prompt reads from here, so the state the session was in before the prompt is never taken for its outcome.",
+  })
+  seq!: number;
+
+  @ApiProperty({ type: () => SessionResponseDto })
+  session!: SessionResponseDto;
+}
+
 export class SessionPortDto {
   @ApiProperty({ example: 5173 })
   port!: number;

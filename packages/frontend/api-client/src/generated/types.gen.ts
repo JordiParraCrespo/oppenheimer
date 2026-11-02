@@ -1944,6 +1944,14 @@ export type SendSessionPromptRequest = {
     text: string;
 };
 
+export type SentSessionPromptResponseDto = {
+    /**
+     * The `seq` of the `prompt.sent` entry this request recorded. What follows it in the session's log (`GET /sessions/{id}/events?afterSeq=`) is the agent's answer: a caller waiting on the prompt reads from here, so the state the session was in before the prompt is never taken for its outcome.
+     */
+    seq: number;
+    session: SessionResponseDto;
+};
+
 export type ReportCloudStatusRequest = {
     sessions: Array<{
         cloudSessionId: string;
@@ -9878,7 +9886,7 @@ export type SendSessionPromptErrors = {
 export type SendSessionPromptError = SendSessionPromptErrors[keyof SendSessionPromptErrors];
 
 export type SendSessionPromptResponses = {
-    200: SessionResponseDto;
+    200: SentSessionPromptResponseDto;
 };
 
 export type SendSessionPromptResponse = SendSessionPromptResponses[keyof SendSessionPromptResponses];

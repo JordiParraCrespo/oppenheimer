@@ -1637,6 +1637,7 @@ export type {
   SendSessionPromptRequest,
   SendSessionPromptResponse,
   SendSessionPromptResponses,
+  SentSessionPromptResponseDto,
   SessionAgentReportResponseDto,
   SessionAttachmentResponseDto,
   SessionCheckoutResponseDto,

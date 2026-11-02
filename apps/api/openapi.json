@@ -10968,7 +10968,7 @@
     },
     "/api/v1/sessions/{id}/prompt": {
       "post": {
-        "description": "Types `text` into the session’s agent and submits it, the way the chat view sends a message, recorded in the log as sent by the caller. Only while the agent waits at its prompt (the session’s state `idle` or `ready-for-review`): while it works, wait; when it asks something, answer its `decision`. Answers the session.",
+        "description": "Types `text` into the session’s agent and submits it, the way the chat view sends a message, recorded in the log as sent by the caller. Only while the agent waits at its prompt (the session’s state `idle` or `ready-for-review`): while it works, wait; when it asks something, answer its `decision`. Answers the `seq` its `prompt.sent` entry took, from which the agent’s answer follows in the log, and the session.",
         "operationId": "sendSessionPrompt",
         "parameters": [
           {
@@ -10996,7 +10996,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/SessionResponseDto"
+                  "$ref": "#/components/schemas/SentSessionPromptResponseDto"
                 }
               }
             }
@@ -28784,6 +28784,22 @@
         },
         "required": [
           "text"
+        ]
+      },
+      "SentSessionPromptResponseDto": {
+        "type": "object",
+        "properties": {
+          "seq": {
+            "type": "number",
+            "description": "The `seq` of the `prompt.sent` entry this request recorded. What follows it in the session's log (`GET /sessions/{id}/events?afterSeq=`) is the agent's answer: a caller waiting on the prompt reads from here, so the state the session was in before the prompt is never taken for its outcome."
+          },
+          "session": {
+            "$ref": "#/components/schemas/SessionResponseDto"
+          }
+        },
+        "required": [
+          "seq",
+          "session"
         ]
       },
       "ReportCloudStatusRequest": {

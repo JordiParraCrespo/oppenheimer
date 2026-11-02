@@ -24,7 +24,7 @@ import { CurrentAccessScope } from '../../../authz/decorators/current-access-sco
 import { AccessScopeInterceptor } from '../../../authz/interceptors/access-scope.interceptor';
 import type { SessionCommandResult } from '../../domain/session-command.types';
 import type { WorkSessionEntity } from '../../domain/work-session.entity';
-import { SessionResponseDto } from '../../dtos/session.response.dto';
+import { SentSessionPromptResponseDto } from '../../dtos/session.response.dto';
 import { FindSessionQuery } from '../../queries/find-session/find-session.query';
 import { WorkSessionMapper } from '../../work-session.mapper';
 import { SendSessionPromptCommand } from './send-session-prompt.command';
@@ -53,9 +53,9 @@ export class SendSessionPromptHttpController {
   @ApiOperation({
     summary: 'Send a follow-up prompt to a session’s agent',
     description:
-      'Types `text` into the session’s agent and submits it, the way the chat view sends a message, recorded in the log as sent by the caller. Only while the agent waits at its prompt (the session’s state `idle` or `ready-for-review`): while it works, wait; when it asks something, answer its `decision`. Answers the session.',
+      'Types `text` into the session’s agent and submits it, the way the chat view sends a message, recorded in the log as sent by the caller. Only while the agent waits at its prompt (the session’s state `idle` or `ready-for-review`): while it works, wait; when it asks something, answer its `decision`. Answers the `seq` its `prompt.sent` entry took, from which the agent’s answer follows in the log, and the session.',
   })
-  @ApiResponse({ status: 200, type: SessionResponseDto })
+  @ApiResponse({ status: 200, type: SentSessionPromptResponseDto })
   @ApiProblemResponse({ status: 404, description: 'Session not found', code: 'SESSIONS_001' })
   @ApiProblemResponse({ status: 409, description: 'That session is closed', code: 'SESSIONS_005' })
   @ApiProblemResponse({ status: 409, description: 'That session is stopped', code: 'SESSIONS_014' })
@@ -71,8 +71,8 @@ export class SendSessionPromptHttpController {
     @CurrentUser('id') userId: string,
     @Param('id', ParseUUIDPipe) id: string,
     @Body() body: SendSessionPromptRequest,
-  ): Promise<SessionResponseDto> {
-    const { sessionId } = await this.commandBus.execute<
+  ): Promise<SentSessionPromptResponseDto> {
+    const { sessionId, seq } = await this.commandBus.execute<
       SendSessionPromptCommand,
       SessionCommandResult
     >(
@@ -86,6 +86,7 @@ export class SendSessionPromptHttpController {
     const session = await this.queryBus.execute<FindSessionQuery, WorkSessionEntity>(
       new FindSessionQuery({ scope, sessionId }),
     );
-    return this.mapper.toResponse(session);
+    // The handler records the entry before it types, so a sent prompt always has one.
+    return { seq: seq ?? 0, session: this.mapper.toResponse(session) };
   }
 }

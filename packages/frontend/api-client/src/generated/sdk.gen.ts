@@ -1596,7 +1596,7 @@ export const answerSessionDecision = <ThrowOnError extends boolean = false>(opti
 /**
  * Send a follow-up prompt to a session’s agent
  *
- * Types `text` into the session’s agent and submits it, the way the chat view sends a message, recorded in the log as sent by the caller. Only while the agent waits at its prompt (the session’s state `idle` or `ready-for-review`): while it works, wait; when it asks something, answer its `decision`. Answers the session.
+ * Types `text` into the session’s agent and submits it, the way the chat view sends a message, recorded in the log as sent by the caller. Only while the agent waits at its prompt (the session’s state `idle` or `ready-for-review`): while it works, wait; when it asks something, answer its `decision`. Answers the `seq` its `prompt.sent` entry took, from which the agent’s answer follows in the log, and the session.
  */
 export const sendSessionPrompt = <ThrowOnError extends boolean = false>(options: Options<SendSessionPromptData, ThrowOnError>): RequestResult<SendSessionPromptResponses, SendSessionPromptErrors, ThrowOnError> => (options.client ?? client).post<SendSessionPromptResponses, SendSessionPromptErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
