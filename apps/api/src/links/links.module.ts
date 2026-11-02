@@ -1,11 +1,13 @@
 import { Module } from '@nestjs/common';
 import { HOST_FOLDERS, SESSION_DISPATCH, SESSION_PORTS } from '../sessions/sessions.di-tokens';
+import { WHATSAPP_DEVICE } from '../whatsapp/whatsapp.di-tokens';
 import { CacheParkedFileAdapter } from './infrastructure/cache-parked-file.adapter';
 import { InProcessLinkReplies } from './infrastructure/in-process-link-replies.adapter';
 import { InProcessLinkRegistry } from './infrastructure/link-registry.adapter';
 import { RelayDispatchAdapter } from './infrastructure/relay-dispatch.adapter';
 import { RelayHostFoldersAdapter } from './infrastructure/relay-host-folders.adapter';
 import { RelaySessionPortsAdapter } from './infrastructure/relay-session-ports.adapter';
+import { RelayWhatsappDeviceAdapter } from './infrastructure/relay-whatsapp-device.adapter';
 import { LINK_REGISTRY, LINK_REPLIES, PARKED_FILES, STAGED_FILE_READER } from './links.di-tokens';
 
 /**
@@ -27,6 +29,7 @@ import { LINK_REGISTRY, LINK_REPLIES, PARKED_FILES, STAGED_FILE_READER } from '.
     { provide: LINK_REPLIES, useClass: InProcessLinkReplies },
     { provide: HOST_FOLDERS, useClass: RelayHostFoldersAdapter },
     { provide: SESSION_PORTS, useClass: RelaySessionPortsAdapter },
+    { provide: WHATSAPP_DEVICE, useClass: RelayWhatsappDeviceAdapter },
   ],
   exports: [
     LINK_REGISTRY,
@@ -36,6 +39,7 @@ import { LINK_REGISTRY, LINK_REPLIES, PARKED_FILES, STAGED_FILE_READER } from '.
     LINK_REPLIES,
     HOST_FOLDERS,
     SESSION_PORTS,
+    WHATSAPP_DEVICE,
   ],
 })
 export class LinksModule {}

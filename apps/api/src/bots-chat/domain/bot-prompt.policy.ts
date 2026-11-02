@@ -1,6 +1,7 @@
 import type { BotMessageEvent } from '@oppenheimer/shared';
 import { eventNote, type HistoryMessage } from './bot-history.policy';
 import { peerMessagePrompt, peerReplyPrompt } from './bot-peer-message.policy';
+import { type BotSkillView, skillsPromptSection } from './bot-skill.policy';
 import { sessionWakePrompt } from './bot-subscription.policy';
 import { TURN_CONTEXT_TAG } from './bot-turn-context.policy';
 
@@ -35,6 +36,8 @@ export interface BotPromptInput {
   engineCapabilities: readonly string[];
   /** Our tools offered this turn. */
   tools: readonly BotPromptTool[];
+  /** Its skills; those it may use unasked are listed when the turn offers `use_skill`. */
+  skills?: readonly BotSkillView[];
 }
 
 /**
@@ -43,7 +46,7 @@ export interface BotPromptInput {
  * goes, what it can and cannot do (a closed list, so a missing tool is a
  * plain "I can't" rather than a search of the machine it runs on), the
  * rules no instruction overrides, how it works on code through sessions
- * when the turn may start one, and its own documents and memory. Empty
+ * when the turn may start one, its own documents, its skills and memory. Empty
  * documents are left out rather than shown blank. The facts of the moment
  * (the time, the hosts) are not here: they open the turn's message, in a
  * block the prompt tells the model to trust.
@@ -67,6 +70,11 @@ export function composeBotSystemPrompt(input: BotPromptInput): string {
   } else {
     parts.push(gettingStarted(input.name, input.tools));
   }
+  const skills = skillsPromptSection(
+    input.skills ?? [],
+    input.tools.some((tool) => tool.name === 'use_skill'),
+  );
+  if (skills) parts.push(skills);
   if (input.personFacts?.length) {
     parts.push(
       `# What you know about the person (shared by all their bots)\n\n${input.personFacts.map((fact) => `- ${fact}`).join('\n')}`,

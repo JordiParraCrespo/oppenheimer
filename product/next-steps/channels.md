@@ -399,3 +399,12 @@ Reading your own mailboxes ([Mail](mail.md)) comes before all of these.
   address for now. The first version is reading two or more of their own
   mailboxes from their bots, a connector ([`mail.md`](mail.md)); the
   channels, email included, come after it.
+- 2026-10-30: the owner asked for WhatsApp the way OpenClaw does it, so that
+  bots see and talk with people there. It was built before email and before
+  the `channels` module, on §7.1's transport (whatsmeow in the runner, keys
+  on the host) but in mail's shape: a connector, the owner's number worked
+  by the owner's bots as them ([`whatsapp.md`](whatsapp.md)). Two things
+  differ from §7.1: the control plane keeps the messages the number sees
+  (`whatsapp_message`, 90 days) so bots can read chats, where §3 had only
+  intake rows; and the linked device answers no one by itself. WhatsApp as
+  a channel (§7.1 in full) is that note's slice 4, on the same device.

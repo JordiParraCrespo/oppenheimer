@@ -90,6 +90,7 @@ import { RedisThrottlerStorage } from './throttling/infrastructure/redis-throttl
 import { ThrottlingModule } from './throttling/throttling.module';
 import { UsersModule } from './users/user.module';
 import { VoiceModule } from './voice/voice.module';
+import { WhatsappModule } from './whatsapp/whatsapp.module';
 import { WorkspaceEventsModule } from './workspace-events/workspace-events.module';
 
 @Module({
@@ -269,6 +270,7 @@ import { WorkspaceEventsModule } from './workspace-events/workspace-events.modul
     TasksModule,
     CalendarModule,
     MailModule,
+    WhatsappModule,
     CloudAgentsModule,
     PullRequestsModule,
     BotsModule,

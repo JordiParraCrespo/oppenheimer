@@ -36,6 +36,15 @@ import {
   SESSION_CREATE_MAX_FILES,
   SESSION_FILE_MEDIA_TYPES,
 } from './session-file.js';
+import {
+  whatsappAckSchema,
+  whatsappLinkSchema,
+  whatsappMessagesSchema,
+  whatsappSendSchema,
+  whatsappSentSchema,
+  whatsappStateSchema,
+  whatsappUnlinkSchema,
+} from './whatsapp.js';
 
 /**
  * The runner link's message vocabulary, as Zod — one source of truth, with JSON
@@ -123,6 +132,12 @@ export const RUNNER_CAPABILITIES = [
    * (`product/versions/mvp/27-bot-subscriptions.md`).
    */
   'session.watch',
+  /**
+   * Holds a WhatsApp linked device for the owner: answers `whatsapp.link`,
+   * `whatsapp.unlink` and `whatsapp.send`, and sends `whatsapp.state` and
+   * `whatsapp.messages` (`product/next-steps/whatsapp.md`).
+   */
+  'whatsapp',
 ] as const;
 export type RunnerCapability = (typeof RUNNER_CAPABILITIES)[number];
 
@@ -1010,6 +1025,13 @@ export const protocolMessageSchema = z.discriminatedUnion('type', [
   portOpenSchema,
   portOpenedSchema,
   portCloseSchema,
+  whatsappLinkSchema,
+  whatsappUnlinkSchema,
+  whatsappStateSchema,
+  whatsappMessagesSchema,
+  whatsappAckSchema,
+  whatsappSendSchema,
+  whatsappSentSchema,
 ]);
 
 export type ProtocolMessage = z.infer<typeof protocolMessageSchema>;

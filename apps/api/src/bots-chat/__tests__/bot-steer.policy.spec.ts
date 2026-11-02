@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import type { Scope } from '@oppenheimer/shared';
-import { takesSteer } from '../domain/bot-steer.policy';
+import { maySteer, takesSteer } from '../domain/bot-steer.policy';
 import { BotTurnEntity, type BotTurnProps } from '../domain/bot-turn.entity';
 
 /**
@@ -71,5 +71,22 @@ describe('takesSteer', () => {
     expect(takesSteer(running({ lane: 'background' }), turn())).toBe(false);
     expect(takesSteer(running({ status: 'completed' }), turn())).toBe(false);
     expect(takesSteer(running({ botId: randomUUID() }), turn())).toBe(false);
+  });
+});
+
+describe('maySteer', () => {
+  it('steers with words alone, as asked', () => {
+    expect(maySteer(true, 'Also check the staging host', 0)).toBe(true);
+    expect(maySteer(false, 'Also check the staging host', 0)).toBe(false);
+  });
+
+  it('keeps images for a turn of their own', () => {
+    expect(maySteer(true, 'This one', 1)).toBe(false);
+  });
+
+  it('keeps a /<name> command for a turn of its own, where its skill runs', () => {
+    expect(maySteer(true, '/triage the nightly build', 0)).toBe(false);
+    expect(maySteer(true, '/skill triage', 0)).toBe(false);
+    expect(maySteer(true, 'look at /etc/hosts', 0)).toBe(true);
   });
 });

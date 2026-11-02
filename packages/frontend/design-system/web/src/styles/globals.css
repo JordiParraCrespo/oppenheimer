@@ -487,6 +487,11 @@
     --email-ink-muted: var(--op-gray-600);
     --email-rule: rgba(0, 0, 0, 0.12);
     --email-link: var(--op-blue-600);
+    /* A QR code to scan from a phone (Settings → WhatsApp): dark modules on a
+       light ground in both themes, because phone cameras read that and not
+       its inverse. */
+    --qr-paper: var(--op-white);
+    --qr-ink: var(--op-black);
     --elevation-menu: var(--shadow-popover);
     --elevation-popover: var(--shadow-popover);
     --elevation-panel: var(--shadow-popover);
@@ -896,6 +901,8 @@
   --color-surface-hover: var(--surface-hover);
   --color-surface-inverse: var(--surface-inverse);
   --color-surface-email: var(--surface-email);
+  --color-qr-paper: var(--qr-paper);
+  --color-qr-ink: var(--qr-ink);
   --color-email-ink: var(--email-ink);
   --color-email-ink-muted: var(--email-ink-muted);
   --color-email-rule: var(--email-rule);

@@ -982,3 +982,17 @@ earlier note:
   connects, and the console reconciles by block and sequence number, the
   stored message being the authority (`versions/mvp/25-bots.md` §2,
   `next-steps/0.7-chat-protocol.md` slice 2).
+- Note 25 §7 listed slash commands among what bots did not have yet. On
+  2026-10-31 the owner asked how OpenClaw and Grok Bot support skills
+  (`research/lessons-from-openclaw-and-grok-bot-skills.md`) and for slash
+  commands; they were built as a bot's skills: one row each, listed by name
+  and description in every prompt and read with `use_skill` when used,
+  saved by the bot with `save_skill` or by hand in Settings → Skills, and
+  run by the person as `/<name>` (`versions/mvp/25-bots.md` §4.1, Skills).
+- `next-steps/channels.md` placed WhatsApp third among the channels, after
+  email and contacts, and as a channel (people write to a bot). On
+  2026-10-30 the owner asked for it first, the way OpenClaw does it, so that
+  bots can see and talk with people: it was built as a connector in mail's
+  shape on the channels note's runner transport, and the control plane now
+  keeps the messages a linked number sees for 90 days
+  (`next-steps/whatsapp.md`). The channel comes after, on the same device.

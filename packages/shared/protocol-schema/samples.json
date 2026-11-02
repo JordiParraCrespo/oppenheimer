@@ -301,6 +301,60 @@
     "type": "port.close",
     "attachmentId": 11
   },
+  "whatsapp.link": {
+    "type": "whatsapp.link",
+    "commandId": "b2c3d4e5-6f7a-4b8c-9d0e-1f2a3b4c5d6e"
+  },
+  "whatsapp.unlink": {
+    "type": "whatsapp.unlink",
+    "commandId": "b2c3d4e5-6f7a-4b8c-9d0e-1f2a3b4c5d6e"
+  },
+  "whatsapp.state": {
+    "type": "whatsapp.state",
+    "state": "pairing",
+    "qr": "2@Q2hhbmdlTWUhIGFuZCB0aGVuIHNjYW4gbWU=,Zm9vYmFy,YmF6cXV4,cXV1eA==",
+    "qrExpiresAt": "2026-09-19T10:00:20Z",
+    "phone": "34600111222@s.whatsapp.net",
+    "name": "Jordi",
+    "reason": "paired from the console"
+  },
+  "whatsapp.messages": {
+    "type": "whatsapp.messages",
+    "messages": [
+      {
+        "key": "34600333444@s.whatsapp.net/3EB0C7A1F2",
+        "id": "3EB0C7A1F2",
+        "chatId": "34600333444@s.whatsapp.net",
+        "chatKind": "direct",
+        "chatName": "Marta",
+        "senderId": "34600333444@s.whatsapp.net",
+        "senderName": "Marta",
+        "fromMe": false,
+        "text": "Are we still on for Tuesday?",
+        "media": "image",
+        "quotedId": "3EB0C7A1F1",
+        "sentAt": "2026-09-19T10:00:00Z"
+      }
+    ]
+  },
+  "whatsapp.ack": {
+    "type": "whatsapp.ack",
+    "keys": [
+      "34600333444@s.whatsapp.net/3EB0C7A1F2"
+    ]
+  },
+  "whatsapp.send": {
+    "type": "whatsapp.send",
+    "commandId": "b2c3d4e5-6f7a-4b8c-9d0e-1f2a3b4c5d6e",
+    "chatId": "34600333444@s.whatsapp.net",
+    "text": "Tuesday works."
+  },
+  "whatsapp.sent": {
+    "type": "whatsapp.sent",
+    "commandId": "b2c3d4e5-6f7a-4b8c-9d0e-1f2a3b4c5d6e",
+    "id": "3EB0C7A1F3",
+    "sentAt": "2026-09-19T10:00:00Z"
+  },
   "session.create": {
     "type": "session.create",
     "commandId": "b2c3d4e5-6f7a-4b8c-9d0e-1f2a3b4c5d6e",

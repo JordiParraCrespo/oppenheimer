@@ -27,6 +27,8 @@ const (
 	// session stops or closes. It keeps its first name on disk, so a runner
 	// updated mid-session still finds, and drops, what it saved before.
 	DirFiles = "images"
+	// DirWhatsApp, under DirState, holds the WhatsApp linked device.
+	DirWhatsApp = "whatsapp"
 )
 
 // Paths resolves every location the runner uses on a host.
@@ -56,6 +58,9 @@ const (
 	// managed image, a package the person holds back). Anything else, or
 	// unset, is on.
 	EnvAgentUpdates = "RUNNER_AGENT_UPDATES"
+	// EnvWhatsApp set to "off" stops the host offering to hold a WhatsApp
+	// linked device. Anything else, or unset, is on.
+	EnvWhatsApp = "RUNNER_WHATSAPP"
 	// EnvDevices is the simulators and emulators this host offers its
 	// sessions, comma-separated serials (`emulator-5554`, or
 	// `emulator-5554=Pixel 4` to name one). Unset offers none.
@@ -72,6 +77,11 @@ const (
 // AgentUpdatesEnabled reports whether `run` keeps the agent CLIs current.
 func AgentUpdatesEnabled() bool {
 	return !strings.EqualFold(strings.TrimSpace(os.Getenv(EnvAgentUpdates)), "off")
+}
+
+// WhatsAppEnabled reports whether the host offers a WhatsApp linked device.
+func WhatsAppEnabled() bool {
+	return !strings.EqualFold(strings.TrimSpace(os.Getenv(EnvWhatsApp)), "off")
 }
 
 // ResolvePaths builds the layout, honouring RUNNER_HOME so a second runner
@@ -198,6 +208,10 @@ func (p Paths) State() string { return filepath.Join(p.Home, DirState) }
 func (p Paths) Manifests() string { return filepath.Join(p.Home, DirManifests) }
 
 // Files is where pasted files are kept.
+// WhatsApp is the WhatsApp linked device's directory: its keys and the
+// messages waiting for the control plane, readable by the runner's user only.
+func (p Paths) WhatsApp() string { return filepath.Join(p.State(), DirWhatsApp) }
+
 func (p Paths) Files() string { return filepath.Join(p.Home, DirFiles) }
 
 // Socket is the local Unix socket: the runner's only listener.

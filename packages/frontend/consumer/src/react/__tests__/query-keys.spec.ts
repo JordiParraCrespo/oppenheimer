@@ -1,13 +1,13 @@
 import { QueryClient } from '@tanstack/react-query';
 import { describe, expect, it } from 'vitest';
-import { botsKeys } from '../bots.queries';
-import { calendarKeys } from '../calendar.queries';
-import { cloudAgentsKeys } from '../cloud-agents.queries';
-import { hostsKeys } from '../hosts.queries';
-import { installationsKeys } from '../installations.queries';
-import { pullRequestsKeys } from '../pull-requests.queries';
-import { sessionsKeys } from '../sessions.queries';
-import { tasksKeys } from '../tasks.queries';
+import { botsKeys } from '../bots.keys';
+import { calendarKeys } from '../calendar.keys';
+import { cloudAgentsKeys } from '../cloud-agents.keys';
+import { hostsKeys } from '../hosts.keys';
+import { installationsKeys } from '../installations.keys';
+import { pullRequestsKeys } from '../pull-requests.keys';
+import { sessionsKeys } from '../sessions.keys';
+import { tasksKeys } from '../tasks.keys';
 
 /**
  * What invalidating or removing a key reaches, asked of a real `QueryClient`,

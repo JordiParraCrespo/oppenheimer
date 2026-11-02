@@ -10,12 +10,7 @@ import type {
 import { useConsumerApp } from './context';
 import { useHostListQuery } from './hosts.queries';
 import { mutation } from './mutation';
-
-export const projectsKeys = {
-  all: ['projects'] as const,
-  lists: () => [...projectsKeys.all, 'list'] as const,
-  list: () => [...projectsKeys.lists()] as const,
-};
+import { projectsKeys } from './projects.keys';
 
 /**
  * The projects of the caller's workspace, newest first: the project chip's

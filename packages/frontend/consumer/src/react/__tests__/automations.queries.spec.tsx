@@ -5,8 +5,8 @@ import { type ReactNode, Suspense, useDeferredValue } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { TOKENS } from '../../di/tokens';
 import type { AutomationEntity, RunPage } from '../../modules/automations/automation.entity';
+import { automationsKeys } from '../automations.keys';
 import {
-  automationsKeys,
   useAutomations,
   useCreateAutomation,
   useDeleteAutomation,

@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { CqrsModule } from '@nestjs/cqrs';
 import { GithubModule } from '../github/github.module';
 import { HostsModule } from '../hosts/hosts.module';
 import { LinksModule } from '../links/links.module';
@@ -11,6 +12,7 @@ import { PreviewProxyGateway } from './infrastructure/preview-proxy.gateway';
 import { RelayEventsProcessor } from './infrastructure/relay-events.processor';
 import { RelayUpgradeGateway } from './infrastructure/relay-upgrade.gateway';
 import { RunnerLinkGateway } from './infrastructure/runner-link.gateway';
+import { WhatsappLinkProcessor } from './infrastructure/whatsapp-link.processor';
 
 /**
  * Relay: the two sockets of `product/versions/mvp/01-protocol.md`.
@@ -22,10 +24,18 @@ import { RunnerLinkGateway } from './infrastructure/runner-link.gateway';
  * their tables.
  */
 @Module({
-  imports: [LinksModule, SessionsModule, HostsModule, GithubModule, OrganizationsModule],
+  imports: [
+    CqrsModule,
+    LinksModule,
+    SessionsModule,
+    HostsModule,
+    GithubModule,
+    OrganizationsModule,
+  ],
   providers: [
     RelayEventsProcessor,
     CredentialsProcessor,
+    WhatsappLinkProcessor,
     RunnerLinkGateway,
     BrowserAttachGateway,
     PreviewProxyGateway,

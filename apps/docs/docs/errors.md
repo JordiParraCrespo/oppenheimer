@@ -772,6 +772,9 @@ See `product/versions/mvp/25-bots.md`.
 | `BOTS_035` <a id="bots_035" />       | Questions not found | 404  |
 | `BOTS_036` <a id="bots_036" />       | The answers do not fit the questions | 422  |
 | `BOTS_037` <a id="bots_037" />       | The questions were already answered | 409  |
+| `BOTS_038` <a id="bots_038" />       | Skill not found | 404  |
+| `BOTS_039` <a id="bots_039" />       | The bot already has a skill with that name | 409  |
+| `BOTS_040` <a id="bots_040" />       | The bot has as many skills as it can keep | 422  |
 
 `BOTS_001`, `BOTS_003` and `BOTS_008` are also returned for a bot, group or fact in
 another workspace.
@@ -859,6 +862,12 @@ question, an option the question does not have, two picks where one is
 taken, or a question left unanswered; its `detail` names which. `BOTS_037` is
 a card already answered or dismissed, or retired because a message reached
 the bot first.
+
+`BOTS_038` to `BOTS_040` are a bot's skills (Settings → Skills, and the bot's
+own `save_skill`). `BOTS_038` is a skill that is not this bot's or not in the
+caller's workspace. `BOTS_039` is a name another of the bot's skills has: a
+skill's name is its slash command, so rename one of them. `BOTS_040` is a
+skill past the bot's fifty: delete one first.
 
 A home host the caller may not use answers `HOSTS_001`, as a session's does.
 
@@ -1036,6 +1045,32 @@ already cancelled, or not one of the caller's.
 `MAIL_018` is a scheduled send carrying an image from the bot's chat: only
 files Gmail holds can wait with it. Attach files from mail, or send it now.
 
+## WhatsApp
+
+A number a person owns, joined as a WhatsApp linked device by the runner on
+one of their hosts, and the messages it sees, kept for their bots. See
+`product/next-steps/whatsapp.md`.
+
+| Code                                   | Title                                                       | HTTP |
+| -------------------------------------- | ----------------------------------------------------------- | ---- |
+| `WHATSAPP_001` <a id="whatsapp_001" /> | That WhatsApp number is not linked                          | 404  |
+| `WHATSAPP_002` <a id="whatsapp_002" /> | WhatsApp belongs to an organization                         | 400  |
+| `WHATSAPP_003` <a id="whatsapp_003" /> | That is as many WhatsApp numbers as one person links        | 409  |
+| `WHATSAPP_004` <a id="whatsapp_004" /> | The host holding that WhatsApp number is offline            | 409  |
+| `WHATSAPP_005` <a id="whatsapp_005" /> | That host’s runner does not hold WhatsApp devices           | 409  |
+| `WHATSAPP_006` <a id="whatsapp_006" /> | That host already holds another WhatsApp number             | 409  |
+| `WHATSAPP_007` <a id="whatsapp_007" /> | That WhatsApp number is not connected                       | 409  |
+| `WHATSAPP_008` <a id="whatsapp_008" /> | WhatsApp did not take the message                           | 502  |
+| `WHATSAPP_009` <a id="whatsapp_009" /> | That number has sent as many bot messages as it may for now | 429  |
+| `WHATSAPP_010` <a id="whatsapp_010" /> | No such WhatsApp chat                                       | 404  |
+
+`WHATSAPP_005` is a runner that predates WhatsApp, or one started with
+`RUNNER_WHATSAPP=off`: update it, or turn it back on. `WHATSAPP_006` is a host
+already holding someone else's number: a runner holds one device. A
+`WHATSAPP_008` whose detail says the host did not answer in time may still
+have sent the message. `WHATSAPP_009` is a bot's share of a day (100 messages
+from one number), or the host's own budget (`WA_004`).
+
 ## Cloud agents
 
 A vendor's cloud (Cursor's Cloud Agents), where a cloud session runs on each
@@ -1091,7 +1126,7 @@ The Go runner (`apps/runner`) emits the same document shape with its own
 catalog. `RUNNER_*` codes are the generic layer shared by every route; the
 others belong to one bounded context each — `APIKEY_*` to credentials,
 `HOST_*` to the host inventory (`FS_*` to its folder listing), `PAIR_*` to pairing, `SVC_*` to the service
-unit, `UPD_*` to self-update, and `SESS_*`, `TMUX_*` and `GIT_*` to sessions. The host-agent codes also reach a person
+unit, `UPD_*` to self-update, `WHATSAPP_*` to the host's WhatsApp linked device, and `SESS_*`, `TMUX_*` and `GIT_*` to sessions. The host-agent codes also reach a person
 through the runner's own CLI, where they set the exit code: 3 for a 401, 4 for a 403, 5
 for a 404 or 428, 6 for a 502, 503 or 504, 7 for `PAIR_009`, and 1 for anything else.
 
@@ -1150,6 +1185,10 @@ for a 404 or 428, 6 for a 502, 503 or 504, 7 for `PAIR_009`, and 1 for anything 
 | `PORT_001` <a id="port_001" />         | The session does not listen on that port     | 404  |
 | `PORT_002` <a id="port_002" />         | Nothing answers on that port                 | 502  |
 | `PORT_003` <a id="port_003" />         | This host cannot list a session's ports      | 501  |
+| `WA_001` <a id="wa_001" />           | This host already holds a WhatsApp device    | 409  |
+| `WA_002` <a id="wa_002" />           | No WhatsApp device is connected on this host | 503  |
+| `WA_003` <a id="wa_003" />           | WhatsApp refused the message                 | 502  |
+| `WA_004` <a id="wa_004" />           | This host's WhatsApp send budget is spent    | 429  |
 | `SESS_001` <a id="sess_001" />         | Session not found                            | 404  |
 | `SESS_002` <a id="sess_002" />         | The session cannot be created with those values | 400 |
 | `SESS_003` <a id="sess_003" />         | The session is not running                   | 409  |
@@ -1207,6 +1246,15 @@ installer, or `git`/`tmux`, which need root. For those two the detail is the
 exact package-manager command to run. `HOST_011` is an install that ran and
 failed, or finished without the tool appearing on `PATH`; the detail is the
 installer's last line.
+
+The `WA_*` codes reach the control plane as `command.failed` on the
+runner link, in answer to `whatsapp.link` and `whatsapp.send`
+(`packages/shared/src/protocol/whatsapp.ts`). `WA_004` is the host's own
+budget, at most 20 sends a minute and 300 a day: WhatsApp publishes no limit
+for a linked device, and going over one costs the number. `WA_003`
+after WhatsApp's own `rate-overlimit` also stops every send from the host for
+ten minutes. The control plane answers a bot with its own `WHATSAPP_*` code
+for each (`WHATSAPP_007`, `WHATSAPP_008`, `WHATSAPP_009`).
 
 <!-- oppenheimer:end runner -->
 ## Domain invariants
