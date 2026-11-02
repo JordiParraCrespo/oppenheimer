@@ -80,6 +80,11 @@ export const QUEUE_NAMES = {
   BOT_SUMMARIES: 'bot-summaries',
   /** The silent check, a few minutes after a bot hands a session a task, that the task got going. */
   BOT_STALL_CHECKS: 'bot-stall-checks',
+  /**
+   * A line typed into a session for its own agent once it is at its prompt: a
+   * pull request it watches moved, or a time it set came.
+   */
+  SESSION_WAKES: 'session-wakes',
   /** The daily sweep of chat images: uploads never sent, and those whose message is gone. */
   BOT_ATTACHMENT_RETENTION: 'bot-attachment-retention',
   /** The one-minute tick that sends scheduled bot mail and reads the mail routines watch. */

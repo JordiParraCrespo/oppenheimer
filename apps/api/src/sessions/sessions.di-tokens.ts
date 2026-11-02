@@ -24,3 +24,5 @@ export const SESSION_USAGE_READER = Symbol('SESSION_USAGE_READER');
 export const CLOUD_FILES = Symbol('CLOUD_FILES');
 /** A session's terminal watches (`session_terminal_watch`). */
 export const SESSION_TERMINAL_WATCH_REPOSITORY = Symbol('SESSION_TERMINAL_WATCH_REPOSITORY');
+/** Where a wake for a session's own agent waits for its time (`SessionWakesPort`). */
+export const SESSION_WAKES = Symbol('SESSION_WAKES');

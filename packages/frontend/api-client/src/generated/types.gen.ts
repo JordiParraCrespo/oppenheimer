@@ -2238,7 +2238,7 @@ export type AutomationTriggerResponseDto = {
     /**
      * `schedule`, or the catalog event (`pr_opened`, `push`, `mail_received`, …).
      */
-    event: 'schedule' | 'pr_opened' | 'pr_draft' | 'pr_sync' | 'pr_merged' | 'comment' | 'push' | 'issue_labeled' | 'check_failed' | 'issue_opened' | 'mention' | 'release' | 'mail_received';
+    event: 'schedule' | 'pr_opened' | 'pr_draft' | 'pr_sync' | 'pr_merged' | 'comment' | 'push' | 'issue_labeled' | 'check_failed' | 'issue_opened' | 'mention' | 'release' | 'check_passed' | 'review' | 'mail_received';
     schedule?: ScheduleResponseDto;
     /**
      * GitHub: the repositories it listens on.
@@ -2365,7 +2365,7 @@ export type CreateAutomationRequest = {
         timezone: string;
     } | {
         source: 'github';
-        event: 'pr_opened' | 'pr_draft' | 'pr_sync' | 'pr_merged' | 'comment' | 'push' | 'issue_labeled' | 'check_failed' | 'issue_opened' | 'mention' | 'release';
+        event: 'pr_opened' | 'pr_draft' | 'pr_sync' | 'pr_merged' | 'comment' | 'push' | 'issue_labeled' | 'check_failed' | 'issue_opened' | 'mention' | 'release' | 'check_passed' | 'review';
         repositories: Array<number>;
         filter: {
             op: 'any';
@@ -2393,7 +2393,7 @@ export type CreateAutomationRequest = {
 
 export type PreviewTriggerRequest = {
     source: 'github';
-    event: 'pr_opened' | 'pr_draft' | 'pr_sync' | 'pr_merged' | 'comment' | 'push' | 'issue_labeled' | 'check_failed' | 'issue_opened' | 'mention' | 'release';
+    event: 'pr_opened' | 'pr_draft' | 'pr_sync' | 'pr_merged' | 'comment' | 'push' | 'issue_labeled' | 'check_failed' | 'issue_opened' | 'mention' | 'release' | 'check_passed' | 'review';
     repositories: Array<number>;
     filter: {
         op: 'any';
@@ -2445,7 +2445,7 @@ export type UpdateAutomationRequest = {
         timezone: string;
     } | {
         source: 'github';
-        event: 'pr_opened' | 'pr_draft' | 'pr_sync' | 'pr_merged' | 'comment' | 'push' | 'issue_labeled' | 'check_failed' | 'issue_opened' | 'mention' | 'release';
+        event: 'pr_opened' | 'pr_draft' | 'pr_sync' | 'pr_merged' | 'comment' | 'push' | 'issue_labeled' | 'check_failed' | 'issue_opened' | 'mention' | 'release' | 'check_passed' | 'review';
         repositories: Array<number>;
         filter: {
             op: 'any';

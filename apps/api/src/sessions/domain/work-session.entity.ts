@@ -13,6 +13,7 @@ import type {
   SessionNotice,
   SessionPlace,
   SessionState,
+  SessionWatchedPull,
 } from '@oppenheimer/shared';
 import { SessionCreatedDomainEvent } from './events/session-created.domain-event';
 import { SessionStateChangedDomainEvent } from './events/session-state-changed.domain-event';
@@ -423,6 +424,11 @@ export class WorkSessionEntity extends AggregateRoot<WorkSessionProps> {
     return this.props.notice;
   }
 
+  /** The pull requests the agent asked to be woken by (`pull.watched`). */
+  get watchedPulls(): readonly SessionWatchedPull[] {
+    return this.props.watchedPulls;
+  }
+
   /**
    * Why this session cannot take input right now — typed keys, a pasted
    * image — or `null` when it can. Closed is final and stopped has no window
@@ -490,6 +496,7 @@ export class WorkSessionEntity extends AggregateRoot<WorkSessionProps> {
       pendingDecision: this.props.pendingDecision,
       agentReport: this.props.agentReport,
       notice: this.props.notice,
+      watchedPulls: this.props.watchedPulls,
     };
   }
 
@@ -522,6 +529,7 @@ export class WorkSessionEntity extends AggregateRoot<WorkSessionProps> {
     this.props.pendingDecision = fold.pendingDecision;
     this.props.agentReport = fold.agentReport;
     this.props.notice = fold.notice;
+    this.props.watchedPulls = fold.watchedPulls;
   }
 
   /**

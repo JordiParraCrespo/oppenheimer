@@ -602,3 +602,37 @@ describe('the notice the fold keeps', () => {
     expect(foldSessionEvent(closed, notified({ id: 'n2', text: 'Late.' })).notice).toBeNull();
   });
 });
+
+describe('the pull requests the fold keeps watched', () => {
+  const watched = (number: number, watch = true, githubRepoId = '821374923') =>
+    entry(SESSION_EVENT_KINDS.PULL_WATCHED, { githubRepoId, number, watch });
+  const running = foldSessionLog([
+    entry(SESSION_EVENT_KINDS.REQUESTED),
+    entry(SESSION_EVENT_KINDS.STARTED),
+  ]);
+
+  it('adds a watch once, ends one, and keeps the newest ten', () => {
+    const two = foldSessionLog([watched(12), watched(12), watched(13)], running);
+    expect(two.watchedPulls).toEqual([
+      { githubRepoId: '821374923', number: 12 },
+      { githubRepoId: '821374923', number: 13 },
+    ]);
+    expect(foldSessionEvent(two, watched(12, false)).watchedPulls).toEqual([
+      { githubRepoId: '821374923', number: 13 },
+    ]);
+    const many = foldSessionLog(
+      Array.from({ length: 12 }, (_, i) => watched(i + 1)),
+      running,
+    );
+    expect(many.watchedPulls.map((pull) => pull.number)).toEqual([3, 4, 5, 6, 7, 8, 9, 10, 11, 12]);
+    expect(foldSessionEvent(two, watched(0)).watchedPulls).toHaveLength(2);
+  });
+
+  it('forgets every watch when the session closes', () => {
+    const watching = foldSessionEvent(running, watched(12));
+    expect(
+      foldSessionEvent(watching, entry(SESSION_EVENT_KINDS.STOPPED)).watchedPulls,
+    ).toHaveLength(1);
+    expect(foldSessionEvent(watching, entry(SESSION_EVENT_KINDS.CLOSED)).watchedPulls).toEqual([]);
+  });
+});
