@@ -88,7 +88,7 @@ function itemOf(step: ChatStep): ChatItem {
         status: step.failed ? 'failed' : 'completed',
         startedAt: at,
         completedAt: at,
-        event: 'notice',
+        event: 'command_output',
         text: step.text,
       };
     case 'task':
