@@ -8,7 +8,13 @@ import {
   FieldError,
 } from '@oppenheimer/design-system-web';
 import { ListChecks } from '@oppenheimer/design-system-web/icons';
-import type { ChatLimit, ChatQueued, ChatTodo } from '@oppenheimer/frontend-consumer';
+import {
+  type ChatLimit,
+  type ChatQueued,
+  type ChatTodo,
+  type SessionAgent,
+  sessionAgentLabel,
+} from '@oppenheimer/frontend-consumer';
 import {
   ChatQueuedRow,
   ChatUsage,
@@ -54,6 +60,7 @@ export type ChatSendResult = { sent: true } | { sent: false; landed: readonly st
  * with the words, to be sent again.
  */
 export function SessionChatComposer({
+  agent,
   busy,
   todos,
   model,
@@ -68,6 +75,8 @@ export function SessionChatComposer({
   onUnqueue,
   onCompact,
 }: {
+  /** Whose conversation it is, named on the line under the field; none for a guest. */
+  agent: SessionAgent | null;
   /** Who hears a recording: the workspace's dictation, when it has one. */
   voice: VoiceInput;
   busy: boolean;
@@ -188,7 +197,11 @@ export function SessionChatComposer({
         busy={busy && draft.trim() === '' && files.length === 0}
         sendBlockedReason={sending ? t('sessions.chat.composer.attaching') : undefined}
         allowEmpty={files.length > 0}
-        placeholder={t('sessions.chat.composer.placeholder')}
+        placeholder={
+          agent
+            ? t('sessions.chat.composer.placeholder', { agent: sessionAgentLabel(agent) })
+            : t('sessions.chat.composer.placeholderAnyAgent')
+        }
         above={above}
         layout="inline"
         dictation={dictationSlots(dictation)}
@@ -206,10 +219,12 @@ export function SessionChatComposer({
             : undefined
         }
         tools={
-          <span className="flex items-center gap-1.5">
-            <AgentMark agent="claude-code" className="size-3.5" />
-            {t('sessions.chat.composer.agent')}
-          </span>
+          agent ? (
+            <span className="flex items-center gap-1.5">
+              <AgentMark agent={agent} className="size-3.5" />
+              {sessionAgentLabel(agent)}
+            </span>
+          ) : undefined
         }
         engine={
           meter || model ? (

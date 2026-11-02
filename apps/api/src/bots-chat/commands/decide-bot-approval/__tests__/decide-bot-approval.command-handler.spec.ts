@@ -124,7 +124,11 @@ describe('DecideBotApprovalCommandHandler', () => {
       result: null,
     });
     expect(approvals.saveTransition).toHaveBeenCalledTimes(1);
-    expect(effects()).toEqual({ runCall: { by: 'Ana' } });
+    const { runCall, continuation, line } = effects();
+    expect(runCall).toEqual({ by: 'Ana' });
+    expect(line).toBeUndefined();
+    expect(continuation?.turn.credentialScopes).toEqual(['bots:write']);
+    expect(continuation?.opening.event).toMatchObject({ outcome: 'approved', stage: 'started' });
   });
 
   it('runs nothing on a no, and queues in the same write a turn told it was denied, with the note', async () => {

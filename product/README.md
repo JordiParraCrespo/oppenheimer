@@ -979,6 +979,12 @@ earlier note:
   line outside any turn, and stops the asking turn if it still runs. Every
   decision is broadcast as `approval_resolved`, so every open tab takes the
   card down at once (25 §5).
+- `versions/mvp/25-bots.md` §5 (2026-10-15) gave the bot one turn after a
+  yes, once the approved call had run, so the chat was silent for the
+  call's whole run and the model's first token after it. On 2026-11-02 the
+  owner asked for the bot to answer first, as a person does: a yes now
+  queues a short "on it" turn at once, the chat shows the call running
+  under it, and the report is its own turn after, drawn "Done: …" (25 §5).
 - `versions/mvp/25-bots.md` §3 had a message written while a bot works
   wait over the composer for the turn after. On 2026-10-31, from Codex's
   `turn/steer`, Enter steers the running turn instead: the turn takes the
@@ -1047,6 +1053,21 @@ earlier note:
   herdr-core: an agent in a session starts, tells and waits on child
   sessions with `runner sessions run|send|wait|report` (`runner --skill`).
   The control-plane half, a child the console lists, is still 0.6's.
+- `next-steps/0.7-chat-protocol.md` kept the agent's transcript file the
+  one source of the session chat, and `0.7-terminal-and-chat.md` named a
+  second file reader as how another agent joins. OpenCode keeps no such
+  file: its conversations are in a database whose tables move between its
+  versions. On 2026-11-02 OpenCode sessions got the chat by another source:
+  the runner launches OpenCode serving its own API on a loopback port with
+  a password of the session's, and follows the conversation through that
+  API, writing each finished part as a line in the transcript shape the
+  console already reads. Claude Code still reads its file.
+- `versions/mvp/25-bots.md` §4.1 stopped a goal when any turn of it
+  failed, since a failure would only fail again. A turn stopped at the
+  4-minute limit for one turn is the exception, decided on 2026-11-02 after
+  a mail-cleaning goal stopped at its first long turn: the goal is the way
+  past that limit, so that turn is reviewed and the next continuation goes
+  on, told to take a smaller step.
 - `versions/mvp/05-screens.md` listed Claude Code's models as the newest
   of each line, Haiku 4.5 among them. On 2026-11-02 the owner asked for
   the list Claude's own picker shows: Opus 5.5, Fable 5.1, Sonnet 5.5 and

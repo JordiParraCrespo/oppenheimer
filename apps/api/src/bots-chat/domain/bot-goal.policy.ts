@@ -2,6 +2,7 @@ import { ArgumentInvalidException } from '@oppenheimer/backend-ddd';
 import {
   BOT_GOAL_CONTINUATIONS_PERSON,
   type BotGoalActivity,
+  type BotTurnFailure,
   type BotTurnStatus,
   botGoalCommandOf,
   parseBotSlashCommand,
@@ -10,7 +11,7 @@ import {
 import { BotGoalEntity } from './bot-goal.entity';
 import type { BotGoalVerdict } from './bot-goal-review.policy';
 import { BotMessageEntity } from './bot-message.entity';
-import { BotTurnEntity } from './bot-turn.entity';
+import { BOT_TURN_TIME_LIMIT_MS, BotTurnEntity } from './bot-turn.entity';
 
 /**
  * A goal keeps a bot going (`25-bots.md` §4.1; from Grok Bot's goals,
@@ -40,6 +41,8 @@ export interface EndedTurn {
   id: string;
   sourceKey: string | null;
   status: BotTurnStatus;
+  /** Why it failed; null unless it did. */
+  failure: BotTurnFailure | null;
 }
 
 /** The turn a person's message queued, as the goal it sets keeps it. */
@@ -115,18 +118,26 @@ export function isGoalTurn(
 }
 
 /**
- * What the end of one of the goal's turns means for it. One that failed or
- * was stopped stops it: a person's Stop is a stop, and a failure would only
- * fail again. One that completed is reviewed. Another turn's end changes
- * nothing.
+ * What the end of one of the goal's turns means for it. One that completed
+ * is reviewed, and so is one stopped by the turn's time limit: a goal is the
+ * way past that limit, its work is kept, and the next continuation picks it
+ * up on a fresh clock. One that failed otherwise, or was stopped, stops it: a
+ * person's Stop is a stop, and any other failure would only fail again.
+ * Another turn's end changes nothing.
  */
 export function goalDecision(goal: BotGoalEntity, ended: EndedTurn): GoalDecision {
   if (!isGoalTurn(goal, ended)) return { kind: 'skip' };
+  if (timedOut(ended)) return { kind: 'review' };
   if (ended.status === 'failed' || ended.status === 'cancelled') {
     return { kind: 'end', activity: 'stopped', reason: ended.status };
   }
   if (ended.status !== 'completed') return { kind: 'skip' };
   return { kind: 'review' };
+}
+
+/** Whether the turn was stopped by the turn's time limit rather than failing. */
+export function timedOut(ended: Pick<EndedTurn, 'status' | 'failure'>): boolean {
+  return ended.status === 'failed' && ended.failure === 'time_limit';
 }
 
 /**
@@ -165,20 +176,30 @@ export function goalSetPrompt(condition: string): string {
   ].join('\n');
 }
 
-/** What a continuation tells the bot: the goal, where it is in its count, the reviewer's reason, and how to stop. */
+/**
+ * What a continuation tells the bot: the goal, where it is in its count, the
+ * reviewer's reason, how to stop, and, when its last turn ran out of time,
+ * to take a smaller step.
+ */
 export function goalContinuationText(
   goal: BotGoalEntity,
   step: number,
   reason: string | null,
+  lastTimedOut = false,
 ): string {
   return [
     `Continue toward your goal (continuation ${step} of ${goal.limit}): ${goal.objective}`,
+    lastTimedOut
+      ? `Your last turn was stopped at the ${BOT_TURN_TIME_LIMIT_MS / 60_000}-minute limit for one turn; what it did is kept. Take a smaller step this turn and report before the limit.`
+      : null,
     reason
       ? `A reviewer read your last turn and says it is not met yet: ${reason}`
       : 'Nobody wrote to you: this turn exists to make progress on the goal.',
     'Read what your last turns did, take the next step, run the check the goal names, and say what it showed.',
     'When the goal is met, or it cannot be met without the person, call end_goal and say why. Do not stretch the work to fill the continuations left.',
-  ].join('\n');
+  ]
+    .filter(Boolean)
+    .join('\n');
 }
 
 /**
@@ -191,6 +212,7 @@ export function goalContinuationTurn(
   goal: BotGoalEntity,
   step: number,
   reason: string | null,
+  lastTimedOut = false,
 ): { turn: BotTurnEntity; opening: BotMessageEntity } {
   const turn = BotTurnEntity.queue({
     ...props,
@@ -203,7 +225,7 @@ export function goalContinuationTurn(
     botId: props.botId,
     turnId: turn.id,
     role: 'event',
-    content: goalContinuationText(goal, step, reason),
+    content: goalContinuationText(goal, step, reason, lastTimedOut),
     event: {
       kind: 'goal',
       activity: 'continued',

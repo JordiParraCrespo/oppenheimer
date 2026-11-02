@@ -43,6 +43,10 @@ type Options struct {
 	// StatusLine is the command a Claude Code session runs for its status
 	// line (`domain.Launch.StatusLine`); empty leaves the CLI's own.
 	StatusLine string
+	// FreePort finds a loopback port nothing listens on, for the local API
+	// of an agent that keeps its conversation behind one (OpenCode); nil
+	// launches it without one, and its session has no chat view.
+	FreePort func() (int, error)
 	// ProgramStatus keeps what an agent reports through OSC 7501; nil reads
 	// the screen alone.
 	ProgramStatus ProgramStatus
@@ -107,6 +111,7 @@ type Service struct {
 	trust       Trust
 	transcripts Transcripts
 	statusLine  string
+	freePort    func() (int, error)
 	now         func() time.Time
 }
 
@@ -132,7 +137,7 @@ func New(opts Options) (*Service, error) {
 		terminals: opts.Terminals, worktrees: opts.Worktrees,
 		store: opts.Store, publisher: publisher,
 		files: opts.Files, places: opts.Places, layout: opts.Layout, env: env, gate: opts.Gate, trust: opts.Trust,
-		transcripts: opts.Transcripts, statusLine: opts.StatusLine, now: now,
+		transcripts: opts.Transcripts, statusLine: opts.StatusLine, freePort: opts.FreePort, now: now,
 	}
 	if opts.Store != nil {
 		loaded, err := opts.Store.Load()
@@ -281,6 +286,50 @@ func (s *Service) Attach(ctx context.Context, id string, window int, size Size, 
 	return s.terminals.Attach(ctx, session.Target(window), size, readOnly)
 }
 
+// agentServer is where the session's agent serves its conversation from
+// this launch on: a fresh port and password each time, since the last port
+// may be another process's by now, keeping when the session first launched
+// (previous, nil on a create). None for an agent that serves nothing, or when
+// no port could be found: the agent then runs as it always did, without a
+// chat view.
+func (s *Service) agentServer(agent domain.Agent, previous *domain.AgentServer, directory string) *domain.AgentServer {
+	if !agent.ServesConversation() || s.freePort == nil {
+		return nil
+	}
+	port, err := s.freePort()
+	if err != nil {
+		return nil
+	}
+	since := s.now().UnixMilli()
+	if previous != nil && previous.Since != 0 {
+		since = previous.Since
+	}
+	server, err := domain.NewAgentServer(port, since, directory)
+	if err != nil {
+		return nil
+	}
+	return &server
+}
+
+// sessionEnv is the session's tmux environment: the host's (Options.Env)
+// and, for an agent that serves its conversation, its API's credentials,
+// which must stay off the launch command line (domain.Launch.ServerEnv).
+func (s *Service) sessionEnv(session domain.Session) map[string]string {
+	env := s.env(session)
+	server := session.Launch.ServerEnv(session.Agent)
+	if len(server) == 0 {
+		return env
+	}
+	merged := make(map[string]string, len(env)+len(server))
+	for name, value := range env {
+		merged[name] = value
+	}
+	for name, value := range server {
+		merged[name] = value
+	}
+	return merged
+}
+
 // FollowChat follows a session's conversation for the chat view, sending
 // its transcript entries to emit until ctx ends (Transcripts.Follow).
 // ErrNoChat for a session whose agent's transcript this runner cannot read.
@@ -292,7 +341,7 @@ func (s *Service) FollowChat(ctx context.Context, id string, entryMax, batchMax 
 	if err != nil {
 		return err
 	}
-	return s.transcripts.Follow(ctx, session.Agent, session.Launch.Conversation, entryMax, batchMax, emit)
+	return s.transcripts.Follow(ctx, session, entryMax, batchMax, emit)
 }
 
 // Send types into a window, which is how the browser's keystrokes arrive
@@ -527,13 +576,14 @@ func (s *Service) Restart(ctx context.Context, id string) (domain.Session, error
 	// Resuming also drops the stored first task, which is right: the
 	// conversation already holds it, and sending it again would ask for the
 	// same work twice.
+	session.Launch.Server = s.agentServer(session.Agent, session.Launch.Server, session.Cwd())
 	launch := session.Launch
 	launch.Resume = true
 	launch.StatusLine = s.statusLine
 	launch.Wrap = s.observer.wrap(session.ID)
 	s.trustFolder(session.Agent, session.Cwd())
 	release := s.holdLaunch(ctx, session.Agent)
-	err = s.terminals.Create(ctx, session.TmuxName(), session.Cwd(), launch.CommandLine(session.Agent), s.env(session))
+	err = s.terminals.Create(ctx, session.TmuxName(), session.Cwd(), launch.CommandLine(session.Agent), s.sessionEnv(session))
 	release()
 	if err != nil {
 		return domain.Session{}, err

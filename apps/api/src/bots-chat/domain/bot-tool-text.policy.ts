@@ -30,6 +30,16 @@ export function fitToolOutput(text: string): string {
   return `${head}\n… ${elided} characters cut from the middle. Ask for less (a filter, a smaller limit) to see them.\n${tail}`;
 }
 
+/**
+ * The first `max` UTF-16 units of `text`, one fewer when the last would be
+ * the first half of a pair (an emoji): a lone half serialises as an escape
+ * some providers' JSON parsers refuse (xAI's answers 400), and stores as
+ * text no one can read.
+ */
+export function startOf(text: string, max: number): string {
+  return keepWholePairs(text.slice(0, max), 'end');
+}
+
 /** `slice` without a surrogate half at the edge a cut made, so no character is broken in two. */
 function keepWholePairs(slice: string, edge: 'start' | 'end'): string {
   if (edge === 'end') return slice.replace(/[\uD800-\uDBFF]$/, '');
@@ -71,7 +81,7 @@ export function formatToolList(
 
 /** `text` cut to `max` characters, the cut said. */
 export function cut(text: string, max: number): string {
-  return text.length > max ? `${text.slice(0, max)}… (cut)` : text;
+  return text.length > max ? `${startOf(text, max)}… (cut)` : text;
 }
 
 /**

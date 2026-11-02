@@ -533,13 +533,13 @@
     },
     "empty": {
       "title": "Nothing said yet",
-      "description": "Claude's words and work appear here as it goes."
+      "description": "The agent's words and work appear here as it goes."
     },
     "composer": {
-      "placeholder": "Message Claude",
+      "placeholder": "Message {{agent}}",
+      "placeholderAnyAgent": "Message the agent",
       "send": "Send",
       "stop": "Stop",
-      "agent": "Claude Code",
       "attach": "Attach files",
       "removeAttachment": "Remove {{name}}",
       "attachTooLarge": "{{name}} is over 5 MB. Save a smaller copy, then attach it again.",

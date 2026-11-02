@@ -15,12 +15,7 @@ import {
 import { FindSessionQuery } from '../../sessions/queries/find-session/find-session.query';
 import { FindSessionEventsQuery } from '../../sessions/queries/find-session-events/find-session-events.query';
 import { FindSessionsQuery } from '../../sessions/queries/find-sessions/find-sessions.query';
-import {
-  cloudSessionUrl,
-  describeDecision,
-  groupScanOf,
-  SESSION_GROUP_PHRASES,
-} from '../bot-session-tool.mapper';
+import { describeDecision, groupScanOf, SESSION_GROUP_PHRASES } from '../bot-session-tool.mapper';
 import { describeSessionActivity } from '../domain/bot-session-activity.policy';
 import {
   cut,
@@ -28,6 +23,7 @@ import {
   formatToolList,
   formatToolTime,
 } from '../domain/bot-tool-text.policy';
+import { describeCloudSession } from './bot-cloud-session.policy';
 import {
   type BotToolArea,
   type BotToolCallContext,
@@ -195,16 +191,15 @@ export class BotHostToolsFactory implements BotToolArea {
           `- group: ${group} (${SESSION_GROUP_PHRASES[group]})`,
           `- state: ${session.state}`,
           `- project: ${projectLabel(session.projectId, projects)}`,
-          `- host: ${session.hostId}`,
+          `- host: ${session.hostId ?? "none (it runs in its vendor's cloud)"}`,
           `- agent: ${session.agent}`,
           `- started by: ${session.origin}`,
           `- where: ${session.folderPath ? `folder ${session.folderPath}` : `branch ${session.branch ?? 'none yet'}`}`,
           `- last activity: ${formatToolTime(session.lastEventAt, context.timeZone)}`,
           `- stopped: ${session.stoppedAt ? formatToolTime(session.stoppedAt, context.timeZone) : 'no'}`,
         ];
-        if (session.cloudSessionId) {
-          lines.push(`- cloud session: ${cloudSessionUrl(session.agent, session.cloudSessionId)}`);
-        }
+        const cloud = describeCloudSession(session);
+        if (cloud) lines.push(cloud);
         if (turn) lines.push(...describeTurn(turn));
         if (session.pendingDecision) {
           lines.push(

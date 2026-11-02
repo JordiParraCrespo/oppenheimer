@@ -245,6 +245,32 @@ describe('OpenAiBotEngine', () => {
     expect(events.at(-1)).toEqual({ type: 'done', reason: 'completed' });
   });
 
+  // A tool that cuts its answer by length can split an emoji, and the SDK
+  // sends the lone half as an escape xAI's parser refuses: the whole turn
+  // failed with a 400 on one character ("unexpected end of hex escape").
+  it('mends a character a tool cut in two before the model or the chat reads it', async () => {
+    const cutting: BotEngineTool = {
+      name: 'get_pull_request',
+      description: 'A pull request',
+      inputSchema: { type: 'object', properties: {} },
+      run: async () => ({ content: '🚀 shipped 🚀'.slice(0, -1) }),
+    };
+    let modelRead: string | undefined;
+    scripted(async function* (seen) {
+      yield toolCalled('call_1', 'get_pull_request', '{}');
+      modelRead = await execute(seen.agent.tools[0], {}, 'call_1');
+      yield toolOutput('call_1', 'get_pull_request', modelRead);
+      yield message('Done');
+    });
+
+    const events = await collect(new XaiBotEngine().run(request({ tools: [cutting] })));
+
+    expect(modelRead).toBe('🚀 shipped \uFFFD');
+    expect(events).toContainEqual(
+      expect.objectContaining({ type: 'tool.finished', output: '🚀 shipped \uFFFD' }),
+    );
+  });
+
   it('hands back what a call made on its own end, never to the model', async () => {
     const start: BotEngineTool = {
       name: 'start_session',
@@ -417,6 +443,24 @@ describe('OpenAiBotEngine', () => {
 
     expect(done).toMatchObject({ type: 'done', reason: 'failed', failure });
     expect(done).not.toHaveProperty('rateLimit');
+  });
+
+  // xAI answers a body it cannot parse with a 400; calling that a refusal
+  // told the person to change their message or model, which cannot help.
+  it('reads a 400 that could not parse the request as our failure, not a refusal', async () => {
+    scripted(async function* () {
+      yield textDelta('Hi');
+      throw Object.assign(
+        new Error(
+          '400 "Failed to parse the request body as JSON: input[98].output: unexpected end of hex escape at line 1 column 147905"',
+        ),
+        { status: 400 },
+      );
+    });
+
+    const done = (await collect(new XaiBotEngine().run(request()))).at(-1);
+
+    expect(done).toMatchObject({ type: 'done', reason: 'failed', failure: 'other' });
   });
 
   it('fails when the run cannot start', async () => {
