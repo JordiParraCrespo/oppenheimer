@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import type { AccessScope } from '@oppenheimer/backend-authz';
+import type { AccessScope } from '../../../../authz/domain/access-scope.types';
 import { ModelProviderResolver } from '../../../application/model-provider.resolver';
 import type { ModelProviderCredentialRepositoryPort } from '../../../database/model-provider-credential.repository.port';
 import type { ProviderKeySealerPort } from '../../../infrastructure/provider-key-sealer.port';

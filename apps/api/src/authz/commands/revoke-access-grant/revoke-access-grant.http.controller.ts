@@ -11,13 +11,13 @@ import {
 } from '@nestjs/common';
 import { CommandBus } from '@nestjs/cqrs';
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
-import type { AccessScope } from '@oppenheimer/backend-authz';
 import { ApiAuthProblemResponses, ApiProblemResponse } from '@oppenheimer/backend-core';
-import { CheckPolicies } from '../../../auth/decorators/check-policies.decorator';
 import { RequireScopes } from '../../../auth/decorators/require-scopes.decorator';
 import { ApiAuthGuard } from '../../../auth/guards/api-auth.guard';
-import { PoliciesGuard } from '../../../auth/guards/policies.guard';
+import { CheckPolicies } from '../../decorators/check-policies.decorator';
 import { CurrentAccessScope } from '../../decorators/current-access-scope.decorator';
+import type { AccessScope } from '../../domain/access-scope.types';
+import { PoliciesGuard } from '../../guards/policies.guard';
 import { AccessScopeInterceptor } from '../../interceptors/access-scope.interceptor';
 import { RevokeAccessGrantCommand } from './revoke-access-grant.command';
 

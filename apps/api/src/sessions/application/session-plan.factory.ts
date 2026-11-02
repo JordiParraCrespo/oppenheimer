@@ -1,7 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
-import type { AccessScope } from '@oppenheimer/backend-authz';
 import { AppError } from '@oppenheimer/backend-core';
 import type { CreateSessionDto, SessionCheckoutInputDto } from '@oppenheimer/shared';
+import type { AccessScope } from '../../authz/domain/access-scope.types';
 import type { RepositoryAccessPort } from '../../github/application/repository-access.port';
 import { REPOSITORY_ACCESS } from '../../github/github.di-tokens';
 import type { GithubRepository } from '../../github/infrastructure/github-app.port';

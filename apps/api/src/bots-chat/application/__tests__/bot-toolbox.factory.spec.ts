@@ -1,6 +1,6 @@
-import { emptyScope } from '@oppenheimer/backend-authz';
 import type { BotTurnOrigin, Scope } from '@oppenheimer/shared';
 import { z } from 'zod/v4';
+import { emptyScope } from '../../../authz/domain/access-scope.types';
 import { NO_PERMISSIONS } from '../../domain/bot-tool-permission.policy';
 
 const STANDING = { preset: 'full' as const, permissions: NO_PERMISSIONS };

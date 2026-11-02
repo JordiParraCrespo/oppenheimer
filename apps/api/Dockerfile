@@ -14,7 +14,6 @@ COPY packages/shared/package.json ./packages/shared/
 COPY packages/tsconfig/package.json ./packages/tsconfig/
 COPY packages/env/package.json ./packages/env/
 COPY packages/translations/package.json ./packages/translations/
-COPY packages/backend/authz/package.json ./packages/backend/authz/
 COPY packages/backend/core/package.json ./packages/backend/core/
 COPY packages/backend/ddd/package.json ./packages/backend/ddd/
 COPY packages/backend/cache/package.json ./packages/backend/cache/

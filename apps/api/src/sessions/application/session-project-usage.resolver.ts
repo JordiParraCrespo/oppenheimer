@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import type { AccessScope } from '@oppenheimer/backend-authz';
+import type { AccessScope } from '../../authz/domain/access-scope.types';
 import type { ProjectUsagePort } from '../../projects/application/project-usage.port';
 import type { WorkSessionRepositoryPort } from '../database/work-session.repository.port';
 import { WORK_SESSION_REPOSITORY } from '../sessions.di-tokens';

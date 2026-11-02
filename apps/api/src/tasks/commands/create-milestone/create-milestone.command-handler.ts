@@ -1,7 +1,7 @@
 import { Inject } from '@nestjs/common';
 import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
-import { requireTenant } from '@oppenheimer/backend-authz';
 import type { AggregateID } from '@oppenheimer/backend-ddd';
+import { requireTenant } from '../../../authz/application/tenant-scope.policy';
 import { TaskFilingResolver } from '../../application/task-filing.resolver';
 import type { MilestoneRepositoryPort } from '../../database/milestone.repository.port';
 import { MilestoneEntity } from '../../domain/milestone.entity';

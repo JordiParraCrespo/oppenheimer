@@ -1,9 +1,9 @@
 import type { ConfigService } from '@nestjs/config';
-import type { AccessScope } from '@oppenheimer/backend-authz';
 import type { BotStreamEvent } from '@oppenheimer/shared';
 import Redis from 'ioredis';
 import { firstValueFrom, type Observable, take, toArray } from 'rxjs';
 import { useTestRedis } from '../../__tests__/integration-services';
+import type { AccessScope } from '../../authz/domain/access-scope.types';
 import type { BotLookupPort } from '../../bots/application/bot-lookup.port';
 import type { BotEntity } from '../../bots/domain/bot.entity';
 import { redisConfigFromEnv, redisConnectionOptions } from '../../config/redis.config';

@@ -1,7 +1,7 @@
 import { Inject } from '@nestjs/common';
 import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
-import { requireTenant } from '@oppenheimer/backend-authz';
 import { AppError } from '@oppenheimer/backend-core';
+import { requireTenant } from '../../../authz/application/tenant-scope.policy';
 import { ModelProviderResolver } from '../../application/model-provider.resolver';
 import { MODEL_PROVIDER_CREDENTIAL_REPOSITORY } from '../../bots.di-tokens';
 import type { ModelProviderCredentialRepositoryPort } from '../../database/model-provider-credential.repository.port';

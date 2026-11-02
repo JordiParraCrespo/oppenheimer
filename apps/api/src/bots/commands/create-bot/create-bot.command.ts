@@ -1,7 +1,7 @@
-import type { AccessScope } from '@oppenheimer/backend-authz';
 import { CommandBase, type CommandProps } from '@oppenheimer/backend-ddd';
 import type { BotPermission, CreateBotDto } from '@oppenheimer/shared';
 import type { SessionEffort } from '@oppenheimer/shared/agents';
+import type { AccessScope } from '../../../authz/domain/access-scope.types';
 
 /**
  * A new bot. `input` is what the console's form sends; the rest is optional

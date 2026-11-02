@@ -1,6 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
-import type { AccessScope } from '@oppenheimer/backend-authz';
 import type { BotProvider } from '@oppenheimer/shared';
+import type { AccessScope } from '../../authz/domain/access-scope.types';
 import { MODEL_PROVIDER_CREDENTIAL_REPOSITORY } from '../bots.di-tokens';
 import type { ModelProviderCredentialRepositoryPort } from '../database/model-provider-credential.repository.port';
 import { providerForNewBot } from '../domain/bot-creation.policy';

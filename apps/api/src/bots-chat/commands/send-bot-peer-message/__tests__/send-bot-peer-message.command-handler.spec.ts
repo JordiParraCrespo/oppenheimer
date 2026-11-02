@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
-import type { AccessScope } from '@oppenheimer/backend-authz';
 import type { BotPeerMessageEvent } from '@oppenheimer/shared';
 import { None, Some } from 'oxide.ts';
+import type { AccessScope } from '../../../../authz/domain/access-scope.types';
 import type { BotLookupPort } from '../../../../bots/application/bot-lookup.port';
 import type { ModelProviderCredentialRepositoryPort } from '../../../../bots/database/model-provider-credential.repository.port';
 import { BotEntity } from '../../../../bots/domain/bot.entity';

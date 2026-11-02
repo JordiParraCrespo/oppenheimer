@@ -1,6 +1,6 @@
-import type { AccessScope } from '@oppenheimer/backend-authz';
 import type { BotDocumentName } from '@oppenheimer/shared';
 import type { Option } from 'oxide.ts';
+import type { AccessScope } from '../../authz/domain/access-scope.types';
 import type { BotDocumentRevision } from '../domain/bot.types';
 import type { BotDocumentEntity } from '../domain/bot-document.entity';
 

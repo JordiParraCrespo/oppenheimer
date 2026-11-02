@@ -1,13 +1,15 @@
 import { Inject, Logger } from '@nestjs/common';
 import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
-import { canGrantScope, ResourceRegistry, requireTenant } from '@oppenheimer/backend-authz';
 import { AppError } from '@oppenheimer/backend-core';
 import type { AggregateID } from '@oppenheimer/backend-ddd';
 import { PrincipalResidencyChecker } from '../../application/principal-residency.policy';
+import { ResourceRegistry } from '../../application/resource.registry';
+import { requireTenant } from '../../application/tenant-scope.policy';
 import { ACCESS_GRANT_REPOSITORY } from '../../authz.di-tokens';
 import type { AccessGrantRepositoryPort } from '../../database/access-grant.repository.port';
 import { AccessGrantEntity } from '../../domain/access-grant.entity';
 import { AccessGrantErrors } from '../../domain/access-grant.errors';
+import { canGrantScope } from '../../domain/can-grant-scope.policy';
 import { CreateAccessGrantCommand } from './create-access-grant.command';
 
 /**

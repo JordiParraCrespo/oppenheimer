@@ -1,6 +1,5 @@
 import { RequestMethod } from '@nestjs/common';
 import { METHOD_METADATA, PATH_METADATA } from '@nestjs/common/constants';
-import { CHECK_POLICIES_KEY, type PolicyRule } from '@oppenheimer/backend-authz';
 import { ENDPOINT_POLICIES, type GuardedEndpoint } from '@oppenheimer/shared';
 import { describe, expect, it } from 'vitest';
 import { ListUsersHttpController } from '../../admin/queries/list-users/list-users.http.controller';
@@ -37,6 +36,7 @@ import { StopSessionHttpController } from '../../sessions/commands/stop-session/
 import { FindSessionHttpController } from '../../sessions/queries/find-session/find-session.http.controller';
 import { FindSessionEventsHttpController } from '../../sessions/queries/find-session-events/find-session-events.http.controller';
 import { FindSessionsHttpController } from '../../sessions/queries/find-sessions/find-sessions.http.controller';
+import { CHECK_POLICIES_KEY, type PolicyRule } from '../decorators/check-policies.decorator';
 
 /**
  * The clients and the guards must not drift.

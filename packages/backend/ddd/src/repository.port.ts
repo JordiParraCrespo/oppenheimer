@@ -23,7 +23,7 @@ export class Paginated<T> {
  * the adapter, not a method callers wrap around repository calls.
  *
  * Tenant-scoped repositories do not extend this: every read there takes an
- * `AccessScope` (see `ScopedRepositoryBase` in `@oppenheimer/backend-authz`).
+ * `AccessScope` (see `ScopedRepositoryBase` in the API's `authz/database/`).
  */
 export interface RepositoryPort<Entity> {
   insert(entity: Entity | Entity[]): Promise<void>;

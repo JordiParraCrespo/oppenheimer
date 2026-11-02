@@ -1,6 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
-import type { AccessScope } from '@oppenheimer/backend-authz';
 import { AppError, requireFound } from '@oppenheimer/backend-core';
+import type { AccessScope } from '../../authz/domain/access-scope.types';
 import type { ProjectLookupPort } from '../../projects/application/project-lookup.port';
 import { PROJECT_LOOKUP } from '../../projects/projects.di-tokens';
 import type { MilestoneRepositoryPort } from '../database/milestone.repository.port';

@@ -1,6 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
-import type { AccessScope } from '@oppenheimer/backend-authz';
 import { AppError, requireFound } from '@oppenheimer/backend-core';
+import type { AccessScope } from '../../authz/domain/access-scope.types';
 import { AUTOMATION_REPOSITORY } from '../automations.di-tokens';
 import type { AutomationRepositoryPort } from '../database/automation.repository.port';
 import type { AutomationEntity } from '../domain/automation.entity';

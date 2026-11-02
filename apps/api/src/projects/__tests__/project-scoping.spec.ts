@@ -1,10 +1,11 @@
-import { type AccessScope, applyAccessScope } from '@oppenheimer/backend-authz';
 import {
   canAccess,
   defineAbilitiesFromPermissions,
   SYSTEM_ROLE_PERMISSIONS,
 } from '@oppenheimer/shared';
 import { describe, expect, it } from 'vitest';
+import { applyAccessScope } from '../../authz/database/scoped.repository';
+import { type AccessScope } from '../../authz/domain/access-scope.types';
 import { ProjectResource } from '../projects.resource';
 
 /**
@@ -13,7 +14,7 @@ import { ProjectResource } from '../projects.resource';
  * Two halves, because they fail independently: the SQL predicate decides which
  * rows a query returns, the CASL ability what `can()` reports. Both are
  * generated from the same declaration; their generic branches (bypass, no
- * tenant) are proved once, in `@oppenheimer/backend-authz` and
+ * tenant) are proved once, in `authz/database/__tests__/` and
  * `@oppenheimer/shared`.
  *
  * The interesting case for this resource is the *absence* of narrowing: a

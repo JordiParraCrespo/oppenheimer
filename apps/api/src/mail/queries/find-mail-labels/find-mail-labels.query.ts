@@ -1,5 +1,5 @@
-import type { AccessScope } from '@oppenheimer/backend-authz';
 import { QueryBase } from '@oppenheimer/backend-ddd';
+import type { AccessScope } from '../../../authz/domain/access-scope.types';
 
 /** The labels of one of the caller's Gmail accounts, with their unread counts. */
 export class FindMailLabelsQuery extends QueryBase {

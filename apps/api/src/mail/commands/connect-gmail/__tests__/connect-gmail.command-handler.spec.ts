@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
-import type { AccessScope } from '@oppenheimer/backend-authz';
 import { describe, expect, it, vi } from 'vitest';
+import type { AccessScope } from '../../../../authz/domain/access-scope.types';
 import type { GmailConnectStateResolver } from '../../../application/gmail-connect-state.resolver';
 import type { GmailConnectionRepositoryPort } from '../../../database/gmail-connection.repository.port';
 import { GmailConnectionEntity } from '../../../domain/gmail-connection.entity';

@@ -1,8 +1,8 @@
 import { Module, type Provider } from '@nestjs/common';
 import { CqrsModule } from '@nestjs/cqrs';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { AuthzModule as AuthzKernelModule } from '@oppenheimer/backend-authz';
 import { configKeySealer } from '@oppenheimer/backend-core';
+import { AuthzModule as AuthzKernelModule } from '../authz/authz.module';
 import { botsProviderKeyOf } from '../config/bots.config';
 import { HostsModule } from '../hosts/hosts.module';
 import { BotLookupResolver } from './application/bot-lookup.resolver';

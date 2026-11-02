@@ -1,6 +1,6 @@
-import type { AccessScope } from '@oppenheimer/backend-authz';
 import { Some } from 'oxide.ts';
 import { describe, expect, it, vi } from 'vitest';
+import type { AccessScope } from '../../../authz/domain/access-scope.types';
 import type { WorkSessionRepositoryPort } from '../../database/work-session.repository.port';
 import { SessionCloudRunEntity } from '../../domain/session-cloud-run.entity';
 import { WorkSessionEntity } from '../../domain/work-session.entity';

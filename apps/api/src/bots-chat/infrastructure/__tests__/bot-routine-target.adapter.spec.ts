@@ -1,5 +1,5 @@
-import { emptyScope } from '@oppenheimer/backend-authz';
 import { AppError } from '@oppenheimer/backend-core';
+import { emptyScope } from '../../../authz/domain/access-scope.types';
 import type { RunTargetContext } from '../../../automations/application/automation-run-target.port';
 import { AutomationEntity } from '../../../automations/domain/automation.entity';
 import {

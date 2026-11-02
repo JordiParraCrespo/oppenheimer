@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import type { AccessScope } from '@oppenheimer/backend-authz';
+import type { AccessScope } from '../../../../authz/domain/access-scope.types';
 import type { BotLookupPort } from '../../../../bots/application/bot-lookup.port';
 import { BotEntity } from '../../../../bots/domain/bot.entity';
 import type { BotAttachmentRepositoryPort } from '../../../database/bot-attachment.repository.port';

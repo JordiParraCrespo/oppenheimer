@@ -12,8 +12,6 @@ export const CREDENTIAL_VERIFIER = Symbol('CREDENTIAL_VERIFIER');
 
 export const CREDENTIAL_OWNER = Symbol('CREDENTIAL_OWNER');
 
-export const ABILITY = Symbol('ABILITY');
-
 export const REQUEST_TENANT = Symbol('REQUEST_TENANT');
 
 export const SESSION_CACHE = Symbol('SESSION_CACHE');

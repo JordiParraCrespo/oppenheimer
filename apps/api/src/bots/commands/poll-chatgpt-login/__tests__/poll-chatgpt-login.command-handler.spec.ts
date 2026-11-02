@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
-import type { AccessScope } from '@oppenheimer/backend-authz';
 import type { CacheService } from '@oppenheimer/backend-cache';
+import type { AccessScope } from '../../../../authz/domain/access-scope.types';
 import type { ChatgptCredentialResolver } from '../../../application/chatgpt-credential.resolver';
 import { ModelProviderResolver } from '../../../application/model-provider.resolver';
 import { ChatgptSignInMapper } from '../../../chatgpt-sign-in.mapper';

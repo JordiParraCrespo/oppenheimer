@@ -1,8 +1,8 @@
 import { Module, type Provider } from '@nestjs/common';
 import { CqrsModule } from '@nestjs/cqrs';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { AuthzModule as AuthzKernelModule } from '@oppenheimer/backend-authz';
 import { configKeySealer } from '@oppenheimer/backend-core';
+import { AuthzModule as AuthzKernelModule } from '../authz/authz.module';
 import { calendarTokenKeyOf } from '../config/calendar.config';
 import { GoogleConnectStateResolver } from './application/google-connect-state.resolver';
 import {

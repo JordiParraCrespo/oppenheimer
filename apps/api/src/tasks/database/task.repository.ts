@@ -1,10 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { type AccessScope, ScopedRepositoryBase } from '@oppenheimer/backend-authz';
 import { OutboxService } from '@oppenheimer/backend-ddd';
 import type { TaskStatus } from '@oppenheimer/shared';
 import { None, type Option, Some } from 'oxide.ts';
 import { type EntityManager, In, Repository } from 'typeorm';
+import { ScopedRepositoryBase } from '../../authz/database/scoped.repository';
+import { type AccessScope } from '../../authz/domain/access-scope.types';
 import type { TaskEntity, TaskSessionLink } from '../domain/task.entity';
 import { rankBetween } from '../domain/task-rank.policy';
 import { PlanEventMapper } from '../plan-event.mapper';

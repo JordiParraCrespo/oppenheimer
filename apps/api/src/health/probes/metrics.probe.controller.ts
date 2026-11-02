@@ -5,7 +5,7 @@ import { ApiExcludeController } from '@nestjs/swagger';
 import { METRICS_REGISTRY, type Registry } from '@oppenheimer/backend-core';
 import { NotFoundException } from '@oppenheimer/backend-ddd';
 import type { Response } from 'express';
-import { NoPolicy } from '../../auth/decorators/check-policies.decorator';
+import { NoPolicy } from '../../authz/decorators/check-policies.decorator';
 
 /**
  * The Prometheus scrape.

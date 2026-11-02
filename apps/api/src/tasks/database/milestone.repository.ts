@@ -1,9 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { type AccessScope, ScopedRepositoryBase } from '@oppenheimer/backend-authz';
 import { OutboxService } from '@oppenheimer/backend-ddd';
 import { None, type Option, Some } from 'oxide.ts';
 import { type EntityManager, Repository, type WhereExpressionBuilder } from 'typeorm';
+import { ScopedRepositoryBase } from '../../authz/database/scoped.repository';
+import { type AccessScope } from '../../authz/domain/access-scope.types';
 import type { MilestoneEntity } from '../domain/milestone.entity';
 import { MilestoneMapper, type MilestoneProgress } from '../milestone.mapper';
 import { PlanEventMapper } from '../plan-event.mapper';

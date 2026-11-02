@@ -1,17 +1,18 @@
-import { type AccessScope, applyAccessScope } from '@oppenheimer/backend-authz';
 import {
   canAccess,
   defineAbilitiesFromPermissions,
   SYSTEM_ROLE_PERMISSIONS,
 } from '@oppenheimer/shared';
 import { describe, expect, it } from 'vitest';
+import { applyAccessScope } from '../../authz/database/scoped.repository';
+import { type AccessScope } from '../../authz/domain/access-scope.types';
 import { InstallationResource } from '../github.resource';
 
 /**
  * The proof that the kernel does what the github module claims. The SQL
  * predicate and the CASL ability come from one declaration but fail
  * independently, so both are tested; their generic branches (bypass, no
- * tenant) are proved once, in `@oppenheimer/backend-authz` and
+ * tenant) are proved once, in `authz/database/__tests__/` and
  * `@oppenheimer/shared`.
  *
  * What an installation grants is one hour of write access to someone's source,

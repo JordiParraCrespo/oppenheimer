@@ -1,11 +1,14 @@
 import { type CanActivate, type ExecutionContext, Inject, Injectable } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { NO_POLICY_KEY } from '@oppenheimer/backend-authz';
 import { AppError } from '@oppenheimer/backend-core';
+import { AuthErrors } from '../../auth/domain/auth.errors';
 import type { AbilityPort } from '../application/ability.port';
-import { ABILITY } from '../auth.di-tokens';
-import { CHECK_POLICIES_KEY, type PolicyRule } from '../decorators/check-policies.decorator';
-import { AuthErrors } from '../domain/auth.errors';
+import { ABILITY } from '../authz.di-tokens';
+import {
+  CHECK_POLICIES_KEY,
+  NO_POLICY_KEY,
+  type PolicyRule,
+} from '../decorators/check-policies.decorator';
 
 /**
  * Resolves the caller's CASL ability from their database-backed roles, checks

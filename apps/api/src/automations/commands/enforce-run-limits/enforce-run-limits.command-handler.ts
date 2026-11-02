@@ -1,7 +1,7 @@
 import { Inject, Logger } from '@nestjs/common';
 import { CommandBus, CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
-import type { AccessScope } from '@oppenheimer/backend-authz';
 import { AppError } from '@oppenheimer/backend-core';
+import type { AccessScope } from '../../../authz/domain/access-scope.types';
 import { StopSessionCommand } from '../../../sessions/commands/stop-session/stop-session.command';
 import { AutomationLimitsResolver } from '../../application/automation-limits.resolver';
 import { OwnerScopeResolver } from '../../application/owner-scope.resolver';

@@ -12,11 +12,11 @@ import { CommandBus } from '@nestjs/cqrs';
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { ApiAuthProblemResponses, ApiProblemResponse } from '@oppenheimer/backend-core';
 import type { Request } from 'express';
-import { NoPolicy } from '../../../auth/decorators/check-policies.decorator';
 import { CurrentSession } from '../../../auth/decorators/current-session.decorator';
 import { CurrentUser } from '../../../auth/decorators/current-user.decorator';
 import { UsesBetterAuthSession } from '../../../auth/decorators/uses-better-auth-session.decorator';
 import { ApiAuthGuard } from '../../../auth/guards/api-auth.guard';
+import { NoPolicy } from '../../../authz/decorators/check-policies.decorator';
 import { RevokeSessionCommand } from './revoke-session.command';
 
 @ApiTags('Profile')
