@@ -2,7 +2,12 @@ import { posix } from 'node:path';
 import { Injectable } from '@nestjs/common';
 import { toPageMeta } from '@oppenheimer/backend-core';
 import type { Mapper } from '@oppenheimer/backend-ddd';
-import { type SessionDecision, sessionDecisionSchema } from '@oppenheimer/shared';
+import {
+  type SessionAgentReport,
+  type SessionDecision,
+  sessionAgentReportSchema,
+  sessionDecisionSchema,
+} from '@oppenheimer/shared';
 import type { HostFolderListing } from './application/host-folders.port';
 import type { SessionCheckoutOrmEntity } from './database/session-checkout.orm-entity';
 import type { SessionCloudRunOrmEntity } from './database/session-cloud-run.orm-entity';
@@ -73,6 +78,7 @@ export class WorkSessionMapper
     record.closeRefusalCode = fold.closeRefusal?.code ?? null;
     record.closeRefusalDetail = fold.closeRefusal?.detail ?? null;
     record.pendingDecision = fold.pendingDecision;
+    record.agentReport = fold.agentReport;
     return record;
   }
 
@@ -119,6 +125,13 @@ export class WorkSessionMapper
   decisionOf(value: unknown): SessionDecision | null {
     if (value === null || value === undefined) return null;
     const parsed = sessionDecisionSchema.safeParse(value);
+    return parsed.success ? parsed.data : null;
+  }
+
+  /** The stored report, read back through its schema like the decision. */
+  agentReportOf(value: unknown): SessionAgentReport | null {
+    if (value === null || value === undefined) return null;
+    const parsed = sessionAgentReportSchema.safeParse(value);
     return parsed.success ? parsed.data : null;
   }
 
@@ -190,6 +203,7 @@ export class WorkSessionMapper
         ? { code: record.closeRefusalCode, detail: record.closeRefusalDetail }
         : null,
       pendingDecision: this.decisionOf(record.pendingDecision),
+      agentReport: this.agentReportOf(record.agentReport),
     };
   }
 
@@ -250,6 +264,7 @@ export class WorkSessionMapper
       ? { code: closeRefusal.code, detail: closeRefusal.detail }
       : null;
     dto.decision = this.decisionToResponse(entity.pendingDecision);
+    dto.agentReport = entity.agentReport ? { ...entity.agentReport } : null;
     // Retired checkouts are left out: the console renders what is on disk, and the
     // row survives only so its directory name is never reissued.
     dto.checkouts = entity.liveCheckouts.map((checkout) =>

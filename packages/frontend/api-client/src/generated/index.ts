@@ -1630,6 +1630,7 @@ export type {
   SendBotMessageRequest,
   SendBotMessageResponse,
   SendBotMessageResponses,
+  SessionAgentReportResponseDto,
   SessionAttachmentResponseDto,
   SessionCheckoutResponseDto,
   SessionCloseRefusalResponseDto,

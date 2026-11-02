@@ -230,6 +230,14 @@ export class WorkSessionOrmEntity {
   pendingDecision!: unknown;
 
   /**
+   * The agent's own word on what it is doing (`SessionAgentReport`), folded
+   * from the `program` of `agent.observed`. Read back through the schema by the
+   * mapper, never trusted as typed.
+   */
+  @Column({ type: 'jsonb', nullable: true })
+  agentReport!: unknown;
+
+  /**
    * Who asked for the session: `person`, `automation` (whose run points back
    * here), `review` (a pull request's review session, which the Sessions
    * list leaves out) or `bot` (a bot acting for its owner).

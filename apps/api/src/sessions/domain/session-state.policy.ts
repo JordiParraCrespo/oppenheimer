@@ -1,5 +1,6 @@
 import type {
   SessionAgentId,
+  SessionAgentReport,
   SessionDecision,
   SessionEffortDto,
   SessionPermissionDto,
@@ -11,6 +12,7 @@ import {
   CLOUD_AGENT_IDS,
   DECISION_ANSWERED_EVENT_KIND,
   SESSION_PERMISSIONS,
+  sessionAgentReportSchema,
 } from '@oppenheimer/shared';
 import { CODING_AGENTS, effortLevelFor, isCodingAgentId } from '@oppenheimer/shared/agents';
 
@@ -248,6 +250,13 @@ export interface SessionFold {
    * the session stopping, failing or closing.
    */
   pendingDecision: SessionDecision | null;
+  /**
+   * The agent's own word on what it is doing (OSC 7501), from the last
+   * `agent.observed` that carried one: why it is blocked, how far along it is,
+   * what it says. Null when the last observation was read off the screen, and
+   * cleared when the agent stops, fails, closes or starts again.
+   */
+  agentReport: SessionAgentReport | null;
 }
 
 export const INITIAL_SESSION_FOLD: SessionFold = {
@@ -268,6 +277,7 @@ export const INITIAL_SESSION_FOLD: SessionFold = {
   closeRequest: null,
   closeRefusal: null,
   pendingDecision: null,
+  agentReport: null,
 };
 
 /**
@@ -335,6 +345,19 @@ function decisionOf(payload: unknown): SessionDecision | null {
   return parsed.success ? parsed.data.decision : null;
 }
 
+/**
+ * The agent's own report an `agent.observed` payload carries as `program`,
+ * narrowed by its schema; null for one read off the screen, or one this build
+ * cannot read.
+ */
+function agentReportOf(payload: unknown): SessionAgentReport | null {
+  if (typeof payload !== 'object' || payload === null) return null;
+  const program = (payload as { program?: unknown }).program;
+  if (program === undefined || program === null) return null;
+  const parsed = sessionAgentReportSchema.safeParse(program);
+  return parsed.success ? parsed.data : null;
+}
+
 function observedStateOf(payload: unknown): AgentObservedState | null {
   const value = stringField(payload, 'state');
   return AGENT_OBSERVED_STATES.includes(value as AgentObservedState)
@@ -370,6 +393,7 @@ export function foldSessionEvent(fold: SessionFold, event: SessionLogEntry): Ses
     }
     case SESSION_EVENT_KINDS.FAILED:
       next.pendingDecision = null;
+      next.agentReport = null;
       return transition(next, 'failed');
     case SESSION_EVENT_KINDS.STOPPED:
       if (next.state === 'resolved') return next;
@@ -378,6 +402,7 @@ export function foldSessionEvent(fold: SessionFold, event: SessionLogEntry): Ses
       // `stoppedAt` is the whole of what changed. Nothing waits on an answer.
       next.stoppedAt = event.occurredAt;
       next.pendingDecision = null;
+      next.agentReport = null;
       return next;
     case SESSION_EVENT_KINDS.CLOSE_REQUESTED:
       if (next.state === 'resolved') return next;
@@ -415,6 +440,7 @@ export function foldSessionEvent(fold: SessionFold, event: SessionLogEntry): Ses
       closed.closeRequest = null;
       closed.closeRefusal = null;
       closed.pendingDecision = null;
+      closed.agentReport = null;
       return closed;
     }
     case SESSION_EVENT_KINDS.NAMED: {
@@ -454,6 +480,9 @@ export function foldSessionEvent(fold: SessionFold, event: SessionLogEntry): Ses
     case SESSION_EVENT_KINDS.AGENT_OBSERVED: {
       const state = observedStateOf(event.payload);
       if (!state) return next;
+      // Every observation says where its state came from: the agent's own
+      // report, or the screen, which carries none and so clears the last one.
+      next.agentReport = agentReportOf(event.payload);
       if (next.lastObservedState === state) {
         // The same state again: keep the transition already recorded, which is what
         // makes a duration accumulate instead of resetting on every heartbeat.
@@ -503,8 +532,9 @@ export function foldSessionLog(
 function opened(fold: SessionFold, event: SessionLogEntry): SessionFold {
   const next = transition(fold, 'open');
   next.stoppedAt = null;
-  // A fresh agent waits on nothing the last one asked.
+  // A fresh agent waits on nothing the last one asked, and has said nothing yet.
   next.pendingDecision = null;
+  next.agentReport = null;
   next.agentSessionId = stringField(event.payload, 'agentSessionId') ?? next.agentSessionId;
   return next;
 }

@@ -22,6 +22,7 @@ export * from './pull-request.schema.js';
 export * from './role.schema.js';
 export * from './session.schema.js';
 export * from './session-decision.schema.js';
+export * from './session-agent-report.schema.js';
 export * from './session-share.schema.js';
 export * from './task.schema.js';
 export * from './user.schema.js';

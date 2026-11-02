@@ -1626,6 +1626,29 @@ export type SessionCloseRefusalResponseDto = {
     detail?: string | null;
 };
 
+export type SessionAgentReportResponseDto = {
+    /**
+     * The agent’s own word. `error` is a turn that ended in an error, which `observed` reads as `done`.
+     */
+    state: 'idle' | 'working' | 'done' | 'blocked' | 'error';
+    /**
+     * What a blocked agent waits on, when it said.
+     */
+    kind: 'permission' | 'question' | 'auth';
+    /**
+     * How far along a working or blocked agent says it is.
+     */
+    progress: number | null;
+    /**
+     * What the agent says, in its own words.
+     */
+    message: string | null;
+    /**
+     * The title the agent gave its work.
+     */
+    title: string | null;
+};
+
 export type SessionResponseDto = {
     id: string;
     organizationId: string;
@@ -1709,6 +1732,10 @@ export type SessionResponseDto = {
      * What the agent waits on you for, by `kind`: a question it asked, or a permission dialog. Null when nothing is pending. Answer it with `POST /sessions/{id}/decision`.
      */
     decision: SessionQuestionDecisionResponseDto | SessionPermissionDecisionResponseDto | null;
+    /**
+     * What the agent itself last said it is doing (OSC 7501): why it is blocked, how far along it is, its message. Null when the state was read off its screen.
+     */
+    agentReport: SessionAgentReportResponseDto | null;
     createdAt: string;
     updatedAt: string;
 };
