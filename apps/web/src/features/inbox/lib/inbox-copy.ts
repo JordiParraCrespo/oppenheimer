@@ -82,11 +82,12 @@ export function inboxCopy(item: InboxItem, t: TFunction): InboxCopy {
     case 'notice': {
       const { session, notice } = item;
       const name = session.name;
+      const title = t('inbox.notice.title', { name });
       return {
         sender: name,
-        short: notice.text,
+        short: title,
         source: session.scopeLabel ?? t('inbox.from.session'),
-        title: t('inbox.notice.title', { name }),
+        title,
         body: notice.text,
       };
     }
