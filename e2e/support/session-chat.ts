@@ -141,10 +141,10 @@ export async function showTerminal(page: Page): Promise<void> {
   const terminal = page
     .getByRole('group', { name: 'How to read this session' })
     .getByRole('button', { name: 'Terminal' });
-  const offered = await terminal.waitFor({ timeout: 10_000 }).then(
-    () => true,
-    () => false,
-  );
-  if (offered) await terminal.click();
+  // `isVisible` answers at once (its `timeout` is ignored), which races the
+  // host's first chat batch; nothing on the page says the chat will never
+  // come, so an absent switch is known only once this wait runs out.
+  await terminal.waitFor({ timeout: 10_000 }).catch(() => {});
+  if (await terminal.isVisible()) await terminal.click();
   await expect(page.locator('[data-slot="chat-transcript"]')).toHaveCount(0);
 }

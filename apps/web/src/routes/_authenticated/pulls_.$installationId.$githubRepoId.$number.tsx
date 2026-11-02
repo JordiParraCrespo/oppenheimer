@@ -15,7 +15,7 @@ import { SessionScreen } from '@/features/sessions/screens/session';
  * view alike, while the sidebar stays on Pull requests. Each view is a page at
  * its own measure (`pullRequestPane`), read off `?view=`. The Chat view is the
  * pull request's review session; its terminal is the sessions feature's, so
- * the route composes the two: the session opens on its chat, and a stopped one
+ * the route composes the two: the session opens on its chat, as every session does, and a stopped one
  * offers the review back rather than a new session. The pull request's toolbar is the page's bar
  * (`bar: 'own'`), led by the sidebar toggle.
  */
@@ -43,7 +43,6 @@ function PullRequestRoute() {
         <SessionScreen
           key={sessionId}
           sessionId={sessionId}
-          initialView="chat"
           closed={({ name, restart, restarting }) => (
             <ReviewSessionStopped name={name} restart={restart} restarting={restarting} />
           )}

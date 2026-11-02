@@ -5,7 +5,6 @@ import { Link } from '@tanstack/react-router';
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { SessionSkeleton } from '../components/session-skeleton';
-import type { SessionView } from '../lib/chat-blocks';
 import { SessionPane } from '../sections/session-pane';
 import { SessionTerminal } from '../sections/session-terminal';
 
@@ -24,13 +23,10 @@ import { SessionTerminal } from '../sections/session-terminal';
  */
 export function SessionScreen({
   sessionId,
-  initialView,
   closed,
   bar,
 }: {
   sessionId: string;
-  /** The view the pane opens on, Chat unless the route says Terminal. */
-  initialView?: SessionView;
   /**
    * Present: the screen draws the session's bar. `back` leads it with the task
    * this session is on ("Back to task", `18-plan-product.md` §4); the route
@@ -81,7 +77,6 @@ export function SessionScreen({
       <QueryState.Data>
         <SessionPane
           sessionId={sessionId}
-          initialView={initialView}
           closed={closed}
           bar={bar}
           terminal={(session, reading, statusItems) => (

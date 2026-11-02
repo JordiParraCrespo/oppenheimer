@@ -8,7 +8,7 @@ import { useTranslation } from 'react-i18next';
 import { SharedEndsIn } from '../components/shared-ends-in';
 import { SharedFrame } from '../components/shared-frame';
 import { useSessionChat } from '../hooks/use-session-chat';
-import type { SessionView } from '../lib/chat-blocks';
+import { DEFAULT_SESSION_VIEW, type SessionView } from '../lib/chat-blocks';
 import { shareRefusalOf } from '../lib/share-session';
 import { SessionChat } from './session-chat';
 import { SharedRefusal } from './shared-refusal';
@@ -36,7 +36,7 @@ export function SharedSessionPane({ slug }: { slug: string }) {
   const { t } = useTranslation();
   const { data: session, error, refetch } = useSuspenseSharedSession(slug);
   const chat = useSessionChat();
-  const [view, setView] = useState<SessionView>('chat');
+  const [view, setView] = useState<SessionView>(DEFAULT_SESSION_VIEW);
   const refusal = error ? shareRefusalOf(error) : null;
   if (refusal) return <SharedRefusal refusal={refusal} slug={slug} />;
 
