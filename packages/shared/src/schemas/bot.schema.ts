@@ -667,6 +667,48 @@ export interface BotGoalEvent {
   reason: string | null;
 }
 
+/**
+ * What a bot spends, for `/usage` (`25-bots.md` §4.1, "Built-in commands";
+ * from Claude Code's `/usage`): its turns, by the provider and model each ran
+ * on, and the calls it makes on its owner's key outside them. Every count is
+ * the chat's as it stands: clearing the conversation starts them again.
+ * Cache reads and writes are part of the input, never on top of it.
+ */
+export const BOT_MODEL_CALL_PURPOSES = ['goal_review', 'summary', 'rule_review'] as const;
+export type BotModelCallPurpose = (typeof BOT_MODEL_CALL_PURPOSES)[number];
+
+export interface BotTokenCounts {
+  inputTokens: number;
+  outputTokens: number;
+  cacheReadTokens: number;
+  cacheWriteTokens: number;
+}
+
+/** A bot's turns on one model. */
+export interface BotUsageModel extends BotTokenCounts {
+  provider: BotProvider;
+  model: string;
+  turns: number;
+}
+
+/** A bot's calls outside its turns, for one purpose. */
+export interface BotUsageBackground extends BotTokenCounts {
+  purpose: BotModelCallPurpose;
+  calls: number;
+}
+
+/** `GET /bots/:id/usage`. */
+export interface BotUsage {
+  /** When the chat's first turn was sent; null before one. */
+  since: string | null;
+  /** The turns that ran, whatever they ended as. */
+  turns: number;
+  /** How long they worked, summed, in milliseconds. */
+  activeMs: number;
+  models: BotUsageModel[];
+  background: BotUsageBackground[];
+}
+
 /** A bot's goal as the console reads it: `GET /bots/:id/goal`. */
 export interface BotGoal {
   id: string;
@@ -731,6 +773,12 @@ export interface BotSubagentRun {
   toolCalls: string[];
   inputTokens: number;
   outputTokens: number;
+  /**
+   * How much of `inputTokens` it read from the provider's prompt cache, and
+   * wrote to it; absent on a run recorded before they were kept.
+   */
+  cacheReadTokens?: number;
+  cacheWriteTokens?: number;
   durationMs: number;
 }
 

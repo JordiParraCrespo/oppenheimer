@@ -135,6 +135,8 @@ export class ClaudeEventTranslator {
           (usage.cache_read_input_tokens ?? 0) +
           (usage.cache_creation_input_tokens ?? 0),
         outputTokens: usage.output_tokens ?? 0,
+        cacheReadTokens: usage.cache_read_input_tokens ?? 0,
+        cacheWriteTokens: usage.cache_creation_input_tokens ?? 0,
         ...(context ? { context } : {}),
       },
     ];

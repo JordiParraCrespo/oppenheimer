@@ -5,6 +5,7 @@ import {
   botSkillNameDraft,
   botSkillNameOf,
   botSkillSchema,
+  isBotConsoleCommand,
   parseBotSlashCommand,
   updateBotSkillSchema,
 } from '../bot-skill.schema.js';
@@ -71,6 +72,22 @@ describe('botGoalCommandOf', () => {
   });
 });
 
+describe('isBotConsoleCommand', () => {
+  const runsHere = (message: string) => isBotConsoleCommand(parseBotSlashCommand(message));
+
+  it('is the built-ins the console runs: /goal alone, /goal clear, /usage with anything after it', () => {
+    for (const message of ['/goal', '/goal off', '/usage', '/usage this week']) {
+      expect(runsHere(message)).toBe(true);
+    }
+  });
+
+  it('leaves /goal <condition>, a skill and a plain message to be sent', () => {
+    for (const message of ['/goal CI is green', '/release-notes', 'my usage?']) {
+      expect(runsHere(message)).toBe(false);
+    }
+  });
+});
+
 describe('botSkillNameOf', () => {
   it('turns a typed title into a command name', () => {
     expect(botSkillNameOf('Release Notes!')).toBe('release-notes');
@@ -92,7 +109,7 @@ describe('botSkillSchema', () => {
   });
 
   it('refuses a name that could not be typed as a command, or a reserved one', () => {
-    for (const name of ['Release', 'release notes', '-release', 'skill', 'goal', '']) {
+    for (const name of ['Release', 'release notes', '-release', 'skill', 'goal', 'usage', '']) {
       expect(botSkillSchema.safeParse({ ...skill, name }).success).toBe(false);
     }
   });

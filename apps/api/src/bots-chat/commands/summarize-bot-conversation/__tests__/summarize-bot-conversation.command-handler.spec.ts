@@ -58,7 +58,7 @@ function setup(
     }
     return [{ type: 'text.done', text: options.answer ?? 'The person ships on Fridays.' }];
   });
-  const complete = vi.spyOn(engine, 'complete');
+  const complete = vi.spyOn(engine, 'completeWithUsage');
   const summaries = {
     findForBot: vi.fn(async () => (options.summary ? Some(options.summary) : None)),
     save: vi.fn(async (summary: BotConversationSummaryEntity) => {
@@ -81,7 +81,7 @@ function setup(
   const handler = new SummarizeBotConversationCommandHandler(
     summaries,
     messages as unknown as BotMessageRepositoryPort,
-    new BotCompletionResolver(engine),
+    new BotCompletionResolver(engine, { recordCall: async () => undefined, findForBot: vi.fn() }),
     access as unknown as BotModelAccessResolver,
   );
   const run = () =>

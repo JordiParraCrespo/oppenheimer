@@ -175,8 +175,9 @@ export function useBotRoomLeft(id: string): BotRoomLeft {
 
 /**
  * The chat read again, and its goal (a line or a turn may have set, moved or
- * ended it); when a turn has ended, the bot too (its last activity moved) and
- * its Needs input card (the turn may have raised one).
+ * ended it); when a turn has ended, the bot too (its last activity moved),
+ * its Needs input card (the turn may have raised one) and its usage (an open
+ * `/usage` card counts the turn).
  */
 function refetchChat(queryClient: QueryClient, id: string, ended: boolean): Promise<unknown> {
   const reads = [
@@ -186,6 +187,7 @@ function refetchChat(queryClient: QueryClient, id: string, ended: boolean): Prom
   if (ended) {
     reads.push(queryClient.invalidateQueries({ queryKey: botsKeys.lists() }));
     reads.push(queryClient.invalidateQueries({ queryKey: botsKeys.approvals(id) }));
+    reads.push(queryClient.invalidateQueries({ queryKey: botsKeys.usage(id) }));
   }
   return Promise.all(reads);
 }

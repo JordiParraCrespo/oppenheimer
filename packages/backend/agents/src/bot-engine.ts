@@ -166,9 +166,16 @@ export type BotEngineEvent =
   | { type: 'retrying'; reason: 'rate_limit' | 'unavailable'; delayMs: number | null }
   | {
       type: 'usage';
-      /** Summed over every call the turn made. */
+      /** Summed over every call the turn made, cached or not. */
       inputTokens: number;
       outputTokens: number;
+      /**
+       * How much of `inputTokens` was read from the provider's prompt cache,
+       * and how much was written to it (Anthropic's cache writes; OpenAI's
+       * cache has none). Absent when the provider did not say.
+       */
+      cacheReadTokens?: number;
+      cacheWriteTokens?: number;
       context?: BotTurnContext;
       limits?: BotPlanLimits;
     }
@@ -221,6 +228,20 @@ export type BotCompletionRequest = Pick<
   | 'scratchDir'
 >;
 
+/** What one completion spent: input (cached or not), output, and the cache's share of the input. */
+export interface BotCompletionUsage {
+  inputTokens: number;
+  outputTokens: number;
+  cacheReadTokens: number;
+  cacheWriteTokens: number;
+}
+
+/** A completion's text, and what it spent when the provider said. */
+export interface BotCompletion {
+  text: string;
+  usage: BotCompletionUsage | null;
+}
+
 /**
  * Runs one turn of a bot. The stream never throws once iteration starts:
  * every turn ends with exactly one `done`, and nothing follows it.
@@ -237,7 +258,17 @@ export abstract class BotEngine {
    * stacks raise) when the provider refused for rate or quota.
    */
   async complete(request: BotCompletionRequest): Promise<string> {
+    return (await this.completeWithUsage(request)).text;
+  }
+
+  /**
+   * `complete`, with what the call spent as the provider reported it, so a
+   * caller that answers for the spend (a bot's usage) can record it. The
+   * usage is null when the provider said nothing.
+   */
+  async completeWithUsage(request: BotCompletionRequest): Promise<BotCompletion> {
     const texts: string[] = [];
+    let usage: BotCompletionUsage | null = null;
     for await (const event of this.run({
       ...request,
       history: [],
@@ -246,6 +277,14 @@ export abstract class BotEngine {
       maxSteps: 1,
     })) {
       if (event.type === 'text.done') texts.push(event.text);
+      if (event.type === 'usage') {
+        usage = {
+          inputTokens: event.inputTokens,
+          outputTokens: event.outputTokens,
+          cacheReadTokens: event.cacheReadTokens ?? 0,
+          cacheWriteTokens: event.cacheWriteTokens ?? 0,
+        };
+      }
       if (event.type === 'done' && event.reason !== 'completed') {
         const reason = event.error ?? `The completion ended ${event.reason}.`;
         if (event.rateLimit) {
@@ -254,7 +293,7 @@ export abstract class BotEngine {
         throw new Error(reason);
       }
     }
-    return texts.join('\n\n').trim();
+    return { text: texts.join('\n\n').trim(), usage };
   }
 }
 
