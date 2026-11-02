@@ -87,13 +87,18 @@ describe('BotTurnOpeningResolver', () => {
         { mimeType: 'image/jpeg', data: Buffer.from(first.storageKey).toString('base64') },
         { mimeType: 'image/png', data: Buffer.from(second.storageKey).toString('base64') },
       ],
+      command: null,
     });
     expect(attachments.findForMessage).toHaveBeenCalledWith(turn.organizationId, message.id);
   });
 
   it('reads no attachment for a message without images', async () => {
     const { resolver, attachments } = setup(opening('Hi', []), []);
-    await expect(resolver.resolve(turn)).resolves.toEqual({ prompt: 'Hi', images: [] });
+    await expect(resolver.resolve(turn)).resolves.toEqual({
+      prompt: 'Hi',
+      images: [],
+      command: null,
+    });
     expect(attachments.findForMessage).not.toHaveBeenCalled();
   });
 

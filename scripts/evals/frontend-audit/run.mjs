@@ -217,8 +217,8 @@ function runAgent(dir, prompt, { model, timeout }) {
     ['-p', prompt, '--output-format', 'json', '--model', model, '--allowedTools', AGENT_TOOLS],
     dir,
     // A case changes `apps/web`, and nothing here is photographed: without
-    // this the screenshot guard's Stop hook holds the auditor's last turn,
-    // and the answer ends on that instead of the JSON block.
+    // this the screenshot guard refuses an auditor that pushes or opens a
+    // pull request, and the answer ends on that instead of the JSON block.
     { timeoutMs: timeout * 60_000, env: { OPPENHEIMER_SCREENSHOT_GUARD: 'off' } },
   );
   const summary = { ok: result.ok, seconds: Math.round((Date.now() - started) / 1000) };

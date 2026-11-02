@@ -42,7 +42,7 @@ import {
   noteBotRetry,
   putBotSnapshot,
 } from '../modules/bots/live-text';
-import { botsKeys } from './bots.queries';
+import { botsKeys } from './bots.keys';
 import { useConsumerApp } from './context';
 import { mutation } from './mutation';
 

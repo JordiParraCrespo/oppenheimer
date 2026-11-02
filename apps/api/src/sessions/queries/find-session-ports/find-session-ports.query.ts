@@ -1,5 +1,5 @@
-import type { AccessScope } from '@oppenheimer/backend-authz';
 import { QueryBase } from '@oppenheimer/backend-ddd';
+import type { AccessScope } from '../../../authz/domain/access-scope.types';
 
 /** The ports a session's processes listen on, asked of its runner now. */
 export class FindSessionPortsQuery extends QueryBase {

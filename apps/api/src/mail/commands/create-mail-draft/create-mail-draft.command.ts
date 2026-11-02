@@ -1,6 +1,6 @@
-import type { AccessScope } from '@oppenheimer/backend-authz';
 import { CommandBase, type CommandProps } from '@oppenheimer/backend-ddd';
 import type { MailPlan } from '@oppenheimer/shared';
+import type { AccessScope } from '../../../authz/domain/access-scope.types';
 import type { MailLocalFiles } from '../../domain/mail-send.policy';
 
 /** Saves a planned message as a draft in the caller's Gmail. Nothing is sent. */

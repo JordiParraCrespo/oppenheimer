@@ -12,7 +12,8 @@ import { NewSessionRepositories } from './new-session-repositories';
  * (`product/versions/mvp/24-session-places.md` §5): the host and where on it
  * first, as one chip, then for a new worktree Repository and Branch, for a
  * folder on the host Folder, and for the cloud Repository and Branch again:
- * the vendor's agent starts from that branch of that repository. The project is not here: it sits over the box,
+ * the vendor's agent starts from that branch of that repository. Codex's
+ * cloud environment is picked in the place chip, as the frame does. The project is not here: it sits over the box,
  * since picking one fills these in (`NewSessionForm`).
  *
  * It reads only `where`, so a pick of anything else leaves it still; the

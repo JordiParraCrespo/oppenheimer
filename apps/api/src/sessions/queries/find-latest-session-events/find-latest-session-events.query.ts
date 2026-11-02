@@ -1,5 +1,5 @@
-import type { AccessScope } from '@oppenheimer/backend-authz';
 import { QueryBase } from '@oppenheimer/backend-ddd';
+import type { AccessScope } from '../../../authz/domain/access-scope.types';
 import type { WorkSessionEntity } from '../../domain/work-session.entity';
 import type { WorkSessionEventEntity } from '../../domain/work-session-event.entity';
 

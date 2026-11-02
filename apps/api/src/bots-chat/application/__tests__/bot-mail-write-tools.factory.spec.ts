@@ -1,6 +1,6 @@
 import type { CommandBus, QueryBus } from '@nestjs/cqrs';
-import { emptyScope } from '@oppenheimer/backend-authz';
 import type { MailPlan } from '@oppenheimer/shared';
+import { emptyScope } from '../../../authz/domain/access-scope.types';
 import { CreateMailDraftCommand } from '../../../mail/commands/create-mail-draft/create-mail-draft.command';
 import { ScheduleMailCommand } from '../../../mail/commands/schedule-mail/schedule-mail.command';
 import { SendMailCommand } from '../../../mail/commands/send-mail/send-mail.command';
@@ -8,7 +8,7 @@ import { GmailConnectionEntity } from '../../../mail/domain/gmail-connection.ent
 import { FindGmailConnectionsQuery } from '../../../mail/queries/find-gmail-connections/find-gmail-connections.query';
 import { PlanMailQuery } from '../../../mail/queries/plan-mail/plan-mail.query';
 import type { BotAttachmentRepositoryPort } from '../../database/bot-attachment.repository.port';
-import { NO_PERMISSIONS } from '../../domain/bot-tool-permission.policy';
+import { type BotPermissions, NO_PERMISSIONS } from '../../domain/bot-tool-permission.policy';
 import { BotTurnBudget } from '../../domain/bot-turn-budget.policy';
 import type { BotAttachmentFilesPort } from '../../infrastructure/bot-attachment-files.port';
 import { BotMailAccountsResolver } from '../bot-mail-accounts.resolver';
@@ -19,8 +19,8 @@ import type { ApprovedCallContext, BotToolContext } from '../bot-tool.factory';
 /**
  * The mail writes as a bot's turn sees them (`product/next-steps/mail.md`
  * §3.3–3.4): a draft is written without asking, a send asks under every
- * preset (Approve everything included) with the planned message stored on
- * the card, and a yes sends exactly that plan once, under its approval; a
+ * preset (Approve everything included), even set to Allow, with the planned
+ * message stored on the card, and a yes sends exactly that plan once, under its approval; a
  * send carried out with no stored plan, or outside an approval, is refused.
  * What the plan and the send do with Gmail is the mail module's spec.
  */
@@ -63,7 +63,10 @@ const RECEIPT = {
   storageKey: 'bot-attachments/org-1/bot-1/receipt.png',
 };
 
-function setup(permission: BotToolContext['permission']) {
+function setup(
+  permission: BotToolContext['permission'],
+  permissions: BotPermissions = NO_PERMISSIONS,
+) {
   const request = vi.fn(async () => ({ status: 'requested' as const }));
   const context: BotToolContext = {
     owner: emptyScope('owner-1', 'org-1'),
@@ -73,7 +76,7 @@ function setup(permission: BotToolContext['permission']) {
     homeHostId: null,
     timeZone: 'UTC',
     permission,
-    permissions: NO_PERMISSIONS,
+    permissions,
     budget: new BotTurnBudget(),
     credentialScopes: null,
     approvals: { request },
@@ -139,6 +142,30 @@ describe('BotMailWriteToolsFactory', () => {
         input: expect.objectContaining({ plan: PLAN }),
         summary: 'Send from ana@gmail.test to bo@client.test: "Invoice 42"',
       }),
+    );
+  });
+
+  it('still asks before sending when the send is set to Allow, on a card that decides only this call', async () => {
+    const allowed: BotPermissions = {
+      ...NO_PERMISSIONS,
+      decisions: new Map([
+        ['send_mail', 'allow'],
+        ['schedule_mail', 'allow'],
+      ]),
+    };
+    const { context, request, commands, definition } = setup('full', allowed);
+
+    await definition('send_mail').bind(context).run(SEND, { signal });
+    await definition('schedule_mail')
+      .bind(context)
+      .run({ ...SEND, send_at: '2026-11-03T09:00:00+01:00' }, { signal });
+
+    expect(commands).not.toHaveBeenCalled();
+    expect(request).toHaveBeenCalledWith(
+      expect.objectContaining({ tool: 'send_mail', perCallOnly: true }),
+    );
+    expect(request).toHaveBeenCalledWith(
+      expect.objectContaining({ tool: 'schedule_mail', perCallOnly: true }),
     );
   });
 

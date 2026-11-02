@@ -1,8 +1,8 @@
 import { Module, type Provider } from '@nestjs/common';
 import { CqrsModule } from '@nestjs/cqrs';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { AuthzModule as AuthzKernelModule } from '@oppenheimer/backend-authz';
 import { configKeySealer } from '@oppenheimer/backend-core';
+import { AuthzModule as AuthzKernelModule } from '../authz/authz.module';
 import { mailTokenKeyOf } from '../config/mail.config';
 import { InboundEventsModule } from '../inbound-events/inbound-events.module';
 import { QueueModule } from '../queue/queue.module';

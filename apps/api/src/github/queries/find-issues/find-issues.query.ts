@@ -1,5 +1,5 @@
-import type { AccessScope } from '@oppenheimer/backend-authz';
 import { QueryBase } from '@oppenheimer/backend-ddd';
+import type { AccessScope } from '../../../authz/domain/access-scope.types';
 import type { RepositoryAddress } from '../../application/pull-request-access.port';
 import type { GithubIssueFilter } from '../../infrastructure/github-issues.port';
 

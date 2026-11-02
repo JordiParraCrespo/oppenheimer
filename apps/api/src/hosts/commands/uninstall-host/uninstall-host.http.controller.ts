@@ -1,9 +1,9 @@
 import { Controller, Delete, HttpCode, UseGuards, Version } from '@nestjs/common';
 import { CommandBus } from '@nestjs/cqrs';
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { NoPolicy } from '@oppenheimer/backend-authz';
 import { ApiProblemResponse } from '@oppenheimer/backend-core';
 import { AllowAnyScope } from '../../../auth/decorators/require-scopes.decorator';
+import { NoPolicy } from '../../../authz/decorators/check-policies.decorator';
 import { CurrentHost } from '../../decorators/current-host.decorator';
 import { HostPrincipalGuard } from '../../guards/host-principal.guard';
 import { UninstallHostCommand } from './uninstall-host.command';

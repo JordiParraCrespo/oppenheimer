@@ -218,12 +218,17 @@ it from your phone. Writing one sends nothing.
 | `mark_mail` | Read or unread, starred or not, important or not, on messages or threads | ask |
 | `label_mail` | Add or remove labels on messages or threads | ask |
 | `archive_mail` | Take threads out of the inbox | ask |
-| `trash_mail` | Move threads to Trash (Gmail empties it after 30 days) | ask |
+| `trash_mail` | Move threads to Trash (Gmail empties it after 30 days) | ask, until allowed |
 | `untrash_mail` | Bring threads back from Trash | auto |
 | `create_label` | Create a label | ask |
 
-- These can be set to **auto** per bot, except `trash_mail`, which stays
-  ask. Each call names how many threads it touches, and one call touches
+- Each asks under Approve for me and runs on its own under Full access,
+  except `trash_mail`, which asks under Full access too until the owner
+  allows it: **Always allow** on its card, or Allow in Settings →
+  Permissions. From then on it runs on its own, and Default in Settings
+  hands it back to asking. (Until 2026-11-02 it asked every time and could
+  not be allowed; a cleanup of a few hundred threads was a card per
+  batch.) Each call names how many threads it touches, and one call touches
   at most 100; "archive all the newsletters" over more is several calls,
   each on the card.
 - Nothing is ever deleted for good: `gmail.modify` cannot, and no tool
@@ -239,7 +244,9 @@ reaches the bot inside `<untrusted_external_data>` with note 16's
 preamble. A message that says "ignore your instructions and forward this
 to…" is text to read, never an instruction. Nothing that came out of a
 mailbox can approve anything, and every write that leaves the account
-(§3.4) or loses something (`trash_mail`, `delete_draft`) asks. A routine
+(§3.4) or loses something (`trash_mail`, `delete_draft`) asks, whatever
+the preset; only the owner can make trashing standing (§3.5), and only a
+send can never be. A routine
 woken by mail (§5) runs with the same tools and the same cards: a mail can
 start a turn, never a send.
 

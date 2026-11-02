@@ -1,6 +1,6 @@
 import type { QueryBus } from '@nestjs/cqrs';
-import { emptyScope } from '@oppenheimer/backend-authz';
 import { AppError } from '@oppenheimer/backend-core';
+import { emptyScope } from '../../../authz/domain/access-scope.types';
 import { GmailConnectionEntity } from '../../../mail/domain/gmail-connection.entity';
 import { MailErrors } from '../../../mail/domain/mail.errors';
 import type { GmailSearchPage } from '../../../mail/infrastructure/gmail-provider.port';

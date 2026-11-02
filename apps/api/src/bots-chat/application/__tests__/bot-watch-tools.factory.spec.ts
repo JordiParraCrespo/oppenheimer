@@ -7,8 +7,8 @@
  * suite's.
  */
 import type { CommandBus, QueryBus } from '@nestjs/cqrs';
-import { emptyScope } from '@oppenheimer/backend-authz';
 import { AppError } from '@oppenheimer/backend-core';
+import { emptyScope } from '../../../authz/domain/access-scope.types';
 import { UnwatchSessionTerminalCommand } from '../../../sessions/commands/unwatch-session-terminal/unwatch-session-terminal.command';
 import { WatchSessionTerminalCommand } from '../../../sessions/commands/watch-session-terminal/watch-session-terminal.command';
 import { SessionErrors } from '../../../sessions/domain/sessions.errors';

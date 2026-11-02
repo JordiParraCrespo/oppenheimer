@@ -1,4 +1,4 @@
-import { LlmError } from './llm.errors';
+import { LlmRateLimitError } from './llm.errors';
 import type { LlmProviderId } from './llm.types';
 
 /** How long to stop when a provider refused for its rate and did not say until when. */
@@ -30,12 +30,10 @@ export class ProviderPause {
   /** Throw `rate_limited` while the provider said to wait. */
   assertOpen(provider: LlmProviderId, now: number = Date.now()): void {
     if (now >= this.until) return;
-    throw new LlmError(
-      'rate_limited',
+    throw new LlmRateLimitError(
       provider,
       `${provider} asked us to wait until ${new Date(this.until).toISOString()}; not called`,
-      429,
-      { resetAt: new Date(this.until) },
+      new Date(this.until),
     );
   }
 
@@ -48,16 +46,14 @@ export class ProviderPause {
     response: Refusal,
     detail: string,
     now: number = Date.now(),
-  ): LlmError | null {
+  ): LlmRateLimitError | null {
     if (response.status !== 429) return null;
     const asked = retryAt(response, now) ?? now + DEFAULT_PAUSE_MS;
     this.until = Math.max(this.until, Math.min(Math.max(asked, now + 1_000), now + MAX_PAUSE_MS));
-    return new LlmError(
-      'rate_limited',
+    return new LlmRateLimitError(
       provider,
       `${provider} answered 429${detail ? `: ${detail}` : ''}`,
-      429,
-      { resetAt: new Date(this.until) },
+      new Date(this.until),
     );
   }
 }

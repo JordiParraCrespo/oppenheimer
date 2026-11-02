@@ -2,6 +2,7 @@ import { type HostResponseDto, heyApiSdk } from '@oppenheimer/api-client';
 import { callApi } from '@oppenheimer/frontend-core';
 import { injectable } from 'inversify';
 import {
+  type HostCodexEnvironments,
   HostEntity,
   type HostFolders,
   type HostPairing,
@@ -92,6 +93,33 @@ export class HostsRepository {
     return callApi(HostsErrors.RENAME_FAILED, async (api) => {
       const data = await api.body(heyApiSdk.renameHost({ path: { id }, body: { name } }));
       return toEntity(data);
+    });
+  }
+
+  /**
+   * The Codex cloud environments of the host's ChatGPT account, through its
+   * runner, those linked to `repository` (`owner/name`) marked; absent, none
+   * is. The failure
+   * keeps the API's code (`SESSIONS_044` to `SESSIONS_047`, `SESSIONS_031`).
+   */
+  findCodexEnvironments(id: string, repository?: string): Promise<HostCodexEnvironments> {
+    return callApi(HostsErrors.FETCH_CODEX_ENVIRONMENTS_FAILED, async (api) => {
+      const data = await api.body(
+        heyApiSdk.findHostCodexEnvironments({
+          path: { id },
+          query: repository ? { repository } : {},
+        }),
+      );
+      return {
+        environments: data.environments.map((env) => ({
+          id: env.id,
+          label: env.label ?? null,
+          pinned: env.pinned,
+          repository: env.repository,
+        })),
+        recommended: data.recommended ?? null,
+        source: data.source,
+      };
     });
   }
 

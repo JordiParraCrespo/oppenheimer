@@ -12,6 +12,7 @@ import {
   type BotQuestionResponseDto,
   type BotResponseDto,
   type BotRoutineResponseDto,
+  type BotSkillResponseDto,
   type BotTurnPlanLimitsDto,
   type BotTurnResponseDto,
   type ChatgptLoginResponseDto,
@@ -54,12 +55,15 @@ import {
   BotGroupEntity,
   BotMemoryFactEntity,
   BotRoutineEntity,
+  BotSkillEntity,
   ChatgptLoginEntity,
   type ChatgptLoginState,
+  type CreateBotSkillInput,
   ModelProviderEntity,
   type SaveBotDocumentInput,
   type UpdateBotFactInput,
   type UpdateBotInput,
+  type UpdateBotSkillInput,
 } from './bot.entity';
 import {
   BotApprovalEntity,
@@ -169,6 +173,20 @@ function toFact(dto: BotMemoryFactResponseDto): BotMemoryFactEntity {
     dto.tier,
     dto.scope,
     dto.botId,
+    new Date(dto.createdAt),
+    new Date(dto.updatedAt),
+  );
+}
+
+function toSkill(dto: BotSkillResponseDto): BotSkillEntity {
+  return new BotSkillEntity(
+    dto.id,
+    dto.name,
+    dto.description,
+    dto.body,
+    dto.userInvocable,
+    dto.modelInvocable,
+    dto.source,
     new Date(dto.createdAt),
     new Date(dto.updatedAt),
   );
@@ -776,6 +794,35 @@ export class BotsRepository {
   clearMemory(id: string): Promise<void> {
     return callApi(BotsErrors.CLEAR_MEMORY_FAILED, async (api) => {
       await api.result(heyApiSdk.clearBotMemory({ path: { id } }));
+    });
+  }
+
+  findSkills(id: string): Promise<BotSkillEntity[]> {
+    return callApi(BotsErrors.FETCH_SKILLS_FAILED, async (api) => {
+      const data = await api.body(heyApiSdk.findBotSkills({ path: { id } }));
+      return data.map(toSkill);
+    });
+  }
+
+  addSkill(id: string, skill: CreateBotSkillInput): Promise<BotSkillEntity> {
+    return callApi(BotsErrors.SAVE_SKILL_FAILED, async (api) => {
+      const data = await api.body(heyApiSdk.createBotSkill({ path: { id }, body: skill }));
+      return toSkill(data);
+    });
+  }
+
+  updateSkill(id: string, skillId: string, change: UpdateBotSkillInput): Promise<BotSkillEntity> {
+    return callApi(BotsErrors.SAVE_SKILL_FAILED, async (api) => {
+      const data = await api.body(
+        heyApiSdk.updateBotSkill({ path: { id, skillId }, body: change }),
+      );
+      return toSkill(data);
+    });
+  }
+
+  removeSkill(id: string, skillId: string): Promise<void> {
+    return callApi(BotsErrors.DELETE_SKILL_FAILED, async (api) => {
+      await api.result(heyApiSdk.deleteBotSkill({ path: { id, skillId } }));
     });
   }
 

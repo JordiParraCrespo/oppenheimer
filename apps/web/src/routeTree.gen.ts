@@ -54,6 +54,7 @@ import { Route as AuthenticatedSettingsMailRouteImport } from './routes/_authent
 import { Route as AuthenticatedSettingsModelProvidersRouteImport } from './routes/_authenticated/settings/model-providers'
 import { Route as AuthenticatedSettingsProfileRouteImport } from './routes/_authenticated/settings/profile'
 import { Route as AuthenticatedSettingsRepositoriesRouteImport } from './routes/_authenticated/settings/repositories'
+import { Route as AuthenticatedSettingsWhatsappRouteImport } from './routes/_authenticated/settings/whatsapp'
 import { Route as AuthenticatedAutomationsBotsBotIdRouteImport } from './routes/_authenticated/automations_.bots.$botId'
 import { Route as AuthenticatedBotsBotIdSettingsRouteImport } from './routes/_authenticated/bots_.$botId.settings'
 import { Route as AuthenticatedPlanCalendarGoogleRouteImport } from './routes/_authenticated/plan/calendar_.google'
@@ -72,6 +73,7 @@ import { Route as AuthenticatedBotsBotIdSettingsPermissionsRouteImport } from '.
 import { Route as AuthenticatedBotsBotIdSettingsProfileRouteImport } from './routes/_authenticated/bots_.$botId.settings/profile'
 import { Route as AuthenticatedBotsBotIdSettingsRoutinesRouteImport } from './routes/_authenticated/bots_.$botId.settings/routines'
 import { Route as AuthenticatedBotsBotIdSettingsRunsOnRouteImport } from './routes/_authenticated/bots_.$botId.settings/runs-on'
+import { Route as AuthenticatedBotsBotIdSettingsSkillsRouteImport } from './routes/_authenticated/bots_.$botId.settings/skills'
 import { Route as AuthenticatedPullsInstallationIdGithubRepoIdNumberRouteImport } from './routes/_authenticated/pulls_.$installationId.$githubRepoId.$number'
 
 const IndexRoute = IndexRouteImport.update({
@@ -313,6 +315,12 @@ const AuthenticatedSettingsRepositoriesRoute =
     path: '/repositories',
     getParentRoute: () => AuthenticatedSettingsRoute,
   } as any)
+const AuthenticatedSettingsWhatsappRoute =
+  AuthenticatedSettingsWhatsappRouteImport.update({
+    id: '/whatsapp',
+    path: '/whatsapp',
+    getParentRoute: () => AuthenticatedSettingsRoute,
+  } as any)
 const AuthenticatedAutomationsBotsBotIdRoute =
   AuthenticatedAutomationsBotsBotIdRouteImport.update({
     id: '/automations_/bots/$botId',
@@ -421,6 +429,12 @@ const AuthenticatedBotsBotIdSettingsRunsOnRoute =
     path: '/runs-on',
     getParentRoute: () => AuthenticatedBotsBotIdSettingsRoute,
   } as any)
+const AuthenticatedBotsBotIdSettingsSkillsRoute =
+  AuthenticatedBotsBotIdSettingsSkillsRouteImport.update({
+    id: '/skills',
+    path: '/skills',
+    getParentRoute: () => AuthenticatedBotsBotIdSettingsRoute,
+  } as any)
 const AuthenticatedPullsInstallationIdGithubRepoIdNumberRoute =
   AuthenticatedPullsInstallationIdGithubRepoIdNumberRouteImport.update({
     id: '/pulls_/$installationId/$githubRepoId/$number',
@@ -464,6 +478,7 @@ export interface FileRoutesByFullPath {
   '/settings/model-providers': typeof AuthenticatedSettingsModelProvidersRoute
   '/settings/profile': typeof AuthenticatedSettingsProfileRoute
   '/settings/repositories': typeof AuthenticatedSettingsRepositoriesRoute
+  '/settings/whatsapp': typeof AuthenticatedSettingsWhatsappRoute
   '/onboarding/': typeof AuthOnboardingIndexRoute
   '/automations/': typeof AuthenticatedAutomationsIndexRoute
   '/bots/': typeof AuthenticatedBotsIndexRoute
@@ -488,6 +503,7 @@ export interface FileRoutesByFullPath {
   '/bots/$botId/settings/profile': typeof AuthenticatedBotsBotIdSettingsProfileRoute
   '/bots/$botId/settings/routines': typeof AuthenticatedBotsBotIdSettingsRoutinesRoute
   '/bots/$botId/settings/runs-on': typeof AuthenticatedBotsBotIdSettingsRunsOnRoute
+  '/bots/$botId/settings/skills': typeof AuthenticatedBotsBotIdSettingsSkillsRoute
   '/pulls/$installationId/$githubRepoId/$number': typeof AuthenticatedPullsInstallationIdGithubRepoIdNumberRoute
   '/bots/$botId/settings/': typeof AuthenticatedBotsBotIdSettingsIndexRoute
 }
@@ -522,6 +538,7 @@ export interface FileRoutesByTo {
   '/settings/model-providers': typeof AuthenticatedSettingsModelProvidersRoute
   '/settings/profile': typeof AuthenticatedSettingsProfileRoute
   '/settings/repositories': typeof AuthenticatedSettingsRepositoriesRoute
+  '/settings/whatsapp': typeof AuthenticatedSettingsWhatsappRoute
   '/onboarding': typeof AuthOnboardingIndexRoute
   '/automations': typeof AuthenticatedAutomationsIndexRoute
   '/bots': typeof AuthenticatedBotsIndexRoute
@@ -545,6 +562,7 @@ export interface FileRoutesByTo {
   '/bots/$botId/settings/profile': typeof AuthenticatedBotsBotIdSettingsProfileRoute
   '/bots/$botId/settings/routines': typeof AuthenticatedBotsBotIdSettingsRoutinesRoute
   '/bots/$botId/settings/runs-on': typeof AuthenticatedBotsBotIdSettingsRunsOnRoute
+  '/bots/$botId/settings/skills': typeof AuthenticatedBotsBotIdSettingsSkillsRoute
   '/pulls/$installationId/$githubRepoId/$number': typeof AuthenticatedPullsInstallationIdGithubRepoIdNumberRoute
   '/bots/$botId/settings': typeof AuthenticatedBotsBotIdSettingsIndexRoute
 }
@@ -588,6 +606,7 @@ export interface FileRoutesById {
   '/_authenticated/settings/model-providers': typeof AuthenticatedSettingsModelProvidersRoute
   '/_authenticated/settings/profile': typeof AuthenticatedSettingsProfileRoute
   '/_authenticated/settings/repositories': typeof AuthenticatedSettingsRepositoriesRoute
+  '/_authenticated/settings/whatsapp': typeof AuthenticatedSettingsWhatsappRoute
   '/_auth/onboarding/': typeof AuthOnboardingIndexRoute
   '/_authenticated/automations/': typeof AuthenticatedAutomationsIndexRoute
   '/_authenticated/bots/': typeof AuthenticatedBotsIndexRoute
@@ -612,6 +631,7 @@ export interface FileRoutesById {
   '/_authenticated/bots_/$botId/settings/profile': typeof AuthenticatedBotsBotIdSettingsProfileRoute
   '/_authenticated/bots_/$botId/settings/routines': typeof AuthenticatedBotsBotIdSettingsRoutinesRoute
   '/_authenticated/bots_/$botId/settings/runs-on': typeof AuthenticatedBotsBotIdSettingsRunsOnRoute
+  '/_authenticated/bots_/$botId/settings/skills': typeof AuthenticatedBotsBotIdSettingsSkillsRoute
   '/_authenticated/pulls_/$installationId/$githubRepoId/$number': typeof AuthenticatedPullsInstallationIdGithubRepoIdNumberRoute
   '/_authenticated/bots_/$botId/settings/': typeof AuthenticatedBotsBotIdSettingsIndexRoute
 }
@@ -653,6 +673,7 @@ export interface FileRouteTypes {
     | '/settings/model-providers'
     | '/settings/profile'
     | '/settings/repositories'
+    | '/settings/whatsapp'
     | '/onboarding/'
     | '/automations/'
     | '/bots/'
@@ -677,6 +698,7 @@ export interface FileRouteTypes {
     | '/bots/$botId/settings/profile'
     | '/bots/$botId/settings/routines'
     | '/bots/$botId/settings/runs-on'
+    | '/bots/$botId/settings/skills'
     | '/pulls/$installationId/$githubRepoId/$number'
     | '/bots/$botId/settings/'
   fileRoutesByTo: FileRoutesByTo
@@ -711,6 +733,7 @@ export interface FileRouteTypes {
     | '/settings/model-providers'
     | '/settings/profile'
     | '/settings/repositories'
+    | '/settings/whatsapp'
     | '/onboarding'
     | '/automations'
     | '/bots'
@@ -734,6 +757,7 @@ export interface FileRouteTypes {
     | '/bots/$botId/settings/profile'
     | '/bots/$botId/settings/routines'
     | '/bots/$botId/settings/runs-on'
+    | '/bots/$botId/settings/skills'
     | '/pulls/$installationId/$githubRepoId/$number'
     | '/bots/$botId/settings'
   id:
@@ -776,6 +800,7 @@ export interface FileRouteTypes {
     | '/_authenticated/settings/model-providers'
     | '/_authenticated/settings/profile'
     | '/_authenticated/settings/repositories'
+    | '/_authenticated/settings/whatsapp'
     | '/_auth/onboarding/'
     | '/_authenticated/automations/'
     | '/_authenticated/bots/'
@@ -800,6 +825,7 @@ export interface FileRouteTypes {
     | '/_authenticated/bots_/$botId/settings/profile'
     | '/_authenticated/bots_/$botId/settings/routines'
     | '/_authenticated/bots_/$botId/settings/runs-on'
+    | '/_authenticated/bots_/$botId/settings/skills'
     | '/_authenticated/pulls_/$installationId/$githubRepoId/$number'
     | '/_authenticated/bots_/$botId/settings/'
   fileRoutesById: FileRoutesById
@@ -1132,6 +1158,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSettingsRepositoriesRouteImport
       parentRoute: typeof AuthenticatedSettingsRoute
     }
+    '/_authenticated/settings/whatsapp': {
+      id: '/_authenticated/settings/whatsapp'
+      path: '/whatsapp'
+      fullPath: '/settings/whatsapp'
+      preLoaderRoute: typeof AuthenticatedSettingsWhatsappRouteImport
+      parentRoute: typeof AuthenticatedSettingsRoute
+    }
     '/_authenticated/automations_/bots/$botId': {
       id: '/_authenticated/automations_/bots/$botId'
       path: '/automations/bots/$botId'
@@ -1258,6 +1291,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedBotsBotIdSettingsRunsOnRouteImport
       parentRoute: typeof AuthenticatedBotsBotIdSettingsRoute
     }
+    '/_authenticated/bots_/$botId/settings/skills': {
+      id: '/_authenticated/bots_/$botId/settings/skills'
+      path: '/skills'
+      fullPath: '/bots/$botId/settings/skills'
+      preLoaderRoute: typeof AuthenticatedBotsBotIdSettingsSkillsRouteImport
+      parentRoute: typeof AuthenticatedBotsBotIdSettingsRoute
+    }
     '/_authenticated/pulls_/$installationId/$githubRepoId/$number': {
       id: '/_authenticated/pulls_/$installationId/$githubRepoId/$number'
       path: '/pulls/$installationId/$githubRepoId/$number'
@@ -1375,6 +1415,7 @@ interface AuthenticatedSettingsRouteChildren {
   AuthenticatedSettingsModelProvidersRoute: typeof AuthenticatedSettingsModelProvidersRoute
   AuthenticatedSettingsProfileRoute: typeof AuthenticatedSettingsProfileRoute
   AuthenticatedSettingsRepositoriesRoute: typeof AuthenticatedSettingsRepositoriesRoute
+  AuthenticatedSettingsWhatsappRoute: typeof AuthenticatedSettingsWhatsappRoute
   AuthenticatedSettingsIndexRoute: typeof AuthenticatedSettingsIndexRoute
   AuthenticatedSettingsHostsNewRoute: typeof AuthenticatedSettingsHostsNewRoute
   AuthenticatedSettingsMailGoogleRoute: typeof AuthenticatedSettingsMailGoogleRoute
@@ -1389,6 +1430,7 @@ const AuthenticatedSettingsRouteChildren: AuthenticatedSettingsRouteChildren = {
   AuthenticatedSettingsProfileRoute: AuthenticatedSettingsProfileRoute,
   AuthenticatedSettingsRepositoriesRoute:
     AuthenticatedSettingsRepositoriesRoute,
+  AuthenticatedSettingsWhatsappRoute: AuthenticatedSettingsWhatsappRoute,
   AuthenticatedSettingsIndexRoute: AuthenticatedSettingsIndexRoute,
   AuthenticatedSettingsHostsNewRoute: AuthenticatedSettingsHostsNewRoute,
   AuthenticatedSettingsMailGoogleRoute: AuthenticatedSettingsMailGoogleRoute,
@@ -1408,6 +1450,7 @@ interface AuthenticatedBotsBotIdSettingsRouteChildren {
   AuthenticatedBotsBotIdSettingsProfileRoute: typeof AuthenticatedBotsBotIdSettingsProfileRoute
   AuthenticatedBotsBotIdSettingsRoutinesRoute: typeof AuthenticatedBotsBotIdSettingsRoutinesRoute
   AuthenticatedBotsBotIdSettingsRunsOnRoute: typeof AuthenticatedBotsBotIdSettingsRunsOnRoute
+  AuthenticatedBotsBotIdSettingsSkillsRoute: typeof AuthenticatedBotsBotIdSettingsSkillsRoute
   AuthenticatedBotsBotIdSettingsIndexRoute: typeof AuthenticatedBotsBotIdSettingsIndexRoute
 }
 
@@ -1427,6 +1470,8 @@ const AuthenticatedBotsBotIdSettingsRouteChildren: AuthenticatedBotsBotIdSetting
       AuthenticatedBotsBotIdSettingsRoutinesRoute,
     AuthenticatedBotsBotIdSettingsRunsOnRoute:
       AuthenticatedBotsBotIdSettingsRunsOnRoute,
+    AuthenticatedBotsBotIdSettingsSkillsRoute:
+      AuthenticatedBotsBotIdSettingsSkillsRoute,
     AuthenticatedBotsBotIdSettingsIndexRoute:
       AuthenticatedBotsBotIdSettingsIndexRoute,
   }

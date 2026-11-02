@@ -1,14 +1,14 @@
 import { Controller, Get, Query, UseGuards, UseInterceptors, Version } from '@nestjs/common';
 import { QueryBus } from '@nestjs/cqrs';
 import { ApiBearerAuth, ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
-import type { AccessScope } from '@oppenheimer/backend-authz';
 import { ApiAuthProblemResponses } from '@oppenheimer/backend-core';
 import { AUTOMATION_RUN_STATUSES, RUN_WINDOWS } from '@oppenheimer/shared/automations';
-import { CheckPolicies } from '../../../auth/decorators/check-policies.decorator';
 import { RequireScopes } from '../../../auth/decorators/require-scopes.decorator';
 import { ApiAuthGuard } from '../../../auth/guards/api-auth.guard';
-import { PoliciesGuard } from '../../../auth/guards/policies.guard';
+import { CheckPolicies } from '../../../authz/decorators/check-policies.decorator';
 import { CurrentAccessScope } from '../../../authz/decorators/current-access-scope.decorator';
+import type { AccessScope } from '../../../authz/domain/access-scope.types';
+import { PoliciesGuard } from '../../../authz/guards/policies.guard';
 import { AccessScopeInterceptor } from '../../../authz/interceptors/access-scope.interceptor';
 import { AutomationRunMapper } from '../../automation-run.mapper';
 import type { RunPage } from '../../domain/automation-read.types';

@@ -982,3 +982,41 @@ earlier note:
   connects, and the console reconciles by block and sequence number, the
   stored message being the authority (`versions/mvp/25-bots.md` §2,
   `next-steps/0.7-chat-protocol.md` slice 2).
+- `AUTHORIZATION.md` (the starter's kernel design, kept as history) put
+  row-level authorization in its own package, `@oppenheimer/backend-authz`.
+  On 2026-10-31 (#556) it was folded into `apps/api/src/authz/`, with
+  `AbilityFactory` (from `roles`) and `PoliciesGuard` (from `auth`): it had
+  one consumer and no second implementation of its one port, and
+  authorization had lived in four places. `.agents/rules/rbac-roles.md` is
+  the current map.
+- Note 25 §7 listed slash commands among what bots did not have yet. On
+  2026-10-31 the owner asked how OpenClaw and Grok Bot support skills
+  (`research/lessons-from-openclaw-and-grok-bot-skills.md`) and for slash
+  commands; they were built as a bot's skills: one row each, listed by name
+  and description in every prompt and read with `use_skill` when used,
+  saved by the bot with `save_skill` or by hand in Settings → Skills, and
+  run by the person as `/<name>` (`versions/mvp/25-bots.md` §4.1, Skills).
+- `next-steps/channels.md` placed WhatsApp third among the channels, after
+  email and contacts, and as a channel (people write to a bot). On
+  2026-10-30 the owner asked for it first, the way OpenClaw does it, so that
+  bots can see and talk with people: it was built as a connector in mail's
+  shape on the channels note's runner transport, and the control plane now
+  keeps the messages a linked number sees for 90 days
+  (`next-steps/whatsapp.md`). The channel comes after, on the same device.
+- Codex cloud sessions named their environment by guessing its label from
+  the repository (`next-steps/cloud-agents.md`, "Codex is built"). On
+  2026-10-31 a session failed on an environment labelled otherwise, and
+  the owner asked to improve environment management: the host now lists
+  the ChatGPT account's environments and starts the task in the one linked
+  to the repository, and New session has an Environment chip to pick
+  another, kept with the session's launch (`next-steps/cloud-agents.md`,
+  "Which Codex environment"). To list them the host reads the Codex CLI's
+  sign-in, which "Environments the CLI cannot reach", decided the same day,
+  had ruled out; which holds is open, for the owner.
+- `next-steps/mail.md` §3.5 kept `trash_mail` asking every time, Full
+  access included, with no Allow and no "always" on its card. On
+  2026-11-02 the owner, cleaning a mailbox a batch of 25 at a time, asked
+  that it can run on its own once they grant it: it still asks under every
+  preset until then, and Always allow on its card or Allow in Settings
+  makes it standing. Sends (§3.4) still ask every time and cannot be
+  allowed.

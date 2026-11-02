@@ -6,8 +6,8 @@ import { describe, expect, it, vi } from 'vitest';
 import { TOKENS } from '../../di/tokens';
 import type { SessionEntity } from '../../modules/sessions/session.entity';
 import { sessionEntity } from '../../testing';
+import { sessionsKeys } from '../sessions.keys';
 import {
-  sessionsKeys,
   useCloseSession,
   useCreateSession,
   useRenameSession,

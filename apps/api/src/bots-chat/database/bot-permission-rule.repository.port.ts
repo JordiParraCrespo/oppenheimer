@@ -1,4 +1,4 @@
-import type { AccessScope } from '@oppenheimer/backend-authz';
+import type { AccessScope } from '../../authz/domain/access-scope.types';
 import type { BotPermissionRuleEntity } from '../domain/bot-permission-rule.entity';
 
 export interface BotPermissionRuleRepositoryPort {

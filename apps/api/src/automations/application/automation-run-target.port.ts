@@ -1,5 +1,5 @@
-import type { AccessScope } from '@oppenheimer/backend-authz';
 import type { AutomationPausedReason, AutomationSkipReason } from '@oppenheimer/shared/automations';
+import type { AccessScope } from '../../authz/domain/access-scope.types';
 import type { AutomationEntity } from '../domain/automation.entity';
 import type { AutomationRunTargetKind, RunDispatchRef } from '../domain/automation.types';
 import type { AutomationLimits } from '../domain/automation-limits.policy';

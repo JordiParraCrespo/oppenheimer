@@ -2,10 +2,10 @@ import { Controller, Get, Header, Query, Req, UseGuards, Version } from '@nestjs
 import { QueryBus } from '@nestjs/cqrs';
 import { ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 import type { ClientFeatureFlags } from '@oppenheimer/shared/feature-flags';
-import { NoPolicy } from '../../../auth/decorators/check-policies.decorator';
 import { AllowAnyScope } from '../../../auth/decorators/require-scopes.decorator';
 import type { ScopedRequest } from '../../../auth/domain/scope-context.types';
 import { OptionalApiAuthGuard } from '../../../auth/guards/optional-api-auth.guard';
+import { NoPolicy } from '../../../authz/decorators/check-policies.decorator';
 import { flagContextOf } from '../../application/flag-context.resolver';
 import { ClientFeatureFlagsResponseDto } from '../../dtos/feature-flag.response.dto';
 import { GetClientFeatureFlagsQuery } from './get-client-feature-flags.query';

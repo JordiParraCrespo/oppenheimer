@@ -1,7 +1,7 @@
 import { Inject } from '@nestjs/common';
 import { type IQueryHandler, QueryHandler } from '@nestjs/cqrs';
-import { requireTenant } from '@oppenheimer/backend-authz';
 import { planStatsWeeks, previousPlanStatsPeriod } from '@oppenheimer/shared';
+import { requireTenant } from '../../../authz/application/tenant-scope.policy';
 import type { SessionUsageReader } from '../../../sessions/database/session-usage.repository.port';
 import { SESSION_USAGE_READER } from '../../../sessions/sessions.di-tokens';
 import type {

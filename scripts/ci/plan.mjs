@@ -157,7 +157,7 @@ export function plan(
   // oppenheimer:end web
   // The same for the backend packages (`knip.backend.json`): an export of
   // `packages/backend/*` that neither the API nor another package imports is
-  // deleted. The API's own files and the authz, llm and agents packages are
+  // deleted. The API's own files and the llm and agents packages are
   // read for what they import but not reported on (its `ignore`).
   add('lint', 'Unused backend exports', 'pnpm', ['check:unused:backend']);
   // oppenheimer:begin starter

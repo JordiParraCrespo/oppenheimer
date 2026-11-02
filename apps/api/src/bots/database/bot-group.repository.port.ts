@@ -1,5 +1,5 @@
-import type { AccessScope } from '@oppenheimer/backend-authz';
 import type { Option } from 'oxide.ts';
+import type { AccessScope } from '../../authz/domain/access-scope.types';
 import type { BotGroupEntity } from '../domain/bot-group.entity';
 
 /** `name-taken`: another group of the workspace has that name, whatever its case. */

@@ -2,12 +2,12 @@ import { Body, Controller, Param, Put, Req, UseGuards, Version } from '@nestjs/c
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
 import { ApiBearerAuth, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { ApiAuthProblemResponses, ApiProblemResponse } from '@oppenheimer/backend-core';
-import { NoPolicy } from '../../../auth/decorators/check-policies.decorator';
 import { CurrentUser } from '../../../auth/decorators/current-user.decorator';
 import { RequireScopes } from '../../../auth/decorators/require-scopes.decorator';
 import { tenantOrganizationIdOf } from '../../../auth/domain/request-tenant.types';
 import type { ScopedRequest } from '../../../auth/domain/scope-context.types';
 import { ApiAuthGuard } from '../../../auth/guards/api-auth.guard';
+import { NoPolicy } from '../../../authz/decorators/check-policies.decorator';
 import { RequireFlag } from '../../../feature-flags/decorators/require-flag.decorator';
 import type { InboxMarkEntity } from '../../domain/inbox-mark.entity';
 import { InboxMarkResponseDto } from '../../dtos/inbox-mark.response.dto';

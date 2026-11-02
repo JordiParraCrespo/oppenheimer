@@ -1,5 +1,5 @@
-import type { AccessScope } from '@oppenheimer/backend-authz';
 import { QueryBase } from '@oppenheimer/backend-ddd';
+import type { AccessScope } from '../../../authz/domain/access-scope.types';
 
 /** One thread of one of the caller's Gmail accounts, every message as text. */
 export class ReadMailThreadQuery extends QueryBase {

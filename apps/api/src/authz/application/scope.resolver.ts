@@ -1,6 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import type { AccessScope, ResolveScopeInput, ScopeResolverPort } from '@oppenheimer/backend-authz';
 import type { Repository } from 'typeorm';
 import { TeamOrmEntity } from '../../organizations/database/team.orm-entity';
 import { TeamMemberOrmEntity } from '../../organizations/database/team-member.orm-entity';
@@ -8,6 +7,8 @@ import type { UserRoleRepositoryPort } from '../../roles/database/user-role.repo
 import { USER_ROLE_REPOSITORY } from '../../roles/roles.di-tokens';
 import { ACCESS_GRANT_REPOSITORY } from '../authz.di-tokens';
 import type { AccessGrantRepositoryPort } from '../database/access-grant.repository.port';
+import type { AccessScope } from '../domain/access-scope.types';
+import type { ResolveScopeInput, ScopeResolverPort } from './scope-resolver.port';
 
 /**
  * Everything is resolved in **one organization**, `input.organizationId`: the

@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { ScopedRepositoryBase } from '@oppenheimer/backend-authz';
 import { None, type Option, Some } from 'oxide.ts';
 import { type EntityManager, In, IsNull, LessThan, type Repository } from 'typeorm';
+import { ScopedRepositoryBase } from '../../authz/database/scoped.repository';
 import { BotResource } from '../../bots/bots.resource';
 import { BotAttachmentMapper } from '../bot-attachment.mapper';
 import {

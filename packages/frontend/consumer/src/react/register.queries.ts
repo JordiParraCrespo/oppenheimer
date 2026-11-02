@@ -4,7 +4,7 @@ import { usersKeys, withCacheOnSuccess } from '@oppenheimer/frontend-core/react'
 import type { RegisterDto } from '@oppenheimer/shared';
 import { type UseMutationOptions, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useConsumerApp } from './context';
-import { profileKeys } from './profile.queries';
+import { profileKeys } from './profile.keys';
 
 /**
  * Sign-up is the consumer product's: an account is created here and nowhere

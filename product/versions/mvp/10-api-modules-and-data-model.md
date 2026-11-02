@@ -102,7 +102,7 @@ predicate and the CASL condition are generated from one declaration
 no `organizationId`: their resources declare `keys: { owner, id }` with
 no `organization` key, and `applyAccessScope` then skips the tenant
 block and scopes by `own` or `grant` alone
-(`packages/backend/authz/src/scope/apply-access-scope.ts`, the
+(`apps/api/src/authz/database/scoped.repository.ts`, the
 `keys.organization` guard). A supported shape of the kernel, not a
 workaround.
 

@@ -188,6 +188,7 @@ export function toCreateSessionRequest(input: CreateSessionInput): CreateSession
             ? { cwdGithubRepoId: input.cwdGithubRepoId }
             : {}),
           ...(input.cloud ? { cloud: true } : {}),
+          ...(input.codexEnvironment ? { codexEnvironment: input.codexEnvironment } : {}),
         }),
     ...(launch && Object.keys(launch).length ? { launch } : {}),
     ...(input.prompt ? { prompt: input.prompt } : {}),

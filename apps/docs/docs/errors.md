@@ -178,7 +178,7 @@ is authorized in is `product/versions/mvp/08-auth.md`.
 A route that reads or writes a workspace's rows answers `TENANT_001` when the
 request acts in no organization: open a workspace (or send a token minted in
 one) and try again. Every module raises this one code
-(`requireTenant` in `@oppenheimer/backend-authz`).
+(`requireTenant` in `apps/api/src/authz/application/tenant-scope.policy.ts`).
 
 It replaced a code per module, all of them a 400 saying the same thing about a
 different noun. These are retired and no longer sent: `BOTS_002` <a id="bots_002" />, `PROJECTS_002` <a id="projects_002" />, `GRANT_004` <a id="grant_004" />, `TASKS_003` <a id="tasks_003" />, `CLOUD_AGENTS_002` <a id="cloud_agents_002" />, `VOICE_001` <a id="voice_001" />, `MAIL_002` <a id="mail_002" />, `INBOX_001` <a id="inbox_001" />, `CALENDAR_002` <a id="calendar_002" />, `AUTOMATIONS_002` <a id="automations_002" />.
@@ -573,6 +573,10 @@ are never reissued.
 | `SESSIONS_041` <a id="sessions_041" /> | That file link expired or never existed         | 404  |
 | `SESSIONS_042` <a id="sessions_042" /> | That pattern cannot be watched | 422 |
 | `SESSIONS_043` <a id="sessions_043" /> | The session already has as many terminal watches as it can hold | 409 |
+| `SESSIONS_044` <a id="sessions_044" /> | This host's runner cannot list Codex environments | 409 |
+| `SESSIONS_045` <a id="sessions_045" /> | The host is offline, so its Codex environments cannot be listed | 503 |
+| `SESSIONS_046` <a id="sessions_046" /> | Codex on the host could not list its environments | 502 |
+| `SESSIONS_047` <a id="sessions_047" /> | ChatGPT is limiting how often the host may list Codex environments | 429 |
 
 `SESSIONS_001` is also returned for a session that exists in another workspace: the
 scoped read cannot see it, and distinguishing the two would confirm the id.
@@ -631,6 +635,15 @@ links together pass the 2 KB a first task may be; shorten the task or attach few
 session's runner scans its screen for on a bot's behalf. A pattern is an RE2 regular expression,
 so lookaround and backreferences are refused (`SESSIONS_042`), and a session holds at most ten
 (`SESSIONS_043`). The runner refuses one it cannot compile itself with `INVALID_PATTERN`.
+
+`SESSIONS_044` to `SESSIONS_046` are the composer's Codex environment picker
+(`GET /v1/hosts/:id/codex-environments`), which the host's runner answers with its
+own ChatGPT sign-in. `044` is a runner older than `codex.environments`: a Codex cloud
+session still starts there, in an environment guessed from the repository's name.
+`046` carries the runner's own words as its `detail` (no `codex`, no sign-in) and its
+code as `upstreamCode`. `047` is ChatGPT refusing the host's read for rate (`SESS_011`):
+the runner asks nothing more of that ChatGPT account until the time it named, which the
+`detail` says. A runner that did not answer in time is `SESSIONS_031`.
 
 `SESSIONS_005` is what closing makes final. A closed session cannot be renamed,
 stopped, restarted or given another checkout — the row is a tombstone for its
@@ -772,6 +785,9 @@ See `product/versions/mvp/25-bots.md`.
 | `BOTS_035` <a id="bots_035" />       | Questions not found | 404  |
 | `BOTS_036` <a id="bots_036" />       | The answers do not fit the questions | 422  |
 | `BOTS_037` <a id="bots_037" />       | The questions were already answered | 409  |
+| `BOTS_038` <a id="bots_038" />       | Skill not found | 404  |
+| `BOTS_039` <a id="bots_039" />       | The bot already has a skill with that name | 409  |
+| `BOTS_040` <a id="bots_040" />       | The bot has as many skills as it can keep | 422  |
 
 `BOTS_001`, `BOTS_003` and `BOTS_008` are also returned for a bot, group or fact in
 another workspace.
@@ -859,6 +875,12 @@ question, an option the question does not have, two picks where one is
 taken, or a question left unanswered; its `detail` names which. `BOTS_037` is
 a card already answered or dismissed, or retired because a message reached
 the bot first.
+
+`BOTS_038` to `BOTS_040` are a bot's skills (Settings → Skills, and the bot's
+own `save_skill`). `BOTS_038` is a skill that is not this bot's or not in the
+caller's workspace. `BOTS_039` is a name another of the bot's skills has: a
+skill's name is its slash command, so rename one of them. `BOTS_040` is a
+skill past the bot's fifty: delete one first.
 
 A home host the caller may not use answers `HOSTS_001`, as a session's does.
 
@@ -1036,6 +1058,32 @@ already cancelled, or not one of the caller's.
 `MAIL_018` is a scheduled send carrying an image from the bot's chat: only
 files Gmail holds can wait with it. Attach files from mail, or send it now.
 
+## WhatsApp
+
+A number a person owns, joined as a WhatsApp linked device by the runner on
+one of their hosts, and the messages it sees, kept for their bots. See
+`product/next-steps/whatsapp.md`.
+
+| Code                                   | Title                                                       | HTTP |
+| -------------------------------------- | ----------------------------------------------------------- | ---- |
+| `WHATSAPP_001` <a id="whatsapp_001" /> | That WhatsApp number is not linked                          | 404  |
+| `WHATSAPP_002` <a id="whatsapp_002" /> | WhatsApp belongs to an organization                         | 400  |
+| `WHATSAPP_003` <a id="whatsapp_003" /> | That is as many WhatsApp numbers as one person links        | 409  |
+| `WHATSAPP_004` <a id="whatsapp_004" /> | The host holding that WhatsApp number is offline            | 409  |
+| `WHATSAPP_005` <a id="whatsapp_005" /> | That host’s runner does not hold WhatsApp devices           | 409  |
+| `WHATSAPP_006` <a id="whatsapp_006" /> | That host already holds another WhatsApp number             | 409  |
+| `WHATSAPP_007` <a id="whatsapp_007" /> | That WhatsApp number is not connected                       | 409  |
+| `WHATSAPP_008` <a id="whatsapp_008" /> | WhatsApp did not take the message                           | 502  |
+| `WHATSAPP_009` <a id="whatsapp_009" /> | That number has sent as many bot messages as it may for now | 429  |
+| `WHATSAPP_010` <a id="whatsapp_010" /> | No such WhatsApp chat                                       | 404  |
+
+`WHATSAPP_005` is a runner that predates WhatsApp, or one started with
+`RUNNER_WHATSAPP=off`: update it, or turn it back on. `WHATSAPP_006` is a host
+already holding someone else's number: a runner holds one device. A
+`WHATSAPP_008` whose detail says the host did not answer in time may still
+have sent the message. `WHATSAPP_009` is a bot's share of a day (100 messages
+from one number), or the host's own budget (`WA_004`).
+
 ## Cloud agents
 
 A vendor's cloud (Cursor's Cloud Agents), where a cloud session runs on each
@@ -1091,7 +1139,7 @@ The Go runner (`apps/runner`) emits the same document shape with its own
 catalog. `RUNNER_*` codes are the generic layer shared by every route; the
 others belong to one bounded context each — `APIKEY_*` to credentials,
 `HOST_*` to the host inventory (`FS_*` to its folder listing), `PAIR_*` to pairing, `SVC_*` to the service
-unit, `UPD_*` to self-update, and `SESS_*`, `TMUX_*` and `GIT_*` to sessions. The host-agent codes also reach a person
+unit, `UPD_*` to self-update, `WHATSAPP_*` to the host's WhatsApp linked device, and `SESS_*`, `TMUX_*` and `GIT_*` to sessions. The host-agent codes also reach a person
 through the runner's own CLI, where they set the exit code: 3 for a 401, 4 for a 403, 5
 for a 404 or 428, 6 for a 502, 503 or 504, 7 for `PAIR_009`, and 1 for anything else.
 
@@ -1150,6 +1198,10 @@ for a 404 or 428, 6 for a 502, 503 or 504, 7 for `PAIR_009`, and 1 for anything 
 | `PORT_001` <a id="port_001" />         | The session does not listen on that port     | 404  |
 | `PORT_002` <a id="port_002" />         | Nothing answers on that port                 | 502  |
 | `PORT_003` <a id="port_003" />         | This host cannot list a session's ports      | 501  |
+| `WA_001` <a id="wa_001" />           | This host already holds a WhatsApp device    | 409  |
+| `WA_002` <a id="wa_002" />           | No WhatsApp device is connected on this host | 503  |
+| `WA_003` <a id="wa_003" />           | WhatsApp refused the message                 | 502  |
+| `WA_004` <a id="wa_004" />           | This host's WhatsApp send budget is spent    | 429  |
 | `SESS_001` <a id="sess_001" />         | Session not found                            | 404  |
 | `SESS_002` <a id="sess_002" />         | The session cannot be created with those values | 400 |
 | `SESS_003` <a id="sess_003" />         | The session is not running                   | 409  |
@@ -1161,6 +1213,7 @@ for a 404 or 428, 6 for a 502, 503 or 504, 7 for `PAIR_009`, and 1 for anything 
 | `SESS_008` <a id="sess_008" />         | Claude Code could not start the session in the cloud | 502 |
 | `SESS_009` <a id="sess_009" />         | Codex could not start the task in the cloud  | 502  |
 | `SESS_010` <a id="sess_010" />         | No Codex cloud environment the CLI can reach is named for the repository | 404 |
+| `SESS_011` <a id="sess_011" />         | ChatGPT asked the host to wait before listing Codex environments | 429 |
 | `TMUX_001` <a id="tmux_001" />         | tmux is not available on this host           | 424  |
 | `TMUX_002` <a id="tmux_002" />         | The tmux server refused the command          | 500  |
 | `GIT_001` <a id="git_001" />           | The worktree could not be prepared           | 500  |
@@ -1207,6 +1260,15 @@ installer, or `git`/`tmux`, which need root. For those two the detail is the
 exact package-manager command to run. `HOST_011` is an install that ran and
 failed, or finished without the tool appearing on `PATH`; the detail is the
 installer's last line.
+
+The `WA_*` codes reach the control plane as `command.failed` on the
+runner link, in answer to `whatsapp.link` and `whatsapp.send`
+(`packages/shared/src/protocol/whatsapp.ts`). `WA_004` is the host's own
+budget, at most 20 sends a minute and 300 a day: WhatsApp publishes no limit
+for a linked device, and going over one costs the number. `WA_003`
+after WhatsApp's own `rate-overlimit` also stops every send from the host for
+ten minutes. The control plane answers a bot with its own `WHATSAPP_*` code
+for each (`WHATSAPP_007`, `WHATSAPP_008`, `WHATSAPP_009`).
 
 <!-- oppenheimer:end runner -->
 ## Domain invariants

@@ -2,7 +2,7 @@ import { Inject } from '@nestjs/common';
 import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
 import { AppError } from '@oppenheimer/backend-core';
 import { ungrantableScopes } from '@oppenheimer/shared';
-import { AbilityFactory } from '../../../roles/application/ability.factory';
+import { AbilityFactory } from '../../../authz/application/ability.factory';
 import { API_TOKEN_REPOSITORY, ORGANIZATION_MEMBERSHIP_READER } from '../../api-tokens.di-tokens';
 import type { ApiTokenRepositoryPort } from '../../database/api-token.repository.port';
 import type { OrganizationMembershipReaderPort } from '../../database/organization-membership.repository.port';

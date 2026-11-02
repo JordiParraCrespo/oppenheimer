@@ -5,7 +5,7 @@
  * than the message that led to them; ending or replacing a goal leaving its
  * waiting continuation to run work the bot just called done.
  */
-import { emptyScope } from '@oppenheimer/backend-authz';
+import { emptyScope } from '../../../authz/domain/access-scope.types';
 import { BotGoalMapper } from '../../bot-goal.mapper';
 import type { BotGoalRepositoryPort } from '../../database/bot-goal.repository.port';
 import { BotGoalEntity } from '../../domain/bot-goal.entity';

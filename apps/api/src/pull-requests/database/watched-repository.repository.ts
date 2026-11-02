@@ -1,7 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { type AccessScope, ScopedRepositoryBase } from '@oppenheimer/backend-authz';
 import { IsNull, Repository } from 'typeorm';
+import { ScopedRepositoryBase } from '../../authz/database/scoped.repository';
+import { type AccessScope } from '../../authz/domain/access-scope.types';
 import { addressOf, installationIdOf } from '../../github/domain/repository-address.policy';
 import { PullRequestResource } from '../pull-requests.resource';
 import { WatchedRepositoryOrmEntity } from './watched-repository.orm-entity';

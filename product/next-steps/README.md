@@ -20,6 +20,7 @@ there.
 | 0.7 | [Terminal and chat display](0.7-terminal-and-chat.md), [The chat's model and protocol](0.7-chat-protocol.md) | Improve the terminal, and a chat display beside it; one item model and stream for both chats |
 | — | [Multi-account](multi-account.md) | Several agent accounts per person (note 06); on the list, version not set |
 | — | [Mail](mail.md) | Bots work your own Gmail accounts, several per person: search, attachments, drafts, sends (always approved), labels and archive, new mail as a routine trigger; the first version, ahead of channels; version not set |
+| — | [WhatsApp](whatsapp.md) | Bots read your own WhatsApp number's chats and write in them, OpenClaw's linked device held by the runner on your host; built 2026-10-30, version not set |
 | — | [Channels](channels.md) | Bots on email, WhatsApp and Slack: one interface per channel, email first as an address of the bot's own; version not set |
 | — | [Customers and routes](customers-and-routes.md) | Bots that talk to customers: routes pick the bot per channel, account, customer and conversation, a bot of a customer's own, hand-off to a person; after channels, version not set |
 | — | [Voice](voice.md) | Wispr-Flow-style dictation in the console, and setting up a session by speaking it; version not set |

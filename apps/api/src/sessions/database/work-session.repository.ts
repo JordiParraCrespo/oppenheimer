@@ -1,9 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { type AccessScope, ScopedRepositoryBase } from '@oppenheimer/backend-authz';
 import { type KeysetOrder, keysetAfter, keysetPage, OutboxService } from '@oppenheimer/backend-ddd';
 import { None, type Option, Some } from 'oxide.ts';
 import { DataSource, type EntityManager, Repository, type SelectQueryBuilder } from 'typeorm';
+import { ScopedRepositoryBase } from '../../authz/database/scoped.repository';
+import { type AccessScope } from '../../authz/domain/access-scope.types';
 import type { SessionCheckoutEntity } from '../domain/session-checkout.entity';
 import type { SessionCloudRunEntity } from '../domain/session-cloud-run.entity';
 import { SESSION_EVENT_KINDS, type SessionFold } from '../domain/session-state.policy';
@@ -597,7 +598,7 @@ export class WorkSessionRepository
                 "projectId" = $17,
                 "closeRequestedAt" = $18, "closeAcceptsUnpushedWork" = $19,
                 "closeRefusalCode" = $20, "closeRefusalDetail" = $21,
-                "pendingDecision" = $22::jsonb,
+                "pendingDecision" = $22::jsonb, "launchEnvironment" = $23,
                 "updatedAt" = now()
           WHERE "id" = $1`,
         [
@@ -623,6 +624,7 @@ export class WorkSessionRepository
           record.closeRefusalCode,
           record.closeRefusalDetail,
           record.pendingDecision === null ? null : JSON.stringify(record.pendingDecision),
+          record.launchEnvironment,
         ],
       );
       await this.turns.writeChanged(manager, session);

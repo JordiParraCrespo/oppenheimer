@@ -1,5 +1,5 @@
-import { type AccessScope, emptyScope } from '@oppenheimer/backend-authz';
 import { WORKSPACE_BOT_APPROVALS_MAX } from '@oppenheimer/shared';
+import { type AccessScope, emptyScope } from '../../../../authz/domain/access-scope.types';
 import type { BotRepositoryPort } from '../../../../bots/database/bot.repository.port';
 import type { BotEntity } from '../../../../bots/domain/bot.entity';
 import type { BotApprovalRepositoryPort } from '../../../database/bot-approval.repository.port';

@@ -13,10 +13,12 @@ import {
   engineForPlace,
   hostCloudCopy,
   hostCloudHost,
+  pickedEnvironment,
   toCloudOptions,
   toHostOptions,
   toStartFromOptions,
 } from '../lib/session-options';
+import { NewSessionCodexEnvironments } from './new-session-codex-environments';
 
 /**
  * The place chip, bound to the draft: a host and where on it — a new
@@ -48,6 +50,12 @@ export function NewSessionPlace() {
   const { field: host } = useController({ control, name: 'hostId' });
   const { field: where } = useController({ control, name: 'where' });
   const { field: cloudProvider } = useController({ control, name: 'cloudProvider' });
+  // The Codex environment picked on the chosen host names the chip.
+  const environment = useWatch({
+    control,
+    name: ['codexEnvironment', 'hostId'],
+    compute: ([pick, on]) => pickedEnvironment(pick, on)?.label ?? null,
+  });
   // The engine names the place only while it is a host's cloud ("Codex
   // cloud"), so an engine picked anywhere else does not redraw this chip.
   const cloudAgent = useWatch({
@@ -115,6 +123,10 @@ export function NewSessionPlace() {
       }}
       onConnectCloud={() => navigate({ to: '/settings/cloud-agents' })}
       onAddHost={() => dialogs.open({ kind: 'add-host', onUseHost: host.onChange })}
+      environments={({ hostId, query, close }) => (
+        <NewSessionCodexEnvironments hostId={hostId} query={query} onDone={close} />
+      )}
+      environment={environment}
       loading={hosts.isPending}
       failure={
         hosts.isError ? resolveError(hosts.error, t('sessions.new.host.failed')).message : undefined

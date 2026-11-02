@@ -1,7 +1,7 @@
 import { Inject } from '@nestjs/common';
 import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
-import { requireTenant } from '@oppenheimer/backend-authz';
 import { requireFound } from '@oppenheimer/backend-core';
+import { requireTenant } from '../../application/tenant-scope.policy';
 import { ACCESS_GRANT_REPOSITORY } from '../../authz.di-tokens';
 import type { AccessGrantRepositoryPort } from '../../database/access-grant.repository.port';
 import { AccessGrantErrors } from '../../domain/access-grant.errors';

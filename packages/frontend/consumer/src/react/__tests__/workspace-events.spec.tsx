@@ -7,19 +7,16 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { TOKENS } from '../../di/tokens';
 import type { WorkspaceStreamStatus } from '../../modules/organizations';
 import type { SessionEntity } from '../../modules/sessions/session.entity';
-import { automationsKeys } from '../automations.queries';
-import { botsKeys } from '../bots.queries';
-import { hostsKeys, useHostPresence } from '../hosts.queries';
+import { automationsKeys } from '../automations.keys';
+import { botsKeys } from '../bots.keys';
+import { hostsKeys } from '../hosts.keys';
+import { useHostPresence } from '../hosts.queries';
 import { inboxKeys } from '../inbox.keys';
 import { LIVE_POLL, usePollWhile } from '../live-poll';
-import { pullRequestsKeys } from '../pull-requests.queries';
-import {
-  sessionsKeys,
-  useSessionStartProgress,
-  useSessions,
-  useSuspenseSession,
-} from '../sessions.queries';
-import { tasksKeys } from '../tasks.queries';
+import { pullRequestsKeys } from '../pull-requests.keys';
+import { sessionsKeys } from '../sessions.keys';
+import { useSessionStartProgress, useSessions, useSuspenseSession } from '../sessions.queries';
+import { tasksKeys } from '../tasks.keys';
 import { useWorkspaceEvents } from '../workspace-events';
 import { fakeKernel } from './fake-kernel';
 

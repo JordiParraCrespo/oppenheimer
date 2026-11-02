@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { QueryBus } from '@nestjs/cqrs';
-import type { AccessScope } from '@oppenheimer/backend-authz';
 import { AppError } from '@oppenheimer/backend-core';
+import type { AccessScope } from '../../authz/domain/access-scope.types';
 import type { BotEntity } from '../../bots/domain/bot.entity';
 import { SessionErrors } from '../../sessions/domain/sessions.errors';
 import type { WorkSessionEntity } from '../../sessions/domain/work-session.entity';

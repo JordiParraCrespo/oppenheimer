@@ -5,7 +5,6 @@ import { APP_FILTER, APP_GUARD } from '@nestjs/core';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { AuthzModule as AuthzKernelModule } from '@oppenheimer/backend-authz';
 import { CacheModule } from '@oppenheimer/backend-cache';
 import {
   AllExceptionsFilter,
@@ -90,6 +89,7 @@ import { RedisThrottlerStorage } from './throttling/infrastructure/redis-throttl
 import { ThrottlingModule } from './throttling/throttling.module';
 import { UsersModule } from './users/user.module';
 import { VoiceModule } from './voice/voice.module';
+import { WhatsappModule } from './whatsapp/whatsapp.module';
 import { WorkspaceEventsModule } from './workspace-events/workspace-events.module';
 
 @Module({
@@ -245,7 +245,6 @@ import { WorkspaceEventsModule } from './workspace-events/workspace-events.modul
       defaultLocale: 'en',
       defaultTimeZone: 'UTC',
     }),
-    AuthzKernelModule.forRoot(),
     AuthModule,
     AuthzModule,
     ApiTokensModule,
@@ -269,6 +268,7 @@ import { WorkspaceEventsModule } from './workspace-events/workspace-events.modul
     TasksModule,
     CalendarModule,
     MailModule,
+    WhatsappModule,
     CloudAgentsModule,
     PullRequestsModule,
     BotsModule,

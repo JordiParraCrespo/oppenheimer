@@ -36,6 +36,7 @@ import { BotSessionToolsFactory } from './application/bot-session-tools.factory'
 import { BotSessionWaitResolver } from './application/bot-session-wait.resolver';
 import { BotSessionWakeResolver } from './application/bot-session-wake.resolver';
 import { BotSessionWatchResolver } from './application/bot-session-watch.resolver';
+import { BotSkillToolsFactory } from './application/bot-skill-tools.factory';
 import { BotSteeringFactory } from './application/bot-steering.factory';
 import { BotSubagentRunnerFactory } from './application/bot-subagent-runner.factory';
 import { BotSubagentToolsFactory } from './application/bot-subagent-tools.factory';
@@ -47,6 +48,7 @@ import { BotTurnOpeningResolver } from './application/bot-turn-opening.resolver'
 import { BotWaitingCardResolver } from './application/bot-waiting-card.resolver';
 import { BotWatchToolsFactory } from './application/bot-watch-tools.factory';
 import { BotWebToolsFactory } from './application/bot-web-tools.factory';
+import { BotWhatsappToolsFactory } from './application/bot-whatsapp-tools.factory';
 import { BotRoutineActivityDomainEventHandler } from './application/event-handlers/bot-routine-activity.domain-event-handler';
 import { BotSessionWakeDomainEventHandler } from './application/event-handlers/bot-session-wake.domain-event-handler';
 import { TurnCancelWatchFactory } from './application/turn-cancel-watch.factory';
@@ -312,6 +314,7 @@ const queryHandlers: Provider[] = [
     BotQuestionToolsFactory,
     BotGoalResolver,
     BotSelfToolsFactory,
+    BotSkillToolsFactory,
     BotPlanToolsFactory,
     BotGithubToolsFactory,
     BotPullRequestToolsFactory,
@@ -321,6 +324,7 @@ const queryHandlers: Provider[] = [
     BotPeerToolsFactory,
     BotWebToolsFactory,
     BotMailToolsFactory,
+    BotWhatsappToolsFactory,
     BotMailWriteToolsFactory,
     BotMailOrganizeToolsFactory,
     BotMailAccountsResolver,

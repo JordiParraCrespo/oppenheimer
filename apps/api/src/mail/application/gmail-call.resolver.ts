@@ -1,6 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
-import type { AccessScope } from '@oppenheimer/backend-authz';
 import { AppError } from '@oppenheimer/backend-core';
+import type { AccessScope } from '../../authz/domain/access-scope.types';
 import type { GmailConnectionRepositoryPort } from '../database/gmail-connection.repository.port';
 import type { GmailConnectionEntity } from '../domain/gmail-connection.entity';
 import { MailErrors } from '../domain/mail.errors';

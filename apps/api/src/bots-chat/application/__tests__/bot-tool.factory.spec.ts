@@ -1,5 +1,5 @@
-import { emptyScope } from '@oppenheimer/backend-authz';
 import { z } from 'zod/v4';
+import { emptyScope } from '../../../authz/domain/access-scope.types';
 import { BotPermissionRuleEntity } from '../../domain/bot-permission-rule.entity';
 import type { BotRuleVerdict } from '../../domain/bot-rule-review.policy';
 import { BotToolPermissionEntity } from '../../domain/bot-tool-permission.entity';

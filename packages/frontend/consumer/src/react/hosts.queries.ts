@@ -3,50 +3,16 @@
 import { useQuery, useSuspenseQuery } from '@oppenheimer/frontend-core/react';
 import { type UseQueryOptions, useMutation, useQueryClient } from '@tanstack/react-query';
 import type {
+  HostCodexEnvironments,
   HostEntity,
   HostFolders,
   HostPairing,
   HostPairingToken,
 } from '../modules/hosts/host.entity';
 import { useConsumerApp } from './context';
+import { hostsKeys } from './hosts.keys';
 import { type Poll, type PollKeys, usePollWhile } from './live-poll';
 import { mutation } from './mutation';
-
-/**
- * Query key factory for the `hosts` feature, from the most generic (`all`) to
- * the most specific, one function per level so any subtree can be named:
- *
- * ```
- * ['hosts']                                   all
- * ['hosts', 'list']                           lists() → list()
- * ['hosts', 'pairing']                        pairings()
- * ['hosts', 'pairing', 'list']                pairingLists() → pairingList()   the tokens Add host polls
- * ['hosts', 'pairing', 'detail']              pairingDetails()
- * ['hosts', 'pairing', 'detail', name]        pairingDetail(name)              the token Add host shows
- * ['hosts', 'detail']                         details()
- * ['hosts', 'detail', id]                     detail(id)
- * ['hosts', 'detail', id, 'folders']          folderLists(id)
- * ['hosts', 'detail', id, 'folders', path]    folders(id, path)                one directory; null is home
- * ```
- *
- * A pairing detail's `queryFn` mints: refetching it issues a new token under
- * the command on screen. So refresh the poll with `pairingLists()`, and never
- * invalidate `pairings()` or `pairingDetails()` while Add host is open.
- */
-export const hostsKeys = {
-  all: ['hosts'] as const,
-  lists: () => [...hostsKeys.all, 'list'] as const,
-  list: () => [...hostsKeys.lists()] as const,
-  pairings: () => [...hostsKeys.all, 'pairing'] as const,
-  pairingLists: () => [...hostsKeys.pairings(), 'list'] as const,
-  pairingList: () => [...hostsKeys.pairingLists()] as const,
-  pairingDetails: () => [...hostsKeys.pairings(), 'detail'] as const,
-  pairingDetail: (name: string) => [...hostsKeys.pairingDetails(), name] as const,
-  details: () => [...hostsKeys.all, 'detail'] as const,
-  detail: (id: string) => [...hostsKeys.details(), id] as const,
-  folderLists: (id: string) => [...hostsKeys.detail(id), 'folders'] as const,
-  folders: (id: string, path: string | null) => [...hostsKeys.folderLists(id), path] as const,
-};
 
 /**
  * The hosts the caller has paired: New session's host chip and the pairing surfaces.
@@ -172,6 +138,32 @@ export function useHostFolders<TData = HostFolders>(
   return useQuery<HostFolders, Error, TData>({
     queryKey: hostsKeys.folders(hostId, path),
     queryFn: () => app.hosts.findFolders(hostId, path ?? undefined),
+    staleTime: 0,
+    retry: false,
+    refetchOnWindowFocus: false,
+    ...options,
+  });
+}
+
+/**
+ * The Codex cloud environments of a host's ChatGPT account, as its runner reads
+ * them now, those linked to `repository` (`owner/name`) marked, or none when
+ * it is null: the Environments pane of New session's place chip, for a Codex
+ * cloud session. A refusal is the answer (the host
+ * is away, its runner is too old, Codex is not signed in), so it is not retried.
+ * Nothing is cached beyond the visit, as for the folder picker: an environment
+ * made on chatgpt.com a minute ago must show.
+ */
+export function useHostCodexEnvironments<TData = HostCodexEnvironments>(
+  hostId: string,
+  repository: string | null,
+  options?: Omit<UseQueryOptions<HostCodexEnvironments, Error, TData>, 'queryKey' | 'queryFn'>,
+) {
+  const app = useConsumerApp();
+
+  return useQuery<HostCodexEnvironments, Error, TData>({
+    queryKey: hostsKeys.codexEnvironments(hostId, repository),
+    queryFn: () => app.hosts.findCodexEnvironments(hostId, repository ?? undefined),
     staleTime: 0,
     retry: false,
     refetchOnWindowFocus: false,

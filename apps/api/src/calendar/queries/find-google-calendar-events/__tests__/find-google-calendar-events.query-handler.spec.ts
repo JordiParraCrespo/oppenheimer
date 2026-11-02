@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
-import type { AccessScope } from '@oppenheimer/backend-authz';
 import { AppError } from '@oppenheimer/backend-core';
 import { describe, expect, it, vi } from 'vitest';
+import type { AccessScope } from '../../../../authz/domain/access-scope.types';
 import type { CalendarConnectionRepositoryPort } from '../../../database/calendar-connection.repository.port';
 import { CalendarErrors } from '../../../domain/calendar.errors';
 import { CalendarConnectionEntity } from '../../../domain/calendar-connection.entity';

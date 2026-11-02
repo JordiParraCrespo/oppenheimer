@@ -278,11 +278,11 @@ export type CurrentCredentialResponseDto = {
     /**
      * Scopes the credential carries. Null for a browser session, which is not scope-restricted.
      */
-    grantedScopes: Array<'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'hosts:read' | 'hosts:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'automations:read' | 'automations:write' | 'bots:read' | 'bots:write' | 'tasks:read' | 'tasks:write' | 'calendar:read' | 'calendar:write' | 'mail:read' | 'mail:write' | 'cloud-agents:read' | 'cloud-agents:write' | 'pulls:read' | 'pulls:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write' | 'inbox:read' | 'inbox:write'> | null;
+    grantedScopes: Array<'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'hosts:read' | 'hosts:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'automations:read' | 'automations:write' | 'bots:read' | 'bots:write' | 'tasks:read' | 'tasks:write' | 'calendar:read' | 'calendar:write' | 'mail:read' | 'mail:write' | 'whatsapp:read' | 'whatsapp:write' | 'cloud-agents:read' | 'cloud-agents:write' | 'pulls:read' | 'pulls:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write' | 'inbox:read' | 'inbox:write'> | null;
     /**
      * What the credential can actually do: its scopes intersected with the owner’s current roles.
      */
-    effectiveScopes: Array<'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'hosts:read' | 'hosts:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'automations:read' | 'automations:write' | 'bots:read' | 'bots:write' | 'tasks:read' | 'tasks:write' | 'calendar:read' | 'calendar:write' | 'mail:read' | 'mail:write' | 'cloud-agents:read' | 'cloud-agents:write' | 'pulls:read' | 'pulls:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write' | 'inbox:read' | 'inbox:write'>;
+    effectiveScopes: Array<'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'hosts:read' | 'hosts:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'automations:read' | 'automations:write' | 'bots:read' | 'bots:write' | 'tasks:read' | 'tasks:write' | 'calendar:read' | 'calendar:write' | 'mail:read' | 'mail:write' | 'whatsapp:read' | 'whatsapp:write' | 'cloud-agents:read' | 'cloud-agents:write' | 'pulls:read' | 'pulls:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write' | 'inbox:read' | 'inbox:write'>;
     /**
      * Organizations the credential is restricted to, or null when unrestricted.
      */
@@ -300,7 +300,7 @@ export type ApiTokenResponseDto = {
     /**
      * Granted permissions.
      */
-    scopes: Array<'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'hosts:read' | 'hosts:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'automations:read' | 'automations:write' | 'bots:read' | 'bots:write' | 'tasks:read' | 'tasks:write' | 'calendar:read' | 'calendar:write' | 'mail:read' | 'mail:write' | 'cloud-agents:read' | 'cloud-agents:write' | 'pulls:read' | 'pulls:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write' | 'inbox:read' | 'inbox:write'>;
+    scopes: Array<'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'hosts:read' | 'hosts:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'automations:read' | 'automations:write' | 'bots:read' | 'bots:write' | 'tasks:read' | 'tasks:write' | 'calendar:read' | 'calendar:write' | 'mail:read' | 'mail:write' | 'whatsapp:read' | 'whatsapp:write' | 'cloud-agents:read' | 'cloud-agents:write' | 'pulls:read' | 'pulls:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write' | 'inbox:read' | 'inbox:write'>;
     /**
      * Organizations this token is restricted to. Null means it follows the owner’s memberships.
      */
@@ -321,7 +321,7 @@ export type ScopePolicyDto = {
 };
 
 export type ScopeLevelDto = {
-    scope: 'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'hosts:read' | 'hosts:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'automations:read' | 'automations:write' | 'bots:read' | 'bots:write' | 'tasks:read' | 'tasks:write' | 'calendar:read' | 'calendar:write' | 'mail:read' | 'mail:write' | 'cloud-agents:read' | 'cloud-agents:write' | 'pulls:read' | 'pulls:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write' | 'inbox:read' | 'inbox:write';
+    scope: 'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'hosts:read' | 'hosts:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'automations:read' | 'automations:write' | 'bots:read' | 'bots:write' | 'tasks:read' | 'tasks:write' | 'calendar:read' | 'calendar:write' | 'mail:read' | 'mail:write' | 'whatsapp:read' | 'whatsapp:write' | 'cloud-agents:read' | 'cloud-agents:write' | 'pulls:read' | 'pulls:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write' | 'inbox:read' | 'inbox:write';
     label: string;
     description: string;
     /**
@@ -336,7 +336,7 @@ export type ScopeLevelsDto = {
 };
 
 export type PermissionGroupDto = {
-    resource: 'profile' | 'users' | 'admin' | 'roles' | 'organizations' | 'members' | 'invitations' | 'workspaces' | 'tokens' | 'hosts' | 'projects' | 'sessions' | 'automations' | 'bots' | 'tasks' | 'calendar' | 'mail' | 'cloud-agents' | 'pulls' | 'repositories' | 'flags' | 'inbox';
+    resource: 'profile' | 'users' | 'admin' | 'roles' | 'organizations' | 'members' | 'invitations' | 'workspaces' | 'tokens' | 'hosts' | 'projects' | 'sessions' | 'automations' | 'bots' | 'tasks' | 'calendar' | 'mail' | 'whatsapp' | 'cloud-agents' | 'pulls' | 'repositories' | 'flags' | 'inbox';
     label: string;
     description: string;
     /**
@@ -354,12 +354,12 @@ export type PermissionCatalogResponseDto = {
     /**
      * Scopes the caller may put on a token. Anything outside this list is refused at creation.
      */
-    grantable: Array<'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'hosts:read' | 'hosts:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'automations:read' | 'automations:write' | 'bots:read' | 'bots:write' | 'tasks:read' | 'tasks:write' | 'calendar:read' | 'calendar:write' | 'mail:read' | 'mail:write' | 'cloud-agents:read' | 'cloud-agents:write' | 'pulls:read' | 'pulls:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write' | 'inbox:read' | 'inbox:write'>;
+    grantable: Array<'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'hosts:read' | 'hosts:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'automations:read' | 'automations:write' | 'bots:read' | 'bots:write' | 'tasks:read' | 'tasks:write' | 'calendar:read' | 'calendar:write' | 'mail:read' | 'mail:write' | 'whatsapp:read' | 'whatsapp:write' | 'cloud-agents:read' | 'cloud-agents:write' | 'pulls:read' | 'pulls:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write' | 'inbox:read' | 'inbox:write'>;
 };
 
 export type CreateApiTokenRequest = {
     name: string;
-    scopes: Array<'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'hosts:read' | 'hosts:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'automations:read' | 'automations:write' | 'bots:read' | 'bots:write' | 'tasks:read' | 'tasks:write' | 'calendar:read' | 'calendar:write' | 'mail:read' | 'mail:write' | 'cloud-agents:read' | 'cloud-agents:write' | 'pulls:read' | 'pulls:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write' | 'inbox:read' | 'inbox:write'>;
+    scopes: Array<'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'hosts:read' | 'hosts:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'automations:read' | 'automations:write' | 'bots:read' | 'bots:write' | 'tasks:read' | 'tasks:write' | 'calendar:read' | 'calendar:write' | 'mail:read' | 'mail:write' | 'whatsapp:read' | 'whatsapp:write' | 'cloud-agents:read' | 'cloud-agents:write' | 'pulls:read' | 'pulls:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write' | 'inbox:read' | 'inbox:write'>;
     organizationIds?: Array<string>;
     expiresInDays?: number | null;
     ipAllowlist?: Array<string>;
@@ -375,7 +375,7 @@ export type CreatedApiTokenResponseDto = {
     /**
      * Granted permissions.
      */
-    scopes: Array<'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'hosts:read' | 'hosts:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'automations:read' | 'automations:write' | 'bots:read' | 'bots:write' | 'tasks:read' | 'tasks:write' | 'calendar:read' | 'calendar:write' | 'mail:read' | 'mail:write' | 'cloud-agents:read' | 'cloud-agents:write' | 'pulls:read' | 'pulls:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write' | 'inbox:read' | 'inbox:write'>;
+    scopes: Array<'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'hosts:read' | 'hosts:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'automations:read' | 'automations:write' | 'bots:read' | 'bots:write' | 'tasks:read' | 'tasks:write' | 'calendar:read' | 'calendar:write' | 'mail:read' | 'mail:write' | 'whatsapp:read' | 'whatsapp:write' | 'cloud-agents:read' | 'cloud-agents:write' | 'pulls:read' | 'pulls:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write' | 'inbox:read' | 'inbox:write'>;
     /**
      * Organizations this token is restricted to. Null means it follows the owner’s memberships.
      */
@@ -1753,6 +1753,7 @@ export type CreateSessionRequest = {
     }>;
     folder?: string;
     cloud?: boolean;
+    codexEnvironment?: string;
     cwdGithubRepoId?: number;
     launch?: {
         model?: string;
@@ -2008,6 +2009,40 @@ export type HostFoldersResponseDto = {
      * The folders of the caller’s own folder sessions on this host, newest first, at most eight.
      */
     recent: Array<HostRecentFolderResponseDto>;
+};
+
+export type HostCodexEnvironmentResponseDto = {
+    /**
+     * Its id, what `codex cloud exec --env` is given.
+     */
+    id: string;
+    /**
+     * The name its owner gave it on chatgpt.com/codex.
+     */
+    label?: string | null;
+    /**
+     * Pinned on chatgpt.com/codex.
+     */
+    pinned: boolean;
+    /**
+     * Linked to the repository the list was asked for.
+     */
+    repository: boolean;
+};
+
+export type HostCodexEnvironmentsResponseDto = {
+    /**
+     * Those linked to the repository first, then pinned, then by label.
+     */
+    environments: Array<HostCodexEnvironmentResponseDto>;
+    /**
+     * The environment a session started with none picked runs in: the one linked to the repository, else one labelled with its name. Null when none is.
+     */
+    recommended?: string | null;
+    /**
+     * `chatgpt`: every environment of the account. `tasks`: only those its recent tasks ran in, when the host could not ask ChatGPT.
+     */
+    source: 'chatgpt' | 'tasks';
 };
 
 export type SessionPortDto = {
@@ -2629,6 +2664,7 @@ export type StartTaskSessionRequest = {
         }>;
         folder?: string;
         cloud?: boolean;
+        codexEnvironment?: string;
         cwdGithubRepoId?: number;
         launch?: {
             model?: string;
@@ -2980,6 +3016,52 @@ export type ScheduledMailResponseDto = {
      * The bot that scheduled it; null once that bot is deleted.
      */
     botId: string | null;
+};
+
+export type WhatsappAccountResponseDto = {
+    id: string;
+    /**
+     * The host whose runner holds the linked device.
+     */
+    hostId: string;
+    /**
+     * What the person and their bots call the number.
+     */
+    label: string;
+    /**
+     * The device as its host last reported it: `pairing` shows a QR code to scan, `connected` is online, `logged_out` and `unlinked` offer Pair again.
+     */
+    status: 'pairing' | 'connecting' | 'connected' | 'logged_out' | 'unlinked';
+    /**
+     * Whether the host’s runner is connected now; nothing moves while it is not.
+     */
+    hostOnline: boolean;
+    /**
+     * The paired number’s JID, once paired.
+     */
+    phone: string | null;
+    /**
+     * The paired account’s own WhatsApp name.
+     */
+    displayName: string | null;
+    /**
+     * While pairing, the QR code’s text, to draw and scan from the phone’s Linked devices.
+     */
+    qr: string | null;
+    qrExpiresAt: string | null;
+    /**
+     * Why the device is logged out or unlinked, in the host’s words.
+     */
+    statusReason: string | null;
+    /**
+     * When it was first linked.
+     */
+    linkedAt: string;
+};
+
+export type LinkWhatsappRequest = {
+    hostId: string;
+    label?: string;
 };
 
 export type PullRequestLaneReasonDto = {
@@ -3632,6 +3714,52 @@ export type UpdateBotMemoryFactRequest = {
     scope?: 'bot' | 'person';
 };
 
+export type BotSkillResponseDto = {
+    id: string;
+    /**
+     * Lowercase letters, digits and hyphens: the slash command that runs it.
+     */
+    name: string;
+    /**
+     * When to use it; every turn of the bot lists it.
+     */
+    description: string;
+    /**
+     * The skill itself, in Markdown: the steps, the checks, what to report.
+     */
+    body: string;
+    /**
+     * The person may run it by typing `/<name>` in the chat.
+     */
+    userInvocable: boolean;
+    /**
+     * The bot's prompt lists it, so the bot may use it unasked.
+     */
+    modelInvocable: boolean;
+    /**
+     * Who wrote it last.
+     */
+    source: 'user' | 'bot';
+    createdAt: string;
+    updatedAt: string;
+};
+
+export type CreateBotSkillRequest = {
+    name: string;
+    description: string;
+    body: string;
+    userInvocable?: boolean;
+    modelInvocable?: boolean;
+};
+
+export type UpdateBotSkillRequest = {
+    name?: string;
+    description?: string;
+    body?: string;
+    userInvocable?: boolean;
+    modelInvocable?: boolean;
+};
+
 export type BotGroupResponseDto = {
     id: string;
     name: string;
@@ -4278,7 +4406,7 @@ export type BotToolPermissionDto = {
     /**
      * The group it is listed under.
      */
-    group: 'self' | 'sessions' | 'plan' | 'mail' | 'github' | 'automations' | 'bots' | 'web';
+    group: 'self' | 'sessions' | 'plan' | 'mail' | 'whatsapp' | 'github' | 'automations' | 'bots' | 'web';
     /**
      * What it does, in a sentence.
      */
@@ -10093,6 +10221,63 @@ export type FindHostFoldersResponses = {
 
 export type FindHostFoldersResponse = FindHostFoldersResponses[keyof FindHostFoldersResponses];
 
+export type FindHostCodexEnvironmentsData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: {
+        /**
+         * The repository the session is for, `owner/name`: its environments are marked. Omit before one is picked.
+         */
+        repository?: string;
+    };
+    url: '/api/v1/hosts/{id}/codex-environments';
+};
+
+export type FindHostCodexEnvironmentsErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * HOSTS_001 — Host not found
+     */
+    404: ProblemDetailsDto;
+    /**
+     * SESSIONS_044 — Runner cannot list
+     */
+    409: ProblemDetailsDto;
+    /**
+     * SESSIONS_047 — ChatGPT asked to wait
+     */
+    429: ProblemDetailsDto;
+    /**
+     * SESSIONS_046 — Codex could not list
+     */
+    502: ProblemDetailsDto;
+    /**
+     * SESSIONS_045 — The host is offline
+     */
+    503: ProblemDetailsDto;
+    /**
+     * SESSIONS_031 — No answer in time
+     */
+    504: ProblemDetailsDto;
+};
+
+export type FindHostCodexEnvironmentsError = FindHostCodexEnvironmentsErrors[keyof FindHostCodexEnvironmentsErrors];
+
+export type FindHostCodexEnvironmentsResponses = {
+    200: HostCodexEnvironmentsResponseDto;
+};
+
+export type FindHostCodexEnvironmentsResponse = FindHostCodexEnvironmentsResponses[keyof FindHostCodexEnvironmentsResponses];
+
 export type FindSessionPortsData = {
     body?: never;
     path: {
@@ -12202,6 +12387,103 @@ export type CancelScheduledMailResponses = {
 
 export type CancelScheduledMailResponse = CancelScheduledMailResponses[keyof CancelScheduledMailResponses];
 
+export type FindWhatsappAccountsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/whatsapp/accounts';
+};
+
+export type FindWhatsappAccountsErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+};
+
+export type FindWhatsappAccountsError = FindWhatsappAccountsErrors[keyof FindWhatsappAccountsErrors];
+
+export type FindWhatsappAccountsResponses = {
+    200: Array<WhatsappAccountResponseDto>;
+};
+
+export type FindWhatsappAccountsResponse = FindWhatsappAccountsResponses[keyof FindWhatsappAccountsResponses];
+
+export type LinkWhatsappData = {
+    body: LinkWhatsappRequest;
+    path?: never;
+    query?: never;
+    url: '/api/v1/whatsapp/accounts';
+};
+
+export type LinkWhatsappErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * HOSTS_001 — No such host of the caller’s
+     */
+    404: ProblemDetailsDto;
+    /**
+     * WHATSAPP_003 — As many numbers as one person links
+     *
+     * WHATSAPP_006 — Another person’s number is on that host
+     *
+     * WHATSAPP_005 — The host’s runner holds no WhatsApp
+     *
+     * WHATSAPP_004 — The host is offline
+     */
+    409: ProblemDetailsDto;
+};
+
+export type LinkWhatsappError = LinkWhatsappErrors[keyof LinkWhatsappErrors];
+
+export type LinkWhatsappResponses = {
+    201: WhatsappAccountResponseDto;
+};
+
+export type LinkWhatsappResponse = LinkWhatsappResponses[keyof LinkWhatsappResponses];
+
+export type RemoveWhatsappAccountData = {
+    body?: never;
+    path: {
+        /**
+         * The linked number.
+         */
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/whatsapp/accounts/{id}';
+};
+
+export type RemoveWhatsappAccountErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+};
+
+export type RemoveWhatsappAccountError = RemoveWhatsappAccountErrors[keyof RemoveWhatsappAccountErrors];
+
+export type RemoveWhatsappAccountResponses = {
+    204: void;
+};
+
+export type RemoveWhatsappAccountResponse = RemoveWhatsappAccountResponses[keyof RemoveWhatsappAccountResponses];
+
 export type FindPullRequestsData = {
     body?: never;
     path?: never;
@@ -13438,6 +13720,148 @@ export type UpdateBotMemoryFactResponses = {
 };
 
 export type UpdateBotMemoryFactResponse = UpdateBotMemoryFactResponses[keyof UpdateBotMemoryFactResponses];
+
+export type FindBotSkillsData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/bots/{id}/skills';
+};
+
+export type FindBotSkillsErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * BOTS_001 — Bot not found
+     */
+    404: ProblemDetailsDto;
+};
+
+export type FindBotSkillsError = FindBotSkillsErrors[keyof FindBotSkillsErrors];
+
+export type FindBotSkillsResponses = {
+    200: Array<BotSkillResponseDto>;
+};
+
+export type FindBotSkillsResponse = FindBotSkillsResponses[keyof FindBotSkillsResponses];
+
+export type CreateBotSkillData = {
+    body: CreateBotSkillRequest;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/bots/{id}/skills';
+};
+
+export type CreateBotSkillErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * BOTS_001 — Bot not found
+     */
+    404: ProblemDetailsDto;
+    /**
+     * BOTS_039 — The name is taken
+     */
+    409: ProblemDetailsDto;
+    /**
+     * BOTS_040 — The bot has as many skills as it can keep
+     */
+    422: ProblemDetailsDto;
+};
+
+export type CreateBotSkillError = CreateBotSkillErrors[keyof CreateBotSkillErrors];
+
+export type CreateBotSkillResponses = {
+    201: BotSkillResponseDto;
+};
+
+export type CreateBotSkillResponse = CreateBotSkillResponses[keyof CreateBotSkillResponses];
+
+export type DeleteBotSkillData = {
+    body?: never;
+    path: {
+        id: string;
+        skillId: string;
+    };
+    query?: never;
+    url: '/api/v1/bots/{id}/skills/{skillId}';
+};
+
+export type DeleteBotSkillErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * BOTS_038 — Skill not found
+     */
+    404: ProblemDetailsDto;
+};
+
+export type DeleteBotSkillError = DeleteBotSkillErrors[keyof DeleteBotSkillErrors];
+
+export type DeleteBotSkillResponses = {
+    204: void;
+};
+
+export type DeleteBotSkillResponse = DeleteBotSkillResponses[keyof DeleteBotSkillResponses];
+
+export type UpdateBotSkillData = {
+    body: UpdateBotSkillRequest;
+    path: {
+        id: string;
+        skillId: string;
+    };
+    query?: never;
+    url: '/api/v1/bots/{id}/skills/{skillId}';
+};
+
+export type UpdateBotSkillErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * BOTS_038 — Skill not found
+     */
+    404: ProblemDetailsDto;
+    /**
+     * BOTS_039 — The name is taken
+     */
+    409: ProblemDetailsDto;
+};
+
+export type UpdateBotSkillError = UpdateBotSkillErrors[keyof UpdateBotSkillErrors];
+
+export type UpdateBotSkillResponses = {
+    200: BotSkillResponseDto;
+};
+
+export type UpdateBotSkillResponse = UpdateBotSkillResponses[keyof UpdateBotSkillResponses];
 
 export type FindBotGroupsData = {
     body?: never;

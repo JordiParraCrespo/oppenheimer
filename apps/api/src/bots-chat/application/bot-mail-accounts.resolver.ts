@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { QueryBus } from '@nestjs/cqrs';
-import type { AccessScope } from '@oppenheimer/backend-authz';
+import type { AccessScope } from '../../authz/domain/access-scope.types';
 import type { GmailConnectionEntity } from '../../mail/domain/gmail-connection.entity';
 import { FindGmailConnectionsQuery } from '../../mail/queries/find-gmail-connections/find-gmail-connections.query';
 import { describeAccount, NO_GMAIL } from '../bot-mail-tool.mapper';

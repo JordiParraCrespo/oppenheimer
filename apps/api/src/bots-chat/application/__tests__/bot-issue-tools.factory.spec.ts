@@ -1,6 +1,6 @@
 import type { CommandBus, QueryBus } from '@nestjs/cqrs';
-import { emptyScope } from '@oppenheimer/backend-authz';
 import { AppError } from '@oppenheimer/backend-core';
+import { emptyScope } from '../../../authz/domain/access-scope.types';
 import { AddIssueCommentCommand } from '../../../github/commands/add-issue-comment/add-issue-comment.command';
 import { CreateIssueCommand } from '../../../github/commands/create-issue/create-issue.command';
 import { GithubErrors } from '../../../github/domain/github.errors';

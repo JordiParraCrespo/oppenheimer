@@ -3,7 +3,7 @@
 import { useQuery } from '@oppenheimer/frontend-core/react';
 import type { BotApprovalDecision } from '@oppenheimer/shared/schemas/bot';
 import type { BotApprovalEntity } from '../modules/bots/bot-conversation.entity';
-import { botsKeys } from './bots.queries';
+import { botsKeys } from './bots.keys';
 import { useConsumerApp } from './context';
 import { mutation } from './mutation';
 

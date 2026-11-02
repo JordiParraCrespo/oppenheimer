@@ -1,8 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { type AccessScope, ScopedRepositoryBase } from '@oppenheimer/backend-authz';
 import { None, type Option, Some } from 'oxide.ts';
 import { DataSource, Repository, type SelectQueryBuilder } from 'typeorm';
+import { ScopedRepositoryBase } from '../../authz/database/scoped.repository';
+import { type AccessScope } from '../../authz/domain/access-scope.types';
 import { BotMemoryFactMapper } from '../bot-memory-fact.mapper';
 import { BotResource } from '../bots.resource';
 import type { BotMemoryFactEntity } from '../domain/bot-memory-fact.entity';

@@ -1,5 +1,5 @@
 import type { CommandBus, QueryBus } from '@nestjs/cqrs';
-import { emptyScope } from '@oppenheimer/backend-authz';
+import { emptyScope } from '../../../authz/domain/access-scope.types';
 import { SaveBotRoutineCommand } from '../../../automations/commands/save-bot-routine/save-bot-routine.command';
 import type { AutomationEntity } from '../../../automations/domain/automation.entity';
 import { GmailConnectionEntity } from '../../../mail/domain/gmail-connection.entity';

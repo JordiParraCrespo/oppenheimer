@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
-import type { AccessScope } from '@oppenheimer/backend-authz';
 import { describe, expect, it, vi } from 'vitest';
+import type { AccessScope } from '../../../../authz/domain/access-scope.types';
 import type { GoogleConnectStateResolver } from '../../../application/google-connect-state.resolver';
 import type { CalendarConnectionRepositoryPort } from '../../../database/calendar-connection.repository.port';
 import { CalendarConnectionEntity } from '../../../domain/calendar-connection.entity';

@@ -33,7 +33,7 @@ src/
 - **`ENDPOINT_POLICIES`** (`permissions/endpoint-policies.ts`): what each
   guarded endpoint demands, keyed by the path Nest mounts it at. One
   declaration of a rule the API enforces and a client gates a destination on;
-  `apps/api/src/auth/__tests__/endpoint-policies.spec.ts` pins the controllers
+  `apps/api/src/authz/__tests__/endpoint-policies.spec.ts` pins the controllers
   to it.
 - **The feature-flag catalog** (`feature-flags/catalog.ts`): every flag the
   code may read, and the pure evaluator the API runs over it. Like `agents/`

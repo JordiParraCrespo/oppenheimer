@@ -1,6 +1,5 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { type AccessScope, ScopedRepositoryBase } from '@oppenheimer/backend-authz';
 import { AppError } from '@oppenheimer/backend-core';
 import { OutboxService } from '@oppenheimer/backend-ddd';
 import { type BotApprovalStatus, QUEUE_NAMES } from '@oppenheimer/shared';
@@ -8,6 +7,8 @@ import { None, type Option, Some } from 'oxide.ts';
 import type { EntityManager } from 'typeorm';
 import { Repository } from 'typeorm';
 import type { QueryDeepPartialEntity } from 'typeorm/query-builder/QueryPartialEntity';
+import { ScopedRepositoryBase } from '../../authz/database/scoped.repository';
+import { type AccessScope } from '../../authz/domain/access-scope.types';
 import { BotResource } from '../../bots/bots.resource';
 import { BotErrors } from '../../bots/domain/bots.errors';
 import { BotApprovalMapper } from '../bot-approval.mapper';

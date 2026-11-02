@@ -6,7 +6,7 @@ import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import { describe, it } from 'node:test';
 import { fileURLToPath } from 'node:url';
-import { commands, gitInvocation, verdict } from './git-guard.mjs';
+import { commands, ghInvocation, gitInvocation, located, verdict } from './git-guard.mjs';
 
 const HOOK = fileURLToPath(new URL('./git-guard.mjs', import.meta.url));
 
@@ -128,7 +128,7 @@ describe('git guard', () => {
   it('finds the subcommand behind the global options', () => {
     assert.deepEqual(
       gitInvocation(['git', '-C', 'repo', '-c', 'a=b', '--no-pager', 'add', '-A']),
-      { subcommand: 'add', args: ['-A'] },
+      { subcommand: 'add', args: ['-A'], directories: ['repo'] },
     );
     assert.equal(gitInvocation(['gitk', '--all']), undefined);
   });
@@ -140,6 +140,24 @@ describe('git guard', () => {
       ['git', 'status'],
       ['head'],
     ]);
+  });
+
+  it('finds gh’s command behind its global options', () => {
+    assert.deepEqual(ghInvocation(['gh', '-R', 'o/r', 'pr', 'create', '--fill']), {
+      group: 'pr',
+      action: 'create',
+      args: ['--fill'],
+    });
+    assert.equal(ghInvocation(['ghq', 'get'])?.group, undefined);
+  });
+
+  it('follows each cd to the directory a command runs in', () => {
+    const where = (line) => located(line, '/work/a').map(({ directory }) => directory);
+    assert.deepEqual(where('git status'), ['/work/a']);
+    assert.deepEqual(where('cd ../b && git push; cd sub && ls'), ['/work/a', '/work/b', '/work/b', '/work/b/sub']);
+    assert.deepEqual(where("cd '/x y' && git push"), ['/work/a', '/x y']);
+    assert.deepEqual(where('cd "$DIR" && git push'), ['/work/a', null]);
+    assert.deepEqual(where('cd - && git push'), ['/work/a', null]);
   });
 });
 

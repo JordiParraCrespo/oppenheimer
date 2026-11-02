@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { QueryBus } from '@nestjs/cqrs';
-import type { AccessScope } from '@oppenheimer/backend-authz';
+import type { AccessScope } from '../../authz/domain/access-scope.types';
 import { FindHostsQuery } from '../../hosts/queries/find-hosts/find-hosts.query';
 import type { OwnerHost, OwnerHostsPort } from './owner-hosts.port';
 

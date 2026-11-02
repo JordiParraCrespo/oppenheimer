@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
-import type { AccessScope } from '@oppenheimer/backend-authz';
 import { Some } from 'oxide.ts';
+import type { AccessScope } from '../../../../authz/domain/access-scope.types';
 import { BotLookupResolver } from '../../../application/bot-lookup.resolver';
 import type { BotRepositoryPort } from '../../../database/bot.repository.port';
 import type { BotDocumentRepositoryPort } from '../../../database/bot-document.repository.port';

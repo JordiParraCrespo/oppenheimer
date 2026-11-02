@@ -22,5 +22,6 @@ export const TOKENS = {
   CalendarRepository: Symbol.for('CalendarRepository'),
   CloudAgentsRepository: Symbol.for('CloudAgentsRepository'),
   MailRepository: Symbol.for('MailRepository'),
+  WhatsappRepository: Symbol.for('WhatsappRepository'),
   VoiceRepository: Symbol.for('VoiceRepository'),
 } as const;

@@ -1,6 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
-import type { AccessScope } from '@oppenheimer/backend-authz';
 import { CacheService } from '@oppenheimer/backend-cache';
+import type { AccessScope } from '../../authz/domain/access-scope.types';
 import type { GithubInstallationRepositoryPort } from '../database/github-installation.repository.port';
 import { GITHUB_APP, GITHUB_INSTALLATION_REPOSITORY } from '../github.di-tokens';
 import type { GithubAppPort } from '../infrastructure/github-app.port';

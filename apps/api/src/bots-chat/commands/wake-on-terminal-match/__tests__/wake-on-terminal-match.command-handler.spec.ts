@@ -7,7 +7,7 @@
  * bot; a watch nobody follows any more left running on the host.
  */
 import type { CommandBus, QueryBus } from '@nestjs/cqrs';
-import { emptyScope } from '@oppenheimer/backend-authz';
+import { emptyScope } from '../../../../authz/domain/access-scope.types';
 import type { BotEntity } from '../../../../bots/domain/bot.entity';
 import { UnwatchSessionTerminalCommand } from '../../../../sessions/commands/unwatch-session-terminal/unwatch-session-terminal.command';
 import type { WorkSessionEntity } from '../../../../sessions/domain/work-session.entity';

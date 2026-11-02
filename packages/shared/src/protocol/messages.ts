@@ -1,5 +1,6 @@
 import { z } from 'zod/v4';
 import { type HostCloudAgentId, isHostCloudAgent } from '../agents/catalog.js';
+import { codexEnvironmentsListSchema, codexEnvironmentsSchema } from './codex-environments.js';
 import {
   deviceAttachSchema,
   deviceDetachSchema,
@@ -18,6 +19,7 @@ import {
 import {
   attachmentIdSchema,
   checkoutIdSchema,
+  codexEnvironmentRefSchema,
   commandIdSchema,
   githubRepoIdSchema,
   gitRefSchema,
@@ -36,6 +38,15 @@ import {
   SESSION_CREATE_MAX_FILES,
   SESSION_FILE_MEDIA_TYPES,
 } from './session-file.js';
+import {
+  whatsappAckSchema,
+  whatsappLinkSchema,
+  whatsappMessagesSchema,
+  whatsappSendSchema,
+  whatsappSentSchema,
+  whatsappStateSchema,
+  whatsappUnlinkSchema,
+} from './whatsapp.js';
 
 /**
  * The runner link's message vocabulary, as Zod — one source of truth, with JSON
@@ -117,12 +128,25 @@ export const RUNNER_CAPABILITIES = [
    */
   'session.cloud.codex',
   /**
+   * Answers `codex.environments.list` with `codex.environments`: the Codex
+   * cloud environments the host's ChatGPT account has, for the composer's
+   * picker, and takes `session.create`'s `codexEnvironment`. A runner without
+   * it guesses the environment from the repository's name.
+   */
+  'codex.environments',
+  /**
    * Takes `session.watch` and `session.unwatch`: it scans a live session's
    * screen for a pattern on every pass it already makes, and reports a match
    * as a `terminal.matched` log entry carrying a count, never the text
    * (`product/versions/mvp/27-bot-subscriptions.md`).
    */
   'session.watch',
+  /**
+   * Holds a WhatsApp linked device for the owner: answers `whatsapp.link`,
+   * `whatsapp.unlink` and `whatsapp.send`, and sends `whatsapp.state` and
+   * `whatsapp.messages` (`product/next-steps/whatsapp.md`).
+   */
+  'whatsapp',
 ] as const;
 export type RunnerCapability = (typeof RUNNER_CAPABILITIES)[number];
 
@@ -415,6 +439,15 @@ export const sessionCreateSchema = z
         expiresAt: z.iso.datetime(),
       })
       .optional(),
+    /**
+     * A Codex cloud session's environment, as the person picked it: its id
+     * (or label), passed to `codex cloud exec --env`. Absent, the runner picks
+     * the environment linked to the repository (`codex.environments`'
+     * `recommended`) and then tries the repository's names as labels. Only on
+     * a Codex cloud session, and sent only to a runner whose `hello` named
+     * `codex.environments`.
+     */
+    codexEnvironment: codexEnvironmentRefSchema.optional(),
   })
   /** A session is in a folder or in its checkouts, never both and never neither. */
   .refine((message) => (message.folder === undefined) === message.checkouts.length > 0, {
@@ -431,6 +464,12 @@ export const sessionCreateSchema = z
         message.checkouts.length === 1 &&
         message.prompt !== undefined),
     { path: ['cloud'] },
+  )
+  .refine(
+    (message) =>
+      message.codexEnvironment === undefined ||
+      (message.cloud !== undefined && message.agent === 'codex'),
+    { path: ['codexEnvironment'] },
   )
   .refine(
     (message) =>
@@ -1010,6 +1049,15 @@ export const protocolMessageSchema = z.discriminatedUnion('type', [
   portOpenSchema,
   portOpenedSchema,
   portCloseSchema,
+  codexEnvironmentsListSchema,
+  codexEnvironmentsSchema,
+  whatsappLinkSchema,
+  whatsappUnlinkSchema,
+  whatsappStateSchema,
+  whatsappMessagesSchema,
+  whatsappAckSchema,
+  whatsappSendSchema,
+  whatsappSentSchema,
 ]);
 
 export type ProtocolMessage = z.infer<typeof protocolMessageSchema>;

@@ -52,8 +52,8 @@ each of them and the question to ask instead. The command handler is
 
 This is the part that is local to writing code, rather than to laying it out:
 
-- `domain/` imports **only** `@oppenheimer/backend-ddd`, `@oppenheimer/backend-authz`,
-  `@oppenheimer/shared` and node core. No `@nestjs/*`, no `typeorm`, no `oxide.ts`,
+- `domain/` imports **only** `@oppenheimer/backend-ddd`, `@oppenheimer/shared`,
+  another module's `domain/` and node core. No `@nestjs/*`, no `typeorm`, no `oxide.ts`,
   no `express`.
 - Handlers (`commands/`, `queries/`, `application/`) inject the **port** via
   its DI token — never a `*.repository.ts`, `*.adapter.ts` or `*.gateway.ts`.
@@ -106,7 +106,7 @@ single-responsibility is enforced (no god-services).
   the same transaction as the write (see "Event-driven async processing").
   A non-tenant adapter extends `TypeOrmRepositoryBase` (same package), which
   does exactly that for the four port methods; a tenant adapter extends
-  `ScopedRepositoryBase` from `@oppenheimer/backend-authz`.
+  `ScopedRepositoryBase` (`apps/api/src/authz/database/scoped.repository.ts`).
 - A write of several statements runs in one
   `this.outbox.transaction(async (manager) => …)`. There is no repository
   `transaction()` method: a callback that does not receive the manager cannot

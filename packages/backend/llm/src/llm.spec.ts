@@ -2,7 +2,7 @@ import { createServer, type IncomingHttpHeaders, type Server } from 'node:http';
 import type { AddressInfo } from 'node:net';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { llmIsConfigured } from './llm.config';
-import { LlmError } from './llm.errors';
+import { LlmError, LlmRateLimitError } from './llm.errors';
 import { createLlmService } from './llm.factory';
 import { AnthropicLlmService } from './providers/anthropic.llm-service';
 import { NoopLlmService } from './providers/noop.llm-service';
@@ -209,7 +209,7 @@ describe('OpenAiCompatibleLlmService', () => {
     expect(error.message).toContain('model crashed');
   });
 
-  it('reports a 429 as rate_limited, with when the provider may be called again', async () => {
+  it('reports a 429 as the shared rate-limit error, with when the provider may be called again', async () => {
     reply = {
       status: 429,
       body: { error: { message: 'slow down' } },
@@ -220,10 +220,12 @@ describe('OpenAiCompatibleLlmService', () => {
 
     const error = await failure(llm.complete({ messages: [{ role: 'user', content: 'Hi' }] }));
 
+    // The bot engines raise this same type, so a caller maps a rate limit once.
+    expect(error).toBeInstanceOf(LlmRateLimitError);
     expect(error.code).toBe('rate_limited');
     expect(error.status).toBe(429);
     expect(error.message).toContain('slow down');
-    expect(error.resetAt?.getTime()).toBeGreaterThanOrEqual(before + 20_000);
+    expect((error as LlmRateLimitError).resetAt?.getTime()).toBeGreaterThanOrEqual(before + 20_000);
   });
 
   it('does not call a provider again until its Retry-After has passed', async () => {
@@ -234,7 +236,7 @@ describe('OpenAiCompatibleLlmService', () => {
 
     const error = await failure(llm.complete({ messages: [{ role: 'user', content: 'Again' }] }));
 
-    expect(error.code).toBe('rate_limited');
+    expect(error).toBeInstanceOf(LlmRateLimitError);
     expect(seen).toHaveLength(1);
   });
 

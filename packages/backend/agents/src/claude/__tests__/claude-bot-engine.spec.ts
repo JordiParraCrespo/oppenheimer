@@ -6,9 +6,10 @@
  * live spec runs the real subprocess.
  */
 import { getEventListeners } from 'node:events';
+import { existsSync } from 'node:fs';
 import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
 import type { Options, Query, SDKMessage } from '@anthropic-ai/claude-agent-sdk';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { InMemoryTransport } from '@modelcontextprotocol/sdk/inMemory.js';
@@ -144,6 +145,24 @@ describe('ClaudeBotEngine', () => {
       { type: 'usage', inputTokens: 15, outputTokens: 5 },
       { type: 'done', reason: 'completed' },
     ]);
+  });
+
+  it('runs a turn that brings no scratch directory in one of its own, and removes it after', async () => {
+    // A completion's caller need not know this engine is the one that needs a
+    // directory: without one it makes its own, and leaves nothing behind.
+    let cwdExisted = false;
+    const { seen } = scripted((options) => {
+      cwdExisted = existsSync(options.cwd ?? '');
+      return [assistant([{ type: 'text', text: 'ok' }]), success()];
+    });
+
+    const events = await collect(new ClaudeBotEngine().run(request({ scratchDir: undefined })));
+
+    expect(events.at(-1)).toEqual({ type: 'done', reason: 'completed' });
+    const cwd = seen.options?.cwd ?? '';
+    expect(cwd.startsWith(join(tmpdir(), 'claude-turn-'))).toBe(true);
+    expect(cwdExisted).toBe(true);
+    expect(existsSync(dirname(cwd))).toBe(false);
   });
 
   it('reports what the last answer was sent, against the window of the model that read the most', async () => {
