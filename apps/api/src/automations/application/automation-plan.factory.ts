@@ -98,10 +98,20 @@ export class AutomationPlanFactory {
   }
 
   /**
-   * Each mail trigger watches one of the owner's own connected Gmail accounts,
-   * and an active one: a routine never reads someone else's mailbox.
+   * Each trigger that watches a connection watches one the caller may use:
+   * one of their own active Gmail accounts, this workspace's Sentry
+   * connection. The one check a save runs for every connection-shaped source.
    */
-  async assertMailAccounts(scope: AccessScope, inputs: readonly TriggerInputDto[]): Promise<void> {
+  async assertConnections(scope: AccessScope, inputs: readonly TriggerInputDto[]): Promise<void> {
+    await this.assertMailAccounts(scope, inputs);
+    await this.assertSentryConnection(scope, inputs);
+  }
+
+  /** A routine never reads someone else's mailbox. */
+  private async assertMailAccounts(
+    scope: AccessScope,
+    inputs: readonly TriggerInputDto[],
+  ): Promise<void> {
     for (const input of inputs) {
       if (input.source !== 'gmail') continue;
       const connection = await this.queryBus
@@ -123,8 +133,8 @@ export class AutomationPlanFactory {
     }
   }
 
-  /** Each Sentry trigger watches this workspace's own connection. */
-  async assertSentryConnection(
+  /** An automation never fires on another workspace's Sentry organization. */
+  private async assertSentryConnection(
     scope: AccessScope,
     inputs: readonly TriggerInputDto[],
   ): Promise<void> {

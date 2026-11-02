@@ -16,9 +16,12 @@ export function verifySentrySignature(
   return expected.length === presented.length && timingSafeEqual(expected, presented);
 }
 
-/** SHA-256 hex of the raw bytes: the same signed bytes are one delivery, whatever id they arrive under. */
-export function sentryPayloadDigest(payload: Buffer): string {
-  return createHash('sha256').update(payload).digest('hex');
+/**
+ * SHA-256 hex of the raw bytes, under the connection they reached: the same
+ * signed bytes are one delivery per connection, whatever id they arrive under.
+ */
+export function sentryPayloadDigest(connectionId: string, payload: Buffer): string {
+  return createHash('sha256').update(connectionId).update('\n').update(payload).digest('hex');
 }
 
 /** A body the hub can store: a JSON object, or `null`. */

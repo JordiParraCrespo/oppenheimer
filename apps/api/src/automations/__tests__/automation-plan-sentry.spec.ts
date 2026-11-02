@@ -26,9 +26,9 @@ function plan(connected: boolean) {
   };
 }
 
-describe('AutomationPlanFactory.assertSentryConnection', () => {
+describe('AutomationPlanFactory.assertConnections', () => {
   it('accepts the workspace’s own connection', async () => {
-    await expect(plan(true).factory.assertSentryConnection(scope, [sentry(OWN)])).resolves.toBe(
+    await expect(plan(true).factory.assertConnections(scope, [sentry(OWN)])).resolves.toBe(
       undefined,
     );
   });
@@ -36,16 +36,16 @@ describe('AutomationPlanFactory.assertSentryConnection', () => {
   it('refuses a connection id the workspace does not hold', async () => {
     const other = '6f1c2d3e-0000-4000-8000-000000000002';
     await expect(
-      plan(true).factory.assertSentryConnection(scope, [sentry(other)]),
+      plan(true).factory.assertConnections(scope, [sentry(other)]),
     ).rejects.toMatchObject({ code: 'SENTRY_002' });
-    await expect(
-      plan(false).factory.assertSentryConnection(scope, [sentry(OWN)]),
-    ).rejects.toMatchObject({ code: 'SENTRY_002' });
+    await expect(plan(false).factory.assertConnections(scope, [sentry(OWN)])).rejects.toMatchObject(
+      { code: 'SENTRY_002' },
+    );
   });
 
   it('asks nothing when no trigger is Sentry’s', async () => {
     const { factory, queryBus } = plan(false);
-    await factory.assertSentryConnection(scope, [
+    await factory.assertConnections(scope, [
       { source: 'github', event: 'push', repositories: [1], filter: { op: 'any' } },
     ]);
     expect(queryBus.execute).not.toHaveBeenCalled();

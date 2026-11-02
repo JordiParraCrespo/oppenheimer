@@ -6,6 +6,7 @@ import { HandleSentryWebhookCommand } from '../commands/handle-sentry-webhook/ha
 import { HandleSentryWebhookCommandHandler } from '../commands/handle-sentry-webhook/handle-sentry-webhook.command-handler';
 import type { SentryConnectionRepositoryPort } from '../database/sentry-connection.repository.port';
 import { SentryConnectionEntity } from '../domain/sentry-connection.entity';
+import { sentryPayloadDigest } from '../infrastructure/sentry-webhook.util';
 
 /**
  * The webhook's door. What breaks this: an unsigned or wrongly signed body
@@ -62,7 +63,7 @@ describe('HandleSentryWebhookCommandHandler', () => {
     expect(delivery).toBeInstanceOf(ReceiveInboundDeliveryCommand);
     expect(delivery).toMatchObject({
       source: 'sentry',
-      deliveryId: 'req-1',
+      deliveryId: `${connection.id}:req-1`,
       eventName: 'issue.created',
       payload: {
         connectionId: connection.id,
@@ -95,6 +96,13 @@ describe('HandleSentryWebhookCommandHandler', () => {
     const { handler, executed } = setup();
     await handler.execute(webhook(sign(body), ''));
     const delivery = executed[0] as ReceiveInboundDeliveryCommand;
-    expect(delivery.deliveryId).toBe(delivery.payloadDigest);
+    expect(delivery.deliveryId).toBe(`${connection.id}:${delivery.payloadDigest}`);
+  });
+
+  // Regression: the same signed body reaching two workspaces' connections
+  // stored for the first only, since the hub dedupes on both keys globally.
+  it('scopes both dedupe keys to the connection', () => {
+    expect(sentryPayloadDigest('c-1', body)).not.toBe(sentryPayloadDigest('c-2', body));
+    expect(sentryPayloadDigest('c-1', body)).toBe(sentryPayloadDigest('c-1', body));
   });
 });

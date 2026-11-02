@@ -441,6 +441,13 @@ describe('launching a run', () => {
       text: 'TypeError: boom',
       ref: 'acme API-1Z',
     });
+    expect(
+      eventCauseSummary({
+        ...issue,
+        type: 'alert_triggered',
+        attributes: { rule: 'Errors in production' },
+      }).label,
+    ).toBe('Alert fired · Errors in production');
     expect(composeRunPrompt('Fix it.', issue)).toContain(
       '<untrusted_external_data source="sentry" event="issue_created" sentry_organization="acme">',
     );

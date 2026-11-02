@@ -22,6 +22,10 @@ import { HandleSentryWebhookCommand } from './handle-sentry-webhook.command';
  * the inbound-events hub with the workspace written into it, keyed by
  * Sentry's request id (or, without one, the digest of the signed bytes).
  * The hub drops what no trigger listens to (`SentryEventSource.accepts`).
+ *
+ * Both of the hub's dedupe keys carry the connection: the same signed body
+ * reaching two workspaces' connections is one delivery for each, and a retry
+ * to one connection is still the same delivery.
  */
 @CommandHandler(HandleSentryWebhookCommand)
 export class HandleSentryWebhookCommandHandler
@@ -47,7 +51,7 @@ export class HandleSentryWebhookCommandHandler
     const body = parseSentryBody(command.payload);
     if (!body || !command.resource) return;
 
-    const digest = sentryPayloadDigest(command.payload);
+    const digest = sentryPayloadDigest(connection.id, command.payload);
     const payload: SentryDeliveryPayload = {
       connectionId: connection.id,
       organizationId: connection.organizationId,
@@ -58,7 +62,7 @@ export class HandleSentryWebhookCommandHandler
     await this.commandBus.execute(
       new ReceiveInboundDeliveryCommand({
         source: 'sentry',
-        deliveryId: command.requestId || digest,
+        deliveryId: `${connection.id}:${command.requestId || digest}`,
         eventName: sentryEventName(command.resource, body),
         payload: { ...payload },
         payloadDigest: digest,

@@ -77,6 +77,7 @@ import { UserRoleOrmEntity } from '../roles/database/user-role.orm-entity';
 import { UserRoleRepository } from '../roles/database/user-role.repository';
 import { UserRoleVersionOrmEntity } from '../roles/database/user-role-version.orm-entity';
 import { RoleMapper } from '../roles/roles.mapper';
+import { SentryConnectionOrmEntity } from '../sentry/database/sentry-connection.orm-entity';
 import { SessionCheckoutOrmEntity } from '../sessions/database/session-checkout.orm-entity';
 import { SessionCloudRunOrmEntity } from '../sessions/database/session-cloud-run.orm-entity';
 import { SessionShareOrmEntity } from '../sessions/database/session-share.orm-entity';
@@ -152,6 +153,7 @@ const dataSource = new DataSource({
     WhatsappMessageOrmEntity,
     SessionCloudRunOrmEntity,
     CloudAgentCredentialOrmEntity,
+    SentryConnectionOrmEntity,
     GithubUserGrantOrmEntity,
     GithubTokenOrmEntity,
     GithubTokenPinOrmEntity,

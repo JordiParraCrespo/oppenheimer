@@ -183,6 +183,12 @@ export interface ExternalEventDefinition {
    * own machine is the case that permission exists for.
    */
   readonly untrustedContent: boolean;
+  /**
+   * The attribute whose value follows the label in a run's cause ("Label
+   * added · bug", "Alert fired · Errors in production"), when one names
+   * what happened better than the label alone.
+   */
+  readonly causeAttribute?: 'label' | 'rule';
 }
 
 export type TriggerFilter = { op: 'any' } | { op: 'equals'; value: string };
@@ -259,6 +265,7 @@ export const EXTERNAL_EVENT_CATALOG: readonly ExternalEventDefinition[] = [
     defaultFilter: { op: 'equals', value: 'bug' },
     checkout: 'default_branch',
     untrustedContent: true,
+    causeAttribute: 'label',
   },
   {
     source: 'github',
@@ -351,6 +358,7 @@ export const EXTERNAL_EVENT_CATALOG: readonly ExternalEventDefinition[] = [
     defaultFilter: ANY_FILTER,
     checkout: 'default_branch',
     untrustedContent: true,
+    causeAttribute: 'rule',
   },
 ];
 

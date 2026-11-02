@@ -33,9 +33,11 @@ function text(value: unknown): string | undefined {
 export function eventCauseSummary(event: RunEventView): RunCauseSummary {
   const definition = externalEventDefinition(event.source, event.type);
   const label = definition?.label ?? event.type;
-  // "Label added · bug": a label event names the label it was about.
-  const qualified =
-    typeof event.attributes.label === 'string' ? `${label} · ${event.attributes.label}` : label;
+  // "Label added · bug": the catalog says which attribute, if any, qualifies the label.
+  const qualifier = definition?.causeAttribute
+    ? text(event.attributes[definition.causeAttribute])
+    : undefined;
+  const qualified = qualifier ? `${label} · ${qualifier}` : label;
   const ref = text(event.context.ref);
   return {
     label: qualified,
