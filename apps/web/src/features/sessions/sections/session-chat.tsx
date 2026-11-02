@@ -86,7 +86,14 @@ export function SessionChat({
   return (
     <div className="relative flex size-full flex-col">
       <div className="relative flex min-h-0 flex-1 flex-col">
-        <div ref={scroller} className="min-h-0 flex-1 overflow-y-auto pt-6 pb-4">
+        {/* No scroll anchoring: the turns that leave the top as the drawn
+            window follows the end would move the reader up, and the follow
+            takes any move up as the reader leaving the end. The chat keeps
+            its place itself (`keepingPlace`, the held window). */}
+        <div
+          ref={scroller}
+          className="min-h-0 flex-1 overflow-y-auto pt-6 pb-4 [overflow-anchor:none]"
+        >
           <TerminalColumn ref={content} className="flex min-h-full flex-col">
             {ids.length === 0 ? (
               <EmptyState className="flex-1">
