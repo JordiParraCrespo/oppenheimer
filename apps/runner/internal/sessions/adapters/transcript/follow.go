@@ -55,11 +55,15 @@ func (r *Reader) Follow(ctx context.Context, session domain.Session, entryMax, b
 	if r.statusDir != "" && session.Agent == domain.AgentClaude {
 		f.status = statusPath(r.statusDir, session.Launch.Conversation)
 	}
+	if r.filesDir != "" && conversationPattern.MatchString(session.ID) {
+		f.shared, f.sharedSeen = SharedDir(r.filesDir, session.ID), map[string]bool{}
+	}
 	ticker := time.NewTicker(followEvery)
 	defer ticker.Stop()
 	for {
 		f.check()
 		f.checkStatus()
+		f.checkShared()
 		select {
 		case <-ctx.Done():
 			return nil
@@ -129,6 +133,11 @@ type follower struct {
 	// it last sent; an empty path follows none.
 	status     string
 	statusSeen statusVersion
+
+	// shared is the session's folder of files its agent shared, and
+	// sharedSeen the entries already sent from it; an empty path follows none.
+	shared     string
+	sharedSeen map[string]bool
 }
 
 // statusVersion tells one write of a status file from the next.
@@ -160,6 +169,32 @@ func (f *follower) checkStatus() {
 	if f.emit(app.ChatBatch{Entries: []string{string(entry)}}) == nil {
 		f.statusSeen = seen
 	}
+}
+
+// checkShared sends each file the agent shared that this attachment has not
+// sent yet, after the history as the status is: the console places each in
+// the conversation by its timestamp. A batch the link refuses is offered
+// again on the next check.
+func (f *follower) checkShared() {
+	if f.shared == "" || f.reset || len(f.pending) > 0 {
+		return
+	}
+	seen := make(map[string]bool, len(f.sharedSeen))
+	for name := range f.sharedSeen {
+		seen[name] = true
+	}
+	entries := sharedEntries(f.shared, seen)
+	if len(entries) == 0 {
+		return
+	}
+	for len(entries) > 0 {
+		n := min(len(entries), f.batchMax)
+		if f.emit(app.ChatBatch{Entries: entries[:n]}) != nil {
+			return
+		}
+		entries = entries[n:]
+	}
+	f.sharedSeen = seen
 }
 
 func (f *follower) check() {

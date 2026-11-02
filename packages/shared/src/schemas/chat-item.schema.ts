@@ -110,12 +110,20 @@ export const chatItemSchema = z.discriminatedUnion('type', [
   /**
    * Something that happened in the conversation that nobody said: a stop, a
    * compaction, a task ending, or what a command the agent's CLI answered
-   * itself printed (`command_output`, its text plain, `failed` from stderr).
+   * itself printed (`command_output`, its text plain, `failed` from stderr),
+   * or a file the agent showed the person (`file_shared`, its caption or name).
    */
   z.object({
     type: z.literal('event'),
     ...itemBase,
-    event: z.enum(['interrupted', 'compacted', 'task_ended', 'notice', 'command_output']),
+    event: z.enum([
+      'interrupted',
+      'compacted',
+      'task_ended',
+      'notice',
+      'command_output',
+      'file_shared',
+    ]),
     text: z.string().nullable(),
   }),
 ]);

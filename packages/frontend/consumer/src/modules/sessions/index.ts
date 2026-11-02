@@ -16,6 +16,7 @@ export {
   type ChatTurn,
   SessionChat,
 } from './chat/session-chat';
+export type { ChatSharedFile } from './chat/session-chat-files';
 export {
   type AttachTicket,
   type CreateSessionCheckout,

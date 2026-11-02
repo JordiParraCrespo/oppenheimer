@@ -45,6 +45,9 @@ type Reader struct {
 	// statusDir is where `runner statusline` keeps each Claude Code
 	// conversation's status (SaveStatus); empty follows none.
 	statusDir string
+	// filesDir is the runner's folder of session files, where each session's
+	// shared files are kept (SaveShared); empty sends none.
+	filesDir string
 
 	// mu guards questions: each conversation's AskUserQuestion watch
 	// (OpenQuestion), asked from the poll loop.
@@ -63,6 +66,10 @@ type Options struct {
 	// StatusDir is where the runner's status line keeps what Claude Code
 	// hands it, by conversation; empty sends no status beside the chat.
 	StatusDir string
+	// FilesDir is the runner's folder of session files, under which each
+	// session keeps the files its agent shared (SaveShared); empty sends
+	// none beside the chat.
+	FilesDir string
 	// CodexSessions is Codex's `sessions/` folder, `~/.codex/sessions` or
 	// `$CODEX_HOME/sessions`, for the chat view.
 	CodexSessions string
@@ -93,7 +100,7 @@ func New(opts Options) *Reader {
 	if opts.GrokSessions != "" {
 		chats[domain.AgentGrok] = grokSource{sessions: opts.GrokSessions}
 	}
-	return &Reader{agents: agents, chats: chats, logger: logger, statusDir: opts.StatusDir}
+	return &Reader{agents: agents, chats: chats, logger: logger, statusDir: opts.StatusDir, filesDir: opts.FilesDir}
 }
 
 // FirstPrompt implements app.Transcripts.

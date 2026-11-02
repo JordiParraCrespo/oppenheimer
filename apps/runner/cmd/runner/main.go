@@ -384,6 +384,17 @@ func sessions(ctx context.Context, args []string) (int, error) {
 			return cli.ExitUsage, errors.New(`usage: runner sessions report "message"`)
 		}
 		return withDelegation(func(d cli.Delegation) error { return d.Report(ctx, strings.Join(args, " ")) })
+	case "send-file":
+		fs := flag.NewFlagSet("sessions send-file", flag.ContinueOnError)
+		caption := fs.String("caption", "", "a line about the file, shown with it")
+		rest, err := parse(fs, args)
+		if err != nil {
+			return cli.ExitUsage, err
+		}
+		if len(rest) != 1 {
+			return cli.ExitUsage, errors.New(`usage: runner sessions send-file <path> [--caption "line"]`)
+		}
+		return withDelegation(func(d cli.Delegation) error { return d.SendFile(ctx, rest[0], *caption) })
 	case "wait":
 		fs := flag.NewFlagSet("sessions wait", flag.ContinueOnError)
 		parent := fs.String("parent", "", "the parent session (default: the session this runs in)")
@@ -545,6 +556,8 @@ func usage(w *os.File) {
   runner sessions wait [<id>...]  wait for this session's children to finish, block or end
   runner sessions report "msg"    from inside a child: send the parent a message
   runner sessions children        this session's children and what each one says
+  runner sessions send-file <path> [--caption "line"]
+                                  from inside a session: show the person a file in its chat
   runner sessions keep [<id>] [--off]  bring a session back on its own after a reboot
   runner --skill                  the manual for an agent in a session (helpers, messages, waits)
   runner pty [--report F] -- CMD  run CMD on a terminal that speaks OSC 7501 (a session's agent runs under it)
