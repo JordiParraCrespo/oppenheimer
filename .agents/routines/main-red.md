@@ -67,20 +67,14 @@ The person who owns this repository asked for this: an obvious fix to a red
 the issue in one line which rule kept it open, and stop.
 
 1. **The cause is plain.** You reproduced the failure, the failing row
-   points at a change that is already on `main`, and the fix follows from
-   the error message. The cases that qualify:
-   - a generated file is stale (the API client, `routeTree.gen.ts`, a
-     catalog or a lockfile), and the fix is running the repository's own
-     generator;
-   - two pull requests each passed alone and clash together: a migration
-     number or timestamp taken twice (renumber the one not yet released), a
-     symbol one renamed and the other still uses, an import of a file the
-     other moved, a duplicated key or route;
-   - lint, format or a type error the merge introduced, fixed without
-     changing what the code does;
-   - a missing row the checks demand (an error code in
-     `apps/docs/docs/errors.md`, a translation key, a `features.json` path,
-     an `oppenheimer:begin`/`end` marker).
+   points at a change that is already on `main`, and the error message
+   itself names a mechanical fix that changes no behaviour, one the
+   repository already knows how to apply (its own generator, its own
+   formatter, the spelling the rest of the code already uses). Examples,
+   not a catalog: a stale generated file; two pull requests that each passed
+   alone and clash together (a migration number taken twice, a symbol one
+   renamed and the other still uses); a lint, format or type error the merge
+   introduced; a row a check demands and nobody added.
 2. **The fix is small.** At most 5 files and about 80 changed lines, not
    counting files a generator wrote.
 3. **It changes nothing anyone has to decide.** None of these:
