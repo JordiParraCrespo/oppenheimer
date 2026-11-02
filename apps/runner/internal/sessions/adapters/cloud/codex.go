@@ -4,7 +4,7 @@ package cloud
 // sign-in, the only supported driver of their account (OpenAI publishes no
 // API for cloud tasks; product/research/cloud-agents.md §3):
 //
-//	codex cloud exec --env <env> --branch <branch> <task>
+//	codex cloud exec --env=<env> --branch <branch> <task>
 //
 // prints the new task's address and exits, and
 //
@@ -28,6 +28,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"net/http"
 	"os"
 	"os/exec"
 	"regexp"
@@ -62,8 +63,9 @@ type CodexTask struct {
 	URL    string `json:"url"`
 	Title  string `json:"title"`
 	Status string `json:"status"`
-	// EnvironmentLabel is the label of the environment the task ran in, as
-	// the CLI names it; empty when it gave none.
+	// EnvironmentID and EnvironmentLabel name the environment the task ran
+	// in, as the CLI names it; the label is empty when it gave none.
+	EnvironmentID    string `json:"environment_id"`
 	EnvironmentLabel string `json:"environment_label"`
 }
 
@@ -81,6 +83,16 @@ type Codex struct {
 	Command string
 	// Timeout bounds one command; zero is two minutes.
 	Timeout time.Duration
+	// Home is the CLI's home, where its sign-in is; empty is where the CLI
+	// looks itself ($CODEX_HOME, else ~/.codex).
+	Home string
+	// BaseURL is the ChatGPT backend environments are read from; empty is
+	// chatgpt.com's.
+	BaseURL string
+	// HTTP reads them; nil is http.DefaultClient.
+	HTTP *http.Client
+	// Now is the clock a rate-limit pause is read against; nil is time.Now.
+	Now func() time.Time
 }
 
 // codexTaskURL is where `codex cloud exec` says the task went:
@@ -88,29 +100,74 @@ type Codex struct {
 // CLI is configured for.
 var codexTaskURL = regexp.MustCompile(`https?://\S+/codex/tasks/([A-Za-z0-9_-]+)`)
 
-// Start creates a task for prompt in the Codex cloud environment of
+// Start creates a task for prompt in a Codex cloud environment for
 // repository (`owner/name`) on branch, and answers it once the CLI has named
-// it. The environment is named by its label, which `codex cloud exec`
-// matches without regard to case: the repository's full name first, then its
-// bare name, the two ways people name one. When the CLI has neither, the
-// start is a domain.CodexEnvironmentRefusal; any other refusal is the CLI's
-// own, in its words.
-func (c Codex) Start(ctx context.Context, repository, branch, prompt string) (Started, error) {
+// it. environment is the one the person picked, by id or label; empty, it is
+// the account's pick for the repository (Environments' Recommended: the one
+// linked to it, else one labelled with its name). With none, the start is a
+// domain.CodexEnvironmentRefusal naming every environment the CLI can reach.
+// Only when the account's whole list could not be read (none, or only its
+// tasks' environments) are the repository's names handed to the CLI as
+// labels, and its refusal of both is that refusal with what the tasks show;
+// any other refusal is the CLI's own, in its words.
+func (c Codex) Start(ctx context.Context, repository, branch, prompt, environment string) (Started, error) {
+	if environment != "" {
+		return c.exec(ctx, environment, branch, prompt)
+	}
+	envs, listErr := c.Environments(ctx, repository)
+	switch {
+	// The CLI resolves a label by reading the same environments, so a refusal
+	// for rate is not worked around by asking it instead.
+	case isRateLimited(listErr):
+		return Started{}, listErr
+	case listErr == nil && envs.Recommended != "":
+		return c.exec(ctx, envs.Recommended, branch, prompt)
+	case listErr == nil && envs.Source == CodexSourceChatGPT:
+		return Started{}, unreachable(repository, envs).Problem()
+	}
 	tried := codexEnvironments(repository)
 	for _, env := range tried {
-		out, err := c.run(ctx, "cloud", "exec", "--env", env, "--branch", branch, prompt)
+		started, err := c.exec(ctx, env, branch, prompt)
 		if err == nil {
-			if match := codexTaskURL.FindStringSubmatch(out); match != nil {
-				return Started{ID: match[1], URL: match[0]}, nil
-			}
-			return Started{}, domain.ErrCodexCloudStart.WithDetail(
-				"codex cloud exec named no task: %s", lastWords(out))
+			return started, nil
 		}
 		if !codexEnvironmentMissing(err, env) {
 			return Started{}, err
 		}
 	}
 	return Started{}, c.environmentRefusal(ctx, tried).Problem()
+}
+
+// exec runs `codex cloud exec` in env. The value rides `--env=`, so one that
+// starts with a dash is still the value and not a flag.
+func (c Codex) exec(ctx context.Context, env, branch, prompt string) (Started, error) {
+	out, err := c.run(ctx, "cloud", "exec", "--env="+env, "--branch", branch, prompt)
+	if err != nil {
+		return Started{}, err
+	}
+	if match := codexTaskURL.FindStringSubmatch(out); match != nil {
+		return Started{ID: match[1], URL: match[0]}, nil
+	}
+	return Started{}, domain.ErrCodexCloudStart.WithDetail(
+		"codex cloud exec named no task: %s", lastWords(out))
+}
+
+// unreachable is the refusal when the account's whole list was read and no
+// environment in it is linked to or named for the repository: the labels
+// tried and every environment the CLI can reach.
+func unreachable(repository string, envs CodexEnvironments) domain.CodexEnvironmentRefusal {
+	refusal := domain.CodexEnvironmentRefusal{Tried: codexEnvironments(repository), Listed: true, Complete: true}
+	for _, env := range envs.Environments {
+		name := env.Label
+		if name == "" {
+			name = env.ID
+		}
+		refusal.Visible = append(refusal.Visible, name)
+		if len(refusal.Visible) == codexVisibleMax {
+			break
+		}
+	}
+	return refusal
 }
 
 // codexMissing is the CLI's refusal of a label it has no environment for

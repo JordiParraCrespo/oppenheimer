@@ -996,3 +996,13 @@ earlier note:
   shape on the channels note's runner transport, and the control plane now
   keeps the messages a linked number sees for 90 days
   (`next-steps/whatsapp.md`). The channel comes after, on the same device.
+- Codex cloud sessions named their environment by guessing its label from
+  the repository (`next-steps/cloud-agents.md`, "Codex is built"). On
+  2026-10-31 a session failed on an environment labelled otherwise, and
+  the owner asked to improve environment management: the host now lists
+  the ChatGPT account's environments and starts the task in the one linked
+  to the repository, and New session has an Environment chip to pick
+  another, kept with the session's launch (`next-steps/cloud-agents.md`,
+  "Which Codex environment"). To list them the host reads the Codex CLI's
+  sign-in, which "Environments the CLI cannot reach", decided the same day,
+  had ruled out; which holds is open, for the owner.

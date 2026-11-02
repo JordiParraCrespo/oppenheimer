@@ -1753,6 +1753,7 @@ export type CreateSessionRequest = {
     }>;
     folder?: string;
     cloud?: boolean;
+    codexEnvironment?: string;
     cwdGithubRepoId?: number;
     launch?: {
         model?: string;
@@ -2008,6 +2009,40 @@ export type HostFoldersResponseDto = {
      * The folders of the caller’s own folder sessions on this host, newest first, at most eight.
      */
     recent: Array<HostRecentFolderResponseDto>;
+};
+
+export type HostCodexEnvironmentResponseDto = {
+    /**
+     * Its id, what `codex cloud exec --env` is given.
+     */
+    id: string;
+    /**
+     * The name its owner gave it on chatgpt.com/codex.
+     */
+    label?: string | null;
+    /**
+     * Pinned on chatgpt.com/codex.
+     */
+    pinned: boolean;
+    /**
+     * Linked to the repository the list was asked for.
+     */
+    repository: boolean;
+};
+
+export type HostCodexEnvironmentsResponseDto = {
+    /**
+     * Those linked to the repository first, then pinned, then by label.
+     */
+    environments: Array<HostCodexEnvironmentResponseDto>;
+    /**
+     * The environment a session started with none picked runs in: the one linked to the repository, else one labelled with its name. Null when none is.
+     */
+    recommended?: string | null;
+    /**
+     * `chatgpt`: every environment of the account. `tasks`: only those its recent tasks ran in, when the host could not ask ChatGPT.
+     */
+    source: 'chatgpt' | 'tasks';
 };
 
 export type SessionPortDto = {
@@ -2629,6 +2664,7 @@ export type StartTaskSessionRequest = {
         }>;
         folder?: string;
         cloud?: boolean;
+        codexEnvironment?: string;
         cwdGithubRepoId?: number;
         launch?: {
             model?: string;
@@ -10184,6 +10220,63 @@ export type FindHostFoldersResponses = {
 };
 
 export type FindHostFoldersResponse = FindHostFoldersResponses[keyof FindHostFoldersResponses];
+
+export type FindHostCodexEnvironmentsData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: {
+        /**
+         * The repository the session is for, `owner/name`: its environments are marked. Omit before one is picked.
+         */
+        repository?: string;
+    };
+    url: '/api/v1/hosts/{id}/codex-environments';
+};
+
+export type FindHostCodexEnvironmentsErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * HOSTS_001 — Host not found
+     */
+    404: ProblemDetailsDto;
+    /**
+     * SESSIONS_044 — Runner cannot list
+     */
+    409: ProblemDetailsDto;
+    /**
+     * SESSIONS_047 — ChatGPT asked to wait
+     */
+    429: ProblemDetailsDto;
+    /**
+     * SESSIONS_046 — Codex could not list
+     */
+    502: ProblemDetailsDto;
+    /**
+     * SESSIONS_045 — The host is offline
+     */
+    503: ProblemDetailsDto;
+    /**
+     * SESSIONS_031 — No answer in time
+     */
+    504: ProblemDetailsDto;
+};
+
+export type FindHostCodexEnvironmentsError = FindHostCodexEnvironmentsErrors[keyof FindHostCodexEnvironmentsErrors];
+
+export type FindHostCodexEnvironmentsResponses = {
+    200: HostCodexEnvironmentsResponseDto;
+};
+
+export type FindHostCodexEnvironmentsResponse = FindHostCodexEnvironmentsResponses[keyof FindHostCodexEnvironmentsResponses];
 
 export type FindSessionPortsData = {
     body?: never;

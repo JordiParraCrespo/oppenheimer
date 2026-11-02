@@ -46,6 +46,7 @@ const (
 	laneRepoPrepare   = "repo:"
 	laneFsList        = "fs:list"
 	lanePortList      = "port:list:"
+	laneCodexEnvs     = "codex:environments"
 )
 
 // linkSender is the slice of the link the handler writes through, so a test
@@ -306,7 +307,7 @@ func (h *linkHandler) capabilities() []string {
 		link.CapabilitySessionImage, link.CapabilitySessionCreateImages, link.CapabilitySessionFiles,
 		link.CapabilityRepositoryPrepare, link.CapabilitySessionFolder, link.CapabilityFsList,
 		link.CapabilityAttachmentChat, link.CapabilitySessionCloud, link.CapabilitySessionCloudCodex,
-		link.CapabilitySessionWatch,
+		link.CapabilitySessionWatch, link.CapabilityCodexEnvironments,
 	}
 	if h.direct != nil {
 		named = append(named, link.CapabilityAttachmentDirect, link.CapabilityAttachmentDirectProof)
@@ -557,6 +558,12 @@ func (h *linkHandler) Message(_ context.Context, msg link.Message) {
 		var m link.DeviceDetach
 		if msg.Decode(&m) == nil {
 			h.dropScreen(m.AttachmentID)
+		}
+	case link.TypeCodexEnvironmentsList:
+		var m link.CodexEnvironmentsList
+		if msg.Decode(&m) == nil {
+			// Two round trips to ChatGPT: off the read loop, one at a time.
+			h.lanes.run(laneCodexEnvs, func() { h.listCodexEnvironments(h.life, m) })
 		}
 	case link.TypePortList:
 		var m link.PortList

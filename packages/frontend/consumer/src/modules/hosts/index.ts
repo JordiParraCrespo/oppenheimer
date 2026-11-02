@@ -1,4 +1,6 @@
 export {
+  type HostCodexEnvironment,
+  type HostCodexEnvironments,
   type HostDetails,
   HostEntity,
   type HostFolderEntry,

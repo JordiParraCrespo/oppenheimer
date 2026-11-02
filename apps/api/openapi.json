@@ -11867,6 +11867,132 @@
         ]
       }
     },
+    "/api/v1/hosts/{id}/codex-environments": {
+      "get": {
+        "description": "The Codex cloud environments of the ChatGPT account the host’s `codex` is signed in to, read by its runner now, with those linked to `repository` marked and the one a session with none picked starts in. Nothing is cached (`product/next-steps/cloud-agents.md`).",
+        "operationId": "findHostCodexEnvironments",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "repository",
+            "required": false,
+            "in": "query",
+            "description": "The repository the session is for, `owner/name`: its environments are marked. Omit before one is picked.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HostCodexEnvironmentsResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "HOSTS_001 — Host not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "SESSIONS_044 — Runner cannot list",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "SESSIONS_047 — ChatGPT asked to wait",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "SESSIONS_046 — Codex could not list",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "SESSIONS_045 — The host is offline",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "SESSIONS_031 — No answer in time",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "List a host's Codex cloud environments",
+        "tags": [
+          "Hosts"
+        ]
+      }
+    },
     "/api/v1/sessions/{id}/ports": {
       "get": {
         "description": "The TCP ports the session's own processes listen on, from 1024 up, asked of its host's runner now: what its Browser tab can open. Nothing is cached.",
@@ -27972,6 +28098,12 @@
           "cloud": {
             "type": "boolean"
           },
+          "codexEnvironment": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128,
+            "pattern": "^[^\\p{Cc}]+$"
+          },
           "cwdGithubRepoId": {
             "type": "integer",
             "minimum": 0,
@@ -28717,6 +28849,64 @@
           "entries",
           "truncated",
           "recent"
+        ]
+      },
+      "HostCodexEnvironmentResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Its id, what `codex cloud exec --env` is given.",
+            "example": "e_6845a1b2c3d4"
+          },
+          "label": {
+            "type": "string",
+            "description": "The name its owner gave it on chatgpt.com/codex.",
+            "nullable": true,
+            "example": "Oppenheimer web"
+          },
+          "pinned": {
+            "type": "boolean",
+            "description": "Pinned on chatgpt.com/codex."
+          },
+          "repository": {
+            "type": "boolean",
+            "description": "Linked to the repository the list was asked for."
+          }
+        },
+        "required": [
+          "id",
+          "pinned",
+          "repository"
+        ]
+      },
+      "HostCodexEnvironmentsResponseDto": {
+        "type": "object",
+        "properties": {
+          "environments": {
+            "description": "Those linked to the repository first, then pinned, then by label.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/HostCodexEnvironmentResponseDto"
+            }
+          },
+          "recommended": {
+            "type": "string",
+            "description": "The environment a session started with none picked runs in: the one linked to the repository, else one labelled with its name. Null when none is.",
+            "nullable": true
+          },
+          "source": {
+            "type": "string",
+            "enum": [
+              "chatgpt",
+              "tasks"
+            ],
+            "description": "`chatgpt`: every environment of the account. `tasks`: only those its recent tasks ran in, when the host could not ask ChatGPT."
+          }
+        },
+        "required": [
+          "environments",
+          "source"
         ]
       },
       "SessionPortDto": {
@@ -30952,6 +31142,12 @@
               },
               "cloud": {
                 "type": "boolean"
+              },
+              "codexEnvironment": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 128,
+                "pattern": "^[^\\p{Cc}]+$"
               },
               "cwdGithubRepoId": {
                 "type": "integer",

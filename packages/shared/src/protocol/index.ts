@@ -8,6 +8,7 @@
  * message.
  */
 export * from './attach.js';
+export * from './codex-environments.js';
 export * from './devices.js';
 export * from './hint.js';
 export * from './link.js';

@@ -342,4 +342,39 @@ export const SessionErrors = {
     message: 'The session already has as many terminal watches as it can hold',
     httpStatus: 409,
   },
+  /**
+   * The composer asked for a host's Codex environments, and its runner predates
+   * `codex.environments`: it would never answer. A Codex cloud session still
+   * starts there, in an environment guessed from the repository's name.
+   */
+  CODEX_ENVIRONMENTS_UNSUPPORTED_BY_RUNNER: {
+    code: 'SESSIONS_044',
+    message: "This host's runner cannot list Codex environments",
+    httpStatus: 409,
+  },
+  /** The composer asked a host that holds no link for its Codex environments. */
+  CODEX_ENVIRONMENTS_HOST_OFFLINE: {
+    code: 'SESSIONS_045',
+    message: 'The host is offline, so its Codex environments cannot be listed',
+    httpStatus: 503,
+  },
+  /**
+   * Codex on the host could not list its environments: no `codex` on it, or
+   * no ChatGPT sign-in. The runner's own words are the detail.
+   */
+  CODEX_ENVIRONMENTS_UNAVAILABLE: {
+    code: 'SESSIONS_046',
+    message: 'Codex on the host could not list its environments',
+    httpStatus: 502,
+  },
+  /**
+   * ChatGPT refused the host's read of its Codex environments for rate
+   * (`SESS_011`): the host asks nothing more of that account until the time
+   * it named, which the runner's words carry as the detail.
+   */
+  CODEX_ENVIRONMENTS_RATE_LIMITED: {
+    code: 'SESSIONS_047',
+    message: 'ChatGPT is limiting how often the host may list Codex environments',
+    httpStatus: 429,
+  },
 } as const satisfies Record<string, ErrorDefinition>;

@@ -20,11 +20,36 @@ const draft: NewSessionDraft = {
   model: null,
   permission: 'auto',
   efforts: {},
+  codexEnvironment: null,
 };
 
 const extras = { prompt: 'Fix it', attachmentIds: [] };
 
 describe('toCreateInput', () => {
+  // Codex's cloud runs the task in one of the account's environments: the one
+  // picked on this host, or the host's pick when none was.
+  it('sends a Codex cloud session with the environment picked on its host', () => {
+    const codex: NewSessionDraft = {
+      ...draft,
+      where: 'cloud',
+      agent: 'codex',
+      codexEnvironment: { hostId: 'host-1', id: 'e_6845a1b2c3d4', label: 'Oppenheimer web' },
+    };
+
+    expect(toCreateInput(codex, extras)).toMatchObject({
+      cloud: true,
+      agent: 'codex',
+      codexEnvironment: 'e_6845a1b2c3d4',
+    });
+    // Another host is signed in to its own ChatGPT account, which may not have it.
+    expect(toCreateInput({ ...codex, hostId: 'host-2' }, extras)).not.toHaveProperty(
+      'codexEnvironment',
+    );
+    expect(toCreateInput({ ...codex, where: 'worktree' }, extras)).not.toHaveProperty(
+      'codexEnvironment',
+    );
+  });
+
   it('sends a worktree session with its checkout and no folder', () => {
     const input = toCreateInput(draft, extras);
 

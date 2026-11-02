@@ -36,8 +36,9 @@ type CloudStarter interface {
 // CodexCloud starts tasks in Codex cloud and reads their status
 // (sessions/adapters/cloud).
 type CodexCloud interface {
-	Start(ctx context.Context, repository, branch, prompt string) (cloud.Started, error)
+	Start(ctx context.Context, repository, branch, prompt, environment string) (cloud.Started, error)
 	List(ctx context.Context, cursor string) (cloud.CodexPage, error)
+	Environments(ctx context.Context, repository string) (cloud.CodexEnvironments, error)
 }
 
 // stageFunc runs one step of a start between its stepper events: began, and

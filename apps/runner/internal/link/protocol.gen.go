@@ -80,6 +80,7 @@ const (
 	CapabilityPortForward           = "port.forward"
 	CapabilitySessionCloud          = "session.cloud"
 	CapabilitySessionCloudCodex     = "session.cloud.codex"
+	CapabilityCodexEnvironments     = "codex.environments"
 	CapabilitySessionWatch          = "session.watch"
 	CapabilityWhatsapp              = "whatsapp"
 )
@@ -130,6 +131,8 @@ const (
 	TypePortOpen                = "port.open"
 	TypePortOpened              = "port.opened"
 	TypePortClose               = "port.close"
+	TypeCodexEnvironmentsList   = "codex.environments.list"
+	TypeCodexEnvironments       = "codex.environments"
 	TypeWhatsappLink            = "whatsapp.link"
 	TypeWhatsappUnlink          = "whatsapp.unlink"
 	TypeWhatsappState           = "whatsapp.state"
@@ -185,6 +188,8 @@ var MessageTypes = []string{
 	TypePortOpen,
 	TypePortOpened,
 	TypePortClose,
+	TypeCodexEnvironmentsList,
+	TypeCodexEnvironments,
 	TypeWhatsappLink,
 	TypeWhatsappUnlink,
 	TypeWhatsappState,
@@ -286,6 +291,10 @@ func NewMessage(messageType string) (any, bool) {
 		return new(PortOpened), true
 	case TypePortClose:
 		return new(PortClose), true
+	case TypeCodexEnvironmentsList:
+		return new(CodexEnvironmentsList), true
+	case TypeCodexEnvironments:
+		return new(CodexEnvironments), true
 	case TypeWhatsappLink:
 		return new(WhatsappLink), true
 	case TypeWhatsappUnlink:
@@ -424,6 +433,7 @@ type SessionCreate struct {
 	Checkouts        []Checkout            `json:"checkouts"`
 	CwdCheckoutID    *string               `json:"cwdCheckoutId"`
 	Cloud            *SessionCreateCloud   `json:"cloud,omitempty"`
+	CodexEnvironment string                `json:"codexEnvironment,omitempty"`
 }
 
 // LaunchOptions is SessionCreate.Launch.
@@ -752,6 +762,30 @@ type PortOpened struct {
 type PortClose struct {
 	Type         string `json:"type"`
 	AttachmentID uint32 `json:"attachmentId"`
+}
+
+// CodexEnvironmentsList is the `codex.environments.list` message.
+type CodexEnvironmentsList struct {
+	Type       string `json:"type"`
+	CommandID  string `json:"commandId"`
+	Repository string `json:"repository,omitempty"`
+}
+
+// CodexEnvironments is the `codex.environments` message.
+type CodexEnvironments struct {
+	Type         string                          `json:"type"`
+	CommandID    string                          `json:"commandId"`
+	Environments []CodexEnvironmentsEnvironments `json:"environments"`
+	Recommended  string                          `json:"recommended,omitempty"`
+	Source       string                          `json:"source"`
+}
+
+// CodexEnvironmentsEnvironments is CodexEnvironments.Environments.
+type CodexEnvironmentsEnvironments struct {
+	ID         string `json:"id"`
+	Label      string `json:"label,omitempty"`
+	Pinned     bool   `json:"pinned"`
+	Repository bool   `json:"repository"`
 }
 
 // WhatsappLink is the `whatsapp.link` message.

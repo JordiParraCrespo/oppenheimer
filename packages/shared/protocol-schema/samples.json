@@ -301,6 +301,30 @@
     "type": "port.close",
     "attachmentId": 11
   },
+  "codex.environments.list": {
+    "type": "codex.environments.list",
+    "commandId": "b2c3d4e5-6f7a-4b8c-9d0e-1f2a3b4c5d6e",
+    "repository": "jordi/oppenheimer"
+  },
+  "codex.environments": {
+    "type": "codex.environments",
+    "commandId": "b2c3d4e5-6f7a-4b8c-9d0e-1f2a3b4c5d6e",
+    "environments": [
+      {
+        "id": "e_6845a1b2c3d4",
+        "label": "Oppenheimer web",
+        "pinned": true,
+        "repository": true
+      },
+      {
+        "id": "e_6845f9e8d7c6",
+        "pinned": false,
+        "repository": false
+      }
+    ],
+    "recommended": "e_6845a1b2c3d4",
+    "source": "chatgpt"
+  },
   "whatsapp.link": {
     "type": "whatsapp.link",
     "commandId": "b2c3d4e5-6f7a-4b8c-9d0e-1f2a3b4c5d6e"

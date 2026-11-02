@@ -3,6 +3,7 @@
 import { useQuery, useSuspenseQuery } from '@oppenheimer/frontend-core/react';
 import { type UseQueryOptions, useMutation, useQueryClient } from '@tanstack/react-query';
 import type {
+  HostCodexEnvironments,
   HostEntity,
   HostFolders,
   HostPairing,
@@ -137,6 +138,32 @@ export function useHostFolders<TData = HostFolders>(
   return useQuery<HostFolders, Error, TData>({
     queryKey: hostsKeys.folders(hostId, path),
     queryFn: () => app.hosts.findFolders(hostId, path ?? undefined),
+    staleTime: 0,
+    retry: false,
+    refetchOnWindowFocus: false,
+    ...options,
+  });
+}
+
+/**
+ * The Codex cloud environments of a host's ChatGPT account, as its runner reads
+ * them now, those linked to `repository` (`owner/name`) marked, or none when
+ * it is null: the Environments pane of New session's place chip, for a Codex
+ * cloud session. A refusal is the answer (the host
+ * is away, its runner is too old, Codex is not signed in), so it is not retried.
+ * Nothing is cached beyond the visit, as for the folder picker: an environment
+ * made on chatgpt.com a minute ago must show.
+ */
+export function useHostCodexEnvironments<TData = HostCodexEnvironments>(
+  hostId: string,
+  repository: string | null,
+  options?: Omit<UseQueryOptions<HostCodexEnvironments, Error, TData>, 'queryKey' | 'queryFn'>,
+) {
+  const app = useConsumerApp();
+
+  return useQuery<HostCodexEnvironments, Error, TData>({
+    queryKey: hostsKeys.codexEnvironments(hostId, repository),
+    queryFn: () => app.hosts.findCodexEnvironments(hostId, repository ?? undefined),
     staleTime: 0,
     retry: false,
     refetchOnWindowFocus: false,

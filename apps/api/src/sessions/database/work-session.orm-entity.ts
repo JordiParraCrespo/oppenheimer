@@ -189,6 +189,13 @@ export class WorkSessionOrmEntity {
   @Column({ type: 'varchar', nullable: true })
   launchEffort!: SessionEffortDto | null;
 
+  /**
+   * A Codex cloud session's environment, as the person picked it (its id or
+   * label). Null is the host's pick: the environment linked to the repository.
+   */
+  @Column({ type: 'varchar', length: 128, nullable: true })
+  launchEnvironment!: string | null;
+
   @Column({ type: 'varchar', nullable: true })
   reportHash!: string | null;
 

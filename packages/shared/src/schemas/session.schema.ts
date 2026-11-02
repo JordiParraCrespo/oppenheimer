@@ -16,6 +16,7 @@ import {
 import { CLOUD_AGENT_IDS, cloudAgentProviderSchema } from './cloud-agent.schema.js';
 import { paginationSchema } from './pagination.schema.js';
 import {
+  codexEnvironmentSchema,
   codingAgentSchema,
   displayNameSchema,
   githubRepoIdSchema,
@@ -158,6 +159,13 @@ const createSessionFields = z.object({
    * `prompt` (`product/research/cloud-agents.md` §5B).
    */
   cloud: z.boolean().optional(),
+  /**
+   * A Codex cloud session's environment, by id or label, as the composer's
+   * picker chose it (`GET /hosts/:id/codex-environments`). Absent, the host
+   * starts the task in the environment linked to the repository. Only with
+   * `cloud` and the agent `codex`.
+   */
+  codexEnvironment: codexEnvironmentSchema.optional(),
   /** Which checkout the agent is launched inside. Must be one of `checkouts`. */
   cwdGithubRepoId: githubRepoIdSchema.optional(),
   /** The composer's foot row. Absent is `ask` with each agent's own defaults. */
@@ -228,6 +236,11 @@ export const createSessionSchema = createSessionFields
       !value.cloud ||
       (isHostCloudAgent(value.agent) && value.checkouts.length === 1 && value.prompt !== undefined),
     { path: ['cloud'] },
+  )
+  .refine(
+    (value) =>
+      value.codexEnvironment === undefined || (value.cloud === true && value.agent === 'codex'),
+    { path: ['codexEnvironment'] },
   );
 
 export type CreateSessionDto = z.infer<typeof createSessionSchema>;
