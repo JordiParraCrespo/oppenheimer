@@ -1,5 +1,6 @@
 import { SettingsContent, SettingsMain, SettingsShell } from '@oppenheimer/design-system-web';
 import {
+  Bug,
   Cloud,
   Cpu,
   Eye,
@@ -47,6 +48,7 @@ function SettingsLayout() {
             items: [
               { to: '/settings/hosts', icon: Cpu, labelKey: 'hosts' },
               { to: '/settings/model-providers', icon: KeyRound, labelKey: 'modelProviders' },
+              { to: '/settings/sentry', icon: Bug, labelKey: 'sentry' },
             ],
           },
         ]}

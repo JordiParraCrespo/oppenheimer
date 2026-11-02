@@ -1650,6 +1650,7 @@ export type {
   SendBotMessageResponse,
   SendBotMessageResponses,
   SentryConnectionResponseDto,
+  SentryStatusResponseDto,
   SessionAgentReportResponseDto,
   SessionAttachmentResponseDto,
   SessionCheckoutResponseDto,

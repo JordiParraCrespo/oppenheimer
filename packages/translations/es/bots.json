@@ -474,6 +474,7 @@
       "schedule": "Horario · {{when}}",
       "github": "GitHub · {{when}}",
       "gmail": "Gmail · {{when}}",
+      "sentry": "Sentry · {{when}}",
       "last": "Última",
       "next": "Próxima",
       "never": "Nunca",

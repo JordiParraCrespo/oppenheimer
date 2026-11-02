@@ -112,20 +112,16 @@ test.describe('Sentry triggers', () => {
     const installationId = await connectInstallation(api);
     const projectId = await createProject(api, installationId);
 
-    // Nothing is connected yet.
-    expect((await api.get('/api/v1/sentry/connection', { failOnStatusCode: false })).status()).toBe(
-      404,
-    );
+    // Nothing is connected yet, and this server can connect.
+    const before = await api.get('/api/v1/sentry/connection');
+    expect(await before.json()).toEqual({ configured: true, connection: null });
     const connected = await api.put('/api/v1/sentry/connection', {
       data: { organizationSlug: 'acme', clientSecret: CLIENT_SECRET },
       failOnStatusCode: false,
     });
     expect(connected.status(), await connected.text()).toBe(200);
-    const connection = (await connected.json()) as {
-      id: string;
-      organizationSlug: string;
-      secretHint: string;
-      webhookUrl: string;
+    const { connection } = (await connected.json()) as {
+      connection: { id: string; organizationSlug: string; secretHint: string; webhookUrl: string };
     };
     expect(connection).toMatchObject({
       organizationSlug: 'acme',

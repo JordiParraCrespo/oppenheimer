@@ -1,5 +1,5 @@
 import { RoutineCard } from '@oppenheimer/design-system-web';
-import { Clock, GitPullRequest, Mail } from '@oppenheimer/design-system-web/icons';
+import { Bug, Clock, GitPullRequest, Mail } from '@oppenheimer/design-system-web/icons';
 import type { BotRoutineEntity } from '@oppenheimer/frontend-consumer';
 import { useRunBotRoutine, useSetBotRoutineEnabled } from '@oppenheimer/frontend-consumer/react';
 import { ErrorAlert, useLocale } from '@oppenheimer/frontend-web';
@@ -15,6 +15,7 @@ const ROUTINE_ICONS = {
   schedule: <Clock />,
   github: <GitPullRequest />,
   gmail: <Mail />,
+  sentry: <Bug />,
 } as const;
 
 /**

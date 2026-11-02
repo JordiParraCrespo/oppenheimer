@@ -3086,6 +3086,14 @@ export type SentryConnectionResponseDto = {
     updatedAt: string;
 };
 
+export type SentryStatusResponseDto = {
+    /**
+     * Whether this server can keep a client secret (`SENTRY_CONNECTION_KEY`). False: connecting answers SENTRY_001.
+     */
+    configured: boolean;
+    connection: SentryConnectionResponseDto | null;
+};
+
 export type PutSentryConnectionRequest = {
     organizationSlug: string;
     clientSecret: string;
@@ -12514,16 +12522,12 @@ export type FindSentryConnectionErrors = {
      * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
      */
     403: ProblemDetailsDto;
-    /**
-     * SENTRY_002 — No Sentry organization is connected
-     */
-    404: ProblemDetailsDto;
 };
 
 export type FindSentryConnectionError = FindSentryConnectionErrors[keyof FindSentryConnectionErrors];
 
 export type FindSentryConnectionResponses = {
-    200: SentryConnectionResponseDto;
+    200: SentryStatusResponseDto;
 };
 
 export type FindSentryConnectionResponse = FindSentryConnectionResponses[keyof FindSentryConnectionResponses];
@@ -12557,7 +12561,7 @@ export type PutSentryConnectionErrors = {
 export type PutSentryConnectionError = PutSentryConnectionErrors[keyof PutSentryConnectionErrors];
 
 export type PutSentryConnectionResponses = {
-    200: SentryConnectionResponseDto;
+    200: SentryStatusResponseDto;
 };
 
 export type PutSentryConnectionResponse = PutSentryConnectionResponses[keyof PutSentryConnectionResponses];

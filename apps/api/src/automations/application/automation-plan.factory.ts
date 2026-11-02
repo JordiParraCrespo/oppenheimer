@@ -14,7 +14,7 @@ import { FindGmailConnectionQuery } from '../../mail/queries/find-gmail-connecti
 import type { ProjectLookupPort } from '../../projects/application/project-lookup.port';
 import { PROJECT_LOOKUP } from '../../projects/projects.di-tokens';
 import { SentryErrors } from '../../sentry/domain/sentry.errors';
-import type { SentryConnectionResponseDto } from '../../sentry/dtos/sentry-connection.response.dto';
+import type { SentryStatusResponseDto } from '../../sentry/dtos/sentry-connection.response.dto';
 import { FindSentryConnectionQuery } from '../../sentry/queries/find-sentry-connection/find-sentry-connection.query';
 import type { AutomationRepository, AutomationTriggerProps } from '../domain/automation.types';
 import { automationAgentSupported } from '../domain/automation-agent.policy';
@@ -132,11 +132,11 @@ export class AutomationPlanFactory {
       input.source === 'sentry' ? [input.connectionId] : [],
     );
     if (named.length === 0) return;
-    const connection = await this.queryBus.execute<
+    const { connection } = await this.queryBus.execute<
       FindSentryConnectionQuery,
-      SentryConnectionResponseDto
+      SentryStatusResponseDto
     >(new FindSentryConnectionQuery({ scope }));
-    const stranger = named.find((id) => id !== connection.id);
+    const stranger = named.find((id) => id !== connection?.id);
     if (stranger) {
       throw new AppError(SentryErrors.NOT_CONNECTED, {
         detail: `This workspace's Sentry connection is not ${stranger}`,

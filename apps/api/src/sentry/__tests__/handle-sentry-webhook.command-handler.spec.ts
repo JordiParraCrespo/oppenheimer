@@ -35,11 +35,7 @@ function setup(found = true) {
     findById: vi.fn(async () => (found ? Some(connection) : None)),
   } as unknown as SentryConnectionRepositoryPort;
   const commandBus = { execute: vi.fn(async (command: unknown) => executed.push(command)) };
-  const handler = new HandleSentryWebhookCommandHandler(
-    connections,
-    sealer,
-    commandBus as never,
-  );
+  const handler = new HandleSentryWebhookCommandHandler(connections, sealer, commandBus as never);
   return { handler, executed };
 }
 

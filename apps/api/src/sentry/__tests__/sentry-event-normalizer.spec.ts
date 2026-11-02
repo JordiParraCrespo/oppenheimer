@@ -113,7 +113,9 @@ describe('normalizeSentryDelivery', () => {
     );
     expect(reopenedByHand).toEqual([]);
     expect(
-      normalizeSentryDelivery(delivery('issue.resolved', { action: 'resolved', data: { issue: issue() } })),
+      normalizeSentryDelivery(
+        delivery('issue.resolved', { action: 'resolved', data: { issue: issue() } }),
+      ),
     ).toEqual([]);
   });
 

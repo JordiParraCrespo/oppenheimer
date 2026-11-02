@@ -1,5 +1,6 @@
 import { Inject } from '@nestjs/common';
 import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
+import { requireTenant } from '@oppenheimer/backend-authz';
 import { AppError, type KeySealer } from '@oppenheimer/backend-core';
 import type { AggregateID } from '@oppenheimer/backend-ddd';
 import type { SentryConnectionRepositoryPort } from '../../database/sentry-connection.repository.port';
@@ -24,8 +25,8 @@ export class PutSentryConnectionCommandHandler
   ) {}
 
   async execute(command: PutSentryConnectionCommand): Promise<AggregateID> {
-    const organizationId = command.scope.organizationId;
-    if (!organizationId) throw new AppError(SentryErrors.NOT_CONNECTED);
+    requireTenant(command.scope);
+    const { organizationId } = command.scope;
     if (!this.sealer.isConfigured()) throw new AppError(SentryErrors.NOT_CONFIGURED);
     const stored = await this.connections.put(
       SentryConnectionEntity.connect({

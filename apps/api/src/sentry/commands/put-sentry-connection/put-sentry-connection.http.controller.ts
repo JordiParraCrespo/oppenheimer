@@ -9,7 +9,7 @@ import { ApiAuthGuard } from '../../../auth/guards/api-auth.guard';
 import { PoliciesGuard } from '../../../auth/guards/policies.guard';
 import { CurrentAccessScope } from '../../../authz/decorators/current-access-scope.decorator';
 import { AccessScopeInterceptor } from '../../../authz/interceptors/access-scope.interceptor';
-import { SentryConnectionResponseDto } from '../../dtos/sentry-connection.response.dto';
+import { SentryStatusResponseDto } from '../../dtos/sentry-connection.response.dto';
 import { FindSentryConnectionQuery } from '../../queries/find-sentry-connection/find-sentry-connection.query';
 import { PutSentryConnectionCommand } from './put-sentry-connection.command';
 import { PutSentryConnectionRequest } from './put-sentry-connection.request.dto';
@@ -33,9 +33,9 @@ export class PutSentryConnectionHttpController {
   @ApiOperation({
     summary: 'Connect the workspace’s Sentry organization',
     description:
-      'Stores the slug and the internal integration’s client secret (sealed, never returned), replacing the workspace’s previous ones; the connection keeps its id. Answers the connection with the webhook URL to paste into the integration.',
+      'Stores the slug and the internal integration’s client secret (sealed, never returned), replacing the workspace’s previous ones; the connection keeps its id. Answers the status, whose connection carries the webhook URL to paste into the integration.',
   })
-  @ApiResponse({ status: 200, type: SentryConnectionResponseDto })
+  @ApiResponse({ status: 200, type: SentryStatusResponseDto })
   @ApiProblemResponse({ status: 400, description: 'No active workspace', code: 'TENANT_001' })
   @ApiProblemResponse({
     status: 503,
@@ -45,7 +45,7 @@ export class PutSentryConnectionHttpController {
   async put(
     @CurrentAccessScope() scope: AccessScope,
     @Body() body: PutSentryConnectionRequest,
-  ): Promise<SentryConnectionResponseDto> {
+  ): Promise<SentryStatusResponseDto> {
     await this.commandBus.execute(
       new PutSentryConnectionCommand({
         scope,

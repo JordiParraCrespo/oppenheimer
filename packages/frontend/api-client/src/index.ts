@@ -244,6 +244,7 @@ export type {
   ScopePolicyDto,
   SendBotMessageRequest,
   SentryConnectionResponseDto,
+  SentryStatusResponseDto,
   SessionAgentReportResponseDto,
   SessionAttachmentResponseDto,
   SessionCheckoutResponseDto,

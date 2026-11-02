@@ -24,3 +24,15 @@ export class SentryConnectionResponseDto {
   @ApiProperty({ format: 'date-time' })
   updatedAt!: string;
 }
+
+/** Whether this server can connect Sentry at all, and the workspace's connection if it has one. */
+export class SentryStatusResponseDto {
+  @ApiProperty({
+    description:
+      'Whether this server can keep a client secret (`SENTRY_CONNECTION_KEY`). False: connecting answers SENTRY_001.',
+  })
+  configured!: boolean;
+
+  @ApiProperty({ type: SentryConnectionResponseDto, nullable: true })
+  connection!: SentryConnectionResponseDto | null;
+}

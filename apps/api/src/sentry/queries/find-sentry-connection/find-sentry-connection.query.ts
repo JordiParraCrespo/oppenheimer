@@ -1,7 +1,7 @@
 import type { AccessScope } from '@oppenheimer/backend-authz';
 import { QueryBase } from '@oppenheimer/backend-ddd';
 
-/** The caller's workspace's Sentry connection; `SENTRY_002` when it has none. */
+/** Whether Sentry can be connected here, and the caller's workspace's connection, if any. */
 export class FindSentryConnectionQuery extends QueryBase {
   readonly scope: AccessScope;
 

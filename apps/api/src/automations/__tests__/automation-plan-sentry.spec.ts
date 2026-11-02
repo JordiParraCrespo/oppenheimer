@@ -1,5 +1,4 @@
 import type { AccessScope } from '@oppenheimer/backend-authz';
-import { AppError } from '@oppenheimer/backend-core';
 import type { TriggerInputDto } from '@oppenheimer/shared';
 import { AutomationPlanFactory } from '../application/automation-plan.factory';
 
@@ -19,12 +18,7 @@ const sentry = (connectionId: string): TriggerInputDto => ({
 
 function plan(connected: boolean) {
   const queryBus = {
-    execute: vi.fn(async () => {
-      if (!connected) {
-        throw new AppError({ code: 'SENTRY_002', message: 'Not connected', httpStatus: 404 });
-      }
-      return { id: OWN };
-    }),
+    execute: vi.fn(async () => ({ configured: true, connection: connected ? { id: OWN } : null })),
   };
   return {
     factory: new AutomationPlanFactory({} as never, {} as never, {} as never, queryBus as never),

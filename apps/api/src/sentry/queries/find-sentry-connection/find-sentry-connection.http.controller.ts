@@ -9,7 +9,7 @@ import { ApiAuthGuard } from '../../../auth/guards/api-auth.guard';
 import { PoliciesGuard } from '../../../auth/guards/policies.guard';
 import { CurrentAccessScope } from '../../../authz/decorators/current-access-scope.decorator';
 import { AccessScopeInterceptor } from '../../../authz/interceptors/access-scope.interceptor';
-import { SentryConnectionResponseDto } from '../../dtos/sentry-connection.response.dto';
+import { SentryStatusResponseDto } from '../../dtos/sentry-connection.response.dto';
 import { FindSentryConnectionQuery } from './find-sentry-connection.query';
 
 @ApiTags('Sentry')
@@ -26,18 +26,13 @@ export class FindSentryConnectionHttpController {
   @CheckPolicies({ action: 'read', subject: 'Automation' })
   @RequireScopes('automations:read')
   @ApiOperation({
-    summary: 'The workspace’s Sentry connection',
+    summary: 'Whether Sentry is connected to the workspace',
     description:
-      'The connected Sentry organization, the client secret’s last four characters, and the webhook URL its integration posts to.',
+      'Whether this server can connect Sentry at all, and the workspace’s connection: the Sentry organization, the client secret’s last four characters, and the webhook URL its integration posts to. Null when none.',
   })
-  @ApiResponse({ status: 200, type: SentryConnectionResponseDto })
+  @ApiResponse({ status: 200, type: SentryStatusResponseDto })
   @ApiProblemResponse({ status: 400, description: 'No active workspace', code: 'TENANT_001' })
-  @ApiProblemResponse({
-    status: 404,
-    description: 'No Sentry organization is connected',
-    code: 'SENTRY_002',
-  })
-  find(@CurrentAccessScope() scope: AccessScope): Promise<SentryConnectionResponseDto> {
+  find(@CurrentAccessScope() scope: AccessScope): Promise<SentryStatusResponseDto> {
     return this.queryBus.execute(new FindSentryConnectionQuery({ scope }));
   }
 }

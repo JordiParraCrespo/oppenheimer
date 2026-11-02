@@ -2471,9 +2471,9 @@ export const removeSentryConnection = <ThrowOnError extends boolean = false>(opt
 });
 
 /**
- * The workspace’s Sentry connection
+ * Whether Sentry is connected to the workspace
  *
- * The connected Sentry organization, the client secret’s last four characters, and the webhook URL its integration posts to.
+ * Whether this server can connect Sentry at all, and the workspace’s connection: the Sentry organization, the client secret’s last four characters, and the webhook URL its integration posts to. Null when none.
  */
 export const findSentryConnection = <ThrowOnError extends boolean = false>(options?: Options<FindSentryConnectionData, ThrowOnError>): RequestResult<FindSentryConnectionResponses, FindSentryConnectionErrors, ThrowOnError> => (options?.client ?? client).get<FindSentryConnectionResponses, FindSentryConnectionErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -2484,7 +2484,7 @@ export const findSentryConnection = <ThrowOnError extends boolean = false>(optio
 /**
  * Connect the workspace’s Sentry organization
  *
- * Stores the slug and the internal integration’s client secret (sealed, never returned), replacing the workspace’s previous ones; the connection keeps its id. Answers the connection with the webhook URL to paste into the integration.
+ * Stores the slug and the internal integration’s client secret (sealed, never returned), replacing the workspace’s previous ones; the connection keeps its id. Answers the status, whose connection carries the webhook URL to paste into the integration.
  */
 export const putSentryConnection = <ThrowOnError extends boolean = false>(options: Options<PutSentryConnectionData, ThrowOnError>): RequestResult<PutSentryConnectionResponses, PutSentryConnectionErrors, ThrowOnError> => (options.client ?? client).put<PutSentryConnectionResponses, PutSentryConnectionErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],

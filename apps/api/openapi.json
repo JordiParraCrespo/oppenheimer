@@ -16526,7 +16526,7 @@
     },
     "/api/v1/sentry/connection": {
       "get": {
-        "description": "The connected Sentry organization, the client secret’s last four characters, and the webhook URL its integration posts to.",
+        "description": "Whether this server can connect Sentry at all, and the workspace’s connection: the Sentry organization, the client secret’s last four characters, and the webhook URL its integration posts to. Null when none.",
         "operationId": "findSentryConnection",
         "parameters": [],
         "responses": {
@@ -16535,7 +16535,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/SentryConnectionResponseDto"
+                  "$ref": "#/components/schemas/SentryStatusResponseDto"
                 }
               }
             }
@@ -16569,16 +16569,6 @@
                 }
               }
             }
-          },
-          "404": {
-            "description": "SENTRY_002 — No Sentry organization is connected",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetailsDto"
-                }
-              }
-            }
           }
         },
         "security": [
@@ -16586,13 +16576,13 @@
             "bearer": []
           }
         ],
-        "summary": "The workspace’s Sentry connection",
+        "summary": "Whether Sentry is connected to the workspace",
         "tags": [
           "Sentry"
         ]
       },
       "put": {
-        "description": "Stores the slug and the internal integration’s client secret (sealed, never returned), replacing the workspace’s previous ones; the connection keeps its id. Answers the connection with the webhook URL to paste into the integration.",
+        "description": "Stores the slug and the internal integration’s client secret (sealed, never returned), replacing the workspace’s previous ones; the connection keeps its id. Answers the status, whose connection carries the webhook URL to paste into the integration.",
         "operationId": "putSentryConnection",
         "parameters": [],
         "requestBody": {
@@ -16611,7 +16601,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/SentryConnectionResponseDto"
+                  "$ref": "#/components/schemas/SentryStatusResponseDto"
                 }
               }
             }
@@ -32554,6 +32544,28 @@
           "webhookUrl",
           "createdAt",
           "updatedAt"
+        ]
+      },
+      "SentryStatusResponseDto": {
+        "type": "object",
+        "properties": {
+          "configured": {
+            "type": "boolean",
+            "description": "Whether this server can keep a client secret (`SENTRY_CONNECTION_KEY`). False: connecting answers SENTRY_001."
+          },
+          "connection": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SentryConnectionResponseDto"
+              }
+            ]
+          }
+        },
+        "required": [
+          "configured",
+          "connection"
         ]
       },
       "PutSentryConnectionRequest": {
