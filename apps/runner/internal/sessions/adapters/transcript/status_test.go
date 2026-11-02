@@ -86,7 +86,7 @@ func TestTheChatCarriesTheStatusAfterTheHistoryAndEachTimeItChanges(t *testing.T
 	go func() {
 		defer close(done)
 		_ = transcript.New(transcript.Options{ClaudeProjects: projects, StatusDir: statusDir}).
-			Follow(ctx, domain.AgentClaude, conversation, 64<<10, 256, sink.emit)
+			Follow(ctx, domain.Session{Agent: domain.AgentClaude, Launch: domain.Launch{Conversation: conversation}}, 64<<10, 256, sink.emit)
 	}()
 	t.Cleanup(func() { cancel(); <-done })
 

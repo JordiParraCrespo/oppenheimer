@@ -7,7 +7,7 @@ import {
   useStickToBottom,
 } from '@oppenheimer/design-system-web';
 import { ArrowDown, ChevronUp } from '@oppenheimer/design-system-web/icons';
-import type { SessionChat as Chat } from '@oppenheimer/frontend-consumer';
+import type { SessionChat as Chat, SessionAgent } from '@oppenheimer/frontend-consumer';
 import { useState } from 'react';
 import { flushSync } from 'react-dom';
 import { useTranslation } from 'react-i18next';
@@ -54,10 +54,13 @@ function keepingPlace(box: HTMLElement | null, grow: () => void): void {
  */
 export function SessionChat({
   chat,
+  agent,
   readOnly,
   attach,
 }: {
   chat: Chat;
+  /** Whose conversation it is; none where the reader is not told (a guest on a share). */
+  agent: SessionAgent | null;
   readOnly: boolean;
   attach?: ChatAttach;
 }) {
@@ -91,9 +94,11 @@ export function SessionChat({
             {ids.length === 0 ? (
               <EmptyState className="flex-1">
                 <EmptyState.Header>
-                  <EmptyState.Media>
-                    <AgentMark agent="claude-code" className="size-10" />
-                  </EmptyState.Media>
+                  {agent ? (
+                    <EmptyState.Media>
+                      <AgentMark agent={agent} className="size-10" />
+                    </EmptyState.Media>
+                  ) : null}
                   <EmptyState.Title>{t('sessions.chat.empty.title')}</EmptyState.Title>
                   <EmptyState.Description>
                     {t('sessions.chat.empty.description')}
@@ -127,9 +132,9 @@ export function SessionChat({
       {readOnly ? null : (
         <TerminalColumn className="pb-3">
           {attach ? (
-            <SessionChatAttachingSend chat={chat} attach={attach} onSent={toLatest} />
+            <SessionChatAttachingSend chat={chat} agent={agent} attach={attach} onSent={toLatest} />
           ) : (
-            <SessionChatSend chat={chat} onSent={toLatest} />
+            <SessionChatSend chat={chat} agent={agent} onSent={toLatest} />
           )}
         </TerminalColumn>
       )}

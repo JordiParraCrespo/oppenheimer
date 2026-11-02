@@ -67,7 +67,7 @@ const reply = (text: string) =>
 
 it('redraws only the turn a line of the transcript lands in', () => {
   const chat = new Chat();
-  render(<SessionChat chat={chat} readOnly />);
+  render(<SessionChat chat={chat} agent="claude-code" readOnly />);
   const history = Array.from({ length: 10 }, (_, turn) => [
     prompt(`Turn ${turn}`),
     call(`t${turn}`),
