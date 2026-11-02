@@ -10,7 +10,7 @@
  */
 import { createServer, type Server } from 'node:http';
 import type { AddressInfo } from 'node:net';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import type { BotEngineEvent } from '../../bot-engine';
 import { steerNote } from '../../turn';
 import { ChatgptBotEngine } from '../chatgpt-bot-engine';
@@ -19,11 +19,18 @@ import { OpenAiBotEngine } from '../openai-bot-engine';
 const KEY = 'sk-local-0123456789';
 
 /**
- * The engine imports the Agents SDK on its first turn, and this spec is that
- * first turn: a cold import under a parallel `turbo test` took longer than
- * Vitest's 5s default on its own.
+ * The engine imports the Agents SDK on its first turn. Cold, under a parallel
+ * `turbo test`, that import alone took 20-30s, which ran past each turn's
+ * 20s abort signal and the test's own timeout: the turn came back as a bare
+ * `done`. `beforeAll` pays for the import once, with its own budget, so a
+ * turn's time is only the turn's.
  */
-const SDK_LOAD_MS = 30_000;
+const SDK_IMPORT_MS = 120_000;
+const TURN_MS = 30_000;
+
+beforeAll(async () => {
+  await Promise.all([import('@openai/agents'), import('openai')]);
+}, SDK_IMPORT_MS);
 
 type ResponsesRequest = {
   url?: string;
@@ -218,7 +225,7 @@ describe('OpenAiBotEngine on the Agents SDK', () => {
         }),
       );
     },
-    SDK_LOAD_MS,
+    TURN_MS,
   );
 
   it(
@@ -279,7 +286,7 @@ describe('OpenAiBotEngine on the Agents SDK', () => {
       );
       expect(steerNote(steers)).toContain('Use Tokyo time instead.');
     },
-    SDK_LOAD_MS,
+    TURN_MS,
   );
 
   it(
@@ -334,7 +341,7 @@ describe('OpenAiBotEngine on the Agents SDK', () => {
         expect(sent.body).not.toHaveProperty('extra_headers');
       }
     },
-    SDK_LOAD_MS,
+    TURN_MS,
   );
 
   it('fails a chatgpt turn that names no account, without calling the backend', async () => {
