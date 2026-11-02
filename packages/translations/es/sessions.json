@@ -246,6 +246,12 @@
       "idle": "Inactiva",
       "resolved": "Terminada"
     },
+    "agentReport": {
+      "permission": "Necesita tu permiso",
+      "question": "Te ha hecho una pregunta",
+      "auth": "Necesita que inicies sesión",
+      "error": "Terminó con un error"
+    },
     "file": {
       "sending": "Enviando archivo",
       "notSupported": "Ninguno de los archivos soltados es uno que el agente pueda recibir. Suelta una imagen, un PDF o un archivo de texto.",

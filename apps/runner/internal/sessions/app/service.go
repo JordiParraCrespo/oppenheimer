@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"reflect"
+	"slices"
 	"sort"
 	"strings"
 	"sync"
@@ -42,7 +43,14 @@ type Options struct {
 	// StatusLine is the command a Claude Code session runs for its status
 	// line (`domain.Launch.StatusLine`); empty leaves the CLI's own.
 	StatusLine string
-	Now        func() time.Time
+	// ProgramStatus keeps what an agent reports through OSC 7501; nil reads
+	// the screen alone.
+	ProgramStatus ProgramStatus
+	// Rebooted says the host started after the session map was last
+	// saved: every session it holds as live was lost to that reboot, and a
+	// kept one is brought back (RecoverKept).
+	Rebooted bool
+	Now      func() time.Time
 }
 
 // Service is the session lifecycle.
@@ -78,11 +86,17 @@ type Service struct {
 	// decisions, under mu, is the id of the decision last reported for each
 	// session whose agent waits on one (reportDecision).
 	decisions map[string]string
+	// listeners, under mu, hear each change after it is written (Listen).
+	listeners []Listener
+	// keeper holds the kept sessions a reboot stopped (keep.go).
+	keeper *keeper
+	// observer says what an agent is doing: its own word, or its screen
+	// (observer.go).
+	observer observer
 	// watches is each session's terminal watches (watches.go).
 	watches     *watchBook
 	terminals   Terminals
 	worktrees   Worktrees
-	classifier  Classifier
 	store       Store
 	publisher   Publisher
 	files       Files
@@ -113,9 +127,10 @@ func New(opts Options) (*Service, error) {
 	s := &Service{
 		sessions: map[string]domain.Session{}, creating: map[string]*creation{},
 		revs: map[string]uint64{}, busy: map[string]int{}, inFlight: map[string]bool{}, confirmed: map[string]bool{}, decisions: map[string]string{},
+		keeper: newKeeper(), observer: observer{classifier: opts.Classifier, program: opts.ProgramStatus},
 		watches:   newWatchBook(),
 		terminals: opts.Terminals, worktrees: opts.Worktrees,
-		classifier: opts.Classifier, store: opts.Store, publisher: publisher,
+		store: opts.Store, publisher: publisher,
 		files: opts.Files, places: opts.Places, layout: opts.Layout, env: env, gate: opts.Gate, trust: opts.Trust,
 		transcripts: opts.Transcripts, statusLine: opts.StatusLine, now: now,
 	}
@@ -131,6 +146,9 @@ func New(opts Options) (*Service, error) {
 				continue
 			}
 			s.sessions[session.ID] = session.Clone()
+			if opts.Rebooted && session.Keep && session.State.Live() {
+				s.keeper.lose(session.ID)
+			}
 		}
 	}
 	return s, nil
@@ -351,7 +369,7 @@ func (s *Service) Refresh(ctx context.Context, id string) (domain.Session, error
 	if !alive {
 		// The tmux session is gone — a host reboot, or someone killed it.
 		// The worktree is intact, so this is `stopped`, not `closed`.
-		next := s.observe(session, rev, domain.StateStopped, "")
+		next := s.observe(session, rev, observation{state: domain.StateStopped})
 		s.reportDecision(next, "")
 		return next, nil
 	}
@@ -360,8 +378,7 @@ func (s *Service) Refresh(ctx context.Context, id string) (domain.Session, error
 		return session, err
 	}
 	s.scanWatches(session.ID, screen.Body)
-	state, loginURL := s.classifier.Classify(screen, session.Agent)
-	next := s.observe(session, rev, state, loginURL)
+	next := s.observe(session, rev, s.observer.observe(session, screen))
 	s.reportDecision(next, screen.Body)
 	return next, nil
 }
@@ -411,7 +428,7 @@ func (s *Service) RefreshAll(ctx context.Context) ([]domain.Session, error) {
 		session := item.session
 		name := session.TmuxName()
 		if !present[name] {
-			s.reportDecision(s.observe(session, item.rev, domain.StateStopped, ""), "")
+			s.reportDecision(s.observe(session, item.rev, observation{state: domain.StateStopped}), "")
 			continue
 		}
 		body, err := s.terminals.CaptureBody(ctx, session.Target(0))
@@ -420,8 +437,8 @@ func (s *Service) RefreshAll(ctx context.Context) ([]domain.Session, error) {
 			continue
 		}
 		s.scanWatches(session.ID, body)
-		state, loginURL := s.classifier.Classify(Screen{Body: body, Title: titles[name]}, session.Agent)
-		s.reportDecision(s.observe(session, item.rev, state, loginURL), body)
+		obs := s.observer.observe(session, Screen{Body: body, Title: titles[name]})
+		s.reportDecision(s.observe(session, item.rev, obs), body)
 	}
 	return s.List(), errors.Join(errs...)
 }
@@ -513,6 +530,7 @@ func (s *Service) Restart(ctx context.Context, id string) (domain.Session, error
 	launch := session.Launch
 	launch.Resume = true
 	launch.StatusLine = s.statusLine
+	launch.Wrap = s.observer.wrap(session.ID)
 	s.trustFolder(session.Agent, session.Cwd())
 	release := s.holdLaunch(ctx, session.Agent)
 	err = s.terminals.Create(ctx, session.TmuxName(), session.Cwd(), launch.CommandLine(session.Agent), s.env(session))
@@ -786,6 +804,9 @@ func (s *Service) decide(session domain.Session, state domain.State, loginURL st
 	if announce {
 		publisher.SessionChanged(next)
 	}
+	if ended {
+		s.announced(next, true)
+	}
 	return next
 }
 
@@ -802,15 +823,16 @@ const blockedConfirmAfter = 15 * time.Second
 // on it, when it is already stopped or closed, or when what was seen is what
 // is stored. Otherwise the change is applied to the current record, not to
 // the refresh's copy, so a window opened meanwhile is kept, and announced.
-func (s *Service) observe(session domain.Session, seen uint64, state domain.State, loginURL string) domain.Session {
-	var confirm bool
+func (s *Service) observe(session domain.Session, seen uint64, obs observation) domain.Session {
+	state, loginURL := obs.state, obs.loginURL
+	var confirm, stateChanged bool
 	next, changed, publisher := s.commit(session.ID, func(cur domain.Session, known bool) (domain.Session, bool) {
 		switch {
 		case !known:
 			return session, false
 		case !cur.State.Live(), s.revs[session.ID] != seen, s.busy[session.ID] > 0:
 			return cur, false
-		case cur.State == state && (loginURL == "" || cur.LoginURL == loginURL):
+		case cur.State == state && (loginURL == "" || cur.LoginURL == loginURL) && sameWord(cur.Program, obs.program):
 			confirm = state == domain.StateBlocked && !s.confirmed[session.ID] &&
 				s.now().Sub(cur.Updated) >= blockedConfirmAfter
 			if confirm {
@@ -819,11 +841,18 @@ func (s *Service) observe(session domain.Session, seen uint64, state domain.Stat
 			return cur, false
 		}
 		delete(s.confirmed, session.ID)
+		stateChanged = cur.State != state
 		cur.State = state
 		if loginURL != "" {
 			cur.LoginURL = loginURL
 		}
-		cur.Updated = s.now().UTC()
+		cur.Program = obs.program
+		if stateChanged {
+			// How long a session has been blocked is what moves it to
+			// waiting-on-you; the agent rewording its message is not a new
+			// state, so it does not restart that clock.
+			cur.Updated = s.now().UTC()
+		}
 		return cur, true
 	})
 	if confirm {
@@ -839,7 +868,30 @@ func (s *Service) observe(session domain.Session, seen uint64, state domain.Stat
 		s.watches.drop(next.ID)
 	}
 	publisher.SessionChanged(next)
+	s.announced(next, stateChanged)
 	return next
+}
+
+// Listen adds a listener: it hears every change of state, and every end, of
+// every session from then on.
+func (s *Service) Listen(l Listener) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.listeners = append(s.listeners, l)
+}
+
+// announced tells the listeners a session moved, after it was written, and
+// lets go of what an ended session's agent reported.
+func (s *Service) announced(next domain.Session, stateChanged bool) {
+	if !next.State.Live() {
+		s.observer.forget(next.ID)
+	}
+	s.mu.Lock()
+	listeners := slices.Clone(s.listeners)
+	s.mu.Unlock()
+	for _, l := range listeners {
+		l.SessionMoved(next, stateChanged)
+	}
 }
 
 // reportDecision tells the control plane what a session's agent waits on the

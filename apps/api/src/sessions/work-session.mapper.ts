@@ -11,6 +11,7 @@ import type { RecentFolder, SessionListPage } from './database/work-session.repo
 import { encodeSessionListCursor } from './domain/session-list-cursor.policy';
 import {
   launchPermissionFor,
+  readAgentReport,
   type SessionAgent,
   type SessionFold,
 } from './domain/session-state.policy';
@@ -73,6 +74,7 @@ export class WorkSessionMapper
     record.closeRefusalCode = fold.closeRefusal?.code ?? null;
     record.closeRefusalDetail = fold.closeRefusal?.detail ?? null;
     record.pendingDecision = fold.pendingDecision;
+    record.agentReport = fold.agentReport;
     return record;
   }
 
@@ -190,6 +192,7 @@ export class WorkSessionMapper
         ? { code: record.closeRefusalCode, detail: record.closeRefusalDetail }
         : null,
       pendingDecision: this.decisionOf(record.pendingDecision),
+      agentReport: readAgentReport(record.agentReport),
     };
   }
 
@@ -250,6 +253,7 @@ export class WorkSessionMapper
       ? { code: closeRefusal.code, detail: closeRefusal.detail }
       : null;
     dto.decision = this.decisionToResponse(entity.pendingDecision);
+    dto.agentReport = entity.agentReport ? { ...entity.agentReport } : null;
     // Retired checkouts are left out: the console renders what is on disk, and the
     // row survives only so its directory name is never reissued.
     dto.checkouts = entity.liveCheckouts.map((checkout) =>

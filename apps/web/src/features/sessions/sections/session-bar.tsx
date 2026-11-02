@@ -3,7 +3,8 @@ import type { SessionEntity } from '@oppenheimer/frontend-consumer';
 import { PageBar } from '@oppenheimer/frontend-web';
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import { dotFor, stateWordFor } from '../lib/session-run-state';
+import { AgentReportNote } from '../components/agent-report-note';
+import { agentNoteFor, dotFor, stateWordFor } from '../lib/session-run-state';
 import { LatencyReadout } from './latency-readout';
 import { SessionShareButton } from './session-share-button';
 
@@ -13,6 +14,9 @@ import { SessionShareButton } from './session-share-button';
  * name and its state on a dot, then the view switch and Share on the right.
  * It is the page's bar, not a band inside the terminal, so the terminal under
  * it runs to the pane's edges and its own status line keeps only the link.
+ *
+ * When the agent itself said what it is doing (OSC 7501), its word follows
+ * the state: why it waits, and its own message.
  *
  * With the echo readout switched on (`latency-readout.ts`), the terminal's
  * keystroke round trip sits after the state, in the bar rather than over
@@ -38,6 +42,7 @@ export function SessionBar({
 }) {
   const { t } = useTranslation();
   const dot = dotFor(session);
+  const note = agentNoteFor(session);
   return (
     <PageBar
       leading={back}
@@ -53,6 +58,7 @@ export function SessionBar({
           >
             {t(`sessions.session.state.${stateWordFor(session)}`)}
           </StatusDot>
+          {note ? <AgentReportNote word={note.word} message={note.message} /> : null}
           {/* A cloud session has no terminal here: nothing to time, nothing to share. */}
           {session.isCloud ? null : <LatencyReadout sessionId={session.id} />}
         </>

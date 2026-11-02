@@ -505,3 +505,67 @@ describe('the decision the fold keeps pending', () => {
     ).toBeNull();
   });
 });
+
+describe('the agent report the fold keeps', () => {
+  const observed = (payload: unknown) => entry(SESSION_EVENT_KINDS.AGENT_OBSERVED, payload);
+  const blockedByItsOwnWord = foldSessionLog([
+    entry(SESSION_EVENT_KINDS.REQUESTED),
+    entry(SESSION_EVENT_KINDS.STARTED),
+    observed({
+      state: 'blocked',
+      program: { state: 'blocked', kind: 'permission', message: 'approve Bash: pnpm test' },
+    }),
+  ]);
+
+  it('keeps what the agent said about itself, absent fields read as null', () => {
+    expect(blockedByItsOwnWord.agentReport).toEqual({
+      state: 'blocked',
+      kind: 'permission',
+      progress: null,
+      message: 'approve Bash: pnpm test',
+      title: null,
+    });
+    // The error the state reads as done is kept as the agent said it.
+    const failed = foldSessionEvent(
+      blockedByItsOwnWord,
+      observed({ state: 'done', program: { state: 'error', message: 'overloaded' } }),
+    );
+    expect(failed.agentReport).toMatchObject({ state: 'error', message: 'overloaded' });
+  });
+
+  it('drops it when an observation came from the screen, or says what this build cannot read', () => {
+    expect(
+      foldSessionEvent(blockedByItsOwnWord, observed({ state: 'blocked' })).agentReport,
+    ).toBeNull();
+    expect(
+      foldSessionEvent(
+        blockedByItsOwnWord,
+        observed({ state: 'working', program: { state: 'dreaming' } }),
+      ).agentReport,
+    ).toBeNull();
+  });
+
+  it('follows a new message while the state stays the same, without restarting the clock', () => {
+    const again = foldSessionEvent(
+      blockedByItsOwnWord,
+      observed({
+        state: 'blocked',
+        program: { state: 'blocked', kind: 'question', message: 'which one?' },
+      }),
+    );
+    expect(again.agentReport).toMatchObject({ kind: 'question', message: 'which one?' });
+    expect(again.lastObservedState).toBe('blocked');
+    expect(again.observedSince).not.toBeNull();
+  });
+
+  it('clears it when the session stops, fails, closes or restarts', () => {
+    for (const kind of [
+      SESSION_EVENT_KINDS.STOPPED,
+      SESSION_EVENT_KINDS.FAILED,
+      SESSION_EVENT_KINDS.CLOSED,
+      SESSION_EVENT_KINDS.RESTARTED,
+    ]) {
+      expect(foldSessionEvent(blockedByItsOwnWord, entry(kind)).agentReport).toBeNull();
+    }
+  });
+});

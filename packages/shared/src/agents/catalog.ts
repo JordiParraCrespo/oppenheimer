@@ -329,6 +329,32 @@ function npmUserInstall(pkg: string): string {
   ].join('\n');
 }
 
+/**
+ * How a message is typed into the agent's terminal by something other than
+ * a person: another agent delegating work to it, or the runner on its
+ * behalf. It is pasted (bracketed, when the CLI asked for that), then
+ * `submit` is typed after `pasteGapMs`: a CLI that reads an Enter arriving
+ * with the paste as part of the paste leaves the message unsent.
+ *
+ * The values are herdr-core's defaults, which the CLIs here all take
+ * (`product/research/lessons-from-herdr.md`).
+ */
+export interface CodingAgentInput {
+  /** The keys that send what was typed. */
+  readonly submit: string;
+  /** The keys that interrupt a turn. */
+  readonly stop: string;
+  /** How long to wait between the paste and `submit`, in milliseconds. */
+  readonly pasteGapMs: number;
+}
+
+/** What every agent CLI here takes: Enter to send, Escape to interrupt, 200 ms. */
+const TYPED_INPUT: CodingAgentInput = Object.freeze({
+  submit: '\r',
+  stop: '\u001b',
+  pasteGapMs: 200,
+});
+
 export interface CodingAgentDefinition {
   readonly id: CodingAgentId;
   readonly label: string;
@@ -382,6 +408,11 @@ export interface CodingAgentDefinition {
   /** What the person's three choices mean to this CLI. */
   readonly launch: CodingAgentLaunch;
   /**
+   * How a message is typed into it (`CodingAgentInput`). Absent for the plain
+   * terminal, which takes a line and Enter like any shell.
+   */
+  readonly input?: CodingAgentInput;
+  /**
    * The argv, appended to `command`, that updates this CLI in place to its
    * latest release **without asking**: the runner runs it unattended, with no
    * terminal and nothing on stdin (`product/versions/mvp/02-runner.md` §10).
@@ -414,6 +445,7 @@ export const CODING_AGENTS: Readonly<Record<CodingAgentId, CodingAgentDefinition
     id: 'claude-code',
     label: 'Claude Code',
     command: 'claude',
+    input: TYPED_INPUT,
     loginTargets: Object.freeze([
       Object.freeze({ host: 'claude.ai' }),
       Object.freeze({ host: 'console.anthropic.com' }),
@@ -506,6 +538,7 @@ export const CODING_AGENTS: Readonly<Record<CodingAgentId, CodingAgentDefinition
     id: 'codex',
     label: 'Codex',
     command: 'codex',
+    input: TYPED_INPUT,
     loginTargets: Object.freeze([
       Object.freeze({ host: 'auth.openai.com' }),
       Object.freeze({ host: 'platform.openai.com' }),
@@ -625,6 +658,7 @@ export const CODING_AGENTS: Readonly<Record<CodingAgentId, CodingAgentDefinition
     id: 'opencode',
     label: 'OpenCode',
     command: 'opencode',
+    input: TYPED_INPUT,
     // OpenCode is not one vendor: `opencode auth login` signs in to whichever
     // provider is picked, so it prints OpenCode Zen's own login or that
     // provider's — Anthropic's, OpenAI's, or GitHub Copilot's device flow.
@@ -744,6 +778,7 @@ export const CODING_AGENTS: Readonly<Record<CodingAgentId, CodingAgentDefinition
     // xAI's Grok Build CLI (`@xai-official/grok`, or `x.ai/cli/install.sh`),
     // whose binary is `grok`.
     command: 'grok',
+    input: TYPED_INPUT,
     // `grok login` signs in through `accounts.x.ai/sign-in`, and `--oauth`
     // through `auth.x.ai`: the two hosts grok 1.0.41 carries for a login.
     // `grok.com` and `console.x.ai` are what it links for a subscription or an

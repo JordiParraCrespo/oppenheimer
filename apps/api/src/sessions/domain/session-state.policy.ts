@@ -1,5 +1,6 @@
 import type {
   SessionAgentId,
+  SessionAgentReport,
   SessionDecision,
   SessionEffortDto,
   SessionPermissionDto,
@@ -11,6 +12,7 @@ import {
   CLOUD_AGENT_IDS,
   DECISION_ANSWERED_EVENT_KIND,
   SESSION_PERMISSIONS,
+  sessionAgentReportSchema,
 } from '@oppenheimer/shared';
 import { CODING_AGENTS, effortLevelFor, isCodingAgentId } from '@oppenheimer/shared/agents';
 
@@ -248,6 +250,13 @@ export interface SessionFold {
    * the session stopping, failing or closing.
    */
   pendingDecision: SessionDecision | null;
+  /**
+   * The agent's own word on what it is doing (OSC 7501), from the last
+   * `agent.observed` that carried one: why it is blocked, how far along it is,
+   * what it says. Null when the last observation was read off the screen, and
+   * cleared when the agent stops, fails, closes or starts again.
+   */
+  agentReport: SessionAgentReport | null;
 }
 
 export const INITIAL_SESSION_FOLD: SessionFold = {
@@ -268,6 +277,7 @@ export const INITIAL_SESSION_FOLD: SessionFold = {
   closeRequest: null,
   closeRefusal: null,
   pendingDecision: null,
+  agentReport: null,
 };
 
 /**
@@ -335,6 +345,25 @@ function decisionOf(payload: unknown): SessionDecision | null {
   return parsed.success ? parsed.data.decision : null;
 }
 
+/**
+ * The agent's own report an `agent.observed` payload carries as `program`;
+ * null for one read off the screen.
+ */
+function agentReportOf(payload: unknown): SessionAgentReport | null {
+  if (typeof payload !== 'object' || payload === null) return null;
+  return readAgentReport((payload as { program?: unknown }).program);
+}
+
+/**
+ * A report narrowed by its schema, from the log or from the `jsonb` column it
+ * is folded into: null for none, and for one this build cannot read.
+ */
+export function readAgentReport(value: unknown): SessionAgentReport | null {
+  if (value === undefined || value === null) return null;
+  const parsed = sessionAgentReportSchema.safeParse(value);
+  return parsed.success ? parsed.data : null;
+}
+
 function observedStateOf(payload: unknown): AgentObservedState | null {
   const value = stringField(payload, 'state');
   return AGENT_OBSERVED_STATES.includes(value as AgentObservedState)
@@ -369,16 +398,14 @@ export function foldSessionEvent(fold: SessionFold, event: SessionLogEntry): Ses
       return opened(next, event);
     }
     case SESSION_EVENT_KINDS.FAILED:
-      next.pendingDecision = null;
-      return transition(next, 'failed');
+      return transition(withoutAgentFacts(next), 'failed');
     case SESSION_EVENT_KINDS.STOPPED:
       if (next.state === 'resolved') return next;
       // Stopping ends the processes and leaves the worktrees, so the work is
       // exactly as unfinished as it was: the lifecycle does not move, and
       // `stoppedAt` is the whole of what changed. Nothing waits on an answer.
       next.stoppedAt = event.occurredAt;
-      next.pendingDecision = null;
-      return next;
+      return withoutAgentFacts(next);
     case SESSION_EVENT_KINDS.CLOSE_REQUESTED:
       if (next.state === 'resolved') return next;
       // A new request replaces whatever the last one ended in: a refusal is
@@ -414,8 +441,7 @@ export function foldSessionEvent(fold: SessionFold, event: SessionLogEntry): Ses
       closed.stoppedAt = closed.stoppedAt ?? event.occurredAt;
       closed.closeRequest = null;
       closed.closeRefusal = null;
-      closed.pendingDecision = null;
-      return closed;
+      return withoutAgentFacts(closed);
     }
     case SESSION_EVENT_KINDS.NAMED: {
       const name = stringField(event.payload, 'name');
@@ -454,6 +480,9 @@ export function foldSessionEvent(fold: SessionFold, event: SessionLogEntry): Ses
     case SESSION_EVENT_KINDS.AGENT_OBSERVED: {
       const state = observedStateOf(event.payload);
       if (!state) return next;
+      // Every observation says where its state came from: the agent's own
+      // report, or the screen, which carries none and so clears the last one.
+      next.agentReport = agentReportOf(event.payload);
       if (next.lastObservedState === state) {
         // The same state again: keep the transition already recorded, which is what
         // makes a duration accumulate instead of resetting on every heartbeat.
@@ -499,12 +528,24 @@ export function foldSessionLog(
   return events.reduce(foldSessionEvent, initial);
 }
 
+/**
+ * The fold with every fact that lives only as long as one run of the agent
+ * cleared: what it waits on the person for, and what it last said it is
+ * doing. A session that stops, fails, closes or starts again has neither;
+ * a new fact of that kind joins this list rather than every case above.
+ */
+function withoutAgentFacts(fold: SessionFold): SessionFold {
+  fold.pendingDecision = null;
+  fold.agentReport = null;
+  return fold;
+}
+
 /** A session that is running again: open, not stopped, and carrying the agent's id. */
 function opened(fold: SessionFold, event: SessionLogEntry): SessionFold {
   const next = transition(fold, 'open');
   next.stoppedAt = null;
-  // A fresh agent waits on nothing the last one asked.
-  next.pendingDecision = null;
+  // A fresh agent waits on nothing the last one asked, and has said nothing yet.
+  withoutAgentFacts(next);
   next.agentSessionId = stringField(event.payload, 'agentSessionId') ?? next.agentSessionId;
   return next;
 }

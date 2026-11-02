@@ -13,7 +13,12 @@ workspace, installs itself as a user service, keeps itself on the current
 signed release (rolling back a version that will not stay up), and runs
 sessions — a git worktree plus a tmux session with the agent in window 0,
 tabs as further windows, a screen classifier for the sidebar dot, and a close
-that pushes the branch and removes the worktree.
+that pushes the branch and removes the worktree. The agent runs under
+`runner pty`, which answers its OSC 7501 probe, so an agent that reports its
+own status (Claude Code) is read from that first and the screen second. An
+agent in a session can start, tell and wait on other agents as child
+sessions (`runner --skill`), and a session marked kept comes back on its own
+after a reboot (`product/research/lessons-from-herdr.md` §4).
 
 `runner run` holds one outbound WebSocket to the control plane: sessions are
 driven from the console over it, and the git credential helper answers with
@@ -36,6 +41,9 @@ the way this host proves who it is, and they go when the link lands.
 | `runner install [--print]` | writes and starts the launchd agent (macOS) or systemd user unit (Debian, Ubuntu); `--print` shows the unit instead |
 | `runner uninstall [--keep-identity] [--force]` | stops the service, revokes the host, erases the identity. Refuses while the runner's sessions run unless `--force`, which ends them (checkouts stay). When the control plane could not unpair the host it says why and how to finish, and exits 7. Never touches the workspaces directory |
 | `runner sessions ls\|create\|attach\|window\|restart\|close` | the worktree-plus-tmux lifecycle, from the host itself; a session made here lives under the work folder's `local/local/` |
+| `runner sessions run\|send\|wait\|report\|children\|keep` | from inside a session, through the running daemon's socket: start a child session with a task (`--repo`, `--outlive-parent`, `--quiet`, `--keep`), type a message into an agent, wait for children to settle, report to the parent, list children, keep a session across reboots. `SESS_012` is an agent not up after 30 s, `HOST_012` no daemon on the socket |
+| `runner --skill` | the manual an agent in a session reads for the commands above; every session's note points at it |
+| `runner pty [--report F] -- CMD` | what window 0 runs the agent under: a PTY of its own that answers OSC 7501's probe, keeps the agent's reports in F and passes every other byte through |
 | `runner credential-helper get` | git's credential protocol, answered over the local socket |
 | `runner status` | platform, pairing, key fingerprint, service, tools, disk. Exits 0 whenever it can print the table, ready or not: read the lines, not the exit code |
 | `runner update [--check\|--force\|--pin V\|--unpin\|--rollback]` | the update policy, by hand |
@@ -59,6 +67,8 @@ host: remove it under Settings → Hosts).
   host.key      0600  the Ed25519 key every dial is signed with
   bin/                runner-<version> binaries and the `current` symlink
   state/              update.json, sessions.json
+  state/program-status/ each wrapped agent's OSC 7501 report, while its `runner pty` runs
+  bin/path/runner     a link to this binary, on every session's PATH
   state/whatsapp/ 0700  whatsapp.db (0600): the WhatsApp linked device's keys and its outbox
   manifests/          agent detection rules newer than the bundled ones
   log/ run/           logs, the Unix socket, the single-instance lock

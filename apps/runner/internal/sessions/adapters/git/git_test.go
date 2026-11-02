@@ -343,6 +343,9 @@ func TestEnsureFailsWhenTheRefIsNotABranchOnTheRemote(t *testing.T) {
 	if err := c.Ensure(ctx, repo, remote, "main"); err != nil {
 		t.Fatal(err)
 	}
+	// The clone's history arrives in the background, fetching every branch;
+	// it lands before "elsewhere" exists, or it would be what fetched it.
+	c.Wait()
 	advance(t, remote, "elsewhere")
 
 	err := c.Ensure(ctx, repo, "", "no-such-branch")

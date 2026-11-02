@@ -7,6 +7,7 @@ import {
   type ErrorDefinition,
 } from '@oppenheimer/backend-ddd';
 import type {
+  SessionAgentReport,
   SessionDecision,
   SessionGroup,
   SessionPlace,
@@ -411,6 +412,11 @@ export class WorkSessionEntity extends AggregateRoot<WorkSessionProps> {
     return this.props.pendingDecision;
   }
 
+  /** The agent's own word on what it is doing (OSC 7501), or null. */
+  get agentReport(): SessionAgentReport | null {
+    return this.props.agentReport;
+  }
+
   /**
    * Why this session cannot take input right now — typed keys, a pasted
    * image — or `null` when it can. Closed is final and stopped has no window
@@ -476,6 +482,7 @@ export class WorkSessionEntity extends AggregateRoot<WorkSessionProps> {
       closeRequest: this.props.closeRequest,
       closeRefusal: this.props.closeRefusal,
       pendingDecision: this.props.pendingDecision,
+      agentReport: this.props.agentReport,
     };
   }
 
@@ -506,6 +513,7 @@ export class WorkSessionEntity extends AggregateRoot<WorkSessionProps> {
     this.props.closeRequest = fold.closeRequest;
     this.props.closeRefusal = fold.closeRefusal;
     this.props.pendingDecision = fold.pendingDecision;
+    this.props.agentReport = fold.agentReport;
   }
 
   /**

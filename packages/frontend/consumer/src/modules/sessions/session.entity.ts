@@ -14,6 +14,7 @@ import {
   cloudAgentIsActive,
 } from '@oppenheimer/shared/schemas/cloud-agent';
 import type { SessionAgentId, SessionPlace } from '@oppenheimer/shared/schemas/session';
+import type { SessionAgentReport } from '@oppenheimer/shared/schemas/session-agent-report';
 import type { SessionDecision } from '@oppenheimer/shared/schemas/session-decision';
 
 /** The agent a session's tmux window 0 runs (`product/versions/mvp/00-scope.md`). */
@@ -205,6 +206,7 @@ export type SessionEntityProps = Pick<
       | 'lastEventAt'
       | 'stateSeq'
       | 'decision'
+      | 'agentReport'
       | 'cloud'
       | 'cloudSessionId'
     >
@@ -263,6 +265,12 @@ export class SessionEntity {
    * asked or a permission dialog (`29-inbox.md` slice 4); null when nothing is.
    */
   readonly decision: SessionDecision | null = null;
+  /**
+   * What the agent itself last said it is doing (OSC 7501): why it is
+   * blocked, how far along it is, its message. Null when the host read the
+   * state off its screen instead.
+   */
+  readonly agentReport: SessionAgentReport | null = null;
   /** The vendor half of a cloud session the control plane launched (Cursor's); null otherwise. */
   readonly cloud: SessionCloudRun | null = null;
   /**

@@ -903,6 +903,12 @@
         "idle": "Idle",
         "resolved": "Done"
       },
+      "agentReport": {
+        "permission": "Needs your permission",
+        "question": "Asked you a question",
+        "auth": "Needs you to sign in",
+        "error": "Ended in an error"
+      },
       "file": {
         "sending": "Sending file",
         "notSupported": "None of the dropped files is one the agent can take. Drop an image, a PDF or a text file.",

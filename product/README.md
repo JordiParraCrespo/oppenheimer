@@ -1029,3 +1029,21 @@ earlier note:
   session, a member's and a guest's: the terminal shows until the
   transcript arrives and stays the view for an agent with none, and the
   Terminal tab is still there to type into the PTY.
+- Note 13 said herdr's agents do not survive a restart and took its screen
+  manifests as the model for agent state. herdr-core, its successor, keeps
+  programs alive across its own restarts and takes status only from the
+  program (OSC 7501), which Claude Code speaks once the terminal answers
+  its probe; tmux does not. On 2026-11-02 the agent's own report became the
+  first source of a session's state, above the screen manifests, through
+  the runner's `runner pty` wrapper (`research/lessons-from-herdr.md` §4,
+  `versions/mvp/02-runner.md` §9).
+- `versions/mvp/02-runner.md` §5 and §12 said a reboot leaves every session
+  stopped until someone presses Restart. On 2026-11-02 a session marked
+  kept (`runner sessions keep`) is restarted on its own after a reboot,
+  reopening its conversation; the rest still wait for Restart.
+- `next-steps/0.6-mcp-cli-and-agent.md` placed delegation (`spawn_task`,
+  `wait_task`, `send_message`) behind an MCP server in the 0.6 slice. On
+  2026-11-02 the host-side half landed in the runner instead, ported from
+  herdr-core: an agent in a session starts, tells and waits on child
+  sessions with `runner sessions run|send|wait|report` (`runner --skill`).
+  The control-plane half, a child the console lists, is still 0.6's.

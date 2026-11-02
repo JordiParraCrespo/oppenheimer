@@ -679,6 +679,9 @@ func (h *linkHandler) SessionChanged(session sessionsdomain.Session) {
 		if session.LoginURL != "" {
 			payload["loginUrl"] = session.LoginURL
 		}
+		if program := programPayload(session.Program); program != nil {
+			payload["program"] = program
+		}
 		h.reporter.Append(session.ID, "agent.observed", payload)
 	}
 }
@@ -787,6 +790,30 @@ func (h *linkHandler) snapshots() []link.SessionSnapshot {
 			snapshot.LoginURL = &url
 		}
 		out = append(out, snapshot)
+	}
+	return out
+}
+
+// programPayload is the agent's own word (OSC 7501) as `agent.observed`
+// carries it beside the state: the word itself, which keeps an `error` the
+// state folds into `done`, why it is blocked, how far along it is and what
+// it says. Nil when the state came from the screen.
+func programPayload(p *sessionsdomain.ProgramStatus) map[string]any {
+	if p == nil {
+		return nil
+	}
+	out := map[string]any{"state": p.State}
+	if p.Kind != "" {
+		out["kind"] = p.Kind
+	}
+	if p.Progress != nil {
+		out["progress"] = *p.Progress
+	}
+	if p.Message != "" {
+		out["message"] = p.Message
+	}
+	if p.Title != "" {
+		out["title"] = p.Title
 	}
 	return out
 }

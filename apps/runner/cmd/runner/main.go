@@ -12,6 +12,7 @@
 //	runner agents       install the agent CLIs (claude, codex, …) and keep them current
 //	runner tools        the host tools (git, tmux, gh): what is there, install gh
 //	runner credential-helper  git's credential helper, over the local socket
+//	runner pty          what a session's agent runs under: answers OSC 7501, keeps its reports
 //	runner selfcheck    what a staged binary must pass before it is activated
 //	runner serve        the control-plane-facing HTTP service (containers)
 //	runner version      version, commit, target
@@ -100,6 +101,9 @@ func dispatch(ctx context.Context, args []string) (int, error) {
 		return withApp(ctx, func(ctx context.Context, app *cli.App) error {
 			return app.CredentialHelper(ctx, operation, os.Stdin, os.Stdout)
 		})
+	case "pty":
+		// A session's window 0 runs its agent under this (statuspty).
+		return cli.PTY(ctx, args, os.Stderr)
 	case "statusline":
 		// Claude Code calls this for a session's status line, the payload on
 		// stdin; it never fails the CLI.
@@ -116,6 +120,12 @@ func dispatch(ctx context.Context, args []string) (int, error) {
 		})
 	case "serve":
 		return serve(ctx)
+	case "skill", "--skill":
+		// The manual for an agent in a session: helpers, messages, waits.
+		if err := cli.Skill(os.Stdout); err != nil {
+			return cli.ExitFailure, err
+		}
+		return cli.ExitOK, nil
 	case "version", "--version", "-v":
 		fmt.Printf("oppenheimer-runner %s %s %s/%s\n", version, commit, osName(), archName())
 		return cli.ExitOK, nil
@@ -126,6 +136,19 @@ func dispatch(ctx context.Context, args []string) (int, error) {
 		usage(os.Stderr)
 		return cli.ExitUsage, fmt.Errorf("unknown command %q", command)
 	}
+}
+
+// withDelegation runs a command that talks to the running daemon over its
+// socket rather than building a second copy of the host agent.
+func withDelegation(fn func(cli.Delegation) error) (int, error) {
+	d, err := cli.NewDelegation(os.Stdout)
+	if err != nil {
+		return cli.ExitFailure, err
+	}
+	if err := fn(d); err != nil {
+		return cli.ExitCode(err), err
+	}
+	return cli.ExitOK, nil
 }
 
 // withApp builds the host agent and runs one command against it.
@@ -331,6 +354,64 @@ func sessions(ctx context.Context, args []string) (int, error) {
 		return withApp(ctx, func(ctx context.Context, app *cli.App) error {
 			return app.CreateSession(ctx, os.Stdout, opts)
 		})
+	case "run":
+		// From inside a session: start a child session with a task.
+		fs := flag.NewFlagSet("sessions run", flag.ContinueOnError)
+		opts := cli.ChildOptions{}
+		fs.StringVar(&opts.Agent, "agent", "claude", "claude, codex, opencode, grok or shell")
+		fs.StringVar(&opts.Name, "name", "", "name for the child")
+		fs.StringVar(&opts.Repo, "repo", "", "give the child a worktree of its own of owner/name (default: run in this session's folder)")
+		fs.StringVar(&opts.Base, "base", "", "with --repo, the branch to cut it from (default: this session's base)")
+		fs.StringVar(&opts.Parent, "parent", "", "the parent session (default: the session this runs in)")
+		fs.BoolVar(&opts.OutliveParent, "outlive-parent", false, "keep running when the parent ends")
+		fs.BoolVar(&opts.Quiet, "quiet", false, "send the parent no notes when the child is blocked or ends")
+		fs.BoolVar(&opts.Keep, "keep", false, "bring the child back on its own after a reboot")
+		rest, err := parse(fs, args)
+		if err != nil {
+			return cli.ExitUsage, err
+		}
+		if len(rest) == 0 {
+			return cli.ExitUsage, errors.New(`usage: runner sessions run [--agent A] [--repo R] "task"`)
+		}
+		return withDelegation(func(d cli.Delegation) error { return d.Run(ctx, opts, strings.Join(rest, " ")) })
+	case "send":
+		if len(args) < 2 {
+			return cli.ExitUsage, errors.New(`usage: runner sessions send <id> "message"`)
+		}
+		return withDelegation(func(d cli.Delegation) error { return d.Send(ctx, args[0], strings.Join(args[1:], " ")) })
+	case "report":
+		if len(args) == 0 {
+			return cli.ExitUsage, errors.New(`usage: runner sessions report "message"`)
+		}
+		return withDelegation(func(d cli.Delegation) error { return d.Report(ctx, strings.Join(args, " ")) })
+	case "wait":
+		fs := flag.NewFlagSet("sessions wait", flag.ContinueOnError)
+		parent := fs.String("parent", "", "the parent session (default: the session this runs in)")
+		timeout := fs.Duration("timeout", 30*time.Minute, "how long to wait; the children keep running past it")
+		rest, err := parse(fs, args)
+		if err != nil {
+			return cli.ExitUsage, err
+		}
+		return withDelegation(func(d cli.Delegation) error { return d.Wait(ctx, *parent, rest, *timeout) })
+	case "keep":
+		fs := flag.NewFlagSet("sessions keep", flag.ContinueOnError)
+		off := fs.Bool("off", false, "stop keeping it: after a reboot it waits for Restart")
+		rest, err := parse(fs, args)
+		if err != nil {
+			return cli.ExitUsage, err
+		}
+		id := ""
+		if len(rest) > 0 {
+			id = rest[0]
+		}
+		return withDelegation(func(d cli.Delegation) error { return d.Keep(ctx, id, !*off) })
+	case "children":
+		fs := flag.NewFlagSet("sessions children", flag.ContinueOnError)
+		parent := fs.String("parent", "", "the parent session (default: the session this runs in)")
+		if _, err := parse(fs, args); err != nil {
+			return cli.ExitUsage, err
+		}
+		return withDelegation(func(d cli.Delegation) error { return d.Children(ctx, *parent) })
 	case "attach":
 		fs := flag.NewFlagSet("sessions attach", flag.ContinueOnError)
 		window := fs.Int("window", 0, "window to attach to; 0 is the agent")
@@ -458,6 +539,15 @@ func usage(w *os.File) {
   runner tools install gh         install GitHub's CLI into ~/.local/bin (git and tmux: the package
                                   manager's command is printed, the runner never uses sudo)
   runner credential-helper get    git's credential protocol, answered over the socket
+  runner sessions run [--agent A] [--repo R] [--outlive-parent] "task"
+                                  from inside a session: start a child session with a task
+  runner sessions send <id> "msg" type a message into a session's agent (paste, then submit)
+  runner sessions wait [<id>...]  wait for this session's children to finish, block or end
+  runner sessions report "msg"    from inside a child: send the parent a message
+  runner sessions children        this session's children and what each one says
+  runner sessions keep [<id>] [--off]  bring a session back on its own after a reboot
+  runner --skill                  the manual for an agent in a session (helpers, messages, waits)
+  runner pty [--report F] -- CMD  run CMD on a terminal that speaks OSC 7501 (a session's agent runs under it)
   runner selfcheck                what a staged binary must pass to be activated
   runner serve                    the HTTP service on a TCP port (containers)
   runner version

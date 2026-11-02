@@ -136,6 +136,15 @@ function toEntity(data: SessionResponseDto): SessionEntity {
     lastEventAt: data.lastEventAt ? new Date(data.lastEventAt) : null,
     stateSeq: data.stateSeq ?? 0,
     decision: toDecision(data.decision),
+    agentReport: data.agentReport
+      ? {
+          state: data.agentReport.state,
+          kind: data.agentReport.kind ?? null,
+          progress: data.agentReport.progress ?? null,
+          message: data.agentReport.message ?? null,
+          title: data.agentReport.title ?? null,
+        }
+      : null,
     cloud: data.cloud
       ? {
           provider: data.cloud.provider,

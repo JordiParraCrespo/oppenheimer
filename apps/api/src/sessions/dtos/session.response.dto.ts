@@ -18,6 +18,7 @@ import {
   SESSION_PLACES,
   SESSION_STATES,
 } from '@oppenheimer/shared';
+import { SessionAgentReportResponseDto } from './session-agent-report.response.dto';
 import {
   type SessionDecisionResponseDto,
   SessionPermissionDecisionResponseDto,
@@ -346,6 +347,14 @@ export class SessionResponseDto {
       'What the agent waits on you for, by `kind`: a question it asked, or a permission dialog. Null when nothing is pending. Answer it with `POST /sessions/{id}/decision`.',
   })
   decision!: SessionDecisionResponseDto | null;
+
+  @ApiProperty({
+    type: SessionAgentReportResponseDto,
+    nullable: true,
+    description:
+      'What the agent itself last said it is doing (OSC 7501): why it is blocked, how far along it is, its message. Null when the state was read off its screen.',
+  })
+  agentReport!: SessionAgentReportResponseDto | null;
 
   @ApiProperty()
   createdAt!: Date;

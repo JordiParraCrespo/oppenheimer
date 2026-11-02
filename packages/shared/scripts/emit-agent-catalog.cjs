@@ -183,6 +183,21 @@ function render() {
     `{${CODING_AGENTS[id].loginTargets.map(goTarget).join(', ')}}`,
   ]);
   lines.push(...aligned(targets, '\t'), '}', '');
+  // How a message is typed into each agent; the plain terminal has no row.
+  lines.push(
+    "// inputCatalog is each agent's `input` entry of the catalog: the keys that",
+    '// send and interrupt a message typed into it, and the pause between a',
+    '// paste and its submit, in milliseconds.',
+    'var inputCatalog = map[string]agentInput{',
+  );
+  const inputs = CODING_AGENT_IDS.filter((id) => CODING_AGENTS[id].input).map((id) => {
+    const input = CODING_AGENTS[id].input;
+    return [
+      JSON.stringify(id),
+      `{submit: ${JSON.stringify(input.submit)}, stop: ${JSON.stringify(input.stop)}, pasteGapMs: ${input.pasteGapMs}}`,
+    ];
+  });
+  lines.push(...aligned(inputs, '\t'), '}', '');
   return lines.join('\n');
 }
 

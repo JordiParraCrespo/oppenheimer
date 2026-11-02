@@ -1167,6 +1167,7 @@ for a 404 or 428, 6 for a 502, 503 or 504, 7 for `PAIR_009`, and 1 for anything 
 | `HOST_009` <a id="host_009" />         | An agent CLI could not be updated            | 424  |
 | `HOST_010` <a id="host_010" />         | The runner does not install this tool        | 400  |
 | `HOST_011` <a id="host_011" />         | A tool could not be installed                | 424  |
+| `HOST_012` <a id="host_012" />         | The runner is not running on this host       | 503  |
 | `FS_001` <a id="fs_001" />             | The folder does not exist                    | 404  |
 | `FS_002` <a id="fs_002" />             | The path is not a directory                  | 400  |
 | `FS_003` <a id="fs_003" />             | The folder cannot be read                    | 403  |
@@ -1214,6 +1215,7 @@ for a 404 or 428, 6 for a 502, 503 or 504, 7 for `PAIR_009`, and 1 for anything 
 | `SESS_009` <a id="sess_009" />         | Codex could not start the task in the cloud  | 502  |
 | `SESS_010` <a id="sess_010" />         | No Codex cloud environment the CLI can reach is named for the repository | 404 |
 | `SESS_011` <a id="sess_011" />         | ChatGPT asked the host to wait before listing Codex environments | 429 |
+| `SESS_012` <a id="sess_012" />         | The session's agent is not ready for a message | 409 |
 | `TMUX_001` <a id="tmux_001" />         | tmux is not available on this host           | 424  |
 | `TMUX_002` <a id="tmux_002" />         | The tmux server refused the command          | 500  |
 | `GIT_001` <a id="git_001" />           | The worktree could not be prepared           | 500  |

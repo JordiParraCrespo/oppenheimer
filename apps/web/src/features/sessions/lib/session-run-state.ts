@@ -56,3 +56,23 @@ export function stateWordFor(session: SessionEntity): SessionStateWord {
   if (!session.isLive) return 'stopped';
   return session.state;
 }
+
+/** Why the agent says it waits, under `sessions.session.agentReport`. */
+export type AgentReportWord = 'permission' | 'question' | 'auth' | 'error';
+
+/**
+ * What the session's bar adds after its state word when the agent itself
+ * said what it is doing (OSC 7501): why it is blocked, or that its turn
+ * ended in an error, and its own message. Nothing for a session that is
+ * not up, or whose state was read off its screen.
+ */
+export function agentNoteFor(
+  session: SessionEntity,
+): { word: AgentReportWord | null; message: string | null } | null {
+  const report = session.agentReport;
+  if (!report || !session.isLive || session.isClosing) return null;
+  const word: AgentReportWord | null =
+    report.state === 'error' ? 'error' : report.state === 'blocked' ? report.kind : null;
+  if (!word && !report.message) return null;
+  return { word, message: report.message };
+}
