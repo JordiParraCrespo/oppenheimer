@@ -56,6 +56,7 @@ export function BotEngineChips({
         aria-label={t('bots.chat.model')}
         searchPlaceholder={t('bots.chat.searchModels')}
         emptyText={(query) => t('bots.chat.noModel', { query })}
+        labels={{ moreModels: t('sessions.new.agent.moreModels') }}
       />
       {levels ? (
         <EffortPicker
