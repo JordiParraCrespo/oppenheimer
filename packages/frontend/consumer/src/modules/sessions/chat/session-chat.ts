@@ -192,37 +192,139 @@ const SUBMIT_AFTER_TEXT_MS = 60;
  */
 const QUEUE_SETTLE_MS = 5000;
 
+/** One line of the transcript: as the host sent it, and read. */
+interface TranscriptLine {
+  raw: string;
+  entry: unknown;
+}
+
+/**
+ * The conversation read so far and the turns it makes. The turns a later
+ * prompt has closed are built once and kept by identity: a build makes
+ * only the open turn again, so a long conversation costs each line the
+ * length of its last turn, not of the whole transcript. A result that lands
+ * on a closed turn's call (a background command that finished after the
+ * next prompt), or a replay that differs, opens the turns from there again.
+ */
+class Transcript {
+  private lines: TranscriptLine[] = [];
+  /** The first line no build has read yet. */
+  private unread = 0;
+  private closed: ChatTurn[] = [];
+  /** The line each closed turn starts at, to build again from one of them. */
+  private closedStarts: number[] = [];
+  /** The calls in the closed turns and the turn each is in, to notice a result that lands on one. */
+  private closedCalls = new Map<string, number>();
+  /** The line the open turn starts at. */
+  private openFrom = 0;
+  /**
+   * While a reconnect replays the history: how many of the lines already
+   * read it has sent again. The transcript only grows, so a replay is what
+   * is held followed by what is new; what is held stays, and only a line
+   * that differs cuts the conversation there.
+   */
+  private replayed: number | null = null;
+
+  /**
+   * A reset: the history again from its first line. With lines to come it
+   * is a replay, checked against what is held; with none, the transcript
+   * is empty now. Whether that changed the conversation.
+   */
+  reset(replaying: boolean): boolean {
+    if (replaying && this.lines.length > 0) {
+      this.replayed = 0;
+      return false;
+    }
+    this.replayed = null;
+    this.truncate(0);
+    return true;
+  }
+
+  /** One line of the conversation; whether it changed what is held. */
+  take(raw: string, entry: unknown): boolean {
+    if (this.replayed !== null) {
+      if (this.lines[this.replayed]?.raw === raw) {
+        this.replayed += 1;
+        if (this.replayed === this.lines.length) this.replayed = null;
+        return false;
+      }
+      this.truncate(this.replayed);
+      this.replayed = null;
+    }
+    this.lines.push({ raw, entry });
+    return true;
+  }
+
+  /** The turns: the closed ones as they were, the rest built from the lines. */
+  turns(): ChatTurn[] {
+    let answered = Number.POSITIVE_INFINITY;
+    for (let index = this.unread; index < this.lines.length; index += 1) {
+      answered = Math.min(answered, this.closedAnswered(this.lines[index]?.entry, index));
+    }
+    this.unread = this.lines.length;
+    if (answered < this.closed.length) this.reopen(answered);
+    const { turns, starts } = buildTurns(
+      this.lines.length,
+      (index) => this.lines[index]?.entry,
+      this.openFrom,
+    );
+    const open = turns.length - 1;
+    for (const [index, turn] of turns.slice(0, Math.max(0, open)).entries()) {
+      const at = this.closed.length;
+      this.closed.push(turn);
+      this.closedStarts.push(starts[index] ?? this.openFrom);
+      for (const step of turn.steps)
+        if (step.kind === 'tool') this.closedCalls.set(step.call.id, at);
+    }
+    if (open > 0) this.openFrom = starts[open] ?? this.openFrom;
+    const last = turns[open];
+    return last ? [...this.closed, last] : [...this.closed];
+  }
+
+  /** Keeps the first `length` lines, and opens again every closed turn that held one past them. */
+  private truncate(length: number): void {
+    this.lines.length = Math.min(this.lines.length, length);
+    this.unread = Math.min(this.unread, length);
+    if (length >= this.openFrom) return;
+    // The first closed turn that runs past `length`: it ends where the next starts.
+    let turn = 0;
+    while ((this.closedStarts[turn + 1] ?? this.openFrom) <= length) turn += 1;
+    this.reopen(turn);
+    if (turn === 0) this.openFrom = 0;
+  }
+
+  /** Opens the closed turns from `turn` on again, for the next build to make afresh. */
+  private reopen(turn: number): void {
+    this.openFrom = this.closedStarts[turn] ?? 0;
+    this.closed = this.closed.slice(0, turn);
+    this.closedStarts = this.closedStarts.slice(0, turn);
+    for (const [call, at] of this.closedCalls) if (at >= turn) this.closedCalls.delete(call);
+  }
+
+  /** The earliest closed turn a result in this entry lands on; `Infinity` for none. */
+  private closedAnswered(entry: unknown, index: number): number {
+    if (this.closedCalls.size === 0) return Number.POSITIVE_INFINITY;
+    const reading = classify(entry, index);
+    if (reading?.kind !== 'results') return Number.POSITIVE_INFINITY;
+    return Math.min(
+      ...reading.results.map(
+        (result) => this.closedCalls.get(result.toolUseId) ?? Number.POSITIVE_INFINITY,
+      ),
+    );
+  }
+}
+
 /**
  * One attachment's chat: batches in, an immutable `ChatState` out, with a
  * subscription a React store can read (`useSyncExternalStore`), and the way
- * back to the agent, which is its terminal. A reset starts over, which is
- * what a reconnect's new attachment sends first. Whoever holds the stream
+ * back to the agent, which is its terminal. A reconnect's new attachment
+ * sends the history again under a reset, which leaves what is drawn alone
+ * where it matches (`Transcript.reset`). Whoever holds the stream
  * feeds it (`apply`) and lends it the stream's input (`connect`); the view
  * reads it and types through it without knowing there is a stream.
  */
 export class SessionChat {
-  private entries: unknown[] = [];
-  /** Each of those entries as the host sent it, to know it again when a reconnect replays it. */
-  private lines: string[] = [];
-  /**
-   * While a reconnect replays the history: how many of the entries already
-   * read it has sent again, line for line. The transcript only grows, so a
-   * replay is what the chat holds followed by what is new; what it holds
-   * stays drawn, and only a line that differs rebuilds the chat from there.
-   */
-  private replayed: number | null = null;
-  /**
-   * The turns a later prompt has closed, built once and kept by identity: a
-   * batch rebuilds only the open turn, so a long conversation costs each
-   * line the length of its last turn, not of the whole transcript.
-   */
-  private closed: ChatTurn[] = [];
-  /** The entry each of those turns starts at, to build again from one of them. */
-  private closedStarts: number[] = [];
-  /** The calls in those turns and the turn each is in, to notice a result that lands on one. */
-  private closedCalls = new Map<string, number>();
-  /** The entry the open turn starts at. */
-  private openFrom = 0;
+  private readonly transcript = new Transcript();
   private type: ((data: string) => void) | null = null;
   private state: ChatState = EMPTY;
   private readonly listeners = new Set<() => void>();
@@ -238,97 +340,27 @@ export class SessionChat {
   private queuedIds = 0;
 
   apply(batch: ChatBatch): void {
-    // Whether the history was cut, so what is drawn must be built again.
-    let cut = false;
-    if (batch.reset) {
-      // A reset with lines is a reconnect sending the history again: it is
-      // checked against the chat, not drawn over it, so a long conversation
-      // does not empty and refill. One with none is a transcript that is
-      // empty now.
-      if (batch.entries.length > 0 && this.entries.length > 0) this.replayed = 0;
-      else {
-        this.replayed = null;
-        this.truncate(0);
-        cut = true;
-      }
-    }
-    let from = this.entries.length;
+    let changed = batch.reset ? this.transcript.reset(batch.entries.length > 0) : false;
     let status = this.state.status;
     for (const raw of batch.entries) {
-      let parsed: unknown;
+      let entry: unknown;
       try {
-        parsed = JSON.parse(raw);
+        entry = JSON.parse(raw);
       } catch {
         // A line the host sent that is not JSON is the host's bug; skip it.
         continue;
       }
       // The status is the latest one, not a line of the conversation.
-      if (record(parsed)?.type === STATUS_ENTRY) {
-        status = statusOf(parsed);
-        continue;
-      }
-      if (this.replayed !== null) {
-        if (this.lines[this.replayed] === raw) {
-          this.replayed += 1;
-          if (this.replayed === this.lines.length) this.replayed = null;
-          continue;
-        }
-        // The history differs from here: what the chat holds past it goes.
-        this.truncate(this.replayed);
-        from = this.entries.length;
-        this.replayed = null;
-        cut = true;
-      }
-      this.entries.push(parsed);
-      this.lines.push(raw);
+      if (record(entry)?.type === STATUS_ENTRY) status = statusOf(entry);
+      else if (this.transcript.take(raw, entry)) changed = true;
     }
-    if (!cut && this.entries.length === from && this.state.available) {
-      // Nothing new in the conversation: a replay so far, or a status alone.
-      if (status !== this.state.status) this.publish({ ...this.state, status });
-      this.flush();
-      return;
+    if (changed || !this.state.available) {
+      this.publish({ ...this.state, available: true, turns: this.transcript.turns(), status });
+    } else if (status !== this.state.status) {
+      // A replay so far, or a status alone: the conversation is as drawn.
+      this.publish({ ...this.state, status });
     }
-    // A result for a call a closed turn made (a background command that
-    // finished after the next prompt) changes that turn: build again from
-    // it, keeping the turns before it as they are.
-    let answered = Number.POSITIVE_INFINITY;
-    for (let index = from; index < this.entries.length; index += 1) {
-      answered = Math.min(answered, this.closedAnswered(this.entries[index], index));
-    }
-    if (answered < this.closed.length) this.reopen(answered);
-    const { turns, starts } = buildTurns(this.entries, this.openFrom);
-    const open = turns.length - 1;
-    for (const [index, turn] of turns.slice(0, Math.max(0, open)).entries()) {
-      const at = this.closed.length;
-      this.closed.push(turn);
-      this.closedStarts.push(starts[index] ?? this.openFrom);
-      for (const step of turn.steps)
-        if (step.kind === 'tool') this.closedCalls.set(step.call.id, at);
-    }
-    if (open > 0) this.openFrom = starts[open] ?? this.openFrom;
-    const last = turns[open];
-    this.publish({
-      ...this.state,
-      available: true,
-      turns: last ? [...this.closed, last] : [...this.closed],
-      status,
-    });
     this.flush();
-  }
-
-  /**
-   * Keeps the first `length` entries and opens again every closed turn that
-   * held one past them, for the next build to make afresh.
-   */
-  private truncate(length: number): void {
-    this.entries.length = Math.min(this.entries.length, length);
-    this.lines.length = Math.min(this.lines.length, length);
-    if (length >= this.openFrom) return;
-    // The first closed turn that runs past `length`: it ends where the next starts.
-    let turn = 0;
-    while ((this.closedStarts[turn + 1] ?? this.openFrom) <= length) turn += 1;
-    this.reopen(turn);
-    if (turn === 0) this.openFrom = 0;
   }
 
   private publish(state: ChatState): void {
@@ -400,26 +432,6 @@ export class SessionChat {
     this.publish({ ...this.state, queued: rest });
     this.send(next.text);
     if (rest.length > 0) setTimeout(() => this.flush(), QUEUE_SETTLE_MS);
-  }
-
-  /** Opens the closed turns from `turn` on again, for the next build to make afresh. */
-  private reopen(turn: number): void {
-    this.openFrom = this.closedStarts[turn] ?? 0;
-    this.closed = this.closed.slice(0, turn);
-    this.closedStarts = this.closedStarts.slice(0, turn);
-    for (const [call, at] of this.closedCalls) if (at >= turn) this.closedCalls.delete(call);
-  }
-
-  /** The earliest closed turn a result in this entry lands on; `Infinity` for none. */
-  private closedAnswered(entry: unknown, index: number): number {
-    if (this.closedCalls.size === 0) return Number.POSITIVE_INFINITY;
-    const reading = classify(entry, index);
-    if (reading?.kind !== 'results') return Number.POSITIVE_INFINITY;
-    return Math.min(
-      ...reading.results.map(
-        (result) => this.closedCalls.get(result.toolUseId) ?? Number.POSITIVE_INFINITY,
-      ),
-    );
   }
 
   /** Lends the chat a way to type into the session's PTY; the function returned takes it back. */
@@ -693,15 +705,16 @@ function systemSteps(raw: string, id: string, at: Date | null): ChatStep[] | nul
 
 /** The entries in turns: a turn opens at each prompt the person typed. */
 export function toTurns(entries: readonly unknown[]): ChatTurn[] {
-  return buildTurns(entries, 0).turns;
+  return buildTurns(entries.length, (index) => entries[index], 0).turns;
 }
 
 /**
- * The turns from entry `from` on, with the entry each one starts at. `from`
- * is where a turn starts (a prompt), or the first entry.
+ * The turns from entry `from` of `count` on, with the entry each one starts
+ * at. `from` is where a turn starts (a prompt), or the first entry.
  */
 function buildTurns(
-  entries: readonly unknown[],
+  count: number,
+  entryAt: (index: number) => unknown,
   from: number,
 ): { turns: ChatTurn[]; starts: number[] } {
   const turns: ChatTurn[] = [];
@@ -715,8 +728,8 @@ function buildTurns(
     return open(turns, null, id, at);
   };
 
-  for (let index = from; index < entries.length; index += 1) {
-    const reading = classify(entries[index], index);
+  for (let index = from; index < count; index += 1) {
+    const reading = classify(entryAt(index), index);
     if (!reading) continue;
     switch (reading.kind) {
       case 'prompt':
