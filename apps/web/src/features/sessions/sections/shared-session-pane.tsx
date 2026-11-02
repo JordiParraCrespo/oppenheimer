@@ -36,7 +36,7 @@ export function SharedSessionPane({ slug }: { slug: string }) {
   const { t } = useTranslation();
   const { data: session, error, refetch } = useSuspenseSharedSession(slug);
   const chat = useSessionChat();
-  const [view, setView] = useState<SessionView>('terminal');
+  const [view, setView] = useState<SessionView>('chat');
   const refusal = error ? shareRefusalOf(error) : null;
   if (refusal) return <SharedRefusal refusal={refusal} slug={slug} />;
 

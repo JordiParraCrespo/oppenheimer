@@ -1030,3 +1030,9 @@ earlier note:
   preset until then, and Always allow on its card or Allow in Settings
   makes it standing. Sends (§3.4) still ask every time and cannot be
   allowed.
+- `next-steps/0.7-terminal-and-chat.md` opened a session on Terminal, with
+  Chat a tab beside it (only a pull request's review session opened on
+  Chat). On 2026-11-02 the owner made Chat the default view of every
+  session, a member's and a guest's: the terminal shows until the
+  transcript arrives and stays the view for an agent with none, and the
+  Terminal tab is still there to type into the PTY.

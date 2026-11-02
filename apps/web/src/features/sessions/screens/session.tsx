@@ -29,7 +29,7 @@ export function SessionScreen({
   bar,
 }: {
   sessionId: string;
-  /** The view the pane opens on, Terminal unless the route says Chat. */
+  /** The view the pane opens on, Chat unless the route says Terminal. */
   initialView?: SessionView;
   /**
    * Present: the screen draws the session's bar. `back` leads it with the task

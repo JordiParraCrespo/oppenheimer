@@ -51,16 +51,18 @@ const SessionPreview = lazy(() =>
  */
 export function SessionPane({
   sessionId,
-  initialView = 'terminal',
+  initialView = 'chat',
   closed,
   bar,
   terminal,
 }: {
   sessionId: string;
   /**
-   * The view the pane opens on. Chat is drawn only once the host sends the
-   * agent's transcript, so a pane that opens on it shows the terminal until
-   * then, and the chat the moment it can.
+   * The view the pane opens on, Chat unless the route says otherwise. Chat is
+   * drawn only once the host sends the agent's transcript, so the pane shows
+   * the terminal until then, and the chat the moment it can; an agent with no
+   * transcript (Codex, a blank terminal) stays on the terminal. Terminal, in
+   * the bar beside Chat, is always there to type into the PTY itself.
    */
   initialView?: SessionView;
   /**
