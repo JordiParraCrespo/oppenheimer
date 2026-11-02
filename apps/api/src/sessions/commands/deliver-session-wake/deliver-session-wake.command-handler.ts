@@ -40,17 +40,20 @@ export class DeliverSessionWakeCommandHandler
     const found = await this.sessions.findOneByIdForMachine(wake.sessionId);
     if (found.isNone()) return;
     const session = found.unwrap();
-    if (session.state !== 'open' || session.stoppedAt) {
-      this.logger.log({ message: 'Dropped a wake: the session is not running', ...ids(wake) });
+    // A session that is not running, or that never takes input here (a cloud
+    // session, one no host started), has nobody to wake, now or later.
+    if (session.state !== 'open' || session.inputRefusal) {
+      this.logger.log({ message: 'Dropped a wake: the session takes no input', ...ids(wake) });
       return;
     }
-    const typed = session.inputRefusal
-      ? ({ outcome: 'undelivered' } as const)
-      : await this.typer.type(session, {
-          commandId: `wake-${wake.wakeId}`,
-          text: wake.text,
-          sender: { kind: 'wake', source: wake.source, wakeId: wake.wakeId },
-        });
+    // Claimed per attempt: an attempt whose keys never reached the host is
+    // logged undelivered, and the next attempt must be free to claim again.
+    // A retry of the same attempt finds its own claim and types nothing.
+    const typed = await this.typer.type(session, {
+      commandId: `wake-${wake.wakeId}-${wake.attempt}`,
+      text: wake.text,
+      sender: { kind: 'wake', source: wake.source, wakeId: wake.wakeId },
+    });
     if (typed.outcome === 'typed' || typed.outcome === 'claimed-before') return;
     if (wake.attempt + 1 >= WAKE_MAX_ATTEMPTS) {
       this.logger.warn({ message: 'Dropped a wake its agent never took', ...ids(wake) });

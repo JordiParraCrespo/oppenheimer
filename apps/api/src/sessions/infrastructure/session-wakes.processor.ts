@@ -5,9 +5,8 @@ import { QUEUE_NAMES } from '@oppenheimer/shared';
 import type { Job } from 'bullmq';
 import type { SessionWake } from '../application/session-wakes.port';
 import { DeliverSessionWakeCommand } from '../commands/deliver-session-wake/deliver-session-wake.command';
+import { SESSION_WAKE_SOURCES, type SessionWakeSource } from '../domain/session-prompt.policy';
 import { DELIVER_SESSION_WAKE_JOB } from './outbox-session-wakes.adapter';
-
-const SOURCES = new Set(['github', 'schedule']);
 
 /**
  * The `session-wakes` worker: one job per wake, staged on the outbox for its
@@ -29,7 +28,7 @@ export class SessionWakesProcessor extends WorkerHost {
       !sessionId ||
       !wakeId ||
       !source ||
-      !SOURCES.has(source) ||
+      !SESSION_WAKE_SOURCES.includes(source as SessionWakeSource) ||
       !text ||
       !Number.isInteger(attempt)
     ) {

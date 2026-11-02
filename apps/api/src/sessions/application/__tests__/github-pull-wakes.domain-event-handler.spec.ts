@@ -12,9 +12,15 @@ import type { SessionWakesPort } from '../session-wakes.port';
 
 function harness(watching: string[]) {
   const sessions = {
-    findWatchingPullForSystem: vi
-      .fn()
-      .mockResolvedValue(watching.map((id) => ({ id }) as WorkSessionEntity)),
+    findWatchingPullForSystem: vi.fn().mockResolvedValue(
+      watching.map(
+        (id) =>
+          ({
+            id,
+            checkouts: [{ githubRepoId: '821374923', repositoryFullName: 'acme-labs/xrp-mobile' }],
+          }) as unknown as WorkSessionEntity,
+      ),
+    ),
   } as unknown as WorkSessionRepositoryPort;
   const wakes = { schedule: vi.fn().mockResolvedValue(undefined) } as unknown as SessionWakesPort;
   return { handler: new GithubPullWakesDomainEventHandler(sessions, wakes), sessions, wakes };
@@ -48,7 +54,11 @@ describe('GithubPullWakesDomainEventHandler', () => {
       }),
       expect.objectContaining({ sessionId: 's-2', wakeId: 'gh-evt-1' }),
     ]);
-    expect(scheduled[0]?.text).toContain('Pull request #128: checks failed (GitHub Actions)');
+    expect(scheduled[0]?.text).toContain(
+      'Pull request #128 of acme-labs/xrp-mobile: checks failed (GitHub Actions)',
+    );
+    // The command names the repository: a session with several checkouts runs above them.
+    expect(scheduled[0]?.text).toContain('`gh pr view 128 --repo acme-labs/xrp-mobile --comments`');
   });
 
   it('wakes nobody for our own app, an event that names no pull request, or one that is not a wake', async () => {

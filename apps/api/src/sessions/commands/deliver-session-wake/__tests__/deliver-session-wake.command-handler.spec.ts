@@ -47,7 +47,10 @@ function sessionAt(observed: string | null, stopped = false) {
   return session;
 }
 
-function harness(found: WorkSessionEntity | null, { claimedBefore = false } = {}) {
+function harness(
+  found: WorkSessionEntity | null,
+  { claimedBefore = false, delivered = true } = {},
+) {
   const sessions = {
     findOneByIdForMachine: vi.fn().mockResolvedValue(found ? Some(found) : None),
     appendEvents: vi.fn().mockResolvedValue({ accepted: [], rejected: [], appended: [] }),
@@ -60,7 +63,7 @@ function harness(found: WorkSessionEntity | null, { claimedBefore = false } = {}
       ),
   } as unknown as WorkSessionRepositoryPort;
   const dispatch = {
-    typeKeys: vi.fn().mockResolvedValue({ delivered: true, hints: [] }),
+    typeKeys: vi.fn().mockResolvedValue({ delivered, hints: delivered ? [] : ['host_offline'] }),
   } as unknown as SessionDispatchPort;
   const wakes = { schedule: vi.fn().mockResolvedValue(undefined) } as unknown as SessionWakesPort;
   const handler = new DeliverSessionWakeCommandHandler(
@@ -87,7 +90,7 @@ describe('DeliverSessionWakeCommandHandler', () => {
     const [, events] = vi.mocked(sessions.appendEventsIf).mock.calls[0] ?? [];
     expect(events).toEqual([
       expect.objectContaining({
-        idempotencyKey: 'prompt.sent:wake-gh-evt-1',
+        idempotencyKey: 'prompt.sent:wake-gh-evt-1-0',
         payload: {
           text: wake().text,
           sender: { kind: 'wake', source: 'github', wakeId: 'gh-evt-1' },
@@ -104,6 +107,24 @@ describe('DeliverSessionWakeCommandHandler', () => {
     await handler.execute(new DeliverSessionWakeCommand({ wake: wake() }));
     expect(dispatch.typeKeys).not.toHaveBeenCalled();
     expect(wakes.schedule).not.toHaveBeenCalled();
+  });
+
+  // The regression: an attempt whose keys never reached the host left its
+  // claim behind, so every later attempt read it as delivered and the wake
+  // was lost although the host came back within the four hours.
+  it('claims afresh on the attempt after one whose keys never reached the host', async () => {
+    const offline = harness(sessionAt('idle'), { delivered: false });
+    await offline.handler.execute(new DeliverSessionWakeCommand({ wake: wake() }));
+    const [again] = vi.mocked(offline.wakes.schedule).mock.calls[0] ?? [];
+    expect(again).toMatchObject({ attempt: 1 });
+
+    const back = harness(sessionAt('idle'));
+    await back.handler.execute(new DeliverSessionWakeCommand({ wake: again as SessionWake }));
+    const [, events] = vi.mocked(back.sessions.appendEventsIf).mock.calls[0] ?? [];
+    expect(events).toEqual([
+      expect.objectContaining({ idempotencyKey: 'prompt.sent:wake-gh-evt-1-1' }),
+    ]);
+    expect(back.dispatch.typeKeys).toHaveBeenCalledOnce();
   });
 
   it('asks a working agent again a minute later, and gives up after four hours', async () => {
