@@ -183,6 +183,10 @@ type Session struct {
 	// LoginURL is the vendor login link the classifier saw, if any. The
 	// console turns it into a button; nothing else is ever linkified (F3).
 	LoginURL string `json:"loginUrl,omitempty"`
+	// Program is the agent's own last word on what it is doing (OSC 7501),
+	// when it said one: why it is blocked, how far along it is, its message.
+	// It is read again on every refresh, so it is never saved.
+	Program *ProgramStatus `json:"-"`
 	// Dirty records that the worktree had uncommitted changes when it was
 	// closed, so the console can say so instead of silently dropping work.
 	Dirty bool `json:"dirty,omitempty"`

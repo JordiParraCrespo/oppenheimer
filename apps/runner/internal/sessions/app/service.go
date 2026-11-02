@@ -42,7 +42,10 @@ type Options struct {
 	// StatusLine is the command a Claude Code session runs for its status
 	// line (`domain.Launch.StatusLine`); empty leaves the CLI's own.
 	StatusLine string
-	Now        func() time.Time
+	// ProgramStatus keeps what an agent reports through OSC 7501; nil reads
+	// the screen alone.
+	ProgramStatus ProgramStatus
+	Now           func() time.Time
 }
 
 // Service is the session lifecycle.
@@ -93,6 +96,7 @@ type Service struct {
 	trust       Trust
 	transcripts Transcripts
 	statusLine  string
+	program     ProgramStatus
 	now         func() time.Time
 }
 
@@ -117,7 +121,7 @@ func New(opts Options) (*Service, error) {
 		terminals: opts.Terminals, worktrees: opts.Worktrees,
 		classifier: opts.Classifier, store: opts.Store, publisher: publisher,
 		files: opts.Files, places: opts.Places, layout: opts.Layout, env: env, gate: opts.Gate, trust: opts.Trust,
-		transcripts: opts.Transcripts, statusLine: opts.StatusLine, now: now,
+		transcripts: opts.Transcripts, statusLine: opts.StatusLine, program: opts.ProgramStatus, now: now,
 	}
 	if opts.Store != nil {
 		loaded, err := opts.Store.Load()
@@ -351,7 +355,7 @@ func (s *Service) Refresh(ctx context.Context, id string) (domain.Session, error
 	if !alive {
 		// The tmux session is gone — a host reboot, or someone killed it.
 		// The worktree is intact, so this is `stopped`, not `closed`.
-		next := s.observe(session, rev, domain.StateStopped, "")
+		next := s.observe(session, rev, observation{state: domain.StateStopped})
 		s.reportDecision(next, "")
 		return next, nil
 	}
@@ -361,7 +365,7 @@ func (s *Service) Refresh(ctx context.Context, id string) (domain.Session, error
 	}
 	s.scanWatches(session.ID, screen.Body)
 	state, loginURL := s.classifier.Classify(screen, session.Agent)
-	next := s.observe(session, rev, state, loginURL)
+	next := s.observe(session, rev, s.heard(session, state, loginURL))
 	s.reportDecision(next, screen.Body)
 	return next, nil
 }
@@ -411,7 +415,7 @@ func (s *Service) RefreshAll(ctx context.Context) ([]domain.Session, error) {
 		session := item.session
 		name := session.TmuxName()
 		if !present[name] {
-			s.reportDecision(s.observe(session, item.rev, domain.StateStopped, ""), "")
+			s.reportDecision(s.observe(session, item.rev, observation{state: domain.StateStopped}), "")
 			continue
 		}
 		body, err := s.terminals.CaptureBody(ctx, session.Target(0))
@@ -421,7 +425,7 @@ func (s *Service) RefreshAll(ctx context.Context) ([]domain.Session, error) {
 		}
 		s.scanWatches(session.ID, body)
 		state, loginURL := s.classifier.Classify(Screen{Body: body, Title: titles[name]}, session.Agent)
-		s.reportDecision(s.observe(session, item.rev, state, loginURL), body)
+		s.reportDecision(s.observe(session, item.rev, s.heard(session, state, loginURL)), body)
 	}
 	return s.List(), errors.Join(errs...)
 }
@@ -513,6 +517,7 @@ func (s *Service) Restart(ctx context.Context, id string) (domain.Session, error
 	launch := session.Launch
 	launch.Resume = true
 	launch.StatusLine = s.statusLine
+	launch.Wrap = s.wrap(session.ID)
 	s.trustFolder(session.Agent, session.Cwd())
 	release := s.holdLaunch(ctx, session.Agent)
 	err = s.terminals.Create(ctx, session.TmuxName(), session.Cwd(), launch.CommandLine(session.Agent), s.env(session))
@@ -802,7 +807,8 @@ const blockedConfirmAfter = 15 * time.Second
 // on it, when it is already stopped or closed, or when what was seen is what
 // is stored. Otherwise the change is applied to the current record, not to
 // the refresh's copy, so a window opened meanwhile is kept, and announced.
-func (s *Service) observe(session domain.Session, seen uint64, state domain.State, loginURL string) domain.Session {
+func (s *Service) observe(session domain.Session, seen uint64, obs observation) domain.Session {
+	state, loginURL := obs.state, obs.loginURL
 	var confirm bool
 	next, changed, publisher := s.commit(session.ID, func(cur domain.Session, known bool) (domain.Session, bool) {
 		switch {
@@ -810,7 +816,7 @@ func (s *Service) observe(session domain.Session, seen uint64, state domain.Stat
 			return session, false
 		case !cur.State.Live(), s.revs[session.ID] != seen, s.busy[session.ID] > 0:
 			return cur, false
-		case cur.State == state && (loginURL == "" || cur.LoginURL == loginURL):
+		case cur.State == state && (loginURL == "" || cur.LoginURL == loginURL) && sameWord(cur.Program, obs.program):
 			confirm = state == domain.StateBlocked && !s.confirmed[session.ID] &&
 				s.now().Sub(cur.Updated) >= blockedConfirmAfter
 			if confirm {
@@ -819,11 +825,18 @@ func (s *Service) observe(session domain.Session, seen uint64, state domain.Stat
 			return cur, false
 		}
 		delete(s.confirmed, session.ID)
+		stateChanged := cur.State != state
 		cur.State = state
 		if loginURL != "" {
 			cur.LoginURL = loginURL
 		}
-		cur.Updated = s.now().UTC()
+		cur.Program = obs.program
+		if stateChanged {
+			// How long a session has been blocked is what moves it to
+			// waiting-on-you; the agent rewording its message is not a new
+			// state, so it does not restart that clock.
+			cur.Updated = s.now().UTC()
+		}
 		return cur, true
 	})
 	if confirm {
@@ -837,9 +850,60 @@ func (s *Service) observe(session domain.Session, seen uint64, state domain.Stat
 	if !state.Live() {
 		s.discardFiles(next.ID)
 		s.watches.drop(next.ID)
+		if s.program != nil {
+			s.program.Forget(next.ID)
+		}
 	}
 	publisher.SessionChanged(next)
 	return next
+}
+
+// observation is what one refresh saw of a session: the state, the vendor
+// login the screen showed, and the agent's own word when it gave one.
+type observation struct {
+	state    domain.State
+	loginURL string
+	program  *domain.ProgramStatus
+}
+
+// heard settles what a refresh observed. The agent's own report (OSC 7501)
+// outranks the screen classifier while the agent holds one: it is the agent
+// saying what it does, where the classifier guesses from its screen. The
+// screen keeps two things: a vendor login, which no report describes and
+// which is the one link the console offers (F3), and every agent that says
+// nothing, or has cleared what it said.
+func (s *Service) heard(session domain.Session, state domain.State, loginURL string) observation {
+	screen := observation{state: state, loginURL: loginURL}
+	if s.program == nil || loginURL != "" {
+		return screen
+	}
+	report, ok := s.program.Read(session.ID)
+	if !ok {
+		return screen
+	}
+	root, ok := report.Root()
+	if !ok {
+		return screen
+	}
+	return observation{state: root.SessionState(), program: &root}
+}
+
+// sameWord reports whether two reports say the same thing to the person:
+// progress alone moving is not news worth an event, so it rides along with
+// the next one.
+func sameWord(a, b *domain.ProgramStatus) bool {
+	if a == nil || b == nil {
+		return a == b
+	}
+	return a.State == b.State && a.Kind == b.Kind && a.Message == b.Message && a.Title == b.Title
+}
+
+// wrap is the words a session's agent runs under, or none.
+func (s *Service) wrap(sessionID string) []string {
+	if s.program == nil {
+		return nil
+	}
+	return s.program.Wrap(sessionID)
 }
 
 // reportDecision tells the control plane what a session's agent waits on the

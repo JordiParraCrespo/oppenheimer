@@ -192,6 +192,21 @@ type Publisher interface {
 	TerminalMatched(sessionID, watchID string, count int)
 }
 
+// ProgramStatus is the agent's own word on what it is doing (OSC 7501),
+// kept by the `pty` wrapper its window runs under. It outranks what the
+// screen classifier reads, which stays the fallback for an agent that says
+// nothing (`product/research/lessons-from-herdr.md`).
+type ProgramStatus interface {
+	// Wrap is the words that put a session's agent under the wrapper,
+	// before its own command line; none leaves it unwrapped.
+	Wrap(sessionID string) []string
+	// Read returns what the session's agent last reported, while its
+	// wrapper runs.
+	Read(sessionID string) (domain.ProgramReport, bool)
+	// Forget drops what a session that ended left behind.
+	Forget(sessionID string)
+}
+
 // Transcripts reads what an agent's own transcript says, on this host. The
 // transcript is the CLI's. Two things leave the host from it: the first
 // message, at most domain.FirstPromptMaxBytes of it, and, while a browser is

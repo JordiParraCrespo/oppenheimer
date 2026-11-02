@@ -12,6 +12,7 @@
 //	runner agents       install the agent CLIs (claude, codex, …) and keep them current
 //	runner tools        the host tools (git, tmux, gh): what is there, install gh
 //	runner credential-helper  git's credential helper, over the local socket
+//	runner pty          what a session's agent runs under: answers OSC 7501, keeps its reports
 //	runner selfcheck    what a staged binary must pass before it is activated
 //	runner serve        the control-plane-facing HTTP service (containers)
 //	runner version      version, commit, target
@@ -100,6 +101,9 @@ func dispatch(ctx context.Context, args []string) (int, error) {
 		return withApp(ctx, func(ctx context.Context, app *cli.App) error {
 			return app.CredentialHelper(ctx, operation, os.Stdin, os.Stdout)
 		})
+	case "pty":
+		// A session's window 0 runs its agent under this (statuspty).
+		return cli.PTY(ctx, args, os.Stderr)
 	case "statusline":
 		// Claude Code calls this for a session's status line, the payload on
 		// stdin; it never fails the CLI.
@@ -458,6 +462,7 @@ func usage(w *os.File) {
   runner tools install gh         install GitHub's CLI into ~/.local/bin (git and tmux: the package
                                   manager's command is printed, the runner never uses sudo)
   runner credential-helper get    git's credential protocol, answered over the socket
+  runner pty [--report F] -- CMD  run CMD on a terminal that speaks OSC 7501 (a session's agent runs under it)
   runner selfcheck                what a staged binary must pass to be activated
   runner serve                    the HTTP service on a TCP port (containers)
   runner version

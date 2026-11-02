@@ -34,6 +34,7 @@ import (
 	gitadapter "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/adapters/git"
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/adapters/manifest"
 	sessionstate "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/adapters/state"
+	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/adapters/statuspty"
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/adapters/tmux"
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/adapters/transcript"
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/adapters/workfolder"
@@ -207,6 +208,10 @@ func New(version string) (*App, error) {
 		// Claude Code hands its status line the context and the plan's usage,
 		// which the chat shows; the runner's own takes them on the way.
 		StatusLine: statusLineCommand(),
+		// The agent runs under `runner pty`, which answers its OSC 7501
+		// probe and keeps what it reports: its own word on what it does,
+		// ahead of the screen classifier.
+		ProgramStatus: statuspty.New(statuspty.Options{Executable: runnerExecutable(), Dir: programStatusDir(paths)}),
 	})
 	if err != nil {
 		return nil, err
