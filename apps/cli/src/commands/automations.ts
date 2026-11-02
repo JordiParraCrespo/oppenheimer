@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto';
+import { CODING_AGENT_IDS, type CodingAgentId } from '@oppenheimer/shared/agents';
 import { Command, Option } from 'commander';
 import type { Automation, Project } from '../lib/api-types';
 import { contextFor } from '../lib/context';
@@ -16,7 +17,6 @@ import {
 /** `SCHEDULE_FREQUENCIES` in `@oppenheimer/shared`. */
 const FREQUENCIES = ['once', 'hourly', 'daily', 'weekdays', 'weekly', 'monthly'] as const;
 type Frequency = (typeof FREQUENCIES)[number];
-const AGENTS = ['claude-code', 'codex', 'opencode', 'grok', 'shell'] as const;
 const WEEKDAYS = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
 
 export function automationsCommand(): Command {
@@ -73,7 +73,7 @@ interface CreateOptions {
   day?: string;
   date?: string;
   timezone?: string;
-  agent: (typeof AGENTS)[number];
+  agent: CodingAgentId;
   paused?: boolean;
 }
 
@@ -94,7 +94,9 @@ function createCommand(): Command {
     .option('--date <YYYY-MM-DD>', 'With --every once: the date')
     .option('--timezone <zone>', 'IANA time zone (default: this machine’s)')
     .addOption(
-      new Option('--agent <agent>', 'Which coding agent').choices(AGENTS).default('claude-code'),
+      new Option('--agent <agent>', 'Which coding agent')
+        .choices(CODING_AGENT_IDS)
+        .default('claude-code'),
     )
     .option('--paused', 'Create it paused')
     .action(async function (this: Command, words: string[]) {

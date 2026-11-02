@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { scheduleTrigger } from '../commands/automations';
 import type { BotConversation, Session } from '../lib/api-types';
 import { ApiClient } from '../lib/client';
-import { isSettled, parseDuration, turnOutcome, waitForSessions } from '../lib/wait';
+import { parseDuration, turnOutcome, waitForSessions } from '../lib/wait';
 
 /**
  * `opp sessions wait` is how an agent on one host waits on a helper on
@@ -30,20 +30,6 @@ function session(overrides: Partial<Session>): Session {
     ...overrides,
   };
 }
-
-describe('isSettled', () => {
-  it('waits on a starting or working agent', () => {
-    expect(isSettled({ lifecycle: 'starting', state: 'idle' })).toBe(false);
-    expect(isSettled({ lifecycle: 'open', state: 'working' })).toBe(false);
-  });
-
-  it('stops for an agent that is through, that needs somebody, or a session that ended', () => {
-    expect(isSettled({ lifecycle: 'open', state: 'ready-for-review' })).toBe(true);
-    expect(isSettled({ lifecycle: 'open', state: 'waiting-on-you' })).toBe(true);
-    expect(isSettled({ lifecycle: 'failed', state: 'working' })).toBe(true);
-    expect(isSettled({ lifecycle: 'resolved', state: 'resolved' })).toBe(true);
-  });
-});
 
 describe('waitForSessions', () => {
   it('returns once the session settles', async () => {
@@ -80,6 +66,60 @@ describe('waitForSessions', () => {
     expect(result.settled).toBe(false);
     expect(result.sessions[0].state).toBe('working');
     expect(clock).toBeLessThanOrEqual(10_000);
+  });
+});
+
+describe('waitForSessions after a prompt', () => {
+  /** A client whose log pages come from this queue, in order, and whose session is always `read`. */
+  function scripted(read: Session, logs: { seq: number; kind: string; payload: object }[][]) {
+    const sessionReads = vi.fn();
+    const fetchImpl = vi.fn(async (url: string) => {
+      if (new URL(url).pathname.endsWith('/events')) {
+        return new Response(JSON.stringify({ data: logs.shift() ?? [], nextSeq: null }));
+      }
+      sessionReads();
+      return new Response(JSON.stringify(read));
+    });
+    return {
+      client: new ApiClient({ apiUrl: 'https://api.example.com', token: 't', fetchImpl }),
+      sessionReads,
+    };
+  }
+
+  it('does not take the idle state from before the prompt for its outcome', async () => {
+    // Codex's review of #618: the prompt leaves the session idle until the
+    // agent is seen on it, and the wait used to return right there.
+    const { client, sessionReads } = scripted(session({ state: 'idle' }), [
+      [],
+      [{ seq: 8, kind: 'agent.observed', payload: { state: 'working' } }],
+    ]);
+
+    const result = await waitForSessions(client, ['s-1'], {
+      timeoutMs: 60_000,
+      intervalMs: 1_000,
+      sleep: async () => {},
+      afterSeq: 7,
+    });
+
+    expect(result.settled).toBe(true);
+    expect(sessionReads).toHaveBeenCalledTimes(2);
+  });
+
+  it('times out on an idle session whose agent never took the prompt', async () => {
+    let clock = 0;
+    const { client } = scripted(session({ state: 'idle' }), []);
+
+    const result = await waitForSessions(client, ['s-1'], {
+      timeoutMs: 9_000,
+      intervalMs: 3_000,
+      afterSeq: 7,
+      now: () => clock,
+      sleep: async (ms) => {
+        clock += ms;
+      },
+    });
+
+    expect(result.settled).toBe(false);
   });
 });
 

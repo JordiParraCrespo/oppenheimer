@@ -111,7 +111,11 @@ test('an agent on one host starts, prompts, waits on and closes a session on ano
   }[];
   expect(waited[0].state).not.toBe('working');
 
-  opp('sessions', 'close', child.id, '--yes', '--accept-unpushed');
+  // `--json` prints the API's answer, so a script can read whether the host closed it.
+  const closed = JSON.parse(
+    opp('--json', 'sessions', 'close', child.id, '--yes', '--accept-unpushed'),
+  ) as SessionRow;
+  expect(closed.id).toBe(child.id);
   await expect
     .poll(
       async () =>

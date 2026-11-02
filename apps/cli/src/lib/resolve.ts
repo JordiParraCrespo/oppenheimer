@@ -1,3 +1,4 @@
+import { type LaunchCheckout, pickProjectCheckout } from '@oppenheimer/shared/sessions';
 import type { Bot, Host, Installation, Project, Repository } from './api-types';
 import type { ApiClient } from './client';
 import { CliError, ExitCode } from './errors';
@@ -48,27 +49,16 @@ export function pickByNameOrId<T extends Named>(
   );
 }
 
-/** A repository as a session or an automation names it. */
-export interface CheckoutRef {
-  installationId: string;
-  githubRepoId: number;
-  baseBranch: string;
-  fullName: string;
-  /** The project that holds it, when it came from one. */
-  projectId?: string;
-}
+/** A repository as a session or an automation names it, and the project that holds it, if one does. */
+export type CheckoutRef = LaunchCheckout & { projectId?: string };
 
 /**
  * The repository `owner/name` names among a project's, or the project's
- * default one when no name is given.
+ * default one when no name is given (`pickProjectCheckout`, which the MCP
+ * server picks with too); refused when the project has no such repository.
  */
 export function pickProjectRepository(project: Project, fullName?: string): CheckoutRef {
-  const repositories = project.repositories;
-  const found = fullName
-    ? repositories.find(
-        (repository) => repository.repositoryFullName.toLowerCase() === fullName.toLowerCase(),
-      )
-    : (repositories.find((repository) => repository.isDefault) ?? repositories[0]);
+  const found = pickProjectCheckout(project.repositories, fullName);
   if (!found) {
     throw new CliError(
       fullName
@@ -78,13 +68,7 @@ export function pickProjectRepository(project: Project, fullName?: string): Chec
       'Pass --repo owner/name, or add the repository to the project in the console.',
     );
   }
-  return {
-    installationId: found.installationId,
-    githubRepoId: Number(found.githubRepoId),
-    baseBranch: found.baseBranch,
-    fullName: found.repositoryFullName,
-    projectId: project.id,
-  };
+  return { ...found, projectId: project.id };
 }
 
 /** The first project holding `owner/name`, preferring a named one over Unassigned. */

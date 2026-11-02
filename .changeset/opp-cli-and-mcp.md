@@ -21,6 +21,11 @@ Oppenheimer over the API (`product/next-steps/0.6-mcp-cli-and-agent.md`).
   environment now reads as unset.
 - `@oppenheimer/api`: `POST /v1/sessions/{id}/prompt` types a follow-up
   prompt into a session's agent for a person's credential (`sessions:write`),
-  the command the bots already use, logged as `{ kind: 'person', userId }`.
-- `@oppenheimer/shared`: `sendSessionPromptSchema`.
-- `@oppenheimer/api-client`: `sendSessionPrompt`.
+  the command the bots already use, logged as `{ kind: 'person', userId }`,
+  and answers `{ seq, session }`: where the prompt landed in the log.
+- `@oppenheimer/shared`: `sendSessionPromptSchema`, and in
+  `@oppenheimer/shared/sessions` what both clients launch and wait with:
+  `sessionLaunchBody`, `pickProjectCheckout`, `isSessionSettled`,
+  `agentTookWorkAfter` and `isWorkSettled`.
+- `@oppenheimer/api-client`: `sendSessionPrompt` and
+  `SentSessionPromptResponseDto`.

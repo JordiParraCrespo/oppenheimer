@@ -72,7 +72,10 @@ The server's instructions tell the agent how to hand work to another host:
 `wait_for_session`, then `get_session` and `send_to_session`. A session that
 is waiting on you needs an answer from the person in the console.
 `wait_for_session` and `ask_bot` hold the call for at most 300 seconds, and
-the agent calls again while the work goes on.
+the agent calls again while the work goes on. `send_to_session` answers the
+`seq` its prompt took in the session's log, and `wait_for_session` with that
+`after_seq` (or `0` after `start_session`) waits on that work, rather than
+taking the idle state from before the prompt for its outcome.
 
 `whoami` needs no permissions and reports what the connection can do. It is
 worth calling first when an expected tool is missing.

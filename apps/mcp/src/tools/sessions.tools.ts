@@ -1,11 +1,19 @@
 import { randomUUID } from 'node:crypto';
 import { FIELD_BOUNDS, fitsPromptBound } from '@oppenheimer/shared';
+import { CODING_AGENT_IDS, type CodingAgentId } from '@oppenheimer/shared/agents';
+import {
+  agentTookWorkAfter,
+  isSessionSettled,
+  isWorkSettled,
+  type ProjectRepositoryView,
+  pickProjectCheckout,
+  type SessionLogEntry,
+  type SessionWaitView,
+  sessionLaunchBody,
+} from '@oppenheimer/shared/sessions';
 import { z } from 'zod';
 import type { OppenheimerClient } from '../client';
 import { defineTool } from './tool';
-
-/** The coding agents a host launches (`CODING_AGENT_IDS` in `@oppenheimer/shared`). */
-const AGENTS = ['claude-code', 'codex', 'opencode', 'grok', 'shell'] as const;
 
 /** A tool call may hold the connection this long; the session keeps running past it. */
 export const MAX_WAIT_SECONDS = 300;
@@ -29,36 +37,22 @@ const sessionId = z
   .uuid()
   .describe('The session’s id (from list_sessions or start_session)');
 
-interface SessionView {
+interface SessionView extends SessionWaitView {
   id: string;
-  state: string;
-  lifecycle: string;
 }
 
 interface ProjectView {
   id: string;
   defaultHostId?: string | null;
-  defaultAgent?: string | null;
-  repositories: {
-    installationId: string;
-    githubRepoId: string;
-    repositoryFullName: string;
-    baseBranch: string;
-    isDefault: boolean;
-  }[];
-}
-
-/** Whether a session has stopped needing time: through with its task, waiting on somebody, or ended. */
-export function isSettled(session: Pick<SessionView, 'state' | 'lifecycle'>): boolean {
-  if (session.lifecycle === 'failed' || session.lifecycle === 'resolved') return true;
-  if (session.lifecycle === 'starting') return false;
-  return session.state !== 'working';
+  defaultAgent?: CodingAgentId | null;
+  repositories: ProjectRepositoryView[];
 }
 
 /**
  * The body of `POST /sessions` for a task in a project's repository or a
- * folder on the host. Throws a sentence the agent can act on when the input
- * names nothing to run in or no host.
+ * folder on the host, built by `sessionLaunchBody` as `opp sessions run`
+ * builds it. Throws a sentence the agent can act on when the input names
+ * nothing to run in or no host.
  */
 export function sessionBody(input: {
   task: string;
@@ -66,7 +60,7 @@ export function sessionBody(input: {
   repository?: string;
   folder?: string;
   host_id?: string;
-  agent?: (typeof AGENTS)[number];
+  agent?: CodingAgentId;
   name?: string;
   permission?: 'ask' | 'auto' | 'full';
 }): Record<string, unknown> {
@@ -76,60 +70,73 @@ export function sessionBody(input: {
       'No host_id given and the project has no default host. Ask which host (list_hosts).',
     );
   }
-  const base = {
+  const launch = {
     hostId,
-    agent: input.agent ?? input.project?.defaultAgent ?? 'claude-code',
+    task: input.task,
+    agent: input.agent ?? input.project?.defaultAgent ?? undefined,
     projectId: input.project?.id,
     name: input.name,
-    prompt: input.task,
-    ...(input.permission ? { launch: { permission: input.permission } } : {}),
+    permission: input.permission,
   };
-  if (input.folder) return { ...base, folder: input.folder };
+  if (input.folder) return sessionLaunchBody({ ...launch, folder: input.folder });
   if (!input.project) {
     throw new Error(
       'Give a project_id (to work in one of its repositories) or a folder on the host.',
     );
   }
-  const wanted = input.repository?.toLowerCase();
-  const repository = wanted
-    ? input.project.repositories.find(
-        (candidate) => candidate.repositoryFullName.toLowerCase() === wanted,
-      )
-    : (input.project.repositories.find((candidate) => candidate.isDefault) ??
-      input.project.repositories[0]);
-  if (!repository) {
+  const checkout = pickProjectCheckout(input.project.repositories, input.repository);
+  if (!checkout) {
     throw new Error(
-      wanted
+      input.repository
         ? `The project has no repository ${input.repository}; list_projects shows its repositories.`
         : 'The project has no repositories; give a folder instead, or a project that has one.',
     );
   }
-  const githubRepoId = Number(repository.githubRepoId);
-  return {
-    ...base,
-    checkouts: [
-      {
-        installationId: repository.installationId,
-        githubRepoId,
-        baseBranch: repository.baseBranch,
-      },
-    ],
-    cwdGithubRepoId: githubRepoId,
-  };
+  return sessionLaunchBody({ ...launch, checkout });
 }
 
-/** Poll a session until it settles or `seconds` pass. */
+interface LogPage {
+  data: SessionLogEntry[];
+  nextSeq: number | null;
+}
+
+/**
+ * Poll a session until it settles or `seconds` pass. With `afterSeq` (the
+ * `seq` `send_to_session` answered, or 0 for a first task), an idle session
+ * is not settled until its log shows the agent took that work, so the state
+ * from before the prompt is never reported as its outcome.
+ */
 export async function waitForSession(
   client: OppenheimerClient,
   id: string,
   seconds: number,
+  afterSeq?: number,
   sleep: (ms: number) => Promise<void> = (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
-): Promise<{ settled: boolean; session: SessionView }> {
+): Promise<{ settled: boolean; tookWork?: boolean; session: SessionView }> {
   const deadline = Date.now() + seconds * 1_000;
+  let cursor = afterSeq ?? 0;
+  let tookWork = false;
   for (;;) {
     const session = await client.get<SessionView>(`/sessions/${id}`);
-    if (isSettled(session)) return { settled: true, session };
-    if (Date.now() + 3_000 > deadline) return { settled: false, session };
+    if (afterSeq === undefined) {
+      if (isSessionSettled(session)) return { settled: true, session };
+    } else {
+      while (!tookWork) {
+        const page = await client.get<LogPage>(`/sessions/${id}/events`, {
+          afterSeq: cursor,
+          limit: 100,
+        });
+        tookWork = agentTookWorkAfter(page.data, afterSeq);
+        cursor = page.data.at(-1)?.seq ?? cursor;
+        if (page.nextSeq === null || page.data.length === 0) break;
+      }
+      if (isWorkSettled(session, tookWork)) return { settled: true, tookWork, session };
+    }
+    if (Date.now() + 3_000 > deadline) {
+      return afterSeq === undefined
+        ? { settled: false, session }
+        : { settled: false, tookWork, session };
+    }
     await sleep(3_000);
   }
 }
@@ -173,7 +180,7 @@ export const sessionTools = [
     name: 'start_session',
     title: 'Start a session',
     description:
-      'Start a coding agent (Claude Code by default) on a host with a task: in a new worktree of one of a project’s repositories, or in a folder already on the host. Returns at once with the session; the agent works on its own, so follow it with wait_for_session or get_session. The host defaults to the project’s default host. The person sees the session in their console.',
+      'Start a coding agent (Claude Code by default) on a host with a task: in a new worktree of one of a project’s repositories, or in a folder already on the host. Returns at once with the session; the agent works on its own, so follow it with wait_for_session (after_seq 0, so the wait is on this first task) or get_session. The host defaults to the project’s default host. The person sees the session in their console.',
     requiredScopes: ['sessions:write', 'projects:read'],
     inputSchema: z.object({
       task: promptInput(
@@ -191,7 +198,10 @@ export const sessionTools = [
         .optional()
         .describe('Instead of a repository: an absolute path to a folder already on the host'),
       host_id: z.string().uuid().optional().describe('The host to run on (from list_hosts)'),
-      agent: z.enum(AGENTS).optional().describe('Which coding agent; claude-code when omitted'),
+      agent: z
+        .enum(CODING_AGENT_IDS)
+        .optional()
+        .describe('Which coding agent; claude-code when omitted'),
       name: z.string().min(1).max(80).optional().describe('A short name for the session'),
       permission: z
         .enum(['ask', 'auto', 'full'])
@@ -211,7 +221,7 @@ export const sessionTools = [
     name: 'send_to_session',
     title: 'Send a prompt to a session',
     description:
-      'Type a follow-up prompt into a running session’s agent: more instructions, a correction, the next step. Only while the agent waits at its prompt (state idle or ready-for-review); while it works, wait_for_session first. The session’s log records the prompt as the person’s, sent through this connection.',
+      'Type a follow-up prompt into a running session’s agent: more instructions, a correction, the next step. Only while the agent waits at its prompt (state idle or ready-for-review); while it works, wait_for_session first. The session’s log records the prompt as the person’s, sent through this connection. Answers `seq`, where the prompt landed in the log: pass it to wait_for_session as after_seq to wait on this prompt.',
     requiredScopes: ['sessions:write'],
     inputSchema: z.object({
       session_id: sessionId,
@@ -224,15 +234,23 @@ export const sessionTools = [
   defineTool({
     name: 'wait_for_session',
     title: 'Wait for a session',
-    description: `Wait until a session's agent is through with its task or needs somebody, for at most wait_seconds (max ${MAX_WAIT_SECONDS}). Answers \`settled\` and the session; when settled is false it is still working, so call again. A state of waiting-on-you means it asks a question or a permission: tell the person.`,
+    description: `Wait until a session's agent is through with its task or needs somebody, for at most wait_seconds (max ${MAX_WAIT_SECONDS}). Pass after_seq (send_to_session's \`seq\`, or 0 after start_session) to wait on that work: without it, a session that has not started on a prompt just sent still reads as idle. Answers \`settled\` and the session; when settled is false it is still working, so call again. A state of waiting-on-you means it asks a question or a permission: tell the person.`,
     requiredScopes: ['sessions:read'],
     inputSchema: z.object({
       session_id: sessionId,
+      after_seq: z
+        .number()
+        .int()
+        .min(0)
+        .optional()
+        .describe(
+          'Wait on the work given at this point of the log (send_to_session’s seq; 0 for a first task)',
+        ),
       wait_seconds: z.number().int().min(0).max(MAX_WAIT_SECONDS).default(120),
     }),
     annotations: { readOnlyHint: true, idempotentHint: true },
-    handler: ({ session_id, wait_seconds }, { client }) =>
-      waitForSession(client, session_id, wait_seconds),
+    handler: ({ session_id, after_seq, wait_seconds }, { client }) =>
+      waitForSession(client, session_id, wait_seconds, after_seq),
   }),
 
   defineTool({

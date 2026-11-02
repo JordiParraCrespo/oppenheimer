@@ -51,6 +51,9 @@ opp sessions close <id>
 - `wait` returns when the agent is idle, ready for review, waiting on you (a
   question, a permission, a failure) or gone. After `--timeout` (default
   `30m`) it exits `1`, and the session keeps running.
+- `run --wait` and `send --wait` wait on the work they gave: a session that
+  reads idle only because its agent has not started on the prompt yet is not
+  done, so the wait ends once the session's log shows the agent took it.
 
 ## Commands
 

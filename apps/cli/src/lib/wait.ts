@@ -1,4 +1,12 @@
-import type { BotApproval, BotConversation, BotMessage, BotTurn, Session } from './api-types';
+import { agentTookWorkAfter, isSessionSettled, isWorkSettled } from '@oppenheimer/shared/sessions';
+import type {
+  BotApproval,
+  BotConversation,
+  BotMessage,
+  BotTurn,
+  Session,
+  SessionLogPage,
+} from './api-types';
 import type { ApiClient } from './client';
 
 /**
@@ -17,36 +25,68 @@ export interface PollOptions {
 
 const realSleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
 
-/**
- * Whether a session has stopped needing time: its agent is through with the
- * task (idle, ready for review, landing), waits on somebody (a question, a
- * permission, a failure), or the session has ended. A session still starting
- * or working is not settled.
- */
-export function isSettled(session: Pick<Session, 'state' | 'lifecycle'>): boolean {
-  if (session.lifecycle === 'failed' || session.lifecycle === 'resolved') return true;
-  if (session.lifecycle === 'starting') return false;
-  return session.state !== 'working';
+/** What the log has shown so far about one session's work, carried from one poll to the next. */
+interface WorkWatch {
+  /** The `seq` to read the log on from. */
+  cursor: number;
+  tookWork: boolean;
 }
 
 /**
  * Poll until every session is settled or the time runs out. Answers each
  * session as last read, and whether all of them settled; the sessions keep
  * running past a timeout.
+ *
+ * With `afterSeq`, the wait is on work given at that point of each session's
+ * log (a prompt just sent, a first task): an idle session is not settled
+ * until the log shows its agent took the work, so the state from before the
+ * work is never reported as its outcome.
  */
 export async function waitForSessions(
   client: ApiClient,
   ids: readonly string[],
-  options: PollOptions,
+  options: PollOptions & { afterSeq?: number },
 ): Promise<{ settled: boolean; sessions: Session[] }> {
   const sleep = options.sleep ?? realSleep;
   const now = options.now ?? Date.now;
   const deadline = now() + options.timeoutMs;
+  const afterSeq = options.afterSeq;
+  const watches = new Map<string, WorkWatch>(
+    ids.map((id) => [id, { cursor: afterSeq ?? 0, tookWork: false }]),
+  );
   for (;;) {
     const sessions = await Promise.all(ids.map((id) => client.get<Session>(`/sessions/${id}`)));
-    if (sessions.every(isSettled)) return { settled: true, sessions };
+    if (afterSeq !== undefined) {
+      await Promise.all(
+        ids.map((id) => readOn(client, id, watches.get(id) as WorkWatch, afterSeq)),
+      );
+    }
+    const settled = sessions.every((session) =>
+      afterSeq === undefined
+        ? isSessionSettled(session)
+        : isWorkSettled(session, (watches.get(session.id) as WorkWatch).tookWork),
+    );
+    if (settled) return { settled: true, sessions };
     if (now() + options.intervalMs > deadline) return { settled: false, sessions };
     await sleep(options.intervalMs);
+  }
+}
+
+/** Read a session's log on from the watch's cursor, to its end, noting whether the agent took the work. */
+async function readOn(
+  client: ApiClient,
+  id: string,
+  watch: WorkWatch,
+  afterSeq: number,
+): Promise<void> {
+  while (!watch.tookWork) {
+    const page = await client.get<SessionLogPage>(`/sessions/${id}/events`, {
+      query: { afterSeq: watch.cursor, limit: 100 },
+    });
+    if (agentTookWorkAfter(page.data, afterSeq)) watch.tookWork = true;
+    const last = page.data.at(-1)?.seq;
+    if (last !== undefined) watch.cursor = last;
+    if (page.nextSeq === null || last === undefined) return;
   }
 }
 

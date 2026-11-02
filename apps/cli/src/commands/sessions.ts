@@ -1,23 +1,16 @@
 import { randomUUID } from 'node:crypto';
+import { CODING_AGENT_IDS } from '@oppenheimer/shared/agents';
 import { Command, Option } from 'commander';
-import type { Host, Project, Session, SessionPage } from '../lib/api-types';
+import type { Host, SentPrompt, Session, SessionPage } from '../lib/api-types';
 import type { ApiClient } from '../lib/client';
 import { contextFor } from '../lib/context';
 import { CliError, ExitCode } from '../lib/errors';
-import { formatDate, render, style, success, table, warn } from '../lib/output';
+import { type LaunchOptions, planLaunch } from '../lib/launch';
+import { formatDate, render, style, table } from '../lib/output';
 import { confirm } from '../lib/prompt';
-import {
-  type CheckoutRef,
-  pickByNameOrId,
-  pickProjectRepository,
-  resolveHost,
-  resolveProject,
-  resolveRepository,
-} from '../lib/resolve';
+import { pickByNameOrId, resolveProject } from '../lib/resolve';
 import { parseDuration, waitForSessions } from '../lib/wait';
 
-/** The coding agents a host launches (`CODING_AGENT_IDS` in `@oppenheimer/shared`). */
-const AGENTS = ['claude-code', 'codex', 'opencode', 'grok', 'shell'] as const;
 const PERMISSIONS = ['ask', 'auto', 'full'] as const;
 
 export function sessionsCommand(): Command {
@@ -112,7 +105,7 @@ function runCommand(): Command {
     .option('--project <project>', 'Project to list the session under, by name or id')
     .option('--base <branch>', 'Branch to cut the session’s branch from')
     .option('--folder <path>', 'Run in a folder already on the host instead of a checkout')
-    .addOption(new Option('--agent <agent>', 'Which coding agent').choices(AGENTS))
+    .addOption(new Option('--agent <agent>', 'Which coding agent').choices(CODING_AGENT_IDS))
     .addOption(
       new Option('--permission <level>', 'What the agent may do without asking').choices(
         PERMISSIONS,
@@ -123,110 +116,30 @@ function runCommand(): Command {
     .option('--wait', 'Wait until the agent is through, or needs you')
     .option('--timeout <duration>', 'With --wait, how long to wait', '30m')
     .action(async function (this: Command, words: string[]) {
-      const options = this.opts<RunOptions>();
+      const options = this.opts<LaunchOptions & { wait?: boolean; timeout: string }>();
       const context = contextFor(this);
-      const plan = await planRun(context.client, options);
+      const plan = await planLaunch(context.client, options, words.join(' '));
 
       const created = await context.client.post<Session>('/sessions', {
         // A retry after a lost answer finds the session already made instead of
         // making a second one, with a second branch.
         headers: { 'idempotency-key': randomUUID() },
-        body: {
-          hostId: plan.host.id,
-          agent: options.agent ?? plan.project?.defaultAgent ?? 'claude-code',
-          projectId: plan.projectId,
-          name: options.name,
-          prompt: words.join(' '),
-          ...(options.folder
-            ? { folder: options.folder }
-            : {
-                checkouts: [
-                  {
-                    installationId: plan.checkout?.installationId,
-                    githubRepoId: plan.checkout?.githubRepoId,
-                    baseBranch: plan.checkout?.baseBranch,
-                  },
-                ],
-                cwdGithubRepoId: plan.checkout?.githubRepoId,
-              }),
-          ...(options.permission || options.model
-            ? { launch: { permission: options.permission, model: options.model } }
-            : {}),
-        },
+        body: plan.body,
       });
 
       if (!options.wait) {
         render(context.json, created, () => {
-          const where = options.folder ?? plan.checkout?.fullName ?? '';
           const offline = created.hints.includes('host_offline')
             ? `\n${style.yellow('!')} ${plan.host.name} is offline: the session starts when it comes back.`
             : '';
-          return `${style.green('✓')} Started ${style.bold(created.id)} on ${plan.host.name} (${where}).${offline}\n${style.dim(`opp sessions wait ${created.id}`)}`;
+          return `${style.green('✓')} Started ${style.bold(created.id)} on ${plan.host.name} (${plan.where}).${offline}\n${style.dim(`opp sessions wait ${created.id}`)}`;
         });
         return;
       }
 
-      await waitAndReport(context.client, [created.id], options.timeout, context.json);
+      // The first task is the whole log: wait until the agent is seen on it.
+      await waitAndReport(context.client, [created.id], options.timeout, context.json, 0);
     });
-}
-
-interface RunOptions {
-  host?: string;
-  repo?: string;
-  project?: string;
-  base?: string;
-  folder?: string;
-  agent?: (typeof AGENTS)[number];
-  permission?: (typeof PERMISSIONS)[number];
-  model?: string;
-  name?: string;
-  wait?: boolean;
-  timeout: string;
-}
-
-/** The host, project and checkout a `run` names, resolved to ids. */
-async function planRun(
-  client: ApiClient,
-  options: RunOptions,
-): Promise<{ host: Host; project?: Project; projectId?: string; checkout?: CheckoutRef }> {
-  if (options.folder && options.repo) {
-    throw new CliError('Pass --folder or --repo, not both.', ExitCode.USAGE);
-  }
-  const project = options.project ? await resolveProject(client, options.project) : undefined;
-
-  let checkout: CheckoutRef | undefined;
-  if (!options.folder) {
-    if (project && (!options.repo || hasRepository(project, options.repo))) {
-      checkout = pickProjectRepository(project, options.repo);
-      if (options.base) checkout = { ...checkout, baseBranch: options.base };
-    } else if (options.repo) {
-      checkout = await resolveRepository(client, options.repo, options.base);
-    } else {
-      throw new CliError(
-        'Say where the agent works: --repo owner/name, --project, or --folder.',
-        ExitCode.USAGE,
-      );
-    }
-  }
-
-  const hostNeedle = options.host ?? project?.defaultHostId ?? undefined;
-  if (!hostNeedle) {
-    throw new CliError(
-      'Say which host to run on: --host <name>.',
-      ExitCode.USAGE,
-      '`opp hosts list` shows your hosts.',
-    );
-  }
-  const host = await resolveHost(client, hostNeedle);
-  if (!host.online) warn(`${host.name} is offline; the session will start when it comes back.`);
-
-  return { host, project, projectId: project?.id ?? checkout?.projectId, checkout };
-}
-
-function hasRepository(project: Project, fullName: string): boolean {
-  return project.repositories.some(
-    (repository) => repository.repositoryFullName.toLowerCase() === fullName.toLowerCase(),
-  );
 }
 
 function sendCommand(): Command {
@@ -239,14 +152,15 @@ function sendCommand(): Command {
     .action(async function (this: Command, id: string, words: string[]) {
       const options = this.opts<{ wait?: boolean; timeout: string }>();
       const context = contextFor(this);
-      const session = await context.client.post<Session>(`/sessions/${id}/prompt`, {
+      const sent = await context.client.post<SentPrompt>(`/sessions/${id}/prompt`, {
         body: { text: words.join(' ') },
       });
       if (!options.wait) {
-        render(context.json, session, () => `${style.green('✓')} Sent to ${session.name}.`);
+        render(context.json, sent, () => `${style.green('✓')} Sent to ${sent.session.name}.`);
         return;
       }
-      await waitAndReport(context.client, [id], options.timeout, context.json);
+      // What the session was doing before the prompt is not its answer: read on from the prompt.
+      await waitAndReport(context.client, [id], options.timeout, context.json, sent.seq);
     });
 }
 
@@ -288,11 +202,11 @@ function closeCommand(): Command {
       const session = await context.client.delete<Session>(`/sessions/${id}`, {
         query: { acceptUnpushedWork: options.acceptUnpushed ? true : undefined },
       });
-      if (session.lifecycle === 'resolved') {
-        success(`Closed ${session.name}.`);
-      } else {
-        warn(`Asked ${session.name} to close; the host has not confirmed yet.`);
-      }
+      render(context.json, session, () =>
+        session.lifecycle === 'resolved'
+          ? `${style.green('✓')} Closed ${session.name}.`
+          : `${style.yellow('!')} Asked ${session.name} to close; the host has not confirmed yet.`,
+      );
     });
 }
 
@@ -302,6 +216,7 @@ async function waitAndReport(
   ids: readonly string[],
   timeout: string,
   json: boolean,
+  afterSeq?: number,
 ): Promise<void> {
   let timeoutMs: number;
   try {
@@ -312,6 +227,7 @@ async function waitAndReport(
   const { settled, sessions } = await waitForSessions(client, ids, {
     timeoutMs,
     intervalMs: 3_000,
+    afterSeq,
   });
   render(json, sessions, () => sessions.map(describe).join('\n\n'));
   if (!settled) {

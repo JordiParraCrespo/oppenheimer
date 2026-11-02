@@ -1,4 +1,6 @@
 import { randomUUID } from 'node:crypto';
+import { CODING_AGENT_IDS } from '@oppenheimer/shared/agents';
+import { type ProjectRepositoryView, pickProjectCheckout } from '@oppenheimer/shared/sessions';
 import { z } from 'zod';
 import { promptInput } from './sessions.tools';
 import { defineTool } from './tool';
@@ -7,12 +9,7 @@ const automationId = z.string().uuid().describe('The automation’s id (from lis
 
 interface ProjectView {
   id: string;
-  repositories: {
-    installationId: string;
-    githubRepoId: string;
-    repositoryFullName: string;
-    isDefault: boolean;
-  }[];
+  repositories: ProjectRepositoryView[];
 }
 
 export const automationTools = [
@@ -66,20 +63,14 @@ export const automationTools = [
         .optional()
         .describe('With once: YYYY-MM-DD'),
       timezone: z.string().min(1).max(64).describe('IANA time zone the schedule is read in'),
-      agent: z.enum(['claude-code', 'codex', 'opencode', 'grok', 'shell']).optional(),
+      agent: z.enum(CODING_AGENT_IDS).optional(),
     }),
     handler: async (args, { client }) => {
       const project = await client.get<ProjectView>(`/projects/${args.project_id}`);
-      const wanted = args.repository?.toLowerCase();
-      const repository = wanted
-        ? project.repositories.find(
-            (candidate) => candidate.repositoryFullName.toLowerCase() === wanted,
-          )
-        : (project.repositories.find((candidate) => candidate.isDefault) ??
-          project.repositories[0]);
-      if (!repository) {
+      const checkout = pickProjectCheckout(project.repositories, args.repository);
+      if (!checkout) {
         throw new Error(
-          wanted
+          args.repository
             ? `The project has no repository ${args.repository}; list_projects shows its repositories.`
             : 'The project has no repositories to run in.',
         );
@@ -88,8 +79,8 @@ export const automationTools = [
         projectId: project.id,
         repositories: [
           {
-            installationId: repository.installationId,
-            githubRepoId: Number(repository.githubRepoId),
+            installationId: checkout.installationId,
+            githubRepoId: checkout.githubRepoId,
           },
         ],
         place: 'host',

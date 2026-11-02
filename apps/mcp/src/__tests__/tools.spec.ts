@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { OppenheimerClient } from '../client';
 import { waitForTurn } from '../tools/bots.tools';
-import { isSettled, promptInput, sessionBody, waitForSession } from '../tools/sessions.tools';
+import { promptInput, sessionBody, waitForSession } from '../tools/sessions.tools';
 
 /**
  * What an agent on one host needs to hand work to another: a session started
@@ -82,15 +82,6 @@ describe('promptInput', () => {
   });
 });
 
-describe('isSettled', () => {
-  it('keeps waiting while starting or working, and stops otherwise', () => {
-    expect(isSettled({ lifecycle: 'starting', state: 'idle' })).toBe(false);
-    expect(isSettled({ lifecycle: 'open', state: 'working' })).toBe(false);
-    expect(isSettled({ lifecycle: 'open', state: 'waiting-on-you' })).toBe(true);
-    expect(isSettled({ lifecycle: 'failed', state: 'working' })).toBe(true);
-  });
-});
-
 const clientAnswering = (answer: (path: string) => unknown) =>
   new OppenheimerClient({
     apiUrl: 'https://api.example.com',
@@ -105,7 +96,7 @@ describe('waitForSession', () => {
     const states = ['working', 'ready-for-review'];
     const client = clientAnswering(() => ({ id: 's', lifecycle: 'open', state: states.shift() }));
 
-    const result = await waitForSession(client, 's', 60, async () => {});
+    const result = await waitForSession(client, 's', 60, undefined, async () => {});
 
     expect(result).toEqual({
       settled: true,
@@ -117,10 +108,29 @@ describe('waitForSession', () => {
     const client = clientAnswering(() => ({ id: 's', lifecycle: 'open', state: 'working' }));
     const sleep = vi.fn(async () => {});
 
-    const result = await waitForSession(client, 's', 0, sleep);
+    const result = await waitForSession(client, 's', 0, undefined, sleep);
 
     expect(result.settled).toBe(false);
     expect(sleep).not.toHaveBeenCalled();
+  });
+});
+
+describe('waitForSession after a prompt', () => {
+  it('keeps waiting on an idle session until the log shows the agent took the prompt', async () => {
+    // Codex's review of #618: `send_to_session` leaves the session idle until
+    // the agent is seen on it, and the wait used to answer "settled" there.
+    const logs = [[], [{ seq: 8, kind: 'agent.observed', payload: { state: 'working' } }]];
+    let sessionReads = 0;
+    const client = clientAnswering((path) => {
+      if (path.endsWith('/events')) return { data: logs.shift() ?? [], nextSeq: null };
+      sessionReads += 1;
+      return { id: 's', lifecycle: 'open', state: 'idle' };
+    });
+
+    const result = await waitForSession(client, 's', 60, 7, async () => {});
+
+    expect(result).toMatchObject({ settled: true, tookWork: true });
+    expect(sessionReads).toBe(2);
   });
 });
 

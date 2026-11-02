@@ -108,18 +108,8 @@ export function createServer(options: CreateServerOptions): CreatedServer {
     },
   );
 
-  // `registerTool` infers its handler's argument type from the schema given at
-  // the call site. Here the schemas come from a registry only known at runtime,
-  // so there is nothing to infer from; `defineTool` has already tied each
-  // handler to its own schema.
-  const register = server.registerTool.bind(server) as unknown as (
-    name: string,
-    config: Record<string, unknown>,
-    handler: (args: Record<string, unknown>) => Promise<unknown>,
-  ) => void;
-
   for (const tool of tools) {
-    register(
+    server.registerTool(
       tool.name,
       {
         title: tool.title,

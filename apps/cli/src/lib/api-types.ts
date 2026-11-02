@@ -1,4 +1,5 @@
 import type { PermissionGroup, Scope } from '@oppenheimer/shared';
+import type { CodingAgentId } from '@oppenheimer/shared/agents';
 
 /**
  * Response shapes the CLI consumes, narrowed to the fields it reads. They
@@ -66,7 +67,7 @@ export interface Project {
   slug: string;
   repositories: ProjectRepository[];
   defaultHostId?: string | null;
-  defaultAgent?: string | null;
+  defaultAgent?: CodingAgentId | null;
   isUnassigned: boolean;
 }
 
@@ -119,6 +120,18 @@ export interface Session {
   agentReport: SessionAgentReport | null;
   createdAt: string;
   updatedAt: string;
+}
+
+/** `GET /sessions/{id}/events`: the append-only log, by `seq`. */
+export interface SessionLogPage {
+  data: { seq: number; kind: string; payload: Record<string, unknown> }[];
+  nextSeq: number | null;
+}
+
+/** `POST /sessions/{id}/prompt`: where the prompt landed in the log, and the session. */
+export interface SentPrompt {
+  seq: number;
+  session: Session;
 }
 
 export interface SessionPage {
