@@ -748,6 +748,13 @@ td.num{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;c
   <span class="k">updates</span><span>Their release manifest is the same shape as ours with an optional digest and no signature. Ours requires both, and refuses to update at all when no key is compiled in.</span>
 </div>
 <div class="verdict"><p><strong>The architecture holds.</strong> What we take is not structure but craft: manifests as versioned data, hooks over scraping, and the terminal title as a first-class signal.</p></div>
+<p>herdr-core, read and measured on 2026-11-02 (§4 of the same note), is herdr's successor: a runtime whose holder process keeps programs alive across its own restarts, and which takes status only from the program itself.</p>
+<div class="rule">
+  <span class="k">status</span><span>OSC 7501 lets an agent say it is idle, working, done, blocked on a permission, a question or a sign-in, or in error. Claude Code speaks it only once the terminal answers its probe, and tmux never does, so the runner runs the agent under <code>runner pty</code>, which answers and keeps the reports. The agent's word now outranks the screen manifests, and the session bar says why it waits.</span>
+  <span class="k">delegation</span><span>An agent in a session starts helpers as child sessions, types into them, waits for them and hears their reports in its own input; children end with their parent. <code>runner --skill</code> is the manual.</span>
+  <span class="k">kept</span><span>A session marked kept comes back on its own after a reboot, reopening its conversation, with herdr-core's backoff.</span>
+  <span class="k">measured</span><span>Typing is the same through tmux and herdr-core at anything a browser can feel. tmux halves bulk throughput and taxes every session for one busy terminal; herdr-core forwards every byte, three times tmux's, which would land on the relay. So tmux stays, and what was missing was the agent's own word.</span>
+</div>
 
 <h2 id="boot">Session boot time, measured</h2>
 <p>A new session was reported to take about 30 seconds to show a terminal. Note 14 (<code>research/session-boot-time.md</code>) measures each hop from Send to the agent's first screen, from the browser, against a real runner cloning from GitHub.</p>

@@ -39,6 +39,11 @@ type Launch struct {
 	// (the context, the plan's usage) for the chat. It is this host's, so it
 	// is set at each launch and never saved.
 	StatusLine string `json:"-"`
+	// Wrap is what the agent's command line runs under: the runner's `pty`
+	// wrapper, which answers the agent's OSC 7501 probe and keeps what it
+	// reports. It names this host's binary, so it is set at each launch and
+	// never saved.
+	Wrap []string `json:"-"`
 }
 
 // launchMap is one agent's `launch` entry of the catalog
@@ -254,12 +259,15 @@ func substitute(vector []string, placeholder, value string) []string {
 // every shell spells assignments the POSIX way, and on the command line rather
 // than in the tmux session's environment, so only window 0 gets it and a
 // shell tab opened beside the agent does not.
+//
+// Wrap leads the line, so the wrapper is the pane's process and the agent,
+// its environment included, runs under it.
 func (l Launch) CommandLine(agent Agent) string {
 	command := agent.Command()
 	if command == "" {
 		return ""
 	}
-	var words []string
+	words := append([]string(nil), l.Wrap...)
 	if env := l.Env(agent); len(env) > 0 {
 		names := make([]string, 0, len(env))
 		for name := range env {

@@ -72,8 +72,12 @@ func newRealHarness(t *testing.T) *realHarness {
 	layout := domain.Layout{Root: t.TempDir()}
 	store := statestore.New(t.TempDir())
 	files := t.TempDir()
+	worktrees := gitadapter.New(gitadapter.Options{Layout: layout})
+	// A clone's history is fetched in the background; it lands before the
+	// temporary directories it writes into are removed.
+	t.Cleanup(worktrees.Wait)
 	svc, err := app.New(app.Options{
-		Terminals: terminal, Worktrees: gitadapter.New(gitadapter.Options{Layout: layout}),
+		Terminals: terminal, Worktrees: worktrees,
 		Classifier: manifest.New(manifest.Options{}), Store: store, Publisher: &recorder{}, Layout: layout,
 		Places: workfolder.New(workfolder.Options{Layout: layout}),
 		Files:  filestore.New(files),

@@ -11,12 +11,12 @@ import type { SessionChat as Chat } from '@oppenheimer/frontend-consumer';
 import { useState } from 'react';
 import { flushSync } from 'react-dom';
 import { useTranslation } from 'react-i18next';
-import { ChatTurn } from '../components/chat-turn';
 import { TerminalColumn } from '../components/terminal-column';
-import { useChatState } from '../hooks/use-session-chat';
+import { useChatTurnIds } from '../hooks/use-session-chat';
 import type { ChatAttach } from '../lib/chat-blocks';
 import { SessionChatAttachingSend } from './session-chat-attaching-send';
 import { SessionChatSend } from './session-chat-send';
+import { SessionChatTurn } from './session-chat-turn';
 
 /**
  * How many turns the chat draws, and how many more each "Show earlier"
@@ -62,21 +62,23 @@ export function SessionChat({
   attach?: ChatAttach;
 }) {
   const { t } = useTranslation();
-  const state = useChatState(chat);
+  // The ids alone: each turn subscribes to its own record, so a line the
+  // agent writes redraws the turn it lands in and not the list.
+  const ids = useChatTurnIds(chat);
   const { scroller, content, atLatest, toLatest } = useStickToBottom();
   // The first turn drawn. At the latest it follows the end; away from it,
   // it is held, so a turn arriving never takes one off the top of what the
   // reader is on. Back at the latest, it follows again.
-  const following = Math.max(0, state.turns.length - TURNS_SHOWN);
+  const following = Math.max(0, ids.length - TURNS_SHOWN);
   const [held, setHeld] = useState<number | null>(null);
   const [wasAtLatest, setWasAtLatest] = useState(atLatest);
   if (wasAtLatest !== atLatest) {
     setWasAtLatest(atLatest);
     setHeld(atLatest ? null : (held ?? following));
   }
-  const first = Math.min(held ?? following, state.turns.length);
-  const last = state.turns.at(-1);
-  const turns = first > 0 ? state.turns.slice(first) : state.turns;
+  const first = Math.min(held ?? following, ids.length);
+  const last = ids.at(-1);
+  const shown = first > 0 ? ids.slice(first) : ids;
 
   const showEarlier = () =>
     keepingPlace(scroller.current, () => setHeld(Math.max(0, first - TURNS_SHOWN)));
@@ -86,7 +88,7 @@ export function SessionChat({
       <div className="relative flex min-h-0 flex-1 flex-col">
         <div ref={scroller} className="min-h-0 flex-1 overflow-y-auto pt-6 pb-4">
           <TerminalColumn ref={content} className="flex min-h-full flex-col">
-            {state.turns.length === 0 ? (
+            {ids.length === 0 ? (
               <EmptyState className="flex-1">
                 <EmptyState.Header>
                   <EmptyState.Media>
@@ -106,8 +108,8 @@ export function SessionChat({
                     {t('sessions.chat.earlier', { count: Math.min(first, TURNS_SHOWN) })}
                   </Button>
                 ) : null}
-                {turns.map((turn) => (
-                  <ChatTurn key={turn.id} turn={turn} latest={turn === last} />
+                {shown.map((id) => (
+                  <SessionChatTurn key={id} chat={chat} id={id} latest={id === last} />
                 ))}
               </ChatTranscript>
             )}

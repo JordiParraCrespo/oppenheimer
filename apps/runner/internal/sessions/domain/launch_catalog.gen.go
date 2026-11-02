@@ -134,3 +134,13 @@ var loginTargets = map[string][]LoginTarget{
 	"opencode":    {{Host: "opencode.ai"}, {Host: "claude.ai"}, {Host: "console.anthropic.com"}, {Host: "auth.openai.com"}, {Host: "chatgpt.com"}, {Host: "github.com", Path: "/login/device"}},
 	"grok":        {{Host: "accounts.x.ai"}, {Host: "auth.x.ai"}},
 }
+
+// inputCatalog is each agent's `input` entry of the catalog: the keys that
+// send and interrupt a message typed into it, and the pause between a
+// paste and its submit, in milliseconds.
+var inputCatalog = map[string]agentInput{
+	"claude-code": {submit: "\r", stop: "\u001b", pasteGapMs: 200},
+	"codex":       {submit: "\r", stop: "\u001b", pasteGapMs: 200},
+	"opencode":    {submit: "\r", stop: "\u001b", pasteGapMs: 200},
+	"grok":        {submit: "\r", stop: "\u001b", pasteGapMs: 200},
+}

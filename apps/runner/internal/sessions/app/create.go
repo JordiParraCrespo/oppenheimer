@@ -62,6 +62,13 @@ type CreateInput struct {
 	// Each is saved outside the worktree just before the agent starts, and
 	// its path appended to the prompt the agent is launched with.
 	Files []CreateFile
+	// Parent, OutliveParent and Quiet make the session a child of another
+	// session's agent (Delegate).
+	Parent        string
+	OutliveParent bool
+	Quiet         bool
+	// Keep brings the session back on its own after a reboot.
+	Keep bool
 	// Progress, when set, hears each stage start and land, in order, with the
 	// session as it stands at each. StageTerminal landing is what says the
 	// session has a pane to attach to. It must not block.
@@ -136,6 +143,8 @@ func (s *Service) Create(ctx context.Context, in CreateInput) (domain.Session, e
 	}
 	now := s.now().UTC()
 	session.ID, session.Agent, session.Launch = id, agent, in.Launch
+	session.Parent, session.OutliveParent, session.Quiet = in.Parent, in.OutliveParent, in.Quiet
+	session.Keep = in.Keep
 	session.State, session.Created, session.Updated = domain.StateCreating, now, now
 	session.Windows = []domain.Window{{Index: 0, Name: string(agent), Agent: true}}
 	// Idempotent by session id: a create redelivered after a reconnect finds
@@ -220,6 +229,7 @@ func (s *Service) create(ctx context.Context, in CreateInput, session domain.Ses
 			return err
 		}
 		launch.StatusLine = s.statusLine
+		launch.Wrap = s.observer.wrap(session.ID)
 		s.trustFolder(session.Agent, session.Cwd())
 		defer s.holdLaunch(ctx, session.Agent)()
 		if err := s.terminals.Launch(ctx, session.Target(0), session.Cwd(), launch.CommandLine(session.Agent)); err != nil {

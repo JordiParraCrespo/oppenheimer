@@ -183,6 +183,10 @@ type Session struct {
 	// LoginURL is the vendor login link the classifier saw, if any. The
 	// console turns it into a button; nothing else is ever linkified (F3).
 	LoginURL string `json:"loginUrl,omitempty"`
+	// Program is the agent's own last word on what it is doing (OSC 7501),
+	// when it said one: why it is blocked, how far along it is, its message.
+	// It is read again on every refresh, so it is never saved.
+	Program *ProgramStatus `json:"-"`
 	// Dirty records that the worktree had uncommitted changes when it was
 	// closed, so the console can say so instead of silently dropping work.
 	Dirty bool `json:"dirty,omitempty"`
@@ -190,6 +194,15 @@ type Session struct {
 	// agent's transcript and handed to the link as `prompt.first`, so a
 	// runner that restarts never reports it a second time.
 	PromptReported bool `json:"promptReported,omitempty"`
+	// Parent is the session whose agent started this one, and empty for a
+	// session a person or the control plane started. A child tells its
+	// parent when it needs attention or ends, unless Quiet, and ends with
+	// its parent unless OutliveParent.
+	Parent        string `json:"parent,omitempty"`
+	OutliveParent bool   `json:"outliveParent,omitempty"`
+	Quiet         bool   `json:"quiet,omitempty"`
+	// Keep brings the session back on its own after a reboot (app/keep.go).
+	Keep bool `json:"keep,omitempty"`
 }
 
 var (

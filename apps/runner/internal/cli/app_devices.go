@@ -57,10 +57,10 @@ func pinDevice(service *devapp.Service, session sessionsdomain.Session) (map[str
 // them, and its device, when it has one. A folder session gets none: the
 // folder is the person's own, and nothing is written into it.
 func writeSessionNote(session sessionsdomain.Session, previews bool, device *devdomain.Device) {
-	if session.Place == sessionsdomain.PlaceFolder || session.Dir == "" || (!previews && device == nil) {
+	if session.Place == sessionsdomain.PlaceFolder || session.Dir == "" {
 		return
 	}
-	note := "# This session\n"
+	note := "# This session\n" + helpersNote
 	if previews {
 		note += previewNote
 	}
@@ -71,6 +71,15 @@ func writeSessionNote(session sessionsdomain.Session, previews bool, device *dev
 	// names its device.
 	_ = os.WriteFile(filepath.Join(session.Dir, sessionNote), []byte(note), 0o600)
 }
+
+// helpersNote points the agent at the manual for working with other agents
+// on this host, which the runner prints itself (skill.md).
+const helpersNote = `
+## Other agents on this host
+
+You can start other agents as sessions of your own, give them work and wait
+for them. Run ` + "`runner --skill`" + ` once for how, before you do.
+`
 
 // previewNote is how a dev server reaches the console's Browser tab
 // (product/versions/mvp/30-session-previews.md).

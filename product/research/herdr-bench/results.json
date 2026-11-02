@@ -1,0 +1,380 @@
+{
+  "meta": {
+    "cpus": "4",
+    "kernel": "Linux 6.18.44-fc-v185",
+    "started": "2026-11-02T09:51:57Z",
+    "tmux": "tmux 3.4"
+  },
+  "results": {
+    "answers OSC 7501 probe": {
+      "herdr-core 0.1.16": true,
+      "tmux (runner)": false
+    },
+    "attach (+1000 lines of history)": {
+      "herdr-core 0.1.16": {
+        "FirstByte": {
+          "N": 50,
+          "P50": 2.488,
+          "P90": 2.744,
+          "P99": 3.05,
+          "Max": 3.05,
+          "Mean": 2.4665600000000003,
+          "Errors": 0
+        },
+        "Painted": {
+          "N": 50,
+          "P50": 2.488,
+          "P90": 2.744,
+          "P99": 3.05,
+          "Max": 3.05,
+          "Mean": 2.4665600000000003,
+          "Errors": 0
+        },
+        "PaintKB": 6.4326171875
+      }
+    },
+    "attach (screen)": {
+      "herdr-core 0.1.16": {
+        "FirstByte": {
+          "N": 50,
+          "P50": 2.446,
+          "P90": 2.92,
+          "P99": 4.099,
+          "Max": 4.099,
+          "Mean": 2.51352,
+          "Errors": 0
+        },
+        "Painted": {
+          "N": 50,
+          "P50": 2.446,
+          "P90": 2.92,
+          "P99": 4.099,
+          "Max": 4.099,
+          "Mean": 2.51352,
+          "Errors": 0
+        },
+        "PaintKB": 0.5234375
+      },
+      "tmux (runner)": {
+        "FirstByte": {
+          "N": 50,
+          "P50": 3.205,
+          "P90": 3.674,
+          "P99": 7.17,
+          "Max": 7.17,
+          "Mean": 3.4007399999999994,
+          "Errors": 0
+        },
+        "Painted": {
+          "N": 50,
+          "P50": 3.231,
+          "P90": 3.674,
+          "P99": 7.17,
+          "Max": 7.17,
+          "Mean": 3.4459,
+          "Errors": 0
+        },
+        "PaintKB": 1.09765625
+      }
+    },
+    "create": {
+      "herdr-core 0.1.16": {
+        "N": 30,
+        "P50": 4.908,
+        "P90": 5.709,
+        "P99": 7.817,
+        "Max": 7.817,
+        "Mean": 5.088666666666667,
+        "Errors": 0
+      },
+      "tmux (runner)": {
+        "N": 30,
+        "P50": 8.04,
+        "P90": 8.813,
+        "P99": 13.486,
+        "Max": 13.486,
+        "Mean": 8.322899999999997,
+        "Errors": 0
+      }
+    },
+    "echo": {
+      "direct-pty": {
+        "N": 1000,
+        "P50": 0.127,
+        "P90": 0.374,
+        "P99": 0.793,
+        "Max": 3.645,
+        "Mean": 0.18184,
+        "Errors": 0
+      },
+      "herdr-core 0.1.16": {
+        "N": 1000,
+        "P50": 0.297,
+        "P90": 0.373,
+        "P99": 0.713,
+        "Max": 2.205,
+        "Mean": 0.31928300000000115,
+        "Errors": 0
+      },
+      "tmux (runner)": {
+        "N": 1000,
+        "P50": 0.216,
+        "P90": 0.309,
+        "P99": 0.818,
+        "Max": 2.745,
+        "Mean": 0.2464189999999994,
+        "Errors": 0
+      }
+    },
+    "echo, busy neighbour (unwatched)": {
+      "direct-pty": {
+        "N": 500,
+        "P50": 0.132,
+        "P90": 0.381,
+        "P99": 0.731,
+        "Max": 0.93,
+        "Mean": 0.19532200000000025,
+        "Errors": 0
+      },
+      "herdr-core 0.1.16": {
+        "N": 500,
+        "P50": 0.365,
+        "P90": 0.722,
+        "P99": 5.623,
+        "Max": 15.364,
+        "Mean": 0.5733999999999997,
+        "Errors": 0
+      },
+      "tmux (runner)": {
+        "N": 500,
+        "P50": 0.932,
+        "P90": 1.829,
+        "P99": 4.882,
+        "Max": 12.075,
+        "Mean": 1.2075919999999998,
+        "Errors": 0
+      }
+    },
+    "echo, busy neighbour (watched)": {
+      "direct-pty": {
+        "N": 500,
+        "P50": 0.064,
+        "P90": 0.143,
+        "P99": 2.053,
+        "Max": 4.069,
+        "Mean": 0.11962199999999998,
+        "Errors": 0
+      },
+      "herdr-core 0.1.16": {
+        "N": 500,
+        "P50": 3.389,
+        "P90": 23.793,
+        "P99": 63.238,
+        "Max": 86.75,
+        "Mean": 8.287752000000001,
+        "Errors": 0
+      },
+      "tmux (runner)": {
+        "N": 500,
+        "P50": 0.951,
+        "P90": 1.421,
+        "P99": 2.174,
+        "Max": 4.899,
+        "Mean": 1.0659939999999992,
+        "Errors": 0
+      }
+    },
+    "footprint, 1 idle shells": {
+      "herdr-core 0.1.16": {
+        "Terminals": 1,
+        "Processes": 0,
+        "PssMB": 0,
+        "IdleCPUPct": 0
+      },
+      "tmux (runner)": {
+        "Terminals": 1,
+        "Processes": 1,
+        "PssMB": 2.7509765625,
+        "IdleCPUPct": 0
+      }
+    },
+    "footprint, 1 idle shells, after the heavy tests": {
+      "herdr-core 0.1.16": {
+        "Terminals": 1,
+        "Processes": 0,
+        "PssMB": 0,
+        "IdleCPUPct": 0
+      },
+      "tmux (runner)": {
+        "Terminals": 1,
+        "Processes": 1,
+        "PssMB": 141.296875,
+        "IdleCPUPct": 0
+      }
+    },
+    "footprint, 50 idle shells": {
+      "herdr-core 0.1.16": {
+        "Terminals": 50,
+        "Processes": 0,
+        "PssMB": 0,
+        "IdleCPUPct": 0
+      },
+      "tmux (runner)": {
+        "Terminals": 50,
+        "Processes": 1,
+        "PssMB": 2.970703125,
+        "IdleCPUPct": 0
+      }
+    },
+    "kill": {
+      "herdr-core 0.1.16": {
+        "N": 30,
+        "P50": 10.645,
+        "P90": 12.835,
+        "P99": 13.027,
+        "Max": 13.027,
+        "Mean": 10.724799999999998,
+        "Errors": 0
+      },
+      "tmux (runner)": {
+        "N": 30,
+        "P50": 6.698,
+        "P90": 7.478,
+        "P99": 7.557,
+        "Max": 7.557,
+        "Mean": 6.7655,
+        "Errors": 0
+      }
+    },
+    "probe reply (od -c)": {
+      "herdr-core 0.1.16": "\"\\x1b]7501;?:states=idle,working,done,blocked,error:kinds=permission,question,auth\\x1b\\\\\\x1b[?62;22c\"",
+      "tmux (runner)": "\"\\x1b[?1;2;4c\""
+    },
+    "screen read": {
+      "herdr-core 0.1.16": {
+        "N": 200,
+        "P50": 0.796,
+        "P90": 0.862,
+        "P99": 1.075,
+        "Max": 1.13,
+        "Mean": 0.8088199999999997,
+        "Errors": 0
+      },
+      "herdr-core 0.1.16 (CLI exec)": {
+        "N": 200,
+        "P50": 1.817,
+        "P90": 2.007,
+        "P99": 2.401,
+        "Max": 2.437,
+        "Mean": 1.852225000000001,
+        "Errors": 0
+      },
+      "tmux (runner)": {
+        "N": 200,
+        "P50": 2.419,
+        "P90": 3.06,
+        "P99": 5.187,
+        "Max": 6.863,
+        "Mean": 2.583,
+        "Errors": 0
+      }
+    },
+    "throughput: base64 (20 MB, 120-col lines)": {
+      "direct-pty": {
+        "Seconds": 0.397766536,
+        "ViewerMB": 20.333342,
+        "MultiplexCPUMs": 0
+      },
+      "herdr-core 0.1.16": {
+        "Seconds": 0.310198843,
+        "ViewerMB": 20.333342,
+        "MultiplexCPUMs": 0
+      },
+      "tmux (runner)": {
+        "Seconds": 1.153469421,
+        "ViewerMB": 2.62431,
+        "MultiplexCPUMs": 1070
+      }
+    },
+    "throughput: seq 1..2M (14.9 MB, short lines)": {
+      "direct-pty": {
+        "Seconds": 0.868779068,
+        "ViewerMB": 16.888904,
+        "MultiplexCPUMs": 0
+      },
+      "herdr-core 0.1.16": {
+        "Seconds": 1.015060117,
+        "ViewerMB": 16.888904,
+        "MultiplexCPUMs": 0
+      },
+      "tmux (runner)": {
+        "Seconds": 1.5069720100000001,
+        "ViewerMB": 5.304155,
+        "MultiplexCPUMs": 1490
+      }
+    },
+    "core crash #1": {
+      "herdr-core 0.1.16": {
+        "ServingAgainMs": 3097.246,
+        "SamePid": true,
+        "ScreenKept": false
+      }
+    },
+    "core crash #2": {
+      "herdr-core 0.1.16": {
+        "ServingAgainMs": 3080.313,
+        "SamePid": true,
+        "ScreenKept": false
+      }
+    },
+    "core crash #3": {
+      "herdr-core 0.1.16": {
+        "ServingAgainMs": 8994.844,
+        "SamePid": true,
+        "ScreenKept": false
+      }
+    },
+    "core crash+kick #1": {
+      "herdr-core 0.1.16": {
+        "ServingAgainMs": 20.196,
+        "SamePid": true,
+        "ScreenKept": false
+      }
+    },
+    "core crash+kick #2": {
+      "herdr-core 0.1.16": {
+        "ServingAgainMs": 20.162,
+        "SamePid": true,
+        "ScreenKept": false
+      }
+    },
+    "core crash+kick #3": {
+      "herdr-core 0.1.16": {
+        "ServingAgainMs": 19.719,
+        "SamePid": true,
+        "ScreenKept": false
+      }
+    },
+    "core update #1": {
+      "herdr-core 0.1.16": {
+        "ServingAgainMs": 19.284,
+        "SamePid": true,
+        "ScreenKept": true
+      }
+    },
+    "core update #2": {
+      "herdr-core 0.1.16": {
+        "ServingAgainMs": 22.111,
+        "SamePid": true,
+        "ScreenKept": true
+      }
+    },
+    "core update #3": {
+      "herdr-core 0.1.16": {
+        "ServingAgainMs": 20.73,
+        "SamePid": true,
+        "ScreenKept": true
+      }
+    }
+  }
+}

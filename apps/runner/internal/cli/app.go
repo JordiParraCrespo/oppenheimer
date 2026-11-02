@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"context"
 	"net/http"
 	"os"
 	"os/user"
@@ -34,6 +35,7 @@ import (
 	gitadapter "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/adapters/git"
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/adapters/manifest"
 	sessionstate "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/adapters/state"
+	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/adapters/statuspty"
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/adapters/tmux"
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/adapters/transcript"
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/adapters/workfolder"
@@ -57,6 +59,8 @@ type App struct {
 	Service *svcapp.Service
 	// Sessions is the worktree-plus-tmux lifecycle.
 	Sessions *sessionsapp.Service
+	// Children is how a session's agent starts, tells and waits on others.
+	Children *sessionsapp.Children
 	// Updates is nil on a host that is not paired: the release URL and the
 	// channel come from the identity, so there is nothing to build from.
 	Updates *updapp.Service
@@ -111,6 +115,7 @@ func New(version string) (*App, error) {
 	if err := paths.Ensure(); err != nil {
 		return nil, err
 	}
+	linkRunner(paths)
 
 	store := pairfile.New(paths.Home)
 	// The directory the user chose at install lives in config.json; the
@@ -175,15 +180,18 @@ func New(version string) (*App, error) {
 	}
 	app.Devices = devices
 	app.Ports = ports.New()
+	programStatus := statuspty.New(statuspty.Options{Executable: runnerExecutable(), Dir: programStatusDir(paths)})
 	trust := agenttrust.New(agenttrust.Options{ClaudeConfig: claudeConfigPath(paths)})
 	sessions, err := sessionsapp.New(sessionsapp.Options{
 		Terminals:  terminals,
 		Worktrees:  worktrees,
 		Classifier: manifest.New(manifest.Options{Dir: paths.Manifests()}),
 		Store:      sessionstate.New(paths.State()),
-		Files:      filestore.New(paths.Files()),
-		Places:     places,
-		Layout:     layout,
+		// A kept session lost to a reboot comes back on its own.
+		Rebooted: rebootedSinceSaved(sessionstate.New(paths.State()).Path()),
+		Files:    filestore.New(paths.Files()),
+		Places:   places,
+		Layout:   layout,
 		Env: func(session sessionsdomain.Session) map[string]string {
 			env := sessionEnv(paths, session)
 			pinned, device := pinDevice(devices, session)
@@ -207,11 +215,19 @@ func New(version string) (*App, error) {
 		// Claude Code hands its status line the context and the plan's usage,
 		// which the chat shows; the runner's own takes them on the way.
 		StatusLine: statusLineCommand(),
+		// The agent runs under `runner pty`, which answers its OSC 7501
+		// probe and keeps what it reports: its own word on what it does,
+		// ahead of the screen classifier.
+		ProgramStatus: programStatus,
 	})
 	if err != nil {
 		return nil, err
 	}
 	app.Sessions = sessions
+	// Agents run agents: children of a session's agent, on this host.
+	app.Children = sessionsapp.NewChildren(sessionsapp.ChildrenOptions{
+		Sessions: sessions, Terminals: terminals, ProgramStatus: programStatus,
+	})
 	app.Worktrees = worktrees
 	app.Cloud = cloud.Starter{
 		Trust: func(dir string) error { return trust.Trust(sessionsdomain.AgentClaude, dir) },
@@ -250,6 +266,12 @@ func sessionEnv(paths Paths, session sessionsdomain.Session) map[string]string {
 	env := map[string]string{
 		"OPPENHEIMER_SESSION": session.ID,
 		"OPPENHEIMER_SOCKET":  paths.Socket(),
+	}
+	// `runner` by name, for the agent's own commands (`runner --skill`).
+	env["PATH"] = WithDir(os.Getenv("PATH"), paths.Commands())
+	// A child's own commands (`runner sessions report`) find its parent.
+	if session.Parent != "" {
+		env["OPPENHEIMER_PARENT"] = session.Parent
 	}
 	if session.Place == sessionsdomain.PlaceFolder {
 		return env
@@ -355,6 +377,28 @@ func WithInstallBins(path, home string) string {
 		}
 	}
 	return strings.Join(entries, string(os.PathListSeparator))
+}
+
+// rebootedSinceSaved reports whether the host booted after the session map
+// at path was last written. The runner writes it whenever a session ends,
+// so a map older than the boot holds as live exactly the sessions that were
+// running when the host went down.
+func rebootedSinceSaved(path string) bool {
+	info, err := os.Stat(path)
+	if err != nil {
+		return false
+	}
+	booted, ok := system.BootTime(context.Background())
+	return ok && booted.After(info.ModTime())
+}
+
+// WithDir is path with dir appended, once.
+func WithDir(path, dir string) string {
+	entries := filepath.SplitList(path)
+	if slices.Contains(entries, dir) {
+		return path
+	}
+	return strings.Join(append(entries, dir), string(os.PathListSeparator))
 }
 
 // ServicePATH is the installer's PATH as the service should carry it: only

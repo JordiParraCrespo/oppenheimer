@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"reflect"
 	"slices"
+	"strings"
 	"testing"
 	"time"
 
@@ -301,7 +302,7 @@ func TestOnlyAWorktreeSessionsShellAsksTheRunnerForCredentials(t *testing.T) {
 		t.Fatalf("folder env = %v", folder)
 	}
 	for key := range folder {
-		if key != "OPPENHEIMER_SESSION" && key != "OPPENHEIMER_SOCKET" {
+		if strings.HasPrefix(key, "GIT_") || key == "OPPENHEIMER_REPO" {
 			t.Fatalf("a folder session's shell carries %s", key)
 		}
 	}

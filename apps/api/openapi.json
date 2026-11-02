@@ -27773,6 +27773,57 @@
           "code"
         ]
       },
+      "SessionAgentReportResponseDto": {
+        "type": "object",
+        "properties": {
+          "state": {
+            "type": "string",
+            "enum": [
+              "idle",
+              "working",
+              "done",
+              "blocked",
+              "error"
+            ],
+            "description": "The agent’s own word. `error` is a turn that ended in an error, which `observed` reads as `done`."
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "permission",
+              "question",
+              "auth"
+            ],
+            "nullable": true,
+            "description": "What a blocked agent waits on, when it said."
+          },
+          "progress": {
+            "type": "number",
+            "nullable": true,
+            "minimum": 0,
+            "maximum": 100,
+            "description": "How far along a working or blocked agent says it is."
+          },
+          "message": {
+            "type": "string",
+            "nullable": true,
+            "example": "approve Bash: pnpm test",
+            "description": "What the agent says, in its own words."
+          },
+          "title": {
+            "type": "string",
+            "nullable": true,
+            "description": "The title the agent gave its work."
+          }
+        },
+        "required": [
+          "state",
+          "kind",
+          "progress",
+          "message",
+          "title"
+        ]
+      },
       "SessionResponseDto": {
         "type": "object",
         "properties": {
@@ -27953,6 +28004,16 @@
             "nullable": true,
             "description": "What the agent waits on you for, by `kind`: a question it asked, or a permission dialog. Null when nothing is pending. Answer it with `POST /sessions/{id}/decision`."
           },
+          "agentReport": {
+            "nullable": true,
+            "description": "What the agent itself last said it is doing (OSC 7501): why it is blocked, how far along it is, its message. Null when the state was read off its screen.",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SessionAgentReportResponseDto"
+              }
+            ]
+          },
           "createdAt": {
             "format": "date-time",
             "type": "string"
@@ -27979,6 +28040,7 @@
           "cloud",
           "hints",
           "decision",
+          "agentReport",
           "createdAt",
           "updatedAt"
         ]
