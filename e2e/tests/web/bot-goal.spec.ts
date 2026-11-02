@@ -28,8 +28,11 @@ test('the /goal command from the chat’s menu to the composer', async ({ page }
   await expect(composer).toHaveValue('/goal ');
 
   // With no condition, send stays off and says what is missing.
+  // The notice on the box's top edge; the disabled send carries the same words for a reader.
   await expect(
-    page.getByText('Write what done looks like after /goal, or /goal clear to stop the goal.'),
+    page
+      .getByText('Write what done looks like after /goal, or /goal clear to stop the goal.')
+      .first(),
   ).toBeVisible();
   await expect(page.getByRole('button', { name: 'Send' })).toBeDisabled();
 
