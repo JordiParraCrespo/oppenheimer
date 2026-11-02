@@ -46,7 +46,9 @@ src/
 - New command groups go in `src/commands/` and are registered in `src/program.ts`.
 - Every command hits an endpoint that declares `@RequireScopes`. A token
   without the matching scope must fail with exit code `4`, not a generic
-  error. The README's Permissions table lists what each command needs.
+  error. The README's Permissions table lists what each command needs. Roles
+  say what a person may do and scopes what a credential may do for them;
+  effective access is the intersection (`.agents/rules/scopes-and-credentials.md`).
 - Writes that create something (`sessions run`, `automations run`) send an
   `Idempotency-Key`, so a retry after a lost answer does not make two.
 - Keep human-readable output in `src/lib/output.ts` so `--json` stays a
