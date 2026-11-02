@@ -1,11 +1,12 @@
 import { inject, injectable } from 'inversify';
 import { TOKENS } from '../../di/tokens';
 import type { ErrorReportContext, IErrorReportingClient } from './error-reporting.client';
-import { isReportableError } from './is-reportable-error';
+import { reportableErrorOf } from './is-reportable-error';
 
 /**
- * The one place the frontend reports an error. Only what `isReportableError`
- * calls a bug is sent; a failing reporter never breaks the app it reports on.
+ * The one place the frontend reports an error. Only the bug a failure is or
+ * wraps is sent (`reportableErrorOf`); a failing reporter never breaks the app
+ * it reports on.
  */
 @injectable()
 export class ErrorReportingService {
@@ -16,8 +17,9 @@ export class ErrorReportingService {
 
   /** Reports `error` when it is a bug of ours; true when it was handed on. */
   capture(error: unknown, context?: ErrorReportContext): boolean {
-    if (!isReportableError(error)) return false;
-    this.safely('capture', () => this.client.capture(error, context));
+    const bug = reportableErrorOf(error);
+    if (bug === undefined) return false;
+    this.safely('capture', () => this.client.capture(bug, context));
     return true;
   }
 

@@ -49,4 +49,15 @@ describe('scrubEvent', () => {
       status_code: 500,
     });
   });
+
+  it('redacts a credential that is the path itself, and an attach ticket', () => {
+    const event = scrubEvent({
+      request: { url: 'https://api.test/api/v1/cloud-files/abc.def?ticket=t1&page=2' },
+      breadcrumbs: [{ data: { url: '/api/v1/cloud-files/abc.def' } }],
+    });
+    expect(event.request?.url).toBe(
+      'https://api.test/api/v1/cloud-files/[redacted]?ticket=%5Bredacted%5D&page=2',
+    );
+    expect(event.breadcrumbs?.[0]?.data?.url).toBe('/api/v1/cloud-files/[redacted]');
+  });
 });

@@ -24,6 +24,7 @@ import {
   problemTypeFor,
   titleForStatus,
 } from '../errors/problem-details';
+import { errorReportOf } from './error-report';
 
 /** What a 5xx tells the client. Anything more would leak internals. */
 const INTERNAL_ERROR_DETAIL =
@@ -79,7 +80,9 @@ export class AllExceptionsFilter implements ExceptionFilter {
         }`,
         exception instanceof Error ? exception.stack : String(exception),
       );
-      this.report(exception, problem, request);
+      if (this.reporter?.enabled) {
+        this.reporter.capture(exception, errorReportOf(exception, problem, request));
+      }
     }
 
     const retryAfter = retryAfterOf(exception);
@@ -152,25 +155,6 @@ export class AllExceptionsFilter implements ExceptionFilter {
     return this.internalProblem(context);
   }
 
-  private report(exception: unknown, problem: ProblemDetails, request: Request | undefined): void {
-    if (!this.reporter?.enabled) return;
-    const curated = exception instanceof AppError || exception instanceof HttpException;
-    const code = exception instanceof AppError ? exception.code : undefined;
-    const subject = request as ReportedRequest | undefined;
-    this.reporter.capture(exception, {
-      level: curated ? 'warning' : 'error',
-      tags: {
-        'http.method': request?.method,
-        'http.route': subject?.route?.path,
-        'http.status_code': problem.status,
-        'error.code': code,
-      },
-      fingerprint: code ? ['app-error', code] : undefined,
-      userId: idOf(subject?.user?.id),
-      workspaceId: idOf(subject?.session?.activeOrganizationId),
-    });
-  }
-
   private internalProblem(
     context: { instance?: string; correlationId?: string },
     status: number = HttpStatus.INTERNAL_SERVER_ERROR,
@@ -184,17 +168,6 @@ export class AllExceptionsFilter implements ExceptionFilter {
       context,
     );
   }
-}
-
-/** What the auth guards and the router leave on a request, as far as a report reads it. */
-interface ReportedRequest {
-  route?: { path?: string };
-  user?: { id?: unknown } | null;
-  session?: { activeOrganizationId?: unknown } | null;
-}
-
-function idOf(value: unknown): string | undefined {
-  return typeof value === 'string' && value ? value : undefined;
 }
 
 /**

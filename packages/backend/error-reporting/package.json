@@ -9,6 +9,18 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
       "require": "./dist/index.js"
+    },
+    "./init": {
+      "types": "./dist/init.d.ts",
+      "import": "./dist/init.js",
+      "require": "./dist/init.js"
+    }
+  },
+  "typesVersions": {
+    "*": {
+      "init": [
+        "./dist/init.d.ts"
+      ]
     }
   },
   "scripts": {
