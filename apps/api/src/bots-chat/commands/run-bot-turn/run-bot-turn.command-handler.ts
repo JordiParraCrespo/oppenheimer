@@ -5,7 +5,6 @@ import { Inject, Logger } from '@nestjs/common';
 import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
 import type { BotEngine } from '@oppenheimer/backend-agents';
 import { AppError } from '@oppenheimer/backend-core';
-import { BotApprovalStartedResolver } from '../../application/bot-approval-started.resolver';
 import { BotSteeringFactory } from '../../application/bot-steering.factory';
 import { BotSummaryTriggerPolicy } from '../../application/bot-summary-trigger.policy';
 import { BotTurnContextResolver } from '../../application/bot-turn-context.resolver';
@@ -20,7 +19,9 @@ import { RunBotTurnCommand } from './run-bot-turn.command';
 
 /**
  * Runs one turn (`25-bots.md` §2): claims it (one running turn per bot), reads
- * what it needs, runs the engine with its steering, hands what the transcript
+ * what it needs, runs the engine with its steering (unless what it read says
+ * the turn takes none, or has nothing left to say, and so ends at once),
+ * hands what the transcript
  * writes to the turn's writer (`TurnWriteFactory`), then records how it ended,
  * makes the bot's next queued turn due and asks whether the conversation needs
  * summarizing. A turn found running was a worker that died under it, and fails
@@ -39,7 +40,6 @@ export class RunBotTurnCommandHandler implements ICommandHandler<RunBotTurnComma
     private readonly summaries: BotSummaryTriggerPolicy,
     private readonly steering: BotSteeringFactory,
     private readonly writes: TurnWriteFactory,
-    private readonly approvalStarted: BotApprovalStartedResolver,
   ) {}
 
   async execute({ turnId, metadata }: RunBotTurnCommand): Promise<void> {
@@ -72,19 +72,19 @@ export class RunBotTurnCommandHandler implements ICommandHandler<RunBotTurnComma
     const watch = this.cancelWatch.watch(turn.id);
     let scratchDir: string | undefined;
     try {
-      // A yes whose call already ran: the turn that reports it says it all.
-      if (await this.approvalStarted.overtaken(turn)) {
+      const shape = await this.context.resolve(turn, new Date());
+      if (!shape) {
         turn.end('completed', new Date());
         return;
       }
       scratchDir = await mkdtemp(join(tmpdir(), 'bot-'));
-      const { takesSteers, ...context } = await this.context.resolve(turn, new Date());
       const transcript = new TurnTranscript(turn);
       // A message sent meanwhile that this turn cannot take waits for its own turn.
-      const steering = takesSteers ? this.steering.steering(turn) : undefined;
+      const steering = shape.takesSteers ? this.steering.steering(turn) : undefined;
       const signal = watch.signal;
       const write = this.writes.writer(turn);
-      for await (const event of this.engine.run({ ...context, signal, scratchDir, steering })) {
+      const request = { ...shape.request, signal, scratchDir, steering };
+      for await (const event of this.engine.run(request)) {
         for (const written of transcript.apply(event)) await write(written);
       }
       transcript.endTurn(new Date(), watch.interruption);

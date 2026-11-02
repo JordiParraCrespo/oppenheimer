@@ -11,7 +11,7 @@ import {
 } from '../../bots-chat.di-tokens';
 import type { BotApprovalRepositoryPort } from '../../database/bot-approval.repository.port';
 import type { BotTurnRepositoryPort } from '../../database/bot-turn.repository.port';
-import { decisionTurn, intersectScopes } from '../../domain/bot-approval.policy';
+import { approvalFinishedTurn, intersectScopes } from '../../domain/bot-approval.policy';
 import type { BotStreamPort } from '../../infrastructure/bot-stream.port';
 import { RunApprovedCallCommand } from './run-approved-call.command';
 
@@ -61,7 +61,7 @@ export class RunApprovedCallCommandHandler
     const owner = bot.unwrap();
     // An approver whose account is gone gets no report: there is nobody to send it as.
     const continuation = approval.decidedByUserId
-      ? decisionTurn(
+      ? approvalFinishedTurn(
           {
             organizationId: owner.organizationId,
             botId: owner.id,
@@ -74,7 +74,6 @@ export class RunApprovedCallCommandHandler
           },
           approval,
           by,
-          'finished',
         )
       : undefined;
     if (

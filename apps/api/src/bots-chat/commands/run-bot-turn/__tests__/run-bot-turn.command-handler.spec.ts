@@ -7,7 +7,6 @@ import {
 import { AppError } from '@oppenheimer/backend-core';
 import { None, Some } from 'oxide.ts';
 import { BotErrors } from '../../../../bots/domain/bots.errors';
-import type { BotApprovalStartedResolver } from '../../../application/bot-approval-started.resolver';
 import { BotSteeringFactory } from '../../../application/bot-steering.factory';
 import type { BotSummaryTriggerPolicy } from '../../../application/bot-summary-trigger.policy';
 import type { BotTurnContextResolver } from '../../../application/bot-turn-context.resolver';
@@ -31,8 +30,8 @@ import { RunBotTurnCommandHandler } from '../run-bot-turn.command-handler';
  * reading what the turn needs fails it with words; Stop aborts the engine; and
  * a turn found running is failed rather than run twice. What its sender
  * steers in is taken at each tool call, by the steer policy, and put after
- * the line of the call that carried it. A turn a yes opened whose call
- * already ran ends without running the engine.
+ * the line of the call that carried it, unless what was read says the turn
+ * takes none. A turn with nothing left to say ends without running the engine.
  */
 function queued(status: 'queued' | 'running' = 'queued') {
   const turn = BotTurnEntity.queue({
@@ -56,8 +55,8 @@ function setup(
     cancel?: boolean;
     resolve?: Error;
     steers?: BotTurnEntity[][];
-    /** The turn opens on a yes whose call already ran. */
-    overtaken?: boolean;
+    /** What was read says the turn has nothing left to say. */
+    nothingToSay?: boolean;
     /** Whether the turn may take what the person sends meanwhile; it may unless said. */
     takesSteers?: boolean;
   } = {},
@@ -104,15 +103,18 @@ function setup(
   const context = {
     resolve: vi.fn(async () => {
       if (options.resolve) throw options.resolve;
+      if (options.nothingToSay) return null;
       return {
-        provider: 'glm' as const,
-        apiKey: 'key',
-        model: 'glm-5.3',
-        effort: null,
-        systemPrompt: 'You are a bot.',
-        history: [],
-        message: 'Hi',
-        tools: [],
+        request: {
+          provider: 'glm' as const,
+          apiKey: 'key',
+          model: 'glm-5.3',
+          effort: null,
+          systemPrompt: 'You are a bot.',
+          history: [],
+          message: 'Hi',
+          tools: [],
+        },
         takesSteers: options.takesSteers ?? true,
       };
     }),
@@ -121,9 +123,6 @@ function setup(
     BotSummaryTriggerPolicy,
     'afterTurn'
   >;
-  const approvalStarted = {
-    overtaken: vi.fn(async () => options.overtaken ?? false),
-  } satisfies Pick<BotApprovalStartedResolver, 'overtaken'>;
   const handler = new RunBotTurnCommandHandler(
     turns as unknown as BotTurnRepositoryPort,
     stream,
@@ -133,7 +132,6 @@ function setup(
     summaries as unknown as BotSummaryTriggerPolicy,
     new BotSteeringFactory(turns as unknown as BotTurnRepositoryPort, new BotMessageMapper()),
     new TurnWriteFactory(messages as unknown as BotMessageRepositoryPort, stream),
-    approvalStarted as unknown as BotApprovalStartedResolver,
   );
   return { handler, turns, messages, stream, summaries, heard, context };
 }
@@ -164,13 +162,12 @@ describe('RunBotTurnCommandHandler', () => {
   });
 
   // Regression: an "on it" after the call ran, or after its report, reads backwards.
-  it('ends a turn a yes opened without a word when its call already ran', async () => {
+  it('ends a turn with nothing left to say (a yes whose call already ran) without a word', async () => {
     const turn = queued();
     const engine = vi.fn(() => [{ type: 'text.done' as const, text: 'On it.' }]);
-    const { handler, messages, context, summaries } = setup(turn, engine, { overtaken: true });
+    const { handler, messages, summaries } = setup(turn, engine, { nothingToSay: true });
     await run(handler, turn.id);
     expect(engine).not.toHaveBeenCalled();
-    expect(context.resolve).not.toHaveBeenCalled();
     expect(messages.insert).not.toHaveBeenCalled();
     expect(turn).toMatchObject({ status: 'completed' });
     expect(summaries.afterTurn).toHaveBeenCalledWith(turn, expect.any(String));

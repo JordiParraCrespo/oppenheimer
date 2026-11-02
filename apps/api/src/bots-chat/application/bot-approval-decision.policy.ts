@@ -7,7 +7,13 @@ import {
 import type { BotEntity } from '../../bots/domain/bot.entity';
 import type { BotApprovalEffects } from '../database/bot-approval.repository.port';
 import type { BotApprovalEntity } from '../domain/bot-approval.entity';
-import { decisionTurn, intersectScopes, reachOf, stoppedLine } from '../domain/bot-approval.policy';
+import {
+  approvalStartedTurn,
+  deniedTurn,
+  intersectScopes,
+  reachOf,
+  stoppedLine,
+} from '../domain/bot-approval.policy';
 import type { BotTurnEntity } from '../domain/bot-turn.entity';
 
 /** Who decides, and through what. */
@@ -68,7 +74,7 @@ export function decideApproval(
     return {
       effects: {
         runCall: { by: decider.name },
-        continuation: decisionTurn(turnProps, approval, decider.name, 'started'),
+        continuation: approvalStartedTurn(turnProps, approval, decider.name),
         ...(permission && { standing: { permission, maxGrants: BOT_TOOL_GRANTS_MAX } }),
       },
       cancelAsking: false,
@@ -82,7 +88,7 @@ export function decideApproval(
     };
   }
   return {
-    effects: { continuation: decisionTurn(turnProps, approval, decider.name) },
+    effects: { continuation: deniedTurn(turnProps, approval, decider.name) },
     cancelAsking: false,
   };
 }

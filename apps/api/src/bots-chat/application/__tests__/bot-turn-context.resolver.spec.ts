@@ -8,15 +8,18 @@ import type { BotDocumentRepositoryPort } from '../../../bots/database/bot-docum
 import type { BotMemoryFactRepositoryPort } from '../../../bots/database/bot-memory-fact.repository.port';
 import type { BotSkillRepositoryPort } from '../../../bots/database/bot-skill.repository.port';
 import { BotSkillEntity } from '../../../bots/domain/bot-skill.entity';
+import type { BotApprovalRepositoryPort } from '../../database/bot-approval.repository.port';
 import type { BotConversationSummaryRepositoryPort } from '../../database/bot-conversation-summary.repository.port';
 import type { BotMessageRepositoryPort } from '../../database/bot-message.repository.port';
 import type { BotTurnRepositoryPort } from '../../database/bot-turn.repository.port';
+import type { BotApprovalEntity } from '../../domain/bot-approval.entity';
 import { BotConversationSummaryEntity } from '../../domain/bot-conversation-summary.entity';
 import { BotMessageEntity } from '../../domain/bot-message.entity';
 import { NO_PERMISSIONS } from '../../domain/bot-tool-permission.policy';
 import { type BotTurnContext, BotTurnEntity } from '../../domain/bot-turn.entity';
 import type { OwnerHostsPort } from '../../infrastructure/owner-hosts.port';
 import type { BotApprovalRequestFactory } from '../bot-approval-request.factory';
+import { BotApprovalStartedPolicy } from '../bot-approval-started.policy';
 import { BotModelAccessResolver } from '../bot-model-access.resolver';
 import type { BotOwnerPermissionsResolver } from '../bot-owner-permissions.resolver';
 import type { BotOwnerScopeResolver } from '../bot-owner-scope.resolver';
@@ -24,12 +27,7 @@ import type { BotPermissionsResolver } from '../bot-permissions.resolver';
 import type { BotRuleReviewerFactory } from '../bot-rule-reviewer.factory';
 import type { BotSubagentRunnerFactory } from '../bot-subagent-runner.factory';
 import type { BotToolboxFactory } from '../bot-toolbox.factory';
-import {
-  APPROVAL_STARTED_REFUSAL,
-  BOT_APPROVAL_STARTED_MAX_STEPS,
-  BOT_TURN_MAX_STEPS,
-  BotTurnContextResolver,
-} from '../bot-turn-context.resolver';
+import { BOT_TURN_MAX_STEPS, BotTurnContextResolver } from '../bot-turn-context.resolver';
 import type { BotTurnOpeningResolver } from '../bot-turn-opening.resolver';
 
 /**
@@ -69,8 +67,10 @@ function setup(
     skills?: BotSkillEntity[];
     /** The tools the prompt lists, by name. */
     offered?: string[];
-    /** The turn opens on a yes while its call runs. */
-    approvalStarted?: boolean;
+    /** What opened the turn, when it is not a message of yours. */
+    message?: BotMessageEntity;
+    /** The approval it names, as the worker reads it. */
+    approval?: 'running' | 'ran';
   } = {},
 ) {
   const opening = conversation.opening ?? 'Hi';
@@ -114,7 +114,7 @@ function setup(
           name: 'archive_mail',
           description: 'Archive.',
           inputSchema: { type: 'object' },
-          run: vi.fn(async () => ({ content: 'Archived 25 threads.' })),
+          run: async () => ({ content: 'Archived 25 threads.' }),
         },
       ],
       readOnlyTools: () => [],
@@ -127,7 +127,7 @@ function setup(
         prompt: opening,
         images: [],
         command: parseBotSlashCommand(opening),
-        approvalStarted: conversation.approvalStarted ?? false,
+        message: conversation.message ?? null,
       }),
     } as unknown as BotTurnOpeningResolver,
     { create: () => ({ run: async () => [] }) } as unknown as BotSubagentRunnerFactory,
@@ -135,6 +135,10 @@ function setup(
     {
       create: () => ({ review: async () => ({ effect: 'none' }) }),
     } as unknown as BotRuleReviewerFactory,
+    new BotApprovalStartedPolicy({
+      findForRun: async () =>
+        Some({ running: conversation.approval !== 'ran' } as BotApprovalEntity),
+    } as unknown as BotApprovalRepositoryPort),
   );
   const turnFrom = (timeZone: string | null) =>
     BotTurnEntity.queue({
@@ -146,31 +150,50 @@ function setup(
       effort: null,
       timeZone,
     });
+  const shape = (at = new Date('2026-10-15T09:00:00Z'), timeZone: string | null = null) =>
+    resolver.resolve(turnFrom(timeZone), at);
   return {
-    resolve: (at = new Date('2026-10-15T09:00:00Z'), timeZone: string | null = null) =>
-      resolver.resolve(turnFrom(timeZone), at),
+    shape,
+    /** What the engine is sent, for a turn that runs. */
+    resolve: async (at?: Date, timeZone: string | null = null) => {
+      const shaped = await shape(at, timeZone);
+      if (!shaped) throw new Error('the turn had nothing to say');
+      return shaped.request;
+    },
   };
 }
 
 describe('BotTurnContextResolver', () => {
-  // What breaks this: the "on it" turn acting before the call it approved
-  // reports, or archiving a second time; or, offered no tools at all, losing
-  // the provider's cached conversation and paying for it whole.
-  it('offers a yes’s turn the same tools, each refusing to run, two round trips and no steer', async () => {
-    const quiet = await setup(async () => [], { approvalStarted: true }).resolve();
-    expect(quiet.tools.map((tool) => tool.name)).toEqual(['archive_mail']);
-    expect(quiet.maxSteps).toBe(BOT_APPROVAL_STARTED_MAX_STEPS);
-    expect(quiet.takesSteers).toBe(false);
-    await expect(
-      quiet.tools[0]?.run({}, { signal: new AbortController().signal }),
-    ).resolves.toEqual({ content: APPROVAL_STARTED_REFUSAL, isError: true });
+  // What breaks this: the turn a yes opens read like any other, so it acts
+  // before the call it approved reports, or says "on it" after the report.
+  it('hands every turn to the approval-started policy: a message of yours runs as read', async () => {
+    const usual = await setup(async () => []).shape();
+    expect(usual?.takesSteers).toBe(true);
+    expect(usual?.request.maxSteps).toBe(BOT_TURN_MAX_STEPS);
 
-    const usual = await setup(async () => []).resolve();
-    expect(usual.maxSteps).toBe(BOT_TURN_MAX_STEPS);
-    expect(usual.takesSteers).toBe(true);
+    const started = BotMessageEntity.createNew({
+      organizationId: 'org-1',
+      botId: 'bot-1',
+      turnId: 't-1',
+      role: 'event',
+      content: 'Ana approved: Archive 25 threads\nIt is running now.',
+      event: {
+        kind: 'approval',
+        outcome: 'approved',
+        tool: 'archive_mail',
+        summary: 'Archive 25 threads',
+        sessionId: null,
+        approvalId: 'a-1',
+        stage: 'started',
+      },
+      steps: [],
+      position: 0,
+    });
+    const onIt = await setup(async () => [], { message: started }).shape();
+    expect(onIt?.takesSteers).toBe(false);
     await expect(
-      usual.tools[0]?.run({}, { signal: new AbortController().signal }),
-    ).resolves.toEqual({ content: 'Archived 25 threads.' });
+      setup(async () => [], { message: started, approval: 'ran' }).shape(),
+    ).resolves.toBe(null);
   });
 
   it('names the home host among the owner’s hosts', async () => {

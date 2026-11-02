@@ -181,7 +181,7 @@ describe('RunApprovedCallCommandHandler', () => {
       role: 'event',
       event: { outcome: 'approved', tool: 'start_session', sessionId: SESSION, stage: 'finished' },
       content:
-        'The approved call finished: Start Claude Code on build-02: Fix the test\nIt ran: Started session for Fix the test.',
+        'Ana approved a call, and it finished: Start Claude Code on build-02: Fix the test\nIt ran: Started session for Fix the test.',
     });
   });
 
