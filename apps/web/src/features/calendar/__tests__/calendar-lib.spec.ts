@@ -23,6 +23,7 @@ function automation(
     {
       id: 'r-1',
       number: 1,
+      place: 'host',
       hostId: 'h-1',
       agent: 'claude-code',
       model: null,

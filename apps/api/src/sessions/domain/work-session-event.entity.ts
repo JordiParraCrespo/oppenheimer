@@ -9,6 +9,15 @@ import {
 /** Who wrote the entry. A host and the control plane are not the same witness. */
 export type SessionEventSource = 'runner' | 'api';
 
+/** One entry a caller wants appended. `seq` is the control plane's to assign. */
+export interface NewSessionEvent {
+  idempotencyKey: string;
+  source: SessionEventSource;
+  kind: string;
+  payload?: unknown;
+  occurredAt?: Date;
+}
+
 /**
  * The payload cap, in bytes of its JSON form: the protocol's
  * `PROTOCOL_MAX_EVENT_PAYLOAD_BYTES` on `events.append`, held again here for

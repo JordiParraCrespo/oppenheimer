@@ -1,3 +1,5 @@
+import type { HostCloudAgentId } from '@oppenheimer/shared/agents';
+
 /**
  * One word for the row, derived by the API on every read: `running` (online,
  * a session up), `idle`, `offline`, `unpaired`.
@@ -21,6 +23,19 @@ export interface HostDetails {
   city: string | null;
   asnOrg: string | null;
   roundTripMillis: number | null;
+  /**
+   * Whether the host can start a cloud session of each agent now — Claude
+   * Code's, Codex's: online, its runner takes them, and the agent's CLI is
+   * installed. `null` when the API could not tell (online, its link held
+   * elsewhere): worth trying, not promised.
+   */
+  startsCloud: Record<HostCloudAgentId, boolean | null>;
+  /**
+   * The claude.ai account (email) the host's `claude` is signed in as: the
+   * one a Claude Code cloud session started there runs on. `null` when it is
+   * not signed in, or the runner does not say.
+   */
+  claudeAccount: string | null;
 }
 
 const NO_DETAILS: HostDetails = {
@@ -34,6 +49,8 @@ const NO_DETAILS: HostDetails = {
   city: null,
   asnOrg: null,
   roundTripMillis: null,
+  startsCloud: { 'claude-code': false, codex: false },
+  claudeAccount: null,
 };
 
 /**
@@ -114,6 +131,30 @@ export interface HostFolderEntry {
   /** Absolute, on the host. */
   path: string;
   branch: string | null;
+}
+
+/** One Codex cloud environment of the host's ChatGPT account. */
+export interface HostCodexEnvironment {
+  /** What `codex cloud exec --env` is given. */
+  id: string;
+  /** The name its owner gave it on chatgpt.com/codex; null when it has none. */
+  label: string | null;
+  pinned: boolean;
+  /** Linked to the repository the list was asked for. */
+  repository: boolean;
+}
+
+/**
+ * The Codex cloud environments a host's ChatGPT account has, read by its
+ * runner now (`GET /hosts/{id}/codex-environments`,
+ * `product/next-steps/cloud-agents.md`): those linked to the repository first.
+ */
+export interface HostCodexEnvironments {
+  environments: HostCodexEnvironment[];
+  /** Where a session started with none picked runs; null when none is linked. */
+  recommended: string | null;
+  /** `tasks`: only those the account's recent tasks ran in, when the host could not ask ChatGPT. */
+  source: 'chatgpt' | 'tasks';
 }
 
 /**

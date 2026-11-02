@@ -23,6 +23,8 @@ describe('initialDraft', () => {
   it('opens on the fallback with nothing remembered', () => {
     expect(initialDraft()).toEqual({
       where: 'worktree',
+      cloudProvider: null,
+      cloudModel: null,
       projectId: null,
       hostId: null,
       scope: [],
@@ -31,6 +33,7 @@ describe('initialDraft', () => {
       model: defaultModelFor('claude-code'),
       permission: 'auto',
       efforts: {},
+      codexEnvironment: null,
     });
   });
 
@@ -50,6 +53,32 @@ describe('initialDraft', () => {
       model: 'gpt-6-astra',
       efforts: { codex: 'ultra', 'claude-code': 'xhigh' },
     });
+  });
+
+  /**
+   * Claude Code's cloud runs Claude Code, and the API refuses another agent
+   * there. A draft that opened on it with Codex would fail only once sent.
+   */
+  it('opens a host’s cloud on Claude Code when the agent left runs in no vendor’s cloud', () => {
+    store({ where: 'cloud', cloudProvider: null, agent: 'grok', model: 'grok-4.6' });
+
+    expect(initialDraft()).toMatchObject({
+      where: 'cloud',
+      agent: 'claude-code',
+      model: defaultModelFor('claude-code'),
+    });
+  });
+
+  it('reopens Codex’s cloud on Codex', () => {
+    store({ where: 'cloud', cloudProvider: null, agent: 'codex', model: 'gpt-6-astra' });
+
+    expect(initialDraft()).toMatchObject({ where: 'cloud', agent: 'codex', model: 'gpt-6-astra' });
+  });
+
+  it('lets an address naming another agent win over a remembered host cloud', () => {
+    store({ where: 'cloud', cloudProvider: null, agent: 'claude-code' });
+
+    expect(initialDraft({ agent: 'grok' })).toMatchObject({ where: 'worktree', agent: 'grok' });
   });
 
   it('keeps each known agent’s pick as left, and drops the old single stop', () => {
@@ -107,6 +136,8 @@ describe('rememberDraft', () => {
   it('writes every chip but the folder, and they read back', () => {
     rememberDraft({
       where: 'folder',
+      cloudProvider: 'cursor',
+      cloudModel: 'grok-4.7',
       projectId: 'p1',
       hostId: 'h1',
       scope: [{ id: 'x', branch: 'y' }],
@@ -114,6 +145,7 @@ describe('rememberDraft', () => {
       model: 'gpt-6-astra',
       permission: 'ask',
       efforts: { codex: 'low' },
+      codexEnvironment: { hostId: 'h1', id: 'e_1', label: 'Web' },
       // A caller holding the whole draft passes it; the folder must not be
       // written: it is remembered per host, on its own.
       ...({ folder: '/tmp' } as object),
@@ -121,6 +153,9 @@ describe('rememberDraft', () => {
 
     expect(Object.keys(JSON.parse(window.localStorage.getItem(KEY) ?? '{}')).sort()).toEqual([
       'agent',
+      'cloudModel',
+      'cloudProvider',
+      'codexEnvironment',
       'efforts',
       'hostId',
       'model',
@@ -131,12 +166,22 @@ describe('rememberDraft', () => {
     ]);
     expect(initialDraft()).toMatchObject({
       where: 'folder',
+      cloudModel: 'grok-4.7',
       projectId: 'p1',
       scope: [{ id: 'x', branch: 'y' }],
       agent: 'codex',
       permission: 'ask',
       efforts: { codex: 'low' },
+      codexEnvironment: { hostId: 'h1', id: 'e_1', label: 'Web' },
     });
+  });
+
+  it('reads a remembered vendor back only beside the cloud, so a host place stays a host’s', () => {
+    store({ where: 'cloud', cloudProvider: 'cursor' });
+    expect(initialDraft().cloudProvider).toBe('cursor');
+
+    store({ where: 'worktree', cloudProvider: 'cursor' });
+    expect(initialDraft().cloudProvider).toBeNull();
   });
 
   it('swallows a storage that refuses the write', () => {
@@ -147,6 +192,8 @@ describe('rememberDraft', () => {
     expect(() =>
       rememberDraft({
         where: 'worktree',
+        cloudProvider: 'cursor',
+        cloudModel: null,
         projectId: null,
         hostId: null,
         scope: [],
@@ -154,6 +201,7 @@ describe('rememberDraft', () => {
         model: null,
         permission: 'auto',
         efforts: {},
+        codexEnvironment: null,
       }),
     ).not.toThrow();
   });

@@ -1,6 +1,6 @@
 import { Inject } from '@nestjs/common';
 import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
-import { AppError } from '@oppenheimer/backend-core';
+import { AppError, requireFound } from '@oppenheimer/backend-core';
 import type { UserRepositoryPort } from '../../../users/database/user.repository.port';
 import { UserErrors } from '../../../users/domain/user.errors';
 import { USER_REPOSITORY } from '../../../users/user.di-tokens';
@@ -32,7 +32,7 @@ export class AssignUserRolesCommandHandler
 
   async execute(command: AssignUserRolesCommand): Promise<void> {
     const user = await this.userRepository.findOneById(command.userId);
-    if (user.isNone()) throw new AppError(UserErrors.NOT_FOUND);
+    requireFound(user, UserErrors.NOT_FOUND);
 
     const uniqueRoleIds = [...new Set(command.roleIds)];
     const roles =

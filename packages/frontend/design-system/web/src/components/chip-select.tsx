@@ -3,6 +3,7 @@
 import { CheckIcon, ChevronDownIcon, ChevronLeftIcon, ChevronRightIcon, SearchIcon } from 'lucide-react';
 import * as React from 'react';
 
+import { selectedFirst } from '../internal/selected-first';
 import { cn } from '../lib/utils';
 import { Link } from './link';
 import { Popover, PopoverContent, PopoverTrigger } from './popover';
@@ -39,12 +40,15 @@ type ChipSelectAction = {
  * chip, 13px rows at 1.35, an underlined search row, the current row in blue.
  * `menu` is the composer's engine button, which the export draws as a menu: a
  * 252px pane of 13px rows at 1.47 with a tighter back row, a full-bleed search
- * hairlined on both edges, and the check as the only blue thing.
+ * hairlined on both edges, and the check as the only blue thing. `engine` is
+ * the engine button's own pane (`AgentModelSelect`): the export's 36px rows of
+ * 13.5px, so its list keeps the scale of the agent tabs above it and the
+ * effort slider below.
  *
  * One prop rather than a class list per call site: a menu is not a chip with
  * six overrides.
  */
-type ChipSelectDensity = 'chip' | 'menu';
+type ChipSelectDensity = 'chip' | 'menu' | 'engine';
 
 /**
  * One row of a list, for sizing a pane in rows rather than in pixels.
@@ -53,7 +57,10 @@ type ChipSelectDensity = 'chip' | 'menu';
  * artboard's own arithmetic: the last visible row is cut rather than flush, so
  * a list that continues says so without a scrollbar.
  */
-const LIST_ROW: Record<ChipSelectDensity, number> = { chip: 29.6, menu: 30.5 };
+const LIST_ROW: Record<ChipSelectDensity, number> = { chip: 29.6, menu: 30.5, engine: 35.5 };
+
+/** A popup's width, when the call site does not set one. */
+const POPUP_WIDTH: Record<ChipSelectDensity, number> = { chip: 248, menu: 252, engine: 280 };
 
 function matches(option: ChipSelectOption, term: string) {
   if (!term) return true;
@@ -164,7 +171,7 @@ function ChipSelectPopup({
         'flex w-auto flex-col gap-0 overflow-x-hidden overflow-y-auto rounded-md border-0 bg-popover p-1 text-fg shadow-popover [scrollbar-width:thin]',
         className,
       )}
-      style={{ width: width ?? (density === 'chip' ? 248 : 252), maxHeight: height, ...style }}
+      style={{ width: width ?? POPUP_WIDTH[density], maxHeight: height, ...style }}
       {...props}
     />
   );
@@ -176,29 +183,53 @@ const SEARCH_CLASSES: Record<ChipSelectDensity, string> = {
   // divides the agent it belongs to from that agent's models, rather than
   // sitting under a heading the way a chip's search does.
   menu: '-mx-1 my-1 border-y px-[13px] py-[5px]',
+  engine: 'my-1 border-b px-2.5 py-1.5',
 };
 
-/** The sticky search row: glyph, borderless input, hairline under it. */
+/**
+ * The sticky search row: glyph, borderless input.
+ *
+ * `row` is a hairlined row across the pane. `boxed` is a filled box on the
+ * rows' own grid: their side padding, their gap and, with `leadingSize`, their
+ * leading slot, so the glyph centres over the rows' marks and the typed text
+ * starts where their labels do.
+ */
 function ChipSelectSearch({
   density = 'chip',
+  variant = 'row',
+  leadingSize = 'mark',
   className,
   ...props
-}: Omit<React.ComponentProps<'input'>, 'type'> & { density?: ChipSelectDensity }) {
+}: Omit<React.ComponentProps<'input'>, 'type'> & {
+  density?: ChipSelectDensity;
+  variant?: 'row' | 'boxed';
+  leadingSize?: ChipSelectLeadingSize;
+}) {
+  const boxed = variant === 'boxed';
   return (
     <div
       data-slot="chip-select-search"
       className={cn(
-        'sticky top-0 z-1 flex items-center gap-[7px] border-border-subtle bg-popover',
-        SEARCH_CLASSES[density],
+        'sticky top-0 z-1 flex items-center',
+        boxed
+          ? cn('mb-1 h-(--control-h-md) rounded-sm bg-control px-2.5', ROW_GAP[density])
+          : cn('gap-[7px] border-border-subtle bg-popover', SEARCH_CLASSES[density]),
       )}
     >
-      <SearchIcon className="size-3.5 shrink-0 text-fg-subtle" />
+      {boxed ? (
+        <ChipSelectLeading size={leadingSize}>
+          <SearchIcon className="size-3.5" />
+        </ChipSelectLeading>
+      ) : (
+        <SearchIcon className="size-3.5 shrink-0 text-fg-subtle" />
+      )}
       <input
         // biome-ignore lint/a11y/noAutofocus: the search is the reason the popup opened
         autoFocus
         type="text"
         className={cn(
-          'min-w-0 flex-1 bg-transparent p-0 text-[12.5px] text-fg outline-none placeholder:text-field-placeholder',
+          'min-w-0 flex-1 bg-transparent p-0 text-fg outline-none placeholder:text-field-placeholder',
+          boxed ? 'text-[13px]' : 'text-[12.5px]',
           className,
         )}
         {...props}
@@ -212,6 +243,7 @@ const BACK_CLASSES: Record<ChipSelectDensity, string> = {
   // A row of the menu it heads, not a header over it: the search row below
   // carries the divider.
   menu: 'gap-2 rounded-sm px-2.5 py-[3px] text-[13px] leading-[1.47] hover:bg-hover-surface',
+  engine: 'gap-2 rounded-sm px-2.5 py-1.5 text-[13.5px] hover:bg-hover-surface',
 };
 
 /** The back row of a nested pane ("‹ Branch for xrp-mobile"). */
@@ -238,13 +270,120 @@ function ChipSelectBack({
   );
 }
 
+/** A heading over a run of rows ("Start in"), in the eyebrow's small caps. */
+function ChipSelectHeading({ className, ...props }: React.ComponentProps<'div'>) {
+  return (
+    <div
+      data-slot="chip-select-heading"
+      className={cn(
+        'px-2.5 pt-2 pb-1 text-[11px] font-medium tracking-[0.06em] text-fg-subtle uppercase',
+        className,
+      )}
+      {...props}
+    />
+  );
+}
+
+/**
+ * The tab row under the search of a pane that holds several lists (Where it
+ * runs: Hosts, Cloud): the labels in a row with a 2px bar under the one on
+ * and a hairline under them all. The search filters the tab that is on.
+ */
+function ChipSelectTabs({ className, ...props }: React.ComponentProps<'div'>) {
+  return (
+    <div
+      role="tablist"
+      data-slot="chip-select-tabs"
+      className={cn(
+        '-mt-1 mb-1 flex shrink-0 gap-4 border-b border-border-subtle px-2.5',
+        className,
+      )}
+      {...props}
+    />
+  );
+}
+
+/** One tab of `ChipSelectTabs`, with how many rows it holds in mono. */
+function ChipSelectTab({
+  selected = false,
+  count,
+  className,
+  children,
+  ...props
+}: React.ComponentProps<'button'> & { selected?: boolean; count?: React.ReactNode }) {
+  return (
+    <button
+      type="button"
+      role="tab"
+      aria-selected={selected}
+      data-slot="chip-select-tab"
+      className={cn(
+        'relative flex h-9 items-center gap-1.5 text-[13px] text-fg-muted outline-none transition-colors duration-fast hover:text-fg focus-visible:text-fg aria-selected:text-fg',
+        className,
+      )}
+      {...props}
+    >
+      {children}
+      {count === undefined ? null : (
+        <span className="figures font-mono text-[11px] text-fg-subtle">{count}</span>
+      )}
+      <span
+        aria-hidden
+        className={cn(
+          'absolute inset-x-0 -bottom-px h-0.5 rounded-pill',
+          selected ? 'bg-fg' : 'bg-transparent',
+        )}
+      />
+    </button>
+  );
+}
+
 const ITEM_CLASSES =
   'flex w-full cursor-default items-center rounded-sm px-2.5 py-1.5 text-left text-[13px] text-fg outline-hidden select-none transition-colors duration-instant hover:bg-hover-surface focus-visible:bg-hover-surface data-highlighted:bg-hover-surface data-disabled:pointer-events-none data-disabled:opacity-40';
 
-const ITEM_DENSITY: Record<ChipSelectDensity, string> = {
-  chip: 'gap-2.5 leading-[1.35]',
-  menu: 'gap-[9px] leading-[1.47]',
+/** The gap after a row's leading slot, shared with a boxed search. */
+const ROW_GAP: Record<ChipSelectDensity, string> = {
+  chip: 'gap-2.5',
+  menu: 'gap-[9px]',
+  engine: 'gap-2.5',
 };
+
+const ITEM_DENSITY: Record<ChipSelectDensity, string> = {
+  chip: 'leading-[1.35]',
+  menu: 'leading-[1.47]',
+  engine: 'min-h-9 py-1 text-[13.5px] leading-[1.35]',
+};
+
+/**
+ * The leading slot's width, fixed so every row's label starts on one line:
+ * `mark` holds a 15px glyph (an `AgentMark`, an icon), `avatar` a 20px
+ * `BotAvatar`.
+ */
+type ChipSelectLeadingSize = 'mark' | 'avatar';
+
+const LEADING_WIDTH: Record<ChipSelectLeadingSize, string> = {
+  mark: 'w-[15px]',
+  avatar: 'w-5',
+};
+
+function ChipSelectLeading({
+  size,
+  children,
+}: {
+  size: ChipSelectLeadingSize;
+  children: React.ReactNode;
+}) {
+  return (
+    <span
+      className={cn(
+        'flex shrink-0 justify-center text-fg-subtle [&_svg:not([class*=size-])]:size-[15px]',
+        LEADING_WIDTH[size],
+      )}
+    >
+      {children}
+    </span>
+  );
+}
 
 /**
  * One option row: leading mark, label and description, the check when selected.
@@ -260,6 +399,7 @@ function ChipSelectItem({
   density = 'chip',
   selected,
   leading,
+  leadingSize = 'mark',
   description,
   mono,
   highlighted,
@@ -272,6 +412,7 @@ function ChipSelectItem({
   density?: ChipSelectDensity;
   selected?: boolean;
   leading?: React.ReactNode;
+  leadingSize?: ChipSelectLeadingSize;
   description?: React.ReactNode;
   mono?: boolean;
   highlighted?: boolean;
@@ -289,17 +430,14 @@ function ChipSelectItem({
       data-highlighted={highlighted || undefined}
       className={cn(
         ITEM_CLASSES,
+        ROW_GAP[density],
         ITEM_DENSITY[density],
         selected && density === 'chip' && 'text-link',
         className,
       )}
       {...props}
     >
-      {leading ? (
-        <span className="flex w-[15px] shrink-0 justify-center text-fg-subtle [&_svg:not([class*=size-])]:size-[15px]">
-          {leading}
-        </span>
-      ) : null}
+      {leading ? <ChipSelectLeading size={leadingSize}>{leading}</ChipSelectLeading> : null}
       <span className="flex min-w-0 flex-1 flex-col">
         <span className={cn('truncate', mono && 'figures text-xs leading-[1.45]')}>{children}</span>
         {description ? (
@@ -313,7 +451,7 @@ function ChipSelectItem({
         <span
           className={cn(
             'flex w-3.5 shrink-0 items-center justify-center',
-            density === 'menu' && 'text-link',
+            density !== 'chip' && 'text-link',
           )}
         >
           {selected ? <CheckIcon className="size-3.5" strokeWidth={2.5} /> : null}
@@ -389,7 +527,9 @@ function ChipSelectList({
       data-slot="chip-select-list"
       className={cn(
         'min-h-0 overflow-y-auto',
-        rows === undefined ? '[scrollbar-width:thin]' : '[scrollbar-width:none]',
+        // A capped list measures its content only, so a caller's padding adds to the cap
+        // instead of clipping the last row.
+        rows === undefined ? '[scrollbar-width:thin]' : 'box-content [scrollbar-width:none]',
         className,
       )}
       style={capped === undefined ? style : { maxHeight: capped, ...style }}
@@ -538,8 +678,9 @@ const ChipSelectOptionRow = React.memo(function ChipSelectOptionRow({
  * on host **mac-studio**, repo **xrp-mobile**, branch **main**". Four in a
  * row on New session, so the row reads as a sentence instead of a form.
  *
- * Every one filters. When the list can grow, a pinned action band ("Add
- * host…") ends in a chevron, because it opens something rather than choosing.
+ * Every one filters, and the current option leads the list. When the list can
+ * grow, a pinned action band ("Add host…") ends in a chevron, because it
+ * opens something rather than choosing.
  *
  * Built on Popover because Base UI Select has no filtering. The parts are
  * exported so a multi-pane picker such as `RepositorySelect` is the same chip
@@ -608,8 +749,14 @@ function ChipSelect({
   const [open, setOpen] = React.useState(false);
   const [query, setQuery] = React.useState('');
   const [active, setActive] = React.useState(0);
+  // The option chosen when the popup opened leads the list (`selectedFirst`).
+  const [pinned, setPinned] = React.useState<string | null>(null);
   const term = query.trim().toLowerCase();
-  const visible = onQueryChange ? options : options.filter((option) => matches(option, term));
+  const visible = selectedFirst(
+    onQueryChange ? options : options.filter((option) => matches(option, term)),
+    pinned ? [pinned] : [],
+    (option) => option.value,
+  );
   const selected = options.find((option) => option.value === value) ?? null;
 
   // Stable across a highlight move, so the memoised rows can skip it.
@@ -641,6 +788,7 @@ function ChipSelect({
       onOpenChange={(next) => {
         setOpen(next);
         setActive(0);
+        if (next) setPinned(value);
         if (!next && query !== '') {
           setQuery('');
           onQueryChange?.('');
@@ -707,10 +855,13 @@ export {
   ChipSelectActionRow,
   ChipSelectBack,
   ChipSelectEmpty,
+  ChipSelectHeading,
   ChipSelectItem,
   ChipSelectList,
   ChipSelectPopup,
   ChipSelectSearch,
+  ChipSelectTab,
+  ChipSelectTabs,
   ChipSelectTrigger,
 };
 export type { ChipSelectAction, ChipSelectDensity, ChipSelectOption, ChipSelectTriggerVariant };

@@ -6,6 +6,7 @@ export class DecideBotApprovalCommand extends CommandBase {
   readonly scope: AccessScope;
   readonly botId: string;
   readonly approvalId: string;
+  /** One of the card's `availableDecisions`, named (`namedBotApprovalDecision`). */
   readonly decision: BotApprovalDecision;
   /** What the person added: why they said no, or what to do instead. */
   readonly note: string | null;

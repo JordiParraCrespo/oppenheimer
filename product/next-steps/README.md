@@ -17,9 +17,12 @@ there.
 | 0.4 | [Slack](0.4-slack.md) | The Slack integration; now the Slack channel of [Channels](channels.md) |
 | 0.5 | [Mobile](0.5-mobile.md) | Mobile |
 | 0.6 | [MCP, CLI and agent](0.6-mcp-cli-and-agent.md) | An MCP server, a CLI and an agent over the same API |
-| 0.7 | [Terminal and chat display](0.7-terminal-and-chat.md) | Improve the terminal, and a chat display beside it |
+| 0.7 | [Terminal and chat display](0.7-terminal-and-chat.md), [The chat's model and protocol](0.7-chat-protocol.md) | Improve the terminal, and a chat display beside it; one item model and stream for both chats |
 | — | [Multi-account](multi-account.md) | Several agent accounts per person (note 06); on the list, version not set |
-| — | [Channels](channels.md) | Bots on WhatsApp, Slack and email: one interface per channel, WhatsApp first on a number the owner links; version not set |
+| — | [Mail](mail.md) | Bots work your own Gmail accounts, several per person: search, attachments, drafts, sends (always approved), labels and archive, new mail as a routine trigger; the first version, ahead of channels; version not set |
+| — | [WhatsApp](whatsapp.md) | Bots read your own WhatsApp number's chats and write in them, OpenClaw's linked device held by the runner on your host; built 2026-10-30, version not set |
+| — | [Channels](channels.md) | Bots on email, WhatsApp and Slack: one interface per channel, email first as an address of the bot's own; version not set |
+| — | [Customers and routes](customers-and-routes.md) | Bots that talk to customers: routes pick the bot per channel, account, customer and conversation, a bot of a customer's own, hand-off to a person; after channels, version not set |
 | — | [Voice](voice.md) | Wispr-Flow-style dictation in the console, and setting up a session by speaking it; version not set |
 | — | [Cloud agents](cloud-agents.md) | Sessions in the vendors' clouds (Claude `--cloud`, Codex cloud, Cursor Cloud Agents) beside sessions on hosts, and brought back onto a host; version not set |
 
@@ -98,3 +101,20 @@ where these land is the first open question below.
 - 2026-10-22: cloud agents added, version not yet set: a Cloud place for
   sessions in Claude's, Codex's and Cursor's clouds, Cursor through its
   API, Claude and Codex through the runner on a host (`../research/cloud-agents.md`).
+- 2026-10-24: customers and routes added after channels.
+- 2026-10-29: channels start with email, an address of the bot's own.
+- 2026-10-29: mail added ahead of channels: bots work your own Gmail, drafts included, every send approved.
+- 2026-10-26: Cursor's cloud agents landed ahead of a version, as a rail
+  item of their own on the person's Cursor key ([Cloud agents](cloud-agents.md),
+  "What landed"); Claude and Codex cloud keep their place in its order.
+- 2026-10-27: Claude cloud built ahead of Cursor, at the owner's request: a
+  `cloud` place started by the host's runner with `claude --cloud`, and its
+  status reported by `apps/extension` from claude.ai (`cloud-agents.md`,
+  `../versions/mvp/24-session-places.md` §7).
+- 2026-10-28: both clouds kept, at the owner's request: Claude Code's
+  (started by a host) and Cursor's (launched by the control plane, no host)
+  are two kinds of the one `cloud` place; Grok's comes after them
+  ([Cloud agents](cloud-agents.md), "Two kinds of cloud session").
+- 2026-10-31: 0.7 gains a second document, [the chat's model and
+  protocol](0.7-chat-protocol.md), with six slices drawn from a read of
+  Codex and Grok.

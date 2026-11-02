@@ -5,7 +5,7 @@ import { describe, expect, it, vi } from 'vitest';
 import type { OppenheimerApp } from '../../di/oppenheimer-app';
 import { useLogin, useLogout } from '../auth.queries';
 import { OppenheimerProvider } from '../context';
-import { withCacheOnSuccess } from '../mutations';
+import { defineMutation, withCacheOnSuccess } from '../mutations';
 import { usersKeys } from '../users.queries';
 
 /**
@@ -75,5 +75,64 @@ describe('a caller’s onSuccess runs alongside the cache update', () => {
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(onSuccess).toHaveBeenCalled();
     expect(invalidated(queryClient, usersKeys.me())).toBe(true);
+  });
+});
+
+describe('defineMutation', () => {
+  const app = { things: { archive: vi.fn(async (id: string) => `archived ${id}`) } };
+  const mutation = defineMutation(() => app);
+
+  it('runs the write against the app, refreshes its reads, then the caller’s onSuccess', async () => {
+    const { wrapper, queryClient } = setup();
+    queryClient.setQueryData(['things', 'list'], ['a']);
+    queryClient.setQueryData(['things', 'detail', 'a'], 'a');
+    const useArchive = mutation({
+      run: (app, id: string) => app.things.archive(id),
+      invalidates: (_data, id) => [
+        ['things', 'list'],
+        ['things', 'detail', id],
+      ],
+    });
+    const onSuccess = vi.fn();
+
+    const { result } = renderHook(() => useArchive({ onSuccess }), { wrapper });
+    act(() => result.current.mutate('a'));
+
+    await waitFor(() => expect(onSuccess).toHaveBeenCalled());
+    expect(app.things.archive).toHaveBeenCalledWith('a');
+    expect(onSuccess.mock.calls[0]?.[0]).toBe('archived a');
+    expect(invalidated(queryClient, ['things', 'list'])).toBe(true);
+    expect(invalidated(queryClient, ['things', 'detail', 'a'])).toBe(true);
+  });
+
+  // An update that returns its refetch holds the mutation pending until it
+  // lands: the screen must not move on before the list it returns to is read.
+  it('waits for the update before the mutation settles', async () => {
+    const { wrapper } = setup();
+    const order: string[] = [];
+    let land: (() => void) | undefined;
+    const useArchive = mutation({
+      run: (app, id: string) => app.things.archive(id),
+      update: () =>
+        new Promise<void>((resolve) => {
+          land = () => {
+            order.push('refetched');
+            resolve();
+          };
+        }),
+    });
+
+    const { result } = renderHook(
+      () => useArchive({ onSuccess: () => void order.push('caller') }),
+      { wrapper },
+    );
+    act(() => result.current.mutate('a'));
+    await waitFor(() => expect(land).toBeDefined());
+    expect(result.current.isPending).toBe(true);
+    expect(order).toEqual([]);
+
+    act(() => land?.());
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(order).toEqual(['refetched', 'caller']);
   });
 });

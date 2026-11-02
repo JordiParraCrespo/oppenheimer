@@ -3,7 +3,6 @@ import { describe, expect, it } from 'vitest';
 import {
   type AbilityContext,
   canAccess,
-  defineAbilitiesFor,
   defineAbilitiesFromPermissions,
   interpolatePermissionConditions,
   type PermissionDefinition,
@@ -129,41 +128,6 @@ describe('defineAbilitiesFromPermissions', () => {
   });
 });
 
-describe('defineAbilitiesFor (legacy single-role helper)', () => {
-  it('builds the admin ability with full access', () => {
-    const ability = defineAbilitiesFor('admin');
-
-    expect(ability.can('manage', 'all')).toBe(true);
-    expect(ability.can('delete', 'User')).toBe(true);
-  });
-
-  it('builds the seeded `user` ability with limited access', () => {
-    const ability = defineAbilitiesFor('user');
-
-    expect(ability.can('read', 'Organization')).toBe(true);
-    expect(ability.can('create', 'Organization')).toBe(true);
-    expect(ability.can('delete', 'Organization')).toBe(false);
-    expect(ability.can('read', 'User')).toBe(false);
-    expect(ability.can('update', 'User')).toBe(false);
-    expect(ability.can('manage', 'all')).toBe(false);
-  });
-
-  it('returns an empty (deny-all) ability for an unknown role', () => {
-    const ability = defineAbilitiesFor('does-not-exist');
-
-    expect(ability.can('read', 'User')).toBe(false);
-    expect(ability.can('manage', 'all')).toBe(false);
-  });
-
-  it('forwards the context so scoped fallback permissions still interpolate', () => {
-    // The own-token rules interpolate the caller id; the legacy fallback must
-    // keep that ownership boundary when no database role is available.
-    const ability = defineAbilitiesFor('user', { user: { id: 'user-1' } });
-    expect(ability.can('read', subject('ApiToken', { userId: 'user-1' }))).toBe(true);
-    expect(ability.can('read', subject('ApiToken', { userId: 'user-2' }))).toBe(false);
-  });
-});
-
 describe('SYSTEM_ROLE_PERMISSIONS', () => {
   it('grants superadmin and admin `manage all`', () => {
     for (const role of ['superadmin', 'admin'] as const) {
@@ -177,6 +141,25 @@ describe('SYSTEM_ROLE_PERMISSIONS', () => {
     const ability = defineAbilitiesFromPermissions(SYSTEM_ROLE_PERMISSIONS.user);
     expect(ability.can('delete', 'User')).toBe(false);
     expect(ability.can('manage', 'all')).toBe(false);
+  });
+
+  it('lets the `user` role find and create its workspace, and nothing on other accounts', () => {
+    const ability = defineAbilitiesFromPermissions(SYSTEM_ROLE_PERMISSIONS.user);
+
+    expect(ability.can('read', 'Organization')).toBe(true);
+    expect(ability.can('create', 'Organization')).toBe(true);
+    expect(ability.can('delete', 'Organization')).toBe(false);
+    expect(ability.can('read', 'User')).toBe(false);
+    expect(ability.can('update', 'User')).toBe(false);
+  });
+
+  it("keeps the `user` role's own-token rules on the caller's tokens", () => {
+    const ability = defineAbilitiesFromPermissions(SYSTEM_ROLE_PERMISSIONS.user, {
+      user: { id: 'user-1' },
+    });
+
+    expect(ability.can('read', subject('ApiToken', { userId: 'user-1' }))).toBe(true);
+    expect(ability.can('read', subject('ApiToken', { userId: 'user-2' }))).toBe(false);
   });
 });
 

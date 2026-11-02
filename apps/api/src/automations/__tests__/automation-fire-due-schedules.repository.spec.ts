@@ -23,6 +23,7 @@ function scheduled(name: string) {
     ownerUserId: 'user-1',
     name,
     revision: {
+      place: 'host',
       hostId: 'host-1',
       agent: 'claude-code',
       model: 'claude-sonnet-5',

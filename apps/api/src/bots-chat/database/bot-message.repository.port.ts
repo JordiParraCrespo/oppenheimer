@@ -16,10 +16,39 @@ export interface BotMessageRepositoryPort {
   insertOnce(message: BotMessageEntity): Promise<boolean>;
   /** An activity line's steps, as they grow. */
   saveSteps(message: BotMessageEntity): Promise<void>;
+  /**
+   * A steer the running turn took (`BotTurnRepositoryPort.takeSteers`), put
+   * where the turn delivered it: at `position`, as of `at`, which is what
+   * the chat orders it by. Only while it is still that turn's.
+   */
+  placeSteer(
+    turn: { organizationId: string; id: string },
+    steer: { messageId: string; position: number },
+    at: Date,
+  ): Promise<void>;
   /** The bot's newest `limit` messages, oldest first. */
   findConversation(scope: AccessScope, botId: string, limit: number): Promise<BotMessageEntity[]>;
+  /**
+   * The person's and the bot's messages whose words match `query`
+   * (Postgres web-search syntax over the `simple` configuration, so no
+   * language is assumed), best matches first, then newest; up to `limit`.
+   * Activity lines and events are not searched.
+   */
+  search(
+    scope: AccessScope,
+    botId: string,
+    query: string,
+    limit: number,
+  ): Promise<BotMessageEntity[]>;
   /** How many messages the chat holds in all: yours, the bot's and events, not activity lines. */
   countConversation(scope: AccessScope, botId: string): Promise<number>;
+  /**
+   * How many blocks of text each of these turns has stored, in all: its
+   * assistant messages with words (an image the bot showed has none). A
+   * running turn's streamed text is numbered by it, and a long turn's
+   * first blocks can fall outside the conversation's window.
+   */
+  countTextBlocks(scope: AccessScope, turnIds: readonly string[]): Promise<Map<string, number>>;
   /**
    * One page of the whole chat for an export, oldest first: up to `limit`
    * messages after `after` (the last of the page before; null from the start).

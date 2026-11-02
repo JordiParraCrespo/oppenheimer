@@ -42,6 +42,7 @@ export function PageBar({
   status,
   tabs,
   actions,
+  className,
 }: {
   leading?: ReactNode;
   title: ReactNode;
@@ -50,6 +51,8 @@ export function PageBar({
   status?: ReactNode;
   tabs?: ReactNode;
   actions?: ReactNode;
+  /** The bar's ground and edge, when the page under it is not the shell's (a session's terminal). */
+  className?: string;
 }) {
   return (
     <PaneBar>
@@ -65,6 +68,7 @@ export function PageBar({
         status={status}
         tabs={tabs}
         actions={actions}
+        className={className}
       />
     </PaneBar>
   );

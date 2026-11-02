@@ -1,6 +1,6 @@
 import { Inject } from '@nestjs/common';
 import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
-import { AppError } from '@oppenheimer/backend-core';
+import { AppError, requireFound } from '@oppenheimer/backend-core';
 import type { AggregateID } from '@oppenheimer/backend-ddd';
 import type {
   FeatureFlagRepositoryPort,
@@ -37,13 +37,14 @@ export class DeleteFlagSegmentCommandHandler
     command: DeleteFlagSegmentCommand,
     manager: FlagTransaction,
   ): Promise<AggregateID> {
-    const found = await this.segments.findOneByKey(command.key, manager);
-    if (found.isNone()) {
-      throw new AppError(FeatureFlagErrors.SEGMENT_NOT_FOUND, {
+    const segment = requireFound(
+      await this.segments.findOneByKey(command.key, manager),
+      FeatureFlagErrors.SEGMENT_NOT_FOUND,
+      {
         detail: `No segment "${command.key}".`,
         extensions: { segment: command.key },
-      });
-    }
+      },
+    );
 
     const usedBy = (await this.flags.findAll(manager))
       .filter((flag) => flag.referencedSegments().includes(command.key))
@@ -55,7 +56,6 @@ export class DeleteFlagSegmentCommandHandler
       });
     }
 
-    const segment = found.unwrap();
     segment.delete({ actorId: command.actorId, comment: command.comment });
     await this.segments.delete(segment, manager);
     return segment.id;

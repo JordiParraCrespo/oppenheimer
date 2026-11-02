@@ -55,5 +55,97 @@
     "denied": "El navegador no tiene permiso para usar el micrófono. Permítelo para este sitio y vuelve a dictar.",
     "unavailable": "No se ha podido abrir ningún micrófono. Conecta uno o elige otro en los ajustes del sistema y vuelve a dictar.",
     "failed": "No se ha podido transcribir la grabación."
+  },
+  "chat": {
+    "usage": {
+      "open": "{{percent}}% del contexto usado. Ver el contexto y el uso del plan.",
+      "openPlan": "{{percent}}% del límite del plan usado. Ver el contexto y el uso del plan.",
+      "context": "Contexto",
+      "tokens": "{{used}} de {{window}} tokens",
+      "compact": "Compactar",
+      "plan": "Límites de uso del plan",
+      "fiveHour": "Límite de 5 horas",
+      "sevenDay": "Límite semanal",
+      "resets": "Se reinicia {{when}}",
+      "tokensOnly": "{{used}} tokens"
+    },
+    "queue": {
+      "queued": "En cola",
+      "sendNow": "Enviar ahora",
+      "edit": "Editar",
+      "remove": "Quitar de la cola",
+      "steer": "Reconducir",
+      "steerHint": "Entra en el turno en curso en su próxima llamada a una herramienta. Si el turno acaba antes, va a continuación."
+    },
+    "json": {
+      "tree": "Árbol",
+      "raw": "Texto",
+      "more": "Mostrar {{count}} más"
+    },
+    "images": {
+      "open": "Abrir {{name}}",
+      "unavailable": "No se ha podido cargar esta imagen.",
+      "previous": "Imagen anterior",
+      "next": "Imagen siguiente",
+      "download": "Descargar",
+      "position": "{{position}} de {{total}}",
+      "pasted": "Imagen pegada"
+    },
+    "mail": {
+      "label": "El mensaje, tal y como sale",
+      "from": "De",
+      "to": "Para",
+      "cc": "Cc",
+      "bcc": "Cco",
+      "subject": "Asunto",
+      "answers": "En respuesta a {{from}}",
+      "forwards": "Reenviando el mensaje de {{from}}",
+      "fromMail": "Tomado del mensaje al que responde",
+      "files_one": "{{count}} archivo",
+      "files_other": "{{count}} archivos",
+      "signature": "Debajo va la firma de Gmail de {{email}} y luego el mensaje citado.",
+      "draft": "El borrador de {{email}}, enviado tal y como está ahora en Gmail.",
+      "nobody": "Nadie",
+      "draftSaved": "Guardado como borrador en {{email}}. No se envió nada.",
+      "draftUpdated": "El borrador de {{email}}, reescrito. No se envió nada.",
+      "openInGmail": "Abrir en Gmail"
+    },
+    "question": {
+      "ownAnswer": "O escribe tu propia respuesta…",
+      "ownAnswerLabel": "Tu respuesta",
+      "several": "Marca con 1–{{last}} todas las que apliquen",
+      "one": "Elige una con 1–{{last}}, o responde con tus palabras",
+      "next": "Siguiente",
+      "submit": "Enviar respuestas",
+      "dismiss": "Descartar",
+      "sending": "Enviando tus respuestas…",
+      "previous": "Pregunta anterior",
+      "nextQuestion": "Pregunta siguiente",
+      "of": "{{n}} de {{total}}"
+    },
+    "output": {
+      "more_one": "+{{count}} línea",
+      "more_many": "+{{count}} líneas",
+      "more_other": "+{{count}} líneas",
+      "full": "Ver líneas completas",
+      "less": "Ver menos"
+    },
+    "explored": {
+      "read": "Leyó",
+      "search": "Buscó",
+      "list": "Listó",
+      "more_one": "+{{count}} más",
+      "more_many": "+{{count}} más",
+      "more_other": "+{{count}} más"
+    }
+  },
+  "search": {
+    "projects": "Buscar proyectos",
+    "milestones": "Buscar hitos",
+    "automations": "Buscar automatizaciones",
+    "repositories": "Buscar repositorios",
+    "hosts": "Buscar hosts",
+    "groups": "Buscar grupos",
+    "noMatch": "Nada coincide con «{{query}}»."
   }
 }

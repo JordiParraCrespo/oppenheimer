@@ -24,6 +24,7 @@ const FILTER_WORD = {
   baseBranch: 'automations.editor.targeting',
   branch: 'automations.editor.on',
   label: 'automations.editor.labeled',
+  query: 'automations.editor.matching',
 } as const;
 
 /**

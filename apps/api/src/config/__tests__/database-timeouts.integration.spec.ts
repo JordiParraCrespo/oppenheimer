@@ -1,9 +1,14 @@
 import type { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { Client } from 'pg';
-import { GenericContainer, type StartedTestContainer, Wait } from 'testcontainers';
 import { DataSource } from 'typeorm';
-import { loadMigrations, runAllMigrations } from '../../__tests__/run-migrations';
+import {
+  createTestDatabase,
+  type TestDatabase,
+  useTestDatabase,
+  useTestRedis,
+} from '../../__tests__/integration-services';
+import { loadMigrations } from '../../__tests__/run-migrations';
 import { bootDataSourceFactory } from '../boot-migrations';
 import { databaseConfigFromEnv, poolOptions } from '../database.config';
 
@@ -18,15 +23,14 @@ import { databaseConfigFromEnv, poolOptions } from '../database.config';
 describe('database pool timeouts (integration)', () => {
   let app: INestApplication;
   let dataSource: DataSource;
-  let pgContainer: StartedTestContainer;
-  let redisContainer: StartedTestContainer;
+  let db: TestDatabase;
 
-  const connect = async (database = 'test') => {
+  const connect = async (database = db.database) => {
     const client = new Client({
-      host: pgContainer.getHost(),
-      port: pgContainer.getMappedPort(5432),
-      user: 'test',
-      password: 'test',
+      host: db.host,
+      port: db.port,
+      user: db.username,
+      password: db.password,
       database,
     });
     await client.connect();
@@ -34,31 +38,15 @@ describe('database pool timeouts (integration)', () => {
   };
 
   beforeAll(async () => {
-    [pgContainer, redisContainer] = await Promise.all([
-      new GenericContainer('postgres:16-alpine')
-        .withEnvironment({ POSTGRES_USER: 'test', POSTGRES_PASSWORD: 'test', POSTGRES_DB: 'test' })
-        .withExposedPorts(5432)
-        .withWaitStrategy(Wait.forLogMessage(/database system is ready to accept connections/, 2))
-        .start(),
-      new GenericContainer('redis:7-alpine').withExposedPorts(6379).start(),
-    ]);
+    db = await useTestDatabase();
+    await useTestRedis();
 
-    process.env.NODE_ENV = 'test';
-    process.env.DB_HOST = pgContainer.getHost();
-    process.env.DB_PORT = pgContainer.getMappedPort(5432).toString();
-    process.env.DB_USERNAME = 'test';
-    process.env.DB_PASSWORD = 'test';
-    process.env.DB_DATABASE = 'test';
-    process.env.REDIS_HOST = redisContainer.getHost();
-    process.env.REDIS_PORT = redisContainer.getMappedPort(6379).toString();
     process.env.BETTER_AUTH_SECRET = 'integration-test-secret-value-32-chars';
     // Short limits, so a statement or a lock that is not cut off shows up as a
     // test timeout rather than a slow suite.
     process.env.DB_STATEMENT_TIMEOUT_MS = '1000';
     process.env.DB_LOCK_TIMEOUT_MS = '500';
     process.env.DB_IDLE_IN_TRANSACTION_TIMEOUT_MS = '2000';
-
-    await runAllMigrations();
 
     const { AppModule } = await import('../../app.module');
     const moduleRef = await Test.createTestingModule({ imports: [AppModule] }).compile();
@@ -71,7 +59,6 @@ describe('database pool timeouts (integration)', () => {
     await app?.close();
     const { emailQueue } = await import('../../auth/infrastructure/email-queue.util');
     await emailQueue.close().catch(() => {});
-    await Promise.all([pgContainer?.stop(), redisContainer?.stop()]);
   });
 
   it('tags the app pool and gives it the configured timeouts', async () => {
@@ -126,7 +113,8 @@ describe('database pool timeouts (integration)', () => {
       .catch(() => undefined);
 
     const rows: { name: string }[] = await dataSource.query(
-      `SELECT DISTINCT application_name AS name FROM pg_stat_activity WHERE datname = 'test'`,
+      'SELECT DISTINCT application_name AS name FROM pg_stat_activity WHERE datname = $1',
+      [db.database],
     );
     expect(rows.map((row) => row.name)).toEqual(expect.arrayContaining(['api', 'api-auth']));
   });
@@ -136,11 +124,7 @@ describe('database pool timeouts (integration)', () => {
     process.env.DB_CONNECTION_TIMEOUT_MS = '500';
     const small = new DataSource({
       type: 'postgres',
-      host: process.env.DB_HOST,
-      port: Number(process.env.DB_PORT),
-      username: 'test',
-      password: 'test',
-      database: 'test',
+      url: db.url,
       extra: poolOptions(databaseConfigFromEnv(), 'api'),
     });
     await small.initialize();
@@ -162,18 +146,12 @@ describe('database pool timeouts (integration)', () => {
   });
 
   it('runs boot migrations on their own connection, free of the statement timeout', async () => {
-    const admin = await connect();
-    await admin.query('CREATE DATABASE boot');
-    await admin.end();
+    const boot = await createTestDatabase({ empty: true });
 
     const migrations = await loadMigrations();
     const options = {
       type: 'postgres' as const,
-      host: process.env.DB_HOST,
-      port: Number(process.env.DB_PORT),
-      username: 'test',
-      password: 'test',
-      database: 'boot',
+      url: boot.url,
       migrations,
       migrationsRun: false,
       // The app pool's options, with the 1 s statement timeout set above: a
@@ -200,7 +178,7 @@ describe('database pool timeouts (integration)', () => {
     });
     expect(app.isInitialized).toBe(false);
 
-    const probe = await connect('boot');
+    const probe = await connect(boot.database);
     try {
       const { rows } = await probe.query('SELECT * FROM migrated_by');
       expect(rows).toEqual([{ name: 'api-migrations', statementTimeout: '0' }]);

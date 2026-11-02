@@ -105,7 +105,7 @@ describe('TranscribeVoiceCommandHandler', () => {
       code: 'VOICE_002',
     });
     await expect(handler.execute(command({ organizationId: null }))).rejects.toMatchObject({
-      code: 'VOICE_001',
+      code: 'TENANT_001',
     });
     expect(transcription.hear).not.toHaveBeenCalled();
   });

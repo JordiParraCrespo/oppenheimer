@@ -1,10 +1,14 @@
-import {
-  ATTACH_CLOSE_CODES,
-  type AttachClientMessage,
-  attachServerMessageSchema,
-} from '@oppenheimer/shared/protocol';
-import { CONSUMER_CONFIG } from '../../../config';
+import { ATTACH_CLOSE_CODES, type AttachClientMessage } from '@oppenheimer/shared/protocol';
 import type { ChatBatch } from '../chat/session-chat';
+import {
+  openAttachSocket,
+  readAttachMessage,
+  reconnectDelay,
+  type Schedule,
+  type SocketFactory,
+  timeoutSchedule,
+  webSocketFactory,
+} from './attach-socket';
 import type { PeerFactory } from './direct-path';
 import { PathSwitch, type RelayPath } from './path-switch';
 
@@ -95,9 +99,9 @@ export interface SessionStreamOptions {
    */
   apiBaseUrl?: string;
   /** Injected in tests; `WebSocket` otherwise. */
-  socketFactory?: (url: string, protocols: string[]) => WebSocket;
+  socketFactory?: SocketFactory;
   /** Injected in tests; `setTimeout` otherwise. */
-  schedule?: (fn: () => void, ms: number) => () => void;
+  schedule?: Schedule;
   /**
    * Whether to take a direct path when the relay offers one: the
    * `terminal_direct_path` flag, read when the offer comes. Absent is never.
@@ -154,13 +158,6 @@ function endOfMintFailure(error: unknown): StreamEnd | null {
   }
 }
 
-export function attachSocketUrl(path: string, apiBaseUrl: string | undefined): string {
-  const base = apiBaseUrl || (typeof window !== 'undefined' ? window.location.origin : '');
-  const url = new URL(path, base);
-  url.protocol = url.protocol === 'https:' ? 'wss:' : 'ws:';
-  return url.toString();
-}
-
 type DataListener = (chunk: Uint8Array | string, consumed: () => void) => void;
 
 /**
@@ -180,8 +177,8 @@ export class AttachSessionStream implements SessionStream {
   private readonly statusListeners = new Set<(status: StreamStatus) => void>();
   private readonly endListeners = new Set<(reason: StreamEnd) => void>();
   private readonly chatListeners = new Set<(batch: ChatBatch) => void>();
-  private readonly socketFactory: (url: string, protocols: string[]) => WebSocket;
-  private readonly schedule: (fn: () => void, ms: number) => () => void;
+  private readonly socketFactory: SocketFactory;
+  private readonly schedule: Schedule;
   private readonly encoder = new TextEncoder();
 
   private status: StreamStatus = 'connecting';
@@ -200,14 +197,8 @@ export class AttachSessionStream implements SessionStream {
   private readonly paths: PathSwitch;
 
   constructor(private readonly options: SessionStreamOptions) {
-    this.socketFactory =
-      options.socketFactory ?? ((url, protocols) => new WebSocket(url, protocols));
-    this.schedule =
-      options.schedule ??
-      ((fn, ms) => {
-        const timer = setTimeout(fn, ms);
-        return () => clearTimeout(timer);
-      });
+    this.socketFactory = options.socketFactory ?? webSocketFactory;
+    this.schedule = options.schedule ?? timeoutSchedule;
     this.paths = new PathSwitch({
       want: options.direct,
       peerFactory: options.peerFactory,
@@ -317,18 +308,13 @@ export class AttachSessionStream implements SessionStream {
   private retry(after: StreamStatus): void {
     if (this.disposed) return;
     this.setStatus(after);
-    const ladder = CONSUMER_CONFIG.stream.reconnectLadderMs;
-    const base = ladder[Math.min(this.attempt, ladder.length - 1)];
+    const wait = reconnectDelay(this.attempt);
     this.attempt += 1;
-    const jitter = base * (Math.random() * 0.4 - 0.2);
     this.waiting = true;
-    this.cancelRetry = this.schedule(
-      () => {
-        this.waiting = false;
-        void this.connect();
-      },
-      Math.max(0, Math.round(base + jitter)),
-    );
+    this.cancelRetry = this.schedule(() => {
+      this.waiting = false;
+      void this.connect();
+    }, wait);
   }
 
   private async connect(): Promise<void> {
@@ -354,10 +340,7 @@ export class AttachSessionStream implements SessionStream {
     }
     if (this.disposed || thisEpoch !== this.epoch) return;
 
-    const ws = this.socketFactory(attachSocketUrl(ticket.url, this.options.apiBaseUrl), [
-      ticket.ticket,
-    ]);
-    ws.binaryType = 'arraybuffer';
+    const ws = openAttachSocket(this.socketFactory, ticket, this.options.apiBaseUrl);
     this.socket = ws;
 
     ws.onopen = () => {
@@ -398,37 +381,31 @@ export class AttachSessionStream implements SessionStream {
   }
 
   private onControl(raw: string): void {
-    let parsed: unknown;
-    try {
-      parsed = JSON.parse(raw);
-    } catch {
-      return;
-    }
-    const message = attachServerMessageSchema.safeParse(parsed);
-    if (!message.success) return;
-    switch (message.data.type) {
+    const message = readAttachMessage(raw);
+    if (!message) return;
+    switch (message.type) {
       case 'attached':
         this.attached = true;
         this.attempt = 0;
         this.setStatus('live');
-        if (message.data.direct) this.paths.invited(message.data.direct.iceServers);
+        if (message.direct) this.paths.invited(message.direct.iceServers, message.direct.hostId);
         return;
       case 'direct.answer':
       case 'direct.path':
       case 'direct.unavailable':
-        this.paths.control(message.data);
+        this.paths.control(message);
         return;
       case 'hint':
-        if (message.data.kind === 'host_offline') this.setStatus('offline');
+        if (message.kind === 'host_offline') this.setStatus('offline');
         return;
       case 'refused':
         this.closedReason = 'refused';
         return;
       case 'closed':
-        this.closedReason = message.data.reason;
+        this.closedReason = message.reason;
         return;
       case 'chat':
-        for (const listener of this.chatListeners) listener(message.data);
+        for (const listener of this.chatListeners) listener(message);
         return;
     }
   }

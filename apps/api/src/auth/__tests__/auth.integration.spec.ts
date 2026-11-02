@@ -1,48 +1,25 @@
 import { randomUUID } from 'node:crypto';
 import type { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
-import { GenericContainer, type StartedTestContainer, Wait } from 'testcontainers';
 import { DataSource } from 'typeorm';
-import { runAllMigrations } from '../../__tests__/run-migrations';
+import { useTestDatabase, useTestRedis } from '../../__tests__/integration-services';
 
 describe('Auth (integration)', () => {
   let app: INestApplication;
   let baseUrl: string;
   let dataSource: DataSource;
-  let pgContainer: StartedTestContainer;
-  let redisContainer: StartedTestContainer;
 
   beforeAll(async () => {
-    [pgContainer, redisContainer] = await Promise.all([
-      new GenericContainer('postgres:16-alpine')
-        .withEnvironment({
-          POSTGRES_USER: 'test',
-          POSTGRES_PASSWORD: 'test',
-          POSTGRES_DB: 'test',
-        })
-        .withExposedPorts(5432)
-        .withWaitStrategy(Wait.forLogMessage(/database system is ready to accept connections/, 2))
-        .start(),
-      new GenericContainer('redis:7-alpine').withExposedPorts(6379).start(),
-    ]);
-
-    process.env.NODE_ENV = 'test';
-    process.env.DB_HOST = pgContainer.getHost();
-    process.env.DB_PORT = pgContainer.getMappedPort(5432).toString();
-    process.env.DB_USERNAME = 'test';
-    process.env.DB_PASSWORD = 'test';
-    process.env.DB_DATABASE = 'test';
-    process.env.REDIS_HOST = redisContainer.getHost();
-    process.env.REDIS_PORT = redisContainer.getMappedPort(6379).toString();
-    process.env.BETTER_AUTH_SECRET = 'integration-test-secret-value-32-chars';
-
-    // The migrations, not `synchronize`: sign-up's side effects need the
+    // The migrated schema, not `synchronize`: sign-up's side effects need the
     // system roles the baseline seeds, and the personal workspace is granted
     // its `owner` row.
-    await runAllMigrations();
+    await useTestDatabase();
+    await useTestRedis();
+
+    process.env.BETTER_AUTH_SECRET = 'integration-test-secret-value-32-chars';
 
     // Import AppModule (and therefore the Better Auth instance, which reads the
-    // database config at module load) only after the container env vars are set.
+    // database config at module load) only after the env vars are set.
     const { AppModule } = await import('../../app.module');
 
     const moduleRef = await Test.createTestingModule({
@@ -72,7 +49,6 @@ describe('Auth (integration)', () => {
     // `app.close()` does not reach it: see `emailQueue`.
     const { emailQueue } = await import('../infrastructure/email-queue.util');
     await emailQueue.close().catch(() => {});
-    await Promise.all([pgContainer?.stop(), redisContainer?.stop()]);
   });
 
   describe('the session sign-up returns', () => {

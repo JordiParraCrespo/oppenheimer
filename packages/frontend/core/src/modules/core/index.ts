@@ -1,4 +1,5 @@
 export type { CoreModuleConfig } from './core.module';
+export { assignProps } from './entity-props';
 export {
   createErrorMessageResolver,
   type ErrorMessageKey,
@@ -7,12 +8,18 @@ export {
   type ResolvedErrorMessage,
 } from './error-message';
 export {
+  type ApiCall,
   AppError,
   type AppErrorOptions,
+  callApi,
   type ErrorDefinition,
   type SdkResult,
-  unwrap,
   unwrapBody,
 } from './errors';
-export { MapApiError } from './map-api-error.decorator';
+export {
+  type EventSourceLike,
+  ServerEventStream,
+  type ServerEventStreamOptions,
+  type ServerEventStreamStatus,
+} from './server-event-stream';
 export type { IStorageService } from './storage.service';

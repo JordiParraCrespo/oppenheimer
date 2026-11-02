@@ -1,6 +1,6 @@
 import type { AccessScope } from '@oppenheimer/backend-authz';
 import { CommandBase, type CommandProps } from '@oppenheimer/backend-ddd';
-import type { StartTaskSessionDto } from '@oppenheimer/shared';
+import type { StartTaskCloudSessionDto, StartTaskSessionDto } from '@oppenheimer/shared';
 import type { PlanActor } from '../../domain/plan-change.types';
 
 export class StartTaskSessionCommand extends CommandBase {
@@ -9,7 +9,8 @@ export class StartTaskSessionCommand extends CommandBase {
   readonly actor: PlanActor;
   readonly userId: string;
   readonly taskId: string;
-  readonly input: StartTaskSessionDto;
+  /** A session a host runs or starts (`session`), or one a vendor runs with no host (`cloud`). */
+  readonly input: StartTaskSessionDto | StartTaskCloudSessionDto;
   /** The caller's `Idempotency-Key`, so a retry returns the session already started. */
   readonly idempotencyKey: string | null;
 

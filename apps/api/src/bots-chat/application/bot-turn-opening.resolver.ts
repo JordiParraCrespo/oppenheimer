@@ -1,6 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import type { BotTurnImage } from '@oppenheimer/backend-agents';
 import { AppError } from '@oppenheimer/backend-core';
+import { type BotSlashCommand, parseBotSlashCommand } from '@oppenheimer/shared';
 import { BotErrors } from '../../bots/domain/bots.errors';
 import { BotAttachmentMapper } from '../bot-attachment.mapper';
 import {
@@ -10,6 +11,8 @@ import {
 } from '../bots-chat.di-tokens';
 import type { BotAttachmentRepositoryPort } from '../database/bot-attachment.repository.port';
 import type { BotMessageRepositoryPort } from '../database/bot-message.repository.port';
+import { attachedImagesNote } from '../domain/bot-image.policy';
+import type { BotMessageEntity } from '../domain/bot-message.entity';
 import { botTurnPrompt } from '../domain/bot-prompt.policy';
 import type { BotTurnEntity } from '../domain/bot-turn.entity';
 import type { BotAttachmentFilesPort } from '../infrastructure/bot-attachment-files.port';
@@ -18,6 +21,13 @@ import type { BotAttachmentFilesPort } from '../infrastructure/bot-attachment-fi
 export interface BotTurnOpening {
   prompt: string;
   images: BotTurnImage[];
+  /**
+   * The `/<name>` your message opens with, when it does (`25-bots.md` §4.1):
+   * only a person's message runs a skill, never an event's text.
+   */
+  command: BotSlashCommand | null;
+  /** The message itself: yours, or the event Oppenheimer told the bot; null when gone. */
+  message: BotMessageEntity | null;
 }
 
 /**
@@ -38,8 +48,13 @@ export class BotTurnOpeningResolver {
 
   async resolve(turn: BotTurnEntity): Promise<BotTurnOpening> {
     const opening = await this.messages.findOpening(turn.organizationId, turn.id);
-    const prompt = botTurnPrompt(opening);
-    if (!opening?.attachments.length) return { prompt, images: [] };
+    const command = opening?.role === 'user' ? parseBotSlashCommand(opening.content) : null;
+    if (!opening?.attachments.length) {
+      return { prompt: botTurnPrompt(opening), images: [], command, message: opening };
+    }
+    const prompt = [botTurnPrompt(opening).trim(), attachedImagesNote(opening.attachments)]
+      .filter(Boolean)
+      .join('\n\n');
     const stored = await this.attachments.findForMessage(turn.organizationId, opening.id);
     const images = await Promise.all(
       opening.attachments.map(async ({ id }) => {
@@ -55,6 +70,6 @@ export class BotTurnOpeningResolver {
         return this.mapper.toTurnImage(attachment, data);
       }),
     );
-    return { prompt, images };
+    return { prompt, images, command, message: opening };
   }
 }

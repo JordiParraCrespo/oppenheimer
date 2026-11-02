@@ -25,7 +25,7 @@ import {
 })
 @Check(
   'CHK_model_provider_credential_provider',
-  `"provider" IN ('anthropic', 'glm', 'openai', 'chatgpt')`,
+  `"provider" IN ('anthropic', 'glm', 'openai', 'chatgpt', 'xai')`,
 )
 export class ModelProviderCredentialOrmEntity {
   @PrimaryGeneratedColumn('uuid')

@@ -1,11 +1,16 @@
 import { Inject, Injectable } from '@nestjs/common';
+import { QueryBus } from '@nestjs/cqrs';
 import type { AccessScope } from '@oppenheimer/backend-authz';
-import { AppError } from '@oppenheimer/backend-core';
+import { AppError, requireFound } from '@oppenheimer/backend-core';
 import type { AutomationRepositoryInputDto, TriggerInputDto } from '@oppenheimer/shared';
+import { type AutomationPlace, automationPlaceFits } from '@oppenheimer/shared/automations';
 import type { RepositoryAccessPort } from '../../github/application/repository-access.port';
 import { REPOSITORY_ACCESS } from '../../github/github.di-tokens';
 import type { HostAccessPort } from '../../hosts/application/host-access.port';
 import { HOST_ACCESS } from '../../hosts/hosts.di-tokens';
+import type { GmailConnectionEntity } from '../../mail/domain/gmail-connection.entity';
+import { MailErrors } from '../../mail/domain/mail.errors';
+import { FindGmailConnectionQuery } from '../../mail/queries/find-gmail-connection/find-gmail-connection.query';
 import type { ProjectLookupPort } from '../../projects/application/project-lookup.port';
 import { PROJECT_LOOKUP } from '../../projects/projects.di-tokens';
 import type { AutomationRepository, AutomationTriggerProps } from '../domain/automation.types';
@@ -29,12 +34,12 @@ export class AutomationPlanFactory {
     private readonly repositories: RepositoryAccessPort,
     @Inject(HOST_ACCESS)
     private readonly hosts: HostAccessPort,
+    private readonly queryBus: QueryBus,
   ) {}
 
   async assertProject(scope: AccessScope, projectId: string): Promise<void> {
     const found = await this.projects.findOneById(scope, projectId);
-    if (found.isNone()) throw new AppError(AutomationErrors.PROJECT_UNAVAILABLE);
-    const project = found.unwrap();
+    const project = requireFound(found, AutomationErrors.PROJECT_UNAVAILABLE);
     if (project.isArchived || project.isUnassigned) {
       throw new AppError(AutomationErrors.PROJECT_UNAVAILABLE, {
         detail: project.isArchived ? 'The project is archived' : 'Unassigned holds no automations',
@@ -62,15 +67,56 @@ export class AutomationPlanFactory {
     return resolved;
   }
 
-  async assertHost(scope: AccessScope, hostId: string): Promise<void> {
-    await this.hosts.assertUsable(scope, hostId);
+  /**
+   * Where a run's session runs, as the revision will hold it: the place, the
+   * agent and the host agree (a vendor runs its own agent with no host,
+   * Claude Code's cloud runs Claude Code from a host), the host is one the
+   * caller may use, and an agent on a host can run unattended.
+   */
+  async assertWhere(
+    scope: AccessScope,
+    where: { place: AutomationPlace; agent: string; hostId: string | null },
+  ): Promise<void> {
+    if (!automationPlaceFits(where)) {
+      throw new AppError(AutomationErrors.AGENT_UNSUPPORTED, {
+        detail: `${where.agent} cannot run in ${where.place} ${where.hostId ? 'from a host' : 'with no host'}`,
+      });
+    }
+    if (where.place === 'host') this.assertAgent(where.agent);
+    if (where.hostId) await this.hosts.assertUsable(scope, where.hostId);
   }
 
-  assertAgent(agent: string): void {
+  private assertAgent(agent: string): void {
     if (!automationAgentSupported(agent)) {
       throw new AppError(AutomationErrors.AGENT_UNSUPPORTED, {
         detail: `${agent} has no unattended mode`,
       });
+    }
+  }
+
+  /**
+   * Each mail trigger watches one of the owner's own connected Gmail accounts,
+   * and an active one: a routine never reads someone else's mailbox.
+   */
+  async assertMailAccounts(scope: AccessScope, inputs: readonly TriggerInputDto[]): Promise<void> {
+    for (const input of inputs) {
+      if (input.source !== 'gmail') continue;
+      const connection = await this.queryBus
+        .execute<FindGmailConnectionQuery, GmailConnectionEntity>(
+          new FindGmailConnectionQuery({ scope, id: input.connectionId }),
+        )
+        // Only "not yours or not there" is a refusal; any other failure surfaces as itself.
+        .catch((error: unknown) => {
+          if (error instanceof AppError && error.code === MailErrors.GMAIL_NOT_CONNECTED.code) {
+            return null;
+          }
+          throw error;
+        });
+      if (!connection?.isActive) {
+        throw new AppError(AutomationErrors.MAIL_ACCOUNT_UNAVAILABLE, {
+          detail: `No connected Gmail account of yours has the id ${input.connectionId}`,
+        });
+      }
     }
   }
 

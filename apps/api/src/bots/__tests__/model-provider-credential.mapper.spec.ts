@@ -54,6 +54,7 @@ describe('ModelProviderCredentialMapper.toResponseList', () => {
         isDefault: true,
       },
       { provider: 'chatgpt', configured: false, keyHint: null, updatedAt: null, isDefault: false },
+      { provider: 'xai', configured: false, keyHint: null, updatedAt: null, isDefault: false },
     ]);
   });
 

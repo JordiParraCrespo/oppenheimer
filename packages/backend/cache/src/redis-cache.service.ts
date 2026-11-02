@@ -10,7 +10,7 @@ export interface RedisCacheOptions {
   keyPrefix?: string;
 }
 
-export const DEFAULT_CACHE_KEY_PREFIX = 'cache:';
+const DEFAULT_CACHE_KEY_PREFIX = 'cache:';
 
 /**
  * `KEYS[1]` keeps the larger of itself and `ARGV[1]`; only a write resets the

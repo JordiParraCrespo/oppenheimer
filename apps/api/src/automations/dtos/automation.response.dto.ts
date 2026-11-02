@@ -3,11 +3,14 @@ import { nullableEnum } from '@oppenheimer/backend-core';
 import {
   AUTOMATION_PAUSED_REASONS,
   AUTOMATION_PERMISSIONS,
+  AUTOMATION_PLACES,
   AUTOMATION_RUN_STATUSES,
   type AutomationPausedReason,
   type AutomationPermission,
+  type AutomationPlace,
   type AutomationRunStatus,
   GITHUB_EVENT_TYPES,
+  GMAIL_EVENT_TYPES,
   SCHEDULE_FREQUENCIES,
   type ScheduleFrequency,
   TRIGGER_SOURCES,
@@ -40,8 +43,20 @@ export class AutomationRevisionResponseDto {
   })
   number!: number;
 
-  @ApiProperty({ format: 'uuid' })
-  hostId!: string;
+  @ApiProperty({
+    enum: AUTOMATION_PLACES,
+    description:
+      'Where each run’s session runs: on the host, in Claude Code’s cloud started from the host, or at a vendor with no host',
+  })
+  place!: AutomationPlace;
+
+  @ApiProperty({
+    format: 'uuid',
+    nullable: true,
+    type: String,
+    description: 'The host a run starts on or from; null at a vendor',
+  })
+  hostId!: string | null;
 
   @ApiProperty({ example: 'claude-code' })
   agent!: string;
@@ -109,8 +124,8 @@ export class AutomationTriggerResponseDto {
   // The enum is the contract: a trigger is written only through the catalog
   // (`externalEventDefinition`), so a stored event is always one of these.
   @ApiProperty({
-    enum: ['schedule', ...GITHUB_EVENT_TYPES],
-    description: '`schedule`, or the catalog event (`pr_opened`, `push`, …).',
+    enum: ['schedule', ...GITHUB_EVENT_TYPES, ...GMAIL_EVENT_TYPES],
+    description: '`schedule`, or the catalog event (`pr_opened`, `push`, `mail_received`, …).',
   })
   event!: string;
 
@@ -122,6 +137,16 @@ export class AutomationTriggerResponseDto {
 
   @ApiPropertyOptional({ type: TriggerFilterResponseDto })
   filter?: TriggerFilterResponseDto;
+
+  @ApiPropertyOptional({ format: 'uuid', description: 'Gmail: the connected account it watches.' })
+  connectionId?: string;
+
+  @ApiPropertyOptional({
+    nullable: true,
+    type: String,
+    description: 'Gmail: the query a new message must match; null for every new message.',
+  })
+  query?: string | null;
 
   @ApiPropertyOptional({ nullable: true, type: Date, description: 'Schedule: the next slot, UTC.' })
   nextFireAt!: Date | null;

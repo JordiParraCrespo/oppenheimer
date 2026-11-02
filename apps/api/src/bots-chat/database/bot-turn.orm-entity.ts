@@ -1,4 +1,5 @@
 import { TIMESTAMP_COLUMN_TYPE } from '@oppenheimer/backend-ddd';
+import type { BotTurnFailure } from '@oppenheimer/shared';
 import {
   Check,
   Column,
@@ -15,6 +16,12 @@ import { BOT_TURN_ERROR_MAX } from '../domain/bot-turn.entity';
  * One message of yours and the bot's answer (`1791001800000-AddBotTurns`), or
  * one another bot sent it (`1791002600000-AddBotPeerMessages`).
  */
+/** `"planLimits"` as stored: each window's share used and its reset, ISO 8601. */
+export interface BotTurnPlanLimitsRecord {
+  fiveHour: { usedPercent: number; resetsAt: string | null } | null;
+  sevenDay: { usedPercent: number; resetsAt: string | null } | null;
+}
+
 @Entity('bot_turn')
 @Unique('UQ_bot_turn_organization_id', ['organizationId', 'id'])
 @Index('IDX_bot_turn_bot', ['organizationId', 'botId', 'createdAt', 'id'])
@@ -33,9 +40,20 @@ import { BOT_TURN_ERROR_MAX } from '../domain/bot-turn.entity';
   'CHK_bot_turn_status',
   `"status" IN ('queued', 'running', 'completed', 'cancelled', 'failed')`,
 )
-@Check('CHK_bot_turn_provider', `"provider" IN ('anthropic', 'glm', 'openai', 'chatgpt')`)
-@Check('CHK_bot_turn_origin', `"origin" IN ('message', 'approval', 'routine')`)
+@Check('CHK_bot_turn_provider', `"provider" IN ('anthropic', 'glm', 'openai', 'chatgpt', 'xai')`)
+@Check(
+  'CHK_bot_turn_origin',
+  `"origin" IN ('message', 'approval', 'question', 'routine', 'subscription', 'goal')`,
+)
+@Check(
+  'CHK_bot_turn_failure',
+  `"failure" IS NULL OR "failure" IN ('rate_limit', 'usage_limit', 'credential', 'refused', 'unavailable', 'time_limit', 'interrupted', 'other')`,
+)
 @Check('CHK_bot_turn_tokens', `"inputTokens" >= 0 AND "outputTokens" >= 0`)
+@Check(
+  'CHK_bot_turn_context',
+  `("contextTokens" IS NULL OR "contextTokens" >= 0) AND ("contextWindow" IS NULL OR "contextWindow" > 0)`,
+)
 @Check('CHK_bot_turn_lane', `"lane" IN ('owner', 'bots', 'background')`)
 @Check('CHK_bot_turn_chain_depth', `"chainDepth" >= 0`)
 @Index('IDX_bot_turn_chain', ['organizationId', 'chainId'], { where: '"chainId" IS NOT NULL' })
@@ -65,7 +83,7 @@ export class BotTurnOrmEntity {
   @Column({ type: 'varchar', length: 16, default: 'queued' })
   status!: string;
 
-  /** Why it exists: a message, an approval's decision, or a routine's run. */
+  /** Why it exists: a message, an approval's decision, a routine's run, or a subscription's wake. */
   @Column({ type: 'varchar', length: 16, default: 'message' })
   origin!: string;
 
@@ -93,11 +111,27 @@ export class BotTurnOrmEntity {
   @Column({ type: 'varchar', length: BOT_TURN_ERROR_MAX, nullable: true })
   error!: string | null;
 
+  /** What kind of failure `error` is (`BOT_TURN_FAILURES`); null unless the turn failed. */
+  @Column({ type: 'varchar', length: 16, nullable: true })
+  failure!: BotTurnFailure | null;
+
   @Column({ type: 'integer', default: 0 })
   inputTokens!: number;
 
   @Column({ type: 'integer', default: 0 })
   outputTokens!: number;
+
+  /** What the last model call was sent; null before an answer. */
+  @Column({ type: 'integer', nullable: true })
+  contextTokens!: number | null;
+
+  /** The model's window, when the engine said it. */
+  @Column({ type: 'integer', nullable: true })
+  contextWindow!: number | null;
+
+  /** A subscription's usage windows as the last answer said them; read whole. */
+  @Column({ type: 'jsonb', nullable: true })
+  planLimits!: BotTurnPlanLimitsRecord | null;
 
   /** Which of the bot's waiting turns runs first (`BotTurnLane`). */
   @Column({ type: 'varchar', length: 16, default: 'owner' })
@@ -120,6 +154,13 @@ export class BotTurnOrmEntity {
   /** Sent with `ask_bot`: the answer goes back to the asker when this turn ends. */
   @Column({ type: 'boolean', default: false })
   replyRequested!: boolean;
+
+  /**
+   * Sent as a steer (`1791005730000-AddBotTurnSteer`): while queued, the
+   * running turn of its sender takes its message at its next tool call.
+   */
+  @Column({ type: 'boolean', default: false })
+  steer!: boolean;
 
   /** On an answer's turn: the turn it answers. */
   @Column({ type: 'uuid', nullable: true })

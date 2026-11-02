@@ -66,4 +66,13 @@ export const HostErrors = {
     message: 'The host is not connected',
     httpStatus: 409,
   },
+  /**
+   * Someone else wrote the host while this change was being made, again on
+   * the retry from a fresh read. Nothing was changed; read it and decide again.
+   */
+  CHANGED_CONCURRENTLY: {
+    code: 'HOSTS_009',
+    message: 'The host changed while this was being saved',
+    httpStatus: 409,
+  },
 } as const satisfies Record<string, ErrorDefinition>;

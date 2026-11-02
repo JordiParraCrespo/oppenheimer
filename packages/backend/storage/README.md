@@ -7,8 +7,9 @@ URLs via `@aws-sdk/s3-request-presigner`).
 ## What's inside
 
 - `StorageService` — abstract contract (the DI token consumers depend on).
-- `LocalStorageService` — stores files on the local filesystem.
-- `S3StorageService` — stores files in S3 / S3-compatible object storage.
+- The drivers, built by the module and not exported: `LocalStorageService`
+  (the local filesystem) and `S3StorageService` (S3 / S3-compatible object
+  storage).
 - `StorageModule` — selects the driver from config and binds it to
   `StorageService`.
 

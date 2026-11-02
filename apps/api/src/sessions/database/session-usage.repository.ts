@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import type { Repository } from 'typeorm';
-import { WorkSessionMapper } from '../work-session.mapper';
+import { SessionUsageMapper } from '../session-usage.mapper';
 import { SessionTurnOrmEntity } from './session-turn.orm-entity';
 import type {
   SessionUsageReader,
@@ -25,7 +25,6 @@ export class SessionUsageRepository implements SessionUsageReader {
   constructor(
     @InjectRepository(SessionTurnOrmEntity)
     private readonly turns: Repository<SessionTurnOrmEntity>,
-    private readonly mapper: WorkSessionMapper,
   ) {}
 
   async weeklyUsage(input: WeeklySessionUsageInput): Promise<SessionUsageWeek[]> {
@@ -52,6 +51,6 @@ export class SessionUsageRepository implements SessionUsageReader {
         ORDER BY 1, 2, 3 NULLS FIRST`,
       [input.organizationId, input.timeZone, input.from, input.to, input.projectId ?? null],
     );
-    return rows.map((row) => this.mapper.usageWeekToRead(row));
+    return rows.map((row) => SessionUsageMapper.toWeek(row));
   }
 }

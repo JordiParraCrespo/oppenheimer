@@ -2,5 +2,19 @@
 # Stands in for Claude Code: prints the argv the runner built, then hands the
 # pane to an interactive shell so a test can type into it. The same shim the
 # relay's own e2e spec uses.
+#
+# `claude --cloud <task>` answers as the real CLI does when it creates a
+# cloud session: it wants a terminal, prints the three lines a runner reads,
+# and exits. Each start is a line in ~/claude-cloud.log — where it ran, that
+# checkout's origin and the task — for a test to read back.
+if [ "$1" = "--cloud" ]; then
+  [ -t 1 ] || { echo 'Error: --cloud requires an interactive terminal.' >&2; exit 1; }
+  id="session_01e2e$(date +%s)$$"
+  printf '%s\t%s\t%s\t%s\n' "$id" "$(pwd -P)" "$(git config --get remote.origin.url 2>/dev/null)" "$2" >> "$HOME/claude-cloud.log"
+  printf 'Created cloud session: %s\r\n' "$2"
+  printf 'View: https://claude.ai/code/%s?from=cli&m=0\r\n' "$id"
+  printf 'Resume with: claude --teleport %s\r\n' "$id"
+  exit 0
+fi
 printf 'CLAUDE-SHIM argv=%s\n' "$*"
 exec sh -i

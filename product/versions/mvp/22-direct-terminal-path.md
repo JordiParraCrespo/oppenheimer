@@ -97,7 +97,14 @@ predictive echo hides whatever distance is left for what is typed most.
 - **The control plane is the signalling channel.** The offer and the
   answer ride the browser's attach socket and the runner link, the two channels already authenticated (a single-use ticket and
   the pinned per-host link). The DTLS fingerprints in them are what bind
-  the data channel to those two ends; no new credential exists. *Changed
+  the data channel to those two ends; no new credential exists.
+  *Changed 2026-10-31 (31):* the fingerprints are relayed by the control
+  plane, so on their own they bind the channel to whatever that party says the
+  two ends are. A compromised control plane could splice two DTLS sessions.
+  The host now **proves itself on every channel** before a byte crosses it: it
+  signs both fingerprints and the browser's nonce with its pairing key, and
+  the browser checks the signature against its own peer connection and pins
+  the key per host. The credential is the one the host already had. *Changed
   while building:* no trickle ICE. Each side gathers its candidates (up to
   two seconds in the browser, three on the host) and sends one complete
   SDP, so there is no candidate message at all.
@@ -178,13 +185,15 @@ predictive echo hides whatever distance is left for what is typed most.
   path is offered only to a runner whose `hello` names the `attachment.direct`
   capability, which ships after both layers.
 - **The relay stops seeing terminal bytes** on the direct path: DTLS is
-  end to end. Nothing on the control plane reads PTY output (agent state is
+  end to end, and since 2026-10-31 the host's proof (31) makes the ends the
+  browser and the host rather than whoever the signalling named. Nothing on the control plane reads PTY output (agent state is
   the runner's, 02 §9), so nothing is lost by it.
 - **"No inbound ports" still holds.** ICE punches out through the host's NAT
   for one negotiated peer at a time; nothing listens for strangers. The
   security checklist (07) gains the line (F29): the runner answers ICE only for
   credentials it received over its link, and drops a data channel whose
-  DTLS fingerprint is not the one signalled.
+  DTLS fingerprint is not the one signalled. F30 (31) adds the host's
+  proof on top.
 
 ### Several browsers
 

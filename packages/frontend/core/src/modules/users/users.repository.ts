@@ -1,8 +1,8 @@
 import { heyApiSdk, type UserResponseDto } from '@oppenheimer/api-client';
 import type { PermissionDefinition } from '@oppenheimer/shared';
 import { injectable } from 'inversify';
-import { unwrapBody } from '../core/errors';
-import { MapApiError } from '../core/map-api-error.decorator';
+import { callApi } from '../core/errors';
+
 import { UserEntity } from './user.entity';
 import { UsersErrors } from './users.errors';
 
@@ -34,10 +34,11 @@ function toPermissions(rules: Array<{ [key: string]: unknown }>): PermissionDefi
 
 @injectable()
 export class UsersRepository {
-  @MapApiError(UsersErrors.FETCH_FAILED)
-  async me(): Promise<UserEntity> {
-    const data = await unwrapBody(heyApiSdk.getMe(), UsersErrors.FETCH_FAILED);
-    return toEntity(data);
+  me(): Promise<UserEntity> {
+    return callApi(UsersErrors.FETCH_FAILED, async (api) => {
+      const data = await api.body(heyApiSdk.getMe());
+      return toEntity(data);
+    });
   }
 
   /**
@@ -45,9 +46,10 @@ export class UsersRepository {
    * gate which routes the sidebar shows. Plain CASL rules, not an entity — the
    * app rebuilds an ability from them with `defineAbilitiesFromPermissions`.
    */
-  @MapApiError(UsersErrors.FETCH_FAILED)
-  async myPermissions(): Promise<PermissionDefinition[]> {
-    const data = await unwrapBody(heyApiSdk.getMyPermissions(), UsersErrors.FETCH_FAILED);
-    return toPermissions(data.permissions);
+  myPermissions(): Promise<PermissionDefinition[]> {
+    return callApi(UsersErrors.FETCH_FAILED, async (api) => {
+      const data = await api.body(heyApiSdk.getMyPermissions());
+      return toPermissions(data.permissions);
+    });
   }
 }

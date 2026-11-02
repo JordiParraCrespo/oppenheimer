@@ -33,7 +33,13 @@ or a blank terminal in each session; Claude Code is the one the demo walks.
   and a session that asked for two was accepted, refused by the host and
   left spinning. The API refuses a second repository before a row is
   written, and since 2026-09-27 it refuses a session with none too: the
-  runner refused one at launch, so it failed after it was recorded (10).
+  runner refused one at launch, so it failed after it was recorded (10). **Changed again 2026-10-26:** the owner
+  lifted the one-repository cap. The runner makes one worktree per
+  checkout, each in its own directory of the session folder, so a session
+  checks out one to five repositories, each a different one, the agent
+  starting in the first unless another is named; a sixth is
+  `SESSIONS_010`. Five because every checkout is a clone and a worktree on
+  the host, and the picker has to stay readable.
   The model still keeps checkouts as a list with a primary
   (the `cwd` checkout, where the agent launches), so several
   repositories, one worktree each, is the next runner slice (11's R3)
@@ -53,7 +59,10 @@ or a blank terminal in each session; Claude Code is the one the demo walks.
 - **Create session chips:** project, host, repository, branch, every
   one of them searchable (the project chip joined on 2026-09-26; the
   agent moved to the engine button on 2026-09-20). The repository chip picks one repository and
-  carries its branch; picking another replaces it (above). The agent
+  carries its branch; picking another replaces it (above). **Changed
+  2026-10-26:** the chip picks several repositories (up to five), each on
+  its own branch; the ones picked before it opened lead the list, and a
+  pick past five replaces the oldest. The agent
   lives in the engine button (05) and lists Claude Code, Codex, OpenCode,
   Grok and a blank terminal, with the vendors' marks where they exist. All
   five are rows of the shared agent catalog (`CODING_AGENTS`) and the

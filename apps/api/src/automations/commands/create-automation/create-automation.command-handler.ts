@@ -1,12 +1,11 @@
 import { Inject } from '@nestjs/common';
 import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
-import { AppError } from '@oppenheimer/backend-core';
+import { requireTenant } from '@oppenheimer/backend-authz';
 import type { AggregateID } from '@oppenheimer/backend-ddd';
 import { AutomationPlanFactory } from '../../application/automation-plan.factory';
 import { AUTOMATION_REPOSITORY } from '../../automations.di-tokens';
 import type { AutomationRepositoryPort } from '../../database/automation.repository.port';
 import { AutomationEntity } from '../../domain/automation.entity';
-import { AutomationErrors } from '../../domain/automations.errors';
 import { CreateAutomationCommand } from './create-automation.command';
 
 /**
@@ -26,12 +25,11 @@ export class CreateAutomationCommandHandler
 
   async execute(command: CreateAutomationCommand): Promise<AggregateID> {
     const { scope, input } = command;
-    if (!scope.organizationId) throw new AppError(AutomationErrors.NO_ACTIVE_ORGANIZATION);
+    requireTenant(scope);
     const now = new Date();
 
-    this.plan.assertAgent(input.agent);
     await this.plan.assertProject(scope, input.projectId);
-    await this.plan.assertHost(scope, input.hostId);
+    await this.plan.assertWhere(scope, input);
     const repositories = await this.plan.resolveRepositories(scope, input.repositories);
     const triggers = this.plan.triggers(input.triggers, now);
 
@@ -41,6 +39,7 @@ export class CreateAutomationCommandHandler
       ownerUserId: scope.userId,
       name: input.name,
       revision: {
+        place: input.place,
         hostId: input.hostId,
         agent: input.agent,
         model: input.launch.model ?? null,

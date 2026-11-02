@@ -1,6 +1,5 @@
 import { ChatReply } from '@oppenheimer/design-system-web';
-import { Markdown } from '@oppenheimer/frontend-web';
-import { ChatCodeBlock } from './chat-code-block';
+import { ChatCode, Markdown } from '@oppenheimer/frontend-web';
 
 /** What the agent said, as the markdown it wrote, unboxed across the chat's column. */
 export function ChatReplyText({ text }: { text: string }) {
@@ -8,7 +7,7 @@ export function ChatReplyText({ text }: { text: string }) {
     <ChatReply>
       <Markdown
         source={text}
-        code={(block) => <ChatCodeBlock code={block.code} language={block.language} />}
+        code={(block) => <ChatCode code={block.code} language={block.language} />}
       />
     </ChatReply>
   );

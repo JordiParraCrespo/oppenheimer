@@ -504,6 +504,29 @@
               "type": "null"
             }
           ]
+        },
+        "cloud": {
+          "type": "object",
+          "properties": {
+            "sealed": {
+              "type": "string",
+              "format": "base64",
+              "contentEncoding": "base64",
+              "pattern": "^$|^(?:[0-9a-zA-Z+/]{4})*(?:(?:[0-9a-zA-Z+/]{2}==)|(?:[0-9a-zA-Z+/]{3}=))?$"
+            },
+            "expiresAt": {
+              "type": "string",
+              "format": "date-time",
+              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+            }
+          },
+          "required": [
+            "sealed",
+            "expiresAt"
+          ]
+        },
+        "codexEnvironment": {
+          "$ref": "#/$defs/codexEnvironmentRef"
         }
       },
       "required": [
@@ -761,6 +784,69 @@
         "type",
         "commandId",
         "sessionId"
+      ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "session.watch"
+        },
+        "commandId": {
+          "$ref": "#/$defs/commandId"
+        },
+        "sessionId": {
+          "$ref": "#/$defs/sessionId"
+        },
+        "watchId": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000)$"
+        },
+        "pattern": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        }
+      },
+      "required": [
+        "type",
+        "commandId",
+        "sessionId",
+        "watchId",
+        "pattern"
+      ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "session.unwatch"
+        },
+        "commandId": {
+          "$ref": "#/$defs/commandId"
+        },
+        "sessionId": {
+          "$ref": "#/$defs/sessionId"
+        },
+        "watchId": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000)$"
+        }
+      },
+      "required": [
+        "type",
+        "commandId",
+        "sessionId",
+        "watchId"
       ]
     },
     {
@@ -1192,6 +1278,610 @@
         "attachmentId",
         "entries"
       ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "device.attach"
+        },
+        "commandId": {
+          "$ref": "#/$defs/commandId"
+        },
+        "sessionId": {
+          "$ref": "#/$defs/sessionId"
+        },
+        "attachmentId": {
+          "$ref": "#/$defs/attachmentId"
+        }
+      },
+      "required": [
+        "type",
+        "commandId",
+        "sessionId",
+        "attachmentId"
+      ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "device.info"
+        },
+        "attachmentId": {
+          "$ref": "#/$defs/attachmentId"
+        },
+        "serial": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "platform": {
+          "type": "string",
+          "enum": [
+            "android",
+            "ios"
+          ]
+        }
+      },
+      "required": [
+        "type",
+        "attachmentId",
+        "serial",
+        "name",
+        "platform"
+      ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "device.input"
+        },
+        "attachmentId": {
+          "$ref": "#/$defs/attachmentId"
+        },
+        "kind": {
+          "type": "string",
+          "enum": [
+            "tap",
+            "swipe",
+            "text",
+            "key",
+            "button"
+          ]
+        },
+        "x": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "y": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "toX": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "toY": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "text": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1000
+        },
+        "key": {
+          "type": "string",
+          "enum": [
+            "enter",
+            "backspace",
+            "escape",
+            "tab"
+          ]
+        },
+        "button": {
+          "type": "string",
+          "enum": [
+            "home",
+            "back",
+            "appSwitch"
+          ]
+        }
+      },
+      "required": [
+        "type",
+        "attachmentId",
+        "kind"
+      ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "device.detach"
+        },
+        "commandId": {
+          "$ref": "#/$defs/commandId"
+        },
+        "sessionId": {
+          "$ref": "#/$defs/sessionId"
+        },
+        "attachmentId": {
+          "$ref": "#/$defs/attachmentId"
+        }
+      },
+      "required": [
+        "type",
+        "commandId",
+        "sessionId",
+        "attachmentId"
+      ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "port.list"
+        },
+        "commandId": {
+          "$ref": "#/$defs/commandId"
+        },
+        "sessionId": {
+          "$ref": "#/$defs/sessionId"
+        }
+      },
+      "required": [
+        "type",
+        "commandId",
+        "sessionId"
+      ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "port.listing"
+        },
+        "commandId": {
+          "$ref": "#/$defs/commandId"
+        },
+        "ports": {
+          "maxItems": 64,
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "port": {
+                "type": "integer",
+                "minimum": 1024,
+                "maximum": 65535
+              },
+              "process": {
+                "type": "string",
+                "maxLength": 100
+              }
+            },
+            "required": [
+              "port"
+            ]
+          }
+        }
+      },
+      "required": [
+        "type",
+        "commandId",
+        "ports"
+      ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "port.open"
+        },
+        "commandId": {
+          "$ref": "#/$defs/commandId"
+        },
+        "sessionId": {
+          "$ref": "#/$defs/sessionId"
+        },
+        "attachmentId": {
+          "$ref": "#/$defs/attachmentId"
+        },
+        "port": {
+          "type": "integer",
+          "minimum": 1024,
+          "maximum": 65535
+        }
+      },
+      "required": [
+        "type",
+        "commandId",
+        "sessionId",
+        "attachmentId",
+        "port"
+      ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "port.opened"
+        },
+        "attachmentId": {
+          "$ref": "#/$defs/attachmentId"
+        }
+      },
+      "required": [
+        "type",
+        "attachmentId"
+      ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "port.close"
+        },
+        "attachmentId": {
+          "$ref": "#/$defs/attachmentId"
+        }
+      },
+      "required": [
+        "type",
+        "attachmentId"
+      ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "codex.environments.list"
+        },
+        "commandId": {
+          "$ref": "#/$defs/commandId"
+        },
+        "repository": {
+          "$ref": "#/$defs/gitRef"
+        }
+      },
+      "required": [
+        "type",
+        "commandId"
+      ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "codex.environments"
+        },
+        "commandId": {
+          "$ref": "#/$defs/commandId"
+        },
+        "environments": {
+          "maxItems": 100,
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "$ref": "#/$defs/codexEnvironmentRef"
+              },
+              "label": {
+                "type": "string",
+                "maxLength": 200
+              },
+              "pinned": {
+                "type": "boolean"
+              },
+              "repository": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "id",
+              "pinned",
+              "repository"
+            ]
+          }
+        },
+        "recommended": {
+          "$ref": "#/$defs/codexEnvironmentRef"
+        },
+        "source": {
+          "type": "string",
+          "enum": [
+            "chatgpt",
+            "tasks"
+          ]
+        }
+      },
+      "required": [
+        "type",
+        "commandId",
+        "environments",
+        "source"
+      ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "whatsapp.link"
+        },
+        "commandId": {
+          "$ref": "#/$defs/commandId"
+        }
+      },
+      "required": [
+        "type",
+        "commandId"
+      ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "whatsapp.unlink"
+        },
+        "commandId": {
+          "$ref": "#/$defs/commandId"
+        }
+      },
+      "required": [
+        "type",
+        "commandId"
+      ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "whatsapp.state"
+        },
+        "state": {
+          "type": "string",
+          "enum": [
+            "unlinked",
+            "pairing",
+            "connecting",
+            "connected",
+            "logged_out"
+          ]
+        },
+        "qr": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1024
+        },
+        "qrExpiresAt": {
+          "type": "string",
+          "format": "date-time",
+          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+        },
+        "phone": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 128
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "reason": {
+          "type": "string",
+          "maxLength": 200
+        }
+      },
+      "required": [
+        "type",
+        "state"
+      ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "whatsapp.messages"
+        },
+        "messages": {
+          "minItems": 1,
+          "maxItems": 50,
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "key": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 256
+              },
+              "id": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 128
+              },
+              "chatId": {
+                "type": "string",
+                "minLength": 3,
+                "maxLength": 128
+              },
+              "chatKind": {
+                "type": "string",
+                "enum": [
+                  "direct",
+                  "group"
+                ]
+              },
+              "chatName": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 200
+              },
+              "senderId": {
+                "type": "string",
+                "minLength": 3,
+                "maxLength": 128
+              },
+              "senderName": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 200
+              },
+              "fromMe": {
+                "type": "boolean"
+              },
+              "text": {
+                "type": "string",
+                "maxLength": 8000
+              },
+              "media": {
+                "type": "string",
+                "enum": [
+                  "image",
+                  "video",
+                  "audio",
+                  "document",
+                  "sticker",
+                  "contact",
+                  "location"
+                ]
+              },
+              "quotedId": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 128
+              },
+              "sentAt": {
+                "type": "string",
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+              }
+            },
+            "required": [
+              "key",
+              "id",
+              "chatId",
+              "chatKind",
+              "senderId",
+              "fromMe",
+              "text",
+              "sentAt"
+            ]
+          }
+        }
+      },
+      "required": [
+        "type",
+        "messages"
+      ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "whatsapp.ack"
+        },
+        "keys": {
+          "minItems": 1,
+          "maxItems": 50,
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          }
+        }
+      },
+      "required": [
+        "type",
+        "keys"
+      ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "whatsapp.send"
+        },
+        "commandId": {
+          "$ref": "#/$defs/commandId"
+        },
+        "chatId": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 128
+        },
+        "text": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 8000
+        }
+      },
+      "required": [
+        "type",
+        "commandId",
+        "chatId",
+        "text"
+      ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "whatsapp.sent"
+        },
+        "commandId": {
+          "$ref": "#/$defs/commandId"
+        },
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "sentAt": {
+          "type": "string",
+          "format": "date-time",
+          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+        }
+      },
+      "required": [
+        "type",
+        "commandId",
+        "id",
+        "sentAt"
+      ]
     }
   ],
   "$defs": {
@@ -1297,6 +1987,10 @@
         "serviceManager": {
           "type": "string",
           "maxLength": 16
+        },
+        "claudeAccount": {
+          "type": "string",
+          "maxLength": 320
         }
       },
       "required": [
@@ -1493,6 +2187,13 @@
       "exclusiveMinimum": 0,
       "maximum": 9007199254740991,
       "id": "githubRepoId"
+    },
+    "codexEnvironmentRef": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "pattern": "^[^\\p{Cc}]+$",
+      "id": "codexEnvironmentRef"
     }
   },
   "x-constants": {
@@ -1520,9 +2221,17 @@
       "session.files",
       "repository.prepare",
       "attachment.direct",
+      "attachment.direct.proof",
       "session.folder",
       "fs.list",
-      "attachment.chat"
+      "attachment.chat",
+      "device.screen",
+      "port.forward",
+      "session.cloud",
+      "session.cloud.codex",
+      "codex.environments",
+      "session.watch",
+      "whatsapp"
     ],
     "maxEventPayloadBytes": 8192,
     "chatEntryMaxBytes": 65536,

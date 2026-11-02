@@ -65,6 +65,41 @@ describe('CloseSessionCommandHandler', () => {
     expect(work.isResolved).toBe(false);
   });
 
+  it('closes a cloud session at once, with nothing sent to its host', async () => {
+    const cloud = WorkSessionEntity.request({
+      organizationId: 'org-acme',
+      projectId: 'project-1',
+      createdByUserId: 'user-1',
+      hostId: 'host-1',
+      slug: 'calm-heron-7c2b1d',
+      agent: 'claude-code',
+      place: 'cloud',
+    });
+    sessions.findOneById.mockResolvedValue(Some(cloud));
+    sessions.appendEvents.mockImplementation(async (target: WorkSessionEntity, events) => {
+      for (const [index, event] of events.entries()) {
+        target.recordEvent({
+          seq: index + 1,
+          kind: event.kind,
+          payload: event.payload,
+          occurredAt: new Date(),
+        });
+      }
+    });
+
+    await expect(
+      handler.execute(
+        new CloseSessionCommand({ scope: SCOPE, sessionId: cloud.id, acceptUnpushedWork: false }),
+      ),
+    ).resolves.toEqual({ sessionId: cloud.id, hints: [] });
+    expect(sessions.appendEvents).toHaveBeenCalledWith(cloud, [
+      expect.objectContaining({ kind: SESSION_EVENT_KINDS.CLOSE_REQUESTED }),
+      expect.objectContaining({ kind: SESSION_EVENT_KINDS.CLOSED }),
+    ]);
+    expect(dispatch.close).not.toHaveBeenCalled();
+    expect(cloud.isResolved).toBe(true);
+  });
+
   it('is a no-op on a session that is already closed', async () => {
     work.recordEvent({
       seq: 1,

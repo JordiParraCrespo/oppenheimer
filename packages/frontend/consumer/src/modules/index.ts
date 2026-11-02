@@ -1,8 +1,12 @@
 export * from './automations';
 export * from './bots';
 export * from './calendar';
+export * from './chat';
+export * from './cloud-agents';
 export * from './hosts';
+export * from './inbox';
 export * from './installations';
+export * from './mail';
 export * from './organizations';
 export * from './permissions';
 export * from './profile';
@@ -11,3 +15,4 @@ export * from './pull-requests';
 export * from './sessions';
 export * from './tasks';
 export * from './voice';
+export * from './whatsapp';

@@ -1,9 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
 import {
+  type ActionEmailParams,
   EmailService,
   type EmailVerificationEmailParams,
-  type HostNetworkChangedEmailParams,
-  type HostPairedEmailParams,
   type InvitationEmailParams,
   type PasswordResetEmailParams,
   type WelcomeEmailParams,
@@ -31,13 +30,9 @@ export class ConsoleEmailService extends EmailService {
     this.logger.log(`[INVITATION] To: ${to} | Locale: ${params.locale} | URL: ${params.url}`);
   }
 
-  async sendHostPaired(to: string, params: HostPairedEmailParams): Promise<void> {
-    this.logger.log(`[HOST PAIRED] To: ${to} | Locale: ${params.locale} | URL: ${params.url}`);
-  }
-
-  async sendHostNetworkChanged(to: string, params: HostNetworkChangedEmailParams): Promise<void> {
+  async sendAction(to: string, params: ActionEmailParams): Promise<void> {
     this.logger.log(
-      `[HOST NETWORK CHANGED] To: ${to} | Locale: ${params.locale} | URL: ${params.url}`,
+      `[ACTION] To: ${to} | Subject: ${params.subject} | Locale: ${params.locale} | URL: ${params.url}`,
     );
   }
 }

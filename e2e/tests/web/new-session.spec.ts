@@ -27,16 +27,21 @@ test.describe('New session', () => {
     await signInAs(page, owner.user);
     await page.goto('/sessions/new');
 
-    await expect(page.getByRole('heading', { name: 'New session' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'What should we work on?' })).toBeVisible();
 
     // ── The prompt box has the size the export gives it ──────────────────────
-    // `field-sizing-content` overrides `rows`, so an empty textarea once
-    // collapsed to one line with every class still right; only a browser that
-    // applied the stylesheet sees it. 128px is `min-h-32`, the tabbed composer
-    // (`Composer` with a `scope`, in the design system). Asserted here because the
+    // `field-sizing-content` sizes the line to what is in it, so only a browser
+    // that applied the stylesheet sees the floor: 44px is `min-h-11`, the one
+    // line of `ComposerPill` (`NewSessionComposer.dc.html`), and the row of
+    // choices sits under the box, not inside it. Asserted here because the
     // composer needs a host, and pairing another would trip the per-IP throttle.
     const composer = page.getByRole('textbox', { name: /Describe a task/ });
-    expect((await composer.boundingBox())?.height, 'the empty composer is 128px tall').toBe(128);
+    const line = await composer.boundingBox();
+    expect(line?.height, 'the empty composer is one 44px line').toBe(44);
+    const permission = await page.getByRole('button', { name: 'Permission level' }).boundingBox();
+    expect(permission?.y, 'the choices sit under the box').toBeGreaterThan(
+      (line?.y ?? 0) + (line?.height ?? 0),
+    );
 
     // ── The project chip, and the dialog behind its foot row ─────────────────
     // A fresh workspace has only its Unassigned project, and the chip starts
@@ -76,6 +81,7 @@ test.describe('New session', () => {
     // machines does, and the chip must still take the choice.
     await page.getByRole('button', { name: 'Host' }).click();
     await page.getByRole('option', { name: /E2E box/ }).click();
+    await page.getByRole('option', { name: /New worktree/ }).click();
     await expect(page.getByRole('button', { name: 'Host' })).toContainText('E2E box');
 
     // ── The repository chip, and the branch pane inside it ───────────────────

@@ -2,7 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { type AccessScope, ScopedRepositoryBase } from '@oppenheimer/backend-authz';
-import { OutboxService } from '@oppenheimer/backend-ddd';
+import { OutboxService, writeVersioned } from '@oppenheimer/backend-ddd';
 import { None, type Option, Some } from 'oxide.ts';
 import { Repository } from 'typeorm';
 import type { HostEntity } from '../domain/host.entity';
@@ -87,20 +87,23 @@ export class HostRepository
    * The row, the outbox entries its events owe, and the timeline entries they
    * stand for, in one transaction. An unpaired host's current network stops
    * being current in the same breath, so the network retention can reach it.
+   *
+   * The row is written only at the version it was loaded at
+   * (`writeVersioned`); a copy someone has written since throws
+   * `VersionConflictException`, and the timeline entries and events go with
+   * the rolled-back transaction.
    */
   async save(entity: HostEntity): Promise<HostEntity> {
     const entries = this.mapper.toTimelineEntries(entity.domainEvents);
     const at = new Date();
     await this.outbox.writeWithEvents([entity], async (manager) => {
-      const saved = await manager
-        .getRepository(HostOrmEntity)
-        .save(this.mapper.toPersistence(entity));
+      await writeVersioned(manager, HostOrmEntity, entity, this.mapper.toPersistence(entity));
       await this.metadata.insertTimeline(manager, entity.id, entries, at);
       if (entries.some((entry) => entry.kind === 'unpaired')) {
         await this.metadata.clearCurrentNetwork(manager, entity.id);
       }
-      return saved;
     });
+    entity.markVersionWritten();
     return entity;
   }
 

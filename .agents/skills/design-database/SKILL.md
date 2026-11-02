@@ -98,8 +98,11 @@ one-line comment above it naming the query it serves (`-- Q1`).
 
 Produce, following `references/templates.md`:
 
-1. **The migration** `apps/api/src/migrations/<timestamp>-<PascalCaseName>.ts`.
-   The timestamp is later than the newest existing one. The header comment
+1. **The migration** `apps/api/src/migrations/<timestamp>-<PascalCaseName>.ts`,
+   started with `pnpm migration:new <PascalCaseName>`, which stamps it with
+   the current time; never choose the timestamp yourself
+   (`database-design.md`, "Migrations"). Replace the skeleton's
+   `TODO(migration:new)` header with the real one. The header comment
    explains the design: what the tables are for, the choices made and why,
    what was deliberately left out, the retention plan for anything that grows
    without bound. SQL in multi-line template strings, one statement per

@@ -1,5 +1,6 @@
 import { Inject } from '@nestjs/common';
 import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
+import { requireTenant } from '@oppenheimer/backend-authz';
 import { AppError } from '@oppenheimer/backend-core';
 import { ModelProviderResolver } from '../../application/model-provider.resolver';
 import { MODEL_PROVIDER_CREDENTIAL_REPOSITORY } from '../../bots.di-tokens';
@@ -24,7 +25,7 @@ export class SetDefaultModelProviderCommandHandler
 
   async execute({ scope, provider }: SetDefaultModelProviderCommand): Promise<void> {
     const known = this.providers.provider(provider);
-    if (!scope.organizationId) throw new AppError(BotErrors.NO_ACTIVE_ORGANIZATION);
+    requireTenant(scope);
     if (!(await this.credentials.setDefault(scope, known))) {
       throw new AppError(BotErrors.DEFAULT_PROVIDER_KEY_MISSING, {
         detail: `Store a key for ${known} first`,

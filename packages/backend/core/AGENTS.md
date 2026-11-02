@@ -11,6 +11,7 @@ other backend packages.
 
 ```
 src/
+├── crypto/         # secrets at rest: the sealed-blob layout, and the config-keyed sealer modules bind to their own token
 ├── errors/         # error types + the RFC 7807 problem-document contract
 ├── filters/        # NestJS exception filters
 ├── database/       # SQL helpers that need no ORM (likeContains)
@@ -23,7 +24,7 @@ src/
 ├── requests/       # request-scoped helpers
 ├── responses/      # paginated response helpers (toPageMeta, PaginatedResponseDto)
 ├── services/       # shared base services
-├── upstream/       # calling systems we do not run: rate-limit signals, the shared pause, the concurrency cap
+├── upstream/       # calling systems we do not run: rate-limit signals, the shared pause, the concurrency cap, the Google OAuth client Gmail and the calendar share
 └── index.ts        # public surface
 ```
 

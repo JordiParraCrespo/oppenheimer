@@ -9,6 +9,9 @@ const schema = z.object({
   // **Optional** — set when Redis requires auth (`requirepass`). Absent means an
   // unauthenticated connection, which is only safe on a private network.
   password: z.string().optional(),
+  // The logical database (`SELECT`): lets deployments, or parallel test
+  // files, share one Redis without sharing keys.
+  db: z.coerce.number().int().min(0).default(0),
 });
 
 export type RedisConfig = z.infer<typeof schema>;
@@ -17,6 +20,7 @@ const ENV_KEYS = {
   host: 'REDIS_HOST',
   port: 'REDIS_PORT',
   password: 'REDIS_PASSWORD',
+  db: 'REDIS_DB',
 };
 
 /**
@@ -33,7 +37,7 @@ export const redisConfig = registerAs('redis', () => redisConfigFromEnv());
 
 /**
  * Where Redis is and how to authenticate: the one place a connection's address
- * is spelled out, so TLS, `db` or `username` are one edit, not five.
+ * is spelled out, so TLS or `username` would be one edit, not five.
  *
  * BullMQ gets exactly this and nothing more. It manages its own retry policy
  * (its workers need `maxRetriesPerRequest: null` and a blocking connection),
@@ -44,6 +48,7 @@ export function redisConnectionOptions(config: RedisConfig): RedisOptions {
     host: config.host,
     port: config.port,
     password: config.password,
+    db: config.db,
   };
 }
 

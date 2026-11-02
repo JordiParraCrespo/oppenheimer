@@ -1,3 +1,4 @@
+// uncatalogued: a plain primitive with no hand-built rival to warn against
 import type * as React from 'react';
 
 import { cn } from '../lib/utils';

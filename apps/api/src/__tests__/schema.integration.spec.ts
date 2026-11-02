@@ -1,8 +1,8 @@
 import { randomUUID } from 'node:crypto';
 import { likeContains } from '@oppenheimer/backend-core';
 import { USERNAME_PATTERN } from '@oppenheimer/shared';
-import { GenericContainer, type StartedTestContainer, Wait } from 'testcontainers';
 import { DataSource } from 'typeorm';
+import { createTestDatabase } from './integration-services';
 import { loadMigrations } from './run-migrations';
 
 /**
@@ -11,25 +11,18 @@ import { loadMigrations } from './run-migrations';
  * same catalogue, and only here are all of them seen at once. The last case reverts
  * and reapplies the migrations, so every `down()` is proven too.
  *
- * The suite starts its own Postgres 16 container. Without Docker,
- * `SCHEMA_TEST_DATABASE_URL` (`postgres://user:pass@host:port/db`) points it at an
- * empty, disposable database, which it migrates, writes rows to and reverts.
+ * The suite migrates an empty database of its own on the run's shared Postgres
+ * (`integration-services.ts`), not a copy of the migrated template, so the
+ * migrations run here from the first. `SCHEMA_TEST_DATABASE_URL`
+ * (`postgres://user:pass@host:port/db`) points it at another empty, disposable
+ * database instead, which it migrates, writes rows to and reverts.
  */
 describe('the migrated schema (integration)', () => {
-  let pgContainer: StartedTestContainer | undefined;
   let dataSource: DataSource;
 
   beforeAll(async () => {
-    const external = process.env.SCHEMA_TEST_DATABASE_URL;
-    let url = external;
-    if (!url) {
-      pgContainer = await new GenericContainer('postgres:16-alpine')
-        .withEnvironment({ POSTGRES_USER: 'test', POSTGRES_PASSWORD: 'test', POSTGRES_DB: 'test' })
-        .withExposedPorts(5432)
-        .withWaitStrategy(Wait.forLogMessage(/database system is ready to accept connections/, 2))
-        .start();
-      url = `postgres://test:test@${pgContainer.getHost()}:${pgContainer.getMappedPort(5432)}/test`;
-    }
+    const url =
+      process.env.SCHEMA_TEST_DATABASE_URL ?? (await createTestDatabase({ empty: true })).url;
 
     dataSource = new DataSource({ type: 'postgres', url, migrations: await loadMigrations() });
     await dataSource.initialize();
@@ -38,7 +31,6 @@ describe('the migrated schema (integration)', () => {
 
   afterAll(async () => {
     await dataSource?.destroy();
-    await pgContainer?.stop();
   });
 
   /** Every row of a catalog query, keyed by its `name` column. */

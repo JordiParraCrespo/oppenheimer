@@ -12,9 +12,9 @@ of duplicating them per app.
 | `@oppenheimer/shared`                | Re-exports `schemas`, `types`, `constants`, `permissions` and `scopes` — **not** `agents` or `protocol` (see below)                             |
 | `@oppenheimer/shared/schemas`        | Zod schemas — the source of truth for request/response DTOs — plus the shared primitives every schema is built from                             |
 | `@oppenheimer/shared/schemas/*`      | One narrow subpath per `src/schemas/<x>.schema.ts` (`auth`, `admin`, `profile`, `organization`, `role`, `host`, `project`, `session`, …)        |
-| `@oppenheimer/shared/types`          | `Role`, `PaginationParams`, `PaginatedResponse<T>`, the deployment/client capability catalogs and the RFC 7807 problem-details helpers           |
-| `@oppenheimer/shared/constants`      | `AUTH`, `PAGINATION`, `ROLES`, `SYSTEM_ROLES`, `SYSTEM_ROLE_PERMISSIONS`, `QUEUE_NAMES`                                                         |
-| `@oppenheimer/shared/permissions`    | CASL helpers — `defineAbilitiesFromPermissions` (DB-driven, source of truth), the legacy `defineAbilitiesFor` fallback, and `ENDPOINT_POLICIES`  |
+| `@oppenheimer/shared/types`          | `Role`, `PaginatedResponse<T>`, the deployment/client capability catalogs and the RFC 7807 problem-details helpers                               |
+| `@oppenheimer/shared/constants`      | `PAGINATION`, the password lengths, `ROLES`, `SYSTEM_ROLES`, `MEMBERSHIP_ROLES`, `ORGANIZATION_ROLES`, `QUEUE_NAMES`                            |
+| `@oppenheimer/shared/permissions`    | CASL helpers — `defineAbilitiesFromPermissions` (DB-driven, source of truth), `SYSTEM_ROLE_PERMISSIONS`, `ENDPOINT_POLICIES` |
 | `@oppenheimer/shared/scopes`         | The credential scope catalog: `SCOPE_RESOURCES`, `PERMISSION_GROUPS`, `SCOPES`, and the helpers that expand, sort, compare and grant them       |
 | `@oppenheimer/shared/agents`         | The closed coding-agent catalog: `CODING_AGENT_IDS`, `CODING_AGENTS`, `isCodingAgentId`                                                         |
 | `@oppenheimer/shared/protocol`       | The runner link's wire vocabulary as Zod: `protocolMessageSchema`, the per-message schemas, the hint sets, and `PROTOCOL_VERSION`               |
@@ -69,6 +69,17 @@ emitted by `build` itself rather than by a script somebody has to remember. It i
 what the Go structs for the runner are generated from, so a wire change shows up
 as a reviewable diff in it, and the spec in `src/protocol/__tests__/` fails if the
 committed file has drifted from the schemas.
+
+`protocol-schema/released.schema.json` is the same artifact frozen at the last
+runner release. `released-protocol.spec.ts` fails on any change that would break
+a runner built against it (a field removed or newly required, an enum value
+dropped, a bound tightened, …; `src/protocol/compatibility.ts` has the full
+list) unless `PROTOCOL_VERSION` was bumped for it. Refresh it when a runner
+release is cut, and only then:
+
+```bash
+pnpm --filter @oppenheimer/shared protocol:release   # build, then copy protocol.schema.json to released.schema.json
+```
 
 ## Consumed by
 

@@ -1,7 +1,7 @@
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { BranchSelect } from '../components/branch-select';
-import { HostSelect } from '../components/host-select';
+import { PlaceSelect } from '../components/place-select';
 import { RepositoryBranchSelect } from '../components/repository-branch-select';
 
 /**
@@ -29,7 +29,22 @@ function openChip(name: string) {
 describe('the scope chips', () => {
   it('says the hosts are loading rather than that none match', () => {
     render(
-      <HostSelect hosts={[]} value={null} onValueChange={vi.fn()} onAddHost={vi.fn()} loading />,
+      <PlaceSelect
+        hosts={[]}
+        hostId={null}
+        place="worktree"
+        cloudAgent={null}
+        hostClouds={[]}
+        onHostChange={vi.fn()}
+        onPlaceChange={vi.fn()}
+        onHostCloudChange={vi.fn()}
+        clouds={[]}
+        cloud={null}
+        onCloudChange={vi.fn()}
+        onConnectCloud={vi.fn()}
+        onAddHost={vi.fn()}
+        loading
+      />,
     );
 
     expect(chip('sessions.new.host.label').disabled).toBe(false);
@@ -92,9 +107,63 @@ describe('the scope chips', () => {
     expect(within(popup).queryByText('sessions.new.branch.empty')).toBeNull();
   });
 
+  it('leads with the repositories picked before it opened, and keeps a new pick in place', () => {
+    const repositories = ['alpha', 'beta', 'gamma'].map((name) => ({
+      id: name,
+      name,
+      branches: [{ value: 'main' }],
+    }));
+    const onValueChange = vi.fn();
+    render(
+      <RepositoryBranchSelect
+        repositories={repositories}
+        value={[{ id: 'gamma', branch: 'main' }]}
+        onValueChange={onValueChange}
+      />,
+    );
+
+    const options = within(openChip('sessions.new.repository.label')).getAllByRole('option');
+    expect(options.map((option) => option.textContent)).toEqual(['gamma', 'alpha', 'beta']);
+
+    // A second pick adds to the first rather than replacing it.
+    fireEvent.click(screen.getByRole('option', { name: 'alpha' }));
+    expect(onValueChange).toHaveBeenCalledWith([
+      { id: 'gamma', branch: 'main' },
+      { id: 'alpha', branch: 'main' },
+    ]);
+  });
+
+  it('leads the branch list with the current branch', () => {
+    render(
+      <BranchSelect
+        branches={['develop', 'main', 'release'].map((value) => ({ value, label: value }))}
+        value="release"
+        onValueChange={vi.fn()}
+      />,
+    );
+
+    const options = within(openChip('sessions.new.branch.label')).getAllByRole('option');
+    expect(options.map((option) => option.textContent)).toEqual(['release', 'develop', 'main']);
+  });
+
   it('is greyed out only when the screen says so', () => {
     render(
-      <HostSelect hosts={[]} value={null} onValueChange={vi.fn()} onAddHost={vi.fn()} disabled />,
+      <PlaceSelect
+        hosts={[]}
+        hostId={null}
+        place="worktree"
+        cloudAgent={null}
+        hostClouds={[]}
+        onHostChange={vi.fn()}
+        onPlaceChange={vi.fn()}
+        onHostCloudChange={vi.fn()}
+        clouds={[]}
+        cloud={null}
+        onCloudChange={vi.fn()}
+        onConnectCloud={vi.fn()}
+        onAddHost={vi.fn()}
+        disabled
+      />,
     );
 
     expect(chip('sessions.new.host.label').disabled).toBe(true);

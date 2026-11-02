@@ -69,6 +69,14 @@ export const SessionsErrors = {
     code: 'SESSIONS_CLIENT_018',
     message: 'Failed to open the shared session',
   },
+  ANSWER_DECISION_FAILED: {
+    code: 'SESSIONS_CLIENT_019',
+    message: 'Failed to answer the session',
+  },
+  START_CLOUD_FAILED: {
+    code: 'SESSIONS_CLIENT_020',
+    message: 'Failed to start the session in the cloud',
+  },
   /**
    * The API's own code for a file over the cap, raised here before the
    * upload: a file that would be refused is not worth sending, and the reader
@@ -77,5 +85,13 @@ export const SessionsErrors = {
   FILE_TOO_LARGE: {
     code: 'SESSIONS_012',
     message: 'That file is too large to give the session',
+  },
+  PORTS_FAILED: {
+    code: 'SESSIONS_CLIENT_020',
+    message: "Failed to list the session's ports",
+  },
+  PREVIEW_FAILED: {
+    code: 'SESSIONS_CLIENT_021',
+    message: "Failed to open the session's preview",
   },
 } as const satisfies Record<string, ErrorDefinition>;

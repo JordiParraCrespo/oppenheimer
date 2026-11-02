@@ -14,10 +14,10 @@ import { onlyFields, PROJECT_FILLED, type ProjectFilled } from '../lib/new-sessi
 import { projectPrefill, toProjectOptions } from '../lib/session-options';
 
 /**
- * The project chip, first in a new worktree's scope band because picking a
- * project prefills the host, the repository and the agent
- * (`product/versions/mvp/05-screens.md`); last and optional for a folder
- * session, which it only files (24). The hosts are read only at pick
+ * The project chip, over New session's box because picking a project
+ * prefills the host, the repository and the agent
+ * (`product/versions/mvp/05-screens.md`); for a folder session it is
+ * optional and only files the session (24). The hosts are read only at pick
  * time, so a host refetch does not re-render it; it subscribes only to whether
  * that list has answered, because a pick before then would drop the project's
  * default host as if it were gone.

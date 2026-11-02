@@ -7,11 +7,6 @@ export const AutomationErrors = {
     message: 'Automation not found',
     httpStatus: 404,
   },
-  NO_ACTIVE_ORGANIZATION: {
-    code: 'AUTOMATIONS_002',
-    message: 'Automations belong to an organization',
-    httpStatus: 400,
-  },
   /** Somebody saved the automation since this editor loaded it. */
   VERSION_CONFLICT: {
     code: 'AUTOMATIONS_003',
@@ -46,5 +41,11 @@ export const AutomationErrors = {
     code: 'AUTOMATIONS_008',
     message: 'Run not found',
     httpStatus: 404,
+  },
+  /** A mail trigger on a Gmail account that is not the owner's, or no longer connected. */
+  MAIL_ACCOUNT_UNAVAILABLE: {
+    code: 'AUTOMATIONS_009',
+    message: 'That Gmail account cannot start a routine',
+    httpStatus: 422,
   },
 } as const satisfies Record<string, ErrorDefinition>;

@@ -46,6 +46,9 @@ import {
  */
 @Injectable()
 export class BotPlanToolsFactory implements BotToolArea {
+  /** Where Settings → Permissions lists these tools. */
+  readonly group = 'plan' as const;
+
   constructor(
     private readonly queryBus: QueryBus,
     private readonly commandBus: CommandBus,

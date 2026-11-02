@@ -2,7 +2,7 @@ import { generateKeyPairSync, type KeyObject, sign } from 'node:crypto';
 import type { ConfigService } from '@nestjs/config';
 import type { CacheService } from '@oppenheimer/backend-cache';
 import { None, Some } from 'oxide.ts';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { CredentialOwnerPort } from '../../../auth/application/credential-owner.port';
 import type { HostRepositoryPort } from '../../database/host.repository.port';
 import { HostEntity } from '../../domain/host.entity';
@@ -77,6 +77,10 @@ describe('HostAssertionResolver', () => {
   let owners: { findActiveOwner: ReturnType<typeof vi.fn> };
   let legacyMarkers: { isBurned: ReturnType<typeof vi.fn> };
   let current: ReturnType<typeof keypair>;
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
 
   beforeEach(() => {
     vi.useFakeTimers();

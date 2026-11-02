@@ -5,8 +5,11 @@ import type {
   BotAuthor,
   BotAvatarColor,
   BotDocumentName,
+  BotMemoryScope,
+  BotMemoryTier,
   BotPermission,
   BotProvider,
+  BotSection,
 } from '@oppenheimer/shared/schemas/bot';
 import type { AutomationStatus, AutomationTrigger } from '../automations/automation.entity';
 
@@ -41,6 +44,8 @@ export class BotEntity {
     public readonly lastActivityAt: Date,
     /** The start of its last message; `null` before the first. */
     public readonly lastMessagePreview: string | null = null,
+    /** The console sections whose sidebar lists it beside Employees, in catalog order. */
+    public readonly sections: BotSection[] = [],
   ) {}
 
   /**
@@ -116,6 +121,12 @@ export class BotMemoryFactEntity {
     public readonly content: string,
     /** Who wrote it last: the reader, or the bot through its tools. */
     public readonly source: BotAuthor,
+    /** `profile`: in mind every turn. `log`: looked up with `recall` when needed. */
+    public readonly tier: BotMemoryTier,
+    /** `bot`: this bot's alone. `person`: about its owner, read by all their bots. */
+    public readonly scope: BotMemoryScope,
+    /** The bot that keeps it, which is another of the owner's bots for a shared fact. */
+    public readonly botId: string,
     public readonly createdAt: Date,
     public readonly updatedAt: Date,
   ) {}
@@ -124,6 +135,59 @@ export class BotMemoryFactEntity {
   get isEdited(): boolean {
     return this.updatedAt.getTime() !== this.createdAt.getTime();
   }
+
+  /** Kept by another of the owner's bots and shared with this one: read, never changed here. */
+  isSharedWith(botId: string): boolean {
+    return this.botId !== botId;
+  }
+}
+
+/**
+ * One of a bot's skills (`25-bots.md` §4.1): a reusable way of doing one task,
+ * run by the person as `/<name>` and used by the bot when a request fits.
+ */
+export class BotSkillEntity {
+  constructor(
+    public readonly id: string,
+    /** What the person types after `/`. */
+    public readonly name: string,
+    /** When to use it; every turn of the bot lists it. */
+    public readonly description: string,
+    /** The skill itself, in Markdown. */
+    public readonly body: string,
+    /** The person may run it as `/<name>`. */
+    public readonly userInvocable: boolean,
+    /** The bot may use it unasked when a request fits. */
+    public readonly modelInvocable: boolean,
+    /** Who wrote it last: the reader, or the bot through `save_skill`. */
+    public readonly source: BotAuthor,
+    public readonly createdAt: Date,
+    public readonly updatedAt: Date,
+  ) {}
+
+  /** What the composer's `/` menu inserts. */
+  get command(): string {
+    return `/${this.name}`;
+  }
+}
+
+/** A new skill: who may run it is both unless said. */
+export interface CreateBotSkillInput {
+  name: string;
+  description: string;
+  body: string;
+  userInvocable?: boolean;
+  modelInvocable?: boolean;
+}
+
+/** A change to a skill; what is left out stays. */
+export type UpdateBotSkillInput = Partial<CreateBotSkillInput>;
+
+/** A change to a fact: its words, its tier or its scope; what is left out stays. */
+export interface UpdateBotFactInput {
+  content?: string;
+  tier?: BotMemoryTier;
+  scope?: BotMemoryScope;
 }
 
 /** `PATCH /bots/:id`: a field left out is unchanged; `null` clears what can be cleared. */
@@ -140,6 +204,8 @@ export interface UpdateBotInput {
   effort?: SessionEffort | null;
   permission?: BotPermission;
   learnAutomatically?: boolean;
+  /** The whole set; `[]` shows it in Employees only. */
+  sections?: BotSection[];
 }
 
 /** `PUT /bots/:id/documents/:name`: the text, over the revision the editor loaded. */

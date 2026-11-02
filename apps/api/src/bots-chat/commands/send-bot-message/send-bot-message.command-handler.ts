@@ -1,6 +1,6 @@
 import { Inject } from '@nestjs/common';
 import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
-import { AppError } from '@oppenheimer/backend-core';
+import { AppError, requireFound } from '@oppenheimer/backend-core';
 import { botDefaultModel } from '@oppenheimer/shared';
 import type { BotLookupPort } from '../../../bots/application/bot-lookup.port';
 import {
@@ -11,15 +11,14 @@ import {
 import type { ModelProviderCredentialRepositoryPort } from '../../../bots/database/model-provider-credential.repository.port';
 import { BotErrors } from '../../../bots/domain/bots.errors';
 import type { ProviderKeySealerPort } from '../../../bots/infrastructure/provider-key-sealer.port';
+import { BotGoalResolver } from '../../application/bot-goal.resolver';
 import { BotMessageAttachmentsResolver } from '../../application/bot-message-attachments.resolver';
-import {
-  BOT_APPROVAL_REPOSITORY,
-  BOT_STREAM,
-  BOT_TURN_REPOSITORY,
-} from '../../bots-chat.di-tokens';
-import type { BotApprovalRepositoryPort } from '../../database/bot-approval.repository.port';
+import { BotWaitingCardResolver } from '../../application/bot-waiting-card.resolver';
+import { BOT_STREAM, BOT_TURN_REPOSITORY } from '../../bots-chat.di-tokens';
 import type { BotTurnRepositoryPort } from '../../database/bot-turn.repository.port';
+import { goalFromMessage } from '../../domain/bot-goal.policy';
 import { BotMessageEntity } from '../../domain/bot-message.entity';
+import { maySteer } from '../../domain/bot-steer.policy';
 import { BotTurnEntity } from '../../domain/bot-turn.entity';
 import type { BotStreamPort } from '../../infrastructure/bot-stream.port';
 import { SendBotMessageCommand } from './send-bot-message.command';
@@ -28,13 +27,25 @@ import { SendBotMessageCommand } from './send-bot-message.command';
  * A message to a bot (`25-bots.md` §2): a queued turn on the bot's provider,
  * model and effort as they are now, with your message (its words, its images
  * or both) as its first. It runs
- * when the bot's turn before it ends. A provider with no key is refused here,
+ * when the bot's turn before it ends, unless it is a steer the running turn
+ * takes first (`BotSteerPolicy`): words alone steer (`maySteer`), since the
+ * running turn would not read images and a `/<name>` runs its skill as a turn
+ * of its own. A provider with no key is refused here,
  * where the person can fix it, rather than failing in the worker. A card the
- * bot is waiting on expires: the person moved on.
+ * bot is waiting on expires: the person moved on. `/goal <condition>` sets
+ * the bot's goal on the turn it queues (`goalFromMessage`), checked before
+ * anything is written and set in the transaction that queues the turn, so
+ * the turn never runs or ends without it.
  */
+/** The turn a send queued, and the message that opens it, which a steer's lookup follows. */
+export interface SentBotMessage {
+  turnId: string;
+  messageId: string;
+}
+
 @CommandHandler(SendBotMessageCommand)
 export class SendBotMessageCommandHandler
-  implements ICommandHandler<SendBotMessageCommand, string>
+  implements ICommandHandler<SendBotMessageCommand, SentBotMessage>
 {
   constructor(
     @Inject(BOT_LOOKUP) private readonly lookup: BotLookupPort,
@@ -43,8 +54,9 @@ export class SendBotMessageCommandHandler
     @Inject(PROVIDER_KEY_SEALER) private readonly sealer: ProviderKeySealerPort,
     @Inject(BOT_TURN_REPOSITORY) private readonly turns: BotTurnRepositoryPort,
     @Inject(BOT_STREAM) private readonly stream: BotStreamPort,
-    @Inject(BOT_APPROVAL_REPOSITORY) private readonly approvals: BotApprovalRepositoryPort,
+    private readonly cards: BotWaitingCardResolver,
     private readonly images: BotMessageAttachmentsResolver,
+    private readonly goals: BotGoalResolver,
   ) {}
 
   async execute({
@@ -54,16 +66,19 @@ export class SendBotMessageCommandHandler
     attachmentIds,
     timeZone,
     credentialScopes,
+    steer,
     metadata,
-  }: SendBotMessageCommand): Promise<string> {
+  }: SendBotMessageCommand): Promise<SentBotMessage> {
     const bot = await this.lookup.bot(scope, botId);
     if (!this.sealer.isConfigured()) throw new AppError(BotErrors.PROVIDERS_NOT_CONFIGURED);
-    if ((await this.credentials.findOne(scope, bot.provider)).isNone()) {
-      throw new AppError(BotErrors.PROVIDER_KEY_MISSING, {
+    requireFound(
+      await this.credentials.findOne(scope, bot.provider),
+      BotErrors.PROVIDER_KEY_MISSING,
+      {
         detail: `The workspace has no ${bot.provider} key`,
         extensions: { provider: bot.provider },
-      });
-    }
+      },
+    );
     const attachments = await this.images.sendable(bot, attachmentIds);
     const turn = BotTurnEntity.queue({
       organizationId: bot.organizationId,
@@ -74,7 +89,9 @@ export class SendBotMessageCommandHandler
       effort: bot.effort,
       timeZone,
       credentialScopes,
+      steer: maySteer(steer, content, attachments.length),
     });
+    const goal = goalFromMessage(content, turn);
     const message = BotMessageEntity.createNew({
       organizationId: bot.organizationId,
       botId: bot.id,
@@ -85,29 +102,18 @@ export class SendBotMessageCommandHandler
       position: 0,
       attachments,
     });
-    const outcome = await this.turns.enqueue(turn, message, metadata.correlationId);
+    const { outcome, replaced } = goal
+      ? await this.turns.enqueueWithGoal(turn, message, goal, metadata.correlationId)
+      : {
+          outcome: await this.turns.enqueue(turn, message, metadata.correlationId),
+          replaced: null,
+        };
     if (outcome === 'missing') throw new AppError(BotErrors.NOT_FOUND);
     if (outcome === 'attachments_taken') throw new AppError(BotErrors.ATTACHMENT_UNSENDABLE);
+    // The goal it replaced goes with the continuation it left waiting.
+    if (replaced) await this.goals.cancelWaiting(replaced, metadata.correlationId);
     await this.stream.publish(bot.id, { type: 'turn', turnId: turn.id, status: 'queued' });
-    await this.expireCard(bot.organizationId, bot.id);
-    return turn.id;
-  }
-
-  /**
-   * Writing to the bot instead of answering its card retires the card
-   * (`25-bots.md` §5): the new turn starts fresh, and nobody decided. A
-   * decision that lands first wins, and this does nothing.
-   */
-  private async expireCard(organizationId: string, botId: string): Promise<void> {
-    const pending = await this.approvals.findPending(organizationId, botId);
-    if (pending.isNone()) return;
-    const approval = pending.unwrap();
-    approval.expire(new Date());
-    if (!(await this.approvals.saveTransition(approval))) return;
-    await this.stream.publish(botId, {
-      type: 'approval',
-      approvalId: approval.id,
-      status: 'expired',
-    });
+    await this.cards.retire(bot.organizationId, bot.id);
+    return { turnId: turn.id, messageId: message.id };
   }
 }

@@ -1,11 +1,16 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
+import type { SessionTerminalWatchRepositoryPort } from '../database/session-terminal-watch.repository.port';
 import type {
   HostSessionRow,
   WorkSessionRepositoryPort,
 } from '../database/work-session.repository.port';
 import { SESSION_EVENT_KINDS } from '../domain/session-state.policy';
 import { WorkSessionEntity } from '../domain/work-session.entity';
-import { SESSION_DISPATCH, WORK_SESSION_REPOSITORY } from '../sessions.di-tokens';
+import {
+  SESSION_DISPATCH,
+  SESSION_TERMINAL_WATCH_REPOSITORY,
+  WORK_SESSION_REPOSITORY,
+} from '../sessions.di-tokens';
 import type { SessionDispatchPort } from './session-dispatch.port';
 import { SessionLaunchSpecFactory } from './session-launch.factory';
 import type {
@@ -25,11 +30,17 @@ import type {
  * `session.closed` even for a session it no longer knows. An owed close replaces an
  * owed launch: a session is never built only to be closed. A `failed` session is read
  * for that alone: a person may delete one, and nothing else here concerns it.
+ * A started cloud session is never held by its host, so it is never recorded stopped.
  * What the host holds that the rows do not know is logged and left alone: ending
  * someone's work is not a side effect of a hello.
  *
- * The stopped entry is keyed by the runner's `runId`, so a replayed hello writes it once.
+ * The stopped entry is keyed by the runner's `runId` and the link's epoch, and written
+ * only while the row is as it was read (`recordStopped`), so a hello retried on its link
+ * writes it once, and the same pane lost again after a restart, on a later link of the
+ * same runner process, is recorded again rather than merged into the first loss.
  * A close sent twice is harmless for the same reason the runner makes it so.
+ * The terminal watches of the live sessions it holds are sent again too: a
+ * runner keeps them in memory only.
  */
 @Injectable()
 export class SessionReconciliationResolver implements SessionReconciliationPort {
@@ -41,11 +52,14 @@ export class SessionReconciliationResolver implements SessionReconciliationPort 
     @Inject(SESSION_DISPATCH)
     private readonly dispatch: SessionDispatchPort,
     private readonly launches: SessionLaunchSpecFactory,
+    @Inject(SESSION_TERMINAL_WATCH_REPOSITORY)
+    private readonly watches: SessionTerminalWatchRepositoryPort,
   ) {}
 
   async reconcile(
     hostId: string,
     runId: string,
+    epoch: number,
     heldSessionIds: readonly string[],
   ): Promise<HostReconciliationOutcome> {
     const held = new Set(heldSessionIds);
@@ -61,8 +75,11 @@ export class SessionReconciliationResolver implements SessionReconciliationPort 
           }
         } else if (
           session.state === 'open' &&
+          // A cloud session lives on claude.ai/code: the host never holds it,
+          // and its absence from a hello is not a lost pane.
+          session.place !== 'cloud' &&
           session.stoppedAt === null &&
-          (await this.recordStopped(session, runId))
+          (await this.recordStopped(session, runId, epoch))
         ) {
           outcome.stopped.push(session.id);
         }
@@ -75,6 +92,8 @@ export class SessionReconciliationResolver implements SessionReconciliationPort 
         if (delivered) outcome.reclosed.push(session.id);
       }
     }
+
+    await this.watchAgain(rows.map((row) => row.session).filter((session) => held.has(session.id)));
 
     const known = new Set(rows.map((row) => row.session.id));
     const unknown = heldSessionIds.filter((id) => !known.has(id));
@@ -100,18 +119,70 @@ export class SessionReconciliationResolver implements SessionReconciliationPort 
     return delivered;
   }
 
-  private async recordStopped(session: WorkSessionEntity, runId: string): Promise<boolean> {
-    const appended = await this.sessions.appendEvents(session, [
-      {
-        idempotencyKey: WorkSessionEntity.apiIdempotencyKey(
-          `hello-${runId}`,
-          SESSION_EVENT_KINDS.STOPPED,
-        ),
-        source: 'api',
-        kind: SESSION_EVENT_KINDS.STOPPED,
-        payload: { source: 'reconciliation', runId },
-      },
-    ]);
-    return appended.accepted.length > 0;
+  /**
+   * A runner keeps terminal watches in memory, so every hello is sent the
+   * watches of the live sessions it holds again, each with the newest count
+   * it reported: a runner that still holds one keeps it, and one that
+   * restarted counts on from there, so its next report is past what the bot
+   * was told. Best effort: a watch that does not reach the runner now is
+   * sent with its next hello.
+   */
+  private async watchAgain(held: readonly WorkSessionEntity[]): Promise<void> {
+    const live = held.filter((session) => session.state === 'open' && session.stoppedAt === null);
+    const byOrganization = new Map<string, WorkSessionEntity[]>();
+    for (const session of live) {
+      byOrganization.set(session.organizationId, [
+        ...(byOrganization.get(session.organizationId) ?? []),
+        session,
+      ]);
+    }
+    for (const [organizationId, sessions] of byOrganization) {
+      const watches = await this.watches.findForSessions(
+        organizationId,
+        sessions.map((session) => session.id),
+      );
+      for (const watch of watches) {
+        const session = sessions.find((candidate) => candidate.id === watch.sessionId);
+        if (session) {
+          await this.dispatch.watchTerminal(session, {
+            watchId: watch.id,
+            pattern: watch.pattern,
+            count: watch.matches,
+          });
+        }
+      }
+    }
+  }
+
+  /**
+   * The decision was made on the row as it was read at the start, and a
+   * reconciliation awaits a dispatch per session, so it is taken again under
+   * the row's lock: stopped only if the session is still open and not
+   * stopped. A stop, a close, a failure, or another link's reconciliation in
+   * between wins, and nothing is written. (Not "nothing recorded since": the
+   * runner resends its unacknowledged batches right after hello, and a late
+   * entry from the pane before it died says nothing about it being alive.)
+   */
+  private async recordStopped(
+    session: WorkSessionEntity,
+    runId: string,
+    epoch: number,
+  ): Promise<boolean> {
+    const appended = await this.sessions.appendEventsIf(
+      session,
+      [
+        {
+          idempotencyKey: WorkSessionEntity.apiIdempotencyKey(
+            `hello-${runId}-${epoch}`,
+            SESSION_EVENT_KINDS.STOPPED,
+          ),
+          source: 'api',
+          kind: SESSION_EVENT_KINDS.STOPPED,
+          payload: { source: 'reconciliation', runId },
+        },
+      ],
+      (fold) => fold.state === 'open' && fold.stoppedAt === null,
+    );
+    return (appended?.accepted.length ?? 0) > 0;
   }
 }

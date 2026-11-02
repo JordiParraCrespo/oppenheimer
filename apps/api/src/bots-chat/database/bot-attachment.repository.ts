@@ -41,6 +41,27 @@ export async function claimAttachmentsWithin(
   return affected === ids.length;
 }
 
+/**
+ * Marks the images a bot showed (`show_image`) as carried by its message,
+ * in the message's insert: the bot's own, stored by no person, of the
+ * message's bot and carried by nothing yet. One the sweep took first is
+ * left out, and the chat says it cannot be loaded.
+ */
+export async function claimShownWithin(
+  manager: EntityManager,
+  message: BotMessageEntity,
+): Promise<void> {
+  const ids = message.attachments.map((attachment) => attachment.id);
+  if (ids.length === 0) return;
+  // PK_bot_attachment.
+  await manager.query(
+    `UPDATE bot_attachment SET "messageId" = $1, "updatedAt" = now()
+      WHERE id = ANY($2::uuid[]) AND "organizationId" = $3 AND "botId" = $4
+        AND "messageId" IS NULL AND "uploadedByUserId" IS NULL`,
+    [message.id, ids, message.organizationId, message.botId],
+  );
+}
+
 @Injectable()
 export class BotAttachmentRepository
   extends ScopedRepositoryBase<BotAttachmentOrmEntity>

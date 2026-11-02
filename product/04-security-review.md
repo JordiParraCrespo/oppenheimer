@@ -175,6 +175,13 @@ by themselves, API keys only for unattended runs.
   target.** Direct-mode: the machine already had it. VM-mode: the
   persistent home had it. The platform stores none of them. This is the
   policy statement to put in the docs and to keep true.
+  - 2026-10-26: what F23 forbids is a subscription sign-in (an agent's
+    login) held by the platform or carried to a target. A vendor's API
+    key that a person or a workspace gives the control plane for the
+    control plane's own calls is not that: the bots' model provider keys
+    (`versions/mvp/25-bots.md`) and a person's Cursor key for cloud agents
+    (`next-steps/cloud-agents.md`) are stored sealed, used only by the
+    control plane, never returned and never sent to a host.
 
 ### Multi-tenancy
 

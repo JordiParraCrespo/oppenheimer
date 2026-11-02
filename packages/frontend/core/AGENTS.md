@@ -19,9 +19,12 @@ The layer model is [`../ARCHITECTURE.md`](../ARCHITECTURE.md).
 - A new query hook → `src/react/<module>.queries.ts` next to its key factory
   (every key derived from `all`), then exported by name from
   `src/react/index.ts`. `src/modules/` never imports `src/react/`. A
-  mutation's cache update goes through `withCacheOnSuccess(options, update)`
-  (`src/react/mutations.ts`), never a hand-written `onSuccess` beside
-  `...options`: spread in the wrong order, a caller's `onSuccess` replaces it.
+  mutation hook is `defineMutation(useApp)({ run, invalidates | update })`
+  (`src/react/mutations.ts`), or, when it needs its own `onMutate` or
+  `onError`, `useMutation` with its cache update through
+  `withCacheOnSuccess(options, update)` — never a hand-written `onSuccess`
+  beside `...options`: spread in the wrong order, a caller's `onSuccess`
+  replaces it.
 - A key that is a kernel contract, one a product must name without the
   kernel importing it → `src/react/query-keys.ts`, not a product package.
 - A feature whose responses must never reach storage → add its key prefix to

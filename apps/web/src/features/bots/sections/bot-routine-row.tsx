@@ -1,5 +1,5 @@
 import { RoutineCard } from '@oppenheimer/design-system-web';
-import { Clock, GitPullRequest } from '@oppenheimer/design-system-web/icons';
+import { Clock, GitPullRequest, Mail } from '@oppenheimer/design-system-web/icons';
 import type { BotRoutineEntity } from '@oppenheimer/frontend-consumer';
 import { useRunBotRoutine, useSetBotRoutineEnabled } from '@oppenheimer/frontend-consumer/react';
 import { ErrorAlert, useLocale } from '@oppenheimer/frontend-web';
@@ -9,6 +9,13 @@ import { useTranslation } from 'react-i18next';
 import { DeleteBotRoutineDialog } from '@/features/bots/dialogs/delete-bot-routine';
 import { fillBotDraft } from '@/features/bots/lib/bot-drafts';
 import { routineMoment, routineWhen } from '@/features/bots/lib/routine-text';
+
+/** A routine's glyph, by what wakes it first. */
+const ROUTINE_ICONS = {
+  schedule: <Clock />,
+  github: <GitPullRequest />,
+  gmail: <Mail />,
+} as const;
 
 /**
  * One routine as a card (`26-bot-routines.md` §7): its switch, Run now, Edit
@@ -29,7 +36,7 @@ export function BotRoutineRow({ botId, routine }: { botId: string; routine: BotR
     <div className="flex flex-col gap-2">
       <RoutineCard
         name={routine.name}
-        icon={first?.source === 'github' ? <GitPullRequest /> : <Clock />}
+        icon={first ? ROUTINE_ICONS[first.source] : <Clock />}
         trigger={routineWhen(routine, locale, t)}
         prompt={routine.prompt}
         last={

@@ -1,6 +1,6 @@
 import { Inject } from '@nestjs/common';
 import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
-import { AppError } from '@oppenheimer/backend-core';
+import { AppError, requireFound } from '@oppenheimer/backend-core';
 import type { UserRepositoryPort } from '../../../users/database/user.repository.port';
 import { USER_REPOSITORY } from '../../../users/user.di-tokens';
 import { ProfileErrors } from '../../domain/profile.errors';
@@ -30,11 +30,13 @@ export class ChangeEmailCommandHandler implements ICommandHandler<ChangeEmailCom
   ) {}
 
   async execute(command: ChangeEmailCommand): Promise<void> {
-    const found = await this.userRepository.findOneById(command.userId);
-    if (found.isNone()) throw new AppError(ProfileErrors.NOT_FOUND);
+    const user = requireFound(
+      await this.userRepository.findOneById(command.userId),
+      ProfileErrors.NOT_FOUND,
+    );
 
     const newEmail = command.newEmail.trim().toLowerCase();
-    if (newEmail === found.unwrap().email.toLowerCase()) {
+    if (newEmail === user.email.toLowerCase()) {
       throw new AppError(ProfileErrors.EMAIL_UNCHANGED);
     }
 

@@ -2,18 +2,11 @@ import { STATUS_CODES } from 'node:http';
 import {
   DEFAULT_PROBLEM_TYPE,
   type InvalidParam,
-  isProblemDetails,
   PROBLEM_JSON_CONTENT_TYPE,
   type ProblemDetails,
 } from '@oppenheimer/shared';
 
-export {
-  DEFAULT_PROBLEM_TYPE,
-  type InvalidParam,
-  isProblemDetails,
-  PROBLEM_JSON_CONTENT_TYPE,
-  type ProblemDetails,
-};
+export { DEFAULT_PROBLEM_TYPE, type InvalidParam, PROBLEM_JSON_CONTENT_TYPE, type ProblemDetails };
 
 /**
  * Where error-type URIs point when nothing else is configured. Deployments

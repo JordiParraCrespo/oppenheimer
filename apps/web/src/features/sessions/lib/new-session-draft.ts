@@ -6,9 +6,13 @@ import {
   SESSION_PERMISSIONS,
   type SessionPermission,
 } from '@oppenheimer/shared/agents';
+import {
+  CLOUD_AGENT_PROVIDERS,
+  type CloudAgentProviderId,
+} from '@oppenheimer/shared/schemas/cloud-agent';
 import { SESSION_PLACES, type SessionPlace } from '@oppenheimer/shared/schemas/session';
 import { rememberedFolder } from './folder-memory';
-import { defaultModelFor, type EffortPicks } from './session-options';
+import { defaultModelFor, type EffortPicks, engineForPlace } from './session-options';
 
 /**
  * What New session has been set to and remembers between visits, every chip
@@ -23,9 +27,20 @@ const STORAGE_KEY = 'oppenheimer.new-session.draft';
 export interface NewSessionDraft {
   /**
    * Where the session runs (`product/versions/mvp/24-session-places.md`): a
-   * new worktree of a project's repository, or a folder already on the host.
+   * new worktree of a project's repository, a folder already on the host, or
+   * the cloud — Claude Code's or Codex's, which the host starts, or a vendor's the
+   * console launches (`cloudProvider`).
    */
   where: SessionPlace;
+  /**
+   * The vendor a cloud session is launched at, on the reader's key, with no
+   * host; null for every session a host runs or starts. While it is set the
+   * host, folder, agent and model below are kept as they were, so leaving
+   * the vendor puts back the host session it left.
+   */
+  cloudProvider: CloudAgentProviderId | null;
+  /** The vendor's model; null is its own default ("Auto"). */
+  cloudModel: string | null;
   /** The body of work the session belongs to; picking one prefills the rest. */
   projectId: string | null;
   hostId: string | null;
@@ -45,10 +60,28 @@ export interface NewSessionDraft {
    * and nothing is sent (`effortChoiceFor`).
    */
   efforts: EffortPicks;
+  /**
+   * The Codex environment picked for a Codex cloud session in the place
+   * chip's Environments pane, with the host it was picked on: it applies only
+   * while that host is the one picked (`toCreateInput`), since each host
+   * lists the environments of its own ChatGPT account. Changing host falls
+   * back to the host's pick without anything clearing it. Null is the host's
+   * pick, the environment linked to the repository.
+   */
+  codexEnvironment: CodexEnvironmentPick | null;
+}
+
+/** An environment picked on one host: its id, and its name for the chip. */
+export interface CodexEnvironmentPick {
+  hostId: string;
+  id: string;
+  label: string;
 }
 
 const FALLBACK: NewSessionDraft = {
   where: 'worktree',
+  cloudProvider: null,
+  cloudModel: null,
   projectId: null,
   hostId: null,
   scope: [],
@@ -57,6 +90,7 @@ const FALLBACK: NewSessionDraft = {
   model: defaultModelFor('claude-code'),
   permission: 'auto',
   efforts: {},
+  codexEnvironment: null,
 };
 
 /**
@@ -65,12 +99,24 @@ const FALLBACK: NewSessionDraft = {
  */
 type RememberedChoices = Pick<
   NewSessionDraft,
-  'where' | 'projectId' | 'hostId' | 'scope' | 'agent' | 'model' | 'permission' | 'efforts'
+  | 'where'
+  | 'cloudProvider'
+  | 'cloudModel'
+  | 'projectId'
+  | 'hostId'
+  | 'scope'
+  | 'agent'
+  | 'model'
+  | 'permission'
+  | 'efforts'
+  | 'codexEnvironment'
 >;
 
 /** The fields `rememberDraft` writes out, for the form's subscription to name. */
 export const REMEMBERED_FIELDS = [
   'where',
+  'cloudProvider',
+  'cloudModel',
   'projectId',
   'hostId',
   'scope',
@@ -78,6 +124,7 @@ export const REMEMBERED_FIELDS = [
   'model',
   'permission',
   'efforts',
+  'codexEnvironment',
 ] as const satisfies readonly (keyof RememberedChoices)[];
 
 /**
@@ -124,6 +171,8 @@ export function openDraft(seed: DraftSeed = {}): {
   const draft: NewSessionDraft = {
     ...FALLBACK,
     where: seed.where ?? stored.where ?? FALLBACK.where,
+    cloudProvider: stored.cloudProvider ?? FALLBACK.cloudProvider,
+    cloudModel: stored.cloudModel ?? FALLBACK.cloudModel,
     projectId: stored.projectId ?? FALLBACK.projectId,
     hostId,
     scope: stored.scope ?? FALLBACK.scope,
@@ -131,8 +180,21 @@ export function openDraft(seed: DraftSeed = {}): {
     ...engine,
     permission: stored.permission ?? FALLBACK.permission,
     efforts: stored.efforts ?? FALLBACK.efforts,
+    codexEnvironment: stored.codexEnvironment ?? FALLBACK.codexEnvironment,
   };
-  return { draft, fillable: landingFillable(stored) };
+  return { draft: fitHostCloud(draft, seed), fillable: landingFillable(stored) };
+}
+
+/**
+ * A draft opening on a host's cloud brings an agent that place runs
+ * (`engineForPlace`), unless the address names another one: then the address
+ * wins and the place falls back to a new worktree.
+ */
+function fitHostCloud(draft: NewSessionDraft, seed: DraftSeed): NewSessionDraft {
+  const engine = engineForPlace(draft, draft);
+  if (engine.agent === draft.agent) return draft;
+  if (seed.agent) return { ...draft, where: 'worktree' };
+  return { ...draft, ...engine };
 }
 
 /** An absolute path is the folder; one under `~` waits for the host's home; none takes the host's last. */
@@ -144,6 +206,8 @@ function seedFolder(path: string | undefined, hostId: string | null): string | n
 
 export function rememberDraft({
   where,
+  cloudProvider,
+  cloudModel,
   projectId,
   hostId,
   scope,
@@ -151,11 +215,24 @@ export function rememberDraft({
   model,
   permission,
   efforts,
+  codexEnvironment,
 }: RememberedChoices) {
   try {
     window.localStorage.setItem(
       STORAGE_KEY,
-      JSON.stringify({ where, projectId, hostId, scope, agent, model, permission, efforts }),
+      JSON.stringify({
+        where,
+        cloudProvider,
+        cloudModel,
+        projectId,
+        hostId,
+        scope,
+        agent,
+        model,
+        permission,
+        efforts,
+        codexEnvironment,
+      }),
     );
   } catch {
     // Private browsing, a full quota, storage switched off. The screen works
@@ -172,6 +249,14 @@ function rememberedChoices(): Partial<RememberedChoices> {
     const agent = isCodingAgentId(stored.agent) ? stored.agent : undefined;
     return {
       where: SESSION_PLACES.find((place) => place === stored.where),
+      // A vendor is only ever picked with the cloud as the place.
+      cloudProvider:
+        stored.where === 'cloud'
+          ? (CLOUD_AGENT_PROVIDERS.find((provider) => provider === stored.cloudProvider) ?? null)
+          : null,
+      // A vendor's model list moves with its releases: kept as it was, and the
+      // vendor refuses one it no longer offers in its own words.
+      cloudModel: typeof stored.cloudModel === 'string' ? stored.cloudModel : undefined,
       projectId: typeof stored.projectId === 'string' ? stored.projectId : undefined,
       hostId: typeof stored.hostId === 'string' ? stored.hostId : undefined,
       scope: scopePicks(stored.scope),
@@ -183,12 +268,22 @@ function rememberedChoices(): Partial<RememberedChoices> {
           : undefined,
       permission: SESSION_PERMISSIONS.find((level) => level === stored.permission),
       efforts: effortPicks(stored.efforts),
+      codexEnvironment: codexEnvironmentPick(stored.codexEnvironment),
     };
   } catch {
     // Storage can be unavailable or hold something from an older shape. A draft
     // is a convenience; failing to read one is not worth an error on screen.
     return {};
   }
+}
+
+/** A remembered environment pick, or none when storage holds another shape. */
+function codexEnvironmentPick(value: unknown): CodexEnvironmentPick | undefined {
+  if (typeof value !== 'object' || value === null) return undefined;
+  const { hostId, id, label } = value as Partial<CodexEnvironmentPick>;
+  return typeof hostId === 'string' && typeof id === 'string' && id && typeof label === 'string'
+    ? { hostId, id, label }
+    : undefined;
 }
 
 /** The chips a project's defaults fill. */

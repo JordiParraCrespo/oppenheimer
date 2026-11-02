@@ -1,8 +1,14 @@
 export { AccessList, AccessRow } from './components/access-list';
 export type { AgentId } from './components/agent-mark';
 export { AgentMark } from './components/agent-mark';
-export type { AgentModel, AgentOption, Engine } from './components/agent-model-select';
-export { AgentModelSelect } from './components/agent-model-select';
+export type {
+  AgentModel,
+  AgentModelEffort,
+  AgentModelSelectLabels,
+  AgentOption,
+  Engine,
+} from './components/agent-model-select';
+export { AgentModelSelect, engineKey } from './components/agent-model-select';
 export type { AlertTone } from './components/alert';
 export {
   Alert,
@@ -104,9 +110,10 @@ export {
   ComposerApproval,
   QuestionPanel,
 } from './components/chat-decisions';
-export type { ChatCodeBlockLabels } from './components/chat-elements';
+export type { ChatCodeBlockLabels, ChatJsonBlockLabels } from './components/chat-elements';
 export {
   ChatCodeBlock,
+  ChatJsonBlock,
   ChatMarker,
   ChatSource,
   ChatSources,
@@ -123,7 +130,13 @@ export {
   ChatTrayButton,
   ThreadFindBar,
 } from './components/chat-header';
-export { ChatImage, ChatImageRemove } from './components/chat-image';
+export {
+  ChatImage,
+  ChatImageButton,
+  ChatImageRemove,
+  ChatImageViewer,
+  ChatImageViewerImage,
+} from './components/chat-image';
 export type { ChatErrorLabels } from './components/chat-status';
 export {
   ChatErrorAction,
@@ -152,7 +165,14 @@ export {
   StreamingCaret,
   TurnHeader,
 } from './components/chat-transcript';
-export { ReasoningRow, ToolCallGroup, ToolCallLive, ToolCallRow } from './components/chat-work';
+export type { ToolCallOutputLabels } from './components/chat-work';
+export {
+  ReasoningRow,
+  ToolCallGroup,
+  ToolCallLive,
+  ToolCallOutput,
+  ToolCallRow,
+} from './components/chat-work';
 export { Checkbox } from './components/checkbox';
 export type { ChipProps } from './components/chip';
 export { Chip, chipVariants, FilterChip } from './components/chip';
@@ -167,10 +187,13 @@ export {
   ChipSelectActionRow,
   ChipSelectBack,
   ChipSelectEmpty,
+  ChipSelectHeading,
   ChipSelectItem,
   ChipSelectList,
   ChipSelectPopup,
   ChipSelectSearch,
+  ChipSelectTab,
+  ChipSelectTabs,
   ChipSelectTrigger,
 } from './components/chip-select';
 export type { CodeBlockTab } from './components/code-block';
@@ -190,7 +213,13 @@ export {
 export type { CommandRowSurface } from './components/command-row';
 export { CommandRow, CommandRowList } from './components/command-row';
 export type { ComposerAttachment, ComposerLabels } from './components/composer';
-export { Composer, ComposerToolButton } from './components/composer';
+export {
+  Composer,
+  ComposerChoices,
+  ComposerFile,
+  ComposerPill,
+  ComposerToolButton,
+} from './components/composer';
 export { DatePicker } from './components/date-picker';
 export type {
   DateRange,
@@ -278,7 +307,7 @@ export type { EffortStop } from './components/effort-slider';
 export { EffortPicker, EffortSlider } from './components/effort-slider';
 export { EmptyState } from './components/empty-state';
 export type { FacetOption } from './components/facet-select';
-export { FacetSelect } from './components/facet-select';
+export { FacetSelect, SearchableFacetSelect } from './components/facet-select';
 export {
   Field,
   FieldAction,
@@ -305,6 +334,24 @@ export { IconButton, iconButtonVariants } from './components/icon-button';
 export type { CarouselSlide } from './components/image-carousel';
 export { ImageCarousel } from './components/image-carousel';
 export {
+  InboxClear,
+  InboxItem,
+  InboxItemSkeleton,
+  InboxList,
+  InboxListHead,
+  InboxMessage,
+  InboxMessageActions,
+  InboxMessageBody,
+  InboxMessageChoices,
+  InboxMessageFacts,
+  InboxQuestion,
+  InboxQuestionOption,
+  InboxQuestionOptions,
+  InboxQuestions,
+  InboxSnoozedRow,
+  InboxToolbar,
+} from './components/inbox';
+export {
   AddRow,
   InlineToken,
   TokenLiveDot,
@@ -315,6 +362,8 @@ export {
 } from './components/inline-token';
 export type { InputProps } from './components/input';
 export { Input, inputVariants } from './components/input';
+export type { JsonTreeAnnotate } from './components/json-tree';
+export { JsonTree } from './components/json-tree';
 export { Kbd } from './components/kbd';
 export { Link } from './components/link';
 export { MergePath } from './components/merge-path';
@@ -414,6 +463,8 @@ export {
   RunsListFoot,
   RunsListHead,
 } from './components/runs-list';
+export type { SearchListOption } from './components/search-list';
+export { SearchList } from './components/search-list';
 export { SegmentedControl, SegmentedControlItem } from './components/segmented-control';
 export { Separator } from './components/separator';
 export type { SessionRename } from './components/session-item';

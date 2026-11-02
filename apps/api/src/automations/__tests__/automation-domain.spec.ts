@@ -60,6 +60,7 @@ function automation(triggers: AutomationTriggerProps[] = [daily()], active = tru
     ownerUserId: 'user-1',
     name: '  Nightly audit ',
     revision: {
+      place: 'host',
       hostId: 'host-1',
       agent: 'claude-code',
       model: 'claude-sonnet-5',

@@ -4,8 +4,9 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { BotEventLine } from '../components/bot-event-line';
 
 /**
- * A decided approval's trace line, a routine's, and another bot's message
- * or answer as a card naming the bot Oppenheimer recorded. What breaks this:
+ * A decided approval's trace line, a routine's, a followed session's, and
+ * another bot's message or answer as a card naming the bot Oppenheimer
+ * recorded. What breaks this:
  * the line read from the event's words (which are the bot's, in English, and
  * may change), so a denial draws as an approval, a routine as an approval, or
  * a translated line never appears; or a bot's message drawn as a trace line
@@ -44,6 +45,29 @@ describe('BotEventLine', () => {
   it('draws a failed call apart from one that ran', () => {
     render(<BotEventLine message={event('failed')} />);
     expect(screen.getByText('bots.chat.event.failed|Start it')).toBeTruthy();
+  });
+
+  it('draws answered questions with each answer under the line, and a dismissal as dismissed', () => {
+    const asked = (
+      outcome: 'answered' | 'dismissed',
+      answers: { question: string; answer: string }[] = [],
+    ) =>
+      ({
+        id: `e-${outcome}`,
+        role: 'event',
+        content: 'Ana answered your questions.',
+        event: { kind: 'question', outcome, summary: 'Which repository?', answers },
+      }) as unknown as BotMessageEntity;
+    render(
+      <BotEventLine
+        message={asked('answered', [{ question: 'Which repository?', answer: 'acme/api' }])}
+      />,
+    );
+    expect(screen.getByText('bots.chat.question.answered|Which repository?')).toBeTruthy();
+    expect(screen.getByText('acme/api')).toBeTruthy();
+    cleanup();
+    render(<BotEventLine message={asked('dismissed')} />);
+    expect(screen.getByText('bots.chat.question.dismissed|Which repository?')).toBeTruthy();
   });
 
   it('names the routine that woke the bot, not the words it was told', () => {
@@ -151,5 +175,80 @@ describe('BotEventLine', () => {
     cleanup();
     render(<BotEventLine message={reply('failed')} />);
     expect(screen.getByText('bots.chat.event.peerFailed|Grace')).toBeTruthy();
+  });
+  // What breaks this: a session that failed drawn like one that finished,
+  // or a wake with no way to the session the person has to look at.
+  it('draws a followed session that woke the bot by its state, with the session to open', () => {
+    const woke = (state: 'completed' | 'failed') =>
+      ({
+        id: 'e4',
+        role: 'event',
+        content: 'The session "Research" (s-2) you follow: its task #1 finished.',
+        event: {
+          kind: 'session',
+          subscriptionId: 'sub-1',
+          sessionId: 's-2',
+          sessionName: 'Research',
+          turn: 1,
+          state,
+        },
+      }) as unknown as BotMessageEntity;
+    const { container } = render(<BotEventLine message={woke('completed')} />);
+    expect(screen.getByText('bots.chat.event.session.completed|Research')).toBeTruthy();
+    expect(screen.getByRole('link', { name: /bots\.chat\.openSession/ }).getAttribute('href')).toBe(
+      '/sessions/s-2',
+    );
+    expect(container.querySelector('.text-danger')).toBeNull();
+    cleanup();
+    const failed = render(<BotEventLine message={woke('failed')} />);
+    expect(screen.getByText('bots.chat.event.session.failed|Research')).toBeTruthy();
+    expect(failed.container.querySelector('.text-danger')).toBeTruthy();
+  });
+  it('draws a goal’s continuation and how it ended from the event, a stop in red', () => {
+    const goal = (activity: 'continued' | 'stopped') =>
+      ({
+        id: `g-${activity}`,
+        role: 'event',
+        content: 'Continue toward your goal…',
+        event: {
+          kind: 'goal',
+          activity,
+          goalId: 'goal-1',
+          objective: 'Ship it',
+          step: 2,
+          limit: 5,
+          reason: activity === 'stopped' ? 'failed' : null,
+        },
+      }) as unknown as BotMessageEntity;
+    render(<BotEventLine message={goal('continued')} />);
+    expect(screen.getByText(/^bots\.chat\.event\.goal\.continued/)).toBeTruthy();
+    const stopped = render(<BotEventLine message={goal('stopped')} />);
+    expect(screen.getByText(/^bots\.chat\.event\.goal\.stopped/)).toBeTruthy();
+    expect(stopped.container.querySelector('.text-danger')).toBeTruthy();
+  });
+
+  // What breaks this: the reviewer's reason lost from the line, or a stop's
+  // status code shown to the person as if it were a reason.
+  it('draws a goal the reviewer found met with its reason, and no code beside a stop', () => {
+    const goal = (activity: 'met' | 'stopped', reason: string) =>
+      ({
+        id: `g-${activity}`,
+        role: 'event',
+        content: 'Goal ended',
+        event: {
+          kind: 'goal',
+          activity,
+          goalId: 'goal-1',
+          objective: 'Ship it',
+          step: 2,
+          limit: 20,
+          reason,
+        },
+      }) as unknown as BotMessageEntity;
+    render(<BotEventLine message={goal('met', 'CI is green on main')} />);
+    expect(screen.getByText(/^bots\.chat\.event\.goal\.met/)).toBeTruthy();
+    expect(screen.getByText(/CI is green on main/)).toBeTruthy();
+    render(<BotEventLine message={goal('stopped', 'failed')} />);
+    expect(screen.queryByText(/· failed/)).toBeNull();
   });
 });

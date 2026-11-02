@@ -1,8 +1,7 @@
 import type { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
-import { GenericContainer, type StartedTestContainer, Wait } from 'testcontainers';
 import { DataSource } from 'typeorm';
-import { runAllMigrations } from '../../__tests__/run-migrations';
+import { useTestDatabase, useTestRedis } from '../../__tests__/integration-services';
 import type { SessionCachePort } from '../../auth/application/session-cache.port';
 import { SESSION_CACHE } from '../../auth/auth.di-tokens';
 
@@ -15,40 +14,18 @@ describe('API tokens & scopes (integration)', () => {
   let app: INestApplication;
   let baseUrl: string;
   let dataSource: DataSource;
-  let pgContainer: StartedTestContainer;
-  let redisContainer: StartedTestContainer;
 
   /** Signed-in owner of the tokens under test. */
   let user: { id: string; email: string; sessionToken: string };
 
   beforeAll(async () => {
-    [pgContainer, redisContainer] = await Promise.all([
-      new GenericContainer('postgres:16-alpine')
-        .withEnvironment({
-          POSTGRES_USER: 'test',
-          POSTGRES_PASSWORD: 'test',
-          POSTGRES_DB: 'test',
-        })
-        .withExposedPorts(5432)
-        .withWaitStrategy(Wait.forLogMessage(/database system is ready to accept connections/, 2))
-        .start(),
-      new GenericContainer('redis:7-alpine').withExposedPorts(6379).start(),
-    ]);
+    await useTestDatabase();
+    await useTestRedis();
 
-    process.env.NODE_ENV = 'test';
-    process.env.DB_HOST = pgContainer.getHost();
-    process.env.DB_PORT = pgContainer.getMappedPort(5432).toString();
-    process.env.DB_USERNAME = 'test';
-    process.env.DB_PASSWORD = 'test';
-    process.env.DB_DATABASE = 'test';
-    process.env.REDIS_HOST = redisContainer.getHost();
-    process.env.REDIS_PORT = redisContainer.getMappedPort(6379).toString();
     process.env.BETTER_AUTH_SECRET = 'integration-test-secret-value-32-chars';
 
-    await runMigrations();
-
     // Import AppModule (and the Better Auth instance, which reads the database
-    // config at module load) only after the container env vars are set.
+    // config at module load) only after the env vars are set.
     const { AppModule } = await import('../../app.module');
     // Rate limiting is skipped under NODE_ENV=test (see AppModule): a suite
     // that mints dozens of tokens would otherwise trip the deliberately low
@@ -81,18 +58,9 @@ describe('API tokens & scopes (integration)', () => {
     // `app.close()` does not reach it: see `emailQueue`.
     const { emailQueue } = await import('../../auth/infrastructure/email-queue.util');
     await emailQueue.close().catch(() => {});
-    await Promise.all([pgContainer?.stop(), redisContainer?.stop()]);
   });
 
   // --- helpers -------------------------------------------------------------
-
-  /**
-   * Build the schema from the migrations, discovered from the directory so it
-   * cannot drift when a migration is added.
-   */
-  async function runMigrations(): Promise<void> {
-    await runAllMigrations();
-  }
 
   interface CallOptions {
     method?: string;
@@ -676,6 +644,30 @@ describe('API tokens & scopes (integration)', () => {
         token: created.token,
       });
       expect(response.status).toBe(200);
+    });
+
+    it('lists every usable token but only the latest revoked ones, however many pile up', async () => {
+      // Regression: the list read every token the owner ever revoked.
+      const kept = await mintToken({ name: 'kept', scopes: ['users:read'] });
+      const spent = await mintToken({ name: 'spent', scopes: ['users:read'] });
+      await call(`/api/v1/tokens/${spent.id}`, { method: 'DELETE', token: user.sessionToken });
+      // Sixty more revoked tokens, all newer than the one still in use.
+      await dataSource.query(
+        `INSERT INTO "api_token"
+         SELECT (jsonb_populate_record(NULL::"api_token", to_jsonb(t) || jsonb_build_object(
+           'id', gen_random_uuid(),
+           'tokenHash', md5(random()::text) || md5(random()::text),
+           'createdAt', t."createdAt" + make_interval(secs => g)))).*
+           FROM "api_token" t, generate_series(1, 60) g WHERE t.id = $1`,
+        [spent.id],
+      );
+
+      const listed = await call('/api/v1/tokens', { token: user.sessionToken });
+
+      expect(listed.status).toBe(200);
+      const tokens = listed.body as { id: string; revokedAt: string | null }[];
+      expect(tokens.map((token) => token.id)).toContain(kept.id);
+      expect(tokens.filter((token) => token.revokedAt !== null).length).toBeLessThanOrEqual(50);
     });
   });
 

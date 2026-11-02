@@ -40,6 +40,7 @@ var launchCatalog = map[string]launchMap{
 		effort: launchLevel{argv: []string{"-c", "model_reasoning_effort=<effort>"}},
 		effortLevels: map[string][]string{
 			"gpt-6.1-sol":   {"low", "medium", "high", "xhigh", "max", "ultra"},
+			"gpt-6.1-terra": {"low", "medium", "high", "xhigh", "max", "ultra"},
 			"gpt-6-astra":   {"low", "medium", "high", "xhigh", "max", "ultra"},
 			"gpt-6-sol":     {"low", "medium", "high", "xhigh", "max", "ultra"},
 			"gpt-6-luna":    {"low", "medium", "high", "xhigh", "max"},
@@ -63,12 +64,31 @@ var launchCatalog = map[string]launchMap{
 		effort:      launchLevel{env: map[string]string{"OPENCODE_CONFIG_CONTENT": "{\"agent\":{\"build\":{\"model\":\"<model>\",\"variant\":\"<effort>\"}}}"}},
 		effortUnset: "none",
 		effortLevels: map[string][]string{
-			"anthropic/claude-opus-5-5":   {"low", "medium", "high", "xhigh", "max"},
-			"anthropic/claude-fable-5-1":  {"low", "medium", "high", "xhigh", "max"},
-			"anthropic/claude-sonnet-5-5": {"low", "medium", "high", "xhigh", "max"},
-			"anthropic/claude-haiku-4-5":  {"none", "high", "max"},
-			"openai/gpt-6.1-sol":          {"low", "medium", "high", "xhigh", "max"},
-			"openai/gpt-5.6-sol":          {"low", "medium", "high", "xhigh", "max"},
+			"anthropic/claude-opus-5-5":         {"low", "medium", "high", "xhigh", "max"},
+			"anthropic/claude-fable-5-1":        {"low", "medium", "high", "xhigh", "max"},
+			"anthropic/claude-sonnet-5-5":       {"low", "medium", "high", "xhigh", "max"},
+			"anthropic/claude-haiku-5-5":        {"none", "low", "medium", "high", "xhigh", "max"},
+			"openai/gpt-6.1-sol":                {"low", "medium", "high", "xhigh", "max"},
+			"openai/gpt-6.1-terra":              {"low", "medium", "high", "xhigh", "max"},
+			"openai/gpt-6-astra":                {"low", "medium", "high", "xhigh", "max"},
+			"openai/gpt-6-sol":                  {"low", "medium", "high", "xhigh", "max"},
+			"openai/gpt-6-luna":                 {"low", "medium", "high", "xhigh", "max"},
+			"openai/gpt-5.6-sol":                {"low", "medium", "high", "xhigh", "max"},
+			"openai/gpt-5.6-terra":              {"low", "medium", "high", "xhigh", "max"},
+			"openai/gpt-5.6-luna":               {"low", "medium", "high", "xhigh", "max"},
+			"xai/grok-4.7":                      {"low", "medium", "high", "xhigh"},
+			"xai/grok-4.6":                      {"low", "medium", "high", "xhigh"},
+			"google/gemini-4-argon":             {"low", "medium", "high"},
+			"google/gemini-3.8-flash":           {"low", "medium", "high"},
+			"zai-coding-plan/glm-5.3":           {"low", "high", "max"},
+			"zai-coding-plan/glm-5.3-highspeed": {"low", "high", "max"},
+			"zai-coding-plan/glm-5.3-flash":     {"low", "high", "max"},
+			"deepseek/deepseek-v4-pro":          {"low", "high", "max"},
+			"deepseek/deepseek-flash":           {"low", "high", "max"},
+			"moonshotai/kimi-k3.1-pro":          {"low", "high", "max"},
+			"alibaba/qwen3.8-max":               {"low", "medium", "xhigh"},
+			"alibaba/qwen3.8-flash":             {"low", "medium", "xhigh"},
+			"minimax/MiniMax-M3.1-Flash":        {"low", "medium", "high", "xhigh", "max"},
 		},
 		prompt:             []string{"--prompt", "<prompt>"},
 		conversationResume: []string{"--continue"},
@@ -84,8 +104,9 @@ var launchCatalog = map[string]launchMap{
 		},
 		effort: launchLevel{argv: []string{"--reasoning-effort", "<effort>"}},
 		effortLevels: map[string][]string{
-			"grok-4.7": {"minimal", "low", "medium", "high", "xhigh", "max"},
-			"grok-4.6": {"minimal", "low", "medium", "high", "xhigh", "max"},
+			"grok-4.7": {"low", "medium", "high", "xhigh"},
+			"grok-4.6": {"low", "medium", "high", "xhigh"},
+			"grok-4.5": {"low", "medium", "high"},
 		},
 		prompt:             []string{"<prompt>"},
 		conversationCreate: []string{"--session-id", "<conversation>"},
@@ -104,4 +125,14 @@ var loginTargets = map[string][]LoginTarget{
 	"codex":       {{Host: "auth.openai.com"}, {Host: "platform.openai.com"}, {Host: "chatgpt.com"}},
 	"opencode":    {{Host: "opencode.ai"}, {Host: "claude.ai"}, {Host: "console.anthropic.com"}, {Host: "auth.openai.com"}, {Host: "chatgpt.com"}, {Host: "github.com", Path: "/login/device"}},
 	"grok":        {{Host: "accounts.x.ai"}, {Host: "auth.x.ai"}},
+}
+
+// inputCatalog is each agent's `input` entry of the catalog: the keys that
+// send and interrupt a message typed into it, and the pause between a
+// paste and its submit, in milliseconds.
+var inputCatalog = map[string]agentInput{
+	"claude-code": {submit: "\r", stop: "\u001b", pasteGapMs: 200},
+	"codex":       {submit: "\r", stop: "\u001b", pasteGapMs: 200},
+	"opencode":    {submit: "\r", stop: "\u001b", pasteGapMs: 200},
+	"grok":        {submit: "\r", stop: "\u001b", pasteGapMs: 200},
 }

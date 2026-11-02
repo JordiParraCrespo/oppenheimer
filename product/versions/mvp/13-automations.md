@@ -76,7 +76,9 @@ fired, guarded and dispatched is 16; the tables and modules are 10.
   trigger as a sentence of tokens — a schedule with its week strip and
   next run, a GitHub card with the live "would have run N times" line the
   API replays against received events; Where it runs picks project,
-  repositories, host, agent and model, prefilled from the project. Create
+  repositories, where the runs go (on a host, Claude Code's cloud from a
+  host, or Cursor's cloud with no host, added 2026-10-29), host, agent and
+  model, prefilled from the project. Create
   and Save exist only on the last step.
 - The feature is `apps/web/src/features/automations/` over the product
   package's `automations` module (`packages/frontend/consumer`).

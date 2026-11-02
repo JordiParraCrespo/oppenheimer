@@ -2,6 +2,7 @@ import { Inject } from '@nestjs/common';
 import { CommandBus, CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
 import { requireFound } from '@oppenheimer/backend-core';
 import { CreateSessionCommand } from '../../../sessions/commands/create-session/create-session.command';
+import { StartCloudSessionCommand } from '../../../sessions/commands/start-cloud-session/start-cloud-session.command';
 import type { SessionCommandResult } from '../../../sessions/domain/session-command.types';
 import type { TaskRepositoryPort } from '../../database/task.repository.port';
 import { TaskErrors } from '../../domain/tasks.errors';
@@ -10,7 +11,10 @@ import { StartTaskSessionCommand } from './start-task-session.command';
 
 /**
  * Starts a session for a task, through the same command New session sends, filed
- * under the task's project (`product/versions/mvp/19-plan-tasks-and-goals.md` §5).
+ * under the task's project (`product/versions/mvp/19-plan-tasks-and-goals.md` §5):
+ * `CreateSessionCommand` for a session a host runs or starts (Claude Code's
+ * cloud among them), `StartCloudSessionCommand` for one a vendor runs with no
+ * host (`product/next-steps/cloud-agents.md`).
  * A person clicked Start, so the session's origin is `person`; that it came from
  * this task is the link's `started`.
  *
@@ -34,15 +38,29 @@ export class StartTaskSessionCommandHandler
       detail: `No task with id ${taskId}`,
     });
 
-    const result = await this.commandBus.execute<CreateSessionCommand, SessionCommandResult>(
-      new CreateSessionCommand({
-        scope,
-        userId,
-        input: { ...input.session, projectId: task.projectId },
-        idempotencyKey: command.idempotencyKey ? `task:${task.id}:${command.idempotencyKey}` : null,
-        origin: 'person',
-      }),
-    );
+    const idempotencyKey = command.idempotencyKey
+      ? `task:${task.id}:${command.idempotencyKey}`
+      : null;
+    const result =
+      'cloud' in input
+        ? await this.commandBus.execute<StartCloudSessionCommand, SessionCommandResult>(
+            new StartCloudSessionCommand({
+              scope,
+              userId,
+              input: { ...input.cloud, projectId: task.projectId },
+              idempotencyKey,
+              origin: 'person',
+            }),
+          )
+        : await this.commandBus.execute<CreateSessionCommand, SessionCommandResult>(
+            new CreateSessionCommand({
+              scope,
+              userId,
+              input: { ...input.session, projectId: task.projectId },
+              idempotencyKey,
+              origin: 'person',
+            }),
+          );
 
     // The session exists whatever happens next; a link that fails is retried
     // with the same key and finds it.

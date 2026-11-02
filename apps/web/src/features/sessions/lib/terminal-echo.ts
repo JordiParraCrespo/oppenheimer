@@ -21,6 +21,8 @@ export interface TerminalEchoOptions {
   renderer: () => TerminalRendererKind;
   /** Which path the stream's bytes take, for the readout (`SessionStream.onPath`). */
   onPath?: (listener: (path: string) => void) => () => void;
+  /** Where the latency readout is published (`bindLatencyReadout`); none without it. */
+  latencyKey?: string;
 }
 
 /**
@@ -56,8 +58,8 @@ export function bindTerminalEcho(
   const offPath = options.onPath?.((next) => {
     path = next;
   });
-  const unbindReadout = term.element
-    ? bindLatencyReadout(term.element, latency, () => path)
+  const unbindReadout = options.latencyKey
+    ? bindLatencyReadout(options.latencyKey, latency, () => path)
     : () => {};
 
   return {

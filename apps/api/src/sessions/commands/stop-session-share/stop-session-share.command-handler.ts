@@ -1,6 +1,6 @@
 import { Inject } from '@nestjs/common';
 import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
-import { SessionLoaderResolver } from '../../application/session-loader.resolver';
+import { requireOnHost, SessionLoaderResolver } from '../../application/session-loader.resolver';
 import type { SessionShareRepositoryPort } from '../../database/session-share.repository.port';
 import { SESSION_SHARE_REPOSITORY } from '../../sessions.di-tokens';
 import { StopSessionShareCommand } from './stop-session-share.command';
@@ -23,7 +23,7 @@ export class StopSessionShareCommandHandler
   ) {}
 
   async execute(command: StopSessionShareCommand): Promise<void> {
-    const session = await this.loader.find(command.scope, command.sessionId);
+    const session = requireOnHost(await this.loader.find(command.scope, command.sessionId));
     const found = await this.shares.findOneBySession(session.organizationId, session.id);
     if (found.isSome()) await this.shares.delete(found.unwrap());
   }

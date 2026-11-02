@@ -54,7 +54,8 @@
     },
     "meta": {
       "cpus": "{{count}} vCPU",
-      "runner": "runner {{version}}"
+      "runner": "runner {{version}}",
+      "claude": "Claude: {{account}}"
     },
     "actions": "Acciones de {{name}}",
     "updateRunner": "Actualizar runner",

@@ -91,12 +91,14 @@ export interface AutomationRunRepositoryPort {
   /**
    * Reserve the run's slot on `hostId`, atomically, or answer false when there
    * is none. Counts and writes under one lock, so concurrent dispatches cannot
-   * all pass the same count — see the adapter.
+   * all pass the same count — see the adapter. A run whose session holds no
+   * place on a host (one in the cloud) passes `null`: only the automation's
+   * own overlap is counted, under a lock of the automation's.
    */
   claimSlot(params: {
     runId: string;
     automationId: string;
-    hostId: string;
+    hostId: string | null;
     liveRunsPerHost: number;
     overlap: string;
     liveSince: Date;

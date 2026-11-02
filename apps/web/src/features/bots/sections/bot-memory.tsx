@@ -13,7 +13,8 @@ import { ClearMemoryDialog } from '@/features/bots/dialogs/clear-memory';
 import { BotFactRow } from './bot-fact-row';
 
 /**
- * The bot's facts: the count and Clear all over a card of them, oldest first,
+ * The bot's facts, with those another of the person's bots shared about them:
+ * the count and Clear all (its own facts only) over a card of them, newest first,
  * then the row where one is added. Each fact is a row that owns its edit and
  * its delete; this owns the add, whose draft is the add row's.
  */
@@ -24,6 +25,7 @@ export function BotMemory({ botId }: { botId: string }) {
   const [clearing, setClearing] = useState(false);
   const add = useAddBotFact({ onSuccess: () => setDraft('') });
   const content = draft.trim();
+  const own = facts.filter((fact) => !fact.isSharedWith(botId)).length;
 
   return (
     <section className="flex flex-col gap-2.5">
@@ -34,7 +36,7 @@ export function BotMemory({ botId }: { botId: string }) {
         <Button
           variant="destructive-ghost"
           size="sm"
-          disabled={facts.length === 0}
+          disabled={own === 0}
           onClick={() => setClearing(true)}
         >
           {t('bots.settings.memory.clearAll')}
@@ -63,7 +65,7 @@ export function BotMemory({ botId }: { botId: string }) {
         onDismiss={() => add.reset()}
       />
       {clearing ? (
-        <ClearMemoryDialog botId={botId} count={facts.length} onClose={() => setClearing(false)} />
+        <ClearMemoryDialog botId={botId} count={own} onClose={() => setClearing(false)} />
       ) : null}
     </section>
   );

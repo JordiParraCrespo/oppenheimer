@@ -4,23 +4,28 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthzModule as AuthzKernelModule } from '@oppenheimer/backend-authz';
 import { GithubModule } from '../github/github.module';
 import { WatchedRepositoriesResolver } from './application/watched-repositories.resolver';
+import { CiFindingMapper } from './ci-finding.mapper';
 import { AddPullRequestCommentCommandHandler } from './commands/add-pull-request-comment/add-pull-request-comment.command-handler';
 import { AddPullRequestCommentHttpController } from './commands/add-pull-request-comment/add-pull-request-comment.http.controller';
 import { AddPullRequestConversationCommentCommandHandler } from './commands/add-pull-request-conversation-comment/add-pull-request-conversation-comment.command-handler';
 import { MergePullRequestCommandHandler } from './commands/merge-pull-request/merge-pull-request.command-handler';
 import { MergePullRequestHttpController } from './commands/merge-pull-request/merge-pull-request.http.controller';
+import { RecordCiFindingsCommandHandler } from './commands/record-ci-findings/record-ci-findings.command-handler';
 import { SetRepositoryWatchCommandHandler } from './commands/set-repository-watch/set-repository-watch.command-handler';
 import { SetRepositoryWatchHttpController } from './commands/set-repository-watch/set-repository-watch.http.controller';
 import { StartReviewSessionCommandHandler } from './commands/start-review-session/start-review-session.command-handler';
 import { StartReviewSessionHttpController } from './commands/start-review-session/start-review-session.http.controller';
 import { SubmitPullRequestReviewCommandHandler } from './commands/submit-pull-request-review/submit-pull-request-review.command-handler';
 import { SubmitPullRequestReviewHttpController } from './commands/submit-pull-request-review/submit-pull-request-review.http.controller';
+import { CiFindingOrmEntity } from './database/ci-finding.orm-entity';
+import { CiFindingRepository } from './database/ci-finding.repository';
 import { ReviewSessionOrmEntity } from './database/review-session.orm-entity';
 import { ReviewSessionRepository } from './database/review-session.repository';
 import { WatchedRepositoryOrmEntity } from './database/watched-repository.orm-entity';
 import { WatchedRepositoryRepository } from './database/watched-repository.repository';
 import { PullRequestMapper } from './pull-request.mapper';
 import {
+  CI_FINDING_REPOSITORY,
   REVIEW_SESSION_REPOSITORY,
   WATCHED_REPOSITORY_REPOSITORY,
 } from './pull-requests.di-tokens';
@@ -61,6 +66,7 @@ const httpControllers = [
 
 const commandHandlers: Provider[] = [
   SetRepositoryWatchCommandHandler,
+  RecordCiFindingsCommandHandler,
   SubmitPullRequestReviewCommandHandler,
   AddPullRequestCommentCommandHandler,
   AddPullRequestConversationCommentCommandHandler,
@@ -83,7 +89,7 @@ const queryHandlers: Provider[] = [
  * The Pull requests area (`product/next-steps/0.2-pull-requests-api-plan.md`):
  * the queue, a pull request's briefing, files and comments, reviews and merges
  * in the caller's own name, and analytics. Pull requests are GitHub's, read
- * through `PULL_REQUEST_ACCESS`; what this module keeps is which repositories a
+ * through the `PULL_REQUEST_*` ports; what this module keeps is which repositories a
  * person watches, the review sessions they started from a pull request, and
  * the rules — lanes, what holds a pull request — it sorts
  * them by.
@@ -91,7 +97,11 @@ const queryHandlers: Provider[] = [
 @Module({
   imports: [
     CqrsModule,
-    TypeOrmModule.forFeature([WatchedRepositoryOrmEntity, ReviewSessionOrmEntity]),
+    TypeOrmModule.forFeature([
+      WatchedRepositoryOrmEntity,
+      ReviewSessionOrmEntity,
+      CiFindingOrmEntity,
+    ]),
     AuthzKernelModule.forFeature([PullRequestResource]),
     GithubModule,
   ],
@@ -100,9 +110,11 @@ const queryHandlers: Provider[] = [
     ...commandHandlers,
     ...queryHandlers,
     PullRequestMapper,
+    CiFindingMapper,
     WatchedRepositoriesResolver,
     { provide: WATCHED_REPOSITORY_REPOSITORY, useClass: WatchedRepositoryRepository },
     { provide: REVIEW_SESSION_REPOSITORY, useClass: ReviewSessionRepository },
+    { provide: CI_FINDING_REPOSITORY, useClass: CiFindingRepository },
   ],
 })
 export class PullRequestsModule {}

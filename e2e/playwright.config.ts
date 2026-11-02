@@ -1,4 +1,5 @@
 import { defineConfig, devices } from '@playwright/test';
+import { chromiumPath } from '../scripts/chromium.mjs';
 
 /**
  * `api` drives the REST routes with `request` only; `web` drives `apps/web` in
@@ -11,14 +12,12 @@ import { defineConfig, devices } from '@playwright/test';
  */
 export const API_URL = process.env.API_URL ?? 'http://localhost:3001';
 export const WEB_URL = process.env.WEB_URL ?? 'http://localhost:3000';
-const CHROMIUM_PATH = process.env.PLAYWRIGHT_CHROMIUM_PATH;
+const CHROMIUM_PATH = chromiumPath();
 /** What `pnpm screens` photographs: routes, and `spec:<name>` throwaway specs. */
 const SCREENS = (process.env.SCREENS ?? '').split(/[\s,]+/).filter(Boolean);
 /**
- * The browser every project that opens a page uses. An environment that
- * already ships a Chromium — a container image, a sandbox — says where it is
- * rather than downloading a second copy for the build this Playwright happens
- * to pin. Unset, Playwright resolves its own, which is what CI does.
+ * The browser every project that opens a page uses: the machine's own
+ * Chromium where it ships one, else Playwright's (`scripts/chromium.mjs`).
  */
 const chromium = {
   ...devices['Desktop Chrome'],

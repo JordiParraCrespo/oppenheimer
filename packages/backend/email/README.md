@@ -6,7 +6,9 @@ Pluggable transactional email for the API, with templates authored in
 ## What's inside
 
 - `EmailService` — abstract contract (+ typed params like `InvitationEmailParams`).
-- Implementations:
+  `sendAction` sends any one-link email in the shared action layout; the API
+  writes its copy (the host notices are this).
+- Implementations, built by the module and not exported:
   - `ConsoleEmailService` — logs emails to stdout (local dev / tests).
   - `NodemailerEmailService` — SMTP via `nodemailer`.
   - `ResendEmailService` — [Resend](https://resend.com/) API. A refusal for

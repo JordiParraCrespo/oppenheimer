@@ -21,7 +21,7 @@ function BotList({ className, ...props }: React.ComponentProps<'div'>) {
  * unread chat sets the name at 600, the preview in full ink and a 7px blue
  * dot at the end; one waiting on the person (`needsInput`: an approval, a
  * question) reads the same with an amber dot instead: both set
- * `data-attention`, which carries the weight. 52px, 14px radius, rows 2px
+ * `data-attention`, which carries the weight. 52px, 6px radius, rows 2px
  * apart in a `BotList`.
  *
  * `action` is the row's ellipsis, shown on hover the way `SessionItem`'s is,
@@ -80,7 +80,7 @@ function BotItem({
       render={render}
       nativeButton={nativeButton ?? render === undefined}
       className={cn(
-        'group/bot flex w-full items-center gap-3 rounded-md px-2.5 py-2 text-left text-fg outline-none transition-colors duration-fast ease-standard hover:bg-hover-surface focus-visible:outline-2 focus-visible:outline-ring data-active:bg-selected-surface data-active:hover:bg-selected-surface',
+        'group/bot flex w-full items-center gap-3 rounded-nav px-2.5 py-2 text-left text-fg outline-none transition-colors duration-fast ease-standard hover:bg-hover-surface focus-visible:outline-2 focus-visible:outline-ring data-active:bg-selected-surface data-active:hover:bg-selected-surface',
         withAction && ROW_BUTTON_WITH_ACTION,
         className,
       )}
@@ -147,7 +147,7 @@ function SortableBotItem({
   hidden?: boolean;
 }) {
   const { node, control } = useSortableControl({ id, data: { type: 'bot', label: props.name }, disabled });
-  return <BotItem {...props} {...control} rowProps={{ ...node, hidden, className: cn(node.className, 'rounded-md') }} />;
+  return <BotItem {...props} {...control} rowProps={{ ...node, hidden, className: cn(node.className, 'rounded-nav') }} />;
 }
 
 export { BotItem, BotList, SortableBotItem };

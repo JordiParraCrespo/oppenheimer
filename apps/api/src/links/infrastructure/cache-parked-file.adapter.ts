@@ -9,6 +9,7 @@ import type {
   StagedFile,
   StagedFileOwner,
 } from '../application/parked-file.port';
+import type { StagedFileReaderPort } from '../application/staged-file-reader.port';
 
 // The keys keep their first name: an entry written before a deploy is still
 // found after it.
@@ -50,9 +51,12 @@ interface Staged extends StagedFileOwner {
   data: string;
 }
 
-/** `ParkedFilePort` in the shared cache, where attach tickets also live. */
+/**
+ * `ParkedFilePort` in the shared cache, where attach tickets also live, and
+ * `StagedFileReaderPort` over the same staged uploads.
+ */
 @Injectable()
-export class CacheParkedFileAdapter implements ParkedFilePort {
+export class CacheParkedFileAdapter implements ParkedFilePort, StagedFileReaderPort {
   constructor(private readonly cache: CacheService) {}
 
   async park(commandId: string, file: ParkedFile): Promise<void> {
@@ -111,6 +115,14 @@ export class CacheParkedFileAdapter implements ParkedFilePort {
         return { imageId, mediaType: file.mediaType };
       }),
     );
+  }
+
+  async readStaged(
+    ids: readonly string[],
+    owner: StagedFileOwner,
+  ): Promise<StagedFile[] | undefined> {
+    const staged = await this.read(ids, owner);
+    return staged?.map((file) => ({ ...file, data: Buffer.from(file.data, 'base64') }));
   }
 
   async collect(imageId: string, hostId: string): Promise<ParkedFile | undefined> {

@@ -1,12 +1,10 @@
 'use client';
 
-import { useQueries, useQuery, withCacheOnSuccess } from '@oppenheimer/frontend-core/react';
+import { useQueries, useQuery } from '@oppenheimer/frontend-core/react';
 import {
   skipToken,
-  type UseMutationOptions,
   type UseQueryOptions,
   type UseQueryResult,
-  useMutation,
   useQueryClient,
 } from '@tanstack/react-query';
 import { useCallback } from 'react';
@@ -19,43 +17,8 @@ import type {
 } from '../modules/installations/installation.entity';
 import type { RepositoryRef } from '../modules/installations/repository-key';
 import { useConsumerApp } from './context';
-
-/**
- * Repositories repeat the key ladder under an installation's `detail(id)`:
- *
- * ```
- * [..., 'detail', id, 'repositories']                              repositories(id)
- * [..., 'detail', id, 'repositories', 'list']                      repositoryLists(id) → repositoryList(id)
- * [..., 'detail', id, 'repositories', 'detail']                    repositoryDetails(id)
- * [..., 'detail', id, 'repositories', 'detail', repoId]            repositoryDetail(id, repoId)
- * [..., 'detail', id, 'repositories', 'detail', repoId, 'branches'] branches(id, repoId)
- * ```
- *
- * So removing an installation drops its whole subtree, while refreshing its
- * repository list leaves every repository's branches alone — the list leaf is
- * not a prefix of them. An id a picker has not chosen yet stays `undefined` in
- * the key; the hook gates the fetch with `skipToken`.
- */
-export const installationsKeys = {
-  all: ['installations'] as const,
-  lists: () => [...installationsKeys.all, 'list'] as const,
-  list: () => [...installationsKeys.lists()] as const,
-  details: () => [...installationsKeys.all, 'detail'] as const,
-  detail: (installationId: string | undefined) =>
-    [...installationsKeys.details(), installationId] as const,
-  repositories: (installationId: string | undefined) =>
-    [...installationsKeys.detail(installationId), 'repositories'] as const,
-  repositoryLists: (installationId: string | undefined) =>
-    [...installationsKeys.repositories(installationId), 'list'] as const,
-  repositoryList: (installationId: string | undefined) =>
-    [...installationsKeys.repositoryLists(installationId)] as const,
-  repositoryDetails: (installationId: string | undefined) =>
-    [...installationsKeys.repositories(installationId), 'detail'] as const,
-  repositoryDetail: (installationId: string | undefined, githubRepoId: number | undefined) =>
-    [...installationsKeys.repositoryDetails(installationId), githubRepoId] as const,
-  branches: (installationId: string | undefined, githubRepoId: number | undefined) =>
-    [...installationsKeys.repositoryDetail(installationId, githubRepoId), 'branches'] as const,
-};
+import { installationsKeys } from './installations.keys';
+import { mutation } from './mutation';
 
 /**
  * The GitHub App installations this workspace has connected.
@@ -86,14 +49,9 @@ export type ConnectInstallationVariables = InstallationCallback;
  * of a button nobody pressed. Nothing is cached: the state is spent on the way
  * back.
  */
-export function useStartInstallation(options?: UseMutationOptions<InstallationStart, Error, void>) {
-  const app = useConsumerApp();
-
-  return useMutation({
-    ...options,
-    mutationFn: () => app.installations.startInstall(),
-  });
-}
+export const useStartInstallation = mutation<InstallationStart, void>({
+  run: (app) => app.installations.startInstall(),
+});
 
 /**
  * Read the installations and their repositories again: for a console tab the
@@ -112,19 +70,10 @@ export function useRefreshInstallations() {
  * straight off it — without that, a reader who has just connected is told they
  * have not.
  */
-export function useConnectInstallation(
-  options?: UseMutationOptions<InstallationEntity, Error, ConnectInstallationVariables>,
-) {
-  const app = useConsumerApp();
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: (callback: ConnectInstallationVariables) => app.installations.connect(callback),
-    ...withCacheOnSuccess(options, () => {
-      queryClient.invalidateQueries({ queryKey: installationsKeys.lists() });
-    }),
-  });
-}
+export const useConnectInstallation = mutation<InstallationEntity, ConnectInstallationVariables>({
+  run: (app, callback) => app.installations.connect(callback),
+  invalidates: () => [installationsKeys.lists()],
+});
 
 /** The repositories one installation can reach: the picker, and the Ready summary's count. */
 export function useInstallationRepositories(

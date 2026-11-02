@@ -12,9 +12,20 @@ const ability = (readable: string[]) =>
  * role's console then never had a stream at all.
  */
 describe('readableTypes', () => {
-  it('keeps the kinds the role may read', () => {
-    expect([...readableTypes(ability(['Session']), null)]).toEqual(['session.changed']);
-    expect([...readableTypes(ability(['Host']), null)]).toEqual(['host.changed', 'pairing.spent']);
+  it('keeps the kinds the role may read, and the caller’s own Inbox', () => {
+    expect([...readableTypes(ability(['Session']), null)]).toEqual([
+      'session.changed',
+      'inboxMark.changed',
+    ]);
+    expect([...readableTypes(ability(['Host']), null)]).toEqual([
+      'host.changed',
+      'pairing.spent',
+      'inboxMark.changed',
+    ]);
+    expect([...readableTypes(ability(['Bot']), null)]).toEqual([
+      'botApproval.changed',
+      'inboxMark.changed',
+    ]);
   });
 
   it("narrows a credential to its scopes, on top of its person's role", () => {
@@ -24,7 +35,15 @@ describe('readableTypes', () => {
     ]);
   });
 
-  it('answers none for a caller who may read nothing it carries', () => {
-    expect(readableTypes(ability([]), null).size).toBe(0);
+  /** No role grants a person their own Inbox, so none can take it away; a credential can. */
+  it('carries the Inbox to any person, and to a credential only with inbox:read', () => {
+    expect([...readableTypes(ability([]), null)]).toEqual(['inboxMark.changed']);
+    const credential = { scopes: ['inbox:write'] } as unknown as ScopeContext;
+    expect([...readableTypes(ability([]), credential)]).toEqual(['inboxMark.changed']);
+  });
+
+  it('answers none for a credential that may read nothing it carries', () => {
+    const credential = { scopes: ['profile:read'] } as unknown as ScopeContext;
+    expect(readableTypes(ability(['Session']), credential).size).toBe(0);
   });
 });

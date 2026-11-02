@@ -20,5 +20,6 @@ describe('engineCapabilities', () => {
   it('promises the OpenAI engine nothing of its own', () => {
     expect(engineCapabilities('openai')).toEqual([]);
     expect(engineCapabilities('chatgpt')).toEqual([]);
+    expect(engineCapabilities('xai')).toEqual([]);
   });
 });

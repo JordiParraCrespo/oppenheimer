@@ -52,4 +52,13 @@ export const BotsErrors = {
   DELETE_ROUTINE_FAILED: { code: 'BOTS_CLIENT_032', message: 'Failed to delete the routine' },
   UPLOAD_IMAGE_FAILED: { code: 'BOTS_CLIENT_033', message: 'Failed to add the image' },
   READ_IMAGE_FAILED: { code: 'BOTS_CLIENT_034', message: 'Failed to load the image' },
+  FETCH_PERMISSIONS_FAILED: { code: 'BOTS_CLIENT_035', message: 'Failed to load the permissions' },
+  SAVE_PERMISSION_FAILED: { code: 'BOTS_CLIENT_036', message: 'Failed to change the permission' },
+  FETCH_GOAL_FAILED: { code: 'BOTS_CLIENT_037', message: 'Failed to load the goal' },
+  CLEAR_GOAL_FAILED: { code: 'BOTS_CLIENT_038', message: 'Failed to stop the goal' },
+  FETCH_QUESTION_FAILED: { code: 'BOTS_CLIENT_039', message: 'Failed to load the questions' },
+  ANSWER_QUESTION_FAILED: { code: 'BOTS_CLIENT_040', message: 'Failed to answer the questions' },
+  FETCH_SKILLS_FAILED: { code: 'BOTS_CLIENT_041', message: 'Failed to load the skills' },
+  SAVE_SKILL_FAILED: { code: 'BOTS_CLIENT_042', message: 'Failed to save the skill' },
+  DELETE_SKILL_FAILED: { code: 'BOTS_CLIENT_043', message: 'Failed to delete the skill' },
 } as const satisfies Record<string, ErrorDefinition>;

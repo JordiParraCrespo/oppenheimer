@@ -5,10 +5,16 @@ import type { BotsRepository } from '../modules/bots';
 import { BotsModule } from '../modules/bots';
 import type { CalendarRepository } from '../modules/calendar';
 import { CalendarModule } from '../modules/calendar';
+import type { CloudAgentsRepository } from '../modules/cloud-agents';
+import { CloudAgentsModule } from '../modules/cloud-agents';
 import type { HostsRepository } from '../modules/hosts';
 import { HostsModule } from '../modules/hosts';
+import type { InboxRepository } from '../modules/inbox';
+import { InboxModule } from '../modules/inbox';
 import type { InstallationsRepository } from '../modules/installations';
 import { InstallationsModule } from '../modules/installations';
+import type { MailRepository } from '../modules/mail';
+import { MailModule } from '../modules/mail';
 import type { OrganizationsService } from '../modules/organizations';
 import { OrganizationsModule } from '../modules/organizations';
 import type { PermissionsRepository } from '../modules/permissions';
@@ -25,6 +31,8 @@ import type { TasksRepository } from '../modules/tasks';
 import { TasksModule } from '../modules/tasks';
 import type { VoiceRepository } from '../modules/voice';
 import { VoiceModule } from '../modules/voice';
+import type { WhatsappRepository } from '../modules/whatsapp';
+import { WhatsappModule } from '../modules/whatsapp';
 import { TOKENS } from './tokens';
 
 /**
@@ -39,7 +47,11 @@ export const consumerModules = [
   PullRequestsModule,
   TasksModule,
   CalendarModule,
+  CloudAgentsModule,
+  MailModule,
+  WhatsappModule,
   HostsModule,
+  InboxModule,
   InstallationsModule,
   PermissionsModule,
   OrganizationsModule,
@@ -83,6 +95,11 @@ export class ConsumerApp {
     return this.kernel.container.get(TOKENS.SessionsService);
   }
 
+  /** The caller's Inbox marks: an item done, snoozed, lowered or deleted. */
+  get inbox(): InboxRepository {
+    return this.kernel.container.get(TOKENS.InboxRepository);
+  }
+
   /** The bodies of work sessions belong to, and what New session is prefilled with. */
   get projects(): ProjectsRepository {
     return this.kernel.container.get(TOKENS.ProjectsRepository);
@@ -111,6 +128,20 @@ export class ConsumerApp {
   /** Plan's calendar: the workspace's events and the viewer's Google Calendar. */
   get calendar(): CalendarRepository {
     return this.kernel.container.get(TOKENS.CalendarRepository);
+  }
+
+  /** Coding agents in a vendor's cloud, on the reader's own key for the vendor. */
+  get cloudAgents(): CloudAgentsRepository {
+    return this.kernel.container.get(TOKENS.CloudAgentsRepository);
+  }
+
+  get mail(): MailRepository {
+    return this.kernel.container.get(TOKENS.MailRepository);
+  }
+
+  /** The reader's WhatsApp numbers, linked as devices on their hosts for their bots. */
+  get whatsapp(): WhatsappRepository {
+    return this.kernel.container.get(TOKENS.WhatsappRepository);
   }
 
   /** Dictation: a recording in, the text it says out. */

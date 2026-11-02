@@ -16,6 +16,12 @@ export interface TurnContextInput {
   homeHost: BotPromptHost | null;
   /** The owner's hosts, home host included; null when they could not be read. */
   hosts: readonly BotPromptHost[] | null;
+  /**
+   * What the model's context held at the end of the bot's last turn; null
+   * before one reported it. Only said against a known window: tokens alone
+   * do not tell the model how much room it has.
+   */
+  lastContext: { tokens: number; window: number | null } | null;
 }
 
 /** How many hosts the turn context lists; the rest are counted. */
@@ -54,6 +60,8 @@ export function composeTurnContext(input: TurnContextInput): string {
     const more = input.hosts.length - shown.length;
     lines.push(`The person's hosts: ${shown.join('; ')}${more > 0 ? `; and ${more} more` : ''}.`);
   }
+  const room = describeRoom(input.lastContext);
+  if (room) lines.push(room);
   return `<${TURN_CONTEXT_TAG}>\n${lines.join('\n')}\n</${TURN_CONTEXT_TAG}>`;
 }
 
@@ -61,6 +69,23 @@ export function composeTurnContext(input: TurnContextInput): string {
 export function withTurnContext(context: string, prompt: string): string {
   return prompt ? `${context}\n\n${prompt}` : context;
 }
+
+/**
+ * How full the model's context was when its last turn ended, as a share of
+ * its window (`research/lessons-from-grok-bot.md` §9, row 2). Past half, the
+ * model is asked to keep reads narrow: the turn's own tool answers fill the
+ * same window, and older messages fold into the summary only between turns.
+ */
+function describeRoom(context: TurnContextInput['lastContext']): string | null {
+  if (!context?.window) return null;
+  const used = Math.min(100, Math.round((context.tokens / context.window) * 100));
+  const said = `Your context was ${used}% full at the end of your last turn (${context.tokens.toLocaleString('en-GB')} of ${context.window.toLocaleString('en-GB')} tokens).`;
+  if (used < BOT_CONTEXT_TIGHT_PERCENT) return said;
+  return `${said} Keep reads narrow this turn: a filter or a smaller limit rather than everything.`;
+}
+
+/** From this share of the window on, the turn context asks for narrow reads. */
+export const BOT_CONTEXT_TIGHT_PERCENT = 50;
 
 function describeHost(host: BotPromptHost): string {
   const sessions =

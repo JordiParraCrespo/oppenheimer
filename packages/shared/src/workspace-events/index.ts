@@ -9,7 +9,8 @@
  *
  * A session's and a run's changes go to the streams of their workspace. A
  * host and its pairing tokens belong to the person who paired them, not to a
- * workspace, so theirs go to that person's streams.
+ * workspace, so theirs go to that person's streams; so do a person's Inbox
+ * marks, which are theirs alone.
  */
 export const WORKSPACE_EVENT_TYPES = [
   /** A session's row changed: created, a start step landed, opened, failed, stopped, restarted, closed. */
@@ -24,6 +25,10 @@ export const WORKSPACE_EVENT_TYPES = [
   'task.changed',
   /** A milestone was created, changed or deleted. */
   'milestone.changed',
+  /** A bot's approval was raised, decided, expired, or its call ran; `botId` is whose. */
+  'botApproval.changed',
+  /** One of the person's Inbox marks was set or removed; sent to that person only. */
+  'inboxMark.changed',
 ] as const;
 
 export type WorkspaceEventType = (typeof WORKSPACE_EVENT_TYPES)[number];
@@ -34,7 +39,9 @@ export type WorkspaceEvent =
   | { type: 'pairing.spent'; id: string; hostId: string }
   | { type: 'automationRun.changed'; id: string; automationId: string }
   | { type: 'task.changed'; id: string }
-  | { type: 'milestone.changed'; id: string };
+  | { type: 'milestone.changed'; id: string }
+  | { type: 'botApproval.changed'; id: string; botId: string }
+  | { type: 'inboxMark.changed'; itemKey: string };
 
 /**
  * The SSE `event:` name of the frame the API sends once a stream is
@@ -49,6 +56,7 @@ export const WORKSPACE_STREAM_EVENT = 'change';
 export function isWorkspaceEvent(value: unknown): value is WorkspaceEvent {
   if (typeof value !== 'object' || value === null) return false;
   const event = value as Record<string, unknown>;
+  if (event.type === 'inboxMark.changed') return typeof event.itemKey === 'string';
   if (typeof event.id !== 'string') return false;
   switch (event.type) {
     case 'session.changed':
@@ -60,6 +68,8 @@ export function isWorkspaceEvent(value: unknown): value is WorkspaceEvent {
       return typeof event.hostId === 'string';
     case 'automationRun.changed':
       return typeof event.automationId === 'string';
+    case 'botApproval.changed':
+      return typeof event.botId === 'string';
     default:
       return false;
   }

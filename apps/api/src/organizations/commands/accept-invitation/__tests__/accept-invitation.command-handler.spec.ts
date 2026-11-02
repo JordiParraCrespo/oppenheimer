@@ -45,7 +45,8 @@ describe('AcceptInvitationCommandHandler', () => {
     handler.execute(new AcceptInvitationCommand({ headers, invitationId: 'inv1', caller }));
 
   beforeEach(() => {
-    vi.clearAllMocks();
+    // Reset, not clear: a test that makes `leave` reject must not hand that to the next.
+    vi.resetAllMocks();
     invitations.findOneById.mockResolvedValue(None);
     workspaces.isMember.mockResolvedValue(false);
     grant.mockResolvedValue(undefined);

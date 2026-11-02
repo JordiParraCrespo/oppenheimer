@@ -1,6 +1,6 @@
 import { Inject } from '@nestjs/common';
 import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
-import { AppError } from '@oppenheimer/backend-core';
+import { AppError, requireFound } from '@oppenheimer/backend-core';
 import { ProjectSettingsResolver } from '../../application/project-settings.resolver';
 import type { ProjectRepositoryPort } from '../../database/project.repository.port';
 import { isReservedProjectName, type ProjectEntity } from '../../domain/project.entity';
@@ -28,11 +28,9 @@ export class UpdateProjectCommandHandler
 
   async execute({ scope, projectId, changes }: UpdateProjectCommand): Promise<ProjectEntity> {
     const found = await this.projects.findOneById(scope, projectId);
-    if (found.isNone()) {
-      throw new AppError(ProjectErrors.NOT_FOUND, { detail: `No project with id ${projectId}` });
-    }
-
-    const project = found.unwrap();
+    const project = requireFound(found, ProjectErrors.NOT_FOUND, {
+      detail: `No project with id ${projectId}`,
+    });
     // A rename is refused for the Unassigned project itself, and onto its name
     // for any other; the aggregate holds both, these give each its own code.
     if (changes.name !== undefined && changes.name !== project.name) {
@@ -64,11 +62,8 @@ export class UpdateProjectCommandHandler
     });
 
     const saved = await this.projects.saveSettingsIfActive(scope, project);
-    if (saved.isNone()) {
-      throw new AppError(ProjectErrors.NOT_FOUND, {
-        detail: `No active project with id ${projectId}`,
-      });
-    }
-    return saved.unwrap();
+    return requireFound(saved, ProjectErrors.NOT_FOUND, {
+      detail: `No active project with id ${projectId}`,
+    });
   }
 }

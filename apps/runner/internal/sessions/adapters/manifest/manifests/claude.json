@@ -1,7 +1,7 @@
 {
   "schema": "oppenheimer.manifest/v1",
   "agent": "claude",
-  "version": "2026.09.18.1",
+  "version": "2026.10.28.2",
   "minEngine": 1,
   "notes": "Claude Code draws a spinner line with an elapsed time and an 'esc to interrupt' hint while it works, a numbered list when it needs an answer, and a prompt box with a '>' when it is waiting for a task. It also writes its state into the terminal title, which is the signal to trust: nothing a person types into the prompt can appear there.",
   "rules": [
@@ -29,13 +29,13 @@
       "any": [
         "(?i)\\bdo you want to (proceed|continue|allow)\\b",
         "(?i)[(\\[]?\\b(y/n|yes/no)\\b[)\\]]?",
-        "(?i)^\\s*\\d\\.\\s+(yes|no)\\b",
+        "(?im)^\\s*(?:[❯›>▶➤]\\s*)?\\d\\.\\s+(yes|no)\\b",
         "(?i)\\bpress enter to (continue|confirm)\\b",
         "(?i)\\bwaiting for (your )?(input|approval|confirmation)\\b",
         "(?i)\\bpaste (the )?code\\b",
         "(?i)\\b(permission|approval) (needed|required)\\b"
       ],
-      "note": "The screen half of the same signal, for releases and terminals where the title is not set."
+      "note": "The screen half of the same signal, for releases and terminals where the title is not set. The numbered Yes / No is read on every line of the region (`(?m)`), cursor or not: an edit or a new file asks 'Do you want to make this edit to app.ts?' or 'Do you want to create app.ts?', which no phrase above names, and a pattern anchored to the region's first line never saw the options under it (the 2026-10-27 Inbox stress)."
     },
     {
       "id": "spinner",
@@ -78,9 +78,14 @@
       "state": "idle",
       "priority": 800,
       "region": "bottom:5",
-      "any": ["(?m)^\\s*(>|❯|›)\\s*$", "(?i)\\btry \"", "(?i)\\bwhat would you like\\b"],
+      "any": [
+        "(?m)^\\s*❯\\x{00A0}",
+        "(?m)^\\s*(>|❯|›)\\s*$",
+        "(?i)\\btry \"",
+        "(?i)\\bwhat would you like\\b"
+      ],
       "not": ["esc to interrupt"],
-      "note": "The prompt box with nothing happening. It is also on screen mid-turn, hence the lower priority and the guard."
+      "note": "The prompt box with nothing happening. It is also on screen mid-turn, hence the lower priority and the guard. Claude Code 2.1 draws the input line as '❯' and a no-break space whether it is empty, holds a suggested next prompt or holds typed text, while its transcript echoes a prompt with '❯' and a plain space; the no-break space is what tells the box from the transcript, so it is matched, never normalised away."
     }
   ]
 }

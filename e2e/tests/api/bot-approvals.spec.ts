@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { expect, test } from '@playwright/test';
 import { expectProblemDocument, signedUpContext } from '../../support/auth';
+import { insertPendingBotApproval } from '../../support/db';
 
 /**
  * A bot's Needs input cards through the deployed API
@@ -13,7 +14,9 @@ import { expectProblemDocument, signedUpContext } from '../../support/auth';
  * `approved` and no result: the call runs in a job, its answer lands on the
  * card (here a refusal, as the account has no host, so the card ends
  * failed), and the bot gets a turn opened by an event that says so. The live
- * half is skipped without the key.
+ * half is skipped without the key. A seeded card offers the decisions its
+ * call allows, refuses one it does not (`BOTS_030`), and a stop writes its
+ * line outside any turn and gives the bot none.
  */
 
 interface Approval {
@@ -29,13 +32,55 @@ interface Conversation {
   messages: {
     role: string;
     content: string;
-    turnId: string;
-    event: { kind: string; outcome: string; tool: string; summary: string } | null;
+    turnId: string | null;
+    event: {
+      kind: string;
+      outcome: string;
+      tool: string;
+      summary: string;
+      approvalId?: string;
+    } | null;
   }[];
   turns: { id: string; status: string }[];
 }
 
 test.describe.configure({ timeout: 240_000 });
+
+test('a card offers the decisions its call allows, and a stop gives the bot no turn back', async () => {
+  const { api } = await signedUpContext('botapprovalsstop');
+  const bot = (await (await api.post('/api/v1/bots', { data: { provider: 'glm' } })).json()) as {
+    id: string;
+  };
+  const approvalId = await insertPendingBotApproval(bot.id, 'start_session', 'Start it');
+  const [card] = (await (
+    await api.get(`/api/v1/bots/${bot.id}/approvals?status=pending`)
+  ).json()) as (Approval & { availableDecisions: string[] })[];
+  expect(card.availableDecisions).toEqual(['approve', 'approve_always', 'deny', 'stop']);
+  await expectProblemDocument(
+    await api.post(`/api/v1/bots/${bot.id}/approvals/${approvalId}/decision`, {
+      data: { decision: 'approve_for_subject' },
+    }),
+    { status: 422, code: 'BOTS_030' },
+  );
+  const turnsBefore = (
+    (await (await api.get(`/api/v1/bots/${bot.id}/conversation`)).json()) as Conversation
+  ).turns.length;
+
+  const stopped = await api.post(`/api/v1/bots/${bot.id}/approvals/${approvalId}/decision`, {
+    data: { decision: 'stop', note: 'Not now' },
+  });
+  expect(stopped.status(), await stopped.text()).toBe(201);
+  expect(await stopped.json()).toMatchObject({ status: 'denied', note: 'Not now' });
+  const conversation = (await (
+    await api.get(`/api/v1/bots/${bot.id}/conversation`)
+  ).json()) as Conversation;
+  expect(conversation.turns).toHaveLength(turnsBefore);
+  expect(conversation.messages.find((message) => message.role === 'event')).toMatchObject({
+    turnId: null,
+    event: { kind: 'approval', outcome: 'stopped', approvalId },
+  });
+  await api.dispose();
+});
 
 test('a bot with no card lists none, and a decision on a card that is not its own is BOTS_015', async () => {
   const { api } = await signedUpContext('botapprovalsnone');

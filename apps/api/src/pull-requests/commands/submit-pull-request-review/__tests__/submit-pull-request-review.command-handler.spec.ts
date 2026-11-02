@@ -2,7 +2,8 @@ import type { AccessScope } from '@oppenheimer/backend-authz';
 import { AppError } from '@oppenheimer/backend-core';
 import type { SubmitPullRequestReviewDto } from '@oppenheimer/shared';
 import { describe, expect, it, vi } from 'vitest';
-import type { PullRequestAccessPort } from '../../../../github/application/pull-request-access.port';
+import type { PullRequestAddress } from '../../../../github/application/pull-request-access.port';
+import type { PullRequestWritePort } from '../../../../github/application/pull-request-write.port';
 import { GithubErrors } from '../../../../github/domain/github.errors';
 import { SubmitPullRequestReviewCommand } from '../submit-pull-request-review.command';
 import { SubmitPullRequestReviewCommandHandler } from '../submit-pull-request-review.command-handler';
@@ -20,23 +21,30 @@ const SCOPE: AccessScope = {
   grants: new Map(),
   bypass: false,
 };
-const ADDRESS = { installationId: 'inst', githubRepoId: 1, number: 7 };
+const ADDRESS = {
+  kind: 'installation' as const,
+  installationId: 'inst',
+  githubRepoId: 1,
+  number: 7,
+};
 
 function access(merge: () => Promise<void>, autoMerge = true) {
   return {
     submitReview: vi.fn().mockResolvedValue(undefined),
     merge: vi.fn(merge),
     enableAutoMerge: vi.fn().mockResolvedValue(autoMerge),
-  } satisfies Pick<PullRequestAccessPort, 'submitReview' | 'merge' | 'enableAutoMerge'>;
+  } satisfies Pick<PullRequestWritePort, 'submitReview' | 'merge' | 'enableAutoMerge'>;
 }
 
-function submit(port: ReturnType<typeof access>, verdict: SubmitPullRequestReviewDto['verdict']) {
-  return new SubmitPullRequestReviewCommandHandler(
-    port as unknown as PullRequestAccessPort,
-  ).execute(
+function submit(
+  port: ReturnType<typeof access>,
+  verdict: SubmitPullRequestReviewDto['verdict'],
+  address: PullRequestAddress = ADDRESS,
+) {
+  return new SubmitPullRequestReviewCommandHandler(port as unknown as PullRequestWritePort).execute(
     new SubmitPullRequestReviewCommand({
       scope: SCOPE,
-      address: ADDRESS,
+      address,
       review: { verdict, comments: [] },
     }),
   );
@@ -88,5 +96,17 @@ describe('submitting a review', () => {
     const port = access(() => Promise.reject(new AppError(GithubErrors.USER_NOT_CONNECTED)));
     await expect(submit(port, 'approve_and_merge')).rejects.toMatchObject({ code: 'GITHUB_012' });
     expect(port.enableAutoMerge).not.toHaveBeenCalled();
+  });
+
+  // Reviews are made in the person's name; a repository only their token
+  // reads has nobody to make one as, so nothing reaches GitHub.
+  it('reviews nothing on a repository read through a token, with GITHUB_022', async () => {
+    const port = access(() => Promise.resolve());
+
+    await expect(
+      submit(port, 'approve_and_merge', { kind: 'tokens', githubRepoId: 1, number: 7 }),
+    ).rejects.toMatchObject({ code: 'GITHUB_022' });
+    expect(port.submitReview).not.toHaveBeenCalled();
+    expect(port.merge).not.toHaveBeenCalled();
   });
 });

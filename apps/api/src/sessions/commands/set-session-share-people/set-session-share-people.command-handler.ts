@@ -1,7 +1,7 @@
 import { Inject } from '@nestjs/common';
 import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
 import { AppError } from '@oppenheimer/backend-core';
-import { SessionLoaderResolver } from '../../application/session-loader.resolver';
+import { requireOnHost, SessionLoaderResolver } from '../../application/session-loader.resolver';
 import type { SessionShareRepositoryPort } from '../../database/session-share.repository.port';
 import { SessionErrors } from '../../domain/sessions.errors';
 import { SESSION_SHARE_REPOSITORY } from '../../sessions.di-tokens';
@@ -24,7 +24,7 @@ export class SetSessionSharePeopleCommandHandler
   ) {}
 
   async execute(command: SetSessionSharePeopleCommand): Promise<string> {
-    const session = await this.loader.find(command.scope, command.sessionId);
+    const session = requireOnHost(await this.loader.find(command.scope, command.sessionId));
     const found = await this.shares.findOneBySession(session.organizationId, session.id);
     if (found.isNone()) throw new AppError(SessionErrors.SHARE_NOT_FOUND);
     const share = found.unwrap();

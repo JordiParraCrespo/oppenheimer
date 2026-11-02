@@ -15,6 +15,6 @@ export class FindApiTokensQueryHandler
   ) {}
 
   execute(query: FindApiTokensQuery): Promise<ApiTokenEntity[]> {
-    return this.apiTokens.findByUserId(query.userId);
+    return this.apiTokens.findByUserId(query.userId, new Date());
   }
 }

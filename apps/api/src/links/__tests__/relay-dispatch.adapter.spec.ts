@@ -4,6 +4,7 @@ import {
   repositoryPrepareSchema,
   sessionCreateSchema,
   sessionImageSchema,
+  sessionInputSchema,
 } from '@oppenheimer/shared/protocol';
 import { describe, expect, it, vi } from 'vitest';
 import { SessionCheckoutEntity } from '../../sessions/domain/session-checkout.entity';
@@ -110,6 +111,62 @@ describe('RelayDispatchAdapter', () => {
     ]);
   });
 
+  describe('a Codex cloud session', () => {
+    const codexCloud = (environment: string | null) => {
+      const entity = WorkSessionEntity.request({
+        organizationId: ORG,
+        projectId: PROJECT,
+        createdByUserId: 'user-1',
+        hostId: HOST,
+        slug: 'bold-otter-3f9a7k',
+        agent: 'codex',
+        place: 'cloud',
+      });
+      entity.recordEvent({
+        seq: 1,
+        kind: 'session.requested',
+        payload: { agent: 'codex', place: 'cloud', launch: { environment } },
+        occurredAt: new Date(),
+      });
+      (entity.checkouts as SessionCheckoutEntity[]).push(
+        SessionCheckoutEntity.createNew({
+          organizationId: ORG,
+          sessionId: entity.id,
+          installationId: 'inst-1',
+          githubRepoId: '42',
+          repositoryFullName: 'acme/xrp-mobile',
+          directoryName: 'xrp-mobile',
+          baseBranch: 'main',
+          branch: 'oppenheimer/xrp-mobile/bold-otter-3f9a7k',
+        }),
+      );
+      return entity;
+    };
+    const spec = {
+      ...NAMES,
+      branch: 'oppenheimer/xrp-mobile/bold-otter-3f9a7k',
+      prompt: 'Fix the wallet list',
+      cloud: { sealed: 'c2VhbGVk', expiresAt: new Date('2026-10-31T13:00:00Z') },
+    };
+
+    // The person's pick rides the create, so the host starts the task there.
+    it('names the environment the person picked', async () => {
+      const { adapter, link } = harness(true, ['session.cloud.codex', 'codex.environments']);
+      await adapter.create(codexCloud('e_6845a1b2c3d4'), spec);
+
+      const parsed = sessionCreateSchema.parse(vi.mocked(link.send).mock.calls[0]?.[0]);
+      expect(parsed.codexEnvironment).toBe('e_6845a1b2c3d4');
+    });
+
+    // None picked is the host's own pick: the environment linked to the repository.
+    it('names none when nobody picked one', async () => {
+      const { adapter, link } = harness(true, ['session.cloud.codex', 'codex.environments']);
+      await adapter.create(codexCloud(null), spec);
+
+      expect(vi.mocked(link.send).mock.calls[0]?.[0]).not.toHaveProperty('codexEnvironment');
+    });
+  });
+
   describe('a session in a folder on the host', () => {
     const inFolder = () =>
       WorkSessionEntity.request({
@@ -119,6 +176,7 @@ describe('RelayDispatchAdapter', () => {
         hostId: HOST,
         slug: 'bold-otter-3f9a7k',
         agent: 'claude-code',
+        place: 'folder',
         folder: '/home/jordi/notes',
       });
 
@@ -206,6 +264,34 @@ describe('RelayDispatchAdapter', () => {
     });
     expect(outcome).toEqual({ delivered: false, hints: ['not_supported'] });
     expect(link.send).not.toHaveBeenCalled();
+  });
+
+  it('types each key as its own session.input, in order, and stops at a link that drops', async () => {
+    const { adapter, link } = harness(true);
+    const entity = session();
+    const outcome = await adapter.typeKeys(entity, {
+      window: 0,
+      keys: ['2', 'Icons', '\r'],
+      gapMs: 0,
+    });
+
+    expect(outcome).toEqual({ delivered: true, hints: [] });
+    const sent = vi
+      .mocked(link.send)
+      .mock.calls.map(([message]) => sessionInputSchema.parse(message));
+    expect(sent.map((message) => Buffer.from(message.data, 'base64').toString('utf8'))).toEqual([
+      '2',
+      'Icons',
+      '\r',
+    ]);
+    expect(sent.every((message) => message.sessionId === entity.id && message.window === 0)).toBe(
+      true,
+    );
+
+    vi.mocked(link.send).mockClear().mockReturnValueOnce(true).mockReturnValueOnce(false);
+    const dropped = await adapter.typeKeys(entity, { window: 0, keys: ['1', '2', '3'], gapMs: 0 });
+    expect(dropped).toEqual({ delivered: false, hints: ['host_offline'] });
+    expect(link.send).toHaveBeenCalledTimes(2);
   });
 
   it('parks the bytes and sends only the command, which the protocol accepts', async () => {

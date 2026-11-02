@@ -2,9 +2,11 @@ package cli
 
 // Files for a window's prompt. `session.image` carries no bytes (why:
 // `sessionImageSchema` in packages/shared/src/protocol/messages.ts). The runner
-// pulls the parked file off the goroutine that reads the link, so a slow
-// download never stalls a pane, then hands it to the session service, which
-// saves it and pastes its path.
+// pulls the parked file on the session's lane, off the goroutine that reads
+// the link, so a slow download never stalls a pane, then hands it to the
+// session service, which saves it and pastes its path. The pull and the paste
+// are one job on that lane, so files land in the prompt in the order they
+// were sent, however long each takes to download.
 
 import (
 	"context"
@@ -29,18 +31,16 @@ func (h *linkHandler) file(ctx context.Context, m link.SessionImage) {
 		h.logger.Warn("session.image with a command id that is not one; dropped")
 		return
 	}
-	go func() {
-		ctx, cancel := context.WithTimeout(ctx, filePullTimeout)
-		defer cancel()
-		data, err := h.pullFile(ctx, m.CommandID)
-		if err != nil {
-			h.fail(m.CommandID, err)
-			return
-		}
-		if _, err := h.app.Sessions.PasteFile(ctx, m.SessionID, m.Window, m.CommandID, m.MediaType, data); err != nil {
-			h.fail(m.CommandID, err)
-		}
-	}()
+	ctx, cancel := context.WithTimeout(ctx, filePullTimeout)
+	defer cancel()
+	data, err := h.pullFile(ctx, m.CommandID)
+	if err != nil {
+		h.fail(m.CommandID, err)
+		return
+	}
+	if _, err := h.app.Sessions.PasteFile(ctx, m.SessionID, m.Window, m.CommandID, m.MediaType, data); err != nil {
+		h.fail(m.CommandID, err)
+	}
 }
 
 // pullCreateFiles fetches the files a `session.create` attached to its

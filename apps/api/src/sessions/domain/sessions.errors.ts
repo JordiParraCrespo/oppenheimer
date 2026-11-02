@@ -77,14 +77,16 @@ export const SessionErrors = {
     httpStatus: 503,
   },
   /**
-   * A second repository on a session that has one. A runner makes one worktree
-   * per session in the MVP, so a session is one repository (00); the create
-   * body is capped by its schema, and this is the same rule for adding one
-   * later, refused before a row is written rather than by the host (#56).
+   * A repository added to a session that already checks out one. The runner
+   * makes a worktree (and keeps a clone) per checkout, at create only: a create
+   * takes up to `MAX_SESSION_CHECKOUTS`, capped by its schema, and the wire has
+   * no frame that adds one to a running session, so a later add is refused
+   * before a row is written rather than recorded and never made. The code dates
+   * from the one-repository MVP (#56); the create bound was raised on 2026-10-26.
    */
-  ONE_REPOSITORY: {
+  TOO_MANY_REPOSITORIES: {
     code: 'SESSIONS_010',
-    message: 'A session checks out one repository',
+    message: 'A running session keeps the repositories it was created with',
     httpStatus: 409,
   },
   /**
@@ -237,5 +239,142 @@ export const SessionErrors = {
     code: 'SESSIONS_031',
     message: 'The host did not answer in time',
     httpStatus: 504,
+  },
+  /**
+   * An answer to a decision the session no longer waits on: somebody answered
+   * it already (here or at the terminal), or the agent asked something else.
+   * The answer names the decision it was for, so it never lands on another.
+   */
+  DECISION_STALE: {
+    code: 'SESSIONS_032',
+    message: 'That question was already answered or changed',
+    httpStatus: 409,
+  },
+  /**
+   * An answer that does not fit the pending decision: an option it does not
+   * have, several picks for one choice, none at all, or answers for the
+   * wrong number of questions.
+   */
+  DECISION_ANSWER_INVALID: {
+    code: 'SESSIONS_033',
+    message: 'That answer does not fit the question',
+    httpStatus: 422,
+  },
+  /** The host holds no link, so the keys that answer a decision were not sent. */
+  DECISION_HOST_OFFLINE: {
+    code: 'SESSIONS_034',
+    message: 'The host is offline, so the answer was not sent',
+    httpStatus: 503,
+  },
+  /** No preview domain (`PREVIEW_BASE_URL`): this deployment cannot serve a session's ports. */
+  PREVIEWS_NOT_CONFIGURED: {
+    code: 'SESSIONS_035',
+    message: 'Previews are not configured on this server',
+    httpStatus: 501,
+  },
+  /**
+   * A follow-up prompt for an agent that is not waiting at its prompt: it is
+   * still starting, at work, or blocked on a question or a permission dialog.
+   * Typed now, the words would land in whatever it draws next.
+   */
+  AGENT_NOT_AT_PROMPT: {
+    code: 'SESSIONS_036',
+    message: 'The agent is not waiting for a prompt',
+    httpStatus: 409,
+  },
+  /**
+   * A cloud session for a host whose live runner did not name the capability
+   * for its agent's cloud (`session.cloud`, `session.cloud.codex`): it would
+   * open a terminal, or refuse the agent, instead of starting the task.
+   */
+  CLOUD_UNSUPPORTED_BY_RUNNER: {
+    code: 'SESSIONS_037',
+    message: "This host's runner cannot start a session in the cloud",
+    httpStatus: 409,
+  },
+  /**
+   * A prompt, an answer or a file for a cloud session: it has no terminal on
+   * its host to type into, and takes them at its vendor (claude.ai,
+   * chatgpt.com/codex).
+   */
+  CLOUD_TAKES_NO_INPUT: {
+    code: 'SESSIONS_038',
+    message: "A cloud session takes input at its vendor's site, not here",
+    httpStatus: 409,
+  },
+  /**
+   * Something only a session a host started has — a terminal, a checkout, a
+   * restart, a share, a prompt — asked of a cloud session the control plane
+   * launched at its vendor (Cursor's), which is followed and answered there
+   * (`product/next-steps/cloud-agents.md`).
+   */
+  VENDOR_SESSION: {
+    code: 'SESSIONS_039',
+    message: 'That session runs at its vendor, not on a host',
+    httpStatus: 409,
+  },
+  /**
+   * A cloud session's task and the download links for its files do not fit
+   * the 2 KB a first task may be: the links ride in the task, since the
+   * cloud never sees the host the files would otherwise go to.
+   */
+  CLOUD_TASK_TOO_LONG: {
+    code: 'SESSIONS_040',
+    message: "The task is too long to carry its files' links",
+    httpStatus: 400,
+  },
+  /**
+   * A cloud session's file link that names nothing: it expired, or it was
+   * never minted. One answer for both, so a link cannot be probed.
+   */
+  CLOUD_FILE_NOT_FOUND: {
+    code: 'SESSIONS_041',
+    message: 'That file link expired or never existed',
+    httpStatus: 404,
+  },
+  TERMINAL_PATTERN_INVALID: {
+    code: 'SESSIONS_042',
+    message: 'That pattern cannot be watched',
+    httpStatus: 422,
+  },
+  TERMINAL_WATCHES_FULL: {
+    code: 'SESSIONS_043',
+    message: 'The session already has as many terminal watches as it can hold',
+    httpStatus: 409,
+  },
+  /**
+   * The composer asked for a host's Codex environments, and its runner predates
+   * `codex.environments`: it would never answer. A Codex cloud session still
+   * starts there, in an environment guessed from the repository's name.
+   */
+  CODEX_ENVIRONMENTS_UNSUPPORTED_BY_RUNNER: {
+    code: 'SESSIONS_044',
+    message: "This host's runner cannot list Codex environments",
+    httpStatus: 409,
+  },
+  /** The composer asked a host that holds no link for its Codex environments. */
+  CODEX_ENVIRONMENTS_HOST_OFFLINE: {
+    code: 'SESSIONS_045',
+    message: 'The host is offline, so its Codex environments cannot be listed',
+    httpStatus: 503,
+  },
+  /**
+   * Codex on the host could not list its environments: no `codex` on it, or
+   * no ChatGPT sign-in. The runner's own words are the detail.
+   */
+  CODEX_ENVIRONMENTS_UNAVAILABLE: {
+    code: 'SESSIONS_046',
+    message: 'Codex on the host could not list its environments',
+    httpStatus: 502,
+  },
+  /**
+   * ChatGPT refused the host's read of its Codex environments for rate
+   * (`SESS_011`): the host asks nothing more of that account until the time
+   * it named, which the runner's words carry as the detail.
+   */
+  CODEX_ENVIRONMENTS_RATE_LIMITED: {
+    code: 'SESSIONS_047',
+    message: 'ChatGPT is limiting how often the host may list Codex environments',
+    httpStatus: 429,
   },
 } as const satisfies Record<string, ErrorDefinition>;

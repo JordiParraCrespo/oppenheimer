@@ -2,7 +2,7 @@ import { Inject } from '@nestjs/common';
 import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
 import { AppError } from '@oppenheimer/backend-core';
 import type { SessionDispatchPort } from '../../application/session-dispatch.port';
-import { SessionLoaderResolver } from '../../application/session-loader.resolver';
+import { requireOnHost, SessionLoaderResolver } from '../../application/session-loader.resolver';
 import type { WorkSessionRepositoryPort } from '../../database/work-session.repository.port';
 import type { SessionCommandResult } from '../../domain/session-command.types';
 import { SESSION_EVENT_KINDS } from '../../domain/session-state.policy';
@@ -33,7 +33,7 @@ export class RemoveCheckoutCommandHandler
   ) {}
 
   async execute(command: RemoveCheckoutCommand): Promise<SessionCommandResult> {
-    const session = await this.loader.find(command.scope, command.sessionId);
+    const session = requireOnHost(await this.loader.find(command.scope, command.sessionId));
     const target = session.liveCheckouts.find((checkout) => checkout.id === command.checkoutId);
     if (!target) {
       throw new AppError(SessionErrors.CHECKOUT_NOT_FOUND, {

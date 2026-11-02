@@ -1,5 +1,13 @@
 import { BotApprovalEntity } from '../domain/bot-approval.entity';
-import { approvalEvent, approvalEventOf } from '../domain/bot-approval.policy';
+import {
+  approvalEventOf,
+  approvalFinishedWords,
+  approvalResolved,
+  approvalStartedWords,
+  deniedWords,
+  stoppedLine,
+} from '../domain/bot-approval.policy';
+import { BotApprovalChangedDomainEvent } from '../domain/events/bot-approval-changed.domain-event';
 
 /**
  * A Needs input card is decided once (`25-bots.md` §5): pending moves to
@@ -9,7 +17,10 @@ import { approvalEvent, approvalEventOf } from '../domain/bot-approval.policy';
  */
 const NOW = new Date('2026-10-15T10:00:00Z');
 
-function pending(summary = 'Start Claude Code on build-02') {
+function pending(
+  summary = 'Start Claude Code on build-02',
+  extra: Partial<Parameters<typeof BotApprovalEntity.request>[0]> = {},
+) {
   return BotApprovalEntity.request({
     organizationId: 'org-1',
     botId: 'bot-1',
@@ -17,10 +28,47 @@ function pending(summary = 'Start Claude Code on build-02') {
     tool: 'start_session',
     input: { task: 'Fix it' },
     summary,
+    ...extra,
   });
 }
 
+/** What the workspace stream is told: without it the Inbox learns of a card only on a poll. */
+function announced(approval: BotApprovalEntity) {
+  return approval.domainEvents
+    .filter((event) => event instanceof BotApprovalChangedDomainEvent)
+    .map((event) => (event as BotApprovalChangedDomainEvent).status);
+}
+
 describe('BotApprovalEntity', () => {
+  it('announces each move to its workspace: raised, decided, expired, run', () => {
+    const approval = pending();
+    expect(approval.domainEvents[0]).toMatchObject({
+      aggregateId: approval.id,
+      organizationId: 'org-1',
+      botId: 'bot-1',
+    });
+    approval.approve('user-1', NOW);
+    approval.recordResult('Started session s-1', false);
+    expect(announced(approval)).toEqual(['pending', 'approved', 'approved']);
+
+    const denied = pending();
+    denied.deny('user-1', NOW);
+    const expired = pending();
+    expired.expire(NOW);
+    expect([announced(denied), announced(expired)]).toEqual([
+      ['pending', 'denied'],
+      ['pending', 'expired'],
+    ]);
+  });
+
+  it('announces nothing for a move it refuses', () => {
+    const approval = pending();
+    approval.approve('user-1', NOW);
+    approval.clearEvents();
+    expect(() => approval.deny('user-1', NOW)).toThrow();
+    expect(approval.domainEvents).toEqual([]);
+  });
+
   it('starts pending, undecided, with a summary cut to fit the card', () => {
     const approval = pending('x'.repeat(600));
     expect(approval).toMatchObject({ status: 'pending', decidedAt: null, decidedByUserId: null });
@@ -86,27 +134,32 @@ describe('BotApprovalEntity', () => {
   });
 });
 
-describe('approvalEvent', () => {
-  it('says who approved what, then what the call answered', () => {
+describe('the words that open an approval’s turns', () => {
+  it('says who approved what, and that it runs now', () => {
     const approval = pending();
     approval.approve('user-1', NOW);
-    approval.recordResult('Started session s-1.', false);
-    expect(approvalEvent(approval, 'Ana')).toBe(
-      'Ana approved: Start Claude Code on build-02\nIt ran: Started session s-1.',
+    expect(approvalStartedWords(approval, 'Ana')).toBe(
+      'Ana approved: Start Claude Code on build-02\nIt is running now.',
     );
   });
 
-  it('says a failed call failed', () => {
+  it('says what the approved call answered, and that a failed one failed', () => {
     const approval = pending();
     approval.approve('user-1', NOW);
-    approval.recordResult('Host offline.', true);
-    expect(approvalEvent(approval, 'Ana')).toContain('It ran and failed: Host offline.');
+    approval.recordResult('Started session s-1.', false);
+    expect(approvalFinishedWords(approval, 'Ana')).toBe(
+      'Ana approved a call, and it finished: Start Claude Code on build-02\nIt ran: Started session s-1.',
+    );
+    const failed = pending();
+    failed.approve('user-1', NOW);
+    failed.recordResult('Host offline.', true);
+    expect(approvalFinishedWords(failed, 'Ana')).toContain('It ran and failed: Host offline.');
   });
 
   it('says who denied it, with their note, and names nobody when the name is unknown', () => {
     const approval = pending();
     approval.deny('user-1', NOW, 'Use staging');
-    expect(approvalEvent(approval, ' ')).toBe(
+    expect(deniedWords(approval, ' ')).toBe(
       'The person denied: Start Claude Code on build-02\nTheir note: Use staging',
     );
   });
@@ -136,5 +189,64 @@ describe('approvalEventOf', () => {
     const denied = pending();
     denied.deny('user-1', NOW, null);
     expect(approvalEventOf(denied)).toMatchObject({ outcome: 'denied', sessionId: null });
+  });
+});
+
+describe('availableDecisions', () => {
+  it('offers, in order, a yes, the yes for its subject and for the tool, a no that carries on and a no that stops', () => {
+    const card = pending('Start it', { subject: { kind: 'project', key: 'p-1', label: 'XRP' } });
+    expect(card.availableDecisions).toEqual([
+      'approve',
+      'approve_for_subject',
+      'approve_always',
+      'deny',
+      'stop',
+    ]);
+  });
+
+  it('offers no yes that stands for a tool decided call by call, nor for a subject the card does not name', () => {
+    expect(pending('Merge it', { perCallOnly: true }).availableDecisions).toEqual([
+      'approve',
+      'deny',
+      'stop',
+    ]);
+    expect(pending().availableDecisions).toEqual(['approve', 'approve_always', 'deny', 'stop']);
+  });
+});
+
+describe('a no that stops the turn', () => {
+  it('is a line outside any turn, saying who stopped what, with the note, naming its card', () => {
+    const approval = pending();
+    approval.deny('user-1', NOW, 'Not today');
+    const line = stoppedLine(approval, 'Ana');
+    expect(line).toMatchObject({
+      turnId: null,
+      role: 'event',
+      content:
+        'Ana denied and stopped your turn: Start Claude Code on build-02\nTheir note: Not today',
+      event: { kind: 'approval', outcome: 'stopped', approvalId: approval.id },
+    });
+    expect(approval.status).toBe('denied');
+  });
+});
+
+describe('approvalResolved', () => {
+  it('tells every chat which card closed and how, with its line', () => {
+    const approval = pending();
+    const of = (decision: Parameters<typeof approvalResolved>[1]) =>
+      approvalResolved(approval, decision).outcome;
+    expect(approvalResolved(approval, 'approve')).toEqual({
+      type: 'approval_resolved',
+      approvalId: approval.id,
+      outcome: 'approved',
+      tool: 'start_session',
+      summary: 'Start Claude Code on build-02',
+    });
+    expect([of('approve_always'), of('deny'), of('stop'), of('expired')]).toEqual([
+      'approved',
+      'denied',
+      'stopped',
+      'expired',
+    ]);
   });
 });

@@ -1,6 +1,8 @@
 import type { AccessScope } from '@oppenheimer/backend-authz';
 import { None, Some } from 'oxide.ts';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { LinkRegistryPort } from '../../../../links/application/link-registry.port';
+import { HostReadResolver } from '../../../application/host-read.resolver';
 import type { HostUsagePort } from '../../../application/host-usage.port';
 import { HostUsageRegistry } from '../../../application/host-usage.registry';
 import type { HostRepositoryPort } from '../../../database/host.repository.port';
@@ -71,7 +73,10 @@ describe('FindPairingTokenQueryHandler', () => {
     handler = new FindPairingTokenQueryHandler(
       tokens as HostPairingTokenRepositoryPort,
       hosts as HostRepositoryPort,
-      registry,
+      new HostReadResolver(registry, { find: () => undefined } as Pick<
+        LinkRegistryPort,
+        'find'
+      > as LinkRegistryPort),
     );
   });
 

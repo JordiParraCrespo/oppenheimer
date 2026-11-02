@@ -1,16 +1,16 @@
-import { createHash, generateKeyPairSync, type KeyObject, sign } from 'node:crypto';
+import { createHash, generateKeyPairSync, type KeyObject, randomUUID, sign } from 'node:crypto';
 import { getQueueToken } from '@nestjs/bullmq';
 import type { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { QUEUE_NAMES } from '@oppenheimer/shared';
 import type { Queue } from 'bullmq';
-import { GenericContainer, type StartedTestContainer, Wait } from 'testcontainers';
 import { DataSource } from 'typeorm';
 import { PostgresQueryRunner } from 'typeorm/driver/postgres/PostgresQueryRunner';
-import { runAllMigrations } from '../../__tests__/run-migrations';
+import { useTestDatabase, useTestRedis } from '../../__tests__/integration-services';
 import type { HostPresencePort } from '../application/host-presence.port';
+import type { HostRepositoryPort } from '../database/host.repository.port';
 import type { HostMetadataRepositoryPort } from '../database/host-metadata.repository.port';
-import { HOST_METADATA_REPOSITORY, HOST_PRESENCE } from '../hosts.di-tokens';
+import { HOST_METADATA_REPOSITORY, HOST_PRESENCE, HOST_REPOSITORY } from '../hosts.di-tokens';
 
 /**
  * Pairing, against a real Postgres and Redis, for two properties only the database
@@ -22,6 +22,9 @@ import { HOST_METADATA_REPOSITORY, HOST_PRESENCE } from '../hosts.di-tokens';
  *  - **the default role grants `manage Host`**: a live database's roles are rows the
  *    migrations wrote, not the fallback constant, and a missing rule is a 403 on
  *    every host route that a stubbed ability would never notice.
+ *  - **a write on a stale copy of a host is refused**: two copies loaded before
+ *    either is saved, saved one after the other, and the second must not put back
+ *    what the first changed — the property `writeVersioned` exists for.
  *
  * The schema is built by the migrations, not `synchronize`, so a bad migration fails
  * here.
@@ -30,8 +33,7 @@ describe('Hosts & pairing (integration)', () => {
   let app: INestApplication;
   let baseUrl: string;
   let dataSource: DataSource;
-  let pgContainer: StartedTestContainer;
-  let redisContainer: StartedTestContainer;
+  let hosts: HostRepositoryPort;
 
   /** Signed-in owner of the hosts under test. */
   let user: { id: string; email: string; sessionToken: string };
@@ -40,27 +42,9 @@ describe('Hosts & pairing (integration)', () => {
   const controlPlane = generateKeyPairSync('ed25519');
 
   beforeAll(async () => {
-    [pgContainer, redisContainer] = await Promise.all([
-      new GenericContainer('postgres:16-alpine')
-        .withEnvironment({
-          POSTGRES_USER: 'test',
-          POSTGRES_PASSWORD: 'test',
-          POSTGRES_DB: 'test',
-        })
-        .withExposedPorts(5432)
-        .withWaitStrategy(Wait.forLogMessage(/database system is ready to accept connections/, 2))
-        .start(),
-      new GenericContainer('redis:7-alpine').withExposedPorts(6379).start(),
-    ]);
+    await useTestDatabase();
+    await useTestRedis();
 
-    process.env.NODE_ENV = 'test';
-    process.env.DB_HOST = pgContainer.getHost();
-    process.env.DB_PORT = pgContainer.getMappedPort(5432).toString();
-    process.env.DB_USERNAME = 'test';
-    process.env.DB_PASSWORD = 'test';
-    process.env.DB_DATABASE = 'test';
-    process.env.REDIS_HOST = redisContainer.getHost();
-    process.env.REDIS_PORT = redisContainer.getMappedPort(6379).toString();
     process.env.BETTER_AUTH_SECRET = 'integration-test-secret-value-32-chars';
 
     // Without the key, the release base and the installer, minting and
@@ -71,8 +55,6 @@ describe('Hosts & pairing (integration)', () => {
     process.env.RUNNER_RELEASE_BASE_URL = 'https://releases.example.test';
     process.env.RUNNER_INSTALL_URL = 'https://releases.example.test/install.sh';
     process.env.RUNNER_RELEASE_CHANNEL = 'stable';
-
-    await runAllMigrations();
 
     const { AppModule } = await import('../../app.module');
     const moduleRef = await Test.createTestingModule({ imports: [AppModule] }).compile();
@@ -92,6 +74,7 @@ describe('Hosts & pairing (integration)', () => {
     await app.listen(0);
     baseUrl = (await app.getUrl()).replace('[::1]', '127.0.0.1');
     dataSource = moduleRef.get(DataSource);
+    hosts = moduleRef.get<HostRepositoryPort>(HOST_REPOSITORY);
 
     user = await signUp('host-owner@example.com');
   }, 180000);
@@ -100,7 +83,6 @@ describe('Hosts & pairing (integration)', () => {
     await app?.close();
     const { emailQueue } = await import('../../auth/infrastructure/email-queue.util');
     await emailQueue.close().catch(() => {});
-    await Promise.all([pgContainer?.stop(), redisContainer?.stop()]);
   });
 
   interface CallOptions {
@@ -231,7 +213,7 @@ describe('Hosts & pairing (integration)', () => {
   }
 
   function randomJti(): string {
-    return createHash('sha256').update(`${Math.random()}`).digest('hex').slice(0, 32);
+    return randomUUID().replace(/-/g, '');
   }
 
   describe('migration', () => {
@@ -845,6 +827,70 @@ describe('Hosts & pairing (integration)', () => {
       } finally {
         spy.mockRestore();
       }
+    });
+  });
+
+  describe('concurrent writes of one host', () => {
+    /** A freshly paired host and two copies of it, both loaded before either is saved. */
+    async function twoCopies() {
+      const minted = await mintPairingToken();
+      const registered = await register(minted.secret, hostKey());
+      const hostId = registered.body?.hostId as string;
+      const [first, second] = await Promise.all([
+        hosts.findOneByIdForMachine(hostId),
+        hosts.findOneByIdForMachine(hostId),
+      ]);
+      return { hostId, first: first.unwrap(), second: second.unwrap() };
+    }
+
+    async function row(hostId: string) {
+      const [found]: { name: string; unpairedAt: Date | null; version: number }[] =
+        await dataSource.query(`SELECT name, "unpairedAt", version FROM host WHERE id = $1`, [
+          hostId,
+        ]);
+      return found;
+    }
+
+    async function unpairedOwed(hostId: string) {
+      const [timeline]: { count: number }[] = await dataSource.query(
+        `SELECT count(*)::int AS count FROM host_event WHERE "hostId" = $1 AND kind = 'unpaired'`,
+        [hostId],
+      );
+      const [outbox]: { count: number }[] = await dataSource.query(
+        `SELECT count(*)::int AS count FROM outbox_message
+          WHERE "aggregateId" = $1 AND "eventName" = 'HostUnpairedDomainEvent'`,
+        [hostId],
+      );
+      return { timeline: timeline.count, events: outbox.count };
+    }
+
+    it('refuses a rename loaded before an unpair, so the host stays unpaired', async () => {
+      const { hostId, first: renaming, second: unpairing } = await twoCopies();
+
+      unpairing.unpair();
+      await hosts.save(unpairing);
+      renaming.rename('Renamed box');
+
+      await expect(hosts.save(renaming)).rejects.toMatchObject({
+        code: 'GENERIC.VERSION_CONFLICT',
+      });
+      const stored = await row(hostId);
+      expect(stored.unpairedAt).not.toBeNull();
+      expect(stored.name).not.toBe('Renamed box');
+      expect(stored.version).toBe(2);
+    });
+
+    it('unpairs once when the console and the machine race, with one event and one timeline entry', async () => {
+      const { hostId, first: fromConsole, second: fromMachine } = await twoCopies();
+
+      fromConsole.unpair();
+      fromMachine.unpair();
+      await hosts.save(fromConsole);
+      await expect(hosts.save(fromMachine)).rejects.toMatchObject({
+        code: 'GENERIC.VERSION_CONFLICT',
+      });
+
+      expect(await unpairedOwed(hostId)).toEqual({ timeline: 1, events: 1 });
     });
   });
 

@@ -6,6 +6,7 @@ import {
   useSuspenseQuery,
   withCacheOnSuccess,
 } from '@oppenheimer/frontend-core/react';
+import type { AnswerSessionDecisionDto } from '@oppenheimer/shared/schemas/session-decision';
 import type { PutSessionShareDto } from '@oppenheimer/shared/schemas/session-share';
 import {
   type QueryClient,
@@ -20,8 +21,11 @@ import type {
   PrepareSessionInput,
   SessionAttachment,
   SessionEntity,
+  SessionPorts,
+  SessionPreview,
   SessionShare,
   SharedSession,
+  StartCloudSessionInput,
 } from '../modules/sessions/session.entity';
 import {
   deriveSessionStartProgress,
@@ -29,26 +33,17 @@ import {
 } from '../modules/sessions/session-steps';
 import { useConsumerApp } from './context';
 import { useHostListQuery } from './hosts.queries';
-import { CLOSE_WATCH_MS, type PollKeys, RESTART_WATCH_MS, usePollWhile } from './live-poll';
+import {
+  CLOSE_WATCH_MS,
+  eitherPoll,
+  type PollKeys,
+  RESTART_WATCH_MS,
+  usePollWhile,
+} from './live-poll';
+import { mutation } from './mutation';
 import { useProjectListQuery } from './projects.queries';
 import { seedDetails } from './seed-details';
-
-/**
- * A session's share sits beside `details()`, not under `detail(id)`: sharing
- * raises no `session.changed`, so a row's every change would refetch it for
- * nothing.
- */
-export const sessionsKeys = {
-  all: ['sessions'] as const,
-  lists: () => [...sessionsKeys.all, 'list'] as const,
-  list: () => [...sessionsKeys.lists()] as const,
-  details: () => [...sessionsKeys.all, 'detail'] as const,
-  detail: (id: string | undefined) => [...sessionsKeys.details(), id] as const,
-  start: (id: string | undefined, failed: boolean) =>
-    [...sessionsKeys.detail(id), 'start', { failed }] as const,
-  share: (id: string) => [...sessionsKeys.all, 'share', id] as const,
-  shared: (slug: string | undefined) => [...sessionsKeys.all, 'shared', slug] as const,
-};
+import { sessionsKeys } from './sessions.keys';
 
 /**
  * The sessions a console asked to close and has not yet seen resolve, each
@@ -199,17 +194,26 @@ export function useSessionListQuery() {
 }
 
 /**
- * Over the query's own rows, before any caller's `select`. Stands down while
- * the workspace event stream carries every change to these rows.
+ * Over the query's own rows, before any caller's `select`. Two polls, the
+ * faster answering: a row being built or deleted, which stands down while
+ * the workspace event stream carries every change to these rows, and a
+ * cloud session whose vendor is still working, which the stream never
+ * carries (`cloudSession`).
  */
 export function useSessionListPoll() {
   const queryClient = useQueryClient();
-  return usePollWhile<SessionEntity[]>(
+  const starting = usePollWhile<SessionEntity[]>(
     'sessionStarting',
     sessionsKeys.list(),
     (rows) =>
       closesOf(queryClient).size > 0 || (rows?.some((session) => session.isProvisioning) ?? false),
   );
+  const cloud = usePollWhile<SessionEntity[]>(
+    'cloudSession',
+    sessionsKeys.list(),
+    (rows) => rows?.some((session) => session.isCloudWorking) ?? false,
+  );
+  return eitherPoll(starting, cloud);
 }
 
 /**
@@ -271,11 +275,19 @@ async function findSession(
 /** A session polls while it is being prepared, or while a restart is being watched. */
 function useSessionPoll(id: string) {
   const queryClient = useQueryClient();
-  return usePollWhile<SessionEntity>(
+  const opening = usePollWhile<SessionEntity>(
     'sessionOpening',
     sessionsKeys.detail(id),
-    (session) => (session?.isProvisioning ?? false) || restartsOf(queryClient).has(id),
+    (session) =>
+      (!session?.isCloud && (session?.isProvisioning ?? false)) || restartsOf(queryClient).has(id),
   );
+  // A cloud session's page follows its vendor's run, which no host reports.
+  const cloud = usePollWhile<SessionEntity>(
+    'cloudSession',
+    sessionsKeys.detail(id),
+    (session) => session?.isCloudWorking ?? false,
+  );
+  return eitherPoll(opening, cloud);
 }
 
 /**
@@ -343,6 +355,23 @@ export function useSessionOpening(session: SessionEntity | undefined): boolean {
   return live && data !== undefined && !data.settled;
 }
 
+/**
+ * This console watches the start it sent ({@link useSessionOpening}), so the
+ * session's pane stays on its steps until the agent runs. The row can read
+ * `open` before the start pane ever mounts, since the host makes the pane
+ * first, so the watch begins with the answer to the create and not with the
+ * pane. Stale from the outset, so the first reader fetches the log at once.
+ * Every start a console sends calls it: New session's and a pull request's
+ * review session.
+ */
+export function watchSessionStart(queryClient: QueryClient, sessionId: string): void {
+  queryClient.setQueryData(
+    sessionsKeys.start(sessionId, false),
+    deriveSessionStartProgress([], { failed: false }),
+    { updatedAt: 0 },
+  );
+}
+
 export interface CreateSessionVariables {
   input: CreateSessionInput;
   /**
@@ -354,37 +383,39 @@ export interface CreateSessionVariables {
   idempotencyKey: string;
 }
 
-export function useCreateSession(
-  options?: UseMutationOptions<SessionEntity, Error, CreateSessionVariables>,
-) {
-  const app = useConsumerApp();
-  const queryClient = useQueryClient();
+export const useCreateSession = mutation<SessionEntity, CreateSessionVariables>({
+  run: (app, { input, idempotencyKey }) => app.sessions.create(input, idempotencyKey),
+  update: (queryClient, session) => {
+    // The row the API just answered with, put where the session screen reads
+    // it. Without this the screen the caller navigates to opens `pending`,
+    // draws its skeleton and fetches the session it was handed a moment ago:
+    // a round trip on the critical path between pressing send and the
+    // terminal mounting, which is the one stretch a reader is watching. Every
+    // other session mutation already seeds it ({@link useSessionPatch});
+    // create was the one that did not.
+    queryClient.setQueryData(sessionsKeys.detail(session.id), session);
+    watchSessionStart(queryClient, session.id);
+    queryClient.invalidateQueries({ queryKey: sessionsKeys.lists() });
+  },
+});
 
-  return useMutation({
-    mutationFn: ({ input, idempotencyKey }: CreateSessionVariables) =>
-      app.sessions.create(input, idempotencyKey),
-    ...withCacheOnSuccess(options, (session) => {
-      // The row the API just answered with, put where the session screen reads
-      // it. Without this the screen the caller navigates to opens `pending`,
-      // draws its skeleton and fetches the session it was handed a moment ago:
-      // a round trip on the critical path between pressing send and the
-      // terminal mounting, which is the one stretch a reader is watching. Every
-      // other session mutation already seeds it ({@link useSessionPatch});
-      // create was the one that did not.
-      queryClient.setQueryData(sessionsKeys.detail(session.id), session);
-      // This console watches the start it sent ({@link useSessionOpening}).
-      // The row can read `open` before the start pane ever mounts, since the
-      // host makes the pane first, so the watch begins here and not there.
-      // Stale from the outset, so the first reader fetches the log at once.
-      queryClient.setQueryData(
-        sessionsKeys.start(session.id, false),
-        deriveSessionStartProgress([], { failed: false }),
-        { updatedAt: 0 },
-      );
-      queryClient.invalidateQueries({ queryKey: sessionsKeys.lists() });
-    }),
-  });
+export interface StartCloudSessionVariables {
+  input: StartCloudSessionInput;
+  /** One per send, kept across its retries, so a retry returns the session already started. */
+  idempotencyKey: string;
 }
+
+/**
+ * Starts a session in a vendor's cloud. The answer is the session, listed at
+ * once with the others; its row opens the vendor's page.
+ */
+export const useStartCloudSession = mutation<SessionEntity, StartCloudSessionVariables>({
+  run: (app, { input, idempotencyKey }) => app.sessions.startCloud(input, idempotencyKey),
+  update: (queryClient, session) => {
+    queryClient.setQueryData(sessionsKeys.detail(session.id), session);
+    return queryClient.invalidateQueries({ queryKey: sessionsKeys.lists() });
+  },
+});
 
 /**
  * Gets a host ready for the session New session is composing: the draft's
@@ -392,15 +423,9 @@ export function useCreateSession(
  * send cuts a branch from a checkout that already exists. Nothing is cached:
  * the answer is only whether the host was told.
  */
-export function usePrepareSession(
-  options?: UseMutationOptions<string[], Error, PrepareSessionInput>,
-) {
-  const app = useConsumerApp();
-  return useMutation({
-    mutationFn: (input: PrepareSessionInput) => app.sessions.prepare(input),
-    ...options,
-  });
-}
+export const usePrepareSession = mutation<string[], PrepareSessionInput>({
+  run: (app, input) => app.sessions.prepare(input),
+});
 
 export interface RenameSessionVariables {
   id: string;
@@ -449,6 +474,49 @@ export function useMoveSession(
   );
 }
 
+export interface AnswerSessionDecisionVariables {
+  sessionId: string;
+  /** `{ id, answers }` for a question, `{ id, option }` for a permission. */
+  answer: AnswerSessionDecisionDto;
+}
+
+/** The API's refusal of an answer to a decision that is no longer the pending one. */
+const DECISION_STALE = 'SESSIONS_032';
+
+/**
+ * Answer what a session's agent waits on, from outside its terminal (the
+ * Inbox): the API types the keys and clears the decision. The row the API
+ * answers replaces the session's in every list at once, so what drew the
+ * decision stops drawing it, and the lists are read again behind it. An
+ * answer refused as stale (answered elsewhere, or the agent asks something
+ * else now) reads the session again, so the new decision shows.
+ */
+export function useAnswerSessionDecision(
+  options?: UseMutationOptions<SessionEntity, Error, AnswerSessionDecisionVariables>,
+) {
+  const app = useConsumerApp();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ sessionId, answer }: AnswerSessionDecisionVariables) =>
+      app.sessions.answerDecision(sessionId, answer),
+    ...withCacheOnSuccess(options, (session) => {
+      queryClient.setQueryData(sessionsKeys.detail(session.id), session);
+      queryClient.setQueriesData<SessionEntity[]>({ queryKey: sessionsKeys.lists() }, (rows) =>
+        rows?.map((row) => (row.id === session.id ? session : row)),
+      );
+      void queryClient.invalidateQueries({ queryKey: sessionsKeys.lists() });
+    }),
+    onError: (error, variables, context, mutation) => {
+      if ((error as { code?: string }).code === DECISION_STALE) {
+        void queryClient.invalidateQueries({ queryKey: sessionsKeys.detail(variables.sessionId) });
+        void queryClient.invalidateQueries({ queryKey: sessionsKeys.lists() });
+      }
+      return options?.onError?.(error, variables, context, mutation);
+    },
+  });
+}
+
 export interface CloseSessionVariables {
   id: string;
   acceptUnpushedWork?: boolean;
@@ -462,21 +530,16 @@ export interface CloseSessionVariables {
  * said in it rather than empty. The session's own row is refreshed and the
  * lists with it: what changes is the lifecycle, which every list draws.
  */
-export function useRestartSession(options?: UseMutationOptions<SessionEntity, Error, string>) {
-  const app = useConsumerApp();
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: (id: string) => app.sessions.restart(id),
-    ...withCacheOnSuccess(options, (session) => {
-      queryClient.setQueryData(sessionsKeys.detail(session.id), session);
-      queryClient.invalidateQueries({ queryKey: sessionsKeys.lists() });
-      // A restart is a request; the row is still stopped until the host says
-      // otherwise, so the detail reads until it does.
-      watchRestart(queryClient, session.id);
-    }),
-  });
-}
+export const useRestartSession = mutation<SessionEntity, string>({
+  run: (app, id) => app.sessions.restart(id),
+  update: (queryClient, session) => {
+    queryClient.setQueryData(sessionsKeys.detail(session.id), session);
+    queryClient.invalidateQueries({ queryKey: sessionsKeys.lists() });
+    // A restart is a request; the row is still stopped until the host says
+    // otherwise, so the detail reads until it does.
+    watchRestart(queryClient, session.id);
+  },
+});
 
 /**
  * Delete a session. The row leaves the lists on the click: the close is the
@@ -528,15 +591,9 @@ export function useCloseSession(
  * Upload a file for New session's first task. Nothing is cached: what comes
  * back is the id the create names in `attachmentIds`.
  */
-export function useUploadSessionAttachment(
-  options?: UseMutationOptions<SessionAttachment, Error, Blob>,
-) {
-  const app = useConsumerApp();
-  return useMutation({
-    mutationFn: (file: Blob) => app.sessions.uploadAttachment(file),
-    ...options,
-  });
-}
+export const useUploadSessionAttachment = mutation<SessionAttachment, Blob>({
+  run: (app, file) => app.sessions.uploadAttachment(file),
+});
 
 /**
  * Paste a file into one window's prompt. Nothing is cached and no key is
@@ -636,3 +693,54 @@ export function useSuspenseSharedSession(slug: string) {
     queryFn: () => app.sessions.findSharedSession(slug),
   });
 }
+
+/**
+ * The ports a session listens on, for its Browser tab: polled while the tab
+ * is open, so a dev server the agent just started shows on its own. An
+ * offline host, or a runner that cannot list, is the answer's `state`, not a
+ * failure.
+ */
+export function useSuspenseSessionPorts(sessionId: string) {
+  const app = useConsumerApp();
+  const queryKey = sessionsKeys.ports(sessionId);
+  const poll = usePollWhile<SessionPorts>('sessionPorts', queryKey, true);
+  return useSuspenseQuery({
+    queryKey,
+    queryFn: () => app.sessions.findPorts(sessionId),
+    staleTime: 0,
+    retry: false,
+    refetchOnWindowFocus: false,
+    ...poll,
+  });
+}
+
+/**
+ * Where the Browser tab frames one of the session's ports. A query, though
+ * minting writes, like `useCurrentPairing`: the frame needs exactly one URL
+ * per port it shows. The ticket in it is single use, so it is never
+ * refetched or kept past the frame: Reload asks again with a new `opened`.
+ */
+export function useSuspenseSessionPreview(sessionId: string, port: number, opened: number) {
+  const app = useConsumerApp();
+  return useSuspenseQuery<SessionPreview>({
+    queryKey: sessionsKeys.preview(sessionId, port, opened),
+    queryFn: () => app.sessions.openPreview(sessionId, { port, embed: true }),
+    staleTime: Number.POSITIVE_INFINITY,
+    gcTime: 0,
+    retry: false,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+  });
+}
+
+/**
+ * Open in a new tab: a URL of its own for one of the session's ports, outside
+ * the console's frame. Nothing cached changes.
+ */
+export const useOpenSessionPreviewTab = mutation<
+  SessionPreview,
+  { sessionId: string; port: number; path?: string }
+>({
+  run: (app, { sessionId, port, path }) =>
+    app.sessions.openPreview(sessionId, { port, path, embed: false }),
+});

@@ -42,6 +42,11 @@ export class UninstallHostHttpController {
     description: 'No valid host assertion was presented',
     code: 'HOSTS_005',
   })
+  @ApiProblemResponse({
+    status: 409,
+    description: 'Someone else wrote the host meanwhile, again on the retry',
+    code: 'HOSTS_009',
+  })
   async uninstall(@CurrentHost() hostId: string): Promise<void> {
     await this.commandBus.execute(new UninstallHostCommand({ hostId }));
   }

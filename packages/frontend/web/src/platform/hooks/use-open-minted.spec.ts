@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { leaveFor } from '../lib/leave';
 import { type MintAddress, useOpenMinted } from './use-open-minted';
 
 /**
@@ -9,7 +10,12 @@ import { type MintAddress, useOpenMinted } from './use-open-minted';
  * caller's say over the address.
  */
 
-afterEach(() => vi.restoreAllMocks());
+vi.mock('../lib/leave', () => ({ leaveFor: vi.fn() }));
+
+afterEach(() => {
+  vi.restoreAllMocks();
+  vi.mocked(leaveFor).mockClear();
+});
 
 function fakeTab() {
   return { opener: {} as unknown, location: { href: '' }, close: vi.fn() };
@@ -49,8 +55,6 @@ describe('useOpenMinted', () => {
 
   it('leaves in this tab, through the caller’s urlFor, opening none', () => {
     const open = vi.spyOn(window, 'open');
-    const assign = vi.fn();
-    vi.spyOn(window, 'location', 'get').mockReturnValue({ assign } as unknown as Location);
 
     useOpenMinted(mintThat('succeeds'), {
       target: 'self',
@@ -58,6 +62,6 @@ describe('useOpenMinted', () => {
     }).open();
 
     expect(open).not.toHaveBeenCalled();
-    expect(assign).toHaveBeenCalledWith('https://github.com/install?state=s&walk=1');
+    expect(leaveFor).toHaveBeenCalledWith('https://github.com/install?state=s&walk=1');
   });
 });

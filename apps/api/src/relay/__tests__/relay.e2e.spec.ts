@@ -49,11 +49,11 @@ import { RunnerLinkGateway } from '../infrastructure/runner-link.gateway';
  * and the frame layout. Faked: the rows (host, session, ticket) and the log, which
  * record what the relay hands them.
  *
- * Opt in with `RELAY_E2E=1`: it needs `go`, `tmux`, `git` and the network, and is
+ * `pnpm --filter @oppenheimer/api test:relay-e2e` runs it (`vitest.e2e.config.ts`);
+ * `pnpm test` leaves it out: it needs `go`, `tmux`, `git` and the network, and is
  * slow. `claude` is a shim on PATH that prints its argv and execs a shell, so the
  * launch argv is observable and the pane interactive.
  */
-const enabled = process.env.RELAY_E2E === '1';
 const RUNNER_DIR = resolve(__dirname, '..', '..', '..', '..', 'runner');
 const HOST = 'a1b2c3d4-0000-4000-8000-000000000001';
 const ORG = 'a1b2c3d4-0000-4000-8000-000000000002';
@@ -253,7 +253,7 @@ async function until<T>(what: string, probe: () => T | undefined, ms = 60_000): 
   throw new Error(`timed out waiting for ${what}`);
 }
 
-describe.skipIf(!enabled)('the runner and the relay, end to end', () => {
+describe('the runner and the relay, end to end', () => {
   let w: World;
 
   beforeAll(async () => {

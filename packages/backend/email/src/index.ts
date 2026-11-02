@@ -1,4 +1,3 @@
-export { ConsoleEmailService } from './console-email.service';
 export { EmailRateLimitedError } from './email.errors';
 export { EmailModule } from './email.module';
 export {
@@ -6,11 +5,7 @@ export {
   type EmailFrameParams,
   EmailService,
   type EmailVerificationEmailParams,
-  type HostNetworkChangedEmailParams,
-  type HostPairedEmailParams,
   type InvitationEmailParams,
   type PasswordResetEmailParams,
   type WelcomeEmailParams,
 } from './email.service';
-export { NodemailerEmailService } from './nodemailer-email.service';
-export { ResendEmailService } from './resend-email.service';

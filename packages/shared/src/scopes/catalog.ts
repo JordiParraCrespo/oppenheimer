@@ -26,9 +26,13 @@ export const SCOPE_RESOURCES = [
   'bots',
   'tasks',
   'calendar',
+  'mail',
+  'whatsapp',
+  'cloud-agents',
   'pulls',
   'repositories',
   'flags',
+  'inbox',
 ] as const;
 export type ScopeResource = (typeof SCOPE_RESOURCES)[number];
 
@@ -456,6 +460,79 @@ export const PERMISSION_GROUPS: readonly PermissionGroup[] = [
     },
   },
   {
+    resource: 'mail',
+    label: 'Mail',
+    description: 'The caller’s own Gmail accounts, as their bots work them.',
+    levels: {
+      read: {
+        scope: 'mail:read',
+        label: 'Read',
+        description: 'List the caller’s own Gmail connections.',
+        policies: [{ action: 'read', subject: 'Mail' }],
+      },
+      write: {
+        scope: 'mail:write',
+        label: 'Edit',
+        description: 'Connect, rename and disconnect the caller’s own Gmail accounts.',
+        policies: [
+          { action: 'create', subject: 'Mail' },
+          { action: 'update', subject: 'Mail' },
+          { action: 'delete', subject: 'Mail' },
+        ],
+      },
+    },
+  },
+  {
+    resource: 'whatsapp',
+    label: 'WhatsApp',
+    description:
+      'The numbers the caller linked as WhatsApp devices on their hosts, as their bots read and write in them.',
+    levels: {
+      read: {
+        scope: 'whatsapp:read',
+        label: 'Read',
+        description: 'List the caller’s own linked numbers and read their chats.',
+        policies: [{ action: 'read', subject: 'Whatsapp' }],
+      },
+      write: {
+        scope: 'whatsapp:write',
+        label: 'Edit',
+        description: 'Link and unlink the caller’s own numbers, and send from them.',
+        policies: [
+          { action: 'create', subject: 'Whatsapp' },
+          { action: 'update', subject: 'Whatsapp' },
+          { action: 'delete', subject: 'Whatsapp' },
+        ],
+      },
+    },
+  },
+  {
+    resource: 'cloud-agents',
+    label: 'Cloud agents',
+    description:
+      'Coding agents run in a vendor’s cloud (Cursor): launching and following them, and the caller’s own key for the vendor.',
+    levels: {
+      read: {
+        scope: 'cloud-agents:read',
+        label: 'Read',
+        description:
+          'Read the caller’s cloud agents, the vendors they connected, and those vendors’ models and repositories.',
+        policies: [{ action: 'read', subject: 'CloudAgent' }],
+      },
+      write: {
+        scope: 'cloud-agents:write',
+        label: 'Edit',
+        description:
+          'Launch cloud agents, follow up on and stop them, and connect or disconnect a vendor key.',
+        policies: [
+          { action: 'create', subject: 'CloudAgent' },
+          { action: 'update', subject: 'CloudAgent' },
+          { action: 'delete', subject: 'CloudAgent' },
+        ],
+      },
+    },
+  },
+  {
     resource: 'pulls',
     label: 'Pull requests',
     description:
@@ -465,14 +542,14 @@ export const PERMISSION_GROUPS: readonly PermissionGroup[] = [
         scope: 'pulls:read',
         label: 'Read',
         description:
-          'Read the queue, a pull request, its files and comments, issues, and the analytics.',
+          'Read the queue, a pull request, its files and comments, issues, and the analytics, and list the owner’s own GitHub tokens (never their secrets).',
         policies: [{ action: 'read', subject: 'PullRequest' }],
       },
       write: {
         scope: 'pulls:write',
         label: 'Review',
         description:
-          'Comment on, review and merge pull requests, and open and comment on issues, in the owner’s name, and choose which repositories to watch.',
+          'Comment on, review and merge pull requests, and open and comment on issues, in the owner’s name, choose which repositories to watch, and add, check, pin and remove the owner’s own GitHub tokens.',
         policies: [{ action: 'update', subject: 'PullRequest' }],
       },
     },
@@ -522,6 +599,29 @@ export const PERMISSION_GROUPS: readonly PermissionGroup[] = [
         label: 'Edit',
         description: 'Change targeting, pull kill switches and edit segments — for every user.',
         policies: [{ action: 'update', subject: 'FeatureFlag' }],
+      },
+    },
+  },
+  {
+    resource: 'inbox',
+    label: 'Inbox',
+    description:
+      "The credential owner's own Inbox marks: what they did to an item (done, low, snoozed, deleted).",
+    // A person always has their own Inbox, like their own profile: no role
+    // grants it, so no CASL rule backs it. The items it lists are read
+    // through their own sources, under those sources' scopes.
+    levels: {
+      read: {
+        scope: 'inbox:read',
+        label: 'Read',
+        description: "Read the owner's Inbox marks in the workspace.",
+        policies: [],
+      },
+      write: {
+        scope: 'inbox:write',
+        label: 'Edit',
+        description: "Mark, snooze and bring back the owner's Inbox items.",
+        policies: [],
       },
     },
   },

@@ -35,7 +35,7 @@ function CalendarLayerItem({
       data-slot="calendar-layer"
       data-checked={checked || undefined}
       className={cn(
-        'flex h-[30px] w-full cursor-pointer items-center gap-[9px] rounded-sm px-2.5 text-fg transition-[background-color,opacity] duration-fast ease-standard not-data-checked:opacity-55 hover:bg-hover-surface [&>svg]:size-3.5 [&>svg]:shrink-0',
+        'flex h-[30px] w-full cursor-pointer items-center gap-[9px] rounded-nav px-2.5 text-fg transition-[background-color,opacity] duration-fast ease-standard not-data-checked:opacity-55 hover:bg-hover-surface [&>svg]:size-3.5 [&>svg]:shrink-0',
         className,
       )}
       {...props}

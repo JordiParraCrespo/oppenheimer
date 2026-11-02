@@ -5,9 +5,17 @@ license: MIT
 metadata:
   author: vercel
   version: "1.0.0"
+disable-model-invocation: true
 ---
 
 # Vercel React Best Practices
+
+> **In this repository the React Compiler rule wins.** `apps/web` builds
+> with the React Compiler on, and
+> `.agents/rules/frontend-architecture.md` (Render rules) forbids manual
+> `useMemo`, `useCallback` and `memo` outside `hooks/`; Biome fails the import.
+> Where a rule below recommends memoisation, skip it there. Placement, render
+> and UI rules in `.agents/rules/` override anything on this page.
 
 Comprehensive performance optimization guide for React and Next.js applications, maintained by Vercel. Contains 69 rules across 8 categories, prioritized by impact to guide automated refactoring and code generation.
 

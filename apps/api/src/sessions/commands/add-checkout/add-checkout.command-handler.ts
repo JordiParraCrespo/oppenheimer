@@ -44,7 +44,7 @@ export class AddCheckoutCommandHandler
   ) {}
 
   async execute(command: AddCheckoutCommand): Promise<SessionCommandResult> {
-    const session = await this.loader.requireLive(command.scope, command.sessionId);
+    const session = await this.loader.requireLiveOnHost(command.scope, command.sessionId);
     // The partial unique on `(sessionId, githubRepoId) WHERE removedAt IS NULL`
     // says the same thing; saying it here is what turns a constraint violation
     // into a sentence about the repository the caller named.
@@ -58,9 +58,13 @@ export class AddCheckoutCommandHandler
       });
     }
 
-    if (session.liveCheckouts.length >= MAX_SESSION_CHECKOUTS) {
-      throw new AppError(SessionErrors.ONE_REPOSITORY, {
-        detail: `Session ${session.slug} already checks out a repository`,
+    // A running session keeps the repositories it was created with: the wire has
+    // no frame that adds a worktree to a live session (`addCheckout` answers
+    // NOT_SUPPORTED), so a second one recorded here would never reach the host.
+    // Several repositories are chosen at create, up to `MAX_SESSION_CHECKOUTS`.
+    if (session.liveCheckouts.length > 0) {
+      throw new AppError(SessionErrors.TOO_MANY_REPOSITORIES, {
+        detail: `Session ${session.slug} is running; pick every repository when the session is created (at most ${MAX_SESSION_CHECKOUTS})`,
       });
     }
 

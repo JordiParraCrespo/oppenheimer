@@ -262,7 +262,7 @@ export function Markdown({
   base?: string;
   /** A write head (`StreamingCaret`) after the last words, for text still being written. */
   caret?: ReactNode;
-  /** Draws a fenced block (a chat's `ChatCodeBlock`); left out, the block is plain with a copy button. */
+  /** Draws a fenced block (a chat's `ChatCode`); left out, the block is plain with a copy button. */
   code?: (block: MarkdownCodeBlock) => ReactNode;
 }) {
   const tokens = parseMarkdown(source);

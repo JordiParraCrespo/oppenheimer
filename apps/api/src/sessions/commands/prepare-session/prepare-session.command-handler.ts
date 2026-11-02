@@ -6,6 +6,7 @@ import { REPOSITORY_ACCESS } from '../../../github/github.di-tokens';
 import type { HostAccessPort } from '../../../hosts/application/host-access.port';
 import type { HostKeyPort } from '../../../hosts/application/host-key.port';
 import { HOST_ACCESS, HOST_KEY } from '../../../hosts/hosts.di-tokens';
+import { RepositoryTokenFactory } from '../../application/repository-token.factory';
 import type { SessionDispatchPort } from '../../application/session-dispatch.port';
 import { SessionErrors } from '../../domain/sessions.errors';
 import { SESSION_DISPATCH } from '../../sessions.di-tokens';
@@ -39,6 +40,7 @@ export class PrepareSessionCommandHandler
     private readonly repositories: RepositoryAccessPort,
     @Inject(SESSION_DISPATCH)
     private readonly dispatch: SessionDispatchPort,
+    private readonly tokens: RepositoryTokenFactory,
   ) {}
 
   async execute(command: PrepareSessionCommand): Promise<PrepareSessionResult> {
@@ -58,19 +60,19 @@ export class PrepareSessionCommandHandler
         checkout.installationId,
         checkout.githubRepoId,
       );
-      const minted = await this.repositories.mintRepositoryToken(
+      const token = await this.tokens.sealed(
+        input.hostId,
         checkout.installationId,
         checkout.githubRepoId,
       );
-      const sealed = await this.keys.sealFor(input.hostId, Buffer.from(minted.token, 'utf8'));
-      if (!sealed) return { hints: ['host_offline'] };
+      if (!token) return { hints: ['host_offline'] };
       const outcome = this.dispatch.prepare(input.hostId, {
         workspaceId: scope.organizationId,
         githubRepoId: checkout.githubRepoId,
         repositoryFullName: repository.fullName,
         baseBranch: checkout.baseBranch ?? repository.defaultBranch,
-        sealed,
-        expiresAt: minted.expiresAt,
+        sealed: token.sealed,
+        expiresAt: token.expiresAt,
       });
       for (const hint of outcome.hints) hints.add(hint);
     }

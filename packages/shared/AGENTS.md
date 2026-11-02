@@ -28,8 +28,8 @@ src/
   the API validates against them and the frontend reuses them. Do not duplicate
   DTO shapes in apps. They state the **constraint only, never a message** — see
   below.
-- **CASL helpers**: `defineAbilitiesFromPermissions` (DB-driven, the source of
-  truth) and the legacy `defineAbilitiesFor` fallback.
+- **CASL helpers**: `defineAbilitiesFromPermissions`, over permissions from
+  the database (the source of truth) or `SYSTEM_ROLE_PERMISSIONS`.
 - **`ENDPOINT_POLICIES`** (`permissions/endpoint-policies.ts`): what each
   guarded endpoint demands, keyed by the path Nest mounts it at. One
   declaration of a rule the API enforces and a client gates a destination on;
@@ -41,11 +41,11 @@ src/
   barrel: the API imports `@oppenheimer/shared/feature-flags`, the web tier
   `@oppenheimer/shared/feature-flags/catalog` (no Zod); see
   `.agents/rules/feature-flags.md`.
-- **Types**: `Role` (free-form role-name `string`), `PermissionDefinition`,
-  `AuthProvider`, `JwtPayload`, `TokenPair`, `PaginationParams`,
-  `PaginatedResponse<T>`.
-- **Constants**: `AUTH`, `PAGINATION`, `ROLES`, `SYSTEM_ROLES`,
-  `SYSTEM_ROLE_PERMISSIONS`, `QUEUE_NAMES`.
+- **Types**: `Role` (free-form role-name `string`), `PaginatedResponse<T>`, the deployment/client capability catalogs and the
+  RFC 7807 problem-details helpers; `PermissionDefinition` and
+  `SYSTEM_ROLE_PERMISSIONS` live in `permissions/`.
+- **Constants**: `PAGINATION`, `PASSWORD_MIN_LENGTH`, `ROLES`,
+  `SYSTEM_ROLES`, `MEMBERSHIP_ROLES`, `ORGANIZATION_ROLES`, `QUEUE_NAMES`.
 - **The coding-agent catalog** (`agents/catalog.ts`): a closed union plus one
   frozen config record per agent. It is deliberately **not a table** — every
   entry carries behaviour the runner needs code for anyway, so a row would be a
@@ -80,6 +80,25 @@ src/
   run, never on `require()`: the specs compare the committed file with
   `render()`, and a require that rewrote it first would always pass.
   `pnpm --filter @oppenheimer/shared check:generated` is the same check CI runs.
+
+  **The link only grows.** `protocol-schema/released.schema.json` is the
+  schema as the last runner release (`runner-v*`) shipped it, and
+  `src/protocol/__tests__/released-protocol.spec.ts` holds what the Zod emits
+  today to it with `src/protocol/compatibility.ts` (build-only, like the
+  emitter). It fails, with one line per break, on a message type or property
+  removed, a property newly required or no longer required, a type changed or
+  made nullable, an enum value removed, a `const`, `pattern`, `format` or
+  `default` changed, a bound tightened (a max lowered, a min raised, or either
+  added), and a link constant changed or dropped. The direction of a message
+  is not in the schema, so the rules hold both peers to it at once. A new
+  message, a new optional property, a looser bound and a new enum value pass;
+  a new value the control plane sends lands in an old runner's default branch,
+  so gate it on `hello.capabilities` or the negotiated version. A real break is
+  a `PROTOCOL_VERSION` bump on purpose, which excuses it. Refresh the snapshot
+  only when a runner release is cut, with
+  `pnpm --filter @oppenheimer/shared protocol:release`, and commit it with the
+  release; refreshing it to turn the spec green ships the break to every
+  runner already out there.
 
   **The protocol is temporarily on a second Zod entry point.** Only `zod/v4` can
   emit JSON Schema (`z.toJSONSchema`), so `src/protocol/` imports it while every

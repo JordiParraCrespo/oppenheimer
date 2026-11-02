@@ -16,8 +16,8 @@
  * throwaway spec, git-ignored, that reaches a state an empty account cannot
  * (a dialog open, a host online) and screenshots it there. It empties
  * `.screenshots/` first, so the folder never mixes two runs. Chromium is the
- * machine's own where it ships one (`/opt/pw-browsers/chromium`), so nothing
- * is downloaded.
+ * machine's own where it ships one (`scripts/chromium.mjs`), so nothing is
+ * downloaded.
  *
  * The manifest records the fingerprint of the branch's visual change
  * (`.agents/hooks/visual-change.mjs`), which is what the screenshot guard
@@ -30,9 +30,9 @@ import { connect } from 'node:net';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { visualChange } from '../../.agents/hooks/visual-change.mjs';
+import { chromiumPath } from '../chromium.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
-const SHIPPED_CHROMIUM = '/opt/pw-browsers/chromium';
 const OUT = resolve(ROOT, '.screenshots');
 
 function fingerprint() {
@@ -104,8 +104,9 @@ if (!up) {
 rmSync(OUT, { recursive: true, force: true });
 const taken = fingerprint();
 env.SCREENS = routes.join(',');
-if (!env.PLAYWRIGHT_CHROMIUM_PATH && existsSync(SHIPPED_CHROMIUM))
-  env.PLAYWRIGHT_CHROMIUM_PATH = SHIPPED_CHROMIUM;
+// Named for the specs that launch a browser of their own, too.
+const chromium = chromiumPath(env);
+if (chromium) env.PLAYWRIGHT_CHROMIUM_PATH = chromium;
 // oppenheimer:begin e2e
 const result = spawnSync('pnpm', ['--filter', '@oppenheimer/e2e', 'screens'], {
   cwd: ROOT,

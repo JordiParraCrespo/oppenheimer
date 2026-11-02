@@ -16,13 +16,16 @@ const ORIGINATOR = 'oppenheimer';
  * differs from OpenAI's API in what a request must carry: the account the
  * token acts for, `store: false` (nothing is kept on ChatGPT's side, so every
  * request sends the whole conversation, which the engine does anyway), and the
- * reasoning sent back encrypted, so a turn's later steps can pass it on.
+ * reasoning sent back encrypted, so a turn's later steps can pass it on. Its
+ * answers say how much of the subscription's 5-hour and weekly windows the
+ * account has used, which the turn reports (`codexLimitsOf`).
  */
 export class ChatgptBotEngine extends OpenAiBotEngine {
   protected override endpoint(request: BotTurnRequest): ResponsesEndpoint | string {
     if (!request.accountId) return 'A ChatGPT turn needs the account it acts for';
     return {
       baseUrl: request.baseUrl ?? CHATGPT_BACKEND_URL,
+      reportsPlanLimits: true,
       modelSettings: {
         store: false,
         providerData: {

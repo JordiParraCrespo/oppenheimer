@@ -43,7 +43,7 @@ describe('FindAccessGrantQueryHandler', () => {
       .execute(new FindAccessGrantQuery({ scope: {} as AccessScope, grantId: 'grant-1' }))
       .catch((e) => e as AppError);
 
-    expect((error as AppError).code).toBe('GRANT_004');
+    expect((error as AppError).code).toBe('TENANT_001');
     expect(repo.findOneInOrganization).not.toHaveBeenCalled();
   });
 });

@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
+import { sessionEntity } from '../../../testing';
 import {
+  repositoryNameOf,
   SessionCheckoutEntity,
   SessionEntity,
   type SessionGroup,
@@ -29,25 +31,25 @@ function session(
     folderPath?: string;
   } = {},
 ): SessionEntity {
-  return new SessionEntity(
-    'session-1',
-    'org-1',
-    'project-1',
-    'host-1',
-    'Fix the wallet list empty state',
-    'bold-otter-3f9a7k',
-    'claude-code',
-    { model: 'opus', permission: 'ask', effort: null },
-    overrides.state ?? 'working',
-    overrides.lifecycle ?? 'open',
-    overrides.cwdCheckoutId ?? null,
-    overrides.checkouts ?? [],
-    overrides.stoppedAt ?? null,
-    overrides.hints ?? [],
-    new Date('2026-06-15T12:00:00Z'),
-    overrides.folderPath ? 'folder' : 'worktree',
-    overrides.folderPath ?? null,
-  );
+  return new SessionEntity({
+    id: 'session-1',
+    organizationId: 'org-1',
+    projectId: 'project-1',
+    hostId: 'host-1',
+    name: 'Fix the wallet list empty state',
+    slug: 'bold-otter-3f9a7k',
+    agent: 'claude-code',
+    launch: { model: 'opus', permission: 'ask', effort: null },
+    state: overrides.state ?? 'working',
+    lifecycle: overrides.lifecycle ?? 'open',
+    cwdCheckoutId: overrides.cwdCheckoutId ?? null,
+    checkouts: overrides.checkouts ?? [],
+    stoppedAt: overrides.stoppedAt ?? null,
+    hints: overrides.hints ?? [],
+    createdAt: new Date('2026-06-15T12:00:00Z'),
+    place: overrides.folderPath ? 'folder' : 'worktree',
+    folderPath: overrides.folderPath ?? null,
+  });
 }
 
 /**
@@ -132,6 +134,25 @@ describe('the checkouts a session carries', () => {
   });
 });
 
+// A move draws the session in its new project while the request is on its
+// way; the regression is a copy that drops a field it was not told about.
+describe('SessionEntity.inProject', () => {
+  it('carries every field but the project, defaulted ones included', () => {
+    const work = sessionEntity({
+      projectId: 'project-1',
+      stateSeq: 4,
+      cloudSessionId: 'session_01',
+      closeRefusal: { code: 'GIT_003', detail: null },
+    });
+
+    const moved = work.inProject('project-2');
+
+    expect(moved).toBeInstanceOf(SessionEntity);
+    expect({ ...moved }).toEqual({ ...work, projectId: 'project-2' });
+    expect(moved.cloudUrl).toBe('https://claude.ai/code/session_01');
+  });
+});
+
 /**
  * `host_offline` is what the control plane says when a command was recorded but
  * no link to the host exists — so the work is owed rather than done. It is the
@@ -141,5 +162,121 @@ describe('SessionEntity.isHostOffline', () => {
   it('reads the hint the create request came back with', () => {
     expect(session({ hints: ['host_offline'] }).isHostOffline).toBe(true);
     expect(session({ hints: [] }).isHostOffline).toBe(false);
+  });
+});
+
+/**
+ * A cloud session has no host or terminal: the console keeps asking about it
+ * while its vendor's run works, and names its repository and the vendor's
+ * branch where a host session names its checkout.
+ */
+describe('a cloud session', () => {
+  function cloud(status: 'starting' | 'running' | 'finished', branch: string | null = null) {
+    return new SessionEntity({
+      id: 'session-2',
+      organizationId: 'org-1',
+      projectId: 'project-1',
+      hostId: null,
+      name: 'Fix the login redirect loop',
+      slug: 'calm-heron-2b8c1d',
+      agent: 'cursor',
+      launch: { model: null, permission: null, effort: null },
+      state: 'working',
+      lifecycle: 'open',
+      cwdCheckoutId: null,
+      checkouts: [],
+      stoppedAt: null,
+      hints: [],
+      createdAt: new Date('2026-10-27T12:00:00Z'),
+      place: 'cloud',
+      folderPath: null,
+      closeRequest: null,
+      closeRefusal: null,
+      observedSince: null,
+      lastEventAt: null,
+      stateSeq: 0,
+      decision: null,
+      cloud: {
+        provider: 'cursor',
+        url: 'https://cursor.com/agents?id=bc-session-2',
+        repositoryUrl: 'https://github.com/acme/api',
+        status,
+        branch,
+        pullRequestUrl: null,
+        syncedAt: new Date('2026-10-27T12:00:00Z'),
+      },
+    });
+  }
+
+  it('is worked on while its vendor’s run is starting or running, and settled once it ended', () => {
+    expect(cloud('starting').isCloudWorking).toBe(true);
+    expect(cloud('running').isCloudWorking).toBe(true);
+    expect(cloud('finished').isCloudWorking).toBe(false);
+    expect(session().isCloudWorking).toBe(false);
+  });
+
+  it('names its repository, and the vendor’s branch once it pushed one', () => {
+    expect(cloud('running').scopeLabel).toBe('acme/api');
+    expect(cloud('finished', 'cursor/fix-login').scopeLabel).toBe('acme/api · cursor/fix-login');
+  });
+
+  it('names a GitHub repository by owner and name, and leaves any other URL whole', () => {
+    expect(repositoryNameOf('https://github.com/acme/web.git')).toBe('acme/web');
+    expect(repositoryNameOf('https://gitlab.com/acme/api')).toBe('https://gitlab.com/acme/api');
+  });
+});
+
+/**
+ * A cloud session started from a host lives at its agent's vendor: the page
+ * and the command that brings its work into a terminal follow the agent, so a
+ * Codex task never links to claude.ai.
+ */
+describe('SessionEntity cloud links', () => {
+  function cloudSession(agent: 'claude-code' | 'codex', cloudSessionId: string | null) {
+    return new SessionEntity({
+      id: 'session-1',
+      organizationId: 'org-1',
+      projectId: 'project-1',
+      hostId: 'host-1',
+      name: 'Fix the wallet list empty state',
+      slug: 'bold-otter-3f9a7k',
+      agent,
+      launch: { model: null, permission: 'ask', effort: null },
+      state: 'working',
+      lifecycle: 'open',
+      cwdCheckoutId: null,
+      checkouts: [],
+      stoppedAt: null,
+      hints: [],
+      createdAt: new Date('2026-06-15T12:00:00Z'),
+      place: 'cloud',
+      folderPath: null,
+      closeRequest: null,
+      closeRefusal: null,
+      observedSince: null,
+      lastEventAt: null,
+      stateSeq: 0,
+      decision: null,
+      cloud: null,
+      cloudSessionId,
+    });
+  }
+
+  it("opens Claude Code's on claude.ai and teleports it", () => {
+    const session = cloudSession('claude-code', 'session_014a8EH8DJs95X1iK8ZH9Y82');
+    expect(session.cloudUrl).toBe('https://claude.ai/code/session_014a8EH8DJs95X1iK8ZH9Y82');
+    expect(session.teleportCommand).toBe('claude --teleport session_014a8EH8DJs95X1iK8ZH9Y82');
+  });
+
+  it('opens a Codex task on chatgpt.com and applies its diff', () => {
+    const session = cloudSession('codex', 'task_e_68a1b2c3d4');
+    expect(session.cloudUrl).toBe('https://chatgpt.com/codex/tasks/task_e_68a1b2c3d4');
+    expect(session.teleportCommand).toBe('codex apply task_e_68a1b2c3d4');
+  });
+
+  it('has neither before its host has started it', () => {
+    const session = cloudSession('codex', null);
+    expect(session.cloudUrl).toBeNull();
+    expect(session.teleportCommand).toBeNull();
   });
 });

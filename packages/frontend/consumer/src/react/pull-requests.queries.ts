@@ -27,7 +27,7 @@ import type {
   PullRequestDetailEntity,
   PullRequestFile,
   PullRequestQueue,
-  PullRequestScope,
+  PullRequestQueueName,
   ReviewInput,
   ReviewOutcome,
   ReviewSession,
@@ -36,44 +36,9 @@ import type {
 import type { SessionEntity } from '../modules/sessions/session.entity';
 import { useConsumerApp } from './context';
 import { usePollWhile } from './live-poll';
-
-/**
- * Query key factory for the Pull requests area. Everything sits under one
- * root because a review, a merge or a watch can move a pull request between
- * the queue's scopes, change its briefing and the analytics at once.
- *
- * ```
- * ['pullRequests', 'queue', scope]
- * ['pullRequests', 'detail', installationId, githubRepoId, number]
- * ['pullRequests', 'detail', …, 'files' | 'comments' | 'activity']
- * ['pullRequests', 'repositories']
- * ['pullRequests', 'analytics', range]
- * ```
- */
-export const pullRequestsKeys = {
-  all: ['pullRequests'] as const,
-  queues: () => [...pullRequestsKeys.all, 'queue'] as const,
-  queue: (scope: PullRequestScope) => [...pullRequestsKeys.queues(), scope] as const,
-  details: () => [...pullRequestsKeys.all, 'detail'] as const,
-  detail: (address: PullRequestAddress | undefined) =>
-    [
-      ...pullRequestsKeys.details(),
-      address?.installationId,
-      address?.githubRepoId,
-      address?.number,
-    ] as const,
-  files: (address: PullRequestAddress | undefined) =>
-    [...pullRequestsKeys.detail(address), 'files'] as const,
-  comments: (address: PullRequestAddress | undefined) =>
-    [...pullRequestsKeys.detail(address), 'comments'] as const,
-  activity: (address: PullRequestAddress | undefined) =>
-    [...pullRequestsKeys.detail(address), 'activity'] as const,
-  repositories: () => [...pullRequestsKeys.all, 'repositories'] as const,
-  reviewSessions: () => [...pullRequestsKeys.all, 'review-sessions'] as const,
-  analytics: () => [...pullRequestsKeys.all, 'analytics'] as const,
-  analyticsRange: (range: PullRequestAnalyticsRange) =>
-    [...pullRequestsKeys.analytics(), range] as const,
-};
+import { mutation } from './mutation';
+import { pullRequestsKeys } from './pull-requests.keys';
+import { watchSessionStart } from './sessions.queries';
 
 /**
  * One scope's queue, longest wait first, with the counts the header and the
@@ -86,9 +51,17 @@ export const pullRequestsKeys = {
  * table reads its scope through `useDeferredValue`, so the rows on screen stay
  * until the next scope has answered.
  */
-export function useSuspensePullRequestQueue(scope: PullRequestScope) {
+export function useSuspensePullRequestQueue(scope: PullRequestQueueName) {
+  return useSuspenseQuery<PullRequestQueue, Error>(usePullRequestQueueQuery(scope));
+}
+
+/**
+ * One scope's queue read, polling while the answer is still filling: the key,
+ * the fetch and the poll, for every hook over it (the Inbox reads two scopes).
+ */
+export function usePullRequestQueueQuery(scope: PullRequestQueueName) {
   const app = useConsumerApp();
-  return useSuspenseQuery<PullRequestQueue, Error>({
+  return {
     queryKey: pullRequestsKeys.queue(scope),
     queryFn: () => app.pullRequests.queue(scope),
     ...usePollWhile<PullRequestQueue>(
@@ -96,11 +69,11 @@ export function useSuspensePullRequestQueue(scope: PullRequestScope) {
       pullRequestsKeys.queue(scope),
       (data) => data?.filling === true,
     ),
-  });
+  };
 }
 
 export function usePullRequestQueue<TData = PullRequestQueue>(
-  scope: PullRequestScope,
+  scope: PullRequestQueueName,
   options?: Omit<UseQueryOptions<PullRequestQueue, Error, TData>, 'queryKey' | 'queryFn'>,
 ) {
   const app = useConsumerApp();
@@ -278,19 +251,11 @@ export interface AddCommentVariables {
 }
 
 /** One line comment posted at once, outside a review. */
-export function useAddPullRequestComment(
-  options?: UseMutationOptions<void, Error, AddCommentVariables>,
-) {
-  const app = useConsumerApp();
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: ({ address, comment }: AddCommentVariables) =>
-      app.pullRequests.addComment(address, comment),
-    ...withCacheOnSuccess(options, (_data, { address }) =>
-      queryClient.invalidateQueries({ queryKey: pullRequestsKeys.comments(address) }),
-    ),
-  });
-}
+export const useAddPullRequestComment = mutation<void, AddCommentVariables>({
+  run: (app, { address, comment }) => app.pullRequests.addComment(address, comment),
+  update: (queryClient, _data, { address }) =>
+    queryClient.invalidateQueries({ queryKey: pullRequestsKeys.comments(address) }),
+});
 
 export interface MergePullRequestVariables {
   address: PullRequestAddress;
@@ -348,19 +313,18 @@ export interface StartReviewSessionVariables {
 }
 
 /** Starts a review session for a pull request; the For review list is read again. */
-export function useStartReviewSession(
-  options?: UseMutationOptions<string, Error, StartReviewSessionVariables>,
-) {
-  const app = useConsumerApp();
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: ({ address, hostId, idempotencyKey }: StartReviewSessionVariables) =>
-      app.pullRequests.startReviewSession(address, hostId, idempotencyKey),
-    ...withCacheOnSuccess(options, () =>
-      queryClient.invalidateQueries({ queryKey: pullRequestsKeys.reviewSessions() }),
-    ),
-  });
-}
+export const useStartReviewSession = mutation<string, StartReviewSessionVariables>({
+  run: (app, { address, hostId, idempotencyKey }) =>
+    app.pullRequests.startReviewSession(address, hostId, idempotencyKey),
+  update: (queryClient, sessionId) => {
+    // The Chat tab draws the session the moment For review lists it, and the
+    // host makes its pane before the checkout: watched, the tab shows the
+    // start's steps until Claude Code runs rather than a shell in an empty
+    // folder.
+    watchSessionStart(queryClient, sessionId);
+    return queryClient.invalidateQueries({ queryKey: pullRequestsKeys.reviewSessions() });
+  },
+});
 
 export interface CloseReviewSessionVariables {
   sessionId: string;

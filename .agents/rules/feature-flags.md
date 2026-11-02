@@ -1,8 +1,10 @@
 ---
 paths:
-  - "apps/**/*"
   - "packages/shared/src/feature-flags/**/*"
-  - "packages/frontend/**/*"
+  - "apps/{api,web}/src/**/*"
+  - "packages/frontend/*/src/**/*"
+  - "scripts/**/*flag*"
+  - "scripts/**/*flag*/**/*"
 ---
 
 # Feature Flags Rules

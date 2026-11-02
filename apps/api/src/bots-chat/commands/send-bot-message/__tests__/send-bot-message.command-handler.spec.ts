@@ -6,12 +6,17 @@ import type { BotLookupResolver } from '../../../../bots/application/bot-lookup.
 import type { ModelProviderCredentialRepositoryPort } from '../../../../bots/database/model-provider-credential.repository.port';
 import { BotEntity } from '../../../../bots/domain/bot.entity';
 import type { ProviderKeySealerPort } from '../../../../bots/infrastructure/provider-key-sealer.port';
+import type { BotGoalResolver } from '../../../application/bot-goal.resolver';
 import { BotMessageAttachmentsResolver } from '../../../application/bot-message-attachments.resolver';
+import { BotWaitingCardResolver } from '../../../application/bot-waiting-card.resolver';
 import type { BotApprovalRepositoryPort } from '../../../database/bot-approval.repository.port';
 import type { BotAttachmentRepositoryPort } from '../../../database/bot-attachment.repository.port';
+import type { BotQuestionRepositoryPort } from '../../../database/bot-question.repository.port';
 import type { BotTurnRepositoryPort } from '../../../database/bot-turn.repository.port';
 import { BotApprovalEntity } from '../../../domain/bot-approval.entity';
 import { BotAttachmentEntity } from '../../../domain/bot-attachment.entity';
+import { BotGoalEntity } from '../../../domain/bot-goal.entity';
+import { BotQuestionEntity } from '../../../domain/bot-question.entity';
 import type { BotStreamPort } from '../../../infrastructure/bot-stream.port';
 import { SendBotMessageCommand } from '../send-bot-message.command';
 import { SendBotMessageCommandHandler } from '../send-bot-message.command-handler';
@@ -21,6 +26,8 @@ import { SendBotMessageCommandHandler } from '../send-bot-message.command-handle
  * they are now, with your message first, or a refusal where the person can
  * fix it — no key for the provider, no sealing key on the server — with
  * nothing queued. A card the bot is waiting on expires with the message.
+ * `/goal <condition>` sets the bot's goal on the turn it queues; `/goal`
+ * alone or `/goal clear` is refused before anything is written.
  */
 const scope: AccessScope = {
   userId: randomUUID(),
@@ -35,8 +42,10 @@ function setup(
     key?: boolean;
     sealer?: boolean;
     pending?: boolean;
+    question?: boolean;
     lost?: boolean;
     provider?: BotEntity['provider'];
+    replaced?: BotGoalEntity;
   } = {},
 ) {
   const bot = BotEntity.createNew({
@@ -49,7 +58,16 @@ function setup(
     homeHostId: null,
     provider: options.provider ?? 'glm',
   });
-  const turns = { enqueue: vi.fn<BotTurnRepositoryPort['enqueue']>(async () => 'staged') };
+  const turns = {
+    enqueue: vi.fn<BotTurnRepositoryPort['enqueue']>(async () => 'staged'),
+    enqueueWithGoal: vi.fn<BotTurnRepositoryPort['enqueueWithGoal']>(async () => ({
+      outcome: 'staged',
+      replaced: options.replaced ?? null,
+    })),
+  };
+  const goals = {
+    cancelWaiting: vi.fn<BotGoalResolver['cancelWaiting']>(async () => undefined),
+  };
   const uploads: BotAttachmentEntity[] = [];
   const attachments = {
     findManyForBot: vi.fn(async (_org: string, _bot: string, ids: readonly string[]) =>
@@ -73,14 +91,40 @@ function setup(
     findPending: vi.fn(async () => (options.pending ? Some(card) : None)),
     saveTransition: vi.fn(async () => !options.lost),
   } satisfies Partial<BotApprovalRepositoryPort>;
+  const asked = BotQuestionEntity.ask({
+    organizationId: bot.organizationId,
+    botId: bot.id,
+    turnId: randomUUID(),
+    questions: [
+      {
+        header: null,
+        question: 'Which repository?',
+        multiSelect: false,
+        options: [
+          { label: 'acme/api', description: null },
+          { label: 'acme/web', description: null },
+        ],
+      },
+    ],
+    summary: 'Which repository?',
+  });
+  const questions = {
+    findPending: vi.fn(async () => (options.question ? Some(asked) : None)),
+    saveTransition: vi.fn(async () => !options.lost),
+  } satisfies Partial<BotQuestionRepositoryPort>;
   const handler = new SendBotMessageCommandHandler(
     { bot: async () => bot } as unknown as BotLookupResolver,
     credentials as unknown as ModelProviderCredentialRepositoryPort,
     sealer,
     turns as unknown as BotTurnRepositoryPort,
     stream,
-    approvals as unknown as BotApprovalRepositoryPort,
+    new BotWaitingCardResolver(
+      approvals as unknown as BotApprovalRepositoryPort,
+      questions as unknown as BotQuestionRepositoryPort,
+      stream,
+    ),
     new BotMessageAttachmentsResolver(attachments as unknown as BotAttachmentRepositoryPort),
+    goals as unknown as BotGoalResolver,
   );
   const upload = () => {
     const created = BotAttachmentEntity.upload(
@@ -97,7 +141,7 @@ function setup(
     uploads.push(created);
     return created;
   };
-  return { handler, turns, bot, approvals, card, stream, upload };
+  return { handler, turns, goals, bot, approvals, card, questions, asked, stream, upload };
 }
 
 const send = (
@@ -106,12 +150,13 @@ const send = (
   timeZone: string | null = null,
   credentialScopes: Scope[] | null = null,
   attachmentIds: string[] = [],
+  content = 'Ship it',
 ) =>
   handler.execute(
     new SendBotMessageCommand({
       scope,
       botId,
-      content: 'Ship it',
+      content,
       attachmentIds,
       timeZone,
       credentialScopes,
@@ -208,6 +253,18 @@ describe('SendBotMessageCommandHandler', () => {
     });
   });
 
+  it('retires a card of questions the same way: unanswered, and an open chat is told', async () => {
+    const { handler, bot, questions, asked, stream } = setup({ question: true });
+    await send(handler, bot.id);
+    expect(asked).toMatchObject({ status: 'expired', answers: null, decidedByUserId: null });
+    expect(questions.saveTransition).toHaveBeenCalledWith(asked);
+    expect(stream.publish).toHaveBeenCalledWith(bot.id, {
+      type: 'question',
+      questionId: asked.id,
+      status: 'expired',
+    });
+  });
+
   it('announces nothing when a decision moved the card first', async () => {
     const { handler, bot, stream } = setup({ pending: true, lost: true });
     await send(handler, bot.id);
@@ -215,5 +272,64 @@ describe('SendBotMessageCommandHandler', () => {
       bot.id,
       expect.objectContaining({ type: 'approval' }),
     );
+  });
+
+  it('announces nothing when the questions were answered first', async () => {
+    const { handler, bot, stream } = setup({ question: true, lost: true });
+    await send(handler, bot.id);
+    expect(stream.publish).not.toHaveBeenCalledWith(
+      bot.id,
+      expect.objectContaining({ type: 'question' }),
+    );
+  });
+
+  it('queues a /goal <condition> with its goal, set on that turn with its reach', async () => {
+    const { handler, turns, bot } = setup();
+    await send(handler, bot.id, 'Europe/Madrid', ['bots:write'], [], '/goal pnpm test exits 0');
+    expect(turns.enqueue).not.toHaveBeenCalled();
+    const [turn, message, goal] = vi.mocked(turns.enqueueWithGoal).mock.calls[0];
+    expect(message.content).toBe('/goal pnpm test exits 0');
+    expect(goal).toMatchObject({
+      botId: bot.id,
+      originTurnId: turn.id,
+      objective: 'pnpm test exits 0',
+      credentialScopes: ['bots:write'],
+      timeZone: 'Europe/Madrid',
+    });
+  });
+
+  it('cancels the continuation the goal a /goal replaced left waiting', async () => {
+    const replaced = BotGoalEntity.set({
+      organizationId: 'org-1',
+      botId: 'bot-1',
+      originTurnId: 'turn-0',
+      objective: 'Triage the bugs',
+      limit: 5,
+      credentialScopes: null,
+      timeZone: null,
+    });
+    const { handler, goals, bot } = setup({ replaced });
+    await send(handler, bot.id, null, null, [], '/goal Ship it');
+    expect(goals.cancelWaiting).toHaveBeenCalledWith(replaced, expect.anything());
+  });
+
+  it('sets no goal for any other message', async () => {
+    const { handler, turns, goals, bot } = setup();
+    await send(handler, bot.id);
+    expect(turns.enqueueWithGoal).not.toHaveBeenCalled();
+    expect(goals.cancelWaiting).not.toHaveBeenCalled();
+  });
+
+  // What breaks this: `/goal clear` typed through the API queuing a turn that
+  // spends a model call to say the goal is cleared, without clearing it.
+  it('refuses /goal alone and /goal clear with a generic 400, queuing nothing', async () => {
+    const { handler, turns, bot } = setup();
+    for (const content of ['/goal', '/goal clear']) {
+      await expect(send(handler, bot.id, null, null, [], content)).rejects.toMatchObject({
+        code: 'GENERIC.ARGUMENT_INVALID',
+      });
+    }
+    expect(turns.enqueue).not.toHaveBeenCalled();
+    expect(turns.enqueueWithGoal).not.toHaveBeenCalled();
   });
 });

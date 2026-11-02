@@ -12,7 +12,7 @@ type RepositoryRowBranch = { value: string; label?: string; description?: string
 
 type RepositoryRowOption = {
   id: string;
-  /** Mono, as GitHub names it. */
+  /** As GitHub names it ("acme/xrp-mobile"). */
   name: string;
   defaultBranch: string;
   branches: RepositoryRowBranch[];
@@ -33,9 +33,10 @@ const defaultBranchLabel = (name: string): string => `Base branch for ${name}`;
  * RepositoryRowList — "Cloned by default", inside the project dialog's
  * Defaults fold (`design/version1/SessionsConsole.dc.html`, `op-prepo`): a
  * 14px card with one 40px row per repository the project holds — a checkbox
- * (ticked, it is cloned into every new session of the project), the mono name,
- * and a 168px base-branch pill opening the scope chips' searchable pane. Which
- * repositories are in the project is `RepositoryAddField`'s to decide.
+ * (ticked, it is cloned into every new session of the project), the name in
+ * the picker's 13px type, and a 168px base-branch pill opening the scope
+ * chips' searchable pane. Which repositories are in the project is
+ * `RepositoryAddField`'s to decide.
  *
  * A form control, not a menu: the caller owns `value`, one row per repository
  * in the project's order.
@@ -145,7 +146,7 @@ function RepositoryRow({
       />
       <label
         htmlFor={id}
-        className="min-w-0 flex-1 cursor-pointer truncate font-mono text-[12.5px] text-fg"
+        className="min-w-0 flex-1 cursor-pointer truncate text-[13px] text-fg"
         title={repository.name}
       >
         {repository.name}

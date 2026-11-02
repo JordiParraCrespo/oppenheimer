@@ -19,7 +19,13 @@ import {
   SubagentRunCard,
 } from '@oppenheimer/design-system-web/chat-cards';
 import { ChatComposer } from '@oppenheimer/design-system-web/chat-composer';
-import { ChatImage, ChatImageRemove } from '@oppenheimer/design-system-web/chat-image';
+import {
+  ChatImage,
+  ChatImageButton,
+  ChatImageRemove,
+  ChatImageViewer,
+  ChatImageViewerImage,
+} from '@oppenheimer/design-system-web/chat-image';
 import {
   ComposerContextMeter,
   ComposerMenu,
@@ -46,13 +52,14 @@ import {
 } from '@oppenheimer/design-system-web/chat-decisions';
 import {
   ChatCodeBlock,
+  ChatJsonBlock,
   ChatMarker,
   ChatSource,
   ChatSources,
   ChatSuggestion,
   ChatSuggestions,
 } from '@oppenheimer/design-system-web/chat-elements';
-import { Composer } from '@oppenheimer/design-system-web/composer';
+import { Composer, ComposerFile } from '@oppenheimer/design-system-web/composer';
 import {
   ChatEmptyState,
   ChatHeader,
@@ -80,7 +87,7 @@ import {
   TurnHeader,
 } from '@oppenheimer/design-system-web/chat-transcript';
 import { Trace, TraceGroup, TraceLive, TraceNote, TraceOutput, TraceStep } from '@oppenheimer/design-system-web/chat-trace';
-import { ReasoningRow, ToolCallGroup, ToolCallLive, ToolCallRow } from '@oppenheimer/design-system-web/chat-work';
+import { ReasoningRow, ToolCallGroup, ToolCallLive, ToolCallOutput, ToolCallRow } from '@oppenheimer/design-system-web/chat-work';
 import { CodeBlock } from '@oppenheimer/design-system-web/code-block';
 import { DiffStat } from '@oppenheimer/design-system-web/diff-stat';
 import { DropdownMenuItem } from '@oppenheimer/design-system-web/dropdown-menu';
@@ -125,11 +132,24 @@ import {
   XIcon,
   ZapIcon,
 } from '@oppenheimer/design-system-web/icons';
+import { JsonTree } from '@oppenheimer/design-system-web/json-tree';
 import { StatusDot } from '@oppenheimer/design-system-web/status-dot';
 import { TemplateTile, TemplateTiles } from '@oppenheimer/design-system-web/template-grid';
 import { Textarea } from '@oppenheimer/design-system-web/textarea';
 
 import { GroupHead, Spec } from './page-shell';
+
+const JSON_DEMO = JSON.stringify(
+  {
+    referral: {
+      campaign: { id: 'xrp-winter', startsAt: '2026-11-16T00:00:00.000Z', endsAt: '2026-12-22T23:59:59.000Z', active: true },
+      rewards: [{ tier: 1, amount: 25 }, { tier: 2, amount: 50 }],
+      notes: null,
+    },
+  },
+  null,
+  2,
+);
 
 /** The chat sits on the pane's recessed ground in the product (grey in light, the canvas in dark), so its cards read as cards here too. */
 function ChatSurface({ children }: { children: React.ReactNode }) {
@@ -212,6 +232,17 @@ function ChatTranscriptBody() {
 function ChatWorkBody() {
   return (
     <div className="flex w-full max-w-184 flex-col gap-4">
+      <ToolCallGroup icon={<SearchIcon />} summary="Explored" detail="Read cancel.ts, step.ts · Searched abortSignal · Listed runner" defaultOpen>
+        <ToolCallRow icon={<FileTextIcon />} verb="Read" target="gateway/cancel.ts" />
+        <ToolCallRow icon={<SearchIcon />} verb="Searched" target="abortSignal" meta="14 results" />
+        <ToolCallRow icon={<FileTextIcon />} verb="Read" target="runner/step.ts" />
+        <ToolCallRow
+          icon={<TerminalIcon />}
+          verb="Ran"
+          target="ls runner"
+          output={<ToolCallOutput>{'cancel.test.ts\nstep.test.ts\nstep.ts\nregistry.ts\nlog.ts\nindex.ts\nREADME.md\ntsconfig.json'}</ToolCallOutput>}
+        />
+      </ToolCallGroup>
       <ToolCallGroup summary="Read 3 files, searched 2 patterns, ran 2 commands" failed="1 failed" defaultOpen>
         <ToolCallRow icon={<FileTextIcon />} verb="Read" target="gateway/cancel.ts" meta="L1–96" />
         <ToolCallRow icon={<SearchIcon />} verb="Searched" target="abortSignal" meta="14 results" />
@@ -287,6 +318,43 @@ const SAMPLE_IMAGE = `data:image/svg+xml;utf8,${encodeURIComponent(
   '<svg xmlns="http://www.w3.org/2000/svg" width="160" height="160"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#9db7f5"/><stop offset="1" stop-color="#3b5bdb"/></linearGradient></defs><rect width="160" height="160" fill="url(#g)"/></svg>',
 )}`;
 
+const VIEWER_IMAGES = ['build-log.png', 'trace.png'];
+
+/** Tiles that open whole in the viewer, ← and → through the others. */
+function ChatImageViewerDemo() {
+  const [open, setOpen] = React.useState<number | null>(null);
+  const name = VIEWER_IMAGES[open ?? 0] ?? '';
+  return (
+    <div className="flex gap-1.5">
+      {VIEWER_IMAGES.map((image, index) => (
+        <ChatImageButton key={image} label={`Open ${image}`} onClick={() => setOpen(index)}>
+          <ChatImage src={SAMPLE_IMAGE} alt={image} size="lg" />
+        </ChatImageButton>
+      ))}
+      <ChatImageViewer
+        open={open !== null}
+        onOpenChange={(next) => {
+          if (!next) setOpen(null);
+        }}
+        index={open ?? 0}
+        count={VIEWER_IMAGES.length}
+        onIndexChange={setOpen}
+        name={name}
+        download={{ href: SAMPLE_IMAGE, filename: name }}
+        labels={{
+          close: 'Close',
+          previous: 'Previous image',
+          next: 'Next image',
+          download: 'Download',
+          position: (position, count) => `${position} of ${count}`,
+        }}
+      >
+        <ChatImageViewerImage src={SAMPLE_IMAGE} alt={name} />
+      </ChatImageViewer>
+    </div>
+  );
+}
+
 function ChatElementsBody() {
   return (
     <div className="flex w-full max-w-184 flex-col gap-6">
@@ -310,6 +378,16 @@ function ChatElementsBody() {
         <ChatSource index={3} href="https://nodejs.org">nodejs.org</ChatSource>
       </ChatSources>
       <ChatCodeBlock code={'const ctrl = new AbortController();\nrun.registerStep(step.id, ctrl);\nawait tool.call(input, { signal: ctrl.signal });'} language="ts" />
+      <pre className="m-0 rounded-sm bg-term-bg px-3 py-2.5 text-term-fg">
+        <JsonTree value={{ ok: true, items: [{ id: 'run_81', status: 'passed' }], next: null }} />
+      </pre>
+      <ChatJsonBlock
+        code={JSON_DEMO}
+        value={JSON.parse(JSON_DEMO)}
+        language="json"
+        annotate={(value) => (typeof value === 'string' && value.endsWith('Z') ? new Date(value).toUTCString().slice(5, 22) : null)}
+      />
+      <ChatImageViewerDemo />
       <ChatComposer value="" onValueChange={() => {}} onSubmit={() => {}} placeholder="Message Release Bot" />
       <ChatComposer
         value="What is wrong in this run?"
@@ -329,6 +407,21 @@ function ChatElementsBody() {
             <ChatImage alt="diagram.svg" invalid>
               <ChatImageRemove label="Remove diagram.svg" />
             </ChatImage>
+          </>
+        }
+      />
+      <ChatComposer
+        layout="inline"
+        value="Why does the import fail on these?"
+        onValueChange={() => {}}
+        onSubmit={() => {}}
+        onAttach={() => {}}
+        placeholder="Message Claude"
+        engine="Opus 5.5"
+        attachments={
+          <>
+            <ComposerFile name="failing-import.png" removeLabel="Remove failing-import.png" />
+            <ComposerFile name="vendor-export.pdf" removeLabel="Remove vendor-export.pdf" />
           </>
         }
       />
@@ -750,6 +843,7 @@ function ChatDecisionsBody() {
       </div>
       <ComposerApprovalDemo />
       <QuestionPanel
+        header="Base branch"
         question="Which branch should the pull request target?"
         index={0}
         total={2}
@@ -771,7 +865,35 @@ function ChatDecisionsBody() {
           </>
         }
       />
+      <QuestionPanelSeveralDemo />
     </div>
+  );
+}
+
+function QuestionPanelSeveralDemo() {
+  const [picks, setPicks] = React.useState<number[]>([0, 2]);
+  return (
+    <QuestionPanel
+      header="Platforms"
+      question="Which platforms should it target?"
+      index={1}
+      total={2}
+      options={[
+        { label: 'Web', description: 'React' },
+        { label: 'iOS', description: 'SwiftUI' },
+        { label: 'Android', description: 'Compose' },
+      ]}
+      value={picks}
+      onValueChange={(index) =>
+        setPicks((held) => (held.includes(index) ? held.filter((i) => i !== index) : [...held, index]))
+      }
+      foot={
+        <>
+          <span className="flex-1">Pick as many as apply</span>
+          <Button size="sm">Submit answers</Button>
+        </>
+      }
+    />
   );
 }
 
@@ -1059,7 +1181,7 @@ export function ChatSection() {
         id="chatwork"
         title="Work and tools"
         meta="chat-work.tsx · chat-trace.tsx"
-        desc="What the agent did, in muted ink so it never reads as the answer. A settled run of calls folds into one verb summary with failures named in red; open, each ToolCallRow hangs from a hairline: the glyph, the verb, the target in mono, its meta. A command with output folds over it on the terminal ground. ToolCallLive is the call in flight; ReasoningRow folds the thinking into Thought for 9s. A bot\'s chat draws its work as a Trace instead (chat-trace.tsx): a 15px TraceStep per call that opens to its TraceOutput (numbered lines, cut with Show more or kept behind Show raw output) or TraceNote, and TraceLive while it runs. A step's action sits at the end of its line, outside the fold (Open session on a call that started one)."
+        desc="What the agent did, in muted ink so it never reads as the answer. A settled run of calls folds into one verb summary with failures named in red; open, each ToolCallRow hangs from a hairline: the glyph, the verb, the target in mono, its meta. A command with output folds over it on the terminal ground. A run of read-only calls is the same fold as Explored (Exploring while it runs) with its targets in detail, a file read twice named once. ToolCallOutput keeps a call's text to its first five lines, a line too long to read cut to its head and tail, under +N lines. ToolCallLive is the call in flight; ReasoningRow folds the thinking into Thought for 9s. A bot\'s chat draws its work as a Trace instead (chat-trace.tsx): a 15px TraceStep per call that opens to its TraceOutput (numbered lines, cut with Show more or kept behind Show raw output) or TraceNote, and TraceLive while it runs. A step's action sits at the end of its line, outside the fold (Open session on a call that started one)."
         code={`<ToolCallGroup summary="Read 3 files, ran 2 commands" failed="1 failed"><ToolCallRow icon={<TerminalIcon />} verb="Ran" target="pnpm test" meta="exit 1" tone="danger" output={log} /></ToolCallGroup>`}
       >
         <ChatWorkDemo />
@@ -1068,8 +1190,8 @@ export function ChatSection() {
       <Spec
         id="chatelements"
         title="AI elements"
-        meta="chat-elements.tsx · chat-composer.tsx · chat-image.tsx"
-        desc="The bot chat's smaller parts. ChatSources are the pages a search found, numbered pills that open each one. ChatMarker is a note between turns, muted with its glyph and a mono figure: context compacted, a model switched for the next turn; a day boundary is a TranscriptDivider. ChatSuggestions are next steps as 34px pills on a hairline, one tap filling the composer. ChatCodeBlock is a fenced block in a reply on the 18px card: the language over the code with Copy, the lines numbered. A bot's composer is ChatComposer (chat-composer.tsx), the 28px card that grows from two lines to eight, sharing Composer's send rules and send button; its paperclip opens the image picker, and the images a message carries are ChatImage tiles over the text, 56px with a round cross, breathing while they upload and ringed in red when refused; on the sent turn they are 160px tiles above the bubble. FloatingChip round takes the reader back to the latest turn."
+        meta="chat-elements.tsx · json-tree.tsx · chat-composer.tsx · chat-image.tsx"
+        desc="The bot chat's smaller parts. ChatSources are the pages a search found, numbered pills that open each one. ChatMarker is a note between turns, muted with its glyph and a mono figure: context compacted, a model switched for the next turn; a day boundary is a TranscriptDivider. ChatSuggestions are next steps as 34px pills on a hairline, one tap filling the composer. ChatCodeBlock is a fenced block in a reply on the 18px card: the language over the code with Copy, the lines numbered. A fence that parses as JSON is a ChatJsonBlock on the same card: it opens as a JsonTree (json-tree.tsx), keys in the attribute yellow, objects and arrays folding with their size in mono, a muted note after a leaf such as a time in words, the path on hover, and Tree / Raw on its band; Copy keeps the text as written. A bot's composer is ChatComposer (chat-composer.tsx), the 28px card that grows from two lines to eight, sharing Composer's send rules and send button; its paperclip opens the image picker, and the images a message carries are ChatImage tiles over the text, 56px with a round cross, breathing while they upload and ringed in red when refused; on the sent turn they are 160px tiles above the bubble. A session read as a chat takes ChatComposer inline: one row, the paperclip before the field, and the files a message carries as ComposerFile chips over it, since they are as often a PDF or a log as a picture. FloatingChip round takes the reader back to the latest turn."
         code={`<ChatMarker icon={<CpuIcon />}>Switched to <strong>GPT-5.2 Codex</strong></ChatMarker><ChatSuggestions><ChatSuggestion onClick={fill}>Show the diff</ChatSuggestion></ChatSuggestions><ChatCodeBlock code={code} language="ts">{highlighted}</ChatCodeBlock>`}
       >
         <ChatElementsDemo />
@@ -1109,7 +1231,7 @@ export function ChatSection() {
         id="chatdecisions"
         title="Decisions"
         meta="chat-decisions.tsx"
-        desc="A blocking request takes the composer's place as a card. ApprovalPanel asks may the agent do this, with what it would touch (a command, a file, an app) and numbered choices, recommended first in blue and stop-everything last in red. QuestionPanel asks a question; a pick fills and takes a check, and the person may type their own answer. ComposerApproval is the same request fused onto a bot's composer (Composer above), under a Needs input line, so the person can answer it another way. The number keys pick a row, only while focus is inside the card."
+        desc="A blocking request takes the composer's place as a card. ApprovalPanel asks may the agent do this, with what it would touch (a command, a file, an app) and numbered choices, recommended first in blue and stop-everything last in red. QuestionPanel asks a question; a pick fills and takes a check, and the person may type their own answer. ComposerApproval is the same request fused onto a bot's composer (Composer above), under a Needs input line, so the person can answer it another way. The number keys pick a row, only while focus is inside the card. Where the agent allows several answers, QuestionPanel takes the set of picks and each row toggles."
         code={`<ApprovalPanel title="Run this command?" tool="Bash" detail={<ApprovalCommand>pnpm test</ApprovalCommand>} choices={choices} onChoose={answer} />`}
       >
         <ChatDecisionsDemo />

@@ -14,6 +14,7 @@ package transcript
 import (
 	"log/slog"
 	"regexp"
+	"sync"
 
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/app"
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/domain"
@@ -26,19 +27,29 @@ var conversationPattern = regexp.MustCompile(`^[0-9A-Za-z-]{1,64}$`)
 // agentReader is one agent's transcript: the first message a person sent in
 // a conversation, or "" while there is none yet (an error is a transcript
 // that is there and cannot be read); where the conversation's file is now,
-// "" while there is none; and one of its lines as the chat view's entry, or
-// none for a line the chat does not show.
+// "" while there is none; and one of its lines as the chat view's entry, at
+// most max bytes, or none for a line the chat does not show.
 type agentReader interface {
 	firstPrompt(conversation string) (string, error)
 	path(conversation string) string
-	chatEntry(line []byte) ([]byte, bool)
+	chatEntry(line []byte, max int) ([]byte, bool)
 }
 
 // Reader is app.Transcripts over the files the agent CLIs keep, dispatching
 // to the agent's own reader.
 type Reader struct {
 	agents map[domain.Agent]agentReader
+	// chats is each agent's conversation file, for the chat view.
+	chats  map[domain.Agent]chatSource
 	logger *slog.Logger
+	// statusDir is where `runner statusline` keeps each Claude Code
+	// conversation's status (SaveStatus); empty follows none.
+	statusDir string
+
+	// mu guards questions: each conversation's AskUserQuestion watch
+	// (OpenQuestion), asked from the poll loop.
+	mu        sync.Mutex
+	questions map[string]*questionWatch
 }
 
 var _ app.Transcripts = (*Reader)(nil)
@@ -49,6 +60,15 @@ type Options struct {
 	// ClaudeProjects is Claude Code's `projects/` folder,
 	// `~/.claude/projects` or `$CLAUDE_CONFIG_DIR/projects`.
 	ClaudeProjects string
+	// StatusDir is where the runner's status line keeps what Claude Code
+	// hands it, by conversation; empty sends no status beside the chat.
+	StatusDir string
+	// CodexSessions is Codex's `sessions/` folder, `~/.codex/sessions` or
+	// `$CODEX_HOME/sessions`, for the chat view.
+	CodexSessions string
+	// GrokSessions is Grok's `sessions/` folder, `~/.grok/sessions` or
+	// `$GROK_HOME/sessions`, for the chat view.
+	GrokSessions string
 	// Logger reports a transcript that could not be read, which the session
 	// service treats as none yet; nil is the process's default logger.
 	Logger *slog.Logger
@@ -61,10 +81,19 @@ func New(opts Options) *Reader {
 		logger = slog.Default()
 	}
 	agents := map[domain.Agent]agentReader{}
+	chats := map[domain.Agent]chatSource{}
 	if opts.ClaudeProjects != "" {
-		agents[domain.AgentClaude] = claudeReader{projects: opts.ClaudeProjects}
+		claude := claudeReader{projects: opts.ClaudeProjects}
+		agents[domain.AgentClaude] = claude
+		chats[domain.AgentClaude] = claude
 	}
-	return &Reader{agents: agents, logger: logger}
+	if opts.CodexSessions != "" {
+		chats[domain.AgentCodex] = codexSource{sessions: opts.CodexSessions}
+	}
+	if opts.GrokSessions != "" {
+		chats[domain.AgentGrok] = grokSource{sessions: opts.GrokSessions}
+	}
+	return &Reader{agents: agents, chats: chats, logger: logger, statusDir: opts.StatusDir}
 }
 
 // FirstPrompt implements app.Transcripts.

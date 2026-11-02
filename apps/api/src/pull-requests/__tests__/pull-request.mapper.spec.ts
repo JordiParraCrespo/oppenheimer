@@ -151,4 +151,18 @@ describe('a pull request read in part', () => {
     // The oldest wait is the queue's, not the first row's.
     expect(queue.oldestWaitingSeconds).toBe(90_000);
   });
+
+  it('answers every scope on the all queue, and counts it beside the three scopes', () => {
+    const row = mapper.toRow(snapshot([]), 'ana', NOW);
+    const rows = [
+      { ...row, number: 1, scope: 'mine' as const },
+      { ...row, number: 2, scope: 'requested' as const },
+      { ...row, number: 3, scope: 'watching' as const },
+    ];
+    const all = mapper.toQueue(rows, 'all', 'ana', []);
+    expect(all.items.map((item) => item.number).sort()).toEqual([1, 2, 3]);
+    expect(all.scopes).toEqual({ all: 3, mine: 1, requested: 1, watching: 1 });
+    // A scope still narrows to its own rows.
+    expect(mapper.toQueue(rows, 'mine', 'ana', []).items.map((item) => item.number)).toEqual([1]);
+  });
 });

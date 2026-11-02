@@ -22,10 +22,9 @@ export {
   ConflictException,
   type ErrorDefinition,
   ExceptionBase,
-  GenericErrorCode,
   NotFoundException,
+  VersionConflictException,
 } from './exceptions';
-export { Guard } from './guard';
 export type { Mapper } from './mapper.interface';
 export {
   type ClaimOptions,
@@ -36,7 +35,6 @@ export {
   type StageJobParams,
 } from './outbox/outbox.service';
 export {
-  OUTBOX_TABLE,
   type OutboxChannel,
   type OutboxMessageRecord,
   OutboxMessageSchema,
@@ -48,13 +46,25 @@ export {
   OutboxRelay,
   type OutboxRelayOptions,
 } from './outbox/outbox-relay';
+export { CursorCodec } from './paging/cursor-codec';
+export {
+  type KeysetCursor,
+  type KeysetOrder,
+  type KeysetPage,
+  keysetAfter,
+  keysetPage,
+} from './paging/keyset';
 export { QueryBase } from './query.base';
 export { Paginated, type RepositoryPort } from './repository.port';
 export { RequestContextService } from './request-context.service';
 export { type PersistenceTracked, TypeOrmRepositoryBase } from './typeorm-repository.base';
-export { convertPropsToObject } from './utils';
 export {
   type DomainPrimitive,
   type Primitives,
   ValueObject,
 } from './value-object.base';
+export {
+  type CreateVersionedEntityProps,
+  VersionedAggregateRoot,
+} from './versioned-aggregate-root.base';
+export { retryOnVersionConflict, type Versioned, writeVersioned } from './versioned-write';

@@ -5,7 +5,7 @@ import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { FilterOption, SessionFacet, SessionFilters } from '../lib/session-filters';
 import { SessionFilterChips } from './session-filter-chips';
-import { SessionsFilterMenu } from './sessions-filter-menu';
+import { type ProjectVisibility, SessionsFilterMenu } from './sessions-filter-menu';
 
 /**
  * The sidebar's head. The filters and the settled query are the section's
@@ -19,6 +19,7 @@ export function SessionsSidebarHead({
   filters,
   options,
   dirty,
+  visibility,
   chips,
   onFiltersChange,
   onFiltersClear,
@@ -31,6 +32,7 @@ export function SessionsSidebarHead({
   filters: SessionFilters;
   options: Record<SessionFacet, FilterOption[]>;
   dirty: boolean;
+  visibility: ProjectVisibility;
   chips: { key: SessionFacet; label: string }[];
   onFiltersChange: (patch: Partial<SessionFilters>) => void;
   onFiltersClear: () => void;
@@ -57,6 +59,7 @@ export function SessionsSidebarHead({
             filters={filters}
             options={options}
             dirty={dirty}
+            visibility={visibility}
             onChange={onFiltersChange}
             onClear={onFiltersClear}
           />

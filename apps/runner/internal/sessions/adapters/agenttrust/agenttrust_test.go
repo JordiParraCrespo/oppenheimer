@@ -3,12 +3,25 @@ package agenttrust_test
 import (
 	"encoding/json"
 	"os"
+	"os/exec"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/adapters/agenttrust"
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/domain"
 )
+
+// workDir is a folder as the store keys it, symlinks resolved: on macOS the
+// temporary directory is under /var, which is /private/var.
+func workDir(t *testing.T) string {
+	t.Helper()
+	dir, err := filepath.EvalSymlinks(t.TempDir())
+	if err != nil {
+		t.Fatal(err)
+	}
+	return dir
+}
 
 func read(t *testing.T, path string) map[string]any {
 	t.Helper()
@@ -28,7 +41,7 @@ func read(t *testing.T, path string) map[string]any {
 func TestTrustMarksTheFolderAndKeepsEverythingElse(t *testing.T) {
 	home := t.TempDir()
 	config := filepath.Join(home, ".claude.json")
-	work := t.TempDir()
+	work := workDir(t)
 	before := `{"oauthAccount":{"email":"a@b.c"},"projects":{"/elsewhere":{"hasTrustDialogAccepted":false},"` +
 		work + `":{"allowedTools":["Bash"]}}}`
 	if err := os.WriteFile(config, []byte(before), 0o600); err != nil {
@@ -58,7 +71,7 @@ func TestTrustMarksTheFolderAndKeepsEverythingElse(t *testing.T) {
 
 func TestTrustWritesTheFileWhenClaudeHasNoneYet(t *testing.T) {
 	config := filepath.Join(t.TempDir(), ".claude.json")
-	work := t.TempDir()
+	work := workDir(t)
 
 	if err := agenttrust.New(agenttrust.Options{ClaudeConfig: config}).Trust(domain.AgentClaude, work); err != nil {
 		t.Fatal(err)
@@ -87,7 +100,7 @@ func TestTrustLeavesOtherAgentsAlone(t *testing.T) {
 // race.
 func TestTrustLeavesAFolderAlreadyTrustedUntouched(t *testing.T) {
 	config := filepath.Join(t.TempDir(), ".claude.json")
-	work := t.TempDir()
+	work := workDir(t)
 	before := `{"projects":{"` + work + `":{"hasTrustDialogAccepted": true}}, "zeta": 1, "alpha": 2}`
 	if err := os.WriteFile(config, []byte(before), 0o600); err != nil {
 		t.Fatal(err)
@@ -107,7 +120,7 @@ func TestTrustLeavesAFolderAlreadyTrustedUntouched(t *testing.T) {
 func TestTrustSurvivesNullWhereAMapBelongs(t *testing.T) {
 	for _, before := range []string{`null`, `{"projects":null}`, `{"projects":{"/x":null}}`} {
 		config := filepath.Join(t.TempDir(), ".claude.json")
-		work := t.TempDir()
+		work := workDir(t)
 		if err := os.WriteFile(config, []byte(before), 0o600); err != nil {
 			t.Fatal(err)
 		}
@@ -119,6 +132,52 @@ func TestTrustSurvivesNullWhereAMapBelongs(t *testing.T) {
 		entry := read(t, config)["projects"].(map[string]any)[work].(map[string]any)
 		if entry["hasTrustDialogAccepted"] != true {
 			t.Fatalf("%s: entry = %v", before, entry)
+		}
+	}
+}
+
+// A session is a worktree of the runner's bare clone. Claude Code lets the
+// repository's `.claude/settings.json` pre-approve tools only once the
+// repository itself is trusted, and otherwise asks again in the worktree,
+// which holds `claude --cloud` until it times out; so both are marked.
+func TestTrustMarksTheRepositoryOfAWorktree(t *testing.T) {
+	if _, err := exec.LookPath("git"); err != nil {
+		t.Skip("no git")
+	}
+	for _, bare := range []bool{true, false} {
+		root := workDir(t)
+		repo := filepath.Join(root, "repo.git")
+		git := func(args ...string) string {
+			t.Helper()
+			cmd := exec.Command("git", args...)
+			cmd.Env = append(os.Environ(), "GIT_AUTHOR_NAME=t", "GIT_AUTHOR_EMAIL=t@t", "GIT_COMMITTER_NAME=t", "GIT_COMMITTER_EMAIL=t@t")
+			out, err := cmd.Output()
+			if err != nil {
+				t.Fatalf("git %v: %v", args, err)
+			}
+			return strings.TrimSpace(string(out))
+		}
+		if bare {
+			git("init", "--quiet", "--bare", repo)
+		} else {
+			repo = filepath.Join(root, "main")
+			git("init", "--quiet", repo)
+		}
+		tree := git("-C", repo, "hash-object", "-t", "tree", "-w", "--stdin")
+		commit := git("-C", repo, "commit-tree", "-m", "x", tree)
+		work := filepath.Join(root, "work")
+		git("-C", repo, "worktree", "add", "--quiet", "--detach", work, commit)
+		config := filepath.Join(t.TempDir(), ".claude.json")
+
+		if err := agenttrust.New(agenttrust.Options{ClaudeConfig: config}).Trust(domain.AgentClaude, work); err != nil {
+			t.Fatal(err)
+		}
+
+		projects := read(t, config)["projects"].(map[string]any)
+		for _, dir := range []string{work, repo} {
+			if entry, _ := projects[dir].(map[string]any); entry["hasTrustDialogAccepted"] != true {
+				t.Fatalf("bare=%v: %s not trusted: %v", bare, dir, projects)
+			}
 		}
 	}
 }

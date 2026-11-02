@@ -1,17 +1,23 @@
 import 'reflect-metadata';
 import { describe, expect, it, vi } from 'vitest';
+import type { SessionTerminalWatchRepositoryPort } from '../../database/session-terminal-watch.repository.port';
 import type {
   HostSessionRow,
   WorkSessionRepositoryPort,
 } from '../../database/work-session.repository.port';
+import { SessionTerminalWatchEntity } from '../../domain/session-terminal-watch.entity';
 import { WorkSessionEntity } from '../../domain/work-session.entity';
+import type { CloudFilesPort } from '../cloud-files.port';
+import { CloudTaskFactory } from '../cloud-task.factory';
 import type { SessionDispatchPort } from '../session-dispatch.port';
 import { SessionLaunchSpecFactory } from '../session-launch.factory';
+import type { SessionLaunchCredentials } from '../session-launch-credentials.resolver';
 import { SessionReconciliationResolver } from '../session-reconciliation.resolver';
 
 const HOST = 'd0c6e4f2-3041-4c5d-8e6f-70819203b4c5';
+const EPOCH = 7;
 
-function session(state: 'starting' | 'open', folder?: string): WorkSessionEntity {
+function session(state: 'starting' | 'open', folder?: string, place?: 'cloud'): WorkSessionEntity {
   const entity = WorkSessionEntity.request({
     organizationId: 'org',
     projectId: 'project',
@@ -19,7 +25,8 @@ function session(state: 'starting' | 'open', folder?: string): WorkSessionEntity
     hostId: HOST,
     slug: 'bold-otter-3f9a7k',
     agent: 'claude-code',
-    folder,
+    ...(folder ? { place: 'folder' as const, folder } : {}),
+    ...(place ? { place } : {}),
   });
   if (state === 'open') {
     entity.recordEvent({ seq: 2, kind: 'session.started', payload: {}, occurredAt: new Date() });
@@ -39,24 +46,48 @@ function deleting(state: 'starting' | 'open', acceptUnpushedWork: boolean): Work
   return entity;
 }
 
-function harness(rows: HostSessionRow[]) {
+function harness(rows: HostSessionRow[], watches: SessionTerminalWatchEntity[] = []) {
+  let minted = 0;
+  const cloudFiles = {
+    keep: vi.fn(),
+    link: vi.fn(async () => `https://api.test/f/link-${++minted}`),
+    sampleLink: () => '',
+    open: vi.fn(),
+  } satisfies CloudFilesPort;
   const sessions = {
     findUnresolvedForHostForMachine: vi.fn().mockResolvedValue(rows),
     appendEvents: vi.fn().mockResolvedValue({ accepted: ['k'], rejected: [], appended: [] }),
+    // The row under the lock is the one the resolver read, unless a test says otherwise.
+    appendEventsIf: vi.fn(
+      async (
+        row: WorkSessionEntity,
+        _events: unknown,
+        holds: (fold: WorkSessionEntity['fold'], turn: null) => boolean,
+      ) => (holds(row.fold, null) ? { accepted: ['k'], rejected: [], appended: [] } : null),
+    ),
   } as unknown as WorkSessionRepositoryPort;
   const dispatch = {
     create: vi.fn().mockResolvedValue({ delivered: true, hints: [] }),
     close: vi.fn().mockResolvedValue({ delivered: true, hints: [] }),
+    watchTerminal: vi.fn().mockResolvedValue({ delivered: true, hints: [] }),
   } as unknown as SessionDispatchPort;
-  const launches = new SessionLaunchSpecFactory({
-    slugOf: vi.fn().mockResolvedValue('jordi'),
-    isMember: vi.fn(),
-    ownedBy: vi.fn().mockResolvedValue([]),
-  });
+  const terminalWatches = {
+    findForSessions: vi.fn(async () => watches),
+  } as unknown as SessionTerminalWatchRepositoryPort;
+  const launches = new SessionLaunchSpecFactory(
+    {
+      slugOf: vi.fn().mockResolvedValue('jordi'),
+      isMember: vi.fn(),
+      ownedBy: vi.fn().mockResolvedValue([]),
+    },
+    { for: vi.fn().mockResolvedValue({}) } as unknown as SessionLaunchCredentials,
+    new CloudTaskFactory(cloudFiles),
+  );
   return {
     sessions,
     dispatch,
-    resolver: new SessionReconciliationResolver(sessions, dispatch, launches),
+    resolver: new SessionReconciliationResolver(sessions, dispatch, launches, terminalWatches),
+    terminalWatches,
   };
 }
 
@@ -64,7 +95,7 @@ describe('SessionReconciliationResolver', () => {
   it('dispatches again a launch the host never carried out, with its prompt', async () => {
     const owed = session('starting');
     const h = harness([{ session: owed, prompt: 'fix it' }]);
-    const outcome = await h.resolver.reconcile(HOST, 'run-1', []);
+    const outcome = await h.resolver.reconcile(HOST, 'run-1', EPOCH, []);
     expect(outcome).toEqual({ redispatched: [owed.id], stopped: [], reclosed: [] });
     expect(h.dispatch.create).toHaveBeenCalledWith(owed, {
       organizationSlug: 'jordi',
@@ -81,7 +112,7 @@ describe('SessionReconciliationResolver', () => {
     const owed = session('starting', '/home/jordi/notes');
     const h = harness([{ session: owed }]);
 
-    await h.resolver.reconcile(HOST, 'run-1', []);
+    await h.resolver.reconcile(HOST, 'run-1', EPOCH, []);
 
     expect(h.dispatch.create).toHaveBeenCalledWith(owed, {
       organizationSlug: 'jordi',
@@ -94,23 +125,75 @@ describe('SessionReconciliationResolver', () => {
     const images = [{ imageId: 'parked-1', mediaType: 'image/png' as const }];
     const h = harness([{ session: owed, prompt: 'match this', images }]);
 
-    await h.resolver.reconcile(HOST, 'run-1', []);
+    await h.resolver.reconcile(HOST, 'run-1', EPOCH, []);
 
     expect(h.dispatch.create).toHaveBeenCalledWith(owed, expect.objectContaining({ images }));
   });
 
-  it('records stopped an open session the host no longer holds, keyed by the run', async () => {
+  it('links a cloud session’s files afresh in its task, never sending them as images', async () => {
+    const owed = session('starting', undefined, 'cloud');
+    const images = [{ imageId: 'kept-1', mediaType: 'image/png' as const }];
+    const h = harness([{ session: owed, prompt: 'match this', images }]);
+
+    await h.resolver.reconcile(HOST, 'run-1', EPOCH, []);
+
+    const [, spec] = vi.mocked(h.dispatch.create).mock.calls[0];
+    expect(spec.images).toBeUndefined();
+    expect(spec.prompt).toContain("-o /tmp/attachments/1.png 'https://api.test/f/link-1'");
+  });
+
+  it('records stopped an open session the host no longer holds, keyed by the run and the link', async () => {
     const lost = session('open');
     const h = harness([{ session: lost }]);
-    const outcome = await h.resolver.reconcile(HOST, 'run-1', []);
+    const outcome = await h.resolver.reconcile(HOST, 'run-1', EPOCH, []);
     expect(outcome).toEqual({ redispatched: [], stopped: [lost.id], reclosed: [] });
-    expect(h.sessions.appendEvents).toHaveBeenCalledWith(lost, [
-      expect.objectContaining({
-        kind: 'session.stopped',
-        idempotencyKey: 'session.stopped:hello-run-1',
-        source: 'api',
-      }),
-    ]);
+    expect(h.sessions.appendEventsIf).toHaveBeenCalledWith(
+      lost,
+      [
+        expect.objectContaining({
+          kind: 'session.stopped',
+          idempotencyKey: 'session.stopped:hello-run-1-7',
+          source: 'api',
+        }),
+      ],
+      expect.any(Function),
+    );
+  });
+
+  it('records the same pane lost again on a later link of the same runner process', async () => {
+    // Lost, restarted, lost again without the runner restarting: one key per
+    // run made the second stop a duplicate of the first, and the session
+    // stayed open on a pane that was gone.
+    const lost = session('open');
+    const h = harness([{ session: lost }]);
+    await h.resolver.reconcile(HOST, 'run-1', 7, []);
+    await h.resolver.reconcile(HOST, 'run-1', 8, []);
+    const keys = vi
+      .mocked(h.sessions.appendEventsIf)
+      .mock.calls.map(([, events]) => events[0]?.idempotencyKey);
+    expect(new Set(keys).size).toBe(2);
+  });
+
+  it('records nothing when the session was stopped after the rows were read', async () => {
+    // The decision is taken again under the row lock: another link's hello, or
+    // a person's stop, got there first.
+    const lost = session('open');
+    const h = harness([{ session: lost }]);
+    const stoppedMeanwhile = session('open');
+    stoppedMeanwhile.recordEvent({
+      seq: 3,
+      kind: 'session.stopped',
+      payload: {},
+      occurredAt: new Date(),
+    });
+    vi.mocked(h.sessions.appendEventsIf).mockImplementation(async (_row, _events, holds) =>
+      holds(stoppedMeanwhile.fold, null) ? { accepted: ['k'], rejected: [], appended: [] } : null,
+    );
+
+    const outcome = await h.resolver.reconcile(HOST, 'run-1', EPOCH, []);
+
+    expect(outcome.stopped).toEqual([]);
+    expect(h.sessions.appendEvents).not.toHaveBeenCalled();
   });
 
   it('leaves alone what the host holds, and what is already stopped', async () => {
@@ -118,10 +201,10 @@ describe('SessionReconciliationResolver', () => {
     const stopped = session('open');
     stopped.recordEvent({ seq: 3, kind: 'session.stopped', payload: {}, occurredAt: new Date() });
     const h = harness([{ session: held }, { session: stopped }]);
-    const outcome = await h.resolver.reconcile(HOST, 'run-1', [held.id]);
+    const outcome = await h.resolver.reconcile(HOST, 'run-1', EPOCH, [held.id]);
     expect(outcome).toEqual({ redispatched: [], stopped: [], reclosed: [] });
     expect(h.dispatch.create).not.toHaveBeenCalled();
-    expect(h.sessions.appendEvents).not.toHaveBeenCalled();
+    expect(h.sessions.appendEventsIf).not.toHaveBeenCalled();
   });
 
   it('sends a close still owed again with its acceptUnpushedWork, held or not, and records the lost pane stopped', async () => {
@@ -131,7 +214,7 @@ describe('SessionReconciliationResolver', () => {
     const held = deleting('open', false);
     const h = harness([{ session: lost }, { session: held }]);
 
-    const outcome = await h.resolver.reconcile(HOST, 'run-1', [held.id]);
+    const outcome = await h.resolver.reconcile(HOST, 'run-1', EPOCH, [held.id]);
 
     expect(outcome).toEqual({ redispatched: [], stopped: [lost.id], reclosed: [lost.id, held.id] });
     expect(h.dispatch.close).toHaveBeenCalledWith(lost, { acceptUnpushedWork: true });
@@ -143,7 +226,7 @@ describe('SessionReconciliationResolver', () => {
     const owed = deleting('starting', false);
     const h = harness([{ session: owed, prompt: 'fix it' }]);
 
-    const outcome = await h.resolver.reconcile(HOST, 'run-1', []);
+    const outcome = await h.resolver.reconcile(HOST, 'run-1', EPOCH, []);
 
     expect(outcome).toEqual({ redispatched: [], stopped: [], reclosed: [owed.id] });
     expect(h.dispatch.create).not.toHaveBeenCalled();
@@ -163,10 +246,10 @@ describe('SessionReconciliationResolver', () => {
     });
     const h = harness([{ session: failed }]);
 
-    const outcome = await h.resolver.reconcile(HOST, 'run-1', []);
+    const outcome = await h.resolver.reconcile(HOST, 'run-1', EPOCH, []);
 
     expect(outcome).toEqual({ redispatched: [], stopped: [], reclosed: [failed.id] });
-    expect(h.sessions.appendEvents).not.toHaveBeenCalled();
+    expect(h.sessions.appendEventsIf).not.toHaveBeenCalled();
     expect(h.dispatch.create).not.toHaveBeenCalled();
   });
 
@@ -187,7 +270,7 @@ describe('SessionReconciliationResolver', () => {
     });
     const h = harness([{ session: refused }, { session: restarted }]);
 
-    await h.resolver.reconcile(HOST, 'run-1', [refused.id, restarted.id]);
+    await h.resolver.reconcile(HOST, 'run-1', EPOCH, [refused.id, restarted.id]);
 
     expect(h.dispatch.close).not.toHaveBeenCalled();
   });
@@ -197,8 +280,30 @@ describe('SessionReconciliationResolver', () => {
     const h = harness([{ session: owed }]);
     vi.mocked(h.dispatch.close).mockResolvedValue({ delivered: false, hints: ['host_offline'] });
 
-    const outcome = await h.resolver.reconcile(HOST, 'run-1', [owed.id]);
+    const outcome = await h.resolver.reconcile(HOST, 'run-1', EPOCH, [owed.id]);
 
     expect(outcome.reclosed).toEqual([]);
+  });
+
+  it('sends the watches of the live sessions a host holds again, with their counts, since a runner keeps them in memory', async () => {
+    const held = session('open');
+    const gone = session('open');
+    const watch = SessionTerminalWatchEntity.watch({
+      organizationId: 'org',
+      sessionId: held.id,
+      pattern: 'FAIL',
+    });
+    const h = harness([{ session: held }, { session: gone }], [watch]);
+
+    await h.resolver.reconcile(HOST, 'run-1', EPOCH, [held.id]);
+
+    // Only the sessions the host holds: one it lost is recorded stopped, not watched.
+    expect(h.terminalWatches.findForSessions).toHaveBeenCalledWith('org', [held.id]);
+    // With the count already reported, so a runner that restarted counts on from it.
+    expect(h.dispatch.watchTerminal).toHaveBeenCalledWith(held, {
+      watchId: watch.id,
+      pattern: 'FAIL',
+      count: 0,
+    });
   });
 });

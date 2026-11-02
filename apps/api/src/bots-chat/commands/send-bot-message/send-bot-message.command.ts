@@ -12,6 +12,8 @@ export class SendBotMessageCommand extends CommandBase {
   readonly timeZone: string | null;
   /** The scopes of the credential it was sent with; null for a browser session. */
   readonly credentialScopes: readonly Scope[] | null;
+  /** Into the turn under way, at its next tool call (`BotSteerPolicy`); text alone steers. */
+  readonly steer: boolean;
 
   constructor(props: CommandProps<SendBotMessageCommand>) {
     super(props);
@@ -21,5 +23,6 @@ export class SendBotMessageCommand extends CommandBase {
     this.attachmentIds = props.attachmentIds ?? [];
     this.timeZone = props.timeZone ?? null;
     this.credentialScopes = props.credentialScopes ?? null;
+    this.steer = props.steer ?? false;
   }
 }

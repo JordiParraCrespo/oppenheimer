@@ -182,6 +182,36 @@ type Publisher interface {
 	// message offered before the link exists, or lost with the process
 	// before it landed, is offered again.
 	FirstPrompt(session domain.Session, text string, reported func()) bool
+	// DecisionChanged carries what the session's agent now waits on the
+	// person for, nil once nothing, to the control plane as `agent.decision`.
+	// It is called when the pending decision appears, changes or clears.
+	DecisionChanged(session domain.Session, decision *domain.Decision)
+	// TerminalMatched reports that a terminal watch counted new matching
+	// lines on the session's screen: count is every one it has counted so
+	// far. The lines themselves never leave the host.
+	TerminalMatched(sessionID, watchID string, count int)
+}
+
+// Listener hears each session the service saw move, after the change is
+// written: a new state, or the end of it (a state that is not live). It runs
+// on the caller's goroutine, so it must hand anything slow to one of its own.
+type Listener interface {
+	SessionMoved(session domain.Session, stateChanged bool)
+}
+
+// ProgramStatus is the agent's own word on what it is doing (OSC 7501),
+// kept by the `pty` wrapper its window runs under. It outranks what the
+// screen classifier reads, which stays the fallback for an agent that says
+// nothing (`product/research/lessons-from-herdr.md`).
+type ProgramStatus interface {
+	// Wrap is the words that put a session's agent under the wrapper,
+	// before its own command line; none leaves it unwrapped.
+	Wrap(sessionID string) []string
+	// Read returns what the session's agent last reported, while its
+	// wrapper runs.
+	Read(sessionID string) (domain.ProgramReport, bool)
+	// Forget drops what a session that ended left behind.
+	Forget(sessionID string)
 }
 
 // Transcripts reads what an agent's own transcript says, on this host. The
@@ -196,12 +226,18 @@ type Transcripts interface {
 	// transcript cannot be read at all. It is asked again on the next poll,
 	// so a failure is only a later name.
 	FirstPrompt(agent domain.Agent, conversation string) string
-	// Follow sends the conversation's entries to emit, the history first
-	// under Reset and then each one the agent appends, until ctx ends. An
+	// Follow sends the session's conversation's entries to emit, the history
+	// first under Reset and then each one the agent appends, until ctx ends.
+	// The session says where it is: its conversation's name, where its agent
+	// serves it, or the directory it ran in. An
 	// entry over entryMax bytes is left out and a batch holds at most
 	// batchMax. A batch emit refuses is offered again. ErrNoChat when this
 	// runner cannot read the agent's transcript.
-	Follow(ctx context.Context, agent domain.Agent, conversation string, entryMax, batchMax int, emit func(ChatBatch) error) error
+	Follow(ctx context.Context, session domain.Session, entryMax, batchMax int, emit func(ChatBatch) error) error
+	// OpenQuestion is the agent's latest AskUserQuestion call that has no
+	// result in the transcript yet, as the decision it asks (29-inbox,
+	// slice 4); false when there is none, or no transcript to read.
+	OpenQuestion(agent domain.Agent, conversation string) (domain.Decision, bool)
 }
 
 // ChatBatch is a run of transcript entries for the chat view, each one the
@@ -222,6 +258,12 @@ func (NopPublisher) SessionChanged(domain.Session) {}
 
 // FirstPrompt implements Publisher: nobody takes it.
 func (NopPublisher) FirstPrompt(domain.Session, string, func()) bool { return false }
+
+// DecisionChanged implements Publisher.
+func (NopPublisher) DecisionChanged(domain.Session, *domain.Decision) {}
+
+// TerminalMatched implements Publisher.
+func (NopPublisher) TerminalMatched(string, string, int) {}
 
 // LaunchGate holds an agent's launch while something is replacing that
 // agent's executable, so a session never starts a CLI halfway through its

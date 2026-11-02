@@ -313,6 +313,12 @@ func TestEnsureFetchesOnlyTheBranchesItIsGiven(t *testing.T) {
 	if err := c.Ensure(ctx, repo, remote, "main"); err != nil {
 		t.Fatal(err)
 	}
+	// The clone's deepen runs on in the background, and while it does Ensure
+	// takes the refs it brought as current and fetches nothing: on a slow
+	// host the push below landed after the deepen had read origin, and
+	// origin/main never moved. This is a later session's fetch, so the
+	// clone has finished deepening.
+	c.Wait()
 	mirror := layout.Store(repo)
 	before := remoteRef(t, mirror, "main")
 	advance(t, remote, "main")
@@ -337,6 +343,9 @@ func TestEnsureFailsWhenTheRefIsNotABranchOnTheRemote(t *testing.T) {
 	if err := c.Ensure(ctx, repo, remote, "main"); err != nil {
 		t.Fatal(err)
 	}
+	// The clone's history arrives in the background, fetching every branch;
+	// it lands before "elsewhere" exists, or it would be what fetched it.
+	c.Wait()
 	advance(t, remote, "elsewhere")
 
 	err := c.Ensure(ctx, repo, "", "no-such-branch")
@@ -404,6 +413,36 @@ func TestAddCutsANewBranchFromTheBaseAndRemoveTakesItAway(t *testing.T) {
 	}
 	if _, err := os.Stat(worktree); !os.IsNotExist(err) {
 		t.Fatal("the worktree is still on disk")
+	}
+}
+
+// A base branch with a slash in its name (`claude/x`, what a cloud session
+// pushes) is a branch on origin like any other. It was taken for a ref
+// already qualified and passed to git as is, which the bare store has no
+// local branch for: git either refused it ("fatal: Not a valid object name")
+// or guessed origin's branch and checked out a local copy of the base instead
+// of the session's branch. A plain add and a spare both cut from it.
+func TestAddCutsFromABaseBranchWithASlashInItsName(t *testing.T) {
+	remote := origin(t)
+	advance(t, remote, "claude/blissful-newton")
+	c, layout := client(t)
+	ctx := context.Background()
+	if err := c.Ensure(ctx, repo, remote, "claude/blissful-newton"); err != nil {
+		t.Fatal(err)
+	}
+	want := remoteRef(t, layout.Store(repo), "claude/blissful-newton")
+
+	for _, slug := range []string{"first", "second"} {
+		worktree := checkout(layout, slug)
+		if err := c.Add(ctx, repo, worktree, "oppenheimer/"+slug, "claude/blissful-newton", true); err != nil {
+			t.Fatalf("add %s: %v", slug, err)
+		}
+		if got := strings.TrimSpace(git(t, worktree, "rev-parse", "HEAD")); got != want {
+			t.Fatalf("%s is at %s, want the base's %s", slug, got, want)
+		}
+		if got := strings.TrimSpace(git(t, worktree, "rev-parse", "--abbrev-ref", "HEAD")); got != "oppenheimer/"+slug {
+			t.Fatalf("%s is on %q, want its own branch", slug, got)
+		}
 	}
 }
 

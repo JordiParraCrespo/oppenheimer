@@ -10,7 +10,7 @@ import { SessionErrors } from '../domain/sessions.errors';
  */
 export function throwIfRefused(
   outcome: SessionCreateOutcome,
-  names: { projectSlug: string; hostId: string },
+  names: { projectSlug: string; hostId: string | null },
 ): void {
   if (outcome.refused === 'project-archived') {
     throw new AppError(SessionErrors.PROJECT_ARCHIVED, {

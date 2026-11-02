@@ -1,6 +1,6 @@
 import { Inject } from '@nestjs/common';
 import { type IQueryHandler, QueryHandler } from '@nestjs/cqrs';
-import { AppError } from '@oppenheimer/backend-core';
+import { AppError, requireFound } from '@oppenheimer/backend-core';
 import { API_TOKEN_REPOSITORY } from '../../api-tokens.di-tokens';
 import type { ApiTokenRepositoryPort } from '../../database/api-token.repository.port';
 import type { ApiTokenEntity } from '../../domain/api-token.entity';
@@ -18,9 +18,7 @@ export class FindApiTokenByIdQueryHandler
 
   async execute(query: FindApiTokenByIdQuery): Promise<ApiTokenEntity> {
     const found = await this.apiTokens.findOneById(query.tokenId);
-    if (found.isNone()) throw new AppError(ApiTokenErrors.NOT_FOUND);
-
-    const token = found.unwrap();
+    const token = requireFound(found, ApiTokenErrors.NOT_FOUND);
     // A token belonging to someone else is reported as missing rather than
     // forbidden, so token ids cannot be probed for existence.
     if (token.userId !== query.userId) throw new AppError(ApiTokenErrors.NOT_FOUND);

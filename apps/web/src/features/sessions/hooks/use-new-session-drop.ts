@@ -1,44 +1,21 @@
-import { createContext, useContext, useEffect, useState } from 'react';
-
-type Receive = (files: File[]) => void;
-
-/** The pane's end calls `deliver`; the composer's end `register`s itself. */
-type NewSessionDrop = {
-  deliver: Receive;
-  /** Take the pane's drops; returns the function that stops. */
-  register: (receive: Receive) => () => void;
-};
+import { createContext, useContext, useState } from 'react';
+import { createFileHandOff, type FileHandOff } from '../lib/file-hand-off';
+import { useTakeFiles } from './use-take-files';
 
 /**
  * Where New session's pane hands a drop: the screen's `DropZone` wraps the
  * pane and calls `deliver`; the composer, which holds the task's files,
- * registers itself. The files stay in the composer and a keystroke stays in
- * the textarea: the object is made once, so nothing re-renders through it.
+ * registers itself (`FileHandOff`).
  */
-export const NewSessionDropContext = createContext<NewSessionDrop | null>(null);
+export const NewSessionDropContext = createContext<FileHandOff | null>(null);
 
 /** The screen's end, made once for the screen's life. */
-export function useNewSessionDrop(): NewSessionDrop {
-  const [drop] = useState<NewSessionDrop>(() => {
-    let current: Receive | null = null;
-    return {
-      deliver: (files) => current?.(files),
-      register: (receive) => {
-        current = receive;
-        return () => {
-          if (current === receive) current = null;
-        };
-      },
-    };
-  });
+export function useNewSessionDrop(): FileHandOff {
+  const [drop] = useState(createFileHandOff);
   return drop;
 }
 
-/**
- * The composer's end: take the pane's drops while mounted. The outside
- * system is the screen's drop target, registered after render.
- */
-export function useReceiveDrops(receive: Receive) {
-  const drop = useContext(NewSessionDropContext);
-  useEffect(() => drop?.register(receive));
+/** The composer's end: take the pane's drops while mounted. */
+export function useReceiveDrops(receive: (files: File[]) => void) {
+  useTakeFiles(useContext(NewSessionDropContext), receive);
 }

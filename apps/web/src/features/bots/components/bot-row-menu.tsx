@@ -7,6 +7,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
   IconButton,
+  SearchList,
 } from '@oppenheimer/design-system-web';
 import { Ellipsis } from '@oppenheimer/design-system-web/icons';
 import { useState } from 'react';
@@ -56,7 +57,7 @@ export function BotRowMenu({
       >
         <Ellipsis />
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="min-w-47.5">
+      <DropdownMenuContent align="end" className={pane === 'move' ? 'w-68' : 'min-w-47.5'}>
         {pane === 'root' ? (
           <>
             <DropdownMenuItem onClick={onSettings}>{t('bots.sidebar.settings')}</DropdownMenuItem>
@@ -77,11 +78,19 @@ export function BotRowMenu({
             {targets.length === 0 ? (
               <DropdownMenuItem disabled>{t('bots.sidebar.moveNone')}</DropdownMenuItem>
             ) : (
-              targets.map((target) => (
-                <DropdownMenuItem key={target.id ?? 'ungrouped'} onClick={() => onMove(target.id)}>
-                  {target.name}
-                </DropdownMenuItem>
-              ))
+              <SearchList
+                className="-mx-1 -mb-1"
+                aria-label={t('bots.sidebar.moveTitle')}
+                options={targets.map((target) => ({ value: target.id, label: target.name }))}
+                value={groupId}
+                onPick={(option) => {
+                  onMove(option.value);
+                  onOpenChange(false);
+                  setPane('root');
+                }}
+                searchPlaceholder={t('common.search.groups')}
+                emptyText={(query) => t('common.search.noMatch', { query })}
+              />
             )}
           </>
         )}

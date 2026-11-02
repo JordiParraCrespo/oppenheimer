@@ -1,6 +1,6 @@
 import { Inject, Logger } from '@nestjs/common';
 import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
-import { canGrantScope, ResourceRegistry } from '@oppenheimer/backend-authz';
+import { canGrantScope, ResourceRegistry, requireTenant } from '@oppenheimer/backend-authz';
 import { AppError } from '@oppenheimer/backend-core';
 import type { AggregateID } from '@oppenheimer/backend-ddd';
 import { PrincipalResidencyChecker } from '../../application/principal-residency.policy';
@@ -33,9 +33,7 @@ export class CreateAccessGrantCommandHandler
 
   async execute(command: CreateAccessGrantCommand): Promise<AggregateID> {
     const { scope } = command;
-    if (!scope.organizationId) {
-      throw new AppError(AccessGrantErrors.NO_ACTIVE_ORGANIZATION);
-    }
+    requireTenant(scope);
 
     // An unknown subject is a warning, not a rejection: the catalog is
     // advisory and an admin may grant over a resource this deployment has not

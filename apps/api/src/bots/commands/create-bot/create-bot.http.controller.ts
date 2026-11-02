@@ -41,8 +41,8 @@ export class CreateBotHttpController {
   @ApiResponse({ status: 201, type: BotResponseDto })
   @ApiProblemResponse({
     status: 400,
-    description: 'Bots belong to an organization',
-    code: 'BOTS_002',
+    description: 'No active workspace',
+    code: 'TENANT_001',
   })
   @ApiProblemResponse({ status: 404, description: 'Bot group not found', code: 'BOTS_003' })
   @ApiProblemResponse({ status: 404, description: 'Host not found', code: 'HOSTS_001' })

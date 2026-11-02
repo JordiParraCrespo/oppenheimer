@@ -267,6 +267,13 @@ func (t *Terminals) Launch(_ context.Context, target, dir, command string) error
 
 // Paste implements app.Terminals by appending to the screen and recording
 // the paste, so a test can tell it from typed keys.
+// PastesSoFar is a copy of Pastes, safe to read while pastes are running.
+func (t *Terminals) PastesSoFar() []string {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	return append([]string(nil), t.Pastes...)
+}
+
 func (t *Terminals) Paste(_ context.Context, target, _ string, text string) error {
 	t.mu.Lock()
 	defer t.mu.Unlock()

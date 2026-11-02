@@ -5,10 +5,14 @@ import {
 } from '@oppenheimer/shared/workspace-events';
 import type { ScopeContext } from '../../auth/domain/scope-context.types';
 
-/** What reading each kind of change takes: the subject a role reads it by, the scope a credential does. */
+/**
+ * What reading each kind of change takes: the subject a role reads it by, the
+ * scope a credential does. A person's own Inbox is theirs whatever their
+ * roles (`inbox` levels are backed by no rule), so it names no subject.
+ */
 const READ_BY: Record<
   WorkspaceEventType,
-  { subject: 'Session' | 'Host' | 'Automation' | 'Task'; scope: Scope }
+  { subject: 'Session' | 'Host' | 'Automation' | 'Task' | 'Bot' | null; scope: Scope }
 > = {
   'session.changed': { subject: 'Session', scope: 'sessions:read' },
   'host.changed': { subject: 'Host', scope: 'hosts:read' },
@@ -16,6 +20,8 @@ const READ_BY: Record<
   'automationRun.changed': { subject: 'Automation', scope: 'automations:read' },
   'task.changed': { subject: 'Task', scope: 'tasks:read' },
   'milestone.changed': { subject: 'Task', scope: 'tasks:read' },
+  'botApproval.changed': { subject: 'Bot', scope: 'bots:read' },
+  'inboxMark.changed': { subject: null, scope: 'inbox:read' },
 };
 
 /** The kinds of change this caller may read: its role's ability, and a credential's scopes on top. */
@@ -27,7 +33,7 @@ export function readableTypes(
   return new Set(
     WORKSPACE_EVENT_TYPES.filter((type) => {
       const { subject, scope } = READ_BY[type];
-      return ability.can('read', subject) && (!scopes || scopes.has(scope));
+      return (subject === null || ability.can('read', subject)) && (!scopes || scopes.has(scope));
     }),
   );
 }

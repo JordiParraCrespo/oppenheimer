@@ -1,6 +1,7 @@
 {
   "name": "@oppenheimer/frontend-consumer",
   "version": "1.0.0",
+  "sideEffects": false,
   "private": true,
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -16,6 +17,10 @@
     "./react": {
       "types": "./dist/react/index.d.ts",
       "import": "./dist/react/index.js"
+    },
+    "./testing": {
+      "types": "./dist/testing/index.d.ts",
+      "import": "./dist/testing/index.js"
     }
   },
   "peerDependencies": {

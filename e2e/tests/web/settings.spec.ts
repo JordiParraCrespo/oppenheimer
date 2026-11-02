@@ -41,7 +41,7 @@ test('settings opens from the account menu, walks its sections and comes back', 
   await expect(page).toHaveURL(/\/settings\/hosts$/);
 
   await page.getByRole('link', { name: 'Back to console' }).click();
-  await expect(page).toHaveURL(/\/sessions/);
+  await expect(page).toHaveURL(/\/inbox/);
 
   await owner.api.dispose();
 });

@@ -19,6 +19,7 @@ import { Route as AuthPublicRouteImport } from './routes/_auth/_public'
 import { Route as AuthOnboardingRouteImport } from './routes/_auth/onboarding'
 import { Route as AuthenticatedSplatRouteImport } from './routes/_authenticated/$'
 import { Route as AuthenticatedAutomationsRouteImport } from './routes/_authenticated/automations'
+import { Route as AuthenticatedInboxRouteImport } from './routes/_authenticated/inbox'
 import { Route as AuthenticatedPlanRouteImport } from './routes/_authenticated/plan'
 import { Route as AuthenticatedPullsRouteImport } from './routes/_authenticated/pulls'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
@@ -40,6 +41,7 @@ import { Route as AuthenticatedBotsIndexRouteImport } from './routes/_authentica
 import { Route as AuthenticatedBotsBotIdRouteImport } from './routes/_authenticated/bots/$botId'
 import { Route as AuthenticatedPlanIndexRouteImport } from './routes/_authenticated/plan/index'
 import { Route as AuthenticatedPlanCalendarRouteImport } from './routes/_authenticated/plan/calendar'
+import { Route as AuthenticatedPlanInboxRouteImport } from './routes/_authenticated/plan/inbox'
 import { Route as AuthenticatedPlanMilestonesRouteImport } from './routes/_authenticated/plan/milestones'
 import { Route as AuthenticatedPullsIndexRouteImport } from './routes/_authenticated/pulls/index'
 import { Route as AuthenticatedPullsAnalyticsRouteImport } from './routes/_authenticated/pulls/analytics'
@@ -47,21 +49,31 @@ import { Route as AuthenticatedSessionsIndexRouteImport } from './routes/_authen
 import { Route as AuthenticatedSessionsSessionIdRouteImport } from './routes/_authenticated/sessions/$sessionId'
 import { Route as AuthenticatedSessionsNewRouteImport } from './routes/_authenticated/sessions/new'
 import { Route as AuthenticatedSettingsIndexRouteImport } from './routes/_authenticated/settings/index'
+import { Route as AuthenticatedSettingsCloudAgentsRouteImport } from './routes/_authenticated/settings/cloud-agents'
+import { Route as AuthenticatedSettingsMailRouteImport } from './routes/_authenticated/settings/mail'
 import { Route as AuthenticatedSettingsModelProvidersRouteImport } from './routes/_authenticated/settings/model-providers'
 import { Route as AuthenticatedSettingsProfileRouteImport } from './routes/_authenticated/settings/profile'
 import { Route as AuthenticatedSettingsRepositoriesRouteImport } from './routes/_authenticated/settings/repositories'
+import { Route as AuthenticatedSettingsWhatsappRouteImport } from './routes/_authenticated/settings/whatsapp'
+import { Route as AuthenticatedAutomationsBotsBotIdRouteImport } from './routes/_authenticated/automations_.bots.$botId'
 import { Route as AuthenticatedBotsBotIdSettingsRouteImport } from './routes/_authenticated/bots_.$botId.settings'
 import { Route as AuthenticatedPlanCalendarGoogleRouteImport } from './routes/_authenticated/plan/calendar_.google'
+import { Route as AuthenticatedPlanBotsBotIdRouteImport } from './routes/_authenticated/plan_.bots.$botId'
+import { Route as AuthenticatedPullsBotsBotIdRouteImport } from './routes/_authenticated/pulls_.bots.$botId'
+import { Route as AuthenticatedSessionsBotsBotIdRouteImport } from './routes/_authenticated/sessions/bots.$botId'
 import { Route as AuthenticatedSettingsHostsIndexRouteImport } from './routes/_authenticated/settings/hosts/index'
 import { Route as AuthenticatedSettingsHostsNewRouteImport } from './routes/_authenticated/settings/hosts/new'
+import { Route as AuthenticatedSettingsMailGoogleRouteImport } from './routes/_authenticated/settings/mail_.google'
 import { Route as AuthenticatedAutomationsAutomationIdSessionsSessionIdRouteImport } from './routes/_authenticated/automations_.$automationId.sessions.$sessionId'
 import { Route as AuthenticatedBotsBotIdSettingsIndexRouteImport } from './routes/_authenticated/bots_.$botId.settings/index'
 import { Route as AuthenticatedBotsBotIdSettingsHomeHostRouteImport } from './routes/_authenticated/bots_.$botId.settings/home-host'
 import { Route as AuthenticatedBotsBotIdSettingsInstructionsRouteImport } from './routes/_authenticated/bots_.$botId.settings/instructions'
 import { Route as AuthenticatedBotsBotIdSettingsMemoryRouteImport } from './routes/_authenticated/bots_.$botId.settings/memory'
+import { Route as AuthenticatedBotsBotIdSettingsPermissionsRouteImport } from './routes/_authenticated/bots_.$botId.settings/permissions'
 import { Route as AuthenticatedBotsBotIdSettingsProfileRouteImport } from './routes/_authenticated/bots_.$botId.settings/profile'
 import { Route as AuthenticatedBotsBotIdSettingsRoutinesRouteImport } from './routes/_authenticated/bots_.$botId.settings/routines'
 import { Route as AuthenticatedBotsBotIdSettingsRunsOnRouteImport } from './routes/_authenticated/bots_.$botId.settings/runs-on'
+import { Route as AuthenticatedBotsBotIdSettingsSkillsRouteImport } from './routes/_authenticated/bots_.$botId.settings/skills'
 import { Route as AuthenticatedPullsInstallationIdGithubRepoIdNumberRouteImport } from './routes/_authenticated/pulls_.$installationId.$githubRepoId.$number'
 
 const IndexRoute = IndexRouteImport.update({
@@ -112,6 +124,11 @@ const AuthenticatedAutomationsRoute =
     path: '/automations',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedInboxRoute = AuthenticatedInboxRouteImport.update({
+  id: '/inbox',
+  path: '/inbox',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
 const AuthenticatedPlanRoute = AuthenticatedPlanRouteImport.update({
   id: '/plan',
   path: '/plan',
@@ -222,6 +239,11 @@ const AuthenticatedPlanCalendarRoute =
     path: '/calendar',
     getParentRoute: () => AuthenticatedPlanRoute,
   } as any)
+const AuthenticatedPlanInboxRoute = AuthenticatedPlanInboxRouteImport.update({
+  id: '/inbox',
+  path: '/inbox',
+  getParentRoute: () => AuthenticatedPlanRoute,
+} as any)
 const AuthenticatedPlanMilestonesRoute =
   AuthenticatedPlanMilestonesRouteImport.update({
     id: '/milestones',
@@ -263,6 +285,18 @@ const AuthenticatedSettingsIndexRoute =
     path: '/',
     getParentRoute: () => AuthenticatedSettingsRoute,
   } as any)
+const AuthenticatedSettingsCloudAgentsRoute =
+  AuthenticatedSettingsCloudAgentsRouteImport.update({
+    id: '/cloud-agents',
+    path: '/cloud-agents',
+    getParentRoute: () => AuthenticatedSettingsRoute,
+  } as any)
+const AuthenticatedSettingsMailRoute =
+  AuthenticatedSettingsMailRouteImport.update({
+    id: '/mail',
+    path: '/mail',
+    getParentRoute: () => AuthenticatedSettingsRoute,
+  } as any)
 const AuthenticatedSettingsModelProvidersRoute =
   AuthenticatedSettingsModelProvidersRouteImport.update({
     id: '/model-providers',
@@ -281,6 +315,18 @@ const AuthenticatedSettingsRepositoriesRoute =
     path: '/repositories',
     getParentRoute: () => AuthenticatedSettingsRoute,
   } as any)
+const AuthenticatedSettingsWhatsappRoute =
+  AuthenticatedSettingsWhatsappRouteImport.update({
+    id: '/whatsapp',
+    path: '/whatsapp',
+    getParentRoute: () => AuthenticatedSettingsRoute,
+  } as any)
+const AuthenticatedAutomationsBotsBotIdRoute =
+  AuthenticatedAutomationsBotsBotIdRouteImport.update({
+    id: '/automations_/bots/$botId',
+    path: '/automations/bots/$botId',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedBotsBotIdSettingsRoute =
   AuthenticatedBotsBotIdSettingsRouteImport.update({
     id: '/bots_/$botId/settings',
@@ -293,6 +339,24 @@ const AuthenticatedPlanCalendarGoogleRoute =
     path: '/calendar/google',
     getParentRoute: () => AuthenticatedPlanRoute,
   } as any)
+const AuthenticatedPlanBotsBotIdRoute =
+  AuthenticatedPlanBotsBotIdRouteImport.update({
+    id: '/plan_/bots/$botId',
+    path: '/plan/bots/$botId',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedPullsBotsBotIdRoute =
+  AuthenticatedPullsBotsBotIdRouteImport.update({
+    id: '/pulls_/bots/$botId',
+    path: '/pulls/bots/$botId',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedSessionsBotsBotIdRoute =
+  AuthenticatedSessionsBotsBotIdRouteImport.update({
+    id: '/sessions/bots/$botId',
+    path: '/sessions/bots/$botId',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedSettingsHostsIndexRoute =
   AuthenticatedSettingsHostsIndexRouteImport.update({
     id: '/hosts/',
@@ -303,6 +367,12 @@ const AuthenticatedSettingsHostsNewRoute =
   AuthenticatedSettingsHostsNewRouteImport.update({
     id: '/hosts/new',
     path: '/hosts/new',
+    getParentRoute: () => AuthenticatedSettingsRoute,
+  } as any)
+const AuthenticatedSettingsMailGoogleRoute =
+  AuthenticatedSettingsMailGoogleRouteImport.update({
+    id: '/mail_/google',
+    path: '/mail/google',
     getParentRoute: () => AuthenticatedSettingsRoute,
   } as any)
 const AuthenticatedAutomationsAutomationIdSessionsSessionIdRoute =
@@ -335,6 +405,12 @@ const AuthenticatedBotsBotIdSettingsMemoryRoute =
     path: '/memory',
     getParentRoute: () => AuthenticatedBotsBotIdSettingsRoute,
   } as any)
+const AuthenticatedBotsBotIdSettingsPermissionsRoute =
+  AuthenticatedBotsBotIdSettingsPermissionsRouteImport.update({
+    id: '/permissions',
+    path: '/permissions',
+    getParentRoute: () => AuthenticatedBotsBotIdSettingsRoute,
+  } as any)
 const AuthenticatedBotsBotIdSettingsProfileRoute =
   AuthenticatedBotsBotIdSettingsProfileRouteImport.update({
     id: '/profile',
@@ -353,6 +429,12 @@ const AuthenticatedBotsBotIdSettingsRunsOnRoute =
     path: '/runs-on',
     getParentRoute: () => AuthenticatedBotsBotIdSettingsRoute,
   } as any)
+const AuthenticatedBotsBotIdSettingsSkillsRoute =
+  AuthenticatedBotsBotIdSettingsSkillsRouteImport.update({
+    id: '/skills',
+    path: '/skills',
+    getParentRoute: () => AuthenticatedBotsBotIdSettingsRoute,
+  } as any)
 const AuthenticatedPullsInstallationIdGithubRepoIdNumberRoute =
   AuthenticatedPullsInstallationIdGithubRepoIdNumberRouteImport.update({
     id: '/pulls_/$installationId/$githubRepoId/$number',
@@ -368,6 +450,7 @@ export interface FileRoutesByFullPath {
   '/onboarding': typeof AuthOnboardingRouteWithChildren
   '/$': typeof AuthenticatedSplatRoute
   '/automations': typeof AuthenticatedAutomationsRouteWithChildren
+  '/inbox': typeof AuthenticatedInboxRoute
   '/plan': typeof AuthenticatedPlanRouteWithChildren
   '/pulls': typeof AuthenticatedPullsRouteWithChildren
   '/settings': typeof AuthenticatedSettingsRouteWithChildren
@@ -385,13 +468,17 @@ export interface FileRoutesByFullPath {
   '/automations/runs': typeof AuthenticatedAutomationsRunsRoute
   '/bots/$botId': typeof AuthenticatedBotsBotIdRoute
   '/plan/calendar': typeof AuthenticatedPlanCalendarRoute
+  '/plan/inbox': typeof AuthenticatedPlanInboxRoute
   '/plan/milestones': typeof AuthenticatedPlanMilestonesRoute
   '/pulls/analytics': typeof AuthenticatedPullsAnalyticsRoute
   '/sessions/$sessionId': typeof AuthenticatedSessionsSessionIdRoute
   '/sessions/new': typeof AuthenticatedSessionsNewRoute
+  '/settings/cloud-agents': typeof AuthenticatedSettingsCloudAgentsRoute
+  '/settings/mail': typeof AuthenticatedSettingsMailRoute
   '/settings/model-providers': typeof AuthenticatedSettingsModelProvidersRoute
   '/settings/profile': typeof AuthenticatedSettingsProfileRoute
   '/settings/repositories': typeof AuthenticatedSettingsRepositoriesRoute
+  '/settings/whatsapp': typeof AuthenticatedSettingsWhatsappRoute
   '/onboarding/': typeof AuthOnboardingIndexRoute
   '/automations/': typeof AuthenticatedAutomationsIndexRoute
   '/bots/': typeof AuthenticatedBotsIndexRoute
@@ -399,17 +486,24 @@ export interface FileRoutesByFullPath {
   '/pulls/': typeof AuthenticatedPullsIndexRoute
   '/sessions/': typeof AuthenticatedSessionsIndexRoute
   '/settings/': typeof AuthenticatedSettingsIndexRoute
+  '/automations/bots/$botId': typeof AuthenticatedAutomationsBotsBotIdRoute
   '/bots/$botId/settings': typeof AuthenticatedBotsBotIdSettingsRouteWithChildren
   '/plan/calendar/google': typeof AuthenticatedPlanCalendarGoogleRoute
+  '/plan/bots/$botId': typeof AuthenticatedPlanBotsBotIdRoute
+  '/pulls/bots/$botId': typeof AuthenticatedPullsBotsBotIdRoute
+  '/sessions/bots/$botId': typeof AuthenticatedSessionsBotsBotIdRoute
   '/settings/hosts/new': typeof AuthenticatedSettingsHostsNewRoute
+  '/settings/mail/google': typeof AuthenticatedSettingsMailGoogleRoute
   '/settings/hosts/': typeof AuthenticatedSettingsHostsIndexRoute
   '/automations/$automationId/sessions/$sessionId': typeof AuthenticatedAutomationsAutomationIdSessionsSessionIdRoute
   '/bots/$botId/settings/home-host': typeof AuthenticatedBotsBotIdSettingsHomeHostRoute
   '/bots/$botId/settings/instructions': typeof AuthenticatedBotsBotIdSettingsInstructionsRoute
   '/bots/$botId/settings/memory': typeof AuthenticatedBotsBotIdSettingsMemoryRoute
+  '/bots/$botId/settings/permissions': typeof AuthenticatedBotsBotIdSettingsPermissionsRoute
   '/bots/$botId/settings/profile': typeof AuthenticatedBotsBotIdSettingsProfileRoute
   '/bots/$botId/settings/routines': typeof AuthenticatedBotsBotIdSettingsRoutinesRoute
   '/bots/$botId/settings/runs-on': typeof AuthenticatedBotsBotIdSettingsRunsOnRoute
+  '/bots/$botId/settings/skills': typeof AuthenticatedBotsBotIdSettingsSkillsRoute
   '/pulls/$installationId/$githubRepoId/$number': typeof AuthenticatedPullsInstallationIdGithubRepoIdNumberRoute
   '/bots/$botId/settings/': typeof AuthenticatedBotsBotIdSettingsIndexRoute
 }
@@ -419,6 +513,7 @@ export interface FileRoutesByTo {
   '/privacy': typeof PrivacyRoute
   '/terms': typeof TermsRoute
   '/$': typeof AuthenticatedSplatRoute
+  '/inbox': typeof AuthenticatedInboxRoute
   '/oauth/consent': typeof OauthConsentRoute
   '/s/$slug': typeof SSlugRoute
   '/forgot-password': typeof AuthPublicForgotPasswordRoute
@@ -433,13 +528,17 @@ export interface FileRoutesByTo {
   '/automations/runs': typeof AuthenticatedAutomationsRunsRoute
   '/bots/$botId': typeof AuthenticatedBotsBotIdRoute
   '/plan/calendar': typeof AuthenticatedPlanCalendarRoute
+  '/plan/inbox': typeof AuthenticatedPlanInboxRoute
   '/plan/milestones': typeof AuthenticatedPlanMilestonesRoute
   '/pulls/analytics': typeof AuthenticatedPullsAnalyticsRoute
   '/sessions/$sessionId': typeof AuthenticatedSessionsSessionIdRoute
   '/sessions/new': typeof AuthenticatedSessionsNewRoute
+  '/settings/cloud-agents': typeof AuthenticatedSettingsCloudAgentsRoute
+  '/settings/mail': typeof AuthenticatedSettingsMailRoute
   '/settings/model-providers': typeof AuthenticatedSettingsModelProvidersRoute
   '/settings/profile': typeof AuthenticatedSettingsProfileRoute
   '/settings/repositories': typeof AuthenticatedSettingsRepositoriesRoute
+  '/settings/whatsapp': typeof AuthenticatedSettingsWhatsappRoute
   '/onboarding': typeof AuthOnboardingIndexRoute
   '/automations': typeof AuthenticatedAutomationsIndexRoute
   '/bots': typeof AuthenticatedBotsIndexRoute
@@ -447,16 +546,23 @@ export interface FileRoutesByTo {
   '/pulls': typeof AuthenticatedPullsIndexRoute
   '/sessions': typeof AuthenticatedSessionsIndexRoute
   '/settings': typeof AuthenticatedSettingsIndexRoute
+  '/automations/bots/$botId': typeof AuthenticatedAutomationsBotsBotIdRoute
   '/plan/calendar/google': typeof AuthenticatedPlanCalendarGoogleRoute
+  '/plan/bots/$botId': typeof AuthenticatedPlanBotsBotIdRoute
+  '/pulls/bots/$botId': typeof AuthenticatedPullsBotsBotIdRoute
+  '/sessions/bots/$botId': typeof AuthenticatedSessionsBotsBotIdRoute
   '/settings/hosts/new': typeof AuthenticatedSettingsHostsNewRoute
+  '/settings/mail/google': typeof AuthenticatedSettingsMailGoogleRoute
   '/settings/hosts': typeof AuthenticatedSettingsHostsIndexRoute
   '/automations/$automationId/sessions/$sessionId': typeof AuthenticatedAutomationsAutomationIdSessionsSessionIdRoute
   '/bots/$botId/settings/home-host': typeof AuthenticatedBotsBotIdSettingsHomeHostRoute
   '/bots/$botId/settings/instructions': typeof AuthenticatedBotsBotIdSettingsInstructionsRoute
   '/bots/$botId/settings/memory': typeof AuthenticatedBotsBotIdSettingsMemoryRoute
+  '/bots/$botId/settings/permissions': typeof AuthenticatedBotsBotIdSettingsPermissionsRoute
   '/bots/$botId/settings/profile': typeof AuthenticatedBotsBotIdSettingsProfileRoute
   '/bots/$botId/settings/routines': typeof AuthenticatedBotsBotIdSettingsRoutinesRoute
   '/bots/$botId/settings/runs-on': typeof AuthenticatedBotsBotIdSettingsRunsOnRoute
+  '/bots/$botId/settings/skills': typeof AuthenticatedBotsBotIdSettingsSkillsRoute
   '/pulls/$installationId/$githubRepoId/$number': typeof AuthenticatedPullsInstallationIdGithubRepoIdNumberRoute
   '/bots/$botId/settings': typeof AuthenticatedBotsBotIdSettingsIndexRoute
 }
@@ -472,6 +578,7 @@ export interface FileRoutesById {
   '/_auth/onboarding': typeof AuthOnboardingRouteWithChildren
   '/_authenticated/$': typeof AuthenticatedSplatRoute
   '/_authenticated/automations': typeof AuthenticatedAutomationsRouteWithChildren
+  '/_authenticated/inbox': typeof AuthenticatedInboxRoute
   '/_authenticated/plan': typeof AuthenticatedPlanRouteWithChildren
   '/_authenticated/pulls': typeof AuthenticatedPullsRouteWithChildren
   '/_authenticated/settings': typeof AuthenticatedSettingsRouteWithChildren
@@ -489,13 +596,17 @@ export interface FileRoutesById {
   '/_authenticated/automations/runs': typeof AuthenticatedAutomationsRunsRoute
   '/_authenticated/bots/$botId': typeof AuthenticatedBotsBotIdRoute
   '/_authenticated/plan/calendar': typeof AuthenticatedPlanCalendarRoute
+  '/_authenticated/plan/inbox': typeof AuthenticatedPlanInboxRoute
   '/_authenticated/plan/milestones': typeof AuthenticatedPlanMilestonesRoute
   '/_authenticated/pulls/analytics': typeof AuthenticatedPullsAnalyticsRoute
   '/_authenticated/sessions/$sessionId': typeof AuthenticatedSessionsSessionIdRoute
   '/_authenticated/sessions/new': typeof AuthenticatedSessionsNewRoute
+  '/_authenticated/settings/cloud-agents': typeof AuthenticatedSettingsCloudAgentsRoute
+  '/_authenticated/settings/mail': typeof AuthenticatedSettingsMailRoute
   '/_authenticated/settings/model-providers': typeof AuthenticatedSettingsModelProvidersRoute
   '/_authenticated/settings/profile': typeof AuthenticatedSettingsProfileRoute
   '/_authenticated/settings/repositories': typeof AuthenticatedSettingsRepositoriesRoute
+  '/_authenticated/settings/whatsapp': typeof AuthenticatedSettingsWhatsappRoute
   '/_auth/onboarding/': typeof AuthOnboardingIndexRoute
   '/_authenticated/automations/': typeof AuthenticatedAutomationsIndexRoute
   '/_authenticated/bots/': typeof AuthenticatedBotsIndexRoute
@@ -503,17 +614,24 @@ export interface FileRoutesById {
   '/_authenticated/pulls/': typeof AuthenticatedPullsIndexRoute
   '/_authenticated/sessions/': typeof AuthenticatedSessionsIndexRoute
   '/_authenticated/settings/': typeof AuthenticatedSettingsIndexRoute
+  '/_authenticated/automations_/bots/$botId': typeof AuthenticatedAutomationsBotsBotIdRoute
   '/_authenticated/bots_/$botId/settings': typeof AuthenticatedBotsBotIdSettingsRouteWithChildren
   '/_authenticated/plan/calendar_/google': typeof AuthenticatedPlanCalendarGoogleRoute
+  '/_authenticated/plan_/bots/$botId': typeof AuthenticatedPlanBotsBotIdRoute
+  '/_authenticated/pulls_/bots/$botId': typeof AuthenticatedPullsBotsBotIdRoute
+  '/_authenticated/sessions/bots/$botId': typeof AuthenticatedSessionsBotsBotIdRoute
   '/_authenticated/settings/hosts/new': typeof AuthenticatedSettingsHostsNewRoute
+  '/_authenticated/settings/mail_/google': typeof AuthenticatedSettingsMailGoogleRoute
   '/_authenticated/settings/hosts/': typeof AuthenticatedSettingsHostsIndexRoute
   '/_authenticated/automations_/$automationId/sessions/$sessionId': typeof AuthenticatedAutomationsAutomationIdSessionsSessionIdRoute
   '/_authenticated/bots_/$botId/settings/home-host': typeof AuthenticatedBotsBotIdSettingsHomeHostRoute
   '/_authenticated/bots_/$botId/settings/instructions': typeof AuthenticatedBotsBotIdSettingsInstructionsRoute
   '/_authenticated/bots_/$botId/settings/memory': typeof AuthenticatedBotsBotIdSettingsMemoryRoute
+  '/_authenticated/bots_/$botId/settings/permissions': typeof AuthenticatedBotsBotIdSettingsPermissionsRoute
   '/_authenticated/bots_/$botId/settings/profile': typeof AuthenticatedBotsBotIdSettingsProfileRoute
   '/_authenticated/bots_/$botId/settings/routines': typeof AuthenticatedBotsBotIdSettingsRoutinesRoute
   '/_authenticated/bots_/$botId/settings/runs-on': typeof AuthenticatedBotsBotIdSettingsRunsOnRoute
+  '/_authenticated/bots_/$botId/settings/skills': typeof AuthenticatedBotsBotIdSettingsSkillsRoute
   '/_authenticated/pulls_/$installationId/$githubRepoId/$number': typeof AuthenticatedPullsInstallationIdGithubRepoIdNumberRoute
   '/_authenticated/bots_/$botId/settings/': typeof AuthenticatedBotsBotIdSettingsIndexRoute
 }
@@ -527,6 +645,7 @@ export interface FileRouteTypes {
     | '/onboarding'
     | '/$'
     | '/automations'
+    | '/inbox'
     | '/plan'
     | '/pulls'
     | '/settings'
@@ -544,13 +663,17 @@ export interface FileRouteTypes {
     | '/automations/runs'
     | '/bots/$botId'
     | '/plan/calendar'
+    | '/plan/inbox'
     | '/plan/milestones'
     | '/pulls/analytics'
     | '/sessions/$sessionId'
     | '/sessions/new'
+    | '/settings/cloud-agents'
+    | '/settings/mail'
     | '/settings/model-providers'
     | '/settings/profile'
     | '/settings/repositories'
+    | '/settings/whatsapp'
     | '/onboarding/'
     | '/automations/'
     | '/bots/'
@@ -558,17 +681,24 @@ export interface FileRouteTypes {
     | '/pulls/'
     | '/sessions/'
     | '/settings/'
+    | '/automations/bots/$botId'
     | '/bots/$botId/settings'
     | '/plan/calendar/google'
+    | '/plan/bots/$botId'
+    | '/pulls/bots/$botId'
+    | '/sessions/bots/$botId'
     | '/settings/hosts/new'
+    | '/settings/mail/google'
     | '/settings/hosts/'
     | '/automations/$automationId/sessions/$sessionId'
     | '/bots/$botId/settings/home-host'
     | '/bots/$botId/settings/instructions'
     | '/bots/$botId/settings/memory'
+    | '/bots/$botId/settings/permissions'
     | '/bots/$botId/settings/profile'
     | '/bots/$botId/settings/routines'
     | '/bots/$botId/settings/runs-on'
+    | '/bots/$botId/settings/skills'
     | '/pulls/$installationId/$githubRepoId/$number'
     | '/bots/$botId/settings/'
   fileRoutesByTo: FileRoutesByTo
@@ -578,6 +708,7 @@ export interface FileRouteTypes {
     | '/privacy'
     | '/terms'
     | '/$'
+    | '/inbox'
     | '/oauth/consent'
     | '/s/$slug'
     | '/forgot-password'
@@ -592,13 +723,17 @@ export interface FileRouteTypes {
     | '/automations/runs'
     | '/bots/$botId'
     | '/plan/calendar'
+    | '/plan/inbox'
     | '/plan/milestones'
     | '/pulls/analytics'
     | '/sessions/$sessionId'
     | '/sessions/new'
+    | '/settings/cloud-agents'
+    | '/settings/mail'
     | '/settings/model-providers'
     | '/settings/profile'
     | '/settings/repositories'
+    | '/settings/whatsapp'
     | '/onboarding'
     | '/automations'
     | '/bots'
@@ -606,16 +741,23 @@ export interface FileRouteTypes {
     | '/pulls'
     | '/sessions'
     | '/settings'
+    | '/automations/bots/$botId'
     | '/plan/calendar/google'
+    | '/plan/bots/$botId'
+    | '/pulls/bots/$botId'
+    | '/sessions/bots/$botId'
     | '/settings/hosts/new'
+    | '/settings/mail/google'
     | '/settings/hosts'
     | '/automations/$automationId/sessions/$sessionId'
     | '/bots/$botId/settings/home-host'
     | '/bots/$botId/settings/instructions'
     | '/bots/$botId/settings/memory'
+    | '/bots/$botId/settings/permissions'
     | '/bots/$botId/settings/profile'
     | '/bots/$botId/settings/routines'
     | '/bots/$botId/settings/runs-on'
+    | '/bots/$botId/settings/skills'
     | '/pulls/$installationId/$githubRepoId/$number'
     | '/bots/$botId/settings'
   id:
@@ -630,6 +772,7 @@ export interface FileRouteTypes {
     | '/_auth/onboarding'
     | '/_authenticated/$'
     | '/_authenticated/automations'
+    | '/_authenticated/inbox'
     | '/_authenticated/plan'
     | '/_authenticated/pulls'
     | '/_authenticated/settings'
@@ -647,13 +790,17 @@ export interface FileRouteTypes {
     | '/_authenticated/automations/runs'
     | '/_authenticated/bots/$botId'
     | '/_authenticated/plan/calendar'
+    | '/_authenticated/plan/inbox'
     | '/_authenticated/plan/milestones'
     | '/_authenticated/pulls/analytics'
     | '/_authenticated/sessions/$sessionId'
     | '/_authenticated/sessions/new'
+    | '/_authenticated/settings/cloud-agents'
+    | '/_authenticated/settings/mail'
     | '/_authenticated/settings/model-providers'
     | '/_authenticated/settings/profile'
     | '/_authenticated/settings/repositories'
+    | '/_authenticated/settings/whatsapp'
     | '/_auth/onboarding/'
     | '/_authenticated/automations/'
     | '/_authenticated/bots/'
@@ -661,17 +808,24 @@ export interface FileRouteTypes {
     | '/_authenticated/pulls/'
     | '/_authenticated/sessions/'
     | '/_authenticated/settings/'
+    | '/_authenticated/automations_/bots/$botId'
     | '/_authenticated/bots_/$botId/settings'
     | '/_authenticated/plan/calendar_/google'
+    | '/_authenticated/plan_/bots/$botId'
+    | '/_authenticated/pulls_/bots/$botId'
+    | '/_authenticated/sessions/bots/$botId'
     | '/_authenticated/settings/hosts/new'
+    | '/_authenticated/settings/mail_/google'
     | '/_authenticated/settings/hosts/'
     | '/_authenticated/automations_/$automationId/sessions/$sessionId'
     | '/_authenticated/bots_/$botId/settings/home-host'
     | '/_authenticated/bots_/$botId/settings/instructions'
     | '/_authenticated/bots_/$botId/settings/memory'
+    | '/_authenticated/bots_/$botId/settings/permissions'
     | '/_authenticated/bots_/$botId/settings/profile'
     | '/_authenticated/bots_/$botId/settings/routines'
     | '/_authenticated/bots_/$botId/settings/runs-on'
+    | '/_authenticated/bots_/$botId/settings/skills'
     | '/_authenticated/pulls_/$installationId/$githubRepoId/$number'
     | '/_authenticated/bots_/$botId/settings/'
   fileRoutesById: FileRoutesById
@@ -757,6 +911,13 @@ declare module '@tanstack/react-router' {
       path: '/automations'
       fullPath: '/automations'
       preLoaderRoute: typeof AuthenticatedAutomationsRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/inbox': {
+      id: '/_authenticated/inbox'
+      path: '/inbox'
+      fullPath: '/inbox'
+      preLoaderRoute: typeof AuthenticatedInboxRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/plan': {
@@ -906,6 +1067,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedPlanCalendarRouteImport
       parentRoute: typeof AuthenticatedPlanRoute
     }
+    '/_authenticated/plan/inbox': {
+      id: '/_authenticated/plan/inbox'
+      path: '/inbox'
+      fullPath: '/plan/inbox'
+      preLoaderRoute: typeof AuthenticatedPlanInboxRouteImport
+      parentRoute: typeof AuthenticatedPlanRoute
+    }
     '/_authenticated/plan/milestones': {
       id: '/_authenticated/plan/milestones'
       path: '/milestones'
@@ -955,6 +1123,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSettingsIndexRouteImport
       parentRoute: typeof AuthenticatedSettingsRoute
     }
+    '/_authenticated/settings/cloud-agents': {
+      id: '/_authenticated/settings/cloud-agents'
+      path: '/cloud-agents'
+      fullPath: '/settings/cloud-agents'
+      preLoaderRoute: typeof AuthenticatedSettingsCloudAgentsRouteImport
+      parentRoute: typeof AuthenticatedSettingsRoute
+    }
+    '/_authenticated/settings/mail': {
+      id: '/_authenticated/settings/mail'
+      path: '/mail'
+      fullPath: '/settings/mail'
+      preLoaderRoute: typeof AuthenticatedSettingsMailRouteImport
+      parentRoute: typeof AuthenticatedSettingsRoute
+    }
     '/_authenticated/settings/model-providers': {
       id: '/_authenticated/settings/model-providers'
       path: '/model-providers'
@@ -976,6 +1158,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSettingsRepositoriesRouteImport
       parentRoute: typeof AuthenticatedSettingsRoute
     }
+    '/_authenticated/settings/whatsapp': {
+      id: '/_authenticated/settings/whatsapp'
+      path: '/whatsapp'
+      fullPath: '/settings/whatsapp'
+      preLoaderRoute: typeof AuthenticatedSettingsWhatsappRouteImport
+      parentRoute: typeof AuthenticatedSettingsRoute
+    }
+    '/_authenticated/automations_/bots/$botId': {
+      id: '/_authenticated/automations_/bots/$botId'
+      path: '/automations/bots/$botId'
+      fullPath: '/automations/bots/$botId'
+      preLoaderRoute: typeof AuthenticatedAutomationsBotsBotIdRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/bots_/$botId/settings': {
       id: '/_authenticated/bots_/$botId/settings'
       path: '/bots/$botId/settings'
@@ -990,6 +1186,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedPlanCalendarGoogleRouteImport
       parentRoute: typeof AuthenticatedPlanRoute
     }
+    '/_authenticated/plan_/bots/$botId': {
+      id: '/_authenticated/plan_/bots/$botId'
+      path: '/plan/bots/$botId'
+      fullPath: '/plan/bots/$botId'
+      preLoaderRoute: typeof AuthenticatedPlanBotsBotIdRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/pulls_/bots/$botId': {
+      id: '/_authenticated/pulls_/bots/$botId'
+      path: '/pulls/bots/$botId'
+      fullPath: '/pulls/bots/$botId'
+      preLoaderRoute: typeof AuthenticatedPullsBotsBotIdRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/sessions/bots/$botId': {
+      id: '/_authenticated/sessions/bots/$botId'
+      path: '/sessions/bots/$botId'
+      fullPath: '/sessions/bots/$botId'
+      preLoaderRoute: typeof AuthenticatedSessionsBotsBotIdRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/settings/hosts/': {
       id: '/_authenticated/settings/hosts/'
       path: '/hosts'
@@ -1002,6 +1219,13 @@ declare module '@tanstack/react-router' {
       path: '/hosts/new'
       fullPath: '/settings/hosts/new'
       preLoaderRoute: typeof AuthenticatedSettingsHostsNewRouteImport
+      parentRoute: typeof AuthenticatedSettingsRoute
+    }
+    '/_authenticated/settings/mail_/google': {
+      id: '/_authenticated/settings/mail_/google'
+      path: '/mail/google'
+      fullPath: '/settings/mail/google'
+      preLoaderRoute: typeof AuthenticatedSettingsMailGoogleRouteImport
       parentRoute: typeof AuthenticatedSettingsRoute
     }
     '/_authenticated/automations_/$automationId/sessions/$sessionId': {
@@ -1039,6 +1263,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedBotsBotIdSettingsMemoryRouteImport
       parentRoute: typeof AuthenticatedBotsBotIdSettingsRoute
     }
+    '/_authenticated/bots_/$botId/settings/permissions': {
+      id: '/_authenticated/bots_/$botId/settings/permissions'
+      path: '/permissions'
+      fullPath: '/bots/$botId/settings/permissions'
+      preLoaderRoute: typeof AuthenticatedBotsBotIdSettingsPermissionsRouteImport
+      parentRoute: typeof AuthenticatedBotsBotIdSettingsRoute
+    }
     '/_authenticated/bots_/$botId/settings/profile': {
       id: '/_authenticated/bots_/$botId/settings/profile'
       path: '/profile'
@@ -1058,6 +1289,13 @@ declare module '@tanstack/react-router' {
       path: '/runs-on'
       fullPath: '/bots/$botId/settings/runs-on'
       preLoaderRoute: typeof AuthenticatedBotsBotIdSettingsRunsOnRouteImport
+      parentRoute: typeof AuthenticatedBotsBotIdSettingsRoute
+    }
+    '/_authenticated/bots_/$botId/settings/skills': {
+      id: '/_authenticated/bots_/$botId/settings/skills'
+      path: '/skills'
+      fullPath: '/bots/$botId/settings/skills'
+      preLoaderRoute: typeof AuthenticatedBotsBotIdSettingsSkillsRouteImport
       parentRoute: typeof AuthenticatedBotsBotIdSettingsRoute
     }
     '/_authenticated/pulls_/$installationId/$githubRepoId/$number': {
@@ -1141,6 +1379,7 @@ const AuthenticatedAutomationsRouteWithChildren =
 
 interface AuthenticatedPlanRouteChildren {
   AuthenticatedPlanCalendarRoute: typeof AuthenticatedPlanCalendarRoute
+  AuthenticatedPlanInboxRoute: typeof AuthenticatedPlanInboxRoute
   AuthenticatedPlanMilestonesRoute: typeof AuthenticatedPlanMilestonesRoute
   AuthenticatedPlanIndexRoute: typeof AuthenticatedPlanIndexRoute
   AuthenticatedPlanCalendarGoogleRoute: typeof AuthenticatedPlanCalendarGoogleRoute
@@ -1148,6 +1387,7 @@ interface AuthenticatedPlanRouteChildren {
 
 const AuthenticatedPlanRouteChildren: AuthenticatedPlanRouteChildren = {
   AuthenticatedPlanCalendarRoute: AuthenticatedPlanCalendarRoute,
+  AuthenticatedPlanInboxRoute: AuthenticatedPlanInboxRoute,
   AuthenticatedPlanMilestonesRoute: AuthenticatedPlanMilestonesRoute,
   AuthenticatedPlanIndexRoute: AuthenticatedPlanIndexRoute,
   AuthenticatedPlanCalendarGoogleRoute: AuthenticatedPlanCalendarGoogleRoute,
@@ -1170,22 +1410,30 @@ const AuthenticatedPullsRouteWithChildren =
   AuthenticatedPullsRoute._addFileChildren(AuthenticatedPullsRouteChildren)
 
 interface AuthenticatedSettingsRouteChildren {
+  AuthenticatedSettingsCloudAgentsRoute: typeof AuthenticatedSettingsCloudAgentsRoute
+  AuthenticatedSettingsMailRoute: typeof AuthenticatedSettingsMailRoute
   AuthenticatedSettingsModelProvidersRoute: typeof AuthenticatedSettingsModelProvidersRoute
   AuthenticatedSettingsProfileRoute: typeof AuthenticatedSettingsProfileRoute
   AuthenticatedSettingsRepositoriesRoute: typeof AuthenticatedSettingsRepositoriesRoute
+  AuthenticatedSettingsWhatsappRoute: typeof AuthenticatedSettingsWhatsappRoute
   AuthenticatedSettingsIndexRoute: typeof AuthenticatedSettingsIndexRoute
   AuthenticatedSettingsHostsNewRoute: typeof AuthenticatedSettingsHostsNewRoute
+  AuthenticatedSettingsMailGoogleRoute: typeof AuthenticatedSettingsMailGoogleRoute
   AuthenticatedSettingsHostsIndexRoute: typeof AuthenticatedSettingsHostsIndexRoute
 }
 
 const AuthenticatedSettingsRouteChildren: AuthenticatedSettingsRouteChildren = {
+  AuthenticatedSettingsCloudAgentsRoute: AuthenticatedSettingsCloudAgentsRoute,
+  AuthenticatedSettingsMailRoute: AuthenticatedSettingsMailRoute,
   AuthenticatedSettingsModelProvidersRoute:
     AuthenticatedSettingsModelProvidersRoute,
   AuthenticatedSettingsProfileRoute: AuthenticatedSettingsProfileRoute,
   AuthenticatedSettingsRepositoriesRoute:
     AuthenticatedSettingsRepositoriesRoute,
+  AuthenticatedSettingsWhatsappRoute: AuthenticatedSettingsWhatsappRoute,
   AuthenticatedSettingsIndexRoute: AuthenticatedSettingsIndexRoute,
   AuthenticatedSettingsHostsNewRoute: AuthenticatedSettingsHostsNewRoute,
+  AuthenticatedSettingsMailGoogleRoute: AuthenticatedSettingsMailGoogleRoute,
   AuthenticatedSettingsHostsIndexRoute: AuthenticatedSettingsHostsIndexRoute,
 }
 
@@ -1198,9 +1446,11 @@ interface AuthenticatedBotsBotIdSettingsRouteChildren {
   AuthenticatedBotsBotIdSettingsHomeHostRoute: typeof AuthenticatedBotsBotIdSettingsHomeHostRoute
   AuthenticatedBotsBotIdSettingsInstructionsRoute: typeof AuthenticatedBotsBotIdSettingsInstructionsRoute
   AuthenticatedBotsBotIdSettingsMemoryRoute: typeof AuthenticatedBotsBotIdSettingsMemoryRoute
+  AuthenticatedBotsBotIdSettingsPermissionsRoute: typeof AuthenticatedBotsBotIdSettingsPermissionsRoute
   AuthenticatedBotsBotIdSettingsProfileRoute: typeof AuthenticatedBotsBotIdSettingsProfileRoute
   AuthenticatedBotsBotIdSettingsRoutinesRoute: typeof AuthenticatedBotsBotIdSettingsRoutinesRoute
   AuthenticatedBotsBotIdSettingsRunsOnRoute: typeof AuthenticatedBotsBotIdSettingsRunsOnRoute
+  AuthenticatedBotsBotIdSettingsSkillsRoute: typeof AuthenticatedBotsBotIdSettingsSkillsRoute
   AuthenticatedBotsBotIdSettingsIndexRoute: typeof AuthenticatedBotsBotIdSettingsIndexRoute
 }
 
@@ -1212,12 +1462,16 @@ const AuthenticatedBotsBotIdSettingsRouteChildren: AuthenticatedBotsBotIdSetting
       AuthenticatedBotsBotIdSettingsInstructionsRoute,
     AuthenticatedBotsBotIdSettingsMemoryRoute:
       AuthenticatedBotsBotIdSettingsMemoryRoute,
+    AuthenticatedBotsBotIdSettingsPermissionsRoute:
+      AuthenticatedBotsBotIdSettingsPermissionsRoute,
     AuthenticatedBotsBotIdSettingsProfileRoute:
       AuthenticatedBotsBotIdSettingsProfileRoute,
     AuthenticatedBotsBotIdSettingsRoutinesRoute:
       AuthenticatedBotsBotIdSettingsRoutinesRoute,
     AuthenticatedBotsBotIdSettingsRunsOnRoute:
       AuthenticatedBotsBotIdSettingsRunsOnRoute,
+    AuthenticatedBotsBotIdSettingsSkillsRoute:
+      AuthenticatedBotsBotIdSettingsSkillsRoute,
     AuthenticatedBotsBotIdSettingsIndexRoute:
       AuthenticatedBotsBotIdSettingsIndexRoute,
   }
@@ -1230,6 +1484,7 @@ const AuthenticatedBotsBotIdSettingsRouteWithChildren =
 interface AuthenticatedRouteChildren {
   AuthenticatedSplatRoute: typeof AuthenticatedSplatRoute
   AuthenticatedAutomationsRoute: typeof AuthenticatedAutomationsRouteWithChildren
+  AuthenticatedInboxRoute: typeof AuthenticatedInboxRoute
   AuthenticatedPlanRoute: typeof AuthenticatedPlanRouteWithChildren
   AuthenticatedPullsRoute: typeof AuthenticatedPullsRouteWithChildren
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRouteWithChildren
@@ -1238,7 +1493,11 @@ interface AuthenticatedRouteChildren {
   AuthenticatedSessionsNewRoute: typeof AuthenticatedSessionsNewRoute
   AuthenticatedBotsIndexRoute: typeof AuthenticatedBotsIndexRoute
   AuthenticatedSessionsIndexRoute: typeof AuthenticatedSessionsIndexRoute
+  AuthenticatedAutomationsBotsBotIdRoute: typeof AuthenticatedAutomationsBotsBotIdRoute
   AuthenticatedBotsBotIdSettingsRoute: typeof AuthenticatedBotsBotIdSettingsRouteWithChildren
+  AuthenticatedPlanBotsBotIdRoute: typeof AuthenticatedPlanBotsBotIdRoute
+  AuthenticatedPullsBotsBotIdRoute: typeof AuthenticatedPullsBotsBotIdRoute
+  AuthenticatedSessionsBotsBotIdRoute: typeof AuthenticatedSessionsBotsBotIdRoute
   AuthenticatedAutomationsAutomationIdSessionsSessionIdRoute: typeof AuthenticatedAutomationsAutomationIdSessionsSessionIdRoute
   AuthenticatedPullsInstallationIdGithubRepoIdNumberRoute: typeof AuthenticatedPullsInstallationIdGithubRepoIdNumberRoute
 }
@@ -1246,6 +1505,7 @@ interface AuthenticatedRouteChildren {
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedSplatRoute: AuthenticatedSplatRoute,
   AuthenticatedAutomationsRoute: AuthenticatedAutomationsRouteWithChildren,
+  AuthenticatedInboxRoute: AuthenticatedInboxRoute,
   AuthenticatedPlanRoute: AuthenticatedPlanRouteWithChildren,
   AuthenticatedPullsRoute: AuthenticatedPullsRouteWithChildren,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRouteWithChildren,
@@ -1254,8 +1514,13 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedSessionsNewRoute: AuthenticatedSessionsNewRoute,
   AuthenticatedBotsIndexRoute: AuthenticatedBotsIndexRoute,
   AuthenticatedSessionsIndexRoute: AuthenticatedSessionsIndexRoute,
+  AuthenticatedAutomationsBotsBotIdRoute:
+    AuthenticatedAutomationsBotsBotIdRoute,
   AuthenticatedBotsBotIdSettingsRoute:
     AuthenticatedBotsBotIdSettingsRouteWithChildren,
+  AuthenticatedPlanBotsBotIdRoute: AuthenticatedPlanBotsBotIdRoute,
+  AuthenticatedPullsBotsBotIdRoute: AuthenticatedPullsBotsBotIdRoute,
+  AuthenticatedSessionsBotsBotIdRoute: AuthenticatedSessionsBotsBotIdRoute,
   AuthenticatedAutomationsAutomationIdSessionsSessionIdRoute:
     AuthenticatedAutomationsAutomationIdSessionsSessionIdRoute,
   AuthenticatedPullsInstallationIdGithubRepoIdNumberRoute:

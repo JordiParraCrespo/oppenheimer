@@ -1,7 +1,7 @@
 'use client';
 
 import { CheckIcon, ChevronLeftIcon, ChevronRightIcon } from 'lucide-react';
-import type * as React from 'react';
+import * as React from 'react';
 
 import { cn } from '../lib/utils';
 import { IconButton } from './icon-button';
@@ -18,6 +18,10 @@ import { IconButton } from './icon-button';
  *   would drive (`detail`).
  * - `QuestionPanel`: the agent asks; picking an option advances. Picked rows
  *   fill and take a check; the person may type their own answer instead.
+ *   Where the agent allows several, `value` is the set of picks and each row
+ *   (and its number key) toggles. `header` is the agent's short tag for the
+ *   question ("Scope"), over it; `autoFocus` puts focus on its first row as
+ *   it appears, so the number keys answer without a click first.
  * - `ChoiceRow`: one numbered choice: an 18px ring with the number in mono,
  *   the label at 14px medium and its line in subtle ink. `tone` rings the
  *   number in the action blue (the recommended one) or red (stop).
@@ -30,6 +34,7 @@ function DecisionCard({
   aside,
   onPick,
   count,
+  autoFocus = false,
   className,
   children,
 }: {
@@ -42,12 +47,19 @@ function DecisionCard({
   aside?: React.ReactNode;
   onPick?: (index: number) => void;
   count: number;
+  /** Focus the first choice once mounted. */
+  autoFocus?: boolean;
   className?: string;
   children: React.ReactNode;
 }) {
+  const ref = React.useRef<HTMLDivElement>(null);
+  React.useEffect(() => {
+    if (autoFocus) ref.current?.querySelector<HTMLElement>('[data-slot="choice-row"]')?.focus({ preventScroll: true });
+  }, [autoFocus]);
   return (
     // biome-ignore lint/a11y/noStaticElementInteractions: the number keys are a shortcut to the buttons inside, which carry the roles.
     <div
+      ref={ref}
       role="group"
       data-slot={slot}
       onKeyDown={(event) => {
@@ -262,6 +274,7 @@ function ApprovalApp({ icon, name, description }: { icon: React.ReactNode; name:
 type QuestionLabels = { previous: string; next: string; of: (n: number, total: number) => string };
 
 function QuestionPanel({
+  header,
   question,
   options,
   value,
@@ -273,11 +286,16 @@ function QuestionPanel({
   answer,
   foot,
   labels,
+  autoFocus,
   className,
 }: {
+  /** The agent's short tag for the question ("Scope"), a mono tag over it. */
+  header?: React.ReactNode;
   question: React.ReactNode;
   options: readonly Choice[];
-  value: number | null;
+  /** The pick, or the picks when several are allowed. */
+  value: number | readonly number[] | null;
+  /** A row was pressed: the pick, or the pick to toggle. */
   onValueChange: (index: number) => void;
   /** Which question this is, from 0, of `total`; with both the stepper shows. */
   index?: number;
@@ -289,12 +307,21 @@ function QuestionPanel({
   /** The note and the buttons (Cancel, Next). */
   foot?: React.ReactNode;
   labels?: Partial<QuestionLabels>;
+  /** Focus the first option as the panel appears. */
+  autoFocus?: boolean;
   className?: string;
 }) {
   const label = { previous: 'Previous question', next: 'Next question', of: (n: number, t: number) => `${n} of ${t}`, ...labels };
   return (
     <DecisionCard
       slot="question-panel"
+      status={
+        header ? (
+          <span className="flex h-4.5 items-center self-start rounded-xs bg-hover-surface px-1.5 font-mono text-[11px] text-fg-muted">
+            {header}
+          </span>
+        ) : undefined
+      }
       title={question}
       aside={
         index !== undefined && total !== undefined && total > 1 ? (
@@ -311,6 +338,7 @@ function QuestionPanel({
       }
       count={options.length}
       onPick={onValueChange}
+      autoFocus={autoFocus}
       className={className}
     >
       <div className="flex flex-col gap-0.5">
@@ -321,7 +349,7 @@ function QuestionPanel({
             n={i + 1}
             label={o.label}
             description={o.description}
-            selected={value === i}
+            selected={Array.isArray(value) ? value.includes(i) : value === i}
             onClick={() => onValueChange(i)}
           />
         ))}

@@ -27,7 +27,7 @@ export class PutSessionShareCommandHandler
   ) {}
 
   async execute(command: PutSessionShareCommand): Promise<string> {
-    const session = await this.loader.requireLive(command.scope, command.sessionId);
+    const session = await this.loader.requireLiveOnHost(command.scope, command.sessionId);
     await this.hosts.assertUsable(command.scope, session.hostId);
 
     const found = await this.shares.findOneBySession(session.organizationId, session.id);

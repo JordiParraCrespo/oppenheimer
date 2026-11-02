@@ -1,13 +1,13 @@
 import { randomUUID } from 'node:crypto';
 import type { AccessScope } from '@oppenheimer/backend-authz';
-import { GenericContainer, type StartedTestContainer, Wait } from 'testcontainers';
 import { DataSource } from 'typeorm';
-import { runAllMigrations } from '../../__tests__/run-migrations';
+import { useTestDatabase } from '../../__tests__/integration-services';
 import { NewBotProviderResolver } from '../application/new-bot-provider.resolver';
 import { BotMapper } from '../bot.mapper';
 import { BotDocumentMapper } from '../bot-document.mapper';
 import { BotGroupMapper } from '../bot-group.mapper';
 import { BotMemoryFactMapper } from '../bot-memory-fact.mapper';
+import { BotSkillMapper } from '../bot-skill.mapper';
 import { CreateBotCommand } from '../commands/create-bot/create-bot.command';
 import { CreateBotCommandHandler } from '../commands/create-bot/create-bot.command-handler';
 import { BotOrmEntity } from '../database/bot.orm-entity';
@@ -19,6 +19,8 @@ import { BotGroupOrmEntity } from '../database/bot-group.orm-entity';
 import { BotGroupRepository } from '../database/bot-group.repository';
 import { BotMemoryFactOrmEntity } from '../database/bot-memory-fact.orm-entity';
 import { BotMemoryFactRepository } from '../database/bot-memory-fact.repository';
+import { BotSkillOrmEntity } from '../database/bot-skill.orm-entity';
+import { BotSkillRepository } from '../database/bot-skill.repository';
 import { ModelProviderCredentialOrmEntity } from '../database/model-provider-credential.orm-entity';
 import { ModelProviderCredentialRepository } from '../database/model-provider-credential.repository';
 import { BotEntity } from '../domain/bot.entity';
@@ -26,6 +28,7 @@ import { userActor } from '../domain/bot.types';
 import { BotDocumentEntity } from '../domain/bot-document.entity';
 import { BotGroupEntity } from '../domain/bot-group.entity';
 import { BotMemoryFactEntity } from '../domain/bot-memory-fact.entity';
+import { BotSkillEntity } from '../domain/bot-skill.entity';
 import { ModelProviderCredentialEntity } from '../domain/model-provider-credential.entity';
 import { ModelProviderCredentialMapper } from '../model-provider-credential.mapper';
 
@@ -33,18 +36,19 @@ import { ModelProviderCredentialMapper } from '../model-provider-credential.mapp
  * Bots against a real Postgres (`product/versions/mvp/25-bots.md`, slice 1):
  * the migration's keys and checks, the sidebar order a move and a group delete
  * leave, the document's conditional write under two writers, the memory cap
- * under two adders, and the workspace boundary on every read; a bot made by a
+ * under two adders, a skill's unique name and cap, and the workspace boundary
+ * on every read; a bot made by a
  * bot, its composite "created by" link and the key that makes its creation
  * happen once, under two racing creations. The schema is the migrations', so a
  * wrong key fails here.
  */
 describe('bots (integration)', () => {
-  let pg: StartedTestContainer;
   let dataSource: DataSource;
   let bots: BotRepository;
   let groups: BotGroupRepository;
   let documents: BotDocumentRepository;
   let memory: BotMemoryFactRepository;
+  let skills: BotSkillRepository;
   let credentials: ModelProviderCredentialRepository;
   let organizationId: string;
   let userId: string;
@@ -59,28 +63,18 @@ describe('bots (integration)', () => {
   const scope = () => scopeOf(organizationId);
 
   beforeAll(async () => {
-    pg = await new GenericContainer('postgres:16-alpine')
-      .withEnvironment({ POSTGRES_USER: 'test', POSTGRES_PASSWORD: 'test', POSTGRES_DB: 'test' })
-      .withExposedPorts(5432)
-      .withWaitStrategy(Wait.forLogMessage(/database system is ready to accept connections/, 2))
-      .start();
-    process.env.DB_HOST = pg.getHost();
-    process.env.DB_PORT = pg.getMappedPort(5432).toString();
-    await runAllMigrations();
+    const db = await useTestDatabase();
 
     dataSource = new DataSource({
       type: 'postgres',
-      host: process.env.DB_HOST,
-      port: Number(process.env.DB_PORT),
-      username: 'test',
-      password: 'test',
-      database: 'test',
+      url: db.url,
       entities: [
         BotOrmEntity,
         BotGroupOrmEntity,
         BotDocumentOrmEntity,
         BotDocumentRevisionOrmEntity,
         BotMemoryFactOrmEntity,
+        BotSkillOrmEntity,
         ModelProviderCredentialOrmEntity,
       ],
       synchronize: false,
@@ -109,6 +103,11 @@ describe('bots (integration)', () => {
       dataSource,
       new BotMemoryFactMapper(),
     );
+    skills = new BotSkillRepository(
+      dataSource.getRepository(BotSkillOrmEntity),
+      dataSource,
+      new BotSkillMapper(),
+    );
     credentials = new ModelProviderCredentialRepository(
       dataSource.getRepository(ModelProviderCredentialOrmEntity),
       new ModelProviderCredentialMapper(),
@@ -117,7 +116,6 @@ describe('bots (integration)', () => {
 
   afterAll(async () => {
     await dataSource?.destroy();
-    await pg?.stop();
   });
 
   beforeEach(async () => {
@@ -151,11 +149,16 @@ describe('bots (integration)', () => {
 
   async function create(
     name: string,
-    options: { groupId?: string | null; homeHostId?: string | null; organization?: string } = {},
+    options: {
+      groupId?: string | null;
+      homeHostId?: string | null;
+      organization?: string;
+      createdBy?: string;
+    } = {},
   ): Promise<BotEntity> {
     const bot = BotEntity.createNew({
       organizationId: options.organization ?? organizationId,
-      createdByUserId: userId,
+      createdByUserId: options.createdBy ?? userId,
       name,
       description: '',
       avatarColor: 'mint',
@@ -294,6 +297,24 @@ describe('bots (integration)', () => {
     expect((await groups.findOneById(scope(), a.id)).unwrap().position).toBe(1);
   });
 
+  it('lists the bots in the Employees order: groups by position, then Ungrouped', async () => {
+    const ops = await addGroup('Ops');
+    const design = await addGroup('Design');
+    await create('Una');
+    await create('Ola', { groupId: ops.id });
+    await create('Dot', { groupId: design.id });
+    await create('Oz', { groupId: ops.id });
+    design.moveTo(0);
+    expect(await groups.save(design)).toBe('saved');
+    // A section's Bots heading narrows this list, so its order is the sidebar's.
+    expect((await bots.findAll(scope())).map((bot) => bot.name)).toEqual([
+      'Dot',
+      'Ola',
+      'Oz',
+      'Una',
+    ]);
+  });
+
   it('lets one of two writers that read the same revision win, and records only its revision', async () => {
     const bot = await create('Ana');
     const first = (await documents.findOne(scope(), bot.id, 'instructions')).unwrap();
@@ -368,7 +389,7 @@ describe('bots (integration)', () => {
     });
     await memory.insert(first, 10);
     await memory.insert(second, 10);
-    first.edit('uno', userActor(userId));
+    first.edit({ content: 'uno' }, userActor(userId));
     expect(await memory.save(first)).toBe('saved');
     expect((await memory.findOneById(scope(), bot.id, first.id)).unwrap()).toMatchObject({
       content: 'uno',
@@ -378,6 +399,50 @@ describe('bots (integration)', () => {
     expect((await memory.findAll(scope(), bot.id)).map((fact) => fact.content)).toEqual(['uno']);
     await memory.clear(bot);
     expect(await memory.findAll(scope(), bot.id)).toEqual([]);
+  });
+
+  it("shares a fact about the person with the person's other bots, and nothing else", async () => {
+    const ana = await create('Ana');
+    const bea = await create('Bea');
+    const otherUserId = randomUUID();
+    await dataSource.query(
+      `INSERT INTO "user" ("id", "name", "email", "firstName", "lastName")
+       VALUES ($1, 'Eva', $2, 'Eva', 'Ruiz')`,
+      [otherUserId, `${otherUserId}@example.com`],
+    );
+    const evas = await create('Evas', { createdBy: otherUserId });
+    const keep = (bot: BotEntity, content: string, kept: { tier?: 'log'; scope?: 'person' } = {}) =>
+      memory.insert(
+        BotMemoryFactEntity.createNew({
+          organizationId,
+          botId: bot.id,
+          content,
+          ...kept,
+          actor: { kind: 'bot' },
+        }),
+        10,
+      );
+    await keep(ana, 'Ana prefers squash merges.', { scope: 'person' });
+    await keep(ana, 'The flaky test is the relay one.', { tier: 'log' });
+    await keep(evas, 'Eva works in Lisbon.', { scope: 'person' });
+
+    const seen = (facts: BotMemoryFactEntity[]) =>
+      facts.map((fact) => [fact.content, fact.tier, fact.scope, fact.botId === ana.id]);
+    expect(seen(await memory.findAll(scope(), bea.id))).toEqual([
+      ['Ana prefers squash merges.', 'profile', 'person', true],
+    ]);
+    expect(seen(await memory.findAllForTurn(organizationId, bea.id))).toEqual([
+      ['Ana prefers squash merges.', 'profile', 'person', true],
+    ]);
+    expect(
+      (await memory.findAll(scope(), ana.id)).map((fact) => [fact.tier, fact.scope]).sort(),
+    ).toEqual([
+      ['log', 'bot'],
+      ['profile', 'person'],
+    ]);
+    expect((await memory.findAll(scope(), evas.id)).map((fact) => fact.content)).toEqual([
+      'Eva works in Lisbon.',
+    ]);
   });
 
   it('reads nothing of another workspace’s bot', async () => {
@@ -410,6 +475,97 @@ describe('bots (integration)', () => {
       [bot.id],
     );
     expect(left).toEqual({ documents: 0, revisions: 0, facts: 0 });
+  });
+
+  describe('skills', () => {
+    const skill = (botId: string, name: string, organization = organizationId) =>
+      BotSkillEntity.createNew({
+        organizationId: organization,
+        botId,
+        name,
+        description: `Does ${name}.`,
+        body: `Steps for ${name}.`,
+        actor: userActor(userId),
+      });
+
+    it('keeps a bot’s skills by name, and reads them back whole', async () => {
+      const bot = await create('Ana');
+      expect(await skills.insert(skill(bot.id, 'triage'), 10)).toBe('inserted');
+      expect(await skills.insert(skill(bot.id, 'release-notes'), 10)).toBe('inserted');
+      const kept = await skills.findAll(scope(), bot.id);
+      expect(kept.map((found) => found.name)).toEqual(['release-notes', 'triage']);
+      expect(kept[1]).toMatchObject({
+        description: 'Does triage.',
+        body: 'Steps for triage.',
+        userInvocable: true,
+        modelInvocable: true,
+        source: 'user',
+      });
+      expect((await skills.findOneByName(scope(), bot.id, 'triage')).isSome()).toBe(true);
+      expect(await skills.findAllForTurn(organizationId, bot.id)).toHaveLength(2);
+    });
+
+    it('answers taken for a second skill of one name on a bot, and not on another bot', async () => {
+      const ana = await create('Ana');
+      const ben = await create('Ben');
+      await skills.insert(skill(ana.id, 'triage'), 10);
+      expect(await skills.insert(skill(ana.id, 'triage'), 10)).toBe('taken');
+      expect(await skills.insert(skill(ben.id, 'triage'), 10)).toBe('inserted');
+      const deploy = skill(ana.id, 'deploy');
+      await skills.insert(deploy, 10);
+      deploy.edit({ name: 'triage' }, userActor(userId));
+      expect(await skills.save(deploy)).toBe('taken');
+      expect((await skills.findOneById(scope(), ana.id, deploy.id)).unwrap().name).toBe('deploy');
+    });
+
+    it('lets only one of two adders take the last skill place', async () => {
+      const bot = await create('Ana');
+      const outcomes = await Promise.all([
+        skills.insert(skill(bot.id, 'triage'), 1),
+        skills.insert(skill(bot.id, 'deploy'), 1),
+      ]);
+      expect(outcomes.sort()).toEqual(['full', 'inserted']);
+      expect(await skills.findAll(scope(), bot.id)).toHaveLength(1);
+    });
+
+    it('answers missing for a skill of a bot that is gone', async () => {
+      expect(await skills.insert(skill(randomUUID(), 'triage'), 10)).toBe('missing');
+    });
+
+    it('reads no other workspace’s skill, and refuses one pointing into it', async () => {
+      const bot = await create('Ana');
+      const added = skill(bot.id, 'triage');
+      await skills.insert(added, 10);
+      const elsewhere = await insertOrganization();
+      expect(await skills.findAll(scopeOf(elsewhere), bot.id)).toEqual([]);
+      expect((await skills.findOneById(scopeOf(elsewhere), bot.id, added.id)).isNone()).toBe(true);
+      await expect(
+        dataSource.query(`UPDATE bot_skill SET "organizationId" = $1 WHERE id = $2`, [
+          elsewhere,
+          added.id,
+        ]),
+      ).rejects.toMatchObject({ constraint: 'FK_bot_skill_bot' });
+    });
+
+    it('refuses a name the command could not be typed as', async () => {
+      const bot = await create('Ana');
+      const added = skill(bot.id, 'triage');
+      await skills.insert(added, 10);
+      await expect(
+        dataSource.query(`UPDATE bot_skill SET name = 'Has Spaces' WHERE id = $1`, [added.id]),
+      ).rejects.toMatchObject({ constraint: 'CHK_bot_skill_name' });
+    });
+
+    it('goes with its bot', async () => {
+      const bot = await create('Ana');
+      await skills.insert(skill(bot.id, 'triage'), 10);
+      await bots.delete(bot);
+      const [left] = await dataSource.query(
+        `SELECT count(*)::int AS skills FROM bot_skill WHERE "botId" = $1`,
+        [bot.id],
+      );
+      expect(left).toEqual({ skills: 0 });
+    });
   });
 
   it('keeps a bot whose home host is removed, with no home host', async () => {

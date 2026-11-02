@@ -39,14 +39,28 @@
     "startFrom": "Try asking",
     "hello": "{{name}} is ready. What should we work on?",
     "placeholder": "Message {{name}}",
+    "placeholderRunning": "Steer {{name}}: Enter steers the turn under way, Alt+Enter queues for after",
+    "steered": "Steered in while it worked",
     "send": "Send",
     "stop": "Stop",
     "noKey": "{{provider}} has no key in this workspace yet. Add one to talk to this bot.",
     "addKey": "Add a key",
     "sendFailed": "Could not send the message.",
     "stopFailed": "Could not stop the turn.",
+    "queuedImages_one": "{{count}} image",
+    "queuedImages_other": "{{count}} images",
     "failed": "{{provider}} could not finish this turn",
     "failedUnknown": "The turn ended without saying why.",
+    "failure": {
+      "rate_limit": "{{provider}} is limiting requests for now. This usually passes: try again in a moment.",
+      "usage_limit": "The {{provider}} account is out of quota or credit. Sending it again won't help until it is topped up or the plan resets.",
+      "credential": "{{provider}} refused the key or sign-in. Sending it again won't help: check it in Model providers.",
+      "refused": "{{provider}} refused this request. Sending it again won't help: change the message or the model.",
+      "unavailable": "{{provider}} could not be reached. This is usually temporary: try again in a moment.",
+      "time_limit": "This turn ran out of time. Sending it again won't help: ask for a smaller step, or split the request.",
+      "interrupted": "This turn was interrupted before it finished. Sending it again runs it."
+    },
+    "openProviders": "Open Model providers",
     "errorDetails": "Show details",
     "errorLess": "Show less",
     "retry": "Retry",
@@ -56,10 +70,10 @@
     "switchedModel": "Switched to <model>{{model}}</model>",
     "tokens_one": "{{tokens}} token",
     "tokens_other": "{{tokens}} tokens",
+    "workedFor": "Worked for {{time}}",
     "images": {
       "attach": "Add images",
       "remove": "Remove {{name}}",
-      "open": "Open {{name}}",
       "pasted": "Pasted image",
       "notSupported": "{{name}} isn't an image a bot can read. Use a PNG, JPEG, GIF or WebP.",
       "tooLarge": "{{name}} is larger than 5 MB.",
@@ -68,11 +82,14 @@
       "noVisionHeld": "{{model}} can't read images. Remove them or switch the model to send this message.",
       "uploading": "Wait for the images to finish adding.",
       "failedHeld": "Remove the image that couldn't be added.",
-      "uploadFailed": "{{name}} couldn't be added.",
-      "unavailable": "This image couldn't be loaded."
+      "uploadFailed": "{{name}} couldn't be added."
     },
     "turn": {
       "queued": "Waiting",
+      "retrying": {
+        "rate_limit": "{{provider}} is limiting requests, retrying…",
+        "unavailable": "{{provider}} is busy, retrying…"
+      },
       "thinking": "Thinking",
       "writing": "Writing",
       "stopped": "Stopped"
@@ -89,8 +106,6 @@
       "results_one": "{{count}} result",
       "results_other": "{{count}} results",
       "rawOutput": "Show raw output",
-      "moreLines_one": "Show {{count}} more line",
-      "moreLines_other": "Show {{count}} more lines",
       "lessOutput": "Show less",
       "group_one": "Used {{count}} tool",
       "group_other": "Used {{count}} tools",
@@ -102,14 +117,25 @@
       "delegated_other": "Ran {{count}} subagents",
       "delegating_one": "Running {{count}} subagent",
       "delegating_other": "Running {{count}} subagents",
+      "delegatingDone_one": "Running {{count}} subagent · {{done}} done",
+      "delegatingDone_other": "Running {{count}} subagents · {{done}} done",
       "seconds": "{{count}}s",
+      "subagentCalled": "Called {{tools}}",
+      "subagentNoCalls": "No tools called yet",
       "subagent": {
+        "queued": "waiting",
+        "running": "running",
         "completed": "completed",
         "failed": "failed",
         "cancelled": "stopped",
         "timed_out": "timed out"
       },
-      "subagentTokens": "{{tokens}} tokens"
+      "subagentTokens": "{{tokens}} tokens",
+      "explored": "Explored",
+      "exploring": "Exploring",
+      "moreLines_one": "+{{count}} line",
+      "moreLines_other": "+{{count}} lines",
+      "fullLines": "Show full lines"
     },
     "suggest": {
       "task": {
@@ -169,6 +195,11 @@
     },
     "saveFailed": "Could not change the bot.",
     "loadFailed": "Could not load this bot.",
+    "question": {
+      "answered": "You answered: {{summary}}",
+      "dismissed": "You dismissed: {{summary}}",
+      "failed": "Could not send your answers."
+    },
     "approval": {
       "needsInput": "Needs input",
       "title": "{{name}} wants to do this",
@@ -180,12 +211,26 @@
       "noteLabel": "What should {{name}} do instead?",
       "notePlaceholder": "Optional: why not, or what to do instead",
       "cancel": "Cancel",
-      "failed": "Could not answer the request."
+      "failed": "Could not answer the request.",
+      "approveOnce": "Approve once",
+      "always": "Always allow",
+      "alwaysFor": "Always allow for {{subject}}",
+      "sharesOutside": "This sends what it writes outside Oppenheimer, in your name.",
+      "fullRequest": "Show the full request",
+      "stop": "Deny and stop",
+      "stopping": "Stopping…",
+      "denyHint": "{{name}} is told why and carries on",
+      "stopHint": "Nothing runs, and {{name}} stops this turn",
+      "shortcut": "Press {{key}}"
     },
     "event": {
       "approved": "You approved: {{summary}}",
       "denied": "You denied: {{summary}}",
+      "stopped": "You denied and stopped the turn: {{summary}}",
       "failed": "You approved, and it failed: {{summary}}",
+      "running": "Running: {{summary}}",
+      "finished": "Done: {{summary}}",
+      "finishedFailed": "It failed: {{summary}}",
       "routine": "Routine · {{name}}",
       "routineSaved": "Created routine “{{name}}”",
       "routineChanged": "Changed routine “{{name}}”",
@@ -199,7 +244,25 @@
       "peerAsk": "<bot>{{name}}</bot> asked",
       "peerAnswered": "<bot>{{name}}</bot> replied",
       "peerFailed": "<bot>{{name}}</bot> could not answer",
-      "peerCancelled": "<bot>{{name}}</bot> was stopped before it answered"
+      "peerCancelled": "<bot>{{name}}</bot> was stopped before it answered",
+      "session": {
+        "needsInput": "Session “{{name}}” needs input",
+        "completed": "Session “{{name}}” finished",
+        "failed": "Session “{{name}}” failed",
+        "cancelled": "Session “{{name}}” was stopped",
+        "expired": "Session “{{name}}” expired before it ran",
+        "stalled": "Session “{{name}}” looks stuck",
+        "matched_one": "Session “{{name}}” printed a line matching “{{pattern}}”",
+        "matched_other": "Session “{{name}}” printed {{count}} lines matching “{{pattern}}”"
+      },
+      "goal": {
+        "continued": "Goal · continuation {{step}} of {{limit}}",
+        "met": "Goal met: “{{objective}}”",
+        "impossible": "Goal “{{objective}}” cannot be met without you",
+        "cleared": "You stopped the goal “{{objective}}”",
+        "exhausted": "Goal “{{objective}}” used all {{limit}} continuations",
+        "stopped": "Goal “{{objective}}” stopped: a turn of it failed or was stopped"
+      }
     },
     "routineReason": {
       "expired": "it waited too long to start",
@@ -211,7 +274,23 @@
       "owner_lost_access": "its owner can no longer run it",
       "unknown": "something went wrong"
     },
-    "openSession": "Open session"
+    "openSession": "Open session",
+    "goal": {
+      "title": "Goal: {{objective}}",
+      "progress": "{{step}} of {{limit}} continuations",
+      "stop": "Stop goal",
+      "stopFailed": "Could not stop the goal. Try again.",
+      "needsCondition": "Write what done looks like after /goal, or /goal clear to stop the goal."
+    },
+    "slash": {
+      "label": "Skills",
+      "menu": "Commands and skills you can run",
+      "pick": "Use /{{name}}",
+      "builtInLabel": "Commands",
+      "builtIn": {
+        "goal": "Keep working until a condition holds, checked after every turn. /goal clear stops it."
+      }
+    }
   },
   "settings": {
     "back": "Back to the chat",
@@ -222,6 +301,8 @@
       "profile": "Profile",
       "instructions": "Instructions",
       "memory": "Memory",
+      "skills": "Skills",
+      "permissions": "Permissions",
       "routines": "Routines",
       "homeHost": "Home host"
     },
@@ -267,7 +348,10 @@
       "save": "Save changes",
       "saving": "Saving…",
       "saved": "Saved",
-      "failed": "Could not save the bot."
+      "failed": "Could not save the bot.",
+      "showsIn": "Shows in",
+      "showsInHint": "Sidebars that list it, beside Employees",
+      "showsInFailed": "Could not save where the bot shows."
     },
     "instructions": {
       "title": "Instructions",
@@ -327,7 +411,52 @@
       "saveFailed": "Could not save the fact.",
       "forget": "Forget “{{fact}}”",
       "forgetFailed": "Could not forget the fact.",
-      "loadFailed": "Could not load what the bot remembers."
+      "loadFailed": "Could not load what the bot remembers.",
+      "aboutYou": "About you",
+      "lookedUp": "Looked up",
+      "sharedBy": "Shared by another of your bots · {{date}}",
+      "keptActions": "Where “{{fact}}” is kept",
+      "toLog": "Look it up only when needed",
+      "toProfile": "Keep it in mind in every chat",
+      "toPerson": "Share it with all your bots",
+      "toBot": "Keep it to this bot"
+    },
+    "skills": {
+      "title": "Skills",
+      "subtitle": "Saved ways of doing a task. Run one by typing / and its name in the chat; the bot uses one on its own when a request fits.",
+      "count_one": "Skills · {{count}}",
+      "count_other": "Skills · {{count}}",
+      "empty": "No skills yet. Add one, or ask the bot to save how it did something as a skill.",
+      "add": "Add skill",
+      "edit": "Edit {{name}}",
+      "delete": "Delete {{name}}",
+      "byYou": "Saved by you · {{date}}",
+      "byBot": "Saved by the bot · {{date}}",
+      "onlyYou": "Only you run it",
+      "onlyBot": "Only the bot uses it",
+      "loadFailed": "Could not load the skills.",
+      "deleteFailed": "Could not delete the skill.",
+      "dialog": {
+        "newTitle": "New skill",
+        "editTitle": "Edit /{{name}}",
+        "description": "A skill is a recipe the bot follows: when it applies, the steps, how to check the result and what to report.",
+        "name": "Name",
+        "nameHint": "Lowercase letters, digits and hyphens. You run it as /{{name}}.",
+        "nameHintCommand": "name",
+        "summary": "Description",
+        "summaryHint": "One sentence on what it does and when to use it. The bot reads this in every chat.",
+        "summaryPlaceholder": "Writes release notes from the pull requests merged since the last tag",
+        "body": "Instructions",
+        "bodyPlaceholder": "1. List the pull requests merged since the last tag.\n2. Group them by area.\n3. Write the notes in Markdown and share them here.",
+        "userInvocable": "I can run it from the chat with its command",
+        "modelInvocable": "The bot can use it on its own when a request fits",
+        "save": "Save skill",
+        "saving": "Saving…",
+        "saveFailed": "Could not save the skill."
+      },
+      "deleteTitle": "Delete /{{name}}?",
+      "deleteBody": "The bot can no longer use it, and /{{name}} stops working in the chat.",
+      "deleting": "Deleting…"
     },
     "routines": {
       "title": "Routines",
@@ -336,6 +465,7 @@
       "askInChat": "Ask in chat",
       "schedule": "Schedule · {{when}}",
       "github": "GitHub · {{when}}",
+      "gmail": "Gmail · {{when}}",
       "last": "Last",
       "next": "Next",
       "never": "Never",
@@ -372,6 +502,56 @@
       "saved": "Saved",
       "failed": "Could not change the home host.",
       "hostsFailed": "Could not load your hosts."
+    },
+    "permissions": {
+      "title": "Permissions",
+      "subtitle": "What the bot does on its own, and what it asks you first.",
+      "loadFailed": "Could not load the bot’s permissions.",
+      "saveFailed": "Could not change the permission.",
+      "tools": "Tools",
+      "preset": {
+        "auto": "Tools you leave on their default follow Approve for me: anything that reaches outside Oppenheimer asks first.",
+        "full": "Tools you leave on their default follow Full access: they run without asking."
+      },
+      "decisions": {
+        "allow": "Allow",
+        "ask": "Ask",
+        "off": "Off"
+      },
+      "decisionFor": "What {{tool}} does",
+      "reset": "Default",
+      "perCall": "Every call asks: it is never allowed for good.",
+      "groups": {
+        "self": "Itself",
+        "sessions": "Sessions and hosts",
+        "plan": "Plan",
+        "mail": "Mail",
+        "whatsapp": "WhatsApp",
+        "github": "GitHub",
+        "automations": "Routines and automations",
+        "bots": "Other bots",
+        "web": "Web and helpers"
+      },
+      "grants": "Always allowed",
+      "noGrants": "Nothing yet. “Always allow for …” on a request adds it here.",
+      "removeGrant": "Stop always allowing {{tool}} for {{subject}}",
+      "rules": {
+        "empty": "No rules yet.",
+        "add": "Add",
+        "remove": "Remove the rule “{{rule}}”",
+        "ask": {
+          "title": "Ask me first when",
+          "hint": "A matching request waits for you, even where the tool would run on its own.",
+          "placeholder": "e.g. it mentions payments or customer data",
+          "new": "New ask rule"
+        },
+        "allow": {
+          "title": "Go ahead without asking when",
+          "hint": "A matching request runs without a card. An ask rule that also matches wins.",
+          "placeholder": "e.g. it comments on our docs repository",
+          "new": "New allow rule"
+        }
+      }
     }
   },
   "delete": {
@@ -380,5 +560,14 @@
     "confirm": "Delete bot",
     "pending": "Deleting…",
     "failed": "Could not delete the bot."
+  },
+  "section": {
+    "heading": "Bots",
+    "empty": "No bots here yet.",
+    "add": "Add one",
+    "manage": "Bots in {{section}}",
+    "checkedHint": "Checked bots show in {{section}}.",
+    "manageAll": "Manage in {{employees}}",
+    "hide": "Hide from {{section}}"
   }
 }

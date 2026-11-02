@@ -1,3 +1,4 @@
+// uncatalogued: a plain form primitive with no hand-built rival to warn against
 import { Input as InputPrimitive } from '@base-ui/react/input';
 import { cva, type VariantProps } from 'class-variance-authority';
 import type * as React from 'react';
@@ -18,6 +19,11 @@ const inputVariants = cva(
       },
       pill: {
         true: 'rounded-pill px-3.5',
+      },
+      /** Filled and borderless, with no focus halo: a search at the head of a
+       *  popup, which opens focused, so a ring would light every opening. */
+      quiet: {
+        true: 'border-transparent bg-control hover:border-transparent has-focus-visible:border-transparent has-focus-visible:ring-0',
       },
       /** The system mono, for a value that is an identifier rather than prose:
        *  the host name on Hosts settings' rename field. */
@@ -44,7 +50,8 @@ type InputProps = Omit<React.ComponentProps<'input'>, 'size'> &
 /**
  * Input — anything you type into has a 10px radius. Sizes follow the shared
  * control ramp (28 / 34 / 42; `lg` is the auth forms). Focus is the blue border
- * plus a 3px `--ring` halo; invalid swaps both for red.
+ * plus a 3px `--ring` halo; invalid swaps both for red. `quiet` is the filled,
+ * borderless field at the head of a popup (the bots picker), which needs neither.
  *
  * The field is a flex shell around the native input so `leading` and
  * `trailing` slots (a search glyph, the password reveal) sit inside the border
@@ -57,6 +64,7 @@ function Input({
   inputClassName,
   size = 'md',
   pill,
+  quiet,
   mono,
   leading,
   trailing,
@@ -67,7 +75,7 @@ function Input({
     <div
       data-slot="input"
       data-size={size}
-      className={cn(inputVariants({ size, pill, mono }), className)}
+      className={cn(inputVariants({ size, pill, quiet, mono }), className)}
     >
       {leading ? (
         <span data-slot="input-leading" className="flex shrink-0 text-fg-subtle">

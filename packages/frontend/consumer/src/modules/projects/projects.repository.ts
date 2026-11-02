@@ -4,7 +4,7 @@ import {
   type ProjectResponseDto,
   type UpdateProjectRequest,
 } from '@oppenheimer/api-client';
-import { MapApiError, unwrapBody } from '@oppenheimer/frontend-core';
+import { callApi } from '@oppenheimer/frontend-core';
 import { isCodingAgentId } from '@oppenheimer/shared/agents';
 import { injectable } from 'inversify';
 import { repositoryKey } from '../installations/repository-key';
@@ -71,39 +71,36 @@ function toUpdateRequest(input: UpdateProjectInput): UpdateProjectRequest {
 
 @injectable()
 export class ProjectsRepository {
-  @MapApiError(ProjectsErrors.FETCH_LIST_FAILED)
-  async findAll(): Promise<ProjectEntity[]> {
-    const data = await unwrapBody(heyApiSdk.findProjects(), ProjectsErrors.FETCH_LIST_FAILED);
-    return data.map(toEntity);
+  findAll(): Promise<ProjectEntity[]> {
+    return callApi(ProjectsErrors.FETCH_LIST_FAILED, async (api) => {
+      const data = await api.body(heyApiSdk.findProjects());
+      return data.map(toEntity);
+    });
   }
 
-  @MapApiError(ProjectsErrors.CREATE_FAILED)
-  async create(input: CreateProjectInput): Promise<ProjectEntity> {
-    const data = await unwrapBody(
-      heyApiSdk.createProject({ body: toCreateRequest(input) }),
-      ProjectsErrors.CREATE_FAILED,
-    );
-    return toEntity(data);
+  create(input: CreateProjectInput): Promise<ProjectEntity> {
+    return callApi(ProjectsErrors.CREATE_FAILED, async (api) => {
+      const data = await api.body(heyApiSdk.createProject({ body: toCreateRequest(input) }));
+      return toEntity(data);
+    });
   }
 
-  @MapApiError(ProjectsErrors.UPDATE_FAILED)
-  async update(id: string, input: UpdateProjectInput): Promise<ProjectEntity> {
-    const data = await unwrapBody(
-      heyApiSdk.updateProject({
-        path: { id },
-        body: toUpdateRequest(input),
-      }),
-      ProjectsErrors.UPDATE_FAILED,
-    );
-    return toEntity(data);
+  update(id: string, input: UpdateProjectInput): Promise<ProjectEntity> {
+    return callApi(ProjectsErrors.UPDATE_FAILED, async (api) => {
+      const data = await api.body(
+        heyApiSdk.updateProject({
+          path: { id },
+          body: toUpdateRequest(input),
+        }),
+      );
+      return toEntity(data);
+    });
   }
 
-  @MapApiError(ProjectsErrors.ARCHIVE_FAILED)
-  async archive(id: string): Promise<ProjectEntity> {
-    const data = await unwrapBody(
-      heyApiSdk.archiveProject({ path: { id } }),
-      ProjectsErrors.ARCHIVE_FAILED,
-    );
-    return toEntity(data);
+  archive(id: string): Promise<ProjectEntity> {
+    return callApi(ProjectsErrors.ARCHIVE_FAILED, async (api) => {
+      const data = await api.body(heyApiSdk.archiveProject({ path: { id } }));
+      return toEntity(data);
+    });
   }
 }

@@ -36,11 +36,7 @@
         "shell": "Start shell"
       }
     },
-    "progressFailed": "Could not load how the start is going.",
-    "codes": {
-      "SESS_002": "This host makes sessions with one repository."
-    },
-    "details": "Details from the host: {{detail}}"
+    "progressFailed": "Could not load how the start is going."
   },
   "closed": {
     "description": "This session has stopped. Its work is on {{branch}}, and restarting brings the terminal back where it left off.",
@@ -53,12 +49,7 @@
   },
   "new": {
     "title": "New session",
-    "subtitle": "Set the scope, then describe the work.",
-    "subtitleProject_one": "In {{name}} · cloning {{picked}} of {{count}} repository, each on its own opp/ branch.",
-    "subtitleProject_other": "In {{name}} · cloning {{picked}} of {{count}} repositories, each on its own opp/ branch.",
-    "subtitleCloning_one": "In {{name}} · cloning {{count}} repository, on its own opp/ branch.",
-    "subtitleCloning_other": "In {{name}} · cloning {{count}} repositories, each on its own opp/ branch.",
-    "subtitleFolder": "Opens a folder on the host as it is. Nothing is cloned and no branch is made.",
+    "heading": "What should we work on?",
     "host": {
       "label": "Host",
       "placeholder": "Host",
@@ -78,7 +69,34 @@
       "folder": {
         "label": "Folder on host",
         "description": "Open an existing directory as it is · nothing is cloned"
-      }
+      },
+      "cloud": {
+        "label": "Cloud",
+        "description": "Start the task in Claude Code’s or Codex’s cloud from this host · the engine says whose"
+      },
+      "claudeCloud": {
+        "label": "Claude Code",
+        "place": "Claude Code cloud",
+        "from": "From {{host}}",
+        "noHost": "Needs a host",
+        "startFrom": "Start from",
+        "cannot": "This runner can’t start it"
+      },
+      "codexCloud": {
+        "label": "Codex",
+        "place": "Codex cloud",
+        "from": "From {{host}}",
+        "noHost": "Needs a host",
+        "startFrom": "Start from",
+        "cannot": "This runner can’t start it"
+      },
+      "hosts": "Hosts",
+      "startIn": "Start in",
+      "atVendor": "Cloud",
+      "clouds": "Cloud",
+      "searchClouds": "Search clouds…",
+      "cloudsEmpty": "No cloud matches.",
+      "connect": "Connect your key"
     },
     "project": {
       "label": "Project",
@@ -103,6 +121,19 @@
       "noApp": "This deployment has no GitHub App, so there are no repositories to pick.",
       "archived": "Archived",
       "failed": "Could not load your repositories."
+    },
+    "codexEnvironment": {
+      "label": "Codex environment",
+      "search": "Search environments…",
+      "empty": "No environment matches.",
+      "loading": "Asking the host for its Codex environments…",
+      "auto": "Auto",
+      "autoLinked": "{{name}}, the host’s pick",
+      "autoByName": "The host’s pick",
+      "linked": "Linked",
+      "pinned": "Pinned",
+      "failed": "Could not list the host’s Codex environments.",
+      "lives": "Environments live in your Codex account"
     },
     "branch": {
       "label": "Branch",
@@ -136,7 +167,12 @@
     "agent": {
       "label": "Agent and model",
       "search": "Search models…",
-      "empty": "No model matches “{{query}}”."
+      "empty": "No model matches “{{query}}”.",
+      "favourites": "Favourites",
+      "favouritesEmpty": "Star a model to keep it here.",
+      "addFavourite": "Add {{model}} to favourites",
+      "removeFavourite": "Remove {{model}} from favourites",
+      "auto": "Auto"
     },
     "permission": {
       "label": "Permission level",
@@ -178,11 +214,43 @@
       "attachNotSupported": "{{name}} is not a file the agent can take. Attach an image, a PDF or a text file.",
       "placeholderOptional": "Optional: a first command or a note. Send opens the terminal."
     },
-    "failed": "The session could not be created."
+    "failed": "The session could not be created.",
+    "cloudNoFiles": "A cloud session takes no files. Remove them, or start it on a host.",
+    "cloudFailure": {
+      "vendor": "The provider",
+      "connect": "Connect {{vendor}} with your API key to start a cloud session there.",
+      "connectAction": "Connect {{vendor}}",
+      "reconnect": "{{vendor}} no longer accepts your API key. It may have been revoked, or it isn't a user API key. Reconnect it to start cloud sessions there again.",
+      "reconnectAction": "Reconnect {{vendor}}",
+      "unavailable": "{{vendor}} didn't answer. Your task is still here; try again in a moment.",
+      "limited": "{{vendor}} asked us to slow down. Wait a minute, then try again.",
+      "refused": "{{vendor}} wouldn't start this session.",
+      "refusedSaying": "{{vendor}} wouldn't start this session: “{{says}}”",
+      "retry": "Try again"
+    }
   },
   "session": {
     "status": {
       "closed": "Disconnected"
+    },
+    "state": {
+      "starting": "Starting",
+      "failed": "Failed",
+      "stopped": "Stopped",
+      "deleted": "Deleted",
+      "deleting": "Deleting…",
+      "working": "Running",
+      "waiting-on-you": "Needs input",
+      "ready-for-review": "Ready for review",
+      "landing": "Landing",
+      "idle": "Idle",
+      "resolved": "Done"
+    },
+    "agentReport": {
+      "permission": "Needs your permission",
+      "question": "Asked you a question",
+      "auth": "Needs you to sign in",
+      "error": "Ended in an error"
     },
     "file": {
       "sending": "Sending file",
@@ -245,6 +313,7 @@
     "pinned": "Pinned",
     "pin": "Pin",
     "unpin": "Unpin",
+    "dropToPin": "Drop a session here to pin it.",
     "actions": "Session actions",
     "rename": "Rename",
     "renameLabel": "Session name",
@@ -260,7 +329,10 @@
     "notDeleted": "Not deleted",
     "notDeletedHint": "Its host refused to delete it. Delete it again to see why.",
     "select": "Select",
-    "selected": "Selected"
+    "selected": "Selected",
+    "openAtVendor": "Opens in {{vendor}}",
+    "allHidden": "Every project is hidden. Show them again from the filter menu.",
+    "noSessions": "No sessions yet. Start one with New session above."
   },
   "deleteSession": {
     "title": "Delete “{{name}}”?",
@@ -271,6 +343,7 @@
     "discard": "Also discard work that is not pushed",
     "keeps": "Deleting stops if the session has work that is not pushed.",
     "descriptionFolder": "Ends the terminal. The folder stays as it is.",
+    "descriptionCloud": "Removes it from Oppenheimer. The session stays on claude.ai/code, where you can archive it.",
     "refused": "Its host did not delete it",
     "refusedUnknown": "The host refused to remove the session."
   },
@@ -304,7 +377,11 @@
     "allRepositories": "All repositories",
     "allAgents": "All agents",
     "allHosts": "All hosts",
-    "noMatches": "No sessions match these filters."
+    "noMatches": "No sessions match these filters.",
+    "shown": "Show projects",
+    "shownAll": "All",
+    "shownSome": "{{shown}} of {{total}}",
+    "showAll": "Show all projects"
   },
   "sort": {
     "custom": "Custom order",
@@ -455,13 +532,19 @@
     },
     "empty": {
       "title": "Nothing said yet",
-      "description": "Claude's words and work appear here as it goes."
+      "description": "The agent's words and work appear here as it goes."
     },
     "composer": {
-      "placeholder": "Message Claude",
+      "placeholder": "Message {{agent}}",
+      "placeholderAnyAgent": "Message the agent",
       "send": "Send",
       "stop": "Stop",
-      "agent": "Claude Code"
+      "attach": "Attach files",
+      "removeAttachment": "Remove {{name}}",
+      "attachTooLarge": "{{name}} is over 5 MB. Save a smaller copy, then attach it again.",
+      "attachTooMany": "A message carries at most {{max}} files.",
+      "attachNotSupported": "{{name}} is not a file the agent can take. Attach an image, a PDF or a text file.",
+      "attaching": "Attaching files…"
     },
     "turn": {
       "working": "Working for",
@@ -472,6 +555,8 @@
     "thinking": "Thinking",
     "plan": "Plan",
     "latest": "Jump to latest",
+    "earlier_one": "Show {{count}} earlier turn",
+    "earlier_other": "Show {{count}} earlier turns",
     "truncated": "cut on the host",
     "failedCall": "failed",
     "failed_one": "{{count}} failed",
@@ -483,6 +568,12 @@
     "notice": {
       "interrupted": "You stopped this turn",
       "compacted": "Context compacted"
+    },
+    "task": {
+      "completed": "Background task finished",
+      "failed": "Background task failed",
+      "killed": "Background task stopped",
+      "unknown": "Background task ended"
     },
     "verb": {
       "command": "Ran",
@@ -535,6 +626,74 @@
     "thought": "Thought",
     "thoughtFor": "Thought for {{seconds}}s",
     "changes_one": "{{count}} file changed",
-    "changes_other": "{{count}} files changed"
+    "changes_other": "{{count}} files changed",
+    "question": {
+      "waiting": "Waiting for your answer",
+      "dismissed": "You dismissed the questions",
+      "noAnswer": "No answer read"
+    },
+    "explored": {
+      "title": "Explored"
+    },
+    "exploring": "Exploring"
+  },
+  "preview": {
+    "show": "Show preview",
+    "hide": "Hide preview",
+    "label": "Preview",
+    "simulator": "Simulator",
+    "close": "Close preview",
+    "frame": "App running on {{name}}",
+    "title": "{{name}} running on this session's host",
+    "connecting": "Connecting to the session's device…",
+    "connectingDetail": "The screen appears once the host has started streaming it.",
+    "unavailable": "No device for this session",
+    "unavailableDetail": "This session's host offers no simulator or emulator, or every one is held by another session.",
+    "offline": "The host is offline",
+    "offlineDetail": "The device comes back when the host reconnects.",
+    "ended": "The session has ended",
+    "browser": "Browser",
+    "address": "localhost:{{port}}",
+    "port": "Port",
+    "portSearch": "Find a port",
+    "portEmpty": "No port",
+    "reload": "Reload",
+    "openTab": "Open in a new tab",
+    "browserFrame": "localhost:{{port}} on this session's host",
+    "lookingForPorts": "Looking for a dev server…",
+    "waiting": "Waiting for a dev server",
+    "waitingDetail": "Start one in the terminal, or ask the agent to. Any port this session listens on, from 1024 up, opens here.",
+    "hostOffline": "The host is offline",
+    "hostOfflineDetail": "The preview comes back when the host reconnects.",
+    "notSupported": "This host can't share its ports",
+    "notSupportedDetail": "Update its runner to open the session's dev server here.",
+    "portsFailed": "Couldn't list the session's ports",
+    "previewFailed": "Couldn't open the preview",
+    "opening": "Opening localhost:{{port}}…"
+  },
+  "cloud": {
+    "eyebrow": "Claude Code cloud",
+    "statusSource": "This status comes from the Oppenheimer extension in Chrome while you’re signed in to claude.ai.",
+    "open": "Open in claude.ai",
+    "teleport": "To continue it in a terminal, run this in a checkout of the repository:",
+    "copy": "Copy command",
+    "copyLink": "Copy link",
+    "copied": "Copied",
+    "delete": "Delete",
+    "openAt": "Open in {{vendor}}",
+    "status": {
+      "starting": "{{vendor}} is starting the agent",
+      "running": "Working in {{vendor}}’s cloud",
+      "finished": "Finished in {{vendor}}’s cloud",
+      "failed": "The agent failed in {{vendor}}’s cloud",
+      "cancelled": "Stopped in {{vendor}}",
+      "expired": "The run expired in {{vendor}}’s cloud"
+    },
+    "codex": {
+      "eyebrow": "Codex cloud",
+      "statusSource": "This status comes from the host that started it, which asks Codex about its tasks once a minute while it’s online.",
+      "open": "Open in ChatGPT",
+      "teleport": "To bring its changes into a terminal, run this in a checkout of the repository:"
+    }
   }
 }

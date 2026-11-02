@@ -6,7 +6,6 @@ import {
   type MongoQuery,
   subject as tagSubject,
 } from '@casl/ability';
-import type { Role } from '../types/index.js';
 
 /**
  * Instance-level permission check: does `ability` allow `action` on this
@@ -71,12 +70,22 @@ export const KNOWN_SUBJECTS = [
   // the workspace's own events and a person's Google Calendar connection.
   'Task',
   'Calendar',
+  // A person's own Gmail accounts, worked by their bots (`product/next-steps/mail.md`):
+  // workspace-owned like the calendar, and every read of a connection adds its owner.
+  'Mail',
+  // A number a person linked as a WhatsApp device on one of their hosts
+  // (`product/next-steps/whatsapp.md`): like `Mail`, every read adds its owner.
+  'Whatsapp',
   // The Pull requests area: GitHub's pull requests, read and reviewed through
   // the workspace's installations, and a person's watched repositories.
   'PullRequest',
   // Bots (`product/versions/mvp/25-bots.md`), workspace-owned like automations:
   // `Bot` covers a bot, its sidebar groups, its documents and its memory.
   'Bot',
+  // Cloud agents (`product/next-steps/cloud-agents.md`): a coding agent run in
+  // a vendor's cloud, and the caller's own key for that vendor. Workspace-owned
+  // like sessions, and every read is also the caller's own.
+  'CloudAgent',
   'all',
 ] as const;
 
@@ -374,12 +383,27 @@ export const SYSTEM_ROLE_PERMISSIONS: Record<string, PermissionDefinition[]> = {
     },
     {
       action: 'manage',
+      subject: 'Mail',
+      conditions: { organizationId: ACTIVE_ORGANIZATION_ID },
+    },
+    {
+      action: 'manage',
+      subject: 'Whatsapp',
+      conditions: { organizationId: ACTIVE_ORGANIZATION_ID },
+    },
+    {
+      action: 'manage',
       subject: 'PullRequest',
       conditions: { organizationId: ACTIVE_ORGANIZATION_ID },
     },
     {
       action: 'manage',
       subject: 'Bot',
+      conditions: { organizationId: ACTIVE_ORGANIZATION_ID },
+    },
+    {
+      action: 'manage',
+      subject: 'CloudAgent',
       conditions: { organizationId: ACTIVE_ORGANIZATION_ID },
     },
   ],
@@ -430,12 +454,3 @@ export const SYSTEM_ROLE_PERMISSIONS: Record<string, PermissionDefinition[]> = {
     },
   ],
 };
-
-/**
- * Legacy: an ability from a single role name, using the seeded system-role
- * permissions. Prefer {@link defineAbilitiesFromPermissions} with the user's
- * DB-backed permissions.
- */
-export function defineAbilitiesFor(role: Role, context: AbilityContext = {}): AppAbility {
-  return defineAbilitiesFromPermissions(SYSTEM_ROLE_PERMISSIONS[role] ?? [], context);
-}

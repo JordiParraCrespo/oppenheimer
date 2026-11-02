@@ -1,19 +1,25 @@
 import { randomUUID } from 'node:crypto';
 import type { OutboxService } from '@oppenheimer/backend-ddd';
 import { SYSTEM_ROLE_PERMISSIONS } from '@oppenheimer/shared';
-import { GenericContainer, type StartedTestContainer, Wait } from 'testcontainers';
 import { DataSource, type EntityManager } from 'typeorm';
 import { PostgresQueryRunner } from 'typeorm/driver/postgres/PostgresQueryRunner';
-import { runAllMigrations } from '../../__tests__/run-migrations';
+import { useTestDatabase } from '../../__tests__/integration-services';
 import { ProjectOrmEntity } from '../../projects/database/project.orm-entity';
 import { ProjectRepository } from '../../projects/database/project.repository';
 import { ProjectRepositoryOrmEntity } from '../../projects/database/project-repository.orm-entity';
 import { ProjectMapper } from '../../projects/project.mapper';
 import { SessionCheckoutOrmEntity } from '../database/session-checkout.orm-entity';
+import { SessionCloudRunOrmEntity } from '../database/session-cloud-run.orm-entity';
 import { WorkSessionOrmEntity } from '../database/work-session.orm-entity';
 import { WorkSessionRepository } from '../database/work-session.repository';
 import { WorkSessionEventOrmEntity } from '../database/work-session-event.orm-entity';
+import { cloudRunLogEntries } from '../domain/cloud-session-sync.policy';
 import { SessionCheckoutEntity } from '../domain/session-checkout.entity';
+import { type CloudRunReport, SessionCloudRunEntity } from '../domain/session-cloud-run.entity';
+import {
+  decodeSessionListCursor,
+  encodeSessionListCursor,
+} from '../domain/session-list-cursor.policy';
 import { mintSessionSlug } from '../domain/session-slug.policy';
 import { SESSION_EVENT_KINDS } from '../domain/session-state.policy';
 import { WorkSessionEntity } from '../domain/work-session.entity';
@@ -30,7 +36,6 @@ import { WorkSessionMapper } from '../work-session.mapper';
  * here rather than in production.
  */
 describe('sessions: the log, the fold and the keys (integration)', () => {
-  let pgContainer: StartedTestContainer;
   let dataSource: DataSource;
   let repository: WorkSessionRepository;
   let organizationId: string;
@@ -74,7 +79,7 @@ describe('sessions: the log, the fold and the keys (integration)', () => {
       slug: overrides.slug ?? mintSessionSlug(),
       agent: 'claude-code',
       idempotencyKey: overrides.idempotencyKey ?? null,
-      folder: overrides.folder,
+      ...(overrides.folder ? { place: 'folder' as const, folder: overrides.folder } : {}),
     });
   }
 
@@ -108,34 +113,18 @@ describe('sessions: the log, the fold and the keys (integration)', () => {
   ];
 
   beforeAll(async () => {
-    pgContainer = await new GenericContainer('postgres:16-alpine')
-      .withEnvironment({ POSTGRES_USER: 'test', POSTGRES_PASSWORD: 'test', POSTGRES_DB: 'test' })
-      .withExposedPorts(5432)
-      .withWaitStrategy(Wait.forLogMessage(/database system is ready to accept connections/, 2))
-      .start();
-
-    process.env.NODE_ENV = 'test';
-    process.env.DB_HOST = pgContainer.getHost();
-    process.env.DB_PORT = pgContainer.getMappedPort(5432).toString();
-    process.env.DB_USERNAME = 'test';
-    process.env.DB_PASSWORD = 'test';
-    process.env.DB_DATABASE = 'test';
-
-    // The migrations, not `synchronize`: a session's composite keys reference
+    // The migrated schema, not `synchronize`: a session's composite keys reference
     // the project, checkout and installation tables, and only the SQL has them.
-    await runAllMigrations();
+    const db = await useTestDatabase();
 
     dataSource = new DataSource({
       type: 'postgres',
-      host: process.env.DB_HOST,
-      port: Number(process.env.DB_PORT),
-      username: 'test',
-      password: 'test',
-      database: 'test',
+      url: db.url,
       entities: [
         WorkSessionOrmEntity,
         SessionCheckoutOrmEntity,
         WorkSessionEventOrmEntity,
+        SessionCloudRunOrmEntity,
         ProjectOrmEntity,
         ProjectRepositoryOrmEntity,
       ],
@@ -153,7 +142,6 @@ describe('sessions: the log, the fold and the keys (integration)', () => {
 
   afterAll(async () => {
     await dataSource?.destroy();
-    await pgContainer?.stop();
   });
 
   beforeEach(async () => {
@@ -185,8 +173,8 @@ describe('sessions: the log, the fold and the keys (integration)', () => {
 
     projectId = await insertProject(organizationId, 'xrp-mobile');
     foreignProjectId = await insertProject(otherOrganizationId, 'xrp-mobile');
-    installationId = await insertInstallation(organizationId, 1);
-    foreignInstallationId = await insertInstallation(otherOrganizationId, 2);
+    installationId = await insertInstallation(organizationId);
+    foreignInstallationId = await insertInstallation(otherOrganizationId);
   });
 
   async function insertProject(org: string, slug: string): Promise<string> {
@@ -199,14 +187,21 @@ describe('sessions: the log, the fold and the keys (integration)', () => {
     return id;
   }
 
-  async function insertInstallation(org: string, githubId: number): Promise<string> {
+  /**
+   * GitHub's installation ids are unique among live rows, and every test
+   * inserts two more into this file's database: counted, so no two can match,
+   * as a random offset once did.
+   */
+  let lastGithubInstallationId = 0;
+
+  async function insertInstallation(org: string): Promise<string> {
     const id = randomUUID();
     await dataSource.query(
       `INSERT INTO "github_installation"
          ("id", "organizationId", "githubInstallationId", "accountLogin", "accountType",
           "repositorySelection", "installedByUserId")
        VALUES ($1, $2, $3, $4, 'Organization', 'all', $5)`,
-      [id, org, githubId + Math.floor(Math.random() * 1_000_000), 'acme', userId],
+      [id, org, ++lastGithubInstallationId, 'acme', userId],
     );
     return id;
   }
@@ -305,7 +300,12 @@ describe('sessions: the log, the fold and the keys (integration)', () => {
           kind: SESSION_EVENT_KINDS.REQUESTED,
           payload: {
             agent: 'claude-code',
-            launch: { model: 'claude-opus-5-5', permission: 'auto', effort: 'high' },
+            launch: {
+              model: 'claude-opus-5-5',
+              permission: 'auto',
+              effort: 'high',
+              environment: 'e_6845a1b2c3d4',
+            },
           },
         },
         {
@@ -336,6 +336,8 @@ describe('sessions: the log, the fold and the keys (integration)', () => {
       expect(row.launchModel).toBe('claude-opus-5-5');
       expect(row.launchPermission).toBe('auto');
       expect(row.launchEffort).toBe('high');
+      // A Codex cloud session's picked environment, which a create sent again reads.
+      expect(row.launchEnvironment).toBe('e_6845a1b2c3d4');
       // The observation columns the derived group is computed from.
       expect(row.lastObservedState).toBe('blocked');
       expect(row.reportHash).toBe('abc123');
@@ -349,6 +351,7 @@ describe('sessions: the log, the fold and the keys (integration)', () => {
         model: 'claude-opus-5-5',
         permission: 'auto',
         effort: 'high',
+        environment: 'e_6845a1b2c3d4',
       });
     });
 
@@ -669,6 +672,137 @@ describe('sessions: the log, the fold and the keys (integration)', () => {
       expect(row.agentSessionId).toBe('agent-9');
     });
 
+    it('stores the decision a blocked agent waits on, reads it back, and clears it on an answer', async () => {
+      const work = session();
+      await repository.createIfUnclaimed(work, requested());
+      const decision = {
+        kind: 'permission',
+        id: 'perm-1',
+        title: 'Do you want to proceed?',
+        detail: 'pnpm test',
+        options: [{ label: 'Yes' }, { label: 'No' }],
+      };
+
+      await repository.appendEventsForHost(hostId, work.id, [
+        { idempotencyKey: 'run-1:1', source: 'runner', kind: SESSION_EVENT_KINDS.STARTED },
+        {
+          idempotencyKey: 'run-1:2',
+          source: 'runner',
+          kind: SESSION_EVENT_KINDS.AGENT_OBSERVED,
+          payload: { state: 'blocked' },
+        },
+        {
+          idempotencyKey: 'run-1:3',
+          source: 'runner',
+          kind: SESSION_EVENT_KINDS.AGENT_DECISION,
+          payload: { decision },
+        },
+      ]);
+      const stored = (await repository.findOneById(scope(), work.id)).unwrap();
+      expect(stored.pendingDecision).toEqual(decision);
+
+      await repository.appendEvents(stored, [
+        {
+          idempotencyKey: `api:${randomUUID()}`,
+          source: 'api',
+          kind: SESSION_EVENT_KINDS.DECISION_ANSWERED,
+          payload: { id: 'perm-1' },
+        },
+      ]);
+      const [row] = await dataSource.query(
+        `SELECT "pendingDecision" FROM "work_session" WHERE "id" = $1`,
+        [work.id],
+      );
+      expect(row.pendingDecision).toBeNull();
+    });
+
+    it('stores what the agent said it is doing, reads it back, and drops it once the screen speaks', async () => {
+      const work = session();
+      await repository.createIfUnclaimed(work, requested());
+      await repository.appendEventsForHost(hostId, work.id, [
+        { idempotencyKey: 'run-2:1', source: 'runner', kind: SESSION_EVENT_KINDS.STARTED },
+        {
+          idempotencyKey: 'run-2:2',
+          source: 'runner',
+          kind: SESSION_EVENT_KINDS.AGENT_OBSERVED,
+          payload: {
+            state: 'blocked',
+            program: { state: 'blocked', kind: 'permission', message: 'approve Bash: pnpm test' },
+          },
+        },
+      ]);
+      const stored = (await repository.findOneById(scope(), work.id)).unwrap();
+      expect(stored.agentReport).toEqual({
+        state: 'blocked',
+        kind: 'permission',
+        progress: null,
+        message: 'approve Bash: pnpm test',
+        title: null,
+      });
+
+      await repository.appendEventsForHost(hostId, work.id, [
+        {
+          idempotencyKey: 'run-2:3',
+          source: 'runner',
+          kind: SESSION_EVENT_KINDS.AGENT_OBSERVED,
+          payload: { state: 'working' },
+        },
+      ]);
+      const [row] = await dataSource.query(
+        `SELECT "agentReport" FROM "work_session" WHERE "id" = $1`,
+        [work.id],
+      );
+      expect(row.agentReport).toBeNull();
+    });
+
+    it('lets one of two answers to the same decision append, never both', async () => {
+      const work = session();
+      await repository.createIfUnclaimed(work, requested());
+      const decision = {
+        kind: 'permission',
+        id: 'perm-race',
+        title: 'Do you want to proceed?',
+        detail: null,
+        options: [{ label: 'Yes' }, { label: 'No' }],
+      };
+      await repository.appendEventsForHost(hostId, work.id, [
+        { idempotencyKey: 'race-1:1', source: 'runner', kind: SESSION_EVENT_KINDS.STARTED },
+        {
+          idempotencyKey: 'race-1:2',
+          source: 'runner',
+          kind: SESSION_EVENT_KINDS.AGENT_DECISION,
+          payload: { decision },
+        },
+      ]);
+      // Two requests, each holding the row as it read it: both see the decision pending.
+      const tabs = await Promise.all([
+        repository.findOneById(scope(), work.id),
+        repository.findOneById(scope(), work.id),
+      ]);
+      const outcomes = await Promise.all(
+        tabs.map((tab) =>
+          repository.appendEventsIf(
+            tab.unwrap(),
+            [
+              {
+                idempotencyKey: `api:${randomUUID()}`,
+                source: 'api',
+                kind: SESSION_EVENT_KINDS.DECISION_ANSWERED,
+                payload: { id: 'perm-race' },
+              },
+            ],
+            (fold) => fold.pendingDecision?.id === 'perm-race',
+          ),
+        ),
+      );
+      expect(outcomes.filter((outcome) => outcome !== null)).toHaveLength(1);
+      const answered = await dataSource.query(
+        `SELECT count(*)::int AS n FROM "work_session_event" WHERE "sessionId" = $1 AND "kind" = $2`,
+        [work.id, SESSION_EVENT_KINDS.DECISION_ANSWERED],
+      );
+      expect(answered[0].n).toBe(1);
+    });
+
     it('keeps seq dense when two coalesced appends race a third', async () => {
       const work = session();
       await repository.createIfUnclaimed(work, requested());
@@ -838,9 +972,17 @@ describe('sessions: the log, the fold and the keys (integration)', () => {
           work.id,
         ]),
       ).rejects.toThrow(/CHK_work_session_folder_path/);
+      // Only a cloud session runs without a host: one that runs on a host keeps it.
+      await expect(
+        dataSource.query(`UPDATE "work_session" SET "hostId" = NULL WHERE "id" = $1`, [work.id]),
+      ).rejects.toThrow(/CHK_work_session_cloud_host/);
+      await expect(
+        dataSource.query(`UPDATE "work_session" SET "place" = 'vm' WHERE "id" = $1`, [work.id]),
+      ).rejects.toThrow(/CHK_work_session_place/);
+      // A cloud session has no folder, as a worktree session has none.
       await expect(
         dataSource.query(`UPDATE "work_session" SET "place" = 'cloud' WHERE "id" = $1`, [work.id]),
-      ).rejects.toThrow(/CHK_work_session_place/);
+      ).resolves.toBeDefined();
     });
 
     it('lists the caller’s recent folders on a host: distinct, newest first, bounded', async () => {
@@ -873,6 +1015,7 @@ describe('sessions: the log, the fold and the keys (integration)', () => {
           hostId,
           slug: mintSessionSlug(),
           agent: 'shell',
+          place: 'folder',
           folder: '/home/ana',
         }),
         requested(),
@@ -921,9 +1064,27 @@ describe('sessions: the log, the fold and the keys (integration)', () => {
       expect(last.nextSeq).toBeNull();
     });
 
-    describe('the session list', () => {
-      const mapper = new WorkSessionMapper();
+    it('reads the last entries of the log, oldest first, and only this session’s', async () => {
+      const work = session();
+      const other = session();
+      await repository.createIfUnclaimed(work, requested());
+      await repository.createIfUnclaimed(other, requested());
+      await repository.appendEvents(
+        work,
+        Array.from({ length: 4 }, (_, index) => ({
+          idempotencyKey: `run-1:${index}`,
+          source: 'runner' as const,
+          kind: SESSION_EVENT_KINDS.AGENT_OBSERVED,
+          payload: { state: 'working' },
+        })),
+      );
 
+      const latest = await repository.findLatestEvents(work, 3);
+      expect(latest.map((event) => event.seq)).toEqual([3, 4, 5]);
+      expect((await repository.findLatestEvents(other, 10)).map((event) => event.seq)).toEqual([1]);
+    });
+
+    describe('the session list', () => {
       async function sessions(count: number): Promise<WorkSessionEntity[]> {
         const made: WorkSessionEntity[] = [];
         for (let n = 0; n < count; n += 1) {
@@ -946,14 +1107,14 @@ describe('sessions: the log, the fold and the keys (integration)', () => {
             page: 1,
             limit: 100,
             sort,
-            cursor: cursor ? mapper.fromListCursor(cursor, sort) : undefined,
+            cursor: cursor ? decodeSessionListCursor(cursor, sort) : undefined,
           });
           // The first page is a page; every one after it is a cursor's, uncounted.
           if (cursor) expect(result.total).toBeUndefined();
           seen.push(...result.data.map((work) => work.id));
           if (!result.nextCursor) return seen;
           // Through the wire format, so the encoding round-trips too.
-          cursor = mapper.toListCursor(result.nextCursor);
+          cursor = encodeSessionListCursor(result.nextCursor);
           await between(page);
         }
         throw new Error('the walk did not end');
@@ -1119,6 +1280,133 @@ describe('sessions: the log, the fold and the keys (integration)', () => {
       expect((await events(work.id)).map((event) => event.kind)).not.toContain(
         SESSION_EVENT_KINDS.MOVED,
       );
+    });
+  });
+
+  describe('a cloud session', () => {
+    const run = (status: CloudRunReport['status'] = 'starting'): CloudRunReport => ({
+      runId: 'run-1',
+      status,
+      branch: null,
+      pullRequestUrl: null,
+      summary: null,
+    });
+
+    function cloudSession(report = run()) {
+      const id = randomUUID();
+      return WorkSessionEntity.requestCloud({
+        id,
+        cloudRun: SessionCloudRunEntity.launched(
+          {
+            organizationId,
+            sessionId: id,
+            provider: 'cursor',
+            externalId: `bc-${id}`,
+            url: `https://cursor.com/agents?id=bc-${id}`,
+            repositoryUrl: 'https://github.com/acme/api',
+            run: report,
+          },
+          new Date(),
+        ),
+        organizationId,
+        projectId,
+        createdByUserId: userId,
+        slug: mintSessionSlug(),
+        agent: 'cursor',
+      });
+    }
+
+    const reported = (report: CloudRunReport) =>
+      cloudRunLogEntries(report.runId, report.status).map((entry) => ({
+        ...entry,
+        source: 'api' as const,
+      }));
+
+    it('is a session with no host, read back with its vendor half, in its project', async () => {
+      const work = cloudSession(run('running'));
+      const created = await repository.createIfUnclaimed(work, [
+        ...requested(),
+        ...reported(run('running')),
+      ]);
+      expect(created.created).toBe(true);
+
+      const read = (await repository.findOneById(scope(), work.id)).unwrap();
+      expect(read).toMatchObject({ place: 'cloud', hostId: null, agent: 'cursor', projectId });
+      expect(read.cloudRun).toMatchObject({
+        provider: 'cursor',
+        externalId: `bc-${work.id}`,
+        latestRunId: 'run-1',
+        status: 'running',
+      });
+      // The vendor's report folded like a runner's: open, and working.
+      expect(read.state).toBe('open');
+      expect(read.group()).toBe('working');
+
+      const listed = await repository.findAllPaginated(scope(), { page: 1, limit: 20 });
+      expect(listed.data.find((row) => row.id === work.id)?.cloudRun?.status).toBe('running');
+    });
+
+    it('lets only a cloud session go without a host', async () => {
+      // A cloud session may also name one: Claude Code's is started by a host.
+      const work = cloudSession();
+      await repository.createIfUnclaimed(work, requested());
+      await expect(
+        dataSource.query(`UPDATE "work_session" SET "hostId" = $2 WHERE "id" = $1`, [
+          work.id,
+          hostId,
+        ]),
+      ).resolves.toBeDefined();
+      const host = session();
+      await repository.createIfUnclaimed(host, requested());
+      await expect(
+        dataSource.query(`UPDATE "work_session" SET "hostId" = NULL WHERE "id" = $1`, [host.id]),
+      ).rejects.toThrow(/CHK_work_session_cloud_host/);
+    });
+
+    it('writes what the vendor said only while the run is the one it asked about', async () => {
+      const work = cloudSession();
+      await repository.createIfUnclaimed(work, requested());
+      const first = (await repository.findOneById(scope(), work.id)).unwrap().cloudRun;
+      const stale = (await repository.findOneById(scope(), work.id)).unwrap().cloudRun;
+      if (!first || !stale) throw new Error('no cloud run read back');
+
+      first.synced({ ...run('finished'), branch: 'cursor/fix-login' }, new Date());
+      expect(await repository.saveCloudRunIf(first, 'run-1')).toBe(true);
+      // A writer whose run is no longer the row's writes nothing.
+      stale.synced(run('failed'), new Date());
+      expect(await repository.saveCloudRunIf(stale, 'run-0')).toBe(false);
+
+      const read = (await repository.findOneById(scope(), work.id)).unwrap().cloudRun;
+      expect(read).toMatchObject({ status: 'finished', branch: 'cursor/fix-login' });
+    });
+
+    it('lands a report two reads made at once a single time', async () => {
+      const work = cloudSession();
+      await repository.createIfUnclaimed(work, requested());
+      const a = (await repository.findOneById(scope(), work.id)).unwrap();
+      const b = (await repository.findOneById(scope(), work.id)).unwrap();
+
+      await Promise.all([
+        repository.appendEvents(a, reported(run('finished'))),
+        repository.appendEvents(b, reported(run('finished'))),
+      ]);
+
+      const kinds = (await events(work.id)).map((event) => event.kind);
+      expect(kinds.filter((kind) => kind === SESSION_EVENT_KINDS.STARTED)).toHaveLength(1);
+      expect(kinds.filter((kind) => kind === SESSION_EVENT_KINDS.AGENT_OBSERVED)).toHaveLength(1);
+      const read = (await repository.findOneById(scope(), work.id)).unwrap();
+      expect(read.group()).toBe('idle');
+    });
+
+    it('goes with its session’s workspace', async () => {
+      const work = cloudSession();
+      await repository.createIfUnclaimed(work, requested());
+      await repository.eraseWorkspace(organizationId);
+      const [{ count }] = await dataSource.query(
+        `SELECT count(*) FROM session_cloud_run WHERE "sessionId" = $1`,
+        [work.id],
+      );
+      expect(Number(count)).toBe(0);
     });
   });
 

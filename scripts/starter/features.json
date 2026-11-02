@@ -9,6 +9,7 @@
         "apps/web",
         "deploy/kamal/deploy.web.yml",
         "e2e/tests/web",
+        "e2e/tests/terminal",
         "e2e/tests/screens",
         "scripts/stack/screens.mjs",
         "scripts/evals/pr-screenshots",
@@ -22,14 +23,7 @@
         "scripts/check-singletons.mjs",
         "scripts/check-singletons.test.mjs"
       ],
-      "scripts": ["dev:mvp", "check:unused", "check:singletons", "screens"],
-      "json": [
-        {
-          "file": "package.json",
-          "path": "devDependencies",
-          "deleteKeys": ["knip"]
-        }
-      ]
+      "scripts": ["dev:mvp", "check:unused", "check:singletons", "screens"]
     },
     "web-showcase": {
       "title": "Web design-system showcase",
@@ -55,6 +49,12 @@
           "remove": ["!**/.next"]
         }
       ]
+    },
+    "extension": {
+      "title": "Chrome extension",
+      "summary": "apps/extension — Manifest V3 extension that tracks your Claude Code cloud sessions and says which need you",
+      "identifiers": ["apps/extension", "@oppenheimer/extension"],
+      "paths": ["apps/extension"]
     },
     "docs": {
       "title": "Documentation site",
@@ -92,7 +92,8 @@
         "e2e/netsim",
         "e2e/support/netsim.ts",
         "e2e/tests/netsim",
-        ".agents/skills/netsim"
+        ".agents/skills/netsim",
+        ".agents/skills/session-previews"
       ],
       "scripts": ["dev:mvp", "check:runner-release"]
     },
@@ -126,7 +127,7 @@
   "shared": {
     "packages/frontend/design-system/web": {
       "identifiers": ["packages/frontend/design-system/web", "@oppenheimer/design-system-web"],
-      "neededBy": ["web", "web-showcase"]
+      "neededBy": ["web", "web-showcase", "extension"]
     },
     "packages/frontend/core": {
       "identifiers": ["packages/frontend/core", "@oppenheimer/frontend-core"],
@@ -157,6 +158,15 @@
     },
     "scripts/query-state-slots.mjs": {
       "identifiers": ["query-state-slots"],
+      "neededBy": ["web"]
+    },
+    "scripts/ui-catalog.mjs": {
+      "identifiers": ["ui-catalog.mjs", "check:ui-catalog"],
+      "neededBy": ["web"],
+      "scripts": ["check:ui-catalog"]
+    },
+    "scripts/ui-catalog.test.mjs": {
+      "identifiers": ["ui-catalog.test.mjs"],
       "neededBy": ["web"]
     },
     "scripts/check-react-compiler.mjs": {

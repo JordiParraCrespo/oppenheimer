@@ -5,12 +5,7 @@ import type { TFunction } from 'i18next';
 /** A routine's *when*, as its card says it: "Schedule · Weekdays at 09:00 +1". */
 export function routineWhen(routine: BotRoutineEntity, locale: string, t: TFunction): string {
   return triggerListText(routine.triggers, locale, t, (trigger, when) =>
-    t(
-      trigger.source === 'github'
-        ? 'bots.settings.routines.github'
-        : 'bots.settings.routines.schedule',
-      { when },
-    ),
+    t(`bots.settings.routines.${trigger.source}`, { when }),
   );
 }
 

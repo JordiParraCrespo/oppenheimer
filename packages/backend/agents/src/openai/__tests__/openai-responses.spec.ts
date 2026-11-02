@@ -4,23 +4,33 @@
  * request, history goes in as input items, a tool call runs our tool and
  * its output goes back to the model, and the stream comes out as the
  * engine's events. What the scripted spec cannot see: that the SDK is
- * wired as the adapter assumes.
+ * wired as the adapter assumes. The server answers as ChatGPT's backend
+ * does, with the subscription's usage windows in its headers, which only a
+ * ChatGPT turn reads.
  */
 import { createServer, type Server } from 'node:http';
 import type { AddressInfo } from 'node:net';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import type { BotEngineEvent } from '../../bot-engine';
+import { steerNote } from '../../turn';
 import { ChatgptBotEngine } from '../chatgpt-bot-engine';
 import { OpenAiBotEngine } from '../openai-bot-engine';
 
 const KEY = 'sk-local-0123456789';
 
 /**
- * The engine imports the Agents SDK on its first turn, and this spec is that
- * first turn: a cold import under a parallel `turbo test` took longer than
- * Vitest's 5s default on its own.
+ * The engine imports the Agents SDK on its first turn. Cold, under a parallel
+ * `turbo test`, that import alone took 20-30s, which ran past each turn's
+ * 20s abort signal and the test's own timeout: the turn came back as a bare
+ * `done`. `beforeAll` pays for the import once, with its own budget, so a
+ * turn's time is only the turn's.
  */
-const SDK_LOAD_MS = 30_000;
+const SDK_IMPORT_MS = 120_000;
+const TURN_MS = 30_000;
+
+beforeAll(async () => {
+  await Promise.all([import('@openai/agents'), import('openai')]);
+}, SDK_IMPORT_MS);
 
 type ResponsesRequest = {
   url?: string;
@@ -112,7 +122,16 @@ beforeEach(async () => {
         headers: req.headers,
         body: JSON.parse(body),
       });
-      res.writeHead(200, { 'content-type': 'text/event-stream' });
+      // The windows move with each answer: the turn reports the last one's.
+      const used = 10 * requests.length;
+      res.writeHead(200, {
+        'content-type': 'text/event-stream',
+        'x-codex-primary-used-percent': String(used + 0.5),
+        'x-codex-primary-window-minutes': '300',
+        'x-codex-primary-reset-at': '1793040000',
+        'x-codex-secondary-used-percent': String(used),
+        'x-codex-secondary-window-minutes': '10080',
+      });
       res.end(replies.shift());
     });
   });
@@ -169,7 +188,13 @@ describe('OpenAiBotEngine on the Agents SDK', () => {
         { type: 'text.delta', text: 'It is ' },
         { type: 'text.delta', text: '13:37.' },
         { type: 'text.done', text: 'It is 13:37.' },
-        { type: 'usage', inputTokens: 22, outputTokens: 6 },
+        // What the last call was sent; a key's turn reads no plan windows.
+        {
+          type: 'usage',
+          inputTokens: 22,
+          outputTokens: 6,
+          context: { tokens: 11, window: null },
+        },
         { type: 'done', reason: 'completed' },
       ]);
 
@@ -200,7 +225,68 @@ describe('OpenAiBotEngine on the Agents SDK', () => {
         }),
       );
     },
-    SDK_LOAD_MS,
+    TURN_MS,
+  );
+
+  it(
+    'hands the model what the person sent meanwhile with the next tool result, once',
+    async () => {
+      const sent = [[{ id: 'message-1', text: 'Use Tokyo time instead.' }], []];
+      let asks = 0;
+      const events: BotEngineEvent[] = [];
+      for await (const event of new OpenAiBotEngine().run({
+        provider: 'openai',
+        apiKey: KEY,
+        baseUrl,
+        model: 'model-placeholder',
+        systemPrompt: 'You are a bot.',
+        history: [],
+        message: 'What time is it?',
+        tools: [
+          {
+            name: 'get_time',
+            description: 'The time',
+            inputSchema: { type: 'object', properties: { zone: { type: 'string' } } },
+            run: async () => ({ content: '13:37 UTC' }),
+          },
+        ],
+        steering: {
+          take: async () => {
+            asks += 1;
+            return sent.shift() ?? [];
+          },
+        },
+        signal: AbortSignal.timeout(20_000),
+        scratchDir: '/unused',
+      })) {
+        events.push(event);
+      }
+
+      const steers = [{ id: 'message-1', text: 'Use Tokyo time instead.' }];
+      // The tool's own output on its line, the delivery right after it.
+      expect(events.slice(0, 3)).toEqual([
+        { type: 'tool.started', callId: 'call_1', name: 'get_time', input: { zone: 'UTC' } },
+        {
+          type: 'tool.finished',
+          callId: 'call_1',
+          name: 'get_time',
+          output: '13:37 UTC',
+          isError: false,
+        },
+        { type: 'steered', callId: 'call_1', steers },
+      ]);
+      expect(asks).toBe(1);
+      // What the model read: the result, then the message, marked as the person's.
+      expect(requests[1]?.body.input).toContainEqual(
+        expect.objectContaining({
+          type: 'function_call_output',
+          call_id: 'call_1',
+          output: `13:37 UTC${steerNote(steers)}`,
+        }),
+      );
+      expect(steerNote(steers)).toContain('Use Tokyo time instead.');
+    },
+    TURN_MS,
   );
 
   it(
@@ -231,6 +317,13 @@ describe('OpenAiBotEngine on the Agents SDK', () => {
       }
 
       expect(events.at(-1)).toEqual({ type: 'done', reason: 'completed' });
+      // The subscription's windows as the last answer said them.
+      expect(events.find((event) => event.type === 'usage')).toMatchObject({
+        limits: {
+          fiveHour: { usedPercent: 20.5, resetsAt: new Date(1_793_040_000_000) },
+          sevenDay: { usedPercent: 20, resetsAt: null },
+        },
+      });
       expect(requests).toHaveLength(2);
       for (const sent of requests) {
         expect(sent.url).toBe('/v1/responses');
@@ -248,7 +341,7 @@ describe('OpenAiBotEngine on the Agents SDK', () => {
         expect(sent.body).not.toHaveProperty('extra_headers');
       }
     },
-    SDK_LOAD_MS,
+    TURN_MS,
   );
 
   it('fails a chatgpt turn that names no account, without calling the backend', async () => {
@@ -269,7 +362,12 @@ describe('OpenAiBotEngine on the Agents SDK', () => {
     }
 
     expect(events).toEqual([
-      { type: 'done', reason: 'failed', error: 'A ChatGPT turn needs the account it acts for' },
+      {
+        type: 'done',
+        reason: 'failed',
+        error: 'A ChatGPT turn needs the account it acts for',
+        failure: 'credential',
+      },
     ]);
     expect(requests).toHaveLength(0);
   });

@@ -1,6 +1,6 @@
 import { Inject } from '@nestjs/common';
 import { type IQueryHandler, QueryHandler } from '@nestjs/cqrs';
-import { AppError } from '@oppenheimer/backend-core';
+import { requireFound } from '@oppenheimer/backend-core';
 import type { UserRepositoryPort } from '../../../users/database/user.repository.port';
 import type { UserEntity } from '../../../users/domain/user.entity';
 import { USER_REPOSITORY } from '../../../users/user.di-tokens';
@@ -16,7 +16,6 @@ export class GetProfileQueryHandler implements IQueryHandler<GetProfileQuery, Us
 
   async execute(query: GetProfileQuery): Promise<UserEntity> {
     const found = await this.userRepository.findOneById(query.userId);
-    if (found.isNone()) throw new AppError(ProfileErrors.NOT_FOUND);
-    return found.unwrap();
+    return requireFound(found, ProfileErrors.NOT_FOUND);
   }
 }

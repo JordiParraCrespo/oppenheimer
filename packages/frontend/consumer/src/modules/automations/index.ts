@@ -1,4 +1,5 @@
 export {
+  type AutomationAgentId,
   AutomationEntity,
   type AutomationInput,
   type AutomationRepository,

@@ -98,4 +98,6 @@
     .observe(document.documentElement, { childList: true, subtree: true });
   if (document.readyState !== 'loading') scan(); else document.addEventListener('DOMContentLoaded', scan);
   setInterval(scan, 1500);
+  if (!document.querySelector('script[data-op-gs]')) { var gs = document.createElement('script'); gs.src = './global-search.js'; gs.setAttribute('data-op-gs', ''); document.head.appendChild(gs); }
+  if (!document.querySelector('script[data-op-sbt]')) { var st = document.createElement('script'); st.src = './sidebar-toggle.js'; st.setAttribute('data-op-sbt', ''); document.head.appendChild(st); }
 })();

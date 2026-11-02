@@ -8,12 +8,16 @@
  * message.
  */
 export * from './attach.js';
+export * from './codex-environments.js';
+export * from './devices.js';
 export * from './hint.js';
 export * from './link.js';
 export * from './messages.js';
+export * from './ports.js';
 export * from './primitives.js';
 export * from './runner-files.js';
 export * from './session-file.js';
 export * from './session-step.js';
 export * from './turn-event.js';
 export * from './version.js';
+export * from './whatsapp.js';

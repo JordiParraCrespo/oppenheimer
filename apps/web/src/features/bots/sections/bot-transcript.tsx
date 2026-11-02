@@ -6,18 +6,21 @@ import {
 } from '@oppenheimer/design-system-web';
 import { Cpu } from '@oppenheimer/design-system-web/icons';
 import {
-  useBotLiveText,
+  useBotLive,
   useSendBotMessage,
   useSuspenseBotConversation,
 } from '@oppenheimer/frontend-consumer/react';
 import { dateFormatter, ErrorAlert, useLocale } from '@oppenheimer/frontend-web';
 import { botModelOf } from '@oppenheimer/shared/schemas/bot';
-import { Link } from '@tanstack/react-router';
+import { Link, useNavigate } from '@tanstack/react-router';
 import { Fragment } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
+import { ApprovalEventLine } from '@/features/bots/components/approval-event-line';
+import { ApprovedCallLive } from '@/features/bots/components/approved-call-live';
 import { BotEventLine } from '@/features/bots/components/bot-event-line';
 import { BotTurn } from '@/features/bots/components/bot-turn';
 import { useSentGlide } from '@/features/bots/hooks/use-sent-glide';
+import { runningApprovedCalls } from '@/features/bots/lib/approval-event';
 import {
   chatTurns,
   markersBefore,
@@ -25,7 +28,7 @@ import {
   newestTurn,
   retryContent,
 } from '@/features/bots/lib/chat-turns';
-import { BotMessageImage } from '@/features/bots/sections/bot-message-image';
+import { BotMessageImages } from '@/features/bots/sections/bot-message-images';
 import { BotHello } from './bot-hello';
 
 /**
@@ -34,6 +37,9 @@ import { BotHello } from './bot-hello';
  * next turn runs on another model. Before the first message, the bot's
  * hello. It keeps the bot's stream open while it is on screen, so text
  * arrives as the bot writes it and each stored message the moment it lands.
+ * A Needs input card decided while the chat is open, here or elsewhere, is
+ * drawn as its decided line at once, until the stored line takes its place;
+ * an approved call still running is held under the turn its yes opened.
  * Once the newest turn has ended, Retry sends your last message again.
  * What you send glides to the top of the pane, the answer beneath it.
  */
@@ -41,9 +47,17 @@ export function BotTranscript({ botId, name }: { botId: string; name: string }) 
   const { t } = useTranslation();
   const locale = useLocale();
   const { data: conversation, error } = useSuspenseBotConversation(botId);
-  const live = useBotLiveText(botId);
+  const live = useBotLive(botId);
   const retry = useSendBotMessage();
+  const navigate = useNavigate();
   const blocks = chatTurns(conversation);
+  // The approved calls still running, each held under the turn its yes opened.
+  const working = new Map(
+    [...runningApprovedCalls(conversation.messages)].map(([turnId, call]) => [
+      turnId,
+      <ApprovedCallLive key={turnId} call={call} />,
+    ]),
+  );
   const again = retryContent(blocks);
   const newest = newestTurn(blocks)?.turnId;
   useSentGlide(newestSentId(blocks));
@@ -95,9 +109,12 @@ export function BotTranscript({ botId, name }: { botId: string; name: string }) 
                 ) : (
                   <BotTurn
                     block={block}
-                    live={live[block.turnId]}
-                    image={(attachment) => (
-                      <BotMessageImage key={attachment.id} botId={botId} attachment={attachment} />
+                    live={live.text[block.turnId]}
+                    working={working.get(block.turnId)}
+                    waitingOn={live.retrying[block.turnId]}
+                    subagents={live.subagents}
+                    images={(attachments) => (
+                      <BotMessageImages botId={botId} attachments={attachments} />
                     )}
                     onRetry={
                       again !== null && block.turnId === newest
@@ -105,11 +122,15 @@ export function BotTranscript({ botId, name }: { botId: string; name: string }) 
                         : undefined
                     }
                     retrying={retry.isPending}
+                    onOpenProviders={() => navigate({ to: '/settings/model-providers' })}
                   />
                 )}
               </Fragment>
             );
           })}
+          {live.resolved.map((event) => (
+            <ApprovalEventLine key={event.approvalId} event={event} />
+          ))}
           <ErrorAlert
             error={retry.error}
             fallback={t('bots.chat.sendFailed')}

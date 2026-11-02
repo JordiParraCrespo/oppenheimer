@@ -5,6 +5,7 @@ import {
   type PullRequestLane,
   type PullRequestScope,
 } from '@oppenheimer/shared';
+import { CiFindingResponseDto } from './ci-finding.response.dto';
 
 const ACTIVITY_EVENTS = [
   'review_requested',
@@ -55,8 +56,14 @@ export class PullRequestLaneReasonDto {
 
 /** One row of the queue. */
 export class PullRequestRowDto {
-  @ApiProperty({ format: 'uuid', description: 'The installation that reaches the repository.' })
-  installationId!: string;
+  @ApiProperty({
+    format: 'uuid',
+    nullable: true,
+    type: String,
+    description:
+      'The installation that reaches the repository; null for one read through your own GitHub tokens.',
+  })
+  installationId!: string | null;
 
   @ApiProperty()
   githubRepoId!: number;
@@ -81,6 +88,12 @@ export class PullRequestRowDto {
 
   @ApiProperty({ example: 'oppenheimer/keychain-tokens' })
   headRef!: string;
+
+  @ApiProperty({
+    description:
+      'The head commit this read saw. A merge that names it is refused once newer commits land; a new push is a new wait in the Inbox.',
+  })
+  headSha!: string;
 
   @ApiProperty({ enum: PULL_REQUEST_SCOPES })
   scope!: PullRequestScope;
@@ -141,6 +154,9 @@ export class PullRequestRowDto {
 }
 
 export class PullRequestScopeCountsDto {
+  @ApiProperty({ description: 'Every open pull request, whatever its scope.' })
+  all!: number;
+
   @ApiProperty()
   mine!: number;
 
@@ -236,6 +252,21 @@ export class PullRequestGateDto {
   state!: (typeof GATE_STATES)[number];
 }
 
+/** One check that failed on the head, as GitHub named it and summed it up. */
+export class PullRequestFailingCheckDto {
+  @ApiProperty({ description: 'The check run’s name, or the commit status’s context.' })
+  name!: string;
+
+  @ApiProperty({ type: String, nullable: true, description: 'Where its log or details are.' })
+  url!: string | null;
+
+  @ApiProperty({ type: String, nullable: true, description: 'Its one-line result.' })
+  title!: string | null;
+
+  @ApiProperty({ type: String, nullable: true, description: 'The start of its summary.' })
+  summary!: string | null;
+}
+
 export class PullRequestChecksDto {
   @ApiProperty({ enum: CHECK_STATES })
   state!: (typeof CHECK_STATES)[number];
@@ -251,6 +282,12 @@ export class PullRequestChecksDto {
 
   @ApiProperty()
   pending!: number;
+
+  @ApiProperty({
+    type: [PullRequestFailingCheckDto],
+    description: 'The checks that failed on the head; empty when none did or they were not read.',
+  })
+  failing!: PullRequestFailingCheckDto[];
 }
 
 export class PullRequestReviewerDto {
@@ -268,12 +305,6 @@ export class PullRequestDetailResponseDto extends PullRequestRowDto {
 
   @ApiProperty()
   baseRef!: string;
-
-  @ApiProperty({
-    description:
-      'The head commit this read saw. A merge that names it is refused once newer commits land.',
-  })
-  headSha!: string;
 
   @ApiProperty({
     description:
@@ -295,6 +326,13 @@ export class PullRequestDetailResponseDto extends PullRequestRowDto {
 
   @ApiProperty({ type: PullRequestChecksDto })
   checkCounts!: PullRequestChecksDto;
+
+  @ApiProperty({
+    type: [CiFindingResponseDto],
+    description:
+      'What the failing checks on the head came to, one per check that was looked into; empty when none was.',
+  })
+  ciFindings!: CiFindingResponseDto[];
 
   @ApiProperty({ type: [PullRequestGateDto] })
   gates!: PullRequestGateDto[];
@@ -399,8 +437,14 @@ export class PullRequestActivityItemDto {
 }
 
 export class WatchedRepositoryDto {
-  @ApiProperty({ format: 'uuid' })
-  installationId!: string;
+  @ApiProperty({
+    format: 'uuid',
+    nullable: true,
+    type: String,
+    description:
+      'The installation that reaches the repository; null for one read through your own GitHub tokens.',
+  })
+  installationId!: string | null;
 
   @ApiProperty()
   githubRepoId!: number;

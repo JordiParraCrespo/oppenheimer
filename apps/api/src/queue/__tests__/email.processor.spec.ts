@@ -14,6 +14,7 @@ function setup() {
     sendEmailVerification: vi.fn(),
     sendWelcome: vi.fn(),
     sendInvitation: vi.fn(),
+    sendAction: vi.fn(),
   };
   const locales = {
     resolveForRecipient: vi.fn().mockResolvedValue({ locale: 'es', timeZone: 'UTC' }),
@@ -105,6 +106,34 @@ describe('EmailProcessor', () => {
     expect(email.sendInvitation).toHaveBeenCalledWith(
       'new@example.com',
       expect.objectContaining({ locale: 'en', subject: "You're invited to Acme" }),
+    );
+  });
+
+  it('sends a host notice as an action email carrying the API’s own copy', async () => {
+    // The email package has no host template: the subject and the host id in
+    // the closing come from the API's mapper, or the notice goes out blank.
+    const { email, processor } = setup();
+
+    await processor.process({
+      id: 'job-3',
+      name: 'host-paired',
+      data: {
+        to: 'ana@example.com',
+        userId: 'user-1',
+        hostId: 'host-1',
+        hostName: 'Dev box',
+        fingerprint: 'abcdef0123456789'.repeat(4),
+        url: 'https://app.oppenheimer.dev',
+      },
+    } as Job);
+
+    expect(email.sendAction).toHaveBeenCalledWith(
+      'ana@example.com',
+      expect.objectContaining({
+        locale: 'es',
+        subject: 'Se ha emparejado un equipo nuevo con tu cuenta',
+        closingText: expect.stringContaining('DELETE /v1/hosts/host-1'),
+      }),
     );
   });
 });

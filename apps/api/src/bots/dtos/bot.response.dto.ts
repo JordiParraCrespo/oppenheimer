@@ -4,9 +4,11 @@ import {
   BOT_AVATAR_COLORS,
   BOT_PERMISSIONS,
   BOT_PROVIDERS,
+  BOT_SECTIONS,
   type BotAvatarColor,
   type BotPermission,
   type BotProvider,
+  type BotSection,
 } from '@oppenheimer/shared';
 import { SESSION_EFFORTS, type SessionEffort } from '@oppenheimer/shared/agents';
 
@@ -75,6 +77,14 @@ export class BotResponseDto {
 
   @ApiProperty({ description: 'Whether what it decides to remember is saved without asking.' })
   learnAutomatically!: boolean;
+
+  @ApiProperty({
+    enum: BOT_SECTIONS,
+    isArray: true,
+    description:
+      'The console sections whose sidebar lists it beside Employees, in catalog order; empty shows it in Employees only.',
+  })
+  sections!: BotSection[];
 
   @ApiProperty({ type: String, format: 'date-time' })
   createdAt!: string;

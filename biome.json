@@ -49,6 +49,7 @@
     }
   },
   "files": {
+    "maxSize": 2097152,
     "includes": [
       "**",
       "!**/node_modules",
@@ -61,15 +62,18 @@
       "!**/playwright-report",
       "!**/blob-report",
       "!**/test-results",
+      "!.stack",
+      "!.ci-local",
+      "!.screenshots",
       "!e2e/tests/screens/local",
       "!scripts/evals/*/results",
       "!**/node-compile-cache",
       "!!**/.claude/worktrees",
-      "!**/.claude/workflows",
       "!**/.agents",
       "!**/*.md",
       "!**/*.css",
       "!**/*.gen.ts",
+      "!apps/api/openapi.json",
       "!**/packages/frontend/api-client/src/data-access",
       "!**/packages/frontend/api-client/src/common",
       "!**/packages/frontend/design-system/*/src/components",

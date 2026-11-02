@@ -4,7 +4,9 @@ import { WORKSPACE_LOOKUP } from '../../organizations/organizations.di-tokens';
 import type { SessionLaunchFile } from '../domain/session-launch-file.types';
 import { sessionBranchName } from '../domain/session-layout.policy';
 import type { WorkSessionEntity } from '../domain/work-session.entity';
+import { CloudTaskFactory } from './cloud-task.factory';
 import type { SessionLaunchSpec } from './session-dispatch.port';
+import { SessionLaunchCredentials } from './session-launch-credentials.resolver';
 
 /**
  * Builds what the host is told to make, from the session and the one name it
@@ -13,12 +15,18 @@ import type { SessionLaunchSpec } from './session-dispatch.port';
  * add a checkout, the hello reconciliation — names the same directories. No
  * project name travels (see `sessionCreateSchema`), and no account: the runner
  * learnt that when it was paired (24 §2).
+ *
+ * A cloud session's files are not sent as `images`: its host only starts it,
+ * so the task carries a fresh link to each instead, minted on every launch so
+ * a create sent again after a reconnect never names an expired one.
  */
 @Injectable()
 export class SessionLaunchSpecFactory {
   constructor(
     @Inject(WORKSPACE_LOOKUP)
     private readonly workspaces: WorkspaceLookupPort,
+    private readonly credentials: SessionLaunchCredentials,
+    private readonly tasks: CloudTaskFactory,
   ) {}
 
   async build(
@@ -29,14 +37,16 @@ export class SessionLaunchSpecFactory {
     // The session row was written in this workspace; a missing slug is a broken
     // invariant, not a request error.
     if (!organizationSlug) throw new Error(`workspace ${session.organizationId} has no slug`);
+    const task = await this.tasks.forLaunch(session, extra);
     return {
       organizationSlug,
       workspaceId: session.organizationId,
-      ...(session.place === 'worktree'
+      ...(session.place !== 'folder'
         ? { branch: session.branch ?? sessionBranchName(session.slug) }
         : {}),
-      ...(extra.prompt ? { prompt: extra.prompt } : {}),
-      ...(extra.images?.length ? { images: extra.images } : {}),
+      ...(task.prompt ? { prompt: task.prompt } : {}),
+      ...(task.images?.length ? { images: task.images } : {}),
+      ...(await this.credentials.for(session)),
     };
   }
 }

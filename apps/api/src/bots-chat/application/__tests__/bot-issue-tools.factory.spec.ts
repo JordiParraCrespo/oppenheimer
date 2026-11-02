@@ -7,6 +7,7 @@ import { GithubErrors } from '../../../github/domain/github.errors';
 import { FindIssueQuery } from '../../../github/queries/find-issue/find-issue.query';
 import { FindIssueCommentsQuery } from '../../../github/queries/find-issue-comments/find-issue-comments.query';
 import { FindIssuesQuery } from '../../../github/queries/find-issues/find-issues.query';
+import { NO_PERMISSIONS } from '../../domain/bot-tool-permission.policy';
 import { BotTurnBudget } from '../../domain/bot-turn-budget.policy';
 import type { BotApprovalRequesterPort } from '../bot-approval-requester.port';
 import { BotIssueToolsFactory } from '../bot-issue-tools.factory';
@@ -59,6 +60,7 @@ function setup(permission: BotToolContext['permission'], answer: (query: unknown
     homeHostId: null,
     timeZone: 'UTC',
     permission,
+    permissions: NO_PERMISSIONS,
     approvals,
     budget: new BotTurnBudget(),
   };

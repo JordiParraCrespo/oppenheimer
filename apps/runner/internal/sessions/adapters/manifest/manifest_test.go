@@ -108,6 +108,36 @@ func TestAQuestionUnderASpinnerWins(t *testing.T) {
 	}
 }
 
+// Claude Code asks before an edit or a new file with a question no phrase in
+// the manifest names; its numbered Yes under the cursor is what says it waits.
+// Before the option line was read on every line of the region, both of these
+// were `unknown`, and a session stopped on one never reached the Inbox.
+func TestAnEditOrCreateDialogIsBlocked(t *testing.T) {
+	c := classifier(t, "")
+	for _, title := range []string{
+		"Do you want to make this edit to src/app.ts?",
+		"Do you want to create empty-state.tsx?",
+	} {
+		body := strings.Join([]string{
+			strings.Repeat("─", 60),
+			" Edit file",
+			"",
+			"  src/app.ts",
+			"  +  export const wallet = createWallet();",
+			"",
+			" " + title,
+			" ❯ 1. Yes",
+			"   2. Yes, allow all edits during this session (shift+tab)",
+			"   3. No, and tell Claude what to do differently (esc)",
+			"",
+			" Esc to cancel",
+		}, "\n")
+		if state, _ := c.Classify(app.Screen{Body: body}, domain.AgentClaude); state != domain.StateBlocked {
+			t.Errorf("%q: state = %q, want blocked", title, state)
+		}
+	}
+}
+
 // Grok 1.0.41 on a host that has never signed in, as the pane showed it in a
 // live session: the braille logo, then the code and a wait on the person. The
 // logo is braille, which is why no spinner rule may read this as work.
@@ -346,5 +376,57 @@ func TestTheTitleAloneIsEnoughToKnowTheAgentIsWorking(t *testing.T) {
 
 	if state != domain.StateWorking {
 		t.Fatalf("state = %q, want working from the title alone", state)
+	}
+}
+
+// Claude Code 2.1 draws its prompt as `❯` and a no-break space, captured from
+// a real pane after a turn. Go's `\s` does not match U+00A0, so this screen
+// read `unknown`, the turn never completed, and a bot waiting on its
+// follow-up never heard back.
+func TestAnEmptyPromptAfterATurnIsIdle(t *testing.T) {
+	rule := strings.Repeat("─", 60)
+	state, _ := manifest.New(manifest.Options{}).Classify(app.Screen{
+		Body: "❯ Please reply with the exact phrase: Follow-up received.\n\n" +
+			"● Follow-up received.\n\n" +
+			"✻ Cooked for 1s · done 7:56 AM\n\n" +
+			rule + "\n❯  \n" + rule + "\n" +
+			"  ⏵⏵ auto mode on (shift+tab to cycle)\n",
+	}, domain.AgentClaude)
+
+	if state != domain.StateIdle {
+		t.Fatalf("state = %q, want idle", state)
+	}
+}
+
+// After most turns Claude Code 2.1 offers a next prompt in the input box. The
+// box is `❯` and a no-break space with the suggestion after it, captured from
+// a real pane; an empty-prompt pattern alone read this `unknown`.
+func TestASuggestedNextPromptIsIdle(t *testing.T) {
+	rule := strings.Repeat("─", 60)
+	state, _ := manifest.New(manifest.Options{}).Classify(app.Screen{
+		Body: "  where the land meets the sea.\n\n" +
+			"✻ Baked for 14s · done 7:45 AM\n\n" +
+			rule + "\n❯ save it to a file\n" + rule + "\n" +
+			"  ⏸ manual mode on · ? for shortcuts\n",
+	}, domain.AgentClaude)
+
+	if state != domain.StateIdle {
+		t.Fatalf("state = %q, want idle", state)
+	}
+}
+
+// Mid-turn the same input box is on screen, so the prompt rule must not turn
+// a working session idle; captured from a real pane.
+func TestTheInputBoxUnderASpinnerIsStillWorking(t *testing.T) {
+	rule := strings.Repeat("─", 60)
+	state, _ := manifest.New(manifest.Options{}).Classify(app.Screen{
+		Body: "❯ Write a 300-word paragraph about tide pools.\n\n" +
+			"· Envisioning… (8s · thinking)\n\n" +
+			rule + "\n❯ \n" + rule + "\n" +
+			"  ⏸ manual mode on · esc to interrupt\n",
+	}, domain.AgentClaude)
+
+	if state != domain.StateWorking {
+		t.Fatalf("state = %q, want working", state)
 	}
 }

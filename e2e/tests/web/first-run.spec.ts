@@ -66,7 +66,7 @@ test('a new account walks the first-run flow into the console', async ({ page })
   await expect(page.getByText(/no host yet/i)).toBeVisible();
 
   await page.getByRole('link', { name: /go to the console/i }).click();
-  await expect(page).toHaveURL(/\/sessions/, { timeout: 30_000 });
+  await expect(page).toHaveURL(/\/inbox/, { timeout: 30_000 });
 });
 
 /**
@@ -127,10 +127,10 @@ test('a named workspace is not sent back through the slug form', async ({ page }
   await claimWorkspaceThroughUi(page, 'Once');
 
   await page.goto('/onboarding/workspace');
-  await expect(page).toHaveURL(/\/sessions/, { timeout: 30_000 });
+  await expect(page).toHaveURL(/\/inbox/, { timeout: 30_000 });
 
   await page.goto('/onboarding/ready');
-  await expect(page).toHaveURL(/\/sessions/, { timeout: 30_000 });
+  await expect(page).toHaveURL(/\/inbox/, { timeout: 30_000 });
 });
 
 /**
@@ -157,21 +157,21 @@ test('a finished account cannot walk back into the flow', async ({ page }) => {
   // Going to the console ends the walk, and replaces the landing in history so
   // Back cannot return to it.
   await page.getByRole('link', { name: /go to the console/i }).click();
-  await expect(page).toHaveURL(/\/sessions/, { timeout: 30_000 });
+  await expect(page).toHaveURL(/\/inbox/, { timeout: 30_000 });
   await page.goBack();
   await expect(page).not.toHaveURL(/\/onboarding\/ready/, { timeout: 30_000 });
 
   // And the address itself is refused, with or without what the walk carried.
   await page.goto('/onboarding/ready');
-  await expect(page).toHaveURL(/\/sessions/, { timeout: 30_000 });
+  await expect(page).toHaveURL(/\/inbox/, { timeout: 30_000 });
 
   await page.goto('/onboarding');
-  await expect(page).toHaveURL(/\/sessions/, { timeout: 30_000 });
+  await expect(page).toHaveURL(/\/inbox/, { timeout: 30_000 });
 
   // Step 4 goes with it: the console pairs a machine in Add host now, so
   // nothing links here and the step is first-run's alone.
   await page.goto('/onboarding/host');
-  await expect(page).toHaveURL(/\/sessions/, { timeout: 30_000 });
+  await expect(page).toHaveURL(/\/inbox/, { timeout: 30_000 });
 
   // Connect GitHub is the one step that stays open, because every App install
   // returns to it, including one a finished account starts from New session's

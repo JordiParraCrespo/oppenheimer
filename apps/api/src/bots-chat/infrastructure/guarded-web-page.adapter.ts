@@ -4,14 +4,16 @@ import { request as httpsRequest } from 'node:https';
 import { isIP, type LookupFunction } from 'node:net';
 import { Injectable } from '@nestjs/common';
 import { isPublicAddress, refuseUrl } from '../domain/web-address.policy';
-import type { WebPagePort, WebPageResult } from './web-page.port';
+import type { WebImageResult, WebPagePort, WebPageResult } from './web-page.port';
 
 /** Redirects followed before giving up. */
 const MAX_REDIRECTS = 5;
 /** One fetch, redirects included. */
 const FETCH_TIMEOUT_MS = 15_000;
-/** The most of a body that is read; the rest is cut. */
-const MAX_BODY_BYTES = 2 * 1024 * 1024;
+/** The most of a page's body that is read; the rest is cut. */
+const MAX_PAGE_BYTES = 2 * 1024 * 1024;
+const PAGE_ACCEPT = 'text/html, text/plain, application/json, */*;q=0.5';
+const IMAGE_ACCEPT = 'image/png, image/jpeg, image/gif, image/webp, image/*;q=0.8';
 const USER_AGENT = 'OppenheimerBot/1.0 (+https://oppenheimer.dev/bots)';
 
 const TEXT_TYPES = /^(text\/|application\/(json|xml|xhtml\+xml|[\w.+-]+\+(json|xml))\b)/i;
@@ -22,15 +24,44 @@ const TEXT_TYPES = /^(text\/|application\/(json|xml|xhtml\+xml|[\w.+-]+\+(json|x
  * public (`isPublicAddress`), and the connection is pinned to the first one
  * (no second lookup an attacker's DNS could answer differently). Redirects
  * are followed by hand and each is checked again. No cookies, no auth, no
- * proxy, a fixed user agent; 15 s and 2 MB at most.
+ * proxy, a fixed user agent; 15 s and 2 MB at most for a page, and for an
+ * image the size its caller takes.
  *
  * Budget (`integrations.md`): the web is not one system with one limit, so
- * the bound is ours: `web_fetch` allows a turn ten calls, and a turn at most
- * one call at a time.
+ * the bound is ours: `web_fetch` allows a turn ten calls, `show_image` eight
+ * images, and a turn at most one call at a time.
  */
 @Injectable()
 export class GuardedWebPageAdapter implements WebPagePort {
   async fetch(url: string, signal: AbortSignal): Promise<WebPageResult> {
+    const result = await this.follow(url, PAGE_ACCEPT, MAX_PAGE_BYTES, signal);
+    return result.kind === 'response' ? this.page(result.url, result.response) : result;
+  }
+
+  async fetchImage(url: string, maxBytes: number, signal: AbortSignal): Promise<WebImageResult> {
+    // One byte over the limit is read, so an image of exactly the limit is whole.
+    const result = await this.follow(url, IMAGE_ACCEPT, maxBytes + 1, signal);
+    if (result.kind !== 'response') return result;
+    const { response } = result;
+    if (response.status < 200 || response.status >= 300) {
+      return { kind: 'failed', reason: `The address answered ${response.status}.` };
+    }
+    if (response.truncated) {
+      return { kind: 'refused', reason: `The image is larger than ${maxBytes} bytes.` };
+    }
+    return { kind: 'image', image: { url: result.url.toString(), bytes: response.body } };
+  }
+
+  /** The answer at `url` once redirects are followed, every address on the way checked. */
+  private async follow(
+    url: string,
+    accept: string,
+    maxBytes: number,
+    signal: AbortSignal,
+  ): Promise<
+    | { kind: 'response'; url: URL; response: Response }
+    | { kind: 'refused' | 'failed'; reason: string }
+  > {
     let current: URL;
     try {
       current = new URL(url);
@@ -53,7 +84,7 @@ export class GuardedWebPageAdapter implements WebPagePort {
       if ('reason' in pinned) return { kind: 'refused', reason: pinned.reason };
       let response: Response;
       try {
-        response = await this.get(current, pinned, deadline);
+        response = await this.get(current, pinned, { accept, maxBytes }, deadline);
       } catch (error) {
         return { kind: 'failed', reason: describeNetworkError(error, deadline) };
       }
@@ -61,7 +92,7 @@ export class GuardedWebPageAdapter implements WebPagePort {
         current = new URL(response.location, current);
         continue;
       }
-      return this.page(current, response);
+      return { kind: 'response', url: current, response };
     }
     return { kind: 'failed', reason: `More than ${MAX_REDIRECTS} redirects.` };
   }
@@ -86,6 +117,7 @@ export class GuardedWebPageAdapter implements WebPagePort {
   private get(
     url: URL,
     pinned: { address: string; family: number },
+    body: { accept: string; maxBytes: number },
     signal: AbortSignal,
   ): Promise<Response> {
     const pin: LookupFunction = (_hostname, options, callback) => {
@@ -104,10 +136,10 @@ export class GuardedWebPageAdapter implements WebPagePort {
           signal,
           headers: {
             'user-agent': USER_AGENT,
-            accept: 'text/html, text/plain, application/json, */*;q=0.5',
+            accept: body.accept,
           },
         },
-        (incoming) => readBody(incoming).then(resolve, reject),
+        (incoming) => readBody(incoming, body.maxBytes).then(resolve, reject),
       );
       outgoing.on('error', reject);
       outgoing.end();
@@ -143,7 +175,7 @@ interface Response {
   truncated: boolean;
 }
 
-function readBody(incoming: IncomingMessage): Promise<Response> {
+function readBody(incoming: IncomingMessage, maxBytes: number): Promise<Response> {
   return new Promise((resolve, reject) => {
     const chunks: Buffer[] = [];
     let size = 0;
@@ -158,10 +190,10 @@ function readBody(incoming: IncomingMessage): Promise<Response> {
       });
     incoming.on('data', (chunk: Buffer) => {
       if (truncated) return;
-      const room = MAX_BODY_BYTES - size;
+      const room = maxBytes - size;
       chunks.push(chunk.length > room ? chunk.subarray(0, room) : chunk);
       size += Math.min(chunk.length, room);
-      if (size >= MAX_BODY_BYTES) {
+      if (size >= maxBytes) {
         truncated = true;
         incoming.destroy();
         done();

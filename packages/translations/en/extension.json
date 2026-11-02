@@ -1,0 +1,72 @@
+{
+  "chrome": {
+    "extName": "Oppenheimer — Claude Code sessions",
+    "extShortName": "Claude sessions",
+    "extDescription": "Tells you when a Claude Code cloud session needs you.",
+    "actionTitle": "Claude Code sessions"
+  },
+  "title": "Claude Code sessions",
+  "checkNow": "Check now",
+  "badge": {
+    "none": "Claude Code sessions",
+    "needsYou_one": "{{count}} Claude Code session needs you",
+    "needsYou_other": "{{count}} Claude Code sessions need you"
+  },
+  "groups": {
+    "needsYou": "Needs you",
+    "running": "Running",
+    "done": "Done",
+    "showDone": "Show done"
+  },
+  "clear": {
+    "title": "You're clear",
+    "nothingRunning": "Nothing is running.",
+    "stillRunning_one": "{{count}} session is still running.",
+    "stillRunning_other": "{{count}} sessions are still running.",
+    "notify": "You'll get a notification when one needs you."
+  },
+  "openClaude": "Open claude.ai/code",
+  "sync": {
+    "checking": "Checking your sessions…",
+    "signedOut": "Sign in to claude.ai in this Chrome, then check again.",
+    "notFound": "Couldn't find your sessions yet. Open claude.ai/code once and the extension will learn where they are.",
+    "unreachable": "Couldn't reach claude.ai. It will try again in a minute."
+  },
+  "row": {
+    "copyCommand": "Copy command",
+    "copied": "Copied"
+  },
+  "state": {
+    "needs-input": "Needs you",
+    "failed": "Failed",
+    "done": "Finished",
+    "running": "Running",
+    "stopped": "Paused"
+  },
+  "reason": {
+    "tool": "Wants to use {{tool}}",
+    "plan": "Has a plan for you to approve",
+    "question": "Waiting for your answer",
+    "provision": "The cloud environment could not be provisioned",
+    "start": "The cloud environment failed to start",
+    "turn": "The last turn failed",
+    "paused": "Paused · reply to resume",
+    "reconnecting": "Reconnecting"
+  },
+  "notification": {
+    "open": "Open the session"
+  },
+  "oppenheimer": {
+    "label": "Oppenheimer",
+    "apiUrl": "Oppenheimer API URL",
+    "token": "API token",
+    "connect": "Connect",
+    "disconnect": "Disconnect",
+    "reportingTo": "Reporting to {{host}}",
+    "launched": "Reporting to {{host}} · {{count}} launched there",
+    "notReporting": "Not reporting: {{detail}}",
+    "notAUrl": "That is not a URL.",
+    "permission": "Chrome needs your permission to reach {{origin}}.",
+    "refused": "Oppenheimer refused: {{detail}}"
+  }
+}

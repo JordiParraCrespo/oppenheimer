@@ -45,24 +45,70 @@ const t = ((key: string, options?: { count?: number }) =>
   `${key.split('.').at(-1)}×${options?.count}`) as unknown as TFunction;
 
 describe('blocksOf', () => {
-  it('folds a run of calls into one group, keeps a reply and a plan apart, and leaves the task list to the composer', () => {
+  it('puts the images a run of calls read after the run, which they do not split, and leaves out one the host only named', () => {
+    const chat = new SessionChat();
+    const jpeg = { source: { type: 'base64', media_type: 'image/jpeg', data: 'AAAA' } };
+    chat.apply({
+      reset: true,
+      entries: [
+        { type: 'user', uuid: 'u', message: { role: 'user', content: 'Look' } },
+        {
+          type: 'assistant',
+          uuid: 'a',
+          message: {
+            role: 'assistant',
+            content: [
+              tool('1', 'Read', { file_path: '/tmp/shot.png' }),
+              tool('2', 'Read', { file_path: '/tmp/big.png' }),
+              tool('3', 'Bash', { command: 'ls' }),
+            ],
+          },
+        },
+        {
+          type: 'user',
+          uuid: 'r',
+          message: {
+            role: 'user',
+            content: [
+              { type: 'tool_result', tool_use_id: '1', content: '[image]', images: [jpeg] },
+              { type: 'tool_result', tool_use_id: '2', content: '[image]', images: [{}] },
+              { type: 'tool_result', tool_use_id: '3', content: 'a.ts' },
+            ],
+          },
+        },
+      ].map((entry) => JSON.stringify(entry)),
+    });
+    const turn = chat.snapshot().turns[0];
+    if (!turn) throw new Error('no turn');
+    const blocks = blocksOf(turn);
+    expect(blocks.map((block) => block.kind)).toEqual(['explored', 'images']);
+    expect(blocks[0]?.kind === 'explored' && blocks[0].calls.map((call) => call.id)).toEqual([
+      '1',
+      '2',
+      '3',
+    ]);
+    expect(blocks[1]).toMatchObject({
+      source: '/tmp/shot.png',
+      images: [{ src: 'data:image/jpeg;base64,AAAA' }],
+    });
+  });
+
+  it('folds reads into an Explored group that a command ends (a task list does not), keeps a reply and a plan apart, and leaves the task list to the composer', () => {
     const turn = turnOf([
       tool('1', 'Read', { file_path: 'a.ts' }),
       tool('2', 'Grep', { pattern: 'x' }),
       tool('t1', 'TodoWrite', { todos: [{ content: 'One', status: 'pending' }] }),
-      tool('3', 'Bash', { command: 'ls' }),
+      tool('3', 'Bash', { command: 'pnpm test' }),
       { type: 'text', text: 'Done.' },
       tool('p', 'ExitPlanMode', { plan: '1. Ship' }),
       tool('t2', 'TodoWrite', { todos: [{ content: 'One', status: 'completed' }] }),
     ]);
     const blocks = blocksOf(turn);
-    expect(blocks.map((block) => block.kind)).toEqual(['tools', 'reply', 'plan']);
-    expect(blocks[0]?.kind === 'tools' && blocks[0].calls.map((call) => call.name)).toEqual([
-      'Read',
-      'Grep',
-      'Bash',
-    ]);
-    expect(latestTodos(turn)).toEqual([{ content: 'One', status: 'completed' }]);
+    expect(blocks.map((block) => block.kind)).toEqual(['explored', 'tools', 'reply', 'plan']);
+    expect(
+      blocks.flatMap((block) => ('calls' in block ? block.calls : [])).map((call) => call.name),
+    ).toEqual(['Read', 'Grep', 'Bash']);
+    expect(latestTodos(turn)).toEqual([{ text: 'One', status: 'completed' }]);
   });
 });
 
@@ -74,8 +120,8 @@ describe('summaryOf', () => {
       tool('3', 'Read', { file_path: 'a' }),
       tool('4', 'Read', { file_path: 'b' }),
     ]);
-    const group = blocksOf(turn)[0];
-    expect(group?.kind === 'tools' && summaryOf(group.calls, t)).toBe('Read×2, edit×1, command×1');
+    const calls = turn.steps.flatMap((step) => (step.kind === 'tool' ? [step.call] : []));
+    expect(summaryOf(calls, t)).toBe('Read×2, edit×1, command×1');
   });
 });
 
@@ -86,5 +132,9 @@ describe('the turn header', () => {
     expect(modelName('claude-haiku-5')).toBe('Haiku 5');
     expect(modelName('gpt-5.6')).toBe('gpt-5.6');
     expect(modelName(null)).toBeNull();
+    // Codex's and OpenCode's models by the catalog's names, OpenCode's
+    // without the provider it puts in front.
+    expect(modelName('gpt-6.1-sol')).toBe('GPT-6.1 Sol');
+    expect(modelName('glm-5.3')).toBe('GLM-5.3');
   });
 });

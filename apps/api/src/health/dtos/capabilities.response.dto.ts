@@ -22,11 +22,19 @@ export class CapabilitiesResponseDto implements ClientDeployment {
   @ApiProperty({ description: 'Plan’s calendar can connect a Google Calendar.' })
   google_calendar!: boolean;
 
+  @ApiProperty({ description: 'A person can connect their Gmail for their bots.' })
+  gmail!: boolean;
+
   @ApiProperty({ description: 'Host pairing is configured (the runner release settings).' })
   hosts!: boolean;
 
   @ApiProperty({ description: 'A workspace can store model provider keys, which bots run on.' })
   bot_providers!: boolean;
+
+  @ApiProperty({
+    description: "A session's dev server can be opened in the console (a preview domain).",
+  })
+  session_previews!: boolean;
 
   @ApiProperty({
     nullable: true,

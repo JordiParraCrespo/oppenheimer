@@ -7,15 +7,19 @@ import type {
   RunnerLink,
 } from '../../../../links/application/link-registry.port';
 import type { ParkedFilePort, StagedFile } from '../../../../links/application/parked-file.port';
+import type { StagedFileReaderPort } from '../../../../links/application/staged-file-reader.port';
 import { ProjectEntity } from '../../../../projects/domain/project.entity';
+import { CloudAttachmentsResolver } from '../../../application/cloud-attachments.resolver';
+import type { CloudFilesPort } from '../../../application/cloud-files.port';
+import { CloudTaskFactory } from '../../../application/cloud-task.factory';
 import { SessionAttachmentsResolver } from '../../../application/session-attachments.resolver';
 import type { SessionDispatchPort } from '../../../application/session-dispatch.port';
 import { SessionLaunchSpecFactory } from '../../../application/session-launch.factory';
+import type { SessionLaunchCredentials } from '../../../application/session-launch-credentials.resolver';
 import type { SessionNamingResolver } from '../../../application/session-naming.resolver';
-import type { SessionPlanFactory } from '../../../application/session-plan.factory';
+import { SessionPlanFactory } from '../../../application/session-plan.factory';
 import type { WorkSessionRepositoryPort } from '../../../database/work-session.repository.port';
 import { WorkSessionEntity } from '../../../domain/work-session.entity';
-import { WorkSessionMapper } from '../../../work-session.mapper';
 import { CreateSessionCommand } from '../create-session.command';
 import { CreateSessionCommandHandler } from '../create-session.command-handler';
 
@@ -57,12 +61,29 @@ function project() {
   });
 }
 
-function launches(): SessionLaunchSpecFactory {
-  return new SessionLaunchSpecFactory({
-    slugOf: vi.fn().mockResolvedValue('jordi'),
-    isMember: vi.fn(),
-    ownedBy: vi.fn().mockResolvedValue([]),
-  });
+function launches(cloudFiles: CloudFilesPort): SessionLaunchSpecFactory {
+  return new SessionLaunchSpecFactory(
+    {
+      slugOf: vi.fn().mockResolvedValue('jordi'),
+      isMember: vi.fn(),
+      ownedBy: vi.fn().mockResolvedValue([]),
+    },
+    { for: vi.fn().mockResolvedValue({}) } as unknown as SessionLaunchCredentials,
+    new CloudTaskFactory(cloudFiles),
+  );
+}
+
+/** Where a cloud session's files are kept: ids in order, a link per launch. */
+function cloudStore() {
+  let next = 0;
+  return {
+    keep: vi.fn(async (_owner, files: readonly { mediaType: StagedFile['mediaType'] }[]) =>
+      files.map((file) => ({ imageId: `kept-${++next}`, mediaType: file.mediaType })),
+    ),
+    link: vi.fn(async (_owner, file: { imageId: string }) => `https://api.test/f/${file.imageId}`),
+    sampleLink: () => 'https://api.test/api/v1/cloud-files/00000000-0000-0000-0000-000000000000',
+    open: vi.fn(),
+  } satisfies CloudFilesPort;
 }
 
 /** The image store in memory: staged uploads by id, checked against their owner as the adapter does. */
@@ -86,8 +107,9 @@ function imageStore(uploads: Record<string, StagedFile> = {}) {
         mediaType: image.mediaType,
       })),
     ),
+    readStaged: vi.fn(async (ids: readonly string[], owner) => read(ids, owner)),
     collect: vi.fn(),
-  } satisfies ParkedFilePort;
+  } satisfies ParkedFilePort & StagedFileReaderPort;
 }
 
 /** The link registry: the host linked with these capabilities, or not linked at all. */
@@ -107,11 +129,13 @@ describe('CreateSessionCommandHandler', () => {
   let plan: SessionPlanFactory;
   let naming: { propose: ReturnType<typeof vi.fn>; record: ReturnType<typeof vi.fn> };
   let store: ReturnType<typeof imageStore>;
+  let cloudFiles: ReturnType<typeof cloudStore>;
   let links: LinkRegistryPort;
   let handler: CreateSessionCommandHandler;
 
   beforeEach(() => {
     store = imageStore();
+    cloudFiles = cloudStore();
     links = linksWith(['session.image', 'session.create.images']);
     sessions = {
       findOneByIdempotencyKey: vi.fn().mockResolvedValue(None),
@@ -148,10 +172,10 @@ describe('CreateSessionCommandHandler', () => {
       hosts as unknown as HostAccessPort,
       dispatch,
       plan,
-      launches(),
+      launches(cloudFiles),
       naming as unknown as SessionNamingResolver,
-      new WorkSessionMapper(),
       new SessionAttachmentsResolver(store, links),
+      new CloudAttachmentsResolver(store, cloudFiles, new CloudTaskFactory(cloudFiles)),
       links,
     );
   }
@@ -348,6 +372,48 @@ describe('CreateSessionCommandHandler', () => {
     });
   });
 
+  it('checks out several repositories, one directory each, and starts the agent in the first', async () => {
+    // The real factory over a fake GitHub: two repositories sharing a short name
+    // must not land in one directory, and the agent starts in the one asked first.
+    const repositories = {
+      acme: { githubRepoId: 42, fullName: 'acme/app', defaultBranch: 'main' },
+      other: { githubRepoId: 77, fullName: 'other/app', defaultBranch: 'trunk' },
+    };
+    plan = new SessionPlanFactory(
+      {
+        repositoryOf: vi.fn(async (_scope, _installation, githubRepoId: number) =>
+          githubRepoId === 42 ? repositories.acme : repositories.other,
+        ),
+      } as never,
+      { findOneById: vi.fn().mockResolvedValue(Some(project())) } as never,
+    );
+    handler = rebuild();
+
+    await handler.execute(
+      command({
+        input: {
+          ...INPUT,
+          checkouts: [
+            { installationId: 'installation-1', githubRepoId: 42 },
+            { installationId: 'installation-1', githubRepoId: 77 },
+          ],
+        },
+      }),
+    );
+
+    const [session, events] = vi.mocked(sessions.createIfUnclaimed).mock.calls[0];
+    expect(session.checkouts.map((checkout) => checkout.directoryName)).toEqual([
+      'app',
+      'other--app',
+    ]);
+    expect(session.checkouts.map((checkout) => checkout.baseBranch)).toEqual(['main', 'trunk']);
+    expect(new Set(session.checkouts.map((checkout) => checkout.branch)).size).toBe(1);
+    expect(events.find((event) => event.kind === 'session.cwd_set')?.payload).toEqual({
+      checkoutId: session.checkouts[0].id,
+    });
+    expect(dispatch.create).toHaveBeenCalledOnce();
+  });
+
   it('sends a worktree session with its branch and the ids its work folder is named by', async () => {
     await handler.execute(command());
 
@@ -443,6 +509,72 @@ describe('CreateSessionCommandHandler', () => {
       ]);
     });
 
+    describe('for a cloud session', () => {
+      const cloud = (ids: string[], prompt = 'look at this') =>
+        command({ input: { ...INPUT, cloud: true, prompt, attachmentIds: ids } });
+
+      // A runner that starts cloud sessions and takes no file at all: the
+      // cloud's agent downloads them, not the host.
+      beforeEach(() => {
+        links = linksWith(['session.cloud']);
+      });
+
+      it('keeps them under the session and links each in the task, asking no runner capability', async () => {
+        store = imageStore({
+          'a-1': upload(),
+          'a-2': { ...upload(), mediaType: 'application/pdf', data: Buffer.from('%PDF-1.7') },
+        });
+        handler = rebuild();
+
+        await handler.execute(cloud(['a-1', 'a-2']));
+
+        const [session, events] = vi.mocked(sessions.createIfUnclaimed).mock.calls[0];
+        expect(store.claim).not.toHaveBeenCalled();
+        expect(cloudFiles.keep).toHaveBeenCalledWith(
+          { organizationId: 'org-acme', sessionId: session.id },
+          [
+            expect.objectContaining({ mediaType: 'image/png' }),
+            expect.objectContaining({ mediaType: 'application/pdf' }),
+          ],
+        );
+        // The log names the kept files, so a create sent again links them afresh.
+        expect(events.find((event) => event.kind === 'prompt.first')?.payload).toEqual({
+          text: 'look at this',
+          images: [
+            { imageId: 'kept-1', mediaType: 'image/png' },
+            { imageId: 'kept-2', mediaType: 'application/pdf' },
+          ],
+        });
+        const [, spec] = vi.mocked(dispatch.create).mock.calls[0];
+        expect(spec.images).toBeUndefined();
+        expect(spec.prompt).toMatch(/^look at this\n/);
+        expect(spec.prompt).toContain("-o /tmp/attachments/1.png 'https://api.test/f/kept-1'");
+        expect(spec.prompt).toContain("-o /tmp/attachments/2.pdf 'https://api.test/f/kept-2'");
+      });
+
+      it('refuses a task its links would take past 2 KB with SESSIONS_040, keeping and writing nothing', async () => {
+        store = imageStore({ 'a-1': upload() });
+        handler = rebuild();
+
+        await expect(handler.execute(cloud(['a-1'], 'x'.repeat(1_900)))).rejects.toMatchObject({
+          code: 'SESSIONS_040',
+        });
+        expect(cloudFiles.keep).not.toHaveBeenCalled();
+        expect(sessions.createIfUnclaimed).not.toHaveBeenCalled();
+      });
+
+      it('refuses an upload that is not the caller’s with SESSIONS_019, keeping nothing', async () => {
+        store = imageStore({ 'a-1': upload('someone-else') });
+        handler = rebuild();
+
+        await expect(handler.execute(cloud(['a-1']))).rejects.toMatchObject({
+          code: 'SESSIONS_019',
+        });
+        expect(cloudFiles.keep).not.toHaveBeenCalled();
+        expect(sessions.createIfUnclaimed).not.toHaveBeenCalled();
+      });
+    });
+
     it('asks nothing of the host when nothing is attached', async () => {
       links = linksWith(null);
       handler = rebuild();
@@ -498,6 +630,7 @@ describe('CreateSessionCommandHandler', () => {
         model: 'claude-opus-5-5',
         permission: 'auto',
         effort: 'high',
+        environment: null,
       });
     });
 
@@ -515,7 +648,12 @@ describe('CreateSessionCommandHandler', () => {
     it('defaults to the level that asks, never to one that escalates', async () => {
       await run({});
 
-      expect(requestPayload().launch).toEqual({ model: null, permission: 'ask', effort: null });
+      expect(requestPayload().launch).toEqual({
+        model: null,
+        permission: 'ask',
+        effort: null,
+        environment: null,
+      });
     });
 
     it('records the first task as prompt.first and sends it with the launch', async () => {

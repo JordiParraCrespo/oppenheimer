@@ -26,7 +26,28 @@ const created = vi.hoisted(() => vi.fn());
 vi.mock('../components/project-select', () => ({
   ProjectSelect: chip('project', 'project-1'),
 }));
-vi.mock('../components/host-select', () => ({ HostSelect: chip('host', 'host-2') }));
+// The place chip holds the host and where on it: `host` picks one, `where` a folder.
+vi.mock('../components/place-select', () => ({
+  PlaceSelect: ({
+    onHostChange,
+    onPlaceChange,
+  }: {
+    onHostChange: (value: string) => void;
+    onPlaceChange: (value: string) => void;
+  }) => {
+    renders.set('place', (renders.get('place') ?? 0) + 1);
+    return (
+      <>
+        <button type="button" onClick={() => onHostChange('host-2')}>
+          host
+        </button>
+        <button type="button" onClick={() => onPlaceChange('folder')}>
+          where
+        </button>
+      </>
+    );
+  },
+}));
 vi.mock('../components/repository-branch-select', () => ({
   RepositoryBranchSelect: chip('repositories', [{ id: 'installation-1:42', branch: 'main' }], {
     // A row whose key no longer parses: `toCheckouts` drops it from the body.
@@ -37,16 +58,30 @@ vi.mock('../components/branch-select', () => ({ BranchSelect: chip('branch', 'de
 vi.mock('../components/permission-select', () => ({
   PermissionSelect: chip('permission', 'ask'),
 }));
-vi.mock('../components/agent-select', () => ({
-  AgentSelect: chip(
+// The engine button holds the effort too: its `effort` button picks a level.
+vi.mock('../components/agent-select', () => {
+  const Agent = chip(
     'agent',
     { agent: 'codex', model: null },
     { shell: { agent: 'shell', model: null } },
-  ),
-}));
-vi.mock('../components/where-select', () => ({
-  WhereSelect: chip('where', 'folder', { worktree: 'worktree' }),
-}));
+  );
+  return {
+    AgentSelect: (props: {
+      onValueChange: (value: unknown) => void;
+      effort: unknown;
+      onEffortChange: (value: string) => void;
+    }) => (
+      <>
+        <Agent onValueChange={props.onValueChange} />
+        {props.effort ? (
+          <button type="button" onClick={() => props.onEffortChange('high')}>
+            effort
+          </button>
+        ) : null}
+      </>
+    ),
+  };
+});
 // The folder chip draws its popup's body as it is given; the body is the
 // section that reads the host, stubbed to a button that uses one folder.
 vi.mock('../components/folder-select', () => ({
@@ -62,7 +97,6 @@ vi.mock('../sections/new-session-folder-browser', () => ({
     </button>
   ),
 }));
-vi.mock('../components/effort-select', () => ({ EffortSelect: chip('effort', 'high') }));
 
 /**
  * The reads, from a store the test can settle. `useSyncExternalStore` is what
@@ -71,7 +105,13 @@ vi.mock('../components/effort-select', () => ({ EffortSelect: chip('effort', 'hi
  */
 const reads = vi.hoisted(() => {
   const listeners = new Set<() => void>();
-  let state = { hosts: [] as { id: string }[], projects: [] as unknown[] };
+  let state = {
+    hosts: [] as {
+      id: string;
+      details?: { startsCloud: { 'claude-code': boolean | null; codex: boolean | null } };
+    }[],
+    projects: [] as unknown[],
+  };
   return {
     get: () => state,
     set(next: typeof state) {
@@ -97,7 +137,14 @@ vi.mock('@oppenheimer/frontend-consumer/react', () => ({
   useProjectsSnapshot: () => () => reads.get().projects,
   // Applies `select` inside the subscription, as a query observer does, so a
   // reader that selects a boolean re-renders only when the boolean flips.
-  useHosts: (options?: { select?: (hosts: { id: string }[]) => unknown }) => {
+  useHosts: (options?: {
+    select?: (
+      hosts: {
+        id: string;
+        details?: { startsCloud: { 'claude-code': boolean | null; codex: boolean | null } };
+      }[],
+    ) => unknown;
+  }) => {
     const data = useSyncExternalStore(reads.subscribe, () =>
       options?.select ? options.select(reads.get().hosts) : reads.get().hosts,
     );
@@ -131,6 +178,17 @@ vi.mock('@oppenheimer/frontend-consumer/react', () => ({
     submittedAt: 0,
   }),
   useVoiceDictation: () => ({ available: false, transcribe: vi.fn() }),
+  // No server key for cloud agents here: the composer is a host's.
+  useCloudAgentStatus: () => ({ data: undefined, isPending: false }),
+  useCloudAgentModels: () => ({ data: [], isPending: false }),
+  useStartCloudSession: () => ({
+    mutate: vi.fn(),
+    reset: vi.fn(),
+    isPending: false,
+    isError: false,
+    error: null,
+    submittedAt: 0,
+  }),
 }));
 
 vi.mock('@oppenheimer/frontend-core/react', () => ({
@@ -195,9 +253,9 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe('NewSessionForm', () => {
-  it('renders only the effort chip when an effort is picked', () => {
+  it('renders only the engine button when an effort is picked', () => {
     fireEvent.click(screen.getByRole('button', { name: 'effort' }));
-    expect(rendered()).toEqual(['effort']);
+    expect(rendered()).toEqual(['agent']);
   });
 
   it('renders only the permission chip when a level is picked', () => {
@@ -205,9 +263,9 @@ describe('NewSessionForm', () => {
     expect(rendered()).toEqual(['permission']);
   });
 
-  it('renders only the host chip and the send gate when a host is picked', () => {
+  it('renders only the place chip and the send gate when a host is picked', () => {
     fireEvent.click(screen.getByRole('button', { name: 'host' }));
-    expect(rendered()).toEqual(['host', 'send']);
+    expect(rendered()).toEqual(['place', 'send']);
   });
 
   /**
@@ -236,16 +294,21 @@ describe('NewSessionForm', () => {
     });
   });
 
-  /** An agent switch decides which foot controls exist, so those three redraw. */
+  /** An agent switch decides which foot controls exist, so those two redraw. */
   it('renders the engine and the agent-dependent controls when the agent changes', () => {
     fireEvent.click(screen.getByRole('button', { name: 'agent' }));
-    expect(rendered()).toEqual(['agent', 'effort', 'permission']);
+    expect(rendered()).toEqual(['agent', 'permission']);
   });
 
   /** The project chip reads the hosts for its prefill at pick time, not by subscribing. */
-  it('renders only the host chip when the host list settles', () => {
-    act(() => reads.set({ ...reads.get(), hosts: [{ id: 'host-1' }] }));
-    expect(rendered()).toEqual(['host']);
+  it('renders only the place chip when the host list settles', () => {
+    act(() =>
+      reads.set({
+        ...reads.get(),
+        hosts: [{ id: 'host-1', details: { startsCloud: { 'claude-code': null, codex: null } } }],
+      }),
+    );
+    expect(rendered()).toEqual(['place']);
   });
 
   /** The send reads the projects when it sends, so a refetch never reaches the composer. */
@@ -261,18 +324,6 @@ describe('NewSessionForm', () => {
     expect(rendered()).toEqual([]);
   });
 
-  it('summarises the picked project under the title', () => {
-    cleanup();
-    render(
-      <ConsoleDialogProvider>
-        <NewSessionForm heading={<h1>title</h1>} />
-      </ConsoleDialogProvider>,
-    );
-    expect(screen.getByText('sessions.new.subtitle')).toBeTruthy();
-    fireEvent.click(screen.getByRole('button', { name: 'project' }));
-    expect(screen.getByText('sessions.new.subtitleProject')).toBeTruthy();
-  });
-
   /** The send gate (05): a host still in the workspace and one repository the body can carry. */
   describe('the send gate', () => {
     function composer() {
@@ -283,7 +334,12 @@ describe('NewSessionForm', () => {
     }
 
     beforeEach(() => {
-      act(() => reads.set({ ...reads.get(), hosts: [{ id: 'host-2' }] }));
+      act(() =>
+        reads.set({
+          ...reads.get(),
+          hosts: [{ id: 'host-2', details: { startsCloud: { 'claude-code': null, codex: null } } }],
+        }),
+      );
       fireEvent.click(screen.getByRole('button', { name: 'host' }));
       fireEvent.change(composer().field, { target: { value: 'Fix the build' } });
     });
@@ -322,14 +378,19 @@ describe('NewSessionForm', () => {
    */
   describe('a folder on the host', () => {
     beforeEach(() => {
-      act(() => reads.set({ ...reads.get(), hosts: [{ id: 'host-2' }] }));
+      act(() =>
+        reads.set({
+          ...reads.get(),
+          hosts: [{ id: 'host-2', details: { startsCloud: { 'claude-code': null, codex: null } } }],
+        }),
+      );
       rendered();
     });
 
-    it('swaps the repository and branch chips for the folder chip, and leaves the composer', () => {
+    it('swaps the repository and branch chips for the folder chip, and leaves the composer and the project', () => {
       fireEvent.click(screen.getByRole('button', { name: 'where' }));
 
-      expect(rendered()).toEqual(['folder', 'host', 'project', 'where']);
+      expect(rendered()).toEqual(['folder', 'place']);
       expect(screen.queryByRole('button', { name: 'repositories' })).toBeNull();
     });
 

@@ -4,7 +4,10 @@ import { CapabilitiesService } from '@oppenheimer/backend-core';
 import type { DeploymentCapabilities } from '@oppenheimer/shared';
 import { botsProviderKeyOf } from '../config/bots.config';
 import { calendarTokenKeyOf } from '../config/calendar.config';
+import { cloudAgentsSealKeyOf } from '../config/cloud-agents.config';
 import { hostsAreConfigured, ipGeolocationIsConfigured } from '../config/hosts.config';
+import { mailTokenKeyOf } from '../config/mail.config';
+import { previewsAreConfigured } from '../config/relay.config';
 import { sessionNamerIsConfigured } from '../config/sessions.config';
 import { speechKeyIsConfigured } from '../config/voice.config';
 
@@ -73,11 +76,22 @@ export function resolveCapabilities(configService: ConfigService): DeploymentCap
         configService.get('oauth.google.clientSecret') &&
         calendarTokenKeyOf(configService.get<string>('calendar.tokenKey')),
     ),
+    // The same Google client and a valid key for Gmail's refresh tokens.
+    gmail: Boolean(
+      configService.get('oauth.google.clientId') &&
+        configService.get('oauth.google.clientSecret') &&
+        mailTokenKeyOf(configService.get<string>('mail.tokenKey')),
+    ),
+    // A valid sealing key for a person's cloud agent vendor keys.
+    cloud_agents: Boolean(cloudAgentsSealKeyOf(configService.get<string>('cloudAgents.sealKey'))),
     // A valid sealing key for the workspaces' model provider keys.
     bot_providers: Boolean(botsProviderKeyOf(configService.get<string>('bots.providerKey'))),
     // The deployment's own speech-to-text server. A workspace signed in to
     // ChatGPT dictates without it; this is every other workspace's way in.
     voice_transcription: speechKeyIsConfigured(configService),
+    // A domain to serve sessions' previews on. The same predicate the preview
+    // routes refuse on, so the Browser tab is never offered to fail.
+    session_previews: previewsAreConfigured(configService),
     // The `console` provider only prints to stdout — that is not delivery.
     email_delivery:
       (emailProvider === 'nodemailer' && Boolean(configService.get('email.smtpHost'))) ||

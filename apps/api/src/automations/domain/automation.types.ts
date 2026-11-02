@@ -1,12 +1,12 @@
-import type { Scope } from '@oppenheimer/shared';
+import type { CreateSessionDto, Scope, StartCloudSessionDto } from '@oppenheimer/shared';
 import type {
   AutomationOverlapPolicy,
   AutomationPausedReason,
   AutomationPermission,
+  AutomationPlace,
   RunCheckoutRule,
   ScheduleRule,
   TriggerFilter,
-  TriggerSource,
 } from '@oppenheimer/shared/automations';
 
 /**
@@ -26,6 +26,15 @@ export type AutomationRunTargetKind = (typeof AUTOMATION_RUN_TARGET_KINDS)[numbe
 export type RunDispatchRef =
   | { kind: 'session'; sessionId: string }
   | { kind: 'bot_turn'; turnId: string };
+
+/**
+ * The session a run starts, in the words of the command that starts it: one
+ * a host runs or starts (`CreateSessionCommand`, Claude Code's cloud among
+ * them), or one a vendor runs with no host (`StartCloudSessionCommand`).
+ */
+export type RunSessionLaunch =
+  | { kind: 'host'; input: CreateSessionDto }
+  | { kind: 'vendor'; input: StartCloudSessionDto };
 
 /** One repository an automation works in, as the revision snapshots it. */
 export interface AutomationRepository {
@@ -56,7 +65,10 @@ export interface BotRevisionProps extends RevisionCommon {
 /** What a session automation's run executes: the prompt and where and how it runs. */
 export interface SessionRevisionProps extends RevisionCommon {
   kind: 'session';
-  hostId: string;
+  /** Where a run's session runs: on the host, in Claude Code's cloud from it, or at a vendor. */
+  place: AutomationPlace;
+  /** The host a run starts on or starts from; null only at a vendor, which needs none. */
+  hostId: string | null;
   agent: string;
   model: string | null;
   permission: AutomationPermission;
@@ -93,6 +105,16 @@ export interface GithubTriggerConfig {
   filter: TriggerFilter;
 }
 
+/**
+ * A Gmail trigger's config (`next-steps/mail.md` §5): the connected account it
+ * watches, and the Gmail query a new message must match, as a filter on the
+ * queries the poll found it matching (`any` for every new message).
+ */
+export interface GmailTriggerConfig {
+  connectionId: string;
+  filter: TriggerFilter;
+}
+
 export type AutomationTriggerProps =
   | {
       id: string;
@@ -106,12 +128,24 @@ export type AutomationTriggerProps =
   | {
       id: string;
       position: number;
-      source: Exclude<TriggerSource, 'schedule'>;
+      source: 'github';
       eventType: string;
       config: GithubTriggerConfig;
       timezone: null;
       nextFireAt: null;
+    }
+  | {
+      id: string;
+      position: number;
+      source: 'gmail';
+      eventType: string;
+      config: GmailTriggerConfig;
+      timezone: null;
+      nextFireAt: null;
     };
+
+/** The external triggers: everything a delivered event can fire. */
+export type EventTriggerProps = Exclude<AutomationTriggerProps, { source: 'schedule' }>;
 
 export interface AutomationLimits {
   overlap: AutomationOverlapPolicy | null;

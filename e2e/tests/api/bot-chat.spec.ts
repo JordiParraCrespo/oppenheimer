@@ -29,7 +29,7 @@ test('a message to a bot whose provider has no key is refused, with nothing queu
   const conversation = (await (
     await api.get(`/api/v1/bots/${bot.id}/conversation`)
   ).json()) as Conversation;
-  expect(conversation).toEqual({ messages: [], turns: [], messageCount: 0 });
+  expect(conversation).toEqual({ messages: [], turns: [], messageCount: 0, storedTextBlocks: {} });
   // An empty chat exports empty and clears to the same; another workspace's bot is not found.
   const exported = await api.get(`/api/v1/bots/${bot.id}/conversation/export`);
   expect(exported.status()).toBe(200);
@@ -105,6 +105,7 @@ test('a GLM bot answers a message, end to end', async () => {
     messages: [],
     turns: [],
     messageCount: 0,
+    storedTextBlocks: {},
   });
   const cleared = (await (await api.get(`/api/v1/bots/${bot.id}`)).json()) as {
     lastMessagePreview: string | null;

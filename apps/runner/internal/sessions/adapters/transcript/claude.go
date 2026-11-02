@@ -10,6 +10,8 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+
+	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/domain"
 )
 
 // readLimit bounds how much of a transcript is read looking for the first
@@ -153,13 +155,14 @@ var (
 // typedText is a message as the person typed it. Claude Code writes a slash
 // command as tags around its name and arguments, which reads as
 // `/name arguments`; a command typed with none, a shell escape and the
-// CLI's own notes say nothing about the task, and are skipped.
+// CLI's own notes (a background task's end among them) say nothing about the task, and are skipped.
 func typedText(text string) string {
 	switch {
 	case text == "",
 		strings.HasPrefix(text, "Caveat:"),
 		strings.HasPrefix(text, "[Request interrupted"),
 		strings.HasPrefix(text, "<local-command-"),
+		strings.HasPrefix(text, "<task-notification>"),
 		strings.HasPrefix(text, "<bash-"):
 		return ""
 	case strings.HasPrefix(text, "<command-"):
@@ -174,3 +177,16 @@ func typedText(text string) string {
 	}
 	return text
 }
+
+// finder implements chatSource: the conversation's file, by its name.
+func (c claudeReader) finder(session domain.Session) (func() string, bool) {
+	conversation := session.Launch.Conversation
+	if !conversationPattern.MatchString(conversation) {
+		return nil, false
+	}
+	return func() string { return c.path(conversation) }, true
+}
+
+// transcriber implements chatSource: each line of Claude Code's transcript
+// is one entry, compacted (claude_chat.go).
+func (c claudeReader) transcriber() chatTranscriber { return lineByLine(c.chatEntry) }

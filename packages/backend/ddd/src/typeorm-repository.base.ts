@@ -3,6 +3,7 @@ import type { FindOptionsWhere, ObjectLiteral, Repository } from 'typeorm';
 import type { Mapper } from './mapper.interface';
 import type { EventfulAggregate, OutboxService } from './outbox/outbox.service';
 import type { RepositoryPort } from './repository.port';
+import { type Versioned, writeVersioned } from './versioned-write';
 
 /**
  * An aggregate that remembers the state it was loaded in, for conditional
@@ -33,10 +34,13 @@ export interface PersistenceTracked {
  * }
  * ```
  *
- * `save` is a blind upsert: right for a create and for an edit where the last
- * writer may win. A state transition two writers can race (claim a run,
- * resolve a request) is a conditional write, `saveIf`, behind a port method
- * named for the transition.
+ * `save` is a blind upsert, kept for the aggregates that predate versioning.
+ * The default for an aggregate whose row more than one writer can change is
+ * `saveVersioned`: the aggregate extends `VersionedAggregateRoot`, the table
+ * has a `version` column, and a write made on a stale copy is refused with
+ * `VersionConflictException`. A transition that answers "who won" rather
+ * than failing (claim a run, resolve a request) is `saveIf`, behind a port
+ * method named for the transition.
  *
  * Tenant-scoped repositories do not extend it, and `ScopedRepositoryBase`
  * (`@oppenheimer/backend-authz`) is not built on it: every read there takes an
@@ -71,6 +75,27 @@ export abstract class TypeOrmRepositoryBase<
       manager.getRepository<Orm>(this.repository.target).save(this.mapper.toPersistence(entity)),
     );
     return this.mapper.toDomain(record);
+  }
+
+  /**
+   * The default write of an existing aggregate: `writeVersioned` on the
+   * manager of the transaction that stages its events, then
+   * `markVersionWritten()` once it committed. A stale copy throws
+   * `VersionConflictException` and writes and stages nothing.
+   */
+  protected async saveVersioned(
+    entity: Aggregate & Versioned & { markVersionWritten(): void },
+  ): Promise<void> {
+    await this.outbox.writeWithEvents([entity], (manager) =>
+      writeVersioned(
+        manager,
+        this.repository.target,
+        entity,
+        this.mapper.toPersistence(entity),
+        this.idColumn,
+      ),
+    );
+    entity.markVersionWritten();
   }
 
   /**

@@ -245,6 +245,8 @@ export interface SessionChoices {
   agent?: string;
   launch?: { model?: string; permission?: string; effort?: string };
   prompt?: string;
+  /** Start it in its agent's cloud (Claude Code's, Codex's) from the host, rather than in a terminal on it. */
+  cloud?: boolean;
 }
 
 /**

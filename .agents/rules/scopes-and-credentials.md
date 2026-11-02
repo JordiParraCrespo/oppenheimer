@@ -1,7 +1,8 @@
 ---
 paths:
   - "apps/api/**/*"
-  - "packages/shared/**/*"
+  - "packages/shared/src/scopes/**/*"
+  - "packages/shared/src/schemas/api-token.schema.ts"
 ---
 
 # Scopes & Credentials Rules

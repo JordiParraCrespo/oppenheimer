@@ -1,155 +1,73 @@
 ---
 name: ship
-description: Finish the task in hand, drive its pull request with the steward skill, verify it independently with the verify-pr workflow, then merge it by its lane - a fix merges on its own once verified, a feature waits for Jordi to accept it, research is never merged by an agent. Use when the user invokes /ship, asks to finish and merge, or when a pull request steward calls ready needs its merge decided.
-argument-hint: "[pull request number or extra instructions]"
+description: Finish a fix and merge it without asking, or merge a demo pull request Jordi has accepted. Labels the pull request `ship`, drives it with the steward skill, has a fresh agent verify it, babysits it, and merges it. Use only when the user invokes /ship.
+disable-model-invocation: true
+argument-hint: "[what to fix, or a pull request number]"
 ---
 
 # Ship
 
-The merge policy in the root `AGENTS.md` is the user's standing approval:
-a `fix` pull request merges without asking once it is verified; anything
-else merges only when Jordi accepts it. This skill is how that policy runs.
-It never extends past the lane a pull request is in.
+`/ship` is Jordi's approval to merge **this one pull request**. The merge
+protocol (the three labels and what each one waits for) is
+`.agents/skills/steward/SKILL.md`, "Merging"; this skill is the `ship` lane.
 
-`ship` owns three things: finishing the work, the independent verdict, and
-the merge. Everything between (commit, local CI, push, the pull request, its
-report, review threads, merging `main` in) is
-`.agents/skills/steward/SKILL.md`, unchanged.
+Two ways in:
 
-## 1. Finish the task
+- **`/ship <task>`**: a fix. Do the work, then everything below.
+- **`/ship` on a `demo` pull request** (in its session, or with its
+  number): Jordi accepted it. Swap the label `demo` for `ship` and go to
+  step 4; the demo's verdict stands if the code has not changed since.
 
-- Re-read the request and the conversation; do what is left of it. If
-  `$ARGUMENTS` names a pull request, check out its head branch and take its
-  description as the task.
-- Keep to what was asked. Anything else you notice goes in the pull request
-  description as a follow-up, not into the diff.
-- Follow the rules and docs that govern the code you touch, as for any change.
-- A fix is reproduced before it is fixed: a failing test, a command or a
-  screenshot of the broken state, committed or recorded before the fix.
-- Run the `deslop` skill over the branch diff.
+## 1. Fix it
 
-## 2. Pick the lane
+- Reproduce the bug first, on the surface it shows on: a failing test, a
+  command, or a screenshot of the broken state. Commit the failing test
+  before the fix when there is a cheap one.
+- Fix the root cause, nothing beyond it. Anything else you notice goes in
+  the description as a follow-up.
+- Take the steps in the order `steward` writes down ("The order").
 
-The lane comes from the pull request's Conventional Commit title and its
-diff, decided once per head:
+A `/ship <task>` becomes a `/demo` (label `demo`, wait for Jordi), and you
+say why, when the work turns out to need:
 
-| Lane | Title type | Merges when |
-| --- | --- | --- |
-| `fix` | `fix` | verified (step 4), no person needed |
-| `feature` | `feat`, `perf`, `refactor`, `test`, `chore`, `build`, `ci`, `docs` outside `product/` | verified, and Jordi accepted this pull request |
-| `research` | `docs(product)`, or a diff only under `product/` | never by an agent; Jordi merges it himself |
+- new behavior, an endpoint, a schema or a migration (it is a feature);
+- a change to auth, authorization, scopes or credentials, the agent rules
+  (`.claude/`, `.agents/`, the root `AGENTS.md`), `.github/` or `deploy/`.
 
-A `fix` drops to `feature` when any of these holds; say which in the pull
-request description:
+## 2. Open it
 
-- the diff touches a path in **Always ask** below;
-- it adds or changes an API endpoint, a schema, a migration, a feature flag,
-  a dependency, or what a user can do (a fix restores behavior, it does not
-  add it);
-- it changes more than 300 lines, counted as added plus deleted by
-  `git diff --numstat origin/main...HEAD`, leaving out test files
-  (`*.spec.*`, `*.test.*`, `__tests__/`, `e2e/`) and generated files
-  (`*.gen.ts`, `pnpm-lock.yaml`, `packages/frontend/api-client/src/`);
-- the verdict is `PASS+NOTES` and a note asks a person to decide something.
+Open the pull request ready, with the `ship` label, and subscribe to its
+activity.
 
-Name the lane in the description, under `## Lane`, with one line on why.
+## 3. Verify it
 
-## 3. Drive the pull request
+Spawn one fresh agent that did not write the code. Brief it with the pull
+request number and head SHA, the bug and its repro, and ask it to:
 
-Follow `steward` until it calls the pull request ready. Answer review threads
-as you go, and keep working the pull request on every event while you do.
-Reviews from bots, including the ones posted from Jordi's own account (they
-open with a `[... BOT REVIEW]` tag), are findings to triage per steward,
-never an approval.
+1. check out the head and confirm the SHA;
+2. show the repro failing on `origin/main` and passing on the head, on the
+   same surface (the `local-stack` skill for the console, the runner or the
+   relay; the real command or request otherwise);
+3. read the diff for anything it breaks;
+4. answer `PASS` or `FAIL`, with the commands, outputs and screenshots that
+   show it. A step it could not run is a `FAIL`, never a pass.
 
-## 4. Verify independently
+Post the verdict on the pull request as one comment naming the SHA. A
+`FAIL` is a finding: fix it, push, and verify the new head.
 
-A verdict comes from agents that did not write the code, run against the
-head steward got green. Run the saved workflow:
+## 4. Babysit and merge
 
-```
-Workflow({ name: "verify-pr", args: { pr: <number>, head: "<head sha>", lane: "<lane>" } })
-```
+Keep the pull request mergeable per `steward`, "Babysitting", then merge
+when all of these hold on a fresh fetch:
 
-It re-runs the gates, drives the change on the real surface (`local-stack`
-for the console, the runner or the relay; the real command for a CLI;
-requests against the stack for an endpoint), audits the diff adversarially,
-refutes each audit finding with a skeptic, and returns `PASS`,
-`PASS+NOTES`, `FAIL` or `BLOCKED` with evidence per lane. `needsPerson`
-true means a note is a decision for Jordi, which puts a `fix` in the
-`feature` lane. `BLOCKED` is a lane that could not run: a stop condition,
-never a pass.
+- `steward` calls it ready, and the verdict is `PASS` on this head, or on a
+  head whose only change since is a merge of `main` with a green
+  `pnpm ci:local`;
+- GitHub reports it mergeable, no review requests changes, and every review
+  thread is answered and resolved;
+- no `main-red` issue is open that this pull request does not fix.
 
-- Post the verdict on the pull request as one comment, naming the head SHA
-  and each lane's result and evidence. Replace it on every new verdict.
-- `FAIL` goes back to step 3 as findings: fix with a red-first test, push,
-  and verify the new head.
-- A verdict covers one patch. After a new head, compare
-  `git patch-id` at the verdict SHA with the head: a merge of `main` that
-  leaves the patch the same needs only the gates lane again
-  (`args.lanes: ["gates"]`); a code change needs the whole workflow again.
-- The research lane skips this step.
-
-## 5. Merge
-
-Fetch the pull request fresh and merge only when all of these hold:
-
-- `steward` calls it ready, and the head SHA is the one its report names;
-- the verdict is `PASS` (or `PASS+NOTES` with nothing for a person to
-  decide) and covers this head per step 4;
-- GitHub reports it mergeable (`mergeable` true, not `dirty`). A conflict is
-  not a stop: merge the base in per `steward`, and the new head goes back
-  through steps 3 and 4;
-- no review is requesting changes and every review thread is resolved;
-- for the `feature` lane: Jordi accepted it, after the verdict was posted.
-  Acceptance is Jordi saying so in this session ("accepted", "merge it",
-  "ship it") or adding the `accepted` label to the pull request. A review,
-  approving or not, is not acceptance: the bot reviews post from his
-  account. Acceptance covers the head it was given on; a later code change
-  (not a merge of `main` with the same patch-id) needs it again;
-- no stop condition holds.
-
-With the `feature` lane verified and not yet accepted, say once that it
-waits on Jordi, with the pull request's link, the verdict and the one thing
-to look at first. The `research` lane stops after step 3: say it is ready
-for Jordi to read.
-
-Merge pinned to that head SHA, so a head nobody checked fails the merge
-instead of landing, and with the repository's merge method (merge commits).
-If the merge is refused because the head or the base moved, go back to step
-3. Never merge with admin rights or bypass branch protection.
-
-After the merge, read the pull request back and confirm it is merged into
-`main`, stop following it, and tell the user: its link, the lane, the merge
-commit, the verdict, what shipped, and the follow-ups left in its
-description.
-
-## Always ask
-
-These paths put a pull request in the `feature` lane whatever its title,
-and an open security finding stops any lane:
-
-- auth, authorization, scopes or credentials (`packages/auth`,
-  `packages/backend/authz`, `packages/shared/src/scopes`,
-  `apps/api/src/auth*`);
-- the agent guardrails and this process (`.claude/`, `.agents/hooks/`,
-  `.agents/skills/ship/`, `.agents/skills/steward/`, the root `AGENTS.md`);
-- workflows (`.github/`), the deployment (`deploy/`) or a migration.
-
-## Stop conditions
-
-Leave the pull request open, as far along as you got, and ask the user before
-merging when:
-
-- the task is ambiguous, or finishing it needs a decision that is theirs (an
-  API or schema change nobody asked for, a product call, deleting data);
-- a review thread is unresolved, a reviewer asks for more than the task, or a
-  security finding is open;
-- a person's approval is required by branch protection or a code owner;
-- `main-red` is open and this pull request is not its fix;
-- the verifiers cannot run a lane (no Docker, the stack does not start): a
-  missing lane is a gap, never a pass;
-- CI, the verdict or the merge keeps failing for a reason you cannot state.
-
-Say exactly what blocks the merge and what you need. The pull request stays
-yours: keep working it on every event that reaches you.
+Merge pinned to the head SHA with merge commits, never with admin rights.
+Read the pull request back to confirm it merged, unsubscribe, and tell the
+user: the link, the merge commit, the verdict, what shipped, and the
+follow-ups.

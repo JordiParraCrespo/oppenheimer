@@ -5,7 +5,8 @@ import {
   type BotTurnRequest,
   DEFAULT_MAX_STEPS,
 } from '../bot-engine';
-import { failed, guardTurn, messageParts, runTool, ToolCallData } from '../turn';
+import { deliverSteers, failed, guardTurn, messageParts, runTool, ToolCallData } from '../turn';
+import { CodexLimitsRecorder } from './codex-limits';
 import { OpenAiEventTranslator, type OpenAiStreamEvent } from './openai-events';
 
 /**
@@ -71,17 +72,28 @@ function userMessage(request: BotTurnRequest): AgentInputItem {
 export interface ResponsesEndpoint {
   baseUrl?: string;
   modelSettings: Record<string, unknown>;
+  /**
+   * The endpoint answers with the subscription's usage windows in its
+   * headers (ChatGPT's Codex backend), which the turn's `usage` then carries.
+   */
+  reportsPlanLimits?: boolean;
 }
 
 /** Provider `openai`, on the OpenAI Agents SDK over the Responses API. */
 export class OpenAiBotEngine extends BotEngine {
   run(request: BotTurnRequest): AsyncIterable<BotEngineEvent> {
     const endpoint = this.endpoint(request);
-    if (typeof endpoint === 'string') return guardTurn(request, () => [failed(endpoint)]);
+    if (typeof endpoint === 'string') {
+      return guardTurn(request, () => [failed(endpoint, 'credential')]);
+    }
     return guardTurn(request, () => this.stream(request, endpoint));
   }
 
-  /** OpenAI's API, or the request's `baseUrl`; a string refuses the turn with that reason. */
+  /**
+   * OpenAI's API, or the request's `baseUrl`; a string refuses the turn with
+   * that reason, as a credential failure: what refuses is a sign-in that
+   * lacks what it needs (ChatGPT's account).
+   */
   protected endpoint(request: BotTurnRequest): ResponsesEndpoint | string {
     return { baseUrl: request.baseUrl, modelSettings: {} };
   }
@@ -97,10 +109,21 @@ export class OpenAiBotEngine extends BotEngine {
     const made = new ToolCallData();
     const translator = new OpenAiEventTranslator((callId) => failedCalls.has(callId), made);
 
-    const modelProvider = new sdk.OpenAIProvider({
-      apiKey: request.apiKey,
-      ...(baseUrl ? { baseURL: baseUrl } : {}),
-    });
+    // An endpoint that reports the plan's windows is fetched through a
+    // recorder that reads each answer's headers on the way past.
+    const limits = endpoint.reportsPlanLimits ? new CodexLimitsRecorder() : null;
+    const modelProvider = limits
+      ? new sdk.OpenAIProvider({
+          openAIClient: new (await import('openai')).default({
+            apiKey: request.apiKey,
+            ...(baseUrl ? { baseURL: baseUrl } : {}),
+            fetch: limits.fetch,
+          }),
+        })
+      : new sdk.OpenAIProvider({
+          apiKey: request.apiKey,
+          ...(baseUrl ? { baseURL: baseUrl } : {}),
+        });
     // Tracing would export the turn to OpenAI's trace store under a key read
     // from the environment; a bot's turn is recorded by Oppenheimer.
     const runner = new sdk.Runner({ modelProvider, tracingDisabled: true });
@@ -115,14 +138,19 @@ export class OpenAiBotEngine extends BotEngine {
           parameters: toolParameters(tool.inputSchema),
           strict: false,
           execute: async (input, _context, details) => {
+            const callId = details?.toolCall?.callId;
             const result = await runTool(tool, input, {
               signal: request.signal,
               apiKey: request.apiKey,
+              ...(callId ? { callId } : {}),
             });
-            const callId = details?.toolCall?.callId;
             if (result.isError && callId) failedCalls.add(callId);
             made.record(callId, result.data);
-            return result.content;
+            return deliverSteers(
+              result.content,
+              { steering: request.steering, signal: request.signal, callId },
+              made,
+            );
           },
         }),
       ),
@@ -147,6 +175,6 @@ export class OpenAiBotEngine extends BotEngine {
     } catch (thrown) {
       error = thrown;
     }
-    yield* translator.finish(error);
+    yield* translator.finish(error, limits?.latest ?? null);
   }
 }

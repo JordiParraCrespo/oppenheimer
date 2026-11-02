@@ -1,14 +1,13 @@
-import { TerminalStatusItem } from '@oppenheimer/design-system-web';
-import { CircleCheck } from '@oppenheimer/design-system-web/icons';
+import { SessionPaneBack } from '@oppenheimer/design-system-web';
 import { useSessionTasks } from '@oppenheimer/frontend-consumer/react';
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 
 /**
- * "Back to task" in a session's status bar (`18-plan-product.md` §4): the
- * title of the task the session is on, opening Plan on it. With several, the
- * task the session was started from, else the one it was linked to last.
- * Nothing for a session on no task.
+ * "Back to task" at the head of a session's bar (`18-plan-product.md` §4, the
+ * frame's `taskTitle` before a slash): the title of the task the session is
+ * on, opening Plan on it. With several, the task the session was started
+ * from, else the one it was linked to last. Nothing for a session on no task.
  */
 export function SessionTaskLink({ sessionId }: { sessionId: string }) {
   const { t } = useTranslation();
@@ -24,16 +23,16 @@ export function SessionTaskLink({ sessionId }: { sessionId: string }) {
   if (!task) return null;
 
   return (
-    <TerminalStatusItem>
-      <Link
-        to="/plan"
-        search={{ task: task.id }}
+    <>
+      <SessionPaneBack
+        render={<Link to="/plan" search={{ task: task.id }} />}
         title={t('tasks.backToTask')}
-        className="flex max-w-60 items-center gap-1.5 text-term-fg hover:underline"
       >
-        <CircleCheck className="size-3 shrink-0" aria-hidden />
-        <span className="truncate">{task.title}</span>
-      </Link>
-    </TerminalStatusItem>
+        {task.title}
+      </SessionPaneBack>
+      <span aria-hidden className="shrink-0 text-fg-subtle">
+        /
+      </span>
+    </>
   );
 }

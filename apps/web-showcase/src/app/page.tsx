@@ -59,6 +59,7 @@ import { DatePickerDemo, MonthCalendarDemo } from '../components/calendar-demos'
 import { DiffDemo } from '../components/diff-demos';
 import { ChatSection } from '../components/chat-demos';
 import { EmployeesSection } from '../components/employee-demos';
+import { InboxSpec } from '../components/inbox-demos';
 import {
   AreaChartDemo,
   CalendarAccountsDemo,
@@ -78,6 +79,7 @@ import {
 
   CarouselDemo,
   ComposerDemo,
+  ComposerPillDemo,
   AddHostDialogDemo,
   DestructiveDialogDemo,
   CheckboxDemo,
@@ -130,6 +132,12 @@ import {
 import { AlertDemo, BadgeDemo, CommandDemo, SkeletonDemo, ToastDemo } from '@/components/feedback';
 import { GroupHead, PageHead, PageShell, Spec, Swatch, ThemePair } from '@/components/page-shell';
 import { TOC_COUNT } from '@/lib/toc';
+
+/** A bot's providers that have no coding agent of their own, drawn with marks of theirs. */
+const PROVIDER_MARKS = [
+  { id: 'glm', label: 'GLM' },
+  { id: 'chatgpt', label: 'ChatGPT' },
+] as const;
 
 export default function Page() {
   return (
@@ -665,7 +673,7 @@ export default function Page() {
         id="agentmark"
         title="AgentMark"
         meta="agent-mark.tsx"
-        desc="The coding agent's mark at 15px. Claude Code carries Anthropic's mark in its own orange, Codex the OpenAI mark, OpenCode its square and Grok its slashed circle in the current ink, and Blank terminal a terminal glyph. An unknown id falls back to the bot."
+        desc="The coding agent's mark at 15px. Claude Code carries Anthropic's mark in its own orange, Codex the OpenAI mark, OpenCode its square, Grok its slashed circle and Cursor (a cloud agent) its cube in the current ink, and Blank terminal a terminal glyph. A bot's providers without a coding agent of their own take theirs: GLM Z.ai's mark, ChatGPT OpenAI's, having none of its own. An unknown id falls back to the bot."
         code={`<AgentMark agent="claude-code" />`}
       >
         {CODING_AGENT_IDS.map((agent) => (
@@ -673,6 +681,20 @@ export default function Page() {
             <span className="flex items-center gap-2.5 text-sm text-fg">
               <AgentMark agent={agent} />
               {CODING_AGENTS[agent].label}
+            </span>
+          </Swatch>
+        ))}
+        <Swatch label="cursor">
+          <span className="flex items-center gap-2.5 text-sm text-fg">
+            <AgentMark agent="cursor" />
+            Cursor
+          </span>
+        </Swatch>
+        {PROVIDER_MARKS.map(({ id, label }) => (
+          <Swatch key={id} label={id}>
+            <span className="flex items-center gap-2.5 text-sm text-fg">
+              <AgentMark agent={id} />
+              {label}
             </span>
           </Swatch>
         ))}
@@ -761,6 +783,7 @@ export default function Page() {
           <Input size="md" placeholder="md · 34" leading={<SearchIcon />} />
           <Input size="lg" placeholder="lg · 42" />
           <Input pill placeholder="Search sessions" leading={<SearchIcon />} trailing={<Kbd>⌘K</Kbd>} />
+          <Input quiet placeholder="Search bots (quiet, a popup's search)" leading={<SearchIcon />} />
           <Input disabled placeholder="Disabled" />
         </div>
       </Spec>
@@ -896,7 +919,7 @@ export default function Page() {
         id="composer"
         title="Composer"
         meta="composer.tsx"
-        desc="The prompt box: an 18px field with a growing textarea, then the foot row, which reads left to right as scope of action, then engine. Bottom left is what the run may touch: attachments and the permission level. Bottom right is who drives it and how hard it thinks: the agent and model, the effort, then mic and the round primary send. Enter submits, Shift+Enter breaks a line; while busy the send button becomes stop. On New session the composer is tabbed: the scope chips sit in a grey band fused to the top of the field, each a borderless ChipSelectTrigger in its tab variant, so host, repositories and branch read as one sentence over the box, which grows to 128px at 15px."
+        desc="The prompt box: an 18px field with a growing textarea, then the foot row, which reads left to right as scope of action, then engine. Bottom left is what the run may touch: attachments and the permission level. Bottom right is who drives it and how hard it thinks: the agent and model, the effort, then mic and the round primary send. Enter submits, Shift+Enter breaks a line; while busy the send button becomes stop. On New session the composer is tabbed: the scope chips sit in a grey band fused to the top of the field, each a borderless ChipSelectTrigger in its tab variant, so host, repositories and branch read as one sentence over the box, which grows to 128px at 15px. New session itself now opens on ComposerPill: one 28px-radius box, Add files at the start of a line that grows, the mic and send at its end, and under it a ComposerChoices row — where it runs and what it may touch on the left, the agent and effort pushed right."
         code={`<Composer value={v} onValueChange={setV} onSubmit={start} onAttach={pick}
   scope={<><ChipSelect variant="tab" … /><RepositorySelect variant="tab" … /></>}
   tools={<PermissionMenu options={levels} value={level} onValueChange={setLevel} />}
@@ -905,6 +928,7 @@ export default function Page() {
         <ComposerDemo />
         <ComposerDemo full />
         <ComposerDemo full blocked="fable is offline — pick another host" />
+        <ComposerPillDemo />
       </Spec>
 
       <Spec
@@ -1111,6 +1135,8 @@ export default function Page() {
       >
         <RoutineItemsDemo />
       </Spec>
+
+      <InboxSpec />
 
       <Spec
         id="pilltabs"
@@ -1344,11 +1370,12 @@ const drag = useDraggable({ id, data: { type: 'task' } });    // drag.handleProp
 
       <Spec
         id="facetselect"
-        title="FacetSelect"
-        meta="facet-select.tsx"
-        desc="One facet of a list's filter picked from a short menu: the first option is the facet unset, and any other pick lights the trigger on the selected wash so a narrowed list never looks whole. The menu is radio rows with the count each pick would leave. pill (30px) is Plan's board: the icon, then the facet's name or the pick. labelled (34px) is the pull-request queue: the facet's name muted, then the current option."
+        title="FacetSelect · SearchableFacetSelect · SearchList"
+        meta="facet-select.tsx · search-list.tsx"
+        desc="One facet of a list's filter: the first option is the facet unset, and any other pick lights the trigger on the selected wash so a narrowed list never looks whole. FacetSelect is a fixed set as radio rows with the count each pick would leave (the queue's Difficulty, Checks, Waiting). SearchableFacetSelect is the same trigger over a list the workspace grows (Plan's Project and Milestone): it opens a SearchList, the Bots picker's shape, a search field over menu rows with the count and the check. SearchList is that body alone, for a menu's submenu or pane, or a set of checks (the card below). pill (30px) is Plan's board; labelled (34px) is the pull-request queue."
         code={`<FacetSelect label="Difficulty" options={lanes} value={lane} onValueChange={setLane} />
-<FacetSelect variant="pill" label="Project" icon={<FolderIcon />} options={projects} value={project} onValueChange={setProject} />`}
+<SearchableFacetSelect variant="pill" label="Project" icon={<FolderIcon />} options={projects} value={project} onValueChange={setProject} searchPlaceholder="Search projects" emptyText={(q) => \`Nothing matches “\${q}”.\`} />
+<SearchList options={projects} value={shown} onPick={(option, selected) => toggle(option.value, selected)} searchPlaceholder="Search projects" emptyText={noMatch} />`}
       >
         <FacetSelectDemo />
       </Spec>

@@ -6,15 +6,17 @@
  * live spec runs the real subprocess.
  */
 import { getEventListeners } from 'node:events';
+import { existsSync } from 'node:fs';
 import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
 import type { Options, Query, SDKMessage } from '@anthropic-ai/claude-agent-sdk';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { InMemoryTransport } from '@modelcontextprotocol/sdk/inMemory.js';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { BotEngineEvent, BotEngineTool, BotTurnRequest } from '../../bot-engine';
+import { steerNote } from '../../turn';
 import { ClaudeBotEngine } from '../claude-bot-engine';
 import { BUILT_IN_TOOLS, DISALLOWED_TOOLS, GLM_BASE_URL } from '../claude-options';
 
@@ -143,6 +145,67 @@ describe('ClaudeBotEngine', () => {
       { type: 'usage', inputTokens: 15, outputTokens: 5 },
       { type: 'done', reason: 'completed' },
     ]);
+  });
+
+  it('runs a turn that brings no scratch directory in one of its own, and removes it after', async () => {
+    // A completion's caller need not know this engine is the one that needs a
+    // directory: without one it makes its own, and leaves nothing behind.
+    let cwdExisted = false;
+    const { seen } = scripted((options) => {
+      cwdExisted = existsSync(options.cwd ?? '');
+      return [assistant([{ type: 'text', text: 'ok' }]), success()];
+    });
+
+    const events = await collect(new ClaudeBotEngine().run(request({ scratchDir: undefined })));
+
+    expect(events.at(-1)).toEqual({ type: 'done', reason: 'completed' });
+    const cwd = seen.options?.cwd ?? '';
+    expect(cwd.startsWith(join(tmpdir(), 'claude-turn-'))).toBe(true);
+    expect(cwdExisted).toBe(true);
+    expect(existsSync(dirname(cwd))).toBe(false);
+  });
+
+  it('reports what the last answer was sent, against the window of the model that read the most', async () => {
+    const answer = (sent: number, parent: string | null = null) =>
+      ({
+        type: 'assistant',
+        parent_tool_use_id: parent,
+        message: {
+          content: [{ type: 'text', text: 'step' }],
+          usage: { input_tokens: 2, cache_read_input_tokens: sent - 2, output_tokens: 40 },
+        },
+      }) as unknown as SDKMessage;
+    const model = (read: number, contextWindow: number) => ({
+      inputTokens: read,
+      outputTokens: 0,
+      cacheReadInputTokens: 0,
+      cacheCreationInputTokens: 0,
+      webSearchRequests: 0,
+      costUSD: 0,
+      contextWindow,
+      maxOutputTokens: 0,
+    });
+    scripted(() => [
+      answer(30_000),
+      // A subagent's call is its own context, not the bot's.
+      answer(90_000, 'toolu_parent'),
+      answer(41_000),
+      success({
+        modelUsage: {
+          'model-main': model(71_000, 1_000_000),
+          'model-small': model(9_000, 200_000),
+        },
+      }),
+    ]);
+
+    const events = await collect(new ClaudeBotEngine().run(request()));
+
+    expect(events.find((event) => event.type === 'usage')).toEqual({
+      type: 'usage',
+      inputTokens: 15,
+      outputTokens: 5,
+      context: { tokens: 41_000, window: 1_000_000 },
+    });
   });
 
   it('runs our tools through the in-process MCP server, under our names, with the key redacted', async () => {
@@ -289,6 +352,74 @@ describe('ClaudeBotEngine', () => {
       content: [{ type: 'text', text: 'Started it.' }],
       isError: false,
     });
+  });
+
+  it('hands the model what the person sent meanwhile with the call it rode, and reports it after that call', async () => {
+    const time: BotEngineTool = {
+      name: 'get_time',
+      description: 'The time',
+      inputSchema: { type: 'object', properties: {} },
+      run: async () => ({ content: '13:37 UTC' }),
+    };
+    const steers = [{ id: 'message-1', text: 'Use Tokyo time instead.' }];
+    const waiting = [steers];
+    let modelRead: unknown;
+    scripted(async function* (options) {
+      const server = (options.mcpServers as Record<string, { instance: McpServer }>).oppenheimer
+        .instance;
+      const [clientSide, serverSide] = InMemoryTransport.createLinkedPair();
+      await server.connect(serverSide);
+      const client = new Client({ name: 'test', version: '1.0.0' });
+      await client.connect(clientSide);
+      const result = await client.callTool({
+        name: 'get_time',
+        arguments: {},
+        _meta: { 'claudecode/toolUseId': 'toolu_1' },
+      });
+      // Claude Code names no tool use: nothing is taken that could not be reported.
+      await client.callTool({ name: 'get_time', arguments: {} });
+      modelRead = result;
+      await client.close();
+      yield assistant([
+        { type: 'tool_use', id: 'toolu_1', name: 'mcp__oppenheimer__get_time', input: {} },
+      ]);
+      yield toolResults([{ type: 'tool_result', tool_use_id: 'toolu_1', content: result.content }]);
+      yield success();
+    });
+    let asks = 0;
+
+    const events = await collect(
+      new ClaudeBotEngine().run(
+        request({
+          tools: [time],
+          steering: {
+            take: async () => {
+              asks += 1;
+              return waiting.shift() ?? [];
+            },
+          },
+        }),
+      ),
+    );
+
+    expect(asks).toBe(1);
+    expect(modelRead).toEqual({
+      content: [{ type: 'text', text: `13:37 UTC${steerNote(steers)}` }],
+      isError: false,
+    });
+    expect(
+      events.filter((event) => event.type.startsWith('tool.') || event.type === 'steered'),
+    ).toEqual([
+      { type: 'tool.started', callId: 'toolu_1', name: 'get_time', input: {} },
+      {
+        type: 'tool.finished',
+        callId: 'toolu_1',
+        name: 'get_time',
+        output: '13:37 UTC',
+        isError: false,
+      },
+      { type: 'steered', callId: 'toolu_1', steers },
+    ]);
   });
 
   it('keeps built-in tool names and reports their results', async () => {
@@ -545,6 +676,65 @@ describe('ClaudeBotEngine', () => {
     expect(done.rateLimit?.resetAt?.getTime()).toBeGreaterThanOrEqual(before + 45_000);
   });
 
+  // The SDK names each failed model call (`SDKAssistantMessageError`); the
+  // chat says from it whether a retry can help.
+  it.each([
+    ['authentication_failed', 'credential'],
+    ['billing_error', 'usage_limit'],
+    ['invalid_request', 'refused'],
+    ['overloaded', 'unavailable'],
+    ['max_output_tokens', 'other'],
+  ])('reads the SDK’s %s as a %s failure', async (code, failure) => {
+    scripted(() => [
+      assistant([{ type: 'text', text: `API Error: ${code}` }], { error: code }),
+      success({ is_error: true, result: 'API Error' }),
+    ]);
+
+    const done = (await collect(new ClaudeBotEngine().run(request()))).at(-1);
+
+    expect(done).toMatchObject({ type: 'done', reason: 'failed', failure });
+    expect(done).not.toHaveProperty('rateLimit');
+  });
+
+  // The chat shows the wait while Claude Code retries, rather than "thinking"
+  // for the minutes a backoff can take.
+  it('says it is retrying when Claude Code retries a refused call, and why', async () => {
+    scripted(() => [
+      {
+        type: 'system',
+        subtype: 'api_retry',
+        retry_delay_ms: 30_000,
+        error_status: 429,
+        error: 'rate_limit',
+      } as unknown as SDKMessage,
+      {
+        type: 'system',
+        subtype: 'api_retry',
+        error_status: 529,
+        error: 'overloaded',
+      } as unknown as SDKMessage,
+      success({ result: 'ok' }),
+    ]);
+
+    const events = await collect(new ClaudeBotEngine().run(request()));
+
+    expect(events.filter((event) => event.type === 'retrying')).toEqual([
+      { type: 'retrying', reason: 'rate_limit', delayMs: 30_000 },
+      { type: 'retrying', reason: 'unavailable', delayMs: null },
+    ]);
+  });
+
+  it('marks a rate limit as that kind of failure', async () => {
+    scripted(() => [
+      assistant([{ type: 'text', text: 'API Error: 429' }], { error: 'rate_limit' }),
+      success({ is_error: true, result: 'API Error', api_error_status: 429 }),
+    ]);
+
+    const done = (await collect(new ClaudeBotEngine().run(request()))).at(-1);
+
+    expect(done).toMatchObject({ type: 'done', reason: 'failed', failure: 'rate_limit' });
+  });
+
   it('takes the reset of a rejected limit, and says nothing of one on any other failure', async () => {
     scripted(() => [
       {
@@ -560,6 +750,30 @@ describe('ClaudeBotEngine', () => {
     const other = (await collect(new ClaudeBotEngine().run(request()))).at(-1);
     expect(other).toMatchObject({ type: 'done', reason: 'failed' });
     expect(other).not.toHaveProperty('rateLimit');
+  });
+
+  // Seen on the local stack: a bad key ended as a generic failure with Retry,
+  // because the SDK throws after Claude Code's error result and the throw,
+  // not the result, decided how the turn ended.
+  it('ends a run the SDK throws on after an error result as that result says, kind included', async () => {
+    scripted(() => ({
+      async *[Symbol.asyncIterator]() {
+        yield assistant([{ type: 'text', text: 'Invalid API key · Fix external API key' }], {
+          error: 'authentication_failed',
+        });
+        yield success({ is_error: true, result: 'Invalid API key · Fix external API key' });
+        throw new Error('Claude Code returned an error result: Invalid API key');
+      },
+    }));
+
+    const done = (await collect(new ClaudeBotEngine().run(request()))).at(-1);
+
+    expect(done).toMatchObject({
+      type: 'done',
+      reason: 'failed',
+      failure: 'credential',
+      error: 'Invalid API key · Fix external API key',
+    });
   });
 
   it('turns a crashed subprocess into a failed end that carries its stderr', async () => {

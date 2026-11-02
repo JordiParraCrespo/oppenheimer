@@ -13,6 +13,7 @@ import { CompleteSignUpCommand } from '../commands/complete-sign-up/complete-sig
 import { RotateDelegatedSessionsCommand } from '../commands/rotate-delegated-sessions/rotate-delegated-sessions.command';
 import { standingChangeOf } from './admin-ban-hook.util';
 import { dispatchFromAuthHook } from './auth-command-bus.util';
+import { authRateLimit } from './auth-rate-limit.util';
 import { betterAuthSecondaryStorage, sessionStore } from './better-auth-secondary-storage.adapter';
 import { emailQueue, enqueueEmailBestEffort } from './email-queue.util';
 import { buildInvitationUrl } from './invitation-url.util';
@@ -123,31 +124,11 @@ export const auth = betterAuth({
   // its `maxAge`. See `product/versions/mvp/08-auth.md`.
   secondaryStorage: betterAuthSecondaryStorage,
   trustedOrigins: [frontendUrl],
-  // Brute-force protection on the auth surface. `/api/auth/*` is mounted on the
-  // HTTP adapter before Nest binds middleware, so the NestJS ThrottlerGuard
-  // never sees these routes — Better Auth's own limiter is the only thing that
-  // can guard them. `storage: 'database'` keeps the counters in Postgres so the
-  // limit holds across API replicas and restarts, unlike the default per-process
-  // memory store.
-  //
-  // Enabled in production (Better Auth's own default), where brute force is the
-  // real threat. It stays off in development and test so an e2e suite that signs
-  // in repeatedly from one IP is not throttled into failure; a non-production
-  // deployment that faces the internet opts in with `AUTH_RATE_LIMIT_ENABLED=true`.
-  rateLimit: {
-    enabled:
-      process.env.NODE_ENV === 'production' || process.env.AUTH_RATE_LIMIT_ENABLED === 'true',
-    storage: 'database',
-    window: 60,
-    max: 100,
-    customRules: {
-      '/sign-in/email': { window: 60, max: 10 },
-      '/sign-up/email': { window: 60, max: 5 },
-      '/forget-password': { window: 60, max: 3 },
-      '/request-password-reset': { window: 60, max: 3 },
-      '/reset-password': { window: 60, max: 5 },
-    },
-  },
+  // Brute-force protection on the auth surface, on everywhere but under test.
+  rateLimit: authRateLimit({
+    AUTH_RATE_LIMIT_ENABLED: process.env.AUTH_RATE_LIMIT_ENABLED,
+    NODE_ENV: process.env.NODE_ENV,
+  }),
   advanced: {
     // Generate UUIDs so the ids stay compatible with the existing
     // `ParseUUIDPipe` validation on the `/users/:id` routes.

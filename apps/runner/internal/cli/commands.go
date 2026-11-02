@@ -275,7 +275,11 @@ func (a *App) moveWorkspaces(ctx context.Context, p *printer, dir string) error 
 	}
 	var held []string
 	for _, session := range a.Sessions.List() {
-		if hasCheckoutUnder(a.Paths.Workspaces, session.Dir) || hasCheckoutUnder(a.Paths.Workspaces, session.Worktree) {
+		under := hasCheckoutUnder(a.Paths.Workspaces, session.Dir)
+		for _, checkout := range session.Checkouts() {
+			under = under || hasCheckoutUnder(a.Paths.Workspaces, checkout.Worktree)
+		}
+		if under {
 			held = append(held, session.ID)
 		}
 	}

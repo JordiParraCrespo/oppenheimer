@@ -49,6 +49,24 @@ describe('BotEntity', () => {
     expect([...bot.editedFields]).toEqual(expect.arrayContaining(['provider', 'model', 'effort']));
   });
 
+  it('shows in no section until named, and keeps a set of them in catalog order', () => {
+    expect(newBot().sections).toEqual([]);
+    expect(newBot({ sections: ['pulls', 'sessions'] }).sections).toEqual(['sessions', 'pulls']);
+    const bot = BotEntity.create({ id: randomUUID(), props: { ...newBot().getProps() } });
+    bot.edit({ sections: ['plan', 'automations', 'plan'] });
+    expect(bot.sections).toEqual(['automations', 'plan']);
+    expect([...bot.editedFields]).toEqual(['sections']);
+  });
+
+  it('refuses a section the console does not have rather than dropping it', () => {
+    expect(() => newBot({ sections: ['inbox' as never] })).toThrow(
+      'inbox is not a console section',
+    );
+    const bot = newBot({ sections: ['plan'] });
+    expect(() => bot.edit({ sections: ['plan', 'inbox' as never] })).toThrow();
+    expect(bot.sections).toEqual(['plan']);
+  });
+
   it('refuses a blank name', () => {
     expect(() => newBot().edit({ name: '   ' })).toThrow();
   });

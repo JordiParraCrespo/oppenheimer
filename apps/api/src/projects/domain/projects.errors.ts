@@ -10,11 +10,6 @@ export const ProjectErrors = {
     message: 'Project not found',
     httpStatus: 404,
   },
-  NO_ACTIVE_ORGANIZATION: {
-    code: 'PROJECTS_002',
-    message: 'Projects belong to an organization',
-    httpStatus: 400,
-  },
   /**
    * No module contributed an answer to "is any session still open here", so
    * archiving refuses rather than assume there is none (fail-closed).

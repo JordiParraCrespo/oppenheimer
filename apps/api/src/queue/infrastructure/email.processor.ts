@@ -98,13 +98,13 @@ export class EmailProcessor extends WorkerHost {
       case 'host-paired': {
         const target = this.mapper.toLocaleTarget(job.data);
         const t = await this.formatter(target);
-        await this.emailService.sendHostPaired(target.to, this.mapper.toHostPaired(job.data, t));
+        await this.emailService.sendAction(target.to, this.mapper.toHostPaired(job.data, t));
         break;
       }
       case 'host-network-changed': {
         const target = this.mapper.toLocaleTarget(job.data);
         const t = await this.formatter(target);
-        await this.emailService.sendHostNetworkChanged(
+        await this.emailService.sendAction(
           target.to,
           this.mapper.toHostNetworkChanged(job.data, t),
         );

@@ -413,7 +413,12 @@ export class AutomationRunRepository
   }
 
   async countLiveOnHost(hostId: string, excludingRunId: string, since: Date): Promise<number> {
-    return this.countLive(`rev."hostId" = $1`, [hostId, excludingRunId, since]);
+    // A cloud session holds no place on the host that started it.
+    return this.countLive(`rev."hostId" = $1 AND rev."place" = 'host'`, [
+      hostId,
+      excludingRunId,
+      since,
+    ]);
   }
 
   async findLiveDispatchedBefore(before: Date, notBefore: Date, batch: number): Promise<LiveRun[]> {
@@ -465,7 +470,7 @@ export class AutomationRunRepository
   async claimSlot(params: {
     runId: string;
     automationId: string;
-    hostId: string;
+    hostId: string | null;
     liveRunsPerHost: number;
     overlap: string;
     liveSince: Date;
@@ -473,12 +478,13 @@ export class AutomationRunRepository
     now: Date;
   }): Promise<boolean> {
     return this.outbox.transaction(async (manager) => {
-      await lockHostDispatch(manager, params.hostId);
+      // With no host, the runs that could contend are the automation's own.
+      await lockHostDispatch(manager, params.hostId ?? `automation:${params.automationId}`);
       const countable = `(${LIVE_WHERE} OR (run."outcome" = 'pending' AND run."claimedAt" >= $5))`;
       const [counts]: { automation: string; host: string }[] = await manager.query(
         `SELECT
            count(*) FILTER (WHERE run."automationId" = $1) AS "automation",
-           count(*) FILTER (WHERE rev."hostId" = $2) AS "host"
+           count(*) FILTER (WHERE rev."hostId" = $2 AND rev."place" = 'host') AS "host"
            FROM "automation_run" run
            JOIN "automation_revision" rev ON rev."id" = run."revisionId"
            ${LIVE_JOINS}

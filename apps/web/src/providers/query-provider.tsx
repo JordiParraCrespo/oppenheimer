@@ -1,4 +1,4 @@
-import { CONSUMER_NON_PERSISTED_FEATURES } from '@oppenheimer/frontend-consumer/react';
+import { CONSUMER_PERSISTED_FEATURES } from '@oppenheimer/frontend-consumer/react';
 import type { OppenheimerApp } from '@oppenheimer/frontend-core';
 import { createQueryClient, createQueryPersistOptions } from '@oppenheimer/frontend-core/react';
 import { createAsyncStoragePersister } from '@tanstack/query-async-storage-persister';
@@ -36,7 +36,7 @@ const persistOptions = {
   // The app version, injected by Vite: a release that changes a response shape
   // starts from a clean cache instead of hydrating entries it can't read.
   ...createQueryPersistOptions(__APP_VERSION__, {
-    nonPersistedFeatures: CONSUMER_NON_PERSISTED_FEATURES,
+    persistedFeatures: CONSUMER_PERSISTED_FEATURES,
   }),
 };
 

@@ -9,18 +9,21 @@ import {
 import { useSessions, useTasks } from '@oppenheimer/frontend-consumer/react';
 import { useDragLabels } from '@oppenheimer/frontend-web';
 import { Link } from '@tanstack/react-router';
+import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { type ConsoleList, useConsoleList } from '@/lib/console';
 import { RAIL_GROUP, useRailOrder } from '../hooks/use-rail-order';
-import { type RailItemId, railEntry } from '../lib/rail-order';
+import type { RailItemId } from '../lib/rail-landing';
+import { railEntry } from '../lib/rail-order';
 
 /**
  * The console's rail, switching the sidebar between its lists
  * (`product/versions/mvp/05-screens.md`, `…/13-automations.md`). The current
  * one is `useConsoleList`'s answer, the same the shell picks the sidebar by.
  * A section rather than kit because the counts are product reads: the
- * sessions the sidebar already subscribes to, and Plan's open tasks
- * (`18-plan-product.md` §1), the board's own read.
+ * sessions the sidebar already subscribes to, Plan's open tasks
+ * (`18-plan-product.md` §1), the board's own read. The Inbox is Plan's
+ * first section (`29-inbox.md`), counted in Plan's sidebar.
  *
  * The reader drags the items into their own order, as the design's rail
  * does; a press still opens the list, and the order is kept on this device
@@ -36,7 +39,10 @@ export function ConsoleRail() {
   const list = useConsoleList();
   const dragLabels = useDragLabels();
   const { order, handlers } = useRailOrder();
-  const counts: Partial<Record<RailItemId, number>> = { sessions: sessionCount, plan: openTasks };
+  const counts: Partial<Record<RailItemId, ReactNode>> = {
+    sessions: sessionCount,
+    plan: openTasks,
+  };
 
   return (
     <Rail aria-label={t('nav.primaryNavigation')}>

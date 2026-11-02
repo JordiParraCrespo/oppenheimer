@@ -15,6 +15,10 @@ roadmap as of 2026-09-26, with no version number yet.
   `../versions/mvp/README.md`). `../README.md` notes that note 06's
   per-account config directories stay the answer for several logins on
   one machine.
+- Since 2026-10-28 each host reports the claude.ai account its `claude` is
+  signed in as, shown in Settings → Hosts and in New session's Start from
+  pane (`../versions/mvp/24-session-places.md`, decided list). Choosing an
+  account is choosing a host until this lands.
 - The agent catalog (`CODING_AGENTS`) and the launch options stored on
   `work_session` (`../versions/mvp/10-api-modules-and-data-model.md`).
 

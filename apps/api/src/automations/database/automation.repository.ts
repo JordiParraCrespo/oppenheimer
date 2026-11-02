@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { type AccessScope, ScopedRepositoryBase } from '@oppenheimer/backend-authz';
 import { OutboxService } from '@oppenheimer/backend-ddd';
+import { isExternalTriggerSource, TRIGGER_SUBJECT_KINDS } from '@oppenheimer/shared/automations';
 import { None, type Option, Some } from 'oxide.ts';
 import { DataSource, type EntityManager, In, Repository } from 'typeorm';
 import type { QueryDeepPartialEntity } from 'typeorm/query-builder/QueryPartialEntity';
@@ -9,6 +10,7 @@ import { AutomationMapper, workspaceLimitsOf } from '../automation.mapper';
 import { AutomationRunMapper } from '../automation-run.mapper';
 import { AutomationResource } from '../automations.resource';
 import type { AutomationEntity } from '../domain/automation.entity';
+import type { WatchedSubject } from '../domain/automation-read.types';
 import type { AutomationRunEntity } from '../domain/automation-run.entity';
 import { routineActivityEvents } from '../domain/routine-activity.policy';
 import { AutomationOrmEntity } from './automation.orm-entity';
@@ -162,6 +164,36 @@ export class AutomationRepository
     return this.one(await this.repository.findOneBy({ id }));
   }
 
+  async findWatchedSubjects(source: string): Promise<WatchedSubject[]> {
+    const rows: { organizationId: string; subjectRef: string; filter: unknown }[] =
+      await this.dataSource.query(
+        `SELECT subject."organizationId", subject."subjectRef", trigger.config -> 'filter' AS filter
+         FROM automation_trigger trigger
+         JOIN automation_trigger_subject subject ON subject."triggerId" = trigger.id
+         JOIN automation ON automation.id = trigger."automationId"
+        WHERE trigger.source = $1
+          AND subject."subjectKind" = $2
+          AND automation."deletedAt" IS NULL
+          AND automation."pausedAt" IS NULL`,
+        [source, subjectKindOf(source)],
+      );
+    const bySubject = new Map<string, WatchedSubject>();
+    for (const row of rows) {
+      const key = `${row.organizationId}:${row.subjectRef}`;
+      const watched = bySubject.get(key) ?? {
+        organizationId: row.organizationId,
+        subjectRef: row.subjectRef,
+        filters: [],
+      };
+      const filter = row.filter as { op?: unknown; value?: unknown } | null;
+      const value =
+        filter?.op === 'equals' && typeof filter.value === 'string' ? filter.value : null;
+      if (!watched.filters.includes(value)) watched.filters.push(value);
+      bySubject.set(key, watched);
+    }
+    return [...bySubject.values()];
+  }
+
   async findEventCandidates(
     organizationId: string,
     source: string,
@@ -177,7 +209,7 @@ export class AutomationRepository
         AutomationTriggerSubjectOrmEntity,
         'subject',
         'subject.triggerId = trigger.id AND subject.organizationId = :organizationId AND subject.subjectKind = :kind AND subject.subjectRef = :subjectRef',
-        { organizationId, kind: 'repository', subjectRef },
+        { organizationId, kind: subjectKindOf(source), subjectRef },
       )
       .innerJoin(AutomationOrmEntity, 'automation', 'automation.id = trigger.automationId')
       .where('trigger.organizationId = :organizationId', { organizationId })
@@ -398,4 +430,9 @@ export class AutomationRepository
       ];
     });
   }
+}
+
+/** The subject kind a source's triggers watch; an unknown source watches nothing. */
+function subjectKindOf(source: string): string {
+  return isExternalTriggerSource(source) ? TRIGGER_SUBJECT_KINDS[source] : '';
 }

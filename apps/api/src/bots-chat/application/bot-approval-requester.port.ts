@@ -1,3 +1,5 @@
+import type { BotToolSubject } from '../domain/bot-tool-permission.entity';
+
 /** One call of an asking tool, as the owner will be asked about it. */
 export interface BotApprovalCall {
   /** Which turn of which bot asks. */
@@ -9,6 +11,14 @@ export interface BotApprovalCall {
   input: Record<string, unknown>;
   /** What will happen, in words, built by the tool from its input. */
   summary: string;
+  /** The one thing the call acts on, when the tool names one; the card offers to always allow it. */
+  subject: BotToolSubject | null;
+  /** The call sends data out of Oppenheimer; the card says so. */
+  sharesOutside: boolean;
+  /** Every call of the tool is decided on its own: the card offers this call only. */
+  perCallOnly: boolean;
+  /** Why a rule made it ask, or that the rules could not be checked; the card says it. */
+  reviewNote?: string | null;
 }
 
 /**

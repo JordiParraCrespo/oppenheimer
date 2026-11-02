@@ -29,8 +29,12 @@ func (t *typedTranscripts) FirstPrompt(_ domain.Agent, conversation string) stri
 	return t.typed[conversation]
 }
 
-func (t *typedTranscripts) Follow(context.Context, domain.Agent, string, int, int, func(app.ChatBatch) error) error {
+func (t *typedTranscripts) Follow(context.Context, domain.Session, int, int, func(app.ChatBatch) error) error {
 	return app.ErrNoChat
+}
+
+func (t *typedTranscripts) OpenQuestion(domain.Agent, string) (domain.Decision, bool) {
+	return domain.Decision{}, false
 }
 
 func (t *typedTranscripts) typeInto(text string) {
@@ -51,6 +55,10 @@ type promptRecorder struct {
 }
 
 func (r *promptRecorder) SessionChanged(domain.Session) {}
+
+func (r *promptRecorder) DecisionChanged(domain.Session, *domain.Decision) {}
+
+func (r *promptRecorder) TerminalMatched(string, string, int) {}
 
 func (r *promptRecorder) FirstPrompt(_ domain.Session, text string, reported func()) bool {
 	time.Sleep(r.hold)

@@ -18,12 +18,28 @@
  * Where a trigger comes from. `schedule` is ours; every other source is an
  * external system that delivers events through the inbound-events hub.
  */
-export const TRIGGER_SOURCES = ['schedule', 'github'] as const;
+export const TRIGGER_SOURCES = ['schedule', 'github', 'gmail'] as const;
 export type TriggerSource = (typeof TRIGGER_SOURCES)[number];
 
-/** The sources whose events arrive from outside, through a webhook. */
-export const EXTERNAL_TRIGGER_SOURCES = ['github'] as const satisfies readonly TriggerSource[];
+/**
+ * The sources whose events arrive from outside: GitHub's through a webhook,
+ * Gmail's from our own poll of the accounts a routine watches.
+ */
+export const EXTERNAL_TRIGGER_SOURCES = [
+  'github',
+  'gmail',
+] as const satisfies readonly TriggerSource[];
 export type ExternalTriggerSource = (typeof EXTERNAL_TRIGGER_SOURCES)[number];
+
+/**
+ * What an external source's events happen to, and so what its triggers watch:
+ * a repository for GitHub, a connected account for Gmail.
+ */
+export const TRIGGER_SUBJECT_KINDS = {
+  github: 'repository',
+  gmail: 'gmail_connection',
+} as const satisfies Record<ExternalTriggerSource, string>;
+export type TriggerSubjectKind = (typeof TRIGGER_SUBJECT_KINDS)[ExternalTriggerSource];
 
 export function isExternalTriggerSource(value: unknown): value is ExternalTriggerSource {
   return (EXTERNAL_TRIGGER_SOURCES as readonly unknown[]).includes(value);
@@ -89,15 +105,20 @@ export const GITHUB_EVENT_TYPES = [
 ] as const;
 export type GithubEventType = (typeof GITHUB_EVENT_TYPES)[number];
 
+/** What a watched Gmail account delivers (`next-steps/mail.md` §5): a message arrived. */
+export const GMAIL_EVENT_TYPES = ['mail_received'] as const;
+export type GmailEventType = (typeof GMAIL_EVENT_TYPES)[number];
+
 /** Every external event type any source defines. */
-export type ExternalEventType = GithubEventType;
+export type ExternalEventType = GithubEventType | GmailEventType;
 
 /**
  * The attribute a trigger's one filter value is compared with. `null` is an
  * event with nothing to narrow on (an issue opened, a release), whose trigger
- * always matches.
+ * always matches. A mail's `query` is the list of watched Gmail queries it
+ * matched, so a trigger's query is found in it.
  */
-export const TRIGGER_FILTER_FIELDS = ['baseBranch', 'branch', 'label'] as const;
+export const TRIGGER_FILTER_FIELDS = ['baseBranch', 'branch', 'label', 'query'] as const;
 export type TriggerFilterField = (typeof TRIGGER_FILTER_FIELDS)[number];
 
 /**
@@ -255,6 +276,16 @@ export const EXTERNAL_EVENT_CATALOG: readonly ExternalEventDefinition[] = [
     checkout: 'default_branch',
     untrustedContent: false,
   },
+  {
+    source: 'gmail',
+    type: 'mail_received',
+    label: 'Mail received',
+    description: 'A message arrived in a connected Gmail account',
+    filterField: 'query',
+    defaultFilter: { op: 'any' },
+    checkout: 'default_branch',
+    untrustedContent: true,
+  },
 ];
 
 const BY_TYPE: ReadonlyMap<string, ExternalEventDefinition> = new Map(
@@ -341,8 +372,74 @@ export const AUTOMATION_PAUSED_REASONS = [
   'host_unpaired',
   'owner_lost_access',
   'bot_provider_missing',
+  'cloud_key_missing',
 ] as const;
 export type AutomationPausedReason = (typeof AUTOMATION_PAUSED_REASONS)[number];
+
+/**
+ * Where a session runs, from New session, a task's Start session or an
+ * automation's runs (`product/versions/mvp/24-session-places.md` §7,
+ * `product/next-steps/cloud-agents.md`): a worktree on its `host`; Claude
+ * Code's cloud, which the host's runner starts (`claude-cloud`); or a
+ * vendor's cloud the control plane launches on the owner's key, with no host
+ * (`cursor`). A vendor's place is its provider id in `CLOUD_AGENT_PROVIDERS`.
+ */
+export const AUTOMATION_PLACES = ['host', 'claude-cloud', 'cursor'] as const;
+export type AutomationPlace = (typeof AUTOMATION_PLACES)[number];
+
+/**
+ * What each place asks of a host and of an agent, the one table every reader
+ * of a place decides from:
+ * - `host`: `runs` the session (it holds a place on the host while it lives),
+ *   only `starts` it (a cloud session, gone from the host once it has
+ *   started), or `null`, none at all (a vendor's);
+ * - `agent`: the one agent the place runs, or `null` for any agent a host can.
+ * A new place is a row here; nothing that reads a place names one.
+ */
+export const AUTOMATION_PLACE_RULES = Object.freeze({
+  host: { host: 'runs', agent: null },
+  'claude-cloud': { host: 'starts', agent: 'claude-code' },
+  cursor: { host: null, agent: 'cursor' },
+} as const satisfies Record<
+  AutomationPlace,
+  { host: 'runs' | 'starts' | null; agent: string | null }
+>);
+
+/** The places whose sessions a vendor runs with no host: each is a cloud provider's id. */
+export type AutomationVendorPlace = {
+  [P in AutomationPlace]: (typeof AUTOMATION_PLACE_RULES)[P]['host'] extends null ? P : never;
+}[AutomationPlace];
+
+export function isVendorPlace(place: AutomationPlace): place is AutomationVendorPlace {
+  return AUTOMATION_PLACE_RULES[place].host === null;
+}
+
+const VENDOR_PLACES = AUTOMATION_PLACES.filter(isVendorPlace);
+
+/** The host whose slots and disk a session in `place` takes: none once it only starts there. */
+export function hostHeldBy(where: {
+  place: AutomationPlace;
+  hostId: string | null;
+}): string | null {
+  return AUTOMATION_PLACE_RULES[where.place].host === 'runs' ? where.hostId : null;
+}
+
+/**
+ * Whether a place, an agent and a host agree, by the place's row: a host
+ * exactly when the place has one, and the place's own agent, or, where it
+ * takes any, one that is not a vendor's.
+ */
+export function automationPlaceFits(value: {
+  place: AutomationPlace;
+  agent: string;
+  hostId: string | null | undefined;
+}): boolean {
+  const rule = AUTOMATION_PLACE_RULES[value.place];
+  if (Boolean(value.hostId) !== (rule.host !== null)) return false;
+  if (rule.agent !== null) return value.agent === rule.agent;
+  // Any agent a host runs, never a vendor's own, which shares its place's id.
+  return !VENDOR_PLACES.some((place) => place === value.agent);
+}
 
 /** The permission levels an unattended run may take (§Q11). `ask` has nobody to ask. */
 export const AUTOMATION_PERMISSIONS = ['auto', 'full'] as const;

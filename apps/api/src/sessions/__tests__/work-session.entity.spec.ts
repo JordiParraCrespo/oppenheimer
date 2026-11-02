@@ -77,23 +77,23 @@ describe('where a session runs', () => {
   });
 
   it('runs in the folder it names, and is nobody’s worktree', () => {
-    const work = session({ folder: '/home/jordi/notes' });
+    const work = session({ place: 'folder', folder: '/home/jordi/notes' });
     expect(work.place).toBe('folder');
     expect(work.folderPath).toBe('/home/jordi/notes');
     expect(work.branch).toBeNull();
   });
 
   it('refuses a checkout in a folder session: the folder is the person’s', () => {
-    const work = session({ folder: '/home/jordi/notes' });
+    const work = session({ place: 'folder', folder: '/home/jordi/notes' });
     expect(() => work.attachCheckout(checkout(work, 'xrp-mobile'))).toThrow(/no checkouts/);
     expect(work.checkouts).toEqual([]);
   });
 
-  it('reads its place off the stored folder, so the two cannot disagree', () => {
+  it('holds its place as the stored fact it is', () => {
     const props = session().getProps();
     const stored = WorkSessionEntity.create({
       id: 'session-1',
-      props: { ...props, folderPath: '/srv' },
+      props: { ...props, place: 'folder', folderPath: '/srv' },
     });
     expect(stored.place).toBe('folder');
     expect(WorkSessionEntity.create({ id: 'session-2', props }).place).toBe('worktree');
@@ -281,5 +281,51 @@ describe('a moved session', () => {
     work.recordEvent(entry(SESSION_EVENT_KINDS.MOVED, { from: 'project-1' }));
 
     expect(work.projectId).toBe('project-1');
+  });
+});
+
+describe('the place', () => {
+  it('takes a folder only with the folder place, and the folder place only with a folder', () => {
+    expect(() => session({ folder: '/home/jordi/notes' })).toThrow();
+    expect(() => session({ place: 'folder' })).toThrow();
+    expect(() => session({ place: 'cloud', folder: '/home/jordi/notes' })).toThrow();
+  });
+});
+
+describe('a cloud session', () => {
+  it('is in the cloud place, and names its Claude Code session once the host started it', () => {
+    const session = WorkSessionEntity.request({
+      organizationId: 'org-acme',
+      projectId: 'project-1',
+      createdByUserId: 'user-1',
+      hostId: 'host-1',
+      slug: 'bold-otter-3f9a7k',
+      agent: 'claude-code',
+      place: 'cloud',
+    });
+    expect(session.place).toBe('cloud');
+    expect(session.cloudSessionId).toBeNull();
+
+    session.recordEvent({
+      seq: 1,
+      kind: SESSION_EVENT_KINDS.STARTED,
+      payload: { agentSessionId: 'session_014a8EH8DJs95X1iK8ZH9Y82', checkouts: [] },
+      occurredAt: new Date(),
+    });
+    expect(session.cloudSessionId).toBe('session_014a8EH8DJs95X1iK8ZH9Y82');
+  });
+});
+
+describe('input to a cloud session', () => {
+  it('is refused: it has no terminal on its host, and is answered on claude.ai', () => {
+    const cloud = session({ place: 'cloud' });
+    cloud.recordEvent({
+      seq: 1,
+      kind: SESSION_EVENT_KINDS.STARTED,
+      payload: { agentSessionId: 'session_014a8EH8DJs95X1iK8ZH9Y82', checkouts: [] },
+      occurredAt: new Date(),
+    });
+    expect(cloud.inputRefusal?.code).toBe('SESSIONS_038');
+    expect(session().inputRefusal).toBeNull();
   });
 });

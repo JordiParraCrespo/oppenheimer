@@ -1,3 +1,4 @@
+// uncatalogued: a plain primitive with no hand-built rival to warn against
 'use client';
 
 import { Tooltip as TooltipPrimitive } from '@base-ui/react/tooltip';

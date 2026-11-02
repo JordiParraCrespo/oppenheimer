@@ -45,7 +45,8 @@ const schema = z.object({
    * The AES-256-GCM key a person's GitHub user token is sealed under, 32 bytes as
    * base64. Optional: without it nothing is stored from the install's user
    * authorization, and the Pull requests area reads through the installation and
-   * cannot review or merge in anyone's name.
+   * cannot review or merge in anyone's name. The tokens people add for
+   * repositories the App is not on are sealed under it too (`GITHUB_021` without it).
    */
   userTokenKey: z.string().optional(),
 });

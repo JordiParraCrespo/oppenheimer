@@ -72,12 +72,14 @@ func TestASlashCommandWithArgumentsReadsAsTyped(t *testing.T) {
 }
 
 // What is not the person's first message never names the session: a tool's
-// result, a subagent's conversation, a compaction summary.
+// result, a subagent's conversation, a compaction summary, a background
+// task's end.
 func TestTheAgentsOwnLinesAreNotAPrompt(t *testing.T) {
 	projects := write(t,
 		`{"type":"user","message":{"role":"user","content":[{"type":"tool_result","tool_use_id":"t-1","content":"ok"}]}}`,
 		`{"type":"user","isSidechain":true,"message":{"role":"user","content":"Search the codebase for the picker"}}`,
 		`{"type":"user","isCompactSummary":true,"message":{"role":"user","content":"This session is being continued"}}`,
+		`{"type":"user","message":{"role":"user","content":"<task-notification>\n<status>completed</status>\n<summary>Background command \"Wait\" completed</summary>\n</task-notification>"}}`,
 	)
 	if got := firstPrompt(projects); got != "" {
 		t.Fatalf("first prompt = %q, want none", got)

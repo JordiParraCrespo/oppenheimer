@@ -60,7 +60,7 @@ func follow(t *testing.T, projects string, sink *batches) {
 	go func() {
 		defer close(done)
 		_ = transcript.New(transcript.Options{ClaudeProjects: projects}).
-			Follow(ctx, domain.AgentClaude, conversation, 64<<10, 256, sink.emit)
+			Follow(ctx, domain.Session{Agent: domain.AgentClaude, Launch: domain.Launch{Conversation: conversation}}, 64<<10, 256, sink.emit)
 	}()
 	t.Cleanup(func() { cancel(); <-done })
 }
@@ -161,10 +161,51 @@ func TestTheChatCarriesNoImageBytesSignaturesOrWholeFiles(t *testing.T) {
 	}
 }
 
-func TestOnlyClaudeHasAChatToFollow(t *testing.T) {
-	err := transcript.New(transcript.Options{ClaudeProjects: t.TempDir()}).
-		Follow(context.Background(), domain.AgentCodex, conversation, 1, 1, func(app.ChatBatch) error { return nil })
+func TestTheChatCarriesTheTokensAnAnswerWasSent(t *testing.T) {
+	lines := []string{
+		`{"type":"user","uuid":"u","message":{"role":"user","content":"Go","usage":{"input_tokens":9}}}`,
+		`{"type":"assistant","uuid":"a","message":{"role":"assistant","model":"claude-opus-5-5","content":[{"type":"text","text":"Done."}],"usage":{"input_tokens":4,"cache_creation_input_tokens":1200,"cache_read_input_tokens":38000,"output_tokens":310,"service_tier":"standard","server_tool_use":{"web_search_requests":0}}}}`,
+	}
+	sink := &batches{}
+	follow(t, write(t, lines...), sink)
+	eventually(t, "two entries", func() bool { return len(sink.entries()) == 2 })
+	message := func(i int) map[string]any { return sink.entries()[i]["message"].(map[string]any) }
+	if usage, ok := message(0)["usage"]; ok {
+		t.Fatalf("a prompt carries no usage: %v", usage)
+	}
+	want := map[string]any{
+		"input_tokens":                float64(4),
+		"cache_creation_input_tokens": float64(1200),
+		"cache_read_input_tokens":     float64(38000),
+		"output_tokens":               float64(310),
+	}
+	usage, _ := message(1)["usage"].(map[string]any)
+	if len(usage) != len(want) {
+		t.Fatalf("only the counts are kept: %v", usage)
+	}
+	for key, value := range want {
+		if usage[key] != value {
+			t.Fatalf("usage[%s] = %v, want %v", key, usage[key], value)
+		}
+	}
+}
+
+func TestAnAgentWithNothingToFindHasNoChatToFollow(t *testing.T) {
+	reader := transcript.New(transcript.Options{ClaudeProjects: t.TempDir()})
+	none := func(app.ChatBatch) error { return nil }
+	// A runner told nowhere Codex keeps its rollouts has none to read.
+	err := reader.Follow(context.Background(), domain.Session{Agent: domain.AgentCodex, Worktree: t.TempDir()}, 1, 1, none)
 	if !errors.Is(err, app.ErrNoChat) {
-		t.Fatalf("codex: %v", err)
+		t.Fatalf("codex without its folder: %v", err)
+	}
+	// An OpenCode launched before the runner served its API has none to read.
+	err = reader.Follow(context.Background(), domain.Session{Agent: domain.AgentOpenCode}, 1, 1, none)
+	if !errors.Is(err, app.ErrNoChat) {
+		t.Fatalf("opencode without a server: %v", err)
+	}
+	// The blank terminal keeps no conversation at all.
+	err = reader.Follow(context.Background(), domain.Session{Agent: domain.AgentShell}, 1, 1, none)
+	if !errors.Is(err, app.ErrNoChat) {
+		t.Fatalf("shell: %v", err)
 	}
 }

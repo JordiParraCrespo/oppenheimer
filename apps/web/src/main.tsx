@@ -1,4 +1,4 @@
-import { i18nReady, ThemeProvider } from '@oppenheimer/frontend-web';
+import { i18nReady, reloadOnStaleBuild, ThemeProvider } from '@oppenheimer/frontend-web';
 import { StrictMode } from 'react';
 import ReactDOM from 'react-dom/client';
 import { app } from '@/lib/oppenheimer';
@@ -6,6 +6,9 @@ import { OppenheimerAppProvider } from '@/providers/oppenheimer-provider';
 import { QueryProvider } from '@/providers/query-provider';
 import { App } from './app';
 import './styles/globals.css';
+
+// Before anything can import lazily: a tab older than the deploy reloads onto it.
+reloadOnStaleBuild();
 
 const container = document.getElementById('root');
 if (!container) throw new Error('Missing #root element');

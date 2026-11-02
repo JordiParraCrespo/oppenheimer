@@ -41,6 +41,11 @@ export class UnpairHostHttpController {
   })
   @ApiResponse({ status: 204, description: 'Host unpaired' })
   @ApiProblemResponse({ status: 404, description: 'Host not found', code: 'HOSTS_001' })
+  @ApiProblemResponse({
+    status: 409,
+    description: 'Someone else wrote the host meanwhile, again on the retry',
+    code: 'HOSTS_009',
+  })
   async unpair(
     @CurrentAccessScope() scope: AccessScope,
     @Param('id', ParseUUIDPipe) id: string,

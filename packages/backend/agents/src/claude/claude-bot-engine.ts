@@ -1,7 +1,9 @@
-import { mkdir } from 'node:fs/promises';
+import { mkdir, mkdtemp, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import type { Query, SDKUserMessage } from '@anthropic-ai/claude-agent-sdk';
 import { BotEngine, type BotEngineEvent, type BotTurnRequest } from '../bot-engine';
-import { describeError, guardTurn, messageParts, ToolCallData } from '../turn';
+import { describeError, failed, guardTurn, messageParts, ToolCallData } from '../turn';
 import { ClaudeEventTranslator } from './claude-events';
 import { claudeOptions, scratchDirs } from './claude-options';
 import { createToolServer } from './claude-tool-server';
@@ -40,13 +42,39 @@ function claudePrompt(request: BotTurnRequest): string | AsyncIterable<SDKUserMe
  * Providers `anthropic` and `glm`, on the Claude Agent SDK: Claude Code as
  * a library, run as a subprocess per turn with its shell and file tools off
  * and our tools served to it in process.
+ *
+ * Claude Code needs a directory to run in. A turn that brings none (a
+ * completion usually does not) gets one made for it here and removed when
+ * the turn ends, so no caller has to know this engine is the one that needs it.
  */
 export class ClaudeBotEngine extends BotEngine {
   run(request: BotTurnRequest): AsyncIterable<BotEngineEvent> {
-    return guardTurn(request, () => this.stream(request));
+    const { scratchDir } = request;
+    if (scratchDir !== undefined) {
+      return guardTurn(request, () => this.stream({ ...request, scratchDir }));
+    }
+    return this.inOwnScratchDir(request);
   }
 
-  private async *stream(request: BotTurnRequest): AsyncGenerator<BotEngineEvent> {
+  private async *inOwnScratchDir(request: BotTurnRequest): AsyncGenerator<BotEngineEvent> {
+    let scratchDir: string;
+    try {
+      scratchDir = await mkdtemp(join(tmpdir(), 'claude-turn-'));
+    } catch (error) {
+      yield failed(`No directory for the turn: ${describeError(error)}`);
+      return;
+    }
+    try {
+      const own = { ...request, scratchDir };
+      yield* guardTurn(own, () => this.stream(own));
+    } finally {
+      await rm(scratchDir, { recursive: true, force: true }).catch(() => undefined);
+    }
+  }
+
+  private async *stream(
+    request: BotTurnRequest & { scratchDir: string },
+  ): AsyncGenerator<BotEngineEvent> {
     const dirs = scratchDirs(request.scratchDir);
     await Promise.all(
       [dirs.configDir, dirs.cwd, dirs.tmp].map((dir) => mkdir(dir, { recursive: true })),
@@ -73,7 +101,11 @@ export class ClaudeBotEngine extends BotEngine {
     };
     const made = new ToolCallData();
     const translator = new ClaudeEventTranslator(made);
-    const toolServer = createToolServer(request.tools, { signal, apiKey: request.apiKey }, made);
+    const toolServer = createToolServer(
+      request.tools,
+      { signal, apiKey: request.apiKey, steering: request.steering },
+      made,
+    );
     try {
       // Loaded on the first turn, so importing the package starts nothing.
       const { query } = await import('@anthropic-ai/claude-agent-sdk');
@@ -90,7 +122,10 @@ export class ClaudeBotEngine extends BotEngine {
       if (request.signal.aborted) throw error;
       // The subprocess's last words say why it exited; the SDK's error only that it did.
       const detail = stderr.trim();
-      throw new Error(detail ? `${describeError(error)}: ${detail}` : describeError(error));
+      yield* translator.thrown(
+        detail ? `${describeError(error)}: ${detail}` : describeError(error),
+        detail || undefined,
+      );
     } finally {
       ended.abort();
       await toolServer.close().catch(() => undefined);

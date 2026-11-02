@@ -13,4 +13,10 @@ import type { AggregateID } from '@oppenheimer/backend-ddd';
 export interface SessionCommandResult {
   sessionId: AggregateID;
   hints: string[];
+  /**
+   * The log entry this request recorded, when it recorded one before acting
+   * (a prompt claimed, a decision answered): what followed it is the
+   * agent's answer, so a reader can start right after it.
+   */
+  seq?: number;
 }

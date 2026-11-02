@@ -1,9 +1,25 @@
 import { z } from 'zod/v4';
+import { type HostCloudAgentId, isHostCloudAgent } from '../agents/catalog.js';
+import { codexEnvironmentsListSchema, codexEnvironmentsSchema } from './codex-environments.js';
+import {
+  deviceAttachSchema,
+  deviceDetachSchema,
+  deviceInfoSchema,
+  deviceInputSchema,
+} from './devices.js';
 import { hintSchema } from './hint.js';
 import { CHAT_BATCH_MAX_ENTRIES, CHAT_ENTRY_MAX_BYTES } from './link.js';
 import {
+  portCloseSchema,
+  portListingSchema,
+  portListSchema,
+  portOpenedSchema,
+  portOpenSchema,
+} from './ports.js';
+import {
   attachmentIdSchema,
   checkoutIdSchema,
+  codexEnvironmentRefSchema,
   commandIdSchema,
   githubRepoIdSchema,
   gitRefSchema,
@@ -22,6 +38,15 @@ import {
   SESSION_CREATE_MAX_FILES,
   SESSION_FILE_MEDIA_TYPES,
 } from './session-file.js';
+import {
+  whatsappAckSchema,
+  whatsappLinkSchema,
+  whatsappMessagesSchema,
+  whatsappSendSchema,
+  whatsappSentSchema,
+  whatsappStateSchema,
+  whatsappUnlinkSchema,
+} from './whatsapp.js';
 
 /**
  * The runner link's message vocabulary, as Zod — one source of truth, with JSON
@@ -54,6 +79,15 @@ export const RUNNER_CAPABILITIES = [
    */
   'attachment.direct',
   /**
+   * Proves itself on every direct channel before a byte crosses it: it signs
+   * both DTLS fingerprints and the browser's nonce with its host key
+   * (`product/versions/mvp/31-peer-to-peer-and-the-host-proof.md`). The relay
+   * invites a direct path only to a runner naming this beside
+   * `attachment.direct`, because the console refuses a channel that is not
+   * proved.
+   */
+  'attachment.direct.proof',
+  /**
    * Takes a `session.create` with a `folder` instead of checkouts: a session in
    * a folder already on the host, nothing cloned and nothing written
    * (`product/versions/mvp/24-session-places.md`).
@@ -62,12 +96,71 @@ export const RUNNER_CAPABILITIES = [
   /** Answers `fs.list` with `fs.listing`: the folder picker's directories. */
   'fs.list',
   /**
-   * Sends `attachment.chat` beside a Claude Code session's PTY frames: the
-   * agent's own transcript, compacted, for the console's chat view (0.7).
+   * Sends `attachment.chat` beside a coding agent session's PTY frames
+   * (Claude Code, Codex, OpenCode, Grok): the agent's own transcript,
+   * compacted, for the console's chat view (0.7). Each agent's is read into
+   * the same lines, Claude Code's shape; OpenCode's off its API.
    */
   'attachment.chat',
+  /**
+   * Answers `device.attach`: the session has a simulator or emulator of its
+   * own on this host, whose screen streams as JPEG frames and which takes
+   * `device.input` (`product/research/device-streaming.md`).
+   */
+  'device.screen',
+  /**
+   * Answers `port.list` and `port.open`: the TCP ports a session's own
+   * processes listen on, each reachable as an attachment of raw bytes, for the
+   * console's Browser tab (`product/versions/mvp/30-session-previews.md`).
+   */
+  'port.forward',
+  /**
+   * Takes a `session.create` with `cloud`: the runner starts the task in
+   * Claude Code's cloud (`claude --cloud`) from a checkout of the repository
+   * and reports the cloud session's id, instead of opening a terminal
+   * (`product/research/cloud-agents.md` §5B).
+   */
+  'session.cloud',
+  /**
+   * Takes a `session.create` with `cloud` for Codex: the runner starts the task
+   * in Codex cloud (`codex cloud exec`) on the checkout's base branch, reports
+   * the task's id, and from then on reads the task's status off
+   * `codex cloud list --json` and reports it as the session's
+   * (`product/next-steps/cloud-agents.md`).
+   */
+  'session.cloud.codex',
+  /**
+   * Answers `codex.environments.list` with `codex.environments`: the Codex
+   * cloud environments the host's ChatGPT account has, for the composer's
+   * picker, and takes `session.create`'s `codexEnvironment`. A runner without
+   * it guesses the environment from the repository's name.
+   */
+  'codex.environments',
+  /**
+   * Takes `session.watch` and `session.unwatch`: it scans a live session's
+   * screen for a pattern on every pass it already makes, and reports a match
+   * as a `terminal.matched` log entry carrying a count, never the text
+   * (`product/versions/mvp/27-bot-subscriptions.md`).
+   */
+  'session.watch',
+  /**
+   * Holds a WhatsApp linked device for the owner: answers `whatsapp.link`,
+   * `whatsapp.unlink` and `whatsapp.send`, and sends `whatsapp.state` and
+   * `whatsapp.messages` (`product/next-steps/whatsapp.md`).
+   */
+  'whatsapp',
 ] as const;
 export type RunnerCapability = (typeof RUNNER_CAPABILITIES)[number];
+
+/**
+ * The capability a runner names to take a cloud session of each agent a host
+ * starts in its vendor's cloud. A runner that named only `session.cloud`
+ * predates Codex cloud and would refuse a Codex one.
+ */
+export const HOST_CLOUD_CAPABILITIES = {
+  'claude-code': 'session.cloud',
+  codex: 'session.cloud.codex',
+} as const satisfies Record<HostCloudAgentId, RunnerCapability>;
 
 /**
  * The capabilities a hello named that this side knows, in order. The hello
@@ -326,6 +419,37 @@ export const sessionCreateSchema = z
      * every checkout a peer.
      */
     cwdCheckoutId: checkoutIdSchema.nullable(),
+    /**
+     * A cloud session: the runner does not open a terminal. For Claude Code it
+     * fetches the one checkout's repository with this token (minted for that
+     * repository alone and sealed to the host, as `repository.prepare`'s is: a
+     * credential ask names a live checkout, and a cloud session leaves none on
+     * the host), checks out its base in a scratch directory, runs
+     * `claude --cloud` there with `prompt` and removes the scratch directory.
+     * For Codex it runs `codex cloud exec` on the checkout's base branch and
+     * needs no checkout, so the token goes unused. Either way it reports the
+     * cloud session's id on `session.started` (`agentSessionId`).
+     *
+     * Only with an agent of `HOST_CLOUD_AGENT_IDS`, one checkout and a prompt,
+     * and sent only to a runner whose `hello` named `session.cloud` (Claude
+     * Code) or `session.cloud.codex` (Codex).
+     */
+    cloud: z
+      .object({
+        /** The installation token, sealed to the host's Ed25519 identity. Base64. */
+        sealed: z.base64(),
+        expiresAt: z.iso.datetime(),
+      })
+      .optional(),
+    /**
+     * A Codex cloud session's environment, as the person picked it: its id
+     * (or label), passed to `codex cloud exec --env`. Absent, the runner picks
+     * the environment linked to the repository (`codex.environments`'
+     * `recommended`) and then tries the repository's names as labels. Only on
+     * a Codex cloud session, and sent only to a runner whose `hello` named
+     * `codex.environments`.
+     */
+    codexEnvironment: codexEnvironmentRefSchema.optional(),
   })
   /** A session is in a folder or in its checkouts, never both and never neither. */
   .refine((message) => (message.folder === undefined) === message.checkouts.length > 0, {
@@ -334,6 +458,21 @@ export const sessionCreateSchema = z
   .refine((message) => (message.branch !== undefined) === message.checkouts.length > 0, {
     path: ['branch'],
   })
+  /** A cloud session starts Claude Code or Codex from one repository with a task. */
+  .refine(
+    (message) =>
+      message.cloud === undefined ||
+      (isHostCloudAgent(message.agent) &&
+        message.checkouts.length === 1 &&
+        message.prompt !== undefined),
+    { path: ['cloud'] },
+  )
+  .refine(
+    (message) =>
+      message.codexEnvironment === undefined ||
+      (message.cloud !== undefined && message.agent === 'codex'),
+    { path: ['codexEnvironment'] },
+  )
   .refine(
     (message) =>
       attachedFilesAreValid(
@@ -477,6 +616,48 @@ export const sessionCloseSchema = z.object({
 });
 
 export type SessionCloseMessage = z.infer<typeof sessionCloseSchema>;
+
+/** How long a terminal watch's pattern may be. */
+export const TERMINAL_WATCH_PATTERN_MAX = 200;
+
+/**
+ * Watch a live session's screen for a pattern (an RE2 regular expression,
+ * matched line by line), replacing any watch with this `watchId` and another
+ * pattern. The runner
+ * scans the screen it already reads on each pass, and appends
+ * `terminal.matched` (`{ watchId, count }`) to the session's log when lines it
+ * had not matched before match: the first at once, then at most one entry per
+ * 5 seconds, and at most 100 entries before it drops the watch. The matched
+ * text never leaves the host. Kept in memory: the control plane sends its
+ * watches again on every hello. An invalid pattern is `command.failed`
+ * `INVALID_PATTERN`.
+ */
+export const sessionWatchSchema = z.object({
+  type: z.literal('session.watch'),
+  commandId: commandIdSchema,
+  sessionId: sessionIdSchema,
+  watchId: z.uuid(),
+  pattern: z.string().min(1).max(TERMINAL_WATCH_PATTERN_MAX),
+  /**
+   * The count already reported for this watch, when the control plane sends
+   * it again after the runner restarted: the runner counts on from it, so
+   * its next report is past what the bot was told. A watch the runner still
+   * holds with the same pattern is kept as it is.
+   */
+  count: z.number().int().min(0).optional(),
+});
+
+export type SessionWatchMessage = z.infer<typeof sessionWatchSchema>;
+
+/** Stop a watch `session.watch` started; one the runner does not hold is no error. */
+export const sessionUnwatchSchema = z.object({
+  type: z.literal('session.unwatch'),
+  commandId: commandIdSchema,
+  sessionId: sessionIdSchema,
+  watchId: z.uuid(),
+});
+
+export type SessionUnwatchMessage = z.infer<typeof sessionUnwatchSchema>;
 
 /**
  * End the agent and the tmux session and leave every checkout on disk, which
@@ -844,6 +1025,8 @@ export const protocolMessageSchema = z.discriminatedUnion('type', [
   sessionWindowOpenSchema,
   sessionWindowCloseSchema,
   sessionCloseSchema,
+  sessionWatchSchema,
+  sessionUnwatchSchema,
   sessionStopSchema,
   sessionRestartSchema,
   hostPreflightSchema,
@@ -859,6 +1042,24 @@ export const protocolMessageSchema = z.discriminatedUnion('type', [
   attachmentDirectRefusedSchema,
   attachmentPathSchema,
   attachmentChatSchema,
+  deviceAttachSchema,
+  deviceInfoSchema,
+  deviceInputSchema,
+  deviceDetachSchema,
+  portListSchema,
+  portListingSchema,
+  portOpenSchema,
+  portOpenedSchema,
+  portCloseSchema,
+  codexEnvironmentsListSchema,
+  codexEnvironmentsSchema,
+  whatsappLinkSchema,
+  whatsappUnlinkSchema,
+  whatsappStateSchema,
+  whatsappMessagesSchema,
+  whatsappAckSchema,
+  whatsappSendSchema,
+  whatsappSentSchema,
 ]);
 
 export type ProtocolMessage = z.infer<typeof protocolMessageSchema>;

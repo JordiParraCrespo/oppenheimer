@@ -21,12 +21,20 @@ export interface RoutineGithubInput {
   branch?: string;
 }
 
-export type RoutineTriggerInput = RoutineScheduleInput | RoutineGithubInput;
+/** New mail as the bot writes it, once the tool has resolved the account to its connection id. */
+export interface RoutineGmailInput {
+  source: 'gmail';
+  account: string;
+  query?: string;
+}
+
+export type RoutineTriggerInput = RoutineScheduleInput | RoutineGithubInput | RoutineGmailInput;
 
 /**
  * How `update_routine`'s triggers become the automations' own trigger input
  * (`26-bot-routines.md` §4): a schedule in the sender's zone unless it names
- * one, a GitHub event filtered by branch or not. Checked against the shared
+ * one, a GitHub event filtered by branch or not, new mail on one account
+ * filtered by a Gmail search or not. Checked against the shared
  * schema, so a trigger the editor would refuse is refused here too, in a
  * sentence the model can act on. Pure.
  */
@@ -48,17 +56,24 @@ export function routineTriggers(
             ...(input.frequency === 'once' ? { date: input.date } : {}),
             timezone: input.timezone ?? timeZone,
           }
-        : {
-            source: 'github',
-            event: input.event,
-            repositories: input.repositories,
-            filter: input.branch ? { op: 'equals', value: input.branch } : { op: 'any' },
-          };
+        : input.source === 'github'
+          ? {
+              source: 'github',
+              event: input.event,
+              repositories: input.repositories,
+              filter: input.branch ? { op: 'equals', value: input.branch } : { op: 'any' },
+            }
+          : {
+              source: 'gmail',
+              event: 'mail_received',
+              connectionId: input.account,
+              query: input.query || null,
+            };
     const parsed = triggerInputSchema.safeParse(candidate);
     if (!parsed.success) {
       const fields = parsed.error.issues.map((issue) => issue.path.join('.') || 'trigger');
       return {
-        refusal: `Trigger ${index + 1} is not valid (${[...new Set(fields)].join(', ')}). A weekly schedule needs days, a monthly one day_of_month, a once one date (YYYY-MM-DD); a GitHub trigger needs repository ids.`,
+        refusal: `Trigger ${index + 1} is not valid (${[...new Set(fields)].join(', ')}). A weekly schedule needs days, a monthly one day_of_month, a once one date (YYYY-MM-DD); a GitHub trigger needs repository ids; a mail query is at most 500 characters.`,
       };
     }
     triggers.push(parsed.data);

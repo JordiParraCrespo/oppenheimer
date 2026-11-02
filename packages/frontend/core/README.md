@@ -27,7 +27,7 @@ nothing imports, and a documented contract with no caller yet carries
 - **modules/feature-flags** — `FeatureFlagsService`, `FeatureFlagsModule`, the
   `FeatureFlagsClientContext` an app passes to
   `OppenheimerApp.create({ featureFlags })`.
-- **modules/core** — `AppError`, `MapApiError`, `unwrap` / `unwrapBody`,
+- **modules/core** — `AppError`, `callApi`, `unwrapBody`,
   `createErrorMessageResolver`, the `IStorageService` port.
 - **modules/user-settings** / **modules/users** — their service and module.
 - **validation** (`./validation`) — `createZodErrorMap`,
@@ -47,7 +47,8 @@ nothing imports, and a documented contract with no caller yet carries
   `@oppenheimer/shared/feature-flags`; see `.agents/rules/feature-flags.md`.
 - Capabilities: `useDeploymentCapabilities`.
 - Queries and mutations: `useQuery` / `useQueries` (entities shared across
-  refetches), `withCacheOnSuccess`, `refetchEverythingForNewIdentity`.
+  refetches), `defineMutation`, `withCacheOnSuccess`,
+  `refetchEverythingForNewIdentity`.
 - Cache policy: `createQueryClient`, `defaultQueryClientOptions`,
   `createQueryPersistOptions`.
 

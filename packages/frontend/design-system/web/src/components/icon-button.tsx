@@ -1,3 +1,4 @@
+// uncatalogued: a plain primitive with no hand-built rival to warn against
 import { Button as ButtonPrimitive } from '@base-ui/react/button';
 import { cva, type VariantProps } from 'class-variance-authority';
 

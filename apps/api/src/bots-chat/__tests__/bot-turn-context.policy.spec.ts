@@ -19,6 +19,7 @@ describe('composeTurnContext', () => {
     timeZone: null,
     homeHost: null,
     hosts: [],
+    lastContext: null,
   };
 
   it('is one block, wrapped in the tag the system prompt names', () => {
@@ -91,5 +92,44 @@ describe('withTurnContext', () => {
     expect(withTurnContext('<turn_context>\nIt is now.\n</turn_context>', 'Ship it')).toBe(
       '<turn_context>\nIt is now.\n</turn_context>\n\nShip it',
     );
+  });
+});
+
+/**
+ * How full the context was when the last turn ended (`lessons-from-grok-bot.md`
+ * §9, row 2): the meter shows it to the person, and the model is told too,
+ * so it reads narrowly when room is short instead of finding out by a cut.
+ */
+describe('composeTurnContext: the room left', () => {
+  const base: TurnContextInput = {
+    now: new Date('2026-10-15T09:00:00Z'),
+    timeZone: null,
+    homeHost: null,
+    hosts: [],
+    lastContext: null,
+  };
+
+  it('says how full the context was against its window', () => {
+    const block = composeTurnContext({ ...base, lastContext: { tokens: 20_000, window: 200_000 } });
+    expect(block).toContain(
+      'Your context was 10% full at the end of your last turn (20,000 of 200,000 tokens).',
+    );
+    expect(block).not.toContain('Keep reads narrow');
+  });
+
+  it('asks for narrow reads from half full on', () => {
+    const block = composeTurnContext({
+      ...base,
+      lastContext: { tokens: 150_000, window: 200_000 },
+    });
+    expect(block).toContain('75% full');
+    expect(block).toContain('Keep reads narrow this turn');
+  });
+
+  it('says nothing without a window, or before any turn reported one', () => {
+    expect(composeTurnContext(base)).not.toContain('Your context');
+    expect(
+      composeTurnContext({ ...base, lastContext: { tokens: 20_000, window: null } }),
+    ).not.toContain('Your context');
   });
 });

@@ -1,5 +1,5 @@
+import type { EventSourceLike } from '@oppenheimer/frontend-core';
 import { describe, expect, it, vi } from 'vitest';
-import type { EventSourceLike } from '../../../organizations/events/workspace-event-stream';
 import { BotStream, type BotStreamStatus } from '../bot-stream';
 
 class FakeSource implements EventSourceLike {
@@ -79,14 +79,26 @@ describe('BotStream', () => {
     const { stream, sources, events } = setup();
     stream.open();
     const source = sources[0] as FakeSource;
-    source.emit('bot', JSON.stringify({ type: 'text', turnId: 't1', text: 'Hel' }));
+    source.emit(
+      'bot',
+      JSON.stringify({ type: 'text', turnId: 't1', block: 0, seq: 1, text: 'Hel' }),
+    );
+    source.emit(
+      'bot',
+      JSON.stringify({ type: 'snapshot', turnId: 't1', block: 0, seq: 1, text: 'Hel' }),
+    );
     source.emit('bot', JSON.stringify({ type: 'turn', turnId: 't1', status: 'completed' }));
     source.emit('bot', JSON.stringify({ type: 'message', turnId: 't1', messageId: 'm1' }));
     source.emit('bot', '{not json');
     source.emit('bot', JSON.stringify({ type: 'turn', turnId: 't1', status: 'exploded' }));
     source.emit('bot', JSON.stringify({ type: 'text', turnId: 't1' }));
     source.emit('bot', JSON.stringify({ type: 'other', turnId: 't1' }));
-    expect(events.mock.calls.map(([event]) => event.type)).toEqual(['text', 'turn', 'message']);
+    expect(events.mock.calls.map(([event]) => event.type)).toEqual([
+      'text',
+      'snapshot',
+      'turn',
+      'message',
+    ]);
   });
 
   it('stops listening once disposed', () => {

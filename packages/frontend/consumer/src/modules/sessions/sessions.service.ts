@@ -1,3 +1,4 @@
+import type { AnswerSessionDecisionDto } from '@oppenheimer/shared/schemas/session-decision';
 import type { PutSessionShareDto } from '@oppenheimer/shared/schemas/session-share';
 import { inject, injectable, optional } from 'inversify';
 import { TOKENS } from '../../di/tokens';
@@ -7,11 +8,15 @@ import type {
   PrepareSessionInput,
   SessionAttachment,
   SessionEntity,
+  SessionPorts,
+  SessionPreview,
   SessionShare,
   SharedSession,
+  StartCloudSessionInput,
 } from './session.entity';
 import { deriveSessionStartProgress, type SessionStartProgress } from './session-steps';
 import type { SessionsRepository } from './sessions.repository';
+import type { DeviceStream } from './stream/device-stream';
 import { LocalFirstSessionStream, type LocalTerminals } from './stream/local-first-stream';
 import { AttachSessionStream, type SessionStream } from './stream/session-stream';
 
@@ -48,6 +53,10 @@ export class SessionsService {
     return this.repository.create(input, idempotencyKey);
   }
 
+  startCloud(input: StartCloudSessionInput, idempotencyKey: string): Promise<SessionEntity> {
+    return this.repository.startCloud(input, idempotencyKey);
+  }
+
   prepare(input: PrepareSessionInput): Promise<string[]> {
     return this.repository.prepare(input);
   }
@@ -60,6 +69,10 @@ export class SessionsService {
     return this.repository.move(id, projectId);
   }
 
+  answerDecision(id: string, answer: AnswerSessionDecisionDto): Promise<SessionEntity> {
+    return this.repository.answerDecision(id, answer);
+  }
+
   restart(id: string): Promise<SessionEntity> {
     return this.repository.restart(id);
   }
@@ -70,6 +83,19 @@ export class SessionsService {
 
   issueAttachTicket(id: string, window = 0): Promise<AttachTicket> {
     return this.repository.issueAttachTicket(id, window);
+  }
+
+  /** The ports the session's processes listen on, for its Browser tab. */
+  findPorts(id: string): Promise<SessionPorts> {
+    return this.repository.findPorts(id);
+  }
+
+  /** Where one of the session's ports opens, framed by the Browser tab or in a tab of its own. */
+  openPreview(
+    id: string,
+    preview: { port: number; path?: string; embed: boolean },
+  ): Promise<SessionPreview> {
+    return this.repository.openPreview(id, preview);
   }
 
   uploadAttachment(file: Blob): Promise<SessionAttachment> {
@@ -109,6 +135,20 @@ export class SessionsService {
     return new AttachSessionStream({
       apiBaseUrl: this.apiBaseUrl,
       issueTicket: () => this.repository.issueSharedAttachTicket(slug),
+    });
+  }
+
+  /**
+   * The session's device, live: its screen as JPEG frames and the reader's
+   * taps and keys back, over the attach socket with a device ticket. The
+   * browser never names a device; the host gives the session its own.
+   * Loaded on demand: a reader who never opens the pane never downloads it.
+   */
+  async openDeviceStream(id: string): Promise<DeviceStream> {
+    const { AttachDeviceStream } = await import('./stream/device-stream');
+    return new AttachDeviceStream({
+      apiBaseUrl: this.apiBaseUrl,
+      issueTicket: () => this.repository.issueAttachTicket(id, 0, 'device'),
     });
   }
 

@@ -1,6 +1,6 @@
 import { Inject } from '@nestjs/common';
 import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
-import { AppError } from '@oppenheimer/backend-core';
+import { AppError, requireFound } from '@oppenheimer/backend-core';
 import type { SessionCachePort } from '../../../auth/application/session-cache.port';
 import { SESSION_CACHE } from '../../../auth/auth.di-tokens';
 import { AccountErasureRegistry } from '../../application/account-erasure.registry';
@@ -35,8 +35,7 @@ export class DeleteUserCommandHandler implements ICommandHandler<DeleteUserComma
 
   async execute(command: DeleteUserCommand): Promise<void> {
     const found = await this.userRepository.findOneById(command.userId);
-    if (found.isNone()) throw new AppError(UserErrors.NOT_FOUND);
-    const user = found.unwrap();
+    const user = requireFound(found, UserErrors.NOT_FOUND);
 
     if (
       command.confirmation !== undefined &&

@@ -1,10 +1,9 @@
 import { Inject } from '@nestjs/common';
 import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
-import { AppError } from '@oppenheimer/backend-core';
+import { requireTenant } from '@oppenheimer/backend-authz';
 import type { AggregateID } from '@oppenheimer/backend-ddd';
 import { CALENDAR_EVENT_REPOSITORY } from '../../calendar.di-tokens';
 import type { CalendarEventRepositoryPort } from '../../database/calendar-event.repository.port';
-import { CalendarErrors } from '../../domain/calendar.errors';
 import { CalendarEventEntity } from '../../domain/calendar-event.entity';
 import { CreateCalendarEventCommand } from './create-calendar-event.command';
 
@@ -18,7 +17,7 @@ export class CreateCalendarEventCommandHandler
   ) {}
 
   async execute({ scope, userId, input }: CreateCalendarEventCommand): Promise<AggregateID> {
-    if (!scope.organizationId) throw new AppError(CalendarErrors.NO_ACTIVE_ORGANIZATION);
+    requireTenant(scope);
     const event = CalendarEventEntity.createNew({
       organizationId: scope.organizationId,
       title: input.title,

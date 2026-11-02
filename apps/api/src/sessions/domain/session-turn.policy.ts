@@ -213,6 +213,18 @@ export function foldTurnEvent(
         'headless',
       );
     }
+    case SESSION_EVENT_KINDS.PROMPT_SENT: {
+      // A follow-up typed at the agent's prompt for a bot: the next turn, told
+      // apart from the screen like the first. One that lands while a turn is
+      // still live joins it rather than leaving that turn open for ever.
+      if (live) return latest;
+      return newTurn((latest?.seq ?? 0) + 1, 'follow_up', text(event.payload, 'text'));
+    }
+    case SESSION_EVENT_KINDS.PROMPT_UNDELIVERED: {
+      // Its keys never reached the host, so the turn it opened never runs.
+      if (latest?.state !== 'queued' || latest.origin !== 'follow_up') return latest;
+      return end(latest, 'cancelled', at);
+    }
     case SESSION_EVENT_KINDS.STARTED: {
       if (latest?.state !== 'queued') return latest;
       return { ...latest, state: 'in_progress', startedAt: latest.startedAt ?? at };

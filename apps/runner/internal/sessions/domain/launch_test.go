@@ -1,7 +1,9 @@
 package domain
 
 import (
+	"encoding/json"
 	"reflect"
+	"slices"
 	"strings"
 	"testing"
 )
@@ -24,8 +26,8 @@ func TestLaunchArgsMirrorTheCatalog(t *testing.T) {
 	if !reflect.DeepEqual(got, want) {
 		t.Fatalf("codex argv = %q, want %q", got, want)
 	}
-	got = Launch{Model: "grok-4.7", Permission: "ask", Effort: "minimal", EffortIsLevel: true, Prompt: "fix the picker"}.Args(AgentGrok)
-	want = []string{"--model", "grok-4.7", "--permission-mode", "default", "--reasoning-effort", "minimal", "fix the picker"}
+	got = Launch{Model: "grok-4.7", Permission: "ask", Effort: "xhigh", EffortIsLevel: true, Prompt: "fix the picker"}.Args(AgentGrok)
+	want = []string{"--model", "grok-4.7", "--permission-mode", "default", "--reasoning-effort", "xhigh", "fix the picker"}
 	if !reflect.DeepEqual(got, want) {
 		t.Fatalf("grok argv = %q, want %q", got, want)
 	}
@@ -62,9 +64,39 @@ func TestOpenCodeEffortIsTheVariantInConfiguration(t *testing.T) {
 	if got := launch.Args(AgentOpenCode); !reflect.DeepEqual(got, []string{"--model", "anthropic/claude-opus-5-5", "--prompt", "go"}) {
 		t.Fatalf("argv = %q, want no effort in it", got)
 	}
-	off := Launch{Model: "anthropic/claude-haiku-4-5", Permission: "full", Effort: "none", EffortIsLevel: true}
+	off := Launch{Model: "anthropic/claude-haiku-5-5", Permission: "full", Effort: "none", EffortIsLevel: true}
 	if env := off.Env(AgentOpenCode); len(env) != 0 {
 		t.Fatalf("haiku with thinking off sets nothing, got %v", env)
+	}
+}
+
+// OpenCode is launched serving its API on the session's loopback port, with
+// the session's password, so the chat can read its conversation and nobody
+// else can drive it; no other agent is given either. Regression: an API on
+// every interface, one with no password, or a password in a process's
+// arguments.
+func TestOpenCodeServesItsConversationOnTheSessionsPort(t *testing.T) {
+	launch := Launch{Permission: "full", Server: &AgentServer{Port: 41234, Password: "pw"}}
+	if got, want := launch.Args(AgentOpenCode), []string{"--port", "41234", "--hostname", "127.0.0.1", "--auto"}; !reflect.DeepEqual(got, want) {
+		t.Fatalf("argv = %q, want %q", got, want)
+	}
+	// The credentials are the terminal's environment, never the command line,
+	// which is the long-lived `runner pty` wrapper's argv.
+	if line := launch.CommandLine(AgentOpenCode); strings.Contains(line, "pw") {
+		t.Fatalf("command line = %q, want no password in it", line)
+	}
+	env := launch.ServerEnv(AgentOpenCode)
+	if env["OPENCODE_SERVER_PASSWORD"] != "pw" || env["OPENCODE_SERVER_USERNAME"] != AgentServerUser {
+		t.Fatalf("server env = %v, want the session's credentials", env)
+	}
+	if got := launch.Args(AgentClaude); slices.Contains(got, "--port") {
+		t.Fatalf("claude argv = %q, want no server", got)
+	}
+	if env := launch.ServerEnv(AgentClaude); env != nil {
+		t.Fatalf("claude server env = %v, want none", env)
+	}
+	if got := (Launch{Resume: true, Server: &AgentServer{Port: 41234, Password: "pw"}}).Args(AgentOpenCode); !slices.Contains(got, "--continue") || !slices.Contains(got, "--port") {
+		t.Fatalf("resumed argv = %q, want the conversation continued on the port", got)
 	}
 }
 
@@ -318,5 +350,29 @@ func TestThePermissionLevelWinsAnEnvironmentName(t *testing.T) {
 	env := Launch{Model: "anthropic/claude-opus-5-5", Permission: "ask", Effort: "high", EffortIsLevel: true}.Env(AgentOpenCode)
 	if !strings.HasPrefix(env["OPENCODE_PERMISSION"], `{"edit":"ask"`) {
 		t.Fatalf("OPENCODE_PERMISSION = %q, want the permission level's", env["OPENCODE_PERMISSION"])
+	}
+}
+
+func TestAClaudeSessionRunsTheRunnersStatusLineWhichIsNeverSaved(t *testing.T) {
+	launch := Launch{Permission: "auto", StatusLine: "'/opt/runner' statusline", Prompt: "fix it"}
+	got := launch.Args(AgentClaude)
+	want := []string{
+		"--settings", `{"statusLine":{"command":"'/opt/runner' statusline","type":"command"}}`,
+		"--permission-mode", "auto", "fix it",
+	}
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("claude argv = %q, want %q", got, want)
+	}
+	// Another agent has no such setting; the command is this host's, so a
+	// saved launch never carries it to the next binary.
+	if args := launch.Args(AgentCodex); slices.Contains(args, "--settings") {
+		t.Fatalf("codex argv = %q", args)
+	}
+	saved, err := json.Marshal(launch)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if strings.Contains(string(saved), "statusline") {
+		t.Fatalf("saved launch = %s", saved)
 	}
 }

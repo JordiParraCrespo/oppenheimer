@@ -167,6 +167,7 @@ export const TOC: TocGroup[] = [
     items: [
       { id: 'sidebar', label: 'Rail · Sidebar', icon: PanelLeftIcon, components: ['rail', 'sidebar', 'session-item'] },
       { id: 'routineitem', label: 'RoutineItem', icon: ZapIcon, components: ['routine-item'] },
+      { id: 'inbox', label: 'Inbox', icon: BellIcon, components: ['inbox'] },
       { id: 'pilltabs', label: 'PillTabs', icon: ToggleLeftIcon, components: ['pill-tabs'] },
       { id: 'editorpage', label: 'EditorPage', icon: PanelTopIcon, components: ['editor-page'] },
       { id: 'pageheader', label: 'PageHeader', icon: HeadingIcon, components: ['page-header'] },
@@ -191,7 +192,7 @@ export const TOC: TocGroup[] = [
       { id: 'calendar', label: 'MonthCalendar', icon: CalendarDaysIcon, components: ['month-calendar', 'calendar-source'] },
       { id: 'calendaraccounts', label: 'CalendarAccountList', icon: CalendarDaysIcon, components: [] },
       { id: 'milestones', label: 'MilestoneTimeline', icon: MilestoneIcon, components: ['milestone-timeline'] },
-      { id: 'facetselect', label: 'FacetSelect', icon: ListFilterIcon, components: ['facet-select'] },
+      { id: 'facetselect', label: 'FacetSelect', icon: ListFilterIcon, components: ['facet-select', 'search-list'] },
       { id: 'daterange', label: 'DateRangePicker', icon: CalendarRangeIcon, components: ['date-range-picker'] },
       { id: 'areachart', label: 'AreaChart', icon: ChartAreaIcon, components: [] },
       { id: 'plandialogs', label: 'Task & session dialogs', icon: AppWindowIcon, components: [] },
@@ -228,7 +229,7 @@ export const TOC: TocGroup[] = [
     items: [
       { id: 'chattranscript', label: 'Transcript', icon: MessageSquareIcon, components: ['chat-transcript'] },
       { id: 'chatwork', label: 'Work and tools', icon: SlidersHorizontalIcon, components: ['chat-work', 'chat-trace'] },
-      { id: 'chatelements', label: 'AI elements', icon: CodeIcon, components: ['chat-elements', 'chat-composer', 'chat-image'] },
+      { id: 'chatelements', label: 'AI elements', icon: CodeIcon, components: ['chat-elements', 'chat-composer', 'chat-image', 'json-tree'] },
       { id: 'chatcards', label: 'Cards', icon: RectangleHorizontalIcon, components: ['chat-cards'] },
       { id: 'chatstatus', label: 'Dividers and status', icon: TriangleAlertIcon, components: ['chat-status'] },
       { id: 'chatstack', label: 'Above the composer', icon: LayersIcon, components: ['chat-composer-stack'] },

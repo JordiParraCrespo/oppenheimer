@@ -1,17 +1,38 @@
 import { ChatMarker, ProposedPlanCard, ReasoningRow } from '@oppenheimer/design-system-web';
-import { Archive, CircleStop } from '@oppenheimer/design-system-web/icons';
+import {
+  Archive,
+  CircleAlert,
+  CircleCheck,
+  CircleDashed,
+  CircleStop,
+} from '@oppenheimer/design-system-web/icons';
+import type { ChatTaskStatus } from '@oppenheimer/frontend-consumer';
 import { Markdown } from '@oppenheimer/frontend-web';
+import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { ChatBlock } from '../lib/chat-blocks';
 import { ChatChanges } from './chat-changes';
+import { ChatCommandOutput } from './chat-command-output';
+import { ChatImages } from './chat-images';
+import { ChatQuestionRecord } from './chat-question-record';
 import { ChatReplyText } from './chat-reply-text';
 import { ChatToolGroup } from './chat-tool-group';
 
+const TASK_ICONS: Record<ChatTaskStatus, ReactNode> = {
+  completed: <CircleCheck />,
+  failed: <CircleAlert />,
+  killed: <CircleStop />,
+  unknown: <CircleDashed />,
+};
+
 /**
  * One block of an agent's turn, drawn as what it is: words as markdown, a
- * plan and the files changed as cards, thinking as a fold that is open while
- * it is what the agent is doing, calls as a group, a stop or a compaction as
- * a note. `live` and `last` say whether this is the work in flight.
+ * plan, what it asked and the files changed as cards, the images a call
+ * read as tiles that open, what a slash command printed in the terminal's
+ * font, thinking as a fold that is open while it is what the agent is
+ * doing, calls as a group (the ones that only looked around as an Explored
+ * one), a stop, a compaction or a background task that ended as a note.
+ * `live` and `last` say whether this is the work in flight.
  */
 export function ChatTurnBlock({
   block,
@@ -32,8 +53,12 @@ export function ChatTurnBlock({
           <Markdown source={block.call.plan ?? ''} />
         </ProposedPlanCard>
       );
+    case 'question':
+      return <ChatQuestionRecord call={block.call} />;
     case 'changes':
       return <ChatChanges files={block.files} />;
+    case 'images':
+      return <ChatImages images={block.images} source={block.source} />;
     case 'thinking': {
       // Open while it is what the agent is doing, folded once it moves on.
       const thinking = live && last;
@@ -57,10 +82,20 @@ export function ChatTurnBlock({
     }
     case 'tools':
       return <ChatToolGroup calls={block.calls} live={live && last} />;
+    case 'explored':
+      return <ChatToolGroup calls={block.calls} live={live && last} explored />;
     case 'notice':
       return (
         <ChatMarker icon={block.notice === 'compacted' ? <Archive /> : <CircleStop />}>
           {t(`sessions.chat.notice.${block.notice}`)}
+        </ChatMarker>
+      );
+    case 'output':
+      return <ChatCommandOutput text={block.text} failed={block.failed} />;
+    case 'task':
+      return (
+        <ChatMarker icon={TASK_ICONS[block.status]}>
+          {block.summary ?? t(`sessions.chat.task.${block.status}`)}
         </ChatMarker>
       );
   }

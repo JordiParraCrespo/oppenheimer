@@ -1,5 +1,5 @@
 import type { ProjectEntity } from '../../projects/domain/project.entity';
-import { planSession } from '../bot-session-tool.mapper';
+import { planSession, sentTurnOf } from '../bot-session-tool.mapper';
 
 /**
  * How `start_session` decides what to start, before anything is dispatched:
@@ -79,5 +79,15 @@ describe('planSession', () => {
     expect(planSession({ task: 'a'.repeat(5_000) }, project(), HOME)).toMatchObject({
       refusal: expect.stringContaining('(task)'),
     });
+  });
+});
+
+describe('sentTurnOf', () => {
+  // What breaks this: send_to_session watching a task its prompt did not
+  // open, so the bot waits for a wake that never comes.
+  it('is the next task after a finished one, the live one it joins, or the first', () => {
+    expect(sentTurnOf({ seq: 2, state: 'completed' })).toBe(3);
+    expect(sentTurnOf({ seq: 2, state: 'in_progress' })).toBe(2);
+    expect(sentTurnOf(null)).toBe(1);
   });
 });

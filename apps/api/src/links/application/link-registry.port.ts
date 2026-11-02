@@ -3,6 +3,7 @@ import type {
   AttachmentDirectAnswerMessage,
   AttachmentDirectRefusedMessage,
   AttachmentPathMessage,
+  DeviceInfoMessage,
   ProtocolMessage,
   RunnerCapability,
 } from '@oppenheimer/shared/protocol';
@@ -25,6 +26,21 @@ export interface AttachmentSink {
    * terminal (0.7), as the runner compacted them. Relayed, never read here.
    */
   chat(message: AttachmentChatMessage): void;
+  /**
+   * Which device a device attachment shows (`device.info`), before its
+   * frames. Only a device attachment implements it; a terminal never hears one.
+   */
+  device?(message: DeviceInfoMessage): void;
+  /**
+   * The runner connected a port attachment to its port (`port.opened`): the
+   * attachment's bytes may flow. Only a port attachment implements it.
+   */
+  opened?(): void;
+  /**
+   * The runner's credit for bytes it wrote to a port attachment's port: the
+   * window this side sends under. Only a port attachment implements it.
+   */
+  credit?(bytes: number): void;
 }
 
 /** What the runner says about an attachment's direct path. */

@@ -3,9 +3,8 @@ import type { ConfigService } from '@nestjs/config';
 import type { AccessScope } from '@oppenheimer/backend-authz';
 import type { OutboxService } from '@oppenheimer/backend-ddd';
 import { Some } from 'oxide.ts';
-import { GenericContainer, type StartedTestContainer, Wait } from 'testcontainers';
 import { DataSource, type EntityManager } from 'typeorm';
-import { runAllMigrations } from '../../__tests__/run-migrations';
+import { useTestDatabase } from '../../__tests__/integration-services';
 import type { InboundEventLookupPort } from '../../inbound-events/application/inbound-event-lookup.port';
 import { AutomationLimitsResolver } from '../application/automation-limits.resolver';
 import { AutomationMapper } from '../automation.mapper';
@@ -23,7 +22,7 @@ import { AutomationSettingsOrmEntity } from '../database/automation-settings.orm
 import { AutomationSettingsRepository } from '../database/automation-settings.repository';
 import { AutomationTriggerOrmEntity } from '../database/automation-trigger.orm-entity';
 import { AutomationTriggerSubjectOrmEntity } from '../database/automation-trigger-subject.orm-entity';
-import { AutomationEntity } from '../domain/automation.entity';
+import { AutomationEntity, type RevisionInput } from '../domain/automation.entity';
 import type { AutomationTriggerProps } from '../domain/automation.types';
 import { AutomationRunEntity } from '../domain/automation-run.entity';
 import { triggerFromInput } from '../domain/trigger-config.policy';
@@ -42,7 +41,6 @@ const DAY = 24 * HOUR;
  * scoped on the run itself, answers the right totals and counts.
  */
 describe('automations: firing under the caps, and the runs list (integration)', () => {
-  let pgContainer: StartedTestContainer;
   let dataSource: DataSource;
   let automations: AutomationRepository;
   let runs: AutomationRunRepository;
@@ -78,28 +76,11 @@ describe('automations: firing under the caps, and the runs list (integration)', 
     }) as AccessScope;
 
   beforeAll(async () => {
-    pgContainer = await new GenericContainer('postgres:16-alpine')
-      .withEnvironment({ POSTGRES_USER: 'test', POSTGRES_PASSWORD: 'test', POSTGRES_DB: 'test' })
-      .withExposedPorts(5432)
-      .withWaitStrategy(Wait.forLogMessage(/database system is ready to accept connections/, 2))
-      .start();
-
-    process.env.NODE_ENV = 'test';
-    process.env.DB_HOST = pgContainer.getHost();
-    process.env.DB_PORT = pgContainer.getMappedPort(5432).toString();
-    process.env.DB_USERNAME = 'test';
-    process.env.DB_PASSWORD = 'test';
-    process.env.DB_DATABASE = 'test';
-
-    await runAllMigrations();
+    const db = await useTestDatabase();
 
     dataSource = new DataSource({
       type: 'postgres',
-      host: process.env.DB_HOST,
-      port: Number(process.env.DB_PORT),
-      username: 'test',
-      password: 'test',
-      database: 'test',
+      url: db.url,
       entities: [
         AutomationOrmEntity,
         AutomationRevisionOrmEntity,
@@ -150,7 +131,6 @@ describe('automations: firing under the caps, and the runs list (integration)', 
 
   afterAll(async () => {
     await dataSource?.destroy();
-    await pgContainer?.stop();
   });
 
   beforeEach(async () => {
@@ -211,7 +191,12 @@ describe('automations: firing under the caps, and the runs list (integration)', 
 
   async function createAutomation(
     triggers: AutomationTriggerProps[],
-    overrides: { org?: string; project?: string; maxRunsPerHour?: number } = {},
+    overrides: {
+      org?: string;
+      project?: string;
+      maxRunsPerHour?: number;
+      where?: Partial<Pick<RevisionInput, 'place' | 'hostId' | 'agent'>>;
+    } = {},
   ): Promise<AutomationEntity> {
     const automation = AutomationEntity.createNew({
       organizationId: overrides.org ?? organizationId,
@@ -219,8 +204,10 @@ describe('automations: firing under the caps, and the runs list (integration)', 
       ownerUserId: userId,
       name: `Automation ${randomUUID().slice(0, 6)}`,
       revision: {
+        place: 'host',
         hostId,
         agent: 'claude-code',
+        ...overrides.where,
         model: null,
         permission: 'auto',
         effort: null,
@@ -587,6 +574,62 @@ describe('automations: firing under the caps, and the runs list (integration)', 
       });
     });
 
+    it('watches a mail account for its live routines, and fires the ones whose query matched', async () => {
+      const botId = await insertBot();
+      const connectionId = randomUUID();
+      const mail = (query: string | null, position: number) =>
+        triggerFromInput(
+          { source: 'gmail', event: 'mail_received', connectionId, query },
+          position,
+        );
+      const routine = (name: string, query: string | null) =>
+        AutomationEntity.createRoutine({
+          organizationId,
+          ownerUserId: userId,
+          botId,
+          name,
+          prompt: 'Answer the mail.',
+          triggers: [mail(query, 0)],
+          active: true,
+          credentialScopes: null,
+          now: new Date(),
+        });
+      const billing = routine('Billing mail', 'from:billing@client.test');
+      const anyMail = routine('Any mail', null);
+      const paused = routine('Paused', 'is:starred');
+      paused.pause('user', new Date());
+      for (const each of [billing, anyMail, paused]) await automations.insert(each);
+
+      const watched = await automations.findWatchedSubjects('gmail');
+      const mine = watched.filter((subject) => subject.subjectRef === connectionId);
+      expect(mine).toHaveLength(1);
+      expect(mine[0]).toMatchObject({ organizationId });
+      expect([...mine[0].filters].sort()).toEqual(['from:billing@client.test', null].sort());
+
+      const fire = async (externalId: string, matched: string[]) => {
+        const [row]: { id: string }[] = await dataSource.query(
+          `INSERT INTO "inbound_event"
+             ("organizationId", "source", "externalId", "eventType", "subjectKind", "subjectRef", "occurredAt")
+           VALUES ($1, 'gmail', $2, 'mail_received', 'gmail_connection', $3, now()) RETURNING "id"`,
+          [organizationId, externalId, connectionId],
+        );
+        return events.execute(
+          new FireEventTriggersCommand({
+            organizationId,
+            inboundEventId: row.id,
+            source: 'gmail',
+            eventType: 'mail_received',
+            subjectRef: connectionId,
+            externalId,
+            actorIsOwnApp: false,
+            attributes: { query: matched },
+          }),
+        );
+      };
+      expect(await fire(`${connectionId}:m1`, [])).toBe(1);
+      expect(await fire(`${connectionId}:m2`, ['from:billing@client.test'])).toBe(2);
+    });
+
     it("records the bot turn its run became, and reads the run's status from it", async () => {
       const botId = await insertBot();
       const routine = AutomationEntity.createRoutine({
@@ -641,6 +684,60 @@ describe('automations: firing under the caps, and the runs list (integration)', 
           new FindAutomationRunQuery({ scope: scope(), runId: run.id }),
         ),
       ).resolves.toMatchObject({ status: 'running', projectId: null, agent: null, hostId: null });
+    });
+  });
+
+  describe('where runs start', () => {
+    it('stores a vendor’s automation with no host, and reads its place back', async () => {
+      const automation = await createAutomation([hourly(0)], {
+        where: { place: 'cursor', hostId: null, agent: 'cursor' },
+      });
+      const read = (await automations.findOneById(scope(), automation.id)).unwrap();
+      expect(read.target).toMatchObject({
+        kind: 'session',
+        revision: { place: 'cursor', hostId: null, agent: 'cursor' },
+      });
+    });
+
+    it('refuses a revision that runs on a host but names none', async () => {
+      const automation = await createAutomation([hourly(0)]);
+      await expect(
+        dataSource.query(`UPDATE "automation_revision" SET "hostId" = NULL WHERE "id" = $1`, [
+          automation.revision.id,
+        ]),
+      ).rejects.toThrow(/CHK_automation_revision_place_host/);
+    });
+
+    it('lets a host run past a live cloud run started from that host', async () => {
+      await settings.upsert(organizationId, { liveRunsPerHost: 1 });
+      const cloud = await createAutomation([hourly(0)], { where: { place: 'claude-cloud' } });
+      await run(cloud, 0, 'dispatched', { turn: 'in_progress' });
+      const onHost = await createAutomation([hourly(0)]);
+      const vendor = await createAutomation([hourly(0)], {
+        where: { place: 'cursor', hostId: null, agent: 'cursor' },
+      });
+      const claim = async (automation: AutomationEntity, host: string | null) => {
+        await run(automation, 0, 'pending');
+        const [pending]: { id: string }[] = await dataSource.query(
+          `SELECT "id" FROM "automation_run" WHERE "automationId" = $1 AND "outcome" = 'pending'`,
+          [automation.id],
+        );
+        const now = new Date();
+        return runs.claimSlot({
+          runId: pending.id,
+          automationId: automation.id,
+          hostId: host,
+          liveRunsPerHost: 1,
+          overlap: 'skip',
+          liveSince: new Date(now.getTime() - DAY),
+          claimFloor: new Date(now.getTime() - DAY),
+          now,
+        });
+      };
+
+      expect(await claim(onHost, hostId)).toBe(true);
+      // With no host, only the automation's own runs are counted.
+      expect(await claim(vendor, null)).toBe(true);
     });
   });
 

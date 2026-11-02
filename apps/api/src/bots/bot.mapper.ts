@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import type { Mapper } from '@oppenheimer/backend-ddd';
-import type { BotAvatarColor, BotPermission, BotProvider } from '@oppenheimer/shared';
+import type { BotAvatarColor, BotPermission, BotProvider, BotSection } from '@oppenheimer/shared';
 import type { SessionEffort } from '@oppenheimer/shared/agents';
 import { BotOrmEntity } from './database/bot.orm-entity';
 import { BotEntity } from './domain/bot.entity';
@@ -27,6 +27,7 @@ export class BotMapper implements Mapper<BotEntity, BotOrmEntity, BotResponseDto
     record.effort = entity.effort;
     record.permission = entity.permission;
     record.learnAutomatically = entity.learnAutomatically;
+    record.sections = [...entity.sections];
     return record;
   }
 
@@ -51,6 +52,7 @@ export class BotMapper implements Mapper<BotEntity, BotOrmEntity, BotResponseDto
         effort: (record.effort ?? null) as SessionEffort | null,
         permission: record.permission as BotPermission,
         learnAutomatically: record.learnAutomatically,
+        sections: (record.sections ?? []) as BotSection[],
         lastMessageAt: record.lastMessageAt ?? null,
         lastMessagePreview: record.lastMessagePreview ?? null,
       },
@@ -72,6 +74,7 @@ export class BotMapper implements Mapper<BotEntity, BotOrmEntity, BotResponseDto
     dto.permission = entity.permission;
     dto.createdByBotId = entity.createdByBotId;
     dto.learnAutomatically = entity.learnAutomatically;
+    dto.sections = [...entity.sections];
     dto.createdAt = entity.createdAt.toISOString();
     dto.updatedAt = entity.updatedAt.toISOString();
     dto.lastActivityAt = (entity.lastMessageAt ?? entity.updatedAt).toISOString();

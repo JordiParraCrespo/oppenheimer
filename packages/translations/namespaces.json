@@ -11,6 +11,7 @@
   "tasks",
   "calendar",
   "hosts",
+  "inbox",
   "settings",
   "nav",
   "language",
@@ -19,5 +20,6 @@
   "public",
   "theme",
   "toasts",
-  "emails"
+  "emails",
+  "extension"
 ]

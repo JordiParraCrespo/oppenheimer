@@ -8,26 +8,6 @@ import type { SessionEntity } from '@oppenheimer/frontend-consumer';
  */
 export const SESSION_PINS_KEY = 'oppenheimer.sidebar.pins';
 
-/** Anything unreadable, or storage switched off, is no pin. */
-export function storedSessionPins(): string[] {
-  try {
-    const stored: unknown = JSON.parse(window.localStorage.getItem(SESSION_PINS_KEY) ?? 'null');
-    return Array.isArray(stored)
-      ? [...new Set(stored.filter((id): id is string => typeof id === 'string'))]
-      : [];
-  } catch {
-    return [];
-  }
-}
-
-export function rememberSessionPins(pins: readonly string[]) {
-  try {
-    window.localStorage.setItem(SESSION_PINS_KEY, JSON.stringify(pins));
-  } catch {
-    // Private browsing or a full quota: the pins hold until the page reloads.
-  }
-}
-
 /** `pins` with `id` pinned on top, or taken out. */
 export function withPin(pins: readonly string[], id: string, pinned: boolean): string[] {
   const rest = pins.filter((pinnedId) => pinnedId !== id);

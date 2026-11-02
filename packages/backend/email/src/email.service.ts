@@ -22,17 +22,6 @@ export interface ActionEmailParams extends EmailFrameParams {
 
 export type PasswordResetEmailParams = ActionEmailParams;
 export type EmailVerificationEmailParams = ActionEmailParams;
-/**
- * A machine was paired with the account. A security notice, not a welcome:
- * its one action opens the console, and its closing names the host id to
- * unpair.
- */
-export type HostPairedEmailParams = ActionEmailParams;
-/**
- * A host connected from another country or network operator than before. A
- * security notice like the pairing one: its one action opens the console.
- */
-export type HostNetworkChangedEmailParams = ActionEmailParams;
 
 export interface WelcomeEmailParams extends EmailFrameParams {
   eyebrow: string;
@@ -64,6 +53,10 @@ export abstract class EmailService {
   abstract sendEmailVerification(to: string, params: EmailVerificationEmailParams): Promise<void>;
   abstract sendWelcome(to: string, params: WelcomeEmailParams): Promise<void>;
   abstract sendInvitation(to: string, params: InvitationEmailParams): Promise<void>;
-  abstract sendHostPaired(to: string, params: HostPairedEmailParams): Promise<void>;
-  abstract sendHostNetworkChanged(to: string, params: HostNetworkChangedEmailParams): Promise<void>;
+  /**
+   * Any email whose one purpose is opening a link, in the shared action
+   * layout. The copy is the caller's: a product notice (a host paired, a host
+   * on a new network) is written by the API and needs no template here.
+   */
+  abstract sendAction(to: string, params: ActionEmailParams): Promise<void>;
 }

@@ -1,36 +1,43 @@
-import type { AccessScope } from '@oppenheimer/backend-authz';
+import type { InstallationAddress, RepositoryAddress } from '../domain/repository-address.types';
 import type {
   GithubChecks,
   GithubPullRequestDetail,
-  GithubPullRequestFile,
   GithubPullRequestReview,
-  GithubPullRequestSummary,
   GithubRefusal,
-  GithubReviewComment,
-  GithubTimelineItem,
 } from '../infrastructure/github-pulls.port';
 
-/** One repository a workspace's installations cover, named by the installation that reaches it. */
-export interface WorkspaceRepository {
-  /** The control-plane installation row's uuid. */
-  installationId: string;
-  githubRepoId: number;
+/*
+ * What the Pull requests area and GitHub trade
+ * (`product/next-steps/0.2-pull-requests-api-plan.md`): the addresses,
+ * repositories and snapshots shared by the four ports beside this file —
+ * the directory, the listings, one pull request's reads, and the writes.
+ */
+export type {
+  InstallationAddress,
+  RepositoryAddress,
+  RepositorySource,
+  TokensAddress,
+} from '../domain/repository-address.types';
+
+/** What the caller can read of one repository, besides where it is. */
+export interface RepositoryFacts {
   name: string;
   fullName: string;
   defaultBranch: string;
   private: boolean;
 }
 
-/** The address of one repository: the installation that reaches it, and GitHub's id for it. */
-export interface RepositoryAddress {
-  installationId: string;
-  githubRepoId: number;
-}
+/**
+ * One repository the caller can read: one a workspace's installation covers,
+ * or one only their own GitHub tokens open (§6.2), whichever token reads it.
+ */
+export type WorkspaceRepository = RepositoryAddress & RepositoryFacts;
 
 /** The address of one pull request. */
-export interface PullRequestAddress extends RepositoryAddress {
-  number: number;
-}
+export type PullRequestAddress = RepositoryAddress & { number: number };
+
+/** A pull request the App reaches: what a write in the caller's name takes. */
+export type InstallationPullRequestAddress = InstallationAddress & { number: number };
 
 /**
  * One part of a pull request as GitHub answered it: the value, or the refusal
@@ -121,83 +128,4 @@ export interface ReviewSubmission {
   event: 'APPROVE' | 'REQUEST_CHANGES' | 'COMMENT';
   body?: string;
   comments: { path: string; line: number; side: 'LEFT' | 'RIGHT'; body: string }[];
-}
-
-/**
- * The one door the Pull requests area reaches GitHub through
- * (`product/next-steps/0.2-pull-requests-api-plan.md`). Reads go through the
- * workspace's installations, scoped like every other repository read; writes go
- * through the caller's own GitHub user token, so what GitHub records is what that
- * person did. With no user token a write is `GITHUB_012`, never somebody else's.
- */
-export interface PullRequestAccessPort {
-  /** Every repository the workspace's usable installations cover. */
-  repositories(scope: AccessScope): Promise<WorkspaceRepository[]>;
-  /** The caller's GitHub login: their stored grant's, or the account of a personal installation they connected. */
-  viewerLogin(scope: AccessScope): Promise<string | null>;
-  /**
-   * What one page view may spend on filling pull requests' parts, shared by
-   * every call it makes. Opened by `readBudget()` and passed along, so the
-   * ceiling belongs to the view and not to each repository under it (#247).
-   */
-  readBudget(): ReadBudget;
-  /** One repository's open pull requests, each with its paths, checks and reviews. Never throws for GitHub's refusals. */
-  openPullRequests(
-    scope: AccessScope,
-    repository: WorkspaceRepository,
-    budget: ReadBudget,
-  ): Promise<RepositoryPulls>;
-  /**
-   * The pull requests closed since a moment across the repositories, the
-   * `limit` most recently closed of them read in full; `complete` is false
-   * when there were more.
-   */
-  closedPullRequests(
-    scope: AccessScope,
-    repositories: WorkspaceRepository[],
-    since: Date,
-    limit: number,
-    budget: ReadBudget,
-  ): Promise<{
-    pulls: RepositoryPulls<ClosedPullRequestSnapshot>[];
-    /** Every pull request in the window as its listing gave it, filled or not: what the figures count. */
-    counted: GithubPullRequestSummary[];
-    complete: boolean;
-  }>;
-  pullRequest(scope: AccessScope, address: PullRequestAddress): Promise<PullRequestSnapshot>;
-  files(scope: AccessScope, address: PullRequestAddress): Promise<GithubPullRequestFile[]>;
-  reviewComments(scope: AccessScope, address: PullRequestAddress): Promise<GithubReviewComment[]>;
-  /** Its conversation: comments, commits, reviews and events, oldest first. */
-  activity(scope: AccessScope, address: PullRequestAddress): Promise<GithubTimelineItem[]>;
-  submitReview(
-    scope: AccessScope,
-    userId: string,
-    address: PullRequestAddress,
-    review: ReviewSubmission,
-  ): Promise<void>;
-  addComment(
-    scope: AccessScope,
-    userId: string,
-    address: PullRequestAddress,
-    comment: { path: string; line: number; side: 'LEFT' | 'RIGHT'; body: string },
-  ): Promise<void>;
-  /**
-   * Merges the head the caller last saw; GitHub's refusal is `GITHUB_014`.
-   * With `expectedHead`, a head that has moved on since is `GITHUB_014` too,
-   * and GitHub is not asked.
-   */
-  merge(
-    scope: AccessScope,
-    userId: string,
-    address: PullRequestAddress,
-    method: 'squash' | 'merge' | 'rebase',
-    expectedHead?: string,
-  ): Promise<void>;
-  /** Asks GitHub to merge it, in the caller's name, once what it requires passes; false when GitHub will not. */
-  enableAutoMerge(
-    scope: AccessScope,
-    userId: string,
-    address: PullRequestAddress,
-    method: 'squash' | 'merge' | 'rebase',
-  ): Promise<boolean>;
 }

@@ -23,6 +23,7 @@ export const namespaces = namespaceList as unknown as readonly [
   'tasks',
   'calendar',
   'hosts',
+  'inbox',
   'settings',
   'nav',
   'language',
@@ -32,6 +33,7 @@ export const namespaces = namespaceList as unknown as readonly [
   'theme',
   'toasts',
   'emails',
+  'extension',
 ];
 
 export type Namespace = (typeof namespaces)[number];

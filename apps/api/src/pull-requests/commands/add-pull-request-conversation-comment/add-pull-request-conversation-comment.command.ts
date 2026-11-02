@@ -1,6 +1,6 @@
 import type { AccessScope } from '@oppenheimer/backend-authz';
 import { CommandBase, type CommandProps } from '@oppenheimer/backend-ddd';
-import type { PullRequestAddress } from '../../../github/application/pull-request-access.port';
+import type { InstallationPullRequestAddress } from '../../../github/application/pull-request-access.port';
 
 /**
  * No controller: a bot's `comment_on_pull_request` tool dispatches it
@@ -9,7 +9,8 @@ import type { PullRequestAddress } from '../../../github/application/pull-reques
  */
 export class AddPullRequestConversationCommentCommand extends CommandBase {
   readonly scope: AccessScope;
-  readonly address: PullRequestAddress;
+  /** Posted in the caller's name, so only where the App reaches. */
+  readonly address: InstallationPullRequestAddress;
   readonly body: string;
 
   constructor(props: CommandProps<AddPullRequestConversationCommentCommand>) {

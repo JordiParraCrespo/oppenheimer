@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import type {
   PullRequestAnalyticsRange,
   PullRequestLane,
-  PullRequestScope,
+  PullRequestQueueName,
 } from '@oppenheimer/shared';
 import type {
   ClosedPullRequestSnapshot,
@@ -11,6 +11,7 @@ import type {
   RepositoryPulls,
   WorkspaceRepository,
 } from '../github/application/pull-request-access.port';
+import { addressKeyOf, installationIdOf } from '../github/domain/repository-address.policy';
 import type {
   GithubPullRequestFile,
   GithubPullRequestSummary,
@@ -63,7 +64,7 @@ export class PullRequestMapper {
     const { pull, repository } = snapshot;
     const decision = decideLane(snapshot.files.value, pull.additions, pull.deletions);
     return {
-      installationId: repository.installationId,
+      installationId: installationIdOf(repository),
       githubRepoId: repository.githubRepoId,
       repository: repository.fullName,
       number: pull.number,
@@ -71,6 +72,7 @@ export class PullRequestMapper {
       author: pull.authorLogin,
       authorKind: isSessionBranch(pull.headRef) ? 'session' : 'person',
       headRef: pull.headRef,
+      headSha: pull.headSha,
       scope: scopeOf(pull, viewerLogin),
       lane: decision.lane,
       laneReason: decision.reason,
@@ -95,16 +97,19 @@ export class PullRequestMapper {
 
   toQueue(
     rows: PullRequestRowDto[],
-    scope: PullRequestScope,
+    scope: PullRequestQueueName,
     viewerLogin: string | null,
     reads: RepositoryPulls<PullRequestSnapshot>[],
   ): PullRequestQueueResponseDto {
-    const items = rows.filter((row) => row.scope === scope).sort(queueOrder);
+    const items = (scope === 'all' ? [...rows] : rows.filter((row) => row.scope === scope)).sort(
+      queueOrder,
+    );
     const count = (predicate: (row: PullRequestRowDto) => boolean) =>
       items.filter(predicate).length;
     return {
       items,
       scopes: {
+        all: rows.length,
         mine: rows.filter((row) => row.scope === 'mine').length,
         requested: rows.filter((row) => row.scope === 'requested').length,
         watching: rows.filter((row) => row.scope === 'watching').length,
@@ -149,25 +154,20 @@ export class PullRequestMapper {
     snapshot: PullRequestSnapshot,
     viewerLogin: string | null,
     now: Date,
-  ): PullRequestDetailResponseDto {
+  ): Omit<PullRequestDetailResponseDto, 'ciFindings'> {
     const { pull } = snapshot;
     const gates = mergeGates(this.factsOf(snapshot));
     return {
       ...this.toRow(snapshot, viewerLogin, now),
       body: pull.body,
       baseRef: pull.baseRef,
-      headSha: pull.headSha,
       fromFork: pull.fromFork,
       state: pull.merged ? 'merged' : pull.state,
       changedFiles: pull.changedFiles,
       folders: foldersOf(snapshot.files.value ?? []),
-      checkCounts: snapshot.checks.value ?? {
-        state: 'unavailable',
-        total: 0,
-        passed: 0,
-        failed: 0,
-        pending: 0,
-      },
+      checkCounts: snapshot.checks.value
+        ? { ...snapshot.checks.value, failing: snapshot.checks.value.failing ?? [] }
+        : { state: 'unavailable', total: 0, passed: 0, failed: 0, pending: 0, failing: [] },
       gates: (['checks', 'conflicts', 'merge'] as const).map((id) => ({
         id,
         state: gates[id],
@@ -231,7 +231,7 @@ export class PullRequestMapper {
 
   toWatch(repository: WorkspaceRepository, watching: boolean): WatchedRepositoryDto {
     return {
-      installationId: repository.installationId,
+      installationId: installationIdOf(repository),
       githubRepoId: repository.githubRepoId,
       fullName: repository.fullName,
       private: repository.private,
@@ -419,8 +419,7 @@ function foldersOf(paths: readonly string[]): string[] {
 
 function dedupe<T extends PullRequestRead>(snapshots: T[]): T[] {
   const seen = new Map<string, T>();
-  for (const s of snapshots)
-    seen.set(`${s.repository.installationId}:${s.repository.githubRepoId}:${s.pull.number}`, s);
+  for (const s of snapshots) seen.set(`${addressKeyOf(s.repository)}:${s.pull.number}`, s);
   return [...seen.values()];
 }
 

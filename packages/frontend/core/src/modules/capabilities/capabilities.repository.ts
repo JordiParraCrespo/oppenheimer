@@ -1,8 +1,8 @@
 import { heyApiSdk } from '@oppenheimer/api-client';
 import type { ClientDeployment } from '@oppenheimer/shared';
 import { injectable } from 'inversify';
-import { unwrapBody } from '../core/errors';
-import { MapApiError } from '../core/map-api-error.decorator';
+import { callApi } from '../core/errors';
+
 import { CapabilitiesErrors } from './capabilities.errors';
 
 /**
@@ -11,8 +11,9 @@ import { CapabilitiesErrors } from './capabilities.errors';
  */
 @injectable()
 export class CapabilitiesRepository {
-  @MapApiError(CapabilitiesErrors.FETCH_FAILED)
-  async get(): Promise<ClientDeployment> {
-    return unwrapBody(heyApiSdk.deploymentCapabilities(), CapabilitiesErrors.FETCH_FAILED);
+  get(): Promise<ClientDeployment> {
+    return callApi(CapabilitiesErrors.FETCH_FAILED, async (api) => {
+      return api.body(heyApiSdk.deploymentCapabilities());
+    });
   }
 }

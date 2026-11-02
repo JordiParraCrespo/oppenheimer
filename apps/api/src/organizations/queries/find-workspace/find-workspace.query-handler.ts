@@ -1,6 +1,6 @@
 import { Inject } from '@nestjs/common';
 import { type IQueryHandler, QueryHandler } from '@nestjs/cqrs';
-import { AppError } from '@oppenheimer/backend-core';
+import { requireFound } from '@oppenheimer/backend-core';
 import type { OrganizationRepositoryPort } from '../../database/organization.repository.port';
 import { OrganizationErrors } from '../../domain/organization.errors';
 import type { Workspace } from '../../domain/organization.types';
@@ -19,7 +19,6 @@ export class FindWorkspaceQueryHandler implements IQueryHandler<FindWorkspaceQue
 
   async execute(query: FindWorkspaceQuery): Promise<Workspace> {
     const found = await this.organizations.findWorkspace(query.workspaceId);
-    if (found.isNone()) throw new AppError(OrganizationErrors.TEAM_NOT_FOUND);
-    return found.unwrap();
+    return requireFound(found, OrganizationErrors.TEAM_NOT_FOUND);
   }
 }

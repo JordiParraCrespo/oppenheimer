@@ -168,7 +168,22 @@ is authorized in is `product/versions/mvp/08-auth.md`.
 | `GRANT_001` <a id="grant_001" /> | Access grant not found                                    | 404  |
 | `GRANT_002` <a id="grant_002" /> | An access grant cannot exceed the granter's own access    | 403  |
 | `GRANT_003` <a id="grant_003" /> | The named principal does not belong to this organization  | 400  |
-| `GRANT_004` <a id="grant_004" /> | Access grants are written inside an organization          | 400  |
+
+## Tenancy
+
+| Code                               | Title               | HTTP |
+| ---------------------------------- | ------------------- | ---- |
+| `TENANT_001` <a id="tenant_001" /> | No active workspace | 400  |
+
+A route that reads or writes a workspace's rows answers `TENANT_001` when the
+request acts in no organization: open a workspace (or send a token minted in
+one) and try again. Every module raises this one code
+(`requireTenant` in `@oppenheimer/backend-authz`).
+
+It replaced a code per module, all of them a 400 saying the same thing about a
+different noun. These are retired and no longer sent: `BOTS_002` <a id="bots_002" />, `PROJECTS_002` <a id="projects_002" />, `GRANT_004` <a id="grant_004" />, `TASKS_003` <a id="tasks_003" />, `CLOUD_AGENTS_002` <a id="cloud_agents_002" />, `VOICE_001` <a id="voice_001" />, `MAIL_002` <a id="mail_002" />, `INBOX_001` <a id="inbox_001" />, `CALENDAR_002` <a id="calendar_002" />, `AUTOMATIONS_002` <a id="automations_002" />.
+The sessions, GitHub and pull-request modules still answer `SESSIONS_002`,
+`GITHUB_006` and `PULLS_001` until they move to `TENANT_001` as well.
 
 ## Rate limiting
 
@@ -198,6 +213,7 @@ would confirm the id.
 | `HOSTS_006` <a id="hosts_006" /> | Too many pairing tokens are open             | 429  |
 | `HOSTS_007` <a id="hosts_007" /> | No file is waiting for that command          | 404  |
 | `HOSTS_008` <a id="hosts_008" /> | The host is not connected                    | 409  |
+| `HOSTS_009` <a id="hosts_009" /> | The host changed while this was being saved  | 409  |
 
 Two of these are deliberately opaque, and both would otherwise be an oracle for
 guessing a credential:
@@ -227,6 +243,14 @@ unaffected.
 `HOSTS_008` answers Update runner (`POST /v1/hosts/{id}/update`) for a host
 with no live link: the request goes down the link, so there is nothing to send
 it on. A runner that is offline checks for updates itself when it comes back.
+
+`HOSTS_009` is optimistic concurrency on the host row. Renaming, unpairing and
+the runner's own uninstall each write the host only at the version they read;
+one that loses to another write reads the host again and decides once more, so
+a rename keeps an unpair that landed first, and an unpair or uninstall that
+finds the host already unpaired writes nothing. Only losing that second try as
+well answers `HOSTS_009`: nothing was changed, and reading the host again shows
+what the other write did.
 
 Note the prefix is plural. The Go runner owns `HOST_00x` and `PAIR_00x` below,
 and a code may only be claimed once.
@@ -343,6 +367,12 @@ session asks.
 | `GITHUB_015` <a id="github_015" /> | GitHub's rate limit was reached; try again shortly             | 429  |
 | `GITHUB_016` <a id="github_016" /> | Issue not found                                                | 404  |
 | `GITHUB_017` <a id="github_017" /> | GitHub refused access to this repository's issues              | 403  |
+| `GITHUB_018` <a id="github_018" /> | GitHub did not accept this token                               | 422  |
+| `GITHUB_019` <a id="github_019" /> | GitHub token not found                                         | 404  |
+| `GITHUB_020` <a id="github_020" /> | You already have a token with that label                       | 409  |
+| `GITHUB_021` <a id="github_021" /> | GitHub tokens are not configured on this server                | 503  |
+| `GITHUB_022` <a id="github_022" /> | This repository is read through your token; act on it on GitHub | 409  |
+| `GITHUB_023` <a id="github_023" /> | None of your GitHub tokens opens this repository               | 404  |
 
 `GITHUB_001` is also returned for an installation that exists but belongs to
 another workspace; distinguishing the two would confirm the id.
@@ -408,6 +438,17 @@ the two alike, and the pull request tools read those. `GITHUB_017` is GitHub's
 installation yet, or the person cannot write to the repository. Rate limits
 on those routes are still `GITHUB_015`.
 
+`GITHUB_018` to `GITHUB_023` are a person's own GitHub tokens, for
+repositories the App will never be installed on. `GITHUB_018` is GitHub
+answering `401` when a token is added or checked again: mistyped, expired,
+revoked, or an organisation's fine-grained token still waiting for an owner's
+approval; nothing is stored from it. `GITHUB_019` is also somebody else's
+token. `GITHUB_021` means the server has no `GITHUB_USER_TOKEN_KEY` to seal
+tokens with. `GITHUB_022` answers a review, comment, merge or review session
+on a repository read through a token: those happen on GitHub. `GITHUB_023`
+means no token of the person's that GitHub still accepts opens the
+repository, or a pin names a token that does not open it.
+
 ## Pull requests
 
 The Pull requests area reads GitHub live through the workspace's installations
@@ -417,9 +458,16 @@ and keeps nothing of a pull request but which repositories the caller watches.
 | ---------------------------------- | ------------------------------------ | ---- |
 | `PULLS_001` <a id="pulls_001" /> | Pull requests belong to a workspace  | 400  |
 | `PULLS_002` <a id="pulls_002" /> | A pull request from a fork cannot be reviewed in a session yet | 409  |
+| `PULLS_003` <a id="pulls_003" /> | That check is not failing on the pull request | 422  |
+| `PULLS_004` <a id="pulls_004" /> | The pull request’s checks could not be read | 409  |
 
 `PULLS_002` answers a review session started on a pull request whose head
 branch is in a fork: a host fetches the base repository's branches only.
+
+`PULLS_003` and `PULLS_004` answer a record of CI findings
+(`record_ci_findings`). A finding is filed against the head GitHub shows now,
+and only for a check failing on it: `PULLS_003` names the checks that are
+failing. `PULLS_004` is GitHub refusing to show the checks at all.
 
 ## Projects
 
@@ -433,7 +481,6 @@ project, where a session that names no project is listed. See
 | Code                                   | Title                              | HTTP |
 | -------------------------------------- | ---------------------------------- | ---- |
 | `PROJECTS_001` <a id="projects_001" /> | Project not found                  | 404  |
-| `PROJECTS_002` <a id="projects_002" /> | Projects belong to an organization  | 400  |
 | `PROJECTS_003` <a id="projects_003" /> | Projects cannot be archived right now | 503 |
 | `PROJECTS_004` <a id="projects_004" /> | That project is archived            | 409  |
 | `PROJECTS_005` <a id="projects_005" /> | That project still has open sessions | 409 |
@@ -492,7 +539,7 @@ are never reissued.
 | `SESSIONS_007` <a id="sessions_007" /> | That repository has used every directory name it can take here | 409 |
 | `SESSIONS_008` <a id="sessions_008" /> | A terminal ticket could not be issued           | 503  |
 | `SESSIONS_009` <a id="sessions_009" /> | A session must name its project (no longer raised) | 400 |
-| `SESSIONS_010` <a id="sessions_010" /> | A session checks out one repository             | 409  |
+| `SESSIONS_010` <a id="sessions_010" /> | A running session keeps the repositories it was created with | 409 |
 | `SESSIONS_011` <a id="sessions_011" /> | This host's runner cannot start that agent      | 409  |
 | `SESSIONS_012` <a id="sessions_012" /> | That file is too large to give the session      | 413  |
 | `SESSIONS_013` <a id="sessions_013" /> | That is not a file the session can take         | 415  |
@@ -514,6 +561,22 @@ are never reissued.
 | `SESSIONS_029` <a id="sessions_029" /> | That path is not a folder                       | 422  |
 | `SESSIONS_030` <a id="sessions_030" /> | That folder cannot be read on the host          | 403  |
 | `SESSIONS_031` <a id="sessions_031" /> | The host did not answer in time                 | 504  |
+| `SESSIONS_032` <a id="sessions_032" /> | That question was already answered or changed   | 409  |
+| `SESSIONS_033` <a id="sessions_033" /> | That answer does not fit the question           | 422  |
+| `SESSIONS_034` <a id="sessions_034" /> | The host is offline, so the answer was not sent | 503  |
+| `SESSIONS_035` <a id="sessions_035" /> | Previews are not configured on this server      | 501  |
+| `SESSIONS_036` <a id="sessions_036" /> | The agent is not waiting for a prompt           | 409  |
+| `SESSIONS_037` <a id="sessions_037" /> | This host's runner cannot start a session in the cloud | 409 |
+| `SESSIONS_038` <a id="sessions_038" /> | A cloud session takes input at its vendor's site, not here | 409 |
+| `SESSIONS_039` <a id="sessions_039" /> | That session runs at its vendor, not on a host  | 409  |
+| `SESSIONS_040` <a id="sessions_040" /> | The task is too long to carry its files' links  | 400  |
+| `SESSIONS_041` <a id="sessions_041" /> | That file link expired or never existed         | 404  |
+| `SESSIONS_042` <a id="sessions_042" /> | That pattern cannot be watched | 422 |
+| `SESSIONS_043` <a id="sessions_043" /> | The session already has as many terminal watches as it can hold | 409 |
+| `SESSIONS_044` <a id="sessions_044" /> | This host's runner cannot list Codex environments | 409 |
+| `SESSIONS_045` <a id="sessions_045" /> | The host is offline, so its Codex environments cannot be listed | 503 |
+| `SESSIONS_046` <a id="sessions_046" /> | Codex on the host could not list its environments | 502 |
+| `SESSIONS_047` <a id="sessions_047" /> | ChatGPT is limiting how often the host may list Codex environments | 429 |
 
 `SESSIONS_001` is also returned for a session that exists in another workspace: the
 scoped read cannot see it, and distinguishing the two would confirm the id.
@@ -539,6 +602,49 @@ nothing: `026` a runner that does not list folders (`fs.list`), `027` no link to
 `FS_001`, `FS_002` and `FS_003`, kept as the `upstreamCode` extension; any other refusal
 a runner gives reads as `030`.
 
+`SESSIONS_039` is something only a session a host started has — its terminal, a checkout, a
+restart or stop, a share, a prompt or an answer typed into it — asked of a cloud session
+the control plane launched at its vendor (Cursor's), which no host started
+(`product/next-steps/cloud-agents.md`). Open it at the vendor, from its `cloud.url`, and
+do it there.
+
+`SESSIONS_032`–`SESSIONS_034` answer `POST /sessions/{id}/decision`, which answers
+what the session's agent waits on — a question it asked or a permission dialog
+(`product/versions/mvp/29-inbox.md`, slice 4). `032` is an answer whose `id` is not
+the decision pending now: it was answered already, at the terminal or from another
+tab, or the agent moved on to another. `033` is an answer that does not fit the
+pending decision (an option it lacks, several picks for one choice). `034` is a host
+with no link: nothing was typed, and nothing is kept for when it comes back.
+
+`SESSIONS_037` is a cloud session (`place: cloud`, `product/research/cloud-agents.md` §5B)
+for a host whose live runner did not announce the capability for its agent's cloud
+(`session.cloud` for Claude Code, `session.cloud.codex` for Codex): it would open a
+terminal, or refuse the agent, instead of starting the task. As with `025`, a host with no
+link right now is not refused. `SESSIONS_038` refuses a prompt, a decision's answer or a
+pasted file for a cloud session: it has no terminal on its host, and is answered at its
+vendor, on claude.ai or chatgpt.com/codex.
+
+`SESSIONS_040` and `SESSIONS_041` are a cloud session's files. A first task's files never
+reach the host, which only starts the session: the API keeps them, and the task the cloud
+receives ends with a download link for each (`GET /v1/cloud-files/{token}`, no credential,
+a day long, minted again whenever the create is sent). `040` is a task whose text and those
+links together pass the 2 KB a first task may be; shorten the task or attach fewer files.
+`041` is a link that expired or never existed.
+
+`SESSIONS_042` and `SESSIONS_043` are a terminal watch (`session_terminal_watch`): a pattern the
+session's runner scans its screen for on a bot's behalf. A pattern is an RE2 regular expression,
+so lookaround and backreferences are refused (`SESSIONS_042`), and a session holds at most ten
+(`SESSIONS_043`). The runner refuses one it cannot compile itself with `INVALID_PATTERN`.
+
+`SESSIONS_044` to `SESSIONS_046` are the composer's Codex environment picker
+(`GET /v1/hosts/:id/codex-environments`), which the host's runner answers with its
+own ChatGPT sign-in. `044` is a runner older than `codex.environments`: a Codex cloud
+session still starts there, in an environment guessed from the repository's name.
+`046` carries the runner's own words as its `detail` (no `codex`, no sign-in) and its
+code as `upstreamCode`. `047` is ChatGPT refusing the host's read for rate (`SESS_011`):
+the runner asks nothing more of that ChatGPT account until the time it named, which the
+`detail` says. A runner that did not answer in time is `SESSIONS_031`.
+
 `SESSIONS_005` is what closing makes final. A closed session cannot be renamed,
 stopped, restarted or given another checkout — the row is a tombstone for its
 directory name, and reopening one would put new work into a directory a coding agent
@@ -547,10 +653,13 @@ already keys conversation state by.
 `SESSIONS_009` is no longer raised. A session that names no project is listed in the
 workspace's Unassigned project. The code stays reserved so it is never reused.
 
-`SESSIONS_010` is the MVP's one repository per session: a runner makes one worktree
-per session, so a second repository is refused here — on create by the body's own
-limit, and on adding one to a session that has one — rather than by the host after
-the session was written.
+`SESSIONS_010` is a repository added to a running session that already checks
+one out. A session picks its repositories at create, up to five
+(`MAX_SESSION_CHECKOUTS`, which the create body's own limit enforces), and a runner
+makes one worktree per checkout then; the wire has no frame that adds a worktree to
+a live session, so a later add is refused here rather than recorded and never made
+on the host. Until 2026-10-26 a session held one repository (#56), which is why the
+code is older than its title.
 
 `SESSIONS_011` is a runner older than the agent that was picked. A runner probes
 the command of every agent it can launch, installed or not, so a host whose last
@@ -602,13 +711,13 @@ owner. See `product/versions/mvp/16-automations-architecture.md`.
 | Code                                         | Title                                       | HTTP |
 | -------------------------------------------- | ------------------------------------------- | ---- |
 | `AUTOMATIONS_001` <a id="automations_001" /> | Automation not found                        | 404  |
-| `AUTOMATIONS_002` <a id="automations_002" /> | Automations belong to an organization       | 400  |
 | `AUTOMATIONS_003` <a id="automations_003" /> | The automation was changed by someone else  | 409  |
 | `AUTOMATIONS_004` <a id="automations_004" /> | A repository is not available to this workspace | 422 |
 | `AUTOMATIONS_005` <a id="automations_005" /> | That agent cannot run an automation         | 422  |
 | `AUTOMATIONS_006` <a id="automations_006" /> | A trigger would never fire                  | 422  |
 | `AUTOMATIONS_007` <a id="automations_007" /> | That project cannot hold automations        | 422  |
 | `AUTOMATIONS_008` <a id="automations_008" /> | Run not found                               | 404  |
+| `AUTOMATIONS_009` <a id="automations_009" /> | That Gmail account cannot start a routine   | 422  |
 
 `AUTOMATIONS_001` is also returned for an automation in another workspace, and for a
 deleted one: its runs stay readable, but it cannot be edited or run.
@@ -641,7 +750,6 @@ See `product/versions/mvp/25-bots.md`.
 | Code                                 | Title                                        | HTTP |
 | ------------------------------------ | -------------------------------------------- | ---- |
 | `BOTS_001` <a id="bots_001" />       | Bot not found                                | 404  |
-| `BOTS_002` <a id="bots_002" />       | Bots belong to an organization               | 400  |
 | `BOTS_003` <a id="bots_003" />       | Bot group not found                          | 404  |
 | `BOTS_004` <a id="bots_004" />       | A group with that name already exists        | 409  |
 | `BOTS_005` <a id="bots_005" />       | Bot document not found                       | 404  |
@@ -668,6 +776,18 @@ See `product/versions/mvp/25-bots.md`.
 | `BOTS_026` <a id="bots_026" />       | Image not found                              | 404  |
 | `BOTS_027` <a id="bots_027" />       | The image can no longer be sent              | 409  |
 | `BOTS_028` <a id="bots_028" />       | The bot's model does not read images         | 422  |
+| `BOTS_029` <a id="bots_029" />       | No such tool | 404  |
+| `BOTS_030` <a id="bots_030" />       | This tool is decided call by call | 422  |
+| `BOTS_031` <a id="bots_031" />       | The bot holds as many rules as it can | 409  |
+| `BOTS_032` <a id="bots_032" />       | Rule not found | 404  |
+| `BOTS_033` <a id="bots_033" />       | Grant not found | 404  |
+| `BOTS_034` <a id="bots_034" />       | The bot holds as many grants as it can | 409  |
+| `BOTS_035` <a id="bots_035" />       | Questions not found | 404  |
+| `BOTS_036` <a id="bots_036" />       | The answers do not fit the questions | 422  |
+| `BOTS_037` <a id="bots_037" />       | The questions were already answered | 409  |
+| `BOTS_038` <a id="bots_038" />       | Skill not found | 404  |
+| `BOTS_039` <a id="bots_039" />       | The bot already has a skill with that name | 409  |
+| `BOTS_040` <a id="bots_040" />       | The bot has as many skills as it can keep | 422  |
 
 `BOTS_001`, `BOTS_003` and `BOTS_008` are also returned for a bot, group or fact in
 another workspace.
@@ -737,6 +857,31 @@ images (GLM); the message's words are not sent either, so nothing is lost:
 remove the images, or switch the bot's model, and send again. An upload that
 is never sent is deleted after a day.
 
+`BOTS_029` to `BOTS_034` are a bot's permissions (Settings → Permissions, and
+how far a yes on a Needs input card reaches). `BOTS_029` names a tool the
+catalog does not have. `BOTS_030` asks to always allow a tool that is decided
+call by call (merging a pull request), whether as its Allow or as a yes that
+reaches past this call, or asks a yes to reach a thing the card did not name:
+a decision outside the card's `availableDecisions` (`approve_always`,
+`approve_for_subject` where it offers neither).
+`BOTS_031` is a rule past the bot's twenty, `BOTS_034` a standing grant past
+its hundred: remove one first. `BOTS_032` and `BOTS_033` are a rule or a grant
+that is not this bot's, not in the caller's workspace, or already removed.
+
+`BOTS_035` to `BOTS_037` are a card of questions (`ask_user`), a card of its
+own beside approvals. `BOTS_035` is a card that is not this bot's or not in
+the caller's workspace. `BOTS_036` is answers that do not fit: not one per
+question, an option the question does not have, two picks where one is
+taken, or a question left unanswered; its `detail` names which. `BOTS_037` is
+a card already answered or dismissed, or retired because a message reached
+the bot first.
+
+`BOTS_038` to `BOTS_040` are a bot's skills (Settings → Skills, and the bot's
+own `save_skill`). `BOTS_038` is a skill that is not this bot's or not in the
+caller's workspace. `BOTS_039` is a name another of the bot's skills has: a
+skill's name is its slash command, so rename one of them. `BOTS_040` is a
+skill past the bot's fifty: delete one first.
+
 A home host the caller may not use answers `HOSTS_001`, as a session's does.
 
 ## Voice
@@ -747,7 +892,6 @@ ChatGPT sign-in or the deployment's own speech-to-text server
 
 | Code                                 | Title                                                        | HTTP |
 | ------------------------------------ | ------------------------------------------------------------ | ---- |
-| `VOICE_001` <a id="voice_001" />     | Dictation needs an active workspace                          | 400  |
 | `VOICE_002` <a id="voice_002" />     | No audio was sent                                            | 400  |
 | `VOICE_003` <a id="voice_003" />     | The recording is too long                                    | 413  |
 | `VOICE_004` <a id="voice_004" />     | The recording is not 16-bit PCM WAV                          | 415  |
@@ -761,6 +905,21 @@ A ChatGPT sign-in that cannot transcribe (`VOICE_006`, or a lapsed sign-in)
 falls back to the deployment's server when there is one; a rate limit
 (`VOICE_007`, with `Retry-After`) does not.
 
+## Inbox
+
+The marks a person leaves on Inbox items: done, low, snoozed until a time,
+or deleted. See `product/versions/mvp/29-inbox.md`.
+
+| Code                                 | Title                                                        | HTTP |
+| ------------------------------------ | ------------------------------------------------------------ | ---- |
+| `INBOX_002` <a id="inbox_002" />     | Not an Inbox item key                                        | 400  |
+| `INBOX_003` <a id="inbox_003" />     | A snooze ends in the future                                  | 422  |
+| `INBOX_004` <a id="inbox_004" />     | Inbox mark not found                                         | 404  |
+
+An item key is `<kind>:<id>` in letters, digits and `:#@._-`, at most 200
+characters, URL-encoded in the path. `INBOX_003` compares `until` with the
+server's clock.
+
 ## Tasks
 
 Plan's board: tasks, the milestones over them, and the sessions a task started or
@@ -770,7 +929,6 @@ links. See `product/versions/mvp/17-plan.md`.
 | ------------------------------------ | ---------------------------------------- | ---- |
 | `TASKS_001` <a id="tasks_001" />     | Task not found                           | 404  |
 | `TASKS_002` <a id="tasks_002" />     | Milestone not found                      | 404  |
-| `TASKS_003` <a id="tasks_003" />     | Tasks belong to an organization          | 400  |
 | `TASKS_004` <a id="tasks_004" />     | That project cannot take tasks           | 409  |
 | `TASKS_005` <a id="tasks_005" />     | Session not found                        | 404  |
 | `TASKS_006` <a id="tasks_006" />     | That position is no longer on the board  | 409  |
@@ -802,7 +960,6 @@ through to Google and never stored. See `product/versions/mvp/20-plan-calendar.m
 | Code                                     | Title                                               | HTTP |
 | ---------------------------------------- | --------------------------------------------------- | ---- |
 | `CALENDAR_001` <a id="calendar_001" />   | Event not found                                     | 404  |
-| `CALENDAR_002` <a id="calendar_002" />   | The calendar belongs to an organization             | 400  |
 | `CALENDAR_003` <a id="calendar_003" />   | That range of days is too wide                      | 400  |
 | `CALENDAR_004` <a id="calendar_004" />   | Google Calendar is not configured on this server    | 503  |
 | `CALENDAR_005` <a id="calendar_005" />   | That Google Calendar connection was not started here | 400 |
@@ -831,6 +988,138 @@ since removed), or one Google has since revoked (or one sealed under a
 `CALENDAR_011` is a sixth Google account: a person connects five at most.
 Remove one, or reconnect one already listed, which does not count again.
 
+## Mail
+
+A person's own Gmail accounts, worked by their bots: the grant is kept sealed,
+and every read goes to Gmail when a bot asks. See `product/next-steps/mail.md`.
+
+| Code                             | Title                                                  | HTTP |
+| -------------------------------- | ------------------------------------------------------ | ---- |
+| `MAIL_001` <a id="mail_001" />   | That Gmail account is not connected                    | 409  |
+| `MAIL_003` <a id="mail_003" />   | That is as many Gmail accounts as mail takes           | 409  |
+| `MAIL_004` <a id="mail_004" />   | Gmail is not configured on this server                 | 503  |
+| `MAIL_005` <a id="mail_005" />   | That Gmail connection was not started here             | 400  |
+| `MAIL_006` <a id="mail_006" />   | Google did not grant access to Gmail                   | 400  |
+| `MAIL_007` <a id="mail_007" />   | Gmail did not answer                                   | 502  |
+| `MAIL_008` <a id="mail_008" />   | Gmail's rate limit was reached; try again shortly      | 429  |
+| `MAIL_009` <a id="mail_009" />   | Gmail has no such message                              | 404  |
+| `MAIL_010` <a id="mail_010" />   | That message cannot go to those recipients             | 400  |
+| `MAIL_011` <a id="mail_011" />   | That account has sent as much bot mail as a day allows | 429  |
+| `MAIL_012` <a id="mail_012" />   | That message is larger than Gmail takes                | 400  |
+| `MAIL_013` <a id="mail_013" />   | That address is not one this account sends from        | 400  |
+| `MAIL_014` <a id="mail_014" />   | That draft changed since it was approved               | 409  |
+| `MAIL_015` <a id="mail_015" />   | That message may already have been sent                | 409  |
+| `MAIL_016` <a id="mail_016" />   | A mail cannot be scheduled for that time               | 400  |
+| `MAIL_017` <a id="mail_017" />   | No such scheduled mail is waiting                      | 404  |
+| `MAIL_018` <a id="mail_018" />   | A scheduled mail carries only files from mail          | 400  |
+
+`MAIL_001` is no such connection of the caller's, or one Google has since
+revoked (or one sealed under a `MAIL_TOKEN_KEY` that was replaced): reconnect it
+in Settings → Mail.
+
+`MAIL_004` needs the Google sign-in client (`GOOGLE_CLIENT_ID`/`_SECRET`), the
+Gmail API enabled on its project, and `MAIL_TOKEN_KEY`.
+
+`MAIL_005` is a connect `state` that is missing, expired, used, or someone
+else's. Start again from Connect Gmail.
+
+`MAIL_006` is Google refusing the code, returning no refresh token or ID token,
+or a consent screen where the Gmail permission was left unticked.
+
+`MAIL_008` comes with `Retry-After`: Gmail counts quota per account and per
+project, and is not asked again until then.
+
+`MAIL_009` is a message, thread or attachment Gmail does not have, or no longer
+has (deleted, or an id from another account).
+
+`MAIL_010` is a recipient that is not an email address, or more than ten
+recipients on one message (to, cc and bcc together).
+
+`MAIL_011` is the account's fifty bot sends in the last 24 hours. Drafts are
+not counted.
+
+`MAIL_012` is a message whose files and text pass Gmail's 25 MB once encoded.
+
+`MAIL_013` is a `from` that is neither the account nor one of its Gmail
+send-as addresses (Gmail → Settings → Accounts).
+
+`MAIL_014` is a draft edited, sent or deleted after the card that approved
+sending it was raised: nothing was sent, and the bot asks again.
+
+`MAIL_015` is an approved send that was started and never confirmed: it may
+have gone. It is never sent a second time on its own; check Gmail's Sent.
+
+`MAIL_016` is a scheduled send's time that has passed by the time the person
+says yes, or that is more than 90 days ahead.
+
+`MAIL_017` is a cancel of a scheduled send that no longer waits: already sent,
+already cancelled, or not one of the caller's.
+
+`MAIL_018` is a scheduled send carrying an image from the bot's chat: only
+files Gmail holds can wait with it. Attach files from mail, or send it now.
+
+## WhatsApp
+
+A number a person owns, joined as a WhatsApp linked device by the runner on
+one of their hosts, and the messages it sees, kept for their bots. See
+`product/next-steps/whatsapp.md`.
+
+| Code                                   | Title                                                       | HTTP |
+| -------------------------------------- | ----------------------------------------------------------- | ---- |
+| `WHATSAPP_001` <a id="whatsapp_001" /> | That WhatsApp number is not linked                          | 404  |
+| `WHATSAPP_002` <a id="whatsapp_002" /> | WhatsApp belongs to an organization                         | 400  |
+| `WHATSAPP_003` <a id="whatsapp_003" /> | That is as many WhatsApp numbers as one person links        | 409  |
+| `WHATSAPP_004` <a id="whatsapp_004" /> | The host holding that WhatsApp number is offline            | 409  |
+| `WHATSAPP_005` <a id="whatsapp_005" /> | That host’s runner does not hold WhatsApp devices           | 409  |
+| `WHATSAPP_006` <a id="whatsapp_006" /> | That host already holds another WhatsApp number             | 409  |
+| `WHATSAPP_007` <a id="whatsapp_007" /> | That WhatsApp number is not connected                       | 409  |
+| `WHATSAPP_008` <a id="whatsapp_008" /> | WhatsApp did not take the message                           | 502  |
+| `WHATSAPP_009` <a id="whatsapp_009" /> | That number has sent as many bot messages as it may for now | 429  |
+| `WHATSAPP_010` <a id="whatsapp_010" /> | No such WhatsApp chat                                       | 404  |
+
+`WHATSAPP_005` is a runner that predates WhatsApp, or one started with
+`RUNNER_WHATSAPP=off`: update it, or turn it back on. `WHATSAPP_006` is a host
+already holding someone else's number: a runner holds one device. A
+`WHATSAPP_008` whose detail says the host did not answer in time may still
+have sent the message. `WHATSAPP_009` is a bot's share of a day (100 messages
+from one number), or the host's own budget (`WA_004`).
+
+## Cloud agents
+
+A vendor's cloud (Cursor's Cloud Agents), where a cloud session runs on each
+person's own key for the vendor: the key, what the vendor offers, and its
+refusals of a launch (`POST /sessions/cloud`). See
+`product/next-steps/cloud-agents.md`.
+
+| Code                                       | Title                                               | HTTP |
+| ------------------------------------------ | --------------------------------------------------- | ---- |
+| `CLOUD_AGENTS_003` <a id="cloud_agents_003" /> | Cloud agents are not configured on this server  | 503  |
+| `CLOUD_AGENTS_004` <a id="cloud_agents_004" /> | That cloud agent provider is not connected      | 409  |
+| `CLOUD_AGENTS_005` <a id="cloud_agents_005" /> | The provider refused the API key                | 422  |
+| `CLOUD_AGENTS_006` <a id="cloud_agents_006" /> | The cloud agent provider did not answer         | 502  |
+| `CLOUD_AGENTS_007` <a id="cloud_agents_007" /> | The cloud agent provider’s rate limit was reached | 429 |
+| `CLOUD_AGENTS_010` <a id="cloud_agents_010" /> | The cloud agent provider refused the request    | 422  |
+| `CLOUD_AGENTS_011` <a id="cloud_agents_011" /> | No such cloud agent provider                    | 404  |
+
+`CLOUD_AGENTS_001`, `008` and `009` are retired: an agent not found, still
+working, or already stopped belonged to the agent's own page, which a cloud
+session leaves to its vendor. They are never reissued.
+
+`CLOUD_AGENTS_003` is a server with no `CLOUD_AGENTS_KEY`: no one can store a
+vendor key, so no one can launch.
+
+`CLOUD_AGENTS_004` is no key stored for the vendor (or one sealed under a
+`CLOUD_AGENTS_KEY` since replaced): connect it again under Cloud agents.
+
+`CLOUD_AGENTS_005` is the vendor refusing the key when it is stored, or later
+when it is used (revoked at the vendor). `CLOUD_AGENTS_010` is the vendor
+refusing what was asked: a repository it cannot reach, a model it does not
+offer, a feature the account lacks; its `detail` carries the vendor's words and
+`upstreamCode` the vendor's code.
+
+`CLOUD_AGENTS_007` carries `Retry-After`. Reads of sessions never answer it:
+a cloud session shows as last heard of.
+
 ## Inbound events
 
 What external systems tell us — GitHub's webhook today — stored once and normalized
@@ -850,7 +1139,7 @@ The Go runner (`apps/runner`) emits the same document shape with its own
 catalog. `RUNNER_*` codes are the generic layer shared by every route; the
 others belong to one bounded context each — `APIKEY_*` to credentials,
 `HOST_*` to the host inventory (`FS_*` to its folder listing), `PAIR_*` to pairing, `SVC_*` to the service
-unit, `UPD_*` to self-update, and `SESS_*`, `TMUX_*` and `GIT_*` to sessions. The host-agent codes also reach a person
+unit, `UPD_*` to self-update, `WHATSAPP_*` to the host's WhatsApp linked device, and `SESS_*`, `TMUX_*` and `GIT_*` to sessions. The host-agent codes also reach a person
 through the runner's own CLI, where they set the exit code: 3 for a 401, 4 for a 403, 5
 for a 404 or 428, 6 for a 502, 503 or 504, 7 for `PAIR_009`, and 1 for anything else.
 
@@ -878,6 +1167,7 @@ for a 404 or 428, 6 for a 502, 503 or 504, 7 for `PAIR_009`, and 1 for anything 
 | `HOST_009` <a id="host_009" />         | An agent CLI could not be updated            | 424  |
 | `HOST_010` <a id="host_010" />         | The runner does not install this tool        | 400  |
 | `HOST_011` <a id="host_011" />         | A tool could not be installed                | 424  |
+| `HOST_012` <a id="host_012" />         | The runner is not running on this host       | 503  |
 | `FS_001` <a id="fs_001" />             | The folder does not exist                    | 404  |
 | `FS_002` <a id="fs_002" />             | The path is not a directory                  | 400  |
 | `FS_003` <a id="fs_003" />             | The folder cannot be read                    | 403  |
@@ -903,13 +1193,29 @@ for a 404 or 428, 6 for a 502, 503 or 504, 7 for `PAIR_009`, and 1 for anything 
 | `UPD_006` <a id="upd_006" />           | The new version could not be activated       | 500  |
 | `UPD_007` <a id="upd_007" />           | The update was rolled back                   | 500  |
 | `UPD_008` <a id="upd_008" />           | This build has no release key and cannot self-update | 424 |
+| `DEV_001` <a id="dev_001" />           | This host has no device for the session      | 409  |
+| `DEV_002` <a id="dev_002" />           | The session's device could not be reached    | 502  |
+| `DEV_003` <a id="dev_003" />           | The device does not take that input          | 400  |
+| `PORT_001` <a id="port_001" />         | The session does not listen on that port     | 404  |
+| `PORT_002` <a id="port_002" />         | Nothing answers on that port                 | 502  |
+| `PORT_003` <a id="port_003" />         | This host cannot list a session's ports      | 501  |
+| `WA_001` <a id="wa_001" />           | This host already holds a WhatsApp device    | 409  |
+| `WA_002` <a id="wa_002" />           | No WhatsApp device is connected on this host | 503  |
+| `WA_003` <a id="wa_003" />           | WhatsApp refused the message                 | 502  |
+| `WA_004` <a id="wa_004" />           | This host's WhatsApp send budget is spent    | 429  |
 | `SESS_001` <a id="sess_001" />         | Session not found                            | 404  |
 | `SESS_002` <a id="sess_002" />         | The session cannot be created with those values | 400 |
 | `SESS_003` <a id="sess_003" />         | The session is not running                   | 409  |
+| `INVALID_PATTERN` <a id="invalid_pattern" /> | The watch pattern is not a valid expression | 400 |
 | `SESS_004` <a id="sess_004" />         | A session already exists for that worktree   | 409  |
 | `SESS_005` <a id="sess_005" />         | The file cannot be given to the session      | 415  |
 | `SESS_006` <a id="sess_006" />         | The session's folder is not on this host     | 404  |
 | `SESS_007` <a id="sess_007" />         | The session's folder is not a directory      | 400  |
+| `SESS_008` <a id="sess_008" />         | Claude Code could not start the session in the cloud | 502 |
+| `SESS_009` <a id="sess_009" />         | Codex could not start the task in the cloud  | 502  |
+| `SESS_010` <a id="sess_010" />         | No Codex cloud environment the CLI can reach is named for the repository | 404 |
+| `SESS_011` <a id="sess_011" />         | ChatGPT asked the host to wait before listing Codex environments | 429 |
+| `SESS_012` <a id="sess_012" />         | The session's agent is not ready for a message | 409 |
 | `TMUX_001` <a id="tmux_001" />         | tmux is not available on this host           | 424  |
 | `TMUX_002` <a id="tmux_002" />         | The tmux server refused the command          | 500  |
 | `GIT_001` <a id="git_001" />           | The worktree could not be prepared           | 500  |
@@ -933,6 +1239,19 @@ the service (`systemctl --user restart oppenheimer-runner` or
 another account owns is fixed with `chown`; a mode looser than `0700` is
 tightened by the runner itself.
 
+`SESS_010` is `codex cloud exec` refusing every label a Codex cloud session
+was tried under (the repository's `owner/name`, then its bare name) as "not
+found". ChatGPT has two lists of Codex environments: the one `codex cloud`
+browses (`/wham/environments`), and the newer one in ChatGPT's Settings →
+Codex Cloud, with publish and snapshots, which codex-cli does not read yet
+(0.166.0). An environment that exists only in the second is not one the CLI
+can start a task in. The detail names the labels tried and the environment
+labels the CLI showed in the account's twenty newest tasks
+(`codex cloud list --json`): codex-cli has no command that lists environments
+outside its interactive TUI, so that list is partial, and the full one is
+`codex cloud` on the host. `SESS_009` stays every other refusal, in the CLI's
+words.
+
 `HOST_009` is `runner agents update` reporting that at least one agent CLI's
 updater failed; the service only logs it and retries. What to do about it is
 open question 4 of `product/versions/mvp/09-runner-install-and-update.md`.
@@ -943,6 +1262,15 @@ installer, or `git`/`tmux`, which need root. For those two the detail is the
 exact package-manager command to run. `HOST_011` is an install that ran and
 failed, or finished without the tool appearing on `PATH`; the detail is the
 installer's last line.
+
+The `WA_*` codes reach the control plane as `command.failed` on the
+runner link, in answer to `whatsapp.link` and `whatsapp.send`
+(`packages/shared/src/protocol/whatsapp.ts`). `WA_004` is the host's own
+budget, at most 20 sends a minute and 300 a day: WhatsApp publishes no limit
+for a linked device, and going over one costs the number. `WA_003`
+after WhatsApp's own `rate-overlimit` also stops every send from the host for
+ten minutes. The control plane answers a bot with its own `WHATSAPP_*` code
+for each (`WHATSAPP_007`, `WHATSAPP_008`, `WHATSAPP_009`).
 
 <!-- oppenheimer:end runner -->
 ## Domain invariants
@@ -957,6 +1285,13 @@ with their own codes rather than as a blanket 500:
 | `GENERIC.ARGUMENT_OUT_OF_RANGE` <a id="generic_argument_out_of_range" /> | 400  |
 | `GENERIC.CONFLICT` <a id="generic_conflict" />                           | 409  |
 | `GENERIC.NOT_FOUND` <a id="generic_not_found" />                         | 404  |
+| `GENERIC.VERSION_CONFLICT` <a id="generic_version_conflict" />         | 409  |
+
+`GENERIC.VERSION_CONFLICT` is a versioned write (`writeVersioned`) refused
+because the row moved past the version the aggregate was loaded at. A handler
+that faces a person usually retries once on a fresh read and answers its own
+module's code when that loses too (`HOSTS_009`); one that does not lets this
+code through. Nothing was written either way.
 
 ## Handling errors as a client
 

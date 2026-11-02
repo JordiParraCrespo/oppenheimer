@@ -1,11 +1,9 @@
 import { randomUUID } from 'node:crypto';
-import { GenericContainer, type StartedTestContainer, Wait } from 'testcontainers';
 import { DataSource } from 'typeorm';
-import { runAllMigrations } from '../../__tests__/run-migrations';
+import { useTestDatabase } from '../../__tests__/integration-services';
 import { SessionTurnOrmEntity } from '../database/session-turn.orm-entity';
 import { SessionUsageRepository } from '../database/session-usage.repository';
 import type { SessionUsageWeek } from '../database/session-usage.repository.port';
-import { WorkSessionMapper } from '../work-session.mapper';
 
 /**
  * `SessionUsageReader.weeklyUsage` against the schema the migrations build: the
@@ -17,7 +15,6 @@ import { WorkSessionMapper } from '../work-session.mapper';
  */
 describe('sessions: weekly turn usage (integration)', () => {
   const timeZone = 'Europe/Madrid';
-  let pgContainer: StartedTestContainer;
   let dataSource: DataSource;
   let reader: SessionUsageRepository;
 
@@ -68,35 +65,16 @@ describe('sessions: weekly turn usage (integration)', () => {
   }
 
   beforeAll(async () => {
-    pgContainer = await new GenericContainer('postgres:16-alpine')
-      .withEnvironment({ POSTGRES_USER: 'test', POSTGRES_PASSWORD: 'test', POSTGRES_DB: 'test' })
-      .withExposedPorts(5432)
-      .withWaitStrategy(Wait.forLogMessage(/database system is ready to accept connections/, 2))
-      .start();
-
-    process.env.NODE_ENV = 'test';
-    process.env.DB_HOST = pgContainer.getHost();
-    process.env.DB_PORT = pgContainer.getMappedPort(5432).toString();
-    process.env.DB_USERNAME = 'test';
-    process.env.DB_PASSWORD = 'test';
-    process.env.DB_DATABASE = 'test';
-    await runAllMigrations();
+    const db = await useTestDatabase();
 
     dataSource = new DataSource({
       type: 'postgres',
-      host: process.env.DB_HOST,
-      port: Number(process.env.DB_PORT),
-      username: 'test',
-      password: 'test',
-      database: 'test',
+      url: db.url,
       entities: [SessionTurnOrmEntity],
       synchronize: false,
     });
     await dataSource.initialize();
-    reader = new SessionUsageRepository(
-      dataSource.getRepository(SessionTurnOrmEntity),
-      new WorkSessionMapper(),
-    );
+    reader = new SessionUsageRepository(dataSource.getRepository(SessionTurnOrmEntity));
 
     await dataSource.query(
       `INSERT INTO "user" ("id", "email", "name", "firstName", "lastName", "emailVerified")
@@ -184,7 +162,6 @@ describe('sessions: weekly turn usage (integration)', () => {
 
   afterAll(async () => {
     await dataSource?.destroy();
-    await pgContainer?.stop();
   });
 
   const week = (row: Omit<SessionUsageWeek, 'costUsd'> & { costUsd: number }) => ({

@@ -412,3 +412,29 @@ func TestAChosenWorkspacesDirectorySurvivesARepair(t *testing.T) {
 		t.Fatalf("workspacesPath = %q after re-pairing", identity.WorkspacesPath)
 	}
 }
+
+// The direct path's host proof is signed with the key registration sent the
+// public half of, so a browser can check it against the fingerprint the
+// console and `runner status` show. Anything that is not a proof transcript
+// is refused: the same key signs boot tokens, and this must not be a way to
+// sign one.
+func TestProveDirectSignsOnlyAProofTranscriptWithTheHostKey(t *testing.T) {
+	svc, _, _ := newService(t)
+	identity := register(t, svc)
+
+	transcript := []byte("oppenheimer/direct/v1/host-proof\nnonce:x\n")
+	pub, sig, err := svc.ProveDirect(transcript)
+	if err != nil {
+		t.Fatalf("prove: %v", err)
+	}
+	if domain.EncodePublicKey(pub) != identity.PublicKey {
+		t.Fatal("the proof carries a key that is not the one registration sent")
+	}
+	if !ed25519.Verify(pub, transcript, sig) {
+		t.Fatal("the proof does not verify")
+	}
+
+	if _, _, err := svc.ProveDirect([]byte("eyJhbGciOiJFZERTQSJ9.eyJzdWIiOiJob3N0In0")); err == nil {
+		t.Fatal("ProveDirect signed something that is not a proof transcript")
+	}
+}

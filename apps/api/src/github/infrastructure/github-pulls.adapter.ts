@@ -2,9 +2,24 @@ import { Injectable } from '@nestjs/common';
 import { AppError } from '@oppenheimer/backend-core';
 import { GithubErrors } from '../domain/github.errors';
 import { GithubHttp, type StatusMap } from './github-http.adapter';
+import {
+  OPEN_PULLS_PAGES,
+  OPEN_PULLS_QUERY,
+  type OpenPullsBody,
+  openPullRequestsOf,
+} from './github-open-pulls.util';
+import {
+  type CheckOutcome,
+  checkRunOutcome,
+  checksOf,
+  commitStatusOutcome,
+  fromForkOf,
+} from './github-pull-rules.util';
 import type {
   GithubChecks,
   GithubCredential,
+  GithubFailingCheck,
+  GithubOpenPullRequest,
   GithubPullRequestDetail,
   GithubPullRequestFile,
   GithubPullRequestReview,
@@ -106,13 +121,25 @@ interface RawComment {
 }
 
 interface RawCheckRun {
+  name?: string;
   status: string;
   conclusion: string | null;
+  details_url?: string | null;
+  html_url?: string | null;
+  output?: { title?: string | null; summary?: string | null } | null;
 }
 
 interface RawCombinedStatus {
-  statuses?: { state: string }[];
+  statuses?: {
+    state: string;
+    context?: string;
+    target_url?: string | null;
+    description?: string | null;
+  }[];
 }
+
+/** How much of a failing check's summary a read keeps. */
+const FAILING_SUMMARY_MAX = 600;
 
 /**
  * GitHub's pull request endpoints on the platform `fetch`, like the App adapter
@@ -141,6 +168,27 @@ export class GithubPullsAdapter implements GithubPullsPort {
     return raw.map(toSummary);
   }
 
+  async listOpenPullRequests(
+    credential: GithubCredential,
+    fullName: string,
+  ): Promise<GithubOpenPullRequest[]> {
+    const [owner, name] = fullName.split('/');
+    const pulls: GithubOpenPullRequest[] = [];
+    let after: string | null = null;
+    for (let page = 0; page < OPEN_PULLS_PAGES; page += 1) {
+      const { body } = await this.request<OpenPullsBody>(`${this.http.api}/graphql`, {
+        credential,
+        method: 'POST',
+        body: { query: OPEN_PULLS_QUERY, variables: { owner, name, after } },
+      });
+      const read = openPullRequestsOf(body);
+      pulls.push(...read.pulls);
+      after = read.next;
+      if (!after) break;
+    }
+    return pulls;
+  }
+
   async readPullRequest(
     credential: GithubCredential,
     fullName: string,
@@ -159,8 +207,7 @@ export class GithubPullsAdapter implements GithubPullsPort {
       changedFiles: body.changed_files ?? 0,
       mergeable: body.mergeable ?? null,
       mergeableState: body.mergeable_state ?? 'unknown',
-      // A head whose repository is gone (a deleted fork) is a fork's too.
-      fromFork: body.head.repo?.id !== body.base.repo?.id,
+      fromFork: fromForkOf(body.head.repo?.id, body.base.repo?.id),
     };
   }
 
@@ -255,38 +302,30 @@ export class GithubPullsAdapter implements GithubPullsPort {
         credential,
       }),
     ]);
-    const outcomes: ('passed' | 'failed' | 'pending')[] = [
-      ...(runs.check_runs ?? []).map((run) =>
-        run.status !== 'completed'
-          ? ('pending' as const)
-          : ['success', 'neutral', 'skipped'].includes(run.conclusion ?? '')
-            ? ('passed' as const)
-            : ('failed' as const),
-      ),
-      ...(combined.statuses ?? []).map((status) =>
-        status.state === 'success'
-          ? ('passed' as const)
-          : status.state === 'pending'
-            ? ('pending' as const)
-            : ('failed' as const),
-      ),
+    // One pass: each check's outcome, and what a failing one said.
+    const read: { outcome: CheckOutcome; failing: GithubFailingCheck }[] = [
+      ...(runs.check_runs ?? []).map((run) => ({
+        outcome: checkRunOutcome(run.status, run.conclusion),
+        failing: {
+          name: run.name ?? 'check',
+          url: run.details_url ?? run.html_url ?? null,
+          title: run.output?.title || null,
+          summary: run.output?.summary ? run.output.summary.slice(0, FAILING_SUMMARY_MAX) : null,
+        },
+      })),
+      ...(combined.statuses ?? []).map((status) => ({
+        outcome: commitStatusOutcome(status.state),
+        failing: {
+          name: status.context ?? 'status',
+          url: status.target_url ?? null,
+          title: status.description || null,
+          summary: null,
+        },
+      })),
     ];
-    const count = (outcome: string) => outcomes.filter((o) => o === outcome).length;
-    const failed = count('failed');
-    const pending = count('pending');
     return {
-      state:
-        outcomes.length === 0
-          ? 'none'
-          : failed > 0
-            ? 'failing'
-            : pending > 0
-              ? 'running'
-              : 'passing',
-      total: outcomes.length,
-      passed: count('passed'),
-      failed,
-      pending,
+      ...checksOf(read.map((check) => check.outcome)),
+      failing: read.filter((check) => check.outcome === 'failed').map((check) => check.failing),
     };
   }
 
@@ -385,6 +424,7 @@ export class GithubPullsAdapter implements GithubPullsPort {
       {
         bucket: credential.bucket,
         token: credential.token,
+        onUnauthorized: credential.onUnauthorized,
         onStatus: { 404: GithubErrors.PULL_REQUEST_NOT_FOUND },
         unauthorized: GithubErrors.USER_NOT_CONNECTED,
       },
@@ -406,6 +446,7 @@ export class GithubPullsAdapter implements GithubPullsPort {
     return this.http.request<T>(url, {
       bucket: options.credential.bucket,
       token: options.credential.token,
+      onUnauthorized: options.credential.onUnauthorized,
       method: options.method,
       body: options.body,
       onStatus: options.onStatus,

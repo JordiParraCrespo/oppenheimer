@@ -13,8 +13,8 @@ memo, Biome plugins in `biome-plugins/` for query keys, `skipToken` and
 mutation cache updates (the rules are
 [`apps/docs/docs/architecture/query-keys.md`](../../apps/docs/docs/architecture/query-keys.md)),
 `pnpm check:unused` (knip) for code nothing reaches, and a `*-render.spec.tsx`
-for what a component costs. The Claude Code Stop hook runs dependency-cruiser
-and `pnpm check:structure`; CI runs every check. The layer model and the cookbooks are in
+for what a component costs. The agent hook `.agents/hooks/arch-check.sh` runs
+dependency-cruiser and `pnpm check:structure`; CI runs every check. The layer model and the cookbooks are in
 [`packages/frontend/ARCHITECTURE.md`](../../packages/frontend/ARCHITECTURE.md)
 and `apps/web/ARCHITECTURE.md`; `/scaffold-feature` produces the shape.
 
@@ -288,8 +288,9 @@ name the jobs and split *those*.
   (`plan.tsx`, `automations.tsx`, `pulls.tsx` render nothing but their
   `Outlet`), and the shell draws the frame at it: the scroll, the measure, the
   gutter. There are four widths and one gutter (32px, 16px on a phone):
-  `status` (420px) and `composer` (760px), centred in the pane; `narrow`
-  (760px, the default), `wide` (1040px, tables and the session terminal),
+  `status` (420px) and `composer` (760px), centred in the pane; `prompt`,
+  760px inside its gutter at the pane's foot (New session); `narrow`
+  (760px, the default, and the session terminal and chat), `wide` (1040px, tables),
   `board` (1240px); and `fluid`, no measure. A page that opens at the top
   opens 24px under the page bar. A bot's chat and Settings take the 760px
   and the gutter too; a screen never invents a width or a padding of its

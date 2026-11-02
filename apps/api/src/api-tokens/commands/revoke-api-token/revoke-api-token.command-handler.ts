@@ -1,6 +1,6 @@
 import { Inject } from '@nestjs/common';
 import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
-import { AppError } from '@oppenheimer/backend-core';
+import { AppError, requireFound } from '@oppenheimer/backend-core';
 import type { AggregateID } from '@oppenheimer/backend-ddd';
 import { API_TOKEN_REPOSITORY } from '../../api-tokens.di-tokens';
 import type { ApiTokenRepositoryPort } from '../../database/api-token.repository.port';
@@ -23,9 +23,7 @@ export class RevokeApiTokenCommandHandler
 
   async execute(command: RevokeApiTokenCommand): Promise<AggregateID> {
     const found = await this.apiTokens.findOneById(command.tokenId);
-    if (found.isNone()) throw new AppError(ApiTokenErrors.NOT_FOUND);
-
-    const token = found.unwrap();
+    const token = requireFound(found, ApiTokenErrors.NOT_FOUND);
     // Someone else's token is reported as missing, not forbidden — ids stay
     // unprobeable.
     if (token.userId !== command.userId) throw new AppError(ApiTokenErrors.NOT_FOUND);

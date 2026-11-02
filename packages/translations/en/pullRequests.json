@@ -16,14 +16,16 @@
     "reviewNext": "Review next",
     "scopesLabel": "Whose pull requests",
     "scopes": {
+      "all": "All",
       "mine": "Mine",
       "requested": "Review requests",
       "watching": "Watching"
     },
     "scopeHint": {
+      "all": "Every open pull request you watch.",
       "mine": "Opened by you or your sessions. Check what holds each one and merge.",
       "requested": "Pull requests where someone asked for your review.",
-      "watching": "Open pull requests in repositories you watch, where nobody asked for your review."
+      "watching": "The rest, where nobody asked for your review."
     },
     "search": "Search title, repo, #number, author",
     "clearSearch": "Clear search",
@@ -153,6 +155,31 @@
       "commentCount_other": "{{count}} comments",
       "commentCount_many": "{{count}} comments",
       "commentsFailed": "Could not load the comments."
+    },
+    "ci": {
+      "next": "Next: {{next}}",
+      "notLookedInto": "Not looked into yet",
+      "relation": {
+        "this_change": "Caused by this change",
+        "unrelated": "Not from this change",
+        "unclear": "Cause unclear"
+      },
+      "flake": {
+        "flake": "Flaky",
+        "real": "Fails every time",
+        "unsure": "Not re-run"
+      },
+      "action": {
+        "fix_here": "Fix here",
+        "rerun": "Run again",
+        "fix_elsewhere": "Fix elsewhere",
+        "ask": "Your call"
+      },
+      "confidence": {
+        "high": "Sure",
+        "medium": "Fairly sure",
+        "low": "Unsure"
+      }
     }
   },
   "review": {
@@ -270,6 +297,9 @@
     "listFailed": "Could not load your review sessions.",
     "delete": "Delete review session",
     "deleteTitle": "Delete the review session of #{{number}}?",
-    "deleteDescription": "The session stops, its worktree of {{branch}} is removed from the host, and the transcript is gone. The pull request is not touched. Deleting stops if the session has work that is not pushed."
+    "deleteDescription": "The session stops, its worktree of {{branch}} is removed from the host, and the transcript is gone. The pull request is not touched. Deleting stops if the session has work that is not pushed.",
+    "stopped": "This review session has stopped. Restarting brings Claude Code back with the conversation where it left off.",
+    "restart": "Restart review",
+    "restarting": "Restarting…"
   }
 }

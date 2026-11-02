@@ -1,24 +1,22 @@
 import { DiffStat, ToolCallRow } from '@oppenheimer/design-system-web';
 import type { ChatToolCall } from '@oppenheimer/frontend-consumer';
+import { ChatToolOutput } from '@oppenheimer/frontend-web';
 import { useTranslation } from 'react-i18next';
 import { firstLine, groupKindOf } from '../lib/chat-blocks';
-import { CHAT_TOOL_ICONS } from '../lib/chat-icons';
+import { chatToolIcon } from '../lib/chat-icons';
 import { ChatToolTarget } from './chat-tool-target';
 
 /**
  * One call the agent made: its glyph and verb, what it acted on, and how it
  * ended — the lines an edit changed, or a failure in red with its first line
  * under the row, readable without opening it. A call that returned something
- * folds over its output on the terminal ground.
+ * folds over its output on the terminal ground, a JSON answer as a tree.
  */
 export function ChatToolRow({ call }: { call: ChatToolCall }) {
   const { t } = useTranslation();
   const kind = groupKindOf(call.kind);
-  const Icon = CHAT_TOOL_ICONS[kind];
-  const verb =
-    kind === 'mcp' || kind === 'other'
-      ? call.name.replace(/^mcp__/, '').replaceAll('__', ' · ')
-      : t(`sessions.chat.verb.${kind}`);
+  const Icon = chatToolIcon(call.kind);
+  const verb = kind === 'mcp' || kind === 'other' ? call.label : t(`sessions.chat.verb.${kind}`);
   const failed = call.status === 'failed';
   const excerpt = failed ? firstLine(call.output) : null;
   const meta = failed ? (
@@ -26,12 +24,11 @@ export function ChatToolRow({ call }: { call: ChatToolCall }) {
   ) : call.diff ? (
     <DiffStat additions={call.diff.additions} deletions={call.diff.deletions} />
   ) : undefined;
-  const output = call.output ? (
-    <>
-      {call.output}
-      {call.truncated ? `\n… ${t('sessions.chat.truncated')}` : null}
-    </>
-  ) : undefined;
+  const output = !call.output ? undefined : (
+    <ChatToolOutput
+      text={call.truncated ? `${call.output}\n… ${t('sessions.chat.truncated')}` : call.output}
+    />
+  );
   return (
     <div className="flex flex-col">
       <ToolCallRow

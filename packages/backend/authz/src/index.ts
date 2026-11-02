@@ -37,6 +37,12 @@ export {
 } from './scope/scope-resolver.port';
 export { ScopedRepositoryBase } from './scope/scoped-repository.base';
 export {
+  requireOrganization,
+  requireTenant,
+  TenancyErrors,
+  type TenantScope,
+} from './scope/tenant-scope';
+export {
   AbilityAssertions,
   type ExpectAbilityContext,
   expectAbility,

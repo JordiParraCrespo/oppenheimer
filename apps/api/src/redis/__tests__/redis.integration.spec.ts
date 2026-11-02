@@ -2,8 +2,7 @@ import type { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { CacheService } from '@oppenheimer/backend-cache';
 import type Redis from 'ioredis';
-import { GenericContainer, type StartedTestContainer, Wait } from 'testcontainers';
-import { runAllMigrations } from '../../__tests__/run-migrations';
+import { useTestDatabase, useTestRedis } from '../../__tests__/integration-services';
 import { RedisHealthIndicator } from '../../health/infrastructure/redis-health.adapter';
 import { LEGACY_REPLAY_MARKER } from '../../hosts/hosts.di-tokens';
 import type { LegacyReplayMarkerPort } from '../../hosts/infrastructure/legacy-replay-marker.port';
@@ -20,34 +19,12 @@ import { REDIS_CLIENT, REDIS_PUB_SUB } from '../redis.di-tokens';
 describe('Redis (integration)', () => {
   let app: INestApplication;
   let redis: Redis;
-  let pgContainer: StartedTestContainer;
-  let redisContainer: StartedTestContainer;
 
   beforeAll(async () => {
-    [pgContainer, redisContainer] = await Promise.all([
-      new GenericContainer('postgres:16-alpine')
-        .withEnvironment({
-          POSTGRES_USER: 'test',
-          POSTGRES_PASSWORD: 'test',
-          POSTGRES_DB: 'test',
-        })
-        .withExposedPorts(5432)
-        .withWaitStrategy(Wait.forLogMessage(/database system is ready to accept connections/, 2))
-        .start(),
-      new GenericContainer('redis:7-alpine').withExposedPorts(6379).start(),
-    ]);
+    await useTestDatabase();
+    await useTestRedis();
 
-    process.env.NODE_ENV = 'test';
-    process.env.DB_HOST = pgContainer.getHost();
-    process.env.DB_PORT = pgContainer.getMappedPort(5432).toString();
-    process.env.DB_USERNAME = 'test';
-    process.env.DB_PASSWORD = 'test';
-    process.env.DB_DATABASE = 'test';
-    process.env.REDIS_HOST = redisContainer.getHost();
-    process.env.REDIS_PORT = redisContainer.getMappedPort(6379).toString();
     process.env.BETTER_AUTH_SECRET = 'integration-test-secret-value-32-chars';
-
-    await runAllMigrations();
 
     // After the env vars: Better Auth and its email queue read them at load.
     const { AppModule } = await import('../../app.module');
@@ -67,7 +44,6 @@ describe('Redis (integration)', () => {
     await app?.close();
     const { emailQueue } = await import('../../auth/infrastructure/email-queue.util');
     await emailQueue.close().catch(() => {});
-    await Promise.all([pgContainer?.stop(), redisContainer?.stop()]);
   });
 
   it('writes every cache key under the cache: prefix', async () => {

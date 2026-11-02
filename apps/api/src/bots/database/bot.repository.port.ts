@@ -23,7 +23,10 @@ export interface BotCreatorCheck {
  * transaction, under a lock on the group's rows.
  */
 export interface BotRepositoryPort {
-  /** The workspace's bots, by group and position. */
+  /**
+   * The workspace's bots in the Employees order, which every list of them
+   * draws: the groups by position, then Ungrouped; by position in each.
+   */
   findAll(scope: AccessScope): Promise<BotEntity[]>;
   /** `None` for a missing or out-of-scope bot. */
   findOneById(scope: AccessScope, id: string): Promise<Option<BotEntity>>;

@@ -1,7 +1,7 @@
 'use client';
 
 import { ChevronDownIcon, ChevronUpIcon } from 'lucide-react';
-import type * as React from 'react';
+import * as React from 'react';
 
 import { useControlled } from '../hooks/use-controlled';
 import { type HostLinkState, LinkDot, useHostLink } from '../internal/host-link';
@@ -18,7 +18,13 @@ import { TerminalStatusBar, TerminalStatusLink } from './terminal';
  * system cannot know: the time offline, and the fix (the commands to run on
  * the host as a `CommandRowList`, and a link to Settings → Hosts).
  *
- * - **Live, reconnecting**: the status bar, its first item the link.
+ * - **Live, reconnecting**: the status bar, its first item the link. A
+ *   pane whose header already says the session's state passes
+ *   `showLive={false}`: while the link is live the bar then leaves the link
+ *   out, so the pane carries one status, and it speaks up only when the
+ *   link does not hold. With no items either, there is nothing for the bar
+ *   to say while live, and it is left out: the grid runs to the pane's
+ *   foot, and a blip brings the bar back at the cost of one resize.
  * - **Offline, catching up, reconnected** in the `banner` form (the
  *   console's): the bar's place goes to a banner on a faint amber wash —
  *   the dot, the title, a dim line, the time offline — and while offline its
@@ -37,6 +43,7 @@ function HostLinkChrome({
   fixOpen,
   defaultFixOpen = false,
   onFixOpenChange,
+  showLive = true,
   children,
 }: {
   /** Mono time since the host went away ("2m 14s"); shown while offline. */
@@ -47,6 +54,8 @@ function HostLinkChrome({
   fixOpen?: boolean;
   defaultFixOpen?: boolean;
   onFixOpenChange?: (open: boolean) => void;
+  /** Draw the link while it is live; off when the pane's header says the state. */
+  showLive?: boolean;
   /** The status bar's items after the link. */
   children?: React.ReactNode;
 }) {
@@ -90,6 +99,8 @@ function HostLinkChrome({
     );
   }
 
+  if (phase === 'live' && !showLive && React.Children.toArray(children).length === 0) return null;
+
   return (
     <>
       {form === 'notice' && row.card ? (
@@ -97,8 +108,10 @@ function HostLinkChrome({
           {offerFix ? fix : null}
         </Notice>
       ) : null}
-      <TerminalStatusBar>
-        <TerminalStatusLink state={row.link}>{labels.status[phase](host)}</TerminalStatusLink>
+      <TerminalStatusBar data-phase={phase}>
+        {phase === 'live' && !showLive ? null : (
+          <TerminalStatusLink state={row.link}>{labels.status[phase](host)}</TerminalStatusLink>
+        )}
         {children}
       </TerminalStatusBar>
     </>

@@ -7,11 +7,17 @@ import {
 import { AppError } from '@oppenheimer/backend-core';
 import { None, Some } from 'oxide.ts';
 import { BotErrors } from '../../../../bots/domain/bots.errors';
+import { BotSteeringFactory } from '../../../application/bot-steering.factory';
 import type { BotSummaryTriggerPolicy } from '../../../application/bot-summary-trigger.policy';
 import type { BotTurnContextResolver } from '../../../application/bot-turn-context.resolver';
 import { TurnCancelWatchFactory } from '../../../application/turn-cancel-watch.factory';
+import { TurnWriteFactory } from '../../../application/turn-write.factory';
+import { BotMessageMapper } from '../../../bot-message.mapper';
 import type { BotMessageRepositoryPort } from '../../../database/bot-message.repository.port';
-import type { BotTurnRepositoryPort } from '../../../database/bot-turn.repository.port';
+import type {
+  BotSteerTaken,
+  BotTurnRepositoryPort,
+} from '../../../database/bot-turn.repository.port';
 import { BotTurnEntity } from '../../../domain/bot-turn.entity';
 import type { BotStreamPort } from '../../../infrastructure/bot-stream.port';
 import { RunBotTurnCommand } from '../run-bot-turn.command';
@@ -22,7 +28,10 @@ import { RunBotTurnCommandHandler } from '../run-bot-turn.command-handler';
  * a bot already busy leaves it queued; the bot's messages are stored and the
  * turn ends with the engine's outcome and usage; a failure in the engine or in
  * reading what the turn needs fails it with words; Stop aborts the engine; and
- * a turn found running is failed rather than run twice.
+ * a turn found running is failed rather than run twice. What its sender
+ * steers in is taken at each tool call, by the steer policy, and put after
+ * the line of the call that carried it, unless what was read says the turn
+ * takes none. A turn with nothing left to say ends without running the engine.
  */
 function queued(status: 'queued' | 'running' = 'queued') {
   const turn = BotTurnEntity.queue({
@@ -41,31 +50,72 @@ function queued(status: 'queued' | 'running' = 'queued') {
 function setup(
   turn: BotTurnEntity | null,
   script: (request: BotTurnRequest) => AsyncIterable<FakeScriptEvent> | FakeScriptEvent[],
-  options: { claim?: 'claimed' | 'busy' | 'lost'; cancel?: boolean; resolve?: Error } = {},
+  options: {
+    claim?: 'claimed' | 'busy' | 'lost';
+    cancel?: boolean;
+    resolve?: Error;
+    steers?: BotTurnEntity[][];
+    /** What was read says the turn has nothing left to say. */
+    nothingToSay?: boolean;
+    /** Whether the turn may take what the person sends meanwhile; it may unless said. */
+    takesSteers?: boolean;
+  } = {},
 ) {
+  const waiting = [...(options.steers ?? [])];
   const turns = {
     findForRun: vi.fn(async () => (turn ? Some(turn) : None)),
     claim: vi.fn(async () => options.claim ?? 'claimed'),
     finish: vi.fn(async () => true),
     isCancelRequested: vi.fn(async () => options.cancel ?? false),
+    takeSteers: vi.fn(async (_running: BotTurnEntity, takes: (steer: BotTurnEntity) => boolean) =>
+      (waiting.shift() ?? []).filter(takes).map(
+        (steer): BotSteerTaken => ({
+          turnId: steer.id,
+          messageId: `message-of-${steer.id}`,
+          text: 'Use Tokyo time instead.',
+        }),
+      ),
+    ),
   } satisfies Partial<BotTurnRepositoryPort>;
   const messages = {
     insert: vi.fn(async () => undefined),
     saveSteps: vi.fn(async () => undefined),
+    placeSteer: vi.fn(async () => undefined),
   } satisfies Partial<BotMessageRepositoryPort>;
-  const stream: BotStreamPort = { publish: vi.fn(async () => undefined), subscribe: vi.fn() };
+  /** What reached the bot's stream, in order. */
+  const heard: string[] = [];
+  const stream = {
+    publish: vi.fn(async (_botId: string, event: { type: string }) => {
+      heard.push(event.type);
+    }),
+    write: vi.fn(async (_botId: string, _turnId: string, block: number, text: string) => {
+      heard.push(`write ${block} ${text}`);
+    }),
+    settle: vi.fn(async () => {
+      heard.push('settle');
+    }),
+    forget: vi.fn(async () => {
+      heard.push('forget');
+    }),
+    inFlight: vi.fn(async () => []),
+    subscribe: vi.fn(),
+  } satisfies BotStreamPort;
   const context = {
     resolve: vi.fn(async () => {
       if (options.resolve) throw options.resolve;
+      if (options.nothingToSay) return null;
       return {
-        provider: 'glm' as const,
-        apiKey: 'key',
-        model: 'glm-5.3',
-        effort: null,
-        systemPrompt: 'You are a bot.',
-        history: [],
-        message: 'Hi',
-        tools: [],
+        request: {
+          provider: 'glm' as const,
+          apiKey: 'key',
+          model: 'glm-5.3',
+          effort: null,
+          systemPrompt: 'You are a bot.',
+          history: [],
+          message: 'Hi',
+          tools: [],
+        },
+        takesSteers: options.takesSteers ?? true,
       };
     }),
   };
@@ -75,14 +125,15 @@ function setup(
   >;
   const handler = new RunBotTurnCommandHandler(
     turns as unknown as BotTurnRepositoryPort,
-    messages as unknown as BotMessageRepositoryPort,
     stream,
     new FakeBotEngine(script),
     context as unknown as BotTurnContextResolver,
     new TurnCancelWatchFactory(turns as unknown as BotTurnRepositoryPort),
     summaries as unknown as BotSummaryTriggerPolicy,
+    new BotSteeringFactory(turns as unknown as BotTurnRepositoryPort, new BotMessageMapper()),
+    new TurnWriteFactory(messages as unknown as BotMessageRepositoryPort, stream),
   );
-  return { handler, turns, messages, stream, summaries };
+  return { handler, turns, messages, stream, summaries, heard, context };
 }
 
 const run = (handler: RunBotTurnCommandHandler, turnId: string) =>
@@ -91,7 +142,7 @@ const run = (handler: RunBotTurnCommandHandler, turnId: string) =>
 describe('RunBotTurnCommandHandler', () => {
   it('claims the turn, stores the reply, and ends completed with its usage', async () => {
     const turn = queued();
-    const { handler, turns, messages, stream, summaries } = setup(turn, () => [
+    const { handler, turns, messages, heard, summaries } = setup(turn, () => [
       { type: 'text.delta', text: 'Hello' },
       { type: 'text.done', text: 'Hello' },
       { type: 'usage', inputTokens: 12, outputTokens: 3 },
@@ -106,12 +157,20 @@ describe('RunBotTurnCommandHandler', () => {
     expect(turns.finish).toHaveBeenCalledWith(turn, expect.any(String));
     // Once it has ended, whether the conversation needs summarizing.
     expect(summaries.afterTurn).toHaveBeenCalledWith(turn, expect.any(String));
-    expect(vi.mocked(stream.publish).mock.calls.map(([, event]) => event.type)).toEqual([
-      'turn',
-      'text',
-      'message',
-      'turn',
-    ]);
+    // The block is kept until it is stored, and nothing of the turn once it reads as ended.
+    expect(heard).toEqual(['turn', 'write 0 Hello', 'message', 'settle', 'forget', 'turn']);
+  });
+
+  // Regression: an "on it" after the call ran, or after its report, reads backwards.
+  it('ends a turn with nothing left to say (a yes whose call already ran) without a word', async () => {
+    const turn = queued();
+    const engine = vi.fn(() => [{ type: 'text.done' as const, text: 'On it.' }]);
+    const { handler, messages, summaries } = setup(turn, engine, { nothingToSay: true });
+    await run(handler, turn.id);
+    expect(engine).not.toHaveBeenCalled();
+    expect(messages.insert).not.toHaveBeenCalled();
+    expect(turn).toMatchObject({ status: 'completed' });
+    expect(summaries.afterTurn).toHaveBeenCalledWith(turn, expect.any(String));
   });
 
   it('stores a tool call as an activity line whose step fills in when the call finishes', async () => {
@@ -133,6 +192,82 @@ describe('RunBotTurnCommandHandler', () => {
         steps: [expect.objectContaining({ callId: 'c1', output: 'found', isError: false })],
       }),
     );
+    expect(turn).toMatchObject({ status: 'completed' });
+  });
+
+  // Regression: the "on it" turn a yes opens took the person's message at a
+  // refused call, and that message, its turn gone, was never acted on.
+  it('hands no steering to a turn that cannot take a message, so the message waits for its own turn', async () => {
+    const turn = queued();
+    let delivered: unknown = 'not run';
+    const { handler, turns } = setup(
+      turn,
+      (request) => {
+        delivered = request.steering;
+        return [{ type: 'text.done', text: 'On it.' }];
+      },
+      { takesSteers: false },
+    );
+    await run(handler, turn.id);
+    expect(delivered).toBeUndefined();
+    expect(turns.takeSteers).not.toHaveBeenCalled();
+    expect(turn).toMatchObject({ status: 'completed' });
+  });
+
+  it('puts a steer its sender sent after the line of the call that carried it, and opens a new line after it', async () => {
+    const turn = queued();
+    const steerOf = (requestedByUserId: string | null) =>
+      BotTurnEntity.queue({
+        organizationId: turn.organizationId,
+        botId: turn.botId,
+        requestedByUserId: requestedByUserId ?? randomUUID(),
+        provider: 'glm',
+        model: 'glm-5.3',
+        effort: null,
+        steer: true,
+      });
+    const mine = steerOf(turn.requestedByUserId);
+    // Someone else's steer is not this turn's to take.
+    const theirs = steerOf(null);
+    const call = (callId: string) => ({
+      type: 'tool.started' as const,
+      callId,
+      name: 'web_search',
+      input: {},
+      result: { output: 'found' },
+    });
+    let delivered: unknown;
+    const { handler, messages, stream } = setup(
+      turn,
+      (request) => {
+        delivered = request.steering;
+        return [call('c1'), call('c2'), { type: 'text.done', text: 'Tokyo it is.' }];
+      },
+      { steers: [[mine, theirs], []] },
+    );
+    await run(handler, turn.id);
+
+    expect(delivered).toBeDefined();
+    expect(messages.placeSteer).toHaveBeenCalledTimes(1);
+    expect(messages.placeSteer).toHaveBeenCalledWith(
+      turn,
+      { kind: 'steer', messageId: `message-of-${mine.id}`, position: 2 },
+      expect.any(Date),
+    );
+    // c1's line at 1, the steer at 2, then c2's own line and the reply.
+    const lines = vi
+      .mocked(messages.insert)
+      .mock.calls.map(([message]) => [message.role, message.position]);
+    expect(lines).toEqual([
+      ['activity', 1],
+      ['activity', 3],
+      ['assistant', 4],
+    ]);
+    expect(vi.mocked(stream.publish).mock.calls.map(([, event]) => event)).toContainEqual({
+      type: 'message',
+      turnId: turn.id,
+      messageId: `message-of-${mine.id}`,
+    });
     expect(turn).toMatchObject({ status: 'completed' });
   });
 

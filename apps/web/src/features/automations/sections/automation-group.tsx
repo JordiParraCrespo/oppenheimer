@@ -1,7 +1,6 @@
 import {
   IconButton,
   SessionList,
-  SidebarEmptyRow,
   SidebarProjectGroup,
   SidebarProjectHeader,
   useNow,
@@ -14,7 +13,8 @@ import { AutomationSidebarRow } from './automation-sidebar-row';
 
 /**
  * One project's group in the automations sidebar: the folding header with
- * New automation in it, then its automations or the empty row.
+ * New automation in it, then its automations. A project with none has no
+ * group, so `items` is empty only while a search hides the group anyway.
  *
  * The group owns its ages' clock, ticking once a minute: every row's meta and
  * run ages may have moved, and the sidebar around the groups — its search, its
@@ -25,15 +25,12 @@ export function AutomationGroup({
   items,
   open,
   onOpenChange,
-  searching,
   onNew,
 }: {
   project: ProjectEntity;
   items: AutomationEntity[];
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  /** A search is narrowing the list: an empty group then says nothing. */
-  searching: boolean;
   onNew: (project: ProjectEntity) => void;
 }) {
   const { t } = useTranslation();
@@ -63,14 +60,6 @@ export function AutomationGroup({
             <AutomationSidebarRow key={automation.id} automation={automation} now={now} />
           ))}
         </SessionList>
-      ) : null}
-      {open && !items.length && !searching ? (
-        <SidebarEmptyRow>
-          {t('automations.sidebar.emptyProject')}{' '}
-          <button type="button" onClick={() => onNew(project)}>
-            {t('automations.sidebar.createOne')}
-          </button>
-        </SidebarEmptyRow>
       ) : null}
     </SidebarProjectGroup>
   );

@@ -11,7 +11,7 @@ import {
 } from '../../bots-chat.di-tokens';
 import type { BotApprovalRepositoryPort } from '../../database/bot-approval.repository.port';
 import type { BotTurnRepositoryPort } from '../../database/bot-turn.repository.port';
-import { decisionTurn, intersectScopes } from '../../domain/bot-approval.policy';
+import { approvalFinishedTurn, intersectScopes } from '../../domain/bot-approval.policy';
 import type { BotStreamPort } from '../../infrastructure/bot-stream.port';
 import { RunApprovedCallCommand } from './run-approved-call.command';
 
@@ -20,7 +20,8 @@ import { RunApprovedCallCommand } from './run-approved-call.command';
  * It runs only while the approval is approved with no result: a retry after
  * the result landed does nothing. The call runs as the owner under what both
  * the asking turn's and the deciding credential's scopes cover; its answer
- * and the turn that reports it back are written together, conditioned on no
+ * and the turn that reports it back (`finished`, after the one the yes
+ * queued to say the bot is on it) are written together, conditioned on no
  * result yet, so a second run of the job never reports twice. The call
  * itself is keyed by the approval, so a job that died after running it and
  * before the write runs it again to no new effect.
@@ -60,7 +61,7 @@ export class RunApprovedCallCommandHandler
     const owner = bot.unwrap();
     // An approver whose account is gone gets no report: there is nobody to send it as.
     const continuation = approval.decidedByUserId
-      ? decisionTurn(
+      ? approvalFinishedTurn(
           {
             organizationId: owner.organizationId,
             botId: owner.id,

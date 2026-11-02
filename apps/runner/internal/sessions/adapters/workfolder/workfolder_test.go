@@ -54,7 +54,7 @@ func TestMakingASessionFolderMarksEveryLevel(t *testing.T) {
 	}
 
 	data, err := os.ReadFile(filepath.Join(layout.Root, "layout.json"))
-	if err != nil || string(data) != "{\"version\":2}\n" {
+	if err != nil || string(data) != "{\"version\":3}\n" {
 		t.Fatalf("layout.json = %q, %v", data, err)
 	}
 	if m := meta(t, layout.Account("acct-1")); m.Kind != "account" || m.ID != "acct-1" {

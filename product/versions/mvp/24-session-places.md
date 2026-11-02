@@ -28,20 +28,26 @@ the OS's application-support directory, its worktrees under
 
 ```
 ~/oppenheimer/                                   the work folder
-├── layout.json                                  {"version": 2}
+├── layout.json                                  {"version": 3}
 └── <account-id>/                                one Oppenheimer account (a pairing)
     ├── .oppenheimer/meta.json                   {"kind":"account", …}
     └── <workspace-id>/                          one workspace (organization) of that account
         ├── .oppenheimer/meta.json               {"kind":"workspace", "slug": …}
-        ├── repos/                               stores: a cache of GitHub, safe to rebuild
+        ├── repos.noindex/                       stores: a cache of GitHub, safe to rebuild
         │   ├── <owner>--<repo>.git/             bare, found by GitHub id (oppenheimer.repo-id)
         │   └── .spares/<owner>--<repo>/         the pre-built worktree that makes a create instant
         ├── agents/<agent-id>/                   reserved (bots moved into Oppenheimer: 25-bots.md)
-        └── sessions/<slug>/                     a worktree session
+        └── sessions.noindex/<slug>/             a worktree session
             ├── .oppenheimer/meta.json           {"kind":"session", "id": …, "origin": …}
             └── <repo>/                          a checkout: the agent's working directory
 ```
 
+- **The directories that hold checkouts end in `.noindex`**, the suffix
+  Spotlight skips with everything below it. A session is a whole
+  checkout, dependencies included, rewritten whenever an agent installs
+  something; indexed, `mdworker_shared` takes more CPU than the agents on
+  a Mac host. `.metadata_never_index` at the root does not keep Spotlight
+  out (MVP decision log, 2026-10-01); the runner still writes it.
 - **Every level is named by an id that never changes**, never by a name
   someone can edit. A path never changes after it is made, because the
   agents key their own history on the working directory (Claude Code's
@@ -68,7 +74,7 @@ the OS's application-support directory, its worktrees under
 
 | Where | What the runner does | Its working directory | Closing it |
 |-------|---------------------|----------------------|------------|
-| **New worktree** | Clones or fetches the stores, cuts `oppenheimer/<slug>` from each base, adds a worktree per repository under `sessions/<slug>/` | The checkout the control plane names | Removes the worktrees (after the branch is pushed, as today) and the session folder |
+| **New worktree** | Clones or fetches the stores, cuts `oppenheimer/<slug>` from each base, adds a worktree per repository under `sessions.noindex/<slug>/` | The checkout the control plane names | Removes the worktrees (after the branch is pushed, as today) and the session folder |
 | **Folder on host** | Nothing on disk: no clone, no branch, no marker | The folder the person picked, which must exist and be a directory | Ends the tmux session; nothing on disk is touched |
 | **Blank terminal** | The `shell` agent, in either of the above | As above | As above |
 
@@ -118,12 +124,86 @@ away in between.
 New session opens on `auto` the first time and on the last level picked
 after that, as the other chips do (05, changed 2026-10-14).
 
+## 7. Claude Code cloud, the third place
+
+Added 2026-10-27 (`../../research/cloud-agents.md` §5B,
+`../../next-steps/cloud-agents.md`). A `cloud` session is started from a
+host and then lives on claude.ai/code:
+
+- **What the runner does.** It fetches the one checkout's store with a
+  token minted for that repository and sealed into `session.create`'s
+  `cloud` field, checks the base out detached in a scratch directory,
+  marks the directory trusted in Claude Code's own state (as a worktree
+  session's folder is), runs `claude --cloud <task>` there under a
+  pseudo-terminal, and removes the directory. Nothing is made in the work
+  folder; no tmux session, so no poll ever reports it stopped. It names `session.cloud` in its hello.
+- **What the API keeps.** `place = 'cloud'` and the cloud session's id in
+  `agentSessionId` (from `session.started`); a hello never records a cloud
+  session stopped. Its state is `agent.observed`, posted by the browser
+  extension (`POST /sessions/cloud-status`).
+- **What the console shows.** Where: *Claude Code cloud* on a host, with a
+  repository and a task (Claude Code only; no files until 2026-10-29, when
+  a first task's files became links in the task, `next-steps/cloud-agents.md`
+  "Files for a cloud session"). It is also the
+  **Claude Code** row first under Cloud, beside the vendors. The row names
+  the host it would start from, the one already picked when it can, else the
+  first that can (online, its runner's live link named `session.cloud`,
+  `claude` installed; the host read's `startsCloudSessions`), as "From
+  mac-studio", and opens a *Start from* pane of every host where the reader
+  picks one. A host that cannot is shown disabled with the reason (*Offline*,
+  *This runner can't start it*). With no host that can, the row is greyed out
+  as *Needs a host*, as `NewSessionComposer.dc.html` draws a cloud account
+  that cannot run. Picking it sets the agent to Claude Code, and the engine
+  button then offers Claude's models alone: the API refuses any other agent
+  in this place. The row's mark is a
+  cloud. The pane has no terminal: the state, *Open in claude.ai*, and
+  `claude --teleport <id>`.
+- **Deleting it.** Nothing of it is on the host, so the API records the
+  close whole — the request and `session.closed` — without the host, online
+  or not, and the session leaves the console at once. It stays on
+  claude.ai/code, where it is archived. Its input (a prompt, an answer, a
+  file) is refused with `SESSIONS_038`: it is answered on claude.ai.
+
+### Codex's cloud, the same place (2026-10-29)
+
+The owner asked for Codex cloud tasks the way Claude Code's cloud works:
+started from a host, run on the vendor's machines, followed here
+(`../../next-steps/cloud-agents.md`, "Codex is built"). It is the same
+place with the agent `codex`; what differs is the vendor's CLI:
+
+- **What the runner does.** `codex cloud exec --env=<environment> --branch
+  <base> <task>` on the checkout's base branch, in the environment the
+  person picked, else the one linked to the repository, else one labelled
+  with the repository's full name, then its bare name (2026-10-31,
+  `../../next-steps/cloud-agents.md`, "Which Codex environment"). Codex reads
+  the branch from GitHub, so nothing is fetched or checked out, and the
+  create's token goes unused. It reports the task's id on `session.started`
+  and the session as working. It names `session.cloud.codex` in its hello;
+  a runner that names only `session.cloud` is refused a Codex one with
+  `SESSIONS_037`.
+- **Its status comes from the host.** Codex's CLI answers it, so the
+  runner asks `codex cloud list --json` once a minute while a task it
+  started in the last week has not settled, and reports a change: pending
+  is working, ready or applied is done, an error is the session failed. A
+  failed ask doubles the wait up to a quarter of an hour. No browser
+  extension is involved; the host must be online for the state to move.
+- **What the console shows.** A **Codex** row under Cloud beside Claude
+  Code's, with its own Start from pane over the hosts that can
+  (`startsCodexCloudSessions`: its runner named `session.cloud.codex` and
+  `codex` is installed). In a host's Start in pane the place is *Cloud*,
+  and the engine says whose: in it the engine button offers Claude Code and
+  Codex alone. The chip reads "mac-studio · Codex cloud". The pane says
+  *Codex cloud*, *Open in ChatGPT*, and `codex apply <id>`, which applies
+  the task's diff to a checkout.
+
 ## Decided
 
 - 2026-10-14: two places: the runner's home `~/.oppenheimer/`, and a work
   folder the person chooses, `~/oppenheimer/` by default.
 - 2026-10-14: the work folder is `<account>/<workspace>/{repos, agents,
-  sessions}`, every level named by an id; no project level.
+  sessions}`, every level named by an id; no project level. Since
+  2026-10-28 `repos.noindex` and `sessions.noindex`, so Spotlight skips
+  them (layout version 3, no migration).
 - 2026-10-14: a session is a new worktree or a folder on the host; the
   blank terminal is an agent, not a place. A folder session's folder is
   the person's: never written, never deleted.
@@ -136,3 +216,37 @@ after that, as the other chips do (05, changed 2026-10-14).
 - 2026-10-14: the account folder is named by the account id the runner
   receives at pairing (`POST /hosts/register`), not by a field on every
   command: the frames carry the workspace only.
+- 2026-10-27: a third place, `cloud`: Claude Code's cloud, started by the
+  host's runner with `claude --cloud` and followed through the browser
+  extension (§7).
+- 2026-10-28: the `cloud` place has a second kind, a session the control
+  plane launches at a vendor through its API (Cursor's first): no host at
+  all, its vendor run beside it in `session_cloud_run`, its row opening the
+  vendor (`next-steps/cloud-agents.md`, "Two kinds of cloud session").
+- 2026-10-28: Claude Code's cloud is also a row under Cloud, not only a
+  place in a host's pane: the console picks a host that can start it and
+  says which (§7). The runner trusts the scratch checkout before
+  `claude --cloud` runs; a fresh folder held the start on Claude Code's
+  trust question until it timed out. A checkout it cannot mark fails the
+  start at once (`SESS_008`, naming why) rather than waiting for that
+  timeout.
+- 2026-10-28: the Claude Code row opens a *Start from* pane of the hosts
+  instead of starting from the one the console chose, which it still names;
+  and in Claude Code's cloud the engine button offers Claude Code alone
+  (§7).
+- 2026-10-28: which Claude account a cloud session runs on is the host's:
+  the runner reports the claude.ai account its `claude` is signed in as
+  (`claudeAccount` in the facts, read from `oauthAccount.emailAddress` in
+  Claude Code's state), Settings → Hosts names it on each card, and Start
+  from names it on each host that can start the session. Two accounts are
+  two hosts to pick between, until multi-account
+  (`../../next-steps/multi-account.md`) gives one host several.
+- 2026-10-29: a task's Start session and an automation's runs pick the
+  place too: on a host, Claude Code's cloud from a host, or Cursor's with no
+  host (`AUTOMATION_PLACES`, `../../next-steps/cloud-agents.md`, "Tasks and
+  automations").
+- 2026-10-29: Codex's cloud is the same place as Claude Code's, with the
+  agent `codex`: the host starts it with `codex cloud exec` and reports its
+  status off `codex cloud list` (§7, "Codex's cloud, the same place").
+  In a host's cloud the engine button now offers Claude Code and Codex,
+  which replaces the 2026-10-28 "Claude Code alone".

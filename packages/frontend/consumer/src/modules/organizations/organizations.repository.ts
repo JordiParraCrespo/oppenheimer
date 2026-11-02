@@ -3,7 +3,7 @@ import {
   type OrganizationResponseDto,
   type UpdateOrganizationRequest,
 } from '@oppenheimer/api-client';
-import { MapApiError, unwrapBody } from '@oppenheimer/frontend-core';
+import { callApi } from '@oppenheimer/frontend-core';
 import type { CreateOrganizationDto } from '@oppenheimer/shared';
 import { injectable } from 'inversify';
 import { OrganizationEntity } from './organization.entity';
@@ -27,13 +27,11 @@ function toEntity(organization: OrganizationResponseDto): OrganizationEntity {
  */
 @injectable()
 export class OrganizationsRepository {
-  @MapApiError(OrganizationsErrors.FETCH_LIST_FAILED)
-  async findAll(): Promise<OrganizationEntity[]> {
-    const result = await unwrapBody(
-      heyApiSdk.listOrganizations(),
-      OrganizationsErrors.FETCH_LIST_FAILED,
-    );
-    return result.map(toEntity);
+  findAll(): Promise<OrganizationEntity[]> {
+    return callApi(OrganizationsErrors.FETCH_LIST_FAILED, async (api) => {
+      const result = await api.body(heyApiSdk.listOrganizations());
+      return result.map(toEntity);
+    });
   }
 
   /**
@@ -44,13 +42,11 @@ export class OrganizationsRepository {
    * membership and the org-scoped role in the same call, so the creator can
    * open what they just made without a second request.
    */
-  @MapApiError(OrganizationsErrors.CREATE_FAILED)
-  async create(dto: CreateOrganizationDto): Promise<OrganizationEntity> {
-    const result = await unwrapBody(
-      heyApiSdk.createOrganization({ body: dto }),
-      OrganizationsErrors.CREATE_FAILED,
-    );
-    return toEntity(result);
+  create(dto: CreateOrganizationDto): Promise<OrganizationEntity> {
+    return callApi(OrganizationsErrors.CREATE_FAILED, async (api) => {
+      const result = await api.body(heyApiSdk.createOrganization({ body: dto }));
+      return toEntity(result);
+    });
   }
 
   /**
@@ -61,21 +57,17 @@ export class OrganizationsRepository {
    * gates Continue on availability, and a network blip that answered `false`
    * would tell somebody an address they can have is already gone.
    */
-  @MapApiError(OrganizationsErrors.CHECK_SLUG_FAILED)
-  async checkSlug(slug: string): Promise<boolean> {
-    const result = await unwrapBody(
-      heyApiSdk.checkSlug({ body: { slug } }),
-      OrganizationsErrors.CHECK_SLUG_FAILED,
-    );
-    return result.available;
+  checkSlug(slug: string): Promise<boolean> {
+    return callApi(OrganizationsErrors.CHECK_SLUG_FAILED, async (api) => {
+      const result = await api.body(heyApiSdk.checkSlug({ body: { slug } }));
+      return result.available;
+    });
   }
 
-  @MapApiError(OrganizationsErrors.UPDATE_FAILED)
-  async update(id: string, changes: UpdateOrganizationRequest): Promise<OrganizationEntity> {
-    const result = await unwrapBody(
-      heyApiSdk.updateOrganization({ path: { id }, body: changes }),
-      OrganizationsErrors.UPDATE_FAILED,
-    );
-    return toEntity(result);
+  update(id: string, changes: UpdateOrganizationRequest): Promise<OrganizationEntity> {
+    return callApi(OrganizationsErrors.UPDATE_FAILED, async (api) => {
+      const result = await api.body(heyApiSdk.updateOrganization({ path: { id }, body: changes }));
+      return toEntity(result);
+    });
   }
 }

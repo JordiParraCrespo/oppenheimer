@@ -34,7 +34,7 @@ export class StopSessionCommandHandler
   ) {}
 
   async execute(command: StopSessionCommand): Promise<SessionCommandResult> {
-    const session = await this.loader.requireLive(command.scope, command.sessionId);
+    const session = await this.loader.requireLiveOnHost(command.scope, command.sessionId);
 
     await this.sessions.appendEvents(session, [
       {

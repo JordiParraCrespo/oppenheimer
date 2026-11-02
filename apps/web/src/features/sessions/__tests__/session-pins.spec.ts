@@ -2,12 +2,13 @@ import type { SessionEntity } from '@oppenheimer/frontend-consumer';
 import { act, renderHook } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
 import { useSessionPins } from '../hooks/use-session-pins';
-import { SESSION_PINS_KEY, splitPinned, storedSessionPins, withPin } from '../lib/session-pins';
+import { SESSION_PINS_KEY, splitPinned, withPin } from '../lib/session-pins';
+import { storedList } from '../lib/stored-list';
 
 /**
  * A pinned session comes back pinned on the next visit, on top of the ones
  * pinned before it, and is drawn once: under Pinned, never in its project
- * too. Anything unreadable in storage is no pin.
+ * too.
  */
 
 const session = (id: string) => ({ id }) as SessionEntity;
@@ -25,14 +26,7 @@ describe('useSessionPins', () => {
     const second = renderHook(() => useSessionPins());
     expect(second.result.current.pins).toEqual(['s2', 's1']);
     act(() => second.result.current.setPinned('s2', false));
-    expect(storedSessionPins()).toEqual(['s1']);
-  });
-});
-
-describe('storedSessionPins', () => {
-  it.each(['{not json', '"s1"', '[1,"s1","s1"]'])('reads %s as what it can make of it', (raw) => {
-    window.localStorage.setItem(SESSION_PINS_KEY, raw);
-    expect(storedSessionPins()).toEqual(raw.includes('s1') && raw.startsWith('[') ? ['s1'] : []);
+    expect(storedList(SESSION_PINS_KEY)).toEqual(['s1']);
   });
 });
 

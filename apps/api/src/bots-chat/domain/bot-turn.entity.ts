@@ -9,6 +9,7 @@ import {
   BOT_TURN_LANES,
   BOT_TURN_STATUSES,
   type BotProvider,
+  type BotTurnFailure,
   type BotTurnLane,
   type BotTurnOrigin,
   type BotTurnStatus,
@@ -22,7 +23,7 @@ export interface BotTurnProps {
   /** Who sent the message; null once that account is gone. */
   requestedByUserId: string | null;
   status: BotTurnStatus;
-  /** Why it exists: a message of yours, an approval's decision, or a routine's run. */
+  /** Why it exists: a message of yours, an approval's decision, a routine's run, or a subscription's wake. */
   origin: BotTurnOrigin;
   /** What makes it happen once (`automation-run:<runId>`); null for a message. */
   sourceKey: string | null;
@@ -59,13 +60,43 @@ export interface BotTurnProps {
   replyRequested: boolean;
   /** On the turn that delivers an answer, the turn it answers. */
   answersTurnId: string | null;
+  /**
+   * Sent as a steer: while it waits, the running turn of the same sender
+   * takes its message at its next tool call (`BotSteerPolicy`); one it
+   * never reached runs as the turn it is. Only a message of yours steers.
+   */
+  steer: boolean;
   /** Why it failed, in words a person can act on; never a key. */
   error: string | null;
+  /** What kind of failure that was, so the chat can say whether a retry helps; null unless failed. */
+  failure: BotTurnFailure | null;
   inputTokens: number;
   outputTokens: number;
+  /** What the model's context held at the turn's last answer; null before one. */
+  context: BotTurnContext | null;
+  /** A subscription's usage windows as that answer said them; null on an API key. */
+  planLimits: BotTurnPlanLimits | null;
   cancelRequestedAt: Date | null;
   startedAt: Date | null;
   endedAt: Date | null;
+}
+
+/** What the model's context held: the tokens, against its window when the engine knew it. */
+export interface BotTurnContext {
+  tokens: number;
+  window: number | null;
+}
+
+/** One of a subscription's usage windows: the share used, 0–100, and when it resets. */
+export interface BotTurnPlanWindow {
+  usedPercent: number;
+  resetsAt: Date | null;
+}
+
+/** A subscription's 5-hour and weekly windows, each null when the provider left it out. */
+export interface BotTurnPlanLimits {
+  fiveHour: BotTurnPlanWindow | null;
+  sevenDay: BotTurnPlanWindow | null;
 }
 
 /** The longest failure a turn keeps (`bot_turn.error`); a longer one is cut to fit. */
@@ -116,6 +147,7 @@ export class BotTurnEntity extends AggregateRoot<BotTurnProps> {
     askedByTurnId?: string | null;
     replyRequested?: boolean;
     answersTurnId?: string | null;
+    steer?: boolean;
   }): BotTurnEntity {
     const turn = new BotTurnEntity({
       id: randomUUID(),
@@ -127,6 +159,7 @@ export class BotTurnEntity extends AggregateRoot<BotTurnProps> {
         askedByTurnId: null,
         replyRequested: false,
         answersTurnId: null,
+        steer: false,
         ...props,
         origin: props.origin ?? 'message',
         sourceKey: props.sourceKey ?? null,
@@ -134,8 +167,11 @@ export class BotTurnEntity extends AggregateRoot<BotTurnProps> {
         credentialScopes: props.credentialScopes ?? null,
         status: 'queued',
         error: null,
+        failure: null,
         inputTokens: 0,
         outputTokens: 0,
+        context: null,
+        planLimits: null,
         cancelRequestedAt: null,
         startedAt: null,
         endedAt: null,
@@ -260,6 +296,9 @@ export class BotTurnEntity extends AggregateRoot<BotTurnProps> {
   get answersTurnId(): string | null {
     return this.props.answersTurnId;
   }
+  get steer(): boolean {
+    return this.props.steer;
+  }
   get timeZone(): string | null {
     return this.props.timeZone;
   }
@@ -272,11 +311,21 @@ export class BotTurnEntity extends AggregateRoot<BotTurnProps> {
   get error(): string | null {
     return this.props.error;
   }
+
+  get failure(): BotTurnFailure | null {
+    return this.props.failure;
+  }
   get inputTokens(): number {
     return this.props.inputTokens;
   }
   get outputTokens(): number {
     return this.props.outputTokens;
+  }
+  get context(): BotTurnContext | null {
+    return this.props.context;
+  }
+  get planLimits(): BotTurnPlanLimits | null {
+    return this.props.planLimits;
   }
   get cancelRequestedAt(): Date | null {
     return this.props.cancelRequestedAt;
@@ -304,19 +353,32 @@ export class BotTurnEntity extends AggregateRoot<BotTurnProps> {
   end(
     status: 'completed' | 'cancelled' | 'failed',
     now: Date,
-    outcome: { error?: string | null; inputTokens?: number; outputTokens?: number } = {},
+    outcome: {
+      error?: string | null;
+      failure?: BotTurnFailure | null;
+      inputTokens?: number;
+      outputTokens?: number;
+      context?: BotTurnContext | null;
+      planLimits?: BotTurnPlanLimits | null;
+    } = {},
   ): void {
     if (this.ended) throw new ArgumentInvalidException(`The turn already ${this.props.status}`);
     this.props.status = status;
     this.props.endedAt = now;
     this.props.error = status === 'failed' ? fitError(outcome.error ?? 'The turn failed') : null;
+    this.props.failure = status === 'failed' ? (outcome.failure ?? 'other') : null;
     this.props.inputTokens = outcome.inputTokens ?? this.props.inputTokens;
     this.props.outputTokens = outcome.outputTokens ?? this.props.outputTokens;
+    this.props.context = outcome.context ?? this.props.context;
+    this.props.planLimits = outcome.planLimits ?? this.props.planLimits;
   }
 
   /** A worker found it running: the one that ran it died, so it fails rather than running twice. */
   abandon(now: Date): void {
-    this.end('failed', now, { error: 'The turn was interrupted. Send the message again.' });
+    this.end('failed', now, {
+      error: 'The turn was interrupted. Send the message again.',
+      failure: 'interrupted',
+    });
   }
 
   /** Who sent the message the turn answers; a turn whose sender's account is gone queues nothing more. */
@@ -349,6 +411,9 @@ export class BotTurnEntity extends AggregateRoot<BotTurnProps> {
     }
     if (props.lane === 'bots' && props.chainId === null) {
       throw new ArgumentInvalidException('A turn a bot queued belongs to its chain');
+    }
+    if (props.steer && (props.lane !== 'owner' || props.origin !== 'message')) {
+      throw new ArgumentInvalidException('Only a message of yours steers');
     }
     if (props.answersTurnId && props.replyRequested) {
       throw new ArgumentInvalidException('An answer asks for no answer');

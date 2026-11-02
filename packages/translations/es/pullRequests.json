@@ -16,14 +16,16 @@
     "reviewNext": "Revisar la siguiente",
     "scopesLabel": "De quién son las pull requests",
     "scopes": {
+      "all": "Todas",
       "mine": "Mías",
       "requested": "Revisiones pedidas",
       "watching": "Seguidas"
     },
     "scopeHint": {
+      "all": "Todas las pull requests abiertas que sigues.",
       "mine": "Abiertas por ti o por tus sesiones. Mira qué frena cada una y fusiónala.",
       "requested": "Pull requests en las que alguien pidió tu revisión.",
-      "watching": "Pull requests abiertas en repositorios que sigues, donde nadie pidió tu revisión."
+      "watching": "El resto: de otras personas, sin revisión pedida a ti."
     },
     "search": "Busca por título, repositorio, #número o autor",
     "clearSearch": "Borrar la búsqueda",
@@ -153,6 +155,31 @@
       "commentCount_other": "{{count}} comentarios",
       "commentCount_many": "{{count}} comentarios",
       "commentsFailed": "No se pudieron cargar los comentarios."
+    },
+    "ci": {
+      "next": "Siguiente: {{next}}",
+      "notLookedInto": "Sin revisar todavía",
+      "relation": {
+        "this_change": "Lo causa este cambio",
+        "unrelated": "No viene de este cambio",
+        "unclear": "Causa poco clara"
+      },
+      "flake": {
+        "flake": "Intermitente",
+        "real": "Falla siempre",
+        "unsure": "Sin reintentar"
+      },
+      "action": {
+        "fix_here": "Arreglar aquí",
+        "rerun": "Volver a ejecutar",
+        "fix_elsewhere": "Arreglar en otro sitio",
+        "ask": "Decides tú"
+      },
+      "confidence": {
+        "high": "Seguro",
+        "medium": "Bastante seguro",
+        "low": "Poco seguro"
+      }
     }
   },
   "review": {
@@ -270,6 +297,9 @@
     "listFailed": "No se pudieron cargar tus sesiones de revisión.",
     "delete": "Eliminar sesión de revisión",
     "deleteTitle": "¿Eliminar la sesión de revisión de #{{number}}?",
-    "deleteDescription": "La sesión se detiene, su worktree de {{branch}} se elimina del host y la transcripción desaparece. El pull request no se toca. La eliminación se detiene si la sesión tiene trabajo sin subir."
+    "deleteDescription": "La sesión se detiene, su worktree de {{branch}} se elimina del host y la transcripción desaparece. El pull request no se toca. La eliminación se detiene si la sesión tiene trabajo sin subir.",
+    "stopped": "Esta sesión de revisión se ha detenido. Al reiniciarla Claude Code vuelve con la conversación donde la dejó.",
+    "restart": "Reiniciar revisión",
+    "restarting": "Reiniciando…"
   }
 }

@@ -20,18 +20,27 @@ import { BotDocumentOrmEntity } from '../bots/database/bot-document.orm-entity';
 import { BotDocumentRevisionOrmEntity } from '../bots/database/bot-document-revision.orm-entity';
 import { BotGroupOrmEntity } from '../bots/database/bot-group.orm-entity';
 import { BotMemoryFactOrmEntity } from '../bots/database/bot-memory-fact.orm-entity';
+import { BotSkillOrmEntity } from '../bots/database/bot-skill.orm-entity';
 import { ModelProviderCredentialOrmEntity } from '../bots/database/model-provider-credential.orm-entity';
 import { BotApprovalOrmEntity } from '../bots-chat/database/bot-approval.orm-entity';
 import { BotAttachmentOrmEntity } from '../bots-chat/database/bot-attachment.orm-entity';
 import { BotConversationSummaryOrmEntity } from '../bots-chat/database/bot-conversation-summary.orm-entity';
+import { BotGoalOrmEntity } from '../bots-chat/database/bot-goal.orm-entity';
 import { BotMessageOrmEntity } from '../bots-chat/database/bot-message.orm-entity';
+import { BotPermissionRuleOrmEntity } from '../bots-chat/database/bot-permission-rule.orm-entity';
+import { BotQuestionOrmEntity } from '../bots-chat/database/bot-question.orm-entity';
+import { BotSubscriptionOrmEntity } from '../bots-chat/database/bot-subscription.orm-entity';
+import { BotToolPermissionOrmEntity } from '../bots-chat/database/bot-tool-permission.orm-entity';
 import { BotTurnOrmEntity } from '../bots-chat/database/bot-turn.orm-entity';
 import { CalendarConnectionOrmEntity } from '../calendar/database/calendar-connection.orm-entity';
 import { CalendarEventOrmEntity } from '../calendar/database/calendar-event.orm-entity';
+import { CloudAgentCredentialOrmEntity } from '../cloud-agents/database/cloud-agent-credential.orm-entity';
 import { FeatureFlagOrmEntity } from '../feature-flags/database/feature-flag.orm-entity';
 import { FlagChangeOrmEntity } from '../feature-flags/database/flag-change.orm-entity';
 import { FlagSegmentOrmEntity } from '../feature-flags/database/flag-segment.orm-entity';
 import { GithubInstallationOrmEntity } from '../github/database/github-installation.orm-entity';
+import { GithubTokenOrmEntity } from '../github/database/github-token.orm-entity';
+import { GithubTokenPinOrmEntity } from '../github/database/github-token-pin.orm-entity';
 import { GithubUserGrantOrmEntity } from '../github/database/github-user-grant.orm-entity';
 import { HostOrmEntity } from '../hosts/database/host.orm-entity';
 import { HostEventOrmEntity } from '../hosts/database/host-event.orm-entity';
@@ -41,6 +50,9 @@ import { HostPairingTokenOrmEntity } from '../hosts/database/host-pairing-token.
 import { HostPresenceOrmEntity } from '../hosts/database/host-presence.orm-entity';
 import { InboundDeliveryOrmEntity } from '../inbound-events/database/inbound-delivery.orm-entity';
 import { InboundEventOrmEntity } from '../inbound-events/database/inbound-event.orm-entity';
+import { InboxMarkOrmEntity } from '../inbox/database/inbox-mark.orm-entity';
+import { GmailConnectionOrmEntity } from '../mail/database/gmail-connection.orm-entity';
+import { MailSendOrmEntity } from '../mail/database/mail-send.orm-entity';
 import { InvitationOrmEntity } from '../organizations/database/invitation.orm-entity';
 import { MemberOrmEntity } from '../organizations/database/member.orm-entity';
 import { OrganizationOrmEntity } from '../organizations/database/organization.orm-entity';
@@ -49,6 +61,7 @@ import { TeamMemberOrmEntity } from '../organizations/database/team-member.orm-e
 import { UserSettingsOrmEntity } from '../profile/database/user-settings.orm-entity';
 import { ProjectOrmEntity } from '../projects/database/project.orm-entity';
 import { ProjectRepositoryOrmEntity } from '../projects/database/project-repository.orm-entity';
+import { CiFindingOrmEntity } from '../pull-requests/database/ci-finding.orm-entity';
 import { ReviewSessionOrmEntity } from '../pull-requests/database/review-session.orm-entity';
 import { WatchedRepositoryOrmEntity } from '../pull-requests/database/watched-repository.orm-entity';
 import { RoleOrmEntity } from '../roles/database/role.orm-entity';
@@ -56,7 +69,9 @@ import { RoleCatalogVersionOrmEntity } from '../roles/database/role-catalog-vers
 import { UserRoleOrmEntity } from '../roles/database/user-role.orm-entity';
 import { UserRoleVersionOrmEntity } from '../roles/database/user-role-version.orm-entity';
 import { SessionCheckoutOrmEntity } from '../sessions/database/session-checkout.orm-entity';
+import { SessionCloudRunOrmEntity } from '../sessions/database/session-cloud-run.orm-entity';
 import { SessionShareOrmEntity } from '../sessions/database/session-share.orm-entity';
+import { SessionTerminalWatchOrmEntity } from '../sessions/database/session-terminal-watch.orm-entity';
 import { SessionTurnOrmEntity } from '../sessions/database/session-turn.orm-entity';
 import { WorkSessionOrmEntity } from '../sessions/database/work-session.orm-entity';
 import { WorkSessionEventOrmEntity } from '../sessions/database/work-session-event.orm-entity';
@@ -65,6 +80,8 @@ import { PlanEventOrmEntity } from '../tasks/database/plan-event.orm-entity';
 import { TaskOrmEntity } from '../tasks/database/task.orm-entity';
 import { TaskSessionOrmEntity } from '../tasks/database/task-session.orm-entity';
 import { UserOrmEntity } from '../users/database/user.orm-entity';
+import { WhatsappAccountOrmEntity } from '../whatsapp/database/whatsapp-account.orm-entity';
+import { WhatsappMessageOrmEntity } from '../whatsapp/database/whatsapp-message.orm-entity';
 
 /**
  * Data source used by the TypeORM CLI (`migration:generate` / `migration:run` /
@@ -106,6 +123,7 @@ export default new DataSource({
     WorkSessionEventOrmEntity,
     SessionTurnOrmEntity,
     SessionShareOrmEntity,
+    SessionTerminalWatchOrmEntity,
     InboundDeliveryOrmEntity,
     InboundEventOrmEntity,
     AutomationOrmEntity,
@@ -120,20 +138,36 @@ export default new DataSource({
     TaskSessionOrmEntity,
     CalendarEventOrmEntity,
     CalendarConnectionOrmEntity,
+    GmailConnectionOrmEntity,
+    MailSendOrmEntity,
+    WhatsappAccountOrmEntity,
+    WhatsappMessageOrmEntity,
+    SessionCloudRunOrmEntity,
+    CloudAgentCredentialOrmEntity,
     GithubUserGrantOrmEntity,
+    GithubTokenOrmEntity,
+    GithubTokenPinOrmEntity,
     WatchedRepositoryOrmEntity,
     BotOrmEntity,
     BotGroupOrmEntity,
     BotDocumentOrmEntity,
     BotDocumentRevisionOrmEntity,
     BotMemoryFactOrmEntity,
+    BotSkillOrmEntity,
     ModelProviderCredentialOrmEntity,
     BotTurnOrmEntity,
     BotMessageOrmEntity,
     BotAttachmentOrmEntity,
+    BotSubscriptionOrmEntity,
+    BotGoalOrmEntity,
+    InboxMarkOrmEntity,
     BotApprovalOrmEntity,
+    BotQuestionOrmEntity,
+    BotToolPermissionOrmEntity,
+    BotPermissionRuleOrmEntity,
     BotConversationSummaryOrmEntity,
     ReviewSessionOrmEntity,
+    CiFindingOrmEntity,
     UserRoleOrmEntity,
     RoleCatalogVersionOrmEntity,
     UserRoleVersionOrmEntity,

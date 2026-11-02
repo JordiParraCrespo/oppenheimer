@@ -1,10 +1,15 @@
 import type {
   BotEngineEvent,
+  BotEngineFailure,
   BotEngineTool,
+  BotSteer,
+  BotSteering,
   BotToolData,
   BotTurnImage,
   BotTurnRequest,
 } from './bot-engine';
+
+type ToolFinished = Extract<BotEngineEvent, { type: 'tool.finished' }>;
 
 type DoneEvent = Extract<BotEngineEvent, { type: 'done' }>;
 
@@ -44,8 +49,8 @@ export function redactSecret(text: string, secret: string): string {
  * `text` with the turn's scratch directory replaced: the path names the
  * machine the control plane runs on, and a bot has no business repeating it.
  */
-export function redactPath(text: string, path: string): string {
-  return path.length >= 4 ? text.split(path).join('[workspace]') : text;
+export function redactPath(text: string, path: string | undefined): string {
+  return path && path.length >= 4 ? text.split(path).join('[workspace]') : text;
 }
 
 /** What a turn's events may carry: the key and the scratch directory, both redacted. */
@@ -64,7 +69,9 @@ class DeltaScrubber {
   private readonly secrets: string[];
 
   constructor(private readonly request: Pick<BotTurnRequest, 'apiKey' | 'scratchDir'>) {
-    this.secrets = [request.apiKey, request.scratchDir].filter((secret) => secret.length >= 4);
+    this.secrets = [request.apiKey, request.scratchDir].filter(
+      (secret): secret is string => secret !== undefined && secret.length >= 4,
+    );
   }
 
   /** What of `text` (after what was held) can go out now. */
@@ -142,11 +149,77 @@ function scrubEvent(event: BotEngineEvent, request: BotTurnRequest): BotEngineEv
   }
 }
 
-export function failed(error: string, rateLimit?: { resetAt: Date | null }): DoneEvent {
+/**
+ * A failed end. A rate limit is that kind whatever `failure` says, and
+ * carries when the provider may be called again.
+ */
+export function failed(
+  error: string,
+  failure: BotEngineFailure = 'other',
+  rateLimit?: { resetAt: Date | null },
+): DoneEvent {
   return rateLimit
-    ? { type: 'done', reason: 'failed', error, rateLimit }
-    : { type: 'done', reason: 'failed', error };
+    ? { type: 'done', reason: 'failed', error, failure: 'rate_limit', rateLimit }
+    : { type: 'done', reason: 'failed', error, failure };
 }
+
+/**
+ * The kind of failure an error thrown by a provider's client is, read from
+ * the HTTP status it carries (both SDKs' API errors have `status`) or, with
+ * none, from a network failure's name or code. A `429` that names a spent
+ * quota (`insufficient_quota`) is the account's limit, not a rate limit; a
+ * `400` that says the body could not be parsed is our request broken, not
+ * one the provider refused.
+ */
+export function failureOf(error: unknown): BotEngineFailure {
+  if (!error || typeof error !== 'object') return 'other';
+  const { status, code, name, cause } = error as {
+    status?: unknown;
+    code?: unknown;
+    name?: unknown;
+    cause?: unknown;
+  };
+  if (typeof status === 'number') {
+    if (status === 429) return code === 'insufficient_quota' ? 'usage_limit' : 'rate_limit';
+    if (status === 402) return 'usage_limit';
+    if (status === 401 || status === 403) return 'credential';
+    if (status === 400) return isMalformedRequest(error) ? 'other' : 'refused';
+    if (status === 404 || status === 413 || status === 422) return 'refused';
+    if (status >= 500) return 'unavailable';
+    return 'other';
+  }
+  if (typeof name === 'string' && /Connection|Timeout/.test(name)) return 'unavailable';
+  const network = typeof code === 'string' ? code : (cause as { code?: unknown } | null)?.code;
+  if (typeof network === 'string' && NETWORK_CODES.has(network)) return 'unavailable';
+  // Some clients only say it in words ("connect ECONNREFUSED 10.0.0.1:443").
+  const message = error instanceof Error ? error.message : '';
+  if ([...NETWORK_CODES].some((spelled) => message.includes(spelled))) return 'unavailable';
+  return 'other';
+}
+
+/**
+ * Whether a `400` says the provider could not read the request's body at
+ * all: our request was broken, not its content refused, so changing the
+ * message or the model (what `refused` tells the person) would not help.
+ * Only the message tells the two apart; a provider's new phrasing goes in
+ * `MALFORMED_REQUEST`.
+ */
+function isMalformedRequest(error: unknown): boolean {
+  return MALFORMED_REQUEST.test(describeError(error));
+}
+
+const MALFORMED_REQUEST =
+  /failed to (?:parse|deserialize)|could not parse|unable to parse|malformed|invalid json/i;
+
+const NETWORK_CODES = new Set([
+  'ECONNREFUSED',
+  'ECONNRESET',
+  'ETIMEDOUT',
+  'ENOTFOUND',
+  'EAI_AGAIN',
+  'UND_ERR_CONNECT_TIMEOUT',
+  'UND_ERR_SOCKET',
+]);
 
 /**
  * When a rate-limit refusal says the provider may be called again: from
@@ -172,19 +245,21 @@ export function resetFromHeaders(
  * contract's shape, becomes an error result the model reads; it never ends
  * the turn. The result is what both the model and `tool.finished` see, so
  * the request's key is redacted from it here, before either does: a tool
- * failure can echo a key the way a provider error can. Its `data` is kept
- * only when it is strings by name.
+ * failure can echo a key the way a provider error can, and a character a
+ * tool cut in two is mended (`wellFormed`). Its `data` is kept only when it
+ * is strings by name.
  */
 export async function runTool(
   tool: BotEngineTool,
   input: unknown,
-  context: { signal: AbortSignal; apiKey: string },
+  context: { signal: AbortSignal; apiKey: string; callId?: string },
 ): Promise<{ content: string; isError: boolean; data?: BotToolData }> {
   let content: string;
   let isError: boolean;
   let data: BotToolData | undefined;
   try {
-    const result = await tool.run(input, { signal: context.signal });
+    const { signal, callId } = context;
+    const result = await tool.run(input, callId ? { signal, callId } : { signal });
     content = typeof result?.content === 'string' ? result.content : String(result?.content ?? '');
     isError = result?.isError === true;
     data = toolData(result?.data);
@@ -192,9 +267,23 @@ export async function runTool(
     content = describeError(error) || 'The tool failed.';
     isError = true;
   }
-  const redacted = redactSecret(content, context.apiKey);
+  const redacted = wellFormed(redactSecret(content, context.apiKey));
   return data ? { content: redacted, isError, data } : { content: redacted, isError };
 }
+
+/**
+ * `text` with every lone surrogate half (an emoji a tool cut in two) made
+ * U+FFFD. The SDKs serialise a lone half as a `\uD83D` escape with nothing
+ * after it, which xAI's JSON parser refuses with a 400 for the whole turn
+ * ("unexpected end of hex escape"); one broken character in one tool's
+ * answer must not cost the turn. (`String.prototype.toWellFormed`, past the
+ * ES2022 lib this package compiles against.)
+ */
+function wellFormed(text: string): string {
+  return text.replace(LONE_SURROGATE, '\uFFFD');
+}
+
+const LONE_SURROGATE = /[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/g;
 
 function toolData(raw: unknown): BotToolData | undefined {
   if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return undefined;
@@ -205,13 +294,19 @@ function toolData(raw: unknown): BotToolData | undefined {
 /**
  * What our tools' calls made, by call id, from the run of each call until
  * the engine reports its end: an SDK's own report of a call carries only
- * its words, so the adapter records the data as it runs the tool.
+ * its words, so the adapter records the data as it runs the tool, and the
+ * messages the person sent that rode its result (`deliverSteers`).
  */
 export class ToolCallData {
   private readonly byCall = new Map<string, BotToolData>();
+  private readonly steersByCall = new Map<string, readonly BotSteer[]>();
 
   record(callId: unknown, data: BotToolData | undefined): void {
     if (typeof callId === 'string' && data) this.byCall.set(callId, data);
+  }
+
+  recordSteers(callId: string, steers: readonly BotSteer[]): void {
+    this.steersByCall.set(callId, steers);
   }
 
   /** The call's data, handed out once. */
@@ -220,6 +315,67 @@ export class ToolCallData {
     this.byCall.delete(callId);
     return data;
   }
+
+  /**
+   * A call's end as the engine reports it: `tool.finished` with the call's
+   * data and the tool's own output (the steer note the model read after it
+   * taken off), then `steered` when messages rode its result.
+   */
+  finished(event: Omit<ToolFinished, 'type' | 'data'>): BotEngineEvent[] {
+    const data = this.take(event.callId);
+    const steers = this.steersByCall.get(event.callId);
+    this.steersByCall.delete(event.callId);
+    const output = steers ? withoutSteerNote(event.output, steers) : event.output;
+    const finished: BotEngineEvent = {
+      type: 'tool.finished',
+      ...event,
+      output,
+      ...(data ? { data } : {}),
+    };
+    return steers ? [finished, { type: 'steered', callId: event.callId, steers }] : [finished];
+  }
+}
+
+/**
+ * What the model reads after a call's result when the person sent messages
+ * while it worked: each one, marked as theirs and as newer than what the
+ * turn opened with, the way Claude Code tells its model of a message typed
+ * mid-turn.
+ */
+export function steerNote(steers: readonly BotSteer[]): string {
+  const said = steers.map((steer) => `<message>\n${steer.text}\n</message>`).join('\n');
+  return `\n\n<person-sent-while-you-worked>\nThe person sent this while you were working. It is newer than their message that opened this turn: take it into account from here on.\n${said}\n</person-sent-while-you-worked>`;
+}
+
+/** `output` without the note `steerNote` added to its end; as it is when the note is not there. */
+function withoutSteerNote(output: string, steers: readonly BotSteer[]): string {
+  const note = steerNote(steers);
+  return output.endsWith(note) ? output.slice(0, -note.length) : output;
+}
+
+/**
+ * Hands what the person sent meanwhile to the model with a call's result
+ * (`BotSteering`): asked once the call ran, unless the turn was stopped or
+ * the SDK named no call to report it on, so nothing is taken that the turn
+ * cannot say it delivered. The result's content with the note after it;
+ * as it was when nothing was sent, or the ask failed.
+ */
+export async function deliverSteers(
+  content: string,
+  context: { steering?: BotSteering; signal: AbortSignal; callId?: unknown },
+  made: ToolCallData,
+): Promise<string> {
+  const { steering, signal, callId } = context;
+  if (!steering || typeof callId !== 'string' || signal.aborted) return content;
+  let steers: readonly BotSteer[];
+  try {
+    steers = await steering.take();
+  } catch {
+    return content;
+  }
+  if (steers.length === 0) return content;
+  made.recordSteers(callId, steers);
+  return `${content}${steerNote(steers)}`;
 }
 
 /**
@@ -286,7 +442,10 @@ export async function* guardTurn(
   } catch (error) {
     yield signal.aborted
       ? CANCELLED
-      : failed(scrubSecret(redactPath(describeError(error), request.scratchDir), request.apiKey));
+      : failed(
+          scrubSecret(redactPath(describeError(error), request.scratchDir), request.apiKey),
+          failureOf(error),
+        );
   } finally {
     if (onAbort) signal.removeEventListener('abort', onAbort);
     // Lets the engine release what it holds; a generator still busy with a

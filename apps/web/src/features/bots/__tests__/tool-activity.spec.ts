@@ -2,14 +2,12 @@ import type { BotMessageEntity } from '@oppenheimer/frontend-consumer';
 import { describe, expect, it } from 'vitest';
 import {
   groupSummary,
-  humaniseToolName,
+  liveLabel,
   liveWords,
-  planItems,
   readableOutput,
   runningStep,
   sharedKind,
   toolAction,
-  toolTarget,
 } from '../lib/tool-activity';
 
 describe('readableOutput', () => {
@@ -72,12 +70,44 @@ describe('liveWords', () => {
   });
 });
 
-describe('humaniseToolName', () => {
-  it('splits snake, kebab and camel case, keeps acronyms, and drops the MCP prefix', () => {
-    expect(humaniseToolName('remember_fact')).toBe('Remember fact');
-    expect(humaniseToolName('createGitHubIssue')).toBe('Create git hub issue');
-    expect(humaniseToolName('fetch-URL')).toBe('Fetch URL');
-    expect(humaniseToolName('mcp__my_server__list-events')).toBe('List events');
+describe('liveLabel', () => {
+  const delegate = {
+    callId: 'c1',
+    name: 'delegate',
+    input: { tasks: [{ task: 'a' }, { task: 'b' }] },
+    output: null,
+    isError: false,
+    sessionId: null,
+    subagents: null,
+    allowedBy: null,
+    mailDraft: null,
+  };
+  const run = (state: 'running' | 'completed' | 'failed') => ({
+    task: 'x',
+    state,
+    toolCalls: [],
+    startedAt: null,
+    durationMs: null,
+  });
+
+  it('counts a delegate call’s ended children, failures included, once one has ended', () => {
+    expect(
+      liveLabel({
+        queued: false,
+        step: delegate,
+        subagents: [run('completed'), run('failed'), run('running')],
+        writing: false,
+      }),
+    ).toEqual({ key: 'bots.chat.activity.delegatingDone', values: { count: 3, done: 2 } });
+  });
+
+  it('says what the call is doing while none has ended, and Waiting before anything while queued', () => {
+    const live = { step: delegate, subagents: [run('running')], writing: false };
+    expect(liveLabel({ queued: false, ...live }).key).toBe('bots.chat.activity.delegating');
+    expect(liveLabel({ queued: true, ...live }).key).toBe('bots.chat.turn.queued');
+    expect(
+      liveLabel({ queued: false, step: undefined, subagents: undefined, writing: true }).key,
+    ).toBe('bots.chat.turn.writing');
   });
 });
 
@@ -93,36 +123,6 @@ describe('runningStep', () => {
     expect(running?.callId).toBe('1');
     expect(runningStep([activity(['ok', ''])])).toBeUndefined();
     expect(runningStep([{ role: 'assistant' } as BotMessageEntity])).toBeUndefined();
-  });
-});
-
-describe('toolTarget', () => {
-  it('is the first text the call was given, on one line and cut short', () => {
-    expect(toolTarget({ limit: 3, path: 'src/index.ts' })).toBe('src/index.ts');
-    expect(toolTarget({ command: 'ls\npwd' })).toBe('ls');
-    expect(toolTarget({ query: 'x'.repeat(100) })).toBe(`${'x'.repeat(80)}…`);
-    expect(toolTarget({ limit: 3 })).toBeUndefined();
-  });
-});
-
-describe('planItems', () => {
-  it('reads the to-do list with each item’s state, skipping what is not an item', () => {
-    expect(
-      planItems({
-        todos: [
-          { content: 'Search', status: 'completed' },
-          { content: 'Compare', status: 'in_progress' },
-          { content: 'Write it up', status: 'pending' },
-          { status: 'pending' },
-          'junk',
-        ],
-      }),
-    ).toEqual([
-      { text: 'Search', state: 'done' },
-      { text: 'Compare', state: 'active' },
-      { text: 'Write it up', state: 'pending' },
-    ]);
-    expect(planItems({})).toEqual([]);
   });
 });
 

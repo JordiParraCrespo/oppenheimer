@@ -33,10 +33,13 @@ import type { AgentObservedState, SessionNameSource } from '../domain/session-st
  * to a person, with no workspace column, and a grant is a row, so no composite key can
  * reference it (its plain foreign key only proves the host exists). Create loads the
  * host through the own-or-grant-scoped repository and refuses on a miss
- * (`product/versions/mvp/03-control-plane.md`).
+ * (`product/versions/mvp/03-control-plane.md`). A cloud session has none, and only a
+ * cloud session (`CHK_work_session_cloud_host`): its vendor's half is
+ * `session_cloud_run`.
  */
 @Entity('work_session')
-@Check('CHK_work_session_place', `place IN ('worktree', 'folder')`)
+@Check('CHK_work_session_place', `place IN ('worktree', 'folder', 'cloud')`)
+@Check('CHK_work_session_cloud_host', `"hostId" IS NOT NULL OR place = 'cloud'`)
 @Check('CHK_work_session_folder_path', `(place = 'folder') = ("folderPath" IS NOT NULL)`)
 @Check(
   'CHK_work_session_close_accepts',
@@ -57,6 +60,10 @@ import type { AgentObservedState, SessionNameSource } from '../domain/session-st
 @Index('IDX_work_session_recent_folders', ['hostId', 'createdByUserId', 'createdAt'], {
   where: `place = 'folder'`,
 })
+// The extension's status report: these Claude Code cloud ids, in this workspace.
+@Index('IDX_work_session_cloud_id', ['organizationId', 'agentSessionId'], {
+  where: `place = 'cloud'`,
+})
 @Unique('UQ_work_session_organization_slug', ['organizationId', 'slug'])
 @Unique('UQ_work_session_organization_id', ['organizationId', 'id'])
 export class WorkSessionOrmEntity {
@@ -76,8 +83,9 @@ export class WorkSessionOrmEntity {
   @Column({ type: 'uuid' })
   createdByUserId!: string;
 
-  @Column({ type: 'uuid' })
-  hostId!: string;
+  /** Null exactly for a cloud session, which runs at its vendor. */
+  @Column({ type: 'uuid', nullable: true })
+  hostId!: string | null;
 
   /** Display name. Starts equal to the slug, then the first prompt names it. */
   @Column({ type: 'varchar' })
@@ -101,8 +109,8 @@ export class WorkSessionOrmEntity {
 
   /**
    * Where the session runs (`product/versions/mvp/24-session-places.md`): a
-   * `worktree` the runner made per checkout, or a `folder` already on the host.
-   * Immutable, like `agent`.
+   * `worktree` the runner made per checkout, a `folder` already on the host, or
+   * `cloud`, a vendor's agent. Immutable, like `agent`.
    */
   @Column({ type: 'varchar', length: 16, default: 'worktree' })
   place!: SessionPlace;
@@ -181,6 +189,13 @@ export class WorkSessionOrmEntity {
   @Column({ type: 'varchar', nullable: true })
   launchEffort!: SessionEffortDto | null;
 
+  /**
+   * A Codex cloud session's environment, as the person picked it (its id or
+   * label). Null is the host's pick: the environment linked to the repository.
+   */
+  @Column({ type: 'varchar', length: 128, nullable: true })
+  launchEnvironment!: string | null;
+
   @Column({ type: 'varchar', nullable: true })
   reportHash!: string | null;
 
@@ -205,6 +220,22 @@ export class WorkSessionOrmEntity {
 
   @Column({ type: 'varchar', length: 500, nullable: true })
   closeRefusalDetail!: string | null;
+
+  /**
+   * What the agent waits on the person for (`SessionDecision`), folded from
+   * `agent.decision`. Read back through the schema by the mapper, never trusted
+   * as typed.
+   */
+  @Column({ type: 'jsonb', nullable: true })
+  pendingDecision!: unknown;
+
+  /**
+   * The agent's own word on what it is doing (`SessionAgentReport`), folded
+   * from the `program` of `agent.observed`. Read back through the schema by the
+   * mapper, never trusted as typed.
+   */
+  @Column({ type: 'jsonb', nullable: true })
+  agentReport!: unknown;
 
   /**
    * Who asked for the session: `person`, `automation` (whose run points back

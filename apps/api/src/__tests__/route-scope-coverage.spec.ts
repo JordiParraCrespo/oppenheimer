@@ -1,9 +1,6 @@
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
 import { PERMISSION_GROUPS } from '@oppenheimer/shared';
 import { describe, expect, it } from 'vitest';
-import { type ScopeDeclaration, scanRoutes } from './route-scopes';
+import { fixtureController, type ScopeDeclaration, scanFixture, scanRoutes } from './route-scopes';
 import inventory from './route-scopes.inventory.json';
 
 /**
@@ -124,22 +121,8 @@ describe('route scope coverage', () => {
 });
 
 describe('the route scan', () => {
-  /** Scan one fixture controller (and the files beside it) in a directory of its own. */
-  function scan(files: Record<string, string>) {
-    const directory = mkdtempSync(join(tmpdir(), 'route-scan-'));
-    try {
-      for (const [name, body] of Object.entries(files)) {
-        mkdirSync(join(directory, name, '..'), { recursive: true });
-        writeFileSync(join(directory, name), body);
-      }
-      return scanRoutes(directory);
-    } finally {
-      rmSync(directory, { recursive: true, force: true });
-    }
-  }
-
-  const controller = (body: string, prelude = "@Controller('things')") =>
-    `${prelude}\nexport class ThingsHttpController {\n${body}\n}\n`;
+  const scan = scanFixture;
+  const controller = fixtureController;
 
   it('reads a decorator whose arguments span lines, and a class version', () => {
     const { routes, unreadable } = scan({

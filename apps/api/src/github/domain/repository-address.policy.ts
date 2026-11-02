@@ -1,0 +1,60 @@
+import type { ErrorDefinition } from '@oppenheimer/backend-ddd';
+import { GithubErrors } from './github.errors';
+import type {
+  InstallationAddress,
+  RepositoryAddress,
+  RepositorySource,
+} from './repository-address.types';
+
+/** The installation an address names on the wire: null for one read through tokens. */
+export function installationIdOf(address: RepositoryAddress): string | null {
+  return address.kind === 'installation' ? address.installationId : null;
+}
+
+/** An address from the wire's two fields, the inverse of {@link installationIdOf}. */
+export function addressOf(installationId: string | null, githubRepoId: number): RepositoryAddress {
+  return installationId === null
+    ? { kind: 'tokens', githubRepoId }
+    : { kind: 'installation', installationId, githubRepoId };
+}
+
+/** An address from a route's source segment and repository id. */
+export function addressFrom(source: RepositorySource, githubRepoId: number): RepositoryAddress {
+  return source.kind === 'installation'
+    ? { kind: 'installation', installationId: source.installationId, githubRepoId }
+    : { kind: 'tokens', githubRepoId };
+}
+
+/** One key per repository and source, for sets and maps. */
+export function addressKeyOf(address: RepositoryAddress): string {
+  return `${installationIdOf(address) ?? 'tokens'}:${address.githubRepoId}`;
+}
+
+export function isInstallationAddress<T extends RepositoryAddress>(
+  address: T,
+): address is Extract<T, InstallationAddress> {
+  return address.kind === 'installation';
+}
+
+/** Why an address is not one the App acts on: the catalog entry and detail to raise. */
+export interface AppAddressRefusal {
+  kind: 'refused';
+  error: ErrorDefinition;
+  detail: string;
+}
+
+/**
+ * The address narrowed to the App, for what only the App can do (writes in
+ * the caller's name, a session that clones), or the refusal for one read
+ * through a token (§6.2), which the caller raises as `GITHUB_022`.
+ */
+export function appAddressOf<T extends RepositoryAddress>(
+  address: T,
+): Extract<T, InstallationAddress> | AppAddressRefusal {
+  if (isInstallationAddress(address)) return address;
+  return {
+    kind: 'refused',
+    error: GithubErrors.READ_ONLY_REPOSITORY,
+    detail: `Repository ${address.githubRepoId} is read through your own GitHub token.`,
+  };
+}

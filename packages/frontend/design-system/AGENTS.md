@@ -38,7 +38,12 @@ the `version1/` artboards for what the screens actually do. Its one sentence:
   A smaller or larger field is a `size` the caller asks for, never a height
   of the component's own.
 - **Six radii and no others**: 6 · 10 · 14 · 18 · 28 · pill. Type into a 10,
-  press a pill, read inside an 18.
+  press a pill, read inside an 18. The navigation column (every sidebar
+  and the settings nav) is one radius, `--radius-nav` (`rounded-nav`, the
+  6): its rows, group heads, search and row actions, whatever their
+  height, so the column reads as one list. A surface there takes
+  `rounded-nav`, never a rung by name. A menu item stays 10, concentric
+  with its 14 popover.
 - **Surfaces never cast shadows.** Depth is tonal. Only popovers, modals and
   glass carry one.
 - **Motion** is 80 / 140 / 220 / 400ms, eased, never bouncy; a 4px rise plus
@@ -51,19 +56,31 @@ the `version1/` artboards for what the screens actually do. Its one sentence:
   Select, for that reason; `RepositorySelect` reuses its parts for the
   multi-repo pane. A foot action with `href` is a new-tab link.
 - **Third-party marks are the vendors' own or nothing.** `AgentMark` ships
-  Anthropic's Claude mark, the OpenAI mark for Codex, OpenCode's square and
-  Grok's slashed circle from their published brand assets, in the vendor's colour where it has one
+  Anthropic's Claude mark, the OpenAI mark for Codex, OpenCode's square,
+  Grok's slashed circle and Cursor's cube from their published brand assets,
+  and for a bot's providers Z.ai's mark for GLM and OpenAI's for ChatGPT (it
+  publishes none of its own), in the vendor's colour where it has one
   and the current ink otherwise. An agent with no published mark takes the
   neutral glyph; never a redrawn imitation.
 - **The composer's foot row reads scope of action, then engine.** Left:
-  attach and the `PermissionMenu`. Right: `AgentModelSelect` (harness first,
-  then its models, so the pair is always valid), `EffortPicker`, mic, send.
+  attach and the `PermissionMenu`. Right: `AgentModelSelect`, one button
+  for agent, model and effort (a tab per agent and one of starred
+  Favourites, a search across every agent, the effort slider at its foot;
+  picking a model picks its agent, so the pair is always valid), mic, send.
+  `EffortPicker` stays for a surface with no engine button (a bot's chat).
   All of them hang from `ComposerToolButton`. Full access is the one setting
-  allowed the warning tone, because it can change a machine unattended. On
-  New session the composer is tabbed: the scope chips go in its `scope`
-  slot, a grey band fused to the top of the field, each chip a
-  `ChipSelectTrigger` in its `tab` variant (borderless, muted, no chevron),
-  so where the work happens reads as one sentence over the box.
+  allowed the warning tone, because it can change a machine unattended. New
+  session is `ComposerPill` (2026-10-25 export): one line with Add files,
+  the mic and send, and under it a `ComposerChoices` row in the same order,
+  where it runs and what it may touch on the left, the engine on the right,
+  each place chip a `ChipSelectTrigger` in its `tab` variant. The first chip
+  is the host and where on it as one ("mac-studio · New worktree"): its pane
+  is `ChipSelectTabs` under the search, Hosts and Cloud, each with its
+  count, and a host opens its Start in pane under a `ChipSelectHeading`. The box stands as tall as a session chat's
+  `ChatComposer`, and the engine pane's rows are the `engine` density, 36px
+  of 13.5px, beside a boxed search. That row never
+  wraps: the place chips truncate and the engine keeps its width. `Composer`'s
+  `scope` band, the tabbed form it replaced, has no caller in the console.
 - **The console's chrome is a rail and a grouped sidebar.** `Rail` (56px)
   switches between the sessions and routines lists (under 768px it is a
   tab bar along the bottom of the screen, and the page beside it keeps
@@ -75,8 +92,7 @@ the `version1/` artboards for what the screens actually do. Its one sentence:
 - **A pane, not a submenu, when the pick belongs to the row.** Appearance
   and Language in the account menu, and Move to project… in a row's menu,
   slide the same menu to a pane (`DropdownMenuPaneItem`, then
-  `DropdownMenuBack` on top of it), the way the engine button slides to its
-  models. `DropdownMenuSub` stays for the filter facets, which are several
+  `DropdownMenuBack` on top of it). `DropdownMenuSub` stays for the filter facets, which are several
   independent picks.
 - **A trigger reads as a sentence.** In the routine editor every variable
   part of a trigger is an `InlineToken` in a `TokenSentence` ("Every
@@ -235,7 +251,10 @@ the `version1/` artboards for what the screens actually do. Its one sentence:
   (`RoutineItem` is the workspace's, in the sidebar); records in a settings
   card are `SettingsListRow`s over a `SettingsAddRow`; `SettingsTopBar`
   says whose settings these are.
-- **The chat is a 46rem column on the pane's recessed ground.** The
+- **The chat is a 46rem column on the pane's recessed ground** (a session's
+  chat stands on its terminal's ground instead, `--chat-ground`, and in its
+  grid's column, the console's `TerminalColumn`, scrolling the whole pane, so
+  Terminal / Chat changes no colour and moves neither edge of the text). The
   person's turns are cards on the right, the agent's are unboxed prose
   opened by a `TurnHeader` on its hairline; what the agent did (tool calls,
   reasoning) is in muted ink so it never reads as the answer. Work in
@@ -252,7 +271,8 @@ the `version1/` artboards for what the screens actually do. Its one sentence:
   header: a `Trace` line per tool call at the reply's 15px, muted, each
   opening to its `TraceOutput` (numbered mono lines on the card) or a
   `TraceNote`, failures in red, then the reply, its fenced code a
-  `ChatCodeBlock`, then a `MessageTrail` (copy, retry, model and tokens).
+  `ChatCodeBlock` (a `ChatJsonBlock`, opening as a `JsonTree`, when it
+  holds JSON), then a `MessageTrail` (copy, retry, model and tokens).
   While it runs a `TraceLive` line says what it is doing, with its clock.
   Between turns a `ChatMarker` notes a model switch and a
   `TranscriptDivider` a new day. Next steps are `ChatSuggestion` pills;

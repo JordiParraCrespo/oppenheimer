@@ -223,6 +223,8 @@ func (a *App) localRouter(errorTypeBaseURL string, logger *slog.Logger) http.Han
 		return httpx.WriteJSON(w, http.StatusOK, session)
 	})
 	router.HandleFunc("GET /v1/sessions/{id}/attach", a.localAttach)
+	// A session's agent starts, tells and waits on children (delegate.go).
+	a.delegateRoutes(router)
 	router.HandleFunc("POST /v1/credentials", func(w http.ResponseWriter, r *http.Request) error {
 		// The token comes from the control plane, per session and per
 		// repository, over the link. A 404 is the helper's "I have none":
@@ -237,7 +239,10 @@ func (a *App) localRouter(errorTypeBaseURL string, logger *slog.Logger) http.Han
 		if a.Credentials == nil || request["host"] != "github.com" {
 			return problem.ErrNotFound.WithDetail("this runner has no credential for %s", request["host"])
 		}
-		token, err := a.Credentials.Get(r.Context(), request["session"])
+		// path is the repository, `owner/name.git`, which git sends only
+		// where it is told to (sessionEnv, the git adapter): what picks
+		// the checkout in a session over several repositories.
+		token, err := a.Credentials.Get(r.Context(), request["session"], request["path"])
 		if err != nil {
 			return problem.ErrNotFound.WithDetail("no credential for this session: %v", err)
 		}
@@ -274,6 +279,10 @@ func (a *App) sessionLoop(ctx context.Context, logger *slog.Logger) {
 		}
 		if _, err := a.Sessions.RefreshAll(ctx); err != nil {
 			logger.Warn("could not refresh every session", slog.Any("error", err))
+		}
+		// A kept session the host's reboot stopped is brought back.
+		for _, session := range a.Sessions.RecoverKept(ctx) {
+			logger.Info("kept session restarted after a reboot", slog.String("session", session.ID))
 		}
 		// A session started with no task is named from the first message
 		// typed into its agent, read off the agent's own transcript.

@@ -153,6 +153,9 @@ services:
         condition: service_healthy
     environment:
       API_UPSTREAM: api:3001
+      # The sessions' preview domain, which the Browser tab frames; empty
+      # without one (host.env's PREVIEW_HOSTNAME).
+      CSP_FRAME_ORIGINS: ${PREVIEW_HOSTNAME:+https://*.${PREVIEW_HOSTNAME}}
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://127.0.0.1:3000/"]
       interval: 15s

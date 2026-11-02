@@ -53,14 +53,48 @@ type CreateInput struct {
 	// repository, kept for the credential helper.
 	CheckoutID   string
 	GithubRepoID int64
+	// More are the checkouts past the first, for a session over several
+	// repositories (one worktree each, side by side in the session's folder,
+	// all on Branch). The first is the fields above, so a create of one
+	// repository reads as it always did.
+	More []CheckoutInput
 	// Files are the files attached to the first task, already pulled.
 	// Each is saved outside the worktree just before the agent starts, and
 	// its path appended to the prompt the agent is launched with.
 	Files []CreateFile
+	// Parent, OutliveParent and Quiet make the session a child of another
+	// session's agent (Delegate).
+	Parent        string
+	OutliveParent bool
+	Quiet         bool
+	// Keep brings the session back on its own after a reboot.
+	Keep bool
 	// Progress, when set, hears each stage start and land, in order, with the
 	// session as it stands at each. StageTerminal landing is what says the
 	// session has a pane to attach to. It must not block.
 	Progress func(domain.StageEvent)
+}
+
+// CheckoutInput is one repository a session checks out past its first: the
+// same fields CreateInput carries for the first.
+type CheckoutInput struct {
+	// Directory names the checkout inside the session's folder; empty is the
+	// repository's own name.
+	Directory    string
+	Repo         string
+	Remote       string
+	BaseBranch   string
+	CheckoutID   string
+	GithubRepoID int64
+}
+
+// checkouts is every checkout the create asks for, the first first.
+func (in CreateInput) checkouts() []CheckoutInput {
+	first := CheckoutInput{
+		Directory: in.Directory, Repo: in.Repo, Remote: in.Remote, BaseBranch: in.BaseBranch,
+		CheckoutID: in.CheckoutID, GithubRepoID: in.GithubRepoID,
+	}
+	return append([]CheckoutInput{first}, in.More...)
 }
 
 // CreateFile is one file attached to a session's first task.
@@ -109,6 +143,8 @@ func (s *Service) Create(ctx context.Context, in CreateInput) (domain.Session, e
 	}
 	now := s.now().UTC()
 	session.ID, session.Agent, session.Launch = id, agent, in.Launch
+	session.Parent, session.OutliveParent, session.Quiet = in.Parent, in.OutliveParent, in.Quiet
+	session.Keep = in.Keep
 	session.State, session.Created, session.Updated = domain.StateCreating, now, now
 	session.Windows = []domain.Window{{Index: 0, Name: string(agent), Agent: true}}
 	// Idempotent by session id: a create redelivered after a reconnect finds
@@ -133,6 +169,9 @@ type stageRunner func(start domain.StageEvent, fn func() error) error
 // by the next attempt for the same session (Places.MakeSession,
 // Worktrees.Add). A folder session has no clone and no worktree stage.
 func (s *Service) create(ctx context.Context, in CreateInput, session domain.Session) (domain.Session, error) {
+	// Where the agent will serve its conversation, chosen before the terminal
+	// is made: its credentials are the terminal's environment.
+	session.Launch.Server = s.agentServer(session.Agent, nil, session.Cwd())
 	// Every stage runs through run, so "started, then landed or failed" is
 	// the one shape a stage can have, and a new stage cannot report half of it.
 	run := stageRunner(func(start domain.StageEvent, fn func() error) error {
@@ -168,7 +207,7 @@ func (s *Service) create(ctx context.Context, in CreateInput, session domain.Ses
 		if err != nil {
 			return err
 		}
-		return s.terminals.Create(ctx, session.TmuxName(), dir, "", s.env(session))
+		return s.terminals.Create(ctx, session.TmuxName(), dir, "", s.sessionEnv(session))
 	}); err != nil {
 		return domain.Session{}, err
 	}
@@ -192,6 +231,9 @@ func (s *Service) create(ctx context.Context, in CreateInput, session domain.Ses
 		if err != nil {
 			return err
 		}
+		launch.Server = session.Launch.Server
+		launch.StatusLine = s.statusLine
+		launch.Wrap = s.observer.wrap(session.ID)
 		s.trustFolder(session.Agent, session.Cwd())
 		defer s.holdLaunch(ctx, session.Agent)()
 		if err := s.terminals.Launch(ctx, session.Target(0), session.Cwd(), launch.CommandLine(session.Agent)); err != nil {

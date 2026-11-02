@@ -64,9 +64,32 @@ describe('coding agent catalog', () => {
     expect(levelsOf('codex', null)).toEqual(levelsOf('codex', 'gpt-6.1-sol'));
     expect(effortFor('codex', 'gpt-6.1-sol')?.default).toBe('low');
     expect(effortFor('codex', 'gpt-6-sol')?.default).toBe('medium');
+    expect(effortFor('codex', 'gpt-6.1-terra')?.default).toBe('medium');
     expect(levelsOf('codex', 'gpt-6-luna')).toEqual(['low', 'medium', 'high', 'xhigh', 'max']);
-    expect(levelsOf('opencode', 'anthropic/claude-haiku-4-5')).toEqual(['none', 'high', 'max']);
-    expect(effortFor('opencode', 'anthropic/claude-haiku-4-5')?.default).toBe('none');
+    // Haiku 5.5's thinking is a toggle, off unasked, so off is a level of its own.
+    expect(levelsOf('opencode', 'anthropic/claude-haiku-5-5')).toEqual([
+      'none',
+      'low',
+      'medium',
+      'high',
+      'xhigh',
+      'max',
+    ]);
+    expect(effortFor('opencode', 'anthropic/claude-haiku-5-5')?.default).toBe('none');
+    // Each provider's variants, not one list for every model OpenCode reaches.
+    expect(levelsOf('opencode', 'xai/grok-4.7')).toEqual(['low', 'medium', 'high', 'xhigh']);
+    // Grok's CLI only takes the levels on the model's own menu, so `minimal`
+    // and `max` are never offered, and Grok 4.5 stops at `high`.
+    expect(levelsOf('grok', 'grok-4.6')).toEqual(['low', 'medium', 'high', 'xhigh']);
+    expect(levelsOf('grok', 'grok-4.5')).toEqual(['low', 'medium', 'high']);
+    expect(effortLevelFor('grok', 'grok-4.5', 'xhigh')).toBeNull();
+    expect(levelsOf('opencode', 'google/gemini-4-argon')).toEqual(['low', 'medium', 'high']);
+    // GLM under z.ai's Coding Plan has no `medium`, so one is never sent to it.
+    expect(levelsOf('opencode', 'zai-coding-plan/glm-5.3')).toEqual(['low', 'high', 'max']);
+    expect(effortLevelFor('opencode', 'zai-coding-plan/glm-5.3', 'medium')).toBeNull();
+    expect(levelsOf('opencode', 'alibaba/qwen3.8-max')).toEqual(['low', 'medium', 'xhigh']);
+    // A model with no reasoning options has no slider.
+    expect(effortFor('opencode', 'moonshotai/kimi-k2.7-code')).toBeUndefined();
     expect(effortFor('shell', null)).toBeUndefined();
     // A model the catalog does not list has levels nobody here knows.
     expect(effortFor('codex', 'gpt-4o')).toBeUndefined();

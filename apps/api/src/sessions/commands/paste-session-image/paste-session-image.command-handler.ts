@@ -3,7 +3,7 @@ import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
 import { AppError } from '@oppenheimer/backend-core';
 import { sniffSessionFile } from '@oppenheimer/shared/protocol';
 import type { SessionDispatchPort } from '../../application/session-dispatch.port';
-import { SessionLoaderResolver } from '../../application/session-loader.resolver';
+import { requireOnHost, SessionLoaderResolver } from '../../application/session-loader.resolver';
 import { SessionErrors } from '../../domain/sessions.errors';
 import { SESSION_DISPATCH } from '../../sessions.di-tokens';
 import { PasteSessionImageCommand } from './paste-session-image.command';
@@ -40,7 +40,7 @@ export class PasteSessionImageCommandHandler
       });
     }
 
-    const session = await this.loader.find(command.scope, command.sessionId);
+    const session = requireOnHost(await this.loader.find(command.scope, command.sessionId));
     const refusal = session.inputRefusal;
     if (refusal) {
       throw new AppError(refusal, { detail: `Session ${session.slug} cannot take input` });

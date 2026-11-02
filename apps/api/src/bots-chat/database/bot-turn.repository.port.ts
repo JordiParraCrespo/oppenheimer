@@ -1,8 +1,9 @@
 import type { AccessScope } from '@oppenheimer/backend-authz';
 import type { Option } from 'oxide.ts';
 import type { BotChainState, BotChainVerdict } from '../domain/bot-chain.policy';
+import type { BotGoalEntity } from '../domain/bot-goal.entity';
 import type { BotMessageEntity } from '../domain/bot-message.entity';
-import type { BotTurnEntity } from '../domain/bot-turn.entity';
+import type { BotTurnContext, BotTurnEntity } from '../domain/bot-turn.entity';
 
 /** How queuing a turn another bot asked for went. */
 export type BotPeerEnqueueOutcome =
@@ -10,6 +11,14 @@ export type BotPeerEnqueueOutcome =
   /** The chain's first turn is gone (its chat was cleared): nothing more is queued for it. */
   | { outcome: 'chain_gone' }
   | { outcome: 'refused'; refusal: string };
+
+/** A steer's message, now the running turn's (`takeSteers`). */
+export interface BotSteerTaken {
+  /** The queued turn it opened, now deleted. */
+  turnId: string;
+  messageId: string;
+  text: string;
+}
 
 export interface BotTurnRepositoryPort {
   /**
@@ -27,6 +36,23 @@ export interface BotTurnRepositoryPort {
   ): Promise<'staged' | 'waiting' | 'missing' | 'attachments_taken'>;
 
   /**
+   * `enqueue` for a message that sets the bot's goal (`/goal <condition>`):
+   * the goal is set in the same transaction as the turn and its job, so the
+   * turn never runs, or ends, without the goal it set. Answers the goal it
+   * replaced, whose waiting continuation the caller cancels; null when
+   * nothing was written.
+   */
+  enqueueWithGoal(
+    turn: BotTurnEntity,
+    message: BotMessageEntity,
+    goal: BotGoalEntity,
+    correlationId: string | null,
+  ): Promise<{
+    outcome: 'staged' | 'waiting' | 'missing' | 'attachments_taken';
+    replaced: BotGoalEntity | null;
+  }>;
+
+  /**
    * `enqueue` for a turn that must happen once, keyed by its `sourceKey`
    * (a routine's run): a key already queued answers that turn instead, so a
    * run dispatched twice queues one turn. With `busyPrefix`, a queued or
@@ -40,6 +66,19 @@ export interface BotTurnRepositoryPort {
     correlationId: string | null,
     busyPrefix: string | null,
   ): Promise<{ outcome: 'staged' | 'waiting' | 'existing' | 'busy' | 'missing'; turnId: string }>;
+
+  /**
+   * `enqueue` for a goal's continuation (`25-bots.md` §4.1), with the goal's
+   * count claimed in the same transaction: `lost` when the goal was stopped,
+   * ended or replaced, or another end claimed the count; `existing` when this
+   * continuation was queued already.
+   */
+  enqueueContinuation(
+    turn: BotTurnEntity,
+    message: BotMessageEntity,
+    correlationId: string | null,
+    goal: BotGoalEntity,
+  ): Promise<'staged' | 'waiting' | 'existing' | 'lost' | 'missing'>;
 
   /**
    * `enqueue` for a turn another bot's call queues: under a lock on its
@@ -64,8 +103,22 @@ export interface BotTurnRepositoryPort {
   ): Promise<'staged' | 'waiting' | 'missing' | 'duplicate'>;
 
   findOne(scope: AccessScope, botId: string, turnId: string): Promise<Option<BotTurnEntity>>;
+  /** The turn that holds a message now: a steer's is the running turn that took it. */
+  findHolding(scope: AccessScope, botId: string, messageId: string): Promise<Option<BotTurnEntity>>;
   /** The worker's read: by id alone, the job carries nothing else it can trust. */
   findForRun(turnId: string): Promise<Option<BotTurnEntity>>;
+  /** The bot's queued turns whose key begins with `prefix` (a goal's continuations). */
+  findQueuedBySourcePrefix(
+    organizationId: string,
+    botId: string,
+    prefix: string,
+  ): Promise<BotTurnEntity[]>;
+  /**
+   * What the model's context held at the end of the bot's newest turn that
+   * reported it, for the next turn to be told how full it is. Null before any
+   * turn reported one.
+   */
+  findLastContext(organizationId: string, botId: string): Promise<BotTurnContext | null>;
   /** These turns of a bot, and any still queued or running, oldest first. */
   findForConversation(
     scope: AccessScope,
@@ -87,6 +140,21 @@ export interface BotTurnRepositoryPort {
    * on the asker. Whether this write won.
    */
   finish(turn: BotTurnEntity, correlationId: string | null): Promise<boolean>;
+
+  /**
+   * Steer (`BotSteerPolicy`): under the bot's lock, every waiting steer of
+   * the bot that `takes` allows, oldest first, moved into `running`: its
+   * message onto the running turn at `BOT_STEER_HELD_POSITION`, its queued
+   * turn deleted, in one transaction, so a Stop, an edit or the worker that
+   * would run it sees it either waiting or gone. The message becomes the
+   * running turn's newest, as of the take, until the transcript places it
+   * where the turn delivered it. A steer whose message carries images stays
+   * queued: the running turn would not read them.
+   */
+  takeSteers(
+    running: BotTurnEntity,
+    takes: (waiting: BotTurnEntity) => boolean,
+  ): Promise<BotSteerTaken[]>;
 
   /** Stop on a running turn: the worker sees it and aborts. Whether it was still running. */
   requestCancel(turn: BotTurnEntity, now: Date): Promise<boolean>;

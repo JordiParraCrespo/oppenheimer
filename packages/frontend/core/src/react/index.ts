@@ -30,7 +30,13 @@ export {
 } from './feature-flags.queries';
 export { useAuthState } from './hooks';
 export { type LastFailure, lastFailure, type TrackedMutation } from './last-failure';
-export { refetchEverythingForNewIdentity, withCacheOnSuccess } from './mutations';
+export {
+  defineMutation,
+  type HookMutationOptions,
+  type MutationSpec,
+  refetchEverythingForNewIdentity,
+  withCacheOnSuccess,
+} from './mutations';
 export { PERSIST_META, type QueryPersistMeta } from './persist-meta';
 export {
   createQueryPersistOptions,

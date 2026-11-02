@@ -2,21 +2,17 @@ import type { AccessScope } from '@oppenheimer/backend-authz';
 import type { SessionSortDto, SessionState } from '@oppenheimer/shared';
 import type { Option } from 'oxide.ts';
 import type { SessionCheckoutEntity } from '../domain/session-checkout.entity';
+import type { SessionCloudRunEntity } from '../domain/session-cloud-run.entity';
 import type { SessionLaunchFile } from '../domain/session-launch-file.types';
+import type { SessionListCursor } from '../domain/session-list-cursor.policy';
+import type { SessionFold } from '../domain/session-state.policy';
+import type { SessionTurnFold } from '../domain/session-turn.policy';
 import type { WorkSessionEntity } from '../domain/work-session.entity';
-import type {
-  SessionEventSource,
-  WorkSessionEventEntity,
-} from '../domain/work-session-event.entity';
+import type { NewSessionEvent, WorkSessionEventEntity } from '../domain/work-session-event.entity';
 
-/** One entry a caller wants appended. `seq` is the control plane's to assign. */
-export interface NewSessionEvent {
-  idempotencyKey: string;
-  source: SessionEventSource;
-  kind: string;
-  payload?: unknown;
-  occurredAt?: Date;
-}
+/** Built in the domain (`session-log-entry.factory.ts`); named here for the port's callers. */
+/** The list's keyset position and its wire format live in `session-list-cursor.policy.ts`. */
+export type { NewSessionEvent, SessionListCursor };
 
 /**
  * What an append came back with, in the shape the link's `events.ack` needs.
@@ -38,16 +34,6 @@ export interface SessionCreateOutcome {
   session: WorkSessionEntity;
   created: boolean;
   refused: 'project-archived' | 'host-unpaired' | null;
-}
-
-/**
- * Where a keyset walk of the list stands: the sort it was issued for, the last
- * row's sort key as Postgres printed it, and the last row's id.
- */
-export interface SessionListCursor {
-  sort: SessionSortDto;
-  key: string;
-  id: string;
 }
 
 export interface SessionFilters {
@@ -166,6 +152,13 @@ export interface WorkSessionRepositoryPort {
   ): Promise<SessionCreateOutcome>;
 
   /**
+   * Write what a cloud session's vendor last said, only if the run still has
+   * `runIdAtLoad` as its latest: a read that asked about an older run than the
+   * row now holds writes nothing. False is that, or a run that is not there.
+   */
+  saveCloudRunIf(run: SessionCloudRunEntity, runIdAtLoad: string): Promise<boolean>;
+
+  /**
    * Append to the log and fold onto the row, in one transaction.
    *
    * `seq` is allocated under `SELECT … FOR UPDATE` on the session row, so
@@ -178,6 +171,21 @@ export interface WorkSessionRepositoryPort {
     session: WorkSessionEntity,
     events: NewSessionEvent[],
   ): Promise<SessionAppendOutcome>;
+
+  /**
+   * {@link appendEvents}, only while `holds` is true of the row as it stands under
+   * the lock: the test and the append are one step, so of two writers that both
+   * read the row in the state `holds` asks for, one appends and the other gets
+   * `null` and wrote nothing. What a transition two requests can race is built on
+   * (an answer to the decision a session waits on). `holds` also sees the latest
+   * turn as it stands under the lock, for a claim the fold alone does not record
+   * (a prompt the agent has not taken yet).
+   */
+  appendEventsIf(
+    session: WorkSessionEntity,
+    events: NewSessionEvent[],
+    holds: (fold: SessionFold, latestTurn: SessionTurnFold | null) => boolean,
+  ): Promise<SessionAppendOutcome | null>;
 
   /**
    * The runner's append to a session its authenticated host holds. The row lock
@@ -233,6 +241,16 @@ export interface WorkSessionRepositoryPort {
   /** `None` both for a missing session and for one outside the caller's scope. */
   findOneById(scope: AccessScope, id: string): Promise<Option<WorkSessionEntity>>;
 
+  /**
+   * The caller's unresolved cloud sessions among these Claude Code ids: what the
+   * browser extension's status report can touch. An id this workspace did not
+   * launch matches nothing.
+   */
+  findCloudByCloudIds(
+    scope: AccessScope,
+    cloudIds: readonly string[],
+  ): Promise<WorkSessionEntity[]>;
+
   /** The session a client's `Idempotency-Key` already created, if any. */
   findOneByIdempotencyKey(scope: AccessScope, key: string): Promise<Option<WorkSessionEntity>>;
 
@@ -249,6 +267,12 @@ export interface WorkSessionRepositoryPort {
     afterSeq: number | undefined,
     limit: number,
   ): Promise<SessionEventPage>;
+
+  /**
+   * The last `limit` entries of the log, oldest first: what a session did
+   * lately, without paging through all of it. The session is the authorization.
+   */
+  findLatestEvents(session: WorkSessionEntity, limit: number): Promise<WorkSessionEventEntity[]>;
 
   /**
    * The one question archiving a project has to ask (`SessionProjectUsage`): a

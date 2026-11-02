@@ -1,14 +1,16 @@
 import { SessionList, Skeleton } from '@oppenheimer/design-system-web';
 import { QueryState } from '@oppenheimer/frontend-web';
+import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { NewSessionButton } from './new-session-button';
 import { SessionsSidebarBody } from './sessions-sidebar-body';
 
 /**
  * The console's sidebar body: New session, which needs no read and stays in
- * every state, and the sessions under it, read under Suspense.
+ * every state, the section's bots (`bots`, the route's to compose, since they
+ * are another feature's), and the sessions under it, read under Suspense.
  */
-export function SessionsSidebar() {
+export function SessionsSidebar({ bots }: { bots?: ReactNode }) {
   const { t } = useTranslation();
 
   return (
@@ -16,6 +18,7 @@ export function SessionsSidebar() {
       <div className="px-3 pb-2.5">
         <NewSessionButton />
       </div>
+      {bots}
       <QueryState>
         <QueryState.Pending>
           <SessionList className="mx-3 mt-2">

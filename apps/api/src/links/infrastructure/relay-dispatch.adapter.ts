@@ -1,11 +1,13 @@
 import { randomUUID } from 'node:crypto';
+import { setTimeout as sleep } from 'node:timers/promises';
 import { Inject, Injectable, Logger } from '@nestjs/common';
-import { CODING_AGENTS } from '@oppenheimer/shared/agents';
+import { CODING_AGENTS, type CodingAgentId, isCodingAgentId } from '@oppenheimer/shared/agents';
 import type {
   ProtocolMessage,
   SessionCloseMessage,
   SessionCreateMessage,
   SessionImageMessage,
+  SessionInputMessage,
   SessionRestartMessage,
   SessionStopMessage,
 } from '@oppenheimer/shared/protocol';
@@ -15,8 +17,10 @@ import type {
   SessionDispatchOutcome,
   SessionDispatchPort,
   SessionFileSpec,
+  SessionKeysSpec,
   SessionLaunchSpec,
   SessionPrepareSpec,
+  SessionTerminalWatchSpec,
 } from '../../sessions/application/session-dispatch.port';
 import { runnerTakesPlace } from '../../sessions/domain/runner-refusal.policy';
 import type { SessionCheckoutEntity } from '../../sessions/domain/session-checkout.entity';
@@ -60,13 +64,18 @@ export class RelayDispatchAdapter implements SessionDispatchPort {
       // A runner that predates folder sessions would refuse a create with no
       // checkouts: the same rule the create refuses by (`runnerRefusal`). The
       // row stays `starting`, so the hello of an updated runner is sent it.
-      if (!runnerTakesPlace(session.place, link.capabilities)) return NOT_SUPPORTED;
+      if (!runnerTakesPlace(session, link.capabilities)) return NOT_SUPPORTED;
+      // Only a host's coding agent is launched by a runner; a vendor's is not.
+      const agent = session.agent;
+      if (!isCodingAgentId(agent)) return NOT_SUPPORTED;
+      // Something the launch must carry could not be made yet.
+      if (spec.withheld) return { delivered: false, hints: [spec.withheld] };
       // A runner that cannot take these files at launch would drop them or
       // refuse them, and start the task without them. The ids stay in the
       // log, so the hello of an updated runner is sent them.
       const types = (spec.images ?? []).map((file) => file.mediaType);
       if (missingFileCapability(link.capabilities, 'create', types)) return NOT_SUPPORTED;
-      return this.deliver(link, createMessage(session, spec));
+      return this.deliver(link, createMessage(session, agent, spec));
     });
   }
 
@@ -117,7 +126,7 @@ export class RelayDispatchAdapter implements SessionDispatchPort {
       if (missingFileCapability(link.capabilities, 'paste', [file.mediaType])) return NOT_SUPPORTED;
       const commandId = randomUUID();
       await this.files.park(commandId, {
-        hostId: session.hostId,
+        hostId: link.hostId,
         sessionId: session.id,
         mediaType: file.mediaType,
         data: file.data,
@@ -133,6 +142,29 @@ export class RelayDispatchAdapter implements SessionDispatchPort {
     });
   }
 
+  async typeKeys(
+    session: WorkSessionEntity,
+    spec: SessionKeysSpec,
+  ): Promise<SessionDispatchOutcome> {
+    return this.withLink(session, async (link) => {
+      for (const [index, key] of spec.keys.entries()) {
+        if (index > 0) await sleep(spec.gapMs);
+        // The runner writes each frame in the session's lane, in order, as one
+        // `send-keys`: one frame is one key the picker reads on its own.
+        const message: SessionInputMessage = {
+          type: 'session.input',
+          commandId: randomUUID(),
+          sessionId: session.id,
+          window: spec.window,
+          data: Buffer.from(key, 'utf8').toString('base64'),
+        };
+        const outcome = this.deliver(link, message);
+        if (!outcome.delivered) return outcome;
+      }
+      return DELIVERED;
+    });
+  }
+
   async addCheckout(
     session: WorkSessionEntity,
     _checkout: SessionCheckoutEntity,
@@ -142,6 +174,38 @@ export class RelayDispatchAdapter implements SessionDispatchPort {
     // so nothing is sent and the caller is told so rather than handed a delivery
     // that did not happen: the row is ahead of the host until the launch is re-sent.
     return this.withLink(session, () => NOT_SUPPORTED);
+  }
+
+  async watchTerminal(
+    session: WorkSessionEntity,
+    spec: SessionTerminalWatchSpec,
+  ): Promise<SessionDispatchOutcome> {
+    return this.withLink(session, (link) => {
+      if (!link.capabilities.includes('session.watch')) return NOT_SUPPORTED;
+      return this.deliver(link, {
+        type: 'session.watch',
+        commandId: randomUUID(),
+        sessionId: session.id,
+        watchId: spec.watchId,
+        pattern: spec.pattern,
+        ...(spec.count ? { count: spec.count } : {}),
+      });
+    });
+  }
+
+  async unwatchTerminal(
+    session: WorkSessionEntity,
+    watchId: string,
+  ): Promise<SessionDispatchOutcome> {
+    return this.withLink(session, (link) => {
+      if (!link.capabilities.includes('session.watch')) return NOT_SUPPORTED;
+      return this.deliver(link, {
+        type: 'session.unwatch',
+        commandId: randomUUID(),
+        sessionId: session.id,
+        watchId,
+      });
+    });
   }
 
   async removeCheckout(
@@ -175,11 +239,16 @@ export class RelayDispatchAdapter implements SessionDispatchPort {
     });
   }
 
-  /** `send` on the session's host link, or `host_offline` when it holds none. */
+  /**
+   * `send` on the session's host link, or `host_offline` when it holds none. A
+   * cloud session has no host to send to: its commands are refused before
+   * here (`requireOnHost`), and one that slipped through is not supported.
+   */
   private async withLink(
     session: WorkSessionEntity,
     send: (link: RunnerLink) => SessionDispatchOutcome | Promise<SessionDispatchOutcome>,
   ): Promise<SessionDispatchOutcome> {
+    if (session.hostId === null) return NOT_SUPPORTED;
     const link = this.links.find(session.hostId);
     return link ? send(link) : OFFLINE;
   }
@@ -202,7 +271,11 @@ export class RelayDispatchAdapter implements SessionDispatchPort {
  * folder already on the host, with neither (`product/versions/mvp/24-session-places.md`):
  * the schema refuses a frame with both or with none.
  */
-function createMessage(session: WorkSessionEntity, spec: SessionLaunchSpec): SessionCreateMessage {
+function createMessage(
+  session: WorkSessionEntity,
+  agent: CodingAgentId,
+  spec: SessionLaunchSpec,
+): SessionCreateMessage {
   return {
     type: 'session.create',
     commandId: randomUUID(),
@@ -210,7 +283,7 @@ function createMessage(session: WorkSessionEntity, spec: SessionLaunchSpec): Ses
     organizationSlug: spec.organizationSlug,
     workspaceId: spec.workspaceId,
     sessionSlug: session.slug,
-    agent: session.agent,
+    agent,
     launch: {
       ...(session.launch.model ? { model: session.launch.model } : {}),
       ...(session.launch.permission ? { permission: session.launch.permission } : {}),
@@ -223,13 +296,20 @@ function createMessage(session: WorkSessionEntity, spec: SessionLaunchSpec): Ses
       // Only for an agent that has a conversation to name: a blank terminal
       // keeps no transcript, and sending it an id would be a field the host
       // has nothing to do with.
-      ...(CODING_AGENTS[session.agent]?.launch.conversation?.create
-        ? { conversation: session.id }
-        : {}),
+      ...(CODING_AGENTS[agent]?.launch.conversation?.create ? { conversation: session.id } : {}),
     },
     ...(spec.prompt ? { prompt: spec.prompt } : {}),
     ...(spec.images?.length ? { images: spec.images } : {}),
     ...placeOf(session, spec),
+    ...(spec.cloud
+      ? { cloud: { sealed: spec.cloud.sealed, expiresAt: spec.cloud.expiresAt.toISOString() } }
+      : {}),
+    // The environment the person picked for a Codex cloud session; absent, the
+    // host starts the task in the one linked to the repository. A runner older
+    // than `codex.environments` ignores the field and guesses from the name.
+    ...(spec.cloud && agent === 'codex' && session.launch.environment
+      ? { codexEnvironment: session.launch.environment }
+      : {}),
   };
 }
 

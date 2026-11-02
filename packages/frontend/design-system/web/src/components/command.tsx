@@ -1,3 +1,4 @@
+// uncatalogued: the primitive under the composer's menus; ComposerMenu's row covers it
 "use client";
 
 import { Command as CommandPrimitive } from "cmdk";

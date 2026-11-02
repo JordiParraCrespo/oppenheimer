@@ -7,6 +7,8 @@ import type {
 } from '@oppenheimer/design-system-web';
 import {
   type BranchEntity,
+  type CloudAgentModel,
+  type CloudAgentStatusEntity,
   type CreateSessionCheckout,
   type CreateSessionInput,
   type HostEntity,
@@ -14,6 +16,7 @@ import {
   parseRepositoryKey,
   type RepositoryEntity,
   repositoryKey,
+  type StartCloudSessionInput,
   shortName,
 } from '@oppenheimer/frontend-consumer';
 import {
@@ -21,10 +24,19 @@ import {
   CODING_AGENTS,
   type CodingAgentId,
   effortFor,
+  HOST_CLOUD_AGENT_IDS,
+  type HostCloudAgentId,
+  isHostCloudAgent,
   type SessionEffort,
   type SessionPermission,
 } from '@oppenheimer/shared/agents';
-import { MAX_SESSION_CHECKOUTS } from '@oppenheimer/shared/schemas/session';
+import {
+  CLOUD_AGENT_LABELS,
+  CLOUD_PROVIDER_AGENT,
+  type CloudAgentId,
+  type CloudAgentProviderId,
+} from '@oppenheimer/shared/schemas/cloud-agent';
+import { MAX_SESSION_CHECKOUTS, type SessionPlace } from '@oppenheimer/shared/schemas/session';
 import type { NewSessionDraft } from './new-session-draft';
 
 // The key a picker's row is named by is the console's, kept in the product
@@ -38,6 +50,98 @@ export { parseRepositoryKey, repositoryKey } from '@oppenheimer/frontend-consume
  */
 
 /**
+ * The rows a picker's search leaves: the label, the second line and the hidden
+ * keywords, matched on the trimmed, lower-cased term, as `ChipSelect` matches.
+ */
+export function filterOptions<T extends ChipSelectOption>(
+  options: readonly T[],
+  term: string,
+): T[] {
+  if (!term) return [...options];
+  return options.filter((option) =>
+    `${option.label} ${option.description ?? ''} ${option.keywords ?? ''}`
+      .toLowerCase()
+      .includes(term),
+  );
+}
+
+/** A host row of the place chip: the option, and whether the machine is reachable now. */
+export type PlaceHost = ChipSelectOption & { online: boolean };
+
+/**
+ * A host row of the Claude Code row's Start from pane: a host row whose line
+ * says what starting from it means, and whether it can.
+ */
+export type StartFromHost = PlaceHost & { disabled: boolean };
+
+/**
+ * A row of the place chip's Cloud tab for a cloud a host starts: its agent,
+ * the host it would start from (null greys it out), and its Start from pane.
+ */
+export interface HostCloudRow {
+  agent: HostCloudAgentId;
+  host: PlaceHost | null;
+  startFrom: StartFromHost[];
+}
+
+/** A cloud row of the place chip: the vendor, the agent it runs, and whether the reader has a key. */
+export type PlaceCloud = ChipSelectOption & {
+  value: CloudAgentProviderId;
+  agent: CloudAgentId;
+  connected: boolean;
+};
+
+/**
+ * The vendors a cloud session can run on, as the place chip's Cloud rows: the
+ * vendor's name and, under it, whose key it runs on, or the word for a vendor
+ * with no key yet. None when this server keeps no keys (`configured`).
+ */
+export function toCloudOptions(
+  status: CloudAgentStatusEntity | undefined,
+  labels: { connect: string },
+): PlaceCloud[] {
+  if (!status?.configured) return [];
+  return status.providers.map((provider) => ({
+    value: provider.id,
+    agent: CLOUD_PROVIDER_AGENT[provider.id],
+    connected: provider.connected,
+    label: provider.label,
+    description: provider.connected
+      ? (provider.accountEmail ?? provider.keyName ?? undefined)
+      : labels.connect,
+  }));
+}
+
+/**
+ * The vendor's own default model, as the engine button names it: Cursor's
+ * `default` ("Auto"), which a launch sends as no model at all.
+ */
+export const CLOUD_DEFAULT_MODEL = 'default';
+
+/**
+ * A cloud agent as the engine button's tab: its own default first, then the
+ * models the vendor lists for the reader. Null when the reader cannot run it
+ * (no key, or a server that keeps none), so its tab is not drawn.
+ */
+export function toCloudAgentOption(
+  provider: CloudAgentProviderId,
+  status: CloudAgentStatusEntity | undefined,
+  models: readonly CloudAgentModel[],
+  labels: { auto: string },
+): AgentOption | null {
+  if (!status?.configured) return null;
+  const agent = CLOUD_PROVIDER_AGENT[provider];
+  return {
+    id: agent,
+    label: CLOUD_AGENT_LABELS[agent],
+    models: [
+      { value: CLOUD_DEFAULT_MODEL, label: labels.auto },
+      ...models.map((model) => ({ value: model.id, label: model.label })),
+    ],
+  };
+}
+
+/**
  * A host that is offline is shown and selectable rather than hidden: the
  * session is recorded and the work is owed to that machine the moment its
  * runner dials in, which is a real thing to want and is what `host_offline`
@@ -46,13 +150,165 @@ export { parseRepositoryKey, repositoryKey } from '@oppenheimer/frontend-consume
 export function toHostOptions(
   hosts: readonly HostEntity[],
   labels: { offline: string },
-): ChipSelectOption[] {
+): PlaceHost[] {
   return hosts.map((host) => ({
     value: host.id,
+    online: host.online,
     label: host.name,
     description: host.online ? host.summary : `${host.summary} · ${labels.offline}`,
     keywords: host.hostname ?? undefined,
   }));
+}
+
+/**
+ * The agent a host's cloud place falls back to when the engine picked runs in
+ * no vendor's cloud: Claude Code, the first that did.
+ */
+const DEFAULT_HOST_CLOUD_AGENT = HOST_CLOUD_AGENT_IDS[0];
+
+/** A host cloud's words in New session, under `sessions.new.where.<key>`. */
+function whereCopy<K extends 'claudeCloud' | 'codexCloud'>(key: K) {
+  return {
+    /** Its row under Cloud, and its Start from pane's way back. */
+    label: `sessions.new.where.${key}.label`,
+    /** The place chip once it is picked ("Codex cloud"). */
+    place: `sessions.new.where.${key}.place`,
+    from: `sessions.new.where.${key}.from`,
+    noHost: `sessions.new.where.${key}.noHost`,
+    startFrom: `sessions.new.where.${key}.startFrom`,
+    cannot: `sessions.new.where.${key}.cannot`,
+  } as const;
+}
+
+/**
+ * Every word the console says about a cloud a host starts, per agent: its
+ * row, its Start from pane and the place chip (`where`), and the pane of a
+ * session started there (`pane`: whose cloud it is, where its status comes
+ * from, where it opens, how its work comes back to a terminal; the link and
+ * the command themselves are the session's, `cloudUrl` and
+ * `teleportCommand`). A new host-started agent is one entry here.
+ */
+const HOST_CLOUDS = {
+  'claude-code': {
+    where: whereCopy('claudeCloud'),
+    pane: {
+      eyebrow: 'sessions.cloud.eyebrow',
+      statusSource: 'sessions.cloud.statusSource',
+      open: 'sessions.cloud.open',
+      teleport: 'sessions.cloud.teleport',
+    },
+  },
+  codex: {
+    where: whereCopy('codexCloud'),
+    pane: {
+      eyebrow: 'sessions.cloud.codex.eyebrow',
+      statusSource: 'sessions.cloud.codex.statusSource',
+      open: 'sessions.cloud.codex.open',
+      teleport: 'sessions.cloud.codex.teleport',
+    },
+  },
+} as const satisfies Record<
+  HostCloudAgentId,
+  { where: ReturnType<typeof whereCopy>; pane: Record<string, string> }
+>;
+
+/** A host cloud's words; an agent with no cloud of its own reads as Claude Code's, the first. */
+export function hostCloudCopy(agent: string) {
+  return HOST_CLOUDS[isHostCloudAgent(agent) ? agent : DEFAULT_HOST_CLOUD_AGENT];
+}
+
+/**
+ * The words for a place on the place chip: a host's cloud is named for the
+ * agent it runs ("Codex cloud"), every other place for itself.
+ */
+export function placeLabelKey(place: SessionPlace, agent: CodingAgentId | null) {
+  return place === 'cloud' && isHostCloudAgent(agent)
+    ? hostCloudCopy(agent).where.place
+    : (`sessions.new.where.${place}.label` as const);
+}
+
+/**
+ * Whether a draft's place is a cloud a host starts — Claude Code's or Codex's
+ * — rather than a vendor's the console launches. It runs an agent of
+ * `HOST_CLOUD_AGENT_IDS` alone (`createSessionSchema` refuses another there).
+ */
+export function isHostCloud(place: {
+  where: SessionPlace;
+  cloudProvider: CloudAgentProviderId | null;
+}): boolean {
+  return place.where === 'cloud' && place.cloudProvider === null;
+}
+
+/**
+ * The engine a place takes: in a host's cloud, the engine as it is when it
+ * runs in its vendor's cloud (Claude Code, Codex), else Claude Code with its
+ * default model; anywhere else, the engine as it is. The one rule the draft,
+ * the place chip and the engine button all read.
+ */
+export function engineForPlace(
+  place: { where: SessionPlace; cloudProvider: CloudAgentProviderId | null },
+  engine: { agent: CodingAgentId; model: string | null },
+): { agent: CodingAgentId; model: string | null } {
+  if (!isHostCloud(place) || isHostCloudAgent(engine.agent)) return engine;
+  return engineFor(DEFAULT_HOST_CLOUD_AGENT);
+}
+
+/** An agent with its default model. */
+export function engineFor(agent: CodingAgentId): { agent: CodingAgentId; model: string | null } {
+  return { agent, model: defaultModelFor(agent) };
+}
+
+/**
+ * A cloud row's Start from pane: every host, the ones that cannot start
+ * `agent`'s cloud disabled and saying why — offline, or a runner the API says
+ * cannot — rather than hidden (`.agents/rules/frontend-ui.md`). For Claude
+ * Code, one that can names the claude.ai account it is signed in as, which is
+ * the account the session runs on: two accounts are two hosts to pick between.
+ */
+export function toStartFromOptions(
+  hosts: readonly HostEntity[],
+  agent: HostCloudAgentId,
+  labels: { offline: string; cannot: string },
+): StartFromHost[] {
+  return hosts.map((host) => {
+    const reason = !host.online
+      ? labels.offline
+      : host.details.startsCloud[agent] === false
+        ? labels.cannot
+        : null;
+    const account = agent === 'claude-code' ? host.details.claudeAccount : null;
+    return {
+      value: host.id,
+      label: host.name,
+      keywords: host.hostname ?? undefined,
+      online: host.online,
+      disabled: reason !== null,
+      description: reason ?? account ?? host.summary,
+    };
+  });
+}
+
+/**
+ * The host the place chip's row for `agent`'s cloud starts a session from
+ * (`product/versions/mvp/24-session-places.md` §7). Online hosts the API says
+ * can start it come first, then ones it could not vouch for either way
+ * (`null`: online, its link held by another replica), and within each the
+ * picked host before the rest. Null when none qualifies, which greys the row
+ * out; a host the API says cannot is never chosen.
+ */
+export function hostCloudHost(
+  hosts: readonly HostEntity[],
+  pickedId: string | null,
+  agent: HostCloudAgentId,
+): HostEntity | null {
+  const picked = hosts.find((host) => host.id === pickedId);
+  for (const verdict of [true, null] as const) {
+    const fits = (host: HostEntity) => host.online && host.details.startsCloud[agent] === verdict;
+    if (picked && fits(picked)) return picked;
+    const other = hosts.find(fits);
+    if (other) return other;
+  }
+  return null;
 }
 
 /**
@@ -87,7 +343,6 @@ export function toBranchOptions(
   return branches.map((branch) => ({
     value: branch.name,
     label: branch.name,
-    mono: true,
     description: branch.isDefault ? labels.default : undefined,
   }));
 }
@@ -99,7 +354,7 @@ export function toBranchOptions(
  * the button names the agent, which is exactly the case the plain terminal is
  * in.
  */
-export function toAgentOptions(): AgentOption[] {
+function toAgentOptions(): AgentOption[] {
   return CODING_AGENT_IDS.map((id) => ({
     id,
     label: CODING_AGENTS[id].label,
@@ -108,6 +363,17 @@ export function toAgentOptions(): AgentOption[] {
       label: model.label,
     })),
   }));
+}
+
+/**
+ * The engine button's tabs: every agent a host runs, then the vendor's cloud
+ * agent when the reader holds its key. In a host's cloud, the agents whose
+ * own cloud a host starts (Claude Code, Codex) alone.
+ */
+export function toEngineAgents(hostCloud: boolean, cloudAgent: AgentOption | null): AgentOption[] {
+  const agents = toAgentOptions();
+  if (hostCloud) return agents.filter((option) => isHostCloudAgent(option.id));
+  return cloudAgent ? [...agents, cloudAgent] : agents;
 }
 
 export function defaultModelFor(agent: CodingAgentId): string | null {
@@ -207,18 +473,41 @@ export function toCheckouts(scope: readonly RepositoryScope[]): CreateSessionChe
 }
 
 /**
- * Whether the draft names somewhere to run, as the create would carry it: one
- * repository `toCheckouts` keeps for a new worktree, a folder for a folder
- * session (`product/versions/mvp/24-session-places.md`).
+ * Whether the draft names somewhere to run, as the create would carry it: a
+ * repository `toCheckouts` keeps for a new worktree or Claude Code's cloud
+ * (the cloud takes the first), a folder for a folder session
+ * (`product/versions/mvp/24-session-places.md`).
  */
 export function hasPlace(draft: Pick<NewSessionDraft, 'where' | 'scope' | 'folder'>): boolean {
   return draft.where === 'folder' ? draft.folder !== null : toCheckouts(draft.scope).length > 0;
 }
 
 /**
+ * The draft as `POST /sessions/cloud` takes it, or null while it cannot be
+ * sent: no vendor picked, no repository, or no task — a vendor's agent runs
+ * on one. The project is the caller's to have checked, as for a host session.
+ */
+export function toStartCloudInput(
+  draft: Pick<NewSessionDraft, 'cloudProvider' | 'cloudModel' | 'projectId' | 'scope'>,
+  prompt: string,
+): StartCloudSessionInput | null {
+  if (!draft.cloudProvider || !prompt.trim()) return null;
+  const [checkout] = toCheckouts(draft.scope);
+  if (!checkout) return null;
+  return {
+    provider: draft.cloudProvider,
+    checkout,
+    prompt,
+    ...(draft.projectId ? { projectId: draft.projectId } : {}),
+    ...(draft.cloudModel ? { model: draft.cloudModel } : {}),
+  };
+}
+
+/**
  * The draft as `POST /sessions` takes it, or null while it cannot be sent: no
- * host, or no place. A folder session carries its folder and no checkouts; a
- * worktree session its one checkout and no folder — never both. The project
+ * host, no place, or a vendor's cloud picked. A folder session carries its folder and no checkouts; a
+ * worktree session a checkout per picked repository and no folder — never
+ * both. The project
  * is the caller's to have checked against the workspace's list: an id it
  * leaves out lands the session in Unassigned.
  */
@@ -226,6 +515,7 @@ export function toCreateInput(
   draft: Pick<
     NewSessionDraft,
     | 'where'
+    | 'cloudProvider'
     | 'hostId'
     | 'projectId'
     | 'scope'
@@ -234,10 +524,12 @@ export function toCreateInput(
     | 'model'
     | 'permission'
     | 'efforts'
+    | 'codexEnvironment'
   >,
   extras: { prompt: string; attachmentIds: readonly string[] },
 ): CreateSessionInput | null {
-  if (!draft.hostId) return null;
+  // A vendor's cloud is launched by `POST /sessions/cloud`, with no host.
+  if (!draft.hostId || draft.cloudProvider) return null;
   const common = {
     hostId: draft.hostId,
     agent: draft.agent,
@@ -247,22 +539,53 @@ export function toCreateInput(
     ...(extras.attachmentIds.length > 0 ? { attachmentIds: [...extras.attachmentIds] } : {}),
   };
   if (draft.where === 'folder') return draft.folder ? { ...common, folder: draft.folder } : null;
-  const [checkout] = toCheckouts(draft.scope);
-  return checkout ? { ...common, checkouts: [checkout] } : null;
+  const [first, ...rest] = toCheckouts(draft.scope);
+  if (!first) return null;
+  // A host's cloud takes a task, one repository and its files: the API keeps
+  // the files and the task links them, since the cloud never sees the host. It
+  // runs Claude Code or Codex, whichever the draft holds (`engineForPlace`).
+  if (draft.where === 'cloud') {
+    if (!extras.prompt) return null;
+    const { agent } = engineForPlace(draft, draft);
+    const environment = codexEnvironmentFor({ ...draft, agent });
+    return {
+      ...common,
+      agent,
+      checkouts: [first],
+      cloud: true,
+      ...(environment ? { codexEnvironment: environment } : {}),
+    };
+  }
+  return { ...common, checkouts: [first, ...rest] };
+}
+
+/**
+ * The Codex environment a Codex cloud session is sent with: the one picked on
+ * its host, or none — the host's pick, the environment linked to the
+ * repository. A pick made on another host is another ChatGPT account's.
+ */
+function codexEnvironmentFor(
+  draft: Pick<NewSessionDraft, 'where' | 'agent' | 'hostId' | 'codexEnvironment'>,
+): string | null {
+  if (draft.where !== 'cloud' || draft.agent !== 'codex') return null;
+  return pickedEnvironment(draft.codexEnvironment, draft.hostId)?.id ?? null;
+}
+
+/** The environment picked on `hostId`, or null when none was. */
+export function pickedEnvironment(
+  pick: NewSessionDraft['codexEnvironment'],
+  hostId: string | null,
+): NonNullable<NewSessionDraft['codexEnvironment']> | null {
+  return pick && pick.hostId === hostId ? pick : null;
 }
 
 /**
  * The repository selection capped at `MAX_SESSION_CHECKOUTS`, keeping what was
- * just picked: a row added past the cap takes the place of the ones already
- * there. One repository per session in the MVP (#56).
+ * just picked: a row added past the cap takes the place of the oldest ones.
  */
-export function capRepositories(
-  previous: RepositoryScope[],
-  next: RepositoryScope[],
-): RepositoryScope[] {
-  if (next.length <= MAX_SESSION_CHECKOUTS) return next;
-  const added = next.filter((scope) => !previous.some((kept) => kept.id === scope.id));
-  return (added.length ? added : next).slice(-MAX_SESSION_CHECKOUTS);
+export function capRepositories(next: RepositoryScope[]): RepositoryScope[] {
+  // The picker appends a pick, so the oldest rows are the first ones.
+  return next.length <= MAX_SESSION_CHECKOUTS ? next : next.slice(-MAX_SESSION_CHECKOUTS);
 }
 
 /**

@@ -1,12 +1,13 @@
 import { QueryClient } from '@tanstack/react-query';
 import { describe, expect, it } from 'vitest';
-import { botsKeys } from '../bots.queries';
-import { calendarKeys } from '../calendar.queries';
-import { hostsKeys } from '../hosts.queries';
-import { installationsKeys } from '../installations.queries';
-import { pullRequestsKeys } from '../pull-requests.queries';
-import { sessionsKeys } from '../sessions.queries';
-import { tasksKeys } from '../tasks.queries';
+import { botsKeys } from '../bots.keys';
+import { calendarKeys } from '../calendar.keys';
+import { cloudAgentsKeys } from '../cloud-agents.keys';
+import { hostsKeys } from '../hosts.keys';
+import { installationsKeys } from '../installations.keys';
+import { pullRequestsKeys } from '../pull-requests.keys';
+import { sessionsKeys } from '../sessions.keys';
+import { tasksKeys } from '../tasks.keys';
 
 /**
  * What invalidating or removing a key reaches, asked of a real `QueryClient`,
@@ -184,5 +185,17 @@ describe('botsKeys', () => {
     expect(invalidated(client, botsKeys.list())).toBe(true);
     expect(invalidated(client, botsKeys.groupList())).toBe(false);
     expect(invalidated(client, botsKeys.detail('bot-1'))).toBe(false);
+  });
+});
+
+describe('cloudAgentsKeys', () => {
+  it('reads a vendor’s models again on a new key, and leaves the status the answer wrote', async () => {
+    const models = cloudAgentsKeys.models('cursor');
+    const client = cacheWith(models, cloudAgentsKeys.status());
+
+    await client.invalidateQueries({ queryKey: cloudAgentsKeys.providers() });
+
+    expect(invalidated(client, models)).toBe(true);
+    expect(invalidated(client, cloudAgentsKeys.status())).toBe(false);
   });
 });

@@ -5,12 +5,14 @@ import type {
   GithubIssueFilter,
   GithubIssueInput,
 } from '../infrastructure/github-issues.port';
-import type { RepositoryAddress, WorkspaceRepository } from './pull-request-access.port';
+import type {
+  InstallationAddress,
+  RepositoryAddress,
+  WorkspaceRepository,
+} from './pull-request-access.port';
 
 /** The address of one issue: GitHub numbers issues and pull requests alike. */
-export interface IssueAddress extends RepositoryAddress {
-  number: number;
-}
+export type IssueAddress = RepositoryAddress & { number: number };
 
 /**
  * The door a workspace's GitHub issues are reached through (`25-bots.md`
@@ -36,14 +38,14 @@ export interface IssueAccessPort {
   createIssue(
     scope: AccessScope,
     userId: string,
-    repository: RepositoryAddress,
+    repository: InstallationAddress,
     issue: GithubIssueInput,
   ): Promise<GithubIssue>;
   /** A comment on an issue's or a pull request's conversation, in the caller's own name. */
   addComment(
     scope: AccessScope,
     userId: string,
-    address: IssueAddress,
+    address: InstallationAddress & { number: number },
     body: string,
   ): Promise<{ htmlUrl: string }>;
 }

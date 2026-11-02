@@ -21,38 +21,23 @@ import { gzipSync } from 'node:zlib';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 
-/** Each app's critical-path budget, in KB of gzipped bytes. */
+/**
+ * Each app's critical-path budget, in KB of gzipped bytes. The number lives in
+ * the app (`bundle-budget.json`), so raising it is a change to that app and
+ * selects its checks alone; what goes in a vendor group is the rule in
+ * `@oppenheimer/tsconfig/vite-chunks.mjs`. Each change and its reason is in
+ * git history.
+ */
 const APPS = [
   // oppenheimer:begin web
-  {
-    name: '@oppenheimer/web',
-    dist: 'apps/web/dist',
-    // 435.4KB measured (2026-09-29): `vendor-react` 106.5KB, `vendor-ui`
-    // 100.4KB, `vendor-forms` 36.8KB, the entry 30.5KB, `vendor-router` 30.2KB.
-    // `manualChunks` puts every design-system component in one chunk the entry
-    // loads, so a picker used on one lazy route is on the critical path; letting
-    // design-system code follow its route is the fix, as its own measured diff.
-    // Headroom is 4.6KB so the next drift fails while it is one change's worth.
-    // Raised to 441KB on 2026-10-21 for the session chat view (0.7), measured
-    // at 440.2KB: `vendor-ui` +0.2KB for the design system's inline chat
-    // composer and animated folds, the entry and the stylesheet +0.1KB each
-    // for its strings, the shimmer sweep and their classes. All of it is the
-    // design system's, on the critical path for the reason above.
-    // Raised to 442KB on 2026-10-21 for images in a bot's chat (#426),
-    // measured at 441.5KB: the entry +0.5KB for the default locale's new
-    // strings (`bots.chat.images.*`, `errors.byCode.BOTS_024`–`BOTS_028`);
-    // the default catalog is bundled, so every string a screen shows lands
-    // here. The upload and image code itself follows the bot's chat route.
-    // Raised to 443KB on 2026-10-22 for a bot's subagents (#444), measured at
-    // 442.1KB on a main that stood at 442.0KB with no headroom: the entry
-    // +0.1KB for the default locale's `bots.chat.activity` strings for
-    // `delegate` (its line, the live line and each subagent's status). The
-    // icon is one the console already ships; the subagent lines follow the
-    // bot's chat route.
-    budgetKB: 443,
-  },
+  { name: '@oppenheimer/web', dir: 'apps/web' },
   // oppenheimer:end web
-];
+].map((app) => ({
+  ...app,
+  dist: `${app.dir}/dist`,
+  budgetFile: `${app.dir}/bundle-budget.json`,
+  budgetKB: JSON.parse(readFileSync(join(ROOT, app.dir, 'bundle-budget.json'), 'utf8')).firstLoadKB,
+}));
 
 /** Script and stylesheet URLs the entry HTML pulls in, as site-root paths. */
 function initialAssets(html) {
@@ -113,7 +98,7 @@ for (const app of APPS) {
 if (failed) {
   console.error(
     '\nFirst load is over budget. Either find the regression (`npx vite build` prints per-chunk' +
-      ' sizes) or raise the budget in scripts/check-bundle-size.mjs on purpose.',
+      " sizes) or raise the budget in the app's bundle-budget.json on purpose.",
   );
   process.exit(1);
 }

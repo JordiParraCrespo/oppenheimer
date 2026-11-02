@@ -152,3 +152,48 @@ export async function unwrapBody<T>(
   }
   return data as NonNullable<T>;
 }
+
+/** The unwrappers {@link callApi} hands its call, each bound to the call's fallback. */
+export interface ApiCall {
+  /** {@link unwrapBody}: the body, which must be there. */
+  body<T>(
+    call: Promise<SdkResult<T>> | SdkResult<T>,
+    isComplete?: (body: NonNullable<T>) => boolean,
+  ): Promise<NonNullable<T>>;
+  /** {@link unwrap}: the answer, which may be empty (a `204`). */
+  result<T>(call: Promise<SdkResult<T>> | SdkResult<T>): Promise<T>;
+}
+
+/**
+ * One API call, its failure reported as `fallback` says: the failure a
+ * repository method declares, named once, beside its signature.
+ *
+ * ```ts
+ * findAll(): Promise<ProjectEntity[]> {
+ *   return callApi(ProjectsErrors.FETCH_LIST_FAILED, async (api) =>
+ *     (await api.body(heyApiSdk.findProjects())).map(toEntity),
+ *   );
+ * }
+ * ```
+ *
+ * `api.body` and `api.result` unwrap a generated SDK call against
+ * `fallback`, keeping the problem document and the status the API sent.
+ * Anything else `run` throws (a network failure, a mapper's error) becomes
+ * an {@link AppError} built from `fallback`; an `AppError` passes through
+ * untouched, so a step that already knows what went wrong keeps its own
+ * diagnosis.
+ */
+export async function callApi<T>(
+  fallback: ErrorDefinition,
+  run: (api: ApiCall) => Promise<T>,
+): Promise<T> {
+  const api: ApiCall = {
+    body: (call, isComplete) => unwrapBody(call, fallback, isComplete),
+    result: (call) => unwrap(call, fallback),
+  };
+  try {
+    return await run(api);
+  } catch (error) {
+    throw toAppError(error, fallback);
+  }
+}

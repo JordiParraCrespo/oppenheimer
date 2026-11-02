@@ -24,7 +24,7 @@ it lives.
 | Who it is: name, description, avatar, sidebar group | Columns on `bot` | Settings → Profile |
 | `SOUL.md`: persona and tone | A document with revisions | Settings → Instructions |
 | `INSTRUCTIONS.md`: its job and rules | A document with revisions | Settings → Instructions |
-| What it remembers | Rows, one fact each, with where it came from | Settings → Memory |
+| What it remembers | Rows, one fact each, with where it came from, how it is kept in mind and whose it is | Settings → Memory |
 | Its provider, model and effort | Columns on `bot` | The chat's composer |
 | What it may do, tool by tool | Rows that differ from the catalog default | Settings → Permissions |
 | Where its sessions run by default | `bot.homeHostId` | Settings → Home host |
@@ -70,11 +70,13 @@ worker runs it and streams what happens back to the chat.
   | GLM | Claude Agent SDK | z.ai's Anthropic-compatible endpoint |
   | OpenAI | OpenAI Agents SDK | OpenAI's API |
   | ChatGPT | OpenAI Agents SDK | ChatGPT's Codex backend, on a ChatGPT subscription |
+  | Grok (`xai`) | OpenAI Agents SDK | xAI's Responses API (`api.x.ai/v1`), on an xAI API key |
 
   A bot made with no provider named, or left on one with no key, goes to
   the first provider the workspace has a key or sign-in for, in the order
-  Anthropic, ChatGPT, OpenAI, GLM (`BOT_PROVIDER_PREFERENCE`, 2026-10-18;
-  it was the catalog order before, which put GLM ahead of ChatGPT).
+  Anthropic, ChatGPT, OpenAI, Grok, GLM (`BOT_PROVIDER_PREFERENCE`,
+  2026-10-18; it was the catalog order before, which put GLM ahead of
+  ChatGPT; Grok joined it on 2026-10-26).
 
   Both engines get the same system prompt, the same history and the
   same tools, and both are translated into the
@@ -91,7 +93,28 @@ worker runs it and streams what happens back to the chat.
 - **The worker owns the turn.** A BullMQ worker runs it, so closing the
   tab does not stop it and a turn is not capped by a request's timeout.
   One turn at a time per bot: a message sent while it works waits its
-  turn. **Stop** cancels the running turn.
+  turn. **Stop** cancels the running turn. Once something is written the
+  button is Send again, and what it sends waits (2026-10-26): each waiting
+  message sits over the composer, not in the transcript, until its turn
+  starts, with Remove (its queued turn is cancelled), Edit (cancelled, its
+  words back in the field; not offered for one with images, which the
+  field cannot hold again) and, on the next one, Send now, which stops the
+  running turn so it runs at once.
+- **The composer says how much room the bot has left** (2026-10-26), the
+  same meter as a session's chat: the context its last answer held and,
+  on a ChatGPT sign-in, the plan's 5-hour and weekly windows with when
+  each resets. Each turn keeps what its engine reported
+  (`bot_turn."contextTokens"`, `"contextWindow"`, `"planLimits"`) and the
+  meter reads the newest. The Claude engine reports the model's window;
+  the OpenAI engine reports none, so an OpenAI, GLM or ChatGPT bot shows
+  its context in tokens alone, never against a guessed window. The plan
+  windows are what the ChatGPT backend answers each call with (the
+  `x-codex-primary-*` and `x-codex-secondary-*` headers the Codex CLI
+  reads); a bot on an API key has none to show. There is no Compact: the
+  engines compact on their own. Since 2026-10-29 the model is told too:
+  the turn context says how full the context was when the bot's last turn
+  ended, against its window, and from half full asks for narrow reads; a
+  turn whose engine reported no window is told nothing.
 - **The Claude engine runs without a shell.** The Claude Agent SDK is
   Claude Code as a library; its shell and file tools would run commands
   the model chose on the control plane. They are off. What it keeps from
@@ -104,7 +127,10 @@ worker runs it and streams what happens back to the chat.
   before it. In order:
   - who the bot is;
   - how a turn goes: answer or say what it is about to do, act, report
-    only what a tool confirmed;
+    only what a tool confirmed; a reply commits to something (what it took
+    on, where it stands, when the person hears next), and asking again for
+    work under way is the same errand, reported rather than started again
+    (2026-10-29);
   - **a closed list of what it can do**: its tools, and that it has no
     shell, no files and no access to the machine it runs on, so a missing
     tool is a plain "I can't" and never a search of the server;
@@ -153,7 +179,7 @@ worker runs it and streams what happens back to the chat.
   are folded, up to the first that has not: a queued message is never in
   the summary before its own turn reads it. A provider that refuses the
   call for rate or quota delays the job until the reset it names
-  (`BotRateLimitError`), rather than retrying on the queue's schedule. The summarizer keeps decisions, facts
+  (`LlmRateLimitError`), rather than retrying on the queue's schedule. The summarizer keeps decisions, facts
   about the person and their work, ids and names, open tasks and the
   bot's promises, drops small talk, and treats the conversation as data,
   not instructions. The summary is one row per bot,
@@ -201,6 +227,17 @@ worker runs it and streams what happens back to the chat.
   messages when the turn ends. The stored messages are the record; the
   stream is only how they arrive early.
 
+- **A failed turn says what kind of failure it was** (2026-10-29, from
+  Grok Bot's failure lines, `research/lessons-from-grok-bot.md` §9). The
+  engine names it from the provider's answer (the Claude SDK's error code,
+  the HTTP status of an OpenAI error): `rate_limit`, `usage_limit` (a spent
+  quota or credit, no longer waited out as a rate limit), `credential`,
+  `refused` (this request: its content, the model), `unavailable`, or
+  `other`; the worker adds `time_limit` and `interrupted`, and a provider
+  with no key for the turn is `credential`. It is `bot_turn."failure"`,
+  beside the words in `"error"`, and `BOT_TURN_FAILURES` says for each
+  whether sending the message again can help.
+
 ## 3. The chat
 
 The chat shows what the bot says, not everything it does:
@@ -215,6 +252,16 @@ The chat shows what the bot says, not everything it does:
   itself *Scout*", "Remembered: deploys go out on Tuesdays", "Forgot a
   fact"), with the old and new value, and a link to the Settings tab
   where you change it back.
+
+While a turn runs, its live line says what it is doing: waiting its turn,
+thinking, the call running ("Searching the web for …"), writing, or, while
+the engine waits out a provider that refused a call, "Anthropic is limiting
+requests, retrying…" (the stream's `retrying` event, until the turn writes
+again; 2026-10-29). An ended turn's trail says how long it worked ("Worked
+for 1m 13s"), its model and its tokens. A failed turn's line says what
+happened and whether sending it again helps, from its kind (§2): Retry only
+when it can, Model providers for a refused key or sign-in, and the
+provider's own words under Show details.
 
 ### 3.1 Images
 
@@ -234,7 +281,7 @@ over the text as soon as it is picked, and a message may be images alone.
   (`attachmentIds` on `POST /bots/:id/messages`); one image is sent by one
   message, claimed in the send's transaction, and only by the person who
   uploaded it: that claim is the one place the rule lives.
-- **Which models.** Anthropic, OpenAI and ChatGPT read images; GLM does
+- **Which models.** Anthropic, OpenAI, ChatGPT and Grok read images; GLM does
   not (`BOT_PROVIDER_CATALOG[provider].images`). On a GLM bot the
   composer refuses a picked image and says to switch the model; with
   images already held, send stays off and says why. Nothing written is
@@ -247,8 +294,14 @@ over the text as soon as it is picked, and a message may be images alone.
   it now. An image that cannot be read fails the turn rather than the bot
   answering without it. Retry is not offered on a message with images: an
   image is sent once, so it is picked again.
+- **The bot's images.** A bot shows images with `show_image` (§4.7): they
+  are the same `bot_attachment` rows, uploaded by no person, carried by a
+  message of the bot's and drawn as tiles in its answer where it showed
+  them, opening in the same viewer; the sweep treats them like yours.
 - **In the chat.** Your images sit above your bubble as 160px tiles that
-  open full size; the bytes come from `GET /bots/:id/attachments/:id/content`,
+  open whole in a viewer over the chat (← and → through the message's
+  others, Esc to close, a download button; 2026-10-28, before that a new
+  tab); the bytes come from `GET /bots/:id/attachments/:id/content`,
   which serves them only to whoever may read the chat. They stay in the
   history with the message.
 - **Storage and retention.** The files are in the deployment's storage
@@ -260,6 +313,44 @@ over the text as soon as it is picked, and a message may be images alone.
   image lives as long as its message, and an upload never sent for a day.
   An upload can be sent for 23 hours, an hour short of the sweep, so a
   send never claims an image whose file the sweep is deleting.
+
+### 3.2 Questions
+
+A bot that cannot go on without a choice only you can make asks rather
+than guesses (2026-10-29, from Grok Bot's form cards,
+`research/lessons-from-grok-bot.md` §9 row 12). `ask_user` puts up to four
+questions on a card, each with two to four likely answers and a tag
+("Repo"), the shape of Claude Code's `AskUserQuestion`, and its turn ends.
+
+- **It is a card of its own** beside the approval card (§5), not a kind of
+  approval: a `bot_question` row holding the questions and, once answered,
+  the answers. Nothing runs on it, so it has no tool, no reach and no yes.
+  A bot still has one card up at a time of either kind: raising one locks
+  the bot and looks for a waiting card in both tables, and a bot whose card
+  waits is told to wait. Writing to the bot instead retires it, as it does
+  an approval. The Inbox does not list questions yet; they are answered in
+  the chat.
+- **Answering** is the same picker a session's questions use, where the
+  composer was: one question at a time, an option by its number or row,
+  several where the bot allows, or your own words instead. Submit sends
+  every answer at once (`POST /bots/:id/questions/:questionId/answer`);
+  Dismiss declines (`…/dismiss`, with a note if you like). Answers that do
+  not fit the questions are refused (`BOTS_036`, naming which), and a card
+  already decided or retired is `BOTS_037`. `GET /bots/:id/question` reads
+  the waiting card.
+- **The bot is told** in the turn the decision queues, like an approval's:
+  each question with its answer, between markers, as data rather than
+  instructions; a dismissal says not to ask again unless you bring it up.
+  The answers are fenced the way a page is (`fenceUntrusted`), so an answer
+  that spells the closing marker cannot leave the fence. The turn's origin
+  is `question`. The chat draws the line ("You answered: Which
+  repository?") with each question over its answer.
+- **Only where someone answers.** The tool is marked attended-only, and the
+  toolbox offers it on turns a person is waiting on (their message, or a
+  card they decided), never on a routine's, a wake's or a goal's.
+- **Not built:** Grok Bot's other resume points, a sign-in to a connector
+  and handing a computer over; they need a connector or a host to resume
+  from.
 
 ## 4. The tools
 
@@ -291,8 +382,10 @@ one `Bot<Area>ToolsFactory` declaring its tools (a name, a description
 whose first sentence the prompt's "What you can do" list shows, a zod
 input) and dispatching that area's own queries and commands with the
 owner's scope. The input is checked before anything runs; the answer is
-labelled text with ids inline, times in the sender's zone, cut at 12,000
-characters with the cut said; a catalog error comes back as its code,
+labelled text with ids inline, times in the sender's zone, kept within
+12,000 characters by its start and its end, with how much of the middle
+was cut said (2026-10-29; it kept only the start, and a session's error is
+at the end); a catalog error comes back as its code,
 title and detail. Text from outside (a page, a pull request, a session's
 result) comes back fenced as data. A message sent through an API token or an
 OAuth grant rather than the console keeps that credential's scopes on its
@@ -314,20 +407,210 @@ that did not cover the tool never runs.
 | `edit_soul` | Rewrite SOUL.md, saved as a revision | auto |
 | `edit_instructions` | Rewrite INSTRUCTIONS.md, saved as a revision | auto |
 | `update_profile` | Change its name and description; an activity line, no revision | auto |
-| `remember` | Save a fact with its source; an activity line, no revision | auto with *Learn automatically*, else ask |
+| `remember` | Save a fact with its source, kept in mind or to look up, about the work or about the person (below); an activity line, no revision | auto with *Learn automatically*, else ask |
 | `forget` | Delete a fact; an activity line with the fact, no revision | auto |
-| `recall` | Search its memory | auto |
+| `recall` | Search its memory, every fact it keeps and those the person's other bots share | auto |
+| `search_chat` | Search its own chat's past messages, the person's and its own, including what only the summary holds: web-search syntax, best matches first, an excerpt around each match, fenced as data (2026-10-29) | auto |
+| `set_goal` / `end_goal` | Set a goal it keeps working toward across turns, or end it (2026-10-29; below) | auto |
+| `ask_user` | Up to 4 questions on a card of their own, each with 2 to 4 likely answers; the turn ends and the answers open the next. Only on a turn someone is waiting on (§3.2, built 2026-10-29) | auto |
+
+**Goals** (2026-10-29, from Grok Bot's goals,
+`research/lessons-from-grok-bot.md` §9 row 10; reviewed and set with `/goal`
+since 2026-11-02, from Claude Code's `/goal`). A goal is for work that
+takes several steps on the bot's own: "get the release branch green". The
+person sets one by typing `/goal <condition>` (below, "Built-in commands");
+the bot sets one with `set_goal`. Either way it is written as a condition
+with the check that proves it ("`pnpm test` exits 0 on the release
+branch"), up to 2,000 characters.
+
+- **A reviewer decides when it is done.** After each turn of the goal (the
+  one that set it, and each continuation), the bot's own model, with no
+  tools and its least effort, reads the condition and the conversation
+  (the newest that fits 12,000 tokens, the turn's own words last) and says
+  one of three things, with a reason in a sentence: *met*, *not met*, or
+  *impossible* without the person. The bot is told it is judged only on
+  what its words show, so it runs the check the condition names and says
+  what it answered. Claude Code's evaluator is the model for this: the one
+  doing the work is not the one that says it is finished.
+- **What the verdict does.** Met or impossible ends the goal, with a line
+  saying so and why. Not met queues one continuation turn, opened by
+  "Goal · continuation 2 of 20" and the reviewer's reason, which the bot
+  reads as its guidance. A reviewer that fails (no key, a refusal, a rate
+  limit, an answer with no verdict in it) is no verdict: the goal goes on,
+  and the limit still bounds it.
+- **Bounds.** A goal the person sets takes at most 20 continuations; one the
+  bot sets takes 5 unless it asks for up to 20. The limit is the bound on
+  the spend, not a guess at how long the work takes: the reviewer is what
+  stops a goal that is done. A bot has one goal at a time; setting another
+  replaces it, and the continuation the old one left waiting is cancelled.
+- **Who it runs as.** A continuation runs as the owner, with the reach of
+  the turn that set the goal (its credential scopes and zone), as a
+  subscription keeps them.
+- **No self-renewal.** A continuation is not offered `set_goal`, so a goal
+  never renews itself.
+- **One at a time.** Only the goal's own turns move it on: the turn that
+  set it, and its continuations. A person's message, a routine or a wake
+  ending in between changes nothing. The continuation is keyed by the goal
+  and its number, so an end delivered twice queues one, and its count is
+  claimed in the same transaction that queues it. A Stop that won the race
+  leaves nothing to queue, and a goal ended or replaced while the reviewer
+  answered is left as it is: the goal is read again after the review.
+- **How it ends.** The bot ends it with `end_goal`, and the call is the
+  record. The goal also ends when:
+  - the reviewer finds it met, or impossible without the person;
+  - the owner presses Stop on the goal above the composer, or types
+    `/goal clear`, which also cancels a continuation still waiting;
+  - its continuations run out;
+  - a turn of it (the one that set it, or a continuation) fails or is
+    stopped. A person's Stop is a stop, and a failure would only fail again.
+    The one exception is a turn stopped at the 4-minute limit for one turn
+    (2026-11-02): a goal is the way past that limit, so the turn is reviewed
+    like one that completed, and the next continuation picks its work up on
+    a fresh clock, told to take a smaller step. Its continuations still
+    bound it.
+
+  Each of these is a line in the chat outside any turn, with the
+  reviewer's reason where it gave one. However a goal ends, or is replaced
+  by a new one, a continuation of it still waiting is cancelled with it.
+- **Clearing the chat** deletes the goal, since a continuation would read a
+  history that no longer exists.
+- **No card.** Neither tool asks. The spend is bounded, every continuation
+  is a line, and Stop is one click.
+- **Not built.** Claude Code's waiting on background work (a goal turn that
+  started a session is judged when it ends, not when the session finishes;
+  the bot watches the session instead) and its pause on a rate limit, which
+  here fails the continuation and so stops the goal.
+
+**Memory has a tier and a scope** (2026-10-29, from Grok Bot's memory,
+`research/lessons-from-grok-bot.md` §9 row 11). Each fact is still one row
+of `bot_memory_fact`, with two columns more:
+
+- **Tier.** A `profile` fact is in mind every turn, in the system prompt.
+  A `log` fact is kept to look up with `recall`: a detail that matters
+  once in a while. The prompt carries the newest 60 profile facts and says
+  how many more there are to recall, so a long memory does not crowd the
+  turn's context.
+- **Scope.** A `bot` fact is the bot's alone. A `person` fact is about its
+  owner ("prefers squash merges"), and every bot that person made in the
+  workspace reads it, in a section of the prompt of its own. It stays the
+  row of the bot that learned it: that bot edits and forgets it, the
+  others read it, and it goes with that bot when the bot is deleted or its
+  memory cleared. Copying it to each bot would make "forget" mean nothing.
+- **Defaults.** A fact is `profile` and `bot` unless the bot or the owner
+  says otherwise: `remember` takes `tier` and `about: 'person'`, and the
+  owner moves a fact from its row's menu in Settings → Memory. A fact
+  another bot shared is shown there muted, with nothing to change.
+- **Not built.** Grok Bot's review queue for shared learnings: a fact
+  about you comes from your own bots, so it is a line in their chat like
+  any other memory change.
+
+**Skills** (2026-10-31, from OpenClaw's skills and Grok Bot's saved
+skills, `research/lessons-from-openclaw-and-grok-bot-skills.md`). A skill is a
+reusable way of doing one task, saved under a short name: when it applies,
+what it needs, the steps, how to check the result and what to report. It is
+one row of `bot_skill`, the bot's own, at most 50 a bot.
+
+| Tool | Does | Default |
+|------|------|---------|
+| `use_skill` | Read one of its skills in full, to follow it | auto |
+| `save_skill` | Save a skill, or replace the one of that name, as the bot's | auto |
+| `delete_skill` | Delete a skill and its command | auto |
+
+- **Its name is its command.** Lowercase letters, digits and hyphens, at
+  most 32 (OpenClaw's cap); `skill` is reserved, and so is each built-in's
+  name (below). Settings types a name into
+  that shape as it is written.
+- **Who may run it is two switches**, at least one on: `userInvocable`, the
+  person runs it as `/<name>` (OpenClaw's `user-invocable`), and
+  `modelInvocable`, the bot uses it unasked (the inverse of its
+  `disable-model-invocation`).
+- **The prompt lists, the bot reads on demand.** The system prompt's "Your
+  skills" section lists each skill the bot may use, by name and description
+  and never its body, sorted by name so the prompt stays the same bytes;
+  only a turn offered `use_skill` gets it. When a request fits one the bot
+  reads it, follows it and says which it used. A skill is how to do the
+  work, never permission to do more: tools, approvals and rules stand.
+- **A slash command runs a skill.** A message of the person's that opens
+  with `/<name>` (or `/skill <name>`, the generic entry) runs that skill if
+  the person may: the turn's message opens with the skill's body, then the
+  words as written, whose part after the command is its input. The stored
+  message stays what was typed. A command that names no such skill tells
+  the bot which ones the person can run, so it says so rather than guessing.
+  Only a person's message runs one, never an event's text.
+- **Made in chat or in Settings.** Asked to "save that as a skill", the bot
+  calls `save_skill`; Settings → Skills lists them with who saved each,
+  adds, edits and deletes. The composer's `/` menu offers the ones the
+  person may run as the command is typed: arrows move, Tab or Enter picks,
+  Escape closes it.
+- **Not built.** Grok Bot's library shared by all of a person's bots, a
+  registry like OpenClaw's ClawHub, and skills that dispatch straight to a
+  tool.
+
+**Built-in commands** (2026-11-02, from Claude Code's commands,
+`code.claude.com/docs/en/commands`). A built-in is a `/<name>` Oppenheimer
+runs itself, for every bot, whatever skills it has. A skill only puts
+words in front of the bot; a built-in drives a feature the product owns,
+which is why `/goal` could not be a skill: the words of one cannot promise
+the goal starts, is judged after each turn, or stops. Their names are
+reserved (`BOT_BUILT_IN_COMMANDS`), so no skill takes one; a skill saved
+under one before it was reserved keeps its row and the bot may still use
+it, but its `/<name>` runs the built-in. The composer's `/` menu lists the
+built-ins first, under Commands, then the skills.
+
+The owner chose them in this order. Only the first is built:
+
+| Command | Does | State |
+|---------|------|-------|
+| `/goal <condition>` | Sets the bot's goal and starts on it (above). `/goal` alone keeps send off and says the condition is missing; `/goal clear` (or `stop`, `off`, `reset`, `none`, `cancel`) stops the goal, as Stop does, and sends nothing. The API refuses both as messages (`GENERIC.ARGUMENT_INVALID`): they are `GET` and `DELETE /bots/:id/goal` | Built |
+| `/usage` | What the chat has cost: tokens by turn, the plan windows on a sign-in, how full the context is | Next |
+| `/loop [interval] <prompt>` or `/schedule` | Run a prompt on an interval, or on a schedule, as a routine of the bot's (26) | Planned |
+| `/plan <idea>` | Think before acting: break the idea into steps, or tasks on the plan, and ask before starting | Planned |
+| `/grill-me` | Interview the person about a plan, one branch of the decision tree at a time, until it holds (from this repo's own `grill-me` skill) | Planned |
+
+Built-ins that change the bot's code tools are not here: a bot has no
+shell, so `/code-review`, `/simplify` and their kind stay the coding
+agent's, in a session, where Claude Code ships them.
 
 ### 4.2 Sessions: its hands on hosts
 | Tool | Does | Default |
 |------|------|---------|
 | `list_hosts` | Hosts, online or not, and the agents they can run | auto |
-| `list_sessions` / `get_session` | Sessions and their state | auto |
+| `list_sessions` / `get_session` | Sessions and their state, each with its project and the group the console's dot shows; filtered by project, host, state or group; `get_session` also shows a pending question or permission dialog with its id and options (built 2026-10-27, issue #493) | auto |
 | `start_session` | Start an agent on a host, in a new worktree or a folder, with a task; the session's origin is `bot` and it always launches at `auto` (decided 2026-10-18: nobody sits at a bot's terminal, so `ask` would wait forever) | ask |
-| `send_to_session` | Type a message into a running session | ask |
-| `read_session` | A session's recent output | auto |
+| `start_cloud_session` | Start a session in a vendor's cloud on a project's repository; `agent` picks the cloud. `claude-code` (default, claude.ai/code) and `codex` (chatgpt.com/codex, with an optional `codex_environment`) go through the sessions' own create with `cloud`, so a host's runner runs `claude --cloud` or `codex cloud exec` in a scratch checkout, exactly as the console's cloud place and a `claude-cloud` automation do; host chosen as `start_session`'s. It waits (at most 120 s, the runner's own limit) for the host to report the session's id and answers with its URL. `cursor` goes through `StartCloudSessionCommand` (`POST /sessions/cloud`'s), on the owner's own Cursor key with no host and an optional `model`; the card says it runs on that key, and a missing key is the call's error (`CLOUD_AGENTS_004`). Scope `sessions:write`, origin `bot`; `get_session` shows the URL after. No watch, since a cloud session is followed at its vendor (added 2026-10-30; Codex and Cursor 2026-11-02) | ask |
+| `watch_session` / `unwatch_session` / `list_watches` | Follow a session, so its task needing input or ending wakes the bot (`start_session` follows its own session); built 2026-10-22, note 27. A `pattern` wakes it when the terminal prints a matching line, matched on the host (2026-10-29) | auto |
+| `wait_for_session` | Wait up to 120 s inside the turn for a session's task to need input or end, at most 3 times a turn (2026-10-29) | auto |
+| `send_to_session` | Type a follow-up prompt into a running session whose agent waits at its prompt; logged as `prompt.sent` with the bot as sender, and it opens a `follow_up` turn the bot then watches (built 2026-10-27) | ask |
+| `answer_session` | Answer the question or permission dialog a session's agent waits on, through the Inbox's own command (built 2026-10-27) | ask |
+| `read_session` | A session's recent log in words: tasks and follow-ups with their sender, the agent working, blocked or done, questions, failures, stops. The log only, never the terminal or the agent's conversation (built 2026-10-27; "recent output" was the plan). `after_seq` reads only what followed an entry; `send_to_session` and `answer_session` name the entry their input followed (2026-10-29) | auto |
 | `stop_session` / `close_session` | Stop it, or close and clean up | ask |
 | `list_folders` | Browse a host's folders | auto |
+
+Built 2026-10-27 (issue #493), so a bot that manages sessions can see them
+as the person does and act on them. Three rules hold it:
+
+- **The group is the console's.** `list_sessions` and `get_session` show the
+  derived group (`session-group.policy.ts`) and the project the sidebar
+  files the session under, never one inferred from tasks. No index holds a
+  group, so a `group` filter reads the 100 newest sessions and says so;
+  `resolved` alone is the stored state and pages like any filter.
+- **What a bot reads is the log, not the conversation.** `read_session`
+  reads the session's event log (the same rows `GET /sessions/{id}/events`
+  pages), said in words and fenced as data. Pane text never reaches
+  Postgres, and the agent's transcript stays on the host, so a bot sees what
+  the console's list would tell a person, not what was on the screen. The
+  owner turns it off like any tool (§5).
+- **What a bot says is the bot's, on the record.** `send_to_session` asks
+  first under Approve for me, and only types while the agent waits at its
+  prompt (`SESSIONS_036` otherwise: it would land as the answer to a
+  question, or mid-task). The API claims the prompt in the log before it
+  types, as `prompt.sent` with `{ kind: 'bot', botId, turnId }` as the
+  sender it read, so two prompts at once cannot both land and a host cannot
+  forge a bot's words: `read_session` names a sender only on an entry the
+  API wrote. Keys that never reach the host are `prompt.undelivered`, which
+  cancels the turn the prompt opened. The console does not draw the log
+  yet; until it does, the bot's chat (the call's activity line and the
+  approval card) and the log are where the person sees it.
 
 ### 4.3 Projects and the plan
 | Tool | Does | Default |
@@ -346,6 +629,7 @@ that did not cover the tool never runs.
 | `list_pull_requests` / `get_pull_request` | With files, comments and activity | auto |
 | `comment_on_pull_request` / `review_pull_request` | Post a line comment, or submit a review: approve, request changes or comment | ask |
 | `start_review_session` | Review it in a session | ask |
+| `record_ci_findings` | Record what each failing check came to: cause, relation to the change, flake, action, confidence and evidence, shown with the pull request's checks (`0.2-pull-requests.md`, "CI findings"; built 2026-10-29) | auto |
 | `merge_pull_request` | Merge it, squash by default, pinned to the head the card showed | ask |
 | `list_issues` / `get_issue` | A repository's issues, one with its comments | auto |
 | `create_issue` / `comment_on_issue` | Open an issue, or comment on one | ask |
@@ -482,10 +766,10 @@ one.
 ### 4.7 Work and the web
 | Tool | Does | Default |
 |------|------|---------|
-| `delegate` | Up to 4 subagents in parallel inside the turn, each on one self-contained task with the context the bot gives it, reading only: the turn's read-only tools (list, get, recall, web search, `web_fetch`), behind the same scopes, owner's roles and per-turn budget, no card and no `delegate` of their own, so one level deep. 3 run at once, each stops after 90 s and 8 steps, all of them when the turn is stopped; one failing never fails the rest. What they answer comes back fenced as data and the bot answers the person; the chat draws a line per subagent (task, how it ended, its answer, the tools it called, its tokens, counted as the turn's). 2 calls a turn. Ours, not the engine's: Claude Code's subagents are off (issue #444) | auto |
+| `delegate` | Up to 4 subagents in parallel inside the turn, each on one self-contained task with the context the bot gives it, reading only: the turn's read-only tools (list, get, recall, web search, `web_fetch`), behind the same scopes, owner's roles and per-turn budget, no card and no `delegate` of their own, so one level deep. 3 run at once, each stops after 90 s and 8 steps, all of them when the turn is stopped; one failing never fails the rest. What they answer comes back fenced as data and the bot answers the person; the chat draws a line per subagent (task, how it ended, its answer, the tools it called, its tokens, counted as the turn's), and while the call runs, the same lines hang under the turn's live line as they work (waiting, running with its clock, or how it ended, each opening to the tools it has called so far), from a frame the bot's stream sends each time one moves and never stores. 2 calls a turn. Ours, not the engine's: Claude Code's subagents are off (issue #444) | auto |
 | `web_search` | From the engine (the provider runs it) | auto |
 | `web_fetch` | Ours, not the engine's: http(s) to public addresses only, refusing loopback, private and link-local ones (every address a name resolves to, and every redirect, checked; the connection pinned to the checked address), 15 s and 2 MB a fetch, text pages only, 10 a turn | auto |
-| `ask_user` | A question card with options | auto |
+| `show_image` | Shows the person up to 4 images a call (8 a turn) under the reply, by each image's own address: fetched like `web_fetch` (public addresses only, every redirect checked), at most 5 MB, known by its bytes as PNG, JPEG, GIF or WebP (never SVG), stored as the chat's own image (`bot_attachment`, no person as its uploader) and carried by a message of the bot's after the call's line, named by the caption the bot gave or the address's file name. The bot does not see them; a later turn's history names what it showed (built 2026-10-28) | auto |
 
 ### 4.8 Never given to a bot
 Pairing, unpairing or uninstalling hosts; connecting or disconnecting
@@ -500,7 +784,11 @@ the tools of §4 grouped as there, each **Allow**, **Ask** or **Off**:
 - **Allow** runs without asking.
 - **Ask** stops the turn on a **Needs input** card: Approve once, Always
   allow, Deny, or tell it what to do instead. *Always allow* sets the tool
-  to Allow.
+  to Allow. Since 2026-10-31 the card draws the decisions the API offers
+  for that call (`availableDecisions`, in order: approve, approve for its
+  subject, always allow, deny, deny and stop), each with a key, and the
+  decide endpoint accepts only those; *Deny* gives the bot a turn to carry
+  on from, *Deny and stop* gives it none.
 - **Off** removes the tool; the model never sees it.
 
 The composer's approval chip is a preset over the list: **Ask for
@@ -545,11 +833,58 @@ How the card works (built 2026-10-15, `bot_approval`):
   once. The bot reads the words, then and in later history, as a note from
   Oppenheimer and not as your words, and is told not to route around a
   denial.
+- **A yes is answered at once, the way a person would.** The approval
+  queues, with the yes, a short turn of the bot's own (its event's
+  `stage` is `started`): "On it, archiving those 25 now.", in its own
+  voice, while the call runs. That turn is offered the bot's usual tools so
+  the provider's cache of the conversation holds, but each refuses to run,
+  it has two round trips, and it takes no steer: a message sent meanwhile
+  waits for a turn that can act on it. Meanwhile the chat holds the call as a live
+  line with its clock ("Running: Archive 25 threads…") under that sentence.
+  The call's answer opens the report's turn as before, its event `finished`,
+  drawn as "Done: …" (or "It failed: …") rather than a second "You
+  approved". If the call ran before the "on it" turn started, that turn ends
+  without a word: an "on it" after the fact, or after the report, reads
+  backwards. A no is unchanged: one turn, which already starts at once.
 - **Writing to the bot instead expires the card.** The new turn starts
   fresh; nobody decided, and the bot is not told.
-- **Not built yet:** *Always allow* (it needs Settings → Permissions), Off,
-  a card for a bot-to-bot or background turn (they will need a timeout
-  where yours has none), and the asking tools of the other areas.
+- **Not built yet:** a card for a bot-to-bot or background turn (they
+  will need a timeout where yours has none), the *Custom* reading of the
+  chip, and the asking tools of the other areas.
+
+Settings → Permissions and how far a yes reaches (built 2026-10-29, from
+Grok Bot's approvals, `research/lessons-from-grok-bot.md` §9 rows 6 and 7):
+
+- **Each tool's row** (`bot_tool_permission`) holds Allow, Ask or Off
+  where the owner changed it; *Default* deletes the row and the tool
+  follows the preset again (`PUT /v1/bots/:id/permissions/tools/:tool`).
+  Off takes the tool out of the catalog the model reads, and an approved
+  call of a tool set Off since is not run. The chip stays the preset;
+  the tab says which tools differ.
+- **A card offers how far the yes reaches.** *Approve once*; *Always allow
+  for …* the thing the call acts on (a repository for GitHub's tools, a
+  project for `start_session`, a session for the tools that drive one),
+  a **standing grant** that lets the next call on that thing run and
+  says so on its line ("Always allowed for acme/docs"); and *Always
+  allow*, which sets the tool to Allow. Either is written in the
+  decision's transaction; past `BOT_TOOL_GRANTS_MAX` grants the decision
+  is refused (`BOTS_034`) and the card stays. The tab lists the grants,
+  each removable.
+- **Merging is decided call by call.** `merge_pull_request` offers this
+  call only, and Settings never offers it Allow (`BOTS_030`).
+- **A card says what it sends out.** GitHub's comment, review and issue
+  tools mark their card: what it writes leaves Oppenheimer in your name.
+  The card folds the call exactly as it will run.
+- **Plain-language rules** (`bot_permission_rule`, at most
+  `BOT_PERMISSION_RULES_MAX`): *Ask me first when …* and *Go ahead without
+  asking when …*. Before an asking call that a rule could change, a
+  reviewer on the bot's own model, one completion with no tools, says
+  which rules the call matches. An ask rule wins: it pauses even a call
+  the tool would run, and the card says which rule ("Paused by your rule
+  …"). An allow rule lets a call that would ask run, and its line says
+  which rule. A review that fails or cannot be read asks, and the card
+  says the rules could not be checked. A standing grant is read before
+  the rules, and an approved call is never reviewed again.
 
 ## 6. What is built, in slices
 
@@ -585,22 +920,23 @@ limits (§2); the tools that run without asking, as the owner: itself
 (`list_automations`, `get_automation`, `run_history`), other bots
 (`list_bots`, `get_bot`), `web_fetch` and, since 2026-10-22, `delegate` (§4.7); `start_session`,
 `stop_session` and `create_bot`, which ask; and the Needs input card
-(§5): Approve, Deny with a note, the bot told either way. Next:
-Settings → Permissions and *Always allow*, then the asking tools of each
-area and `ask_bot`.
+(§5): Approve, Deny with a note, the bot told either way. Since
+2026-10-29, Settings → Permissions, a yes that reaches past its call, and
+the owner's rules (§5). Next: the asking tools of each area.
 
 ## 7. Not built yet
 
 Templates (GitHub, Sessions, Plan, and Blank as a template), the built-in
 bots (Project manager, Merge manager), group chats with several bots,
-Routines, Notifications, plain-language permission rules ("always ask
-before touching the payments repo"), daily caps, slash commands, voice,
-attachments other than images (§3.1), the context meter, project and
-user memory, a bot's engine running on a host of its own with the full
+Routines, Notifications, daily caps, voice,
+attachments other than images (§3.1), project memory, a bot's engine running on a host of its own with the full
 Claude Code toolset.
 
 Routines, a bot waking on a schedule, an event or finished work, are
 designed in [26](26-bot-routines.md).
+
+Bots shown beside a section's own list (Sessions, Automations, Plan, Pull
+requests) are [28](28-bots-in-sections.md).
 
 The design's avatar photos are photographs of people; until there is a
 set we may use, an avatar is the bot's initials on one of the design's
@@ -613,7 +949,7 @@ eight colours (`AV_COLORS`).
   `bot_memory_fact`; from slice 2 `model_provider_credential`, `bot_turn`
   and `bot_message`; from slice 3 `bot_tool_permission` and
   `bot_approval`; for long conversations `bot_conversation_summary`; for
-  images `bot_attachment` (§3.1).
+  images `bot_attachment` (§3.1); for skills `bot_skill` (§4.1).
   Workspace-scoped like automations, with the `Bot`
   policy subject and the `bots:read` / `bots:write` scopes.
 - **Engines:** `packages/backend/agents` (`@oppenheimer/backend-agents`),
@@ -629,7 +965,8 @@ eight colours (`AV_COLORS`).
   conversation's summary); the same image can run it alone when turns need their own
   container. The daily `bot-attachment-retention` job sweeps images no
   message carries (§3.1). It owns `BotChainPolicy` and `BotQueueLanes` (§4.6).
-- **Console:** the rail's Employees entry opens `/bots`; a bot's chat is
+- **Console:** the rail's Employees entry opens `/bots`, and leads the
+  rail by default, so the console opens there (05); a bot's chat is
   `/bots/<id>`, its settings `/bots/<id>/settings/<tab>`; the provider
   keys are `/settings/model-providers`.
 
@@ -762,3 +1099,99 @@ The decisions it produced:
   one level deep), offered only the turn's read-only tools behind the
   owner's permissions, and what they say is data the bot checks. Children
   that change things wait until this lifecycle has proven itself.
+- 2026-10-26: **Grok is a fifth provider** (`xai`), on the OpenAI engine
+  pointed at xAI's Responses API, with a workspace's xAI API key stored
+  like OpenAI's (§2). It offers Grok 4.7, whose effort runs low to extra
+  high, and Grok Build 0.1, which xAI refuses an effort for, so its row
+  has none. It comes after OpenAI and before GLM in the fallback order.
+- 2026-10-28: **Grok's catalog row grew to xAI's current models**: Grok
+  4.7 (the default), 4.6 and 4.5 beside Grok Build 0.1, each with the
+  levels xAI's reasoning guide gives it (4.5 stops at high), and `high`
+  as the default level, as it is xAI's, where it was `medium`.
+- 2026-10-29: **a running `delegate` call's subagents show as they work**
+  (§4.7). "Running 3 subagents" said nothing until every child ended: the
+  runner now sends the bot's stream a frame with where each child is (its
+  task, waiting or running or how it ended, the tools it has called) each
+  time one moves, under the call's id, and the chat hangs a line per child
+  under the live line until the stored step replaces them. The frames are
+  best-effort like the streamed text; a chat opened mid-call fills in at
+  the next move.
+- 2026-10-28: **a bot shows images** (`show_image`, §4.7). A bot has no
+  files of its own, so what it shows is from the web, by the image's own
+  address, fetched through `web_fetch`'s guard and judged by its bytes; it
+  is stored as the chat's own image and drawn in the answer, opening in the
+  viewer your images open in.
+- 2026-10-29: **five things from Grok Bot's harness**
+  (`research/lessons-from-grok-bot.md` §9, rows 1 to 5): a long tool
+  answer keeps its end as well as its start (§4); the turn context says
+  how full the context was (§2); a reply commits, and a repeated ask
+  reports (§2); a failed turn has a kind that says whether a retry helps,
+  drawn in the chat (§2, §3); and `search_chat` (§4.1). With them the live
+  line shows a provider's retry wait and the trail how long a turn worked
+  (§3).
+- 2026-10-29: **a yes can reach past its call, to the thing it acts on.**
+  *Always allow for acme/docs* is a standing grant for one tool on one
+  repository, project or session, beside *Always allow* for the tool;
+  merging is never standing. It adds to 2026-10-15's "*Always allow* sets
+  the tool to Allow" rather than replacing it. From Grok Bot's per-path
+  grants (`research/lessons-from-grok-bot.md` §9 row 6).
+- 2026-10-29: **what a failing check came to is a record** a bot files
+  (`record_ci_findings`, §4.4), on the pull request's head and shown with
+  its checks, not prose in a chat. From Grok Bot's CI investigation (§9
+  row 14).
+- 2026-10-29: **a bot asks questions on a card** (`ask_user`, §3.2): a
+  card of its own (`bot_question`), answered or dismissed and never
+  approved, beside the approval card; one card of either kind is up at a
+  time. From Grok Bot's form cards (§9 row 12).
+- 2026-10-29: **a fact has a tier and a scope**: in mind or looked up,
+  the bot's or about the person and read by all their bots, still one row
+  owned by the bot that learned it (§4.1). It moves user memory out of §7.
+  From Grok Bot's memory (§9 row 11).
+- 2026-10-29: **the owner's rules are read by a reviewer on the bot's own
+  model, and it fails closed**: an ask rule beats an allow rule, and a
+  review that cannot say asks. It moves plain-language rules out of §7.
+  From Grok Bot's reviewer (§9 row 7).
+- 2026-10-31: **a no can stop the turn, and the card's choices are the
+  server's.** A card carries `availableDecisions`, chosen for its call, and
+  the decide endpoint accepts exactly those (`BOTS_030` otherwise). *Deny*
+  still queues the turn that tells the bot, so it carries on; the new
+  *Deny and stop* writes the decision as a line of the chat outside any
+  turn, queues none, and asks the asking turn to stop if it still runs.
+  A decision is broadcast on the bot's stream as `approval_resolved`, so
+  every open tab takes the card down at once and draws the decided line,
+  and a card raised while the bot's text is half a line waits for the line
+  to end (at most 600 ms). From Codex's `available_decisions`,
+  `serverRequest/resolved` and its deferred approval modals. It refines
+  2026-10-15's card, whose no always gave the bot a turn.
+- 2026-11-02: **a yes gets an answer before the work.** Approving a card
+  queued no turn until the call had run, so the chat stayed silent through
+  the call and then through a model call over the whole conversation. A
+  yes now queues a short "on it" turn at once (`stage: started`), the chat
+  shows the call running under it, and the report follows as its own turn
+  (`stage: finished`, drawn "Done: …"). Each yes costs one more model call,
+  over a cached prefix. It refines 2026-10-15's card, whose yes gave the
+  bot one turn, after the call.
+- 2026-10-31: **a chat that reconnects mid-turn loses no text** (§2,
+  Streaming). The stream dropped what was published while the browser's
+  connection was down, and the console drew a hole until the next stored
+  message. The block of text a turn is writing is now kept in Redis beside
+  the channel until it is stored or the turn ends, and the stream sends it
+  whole as a `snapshot` per running turn right after `ready` (Grok's
+  reconnect response: a snapshot first, then deltas). Each delta carries
+  its block (the blocks the turn stored before it) and the turn's `seq`, so
+  the console drops one it already holds, and draws a block until the
+  conversation holds that many of the turn's assistant messages with text
+  (Codex's rule that the completed item is authoritative). That replaced
+  the console's matching of streamed text against stored text.
+- 2026-11-02: **built-in commands, and `/goal` the first** (§4.1). The
+  owner asked for bots to come with basic skills like Claude Code's
+  `/goal`, and chose `/goal`, `/usage`, `/loop` or `/schedule`, `/plan`
+  and `/grill-me`, in that order. A built-in is product code, not a skill
+  row: a skill cannot start, judge or stop a goal. `/goal <condition>` sets
+  the bot's goal as the person, and a reviewer on the bot's own model
+  judges it after every turn (met, not met, impossible), as Claude Code's
+  evaluator does. It replaces 2026-10-29's "the bot ends it with
+  `end_goal`" as the only way a goal is found done, and its bound of 5
+  continuations, up to 10: a person's goal takes 20, a bot's 5 unless it
+  asks for up to 20, and the condition holds 2,000 characters, not 500.
+

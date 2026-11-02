@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { Inject } from '@nestjs/common';
 import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
+import { requireOrganization } from '@oppenheimer/backend-authz';
 import { AppError } from '@oppenheimer/backend-core';
 import { ProjectSettingsResolver } from '../../application/project-settings.resolver';
 import type { ProjectRepositoryPort } from '../../database/project.repository.port';
@@ -31,7 +32,7 @@ export class CreateProjectCommandHandler
 
   async execute({ scope, input }: CreateProjectCommand): Promise<ProjectEntity> {
     const { organizationId } = scope;
-    if (!organizationId) throw new AppError(ProjectErrors.NO_ACTIVE_ORGANIZATION);
+    requireOrganization(organizationId);
     if (isReservedProjectName(input.name)) {
       throw new AppError(ProjectErrors.NAME_RESERVED, {
         detail: `“${input.name}” would list as a second Unassigned project`,

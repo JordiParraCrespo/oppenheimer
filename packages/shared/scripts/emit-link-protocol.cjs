@@ -72,6 +72,9 @@ const INTEGER_TYPES = {
   'session.resize.cols': 'int',
   'session.resize.rows': 'int',
   'sessionSnapshot.stateSeconds': 'int',
+  'port.listing.ports[].port': 'int',
+  'port.open.port': 'int',
+  'session.watch.count': 'int',
 };
 
 /** Inline objects the runner already had a name for; the rest are `<Parent><Field>`. */
@@ -82,6 +85,8 @@ const NESTED_NAMES = {
   'session.create.launch': 'LaunchOptions',
   'session.create.checkouts[]': 'Checkout',
   'sessionSnapshot.windows[]': 'Window',
+  'port.listing.ports[]': 'ListedPort',
+  'whatsapp.messages.messages[]': 'WhatsappInbound',
 };
 
 /** Doc comments for the constants, which the schema carries as bare values. */

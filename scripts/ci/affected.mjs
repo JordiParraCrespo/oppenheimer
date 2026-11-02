@@ -18,11 +18,19 @@
  *   filters   `--filter=<name>` per package, empty when scope is "all"
  *   images    JSON array of apps whose Docker image to build
  *
+ *   lint_only JSON array of the changed files only the lint job reads
+ *   api_suites "false" when the API is affected only through copy it never
+ *             reads, so its integration and e2e suites have nothing to check
+ *
  *   node scripts/ci/affected.mjs                 # in CI: reads GITHUB_* env
  *   node scripts/ci/affected.mjs --base origin/main   # locally
+ *   node scripts/ci/affected.mjs --base origin/main --dirty   # with uncommitted work
+ *
+ * Which paths outside the packages count, and how, is `selection.mjs`.
  */
 import { execFileSync } from 'node:child_process';
 import { appendFileSync } from 'node:fs';
+import { apiSuitesNeeded, classify } from './selection.mjs';
 
 /** App directory under apps/ → the workspace package the image is built from. */
 const IMAGES = {
@@ -38,30 +46,6 @@ const IMAGES = {
   // oppenheimer:end runner
 };
 
-/**
- * Paths outside every package that can still break any of them. Turbo does
- * not attribute these to a package, so a change here means a full run.
- */
-const GLOBAL_PATHS = [
-  /^\.github\//,
-  /^docker\//,
-  /^\.dockerignore$/,
-  /^turbo\.json$/,
-  /^package\.json$/,
-  /^pnpm-lock\.yaml$/,
-  /^pnpm-workspace\.yaml$/,
-  /^\.npmrc$/,
-  /^\.env\.example$/,
-  /^biome\.json$/,
-  /^biome-plugins\//,
-  /^tsconfig\.base\.json$/,
-  /^scripts\//,
-  // oppenheimer:begin runner
-  /^go\.work/,
-  /^\.golangci\.yml$/,
-  // oppenheimer:end runner
-];
-
 function git(...args) {
   return execFileSync('git', args, { encoding: 'utf8' }).trim();
 }
@@ -72,6 +56,15 @@ function turboPackages(args, env = {}) {
     env: { ...process.env, TURBO_TELEMETRY_DISABLED: '1', ...env },
   });
   return JSON.parse(out).packages.items.map((p) => p.name);
+}
+
+/** The directories of the packages a filter selects. */
+function turboPaths(args) {
+  const out = execFileSync('pnpm', ['exec', 'turbo', 'ls', '--output=json', ...args], {
+    encoding: 'utf8',
+    env: { ...process.env, TURBO_TELEMETRY_DISABLED: '1' },
+  });
+  return JSON.parse(out).packages.items.map((p) => p.path);
 }
 
 function baseRef() {
@@ -94,19 +87,39 @@ function baseRef() {
 }
 
 const base = baseRef();
+const dirty = process.argv.includes('--dirty');
 let scope = 'all';
 let reason = 'push to the default branch';
 let packages;
+let lintOnly = [];
+let apiSuites = true;
+
+/** The files the branch changes: committed, and with `--dirty` uncommitted and untracked too. */
+function changedFiles() {
+  if (!dirty) return git('diff', '--name-only', `${base}...HEAD`).split('\n').filter(Boolean);
+  const since = git('merge-base', base, 'HEAD');
+  const tracked = git('diff', '--name-only', since).split('\n');
+  const untracked = git('ls-files', '--others', '--exclude-standard').split('\n');
+  return [...new Set([...tracked, ...untracked])].filter(Boolean);
+}
 
 if (base) {
-  const changed = git('diff', '--name-only', `${base}...HEAD`).split('\n').filter(Boolean);
-  const global = changed.filter((file) => GLOBAL_PATHS.some((re) => re.test(file)));
-  if (global.length > 0) {
+  const changed = changedFiles();
+  const sorted = classify(changed);
+  lintOnly = sorted.lintOnly;
+  if (sorted.global.length > 0) {
+    const { global } = sorted;
     reason = `a change outside every package: ${global.slice(0, 5).join(', ')}${global.length > 5 ? ', …' : ''}`;
   } else {
     scope = 'affected';
     reason = `${changed.length} changed file(s) since ${base}`;
+    // Turborepo counts uncommitted files as changed whatever TURBO_SCM_HEAD says.
     packages = turboPackages(['--affected'], { TURBO_SCM_BASE: base, TURBO_SCM_HEAD: 'HEAD' });
+    packages = [...new Set([...packages, ...sorted.owners])];
+    if (packages.includes('@oppenheimer/api')) {
+      const apiDirs = turboPaths(['--filter=@oppenheimer/api...']);
+      apiSuites = apiSuitesNeeded(changed, apiDirs);
+    }
   }
 }
 if (scope === 'all') packages = turboPackages([]);
@@ -122,12 +135,17 @@ const outputs = {
   packages: JSON.stringify(packages),
   filters,
   images: JSON.stringify(images),
+  lint_only: JSON.stringify(lintOnly),
+  api_suites: String(apiSuites),
 };
 
 const summary = [
   `**Scope:** ${scope} (${reason})`,
   `**Packages (${packages.length}):** ${packages.join(', ') || 'none'}`,
   `**Images:** ${images.join(', ') || 'none'}`,
+  ...(apiSuites
+    ? []
+    : ['**API suites:** skipped; the API is affected only through copy it never reads']),
 ].join('\n\n');
 console.log(summary);
 

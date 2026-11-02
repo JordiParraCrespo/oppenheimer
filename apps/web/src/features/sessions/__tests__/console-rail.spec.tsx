@@ -57,8 +57,8 @@ describe('ConsoleRail', () => {
     expect(screen.getAllByRole('link').map((link) => link.getAttribute('aria-label'))).toEqual([
       'nav.plan',
       'nav.pullRequests',
-      'nav.sessions',
       'nav.employees',
+      'nav.sessions',
       'nav.automations',
     ]);
   });

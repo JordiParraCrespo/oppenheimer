@@ -9,6 +9,7 @@ import { describe, expect, it, vi } from 'vitest';
 import type { BotEngineEvent, BotEngineTool, BotTurnRequest } from '../../bot-engine';
 import { OpenAiBotEngine } from '../openai-bot-engine';
 import type { OpenAiStreamEvent } from '../openai-events';
+import { XaiBotEngine } from '../xai-bot-engine';
 
 /** A tool as the mocked `tool()` keeps it: the options the adapter passed. */
 interface ToolOptions {
@@ -167,7 +168,7 @@ describe('OpenAiBotEngine', () => {
       { type: 'text.delta', text: 'Hel' },
       { type: 'text.delta', text: 'lo' },
       { type: 'text.done', text: 'Hello' },
-      { type: 'usage', inputTokens: 14, outputTokens: 3 },
+      { type: 'usage', inputTokens: 14, outputTokens: 3, context: { tokens: 4, window: null } },
       { type: 'done', reason: 'completed' },
     ]);
   });
@@ -242,6 +243,32 @@ describe('OpenAiBotEngine', () => {
       },
     ]);
     expect(events.at(-1)).toEqual({ type: 'done', reason: 'completed' });
+  });
+
+  // A tool that cuts its answer by length can split an emoji, and the SDK
+  // sends the lone half as an escape xAI's parser refuses: the whole turn
+  // failed with a 400 on one character ("unexpected end of hex escape").
+  it('mends a character a tool cut in two before the model or the chat reads it', async () => {
+    const cutting: BotEngineTool = {
+      name: 'get_pull_request',
+      description: 'A pull request',
+      inputSchema: { type: 'object', properties: {} },
+      run: async () => ({ content: '🚀 shipped 🚀'.slice(0, -1) }),
+    };
+    let modelRead: string | undefined;
+    scripted(async function* (seen) {
+      yield toolCalled('call_1', 'get_pull_request', '{}');
+      modelRead = await execute(seen.agent.tools[0], {}, 'call_1');
+      yield toolOutput('call_1', 'get_pull_request', modelRead);
+      yield message('Done');
+    });
+
+    const events = await collect(new XaiBotEngine().run(request({ tools: [cutting] })));
+
+    expect(modelRead).toBe('🚀 shipped \uFFFD');
+    expect(events).toContainEqual(
+      expect.objectContaining({ type: 'tool.finished', output: '🚀 shipped \uFFFD' }),
+    );
   });
 
   it('hands back what a call made on its own end, never to the model', async () => {
@@ -394,6 +421,48 @@ describe('OpenAiBotEngine', () => {
     expect(done).not.toHaveProperty('rateLimit');
   });
 
+  // The chat says whether sending it again can help (`lessons-from-grok-bot.md`
+  // §9, row 4): a spent quota or a refused key never passes on a retry, and a
+  // spent quota must not be waited out as a rate limit either.
+  it.each([
+    [401, undefined, 'credential'],
+    [403, undefined, 'credential'],
+    [402, undefined, 'usage_limit'],
+    [429, 'insufficient_quota', 'usage_limit'],
+    [400, undefined, 'refused'],
+    [404, 'model_not_found', 'refused'],
+    [503, undefined, 'unavailable'],
+    [418, undefined, 'other'],
+  ])('reads a %i (%s) as a %s failure', async (status, code, failure) => {
+    scripted(async function* () {
+      yield textDelta('Hi');
+      throw Object.assign(new Error(`${status} refused`), { status, code });
+    });
+
+    const done = (await collect(new OpenAiBotEngine().run(request()))).at(-1);
+
+    expect(done).toMatchObject({ type: 'done', reason: 'failed', failure });
+    expect(done).not.toHaveProperty('rateLimit');
+  });
+
+  // xAI answers a body it cannot parse with a 400; calling that a refusal
+  // told the person to change their message or model, which cannot help.
+  it('reads a 400 that could not parse the request as our failure, not a refusal', async () => {
+    scripted(async function* () {
+      yield textDelta('Hi');
+      throw Object.assign(
+        new Error(
+          '400 "Failed to parse the request body as JSON: input[98].output: unexpected end of hex escape at line 1 column 147905"',
+        ),
+        { status: 400 },
+      );
+    });
+
+    const done = (await collect(new XaiBotEngine().run(request()))).at(-1);
+
+    expect(done).toMatchObject({ type: 'done', reason: 'failed', failure: 'other' });
+  });
+
   it('fails when the run cannot start', async () => {
     sdk.state.run = () => {
       throw new Error('connect ECONNREFUSED');
@@ -401,7 +470,9 @@ describe('OpenAiBotEngine', () => {
 
     const events = await collect(new OpenAiBotEngine().run(request()));
 
-    expect(events).toEqual([{ type: 'done', reason: 'failed', error: 'connect ECONNREFUSED' }]);
+    expect(events).toEqual([
+      { type: 'done', reason: 'failed', error: 'connect ECONNREFUSED', failure: 'unavailable' },
+    ]);
   });
 
   it('cancels promptly on abort and passes the signal to the SDK', async () => {
@@ -422,5 +493,19 @@ describe('OpenAiBotEngine', () => {
       { type: 'done', reason: 'cancelled' },
     ]);
     expect(run.seen?.options.signal.aborted).toBe(true);
+  });
+  it('sends an xAI turn to xAI’s API with its effort, unless the request names another endpoint', async () => {
+    const run = scripted(async function* () {});
+
+    await collect(new XaiBotEngine().run(request({ provider: 'xai', effort: 'high' })));
+    expect(run.seen).toMatchObject({
+      provider: { apiKey: KEY, baseURL: 'https://api.x.ai/v1' },
+      agent: { modelSettings: { reasoning: { effort: 'high' } } },
+    });
+
+    await collect(
+      new XaiBotEngine().run(request({ provider: 'xai', baseUrl: 'https://example.test/v1' })),
+    );
+    expect(run.seen?.provider.baseURL).toBe('https://example.test/v1');
   });
 });

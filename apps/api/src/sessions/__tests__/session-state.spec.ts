@@ -296,7 +296,12 @@ describe('the launch the fold projects', () => {
       }),
     );
 
-    expect(fold.launch).toEqual({ model: 'opus', permission: 'auto', effort: 'high' });
+    expect(fold.launch).toEqual({
+      model: 'opus',
+      permission: 'auto',
+      effort: 'high',
+      environment: null,
+    });
     // The request is also what starts the session, and stating a launch must not
     // have cost it that.
     expect(fold.state).toBe('starting');
@@ -305,7 +310,26 @@ describe('the launch the fold projects', () => {
   it('reads a request with no launch as the level that asks', () => {
     const fold = foldSessionEvent(INITIAL_SESSION_FOLD, entry(SESSION_EVENT_KINDS.REQUESTED, {}));
 
-    expect(fold.launch).toEqual({ model: null, permission: 'ask', effort: null });
+    expect(fold.launch).toEqual({
+      model: null,
+      permission: 'ask',
+      effort: null,
+      environment: null,
+    });
+  });
+
+  // A Codex cloud session's environment is part of the launch, so a create
+  // sent again after a reconnect starts the task where the person picked.
+  it('takes a Codex cloud environment from the request', () => {
+    const fold = foldSessionEvent(
+      INITIAL_SESSION_FOLD,
+      entry(SESSION_EVENT_KINDS.REQUESTED, {
+        agent: 'codex',
+        launch: { environment: 'e_6845a1b2c3d4' },
+      }),
+    );
+
+    expect(fold.launch.environment).toBe('e_6845a1b2c3d4');
   });
 
   it('refuses a permission level outside the union rather than storing it', () => {
@@ -346,7 +370,12 @@ describe('the launch the fold projects', () => {
       entry(SESSION_EVENT_KINDS.STOPPED),
     ]);
 
-    expect(fold.launch).toEqual({ model: 'sonnet', permission: 'full', effort: 'max' });
+    expect(fold.launch).toEqual({
+      model: 'sonnet',
+      permission: 'full',
+      effort: 'max',
+      environment: null,
+    });
   });
 });
 
@@ -363,7 +392,180 @@ describe('launchPermissionFor', () => {
   });
 
   it('reads an agent this build does not know as one that asks', () => {
-    expect(launchPermissionFor('cursor', null)).toBe('ask');
+    expect(launchPermissionFor('devin', null)).toBe('ask');
     expect(launchPermissionFor(null, 'full')).toBe('full');
+  });
+
+  it('records no level for a vendor’s cloud agent, which runs under the vendor’s rules', () => {
+    expect(launchPermissionFor('cursor', 'full')).toBeNull();
+  });
+});
+
+/**
+ * What the agent waits on the person for (`29-inbox.md` slice 4). The Inbox shows
+ * it and answers it, so a decision the agent no longer waits on must never stay:
+ * an answer typed into it would land on whatever the agent asks next.
+ */
+describe('the decision the fold keeps pending', () => {
+  const question = {
+    kind: 'question',
+    id: 'toolu_01',
+    questions: [
+      {
+        question: 'Which scope?',
+        multiSelect: false,
+        options: [{ label: 'Tokens' }, { label: 'Everything', description: 'All of it' }],
+      },
+    ],
+  };
+  const permission = {
+    kind: 'permission',
+    id: 'perm-abc',
+    title: 'Do you want to proceed?',
+    detail: 'Bash command\npnpm test',
+    options: [{ label: 'Yes' }, { label: 'No' }],
+  };
+  const blockedOn = (decision: unknown) =>
+    foldSessionLog([
+      entry(SESSION_EVENT_KINDS.REQUESTED),
+      entry(SESSION_EVENT_KINDS.STARTED),
+      entry(SESSION_EVENT_KINDS.AGENT_OBSERVED, { state: 'blocked' }),
+      entry(SESSION_EVENT_KINDS.AGENT_DECISION, { decision }),
+    ]);
+
+  it('keeps the question the runner reported, absent texts read as null', () => {
+    expect(blockedOn(question).pendingDecision).toEqual({
+      kind: 'question',
+      id: 'toolu_01',
+      questions: [
+        {
+          header: null,
+          question: 'Which scope?',
+          multiSelect: false,
+          options: [
+            { label: 'Tokens', description: null },
+            { label: 'Everything', description: 'All of it' },
+          ],
+        },
+      ],
+    });
+    expect(blockedOn(permission).pendingDecision).toMatchObject({ id: 'perm-abc' });
+  });
+
+  it('clears it on the runner’s own clear, and keeps nothing it cannot read', () => {
+    const fold = blockedOn(question);
+    expect(
+      foldSessionEvent(fold, entry(SESSION_EVENT_KINDS.AGENT_DECISION, { decision: null }))
+        .pendingDecision,
+    ).toBeNull();
+    expect(blockedOn({ kind: 'question', id: 'x', questions: [] }).pendingDecision).toBeNull();
+  });
+
+  it('clears the decision an answer names, and only that one', () => {
+    const fold = blockedOn(question);
+    expect(
+      foldSessionEvent(fold, entry(SESSION_EVENT_KINDS.DECISION_ANSWERED, { id: 'toolu_01' }))
+        .pendingDecision,
+    ).toBeNull();
+    expect(
+      foldSessionEvent(fold, entry(SESSION_EVENT_KINDS.DECISION_ANSWERED, { id: 'toolu_00' }))
+        .pendingDecision,
+    ).not.toBeNull();
+  });
+
+  it('clears it once the agent is anything but blocked, and keeps it while it stays blocked', () => {
+    const fold = blockedOn(permission);
+    expect(
+      foldSessionEvent(fold, entry(SESSION_EVENT_KINDS.AGENT_OBSERVED, { state: 'blocked' }))
+        .pendingDecision,
+    ).not.toBeNull();
+    expect(
+      foldSessionEvent(fold, entry(SESSION_EVENT_KINDS.AGENT_OBSERVED, { state: 'working' }))
+        .pendingDecision,
+    ).toBeNull();
+  });
+
+  it('clears it when the session stops, fails, closes or restarts', () => {
+    const fold = blockedOn(permission);
+    for (const kind of [
+      SESSION_EVENT_KINDS.STOPPED,
+      SESSION_EVENT_KINDS.FAILED,
+      SESSION_EVENT_KINDS.CLOSED,
+      SESSION_EVENT_KINDS.RESTARTED,
+    ]) {
+      expect(foldSessionEvent(fold, entry(kind)).pendingDecision).toBeNull();
+    }
+  });
+
+  it('takes no decision on a stopped session', () => {
+    const stopped = foldSessionEvent(blockedOn(null), entry(SESSION_EVENT_KINDS.STOPPED));
+    expect(
+      foldSessionEvent(stopped, entry(SESSION_EVENT_KINDS.AGENT_DECISION, { decision: question }))
+        .pendingDecision,
+    ).toBeNull();
+  });
+});
+
+describe('the agent report the fold keeps', () => {
+  const observed = (payload: unknown) => entry(SESSION_EVENT_KINDS.AGENT_OBSERVED, payload);
+  const blockedByItsOwnWord = foldSessionLog([
+    entry(SESSION_EVENT_KINDS.REQUESTED),
+    entry(SESSION_EVENT_KINDS.STARTED),
+    observed({
+      state: 'blocked',
+      program: { state: 'blocked', kind: 'permission', message: 'approve Bash: pnpm test' },
+    }),
+  ]);
+
+  it('keeps what the agent said about itself, absent fields read as null', () => {
+    expect(blockedByItsOwnWord.agentReport).toEqual({
+      state: 'blocked',
+      kind: 'permission',
+      progress: null,
+      message: 'approve Bash: pnpm test',
+      title: null,
+    });
+    // The error the state reads as done is kept as the agent said it.
+    const failed = foldSessionEvent(
+      blockedByItsOwnWord,
+      observed({ state: 'done', program: { state: 'error', message: 'overloaded' } }),
+    );
+    expect(failed.agentReport).toMatchObject({ state: 'error', message: 'overloaded' });
+  });
+
+  it('drops it when an observation came from the screen, or says what this build cannot read', () => {
+    expect(
+      foldSessionEvent(blockedByItsOwnWord, observed({ state: 'blocked' })).agentReport,
+    ).toBeNull();
+    expect(
+      foldSessionEvent(
+        blockedByItsOwnWord,
+        observed({ state: 'working', program: { state: 'dreaming' } }),
+      ).agentReport,
+    ).toBeNull();
+  });
+
+  it('follows a new message while the state stays the same, without restarting the clock', () => {
+    const again = foldSessionEvent(
+      blockedByItsOwnWord,
+      observed({
+        state: 'blocked',
+        program: { state: 'blocked', kind: 'question', message: 'which one?' },
+      }),
+    );
+    expect(again.agentReport).toMatchObject({ kind: 'question', message: 'which one?' });
+    expect(again.lastObservedState).toBe('blocked');
+    expect(again.observedSince).not.toBeNull();
+  });
+
+  it('clears it when the session stops, fails, closes or restarts', () => {
+    for (const kind of [
+      SESSION_EVENT_KINDS.STOPPED,
+      SESSION_EVENT_KINDS.FAILED,
+      SESSION_EVENT_KINDS.CLOSED,
+      SESSION_EVENT_KINDS.RESTARTED,
+    ]) {
+      expect(foldSessionEvent(blockedByItsOwnWord, entry(kind)).agentReport).toBeNull();
+    }
   });
 });

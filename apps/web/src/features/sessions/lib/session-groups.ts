@@ -3,8 +3,8 @@ import type { TFunction } from 'i18next';
 
 /**
  * The sidebar's groups: one per project, in the order given (the reader's,
- * `orderProjects`), each holding the sessions that belong to it — so an empty project is still a group, with the
- * empty row inside it, and a session whose project the list does not hold
+ * `orderProjects`), each holding the sessions that belong to it — so an empty project is still a group,
+ * which `shownGroups` leaves undrawn, and a session whose project the list does not hold
  * (archived meanwhile, or not yet loaded) goes last under no header rather
  * than vanishing.
  */
@@ -33,18 +33,22 @@ export function groupByProject(
 }
 
 /**
- * The groups worth drawing. While a filter or the search narrows the list, a
- * group left with no session is noise, so it goes; the one exception is the
- * project the project filter picked, which stays to say it has no match.
+ * The groups worth drawing: a project with no session is noise, so it goes.
+ * A group stays while one of `occupied`'s sessions is its own, so the group a
+ * drag lifts its last session out of holds still under the pointer, and the
+ * project the project filter picked stays to say it has no match. A project
+ * whose only sessions are pinned is not drawn: they are drawn above the
+ * projects, and are not in `occupied`.
  */
 export function shownGroups<T extends ProjectGroup>(
   groups: readonly T[],
-  narrowed: boolean,
+  occupied: ReadonlySet<string>,
   pickedProject: string | null,
 ): T[] {
-  if (!narrowed) return [...groups];
   return groups.filter(
-    (group) => group.sessions.length > 0 || (group.project && group.project.id === pickedProject),
+    (group) =>
+      group.sessions.length > 0 ||
+      (group.project && (occupied.has(group.project.id) || group.project.id === pickedProject)),
   );
 }
 
@@ -56,6 +60,35 @@ export function emptyMessage(t: TFunction, narrowed: boolean, query: string): st
   const term = query.trim();
   if (!narrowed) return t('sessions.sidebar.emptyProject');
   return term ? t('sessions.sidebar.noMatches', { query: term }) : t('sessions.filters.noMatches');
+}
+
+/**
+ * What the sidebar says in place of its list, or null when it draws one: no
+ * project at all, nothing that matches the search or the filters, every
+ * project hidden, or no session in any project.
+ */
+export function emptyListMessage(
+  t: TFunction,
+  {
+    groups,
+    shown,
+    pinned,
+    hiddenCount,
+    narrowed,
+    query,
+  }: {
+    groups: readonly ProjectGroup[];
+    shown: readonly ProjectGroup[];
+    pinned: readonly SessionEntity[];
+    hiddenCount: number;
+    narrowed: boolean;
+    query: string;
+  },
+): string | null {
+  if (groups.length === 0 && hiddenCount === 0) return t('sessions.sidebar.empty');
+  if (shown.length > 0 || pinned.length > 0) return null;
+  if (narrowed) return emptyMessage(t, true, query);
+  return groups.length === 0 ? t('sessions.sidebar.allHidden') : t('sessions.sidebar.noSessions');
 }
 
 /**

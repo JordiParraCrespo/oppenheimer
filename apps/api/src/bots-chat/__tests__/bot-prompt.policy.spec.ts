@@ -32,6 +32,19 @@ describe('composeBotSystemPrompt', () => {
     expect(prompt).toContain('- Staging is devbox.');
   });
 
+  it('adds what it knows about the person under its own heading, and how many facts are left to recall', () => {
+    const prompt = composeBotSystemPrompt({
+      ...base,
+      personFacts: ['Prefers squash merges.'],
+      factsToRecall: 3,
+    });
+    expect(prompt).toContain(
+      '# What you know about the person (shared by all their bots)\n\n- Prefers squash merges.',
+    );
+    expect(prompt).toContain('You also keep 3 facts not shown here');
+    expect(composeBotSystemPrompt(base)).not.toMatch(/about the person|You also keep/);
+  });
+
   it('walks a new bot through learning its job while INSTRUCTIONS.md is empty, and drops it once written', () => {
     expect(composeBotSystemPrompt(base)).toContain('# Getting started');
     const written = composeBotSystemPrompt({ ...base, instructions: 'Review every PR.' });
@@ -99,6 +112,17 @@ describe('composeBotSystemPrompt', () => {
     expect(bare).toContain('- Answer from what you know and what is in this chat.');
   });
 
+  // From Grok Bot (`lessons-from-grok-bot.md` §9, row 3): a bare "On it" left
+  // the person not knowing what was taken on or when to look again, and a
+  // repeated ask started a second session for the same work.
+  it('asks every reply to commit, and a repeated ask to report rather than start again', () => {
+    const prompt = composeBotSystemPrompt(base);
+    expect(prompt).toContain('A reply commits to something');
+    expect(prompt).toContain('"On it" or "Sure" alone is not a reply');
+    expect(prompt).toContain('is the same errand, not a new one');
+    expect(prompt).toContain('check what you started');
+  });
+
   it('forbids asking for secrets and treats tool text as data', () => {
     const prompt = composeBotSystemPrompt(base);
     expect(prompt).toContain('Never ask anyone to paste a token');
@@ -132,6 +156,66 @@ describe('events from Oppenheimer', () => {
     const prompt = botTurnPrompt(event);
     expect(prompt).toContain('Ana denied: Start Claude Code');
     expect(prompt).toContain('do not try the same thing another way');
+  });
+
+  // What breaks this: the turn a yes opens reporting a result it has not got,
+  // or saying nothing and leaving the person waiting through the call.
+  it('asks the turn a yes opens to say it is on it, and the one after to report how it went', () => {
+    const approval = {
+      kind: 'approval' as const,
+      outcome: 'approved' as const,
+      tool: 'archive_mail',
+      summary: 'Archive 25 threads',
+      sessionId: null,
+      approvalId: 'a-1',
+    };
+    const started = botTurnPrompt({
+      role: 'event',
+      content: 'Ana approved: Archive 25 threads\nIt is running now.',
+      event: { ...approval, stage: 'started' },
+    });
+    expect(started).toContain('that you are on it');
+    expect(started).toContain('do not call any tool');
+    expect(started).not.toContain('what came of the approval card');
+    const finished = botTurnPrompt({
+      role: 'event',
+      content: 'The approved call finished: Archive 25 threads\nIt ran: Archived 25.',
+      event: { ...approval, stage: 'finished' },
+    });
+    expect(finished).toContain('what came of the approval card');
+  });
+
+  // What breaks this: a routine's turn told to report on "the approval card
+  // you raised", which it never raised.
+  it('reads a routine run as the note it is, and a followed session by its state', () => {
+    const routine = botTurnPrompt({
+      role: 'event',
+      content: 'Your routine "Digest" is running now',
+      event: {
+        kind: 'routine',
+        activity: 'ran',
+        automationId: 'a-1',
+        runId: 'r-1',
+        name: 'Digest',
+        reason: null,
+      },
+    });
+    expect(routine).toContain('Your routine "Digest" is running now');
+    expect(routine).not.toContain('approval card');
+    const session = botTurnPrompt({
+      role: 'event',
+      content: 'its task #1 failed.',
+      event: {
+        kind: 'session',
+        subscriptionId: 's-1',
+        sessionId: 'session-1',
+        sessionName: 'x',
+        turn: 1,
+        state: 'failed',
+      },
+    });
+    expect(session).toContain('tell the person it failed');
+    expect(session).not.toContain('approval card');
   });
 
   it('asks a turn your message opened exactly what you wrote', () => {

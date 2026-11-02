@@ -1,6 +1,9 @@
+import type { QueryBus } from '@nestjs/cqrs';
 import { emptyScope } from '@oppenheimer/backend-authz';
+import { AppError } from '@oppenheimer/backend-core';
 import { Some } from 'oxide.ts';
-import type { AutomationPlanFactory } from '../../../application/automation-plan.factory';
+import { MailErrors } from '../../../../mail/domain/mail.errors';
+import { AutomationPlanFactory } from '../../../application/automation-plan.factory';
 import { BotRoutineResolver } from '../../../application/bot-routine.resolver';
 import type { AutomationRepositoryPort } from '../../../database/automation.repository.port';
 import { AutomationEntity } from '../../../domain/automation.entity';
@@ -13,10 +16,11 @@ import { SaveBotRoutineCommandHandler } from '../save-bot-routine.command-handle
  * when takes the scopes of the credential that made it, so a routine never
  * runs wider than its last editor; a pause or a resume leaves them alone.
  * What breaks this: an edit through a narrow API token leaving the routine on
- * a browser session's unlimited reach, or a pause from the console widening a
- * routine a token saved. The column round trip is the integration suite's.
+ * a browser session's unlimited reach, a pause from the console widening a
+ * routine a token saved, or a routine set to watch a Gmail account its owner
+ * does not hold. The column round trip is the integration suite's.
  */
-function setup() {
+function setup(mailAccount: () => Promise<unknown> = async () => ({ isActive: true })) {
   const routine = AutomationEntity.createRoutine({
     organizationId: 'org-1',
     ownerUserId: 'owner-1',
@@ -38,9 +42,10 @@ function setup() {
     findOneById: vi.fn(async () => Some(routine)),
     save,
   } as unknown as AutomationRepositoryPort;
+  const queryBus = { execute: vi.fn(mailAccount) } as unknown as QueryBus;
   const handler = new SaveBotRoutineCommandHandler(
     automations,
-    {} as unknown as AutomationPlanFactory,
+    new AutomationPlanFactory({} as never, {} as never, {} as never, queryBus),
     new BotRoutineResolver(automations),
   );
   const saveWith = (
@@ -74,5 +79,49 @@ describe('SaveBotRoutineCommandHandler', () => {
     await saveWith({ enabled: false }, null);
     expect(routine.isPaused).toBe(true);
     expect(routine.target).toMatchObject({ credentialScopes: ['automations:write'] });
+  });
+
+  it('refuses to watch a Gmail account the owner does not hold, and saves nothing', async () => {
+    const { save, saveWith } = setup(async () => {
+      throw new AppError(MailErrors.GMAIL_NOT_CONNECTED);
+    });
+    await expect(
+      saveWith(
+        {
+          triggers: [
+            {
+              source: 'gmail',
+              event: 'mail_received',
+              connectionId: '0d9f6a4e-0000-4000-8000-000000000001',
+              query: null,
+            },
+          ],
+        },
+        null,
+      ),
+    ).rejects.toMatchObject({ code: 'AUTOMATIONS_009' });
+    expect(save).not.toHaveBeenCalled();
+  });
+
+  it('lets a failure other than a missing account surface as itself, not as AUTOMATIONS_009', async () => {
+    const { save, saveWith } = setup(async () => {
+      throw new Error('the database went away');
+    });
+    await expect(
+      saveWith(
+        {
+          triggers: [
+            {
+              source: 'gmail',
+              event: 'mail_received',
+              connectionId: '0d9f6a4e-0000-4000-8000-000000000001',
+              query: null,
+            },
+          ],
+        },
+        null,
+      ),
+    ).rejects.toThrow('the database went away');
+    expect(save).not.toHaveBeenCalled();
   });
 });

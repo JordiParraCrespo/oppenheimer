@@ -48,6 +48,22 @@ describe('BotTurnEntity.end', () => {
     turn.end('cancelled', new Date(), { error: 'ignored' });
     expect(turn.error).toBeNull();
   });
+
+  // The chat says from the kind whether sending it again helps: a turn whose
+  // worker died runs fine when sent again, and only a failed turn has a kind.
+  it('keeps the kind of failure only on a failed turn, and marks an abandoned turn interrupted', () => {
+    const failed = running();
+    failed.end('failed', new Date(), { error: 'quota', failure: 'usage_limit' });
+    expect(failed.failure).toBe('usage_limit');
+
+    const cancelled = running();
+    cancelled.end('cancelled', new Date(), { failure: 'refused' });
+    expect(cancelled.failure).toBeNull();
+
+    const abandoned = running();
+    abandoned.abandon(new Date());
+    expect(abandoned.failure).toBe('interrupted');
+  });
 });
 
 describe('BotTurnEntity, between bots', () => {
@@ -152,5 +168,23 @@ describe('BotTurnEntity, between bots', () => {
     expect(() =>
       BotTurnEntity.queueFromBot(orphan, { botId: randomUUID(), ...engine, replyRequested: false }),
     ).toThrow('no longer has an account');
+  });
+});
+
+describe('BotTurnEntity.queue as a steer', () => {
+  it('lets only a message of yours steer, never a routine run', () => {
+    const steer = {
+      organizationId: randomUUID(),
+      botId: randomUUID(),
+      requestedByUserId: randomUUID(),
+      provider: 'glm' as const,
+      model: 'glm-5.3',
+      effort: null,
+      steer: true,
+    };
+    expect(BotTurnEntity.queue(steer).steer).toBe(true);
+    expect(() => BotTurnEntity.queue({ ...steer, origin: 'routine' })).toThrow(
+      'Only a message of yours steers',
+    );
   });
 });

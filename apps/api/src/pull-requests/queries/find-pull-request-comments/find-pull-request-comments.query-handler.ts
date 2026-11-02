@@ -1,7 +1,7 @@
 import { Inject } from '@nestjs/common';
 import { type IQueryHandler, QueryHandler } from '@nestjs/cqrs';
-import type { PullRequestAccessPort } from '../../../github/application/pull-request-access.port';
-import { PULL_REQUEST_ACCESS } from '../../../github/github.di-tokens';
+import type { PullRequestReadPort } from '../../../github/application/pull-request-read.port';
+import { PULL_REQUEST_READS } from '../../../github/github.di-tokens';
 import type { PullRequestCommentDto } from '../../dtos/pull-request.response.dto';
 import { PullRequestMapper } from '../../pull-request.mapper';
 import { FindPullRequestCommentsQuery } from './find-pull-request-comments.query';
@@ -12,8 +12,8 @@ export class FindPullRequestCommentsQueryHandler
   implements IQueryHandler<FindPullRequestCommentsQuery, PullRequestCommentDto[]>
 {
   constructor(
-    @Inject(PULL_REQUEST_ACCESS)
-    private readonly access: PullRequestAccessPort,
+    @Inject(PULL_REQUEST_READS)
+    private readonly reads: PullRequestReadPort,
     private readonly mapper: PullRequestMapper,
   ) {}
 
@@ -21,7 +21,7 @@ export class FindPullRequestCommentsQueryHandler
     scope,
     address,
   }: FindPullRequestCommentsQuery): Promise<PullRequestCommentDto[]> {
-    const comments = await this.access.reviewComments(scope, address);
+    const comments = await this.reads.reviewComments(scope, address);
     return comments.map((comment) => this.mapper.toComment(comment));
   }
 }

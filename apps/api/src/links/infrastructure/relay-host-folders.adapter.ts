@@ -52,6 +52,8 @@ export class RelayHostFoldersAdapter implements HostFoldersPort {
     if (reply.type === 'command.failed') {
       return { kind: 'failed', code: reply.code, detail: reply.detail };
     }
+    // A reply is matched by command id, so another kind is a runner bug.
+    if (reply.type !== 'fs.listing') return { kind: 'failed', code: 'UNEXPECTED_REPLY' };
     const { type: _type, commandId: _commandId, ...listing } = reply;
     return { kind: 'listed', listing };
   }

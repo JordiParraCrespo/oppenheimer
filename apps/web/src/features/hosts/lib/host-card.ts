@@ -18,13 +18,15 @@ export function cardStatusOf(host: HostEntity): HostCardStatus {
  * 32 vCPU · eu-west · runner 0.14.2" — each one present only when it is
  * known. The frame's third slot is where the host is: the city and country
  * code the API placed its connecting address in ("Madrid, ES", DB-IP Lite),
- * decided 2026-09-26 in place of a cloud region no host reports. `kind` says
- * how to word it.
+ * decided 2026-09-26 in place of a cloud region no host reports. Last, the
+ * claude.ai account the host's `claude` is signed in as. `kind` says how to
+ * word it.
  */
 export type MetaPart =
   | { kind: 'text'; value: string }
   | { kind: 'cpus'; count: number }
-  | { kind: 'runner'; version: string };
+  | { kind: 'runner'; version: string }
+  | { kind: 'claude'; account: string };
 
 export function metaPartsOf(host: HostEntity): MetaPart[] {
   const { details } = host;
@@ -35,5 +37,7 @@ export function metaPartsOf(host: HostEntity): MetaPart[] {
   const place = [details.city, details.countryCode].filter(Boolean).join(', ');
   if (place) parts.push({ kind: 'text', value: place });
   if (host.runnerVersion) parts.push({ kind: 'runner', version: host.runnerVersion });
+  // The account a Claude Code cloud session started here runs on.
+  if (details.claudeAccount) parts.push({ kind: 'claude', account: details.claudeAccount });
   return parts;
 }

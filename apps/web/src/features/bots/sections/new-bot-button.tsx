@@ -12,7 +12,8 @@ import { useNewBot } from '@/features/bots/hooks/use-create-bot';
 /**
  * New bot, the plus in the Employees sidebar's brand row: a blank bot, then
  * its chat. A refusal opens under the plus, with Try again, since the row has
- * no room to say it in.
+ * no room to say it in. A section's Bots heading makes one from its own menu
+ * (`SectionBotsMenu`).
  */
 export function NewBotButton() {
   const { t } = useTranslation();

@@ -7,6 +7,7 @@ export const TOKENS = {
   AutomationsRepository: Symbol.for('AutomationsRepository'),
   BotsRepository: Symbol.for('BotsRepository'),
   HostsRepository: Symbol.for('HostsRepository'),
+  InboxRepository: Symbol.for('InboxRepository'),
   InstallationsRepository: Symbol.for('InstallationsRepository'),
   OrganizationsRepository: Symbol.for('OrganizationsRepository'),
   OrganizationsService: Symbol.for('OrganizationsService'),
@@ -19,5 +20,8 @@ export const TOKENS = {
   LocalTerminals: Symbol.for('LocalTerminals'),
   TasksRepository: Symbol.for('TasksRepository'),
   CalendarRepository: Symbol.for('CalendarRepository'),
+  CloudAgentsRepository: Symbol.for('CloudAgentsRepository'),
+  MailRepository: Symbol.for('MailRepository'),
+  WhatsappRepository: Symbol.for('WhatsappRepository'),
   VoiceRepository: Symbol.for('VoiceRepository'),
 } as const;

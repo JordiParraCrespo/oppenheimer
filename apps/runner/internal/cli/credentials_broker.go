@@ -24,8 +24,10 @@ const askTimeout = 10 * time.Second
 const tokenRefreshMargin = 5 * time.Minute
 
 // credentialBroker answers the credential helper: one installation token per
-// session, asked of the control plane on the link when git first needs it and
-// held in memory until it expires or is revoked (02-runner §8; F21). Nothing
+// session and checkout, asked of the control plane on the link when git first
+// needs it and held in memory until it expires or is revoked (02-runner §8;
+// F21). A token is minted for one repository, so a session over several asks
+// once for each, and the helper says which by the path git hands it. Nothing
 // is written to disk and nothing is logged.
 type credentialBroker struct {
 	client   sender
@@ -34,9 +36,16 @@ type credentialBroker struct {
 	now      func() time.Time
 
 	mu      sync.Mutex
-	tokens  map[string]cachedToken     // session id → token
+	tokens  map[tokenKey]cachedToken   // session and checkout → token
 	waiting map[string]chan grantReply // request id → the ask waiting on it
-	asking  map[string]*inflight       // session id → the ask every concurrent caller joins
+	asking  map[tokenKey]*inflight     // session and checkout → the ask every concurrent caller joins
+}
+
+// tokenKey is what a token is held under: the session, and the checkout whose
+// repository it was minted for. A `prepare:` identity has no checkout.
+type tokenKey struct {
+	session  string
+	checkout string
 }
 
 // sender is the link, as far as the broker needs it.
@@ -70,51 +79,63 @@ var errNoCredential = errors.New("no credential for this session")
 func newCredentialBroker(client sender, unseal func([]byte) ([]byte, error), sessions func(string) (sessionsdomain.Session, error)) *credentialBroker {
 	return &credentialBroker{
 		client: client, unseal: unseal, sessions: sessions, now: time.Now,
-		tokens: map[string]cachedToken{}, waiting: map[string]chan grantReply{},
-		asking: map[string]*inflight{},
+		tokens: map[tokenKey]cachedToken{}, waiting: map[string]chan grantReply{},
+		asking: map[tokenKey]*inflight{},
 	}
 }
 
-// Get answers the helper for one session: the cached token while it is fresh,
-// otherwise one asked for on the link and unsealed here. A session whose
-// create is still running is one the session service already answers for,
-// so its clone gets a token like any git inside a session does.
+// Get answers the helper for one session and the repository at path (what
+// git sends under `credential.useHttpPath`, `owner/name.git`; empty for a
+// session of one checkout, whose git is not told to send it): the cached
+// token while it is fresh, otherwise one asked for on the link and unsealed
+// here. A session whose create is still running is one the session service
+// already answers for, so its clone gets a token like any git inside a
+// session does.
 //
-// Concurrent callers for one session share a single ask. It runs on a
+// Concurrent callers for one checkout share a single ask. It runs on a
 // context of its own, bounded by askTimeout, so the caller that started it
 // going away does not fail the others; each caller stops waiting when its
 // own context ends.
-func (b *credentialBroker) Get(ctx context.Context, sessionID string) (string, error) {
+func (b *credentialBroker) Get(ctx context.Context, sessionID, path string) (string, error) {
 	if sessionID == "" {
 		return "", errNoCredential
 	}
 	if strings.HasPrefix(sessionID, preparePrefix) {
 		b.mu.Lock()
-		held, ok := b.tokens[sessionID]
+		held, ok := b.tokens[tokenKey{session: sessionID}]
 		b.mu.Unlock()
 		if !ok || !b.now().Before(held.expiresAt) {
 			return "", errNoCredential
 		}
 		return held.token, nil
 	}
+	session, err := b.sessions(sessionID)
+	if err != nil {
+		return "", errNoCredential
+	}
+	checkout, ok := session.CheckoutFor(path)
+	if !ok || checkout.CheckoutID == "" {
+		return "", errNoCredential
+	}
+	key := tokenKey{session: sessionID, checkout: checkout.CheckoutID}
 	b.mu.Lock()
-	cached, ok := b.tokens[sessionID]
+	cached, ok := b.tokens[key]
 	if ok && b.now().Add(tokenRefreshMargin).Before(cached.expiresAt) {
 		b.mu.Unlock()
 		return cached.token, nil
 	}
-	call, joined := b.asking[sessionID]
+	call, joined := b.asking[key]
 	if !joined {
 		call = &inflight{done: make(chan struct{})}
-		b.asking[sessionID] = call
+		b.asking[key] = call
 	}
 	b.mu.Unlock()
 
 	if !joined {
 		go func() {
-			call.token, call.err = b.ask(context.WithoutCancel(ctx), sessionID)
+			call.token, call.err = b.ask(context.WithoutCancel(ctx), key, checkout)
 			b.mu.Lock()
-			delete(b.asking, sessionID)
+			delete(b.asking, key)
 			b.mu.Unlock()
 			close(call.done)
 		}()
@@ -129,12 +150,7 @@ func (b *credentialBroker) Get(ctx context.Context, sessionID string) (string, e
 
 // ask sends one `credentials.token` and waits for its grant, caching the
 // token it unseals.
-func (b *credentialBroker) ask(ctx context.Context, sessionID string) (string, error) {
-	session, err := b.sessions(sessionID)
-	if err != nil || session.CheckoutID == "" {
-		return "", errNoCredential
-	}
-
+func (b *credentialBroker) ask(ctx context.Context, key tokenKey, checkout sessionsdomain.Checkout) (string, error) {
 	requestID, err := newRequestID()
 	if err != nil {
 		return "", err
@@ -150,8 +166,8 @@ func (b *credentialBroker) ask(ctx context.Context, sessionID string) (string, e
 	}()
 
 	err = b.client.Send(link.CredentialsToken{
-		Type: "credentials.token", RequestID: requestID, SessionID: sessionID,
-		CheckoutID: session.CheckoutID, GithubRepoID: session.GithubRepoID,
+		Type: "credentials.token", RequestID: requestID, SessionID: key.session,
+		CheckoutID: checkout.CheckoutID, GithubRepoID: checkout.GithubRepoID,
 	})
 	if err != nil {
 		return "", errNoCredential
@@ -170,7 +186,7 @@ func (b *credentialBroker) ask(ctx context.Context, sessionID string) (string, e
 			return "", err
 		}
 		b.mu.Lock()
-		b.tokens[sessionID] = cachedToken{token: string(plain), expiresAt: granted.expiresAt}
+		b.tokens[key] = cachedToken{token: string(plain), expiresAt: granted.expiresAt}
 		b.mu.Unlock()
 		return string(plain), nil
 	}
@@ -195,19 +211,24 @@ const preparePrefix = "prepare:"
 // Hold keeps a token handed over with a command, for the git that command runs.
 func (b *credentialBroker) Hold(id, token string, expiresAt time.Time) {
 	b.mu.Lock()
-	b.tokens[id] = cachedToken{token: token, expiresAt: expiresAt}
+	b.tokens[tokenKey{session: id}] = cachedToken{token: token, expiresAt: expiresAt}
 	b.mu.Unlock()
 }
 
-// Revoke drops a session's token early, as `credentials.revoke` asks.
-func (b *credentialBroker) Revoke(sessionID string) {
+// Revoke drops a checkout's token early, as `credentials.revoke` asks; with
+// no checkout named, every token the session holds.
+func (b *credentialBroker) Revoke(sessionID, checkoutID string) {
 	b.mu.Lock()
-	delete(b.tokens, sessionID)
-	b.mu.Unlock()
+	defer b.mu.Unlock()
+	for key := range b.tokens {
+		if key.session == sessionID && (checkoutID == "" || key.checkout == checkoutID) {
+			delete(b.tokens, key)
+		}
+	}
 }
 
-// Forget drops a session's token as it closes.
-func (b *credentialBroker) Forget(sessionID string) { b.Revoke(sessionID) }
+// Forget drops every token a session holds as it closes.
+func (b *credentialBroker) Forget(sessionID string) { b.Revoke(sessionID, "") }
 
 func (b *credentialBroker) deliver(requestID string, reply grantReply) bool {
 	b.mu.Lock()

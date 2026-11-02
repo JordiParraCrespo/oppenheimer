@@ -13,6 +13,8 @@ import {
 @Entity('bot_message')
 @Index('IDX_bot_message_bot', ['organizationId', 'botId', 'createdAt', 'id'])
 @Index('IDX_bot_message_turn', ['organizationId', 'turnId', 'position'])
+// GIN over to_tsvector('simple', "content") for search_chat (`AddBotMessageSearch`).
+@Index('IDX_bot_message_search', { synchronize: false })
 @Check('CHK_bot_message_role', `"role" IN ('user', 'assistant', 'activity', 'event')`)
 @Check('CHK_bot_message_event', `("role" = 'event') = ("event" IS NOT NULL)`)
 @Check('CHK_bot_message_position', `"position" >= 0`)

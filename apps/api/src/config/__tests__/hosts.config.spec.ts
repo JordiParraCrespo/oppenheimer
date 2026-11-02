@@ -1,12 +1,11 @@
 import { generateKeyPairSync } from 'node:crypto';
 import type { ConfigService } from '@nestjs/config';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { hostsAreConfigured, hostsConfig } from '../hosts.config';
 
 function withEnv(values: Record<string, string | undefined>) {
   for (const [key, value] of Object.entries(values)) {
-    if (value === undefined) delete process.env[key];
-    else process.env[key] = value;
+    vi.stubEnv(key, value);
   }
   return hostsConfig();
 }
@@ -28,9 +27,9 @@ describe('hostsConfig', () => {
       'RUNNER_RELEASE_CHANNEL',
       'RUNNER_INSTALL_URL',
     ]) {
-      delete process.env[key];
+      vi.stubEnv(key, undefined);
     }
-    process.env.BETTER_AUTH_URL = 'https://api.example.com';
+    vi.stubEnv('BETTER_AUTH_URL', 'https://api.example.com');
   });
 
   it('falls back to the API’s own public URL for the audience runners sign for', () => {

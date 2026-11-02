@@ -17,6 +17,7 @@ import { LinkTaskSessionCommandHandler } from './commands/link-task-session/link
 import { LinkTaskSessionHttpController } from './commands/link-task-session/link-task-session.http.controller';
 import { MoveTaskCommandHandler } from './commands/move-task/move-task.command-handler';
 import { MoveTaskHttpController } from './commands/move-task/move-task.http.controller';
+import { StartTaskCloudSessionHttpController } from './commands/start-task-cloud-session/start-task-cloud-session.http.controller';
 import { StartTaskSessionCommandHandler } from './commands/start-task-session/start-task-session.command-handler';
 import { StartTaskSessionHttpController } from './commands/start-task-session/start-task-session.http.controller';
 import { UnlinkTaskSessionCommandHandler } from './commands/unlink-task-session/unlink-task-session.command-handler';
@@ -57,6 +58,7 @@ const httpControllers = [
   MoveTaskHttpController,
   DeleteTaskHttpController,
   StartTaskSessionHttpController,
+  StartTaskCloudSessionHttpController,
   LinkTaskSessionHttpController,
   UnlinkTaskSessionHttpController,
   FindMilestonesHttpController,

@@ -1,10 +1,22 @@
-import type { CommandFailedMessage, FsListingMessage } from '@oppenheimer/shared/protocol';
+import type {
+  CodexEnvironmentsMessage,
+  CommandFailedMessage,
+  FsListingMessage,
+  PortListingMessage,
+  WhatsappSentMessage,
+} from '@oppenheimer/shared/protocol';
 
 /**
  * A runner's answer to a command the control plane is waiting on: the reply
- * frame itself, or its refusal. `fs.listing` is the one reply frame today.
+ * frame itself, or its refusal: `fs.listing`, `port.listing`,
+ * `codex.environments` or `whatsapp.sent`.
  */
-export type LinkReply = FsListingMessage | CommandFailedMessage;
+export type LinkReply =
+  | FsListingMessage
+  | PortListingMessage
+  | CodexEnvironmentsMessage
+  | WhatsappSentMessage
+  | CommandFailedMessage;
 
 /** One waiter: the reply, or null when none came in time. */
 export interface PendingReply {

@@ -2,13 +2,11 @@ package cli
 
 import (
 	"context"
-	"sync"
 	"testing"
 	"time"
 
-	"github.com/pion/webrtc/v4"
-
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/direct"
+	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/direct/directtest"
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/link"
 )
 
@@ -109,47 +107,11 @@ func TestDirectInputThatOutrunsTheRelayClosesTheAttachment(t *testing.T) {
 	})
 }
 
-// browserPeer is the console's side of the channel, offering as it does.
-type browserPeer struct {
-	pc  *webrtc.PeerConnection
-	dc  *webrtc.DataChannel
-	mu  sync.Mutex
-	got []byte
-}
-
-func offerFromBrowser(t *testing.T) (*browserPeer, string) {
+// testAnswerer is an Answerer that proves itself with a key of its own.
+func testAnswerer(t *testing.T) *direct.Answerer {
 	t.Helper()
-	pc, err := webrtc.NewPeerConnection(webrtc.Configuration{})
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() { _ = pc.Close() })
-	dc, err := pc.CreateDataChannel(direct.ChannelLabel, nil)
-	if err != nil {
-		t.Fatal(err)
-	}
-	b := &browserPeer{pc: pc, dc: dc}
-	dc.OnMessage(func(msg webrtc.DataChannelMessage) {
-		b.mu.Lock()
-		b.got = append(b.got, msg.Data...)
-		b.mu.Unlock()
-	})
-	offer, err := pc.CreateOffer(nil)
-	if err != nil {
-		t.Fatal(err)
-	}
-	gathered := webrtc.GatheringCompletePromise(pc)
-	if err := pc.SetLocalDescription(offer); err != nil {
-		t.Fatal(err)
-	}
-	<-gathered
-	return b, pc.LocalDescription().SDP
-}
-
-func (b *browserPeer) received() string {
-	b.mu.Lock()
-	defer b.mu.Unlock()
-	return string(b.got)
+	prove, _ := directtest.NewProver(t)
+	return direct.NewAnswerer(direct.Options{Prove: prove})
 }
 
 // The whole switch over a real data channel: the offer is answered over the
@@ -160,7 +122,7 @@ func (b *browserPeer) received() string {
 func TestAnOfferMovesTheOutputToTheChannel(t *testing.T) {
 	pty := newHeldPTY(false)
 	h, sent, _ := newAttachHarness(t, pty, nil)
-	h.direct = direct.NewAnswerer(direct.Options{})
+	h.direct = testAnswerer(t)
 	h.Message(context.Background(), attachMessage(t))
 	waitForAttachment(t, h)
 	att := h.attachmentByID(attachmentUnderTest)
@@ -170,7 +132,7 @@ func TestAnOfferMovesTheOutputToTheChannel(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	browser, offer := offerFromBrowser(t)
+	browser, offer := directtest.NewBrowser(t, direct.ChannelLabel)
 	h.Message(context.Background(), message(t, "attachment.direct.offer", map[string]any{
 		"attachmentId": attachmentUnderTest, "sdp": offer, "iceServers": []string{},
 	}))
@@ -178,9 +140,7 @@ func TestAnOfferMovesTheOutputToTheChannel(t *testing.T) {
 		_, ok := m.(link.AttachmentDirectAnswer)
 		return ok
 	}).(link.AttachmentDirectAnswer)
-	if err := browser.pc.SetRemoteDescription(webrtc.SessionDescription{Type: webrtc.SDPTypeAnswer, SDP: answer.Sdp}); err != nil {
-		t.Fatal(err)
-	}
+	browser.Accept(t, answer.Sdp)
 
 	path := sent.waitFor(t, "attachment.path", func(m any) bool {
 		_, ok := m.(link.AttachmentPath)
@@ -194,9 +154,9 @@ func TestAnOfferMovesTheOutputToTheChannel(t *testing.T) {
 		t.Fatal(err)
 	}
 	deadline := time.Now().Add(5 * time.Second)
-	for browser.received() != "after" {
+	for string(browser.Bytes()) != "after" {
 		if time.Now().After(deadline) {
-			t.Fatalf("the browser got %q on the channel, want only what followed the switch", browser.received())
+			t.Fatalf("the browser got %q on the channel, want only what followed the switch", string(browser.Bytes()))
 		}
 		time.Sleep(time.Millisecond)
 	}
@@ -205,7 +165,7 @@ func TestAnOfferMovesTheOutputToTheChannel(t *testing.T) {
 		t.Fatalf("the link carried %q, want only what preceded the switch", got)
 	}
 
-	_ = browser.pc.Close()
+	_ = browser.PC.Close()
 	deadline = time.Now().Add(10 * time.Second)
 	for pty.redrawn() == 0 {
 		if time.Now().After(deadline) {
@@ -240,11 +200,11 @@ func TestAnOfferMovesTheOutputToTheChannel(t *testing.T) {
 func TestOffersThatCannotBeAnsweredAreRefused(t *testing.T) {
 	pty := newHeldPTY(false)
 	h, sent, _ := newAttachHarness(t, pty, nil)
-	h.direct = direct.NewAnswerer(direct.Options{})
+	h.direct = testAnswerer(t)
 
 	h.Message(context.Background(), attachMessage(t))
 	waitForAttachment(t, h)
-	_, offer := offerFromBrowser(t)
+	_, offer := directtest.NewBrowser(t, direct.ChannelLabel)
 	for i := 0; i < 2; i++ {
 		h.Message(context.Background(), message(t, "attachment.direct.offer", map[string]any{
 			"attachmentId": attachmentUnderTest, "sdp": offer, "iceServers": []string{},
@@ -273,13 +233,15 @@ func TestTheHelloNamesTheDirectPathWhenTheHostCanAnswer(t *testing.T) {
 			t.Fatal("a host with no answerer offered the direct path")
 		}
 	}
-	h.direct = direct.NewAnswerer(direct.Options{})
-	found := false
-	for _, named := range h.capabilities() {
-		found = found || named == link.CapabilityAttachmentDirect
+	h.direct = testAnswerer(t)
+	named := map[string]bool{}
+	for _, capability := range h.capabilities() {
+		named[capability] = true
 	}
-	if !found {
-		t.Fatal("a host that can answer did not offer the direct path")
+	// The proof is named beside the path: the relay invites only a runner
+	// naming both, since the console refuses an unproved channel.
+	if !named[link.CapabilityAttachmentDirect] || !named[link.CapabilityAttachmentDirectProof] {
+		t.Fatal("a host that can answer did not offer the direct path and its proof")
 	}
 }
 
@@ -322,11 +284,11 @@ func TestAnOfferWaitsForAnAttachmentStillOpening(t *testing.T) {
 	pty := newHeldPTY(false)
 	gate := make(chan struct{})
 	h, sent, terminals := newAttachHarness(t, pty, gate)
-	h.direct = direct.NewAnswerer(direct.Options{})
+	h.direct = testAnswerer(t)
 	h.Message(context.Background(), attachMessage(t))
 	<-terminals.entered
 
-	_, offer := offerFromBrowser(t)
+	_, offer := directtest.NewBrowser(t, direct.ChannelLabel)
 	h.Message(context.Background(), message(t, "attachment.direct.offer", map[string]any{
 		"attachmentId": attachmentUnderTest, "sdp": offer, "iceServers": []string{},
 	}))

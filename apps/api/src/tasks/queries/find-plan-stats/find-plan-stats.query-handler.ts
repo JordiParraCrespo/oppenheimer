@@ -1,6 +1,6 @@
 import { Inject } from '@nestjs/common';
 import { type IQueryHandler, QueryHandler } from '@nestjs/cqrs';
-import { AppError } from '@oppenheimer/backend-core';
+import { requireTenant } from '@oppenheimer/backend-authz';
 import { planStatsWeeks, previousPlanStatsPeriod } from '@oppenheimer/shared';
 import type { SessionUsageReader } from '../../../sessions/database/session-usage.repository.port';
 import { SESSION_USAGE_READER } from '../../../sessions/sessions.di-tokens';
@@ -8,7 +8,6 @@ import type {
   PlanEventRangeInput,
   PlanEventRepositoryPort,
 } from '../../database/plan-event.repository.port';
-import { TaskErrors } from '../../domain/tasks.errors';
 import type { PlanStatsResponseDto } from '../../dtos/plan-stats.response.dto';
 import { PlanStatsMapper, type PlanUsageWeek } from '../../plan-stats.mapper';
 import { PLAN_EVENT_REPOSITORY } from '../../tasks.di-tokens';
@@ -33,7 +32,7 @@ export class FindPlanStatsQueryHandler
   ) {}
 
   async execute({ scope, period }: FindPlanStatsQuery): Promise<PlanStatsResponseDto> {
-    if (!scope.organizationId) throw new AppError(TaskErrors.NO_ACTIVE_ORGANIZATION);
+    requireTenant(scope);
     const range = (from: string, to: string): PlanEventRangeInput => ({
       organizationId: scope.organizationId as string,
       projectId: period.projectId,

@@ -6,7 +6,10 @@ import { useStreamCovers } from './workspace-stream-status';
  * it keeps asking while the tab is hidden. A query hook in this package spreads
  * {@link usePollWhile} with its query key; nothing else names an interval, and
  * a feature asks for the hook that already polls (`useHostPresence`). A poll
- * stands down while the workspace event stream carries its fact.
+ * stands down while the workspace event stream carries its fact, and only a
+ * kind that says so (`streamCanCover: true`) whose read the stream announces
+ * in full (`workspace-events.ts`): a new kind keeps polling until someone has
+ * checked that the stream carries every change it waits on.
  *
  * `inBackground` keeps TanStack Query's interval running on a hidden document,
  * where it pauses by default. A poll that watches something finish keeps going:
@@ -36,37 +39,49 @@ import { useStreamCovers } from './workspace-stream-status';
  *   background. Five seconds is the pace ChatGPT's device flow usually asks
  *   for; when it asks for a slower one, the API answers the faster polls
  *   "pending" without asking ChatGPT, so this interval never sets the pace.
+ * - `whatsappPairing`: Settings → WhatsApp while a number pairs: the host
+ *   issues a new QR code every twenty seconds or so, and the phone that scans
+ *   one is told so at once, so two seconds keeps the code drawn current. It
+ *   keeps going in the background, where the reader has their phone out. The
+ *   workspace stream carries no device state.
+ * - `sessionPorts`: the ports a session listens on, while its Browser tab is
+ *   open: a dev server the agent just started shows within a few seconds.
+ *   Not in the background, and the workspace stream carries no such fact.
  * - `hostPresence`: a host going on or offline (Settings → Hosts), or coming
  *   back while a session's terminal waits on it. A reader who left the tab is
  *   redialled by the terminal's own visibility wake, so it still pauses.
+ * - `cloudSession`: the session list while a cloud session's run is working
+ *   at its vendor, for minutes. A list read is what asks the vendor (a few
+ *   sessions, none more than once in thirty seconds, whatever this asks), so
+ *   five seconds costs the vendor nothing more. It keeps going on a hidden
+ *   tab, the one a reader leaves while an agent works. The workspace stream
+ *   carries no vendor's news, so it never stands this poll down.
  */
 export const LIVE_POLL = {
-  sessionStarting: { interval: 2000, inBackground: true },
+  sessionStarting: { interval: 2000, inBackground: true, streamCanCover: true },
   sessionOpening: {
     interval: 2000,
     openingInterval: 300,
     openingForMs: 3000,
     inBackground: true,
+    streamCanCover: true,
   },
-  pairing: { interval: 3000, inBackground: true },
+  pairing: { interval: 3000, inBackground: true, streamCanCover: true },
   liveRun: { interval: 5000, inBackground: true },
-  chatgptLogin: { interval: 5000, inBackground: true, streamCanCover: false },
+  chatgptLogin: { interval: 5000, inBackground: true },
+  whatsappPairing: { interval: 2000, inBackground: true },
   hostPresence: { interval: 15_000, inBackground: false },
+  cloudSession: { interval: 5000, inBackground: true },
+  sessionPorts: { interval: 3000, inBackground: false },
   /**
-   * A pull request answer that is still filling its parts. The rows are drawn
-   * from the first read; each poll fills a budget more, out of a cache that
-   * keeps what it has, until nothing is left unread (#247). Not in the
+   * The PR queue filling the parts of the rows it deferred. The rows are
+   * drawn from the first read; each poll fills a budget more, out of a cache
+   * that keeps what it has, until nothing is left unread (#247). Not in the
    * background: nobody is watching a page they left, and GitHub's budget is
-   * better spent on the page in front of someone.
+   * better spent on the page in front of someone. The stream has no event for
+   * "the read has stopped filling", so it never stands this poll down.
    */
-  /**
-   * The PR queue filling the rows it deferred. `streamCanCover: false`
-   * because the workspace stream has no event for "the read has stopped
-   * filling": if this key were ever added to the coverage table, standing the
-   * poll down would leave the queue permanently short of the rows it has not
-   * read yet. The exclusion belongs here, not in a reviewer's memory.
-   */
-  pullRequestsFilling: { interval: 4000, inBackground: false, streamCanCover: false },
+  pullRequestsFilling: { interval: 4000, inBackground: false },
 } as const;
 
 export type LivePollKind = keyof typeof LIVE_POLL;
@@ -80,7 +95,7 @@ export interface Poll<TData> {
 }
 
 /** What {@link pollWhile} reads off the query TanStack hands its interval callback. */
-interface PollQuery<TData> {
+export interface PollQuery<TData> {
   queryHash: string;
   state: { data?: TData };
 }
@@ -148,6 +163,27 @@ export function pollWhile<TData>(
 }
 
 /**
+ * Two polls over one query as one: whichever asks sooner sets the pace, and
+ * it keeps going on a hidden tab when either would. For a query that waits
+ * on two kinds of thing at once (the session list: a row being built, and a
+ * vendor's run), each with its own kind and its own reason to stop.
+ */
+export function eitherPoll<TData>(a: Poll<TData>, b: Poll<TData>): Poll<TData> {
+  const at = (poll: Poll<TData>, query: PollQuery<TData>) =>
+    typeof poll.refetchInterval === 'function' ? poll.refetchInterval(query) : poll.refetchInterval;
+  return {
+    refetchInterval: (query) => {
+      const first = at(a, query);
+      const second = at(b, query);
+      if (first === false) return second;
+      if (second === false) return first;
+      return Math.min(first, second);
+    },
+    refetchIntervalInBackground: a.refetchIntervalInBackground || b.refetchIntervalInBackground,
+  };
+}
+
+/**
  * How long the session list keeps watching a deleted session's row. A host
  * that is online answers a close in seconds; one that is offline answers only
  * when it is back, and the list stops asking after this.
@@ -177,7 +213,7 @@ export function usePollWhile<TData>(
   active: boolean | ((data: TData | undefined) => boolean),
 ): Poll<TData> {
   const poll = LIVE_POLL[kind];
-  const streamCanCover = 'streamCanCover' in poll ? poll.streamCanCover : true;
+  const streamCanCover = 'streamCanCover' in poll && poll.streamCanCover;
   // Called unconditionally: it is a hook, and whether the answer is used is
   // the poll kind's business, not the render's.
   const covered = useStreamCovers(queryKey);

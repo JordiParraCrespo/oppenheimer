@@ -14,6 +14,7 @@ import {
   providerOfMark,
 } from '../lib/bot-engine';
 import { botSections, firstBot, inOrder, sectionOrder } from '../lib/bot-groups';
+import { composerTopOf } from '../lib/composer-top';
 import { revisionNote } from '../lib/revision-note';
 
 /**
@@ -113,7 +114,8 @@ describe('the model button', () => {
   it('maps a pick back to the provider whose group it is in', () => {
     expect(providerOfMark(botEngineValue('openai', null).agent)).toBe('openai');
     expect(providerOfMark(botEngineValue('glm', null).agent)).toBe('glm');
-    expect(providerOfMark('grok')).toBeUndefined();
+    expect(providerOfMark(botEngineValue('xai', null).agent)).toBe('xai');
+    expect(providerOfMark('shell')).toBeUndefined();
     expect(botEngineValue('anthropic', null)).toEqual({
       agent: 'claude-code',
       model: 'claude-opus-5-5',
@@ -190,5 +192,16 @@ describe('firstBot', () => {
 
   it('is undefined for a workspace with no bots, which keeps the greeting', () => {
     expect(firstBot([], [group('g', 0)])).toBeUndefined();
+  });
+});
+
+describe('composerTopOf', () => {
+  it('puts one thing on the composer’s top edge: the queue, else the missing key, else a /goal’s missing condition, else the goal', () => {
+    const none = { waiting: 0, noKey: false, command: false, goal: false };
+    expect(composerTopOf({ ...none, waiting: 2, noKey: true, goal: true })).toBe('queue');
+    expect(composerTopOf({ ...none, noKey: true, command: true, goal: true })).toBe('noKey');
+    expect(composerTopOf({ ...none, command: true, goal: true })).toBe('command');
+    expect(composerTopOf({ ...none, goal: true })).toBe('goal');
+    expect(composerTopOf(none)).toBeNull();
   });
 });

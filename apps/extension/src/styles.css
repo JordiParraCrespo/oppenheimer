@@ -1,0 +1,13 @@
+@import "tailwindcss";
+@import "@oppenheimer/design-system-web/styles";
+
+@source "./**/*.{ts,tsx}";
+@source "../../../packages/frontend/design-system/web/src/**/*.{ts,tsx}";
+
+/* Dark mode follows the system: `public/theme-init.js` sets the class before first paint. */
+@custom-variant dark (&:where(.dark, .dark *));
+
+body {
+  margin: 0;
+  background: var(--color-bg);
+}

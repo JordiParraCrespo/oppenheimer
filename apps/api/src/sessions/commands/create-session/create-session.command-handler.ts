@@ -1,10 +1,12 @@
 import { Inject } from '@nestjs/common';
 import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
 import { AppError } from '@oppenheimer/backend-core';
+import { placeOfCreate } from '@oppenheimer/shared';
 import type { HostAccessPort } from '../../../hosts/application/host-access.port';
 import { HOST_ACCESS } from '../../../hosts/hosts.di-tokens';
 import type { LinkRegistryPort } from '../../../links/application/link-registry.port';
 import { LINK_REGISTRY } from '../../../links/links.di-tokens';
+import { CloudAttachmentsResolver } from '../../application/cloud-attachments.resolver';
 import { requireLaunchableHost } from '../../application/require-launchable-host.policy';
 import { SessionAttachmentsResolver } from '../../application/session-attachments.resolver';
 import { throwIfRefused } from '../../application/session-create-refusal.policy';
@@ -14,23 +16,19 @@ import { SessionNamingResolver } from '../../application/session-naming.resolver
 import { SessionPlanFactory } from '../../application/session-plan.factory';
 import type { WorkSessionRepositoryPort } from '../../database/work-session.repository.port';
 import type { SessionCommandResult } from '../../domain/session-command.types';
+import { firstPromptKey, requestEntries } from '../../domain/session-log-entry.factory';
 import { mintSessionSlug } from '../../domain/session-slug.policy';
 import { SessionErrors } from '../../domain/sessions.errors';
 import { WorkSessionEntity } from '../../domain/work-session.entity';
 import { SESSION_DISPATCH, WORK_SESSION_REPOSITORY } from '../../sessions.di-tokens';
-import { WorkSessionMapper } from '../../work-session.mapper';
 import { CreateSessionCommand } from './create-session.command';
 
 /**
- * Starts a session: the project, the slug, the checkouts, the first entry of the
- * log, and the job the host is owed.
+ * Starts a session: the project, the slug, the checkouts, the log's first entry, the host's job.
  *
- * The order matters. The host is checked **first**: `hostId` is the one reference
- * no composite key can scope (a host is a person's, with no workspace column), so a
- * foreign host is refused before anything is written; then the project, the
- * checkouts and the attached images. The row, its checkouts and its log commit
- * together, and only a session genuinely created is dispatched. A folder session
- * (24) attaches no checkout: its folder is already on the host, and the person's.
+ * The order matters. The host is checked **first**, before anything is written: `hostId` is
+ * the one reference no composite key can scope. Then the project, the checkouts and the files
+ * (parked for the host, or kept for a cloud session's agent); the row and its log commit as one.
  */
 @CommandHandler(CreateSessionCommand)
 export class CreateSessionCommandHandler
@@ -46,8 +44,8 @@ export class CreateSessionCommandHandler
     private readonly plan: SessionPlanFactory,
     private readonly launches: SessionLaunchSpecFactory,
     private readonly naming: SessionNamingResolver,
-    private readonly mapper: WorkSessionMapper,
     private readonly attachments: SessionAttachmentsResolver,
+    private readonly cloudAttachments: CloudAttachmentsResolver,
     @Inject(LINK_REGISTRY)
     private readonly links: LinkRegistryPort,
   ) {}
@@ -73,6 +71,7 @@ export class CreateSessionCommandHandler
       hostId: input.hostId,
       slug: mintSessionSlug(),
       agent: input.agent,
+      place: placeOfCreate(input),
       folder: input.folder,
       name: input.name,
       idempotencyKey: command.idempotencyKey,
@@ -83,11 +82,12 @@ export class CreateSessionCommandHandler
       await this.plan.attachCheckout(scope, session, checkout);
     }
     // Before the row: a task that talks about a picture must not start without it.
-    const images = await this.attachments.claim(scope, command.userId, session.id, input);
+    const files = input.cloud ? this.cloudAttachments : this.attachments;
+    const images = await files.claim(scope, command.userId, session.id, input);
 
     const created = await this.sessions.createIfUnclaimed(
       session,
-      this.mapper.toRequestEvents({
+      requestEntries({
         commandId: command.id,
         userId: command.userId,
         input,
@@ -108,11 +108,7 @@ export class CreateSessionCommandHandler
       await this.launches.build(created.session, { prompt: input.prompt, images }),
     );
 
-    await this.naming.record(
-      created.session,
-      await naming,
-      WorkSessionMapper.promptKeyFor(command.id),
-    );
+    await this.naming.record(created.session, await naming, firstPromptKey(command.id));
     return { sessionId: created.session.id, hints };
   }
 }

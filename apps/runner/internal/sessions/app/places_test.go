@@ -30,7 +30,7 @@ func TestAWorktreeSessionLivesInItsWorkspacesSessionsFolder(t *testing.T) {
 		t.Fatalf("create: %v", err)
 	}
 
-	wantDir := "/home/jordi/oppenheimer/acct-1/ws-1/sessions/fix-login"
+	wantDir := "/home/jordi/oppenheimer/acct-1/ws-1/sessions.noindex/fix-login"
 	if session.Place != domain.PlaceWorktree || session.Dir != wantDir || session.Worktree != filepath.Join(wantDir, "web") {
 		t.Fatalf("session = place %q dir %q worktree %q", session.Place, session.Dir, session.Worktree)
 	}

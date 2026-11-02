@@ -47,6 +47,8 @@ export function HostRow({ host }: { host: HostEntity }) {
         return t('hosts.settings.meta.cpus', { count: part.count });
       case 'runner':
         return t('hosts.settings.meta.runner', { version: part.version });
+      case 'claude':
+        return t('hosts.settings.meta.claude', { account: part.account });
       default:
         return part.value;
     }

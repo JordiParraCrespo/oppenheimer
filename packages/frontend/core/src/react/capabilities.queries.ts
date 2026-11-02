@@ -6,7 +6,7 @@ import { CORE_CONFIG } from '../config';
 import { useOppenheimerApp } from './context';
 import { useQuery } from './query';
 
-const capabilitiesKeys = {
+export const capabilitiesKeys = {
   all: ['capabilities'] as const,
   deployment: () => [...capabilitiesKeys.all, 'deployment'] as const,
 };

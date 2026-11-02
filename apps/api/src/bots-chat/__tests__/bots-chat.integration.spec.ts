@@ -1,14 +1,14 @@
 import { randomUUID } from 'node:crypto';
 import type { AccessScope } from '@oppenheimer/backend-authz';
 import { OutboxMessageSchema, OutboxService } from '@oppenheimer/backend-ddd';
-import { GenericContainer, type StartedTestContainer, Wait } from 'testcontainers';
 import { DataSource } from 'typeorm';
-import { runAllMigrations } from '../../__tests__/run-migrations';
+import { useTestDatabase } from '../../__tests__/integration-services';
 import type { ChatgptCredentialResolver } from '../../bots/application/chatgpt-credential.resolver';
 import { TurnCredentialsResolver } from '../../bots/application/turn-credentials.resolver';
 import { BotMapper } from '../../bots/bot.mapper';
 import { BotDocumentMapper } from '../../bots/bot-document.mapper';
 import { BotMemoryFactMapper } from '../../bots/bot-memory-fact.mapper';
+import { BotSkillMapper } from '../../bots/bot-skill.mapper';
 import { BotOrmEntity } from '../../bots/database/bot.orm-entity';
 import { BotRepository } from '../../bots/database/bot.repository';
 import { BotDocumentOrmEntity } from '../../bots/database/bot-document.orm-entity';
@@ -16,26 +16,37 @@ import { BotDocumentRepository } from '../../bots/database/bot-document.reposito
 import { BotDocumentRevisionOrmEntity } from '../../bots/database/bot-document-revision.orm-entity';
 import { BotMemoryFactOrmEntity } from '../../bots/database/bot-memory-fact.orm-entity';
 import { BotMemoryFactRepository } from '../../bots/database/bot-memory-fact.repository';
+import { BotSkillOrmEntity } from '../../bots/database/bot-skill.orm-entity';
+import { BotSkillRepository } from '../../bots/database/bot-skill.repository';
 import { ModelProviderCredentialOrmEntity } from '../../bots/database/model-provider-credential.orm-entity';
 import { ModelProviderCredentialRepository } from '../../bots/database/model-provider-credential.repository';
 import { BotEntity } from '../../bots/domain/bot.entity';
 import { userActor } from '../../bots/domain/bot.types';
 import { BotDocumentEntity } from '../../bots/domain/bot-document.entity';
 import { BotMemoryFactEntity } from '../../bots/domain/bot-memory-fact.entity';
+import { BotSkillEntity } from '../../bots/domain/bot-skill.entity';
 import { ModelProviderCredentialEntity } from '../../bots/domain/model-provider-credential.entity';
 import type { ProviderKeySealerPort } from '../../bots/infrastructure/provider-key-sealer.port';
 import { ModelProviderCredentialMapper } from '../../bots/model-provider-credential.mapper';
 import type { BotApprovalRequestFactory } from '../application/bot-approval-request.factory';
+import { BotApprovalStartedPolicy } from '../application/bot-approval-started.policy';
 import { BotModelAccessResolver } from '../application/bot-model-access.resolver';
 import type { BotOwnerPermissionsResolver } from '../application/bot-owner-permissions.resolver';
 import type { BotOwnerScopeResolver } from '../application/bot-owner-scope.resolver';
+import type { BotPermissionsResolver } from '../application/bot-permissions.resolver';
+import type { BotRuleReviewerFactory } from '../application/bot-rule-reviewer.factory';
+import type { BotSubagentRunnerFactory } from '../application/bot-subagent-runner.factory';
 import type { BotToolboxFactory } from '../application/bot-toolbox.factory';
 import { BotTurnContextResolver } from '../application/bot-turn-context.resolver';
 import { BotTurnOpeningResolver } from '../application/bot-turn-opening.resolver';
 import { BotApprovalMapper } from '../bot-approval.mapper';
 import { BotAttachmentMapper } from '../bot-attachment.mapper';
 import { BotConversationSummaryMapper } from '../bot-conversation-summary.mapper';
+import { BotGoalMapper } from '../bot-goal.mapper';
 import { BotMessageMapper } from '../bot-message.mapper';
+import { BotQuestionMapper } from '../bot-question.mapper';
+import { BotSubscriptionMapper } from '../bot-subscription.mapper';
+import { BotToolPermissionMapper } from '../bot-tool-permission.mapper';
 import { BotTurnMapper } from '../bot-turn.mapper';
 import { BotApprovalOrmEntity } from '../database/bot-approval.orm-entity';
 import { BotApprovalRepository } from '../database/bot-approval.repository';
@@ -44,23 +55,40 @@ import { BotAttachmentRepository } from '../database/bot-attachment.repository';
 import { BotConversationRepository } from '../database/bot-conversation.repository';
 import { BotConversationSummaryOrmEntity } from '../database/bot-conversation-summary.orm-entity';
 import { BotConversationSummaryRepository } from '../database/bot-conversation-summary.repository';
+import { BotGoalOrmEntity } from '../database/bot-goal.orm-entity';
+import { BotGoalRepository } from '../database/bot-goal.repository';
 import { BotMessageOrmEntity } from '../database/bot-message.orm-entity';
 import { BotMessageRepository } from '../database/bot-message.repository';
+import { BotQuestionOrmEntity } from '../database/bot-question.orm-entity';
+import { BotQuestionRepository } from '../database/bot-question.repository';
+import { BotSubscriptionOrmEntity } from '../database/bot-subscription.orm-entity';
+import { BotSubscriptionRepository } from '../database/bot-subscription.repository';
 import { BotTurnOrmEntity } from '../database/bot-turn.orm-entity';
 import { BotTurnRepository } from '../database/bot-turn.repository';
 import { BotApprovalEntity } from '../domain/bot-approval.entity';
+import { stoppedLine } from '../domain/bot-approval.policy';
 import { BotAttachmentEntity } from '../domain/bot-attachment.entity';
 import { BotConversationSummaryEntity } from '../domain/bot-conversation-summary.entity';
+import { BotGoalEntity } from '../domain/bot-goal.entity';
+import { goalContinuationTurn, goalEndLine } from '../domain/bot-goal.policy';
 import { BotMessageEntity } from '../domain/bot-message.entity';
+import { BotQuestionEntity } from '../domain/bot-question.entity';
 import {
   routineActivityLine,
   routinePrefix,
   routineSourceKey,
   routineTurn,
 } from '../domain/bot-routine.policy';
+import { takesSteer } from '../domain/bot-steer.policy';
+import { BotSubscriptionEntity } from '../domain/bot-subscription.entity';
+import { type SessionWake, sessionWakeTurn } from '../domain/bot-subscription.policy';
 import { planSummary, type SummarizableMessage } from '../domain/bot-summary.policy';
+import { NO_PERMISSIONS } from '../domain/bot-tool-permission.policy';
 import { BotTurnEntity } from '../domain/bot-turn.entity';
+import { OutboxBotStallChecksAdapter } from '../infrastructure/outbox-bot-stall-checks.adapter';
 import type { OwnerHostsPort } from '../infrastructure/owner-hosts.port';
+import { FindBotTurnQuery } from '../queries/find-bot-turn/find-bot-turn.query';
+import { FindBotTurnQueryHandler } from '../queries/find-bot-turn/find-bot-turn.query-handler';
 
 /**
  * A bot's chat against a real Postgres (`product/versions/mvp/25-bots.md`
@@ -69,23 +97,31 @@ import type { OwnerHostsPort } from '../infrastructure/owner-hosts.port';
  * conversation and history, Stop's conditional writes, the cascade from the
  * bot, and a turn's context read in its own workspace only; Needs input
  * cards: one waiting per bot, decided once however many decide at once, the
- * event that opens a decision's turn, and the cascade; a conversation's
+ * event that opens a decision's turn, the workspace's cards across bots and
+ * the event each move stages, and the cascade; a conversation's
  * summary: one write of two racing ones wins, the cutoff never moves back,
  * and a turn's history and the summarizer's read start after it to the
- * microsecond. The schema is the migrations'.
+ * microsecond; a bot's subscriptions to sessions: one per bot and session,
+ * a wake recorded once of two racing ones, gone with the bot, outliving a
+ * cleared chat, and one turn per wake however often it is delivered; a
+ * steer: taken by the running turn once, moved into it, never with images,
+ * and left queued when Stop got it first. The schema is the migrations'.
  */
 describe('bots chat (integration)', () => {
-  let pg: StartedTestContainer;
   let dataSource: DataSource;
   let bots: BotRepository;
   let documents: BotDocumentRepository;
   let memory: BotMemoryFactRepository;
+  let skills: BotSkillRepository;
   let credentials: ModelProviderCredentialRepository;
   let turns: BotTurnRepository;
   let messages: BotMessageRepository;
   let approvals: BotApprovalRepository;
+  let questions: BotQuestionRepository;
   let summaries: BotConversationSummaryRepository;
   let attachments: BotAttachmentRepository;
+  let subscriptions: BotSubscriptionRepository;
+  let goals: BotGoalRepository;
   let organizationId: string;
   let userId: string;
 
@@ -99,33 +135,26 @@ describe('bots chat (integration)', () => {
   const scope = () => scopeOf(organizationId);
 
   beforeAll(async () => {
-    pg = await new GenericContainer('postgres:16-alpine')
-      .withEnvironment({ POSTGRES_USER: 'test', POSTGRES_PASSWORD: 'test', POSTGRES_DB: 'test' })
-      .withExposedPorts(5432)
-      .withWaitStrategy(Wait.forLogMessage(/database system is ready to accept connections/, 2))
-      .start();
-    process.env.DB_HOST = pg.getHost();
-    process.env.DB_PORT = pg.getMappedPort(5432).toString();
-    await runAllMigrations();
+    const db = await useTestDatabase();
 
     dataSource = new DataSource({
       type: 'postgres',
-      host: process.env.DB_HOST,
-      port: Number(process.env.DB_PORT),
-      username: 'test',
-      password: 'test',
-      database: 'test',
+      url: db.url,
       entities: [
         BotOrmEntity,
         BotDocumentOrmEntity,
         BotDocumentRevisionOrmEntity,
         BotMemoryFactOrmEntity,
+        BotSkillOrmEntity,
         ModelProviderCredentialOrmEntity,
         BotTurnOrmEntity,
         BotMessageOrmEntity,
         BotApprovalOrmEntity,
+        BotQuestionOrmEntity,
         BotConversationSummaryOrmEntity,
         BotAttachmentOrmEntity,
+        BotSubscriptionOrmEntity,
+        BotGoalOrmEntity,
         OutboxMessageSchema,
       ],
       synchronize: false,
@@ -149,6 +178,11 @@ describe('bots chat (integration)', () => {
       dataSource,
       new BotMemoryFactMapper(),
     );
+    skills = new BotSkillRepository(
+      dataSource.getRepository(BotSkillOrmEntity),
+      dataSource,
+      new BotSkillMapper(),
+    );
     credentials = new ModelProviderCredentialRepository(
       dataSource.getRepository(ModelProviderCredentialOrmEntity),
       new ModelProviderCredentialMapper(),
@@ -159,6 +193,7 @@ describe('bots chat (integration)', () => {
       new BotTurnMapper(),
       new BotMessageMapper(),
       new BotConversationRepository(),
+      new BotGoalMapper(),
     );
     messages = new BotMessageRepository(
       dataSource.getRepository(BotMessageOrmEntity),
@@ -168,6 +203,14 @@ describe('bots chat (integration)', () => {
     approvals = new BotApprovalRepository(
       dataSource.getRepository(BotApprovalOrmEntity),
       new BotApprovalMapper(),
+      new OutboxService(dataSource),
+      new BotTurnMapper(),
+      new BotMessageMapper(),
+      new BotToolPermissionMapper(),
+    );
+    questions = new BotQuestionRepository(
+      dataSource.getRepository(BotQuestionOrmEntity),
+      new BotQuestionMapper(),
       new OutboxService(dataSource),
       new BotTurnMapper(),
       new BotMessageMapper(),
@@ -181,11 +224,20 @@ describe('bots chat (integration)', () => {
       dataSource.getRepository(BotAttachmentOrmEntity),
       new BotAttachmentMapper(),
     );
+    subscriptions = new BotSubscriptionRepository(
+      dataSource.getRepository(BotSubscriptionOrmEntity),
+      new BotSubscriptionMapper(),
+    );
+    goals = new BotGoalRepository(
+      dataSource.getRepository(BotGoalOrmEntity),
+      dataSource,
+      new BotGoalMapper(),
+      new BotMessageMapper(),
+    );
   }, 180000);
 
   afterAll(async () => {
     await dataSource?.destroy();
-    await pg?.stop();
   });
 
   beforeEach(async () => {
@@ -241,7 +293,7 @@ describe('bots chat (integration)', () => {
     });
   }
 
-  function sent(bot: BotEntity, content: string) {
+  function sent(bot: BotEntity, content: string, options: { steer?: boolean } = {}) {
     const turn = BotTurnEntity.queue({
       organizationId: bot.organizationId,
       botId: bot.id,
@@ -249,6 +301,7 @@ describe('bots chat (integration)', () => {
       provider: 'glm',
       model: 'glm-5.3',
       effort: null,
+      steer: options.steer ?? false,
     });
     const message = BotMessageEntity.createNew({
       organizationId: bot.organizationId,
@@ -400,9 +453,42 @@ describe('bots chat (integration)', () => {
     const running = (await turns.findForRun(turn.id)).unwrap();
     running.start(new Date());
     await turns.claim(running);
-    running.end('failed', new Date(), { error: 'e'.repeat(2_001) });
+    running.end('failed', new Date(), { error: 'e'.repeat(2_001), failure: 'usage_limit' });
     expect(await turns.finish(running, null)).toBe(true);
-    expect((await turns.findForRun(turn.id)).unwrap()).toMatchObject({ status: 'failed' });
+    // The kind passes CHK_bot_turn_failure and comes back: the chat reads it.
+    expect((await turns.findForRun(turn.id)).unwrap()).toMatchObject({
+      status: 'failed',
+      failure: 'usage_limit',
+    });
+  });
+
+  // What breaks this: a column the finish leaves out of its UPDATE, a CHECK
+  // that refuses a real window, or the plan's reset read back as a string.
+  it('keeps the context and the plan limits a turn ended with', async () => {
+    const bot = await create('Metered');
+    const { turn, message } = sent(bot, 'One');
+    await turns.enqueue(turn, message, null);
+    const running = (await turns.findForRun(turn.id)).unwrap();
+    running.start(new Date());
+    await turns.claim(running);
+    const fiveHour = { usedPercent: 20.5, resetsAt: new Date('2026-10-26T14:00:00.000Z') };
+    running.end('completed', new Date(), {
+      inputTokens: 900,
+      outputTokens: 40,
+      context: { tokens: 41_000, window: 1_000_000 },
+      planLimits: { fiveHour, sevenDay: { usedPercent: 3, resetsAt: null } },
+    });
+    expect(await turns.finish(running, null)).toBe(true);
+    const stored = (await turns.findForRun(turn.id)).unwrap();
+    expect(stored.context).toEqual({ tokens: 41_000, window: 1_000_000 });
+    expect(stored.planLimits).toEqual({ fiveHour, sevenDay: { usedPercent: 3, resetsAt: null } });
+    // The next turn is told how full the context was; another bot reads none of it.
+    expect(await turns.findLastContext(bot.organizationId, bot.id)).toEqual({
+      tokens: 41_000,
+      window: 1_000_000,
+    });
+    const other = await create('Unmetered');
+    expect(await turns.findLastContext(other.organizationId, other.id)).toBeNull();
   });
 
   it('makes the end of a turn wait for the bot row a send holds', async () => {
@@ -477,6 +563,41 @@ describe('bots chat (integration)', () => {
     expect(await messages.findConversation(scopeOf(other), bot.id, 10)).toEqual([]);
   });
 
+  // What breaks this: another bot's or another workspace's chat matching, or
+  // web-search syntax passed through as a raw tsquery and failing on a stray
+  // quote.
+  it('searches one bot’s own words in its own workspace, with web-search syntax', async () => {
+    const bot = await create('Searcher');
+    const neighbour = await create('Neighbour');
+    const asked = sent(bot, 'Where does the staging host live?');
+    await turns.enqueue(asked.turn, asked.message, null);
+    await messages.insert(
+      BotMessageEntity.createNew({
+        organizationId: bot.organizationId,
+        botId: bot.id,
+        turnId: asked.turn.id,
+        role: 'assistant',
+        content: 'The staging host is build-02, behind the VPN.',
+        steps: [],
+        position: 1,
+      }),
+    );
+    const elsewhere = sent(neighbour, 'staging host for the neighbour');
+    await turns.enqueue(elsewhere.turn, elsewhere.message, null);
+
+    const hits = await messages.search(scope(), bot.id, 'staging host', 10);
+    expect(hits.map((message) => message.content).sort()).toEqual([
+      'The staging host is build-02, behind the VPN.',
+      'Where does the staging host live?',
+    ]);
+    expect(await messages.search(scope(), bot.id, '"staging host is" -vpn', 10)).toEqual([]);
+    // A stray quote is not an error: the syntax never refuses, and OR joins.
+    expect(await messages.search(scope(), bot.id, 'build-02 OR "unclosed', 10)).toHaveLength(1);
+    expect(
+      await messages.search(scopeOf(await insertOrganization()), bot.id, 'staging', 10),
+    ).toEqual([]);
+  });
+
   it('cancels a queued turn and a running one only through its conditional writes', async () => {
     const bot = await create('Glm Bot');
     const { turn, message } = sent(bot, 'Wait');
@@ -487,6 +608,99 @@ describe('bots chat (integration)', () => {
     await turns.claim(loaded);
     expect(await turns.requestCancel(loaded, new Date())).toBe(true);
     expect(await turns.isCancelRequested(turn.id)).toBe(true);
+  });
+
+  it('moves a steer into the running turn once, deleting its queued turn, and leaves a message sent to wait', async () => {
+    const bot = await create('Glm Bot');
+    const running = sent(bot, 'What time is it?');
+    await turns.enqueue(running.turn, running.message, null);
+    const claimed = (await turns.findForRun(running.turn.id)).unwrap();
+    claimed.start(new Date());
+    expect(await turns.claim(claimed)).toBe('claimed');
+    const waits = sent(bot, 'And after that?');
+    const steer = sent(bot, 'Use Tokyo time.', { steer: true });
+    expect(await turns.enqueue(waits.turn, waits.message, null)).toBe('waiting');
+    expect(await turns.enqueue(steer.turn, steer.message, null)).toBe('waiting');
+    const takes = (waiting: BotTurnEntity) => takesSteer(claimed, waiting);
+
+    // Two asks race: the steer is taken by one of them only.
+    const [one, two] = await Promise.all([
+      turns.takeSteers(claimed, takes),
+      turns.takeSteers(claimed, takes),
+    ]);
+    expect([...one, ...two]).toEqual([
+      { turnId: steer.turn.id, messageId: steer.message.id, text: 'Use Tokyo time.' },
+    ]);
+    expect((await turns.findForRun(steer.turn.id)).isNone()).toBe(true);
+    expect((await turns.findForRun(waits.turn.id)).unwrap().status).toBe('queued');
+    // Taken and not placed yet (a worker that died here): it reads as the
+    // turn's newest message, after what was stored when it was taken.
+    const [held]: { turnId: string; position: number }[] = await dataSource.query(
+      `SELECT "turnId", position FROM bot_message WHERE id = $1`,
+      [steer.message.id],
+    );
+    expect(held).toEqual({ turnId: claimed.id, position: 1 });
+    const unplaced = await messages.findConversation(scope(), bot.id, 10);
+    expect(unplaced.map((message) => message.content)).toEqual([
+      'What time is it?',
+      'And after that?',
+      'Use Tokyo time.',
+    ]);
+    // The send's answer, read after the take, is the turn that took it, never a 404.
+    const answer = await new FindBotTurnQueryHandler(turns).execute(
+      new FindBotTurnQuery(scope(), bot.id, steer.turn.id, steer.message.id),
+    );
+    expect(answer.id).toBe(claimed.id);
+    await expect(
+      new FindBotTurnQueryHandler(turns).execute(
+        new FindBotTurnQuery(scope(), bot.id, steer.turn.id),
+      ),
+    ).rejects.toMatchObject({ code: 'BOTS_014' });
+
+    // Put where the turn delivered it: the chat then reads it in that place.
+    const line = BotMessageEntity.createNew({
+      organizationId: bot.organizationId,
+      botId: bot.id,
+      turnId: claimed.id,
+      role: 'assistant',
+      content: 'Checking.',
+      steps: [],
+      position: 1,
+    });
+    await messages.insert(line);
+    await messages.placeSteer(claimed, { messageId: steer.message.id, position: 2 }, new Date());
+    const chat = await messages.findConversation(scope(), bot.id, 10);
+    expect(chat.map((message) => [message.turnId, message.content])).toEqual([
+      [claimed.id, 'What time is it?'],
+      [waits.turn.id, 'And after that?'],
+      [claimed.id, 'Checking.'],
+      [claimed.id, 'Use Tokyo time.'],
+    ]);
+  });
+
+  it('takes no steer Stop cancelled first, nor one with images', async () => {
+    const bot = await create('Glm Bot');
+    const running = sent(bot, 'Go');
+    await turns.enqueue(running.turn, running.message, null);
+    const claimed = (await turns.findForRun(running.turn.id)).unwrap();
+    claimed.start(new Date());
+    await turns.claim(claimed);
+    const stopped = sent(bot, 'Never mind', { steer: true });
+    await turns.enqueue(stopped.turn, stopped.message, null);
+    const cancelled = (await turns.findForRun(stopped.turn.id)).unwrap();
+    cancelled.end('cancelled', new Date());
+    expect(await turns.finish(cancelled, null)).toBe(true);
+    const pictured = sent(bot, 'Like this', { steer: true });
+    await turns.enqueue(pictured.turn, pictured.message, null);
+    await dataSource.query(`UPDATE bot_message SET attachments = $2::jsonb WHERE id = $1`, [
+      pictured.message.id,
+      JSON.stringify([{ id: randomUUID(), mimeType: 'image/png', sizeBytes: 1, name: 'x' }]),
+    ]);
+
+    expect(await turns.takeSteers(claimed, (waiting) => takesSteer(claimed, waiting))).toEqual([]);
+    expect((await turns.findForRun(stopped.turn.id)).unwrap().status).toBe('cancelled');
+    // Left as the turn it is: it runs next, with its images.
+    expect((await turns.findForRun(pictured.turn.id)).unwrap().status).toBe('queued');
   });
 
   it('deletes a bot with its turns and messages', async () => {
@@ -516,10 +730,12 @@ describe('bots chat (integration)', () => {
       new BotModelAccessResolver(bots, new TurnCredentialsResolver(credentials, sealer, chatgpt)),
       documents,
       memory,
+      skills,
       messages,
       summaries,
       owners,
       hosts,
+      turns,
       { tools: () => [], catalog: () => [] } as unknown as BotToolboxFactory,
       {} as BotApprovalRequestFactory,
       { heldScopes: async () => new Set() } as unknown as BotOwnerPermissionsResolver,
@@ -533,7 +749,20 @@ describe('bots chat (integration)', () => {
         },
         new BotAttachmentMapper(),
       ),
+      { create: () => ({ run: async () => [] }) } as unknown as BotSubagentRunnerFactory,
+      { forBot: async () => NO_PERMISSIONS } as unknown as BotPermissionsResolver,
+      {
+        create: () => ({ review: async () => ({ effect: 'none' }) }),
+      } as unknown as BotRuleReviewerFactory,
+      new BotApprovalStartedPolicy(approvals),
     );
+  }
+
+  /** What the engine is sent for a turn that runs. */
+  async function requestFor(turn: BotTurnEntity) {
+    const shape = await contextResolver().resolve(turn, new Date());
+    if (!shape) throw new Error('the turn had nothing to say');
+    return shape.request;
   }
 
   it("reads a turn's bot, documents and memory in the turn's workspace, and never another's", async () => {
@@ -568,12 +797,43 @@ describe('bots chat (integration)', () => {
 
     const mine = await create('Mine');
     const { turn } = sent(mine, 'Hi');
-    const context = await contextResolver().resolve(turn, new Date());
+    const context = await requestFor(turn);
     expect(context.apiKey).toBe('my-key-1234');
     expect(context.systemPrompt).toContain('You are Mine.');
     expect(context.systemPrompt).not.toContain('their secret');
     expect(context.message).toContain("The person's hosts could not be read just now");
     expect(context.tools).toEqual([]);
+  });
+
+  it("runs the skill a person's /<name> names, read in the turn's workspace and never another's", async () => {
+    const skill = (botId: string, organization: string, body: string) =>
+      BotSkillEntity.createNew({
+        organizationId: organization,
+        botId,
+        name: 'triage',
+        description: 'Sorts a failing build.',
+        body,
+        actor: userActor(userId),
+      });
+    const other = await insertOrganization();
+    const theirs = await create('Theirs', { organization: other });
+    await skills.insert(skill(theirs.id, other, 'their steps'), 50);
+    const mine = await create('Mine');
+    await skills.insert(skill(mine.id, organizationId, 'Read the log, then label it.'), 50);
+    await credentials.put(credential('my-key-1234'));
+    const { turn, message } = sent(mine, '/triage the nightly build');
+    await turns.enqueue(turn, message, null);
+
+    const context = await requestFor(turn);
+    expect(context.message).toContain(
+      'The person ran your skill /triage. Follow it for this request. What they wrote after the command is its input.\n\n<skill name="triage">\nRead the log, then label it.\n</skill>\n\n/triage the nightly build',
+    );
+    expect(context.message).not.toContain('their steps');
+    // What is stored is what the person typed; the skill rides this turn only.
+    const [stored] = await dataSource.query(`SELECT content FROM bot_message WHERE id = $1`, [
+      message.id,
+    ]);
+    expect(stored.content).toBe('/triage the nightly build');
   });
   async function asked(bot: BotEntity, summary = 'Start Claude Code on build-02') {
     const { turn, message } = sent(bot, 'Start it');
@@ -588,11 +848,142 @@ describe('bots chat (integration)', () => {
     });
   }
 
+  it('writes an “Always allow” with the yes, and rolls the yes back when the grants are full', async () => {
+    const bot = await create('Granter');
+    const { turn, message } = sent(bot, 'Start it');
+    await turns.enqueue(turn, message, null);
+    const card = BotApprovalEntity.request({
+      organizationId: bot.organizationId,
+      botId: bot.id,
+      turnId: turn.id,
+      tool: 'comment_on_pull_request',
+      input: { body: 'LGTM' },
+      summary: 'Comment on acme/docs#4',
+      subject: { kind: 'repository', key: 'i-1:7', label: 'acme/docs' },
+      sharesOutside: true,
+    });
+    await approvals.insertPending(card);
+    const standing = () =>
+      dataSource.query(
+        `SELECT "tool", "decision", "subjectLabel" FROM bot_tool_permission WHERE "botId" = $1`,
+        [bot.id],
+      );
+
+    // Past the cap: nothing is written, and the card still waits.
+    const full = (await approvals.findOne(scope(), bot.id, card.id)).unwrap();
+    full.approve(userId, new Date(), null, 'subject');
+    const permission = full.standing();
+    if (!permission) throw new Error('a yes for the subject leaves a grant');
+    await expect(
+      approvals.saveTransition(full, {
+        runCall: { by: 'Ana' },
+        standing: { permission, maxGrants: 0 },
+      }),
+    ).rejects.toMatchObject({ code: 'BOTS_034' });
+    expect(await standing()).toEqual([]);
+    expect((await approvals.findOne(scope(), bot.id, card.id)).unwrap()).toMatchObject({
+      status: 'pending',
+      sharesOutside: true,
+      subject: { kind: 'repository', key: 'i-1:7', label: 'acme/docs' },
+    });
+
+    const granted = (await approvals.findOne(scope(), bot.id, card.id)).unwrap();
+    granted.approve(userId, new Date(), null, 'subject');
+    const grant = granted.standing();
+    if (!grant) throw new Error('a yes for the subject leaves a grant');
+    expect(
+      await approvals.saveTransition(granted, {
+        runCall: { by: 'Ana' },
+        standing: { permission: grant, maxGrants: 100 },
+      }),
+    ).toBe(true);
+    expect(await standing()).toEqual([
+      { tool: 'comment_on_pull_request', decision: 'allow', subjectLabel: 'acme/docs' },
+    ]);
+    expect((await approvals.findOne(scope(), bot.id, card.id)).unwrap().reach).toBe('subject');
+  });
+
+  /** A card of questions on the bot's turn, waiting for its owner. */
+  async function questioned(bot: BotEntity, question = 'Which repository?') {
+    const { turn, message } = sent(bot, 'Release it');
+    await turns.enqueue(turn, message, null);
+    return BotQuestionEntity.ask({
+      organizationId: bot.organizationId,
+      botId: bot.id,
+      turnId: turn.id,
+      questions: [
+        {
+          header: null,
+          question,
+          multiSelect: false,
+          options: [
+            { label: 'acme/web', description: null },
+            { label: 'acme/api', description: null },
+          ],
+        },
+      ],
+      summary: question,
+    });
+  }
+
+  it('stores a card of questions answered, and refuses an answered card without its answers', async () => {
+    const bot = await create('Questioner');
+    const card = await questioned(bot);
+    expect(await questions.insertPending(card)).toBe('inserted');
+    const stored = (await questions.findPending(organizationId, bot.id)).unwrap();
+    expect(stored.questions.map((question) => question.question)).toEqual(['Which repository?']);
+    stored.answer(userId, new Date(), [{ picks: [1], other: 'and tag it' }]);
+    expect(await questions.saveTransition(stored)).toBe(true);
+    expect((await questions.findOne(scope(), bot.id, card.id)).unwrap()).toMatchObject({
+      status: 'answered',
+      answers: [{ picks: [1], other: 'and tag it' }],
+    });
+    // The loser of a race writes nothing.
+    const stale = card;
+    stale.expire(new Date());
+    expect(await questions.saveTransition(stale)).toBe(false);
+    await expect(
+      dataSource.query(`UPDATE bot_question SET answers = NULL WHERE id = $1`, [card.id]),
+    ).rejects.toThrow(/CHK_bot_question_answers/);
+    // Another workspace cannot read it.
+    expect(
+      (await questions.findOne(scopeOf(await insertOrganization()), bot.id, card.id)).isNone(),
+    ).toBe(true);
+  });
+
+  it('keeps one card up per bot across both kinds: questions wait on an approval, and the other way round', async () => {
+    const bot = await create('One at a time');
+    const approval = await asked(bot, 'Start Claude Code on build-02');
+    expect(await approvals.insertPending(approval)).toBe('inserted');
+    const blocked = await questioned(bot);
+    expect(await questions.insertPending(blocked)).toEqual({
+      waiting: 'Start Claude Code on build-02',
+    });
+    expect((await questions.findPending(organizationId, bot.id)).isNone()).toBe(true);
+
+    const decided = (await approvals.findPending(organizationId, bot.id)).unwrap();
+    decided.deny(userId, new Date(), 'no');
+    expect(await approvals.saveTransition(decided)).toBe(true);
+    const card = await questioned(bot, 'Which branch?');
+    expect(await questions.insertPending(card)).toBe('inserted');
+    expect(await approvals.insertPending(await asked(bot, 'Merge it'))).toEqual({
+      waiting: 'Which branch?',
+    });
+
+    // Raised at once, one of the two lands and the other is told to wait.
+    const racer = await create('Racing cards');
+    const outcomes = await Promise.all([
+      approvals.insertPending(await asked(racer, 'Run it')),
+      questions.insertPending(await questioned(racer, 'Which one?')),
+    ]);
+    expect(outcomes.filter((outcome) => outcome === 'inserted')).toHaveLength(1);
+  });
+
   it('keeps one card waiting per bot: a second is refused until the first is decided', async () => {
     const bot = await create('Asker');
     const first = await asked(bot, 'First');
     expect(await approvals.insertPending(first)).toBe('inserted');
-    expect(await approvals.insertPending(await asked(bot, 'Second'))).toBe('pending_exists');
+    expect(await approvals.insertPending(await asked(bot, 'Second'))).toEqual({ waiting: 'First' });
     // Another bot asks on its own.
     expect(await approvals.insertPending(await asked(await create('Other')))).toBe('inserted');
 
@@ -609,6 +1000,60 @@ describe('bots chat (integration)', () => {
     expect(
       await approvals.findForBot(scopeOf(await insertOrganization()), bot.id, undefined, 50),
     ).toEqual([]);
+  });
+
+  it("reads the workspace's cards in one status across its bots, newest first, and stages each move's event", async () => {
+    const ops = await create('Ops');
+    const docs = await create('Docs');
+    const first = await asked(ops, 'First');
+    expect(await approvals.insertPending(first)).toBe('inserted');
+    const second = await asked(docs, 'Second');
+    expect(await approvals.insertPending(second)).toBe('inserted');
+    const elsewhere = await insertOrganization();
+    const foreign = await asked(await create('Theirs', { organization: elsewhere }));
+    expect(await approvals.insertPending(foreign)).toBe('inserted');
+
+    const pendingIds = async (limit = 100) =>
+      (await approvals.findInWorkspace(scope(), 'pending', limit)).map((card) => card.id);
+    expect(await pendingIds()).toEqual([second.id, first.id]);
+    expect(await pendingIds(1)).toEqual([second.id]);
+
+    const stale = (await approvals.findOne(scope(), ops.id, first.id)).unwrap();
+    const decided = (await approvals.findOne(scope(), ops.id, first.id)).unwrap();
+    decided.deny(userId, new Date(), 'no');
+    expect(await approvals.saveTransition(decided)).toBe(true);
+    // The loser of the race stages nothing: its move never happened.
+    stale.expire(new Date());
+    expect(await approvals.saveTransition(stale)).toBe(false);
+
+    expect(await pendingIds()).toEqual([second.id]);
+    expect(
+      (await approvals.findInWorkspace(scope(), 'denied', 100)).map((card) => card.id),
+    ).toEqual([first.id]);
+    const staged: { aggregateId: string; status: string; botId: string }[] = await dataSource.query(
+      `SELECT "aggregateId", payload->>'status' AS status, payload->>'botId' AS "botId"
+       FROM outbox_message
+       WHERE "eventName" = 'BotApprovalChangedDomainEvent' AND "aggregateId" = ANY($1)
+       ORDER BY "createdAt", id`,
+      [[first.id, second.id]],
+    );
+    expect(staged).toEqual([
+      { aggregateId: first.id, status: 'pending', botId: ops.id },
+      { aggregateId: second.id, status: 'pending', botId: docs.id },
+      { aggregateId: first.id, status: 'denied', botId: ops.id },
+    ]);
+  });
+
+  it('stages no event for a card refused as a second one waiting', async () => {
+    const bot = await create('Twice');
+    await approvals.insertPending(await asked(bot));
+    const refused = await asked(bot);
+    expect(await approvals.insertPending(refused)).toEqual({ waiting: refused.summary });
+    const [{ count }]: { count: string }[] = await dataSource.query(
+      `SELECT count(*) FROM outbox_message WHERE "aggregateId" = $1`,
+      [refused.id],
+    );
+    expect(count).toBe('0');
   });
 
   it('lets one decision win however many land at once: the rest lose and change nothing', async () => {
@@ -676,6 +1121,37 @@ describe('bots chat (integration)', () => {
       [bot.id],
     );
     expect(lastMessagePreview).toBe('Before');
+  });
+
+  it('writes a stopping no’s line with the decision, outside any turn, and queues no turn; a loser writes none', async () => {
+    const bot = await create('Stopper');
+    const card = await asked(bot);
+    await approvals.insertPending(card);
+    const [first, second] = await Promise.all([
+      approvals.findOne(scope(), bot.id, card.id),
+      approvals.findOne(scope(), bot.id, card.id),
+    ]);
+    const winner = first.unwrap();
+    winner.deny(userId, new Date(), 'Not now');
+    const line = stoppedLine(winner, 'Ana');
+    expect(await approvals.saveTransition(winner, { line })).toBe(true);
+    const loser = second.unwrap();
+    loser.deny(userId, new Date());
+    const lost = stoppedLine(loser, 'Ana');
+    expect(await approvals.saveTransition(loser, { line: lost })).toBe(false);
+
+    const [{ count }]: { count: number }[] = await dataSource.query(
+      `SELECT count(*)::int AS count FROM bot_turn WHERE "botId" = $1`,
+      [bot.id],
+    );
+    expect(count).toBe(1);
+    const conversation = await messages.findConversation(scope(), bot.id, 10);
+    expect(conversation.find((message) => message.id === line.id)).toMatchObject({
+      turnId: null,
+      role: 'event',
+      event: { kind: 'approval', outcome: 'stopped', approvalId: card.id },
+    });
+    expect(conversation.some((message) => message.id === lost.id)).toBe(false);
   });
 
   it('deletes a bot’s approvals with it', async () => {
@@ -1104,6 +1580,33 @@ describe('bots chat (integration)', () => {
     expect((await conversationRows(bot.id)).messages).toBe(2);
   });
 
+  // What breaks this: a long running turn whose first blocks fell out of the
+  // conversation's window, counted short, so the console drew them again live.
+  it('counts each turn’s stored blocks of text in all, not its activity lines', async () => {
+    const bot = await create('Blocks');
+    const { turn, message } = sent(bot, 'Write a lot');
+    await turns.enqueue(turn, message, null);
+    const line = (role: 'assistant' | 'activity', content: string, position: number) =>
+      BotMessageEntity.createNew({
+        organizationId: bot.organizationId,
+        botId: bot.id,
+        turnId: turn.id,
+        role,
+        content,
+        steps: [],
+        position,
+      });
+    await messages.insert(line('assistant', 'One.', 1));
+    await messages.insert(line('activity', '', 2));
+    await messages.insert(line('assistant', 'Two.', 3));
+    expect(await messages.countTextBlocks(scope(), [turn.id, randomUUID()])).toEqual(
+      new Map([[turn.id, 2]]),
+    );
+    expect(await messages.countTextBlocks(scope(), [])).toEqual(new Map());
+    const other = await insertOrganization();
+    expect(await messages.countTextBlocks(scopeOf(other), [turn.id])).toEqual(new Map());
+  });
+
   it('counts the whole chat and reads it all back a page at a time, oldest first', async () => {
     const bot = await create('Long');
     await talked(bot, 10);
@@ -1465,5 +1968,424 @@ describe('bots chat (integration)', () => {
       expect.arrayContaining(images.map((i) => i.id)),
     );
     expect(await attachments.deleteUnclaimed(images.map((image) => image.id))).toBe(2);
+  });
+  it('claims for the bot’s message only the images it showed, never a person’s upload, and leaves the sidebar’s last words', async () => {
+    const bot = await create('Shows');
+    const { turn, message } = sent(bot, 'Show me a chart');
+    await turns.enqueue(turn, message, null);
+    const shown = BotAttachmentEntity.upload(
+      {
+        organizationId: bot.organizationId,
+        botId: bot.id,
+        uploadedByUserId: null,
+        mimeType: 'image/png',
+        sizeBytes: 2048,
+        name: 'Revenue by quarter',
+      },
+      'png',
+    );
+    await attachments.insert(shown);
+    const persons = await uploaded(bot);
+    const reply = BotMessageEntity.createNew({
+      organizationId: bot.organizationId,
+      botId: bot.id,
+      turnId: turn.id,
+      role: 'assistant',
+      content: '',
+      steps: [],
+      position: 2,
+      attachments: [shown.toMessageAttachment(), persons.toMessageAttachment()],
+    });
+    await messages.insert(reply);
+
+    const claimed = await attachments.findForMessage(organizationId, reply.id);
+    expect(claimed.map((image) => image.id)).toEqual([shown.id]);
+    const [{ lastMessagePreview }]: { lastMessagePreview: string | null }[] =
+      await dataSource.query(`SELECT "lastMessagePreview" FROM bot WHERE id = $1`, [bot.id]);
+    expect(lastMessagePreview).toBe('Show me a chart');
+  });
+
+  describe('subscriptions (27-bot-subscriptions.md)', () => {
+    const SESSION = '7b1c4f9e-0000-4000-8000-0000000000aa';
+
+    function watching(
+      bot: BotEntity,
+      overrides: Partial<Parameters<typeof BotSubscriptionEntity.subscribe>[0]> = {},
+    ) {
+      return BotSubscriptionEntity.subscribe({
+        organizationId: bot.organizationId,
+        botId: bot.id,
+        sessionId: SESSION,
+        originTurnId: null,
+        purpose: 'research',
+        until: 'task',
+        watchedTurn: 1,
+        credentialScopes: ['sessions:read'],
+        timeZone: 'Europe/Madrid',
+        known: null,
+        ...overrides,
+      });
+    }
+
+    // What breaks this: a stall check delivered at once, before the agent
+    // had any time to start, or lost with a restart.
+    it('stages the stall check on the outbox, held until its time', async () => {
+      await dataSource.query(`DELETE FROM outbox_message WHERE topic = 'bot-stall-checks'`);
+      const bot = await create('Stall');
+      const stored = await subscriptions.subscribe(watching(bot));
+      const at = new Date(Date.now() + 5 * 60_000);
+      await new OutboxBotStallChecksAdapter(new OutboxService(dataSource)).schedule(
+        { subscriptionId: stored.id, botId: bot.id, sessionId: SESSION, turn: 1 },
+        at,
+        'corr-1',
+      );
+      const rows: { eventName: string; payload: unknown; status: string; availableAt: Date }[] =
+        await dataSource.query(
+          `SELECT "eventName", payload, status, "availableAt" FROM outbox_message WHERE topic = 'bot-stall-checks'`,
+        );
+      expect(rows).toHaveLength(1);
+      expect(rows[0]).toMatchObject({
+        eventName: 'check-stalled-session',
+        payload: { subscriptionId: stored.id, turn: 1 },
+        status: 'pending',
+      });
+      expect(new Date(rows[0].availableAt).getTime()).toBe(at.getTime());
+    });
+
+    it('holds one subscription per bot and session: a second subscribe keeps its id, wakes and newest state', async () => {
+      const bot = await create('Watcher');
+      const first = await subscriptions.subscribe(watching(bot));
+      first.recordWake(1, 'requires_action');
+      expect(await subscriptions.recordWake(first)).toBe(true);
+
+      const again = await subscriptions.subscribe(
+        watching(bot, { purpose: null, until: 'closed', watchedTurn: null }),
+      );
+      expect(again).toMatchObject({
+        id: first.id,
+        purpose: 'research',
+        until: 'closed',
+        watchedTurn: null,
+        wakes: 1,
+        lastTurn: 1,
+        lastState: 'requires_action',
+        credentialScopes: ['sessions:read'],
+      });
+      expect(await subscriptions.findIdsForSession(bot.organizationId, SESSION)).toEqual([
+        first.id,
+      ]);
+      // Another workspace's event never reads this bot's subscription.
+      expect(await subscriptions.findIdsForSession(await insertOrganization(), SESSION)).toEqual(
+        [],
+      );
+    });
+
+    // What breaks this: an input-needed wake recorded just before the task's
+    // end, keeping a finished one-task subscription alive.
+    it('records one of two racing wakes, and ends a subscription whatever was recorded since', async () => {
+      const bot = await create('Racer');
+      const stored = await subscriptions.subscribe(watching(bot));
+      const a = (await subscriptions.findForWake(stored.id)) as BotSubscriptionEntity;
+      const b = (await subscriptions.findForWake(stored.id)) as BotSubscriptionEntity;
+      a.recordWake(1, 'requires_action');
+      b.recordWake(1, 'completed');
+      expect(await subscriptions.recordWake(a)).toBe(true);
+      expect(await subscriptions.recordWake(b)).toBe(false);
+      expect(await subscriptions.end(b)).toBe(true);
+      expect(await subscriptions.end(a)).toBe(false);
+      expect(await subscriptions.findForWake(stored.id)).toBeNull();
+    });
+
+    it('names a terminal watch, answers the one it replaced, finds it by the watch, and keeps the newest count', async () => {
+      const bot = await create('Pattern watcher');
+      const stored = await subscriptions.subscribe(watching(bot));
+      const first = randomUUID();
+      const second = randomUUID();
+      expect(
+        await subscriptions.attachTerminalWatch(stored.id, { id: first, pattern: 'FAIL' }),
+      ).toBeNull();
+      expect(
+        await subscriptions.attachTerminalWatch(stored.id, { id: second, pattern: 'PASS' }),
+      ).toBe(first);
+      expect(await subscriptions.findForTerminalWatch(first)).toBeNull();
+
+      const found = (await subscriptions.findForTerminalWatch(second)) as BotSubscriptionEntity;
+      expect(found).toMatchObject({
+        id: stored.id,
+        terminalWatch: { id: second, pattern: 'PASS' },
+        matches: 0,
+      });
+      found.recordMatch(4);
+      expect(await subscriptions.recordWake(found)).toBe(true);
+      // A second subscribe keeps the watch and what it counted.
+      await subscriptions.subscribe(watching(bot, { until: 'closed', watchedTurn: null }));
+      expect(await subscriptions.findForWake(stored.id)).toMatchObject({
+        terminalWatch: { id: second, pattern: 'PASS' },
+        matches: 4,
+        wakes: 1,
+      });
+      await expect(
+        dataSource.query(`UPDATE bot_subscription SET pattern = NULL WHERE id = $1`, [stored.id]),
+      ).rejects.toThrow(/CHK_bot_subscription_pattern/);
+    });
+
+    it('refuses what the table does not hold, goes with its bot, and outlives a cleared chat', async () => {
+      const bot = await create('Cascade');
+      await expect(
+        dataSource.query(
+          `INSERT INTO bot_subscription ("organizationId", "botId", "resourceKind", "resourceId", "until") VALUES ($1, $2, 'session', $3, 'task')`,
+          [bot.organizationId, bot.id, SESSION],
+        ),
+      ).rejects.toMatchObject({ constraint: 'CHK_bot_subscription_watched_turn' });
+
+      const { turn, message } = sent(bot, 'Research this');
+      await turns.enqueue(turn, message, null);
+      const stored = await subscriptions.subscribe(watching(bot, { originTurnId: turn.id }));
+      expect(await turns.clearConversation(bot.organizationId, bot.id)).toBe('busy');
+      await dataSource.query(`UPDATE bot_turn SET status = 'completed' WHERE id = $1`, [turn.id]);
+      expect(await turns.clearConversation(bot.organizationId, bot.id)).toBe('cleared');
+      expect(await subscriptions.findForWake(stored.id)).toMatchObject({ originTurnId: null });
+
+      await dataSource.query(`DELETE FROM bot WHERE id = $1`, [bot.id]);
+      expect(await subscriptions.findForWake(stored.id)).toBeNull();
+    });
+
+    // What breaks this: the same session news, delivered again after the API
+    // restarted, telling the person twice.
+    it('queues one turn per task and state, however often and by whichever process the wake is built', async () => {
+      await dataSource.query(`DELETE FROM outbox_message`);
+      const bot = await create('Wakes');
+      const stored = await subscriptions.subscribe(watching(bot));
+      const news: SessionWake = {
+        subscriptionId: stored.id,
+        sessionId: SESSION,
+        sessionName: 'Research',
+        purpose: 'research',
+        ends: true,
+        cause: {
+          kind: 'state',
+          task: {
+            seq: 1,
+            state: 'completed',
+            prompt: 'Research',
+            result: 'Done',
+            failureDetail: null,
+          },
+          state: 'completed',
+          silentPattern: null,
+        },
+      };
+      const props = {
+        organizationId: bot.organizationId,
+        botId: bot.id,
+        requestedByUserId: userId,
+        provider: 'glm' as const,
+        model: 'glm-5.3',
+        effort: null,
+      };
+      const first = sessionWakeTurn(props, news);
+      const redelivered = sessionWakeTurn(props, news);
+      expect(await turns.enqueueOnce(first.turn, first.opening, null, null)).toEqual({
+        outcome: 'staged',
+        turnId: first.turn.id,
+      });
+      expect(await turns.enqueueOnce(redelivered.turn, redelivered.opening, null, null)).toEqual({
+        outcome: 'existing',
+        turnId: first.turn.id,
+      });
+      expect(await stagedTurns()).toEqual([first.turn.id]);
+      const opening = await messages.findOpening(bot.organizationId, first.turn.id);
+      expect(opening?.event).toEqual({
+        kind: 'session',
+        subscriptionId: stored.id,
+        sessionId: SESSION,
+        sessionName: 'Research',
+        turn: 1,
+        state: 'completed',
+      });
+      const [row]: { origin: string }[] = await dataSource.query(
+        `SELECT origin FROM bot_turn WHERE id = $1`,
+        [first.turn.id],
+      );
+      expect(row.origin).toBe('subscription');
+    });
+  });
+  // What breaks this: two goals for one bot; two ends at once both storing a
+  // continuation (two would run); an ended goal ending again with a second
+  // line; a turn's end owing the goal's job when the bot has no goal, or not
+  // owing it when the goal was set in that very turn.
+  describe('goals (25-bots.md §4.1)', () => {
+    function goalFor(bot: BotEntity, originTurnId: string, objective = 'Ship it') {
+      return BotGoalEntity.set({
+        organizationId: bot.organizationId,
+        botId: bot.id,
+        originTurnId,
+        objective,
+        limit: 3,
+        credentialScopes: ['bots:read'],
+        timeZone: 'Europe/Madrid',
+      });
+    }
+
+    it('holds one goal per bot: setting another replaces it and answers the old one', async () => {
+      const bot = await create('Goalie');
+      const turn = await runningTurn(bot);
+      const first = goalFor(bot, turn.id, 'Triage the bugs');
+      expect(await goals.set(first)).toBeNull();
+      const replaced = await goals.set(goalFor(bot, turn.id, 'Ship it'));
+      expect(replaced).toMatchObject({ id: first.id, objective: 'Triage the bugs' });
+      expect(await goals.findForBot(bot.organizationId, bot.id)).toMatchObject({
+        objective: 'Ship it',
+        continuations: 0,
+        credentialScopes: ['bots:read'],
+      });
+    });
+
+    // What breaks this: a /goal's turn queued in one transaction and its goal
+    // set in another, so a fast worker (or a crash between them) runs and
+    // ends the turn with no goal, and the goal set after is never reviewed.
+    it('sets a /goal’s goal in the transaction that queues its turn, replacing the one there was', async () => {
+      const bot = await create('Setter');
+      const earlier = await runningTurn(bot);
+      const old = goalFor(bot, earlier.id, 'Triage the bugs');
+      await goals.set(old);
+      const yours = sent(bot, '/goal Ship it');
+      const goal = goalFor(bot, yours.turn.id, 'Ship it');
+      const { outcome, replaced } = await turns.enqueueWithGoal(
+        yours.turn,
+        yours.message,
+        goal,
+        null,
+      );
+      expect(outcome).toBe('waiting');
+      expect(replaced).toMatchObject({ id: old.id });
+      expect(await goals.findForBot(bot.organizationId, bot.id)).toMatchObject({
+        id: goal.id,
+        originTurnId: yours.turn.id,
+      });
+    });
+
+    it('sets no goal when the /goal’s bot is gone', async () => {
+      const bot = await create('Gone');
+      const yours = sent(bot, '/goal Ship it');
+      await dataSource.query(`DELETE FROM bot WHERE id = $1`, [bot.id]);
+      const goal = goalFor(bot, yours.turn.id);
+      expect(await turns.enqueueWithGoal(yours.turn, yours.message, goal, null)).toEqual({
+        outcome: 'missing',
+        replaced: null,
+      });
+      const left: unknown[] = await dataSource.query(`SELECT 1 FROM bot_goal WHERE id = $1`, [
+        goal.id,
+      ]);
+      expect(left).toEqual([]);
+    });
+
+    function continuation(bot: BotEntity, goal: BotGoalEntity) {
+      return goalContinuationTurn(
+        {
+          organizationId: bot.organizationId,
+          botId: bot.id,
+          requestedByUserId: userId,
+          provider: 'glm',
+          model: 'glm-5.3',
+          effort: null,
+        },
+        goal,
+        goal.advance(),
+        null,
+      );
+    }
+
+    // What breaks this: a count stored apart from its turn, so a process that
+    // dies between the two leaves a goal counted with nothing queued, or two
+    // ends racing both queue a continuation.
+    it('queues a continuation and claims its count together, once when two ends race', async () => {
+      const bot = await create('Racer');
+      const turn = await runningTurn(bot);
+      await goals.set(goalFor(bot, turn.id));
+      const [a, b] = await Promise.all([
+        goals.findForBot(bot.organizationId, bot.id),
+        goals.findForBot(bot.organizationId, bot.id),
+      ]);
+      const first = continuation(bot, a as BotGoalEntity);
+      const second = continuation(bot, b as BotGoalEntity);
+      const outcomes = await Promise.all([
+        turns.enqueueContinuation(first.turn, first.opening, null, a as BotGoalEntity),
+        turns.enqueueContinuation(second.turn, second.opening, null, b as BotGoalEntity),
+      ]);
+      // Both carry the key of continuation 1: one queues it, the other finds it.
+      expect(outcomes.sort()).toEqual(['existing', 'waiting']);
+      expect((await goals.findForBot(bot.organizationId, bot.id))?.continuations).toBe(1);
+      const queued: unknown[] = await dataSource.query(
+        `SELECT 1 FROM bot_turn WHERE "botId" = $1 AND origin = 'goal'`,
+        [bot.id],
+      );
+      expect(queued).toHaveLength(1);
+    });
+
+    // What breaks this: a Stop deleting the goal while its continuation is
+    // being queued, and the continuation queued after the Stop returned.
+    it('queues nothing for a goal stopped before its continuation was claimed', async () => {
+      const bot = await create('Stopped');
+      const turn = await runningTurn(bot);
+      const goal = goalFor(bot, turn.id);
+      await goals.set(goal);
+      const loaded = (await goals.findForBot(bot.organizationId, bot.id)) as BotGoalEntity;
+      await goals.end(goal, null);
+      const next = continuation(bot, loaded);
+      expect(await turns.enqueueContinuation(next.turn, next.opening, null, loaded)).toBe('lost');
+      const queued: unknown[] = await dataSource.query(
+        `SELECT 1 FROM bot_turn WHERE "botId" = $1 AND origin = 'goal'`,
+        [bot.id],
+      );
+      expect(queued).toEqual([]);
+    });
+
+    it('ends once, with its line outside any turn, and a second end writes nothing', async () => {
+      const bot = await create('Ender');
+      const turn = await runningTurn(bot);
+      const goal = goalFor(bot, turn.id);
+      await goals.set(goal);
+      expect(await goals.end(goal, goalEndLine(goal, 'cleared', null))).toBe(true);
+      expect(await goals.end(goal, goalEndLine(goal, 'cleared', null))).toBe(false);
+      const lines: { turnId: string | null }[] = await dataSource.query(
+        `SELECT "turnId" FROM bot_message WHERE "botId" = $1 AND event->>'kind' = 'goal'`,
+        [bot.id],
+      );
+      expect(lines).toEqual([{ turnId: null }]);
+      expect(await goals.findForBot(bot.organizationId, bot.id)).toBeNull();
+    });
+
+    it('stages the goal’s job when one of its turns ends, and none for any other turn', async () => {
+      await dataSource.query(`DELETE FROM outbox_message`);
+      const withGoal = await create('Driven');
+      const without = await create('Idle');
+      const driven = await runningTurn(withGoal);
+      const idle = await runningTurn(without);
+      // Set in the very turn that is ending: the end's transaction sees it.
+      await goals.set(goalFor(withGoal, driven.id));
+      for (const turn of [driven, idle]) {
+        turn.end('completed', new Date());
+        expect(await turns.finish(turn, null)).toBe(true);
+      }
+      // A later turn of the same bot that is not the goal's owes it nothing.
+      const other = await runningTurn(withGoal);
+      other.end('completed', new Date());
+      expect(await turns.finish(other, null)).toBe(true);
+      const jobs: { payload: { turnId: string } }[] = await dataSource.query(
+        `SELECT payload FROM outbox_message WHERE topic = 'bot-turns' AND "eventName" = 'continue-bot-goal'`,
+      );
+      expect(jobs.map((job) => job.payload.turnId)).toEqual([driven.id]);
+    });
+
+    it('goes with the chat: clearing the conversation deletes the goal its turn set', async () => {
+      const bot = await create('Forgetful');
+      const turn = await runningTurn(bot);
+      await goals.set(goalFor(bot, turn.id));
+      turn.end('completed', new Date());
+      await turns.finish(turn, null);
+      expect(await turns.clearConversation(bot.organizationId, bot.id)).toBe('cleared');
+      expect(await goals.findForBot(bot.organizationId, bot.id)).toBeNull();
+    });
   });
 });

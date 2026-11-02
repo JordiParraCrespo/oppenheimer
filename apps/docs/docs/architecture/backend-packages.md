@@ -62,6 +62,9 @@ Located in `src/templates/`, built with `@react-email/components`:
 - `password-reset.tsx` — Reset button + fallback link
 - `email-verification.tsx` — Verify button + fallback link
 - `welcome.tsx` — Welcome message with user's name
+- `action-email.tsx` — the one-link layout behind `sendAction`, which the API
+  fills with its own copy for product notices (a host paired, a host on a new
+  network)
 
 ### Configuration
 
@@ -154,19 +157,12 @@ import { StorageModule } from "@oppenheimer/backend-storage";
 export class AppModule {}
 ```
 
-## `@oppenheimer/backend-queue`
+## Queues
 
-BullMQ async job processing with Bull Board admin UI.
-
-```typescript
-import { setupBullBoard } from "@oppenheimer/backend-queue";
-import { QUEUE_NAMES } from "@oppenheimer/shared";
-
-// In main.ts bootstrap
-setupBullBoard(app, [QUEUE_NAMES.EMAIL, QUEUE_NAMES.INBOUND_EVENTS]);
-```
-
-Bull Board UI is available at `/admin/queues`.
+BullMQ is not a package: every queue is registered once, in the API's
+`src/queue/queue.module.ts`, and the Bull Board dashboard is mounted by
+`setupBullBoard` (`src/queue/infrastructure/bull-board.util.ts`) from
+`main.ts`, at `/admin/queues`, behind Basic auth.
 
 ## CJS compatibility
 

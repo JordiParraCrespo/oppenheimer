@@ -11,6 +11,7 @@ import { TaskEntity, type TaskProps } from '../../../tasks/domain/task.entity';
 import { FindPlanSummaryQuery } from '../../../tasks/queries/find-plan-summary/find-plan-summary.query';
 import { FindTaskQuery } from '../../../tasks/queries/find-task/find-task.query';
 import { FindTasksQuery } from '../../../tasks/queries/find-tasks/find-tasks.query';
+import { NO_PERMISSIONS } from '../../domain/bot-tool-permission.policy';
 import { BotTurnBudget } from '../../domain/bot-turn-budget.policy';
 import { BotPlanToolsFactory } from '../bot-plan-tools.factory';
 import type { BotToolContext } from '../bot-tool.factory';
@@ -32,6 +33,7 @@ const context: BotToolContext = {
   homeHostId: null,
   timeZone: 'Europe/Madrid',
   permission: 'auto',
+  permissions: NO_PERMISSIONS,
   budget: new BotTurnBudget(),
   approvals: { request: vi.fn() },
 };

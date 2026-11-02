@@ -30,8 +30,8 @@ declare module '@tanstack/react-router' {
   interface StaticDataRouteOption {
     /**
      * A page at that measure (`EditorPageBody`'s `size`: `status`,
-     * `composer`, `narrow` — the default — `wide`, `board`, `fluid`), or
-     * `full`, a box that is the pane. A function of the route's search when
+     * `composer`, `prompt`, `narrow` — the default — `wide`, `board`,
+     * `fluid`), or `full`, a box that is the pane. A function of the route's search when
      * its views are search params.
      */
     pane?: PaneDeclaration;

@@ -1,4 +1,4 @@
-import { expect, type Locator, type Page } from '@playwright/test';
+import { errors, expect, type Locator, type Page } from '@playwright/test';
 
 /** Where a host's Claude Code keeps conversations; the runner finds one in any project folder. */
 const FOLDER = '~/.claude/projects/-w-sessions-xrp-mobile';
@@ -49,8 +49,8 @@ async function distanceFromEnd(page: Page): Promise<number> {
 /**
  * Nothing of the terminal under the chat paints or takes a pointer over it:
  * the topmost element at points across the chat's area is the chat's own,
- * never xterm's layers or the latency readout (a z-index inside the grid
- * once reached over the cover, greying a band and eating clicks).
+ * never xterm's layers (a z-index inside the grid once reached over the
+ * cover, greying a band and eating clicks).
  */
 export async function expectChatOnTop(page: Page): Promise<void> {
   const box = await scroller(page).boundingBox();
@@ -60,14 +60,13 @@ export async function expectChatOnTop(page: Page): Promise<void> {
     // they still paint: for the sampling, everything of the terminal takes
     // one, which makes the topmost element the topmost painted.
     const probe = document.createElement('style');
-    probe.textContent =
-      '.xterm, .xterm *, [data-testid="terminal-latency"] { pointer-events: auto !important; }';
+    probe.textContent = '.xterm, .xterm * { pointer-events: auto !important; }';
     document.head.appendChild(probe);
     const found: string[] = [];
     for (let x = b.x + 4; x < b.x + b.width; x += b.width / 12) {
       for (let y = b.y + 4; y < b.y + b.height; y += b.height / 12) {
         const el = document.elementFromPoint(x, y);
-        if (el?.closest('.xterm, [data-testid="terminal-latency"]')) {
+        if (el?.closest('.xterm')) {
           found.push(
             `${Math.round(x)},${Math.round(y)}: ${el.className || el.getAttribute('style') || el.tagName}`,
           );
@@ -129,4 +128,31 @@ export async function expectComposerClickable(page: Page): Promise<Locator> {
   await composer.click();
   await expect(composer).toBeFocused();
   return composer;
+}
+
+/**
+ * Puts a Claude Code session's pane on its terminal, for a test that types
+ * into the grid. A session opens on Chat once the host sends its transcript
+ * (an empty one too) to a reader `session_chat_view` is on for, and the chat
+ * covers the grid, so a click meant for xterm would land on the chat. Where
+ * the chat is not offered the pane is the terminal already.
+ */
+export async function showTerminal(page: Page): Promise<void> {
+  // The English `sessions.chat.view.label` and `sessions.chat.view.terminal`.
+  const terminal = page
+    .getByRole('group', { name: 'How to read this session' })
+    .getByRole('button', { name: 'Terminal' });
+  // `isVisible` answers at once (its `timeout` is ignored), which races the
+  // host's first chat batch; nothing on the page says the chat will never
+  // come, so an absent switch is known only once this wait runs out. Only
+  // that timeout means "not offered"; any other failure is the test's.
+  const offered = await terminal.waitFor({ timeout: 10_000 }).then(
+    () => true,
+    (error: unknown) => {
+      if (error instanceof errors.TimeoutError) return false;
+      throw error;
+    },
+  );
+  if (offered) await terminal.click();
+  await expect(page.locator('[data-slot="chat-transcript"]')).toHaveCount(0);
 }

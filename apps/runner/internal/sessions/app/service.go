@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"reflect"
+	"slices"
 	"sort"
 	"strings"
 	"sync"
@@ -39,7 +40,21 @@ type Options struct {
 	// Transcripts reads a session's first message off the agent's own
 	// transcript, for a session launched with no task; nil reports none.
 	Transcripts Transcripts
-	Now         func() time.Time
+	// StatusLine is the command a Claude Code session runs for its status
+	// line (`domain.Launch.StatusLine`); empty leaves the CLI's own.
+	StatusLine string
+	// FreePort finds a loopback port nothing listens on, for the local API
+	// of an agent that keeps its conversation behind one (OpenCode); nil
+	// launches it without one, and its session has no chat view.
+	FreePort func() (int, error)
+	// ProgramStatus keeps what an agent reports through OSC 7501; nil reads
+	// the screen alone.
+	ProgramStatus ProgramStatus
+	// Rebooted says the host started after the session map was last
+	// saved: every session it holds as live was lost to that reboot, and a
+	// kept one is brought back (RecoverKept).
+	Rebooted bool
+	Now      func() time.Time
 }
 
 // Service is the session lifecycle.
@@ -67,11 +82,25 @@ type Service struct {
 	// command is in flight, so a Stop or a Close that landed in between is
 	// never overwritten by a live state read before it. Neither is
 	// persisted: they only order writes within this process.
-	revs        map[string]uint64
-	busy        map[string]int
+	revs map[string]uint64
+	busy map[string]int
+	// confirmed, under mu, holds the sessions whose blocked agent has been
+	// announced a second time (see observe).
+	confirmed map[string]bool
+	// decisions, under mu, is the id of the decision last reported for each
+	// session whose agent waits on one (reportDecision).
+	decisions map[string]string
+	// listeners, under mu, hear each change after it is written (Listen).
+	listeners []Listener
+	// keeper holds the kept sessions a reboot stopped (keep.go).
+	keeper *keeper
+	// observer says what an agent is doing: its own word, or its screen
+	// (observer.go).
+	observer observer
+	// watches is each session's terminal watches (watches.go).
+	watches     *watchBook
 	terminals   Terminals
 	worktrees   Worktrees
-	classifier  Classifier
 	store       Store
 	publisher   Publisher
 	files       Files
@@ -81,6 +110,8 @@ type Service struct {
 	gate        LaunchGate
 	trust       Trust
 	transcripts Transcripts
+	statusLine  string
+	freePort    func() (int, error)
 	now         func() time.Time
 }
 
@@ -100,11 +131,13 @@ func New(opts Options) (*Service, error) {
 	}
 	s := &Service{
 		sessions: map[string]domain.Session{}, creating: map[string]*creation{},
-		revs: map[string]uint64{}, busy: map[string]int{}, inFlight: map[string]bool{},
+		revs: map[string]uint64{}, busy: map[string]int{}, inFlight: map[string]bool{}, confirmed: map[string]bool{}, decisions: map[string]string{},
+		keeper: newKeeper(), observer: observer{classifier: opts.Classifier, program: opts.ProgramStatus},
+		watches:   newWatchBook(),
 		terminals: opts.Terminals, worktrees: opts.Worktrees,
-		classifier: opts.Classifier, store: opts.Store, publisher: publisher,
+		store: opts.Store, publisher: publisher,
 		files: opts.Files, places: opts.Places, layout: opts.Layout, env: env, gate: opts.Gate, trust: opts.Trust,
-		transcripts: opts.Transcripts, now: now,
+		transcripts: opts.Transcripts, statusLine: opts.StatusLine, freePort: opts.FreePort, now: now,
 	}
 	if opts.Store != nil {
 		loaded, err := opts.Store.Load()
@@ -118,6 +151,9 @@ func New(opts Options) (*Service, error) {
 				continue
 			}
 			s.sessions[session.ID] = session.Clone()
+			if opts.Rebooted && session.Keep && session.State.Live() {
+				s.keeper.lose(session.ID)
+			}
 		}
 	}
 	return s, nil
@@ -250,6 +286,50 @@ func (s *Service) Attach(ctx context.Context, id string, window int, size Size, 
 	return s.terminals.Attach(ctx, session.Target(window), size, readOnly)
 }
 
+// agentServer is where the session's agent serves its conversation from
+// this launch on: a fresh port and password each time, since the last port
+// may be another process's by now, keeping when the session first launched
+// (previous, nil on a create). None for an agent that serves nothing, or when
+// no port could be found: the agent then runs as it always did, without a
+// chat view.
+func (s *Service) agentServer(agent domain.Agent, previous *domain.AgentServer, directory string) *domain.AgentServer {
+	if !agent.ServesConversation() || s.freePort == nil {
+		return nil
+	}
+	port, err := s.freePort()
+	if err != nil {
+		return nil
+	}
+	since := s.now().UnixMilli()
+	if previous != nil && previous.Since != 0 {
+		since = previous.Since
+	}
+	server, err := domain.NewAgentServer(port, since, directory)
+	if err != nil {
+		return nil
+	}
+	return &server
+}
+
+// sessionEnv is the session's tmux environment: the host's (Options.Env)
+// and, for an agent that serves its conversation, its API's credentials,
+// which must stay off the launch command line (domain.Launch.ServerEnv).
+func (s *Service) sessionEnv(session domain.Session) map[string]string {
+	env := s.env(session)
+	server := session.Launch.ServerEnv(session.Agent)
+	if len(server) == 0 {
+		return env
+	}
+	merged := make(map[string]string, len(env)+len(server))
+	for name, value := range env {
+		merged[name] = value
+	}
+	for name, value := range server {
+		merged[name] = value
+	}
+	return merged
+}
+
 // FollowChat follows a session's conversation for the chat view, sending
 // its transcript entries to emit until ctx ends (Transcripts.Follow).
 // ErrNoChat for a session whose agent's transcript this runner cannot read.
@@ -261,7 +341,7 @@ func (s *Service) FollowChat(ctx context.Context, id string, entryMax, batchMax 
 	if err != nil {
 		return err
 	}
-	return s.transcripts.Follow(ctx, session.Agent, session.Launch.Conversation, entryMax, batchMax, emit)
+	return s.transcripts.Follow(ctx, session, entryMax, batchMax, emit)
 }
 
 // Send types into a window, which is how the browser's keystrokes arrive
@@ -338,14 +418,18 @@ func (s *Service) Refresh(ctx context.Context, id string) (domain.Session, error
 	if !alive {
 		// The tmux session is gone — a host reboot, or someone killed it.
 		// The worktree is intact, so this is `stopped`, not `closed`.
-		return s.observe(session, rev, domain.StateStopped, ""), nil
+		next := s.observe(session, rev, observation{state: domain.StateStopped})
+		s.reportDecision(next, "")
+		return next, nil
 	}
 	screen, err := s.terminals.Capture(ctx, session.Target(0))
 	if err != nil {
 		return session, err
 	}
-	state, loginURL := s.classifier.Classify(screen, session.Agent)
-	return s.observe(session, rev, state, loginURL), nil
+	s.scanWatches(session.ID, screen.Body)
+	next := s.observe(session, rev, s.observer.observe(session, screen))
+	s.reportDecision(next, screen.Body)
+	return next, nil
 }
 
 // RefreshAll refreshes every live session and returns the whole list, newest
@@ -367,6 +451,9 @@ func (s *Service) RefreshAll(ctx context.Context) ([]domain.Session, error) {
 		}
 	}
 	s.mu.Unlock()
+	// A session that stopped, closed or went since the last pass takes its
+	// watches with it.
+	s.pruneWatches()
 	if len(live) == 0 {
 		return s.List(), nil
 	}
@@ -390,7 +477,7 @@ func (s *Service) RefreshAll(ctx context.Context) ([]domain.Session, error) {
 		session := item.session
 		name := session.TmuxName()
 		if !present[name] {
-			s.observe(session, item.rev, domain.StateStopped, "")
+			s.reportDecision(s.observe(session, item.rev, observation{state: domain.StateStopped}), "")
 			continue
 		}
 		body, err := s.terminals.CaptureBody(ctx, session.Target(0))
@@ -398,8 +485,9 @@ func (s *Service) RefreshAll(ctx context.Context) ([]domain.Session, error) {
 			errs = append(errs, err)
 			continue
 		}
-		state, loginURL := s.classifier.Classify(Screen{Body: body, Title: titles[name]}, session.Agent)
-		s.observe(session, item.rev, state, loginURL)
+		s.scanWatches(session.ID, body)
+		obs := s.observer.observe(session, Screen{Body: body, Title: titles[name]})
+		s.reportDecision(s.observe(session, item.rev, obs), body)
 	}
 	return s.List(), errors.Join(errs...)
 }
@@ -488,11 +576,14 @@ func (s *Service) Restart(ctx context.Context, id string) (domain.Session, error
 	// Resuming also drops the stored first task, which is right: the
 	// conversation already holds it, and sending it again would ask for the
 	// same work twice.
+	session.Launch.Server = s.agentServer(session.Agent, session.Launch.Server, session.Cwd())
 	launch := session.Launch
 	launch.Resume = true
+	launch.StatusLine = s.statusLine
+	launch.Wrap = s.observer.wrap(session.ID)
 	s.trustFolder(session.Agent, session.Cwd())
 	release := s.holdLaunch(ctx, session.Agent)
-	err = s.terminals.Create(ctx, session.TmuxName(), session.Cwd(), launch.CommandLine(session.Agent), s.env(session))
+	err = s.terminals.Create(ctx, session.TmuxName(), session.Cwd(), launch.CommandLine(session.Agent), s.sessionEnv(session))
 	release()
 	if err != nil {
 		return domain.Session{}, err
@@ -757,11 +848,24 @@ func (s *Service) decide(session domain.Session, state domain.State, loginURL st
 	if ended {
 		s.discardFiles(next.ID)
 	}
+	if !state.Live() && state != domain.StateCreating {
+		s.watches.drop(next.ID)
+	}
 	if announce {
 		publisher.SessionChanged(next)
 	}
+	if ended {
+		s.announced(next, true)
+	}
 	return next
 }
+
+// blockedConfirmAfter is how long an agent stays blocked before observe
+// announces it once more. A state is announced when it changes, but the
+// control plane counts how long one has lasted only from its second report
+// (`session-state.policy.ts`), so that one report cannot claim a duration: a
+// blocked agent announced once would never come to wait on anyone.
+const blockedConfirmAfter = 15 * time.Second
 
 // observe applies what a refresh saw, as a compare-and-set against the record
 // it read at revision seen. It writes nothing (no store, no revision, no
@@ -769,23 +873,41 @@ func (s *Service) decide(session domain.Session, state domain.State, loginURL st
 // on it, when it is already stopped or closed, or when what was seen is what
 // is stored. Otherwise the change is applied to the current record, not to
 // the refresh's copy, so a window opened meanwhile is kept, and announced.
-func (s *Service) observe(session domain.Session, seen uint64, state domain.State, loginURL string) domain.Session {
+func (s *Service) observe(session domain.Session, seen uint64, obs observation) domain.Session {
+	state, loginURL := obs.state, obs.loginURL
+	var confirm, stateChanged bool
 	next, changed, publisher := s.commit(session.ID, func(cur domain.Session, known bool) (domain.Session, bool) {
 		switch {
 		case !known:
 			return session, false
 		case !cur.State.Live(), s.revs[session.ID] != seen, s.busy[session.ID] > 0:
 			return cur, false
-		case cur.State == state && (loginURL == "" || cur.LoginURL == loginURL):
+		case cur.State == state && (loginURL == "" || cur.LoginURL == loginURL) && sameWord(cur.Program, obs.program):
+			confirm = state == domain.StateBlocked && !s.confirmed[session.ID] &&
+				s.now().Sub(cur.Updated) >= blockedConfirmAfter
+			if confirm {
+				s.confirmed[session.ID] = true
+			}
 			return cur, false
 		}
+		delete(s.confirmed, session.ID)
+		stateChanged = cur.State != state
 		cur.State = state
 		if loginURL != "" {
 			cur.LoginURL = loginURL
 		}
-		cur.Updated = s.now().UTC()
+		cur.Program = obs.program
+		if stateChanged {
+			// How long a session has been blocked is what moves it to
+			// waiting-on-you; the agent rewording its message is not a new
+			// state, so it does not restart that clock.
+			cur.Updated = s.now().UTC()
+		}
 		return cur, true
 	})
+	if confirm {
+		publisher.SessionChanged(next)
+	}
 	if !changed {
 		return next
 	}
@@ -793,9 +915,83 @@ func (s *Service) observe(session domain.Session, seen uint64, state domain.Stat
 	// the moment it ended.
 	if !state.Live() {
 		s.discardFiles(next.ID)
+		s.watches.drop(next.ID)
 	}
 	publisher.SessionChanged(next)
+	s.announced(next, stateChanged)
 	return next
+}
+
+// Listen adds a listener: it hears every change of state, and every end, of
+// every session from then on.
+func (s *Service) Listen(l Listener) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.listeners = append(s.listeners, l)
+}
+
+// announced tells the listeners a session moved, after it was written, and
+// lets go of what an ended session's agent reported.
+func (s *Service) announced(next domain.Session, stateChanged bool) {
+	if !next.State.Live() {
+		s.observer.forget(next.ID)
+	}
+	s.mu.Lock()
+	listeners := slices.Clone(s.listeners)
+	s.mu.Unlock()
+	for _, l := range listeners {
+		l.SessionMoved(next, stateChanged)
+	}
+}
+
+// reportDecision tells the control plane what a session's agent waits on the
+// person for, after a refresh observed it, whenever that changed: a decision
+// that appears, one that is replaced by another, and one that clears. Only a
+// blocked agent waits on one. The question comes from the agent's transcript
+// (an AskUserQuestion call with no result yet) and, when there is none, a
+// permission dialog from the screen body; nothing is reported for a session
+// that never had one in this process.
+func (s *Service) reportDecision(session domain.Session, body string) {
+	var decision *domain.Decision
+	if session.State == domain.StateBlocked {
+		decision = s.pendingDecision(session, body)
+	}
+	id := ""
+	if decision != nil {
+		id = decision.ID
+	}
+	s.mu.Lock()
+	last, had := s.decisions[session.ID]
+	if last == id && (had || id == "") {
+		s.mu.Unlock()
+		return
+	}
+	if id == "" {
+		delete(s.decisions, session.ID)
+	} else {
+		s.decisions[session.ID] = id
+	}
+	publisher := s.publisher
+	s.mu.Unlock()
+	publisher.DecisionChanged(session, decision)
+}
+
+// pendingDecision is the decision a blocked agent waits on, or nil when it
+// cannot be read: the transcript's open question first, since its picker is
+// also a numbered list, then Claude Code's permission dialog.
+func (s *Service) pendingDecision(session domain.Session, body string) *domain.Decision {
+	if s.transcripts != nil && session.Launch.Conversation != "" {
+		if decision, ok := s.transcripts.OpenQuestion(session.Agent, session.Launch.Conversation); ok {
+			return &decision
+		}
+	}
+	if session.Agent != domain.AgentClaude {
+		return nil
+	}
+	if decision, ok := domain.PermissionDecision(body); ok {
+		return &decision
+	}
+	return nil
 }
 
 // discardFiles drops a session's pasted files. They were for the agent in

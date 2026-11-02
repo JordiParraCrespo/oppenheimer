@@ -140,3 +140,8 @@ func readTrimmed(path string) string {
 	}
 	return strings.TrimSpace(string(raw))
 }
+
+// BootTime is when this host's kernel started.
+func BootTime(context.Context) (time.Time, bool) {
+	return bootTime(readTrimmed("/proc/stat"))
+}

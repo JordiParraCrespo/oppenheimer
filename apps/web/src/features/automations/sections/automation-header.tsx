@@ -119,7 +119,7 @@ export function AutomationHeader({ automation }: { automation: AutomationEntity 
         <PageHeaderSep />
         <span>{automationTriggerText(automation, locale, t)}</span>
         <PageHeaderSep />
-        <span>{automationSubline(automation, projectName)}</span>
+        <span>{automationSubline(automation, projectName, t)}</span>
       </PageHeaderMeta>
       {automation.isPaused ? (
         <PageHeaderNote

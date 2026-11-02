@@ -18,7 +18,7 @@ import { ApiAuthGuard } from '../../../auth/guards/api-auth.guard';
 import { PoliciesGuard } from '../../../auth/guards/policies.guard';
 import { CurrentAccessScope } from '../../../authz/decorators/current-access-scope.decorator';
 import { AccessScopeInterceptor } from '../../../authz/interceptors/access-scope.interceptor';
-import type { HostOverview } from '../../application/host-usage.registry';
+import type { HostRead } from '../../application/host-read.resolver';
 import { HostResponseDto } from '../../dtos/host.response.dto';
 import { HostMapper } from '../../host.mapper';
 import { FindHostQuery } from '../../queries/find-host/find-host.query';
@@ -48,6 +48,11 @@ export class RenameHostHttpController {
   })
   @ApiResponse({ status: 200, type: HostResponseDto })
   @ApiProblemResponse({ status: 404, description: 'Host not found', code: 'HOSTS_001' })
+  @ApiProblemResponse({
+    status: 409,
+    description: 'Someone else wrote the host meanwhile, again on the retry',
+    code: 'HOSTS_009',
+  })
   async rename(
     @CurrentAccessScope() scope: AccessScope,
     @Param('id', ParseUUIDPipe) id: string,
@@ -55,7 +60,7 @@ export class RenameHostHttpController {
   ): Promise<HostResponseDto> {
     await this.commandBus.execute(new RenameHostCommand({ scope, hostId: id, name: body.name }));
 
-    const overview = await this.queryBus.execute<FindHostQuery, HostOverview>(
+    const overview = await this.queryBus.execute<FindHostQuery, HostRead>(
       new FindHostQuery({ scope, hostId: id }),
     );
     return this.mapper.toResponse(overview.host, overview);

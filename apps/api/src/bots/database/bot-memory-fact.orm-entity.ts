@@ -9,11 +9,20 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 
-/** One fact a bot remembers. Capped per bot by the API, counted under a lock on the bot. */
+/**
+ * One fact a bot remembers, kept in mind or looked up (`tier`), for itself or
+ * for its owner's every bot (`scope`). Capped per bot by the API, counted
+ * under a lock on the bot.
+ */
 @Entity('bot_memory_fact')
 @Index('IDX_bot_memory_fact_bot', ['organizationId', 'botId', 'createdAt', 'id'])
 @Check('CHK_bot_memory_fact_content', `char_length(btrim("content")) > 0`)
 @Check('CHK_bot_memory_fact_source', `"source" IN ('user', 'bot')`)
+@Check('CHK_bot_memory_fact_tier', `"tier" IN ('profile', 'log')`)
+@Check('CHK_bot_memory_fact_scope', `"scope" IN ('bot', 'person')`)
+@Index('IDX_bot_memory_fact_person', ['organizationId', 'botId', 'createdAt', 'id'], {
+  where: `"scope" = 'person'`,
+})
 export class BotMemoryFactOrmEntity {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
@@ -29,6 +38,14 @@ export class BotMemoryFactOrmEntity {
 
   @Column({ type: 'varchar', length: 8, default: 'user' })
   source!: string;
+
+  /** `profile`, in mind every turn; `log`, looked up with `recall`. */
+  @Column({ type: 'varchar', length: 8, default: 'profile' })
+  tier!: string;
+
+  /** `bot`, this bot's alone; `person`, read by every bot of its owner. */
+  @Column({ type: 'varchar', length: 8, default: 'bot' })
+  scope!: string;
 
   @CreateDateColumn({ type: TIMESTAMP_COLUMN_TYPE })
   createdAt!: Date;

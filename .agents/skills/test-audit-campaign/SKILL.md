@@ -59,8 +59,9 @@ assertions carried into keepers, and the test-only seams unlocked.
 
 ## 5. Cutover
 
-Edit lane by lane. One owner edits shared support (`apps/api/test/`, fakes
-used by several suites). With each lane, remove the test-only production seams
+Edit lane by lane. One owner edits shared support (the helpers beside the
+specs in `apps/api/src/__tests__/`, `apps/api/src/config/__tests__/config-stub.ts`,
+fakes used by several suites). With each lane, remove the test-only production seams
 it unlocks.
 
 Done when every lane plan is applied and each lane's keepers pass.

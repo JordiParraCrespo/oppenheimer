@@ -14,7 +14,9 @@
     "./es": "./es.ts",
     "./en/index.json": "./en/index.json",
     "./es/index.json": "./es/index.json",
-    "./namespaces": "./namespaces.ts"
+    "./namespaces": "./namespaces.ts",
+    "./en/extension.json": "./en/extension.json",
+    "./es/extension.json": "./es/extension.json"
   },
   "scripts": {
     "assemble": "node scripts/assemble.mjs",

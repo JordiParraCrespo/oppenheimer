@@ -1,7 +1,7 @@
 import type { ProjectEntity, SessionEntity } from '@oppenheimer/frontend-consumer';
 import { afterEach, describe, expect, it } from 'vitest';
 import {
-  mergeSessionOrder,
+  mergeOrder,
   orderProjects,
   orderSessions,
   rememberSidebarOrder,
@@ -65,9 +65,9 @@ describe('orderSessions', () => {
   });
 });
 
-describe('mergeSessionOrder', () => {
+describe('mergeOrder', () => {
   it('keeps a session the drop did not see (a pinned one) after the one it followed', () => {
-    expect(mergeSessionOrder(['s3', 's1', 's4'], ['s1', 'pinned', 's3', 's4'])).toEqual([
+    expect(mergeOrder(['s3', 's1', 's4'], ['s1', 'pinned', 's3', 's4'])).toEqual([
       's3',
       's1',
       'pinned',
@@ -76,6 +76,10 @@ describe('mergeSessionOrder', () => {
   });
 
   it('keeps one that led the stored order at the front', () => {
-    expect(mergeSessionOrder(['s2', 's1'], ['pinned', 's1', 's2'])).toEqual(['pinned', 's2', 's1']);
+    expect(mergeOrder(['s2', 's1'], ['pinned', 's1', 's2'])).toEqual(['pinned', 's2', 's1']);
+  });
+
+  it('keeps a hidden project in its place when the shown ones are dragged', () => {
+    expect(mergeOrder(['p3', 'p1'], ['p1', 'hidden', 'p3'])).toEqual(['p3', 'p1', 'hidden']);
   });
 });

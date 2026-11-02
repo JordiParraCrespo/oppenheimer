@@ -65,10 +65,10 @@ describe('PutModelProviderCredentialCommandHandler', () => {
     expect(credentials.put).not.toHaveBeenCalled();
   });
 
-  it('refuses a caller with no workspace with BOTS_002', async () => {
+  it('refuses a caller with no workspace with TENANT_001', async () => {
     const { handler } = setup();
     await expect(handler.execute(command('glm', scope(null)))).rejects.toMatchObject({
-      code: 'BOTS_002',
+      code: 'TENANT_001',
     });
   });
 });

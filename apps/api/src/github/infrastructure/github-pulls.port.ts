@@ -113,7 +113,45 @@ export interface GithubChecks {
   passed: number;
   failed: number;
   pending: number;
+  /**
+   * The checks that failed on the head, by name, with where to read them
+   * and what they said; only the read of one pull request's checks fills it.
+   */
+  failing?: GithubFailingCheck[];
 }
+
+/** One failing check: a check run or a commit status, as GitHub named and summed it up. */
+export interface GithubFailingCheck {
+  name: string;
+  /** Where its log or details are; null when it gave none. */
+  url: string | null;
+  /** Its one-line result ("2 tests failed"); null when it gave none. */
+  title: string | null;
+  /** The start of its summary, cut short; null when it gave none. */
+  summary: string | null;
+}
+
+/**
+ * An open pull request read whole in one request: its detail, the paths it
+ * touches, its checks on the head commit and its reviews.
+ */
+export interface GithubOpenPullRequest {
+  pull: GithubPullRequestDetail;
+  files: GithubPart<string[]>;
+  checks: GithubPart<GithubChecks>;
+  reviews: GithubPart<GithubPullRequestReview[]>;
+}
+
+/**
+ * One part of that read: the value, GitHub's refusal, or `past_page` when
+ * the part ran longer than the read's page. That one is not a refusal: the
+ * caller reads the pull request the long way rather than show part of a list
+ * as all of it (#244).
+ */
+export type GithubPart<T> =
+  | { value: T; refusal: null }
+  | { value: null; refusal: GithubRefusal }
+  | { value: null; refusal: 'past_page' };
 
 export interface GithubReviewInput {
   event: 'APPROVE' | 'REQUEST_CHANGES' | 'COMMENT';
@@ -127,12 +165,26 @@ export interface GithubReviewInput {
  * the App's own JWT, the OAuth exchange, an installation (every token minted
  * for it shares one budget), or a person (every token of theirs shares one).
  */
-export type GithubBucket = 'app' | 'oauth' | `installation:${number}` | `user:${number}`;
+export type GithubBucket =
+  | 'app'
+  | 'oauth'
+  | `installation:${number}`
+  | `user:${number}`
+  /** A token GitHub has not yet said whose it is, named by a digest of it, never the secret. */
+  | `token:${string}`;
 
 /** A token and the budget GitHub counts it against, which only the caller knows. */
 export interface GithubCredential {
   token: string;
   bucket: GithubBucket;
+  /**
+   * Whose answers a read with this credential may share a cache with; the
+   * bucket when absent. A person's own token names itself: two tokens of one
+   * GitHub account share a budget but not necessarily what they can see.
+   */
+  cacheScope?: string;
+  /** Called when GitHub answers `401`, so a refused credential stops being chosen (§6.2). */
+  onUnauthorized?: () => Promise<void>;
 }
 
 export interface GithubPullsPort {
@@ -143,6 +195,15 @@ export interface GithubPullsPort {
     state: 'open' | 'closed',
     maxPages: number,
   ): Promise<GithubPullRequestSummary[]>;
+  /**
+   * Every open pull request of a repository, newest update first, each with
+   * its paths, checks and reviews: one GraphQL request a page, in place of a
+   * listing and four requests per pull request.
+   */
+  listOpenPullRequests(
+    credential: GithubCredential,
+    fullName: string,
+  ): Promise<GithubOpenPullRequest[]>;
   readPullRequest(
     credential: GithubCredential,
     fullName: string,

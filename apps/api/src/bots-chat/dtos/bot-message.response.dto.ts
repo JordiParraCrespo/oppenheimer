@@ -1,14 +1,22 @@
 import { ApiExtraModels, ApiProperty, getSchemaPath } from '@nestjs/swagger';
 import {
+  BOT_APPROVAL_EVENT_STAGES,
   BOT_EVENT_OUTCOMES,
+  BOT_GOAL_ACTIVITIES,
   BOT_MESSAGE_ROLES,
+  BOT_QUESTION_OUTCOMES,
   BOT_REPLY_OUTCOMES,
   BOT_ROUTINE_ACTIVITIES,
+  BOT_SESSION_EVENT_STATES,
   BOT_SUBAGENT_STATUSES,
+  type BotApprovalEventStage,
   type BotEventOutcome,
+  type BotGoalActivity,
   type BotMessageRole,
+  type BotQuestionOutcome,
   type BotReplyOutcome,
   type BotRoutineActivity,
+  type BotSessionEventState,
   type BotSubagentStatus,
 } from '@oppenheimer/shared';
 import { BotAttachmentResponseDto } from './bot-attachment.response.dto';
@@ -75,6 +83,32 @@ export class BotToolStepResponseDto {
     description: 'The subagents a `delegate` call ran; null for any other call, and while it runs.',
   })
   subagents!: BotSubagentRunResponseDto[] | null;
+
+  @ApiProperty({
+    type: String,
+    nullable: true,
+    description:
+      'Why an asking call ran without a card: a standing grant ("Always allowed for acme/docs") or the owner’s rule that let it; null otherwise.',
+  })
+  allowedBy!: string | null;
+
+  @ApiProperty({
+    type: 'object',
+    additionalProperties: true,
+    nullable: true,
+    description:
+      'The draft a mail call saved in Gmail (`saved`, `draftId`, `link`, `mail`: the message as planned); null for any other call.',
+  })
+  mailDraft!: Record<string, unknown> | null;
+}
+
+/** One answered question, as the chat shows it. */
+export class BotAnsweredQuestionResponseDto {
+  @ApiProperty()
+  question!: string;
+
+  @ApiProperty({ description: 'The picked options and the person’s own words, joined.' })
+  answer!: string;
 }
 
 /** An approval decided: how, for which tool, and the card's line (`25-bots.md` §5). */
@@ -98,6 +132,41 @@ export class BotApprovalEventResponseDto {
     description: 'The session the approved call started; null when it started none.',
   })
   sessionId!: string | null;
+
+  @ApiProperty({
+    type: String,
+    format: 'uuid',
+    required: false,
+    description:
+      'The card it decided, as the stream’s `approval_resolved` named it; absent on older lines.',
+  })
+  approvalId?: string;
+
+  @ApiProperty({
+    enum: BOT_APPROVAL_EVENT_STAGES,
+    required: false,
+    description:
+      'Which of an approved call’s two lines this is: `started` is the yes, written while the call runs, and opens the turn where the bot says it is on it; `finished` opens the turn that reports how it went. Absent on a no and on older lines.',
+  })
+  stage?: BotApprovalEventStage;
+}
+
+/** A card of questions decided (`ask_user`, `25-bots.md` §3.2): how, its line, and each answer. */
+export class BotQuestionEventResponseDto {
+  @ApiProperty({ enum: ['question'] })
+  kind!: 'question';
+
+  @ApiProperty({ enum: BOT_QUESTION_OUTCOMES })
+  outcome!: BotQuestionOutcome;
+
+  @ApiProperty({ description: "The card's line: its first question, and how many follow." })
+  summary!: string;
+
+  @ApiProperty({
+    type: [BotAnsweredQuestionResponseDto],
+    description: 'Each question and its answer, in words; empty when dismissed.',
+  })
+  answers!: BotAnsweredQuestionResponseDto[];
 }
 
 /** What happened to one of the bot's routines (`26-bot-routines.md` §4, "In the chat"). */
@@ -171,18 +240,100 @@ export class BotPeerReplyEventResponseDto {
   outcome!: BotReplyOutcome;
 }
 
+/** A session the bot follows woke it (`27-bot-subscriptions.md` §4). */
+/** A terminal watch's match, as a session event names it. */
+export class BotSessionMatchResponseDto {
+  @ApiProperty({ description: 'The pattern the bot watches the terminal for.' })
+  pattern!: string;
+
+  @ApiProperty({ description: 'New matching lines counted so far.' })
+  count!: number;
+}
+
+export class BotSessionEventResponseDto {
+  @ApiProperty({ enum: ['session'] })
+  kind!: 'session';
+
+  @ApiProperty({ format: 'uuid', description: 'The subscription that woke the bot.' })
+  subscriptionId!: string;
+
+  @ApiProperty({ format: 'uuid' })
+  sessionId!: string;
+
+  @ApiProperty({ description: "The session's name at the wake." })
+  sessionName!: string;
+
+  @ApiProperty({ description: "Which of the session's tasks: its turn's number, from 1." })
+  turn!: number;
+
+  @ApiProperty({
+    enum: BOT_SESSION_EVENT_STATES,
+    description:
+      'What became of the task, `matched` when its terminal printed a line matching the pattern the bot watches for, or `stalled` when its stall check found it stuck.',
+  })
+  state!: BotSessionEventState;
+
+  @ApiProperty({
+    type: BotSessionMatchResponseDto,
+    nullable: true,
+    required: false,
+    description: 'For `matched`: the pattern and how many lines matched so far; never the text.',
+  })
+  match?: BotSessionMatchResponseDto | null;
+}
+
+export class BotGoalEventResponseDto {
+  @ApiProperty({ enum: ['goal'] })
+  kind!: 'goal';
+
+  @ApiProperty({
+    enum: BOT_GOAL_ACTIVITIES,
+    description:
+      '`continued` opens a continuation turn; the others say how the goal ended outside any turn: the reviewer found it met (`met`) or out of reach without the person (`impossible`), stopped by its owner (`cleared`), out of continuations (`exhausted`), or a turn of it failed or was stopped (`stopped`).',
+  })
+  activity!: BotGoalActivity;
+
+  @ApiProperty({ format: 'uuid' })
+  goalId!: string;
+
+  @ApiProperty({ description: "The goal's objective at the time." })
+  objective!: string;
+
+  @ApiProperty({
+    description: 'For `continued`, which continuation this is; otherwise how many ran.',
+  })
+  step!: number;
+
+  @ApiProperty({ description: 'The continuations the goal may take.' })
+  limit!: number;
+
+  @ApiProperty({
+    nullable: true,
+    type: String,
+    description:
+      "For `continued`, `met`, `impossible` and `exhausted`: the reviewer's reason in its words, null when it gave none. For `stopped`: the status of the turn that ended it, or `access_lost`.",
+  })
+  reason!: string | null;
+}
+
 export type BotMessageEventResponseDto =
   | BotApprovalEventResponseDto
+  | BotQuestionEventResponseDto
   | BotRoutineEventResponseDto
   | BotPeerMessageEventResponseDto
-  | BotPeerReplyEventResponseDto;
+  | BotPeerReplyEventResponseDto
+  | BotSessionEventResponseDto
+  | BotGoalEventResponseDto;
 
 /** One thing the chat draws: your message, the bot's text, an activity line or an event. */
 @ApiExtraModels(
   BotApprovalEventResponseDto,
+  BotQuestionEventResponseDto,
   BotRoutineEventResponseDto,
   BotPeerMessageEventResponseDto,
   BotPeerReplyEventResponseDto,
+  BotSessionEventResponseDto,
+  BotGoalEventResponseDto,
 )
 export class BotMessageResponseDto {
   @ApiProperty({ format: 'uuid' })
@@ -209,9 +360,12 @@ export class BotMessageResponseDto {
   @ApiProperty({
     oneOf: [
       { $ref: getSchemaPath(BotApprovalEventResponseDto) },
+      { $ref: getSchemaPath(BotQuestionEventResponseDto) },
       { $ref: getSchemaPath(BotRoutineEventResponseDto) },
       { $ref: getSchemaPath(BotPeerMessageEventResponseDto) },
       { $ref: getSchemaPath(BotPeerReplyEventResponseDto) },
+      { $ref: getSchemaPath(BotSessionEventResponseDto) },
+      { $ref: getSchemaPath(BotGoalEventResponseDto) },
     ],
     nullable: true,
     description: 'What an event says happened, by `kind`; null on every other role.',
@@ -248,4 +402,12 @@ export class BotConversationResponseDto {
       'How many messages the chat holds in all, past this window: yours, the bot’s and events, not activity lines.',
   })
   messageCount!: number;
+
+  @ApiProperty({
+    type: 'object',
+    additionalProperties: { type: 'number' },
+    description:
+      'For each turn still queued or running, by its id, how many blocks of text it has stored in all, past this window: the `block` its streamed text is numbered from (`GET /bots/:id/stream`).',
+  })
+  storedTextBlocks!: Record<string, number>;
 }

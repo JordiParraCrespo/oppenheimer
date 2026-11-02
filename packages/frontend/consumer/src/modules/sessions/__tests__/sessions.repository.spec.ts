@@ -4,7 +4,12 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { SessionsRepository, toCreateSessionRequest } from '../sessions.repository';
 
 vi.mock('@oppenheimer/api-client', () => ({
-  heyApiSdk: { findSessions: vi.fn(), findSessionEvents: vi.fn(), closeSession: vi.fn() },
+  heyApiSdk: {
+    findSessions: vi.fn(),
+    findSessionEvents: vi.fn(),
+    closeSession: vi.fn(),
+    answerSessionDecision: vi.fn(),
+  },
 }));
 
 /** What the generated SDK resolves to on success. */
@@ -168,5 +173,75 @@ describe('toCreateSessionRequest', () => {
       prompt: 'Fix it',
     });
     expect(body).not.toHaveProperty('folder');
+  });
+});
+
+/**
+ * A session's pending decision (`29-inbox.md` slice 4) reaches the console as
+ * the API states it, with what the runner left out read as null, and an
+ * answer goes to the decision route as the body the API takes.
+ */
+describe('SessionsRepository decisions', () => {
+  let repository: SessionsRepository;
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    repository = new SessionsRepository();
+  });
+
+  it('reads a question with its absent header and descriptions as null', async () => {
+    vi.mocked(heyApiSdk.findSessions).mockResolvedValueOnce(
+      ok({
+        data: [
+          {
+            ...session('s1'),
+            decision: {
+              kind: 'question',
+              id: 'toolu_1',
+              questions: [
+                {
+                  question: 'Which screens?',
+                  multiSelect: true,
+                  options: [{ label: 'Wallet' }, { label: 'All', description: 'Every tab' }],
+                },
+              ],
+            },
+          },
+          session('s2'),
+        ],
+        meta: { limit: 100, nextCursor: null },
+      }),
+    );
+
+    const [asked, quiet] = await repository.findAll();
+
+    expect(asked?.decision).toEqual({
+      kind: 'question',
+      id: 'toolu_1',
+      questions: [
+        {
+          header: null,
+          question: 'Which screens?',
+          multiSelect: true,
+          options: [
+            { label: 'Wallet', description: null },
+            { label: 'All', description: 'Every tab' },
+          ],
+        },
+      ],
+    });
+    expect(quiet?.decision).toBeNull();
+  });
+
+  it('answers a permission by its option and returns the session the API answers', async () => {
+    vi.mocked(heyApiSdk.answerSessionDecision).mockResolvedValueOnce(ok(session('s1')));
+
+    const answered = await repository.answerDecision('s1', { id: 'perm-a', option: 0 });
+
+    expect(answered.id).toBe('s1');
+    expect(heyApiSdk.answerSessionDecision).toHaveBeenCalledWith({
+      path: { id: 's1' },
+      body: { id: 'perm-a', option: 0 },
+    });
   });
 });

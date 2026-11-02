@@ -37,7 +37,7 @@ export class FindPlanStatsHttpController {
   @ApiQuery({ name: 'projectId', required: false, type: String, format: 'uuid' })
   @ApiQuery({ name: 'compare', required: false, enum: ['true', 'false'] })
   @ApiResponse({ status: 200, type: PlanStatsResponseDto })
-  @ApiProblemResponse({ status: 400, description: 'No active organization', code: 'TASKS_003' })
+  @ApiProblemResponse({ status: 400, description: 'No active workspace', code: 'TENANT_001' })
   async stats(
     @CurrentAccessScope() scope: AccessScope,
     @Query() query: FindPlanStatsRequest,

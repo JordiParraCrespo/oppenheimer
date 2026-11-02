@@ -1,6 +1,6 @@
 import { Inject } from '@nestjs/common';
 import { type IQueryHandler, QueryHandler } from '@nestjs/cqrs';
-import { AppError } from '@oppenheimer/backend-core';
+import { requireFound } from '@oppenheimer/backend-core';
 import type { OrganizationRepositoryPort } from '../../database/organization.repository.port';
 import { OrganizationErrors } from '../../domain/organization.errors';
 import type { Organization } from '../../domain/organization.types';
@@ -21,7 +21,6 @@ export class FindOrganizationQueryHandler
 
   async execute(query: FindOrganizationQuery): Promise<Organization> {
     const found = await this.organizations.findOrganization(query.organizationId);
-    if (found.isNone()) throw new AppError(OrganizationErrors.NOT_FOUND);
-    return found.unwrap();
+    return requireFound(found, OrganizationErrors.NOT_FOUND);
   }
 }

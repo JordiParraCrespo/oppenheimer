@@ -36,11 +36,13 @@ import { BotsModule } from './bots/bots.module';
 import { BotsChatModule } from './bots-chat/bots-chat.module';
 import { CalendarModule } from './calendar/calendar.module';
 import { CapabilitiesModule } from './capabilities/capabilities.module';
+import { CloudAgentsModule } from './cloud-agents/cloud-agents.module';
 import {
   appConfig,
   automationsConfig,
   botsConfig,
   calendarConfig,
+  cloudAgentsConfig,
   databaseConfig,
   emailConfig,
   githubAppConfig,
@@ -48,6 +50,7 @@ import {
   hostsConfig,
   llmConfig,
   llmConfigFrom,
+  mailConfig,
   oauthConfig,
   redisConfig,
   relayConfig,
@@ -68,6 +71,8 @@ import { GithubModule } from './github/github.module';
 import { HealthModule } from './health/health.module';
 import { HostsModule } from './hosts/hosts.module';
 import { InboundEventsModule } from './inbound-events/inbound-events.module';
+import { InboxModule } from './inbox/inbox.module';
+import { MailModule } from './mail/mail.module';
 import { OrganizationsModule } from './organizations/organizations.module';
 import { OutboxModule } from './outbox/outbox.module';
 import { ProfileModule } from './profile/profile.module';
@@ -85,6 +90,7 @@ import { RedisThrottlerStorage } from './throttling/infrastructure/redis-throttl
 import { ThrottlingModule } from './throttling/throttling.module';
 import { UsersModule } from './users/user.module';
 import { VoiceModule } from './voice/voice.module';
+import { WhatsappModule } from './whatsapp/whatsapp.module';
 import { WorkspaceEventsModule } from './workspace-events/workspace-events.module';
 
 @Module({
@@ -107,6 +113,8 @@ import { WorkspaceEventsModule } from './workspace-events/workspace-events.modul
         automationsConfig,
         botsConfig,
         calendarConfig,
+        mailConfig,
+        cloudAgentsConfig,
         retentionConfig,
         throttlingConfig,
         voiceConfig,
@@ -261,10 +269,14 @@ import { WorkspaceEventsModule } from './workspace-events/workspace-events.modul
     WorkspaceEventsModule,
     TasksModule,
     CalendarModule,
+    MailModule,
+    WhatsappModule,
+    CloudAgentsModule,
     PullRequestsModule,
     BotsModule,
     BotsChatModule,
     VoiceModule,
+    InboxModule,
     RelayModule,
     HealthModule,
     QueueModule,

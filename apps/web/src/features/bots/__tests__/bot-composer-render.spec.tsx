@@ -25,11 +25,15 @@ const idle = vi.hoisted(() => () => ({
 
 vi.mock('@oppenheimer/frontend-consumer/react', () => ({
   useBotActiveTurn: () => null,
+  useBotWaitingMessages: () => [],
+  useBotGoal: () => ({ data: null }),
   useModelProviders: () => ({ data: true }),
   useSendBotMessage: idle,
   useUploadBotImage: () => ({ mutateAsync: async () => ({ id: 'a1' }) }),
   useCancelBotTurn: idle,
+  useClearBotGoal: idle,
   useVoiceDictation: () => ({ available: false, transcribe: async () => null }),
+  useBotSlashCommands: () => ({ data: undefined }),
 }));
 
 afterEach(cleanup);

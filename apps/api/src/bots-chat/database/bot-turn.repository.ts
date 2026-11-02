@@ -6,23 +6,32 @@ import { BOT_ACTIVE_TURN_STATUSES, QUEUE_NAMES } from '@oppenheimer/shared';
 import { None, type Option, Some } from 'oxide.ts';
 import { type EntityManager, Repository } from 'typeorm';
 import { BotResource } from '../../bots/bots.resource';
+import { BotGoalMapper } from '../bot-goal.mapper';
 import { BotMessageMapper } from '../bot-message.mapper';
 import { BotTurnMapper } from '../bot-turn.mapper';
 import { BOT_CONVERSATION_REPOSITORY } from '../bots-chat.di-tokens';
 import type { BotChainState, BotChainVerdict } from '../domain/bot-chain.policy';
+import type { BotGoalEntity } from '../domain/bot-goal.entity';
 import type { BotMessageEntity } from '../domain/bot-message.entity';
-import type { BotTurnEntity } from '../domain/bot-turn.entity';
+import type { BotTurnContext, BotTurnEntity } from '../domain/bot-turn.entity';
 import { claimAttachmentsWithin } from './bot-attachment.repository';
 import type { BotConversationRepositoryPort } from './bot-conversation.repository.port';
+import { claimContinuationWithin, owesGoalWithin, setGoalWithin } from './bot-goal.repository';
 import { insertMessageWithin } from './bot-message.repository';
 import { BotTurnOrmEntity } from './bot-turn.orm-entity';
-import type { BotPeerEnqueueOutcome, BotTurnRepositoryPort } from './bot-turn.repository.port';
+import type {
+  BotPeerEnqueueOutcome,
+  BotSteerTaken,
+  BotTurnRepositoryPort,
+} from './bot-turn.repository.port';
 
 /** The job that runs one turn; its payload is `{ turnId }`. */
 export const RUN_BOT_TURN_JOB = 'run-bot-turn';
 
 /** The job that queues an ask's answer on the bot that asked; its payload is `{ turnId }`, the asked turn. */
 export const DELIVER_BOT_ANSWER_JOB = 'deliver-bot-answer';
+/** A turn of a bot with a goal ended: the goal decides whether to go on (`25-bots.md` §4.1). */
+export const CONTINUE_BOT_GOAL_JOB = 'continue-bot-goal';
 
 /** The order lanes run in (`BotQueueLanes`), as SQL over `bot_turn."lane"`. */
 const LANE_ORDER = `CASE "lane" WHEN 'owner' THEN 0 WHEN 'bots' THEN 1 ELSE 2 END`;
@@ -72,6 +81,7 @@ export class BotTurnRepository
     private readonly messages: BotMessageMapper,
     @Inject(BOT_CONVERSATION_REPOSITORY)
     private readonly conversations: BotConversationRepositoryPort,
+    private readonly goals: BotGoalMapper,
   ) {
     super();
   }
@@ -81,6 +91,31 @@ export class BotTurnRepository
     message: BotMessageEntity,
     correlationId: string | null,
   ): Promise<'staged' | 'waiting' | 'missing' | 'attachments_taken'> {
+    return (await this.enqueueSetting(turn, message, null, correlationId)).outcome;
+  }
+
+  enqueueWithGoal(
+    turn: BotTurnEntity,
+    message: BotMessageEntity,
+    goal: BotGoalEntity,
+    correlationId: string | null,
+  ): Promise<{
+    outcome: 'staged' | 'waiting' | 'missing' | 'attachments_taken';
+    replaced: BotGoalEntity | null;
+  }> {
+    return this.enqueueSetting(turn, message, goal, correlationId);
+  }
+
+  /** A sent message's turn, and the goal it sets when it sets one, in one transaction. */
+  private async enqueueSetting(
+    turn: BotTurnEntity,
+    message: BotMessageEntity,
+    goal: BotGoalEntity | null,
+    correlationId: string | null,
+  ): Promise<{
+    outcome: 'staged' | 'waiting' | 'missing' | 'attachments_taken';
+    replaced: BotGoalEntity | null;
+  }> {
     try {
       return await this.outbox.transaction(async (manager) => {
         const outcome = await enqueueWithin(
@@ -92,13 +127,15 @@ export class BotTurnRepository
           message,
           correlationId,
         );
-        if (outcome !== 'missing' && !(await claimAttachmentsTo(manager, turn, message))) {
-          throw new AttachmentsTaken();
-        }
-        return outcome;
+        if (outcome === 'missing') return { outcome, replaced: null };
+        if (!(await claimAttachmentsTo(manager, turn, message))) throw new AttachmentsTaken();
+        const replaced = goal ? await setGoalWithin(manager, this.goals, goal) : null;
+        return { outcome, replaced };
       });
     } catch (error) {
-      if (error instanceof AttachmentsTaken) return 'attachments_taken';
+      if (error instanceof AttachmentsTaken) {
+        return { outcome: 'attachments_taken' as const, replaced: null };
+      }
       throw error;
     }
   }
@@ -140,6 +177,34 @@ export class BotTurnRepository
         correlationId,
       );
       return { outcome, turnId: turn.id };
+    });
+  }
+
+  enqueueContinuation(
+    turn: BotTurnEntity,
+    message: BotMessageEntity,
+    correlationId: string | null,
+    goal: BotGoalEntity,
+  ): Promise<'staged' | 'waiting' | 'existing' | 'lost' | 'missing'> {
+    return this.outbox.transaction(async (manager) => {
+      if (!(await lockBot(manager, turn))) return 'missing';
+      // UQ_bot_turn_source: this continuation was queued, and counted, already.
+      const [existing]: unknown[] = await manager.query(
+        `SELECT 1 FROM bot_turn WHERE "botId" = $1 AND "sourceKey" = $2`,
+        [turn.botId, turn.sourceKey],
+      );
+      if (existing) return 'existing';
+      // The goal's count and its turn commit together, or neither does.
+      if (!(await claimContinuationWithin(manager, goal))) return 'lost';
+      return enqueueLocked(
+        manager,
+        this.outbox,
+        this.mapper,
+        this.messages,
+        turn,
+        message,
+        correlationId,
+      );
     });
   }
 
@@ -203,9 +268,57 @@ export class BotTurnRepository
     return record ? Some(this.mapper.toDomain(record)) : None;
   }
 
+  async findHolding(
+    scope: AccessScope,
+    botId: string,
+    messageId: string,
+  ): Promise<Option<BotTurnEntity>> {
+    // PK_bot_message, then PK_bot_turn.
+    const record = await this.scopedQuery(scope)
+      .andWhere('turn.botId = :botId', { botId })
+      .andWhere(
+        `turn.id = (SELECT m."turnId" FROM bot_message m WHERE m."organizationId" = turn."organizationId" AND m.id = :messageId)`,
+        { messageId },
+      )
+      .getOne();
+    return record ? Some(this.mapper.toDomain(record)) : None;
+  }
+
   async findForRun(turnId: string): Promise<Option<BotTurnEntity>> {
     const record = await this.repository.findOne({ where: { id: turnId } });
     return record ? Some(this.mapper.toDomain(record)) : None;
+  }
+
+  async findQueuedBySourcePrefix(
+    organizationId: string,
+    botId: string,
+    prefix: string,
+  ): Promise<BotTurnEntity[]> {
+    // IDX_bot_turn_bot narrows to the bot; its queued turns are a handful.
+    const records = await this.repository
+      .createQueryBuilder('turn')
+      .where('turn.organizationId = :organizationId AND turn.botId = :botId', {
+        organizationId,
+        botId,
+      })
+      .andWhere(`turn.status = 'queued' AND starts_with(turn."sourceKey", :prefix)`, { prefix })
+      .getMany();
+    return records.map((record) => this.mapper.toDomain(record));
+  }
+
+  async findLastContext(organizationId: string, botId: string): Promise<BotTurnContext | null> {
+    // IDX_bot_turn_bot, read backwards from the newest turn.
+    const record = await this.repository
+      .createQueryBuilder('turn')
+      .where('turn.organizationId = :organizationId AND turn.botId = :botId', {
+        organizationId,
+        botId,
+      })
+      .andWhere('turn.contextTokens IS NOT NULL')
+      .orderBy('turn.createdAt', 'DESC')
+      .addOrderBy('turn.id', 'DESC')
+      .getOne();
+    return record ? this.mapper.toDomain(record).context : null;
   }
 
   async findForConversation(
@@ -244,6 +357,8 @@ export class BotTurnRepository
   }
 
   finish(turn: BotTurnEntity, correlationId: string | null): Promise<boolean> {
+    // The stored shape of what the turn ended with is the mapper's.
+    const record = this.mapper.toPersistence(turn);
     return this.outbox.transaction(async (manager) => {
       // The same lock a send takes, first: a send either commits before this
       // looks for the next queued turn, or counts this one as ended.
@@ -254,8 +369,12 @@ export class BotTurnRepository
         .set({
           status: turn.status,
           error: turn.error,
+          failure: turn.failure,
           inputTokens: turn.inputTokens,
           outputTokens: turn.outputTokens,
+          contextTokens: record.contextTokens,
+          contextWindow: record.contextWindow,
+          planLimits: record.planLimits,
           endedAt: turn.endedAt,
         })
         .where('id = :id AND "status" = :at', { id: turn.id, at: turn.statusAtLoad })
@@ -273,7 +392,56 @@ export class BotTurnRepository
           correlationId,
         });
       }
+      // A goal's own turn owes it a decision, staged with the end that owes it.
+      if (await owesGoalWithin(manager, turn)) {
+        await this.outbox.stageJob(manager, {
+          queue: QUEUE_NAMES.BOT_TURNS,
+          jobName: CONTINUE_BOT_GOAL_JOB,
+          payload: { turnId: turn.id },
+          reason: `bot ${turn.botId}: turn ${turn.id} ended with a goal open`,
+          aggregateId: turn.id,
+          correlationId,
+        });
+      }
       return true;
+    });
+  }
+
+  async takeSteers(
+    running: BotTurnEntity,
+    takes: (waiting: BotTurnEntity) => boolean,
+  ): Promise<BotSteerTaken[]> {
+    // Asked at every tool call: a read without the lock first, since most find none.
+    // IDX_bot_turn_active.
+    const waiting: unknown[] = await this.repository.query(
+      `SELECT 1 FROM bot_turn
+        WHERE "organizationId" = $1 AND "botId" = $2 AND "status" = 'queued' AND "steer"
+        LIMIT 1`,
+      [running.organizationId, running.botId],
+    );
+    if (waiting.length === 0) return [];
+    return this.outbox.transaction(async (manager) => {
+      // The lock a send, a Stop of a queued turn and a turn's end take.
+      if (!(await lockBot(manager, running))) return [];
+      // IDX_bot_turn_active: a bot's queued turns are a handful.
+      const records = await manager
+        .getRepository(BotTurnOrmEntity)
+        .createQueryBuilder('turn')
+        .where('turn.organizationId = :organizationId AND turn.botId = :botId', {
+          organizationId: running.organizationId,
+          botId: running.botId,
+        })
+        .andWhere(`turn.status = 'queued' AND turn.steer`)
+        .orderBy('turn.createdAt', 'ASC')
+        .addOrderBy('turn.id', 'ASC')
+        .getMany();
+      const taken: BotSteerTaken[] = [];
+      const waiting = records.map((record) => this.mapper.toDomain(record)).filter(takes);
+      for (const steer of waiting) {
+        const moved = await moveSteerWithin(manager, running, steer);
+        if (moved) taken.push(moved);
+      }
+      return taken;
     });
   }
 
@@ -362,12 +530,47 @@ async function enqueueLocked(
 }
 
 /**
+ * One steer moved into the running turn, in one statement under the caller's
+ * lock on the bot: its message becomes the turn's newest (after the turn's
+ * last stored position, as of now), so a worker that dies before the
+ * transcript places it still reads it in order, and its queued turn is
+ * deleted. Null, and nothing written, when the turn is no longer queued or
+ * its message carries images.
+ */
+async function moveSteerWithin(
+  manager: EntityManager,
+  running: Pick<BotTurnEntity, 'organizationId' | 'id'>,
+  steer: Pick<BotTurnEntity, 'id'>,
+): Promise<BotSteerTaken | null> {
+  // IDX_bot_message_turn for the move and the turn's last position; PK_bot_turn
+  // for the delete, whose cascade finds the message gone from the steer's turn.
+  const [moved]: { id: string; content: string }[] = await manager.query(
+    `WITH moved AS (
+       UPDATE bot_message SET "turnId" = $3, "createdAt" = now(),
+              "position" = (SELECT coalesce(max(m."position"), 0) + 1 FROM bot_message m
+                             WHERE m."organizationId" = $1 AND m."turnId" = $3)
+        WHERE "organizationId" = $1 AND "turnId" = $2 AND "role" = 'user'
+          AND "attachments" = '[]'::jsonb
+          AND EXISTS (SELECT 1 FROM bot_turn t
+                       WHERE t."organizationId" = $1 AND t.id = $2 AND t."status" = 'queued')
+        RETURNING id, content
+     ), gone AS (
+       DELETE FROM bot_turn
+        WHERE "organizationId" = $1 AND id = $2 AND EXISTS (SELECT 1 FROM moved)
+     )
+     SELECT id, content FROM moved`,
+    [running.organizationId, steer.id, running.id],
+  );
+  return moved ? { turnId: steer.id, messageId: moved.id, text: moved.content } : null;
+}
+
+/**
  * Locks the bot's row for the rest of the transaction: the one lock a send
  * and the end of a turn take turns on, so only one of them decides which
  * turn is due. `FOR NO KEY UPDATE` leaves the bot's turns free to reference
  * it. Whether the bot is still there.
  */
-async function lockBot(
+export async function lockBot(
   manager: EntityManager,
   turn: Pick<BotTurnEntity, 'organizationId' | 'botId'>,
 ): Promise<boolean> {
@@ -376,6 +579,28 @@ async function lockBot(
     [turn.organizationId, turn.botId],
   );
   return bot.length > 0;
+}
+
+/**
+ * The line of the card the bot has waiting, of either kind, or null: a bot
+ * has one card up at a time, an approval or a card of questions
+ * (`25-bots.md` §5). Read under `lockBot`, so two cards raised at once see
+ * each other.
+ */
+export async function waitingCardWithin(
+  manager: EntityManager,
+  organizationId: string,
+  botId: string,
+): Promise<string | null> {
+  // UQ_bot_approval_pending, UQ_bot_question_pending.
+  const rows: { summary: string }[] = await manager.query(
+    `SELECT summary FROM bot_approval WHERE "organizationId" = $1 AND "botId" = $2 AND status = 'pending'
+     UNION ALL
+     SELECT summary FROM bot_question WHERE "organizationId" = $1 AND "botId" = $2 AND status = 'pending'
+     LIMIT 1`,
+    [organizationId, botId],
+  );
+  return rows[0]?.summary ?? null;
 }
 
 /** Stages the job that runs `turnId`, in the transaction that made it due. */

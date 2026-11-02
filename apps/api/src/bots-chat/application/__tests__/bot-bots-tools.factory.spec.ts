@@ -12,6 +12,7 @@ import {
   SendBotPeerMessageCommand,
   type SendBotPeerMessageResult,
 } from '../../commands/send-bot-peer-message/send-bot-peer-message.command';
+import { NO_PERMISSIONS } from '../../domain/bot-tool-permission.policy';
 import { BotTurnBudget } from '../../domain/bot-turn-budget.policy';
 import type { BotApprovalRequesterPort } from '../bot-approval-requester.port';
 import { BotPeerToolsFactory } from '../bot-bots-tools.factory';
@@ -40,6 +41,7 @@ const context: BotToolContext = {
   homeHostId: null,
   timeZone: 'Europe/Madrid',
   permission: 'auto',
+  permissions: NO_PERMISSIONS,
   budget: new BotTurnBudget(),
   approvals: { request: vi.fn() },
 };

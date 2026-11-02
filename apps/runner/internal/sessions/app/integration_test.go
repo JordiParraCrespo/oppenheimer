@@ -26,11 +26,29 @@ import (
 // shell. Everything else about the lifecycle is covered on the in-memory
 // adapters next door.
 
-type recorder struct{ states []domain.State }
+type recorder struct {
+	states    []domain.State
+	decisions []*domain.Decision
+	matches   []terminalMatch
+}
+
+// terminalMatch is one TerminalMatched report.
+type terminalMatch struct {
+	session, watch string
+	count          int
+}
+
+func (r *recorder) TerminalMatched(sessionID, watchID string, count int) {
+	r.matches = append(r.matches, terminalMatch{session: sessionID, watch: watchID, count: count})
+}
 
 func (r *recorder) SessionChanged(s domain.Session) { r.states = append(r.states, s.State) }
 
 func (r *recorder) FirstPrompt(domain.Session, string, func()) bool { return true }
+
+func (r *recorder) DecisionChanged(_ domain.Session, decision *domain.Decision) {
+	r.decisions = append(r.decisions, decision)
+}
 
 // realHarness wires the service to this machine's tmux and git.
 type realHarness struct {
@@ -54,8 +72,12 @@ func newRealHarness(t *testing.T) *realHarness {
 	layout := domain.Layout{Root: t.TempDir()}
 	store := statestore.New(t.TempDir())
 	files := t.TempDir()
+	worktrees := gitadapter.New(gitadapter.Options{Layout: layout})
+	// A clone's history is fetched in the background; it lands before the
+	// temporary directories it writes into are removed.
+	t.Cleanup(worktrees.Wait)
 	svc, err := app.New(app.Options{
-		Terminals: terminal, Worktrees: gitadapter.New(gitadapter.Options{Layout: layout}),
+		Terminals: terminal, Worktrees: worktrees,
 		Classifier: manifest.New(manifest.Options{}), Store: store, Publisher: &recorder{}, Layout: layout,
 		Places: workfolder.New(workfolder.Options{Layout: layout}),
 		Files:  filestore.New(files),

@@ -100,3 +100,13 @@ export interface TriggerPreview {
   days: number;
   matches: StoredExternalEvent[];
 }
+
+/**
+ * A subject some live trigger watches, and what the triggers on it narrow
+ * by: each filter value, or `null` for a trigger that takes everything.
+ */
+export interface WatchedSubject {
+  organizationId: string;
+  subjectRef: string;
+  filters: (string | null)[];
+}

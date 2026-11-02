@@ -1,5 +1,9 @@
 import { ArgumentInvalidException } from '@oppenheimer/backend-ddd';
 import { describe, expect, it } from 'vitest';
+import {
+  decodeSessionListCursor,
+  encodeSessionListCursor,
+} from '../domain/session-list-cursor.policy';
 import { WorkSessionMapper } from '../work-session.mapper';
 
 const mapper = new WorkSessionMapper();
@@ -8,12 +12,22 @@ const ID = 'c9b5d3e1-2f30-4b4c-9d5e-6f708192a3b4';
 describe('the session list cursor', () => {
   it('round-trips the key Postgres printed, to the microsecond', () => {
     const cursor = { sort: 'recent' as const, key: '2026-09-28 10:00:00.123456+00', id: ID };
-    expect(mapper.fromListCursor(mapper.toListCursor(cursor), 'recent')).toEqual(cursor);
+    expect(decodeSessionListCursor(encodeSessionListCursor(cursor), 'recent')).toEqual(cursor);
+  });
+
+  it('reads, and writes byte for byte, a cursor the hand-written encoding issued', () => {
+    // What the list issued before it moved onto `CursorCodec`: clients hold these.
+    const issued =
+      'eyJzIjoicmVjZW50IiwiayI6IjIwMjYtMDktMjggMTA6MDA6MDAuMTIzNDU2KzAwIiwiaSI6ImM5YjVkM2UxLTJmMzAtNGI0Yy05ZDVlLTZmNzA4MTkyYTNiNCJ9';
+    const cursor = { sort: 'recent' as const, key: '2026-09-28 10:00:00.123456+00', id: ID };
+
+    expect(decodeSessionListCursor(issued, 'recent')).toEqual(cursor);
+    expect(encodeSessionListCursor(cursor)).toBe(issued);
   });
 
   it('refuses a cursor issued for another sort', () => {
-    const text = mapper.toListCursor({ sort: 'name', key: 'bold otter', id: ID });
-    expect(() => mapper.fromListCursor(text, 'recent')).toThrow(ArgumentInvalidException);
+    const text = encodeSessionListCursor({ sort: 'name', key: 'bold otter', id: ID });
+    expect(() => decodeSessionListCursor(text, 'recent')).toThrow(ArgumentInvalidException);
   });
 
   it('refuses anything it did not issue', () => {
@@ -23,7 +37,7 @@ describe('the session list cursor', () => {
       Buffer.from(`{"s":"sideways","k":"a","i":"${ID}"}`).toString('base64url'),
       Buffer.from('"recent"').toString('base64url'),
     ]) {
-      expect(() => mapper.fromListCursor(text, 'recent')).toThrow(ArgumentInvalidException);
+      expect(() => decodeSessionListCursor(text, 'recent')).toThrow(ArgumentInvalidException);
     }
   });
 
@@ -36,7 +50,7 @@ describe('the session list cursor', () => {
       total: 41,
       page: 1,
       totalPages: 3,
-      nextCursor: mapper.toListCursor(next),
+      nextCursor: encodeSessionListCursor(next),
     });
     expect(mapper.toPageMeta({ data: [], limit: 20, nextCursor: null })).toEqual({
       limit: 20,

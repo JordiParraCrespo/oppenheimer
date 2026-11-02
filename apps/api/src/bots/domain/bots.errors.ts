@@ -7,11 +7,6 @@ export const BotErrors = {
     message: 'Bot not found',
     httpStatus: 404,
   },
-  NO_ACTIVE_ORGANIZATION: {
-    code: 'BOTS_002',
-    message: 'Bots belong to an organization',
-    httpStatus: 400,
-  },
   /** Also a group in another workspace. */
   GROUP_NOT_FOUND: {
     code: 'BOTS_003',
@@ -163,6 +158,78 @@ export const BotErrors = {
   MODEL_TAKES_NO_IMAGES: {
     code: 'BOTS_028',
     message: "The bot's model does not read images",
+    httpStatus: 422,
+  },
+  /** A tool name the catalog does not have. */
+  TOOL_UNKNOWN: {
+    code: 'BOTS_029',
+    message: 'No such tool',
+    httpStatus: 404,
+  },
+  /** Allow, or an approval that reaches past one call, for a tool decided call by call (merging). */
+  TOOL_PER_CALL: {
+    code: 'BOTS_030',
+    message: 'This tool is decided call by call',
+    httpStatus: 422,
+  },
+  /** A rule past `BOT_PERMISSION_RULES_MAX`. */
+  PERMISSION_RULES_FULL: {
+    code: 'BOTS_031',
+    message: 'The bot holds as many rules as it can',
+    httpStatus: 409,
+  },
+  /** Also a rule of another bot, or in another workspace. */
+  PERMISSION_RULE_NOT_FOUND: {
+    code: 'BOTS_032',
+    message: 'Rule not found',
+    httpStatus: 404,
+  },
+  /** Also a grant of another bot, or in another workspace. */
+  TOOL_GRANT_NOT_FOUND: {
+    code: 'BOTS_033',
+    message: 'Grant not found',
+    httpStatus: 404,
+  },
+  /** A standing grant past `BOT_TOOL_GRANTS_MAX`. */
+  TOOL_GRANTS_FULL: {
+    code: 'BOTS_034',
+    message: 'The bot holds as many grants as it can',
+    httpStatus: 409,
+  },
+  /** A card of questions of another bot, or in another workspace. */
+  QUESTION_NOT_FOUND: {
+    code: 'BOTS_035',
+    message: 'Questions not found',
+    httpStatus: 404,
+  },
+  /** Answers that are not one per question, pick no option it has, or leave one unanswered. */
+  ANSWERS_INVALID: {
+    code: 'BOTS_036',
+    message: 'The answers do not fit the questions',
+    httpStatus: 422,
+  },
+  /** A card of questions already answered, dismissed, or retired by a new message. */
+  QUESTION_DECIDED: {
+    code: 'BOTS_037',
+    message: 'The questions were already answered',
+    httpStatus: 409,
+  },
+  /** Also a skill of another bot, or in another workspace. */
+  SKILL_NOT_FOUND: {
+    code: 'BOTS_038',
+    message: 'Skill not found',
+    httpStatus: 404,
+  },
+  /** A skill's name is its slash command, so one bot has one skill of each name. */
+  SKILL_NAME_TAKEN: {
+    code: 'BOTS_039',
+    message: 'The bot already has a skill with that name',
+    httpStatus: 409,
+  },
+  /** Every skill's name and description is in each turn's prompt, so a bot keeps a bounded number. */
+  SKILLS_FULL: {
+    code: 'BOTS_040',
+    message: 'The bot has as many skills as it can keep',
     httpStatus: 422,
   },
 } as const satisfies Record<string, ErrorDefinition>;

@@ -1,11 +1,7 @@
 import { ATTACH_CLOSE_CODES } from '@oppenheimer/shared/protocol';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import {
-  AttachSessionStream,
-  attachSocketUrl,
-  type SessionStream,
-  type StreamStatus,
-} from '../session-stream';
+import { attachSocketUrl } from '../attach-socket';
+import { AttachSessionStream, type SessionStream, type StreamStatus } from '../session-stream';
 
 /**
  * The real transport against a scripted socket: the contract `use-terminal`

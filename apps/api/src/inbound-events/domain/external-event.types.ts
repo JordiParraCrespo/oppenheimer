@@ -1,4 +1,4 @@
-import type { ExternalTriggerSource } from '@oppenheimer/shared/automations';
+import type { ExternalTriggerSource, TriggerSubjectKind } from '@oppenheimer/shared/automations';
 
 /**
  * The canonical shape of something that happened elsewhere
@@ -18,8 +18,8 @@ export interface ExternalEvent {
    * delivery id plus the type, and the label, check suite or status context.
    */
   externalId: string;
-  /** What it happened to. A repository today; a Slack channel later. */
-  subject: { kind: 'repository'; ref: string; name: string };
+  /** What it happened to: a repository, a connected Gmail account; a Slack channel later. */
+  subject: { kind: TriggerSubjectKind; ref: string; name: string };
   actor: { login: string | null; isOwnApp: boolean };
   /**
    * Flat, typed facts filters read (`baseBranch`, `branch`, `label`, `number`,

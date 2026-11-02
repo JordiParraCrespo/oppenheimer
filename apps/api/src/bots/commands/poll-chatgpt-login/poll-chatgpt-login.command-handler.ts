@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto';
 import { Inject } from '@nestjs/common';
 import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
+import { requireOrganization } from '@oppenheimer/backend-authz';
 import { CacheService } from '@oppenheimer/backend-cache';
 import { AppError } from '@oppenheimer/backend-core';
 import { ChatgptCredentialResolver } from '../../application/chatgpt-credential.resolver';
@@ -42,7 +43,7 @@ export class PollChatgptLoginCommandHandler
 
   async execute({ scope, flowId }: PollChatgptLoginCommand): Promise<boolean> {
     const organizationId = scope.organizationId;
-    if (!organizationId) throw new AppError(BotErrors.NO_ACTIVE_ORGANIZATION);
+    requireOrganization(organizationId);
     this.providers.assertConfigured();
     const flow = this.open(flowId);
     if (!flow || !isChatgptLoginOpen(flow, organizationId, new Date())) {

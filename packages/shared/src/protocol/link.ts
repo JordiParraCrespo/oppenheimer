@@ -87,10 +87,15 @@ export const LINK_MAX_FRAME_BYTES = 512 * 1024;
 /**
  * The largest transcript entry `attachment.chat` carries. The runner compacts
  * each line of the agent's transcript before it sends it — a tool's output and
- * a file it wrote are cut, a pasted image is named, never sent — and drops an
- * entry still bigger than this.
+ * a file it wrote are cut, an image goes as a preview in the room the entry
+ * has left, or is only named — and drops an entry still bigger than this.
  */
 export const CHAT_ENTRY_MAX_BYTES = 64 * 1024;
 
 /** The most entries one `attachment.chat` holds; a longer history is several. */
 export const CHAT_BATCH_MAX_ENTRIES = 256;
+
+/** What the reader can do to a session's device from the console (`device.input`). */
+export const DEVICE_INPUT_KINDS = ['tap', 'swipe', 'text', 'key', 'button'] as const;
+export const DEVICE_KEYS = ['enter', 'backspace', 'escape', 'tab'] as const;
+export const DEVICE_BUTTONS = ['home', 'back', 'appSwitch'] as const;

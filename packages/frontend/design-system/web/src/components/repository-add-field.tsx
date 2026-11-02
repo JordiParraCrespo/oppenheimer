@@ -17,7 +17,7 @@ import { Popover, PopoverTrigger } from './popover';
 
 type RepositoryAddOption = {
   id: string;
-  /** Mono, as GitHub names it. */
+  /** As GitHub names it ("acme/xrp-mobile"). */
   name: string;
   /** A muted second line: the language, when it was pushed. */
   description?: React.ReactNode;
@@ -31,9 +31,9 @@ const defaultEmptyText = (query: string): React.ReactNode =>
  * (`design/version1/SessionsConsole.dc.html`): a field reading "Add a
  * repository…" that opens the scope chips' pane (search, one row per
  * repository the App can see and the project lacks, the GitHub mark before its
- * mono name), over a 14px card with one row per added repository and an X to
- * take it out. What each repository does in a new session is the Defaults
- * fold's, in `RepositoryRowList`.
+ * name in the rows' own type, as the repository chip's), over a 14px card with
+ * one row per added repository and an X to take it out. What each repository
+ * does in a new session is the Defaults fold's, in `RepositoryRowList`.
  *
  * Ids in, ids out: the caller owns `value` (the ids added, in order) and the
  * label and hint around it. The pane is `ChipSelect`'s parts, as the branch
@@ -123,7 +123,6 @@ function RepositoryAddField({
                   key={repo.id}
                   leading={<BrandGlyph name="github" className="size-[15px] opacity-70" />}
                   description={repo.description}
-                  mono
                   onClick={() => {
                     onValueChange([...value, repo.id]);
                     setQuery('');
@@ -161,7 +160,7 @@ function RepositoryAddField({
               className="flex min-h-10 items-center gap-2.5 border-t border-border-subtle pr-1.5 pl-3 first:border-t-0"
             >
               <BrandGlyph name="github" className="size-[15px] shrink-0 opacity-70" />
-              <span className="min-w-0 flex-1 truncate font-mono text-[12.5px] text-fg" title={repo.name}>
+              <span className="min-w-0 flex-1 truncate text-[13px] text-fg" title={repo.name}>
                 {repo.name}
               </span>
               <IconButton

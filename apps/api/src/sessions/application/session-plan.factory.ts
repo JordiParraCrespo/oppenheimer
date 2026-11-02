@@ -84,6 +84,24 @@ export class SessionPlanFactory {
   }
 
   /**
+   * Where a cloud session's agent runs: the repository's address at GitHub and
+   * the branch it starts from (the caller's, else the repository's default),
+   * asked of GitHub as a checkout's name is, so the installation is the
+   * authority on whether the caller may name it. A vendor that cannot reach the
+   * repository says so itself (`CLOUD_AGENTS_010`).
+   */
+  async cloudSourceOf(
+    scope: AccessScope,
+    input: SessionCheckoutInputDto,
+  ): Promise<{ repositoryUrl: string; startingRef: string }> {
+    const repository = await this.repositoryOf(scope, input);
+    return {
+      repositoryUrl: `https://github.com/${repository.fullName}`,
+      startingRef: input.baseBranch ?? repository.defaultBranch,
+    };
+  }
+
+  /**
    * Where the agent starts: the checkout the caller named, or the first one when it
    * named none. Null only when the session has no checkouts at all, which starts it
    * in the session directory with every checkout a peer.

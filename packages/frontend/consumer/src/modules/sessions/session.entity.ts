@@ -1,8 +1,39 @@
-import type { CodingAgentId, SessionEffort, SessionPermission } from '@oppenheimer/shared/agents';
-import type { SessionPlace } from '@oppenheimer/shared/schemas/session';
+import { assignProps } from '@oppenheimer/frontend-core';
+import {
+  CODING_AGENTS,
+  type CodingAgentId,
+  isCodingAgentId,
+  type SessionEffort,
+  type SessionPermission,
+} from '@oppenheimer/shared/agents';
+import {
+  CLOUD_AGENT_LABELS,
+  CLOUD_AGENT_PROVIDER_LABELS,
+  type CloudAgentProviderId,
+  type CloudAgentStatus,
+  cloudAgentIsActive,
+} from '@oppenheimer/shared/schemas/cloud-agent';
+import type { SessionAgentId, SessionPlace } from '@oppenheimer/shared/schemas/session';
+import type { SessionAgentReport } from '@oppenheimer/shared/schemas/session-agent-report';
+import type { SessionDecision } from '@oppenheimer/shared/schemas/session-decision';
 
 /** The agent a session's tmux window 0 runs (`product/versions/mvp/00-scope.md`). */
-export type SessionAgent = CodingAgentId;
+/** What a session runs: a host's coding agent, or a vendor's in the cloud (`cursor`). */
+export type SessionAgent = SessionAgentId;
+
+/**
+ * A cloud session's vendor half: whose agent it is, its page (which the
+ * session's row opens), and what the vendor last said about its run.
+ */
+export interface SessionCloudRun {
+  provider: CloudAgentProviderId;
+  url: string | null;
+  repositoryUrl: string;
+  status: CloudAgentStatus;
+  branch: string | null;
+  pullRequestUrl: string | null;
+  syncedAt: Date;
+}
 
 /**
  * The **derived group**: what the sidebar's dot shows, computed by the control
@@ -87,6 +118,28 @@ export class SessionCheckoutEntity {
  * `POST /sessions/{id}/attach-ticket` mints it. It travels in
  * `Sec-WebSocket-Protocol` and is redeemed by opening `url` on the API's origin.
  */
+/** One port a session's processes listen on, which its Browser tab can open. */
+export interface SessionPort {
+  port: number;
+  /** The command listening on it ("node"), when the host said. */
+  process: string | null;
+}
+
+/**
+ * What the session's host said about its ports: the ports, or why it said
+ * nothing (no link now, or a runner that cannot list them).
+ */
+export interface SessionPorts {
+  state: 'listed' | 'host_offline' | 'not_supported';
+  ports: SessionPort[];
+}
+
+/** Where a session's port opens: its preview origin, with a ticket that lives a minute. */
+export interface SessionPreview {
+  url: string;
+  expiresAt: Date;
+}
+
 export interface AttachTicket {
   ticket: string;
   /** A path on the API's own origin, e.g. `/api/v1/relay/attach`. */
@@ -123,6 +176,42 @@ export interface SharedSession {
   expiresAt: Date | null;
 }
 
+/** What a {@link SessionEntity} is made from: every field, the defaulted ones optional. */
+export type SessionEntityProps = Pick<
+  SessionEntity,
+  | 'id'
+  | 'organizationId'
+  | 'projectId'
+  | 'hostId'
+  | 'name'
+  | 'slug'
+  | 'agent'
+  | 'launch'
+  | 'state'
+  | 'lifecycle'
+  | 'cwdCheckoutId'
+  | 'checkouts'
+  | 'stoppedAt'
+  | 'hints'
+  | 'createdAt'
+  | 'place'
+  | 'folderPath'
+> &
+  Partial<
+    Pick<
+      SessionEntity,
+      | 'closeRequest'
+      | 'closeRefusal'
+      | 'observedSince'
+      | 'lastEventAt'
+      | 'stateSeq'
+      | 'decision'
+      | 'agentReport'
+      | 'cloud'
+      | 'cloudSessionId'
+    >
+  >;
+
 /**
  * A session as the console needs it: a terminal, an agent, and where it runs
  * on a host — a set of checkouts the runner made (`worktree`), or a folder
@@ -134,35 +223,111 @@ export interface SharedSession {
  * stored fold of the log.
  */
 export class SessionEntity {
-  constructor(
-    public readonly id: string,
-    public readonly organizationId: string,
-    public readonly projectId: string,
-    public readonly hostId: string,
-    public readonly name: string,
-    /** The directory name and the last segment of the branch. Immutable. */
-    public readonly slug: string,
-    public readonly agent: SessionAgent,
-    public readonly launch: SessionLaunch,
-    public readonly state: SessionGroup,
-    public readonly lifecycle: SessionState,
-    public readonly cwdCheckoutId: string | null,
-    public readonly checkouts: SessionCheckoutEntity[],
-    public readonly stoppedAt: Date | null,
-    /** What the control plane could not do for the request that returned this. */
-    public readonly hints: string[],
-    public readonly createdAt: Date,
-    public readonly place: SessionPlace,
-    /** The folder a `folder` session runs in, absolute; null for a worktree session. */
-    public readonly folderPath: string | null,
-    /**
-     * A delete the host has not carried out yet: the close is the host's to do, so
-     * the session stays until it answers, and its next connection is sent it again.
-     */
-    public readonly closeRequest: SessionCloseRequest | null = null,
-    /** Why the host refused the last delete, until it is asked again. */
-    public readonly closeRefusal: SessionCloseRefusal | null = null,
-  ) {}
+  readonly id!: string;
+  readonly organizationId!: string;
+  readonly projectId!: string;
+  /** Null for a cloud session launched at its vendor, which no host started. */
+  readonly hostId!: string | null;
+  readonly name!: string;
+  /** The directory name and the last segment of the branch. Immutable. */
+  readonly slug!: string;
+  readonly agent!: SessionAgent;
+  readonly launch!: SessionLaunch;
+  readonly state!: SessionGroup;
+  readonly lifecycle!: SessionState;
+  readonly cwdCheckoutId!: string | null;
+  readonly checkouts!: SessionCheckoutEntity[];
+  readonly stoppedAt!: Date | null;
+  /** What the control plane could not do for the request that returned this. */
+  readonly hints!: string[];
+  readonly createdAt!: Date;
+  readonly place!: SessionPlace;
+  /** The folder a `folder` session runs in, absolute; null for a worktree session. */
+  readonly folderPath!: string | null;
+  /**
+   * A delete the host has not carried out yet: the close is the host's to do, so
+   * the session stays until it answers, and its next connection is sent it again.
+   */
+  readonly closeRequest: SessionCloseRequest | null = null;
+  /** Why the host refused the last delete, until it is asked again. */
+  readonly closeRefusal: SessionCloseRefusal | null = null;
+  /**
+   * When the agent entered the state it was last observed in; null until a
+   * second report of it. A blocked wait is named by it (the Inbox).
+   */
+  readonly observedSince: Date | null = null;
+  /** When the session's log last moved. */
+  readonly lastEventAt: Date | null = null;
+  /** Bumped on every change of `lifecycle`: one failure or launch told from the next. */
+  readonly stateSeq: number = 0;
+  /**
+   * What the agent waits on you to decide, as the host read it: a question it
+   * asked or a permission dialog (`29-inbox.md` slice 4); null when nothing is.
+   */
+  readonly decision: SessionDecision | null = null;
+  /**
+   * What the agent itself last said it is doing (OSC 7501): why it is
+   * blocked, how far along it is, its message. Null when the host read the
+   * state off its screen instead.
+   */
+  readonly agentReport: SessionAgentReport | null = null;
+  /** The vendor half of a cloud session the control plane launched (Cursor's); null otherwise. */
+  readonly cloud: SessionCloudRun | null = null;
+  /**
+   * A cloud session's id at its vendor, once its host has started it:
+   * Claude Code's session (`session_…`) or Codex's task (`task_…`); null
+   * before, and for every other session.
+   */
+  readonly cloudSessionId: string | null = null;
+
+  constructor(props: SessionEntityProps) {
+    assignProps(this, props);
+  }
+
+  /**
+   * Whether it runs in a vendor's cloud, with no terminal here: Claude Code's,
+   * whose page is claude.ai/code, or one launched at its vendor (`cloud`).
+   */
+  get isCloud(): boolean {
+    return this.place === 'cloud';
+  }
+
+  /** Whether its vendor's run may still change on its own: the list keeps asking while it does. */
+  get isCloudWorking(): boolean {
+    return this.cloud !== null && cloudAgentIsActive(this.cloud.status);
+  }
+
+  /**
+   * Where it runs, as one key a filter can compare: its host's id, or
+   * `cloud:<vendor>` for a cloud session.
+   */
+  get runsOn(): string {
+    return this.cloud ? `cloud:${this.cloud.provider}` : (this.hostId ?? '');
+  }
+
+  /**
+   * The cloud session's page at its vendor, once it has one: claude.ai/code
+   * for Claude Code's, chatgpt.com/codex for a Codex task.
+   */
+  get cloudUrl(): string | null {
+    if (!this.cloudSessionId) return null;
+    const id = encodeURIComponent(this.cloudSessionId);
+    return this.agent === 'codex'
+      ? `https://chatgpt.com/codex/tasks/${id}`
+      : `https://claude.ai/code/${id}`;
+  }
+
+  /**
+   * The command that brings the cloud session's work into a terminal: Claude
+   * Code's branch and conversation (`claude --teleport`), or a Codex task's
+   * diff, applied to the checkout it runs in (`codex apply`).
+   */
+  get teleportCommand(): string | null {
+    if (!this.cloudSessionId) return null;
+    return this.agent === 'codex'
+      ? `codex apply ${this.cloudSessionId}`
+      : `claude --teleport ${this.cloudSessionId}`;
+  }
 
   /** Whether a delete is on its way to the host: the row reads "Deleting…". */
   get isClosing(): boolean {
@@ -202,10 +367,15 @@ export class SessionEntity {
 
   /**
    * `repo · branch` for the status line, with a count when there are more; the
-   * folder's path for a folder session (`folderLabel` shortens it under home).
+   * folder's path for a folder session (`folderLabel` shortens it under home);
+   * the repository and, once it pushed one, the vendor's branch for a cloud one.
    */
   get scopeLabel(): string | null {
     if (this.isFolder) return this.folderPath;
+    if (this.cloud) {
+      const repository = repositoryNameOf(this.cloud.repositoryUrl);
+      return this.cloud.branch ? `${repository} · ${this.cloud.branch}` : repository;
+    }
     const checkout = this.cwdCheckout;
     if (!checkout) return null;
     const extra = this.checkouts.length - 1;
@@ -220,27 +390,15 @@ export class SessionEntity {
 
   /** The same session in another project: what a list draws while a move to it is on its way. */
   inProject(projectId: string): SessionEntity {
-    return new SessionEntity(
-      this.id,
-      this.organizationId,
-      projectId,
-      this.hostId,
-      this.name,
-      this.slug,
-      this.agent,
-      this.launch,
-      this.state,
-      this.lifecycle,
-      this.cwdCheckoutId,
-      this.checkouts,
-      this.stoppedAt,
-      this.hints,
-      this.createdAt,
-      this.place,
-      this.folderPath,
-      this.closeRequest,
-      this.closeRefusal,
-    );
+    return this.with({ projectId });
+  }
+
+  /**
+   * A copy with `overrides` applied. The copy is of every field the session
+   * holds, so a field added later is carried without being listed here.
+   */
+  with(overrides: Partial<SessionEntityProps>): SessionEntity {
+    return new SessionEntity({ ...this, ...overrides });
   }
 }
 
@@ -257,12 +415,26 @@ export interface CreateSessionCheckout {
 export type CreateSessionInput = CreateSessionCommon &
   (CreateWorktreeSession | CreateFolderSession);
 
-/** A new worktree: the runner clones and cuts a branch. */
+/**
+ * A new worktree: the runner clones and cuts a branch. With `cloud`, the host
+ * starts the task in Claude Code's cloud from that repository instead, and
+ * keeps nothing: Claude Code only, with a prompt.
+ */
 export interface CreateWorktreeSession {
-  /** Exactly one: a runner makes a session as one worktree of one repository. */
-  checkouts: [CreateSessionCheckout];
+  /**
+   * At least one, at most `MAX_SESSION_CHECKOUTS`, each a different repository: the
+   * runner makes one worktree per checkout. The first is where the agent starts
+   * unless `cwdGithubRepoId` names another.
+   */
+  checkouts: [CreateSessionCheckout, ...CreateSessionCheckout[]];
   /** Which checkout the agent is launched in. Must name one of `checkouts`. */
   cwdGithubRepoId?: number;
+  cloud?: boolean;
+  /**
+   * A Codex cloud session's environment, by id: absent, the host starts the
+   * task in the environment linked to the repository.
+   */
+  codexEnvironment?: string;
   folder?: never;
 }
 
@@ -272,11 +444,13 @@ export interface CreateFolderSession {
   folder: string;
   checkouts?: never;
   cwdGithubRepoId?: never;
+  cloud?: never;
+  codexEnvironment?: never;
 }
 
 interface CreateSessionCommon {
   hostId: string;
-  agent: SessionAgent;
+  agent: CodingAgentId;
   launch?: Partial<SessionLaunch>;
   /** The composer's first task. It names the session and reaches the agent. */
   prompt?: string;
@@ -286,10 +460,24 @@ interface CreateSessionCommon {
   projectId?: string;
 }
 
+/**
+ * What New session posts for a session in a vendor's cloud: the vendor, the
+ * project, one repository, the first task and a model. There is no host,
+ * folder or permission level to name.
+ */
+export interface StartCloudSessionInput {
+  provider: CloudAgentProviderId;
+  projectId?: string;
+  checkout: CreateSessionCheckout;
+  prompt: string;
+  /** Absent is the vendor's own default. */
+  model?: string;
+}
+
 /** What a host is asked to get ready while New session is still being written. */
 export interface PrepareSessionInput {
   hostId: string;
-  checkouts: [CreateSessionCheckout];
+  checkouts: [CreateSessionCheckout, ...CreateSessionCheckout[]];
 }
 
 /** An image uploaded for a first task, waiting for the create that names it. */
@@ -297,4 +485,20 @@ export interface SessionAttachment {
   id: string;
   mediaType: string;
   size: number;
+}
+
+/** `owner/name` of a GitHub repository URL, the URL itself for anything else. */
+export function repositoryNameOf(url: string): string {
+  const match = /^https:\/\/github\.com\/([^/]+\/[^/]+?)(?:\.git)?\/?$/.exec(url);
+  return match ? match[1] : url;
+}
+
+/** What an agent is called on screen: the host catalog's name, or a cloud agent's vendor's. */
+export function sessionAgentLabel(agent: SessionAgent): string {
+  return isCodingAgentId(agent) ? CODING_AGENTS[agent].label : CLOUD_AGENT_LABELS[agent];
+}
+
+/** What a cloud vendor is called on screen, as a place a session runs. */
+export function cloudProviderLabel(provider: CloudAgentProviderId): string {
+  return CLOUD_AGENT_PROVIDER_LABELS[provider];
 }

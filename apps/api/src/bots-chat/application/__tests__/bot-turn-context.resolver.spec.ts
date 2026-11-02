@@ -1,23 +1,33 @@
 import { emptyScope } from '@oppenheimer/backend-authz';
 import { AppError } from '@oppenheimer/backend-core';
+import { parseBotSlashCommand } from '@oppenheimer/shared';
 import { None, Some } from 'oxide.ts';
 import type { TurnCredentialsPort } from '../../../bots/application/turn-credentials.port';
 import type { BotRepositoryPort } from '../../../bots/database/bot.repository.port';
 import type { BotDocumentRepositoryPort } from '../../../bots/database/bot-document.repository.port';
 import type { BotMemoryFactRepositoryPort } from '../../../bots/database/bot-memory-fact.repository.port';
+import type { BotSkillRepositoryPort } from '../../../bots/database/bot-skill.repository.port';
+import { BotSkillEntity } from '../../../bots/domain/bot-skill.entity';
+import type { BotApprovalRepositoryPort } from '../../database/bot-approval.repository.port';
 import type { BotConversationSummaryRepositoryPort } from '../../database/bot-conversation-summary.repository.port';
 import type { BotMessageRepositoryPort } from '../../database/bot-message.repository.port';
+import type { BotTurnRepositoryPort } from '../../database/bot-turn.repository.port';
+import type { BotApprovalEntity } from '../../domain/bot-approval.entity';
 import { BotConversationSummaryEntity } from '../../domain/bot-conversation-summary.entity';
 import { BotMessageEntity } from '../../domain/bot-message.entity';
-import { BotTurnEntity } from '../../domain/bot-turn.entity';
+import { NO_PERMISSIONS } from '../../domain/bot-tool-permission.policy';
+import { type BotTurnContext, BotTurnEntity } from '../../domain/bot-turn.entity';
 import type { OwnerHostsPort } from '../../infrastructure/owner-hosts.port';
 import type { BotApprovalRequestFactory } from '../bot-approval-request.factory';
+import { BotApprovalStartedPolicy } from '../bot-approval-started.policy';
 import { BotModelAccessResolver } from '../bot-model-access.resolver';
 import type { BotOwnerPermissionsResolver } from '../bot-owner-permissions.resolver';
 import type { BotOwnerScopeResolver } from '../bot-owner-scope.resolver';
+import type { BotPermissionsResolver } from '../bot-permissions.resolver';
+import type { BotRuleReviewerFactory } from '../bot-rule-reviewer.factory';
 import type { BotSubagentRunnerFactory } from '../bot-subagent-runner.factory';
 import type { BotToolboxFactory } from '../bot-toolbox.factory';
-import { BotTurnContextResolver } from '../bot-turn-context.resolver';
+import { BOT_TURN_MAX_STEPS, BotTurnContextResolver } from '../bot-turn-context.resolver';
 import type { BotTurnOpeningResolver } from '../bot-turn-opening.resolver';
 
 /**
@@ -31,13 +41,41 @@ import type { BotTurnOpeningResolver } from '../bot-turn-opening.resolver';
  */
 const HOME = '11111111-1111-4111-8111-111111111111';
 
+function skill(
+  name: string,
+  invocable: { userInvocable?: boolean; modelInvocable?: boolean } = {},
+): BotSkillEntity {
+  return BotSkillEntity.createNew({
+    organizationId: 'org-1',
+    botId: 'bot-1',
+    name,
+    description: `Does ${name}.`,
+    body: `Steps for ${name}.`,
+    ...invocable,
+    actor: { kind: 'user', userId: 'owner-1' },
+  });
+}
+
 function setup(
   hostsOf: OwnerHostsPort['hostsOf'],
   conversation: {
     summary?: BotConversationSummaryEntity;
     findHistory?: BotMessageRepositoryPort['findHistory'];
+    lastContext?: BotTurnContext;
+    /** What the person wrote; a `/<name>` runs that skill. */
+    opening?: string;
+    skills?: BotSkillEntity[];
+    /** The tools the prompt lists, by name. */
+    offered?: string[];
+    /** What opened the turn, when it is not a message of yours. */
+    message?: BotMessageEntity;
+    /** The approval it names, as the worker reads it. */
+    approval?: 'running' | 'ran';
   } = {},
 ) {
+  const opening = conversation.opening ?? 'Hi';
+  const skills = conversation.skills ?? [];
+  const offered = (conversation.offered ?? []).map((name) => ({ name, description: `${name}.` }));
   const owner = emptyScope('owner-1', 'org-1');
   const bot = {
     id: 'bot-1',
@@ -58,6 +96,7 @@ function setup(
     access,
     { findAllForTurn: async () => [] } as unknown as BotDocumentRepositoryPort,
     { findAllForTurn: async () => [] } as unknown as BotMemoryFactRepositoryPort,
+    { findAllForTurn: async () => skills } as unknown as BotSkillRepositoryPort,
     {
       findHistory: conversation.findHistory ?? (async () => []),
     } as unknown as BotMessageRepositoryPort,
@@ -66,11 +105,40 @@ function setup(
     } as unknown as BotConversationSummaryRepositoryPort,
     { resolve: async () => owner } as unknown as BotOwnerScopeResolver,
     { hostsOf: vi.fn(hostsOf) },
-    { tools: () => [], readOnlyTools: () => [], catalog: () => [] } as unknown as BotToolboxFactory,
+    {
+      findLastContext: async () => conversation.lastContext ?? null,
+    } satisfies Pick<BotTurnRepositoryPort, 'findLastContext'> as unknown as BotTurnRepositoryPort,
+    {
+      tools: () => [
+        {
+          name: 'archive_mail',
+          description: 'Archive.',
+          inputSchema: { type: 'object' },
+          run: async () => ({ content: 'Archived 25 threads.' }),
+        },
+      ],
+      readOnlyTools: () => [],
+      catalog: () => offered,
+    } as unknown as BotToolboxFactory,
     {} as BotApprovalRequestFactory,
     { heldScopes: async () => new Set() } as unknown as BotOwnerPermissionsResolver,
-    { resolve: async () => ({ prompt: 'Hi', images: [] }) } as unknown as BotTurnOpeningResolver,
+    {
+      resolve: async () => ({
+        prompt: opening,
+        images: [],
+        command: parseBotSlashCommand(opening),
+        message: conversation.message ?? null,
+      }),
+    } as unknown as BotTurnOpeningResolver,
     { create: () => ({ run: async () => [] }) } as unknown as BotSubagentRunnerFactory,
+    { forBot: async () => NO_PERMISSIONS } as unknown as BotPermissionsResolver,
+    {
+      create: () => ({ review: async () => ({ effect: 'none' }) }),
+    } as unknown as BotRuleReviewerFactory,
+    new BotApprovalStartedPolicy({
+      findForRun: async () =>
+        Some({ running: conversation.approval !== 'ran' } as BotApprovalEntity),
+    } as unknown as BotApprovalRepositoryPort),
   );
   const turnFrom = (timeZone: string | null) =>
     BotTurnEntity.queue({
@@ -82,13 +150,52 @@ function setup(
       effort: null,
       timeZone,
     });
+  const shape = (at = new Date('2026-10-15T09:00:00Z'), timeZone: string | null = null) =>
+    resolver.resolve(turnFrom(timeZone), at);
   return {
-    resolve: (at = new Date('2026-10-15T09:00:00Z'), timeZone: string | null = null) =>
-      resolver.resolve(turnFrom(timeZone), at),
+    shape,
+    /** What the engine is sent, for a turn that runs. */
+    resolve: async (at?: Date, timeZone: string | null = null) => {
+      const shaped = await shape(at, timeZone);
+      if (!shaped) throw new Error('the turn had nothing to say');
+      return shaped.request;
+    },
   };
 }
 
 describe('BotTurnContextResolver', () => {
+  // What breaks this: the turn a yes opens read like any other, so it acts
+  // before the call it approved reports, or says "on it" after the report.
+  it('hands every turn to the approval-started policy: a message of yours runs as read', async () => {
+    const usual = await setup(async () => []).shape();
+    expect(usual?.takesSteers).toBe(true);
+    expect(usual?.request.maxSteps).toBe(BOT_TURN_MAX_STEPS);
+
+    const started = BotMessageEntity.createNew({
+      organizationId: 'org-1',
+      botId: 'bot-1',
+      turnId: 't-1',
+      role: 'event',
+      content: 'Ana approved: Archive 25 threads\nIt is running now.',
+      event: {
+        kind: 'approval',
+        outcome: 'approved',
+        tool: 'archive_mail',
+        summary: 'Archive 25 threads',
+        sessionId: null,
+        approvalId: 'a-1',
+        stage: 'started',
+      },
+      steps: [],
+      position: 0,
+    });
+    const onIt = await setup(async () => [], { message: started }).shape();
+    expect(onIt?.takesSteers).toBe(false);
+    await expect(
+      setup(async () => [], { message: started, approval: 'ran' }).shape(),
+    ).resolves.toBe(null);
+  });
+
   it('names the home host among the owner’s hosts', async () => {
     const { resolve } = setup(async () => [
       { id: HOME, name: 'build-01', online: true, runningSessions: 1 },
@@ -103,6 +210,15 @@ describe('BotTurnContextResolver', () => {
       /^<turn_context>\nIt is Thursday, 15 October 2026, 11:00 \(Europe\/Madrid/,
     );
     expect(message.endsWith('</turn_context>\n\nHi')).toBe(true);
+  });
+
+  it('tells the turn how full its context was when the last turn ended, in the message, not the prompt', async () => {
+    const { resolve } = setup(async () => [], {
+      lastContext: { tokens: 120_000, window: 200_000 },
+    });
+    const { message, systemPrompt } = await resolve(new Date('2026-10-15T09:00:00Z'), null);
+    expect(message).toContain('Your context was 60% full at the end of your last turn');
+    expect(systemPrompt).not.toContain('Your context was');
   });
 
   it('composes the same system prompt on two turns apart in time, zone and hosts', async () => {
@@ -168,5 +284,66 @@ describe('BotTurnContextResolver', () => {
     expect(history).toHaveLength(2);
     expect(history[0].text).toContain('The person deploys from build-01.');
     expect(history[1]).toEqual({ role: 'user', text: 'Deploy again?' });
+  });
+
+  describe('skills', () => {
+    it('lists the skills the bot may use, by name and description and never their body, when it can read one', async () => {
+      const { resolve } = setup(async () => [], {
+        offered: ['use_skill'],
+        skills: [
+          skill('triage'),
+          skill('release-notes'),
+          skill('deploy', { modelInvocable: false }),
+        ],
+      });
+      const { systemPrompt } = await resolve();
+      expect(systemPrompt).toContain('# Your skills\n\nSaved ways of doing a task');
+      expect(systemPrompt).toContain(
+        '- `release-notes`: Does release-notes.\n- `triage`: Does triage.',
+      );
+      expect(systemPrompt).not.toContain('Steps for');
+      // Only the person runs it, so the bot is not offered it.
+      expect(systemPrompt).not.toContain('`deploy`');
+    });
+
+    it('lists none when the turn cannot read a skill', async () => {
+      const { resolve } = setup(async () => [], { skills: [skill('triage')] });
+      expect((await resolve()).systemPrompt).not.toContain('# Your skills');
+    });
+
+    it('runs the skill a person names with /<name>: its body opens the message, their words after it', async () => {
+      const { resolve } = setup(async () => [], {
+        opening: '/release-notes v2.3',
+        skills: [skill('release-notes', { modelInvocable: false })],
+      });
+      const { message, systemPrompt } = await resolve();
+      expect(message).toContain(
+        'The person ran your skill /release-notes. Follow it for this request. What they wrote after the command is its input.\n\n<skill name="release-notes">\nSteps for release-notes.\n</skill>\n\n/release-notes v2.3',
+      );
+      // The prompt stays the same bytes: the skill rides this turn's message only.
+      expect(systemPrompt).not.toContain('Steps for release-notes.');
+    });
+
+    it('says a command is no skill of its, and names the ones the person can run', async () => {
+      const { resolve } = setup(async () => [], {
+        opening: '/relase-notes',
+        skills: [skill('release-notes'), skill('triage', { userInvocable: false })],
+      });
+      const { message } = await resolve();
+      expect(message).toContain(
+        'The message starts with /relase-notes, which is not one of your skills. The skills they can run are /release-notes.',
+      );
+      expect(message).not.toContain('<skill');
+    });
+
+    it('does not run a skill only the bot may use, from a command', async () => {
+      const { resolve } = setup(async () => [], {
+        opening: '/triage',
+        skills: [skill('triage', { userInvocable: false })],
+      });
+      const { message } = await resolve();
+      expect(message).not.toContain('<skill');
+      expect(message).toContain('You have no skills they can run.');
+    });
   });
 });

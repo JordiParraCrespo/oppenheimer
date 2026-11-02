@@ -86,7 +86,9 @@ services:
     # admits beyond 'self'. The image defaults it to the PostHog EU endpoints;
     # add it here only to widen that (another analytics region, or a
     # VITE_API_URL that is not this origin). Setting it replaces the default
-    # rather than adding to it — see apps/web/nginx.conf.
+    # rather than adding to it — see apps/web/nginx.conf. CSP_FRAME_ORIGINS
+    # admits the sessions' preview domain to the Browser tab's frame
+    # (https://*.<PREVIEW_BASE_URL's domain>); empty, the tab cannot frame one.
     ports:
       - "3000:3000"
   # oppenheimer:end web

@@ -1,0 +1,1 @@
+export const INBOX_MARK_REPOSITORY = Symbol('INBOX_MARK_REPOSITORY');

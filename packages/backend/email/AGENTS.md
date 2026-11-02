@@ -25,7 +25,10 @@ src/
 - **Pluggable service pattern**: abstract `EmailService` → concrete providers
   (console / nodemailer / resend) → selected by the factory in `EmailModule`.
   Add a provider as another concrete class; do not branch inside callers.
-- Templates are **React Email** components rendered via `render.ts`.
+- Templates are **React Email** components rendered via `render.ts`. The
+  package holds the layout and the account emails (reset, verification,
+  welcome, invitation); a product notice is a `sendAction` call with copy the
+  API's `queue/email-job.mapper.ts` writes, not a template here.
 - Ships **CommonJS**.
 
 ## Commands

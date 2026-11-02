@@ -12,7 +12,7 @@ export function FleetSessionRow({
   session: SessionEntity;
   hostsById: Map<string, HostEntity>;
 }) {
-  const host = hostsById.get(session.hostId);
+  const host = session.hostId ? hostsById.get(session.hostId) : undefined;
   const state = session.isProvisioning ? 'pending' : host?.online ? 'running' : 'failed';
 
   return <SessionItem name={session.name} state={state} />;

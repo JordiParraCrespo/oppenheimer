@@ -4,7 +4,7 @@ import type { UserSettingsEntity } from '../modules/user-settings/user-settings.
 import { useOppenheimerApp } from './context';
 import { useQuery } from './query';
 
-export const userSettingsKeys = {
+const userSettingsKeys = {
   all: ['userSettings'] as const,
   me: () => [...userSettingsKeys.all, 'me'] as const,
 };

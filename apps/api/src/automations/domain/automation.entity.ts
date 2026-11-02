@@ -7,9 +7,10 @@ import {
 } from '@oppenheimer/backend-ddd';
 import type { Scope } from '@oppenheimer/shared';
 import { effortLevelFor } from '@oppenheimer/shared/agents';
-import type {
-  AutomationOverlapPolicy,
-  AutomationPausedReason,
+import {
+  type AutomationOverlapPolicy,
+  type AutomationPausedReason,
+  automationPlaceFits,
 } from '@oppenheimer/shared/automations';
 import type {
   AutomationChange,
@@ -88,6 +89,7 @@ export interface RoutineChanges {
 }
 
 const REVISION_FIELDS = [
+  'place',
   'hostId',
   'agent',
   'model',
@@ -409,6 +411,11 @@ export class AutomationEntity extends AggregateRoot<AutomationProps> {
       throw new ArgumentNotProvidedException('A session automation belongs to a project');
     }
     const revision = target.revision;
+    if (!automationPlaceFits(revision)) {
+      throw new ArgumentInvalidException(
+        `An automation in ${revision.place} cannot run ${revision.agent} ${revision.hostId ? 'on a host' : 'with no host'}`,
+      );
+    }
     if (revision.repositories.length === 0) {
       throw new ArgumentInvalidException('An automation works in at least one repository');
     }
@@ -416,6 +423,9 @@ export class AutomationEntity extends AggregateRoot<AutomationProps> {
       revision.repositories.map((repository) => repository.githubRepoId),
     );
     for (const trigger of this.props.triggers) {
+      if (trigger.source === 'gmail') {
+        throw new ArgumentInvalidException('Mail starts a bot routine, not a session automation');
+      }
       if (trigger.source === 'schedule') continue;
       if (!trigger.config.repositories.every((id) => repositories.has(id))) {
         throw new ArgumentInvalidException(

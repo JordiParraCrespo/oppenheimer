@@ -1,6 +1,6 @@
 import { Inject } from '@nestjs/common';
 import { type IQueryHandler, QueryHandler } from '@nestjs/cqrs';
-import { AppError } from '@oppenheimer/backend-core';
+import { requireFound } from '@oppenheimer/backend-core';
 import { AUTOMATION_RUN_REPOSITORY } from '../../automations.di-tokens';
 import type { AutomationRunRepositoryPort } from '../../database/automation-run.repository.port';
 import type { RunReadModel } from '../../domain/automation-read.types';
@@ -18,7 +18,6 @@ export class FindAutomationRunQueryHandler
 
   async execute(query: FindAutomationRunQuery): Promise<RunReadModel> {
     const found = await this.runs.findOne(query.scope, query.runId);
-    if (found.isNone()) throw new AppError(AutomationErrors.RUN_NOT_FOUND);
-    return found.unwrap();
+    return requireFound(found, AutomationErrors.RUN_NOT_FOUND);
   }
 }

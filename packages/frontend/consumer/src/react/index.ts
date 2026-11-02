@@ -23,13 +23,19 @@ export {
 } from './bot-approvals.queries';
 export {
   type BotHistory,
+  type BotImageReads,
+  type BotLive,
+  type BotLiveRetries,
+  type BotLiveSubagents,
   type BotLiveText,
   type CancelBotTurnVariables,
   type ExportBotConversationVariables,
   type SendBotMessageVariables,
   useBotActiveTurn,
-  useBotImage,
-  useBotLiveText,
+  useBotImages,
+  useBotLive,
+  useBotRoomLeft,
+  useBotWaitingMessages,
   useCancelBotTurn,
   useClearBotConversation,
   useExportBotConversation,
@@ -38,6 +44,23 @@ export {
   useSuspenseBotHistory,
   useUploadBotImage,
 } from './bot-chat.queries';
+export { useBotGoal, useClearBotGoal } from './bot-goal.queries';
+export {
+  type AddBotPermissionRuleVariables,
+  type DeleteBotPermissionRuleVariables,
+  type DeleteBotToolGrantVariables,
+  type SetBotToolDecisionVariables,
+  useAddBotPermissionRule,
+  useDeleteBotPermissionRule,
+  useDeleteBotToolGrant,
+  useSetBotToolDecision,
+  useSuspenseBotPermissions,
+} from './bot-permissions.queries';
+export {
+  useAnswerBotQuestion,
+  useBotPendingQuestion,
+  useDismissBotQuestion,
+} from './bot-questions.queries';
 export {
   type BotRoutineVariables,
   type RunBotRoutineVariables,
@@ -48,6 +71,16 @@ export {
   useSuspenseAllBotRoutines,
   useSuspenseBotRoutines,
 } from './bot-routines.queries';
+export {
+  type AddBotSkillVariables,
+  type DeleteBotSkillVariables,
+  type UpdateBotSkillVariables,
+  useAddBotSkill,
+  useBotSlashCommands,
+  useDeleteBotSkill,
+  useSuspenseBotSkills,
+  useUpdateBotSkill,
+} from './bot-skills.queries';
 export { type ChatgptLoginFlow, useChatgptLogin } from './bots.chatgpt-login';
 export {
   type AddBotFactVariables,
@@ -61,6 +94,7 @@ export {
   useBotDocuments,
   useBotGroups,
   useBots,
+  useBotsSnapshot,
   useClearBotMemory,
   useCreateBot,
   useCreateBotGroup,
@@ -77,6 +111,7 @@ export {
   useSuspenseBotMemory,
   useSuspenseBotRevisions,
   useSuspenseBotsAndGroups,
+  useSuspenseSectionBots,
   useUpdateBot,
   useUpdateBotFact,
   useUpdateBotOptimistically,
@@ -99,8 +134,16 @@ export {
 // The pairing flow, not its parts: a surface that read the token or the host
 // poll directly would be back to asking "is there a host?" instead of "was
 // this token spent?".
+export {
+  useCloudAgentModels,
+  useCloudAgentStatus,
+  useConnectCloudAgentProvider,
+  useDisconnectCloudAgentProvider,
+  useSuspenseCloudAgentStatus,
+} from './cloud-agents.queries';
 export { type HostPairingFlow, useHostPairing } from './hosts.pairing';
 export {
+  useHostCodexEnvironments,
   useHostFolders,
   useHostPresence,
   useHosts,
@@ -112,6 +155,14 @@ export {
   useUpdateHostRunner,
 } from './hosts.queries';
 export {
+  inboxAnswered,
+  type PutInboxMarkVariables,
+  useDeleteInboxMark,
+  useInboxCount,
+  usePutInboxMark,
+  useSuspenseInbox,
+} from './inbox.queries';
+export {
   type ConnectInstallationVariables,
   useConnectInstallation,
   useInstallationRepositories,
@@ -121,6 +172,15 @@ export {
   useRepositoryBranchesFor,
   useStartInstallation,
 } from './installations.queries';
+export {
+  useCancelScheduledMail,
+  useConnectGmail,
+  useDisconnectGmail,
+  useRenameGmailConnection,
+  useStartGmailConnection,
+  useSuspenseGmailConnections,
+  useSuspenseScheduledMail,
+} from './mail.queries';
 export {
   useModelProviders,
   usePutModelProviderKey,
@@ -135,7 +195,7 @@ export {
   useOrganizations,
 } from './organizations.queries';
 export { usePermissionCatalog } from './permissions.queries';
-export { CONSUMER_NON_PERSISTED_FEATURES } from './persistence';
+export { CONSUMER_PERSISTED_FEATURES } from './persistence';
 export {
   useChangeEmail,
   useChangeOwnPassword,
@@ -194,10 +254,12 @@ export {
   type RenameSessionVariables,
   type SetSessionSharePeopleVariables,
   type StopSessionShareVariables,
+  useAnswerSessionDecision,
   useCloseSession,
   useCreateSession,
   useInvalidateSession,
   useMoveSession,
+  useOpenSessionPreviewTab,
   usePasteSessionFile,
   usePrepareSession,
   usePutSessionShare,
@@ -208,14 +270,21 @@ export {
   useSessionStartProgress,
   useSessions,
   useSetSessionSharePeople,
+  useStartCloudSession,
   useStopSessionShare,
   useSuspenseSession,
+  useSuspenseSessionPorts,
+  useSuspenseSessionPreview,
   useSuspenseSessionShare,
   useSuspenseSessionsSidebar,
   useSuspenseSharedSession,
   useUploadSessionAttachment,
 } from './sessions.queries';
-export { useSessionStream, useSharedSessionStream } from './sessions.stream';
+export {
+  useSessionDeviceStream,
+  useSessionStream,
+  useSharedSessionStream,
+} from './sessions.stream';
 export {
   type LinkTaskSessionVariables,
   type MoveTaskVariables,
@@ -243,4 +312,9 @@ export {
   useVoiceDictation,
   type VoiceDictation,
 } from './voice.queries';
+export {
+  useLinkWhatsapp,
+  useSuspenseWhatsappSettings,
+  useUnlinkWhatsapp,
+} from './whatsapp.queries';
 export { useWorkspaceEvents } from './workspace-events';

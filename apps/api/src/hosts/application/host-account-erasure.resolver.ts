@@ -1,4 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
+import { retryOnVersionConflict } from '@oppenheimer/backend-ddd';
 import type { AccountErasurePort } from '../../users/application/account-erasure.port';
 import type { HostRepositoryPort } from '../database/host.repository.port';
 import { HOST_REPOSITORY } from '../hosts.di-tokens';
@@ -19,10 +20,17 @@ export class HostAccountErasure implements AccountErasurePort {
   ) {}
 
   async eraseFor(userId: string): Promise<void> {
-    for (const host of await this.hosts.findOwnedBySystem(userId)) {
-      if (host.isUnpaired) continue;
-      host.unpair();
-      await this.hosts.save(host);
+    for (const listed of await this.hosts.findOwnedBySystem(userId)) {
+      if (listed.isUnpaired) continue;
+      // Each try reads the host afresh, so one that another writer changed
+      // since the list was read is unpaired from what it is now.
+      await retryOnVersionConflict(async () => {
+        const found = await this.hosts.findOneByIdForMachine(listed.id);
+        if (found.isNone() || found.unwrap().isUnpaired) return;
+        const host = found.unwrap();
+        host.unpair();
+        await this.hosts.save(host);
+      });
     }
   }
 }

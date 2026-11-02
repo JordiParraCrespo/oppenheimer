@@ -1,10 +1,19 @@
 import type {
-  CreateSessionDto,
+  SessionAgentId,
+  SessionAgentReport,
+  SessionDecision,
   SessionEffortDto,
   SessionPermissionDto,
   SessionState,
 } from '@oppenheimer/shared';
-import { SESSION_PERMISSIONS } from '@oppenheimer/shared';
+import {
+  AGENT_DECISION_EVENT_KIND,
+  agentDecisionPayloadSchema,
+  CLOUD_AGENT_IDS,
+  DECISION_ANSWERED_EVENT_KIND,
+  SESSION_PERMISSIONS,
+  sessionAgentReportSchema,
+} from '@oppenheimer/shared';
 import { CODING_AGENTS, effortLevelFor, isCodingAgentId } from '@oppenheimer/shared/agents';
 
 /**
@@ -22,8 +31,11 @@ import { CODING_AGENTS, effortLevelFor, isCodingAgentId } from '@oppenheimer/sha
  * disagrees with.
  */
 
-/** The coding agent a session runs: the create DTO's union over the closed agent catalog. */
-export type SessionAgent = CreateSessionDto['agent'];
+/**
+ * What a session runs: a coding agent a host launches, from the runner's closed
+ * catalog, or a vendor's agent in the cloud (`SESSION_AGENT_IDS`).
+ */
+export type SessionAgent = SessionAgentId;
 
 /**
  * What the screen manifest reports. An **input** to the derived group, never a
@@ -86,14 +98,45 @@ export const SESSION_EVENT_KINDS = {
    * reads off the agent's transcript (Claude Code's, for now). Payload `{ text, images? }`.
    */
   PROMPT_FIRST: 'prompt.first',
+  /**
+   * A follow-up prompt the API typed into window 0 for somebody other than a
+   * person at the terminal: a bot, for now. Payload `{ text, sender }`, the
+   * sender as the API read it (`SessionPromptSender`), never as the words
+   * claim. It opens the next turn when none is live.
+   */
+  PROMPT_SENT: 'prompt.sent',
+  /**
+   * The keys of that prompt never reached the host (its link dropped between
+   * the claim and the keys). Payload `{ id }`, the command that sent it; the
+   * turn it opened is cancelled.
+   */
+  PROMPT_UNDELIVERED: 'prompt.undelivered',
   /** What the screen manifest last observed the agent doing. Payload `{ state }`. */
   AGENT_OBSERVED: 'agent.observed',
+  /**
+   * What a blocked agent waits on the person for: an `AskUserQuestion` call or a
+   * permission dialog, read on the host. Payload `{ decision }`, null once it
+   * cleared (`SessionDecision`, `29-inbox.md` slice 4).
+   */
+  AGENT_DECISION: AGENT_DECISION_EVENT_KIND,
+  /**
+   * Somebody answered the pending decision from the console. Payload `{ id }`,
+   * written by the API beside the keys it sent; the runner's next report confirms.
+   */
+  DECISION_ANSWERED: DECISION_ANSWERED_EVENT_KIND,
   /**
    * The host refused a command no attachment was waiting on. Payload
    * `{ command, code, detail? }`, written by the relay. The fold reads only a
    * refused `session.close`, which ends the close the log was owed.
    */
   COMMAND_FAILED: 'command.failed',
+  /**
+   * A terminal watch's pattern matched lines the runner had not matched
+   * before. Payload `{ watchId, count }`, the count cumulative; never the
+   * text, which stays on the host (`session_terminal_watch`). It moves no
+   * state: the entity raises `SessionTerminalMatchedDomainEvent` for it.
+   */
+  TERMINAL_MATCHED: 'terminal.matched',
   /** The agent left a report. Payload `{ hash }` — never the report itself. */
   REPORT_PUBLISHED: 'report.published',
   /** Somebody read that report. Payload `{ hash }`. */
@@ -115,6 +158,11 @@ export interface SessionLaunchFold {
   model: string | null;
   permission: SessionPermissionDto | null;
   effort: SessionEffortDto | null;
+  /**
+   * A Codex cloud session's environment, as picked; null is the host's own
+   * pick, the environment linked to the repository.
+   */
+  environment: string | null;
 }
 
 export interface SessionLogEntry {
@@ -196,6 +244,19 @@ export interface SessionFold {
   closeRequest: SessionCloseRequestFold | null;
   /** Why the host refused the last close, until somebody asks again or restarts. */
   closeRefusal: SessionCloseRefusalFold | null;
+  /**
+   * What the agent waits on the person for, as the runner last reported it:
+   * cleared by its own report, by an answer, by any state but `blocked`, and by
+   * the session stopping, failing or closing.
+   */
+  pendingDecision: SessionDecision | null;
+  /**
+   * The agent's own word on what it is doing (OSC 7501), from the last
+   * `agent.observed` that carried one: why it is blocked, how far along it is,
+   * what it says. Null when the last observation was read off the screen, and
+   * cleared when the agent stops, fails, closes or starts again.
+   */
+  agentReport: SessionAgentReport | null;
 }
 
 export const INITIAL_SESSION_FOLD: SessionFold = {
@@ -211,10 +272,12 @@ export const INITIAL_SESSION_FOLD: SessionFold = {
   observedSince: null,
   reportHash: null,
   ackedReportHash: null,
-  launch: { model: null, permission: 'ask', effort: null },
+  launch: { model: null, permission: 'ask', effort: null, environment: null },
   projectId: null,
   closeRequest: null,
   closeRefusal: null,
+  pendingDecision: null,
+  agentReport: null,
 };
 
 /**
@@ -232,6 +295,8 @@ export function launchPermissionFor(
   requested: string | null | undefined,
 ): SessionPermissionDto | null {
   if (agent && isCodingAgentId(agent) && !CODING_AGENTS[agent].launch.permission) return null;
+  // A vendor's agent runs under the vendor's rules: there is no level to record.
+  if ((CLOUD_AGENT_IDS as readonly (string | null)[]).includes(agent)) return null;
   return SESSION_PERMISSIONS.includes(requested as SessionPermissionDto)
     ? (requested as SessionPermissionDto)
     : 'ask';
@@ -264,6 +329,7 @@ function launchOf(payload: unknown): SessionLaunchFold | null {
     // The same rule the create applied (`effortLevelFor`), so a replay of the
     // log records exactly what the create did.
     effort: effortLevelFor(agent, model, stringField(launch, 'effort')),
+    environment: stringField(launch, 'environment'),
   };
 }
 
@@ -271,6 +337,31 @@ function launchOf(payload: unknown): SessionLaunchFold | null {
 function acceptsUnpushedWork(payload: unknown): boolean {
   if (typeof payload !== 'object' || payload === null) return false;
   return (payload as { acceptUnpushedWork?: unknown }).acceptUnpushedWork === true;
+}
+
+/** The decision an `agent.decision` payload states; null for a clear or a shape it cannot read. */
+function decisionOf(payload: unknown): SessionDecision | null {
+  const parsed = agentDecisionPayloadSchema.safeParse(payload);
+  return parsed.success ? parsed.data.decision : null;
+}
+
+/**
+ * The agent's own report an `agent.observed` payload carries as `program`;
+ * null for one read off the screen.
+ */
+function agentReportOf(payload: unknown): SessionAgentReport | null {
+  if (typeof payload !== 'object' || payload === null) return null;
+  return readAgentReport((payload as { program?: unknown }).program);
+}
+
+/**
+ * A report narrowed by its schema, from the log or from the `jsonb` column it
+ * is folded into: null for none, and for one this build cannot read.
+ */
+export function readAgentReport(value: unknown): SessionAgentReport | null {
+  if (value === undefined || value === null) return null;
+  const parsed = sessionAgentReportSchema.safeParse(value);
+  return parsed.success ? parsed.data : null;
 }
 
 function observedStateOf(payload: unknown): AgentObservedState | null {
@@ -307,14 +398,14 @@ export function foldSessionEvent(fold: SessionFold, event: SessionLogEntry): Ses
       return opened(next, event);
     }
     case SESSION_EVENT_KINDS.FAILED:
-      return transition(next, 'failed');
+      return transition(withoutAgentFacts(next), 'failed');
     case SESSION_EVENT_KINDS.STOPPED:
       if (next.state === 'resolved') return next;
       // Stopping ends the processes and leaves the worktrees, so the work is
       // exactly as unfinished as it was: the lifecycle does not move, and
-      // `stoppedAt` is the whole of what changed.
+      // `stoppedAt` is the whole of what changed. Nothing waits on an answer.
       next.stoppedAt = event.occurredAt;
-      return next;
+      return withoutAgentFacts(next);
     case SESSION_EVENT_KINDS.CLOSE_REQUESTED:
       if (next.state === 'resolved') return next;
       // A new request replaces whatever the last one ended in: a refusal is
@@ -350,7 +441,7 @@ export function foldSessionEvent(fold: SessionFold, event: SessionLogEntry): Ses
       closed.stoppedAt = closed.stoppedAt ?? event.occurredAt;
       closed.closeRequest = null;
       closed.closeRefusal = null;
-      return closed;
+      return withoutAgentFacts(closed);
     }
     case SESSION_EVENT_KINDS.NAMED: {
       const name = stringField(event.payload, 'name');
@@ -389,6 +480,9 @@ export function foldSessionEvent(fold: SessionFold, event: SessionLogEntry): Ses
     case SESSION_EVENT_KINDS.AGENT_OBSERVED: {
       const state = observedStateOf(event.payload);
       if (!state) return next;
+      // Every observation says where its state came from: the agent's own
+      // report, or the screen, which carries none and so clears the last one.
+      next.agentReport = agentReportOf(event.payload);
       if (next.lastObservedState === state) {
         // The same state again: keep the transition already recorded, which is what
         // makes a duration accumulate instead of resetting on every heartbeat.
@@ -399,8 +493,22 @@ export function foldSessionEvent(fold: SessionFold, event: SessionLogEntry): Ses
       // yet — one report cannot be evidence of having been stuck.
       next.lastObservedState = state;
       next.observedSince = null;
+      // Only a blocked agent waits on a decision; one that moved on answered it,
+      // at the terminal or anywhere else.
+      if (state !== 'blocked') next.pendingDecision = null;
       return next;
     }
+    case SESSION_EVENT_KINDS.AGENT_DECISION:
+      if (next.state === 'resolved' || next.stoppedAt) return next;
+      next.pendingDecision = decisionOf(event.payload);
+      return next;
+    case SESSION_EVENT_KINDS.DECISION_ANSWERED:
+      // Only the decision it answered: a later one the runner already reported
+      // is still pending.
+      if (next.pendingDecision?.id === stringField(event.payload, 'id')) {
+        next.pendingDecision = null;
+      }
+      return next;
     case SESSION_EVENT_KINDS.REPORT_PUBLISHED:
       next.reportHash = stringField(event.payload, 'hash') ?? next.reportHash;
       return next;
@@ -420,10 +528,24 @@ export function foldSessionLog(
   return events.reduce(foldSessionEvent, initial);
 }
 
+/**
+ * The fold with every fact that lives only as long as one run of the agent
+ * cleared: what it waits on the person for, and what it last said it is
+ * doing. A session that stops, fails, closes or starts again has neither;
+ * a new fact of that kind joins this list rather than every case above.
+ */
+function withoutAgentFacts(fold: SessionFold): SessionFold {
+  fold.pendingDecision = null;
+  fold.agentReport = null;
+  return fold;
+}
+
 /** A session that is running again: open, not stopped, and carrying the agent's id. */
 function opened(fold: SessionFold, event: SessionLogEntry): SessionFold {
   const next = transition(fold, 'open');
   next.stoppedAt = null;
+  // A fresh agent waits on nothing the last one asked, and has said nothing yet.
+  withoutAgentFacts(next);
   next.agentSessionId = stringField(event.payload, 'agentSessionId') ?? next.agentSessionId;
   return next;
 }

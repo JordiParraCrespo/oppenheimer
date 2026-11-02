@@ -1,7 +1,7 @@
 import type { SessionStartStep } from '@oppenheimer/frontend-consumer';
 import type { TFunction } from 'i18next';
 import { describe, expect, it } from 'vitest';
-import { failureReason, provisioningSteps } from '../lib/provisioning-steps';
+import { provisioningSteps } from '../lib/provisioning-steps';
 
 /**
  * A step says what it is doing while it runs and what came of it once it
@@ -88,35 +88,6 @@ describe('provisioningSteps', () => {
       t,
     );
     expect(clone.meta).toBe('repository not found');
-  });
-});
-
-describe('failureReason', () => {
-  const catalog = (code: string) => (code === 'GIT_004' ? 'errors.byCode.GIT_004' : undefined);
-
-  it('says a code a person can act on in the console’s words', () => {
-    expect(failureReason({ code: 'SESS_002', detail: 'the frame carried 2' }, t, catalog)).toEqual({
-      reason: 'sessions.provisioning.codes.SESS_002',
-      detail: 'the frame carried 2',
-    });
-  });
-
-  it('translates any other code through the shared catalog', () => {
-    expect(failureReason({ code: 'GIT_004', detail: 'auth failed' }, t, catalog)).toEqual({
-      reason: 'errors.byCode.GIT_004',
-      detail: 'auth failed',
-    });
-  });
-
-  it('never makes the host’s English the reason, only its detail', () => {
-    expect(failureReason({ code: 'RUNNER_012', detail: 'clone refused' }, t, catalog)).toEqual({
-      reason: 'sessions.provisioning.failed',
-      detail: 'clone refused',
-    });
-    expect(failureReason({ code: null, detail: 'boom' }, t, catalog)?.reason).toBe(
-      'sessions.provisioning.failed',
-    );
-    expect(failureReason(null, t, catalog)).toBeNull();
   });
 });
 

@@ -3,7 +3,7 @@ import {
   type ProfileResponseDto,
   type UserSessionResponseDto,
 } from '@oppenheimer/api-client';
-import { MapApiError, unwrap, unwrapBody } from '@oppenheimer/frontend-core';
+import { callApi } from '@oppenheimer/frontend-core';
 import type {
   ChangeEmailDto,
   ChangeOwnPasswordDto,
@@ -48,73 +48,68 @@ function toSession(data: UserSessionResponseDto): UserSessionEntity {
 
 @injectable()
 export class ProfileRepository {
-  @MapApiError(ProfileErrors.FETCH_FAILED)
-  async get(): Promise<ProfileEntity> {
-    return toProfile(await unwrapBody(heyApiSdk.getProfile(), ProfileErrors.FETCH_FAILED));
+  get(): Promise<ProfileEntity> {
+    return callApi(ProfileErrors.FETCH_FAILED, async (api) => {
+      return toProfile(await api.body(heyApiSdk.getProfile()));
+    });
   }
 
-  @MapApiError(ProfileErrors.UPDATE_FAILED)
-  async update(dto: UpdateProfileDto): Promise<ProfileEntity> {
-    return toProfile(
-      await unwrapBody(heyApiSdk.updateProfile({ body: dto }), ProfileErrors.UPDATE_FAILED),
-    );
+  update(dto: UpdateProfileDto): Promise<ProfileEntity> {
+    return callApi(ProfileErrors.UPDATE_FAILED, async (api) => {
+      return toProfile(await api.body(heyApiSdk.updateProfile({ body: dto })));
+    });
   }
 
-  @MapApiError(ProfileErrors.UPLOAD_AVATAR_FAILED)
-  async uploadAvatar(file: Blob): Promise<ProfileEntity> {
-    return toProfile(
-      await unwrapBody(
-        heyApiSdk.uploadAvatar({ body: { file } }),
-        ProfileErrors.UPLOAD_AVATAR_FAILED,
-      ),
-    );
+  uploadAvatar(file: Blob): Promise<ProfileEntity> {
+    return callApi(ProfileErrors.UPLOAD_AVATAR_FAILED, async (api) => {
+      return toProfile(await api.body(heyApiSdk.uploadAvatar({ body: { file } })));
+    });
   }
 
-  @MapApiError(ProfileErrors.DELETE_AVATAR_FAILED)
-  async deleteAvatar(): Promise<ProfileEntity> {
-    return toProfile(
-      await unwrapBody(heyApiSdk.deleteAvatar(), ProfileErrors.DELETE_AVATAR_FAILED),
-    );
+  deleteAvatar(): Promise<ProfileEntity> {
+    return callApi(ProfileErrors.DELETE_AVATAR_FAILED, async (api) => {
+      return toProfile(await api.body(heyApiSdk.deleteAvatar()));
+    });
   }
 
-  @MapApiError(ProfileErrors.CHANGE_PASSWORD_FAILED)
-  async changePassword(dto: ChangeOwnPasswordDto): Promise<void> {
-    await unwrap(heyApiSdk.changePassword({ body: dto }), ProfileErrors.CHANGE_PASSWORD_FAILED);
+  changePassword(dto: ChangeOwnPasswordDto): Promise<void> {
+    return callApi(ProfileErrors.CHANGE_PASSWORD_FAILED, async (api) => {
+      await api.result(heyApiSdk.changePassword({ body: dto }));
+    });
   }
 
   /**
    * Ask for a link at the new address. The account moves only when it is
    * followed, so nothing on the profile changes here.
    */
-  @MapApiError(ProfileErrors.CHANGE_EMAIL_FAILED)
-  async changeEmail(dto: ChangeEmailDto): Promise<void> {
-    await unwrap(heyApiSdk.changeEmail({ body: dto }), ProfileErrors.CHANGE_EMAIL_FAILED);
+  changeEmail(dto: ChangeEmailDto): Promise<void> {
+    return callApi(ProfileErrors.CHANGE_EMAIL_FAILED, async (api) => {
+      await api.result(heyApiSdk.changeEmail({ body: dto }));
+    });
   }
 
-  @MapApiError(ProfileErrors.DELETE_ACCOUNT_FAILED)
-  async deleteAccount(dto: DeleteAccountDto): Promise<void> {
-    await unwrap(heyApiSdk.deleteOwnAccount({ body: dto }), ProfileErrors.DELETE_ACCOUNT_FAILED);
+  deleteAccount(dto: DeleteAccountDto): Promise<void> {
+    return callApi(ProfileErrors.DELETE_ACCOUNT_FAILED, async (api) => {
+      await api.result(heyApiSdk.deleteOwnAccount({ body: dto }));
+    });
   }
 
-  @MapApiError(ProfileErrors.FETCH_SESSIONS_FAILED)
-  async getSessions(): Promise<UserSessionEntity[]> {
-    const data = await unwrapBody(
-      heyApiSdk.findProfileSessions(),
-      ProfileErrors.FETCH_SESSIONS_FAILED,
-    );
-    return data.map(toSession);
+  getSessions(): Promise<UserSessionEntity[]> {
+    return callApi(ProfileErrors.FETCH_SESSIONS_FAILED, async (api) => {
+      const data = await api.body(heyApiSdk.findProfileSessions());
+      return data.map(toSession);
+    });
   }
 
-  @MapApiError(ProfileErrors.REVOKE_SESSION_FAILED)
-  async revokeSession(sessionId: string): Promise<void> {
-    await unwrap(
-      heyApiSdk.revokeProfileSession({ path: { id: sessionId } }),
-      ProfileErrors.REVOKE_SESSION_FAILED,
-    );
+  revokeSession(sessionId: string): Promise<void> {
+    return callApi(ProfileErrors.REVOKE_SESSION_FAILED, async (api) => {
+      await api.result(heyApiSdk.revokeProfileSession({ path: { id: sessionId } }));
+    });
   }
 
-  @MapApiError(ProfileErrors.REVOKE_SESSION_FAILED)
-  async revokeOtherSessions(): Promise<void> {
-    await unwrap(heyApiSdk.revokeOtherSessions(), ProfileErrors.REVOKE_SESSION_FAILED);
+  revokeOtherSessions(): Promise<void> {
+    return callApi(ProfileErrors.REVOKE_SESSION_FAILED, async (api) => {
+      await api.result(heyApiSdk.revokeOtherSessions());
+    });
   }
 }

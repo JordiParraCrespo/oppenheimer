@@ -72,7 +72,7 @@ func New(opts Options) *Folder {
 }
 
 // Init makes the work folder's root, 0700, and says which layout it is on
-// (`layout.json`, {"version": 2}) when nothing says so yet. A file that is
+// (`layout.json`, {"version": 3}) when nothing says so yet. A file that is
 // there is left as it is.
 func (f *Folder) Init() error {
 	if err := os.MkdirAll(f.layout.Root, 0o700); err != nil {

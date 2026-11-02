@@ -176,13 +176,13 @@ function ComposerContextMeter({
   onCompact,
   label,
   className,
-}: {
+  ...props
+}: Omit<React.ComponentProps<'button'>, 'value' | 'type' | 'children'> & {
   /** How full the context is, 0–100. */
   value: number;
   onCompact?: () => void;
   /** The title and accessible name ("23% of context used. Click to compact."). */
   label?: string;
-  className?: string;
 }) {
   const pct = Math.max(0, Math.min(100, Math.round(value)));
   const name = label ?? `${pct}% of context used${onCompact ? '. Click to compact.' : ''}`;
@@ -192,12 +192,16 @@ function ComposerContextMeter({
       data-slot="composer-context-meter"
       aria-label={name}
       title={name}
-      disabled={!onCompact}
-      onClick={onCompact}
+      disabled={!onCompact && !props.onClick}
       className={cn(
         'figures inline-flex h-7 shrink-0 items-center gap-1.5 rounded-pill px-2 font-mono text-[11.5px] text-fg-subtle outline-none transition-colors duration-fast enabled:hover:bg-hover-surface enabled:hover:text-fg-muted focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-default',
         className,
       )}
+      {...props}
+      onClick={(event) => {
+        onCompact?.();
+        props.onClick?.(event);
+      }}
     >
       <span aria-hidden className="h-1 w-7 overflow-hidden rounded-pill bg-hover-surface">
         <span

@@ -6,12 +6,11 @@ import {
   useNewSessionForm,
 } from '../hooks/use-new-session-form';
 import { NewSessionAgent } from './new-session-agent';
-import { NewSessionEffort } from './new-session-effort';
 import { NewSessionPermission } from './new-session-permission';
 import { NewSessionPrepare } from './new-session-prepare';
+import { NewSessionProject } from './new-session-project';
 import { NewSessionScope } from './new-session-scope';
 import { NewSessionSend } from './new-session-send';
-import { NewSessionSubtitle } from './new-session-subtitle';
 
 /**
  * New session: the draft's store and where each control sits. This section
@@ -23,10 +22,12 @@ import { NewSessionSubtitle } from './new-session-subtitle';
  * leave them still; the shape does not lean on the React Compiler, and
  * `new-session-form-render.spec.tsx` holds it.
  *
- * The chips sit in the composer's `scope` band (the 2026-09-26 export), in
- * the order where the session runs reads (`NewSessionScope`). The address can
- * seed the draft (`new-session-search.ts`): it is read once, for the store's
- * first values.
+ * The layout is `NewSessionComposer.dc.html` (the 2026-10-26 export): the
+ * heading, the project over the box (it fills the rest in, so it is picked
+ * first), the box, and under it one row of choices — where it runs and what
+ * it may touch on the left (`NewSessionScope`, then the permission level),
+ * the agent and effort on the right. The address can seed the draft
+ * (`new-session-search.ts`): it is read once, for the store's first values.
  */
 export function NewSessionForm({ heading }: { heading?: ReactNode }) {
   const search = useSearch({ from: '/_authenticated/sessions/new' });
@@ -41,24 +42,17 @@ export function NewSessionForm({ heading }: { heading?: ReactNode }) {
     <NewSessionFormContext.Provider value={form}>
       <NewSessionLandingContext.Provider value={fillable}>
         <NewSessionPrepare />
-        {heading ? (
-          <div>
-            {heading}
-            <NewSessionSubtitle />
-          </div>
-        ) : null}
+        {heading}
+        <div className="-mb-2 flex">
+          <NewSessionProject />
+        </div>
         <NewSessionSend
           // Pending is `loading`, settled-and-empty is the empty line plus the
           // chip's own foot action, and `disabled` is only for a chip this
           // screen forbids — which none of these are.
           scope={<NewSessionScope />}
           tools={<NewSessionPermission />}
-          engine={
-            <>
-              <NewSessionAgent />
-              <NewSessionEffort />
-            </>
-          }
+          engine={<NewSessionAgent />}
         />
       </NewSessionLandingContext.Provider>
     </NewSessionFormContext.Provider>

@@ -38,6 +38,11 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
 | 24 | [Where a session runs](24-session-places.md) | Two places on a host (the runner's home `~/.oppenheimer/`, the work folder `~/oppenheimer/`), the work folder as `<account>/<workspace>/{repos, agents, sessions}` named by ids, and three ways to start: a new worktree, a folder on the host, a blank terminal in either |
 | 25 | [Bots](25-bots.md) | The Employees section's general bot: its loop in Oppenheimer on the Claude Agent SDK or the OpenAI Agents SDK by provider (Anthropic, GLM, OpenAI), the tool catalog and per-bot permissions, bots that edit themselves, talk to each other and create bots, hosts for the sessions it starts; four slices |
 | 26 | [Bot routines](26-bot-routines.md) | How a bot works when nobody writes to it: routines as automations whose run target is a bot (an `AutomationRunTarget` port, session and bot adapters), a routine's run as a queued turn of the bot, "when a session ends" as a trigger source, the heartbeat as a spread schedule with quiet turns; routines made in chat through one `update_routine` tool, a read-only Routines tab and a spend guard, as Grok Bot does; five slices |
+| 27 | [Bot subscriptions](27-bot-subscriptions.md) | How a bot hears back from work it delegated: a subscription to a session (at start or later) wakes it with a queued turn when the task needs input, completes, fails or is stopped; thin events re-read as the owner, one wake per task and state, a wake limit; what Grok Bot and OpenAI's webhooks taught; three slices |
+| 28 | [Bots in the sections](28-bots-in-sections.md) | A Bots heading in Sessions, Automations, Plan and Pull requests, as the 2026-10-25 export draws it: a bot shows in the sections placed on it (by its owner, the section's plus, or itself), and opens its chat inside Pull requests; three slices |
+| 29 | [Inbox](29-inbox.md) | The 2026-10-25 export's new first rail item, first version: what needs you composed in the console from four reads that exist (sessions waiting on you, bot approvals, pull requests for you, failed runs), one at a time with its answer, filtered by project; done, deprioritize, snooze and delete stored as marks per occurrence; one new read, one new event; questions from Claude Code later |
+| 30 | [Session previews](30-session-previews.md) | The session pane's Browser tab: a session's dev server on an origin per session and port under a preview domain, served by the relay through the runner's link (the tunnel already open), judged as an attach by ticket then cookie, the app seeing `localhost`; an app with an API through its dev server's proxy; the ports a session's own processes listen on; why not Cloudflare Tunnel or ngrok |
+| 31 | [Peer to peer first, and the host proof](31-peer-to-peer-and-the-host-proof.md) | What still crosses the control plane and the order it moves to the browser ↔ host path; the host signs both DTLS fingerprints and the browser's nonce with its pairing key on every direct channel, and the browser pins the key per host (trust on first use), so a control plane that rewrites the signalling cannot sit in the middle; next: the pin on screen, shares direct, end to end on the relay, device keys |
 
 ## Decision log
 
@@ -716,3 +721,56 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
 - 2026-10-15: **A bot's loop moved into Oppenheimer** on its provider's
   agent SDK, with owner-set tool permissions and bots that edit
   themselves; see [25](25-bots.md) "Decided".
+- 2026-10-22: **a bot follows a session it delegated with a subscription** (27, issue #445): a `bot_subscription` row whose wakes are queued turns keyed once per task and state, re-reading the session as the owner. It changes 26's "no watch table" for a bot's own sessions; 26 §5's trigger stays for automations.
+- 2026-10-25: **the Inbox starts minimal** (29): only what the system already knows, composed in the console from existing reads, nothing stored; agents posting into it, the message box to a general bot and Claude Code questions in the Inbox come later.
+- 2026-10-26: **the Inbox stores your marks** (29): the 2026-10-26 export adds Mark as done, Deprioritize, Snooze and Delete on every row, so an `inbox_mark` row per item occurrence is kept, keyed so a new wait comes back; the items themselves are still not stored. Each item carries its project for the frame's project filter.
+- 2026-10-26: **the Inbox is built in the console** (29, "As built"): a failed or stuck session is keyed by its lifecycle's change count rather than `observedSince`, which only a blocked agent has; the API reports both and a pull request row's head commit.
+- 2026-10-29: **the Inbox moves into Plan and reads like mail** (29, "As built: the Inbox in Plan"): Plan's first section at `/plan/inbox`, no rail item, the console still lands on it; a list column with search and unread rows beside a reading pane with a toolbar; the visit's log and the greeting are gone.
+- 2026-10-26: **a bot's chat queues what you write while it works and shows the room it has left** ([25](25-bots.md) §2): waiting messages over the composer with Remove, Edit and Send now, and the context meter with a ChatGPT sign-in's plan windows; the meter is no longer "not built yet".
+- 2026-10-26: **bots show in the console's sections** (28): a set of sections on the bot, chosen by its owner, the section's plus or the bot itself, lists it under a Bots heading in Sessions, Automations, Plan and Pull requests; Pull requests opens its chat in place. Not derived from permissions, which are not built yet.
+- 2026-10-26: **a session checks out several repositories again, up to
+  five** (00). 2026-09-23's one repository per session (#56) is lifted:
+  the runner makes one worktree per checkout on `session.create`, each in
+  its own directory of the session folder (two repositories sharing a name
+  take `<repo>` and `<owner>--<repo>`). The create body takes one to
+  `MAX_SESSION_CHECKOUTS` (5) distinct repositories, the agent starts in
+  the first unless `cwdGithubRepoId` names another. Adding one to a
+  running session stays refused (`SESSIONS_010`, which keeps its code):
+  the wire has no frame that adds a worktree to a live session, so the
+  repositories are picked at create. A session with none
+  is still refused (2026-09-27).
+- 2026-10-26: **every section opens a bot's chat in place** (28): Sessions, Automations and Plan too, under their own address and sidebar, not Employees as their frames link it.
+- 2026-10-28: **the work folder's checkouts live in `.noindex` directories**
+  (24 §2): `repos.noindex/` and `sessions.noindex/`, layout version 3.
+  2026-10-01's hidden `.worktrees/` was lost when sessions moved to the
+  work folder, leaving only `.metadata_never_index`, which that entry had
+  measured as not working; Spotlight skips a directory named `*.noindex`
+  and everything under it. No migration: a session keeps the folder its
+  state records, and a store left in `repos/` is cloned again on its next
+  create.
+- 2026-10-31: **the relay's critical path hardened** (01, 03, #556): a hello
+  whose reconciliation fails closes the link with 1013 for a redial and a
+  fresh hello, instead of being logged; the handshake answers 503, not 401, when
+  the assertion's store is down; attach sockets are pinged like the link;
+  a browser's `resize` and `credit` are held to a rate per attachment and a
+  credit clamped; a lost pane's `session.stopped` is keyed by run and link
+  epoch and written only while the row is still open and not stopped. The
+  single API replica is written down as a known constraint (03, open
+  question 4).
+- 2026-10-31: **the host proves itself on every direct channel** (31, 22,
+  01, 07 F30). Asked for: "as much p2p as possible … some handshake to make
+  it more robust". 22 bound the data channel to the DTLS fingerprints in the
+  signalling, which the control plane carries, so a compromised one could
+  splice two DTLS sessions. Built: before a byte crosses a channel the host
+  signs both fingerprints and the browser's nonce with its pairing key; the
+  browser checks the signature against its own peer connection, pins the key
+  per host on first use and refuses another; the runner moves output to the
+  channel only on the browser's `ready`. The relay invites only a runner
+  naming `attachment.direct.proof`, and names the host in `attached.direct`.
+  31 also orders what moves off the control plane next.
+- 2026-10-31: **the host pin does not stop an active control plane that
+  invents host ids** (31, corrected the same day after the pull request's
+  security review). The pin is keyed by the host id the relay names, and an
+  unseen id is first use, so a compromised control plane can name a fresh one
+  and sit in the middle with a key of its own. 31 now says so, and its open
+  question 4 asks how first use stops being automatic.

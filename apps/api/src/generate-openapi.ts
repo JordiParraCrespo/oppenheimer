@@ -16,7 +16,9 @@ async function generate() {
 
   const document = createOpenApiDocument(app);
   const outputPath = resolve(__dirname, '../openapi.json');
-  writeFileSync(outputPath, JSON.stringify(document, null, 2));
+  // Written as-is, not formatted after: a formatter has a size cap this file
+  // outgrows, and two regenerates must give the same bytes.
+  writeFileSync(outputPath, `${JSON.stringify(document, null, 2)}\n`);
   console.log(`OpenAPI spec written to ${outputPath}`);
 
   await app.close();

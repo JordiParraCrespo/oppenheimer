@@ -55,5 +55,95 @@
     "denied": "The browser was not allowed to use the microphone. Allow it for this site, then dictate again.",
     "unavailable": "No microphone could be opened. Plug one in or pick another in your system settings, then dictate again.",
     "failed": "The recording could not be transcribed."
+  },
+  "chat": {
+    "usage": {
+      "open": "{{percent}}% of context used. Show the context and plan usage.",
+      "openPlan": "{{percent}}% of the plan's limit used. Show the context and plan usage.",
+      "context": "Context",
+      "tokens": "{{used}} of {{window}} tokens",
+      "compact": "Compact",
+      "plan": "Plan usage limits",
+      "fiveHour": "5-hour limit",
+      "sevenDay": "Weekly limit",
+      "resets": "Resets {{when}}",
+      "tokensOnly": "{{used}} tokens"
+    },
+    "queue": {
+      "queued": "Queued",
+      "sendNow": "Send now",
+      "edit": "Edit",
+      "remove": "Remove from the queue",
+      "steer": "Steer",
+      "steerHint": "Goes into the turn under way at its next tool call. If the turn ends first, it runs next."
+    },
+    "json": {
+      "tree": "Tree",
+      "raw": "Raw",
+      "more": "Show {{count}} more"
+    },
+    "images": {
+      "open": "Open {{name}}",
+      "unavailable": "This image couldn't be loaded.",
+      "previous": "Previous image",
+      "next": "Next image",
+      "download": "Download",
+      "position": "{{position}} of {{total}}",
+      "pasted": "Pasted image"
+    },
+    "mail": {
+      "label": "The message, exactly as it goes",
+      "from": "From",
+      "to": "To",
+      "cc": "Cc",
+      "bcc": "Bcc",
+      "subject": "Subject",
+      "answers": "In reply to {{from}}",
+      "forwards": "Forwarding {{from}}'s message",
+      "fromMail": "Taken from the message it answers",
+      "files_one": "{{count}} file",
+      "files_other": "{{count}} files",
+      "signature": "The Gmail signature of {{email}} goes below it, then the quoted message.",
+      "draft": "The draft in {{email}}, sent as it stands now in Gmail.",
+      "nobody": "Nobody",
+      "draftSaved": "Saved as a draft in {{email}}. Nothing was sent.",
+      "draftUpdated": "The draft in {{email}}, rewritten. Nothing was sent.",
+      "openInGmail": "Open in Gmail"
+    },
+    "question": {
+      "ownAnswer": "Or type your own answer…",
+      "ownAnswerLabel": "Your answer",
+      "several": "Toggle with 1–{{last}}, as many as apply",
+      "one": "Pick one with 1–{{last}}, or answer in your own words",
+      "next": "Next",
+      "submit": "Submit answers",
+      "dismiss": "Dismiss",
+      "sending": "Sending your answers…",
+      "previous": "Previous question",
+      "nextQuestion": "Next question",
+      "of": "{{n}} of {{total}}"
+    },
+    "output": {
+      "more_one": "+{{count}} line",
+      "more_other": "+{{count}} lines",
+      "full": "Show full lines",
+      "less": "Show less"
+    },
+    "explored": {
+      "read": "Read",
+      "search": "Searched",
+      "list": "Listed",
+      "more_one": "+{{count}} more",
+      "more_other": "+{{count}} more"
+    }
+  },
+  "search": {
+    "projects": "Search projects",
+    "milestones": "Search milestones",
+    "automations": "Search automations",
+    "repositories": "Search repositories",
+    "hosts": "Search hosts",
+    "groups": "Search groups",
+    "noMatch": "Nothing matches “{{query}}”."
   }
 }

@@ -7,13 +7,16 @@ import { NestFactory } from '@nestjs/core';
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import { SwaggerModule } from '@nestjs/swagger';
 import { SanitizePipe } from '@oppenheimer/backend-core';
-import { BULL_BOARD_MIN_PASSWORD_LENGTH, setupBullBoard } from '@oppenheimer/backend-queue';
 import { QUEUE_NAMES } from '@oppenheimer/shared';
 import helmet from 'helmet';
 import { Logger } from 'nestjs-pino';
 import { ZodValidationPipe } from 'nestjs-zod';
 import { AppModule } from './app.module';
 import { createOpenApiDocument } from './openapi-document';
+import {
+  BULL_BOARD_MIN_PASSWORD_LENGTH,
+  setupBullBoard,
+} from './queue/infrastructure/bull-board.util';
 
 async function bootstrap() {
   // `bodyParser: false` is required by `@thallesp/nestjs-better-auth` so that
@@ -90,6 +93,7 @@ async function bootstrap() {
       QUEUE_NAMES.AUTOMATION_RETENTION,
       QUEUE_NAMES.OUTBOX_RETENTION,
       QUEUE_NAMES.BOT_ATTACHMENT_RETENTION,
+      QUEUE_NAMES.MAIL_MINUTE,
     ],
     bullBoardUsername && bullBoardPassword
       ? { auth: { username: bullBoardUsername, password: bullBoardPassword } }

@@ -1,4 +1,5 @@
 import type { AutomationRunEntity } from '@oppenheimer/frontend-consumer';
+import { automationRunEntity } from '@oppenheimer/frontend-consumer/testing';
 import { shareEntities } from '@oppenheimer/frontend-core/react';
 import { act, cleanup, render } from '@testing-library/react';
 import { useSyncExternalStore } from 'react';
@@ -81,17 +82,12 @@ vi.mock('../sections/runs-facets', () => ({ RunsFacets: () => null }));
 const START = Date.parse('2026-09-26T10:00:00Z');
 
 function run(id: string, status: string): AutomationRunEntity {
-  return {
+  return automationRunEntity({
     id,
     title: id,
-    status,
-    automationId: 'automation-1',
-    automationName: 'Nightly',
-    automationDeleted: false,
-    sessionId: `session-${id}`,
-    skipReason: null,
+    status: status as AutomationRunEntity['status'],
     createdAt: new Date(START),
-  } as unknown as AutomationRunEntity;
+  });
 }
 
 function page(statuses: Record<string, string>) {

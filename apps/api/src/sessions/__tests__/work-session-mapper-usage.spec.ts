@@ -1,15 +1,14 @@
 import { SessionTurnOrmEntity } from '../database/session-turn.orm-entity';
-import { WorkSessionMapper } from '../work-session.mapper';
+import { SessionTurnMapper } from '../session-turn.mapper';
+import { SessionUsageMapper } from '../session-usage.mapper';
 
 /**
  * `pg` returns `bigint` and `numeric` as strings, so a token count read off
- * `session_turn` or summed by the usage aggregate arrives as text. The mapper
- * is the one place that turns it into a number; a miss here would hand Stats
+ * `session_turn` or summed by the usage aggregate arrives as text. The turn and
+ * usage mappers are the one place that turns it into a number; a miss here would hand Stats
  * `"941" + "2250"` concatenated instead of added. The SQL that produces these
  * rows is covered by `session-usage.integration.spec.ts`.
  */
-const mapper = new WorkSessionMapper();
-
 function storedTurn(overrides: Partial<SessionTurnOrmEntity> = {}): SessionTurnOrmEntity {
   return Object.assign(new SessionTurnOrmEntity(), {
     seq: 1,
@@ -38,7 +37,7 @@ function storedTurn(overrides: Partial<SessionTurnOrmEntity> = {}): SessionTurnO
 
 describe('a stored turn’s usage', () => {
   it('reads bigint counts the driver returns as strings as numbers', () => {
-    expect(mapper.turnToDomain(storedTurn())).toMatchObject({
+    expect(SessionTurnMapper.toDomain(storedTurn())).toMatchObject({
       model: 'claude-sonnet-4-5-20250929',
       inputTokens: 941,
       outputTokens: 2250,
@@ -49,7 +48,7 @@ describe('a stored turn’s usage', () => {
   });
 
   it('keeps an unmeasured turn null rather than zero', () => {
-    const turn = mapper.turnToDomain(
+    const turn = SessionTurnMapper.toDomain(
       storedTurn({
         model: null,
         inputTokens: null,
@@ -68,16 +67,16 @@ describe('a stored turn’s usage', () => {
   });
 
   it('reads a count past 2^53 as unmeasured instead of a rounded number', () => {
-    expect(mapper.turnToDomain(storedTurn({ inputTokens: '9007199254740993' })).inputTokens).toBe(
-      null,
-    );
+    expect(
+      SessionTurnMapper.toDomain(storedTurn({ inputTokens: '9007199254740993' })).inputTokens,
+    ).toBe(null);
   });
 });
 
 describe('a row of the weekly usage aggregate', () => {
   it('reads numeric sums and the count as numbers', () => {
     expect(
-      mapper.usageWeekToRead({
+      SessionUsageMapper.toWeek({
         weekStart: '2026-10-12',
         projectId: 'p-1',
         model: 'claude-sonnet-4-5-20250929',
@@ -103,7 +102,7 @@ describe('a row of the weekly usage aggregate', () => {
 
   it('reads a group of unmeasured turns as zero usage under a null model', () => {
     expect(
-      mapper.usageWeekToRead({
+      SessionUsageMapper.toWeek({
         weekStart: '2026-10-12',
         projectId: 'p-1',
         model: null,

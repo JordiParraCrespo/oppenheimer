@@ -43,7 +43,7 @@ export class RestartSessionCommandHandler
   ) {}
 
   async execute(command: RestartSessionCommand): Promise<SessionCommandResult> {
-    const session = await this.loader.requireLive(command.scope, command.sessionId);
+    const session = await this.loader.requireLiveOnHost(command.scope, command.sessionId);
 
     // Nothing restarts under a retired project, or on a host the caller can no
     // longer use (a grant revoked, the host unpaired).

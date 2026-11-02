@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { insertBotRoutine, routinePausedAt } from '../../support/db';
+import { insertBotMailRoutine, insertBotRoutine, routinePausedAt } from '../../support/db';
 import { provisionedUser, signInAs } from '../../support/web';
 
 /**
@@ -86,4 +86,30 @@ test("a routine's change in its bot's chat, and the routine on /automations", as
   await expect(row).toContainText('Runs on Juno');
   await row.click();
   await expect(page).toHaveURL(new RegExp(`/bots/${bot.id}/settings/routines$`));
+});
+
+/**
+ * A routine that wakes on new mail reads as mail on its card
+ * (`next-steps/mail.md` §5): its glyph and "Gmail · …" line, with the search
+ * it waits for or "Any new mail". What breaks this: a mail trigger the
+ * console does not know, drawn as a schedule or dropped from the card.
+ */
+test('a routine that wakes on new mail says so on its card', async ({ page }) => {
+  const owner = await provisionedUser('botmailroutine');
+  await owner.api.put('/api/v1/model-providers/glm', { data: { apiKey: 'e2e-placeholder' } });
+  const bot = (await (
+    await owner.api.post('/api/v1/bots', { data: { name: 'Juno', provider: 'glm' } })
+  ).json()) as { id: string };
+  const account = '33333333-3333-4333-8333-333333333333';
+  await insertBotMailRoutine(bot.id, 'Answer billing', account, 'from:billing@client.test');
+  await insertBotMailRoutine(bot.id, 'Triage the inbox', account, null);
+  await signInAs(page, owner.user);
+
+  await page.goto(`/bots/${bot.id}/settings/routines`);
+  const cards = page.locator('[data-slot="routine-card"]');
+  await expect(cards.filter({ hasText: 'Answer billing' })).toContainText(
+    'Gmail · New mail matching “from:billing@client.test”',
+  );
+  await expect(cards.filter({ hasText: 'Triage the inbox' })).toContainText('Gmail · Any new mail');
+  await owner.api.dispose();
 });

@@ -1,16 +1,31 @@
 import type {
+  ChatStatus,
   ChatStep,
+  ChatTaskStatus,
   ChatTodo,
   ChatToolCall,
   ChatToolKind,
+  ChatTranscriptImage,
   ChatTurn,
   SessionChat,
 } from '@oppenheimer/frontend-consumer';
+import type { ChatUsageContext } from '@oppenheimer/frontend-web';
+import { CODING_AGENTS } from '@oppenheimer/shared/agents';
 import type { TFunction } from 'i18next';
 import type { ReactNode } from 'react';
+import { exploredRuns } from './explored';
+import type { FileHandOff } from './file-hand-off';
 
 /** How a session pane reads its session: the grid, or the chat (0.7). */
 export type SessionView = 'terminal' | 'chat';
+
+/**
+ * The view every session pane opens on, a member's and a guest's. Chat is
+ * drawn only once the host sends the agent's transcript (`useChatReading`),
+ * so until then, and for an agent with none, the pane is the terminal; the
+ * Terminal / Chat switch is always there to type into the PTY itself.
+ */
+export const DEFAULT_SESSION_VIEW: SessionView = 'chat';
 
 /**
  * What a session pane hands its terminal about the chat: the chat its stream
@@ -22,6 +37,18 @@ export interface PaneReading {
   view: SessionView;
   onViewChange: (view: SessionView) => void;
   cover: ReactNode;
+  /**
+   * Where the files the pane catches go while the chat shows, when its
+   * composer takes files: a drop on the pane or a paste on the chat becomes
+   * a chip on the next message rather than a path in the agent's prompt.
+   */
+  files?: FileHandOff;
+}
+
+/** What the chat's composer needs to carry files: the session they go to, and the pane's hand-off. */
+export interface ChatAttach {
+  sessionId: string;
+  files: FileHandOff;
 }
 
 /** A file a turn changed, its line counts summed over every edit to it. */
@@ -34,18 +61,30 @@ export interface ChangedFile {
 /**
  * How a turn of the chat view is drawn: its steps in blocks. A run of tool
  * calls folds into one group with a verb summary ("Read 3 files, ran 2
- * commands"), the way Synara and Codex fold work; a plan is a card of its
- * own; a turn that has settled after changing files ends on the card that
- * lists them, as Codex's does. The task list is not here: the composer keeps
+ * commands"), the way Synara and Codex fold work, and a run of calls that
+ * only look around (reads, searches, listings, `ls` and `rg`) is an
+ * `explored` group of its own, which names what it looked at; a call of
+ * the other sort ends either run. A plan is a card of its
+ * own, and so are questions the agent asked, with what was answered; the
+ * images a call's result carried (a screenshot the agent read) follow its
+ * group as tiles that open; a turn that has settled after changing files ends on the
+ * card that lists them, as Codex's does. The task list is not here: the composer keeps
  * it (`latestTodos`), because each `TodoWrite` restates the whole list.
  */
 export type ChatBlock =
   | { kind: 'reply'; id: string; text: string }
   | { kind: 'thinking'; id: string; text: string; seconds: number | null }
   | { kind: 'tools'; id: string; calls: ChatToolCall[] }
+  | { kind: 'explored'; id: string; calls: ChatToolCall[] }
   | { kind: 'plan'; id: string; call: ChatToolCall }
+  | { kind: 'question'; id: string; call: ChatToolCall }
   | { kind: 'notice'; id: string; notice: 'interrupted' | 'compacted' }
-  | { kind: 'changes'; id: string; files: ChangedFile[] };
+  /** What a command the CLI answered itself printed (`/context`). */
+  | { kind: 'output'; id: string; text: string; failed: boolean }
+  | { kind: 'task'; id: string; status: ChatTaskStatus; summary: string | null }
+  | { kind: 'changes'; id: string; files: ChangedFile[] }
+  /** What the call read them from, a path or a URL, when it says. */
+  | { kind: 'images'; id: string; source: string | null; images: ChatTranscriptImage[] };
 
 export function blocksOf(turn: ChatTurn): ChatBlock[] {
   const blocks: ChatBlock[] = [];
@@ -61,7 +100,34 @@ export function blocksOf(turn: ChatTurn): ChatBlock[] {
   });
   const files = turn.working ? [] : changedFiles(turn.steps);
   if (files.length > 0) blocks.push({ kind: 'changes', id: `${turn.id}:changes`, files });
-  return blocks;
+  return blocks.flatMap((block) =>
+    block.kind === 'tools' ? runsOf(block).flatMap((run) => [run, ...imagesOf(run)]) : [block],
+  );
+}
+
+type CallsBlock = Extract<ChatBlock, { kind: 'tools' | 'explored' }>;
+
+/** A run of calls as the blocks it is: each stretch of exploring calls `explored`, the rest `tools`. */
+function runsOf(group: Extract<ChatBlock, { kind: 'tools' }>): CallsBlock[] {
+  return exploredRuns(group.calls).map((run, index) => ({
+    kind: run.explored ? 'explored' : 'tools',
+    id: index === 0 ? group.id : (run.items[0]?.id ?? group.id),
+    calls: run.items,
+  }));
+}
+
+/**
+ * The images a group's calls read, one block per call, after the group:
+ * placed once the calls are folded, so a call that read a picture never
+ * splits the run it belongs to.
+ */
+function imagesOf(group: CallsBlock): ChatBlock[] {
+  return group.calls.flatMap((call) => {
+    const images = shownImages(call.images);
+    return images.length > 0
+      ? [{ kind: 'images' as const, id: `${call.id}:images`, source: call.target, images }]
+      : [];
+  });
 }
 
 function blockOf(step: ChatStep, next: ChatStep | undefined): ChatBlock | null {
@@ -77,13 +143,25 @@ function blockOf(step: ChatStep, next: ChatStep | undefined): ChatBlock | null {
       };
     case 'notice':
       return { kind: 'notice', id: step.id, notice: step.notice };
+    case 'output':
+      return { kind: 'output', id: step.id, text: step.text, failed: step.failed };
+    case 'task':
+      return { kind: 'task', id: step.id, status: step.status, summary: step.summary };
     case 'tool':
       if (step.call.kind === 'todo') return null;
       if (step.call.kind === 'plan' && step.call.plan) {
         return { kind: 'plan', id: step.id, call: step.call };
       }
+      if (step.call.kind === 'question' && step.call.questions?.length) {
+        return { kind: 'question', id: step.id, call: step.call };
+      }
       return { kind: 'tools', id: step.id, calls: [step.call] };
   }
+}
+
+/** The images that came with a preview: one the host only named has nothing to show. */
+export function shownImages(images: readonly ChatTranscriptImage[] | null): ChatTranscriptImage[] {
+  return images?.filter((image) => image.src !== null) ?? [];
 }
 
 /**
@@ -114,6 +192,22 @@ function changedFiles(steps: readonly ChatStep[]): ChangedFile[] {
   return [...files.values()];
 }
 
+/**
+ * The questions the agent is stopped on, if any: the newest call in the
+ * last turn that asks and has no answer yet. While it waits, Claude Code's
+ * picker holds the terminal's input, so the chat answers it in the
+ * composer's place rather than type a message into the picker.
+ */
+export function pendingQuestion(turn: ChatTurn | undefined): ChatToolCall | null {
+  if (!turn?.working) return null;
+  for (let i = turn.steps.length - 1; i >= 0; i -= 1) {
+    const step = turn.steps[i];
+    if (step?.kind !== 'tool' || step.call.kind !== 'question') continue;
+    return step.call.status === 'running' && step.call.questions?.length ? step.call : null;
+  }
+  return null;
+}
+
 /** The task list the agent last wrote in a turn, which the composer keeps in reach. */
 export function latestTodos(turn: ChatTurn): ChatTodo[] | null {
   for (let i = turn.steps.length - 1; i >= 0; i -= 1) {
@@ -128,6 +222,38 @@ export function latestModel(turns: readonly ChatTurn[]): string | null {
   for (let i = turns.length - 1; i >= 0; i -= 1) {
     const model = turns[i]?.model;
     if (model) return model;
+  }
+  return null;
+}
+
+/** A Claude model's id, whose context windows are the two below. */
+const CLAUDE_MODEL = /^claude-/;
+/** The window a Claude model reads by default. */
+const CONTEXT_WINDOW = 200_000;
+/** The long-context window, which a session past the default is on. */
+const LONG_CONTEXT_WINDOW = 1_000_000;
+
+/**
+ * The context as of the agent's last answer: the CLI's own figure when its
+ * status line has sent one, which knows the window the session runs with;
+ * otherwise counted off the transcript, which does not, so it is the
+ * default window until the tokens could only fit the long one. That guess
+ * is a Claude model's windows, so a turn another model answered (OpenCode
+ * on GPT, say) is not counted: no meter beats one against the wrong window.
+ */
+export function latestContext(
+  turns: readonly ChatTurn[],
+  status: ChatStatus | null = null,
+): ChatUsageContext | null {
+  if (status?.context) {
+    const { usedPercent, window } = status.context;
+    return { tokens: Math.round((usedPercent / 100) * window), window };
+  }
+  for (let i = turns.length - 1; i >= 0; i -= 1) {
+    const tokens = turns[i]?.contextTokens;
+    if (!tokens) continue;
+    if (!CLAUDE_MODEL.test(turns[i]?.model ?? '')) return null;
+    return { tokens, window: tokens > CONTEXT_WINDOW ? LONG_CONTEXT_WINDOW : CONTEXT_WINDOW };
   }
   return null;
 }
@@ -225,11 +351,29 @@ export function elapsedOf(turn: ChatTurn): string | null {
 }
 
 /**
- * A model id as people say it: `claude-opus-5-5` reads "Opus 5.5". Anything
- * that is not a Claude id is shown as it came.
+ * The agent catalog's models by id, as people say them ("GPT-6.1 Sol"):
+ * each id as the CLI takes it, and without the provider OpenCode puts in
+ * front of it (`anthropic/`), which is how OpenCode names the model that
+ * answered.
+ */
+const MODEL_LABELS: ReadonlyMap<string, string> = new Map(
+  Object.values(CODING_AGENTS).flatMap((agent) =>
+    agent.models.flatMap((model): [string, string][] => [
+      [model.id, model.label],
+      [model.id.slice(model.id.indexOf('/') + 1), model.label],
+    ]),
+  ),
+);
+
+/**
+ * A model id as people say it: the catalog's name for it ("GPT-6.1 Sol"),
+ * else a Claude id read as one (`claude-opus-5-5` reads "Opus 5.5"). Any
+ * other is shown as it came.
  */
 export function modelName(model: string | null): string | null {
   if (!model) return null;
+  const known = MODEL_LABELS.get(model);
+  if (known) return known;
   const match = /^claude-([a-z]+)-(\d+)(?:-(\d+))?/.exec(model);
   if (!match) return model;
   const [, family = '', major, minor] = match;

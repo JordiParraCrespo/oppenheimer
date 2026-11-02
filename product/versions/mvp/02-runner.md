@@ -426,7 +426,11 @@ authority: a person can run `git worktree add` by hand under
 `~/oppenheimer-ai/`, and only a directory carrying our `.oppenheimer`
 marker is ours to remove, and only when the control plane says so. **After a host reboot** tmux
 is gone: every session shows stopped with a Restart button that
-recreates window 0 in the same worktree, which survived.
+recreates window 0 in the same worktree, which survived. A session marked
+kept (`runner sessions keep`, 2026-11-02) does not wait for the button: a
+runner that starts on a host booted after it last saved the session map
+restarts each kept session that was running, reopening its conversation,
+and retries a failure from 1.5 s doubling to a minute.
 
 **Caps.** 20 sessions per host by default, 2 MB ring buffer each, 32 KB
 PTY read buffer. Resize is coalesced once, by the console, over 50 ms;
@@ -557,6 +561,18 @@ follows (`apps/web/src/features/sessions/lib/cursor-frames.ts`).
   skipped with a reason, never fatal.
 - Where an agent has lifecycle hooks, the hooks are authoritative and
   the screen is the fallback; that half is still to build.
+- **The agent's own word comes first** (2026-11-02). An agent that speaks
+  OSC 7501, the Program Status Protocol (Claude Code from 2.1.295), says
+  itself whether it is idle, working, done, blocked (on a permission, a
+  question or a sign-in) or in error, with a message. It does so only to a
+  terminal that answers its `OSC 7501 ; ?` probe, which tmux does not, so
+  window 0 runs the agent under `runner pty`: a PTY of its own inside the
+  pane that answers the probe, keeps each report in
+  `state/program-status/<session>.json` and passes every other byte
+  through. While that file's wrapper lives and holds a report, its state
+  is the session's (`error` reads as `done`), and `agent.observed` carries
+  the report as `program`; the manifests above are the fallback, and only
+  the screen names a vendor login (`research/lessons-from-herdr.md` §4).
 - The vendor-login allowlist stays in code, not in a manifest: what the
   console may turn into a clickable link should not travel over the
   network (F3). It is **generated**, per agent, from the catalog's
@@ -569,7 +585,11 @@ follows (`apps/web/src/features/sessions/lib/cursor-frames.ts`).
 - Idle is terminal silence **and** a manifest state that is not working,
   so a long unattended run is never called idle.
 - State changes go to the control plane as events; the control plane
-  derives the sidebar dot from them.
+  derives the sidebar dot from them. An agent still blocked 15 s after it
+  was announced is announced once more: the control plane counts a
+  state's duration only from its second report, so a question asked once
+  would otherwise never make the session wait on anyone (found on
+  2026-10-26 by the Inbox's fleet spec).
 
 ### 10. Host facts and health
 
@@ -700,7 +720,7 @@ offline. Logs never contain PTY bytes or tokens.
 | Link down | Sessions keep running in tmux. Reconnect ladder, new epoch, snapshot on hello |
 | Control plane says the runner is too old | Update within the urgent delay, ignoring the safe window (09 §5) |
 | Runner killed or updated | tmux untouched; adopt on boot, rehydrate buffers, resume streams |
-| Host rebooted | Sessions stopped, worktrees intact, Restart recreates window 0 |
+| Host rebooted | Sessions stopped, worktrees intact, Restart recreates window 0; a kept session is restarted on its own (§5) |
 | `tmux` missing | Sessions refuse to start with `TMUX_001`; the UI shows the fix |
 | `claude` missing | Session starts; the terminal shows the install hint |
 | Disk nearly full | Status event and a banner before the failure, refuse new sessions under the floor |

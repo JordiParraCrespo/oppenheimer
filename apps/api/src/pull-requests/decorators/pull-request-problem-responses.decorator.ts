@@ -11,8 +11,9 @@ export const PullRequestProblemResponses = () =>
     ApiProblemResponse({ status: 400, description: 'No active workspace', code: 'PULLS_001' }),
     ApiProblemResponse({
       status: 404,
-      description: 'The installation, the repository or the pull request is not there',
-      code: ['GITHUB_001', 'GITHUB_010', 'GITHUB_013'],
+      description:
+        'The installation, the repository or the pull request is not there, or none of your tokens opens the repository',
+      code: ['GITHUB_001', 'GITHUB_010', 'GITHUB_013', 'GITHUB_023'],
     }),
     ApiProblemResponse({
       status: 409,
@@ -41,12 +42,16 @@ export const PullRequestProblemResponses = () =>
     }),
   );
 
-/** What a write in the caller's name adds: no user token, or GitHub would not merge yet. */
+/**
+ * What a write in the caller's name adds: no user token, GitHub would not
+ * merge yet, or the repository is read through the caller's own token.
+ */
 export const PullRequestWriteProblemResponses = () =>
   applyDecorators(
     ApiProblemResponse({
       status: 409,
-      description: 'No GitHub user token to act with, or GitHub would not merge yet',
-      code: ['GITHUB_012', 'GITHUB_014'],
+      description:
+        'No GitHub user token to act with, GitHub would not merge yet, or the repository is read through your own token',
+      code: ['GITHUB_012', 'GITHUB_014', 'GITHUB_022'],
     }),
   );

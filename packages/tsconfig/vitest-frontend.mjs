@@ -12,6 +12,15 @@
  *   wasted renders with it on — so a `*-render.spec.tsx` that ran with it
  *   enabled would be measuring the build step rather than the code.
  *
+ * Both run on the `vmThreads` pool. A spec's time is mostly building a jsdom
+ * and importing React and the design system, not its tests; the default pool
+ * pays that per file, a VM context per file on a long-lived worker pays the
+ * jsdom once per worker and still gives each file its own modules, document,
+ * storage and globals, so `vi.mock` and a leftover tree stay inside the file.
+ * Inside a VM context jsdom behaves more like a browser than it does under
+ * `forks`: `window.location` cannot be redefined, and Node's globals that jsdom
+ * does not implement (`ReadableStream`) are absent.
+ *
  * It is shared rather than copied into each package because the failure mode is
  * silent: a package that sets up only the `unit` project still runs its budget
  * specs, with the compiler on, and they pass. See
@@ -38,6 +47,7 @@ export function frontendVitestProjects({ react, alias }) {
         resolve,
         test: {
           name: 'unit',
+          pool: 'vmThreads',
           environment: 'jsdom',
           include: ALL_SPECS,
           exclude: [RENDER_BUDGET],
@@ -48,6 +58,7 @@ export function frontendVitestProjects({ react, alias }) {
         resolve,
         test: {
           name: 'render-budget',
+          pool: 'vmThreads',
           environment: 'jsdom',
           include: [RENDER_BUDGET],
         },

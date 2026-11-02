@@ -11,8 +11,8 @@ import {
 import { HTTP_LATENCY_BUCKETS_SECONDS } from './buckets';
 import { createMetricsProvider, InjectMetric, type ModuleMetrics } from './metric';
 
-export const HTTP_REQUESTS_TOTAL = 'http_requests_total';
-export const HTTP_REQUEST_DURATION_SECONDS = 'http_request_duration_seconds';
+const HTTP_REQUESTS_TOTAL = 'http_requests_total';
+const HTTP_REQUEST_DURATION_SECONDS = 'http_request_duration_seconds';
 
 export const HttpMetrics: ModuleMetrics = {
   [HTTP_REQUESTS_TOTAL]: {
@@ -29,7 +29,7 @@ export const HttpMetrics: ModuleMetrics = {
 };
 
 /** Every value `status_class` can take, created at zero for every group. */
-export const HTTP_STATUS_CLASSES = ['1xx', '2xx', '3xx', '4xx', '5xx', 'aborted', 'other'] as const;
+const HTTP_STATUS_CLASSES = ['1xx', '2xx', '3xx', '4xx', '5xx', 'aborted', 'other'] as const;
 
 /**
  * How a route template becomes a `route` label. A rule matches a template
@@ -51,8 +51,8 @@ export interface HttpMetricsOptions {
 }
 
 /** At most this many rules, and this many groups, so the label set stays small by construction. */
-export const HTTP_METRICS_MAX_RULES = 100;
-export const HTTP_METRICS_MAX_GROUPS = 20;
+const HTTP_METRICS_MAX_RULES = 100;
+const HTTP_METRICS_MAX_GROUPS = 20;
 
 const GROUP_NAME = /^[a-z][a-z0-9_]{0,39}$/;
 const HTTP_METRICS_OPTIONS = Symbol('HTTP_METRICS_OPTIONS');
