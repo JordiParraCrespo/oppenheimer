@@ -173,8 +173,10 @@ export interface BotToolSpec<Input extends z.ZodType> {
    * posts to GitHub, creates a bot): under Approve for me it asks the owner
    * first. Its validated call becomes a Needs input card, the model is told
    * to end its turn, and the call runs only when the owner approves it.
-   * `'always'` asks under every preset, Approve everything included: what
-   * the owner must see each time (mail sent from their address).
+   * `'always'` asks under every preset, Full access included, until the
+   * owner allows it (Settings, or a card's "always"): what the preset alone
+   * must not let run (trashing mail). With `perCallOnly`, nothing makes it
+   * standing (mail sent from their address).
    */
   asks?: boolean | 'always';
   /**
@@ -293,12 +295,12 @@ export function defineBotTool<Input extends z.ZodType>(
   if (spec.perCallOnly && !spec.asks) {
     throw new Error(`${spec.name} is per call only, so it must ask first.`);
   }
-  // A tool that always asks is decided call by call, Full access included.
+  // A tool that always asks does so under Full access too, until the owner allows it.
   const always = spec.asks === 'always';
   const traits: BotToolTraits = {
     name: spec.name,
     asks: spec.asks === true || always,
-    perCallOnly: spec.perCallOnly === true || always,
+    perCallOnly: spec.perCallOnly === true,
     ...(always && { always }),
   };
   const { $schema: _dialect, ...inputSchema } = z.toJSONSchema(spec.input, { io: 'input' });
@@ -507,7 +509,7 @@ async function askOwner<Input extends z.ZodType>(
     summary,
     subject,
     sharesOutside: spec.sharesOutside === true,
-    perCallOnly: spec.perCallOnly === true || spec.asks === 'always',
+    perCallOnly: spec.perCallOnly === true,
     reviewNote,
   });
   return outcome.status === 'requested'

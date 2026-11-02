@@ -6,7 +6,7 @@ import { GmailConnectionEntity } from '../../../mail/domain/gmail-connection.ent
 import type { GmailLabel } from '../../../mail/infrastructure/gmail-provider.port';
 import { FindGmailConnectionsQuery } from '../../../mail/queries/find-gmail-connections/find-gmail-connections.query';
 import { FindMailLabelsQuery } from '../../../mail/queries/find-mail-labels/find-mail-labels.query';
-import { NO_PERMISSIONS } from '../../domain/bot-tool-permission.policy';
+import { type BotPermissions, NO_PERMISSIONS } from '../../domain/bot-tool-permission.policy';
 import { BotTurnBudget } from '../../domain/bot-turn-budget.policy';
 import { BotMailAccountsResolver } from '../bot-mail-accounts.resolver';
 import { BotMailOrganizeToolsFactory } from '../bot-mail-organize-tools.factory';
@@ -15,7 +15,8 @@ import type { BotToolContext } from '../bot-tool.factory';
 /**
  * Organizing as a bot's turn sees it (`product/next-steps/mail.md` §3.5):
  * marking under Approve everything runs without a card, trashing asks under
- * every preset, untrashing never asks, a label card stores the labels' ids
+ * every preset until the owner allows it and then runs on its own,
+ * untrashing never asks, a label card stores the labels' ids
  * with their names on its line, more than 100 at once is refused before
  * Gmail is asked, and a thread Gmail does not have is named in the answer.
  * Gmail's own calls are the gateway's spec.
@@ -51,7 +52,10 @@ const LABELS: GmailLabel[] = [
 
 const signal = new AbortController().signal;
 
-function setup(permission: BotToolContext['permission']) {
+function setup(
+  permission: BotToolContext['permission'],
+  permissions: BotPermissions = NO_PERMISSIONS,
+) {
   const request = vi.fn(async () => ({ status: 'requested' as const }));
   const context: BotToolContext = {
     owner: emptyScope('owner-1', 'org-1'),
@@ -61,7 +65,7 @@ function setup(permission: BotToolContext['permission']) {
     homeHostId: null,
     timeZone: 'UTC',
     permission,
-    permissions: NO_PERMISSIONS,
+    permissions,
     budget: new BotTurnBudget(),
     credentialScopes: null,
     approvals: { request },
@@ -111,7 +115,7 @@ describe('BotMailOrganizeToolsFactory', () => {
     expect(result.content).toContain('gone');
   });
 
-  it('asks before trashing under every preset, and never before bringing threads back', async () => {
+  it('asks before trashing under Full access, on a card a yes can make standing, and never before bringing threads back', async () => {
     const { request, commands, tool } = setup('full');
 
     await tool('trash_mail').run({ account: 'Personal', thread_ids: ['t1'] }, { signal });
@@ -119,12 +123,32 @@ describe('BotMailOrganizeToolsFactory', () => {
       expect.objectContaining({
         tool: 'trash_mail',
         summary: expect.stringContaining('Move 1 thread to Trash'),
+        perCallOnly: false,
       }),
     );
     expect(commands).not.toHaveBeenCalled();
 
     await tool('untrash_mail').run({ account: 'Personal', thread_ids: ['t1'] }, { signal });
     expect(commands).toHaveBeenCalledWith(expect.objectContaining({ trash: false }));
+  });
+
+  it('trashes without a card once the owner has allowed it', async () => {
+    const allowed: BotPermissions = {
+      ...NO_PERMISSIONS,
+      decisions: new Map([['trash_mail', 'allow']]),
+    };
+    const { request, commands, tool } = setup('full', allowed);
+
+    const result = await tool('trash_mail').run(
+      { account: 'Personal', thread_ids: ['t1'] },
+      { signal },
+    );
+
+    expect(request).not.toHaveBeenCalled();
+    expect(commands).toHaveBeenCalledWith(
+      expect.objectContaining({ threadIds: ['t1'], trash: true }),
+    );
+    expect(result.content).toContain('Moved to Trash');
   });
 
   it('stores a label card with the labels’ ids, and names them on its line', async () => {

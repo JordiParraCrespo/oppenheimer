@@ -1006,3 +1006,10 @@ earlier note:
   "Which Codex environment"). To list them the host reads the Codex CLI's
   sign-in, which "Environments the CLI cannot reach", decided the same day,
   had ruled out; which holds is open, for the owner.
+- `next-steps/mail.md` §3.5 kept `trash_mail` asking every time, Full
+  access included, with no Allow and no "always" on its card. On
+  2026-11-02 the owner, cleaning a mailbox a batch of 25 at a time, asked
+  that it can run on its own once they grant it: it still asks under every
+  preset until then, and Always allow on its card or Allow in Settings
+  makes it standing. Sends (§3.4) still ask every time and cannot be
+  allowed.
