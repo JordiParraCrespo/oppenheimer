@@ -18,12 +18,12 @@ import {
   SESSION_PLACES,
   SESSION_STATES,
 } from '@oppenheimer/shared';
+import { SessionAgentReportResponseDto } from './session-agent-report.response.dto';
 import {
   type SessionDecisionResponseDto,
   SessionPermissionDecisionResponseDto,
   SessionQuestionDecisionResponseDto,
 } from './session-decision.response.dto';
-import { SessionAgentReportResponseDto } from './session-agent-report.response.dto';
 
 /**
  * One repository checked out for this session.

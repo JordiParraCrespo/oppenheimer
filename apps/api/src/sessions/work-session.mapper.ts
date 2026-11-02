@@ -2,12 +2,7 @@ import { posix } from 'node:path';
 import { Injectable } from '@nestjs/common';
 import { toPageMeta } from '@oppenheimer/backend-core';
 import type { Mapper } from '@oppenheimer/backend-ddd';
-import {
-  type SessionAgentReport,
-  type SessionDecision,
-  sessionAgentReportSchema,
-  sessionDecisionSchema,
-} from '@oppenheimer/shared';
+import { type SessionDecision, sessionDecisionSchema } from '@oppenheimer/shared';
 import type { HostFolderListing } from './application/host-folders.port';
 import type { SessionCheckoutOrmEntity } from './database/session-checkout.orm-entity';
 import type { SessionCloudRunOrmEntity } from './database/session-cloud-run.orm-entity';
@@ -16,6 +11,7 @@ import type { RecentFolder, SessionListPage } from './database/work-session.repo
 import { encodeSessionListCursor } from './domain/session-list-cursor.policy';
 import {
   launchPermissionFor,
+  readAgentReport,
   type SessionAgent,
   type SessionFold,
 } from './domain/session-state.policy';
@@ -128,13 +124,6 @@ export class WorkSessionMapper
     return parsed.success ? parsed.data : null;
   }
 
-  /** The stored report, read back through its schema like the decision. */
-  agentReportOf(value: unknown): SessionAgentReport | null {
-    if (value === null || value === undefined) return null;
-    const parsed = sessionAgentReportSchema.safeParse(value);
-    return parsed.success ? parsed.data : null;
-  }
-
   /** One row of the recent-folders aggregate; the driver returns the `max` as a `Date`. */
   recentFolderOf(row: unknown): RecentFolder {
     const record = typeof row === 'object' && row !== null ? (row as Record<string, unknown>) : {};
@@ -203,7 +192,7 @@ export class WorkSessionMapper
         ? { code: record.closeRefusalCode, detail: record.closeRefusalDetail }
         : null,
       pendingDecision: this.decisionOf(record.pendingDecision),
-      agentReport: this.agentReportOf(record.agentReport),
+      agentReport: readAgentReport(record.agentReport),
     };
   }
 

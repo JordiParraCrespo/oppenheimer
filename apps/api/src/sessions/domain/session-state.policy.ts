@@ -346,15 +346,21 @@ function decisionOf(payload: unknown): SessionDecision | null {
 }
 
 /**
- * The agent's own report an `agent.observed` payload carries as `program`,
- * narrowed by its schema; null for one read off the screen, or one this build
- * cannot read.
+ * The agent's own report an `agent.observed` payload carries as `program`;
+ * null for one read off the screen.
  */
 function agentReportOf(payload: unknown): SessionAgentReport | null {
   if (typeof payload !== 'object' || payload === null) return null;
-  const program = (payload as { program?: unknown }).program;
-  if (program === undefined || program === null) return null;
-  const parsed = sessionAgentReportSchema.safeParse(program);
+  return readAgentReport((payload as { program?: unknown }).program);
+}
+
+/**
+ * A report narrowed by its schema, from the log or from the `jsonb` column it
+ * is folded into: null for none, and for one this build cannot read.
+ */
+export function readAgentReport(value: unknown): SessionAgentReport | null {
+  if (value === undefined || value === null) return null;
+  const parsed = sessionAgentReportSchema.safeParse(value);
   return parsed.success ? parsed.data : null;
 }
 

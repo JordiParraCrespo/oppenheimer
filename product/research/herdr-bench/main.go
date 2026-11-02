@@ -19,8 +19,6 @@ import (
 	"time"
 )
 
-// ---------------------------------------------------------------- viewer
-
 type chunk struct {
 	at   time.Time
 	text string
@@ -145,8 +143,6 @@ func (v *vtText) feed(p []byte) string {
 	return b.String()
 }
 
-// ---------------------------------------------------------------- stats
-
 type dist struct {
 	N                        int
 	P50, P90, P99, Max, Mean float64 // ms
@@ -173,8 +169,6 @@ func median(xs []float64) float64 {
 	sort.Float64s(s)
 	return s[len(s)/2]
 }
-
-// ---------------------------------------------------------------- tests
 
 type results map[string]map[string]any // test → backend → result
 
@@ -390,8 +384,6 @@ func attachOK(b Backend, name string) Stream {
 	must(err)
 	return s
 }
-
-// ---------------------------------------------------------------- main
 
 func main() {
 	hcBin := flag.String("hc", "", "herdr-core binary")

@@ -349,7 +349,11 @@ export interface CodingAgentInput {
 }
 
 /** What every agent CLI here takes: Enter to send, Escape to interrupt, 200 ms. */
-const TYPED_INPUT: CodingAgentInput = Object.freeze({ submit: '\r', stop: '\u001b', pasteGapMs: 200 });
+const TYPED_INPUT: CodingAgentInput = Object.freeze({
+  submit: '\r',
+  stop: '\u001b',
+  pasteGapMs: 200,
+});
 
 export interface CodingAgentDefinition {
   readonly id: CodingAgentId;

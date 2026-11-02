@@ -42,8 +42,6 @@ type Backend interface {
 
 const cols, rows = 132, 40 // the runner's launchCols × launchRows
 
-// ---------------------------------------------------------------- direct PTY
-
 // direct runs the program on a PTY the benchmark owns: no multiplexer, no
 // persistence. The floor the other two are measured against.
 type direct struct {
@@ -105,8 +103,6 @@ func (s directStream) Read(p []byte) (int, error)  { return s.f.Read(p) }
 func (s directStream) Write(p []byte) (int, error) { return s.f.Write(p) }
 func (s directStream) Close() error                { return nil } // the PTY is the terminal
 func (s directStream) Pids() []int                 { return nil }
-
-// ---------------------------------------------------------------- tmux
 
 // tmuxConfig is apps/runner/internal/sessions/adapters/tmux.Config, verbatim.
 const tmuxConfig = `set -g status off
@@ -196,8 +192,6 @@ func (s *tmuxStream) Close() error {
 	_, _ = s.cmd.Process.Wait()
 	return err
 }
-
-// ---------------------------------------------------------------- herdr-core
 
 // hcBackend drives herdr-core over its own socket: plain JSON-RPC for
 // control on one long-lived connection (as a Go runner would hold it), and a
