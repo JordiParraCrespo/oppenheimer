@@ -202,6 +202,15 @@ const QUEUE_SETTLE_MS = 5000;
  */
 export class SessionChat {
   private entries: unknown[] = [];
+  /** Each of those entries as the host sent it, to know it again when a reconnect replays it. */
+  private lines: string[] = [];
+  /**
+   * While a reconnect replays the history: how many of the entries already
+   * read it has sent again, line for line. The transcript only grows, so a
+   * replay is what the chat holds followed by what is new; what it holds
+   * stays drawn, and only a line that differs rebuilds the chat from there.
+   */
+  private replayed: number | null = null;
   /**
    * The turns a later prompt has closed, built once and kept by identity: a
    * batch rebuilds only the open turn, so a long conversation costs each
@@ -229,12 +238,21 @@ export class SessionChat {
   private queuedIds = 0;
 
   apply(batch: ChatBatch): void {
+    // Whether the history was cut, so what is drawn must be built again.
+    let cut = false;
     if (batch.reset) {
-      this.entries = [];
-      this.reopen(0);
-      this.openFrom = 0;
+      // A reset with lines is a reconnect sending the history again: it is
+      // checked against the chat, not drawn over it, so a long conversation
+      // does not empty and refill. One with none is a transcript that is
+      // empty now.
+      if (batch.entries.length > 0 && this.entries.length > 0) this.replayed = 0;
+      else {
+        this.replayed = null;
+        this.truncate(0);
+        cut = true;
+      }
     }
-    const from = this.entries.length;
+    let from = this.entries.length;
     let status = this.state.status;
     for (const raw of batch.entries) {
       let parsed: unknown;
@@ -245,8 +263,30 @@ export class SessionChat {
         continue;
       }
       // The status is the latest one, not a line of the conversation.
-      if (record(parsed)?.type === STATUS_ENTRY) status = statusOf(parsed);
-      else this.entries.push(parsed);
+      if (record(parsed)?.type === STATUS_ENTRY) {
+        status = statusOf(parsed);
+        continue;
+      }
+      if (this.replayed !== null) {
+        if (this.lines[this.replayed] === raw) {
+          this.replayed += 1;
+          if (this.replayed === this.lines.length) this.replayed = null;
+          continue;
+        }
+        // The history differs from here: what the chat holds past it goes.
+        this.truncate(this.replayed);
+        from = this.entries.length;
+        this.replayed = null;
+        cut = true;
+      }
+      this.entries.push(parsed);
+      this.lines.push(raw);
+    }
+    if (!cut && this.entries.length === from && this.state.available) {
+      // Nothing new in the conversation: a replay so far, or a status alone.
+      if (status !== this.state.status) this.publish({ ...this.state, status });
+      this.flush();
+      return;
     }
     // A result for a call a closed turn made (a background command that
     // finished after the next prompt) changes that turn: build again from
@@ -274,6 +314,21 @@ export class SessionChat {
       status,
     });
     this.flush();
+  }
+
+  /**
+   * Keeps the first `length` entries and opens again every closed turn that
+   * held one past them, for the next build to make afresh.
+   */
+  private truncate(length: number): void {
+    this.entries.length = Math.min(this.entries.length, length);
+    this.lines.length = Math.min(this.lines.length, length);
+    if (length >= this.openFrom) return;
+    // The first closed turn that runs past `length`: it ends where the next starts.
+    let turn = 0;
+    while ((this.closedStarts[turn + 1] ?? this.openFrom) <= length) turn += 1;
+    this.reopen(turn);
+    if (turn === 0) this.openFrom = 0;
   }
 
   private publish(state: ChatState): void {

@@ -364,6 +364,50 @@ describe('SessionChat', () => {
     expect(listener).toHaveBeenCalledTimes(3);
   });
 
+  it('keeps a long conversation drawn while a reconnect replays it, and takes what is new after', () => {
+    // What breaks this: a reset that empties the chat and refills it batch by
+    // batch, so a long chat on screen collapses to its first turns, every
+    // turn is drawn afresh and the reader loses their place on each reconnect.
+    const lines = [
+      user('u1', 'One'),
+      assistant('a1', [{ type: 'text', text: 'Hi.' }]),
+      user('u2', 'Two'),
+      assistant('a2', [{ type: 'text', text: 'Sure.' }]),
+      user('u3', 'Three'),
+    ].map((entry) => JSON.stringify(entry));
+    const chat = new SessionChat();
+    chat.apply({ reset: true, entries: lines });
+    const before = chat.snapshot();
+    const listener = vi.fn();
+    chat.subscribe(listener);
+
+    // The history comes back in parts, the first under the reset.
+    chat.apply({ reset: true, entries: lines.slice(0, 2) });
+    chat.apply({ entries: lines.slice(2) });
+    expect(chat.snapshot()).toBe(before);
+    expect(listener).not.toHaveBeenCalled();
+
+    const next = JSON.stringify(assistant('a3', [{ type: 'text', text: 'Done.' }]));
+    chat.apply({ entries: [next] });
+    expect(chat.snapshot().turns.map((turn) => turn.prompt?.text)).toEqual(['One', 'Two', 'Three']);
+    expect(chat.snapshot().turns[0]).toBe(before.turns[0]);
+    expect(chat.snapshot().turns.at(-1)?.working).toBe(false);
+  });
+
+  it('builds again from the first line a reset sends that the chat does not hold', () => {
+    // What breaks this: a replay taken on trust, so a transcript the CLI
+    // rewrote keeps the turns it no longer has.
+    const one = JSON.stringify(user('u1', 'One'));
+    const hi = JSON.stringify(assistant('a1', [{ type: 'text', text: 'Hi.' }]));
+    const chat = new SessionChat();
+    chat.apply({
+      reset: true,
+      entries: [one, hi, JSON.stringify(user('u2', 'Two')), JSON.stringify(user('u3', 'Three'))],
+    });
+    chat.apply({ reset: true, entries: [one, hi, JSON.stringify(user('u9', 'Other'))] });
+    expect(chat.snapshot().turns.map((turn) => turn.prompt?.text)).toEqual(['One', 'Other']);
+  });
+
   it('reads a long conversation line by line as the whole transcript reads, keeping closed turns', () => {
     const entries = [
       user('u1', 'One'),
