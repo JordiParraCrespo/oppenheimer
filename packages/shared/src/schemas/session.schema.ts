@@ -341,6 +341,17 @@ export const renameSessionSchema = z.object({
 export type RenameSessionDto = z.infer<typeof renameSessionSchema>;
 
 /**
+ * `POST /sessions/{id}/prompt`: a follow-up typed into a running session's
+ * agent by a person who is not at its terminal: a script, the `opp` CLI or an
+ * agent over MCP, acting on their credential. Held to the first prompt's bound.
+ */
+export const sendSessionPromptSchema = z.object({
+  text: promptSchema,
+});
+
+export type SendSessionPromptDto = z.infer<typeof sendSessionPromptSchema>;
+
+/**
  * The **stored lifecycle**, `work_session.state` — the fold of the append-only
  * event log, never a second truth.
  *

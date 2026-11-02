@@ -242,6 +242,7 @@ export type {
   ScopeLevelsDto,
   ScopePolicyDto,
   SendBotMessageRequest,
+  SendSessionPromptRequest,
   SessionAgentReportResponseDto,
   SessionAttachmentResponseDto,
   SessionCheckoutResponseDto,

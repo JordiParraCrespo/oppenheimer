@@ -21,7 +21,7 @@ const AGENT_WINDOW = 0;
 
 /**
  * Types a follow-up prompt into a running session's agent for a bot (issue
- * #493), the keys the console's chat view types for a message, sent to
+ * #493) or for a person over the API, the keys the console's chat view types for a message, sent to
  * window 0 as `session.input`.
  *
  * The prompt is claimed first, as `prompt.sent` appended only while the agent
@@ -31,8 +31,9 @@ const AGENT_WINDOW = 0;
  * once one types and the other is refused. The keys go after the claim; a host that cannot take
  * them gets `prompt.undelivered`, which cancels the turn the claim opened.
  *
- * No controller: a person types into the terminal itself. Only a bot's
- * tool sends a prompt this way.
+ * A bot's tool sends one, and so does `POST /sessions/{id}/prompt` for a
+ * person not at the terminal (the `opp` CLI, an MCP client); a person at the
+ * terminal types into it.
  */
 @CommandHandler(SendSessionPromptCommand)
 export class SendSessionPromptCommandHandler

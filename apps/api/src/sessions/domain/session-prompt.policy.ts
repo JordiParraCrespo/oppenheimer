@@ -3,21 +3,21 @@ import type { SessionTurnFold } from './session-turn.policy';
 
 /**
  * A follow-up prompt typed into a running session's agent by somebody other
- * than a person at its terminal (issue #493): whether the agent can take one
+ * than a person at its terminal (issue #493): a bot, or a person over the API: whether the agent can take one
  * now, and the keys that give it the words the way the console's chat view
  * does.
  */
 
 /**
  * Who sent a prompt, as the API read it when it typed it: the bot whose turn
- * made the call and the turn itself. Recorded on the `prompt.sent` entry, so
- * the log says who spoke whatever the words claim.
+ * made the call and the turn itself, or the person whose credential called
+ * `POST /sessions/{id}/prompt` (the `opp` CLI, an MCP client, a script).
+ * Recorded on the `prompt.sent` entry, so the log says who spoke whatever the
+ * words claim.
  */
-export interface SessionPromptSender {
-  kind: 'bot';
-  botId: string;
-  turnId: string;
-}
+export type SessionPromptSender =
+  | { kind: 'bot'; botId: string; turnId: string }
+  | { kind: 'person'; userId: string };
 
 /** Several lines go to the agent as one bracketed paste, so a newline in them is not Enter. */
 const PASTE_START = '\u001b[200~';
