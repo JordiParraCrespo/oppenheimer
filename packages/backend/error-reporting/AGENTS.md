@@ -13,6 +13,7 @@ src/
 ├── sentry-error-reporter.service.ts   # Sentry driver: one scope per report, the correlation id on each
 ├── noop-error-reporter.service.ts     # no DSN: reports nothing
 ├── init-error-reporting.ts            # Sentry.init, before Nest; errorReportingEnabled()
+├── init.ts                            # the ./init entry: init only, no Nest
 ├── scrub-event.ts                     # beforeSend: what never leaves the API
 ├── error-reporting.module.ts          # global module, picks the driver
 └── index.ts
@@ -23,7 +24,9 @@ src/
 - **Nothing Sentry in the public API.** Callers speak `ErrorReporter` and
   `ErrorReportContext`; `@sentry/*` types stay inside the drivers
   (`pnpm check:public-api`).
-- **Init before Nest.** `initErrorReporting` runs in the app's first import;
+- **Init before Nest.** `initErrorReporting` runs in the app's first import,
+  taken from the `./init` entry (`src/init.ts`), which must never import
+  `@nestjs/*` or the module;
   `ErrorReportingModule.forRoot()` only reads whether it did. The module never
   starts the SDK itself: by then the libraries it instruments are loaded.
 - **Report what someone acts on.** A 4xx, a retried job attempt, a provider's

@@ -8,7 +8,7 @@ behind it. With no `SENTRY_DSN` it is a no-op, so tests, local development and
 
 | Export | Purpose |
 | --- | --- |
-| `initErrorReporting(options)` | Starts the Sentry SDK. Called first thing, before Nest loads (`apps/api/src/config/instrument.ts`), so HTTP, Express, Postgres, ioredis and BullMQ are traced |
+| `initErrorReporting(options)` | Starts the Sentry SDK. Called first thing, before Nest loads (`apps/api/src/config/instrument.ts`), so HTTP, Express, Postgres, ioredis, BullMQ and Nest are traced. Import it from `@oppenheimer/backend-error-reporting/init`, which loads nothing of Nest; the root also exports it |
 | `ErrorReportingModule.forRoot()` | Global module providing `ErrorReporter`: Sentry when started, a no-op otherwise |
 | `ErrorReporter` | The port: `capture(error, context)`, `flush(timeoutMs)`, `enabled` |
 | `ErrorReportContext` | Level, tags, extras, fingerprint, user id and workspace id of one report |

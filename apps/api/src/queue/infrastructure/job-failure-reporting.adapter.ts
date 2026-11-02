@@ -3,7 +3,8 @@ import { Injectable, type OnApplicationBootstrap, Optional } from '@nestjs/commo
 import { DiscoveryService } from '@nestjs/core';
 import { ErrorReporter } from '@oppenheimer/backend-error-reporting';
 import type { Job } from 'bullmq';
-import { jobFailureReportOf } from './job-failure-report.util';
+import { JobFailureMapper } from '../job-failure.mapper';
+import { isFinalFailure } from './job-failure-report.util';
 
 /**
  * Reports a job that failed for good: out of retries, or failed with
@@ -13,6 +14,14 @@ import { jobFailureReportOf } from './job-failure-report.util';
  * Every processor's worker is found and listened to here, once, so a new
  * processor is reported without remembering to: none of them carries an
  * `@OnWorkerEvent('failed')` of its own for this.
+ *
+ * Why the workers exist by then: `@nestjs/bullmq`'s `BullRegistrar` builds
+ * every processor's worker in its `onModuleInit`, and Nest runs every
+ * `onModuleInit` before the first `onApplicationBootstrap`. A worker made
+ * with `autorun: false` exists too, and is listened to the same way. The one
+ * host with no worker is an app built without the registrar running
+ * (`generate:openapi` builds the module graph and stops); `WorkerHost.worker`
+ * throws there, and that host is skipped.
  */
 @Injectable()
 export class JobFailureReportingAdapter implements OnApplicationBootstrap {
@@ -30,11 +39,10 @@ export class JobFailureReportingAdapter implements OnApplicationBootstrap {
       const host: unknown = wrapper.instance;
       if (!(host instanceof WorkerHost)) continue;
       const worker = workerOf(host);
-      // `generate:openapi` builds the app without starting workers.
       if (!worker) continue;
       worker.on('failed', (job: Job | undefined, error: Error) => {
-        const report = jobFailureReportOf(worker.name, job, error);
-        if (report) reporter.capture(error, report);
+        if (!isFinalFailure(job, error)) return;
+        reporter.capture(error, JobFailureMapper.toErrorReport(worker.name, job, error));
       });
     }
   }
