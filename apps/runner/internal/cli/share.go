@@ -10,8 +10,8 @@ import (
 
 	"github.com/jordiparracrespo/oppenheimer/packages/go/httpx"
 
-	sessionsdomain "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/domain"
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/adapters/transcript"
+	sessionsdomain "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/domain"
 )
 
 // shareRequest is `runner sessions send-file`'s body: an absolute path, as

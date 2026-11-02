@@ -70,7 +70,7 @@ func SaveShared(filesDir, sessionID, path, caption string, now time.Time) (Share
 	}
 	info, err := os.Stat(path)
 	if err != nil {
-		return Shared{}, fmt.Errorf("%w: %v", ErrSharedRead, err)
+		return Shared{}, fmt.Errorf("%w: %w", ErrSharedRead, err)
 	}
 	if !info.Mode().IsRegular() {
 		return Shared{}, ErrSharedNotFile
@@ -88,7 +88,7 @@ func SaveShared(filesDir, sessionID, path, caption string, now time.Time) (Share
 	if info.Size() <= SharedReadMax {
 		data, err = readAtMost(path, SharedReadMax)
 		if err != nil {
-			return Shared{}, fmt.Errorf("%w: %v", ErrSharedRead, err)
+			return Shared{}, fmt.Errorf("%w: %w", ErrSharedRead, err)
 		}
 	}
 	shared.MediaType = mediaTypeOf(path, data)
