@@ -42,6 +42,8 @@ export const apiHttpMetricsOptions: HttpMetricsOptions = {
     { templatePrefix: '/v1/mail', group: 'mail' },
     { templatePrefix: '/v1/whatsapp', group: 'whatsapp' },
     { templatePrefix: '/v1/cloud-agents', group: 'cloud_agents' },
+    // The Sentry connection and its webhooks exist for automations' triggers.
+    { templatePrefix: '/v1/sentry', group: 'automations' },
     { templatePrefix: '/v1/pulls', group: 'github' },
     { templatePrefix: '/v1/installations', group: 'github' },
     { templatePrefix: '/v1/github', group: 'github' },

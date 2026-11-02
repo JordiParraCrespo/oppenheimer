@@ -52,6 +52,8 @@ const PUBLIC: Record<string, string> = {
     'a machine redeeming a registration token, the whole credential, which the handler checks',
   'POST /v1/github/webhook':
     'GitHub cannot send a bearer; the handler verifies the X-Hub-Signature-256 HMAC',
+  'POST /v1/sentry/webhooks/:connectionId':
+    'Sentry cannot send a bearer; the handler verifies Sentry-Hook-Signature with that connection’s secret',
   'GET /v1/feature-flags':
     'OptionalApiAuthGuard: the signed-out console reads its flags before anyone signs in',
   'POST /v1/shared-sessions/lookup':
