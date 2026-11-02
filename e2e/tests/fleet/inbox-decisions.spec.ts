@@ -2,7 +2,11 @@ import { expect, type Page, test } from '@playwright/test';
 import { WEB_URL } from '../../playwright.config';
 import { signedUpContext } from '../../support/auth';
 import { pairedHosts } from '../../support/fleet';
-import { appendTranscript, transcriptEntry as entry } from '../../support/session-chat';
+import {
+  appendTranscript,
+  transcriptEntry as entry,
+  showTerminal,
+} from '../../support/session-chat';
 import { connectInstallation, createSession } from '../../support/sessions';
 import { linkLive, signInAs } from '../../support/web';
 
@@ -41,6 +45,7 @@ async function runInSession(page: Page, screen: () => string, sessionId: string,
   await page.goto(`/sessions/${sessionId}`);
   await expect.poll(() => screen().includes('CLAUDE-SHIM argv='), { timeout: 120_000 }).toBe(true);
   await expect(linkLive(page)).toBeVisible();
+  await showTerminal(page);
   await page.locator('.xterm').first().click();
   await page.keyboard.type(command);
   await page.keyboard.press('Enter');

@@ -129,3 +129,22 @@ export async function expectComposerClickable(page: Page): Promise<Locator> {
   await expect(composer).toBeFocused();
   return composer;
 }
+
+/**
+ * Puts a Claude Code session's pane on its terminal, for a test that types
+ * into the grid. A session opens on Chat once the host sends its transcript
+ * (an empty one too) to a reader `session_chat_view` is on for, and the chat
+ * covers the grid, so a click meant for xterm would land on the chat. Where
+ * the chat is not offered the pane is the terminal already.
+ */
+export async function showTerminal(page: Page): Promise<void> {
+  const terminal = page
+    .getByRole('group', { name: 'How to read this session' })
+    .getByRole('button', { name: 'Terminal' });
+  const offered = await terminal.waitFor({ timeout: 10_000 }).then(
+    () => true,
+    () => false,
+  );
+  if (offered) await terminal.click();
+  await expect(page.locator('[data-slot="chat-transcript"]')).toHaveCount(0);
+}

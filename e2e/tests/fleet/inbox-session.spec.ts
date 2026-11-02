@@ -2,6 +2,7 @@ import { expect, test } from '@playwright/test';
 import { WEB_URL } from '../../playwright.config';
 import { signedUpContext } from '../../support/auth';
 import { pairedHosts } from '../../support/fleet';
+import { showTerminal } from '../../support/session-chat';
 import { connectInstallation, createSession } from '../../support/sessions';
 import { linkLive, signInAs } from '../../support/web';
 
@@ -44,6 +45,7 @@ test('a session waiting on an answer shows in the Inbox and opens from it', asyn
   await expect(linkLive(page)).toBeVisible();
 
   // What Claude Code draws when it stops for a permission.
+  await showTerminal(page);
   await page.locator('.xterm').first().click();
   await page.keyboard.type(
     "clear; printf 'Bash command\\n  pnpm generate:api-client\\n\\nDo you want to proceed?\\n  1. Yes\\n  2. No\\n'",
