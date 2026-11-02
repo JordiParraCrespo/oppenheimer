@@ -1,7 +1,8 @@
 /**
  * What a turn's end means for a bot's goal (`25-bots.md` §4.1), and the
  * goal's own bounds. What breaks this: a person's Stop on a continuation, or
- * a failing one, letting the goal queue another; an unrelated turn's failure
+ * a failing one, letting the goal queue another; a turn of it stopped at the
+ * turn's time limit ending the goal instead of handing on to the next; an unrelated turn's failure
  * ending a goal it has nothing to do with; a goal going past its limit, or
  * going on after the reviewer found it met; a continuation keyed so that an
  * end delivered twice queues two; a `/goal` that shows or clears the goal
@@ -41,10 +42,13 @@ describe('goalDecision', () => {
     id: `turn-${step}`,
     sourceKey: goalSourceKey('goal-1', step),
     status,
+    failure: status === 'failed' ? ('other' as const) : null,
   });
 
   it('asks the reviewer after the turn that set it, or one of its continuations, completed', () => {
-    expect(goalDecision(goal(), { id: 'turn-0', sourceKey: null, status: 'completed' })).toEqual({
+    expect(
+      goalDecision(goal(), { id: 'turn-0', sourceKey: null, status: 'completed', failure: null }),
+    ).toEqual({
       kind: 'review',
     });
     expect(goalDecision(goal(3, 3), own('completed', 3))).toEqual({ kind: 'review' });
@@ -54,7 +58,9 @@ describe('goalDecision', () => {
   // continuation waits, queuing a second one beside it.
   it('changes nothing when a turn that is not the goal’s ends, however it ended', () => {
     for (const status of ['completed', 'failed', 'cancelled'] as const) {
-      expect(goalDecision(goal(1), { id: 'other', sourceKey: 'routine:a:b', status })).toEqual({
+      expect(
+        goalDecision(goal(1), { id: 'other', sourceKey: 'routine:a:b', status, failure: null }),
+      ).toEqual({
         kind: 'skip',
       });
     }
@@ -66,11 +72,29 @@ describe('goalDecision', () => {
       activity: 'stopped',
       reason: 'cancelled',
     });
-    expect(goalDecision(goal(), { id: 'turn-0', sourceKey: null, status: 'failed' })).toEqual({
+    expect(
+      goalDecision(goal(), { id: 'turn-0', sourceKey: null, status: 'failed', failure: 'other' }),
+    ).toEqual({
       kind: 'end',
       activity: 'stopped',
       reason: 'failed',
     });
+  });
+
+  // What breaks this: a long goal ending the moment one of its turns runs
+  // past the turn's time limit, when the next continuation would carry on.
+  it('reviews a turn of the goal stopped at the time limit, so the goal goes on', () => {
+    expect(goalDecision(goal(1), { ...own('failed'), failure: 'time_limit' })).toEqual({
+      kind: 'review',
+    });
+    expect(
+      goalDecision(goal(1), {
+        id: 'other',
+        sourceKey: null,
+        status: 'failed',
+        failure: 'time_limit',
+      }),
+    ).toEqual({ kind: 'skip' });
   });
 });
 
@@ -190,6 +214,28 @@ describe('a continuation', () => {
     expect(opening.content).toContain('continuation 2 of 3');
     expect(opening.content).toContain('Two tests still fail');
     expect(opening.content).toContain('end_goal');
+    expect(opening.content).not.toContain('minute limit');
+  });
+
+  // What breaks this: the turn after a timeout trying the same oversized step
+  // again, and timing out on every continuation.
+  it('tells the bot to take a smaller step when its last turn ran out of time', () => {
+    const { opening } = goalContinuationTurn(
+      {
+        organizationId: 'org-1',
+        botId: 'bot-1',
+        requestedByUserId: 'owner-1',
+        provider: 'anthropic',
+        model: 'claude-sonnet-5-5',
+        effort: null,
+      },
+      goal(1),
+      2,
+      null,
+      true,
+    );
+    expect(opening.content).toContain('4-minute limit');
+    expect(opening.content).toContain('smaller step');
   });
 });
 

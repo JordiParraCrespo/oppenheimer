@@ -463,6 +463,11 @@ branch"), up to 2,000 characters.
   - its continuations run out;
   - a turn of it (the one that set it, or a continuation) fails or is
     stopped. A person's Stop is a stop, and a failure would only fail again.
+    The one exception is a turn stopped at the 4-minute limit for one turn
+    (2026-11-02): a goal is the way past that limit, so the turn is reviewed
+    like one that completed, and the next continuation picks its work up on
+    a fresh clock, told to take a smaller step. Its continuations still
+    bound it.
 
   Each of these is a line in the chat outside any turn, with the
   reviewer's reason where it gave one. However a goal ends, or is replaced
