@@ -41,12 +41,15 @@ export function laterReset(held: Date | null, limit: BotRateLimit): Date {
 }
 
 /**
- * What the model reads when a call met a limit before doing anything: who is
- * limiting, until when, that this is expected and passes, and what to do with
- * the rest of the turn. `code` is the integration's catalog code.
+ * What the model reads when a call ended on a limit: who is limiting, until
+ * when, that this is expected and passes, and what to do with the rest of the
+ * turn. `code` is the integration's catalog code. It does not claim the call
+ * changed nothing: a tool that writes in several steps may have made some
+ * before the limit, and one that knows reports them as a partial answer
+ * instead (`rateLimitedPartwayLine`).
  */
 export function rateLimitedLine(code: string, limit: BotRateLimit, now: Date): string {
-  return `${code}: ${limit.system} is limiting our requests ${untilWords(limit, now)}. This call did nothing. ${waitAdvice(limit)}`;
+  return `${code}: ${limit.system} is limiting our requests ${untilWords(limit, now)}, and stopped this call there. ${waitAdvice(limit)}`;
 }
 
 /**

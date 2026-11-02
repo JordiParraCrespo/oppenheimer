@@ -371,6 +371,7 @@ describe('defineBotTool, a call a system’s rate limit stopped', () => {
       `MAIL_008: Gmail is limiting our requests until ${resetAt.toISOString()}`,
     );
     expect(result.content).toContain('Do not retry it in this turn');
+    expect(result.content).not.toContain('did nothing');
     expect(result.content).not.toContain('project_number');
     expect(JSON.parse(result.data?.rateLimit ?? '{}')).toEqual({
       system: 'Gmail',
