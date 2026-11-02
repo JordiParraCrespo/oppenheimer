@@ -1,5 +1,7 @@
 import { emptyScope } from '@oppenheimer/backend-authz';
+import { AppError } from '@oppenheimer/backend-core';
 import { z } from 'zod/v4';
+import { MailErrors } from '../../../mail/domain/mail.errors';
 import { BotPermissionRuleEntity } from '../../domain/bot-permission-rule.entity';
 import type { BotRuleVerdict } from '../../domain/bot-rule-review.policy';
 import { BotToolPermissionEntity } from '../../domain/bot-tool-permission.entity';
@@ -324,5 +326,55 @@ describe('defineBotTool, the owner’s rules', () => {
     expect(review.review).not.toHaveBeenCalled();
     expect(approvals.request).toHaveBeenCalledTimes(1);
     expect(run).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('defineBotTool, a call a system’s rate limit stopped', () => {
+  const resetAt = new Date(Date.now() + 60_000);
+  const limited = new AppError(MailErrors.GMAIL_RATE_LIMITED, {
+    detail:
+      "Quota exceeded for quota metric 'Queries' of service 'gmail.googleapis.com' for consumer 'project_number:123'.",
+    retryAfterSeconds: 60,
+    extensions: { upstream: 'Gmail', retryAfterSeconds: 60, resetAt: resetAt.toISOString() },
+  });
+  const tool = defineBotTool({
+    name: 'archive_mail',
+    scope: 'mail:write',
+    description: 'Archives mail.',
+    input: z.object({}),
+    run: async () => {
+      throw limited;
+    },
+  });
+
+  // What breaks this: the model reading Google's quota sentence (and our
+  // project's number) as a failure, retrying at once, and the turn ending
+  // with no time for whatever queues the next one.
+  it('tells the model who is limiting and until when, without the provider’s text, and hands the engine the limit', async () => {
+    const result = await tool
+      .bind({
+        owner: emptyScope('owner-1', 'org-1'),
+        organizationId: 'org-1',
+        botId: 'bot-1',
+        turnId: 'turn-1',
+        homeHostId: null,
+        timeZone: 'UTC',
+        permission: 'full',
+        permissions: NO_PERMISSIONS,
+        budget: new BotTurnBudget(),
+        approvals: { request: vi.fn<BotApprovalRequesterPort['request']>() },
+      })
+      .run({}, { signal: new AbortController().signal });
+
+    expect(result.isError).toBe(true);
+    expect(result.content).toContain(
+      `MAIL_008: Gmail is limiting our requests until ${resetAt.toISOString()}`,
+    );
+    expect(result.content).toContain('Do not retry it in this turn');
+    expect(result.content).not.toContain('project_number');
+    expect(JSON.parse(result.data?.rateLimit ?? '{}')).toEqual({
+      system: 'Gmail',
+      resetAt: resetAt.toISOString(),
+    });
   });
 });

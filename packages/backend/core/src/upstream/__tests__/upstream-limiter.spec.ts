@@ -91,4 +91,56 @@ describe('UpstreamLimiter', () => {
     release(answer(200));
     await busy;
   });
+
+  // What breaks this: a bot working through a mailbox learning the limit only
+  // from the provider's refusal, which providers count against us and escalate.
+  it('refuses a call its bucket’s budget cannot hold without sending it, and pauses the bucket', async () => {
+    const limiter = new UpstreamLimiter('Example', LIMITED, undefined, {
+      ...OPTIONS,
+      budget: { units: 10, windowMs: 3_600_000 },
+    });
+    const send = vi.fn().mockResolvedValue(answer(200));
+
+    await limiter.exchange('user:1', send, undefined, 6);
+    await expect(limiter.exchange('user:1', send, undefined, 6)).rejects.toMatchObject({
+      code: 'X_001',
+    });
+    // Paused for the rest of the window, even for a call the budget would hold.
+    await expect(limiter.exchange('user:1', send, undefined, 1)).rejects.toMatchObject({
+      code: 'X_001',
+    });
+    // Another bucket spends from its own budget.
+    await limiter.exchange('user:2', send, undefined, 6);
+    expect(send).toHaveBeenCalledTimes(2);
+  });
+
+  it('spends a shared budget through the store, so every replica stops together', async () => {
+    const counts = new Map<string, number>();
+    const store = {
+      get: async () => undefined,
+      setMax: async (_key: string, value: number) => value,
+      incrementBy: async (key: string, by: number) => {
+        counts.set(key, (counts.get(key) ?? 0) + by);
+        return counts.get(key) ?? 0;
+      },
+    };
+    const options = { ...OPTIONS, budget: { units: 10, windowMs: 3_600_000 } };
+    const send = vi.fn().mockResolvedValue(answer(200));
+
+    await new UpstreamLimiter('Example', LIMITED, store, options).exchange(
+      'user:1',
+      send,
+      undefined,
+      6,
+    );
+    await expect(
+      new UpstreamLimiter('Example', LIMITED, store, options).exchange(
+        'user:1',
+        send,
+        undefined,
+        6,
+      ),
+    ).rejects.toMatchObject({ code: 'X_001' });
+    expect(send).toHaveBeenCalledTimes(1);
+  });
 });

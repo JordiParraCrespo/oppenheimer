@@ -10,6 +10,7 @@ import {
   BotMessageEntity,
   type BotToolStep,
 } from '../domain/bot-message.entity';
+import { laterReset, RATE_LIMIT_DATA_KEY, rateLimitOfData } from '../domain/bot-rate-limit.policy';
 import { SHOWN_IMAGES_DATA_KEY } from '../domain/bot-shown-image.policy';
 import { SUBAGENT_DATA_KEY } from '../domain/bot-subagent.policy';
 import { startOf } from '../domain/bot-tool-text.policy';
@@ -47,6 +48,8 @@ export interface TranscriptOutcome {
   context: BotTurnContext | null;
   /** A subscription's windows as its last answer said them. */
   planLimits: BotTurnPlanLimits | null;
+  /** The latest moment a system its tools called asked us to wait until; null when none did. */
+  limitedUntil: Date | null;
 }
 
 /**
@@ -82,6 +85,7 @@ export class TurnTranscript {
     outputTokens: 0,
     context: null,
     planLimits: null,
+    limitedUntil: null,
   };
 
   constructor(private readonly turn: BotTurnEntity) {}
@@ -137,8 +141,9 @@ export class TurnTranscript {
    * steps still completes it.
    */
   endTurn(now: Date, interruption: TurnInterruption | null): void {
-    const { reason, error, failure, inputTokens, outputTokens, context, planLimits } = this.outcome;
-    const usage = { inputTokens, outputTokens, context, planLimits };
+    const { reason, error, failure, inputTokens, outputTokens, context, planLimits, limitedUntil } =
+      this.outcome;
+    const usage = { inputTokens, outputTokens, context, planLimits, limitedUntil };
     if (interruption === 'time_limit') {
       this.turn.end('failed', now, { error: TIME_LIMIT_ERROR, failure: 'time_limit', ...usage });
     } else if (interruption === 'stop') {
@@ -197,6 +202,8 @@ export class TurnTranscript {
     step.subagents = isError ? null : toSubagentRuns(data?.[SUBAGENT_DATA_KEY]);
     step.allowedBy = data?.[ALLOWED_BY_DATA_KEY]?.slice(0, BOT_ALLOWED_BY_MAX) ?? null;
     step.mailDraft = isError ? null : toMailDraft(data?.[MAIL_DRAFT_DATA_KEY]);
+    const limit = rateLimitOfData(data?.[RATE_LIMIT_DATA_KEY]);
+    if (limit) this.outcome.limitedUntil = laterReset(this.outcome.limitedUntil, limit);
     for (const run of step.subagents ?? []) {
       this.outcome.inputTokens += run.inputTokens;
       this.outcome.outputTokens += run.outputTokens;

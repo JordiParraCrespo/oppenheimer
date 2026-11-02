@@ -261,6 +261,49 @@ describe('GmailGateway', () => {
     await expect(gateway.listLabels(BEN)).resolves.toEqual([]);
   });
 
+  // What breaks this: a bot told nothing was archived when most of the batch
+  // was, archiving it all again later and spending the quota twice.
+  it('keeps the threads it changed when Gmail’s limit stops a batch partway, and sends no more', async () => {
+    const fetch = vi
+      .fn()
+      .mockResolvedValueOnce(TOKEN())
+      .mockResolvedValueOnce(json(200, {}))
+      .mockResolvedValueOnce(
+        json(429, { error: { errors: [{ reason: 'userRateLimitExceeded' }] } }),
+      );
+    vi.stubGlobal('fetch', fetch);
+    const gateway = new GmailGateway(config);
+
+    const outcome = await gateway.modifyThreads(ANA, ['t1', 't2', 't3'], {
+      add: [],
+      remove: ['INBOX'],
+    });
+
+    expect(outcome).toMatchObject({
+      changed: ['t1'],
+      missing: [],
+      notReached: ['t2', 't3'],
+      limited: { system: 'Gmail' },
+    });
+    expect(fetch).toHaveBeenCalledTimes(3);
+  });
+
+  it('answers the limit itself when it stops a batch before anything changed', async () => {
+    const fetch = vi
+      .fn()
+      .mockResolvedValueOnce(TOKEN())
+      .mockResolvedValueOnce(
+        json(429, { error: { errors: [{ reason: 'userRateLimitExceeded' }] } }),
+      );
+    vi.stubGlobal('fetch', fetch);
+    const gateway = new GmailGateway(config);
+
+    await expect(
+      gateway.modifyThreads(ANA, ['t1', 't2'], { add: [], remove: ['INBOX'] }),
+    ).rejects.toMatchObject({ code: 'MAIL_008' });
+    expect(fetch).toHaveBeenCalledTimes(2);
+  });
+
   it('deletes a draft, reading Gmail’s empty answer as done', async () => {
     const fetch = vi
       .fn()
@@ -291,6 +334,8 @@ describe('GmailGateway', () => {
     await expect(gateway.modifyThreads(ANA, ['t1', 'gone', 't3'], change)).resolves.toEqual({
       changed: ['t1', 't3'],
       missing: ['gone'],
+      notReached: [],
+      limited: null,
     });
     await gateway.modifyMessages(ANA, ['m1', 'm2'], change);
 

@@ -119,6 +119,7 @@ export const ENDED_TURN_STATUSES: readonly BotTurnStatus[] = ['completed', 'canc
  */
 export class BotTurnEntity extends AggregateRoot<BotTurnProps> {
   private loadedStatus: BotTurnStatus;
+  private limitedUntil: Date | null = null;
 
   constructor(create: CreateEntityProps<BotTurnProps>) {
     super(create);
@@ -340,6 +341,15 @@ export class BotTurnEntity extends AggregateRoot<BotTurnProps> {
     return ENDED_TURN_STATUSES.includes(this.props.status);
   }
 
+  /**
+   * Until when a system the turn's tools called asked us to wait, as the turn
+   * ended (`bot-rate-limit.policy.ts`). Not stored: it is read once, by the
+   * end's write, which holds the goal's next decision until then.
+   */
+  get limitedUntilAtEnd(): Date | null {
+    return this.limitedUntil;
+  }
+
   /** A worker takes it. Only a queued turn starts. */
   start(now: Date): void {
     if (this.props.status !== 'queued') {
@@ -360,9 +370,11 @@ export class BotTurnEntity extends AggregateRoot<BotTurnProps> {
       outputTokens?: number;
       context?: BotTurnContext | null;
       planLimits?: BotTurnPlanLimits | null;
+      limitedUntil?: Date | null;
     } = {},
   ): void {
     if (this.ended) throw new ArgumentInvalidException(`The turn already ${this.props.status}`);
+    this.limitedUntil = outcome.limitedUntil ?? null;
     this.props.status = status;
     this.props.endedAt = now;
     this.props.error = status === 'failed' ? fitError(outcome.error ?? 'The turn failed') : null;

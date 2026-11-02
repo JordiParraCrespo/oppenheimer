@@ -7,6 +7,8 @@ import { OrganizeMailCommand } from './organize-mail.command';
  * Applies a label change to threads, one by one, and to messages, in one
  * batch. A thread Gmail does not have is answered as missing; the messages
  * are counted as changed, since Gmail's batch answers nothing per message.
+ * When Gmail's limit stops the threads partway, the batch is not sent: its
+ * messages are not reached either.
  */
 @CommandHandler(OrganizeMailCommand)
 export class OrganizeMailCommandHandler
@@ -18,11 +20,13 @@ export class OrganizeMailCommandHandler
     const { scope, connectionId, threadIds, messageIds, change } = command;
     const connection = await this.gmail.activeConnection(scope, connectionId);
     return this.gmail.call(connection, async (provider, grant) => {
-      const threads = threadIds.length
+      const threads: GmailBulkOutcome = threadIds.length
         ? await provider.modifyThreads(grant, threadIds, change)
-        : { changed: [], missing: [] };
+        : { changed: [], missing: [], notReached: [], limited: null };
+      if (threads.limited)
+        return { ...threads, notReached: [...threads.notReached, ...messageIds] };
       if (messageIds.length) await provider.modifyMessages(grant, messageIds, change);
-      return { changed: [...threads.changed, ...messageIds], missing: threads.missing };
+      return { ...threads, changed: [...threads.changed, ...messageIds] };
     });
   }
 }

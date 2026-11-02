@@ -60,9 +60,14 @@ export {
   type GoogleQuota,
   googleBucketsOf,
 } from './upstream/google-oauth.client';
+export type { UpstreamBudgetOptions } from './upstream/upstream-budget';
 export {
   type ExchangedResponse,
   type RefusalReader,
   UpstreamLimiter,
   type UpstreamLimiterOptions,
 } from './upstream/upstream-limiter';
+export {
+  type UpstreamRateLimit,
+  upstreamRateLimitOf,
+} from './upstream/upstream-rate-limited.error';
