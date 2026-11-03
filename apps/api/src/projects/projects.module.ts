@@ -17,6 +17,8 @@ import { ArchiveProjectCommandHandler } from './commands/archive-project/archive
 import { ArchiveProjectHttpController } from './commands/archive-project/archive-project.http.controller';
 import { CreateProjectCommandHandler } from './commands/create-project/create-project.command-handler';
 import { CreateProjectHttpController } from './commands/create-project/create-project.http.controller';
+import { RestoreProjectCommandHandler } from './commands/restore-project/restore-project.command-handler';
+import { RestoreProjectHttpController } from './commands/restore-project/restore-project.http.controller';
 import { UpdateProjectCommandHandler } from './commands/update-project/update-project.command-handler';
 import { UpdateProjectHttpController } from './commands/update-project/update-project.http.controller';
 import { ProjectOrmEntity } from './database/project.orm-entity';
@@ -36,12 +38,14 @@ const httpControllers = [
   CreateProjectHttpController,
   UpdateProjectHttpController,
   ArchiveProjectHttpController,
+  RestoreProjectHttpController,
 ];
 
 const commandHandlers: Provider[] = [
   CreateProjectCommandHandler,
   UpdateProjectCommandHandler,
   ArchiveProjectCommandHandler,
+  RestoreProjectCommandHandler,
 ];
 const queryHandlers: Provider[] = [FindProjectsQueryHandler, FindProjectQueryHandler];
 const mappers: Provider[] = [ProjectMapper];

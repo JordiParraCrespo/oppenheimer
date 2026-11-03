@@ -3,6 +3,7 @@ import { emptyScope } from '@oppenheimer/backend-authz';
 import { AppError } from '@oppenheimer/backend-core';
 import { ArchiveProjectCommand } from '../../../projects/commands/archive-project/archive-project.command';
 import { CreateProjectCommand } from '../../../projects/commands/create-project/create-project.command';
+import { RestoreProjectCommand } from '../../../projects/commands/restore-project/restore-project.command';
 import { UpdateProjectCommand } from '../../../projects/commands/update-project/update-project.command';
 import { ProjectEntity, type ProjectProps } from '../../../projects/domain/project.entity';
 import { ProjectErrors } from '../../../projects/domain/projects.errors';
@@ -303,7 +304,7 @@ describe('BotProjectToolsFactory', () => {
           expect.objectContaining({
             tool: 'archive_project',
             perCallOnly: true,
-            summary: expect.stringContaining('cannot be restored'),
+            summary: expect.stringContaining('its automations are paused'),
           }),
         );
         expect(commandBus.execute).not.toHaveBeenCalled();
@@ -345,6 +346,53 @@ describe('BotProjectToolsFactory', () => {
       expect(result.isError).toBe(true);
       expect(result.content).toContain('cannot be archived');
       expect(context.approvals.request).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('restore_project', () => {
+    const archived = WORKSPACE[2];
+
+    it('restores an archived project through the projects’ own command, without asking', async () => {
+      const { commandBus, context, call } = setup({
+        query: (query) => (query instanceof FindProjectQuery ? archived : WORKSPACE),
+        command: () => project(ARCHIVED_ID, 'Old site'),
+      });
+
+      const result = await call('restore_project', { project_id: ARCHIVED_ID });
+
+      expect(result.isError).toBe(false);
+      const command = commandBus.execute.mock.calls[0][0] as RestoreProjectCommand;
+      expect(command).toBeInstanceOf(RestoreProjectCommand);
+      expect(command.scope).toBe(owner);
+      expect(command.projectId).toBe(ARCHIVED_ID);
+      expect(result.content).toContain(`Restored project ${ARCHIVED_ID} "Old site"`);
+      expect(result.content).toContain('automations its archive paused are still paused');
+      expect(context.approvals.request).not.toHaveBeenCalled();
+    });
+
+    it('says an active project is not archived, writing nothing', async () => {
+      const { commandBus, call } = setup({
+        query: (query) => (query instanceof FindProjectQuery ? WORKSPACE[0] : WORKSPACE),
+      });
+
+      const result = await call('restore_project', { project_id: WEBSITE_ID });
+
+      expect(result.content).toContain('is not archived. Nothing changed.');
+      expect(commandBus.execute).not.toHaveBeenCalled();
+    });
+
+    it('says a project of another workspace is not found, writing nothing', async () => {
+      const { commandBus, call } = setup({
+        query: () => {
+          throw new AppError(ProjectErrors.NOT_FOUND, { detail: 'No project' });
+        },
+      });
+
+      const result = await call('restore_project', { project_id: OTHER_WORKSPACE_PROJECT_ID });
+
+      expect(result.isError).toBe(true);
+      expect(result.content).toMatch(/^PROJECTS_001: /);
+      expect(commandBus.execute).not.toHaveBeenCalled();
     });
   });
 

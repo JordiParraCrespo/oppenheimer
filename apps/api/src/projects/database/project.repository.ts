@@ -16,6 +16,7 @@ import type {
   ArchiveOutcome,
   ProjectInsertOutcome,
   ProjectRepositoryPort,
+  RestoreOutcome,
 } from './project.repository.port';
 import { ProjectRepositoryOrmEntity } from './project-repository.orm-entity';
 
@@ -152,6 +153,46 @@ export class ProjectRepository
       project.clearEvents();
       return {
         result: 'archived' as const,
+        project: this.mapper.toDomain(updated[0], repositories.get(projectId)),
+      };
+    });
+  }
+
+  /**
+   * The scope's own predicate is reused verbatim as a sub-query, as the archive
+   * does, so a project in another workspace is `not-found` here as on every read.
+   */
+  async restoreIfArchived(scope: AccessScope, projectId: string): Promise<RestoreOutcome> {
+    const [reachable, parameters] = this.scopedQuery(scope)
+      .select(`${this.alias}.id`)
+      .getQueryAndParameters();
+    const table = this.repository.metadata.tableName;
+
+    return this.outbox.transaction(async (manager) => {
+      const locked: ProjectOrmEntity[] = await manager.query(
+        `SELECT * FROM "${table}"
+          WHERE "id" = $${parameters.length + 1} AND "id" IN (${reachable})
+          FOR UPDATE`,
+        [...parameters, projectId],
+      );
+      if (locked.length === 0) return { result: 'not-found' as const };
+
+      const repositories = await this.repositoriesOf([projectId], manager);
+      const project = this.mapper.toDomain(locked[0], repositories.get(projectId));
+      if (!project.isArchived) return { result: 'active' as const, project };
+
+      project.restore();
+      const [updated]: [ProjectOrmEntity[], number] = await manager.query(
+        `UPDATE "${table}" SET "archivedAt" = NULL, "updatedAt" = now()
+          WHERE "id" = $1
+        RETURNING *`,
+        [projectId],
+      );
+      // The restore and what it owes commit together.
+      await this.outbox.stageEvents(manager, project.domainEvents);
+      project.clearEvents();
+      return {
+        result: 'restored' as const,
         project: this.mapper.toDomain(updated[0], repositories.get(projectId)),
       };
     });

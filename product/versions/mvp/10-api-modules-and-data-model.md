@@ -888,6 +888,9 @@ there.
   new is listed under a retired project (`SESSIONS_006`). Grants key on
   the project's UUID and the slug is never reissued, so a new project can
   never inherit a retired one's approvals (herdr-projects' warning).
+  An archived project can be restored (`POST /projects/{id}/restore`,
+  2026-11-03): the same row comes back with its slug, so nothing is
+  reissued; the automations its archive paused stay paused.
 
 **`sessions/`**
 

@@ -1109,6 +1109,11 @@ earlier note:
   metadata and an edit can be put back; `archive_project`, which cannot be
   undone, asks under every preset, one call at a time. `move_session` was
   added, and the workspace stream gained `project.changed`.
+- `versions/mvp/10-api-modules-and-data-model.md` kept an archived project
+  for ever with no way back ("there is no un-archive"). On 2026-11-03 the
+  owner asked for restore: `POST /projects/{id}/restore` and the bot's
+  `restore_project` bring the same row back with its slug, so a slug is
+  still never reissued. The automations its archive paused stay paused.
 - `versions/mvp/29-inbox.md` §1 ordered the Inbox most blocked first:
   approvals and waiting sessions oldest wait first, then requested
   reviews, ready merges and failed runs. On 2026-11-03 the owner asked for

@@ -9341,6 +9341,38 @@ export type UpdateProjectResponses = {
 
 export type UpdateProjectResponse = UpdateProjectResponses[keyof UpdateProjectResponses];
 
+export type RestoreProjectData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/projects/{id}/restore';
+};
+
+export type RestoreProjectErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * PROJECTS_001 — Project not found
+     */
+    404: ProblemDetailsDto;
+};
+
+export type RestoreProjectError = RestoreProjectErrors[keyof RestoreProjectErrors];
+
+export type RestoreProjectResponses = {
+    200: ProjectResponseDto;
+};
+
+export type RestoreProjectResponse = RestoreProjectResponses[keyof RestoreProjectResponses];
+
 export type FindSharedSessionData = {
     body: FindSharedSessionRequest;
     path?: never;
