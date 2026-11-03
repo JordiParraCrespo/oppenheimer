@@ -22539,6 +22539,104 @@
         ]
       }
     },
+    "/api/v1/voice/live": {
+      "post": {
+        "description": "A realtime transcription session for one recording: the WebSocket to stream it to (24 kHz mono 16-bit PCM) and a secret that opens that session for about a minute, so the words can show while they are said. Opened on the deployment's OpenAI key, which never leaves the API. The text to keep is still the recording's transcription when it stops (`POST /voice/transcriptions`).",
+        "operationId": "startVoiceLive",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StartVoiceLiveRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VoiceLiveSessionResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "TENANT_001 — No active workspace",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FLAG_003 — The \"voice_dictation\" feature is switched off for the caller",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "VOICE_008 — No live dictation\n\nVOICE_005 — Nobody to transcribe",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "RATE_001 — Rate limit reached\n\nVOICE_007 — Provider rate limit",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "VOICE_006 — Provider failed",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Start a live dictation",
+        "tags": [
+          "Voice"
+        ]
+      }
+    },
     "/api/v1/voice/status": {
       "get": {
         "description": "The speech providers available to the workspace, in the order a dictation tries them. Empty: nobody can hear a recording, and the console shows no mic.",
@@ -36527,6 +36625,42 @@
           "polished"
         ]
       },
+      "StartVoiceLiveRequest": {
+        "type": "object",
+        "properties": {
+          "vocabulary": {
+            "type": "string",
+            "maxLength": 6060
+          },
+          "language": {
+            "type": "string",
+            "pattern": "^[a-z]{2}$"
+          }
+        }
+      },
+      "VoiceLiveSessionResponseDto": {
+        "type": "object",
+        "properties": {
+          "url": {
+            "type": "string",
+            "description": "The WebSocket to stream the recording to."
+          },
+          "secret": {
+            "type": "string",
+            "description": "A secret that opens that one transcription session, for about a minute. Never the deployment key."
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "When the secret stops opening a session."
+          }
+        },
+        "required": [
+          "url",
+          "secret",
+          "expiresAt"
+        ]
+      },
       "VoiceStatusResponseDto": {
         "type": "object",
         "properties": {
@@ -36544,11 +36678,16 @@
                 "speech_key"
               ]
             }
+          },
+          "live": {
+            "type": "boolean",
+            "description": "Whether the words can also show while they are spoken (`POST /voice/live`): the deployment has an OpenAI key for realtime transcription."
           }
         },
         "required": [
           "available",
-          "providers"
+          "providers",
+          "live"
         ]
       },
       "InboxMarkResponseDto": {

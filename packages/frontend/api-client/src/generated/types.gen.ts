@@ -4657,6 +4657,26 @@ export type VoiceTranscriptionResponseDto = {
     polished: boolean;
 };
 
+export type StartVoiceLiveRequest = {
+    vocabulary?: string;
+    language?: string;
+};
+
+export type VoiceLiveSessionResponseDto = {
+    /**
+     * The WebSocket to stream the recording to.
+     */
+    url: string;
+    /**
+     * A secret that opens that one transcription session, for about a minute. Never the deployment key.
+     */
+    secret: string;
+    /**
+     * When the secret stops opening a session.
+     */
+    expiresAt: string;
+};
+
 export type VoiceStatusResponseDto = {
     /**
      * At least one provider can hear a recording.
@@ -4666,6 +4686,10 @@ export type VoiceStatusResponseDto = {
      * The providers available, in the order a dictation tries them.
      */
     providers: Array<'chatgpt' | 'speech_key'>;
+    /**
+     * Whether the words can also show while they are spoken (`POST /voice/live`): the deployment has an OpenAI key for realtime transcription.
+     */
+    live: boolean;
 };
 
 export type InboxMarkResponseDto = {
@@ -15293,6 +15317,52 @@ export type TranscribeVoiceResponses = {
 };
 
 export type TranscribeVoiceResponse = TranscribeVoiceResponses[keyof TranscribeVoiceResponses];
+
+export type StartVoiceLiveData = {
+    body: StartVoiceLiveRequest;
+    path?: never;
+    query?: never;
+    url: '/api/v1/voice/live';
+};
+
+export type StartVoiceLiveErrors = {
+    /**
+     * TENANT_001 — No active workspace
+     */
+    400: ProblemDetailsDto;
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * FLAG_003 — The "voice_dictation" feature is switched off for the caller
+     */
+    403: ProblemDetailsDto;
+    /**
+     * VOICE_008 — No live dictation
+     *
+     * VOICE_005 — Nobody to transcribe
+     */
+    409: ProblemDetailsDto;
+    /**
+     * RATE_001 — Rate limit reached
+     *
+     * VOICE_007 — Provider rate limit
+     */
+    429: ProblemDetailsDto;
+    /**
+     * VOICE_006 — Provider failed
+     */
+    502: ProblemDetailsDto;
+};
+
+export type StartVoiceLiveError = StartVoiceLiveErrors[keyof StartVoiceLiveErrors];
+
+export type StartVoiceLiveResponses = {
+    200: VoiceLiveSessionResponseDto;
+};
+
+export type StartVoiceLiveResponse = StartVoiceLiveResponses[keyof StartVoiceLiveResponses];
 
 export type FindVoiceStatusData = {
     body?: never;

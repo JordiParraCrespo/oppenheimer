@@ -25,6 +25,16 @@ const SPEECH_PROMPT_MAX = 600;
  * dictation here is Spanish, Catalan and English, often in one breath.
  */
 export function speechPrompt(vocabulary: readonly string[]): string {
+  return speechNames(vocabulary).join(', ');
+}
+
+/**
+ * The names a speech model is told to expect: the screen's first, then
+ * {@link ALWAYS_SAID}, without repeats, cut at a whole name to
+ * {@link SPEECH_PROMPT_MAX} characters as a comma-separated list. The
+ * `prompt` above joins them; live dictation sends them as `keywords`.
+ */
+export function speechNames(vocabulary: readonly string[]): string[] {
   const names: string[] = [];
   const seen = new Set<string>();
   let length = 0;
@@ -37,7 +47,7 @@ export function speechPrompt(vocabulary: readonly string[]): string {
     names.push(name);
     length += added;
   }
-  return names.join(', ');
+  return names;
 }
 
 /**

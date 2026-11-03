@@ -1103,3 +1103,7 @@ earlier note:
   (`opp`) and `apps/mcp`, clients of the API on scoped tokens: they reach
   automations, bots and tasks, which are not the runner's to forward. The
   runner keeps the same-host verbs.
+- `next-steps/voice.md` put streaming partials in slice 4, later. On
+  2026-11-03 live dictation came forward: OpenAI's realtime transcription
+  shows the words while they are spoken, on the deployment's key, and the
+  recording's transcription still replaces them when it stops.

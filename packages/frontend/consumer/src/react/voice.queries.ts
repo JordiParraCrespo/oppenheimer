@@ -1,7 +1,7 @@
 'use client';
 
 import { useFeatureFlag, useQuery } from '@oppenheimer/frontend-core/react';
-import type { VoiceStatusDto } from '@oppenheimer/shared/schemas/voice';
+import type { VoiceLiveSessionDto, VoiceStatusDto } from '@oppenheimer/shared/schemas/voice';
 import { type UseMutationOptions, type UseQueryOptions, useMutation } from '@tanstack/react-query';
 import type { VoiceTranscription } from '../modules/voice';
 import { useConsumerApp } from './context';
@@ -46,11 +46,33 @@ function useTranscribeVoice(
   });
 }
 
+/**
+ * Start one live dictation (`POST /voice/live`). Nothing is cached: the
+ * ticket opens one recording's socket and is spent when it does.
+ */
+function useStartVoiceLive(
+  options?: UseMutationOptions<VoiceLiveSessionDto, Error, TranscribeVoiceLiveVariables>,
+) {
+  const app = useConsumerApp();
+  return useMutation({
+    mutationFn: ({ vocabulary }: TranscribeVoiceLiveVariables) =>
+      app.voice.startLive({ vocabulary }),
+    ...options,
+  });
+}
+
+interface TranscribeVoiceLiveVariables {
+  /** The names the screen shows, for the realtime model to expect. */
+  vocabulary?: readonly string[];
+}
+
 /** What a screen hands its fields so they can take dictation; the kit's `VoiceInput`. */
 export interface VoiceDictation {
   available: boolean;
   /** The recording's text, or null when it could not be transcribed. */
   transcribe: (wav: Blob) => Promise<string | null>;
+  /** Present when the words can show while they are spoken: one recording's live ticket, or null. */
+  live?: () => Promise<{ url: string; secret: string } | null>;
 }
 
 /**
@@ -60,7 +82,8 @@ export interface VoiceDictation {
  * when the answer flips), and one transcription per recording. `vocabulary`
  * is read when a recording is sent: the names the screen shows, for the
  * tidy to spell as written. Every field on the screen shares the answer;
- * each says for itself what happened to its own recording.
+ * each says for itself what happened to its own recording. With `live`, the
+ * words also show while they are spoken, where the deployment can.
  */
 export function useVoiceDictation(vocabulary?: () => readonly string[]): VoiceDictation {
   const enabled = useFeatureFlag('voice_dictation');
@@ -68,7 +91,10 @@ export function useVoiceDictation(vocabulary?: () => readonly string[]): VoiceDi
     enabled,
     select: (status) => status.available,
   });
+  // A second observer of the same answer, narrowed apart so each flips on its own.
+  const { data: live } = useVoiceStatus({ enabled, select: (status) => status.live });
   const transcription = useTranscribeVoice();
+  const liveSession = useStartVoiceLive();
   return {
     available: enabled && available === true,
     transcribe: async (wav) => {
@@ -79,5 +105,15 @@ export function useVoiceDictation(vocabulary?: () => readonly string[]): VoiceDi
         return null;
       }
     },
+    live:
+      enabled && live === true
+        ? async () => {
+            try {
+              return await liveSession.mutateAsync({ vocabulary: vocabulary?.() });
+            } catch {
+              return null;
+            }
+          }
+        : undefined,
   };
 }

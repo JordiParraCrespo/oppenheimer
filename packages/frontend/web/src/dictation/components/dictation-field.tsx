@@ -1,6 +1,7 @@
 import { DictationFrame, type DictationSlot } from '@oppenheimer/design-system-web';
 import type { ReactNode } from 'react';
 import { type Dictation, useDictation, type VoiceInput } from '../hooks/use-dictation';
+import type { DictatedText } from '../lib/dictate-into';
 import { DictationBar } from './dictation-bar';
 import { DictationError } from './dictation-error';
 import { DictationMic } from './dictation-mic';
@@ -35,7 +36,7 @@ export function DictationField({
   className,
 }: {
   voice: VoiceInput;
-  onText: (text: string) => void;
+  onText: DictatedText;
   children: ReactNode;
   className?: string;
 }) {

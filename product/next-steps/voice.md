@@ -415,6 +415,40 @@ both steps, a personal dictionary learned from edits (its own consent and
 table), streaming partials, and whether ChatGPT's route stays first in line
 once the eval has numbers for it.
 
+## Live dictation as built (2026-11-03)
+
+Slice 4's "streaming partials" came forward: the words now show in the field
+while they are spoken. Where the build differs from the plan above, the
+build is the decision.
+
+- **OpenAI's realtime transcription, as a preview.** `POST /v1/voice/live`
+  mints a `transcription` session on the deployment's OpenAI key
+  (`POST /v1/realtime/client_secrets`, `VOICE_LIVE_MODEL`, by default
+  `gpt-live-transcribe`, turn detection off) and answers a secret good for one
+  session and a minute. The browser opens
+  `wss://api.openai.com/v1/realtime?intent=transcription` on it and streams
+  24 kHz PCM16 as the recording is made; the key never leaves the API. The
+  screen's names go as `keywords`.
+- **The text the field keeps is still the recording's transcription.** When
+  the recording stops, the WAV goes to `POST /voice/transcriptions` as
+  before (the ChatGPT sign-in first, then the speech server, then the
+  polish), and its text replaces the live words. When that fails, the live
+  words stay as the text. So a ChatGPT sign-in keeps costing nothing per
+  clip, and live adds about $0.017 a minute of speech on the key.
+- **Live is best effort and optional.** No key (`VOICE_LIVE_API_KEY`, or a
+  `VOICE_STT_*` pointed at OpenAI), and `GET /voice/status` answers
+  `live: false`: dictation works as it did. A socket that cannot open, or
+  fails mid-recording, says nothing; the transcription lands at the stop.
+- **The field shows the live words in place.** Each update replaces the
+  words it showed last (`replaceDictation`), and when the person edits the
+  end of the field meanwhile, nothing they wrote is taken out. Cancel takes
+  the live words back out.
+- **Enter sends while dictating.** In a composer, Enter (in the field, on
+  the recorder, or with nothing focused) ends the recording and sends once
+  the text has landed; a failed transcription sends nothing.
+- `VOICE_008` answers `POST /voice/live` on a deployment with no key.
+  `wss://api.openai.com` is in the console's default `CSP_EXTRA_ORIGINS`.
+
 ## How we know it works
 
 - **Unit:** the `useDictation` state machine with a fake

@@ -18,6 +18,12 @@ import { parseEnv, positiveInt } from './env';
  * sign-in; without a sign-in the polish runs on the deployment's LLM
  * (`LLM_*`), if it has one. `polishTimeoutMs` bounds it: past it the person
  * gets the raw transcript rather than a wait.
+ *
+ * `liveApiKey` is an OpenAI key for live dictation (the words in the field
+ * while they are spoken, on OpenAI's realtime transcription); without it, a
+ * `sttApiKey` for OpenAI's own base URL serves. `liveModel` is the realtime
+ * model. Optional: without a key, dictation works as before, the text landing
+ * when the recording stops.
  */
 const schema = z.object({
   sttBaseUrl: z.string().url().optional(),
@@ -25,6 +31,8 @@ const schema = z.object({
   sttModel: z.string().optional(),
   polishModel: z.string().optional(),
   polishTimeoutMs: positiveInt(6_000),
+  liveApiKey: z.string().optional(),
+  liveModel: z.string().default('gpt-live-transcribe'),
 });
 
 export const voiceConfig = registerAs('voice', () =>
@@ -34,6 +42,8 @@ export const voiceConfig = registerAs('voice', () =>
     sttModel: 'VOICE_STT_MODEL',
     polishModel: 'VOICE_POLISH_MODEL',
     polishTimeoutMs: 'VOICE_POLISH_TIMEOUT_MS',
+    liveApiKey: 'VOICE_LIVE_API_KEY',
+    liveModel: 'VOICE_LIVE_MODEL',
   }),
 );
 
