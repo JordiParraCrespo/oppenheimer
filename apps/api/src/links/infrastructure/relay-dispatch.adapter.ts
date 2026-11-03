@@ -284,27 +284,7 @@ function createMessage(
     workspaceId: spec.workspaceId,
     sessionSlug: session.slug,
     agent,
-    launch: {
-      ...(session.launch.model ? { model: session.launch.model } : {}),
-      ...(session.launch.permission ? { permission: session.launch.permission } : {}),
-      ...(session.launch.effort ? { effort: session.launch.effort } : {}),
-      // The agent's conversation takes the session's own id, so the transcript
-      // the CLI keeps is findable by the one name both sides already agree on
-      // — and a session that has stopped can be reopened rather than read back
-      // out of a pane that no longer exists.
-      //
-      // Only for an agent that has a conversation to name: a blank terminal
-      // keeps no transcript, and sending it an id would be a field the host
-      // has nothing to do with.
-      //
-      // A session that continues a cloud one names none: the conversation it
-      // opens is the cloud session's, under the name Claude Code gives it.
-      ...(session.launch.teleport
-        ? { teleport: session.launch.teleport }
-        : CODING_AGENTS[agent]?.launch.conversation?.create
-          ? { conversation: session.id }
-          : {}),
-    },
+    launch: launchFrame(session, agent),
     ...(spec.prompt ? { prompt: spec.prompt } : {}),
     ...(spec.images?.length ? { images: spec.images } : {}),
     ...placeOf(session, spec),
@@ -317,6 +297,38 @@ function createMessage(
     ...(spec.cloud && agent === 'codex' && session.launch.environment
       ? { codexEnvironment: session.launch.environment }
       : {}),
+  };
+}
+
+/**
+ * The launch as the frame carries it: the foot row's choices, and how the
+ * agent's conversation is opened. The runner picks the argv from what it is
+ * sent; this decides only what to send.
+ *
+ * A session that continues a cloud one names the cloud session and no
+ * conversation of its own: Claude Code names the teleported one, and an id
+ * sent beside it would be a transcript the runner looks for and never finds.
+ * Any other agent that has a conversation to name takes the session's own id,
+ * so the transcript the CLI keeps is findable by the one name both sides
+ * already agree on — and a session that has stopped can be reopened rather
+ * than read back out of a pane that no longer exists. A blank terminal keeps
+ * no transcript, so it is sent none.
+ */
+function launchFrame(
+  session: WorkSessionEntity,
+  agent: CodingAgentId,
+): SessionCreateMessage['launch'] {
+  const { model, permission, effort, teleport } = session.launch;
+  const conversation = teleport
+    ? { teleport }
+    : CODING_AGENTS[agent]?.launch.conversation?.create
+      ? { conversation: session.id }
+      : {};
+  return {
+    ...(model ? { model } : {}),
+    ...(permission ? { permission } : {}),
+    ...(effort ? { effort } : {}),
+    ...conversation,
   };
 }
 
