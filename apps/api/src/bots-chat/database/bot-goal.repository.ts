@@ -98,20 +98,31 @@ export async function claimContinuationWithin(
 }
 
 /**
- * Marks the bot's goal as waiting out `limit`, in the transaction that stages
- * its held decision (`BotTurnRepository.finish`), so the row says what the
- * queue holds. `UQ_bot_goal_bot` finds the one row; a bot with no goal by
- * now writes nothing.
+ * Marks the ended turn's own goal as waiting out `limit`, in the transaction
+ * that stages its held decision (`BotTurnRepository.finish`), so the row says
+ * what the queue holds. Its own goal is the one it set (`originTurnId`) or
+ * the one its continuation key names: a goal set in its place while it ran
+ * is not held by it, and is left as it is. A goal that is gone writes nothing.
  */
 export async function holdGoalWithin(
   manager: EntityManager,
-  turn: { organizationId: string; botId: string },
+  turn: { organizationId: string; botId: string; id: string; sourceKey: string | null },
   limit: { system: string; resetAt: Date },
 ): Promise<void> {
+  // UQ_bot_goal_bot finds the bot's one row; the rest says whether it is this turn's.
   await manager.query(
-    `UPDATE bot_goal SET "waitingFor" = $3, "waitingUntil" = $4, "updatedAt" = now()
-      WHERE "organizationId" = $1 AND "botId" = $2`,
-    [turn.organizationId, turn.botId, limit.system.slice(0, 64), limit.resetAt],
+    `UPDATE bot_goal SET "waitingFor" = $5, "waitingUntil" = $6, "updatedAt" = now()
+      WHERE "organizationId" = $1 AND "botId" = $2
+        AND ("originTurnId" = $3 OR left($4, length($7 || id::text || ':')) = $7 || id::text || ':')`,
+    [
+      turn.organizationId,
+      turn.botId,
+      turn.id,
+      turn.sourceKey,
+      limit.system.slice(0, 64),
+      limit.resetAt,
+      GOAL_KEY_PREFIX,
+    ],
   );
 }
 
