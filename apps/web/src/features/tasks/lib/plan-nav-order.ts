@@ -11,7 +11,7 @@ export const PLAN_NAV_ORDER_KEY = 'oppenheimer.plan.nav.order';
 
 const IDS = new Set<string>(PLAN_NAV_IDS);
 
-function isPlanNavId(value: unknown): value is PlanNavId {
+export function isPlanNavId(value: unknown): value is PlanNavId {
   return typeof value === 'string' && IDS.has(value);
 }
 
@@ -41,8 +41,8 @@ export function mergeShownOrder(
   moved: readonly PlanNavId[],
   shown: (id: PlanNavId) => boolean,
 ): PlanNavId[] {
-  const next = [...moved];
-  return order.map((id) => (shown(id) ? (next.shift() ?? id) : id));
+  const next = moved[Symbol.iterator]();
+  return order.map((id) => (shown(id) ? (next.next().value ?? id) : id));
 }
 
 export function rememberPlanNavOrder(order: readonly PlanNavId[]) {

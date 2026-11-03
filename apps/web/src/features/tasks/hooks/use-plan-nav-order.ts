@@ -1,8 +1,8 @@
 import { useSortableGroups } from '@oppenheimer/design-system-web';
 import { useState } from 'react';
 import {
+  isPlanNavId,
   mergeShownOrder,
-  PLAN_NAV_IDS,
   type PlanNavId,
   rememberPlanNavOrder,
   storedPlanNavOrder,
@@ -10,8 +10,6 @@ import {
 
 /** The `SortableGroup` id Plan's sidebar views sit in. */
 export const PLAN_NAV_GROUP = 'plan-nav';
-
-const IDS = new Set<string>(PLAN_NAV_IDS);
 
 /**
  * Plan's sidebar views in the reader's order. The drag layer hands back the
@@ -24,7 +22,7 @@ export function usePlanNavOrder(shown: (id: PlanNavId) => boolean) {
   const [order, setOrder] = useState<readonly PlanNavId[]>(storedPlanNavOrder);
   const visible = order.filter(shown);
   const handlers = useSortableGroups({ [PLAN_NAV_GROUP]: visible }, (next) => {
-    const moved = (next[PLAN_NAV_GROUP] ?? []).filter((id): id is PlanNavId => IDS.has(id));
+    const moved = (next[PLAN_NAV_GROUP] ?? []).filter(isPlanNavId);
     const settled = mergeShownOrder(order, moved, shown);
     setOrder(settled);
     rememberPlanNavOrder(settled);

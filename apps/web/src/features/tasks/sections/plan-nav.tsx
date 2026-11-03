@@ -14,7 +14,7 @@ import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { PLAN_NAV_GROUP, usePlanNavOrder } from '../hooks/use-plan-nav-order';
 import { useTodayEventCount } from '../hooks/use-today-event-count';
-import type { PlanNavId } from '../lib/plan-nav-order';
+import { isPlanNavId, type PlanNavId } from '../lib/plan-nav-order';
 import { PlanInboxItem } from './plan-inbox-item';
 
 /** Each view's name and glyph, for its row and the copy a drag lifts. */
@@ -25,9 +25,15 @@ const LOOK = {
   calendar: { labelKey: 'tasks.nav.calendar', icon: <CalendarDays /> },
 } as const satisfies Record<PlanNavId, { labelKey: string; icon: ReactNode }>;
 
-function isPlanNavId(id: string): id is PlanNavId {
-  return id in LOOK;
-}
+/**
+ * Where each view but the Inbox goes, and whether a route under it keeps it
+ * lit. The Inbox is its own row (`PlanInboxItem`), which owns its minute tick.
+ */
+const ROUTE = {
+  tasks: { to: '/plan', fuzzy: false },
+  milestones: { to: '/plan/milestones', fuzzy: true },
+  calendar: { to: '/plan/calendar', fuzzy: true },
+} as const satisfies Record<Exclude<PlanNavId, 'inbox'>, { to: string; fuzzy: boolean }>;
 
 /**
  * The head of Plan's sidebar (the `Tasks` frame): the Inbox with what needs
@@ -48,49 +54,10 @@ export function PlanNav() {
   const matchRoute = useMatchRoute();
   const dragLabels = useDragLabels();
   const { order, handlers } = usePlanNavOrder((id) => id !== 'inbox' || inbox);
-
-  const row = (id: Exclude<PlanNavId, 'inbox'>) => {
-    switch (id) {
-      case 'tasks':
-        return (
-          <SortableRoutineItem
-            key={id}
-            id={id}
-            name={t(LOOK.tasks.labelKey)}
-            icon={LOOK.tasks.icon}
-            meta={open === undefined ? undefined : String(open)}
-            active={Boolean(matchRoute({ to: '/plan' }))}
-            nativeButton={false}
-            render={<Link to="/plan" />}
-          />
-        );
-      case 'milestones':
-        return (
-          <SortableRoutineItem
-            key={id}
-            id={id}
-            name={t(LOOK.milestones.labelKey)}
-            icon={LOOK.milestones.icon}
-            meta={milestones === undefined ? undefined : String(milestones)}
-            active={Boolean(matchRoute({ to: '/plan/milestones', fuzzy: true }))}
-            nativeButton={false}
-            render={<Link to="/plan/milestones" />}
-          />
-        );
-      case 'calendar':
-        return (
-          <SortableRoutineItem
-            key={id}
-            id={id}
-            name={t(LOOK.calendar.labelKey)}
-            icon={LOOK.calendar.icon}
-            meta={today === undefined ? undefined : String(today)}
-            active={Boolean(matchRoute({ to: '/plan/calendar', fuzzy: true }))}
-            nativeButton={false}
-            render={<Link to="/plan/calendar" />}
-          />
-        );
-    }
+  const counts: Record<keyof typeof ROUTE, number | undefined> = {
+    tasks: open,
+    milestones,
+    calendar: today,
   };
 
   return (
@@ -110,7 +77,23 @@ export function PlanNav() {
           accepts={['routine-item']}
           className="flex flex-col gap-0.5"
         >
-          {order.map((id) => (id === 'inbox' ? <PlanInboxItem key={id} id={id} /> : row(id)))}
+          {order.map((id) => {
+            if (id === 'inbox') return <PlanInboxItem key={id} id={id} />;
+            const { to, fuzzy } = ROUTE[id];
+            const count = counts[id];
+            return (
+              <SortableRoutineItem
+                key={id}
+                id={id}
+                name={t(LOOK[id].labelKey)}
+                icon={LOOK[id].icon}
+                meta={count === undefined ? undefined : String(count)}
+                active={Boolean(matchRoute({ to, fuzzy }))}
+                nativeButton={false}
+                render={<Link to={to} />}
+              />
+            );
+          })}
         </SortableGroup>
       </DragProvider>
     </nav>
