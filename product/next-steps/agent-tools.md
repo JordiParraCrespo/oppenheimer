@@ -86,3 +86,73 @@ command is taught to every agent by `runner --skill`
   the phone is 0.5's (`0.5-mobile.md`, its question 3). A browser
   notification while the console is open in another tab is the cheap step
   before that.
+
+## 3. Wake on a pull request (built 2026-11-02)
+
+- **The command.** `runner sessions watch-pr <number> [--repo owner/name]
+  [--off]`, from inside a session. The runner names the pull request by its
+  checkout's GitHub repository id (the first checkout unless `--repo` picks
+  another; a folder session, or one the CLI made, has none and is refused)
+  and logs `pull.watched { githubRepoId, number, watch }`. A runner with no
+  link refuses it (`SESS_015`).
+- **What the session keeps.** The fold keeps the watched pull requests,
+  oldest first, ten at most (an eleventh drops the oldest), as
+  `watchedPulls` (a `jsonb` column, `[]` for none). They outlive a stop and
+  go when the session closes. A partial index on the workspace, over the
+  rows that watch something, is what a webhook reads.
+- **What wakes it.** The GitHub events the hub already stores, on that
+  repository and number: `check_failed`, `check_passed`, `review`,
+  `comment` and `pr_merged`. Two of them are new in the catalog, so an
+  automation can fire on them too: `check_passed` (a check suite that
+  completed `success`; statuses stay failures only) and `review` (a
+  submitted review whatever its state; before, only one that mentioned the
+  app became anything). Our own app's events wake nobody.
+- **The wake.** One line per open, running session that watches it, made
+  only of the event's metadata — its kind, the number, a check's
+  conclusion and name, a review's state, the actor's login, each held to
+  the characters GitHub allows — and never a comment's or a review's
+  words, which anyone who can comment on a public repository writes. The
+  line is framed as the runner frames a child's report,
+  `<oppenheimer from="github" event="review" repo="acme/app" pull="128">…</oppenheimer>`,
+  and tells the agent to read the comments with `gh pr view 128 --repo
+  acme/app --comments` itself: the repository is the watching session's
+  checkout of it, named because a session with several checkouts runs
+  above all of them.
+- **Delivery** is a job on a new durable queue, `session-wakes`, staged on
+  the outbox. The worker types the line as a prompt from
+  `{ kind: 'wake', source: 'github', wakeId }` through the same typer a
+  bot's prompt uses (`SessionPromptTyperResolver`): claimed in the log by
+  the wake's id, so a retry types once, and only while the agent is at its
+  prompt. An agent that is working or waiting on the person, or a host that
+  is offline, is asked again a minute later, for four hours; each attempt
+  claims under its own key, so one whose keys never reached the host does
+  not block the next. A session that stopped or closed, or takes no input
+  here (a cloud session), drops it.
+- **Not yet.** The console does not show what a session watches, nor a
+  wake in its chat beyond the prompt it typed. A bot subscription to a pull
+  request (`../versions/mvp/27-bot-subscriptions.md` §7) can wake through
+  the same events.
+
+## 4. Wake later (built 2026-11-02)
+
+- **The command.** `runner sessions wake-in <30m|2h|1d> "note"`, from
+  inside a session: a minute to seven days (Go's durations, or whole
+  days), and a note of at most 1,000 bytes. The runner gives the wake an id
+  and logs `wake.requested { id, at, text }`, `at` in UTC; with no link it
+  refuses (`SESS_015`). The agent is told to end its turn: the point is to
+  sleep instead of polling a deploy, a CI run or a reviewer.
+- **The control plane holds it.** The entry moves no state; the session
+  raises `SessionWakeRequested`, whose handler stages the wake on the
+  `session-wakes` queue for its time (§3's delivery, unchanged): a time
+  already past wakes now, one past a week is held to a week. The job sits
+  on the outbox until it is due, so a restart of the API or the runner
+  loses nothing; the host must be up when it is.
+- **The wake.** The agent's own note, framed as the host's,
+  `<oppenheimer from="schedule" wake="<id>">…</oppenheimer>` (a frame's
+  end inside the note is taken out), typed as a prompt from
+  `{ kind: 'wake', source: 'schedule' }` once the agent is at its prompt,
+  asked again each minute for four hours, and dropped for a session that
+  stopped or closed.
+- **Not yet.** The agent cannot list or cancel its wakes, and the console
+  does not show them: a wake is a job, not a row. Both want a
+  `session_wake` table the day either is asked for.

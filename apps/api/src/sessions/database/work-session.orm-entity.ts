@@ -64,6 +64,11 @@ import type { AgentObservedState, SessionNameSource } from '../domain/session-st
 @Index('IDX_work_session_cloud_id', ['organizationId', 'agentSessionId'], {
   where: `place = 'cloud'`,
 })
+// A GitHub event's sessions to wake: those in its workspace that watch a pull
+// request. Partial, so only those rows are in it; the list changes rarely.
+@Index('IDX_work_session_watching_pulls', ['organizationId'], {
+  where: `"watchedPulls" <> '[]'::jsonb`,
+})
 @Unique('UQ_work_session_organization_slug', ['organizationId', 'slug'])
 @Unique('UQ_work_session_organization_id', ['organizationId', 'id'])
 export class WorkSessionOrmEntity {
@@ -243,6 +248,13 @@ export class WorkSessionOrmEntity {
    */
   @Column({ type: 'jsonb', nullable: true })
   notice!: unknown;
+
+  /**
+   * The pull requests the agent asked to be woken by (`SessionWatchedPull[]`),
+   * folded from `pull.watched`; `[]` for none. Read back through the schema.
+   */
+  @Column({ type: 'jsonb', default: () => "'[]'::jsonb" })
+  watchedPulls!: unknown;
 
   /**
    * Who asked for the session: `person`, `automation` (whose run points back

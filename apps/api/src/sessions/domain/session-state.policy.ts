@@ -6,6 +6,7 @@ import type {
   SessionNotice,
   SessionPermissionDto,
   SessionState,
+  SessionWatchedPull,
 } from '@oppenheimer/shared';
 import {
   AGENT_DECISION_EVENT_KIND,
@@ -14,9 +15,14 @@ import {
   agentNotifiedPayloadSchema,
   CLOUD_AGENT_IDS,
   DECISION_ANSWERED_EVENT_KIND,
+  PULL_WATCHED_EVENT_KIND,
+  pullWatchedPayloadSchema,
   SESSION_PERMISSIONS,
+  SESSION_WATCHED_PULLS_MAX,
   sessionAgentReportSchema,
   sessionNoticeSchema,
+  sessionWatchedPullSchema,
+  WAKE_REQUESTED_EVENT_KIND,
 } from '@oppenheimer/shared';
 import { CODING_AGENTS, effortLevelFor, isCodingAgentId } from '@oppenheimer/shared/agents';
 
@@ -147,6 +153,17 @@ export const SESSION_EVENT_KINDS = {
    * `{ id, text }` (`SessionNotice`); the session keeps the latest for the Inbox.
    */
   AGENT_NOTIFIED: AGENT_NOTIFIED_EVENT_KIND,
+  /**
+   * The agent asked to be woken by a pull request's events, or to stop
+   * (`runner sessions watch-pr`). Payload `{ githubRepoId, number, watch }`.
+   */
+  PULL_WATCHED: PULL_WATCHED_EVENT_KIND,
+  /**
+   * The agent asked to be woken at a time (`runner sessions wake-in`). Payload
+   * `{ id, at, text }`. It moves no state: the entity raises
+   * `SessionWakeRequestedDomainEvent` for it, and the wake is a queued job.
+   */
+  WAKE_REQUESTED: WAKE_REQUESTED_EVENT_KIND,
   /** The agent left a report. Payload `{ hash }` — never the report itself. */
   REPORT_PUBLISHED: 'report.published',
   /** Somebody read that report. Payload `{ hash }`. */
@@ -273,6 +290,12 @@ export interface SessionFold {
    * Inbox shows it until the person marks it done. Cleared when it closes.
    */
   notice: SessionNotice | null;
+  /**
+   * The pull requests the agent asked to be woken by, oldest first, at most
+   * `SESSION_WATCHED_PULLS_MAX`. Kept while the session lives; cleared when
+   * it closes.
+   */
+  watchedPulls: SessionWatchedPull[];
 }
 
 export const INITIAL_SESSION_FOLD: SessionFold = {
@@ -295,6 +318,7 @@ export const INITIAL_SESSION_FOLD: SessionFold = {
   pendingDecision: null,
   agentReport: null,
   notice: null,
+  watchedPulls: [],
 };
 
 /**
@@ -379,6 +403,15 @@ export function readNotice(value: unknown): SessionNotice | null {
   if (value === undefined || value === null) return null;
   const parsed = sessionNoticeSchema.safeParse(value);
   return parsed.success ? parsed.data : null;
+}
+
+/** The watched pull requests in a `jsonb` column, each one this build can read. */
+export function readWatchedPulls(value: unknown): SessionWatchedPull[] {
+  if (!Array.isArray(value)) return [];
+  return value.flatMap((item) => {
+    const parsed = sessionWatchedPullSchema.safeParse(item);
+    return parsed.success ? [parsed.data] : [];
+  });
 }
 
 /**
@@ -469,6 +502,7 @@ export function foldSessionEvent(fold: SessionFold, event: SessionLogEntry): Ses
       closed.closeRequest = null;
       closed.closeRefusal = null;
       closed.notice = null;
+      closed.watchedPulls = [];
       return withoutAgentFacts(closed);
     }
     case SESSION_EVENT_KINDS.NAMED: {
@@ -542,6 +576,19 @@ export function foldSessionEvent(fold: SessionFold, event: SessionLogEntry): Ses
       const parsed = agentNotifiedPayloadSchema.safeParse(event.payload);
       if (!parsed.success) return next;
       next.notice = { ...parsed.data, at: event.occurredAt.toISOString() };
+      return next;
+    }
+    case SESSION_EVENT_KINDS.PULL_WATCHED: {
+      if (next.state === 'resolved') return next;
+      const parsed = pullWatchedPayloadSchema.safeParse(event.payload);
+      if (!parsed.success) return next;
+      const { githubRepoId, number, watch } = parsed.data;
+      const others = next.watchedPulls.filter(
+        (pull) => pull.githubRepoId !== githubRepoId || pull.number !== number,
+      );
+      next.watchedPulls = watch
+        ? [...others, { githubRepoId, number }].slice(-SESSION_WATCHED_PULLS_MAX)
+        : others;
       return next;
     }
     case SESSION_EVENT_KINDS.REPORT_PUBLISHED:

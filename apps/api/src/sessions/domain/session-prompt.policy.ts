@@ -3,21 +3,27 @@ import type { SessionTurnFold } from './session-turn.policy';
 
 /**
  * A follow-up prompt typed into a running session's agent by somebody other
- * than a person at its terminal (issue #493): a bot, or a person over the API: whether the agent can take one
+ * than a person at its terminal (issue #493): whether the agent can take one
  * now, and the keys that give it the words the way the console's chat view
  * does.
  */
 
 /**
  * Who sent a prompt, as the API read it when it typed it: the bot whose turn
- * made the call and the turn itself, or the person whose credential called
- * `POST /sessions/{id}/prompt` (the `opp` CLI, an MCP client, a script).
- * Recorded on the `prompt.sent` entry, so the log says who spoke whatever the
- * words claim.
+ * made the call and the turn itself; a wake the session's own agent asked
+ * for (`product/next-steps/agent-tools.md` §3–4): what woke it and the wake's
+ * id; or the person whose credential called `POST /sessions/{id}/prompt` (the
+ * `opp` CLI, an MCP client, a script). Recorded on the `prompt.sent` entry, so
+ * the log says who spoke whatever the words claim.
  */
 export type SessionPromptSender =
   | { kind: 'bot'; botId: string; turnId: string }
+  | { kind: 'wake'; source: SessionWakeSource; wakeId: string }
   | { kind: 'person'; userId: string };
+
+/** What a wake comes from: a pull request the agent watches, or a time it set. */
+export const SESSION_WAKE_SOURCES = ['github', 'schedule'] as const;
+export type SessionWakeSource = (typeof SESSION_WAKE_SOURCES)[number];
 
 /** Several lines go to the agent as one bracketed paste, so a newline in them is not Enter. */
 const PASTE_START = '\u001b[200~';

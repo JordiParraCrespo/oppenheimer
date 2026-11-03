@@ -396,14 +396,22 @@ export class BotTurnRepository
         });
       }
       // A goal's own turn owes it a decision, staged with the end that owes it.
+      // A turn a system's rate limit stopped holds it until the limit ends: a
+      // continuation sooner would only meet the limit again, and spend one of
+      // the goal's turns doing it.
       if (await owesGoalWithin(manager, turn)) {
+        const limitedUntil = turn.limitedUntilAtEnd;
+        const waits = limitedUntil !== null && limitedUntil > new Date();
         await this.outbox.stageJob(manager, {
           queue: QUEUE_NAMES.BOT_TURNS,
           jobName: CONTINUE_BOT_GOAL_JOB,
           payload: { turnId: turn.id },
-          reason: `bot ${turn.botId}: turn ${turn.id} ended with a goal open`,
+          reason: waits
+            ? `bot ${turn.botId}: turn ${turn.id} ended with a goal open, rate limited until ${limitedUntil.toISOString()}`
+            : `bot ${turn.botId}: turn ${turn.id} ended with a goal open`,
           aggregateId: turn.id,
           correlationId,
+          ...(waits && { availableAt: limitedUntil }),
         });
       }
       return true;

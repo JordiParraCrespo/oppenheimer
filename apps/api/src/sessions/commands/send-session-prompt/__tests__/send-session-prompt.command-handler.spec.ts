@@ -2,6 +2,7 @@ import { Some } from 'oxide.ts';
 import { describe, expect, it, vi } from 'vitest';
 import type { SessionDispatchPort } from '../../../application/session-dispatch.port';
 import { SessionLoaderResolver } from '../../../application/session-loader.resolver';
+import { SessionPromptTyperResolver } from '../../../application/session-prompt-typer.resolver';
 import type { WorkSessionRepositoryPort } from '../../../database/work-session.repository.port';
 import { SessionCloudRunEntity } from '../../../domain/session-cloud-run.entity';
 import { SESSION_EVENT_KINDS } from '../../../domain/session-state.policy';
@@ -52,7 +53,8 @@ function sessionAt(observed: string | null) {
   return session;
 }
 
-const APPENDED = { accepted: [], rejected: [], appended: [] };
+/** A claim that won: the `prompt.sent` row it appended. */
+const APPENDED = { accepted: [], rejected: [], appended: [{ seq: 3 }] };
 
 /** `claims` is whether the conditional append wins the row (another prompt may have first). */
 function harness(session: WorkSessionEntity, delivered = true, claims = true) {
@@ -75,8 +77,7 @@ function harness(session: WorkSessionEntity, delivered = true, claims = true) {
   } as unknown as SessionDispatchPort;
   const handler = new SendSessionPromptCommandHandler(
     new SessionLoaderResolver(sessions),
-    sessions,
-    dispatch,
+    new SessionPromptTyperResolver(sessions, dispatch),
   );
   return { handler, sessions, dispatch };
 }

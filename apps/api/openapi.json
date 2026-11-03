@@ -29571,6 +29571,8 @@
               "issue_opened",
               "mention",
               "release",
+              "check_passed",
+              "review",
               "mail_received"
             ],
             "description": "`schedule`, or the catalog event (`pr_opened`, `push`, `mail_received`, …)."
@@ -30010,7 +30012,9 @@
                         "check_failed",
                         "issue_opened",
                         "mention",
-                        "release"
+                        "release",
+                        "check_passed",
+                        "review"
                       ]
                     },
                     "repositories": {
@@ -30217,7 +30221,9 @@
               "check_failed",
               "issue_opened",
               "mention",
-              "release"
+              "release",
+              "check_passed",
+              "review"
             ]
           },
           "repositories": {
@@ -30487,7 +30493,9 @@
                         "check_failed",
                         "issue_opened",
                         "mention",
-                        "release"
+                        "release",
+                        "check_passed",
+                        "review"
                       ]
                     },
                     "repositories": {

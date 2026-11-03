@@ -199,6 +199,13 @@ type Notifier interface {
 	Notified(sessionID string, notice domain.Notice)
 }
 
+// PullWatcher is the part of a Publisher that tells the control plane which
+// pull requests a session's agent wants to be woken by, as `pull.watched`.
+// Optional, like Notifier.
+type PullWatcher interface {
+	PullWatched(sessionID string, watch domain.PullWatch)
+}
+
 // Listener hears each session the service saw move, after the change is
 // written: a new state, or the end of it (a state that is not live). It runs
 // on the caller's goroutine, so it must hand anything slow to one of its own.

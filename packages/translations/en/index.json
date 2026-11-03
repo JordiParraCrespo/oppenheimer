@@ -2076,6 +2076,14 @@
         "label": "Check failed",
         "desc": "Any Actions workflow or status check"
       },
+      "check_passed": {
+        "label": "Checks passed",
+        "desc": "An Actions workflow or check suite finished green"
+      },
+      "review": {
+        "label": "Review submitted",
+        "desc": "An approval, changes requested or a review comment"
+      },
       "issue_opened": {
         "label": "Issue opened",
         "desc": "New issues only, not reopened ones"
