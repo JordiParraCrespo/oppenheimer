@@ -181,6 +181,7 @@ export class ProjectEntity extends AggregateRoot<ProjectProps> {
    * every call rather than after the last of several.
    */
   configure(settings: ProjectSettings): void {
+    const before = this.settingsKey();
     if (settings.name !== undefined && settings.name !== this.props.name) {
       this.assertNotUnassigned('renamed');
       assertNameFree(settings.name);
@@ -194,7 +195,16 @@ export class ProjectEntity extends AggregateRoot<ProjectProps> {
     if (settings.defaultAgent !== undefined) this.props.defaultAgent = settings.defaultAgent;
     this.setUpdatedAt(new Date());
     this.validate();
-    this.announceChange("A project's settings changed; the console re-reads it");
+    // Only a real change is announced: the console re-reads on it.
+    if (this.settingsKey() !== before) {
+      this.announceChange("A project's settings changed; the console re-reads it");
+    }
+  }
+
+  /** What `configure` may change, as one comparable value. */
+  private settingsKey(): string {
+    const { name, repositories, defaultHostId, defaultAgent } = this.props;
+    return JSON.stringify({ name, repositories, defaultHostId, defaultAgent });
   }
 
   /**

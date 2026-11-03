@@ -48,6 +48,15 @@ describe('ProjectEntity', () => {
     ]);
   });
 
+  it('announces nothing when a configure changes nothing', () => {
+    const project = ProjectEntity.createNew(VALID);
+    project.clearEvents();
+
+    project.configure({ name: project.name, repositories: project.repositories });
+
+    expect(project.domainEvents).toHaveLength(0);
+  });
+
   it('keeps the slug when the project is renamed', () => {
     const project = ProjectEntity.createNew(VALID);
 

@@ -53,6 +53,7 @@ const UNASSIGNED_ID = '33333333-3333-4333-8333-333333333333';
 const ARCHIVED_ID = '44444444-4444-4444-8444-444444444444';
 const OTHER_WORKSPACE_PROJECT_ID = '55555555-5555-4555-8555-555555555555';
 const SESSION_ID = '66666666-6666-4666-8666-666666666666';
+const OTHER_SESSION_ID = '88888888-8888-4888-8888-888888888888';
 const INSTALLATION_ID = '77777777-7777-4777-8777-777777777777';
 
 const project = (id: string, name: string, props: Partial<ProjectProps> = {}) =>
@@ -199,7 +200,7 @@ describe('BotProjectToolsFactory', () => {
       });
 
       expect(result.isError).toBe(true);
-      expect(result.content).toContain('one repository must be is_default');
+      expect(result.content).toContain('repositories: breaks the rule its description gives');
       expect(commandBus.execute).not.toHaveBeenCalled();
     });
 
@@ -279,7 +280,9 @@ describe('BotProjectToolsFactory', () => {
     const answers = (open: WorkSessionEntity[]) => ({
       query: (query: unknown) => {
         if (query instanceof FindProjectQuery) return WORKSPACE[0];
-        if (query instanceof FindSessionsQuery) return { data: open };
+        if (query instanceof FindSessionsQuery) {
+          return { data: open.filter((one) => one.state === query.state) };
+        }
         return WORKSPACE;
       },
       command: () => project(WEBSITE_ID, 'Website', { archivedAt: new Date() }),
@@ -319,13 +322,16 @@ describe('BotProjectToolsFactory', () => {
       expect(command.projectId).toBe(WEBSITE_ID);
     });
 
-    it('names the sessions still open in the project and raises no card', async () => {
-      const { commandBus, context, call } = setup(answers([session()]));
+    it('names the sessions the archive would refuse over, each state asked of the sessions’ own filter, and raises no card', async () => {
+      const { commandBus, context, call } = setup(
+        answers([session(), session({ id: OTHER_SESSION_ID, state: 'failed' })]),
+      );
 
       const result = await call('archive_project', { project_id: WEBSITE_ID });
 
       expect(result.isError).toBe(true);
       expect(result.content).toContain(`${SESSION_ID} "Fix the sitemap" (open)`);
+      expect(result.content).toContain(`${OTHER_SESSION_ID} "Fix the sitemap" (failed)`);
       expect(result.content).toContain('move_session');
       expect(context.approvals.request).not.toHaveBeenCalled();
       expect(commandBus.execute).not.toHaveBeenCalled();

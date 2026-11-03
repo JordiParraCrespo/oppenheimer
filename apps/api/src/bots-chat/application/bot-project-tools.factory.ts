@@ -4,6 +4,7 @@ import {
   createProjectSchema,
   FIELD_BOUNDS,
   MAX_PROJECT_REPOSITORIES,
+  SESSION_STATES,
   updateProjectSchema,
 } from '@oppenheimer/shared';
 import { CODING_AGENT_IDS } from '@oppenheimer/shared/agents';
@@ -30,8 +31,8 @@ import {
   defineBotTool,
 } from './bot-tool.factory';
 
-/** How many of a project's newest sessions `archive_project` reads to name the open ones. */
-const OPEN_SESSIONS_SCAN = 100;
+/** How many open sessions of each state `archive_project` names when it refuses. */
+const OPEN_SESSIONS_SHOWN = 20;
 
 const repositoryInput = z.object({
   installation_id: z.uuid().describe('The installation id list_repositories or get_project shows.'),
@@ -291,23 +292,30 @@ export class BotProjectToolsFactory implements BotToolArea {
   }
 
   /**
-   * The project's sessions that are not closed, among its newest: what the
-   * archive would refuse over, named so the person can decide. The archive
-   * itself is still the authority, under the project row's lock.
+   * The project's sessions that are not closed, as the archive counts them
+   * (every state but `resolved`), each state asked of the sessions' own
+   * filter so an older open session is not missed behind newer closed ones.
+   * At most `OPEN_SESSIONS_SHOWN` per state are named. The archive itself is
+   * still the authority, under the project row's lock.
    */
   private async openSessions(
     context: BotToolCallContext,
     projectId: string,
   ): Promise<WorkSessionEntity[]> {
-    const page = await this.queryBus.execute<FindSessionsQuery, { data: WorkSessionEntity[] }>(
-      new FindSessionsQuery({
-        scope: context.owner,
-        page: 1,
-        limit: OPEN_SESSIONS_SCAN,
-        projectId,
-      }),
+    const pages = await Promise.all(
+      SESSION_STATES.filter((state) => state !== 'resolved').map((state) =>
+        this.queryBus.execute<FindSessionsQuery, { data: WorkSessionEntity[] }>(
+          new FindSessionsQuery({
+            scope: context.owner,
+            page: 1,
+            limit: OPEN_SESSIONS_SHOWN,
+            projectId,
+            state,
+          }),
+        ),
+      ),
     );
-    return page.data.filter((session) => session.state !== 'resolved');
+    return pages.flatMap((page) => page.data);
   }
 }
 
@@ -336,8 +344,10 @@ function validDto<Dto>(
   if (parsed.success) return parsed.data;
   const issues = parsed.error.issues.map((issue) => {
     const field = issue.path.length ? `${issue.path.join('.')}: ` : '';
-    return issue.path[0] === 'repositories' && issue.code === 'custom'
-      ? `${field}one repository must be is_default, and none may be listed twice`
+    // The shared schemas carry no messages (their package's rule); a rule of
+    // their own is named by the field's description, which the model has.
+    return issue.code === 'custom'
+      ? `${field}breaks the rule its description gives`
       : `${field}${issue.message}`;
   });
   throw new BotToolRefusal(`Not a project the console would take: ${issues.join('; ')}.`);
