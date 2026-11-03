@@ -1,7 +1,12 @@
 import { Injectable, Optional } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { CacheService } from '@oppenheimer/backend-cache';
-import { GoogleOAuthClient, googleBucketsOf, UpstreamLimiter } from '@oppenheimer/backend-core';
+import {
+  GoogleOAuthClient,
+  googleBucketsOf,
+  UpstreamLimiter,
+  upstreamRateLimitOf,
+} from '@oppenheimer/backend-core';
 import { MailErrors } from '../domain/mail.errors';
 import {
   accountOfIdToken,
@@ -43,15 +48,22 @@ import {
 
 const TIMEOUT_MS = 15_000;
 /**
- * Gmail counts quota units per user (250 a second) and per project (1.2
- * million a minute). The costliest thing a bot does is a search: one token
- * refresh, one `messages.list` (5 units) and a `messages.get` per result (5
- * units each), so 25 results is 130 units, about half a second of one
- * person's budget. Eight calls in flight per process keeps one search from
- * spending that in a burst; a queue past forty answers `MAIL_008` rather
- * than hanging the turn.
+ * Gmail counts quota units (`gmailUnitsOf`) per person: 15,000 a minute and
+ * 250 a second, and 1.2 million a minute for the project. The costliest thing
+ * a bot does is a search: one `messages.list` (5 units) and a `messages.get`
+ * per result (5 each), so 25 results is 130 units. Eight calls in flight per
+ * process keeps one search under the per-second rate; a queue past forty
+ * answers `MAIL_008` rather than hanging the turn. The budget keeps each
+ * account at 12,000 units a minute across every replica, a fifth under
+ * Gmail's own number, so a bot working through a mailbox stops before Google
+ * has to refuse it, and the console's own calls keep room.
  */
-const LIMITS = { maxInFlight: 8, maxQueued: 40, maxWaitMs: 10_000 };
+const LIMITS = {
+  maxInFlight: 8,
+  maxQueued: 40,
+  maxWaitMs: 10_000,
+  budget: { units: 12_000, windowMs: 60_000 },
+};
 /** The most result pages a watched query is read for: 5,000 messages of two days. */
 const MATCH_PAGES_MAX = 10;
 /**
@@ -482,6 +494,7 @@ export class GmailGateway implements GmailProviderPort {
         },
         buckets,
         quota,
+        gmailUnitsOf(method, path),
       );
       if (response.status === 401) throw new GmailGrantRevokedError('Gmail refused the token');
       if (response.status === 404) throw new GmailNotFoundError(`Gmail has no ${path}`);
@@ -498,6 +511,34 @@ export class GmailGateway implements GmailProviderPort {
   private config(key: 'gmailApiBaseUrl'): string {
     return this.configService.getOrThrow<string>(`mail.${key}`);
   }
+}
+
+/**
+ * What a call costs of Gmail's per-person quota, in Gmail's units
+ * (developers.google.com/gmail/api/reference/quota), by resource, then by the
+ * path's second segment (`send`, `batchModify`) or the method. A new endpoint
+ * is a row here.
+ */
+const GMAIL_UNITS: Record<string, { default: number; [segmentOrMethod: string]: number }> = {
+  messages: { default: 5, send: 100, batchModify: 50 },
+  threads: { default: 10 },
+  drafts: { default: 10, send: 100, GET: 5, PUT: 15 },
+  labels: { default: 1, POST: 5 },
+  history: { default: 2 },
+  profile: { default: 1 },
+  settings: { default: 1 },
+};
+/** A call this table does not know is priced as the dearest ordinary call, so it never spends less than it does. */
+const GMAIL_UNKNOWN_UNITS = 10;
+
+export function gmailUnitsOf(method: string, path: string): number {
+  const [resource, segment] = path.split('/');
+  if (!Object.hasOwn(GMAIL_UNITS, resource)) return GMAIL_UNKNOWN_UNITS;
+  const prices = GMAIL_UNITS[resource];
+  // Own keys only: a segment is often an id, and an id must not read a prototype member.
+  const priced = (key: string | undefined) =>
+    key !== undefined && Object.hasOwn(prices, key) ? prices[key] : undefined;
+  return priced(segment) ?? priced(method) ?? prices.default;
 }
 
 /** A message as Gmail's API takes it: the whole of it, base64url, in its thread when it has one. */
@@ -534,15 +575,31 @@ async function eachThread(
   threadIds: readonly string[],
   write: (id: string) => Promise<unknown>,
 ): Promise<GmailBulkOutcome> {
-  const outcome: GmailBulkOutcome = { changed: [], missing: [] };
-  for (const id of threadIds) {
+  const outcome: GmailBulkOutcome = { changed: [], missing: [], notReached: [], limited: null };
+  for (const [index, id] of threadIds.entries()) {
     try {
       await write(id);
       outcome.changed.push(id);
     } catch (error) {
-      if (!(error instanceof GmailNotFoundError)) throw error;
-      outcome.missing.push(id);
+      if (error instanceof GmailNotFoundError) outcome.missing.push(id);
+      else return stoppedAt(outcome, threadIds.slice(index), error);
     }
   }
   return outcome;
+}
+
+/**
+ * A batch stopped by `error` with `rest` still to do. Gmail's limit after the
+ * batch got somewhere is an outcome: what it reached stands, the rest is not
+ * reached. Anything else, or a limit on the first thread, is the error itself.
+ */
+function stoppedAt(
+  outcome: GmailBulkOutcome,
+  rest: readonly string[],
+  error: unknown,
+): GmailBulkOutcome {
+  const limited = upstreamRateLimitOf(error);
+  const reached = outcome.changed.length + outcome.missing.length > 0;
+  if (!limited || !reached) throw error;
+  return { ...outcome, notReached: [...rest], limited };
 }

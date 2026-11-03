@@ -400,6 +400,35 @@ acme/xrp-mobile: Fix the failing test"). An approved call runs under the
 same scope filter as the turn that asked, so a card raised through a token
 that did not cover the tool never runs.
 
+**Rate limits** (2026-11-02). Gmail, GitHub and the calendar meter us, and
+a bot that works through a mailbox or a repository runs into their limits
+as a matter of course. That is a wait, not a fault, and three things make
+it one:
+
+- **The limit is kept before the provider has to say it.** A provider whose
+  budget is published gets one in its gateway's `UpstreamLimiter`
+  (`budget`, spent per call in the provider's own units): Gmail spends
+  `gmailUnitsOf` each call from 12,000 units a minute per account, across
+  every replica, a fifth under Google's 15,000. A call the window cannot
+  hold is refused without being sent, and the account waits for the
+  window, so the bot meets our limit, not Google's (which counts against
+  the project and escalates). A provider that says what is left (GitHub's
+  `x-ratelimit-remaining`) was already stopped at zero.
+- **A limited call reads as a wait with a time.** `describeToolFailure`
+  answers any integration's rate-limit problem (`upstreamRateLimitOf`) as
+  "Gmail is limiting our requests until 10:02:00Z (in about 60 s). This call
+  did nothing…", says it is normal and passes, and tells the model not to
+  retry it in the turn but to say what is done and what is left. The
+  provider's own sentence is not passed on: Google's names our cloud
+  project. A bulk write the limit stopped partway (archive, label, trash
+  over threads) answers what it changed and which ids it did not reach,
+  rather than failing the whole call.
+- **The goal waits too.** The limit rides on the call's step data
+  (`rateLimit`); the turn ends holding the latest one it met, and the
+  goal's decision is staged on the outbox for that time instead of now
+  (`availableAt`). A continuation queued at once would only meet the limit
+  again and spend one of the goal's turns doing it.
+
 ### 4.1 Itself
 | Tool | Does | Default |
 |------|------|---------|
