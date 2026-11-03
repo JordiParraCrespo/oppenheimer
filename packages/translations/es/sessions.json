@@ -639,7 +639,10 @@
     "explored": {
       "title": "Explorado"
     },
-    "exploring": "Explorando"
+    "exploring": "Explorando",
+    "file": {
+      "onHost": "Se queda en el equipo: es demasiado grande para el chat, o no es una imagen ni texto."
+    }
   },
   "preview": {
     "show": "Mostrar vista previa",

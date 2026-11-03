@@ -1,4 +1,5 @@
 import type {
+  ChatSharedFile,
   ChatStatus,
   ChatStep,
   ChatTaskStatus,
@@ -84,7 +85,9 @@ export type ChatBlock =
   | { kind: 'task'; id: string; status: ChatTaskStatus; summary: string | null }
   | { kind: 'changes'; id: string; files: ChangedFile[] }
   /** What the call read them from, a path or a URL, when it says. */
-  | { kind: 'images'; id: string; source: string | null; images: ChatTranscriptImage[] };
+  | { kind: 'images'; id: string; source: string | null; images: ChatTranscriptImage[] }
+  /** A file the agent showed the person (`runner sessions send-file`). */
+  | { kind: 'file'; id: string; file: ChatSharedFile };
 
 export function blocksOf(turn: ChatTurn): ChatBlock[] {
   const blocks: ChatBlock[] = [];
@@ -147,6 +150,8 @@ function blockOf(step: ChatStep, next: ChatStep | undefined): ChatBlock | null {
       return { kind: 'output', id: step.id, text: step.text, failed: step.failed };
     case 'task':
       return { kind: 'task', id: step.id, status: step.status, summary: step.summary };
+    case 'file':
+      return { kind: 'file', id: step.id, file: step.file };
     case 'tool':
       if (step.call.kind === 'todo') return null;
       if (step.call.kind === 'plan' && step.call.plan) {
@@ -326,6 +331,31 @@ export function pathParts(path: string): { name: string; folder: string } {
   return slash < 0
     ? { name: trimmed, folder: '' }
     : { name: trimmed.slice(slash + 1), folder: trimmed.slice(0, slash) };
+}
+
+const SIZE_UNITS = ['byte', 'kilobyte', 'megabyte', 'gigabyte'] as const;
+const sizeFormats = new Map<string, Intl.NumberFormat>();
+
+/** A file's size in the reader's words ("2.4 MB"), its formatters made once per locale and unit. */
+export function fileSize(bytes: number, locale: string): string {
+  let value = bytes;
+  let unit = 0;
+  while (value >= 1024 && unit < SIZE_UNITS.length - 1) {
+    value /= 1024;
+    unit += 1;
+  }
+  const key = `${locale}:${unit}`;
+  let format = sizeFormats.get(key);
+  if (!format) {
+    format = new Intl.NumberFormat(locale, {
+      style: 'unit',
+      unit: SIZE_UNITS[unit],
+      unitDisplay: unit === 0 ? 'long' : 'short',
+      maximumFractionDigits: unit === 0 ? 0 : 1,
+    });
+    sizeFormats.set(key, format);
+  }
+  return format.format(value);
 }
 
 /** The first line of a failure, shown under its call without opening it. */

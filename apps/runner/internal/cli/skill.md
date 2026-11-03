@@ -58,6 +58,19 @@ runner sessions report "Two bugs, both in parse(): … Done."
 It arrives in your parent's input as `<oppenheimer from="<your id>">…</oppenheimer>`.
 Report once, when you have something your parent can act on.
 
+## Show the person a file
+
+```sh
+runner sessions send-file shots/home-dark.png --caption "The home page in dark mode"
+runner sessions send-file report.md
+```
+
+The file appears in your session's chat in the console: an image as a
+picture, a small text file as its text, anything else by its name and
+path. Use it for what the person should look at rather than read in your
+answer: a screenshot, a chart, a page you rendered. The file stays on this
+host; send it again after you change it.
+
 ## What the person sees
 
 Every session, children included, is a terminal on this host. The console

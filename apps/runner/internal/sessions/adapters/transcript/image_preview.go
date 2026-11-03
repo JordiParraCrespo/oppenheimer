@@ -59,6 +59,12 @@ func previewImage(raw json.RawMessage, budget int) *chatImageSource {
 	if err != nil {
 		return nil
 	}
+	return previewBytes(data, budget)
+}
+
+// previewBytes is previewImage over an image's own bytes: a file an agent
+// shares (`shared.go`) is read off the disk, not out of a transcript.
+func previewBytes(data []byte, budget int) *chatImageSource {
 	config, _, err := image.DecodeConfig(bytes.NewReader(data))
 	if err != nil || config.Width <= 0 || config.Height <= 0 || config.Width*config.Height > previewDecodeMax {
 		return nil
