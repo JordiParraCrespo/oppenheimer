@@ -153,6 +153,10 @@
       "identifiers": ["packages/frontend/web", "@oppenheimer/frontend-web"],
       "neededBy": ["web"]
     },
+    "packages/http-client": {
+      "identifiers": ["packages/http-client", "@oppenheimer/http-client"],
+      "neededBy": ["cli", "mcp"]
+    },
     "packages/frontend/api-client": {
       "identifiers": ["packages/frontend/api-client", "@oppenheimer/api-client"],
       "neededBy": ["web"],

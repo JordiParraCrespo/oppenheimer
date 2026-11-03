@@ -2,7 +2,7 @@
   "name": "@oppenheimer/cli",
   "version": "0.1.0",
   "private": true,
-  "description": "opp — drive Oppenheimer from the command line: hosts, sessions, automations, bots",
+  "description": "opp \u2014 drive Oppenheimer from the command line: hosts, sessions, automations, bots",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "bin": {
@@ -18,6 +18,7 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
+    "@oppenheimer/http-client": "workspace:*",
     "@oppenheimer/shared": "workspace:*",
     "commander": "^15.0.0"
   },

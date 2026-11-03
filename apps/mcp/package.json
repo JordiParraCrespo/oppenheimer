@@ -27,10 +27,11 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@oppenheimer/env": "workspace:*",
-    "@oppenheimer/shared": "workspace:*",
     "@modelcontextprotocol/node": "^2.0.0",
     "@modelcontextprotocol/server": "^2.0.0",
+    "@oppenheimer/env": "workspace:*",
+    "@oppenheimer/http-client": "workspace:*",
+    "@oppenheimer/shared": "workspace:*",
     "express": "^5.2.1",
     "zod": "^4.2.0"
   },

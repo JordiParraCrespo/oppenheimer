@@ -8,10 +8,12 @@ the API over HTTP and nothing else: no database, no link, no runner.
 ## Stack
 
 - **commander** for the command tree, assembled in `src/program.ts`
-- Talks to the API over HTTP via `src/lib/client.ts`, with response shapes
-  hand-written in `src/lib/api-types.ts`, narrowed to the fields it reads
-  (the generated client is TypeScript source for the console's bundler, not
-  something a CommonJS binary can load)
+- Talks to the API over HTTP via `src/lib/client.ts`. The transport and the
+  problem-document reading are `@oppenheimer/http-client`'s, shared with the
+  MCP server; the client only maps a failure onto the exit codes
+- Response shapes are hand-written in `src/lib/api-types.ts`, narrowed to the
+  fields it reads (the generated client is TypeScript source for the console's
+  bundler, not something a CommonJS binary can load)
 - Credentials are API tokens governed by the **scope catalog** in
   `@oppenheimer/shared` (`packages/shared/src/scopes/`)
 - Ships a single binary: `opp` → `dist/bin/opp.js`
@@ -24,7 +26,7 @@ src/
 ├── program.ts     # command tree assembly
 ├── commands/      # one file per command group (auth, hosts, sessions, automations, bots, tasks, tokens, mcp)
 ├── lib/
-│   ├── client.ts      # HTTP client; failures become CliErrors with the right exit code
+│   ├── client.ts      # the API over @oppenheimer/http-client; failures become CliErrors with the right exit code
 │   ├── resolve.ts     # names (host, project, bot, owner/name) → ids, refusing ambiguity
 │   ├── wait.ts        # polling a session or a bot's turn until it settles
 │   ├── config.ts      # profiles

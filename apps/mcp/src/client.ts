@@ -1,4 +1,10 @@
-import { isProblemDetails, type ProblemDetails, type Scope } from '@oppenheimer/shared';
+import {
+  HttpClient,
+  type HttpResponse,
+  HttpTransportError,
+  readProblem,
+} from '@oppenheimer/http-client';
+import type { ProblemDetails, Scope } from '@oppenheimer/shared';
 
 /**
  * An API call that failed. Carries the HTTP status and the API's error code so
@@ -48,23 +54,18 @@ export interface OppenheimerClientOptions {
 }
 
 /**
- * Minimal typed client for the Oppenheimer REST API.
+ * Typed client for the Oppenheimer REST API, over `@oppenheimer/http-client`'s
+ * transport, which `opp` shares: a failed answer becomes an
+ * {@link OppenheimerApiError} a tool can phrase for the model.
  *
- * Deliberately hand-rolled rather than generated: the MCP server needs to run
- * as a standalone binary against any Oppenheimer deployment, so it depends on the
- * HTTP contract, not on a build artifact of the API it is talking to.
+ * It depends on the HTTP contract, not on a build of the API it talks to, so
+ * the server runs as a standalone binary against any deployment.
  */
 export class OppenheimerClient {
-  private readonly baseUrl: string;
-  private readonly token: string;
-  private readonly timeoutMs: number;
-  private readonly fetchImpl: typeof fetch;
+  private readonly http: HttpClient;
 
   constructor(options: OppenheimerClientOptions) {
-    this.baseUrl = `${options.apiUrl.replace(/\/+$/, '')}/api/v1`;
-    this.token = options.token;
-    this.timeoutMs = options.timeoutMs ?? 30_000;
-    this.fetchImpl = options.fetchImpl ?? fetch;
+    this.http = new HttpClient(options);
   }
 
   /** What this credential is and what it can actually do. */
@@ -100,105 +101,32 @@ export class OppenheimerClient {
     query?: Record<string, unknown>,
     headers?: Record<string, string>,
   ): Promise<T> {
-    const url = new URL(`${this.baseUrl}${path}`);
-    for (const [key, value] of Object.entries(query ?? {})) {
-      if (value !== undefined && value !== null && value !== '') {
-        url.searchParams.set(key, String(value));
-      }
-    }
-
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), this.timeoutMs);
-
+    let response: HttpResponse;
     try {
-      const response = await this.fetchImpl(url.toString(), {
-        method,
-        headers: {
-          authorization: `Bearer ${this.token}`,
-          accept: 'application/json, application/problem+json',
-          ...(body === undefined ? {} : { 'content-type': 'application/json' }),
-          ...headers,
-        },
-        body: body === undefined ? undefined : JSON.stringify(body),
-        signal: controller.signal,
-      });
-
-      if (response.status === 204) return undefined as T;
-
-      const text = await response.text();
-      const payload = text ? safeParse(text) : undefined;
-
-      if (!response.ok) {
-        throw toApiError(response.status, payload, method, path);
-      }
-
-      return payload as T;
+      response = await this.http.request({ method, path, body, query, headers });
     } catch (error) {
-      if (error instanceof OppenheimerApiError) throw error;
-      if (error instanceof Error && error.name === 'AbortError') {
-        throw new OppenheimerApiError(504, 'MCP_TIMEOUT', `${method} ${path} timed out`);
+      if (error instanceof HttpTransportError) {
+        throw new OppenheimerApiError(
+          error.kind === 'timeout' ? 504 : 503,
+          error.kind === 'timeout' ? 'MCP_TIMEOUT' : 'MCP_UNREACHABLE',
+          error.message,
+        );
       }
-      throw new OppenheimerApiError(
-        503,
-        'MCP_UNREACHABLE',
-        `Could not reach the Oppenheimer API at ${this.baseUrl}: ${
-          error instanceof Error ? error.message : String(error)
-        }`,
-      );
-    } finally {
-      clearTimeout(timeout);
+      throw error;
     }
-  }
-}
-
-/**
- * Turns a failed response body into a {@link OppenheimerApiError}.
- *
- * The API answers with an RFC 7807 problem document, whose `detail` explains
- * this occurrence and whose `title` names the problem type. Anything else —
- * a proxy's plain-text 502, an older deployment's `{ message }` body — falls
- * back to whatever text is there.
- */
-function toApiError(
-  status: number,
-  payload: unknown,
-  method: string,
-  path: string,
-): OppenheimerApiError {
-  const fallback = `${method} ${path} failed with ${status}`;
-
-  if (isProblemDetails(payload)) {
-    const problem = payload as ProblemDetails;
-    const message = [problem.detail ?? problem.title ?? fallback, describeInvalidParams(problem)]
-      .filter(Boolean)
-      .join(' ');
-    return new OppenheimerApiError(status, problem.code, message, problem.correlationId, problem);
-  }
-
-  const legacy = (payload ?? {}) as {
-    code?: string;
-    message?: string;
-    correlationId?: string;
-  };
-  return new OppenheimerApiError(
-    status,
-    legacy.code,
-    legacy.message ?? fallback,
-    legacy.correlationId,
-  );
-}
-
-/** Renders `invalidParams` inline so an agent can fix the call without a second round-trip. */
-function describeInvalidParams(problem: ProblemDetails): string {
-  if (!problem.invalidParams?.length) return '';
-  const fields = problem.invalidParams.map((param) => `${param.name}: ${param.reason}`);
-  return `(${fields.join('; ')})`;
-}
-
-function safeParse(text: string): unknown {
-  try {
-    return JSON.parse(text);
-  } catch {
-    return { message: text };
+    if (!response.ok) {
+      const read = readProblem(
+        response.payload,
+        `${method} ${path} failed with ${response.status}`,
+      );
+      throw new OppenheimerApiError(
+        response.status,
+        read.code,
+        read.message,
+        read.correlationId,
+        read.problem,
+      );
+    }
+    return response.payload as T;
   }
 }

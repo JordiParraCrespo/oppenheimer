@@ -14,7 +14,8 @@ MCP (Model Context Protocol) server exposing Oppenheimer's API to MCP clients ov
 - **Zod 4** here only. The rest of the monorepo is still on Zod 3; the SDK v2
   requires 4, and `apps/mcp` imports no Zod schemas from `@oppenheimer/shared`, so
   the bump stops at this package
-- Talks to the API over HTTP via `src/client.ts`
+- Talks to the API over HTTP via `src/client.ts`, on `@oppenheimer/http-client`'s
+  transport, which `opp` shares; the client turns a failure into `OppenheimerApiError`
 - Access is governed by the **scope catalog** in `@oppenheimer/shared`
   (`packages/shared/src/scopes/`)
 

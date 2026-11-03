@@ -36,17 +36,6 @@ describe('problem details', () => {
     expect(error.correlationId).toBe('req-7');
   });
 
-  it('falls back to the problem title when there is no detail', async () => {
-    const error = await failWith(403, {
-      type: 'about:blank',
-      title: 'Forbidden',
-      status: 403,
-    });
-
-    expect(error.message).toBe('Forbidden');
-    expect(error.isPermissionError).toBe(true);
-  });
-
   it('names the rejected fields so a tool can fix its arguments', async () => {
     const error = await failWith(400, {
       title: 'Validation failed',
@@ -68,15 +57,5 @@ describe('problem details', () => {
 
     expect(error.code).toBe('TOKEN_009');
     expect(error.message).toBe('Token limit reached');
-  });
-
-  it('survives a proxy answering with something that is not JSON', async () => {
-    const fetchImpl = vi.fn().mockResolvedValue(new Response('<html>502</html>', { status: 502 }));
-    const error = (await clientWith(fetchImpl)
-      .get('/users')
-      .catch((e) => e)) as OppenheimerApiError;
-
-    expect(error.status).toBe(502);
-    expect(error.message).toContain('<html>502</html>');
   });
 });

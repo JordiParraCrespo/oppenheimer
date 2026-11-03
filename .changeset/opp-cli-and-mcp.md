@@ -1,6 +1,7 @@
 ---
 "@oppenheimer/cli": minor
 "@oppenheimer/mcp": minor
+"@oppenheimer/http-client": minor
 "@oppenheimer/api": minor
 "@oppenheimer/shared": minor
 "@oppenheimer/api-client": minor
@@ -19,6 +20,9 @@ Oppenheimer over the API (`product/next-steps/0.6-mcp-cli-and-agent.md`).
   Streamable HTTP, offered only when the credential's scopes cover them.
   Built from the Flama boilerplate's `mcp` plugin; a blank variable in the
   environment now reads as unset.
+- `@oppenheimer/http-client`: new. The transport both clients call the API
+  through (`HttpClient`, `HttpTransportError`) and `readProblem`, which reads
+  a failed answer's problem document once for both.
 - `@oppenheimer/api`: `POST /v1/sessions/{id}/prompt` types a follow-up
   prompt into a session's agent for a person's credential (`sessions:write`),
   the command the bots already use, logged as `{ kind: 'person', userId }`,

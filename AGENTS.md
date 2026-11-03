@@ -49,6 +49,7 @@ apps/        api (NestJS control plane) · web (Vite + TanStack Router console)
              cli (`opp`, commander) · mcp (MCP server, stdio + Streamable HTTP)
 packages/    shared (Zod schemas, types, CASL, scope + flag catalogs, the link protocol)
              auth (Better Auth config) · env (root .env loader) · tsconfig
+             http-client (the transport cli and mcp call the API through)
              translations (i18n JSON)
              backend/  agents authz cache core ddd email i18n llm queue storage
              frontend/ core (kernel) · consumer (the console's domain) · web (platform kit)
@@ -66,6 +67,7 @@ translations → web, frontend/web, api (email copy via backend/i18n)
 design-system/web → web, web-showcase, frontend/web
 api-client → frontend/core, frontend/consumer · frontend/core → every frontend package, web
 frontend/consumer, frontend/web → web · go/core → every go module · go/* → runner
+http-client → cli, mcp
 ```
 
 Each app and package has a `README.md` (purpose, exports, usage) and an
