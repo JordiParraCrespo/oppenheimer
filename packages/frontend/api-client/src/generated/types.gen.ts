@@ -1649,6 +1649,21 @@ export type SessionAgentReportResponseDto = {
     title: string | null;
 };
 
+export type SessionNoticeResponseDto = {
+    /**
+     * The runner’s id for this notice.
+     */
+    id: string;
+    /**
+     * What the agent said, in its own words: data, not instructions.
+     */
+    text: string;
+    /**
+     * When the host logged it.
+     */
+    at: string;
+};
+
 export type SessionResponseDto = {
     id: string;
     organizationId: string;
@@ -1736,6 +1751,10 @@ export type SessionResponseDto = {
      * What the agent itself last said it is doing (OSC 7501): why it is blocked, how far along it is, its message. Null when the state was read off its screen.
      */
     agentReport: SessionAgentReportResponseDto | null;
+    /**
+     * The last line the agent sent you (`runner sessions notify`), kept until the session closes. The Inbox shows it until you mark it done.
+     */
+    notice: SessionNoticeResponseDto | null;
     createdAt: string;
     updatedAt: string;
 };
@@ -2219,7 +2238,7 @@ export type AutomationTriggerResponseDto = {
     /**
      * `schedule`, or the catalog event (`pr_opened`, `push`, `mail_received`, `issue_created`, …).
      */
-    event: 'schedule' | 'pr_opened' | 'pr_draft' | 'pr_sync' | 'pr_merged' | 'comment' | 'push' | 'issue_labeled' | 'check_failed' | 'issue_opened' | 'mention' | 'release' | 'mail_received' | 'issue_created' | 'issue_regressed' | 'issue_escalating' | 'alert_triggered';
+    event: 'schedule' | 'pr_opened' | 'pr_draft' | 'pr_sync' | 'pr_merged' | 'comment' | 'push' | 'issue_labeled' | 'check_failed' | 'issue_opened' | 'mention' | 'release' | 'check_passed' | 'review' | 'mail_received' | 'issue_created' | 'issue_regressed' | 'issue_escalating' | 'alert_triggered';
     schedule?: ScheduleResponseDto;
     /**
      * GitHub: the repositories it listens on.
@@ -2349,7 +2368,7 @@ export type CreateAutomationRequest = {
         timezone: string;
     } | {
         source: 'github';
-        event: 'pr_opened' | 'pr_draft' | 'pr_sync' | 'pr_merged' | 'comment' | 'push' | 'issue_labeled' | 'check_failed' | 'issue_opened' | 'mention' | 'release';
+        event: 'pr_opened' | 'pr_draft' | 'pr_sync' | 'pr_merged' | 'comment' | 'push' | 'issue_labeled' | 'check_failed' | 'issue_opened' | 'mention' | 'release' | 'check_passed' | 'review';
         repositories: Array<number>;
         filter: {
             op: 'any';
@@ -2387,7 +2406,7 @@ export type CreateAutomationRequest = {
 
 export type PreviewTriggerRequest = {
     source: 'github';
-    event: 'pr_opened' | 'pr_draft' | 'pr_sync' | 'pr_merged' | 'comment' | 'push' | 'issue_labeled' | 'check_failed' | 'issue_opened' | 'mention' | 'release';
+    event: 'pr_opened' | 'pr_draft' | 'pr_sync' | 'pr_merged' | 'comment' | 'push' | 'issue_labeled' | 'check_failed' | 'issue_opened' | 'mention' | 'release' | 'check_passed' | 'review';
     repositories: Array<number>;
     filter: {
         op: 'any';
@@ -2439,7 +2458,7 @@ export type UpdateAutomationRequest = {
         timezone: string;
     } | {
         source: 'github';
-        event: 'pr_opened' | 'pr_draft' | 'pr_sync' | 'pr_merged' | 'comment' | 'push' | 'issue_labeled' | 'check_failed' | 'issue_opened' | 'mention' | 'release';
+        event: 'pr_opened' | 'pr_draft' | 'pr_sync' | 'pr_merged' | 'comment' | 'push' | 'issue_labeled' | 'check_failed' | 'issue_opened' | 'mention' | 'release' | 'check_passed' | 'review';
         repositories: Array<number>;
         filter: {
             op: 'any';
@@ -4087,6 +4106,14 @@ export type BotSubagentRunResponseDto = {
     inputTokens: number;
     outputTokens: number;
     /**
+     * How much of its input it read from the prompt cache.
+     */
+    cacheReadTokens?: number;
+    /**
+     * How much of its input it wrote to the prompt cache.
+     */
+    cacheWriteTokens?: number;
+    /**
      * How long it ran, in milliseconds.
      */
     durationMs: number;
@@ -4274,6 +4301,69 @@ export type BotGoalResponseDto = {
 
 export type BotGoalStateResponseDto = {
     goal: BotGoalResponseDto | null;
+};
+
+export type BotUsageModelResponseDto = {
+    /**
+     * Every token sent, cached or not.
+     */
+    inputTokens: number;
+    outputTokens: number;
+    /**
+     * How much of the input was read from the prompt cache.
+     */
+    cacheReadTokens: number;
+    /**
+     * How much of the input was written to the prompt cache.
+     */
+    cacheWriteTokens: number;
+    provider: 'anthropic' | 'glm' | 'openai' | 'chatgpt' | 'xai';
+    model: string;
+    /**
+     * The turns that ran on this model.
+     */
+    turns: number;
+};
+
+export type BotUsageBackgroundResponseDto = {
+    /**
+     * Every token sent, cached or not.
+     */
+    inputTokens: number;
+    outputTokens: number;
+    /**
+     * How much of the input was read from the prompt cache.
+     */
+    cacheReadTokens: number;
+    /**
+     * How much of the input was written to the prompt cache.
+     */
+    cacheWriteTokens: number;
+    /**
+     * Why the bot called its model outside a turn: a goal's review, the conversation's summary, or a review of the owner's rules.
+     */
+    purpose: 'goal_review' | 'summary' | 'rule_review';
+    calls: number;
+};
+
+export type BotUsageResponseDto = {
+    /**
+     * When the chat's first turn was sent; null before one. Clearing the chat starts again.
+     */
+    since: string | null;
+    /**
+     * The turns that ran, whatever they ended as.
+     */
+    turns: number;
+    /**
+     * How long they worked, summed, in milliseconds.
+     */
+    activeMs: number;
+    /**
+     * Its turns by model, most spent first.
+     */
+    models: Array<BotUsageModelResponseDto>;
+    background: Array<BotUsageBackgroundResponseDto>;
 };
 
 export type BotApprovalResponseDto = {
@@ -4592,7 +4682,7 @@ export type VoiceStatusResponseDto = {
 
 export type InboxMarkResponseDto = {
     /**
-     * The occurrence: `session:<id>:<observedSince>`, `approval:<id>`, `pull:<repoId>#<number>@<sha>` or `run:<id>`.
+     * The occurrence: `session:<id>:<observedSince>`, `approval:<id>`, `pull:<repoId>#<number>@<sha>`, `run:<id>` or `notice:<sessionId>:<noticeId>`.
      */
     itemKey: string;
     mark: 'done' | 'low' | 'snoozed' | 'deleted';
@@ -14734,6 +14824,38 @@ export type FindBotGoalResponses = {
 };
 
 export type FindBotGoalResponse = FindBotGoalResponses[keyof FindBotGoalResponses];
+
+export type FindBotUsageData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/bots/{id}/usage';
+};
+
+export type FindBotUsageErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * BOTS_001 — Bot not found
+     */
+    404: ProblemDetailsDto;
+};
+
+export type FindBotUsageError = FindBotUsageErrors[keyof FindBotUsageErrors];
+
+export type FindBotUsageResponses = {
+    200: BotUsageResponseDto;
+};
+
+export type FindBotUsageResponse = FindBotUsageResponses[keyof FindBotUsageResponses];
 
 export type StreamBotData = {
     body?: never;
