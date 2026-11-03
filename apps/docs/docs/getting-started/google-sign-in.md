@@ -18,6 +18,7 @@ provider on.
 | --------------------- | -------------------------------------------------- | ------------------------------------------------------------------------- |
 | Provider registration | `apps/api/src/auth/infrastructure/better-auth.config.ts`                        | Adds `socialProviders.google` **only** when both env vars are set         |
 | Callback route        | Better Auth                                        | Serves `${BETTER_AUTH_URL}/api/auth/callback/google`                      |
+| Account chooser       | `apps/api/src/auth/infrastructure/better-auth.config.ts` (`prompt`)            | Sets `prompt: 'select_account'`, so Google always asks which account instead of reusing the last one |
 | Name mapping          | `apps/api/src/auth/infrastructure/better-auth.config.ts` (`splitName`)          | Splits Google's `name` into the app's `firstName` / `lastName`            |
 | Capability detection  | `apps/api/src/capabilities/capabilities.module.ts` | Resolves `google_oauth` from config at boot, logs it, serves it over HTTP |
 | Capability endpoint   | `GET /api/v1/health/capabilities`                  | Tells clients whether the provider is configured                          |
@@ -223,9 +224,7 @@ silently.
 
 ## Optional tweaks
 
-The `google` entry already sets `prompt: 'select_account'`, so Google always
-shows its account chooser instead of silently reusing the last account. The
-rest go on the `google` entry in `apps/api/src/auth/infrastructure/better-auth.config.ts`:
+All of these go on the `google` entry in `apps/api/src/auth/infrastructure/better-auth.config.ts`:
 
 | Option                     | Effect                                                               |
 | -------------------------- | -------------------------------------------------------------------- |
