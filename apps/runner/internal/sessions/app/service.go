@@ -534,6 +534,43 @@ func (s *Service) ReportFirstPrompts() {
 	}
 }
 
+// FindTeleported is the poll loop's step for a session that continues a
+// cloud one: Claude Code names the teleported conversation itself, so the
+// newest transcript in the session's folder since the agent opened it is
+// taken as the session's conversation, and kept. From then on the chat
+// view, question detection and the status line read it by that name, as
+// they read any other session's.
+func (s *Service) FindTeleported() {
+	if s.transcripts == nil {
+		return
+	}
+	s.mu.Lock()
+	var waiting []domain.Session
+	for _, session := range s.sessions {
+		if session.State.Live() && session.Launch.Teleport != "" && session.Launch.Conversation == "" {
+			waiting = append(waiting, session.Clone())
+		}
+	}
+	s.mu.Unlock()
+	for _, session := range waiting {
+		since := session.Launch.TeleportSince
+		if since.IsZero() {
+			since = session.Created
+		}
+		conversation := s.transcripts.Teleported(session.Agent, session.Cwd(), since)
+		if conversation == "" {
+			continue
+		}
+		s.commit(session.ID, func(cur domain.Session, known bool) (domain.Session, bool) {
+			if !known || cur.Launch.Teleport == "" || cur.Launch.Conversation != "" {
+				return cur, false
+			}
+			cur.Launch.Conversation = conversation
+			return cur, true
+		})
+	}
+}
+
 // promptReported records that the control plane has a session's first
 // message, so no pass offers it again, in this process or the next.
 func (s *Service) promptReported(id string) {
@@ -577,6 +614,12 @@ func (s *Service) Restart(ctx context.Context, id string) (domain.Session, error
 	// conversation already holds it, and sending it again would ask for the
 	// same work twice.
 	session.Launch.Server = s.agentServer(session.Agent, session.Launch.Server, session.Cwd())
+	// `--continue` may reopen a teleported conversation under a name of its
+	// own, so it is looked for again from now (FindTeleported).
+	if session.Launch.Teleport != "" {
+		session.Launch.Conversation = ""
+		session.Launch.TeleportSince = s.now().UTC()
+	}
 	launch := session.Launch
 	launch.Resume = true
 	launch.StatusLine = s.statusLine

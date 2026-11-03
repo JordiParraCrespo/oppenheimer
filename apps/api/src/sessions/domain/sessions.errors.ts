@@ -377,4 +377,14 @@ export const SessionErrors = {
     message: 'ChatGPT is limiting how often the host may list Codex environments',
     httpStatus: 429,
   },
+  /**
+   * Continuing a cloud session on a host (`teleport`) whose live runner did
+   * not name `session.teleport`: it would drop the cloud session's id and
+   * start an empty conversation instead.
+   */
+  TELEPORT_UNSUPPORTED_BY_RUNNER: {
+    code: 'SESSIONS_048',
+    message: "This host's runner cannot continue a cloud session",
+    httpStatus: 409,
+  },
 } as const satisfies Record<string, ErrorDefinition>;

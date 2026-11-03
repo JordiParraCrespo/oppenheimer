@@ -631,6 +631,7 @@ describe('CreateSessionCommandHandler', () => {
         permission: 'auto',
         effort: 'high',
         environment: null,
+        teleport: null,
       });
     });
 
@@ -653,6 +654,7 @@ describe('CreateSessionCommandHandler', () => {
         permission: 'ask',
         effort: null,
         environment: null,
+        teleport: null,
       });
     });
 

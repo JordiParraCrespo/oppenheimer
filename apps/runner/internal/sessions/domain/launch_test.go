@@ -255,6 +255,21 @@ func containsValue(args []string, value string) bool {
 // An agent the catalog gives no way to reopen a conversation restarts the way
 // it always did: a fresh conversation and the first task sent again. The one
 // thing it must never do is offer an id that already exists.
+// A session that continues a cloud one starts with its branch and history,
+// and a restart reopens what that left: replaying `--teleport` would pull the
+// cloud session over the work done here, and `--resume <session id>` names a
+// conversation Claude Code never created.
+func TestATeleportContinuesTheCloudSessionAndARestartReopensIt(t *testing.T) {
+	launch := Launch{Permission: "auto", Teleport: "session_01KpKLr7hb6j4zoBFARRi2ZM", Conversation: "8b1f4c8e-2f0a-4f43-9b51-2b8f8c0c6d11"}
+	if want := []string{"--permission-mode", "auto", "--teleport", "session_01KpKLr7hb6j4zoBFARRi2ZM"}; !reflect.DeepEqual(launch.Args(AgentClaude), want) {
+		t.Fatalf("argv = %q, want %q", launch.Args(AgentClaude), want)
+	}
+	launch.Resume = true
+	if want := []string{"--permission-mode", "auto", "--continue"}; !reflect.DeepEqual(launch.Args(AgentClaude), want) {
+		t.Fatalf("resumed argv = %q, want %q", launch.Args(AgentClaude), want)
+	}
+}
+
 func TestResumeFallsBackForAnAgentThatCannotReopen(t *testing.T) {
 	const id = "17a57597-65a4-4517-84e3-b4010c7b8ed9"
 	resumed := Launch{Conversation: id, Prompt: "Do the thing.", Resume: true}.Args(AgentShell)

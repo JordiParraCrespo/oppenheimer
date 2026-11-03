@@ -307,7 +307,8 @@ func (h *linkHandler) capabilities() []string {
 		link.CapabilitySessionImage, link.CapabilitySessionCreateImages, link.CapabilitySessionFiles,
 		link.CapabilityRepositoryPrepare, link.CapabilitySessionFolder, link.CapabilityFsList,
 		link.CapabilityAttachmentChat, link.CapabilitySessionCloud, link.CapabilitySessionCloudCodex,
-		link.CapabilitySessionWatch, link.CapabilityCodexEnvironments, link.CapabilitySharedPreview,
+		link.CapabilitySessionWatch, link.CapabilityCodexEnvironments, link.CapabilitySessionTeleport,
+		link.CapabilitySharedPreview,
 	}
 	if h.direct != nil {
 		named = append(named, link.CapabilityAttachmentDirect, link.CapabilityAttachmentDirectProof)

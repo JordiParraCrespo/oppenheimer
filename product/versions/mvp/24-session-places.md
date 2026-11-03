@@ -157,7 +157,9 @@ host and then lives on claude.ai/code:
   button then offers Claude's models alone: the API refuses any other agent
   in this place. The row's mark is a
   cloud. The pane has no terminal: the state, *Open in claude.ai*, and
-  `claude --teleport <id>`.
+  `claude --teleport <id>`. Since 2026-11-03 the pane also offers
+  *Continue on a host*: a worktree session on the host the reader picks
+  whose agent runs that command (`next-steps/cloud-agents.md`).
 - **Deleting it.** Nothing of it is on the host, so the API records the
   close whole — the request and `session.closed` — without the host, online
   or not, and the session leaves the console at once. It stays on

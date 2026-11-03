@@ -180,6 +180,27 @@ describe('createSessionSchema', () => {
     ).toBe(false);
   });
 
+  // A teleport continues a conversation the cloud session already holds, so a
+  // first task would be a second one; and only Claude Code's CLI can open it.
+  it('takes a teleport as Claude Code in a worktree of one repository, with no task', () => {
+    const teleport = {
+      hostId: uuid,
+      agent: 'claude-code',
+      checkouts: [{ installationId: otherUuid, githubRepoId: 42 }],
+      teleport: 'session_01KpKLr7hb6j4zoBFARRi2ZM',
+    };
+    expect(createSessionSchema.safeParse(teleport).success).toBe(true);
+    expect(createSessionSchema.safeParse({ ...teleport, prompt: 'Go on' }).success).toBe(false);
+    expect(createSessionSchema.safeParse({ ...teleport, agent: 'codex' }).success).toBe(false);
+    expect(createSessionSchema.safeParse({ ...teleport, cloud: true }).success).toBe(false);
+    expect(
+      createSessionSchema.safeParse({ ...teleport, checkouts: [], folder: '/home/jordi' }).success,
+    ).toBe(false);
+    expect(createSessionSchema.safeParse({ ...teleport, teleport: 'not-a-session' }).success).toBe(
+      false,
+    );
+  });
+
   it('takes a session that names no project: the API lists it in Unassigned', () => {
     expect(
       createSessionSchema.safeParse({

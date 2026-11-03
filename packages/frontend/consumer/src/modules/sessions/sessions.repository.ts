@@ -201,6 +201,7 @@ export function toCreateSessionRequest(input: CreateSessionInput): CreateSession
             : {}),
           ...(input.cloud ? { cloud: true } : {}),
           ...(input.codexEnvironment ? { codexEnvironment: input.codexEnvironment } : {}),
+          ...(input.teleport ? { teleport: input.teleport } : {}),
         }),
     ...(launch && Object.keys(launch).length ? { launch } : {}),
     ...(input.prompt ? { prompt: input.prompt } : {}),

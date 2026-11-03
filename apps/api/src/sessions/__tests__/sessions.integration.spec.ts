@@ -305,6 +305,7 @@ describe('sessions: the log, the fold and the keys (integration)', () => {
               permission: 'auto',
               effort: 'high',
               environment: 'e_6845a1b2c3d4',
+              teleport: 'session_01KpKLr7hb6j4zoBFARRi2ZM',
             },
           },
         },
@@ -338,6 +339,8 @@ describe('sessions: the log, the fold and the keys (integration)', () => {
       expect(row.launchEffort).toBe('high');
       // A Codex cloud session's picked environment, which a create sent again reads.
       expect(row.launchEnvironment).toBe('e_6845a1b2c3d4');
+      // The cloud session a worktree session continues, which a create sent again reads.
+      expect(row.launchTeleport).toBe('session_01KpKLr7hb6j4zoBFARRi2ZM');
       // The observation columns the derived group is computed from.
       expect(row.lastObservedState).toBe('blocked');
       expect(row.reportHash).toBe('abc123');
@@ -352,6 +355,7 @@ describe('sessions: the log, the fold and the keys (integration)', () => {
         permission: 'auto',
         effort: 'high',
         environment: 'e_6845a1b2c3d4',
+        teleport: 'session_01KpKLr7hb6j4zoBFARRi2ZM',
       });
     });
 

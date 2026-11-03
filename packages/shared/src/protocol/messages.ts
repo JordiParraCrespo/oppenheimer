@@ -131,6 +131,12 @@ export const RUNNER_CAPABILITIES = [
    */
   'session.cloud.codex',
   /**
+   * Takes a `session.create` whose launch names a cloud session to continue
+   * (`launch.teleport`): the agent starts with `claude --teleport <id>` in the
+   * new worktree, and a restart reopens that conversation with `--continue`.
+   */
+  'session.teleport',
+  /**
    * Answers `codex.environments.list` with `codex.environments`: the Codex
    * cloud environments the host's ChatGPT account has, for the composer's
    * picker, and takes `session.create`'s `codexEnvironment`. A runner without

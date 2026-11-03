@@ -7,6 +7,7 @@ import (
 	"context"
 	"errors"
 	"io"
+	"time"
 
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/domain"
 )
@@ -260,6 +261,12 @@ type Transcripts interface {
 	// result in the transcript yet, as the decision it asks (29-inbox,
 	// slice 4); false when there is none, or no transcript to read.
 	OpenQuestion(agent domain.Agent, conversation string) (domain.Decision, bool)
+	// Teleported is the conversation an agent opened in dir on or after
+	// since, by the name its CLI gave it: what a session that continues a
+	// cloud one reads its transcript by, since the CLI names a teleported
+	// conversation itself. "" while there is none yet, and for an agent whose
+	// transcripts this runner cannot read.
+	Teleported(agent domain.Agent, dir string, since time.Time) string
 }
 
 // ChatBatch is a run of transcript entries for the chat view, each one the

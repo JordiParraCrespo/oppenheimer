@@ -80,6 +80,7 @@ const (
 	CapabilityPortForward           = "port.forward"
 	CapabilitySessionCloud          = "session.cloud"
 	CapabilitySessionCloudCodex     = "session.cloud.codex"
+	CapabilitySessionTeleport       = "session.teleport"
 	CapabilityCodexEnvironments     = "codex.environments"
 	CapabilitySessionWatch          = "session.watch"
 	CapabilityWhatsapp              = "whatsapp"
@@ -452,6 +453,7 @@ type LaunchOptions struct {
 	Effort       string `json:"effort,omitempty"`
 	Conversation string `json:"conversation,omitempty"`
 	Resume       bool   `json:"resume,omitempty"`
+	Teleport     string `json:"teleport,omitempty"`
 }
 
 // SessionCreateImages is SessionCreate.Images.

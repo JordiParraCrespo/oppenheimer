@@ -421,6 +421,10 @@
             },
             "resume": {
               "type": "boolean"
+            },
+            "teleport": {
+              "type": "string",
+              "pattern": "^session_[A-Za-z0-9]{8,64}$"
             }
           }
         },
@@ -2285,6 +2289,7 @@
       "port.forward",
       "session.cloud",
       "session.cloud.codex",
+      "session.teleport",
       "codex.environments",
       "session.watch",
       "whatsapp",

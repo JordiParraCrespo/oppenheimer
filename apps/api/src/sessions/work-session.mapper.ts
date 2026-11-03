@@ -2,7 +2,7 @@ import { posix } from 'node:path';
 import { Injectable } from '@nestjs/common';
 import { toPageMeta } from '@oppenheimer/backend-core';
 import type { Mapper } from '@oppenheimer/backend-ddd';
-import { type SessionDecision, sessionDecisionSchema } from '@oppenheimer/shared';
+import type { SessionDecision } from '@oppenheimer/shared';
 import type { HostFolderListing } from './application/host-folders.port';
 import type { SessionCheckoutOrmEntity } from './database/session-checkout.orm-entity';
 import type { SessionCloudRunOrmEntity } from './database/session-cloud-run.orm-entity';
@@ -12,6 +12,7 @@ import { encodeSessionListCursor } from './domain/session-list-cursor.policy';
 import {
   launchPermissionFor,
   readAgentReport,
+  readDecision,
   readNotice,
   readSharedFiles,
   readWatchedPulls,
@@ -72,6 +73,7 @@ export class WorkSessionMapper
     record.launchPermission = fold.launch.permission;
     record.launchEffort = fold.launch.effort;
     record.launchEnvironment = fold.launch.environment;
+    record.launchTeleport = fold.launch.teleport;
     record.closeRequestedAt = fold.closeRequest?.requestedAt ?? null;
     record.closeAcceptsUnpushedWork = fold.closeRequest?.acceptUnpushedWork ?? false;
     record.closeRefusalCode = fold.closeRefusal?.code ?? null;
@@ -118,16 +120,6 @@ export class WorkSessionMapper
     for (const checkout of checkouts)
       session.attachCheckout(SessionCheckoutMapper.toDomain(checkout));
     return session;
-  }
-
-  /**
-   * The stored decision, read back through its schema: a `jsonb` value is only as
-   * typed as whatever wrote it, and one this build cannot read is no decision.
-   */
-  decisionOf(value: unknown): SessionDecision | null {
-    if (value === null || value === undefined) return null;
-    const parsed = sessionDecisionSchema.safeParse(value);
-    return parsed.success ? parsed.data : null;
   }
 
   /** One row of the recent-folders aggregate; the driver returns the `max` as a `Date`. */
@@ -186,6 +178,7 @@ export class WorkSessionMapper
         permission: launchPermissionFor(record.agent, record.launchPermission),
         effort: record.launchEffort,
         environment: record.launchEnvironment,
+        teleport: record.launchTeleport,
       },
       projectId: record.projectId,
       closeRequest: record.closeRequestedAt
@@ -197,7 +190,7 @@ export class WorkSessionMapper
       closeRefusal: record.closeRefusalCode
         ? { code: record.closeRefusalCode, detail: record.closeRefusalDetail }
         : null,
-      pendingDecision: this.decisionOf(record.pendingDecision),
+      pendingDecision: readDecision(record.pendingDecision),
       agentReport: readAgentReport(record.agentReport),
       notice: readNotice(record.notice),
       watchedPulls: readWatchedPulls(record.watchedPulls),

@@ -24,6 +24,7 @@ import {
   SESSION_SHARED_FILES_MAX,
   SESSION_WATCHED_PULLS_MAX,
   sessionAgentReportSchema,
+  sessionDecisionSchema,
   sessionNoticeSchema,
   sessionSharedFileSchema,
   sessionWatchedPullSchema,
@@ -202,6 +203,11 @@ export interface SessionLaunchFold {
    * pick, the environment linked to the repository.
    */
   environment: string | null;
+  /**
+   * The Claude Code cloud session this one continues (`claude --teleport`);
+   * null is a conversation of its own.
+   */
+  teleport: string | null;
 }
 
 export interface SessionLogEntry {
@@ -329,7 +335,7 @@ export const INITIAL_SESSION_FOLD: SessionFold = {
   observedSince: null,
   reportHash: null,
   ackedReportHash: null,
-  launch: { model: null, permission: 'ask', effort: null, environment: null },
+  launch: { model: null, permission: 'ask', effort: null, environment: null, teleport: null },
   projectId: null,
   closeRequest: null,
   closeRefusal: null,
@@ -390,6 +396,7 @@ function launchOf(payload: unknown): SessionLaunchFold | null {
     // log records exactly what the create did.
     effort: effortLevelFor(agent, model, stringField(launch, 'effort')),
     environment: stringField(launch, 'environment'),
+    teleport: stringField(launch, 'teleport'),
   };
 }
 
@@ -412,6 +419,16 @@ function decisionOf(payload: unknown): SessionDecision | null {
 function agentReportOf(payload: unknown): SessionAgentReport | null {
   if (typeof payload !== 'object' || payload === null) return null;
   return readAgentReport((payload as { program?: unknown }).program);
+}
+
+/**
+ * The stored decision, read back through its schema: a `jsonb` value is only as
+ * typed as whatever wrote it, and one this build cannot read is no decision.
+ */
+export function readDecision(value: unknown): SessionDecision | null {
+  if (value === null || value === undefined) return null;
+  const parsed = sessionDecisionSchema.safeParse(value);
+  return parsed.success ? parsed.data : null;
 }
 
 /**

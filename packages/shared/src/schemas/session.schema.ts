@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import {
   CODING_AGENT_IDS,
+  canTeleport,
   isHostCloudAgent,
   SESSION_EFFORTS,
   SESSION_PERMISSIONS,
@@ -16,6 +17,7 @@ import {
 import { CLOUD_AGENT_IDS, cloudAgentProviderSchema } from './cloud-agent.schema.js';
 import { paginationSchema } from './pagination.schema.js';
 import {
+  CLOUD_SESSION_ID_PATTERN,
   codexEnvironmentSchema,
   codingAgentSchema,
   displayNameSchema,
@@ -128,6 +130,9 @@ export { hostPathSchema };
  */
 export const MAX_SESSION_CHECKOUTS = 5;
 
+/** A Claude Code cloud session's id, as claude.ai/code and `claude --teleport` name it. */
+export const cloudSessionIdSchema = z.string().regex(CLOUD_SESSION_ID_PATTERN);
+
 const createSessionFields = z.object({
   hostId: z.string().uuid(),
   agent: codingAgentSchema,
@@ -166,6 +171,15 @@ const createSessionFields = z.object({
    * `cloud` and the agent `codex`.
    */
   codexEnvironment: codexEnvironmentSchema.optional(),
+  /**
+   * Continue a cloud session on the host instead of starting a conversation:
+   * the worktree session's agent is started with the cloud session's branch
+   * and history (`claude --teleport <id>`). An agent with a teleport in the
+   * catalog only (`canTeleport`), in a worktree of the one repository the
+   * cloud session worked on, and with no first task: the conversation holds
+   * it (`product/next-steps/cloud-agents.md`, "Bring it here").
+   */
+  teleport: cloudSessionIdSchema.optional(),
   /** Which checkout the agent is launched inside. Must be one of `checkouts`. */
   cwdGithubRepoId: githubRepoIdSchema.optional(),
   /** The composer's foot row. Absent is `ask` with each agent's own defaults. */
@@ -241,6 +255,16 @@ export const createSessionSchema = createSessionFields
     (value) =>
       value.codexEnvironment === undefined || (value.cloud === true && value.agent === 'codex'),
     { path: ['codexEnvironment'] },
+  )
+  .refine(
+    (value) =>
+      value.teleport === undefined ||
+      (canTeleport(value.agent) &&
+        !value.cloud &&
+        value.checkouts.length === 1 &&
+        value.prompt === undefined &&
+        !value.attachmentIds?.length),
+    { path: ['teleport'] },
   );
 
 export type CreateSessionDto = z.infer<typeof createSessionSchema>;
@@ -274,9 +298,6 @@ export function placeOfCreate(input: Pick<CreateSessionDto, 'folder' | 'cloud'>)
   if (input.folder !== undefined) return 'folder';
   return input.cloud ? 'cloud' : 'worktree';
 }
-
-/** A Claude Code cloud session's id, as claude.ai/code and `claude --teleport` name it. */
-export const cloudSessionIdSchema = z.string().regex(/^session_[A-Za-z0-9]{8,64}$/);
 
 /**
  * What the browser extension saw a cloud session doing on claude.ai, in its own
