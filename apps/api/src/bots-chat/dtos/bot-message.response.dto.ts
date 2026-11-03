@@ -20,6 +20,8 @@ import {
   type BotRoutineActivity,
   type BotSessionEventState,
   type BotSubagentStatus,
+  PULL_REQUEST_WAKE_EVENTS,
+  type PullRequestWakeEvent,
 } from '@oppenheimer/shared';
 import { BotAttachmentResponseDto } from './bot-attachment.response.dto';
 import { BotTurnResponseDto } from './bot-turn.response.dto';
@@ -313,6 +315,30 @@ export class BotSessionEventResponseDto {
   match?: BotSessionMatchResponseDto | null;
 }
 
+/** A pull request the bot follows woke it (`27-bot-subscriptions.md` §7). */
+export class BotPullRequestEventResponseDto {
+  @ApiProperty({ enum: ['pull_request'] })
+  kind!: 'pull_request';
+
+  @ApiProperty({ format: 'uuid', description: 'The subscription that woke the bot.' })
+  subscriptionId!: string;
+
+  @ApiProperty({ description: "GitHub's repository id, as a string: it is a bigint." })
+  githubRepoId!: string;
+
+  @ApiProperty({ description: '`owner/name`, as it was when the bot watched it.' })
+  repository!: string;
+
+  @ApiProperty({ description: 'The pull request number.' })
+  number!: number;
+
+  @ApiProperty({
+    enum: PULL_REQUEST_WAKE_EVENTS,
+    description: "What happened on it, from GitHub's metadata; never anyone's words.",
+  })
+  event!: PullRequestWakeEvent;
+}
+
 export class BotGoalEventResponseDto {
   @ApiProperty({ enum: ['goal'] })
   kind!: 'goal';
@@ -393,6 +419,7 @@ export type BotMessageEventResponseDto =
   | BotPeerMessageEventResponseDto
   | BotPeerReplyEventResponseDto
   | BotSessionEventResponseDto
+  | BotPullRequestEventResponseDto
   | BotGoalEventResponseDto
   | BotLoopEventResponseDto;
 
@@ -404,6 +431,7 @@ export type BotMessageEventResponseDto =
   BotPeerMessageEventResponseDto,
   BotPeerReplyEventResponseDto,
   BotSessionEventResponseDto,
+  BotPullRequestEventResponseDto,
   BotGoalEventResponseDto,
   BotLoopEventResponseDto,
 )
@@ -437,6 +465,7 @@ export class BotMessageResponseDto {
       { $ref: getSchemaPath(BotPeerMessageEventResponseDto) },
       { $ref: getSchemaPath(BotPeerReplyEventResponseDto) },
       { $ref: getSchemaPath(BotSessionEventResponseDto) },
+      { $ref: getSchemaPath(BotPullRequestEventResponseDto) },
       { $ref: getSchemaPath(BotGoalEventResponseDto) },
       { $ref: getSchemaPath(BotLoopEventResponseDto) },
     ],

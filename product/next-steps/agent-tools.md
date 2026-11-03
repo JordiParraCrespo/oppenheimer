@@ -134,9 +134,8 @@ command is taught to every agent by `runner --skill`
   not block the next. A session that stopped or closed, or takes no input
   here (a cloud session), drops it.
 - **Not yet.** The console does not show what a session watches, nor a
-  wake in its chat beyond the prompt it typed. A bot subscription to a pull
-  request (`../versions/mvp/27-bot-subscriptions.md` §7) can wake through
-  the same events.
+  wake in its chat beyond the prompt it typed. A bot follows a pull request
+  through the same events (§6).
 
 ## 4. Wake later (built 2026-11-02)
 
@@ -199,6 +198,33 @@ its pending approvals reached the Inbox.
   with the Bot icon, Later, Open chat (the bot's chat) and Done.
 - **Not yet.** The bot's chat does not show its notice, and a notice does
   not reach a phone (as §2's).
+
+## 6. Bots watch a pull request (built 2026-11-03)
+
+- **What it is.** §3's wake, for a bot instead of a session's agent: a
+  bot subscription of kind `pull_request`
+  (`../versions/mvp/27-bot-subscriptions.md` §7.1), made with
+  `watch_pull_request { repository: "owner/name" | id, number, purpose? }`
+  and undone with `unwatch_pull_request`; `list_watches` lists it beside
+  the sessions the bot follows.
+- **Who may.** Only a repository the workspace's usable GitHub
+  installations let the bot's owner read, and only an open pull request,
+  both read as the owner when the watch is made.
+- **What wakes it.** §3's events, on that repository id and number in the
+  event's workspace: `check_failed`, `check_passed`, `review`, `comment`,
+  `pr_merged`. The list is one, `PULL_REQUEST_WAKE_EVENTS` in
+  `packages/shared`, so a session and a bot are woken by the same things.
+  Our own app's events wake nobody.
+- **The wake.** One queued turn of the bot per event and subscription, in
+  the background lane, keyed by the stored event so a redelivery is one
+  turn. Its words are §3's, from the same pure helper
+  (`github/domain/github-pull-event.policy.ts`, `pullEventPhrase`): only
+  the event's metadata, each field held to what GitHub allows, never a
+  comment's or a review's words; the bot is told to read those with
+  `get_pull_request`. A merge is the last wake. Twenty wakes end it.
+- **Not yet.** A pull request closed without a merge makes no event, so it
+  does not end the watch; nor does the console list a bot's watches
+  (27 §9, slice B).
 
 ## 7. Bots see shared files (built 2026-11-03)
 

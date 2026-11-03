@@ -3544,6 +3544,10 @@ export type PullRequestCommentDto = {
     side: 'LEFT' | 'RIGHT';
     body: string;
     author: string;
+    /**
+     * Whether the author is the repository’s owner, a member or a collaborator (false: anyone else); null when GitHub did not say.
+     */
+    authorIsInsider?: boolean | null;
     createdAt: string;
 };
 
@@ -3554,6 +3558,10 @@ export type PullRequestActivityItemDto = {
      * A GitHub login; a commit’s author name.
      */
     author: string;
+    /**
+     * For a comment or a review: whether its author is the repository’s owner, a member or a collaborator (false: anyone else); null when GitHub did not say or for a commit or event.
+     */
+    authorIsInsider?: boolean | null;
     at: string;
     /**
      * Markdown, or a commit message.
@@ -4022,6 +4030,30 @@ export type BotSessionEventResponseDto = {
     match?: BotSessionMatchResponseDto | null;
 };
 
+export type BotPullRequestEventResponseDto = {
+    kind: 'pull_request';
+    /**
+     * The subscription that woke the bot.
+     */
+    subscriptionId: string;
+    /**
+     * GitHub's repository id, as a string: it is a bigint.
+     */
+    githubRepoId: string;
+    /**
+     * `owner/name`, as it was when the bot watched it.
+     */
+    repository: string;
+    /**
+     * The pull request number.
+     */
+    number: number;
+    /**
+     * What happened on it, from GitHub's metadata; never anyone's words.
+     */
+    event: 'check_failed' | 'check_passed' | 'review' | 'comment' | 'pr_merged';
+};
+
 export type BotGoalEventResponseDto = {
     kind: 'goal';
     /**
@@ -4182,7 +4214,7 @@ export type BotMessageResponseDto = {
     /**
      * What an event says happened, by `kind`; null on every other role.
      */
-    event: BotApprovalEventResponseDto | BotQuestionEventResponseDto | BotRoutineEventResponseDto | BotPeerMessageEventResponseDto | BotPeerReplyEventResponseDto | BotSessionEventResponseDto | BotGoalEventResponseDto | BotLoopEventResponseDto | null;
+    event: BotApprovalEventResponseDto | BotQuestionEventResponseDto | BotRoutineEventResponseDto | BotPeerMessageEventResponseDto | BotPeerReplyEventResponseDto | BotSessionEventResponseDto | BotPullRequestEventResponseDto | BotGoalEventResponseDto | BotLoopEventResponseDto | null;
     /**
      * The images a message of yours carries, in the order attached; read each from `GET /bots/:id/attachments/:attachmentId/content`. Empty on every other role.
      */

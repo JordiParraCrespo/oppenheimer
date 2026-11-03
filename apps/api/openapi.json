@@ -33832,6 +33832,11 @@
           "author": {
             "type": "string"
           },
+          "authorIsInsider": {
+            "type": "boolean",
+            "nullable": true,
+            "description": "Whether the author is the repository’s owner, a member or a collaborator (false: anyone else); null when GitHub did not say."
+          },
           "createdAt": {
             "type": "string",
             "format": "date-time"
@@ -33865,6 +33870,11 @@
           "author": {
             "type": "string",
             "description": "A GitHub login; a commit’s author name."
+          },
+          "authorIsInsider": {
+            "type": "boolean",
+            "nullable": true,
+            "description": "For a comment or a review: whether its author is the repository’s owner, a member or a collaborator (false: anyone else); null when GitHub did not say or for a commit or event."
           },
           "at": {
             "type": "string",
@@ -35205,6 +35215,53 @@
           "state"
         ]
       },
+      "BotPullRequestEventResponseDto": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "pull_request"
+            ]
+          },
+          "subscriptionId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The subscription that woke the bot."
+          },
+          "githubRepoId": {
+            "type": "string",
+            "description": "GitHub's repository id, as a string: it is a bigint."
+          },
+          "repository": {
+            "type": "string",
+            "description": "`owner/name`, as it was when the bot watched it."
+          },
+          "number": {
+            "type": "number",
+            "description": "The pull request number."
+          },
+          "event": {
+            "type": "string",
+            "enum": [
+              "check_failed",
+              "check_passed",
+              "review",
+              "comment",
+              "pr_merged"
+            ],
+            "description": "What happened on it, from GitHub's metadata; never anyone's words."
+          }
+        },
+        "required": [
+          "kind",
+          "subscriptionId",
+          "githubRepoId",
+          "repository",
+          "number",
+          "event"
+        ]
+      },
       "BotGoalEventResponseDto": {
         "type": "object",
         "properties": {
@@ -35540,6 +35597,9 @@
               },
               {
                 "$ref": "#/components/schemas/BotSessionEventResponseDto"
+              },
+              {
+                "$ref": "#/components/schemas/BotPullRequestEventResponseDto"
               },
               {
                 "$ref": "#/components/schemas/BotGoalEventResponseDto"

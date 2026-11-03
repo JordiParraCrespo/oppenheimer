@@ -15,7 +15,14 @@ describe('timelineItemOf', () => {
         { event: 'commented', id: 7, user: { login: 'ana' }, body: 'LGTM', created_at: 't1' },
         0,
       ),
-    ).toEqual({ kind: 'comment', id: 'comment:7', login: 'ana', body: 'LGTM', at: 't1' });
+    ).toEqual({
+      kind: 'comment',
+      id: 'comment:7',
+      login: 'ana',
+      insider: null,
+      body: 'LGTM',
+      at: 't1',
+    });
     expect(
       timelineItemOf(
         {
@@ -50,10 +57,46 @@ describe('timelineItemOf', () => {
       kind: 'review',
       id: 'review:9',
       login: 'bo',
+      insider: null,
       state: 'approved',
       body: '',
       at: 't3',
     });
+  });
+
+  // What breaks this: a comment from a stranger read as a collaborator's, so
+  // the bot is not told whose words could be a prompt injection.
+  it("says whether a comment's or a review's author is part of the repository", () => {
+    const by = (association: string) =>
+      timelineItemOf(
+        {
+          event: 'commented',
+          id: 1,
+          user: { login: 'x' },
+          body: '',
+          created_at: 't',
+          author_association: association,
+        },
+        0,
+      );
+    expect(by('OWNER')).toMatchObject({ insider: true });
+    expect(by('MEMBER')).toMatchObject({ insider: true });
+    expect(by('COLLABORATOR')).toMatchObject({ insider: true });
+    expect(by('CONTRIBUTOR')).toMatchObject({ insider: false });
+    expect(by('FIRST_TIME_CONTRIBUTOR')).toMatchObject({ insider: false });
+    expect(by('NONE')).toMatchObject({ insider: false });
+    expect(
+      timelineItemOf(
+        {
+          event: 'reviewed',
+          id: 2,
+          user: { login: 'y' },
+          state: 'COMMENTED',
+          author_association: 'NONE',
+        },
+        0,
+      ),
+    ).toMatchObject({ kind: 'review', insider: false });
   });
 
   it('names who a review was asked of, and who merged', () => {

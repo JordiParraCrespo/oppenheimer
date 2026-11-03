@@ -64,6 +64,7 @@ export type {
   BotPermissionRuleDto,
   BotPermissionsResponseDto,
   BotPlanWindowDto,
+  BotPullRequestEventResponseDto,
   BotQuestionAnswerResponseDto,
   BotQuestionEventResponseDto,
   BotQuestionItemResponseDto,
