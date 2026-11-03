@@ -22,17 +22,23 @@ export function rateLimitData(limit: BotRateLimit): string {
   return JSON.stringify({ system: limit.system, resetAt: limit.resetAt.toISOString() });
 }
 
-/** The limit a call's data stored, or null when it holds none or holds it malformed. */
+/** The limit a call's data carried (JSON, as tool data is strings), or null when none or malformed. */
 export function rateLimitOfData(value: string | undefined): BotRateLimit | null {
   if (!value) return null;
   try {
-    const parsed = JSON.parse(value) as { system?: unknown; resetAt?: unknown };
-    if (typeof parsed.system !== 'string' || typeof parsed.resetAt !== 'string') return null;
-    const resetAt = new Date(parsed.resetAt);
-    return Number.isNaN(resetAt.getTime()) ? null : { system: parsed.system, resetAt };
+    return rateLimitOfRecord(JSON.parse(value));
   } catch {
     return null;
   }
+}
+
+/** A limit stored as `{ system, resetAt }` with the time as ISO, or null when it is not one. */
+export function rateLimitOfRecord(value: unknown): BotRateLimit | null {
+  if (!value || typeof value !== 'object') return null;
+  const { system, resetAt } = value as { system?: unknown; resetAt?: unknown };
+  if (typeof system !== 'string' || typeof resetAt !== 'string') return null;
+  const at = new Date(resetAt);
+  return Number.isNaN(at.getTime()) ? null : { system, resetAt: at };
 }
 
 /** The later of two limits' ends: a turn that met two waits for both. */

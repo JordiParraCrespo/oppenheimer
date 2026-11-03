@@ -35002,6 +35002,24 @@
           "durationMs"
         ]
       },
+      "BotToolStepRateLimitResponseDto": {
+        "type": "object",
+        "properties": {
+          "system": {
+            "type": "string",
+            "description": "The system limiting our requests (\"Gmail\", \"GitHub\")."
+          },
+          "resetAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "When it may be called again."
+          }
+        },
+        "required": [
+          "system",
+          "resetAt"
+        ]
+      },
       "BotToolStepResponseDto": {
         "type": "object",
         "properties": {
@@ -35048,6 +35066,16 @@
             "additionalProperties": true,
             "nullable": true,
             "description": "The draft a mail call saved in Gmail (`saved`, `draftId`, `link`, `mail`: the message as planned); null for any other call."
+          },
+          "rateLimit": {
+            "nullable": true,
+            "description": "The system that was limiting our requests when the call ended, and until when: the chat draws the step as a wait, not a failure. Null when no limit stopped it.",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/BotToolStepRateLimitResponseDto"
+              }
+            ]
           }
         },
         "required": [
@@ -35059,7 +35087,8 @@
           "sessionId",
           "subagents",
           "allowedBy",
-          "mailDraft"
+          "mailDraft",
+          "rateLimit"
         ]
       },
       "BotAttachmentResponseDto": {

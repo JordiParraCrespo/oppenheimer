@@ -428,6 +428,11 @@ it one:
   goal's decision is staged on the outbox for that time instead of now
   (`availableAt`). A continuation queued at once would only meet the limit
   again and spend one of the goal's turns doing it.
+- **The chat draws it as a wait** (2026-11-03). The step keeps its limit
+  (`bot_message.steps[].rateLimit`, `{ system, resetAt }`), and its line
+  has a clock and "Gmail limit · until 10:02" in the line's own colour, not
+  the red "failed"; a group of calls counts it out of its "N failed". An
+  exported chat marks it the same way.
 
 ### 4.1 Itself
 | Tool | Does | Default |
