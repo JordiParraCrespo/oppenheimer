@@ -93,20 +93,27 @@ export function botHistory(
  * them, as it moves the prefix anyway.
  */
 function historyStart(costs: readonly number[], left: number): number {
-  let rest = costs.reduce((sum, cost) => sum + cost, 0);
+  const before = [0];
+  for (const cost of costs) before.push(before[before.length - 1] + cost);
+  const rest = (start: number) => before[costs.length] - before[start];
   let start = 0;
-  while (start < costs.length && rest > left) {
-    let block = 0;
-    while (
-      start < costs.length &&
-      (block === 0 || block + costs[start] <= BOT_HISTORY_BLOCK_TOKENS)
-    ) {
-      block += costs[start];
-      rest -= costs[start];
-      start += 1;
-    }
-  }
+  while (start < costs.length && rest(start) > left) start = blockEnd(costs, start);
   return start;
+}
+
+/**
+ * Where the block that opens at `start` ends: the messages from there that
+ * fit `BOT_HISTORY_BLOCK_TOKENS` together, or the one at `start` when it is
+ * larger on its own.
+ */
+function blockEnd(costs: readonly number[], start: number): number {
+  let end = start + 1;
+  let block = costs[start];
+  while (end < costs.length && block + costs[end] <= BOT_HISTORY_BLOCK_TOKENS) {
+    block += costs[end];
+    end += 1;
+  }
+  return end;
 }
 
 /** One stored message as the history entry a turn is sent. */
