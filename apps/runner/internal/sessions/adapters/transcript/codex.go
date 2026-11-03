@@ -224,6 +224,8 @@ type codexChat struct {
 
 func (c *codexChat) quiet(time.Duration, int) [][]byte { return nil }
 
+func (c *codexChat) holds() bool { return false }
+
 func (c *codexChat) line(raw []byte, _ int) [][]byte {
 	c.lines++
 	var line codexLine

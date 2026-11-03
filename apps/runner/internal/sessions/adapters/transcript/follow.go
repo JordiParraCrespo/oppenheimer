@@ -95,6 +95,9 @@ type chatTranscriber interface {
 	// for since: a reply an agent writes in pieces is whole only when the
 	// pieces stop.
 	quiet(since time.Duration, max int) [][]byte
+	// holds is whether it still holds lines read for a later quiet: the
+	// history has not all been sent while it does.
+	holds() bool
 }
 
 // lineByLine is the transcriber of a file whose every line is complete and
@@ -109,6 +112,8 @@ func (l lineByLine) line(raw []byte, max int) [][]byte {
 }
 
 func (lineByLine) quiet(time.Duration, int) [][]byte { return nil }
+
+func (lineByLine) holds() bool { return false }
 
 // follower is one conversation's read position.
 type follower struct {
@@ -254,9 +259,7 @@ func (f *follower) check() {
 		if !f.reset {
 			f.queue(f.t.quiet(time.Since(f.grew), f.entryMax))
 		}
-		if f.history != historySent {
-			f.history = historyRead
-		}
+		f.readTo(true)
 		f.flush()
 		return
 	}
@@ -274,14 +277,13 @@ func (f *follower) check() {
 	}
 	f.offset += int64(len(chunk))
 	f.grew = time.Now()
-	if f.history != historySent && f.offset >= info.Size() {
-		f.history = historyRead
-	}
+	atEnd := f.offset >= info.Size()
 	data := append(append([]byte(nil), f.partial...), chunk...)
 	end := bytes.LastIndexByte(data, '\n')
 	if end < 0 {
 		// A line still being written is left for the next check.
 		f.partial = data
+		f.readTo(atEnd)
 		if f.reset || f.history == historyRead {
 			f.flush()
 		}
@@ -291,7 +293,17 @@ func (f *follower) check() {
 	for _, line := range bytes.Split(data[:end], []byte{'\n'}) {
 		f.queue(f.t.line(line, f.entryMax))
 	}
+	f.readTo(atEnd)
 	f.flush()
+}
+
+// readTo notes a read of the history that reached the transcript's end,
+// once the transcriber holds nothing back for a later quiet: what it holds
+// is history still to send.
+func (f *follower) readTo(atEnd bool) {
+	if atEnd && f.history != historySent && !f.t.holds() {
+		f.history = historyRead
+	}
 }
 
 // queue holds entries for the next batch, leaving out one over entryMax.
