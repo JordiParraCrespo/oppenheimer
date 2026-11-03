@@ -13,7 +13,15 @@ import { BotUsageReport } from '../components/bot-usage-report';
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
     t: (key: string, options?: Record<string, unknown>) =>
-      options ? `${key}:${options.count ?? options.tokens ?? options.calls ?? ''}` : key,
+      options
+        ? `${key}:${[
+            options.count ?? options.tokens ?? options.calls,
+            options.model,
+            options.percent,
+          ]
+            .filter((value) => value !== undefined)
+            .join(' ')}`
+        : key,
     i18n: { resolvedLanguage: 'en', language: 'en' },
   }),
   initReactI18next: { type: '3rdParty', init: () => {} },
@@ -61,7 +69,7 @@ describe('BotUsageReport', () => {
     expect(screen.getByText(/bots\.chat\.usage\.input:4\.1K/)).toBeTruthy();
     expect(screen.getByText(/bots\.chat\.usage\.cacheRead:22\.8M/)).toBeTruthy();
     expect(screen.getByText(/bots\.chat\.usage\.cacheWrite:543\.1K/)).toBeTruthy();
-    expect(screen.getByText(/model-placeholder 100%/)).toBeTruthy();
+    expect(screen.getByText(/bots\.chat\.usage\.modelShare:model-placeholder 100/)).toBeTruthy();
     expect(screen.getByText(/bots\.chat\.usage\.includes/)).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'common.close' }));
     expect(onClose).toHaveBeenCalled();

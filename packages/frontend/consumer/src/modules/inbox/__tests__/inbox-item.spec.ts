@@ -391,3 +391,37 @@ describe('inboxSubject: what an occurrence is an occurrence of', () => {
     expect(inboxSubject('run:r1')).toBe('run:r1');
   });
 });
+
+describe('composeInbox: what an agent told you', () => {
+  const told = (id: string, noticeId: string, minutesAgo: number) =>
+    new SessionEntity({
+      ...session(id, { state: 'working' }),
+      notice: { id: noticeId, text: 'Tests pass.', at: at(minutesAgo) },
+    });
+
+  it('lists a notice from a session that needs nothing else, by when it came', () => {
+    const view = composeInbox(
+      sources({ sessions: [told('s1', 'n1', 3), session('s2', { observedSince: at(1) })] }),
+      [],
+      NOW,
+    );
+    expect(view.open.map((item) => item.key)).toEqual([
+      'notice:s1:n1',
+      expect.stringMatching(/^session:s2:/),
+    ]);
+    expect(view.open[0]).toMatchObject({ kind: 'notice', since: at(3), projectIds: ['p-app'] });
+  });
+
+  // The regression: a notice keyed by its session alone, so marking one done
+  // hid every notice the agent sent after it.
+  it('brings the next notice back after the last one was marked done', () => {
+    const done = [mark('notice:s1:n1', 'done')];
+    expect(composeInbox(sources({ sessions: [told('s1', 'n1', 3)] }), done, NOW).open).toEqual([]);
+    expect(
+      composeInbox(sources({ sessions: [told('s1', 'n2', 1)] }), done, NOW).open.map(
+        (item) => item.key,
+      ),
+    ).toEqual(['notice:s1:n2']);
+    expect(inboxSubject('notice:s1:n2')).toBe('notice:s1');
+  });
+});

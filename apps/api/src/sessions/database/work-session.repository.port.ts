@@ -126,6 +126,17 @@ export interface WorkSessionRepositoryPort {
   findUnresolvedOnHostForSystem(hostId: string): Promise<WorkSessionEntity[]>;
 
   /**
+   * The open sessions in a workspace whose agent asked to be woken by this pull
+   * request (`pull.watched`), for a GitHub event on it. No person scopes a
+   * webhook; the workspace is the event's.
+   */
+  findWatchingPullForSystem(
+    organizationId: string,
+    githubRepoId: string,
+    number: number,
+  ): Promise<WorkSessionEntity[]>;
+
+  /**
    * How many sessions are running on each of these hosts, by the same rule.
    * The hosts were read under the caller's scope before they got here, and the
    * answer is a count, never a row. A host with none is absent from the map.

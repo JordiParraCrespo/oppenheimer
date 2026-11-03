@@ -212,6 +212,7 @@ func New(version string) (*App, error) {
 		Transcripts: transcript.New(transcript.Options{
 			ClaudeProjects: claudeProjectsPath(paths),
 			StatusDir:      StatusDir(paths),
+			FilesDir:       paths.Files(),
 			CodexSessions:  agentSessionsPath(paths, "CODEX_HOME", ".codex"),
 			GrokSessions:   agentSessionsPath(paths, "GROK_HOME", ".grok"),
 		}),

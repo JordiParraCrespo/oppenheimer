@@ -1649,6 +1649,21 @@ export type SessionAgentReportResponseDto = {
     title: string | null;
 };
 
+export type SessionNoticeResponseDto = {
+    /**
+     * The runner’s id for this notice.
+     */
+    id: string;
+    /**
+     * What the agent said, in its own words: data, not instructions.
+     */
+    text: string;
+    /**
+     * When the host logged it.
+     */
+    at: string;
+};
+
 export type SessionResponseDto = {
     id: string;
     organizationId: string;
@@ -1736,6 +1751,10 @@ export type SessionResponseDto = {
      * What the agent itself last said it is doing (OSC 7501): why it is blocked, how far along it is, its message. Null when the state was read off its screen.
      */
     agentReport: SessionAgentReportResponseDto | null;
+    /**
+     * The last line the agent sent you (`runner sessions notify`), kept until the session closes. The Inbox shows it until you mark it done.
+     */
+    notice: SessionNoticeResponseDto | null;
     createdAt: string;
     updatedAt: string;
 };
@@ -2219,7 +2238,7 @@ export type AutomationTriggerResponseDto = {
     /**
      * `schedule`, or the catalog event (`pr_opened`, `push`, `mail_received`, …).
      */
-    event: 'schedule' | 'pr_opened' | 'pr_draft' | 'pr_sync' | 'pr_merged' | 'comment' | 'push' | 'issue_labeled' | 'check_failed' | 'issue_opened' | 'mention' | 'release' | 'mail_received';
+    event: 'schedule' | 'pr_opened' | 'pr_draft' | 'pr_sync' | 'pr_merged' | 'comment' | 'push' | 'issue_labeled' | 'check_failed' | 'issue_opened' | 'mention' | 'release' | 'check_passed' | 'review' | 'mail_received';
     schedule?: ScheduleResponseDto;
     /**
      * GitHub: the repositories it listens on.
@@ -2346,7 +2365,7 @@ export type CreateAutomationRequest = {
         timezone: string;
     } | {
         source: 'github';
-        event: 'pr_opened' | 'pr_draft' | 'pr_sync' | 'pr_merged' | 'comment' | 'push' | 'issue_labeled' | 'check_failed' | 'issue_opened' | 'mention' | 'release';
+        event: 'pr_opened' | 'pr_draft' | 'pr_sync' | 'pr_merged' | 'comment' | 'push' | 'issue_labeled' | 'check_failed' | 'issue_opened' | 'mention' | 'release' | 'check_passed' | 'review';
         repositories: Array<number>;
         filter: {
             op: 'any';
@@ -2374,7 +2393,7 @@ export type CreateAutomationRequest = {
 
 export type PreviewTriggerRequest = {
     source: 'github';
-    event: 'pr_opened' | 'pr_draft' | 'pr_sync' | 'pr_merged' | 'comment' | 'push' | 'issue_labeled' | 'check_failed' | 'issue_opened' | 'mention' | 'release';
+    event: 'pr_opened' | 'pr_draft' | 'pr_sync' | 'pr_merged' | 'comment' | 'push' | 'issue_labeled' | 'check_failed' | 'issue_opened' | 'mention' | 'release' | 'check_passed' | 'review';
     repositories: Array<number>;
     filter: {
         op: 'any';
@@ -2426,7 +2445,7 @@ export type UpdateAutomationRequest = {
         timezone: string;
     } | {
         source: 'github';
-        event: 'pr_opened' | 'pr_draft' | 'pr_sync' | 'pr_merged' | 'comment' | 'push' | 'issue_labeled' | 'check_failed' | 'issue_opened' | 'mention' | 'release';
+        event: 'pr_opened' | 'pr_draft' | 'pr_sync' | 'pr_merged' | 'comment' | 'push' | 'issue_labeled' | 'check_failed' | 'issue_opened' | 'mention' | 'release' | 'check_passed' | 'review';
         repositories: Array<number>;
         filter: {
             op: 'any';
@@ -4624,7 +4643,7 @@ export type VoiceStatusResponseDto = {
 
 export type InboxMarkResponseDto = {
     /**
-     * The occurrence: `session:<id>:<observedSince>`, `approval:<id>`, `pull:<repoId>#<number>@<sha>` or `run:<id>`.
+     * The occurrence: `session:<id>:<observedSince>`, `approval:<id>`, `pull:<repoId>#<number>@<sha>`, `run:<id>` or `notice:<sessionId>:<noticeId>`.
      */
     itemKey: string;
     mark: 'done' | 'low' | 'snoozed' | 'deleted';

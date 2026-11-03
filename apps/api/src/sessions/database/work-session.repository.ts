@@ -429,6 +429,28 @@ export class WorkSessionRepository
     return records.map((record) => this.mapper.toDomain(record, checkouts.get(record.id) ?? []));
   }
 
+  async findWatchingPullForSystem(
+    organizationId: string,
+    githubRepoId: string,
+    number: number,
+  ): Promise<WorkSessionEntity[]> {
+    const records = await this.unscopedQuery(
+      'a GitHub event wakes the sessions that watch its pull request, and a webhook has no person to scope by',
+    )
+      .where('session.organizationId = :organizationId', { organizationId })
+      .andWhere(`session.watchedPulls <> '[]'::jsonb`)
+      .andWhere('session.watchedPulls @> :pull::jsonb', {
+        pull: JSON.stringify([{ githubRepoId, number }]),
+      })
+      .andWhere('session.state = :open', { open: 'open' })
+      .andWhere('session.stoppedAt IS NULL')
+      .orderBy('session.createdAt', 'ASC')
+      .getMany();
+    if (records.length === 0) return [];
+    const checkouts = await this.checkouts.findForSessions(records.map((record) => record.id));
+    return records.map((record) => this.mapper.toDomain(record, checkouts.get(record.id) ?? []));
+  }
+
   async countRunningByHost(hostIds: readonly string[]): Promise<Map<string, number>> {
     if (hostIds.length === 0) return new Map();
     const rows: { hostId: string; count: string }[] = await this.running(
@@ -598,7 +620,8 @@ export class WorkSessionRepository
                 "closeRequestedAt" = $18, "closeAcceptsUnpushedWork" = $19,
                 "closeRefusalCode" = $20, "closeRefusalDetail" = $21,
                 "pendingDecision" = $22::jsonb, "launchEnvironment" = $23,
-                "agentReport" = $24::jsonb,
+                "agentReport" = $24::jsonb, "notice" = $25::jsonb,
+                "watchedPulls" = $26::jsonb,
                 "updatedAt" = now()
           WHERE "id" = $1`,
         [
@@ -626,6 +649,8 @@ export class WorkSessionRepository
           record.pendingDecision === null ? null : JSON.stringify(record.pendingDecision),
           record.launchEnvironment,
           record.agentReport === null ? null : JSON.stringify(record.agentReport),
+          record.notice === null ? null : JSON.stringify(record.notice),
+          JSON.stringify(record.watchedPulls ?? []),
         ],
       );
       await this.turns.writeChanged(manager, session);
