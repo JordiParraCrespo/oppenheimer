@@ -2234,19 +2234,22 @@ export type AutomationTriggerResponseDto = {
      * The card’s place in the editor, from 0.
      */
     position: number;
-    source: 'schedule' | 'github' | 'gmail';
+    source: 'schedule' | 'github' | 'gmail' | 'sentry';
     /**
-     * `schedule`, or the catalog event (`pr_opened`, `push`, `mail_received`, …).
+     * `schedule`, or the catalog event (`pr_opened`, `push`, `mail_received`, `issue_created`, …).
      */
-    event: 'schedule' | 'pr_opened' | 'pr_draft' | 'pr_sync' | 'pr_merged' | 'comment' | 'push' | 'issue_labeled' | 'check_failed' | 'issue_opened' | 'mention' | 'release' | 'check_passed' | 'review' | 'mail_received';
+    event: 'schedule' | 'pr_opened' | 'pr_draft' | 'pr_sync' | 'pr_merged' | 'comment' | 'push' | 'issue_labeled' | 'check_failed' | 'issue_opened' | 'mention' | 'release' | 'check_passed' | 'review' | 'mail_received' | 'issue_created' | 'issue_regressed' | 'issue_escalating' | 'alert_triggered';
     schedule?: ScheduleResponseDto;
     /**
      * GitHub: the repositories it listens on.
      */
     repositories?: Array<string>;
+    /**
+     * GitHub: the branch or label filter. Sentry: the project slug (an alert’s rule name).
+     */
     filter?: TriggerFilterResponseDto;
     /**
-     * Gmail: the connected account it watches.
+     * Gmail: the connected account it watches. Sentry: the workspace’s Sentry connection.
      */
     connectionId?: string;
     /**
@@ -2378,6 +2381,16 @@ export type CreateAutomationRequest = {
         event: 'mail_received';
         connectionId: string;
         query?: string | null;
+    } | {
+        source: 'sentry';
+        event: 'issue_created' | 'issue_regressed' | 'issue_escalating' | 'alert_triggered';
+        connectionId: string;
+        filter: {
+            op: 'any';
+        } | {
+            op: 'equals';
+            value: string;
+        };
     }>;
     prompt: string;
     agent: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'shell' | 'cursor';
@@ -2458,6 +2471,16 @@ export type UpdateAutomationRequest = {
         event: 'mail_received';
         connectionId: string;
         query?: string | null;
+    } | {
+        source: 'sentry';
+        event: 'issue_created' | 'issue_regressed' | 'issue_escalating' | 'alert_triggered';
+        connectionId: string;
+        filter: {
+            op: 'any';
+        } | {
+            op: 'equals';
+            value: string;
+        };
     }>;
     prompt?: string;
     agent?: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'shell' | 'cursor';
@@ -3062,6 +3085,37 @@ export type ScheduledMailResponseDto = {
      * The bot that scheduled it; null once that bot is deleted.
      */
     botId: string | null;
+};
+
+export type SentryConnectionResponseDto = {
+    id: string;
+    /**
+     * The Sentry organization slug
+     */
+    organizationSlug: string;
+    /**
+     * The client secret’s last four characters
+     */
+    secretHint: string;
+    /**
+     * Where the internal integration sends its webhooks: paste it into Sentry as the Webhook URL
+     */
+    webhookUrl: string;
+    createdAt: string;
+    updatedAt: string;
+};
+
+export type SentryStatusResponseDto = {
+    /**
+     * Whether this server can keep a client secret (`SENTRY_CONNECTION_KEY`). False: connecting answers SENTRY_001.
+     */
+    configured: boolean;
+    connection: SentryConnectionResponseDto | null;
+};
+
+export type PutSentryConnectionRequest = {
+    organizationSlug: string;
+    clientSecret: string;
 };
 
 export type WhatsappAccountResponseDto = {
@@ -12507,6 +12561,100 @@ export type CancelScheduledMailResponses = {
 };
 
 export type CancelScheduledMailResponse = CancelScheduledMailResponses[keyof CancelScheduledMailResponses];
+
+export type RemoveSentryConnectionData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/sentry/connection';
+};
+
+export type RemoveSentryConnectionErrors = {
+    /**
+     * TENANT_001 — No active workspace
+     */
+    400: ProblemDetailsDto;
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+};
+
+export type RemoveSentryConnectionError = RemoveSentryConnectionErrors[keyof RemoveSentryConnectionErrors];
+
+export type RemoveSentryConnectionResponses = {
+    204: void;
+};
+
+export type RemoveSentryConnectionResponse = RemoveSentryConnectionResponses[keyof RemoveSentryConnectionResponses];
+
+export type FindSentryConnectionData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/sentry/connection';
+};
+
+export type FindSentryConnectionErrors = {
+    /**
+     * TENANT_001 — No active workspace
+     */
+    400: ProblemDetailsDto;
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+};
+
+export type FindSentryConnectionError = FindSentryConnectionErrors[keyof FindSentryConnectionErrors];
+
+export type FindSentryConnectionResponses = {
+    200: SentryStatusResponseDto;
+};
+
+export type FindSentryConnectionResponse = FindSentryConnectionResponses[keyof FindSentryConnectionResponses];
+
+export type PutSentryConnectionData = {
+    body: PutSentryConnectionRequest;
+    path?: never;
+    query?: never;
+    url: '/api/v1/sentry/connection';
+};
+
+export type PutSentryConnectionErrors = {
+    /**
+     * TENANT_001 — No active workspace
+     */
+    400: ProblemDetailsDto;
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * SENTRY_001 — Sentry triggers are not configured on this server
+     */
+    503: ProblemDetailsDto;
+};
+
+export type PutSentryConnectionError = PutSentryConnectionErrors[keyof PutSentryConnectionErrors];
+
+export type PutSentryConnectionResponses = {
+    200: SentryStatusResponseDto;
+};
+
+export type PutSentryConnectionResponse = PutSentryConnectionResponses[keyof PutSentryConnectionResponses];
 
 export type FindWhatsappAccountsData = {
     body?: never;

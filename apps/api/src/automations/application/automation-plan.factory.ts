@@ -13,6 +13,9 @@ import { MailErrors } from '../../mail/domain/mail.errors';
 import { FindGmailConnectionQuery } from '../../mail/queries/find-gmail-connection/find-gmail-connection.query';
 import type { ProjectLookupPort } from '../../projects/application/project-lookup.port';
 import { PROJECT_LOOKUP } from '../../projects/projects.di-tokens';
+import { SentryErrors } from '../../sentry/domain/sentry.errors';
+import type { SentryStatusResponseDto } from '../../sentry/dtos/sentry-connection.response.dto';
+import { FindSentryConnectionQuery } from '../../sentry/queries/find-sentry-connection/find-sentry-connection.query';
 import type { AutomationRepository, AutomationTriggerProps } from '../domain/automation.types';
 import { automationAgentSupported } from '../domain/automation-agent.policy';
 import { AutomationErrors } from '../domain/automations.errors';
@@ -95,10 +98,20 @@ export class AutomationPlanFactory {
   }
 
   /**
-   * Each mail trigger watches one of the owner's own connected Gmail accounts,
-   * and an active one: a routine never reads someone else's mailbox.
+   * Each trigger that watches a connection watches one the caller may use:
+   * one of their own active Gmail accounts, this workspace's Sentry
+   * connection. The one check a save runs for every connection-shaped source.
    */
-  async assertMailAccounts(scope: AccessScope, inputs: readonly TriggerInputDto[]): Promise<void> {
+  async assertConnections(scope: AccessScope, inputs: readonly TriggerInputDto[]): Promise<void> {
+    await this.assertMailAccounts(scope, inputs);
+    await this.assertSentryConnection(scope, inputs);
+  }
+
+  /** A routine never reads someone else's mailbox. */
+  private async assertMailAccounts(
+    scope: AccessScope,
+    inputs: readonly TriggerInputDto[],
+  ): Promise<void> {
     for (const input of inputs) {
       if (input.source !== 'gmail') continue;
       const connection = await this.queryBus
@@ -117,6 +130,27 @@ export class AutomationPlanFactory {
           detail: `No connected Gmail account of yours has the id ${input.connectionId}`,
         });
       }
+    }
+  }
+
+  /** An automation never fires on another workspace's Sentry organization. */
+  private async assertSentryConnection(
+    scope: AccessScope,
+    inputs: readonly TriggerInputDto[],
+  ): Promise<void> {
+    const named = inputs.flatMap((input) =>
+      input.source === 'sentry' ? [input.connectionId] : [],
+    );
+    if (named.length === 0) return;
+    const { connection } = await this.queryBus.execute<
+      FindSentryConnectionQuery,
+      SentryStatusResponseDto
+    >(new FindSentryConnectionQuery({ scope }));
+    const stranger = named.find((id) => id !== connection?.id);
+    if (stranger) {
+      throw new AppError(SentryErrors.NOT_CONNECTED, {
+        detail: `This workspace's Sentry connection is not ${stranger}`,
+      });
     }
   }
 

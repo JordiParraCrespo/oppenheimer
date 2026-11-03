@@ -54,6 +54,7 @@ import { Route as AuthenticatedSettingsMailRouteImport } from './routes/_authent
 import { Route as AuthenticatedSettingsModelProvidersRouteImport } from './routes/_authenticated/settings/model-providers'
 import { Route as AuthenticatedSettingsProfileRouteImport } from './routes/_authenticated/settings/profile'
 import { Route as AuthenticatedSettingsRepositoriesRouteImport } from './routes/_authenticated/settings/repositories'
+import { Route as AuthenticatedSettingsSentryRouteImport } from './routes/_authenticated/settings/sentry'
 import { Route as AuthenticatedSettingsWhatsappRouteImport } from './routes/_authenticated/settings/whatsapp'
 import { Route as AuthenticatedAutomationsBotsBotIdRouteImport } from './routes/_authenticated/automations_.bots.$botId'
 import { Route as AuthenticatedBotsBotIdSettingsRouteImport } from './routes/_authenticated/bots_.$botId.settings'
@@ -315,6 +316,12 @@ const AuthenticatedSettingsRepositoriesRoute =
     path: '/repositories',
     getParentRoute: () => AuthenticatedSettingsRoute,
   } as any)
+const AuthenticatedSettingsSentryRoute =
+  AuthenticatedSettingsSentryRouteImport.update({
+    id: '/sentry',
+    path: '/sentry',
+    getParentRoute: () => AuthenticatedSettingsRoute,
+  } as any)
 const AuthenticatedSettingsWhatsappRoute =
   AuthenticatedSettingsWhatsappRouteImport.update({
     id: '/whatsapp',
@@ -478,6 +485,7 @@ export interface FileRoutesByFullPath {
   '/settings/model-providers': typeof AuthenticatedSettingsModelProvidersRoute
   '/settings/profile': typeof AuthenticatedSettingsProfileRoute
   '/settings/repositories': typeof AuthenticatedSettingsRepositoriesRoute
+  '/settings/sentry': typeof AuthenticatedSettingsSentryRoute
   '/settings/whatsapp': typeof AuthenticatedSettingsWhatsappRoute
   '/onboarding/': typeof AuthOnboardingIndexRoute
   '/automations/': typeof AuthenticatedAutomationsIndexRoute
@@ -538,6 +546,7 @@ export interface FileRoutesByTo {
   '/settings/model-providers': typeof AuthenticatedSettingsModelProvidersRoute
   '/settings/profile': typeof AuthenticatedSettingsProfileRoute
   '/settings/repositories': typeof AuthenticatedSettingsRepositoriesRoute
+  '/settings/sentry': typeof AuthenticatedSettingsSentryRoute
   '/settings/whatsapp': typeof AuthenticatedSettingsWhatsappRoute
   '/onboarding': typeof AuthOnboardingIndexRoute
   '/automations': typeof AuthenticatedAutomationsIndexRoute
@@ -606,6 +615,7 @@ export interface FileRoutesById {
   '/_authenticated/settings/model-providers': typeof AuthenticatedSettingsModelProvidersRoute
   '/_authenticated/settings/profile': typeof AuthenticatedSettingsProfileRoute
   '/_authenticated/settings/repositories': typeof AuthenticatedSettingsRepositoriesRoute
+  '/_authenticated/settings/sentry': typeof AuthenticatedSettingsSentryRoute
   '/_authenticated/settings/whatsapp': typeof AuthenticatedSettingsWhatsappRoute
   '/_auth/onboarding/': typeof AuthOnboardingIndexRoute
   '/_authenticated/automations/': typeof AuthenticatedAutomationsIndexRoute
@@ -673,6 +683,7 @@ export interface FileRouteTypes {
     | '/settings/model-providers'
     | '/settings/profile'
     | '/settings/repositories'
+    | '/settings/sentry'
     | '/settings/whatsapp'
     | '/onboarding/'
     | '/automations/'
@@ -733,6 +744,7 @@ export interface FileRouteTypes {
     | '/settings/model-providers'
     | '/settings/profile'
     | '/settings/repositories'
+    | '/settings/sentry'
     | '/settings/whatsapp'
     | '/onboarding'
     | '/automations'
@@ -800,6 +812,7 @@ export interface FileRouteTypes {
     | '/_authenticated/settings/model-providers'
     | '/_authenticated/settings/profile'
     | '/_authenticated/settings/repositories'
+    | '/_authenticated/settings/sentry'
     | '/_authenticated/settings/whatsapp'
     | '/_auth/onboarding/'
     | '/_authenticated/automations/'
@@ -1158,6 +1171,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSettingsRepositoriesRouteImport
       parentRoute: typeof AuthenticatedSettingsRoute
     }
+    '/_authenticated/settings/sentry': {
+      id: '/_authenticated/settings/sentry'
+      path: '/sentry'
+      fullPath: '/settings/sentry'
+      preLoaderRoute: typeof AuthenticatedSettingsSentryRouteImport
+      parentRoute: typeof AuthenticatedSettingsRoute
+    }
     '/_authenticated/settings/whatsapp': {
       id: '/_authenticated/settings/whatsapp'
       path: '/whatsapp'
@@ -1415,6 +1435,7 @@ interface AuthenticatedSettingsRouteChildren {
   AuthenticatedSettingsModelProvidersRoute: typeof AuthenticatedSettingsModelProvidersRoute
   AuthenticatedSettingsProfileRoute: typeof AuthenticatedSettingsProfileRoute
   AuthenticatedSettingsRepositoriesRoute: typeof AuthenticatedSettingsRepositoriesRoute
+  AuthenticatedSettingsSentryRoute: typeof AuthenticatedSettingsSentryRoute
   AuthenticatedSettingsWhatsappRoute: typeof AuthenticatedSettingsWhatsappRoute
   AuthenticatedSettingsIndexRoute: typeof AuthenticatedSettingsIndexRoute
   AuthenticatedSettingsHostsNewRoute: typeof AuthenticatedSettingsHostsNewRoute
@@ -1430,6 +1451,7 @@ const AuthenticatedSettingsRouteChildren: AuthenticatedSettingsRouteChildren = {
   AuthenticatedSettingsProfileRoute: AuthenticatedSettingsProfileRoute,
   AuthenticatedSettingsRepositoriesRoute:
     AuthenticatedSettingsRepositoriesRoute,
+  AuthenticatedSettingsSentryRoute: AuthenticatedSettingsSentryRoute,
   AuthenticatedSettingsWhatsappRoute: AuthenticatedSettingsWhatsappRoute,
   AuthenticatedSettingsIndexRoute: AuthenticatedSettingsIndexRoute,
   AuthenticatedSettingsHostsNewRoute: AuthenticatedSettingsHostsNewRoute,

@@ -76,3 +76,8 @@ third external source, after GitHub and Gmail.
 - 2026-11-02: slice 2 built: the console reports render throws its route
   and `QueryState` boundaries catch, and query or mutation failures that are
   not a request the server answered; source maps upload at build time.
+- 2026-11-02: slice 3 built. The connection is one per workspace and is
+  managed in Settings → Sentry; the automation editor offers the four Sentry
+  events once it exists. The read endpoint answers `{ configured, connection }`
+  rather than a 404, as cloud agents do. Bot routines can carry a Sentry
+  trigger through the API; the bot's routine tool does not offer one yet.

@@ -137,6 +137,22 @@
     "release": {
       "label": "Release publicada",
       "desc": "Sin incluir pre-releases"
+    },
+    "issue_created": {
+      "label": "Nueva incidencia de Sentry",
+      "desc": "Sentry agrupó un error que no había visto antes"
+    },
+    "issue_regressed": {
+      "label": "Incidencia de Sentry reabierta",
+      "desc": "Una incidencia resuelta volvió a ocurrir"
+    },
+    "issue_escalating": {
+      "label": "Incidencia de Sentry en aumento",
+      "desc": "Una incidencia ocurre mucho más de lo normal"
+    },
+    "alert_triggered": {
+      "label": "Alerta de Sentry disparada",
+      "desc": "Se disparó una regla de alerta de incidencias"
     }
   },
   "trigger": {
@@ -152,7 +168,8 @@
     "more": "{{summary}} +{{count}}",
     "manual": "Solo manual",
     "monFri": "lun–vie",
-    "weekend": "sáb, dom"
+    "weekend": "sáb, dom",
+    "sentryIn": "{{event}} en {{value}}"
   },
   "next": {
     "onEvent": "En el próximo evento",
@@ -315,7 +332,17 @@
     "noMatch": "Nada coincide con «{{query}}».",
     "chooseRepositories": "Elige repositorios…",
     "chooseAgent": "Elige un agente…",
-    "chooseModel": "Elige un modelo…"
+    "chooseModel": "Elige un modelo…",
+    "groupSentry": "Sentry",
+    "connectSentry": "Conecta Sentry en Ajustes primero",
+    "inProject": "en",
+    "forRule": "para la regla",
+    "anyProject": "cualquier proyecto",
+    "anyRule": "cualquier regla",
+    "projectPlaceholder": "Slug del proyecto",
+    "rulePlaceholder": "Nombre de la regla",
+    "sentryWhere": "Se ejecuta en {{repository}}",
+    "sentryWhereNone": "Se ejecuta en el primer repositorio"
   },
   "skipReasonOther": "Omitida",
   "pausedReasonOther": "En pausa. Los disparadores se ignoran hasta que se reanude.",

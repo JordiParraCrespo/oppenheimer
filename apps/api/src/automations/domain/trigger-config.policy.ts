@@ -13,48 +13,65 @@ import type { AutomationTriggerProps } from './automation.types';
  * console, so the API and the editor's "Next run" agree by construction.
  */
 
-/** The stored trigger for one editor card. `position` is the card's order. */
-export function triggerFromInput(input: TriggerInputDto, position: number): AutomationTriggerProps {
-  if (input.source === 'schedule') {
-    const { source: _source, timezone, ...config } = input;
-    return {
-      id: randomUUID(),
-      position,
-      source: 'schedule',
-      eventType: 'schedule',
-      config,
-      timezone,
-      nextFireAt: null,
-    };
-  }
-  if (input.source === 'gmail') {
-    return {
-      id: randomUUID(),
-      position,
-      source: 'gmail',
-      eventType: input.event,
-      config: {
-        connectionId: input.connectionId,
-        filter: input.query ? { op: 'equals', value: input.query } : { op: 'any' },
-      },
-      timezone: null,
-      nextFireAt: null,
-    };
-  }
-  const definition = externalEventDefinition(input.source, input.event);
-  return {
-    id: randomUUID(),
-    position,
-    source: input.source,
+/** An editor card's source, and what a stored trigger of that source holds besides its id and place. */
+type TriggerSource = TriggerInputDto['source'];
+type StoredFields<S extends TriggerSource> = Omit<
+  Extract<AutomationTriggerProps, { source: S }>,
+  'id' | 'position'
+>;
+
+/**
+ * How each source's editor card becomes what is stored: one pure function per
+ * source, so a new source is a row here rather than a branch in
+ * `triggerFromInput`. A source the record does not list fails to compile.
+ */
+const STORED: {
+  [S in TriggerSource]: (input: Extract<TriggerInputDto, { source: S }>) => StoredFields<S>;
+} = {
+  schedule: ({ source: _source, timezone, ...config }) => ({
+    source: 'schedule',
+    eventType: 'schedule',
+    config,
+    timezone,
+    nextFireAt: null,
+  }),
+  github: (input) => ({
+    source: 'github',
     eventType: input.event,
     config: {
       repositories: input.repositories.map(String),
       // An event with nothing to narrow on matches everything, whatever was sent.
-      filter: definition?.filterField ? input.filter : { op: 'any' },
+      filter: externalEventDefinition('github', input.event)?.filterField
+        ? input.filter
+        : { op: 'any' },
     },
     timezone: null,
     nextFireAt: null,
-  };
+  }),
+  gmail: (input) => ({
+    source: 'gmail',
+    eventType: input.event,
+    config: {
+      connectionId: input.connectionId,
+      filter: input.query ? { op: 'equals', value: input.query } : { op: 'any' },
+    },
+    timezone: null,
+    nextFireAt: null,
+  }),
+  sentry: (input) => ({
+    source: 'sentry',
+    eventType: input.event,
+    config: { connectionId: input.connectionId, filter: input.filter },
+    timezone: null,
+    nextFireAt: null,
+  }),
+};
+
+/** The stored trigger for one editor card. `position` is the card's order. */
+export function triggerFromInput(input: TriggerInputDto, position: number): AutomationTriggerProps {
+  // TypeScript cannot pair a union's member with its own row of the record.
+  const stored = STORED[input.source] as (card: TriggerInputDto) => StoredFields<TriggerSource>;
+  return { id: randomUUID(), position, ...stored(input) } as AutomationTriggerProps;
 }
 
 /** The rule a schedule trigger fires by, zone included. */

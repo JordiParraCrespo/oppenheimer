@@ -18,13 +18,15 @@ import {
   type GithubEventType,
   isVendorPlace,
   type ScheduleFrequency,
+  type SentryEventType,
   type TriggerFilter,
 } from '@oppenheimer/shared/automations';
 import { localDate } from './time';
 
 export type ScheduleCard = Extract<TriggerInput, { source: 'schedule' }> & { key: string };
 export type GithubCard = Extract<TriggerInput, { source: 'github' }> & { key: string };
-export type TriggerCard = ScheduleCard | GithubCard;
+export type SentryCard = Extract<TriggerInput, { source: 'sentry' }> & { key: string };
+export type TriggerCard = ScheduleCard | GithubCard | SentryCard;
 
 /**
  * The editor's state apart from the two typed fields (name and prompt, which
@@ -119,6 +121,10 @@ export function draftOf(automation: AutomationEntity): AutomationDraft {
         return [{ ...rule, key: nextKey() }];
       }
       if (trigger.source === 'gmail') return [];
+      if (trigger.source === 'sentry') {
+        const { id: _id, ...card } = trigger;
+        return [{ ...card, key: nextKey() }];
+      }
       return [
         {
           source: 'github',
@@ -174,6 +180,17 @@ export function githubCard(event: GithubEventType, repositories: number[]): Gith
     event,
     repositories,
     filter: defaultFilter(event),
+    key: nextKey(),
+  };
+}
+
+/** A new Sentry card: every project, on the workspace's connection. */
+export function sentryCard(event: SentryEventType, connectionId: string): SentryCard {
+  return {
+    source: 'sentry',
+    event,
+    connectionId,
+    filter: externalEventDefinition('sentry', event)?.defaultFilter ?? { op: 'any' },
     key: nextKey(),
   };
 }

@@ -8,7 +8,13 @@ import {
 } from '@oppenheimer/api-client';
 import { callApi } from '@oppenheimer/frontend-core';
 import { isCodingAgentId } from '@oppenheimer/shared/agents';
-import type { TriggerFilter } from '@oppenheimer/shared/automations';
+import {
+  GITHUB_EVENT_TYPES,
+  type GithubEventType,
+  SENTRY_EVENT_TYPES,
+  type SentryEventType,
+  type TriggerFilter,
+} from '@oppenheimer/shared/automations';
 import { CLOUD_AGENT_IDS } from '@oppenheimer/shared/schemas/cloud-agent';
 import { injectable } from 'inversify';
 import {
@@ -35,13 +41,30 @@ function filterOf(dto: AutomationTriggerResponseDto['filter']): TriggerFilter {
   return dto?.op === 'equals' && dto.value ? { op: 'equals', value: dto.value } : { op: 'any' };
 }
 
+function isGithubEvent(event: string): event is GithubEventType {
+  return (GITHUB_EVENT_TYPES as readonly string[]).includes(event);
+}
+
+function isSentryEvent(event: string): event is SentryEventType {
+  return (SENTRY_EVENT_TYPES as readonly string[]).includes(event);
+}
+
 /** A saved trigger as the console reads it; a kind this client does not know reads as none. */
 export function triggerOf(dto: AutomationTriggerResponseDto): AutomationTrigger | null {
   if (dto.source === 'schedule' && dto.schedule) {
     const { timezone, ...rule } = dto.schedule;
     return { source: 'schedule', id: dto.id, ...rule, timezone, nextFireAt: date(dto.nextFireAt) };
   }
-  if (dto.source === 'github' && dto.event !== 'schedule' && dto.event !== 'mail_received') {
+  if (dto.source === 'sentry' && isSentryEvent(dto.event) && dto.connectionId) {
+    return {
+      source: 'sentry',
+      id: dto.id,
+      event: dto.event,
+      connectionId: dto.connectionId,
+      filter: filterOf(dto.filter),
+    };
+  }
+  if (dto.source === 'github' && isGithubEvent(dto.event)) {
     return {
       source: 'github',
       id: dto.id,
@@ -158,6 +181,14 @@ function toTriggerRequest(trigger: TriggerInput): TriggerRequest {
       ...(trigger.days ? { days: trigger.days } : {}),
       ...(trigger.dayOfMonth !== undefined ? { dayOfMonth: trigger.dayOfMonth } : {}),
       ...(trigger.date ? { date: trigger.date } : {}),
+    };
+  }
+  if (trigger.source === 'sentry') {
+    return {
+      source: 'sentry',
+      event: trigger.event,
+      connectionId: trigger.connectionId,
+      filter: trigger.filter,
     };
   }
   if (trigger.source === 'gmail') {

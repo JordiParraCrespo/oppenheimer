@@ -16524,6 +16524,189 @@
         ]
       }
     },
+    "/api/v1/sentry/connection": {
+      "get": {
+        "description": "Whether this server can connect Sentry at all, and the workspace’s connection: the Sentry organization, the client secret’s last four characters, and the webhook URL its integration posts to. Null when none.",
+        "operationId": "findSentryConnection",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SentryStatusResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "TENANT_001 — No active workspace",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Whether Sentry is connected to the workspace",
+        "tags": [
+          "Sentry"
+        ]
+      },
+      "put": {
+        "description": "Stores the slug and the internal integration’s client secret (sealed, never returned), replacing the workspace’s previous ones; the connection keeps its id. Answers the status, whose connection carries the webhook URL to paste into the integration.",
+        "operationId": "putSentryConnection",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PutSentryConnectionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SentryStatusResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "TENANT_001 — No active workspace",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "SENTRY_001 — Sentry triggers are not configured on this server",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Connect the workspace’s Sentry organization",
+        "tags": [
+          "Sentry"
+        ]
+      },
+      "delete": {
+        "description": "Forgets the slug and the secret. The webhook URL stops answering and Sentry triggers stop firing. No connection does nothing.",
+        "operationId": "removeSentryConnection",
+        "parameters": [],
+        "responses": {
+          "204": {
+            "description": ""
+          },
+          "400": {
+            "description": "TENANT_001 — No active workspace",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Disconnect the workspace’s Sentry organization",
+        "tags": [
+          "Sentry"
+        ]
+      }
+    },
     "/api/v1/whatsapp/accounts": {
       "get": {
         "description": "Every number the caller linked as a WhatsApp device on one of their hosts, oldest first: its name, how its device stands, whether its host is online, and while it pairs, the QR code to scan.",
@@ -29417,7 +29600,8 @@
             "enum": [
               "schedule",
               "github",
-              "gmail"
+              "gmail",
+              "sentry"
             ]
           },
           "event": {
@@ -29437,9 +29621,13 @@
               "release",
               "check_passed",
               "review",
-              "mail_received"
+              "mail_received",
+              "issue_created",
+              "issue_regressed",
+              "issue_escalating",
+              "alert_triggered"
             ],
-            "description": "`schedule`, or the catalog event (`pr_opened`, `push`, `mail_received`, …)."
+            "description": "`schedule`, or the catalog event (`pr_opened`, `push`, `mail_received`, `issue_created`, …)."
           },
           "schedule": {
             "$ref": "#/components/schemas/ScheduleResponseDto"
@@ -29452,12 +29640,17 @@
             }
           },
           "filter": {
-            "$ref": "#/components/schemas/TriggerFilterResponseDto"
+            "description": "GitHub: the branch or label filter. Sentry: the project slug (an alert’s rule name).",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/TriggerFilterResponseDto"
+              }
+            ]
           },
           "connectionId": {
             "type": "string",
             "format": "uuid",
-            "description": "Gmail: the connected account it watches."
+            "description": "Gmail: the connected account it watches. Sentry: the workspace’s Sentry connection."
           },
           "query": {
             "type": "string",
@@ -29968,6 +30161,74 @@
                     "event",
                     "connectionId"
                   ]
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "source": {
+                      "type": "string",
+                      "enum": [
+                        "sentry"
+                      ]
+                    },
+                    "event": {
+                      "type": "string",
+                      "enum": [
+                        "issue_created",
+                        "issue_regressed",
+                        "issue_escalating",
+                        "alert_triggered"
+                      ]
+                    },
+                    "connectionId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "filter": {
+                      "oneOf": [
+                        {
+                          "type": "object",
+                          "properties": {
+                            "op": {
+                              "type": "string",
+                              "enum": [
+                                "any"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "op"
+                          ]
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "op": {
+                              "type": "string",
+                              "enum": [
+                                "equals"
+                              ]
+                            },
+                            "value": {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 200
+                            }
+                          },
+                          "required": [
+                            "op",
+                            "value"
+                          ]
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "source",
+                    "event",
+                    "connectionId",
+                    "filter"
+                  ]
                 }
               ]
             }
@@ -30448,6 +30709,74 @@
                     "source",
                     "event",
                     "connectionId"
+                  ]
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "source": {
+                      "type": "string",
+                      "enum": [
+                        "sentry"
+                      ]
+                    },
+                    "event": {
+                      "type": "string",
+                      "enum": [
+                        "issue_created",
+                        "issue_regressed",
+                        "issue_escalating",
+                        "alert_triggered"
+                      ]
+                    },
+                    "connectionId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "filter": {
+                      "oneOf": [
+                        {
+                          "type": "object",
+                          "properties": {
+                            "op": {
+                              "type": "string",
+                              "enum": [
+                                "any"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "op"
+                          ]
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "op": {
+                              "type": "string",
+                              "enum": [
+                                "equals"
+                              ]
+                            },
+                            "value": {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 200
+                            }
+                          },
+                          "required": [
+                            "op",
+                            "value"
+                          ]
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "source",
+                    "event",
+                    "connectionId",
+                    "filter"
                   ]
                 }
               ]
@@ -32287,6 +32616,88 @@
           "subject",
           "scheduledFor",
           "botId"
+        ]
+      },
+      "SentryConnectionResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "organizationSlug": {
+            "type": "string",
+            "description": "The Sentry organization slug",
+            "example": "acme"
+          },
+          "secretHint": {
+            "type": "string",
+            "description": "The client secret’s last four characters",
+            "example": "9f3a"
+          },
+          "webhookUrl": {
+            "type": "string",
+            "description": "Where the internal integration sends its webhooks: paste it into Sentry as the Webhook URL",
+            "example": "https://console.example.com/api/v1/sentry/webhooks/6f1c…"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "organizationSlug",
+          "secretHint",
+          "webhookUrl",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "SentryStatusResponseDto": {
+        "type": "object",
+        "properties": {
+          "configured": {
+            "type": "boolean",
+            "description": "Whether this server can keep a client secret (`SENTRY_CONNECTION_KEY`). False: connecting answers SENTRY_001."
+          },
+          "connection": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SentryConnectionResponseDto"
+              }
+            ]
+          }
+        },
+        "required": [
+          "configured",
+          "connection"
+        ]
+      },
+      "PutSentryConnectionRequest": {
+        "type": "object",
+        "properties": {
+          "organizationSlug": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64,
+            "pattern": "^[a-z0-9][a-z0-9_-]*$"
+          },
+          "clientSecret": {
+            "type": "string",
+            "minLength": 16,
+            "maxLength": 256
+          }
+        },
+        "required": [
+          "organizationSlug",
+          "clientSecret"
         ]
       },
       "WhatsappAccountResponseDto": {

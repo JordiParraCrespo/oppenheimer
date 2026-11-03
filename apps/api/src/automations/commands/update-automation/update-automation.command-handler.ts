@@ -58,6 +58,7 @@ export class UpdateAutomationCommandHandler
       revision.effort = input.launch.effort ?? null;
     }
     if (input.projectId !== undefined) await this.plan.assertProject(scope, input.projectId);
+    if (input.triggers) await this.plan.assertConnections(scope, input.triggers);
 
     automation.change(
       {

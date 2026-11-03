@@ -239,6 +239,31 @@ describe('the draft', () => {
     expect(toUpdateInput(draft, task, 3)).toMatchObject({ version: 3, launch: {} });
   });
 
+  // Regression: an automation with a Sentry trigger losing it the first time
+  // it is edited and saved from the console.
+  it('keeps a Sentry trigger through an edit, and says it in the table', () => {
+    const sentry = {
+      source: 'sentry' as const,
+      id: 't-9',
+      event: 'issue_created' as const,
+      connectionId: 'c-1',
+      filter: { op: 'equals' as const, value: 'api' },
+    };
+    const draft = draftOf(automation({ triggers: [sentry] }));
+    const task = { name: 'Fix errors', prompt: 'Fix it.' };
+    expect(toCreateInput(draft, task)?.triggers).toEqual([
+      {
+        source: 'sentry',
+        event: 'issue_created',
+        connectionId: 'c-1',
+        filter: { op: 'equals', value: 'api' },
+      },
+    ]);
+    const words = automationTriggerText(automation({ triggers: [sentry] }), 'en', t);
+    expect(words.startsWith('automations.trigger.sentryIn')).toBe(true);
+    expect(words).toContain('"value":"api"');
+  });
+
   it('prefills a new automation from the project it was opened for', () => {
     const projects = [project({ id: 'p-1' }), project({ id: 'p-2', defaultHostId: 'h-2' })];
 

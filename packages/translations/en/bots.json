@@ -491,6 +491,7 @@
       "schedule": "Schedule · {{when}}",
       "github": "GitHub · {{when}}",
       "gmail": "Gmail · {{when}}",
+      "sentry": "Sentry · {{when}}",
       "last": "Last",
       "next": "Next",
       "never": "Never",

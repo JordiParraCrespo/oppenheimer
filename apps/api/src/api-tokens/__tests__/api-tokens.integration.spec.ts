@@ -768,18 +768,23 @@ describe('API tokens & scopes (integration)', () => {
         .get(CommandBus)
         .execute(new UpdateUserCommand({ userId: owner.id, isActive: false }));
 
-      // The relay is woken on commit; give it a moment to deliver.
-      for (let i = 0; i < 50 && (await countSessions()) > 0; i++) {
+      const outboxRows = (): Promise<{ status: string }[]> =>
+        dataSource.query(
+          `SELECT "status" FROM "outbox_message"
+           WHERE "eventName" = 'UserDeactivatedDomainEvent' AND "aggregateId" = $1`,
+          [owner.id],
+        );
+      // The relay is woken on commit; give it a moment to deliver. The
+      // handler deletes the sessions before the relay marks its row
+      // processed, so the wait is for both, not for the first.
+      const delivered = async () =>
+        (await countSessions()) === 0 &&
+        (await outboxRows()).every((row) => row.status === 'processed');
+      for (let i = 0; i < 50 && !(await delivered()); i++) {
         await new Promise((resolve) => setTimeout(resolve, 100));
       }
       expect(await countSessions()).toBe(0);
-
-      const rows: { status: string }[] = await dataSource.query(
-        `SELECT "status" FROM "outbox_message"
-         WHERE "eventName" = 'UserDeactivatedDomainEvent' AND "aggregateId" = $1`,
-        [owner.id],
-      );
-      expect(rows).toEqual([{ status: 'processed' }]);
+      expect(await outboxRows()).toEqual([{ status: 'processed' }]);
     });
   });
 

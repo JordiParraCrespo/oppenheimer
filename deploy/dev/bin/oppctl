@@ -596,7 +596,7 @@ cmd_setup() {
       -e "s|@CONTROL_PLANE_SIGNING_KEY@|$(openssl genpkey -algorithm ed25519 -outform DER | base64 -w0)|"
     )
     local key
-    for key in BETTER_AUTH_SECRET GITHUB_USER_TOKEN_KEY BOTS_PROVIDER_KEY; do
+    for key in BETTER_AUTH_SECRET GITHUB_USER_TOKEN_KEY BOTS_PROVIDER_KEY SENTRY_CONNECTION_KEY; do
       fill+=(-e "s|@$key@|$(openssl rand -base64 32)|")
     done
     sed "${fill[@]}" "$HERE/config/api.env.example" > "$CONFIG/api.env"

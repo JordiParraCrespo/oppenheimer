@@ -25,6 +25,8 @@ import type { ProjectsRepository } from '../modules/projects';
 import { ProjectsModule } from '../modules/projects';
 import type { PullRequestsRepository } from '../modules/pull-requests';
 import { PullRequestsModule } from '../modules/pull-requests';
+import type { SentryRepository } from '../modules/sentry';
+import { SentryModule } from '../modules/sentry';
 import type { SessionsService } from '../modules/sessions';
 import { SessionsModule } from '../modules/sessions';
 import type { TasksRepository } from '../modules/tasks';
@@ -48,6 +50,7 @@ export const consumerModules = [
   TasksModule,
   CalendarModule,
   CloudAgentsModule,
+  SentryModule,
   MailModule,
   WhatsappModule,
   HostsModule,
@@ -133,6 +136,10 @@ export class ConsumerApp {
   /** Coding agents in a vendor's cloud, on the reader's own key for the vendor. */
   get cloudAgents(): CloudAgentsRepository {
     return this.kernel.container.get(TOKENS.CloudAgentsRepository);
+  }
+
+  get sentry(): SentryRepository {
+    return this.kernel.container.get(TOKENS.SentryRepository);
   }
 
   get mail(): MailRepository {

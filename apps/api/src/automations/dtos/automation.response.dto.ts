@@ -13,6 +13,7 @@ import {
   GMAIL_EVENT_TYPES,
   SCHEDULE_FREQUENCIES,
   type ScheduleFrequency,
+  SENTRY_EVENT_TYPES,
   TRIGGER_SOURCES,
   type TriggerSource,
 } from '@oppenheimer/shared/automations';
@@ -124,8 +125,9 @@ export class AutomationTriggerResponseDto {
   // The enum is the contract: a trigger is written only through the catalog
   // (`externalEventDefinition`), so a stored event is always one of these.
   @ApiProperty({
-    enum: ['schedule', ...GITHUB_EVENT_TYPES, ...GMAIL_EVENT_TYPES],
-    description: '`schedule`, or the catalog event (`pr_opened`, `push`, `mail_received`, …).',
+    enum: ['schedule', ...GITHUB_EVENT_TYPES, ...GMAIL_EVENT_TYPES, ...SENTRY_EVENT_TYPES],
+    description:
+      '`schedule`, or the catalog event (`pr_opened`, `push`, `mail_received`, `issue_created`, …).',
   })
   event!: string;
 
@@ -135,10 +137,18 @@ export class AutomationTriggerResponseDto {
   @ApiPropertyOptional({ type: [String], description: 'GitHub: the repositories it listens on.' })
   repositories?: string[];
 
-  @ApiPropertyOptional({ type: TriggerFilterResponseDto })
+  @ApiPropertyOptional({
+    type: TriggerFilterResponseDto,
+    description:
+      'GitHub: the branch or label filter. Sentry: the project slug (an alert’s rule name).',
+  })
   filter?: TriggerFilterResponseDto;
 
-  @ApiPropertyOptional({ format: 'uuid', description: 'Gmail: the connected account it watches.' })
+  @ApiPropertyOptional({
+    format: 'uuid',
+    description:
+      'Gmail: the connected account it watches. Sentry: the workspace’s Sentry connection.',
+  })
   connectionId?: string;
 
   @ApiPropertyOptional({

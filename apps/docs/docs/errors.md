@@ -1120,6 +1120,29 @@ offer, a feature the account lacks; its `detail` carries the vendor's words and
 `CLOUD_AGENTS_007` carries `Retry-After`. Reads of sessions never answer it:
 a cloud session shows as last heard of.
 
+## Sentry
+
+The workspace's connected Sentry organization, whose issues and alerts start
+automations and bot routines (`product/next-steps/sentry.md`). Not the API's
+own error reporting, which has no codes.
+
+| Code                                 | Title                                                  | HTTP |
+| ------------------------------------ | ------------------------------------------------------ | ---- |
+| `SENTRY_001` <a id="sentry_001" />   | Sentry triggers are not configured on this server      | 503  |
+| `SENTRY_002` <a id="sentry_002" />   | No Sentry organization is connected to this workspace  | 404  |
+| `SENTRY_003` <a id="sentry_003" />   | The Sentry webhook signature is invalid                | 401  |
+
+`SENTRY_001` is a server with no `SENTRY_CONNECTION_KEY`: no client secret can
+be kept, so no workspace can connect.
+
+`SENTRY_002` is a workspace with no connection, a trigger that names another
+workspace's connection, or a webhook to a URL no connection holds (one that
+was disconnected).
+
+`SENTRY_003` is a webhook whose `Sentry-Hook-Signature` is not the HMAC of
+its body under the connection's client secret: a secret pasted wrong, or not
+Sentry. Nothing is stored.
+
 ## Inbound events
 
 What external systems tell us — GitHub's webhook today — stored once and normalized

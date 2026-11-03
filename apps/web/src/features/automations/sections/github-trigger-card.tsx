@@ -25,6 +25,8 @@ const FILTER_WORD = {
   branch: 'automations.editor.on',
   label: 'automations.editor.labeled',
   query: 'automations.editor.matching',
+  project: 'automations.editor.inProject',
+  rule: 'automations.editor.forRule',
 } as const;
 
 /**

@@ -248,6 +248,12 @@ export {
 } from './pull-requests.queries';
 export { useRegister } from './register.queries';
 export {
+  useConnectSentry,
+  useDisconnectSentry,
+  useSentryStatus,
+  useSuspenseSentryStatus,
+} from './sentry.queries';
+export {
   type CloseSessionVariables,
   type CreateSessionVariables,
   type MoveSessionVariables,

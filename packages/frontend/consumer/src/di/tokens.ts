@@ -21,6 +21,7 @@ export const TOKENS = {
   TasksRepository: Symbol.for('TasksRepository'),
   CalendarRepository: Symbol.for('CalendarRepository'),
   CloudAgentsRepository: Symbol.for('CloudAgentsRepository'),
+  SentryRepository: Symbol.for('SentryRepository'),
   MailRepository: Symbol.for('MailRepository'),
   WhatsappRepository: Symbol.for('WhatsappRepository'),
   VoiceRepository: Symbol.for('VoiceRepository'),

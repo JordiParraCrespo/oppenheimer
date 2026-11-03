@@ -9,20 +9,28 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@oppenheimer/design-system-web';
-import { Clock } from '@oppenheimer/design-system-web/icons';
+import { Bug, Clock } from '@oppenheimer/design-system-web/icons';
+import { useSentryStatus } from '@oppenheimer/frontend-consumer/react';
 import { eventLabel, viewerTimeZone } from '@oppenheimer/frontend-web';
-import { GITHUB_EVENT_TYPES, SCHEDULE_FREQUENCIES } from '@oppenheimer/shared/automations';
+import {
+  GITHUB_EVENT_TYPES,
+  SCHEDULE_FREQUENCIES,
+  SENTRY_EVENT_TYPES,
+} from '@oppenheimer/shared/automations';
 import { MAX_AUTOMATION_TRIGGERS } from '@oppenheimer/shared/schemas/automation';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ScheduleTriggerCard } from '../components/schedule-trigger-card';
-import { githubCard, scheduleCard, type TriggerCard } from '../lib/automation-draft';
+import { githubCard, scheduleCard, sentryCard, type TriggerCard } from '../lib/automation-draft';
 import { GithubTriggerCard } from './github-trigger-card';
+import { SentryTriggerCard } from './sentry-trigger-card';
 
 /**
  * The editor's Trigger step: "Any trigger starts a run.", a card per
- * trigger, and Add trigger, whose menu groups the schedules and the GitHub
- * events with a line each. A new schedule is set in the viewer's own zone.
+ * trigger, and Add trigger, whose menu groups the schedules, the GitHub
+ * events and the Sentry events with a line each. A new schedule is set in the
+ * viewer's own zone; a Sentry event needs the workspace's Sentry connection,
+ * and says where to make one when there is none.
  */
 export function EditorTriggerStep({
   triggers,
@@ -39,6 +47,7 @@ export function EditorTriggerStep({
     onChange(triggers.map((current) => (current.key === card.key ? card : current)));
   const remove = (key: string) => onChange(triggers.filter((current) => current.key !== key));
   const full = triggers.length >= MAX_AUTOMATION_TRIGGERS;
+  const sentry = useSentryStatus().data?.connection ?? null;
 
   return (
     <div className="flex flex-col gap-1.5">
@@ -48,6 +57,14 @@ export function EditorTriggerStep({
           <ScheduleTriggerCard
             key={card.key}
             card={card}
+            onChange={replace}
+            onRemove={() => remove(card.key)}
+          />
+        ) : card.source === 'sentry' ? (
+          <SentryTriggerCard
+            key={card.key}
+            card={card}
+            repository={repositories[0]?.name ?? null}
             onChange={replace}
             onRemove={() => remove(card.key)}
           />
@@ -110,6 +127,27 @@ export function EditorTriggerStep({
                     <span>{eventLabel(event, t)}</span>
                     <span className="text-xs text-fg-subtle">
                       {t(`automations.event.${event}.desc`)}
+                    </span>
+                  </span>
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuGroup>
+            <DropdownMenuSeparator />
+            <DropdownMenuGroup>
+              <DropdownMenuLabel>{t('automations.editor.groupSentry')}</DropdownMenuLabel>
+              {SENTRY_EVENT_TYPES.map((event) => (
+                <DropdownMenuItem
+                  key={event}
+                  disabled={!sentry}
+                  onClick={() => sentry && onChange([...triggers, sentryCard(event, sentry.id)])}
+                >
+                  <Bug />
+                  <span className="flex flex-col">
+                    <span>{eventLabel(event, t)}</span>
+                    <span className="text-xs text-fg-subtle">
+                      {sentry
+                        ? t(`automations.event.${event}.desc`)
+                        : t('automations.editor.connectSentry')}
                     </span>
                   </span>
                 </DropdownMenuItem>

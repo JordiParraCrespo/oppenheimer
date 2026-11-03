@@ -7,6 +7,7 @@
     "hosts": "Hosts",
     "repositories": "Watched repositories",
     "modelProviders": "Model providers",
+    "sentry": "Sentry",
     "cloudAgents": "Cloud agents",
     "mail": "Mail",
     "whatsapp": "WhatsApp"
@@ -178,6 +179,42 @@
       "save": "Connect",
       "saving": "Checking…",
       "failed": "Couldn’t connect."
+    }
+  },
+  "sentry": {
+    "title": "Sentry",
+    "description": "Connect your Sentry organization so a new issue, a regression or an alert can start an automation that investigates it and opens the fix.",
+    "unavailable": "This server can’t keep a Sentry secret. Ask whoever runs it to set SENTRY_CONNECTION_KEY.",
+    "loadFailed": "Couldn’t load the Sentry connection.",
+    "name": "Sentry",
+    "meta": "Issues and alerts from one Sentry organization, for this workspace’s automations.",
+    "notConnected": "Not connected",
+    "connectedAs": "{{organization}} · secret ending {{hint}}",
+    "connect": "Connect",
+    "replace": "Replace secret",
+    "disconnect": "Disconnect",
+    "disconnectFailed": "Couldn’t disconnect Sentry.",
+    "webhookLabel": "Webhook URL",
+    "copy": "Copy",
+    "copied": "Copied",
+    "stepsTitle": "In Sentry",
+    "steps": {
+      "integration": "Settings → Developer Settings → Custom Integrations → Create New Integration → Internal Integration.",
+      "webhook": "Connect here first, then paste the webhook URL above as the integration’s Webhook URL.",
+      "events": "Under Webhooks, turn on issue; turn on Alert Rule Action to use it in issue alert rules.",
+      "secret": "Copy the integration’s Client Secret into Connect here.",
+      "trigger": "Add a Sentry trigger to an automation: it runs in the automation’s first repository."
+    },
+    "dialog": {
+      "title": "Connect Sentry",
+      "description": "The secret checks every webhook Sentry sends. It is sealed and never shown again.",
+      "slug": "Organization slug",
+      "slugHint": "As in https://acme.sentry.io",
+      "secret": "Client secret",
+      "secretHint": "From the internal integration’s Credentials",
+      "save": "Connect",
+      "saving": "Connecting…",
+      "failed": "Couldn’t connect Sentry."
     }
   },
   "mail": {

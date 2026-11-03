@@ -426,7 +426,8 @@ export class AutomationEntity extends AggregateRoot<AutomationProps> {
       if (trigger.source === 'gmail') {
         throw new ArgumentInvalidException('Mail starts a bot routine, not a session automation');
       }
-      if (trigger.source === 'schedule') continue;
+      // A schedule and a Sentry issue name no repository: the run works in the first.
+      if (trigger.source === 'schedule' || trigger.source === 'sentry') continue;
       if (!trigger.config.repositories.every((id) => repositories.has(id))) {
         throw new ArgumentInvalidException(
           'A trigger listens on a repository the automation does not work in',

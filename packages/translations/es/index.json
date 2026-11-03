@@ -414,6 +414,9 @@
       "CLOUD_AGENTS_007": "Se alcanzó el límite de peticiones del proveedor. Vuelve a intentarlo en breve.",
       "CLOUD_AGENTS_010": "El proveedor rechazó la petición.",
       "CLOUD_AGENTS_011": "Ese proveedor de agentes en la nube no está disponible aquí.",
+      "SENTRY_001": "Este servidor no puede guardar un secreto de Sentry. Pide a quien lo administra que configure SENTRY_CONNECTION_KEY.",
+      "SENTRY_002": "Conecta primero Sentry en Ajustes → Sentry.",
+      "SENTRY_003": "Ese webhook no está firmado con el secreto de la integración conectada.",
       "INBOUND_001": "Esa fuente de eventos no se conoce.",
       "INBOUND_002": "La entrega no incluye un identificador de entrega.",
       "SESS_001": "El host no tiene constancia de esa sesión.",
@@ -1866,6 +1869,7 @@
         "schedule": "Horario · {{when}}",
         "github": "GitHub · {{when}}",
         "gmail": "Gmail · {{when}}",
+        "sentry": "Sentry · {{when}}",
         "last": "Última",
         "next": "Próxima",
         "never": "Nunca",
@@ -2110,6 +2114,22 @@
       "release": {
         "label": "Release publicada",
         "desc": "Sin incluir pre-releases"
+      },
+      "issue_created": {
+        "label": "Nueva incidencia de Sentry",
+        "desc": "Sentry agrupó un error que no había visto antes"
+      },
+      "issue_regressed": {
+        "label": "Incidencia de Sentry reabierta",
+        "desc": "Una incidencia resuelta volvió a ocurrir"
+      },
+      "issue_escalating": {
+        "label": "Incidencia de Sentry en aumento",
+        "desc": "Una incidencia ocurre mucho más de lo normal"
+      },
+      "alert_triggered": {
+        "label": "Alerta de Sentry disparada",
+        "desc": "Se disparó una regla de alerta de incidencias"
       }
     },
     "trigger": {
@@ -2125,7 +2145,8 @@
       "more": "{{summary}} +{{count}}",
       "manual": "Solo manual",
       "monFri": "lun–vie",
-      "weekend": "sáb, dom"
+      "weekend": "sáb, dom",
+      "sentryIn": "{{event}} en {{value}}"
     },
     "next": {
       "onEvent": "En el próximo evento",
@@ -2288,7 +2309,17 @@
       "noMatch": "Nada coincide con «{{query}}».",
       "chooseRepositories": "Elige repositorios…",
       "chooseAgent": "Elige un agente…",
-      "chooseModel": "Elige un modelo…"
+      "chooseModel": "Elige un modelo…",
+      "groupSentry": "Sentry",
+      "connectSentry": "Conecta Sentry en Ajustes primero",
+      "inProject": "en",
+      "forRule": "para la regla",
+      "anyProject": "cualquier proyecto",
+      "anyRule": "cualquier regla",
+      "projectPlaceholder": "Slug del proyecto",
+      "rulePlaceholder": "Nombre de la regla",
+      "sentryWhere": "Se ejecuta en {{repository}}",
+      "sentryWhereNone": "Se ejecuta en el primer repositorio"
     },
     "skipReasonOther": "Omitida",
     "pausedReasonOther": "En pausa. Los disparadores se ignoran hasta que se reanude.",
@@ -3098,6 +3129,7 @@
       "hosts": "Hosts",
       "repositories": "Repositorios observados",
       "modelProviders": "Proveedores de modelos",
+      "sentry": "Sentry",
       "cloudAgents": "Agentes en la nube",
       "mail": "Correo",
       "whatsapp": "WhatsApp"
@@ -3269,6 +3301,42 @@
         "save": "Conectar",
         "saving": "Comprobando…",
         "failed": "No se pudo conectar."
+      }
+    },
+    "sentry": {
+      "title": "Sentry",
+      "description": "Conecta tu organización de Sentry para que una incidencia nueva, una regresión o una alerta pongan en marcha una automatización que la investigue y abra el arreglo.",
+      "unavailable": "Este servidor no puede guardar un secreto de Sentry. Pide a quien lo administra que defina SENTRY_CONNECTION_KEY.",
+      "loadFailed": "No se pudo cargar la conexión con Sentry.",
+      "name": "Sentry",
+      "meta": "Incidencias y alertas de una organización de Sentry, para las automatizaciones de este espacio.",
+      "notConnected": "Sin conectar",
+      "connectedAs": "{{organization}} · secreto acabado en {{hint}}",
+      "connect": "Conectar",
+      "replace": "Cambiar secreto",
+      "disconnect": "Desconectar",
+      "disconnectFailed": "No se pudo desconectar Sentry.",
+      "webhookLabel": "URL del webhook",
+      "copy": "Copiar",
+      "copied": "Copiado",
+      "stepsTitle": "En Sentry",
+      "steps": {
+        "integration": "Settings → Developer Settings → Custom Integrations → Create New Integration → Internal Integration.",
+        "webhook": "Conecta aquí primero y pega la URL de arriba como Webhook URL de la integración.",
+        "events": "En Webhooks, activa issue; activa Alert Rule Action para usarla en reglas de alerta.",
+        "secret": "Copia el Client Secret de la integración en Conectar.",
+        "trigger": "Añade un disparador de Sentry a una automatización: se ejecuta en su primer repositorio."
+      },
+      "dialog": {
+        "title": "Conectar Sentry",
+        "description": "El secreto comprueba cada webhook que envía Sentry. Se guarda sellado y no se vuelve a mostrar.",
+        "slug": "Slug de la organización",
+        "slugHint": "Como en https://acme.sentry.io",
+        "secret": "Client secret",
+        "secretHint": "En Credentials de la integración interna",
+        "save": "Conectar",
+        "saving": "Conectando…",
+        "failed": "No se pudo conectar Sentry."
       }
     },
     "mail": {

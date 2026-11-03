@@ -2,6 +2,7 @@ import {
   externalEventDefinition,
   type GithubEventType,
   type ScheduleFrequency,
+  type SentryEventType,
   timeZoneAbbreviation,
 } from '@oppenheimer/shared/automations';
 import type { TFunction } from 'i18next';
@@ -9,7 +10,8 @@ import { dateFormatter, viewerTimeZone, wallClock, weekdayDate } from './format-
 
 /**
  * A trigger in words, the way the frames say it: "Weekdays at 08:30",
- * "Every Mon, Wed at 09:00", "On pull request opened", "Any new mail". The words are the
+ * "Every Mon, Wed at 09:00", "On pull request opened", "Any new mail",
+ * "On a new Sentry issue in api". The words are the
  * locale's; the structure is here once, for the automations pages and a
  * bot's Routines tab alike.
  */
@@ -80,13 +82,15 @@ export function scheduleText(rule: ScheduleWords, locale: string, t: TFunction):
   }
 }
 
-export function eventLabel(event: GithubEventType, t: TFunction): string {
+export function eventLabel(event: GithubEventType | SentryEventType, t: TFunction): string {
   return t(`automations.event.${event}.label`, {
-    defaultValue: externalEventDefinition('github', event)?.label ?? event,
+    defaultValue:
+      (externalEventDefinition('github', event) ?? externalEventDefinition('sentry', event))
+        ?.label ?? event,
   });
 }
 
-function eventText(event: GithubEventType, t: TFunction): string {
+function eventText(event: GithubEventType | SentryEventType, t: TFunction): string {
   const label = eventLabel(event, t);
   return t('automations.trigger.event', {
     event: label.charAt(0).toLocaleLowerCase() + label.slice(1),
@@ -97,7 +101,12 @@ function eventText(event: GithubEventType, t: TFunction): string {
 export type TriggerWords =
   | ({ source: 'schedule' } & ScheduleWords)
   | { source: 'github'; event: GithubEventType }
-  | { source: 'gmail'; query: string | null };
+  | { source: 'gmail'; query: string | null }
+  | {
+      source: 'sentry';
+      event: SentryEventType;
+      filter: { op: 'any' } | { op: 'equals'; value: string };
+    };
 
 function triggerText(trigger: TriggerWords, locale: string, t: TFunction): string {
   switch (trigger.source) {
@@ -109,6 +118,12 @@ function triggerText(trigger: TriggerWords, locale: string, t: TFunction): strin
       return trigger.query
         ? t('automations.trigger.mail', { query: trigger.query })
         : t('automations.trigger.anyMail');
+    case 'sentry': {
+      const event = eventText(trigger.event, t);
+      return trigger.filter.op === 'equals'
+        ? t('automations.trigger.sentryIn', { event, value: trigger.filter.value })
+        : event;
+    }
   }
 }
 

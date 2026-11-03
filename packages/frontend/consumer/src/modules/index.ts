@@ -12,6 +12,7 @@ export * from './permissions';
 export * from './profile';
 export * from './projects';
 export * from './pull-requests';
+export * from './sentry';
 export * from './sessions';
 export * from './tasks';
 export * from './voice';
