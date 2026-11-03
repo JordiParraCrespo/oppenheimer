@@ -11,9 +11,7 @@ import { provisionedUser } from '../../support/web';
  * sentence and tidies it as the polish does. ChatGPT's own route is the
  * gateway spec's; no run here reaches it. `voice_dictation` is on by
  * default; each test still turns it on, so a deployment that switched it
- * off does not fail the suite. Live dictation (`POST /v1/voice/live`) needs
- * an OpenAI key the stack does not have, so here it is refused; the
- * session it mints is the gateway spec's.
+ * off does not fail the suite.
  */
 
 /** One second of 16 kHz mono 16-bit silence, as the console records it. */
@@ -42,24 +40,7 @@ test.describe('Voice', () => {
     const response = await owner.api.get('/api/v1/voice/status');
 
     expect(response.status(), await response.text()).toBe(200);
-    // The stack's speech server is a stub, not OpenAI, and it has no live key.
-    expect(await response.json()).toEqual({
-      available: true,
-      providers: ['speech_key'],
-      live: false,
-    });
-  });
-
-  test('refuses a live dictation with VOICE_008 on a deployment with no OpenAI key', async () => {
-    const owner = await provisionedUser('voice-live');
-    await turnOnForEveryone(owner.api, 'voice_dictation');
-
-    const response = await owner.api.post('/api/v1/voice/live', {
-      data: { vocabulary: 'oppenheimer' },
-    });
-
-    expect(response.status(), await response.text()).toBe(409);
-    expect(await response.json()).toMatchObject({ code: 'VOICE_008' });
+    expect(await response.json()).toEqual({ available: true, providers: ['speech_key'] });
   });
 
   test('transcribes a WAV on the deployment speech server and tidies it', async () => {
