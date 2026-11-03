@@ -86,8 +86,10 @@ export function BoardColumns() {
       dueDayLabel(iso, today, words, (day) => formatCalendarDay(day, locale, 'short')),
   };
   const milestone = filter.milestoneId ? milestones.get(filter.milestoneId) : undefined;
-  const filed = milestone?.name ?? (filter.projectId ? projectNames.get(filter.projectId) : null);
   const filing = filingOf(filter, read.milestones, unassignedId);
+  const filed =
+    milestone?.name ??
+    (filter.projectIds?.length && filing.projectId ? projectNames.get(filing.projectId) : null);
 
   const card = (task: TaskEntity, lifted = false) => {
     const view = cardView(task, context);
