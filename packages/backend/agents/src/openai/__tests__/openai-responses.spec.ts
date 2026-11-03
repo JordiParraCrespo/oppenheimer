@@ -193,6 +193,7 @@ describe('OpenAiBotEngine on the Agents SDK', () => {
           type: 'usage',
           inputTokens: 22,
           outputTokens: 6,
+          cacheReadTokens: 0,
           context: { tokens: 11, window: null },
         },
         { type: 'done', reason: 'completed' },

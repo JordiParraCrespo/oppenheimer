@@ -11,7 +11,14 @@ export type OpenAiStreamEvent =
       data: {
         type: string;
         delta?: string;
-        response?: { usage?: { inputTokens?: number; outputTokens?: number } };
+        response?: {
+          usage?: {
+            inputTokens?: number;
+            outputTokens?: number;
+            /** The Responses API's `input_tokens_details` as the SDK copies it, one per request or a list. */
+            inputTokensDetails?: Record<string, number> | Array<Record<string, number>>;
+          };
+        };
       };
     }
   | {
@@ -28,6 +35,14 @@ type RawItem = {
   arguments?: string;
   content?: unknown;
 };
+
+/** The cached share of a response's input, from its details: one record, or one per request. */
+function cachedTokensOf(
+  details: Record<string, number> | Array<Record<string, number>> | undefined,
+): number {
+  const records = Array.isArray(details) ? details : details ? [details] : [];
+  return records.reduce((sum, record) => sum + (record.cached_tokens ?? 0), 0);
+}
 
 function parseArguments(text: string | undefined): unknown {
   if (!text) return {};
@@ -70,6 +85,7 @@ function outputText(output: unknown): string {
 export class OpenAiEventTranslator {
   private inputTokens = 0;
   private outputTokens = 0;
+  private cachedTokens = 0;
   private sawUsage = false;
   private lastInput = 0;
 
@@ -88,6 +104,7 @@ export class OpenAiEventTranslator {
         this.lastInput = data.response.usage.inputTokens ?? 0;
         this.inputTokens += this.lastInput;
         this.outputTokens += data.response.usage.outputTokens ?? 0;
+        this.cachedTokens += cachedTokensOf(data.response.usage.inputTokensDetails);
       }
       return [];
     }
@@ -135,6 +152,7 @@ export class OpenAiEventTranslator {
         type: 'usage',
         inputTokens: this.inputTokens,
         outputTokens: this.outputTokens,
+        cacheReadTokens: this.cachedTokens,
         ...(this.lastInput > 0 ? { context: { tokens: this.lastInput, window: null } } : {}),
         ...(limits ? { limits } : {}),
       });

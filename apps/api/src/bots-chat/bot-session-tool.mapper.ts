@@ -72,76 +72,22 @@ export function planSession(
   return parsedPlan(parsed, hostId, 'Check the task, folder and name.');
 }
 
-/** What `start_cloud_session` takes: `start_session`'s input with no folder, agent or watch. */
-export interface StartCloudSessionInput {
-  task: string;
-  project_id: string;
-  repository?: string;
-  host_id?: string;
-  name?: string;
-}
-
-/**
- * How `start_cloud_session`'s input becomes a session to create: Claude
- * Code's cloud, started by a host's runner with `claude --cloud <task>` from
- * one of the project's repositories (`createSessionSchema`'s `cloud`), the
- * same body the console's *Claude Code cloud* and a `claude-cloud`
- * automation send. The host is chosen as `start_session` chooses it; it only
- * starts the session, which then lives on claude.ai/code. Pure.
- */
-export function planCloudSession(
-  input: StartCloudSessionInput,
-  project: ProjectEntity,
-  homeHostId: string | null,
-): { body: CreateSessionDto; hostId: string } | { refusal: string } {
-  const hostId = sessionHostId(input, project, homeHostId);
-  if (!hostId) {
-    return {
-      refusal:
-        'No host given, and neither the project nor you have a default one. A cloud session is started by a host whose claude is signed in: ask which one to use (list_hosts).',
-    };
-  }
-  const checkout = pickRepository(project, input.repository);
-  if ('reason' in checkout) return { refusal: checkout.reason };
-  const parsed = createSessionSchema.safeParse({
-    hostId,
-    agent: CLOUD_SESSION_AGENT,
-    projectId: project.id,
-    name: input.name,
-    prompt: input.task,
-    cloud: true,
-    checkouts: [checkout],
-  });
-  return parsedPlan(parsed, hostId, 'Check the task and name.');
-}
-
-/** The one agent `start_cloud_session` starts: Claude Code, whose CLI takes `--cloud`. */
-export const CLOUD_SESSION_AGENT = 'claude-code' as const satisfies CodingAgentId;
-
-/**
- * A cloud session's page at its vendor, by the id its host reported:
- * claude.ai/code for Claude Code's (what `claude --cloud` printed),
- * chatgpt.com/codex for a Codex task. The console's `cloudUrl`, server side.
- */
-export function cloudSessionUrl(agent: string, cloudSessionId: string): string {
-  const id = encodeURIComponent(cloudSessionId);
-  return agent === 'codex'
-    ? `https://chatgpt.com/codex/tasks/${id}`
-    : `https://claude.ai/code/${id}`;
-}
-
 function parsedPlan(
   parsed: ReturnType<typeof createSessionSchema.safeParse>,
   hostId: string,
   check: string,
 ): { body: CreateSessionDto; hostId: string } | { refusal: string } {
-  if (!parsed.success) {
-    const fields = parsed.error.issues.map((issue) => toolField(issue.path.join('.')));
-    return {
-      refusal: `Not started: the session would be invalid (${[...new Set(fields)].join(', ')}). ${check}`,
-    };
-  }
+  if (!parsed.success) return { refusal: invalidBodyRefusal(parsed.error.issues, check) };
   return { body: parsed.data, hostId };
+}
+
+/** Why a body the sessions' schema rejected was not started, naming each field as the tool's input does. */
+export function invalidBodyRefusal(
+  issues: readonly { path: readonly PropertyKey[] }[],
+  check: string,
+): string {
+  const fields = issues.map((issue) => toolField(issue.path.map(String).join('.')));
+  return `Not started: the session would be invalid (${[...new Set(fields)].join(', ')}). ${check}`;
 }
 
 /**
@@ -195,27 +141,14 @@ export function sessionSummary(
   return `Start ${CODING_AGENTS[agent].label} on ${hostName ?? 'no host yet'}${where}${hearBack}: ${clippedTask(input.task)}`;
 }
 
-/**
- * The Needs input card's line for a `start_cloud_session` call: "Start a
- * Claude Code cloud session from build-02 in acme/xrp-mobile: Fix the failing
- * test", the task cut to fit.
- */
-export function cloudSessionSummary(
-  input: StartCloudSessionInput,
-  project: ProjectEntity | null,
-  hostName: string | null,
-): string {
-  const repository = project ? repositoryOf(project, input.repository) : null;
-  const where = repository ? ` in ${repository}` : ` in project ${input.project_id}`;
-  return `Start a ${CODING_AGENTS[CLOUD_SESSION_AGENT].label} cloud session from ${hostName ?? 'no host yet'}${where}: ${clippedTask(input.task)}`;
-}
-
-function clippedTask(text: string): string {
+/** A task in one line, cut to fit a card. */
+export function clippedTask(text: string): string {
   const task = text.replace(/\s+/g, ' ').trim();
   return task.length > TASK_IN_SUMMARY_MAX ? `${task.slice(0, TASK_IN_SUMMARY_MAX - 1)}…` : task;
 }
 
-function repositoryOf(project: ProjectEntity, name: string | undefined): string | null {
+/** The repository a call names, or the project's default; null when it has none. */
+export function repositoryOf(project: ProjectEntity, name: string | undefined): string | null {
   const repositories = project.repositories;
   const chosen = name
     ? repositories.find((repo) => repo.repositoryFullName.toLowerCase() === name.toLowerCase())
@@ -224,7 +157,7 @@ function repositoryOf(project: ProjectEntity, name: string | undefined): string 
 }
 
 /** The project's repository to check out: the one named, or its default. */
-function pickRepository(
+export function pickRepository(
   project: ProjectEntity,
   name: string | undefined,
 ): { installationId: string; githubRepoId: number; baseBranch: string } | { reason: string } {

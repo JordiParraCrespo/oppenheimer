@@ -322,9 +322,9 @@ describe('SendBotMessageCommandHandler', () => {
 
   // What breaks this: `/goal clear` typed through the API queuing a turn that
   // spends a model call to say the goal is cleared, without clearing it.
-  it('refuses /goal alone and /goal clear with a generic 400, queuing nothing', async () => {
+  it('refuses /goal alone, /goal clear and /usage with a generic 400, queuing nothing', async () => {
     const { handler, turns, bot } = setup();
-    for (const content of ['/goal', '/goal clear']) {
+    for (const content of ['/goal', '/goal clear', '/usage']) {
       await expect(send(handler, bot.id, null, null, [], content)).rejects.toMatchObject({
         code: 'GENERIC.ARGUMENT_INVALID',
       });

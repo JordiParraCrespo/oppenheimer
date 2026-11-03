@@ -81,6 +81,7 @@ export {
   useSuspenseBotSkills,
   useUpdateBotSkill,
 } from './bot-skills.queries';
+export { useSuspenseBotUsage } from './bot-usage.queries';
 export { type ChatgptLoginFlow, useChatgptLogin } from './bots.chatgpt-login';
 export {
   type AddBotFactVariables,

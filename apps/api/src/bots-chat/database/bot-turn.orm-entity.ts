@@ -50,6 +50,7 @@ export interface BotTurnPlanLimitsRecord {
   `"failure" IS NULL OR "failure" IN ('rate_limit', 'usage_limit', 'credential', 'refused', 'unavailable', 'time_limit', 'interrupted', 'other')`,
 )
 @Check('CHK_bot_turn_tokens', `"inputTokens" >= 0 AND "outputTokens" >= 0`)
+@Check('CHK_bot_turn_cache_tokens', `"cacheReadTokens" >= 0 AND "cacheWriteTokens" >= 0`)
 @Check(
   'CHK_bot_turn_context',
   `("contextTokens" IS NULL OR "contextTokens" >= 0) AND ("contextWindow" IS NULL OR "contextWindow" > 0)`,
@@ -120,6 +121,14 @@ export class BotTurnOrmEntity {
 
   @Column({ type: 'integer', default: 0 })
   outputTokens!: number;
+
+  /** How much of `inputTokens` was read from the provider's prompt cache. */
+  @Column({ type: 'integer', default: 0 })
+  cacheReadTokens!: number;
+
+  /** How much of `inputTokens` was written to it. */
+  @Column({ type: 'integer', default: 0 })
+  cacheWriteTokens!: number;
 
   /** What the last model call was sent; null before an answer. */
   @Column({ type: 'integer', nullable: true })

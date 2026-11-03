@@ -237,6 +237,8 @@ describe('useBotLive', () => {
     await chat.send(text('Done'));
     await chat.send({ type: 'turn', turnId: 't1', status: 'completed' });
     expect(chat.invalidated).toContainEqual(['bots', 'list']);
+    // An open /usage card counts the turn that just ended.
+    expect(chat.invalidated).toContainEqual(['bots', 'detail', 'bot-1', 'usage']);
     expect(chat.invalidated).toContainEqual(APPROVALS);
     expect(result.current.text).toEqual({ t1: 'Done' });
     await chat.land(read('completed', 'Done'));
