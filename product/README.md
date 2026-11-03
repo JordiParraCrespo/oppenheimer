@@ -967,6 +967,12 @@ earlier note:
   model judges it after every turn (met, not met, impossible), as Claude
   Code's evaluator does; a person's goal takes up to 20 continuations, a
   bot's 5 unless it asks for up to 20 (25 §4.1, "Built-in commands").
+- `versions/mvp/25-bots.md` §4.1 (2026-11-02) drew `/usage` as three lines
+  of this chat's figures and left the context and plan windows to the
+  composer's meter. On 2026-11-03 the owner asked for a card like Claude
+  Code's small usage card, and smaller: the command as a bubble, then a
+  384px card with the plan's 5-hour and weekly windows as bars, this chat's
+  figures in a grid and the tokens' breakdown (25 §4.1).
 - 2026-10-31: the owner took the six chat slices drawn from a read of Codex
   and Grok (`research/lessons-from-codex-and-grok-chat.md`); they are listed
   in `next-steps/0.7-chat-protocol.md`.

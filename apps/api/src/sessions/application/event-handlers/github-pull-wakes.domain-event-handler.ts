@@ -2,7 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import { OnEvent } from '@nestjs/event-emitter';
 import { ExternalEventReceivedDomainEvent } from '../../../inbound-events/domain/events/external-event-received.domain-event';
 import type { WorkSessionRepositoryPort } from '../../database/work-session.repository.port';
-import { githubWakeText, isWakingGithubEvent } from '../../domain/session-wake.policy';
+import { githubWakeText, isWakingGithubEvent, wakeIds } from '../../domain/session-wake.policy';
 import { SESSION_WAKES, WORK_SESSION_REPOSITORY } from '../../sessions.di-tokens';
 import type { SessionWakesPort } from '../session-wakes.port';
 
@@ -57,7 +57,7 @@ export class GithubPullWakesDomainEventHandler {
         this.wakes.schedule(
           {
             sessionId: session.id,
-            wakeId: `gh-${event.aggregateId}`,
+            wakeId: wakeIds.github(event.aggregateId),
             source: 'github',
             text: githubWakeText(
               type,

@@ -273,7 +273,10 @@ runner does with it and point back.
   `pull.watched` with `{ githubRepoId, number, watch }`
   (`packages/shared/src/schemas/session-wake.schema.ts`); the control plane
   types a line into the session when that pull request's checks finish, it
-  is reviewed or commented on, or it merges.
+  is reviewed or commented on, or it merges. When it asks to be woken
+  later (`runner sessions wake-in`), the runner logs `wake.requested` with
+  `{ id, at, text }`, `at` in UTC; the control plane holds the wake and
+  types the note back in when it is due.
 - `attachment.credit` — the browser's consumed-byte credit, relayed to
   the runner so it resumes that attachment's PTY reads. Without it the
   window below is a one-way valve: a noisy pane stalls for good rather

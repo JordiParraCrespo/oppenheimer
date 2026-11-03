@@ -413,6 +413,35 @@ acme/xrp-mobile: Fix the failing test"). An approved call runs under the
 same scope filter as the turn that asked, so a card raised through a token
 that did not cover the tool never runs.
 
+**Rate limits** (2026-11-02). Gmail, GitHub and the calendar meter us, and
+a bot that works through a mailbox or a repository runs into their limits
+as a matter of course. That is a wait, not a fault, and three things make
+it one:
+
+- **The limit is kept before the provider has to say it.** A provider whose
+  budget is published gets one in its gateway's `UpstreamLimiter`
+  (`budget`, spent per call in the provider's own units): Gmail spends
+  `gmailUnitsOf` each call from 12,000 units a minute per account, across
+  every replica, a fifth under Google's 15,000. A call the window cannot
+  hold is refused without being sent, and the account waits for the
+  window, so the bot meets our limit, not Google's (which counts against
+  the project and escalates). A provider that says what is left (GitHub's
+  `x-ratelimit-remaining`) was already stopped at zero.
+- **A limited call reads as a wait with a time.** `describeToolFailure`
+  answers any integration's rate-limit problem (`upstreamRateLimitOf`) as
+  "Gmail is limiting our requests until 10:02:00Z (in about 60 s). This call
+  did nothing…", says it is normal and passes, and tells the model not to
+  retry it in the turn but to say what is done and what is left. The
+  provider's own sentence is not passed on: Google's names our cloud
+  project. A bulk write the limit stopped partway (archive, label, trash
+  over threads) answers what it changed and which ids it did not reach,
+  rather than failing the whole call.
+- **The goal waits too.** The limit rides on the call's step data
+  (`rateLimit`); the turn ends holding the latest one it met, and the
+  goal's decision is staged on the outbox for that time instead of now
+  (`availableAt`). A continuation queued at once would only meet the limit
+  again and spend one of the goal's turns doing it.
+
 ### 4.1 Itself
 | Tool | Does | Default |
 |------|------|---------|
@@ -583,21 +612,24 @@ The owner chose them in this order. Only the first is built:
 **`/usage`** (2026-11-02, from Claude Code's `/usage` and its usage card).
 The console puts a card in the chat, below its last message, and sends the
 bot nothing (`GET /bots/:id/usage`). It stays until Close, and goes with the
-tab: it is never part of the conversation. It is three lines under its
-title and the date of the chat's first turn:
+tab: it is never part of the conversation. Since 2026-11-03 it is drawn
+as Claude Code draws its own: the command as sent, on the right, and a
+small card under it (384px) with Copy and Close:
 
-- turns that ran, time at work (each turn's start to its end, summed),
-  tokens in and out, and the cache hit rate (the share of the input read
-  from the provider's prompt cache);
-- those tokens split into Input (sent fresh), Output, Cache read and Cache
-  write;
-- each model's share of what the turns spent, and the calls the bot made
-  on its owner's key that are not a turn (goal reviews, summaries, rule
-  reviews), which the totals include, so a long goal does not look cheaper
-  than it is.
+- the plan's 5-hour and weekly windows as bars, with when each resets,
+  on a sign-in that reports them (a ChatGPT sign-in today);
+- **This chat**, a grid of figures: time active (each turn's start to its
+  end, summed), turns that ran, the cache hit rate (the share of the input
+  read from the provider's prompt cache), tokens in and out, and each
+  model's share of what the turns spent;
+- **Breakdown**, headed by the model (or how many), the tokens split into
+  Input (sent fresh), Output, Cache read and Cache write, and a line naming
+  the calls the bot made on its owner's key that are not a turn (goal
+  reviews, summaries, rule reviews), which the totals include, so a long
+  goal does not look cheaper than it is.
 
-The context and the plan windows are not repeated: the composer's meter
-shows them. Copy puts the lines on the clipboard as text.
+Claude Code's Cost and API time are left out: nothing here knows a model's
+prices. Copy puts the card on the clipboard as text.
 
 Where it comes from:
 
@@ -1254,6 +1286,12 @@ The decisions it produced:
   counts the calls a bot makes outside its turns (goal reviews, summaries,
   rule reviews), which nothing recorded before. Money is left out until
   Oppenheimer keeps prices.
+- 2026-11-03: **the `/usage` card is drawn like Claude Code's** (§4.1). The
+  owner found the three lines hard to read and asked for a card like Claude
+  Code's small one, then for it smaller: the command as a bubble, a 384px
+  card with the plan's windows as bars, this chat's figures in a grid and
+  the tokens' breakdown. It replaces 2026-11-02's three lines and its
+  leaving the plan windows to the composer's meter.
 - 2026-11-03: **a bot's requests stay cacheable from turn to turn** (§2).
   `/usage` showed a bot on GPT and Grok reading 1% of its input from the
   prompt cache. Two causes: the OpenAI engine sent no `prompt_cache_key`,

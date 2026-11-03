@@ -15,11 +15,13 @@ import type {
   SessionState,
   SessionWatchedPull,
 } from '@oppenheimer/shared';
+import { wakeRequestedPayloadSchema } from '@oppenheimer/shared';
 import { SessionCreatedDomainEvent } from './events/session-created.domain-event';
 import { SessionStateChangedDomainEvent } from './events/session-state-changed.domain-event';
 import { SessionTerminalMatchedDomainEvent } from './events/session-terminal-matched.domain-event';
 import { SessionTurnChangedDomainEvent } from './events/session-turn-changed.domain-event';
 import { SessionUpdatedDomainEvent } from './events/session-updated.domain-event';
+import { SessionWakeRequestedDomainEvent } from './events/session-wake-requested.domain-event';
 import type { SessionCheckoutEntity } from './session-checkout.entity';
 import type { SessionCloudRunEntity } from './session-cloud-run.entity';
 import { sessionGroup } from './session-group.policy';
@@ -574,6 +576,22 @@ export class WorkSessionEntity extends AggregateRoot<WorkSessionProps> {
             organizationId: this.props.organizationId,
             watchId: match.watchId,
             count: match.count,
+          }),
+        );
+      }
+    }
+
+    if (entry.kind === SESSION_EVENT_KINDS.WAKE_REQUESTED) {
+      const wake = wakeRequestedPayloadSchema.safeParse(entry.payload);
+      if (wake.success) {
+        this.addEvent(
+          new SessionWakeRequestedDomainEvent({
+            aggregateId: this.id,
+            reason: `the session's agent asked to be woken at ${wake.data.at}`,
+            organizationId: this.props.organizationId,
+            wakeId: wake.data.id,
+            at: wake.data.at,
+            text: wake.data.text,
           }),
         );
       }

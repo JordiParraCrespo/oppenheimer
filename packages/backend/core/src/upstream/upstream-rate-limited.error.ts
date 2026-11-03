@@ -26,3 +26,24 @@ export function upstreamRateLimited(
     },
   });
 }
+
+/** A provider's rate limit, as a caller reads it back off the problem it raised. */
+export interface UpstreamRateLimit {
+  /** The system that is limiting calls ("Gmail", "GitHub"). */
+  system: string;
+  /** When it may be called again. */
+  resetAt: Date;
+}
+
+/**
+ * The rate limit an error carries, when it is one {@link upstreamRateLimited}
+ * raised; null for anything else. Whoever calls an integration (a bot's tool,
+ * a job) reads a limit here once, whichever system it came from.
+ */
+export function upstreamRateLimitOf(error: unknown): UpstreamRateLimit | null {
+  if (!(error instanceof AppError)) return null;
+  const { upstream, resetAt } = error.extensions;
+  if (typeof upstream !== 'string' || typeof resetAt !== 'string') return null;
+  const at = new Date(resetAt);
+  return Number.isNaN(at.getTime()) ? null : { system: upstream, resetAt: at };
+}

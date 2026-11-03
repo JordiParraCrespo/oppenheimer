@@ -730,6 +730,15 @@ func (h *linkHandler) PullWatched(sessionID string, watch sessionsdomain.PullWat
 	h.reporter.Append(sessionID, sessionsdomain.PullWatchedKind, watch)
 }
 
+// WakeRequested is the session service's waker: `wake.requested` with when
+// to wake the session's agent and what to tell it then.
+func (h *linkHandler) WakeRequested(sessionID string, wake sessionsdomain.WakeRequest) {
+	if h.reporter == nil {
+		return
+	}
+	h.reporter.Append(sessionID, sessionsdomain.WakeRequestedKind, wake)
+}
+
 // TerminalMatched is the session service's publisher for a terminal watch's
 // report: `terminal.matched` with the watch and how many lines it has counted.
 // The matched text is never in it, nor in the log: it does not leave the host.

@@ -4,10 +4,10 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { BotUsageReport } from '../components/bot-usage-report';
 
 /**
- * The `/usage` card's lines (`25-bots.md` §4.1). What breaks this: the
- * Input figure counting the cache's tokens twice; the calls outside the
- * turns left out of the totals or not named; an empty chat drawing zeros as
- * if it had run; Close doing nothing.
+ * The `/usage` card (`25-bots.md` §4.1). What breaks this: the Input line
+ * counting the cache's tokens twice; the calls outside the turns left out of
+ * the totals or not named; the plan's windows not drawn on a sign-in; an
+ * empty chat drawing zeros as if it had run; Close doing nothing.
  */
 
 vi.mock('react-i18next', () => ({
@@ -57,22 +57,44 @@ const usage: BotUsage = {
 };
 
 function report(value: BotUsage, onClose = vi.fn()) {
-  render(<BotUsageReport usage={value} onClose={onClose} />);
+  render(<BotUsageReport usage={value} fiveHour={null} sevenDay={null} onClose={onClose} />);
   return onClose;
 }
 
+/** The figure or breakdown line a label names, as one row's text. */
+function row(label: string) {
+  return screen.getByText(label).parentElement?.textContent;
+}
+
 describe('BotUsageReport', () => {
-  it('says what the chat spent in three lines, the input apart from the cache, the calls outside its turns named', () => {
+  it('breaks the chat down with the input apart from the cache, the calls outside its turns named', () => {
     const onClose = report(usage);
-    expect(screen.getByText(/bots\.chat\.usage\.summary:3/)).toBeTruthy();
+    expect(row('bots.chat.usage.turns')).toBe('bots.chat.usage.turns3');
+    // 22,800,000 read of 23,347,210 sent.
+    expect(row('bots.chat.usage.cacheHit')).toBe('bots.chat.usage.cacheHit98%');
+    // The one model: its share of the turns, and the breakdown's heading.
+    expect(screen.getByText('100%').previousElementSibling?.textContent).toBe('model-placeholder');
     // 23,343,210 + 4,000 sent, of which 22,800,000 read and 543,100 written: 4,110 fresh.
-    expect(screen.getByText(/bots\.chat\.usage\.input:4\.1K/)).toBeTruthy();
-    expect(screen.getByText(/bots\.chat\.usage\.cacheRead:22\.8M/)).toBeTruthy();
-    expect(screen.getByText(/bots\.chat\.usage\.cacheWrite:543\.1K/)).toBeTruthy();
-    expect(screen.getByText(/bots\.chat\.usage\.modelShare:model-placeholder 100/)).toBeTruthy();
+    expect(row('bots.chat.usage.input')).toBe('bots.chat.usage.input4.1K');
+    expect(row('bots.chat.usage.cacheRead')).toBe('bots.chat.usage.cacheRead22.8M');
+    expect(row('bots.chat.usage.cacheWrite')).toBe('bots.chat.usage.cacheWrite543.1K');
     expect(screen.getByText(/bots\.chat\.usage\.includes/)).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'common.close' }));
     expect(onClose).toHaveBeenCalled();
+  });
+
+  it("draws the plan's windows a sign-in reported, and none it did not", () => {
+    render(
+      <BotUsageReport
+        usage={usage}
+        fiveHour={{ usedPercent: 34.4, resetsAt: null }}
+        sevenDay={null}
+        onClose={vi.fn()}
+      />,
+    );
+    expect(screen.getByText('common.chat.usage.fiveHour')).toBeTruthy();
+    expect(screen.getByText('34%')).toBeTruthy();
+    expect(screen.queryByText('common.chat.usage.sevenDay')).toBeNull();
   });
 
   it('says the chat has spent nothing before any turn ran, with nothing to copy', () => {

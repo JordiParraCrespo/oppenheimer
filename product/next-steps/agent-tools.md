@@ -132,3 +132,27 @@ command is taught to every agent by `runner --skill`
   wake in its chat beyond the prompt it typed. A bot subscription to a pull
   request (`../versions/mvp/27-bot-subscriptions.md` §7) can wake through
   the same events.
+
+## 4. Wake later (built 2026-11-02)
+
+- **The command.** `runner sessions wake-in <30m|2h|1d> "note"`, from
+  inside a session: a minute to seven days (Go's durations, or whole
+  days), and a note of at most 1,000 bytes. The runner gives the wake an id
+  and logs `wake.requested { id, at, text }`, `at` in UTC; with no link it
+  refuses (`SESS_015`). The agent is told to end its turn: the point is to
+  sleep instead of polling a deploy, a CI run or a reviewer.
+- **The control plane holds it.** The entry moves no state; the session
+  raises `SessionWakeRequested`, whose handler stages the wake on the
+  `session-wakes` queue for its time (§3's delivery, unchanged): a time
+  already past wakes now, one past a week is held to a week. The job sits
+  on the outbox until it is due, so a restart of the API or the runner
+  loses nothing; the host must be up when it is.
+- **The wake.** The agent's own note, framed as the host's,
+  `<oppenheimer from="schedule" wake="<id>">…</oppenheimer>` (a frame's
+  end inside the note is taken out), typed as a prompt from
+  `{ kind: 'wake', source: 'schedule' }` once the agent is at its prompt,
+  asked again each minute for four hours, and dropped for a session that
+  stopped or closed.
+- **Not yet.** The agent cannot list or cancel its wakes, and the console
+  does not show them: a wake is a job, not a row. Both want a
+  `session_wake` table the day either is asked for.

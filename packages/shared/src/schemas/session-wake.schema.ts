@@ -26,3 +26,28 @@ export const pullWatchedPayloadSchema = sessionWatchedPullSchema.extend({
 });
 
 export type SessionWatchedPull = z.infer<typeof sessionWatchedPullSchema>;
+
+/**
+ * The event kind an agent's wake at a time it set is logged as
+ * (`runner sessions wake-in`, `product/next-steps/agent-tools.md` §4).
+ */
+export const WAKE_REQUESTED_EVENT_KIND = 'wake.requested';
+
+/** The longest an agent may sleep: a week. */
+export const SESSION_WAKE_MAX_DELAY_MS = 7 * 24 * 60 * 60 * 1000;
+
+/** The agent's note to itself, in bytes. */
+export const SESSION_WAKE_TEXT_MAX = 1000;
+
+/** What the runner logs: the wake's id, when, and what to tell the agent then. */
+export const wakeRequestedPayloadSchema = z.object({
+  id: z
+    .string()
+    .min(1)
+    .max(64)
+    .regex(/^[A-Za-z0-9_-]+$/),
+  at: z.string().datetime(),
+  text: z.string().min(1).max(SESSION_WAKE_TEXT_MAX),
+});
+
+export type WakeRequestedPayload = z.infer<typeof wakeRequestedPayloadSchema>;

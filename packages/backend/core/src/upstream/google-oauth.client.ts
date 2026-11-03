@@ -132,19 +132,23 @@ export class GoogleOAuthClient {
 
   /**
    * Every call to Google, through the limiter. `buckets[0]` is the one a
-   * per-person refusal pauses.
+   * per-person refusal pauses. `units` is what the call costs of the API's
+   * quota, which the limiter's budget spends; the OAuth endpoints count
+   * nothing against an API's quota, so they spend 0.
    */
   async fetch(
     url: URL,
     init: RequestInit,
     buckets: GoogleBucket[],
     quota: GoogleQuota = 'either',
+    units = 0,
   ): Promise<{ response: Response; errorBody: string | null }> {
     try {
       return await this.options.limiter.exchange(
         buckets,
         () => fetch(url, { ...init, signal: AbortSignal.timeout(this.options.timeoutMs) }),
         readQuotaRefusal(buckets[0], quota),
+        units,
       );
     } catch (error) {
       if (error instanceof AppError) throw error;

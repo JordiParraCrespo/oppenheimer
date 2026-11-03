@@ -22,6 +22,7 @@ import {
   sessionAgentReportSchema,
   sessionNoticeSchema,
   sessionWatchedPullSchema,
+  WAKE_REQUESTED_EVENT_KIND,
 } from '@oppenheimer/shared';
 import { CODING_AGENTS, effortLevelFor, isCodingAgentId } from '@oppenheimer/shared/agents';
 
@@ -156,6 +157,12 @@ export const SESSION_EVENT_KINDS = {
    * (`runner sessions watch-pr`). Payload `{ githubRepoId, number, watch }`.
    */
   PULL_WATCHED: PULL_WATCHED_EVENT_KIND,
+  /**
+   * The agent asked to be woken at a time (`runner sessions wake-in`). Payload
+   * `{ id, at, text }`. It moves no state: the entity raises
+   * `SessionWakeRequestedDomainEvent` for it, and the wake is a queued job.
+   */
+  WAKE_REQUESTED: WAKE_REQUESTED_EVENT_KIND,
   /** The agent left a report. Payload `{ hash }` — never the report itself. */
   REPORT_PUBLISHED: 'report.published',
   /** Somebody read that report. Payload `{ hash }`. */

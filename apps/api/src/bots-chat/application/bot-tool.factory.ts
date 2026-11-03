@@ -1,6 +1,6 @@
 import type { BotEngineTool } from '@oppenheimer/backend-agents';
 import type { AccessScope } from '@oppenheimer/backend-authz';
-import { AppError } from '@oppenheimer/backend-core';
+import { AppError, upstreamRateLimitOf } from '@oppenheimer/backend-core';
 import { ExceptionBase } from '@oppenheimer/backend-ddd';
 import type {
   BotAttachment,
@@ -19,6 +19,12 @@ import {
   grantedLine,
   waitingForApproval,
 } from '../domain/bot-approval.policy';
+import {
+  type BotRateLimit,
+  RATE_LIMIT_DATA_KEY,
+  rateLimitData,
+  rateLimitedLine,
+} from '../domain/bot-rate-limit.policy';
 import {
   RULES_UNCHECKED_NOTE,
   ruleAllowedLine,
@@ -133,6 +139,8 @@ export interface BotToolAnswer {
   images?: readonly BotAttachment[];
   /** The draft a mail call saved in Gmail, for the chat to draw as a card. */
   mailDraft?: BotMailDraft;
+  /** The limit that stopped the call partway, when one did (`bot-rate-limit.policy.ts`). */
+  rateLimit?: BotRateLimit;
 }
 
 /** What a call ended with: the words the model reads, and the session it started, if any. */
@@ -143,6 +151,8 @@ export interface BotToolResult {
   subagents?: readonly BotSubagentRun[];
   images?: readonly BotAttachment[];
   mailDraft?: BotMailDraft;
+  /** The limit the call met, before or partway through its work. */
+  rateLimit?: BotRateLimit;
 }
 
 /** One tool as an area declares it: a name, what it does, its input, and what it runs. */
@@ -319,9 +329,10 @@ export function defineBotTool<Input extends z.ZodType>(
         ...(answer.subagents ? { subagents: answer.subagents } : {}),
         ...(answer.images?.length ? { images: answer.images } : {}),
         ...(answer.mailDraft ? { mailDraft: answer.mailDraft } : {}),
+        ...(answer.rateLimit ? { rateLimit: answer.rateLimit } : {}),
       };
     } catch (error) {
-      return { content: describeToolFailure(error), isError: true };
+      return failureOf(error);
     }
   };
   return {
@@ -344,18 +355,9 @@ export function defineBotTool<Input extends z.ZodType>(
           if (!parsed.success) {
             return { content: `Invalid input: ${describeIssues(parsed.error)}`, isError: true };
           }
-          const { sessionId, subagents, images, mailDraft, ...result } = await call(
-            parsed.data,
-            callId ? { ...context, callId } : context,
-            signal,
+          return toEngineResult(
+            await call(parsed.data, callId ? { ...context, callId } : context, signal),
           );
-          const data = {
-            ...(sessionId ? { sessionId } : {}),
-            ...(subagents ? { [SUBAGENT_DATA_KEY]: JSON.stringify(subagents) } : {}),
-            ...(images ? { [SHOWN_IMAGES_DATA_KEY]: JSON.stringify(images) } : {}),
-            ...(mailDraft ? { [MAIL_DRAFT_DATA_KEY]: JSON.stringify(mailDraft) } : {}),
-          };
-          return Object.keys(data).length > 0 ? { ...result, data } : result;
         },
       };
       // Off never reaches here: the toolbox does not offer it.
@@ -406,7 +408,7 @@ function askingFirst<Input extends z.ZodType>(
         }
         return { content: await askOwner(spec, context, call, subject, reviewNote) };
       } catch (error) {
-        return { content: describeToolFailure(error), isError: true };
+        return toEngineResult(failureOf(error));
       }
     },
   };
@@ -435,7 +437,7 @@ function reviewedFirst<Input extends z.ZodType>(
         const subject = await subjectOf(spec, call, context);
         return { content: await askOwner(spec, context, call, subject, verdict.note) };
       } catch (error) {
-        return { content: describeToolFailure(error), isError: true };
+        return toEngineResult(failureOf(error));
       }
     },
   };
@@ -556,9 +558,39 @@ function describeIssues(error: z.ZodError): string {
  */
 export class BotToolRefusal extends Error {}
 
-/** A failure in words the model can act on: a refusal's words, or our catalog's code, title and detail. */
-export function describeToolFailure(error: unknown): string {
+/**
+ * A call's result as the engine takes it: the words, and everything the chat
+ * or the turn reads apart from them (the session, the children, the images,
+ * the draft, the limit) as the call's data. Every path a call ends on, run,
+ * refused or failed, goes through here.
+ */
+function toEngineResult(result: BotToolResult): Awaited<ReturnType<BotEngineTool['run']>> {
+  const { sessionId, subagents, images, mailDraft, rateLimit, ...rest } = result;
+  const data = {
+    ...(sessionId ? { sessionId } : {}),
+    ...(subagents ? { [SUBAGENT_DATA_KEY]: JSON.stringify(subagents) } : {}),
+    ...(images?.length ? { [SHOWN_IMAGES_DATA_KEY]: JSON.stringify(images) } : {}),
+    ...(mailDraft ? { [MAIL_DRAFT_DATA_KEY]: JSON.stringify(mailDraft) } : {}),
+    ...(rateLimit ? { [RATE_LIMIT_DATA_KEY]: rateLimitData(rateLimit) } : {}),
+  };
+  return Object.keys(data).length > 0 ? { ...rest, data } : rest;
+}
+
+/** A failed call: its words, and the limit it met when a system was limiting our requests. */
+function failureOf(error: unknown): BotToolResult {
+  const rateLimit = upstreamRateLimitOf(error);
+  return { content: describeToolFailure(error), isError: true, ...(rateLimit && { rateLimit }) };
+}
+
+/**
+ * A failure in words the model can act on: a refusal's words, a system's
+ * rate limit as a wait with its time (never the provider's own text, which
+ * can name our cloud project), or our catalog's code, title and detail.
+ */
+export function describeToolFailure(error: unknown, now: Date = new Date()): string {
   if (error instanceof BotToolRefusal) return error.message;
+  const rateLimit = upstreamRateLimitOf(error);
+  if (rateLimit && error instanceof AppError) return rateLimitedLine(error.code, rateLimit, now);
   if (error instanceof AppError) {
     return `${error.code}: ${error.title}.${error.detail ? ` ${error.detail}` : ''}`;
   }
