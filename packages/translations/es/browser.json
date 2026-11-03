@@ -1196,7 +1196,10 @@
         "terminal": "Terminal",
         "chat": "Chat"
       },
-      "loading": "Cargando la conversación…",
+      "loading": {
+        "title": "Cargando la conversación",
+        "lead": "El historial del agente está llegando desde el host."
+      },
       "empty": {
         "title": "Todavía no se ha dicho nada",
         "description": "Lo que el agente dice y hace aparece aquí mientras trabaja."

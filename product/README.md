@@ -1156,3 +1156,6 @@ earlier note:
   *Continue on a host* starts a worktree session there whose agent runs
   `claude --teleport <id>` (`teleport` on the create, runner capability
   `session.teleport`). Codex's `codex apply` stays a command.
+- The entry above made Chat the default view of every session. On
+  2026-11-03 the owner made Terminal the default again, a member's and a
+  guest's; Chat stays a tab beside it once the transcript arrives.

@@ -7,10 +7,15 @@ import {
   useStickToBottom,
 } from '@oppenheimer/design-system-web';
 import { ArrowDown, ChevronUp } from '@oppenheimer/design-system-web/icons';
-import type { SessionChat as Chat, SessionAgent } from '@oppenheimer/frontend-consumer';
+import {
+  type SessionChat as Chat,
+  type SessionAgent,
+  sessionAgentLabel,
+} from '@oppenheimer/frontend-consumer';
 import { useState } from 'react';
 import { flushSync } from 'react-dom';
 import { useTranslation } from 'react-i18next';
+import { SessionStatusHead } from '../components/session-status-head';
 import { TerminalColumn } from '../components/terminal-column';
 import { useChatLoading, useChatTurnIds } from '../hooks/use-session-chat';
 import type { ChatAttach } from '../lib/chat-blocks';
@@ -101,14 +106,16 @@ export function SessionChat({
           <TerminalColumn ref={content} className="flex min-h-full flex-col">
             {loading ? (
               // The history is still arriving: the conversation is drawn once
-              // it has, at its end, so until then the column says so.
-              <EmptyState aria-busy className="flex-1">
-                <EmptyState.Header>
-                  <EmptyState.Description role="status">
-                    {t('sessions.chat.loading')}
-                  </EmptyState.Description>
-                </EmptyState.Header>
-              </EmptyState>
+              // it has, at its end, so until then the column says so, in the
+              // provisioning pane's head at its width (420px), centred in the
+              // column as that pane is in the frame.
+              <div aria-busy role="status" className="my-auto w-full max-w-105 self-center py-8">
+                <SessionStatusHead
+                  eyebrow={agent ? sessionAgentLabel(agent) : undefined}
+                  title={t('sessions.chat.loading.title')}
+                  lead={t('sessions.chat.loading.lead')}
+                />
+              </div>
             ) : ids.length === 0 ? (
               <EmptyState className="flex-1">
                 <EmptyState.Header>

@@ -21,12 +21,11 @@ import type { FileHandOff } from './file-hand-off';
 export type SessionView = 'terminal' | 'chat';
 
 /**
- * The view every session pane opens on, a member's and a guest's. Chat is
- * drawn only once the host sends the agent's transcript (`useChatReading`),
- * so until then, and for an agent with none, the pane is the terminal; the
- * Terminal / Chat switch is always there to type into the PTY itself.
+ * The view every session pane opens on, a member's and a guest's: the
+ * terminal. Chat is a press away once the host sends the agent's transcript
+ * (`useChatReading`).
  */
-export const DEFAULT_SESSION_VIEW: SessionView = 'chat';
+export const DEFAULT_SESSION_VIEW: SessionView = 'terminal';
 
 /**
  * What a session pane hands its terminal about the chat: the chat its stream

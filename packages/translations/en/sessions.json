@@ -531,7 +531,10 @@
       "terminal": "Terminal",
       "chat": "Chat"
     },
-    "loading": "Loading conversation…",
+    "loading": {
+      "title": "Loading conversation",
+      "lead": "The agent's history is on its way from the host."
+    },
     "empty": {
       "title": "Nothing said yet",
       "description": "The agent's words and work appear here as it goes."

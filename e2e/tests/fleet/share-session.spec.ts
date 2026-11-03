@@ -3,7 +3,6 @@ import { WEB_URL } from '../../playwright.config';
 import { newContext, signedUpContext, signIn, VALID_PASSWORD } from '../../support/auth';
 import { query } from '../../support/db';
 import { attach, pairedHosts } from '../../support/fleet';
-import { showTerminal } from '../../support/session-chat';
 import { connectInstallation, createSession } from '../../support/sessions';
 import { signInAs } from '../../support/web';
 
@@ -83,7 +82,6 @@ test('a named account types through a write share; a view-only link only watches
   await expect
     .poll(() => typistScreen().includes('CLAUDE-SHIM argv='), { timeout: 120_000 })
     .toBe(true);
-  await showTerminal(typist);
   await typist.locator('.xterm').first().click();
   await typist.keyboard.type('echo guest-$((6*7))');
   await typist.keyboard.press('Enter');
@@ -102,7 +100,6 @@ test('a named account types through a write share; a view-only link only watches
   await watcher.goto(`/s/${slug}`);
   await expect(watcher.getByText('View only', { exact: true })).toBeVisible();
   await expect.poll(() => watcherScreen().includes('guest-42'), { timeout: 30_000 }).toBe(true);
-  await showTerminal(watcher);
   await watcher.locator('.xterm').first().click();
   await watcher.keyboard.type('echo watcher-$((7*7))');
   await watcher.keyboard.press('Enter');
