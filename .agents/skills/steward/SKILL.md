@@ -21,16 +21,22 @@ other skills point here.
    not for the pull request. Fix what it finds and run it again.
 3. **Deslop:** the `deslop` skill over the branch diff.
 4. **Commit**, staging files by path.
-5. **Screens**, when the change shows on screen: the `local-stack` skill's
+5. **Autoreview**, before the pull request is opened: the `autoreview`
+   skill, a fresh agent reviewing the committed branch. Its fixes go back
+   to step 2. A pull request that changes no code (a research note) skips
+   it.
+6. **Screens**, when the change shows on screen: the `local-stack` skill's
    "Show a visual change" (stack up `--web`, `pnpm screens <route>...`).
    An edit after them that only touches comments or layout keeps them;
    any other edit to a visual file means taking them again.
-6. **`pnpm ci:local`** on that commit. A stack already up with `--web` stays
+7. **`pnpm ci:local`** on that commit. A stack already up with `--web` stays
    up; the run swaps in the API it built.
-7. **Push** on green, with the report and the screenshots in the
-   description.
+8. **Push** on green, with the report, the autoreview and the screenshots
+   in the description.
 
-A fix after step 6 goes back to step 2 for that fix, and through 4–7 again.
+A fix after step 7 goes back to step 2 for that fix, and through 4–8 again;
+once the pull request is open, step 5 runs again only for a fix that
+changes behavior.
 
 ## Before every push
 
