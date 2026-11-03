@@ -71,6 +71,7 @@ export class WorkSessionMapper
     record.launchPermission = fold.launch.permission;
     record.launchEffort = fold.launch.effort;
     record.launchEnvironment = fold.launch.environment;
+    record.launchTeleport = fold.launch.teleport;
     record.closeRequestedAt = fold.closeRequest?.requestedAt ?? null;
     record.closeAcceptsUnpushedWork = fold.closeRequest?.acceptUnpushedWork ?? false;
     record.closeRefusalCode = fold.closeRefusal?.code ?? null;
@@ -184,6 +185,7 @@ export class WorkSessionMapper
         permission: launchPermissionFor(record.agent, record.launchPermission),
         effort: record.launchEffort,
         environment: record.launchEnvironment,
+        teleport: record.launchTeleport,
       },
       projectId: record.projectId,
       closeRequest: record.closeRequestedAt

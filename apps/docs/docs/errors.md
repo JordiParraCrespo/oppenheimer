@@ -577,6 +577,7 @@ are never reissued.
 | `SESSIONS_045` <a id="sessions_045" /> | The host is offline, so its Codex environments cannot be listed | 503 |
 | `SESSIONS_046` <a id="sessions_046" /> | Codex on the host could not list its environments | 502 |
 | `SESSIONS_047` <a id="sessions_047" /> | ChatGPT is limiting how often the host may list Codex environments | 429 |
+| `SESSIONS_048` <a id="sessions_048" /> | This host's runner cannot continue a cloud session | 409 |
 
 `SESSIONS_001` is also returned for a session that exists in another workspace: the
 scoped read cannot see it, and distinguishing the two would confirm the id.
@@ -623,6 +624,11 @@ terminal, or refuse the agent, instead of starting the task. As with `025`, a ho
 link right now is not refused. `SESSIONS_038` refuses a prompt, a decision's answer or a
 pasted file for a cloud session: it has no terminal on its host, and is answered at its
 vendor, on claude.ai or chatgpt.com/codex.
+
+`SESSIONS_048` is a create with `teleport`, a Claude Code cloud session to continue in a
+worktree on the host (`claude --teleport <id>`), for a host whose live runner did not
+announce `session.teleport`: it would drop the id and start an empty conversation. Update
+the runner. As with `025`, a host with no link right now is not refused.
 
 `SESSIONS_040` and `SESSIONS_041` are a cloud session's files. A first task's files never
 reach the host, which only starts the session: the API keeps them, and the task the cloud

@@ -12,6 +12,8 @@ const REFUSAL_DETAIL: Record<string, (hostId: string) => string> = {
     `The runner on host ${hostId} predates folder sessions; update it to start one in a folder`,
   [SessionErrors.CLOUD_UNSUPPORTED_BY_RUNNER.code]: (hostId) =>
     `The runner on host ${hostId} predates cloud sessions; update it to start one in the cloud`,
+  [SessionErrors.TELEPORT_UNSUPPORTED_BY_RUNNER.code]: (hostId) =>
+    `The runner on host ${hostId} predates continuing a cloud session; update it to bring one here`,
 };
 
 /**
@@ -28,12 +30,12 @@ export async function requireLaunchableHost(
   hosts: HostAccessPort,
   links: LinkRegistryPort,
   scope: AccessScope,
-  input: Pick<CreateSessionDto, 'hostId' | 'agent' | 'folder' | 'cloud'>,
+  input: Pick<CreateSessionDto, 'hostId' | 'agent' | 'folder' | 'cloud' | 'teleport'>,
 ): Promise<void> {
   const { hostId, agent } = input;
   const host = await hosts.assertUsable(scope, hostId);
   const refusal = runnerRefusal(
-    { agent, place: placeOfCreate(input) },
+    { agent, place: placeOfCreate(input), launch: { teleport: input.teleport ?? null } },
     { probedTools: host.probedTools, capabilities: links.find(hostId)?.capabilities ?? null },
   );
   if (!refusal) return;

@@ -296,7 +296,14 @@ function createMessage(
       // Only for an agent that has a conversation to name: a blank terminal
       // keeps no transcript, and sending it an id would be a field the host
       // has nothing to do with.
-      ...(CODING_AGENTS[agent]?.launch.conversation?.create ? { conversation: session.id } : {}),
+      //
+      // A session that continues a cloud one names none: the conversation it
+      // opens is the cloud session's, under the name Claude Code gives it.
+      ...(session.launch.teleport
+        ? { teleport: session.launch.teleport }
+        : CODING_AGENTS[agent]?.launch.conversation?.create
+          ? { conversation: session.id }
+          : {}),
     },
     ...(spec.prompt ? { prompt: spec.prompt } : {}),
     ...(spec.images?.length ? { images: spec.images } : {}),

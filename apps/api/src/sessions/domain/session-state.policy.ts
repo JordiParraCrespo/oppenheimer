@@ -190,6 +190,11 @@ export interface SessionLaunchFold {
    * pick, the environment linked to the repository.
    */
   environment: string | null;
+  /**
+   * The Claude Code cloud session this one continues (`claude --teleport`);
+   * null is a conversation of its own.
+   */
+  teleport: string | null;
 }
 
 export interface SessionLogEntry {
@@ -311,7 +316,7 @@ export const INITIAL_SESSION_FOLD: SessionFold = {
   observedSince: null,
   reportHash: null,
   ackedReportHash: null,
-  launch: { model: null, permission: 'ask', effort: null, environment: null },
+  launch: { model: null, permission: 'ask', effort: null, environment: null, teleport: null },
   projectId: null,
   closeRequest: null,
   closeRefusal: null,
@@ -371,6 +376,7 @@ function launchOf(payload: unknown): SessionLaunchFold | null {
     // log records exactly what the create did.
     effort: effortLevelFor(agent, model, stringField(launch, 'effort')),
     environment: stringField(launch, 'environment'),
+    teleport: stringField(launch, 'teleport'),
   };
 }
 

@@ -4,10 +4,14 @@ import { CODING_AGENTS, isCodingAgentId, isHostCloudAgent } from '@oppenheimer/s
 import { HOST_CLOUD_CAPABILITIES, type RunnerCapability } from '@oppenheimer/shared/protocol';
 import { SessionErrors } from './sessions.errors';
 
-/** What is about to be sent: the agent to start and where it runs. */
+/**
+ * What is about to be sent: the agent to start, where it runs, and the cloud
+ * session it continues (`launch.teleport`), if any.
+ */
 export interface RunnerLaunch {
   agent: string;
   place: SessionPlace;
+  launch?: { teleport: string | null };
 }
 
 /**
@@ -71,15 +75,36 @@ function placeNeed(launch: RunnerLaunch): PlaceNeed {
   }
 }
 
-/** Whether a runner whose hello named `capabilities` takes `launch`'s place (`placeNeed`). */
+/**
+ * A launch that continues a cloud session needs a runner that named
+ * `session.teleport`: an older one drops the field and starts an empty
+ * conversation in the worktree, which is not what was asked for.
+ */
+function teleportNeed(launch: RunnerLaunch): PlaceNeed {
+  return launch.launch?.teleport
+    ? {
+        kind: 'capability',
+        capability: 'session.teleport',
+        refusal: SessionErrors.TELEPORT_UNSUPPORTED_BY_RUNNER,
+      }
+    : { kind: 'none' };
+}
+
+function met(need: PlaceNeed, capabilities: readonly RunnerCapability[]): boolean {
+  return (
+    need.kind === 'none' || (need.kind === 'capability' && capabilities.includes(need.capability))
+  );
+}
+
+/**
+ * Whether a runner whose hello named `capabilities` takes `launch`'s place
+ * (`placeNeed`) and the cloud session it continues (`teleportNeed`).
+ */
 export function runnerTakesPlace(
   launch: RunnerLaunch,
   capabilities: readonly RunnerCapability[],
 ): boolean {
-  const need = placeNeed(launch);
-  return (
-    need.kind === 'none' || (need.kind === 'capability' && capabilities.includes(need.capability))
-  );
+  return met(placeNeed(launch), capabilities) && met(teleportNeed(launch), capabilities);
 }
 
 /**
@@ -91,7 +116,9 @@ export function runnerTakesPlace(
  * session on a runner whose live link did not name `session.folder` is
  * `FOLDER_UNSUPPORTED_BY_RUNNER`; with no live link (`capabilities` null) it is
  * not refused here, and the dispatch answers `not_supported` by the same rule
- * (`runnerTakesPlace`) when the runner says hello. Whether the agent is
+ * (`runnerTakesPlace`) when the runner says hello. A launch that continues a
+ * cloud session on a runner that did not name `session.teleport` is
+ * `TELEPORT_UNSUPPORTED_BY_RUNNER`, by the same rule. Whether the agent is
  * installed is never asked.
  */
 export function runnerRefusal(
@@ -101,7 +128,8 @@ export function runnerRefusal(
   if (!runnerCanStart(launch.agent, runner.probedTools)) {
     return SessionErrors.AGENT_UNSUPPORTED_BY_RUNNER;
   }
-  const need = placeNeed(launch);
-  if (need.kind === 'none' || runner.capabilities === null) return null;
-  return runnerTakesPlace(launch, runner.capabilities) ? null : need.refusal;
+  if (runner.capabilities === null) return null;
+  const capabilities = runner.capabilities;
+  const unmet = [placeNeed(launch), teleportNeed(launch)].find((need) => !met(need, capabilities));
+  return unmet && unmet.kind !== 'none' ? unmet.refusal : null;
 }

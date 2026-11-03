@@ -1097,3 +1097,9 @@ earlier note:
   (`opp`) and `apps/mcp`, clients of the API on scoped tokens: they reach
   automations, bots and tasks, which are not the runner's to forward. The
   runner keeps the same-host verbs.
+- `next-steps/cloud-agents.md` left bringing a Claude Code cloud session
+  back as a command to copy, with no button that opens a worktree session.
+  On 2026-11-03 the owner asked to pick the host from the session's pane:
+  *Continue on a host* starts a worktree session there whose agent runs
+  `claude --teleport <id>` (`teleport` on the create, runner capability
+  `session.teleport`). Codex's `codex apply` stays a command.

@@ -84,6 +84,8 @@ func createInput(m link.SessionCreate, account string) (sessionsapp.CreateInput,
 			// The name the agent's conversation takes, so what it says can be
 			// reopened after the session stops.
 			Conversation: m.Launch.Conversation, Resume: m.Launch.Resume,
+			// A cloud session this one continues, in place of a new conversation.
+			Teleport: m.Launch.Teleport,
 		},
 	}
 	if m.Folder != "" {

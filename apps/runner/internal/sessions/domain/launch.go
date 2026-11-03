@@ -33,6 +33,11 @@ type Launch struct {
 	// re-sending the first task would replay it.
 	Conversation string `json:"conversation,omitempty"`
 	Resume       bool   `json:"resume,omitempty"`
+	// Teleport is a cloud session of the agent's own that this session
+	// continues: the agent starts with its branch and history (`claude
+	// --teleport <id>`) in place of a new conversation, and a resume reopens
+	// what that left. It is saved, so a restart takes the resume form.
+	Teleport string `json:"teleport,omitempty"`
 	// Prompt is the first task, appended as the trailing positional so it is
 	// in the process's arguments before it starts (02-runner §5). It is kept
 	// for restart only and never logged.
@@ -141,6 +146,10 @@ type launchMap struct {
 	// The resume form is a subcommand, so it leads the argv instead of
 	// following it.
 	conversationResumeLeads bool
+	// How a cloud session is continued here, `<teleport>` its id, and how
+	// the conversation that left is reopened. Neither names a conversation.
+	teleportStart  []string
+	teleportResume []string
 }
 
 // launchLevel is one permission or effort level: the argv appended to the
@@ -188,6 +197,16 @@ func (l Launch) Args(agent Agent) []string {
 	}
 	args = append(args, m.permission[l.Permission].argv...)
 	args = append(args, l.effortLevel(m).argv...)
+	// Continuing a cloud session: its conversation has a name of its own and
+	// already holds the task, so neither the session's id nor a prompt is
+	// sent. An agent with no teleport in the catalog falls through to an
+	// ordinary launch, which the control plane never asks of it.
+	if l.Teleport != "" && m.teleportStart != nil {
+		if l.Resume {
+			return append(args, m.teleportResume...)
+		}
+		return append(args, substitute(m.teleportStart, "<teleport>", l.Teleport)...)
+	}
 	// Reopening the conversation, and then there is no first task to send: the
 	// conversation already holds it, and sending it again would ask for the
 	// same work twice.

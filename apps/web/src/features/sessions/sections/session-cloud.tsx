@@ -7,6 +7,7 @@ import { useTranslation } from 'react-i18next';
 import { CloudLink } from '../components/cloud-link';
 import { hostCloudCopy } from '../lib/session-options';
 import { dotFor, stateWordFor } from '../lib/session-run-state';
+import { SessionCloudContinue } from './session-cloud-continue';
 
 const DeleteSessionDialog = lazy(() =>
   import('../dialogs/delete-session').then((module) => ({ default: module.DeleteSessionDialog })),
@@ -17,7 +18,10 @@ const DeleteSessionDialog = lazy(() =>
  * (`product/research/cloud-agents.md` §5B). There is no terminal here: the
  * session lives at its vendor (claude.ai/code, chatgpt.com/codex), so the
  * pane says what it is doing, opens it there, and hands over the command that
- * brings its work into a terminal (`claude --teleport`, `codex apply`). Its
+ * brings its work into a terminal (`claude --teleport`, `codex apply`). A
+ * Claude Code one can also be continued on one of your hosts from here, a
+ * worktree session that runs that command for you, and then the command is
+ * the way to do it yourself (`SessionCloudContinue`). Its
  * address is written out as a link too, to open or open in another window,
  * with a button that copies it. Its state is what the Oppenheimer extension
  * saw on claude.ai for Claude Code, and what the host that started it read
@@ -55,10 +59,12 @@ export function SessionCloud({ session }: { session: SessionEntity }) {
           </Button>
         </div>
 
+        {session.canContinueOnHost ? <SessionCloudContinue session={session} /> : null}
+
         {session.teleportCommand ? (
           <CommandRow
             className="mt-6.5 max-w-140"
-            lead={t(copy.teleport)}
+            lead={t(session.canContinueOnHost ? 'sessions.cloud.teleportManual' : copy.teleport)}
             command={session.teleportCommand}
             copyLabel={t('sessions.cloud.copy')}
             copiedLabel={t('sessions.cloud.copied')}

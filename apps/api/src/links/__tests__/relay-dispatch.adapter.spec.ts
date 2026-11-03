@@ -111,6 +111,45 @@ describe('RelayDispatchAdapter', () => {
     ]);
   });
 
+  // A session that continues a Claude Code cloud session names the cloud one,
+  // and no conversation of its own: `claude --session-id` beside `--teleport`
+  // would name a conversation the CLI does not open.
+  describe('a session that continues a cloud session', () => {
+    const teleported = () => {
+      const entity = session('claude-code');
+      entity.recordEvent({
+        seq: 1,
+        kind: 'session.requested',
+        payload: {
+          agent: 'claude-code',
+          launch: { permission: 'auto', teleport: 'session_01KpKLr7hb6j4zoBFARRi2ZM' },
+        },
+        occurredAt: new Date(),
+      });
+      return entity;
+    };
+    const spec = { ...NAMES, branch: 'oppenheimer/xrp-mobile/bold-otter-3f9a7k' };
+
+    it('sends the cloud session in the launch to a runner that takes it', async () => {
+      const { adapter, link } = harness(true, ['session.teleport']);
+      await adapter.create(teleported(), spec);
+
+      const parsed = sessionCreateSchema.parse(vi.mocked(link.send).mock.calls[0]?.[0]);
+      expect(parsed.launch).toEqual({
+        permission: 'auto',
+        teleport: 'session_01KpKLr7hb6j4zoBFARRi2ZM',
+      });
+    });
+
+    it('holds it for a runner that would start an empty conversation instead', async () => {
+      const { adapter, link } = harness(true, ['session.image']);
+      const outcome = await adapter.create(teleported(), spec);
+
+      expect(outcome.delivered).toBe(false);
+      expect(link.send).not.toHaveBeenCalled();
+    });
+  });
+
   describe('a Codex cloud session', () => {
     const codexCloud = (environment: string | null) => {
       const entity = WorkSessionEntity.request({

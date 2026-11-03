@@ -301,6 +301,7 @@ describe('the launch the fold projects', () => {
       permission: 'auto',
       effort: 'high',
       environment: null,
+      teleport: null,
     });
     // The request is also what starts the session, and stating a launch must not
     // have cost it that.
@@ -315,6 +316,7 @@ describe('the launch the fold projects', () => {
       permission: 'ask',
       effort: null,
       environment: null,
+      teleport: null,
     });
   });
 
@@ -330,6 +332,20 @@ describe('the launch the fold projects', () => {
     );
 
     expect(fold.launch.environment).toBe('e_6845a1b2c3d4');
+  });
+
+  // The cloud session a worktree session continues is part of the launch, so a
+  // create sent again after a reconnect continues it instead of starting empty.
+  it('takes the cloud session a request continues', () => {
+    const fold = foldSessionEvent(
+      INITIAL_SESSION_FOLD,
+      entry(SESSION_EVENT_KINDS.REQUESTED, {
+        agent: 'claude-code',
+        launch: { permission: 'auto', teleport: 'session_01KpKLr7hb6j4zoBFARRi2ZM' },
+      }),
+    );
+
+    expect(fold.launch.teleport).toBe('session_01KpKLr7hb6j4zoBFARRi2ZM');
   });
 
   it('refuses a permission level outside the union rather than storing it', () => {
@@ -375,6 +391,7 @@ describe('the launch the fold projects', () => {
       permission: 'full',
       effort: 'max',
       environment: null,
+      teleport: null,
     });
   });
 });

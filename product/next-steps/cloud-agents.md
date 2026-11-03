@@ -23,8 +23,20 @@ owner asked for it end to end:
   workspace launched, as the agent's observed state, so their dots follow the
   usual rules. No claude.ai credential ever leaves the browser.
 - **Bring it here** is the command, `claude --teleport <id>`, on the
-  session's pane. A Teleport button that opens a worktree session on a host
-  is not built.
+  session's pane, and, since 2026-11-03, *Continue on a host* above it: the
+  reader picks a host (the one that started it while it is online, else the
+  first online one), and the console starts a worktree session there on
+  the cloud session's repository, from the base it started on, in its
+  project and under its name, whose agent runs `claude --teleport <id>`
+  instead of opening a conversation of its own, then opens that session.
+  The create carries `teleport` (one checkout, no first task); the launch
+  keeps it (`launchTeleport`), so a create sent again after a reconnect
+  continues the same cloud session, and a restart reopens what it left with
+  `claude --continue`. A runner takes it only once its hello names
+  `session.teleport` (`SESSIONS_048` otherwise). The host's Claude Code must
+  be signed in to the account that owns the cloud session. The new session
+  names no conversation (Claude Code names the teleported one), so its chat
+  view has no transcript to follow yet; the terminal is the session.
 
 The proposal is [`../research/cloud-agents.md`](../research/cloud-agents.md)
 §5, and its open questions are §6. This file keeps only what decides

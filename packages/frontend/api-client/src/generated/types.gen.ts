@@ -1800,6 +1800,7 @@ export type CreateSessionRequest = {
     folder?: string;
     cloud?: boolean;
     codexEnvironment?: string;
+    teleport?: string;
     cwdGithubRepoId?: number;
     launch?: {
         model?: string;
@@ -2723,6 +2724,7 @@ export type StartTaskSessionRequest = {
         folder?: string;
         cloud?: boolean;
         codexEnvironment?: string;
+        teleport?: string;
         cwdGithubRepoId?: number;
         launch?: {
             model?: string;
@@ -9435,7 +9437,7 @@ export type CreateSessionErrors = {
     /**
      * SESSIONS_017 — The host’s runner takes no images
      *
-     * SESSIONS_011 / SESSIONS_025 — The host's runner is older than the agent, or than folder sessions
+     * SESSIONS_011 / SESSIONS_025 / SESSIONS_048 — The host's runner is older than the agent, than folder sessions, or than continuing a cloud session
      *
      * SESSIONS_006 — That project is archived
      */
