@@ -35,10 +35,12 @@ pull request with its SHA. Fix every `FAIL` and verify again.
 
 ## 4. Hand it over
 
-Send Jordi one message:
+Send Jordi one message, written the way `ketchup` writes an action item
+(plain words, pick, evidence, risk):
 
 - the link and what it does, in two lines;
-- how to try it (route, command, account), with the screenshots or video;
+- how to try it (route, command, account), with the screenshots or video,
+  and a `visualize` diagram when the change is easier to see than read;
 - the verdict;
 - the questions from step 1, each with the default you took.
 

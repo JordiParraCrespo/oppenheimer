@@ -1,0 +1,70 @@
+---
+name: ketchup
+description: Catch Jordi up in plain words and small visuals, and list every call waiting on him so he can make it from the reply alone. `/ketchup` covers this chat since his last message; `/ketchup all` covers every open agent pull request in the repository, by its merge label. Read-only. Use for /ketchup.
+disable-model-invocation: true
+argument-hint: "[all]"
+---
+
+# Ketchup
+
+Adapted from poteto's `ketchup` in pstack (`cursor/plugins`, MIT).
+
+Catch Jordi up, and help him understand each change, not only where it
+stands. Then lay out every call waiting on him so he can make it from your
+reply alone. Write in the `bro` voice: plain words, short sentences, what
+changed for him, not how you did it.
+
+## Scope
+
+- **`/ketchup`**: this chat, since the last message Jordi wrote.
+  Notifications and subagent results are not his messages. Assume he
+  remembers his last message and nothing after it.
+- **`/ketchup all`**: every open pull request an agent opened in this
+  repository, read from GitHub by its label (the protocol is `steward`,
+  "Merging"). `propose` pull requests wait on him. A `ship` or `research`
+  pull request that is not merging is stuck: say why, from its threads,
+  its report and its mergeability. Add what merged since the last
+  `/ketchup all` in this chat, or in the last day, one line each.
+
+## Gather
+
+Keep this turn read-only: change no code, start no app or job, post
+nothing. Check the current state of each pull request, report or agent
+you will mention, and each number you will show against where it comes
+from; say so when you correct one.
+
+An **action item** is a call only Jordi can make: a product choice, an
+approval (`/ship` on a `propose` pull request), something that cannot be
+undone, access you lack. Include any still waiting on him, even one raised
+before his last message. Work you can still do yourself is not an action
+item, and never make one up to fill the reply.
+
+For each item collect its link, what it changes for users, the evidence
+behind your pick (the verifier's verdict, the autoreview, the screenshots),
+its risk, and your pick. Write "unknown" for a fact the call needs that
+you do not have.
+
+## Write
+
+Spend the words on the calls, not the story.
+
+1. **One sentence** naming what waits on him, or saying nothing does. If
+   nothing happened and nothing waits, say so and stop.
+2. **What happened**, pictures first: the screenshots the work produced,
+   then any diagram from the `visualize` skill that explains a change.
+   Then one short bullet per thing he asked for (per pull request for
+   `all`): what came of it, and whether it is done, running, failed or
+   not checked, said the way you would say it out loud. Under 100 words
+   for this part, fewer when less happened. Never mark something done
+   that still waits on him.
+3. **The action items.** One call about one item is one bullet: the call,
+   your pick, what it changes for users, the evidence, the risk (even
+   "Low risk: only the colors change"). When items share a call ("accept
+   these three proposals"), write the call and pick once, then a bullet per
+   item, riskiest first. About 30 words per item; never cut an item or
+   replace a list with a count to save words. A call between options gives
+   each option with what it gets him and what it costs.
+
+Leave out hashes, file paths, commands and counts unless he needs one to
+act. Name each pull request by its number and a name he would recognise.
+Link only things that exist.
