@@ -6,7 +6,7 @@ import { ErrorAlert } from '@oppenheimer/frontend-web';
 import { useNavigate } from '@tanstack/react-router';
 import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { continueHost } from '../lib/cloud-continue';
+import { continueHost, continueOnHost } from '../lib/cloud-continue';
 
 /**
  * Continue a Claude Code cloud session on one of your hosts: a worktree
@@ -39,7 +39,7 @@ export function SessionCloudContinue({ session }: { session: SessionEntity }) {
     null;
 
   const start = () => {
-    const input = hostId ? session.continueOn(hostId) : null;
+    const input = hostId ? continueOnHost(session, hostId) : null;
     if (!hostId || !input) return;
     if (attempt.current?.hostId !== hostId) attempt.current = { hostId, key: crypto.randomUUID() };
     create.mutate({ input, idempotencyKey: attempt.current.key });

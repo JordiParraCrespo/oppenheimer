@@ -2,7 +2,6 @@ import { assignProps } from '@oppenheimer/frontend-core';
 import {
   CODING_AGENTS,
   type CodingAgentId,
-  canTeleport,
   isCodingAgentId,
   type SessionEffort,
   type SessionPermission,
@@ -344,48 +343,6 @@ export class SessionEntity {
       : `claude --teleport ${this.cloudSessionId}`;
   }
 
-  /**
-   * Whether a host can continue it in a worktree of its own, with its branch
-   * and history (`claude --teleport`): a cloud session a host started for an
-   * agent that teleports (Claude Code's), on the one repository it worked on,
-   * once its vendor has given it an id.
-   */
-  get canContinueOnHost(): boolean {
-    return (
-      this.place === 'cloud' &&
-      this.cloud === null &&
-      canTeleport(this.agent) &&
-      this.cloudSessionId !== null &&
-      this.checkouts.length === 1
-    );
-  }
-
-  /**
-   * The create that continues it on `hostId`: a worktree of its repository,
-   * from the base it started on, in its project and under its name, whose
-   * agent opens the cloud session there. No first task, since the
-   * conversation holds it. Null when it cannot be continued on a host.
-   */
-  continueOn(hostId: string): CreateSessionInput | null {
-    const [checkout] = this.checkouts;
-    if (!this.canContinueOnHost || !checkout || !this.cloudSessionId || !canTeleport(this.agent))
-      return null;
-    return {
-      hostId,
-      agent: this.agent,
-      projectId: this.projectId,
-      name: this.name,
-      checkouts: [
-        {
-          installationId: checkout.installationId,
-          githubRepoId: Number(checkout.githubRepoId),
-          baseBranch: checkout.baseBranch,
-        },
-      ],
-      teleport: this.cloudSessionId,
-    };
-  }
-
   /** Whether a delete is on its way to the host: the row reads "Deleting…". */
   get isClosing(): boolean {
     return this.closeRequest !== null;
@@ -495,7 +452,7 @@ export interface CreateWorktreeSession {
   /**
    * A Claude Code cloud session to continue in this worktree
    * (`claude --teleport`) instead of starting a conversation: one checkout,
-   * and no first task (`SessionEntity.continueOn`).
+   * and no first task.
    */
   teleport?: string;
   folder?: never;

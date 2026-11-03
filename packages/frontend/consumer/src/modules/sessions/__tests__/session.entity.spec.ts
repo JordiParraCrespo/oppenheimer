@@ -279,40 +279,4 @@ describe('SessionEntity cloud links', () => {
     expect(session.cloudUrl).toBeNull();
     expect(session.teleportCommand).toBeNull();
   });
-
-  // Continuing on a host is a worktree of the repository the cloud session
-  // worked on, from its base, whose agent opens the cloud session there; a
-  // first task would be a second one the conversation already holds.
-  it("continues Claude Code's on a host as a worktree session that teleports it", () => {
-    const session = cloudSession('claude-code', 'session_014a8EH8DJs95X1iK8ZH9Y82').with({
-      checkouts: [
-        new SessionCheckoutEntity(
-          'checkout-1',
-          'inst-1',
-          '42',
-          'acme/xrp-mobile',
-          'xrp-mobile',
-          'main',
-          'oppenheimer/bold-otter-3f9a7k',
-        ),
-      ],
-    });
-
-    expect(session.canContinueOnHost).toBe(true);
-    expect(session.continueOn('host-2')).toEqual({
-      hostId: 'host-2',
-      agent: 'claude-code',
-      projectId: session.projectId,
-      name: 'Fix the wallet list empty state',
-      checkouts: [{ installationId: 'inst-1', githubRepoId: 42, baseBranch: 'main' }],
-      teleport: 'session_014a8EH8DJs95X1iK8ZH9Y82',
-    });
-  });
-
-  // A Codex task brings back a diff (`codex apply`), not a conversation, and a
-  // session with no id yet has nothing at its vendor to open.
-  it('continues neither a Codex task nor a session its host has not started', () => {
-    expect(cloudSession('codex', 'task_e_68a1b2c3d4').continueOn('host-2')).toBeNull();
-    expect(cloudSession('claude-code', null).continueOn('host-2')).toBeNull();
-  });
 });

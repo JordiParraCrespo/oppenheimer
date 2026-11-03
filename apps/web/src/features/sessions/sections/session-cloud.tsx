@@ -5,6 +5,7 @@ import { PageFrame } from '@oppenheimer/frontend-web';
 import { lazy, Suspense, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { CloudLink } from '../components/cloud-link';
+import { canContinueOnHost } from '../lib/cloud-continue';
 import { hostCloudCopy } from '../lib/session-options';
 import { dotFor, stateWordFor } from '../lib/session-run-state';
 import { SessionCloudContinue } from './session-cloud-continue';
@@ -59,12 +60,12 @@ export function SessionCloud({ session }: { session: SessionEntity }) {
           </Button>
         </div>
 
-        {session.canContinueOnHost ? <SessionCloudContinue session={session} /> : null}
+        {canContinueOnHost(session) ? <SessionCloudContinue session={session} /> : null}
 
         {session.teleportCommand ? (
           <CommandRow
             className="mt-6.5 max-w-140"
-            lead={t(session.canContinueOnHost ? 'sessions.cloud.teleportManual' : copy.teleport)}
+            lead={t(canContinueOnHost(session) ? 'sessions.cloud.teleportManual' : copy.teleport)}
             command={session.teleportCommand}
             copyLabel={t('sessions.cloud.copy')}
             copiedLabel={t('sessions.cloud.copied')}
