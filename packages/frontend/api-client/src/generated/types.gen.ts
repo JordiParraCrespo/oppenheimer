@@ -4255,6 +4255,17 @@ export type SendBotMessageRequest = {
     steer?: boolean;
 };
 
+export type BotGoalWaitingResponseDto = {
+    /**
+     * The system limiting our requests ("Gmail", "GitHub").
+     */
+    system: string;
+    /**
+     * When the goal goes on.
+     */
+    until: string;
+};
+
 export type BotGoalResponseDto = {
     id: string;
     /**
@@ -4270,6 +4281,10 @@ export type BotGoalResponseDto = {
      */
     limit: number;
     createdAt: string;
+    /**
+     * A turn of the goal ended on a system’s rate limit, and its next decision waits until then; null when nothing holds it.
+     */
+    waiting: BotGoalWaitingResponseDto | null;
 };
 
 export type BotGoalStateResponseDto = {

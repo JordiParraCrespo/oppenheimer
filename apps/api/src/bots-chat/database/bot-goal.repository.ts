@@ -88,12 +88,31 @@ export async function claimContinuationWithin(
   const result = await manager
     .createQueryBuilder()
     .update(BotGoalOrmEntity)
-    .set({ continuations: goal.continuations })
+    // A continuation queued is the end of any wait the goal was holding for.
+    .set({ continuations: goal.continuations, waitingFor: null, waitingUntil: null })
     .where('id = :id AND continuations = :at', { id: goal.id, at: goal.continuationsAtLoad })
     .execute();
   if (result.affected !== 1) return false;
   goal.markPersisted();
   return true;
+}
+
+/**
+ * Marks the bot's goal as waiting out `limit`, in the transaction that stages
+ * its held decision (`BotTurnRepository.finish`), so the row says what the
+ * queue holds. `UQ_bot_goal_bot` finds the one row; a bot with no goal by
+ * now writes nothing.
+ */
+export async function holdGoalWithin(
+  manager: EntityManager,
+  turn: { organizationId: string; botId: string },
+  limit: { system: string; resetAt: Date },
+): Promise<void> {
+  await manager.query(
+    `UPDATE bot_goal SET "waitingFor" = $3, "waitingUntil" = $4, "updatedAt" = now()
+      WHERE "organizationId" = $1 AND "botId" = $2`,
+    [turn.organizationId, turn.botId, limit.system.slice(0, 64), limit.resetAt],
+  );
 }
 
 /**

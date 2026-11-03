@@ -10,6 +10,7 @@ import {
   BOT_GOAL_OBJECTIVE_MAX,
   type Scope,
 } from '@oppenheimer/shared';
+import type { BotRateLimit } from './bot-rate-limit.policy';
 
 export interface BotGoalProps {
   organizationId: string;
@@ -25,6 +26,13 @@ export interface BotGoalProps {
   /** The setting turn's credential scopes; null for a browser session. */
   credentialScopes: readonly Scope[] | null;
   timeZone: string | null;
+  /**
+   * The system whose rate limit a turn of the goal ended on, and until when:
+   * the goal's next decision is held until then (`bot-rate-limit.policy.ts`).
+   * Null when nothing holds it. Set by the end that holds it and cleared by
+   * the claim of the next continuation, both in SQL, never by this entity.
+   */
+  waiting?: BotRateLimit | null;
 }
 
 /**
@@ -45,10 +53,10 @@ export class BotGoalEntity extends AggregateRoot<BotGoalProps> {
     return new BotGoalEntity(create);
   }
 
-  static set(props: Omit<BotGoalProps, 'continuations'>): BotGoalEntity {
+  static set(props: Omit<BotGoalProps, 'continuations' | 'waiting'>): BotGoalEntity {
     const goal = new BotGoalEntity({
       id: randomUUID(),
-      props: { ...props, objective: props.objective.trim(), continuations: 0 },
+      props: { ...props, objective: props.objective.trim(), continuations: 0, waiting: null },
     });
     goal.validate();
     return goal;
@@ -77,6 +85,10 @@ export class BotGoalEntity extends AggregateRoot<BotGoalProps> {
   }
   get timeZone(): string | null {
     return this.props.timeZone;
+  }
+  /** The rate limit its next decision waits out; null when nothing holds it. */
+  get waiting(): BotRateLimit | null {
+    return this.props.waiting ?? null;
   }
   /** The count a conditional write is checked against. */
   get continuationsAtLoad(): number {

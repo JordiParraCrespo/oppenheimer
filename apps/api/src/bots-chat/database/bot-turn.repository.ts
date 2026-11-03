@@ -16,7 +16,12 @@ import type { BotMessageEntity } from '../domain/bot-message.entity';
 import type { BotTurnContext, BotTurnEntity } from '../domain/bot-turn.entity';
 import { claimAttachmentsWithin } from './bot-attachment.repository';
 import type { BotConversationRepositoryPort } from './bot-conversation.repository.port';
-import { claimContinuationWithin, owesGoalWithin, setGoalWithin } from './bot-goal.repository';
+import {
+  claimContinuationWithin,
+  holdGoalWithin,
+  owesGoalWithin,
+  setGoalWithin,
+} from './bot-goal.repository';
 import { insertMessageWithin } from './bot-message.repository';
 import { BotTurnOrmEntity } from './bot-turn.orm-entity';
 import type {
@@ -398,20 +403,21 @@ export class BotTurnRepository
       // A goal's own turn owes it a decision, staged with the end that owes it.
       // A turn a system's rate limit stopped holds it until the limit ends: a
       // continuation sooner would only meet the limit again, and spend one of
-      // the goal's turns doing it.
+      // the goal's turns doing it. The goal says it waits, for the chat.
       if (await owesGoalWithin(manager, turn)) {
-        const limitedUntil = turn.limitedUntilAtEnd;
-        const waits = limitedUntil !== null && limitedUntil > new Date();
+        const limit = turn.limitAtEnd;
+        const held = limit && limit.resetAt > new Date() ? limit : null;
+        if (held) await holdGoalWithin(manager, turn, held);
         await this.outbox.stageJob(manager, {
           queue: QUEUE_NAMES.BOT_TURNS,
           jobName: CONTINUE_BOT_GOAL_JOB,
           payload: { turnId: turn.id },
-          reason: waits
-            ? `bot ${turn.botId}: turn ${turn.id} ended with a goal open, rate limited until ${limitedUntil.toISOString()}`
+          reason: held
+            ? `bot ${turn.botId}: turn ${turn.id} ended with a goal open, rate limited until ${held.resetAt.toISOString()}`
             : `bot ${turn.botId}: turn ${turn.id} ended with a goal open`,
           aggregateId: turn.id,
           correlationId,
-          ...(waits && { availableAt: limitedUntil }),
+          ...(held && { availableAt: held.resetAt }),
         });
       }
       return true;

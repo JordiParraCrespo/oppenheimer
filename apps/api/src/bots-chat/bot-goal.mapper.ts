@@ -17,6 +17,8 @@ export class BotGoalMapper {
     record.continuations = entity.continuations;
     record.credentialScopes = entity.credentialScopes ? [...entity.credentialScopes] : null;
     record.timeZone = entity.timeZone;
+    record.waitingFor = entity.waiting?.system ?? null;
+    record.waitingUntil = entity.waiting?.resetAt ?? null;
     return record;
   }
 
@@ -34,6 +36,10 @@ export class BotGoalMapper {
         continuations: record.continuations,
         credentialScopes: record.credentialScopes ? scopesOf(record.credentialScopes) : null,
         timeZone: record.timeZone,
+        waiting:
+          record.waitingFor && record.waitingUntil
+            ? { system: record.waitingFor, resetAt: record.waitingUntil }
+            : null,
       },
     });
   }
@@ -45,6 +51,9 @@ export class BotGoalMapper {
     dto.continuations = entity.continuations;
     dto.limit = entity.limit;
     dto.createdAt = entity.createdAt.toISOString();
+    dto.waiting = entity.waiting
+      ? { system: entity.waiting.system, until: entity.waiting.resetAt.toISOString() }
+      : null;
     return dto;
   }
 

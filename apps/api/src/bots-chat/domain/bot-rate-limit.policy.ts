@@ -41,9 +41,9 @@ export function rateLimitOfRecord(value: unknown): BotRateLimit | null {
   return Number.isNaN(at.getTime()) ? null : { system, resetAt: at };
 }
 
-/** The later of two limits' ends: a turn that met two waits for both. */
-export function laterReset(held: Date | null, limit: BotRateLimit): Date {
-  return held && held >= limit.resetAt ? held : limit.resetAt;
+/** The later of two limits: a turn that met two waits for both, and names the one it waits on. */
+export function laterLimit(held: BotRateLimit | null, limit: BotRateLimit): BotRateLimit {
+  return held && held.resetAt >= limit.resetAt ? held : limit;
 }
 
 /**

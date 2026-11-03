@@ -716,6 +716,8 @@ export interface BotGoal {
   continuations: number;
   limit: number;
   createdAt: string;
+  /** A turn ended on a system's rate limit, and the goal goes on at `until`; null when nothing holds it. */
+  waiting: { system: string; until: string } | null;
 }
 
 /**
