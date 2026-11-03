@@ -1,4 +1,3 @@
-import { ArgumentInvalidException } from '@oppenheimer/backend-ddd';
 import {
   BOT_GOAL_CONTINUATIONS_PERSON,
   type BotGoalActivity,
@@ -57,19 +56,13 @@ export interface GoalSettingTurn {
 /**
  * The goal a person's message sets (`25-bots.md` §4.1, "Built-in
  * commands"): `/goal <condition>` sets one on the turn it queues, with the
- * whole of the limit; null for any other message. `/goal` alone and
- * `/goal clear` are refused: they show and stop the goal, which the console
- * does with `GET` and `DELETE /bots/:id/goal`, and as a message they would
- * spend a turn to say what the notice already shows.
+ * whole of the limit; null for any other message, `/goal` alone and
+ * `/goal clear` included, which `refuseConsoleCommand`
+ * (`bot-built-in.policy.ts`) refuses first.
  */
 export function goalFromMessage(content: string, turn: GoalSettingTurn): BotGoalEntity | null {
   const command = botGoalCommandOf(parseBotSlashCommand(content));
-  if (!command) return null;
-  if (command.kind !== 'set') {
-    throw new ArgumentInvalidException(
-      '/goal alone and /goal clear are not messages: read the goal with GET /bots/:id/goal and stop it with DELETE /bots/:id/goal',
-    );
-  }
+  if (command?.kind !== 'set') return null;
   return BotGoalEntity.set({
     organizationId: turn.organizationId,
     botId: turn.botId,

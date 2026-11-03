@@ -264,6 +264,19 @@ runner does with it and point back.
   is `packages/shared/src/schemas/session-decision.schema.ts`, Go twin
   generated, bounded to fit the 8 KB event cap. The answer goes back as
   plain `session.input` frames, one key each; nothing new is on the wire.
+  When the agent tells the person a line (`runner sessions notify`, since
+  2026-11-02), the runner logs `agent.notified` with `{ id, text }`
+  (`packages/shared/src/schemas/session-notice.schema.ts`), the text at most
+  500 bytes; the control plane keeps the latest on the session for the
+  Inbox. Nothing new is on the wire for it either. When it asks to be
+  woken by a pull request (`runner sessions watch-pr`), the runner logs
+  `pull.watched` with `{ githubRepoId, number, watch }`
+  (`packages/shared/src/schemas/session-wake.schema.ts`); the control plane
+  types a line into the session when that pull request's checks finish, it
+  is reviewed or commented on, or it merges. When it asks to be woken
+  later (`runner sessions wake-in`), the runner logs `wake.requested` with
+  `{ id, at, text }`, `at` in UTC; the control plane holds the wake and
+  types the note back in when it is due.
 - `attachment.credit` — the browser's consumed-byte credit, relayed to
   the runner so it resumes that attachment's PTY reads. Without it the
   window below is a one-way valve: a noisy pane stalls for good rather

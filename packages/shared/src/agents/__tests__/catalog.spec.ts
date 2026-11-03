@@ -50,6 +50,10 @@ describe('coding agent catalog', () => {
     expect(effortFor('claude-code', 'claude-opus-5-5')?.default).toBe('medium');
     expect(effortFor('claude-code', 'claude-fable-5-1')?.default).toBe('high');
     expect(effortFor('claude-code', 'claude-haiku-4-5')).toBeUndefined();
+    expect(effortFor('claude-code', 'claude-haiku-5-5')?.default).toBe('medium');
+    // `xhigh` arrived with Opus 4.7: the 4.6 generation stops short of it.
+    expect(levelsOf('claude-code', 'claude-opus-4-6')).toEqual(['low', 'medium', 'high', 'max']);
+    expect(levelsOf('claude-code', 'claude-sonnet-4-6')).toEqual(['low', 'medium', 'high', 'max']);
     expect(levelsOf('codex', 'gpt-5.6-sol')).toEqual([
       'low',
       'medium',

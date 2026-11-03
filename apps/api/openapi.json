@@ -21263,6 +21263,73 @@
         ]
       }
     },
+    "/api/v1/bots/{id}/usage": {
+      "get": {
+        "description": "The tokens its turns spent, by model, and its calls on the owner's key outside them (goal reviews, summaries, rule reviews), since the chat's first turn. Cache reads and writes are part of the input.",
+        "operationId": "findBotUsage",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BotUsageResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "BOTS_001 — Bot not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "What a bot's chat has spent",
+        "tags": [
+          "Bots"
+        ]
+      }
+    },
     "/api/v1/bots/{id}/stream": {
       "get": {
         "description": "Server-Sent Events. `ready` once subscribed, then a `bot` event per change, its `data` one of: `{ type: \"snapshot\", turnId, block, seq, text }` right after `ready`, once per running turn: the whole block of text it is writing and has not stored, in place of what the reader held for that block; `{ type: \"text\", turnId, block, seq, text }` as a turn writes (`block` counts the blocks the turn stored before it, `seq` its text writes; one at or below what the reader holds is a duplicate); `{ type: \"retrying\", turnId, reason }` while a turn waits on a provider that refused a call; `{ type: \"subagents\", turnId, callId, runs }` where each child of a running `delegate` call is; `{ type: \"message\", turnId, messageId }` when a message is stored; `{ type: \"turn\", turnId, status }` when a turn moves; `{ type: \"approval\", approvalId, status }` and `{ type: \"question\", questionId, status }` when a card is raised or settled. The stored conversation is the record; read it again on `ready`, `message` and `turn`. A `keepalive` holds an idle stream open, and the stream ends after 15 minutes so the redial is authenticated again.",
@@ -27824,6 +27891,32 @@
           "title"
         ]
       },
+      "SessionNoticeResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "3f9a7c1e2b4d6a80",
+            "description": "The runner’s id for this notice."
+          },
+          "text": {
+            "type": "string",
+            "maxLength": 500,
+            "example": "The migration ran: 3 tables changed, all tests pass.",
+            "description": "What the agent said, in its own words: data, not instructions."
+          },
+          "at": {
+            "format": "date-time",
+            "type": "string",
+            "description": "When the host logged it."
+          }
+        },
+        "required": [
+          "id",
+          "text",
+          "at"
+        ]
+      },
       "SessionResponseDto": {
         "type": "object",
         "properties": {
@@ -28014,6 +28107,16 @@
               }
             ]
           },
+          "notice": {
+            "nullable": true,
+            "description": "The last line the agent sent you (`runner sessions notify`), kept until the session closes. The Inbox shows it until you mark it done.",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SessionNoticeResponseDto"
+              }
+            ]
+          },
           "createdAt": {
             "format": "date-time",
             "type": "string"
@@ -28041,6 +28144,7 @@
           "hints",
           "decision",
           "agentReport",
+          "notice",
           "createdAt",
           "updatedAt"
         ]
@@ -29331,6 +29435,8 @@
               "issue_opened",
               "mention",
               "release",
+              "check_passed",
+              "review",
               "mail_received"
             ],
             "description": "`schedule`, or the catalog event (`pr_opened`, `push`, `mail_received`, …)."
@@ -29770,7 +29876,9 @@
                         "check_failed",
                         "issue_opened",
                         "mention",
-                        "release"
+                        "release",
+                        "check_passed",
+                        "review"
                       ]
                     },
                     "repositories": {
@@ -29977,7 +30085,9 @@
               "check_failed",
               "issue_opened",
               "mention",
-              "release"
+              "release",
+              "check_passed",
+              "review"
             ]
           },
           "repositories": {
@@ -30247,7 +30357,9 @@
                         "check_failed",
                         "issue_opened",
                         "mention",
-                        "release"
+                        "release",
+                        "check_passed",
+                        "review"
                       ]
                     },
                     "repositories": {
@@ -34867,6 +34979,14 @@
           "outputTokens": {
             "type": "number"
           },
+          "cacheReadTokens": {
+            "type": "number",
+            "description": "How much of its input it read from the prompt cache."
+          },
+          "cacheWriteTokens": {
+            "type": "number",
+            "description": "How much of its input it wrote to the prompt cache."
+          },
           "durationMs": {
             "type": "number",
             "description": "How long it ran, in milliseconds."
@@ -35335,6 +35455,131 @@
         },
         "required": [
           "goal"
+        ]
+      },
+      "BotUsageModelResponseDto": {
+        "type": "object",
+        "properties": {
+          "inputTokens": {
+            "type": "number",
+            "description": "Every token sent, cached or not."
+          },
+          "outputTokens": {
+            "type": "number"
+          },
+          "cacheReadTokens": {
+            "type": "number",
+            "description": "How much of the input was read from the prompt cache."
+          },
+          "cacheWriteTokens": {
+            "type": "number",
+            "description": "How much of the input was written to the prompt cache."
+          },
+          "provider": {
+            "type": "string",
+            "enum": [
+              "anthropic",
+              "glm",
+              "openai",
+              "chatgpt",
+              "xai"
+            ]
+          },
+          "model": {
+            "type": "string"
+          },
+          "turns": {
+            "type": "number",
+            "description": "The turns that ran on this model."
+          }
+        },
+        "required": [
+          "inputTokens",
+          "outputTokens",
+          "cacheReadTokens",
+          "cacheWriteTokens",
+          "provider",
+          "model",
+          "turns"
+        ]
+      },
+      "BotUsageBackgroundResponseDto": {
+        "type": "object",
+        "properties": {
+          "inputTokens": {
+            "type": "number",
+            "description": "Every token sent, cached or not."
+          },
+          "outputTokens": {
+            "type": "number"
+          },
+          "cacheReadTokens": {
+            "type": "number",
+            "description": "How much of the input was read from the prompt cache."
+          },
+          "cacheWriteTokens": {
+            "type": "number",
+            "description": "How much of the input was written to the prompt cache."
+          },
+          "purpose": {
+            "type": "string",
+            "enum": [
+              "goal_review",
+              "summary",
+              "rule_review"
+            ],
+            "description": "Why the bot called its model outside a turn: a goal's review, the conversation's summary, or a review of the owner's rules."
+          },
+          "calls": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "inputTokens",
+          "outputTokens",
+          "cacheReadTokens",
+          "cacheWriteTokens",
+          "purpose",
+          "calls"
+        ]
+      },
+      "BotUsageResponseDto": {
+        "type": "object",
+        "properties": {
+          "since": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true,
+            "description": "When the chat's first turn was sent; null before one. Clearing the chat starts again."
+          },
+          "turns": {
+            "type": "number",
+            "description": "The turns that ran, whatever they ended as."
+          },
+          "activeMs": {
+            "type": "number",
+            "description": "How long they worked, summed, in milliseconds."
+          },
+          "models": {
+            "description": "Its turns by model, most spent first.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BotUsageModelResponseDto"
+            }
+          },
+          "background": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BotUsageBackgroundResponseDto"
+            }
+          }
+        },
+        "required": [
+          "since",
+          "turns",
+          "activeMs",
+          "models",
+          "background"
         ]
       },
       "BotApprovalResponseDto": {
@@ -36117,7 +36362,7 @@
         "properties": {
           "itemKey": {
             "type": "string",
-            "description": "The occurrence: `session:<id>:<observedSince>`, `approval:<id>`, `pull:<repoId>#<number>@<sha>` or `run:<id>`."
+            "description": "The occurrence: `session:<id>:<observedSince>`, `approval:<id>`, `pull:<repoId>#<number>@<sha>`, `run:<id>` or `notice:<sessionId>:<noticeId>`."
           },
           "mark": {
             "type": "string",

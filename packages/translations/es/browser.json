@@ -831,6 +831,7 @@
         "empty": "Ningún modelo coincide con «{{query}}».",
         "favourites": "Favoritos",
         "favouritesEmpty": "Marca un modelo con la estrella para tenerlo aquí.",
+        "moreModels": "Más modelos",
         "addFavourite": "Añadir {{model}} a favoritos",
         "removeFavourite": "Quitar {{model}} de favoritos",
         "auto": "Auto"
@@ -1299,7 +1300,10 @@
       "explored": {
         "title": "Explorado"
       },
-      "exploring": "Explorando"
+      "exploring": "Explorando",
+      "file": {
+        "onHost": "Se queda en el equipo: es demasiado grande para el chat, o no es una imagen ni texto."
+      }
     },
     "preview": {
       "show": "Mostrar vista previa",
@@ -1658,8 +1662,33 @@
         "pick": "Usar /{{name}}",
         "builtInLabel": "Comandos",
         "builtIn": {
-          "goal": "Sigue trabajando hasta que se cumpla una condición, revisada tras cada turno. /goal clear lo detiene."
+          "goal": "Sigue trabajando hasta que se cumpla una condición, revisada tras cada turno. /goal clear lo detiene.",
+          "usage": "Muestra lo que ha gastado este chat: tokens por modelo, aciertos de caché, ventanas del plan."
         }
+      },
+      "usage": {
+        "title": "Uso",
+        "since": "desde el {{date}}",
+        "copy": "Copiar uso",
+        "summary_one": "{{count}} turno · {{active}} trabajando · {{tokens}} tokens",
+        "summary_other": "{{count}} turnos · {{active}} trabajando · {{tokens}} tokens",
+        "cacheHit": "{{percent}} % de aciertos de caché",
+        "modelShare": "{{model}} {{percent}} %",
+        "input": "Entrada {{tokens}}",
+        "output": "Salida {{tokens}}",
+        "cacheRead": "Lectura de caché {{tokens}}",
+        "cacheWrite": "Escritura de caché {{tokens}}",
+        "includes": "incluye {{calls}} fuera de sus turnos",
+        "purpose": {
+          "goalReview_one": "{{count}} revisión del objetivo",
+          "goalReview_other": "{{count}} revisiones del objetivo",
+          "summary_one": "{{count}} resumen",
+          "summary_other": "{{count}} resúmenes",
+          "ruleReview_one": "{{count}} revisión de reglas",
+          "ruleReview_other": "{{count}} revisiones de reglas"
+        },
+        "empty": "Este chat aún no ha gastado nada.",
+        "loadFailed": "No se pudo cargar el uso. Inténtalo de nuevo."
       }
     },
     "settings": {
@@ -2061,6 +2090,14 @@
       "check_failed": {
         "label": "Check fallido",
         "desc": "Cualquier workflow de Actions o check de estado"
+      },
+      "check_passed": {
+        "label": "Checks superados",
+        "desc": "Un workflow de Actions o un check suite terminó en verde"
+      },
+      "review": {
+        "label": "Revisión enviada",
+        "desc": "Una aprobación, cambios pedidos o un comentario de revisión"
       },
       "issue_opened": {
         "label": "Incidencia abierta",
@@ -3046,6 +3083,10 @@
       "clear": "Lo nuevo llega aquí cuando algo necesita una decisión.",
       "clearRunning_one": "{{count}} sesión sigue en marcha. Lo nuevo llega aquí cuando algo necesita una decisión.",
       "clearRunning_other": "{{count}} sesiones siguen en marcha. Lo nuevo llega aquí cuando algo necesita una decisión."
+    },
+    "notice": {
+      "title": "{{name}} tiene novedades para ti",
+      "done": "Hecho"
     }
   },
   "settings": {

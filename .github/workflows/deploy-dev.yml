@@ -4,7 +4,7 @@ name: Deploy dev
 # pulls the images this workflow pushed and pins them by digest, and never
 # builds anything. The server side is deploy/dev (README.md there is the
 # runbook). Pull requests carry their `pnpm ci:local` report, so main is what
-# was reviewed; the scheduled CI run still re-checks it every eight hours.
+# was reviewed; the scheduled CI run still re-checks it every four hours.
 #
 # Off until the server exists: set the repository variable
 # DEV_DEPLOY_ENABLED=true once deploy/dev/README.md's setup is done.

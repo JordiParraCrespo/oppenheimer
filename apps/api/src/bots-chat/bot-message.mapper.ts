@@ -200,6 +200,8 @@ export function toSubagentRuns(raw: unknown): BotSubagentRun[] | null {
           : [],
         inputTokens: count(row.inputTokens),
         outputTokens: count(row.outputTokens),
+        cacheReadTokens: count(row.cacheReadTokens),
+        cacheWriteTokens: count(row.cacheWriteTokens),
         durationMs: count(row.durationMs),
       },
     ];

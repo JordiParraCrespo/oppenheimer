@@ -24,6 +24,7 @@ there.
 | — | [Channels](channels.md) | Bots on email, WhatsApp and Slack: one interface per channel, email first as an address of the bot's own; version not set |
 | — | [Customers and routes](customers-and-routes.md) | Bots that talk to customers: routes pick the bot per channel, account, customer and conversation, a bot of a customer's own, hand-off to a person; after channels, version not set |
 | — | [Voice](voice.md) | Wispr-Flow-style dictation in the console, and setting up a session by speaking it; version not set |
+| — | [Agent tools](agent-tools.md) | An agent in a session reaches the person: sends a file to the chat, notifies the Inbox, is woken by its pull request or at a time it set; started 2026-11-02, version not set |
 | — | [Cloud agents](cloud-agents.md) | Sessions in the vendors' clouds (Claude `--cloud`, Codex cloud, Cursor Cloud Agents) beside sessions on hosts, and brought back onto a host; version not set |
 | — | [Sentry](sentry.md) | Errors from the API, workers, bots and console reported to Sentry; a Sentry issue as an automation trigger that starts a fix; built from 2026-11-02, version not set |
 
@@ -119,5 +120,8 @@ where these land is the first open question below.
 - 2026-10-31: 0.7 gains a second document, [the chat's model and
   protocol](0.7-chat-protocol.md), with six slices drawn from a read of
   Codex and Grok.
+- 2026-11-02: agent tools added (`agent-tools.md`), from the tools Claude
+  Code has in its own cloud sessions: send a file, notify, wake on a pull
+  request, wake later. Send a file built the same day.
 - 2026-11-02: Sentry added: error reporting, and Sentry issues as a trigger
   source (`sentry.md`); version not set.

@@ -170,6 +170,7 @@
       "empty": "No model matches “{{query}}”.",
       "favourites": "Favourites",
       "favouritesEmpty": "Star a model to keep it here.",
+      "moreModels": "More models",
       "addFavourite": "Add {{model}} to favourites",
       "removeFavourite": "Remove {{model}} from favourites",
       "auto": "Auto"
@@ -635,7 +636,10 @@
     "explored": {
       "title": "Explored"
     },
-    "exploring": "Exploring"
+    "exploring": "Exploring",
+    "file": {
+      "onHost": "It stays on the host: too large for the chat, or not an image or text."
+    }
   },
   "preview": {
     "show": "Show preview",

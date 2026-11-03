@@ -47,7 +47,11 @@ export function botProviderOptions(
     return {
       id: BOT_PROVIDER_MARKS[provider],
       label: definition.label,
-      models: definition.models.map((model) => ({ value: model.id, label: model.label })),
+      models: definition.models.map((model) => ({
+        value: model.id,
+        label: model.label,
+        legacy: model.legacy,
+      })),
     };
   });
 }

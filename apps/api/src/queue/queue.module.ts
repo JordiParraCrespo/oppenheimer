@@ -48,6 +48,12 @@ const QUEUE_REGISTRATIONS: readonly QueueRegistration[] = [
     defaultJobOptions: DURABLE_JOB_OPTIONS,
     stagedOnOutbox: true,
   },
+  // A wake is claimed by its id in the session's log, so a retry types it once.
+  {
+    name: QUEUE_NAMES.SESSION_WAKES,
+    defaultJobOptions: DURABLE_JOB_OPTIONS,
+    stagedOnOutbox: true,
+  },
   // Scheduler-driven queues (the automation tick, the daily purges): the
   // root defaults from `app.module.ts`.
   { name: QUEUE_NAMES.HOST_RETENTION },

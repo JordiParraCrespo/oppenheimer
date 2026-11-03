@@ -25,6 +25,8 @@ import {
  * | `push`          | `push` to a branch, not a tag and not a branch deletion        |
  * | `issue_labeled` | `issues` / `pull_request` `labeled`, one event per label       |
  * | `check_failed`  | `check_suite` completed failing, or a `status` failure/error   |
+ * | `check_passed`  | `check_suite` completed `success` (statuses: failures only)    |
+ * | `review`        | `pull_request_review` `submitted`, whatever its state          |
  * | `issue_opened`  | `issues` `opened` (reopened is a different action)             |
  * | `release`       | `release` `published`, pre-releases excluded                   |
  *
@@ -294,17 +296,28 @@ function reviewEvents(
 ): ExternalEvent[] {
   if (action !== 'submitted') return [];
   const review = obj(payload.review);
-  if (!mentions(review.body, options.mentionHandle)) return [];
   const pr = obj(payload.pull_request);
   const { attributes, context } = pullRequestParts(pr);
-  return [
+  const reviewContext = {
+    ...context,
+    body: capped(review.body),
+    url: str(review.html_url) ?? context.url,
+    author: str(obj(review.user).login) ?? context.author,
+  };
+  const at = dateOf(review.submitted_at);
+  const events = [
     make(
-      'mention',
-      attributes,
-      { ...context, body: capped(review.body), url: str(review.html_url) ?? context.url },
-      dateOf(review.submitted_at),
+      'review',
+      { ...attributes, state: str(review.state)?.toLowerCase() ?? null, reviewId: num(review.id) },
+      reviewContext,
+      at,
+      `:${num(review.id) ?? ''}`,
     ),
   ];
+  if (mentions(review.body, options.mentionHandle)) {
+    events.push(make('mention', attributes, reviewContext, at));
+  }
+  return events;
 }
 
 function pushEvents(payload: Json, make: Make): ExternalEvent[] {
@@ -336,7 +349,8 @@ function checkSuiteEvents(payload: Json, action: string | null, make: Make): Ext
   if (action !== 'completed') return [];
   const suite = obj(payload.check_suite);
   const conclusion = str(suite.conclusion);
-  if (!conclusion || !FAILING_CONCLUSIONS.has(conclusion)) return [];
+  const passed = conclusion === 'success';
+  if (!conclusion || (!passed && !FAILING_CONCLUSIONS.has(conclusion))) return [];
   const branch = str(suite.head_branch);
   const app = obj(suite.app);
   const pulls = Array.isArray(suite.pull_requests) ? suite.pull_requests.map(obj) : [];
@@ -344,7 +358,7 @@ function checkSuiteEvents(payload: Json, action: string | null, make: Make): Ext
   const headSha = str(suite.head_sha);
   return [
     make(
-      'check_failed',
+      passed ? 'check_passed' : 'check_failed',
       { branch, headSha, conclusion, number, check: str(app.name) },
       {
         ref: str(app.name) ?? (headSha ? headSha.slice(0, 7) : undefined),

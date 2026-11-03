@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { SessionStateChangedDomainEvent } from '../domain/events/session-state-changed.domain-event';
 import { SessionUpdatedDomainEvent } from '../domain/events/session-updated.domain-event';
+import { SessionWakeRequestedDomainEvent } from '../domain/events/session-wake-requested.domain-event';
 import { SessionCheckoutEntity } from '../domain/session-checkout.entity';
 import {
   checkoutDirectoryCandidates,
@@ -327,5 +328,34 @@ describe('input to a cloud session', () => {
     });
     expect(cloud.inputRefusal?.code).toBe('SESSIONS_038');
     expect(session().inputRefusal).toBeNull();
+  });
+});
+
+describe('a wake the agent asked for', () => {
+  // The regression: a `wake.requested` folded like any other entry, raising
+  // nothing, so no job was ever staged and the agent slept for good.
+  it('raises the wake with its time and words, and nothing for one it cannot read', () => {
+    const work = session();
+    work.recordEvents([
+      entry(SESSION_EVENT_KINDS.STARTED),
+      entry(SESSION_EVENT_KINDS.WAKE_REQUESTED, {
+        id: 'w1',
+        at: '2026-11-02T21:00:00.000Z',
+        text: 'Check whether the deploy finished.',
+      }),
+      entry(SESSION_EVENT_KINDS.WAKE_REQUESTED, { id: 'w2', at: 'tomorrow', text: 'x' }),
+    ]);
+    const wakes = work.domainEvents.filter(
+      (event) => event instanceof SessionWakeRequestedDomainEvent,
+    );
+    expect(wakes).toEqual([
+      expect.objectContaining({
+        aggregateId: work.id,
+        organizationId: 'org-acme',
+        wakeId: 'w1',
+        at: '2026-11-02T21:00:00.000Z',
+        text: 'Check whether the deploy finished.',
+      }),
+    ]);
   });
 });
