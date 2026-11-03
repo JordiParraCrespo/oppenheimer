@@ -223,11 +223,12 @@ silently.
 
 ## Optional tweaks
 
-All of these go on the `google` entry in `apps/api/src/auth/infrastructure/better-auth.config.ts`:
+The `google` entry already sets `prompt: 'select_account'`, so Google always
+shows its account chooser instead of silently reusing the last account. The
+rest go on the `google` entry in `apps/api/src/auth/infrastructure/better-auth.config.ts`:
 
 | Option                     | Effect                                                               |
 | -------------------------- | -------------------------------------------------------------------- |
-| `prompt: 'select_account'` | Always show the account chooser instead of silently reusing the last |
 | `accessType: 'offline'`    | Ask for a refresh token (Google issues one on first consent only)    |
 | `hd: 'example.com'`        | Restrict sign-in to one Google Workspace domain                      |
 | Extra Google API scopes    | Possible too — see Better Auth's Google provider docs for the option name and shape, and enable the matching API in the console |
