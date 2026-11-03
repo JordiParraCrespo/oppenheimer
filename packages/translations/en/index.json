@@ -957,7 +957,7 @@
       }
     },
     "sidebar": {
-      "projects": "Projects",
+      "sessions": "Sessions",
       "newProject": "New project",
       "search": "Search sessions",
       "clearSearch": "Clear search",
