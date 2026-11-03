@@ -179,7 +179,10 @@ session event: that is slice 4.
    the latest open one on the session, and the Inbox answers it.
    Built, server and console (below).
 5. **Later, not planned here**: the message box to a general bot, items
-   that agents and sessions post themselves, email and customer chats
+   that agents and sessions post themselves (*the first of these was built
+   on 2026-11-02*: a line an agent sends with `runner sessions notify`,
+   kept on its session and listed as a `notice` item, keyed
+   `notice:<session>:<notice id>`; `../../next-steps/agent-tools.md` §2), email and customer chats
    (`../../next-steps/channels.md`), batched delivery during a focus
    block (the research note §3).
 

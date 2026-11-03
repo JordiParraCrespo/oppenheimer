@@ -170,6 +170,7 @@
       "empty": "Ningún modelo coincide con «{{query}}».",
       "favourites": "Favoritos",
       "favouritesEmpty": "Marca un modelo con la estrella para tenerlo aquí.",
+      "moreModels": "Más modelos",
       "addFavourite": "Añadir {{model}} a favoritos",
       "removeFavourite": "Quitar {{model}} de favoritos",
       "auto": "Auto"
@@ -638,7 +639,10 @@
     "explored": {
       "title": "Explorado"
     },
-    "exploring": "Explorando"
+    "exploring": "Explorando",
+    "file": {
+      "onHost": "Se queda en el equipo: es demasiado grande para el chat, o no es una imagen ni texto."
+    }
   },
   "preview": {
     "show": "Mostrar vista previa",

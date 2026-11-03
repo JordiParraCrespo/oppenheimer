@@ -8,14 +8,17 @@ import { HostsModule } from '../hosts/hosts.module';
 import { LinksModule } from '../links/links.module';
 import { OrganizationsModule } from '../organizations/organizations.module';
 import { ProjectsModule } from '../projects/projects.module';
+import { QueueModule } from '../queue/queue.module';
 import { UsersModule } from '../users/user.module';
 import { AttachTicketFactory } from './application/attach-ticket.factory';
 import { CloudAttachmentsResolver } from './application/cloud-attachments.resolver';
 import { CloudSessionSyncResolver } from './application/cloud-session-sync.resolver';
 import { CloudTaskFactory } from './application/cloud-task.factory';
+import { GithubPullWakesDomainEventHandler } from './application/event-handlers/github-pull-wakes.domain-event-handler';
 import { HostUnpairedStopsSessionsDomainEventHandler } from './application/event-handlers/host-unpaired.domain-event-handler';
 import { HostUnpairedClosesSessionsDomainEventHandler } from './application/event-handlers/host-unpaired-wipe.domain-event-handler';
 import { SessionTerminalMatchedDomainEventHandler } from './application/event-handlers/session-terminal-matched.domain-event-handler';
+import { SessionWakeRequestedDomainEventHandler } from './application/event-handlers/session-wake-requested.domain-event-handler';
 import { RecordSessionEventsResolver } from './application/record-session-events.resolver';
 import { RepositoryTokenFactory } from './application/repository-token.factory';
 import { SessionAccountErasure } from './application/session-account-erasure.resolver';
@@ -28,6 +31,7 @@ import { SessionLookupResolver } from './application/session-lookup.resolver';
 import { SessionNamingResolver } from './application/session-naming.resolver';
 import { SessionPlanFactory } from './application/session-plan.factory';
 import { SessionProjectUsage } from './application/session-project-usage.resolver';
+import { SessionPromptTyperResolver } from './application/session-prompt-typer.resolver';
 import { SessionReconciliationResolver } from './application/session-reconciliation.resolver';
 import { SessionShareAccessResolver } from './application/session-share-access.resolver';
 import { AddCheckoutCommandHandler } from './commands/add-checkout/add-checkout.command-handler';
@@ -38,6 +42,7 @@ import { CloseSessionCommandHandler } from './commands/close-session/close-sessi
 import { CloseSessionHttpController } from './commands/close-session/close-session.http.controller';
 import { CreateSessionCommandHandler } from './commands/create-session/create-session.command-handler';
 import { CreateSessionHttpController } from './commands/create-session/create-session.http.controller';
+import { DeliverSessionWakeCommandHandler } from './commands/deliver-session-wake/deliver-session-wake.command-handler';
 import { IssueAttachTicketCommandHandler } from './commands/issue-attach-ticket/issue-attach-ticket.command-handler';
 import { IssueAttachTicketHttpController } from './commands/issue-attach-ticket/issue-attach-ticket.http.controller';
 import { IssueSessionPreviewCommandHandler } from './commands/issue-session-preview/issue-session-preview.command-handler';
@@ -85,6 +90,8 @@ import { SessionUsageRepository } from './database/session-usage.repository';
 import { WorkSessionOrmEntity } from './database/work-session.orm-entity';
 import { WorkSessionRepository } from './database/work-session.repository';
 import { WorkSessionEventOrmEntity } from './database/work-session-event.orm-entity';
+import { OutboxSessionWakesAdapter } from './infrastructure/outbox-session-wakes.adapter';
+import { SessionWakesProcessor } from './infrastructure/session-wakes.processor';
 import { StorageCloudFilesAdapter } from './infrastructure/storage-cloud-files.adapter';
 import { FindCloudFileHttpController } from './queries/find-cloud-file/find-cloud-file.http.controller';
 import { FindCloudFileQueryHandler } from './queries/find-cloud-file/find-cloud-file.query-handler';
@@ -115,6 +122,7 @@ import {
   SESSION_SHARE_REPOSITORY,
   SESSION_TERMINAL_WATCH_REPOSITORY,
   SESSION_USAGE_READER,
+  SESSION_WAKES,
   WORK_SESSION_REPOSITORY,
 } from './sessions.di-tokens';
 import { SessionResource } from './sessions.resource';
@@ -183,6 +191,7 @@ const commandHandlers: Provider[] = [
   PasteSessionImageCommandHandler,
   AnswerSessionDecisionCommandHandler,
   SendSessionPromptCommandHandler,
+  DeliverSessionWakeCommandHandler,
   UploadSessionAttachmentCommandHandler,
   RecordSessionEventsCommandHandler,
 ];
@@ -240,6 +249,8 @@ const adapters: Provider[] = [
     OrganizationsModule,
     // `CLOUD_RUNS`: what a cloud session asks its vendor, on its launcher's key.
     CloudAgentsModule,
+    // The `session-wakes` queue its worker takes a wake from.
+    QueueModule,
   ],
   controllers: [...httpControllers],
   providers: [
@@ -270,6 +281,11 @@ const adapters: Provider[] = [
     ...UsersModule.contributeAccountErasure([SessionAccountErasure]),
     HostUnpairedStopsSessionsDomainEventHandler,
     SessionTerminalMatchedDomainEventHandler,
+    GithubPullWakesDomainEventHandler,
+    SessionWakeRequestedDomainEventHandler,
+    SessionPromptTyperResolver,
+    SessionWakesProcessor,
+    { provide: SESSION_WAKES, useClass: OutboxSessionWakesAdapter },
     HostUnpairedClosesSessionsDomainEventHandler,
     { provide: WORK_SESSION_REPOSITORY, useClass: WorkSessionRepository },
     { provide: SESSION_SHARE_REPOSITORY, useClass: SessionShareRepository },

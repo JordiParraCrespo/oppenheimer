@@ -8,7 +8,7 @@ import {
   ruleVerdict,
 } from '../domain/bot-rule-review.policy';
 import type { BotPermissions } from '../domain/bot-tool-permission.policy';
-import { BotCompletionResolver } from './bot-completion.resolver';
+import { type BotCompletionFor, BotCompletionResolver } from './bot-completion.resolver';
 
 /** What a review runs on: the turn's provider, model and key. */
 type BotReviewEngine = Pick<
@@ -33,7 +33,8 @@ export interface BotRuleReviewer {
 export class BotRuleReviewerFactory {
   constructor(private readonly completions: BotCompletionResolver) {}
 
-  create(model: BotReviewEngine): BotRuleReviewer {
+  /** A reviewer for one turn, on its model, whose calls' spend is the bot's. */
+  create(model: BotReviewEngine, bot: Omit<BotCompletionFor, 'purpose'>): BotRuleReviewer {
     return {
       review: async (call, rules) => {
         const answer = await this.completions.complete(
@@ -45,7 +46,7 @@ export class BotRuleReviewerFactory {
             message: composeRuleReview(call, rules),
             signal: AbortSignal.timeout(REVIEW_TIME_LIMIT_MS),
           },
-          'review',
+          { ...bot, purpose: 'rule_review' },
         );
         return ruleVerdict(answer, rules);
       },

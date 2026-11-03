@@ -122,9 +122,22 @@ const textDelta = (delta: string): OpenAiStreamEvent => ({
   type: 'raw_model_stream_event',
   data: { type: 'output_text_delta', delta },
 });
-const responseDone = (inputTokens: number, outputTokens: number): OpenAiStreamEvent => ({
+const responseDone = (
+  inputTokens: number,
+  outputTokens: number,
+  cached?: number,
+): OpenAiStreamEvent => ({
   type: 'raw_model_stream_event',
-  data: { type: 'response_done', response: { usage: { inputTokens, outputTokens } } },
+  data: {
+    type: 'response_done',
+    response: {
+      usage: {
+        inputTokens,
+        outputTokens,
+        ...(cached === undefined ? {} : { inputTokensDetails: { cached_tokens: cached } }),
+      },
+    },
+  },
 });
 const message = (text: string): OpenAiStreamEvent => ({
   type: 'run_item_stream_event',
@@ -157,7 +170,7 @@ describe('OpenAiBotEngine', () => {
     scripted(async function* () {
       yield textDelta('Hel');
       yield textDelta('lo');
-      yield responseDone(10, 2);
+      yield responseDone(10, 2, 6);
       yield message('Hello');
       yield responseDone(4, 1);
     });
@@ -168,7 +181,13 @@ describe('OpenAiBotEngine', () => {
       { type: 'text.delta', text: 'Hel' },
       { type: 'text.delta', text: 'lo' },
       { type: 'text.done', text: 'Hello' },
-      { type: 'usage', inputTokens: 14, outputTokens: 3, context: { tokens: 4, window: null } },
+      {
+        type: 'usage',
+        inputTokens: 14,
+        outputTokens: 3,
+        cacheReadTokens: 6,
+        context: { tokens: 4, window: null },
+      },
       { type: 'done', reason: 'completed' },
     ]);
   });

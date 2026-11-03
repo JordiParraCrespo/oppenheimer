@@ -75,7 +75,8 @@ import { BotGoalNotice } from '@/features/bots/sections/bot-goal-notice';
  * alone. A file it will not hold, or one the API refused, is said under the
  * field; while one uploads or failed, or the bot's model reads no images,
  * send is off and says why, and nothing written is lost.
- * A built-in command the console runs itself (`/goal clear`) sends nothing,
+ * A built-in command the console runs itself (`/goal clear`, `/usage`, which
+ * puts the usage card in the chat) sends nothing,
  * and one that cannot be sent as typed (`/goal` with no condition) keeps send
  * off and says why on the box's top edge (`useBuiltInCommand`).
  */

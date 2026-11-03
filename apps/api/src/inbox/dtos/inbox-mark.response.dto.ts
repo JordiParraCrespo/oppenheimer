@@ -5,7 +5,7 @@ import { INBOX_MARKS, type InboxMark } from '@oppenheimer/shared';
 export class InboxMarkResponseDto {
   @ApiProperty({
     description:
-      'The occurrence: `session:<id>:<observedSince>`, `approval:<id>`, `pull:<repoId>#<number>@<sha>` or `run:<id>`.',
+      'The occurrence: `session:<id>:<observedSince>`, `approval:<id>`, `pull:<repoId>#<number>@<sha>`, `run:<id>` or `notice:<sessionId>:<noticeId>`.',
   })
   itemKey!: string;
 

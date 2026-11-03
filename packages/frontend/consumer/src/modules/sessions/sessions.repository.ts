@@ -145,6 +145,9 @@ function toEntity(data: SessionResponseDto): SessionEntity {
           title: data.agentReport.title ?? null,
         }
       : null,
+    notice: data.notice
+      ? { id: data.notice.id, text: data.notice.text, at: new Date(data.notice.at) }
+      : null,
     cloud: data.cloud
       ? {
           provider: data.cloud.provider,

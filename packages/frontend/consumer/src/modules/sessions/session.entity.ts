@@ -22,6 +22,17 @@ import type { SessionDecision } from '@oppenheimer/shared/schemas/session-decisi
 export type SessionAgent = SessionAgentId;
 
 /**
+ * The last line the session's agent sent you (`runner sessions notify`):
+ * the Inbox shows it until you mark it done. `id` is the host's, so a mark
+ * on one never hides the next.
+ */
+export interface SessionNotice {
+  id: string;
+  text: string;
+  at: Date;
+}
+
+/**
  * A cloud session's vendor half: whose agent it is, its page (which the
  * session's row opens), and what the vendor last said about its run.
  */
@@ -207,6 +218,7 @@ export type SessionEntityProps = Pick<
       | 'stateSeq'
       | 'decision'
       | 'agentReport'
+      | 'notice'
       | 'cloud'
       | 'cloudSessionId'
     >
@@ -271,6 +283,8 @@ export class SessionEntity {
    * state off its screen instead.
    */
   readonly agentReport: SessionAgentReport | null = null;
+  /** The last line the agent sent you, kept until the session closes; null for none. */
+  readonly notice: SessionNotice | null = null;
   /** The vendor half of a cloud session the control plane launched (Cursor's); null otherwise. */
   readonly cloud: SessionCloudRun | null = null;
   /**

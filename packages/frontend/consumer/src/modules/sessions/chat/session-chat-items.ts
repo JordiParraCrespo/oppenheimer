@@ -91,6 +91,16 @@ function itemOf(step: ChatStep): ChatItem {
         event: 'command_output',
         text: step.text,
       };
+    case 'file':
+      return {
+        type: 'event',
+        id: step.id,
+        status: 'completed',
+        startedAt: at,
+        completedAt: at,
+        event: 'file_shared',
+        text: step.file.caption ?? step.file.name,
+      };
     case 'task':
       return {
         type: 'event',
