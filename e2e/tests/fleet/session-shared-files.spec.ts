@@ -48,7 +48,12 @@ test("a shared file's metadata reaches the session's log, never its path", async
       timeout: 30_000,
     })
     .toMatchObject({
-      payload: { name: 'notes.md', mediaType: 'text/markdown', caption: 'My notes', hasPreview: false },
+      payload: {
+        name: 'notes.md',
+        mediaType: 'text/markdown',
+        caption: 'My notes',
+        hasPreview: false,
+      },
     });
   const shared = (await log(api, sessionId)).find((entry) => entry.kind === 'file.shared');
   // The host's path and the bytes stay on the host.
