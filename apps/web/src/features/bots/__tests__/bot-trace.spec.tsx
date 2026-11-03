@@ -15,7 +15,7 @@ import { BotTrace } from '../components/bot-trace';
 
 vi.mock('react-i18next', async (importOriginal) => ({
   ...(await importOriginal<typeof import('react-i18next')>()),
-  useTranslation: () => ({ t: (key: string) => key }),
+  useTranslation: () => ({ t: (key: string) => key, i18n: { resolvedLanguage: 'en' } }),
 }));
 
 afterEach(cleanup);
@@ -32,6 +32,7 @@ const step = (callId: string, overrides: Partial<BotToolStep> = {}): BotToolStep
   subagents: null,
   allowedBy: null,
   mailDraft: null,
+  rateLimit: null,
   ...overrides,
 });
 
@@ -57,6 +58,25 @@ describe('BotTrace', () => {
     expect(screen.queryAllByRole('listitem')).toHaveLength(0);
     fireEvent.click(summary);
     expect(screen.getAllByRole('listitem')).toHaveLength(3);
+  });
+
+  // What breaks this: a call Gmail's limit stopped drawn in red as "failed",
+  // and counted as a failure in its group, when it is a wait that passes.
+  it('draws a call a rate limit stopped as a wait, not a failure, and does not count it as failed', () => {
+    const limited = step('b', {
+      name: 'archive_mail',
+      isError: true,
+      output: 'MAIL_008: Gmail is limiting our requests',
+      rateLimit: { system: 'Gmail', resetAt: new Date('2026-11-02T10:02:00.000Z') },
+    });
+    render(<BotTrace steps={[step('a', { name: 'archive_mail' }), limited]} />);
+    const summary = screen.getByRole('button', { name: /bots\.chat\.activity\.group/ });
+    expect(summary.textContent).not.toContain('bots.chat.activity.groupFailed');
+    fireEvent.click(summary);
+    const line = screen.getAllByRole('listitem')[1];
+    expect(line.getAttribute('data-tone')).toBe('default');
+    expect(line.textContent).toContain('bots.chat.activity.stepLimited');
+    expect(line.textContent).not.toContain('bots.chat.activity.stepFailed');
   });
 
   it('draws a delegate call’s subagents under its line, each opening to its answer, a failed one in red', () => {

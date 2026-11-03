@@ -121,6 +121,7 @@ describe('TurnTranscript', () => {
         subagents: null,
         allowedBy: null,
         mailDraft: null,
+        rateLimit: null,
       },
       {
         callId: 'b',
@@ -132,6 +133,7 @@ describe('TurnTranscript', () => {
         subagents: null,
         allowedBy: null,
         mailDraft: null,
+        rateLimit: null,
       },
     ]);
   });
@@ -272,6 +274,7 @@ describe('TurnTranscript', () => {
       data: { [RATE_LIMIT_DATA_KEY]: JSON.stringify({ system: 'Gmail', resetAt }) },
     });
     const transcript = new TurnTranscript(turn());
+    const writes: TranscriptWrite[] = [];
     for (const event of [
       { type: 'tool.started' as const, callId: 'a', name: 'archive_mail', input: {} },
       { type: 'tool.started' as const, callId: 'b', name: 'archive_mail', input: {} },
@@ -279,10 +282,16 @@ describe('TurnTranscript', () => {
       limited('b', '2026-11-02T10:01:00.000Z'),
       { type: 'done' as const, reason: 'completed' as const },
     ]) {
-      transcript.apply(event);
+      writes.push(...transcript.apply(event));
     }
+    const steps = inserted(writes).flatMap((message) => message.steps);
     transcript.endTurn(new Date('2026-11-02T10:00:00.000Z'), null);
     expect(transcript.result.limitedUntil).toEqual(new Date('2026-11-02T10:02:00.000Z'));
+    // Each step keeps its own limit, so the chat draws it as a wait.
+    expect(steps.map((step) => step.rateLimit?.resetAt)).toEqual([
+      new Date('2026-11-02T10:02:00.000Z'),
+      new Date('2026-11-02T10:01:00.000Z'),
+    ]);
   });
 
   it('keeps text a failed turn streamed but never finished, and says why it failed', () => {

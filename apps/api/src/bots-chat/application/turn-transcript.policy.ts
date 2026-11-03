@@ -176,6 +176,7 @@ export class TurnTranscript {
       subagents: null,
       allowedBy: null,
       mailDraft: null,
+      rateLimit: null,
     };
     if (this.activity) {
       this.activity.steps.push(step);
@@ -207,6 +208,7 @@ export class TurnTranscript {
     step.allowedBy = data?.[ALLOWED_BY_DATA_KEY]?.slice(0, BOT_ALLOWED_BY_MAX) ?? null;
     step.mailDraft = isError ? null : toMailDraft(data?.[MAIL_DRAFT_DATA_KEY]);
     const limit = rateLimitOfData(data?.[RATE_LIMIT_DATA_KEY]);
+    step.rateLimit = limit;
     if (limit) this.outcome.limitedUntil = laterReset(this.outcome.limitedUntil, limit);
     for (const run of step.subagents ?? []) {
       this.outcome.inputTokens += run.inputTokens;

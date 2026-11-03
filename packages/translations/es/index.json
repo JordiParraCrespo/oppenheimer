@@ -1468,6 +1468,7 @@
         "planning": "Actualizando su plan",
         "using": "Usando {{name}}",
         "stepFailed": "error",
+        "stepLimited": "límite de {{system}} · hasta las {{time}}",
         "results_one": "{{count}} resultado",
         "results_many": "{{count}} resultados",
         "results_other": "{{count}} resultados",

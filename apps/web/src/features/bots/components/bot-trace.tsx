@@ -8,9 +8,16 @@ import {
   type TraceOutputLabels,
   TraceStep,
 } from '@oppenheimer/design-system-web';
-import { Globe, ListTodo, Search, UsersIcon, Wrench } from '@oppenheimer/design-system-web/icons';
+import {
+  Clock,
+  Globe,
+  ListTodo,
+  Search,
+  UsersIcon,
+  Wrench,
+} from '@oppenheimer/design-system-web/icons';
 import { type BotToolStep, todosOf } from '@oppenheimer/frontend-consumer';
-import { useExploredLine } from '@oppenheimer/frontend-web';
+import { dateFormatter, useExploredLine, useLocale } from '@oppenheimer/frontend-web';
 import type { TFunction } from 'i18next';
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -132,6 +139,11 @@ const STEP_VIEWS: { [K in Kind]: StepView<K> } = {
   },
 };
 
+/** A call that failed: an error that was not a system's rate limit, which is a wait. */
+function failedStep(step: BotToolStep): boolean {
+  return step.isError && step.rateLimit === null;
+}
+
 /** The view for a call's kind, typed to that kind. */
 function viewOf<K extends Kind>(action: Extract<ToolAction, { kind: K }>): StepView<K> {
   return STEP_VIEWS[action.kind as K] as StepView<K>;
@@ -146,7 +158,10 @@ function viewOf<K extends Kind>(action: Extract<ToolAction, { kind: K }>): StepV
  * (a `get_`, `list_`, `read_` or `search_` tool, the web search) fold into
  * their own "Explored" line that names what they read, "Exploring" while
  * the call running now is one more of them, and any other call ends that
- * run. A call that would have asked and ran says why on its line. A call
+ * run. A call a system's rate limit stopped is a wait, not a failure: a
+ * clock, the system and the time it may be called again, in the line's own
+ * colour, and it does not count as failed in its group. A call that would
+ * have asked and ran says why on its line. A call
  * still running is not drawn here: the turn's live line says
  * what it is doing. A call that started a session carries Open session on
  * its own line.
@@ -161,6 +176,12 @@ export function BotTrace({
 }) {
   const { t } = useTranslation();
   const exploredLine = useExploredLine();
+  const locale = useLocale();
+  const limitedLine = (limit: NonNullable<BotToolStep['rateLimit']>) =>
+    t('bots.chat.activity.stepLimited', {
+      system: limit.system,
+      time: dateFormatter(locale, { timeStyle: 'short' }).format(limit.resetAt),
+    });
   const labels: TraceOutputLabels = {
     raw: t('bots.chat.activity.rawOutput'),
     more: (count) => t('bots.chat.activity.moreLines', { count }),
@@ -171,16 +192,21 @@ export function BotTrace({
     const action = toolAction(step);
     const view = viewOf(action);
     const { meta, body } = view.detail(step, t, labels);
+    const failed = failedStep(step);
     return (
       <TraceStep
         key={step.callId}
-        icon={view.icon}
+        icon={step.rateLimit ? <Clock /> : view.icon}
         {...view.title(t, action)}
-        // A call that ran without its card says why: a standing grant, or your rule.
+        // A limit is a wait with its time; a call that ran without its card says why.
         meta={
-          step.isError ? t('bots.chat.activity.stepFailed') : (meta ?? step.allowedBy ?? undefined)
+          step.rateLimit
+            ? limitedLine(step.rateLimit)
+            : failed
+              ? t('bots.chat.activity.stepFailed')
+              : (meta ?? step.allowedBy ?? undefined)
         }
-        tone={step.isError ? 'danger' : 'default'}
+        tone={failed ? 'danger' : 'default'}
         action={step.sessionId ? <OpenSessionButton sessionId={step.sessionId} /> : undefined}
       >
         {body}
@@ -188,7 +214,7 @@ export function BotTrace({
     );
   };
   const failedOf = (run: TraceRun) => {
-    const failed = run.steps.filter((step) => step.isError).length;
+    const failed = run.steps.filter(failedStep).length;
     return failed > 0 ? t('bots.chat.activity.groupFailed', { count: failed }) : undefined;
   };
   const runOf = (run: TraceRun) => {
