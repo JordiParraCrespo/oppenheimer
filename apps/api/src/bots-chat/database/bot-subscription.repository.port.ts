@@ -3,7 +3,7 @@ import type { BotSubscriptionEntity } from '../domain/bot-subscription.entity';
 export interface BotSubscriptionRepositoryPort {
   /**
    * Stores a new subscription, or, when the bot already follows that
-   * session, replaces what it follows and why while keeping its id, its
+   * session or pull request, replaces what it follows and why while keeping its id, its
    * newest wake and its wake count. Answers the subscription as stored.
    */
   subscribe(subscription: BotSubscriptionEntity): Promise<BotSubscriptionEntity>;
@@ -12,13 +12,19 @@ export interface BotSubscriptionRepositoryPort {
   findForWake(subscriptionId: string): Promise<BotSubscriptionEntity | null>;
   /** The ids of every bot subscription to a session, in the event's workspace. */
   findIdsForSession(organizationId: string, sessionId: string): Promise<string[]>;
+  /** The ids of every bot subscription to a pull request, in the event's workspace. */
+  findIdsForPullRequest(
+    organizationId: string,
+    githubRepoId: string,
+    pullNumber: number,
+  ): Promise<string[]>;
   /** The subscriptions of one bot, oldest first, at most `limit`. */
   findForBot(
     organizationId: string,
     botId: string,
     limit: number,
   ): Promise<BotSubscriptionEntity[]>;
-  /** How many sessions the bot follows now. */
+  /** How many sessions and pull requests the bot follows now. */
   countForBot(organizationId: string, botId: string): Promise<number>;
 
   /**
@@ -34,6 +40,12 @@ export interface BotSubscriptionRepositoryPort {
   end(subscription: BotSubscriptionEntity): Promise<boolean>;
   /** The bot stops following the session. Whether it was following it. */
   unsubscribe(organizationId: string, botId: string, sessionId: string): Promise<boolean>;
+  /** The bot stops following the pull request. Whether it was following it. */
+  unsubscribePullRequest(
+    organizationId: string,
+    botId: string,
+    pull: { githubRepoId: string; number: number },
+  ): Promise<boolean>;
   /** The subscription that asked for this terminal watch, if one still does. */
   findForTerminalWatch(watchId: string): Promise<BotSubscriptionEntity | null>;
   /**

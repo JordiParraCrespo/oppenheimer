@@ -51,7 +51,7 @@ export class BotWatchToolsFactory implements BotToolArea {
     return defineBotTool({
       name: 'watch_session',
       scope: 'sessions:read',
-      description: `Subscribes you to a session, so you are woken with a turn of your own when its task needs input, finishes, fails or is stopped: no need to check on it or to be asked. Sessions you start with start_session are watched already. until "task" (the default) follows the task running now, or the next one if none is; "closed" follows every task until the session is closed. With pattern (a regular expression, matched line by line), you are also woken when its terminal prints a new line matching it, such as "FAIL|Error" or "Tests: \\d+ passed": you are told it matched and how often, never the line, so read the session to see why. At most ${BOT_SUBSCRIPTION_WAKE_LIMIT} wakes per watch, matches included, and ${BOT_SUBSCRIPTIONS_PER_BOT} watched sessions.`,
+      description: `Subscribes you to a session, so you are woken with a turn of your own when its task needs input, finishes, fails or is stopped: no need to check on it or to be asked. Sessions you start with start_session are watched already. until "task" (the default) follows the task running now, or the next one if none is; "closed" follows every task until the session is closed. With pattern (a regular expression, matched line by line), you are also woken when its terminal prints a new line matching it, such as "FAIL|Error" or "Tests: \\d+ passed": you are told it matched and how often, never the line, so read the session to see why. At most ${BOT_SUBSCRIPTION_WAKE_LIMIT} wakes per watch, matches included, and ${BOT_SUBSCRIPTIONS_PER_BOT} watched sessions and pull requests.`,
       input: z.object({
         session_id: z.uuid().describe('The session to follow (from list_sessions).'),
         until: z
@@ -123,7 +123,7 @@ export class BotWatchToolsFactory implements BotToolArea {
       name: 'list_watches',
       scope: 'sessions:read',
       description:
-        'Lists the sessions you follow: each one, why, until when, and how many times it woke you. Read a session itself with get_session.',
+        'Lists the sessions and pull requests you follow: each one, why, until when, and how many times it woke you. Read a session itself with get_session, a pull request with get_pull_request.',
       input: z.object({}),
       run: async (_input, context) => {
         const watched = await this.subscriptions.findForBot(
@@ -131,7 +131,7 @@ export class BotWatchToolsFactory implements BotToolArea {
           context.botId,
           BOT_SUBSCRIPTIONS_PER_BOT,
         );
-        if (!watched.length) return 'You follow no sessions.';
+        if (!watched.length) return 'You follow no sessions and no pull requests.';
         return watched
           .map((subscription) => this.mapper.toListLine(subscription, context.timeZone))
           .join('\n');

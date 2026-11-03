@@ -1086,3 +1086,11 @@ earlier note:
   the file's metadata (never its path or bytes), the session keeps the
   last 20, and a bot lists them and shows an image's preview, asked of
   the host over the link (`next-steps/agent-tools.md` §7).
+- `versions/mvp/27-bot-subscriptions.md` §1 had every wake re-read what it
+  follows as the bot's owner and wake for what holds now, and §7 planned
+  pull requests from the pull-requests module's webhooks. Built on
+  2026-11-03, a bot following a pull request (`watch_pull_request`) is woken
+  by the inbound-events hub's GitHub events instead, and its wake is the
+  event's metadata alone, never a re-read: the pull request is GitHub's, not
+  ours to re-read on every event. A close without a merge makes no event
+  yet, so only a merge ends it (27 §7.1, `next-steps/agent-tools.md` §6).

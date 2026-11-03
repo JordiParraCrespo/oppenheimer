@@ -1,8 +1,12 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { OnEvent } from '@nestjs/event-emitter';
+import {
+  isPullRequestWakeEvent,
+  pullNumberOf,
+} from '../../../github/domain/github-pull-event.policy';
 import { ExternalEventReceivedDomainEvent } from '../../../inbound-events/domain/events/external-event-received.domain-event';
 import type { WorkSessionRepositoryPort } from '../../database/work-session.repository.port';
-import { githubWakeText, isWakingGithubEvent, wakeIds } from '../../domain/session-wake.policy';
+import { githubWakeText, wakeIds } from '../../domain/session-wake.policy';
 import { SESSION_WAKES, WORK_SESSION_REPOSITORY } from '../../sessions.di-tokens';
 import type { SessionWakesPort } from '../session-wakes.port';
 
@@ -41,10 +45,9 @@ export class GithubPullWakesDomainEventHandler {
     >,
   ): Promise<void> {
     if (event.source !== 'github' || event.actorIsOwnApp) return;
-    if (!isWakingGithubEvent(event.eventType)) return;
-    const number = event.attributes?.number;
-    if (typeof number !== 'number' || !Number.isInteger(number) || number < 1) return;
-    if (event.attributes?.isPullRequest === false) return;
+    if (!isPullRequestWakeEvent(event.eventType)) return;
+    const number = pullNumberOf(event.attributes);
+    if (number === null) return;
     const watching = await this.sessions.findWatchingPullForSystem(
       event.organizationId,
       event.subjectRef,

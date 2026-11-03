@@ -3,6 +3,7 @@ import { BOT_SESSION_WAKE_STATES, botDefaultModel, SCOPES, type Scope } from '@o
 import type { BotEntity } from '../bots/domain/bot.entity';
 import type { WorkSessionEntity } from '../sessions/domain/work-session.entity';
 import { BotSubscriptionOrmEntity } from './database/bot-subscription.orm-entity';
+import type { PullRequestRef, pullRequestWakeTurn } from './domain/bot-pull-request-wake.policy';
 import { BotSubscriptionEntity } from './domain/bot-subscription.entity';
 import {
   BOT_SUBSCRIPTION_UNTIL,
@@ -32,6 +33,9 @@ export class BotSubscriptionMapper {
     record.botId = entity.botId;
     record.resourceKind = entity.resourceKind;
     record.resourceId = entity.resourceId;
+    record.githubRepoId = entity.pullRequest?.githubRepoId ?? null;
+    record.pullNumber = entity.pullRequest?.number ?? null;
+    record.repositoryFullName = entity.pullRequest?.repository ?? null;
     record.originTurnId = entity.originTurnId;
     record.purpose = entity.purpose;
     record.until = entity.until;
@@ -57,9 +61,19 @@ export class BotSubscriptionMapper {
       props: {
         organizationId: record.organizationId,
         botId: record.botId,
-        // The table's CHECK holds it to the one kind there is.
-        resourceKind: 'session',
+        // CHK_bot_subscription_subject holds the columns to the kind.
+        resourceKind: record.resourceKind === 'pull_request' ? 'pull_request' : 'session',
         resourceId: record.resourceId,
+        pullRequest:
+          record.resourceKind === 'pull_request' &&
+          record.githubRepoId !== null &&
+          record.pullNumber !== null
+            ? {
+                githubRepoId: String(record.githubRepoId),
+                number: record.pullNumber,
+                repository: record.repositoryFullName ?? '',
+              }
+            : null,
         originTurnId: record.originTurnId,
         purpose: record.purpose,
         until: BOT_SUBSCRIPTION_UNTIL.find((known) => known === record.until) ?? 'task',
@@ -114,6 +128,24 @@ export class BotSubscriptionMapper {
     };
   }
 
+  /** A new pull request subscription from the turn that asked for it and the repository it resolved. */
+  toPullRequestSubscribeProps(
+    asker: Parameters<BotSubscriptionMapper['toSubscribeProps']>[0],
+    pullRequest: PullRequestRef,
+    purpose: string | null,
+  ): Parameters<typeof BotSubscriptionEntity.subscribeToPullRequest>[0] {
+    const { organizationId, botId, turnId, credentialScopes, timeZone } = asker;
+    return {
+      organizationId,
+      botId,
+      pullRequest,
+      purpose,
+      credentialScopes,
+      timeZone,
+      originTurnId: turnId,
+    };
+  }
+
   /**
    * The turn a wake queues, as the bot's owner on the bot's engine as it is
    * now, with the scopes and zone of the turn that subscribed.
@@ -122,7 +154,7 @@ export class BotSubscriptionMapper {
     subscription: BotSubscriptionEntity,
     bot: BotEntity,
     ownerUserId: string,
-  ): Parameters<typeof sessionWakeTurn>[0] {
+  ): Parameters<typeof sessionWakeTurn>[0] & Parameters<typeof pullRequestWakeTurn>[0] {
     return {
       organizationId: subscription.organizationId,
       botId: bot.id,
@@ -229,8 +261,18 @@ export class BotSubscriptionMapper {
     return watching;
   }
 
-  /** One line of `list_watches`. */
+  /** One line of `list_watches`, a session's or a pull request's. */
   toListLine(subscription: BotSubscriptionEntity, timeZone: string): string {
+    const purpose = subscription.purpose ? ` — ${subscription.purpose}` : '';
+    const pull = subscription.pullRequest;
+    if (pull) {
+      const parts = [
+        'until merged',
+        `woke you ${subscription.wakes} of ${BOT_SUBSCRIPTION_WAKE_LIMIT} times`,
+        `since ${formatToolTime(subscription.createdAt, timeZone)}`,
+      ];
+      return `pull request #${pull.number} of ${pull.repository} (repository id ${pull.githubRepoId}) [${parts.join('; ')}]${purpose}`;
+    }
     const until =
       subscription.until === 'task' ? `task #${subscription.watchedTurn}` : 'until closed';
     const parts = [
@@ -244,7 +286,6 @@ export class BotSubscriptionMapper {
         : null,
       `since ${formatToolTime(subscription.createdAt, timeZone)}`,
     ].filter(Boolean);
-    const purpose = subscription.purpose ? ` — ${subscription.purpose}` : '';
     return `session ${subscription.resourceId} [${parts.join('; ')}]${purpose}`;
   }
 }

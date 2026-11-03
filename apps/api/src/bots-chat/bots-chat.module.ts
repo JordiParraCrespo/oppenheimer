@@ -31,6 +31,8 @@ import { BotOwnerScopeResolver } from './application/bot-owner-scope.resolver';
 import { BotPermissionsResolver } from './application/bot-permissions.resolver';
 import { BotPlanToolsFactory } from './application/bot-plan-tools.factory';
 import { BotPullRequestToolsFactory } from './application/bot-pull-request-tools.factory';
+import { BotPullRequestWatchResolver } from './application/bot-pull-request-watch.resolver';
+import { BotPullRequestWatchToolsFactory } from './application/bot-pull-request-watch-tools.factory';
 import { BotQuestionDecisionResolver } from './application/bot-question-decision.resolver';
 import { BotQuestionToolsFactory } from './application/bot-question-tools.factory';
 import { BotRoutineToolsFactory } from './application/bot-routine-tools.factory';
@@ -54,6 +56,7 @@ import { BotWaitingCardResolver } from './application/bot-waiting-card.resolver'
 import { BotWatchToolsFactory } from './application/bot-watch-tools.factory';
 import { BotWebToolsFactory } from './application/bot-web-tools.factory';
 import { BotWhatsappToolsFactory } from './application/bot-whatsapp-tools.factory';
+import { BotPullRequestWakeDomainEventHandler } from './application/event-handlers/bot-pull-request-wake.domain-event-handler';
 import { BotRoutineActivityDomainEventHandler } from './application/event-handlers/bot-routine-activity.domain-event-handler';
 import { BotSessionWakeDomainEventHandler } from './application/event-handlers/bot-session-wake.domain-event-handler';
 import { TurnCancelWatchFactory } from './application/turn-cancel-watch.factory';
@@ -122,6 +125,7 @@ import { SetBotToolDecisionHttpController } from './commands/set-bot-tool-decisi
 import { SummarizeBotConversationCommandHandler } from './commands/summarize-bot-conversation/summarize-bot-conversation.command-handler';
 import { UploadBotAttachmentCommandHandler } from './commands/upload-bot-attachment/upload-bot-attachment.command-handler';
 import { UploadBotAttachmentHttpController } from './commands/upload-bot-attachment/upload-bot-attachment.http.controller';
+import { WakeOnPullRequestCommandHandler } from './commands/wake-on-pull-request/wake-on-pull-request.command-handler';
 import { WakeOnTerminalMatchCommandHandler } from './commands/wake-on-terminal-match/wake-on-terminal-match.command-handler';
 import { WakeSubscribedBotCommandHandler } from './commands/wake-subscribed-bot/wake-subscribed-bot.command-handler';
 import { BotApprovalOrmEntity } from './database/bot-approval.orm-entity';
@@ -230,6 +234,7 @@ const commandHandlers: Provider[] = [
   WakeSubscribedBotCommandHandler,
   CheckStalledSessionCommandHandler,
   WakeOnTerminalMatchCommandHandler,
+  WakeOnPullRequestCommandHandler,
   ContinueBotGoalCommandHandler,
   ClearBotGoalCommandHandler,
   FindBotGoalQueryHandler,
@@ -333,6 +338,7 @@ const queryHandlers: Provider[] = [
     BotSessionFileToolsFactory,
     BotSessionToolsFactory,
     BotSessionWatchResolver,
+    BotPullRequestWatchResolver,
     BotSessionWakeResolver,
     BotSessionWaitResolver,
     BotSubscriptionSubjectResolver,
@@ -348,6 +354,7 @@ const queryHandlers: Provider[] = [
     BotPlanToolsFactory,
     BotGithubToolsFactory,
     BotPullRequestToolsFactory,
+    BotPullRequestWatchToolsFactory,
     BotIssueToolsFactory,
     BotAutomationToolsFactory,
     BotRoutineToolsFactory,
@@ -365,6 +372,7 @@ const queryHandlers: Provider[] = [
     ...AutomationsModule.contributeRunTargets([BotRoutineTarget]),
     BotRoutineActivityDomainEventHandler,
     BotSessionWakeDomainEventHandler,
+    BotPullRequestWakeDomainEventHandler,
     TurnCancelWatchFactory,
     BotTurnsProcessor,
     BotApprovalsProcessor,

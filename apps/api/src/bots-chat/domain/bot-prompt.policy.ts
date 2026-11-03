@@ -2,6 +2,7 @@ import type { BotApprovalEventStage, BotMessageEvent } from '@oppenheimer/shared
 import { approvalAsk } from './bot-approval.policy';
 import { eventNote, type HistoryMessage } from './bot-history.policy';
 import { peerMessagePrompt, peerReplyPrompt } from './bot-peer-message.policy';
+import { pullRequestWakePrompt } from './bot-pull-request-wake.policy';
 import { type BotSkillView, skillsPromptSection } from './bot-skill.policy';
 import { sessionWakePrompt } from './bot-subscription.policy';
 import { TURN_CONTEXT_TAG } from './bot-turn-context.policy';
@@ -226,6 +227,7 @@ const EVENT_PROMPTS: EventPrompts = {
   bot_message: peerMessagePrompt,
   bot_reply: peerReplyPrompt,
   session: sessionWakePrompt,
+  pull_request: pullRequestWakePrompt,
   goal: (_event, content) => eventNote(content),
 };
 

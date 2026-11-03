@@ -1615,6 +1615,13 @@
           "matched_one": "Session “{{name}}” printed a line matching “{{pattern}}”",
           "matched_other": "Session “{{name}}” printed {{count}} lines matching “{{pattern}}”"
         },
+        "pullRequest": {
+          "check_failed": "Pull request #{{number}} of {{repository}}: checks failed",
+          "check_passed": "Pull request #{{number}} of {{repository}}: checks passed",
+          "review": "Pull request #{{number}} of {{repository}}: new review",
+          "comment": "Pull request #{{number}} of {{repository}}: new comment",
+          "pr_merged": "Pull request #{{number}} of {{repository}} was merged"
+        },
         "goal": {
           "continued": "Goal · continuation {{step}} of {{limit}}",
           "met": "Goal met: “{{objective}}”",
