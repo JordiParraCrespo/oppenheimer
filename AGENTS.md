@@ -94,8 +94,8 @@ When you add a file that mentions an optional app (CI, compose,
   Driving a pull request, and the order of its steps, is the `/steward` skill.
   Every agent pull request is `/ship` (a fix, merged on its own once a fresh
   agent verifies it), `/demo` (a feature, merged once Jordi accepts) or
-  `/research` (merged once green), and carries that label; the protocol is
-  `/steward`, "Merging".
+  `/research` (merged once green), and carries that label; `/cook` picks one
+  for you. The protocol is `/steward`, "Merging".
 - **Stage files by path.** `.claude/settings.json` and the hooks in
   `.agents/hooks/` refuse `git add -A`/`.`, pushes to `main`, force pushes,
   `git reset --hard` and the like; read them for the exact policy and for
