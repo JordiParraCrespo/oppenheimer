@@ -1,8 +1,9 @@
 # Agent tools: an agent in a session reaches the person
 
 **Goal:** an agent working in a session can reach the person without them
-watching its terminal. These four come from the tools Claude Code has in
-its own cloud sessions and were set by the owner on 2026-11-02:
+watching its terminal. The first four come from the tools Claude Code has
+in its own cloud sessions and were set by the owner on 2026-11-02; the
+fifth gives a bot §2's line (2026-11-03):
 
 | § | Tool | The agent runs | The person sees |
 |---|------|----------------|-----------------|
@@ -10,6 +11,7 @@ its own cloud sessions and were set by the owner on 2026-11-02:
 | 2 | Notify | `runner sessions notify "line"` | an item in the Inbox |
 | 3 | Wake on a pull request | `runner sessions watch-pr <number>` | nothing; the agent is told when its PR's checks finish or someone reviews it |
 | 4 | Wake later | `runner sessions wake-in <duration> "message"` | nothing; the message is typed into the session when it is due |
+| 5 | Bots notify | a bot's `notify` tool | an item in the Inbox |
 
 They share one shape: the agent runs a `runner` command in its terminal,
 which reaches the runner's daemon over its local socket (as
@@ -156,3 +158,41 @@ command is taught to every agent by `runner --skill`
 - **Not yet.** The agent cannot list or cancel its wakes, and the console
   does not show them: a wake is a job, not a row. Both want a
   `session_wake` table the day either is asked for.
+
+## 5. Bots notify (built 2026-11-03)
+
+§2 for a bot. A bot's reply shows only in its own chat, which the person
+may not be watching (a routine's run, a wake, a long task); until now only
+its pending approvals reached the Inbox.
+
+- **The tool.** `notify { text }` (`bots-chat/application/
+  bot-notice-tools.factory.ts`), in the "self" group: one line, trimmed,
+  1 to 500 characters (`BOT_NOTICE_TEXT_MAX`, the session notice's bound).
+  It asks nothing and reaches nothing outside Oppenheimer, so it never asks
+  first under any preset; it needs `bots:write`, as `ask_user` does. Unlike
+  `ask_user` it is offered on every turn, a routine's and a wake's included,
+  since those are the turns nobody watches. At most two a turn
+  (`BOT_NOTICES_PER_TURN`): a notice replaces the last, so a second is a
+  correction at most. The description tells the bot when: it finished
+  something the person asked to hear about, or needs them and they may not
+  be in its chat; one line; it replaces the previous notice.
+- **What is kept.** A table, `bot_notice`, one row per bot (unique on
+  `("organizationId", "botId")`, the composite key to `bot` that also
+  cascades it away with the bot). A new notice upserts the row **under a
+  new id**: the id is the notice's, and the Inbox keys an item by it.
+  `updatedAt` is when the current notice came; `createdAt` the bot's first.
+  The write stages `BotNoticeChangedDomainEvent`, which the workspace
+  stream sends as `botNotice.changed { id, botId }` to whoever may read
+  bots (`bots:read`).
+- **The read.** `GET /v1/bot-notices` (`bots:read`, `read Bot`): each
+  bot's notice on the bots the caller may read, newest first, at most 50
+  (`WORKSPACE_BOT_NOTICES_MAX`), each with `id, botId, botName, text, at`.
+- **The Inbox.** A `botNotice` item, keyed `botnotice:<bot>:<notice id>`,
+  so marking one done never hides the next. It sorts with the waiting
+  sessions and the session notices, by when it came, under no project; the
+  Type facet counts it with the bots' approvals, under the option now
+  labelled "Bots" (it was "Bot approvals"), whose search value is `bots`
+  (it was `approval`, which a saved link still opens). Its card is the bot's words,
+  with the Bot icon, Later, Open chat (the bot's chat) and Done.
+- **Not yet.** The bot's chat does not show its notice, and a notice does
+  not reach a phone (as §2's).

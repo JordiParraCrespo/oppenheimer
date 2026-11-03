@@ -20,6 +20,7 @@ import { BotLoopToolsFactory } from './bot-loop-tools.factory';
 import { BotMailOrganizeToolsFactory } from './bot-mail-organize-tools.factory';
 import { BotMailToolsFactory } from './bot-mail-tools.factory';
 import { BotMailWriteToolsFactory } from './bot-mail-write-tools.factory';
+import { BotNoticeToolsFactory } from './bot-notice-tools.factory';
 import { BotPlanToolsFactory } from './bot-plan-tools.factory';
 import { BotProjectToolsFactory } from './bot-project-tools.factory';
 import { BotPullRequestToolsFactory } from './bot-pull-request-tools.factory';
@@ -72,6 +73,7 @@ export class BotToolboxFactory {
     goals: BotGoalToolsFactory,
     loops: BotLoopToolsFactory,
     questions: BotQuestionToolsFactory,
+    notices: BotNoticeToolsFactory,
   ) {
     this.areas = [
       self,
@@ -79,6 +81,7 @@ export class BotToolboxFactory {
       goals,
       loops,
       questions,
+      notices,
       hosts,
       sessions,
       watches,

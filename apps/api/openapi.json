@@ -21774,6 +21774,57 @@
         ]
       }
     },
+    "/api/v1/bot-notices": {
+      "get": {
+        "description": "Each bot's latest line to the person (its `notify` tool), on the bots you may read, newest first, at most 50. A newer notice replaces a bot's last one under a new id.",
+        "operationId": "findWorkspaceBotNotices",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/WorkspaceBotNoticeResponseDto"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "The workspace's bot notices",
+        "tags": [
+          "Bots"
+        ]
+      }
+    },
     "/api/v1/bots/{id}/approvals/{approvalId}/decision": {
       "post": {
         "description": "`decision` is one of the card's `availableDecisions`. `approve` queues exactly the call the bot asked for, run as the bot's owner and only within what both the asking turn's and your credential's scopes cover; its answer is kept (`failed` when it failed or was not covered). `approve_always` also sets the tool to Allow for the bot, `approve_for_subject` allows it on what the call acts on (the older `approve` with `reach` `tool` or `subject` says the same). `deny` runs nothing, and the bot gets a turn that tells it so, with the note, under the same scopes, and carries on. `stop` runs nothing and gives the bot no turn back: the running turn is asked to stop, and the chat keeps a line saying so. Every open chat hears the card closed (`approval_resolved` on the bot's stream).",
@@ -36310,6 +36361,42 @@
           "botId",
           "botName",
           "sessionId"
+        ]
+      },
+      "WorkspaceBotNoticeResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The notice: a new id with each notice, so a mark on one never hides the next."
+          },
+          "botId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The bot that sent it."
+          },
+          "botName": {
+            "type": "string",
+            "description": "The bot's name, as the console shows it."
+          },
+          "text": {
+            "type": "string",
+            "maxLength": 500,
+            "description": "The line, as the bot wrote it."
+          },
+          "at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "When it came."
+          }
+        },
+        "required": [
+          "id",
+          "botId",
+          "botName",
+          "text",
+          "at"
         ]
       },
       "DecideBotApprovalRequest": {

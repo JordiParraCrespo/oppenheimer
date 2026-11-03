@@ -1095,7 +1095,9 @@ earlier note:
   already knew, with no way for an agent to post into it. Since 2026-11-02
   an agent in a session can: `runner sessions notify "line"` keeps the line
   on its session, and the Inbox lists it until it is marked done
-  (`next-steps/agent-tools.md` §2).
+  (`next-steps/agent-tools.md` §2). Since 2026-11-03 a bot can too, with
+  its `notify` tool: its latest line is a `botNotice` item, and the Type
+  facet's "Bot approvals" is "Bots" (§5).
 - `versions/mvp/25-bots.md` §2 sent a turn the newest messages that fit
   its history budget, and the OpenAI engine named no conversation to the
   provider. On 2026-11-03, after `/usage` showed a bot on GPT and Grok at a

@@ -1,5 +1,5 @@
 import type { InboxItem } from '@oppenheimer/frontend-consumer';
-import { type InboxTypeFilter, NO_PROJECT } from './inbox-search';
+import { INBOX_TYPES, type InboxTypeFilter, NO_PROJECT } from './inbox-search';
 import { type InboxVisit, visitOrder } from './inbox-visit';
 
 export interface InboxFilter {
@@ -9,13 +9,15 @@ export interface InboxFilter {
 }
 
 /**
- * The Type facet each kind is counted under. A session's notice counts with
- * its sessions: the facet has no option of its own for it.
+ * The Type facet each kind is counted under, one kind to one option but for
+ * the notices: a session's counts with its sessions, a bot's with the bots'
+ * approvals under Bots.
  */
 const TYPE_OF: Record<InboxItem['kind'], Exclude<InboxTypeFilter, 'all'>> = {
   session: 'session',
   notice: 'session',
-  approval: 'approval',
+  botNotice: 'bots',
+  approval: 'bots',
   pull: 'pull',
   run: 'run',
 };
@@ -41,7 +43,7 @@ function matchesFilter(item: InboxItem, filter: InboxFilter): boolean {
  */
 export function facetCounts(items: readonly InboxItem[], filter: InboxFilter) {
   const types = Object.fromEntries(
-    (['all', 'pull', 'approval', 'session', 'run'] as const).map((type) => [
+    INBOX_TYPES.map((type) => [
       type,
       items.filter((item) => matchesType(item, type) && matchesProject(item, filter.project))
         .length,

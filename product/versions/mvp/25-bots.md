@@ -469,6 +469,7 @@ it one:
 | `recall` | Search its memory, every fact it keeps and those the person's other bots share | auto |
 | `search_chat` | Search its own chat's past messages, the person's and its own, including what only the summary holds: web-search syntax, best matches first, an excerpt around each match, fenced as data (2026-10-29) | auto |
 | `set_goal` / `end_goal` | Set a goal it keeps working toward across turns, or end it (2026-10-29; below) | auto |
+| `notify` | One line, at most 500 characters, in the person's Inbox, in place of its last notice; for a bot whose chat nobody watches. Never asks; at most 2 a turn (`../../next-steps/agent-tools.md` §5, built 2026-11-03) | auto |
 | `ask_user` | Up to 4 questions on a card of their own, each with 2 to 4 likely answers; the turn ends and the answers open the next. Only on a turn someone is waiting on (§3.2, built 2026-10-29) | auto |
 
 **Goals** (2026-10-29, from Grok Bot's goals,

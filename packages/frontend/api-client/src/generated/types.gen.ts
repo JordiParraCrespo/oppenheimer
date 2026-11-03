@@ -4544,6 +4544,29 @@ export type WorkspaceBotApprovalResponseDto = {
     sessionId: string | null;
 };
 
+export type WorkspaceBotNoticeResponseDto = {
+    /**
+     * The notice: a new id with each notice, so a mark on one never hides the next.
+     */
+    id: string;
+    /**
+     * The bot that sent it.
+     */
+    botId: string;
+    /**
+     * The bot's name, as the console shows it.
+     */
+    botName: string;
+    /**
+     * The line, as the bot wrote it.
+     */
+    text: string;
+    /**
+     * When it came.
+     */
+    at: string;
+};
+
 export type DecideBotApprovalRequest = {
     decision: 'approve' | 'approve_for_subject' | 'approve_always' | 'deny' | 'stop';
     note?: string;
@@ -15014,6 +15037,32 @@ export type FindWorkspaceBotApprovalsResponses = {
 };
 
 export type FindWorkspaceBotApprovalsResponse = FindWorkspaceBotApprovalsResponses[keyof FindWorkspaceBotApprovalsResponses];
+
+export type FindWorkspaceBotNoticesData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/bot-notices';
+};
+
+export type FindWorkspaceBotNoticesErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+};
+
+export type FindWorkspaceBotNoticesError = FindWorkspaceBotNoticesErrors[keyof FindWorkspaceBotNoticesErrors];
+
+export type FindWorkspaceBotNoticesResponses = {
+    200: Array<WorkspaceBotNoticeResponseDto>;
+};
+
+export type FindWorkspaceBotNoticesResponse = FindWorkspaceBotNoticesResponses[keyof FindWorkspaceBotNoticesResponses];
 
 export type DecideBotApprovalData = {
     body: DecideBotApprovalRequest;

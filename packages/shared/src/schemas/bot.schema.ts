@@ -1212,6 +1212,29 @@ export type FindWorkspaceBotApprovalsDto = z.infer<typeof findWorkspaceBotApprov
 export const WORKSPACE_BOT_APPROVALS_MAX = 100;
 
 /**
+ * A line a bot sent the person with its `notify` tool
+ * (`product/next-steps/agent-tools.md` §5): a bot keeps only its latest, and
+ * the Inbox shows it until the person marks it done. Each notice has an id
+ * of its own, so a mark on one never hides the next. The bound is the
+ * session notice's (`SESSION_NOTICE_TEXT_MAX`): a line, not a report.
+ */
+export const BOT_NOTICE_TEXT_MAX = 500;
+
+/** The most notices the workspace read (`GET /bot-notices`) returns, newest first. */
+export const WORKSPACE_BOT_NOTICES_MAX = 50;
+
+/** One bot's latest notice, as the workspace read answers it. */
+export const workspaceBotNoticeSchema = z.object({
+  id: z.string().uuid(),
+  botId: z.string().uuid(),
+  botName: z.string(),
+  text: z.string().min(1).max(BOT_NOTICE_TEXT_MAX),
+  /** When it came. */
+  at: z.string().datetime(),
+});
+export type WorkspaceBotNotice = z.infer<typeof workspaceBotNoticeSchema>;
+
+/**
  * Where a piece of a turn's streamed text belongs. `block` counts the blocks
  * of text the turn stored before this one (a block of only whitespace is not
  * stored, and does not count), so a block is drawn live until the
