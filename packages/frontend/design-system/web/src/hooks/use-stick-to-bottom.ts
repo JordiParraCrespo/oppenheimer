@@ -4,11 +4,62 @@ import { type RefObject, useEffect, useRef, useState } from 'react';
 const NEAR_BOTTOM_PX = 80;
 /**
  * How long after the reader's own input (a wheel, a touch, a key) a move up
- * is theirs: a wheel's smooth scroll and a trackpad's glide run on after it.
+ * is theirs. Chromium's smooth wheel scroll and a trackpad's glide run on
+ * after the last event, for a few hundred milliseconds; this is chosen
+ * well past that, not measured. Too short, and the tail of a glide snaps
+ * back to the end; too long only means a clamp just after the reader's own
+ * scroll down can still let go, which that scroll had nearly done anyway.
  */
 const READER_INPUT_MS = 1000;
 /** The keys that scroll a pane up. */
 const UP_KEYS = new Set(['ArrowUp', 'PageUp', 'Home']);
+
+/**
+ * Whether the scroller's latest move is the reader's: a wheel turned up, a
+ * touch, an up key or a press on its scrollbar, just now or still held.
+ * The browser moves the view on its own too (a clamp when the content
+ * shrinks), and only this tells the two apart. `stop` removes its listeners.
+ */
+function readerInput(box: HTMLElement): { reading: () => boolean; stop: () => void } {
+  let at = Number.NEGATIVE_INFINITY;
+  let dragging = false;
+  const mark = () => {
+    at = performance.now();
+  };
+  const onWheel = (event: WheelEvent) => {
+    if (event.deltaY < 0) mark();
+  };
+  const onKey = (event: KeyboardEvent) => {
+    if (UP_KEYS.has(event.key) || (event.key === ' ' && event.shiftKey)) mark();
+  };
+  // The scrollbar is the scroller's own: a press on it, not on what it holds.
+  const onPress = (event: PointerEvent) => {
+    if (event.target !== box) return;
+    dragging = true;
+    mark();
+  };
+  const onRelease = () => {
+    if (dragging) mark();
+    dragging = false;
+  };
+  box.addEventListener('wheel', onWheel, { passive: true });
+  box.addEventListener('touchmove', mark, { passive: true });
+  box.addEventListener('keydown', onKey);
+  box.addEventListener('pointerdown', onPress);
+  window.addEventListener('pointerup', onRelease);
+  window.addEventListener('pointercancel', onRelease);
+  return {
+    reading: () => dragging || performance.now() - at < READER_INPUT_MS,
+    stop: () => {
+      box.removeEventListener('wheel', onWheel);
+      box.removeEventListener('touchmove', mark);
+      box.removeEventListener('keydown', onKey);
+      box.removeEventListener('pointerdown', onPress);
+      window.removeEventListener('pointerup', onRelease);
+      window.removeEventListener('pointercancel', onRelease);
+    },
+  };
+}
 
 /** Follows the end or stops: scroll anchoring only while it does not. */
 function follow(pinned: { current: boolean }, box: HTMLElement, on: boolean): void {
@@ -62,34 +113,16 @@ export function useStickToBottom({ repin }: { repin?: (content: HTMLElement) => 
     if (!box || !inner || typeof ResizeObserver === 'undefined') return;
     const shouldRepin = repinRef.current;
     let lastTop = box.scrollTop;
-    let input = Number.NEGATIVE_INFINITY;
-    let dragging = false;
     const near = () => box.scrollHeight - box.scrollTop - box.clientHeight < NEAR_BOTTOM_PX;
-    const reading = () => dragging || performance.now() - input < READER_INPUT_MS;
-    const onInput = () => {
-      input = performance.now();
-    };
-    const onWheel = (event: WheelEvent) => {
-      if (event.deltaY < 0) onInput();
-    };
-    const onKey = (event: KeyboardEvent) => {
-      if (UP_KEYS.has(event.key) || (event.key === ' ' && event.shiftKey)) onInput();
-    };
-    // The scrollbar is the scroller's own: a press on it, not on what it holds.
-    const onPress = (event: PointerEvent) => {
-      if (event.target !== box) return;
-      dragging = true;
-      onInput();
-    };
-    const onRelease = () => {
-      if (dragging) onInput();
-      dragging = false;
-    };
+    const reader = readerInput(box);
+    // Up and the reader's: they leave the end unless still near it. Up and
+    // not theirs while following: the browser's, so back to the end. Down
+    // to near the end: follow again.
     const onScroll = () => {
-      if (box.scrollTop < lastTop) {
-        if (reading()) follow(pinned, box, near());
-        else if (pinned.current && !held.current) box.scrollTop = box.scrollHeight;
-      } else if (near()) follow(pinned, box, true);
+      const up = box.scrollTop < lastTop;
+      if (up && reader.reading()) follow(pinned, box, near());
+      else if (up && pinned.current && !held.current) box.scrollTop = box.scrollHeight;
+      else if (!up && near()) follow(pinned, box, true);
       lastTop = box.scrollTop;
       setAtLatest(pinned.current || near());
     };
@@ -101,23 +134,12 @@ export function useStickToBottom({ repin }: { repin?: (content: HTMLElement) => 
     shouldRepin?.(inner);
     follow(pinned, box, pinned.current);
     box.addEventListener('scroll', onScroll, { passive: true });
-    box.addEventListener('wheel', onWheel, { passive: true });
-    box.addEventListener('touchmove', onInput, { passive: true });
-    box.addEventListener('keydown', onKey);
-    box.addEventListener('pointerdown', onPress);
-    window.addEventListener('pointerup', onRelease);
-    window.addEventListener('pointercancel', onRelease);
     observer.observe(inner);
     observer.observe(box);
     box.scrollTop = box.scrollHeight;
     return () => {
       box.removeEventListener('scroll', onScroll);
-      box.removeEventListener('wheel', onWheel);
-      box.removeEventListener('touchmove', onInput);
-      box.removeEventListener('keydown', onKey);
-      box.removeEventListener('pointerdown', onPress);
-      window.removeEventListener('pointerup', onRelease);
-      window.removeEventListener('pointercancel', onRelease);
+      reader.stop();
       observer.disconnect();
     };
   }, []);
