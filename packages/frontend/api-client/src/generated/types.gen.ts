@@ -9437,7 +9437,7 @@ export type CreateSessionErrors = {
     /**
      * SESSIONS_017 — The host’s runner takes no images
      *
-     * SESSIONS_011 / SESSIONS_025 / SESSIONS_048 — The host's runner is older than the agent, than folder sessions, or than continuing a cloud session
+     * SESSIONS_011 / SESSIONS_025 / SESSIONS_048 — The host's runner predates the agent, folder sessions or cloud teleports
      *
      * SESSIONS_006 — That project is archived
      */

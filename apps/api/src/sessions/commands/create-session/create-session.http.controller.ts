@@ -72,8 +72,7 @@ export class CreateSessionHttpController {
   })
   @ApiProblemResponse({
     status: 409,
-    description:
-      "The host's runner is older than the agent, than folder sessions, or than continuing a cloud session",
+    description: "The host's runner predates the agent, folder sessions or cloud teleports",
     code: ['SESSIONS_011', 'SESSIONS_025', 'SESSIONS_048'],
   })
   @ApiProblemResponse({ status: 503, description: 'The host is offline', code: 'SESSIONS_016' })

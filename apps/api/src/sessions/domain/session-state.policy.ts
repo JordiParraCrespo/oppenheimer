@@ -20,6 +20,7 @@ import {
   SESSION_PERMISSIONS,
   SESSION_WATCHED_PULLS_MAX,
   sessionAgentReportSchema,
+  sessionDecisionSchema,
   sessionNoticeSchema,
   sessionWatchedPullSchema,
   WAKE_REQUESTED_EVENT_KIND,
@@ -399,6 +400,16 @@ function decisionOf(payload: unknown): SessionDecision | null {
 function agentReportOf(payload: unknown): SessionAgentReport | null {
   if (typeof payload !== 'object' || payload === null) return null;
   return readAgentReport((payload as { program?: unknown }).program);
+}
+
+/**
+ * The stored decision, read back through its schema: a `jsonb` value is only as
+ * typed as whatever wrote it, and one this build cannot read is no decision.
+ */
+export function readDecision(value: unknown): SessionDecision | null {
+  if (value === null || value === undefined) return null;
+  const parsed = sessionDecisionSchema.safeParse(value);
+  return parsed.success ? parsed.data : null;
 }
 
 /**
