@@ -22,7 +22,28 @@ FROM base AS builder
 WORKDIR /app
 COPY --from=deps /app ./
 COPY . .
-RUN pnpm --filter @oppenheimer/web... build
+# Error reporting (Sentry), baked into the bundle at build time like every
+# VITE_ value: public by nature. All empty, the console reports nothing and
+# never downloads the SDK. The release is the commit the deploy builds, the
+# same one the API reports under (deploy/dev/compose.yml's SENTRY_RELEASE).
+ARG VITE_SENTRY_DSN=""
+ARG VITE_SENTRY_ENVIRONMENT=""
+ARG VITE_SENTRY_RELEASE=""
+ARG VITE_SENTRY_TRACES_SAMPLE_RATE="0"
+# Where the build uploads its hidden source maps. Not secret; the token is.
+ARG SENTRY_ORG=""
+ARG SENTRY_WEB_PROJECT=""
+ENV VITE_SENTRY_DSN=$VITE_SENTRY_DSN \
+    VITE_SENTRY_ENVIRONMENT=$VITE_SENTRY_ENVIRONMENT \
+    VITE_SENTRY_RELEASE=$VITE_SENTRY_RELEASE \
+    VITE_SENTRY_TRACES_SAMPLE_RATE=$VITE_SENTRY_TRACES_SAMPLE_RATE \
+    SENTRY_ORG=$SENTRY_ORG \
+    SENTRY_WEB_PROJECT=$SENTRY_WEB_PROJECT
+# The upload token is a BuildKit secret, never an ARG: an ARG stays in the
+# image's history. Absent, the build makes no source maps and uploads nothing.
+RUN --mount=type=secret,id=sentry_auth_token \
+    SENTRY_AUTH_TOKEN="$(cat /run/secrets/sentry_auth_token 2>/dev/null || true)" \
+    pnpm --filter @oppenheimer/web... build
 
 FROM nginx:alpine AS runner
 COPY --from=builder /app/apps/web/dist /usr/share/nginx/html
