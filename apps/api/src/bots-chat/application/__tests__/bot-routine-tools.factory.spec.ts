@@ -18,7 +18,9 @@ import type { BotToolContext } from '../bot-tool.factory';
  * starts going ahead without one,
  * a routine saved with a broader credential than the turn's, another bot's
  * routine touched, or a mail trigger's card storing an account name that
- * could later mean another account.
+ * could later mean another account; a /schedule's own routine asking again
+ * for what the person just asked for, or that consent reaching past its
+ * create.
  */
 const ROUTINE = '0d9f6a4e-0000-4000-8000-000000000001';
 
@@ -40,7 +42,7 @@ const ACCOUNT = GmailConnectionEntity.connect({
   scopes: [],
 });
 
-function setup() {
+function setup(ranCommand: string | null = null) {
   const execute = vi.fn(async () => ROUTINE);
   const commandBus = { execute } as unknown as CommandBus;
   const queryBus = {
@@ -72,6 +74,7 @@ function setup() {
     permissions: NO_PERMISSIONS,
     budget: new BotTurnBudget(),
     credentialScopes: ['automations:write'],
+    ranCommand,
     approvals,
   };
   const call = (input: unknown) =>
@@ -87,6 +90,20 @@ const create = {
 };
 
 describe('update_routine', () => {
+  it('saves the routine a /schedule asked for at once, with no card', async () => {
+    const { call, execute, approvals } = setup('schedule');
+    await call(create);
+    expect(approvals.request).not.toHaveBeenCalled();
+    expect(execute.mock.calls[0][0]).toBeInstanceOf(SaveBotRoutineCommand);
+  });
+
+  it('still asks in a /schedule turn before anything but that create', async () => {
+    const { call, execute, approvals } = setup('schedule');
+    await call({ action: 'delete', routine_id: ROUTINE });
+    expect(approvals.request).toHaveBeenCalled();
+    expect(execute).not.toHaveBeenCalled();
+  });
+
   it('asks before saving a routine, with what it will do, and saves nothing yet', async () => {
     const { call, execute, approvals } = setup();
     await call(create);

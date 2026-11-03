@@ -4047,6 +4047,31 @@ export type BotGoalEventResponseDto = {
     reason: string | null;
 };
 
+export type BotLoopEventResponseDto = {
+    kind: 'loop';
+    /**
+     * `ran` opens a run of the loop; the others say how it ended outside any turn: stopped by its owner (`cleared`), out of its 3 days (`expired`), a run of it failed or was stopped (`stopped`), or a self-paced run did not say when to run next (`ended`).
+     */
+    activity: 'ran' | 'cleared' | 'expired' | 'stopped' | 'ended';
+    loopId: string;
+    /**
+     * The loop's prompt at the time.
+     */
+    prompt: string;
+    /**
+     * Minutes between runs; null when the bot says when it runs next.
+     */
+    intervalMinutes: number | null;
+    /**
+     * For `ran`, which run this is, the message that set it being the first; otherwise how many ran.
+     */
+    run: number;
+    /**
+     * For `stopped`: the status of the run that ended it, or `access_lost`; otherwise null.
+     */
+    reason: string | null;
+};
+
 export type BotSubagentRunResponseDto = {
     /**
      * The task the bot gave it.
@@ -4157,7 +4182,7 @@ export type BotMessageResponseDto = {
     /**
      * What an event says happened, by `kind`; null on every other role.
      */
-    event: BotApprovalEventResponseDto | BotQuestionEventResponseDto | BotRoutineEventResponseDto | BotPeerMessageEventResponseDto | BotPeerReplyEventResponseDto | BotSessionEventResponseDto | BotGoalEventResponseDto | null;
+    event: BotApprovalEventResponseDto | BotQuestionEventResponseDto | BotRoutineEventResponseDto | BotPeerMessageEventResponseDto | BotPeerReplyEventResponseDto | BotSessionEventResponseDto | BotGoalEventResponseDto | BotLoopEventResponseDto | null;
     /**
      * The images a message of yours carries, in the order attached; read each from `GET /bots/:id/attachments/:attachmentId/content`. Empty on every other role.
      */
@@ -4255,6 +4280,17 @@ export type SendBotMessageRequest = {
     steer?: boolean;
 };
 
+export type BotGoalWaitingResponseDto = {
+    /**
+     * The system limiting our requests ("Gmail", "GitHub").
+     */
+    system: string;
+    /**
+     * When the goal goes on.
+     */
+    until: string;
+};
+
 export type BotGoalResponseDto = {
     id: string;
     /**
@@ -4270,10 +4306,43 @@ export type BotGoalResponseDto = {
      */
     limit: number;
     createdAt: string;
+    /**
+     * A turn of the goal ended on a system’s rate limit, and its next decision waits until then; null when nothing holds it.
+     */
+    waiting: BotGoalWaitingResponseDto | null;
 };
 
 export type BotGoalStateResponseDto = {
     goal: BotGoalResponseDto | null;
+};
+
+export type BotLoopResponseDto = {
+    id: string;
+    /**
+     * What each run does.
+     */
+    prompt: string;
+    /**
+     * Minutes between runs; null when the bot says when it runs next.
+     */
+    intervalMinutes: number | null;
+    /**
+     * The runs so far, the message that set it being the first.
+     */
+    runs: number;
+    /**
+     * When the next run is due; null while a self-paced run has not said.
+     */
+    nextRunAt: string | null;
+    /**
+     * When it ends on its own.
+     */
+    expiresAt: string;
+    createdAt: string;
+};
+
+export type BotLoopStateResponseDto = {
+    loop: BotLoopResponseDto | null;
 };
 
 export type BotUsageModelResponseDto = {
@@ -14774,6 +14843,73 @@ export type FindBotGoalResponses = {
 };
 
 export type FindBotGoalResponse = FindBotGoalResponses[keyof FindBotGoalResponses];
+
+export type ClearBotLoopData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/bots/{id}/loop';
+};
+
+export type ClearBotLoopErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * BOTS_001 — Bot not found
+     */
+    404: ProblemDetailsDto;
+};
+
+export type ClearBotLoopError = ClearBotLoopErrors[keyof ClearBotLoopErrors];
+
+export type ClearBotLoopResponses = {
+    /**
+     * The bot has no loop now.
+     */
+    204: void;
+};
+
+export type ClearBotLoopResponse = ClearBotLoopResponses[keyof ClearBotLoopResponses];
+
+export type FindBotLoopData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/bots/{id}/loop';
+};
+
+export type FindBotLoopErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * BOTS_001 — Bot not found
+     */
+    404: ProblemDetailsDto;
+};
+
+export type FindBotLoopError = FindBotLoopErrors[keyof FindBotLoopErrors];
+
+export type FindBotLoopResponses = {
+    200: BotLoopStateResponseDto;
+};
+
+export type FindBotLoopResponse = FindBotLoopResponses[keyof FindBotLoopResponses];
 
 export type FindBotUsageData = {
     body?: never;

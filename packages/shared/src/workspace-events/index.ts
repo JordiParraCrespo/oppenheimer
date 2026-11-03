@@ -25,6 +25,8 @@ export const WORKSPACE_EVENT_TYPES = [
   'task.changed',
   /** A milestone was created, changed or deleted. */
   'milestone.changed',
+  /** A project was made, changed or archived, by a person or a bot acting for one. */
+  'project.changed',
   /** A bot's approval was raised, decided, expired, or its call ran; `botId` is whose. */
   'botApproval.changed',
   /** A bot sent the person a new notice (`notify`); `id` is the notice, `botId` whose. */
@@ -42,6 +44,7 @@ export type WorkspaceEvent =
   | { type: 'automationRun.changed'; id: string; automationId: string }
   | { type: 'task.changed'; id: string }
   | { type: 'milestone.changed'; id: string }
+  | { type: 'project.changed'; id: string }
   | { type: 'botApproval.changed'; id: string; botId: string }
   | { type: 'botNotice.changed'; id: string; botId: string }
   | { type: 'inboxMark.changed'; itemKey: string };
@@ -66,6 +69,7 @@ export function isWorkspaceEvent(value: unknown): value is WorkspaceEvent {
     case 'host.changed':
     case 'task.changed':
     case 'milestone.changed':
+    case 'project.changed':
       return true;
     case 'pairing.spent':
       return typeof event.hostId === 'string';

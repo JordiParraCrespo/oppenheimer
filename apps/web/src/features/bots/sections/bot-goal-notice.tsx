@@ -1,21 +1,28 @@
 import { ComposerNotice, ComposerStackAction } from '@oppenheimer/design-system-web';
-import { Target } from '@oppenheimer/design-system-web/icons';
+import { Clock, Target } from '@oppenheimer/design-system-web/icons';
 import { useClearBotGoal } from '@oppenheimer/frontend-consumer/react';
+import { useLocale } from '@oppenheimer/frontend-web';
 import type { BotGoal } from '@oppenheimer/shared/schemas/bot';
 import { useTranslation } from 'react-i18next';
+import { goalBannerLine } from '@/features/bots/lib/goal-banner';
 
 /**
  * The goal the bot keeps working toward (`25-bots.md` §4.1), fused onto the
  * composer's top edge: what it is, how many continuation turns it has taken
- * of its limit, and Stop. A Stop that fails says so in the notice itself,
- * where the button was pressed.
+ * of its limit, and Stop. While a turn of it ended on a system's rate limit
+ * and its next turn is held until the limit ends, a clock and "waiting for
+ * Gmail until 10:02" stand in for the count, so the goal does not look
+ * stalled. A Stop that fails says so in the notice itself, where the button
+ * was pressed.
  */
 export function BotGoalNotice({ botId, goal }: { botId: string; goal: BotGoal }) {
   const { t } = useTranslation();
+  const locale = useLocale();
   const clear = useClearBotGoal();
+  const line = goalBannerLine(goal, t, locale);
   return (
     <ComposerNotice
-      icon={<Target />}
+      icon={line.waiting ? <Clock /> : <Target />}
       action={
         <ComposerStackAction disabled={clear.isPending} onClick={() => clear.mutate({ id: botId })}>
           {t('bots.chat.goal.stop')}
@@ -29,9 +36,7 @@ export function BotGoalNotice({ botId, goal }: { botId: string; goal: BotGoal })
           <span className="min-w-0 truncate" title={goal.objective}>
             {t('bots.chat.goal.title', { objective: goal.objective })}
           </span>
-          <span className="shrink-0 text-xs text-fg-muted">
-            {t('bots.chat.goal.progress', { step: goal.continuations, limit: goal.limit })}
-          </span>
+          <span className="shrink-0 text-xs text-fg-muted">{line.text}</span>
         </span>
       )}
     </ComposerNotice>

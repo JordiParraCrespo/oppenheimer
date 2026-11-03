@@ -7,7 +7,9 @@ import type { ModelProviderCredentialRepositoryPort } from '../../../../bots/dat
 import { BotEntity } from '../../../../bots/domain/bot.entity';
 import type { ProviderKeySealerPort } from '../../../../bots/infrastructure/provider-key-sealer.port';
 import type { BotGoalResolver } from '../../../application/bot-goal.resolver';
+import type { BotLoopResolver } from '../../../application/bot-loop.resolver';
 import { BotMessageAttachmentsResolver } from '../../../application/bot-message-attachments.resolver';
+import { BotSentTurnResolver } from '../../../application/bot-sent-turn.resolver';
 import { BotWaitingCardResolver } from '../../../application/bot-waiting-card.resolver';
 import type { BotApprovalRepositoryPort } from '../../../database/bot-approval.repository.port';
 import type { BotAttachmentRepositoryPort } from '../../../database/bot-attachment.repository.port';
@@ -16,6 +18,7 @@ import type { BotTurnRepositoryPort } from '../../../database/bot-turn.repositor
 import { BotApprovalEntity } from '../../../domain/bot-approval.entity';
 import { BotAttachmentEntity } from '../../../domain/bot-attachment.entity';
 import { BotGoalEntity } from '../../../domain/bot-goal.entity';
+import { BotLoopEntity } from '../../../domain/bot-loop.entity';
 import { BotQuestionEntity } from '../../../domain/bot-question.entity';
 import type { BotStreamPort } from '../../../infrastructure/bot-stream.port';
 import { SendBotMessageCommand } from '../send-bot-message.command';
@@ -26,8 +29,9 @@ import { SendBotMessageCommandHandler } from '../send-bot-message.command-handle
  * they are now, with your message first, or a refusal where the person can
  * fix it — no key for the provider, no sealing key on the server — with
  * nothing queued. A card the bot is waiting on expires with the message.
- * `/goal <condition>` sets the bot's goal on the turn it queues; `/goal`
- * alone or `/goal clear` is refused before anything is written.
+ * `/goal <condition>` sets the bot's goal on the turn it queues, and
+ * `/loop …` its loop; `/goal` alone, `/goal clear` and `/loop stop` are
+ * refused before anything is written.
  */
 const scope: AccessScope = {
   userId: randomUUID(),
@@ -46,6 +50,7 @@ function setup(
     lost?: boolean;
     provider?: BotEntity['provider'];
     replaced?: BotGoalEntity;
+    replacedLoop?: BotLoopEntity;
   } = {},
 ) {
   const bot = BotEntity.createNew({
@@ -64,9 +69,16 @@ function setup(
       outcome: 'staged',
       replaced: options.replaced ?? null,
     })),
+    enqueueWithLoop: vi.fn<BotTurnRepositoryPort['enqueueWithLoop']>(async () => ({
+      outcome: 'staged',
+      replaced: options.replacedLoop ?? null,
+    })),
   };
   const goals = {
     cancelWaiting: vi.fn<BotGoalResolver['cancelWaiting']>(async () => undefined),
+  };
+  const loops = {
+    cancelWaiting: vi.fn<BotLoopResolver['cancelWaiting']>(async () => undefined),
   };
   const uploads: BotAttachmentEntity[] = [];
   const attachments = {
@@ -116,7 +128,6 @@ function setup(
     { bot: async () => bot } as unknown as BotLookupResolver,
     credentials as unknown as ModelProviderCredentialRepositoryPort,
     sealer,
-    turns as unknown as BotTurnRepositoryPort,
     stream,
     new BotWaitingCardResolver(
       approvals as unknown as BotApprovalRepositoryPort,
@@ -124,7 +135,11 @@ function setup(
       stream,
     ),
     new BotMessageAttachmentsResolver(attachments as unknown as BotAttachmentRepositoryPort),
-    goals as unknown as BotGoalResolver,
+    new BotSentTurnResolver(
+      turns as unknown as BotTurnRepositoryPort,
+      goals as unknown as BotGoalResolver,
+      loops as unknown as BotLoopResolver,
+    ),
   );
   const upload = () => {
     const created = BotAttachmentEntity.upload(
@@ -141,7 +156,7 @@ function setup(
     uploads.push(created);
     return created;
   };
-  return { handler, turns, goals, bot, approvals, card, questions, asked, stream, upload };
+  return { handler, turns, goals, loops, bot, approvals, card, questions, asked, stream, upload };
 }
 
 const send = (
@@ -320,16 +335,53 @@ describe('SendBotMessageCommandHandler', () => {
     expect(goals.cancelWaiting).not.toHaveBeenCalled();
   });
 
-  // What breaks this: `/goal clear` typed through the API queuing a turn that
-  // spends a model call to say the goal is cleared, without clearing it.
-  it('refuses /goal alone, /goal clear and /usage with a generic 400, queuing nothing', async () => {
+  it('queues a /loop with its loop, set on that turn with its interval and reach', async () => {
     const { handler, turns, bot } = setup();
-    for (const content of ['/goal', '/goal clear', '/usage']) {
+    await send(handler, bot.id, 'Europe/Madrid', ['bots:write'], [], '/loop 5m check the deploy');
+    expect(turns.enqueue).not.toHaveBeenCalled();
+    const [turn, message, loop] = vi.mocked(turns.enqueueWithLoop).mock.calls[0];
+    expect(message.content).toBe('/loop 5m check the deploy');
+    expect(loop).toMatchObject({
+      botId: bot.id,
+      originTurnId: turn.id,
+      prompt: 'check the deploy',
+      intervalMinutes: 5,
+      credentialScopes: ['bots:write'],
+      timeZone: 'Europe/Madrid',
+    });
+  });
+
+  it('cancels the run the loop a /loop replaced left waiting', async () => {
+    const replacedLoop = BotLoopEntity.set(
+      {
+        organizationId: 'org-1',
+        botId: 'bot-1',
+        originTurnId: 'turn-0',
+        prompt: 'watch PR 42',
+        intervalMinutes: null,
+        credentialScopes: null,
+        timeZone: null,
+      },
+      new Date(),
+    );
+    const { handler, loops, goals, bot } = setup({ replacedLoop });
+    await send(handler, bot.id, null, null, [], '/loop 10m check CI');
+    expect(loops.cancelWaiting).toHaveBeenCalledWith(replacedLoop, expect.anything());
+    expect(goals.cancelWaiting).not.toHaveBeenCalled();
+  });
+
+  // What breaks this: `/goal clear` typed through the API queuing a turn that
+  // spends a model call to say the goal is cleared, without clearing it; a
+  // `/loop` with an interval out of range running as a loop of its words.
+  it('refuses /goal alone, /goal clear, /loop stop, a bad interval and /usage with a generic 400, queuing nothing', async () => {
+    const { handler, turns, bot } = setup();
+    for (const content of ['/goal', '/goal clear', '/loop stop', '/loop 0m x', '/usage']) {
       await expect(send(handler, bot.id, null, null, [], content)).rejects.toMatchObject({
         code: 'GENERIC.ARGUMENT_INVALID',
       });
     }
     expect(turns.enqueue).not.toHaveBeenCalled();
     expect(turns.enqueueWithGoal).not.toHaveBeenCalled();
+    expect(turns.enqueueWithLoop).not.toHaveBeenCalled();
   });
 });

@@ -1,16 +1,9 @@
-import {
-  ChatComposer,
-  ComposerNotice,
-  ComposerStack,
-  ComposerStackAction,
-  ComposerStackRow,
-  FieldError,
-} from '@oppenheimer/design-system-web';
-import { KeyRound, SquareSlash } from '@oppenheimer/design-system-web/icons';
+import { ChatComposer, FieldError } from '@oppenheimer/design-system-web';
 import type { BotWaitingMessage } from '@oppenheimer/frontend-consumer';
 import {
   useBotActiveTurn,
   useBotGoal,
+  useBotLoop,
   useBotWaitingMessages,
   useCancelBotTurn,
   useModelProviders,
@@ -18,7 +11,6 @@ import {
   useVoiceDictation,
 } from '@oppenheimer/frontend-consumer/react';
 import {
-  ChatQueuedRow,
   dictateInto,
   dictationSlots,
   ErrorAlert,
@@ -44,8 +36,8 @@ import { useComposerFocus } from '@/features/bots/hooks/use-composer-focus';
 import { useSlashMenu } from '@/features/bots/hooks/use-slash-menu';
 import { botDraft, fillBotDraft, setBotDraft } from '@/features/bots/lib/bot-drafts';
 import { BOT_IMAGE_ACCEPT, heldImagesBlock } from '@/features/bots/lib/bot-images';
-import { type ComposerTop, composerTopOf } from '@/features/bots/lib/composer-top';
-import { BotGoalNotice } from '@/features/bots/sections/bot-goal-notice';
+import { composerTopOf } from '@/features/bots/lib/composer-top';
+import { BotComposerTop } from '@/features/bots/sections/bot-composer-top';
 
 /**
  * The bot's composer. Send says it to the bot; while a turn is queued or
@@ -75,7 +67,7 @@ import { BotGoalNotice } from '@/features/bots/sections/bot-goal-notice';
  * alone. A file it will not hold, or one the API refused, is said under the
  * field; while one uploads or failed, or the bot's model reads no images,
  * send is off and says why, and nothing written is lost.
- * A built-in command the console runs itself (`/goal clear`, `/usage`, which
+ * A built-in command the console runs itself (`/goal clear`, `/loop stop`, `/usage`, which
  * puts the usage card in the chat) sends nothing,
  * and one that cannot be sent as typed (`/goal` with no condition) keeps send
  * off and says why on the box's top edge (`useBuiltInCommand`).
@@ -102,7 +94,8 @@ export function BotComposer({
   const field = useComposerFocus(botId);
   const slash = useSlashMenu(botId, draft, (next) => fillBotDraft(botId, next));
   const active = useBotActiveTurn(botId);
-  const waiting = useBotWaitingMessages(botId);
+  // How many wait decides whether the queue takes the top edge; `BotComposerTop` draws them.
+  const waiting = useBotWaitingMessages(botId).length;
   const { data: keyed } = useModelProviders({
     select: (rows) => rows.find((row) => row.provider === provider)?.configured,
   });
@@ -120,8 +113,9 @@ export function BotComposer({
   });
   const cancel = useCancelBotTurn();
   const builtIn = useBuiltInCommand(botId, draft);
-  // The goal is drawn in `above`, fused onto the box, so the box has to know whether there is one.
+  // Whether there is a goal or a loop decides whether the box has a top edge (`BotComposerTop` draws it).
   const { data: goal } = useBotGoal(botId);
+  const { data: loop } = useBotLoop(botId);
   const noKey = keyed === false ? t('bots.chat.noKey', { provider: providerLabel }) : undefined;
   const imagesBlock = heldImagesBlock(images.images, takesImages);
   const blocked =
@@ -142,12 +136,6 @@ export function BotComposer({
     voice: useVoiceDictation(() => [name]),
     onText: dictateInto((next) => setBotDraft(botId, next(botDraft(botId)))),
   });
-
-  const addKey = (
-    <ComposerStackAction onClick={() => navigate({ to: '/settings/model-providers' })}>
-      {t('bots.chat.addKey')}
-    </ComposerStackAction>
-  );
 
   // Edit: the waiting turn is called off, and its words come back into the field.
   function takeBack(message: BotWaitingMessage) {
@@ -175,43 +163,12 @@ export function BotComposer({
   }
 
   const top = composerTopOf({
-    waiting: waiting.length,
+    waiting,
     noKey: Boolean(noKey),
     command: Boolean(builtIn.notice),
     goal: Boolean(goal),
+    loop: Boolean(loop),
   });
-  const tops: Record<ComposerTop, () => ReactNode> = {
-    queue: () => (
-      <ComposerStack>
-        {noKey ? (
-          <ComposerStackRow icon={<KeyRound />} actions={addKey}>
-            {noKey}
-          </ComposerStackRow>
-        ) : null}
-        {waiting.map((message, index) => (
-          <ChatQueuedRow
-            key={message.turnId}
-            steer={message.steer}
-            text={message.text || t('bots.chat.queuedImages', { count: message.images })}
-            onSendNow={
-              index === 0 && active?.status === 'running'
-                ? () => cancel.mutate({ id: botId, turnId: active.id })
-                : undefined
-            }
-            onEdit={message.images === 0 ? () => takeBack(message) : undefined}
-            onRemove={() => cancel.mutate({ id: botId, turnId: message.turnId })}
-          />
-        ))}
-      </ComposerStack>
-    ),
-    noKey: () => (
-      <ComposerNotice icon={<KeyRound />} action={addKey}>
-        {noKey}
-      </ComposerNotice>
-    ),
-    command: () => <ComposerNotice icon={<SquareSlash />}>{builtIn.notice}</ComposerNotice>,
-    goal: () => (goal ? <BotGoalNotice botId={botId} goal={goal} /> : null),
-  };
 
   return (
     <>
@@ -286,7 +243,20 @@ export function BotComposer({
           }
           tools={tools}
           engine={engine}
-          above={top ? tops[top]() : undefined}
+          above={
+            top ? (
+              <BotComposerTop
+                botId={botId}
+                top={top}
+                runningTurnId={active?.status === 'running' ? active.id : null}
+                noKey={noKey}
+                notice={builtIn.notice}
+                onAddKey={() => navigate({ to: '/settings/model-providers' })}
+                onCancel={(turnId) => cancel.mutate({ id: botId, turnId })}
+                onTakeBack={takeBack}
+              />
+            ) : undefined
+          }
           dictation={dictationSlots(dictation)}
           labels={{
             send: t('bots.chat.send'),

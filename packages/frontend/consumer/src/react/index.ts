@@ -45,6 +45,7 @@ export {
   useUploadBotImage,
 } from './bot-chat.queries';
 export { useBotGoal, useClearBotGoal } from './bot-goal.queries';
+export { useBotLoop, useClearBotLoop } from './bot-loop.queries';
 export {
   type AddBotPermissionRuleVariables,
   type DeleteBotPermissionRuleVariables,

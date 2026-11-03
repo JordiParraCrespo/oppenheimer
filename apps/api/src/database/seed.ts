@@ -29,6 +29,7 @@ import { BotApprovalOrmEntity } from '../bots-chat/database/bot-approval.orm-ent
 import { BotAttachmentOrmEntity } from '../bots-chat/database/bot-attachment.orm-entity';
 import { BotConversationSummaryOrmEntity } from '../bots-chat/database/bot-conversation-summary.orm-entity';
 import { BotGoalOrmEntity } from '../bots-chat/database/bot-goal.orm-entity';
+import { BotLoopOrmEntity } from '../bots-chat/database/bot-loop.orm-entity';
 import { BotMessageOrmEntity } from '../bots-chat/database/bot-message.orm-entity';
 import { BotModelCallOrmEntity } from '../bots-chat/database/bot-model-call.orm-entity';
 import { BotNoticeOrmEntity } from '../bots-chat/database/bot-notice.orm-entity';
@@ -170,6 +171,7 @@ const dataSource = new DataSource({
     BotAttachmentOrmEntity,
     BotSubscriptionOrmEntity,
     BotGoalOrmEntity,
+    BotLoopOrmEntity,
     BotNoticeOrmEntity,
     BotModelCallOrmEntity,
     InboxMarkOrmEntity,
