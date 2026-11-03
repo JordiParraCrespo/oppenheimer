@@ -76,6 +76,47 @@ func (a *App) notifyRoutes(router *httpx.Router) {
 	})
 }
 
+// watchPullRequest is `runner sessions watch-pr`'s body.
+type watchPullRequest struct {
+	Repo   string `json:"repo,omitempty"`
+	Number int    `json:"number"`
+	Watch  bool   `json:"watch"`
+}
+
+// watchRoutes mounts `runner sessions watch-pr`'s route on the local socket.
+func (a *App) watchRoutes(router *httpx.Router) {
+	router.HandleFunc("POST /v1/sessions/{id}/pulls", func(w http.ResponseWriter, r *http.Request) error {
+		var in watchPullRequest
+		if err := httpx.DecodeJSON(r, &in); err != nil {
+			return err
+		}
+		watch, err := a.Sessions.WatchPull(r.PathValue("id"), in.Repo, in.Number, in.Watch)
+		if err != nil {
+			return err
+		}
+		return httpx.WriteJSON(w, http.StatusOK, watch)
+	})
+}
+
+// WatchPull asks to be woken by a pull request's events, or to stop.
+func (d Delegation) WatchPull(ctx context.Context, repo string, number int, watch bool) error {
+	self, err := d.self("")
+	if err != nil {
+		return err
+	}
+	var out sessionsdomain.PullWatch
+	if err := d.call(ctx, http.MethodPost, "/v1/sessions/"+self+"/pulls",
+		watchPullRequest{Repo: repo, Number: number, Watch: watch}, &out); err != nil {
+		return err
+	}
+	line := fmt.Sprintf("watching pull request #%d: you will be told when its checks finish, someone reviews or comments, or it merges", number)
+	if !watch {
+		line = fmt.Sprintf("no longer watching pull request #%d", number)
+	}
+	_, err = fmt.Fprintln(d.Out, line)
+	return err
+}
+
 // Notify tells the person a line in the console's Inbox.
 func (d Delegation) Notify(ctx context.Context, text string) error {
 	self, err := d.self("")

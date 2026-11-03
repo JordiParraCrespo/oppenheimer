@@ -721,6 +721,15 @@ func (h *linkHandler) Notified(sessionID string, notice sessionsdomain.Notice) {
 	h.reporter.Append(sessionID, sessionsdomain.AgentNotifiedKind, notice)
 }
 
+// PullWatched is the session service's pull watcher: `pull.watched` with the
+// pull request a session's agent wants to be woken by, or no longer does.
+func (h *linkHandler) PullWatched(sessionID string, watch sessionsdomain.PullWatch) {
+	if h.reporter == nil {
+		return
+	}
+	h.reporter.Append(sessionID, sessionsdomain.PullWatchedKind, watch)
+}
+
 // TerminalMatched is the session service's publisher for a terminal watch's
 // report: `terminal.matched` with the watch and how many lines it has counted.
 // The matched text is never in it, nor in the log: it does not leave the host.

@@ -268,7 +268,12 @@ runner does with it and point back.
   2026-11-02), the runner logs `agent.notified` with `{ id, text }`
   (`packages/shared/src/schemas/session-notice.schema.ts`), the text at most
   500 bytes; the control plane keeps the latest on the session for the
-  Inbox. Nothing new is on the wire for it either.
+  Inbox. Nothing new is on the wire for it either. When it asks to be
+  woken by a pull request (`runner sessions watch-pr`), the runner logs
+  `pull.watched` with `{ githubRepoId, number, watch }`
+  (`packages/shared/src/schemas/session-wake.schema.ts`); the control plane
+  types a line into the session when that pull request's checks finish, it
+  is reviewed or commented on, or it merges.
 - `attachment.credit` — the browser's consumed-byte credit, relayed to
   the runner so it resumes that attachment's PTY reads. Without it the
   window below is a one-way valve: a noisy pane stalls for good rather

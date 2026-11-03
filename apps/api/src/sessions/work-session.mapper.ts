@@ -13,6 +13,7 @@ import {
   launchPermissionFor,
   readAgentReport,
   readNotice,
+  readWatchedPulls,
   type SessionAgent,
   type SessionFold,
 } from './domain/session-state.policy';
@@ -77,6 +78,7 @@ export class WorkSessionMapper
     record.pendingDecision = fold.pendingDecision;
     record.agentReport = fold.agentReport;
     record.notice = fold.notice;
+    record.watchedPulls = fold.watchedPulls;
     return record;
   }
 
@@ -196,6 +198,7 @@ export class WorkSessionMapper
       pendingDecision: this.decisionOf(record.pendingDecision),
       agentReport: readAgentReport(record.agentReport),
       notice: readNotice(record.notice),
+      watchedPulls: readWatchedPulls(record.watchedPulls),
     };
   }
 

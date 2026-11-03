@@ -30,6 +30,7 @@ import (
 	"log/slog"
 	"os"
 	"os/signal"
+	"strconv"
 	"strings"
 	"syscall"
 	"time"
@@ -389,6 +390,22 @@ func sessions(ctx context.Context, args []string) (int, error) {
 			return cli.ExitUsage, errors.New(`usage: runner sessions notify "line"`)
 		}
 		return withDelegation(func(d cli.Delegation) error { return d.Notify(ctx, strings.Join(args, " ")) })
+	case "watch-pr":
+		fs := flag.NewFlagSet("sessions watch-pr", flag.ContinueOnError)
+		repo := fs.String("repo", "", "owner/name of the checkout it is in (default: the session's first)")
+		off := fs.Bool("off", false, "stop watching it")
+		rest, err := parse(fs, args)
+		if err != nil {
+			return cli.ExitUsage, err
+		}
+		number := 0
+		if len(rest) == 1 {
+			number, _ = strconv.Atoi(strings.TrimPrefix(rest[0], "#"))
+		}
+		if number < 1 {
+			return cli.ExitUsage, errors.New(`usage: runner sessions watch-pr <number> [--repo owner/name] [--off]`)
+		}
+		return withDelegation(func(d cli.Delegation) error { return d.WatchPull(ctx, *repo, number, !*off) })
 	case "send-file":
 		fs := flag.NewFlagSet("sessions send-file", flag.ContinueOnError)
 		caption := fs.String("caption", "", "a line about the file, shown with it")
@@ -564,6 +581,9 @@ func usage(w *os.File) {
   runner sessions send-file <path> [--caption "line"]
                                   from inside a session: show the person a file in its chat
   runner sessions notify "line"   from inside a session: tell the person, in the console's Inbox
+  runner sessions watch-pr <n> [--repo R] [--off]
+                                  from inside a session: be woken by a pull request's checks, reviews,
+                                  comments and merge
   runner sessions keep [<id>] [--off]  bring a session back on its own after a reboot
   runner --skill                  the manual for an agent in a session (helpers, messages, waits)
   runner pty [--report F] -- CMD  run CMD on a terminal that speaks OSC 7501 (a session's agent runs under it)
