@@ -47,10 +47,13 @@ export class ProjectRepository
 
   async insert(entity: ProjectEntity): Promise<ProjectInsertOutcome> {
     try {
-      await this.repository.manager.transaction(async (manager) => {
+      // The row and the change the console hears of commit together.
+      await this.outbox.transaction(async (manager) => {
         await manager.getRepository(ProjectOrmEntity).insert(this.mapper.toPersistence(entity));
         await this.insertRepositories(manager, entity);
+        await this.outbox.stageEvents(manager, entity.domainEvents);
       });
+      entity.clearEvents();
       return 'inserted';
     } catch (error) {
       if (isSlugConflict(error)) return 'slug-taken';
@@ -71,7 +74,7 @@ export class ProjectRepository
     const table = this.repository.metadata.tableName;
     const at = parameters.length;
 
-    return this.repository.manager.transaction(async (manager) => {
+    return this.outbox.transaction(async (manager) => {
       // TypeORM's Postgres driver returns `[rows, affectedCount]` for an UPDATE.
       const [updated]: [ProjectOrmEntity[], number] = await manager.query(
         `UPDATE "${table}"
@@ -85,12 +88,18 @@ export class ProjectRepository
           RETURNING *`,
         [...parameters, entity.name, entity.defaultHostId, entity.defaultAgent, entity.id],
       );
-      if (updated.length === 0) return None;
+      // Nothing written, nothing announced.
+      if (updated.length === 0) {
+        entity.clearEvents();
+        return None;
+      }
 
       // The whole set, replaced: a project's repositories are configuration, and
       // what a session checked out lives on the session's own rows.
       await manager.getRepository(ProjectRepositoryOrmEntity).delete({ projectId: entity.id });
       const repositories = await this.insertRepositories(manager, entity);
+      await this.outbox.stageEvents(manager, entity.domainEvents);
+      entity.clearEvents();
       return Some(this.mapper.toDomain(updated[0], repositories));
     });
   }

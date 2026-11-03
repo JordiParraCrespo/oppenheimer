@@ -21,6 +21,7 @@ import { BotMailOrganizeToolsFactory } from './bot-mail-organize-tools.factory';
 import { BotMailToolsFactory } from './bot-mail-tools.factory';
 import { BotMailWriteToolsFactory } from './bot-mail-write-tools.factory';
 import { BotPlanToolsFactory } from './bot-plan-tools.factory';
+import { BotProjectToolsFactory } from './bot-project-tools.factory';
 import { BotPullRequestToolsFactory } from './bot-pull-request-tools.factory';
 import { BotQuestionToolsFactory } from './bot-question-tools.factory';
 import { BotRoutineToolsFactory } from './bot-routine-tools.factory';
@@ -55,6 +56,7 @@ export class BotToolboxFactory {
     sessions: BotSessionToolsFactory,
     watches: BotWatchToolsFactory,
     plan: BotPlanToolsFactory,
+    projects: BotProjectToolsFactory,
     github: BotGithubToolsFactory,
     pullRequests: BotPullRequestToolsFactory,
     issues: BotIssueToolsFactory,
@@ -81,6 +83,7 @@ export class BotToolboxFactory {
       sessions,
       watches,
       plan,
+      projects,
       github,
       pullRequests,
       issues,

@@ -6,6 +6,7 @@ import { AutomationRunChangesDomainEventHandler } from '../event-handlers/automa
 import { BotApprovalChangesDomainEventHandler } from '../event-handlers/bot-approval-changes.domain-event-handler';
 import { HostChangesDomainEventHandler } from '../event-handlers/host-changes.domain-event-handler';
 import { InboxMarkChangesDomainEventHandler } from '../event-handlers/inbox-mark-changes.domain-event-handler';
+import { ProjectChangesDomainEventHandler } from '../event-handlers/project-changes.domain-event-handler';
 import { SessionChangesDomainEventHandler } from '../event-handlers/session-changes.domain-event-handler';
 
 function bus() {
@@ -133,4 +134,25 @@ describe('InboxMarkChangesDomainEventHandler', () => {
       [{ userId: 'jordi' }, { type: 'inboxMark.changed', itemKey: 'approval:ap-1' }],
     ]);
   });
+});
+
+/**
+ * A project a bot made, renamed or archived from chat reaches the sidebar
+ * without a reload only through this announcement.
+ */
+describe('ProjectChangesDomainEventHandler', () => {
+  it.each(['changed', 'archived'] as const)(
+    "announces a project %s to its workspace's console",
+    async (kind) => {
+      const events = bus();
+      await new ProjectChangesDomainEventHandler(events)[kind]({
+        aggregateId: 'p-1',
+        organizationId: 'org-1',
+      });
+      expect(events.publish).toHaveBeenCalledWith(
+        { organizationId: 'org-1' },
+        { type: 'project.changed', id: 'p-1' },
+      );
+    },
+  );
 });

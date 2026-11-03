@@ -1103,6 +1103,12 @@ earlier note:
   `prompt_cache_key`, and the history loses its oldest messages a block of
   about 6,000 tokens at a time, so each turn's request starts as the last
   one's did.
+- `versions/mvp/25-bots.md` §4.3 listed `create_project` and
+  `update_project` as asking first. On 2026-11-03 (issue #647) they were
+  built to run under Approve for me like the task writes, since a project is
+  metadata and an edit can be put back; `archive_project`, which cannot be
+  undone, asks under every preset, one call at a time. `move_session` was
+  added, and the workspace stream gained `project.changed`.
 - `versions/mvp/29-inbox.md` §1 ordered the Inbox most blocked first:
   approvals and waiting sessions oldest wait first, then requested
   reviews, ready merges and failed runs. On 2026-11-03 the owner asked for

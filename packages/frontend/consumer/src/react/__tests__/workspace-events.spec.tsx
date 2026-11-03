@@ -13,6 +13,7 @@ import { hostsKeys } from '../hosts.keys';
 import { useHostPresence } from '../hosts.queries';
 import { inboxKeys } from '../inbox.keys';
 import { LIVE_POLL, usePollWhile } from '../live-poll';
+import { projectsKeys } from '../projects.keys';
 import { pullRequestsKeys } from '../pull-requests.keys';
 import { sessionsKeys } from '../sessions.keys';
 import { useSessionStartProgress, useSessions, useSuspenseSession } from '../sessions.queries';
@@ -131,6 +132,11 @@ describe('useWorkspaceEvents', () => {
     invalidated.length = 0;
     await send({ type: 'inboxMark.changed', itemKey: 'approval:ap-1' });
     expect(invalidated).toEqual([inboxKeys.marks()]);
+
+    // A project a bot made from chat reaches the sidebar without a reload.
+    invalidated.length = 0;
+    await send({ type: 'project.changed', id: 'pr-1' });
+    expect(invalidated).toEqual([projectsKeys.lists()]);
   });
 
   /**
