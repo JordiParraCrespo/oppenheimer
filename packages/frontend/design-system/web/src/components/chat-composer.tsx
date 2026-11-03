@@ -3,7 +3,13 @@
 import { ArrowUpIcon, PaperclipIcon } from 'lucide-react';
 import type * as React from 'react';
 
-import { ComposerFoot, ComposerFrame, ComposerSendButton, useComposerSend } from '../internal/composer-send';
+import {
+  ComposerFoot,
+  ComposerFrame,
+  ComposerRecorder,
+  ComposerSendButton,
+  useComposerSend,
+} from '../internal/composer-send';
 import type { DictationSlot } from './chat-composer-extras';
 import { cn } from '../lib/utils';
 import { IconButton } from './icon-button';
@@ -102,7 +108,7 @@ function ChatComposer({
   layout?: 'stacked' | 'inline';
 }) {
   const label = { ...DEFAULT_CHAT_COMPOSER_LABELS, ...labels };
-  const { blocked, canSend, submit, onKeyDown, recorderRef } = useComposerSend({
+  const { blocked, canSend, submit, onKeyDown } = useComposerSend({
     value,
     busy,
     disabled,
@@ -111,7 +117,8 @@ function ChatComposer({
     onSubmit,
     onStop,
     onAltSubmit,
-    dictation,
+    // While a recording is open, a send waits for what is still being heard.
+    beforeSend: dictation?.recorder ? dictation.finish : undefined,
   });
 
   const inline = layout === 'inline';
@@ -180,12 +187,13 @@ function ChatComposer({
   const recorder = dictation?.recorder ? (
     // The bar is 12px taller than the foot row it replaces; it takes
     // that from the field's bottom padding, so the box keeps its height.
-    <div
-      ref={recorderRef}
+    <ComposerRecorder
       data-slot="chat-composer-recorder"
-      className={inline ? 'w-full' : '-mt-3 px-3 pb-3'}>
+      className={inline ? 'w-full' : '-mt-3 px-3 pb-3'}
+      onEnter={submit}
+    >
       {dictation.recorder}
-    </div>
+    </ComposerRecorder>
   ) : null;
 
   const box = (

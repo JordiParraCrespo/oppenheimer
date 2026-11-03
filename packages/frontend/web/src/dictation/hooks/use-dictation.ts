@@ -43,6 +43,13 @@ export interface Dictation {
   /** The mic: starts a recording, or ends one and hands it over. */
   toggle: () => void;
   stop: () => void;
+  /**
+   * Ends the recording (or waits for the one being transcribed) and settles
+   * once what was said is in the field: true when it landed or there was
+   * nothing to hear, false when it failed. A second call while one waits
+   * answers false at once, so one send goes, not two.
+   */
+  finish: () => Promise<boolean>;
   cancel: () => void;
 }
 
@@ -77,6 +84,7 @@ export function useDictation({
     deliver.current = onText;
   });
   const live = useLive(deliver);
+  const settle = useSettled();
   const recorder = useRecorder({
     sampleRate: VOICE_SAMPLE_RATE,
     maxSeconds: VOICE_MAX_SECONDS,
@@ -91,8 +99,17 @@ export function useDictation({
         live.show('');
         setFailed(text === null);
       }
+      settle.after(Boolean(kept) || text !== null);
     },
   });
+
+  /** Whether a recording was handed over, to be transcribed. */
+  function stop(): boolean {
+    if (recorder.stop()) return true;
+    // Stopped before a word was recorded (still waiting on the microphone).
+    live.cancel();
+    return false;
+  }
 
   return {
     available: voice.available,
@@ -109,14 +126,54 @@ export function useDictation({
       recorder.start();
     },
     stop: () => {
-      // Stopped before a word was recorded (still waiting on the microphone): nothing will be handed over.
-      if (recorder.state !== 'recording') live.cancel();
-      recorder.stop();
+      stop();
+    },
+    finish: () => {
+      if (settle.waiting()) return Promise.resolve(false);
+      const settled = settle.wait();
+      if (!transcribing && !stop()) settle.now(true);
+      return settled;
     },
     cancel: () => {
       live.cancel();
       recorder.cancel();
     },
+  };
+}
+
+/**
+ * A `finish` waiting for what was said to land: `after` settles it once the
+ * render that put the text in the field has committed (the effect
+ * synchronises the promise with that commit), so whoever awaited it reads
+ * the field with the text in it.
+ */
+function useSettled() {
+  const waiter = useRef<((landed: boolean) => void) | null>(null);
+  const [outcome, setOutcome] = useState<boolean | null>(null);
+  useEffect(() => {
+    if (outcome === null) return;
+    setOutcome(null);
+    const resolve = waiter.current;
+    waiter.current = null;
+    resolve?.(outcome);
+  }, [outcome]);
+
+  function now(landed: boolean): void {
+    const resolve = waiter.current;
+    waiter.current = null;
+    resolve?.(landed);
+  }
+
+  return {
+    waiting: () => waiter.current !== null,
+    wait: () =>
+      new Promise<boolean>((resolve) => {
+        waiter.current = resolve;
+      }),
+    after: (landed: boolean) => {
+      if (waiter.current) setOutcome(landed);
+    },
+    now,
   };
 }
 
