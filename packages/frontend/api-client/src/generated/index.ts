@@ -414,6 +414,7 @@ export type {
   BotSubagentRunResponseDto,
   BotToolGrantDto,
   BotToolPermissionDto,
+  BotToolStepRateLimitResponseDto,
   BotToolStepResponseDto,
   BotTurnPlanLimitsDto,
   BotTurnResponseDto,

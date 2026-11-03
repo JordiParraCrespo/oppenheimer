@@ -1463,6 +1463,7 @@
         "planning": "Updating its plan",
         "using": "Using {{name}}",
         "stepFailed": "failed",
+        "stepLimited": "{{system}} limit · until {{time}}",
         "results_one": "{{count}} result",
         "results_other": "{{count}} results",
         "rawOutput": "Show raw output",

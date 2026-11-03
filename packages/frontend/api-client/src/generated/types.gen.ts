@@ -4065,6 +4065,17 @@ export type BotSubagentRunResponseDto = {
     durationMs: number;
 };
 
+export type BotToolStepRateLimitResponseDto = {
+    /**
+     * The system limiting our requests ("Gmail", "GitHub").
+     */
+    system: string;
+    /**
+     * When it may be called again.
+     */
+    resetAt: string;
+};
+
 export type BotToolStepResponseDto = {
     callId: string;
     /**
@@ -4100,6 +4111,10 @@ export type BotToolStepResponseDto = {
     mailDraft: {
         [key: string]: unknown;
     } | null;
+    /**
+     * The system that was limiting our requests when the call ended, and until when: the chat draws the step as a wait, not a failure. Null when no limit stopped it.
+     */
+    rateLimit: BotToolStepRateLimitResponseDto | null;
 };
 
 export type BotAttachmentResponseDto = {
