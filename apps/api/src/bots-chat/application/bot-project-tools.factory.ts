@@ -1,14 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
-import {
-  createProjectSchema,
-  FIELD_BOUNDS,
-  MAX_PROJECT_REPOSITORIES,
-  SESSION_STATES,
-  updateProjectSchema,
-} from '@oppenheimer/shared';
+import { FIELD_BOUNDS, MAX_PROJECT_REPOSITORIES, SESSION_STATES } from '@oppenheimer/shared';
 import { CODING_AGENT_IDS } from '@oppenheimer/shared/agents';
-import type { ZodType as SharedSchema, ZodTypeDef } from 'zod';
 import { z } from 'zod/v4';
 import { ArchiveProjectCommand } from '../../projects/commands/archive-project/archive-project.command';
 import { CreateProjectCommand } from '../../projects/commands/create-project/create-project.command';
@@ -22,6 +15,7 @@ import type { WorkSessionEntity } from '../../sessions/domain/work-session.entit
 import { FindSessionQuery } from '../../sessions/queries/find-session/find-session.query';
 import { FindSessionsQuery } from '../../sessions/queries/find-sessions/find-sessions.query';
 import { describeProjectInFull } from '../bot-plan-tool.mapper';
+import { createProjectBody, type ProjectBody, updateProjectBody } from '../bot-project-tool.mapper';
 import { namesakeRefusal, namesakesOf } from '../domain/bot-project.policy';
 import {
   type BotToolArea,
@@ -66,8 +60,6 @@ const allowSameNameInput = z
     'Only when the person said they want a second project with a name another already has.',
   );
 
-type RepositoryInput = z.output<typeof repositoryInput>;
-
 /**
  * Projects, the writes (`25-bots.md` §4.3): make one, change its name,
  * repositories and defaults, archive it, and list an existing session under
@@ -108,12 +100,7 @@ export class BotProjectToolsFactory implements BotToolArea {
       }),
       run: async (input, context) => {
         await this.refuseNamesake(context, input.name, input.allow_same_name);
-        const dto = validDto(createProjectSchema, {
-          name: input.name,
-          repositories: input.repositories.map(repositoryDtoOf),
-          defaultHostId: input.default_host_id,
-          defaultAgent: input.default_agent,
-        });
+        const dto = bodyOrRefuse(createProjectBody(input));
         const project = await this.commandBus.execute<CreateProjectCommand, ProjectEntity>(
           new CreateProjectCommand({ scope: context.owner, input: dto }),
         );
@@ -149,12 +136,7 @@ export class BotProjectToolsFactory implements BotToolArea {
         if (input.name !== undefined) {
           await this.refuseNamesake(context, input.name, input.allow_same_name, input.project_id);
         }
-        const dto = validDto(updateProjectSchema, {
-          name: input.name,
-          repositories: input.repositories?.map(repositoryDtoOf),
-          defaultHostId: input.default_host_id,
-          defaultAgent: input.default_agent,
-        });
+        const dto = bodyOrRefuse(updateProjectBody(input));
         const project = await this.commandBus.execute<UpdateProjectCommand, ProjectEntity>(
           new UpdateProjectCommand({
             scope: context.owner,
@@ -319,36 +301,8 @@ export class BotProjectToolsFactory implements BotToolArea {
   }
 }
 
-/** A bot's repository, as the projects' request body names it. */
-function repositoryDtoOf(repository: RepositoryInput) {
-  return {
-    installationId: repository.installation_id,
-    githubRepoId: repository.github_repo_id,
-    baseBranch: repository.base_branch,
-    isDefault: repository.is_default,
-  };
-}
-
-/**
- * The body checked against the schema the console's route validates it with,
- * so a bot cannot send what a person could not; a failure says which field.
- */
-function validDto<Dto>(
-  schema: SharedSchema<Dto, ZodTypeDef, unknown>,
-  body: Record<string, unknown>,
-): Dto {
-  const defined = Object.fromEntries(
-    Object.entries(body).filter(([, value]) => value !== undefined),
-  );
-  const parsed = schema.safeParse(defined);
-  if (parsed.success) return parsed.data;
-  const issues = parsed.error.issues.map((issue) => {
-    const field = issue.path.length ? `${issue.path.join('.')}: ` : '';
-    // The shared schemas carry no messages (their package's rule); a rule of
-    // their own is named by the field's description, which the model has.
-    return issue.code === 'custom'
-      ? `${field}breaks the rule its description gives`
-      : `${field}${issue.message}`;
-  });
-  throw new BotToolRefusal(`Not a project the console would take: ${issues.join('; ')}.`);
+/** The checked body, or the tool's refusal in its words. */
+function bodyOrRefuse<Dto>(outcome: ProjectBody<Dto>): Dto {
+  if ('refusal' in outcome) throw new BotToolRefusal(outcome.refusal);
+  return outcome.body;
 }
