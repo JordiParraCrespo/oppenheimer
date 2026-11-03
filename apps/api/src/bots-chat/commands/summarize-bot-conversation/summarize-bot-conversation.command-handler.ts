@@ -1,6 +1,9 @@
 import { Inject, Logger } from '@nestjs/common';
 import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
-import { BotCompletionResolver } from '../../application/bot-completion.resolver';
+import {
+  type BotCompletionFor,
+  BotCompletionResolver,
+} from '../../application/bot-completion.resolver';
 import {
   BotModelAccessResolver,
   type BotModelTarget,
@@ -66,6 +69,7 @@ export class SummarizeBotConversationCommandHandler
     const content = await this.complete(
       target,
       composeSummaryRequest(summary?.content ?? null, plan.fold),
+      { organizationId, botId, purpose: 'summary' },
     );
     if (!content) throw new Error(`The summary of bot ${botId} came back empty`);
     summary?.revise(content, plan.through);
@@ -82,7 +86,11 @@ export class SummarizeBotConversationCommandHandler
   }
 
   /** One tool-less answer from the bot's model. */
-  private complete(target: BotModelTarget, message: string): Promise<string> {
+  private complete(
+    target: BotModelTarget,
+    message: string,
+    call: BotCompletionFor,
+  ): Promise<string> {
     return this.completions.complete(
       {
         ...target,
@@ -90,7 +98,7 @@ export class SummarizeBotConversationCommandHandler
         message,
         signal: AbortSignal.timeout(BOT_TURN_TIME_LIMIT_MS),
       },
-      'summary',
+      call,
     );
   }
 }

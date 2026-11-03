@@ -562,10 +562,49 @@ The owner chose them in this order. Only the first is built:
 | Command | Does | State |
 |---------|------|-------|
 | `/goal <condition>` | Sets the bot's goal and starts on it (above). `/goal` alone keeps send off and says the condition is missing; `/goal clear` (or `stop`, `off`, `reset`, `none`, `cancel`) stops the goal, as Stop does, and sends nothing. The API refuses both as messages (`GENERIC.ARGUMENT_INVALID`): they are `GET` and `DELETE /bots/:id/goal` | Built |
-| `/usage` | What the chat has cost: tokens by turn, the plan windows on a sign-in, how full the context is | Next |
+| `/usage` | Puts the usage card in the chat: what the chat has spent, in tokens (below). The API refuses it as a message, as it does `/goal` alone | Built |
 | `/loop [interval] <prompt>` or `/schedule` | Run a prompt on an interval, or on a schedule, as a routine of the bot's (26) | Planned |
 | `/plan <idea>` | Think before acting: break the idea into steps, or tasks on the plan, and ask before starting | Planned |
 | `/grill-me` | Interview the person about a plan, one branch of the decision tree at a time, until it holds (from this repo's own `grill-me` skill) | Planned |
+
+**`/usage`** (2026-11-02, from Claude Code's `/usage` and its usage card).
+The console puts a card in the chat, below its last message, and sends the
+bot nothing (`GET /bots/:id/usage`). It stays until Close, and goes with the
+tab: it is never part of the conversation. It is three lines under its
+title and the date of the chat's first turn:
+
+- turns that ran, time at work (each turn's start to its end, summed),
+  tokens in and out, and the cache hit rate (the share of the input read
+  from the provider's prompt cache);
+- those tokens split into Input (sent fresh), Output, Cache read and Cache
+  write;
+- each model's share of what the turns spent, and the calls the bot made
+  on its owner's key that are not a turn (goal reviews, summaries, rule
+  reviews), which the totals include, so a long goal does not look cheaper
+  than it is.
+
+The context and the plan windows are not repeated: the composer's meter
+shows them. Copy puts the lines on the clipboard as text.
+
+Where it comes from:
+
+- Each engine reports a turn's cache reads and writes beside its input
+  (Anthropic's `cache_read_input_tokens` and `cache_creation_input_tokens`,
+  the Responses API's `cached_tokens`; OpenAI's cache has no writes), and the
+  turn keeps them (`bot_turn."cacheReadTokens"`, `"cacheWriteTokens"`). They
+  are part of the input, never on top of it. A subagent's tokens count in
+  its turn, its cache share does not.
+- A call outside a turn is one row of `bot_model_call`, written after it
+  answers, when the provider said what it spent (`BotCompletionResolver`).
+  A record that fails is logged and the call stands.
+- Clearing the chat clears both, so the card always counts one chat.
+
+**Not built:** money. Nothing in Oppenheimer knows a model's prices, a
+price depends on caching the card would have to price per provider, and a
+ChatGPT sign-in pays nothing per token. Prices are a table of their own,
+added on top of these counts. Nor a chart over time (Claude Code's card has
+none either); the counts are kept per turn, so a day-by-day view can come
+from the same rows.
 
 Built-ins that change the bot's code tools are not here: a bot has no
 shell, so `/code-review`, `/simplify` and their kind stay the coding
@@ -577,7 +616,7 @@ agent's, in a session, where Claude Code ships them.
 | `list_hosts` | Hosts, online or not, and the agents they can run | auto |
 | `list_sessions` / `get_session` | Sessions and their state, each with its project and the group the console's dot shows; filtered by project, host, state or group; `get_session` also shows a pending question or permission dialog with its id and options (built 2026-10-27, issue #493) | auto |
 | `start_session` | Start an agent on a host, in a new worktree or a folder, with a task; the session's origin is `bot` and it always launches at `auto` (decided 2026-10-18: nobody sits at a bot's terminal, so `ask` would wait forever) | ask |
-| `start_cloud_session` | Start a Claude Code cloud session (claude.ai/code) on a project's repository: the sessions' own create with `cloud`, so a host's runner runs `claude --cloud <task>` in a scratch checkout, exactly as the console's *Claude Code cloud* and a `claude-cloud` automation do; host chosen as `start_session`'s, scope `sessions:write`, origin `bot`. It waits (at most 120 s, the runner's own limit) for the host to report the `session_…` id and answers with its claude.ai URL; `get_session` shows the URL after. Claude Code only; no watch, since a cloud session is followed on claude.ai (added 2026-10-30) | ask |
+| `start_cloud_session` | Start a session in a vendor's cloud on a project's repository; `agent` picks the cloud. `claude-code` (default, claude.ai/code) and `codex` (chatgpt.com/codex, with an optional `codex_environment`) go through the sessions' own create with `cloud`, so a host's runner runs `claude --cloud` or `codex cloud exec` in a scratch checkout, exactly as the console's cloud place and a `claude-cloud` automation do; host chosen as `start_session`'s. It waits (at most 120 s, the runner's own limit) for the host to report the session's id and answers with its URL. `cursor` goes through `StartCloudSessionCommand` (`POST /sessions/cloud`'s), on the owner's own Cursor key with no host and an optional `model`; the card says it runs on that key, and a missing key is the call's error (`CLOUD_AGENTS_004`). Scope `sessions:write`, origin `bot`; `get_session` shows the URL after. No watch, since a cloud session is followed at its vendor (added 2026-10-30; Codex and Cursor 2026-11-02) | ask |
 | `watch_session` / `unwatch_session` / `list_watches` | Follow a session, so its task needing input or ending wakes the bot (`start_session` follows its own session); built 2026-10-22, note 27. A `pattern` wakes it when the terminal prints a matching line, matched on the host (2026-10-29) | auto |
 | `wait_for_session` | Wait up to 120 s inside the turn for a session's task to need input or end, at most 3 times a turn (2026-10-29) | auto |
 | `send_to_session` | Type a follow-up prompt into a running session whose agent waits at its prompt; logged as `prompt.sent` with the bot as sender, and it opens a `follow_up` turn the bot then watches (built 2026-10-27) | ask |
@@ -1194,4 +1233,11 @@ The decisions it produced:
   `end_goal`" as the only way a goal is found done, and its bound of 5
   continuations, up to 10: a person's goal takes 20, a bot's 5 unless it
   asks for up to 20, and the condition holds 2,000 characters, not 500.
-
+- 2026-11-02: **`/usage` is built** (§4.1). The owner asked for a card like
+  Claude Code's, then asked for it in the chat and small: three lines of
+  this chat's figures, the context and plan windows left to the composer's
+  meter. It
+  counts tokens only, with cache reads and writes kept per turn, and it
+  counts the calls a bot makes outside its turns (goal reviews, summaries,
+  rule reviews), which nothing recorded before. Money is left out until
+  Oppenheimer keeps prices.

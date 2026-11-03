@@ -51,7 +51,7 @@ export class BotGoalReviewResolver {
           message: composeGoalReview(goal.objective, transcript),
           signal: AbortSignal.timeout(REVIEW_TIME_LIMIT_MS),
         },
-        'goal-review',
+        { organizationId: goal.organizationId, botId: goal.botId, purpose: 'goal_review' },
       );
       const verdict = goalVerdict(answer);
       if (!verdict) this.logger.warn({ message: 'A goal review gave no verdict', goalId: goal.id });

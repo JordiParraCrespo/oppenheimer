@@ -9,3 +9,4 @@ export { ChatUsage } from './components/chat-usage';
 export { useExploredLine } from './hooks/use-explored-line';
 export type { ChatGalleryImage } from './lib/chat-images';
 export type { ChatUsageContext, ChatUsageLimit } from './lib/chat-usage';
+export { formatTokens } from './lib/format-tokens';

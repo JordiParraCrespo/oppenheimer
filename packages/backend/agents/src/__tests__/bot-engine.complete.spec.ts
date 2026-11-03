@@ -79,4 +79,19 @@ describe('BotEngine.complete', () => {
       'The completion ended cancelled.',
     );
   });
+
+  // What breaks this: a bot's usage missing what its reviews and summaries
+  // spent, because the completion dropped the engine's usage.
+  it('answers what the call spent beside the text, or null when the provider said nothing', async () => {
+    const spending = new FakeBotEngine(() => [
+      { type: 'text.done', text: 'Done.' },
+      { type: 'usage', inputTokens: 120, outputTokens: 8, cacheReadTokens: 100 },
+    ]);
+    expect(await spending.completeWithUsage(request())).toEqual({
+      text: 'Done.',
+      usage: { inputTokens: 120, outputTokens: 8, cacheReadTokens: 100, cacheWriteTokens: 0 },
+    });
+    const silent = new FakeBotEngine(() => [{ type: 'text.done', text: 'Done.' }]);
+    expect(await silent.completeWithUsage(request())).toEqual({ text: 'Done.', usage: null });
+  });
 });

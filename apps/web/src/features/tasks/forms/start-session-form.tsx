@@ -187,6 +187,7 @@ export function StartSessionForm({
                     aria-label={t('tasks.start.agent')}
                     searchPlaceholder={t('tasks.start.agentSearch')}
                     emptyText={(query) => t('tasks.start.agentEmpty', { query })}
+                    labels={{ moreModels: t('sessions.new.agent.moreModels') }}
                   />
                 )}
               />

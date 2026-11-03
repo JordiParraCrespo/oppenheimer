@@ -44,6 +44,18 @@ export class BotSubagentRunResponseDto {
   @ApiProperty()
   outputTokens!: number;
 
+  @ApiProperty({
+    required: false,
+    description: 'How much of its input it read from the prompt cache.',
+  })
+  cacheReadTokens?: number;
+
+  @ApiProperty({
+    required: false,
+    description: 'How much of its input it wrote to the prompt cache.',
+  })
+  cacheWriteTokens?: number;
+
   @ApiProperty({ description: 'How long it ran, in milliseconds.' })
   durationMs!: number;
 }

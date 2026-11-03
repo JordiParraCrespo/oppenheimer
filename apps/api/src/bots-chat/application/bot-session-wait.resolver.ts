@@ -8,6 +8,7 @@ import {
   sessionWaitAnswer,
   sessionWaitOutcome,
 } from '../domain/bot-session-wait.policy';
+import { cloudLinkOf } from './bot-cloud-session.policy';
 import type { BotToolCallContext } from './bot-tool.factory';
 
 /**
@@ -44,8 +45,9 @@ export class BotSessionWaitResolver {
 
   /**
    * A cloud session as it stands once its host has started it
-   * (`start_cloud_session`): read as the owner until the runner reports the
-   * id `claude --cloud` printed, the start fails or the session closes, or
+   * (`start_cloud_session`): read as the owner until it has a link at its
+   * vendor (the id its host reported, or the page a launching vendor gave,
+   * there at once), the start fails or the session closes, or
    * `seconds` pass. The last read is the answer either way; the caller says
    * what it shows.
    */
@@ -61,7 +63,7 @@ export class BotSessionWaitResolver {
         new FindSessionQuery({ scope: context.owner, sessionId }),
       );
       const settled =
-        session.cloudSessionId !== null || session.state === 'failed' || session.isResolved;
+        cloudLinkOf(session) !== null || session.state === 'failed' || session.isResolved;
       if (settled || Date.now() + BOT_SESSION_WAIT_POLL_MS > deadline) return session;
       await pause(BOT_SESSION_WAIT_POLL_MS, signal);
     }

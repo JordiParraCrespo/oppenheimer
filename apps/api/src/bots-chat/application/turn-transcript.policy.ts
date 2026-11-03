@@ -43,6 +43,8 @@ export interface TranscriptOutcome {
   failure: BotEngineFailure | null;
   inputTokens: number;
   outputTokens: number;
+  cacheReadTokens: number;
+  cacheWriteTokens: number;
   /** What the context held at the last answer that reported it. */
   context: BotTurnContext | null;
   /** A subscription's windows as its last answer said them. */
@@ -80,6 +82,8 @@ export class TurnTranscript {
     failure: 'other',
     inputTokens: 0,
     outputTokens: 0,
+    cacheReadTokens: 0,
+    cacheWriteTokens: 0,
     context: null,
     planLimits: null,
   };
@@ -112,6 +116,8 @@ export class TurnTranscript {
       case 'usage':
         this.outcome.inputTokens += event.inputTokens;
         this.outcome.outputTokens += event.outputTokens;
+        this.outcome.cacheReadTokens += event.cacheReadTokens ?? 0;
+        this.outcome.cacheWriteTokens += event.cacheWriteTokens ?? 0;
         this.outcome.context = event.context ?? this.outcome.context;
         this.outcome.planLimits = event.limits ?? this.outcome.planLimits;
         return [];
@@ -137,8 +143,7 @@ export class TurnTranscript {
    * steps still completes it.
    */
   endTurn(now: Date, interruption: TurnInterruption | null): void {
-    const { reason, error, failure, inputTokens, outputTokens, context, planLimits } = this.outcome;
-    const usage = { inputTokens, outputTokens, context, planLimits };
+    const { reason, error, failure, ...usage } = this.outcome;
     if (interruption === 'time_limit') {
       this.turn.end('failed', now, { error: TIME_LIMIT_ERROR, failure: 'time_limit', ...usage });
     } else if (interruption === 'stop') {
@@ -200,6 +205,8 @@ export class TurnTranscript {
     for (const run of step.subagents ?? []) {
       this.outcome.inputTokens += run.inputTokens;
       this.outcome.outputTokens += run.outputTokens;
+      this.outcome.cacheReadTokens += run.cacheReadTokens ?? 0;
+      this.outcome.cacheWriteTokens += run.cacheWriteTokens ?? 0;
     }
     const writes: TranscriptWrite[] = [{ kind: 'steps', message: line }];
     const images = isError ? [] : toShownImages(data?.[SHOWN_IMAGES_DATA_KEY]);
