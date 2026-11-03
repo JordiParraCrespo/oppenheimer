@@ -1,6 +1,7 @@
 import { useSortableGroups } from '@oppenheimer/design-system-web';
 import { useState } from 'react';
 import {
+  mergeShownOrder,
   PLAN_NAV_IDS,
   type PlanNavId,
   rememberPlanNavOrder,
@@ -24,9 +25,7 @@ export function usePlanNavOrder(shown: (id: PlanNavId) => boolean) {
   const visible = order.filter(shown);
   const handlers = useSortableGroups({ [PLAN_NAV_GROUP]: visible }, (next) => {
     const moved = (next[PLAN_NAV_GROUP] ?? []).filter((id): id is PlanNavId => IDS.has(id));
-    // A hidden view keeps the slot it had: the visible ones fill the others in their new order.
-    let at = 0;
-    const settled = order.map((id) => (shown(id) ? (moved[at++] ?? id) : id));
+    const settled = mergeShownOrder(order, moved, shown);
     setOrder(settled);
     rememberPlanNavOrder(settled);
   });

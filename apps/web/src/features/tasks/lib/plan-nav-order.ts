@@ -32,6 +32,19 @@ export function storedPlanNavOrder(): PlanNavId[] {
   return [...kept, ...PLAN_NAV_IDS.filter((id) => !kept.has(id))];
 }
 
+/**
+ * `order` with its shown views refilled from `moved` in their new order; a
+ * hidden view (the Inbox without its flag) keeps the slot it had.
+ */
+export function mergeShownOrder(
+  order: readonly PlanNavId[],
+  moved: readonly PlanNavId[],
+  shown: (id: PlanNavId) => boolean,
+): PlanNavId[] {
+  const next = [...moved];
+  return order.map((id) => (shown(id) ? (next.shift() ?? id) : id));
+}
+
 export function rememberPlanNavOrder(order: readonly PlanNavId[]) {
   try {
     window.localStorage.setItem(PLAN_NAV_ORDER_KEY, JSON.stringify(order));
