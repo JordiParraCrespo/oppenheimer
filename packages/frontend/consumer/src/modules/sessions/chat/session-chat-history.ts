@@ -34,8 +34,24 @@ export const LOAD_SETTLE_MS = 500;
 function endsARead(batch: HistoryBatch): boolean {
   if (batch.entries.length >= CHAT_BATCH_MAX_ENTRIES) return false;
   let bytes = 0;
-  for (const entry of batch.entries) bytes += entry.length;
+  for (const entry of batch.entries) bytes += utf8Length(entry);
   return bytes < CHAT_ENTRY_MAX_BYTES;
+}
+
+/** A line's size as the runner counts it, in UTF-8 bytes rather than UTF-16 units. */
+function utf8Length(text: string): number {
+  let bytes = 0;
+  for (let index = 0; index < text.length; index += 1) {
+    const unit = text.charCodeAt(index);
+    if (unit < 0x80) bytes += 1;
+    else if (unit < 0x800) bytes += 2;
+    else if (unit >= 0xd800 && unit <= 0xdbff) {
+      // A surrogate pair is one code point of four bytes.
+      bytes += 4;
+      index += 1;
+    } else bytes += 3;
+  }
+  return bytes;
 }
 
 /**

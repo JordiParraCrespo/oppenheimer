@@ -406,6 +406,40 @@ describe('SessionChat', () => {
     vi.useRealTimers();
   });
 
+  it('keeps holding a first load whose short-looking batch is full in UTF-8', () => {
+    // What breaks this: a batch measured in UTF-16 units, so one the runner
+    // closed at its byte limit, heavy in CJK text, reads as the end of the
+    // history and each part of the rest is drawn as it lands.
+    vi.useFakeTimers();
+    const text = '漢'.repeat(14_000);
+    const lines = [0, 1, 2].map((i) => JSON.stringify(user(`u${i}`, `${text} ${i}`)));
+    const chat = new SessionChat();
+    chat.apply({ reset: true, entries: lines });
+    expect(chat.snapshot()).toMatchObject({ loading: true, turns: [] });
+    vi.advanceTimersByTime(1_000);
+    expect(chat.snapshot().turns).toHaveLength(3);
+    vi.useRealTimers();
+  });
+
+  it('settles a replay that came back short while a first load was held', () => {
+    // What breaks this: a first load's quiet that ends the hold but not the
+    // replay a reconnect started under it, so turns the transcript no longer
+    // has stay drawn.
+    vi.useFakeTimers();
+    const lines = Array.from({ length: 512 }, (_, i) =>
+      JSON.stringify(user(`u${i}`, `Prompt ${i}`)),
+    );
+    const chat = new SessionChat();
+    chat.apply({ reset: true, entries: lines.slice(0, 256) });
+    chat.apply({ entries: lines.slice(256) });
+    // The link drops; the reconnect sends back only the first full batch.
+    chat.apply({ reset: true, entries: lines.slice(0, 256) });
+    vi.advanceTimersByTime(10_000);
+    expect(chat.snapshot().loading).toBe(false);
+    expect(chat.snapshot().turns).toHaveLength(256);
+    vi.useRealTimers();
+  });
+
   it('draws a short first load at once', () => {
     // What breaks this: every chat held for the quiet, a short one too.
     const chat = new SessionChat();
