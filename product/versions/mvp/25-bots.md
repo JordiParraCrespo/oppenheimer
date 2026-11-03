@@ -171,7 +171,11 @@ worker runs it and streams what happens back to the chat.
   of its input from the cache. The key is the bot's id, since a bot has one
   conversation (`BotTurnRequest.cacheKey`). xAI reads it as it reads its
   `x-grok-conv-id` header. Claude Code marks what to cache itself and needs
-  none. Subagents and the calls outside a turn send no key yet.
+  none. A subagent is named by its turn and its place among the children
+  (`<turn>:subagent:<n>`), so each child's steps reach its own prefix and
+  the children that run at once are spread out; a call outside a turn (a
+  summary, a goal or rule review) by its bot and purpose
+  (`<bot>:summary`), since each purpose has a system prompt of its own.
 - **A turn is sent a token budget of history, with a summary of what
   falls out** (2026-10-15). It used to be the last 40 messages, and
   anything older was dropped without a word. Now a turn gets the
@@ -1298,8 +1302,10 @@ The decisions it produced:
   so OpenAI, ChatGPT's backend and xAI routed each request on its own, and
   the history lost its oldest message on every turn past the budget, which
   changed the request right after the system prompt. Each request now
-  carries the bot's id as its key, and the history loses a block of about
-  6,000 tokens at a time, so it starts where the last turn's did. From the
+  carries the bot's id as its key (a subagent its turn's and its place, a
+  summary or review its bot's and purpose), and the history loses a block
+  of about 6,000 tokens at a time, so it starts where the last turn's did.
+  From the
   reconstructed Grok Bot, whose requests carry their conversation's id and
   whose history only grows until a summary, and Codex, which sends its
   conversation's id as `prompt_cache_key`. It refines 2026-10-15's history

@@ -231,6 +231,7 @@ export type BotCompletionRequest = Pick<
   | 'baseUrl'
   | 'model'
   | 'effort'
+  | 'cacheKey'
   | 'systemPrompt'
   | 'message'
   | 'signal'
