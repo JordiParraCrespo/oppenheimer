@@ -210,8 +210,9 @@ export class ProjectEntity extends AggregateRoot<ProjectProps> {
   /**
    * Retire the project. Idempotent: the first archive is the one that counts.
    *
-   * There is no un-archive. The slug stays with the retired row and is never
-   * reissued, so a link to a retired project can never land on a new one.
+   * The slug stays with the retired row and is never reissued, so a link to a
+   * retired project can never land on a new one; `restore` brings the same
+   * row back, slug and all.
    */
   archive(at: Date): void {
     this.assertNotUnassigned('archived');
@@ -260,10 +261,17 @@ export class ProjectEntity extends AggregateRoot<ProjectProps> {
   }
 
   /**
-   * The Unassigned project is where unfiled work goes; it keeps its name and its
-   * place. The handlers ask first and answer with `PROJECTS_008`; this is the
-   * aggregate holding the invariant whatever the caller.
+   * Bring an archived project back: work can be listed in it again. Idempotent:
+   * an active project is left as it is and announces nothing. The automations
+   * its archive paused stay paused, for the person to resume one by one.
    */
+  restore(): void {
+    if (!this.props.archivedAt) return;
+    this.props.archivedAt = null;
+    this.setUpdatedAt(new Date());
+    this.announceChange('An archived project was restored; the console lists it again');
+  }
+
   private announceChange(reason: string): void {
     this.addEvent(
       new ProjectChangedDomainEvent({
@@ -274,6 +282,11 @@ export class ProjectEntity extends AggregateRoot<ProjectProps> {
     );
   }
 
+  /**
+   * The Unassigned project is where unfiled work goes; it keeps its name and its
+   * place. The handlers ask first and answer with `PROJECTS_008`; this is the
+   * aggregate holding the invariant whatever the caller.
+   */
   private assertNotUnassigned(change: 'renamed' | 'archived'): void {
     if (this.props.isUnassigned) {
       throw new ArgumentInvalidException(`The Unassigned project cannot be ${change}`);

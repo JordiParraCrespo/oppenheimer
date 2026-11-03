@@ -5,6 +5,10 @@ import { CODING_AGENT_IDS } from '@oppenheimer/shared/agents';
 import { z } from 'zod/v4';
 import { ArchiveProjectCommand } from '../../projects/commands/archive-project/archive-project.command';
 import { CreateProjectCommand } from '../../projects/commands/create-project/create-project.command';
+import {
+  RestoreProjectCommand,
+  type RestoreProjectResult,
+} from '../../projects/commands/restore-project/restore-project.command';
 import { UpdateProjectCommand } from '../../projects/commands/update-project/update-project.command';
 import type { ProjectEntity } from '../../projects/domain/project.entity';
 import { FindProjectQuery } from '../../projects/queries/find-project/find-project.query';
@@ -62,15 +66,16 @@ const allowSameNameInput = z
 
 /**
  * Projects, the writes (`25-bots.md` §4.3): make one, change its name,
- * repositories and defaults, archive it, and list an existing session under
- * another. Each dispatches the projects' or sessions' own command in the
+ * repositories and defaults, archive or restore it, and list an existing
+ * session under another. Each dispatches the projects' or sessions' own command in the
  * owner's scope, through the same request schemas the console's routes
  * validate with, so a bot meets the rules a person does: the Unassigned
  * project keeps its name, repositories come from a connected installation, an
  * archived project takes nothing new, a project another workspace owns is not
- * found. Making, changing and moving stay inside Oppenheimer and can be put
- * back, so they run under Approve for me; archiving cannot be undone, so it
- * asks every time, under every preset.
+ * found. Making, changing, restoring and moving stay inside Oppenheimer and
+ * can be put back, so they run under Approve for me; archiving stops work
+ * from being started and pauses automations that a restore leaves paused, so
+ * it asks every time, under every preset.
  */
 @Injectable()
 export class BotProjectToolsFactory implements BotToolArea {
@@ -83,7 +88,13 @@ export class BotProjectToolsFactory implements BotToolArea {
   ) {}
 
   definitions(): readonly BotToolDefinition[] {
-    return [this.createProject(), this.updateProject(), this.archiveProject(), this.moveSession()];
+    return [
+      this.createProject(),
+      this.updateProject(),
+      this.archiveProject(),
+      this.restoreProject(),
+      this.moveSession(),
+    ];
   }
 
   private createProject(): BotToolDefinition {
@@ -156,7 +167,7 @@ export class BotProjectToolsFactory implements BotToolArea {
       asks: 'always',
       perCallOnly: true,
       description:
-        'Archives a project: nothing new can be started or listed in it, its automations are paused, and its tasks and closed sessions stay where they are. It cannot be undone: there is no restore, and its name and slug are kept by the archived row. It is refused while the project has sessions that are not closed; move them (move_session) or close them first. Projects are never deleted. Always asks the person first.',
+        'Archives a project: nothing new can be started or listed in it, its automations are paused, and its tasks and closed sessions stay where they are. restore_project brings it back with its name and slug, but its automations stay paused until the person resumes them. It is refused while the project has sessions that are not closed; move them (move_session) or close them first. Projects are never deleted: archiving is what the console calls deleting. Always asks the person first.',
       input: z.object({ project_id: z.uuid().describe('A project id from list_projects.') }),
       normalize: async (input, context) => {
         const project = await this.project(context, input.project_id);
@@ -181,13 +192,37 @@ export class BotProjectToolsFactory implements BotToolArea {
       },
       summarize: async (input, context) => {
         const project = await this.project(context, input.project_id);
-        return `Archive the project "${project.name}" (${project.slug}). Nothing new can go in it, its automations are paused, and it cannot be restored`;
+        return `Archive the project "${project.name}" (${project.slug}). Nothing new can go in it and its automations are paused; a restore brings it back, but not its automations`;
       },
       run: async (input, context) => {
         const project = await this.commandBus.execute<ArchiveProjectCommand, ProjectEntity>(
           new ArchiveProjectCommand({ scope: context.owner, projectId: input.project_id }),
         );
         return `Archived project ${project.id} "${project.name}". Its tasks and past sessions stay listed under it; list_projects shows it only with include_archived.`;
+      },
+    });
+  }
+
+  private restoreProject(): BotToolDefinition {
+    return defineBotTool({
+      name: 'restore_project',
+      scope: 'projects:write',
+      description:
+        'Restores an archived project (list_projects with include_archived shows them): work can be started and listed in it again, with its name, slug, repositories, tasks and past sessions as they were. The automations its archive paused stay paused; say so, and point the person at them (list_automations with its project_id). Restoring an active project changes nothing. When the person names an archived project loosely and more than one fits, ask which.',
+      input: z.object({
+        project_id: z
+          .uuid()
+          .describe('An archived project id from list_projects with include_archived.'),
+      }),
+      run: async (input, context) => {
+        const { project, restored } = await this.commandBus.execute<
+          RestoreProjectCommand,
+          RestoreProjectResult
+        >(new RestoreProjectCommand({ scope: context.owner, projectId: input.project_id }));
+        if (!restored) {
+          return `Project ${project.id} "${project.name}" is not archived. Nothing changed.`;
+        }
+        return `Restored project ${project.id} "${project.name}"; work can be started in it again. The automations its archive paused are still paused.\n${describeProjectInFull(project, context)}`;
       },
     });
   }

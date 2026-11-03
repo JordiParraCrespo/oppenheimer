@@ -243,6 +243,7 @@
   "POST /v1/profile/email": "session-only",
   "POST /v1/profile/password": "session-only",
   "POST /v1/projects": ["projects:write"],
+  "POST /v1/projects/:id/restore": ["projects:write"],
   "POST /v1/pulls/:installationId/:githubRepoId/:number/comments": ["pulls:write"],
   "POST /v1/pulls/:installationId/:githubRepoId/:number/merge": ["pulls:write"],
   "POST /v1/pulls/:installationId/:githubRepoId/:number/review-session": [

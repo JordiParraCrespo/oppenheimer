@@ -296,6 +296,45 @@ describe('projects: the saved scope (integration)', () => {
     ]);
   });
 
+  it('restores an archived project through the caller’s scope, staging the change once', async () => {
+    const project = newProject('deneb');
+    await repository.insert(project);
+    await repository.archiveIfUnused(scope(), project.id, async () => false);
+
+    const restored = await repository.restoreIfArchived(scope(), project.id);
+    const again = await repository.restoreIfArchived(scope(), project.id);
+
+    expect(restored.result).toBe('restored');
+    if (restored.result !== 'not-found') {
+      expect(restored.project.isArchived).toBe(false);
+      expect(restored.project.slug).toBe('deneb');
+    }
+    expect(again.result).toBe('active');
+    expect(await eventsOf(project.id)).toEqual([
+      'ProjectChangedDomainEvent',
+      'ProjectArchivedDomainEvent',
+      'ProjectChangedDomainEvent',
+    ]);
+    // The restored project takes work again: its settings can be changed.
+    project.configure({ name: 'Deneb 2' });
+    expect((await repository.saveSettingsIfActive(scope(), project)).isSome()).toBe(true);
+  });
+
+  it('answers not-found for a project of another workspace, writing nothing', async () => {
+    const project = newProject('altair');
+    await repository.insert(project);
+    await repository.archiveIfUnused(scope(), project.id, async () => false);
+    const outsider = { ...scope(), organizationId: randomUUID() };
+
+    const outcome = await repository.restoreIfArchived(outsider, project.id);
+
+    expect(outcome.result).toBe('not-found');
+    expect(await eventsOf(project.id)).toEqual([
+      'ProjectChangedDomainEvent',
+      'ProjectArchivedDomainEvent',
+    ]);
+  });
+
   it('wakes nothing when the archive is refused', async () => {
     const project = newProject('lyra');
     await repository.insert(project);

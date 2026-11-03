@@ -57,6 +57,21 @@ describe('ProjectEntity', () => {
     expect(project.domainEvents).toHaveLength(0);
   });
 
+  it('restores an archived project with its slug, announcing it once', () => {
+    const project = ProjectEntity.createNew(VALID);
+    project.archive(new Date('2026-09-28T10:00:00Z'));
+    project.clearEvents();
+
+    project.restore();
+    project.restore();
+
+    expect(project.isArchived).toBe(false);
+    expect(project.slug).toBe(VALID.slug);
+    expect(project.domainEvents.map((event) => event.constructor.name)).toEqual([
+      'ProjectChangedDomainEvent',
+    ]);
+  });
+
   it('keeps the slug when the project is renamed', () => {
     const project = ProjectEntity.createNew(VALID);
 

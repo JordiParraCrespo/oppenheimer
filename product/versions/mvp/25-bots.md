@@ -806,6 +806,7 @@ as the person does and act on them. Three rules hold it:
 | `list_projects` / `get_project` | The workspace's projects, or one with its repositories, default host and agent | auto |
 | `create_project` / `update_project` | Make a project, or change its name, repositories, default host or agent; a name another project already has is refused unless the person asked for a second one (built 2026-11-03, issue #647) | auto |
 | `archive_project` | Archive a project: nothing new goes in it and its automations pause; refused while it has sessions that are not closed, which the call names (built 2026-11-03, issue #647) | always asks, per call |
+| `restore_project` | Restore an archived project with its slug; the automations its archive paused stay paused (built 2026-11-03, after #647) | auto |
 | `move_session` | List an existing session under another project, or Unassigned (built 2026-11-03, issue #647) | auto |
 | `list_tasks` / `get_task` / `plan_summary` | Tasks, milestones, stats | auto |
 | `create_task` / `update_task` / `move_task` | Add a task, edit its title, notes, project, milestone, due date or blocked reason, or move it to a column | auto |
@@ -821,12 +822,16 @@ bot meets the rules a person does and no rule of its own beyond one:
 - **Making and changing run; archiving always asks.** A project is
   metadata inside Oppenheimer and a create, an edit or a move can be put
   back, so under Approve for me they run like the task writes (this table
-  said `ask` before). An archive cannot be undone (there is no restore: the
-  slug is a tombstone, `10-api-modules-and-data-model.md`), so it asks under
-  every preset and its card offers this call only. Its card is not raised
-  for the Unassigned project, an archived one, or one with open sessions:
-  the call names those sessions and the bot asks whether to move or close
-  them. There is no delete, for the same reason there is no restore.
+  said `ask` before). An archive stops work being started in the project
+  and pauses its automations, which a restore does not resume, so it asks
+  under every preset and its card offers this call only. Its card is not
+  raised for the Unassigned project, an archived one, or one with open
+  sessions: the call names those sessions and the bot asks whether to move
+  or close them. `restore_project` (`POST /projects/{id}/restore`, added
+  the same day) brings the same row back with its slug, and runs like the
+  other writes. There is no delete: a row is never removed
+  (`10-api-modules-and-data-model.md`), and the console's "Delete" is the
+  archive.
 - **No accidental twins.** The console lets two projects share a name; a
   bot does not, unless the person said so (`allow_same_name`): a name is
   compared ignoring case and spaces, archived projects included, and the
