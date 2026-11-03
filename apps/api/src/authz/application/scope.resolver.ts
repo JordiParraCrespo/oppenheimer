@@ -1,6 +1,12 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import type { AccessScope, ResolveScopeInput, ScopeResolverPort } from '@oppenheimer/backend-authz';
+import {
+  type AccessScope,
+  isPersonOwned,
+  type ResolveScopeInput,
+  ResourceRegistry,
+  type ScopeResolverPort,
+} from '@oppenheimer/backend-authz';
 import type { Repository } from 'typeorm';
 import { TeamOrmEntity } from '../../organizations/database/team.orm-entity';
 import { TeamMemberOrmEntity } from '../../organizations/database/team-member.orm-entity';
@@ -36,22 +42,11 @@ export class ScopeResolver implements ScopeResolverPort {
     private readonly grants: AccessGrantRepositoryPort,
     @Inject(USER_ROLE_REPOSITORY)
     private readonly userRoles: UserRoleRepositoryPort,
+    private readonly registry: ResourceRegistry,
   ) {}
 
   async resolve(input: ResolveScopeInput): Promise<AccessScope> {
     const bypass = input.isPlatformAdmin || input.hasFullAccess;
-
-    // A bypass scope reaches everything, so resolving its membership would be
-    // work whose result is discarded.
-    if (bypass) {
-      return {
-        userId: input.userId,
-        organizationId: input.organizationId,
-        teamIds: [],
-        grants: new Map(),
-        bypass: true,
-      };
-    }
 
     if (!input.organizationId) {
       return {
@@ -59,10 +54,13 @@ export class ScopeResolver implements ScopeResolverPort {
         organizationId: null,
         teamIds: [],
         grants: new Map(),
-        bypass: false,
+        bypass,
       };
     }
 
+    // A bypass still reads its grants: it skips the slice of the tenant's
+    // rows, never a person's own (`applyAccessScope`), so a host someone
+    // granted it by name is reached through that grant like anyone else's.
     const [teamIds, roleIds] = await Promise.all([
       this.teamIdsFor(input.userId, input.organizationId),
       input.roleIds ?? this.userRoles.findRoleIdsForUser(input.userId, input.organizationId),
@@ -74,7 +72,7 @@ export class ScopeResolver implements ScopeResolverPort {
       organizationId: input.organizationId,
       teamIds,
       grants,
-      bypass: false,
+      bypass,
     };
   }
 
@@ -97,7 +95,9 @@ export class ScopeResolver implements ScopeResolverPort {
   /**
    * Unexpired grants addressed to the caller, one of their teams or one of
    * their roles, folded into a per-subject map. A blanket grant collapses the
-   * whole subject to `'all'`.
+   * whole subject to `'all'`, except on a person's own rows, where no grant
+   * reaches every row (`canGrantScope`): one there is skipped, so it cannot
+   * swallow the named grants beside it.
    */
   private async grantsFor(
     userId: string,
@@ -120,6 +120,8 @@ export class ScopeResolver implements ScopeResolverPort {
     const grants = new Map<string, Set<string> | 'all'>();
     for (const row of rows) {
       if (row.isBlanket()) {
+        const resource = this.registry.get(row.resourceType);
+        if (resource && isPersonOwned(resource.keys)) continue;
         grants.set(row.resourceType, 'all');
         continue;
       }
