@@ -2676,6 +2676,19 @@ describe('bots chat (integration)', () => {
       expect(lines).toEqual([{ turnId: null }]);
     });
 
+    // What breaks this: a decision read off the loop applied after a run was
+    // queued or rescheduled meanwhile, ending the loop that run keeps going.
+    it('ends a loop only while it is as it was read, when asked to', async () => {
+      const bot = await create('Careful');
+      const read = await setWithEndedFirstRun(bot, null);
+      expect(await loops.schedule(read, new Date(Date.now() + 60_000), null)).toBe(true);
+      const stale = (await loops.findForRun(read.id)) as BotLoopEntity;
+      await dataSource.query(`UPDATE bot_loop SET runs = runs + 1 WHERE id = $1`, [read.id]);
+      expect(await loops.end(stale, null, true)).toBe(false);
+      expect(await loops.findForRun(read.id)).not.toBeNull();
+      expect(await loops.end(stale, null)).toBe(true);
+    });
+
     it('stages the loop’s job when one of its runs ends, and none for any other turn', async () => {
       await dataSource.query(`DELETE FROM outbox_message`);
       const bot = await create('Finisher');

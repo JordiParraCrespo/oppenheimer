@@ -86,6 +86,36 @@ export function isLoopTurn(
   );
 }
 
+/**
+ * Which of the loop's runs a turn is: the turn that set it is 0, a queued run
+ * its number; null for any other turn.
+ */
+export function loopRunOf(
+  loop: Pick<BotLoopEntity, 'id' | 'originTurnId'>,
+  turn: Pick<EndedTurn, 'id' | 'sourceKey'>,
+): number | null {
+  if (turn.id === loop.originTurnId) return 0;
+  const prefix = loopKeyPrefix(loop.id);
+  if (!turn.sourceKey?.startsWith(prefix)) return null;
+  const run = Number(turn.sourceKey.slice(prefix.length));
+  return Number.isInteger(run) ? run : null;
+}
+
+/**
+ * Whether a turn's tool call may act on the loop the bot has now: one of its
+ * runs, or a turn queued after it was set (the person asking in a message).
+ * A run of a loop this one replaced, still working when it was replaced,
+ * may not: what it decides is about the loop it was run for.
+ */
+export function mayActOnLoop(
+  loop: Pick<BotLoopEntity, 'id' | 'originTurnId' | 'createdAt'>,
+  turn: Pick<EndedTurn, 'id' | 'sourceKey'> & { createdAt: Date },
+): boolean {
+  if (isLoopTurn(loop, turn)) return true;
+  if (turn.sourceKey?.startsWith(LOOP_KEY_PREFIX)) return false;
+  return turn.createdAt.getTime() >= loop.createdAt.getTime();
+}
+
 /** A run's job, as it was staged: the run it queues and the time it was due. */
 export interface LoopRunDue {
   run: number;
@@ -153,10 +183,12 @@ export type LoopRunEnd = ({ kind: 'end' } & LoopEnding) | { kind: 'retry' } | { 
  * turn's time limit or a passing failure (a rate limit, an outage) keeps
  * it: its work is kept and the next run starts afresh. A self-paced run
  * that did not say when to run next ends it, unless it failed in passing,
- * when it is tried again a minute later. Another turn's end changes nothing.
+ * when it is tried again a minute later. Only the loop's latest run decides:
+ * another turn's end, or a late word about a run the loop has gone past (its
+ * next is already queued), changes nothing.
  */
 export function loopRunEnd(loop: BotLoopEntity, ended: EndedTurn): LoopRunEnd {
-  if (!isLoopTurn(loop, ended)) return { kind: 'keep' };
+  if (loopRunOf(loop, ended) !== loop.runs) return { kind: 'keep' };
   if (ended.status === 'cancelled')
     return { kind: 'end', activity: 'stopped', reason: 'cancelled' };
   const failed = ended.status === 'failed';

@@ -6,6 +6,7 @@ import {
   loopRunEnd,
   loopRunTurn,
   loopSourceKey,
+  mayActOnLoop,
   nextRunAfter,
   nextRunWhenBusy,
   selfPacedRunAt,
@@ -17,7 +18,9 @@ import {
  * was moved or already ran queuing a second run; a fixed loop drifting off
  * its slots, or running past its expiry; a busy bot handed a pile of runs; a
  * passing failure ending a loop meant to run for days; a self-paced loop
- * going on with nobody saying when.
+ * going on with nobody saying when; a late word about an earlier run ending
+ * the loop its next run already keeps going; a run of a replaced loop
+ * ending or moving its replacement.
  */
 
 const SET_AT = new Date('2026-11-03T09:00:00Z');
@@ -131,6 +134,7 @@ describe('loopRunEnd', () => {
 
   it('stops the loop on a run the person stopped, or one that would fail again', () => {
     const fixed = loop(5);
+    fixed.ran(minutes(10));
     const key = loopSourceKey(fixed.id, 1);
     expect(loopRunEnd(fixed, run({ sourceKey: key, status: 'cancelled' }))).toMatchObject({
       kind: 'end',
@@ -187,5 +191,47 @@ describe('loopRunTurn', () => {
     // The setting turn was the first run, so the first one queued is the second.
     expect(opening.event).toMatchObject({ kind: 'loop', activity: 'ran', run: 2 });
     expect(opening.content).toContain('Run 2 of your loop');
+  });
+});
+
+describe('runs the loop has gone past, and loops a turn may act on', () => {
+  // What breaks this: a finish job for run 1 delivered after run 2 was
+  // queued reads the self-paced loop's empty next run as run 1 saying
+  // nothing, and ends the loop run 2 keeps going.
+  it('lets only the latest run decide whether the loop ends', () => {
+    const selfPaced = loop(null);
+    selfPaced.ran(null);
+    expect(loopRunEnd(selfPaced, ended({ id: 'turn-0' }))).toEqual({ kind: 'keep' });
+    expect(
+      loopRunEnd(selfPaced, ended({ sourceKey: loopSourceKey(selfPaced.id, 1) })),
+    ).toMatchObject({ kind: 'end', activity: 'ended' });
+  });
+
+  // What breaks this: a run of the loop a new /loop replaced, still working,
+  // calling end_loop and ending the loop the person just set.
+  it('lets a turn act on the loop only when it is one of its runs or came after it', () => {
+    const set = BotLoopEntity.create({
+      id: 'loop-2',
+      createdAt: minutes(10),
+      props: {
+        organizationId: 'org-1',
+        botId: 'bot-1',
+        originTurnId: 'turn-2',
+        prompt: 'watch PR 42',
+        intervalMinutes: null,
+        runs: 0,
+        nextRunAt: null,
+        expiresAt: minutes(4_000),
+        credentialScopes: null,
+        timeZone: null,
+      },
+    });
+    const at = (count: number) => ({ createdAt: minutes(count) });
+    expect(mayActOnLoop(set, { id: 'turn-2', sourceKey: null, ...at(10) })).toBe(true);
+    expect(mayActOnLoop(set, { id: 'turn-3', sourceKey: 'loop:loop-2:1', ...at(15) })).toBe(true);
+    expect(mayActOnLoop(set, { id: 'turn-4', sourceKey: null, ...at(20) })).toBe(true);
+    // The replaced loop's setting turn and its run, both from before.
+    expect(mayActOnLoop(set, { id: 'turn-0', sourceKey: null, ...at(0) })).toBe(false);
+    expect(mayActOnLoop(set, { id: 'turn-1', sourceKey: 'loop:loop-1:1', ...at(12) })).toBe(false);
   });
 });

@@ -14,7 +14,9 @@ export interface BotLoopRepositoryPort {
   schedule(loop: BotLoopEntity, at: Date, correlationId: string | null): Promise<boolean>;
   /**
    * Ends the loop and writes the line that says how, in one transaction;
-   * false, and no line, when it had already ended.
+   * false, and no line, when it had already ended. With `ifUnchanged`, only
+   * while its count and next run are as they were loaded: a decision read
+   * off them is not applied to a loop that moved on meanwhile.
    */
-  end(loop: BotLoopEntity, line: BotMessageEntity | null): Promise<boolean>;
+  end(loop: BotLoopEntity, line: BotMessageEntity | null, ifUnchanged?: boolean): Promise<boolean>;
 }

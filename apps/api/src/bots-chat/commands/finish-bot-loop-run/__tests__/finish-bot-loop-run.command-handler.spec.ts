@@ -2,7 +2,8 @@
  * A run of a loop ended (`25-bots.md` §4.1, `/loop`). What breaks this: a
  * loop going on after its run was stopped or failed for good; a self-paced
  * loop going on with nobody saying when, or ending over a passing failure;
- * another turn's end touching the loop. The decision table itself is
+ * another turn's end touching the loop; an end applied to a loop that moved
+ * on after it was read (the end is conditional). The decision table itself is
  * `bot-loop.policy.spec.ts`; this proves the handler acts on it.
  */
 import { Some } from 'oxide.ts';
@@ -78,6 +79,7 @@ describe('FinishBotLoopRunCommandHandler', () => {
       expect.anything(),
       { activity: 'stopped', reason: 'cancelled' },
       'c-1',
+      true,
     );
   });
 
@@ -97,6 +99,7 @@ describe('FinishBotLoopRunCommandHandler', () => {
       expect.anything(),
       { activity: 'ended', reason: null },
       'c-1',
+      true,
     );
   });
 

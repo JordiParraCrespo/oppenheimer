@@ -64,12 +64,23 @@ export class BotLoopRepository
     });
   }
 
-  end(loop: BotLoopEntity, line: BotMessageEntity | null): Promise<boolean> {
+  end(loop: BotLoopEntity, line: BotMessageEntity | null, ifUnchanged = false): Promise<boolean> {
     return this.outbox.transaction(async (manager) => {
-      const result = await manager.delete(BotLoopOrmEntity, {
-        id: loop.id,
-        organizationId: loop.organizationId,
-      });
+      const query = manager
+        .createQueryBuilder()
+        .delete()
+        .from(BotLoopOrmEntity)
+        .where('id = :id AND "organizationId" = :organizationId', {
+          id: loop.id,
+          organizationId: loop.organizationId,
+        });
+      if (ifUnchanged) {
+        query.andWhere('runs = :runs AND "nextRunAt" IS NOT DISTINCT FROM :at', {
+          runs: loop.runsAtLoad,
+          at: loop.nextRunAtLoad,
+        });
+      }
+      const result = await query.execute();
       if (result.affected !== 1) return false;
       if (line) await insertMessageWithin(manager, this.messages, line);
       return true;

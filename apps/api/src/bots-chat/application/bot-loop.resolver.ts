@@ -39,9 +39,11 @@ export class BotLoopResolver {
     /** How it ended, for its line; null when the call that ended it is the record. */
     ending: LoopEnding | null,
     correlationId: string | null,
+    /** Only while the loop is as it was loaded (`BotLoopRepositoryPort.end`). */
+    ifUnchanged = false,
   ): Promise<boolean> {
     const line = ending ? loopEndLine(loop, ending.activity, ending.reason) : null;
-    if (!(await this.loops.end(loop, line))) return false;
+    if (!(await this.loops.end(loop, line, ifUnchanged))) return false;
     if (line) {
       await this.stream.publish(loop.botId, { type: 'message', turnId: null, messageId: line.id });
     }

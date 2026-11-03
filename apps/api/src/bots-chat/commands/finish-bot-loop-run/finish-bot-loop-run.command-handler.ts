@@ -11,8 +11,9 @@ import { FinishBotLoopRunCommand } from './finish-bot-loop-run.command';
  * A run of a loop ended (`25-bots.md` §4.1, `/loop`): `loopRunEnd` says
  * whether the loop ends, with its line, or a self-paced run that failed in
  * passing is tried again a minute on. A fixed loop's next run was staged
- * when this one was queued, so going on needs nothing here. A loop ended or
- * replaced meanwhile is left as it is.
+ * when this one was queued, so going on needs nothing here. A loop ended,
+ * replaced or moved on meanwhile (a late word about an earlier run, a run
+ * the bot scheduled after this was read) is left as it is.
  */
 @CommandHandler(FinishBotLoopRunCommand)
 export class FinishBotLoopRunCommandHandler
@@ -33,10 +34,12 @@ export class FinishBotLoopRunCommandHandler
 
     const end = loopRunEnd(loop, ended);
     if (end.kind === 'end') {
+      // Read off the loop as loaded: a run queued, or `schedule_loop`, since keeps it.
       await this.loopsOf.end(
         loop,
         { activity: end.activity, reason: end.reason },
         metadata.correlationId,
+        true,
       );
       return;
     }
