@@ -261,11 +261,6 @@ export class ProjectEntity extends AggregateRoot<ProjectProps> {
   }
 
   /**
-   * The Unassigned project is where unfiled work goes; it keeps its name and its
-   * place. The handlers ask first and answer with `PROJECTS_008`; this is the
-   * aggregate holding the invariant whatever the caller.
-   */
-  /**
    * Bring an archived project back: work can be listed in it again. Idempotent:
    * an active project is left as it is and announces nothing. The automations
    * its archive paused stay paused, for the person to resume one by one.
@@ -287,6 +282,11 @@ export class ProjectEntity extends AggregateRoot<ProjectProps> {
     );
   }
 
+  /**
+   * The Unassigned project is where unfiled work goes; it keeps its name and its
+   * place. The handlers ask first and answer with `PROJECTS_008`; this is the
+   * aggregate holding the invariant whatever the caller.
+   */
   private assertNotUnassigned(change: 'renamed' | 'archived'): void {
     if (this.props.isUnassigned) {
       throw new ArgumentInvalidException(`The Unassigned project cannot be ${change}`);

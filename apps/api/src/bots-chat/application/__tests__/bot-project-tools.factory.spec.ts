@@ -350,12 +350,9 @@ describe('BotProjectToolsFactory', () => {
   });
 
   describe('restore_project', () => {
-    const archived = WORKSPACE[2];
-
     it('restores an archived project through the projects’ own command, without asking', async () => {
       const { commandBus, context, call } = setup({
-        query: (query) => (query instanceof FindProjectQuery ? archived : WORKSPACE),
-        command: () => project(ARCHIVED_ID, 'Old site'),
+        command: () => ({ project: project(ARCHIVED_ID, 'Old site'), restored: true }),
       });
 
       const result = await call('restore_project', { project_id: ARCHIVED_ID });
@@ -370,20 +367,19 @@ describe('BotProjectToolsFactory', () => {
       expect(context.approvals.request).not.toHaveBeenCalled();
     });
 
-    it('says an active project is not archived, writing nothing', async () => {
-      const { commandBus, call } = setup({
-        query: (query) => (query instanceof FindProjectQuery ? WORKSPACE[0] : WORKSPACE),
+    it('says an active project is not archived, as the command found it', async () => {
+      const { call } = setup({
+        command: () => ({ project: WORKSPACE[0], restored: false }),
       });
 
       const result = await call('restore_project', { project_id: WEBSITE_ID });
 
       expect(result.content).toContain('is not archived. Nothing changed.');
-      expect(commandBus.execute).not.toHaveBeenCalled();
     });
 
-    it('says a project of another workspace is not found, writing nothing', async () => {
-      const { commandBus, call } = setup({
-        query: () => {
+    it('says a project of another workspace is not found, as the projects module answers', async () => {
+      const { call } = setup({
+        command: () => {
           throw new AppError(ProjectErrors.NOT_FOUND, { detail: 'No project' });
         },
       });
@@ -392,7 +388,6 @@ describe('BotProjectToolsFactory', () => {
 
       expect(result.isError).toBe(true);
       expect(result.content).toMatch(/^PROJECTS_001: /);
-      expect(commandBus.execute).not.toHaveBeenCalled();
     });
   });
 

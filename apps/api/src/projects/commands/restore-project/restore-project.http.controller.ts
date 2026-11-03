@@ -18,10 +18,9 @@ import { ApiAuthGuard } from '../../../auth/guards/api-auth.guard';
 import { PoliciesGuard } from '../../../auth/guards/policies.guard';
 import { CurrentAccessScope } from '../../../authz/decorators/current-access-scope.decorator';
 import { AccessScopeInterceptor } from '../../../authz/interceptors/access-scope.interceptor';
-import type { ProjectEntity } from '../../domain/project.entity';
 import { ProjectResponseDto } from '../../dtos/project.response.dto';
 import { ProjectMapper } from '../../project.mapper';
-import { RestoreProjectCommand } from './restore-project.command';
+import { RestoreProjectCommand, type RestoreProjectResult } from './restore-project.command';
 
 @ApiTags('Projects')
 @ApiBearerAuth()
@@ -52,7 +51,7 @@ export class RestoreProjectHttpController {
     @CurrentAccessScope() scope: AccessScope,
     @Param('id', ParseUUIDPipe) id: string,
   ): Promise<ProjectResponseDto> {
-    const project = await this.commandBus.execute<RestoreProjectCommand, ProjectEntity>(
+    const { project } = await this.commandBus.execute<RestoreProjectCommand, RestoreProjectResult>(
       new RestoreProjectCommand({ scope, projectId: id }),
     );
     return this.mapper.toResponse(project);

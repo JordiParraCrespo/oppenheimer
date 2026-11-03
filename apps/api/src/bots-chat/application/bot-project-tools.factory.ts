@@ -5,7 +5,10 @@ import { CODING_AGENT_IDS } from '@oppenheimer/shared/agents';
 import { z } from 'zod/v4';
 import { ArchiveProjectCommand } from '../../projects/commands/archive-project/archive-project.command';
 import { CreateProjectCommand } from '../../projects/commands/create-project/create-project.command';
-import { RestoreProjectCommand } from '../../projects/commands/restore-project/restore-project.command';
+import {
+  RestoreProjectCommand,
+  type RestoreProjectResult,
+} from '../../projects/commands/restore-project/restore-project.command';
 import { UpdateProjectCommand } from '../../projects/commands/update-project/update-project.command';
 import type { ProjectEntity } from '../../projects/domain/project.entity';
 import { FindProjectQuery } from '../../projects/queries/find-project/find-project.query';
@@ -212,13 +215,13 @@ export class BotProjectToolsFactory implements BotToolArea {
           .describe('An archived project id from list_projects with include_archived.'),
       }),
       run: async (input, context) => {
-        const before = await this.project(context, input.project_id);
-        if (!before.isArchived) {
-          return `Project ${before.id} "${before.name}" is not archived. Nothing changed.`;
+        const { project, restored } = await this.commandBus.execute<
+          RestoreProjectCommand,
+          RestoreProjectResult
+        >(new RestoreProjectCommand({ scope: context.owner, projectId: input.project_id }));
+        if (!restored) {
+          return `Project ${project.id} "${project.name}" is not archived. Nothing changed.`;
         }
-        const project = await this.commandBus.execute<RestoreProjectCommand, ProjectEntity>(
-          new RestoreProjectCommand({ scope: context.owner, projectId: input.project_id }),
-        );
         return `Restored project ${project.id} "${project.name}"; work can be started in it again. The automations its archive paused are still paused.\n${describeProjectInFull(project, context)}`;
       },
     });

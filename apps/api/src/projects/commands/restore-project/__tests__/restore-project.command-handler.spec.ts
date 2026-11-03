@@ -39,17 +39,23 @@ function handlerAnswering(
 }
 
 describe('RestoreProjectCommandHandler', () => {
-  it.each(['restored', 'active'] as const)('answers the project when it is %s', async (result) => {
-    const restored = project();
-    const { projects, handler } = handlerAnswering({ result, project: restored });
+  it.each([
+    ['restored', true],
+    ['active', false],
+  ] as const)(
+    'answers the project when it is %s, and whether it restored it',
+    async (result, restored) => {
+      const found = project();
+      const { projects, handler } = handlerAnswering({ result, project: found });
 
-    const answer = await handler.execute(
-      new RestoreProjectCommand({ scope: SCOPE, projectId: restored.id }),
-    );
+      const answer = await handler.execute(
+        new RestoreProjectCommand({ scope: SCOPE, projectId: found.id }),
+      );
 
-    expect(answer).toBe(restored);
-    expect(projects.restoreIfArchived).toHaveBeenCalledWith(SCOPE, restored.id);
-  });
+      expect(answer).toEqual({ project: found, restored });
+      expect(projects.restoreIfArchived).toHaveBeenCalledWith(SCOPE, found.id);
+    },
+  );
 
   it('refuses a project the scope does not reach with PROJECTS_001', async () => {
     const { handler } = handlerAnswering({ result: 'not-found' });

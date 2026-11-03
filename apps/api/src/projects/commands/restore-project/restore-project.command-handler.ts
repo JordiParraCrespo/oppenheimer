@@ -2,10 +2,9 @@ import { Inject } from '@nestjs/common';
 import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
 import { AppError } from '@oppenheimer/backend-core';
 import type { ProjectRepositoryPort } from '../../database/project.repository.port';
-import type { ProjectEntity } from '../../domain/project.entity';
 import { ProjectErrors } from '../../domain/projects.errors';
 import { PROJECT_REPOSITORY } from '../../projects.di-tokens';
-import { RestoreProjectCommand } from './restore-project.command';
+import { RestoreProjectCommand, type RestoreProjectResult } from './restore-project.command';
 
 /**
  * Brings an archived project back: work can be listed in it again. The same row
@@ -16,20 +15,20 @@ import { RestoreProjectCommand } from './restore-project.command';
  */
 @CommandHandler(RestoreProjectCommand)
 export class RestoreProjectCommandHandler
-  implements ICommandHandler<RestoreProjectCommand, ProjectEntity>
+  implements ICommandHandler<RestoreProjectCommand, RestoreProjectResult>
 {
   constructor(
     @Inject(PROJECT_REPOSITORY)
     private readonly projects: ProjectRepositoryPort,
   ) {}
 
-  async execute(command: RestoreProjectCommand): Promise<ProjectEntity> {
+  async execute(command: RestoreProjectCommand): Promise<RestoreProjectResult> {
     const outcome = await this.projects.restoreIfArchived(command.scope, command.projectId);
     if (outcome.result === 'not-found') {
       throw new AppError(ProjectErrors.NOT_FOUND, {
         detail: `No project with id ${command.projectId}`,
       });
     }
-    return outcome.project;
+    return { project: outcome.project, restored: outcome.result === 'restored' };
   }
 }
