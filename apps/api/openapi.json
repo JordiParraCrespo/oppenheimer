@@ -33707,6 +33707,11 @@
           "author": {
             "type": "string"
           },
+          "authorIsInsider": {
+            "type": "boolean",
+            "nullable": true,
+            "description": "Whether the author is the repository’s owner, a member or a collaborator (false: anyone else); null when GitHub did not say."
+          },
           "createdAt": {
             "type": "string",
             "format": "date-time"
@@ -33740,6 +33745,11 @@
           "author": {
             "type": "string",
             "description": "A GitHub login; a commit’s author name."
+          },
+          "authorIsInsider": {
+            "type": "boolean",
+            "nullable": true,
+            "description": "For a comment or a review: whether its author is the repository’s owner, a member or a collaborator (false: anyone else); null when GitHub did not say or for a commit or event."
           },
           "at": {
             "type": "string",

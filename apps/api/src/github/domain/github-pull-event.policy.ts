@@ -58,6 +58,17 @@ export function followedPullEvent(event: {
   return { githubRepoId: event.subjectRef, number, type: event.eventType };
 }
 
+/**
+ * Whether an author is part of the repository, from GitHub's
+ * `author_association`: its owner, a member of its organization or a
+ * collaborator. Anyone else (a contributor, a first-timer, nobody) wrote
+ * from outside it; null when GitHub did not say.
+ */
+export function isRepositoryInsider(association: string | null | undefined): boolean | null {
+  if (!association) return null;
+  return ['OWNER', 'MEMBER', 'COLLABORATOR'].includes(association.toUpperCase());
+}
+
 /** A login as GitHub allows one, or nothing: no other character reaches the reader. */
 export function githubLogin(value: string | null): string | null {
   return value && /^[A-Za-z0-9-]{1,39}(\[bot\])?$/.test(value) ? value : null;

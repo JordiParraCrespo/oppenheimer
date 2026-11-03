@@ -3544,6 +3544,10 @@ export type PullRequestCommentDto = {
     side: 'LEFT' | 'RIGHT';
     body: string;
     author: string;
+    /**
+     * Whether the author is the repository’s owner, a member or a collaborator (false: anyone else); null when GitHub did not say.
+     */
+    authorIsInsider?: boolean | null;
     createdAt: string;
 };
 
@@ -3554,6 +3558,10 @@ export type PullRequestActivityItemDto = {
      * A GitHub login; a commit’s author name.
      */
     author: string;
+    /**
+     * For a comment or a review: whether its author is the repository’s owner, a member or a collaborator (false: anyone else); null when GitHub did not say or for a commit or event.
+     */
+    authorIsInsider?: boolean | null;
     at: string;
     /**
      * Markdown, or a commit message.

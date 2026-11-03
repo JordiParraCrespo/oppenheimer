@@ -1,4 +1,4 @@
-import { followedPullEvent } from '../domain/github-pull-event.policy';
+import { followedPullEvent, isRepositoryInsider } from '../domain/github-pull-event.policy';
 
 /**
  * Which stored GitHub events move a pull request someone follows
@@ -37,5 +37,15 @@ describe('followedPullEvent', () => {
     expect(followedPullEvent({ ...checkFailed, attributes: {} })).toBeNull();
     expect(followedPullEvent({ ...checkFailed, subjectRef: 'acme/app' })).toBeNull();
     expect(followedPullEvent({ ...checkFailed, subjectRef: '0' })).toBeNull();
+  });
+});
+
+describe('isRepositoryInsider', () => {
+  it("counts the repository's owner, members and collaborators in, everyone else out, and says nothing it was not told", () => {
+    expect(isRepositoryInsider('OWNER')).toBe(true);
+    expect(isRepositoryInsider('collaborator')).toBe(true);
+    expect(isRepositoryInsider('CONTRIBUTOR')).toBe(false);
+    expect(isRepositoryInsider('NONE')).toBe(false);
+    expect(isRepositoryInsider(undefined)).toBeNull();
   });
 });

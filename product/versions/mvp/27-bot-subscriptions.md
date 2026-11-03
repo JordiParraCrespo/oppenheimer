@@ -303,6 +303,22 @@ share their words (`github/domain/github-pull-event.policy.ts`).
   repository id and name, the number and what happened), drawn in the chat
   as one line ("Pull request #128 of acme/app: checks failed"). A merge is
   the last wake: the subscription ends after it.
+- **Outside text, and the owner's call (2026-11-03).** A watch lets anyone
+  who can comment on the pull request start an unattended turn, and the bot
+  reads that comment with its whole toolbox: `web_fetch`, mail and session
+  reads included, none of them asking first under `auto`. Codex's security
+  review proposed narrowing such turns (only that pull request's reads and
+  `notify`) or making their outbound and private reads ask first. The owner
+  chose full autonomy: a bot should act on what it reads (a comment, later a
+  WhatsApp message) the way it acts on its owner's words, up to starting a
+  session. The turn keeps every tool, and the defence is the prompt, an
+  accepted risk: each comment and review names its author as a collaborator
+  or as outside the repository (GitHub's `author_association`), outside
+  text stays fenced, and the rules name what an injection asks for and
+  forbid putting the person's private information where outside text
+  points. Narrowing by author (a collaborator's words drive the bot, a
+  stranger's ask first) and a tool-less reader in front of the bot are the
+  options on file if that changes.
 - **Not yet.** GitHub's normalizer makes no event of a pull request closed
   without a merge, so such a subscription stays until it is unwatched or
   reaches its wake limit; a `pr_closed` type in the catalog is what would

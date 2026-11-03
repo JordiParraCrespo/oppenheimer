@@ -1100,6 +1100,14 @@ earlier note:
   event's metadata alone, never a re-read: the pull request is GitHub's, not
   ours to re-read on every event. A close without a merge makes no event
   yet, so only a merge ends it (27 §7.1, `next-steps/agent-tools.md` §6).
+- `versions/mvp/25-bots.md` treated text from tools as information, not
+  instructions, and left every tool to the turn that reads it. On
+  2026-11-03 a pull request watch made that text a stranger's comment
+  starting an unattended turn, and Codex's review asked for narrower tools
+  on such turns. The owner chose full autonomy instead: those turns keep
+  every tool, and the prompt carries the defence, each GitHub author named
+  as a collaborator or as outside the repository and a rule against putting
+  private information where outside text points (27 §7.1).
 - `versions/mvp/25-bots.md` §2 sent a turn the newest messages that fit
   its history budget, and the OpenAI engine named no conversation to the
   provider. On 2026-11-03, after `/usage` showed a bot on GPT and Grok at a
