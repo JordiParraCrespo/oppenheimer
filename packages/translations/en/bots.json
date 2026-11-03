@@ -286,6 +286,7 @@
     "goal": {
       "title": "Goal: {{objective}}",
       "progress": "{{step}} of {{limit}} continuations",
+      "waiting": "waiting for {{system}} until {{time}}",
       "stop": "Stop goal",
       "stopFailed": "Could not stop the goal. Try again.",
       "needsCondition": "Write what done looks like after /goal, or /goal clear to stop the goal."

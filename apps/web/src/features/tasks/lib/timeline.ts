@@ -11,10 +11,10 @@ export function timelineRows(
   projects: readonly { id: string; name: string }[],
   milestones: readonly MilestoneEntity[],
   tasks: readonly TaskEntity[],
-  projectId?: string,
+  projectIds?: readonly string[],
 ): TimelineRow[] {
   return projects
-    .filter((project) => !projectId || project.id === projectId)
+    .filter((project) => !projectIds || projectIds.includes(project.id))
     .map((project) => {
       const own = tasks.filter((task) => task.projectId === project.id);
       const done = own.filter((task) => task.isDone).length;

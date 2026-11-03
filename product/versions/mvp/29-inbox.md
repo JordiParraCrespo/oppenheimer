@@ -29,10 +29,12 @@ workspace has one member today (`08-auth.md`), so "workspace-wide" is
 | **A pull request for you** | `GET /v1/pulls?scope=requested`, and `scope=mine` with `blocker = null` | a review is requested of you, or your pull request can merge | **Merge** through the existing `POST /v1/pulls/:installationId/:githubRepoId/:number/merge` for a mergeable one; **Open** opens it in Pull requests, **View on GitHub** in a new tab |
 | **An automation that failed** | `GET /v1/automation-runs?status=failed&window=24h` | a run failed in the last day | **Run again** (`POST /v1/automations/:id/run`); **Open run** |
 
-**Order**, most blocked first: bot approvals and sessions waiting, oldest
-wait first (each stalls an agent); then pull requests requested of you;
-then pull requests ready to merge; then failed runs. A deprioritized item
-sorts after all of them and reads *Low*.
+**Order**, newest first, as a mail client lists: every kind together, by
+when its wait began. A deprioritized item sorts after all of them and
+reads *Low*. (Until 2026-11-03 the list ran most blocked first: approvals
+and waiting sessions oldest wait first, then requested reviews, ready
+merges and failed runs; see the "decisions that changed" list in
+`product/README.md`.)
 
 **Project.** Every item carries the project it belongs to, so the list
 filters by project as the frame does, with a count beside each:
@@ -331,8 +333,7 @@ is that run, repeatable:
   wrong session, is in the file.
 - **What it asserts:** the list holds exactly what the API says needs you,
   and the count beside Needs you, the bar's and the rail's agree with it
-  (31 items); the order (approvals and sessions by wait, then reviews, then
-  merges); the card per kind; the project facet adds up. Every permission
+  (31 items); the card per kind; the project facet adds up. Every permission
   and question is answered from the Inbox (eight back to back, seven from
   two pages at once), and each session received exactly the bytes
   `questionKeys` gives, once. Two pages answering one dialog at the same

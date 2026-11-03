@@ -450,6 +450,12 @@ it one:
   has a clock and "Gmail limit · until 10:02" in the line's own colour, not
   the red "failed"; a group of calls counts it out of its "N failed". An
   exported chat marks it the same way.
+- **The goal says it waits** (2026-11-03). The end that holds a goal's
+  decision also marks the goal (`bot_goal."waitingFor"`, `"waitingUntil"`,
+  both or neither, in the same transaction as the held job); claiming the
+  next continuation clears it, and a goal that ends is deleted with it. The
+  goal's banner draws a clock and "waiting for Gmail until 10:02" in place
+  of its count, so a held goal does not look stalled.
 
 ### 4.1 Itself
 | Tool | Does | Default |

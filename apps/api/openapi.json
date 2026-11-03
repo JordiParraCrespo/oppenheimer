@@ -35754,6 +35754,24 @@
           }
         }
       },
+      "BotGoalWaitingResponseDto": {
+        "type": "object",
+        "properties": {
+          "system": {
+            "type": "string",
+            "description": "The system limiting our requests (\"Gmail\", \"GitHub\")."
+          },
+          "until": {
+            "type": "string",
+            "format": "date-time",
+            "description": "When the goal goes on."
+          }
+        },
+        "required": [
+          "system",
+          "until"
+        ]
+      },
       "BotGoalResponseDto": {
         "type": "object",
         "properties": {
@@ -35776,6 +35794,16 @@
           "createdAt": {
             "type": "string",
             "format": "date-time"
+          },
+          "waiting": {
+            "nullable": true,
+            "description": "A turn of the goal ended on a system’s rate limit, and its next decision waits until then; null when nothing holds it.",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/BotGoalWaitingResponseDto"
+              }
+            ]
           }
         },
         "required": [
@@ -35783,7 +35811,8 @@
           "objective",
           "continuations",
           "limit",
-          "createdAt"
+          "createdAt",
+          "waiting"
         ]
       },
       "BotGoalStateResponseDto": {

@@ -10,7 +10,7 @@ import { InboxMarkEntity } from '../inbox-mark.entity';
 
 /**
  * The Inbox (`product/versions/mvp/29-inbox.md`): an item per occurrence of a
- * wait, in the order "most blocked first", filed under its projects, and the
+ * wait, newest first, filed under its projects, and the
  * reader's marks applied to that occurrence only — so a new wait comes back
  * however the last one was marked.
  */
@@ -212,28 +212,30 @@ const mark = (itemKey: string, kind: InboxMarkEntity['mark'], until: Date | null
   new InboxMarkEntity(itemKey, kind, until, at(1));
 
 describe('composeInbox: what needs you, and in what order', () => {
-  it('puts approvals and waiting sessions first, oldest wait first, then requested reviews, ready merges and failed runs', () => {
+  it('lists every kind newest first, whatever its kind, and a Low item after all of them', () => {
     const view = composeInbox(
       sources({
         sessions: [
           session('s-new', { observedSince: at(2) }),
           session('s-old', { observedSince: at(50) }),
         ],
-        approvals: [approval('a-1', 20)],
-        requested: [pull(1)],
-        mine: [pull(2, { scope: 'mine' })],
-        failedRuns: [run('r-1', 90)],
+        approvals: [approval('a-1', 20), approval('a-low', 1)],
+        requested: [pull(1, { openedMinutesAgo: 30 })],
+        mine: [pull(2, { scope: 'mine', openedMinutesAgo: 70 })],
+        failedRuns: [run('r-1', 90), run('r-2', 5)],
       }),
-      [],
+      [mark('approval:a-low', 'low')],
       NOW,
     );
     expect(view.open.map((item) => item.key)).toEqual([
-      sessionItemKey(session('s-old', { observedSince: at(50) })),
-      'approval:a-1',
       sessionItemKey(session('s-new', { observedSince: at(2) })),
+      'run:r-2',
+      'approval:a-1',
       'pull:42#1@aaa111',
+      sessionItemKey(session('s-old', { observedSince: at(50) })),
       'pull:42#2@aaa111',
       'run:r-1',
+      'approval:a-low',
     ]);
   });
 
@@ -324,8 +326,8 @@ describe('composeInbox: marks apply to one occurrence', () => {
       NOW,
     );
     expect(view.open.map((item) => item.key)).toEqual([
-      'session:s-2:s5',
       `session:s-1:${at(1).toISOString()}`,
+      'session:s-2:s5',
     ]);
   });
 
@@ -406,10 +408,10 @@ describe('composeInbox: what an agent told you', () => {
       NOW,
     );
     expect(view.open.map((item) => item.key)).toEqual([
-      'notice:s1:n1',
       expect.stringMatching(/^session:s2:/),
+      'notice:s1:n1',
     ]);
-    expect(view.open[0]).toMatchObject({ kind: 'notice', since: at(3), projectIds: ['p-app'] });
+    expect(view.open[1]).toMatchObject({ kind: 'notice', since: at(3), projectIds: ['p-app'] });
   });
 
   // The regression: a notice keyed by its session alone, so marking one done

@@ -1660,6 +1660,7 @@
       "goal": {
         "title": "Objetivo: {{objective}}",
         "progress": "{{step}} de {{limit}} continuaciones",
+        "waiting": "esperando a {{system}} hasta las {{time}}",
         "stop": "Detener objetivo",
         "stopFailed": "No se pudo detener el objetivo. Inténtalo de nuevo.",
         "needsCondition": "Escribe tras /goal cómo sabremos que está hecho, o /goal clear para detener el objetivo."

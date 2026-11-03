@@ -2488,6 +2488,59 @@ describe('bots chat (integration)', () => {
       expect(jobs.map((job) => job.payload.turnId)).toEqual([driven.id]);
     });
 
+    // What breaks this: a goal held for a rate limit that the chat cannot see,
+    // so its banner looks stalled, or a wait left on the goal after its next
+    // continuation was queued, so the banner says it waits while it works.
+    it('holds the goal’s decision until a rate limit ends, says it waits, and forgets the wait once it goes on', async () => {
+      await dataSource.query(`DELETE FROM outbox_message`);
+      const bot = await create('Patient');
+      const turn = await runningTurn(bot);
+      await goals.set(goalFor(bot, turn.id));
+      const resetAt = new Date(Date.now() + 60_000);
+      turn.end('completed', new Date(), { limited: { system: 'Gmail', resetAt } });
+      expect(await turns.finish(turn, null)).toBe(true);
+
+      const held = (await goals.findForBot(bot.organizationId, bot.id)) as BotGoalEntity;
+      expect(held.waiting).toEqual({ system: 'Gmail', resetAt });
+      const [job]: { availableAt: Date }[] = await dataSource.query(
+        `SELECT "availableAt" FROM outbox_message WHERE topic = 'bot-turns' AND "eventName" = 'continue-bot-goal'`,
+      );
+      expect(job?.availableAt).toEqual(resetAt);
+
+      const next = continuation(bot, held);
+      expect(await turns.enqueueContinuation(next.turn, next.opening, null, held)).toBe('staged');
+      expect((await goals.findForBot(bot.organizationId, bot.id))?.waiting).toBeNull();
+    });
+
+    // What breaks this: a goal replaced while the old one's continuation ran,
+    // marked as waiting by that continuation's limit, though nothing holds it.
+    it('marks only the ended turn’s own goal as waiting, never one set in its place', async () => {
+      const bot = await create('Replaced');
+      const setter = await runningTurn(bot);
+      const old = goalFor(bot, setter.id, 'Old goal');
+      await goals.set(old);
+      setter.end('completed', new Date());
+      expect(await turns.finish(setter, null)).toBe(true);
+      const loaded = (await goals.findForBot(bot.organizationId, bot.id)) as BotGoalEntity;
+      const next = continuation(bot, loaded);
+      expect(await turns.enqueueContinuation(next.turn, next.opening, null, loaded)).toBe('staged');
+      const running = (await turns.findForRun(next.turn.id)).unwrap();
+      running.start(new Date());
+      expect(await turns.claim(running)).toBe('claimed');
+      // The person sets a new goal while the old one's continuation runs.
+      const yours = sent(bot, '/goal New goal');
+      await turns.enqueue(yours.turn, yours.message, null);
+      await goals.set(goalFor(bot, yours.turn.id, 'New goal'));
+
+      running.end('completed', new Date(), {
+        limited: { system: 'Gmail', resetAt: new Date(Date.now() + 60_000) },
+      });
+      expect(await turns.finish(running, null)).toBe(true);
+      const current = (await goals.findForBot(bot.organizationId, bot.id)) as BotGoalEntity;
+      expect(current.objective).toBe('New goal');
+      expect(current.waiting).toBeNull();
+    });
+
     it('goes with the chat: clearing the conversation deletes the goal its turn set', async () => {
       const bot = await create('Forgetful');
       const turn = await runningTurn(bot);

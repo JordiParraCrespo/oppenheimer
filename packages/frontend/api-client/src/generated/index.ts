@@ -394,6 +394,7 @@ export type {
   BotGoalEventResponseDto,
   BotGoalResponseDto,
   BotGoalStateResponseDto,
+  BotGoalWaitingResponseDto,
   BotGroupResponseDto,
   BotLoopEventResponseDto,
   BotLoopResponseDto,
