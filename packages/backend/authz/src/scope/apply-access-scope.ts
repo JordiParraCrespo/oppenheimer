@@ -1,5 +1,5 @@
 import type { ObjectLiteral, SelectQueryBuilder } from 'typeorm';
-import type { ResourceDefinition } from '../registry/resource-definition';
+import { isPersonOwned, type ResourceDefinition } from '../registry/resource-definition';
 import type { AccessScope } from './access-scope';
 
 /**
@@ -37,11 +37,7 @@ export function applyAccessScope<T extends ObjectLiteral>(
     });
   }
 
-  // A person's own rows (a resource with no organization key, such as a host,
-  // which is someone's machine) have no tenant for a bypass or an 'all' grant
-  // to stay inside: either would reach every owner's rows on the deployment.
-  // So on those only the owner and grants of named rows count.
-  const personOwned = !keys.organization;
+  const personOwned = isPersonOwned(keys);
 
   // A bypass skips the slice within the tenant, never the tenant itself.
   if (scope.bypass && !personOwned) return qb;

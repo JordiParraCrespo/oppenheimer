@@ -422,26 +422,37 @@ function scope(overrides: Partial<AccessScope> = {}): AccessScope {
   };
 }
 
+/** A tenant resource's keys: the shape every grant here is checked against. */
+const tenantOwned = { keys: { organization: 'organizationId', id: 'id' } };
+
 describe('canGrantScope', () => {
   it('allows granting a row the actor holds', () => {
     const actor = scope({ grants: new Map([['Project', new Set(['project-1'])]]) });
     expect(
-      canGrantScope(actor, {
-        organizationId: 'org-1',
-        resourceType: 'Project',
-        resourceId: 'project-1',
-      }),
+      canGrantScope(
+        actor,
+        {
+          organizationId: 'org-1',
+          resourceType: 'Project',
+          resourceId: 'project-1',
+        },
+        tenantOwned,
+      ),
     ).toBe(true);
   });
 
   it('blocks granting a row the actor does not hold', () => {
     const actor = scope({ grants: new Map([['Project', new Set(['project-1'])]]) });
     expect(
-      canGrantScope(actor, {
-        organizationId: 'org-1',
-        resourceType: 'Project',
-        resourceId: 'project-2',
-      }),
+      canGrantScope(
+        actor,
+        {
+          organizationId: 'org-1',
+          resourceType: 'Project',
+          resourceId: 'project-2',
+        },
+        tenantOwned,
+      ),
     ).toBe(false);
   });
 
@@ -454,28 +465,36 @@ describe('canGrantScope', () => {
       resourceId: null,
     };
 
-    expect(canGrantScope(partial, request)).toBe(false);
-    expect(canGrantScope(full, request)).toBe(true);
+    expect(canGrantScope(partial, request, tenantOwned)).toBe(false);
+    expect(canGrantScope(full, request, tenantOwned)).toBe(true);
   });
 
   it('never crosses a tenant boundary', () => {
     const actor = scope({ grants: new Map([['Project', 'all']]) });
     expect(
-      canGrantScope(actor, {
-        organizationId: 'org-2',
-        resourceType: 'Project',
-        resourceId: null,
-      }),
+      canGrantScope(
+        actor,
+        {
+          organizationId: 'org-2',
+          resourceType: 'Project',
+          resourceId: null,
+        },
+        tenantOwned,
+      ),
     ).toBe(false);
   });
 
   it('lets the platform tier through', () => {
     expect(
-      canGrantScope(scope({ bypass: true }), {
-        organizationId: 'org-2',
-        resourceType: 'Project',
-        resourceId: null,
-      }),
+      canGrantScope(
+        scope({ bypass: true }),
+        {
+          organizationId: 'org-2',
+          resourceType: 'Project',
+          resourceId: null,
+        },
+        tenantOwned,
+      ),
     ).toBe(true);
   });
 
@@ -500,5 +519,17 @@ describe('canGrantScope', () => {
     expect(
       canGrantScope(scope({ grants: new Map([['Host', new Set(['host-1'])]]) }), host, personOwned),
     ).toBe(true);
+  });
+
+  it('holds a type the registry does not know to the same rule, so leaving it out never reopens it', () => {
+    // What breaks this: a caller that does not pass the resource, or a typo in
+    // its subject, letting a bypass grant someone's machine again.
+    expect(
+      canGrantScope(
+        scope({ bypass: true }),
+        { organizationId: 'org-1', resourceType: 'Hots', resourceId: 'host-1' },
+        undefined,
+      ),
+    ).toBe(false);
   });
 });
