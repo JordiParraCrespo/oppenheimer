@@ -15,9 +15,10 @@ import { continueHost } from '../lib/cloud-continue';
  * starts on the host that started it while it is online, else the first
  * online one; picking another is the chip's. A press opens the new session.
  *
- * The idempotency key belongs to one host's attempt, as New session's does:
- * a second press after a lost answer returns the session already made, and a
- * press on another host, or after a refusal, is a new one.
+ * The idempotency key belongs to one host's attempt, as New session's does,
+ * and outlives a failure: a second press after a lost answer returns the
+ * session already made rather than a second worktree, and a refused one
+ * wrote nothing for the key to find. A press on another host is a new one.
  */
 export function SessionCloudContinue({ session }: { session: SessionEntity }) {
   const { t } = useTranslation();
@@ -29,9 +30,6 @@ export function SessionCloudContinue({ session }: { session: SessionEntity }) {
     onSuccess: (created) => {
       attempt.current = null;
       navigate({ to: '/sessions/$sessionId', params: { sessionId: created.id } });
-    },
-    onError: () => {
-      attempt.current = null;
     },
   });
   const list = hosts.data ?? [];
