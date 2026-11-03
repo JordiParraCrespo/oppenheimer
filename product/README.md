@@ -1084,3 +1084,10 @@ earlier note:
   an agent in a session can: `runner sessions notify "line"` keeps the line
   on its session, and the Inbox lists it until it is marked done
   (`next-steps/agent-tools.md` §2).
+- `versions/mvp/25-bots.md` §2 sent a turn the newest messages that fit
+  its history budget, and the OpenAI engine named no conversation to the
+  provider. On 2026-11-03, after `/usage` showed a bot on GPT and Grok at a
+  1% cache hit rate, each request carries the bot's id as its
+  `prompt_cache_key`, and the history loses its oldest messages a block of
+  about 6,000 tokens at a time, so each turn's request starts as the last
+  one's did.

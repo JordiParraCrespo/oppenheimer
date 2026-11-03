@@ -23,13 +23,22 @@ import type { BotSubagentRunner, BotSubagentTask } from './bot-tool.factory';
 /** What a child runs on that its parent's turn decided: the provider, model and key. */
 export type BotSubagentEngine = Pick<
   BotTurnRequest,
-  'provider' | 'apiKey' | 'accountId' | 'baseUrl' | 'model' | 'effort'
+  'provider' | 'apiKey' | 'accountId' | 'baseUrl' | 'model' | 'effort' | 'cacheKey'
 >;
 
 /** The turn a runner's children belong to, whose chat watches them. */
 export interface BotSubagentTurn {
   botId: string;
   turnId: string;
+}
+
+/**
+ * A child's prompt cache key: one per child of the turn, so each child's
+ * steps reach the server that holds its own prefix, and the children that
+ * run at once are not all sent to one. Under 64 characters.
+ */
+function subagentCacheKey(turn: BotSubagentTurn, index: number): string {
+  return `${turn.turnId}:subagent:${index}`;
 }
 
 /**
@@ -67,7 +76,14 @@ export class BotSubagentRunnerFactory {
         });
         board.publish();
         return inPool(tasks, SUBAGENT_CONCURRENCY, (task, index) =>
-          this.child(engine, systemPrompt, tools, task, signal, board.child(index)),
+          this.child(
+            { ...engine, cacheKey: subagentCacheKey(turn, index) },
+            systemPrompt,
+            tools,
+            task,
+            signal,
+            board.child(index),
+          ),
         );
       },
     };
