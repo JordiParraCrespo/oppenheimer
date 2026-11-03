@@ -32,20 +32,19 @@ export function projectParamOf(slugs: readonly string[]): string | undefined {
 }
 
 /**
- * The project ids a set of slugs names, `undefined` for none (All projects). A
- * slug no project has resolves to `''`, which matches nothing, so a stale link
- * filters to nothing rather than to everything.
+ * The ids of the projects a set of slugs names, `undefined` for no slugs (All
+ * projects). A slug no project has names nothing, so a stale link narrows to
+ * the projects that still exist, and to an empty set, which shows nothing,
+ * when none does: it never widens to All projects.
  */
 export function projectIdsOfSlugs(
   slugs: readonly string[],
   projects: readonly { id: string; slug: string; isUnassigned: boolean }[],
 ): string[] | undefined {
   if (slugs.length === 0) return undefined;
-  return slugs.map(
-    (slug) =>
-      projects.find((row) => (slug === UNASSIGNED_SLUG ? row.isUnassigned : row.slug === slug))
-        ?.id ?? '',
-  );
+  return projects
+    .filter((row) => slugs.includes(row.isUnassigned ? UNASSIGNED_SLUG : row.slug))
+    .map((row) => row.id);
 }
 
 /** How many tasks each Plan filter option holds: all of them, and per project and milestone. */

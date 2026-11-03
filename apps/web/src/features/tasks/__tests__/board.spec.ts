@@ -194,13 +194,11 @@ describe('?project=', () => {
     expect(projectParamOf(['web', 'billing'])).toBe('web,billing');
   });
 
-  it('turns slugs into ids, a stale one into an id that matches nothing', () => {
-    // Dropping a stale slug would widen `?project=gone` to All projects.
-    expect(projectIdsOfSlugs(['web', 'unassigned', 'gone'], projects)).toEqual([
-      'p-web',
-      'p-none',
-      '',
-    ]);
+  it('turns slugs into ids, leaving a stale one out but never widening to All projects', () => {
+    expect(projectIdsOfSlugs(['web', 'unassigned', 'gone'], projects)).toEqual(['p-web', 'p-none']);
+    // Reading `?project=gone` as no filter would show every project's tasks.
+    expect(projectIdsOfSlugs(['gone'], projects)).toEqual([]);
+    expect(columnOf([task('t')], 'todo', { projectIds: [] })).toEqual([]);
     expect(projectIdsOfSlugs([], projects)).toBeUndefined();
   });
 });

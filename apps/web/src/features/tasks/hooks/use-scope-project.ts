@@ -4,8 +4,8 @@ import { projectIdsOfSlugs, projectSlugsOf } from '../lib/plan-scope';
 
 /**
  * The projects the Plan view in the address is narrowed to: their slugs from
- * `?project=` and the ids they name (`''` for a slug no project has; absent
- * for All projects). Read from the location rather than one route, so the
+ * `?project=` and the ids of the projects they name (absent for All
+ * projects; empty when none of them exists). Read from the location rather than one route, so the
  * sidebar and every Plan view ask the same way.
  */
 export function useScopeProject(): { slugs: string[]; projectIds?: readonly string[] } {
@@ -14,5 +14,5 @@ export function useScopeProject(): { slugs: string[]; projectIds?: readonly stri
   });
   const slugs = projectSlugsOf(typeof param === 'string' ? param : undefined);
   const { data: projectIds } = useProjects({ select: (rows) => projectIdsOfSlugs(slugs, rows) });
-  return { slugs, projectIds: slugs.length ? (projectIds ?? ['']) : undefined };
+  return { slugs, projectIds: slugs.length ? (projectIds ?? []) : undefined };
 }

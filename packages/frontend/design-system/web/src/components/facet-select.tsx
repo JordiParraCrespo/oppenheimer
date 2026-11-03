@@ -142,18 +142,73 @@ function FacetSelect({
       <DropdownMenuContent style={{ minWidth: menuWidth ?? (variant === 'pill' ? 240 : 200) }}>
         <DropdownMenuRadioGroup value={current?.value} onValueChange={(next) => onValueChange(String(next))}>
           {options.map((option) => (
-            <DropdownMenuRadioItem key={option.value} value={option.value} closeOnClick>
-              <span className="flex items-center gap-2.5">
-                <span className="min-w-0 flex-1 truncate">{option.label}</span>
-                {option.count !== undefined ? (
-                  <span className="figures font-mono text-[11.5px] text-fg-subtle">{option.count}</span>
-                ) : null}
-              </span>
+            <DropdownMenuRadioItem
+              key={option.value}
+              value={option.value}
+              count={option.count}
+              closeOnClick
+            >
+              {option.label}
             </DropdownMenuRadioItem>
           ))}
         </DropdownMenuRadioGroup>
       </DropdownMenuContent>
     </DropdownMenu>
+  );
+}
+
+/** What both searchable facets take from their caller, besides the value. */
+type SearchableFacetProps = {
+  label: string;
+  options: SearchListOption[];
+  searchPlaceholder: string;
+  emptyText: (query: string) => React.ReactNode;
+  variant?: FacetVariant;
+  icon?: React.ReactNode;
+  menuWidth?: number;
+  className?: string;
+};
+
+/**
+ * The body both searchable facets share: the trigger, the popup and the
+ * `SearchList` in it. The public facet says what is picked (`current` on the
+ * trigger, `checked` in the list) and what a pick does; `onPick` gets `close`
+ * for a pick that ends the choice.
+ */
+function SearchableFacet({
+  label,
+  options,
+  searchPlaceholder,
+  emptyText,
+  variant = 'labelled',
+  icon,
+  menuWidth = 272,
+  className,
+  current,
+  set,
+  checked,
+  onPick,
+}: SearchableFacetProps & {
+  current: React.ReactNode;
+  set: boolean;
+  checked: string | readonly string[];
+  onPick: (option: SearchListOption, selected: boolean, close: () => void) => void;
+}) {
+  const [open, setOpen] = React.useState(false);
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger {...facetTriggerProps({ label, current, set, variant, icon, className })} />
+      <ChipSelectPopup density="menu" width={menuWidth} className="p-0">
+        <SearchList
+          aria-label={label}
+          options={options}
+          value={checked}
+          onPick={(option, selected) => onPick(option, selected, () => setOpen(false))}
+          searchPlaceholder={searchPlaceholder}
+          emptyText={emptyText}
+        />
+      </ChipSelectPopup>
+    </Popover>
   );
 }
 
@@ -177,50 +232,25 @@ function FacetSelect({
  * ```
  */
 function SearchableFacetSelect({
-  label,
-  options,
   value,
   onValueChange,
-  searchPlaceholder,
-  emptyText,
-  variant = 'labelled',
-  icon,
-  menuWidth = 272,
-  className,
-}: {
-  label: string;
-  options: SearchListOption[];
+  ...props
+}: SearchableFacetProps & {
   value: string;
   onValueChange: (value: string) => void;
-  searchPlaceholder: string;
-  emptyText: (query: string) => React.ReactNode;
-  variant?: FacetVariant;
-  icon?: React.ReactNode;
-  menuWidth?: number;
-  className?: string;
 }) {
-  const [open, setOpen] = React.useState(false);
-  const current = options.find((o) => o.value === value) ?? options[0];
-  const set = current !== undefined && current !== options[0];
+  const current = props.options.find((o) => o.value === value) ?? props.options[0];
   return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger
-        {...facetTriggerProps({ label, current: current?.label, set, variant, icon, className })}
-      />
-      <ChipSelectPopup density="menu" width={menuWidth} className="p-0">
-        <SearchList
-          aria-label={label}
-          options={options}
-          value={current?.value ?? ''}
-          onPick={(option) => {
-            onValueChange(option.value);
-            setOpen(false);
-          }}
-          searchPlaceholder={searchPlaceholder}
-          emptyText={emptyText}
-        />
-      </ChipSelectPopup>
-    </Popover>
+    <SearchableFacet
+      {...props}
+      current={current?.label}
+      set={current !== undefined && current !== props.options[0]}
+      checked={current?.value ?? ''}
+      onPick={(option, _selected, close) => {
+        onValueChange(option.value);
+        close();
+      }}
+    />
   );
 }
 
@@ -246,68 +276,38 @@ function SearchableFacetSelect({
  * ```
  */
 function SearchableFacetMultiSelect({
-  label,
-  options,
   values,
   onValuesChange,
-  searchPlaceholder,
-  emptyText,
-  variant = 'labelled',
-  icon,
-  menuWidth = 272,
-  className,
-}: {
-  label: string;
-  options: SearchListOption[];
+  ...props
+}: SearchableFacetProps & {
   /** The options picked, in the order they were picked; empty is the facet unset. */
   values: readonly string[];
   onValuesChange: (values: string[]) => void;
-  searchPlaceholder: string;
-  emptyText: (query: string) => React.ReactNode;
-  variant?: FacetVariant;
-  icon?: React.ReactNode;
-  menuWidth?: number;
-  className?: string;
 }) {
-  const unset = options[0];
-  const picked = options.filter((o) => o !== unset && values.includes(o.value));
+  const unset = props.options[0];
+  const picked = props.options.filter((o) => o !== unset && values.includes(o.value));
   const first = values.map((value) => picked.find((o) => o.value === value)).find(Boolean);
-  const current =
-    picked.length > 1 ? (
-      <>
-        {first?.label}{' '}
-        <span className="figures font-mono text-[11.5px]">+{picked.length - 1}</span>
-      </>
-    ) : (
-      first?.label
-    );
   return (
-    <Popover>
-      <PopoverTrigger
-        {...facetTriggerProps({
-          label,
-          current,
-          set: picked.length > 0,
-          variant,
-          icon,
-          className,
-        })}
-      />
-      <ChipSelectPopup density="menu" width={menuWidth} className="p-0">
-        <SearchList
-          aria-label={label}
-          options={options}
-          value={picked.length ? picked.map((o) => o.value) : unset ? [unset.value] : []}
-          onPick={(option, selected) => {
-            if (option === unset) return onValuesChange([]);
-            const rest = values.filter((value) => value !== option.value);
-            onValuesChange(selected ? [...rest, option.value] : rest);
-          }}
-          searchPlaceholder={searchPlaceholder}
-          emptyText={emptyText}
-        />
-      </ChipSelectPopup>
-    </Popover>
+    <SearchableFacet
+      {...props}
+      current={
+        picked.length > 1 ? (
+          <>
+            {first?.label}{' '}
+            <span className="figures font-mono text-[11.5px]">+{picked.length - 1}</span>
+          </>
+        ) : (
+          first?.label
+        )
+      }
+      set={picked.length > 0}
+      checked={picked.length ? picked.map((o) => o.value) : unset ? [unset.value] : []}
+      onPick={(option, selected) => {
+        if (option === unset) return onValuesChange([]);
+        const rest = values.filter((value) => value !== option.value);
+        onValuesChange(selected ? [...rest, option.value] : rest);
+      }}
+    />
   );
 }
 

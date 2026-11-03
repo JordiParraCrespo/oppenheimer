@@ -7,7 +7,7 @@ const board = getRouteApi('/_authenticated/plan/');
 
 /**
  * What the board's address narrows it to, as ids: the projects' slugs turned
- * into their ids, and the milestone. A slug no project has filters to nothing
+ * into their ids, and the milestone. A slug no project has narrows to nothing
  * rather than everything, so a stale link does not pretend to be All projects.
  */
 export function useBoardFilter(): BoardFilter {
@@ -15,7 +15,8 @@ export function useBoardFilter(): BoardFilter {
   const slugs = projectSlugsOf(project);
   const { data: projectIds } = useProjects({ select: (rows) => projectIdsOfSlugs(slugs, rows) });
   return {
-    projectIds: slugs.length ? (projectIds ?? ['']) : undefined,
+    // Until the projects load, a narrowed board shows nothing rather than everything.
+    projectIds: slugs.length ? (projectIds ?? []) : undefined,
     milestoneId: milestone,
   };
 }

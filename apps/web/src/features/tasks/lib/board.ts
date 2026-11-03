@@ -6,7 +6,7 @@ export const COLUMNS: readonly TaskStatus[] = ['later', 'todo', 'doing', 'done']
 
 /**
  * What the board is narrowed to: a set of projects (their ids; absent is All
- * projects) and a milestone, either or neither.
+ * projects, empty is none) and a milestone, either or neither.
  */
 export interface BoardFilter {
   projectIds?: readonly string[];

@@ -6,7 +6,6 @@ import {
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
   DropdownMenuSeparator,
-  DropdownMenuShortcut,
   DropdownMenuSub,
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
@@ -90,14 +89,8 @@ export function InboxFilterMenu({
               onValueChange={(next) => onTypeChange(next as InboxTypeFilter)}
             >
               {INBOX_TYPES.map((type) => (
-                <DropdownMenuRadioItem key={type} value={type}>
-                  {/* The item's label is one truncating line; the count needs a row of its own to sit apart. */}
-                  <span className="flex items-center gap-2.5">
-                    <span className="min-w-0 flex-1 truncate">{t(`inbox.type.${type}`)}</span>
-                    <DropdownMenuShortcut className="figures">
-                      {typeCounts[type]}
-                    </DropdownMenuShortcut>
-                  </span>
+                <DropdownMenuRadioItem key={type} value={type} count={typeCounts[type]}>
+                  {t(`inbox.type.${type}`)}
                 </DropdownMenuRadioItem>
               ))}
             </DropdownMenuRadioGroup>
