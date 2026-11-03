@@ -105,6 +105,12 @@ export function useChatTurnIds(chat: SessionChat): readonly string[] {
   return useSyncExternalStore(chat.subscribe, select, select);
 }
 
+/** Whether a first load's history is still arriving, for the chat to wait for it. */
+export function useChatLoading(chat: SessionChat): boolean {
+  const loading = () => chat.snapshot().loading;
+  return useSyncExternalStore(chat.subscribe, loading, loading);
+}
+
 /** Whether the host sends this session's chat at all, for the toggle that offers it. */
 function useChatAvailable(chat: SessionChat): boolean {
   const available = () => chat.snapshot().available;

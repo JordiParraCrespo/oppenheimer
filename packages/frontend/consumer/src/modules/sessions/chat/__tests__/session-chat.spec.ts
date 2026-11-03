@@ -361,6 +361,7 @@ describe('SessionChat', () => {
     chat.apply({ reset: true, entries: [] });
     expect(chat.snapshot()).toEqual({
       available: true,
+      loading: false,
       turns: [],
       queued: [],
       status: null,
@@ -368,6 +369,83 @@ describe('SessionChat', () => {
     });
     expect(before.turns).toHaveLength(2);
     expect(listener).toHaveBeenCalledTimes(3);
+  });
+
+  it('draws a long first load once, when its history has all come', () => {
+    // What breaks this: each part of a long history drawn as it lands, so the
+    // chat's window runs through the whole conversation on a first load,
+    // mounting every turn on its way to the end.
+    const lines = Array.from({ length: 300 }, (_, i) =>
+      JSON.stringify(user(`u${i}`, `Prompt ${i}`)),
+    );
+    const chat = new SessionChat();
+    const seen: number[] = [];
+    chat.subscribe(() => seen.push(chat.snapshot().turns.length));
+
+    // The runner's full batches, then the short one that ends its read.
+    chat.apply({ reset: true, entries: lines.slice(0, 256) });
+    expect(chat.snapshot()).toMatchObject({ available: true, loading: true, turns: [] });
+    chat.apply({ entries: lines.slice(256) });
+    expect(chat.snapshot().loading).toBe(false);
+    expect(chat.snapshot().turns).toHaveLength(300);
+    expect(seen).toEqual([0, 300]);
+  });
+
+  it('draws a first load whose history goes quiet before a short batch', () => {
+    // What breaks this: a history that ends on a full batch, never drawn.
+    vi.useFakeTimers();
+    const lines = Array.from({ length: 256 }, (_, i) =>
+      JSON.stringify(user(`u${i}`, `Prompt ${i}`)),
+    );
+    const chat = new SessionChat();
+    chat.apply({ reset: true, entries: lines });
+    expect(chat.snapshot().turns).toHaveLength(0);
+    vi.advanceTimersByTime(1_000);
+    expect(chat.snapshot()).toMatchObject({ loading: false });
+    expect(chat.snapshot().turns).toHaveLength(256);
+    vi.useRealTimers();
+  });
+
+  it('keeps holding a first load whose short-looking batch is full in UTF-8', () => {
+    // What breaks this: a batch measured in UTF-16 units, so one the runner
+    // closed at its byte limit, heavy in CJK text, reads as the end of the
+    // history and each part of the rest is drawn as it lands.
+    vi.useFakeTimers();
+    const text = '漢'.repeat(14_000);
+    const lines = [0, 1, 2].map((i) => JSON.stringify(user(`u${i}`, `${text} ${i}`)));
+    const chat = new SessionChat();
+    chat.apply({ reset: true, entries: lines });
+    expect(chat.snapshot()).toMatchObject({ loading: true, turns: [] });
+    vi.advanceTimersByTime(1_000);
+    expect(chat.snapshot().turns).toHaveLength(3);
+    vi.useRealTimers();
+  });
+
+  it('settles a replay that came back short while a first load was held', () => {
+    // What breaks this: a first load's quiet that ends the hold but not the
+    // replay a reconnect started under it, so turns the transcript no longer
+    // has stay drawn.
+    vi.useFakeTimers();
+    const lines = Array.from({ length: 512 }, (_, i) =>
+      JSON.stringify(user(`u${i}`, `Prompt ${i}`)),
+    );
+    const chat = new SessionChat();
+    chat.apply({ reset: true, entries: lines.slice(0, 256) });
+    chat.apply({ entries: lines.slice(256) });
+    // The link drops; the reconnect sends back only the first full batch.
+    chat.apply({ reset: true, entries: lines.slice(0, 256) });
+    vi.advanceTimersByTime(10_000);
+    expect(chat.snapshot().loading).toBe(false);
+    expect(chat.snapshot().turns).toHaveLength(256);
+    vi.useRealTimers();
+  });
+
+  it('draws a short first load at once', () => {
+    // What breaks this: every chat held for the quiet, a short one too.
+    const chat = new SessionChat();
+    chat.apply({ reset: true, entries: [JSON.stringify(user('u1', 'One'))] });
+    expect(chat.snapshot()).toMatchObject({ loading: false });
+    expect(chat.snapshot().turns).toHaveLength(1);
   });
 
   it('keeps a long conversation drawn while a reconnect replays it, and takes what is new after', () => {
