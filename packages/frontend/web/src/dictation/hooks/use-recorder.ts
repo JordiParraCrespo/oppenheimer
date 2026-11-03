@@ -54,21 +54,16 @@ const CHUNK = 4096;
  * as they arrive and encoded once, at the end. A recording that reaches
  * `maxSeconds` stops on its own and is handed over like any other.
  *
- * Each chunk also goes to `onChunk` as it is heard, for live dictation.
- *
  * The effects synchronise with the microphone: the audio callback reads the
- * latest `onRecorded` and `onChunk`, and whatever is open when the screen unmounts is
+ * latest `onRecorded`, and whatever is open when the screen unmounts is
  * closed, so the browser's recording light goes out.
  */
 export function useRecorder({
   onRecorded,
-  onChunk,
   sampleRate,
   maxSeconds,
 }: {
   onRecorded: (wav: Blob) => void;
-  /** Each chunk as it is heard, at the microphone's rate: what live dictation streams. */
-  onChunk?: (samples: Float32Array, inputRate: number) => void;
   sampleRate: number;
   maxSeconds: number;
 }): Recorder {
@@ -82,10 +77,8 @@ export function useRecorder({
   // The audio callback outlives the render that started it; it hands over
   // through this, which follows the latest `onRecorded`.
   const deliver = useRef(onRecorded);
-  const streamChunk = useRef(onChunk);
   useEffect(() => {
     deliver.current = onRecorded;
-    streamChunk.current = onChunk;
   });
 
   /** Whether a recording was handed over to `onRecorded`. */
@@ -139,7 +132,6 @@ export function useRecorder({
     processor.onaudioprocess = (event) => {
       const chunk = new Float32Array(event.inputBuffer.getChannelData(0));
       open.chunks.push(chunk);
-      streamChunk.current?.(chunk, context.sampleRate);
       const elapsed = context.currentTime - open.startedAt;
       meter.push(levelOf(chunk), elapsed * 1000);
       if (elapsed >= maxSeconds) finish(true);

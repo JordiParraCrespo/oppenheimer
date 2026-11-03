@@ -37,10 +37,4 @@ export const VoiceErrors = {
     message: 'The speech-to-text provider is rate limiting this workspace',
     httpStatus: 429,
   },
-  /** Live dictation needs an OpenAI key the deployment has not set (`VOICE_LIVE_API_KEY`). */
-  LIVE_NOT_CONFIGURED: {
-    code: 'VOICE_008',
-    message: 'Live dictation is not set up on this deployment',
-    httpStatus: 409,
-  },
 } as const satisfies Record<string, ErrorDefinition>;

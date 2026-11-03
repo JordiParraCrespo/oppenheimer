@@ -9,8 +9,4 @@ export const VoiceErrors = {
     code: 'VOICE_CLIENT_002',
     message: 'Failed to read whether dictation is available',
   },
-  LIVE_FAILED: {
-    code: 'VOICE_CLIENT_003',
-    message: 'Failed to start a live dictation',
-  },
 } as const satisfies Record<string, ErrorDefinition>;

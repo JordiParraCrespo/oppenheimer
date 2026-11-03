@@ -898,17 +898,12 @@ ChatGPT sign-in or the deployment's own speech-to-text server
 | `VOICE_005` <a id="voice_005" />     | Dictation is not set up for this workspace                   | 409  |
 | `VOICE_006` <a id="voice_006" />     | The speech-to-text provider could not transcribe the recording | 502  |
 | `VOICE_007` <a id="voice_007" />     | The speech-to-text provider is rate limiting this workspace  | 429  |
-| `VOICE_008` <a id="voice_008" />     | Live dictation is not set up on this deployment              | 409  |
 
 `VOICE_005` means nobody can hear the clip: sign the workspace in to ChatGPT
 (Settings → Model providers), or give the deployment a speech-to-text server.
 A ChatGPT sign-in that cannot transcribe (`VOICE_006`, or a lapsed sign-in)
 falls back to the deployment's server when there is one; a rate limit
 (`VOICE_007`, with `Retry-After`) does not.
-
-`VOICE_008` answers `POST /v1/voice/live` on a deployment with no OpenAI key
-for realtime transcription (`VOICE_LIVE_API_KEY`, or `VOICE_STT_*` pointed at
-OpenAI). Dictation still works; the words land when the recording stops.
 
 ## Inbox
 

@@ -84,33 +84,4 @@ export interface VoiceTranscriptionDto {
 export interface VoiceStatusDto {
   available: boolean;
   providers: VoiceProvider[];
-  /** Whether a recording can also be heard live, its words in the field while it is spoken (`POST /voice/live`). */
-  live: boolean;
-}
-
-/**
- * Live dictation: while a recording runs, the console streams it to a
- * realtime speech model and shows the words as they come. What it sends is
- * 24 kHz mono 16-bit PCM, the rate the realtime models take. The text the
- * field keeps is still the recording's transcription when it stops; the live
- * words only show it being heard.
- */
-export const VOICE_LIVE_SAMPLE_RATE = 24_000;
-
-/** `POST /voice/live`'s body: the names to expect, and the speaker's language when known. */
-export const startVoiceLiveSchema = z.object({
-  vocabulary: transcribeVoiceSchema.shape.vocabulary,
-  language: transcribeVoiceSchema.shape.language,
-});
-export type StartVoiceLiveDto = z.infer<typeof startVoiceLiveSchema>;
-
-/**
- * One live dictation's ticket: where the console opens the realtime socket,
- * and the short-lived secret it opens it with. The secret is good for one
- * session and minutes, never the deployment's key.
- */
-export interface VoiceLiveSessionDto {
-  url: string;
-  secret: string;
-  expiresAt: string;
 }

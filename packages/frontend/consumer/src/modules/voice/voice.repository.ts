@@ -1,7 +1,6 @@
 import { heyApiSdk } from '@oppenheimer/api-client';
 import { callApi } from '@oppenheimer/frontend-core';
 import {
-  type VoiceLiveSessionDto,
   type VoiceProvider,
   type VoiceStatusDto,
   vocabularyTerms,
@@ -49,35 +48,13 @@ export class VoiceRepository {
   }
 
   /**
-   * A live session for one recording (`POST /voice/live`): the socket the
-   * console streams it to while it is made, and the short-lived secret that
-   * opens it, so the words show as they are said.
-   */
-  startLive(
-    options: { vocabulary?: readonly string[]; language?: string } = {},
-  ): Promise<VoiceLiveSessionDto> {
-    return callApi(VoiceErrors.LIVE_FAILED, async (api) => {
-      const vocabulary = vocabularyTerms(options.vocabulary ?? []);
-      const data = await api.body(
-        heyApiSdk.startVoiceLive({
-          body: {
-            vocabulary: vocabulary.length ? vocabulary.join('\n') : undefined,
-            language: options.language,
-          },
-        }),
-      );
-      return { url: data.url, secret: data.secret, expiresAt: data.expiresAt };
-    });
-  }
-
-  /**
    * Whether the workspace can dictate, and on which providers: the API asks
    * every speech provider it knows, so the console never decides it itself.
    */
   status(): Promise<VoiceStatusDto> {
     return callApi(VoiceErrors.STATUS_FAILED, async (api) => {
       const data = await api.body(heyApiSdk.findVoiceStatus());
-      return { available: data.available, providers: data.providers, live: data.live };
+      return { available: data.available, providers: data.providers };
     });
   }
 }

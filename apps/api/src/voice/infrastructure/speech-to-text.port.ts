@@ -35,27 +35,3 @@ export interface KeyedSpeechPort {
   isConfigured(): boolean;
   transcribe(clip: VoiceClip): Promise<string>;
 }
-
-/** What a live dictation is told to expect: the names, and the speaker's language when known. */
-export interface LiveSpeechHints {
-  keywords: readonly string[];
-  language?: string;
-}
-
-/** One live dictation's ticket: the socket to open and the short-lived secret to open it with. */
-export interface LiveSpeechTicket {
-  url: string;
-  secret: string;
-  expiresAt: Date;
-}
-
-/**
- * Live dictation on OpenAI's realtime transcription: a transcription session
- * minted with the deployment's key, handed to the console as a secret that
- * opens that one session for minutes. The audio goes from the browser to
- * OpenAI; the key never leaves the API.
- */
-export interface LiveSpeechPort {
-  isConfigured(): boolean;
-  open(hints: LiveSpeechHints): Promise<LiveSpeechTicket>;
-}

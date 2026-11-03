@@ -6,7 +6,7 @@ import {
   Input,
   Textarea,
 } from '@oppenheimer/design-system-web';
-import { type DictatedText, DictationField, type VoiceInput } from '@oppenheimer/frontend-web';
+import { DictationField, type VoiceInput } from '@oppenheimer/frontend-web';
 import type { AutomationTaskDto } from '@oppenheimer/shared/schemas/automation';
 import type { FieldErrors, UseFormRegister } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
@@ -28,7 +28,7 @@ export function AutomationTaskFields({
   register: UseFormRegister<AutomationTaskDto>;
   errors: FieldErrors<AutomationTaskDto>;
   voice: VoiceInput;
-  onDictatePrompt: DictatedText;
+  onDictatePrompt: (text: string) => void;
   autoFocus?: boolean;
 }) {
   const { t } = useTranslation();
