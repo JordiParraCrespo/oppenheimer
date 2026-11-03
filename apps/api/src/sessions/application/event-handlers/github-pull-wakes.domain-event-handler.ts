@@ -1,9 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { OnEvent } from '@nestjs/event-emitter';
-import {
-  isPullRequestWakeEvent,
-  pullNumberOf,
-} from '../../../github/domain/github-pull-event.policy';
+import { followedPullEvent } from '../../../github/domain/github-pull-event.policy';
 import { ExternalEventReceivedDomainEvent } from '../../../inbound-events/domain/events/external-event-received.domain-event';
 import type { WorkSessionRepositoryPort } from '../../database/work-session.repository.port';
 import { githubWakeText, wakeIds } from '../../domain/session-wake.policy';
@@ -44,16 +41,14 @@ export class GithubPullWakesDomainEventHandler {
       | 'metadata'
     >,
   ): Promise<void> {
-    if (event.source !== 'github' || event.actorIsOwnApp) return;
-    if (!isPullRequestWakeEvent(event.eventType)) return;
-    const number = pullNumberOf(event.attributes);
-    if (number === null) return;
+    const pull = followedPullEvent(event);
+    if (!pull) return;
+    const { githubRepoId, number, type } = pull;
     const watching = await this.sessions.findWatchingPullForSystem(
       event.organizationId,
-      event.subjectRef,
+      githubRepoId,
       number,
     );
-    const type = event.eventType;
     // Each wake on its own outbox row: the stages do not depend on each other.
     await Promise.all(
       watching.map((session) =>
@@ -67,7 +62,7 @@ export class GithubPullWakesDomainEventHandler {
               number,
               event.attributes ?? {},
               event.actorLogin ?? null,
-              session.checkouts.find((checkout) => checkout.githubRepoId === event.subjectRef)
+              session.checkouts.find((checkout) => checkout.githubRepoId === githubRepoId)
                 ?.repositoryFullName ?? null,
             ),
             attempt: 0,

@@ -1,10 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { CommandBus } from '@nestjs/cqrs';
 import { OnEvent } from '@nestjs/event-emitter';
-import {
-  isPullRequestWakeEvent,
-  pullNumberOf,
-} from '../../../github/domain/github-pull-event.policy';
+import { followedPullEvent } from '../../../github/domain/github-pull-event.policy';
 import { ExternalEventReceivedDomainEvent } from '../../../inbound-events/domain/events/external-event-received.domain-event';
 import { BOT_SUBSCRIPTION_REPOSITORY } from '../../bots-chat.di-tokens';
 import { WakeOnPullRequestCommand } from '../../commands/wake-on-pull-request/wake-on-pull-request.command';
@@ -43,15 +40,12 @@ export class BotPullRequestWakeDomainEventHandler {
       | 'metadata'
     >,
   ): Promise<void> {
-    if (event.source !== 'github' || event.actorIsOwnApp) return;
-    const type = event.eventType;
-    if (!isPullRequestWakeEvent(type)) return;
-    const number = pullNumberOf(event.attributes);
-    if (number === null || !/^[1-9]\d{0,18}$/.test(event.subjectRef)) return;
+    const pull = followedPullEvent(event);
+    if (!pull) return;
     const ids = await this.subscriptions.findIdsForPullRequest(
       event.organizationId,
-      event.subjectRef,
-      number,
+      pull.githubRepoId,
+      pull.number,
     );
     // Each wake reads and decides on its own, so they run together, and one
     // that fails does not hold back the others; a failure is then thrown, for
@@ -63,7 +57,7 @@ export class BotPullRequestWakeDomainEventHandler {
           new WakeOnPullRequestCommand({
             subscriptionId,
             inboundEventId: event.aggregateId,
-            type,
+            type: pull.type,
             attributes: event.attributes ?? {},
             actorLogin: event.actorLogin ?? null,
             metadata: { correlationId: event.metadata?.correlationId ?? undefined },

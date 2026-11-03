@@ -89,17 +89,21 @@ describe('a pull request subscription', () => {
 
 describe('pullRequestWakeFor', () => {
   it('wakes for every event, and a merge is the last wake', () => {
-    expect(pullRequestWakeFor(0, 'comment')).toEqual({ kind: 'wake', ends: false });
-    expect(pullRequestWakeFor(3, 'pr_merged')).toEqual({ kind: 'wake', ends: true });
+    expect(pullRequestWakeFor(1, 'comment')).toEqual({ kind: 'wake', ends: false });
+    expect(pullRequestWakeFor(4, 'pr_merged')).toEqual({ kind: 'wake', ends: true });
   });
 
   // Regression: a pull request whose checks re-run in a loop would keep a bot busy for ever.
   it('says the wake that reaches the limit is the last, and ends without waking past it', () => {
     expect(pullRequestWakeFor(BOT_SUBSCRIPTION_WAKE_LIMIT - 1, 'check_failed')).toEqual({
       kind: 'wake',
-      ends: true,
+      ends: false,
     });
     expect(pullRequestWakeFor(BOT_SUBSCRIPTION_WAKE_LIMIT, 'check_failed')).toEqual({
+      kind: 'wake',
+      ends: true,
+    });
+    expect(pullRequestWakeFor(null, 'check_failed')).toEqual({
       kind: 'end',
       reason: 'wake_limit',
     });

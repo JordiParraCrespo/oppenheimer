@@ -1,7 +1,8 @@
 /**
  * An event on a pull request a bot follows wakes it (`27-bot-subscriptions.md`
  * §7). What breaks this: an event delivered twice queuing two turns or
- * counting twice against the wake limit; a merged pull request keeping its
+ * counting twice against the wake limit; a wake queued without taking one
+ * from the limit; a merged pull request keeping its
  * subscription; a bot whose owner left being woken; a wake past the limit;
  * a session subscription woken by a pull request's event. The text the bot
  * reads is `bot-pull-request-wake.policy.spec.ts`.
@@ -64,7 +65,11 @@ function setup(
   const stored = options.stored === undefined ? subscription() : options.stored;
   const subscriptions = {
     findForWake: vi.fn<BotSubscriptionRepositoryPort['findForWake']>(async () => stored),
-    recordWake: vi.fn<BotSubscriptionRepositoryPort['recordWake']>(async () => true),
+    // The store's count, as one statement takes from it.
+    claimWake: vi.fn<BotSubscriptionRepositoryPort['claimWake']>(async (_id, limit) =>
+      stored && stored.wakes < limit ? stored.wakes + 1 : null,
+    ),
+    releaseWake: vi.fn<BotSubscriptionRepositoryPort['releaseWake']>(async () => undefined),
     end: vi.fn<BotSubscriptionRepositoryPort['end']>(async () => true),
   } satisfies Partial<BotSubscriptionRepositoryPort>;
   const turns = {
@@ -133,17 +138,27 @@ describe('WakeOnPullRequestCommandHandler', () => {
     expect(stream.publish).toHaveBeenCalledOnce();
     // The pull request is not re-read: GitHub is not ours to read on every event.
     expect(queries.execute).not.toHaveBeenCalled();
-    expect(subscriptions.recordWake.mock.calls[0][0].wakes).toBe(1);
+    expect(subscriptions.claimWake).toHaveBeenCalledWith('sub-1', BOT_SUBSCRIPTION_WAKE_LIMIT);
+    expect(subscriptions.releaseWake).not.toHaveBeenCalled();
     expect(subscriptions.end).not.toHaveBeenCalled();
   });
 
   // Regression: a redelivered event counted again would end a subscription
   // short of its twenty wakes.
-  it('counts nothing when a delivery before this one already queued the turn', async () => {
+  it('gives its wake back when a delivery before this one already queued the turn', async () => {
     const { subscriptions, turns, run } = setup({ outcome: 'existing' });
     await run();
     expect(turns.enqueueOnce).toHaveBeenCalledOnce();
-    expect(subscriptions.recordWake).not.toHaveBeenCalled();
+    expect(subscriptions.releaseWake).toHaveBeenCalledWith('sub-1');
+  });
+
+  it('ends it after the wake that takes the last of the limit', async () => {
+    const { subscriptions, turns, run } = setup({
+      stored: subscription({ wakes: BOT_SUBSCRIPTION_WAKE_LIMIT - 1 }),
+    });
+    await run();
+    expect(turns.enqueueOnce.mock.calls[0][1].content).toContain('no longer subscribed');
+    expect(subscriptions.end).toHaveBeenCalledOnce();
   });
 
   it('ends the subscription after the wake that tells the bot it was merged', async () => {
@@ -151,7 +166,7 @@ describe('WakeOnPullRequestCommandHandler', () => {
     await run('pr_merged');
     expect(turns.enqueueOnce.mock.calls[0][1].content).toContain('no longer subscribed');
     expect(subscriptions.end).toHaveBeenCalledOnce();
-    expect(subscriptions.recordWake).not.toHaveBeenCalled();
+    expect(subscriptions.releaseWake).not.toHaveBeenCalled();
   });
 
   it('ends it without waking when the owner left the workspace', async () => {
@@ -178,6 +193,7 @@ describe('WakeOnPullRequestCommandHandler', () => {
       const { subscriptions, turns, run } = setup({ stored });
       await run();
       expect(turns.enqueueOnce).not.toHaveBeenCalled();
+      expect(subscriptions.claimWake).not.toHaveBeenCalled();
       expect(subscriptions.end).not.toHaveBeenCalled();
     }
   });

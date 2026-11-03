@@ -3,8 +3,8 @@ import { BOT_SESSION_WAKE_STATES, botDefaultModel, SCOPES, type Scope } from '@o
 import type { BotEntity } from '../bots/domain/bot.entity';
 import type { WorkSessionEntity } from '../sessions/domain/work-session.entity';
 import { BotSubscriptionOrmEntity } from './database/bot-subscription.orm-entity';
-import type { PullRequestRef, pullRequestWakeTurn } from './domain/bot-pull-request-wake.policy';
-import { BotSubscriptionEntity } from './domain/bot-subscription.entity';
+import type { pullRequestWakeTurn } from './domain/bot-pull-request-wake.policy';
+import { BotSubscriptionEntity, type PullRequestRef } from './domain/bot-subscription.entity';
 import {
   BOT_SUBSCRIPTION_UNTIL,
   BOT_SUBSCRIPTION_WAKE_LIMIT,

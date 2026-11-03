@@ -33,6 +33,15 @@ export interface BotSubscriptionRepositoryPort {
    */
   recordWake(subscription: BotSubscriptionEntity): Promise<boolean>;
   /**
+   * Takes one of a pull request subscription's wakes, unless `limit` are
+   * taken: the count with this one in it, or null when none was left (or the
+   * subscription is gone). One statement, so events delivered together take
+   * one wake each, and never more than `limit` between them.
+   */
+  claimWake(subscriptionId: string, limit: number): Promise<number | null>;
+  /** Gives back a wake claimed for an event that queued no turn. */
+  releaseWake(subscriptionId: string): Promise<void>;
+  /**
    * Ends it, whatever was recorded since it was loaded: an end is final, so a
    * wake that recorded meanwhile (input needed, read before the task ended)
    * never keeps a finished subscription alive. Whether it was still there.

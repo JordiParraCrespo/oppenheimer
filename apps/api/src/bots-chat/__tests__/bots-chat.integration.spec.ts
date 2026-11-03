@@ -83,7 +83,11 @@ import {
 } from '../domain/bot-routine.policy';
 import { takesSteer } from '../domain/bot-steer.policy';
 import { BotSubscriptionEntity } from '../domain/bot-subscription.entity';
-import { type SessionWake, sessionWakeTurn } from '../domain/bot-subscription.policy';
+import {
+  BOT_SUBSCRIPTION_WAKE_LIMIT,
+  type SessionWake,
+  sessionWakeTurn,
+} from '../domain/bot-subscription.policy';
 import { planSummary, type SummarizableMessage } from '../domain/bot-summary.policy';
 import { NO_PERMISSIONS } from '../domain/bot-tool-permission.policy';
 import { BotTurnEntity } from '../domain/bot-turn.entity';
@@ -2123,8 +2127,7 @@ describe('bots chat (integration)', () => {
           timeZone: 'UTC',
         });
       const first = await subscriptions.subscribe(pull());
-      first.recordPullRequestWake();
-      expect(await subscriptions.recordWake(first)).toBe(true);
+      expect(await subscriptions.claimWake(first.id, BOT_SUBSCRIPTION_WAKE_LIMIT)).toBe(1);
       const again = await subscriptions.subscribe(pull({ purpose: null }));
       expect(again).toMatchObject({
         id: first.id,
@@ -2183,6 +2186,38 @@ describe('bots chat (integration)', () => {
           )
         )[0].indexdef,
       ).toContain(`WHERE (("resourceKind")::text = 'pull_request'::text)`);
+    });
+
+    // Codex on #638. What breaks this: two events on one pull request,
+    // delivered together, both reading the count before either writes it,
+    // so a watch wakes its bot past the limit.
+    it('takes one wake per event, never past the limit, even for events delivered together', async () => {
+      const bot = await create('PR racer');
+      const followed = await subscriptions.subscribe(
+        BotSubscriptionEntity.subscribeToPullRequest({
+          organizationId: bot.organizationId,
+          botId: bot.id,
+          pullRequest: { githubRepoId: '42', repository: 'acme-labs/app', number: 7 },
+          originTurnId: null,
+          purpose: null,
+          credentialScopes: null,
+          timeZone: null,
+        }),
+      );
+      await dataSource.query(`UPDATE bot_subscription SET "wakes" = $2 WHERE id = $1`, [
+        followed.id,
+        BOT_SUBSCRIPTION_WAKE_LIMIT - 1,
+      ]);
+      const claims = await Promise.all([
+        subscriptions.claimWake(followed.id, BOT_SUBSCRIPTION_WAKE_LIMIT),
+        subscriptions.claimWake(followed.id, BOT_SUBSCRIPTION_WAKE_LIMIT),
+      ]);
+      expect(claims.sort()).toEqual([BOT_SUBSCRIPTION_WAKE_LIMIT, null]);
+      // One that queued nothing gives its wake back.
+      await subscriptions.releaseWake(followed.id);
+      expect(await subscriptions.claimWake(followed.id, BOT_SUBSCRIPTION_WAKE_LIMIT)).toBe(
+        BOT_SUBSCRIPTION_WAKE_LIMIT,
+      );
     });
 
     it('names a terminal watch, answers the one it replaced, finds it by the watch, and keeps the newest count', async () => {

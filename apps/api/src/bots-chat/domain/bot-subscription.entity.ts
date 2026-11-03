@@ -6,7 +6,6 @@ import {
   type CreateEntityProps,
 } from '@oppenheimer/backend-ddd';
 import type { BotSessionWakeState, Scope } from '@oppenheimer/shared';
-import type { PullRequestRef } from './bot-pull-request-wake.policy';
 import {
   BOT_SUBSCRIPTION_PURPOSE_MAX,
   type BotSubscriptionKind,
@@ -16,6 +15,15 @@ import {
 
 /** The longest `owner/name` GitHub allows: a 39-character owner and a 100-character name. */
 export const PULL_REQUEST_REPOSITORY_MAX = 140;
+
+/** The pull request a subscription follows: GitHub's repository id, its name when watched, and the number. */
+export interface PullRequestRef {
+  /** GitHub's repository id, as a string: the column is a bigint. */
+  githubRepoId: string;
+  /** `owner/name`, as it was when the bot watched it. */
+  repository: string;
+  number: number;
+}
 
 export interface BotSubscriptionProps {
   organizationId: string;
@@ -206,12 +214,6 @@ export class BotSubscriptionEntity extends AggregateRoot<BotSubscriptionProps> {
   get wakeSubject(): WakeSubject {
     const { until, watchedTurn, lastTurn, lastState, wakes } = this.props;
     return { id: this.id, until, watchedTurn, lastTurn, lastState, wakes };
-  }
-
-  /** A wake was queued for an event on the pull request it follows. */
-  recordPullRequestWake(): void {
-    this.props.wakes += 1;
-    this.validate();
   }
 
   /** A wake was queued for this task in this state. */

@@ -8,6 +8,25 @@ import type { BotSubscriptionEntity } from '../domain/bot-subscription.entity';
 import { BotSubscriptionOrmEntity } from './bot-subscription.orm-entity';
 import type { BotSubscriptionRepositoryPort } from './bot-subscription.repository.port';
 
+/**
+ * What subscribing again sets, whatever is followed: from which turn, why
+ * (kept when the bot gives no new reason), under which scopes and time zone.
+ * Each kind's upsert adds what only it holds.
+ */
+const RESUBSCRIBED = `"originTurnId" = EXCLUDED."originTurnId",
+             "purpose" = COALESCE(EXCLUDED."purpose", s."purpose"),
+             "credentialScopes" = EXCLUDED."credentialScopes",
+             "timeZone" = EXCLUDED."timeZone"`;
+
+/** Every write of an existing subscription moves its version. */
+const VERSIONED = `"version" = s."version" + 1,
+             "updatedAt" = now()`;
+
+/** The scopes as the `jsonb` parameter: null for a browser session's turn. */
+function scopesParam(record: BotSubscriptionOrmEntity): string | null {
+  return record.credentialScopes === null ? null : JSON.stringify(record.credentialScopes);
+}
+
 @Injectable()
 export class BotSubscriptionRepository
   extends ScopedRepositoryBase<BotSubscriptionOrmEntity>
@@ -39,18 +58,14 @@ export class BotSubscriptionRepository
           "until", "watchedTurn", "credentialScopes", "timeZone", "lastTurn", "lastState")
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
        ON CONFLICT ("organizationId", "botId", "resourceKind", "resourceId") DO UPDATE
-         SET "originTurnId" = EXCLUDED."originTurnId",
-             "purpose" = COALESCE(EXCLUDED."purpose", s."purpose"),
+         SET ${RESUBSCRIBED},
              "until" = EXCLUDED."until",
              "watchedTurn" = EXCLUDED."watchedTurn",
-             "credentialScopes" = EXCLUDED."credentialScopes",
-             "timeZone" = EXCLUDED."timeZone",
              "lastTurn" = CASE WHEN s."lastTurn" IS NULL OR EXCLUDED."lastTurn" > s."lastTurn"
                                THEN COALESCE(EXCLUDED."lastTurn", s."lastTurn") ELSE s."lastTurn" END,
              "lastState" = CASE WHEN s."lastTurn" IS NULL OR EXCLUDED."lastTurn" > s."lastTurn"
                                 THEN COALESCE(EXCLUDED."lastState", s."lastState") ELSE s."lastState" END,
-             "version" = s."version" + 1,
-             "updatedAt" = now()
+             ${VERSIONED}
        RETURNING *`,
       [
         record.id,
@@ -62,7 +77,7 @@ export class BotSubscriptionRepository
         record.purpose,
         record.until,
         record.watchedTurn,
-        record.credentialScopes === null ? null : JSON.stringify(record.credentialScopes),
+        scopesParam(record),
         record.timeZone,
         record.lastTurn,
         record.lastState,
@@ -88,12 +103,8 @@ export class BotSubscriptionRepository
        ON CONFLICT ("organizationId", "botId", "githubRepoId", "pullNumber")
          WHERE "resourceKind" = 'pull_request' DO UPDATE
          SET "repositoryFullName" = EXCLUDED."repositoryFullName",
-             "originTurnId" = EXCLUDED."originTurnId",
-             "purpose" = COALESCE(EXCLUDED."purpose", s."purpose"),
-             "credentialScopes" = EXCLUDED."credentialScopes",
-             "timeZone" = EXCLUDED."timeZone",
-             "version" = s."version" + 1,
-             "updatedAt" = now()
+             ${RESUBSCRIBED},
+             ${VERSIONED}
        RETURNING *`,
       [
         record.id,
@@ -104,7 +115,7 @@ export class BotSubscriptionRepository
         record.repositoryFullName,
         record.originTurnId,
         record.purpose,
-        record.credentialScopes === null ? null : JSON.stringify(record.credentialScopes),
+        scopesParam(record),
         record.timeZone,
       ],
     );
@@ -172,6 +183,27 @@ export class BotSubscriptionRepository
     const won = result.affected === 1;
     if (won) subscription.markPersisted();
     return won;
+  }
+
+  async claimWake(subscriptionId: string, limit: number): Promise<number | null> {
+    // PK_bot_subscription. The count moves by itself, outside the version:
+    // a wake taken is never a write another writer could undo.
+    const [rows]: [{ wakes: number }[], number] = await this.repository.query(
+      `UPDATE bot_subscription SET "wakes" = "wakes" + 1, "updatedAt" = now()
+       WHERE "id" = $1 AND "wakes" < $2
+       RETURNING "wakes"`,
+      [subscriptionId, limit],
+    );
+    return rows[0]?.wakes ?? null;
+  }
+
+  async releaseWake(subscriptionId: string): Promise<void> {
+    // PK_bot_subscription.
+    await this.repository.query(
+      `UPDATE bot_subscription SET "wakes" = "wakes" - 1, "updatedAt" = now()
+       WHERE "id" = $1 AND "wakes" > 0`,
+      [subscriptionId],
+    );
   }
 
   async findForTerminalWatch(watchId: string): Promise<BotSubscriptionEntity | null> {

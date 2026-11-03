@@ -6,6 +6,7 @@ import {
 } from '../../github/domain/github-pull-event.policy';
 import { eventNote } from './bot-history.policy';
 import { BotMessageEntity } from './bot-message.entity';
+import type { PullRequestRef } from './bot-subscription.entity';
 import { BOT_SUBSCRIPTION_WAKE_LIMIT } from './bot-subscription.policy';
 import { BotTurnEntity } from './bot-turn.entity';
 
@@ -19,15 +20,6 @@ import { BotTurnEntity } from './bot-turn.entity';
  * tools. A comment's or a review's words never reach it here. Pure.
  */
 
-/** The pull request a subscription follows: GitHub's repository id, its name when watched, and the number. */
-export interface PullRequestRef {
-  /** GitHub's repository id, as a string: the column is a bigint. */
-  githubRepoId: string;
-  /** `owner/name`, as it was when the bot watched it. */
-  repository: string;
-  number: number;
-}
-
 export type PullRequestWakeDecision =
   /** The wake limit is reached: the subscription ends without waking the bot. */
   | { kind: 'end'; reason: 'wake_limit' }
@@ -35,17 +27,19 @@ export type PullRequestWakeDecision =
   | { kind: 'wake'; ends: boolean };
 
 /**
- * Whether an event on a followed pull request wakes the bot. Every event
- * that reaches here does, once (its key is the stored event's id), until the
- * wake limit; a merge is the last, since nothing happens to a merged pull
+ * Whether an event on a followed pull request wakes the bot, from the wake
+ * it claimed: the subscription's count with this wake in it, or null when
+ * the limit left none. Every event that reaches here wakes it once (its key
+ * is the stored event's id) until the limit; the wake that reaches the limit
+ * is the last, and so is a merge, since nothing happens to a merged pull
  * request that the bot followed it for.
  */
 export function pullRequestWakeFor(
-  wakes: number,
+  claimed: number | null,
   type: PullRequestWakeEvent,
 ): PullRequestWakeDecision {
-  if (wakes >= BOT_SUBSCRIPTION_WAKE_LIMIT) return { kind: 'end', reason: 'wake_limit' };
-  return { kind: 'wake', ends: endsPullRequest(type) || wakes + 1 >= BOT_SUBSCRIPTION_WAKE_LIMIT };
+  if (claimed === null) return { kind: 'end', reason: 'wake_limit' };
+  return { kind: 'wake', ends: endsPullRequest(type) || claimed >= BOT_SUBSCRIPTION_WAKE_LIMIT };
 }
 
 /** What a pull request's wake tells the bot; `inboundEventId` makes one event one turn, however often delivered. */

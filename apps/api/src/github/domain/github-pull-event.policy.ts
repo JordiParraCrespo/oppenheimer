@@ -30,6 +30,34 @@ export function pullNumberOf(attributes: Record<string, unknown> | undefined): n
   return number;
 }
 
+/** A pull request a stored GitHub event moved, as whoever follows it reads it. */
+export interface FollowedPullEvent {
+  /** GitHub's repository id, as the event's subject names it. */
+  githubRepoId: string;
+  number: number;
+  type: PullRequestWakeEvent;
+}
+
+/**
+ * The pull request a stored event moved, or null when it wakes no follower:
+ * another source, our own app's doing, an event nobody is woken by, or one
+ * that names no pull request by a repository id and a number. The one place
+ * that knows how a GitHub event names a followed pull request.
+ */
+export function followedPullEvent(event: {
+  source: string;
+  eventType: string;
+  subjectRef: string;
+  actorIsOwnApp: boolean;
+  attributes?: Record<string, unknown>;
+}): FollowedPullEvent | null {
+  if (event.source !== 'github' || event.actorIsOwnApp) return null;
+  if (!isPullRequestWakeEvent(event.eventType)) return null;
+  const number = pullNumberOf(event.attributes);
+  if (number === null || !/^[1-9]\d{0,18}$/.test(event.subjectRef)) return null;
+  return { githubRepoId: event.subjectRef, number, type: event.eventType };
+}
+
 /** A login as GitHub allows one, or nothing: no other character reaches the reader. */
 export function githubLogin(value: string | null): string | null {
   return value && /^[A-Za-z0-9-]{1,39}(\[bot\])?$/.test(value) ? value : null;

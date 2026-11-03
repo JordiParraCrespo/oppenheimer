@@ -10,6 +10,7 @@ import {
   pullRequestWakeOf,
   pullRequestWakeTurn,
 } from '../../domain/bot-pull-request-wake.policy';
+import { BOT_SUBSCRIPTION_WAKE_LIMIT } from '../../domain/bot-subscription.policy';
 import { WakeOnPullRequestCommand } from './wake-on-pull-request.command';
 
 /**
@@ -18,9 +19,11 @@ import { WakeOnPullRequestCommand } from './wake-on-pull-request.command';
  * request is not re-read, since GitHub is not ours to read as the owner on
  * every event: the wake is the event's metadata. It is the one wake path
  * (`BotSessionWakeResolver.queueTurn`), keyed by the subscription and the
- * stored event, so an event delivered twice queues one turn, and only a turn
- * queued now is counted against the wake limit. A merge ends the
- * subscription after its wake.
+ * stored event, so an event delivered twice queues one turn. The wake is
+ * taken from the limit before the turn is queued, in one statement, so
+ * events delivered together never pass it; one that queues nothing (it was
+ * delivered before) gives its wake back. A merge ends the subscription after
+ * its wake.
  */
 @CommandHandler(WakeOnPullRequestCommand)
 export class WakeOnPullRequestCommandHandler
@@ -41,7 +44,11 @@ export class WakeOnPullRequestCommandHandler
     const acting = await this.subjects.resolveOwner(subscription);
     if (!acting) return this.wakes.end(subscription, 'access_lost');
 
-    const decision = pullRequestWakeFor(subscription.wakes, command.type);
+    const claimed = await this.subscriptions.claimWake(
+      subscription.id,
+      BOT_SUBSCRIPTION_WAKE_LIMIT,
+    );
+    const decision = pullRequestWakeFor(claimed, command.type);
     if (decision.kind === 'end') return this.wakes.end(subscription, decision.reason);
 
     const wake = pullRequestWakeOf(
@@ -64,11 +71,7 @@ export class WakeOnPullRequestCommandHandler
       built,
       command.metadata.correlationId,
     );
-    if (queued === 'missing') return;
-    if (decision.ends) return this.wakes.end(subscription, 'delivered');
-    if (queued === 'existing') return;
-    subscription.recordPullRequestWake();
-    // A loser was beaten by another wake of the same subscription, which recorded its own.
-    await this.subscriptions.recordWake(subscription);
+    if (queued !== 'queued') await this.subscriptions.releaseWake(subscription.id);
+    if (queued !== 'missing' && decision.ends) await this.wakes.end(subscription, 'delivered');
   }
 }
