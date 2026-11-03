@@ -9,7 +9,10 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 
-/** A bot following work it delegated (`1791003300000-AddBotSubscriptions`). */
+/**
+ * A bot following work it delegated (`1791003300000-AddBotSubscriptions`), a
+ * session or a pull request (`1793707588046-AddBotPullRequestSubscriptions`).
+ */
 @Entity('bot_subscription')
 @Index(
   'UQ_bot_subscription_bot_resource',
@@ -22,7 +25,19 @@ import {
 @Index('IDX_bot_subscription_origin_turn', ['organizationId', 'originTurnId'], {
   where: '"originTurnId" IS NOT NULL',
 })
-@Check('CHK_bot_subscription_resource_kind', `"resourceKind" IN ('session')`)
+@Index(
+  'UQ_bot_subscription_bot_pull_request',
+  ['organizationId', 'botId', 'githubRepoId', 'pullNumber'],
+  { unique: true, where: `"resourceKind" = 'pull_request'` },
+)
+@Index('IDX_bot_subscription_pull_request', ['organizationId', 'githubRepoId', 'pullNumber'], {
+  where: `"resourceKind" = 'pull_request'`,
+})
+@Check('CHK_bot_subscription_resource_kind', `"resourceKind" IN ('session', 'pull_request')`)
+@Check(
+  'CHK_bot_subscription_subject',
+  `("resourceKind" = 'session' AND "resourceId" IS NOT NULL AND num_nonnulls("githubRepoId", "pullNumber", "repositoryFullName") = 0) OR ("resourceKind" = 'pull_request' AND "resourceId" IS NULL AND "githubRepoId" IS NOT NULL AND "githubRepoId" > 0 AND "pullNumber" IS NOT NULL AND "pullNumber" >= 1 AND "repositoryFullName" IS NOT NULL AND char_length("repositoryFullName") > 0 AND "until" = 'closed' AND "terminalWatchId" IS NULL)`,
+)
 @Check('CHK_bot_subscription_until', `"until" IN ('task', 'closed')`)
 @Check(
   'CHK_bot_subscription_watched_turn',
@@ -57,9 +72,20 @@ export class BotSubscriptionOrmEntity {
   @Column({ type: 'varchar', length: 32 })
   resourceKind!: string;
 
-  /** The followed resource; no foreign key, it is polymorphic over `resourceKind`. */
-  @Column({ type: 'uuid' })
-  resourceId!: string;
+  /** The followed session; no foreign key, it is polymorphic over `resourceKind`. Null for a pull request. */
+  @Column({ type: 'uuid', nullable: true })
+  resourceId!: string | null;
+
+  /** GitHub's repository id of a followed pull request, exchanged as a string: it is a bigint. */
+  @Column({ type: 'bigint', nullable: true })
+  githubRepoId!: string | null;
+
+  @Column({ type: 'integer', nullable: true })
+  pullNumber!: number | null;
+
+  /** `owner/name` when the bot watched it, for its list and its wakes. */
+  @Column({ type: 'varchar', length: 140, nullable: true })
+  repositoryFullName!: string | null;
 
   /** The bot's turn that subscribed; null once its chat is cleared. */
   @Column({ type: 'uuid', nullable: true })

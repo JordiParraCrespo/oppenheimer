@@ -84,6 +84,7 @@ const (
 	CapabilityCodexEnvironments     = "codex.environments"
 	CapabilitySessionWatch          = "session.watch"
 	CapabilityWhatsapp              = "whatsapp"
+	CapabilitySharedPreview         = "shared.preview"
 )
 
 // The `type` of every message on the link.
@@ -141,6 +142,8 @@ const (
 	TypeWhatsappAck             = "whatsapp.ack"
 	TypeWhatsappSend            = "whatsapp.send"
 	TypeWhatsappSent            = "whatsapp.sent"
+	TypeSharedPreviewGet        = "shared.preview.get"
+	TypeSharedPreview           = "shared.preview"
 )
 
 // MessageTypes is every message type on the link, in the schema's order.
@@ -198,6 +201,8 @@ var MessageTypes = []string{
 	TypeWhatsappAck,
 	TypeWhatsappSend,
 	TypeWhatsappSent,
+	TypeSharedPreviewGet,
+	TypeSharedPreview,
 }
 
 // NewMessage returns a pointer to a new struct for a message type, and false
@@ -310,6 +315,10 @@ func NewMessage(messageType string) (any, bool) {
 		return new(WhatsappSend), true
 	case TypeWhatsappSent:
 		return new(WhatsappSent), true
+	case TypeSharedPreviewGet:
+		return new(SharedPreviewGet), true
+	case TypeSharedPreview:
+		return new(SharedPreview), true
 	}
 	return nil, false
 }
@@ -855,6 +864,22 @@ type WhatsappSent struct {
 	CommandID string    `json:"commandId"`
 	ID        string    `json:"id"`
 	SentAt    time.Time `json:"sentAt"`
+}
+
+// SharedPreviewGet is the `shared.preview.get` message.
+type SharedPreviewGet struct {
+	Type      string `json:"type"`
+	CommandID string `json:"commandId"`
+	SessionID string `json:"sessionId"`
+	FileID    string `json:"fileId"`
+}
+
+// SharedPreview is the `shared.preview` message.
+type SharedPreview struct {
+	Type      string `json:"type"`
+	CommandID string `json:"commandId"`
+	MediaType string `json:"mediaType"`
+	Data      string `json:"data"`
 }
 
 // SessionSnapshot is `#/$defs/sessionSnapshot`.

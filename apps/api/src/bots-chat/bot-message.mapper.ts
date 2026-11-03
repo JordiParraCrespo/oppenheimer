@@ -5,6 +5,7 @@ import {
   BOT_EVENT_OUTCOMES,
   BOT_GOAL_ACTIVITIES,
   BOT_IMAGE_MIME_TYPES,
+  BOT_LOOP_ACTIVITIES,
   BOT_QUESTION_OUTCOMES,
   BOT_REPLY_OUTCOMES,
   BOT_ROUTINE_ACTIVITIES,
@@ -19,6 +20,7 @@ import {
   type BotSubagentProgress,
   type BotSubagentRun,
   botMailDraftSchema,
+  PULL_REQUEST_WAKE_EVENTS,
 } from '@oppenheimer/shared';
 import { BotMessageOrmEntity } from './database/bot-message.orm-entity';
 import type { BotSteerTaken } from './database/bot-turn.repository.port';
@@ -30,10 +32,12 @@ import { BotAttachmentResponseDto } from './dtos/bot-attachment.response.dto';
 import {
   BotApprovalEventResponseDto,
   BotGoalEventResponseDto,
+  BotLoopEventResponseDto,
   type BotMessageEventResponseDto,
   BotMessageResponseDto,
   BotPeerMessageEventResponseDto,
   BotPeerReplyEventResponseDto,
+  BotPullRequestEventResponseDto,
   BotQuestionEventResponseDto,
   BotRoutineEventResponseDto,
   BotSessionEventResponseDto,
@@ -290,8 +294,12 @@ function toEventResponse(event: BotMessageEvent): BotMessageEventResponseDto {
       return Object.assign(new BotPeerReplyEventResponseDto(), event);
     case 'session':
       return Object.assign(new BotSessionEventResponseDto(), event);
+    case 'pull_request':
+      return Object.assign(new BotPullRequestEventResponseDto(), event);
     case 'goal':
       return Object.assign(new BotGoalEventResponseDto(), event);
+    case 'loop':
+      return Object.assign(new BotLoopEventResponseDto(), event);
   }
 }
 
@@ -374,6 +382,7 @@ function toEvent(raw: Record<string, unknown> | null): BotMessageEvent | null {
       ...matchOf(raw.match),
     };
   }
+  if (raw.kind === 'pull_request') return pullRequestEventOf(raw);
   if (raw.kind === 'goal') {
     const activity = BOT_GOAL_ACTIVITIES.find((known) => known === raw.activity);
     if (!activity || typeof raw.goalId !== 'string') return null;
@@ -387,7 +396,36 @@ function toEvent(raw: Record<string, unknown> | null): BotMessageEvent | null {
       reason: typeof raw.reason === 'string' ? raw.reason : null,
     };
   }
+  if (raw.kind === 'loop') {
+    const activity = BOT_LOOP_ACTIVITIES.find((known) => known === raw.activity);
+    if (!activity || typeof raw.loopId !== 'string') return null;
+    return {
+      kind: 'loop',
+      activity,
+      loopId: raw.loopId,
+      prompt: String(raw.prompt ?? ''),
+      intervalMinutes: typeof raw.intervalMinutes === 'number' ? raw.intervalMinutes : null,
+      run: typeof raw.run === 'number' ? raw.run : 0,
+      reason: typeof raw.reason === 'string' ? raw.reason : null,
+    };
+  }
   return null;
+}
+
+/** A stored pull request event, narrowed once; one the mapper did not write reads as none. */
+function pullRequestEventOf(raw: Record<string, unknown>): BotMessageEvent | null {
+  const event = PULL_REQUEST_WAKE_EVENTS.find((known) => known === raw.event);
+  const { subscriptionId, githubRepoId, number } = raw;
+  if (!event || typeof subscriptionId !== 'string' || typeof githubRepoId !== 'string') return null;
+  if (typeof number !== 'number') return null;
+  return {
+    kind: 'pull_request',
+    subscriptionId,
+    githubRepoId,
+    repository: String(raw.repository ?? ''),
+    number,
+    event,
+  };
 }
 
 /** A stored match, narrowed once: a pattern and a positive count, or no `match` key at all. */

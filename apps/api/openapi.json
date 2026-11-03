@@ -9449,6 +9449,73 @@
         ]
       }
     },
+    "/api/v1/projects/{id}/restore": {
+      "post": {
+        "description": "Brings an archived project back with its slug, so sessions can be started in it again. Restoring an active project changes nothing. The automations its archive paused stay paused.",
+        "operationId": "restoreProject",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "PROJECTS_001 — Project not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Restore an archived project",
+        "tags": [
+          "Projects"
+        ]
+      }
+    },
     "/api/v1/shared-sessions/lookup": {
       "post": {
         "description": "The session’s name and state, what the share lets the caller do and until when, and who shared it.",
@@ -21370,6 +21437,131 @@
         ]
       }
     },
+    "/api/v1/bots/{id}/loop": {
+      "delete": {
+        "description": "Ends the loop set with /loop, with a line in its chat saying you stopped it, and cancels a run still waiting. With no loop, nothing changes.",
+        "operationId": "clearBotLoop",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "The bot has no loop now."
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "BOTS_001 — Bot not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Stop a bot's loop",
+        "tags": [
+          "Bots"
+        ]
+      },
+      "get": {
+        "description": "The loop set with /loop: its prompt, its interval (null when the bot says when it runs next), how many runs it has made, when the next is due and when it expires; null when it has none.",
+        "operationId": "findBotLoop",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BotLoopStateResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "BOTS_001 — Bot not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "A bot's loop",
+        "tags": [
+          "Bots"
+        ]
+      }
+    },
     "/api/v1/bots/{id}/usage": {
       "get": {
         "description": "The tokens its turns spent, by model, and its calls on the owner's key outside them (goal reviews, summaries, rule reviews), since the chat's first turn. Cache reads and writes are part of the input.",
@@ -21644,6 +21836,57 @@
           }
         ],
         "summary": "The workspace's bot approvals",
+        "tags": [
+          "Bots"
+        ]
+      }
+    },
+    "/api/v1/bot-notices": {
+      "get": {
+        "description": "Each bot's latest line to the person (its `notify` tool), on the bots you may read, newest first, at most 50. A newer notice replaces a bot's last one under a new id.",
+        "operationId": "findWorkspaceBotNotices",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/WorkspaceBotNoticeResponseDto"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "The workspace's bot notices",
         "tags": [
           "Bots"
         ]
@@ -33664,6 +33907,11 @@
           "author": {
             "type": "string"
           },
+          "authorIsInsider": {
+            "type": "boolean",
+            "nullable": true,
+            "description": "Whether the author is the repository’s owner, a member or a collaborator (false: anyone else); null when GitHub did not say."
+          },
           "createdAt": {
             "type": "string",
             "format": "date-time"
@@ -33697,6 +33945,11 @@
           "author": {
             "type": "string",
             "description": "A GitHub login; a commit’s author name."
+          },
+          "authorIsInsider": {
+            "type": "boolean",
+            "nullable": true,
+            "description": "For a comment or a review: whether its author is the repository’s owner, a member or a collaborator (false: anyone else); null when GitHub did not say or for a commit or event."
           },
           "at": {
             "type": "string",
@@ -35037,6 +35290,53 @@
           "state"
         ]
       },
+      "BotPullRequestEventResponseDto": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "pull_request"
+            ]
+          },
+          "subscriptionId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The subscription that woke the bot."
+          },
+          "githubRepoId": {
+            "type": "string",
+            "description": "GitHub's repository id, as a string: it is a bigint."
+          },
+          "repository": {
+            "type": "string",
+            "description": "`owner/name`, as it was when the bot watched it."
+          },
+          "number": {
+            "type": "number",
+            "description": "The pull request number."
+          },
+          "event": {
+            "type": "string",
+            "enum": [
+              "check_failed",
+              "check_passed",
+              "review",
+              "comment",
+              "pr_merged"
+            ],
+            "description": "What happened on it, from GitHub's metadata; never anyone's words."
+          }
+        },
+        "required": [
+          "kind",
+          "subscriptionId",
+          "githubRepoId",
+          "repository",
+          "number",
+          "event"
+        ]
+      },
       "BotGoalEventResponseDto": {
         "type": "object",
         "properties": {
@@ -35087,6 +35387,59 @@
           "objective",
           "step",
           "limit",
+          "reason"
+        ]
+      },
+      "BotLoopEventResponseDto": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "loop"
+            ]
+          },
+          "activity": {
+            "type": "string",
+            "enum": [
+              "ran",
+              "cleared",
+              "expired",
+              "stopped",
+              "ended"
+            ],
+            "description": "`ran` opens a run of the loop; the others say how it ended outside any turn: stopped by its owner (`cleared`), out of its 3 days (`expired`), a run of it failed or was stopped (`stopped`), or a self-paced run did not say when to run next (`ended`)."
+          },
+          "loopId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "prompt": {
+            "type": "string",
+            "description": "The loop's prompt at the time."
+          },
+          "intervalMinutes": {
+            "type": "number",
+            "nullable": true,
+            "description": "Minutes between runs; null when the bot says when it runs next."
+          },
+          "run": {
+            "type": "number",
+            "description": "For `ran`, which run this is, the message that set it being the first; otherwise how many ran."
+          },
+          "reason": {
+            "type": "string",
+            "nullable": true,
+            "description": "For `stopped`: the status of the run that ended it, or `access_lost`; otherwise null."
+          }
+        },
+        "required": [
+          "kind",
+          "activity",
+          "loopId",
+          "prompt",
+          "intervalMinutes",
+          "run",
           "reason"
         ]
       },
@@ -35321,7 +35674,13 @@
                 "$ref": "#/components/schemas/BotSessionEventResponseDto"
               },
               {
+                "$ref": "#/components/schemas/BotPullRequestEventResponseDto"
+              },
+              {
                 "$ref": "#/components/schemas/BotGoalEventResponseDto"
+              },
+              {
+                "$ref": "#/components/schemas/BotLoopEventResponseDto"
               }
             ],
             "nullable": true,
@@ -35581,6 +35940,24 @@
           }
         }
       },
+      "BotGoalWaitingResponseDto": {
+        "type": "object",
+        "properties": {
+          "system": {
+            "type": "string",
+            "description": "The system limiting our requests (\"Gmail\", \"GitHub\")."
+          },
+          "until": {
+            "type": "string",
+            "format": "date-time",
+            "description": "When the goal goes on."
+          }
+        },
+        "required": [
+          "system",
+          "until"
+        ]
+      },
       "BotGoalResponseDto": {
         "type": "object",
         "properties": {
@@ -35603,6 +35980,16 @@
           "createdAt": {
             "type": "string",
             "format": "date-time"
+          },
+          "waiting": {
+            "nullable": true,
+            "description": "A turn of the goal ended on a system’s rate limit, and its next decision waits until then; null when nothing holds it.",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/BotGoalWaitingResponseDto"
+              }
+            ]
           }
         },
         "required": [
@@ -35610,7 +35997,8 @@
           "objective",
           "continuations",
           "limit",
-          "createdAt"
+          "createdAt",
+          "waiting"
         ]
       },
       "BotGoalStateResponseDto": {
@@ -35628,6 +36016,69 @@
         },
         "required": [
           "goal"
+        ]
+      },
+      "BotLoopResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "prompt": {
+            "type": "string",
+            "description": "What each run does."
+          },
+          "intervalMinutes": {
+            "type": "number",
+            "nullable": true,
+            "description": "Minutes between runs; null when the bot says when it runs next."
+          },
+          "runs": {
+            "type": "number",
+            "description": "The runs so far, the message that set it being the first."
+          },
+          "nextRunAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true,
+            "description": "When the next run is due; null while a self-paced run has not said."
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "When it ends on its own."
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "prompt",
+          "intervalMinutes",
+          "runs",
+          "nextRunAt",
+          "expiresAt",
+          "createdAt"
+        ]
+      },
+      "BotLoopStateResponseDto": {
+        "type": "object",
+        "properties": {
+          "loop": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/BotLoopResponseDto"
+              }
+            ]
+          }
+        },
+        "required": [
+          "loop"
         ]
       },
       "BotUsageModelResponseDto": {
@@ -36045,6 +36496,42 @@
           "botId",
           "botName",
           "sessionId"
+        ]
+      },
+      "WorkspaceBotNoticeResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The notice: a new id with each notice, so a mark on one never hides the next."
+          },
+          "botId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The bot that sent it."
+          },
+          "botName": {
+            "type": "string",
+            "description": "The bot's name, as the console shows it."
+          },
+          "text": {
+            "type": "string",
+            "maxLength": 500,
+            "description": "The line, as the bot wrote it."
+          },
+          "at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "When it came."
+          }
+        },
+        "required": [
+          "id",
+          "botId",
+          "botName",
+          "text",
+          "at"
         ]
       },
       "DecideBotApprovalRequest": {

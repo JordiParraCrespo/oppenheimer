@@ -3,6 +3,7 @@ import {
   BOT_APPROVAL_EVENT_STAGES,
   BOT_EVENT_OUTCOMES,
   BOT_GOAL_ACTIVITIES,
+  BOT_LOOP_ACTIVITIES,
   BOT_MESSAGE_ROLES,
   BOT_QUESTION_OUTCOMES,
   BOT_REPLY_OUTCOMES,
@@ -12,12 +13,15 @@ import {
   type BotApprovalEventStage,
   type BotEventOutcome,
   type BotGoalActivity,
+  type BotLoopActivity,
   type BotMessageRole,
   type BotQuestionOutcome,
   type BotReplyOutcome,
   type BotRoutineActivity,
   type BotSessionEventState,
   type BotSubagentStatus,
+  PULL_REQUEST_WAKE_EVENTS,
+  type PullRequestWakeEvent,
 } from '@oppenheimer/shared';
 import { BotAttachmentResponseDto } from './bot-attachment.response.dto';
 import { BotTurnResponseDto } from './bot-turn.response.dto';
@@ -311,6 +315,30 @@ export class BotSessionEventResponseDto {
   match?: BotSessionMatchResponseDto | null;
 }
 
+/** A pull request the bot follows woke it (`27-bot-subscriptions.md` §7). */
+export class BotPullRequestEventResponseDto {
+  @ApiProperty({ enum: ['pull_request'] })
+  kind!: 'pull_request';
+
+  @ApiProperty({ format: 'uuid', description: 'The subscription that woke the bot.' })
+  subscriptionId!: string;
+
+  @ApiProperty({ description: "GitHub's repository id, as a string: it is a bigint." })
+  githubRepoId!: string;
+
+  @ApiProperty({ description: '`owner/name`, as it was when the bot watched it.' })
+  repository!: string;
+
+  @ApiProperty({ description: 'The pull request number.' })
+  number!: number;
+
+  @ApiProperty({
+    enum: PULL_REQUEST_WAKE_EVENTS,
+    description: "What happened on it, from GitHub's metadata; never anyone's words.",
+  })
+  event!: PullRequestWakeEvent;
+}
+
 export class BotGoalEventResponseDto {
   @ApiProperty({ enum: ['goal'] })
   kind!: 'goal';
@@ -345,6 +373,45 @@ export class BotGoalEventResponseDto {
   reason!: string | null;
 }
 
+export class BotLoopEventResponseDto {
+  @ApiProperty({ enum: ['loop'] })
+  kind!: 'loop';
+
+  @ApiProperty({
+    enum: BOT_LOOP_ACTIVITIES,
+    description:
+      '`ran` opens a run of the loop; the others say how it ended outside any turn: stopped by its owner (`cleared`), out of its 3 days (`expired`), a run of it failed or was stopped (`stopped`), or a self-paced run did not say when to run next (`ended`).',
+  })
+  activity!: BotLoopActivity;
+
+  @ApiProperty({ format: 'uuid' })
+  loopId!: string;
+
+  @ApiProperty({ description: "The loop's prompt at the time." })
+  prompt!: string;
+
+  @ApiProperty({
+    type: Number,
+    nullable: true,
+    description: 'Minutes between runs; null when the bot says when it runs next.',
+  })
+  intervalMinutes!: number | null;
+
+  @ApiProperty({
+    description:
+      'For `ran`, which run this is, the message that set it being the first; otherwise how many ran.',
+  })
+  run!: number;
+
+  @ApiProperty({
+    nullable: true,
+    type: String,
+    description:
+      'For `stopped`: the status of the run that ended it, or `access_lost`; otherwise null.',
+  })
+  reason!: string | null;
+}
+
 export type BotMessageEventResponseDto =
   | BotApprovalEventResponseDto
   | BotQuestionEventResponseDto
@@ -352,7 +419,9 @@ export type BotMessageEventResponseDto =
   | BotPeerMessageEventResponseDto
   | BotPeerReplyEventResponseDto
   | BotSessionEventResponseDto
-  | BotGoalEventResponseDto;
+  | BotPullRequestEventResponseDto
+  | BotGoalEventResponseDto
+  | BotLoopEventResponseDto;
 
 /** One thing the chat draws: your message, the bot's text, an activity line or an event. */
 @ApiExtraModels(
@@ -362,7 +431,9 @@ export type BotMessageEventResponseDto =
   BotPeerMessageEventResponseDto,
   BotPeerReplyEventResponseDto,
   BotSessionEventResponseDto,
+  BotPullRequestEventResponseDto,
   BotGoalEventResponseDto,
+  BotLoopEventResponseDto,
 )
 export class BotMessageResponseDto {
   @ApiProperty({ format: 'uuid' })
@@ -394,7 +465,9 @@ export class BotMessageResponseDto {
       { $ref: getSchemaPath(BotPeerMessageEventResponseDto) },
       { $ref: getSchemaPath(BotPeerReplyEventResponseDto) },
       { $ref: getSchemaPath(BotSessionEventResponseDto) },
+      { $ref: getSchemaPath(BotPullRequestEventResponseDto) },
       { $ref: getSchemaPath(BotGoalEventResponseDto) },
+      { $ref: getSchemaPath(BotLoopEventResponseDto) },
     ],
     nullable: true,
     description: 'What an event says happened, by `kind`; null on every other role.',

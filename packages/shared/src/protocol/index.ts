@@ -18,6 +18,7 @@ export * from './primitives.js';
 export * from './runner-files.js';
 export * from './session-file.js';
 export * from './session-step.js';
+export * from './shared-files.js';
 export * from './turn-event.js';
 export * from './version.js';
 export * from './whatsapp.js';

@@ -9,7 +9,7 @@ import { boardCounts } from '../lib/board';
 
 /**
  * The Milestones view's header (the 2026-10-13 `Tasks` frame): Milestones, the
- * board's counts for the project shown, then Today and Earlier / Later to move
+ * board's counts for the projects shown, then Today and Earlier / Later to move
  * the timeline, and New milestone.
  */
 export function MilestonesHeader({
@@ -25,9 +25,9 @@ export function MilestonesHeader({
 }) {
   const { t } = useTranslation();
   const today = useToday();
-  const { projectId } = useScopeProject();
+  const { projectIds } = useScopeProject();
   const { data: counts, isPending } = useTasks({
-    select: (rows) => boardCounts(rows, { projectId }, today),
+    select: (rows) => boardCounts(rows, { projectIds }, today),
   });
 
   return (

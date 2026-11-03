@@ -62,4 +62,7 @@ export const BotsErrors = {
   SAVE_SKILL_FAILED: { code: 'BOTS_CLIENT_042', message: 'Failed to save the skill' },
   DELETE_SKILL_FAILED: { code: 'BOTS_CLIENT_043', message: 'Failed to delete the skill' },
   FETCH_USAGE_FAILED: { code: 'BOTS_CLIENT_044', message: 'Failed to load the usage' },
+  FETCH_LOOP_FAILED: { code: 'BOTS_CLIENT_045', message: 'Failed to load the loop' },
+  CLEAR_LOOP_FAILED: { code: 'BOTS_CLIENT_046', message: 'Failed to stop the loop' },
+  FETCH_NOTICES_FAILED: { code: 'BOTS_CLIENT_047', message: "Failed to load the bots' notices" },
 } as const satisfies Record<string, ErrorDefinition>;

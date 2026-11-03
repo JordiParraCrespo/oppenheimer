@@ -3,7 +3,13 @@
 import { ArrowUpIcon, ChevronDownIcon, PaperclipIcon, PlusIcon, SquareIcon, XIcon } from 'lucide-react';
 import type * as React from 'react';
 
-import { ComposerFoot, ComposerFrame, ComposerSendButton, useComposerSend } from '../internal/composer-send';
+import {
+  ComposerFoot,
+  ComposerFrame,
+  ComposerRecorder,
+  ComposerSendButton,
+  useComposerSend,
+} from '../internal/composer-send';
 import { cn } from '../lib/utils';
 import type { DictationSlot } from './chat-composer-extras';
 import { IconButton } from './icon-button';
@@ -181,6 +187,8 @@ function Composer({
     attachmentCount: attachments?.length,
     onSubmit,
     onStop,
+    // While a recording is open, a send waits for what is still being heard.
+    beforeSend: dictation?.recorder ? dictation.finish : undefined,
   });
 
   const box = (
@@ -234,9 +242,13 @@ function Composer({
         {dictation?.recorder ? (
           // The bar is 16px taller than the foot row it replaces; it takes
           // that from the field's bottom padding, so the box keeps its height.
-          <div data-slot="composer-recorder" className="-mt-4 px-2.5 pb-2.5">
+          <ComposerRecorder
+            data-slot="composer-recorder"
+            className="-mt-4 px-2.5 pb-2.5"
+            onEnter={submit}
+          >
             {dictation.recorder}
-          </div>
+          </ComposerRecorder>
         ) : (
         <ComposerFoot
           data-slot="composer-foot"
@@ -294,7 +306,8 @@ function Composer({
  * `sendBlockedReason` keeps send focusable and says why it is off, and while
  * `busy` send becomes stop. Files list above the line as removable chips;
  * a recording takes a row under it, standing in for the mic and send until
- * it ends, and its notice sits under the box.
+ * it ends (Enter ends it and sends once the text lands), and its notice
+ * sits under the box.
  */
 function ComposerPill({
   value,
@@ -344,6 +357,8 @@ function ComposerPill({
     attachmentCount: attachments?.length,
     onSubmit,
     onStop,
+    // While a recording is open, a send waits for what is still being heard.
+    beforeSend: dictation?.recorder ? dictation.finish : undefined,
   });
 
   const box = (
@@ -380,8 +395,7 @@ function ComposerPill({
           data-slot="composer-input"
           value={value}
           onChange={(event) => onValueChange(event.target.value)}
-          // Enter waits for the recording too, for the reason send does below.
-          onKeyDown={dictation?.recorder ? undefined : onKeyDown}
+          onKeyDown={onKeyDown}
           placeholder={placeholder}
           disabled={disabled}
           rows={1}
@@ -391,8 +405,8 @@ function ComposerPill({
           )}
         />
         {/* While a recording is open its bar holds the controls, as it takes
-            `Composer`'s foot row: a send pressed mid-sentence would start the
-            session on the typed half and drop what is still being heard. */}
+            `Composer`'s foot row. Enter, in the field or on the bar, ends the
+            recording and sends once what was said is in the draft. */}
         {dictation?.recorder ? null : (
           <span className="flex shrink-0 items-center gap-1 p-1.5">
             {dictation?.mic}
@@ -411,9 +425,9 @@ function ComposerPill({
         )}
       </div>
       {dictation?.recorder ? (
-        <div data-slot="composer-recorder" className="p-1.5">
+        <ComposerRecorder data-slot="composer-recorder" className="p-1.5" onEnter={submit}>
           {dictation.recorder}
-        </div>
+        </ComposerRecorder>
       ) : null}
     </div>
   );

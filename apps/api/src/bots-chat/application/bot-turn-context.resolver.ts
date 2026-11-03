@@ -138,6 +138,7 @@ export class BotTurnContextResolver {
         budget: new BotTurnBudget(),
         credentialScopes: turn.credentialScopes,
         origin: turn.origin,
+        ranCommand: command?.name ?? null,
         approvals: this.approvals,
         permissions,
         // The owner's rules are read on the turn's own model, only when there are some.

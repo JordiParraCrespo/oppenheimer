@@ -19,12 +19,14 @@ import {
   heyApiSdk,
   type ModelProviderCredentialResponseDto,
   type WorkspaceBotApprovalResponseDto,
+  type WorkspaceBotNoticeResponseDto,
 } from '@oppenheimer/api-client';
 import { AppError, callApi } from '@oppenheimer/frontend-core';
 import {
   BOT_APPROVAL_DECISIONS,
   BOT_EVENT_OUTCOMES,
   BOT_GOAL_ACTIVITIES,
+  BOT_LOOP_ACTIVITIES,
   BOT_QUESTION_OUTCOMES,
   BOT_REPLY_OUTCOMES,
   BOT_SESSION_EVENT_STATES,
@@ -32,6 +34,7 @@ import {
   type BotAttachment,
   type BotDocumentName,
   type BotGoal,
+  type BotLoop,
   type BotMessageEvent,
   type BotPermissionRuleEffect,
   type BotProvider,
@@ -39,6 +42,7 @@ import {
   type BotSection,
   type BotToolDecision,
   type BotUsage,
+  PULL_REQUEST_WAKE_EVENTS,
 } from '@oppenheimer/shared/schemas/bot';
 import {
   type BotMailDraft,
@@ -76,6 +80,7 @@ import {
   type BotToolStep,
   BotTurnEntity,
   WorkspaceBotApprovalEntity,
+  WorkspaceBotNoticeEntity,
 } from './bot-conversation.entity';
 import { BotPermissionsEntity } from './bot-permissions.entity';
 import { BotsErrors } from './bots.errors';
@@ -220,7 +225,7 @@ function toAttachment(dto: BotAttachmentResponseDto): BotAttachment {
 /**
  * The wire's event as the union the chat draws from, kind by kind: an
  * approval, a routine's activity, a message from another bot, or the answer
- * to an ask, or a session the bot follows waking it. An outcome or a state
+ * to an ask, or a session or a pull request the bot follows waking it. An outcome or a state
  * this client does not know reads as no event, and the chat falls back to
  * the message's first line.
  */
@@ -292,6 +297,19 @@ function toEvent(dto: NonNullable<BotMessageResponseDto['event']>): BotMessageEv
           }
         : null;
     }
+    case 'pull_request': {
+      const event = PULL_REQUEST_WAKE_EVENTS.find((candidate) => candidate === dto.event);
+      return event
+        ? {
+            kind: 'pull_request',
+            subscriptionId: dto.subscriptionId,
+            githubRepoId: dto.githubRepoId,
+            repository: dto.repository,
+            number: dto.number,
+            event,
+          }
+        : null;
+    }
     case 'goal': {
       const activity = BOT_GOAL_ACTIVITIES.find((candidate) => candidate === dto.activity);
       return activity
@@ -302,6 +320,20 @@ function toEvent(dto: NonNullable<BotMessageResponseDto['event']>): BotMessageEv
             objective: dto.objective,
             step: dto.step,
             limit: dto.limit,
+            reason: dto.reason,
+          }
+        : null;
+    }
+    case 'loop': {
+      const activity = BOT_LOOP_ACTIVITIES.find((candidate) => candidate === dto.activity);
+      return activity
+        ? {
+            kind: 'loop',
+            activity,
+            loopId: dto.loopId,
+            prompt: dto.prompt,
+            intervalMinutes: dto.intervalMinutes,
+            run: dto.run,
             reason: dto.reason,
           }
         : null;
@@ -406,6 +438,10 @@ function toWorkspaceApproval(dto: WorkspaceBotApprovalResponseDto): WorkspaceBot
     dto.sessionId,
     dto.input,
   );
+}
+
+function toWorkspaceNotice(dto: WorkspaceBotNoticeResponseDto): WorkspaceBotNoticeEntity {
+  return new WorkspaceBotNoticeEntity(dto.id, dto.botId, dto.botName, dto.text, new Date(dto.at));
 }
 
 /** The export's lines as messages; a line that cannot be read fails the export. */
@@ -530,11 +566,34 @@ export class BotsRepository {
     });
   }
 
+  /** Each bot's latest line to the person, on the bots the caller may read, newest first. */
+  findWorkspaceNotices(): Promise<WorkspaceBotNoticeEntity[]> {
+    return callApi(BotsErrors.FETCH_NOTICES_FAILED, async (api) => {
+      const data = await api.body(heyApiSdk.findWorkspaceBotNotices());
+      return data.map(toWorkspaceNotice);
+    });
+  }
+
   /** The goal the bot set itself and keeps working toward; null when it has none. */
   findGoal(id: string): Promise<BotGoal | null> {
     return callApi(BotsErrors.FETCH_GOAL_FAILED, async (api) => {
       const { goal } = await api.body(heyApiSdk.findBotGoal({ path: { id } }));
       return goal;
+    });
+  }
+
+  /** The loop set with `/loop`: what it runs, how often, and when next; null when it has none. */
+  findLoop(id: string): Promise<BotLoop | null> {
+    return callApi(BotsErrors.FETCH_LOOP_FAILED, async (api) => {
+      const { loop } = await api.body(heyApiSdk.findBotLoop({ path: { id } }));
+      return loop;
+    });
+  }
+
+  /** Stops the bot's loop: no more runs, and one still waiting is cancelled. */
+  clearLoop(id: string): Promise<void> {
+    return callApi(BotsErrors.CLEAR_LOOP_FAILED, async (api) => {
+      await api.result(heyApiSdk.clearBotLoop({ path: { id } }));
     });
   }
 

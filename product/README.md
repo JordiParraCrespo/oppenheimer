@@ -967,6 +967,18 @@ earlier note:
   model judges it after every turn (met, not met, impossible), as Claude
   Code's evaluator does; a person's goal takes up to 20 continuations, a
   bot's 5 unless it asks for up to 20 (25 §4.1, "Built-in commands").
+- `versions/mvp/26-bot-routines.md` §4 (2026-10-18) had every routine
+  save by the bot ask the owner first, except on the Routines tab. On
+  2026-11-03 `/schedule <request>` was built (25 §4.1): the bot saves the
+  routine the person's command asks for, and that one create raises no
+  card, since the command is the consent. Changes, deletes and runs still
+  ask.
+- `versions/mvp/25-bots.md` §4.1 (2026-11-02) planned `/loop` or
+  `/schedule` as a routine of the bot's (26). On 2026-11-03 the owner chose
+  `/loop`, and it is its own built-in instead: routines run on a calendar
+  and last until deleted, while a loop runs every few minutes (1 minute to
+  1 day, or when the bot chooses), belongs to the chat it was typed in and
+  expires after 3 days. `/schedule` stays planned as a routine (25 §4.1).
 - `versions/mvp/25-bots.md` §4.1 (2026-11-02) drew `/usage` as three lines
   of this chat's figures and left the context and plan windows to the
   composer's meter. On 2026-11-03 the owner asked for a card like Claude
@@ -1083,7 +1095,31 @@ earlier note:
   already knew, with no way for an agent to post into it. Since 2026-11-02
   an agent in a session can: `runner sessions notify "line"` keeps the line
   on its session, and the Inbox lists it until it is marked done
-  (`next-steps/agent-tools.md` §2).
+  (`next-steps/agent-tools.md` §2). Since 2026-11-03 a bot can too, with
+  its `notify` tool: its latest line is a `botNotice` item, and the Type
+  facet's "Bot approvals" is "Bots" (§5).
+- `next-steps/agent-tools.md` §1 kept a shared file between the host and
+  the browser attached to the session's chat; the control plane never
+  heard of it. Since 2026-11-03 the runner also logs `file.shared` with
+  the file's metadata (never its path or bytes), the session keeps the
+  last 20, and a bot lists them and shows an image's preview, asked of
+  the host over the link (`next-steps/agent-tools.md` §7).
+- `versions/mvp/27-bot-subscriptions.md` §1 had every wake re-read what it
+  follows as the bot's owner and wake for what holds now, and §7 planned
+  pull requests from the pull-requests module's webhooks. Built on
+  2026-11-03, a bot following a pull request (`watch_pull_request`) is woken
+  by the inbound-events hub's GitHub events instead, and its wake is the
+  event's metadata alone, never a re-read: the pull request is GitHub's, not
+  ours to re-read on every event. A close without a merge makes no event
+  yet, so only a merge ends it (27 §7.1, `next-steps/agent-tools.md` §6).
+- `versions/mvp/25-bots.md` treated text from tools as information, not
+  instructions, and left every tool to the turn that reads it. On
+  2026-11-03 a pull request watch made that text a stranger's comment
+  starting an unattended turn, and Codex's review asked for narrower tools
+  on such turns. The owner chose full autonomy instead: those turns keep
+  every tool, and the prompt carries the defence, each GitHub author named
+  as a collaborator or as outside the repository and a rule against putting
+  private information where outside text points (27 §7.1).
 - `versions/mvp/25-bots.md` §2 sent a turn the newest messages that fit
   its history budget, and the OpenAI engine named no conversation to the
   provider. On 2026-11-03, after `/usage` showed a bot on GPT and Grok at a
@@ -1091,6 +1127,23 @@ earlier note:
   `prompt_cache_key`, and the history loses its oldest messages a block of
   about 6,000 tokens at a time, so each turn's request starts as the last
   one's did.
+- `versions/mvp/25-bots.md` §4.3 listed `create_project` and
+  `update_project` as asking first. On 2026-11-03 (issue #647) they were
+  built to run under Approve for me like the task writes, since a project is
+  metadata and an edit can be put back; `archive_project`, which cannot be
+  undone, asks under every preset, one call at a time. `move_session` was
+  added, and the workspace stream gained `project.changed`.
+- `versions/mvp/10-api-modules-and-data-model.md` kept an archived project
+  for ever with no way back ("there is no un-archive"). On 2026-11-03 the
+  owner asked for restore: `POST /projects/{id}/restore` and the bot's
+  `restore_project` bring the same row back with its slug, so a slug is
+  still never reissued. The automations its archive paused stay paused.
+- `versions/mvp/29-inbox.md` §1 ordered the Inbox most blocked first:
+  approvals and waiting sessions oldest wait first, then requested
+  reviews, ready merges and failed runs. On 2026-11-03 the owner asked for
+  the most recent first, so the list is newest first across every kind,
+  Low items still last; the order is held by the consumer's
+  `composeInbox` test, no longer by the fleet stress suite.
 - `next-steps/0.6-mcp-cli-and-agent.md` asked whether the CLI is a new app
   or `runner` grows user commands, and noted the starter's CLI and MCP apps
   were pruned. On 2026-11-02 both came back as their own apps, `apps/cli`

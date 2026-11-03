@@ -4,16 +4,25 @@ import type { TaskStatus } from '@oppenheimer/shared/schemas/task';
 /** The board's columns, in the frames' order (`Tasks.dc.html`). */
 export const COLUMNS: readonly TaskStatus[] = ['later', 'todo', 'doing', 'done'];
 
-/** What the board is narrowed to: a project (its id) and a milestone, either or neither. */
+/**
+ * What the board is narrowed to: a set of projects (their ids; absent is All
+ * projects, empty is none) and a milestone, either or neither.
+ */
 export interface BoardFilter {
-  projectId?: string;
+  projectIds?: readonly string[];
   milestoneId?: string;
+}
+
+/** The one project the board is narrowed to, when it is narrowed to exactly one. */
+export function soleProjectOf(filter: BoardFilter): string | undefined {
+  return filter.projectIds?.length === 1 ? filter.projectIds[0] : undefined;
 }
 
 /**
  * Where a task added from the board is filed: a milestone brings its own project
- * (the API refuses a project that disagrees with it), else the filtered project,
- * else the workspace's Unassigned one. A filtered milestone the list does not
+ * (the API refuses a project that disagrees with it), else the first project the
+ * board is filtered to (so the task stays in view), else the workspace's
+ * Unassigned one. A filtered milestone the list does not
  * have (deleted, or not refetched yet) is sent without a project, so the API
  * files under its project or says it is gone, rather than the task quietly
  * landing elsewhere.
@@ -27,14 +36,14 @@ export function filingOf(
     ? milestones.find((row) => row.id === filter.milestoneId)
     : undefined;
   return {
-    projectId: filter.milestoneId ? milestone?.projectId : filter.projectId || unassignedId,
+    projectId: filter.milestoneId ? milestone?.projectId : filter.projectIds?.[0] || unassignedId,
     milestoneId: filter.milestoneId ?? null,
   };
 }
 
 function passes(task: TaskEntity, filter: BoardFilter): boolean {
   return (
-    (!filter.projectId || task.projectId === filter.projectId) &&
+    (!filter.projectIds || filter.projectIds.includes(task.projectId)) &&
     (!filter.milestoneId || task.milestoneId === filter.milestoneId)
   );
 }

@@ -14,6 +14,7 @@ import {
   readAgentReport,
   readDecision,
   readNotice,
+  readSharedFiles,
   readWatchedPulls,
   type SessionAgent,
   type SessionFold,
@@ -81,6 +82,7 @@ export class WorkSessionMapper
     record.agentReport = fold.agentReport;
     record.notice = fold.notice;
     record.watchedPulls = fold.watchedPulls;
+    record.sharedFiles = fold.sharedFiles;
     return record;
   }
 
@@ -192,6 +194,7 @@ export class WorkSessionMapper
       agentReport: readAgentReport(record.agentReport),
       notice: readNotice(record.notice),
       watchedPulls: readWatchedPulls(record.watchedPulls),
+      sharedFiles: readSharedFiles(record.sharedFiles),
     };
   }
 
@@ -242,15 +245,8 @@ export class WorkSessionMapper
     dto.updatedAt = entity.updatedAt;
     dto.hints = options.hints ?? [];
     const { closeRequest, closeRefusal } = entity;
-    dto.closeRequest = closeRequest
-      ? {
-          requestedAt: closeRequest.requestedAt,
-          acceptUnpushedWork: closeRequest.acceptUnpushedWork,
-        }
-      : null;
-    dto.closeRefusal = closeRefusal
-      ? { code: closeRefusal.code, detail: closeRefusal.detail }
-      : null;
+    dto.closeRequest = closeRequest ? { ...closeRequest } : null;
+    dto.closeRefusal = closeRefusal ? { ...closeRefusal } : null;
     dto.decision = this.decisionToResponse(entity.pendingDecision);
     dto.agentReport = entity.agentReport ? { ...entity.agentReport } : null;
     dto.notice = entity.notice ? { ...entity.notice, at: new Date(entity.notice.at) } : null;

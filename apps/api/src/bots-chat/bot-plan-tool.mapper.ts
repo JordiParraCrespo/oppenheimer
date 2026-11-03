@@ -70,6 +70,29 @@ export function describeProject(project: ProjectEntity, context: BotToolCallCont
   return `${project.id} "${project.name}" [${parts.join('; ')}]`;
 }
 
+/**
+ * One project in full, as `get_project` and the project writes answer: each
+ * repository with the installation and repository ids `update_project` takes
+ * back, so a bot can keep the ones it does not mean to change.
+ */
+export function describeProjectInFull(project: ProjectEntity, context: BotToolCallContext): string {
+  const repositories = project.repositories.map(
+    (repository) =>
+      `  - ${repository.repositoryFullName} (base ${repository.baseBranch})${repository.isDefault ? ' default' : ''} [installation_id ${repository.installationId}; github_repo_id ${repository.githubRepoId}]`,
+  );
+  return [
+    `Project ${project.id} "${project.name}"${project.isUnassigned ? ' (Unassigned: where work with no project goes)' : ''}`,
+    `- slug: ${project.slug}`,
+    `- archived: ${project.archivedAt ? formatToolTime(project.archivedAt, context.timeZone) : 'no'}`,
+    `- default host: ${project.defaultHostId ?? 'none'}`,
+    `- default agent: ${project.defaultAgent ?? 'none'}`,
+    repositories.length
+      ? `- repositories (${repositories.length}):\n${repositories.join('\n')}`
+      : '- repositories: none',
+    `- created: ${formatToolTime(project.createdAt, context.timeZone)}`,
+  ].join('\n');
+}
+
 export function describeDue(task: TaskEntity): string {
   if (!task.dueDate) return 'no due date';
   return `due ${task.dueDate}${task.dueTime ? ` ${task.dueTime}` : ''}`;

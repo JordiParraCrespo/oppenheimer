@@ -200,6 +200,14 @@ type Notifier interface {
 	Notified(sessionID string, notice domain.Notice)
 }
 
+// FileSharer is the part of a Publisher that tells the control plane a
+// session's agent shared a file (`runner sessions send-file`), as
+// `file.shared`. Optional, like Notifier, but a runner with none still shows
+// the file in the session's chat: the event is for bots, not the person.
+type FileSharer interface {
+	FileShared(sessionID string, file domain.SharedFile)
+}
+
 // PullWatcher is the part of a Publisher that tells the control plane which
 // pull requests a session's agent wants to be woken by, as `pull.watched`.
 // Optional, like Notifier.

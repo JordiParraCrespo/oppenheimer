@@ -284,6 +284,32 @@ export async function insertBotActivity(
 }
 
 /**
+ * A goal waiting out a system's rate limit (`25-bots.md` §4, "Rate limits"),
+ * written straight into `bot_goal` on a finished turn of the bot: the stack
+ * runs no model to set one and no Gmail to limit it, and what holds the
+ * goal is the API's integration spec.
+ */
+export async function insertWaitingBotGoal(
+  botId: string,
+  objective: string,
+  waiting: { system: string; until: string },
+): Promise<void> {
+  await query(
+    `WITH bot AS (SELECT "organizationId" FROM bot WHERE id = $1),
+          turn AS (
+            INSERT INTO bot_turn ("organizationId", "botId", status, provider, model)
+            SELECT bot."organizationId", $1, 'completed', 'glm', 'glm-5'
+              FROM bot
+            RETURNING id, "organizationId"
+          )
+     INSERT INTO bot_goal ("organizationId", "botId", "originTurnId", objective, "limit",
+                           continuations, "waitingFor", "waitingUntil")
+     SELECT turn."organizationId", $1, turn.id, $2, 5, 2, $3, $4 FROM turn`,
+    [botId, objective, waiting.system, waiting.until],
+  );
+}
+
+/**
  * A send a bot scheduled from its owner's Gmail (`next-steps/mail.md` §3.4),
  * written straight into `mail_send` in the bot's workspace: the stack has no
  * Gmail to approve one against, and the list and its Cancel are the API's.

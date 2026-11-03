@@ -204,6 +204,18 @@ export const SAMPLES: Record<ProtocolMessageType, ProtocolMessage> = {
     text: 'Tuesday works.',
   },
   'whatsapp.sent': { type: 'whatsapp.sent', commandId, id: '3EB0C7A1F3', sentAt: occurredAt },
+  'shared.preview.get': {
+    type: 'shared.preview.get',
+    commandId,
+    sessionId,
+    fileId: '3f9a7c1e2b4d6a80',
+  },
+  'shared.preview': {
+    type: 'shared.preview',
+    commandId,
+    mediaType: 'image/jpeg',
+    data: '/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/wAALCAABAAEBAREA/8QAFAABAAAAAAAAAAAAAAAAAAAACf/EABQQAQAAAAAAAAAAAAAAAAAAAAD/2gAIAQEAAD8AKp//2Q==',
+  },
   'session.create': {
     type: 'session.create',
     commandId,

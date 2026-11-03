@@ -38,6 +38,7 @@ import {
   SESSION_CREATE_MAX_FILES,
   SESSION_FILE_MEDIA_TYPES,
 } from './session-file.js';
+import { sharedPreviewGetSchema, sharedPreviewSchema } from './shared-files.js';
 import {
   whatsappAckSchema,
   whatsappLinkSchema,
@@ -155,6 +156,12 @@ export const RUNNER_CAPABILITIES = [
    * `whatsapp.messages` (`product/next-steps/whatsapp.md`).
    */
   'whatsapp',
+  /**
+   * Logs `file.shared` for each file an agent shares, and answers
+   * `shared.preview.get` with `shared.preview`: the JPEG preview it kept of
+   * a shared image, for a bot to show (`product/next-steps/agent-tools.md` §7).
+   */
+  'shared.preview',
 ] as const;
 export type RunnerCapability = (typeof RUNNER_CAPABILITIES)[number];
 
@@ -1066,6 +1073,8 @@ export const protocolMessageSchema = z.discriminatedUnion('type', [
   whatsappAckSchema,
   whatsappSendSchema,
   whatsappSentSchema,
+  sharedPreviewGetSchema,
+  sharedPreviewSchema,
 ]);
 
 export type ProtocolMessage = z.infer<typeof protocolMessageSchema>;

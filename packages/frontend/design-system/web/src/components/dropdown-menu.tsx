@@ -247,7 +247,9 @@ const RADIO_INDICATOR: Record<DropdownMenuDensity, string> = {
  * then a muted line), the check aligned to the first line. `icon` is the mark
  * before the text, sized by the density; `tone="warning"` colours the whole
  * row, label and description, for the one choice that changes a machine
- * unattended.
+ * unattended. `count` is how many rows the choice would leave (a filter's
+ * facets), in mono at the end of the first line; the label truncates before
+ * it does.
  */
 function DropdownMenuRadioItem({
   className,
@@ -255,6 +257,7 @@ function DropdownMenuRadioItem({
   density = 'default',
   description,
   icon,
+  count,
   tone,
   inset,
   ...props
@@ -263,6 +266,7 @@ function DropdownMenuRadioItem({
   density?: DropdownMenuDensity;
   description?: React.ReactNode;
   icon?: React.ReactNode;
+  count?: number;
   tone?: 'default' | 'warning';
 }) {
   return (
@@ -284,7 +288,19 @@ function DropdownMenuRadioItem({
         <span className={cn('flex shrink-0 pt-px', RADIO_ICON[density])}>{icon}</span>
       ) : null}
       <span className="flex min-w-0 flex-1 flex-col gap-px text-left">
-        <span className="truncate">{children}</span>
+        {count === undefined ? (
+          <span className="truncate">{children}</span>
+        ) : (
+          <span className="flex min-w-0 items-center gap-2.5">
+            <span className="min-w-0 flex-1 truncate">{children}</span>
+            <span
+              data-slot="radio-count"
+              className="figures font-mono text-[11.5px] text-fg-subtle"
+            >
+              {count}
+            </span>
+          </span>
+        )}
         {description ? (
           <span data-slot="radio-description" className="leading-snug text-fg-muted">
             {description}

@@ -19,6 +19,7 @@ export function dictationSlots(dictation: Dictation): DictationSlot {
     ) : undefined,
     recorder: dictation.phase ? <DictationBar dictation={dictation} /> : undefined,
     notice: dictation.problem ? <DictationError problem={dictation.problem} /> : undefined,
+    finish: dictation.finish,
   };
 }
 

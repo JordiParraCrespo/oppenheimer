@@ -16,6 +16,7 @@ import type {
   ArchiveOutcome,
   ProjectInsertOutcome,
   ProjectRepositoryPort,
+  RestoreOutcome,
 } from './project.repository.port';
 import { ProjectRepositoryOrmEntity } from './project-repository.orm-entity';
 
@@ -47,10 +48,13 @@ export class ProjectRepository
 
   async insert(entity: ProjectEntity): Promise<ProjectInsertOutcome> {
     try {
-      await this.repository.manager.transaction(async (manager) => {
+      // The row and the change the console hears of commit together.
+      await this.outbox.transaction(async (manager) => {
         await manager.getRepository(ProjectOrmEntity).insert(this.mapper.toPersistence(entity));
         await this.insertRepositories(manager, entity);
+        await this.outbox.stageEvents(manager, entity.domainEvents);
       });
+      entity.clearEvents();
       return 'inserted';
     } catch (error) {
       if (isSlugConflict(error)) return 'slug-taken';
@@ -71,7 +75,7 @@ export class ProjectRepository
     const table = this.repository.metadata.tableName;
     const at = parameters.length;
 
-    return this.repository.manager.transaction(async (manager) => {
+    return this.outbox.transaction(async (manager) => {
       // TypeORM's Postgres driver returns `[rows, affectedCount]` for an UPDATE.
       const [updated]: [ProjectOrmEntity[], number] = await manager.query(
         `UPDATE "${table}"
@@ -85,12 +89,18 @@ export class ProjectRepository
           RETURNING *`,
         [...parameters, entity.name, entity.defaultHostId, entity.defaultAgent, entity.id],
       );
-      if (updated.length === 0) return None;
+      // Nothing written, nothing announced.
+      if (updated.length === 0) {
+        entity.clearEvents();
+        return None;
+      }
 
       // The whole set, replaced: a project's repositories are configuration, and
       // what a session checked out lives on the session's own rows.
       await manager.getRepository(ProjectRepositoryOrmEntity).delete({ projectId: entity.id });
       const repositories = await this.insertRepositories(manager, entity);
+      await this.outbox.stageEvents(manager, entity.domainEvents);
+      entity.clearEvents();
       return Some(this.mapper.toDomain(updated[0], repositories));
     });
   }
@@ -98,21 +108,51 @@ export class ProjectRepository
   /**
    * The lock is the port's contract: a session create that reads after an archive
    * commits finds zero rows, and a check asked before the lock could be stale by the
-   * time `archivedAt` lands. The scope's own predicate is reused verbatim as a
-   * sub-query, so a project in another workspace is `not-found` here as on every read.
+   * time `archivedAt` lands.
    */
-  async archiveIfUnused(
+  archiveIfUnused(
     scope: AccessScope,
     projectId: string,
     stillInUse: () => Promise<boolean>,
   ): Promise<ArchiveOutcome> {
+    return this.withLockedProject(scope, projectId, async (project, manager) => {
+      // Already retired: nothing to ask and nothing to write.
+      if (project.isArchived) return { result: 'archived' as const, project };
+      // Where work that names no project goes; retiring it would strand that work.
+      if (project.isUnassigned) return { result: 'unassigned' as const, project };
+      if (await stillInUse()) return { result: 'in-use' as const, project };
+
+      project.archive(new Date());
+      return { result: 'archived' as const, project: await this.writeArchivedAt(manager, project) };
+    });
+  }
+
+  restoreIfArchived(scope: AccessScope, projectId: string): Promise<RestoreOutcome> {
+    return this.withLockedProject(scope, projectId, async (project, manager) => {
+      if (!project.isArchived) return { result: 'active' as const, project };
+
+      project.restore();
+      return { result: 'restored' as const, project: await this.writeArchivedAt(manager, project) };
+    });
+  }
+
+  /**
+   * One project, locked `FOR UPDATE` through the caller's scope inside an outbox
+   * transaction, handed to `decide` with its manager; `not-found` for a project
+   * missing or in another workspace alike. The scope's own predicate is reused
+   * verbatim as a sub-query, so this lock reaches exactly what the reads do. The
+   * transaction wakes the relay after commit only when `decide` staged something.
+   */
+  private async withLockedProject<Outcome>(
+    scope: AccessScope,
+    projectId: string,
+    decide: (project: ProjectEntity, manager: EntityManager) => Promise<Outcome>,
+  ): Promise<Outcome | { result: 'not-found' }> {
     const [reachable, parameters] = this.scopedQuery(scope)
       .select(`${this.alias}.id`)
       .getQueryAndParameters();
     const table = this.repository.metadata.tableName;
 
-    // The outbox's transaction wakes the relay after commit when the archive
-    // staged its event; the early returns stage nothing and wake nothing.
     return this.outbox.transaction(async (manager) => {
       const locked: ProjectOrmEntity[] = await manager.query(
         `SELECT * FROM "${table}"
@@ -123,29 +163,29 @@ export class ProjectRepository
       if (locked.length === 0) return { result: 'not-found' as const };
 
       const repositories = await this.repositoriesOf([projectId], manager);
-      const project = this.mapper.toDomain(locked[0], repositories.get(projectId));
-      // Already retired: nothing to ask and nothing to write.
-      if (project.isArchived) return { result: 'archived' as const, project };
-      // Where work that names no project goes; retiring it would strand that work.
-      if (project.isUnassigned) return { result: 'unassigned' as const, project };
-
-      if (await stillInUse()) return { result: 'in-use' as const, project };
-
-      project.archive(new Date());
-      const [updated]: [ProjectOrmEntity[], number] = await manager.query(
-        `UPDATE "${table}" SET "archivedAt" = $2, "updatedAt" = now()
-          WHERE "id" = $1
-        RETURNING *`,
-        [projectId, project.archivedAt],
-      );
-      // The archive and what it owes commit together.
-      await this.outbox.stageEvents(manager, project.domainEvents);
-      project.clearEvents();
-      return {
-        result: 'archived' as const,
-        project: this.mapper.toDomain(updated[0], repositories.get(projectId)),
-      };
+      return decide(this.mapper.toDomain(locked[0], repositories.get(projectId)), manager);
     });
+  }
+
+  /**
+   * The locked project's `archivedAt` as its archive or restore left it, and the
+   * events that owes, in the same transaction; the stored row read back.
+   */
+  private async writeArchivedAt(
+    manager: EntityManager,
+    project: ProjectEntity,
+  ): Promise<ProjectEntity> {
+    const table = this.repository.metadata.tableName;
+    const [updated]: [ProjectOrmEntity[], number] = await manager.query(
+      `UPDATE "${table}" SET "archivedAt" = $2, "updatedAt" = now()
+        WHERE "id" = $1
+      RETURNING *`,
+      [project.id, project.archivedAt],
+    );
+    await this.outbox.stageEvents(manager, project.domainEvents);
+    project.clearEvents();
+    const repositories = await this.repositoriesOf([project.id], manager);
+    return this.mapper.toDomain(updated[0], repositories.get(project.id));
   }
 
   async findAll(

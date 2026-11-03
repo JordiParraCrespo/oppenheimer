@@ -92,32 +92,13 @@ function setup(
     ],
   };
   const none: BotToolArea = { definitions: () => [] };
+  // Every other positional area offers nothing, however many the toolbox takes.
+  const areas = Array.from({ length: BotToolboxFactory.length }, (_, i) => (i === 0 ? area : none));
   const toolbox = new (
     BotToolboxFactory as unknown as new (
       ...areas: BotToolArea[]
     ) => BotToolboxFactory
-  )(
-    area,
-    none,
-    none,
-    none,
-    none,
-    none,
-    none,
-    none,
-    none,
-    none,
-    none,
-    none,
-    none,
-    none,
-    none,
-    none,
-    none,
-    none,
-    none,
-    none,
-  );
+  )(...areas);
   const owners = {
     resolve: vi.fn(async () => emptyScope(OWNER, 'org-1')),
   } as unknown as BotOwnerScopeResolver;

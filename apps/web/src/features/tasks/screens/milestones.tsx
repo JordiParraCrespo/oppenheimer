@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { MilestonesTimelineSkeleton } from '../components/milestones-timeline-skeleton';
 import { MilestoneDialog } from '../dialogs/milestone';
 import { useScopeProject } from '../hooks/use-scope-project';
+import { soleProjectOf } from '../lib/board';
 import { MilestonesHeader } from '../sections/milestones-header';
 import { MilestonesTimeline } from '../sections/milestones-timeline';
 import { PlanFilters } from '../sections/plan-filters';
@@ -17,7 +18,7 @@ import { PlanFilters } from '../sections/plan-filters';
  */
 export function MilestonesScreen() {
   const { t } = useTranslation();
-  const { projectId } = useScopeProject();
+  const { projectIds } = useScopeProject();
   const timeline = useRef<MilestoneTimelineControls>(null);
   const [editing, setEditing] = useState<string | 'new' | null>(null);
 
@@ -46,7 +47,7 @@ export function MilestonesScreen() {
       {editing ? (
         <MilestoneDialog
           milestoneId={editing === 'new' ? undefined : editing}
-          projectId={projectId || undefined}
+          projectId={soleProjectOf({ projectIds }) || undefined}
           onClose={() => setEditing(null)}
           onDeleted={() => setEditing(null)}
         />

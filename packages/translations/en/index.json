@@ -958,7 +958,7 @@
       }
     },
     "sidebar": {
-      "projects": "Projects",
+      "sessions": "Sessions",
       "newProject": "New project",
       "search": "Search sessions",
       "clearSearch": "Clear search",
@@ -1630,6 +1630,13 @@
           "matched_one": "Session “{{name}}” printed a line matching “{{pattern}}”",
           "matched_other": "Session “{{name}}” printed {{count}} lines matching “{{pattern}}”"
         },
+        "pullRequest": {
+          "check_failed": "Pull request #{{number}} of {{repository}}: checks failed",
+          "check_passed": "Pull request #{{number}} of {{repository}}: checks passed",
+          "review": "Pull request #{{number}} of {{repository}}: new review",
+          "comment": "Pull request #{{number}} of {{repository}}: new comment",
+          "pr_merged": "Pull request #{{number}} of {{repository}} was merged"
+        },
         "goal": {
           "continued": "Goal · continuation {{step}} of {{limit}}",
           "met": "Goal met: “{{objective}}”",
@@ -1637,6 +1644,13 @@
           "cleared": "You stopped the goal “{{objective}}”",
           "exhausted": "Goal “{{objective}}” used all {{limit}} continuations",
           "stopped": "Goal “{{objective}}” stopped: a turn of it failed or was stopped"
+        },
+        "loop": {
+          "ran": "Loop · run {{run}}",
+          "cleared": "You stopped the loop “{{prompt}}”",
+          "expired": "Loop “{{prompt}}” ended after 3 days",
+          "stopped": "Loop “{{prompt}}” stopped: a run of it failed or was stopped",
+          "ended": "Loop “{{prompt}}” ended: the bot did not say when to run next"
         }
       },
       "routineReason": {
@@ -1653,9 +1667,27 @@
       "goal": {
         "title": "Goal: {{objective}}",
         "progress": "{{step}} of {{limit}} continuations",
+        "waiting": "waiting for {{system}} until {{time}}",
         "stop": "Stop goal",
         "stopFailed": "Could not stop the goal. Try again.",
         "needsCondition": "Write what done looks like after /goal, or /goal clear to stop the goal."
+      },
+      "loop": {
+        "title": "Loop: {{prompt}}",
+        "every": {
+          "minutes_one": "every minute",
+          "minutes_other": "every {{count}} minutes",
+          "hours_one": "every hour",
+          "hours_other": "every {{count}} hours",
+          "days_one": "every day",
+          "days_other": "every {{count}} days",
+          "selfPaced": "when the bot chooses"
+        },
+        "next": "next {{time}}",
+        "deciding": "waiting for the bot to say when",
+        "stop": "Stop loop",
+        "stopFailed": "Could not stop the loop. Try again.",
+        "badInterval": "A loop runs every 1 minute to 1 day: /loop 5m <prompt>, or /loop <prompt> to let the bot choose when."
       },
       "slash": {
         "label": "Skills",
@@ -1664,7 +1696,9 @@
         "builtInLabel": "Commands",
         "builtIn": {
           "goal": "Keep working until a condition holds, checked after every turn. /goal clear stops it.",
-          "usage": "Show what this chat has spent: tokens by model, cache hits, plan windows."
+          "usage": "Show what this chat has spent: tokens by model, cache hits, plan windows.",
+          "loop": "Run a prompt every few minutes, or when the bot chooses. /loop stop ends it.",
+          "schedule": "Save a routine that runs on a schedule. /schedule alone opens the routines."
         }
       },
       "usage": {
@@ -2986,7 +3020,7 @@
     "type": {
       "all": "All",
       "pull": "Pull requests",
-      "approval": "Bot approvals",
+      "bots": "Bots",
       "session": "Sessions",
       "run": "Automations"
     },
@@ -3006,7 +3040,8 @@
     "from": {
       "session": "Session",
       "approval": "Bot approval",
-      "run": "Automation"
+      "run": "Automation",
+      "botNotice": "Bot"
     },
     "session": {
       "blockedShort": "{{name}} is waiting on you",
@@ -3085,6 +3120,11 @@
     },
     "notice": {
       "title": "{{name}} has news for you",
+      "done": "Done"
+    },
+    "botNotice": {
+      "title": "{{bot}} has news for you",
+      "openChat": "Open chat",
       "done": "Done"
     }
   },

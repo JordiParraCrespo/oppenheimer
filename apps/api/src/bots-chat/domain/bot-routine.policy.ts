@@ -40,10 +40,29 @@ export type RoutineAction = (typeof ROUTINE_ACTIONS)[number];
  * Whether the owner has to consent to the bot doing this to a routine
  * (`26-bot-routines.md` §4): only what spends nothing and can be undone runs
  * without a card, which is reading the list and pausing. A run the bot starts
- * is spend nobody clicked for, so `run_now` asks like a save does.
+ * is spend nobody clicked for, so `run_now` asks like a save does. The one
+ * exception is the turn of the person's own `/schedule` (`25-bots.md` §4.1):
+ * their command is the consent to the routine it asks for, so a `create` in
+ * that turn runs; changing or deleting one still asks.
  */
-export function routineCallAsks(action: RoutineAction): boolean {
+export function routineCallAsks(action: RoutineAction, ranSchedule = false): boolean {
+  if (action === 'create' && ranSchedule) return false;
   return action !== 'list' && action !== 'pause';
+}
+
+/**
+ * The turn's message when the person runs `/schedule <request>`: save the
+ * routine it asks for now, on a schedule in their time zone, and say what was
+ * saved. A schedule runs at most once a day at a time of day; a request for
+ * minutes is a `/loop`, and one with no time is asked about, never guessed.
+ */
+export function scheduleSetPrompt(request: string): string {
+  return [
+    `The person ran /schedule to have you save a routine: ${request}`,
+    'Create it now with update_routine (action create): a short name, the prompt you will run each time written to yourself, and a schedule trigger in their time zone. Their /schedule is their consent to this one routine, so it does not ask them.',
+    'A schedule runs once at a time of day on the days it names (daily, weekdays, weekly, monthly, or once on a date). If they want it every few minutes, tell them /loop does that instead and save nothing. If the request says what to do but not when, ask them when in one line and save nothing yet.',
+    'Then say in one line what you scheduled and when it runs.',
+  ].join('\n');
 }
 
 /** Every turn of one routine's runs begins with this. */

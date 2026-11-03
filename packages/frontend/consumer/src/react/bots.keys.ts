@@ -25,6 +25,7 @@ export const botsKeys = {
   permissions: (id: string) => [...botsKeys.detail(id), 'permissions'] as const,
   goal: (id: string) => [...botsKeys.detail(id), 'goal'] as const,
   usage: (id: string) => [...botsKeys.detail(id), 'usage'] as const,
+  loop: (id: string) => [...botsKeys.detail(id), 'loop'] as const,
   routines: (id: string) => [...botsKeys.detail(id), 'routines'] as const,
   routineList: (id: string) => [...botsKeys.routines(id), 'list'] as const,
   // Every bot's, for `/automations`: apart from any one bot's, so a write to
@@ -41,6 +42,9 @@ export const botsKeys = {
   // bot's, and announced by `botApproval.changed`.
   workspaceApprovals: () => [...botsKeys.all, 'approvals'] as const,
   pendingApprovals: () => [...botsKeys.workspaceApprovals(), 'pending'] as const,
+  // Each bot's latest notice (`notify`), across the workspace (the Inbox), and
+  // announced by `botNotice.changed`.
+  workspaceNotices: () => [...botsKeys.all, 'notices'] as const,
   groups: () => [...botsKeys.all, 'group'] as const,
   groupLists: () => [...botsKeys.groups(), 'list'] as const,
   groupList: () => [...botsKeys.groupLists()] as const,
