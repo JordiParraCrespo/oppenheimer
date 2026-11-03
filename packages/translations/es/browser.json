@@ -1659,8 +1659,32 @@
         "pick": "Usar /{{name}}",
         "builtInLabel": "Comandos",
         "builtIn": {
-          "goal": "Sigue trabajando hasta que se cumpla una condición, revisada tras cada turno. /goal clear lo detiene."
+          "goal": "Sigue trabajando hasta que se cumpla una condición, revisada tras cada turno. /goal clear lo detiene.",
+          "usage": "Muestra lo que ha gastado este chat: tokens por modelo, aciertos de caché, ventanas del plan."
         }
+      },
+      "usage": {
+        "title": "Uso",
+        "since": "desde el {{date}}",
+        "copy": "Copiar uso",
+        "summary_one": "{{count}} turno · {{active}} trabajando · {{tokens}} tokens",
+        "summary_other": "{{count}} turnos · {{active}} trabajando · {{tokens}} tokens",
+        "cacheHit": "{{percent}} % de aciertos de caché",
+        "input": "Entrada {{tokens}}",
+        "output": "Salida {{tokens}}",
+        "cacheRead": "Lectura de caché {{tokens}}",
+        "cacheWrite": "Escritura de caché {{tokens}}",
+        "includes": "incluye {{calls}} fuera de sus turnos",
+        "purpose": {
+          "goalReview_one": "{{count}} revisión del objetivo",
+          "goalReview_other": "{{count}} revisiones del objetivo",
+          "summary_one": "{{count}} resumen",
+          "summary_other": "{{count}} resúmenes",
+          "ruleReview_one": "{{count}} revisión de reglas",
+          "ruleReview_other": "{{count}} revisiones de reglas"
+        },
+        "empty": "Este chat aún no ha gastado nada.",
+        "loadFailed": "No se pudo cargar el uso. Inténtalo de nuevo."
       }
     },
     "settings": {

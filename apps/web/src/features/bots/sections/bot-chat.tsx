@@ -15,6 +15,7 @@ import { BotEngine } from './bot-engine';
 import { BotQuestionCard } from './bot-question-card';
 import { BotTranscript } from './bot-transcript';
 import { BotUsage } from './bot-usage';
+import { BotUsageCard } from './bot-usage-card';
 
 /**
  * A bot's chat (`design/version1/Bots.dc.html`, `25-bots.md` §3): its
@@ -70,6 +71,7 @@ export function BotChat({ botId }: { botId: string }) {
             <BotTranscript botId={bot.id} name={bot.name} />
           </QueryState.Data>
         </QueryState>
+        <BotUsageCard botId={bot.id} />
       </BotChatScroller>
       <div className="px-4 pb-4 sm:px-8">
         <div className="mx-auto flex w-full max-w-190 flex-col gap-2">
