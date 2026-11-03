@@ -147,3 +147,40 @@ func TestOnlyAClaudeConversationIsLookedUp(t *testing.T) {
 		t.Fatalf("a Codex session read Claude Code's transcript: %q", got)
 	}
 }
+
+// A teleported conversation is named by Claude Code, so it is found as the
+// newest transcript in the session's folder since the agent opened it: an
+// older one there (a conversation before a restart) and one in another
+// folder are not it, and Codex, which does not teleport, finds none.
+func TestATeleportedConversationIsTheNewestInTheSessionsFolderSinceItOpened(t *testing.T) {
+	projects := write(t, promptLine)
+	folder := filepath.Join(projects, "-w-sessions-bold-otter-3f9a7k-oppenheimer")
+	opened := time.Now().Add(-time.Minute)
+	past := opened.Add(-time.Hour)
+	if err := os.Chtimes(filepath.Join(folder, conversation+".jsonl"), past, past); err != nil {
+		t.Fatal(err)
+	}
+	reader := transcript.New(transcript.Options{ClaudeProjects: projects})
+	dir := "/w/sessions/bold-otter-3f9a7k/oppenheimer"
+	if got := reader.Teleported(domain.AgentClaude, dir, opened); got != "" {
+		t.Fatalf("teleported = %q, want none before the agent writes one", got)
+	}
+
+	teleported := "9a8b7c6d-5e4f-4a3b-8c2d-1e0f9a8b7c6d"
+	if err := os.WriteFile(filepath.Join(folder, teleported+".jsonl"), []byte(promptLine+"\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	elsewhere := filepath.Join(projects, "-w-sessions-other-session-oppenheimer")
+	if err := os.MkdirAll(elsewhere, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(elsewhere, "0b1c2d3e-4f5a-4b6c-8d7e-9f0a1b2c3d4e.jsonl"), nil, 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if got := reader.Teleported(domain.AgentClaude, dir, opened); got != teleported {
+		t.Fatalf("teleported = %q, want %q", got, teleported)
+	}
+	if got := reader.Teleported(domain.AgentCodex, dir, opened); got != "" {
+		t.Fatalf("teleported for Codex = %q, want none", got)
+	}
+}

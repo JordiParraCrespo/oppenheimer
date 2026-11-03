@@ -34,9 +34,12 @@ owner asked for it end to end:
   continues the same cloud session, and a restart reopens what it left with
   `claude --continue`. A runner takes it only once its hello names
   `session.teleport` (`SESSIONS_048` otherwise). The host's Claude Code must
-  be signed in to the account that owns the cloud session. The new session
-  names no conversation (Claude Code names the teleported one), so its chat
-  view has no transcript to follow yet; the terminal is the session.
+  be signed in to the account that owns the cloud session. Claude Code names
+  the teleported conversation itself, so the runner does not name one: it
+  takes the newest transcript in the session's folder since the agent opened
+  it as the session's conversation and keeps it, and the chat view, question
+  detection and the status line read it by that name. A restart looks for it
+  again, since `--continue` may name it anew.
 
 The proposal is [`../research/cloud-agents.md`](../research/cloud-agents.md)
 §5, and its open questions are §6. This file keeps only what decides

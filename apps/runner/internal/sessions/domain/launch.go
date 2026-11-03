@@ -8,6 +8,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"time"
 )
 
 // Launch is how a session's agent was started: the structured choices
@@ -38,6 +39,12 @@ type Launch struct {
 	// --teleport <id>`) in place of a new conversation, and a resume reopens
 	// what that left. It is saved, so a restart takes the resume form.
 	Teleport string `json:"teleport,omitempty"`
+	// TeleportSince is when the agent last opened the teleported
+	// conversation, at a restart; zero is the session's creation. The CLI
+	// names that conversation itself, so the runner finds it by the newest
+	// transcript in the session's folder from then on and keeps its name in
+	// Conversation, which every transcript reader reads it by.
+	TeleportSince time.Time `json:"teleportSince,omitzero"`
 	// Prompt is the first task, appended as the trailing positional so it is
 	// in the process's arguments before it starts (02-runner §5). It is kept
 	// for restart only and never logged.

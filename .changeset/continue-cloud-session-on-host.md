@@ -16,4 +16,6 @@ session there on the cloud session's repository whose agent runs
 (`launchTeleport`), so a re-sent create continues the same cloud session and
 a restart reopens it with `claude --continue`. The runner names the new
 capability `session.teleport`; a host whose runner does not is refused with
-`SESSIONS_048`.
+`SESSIONS_048`. Claude Code names the teleported conversation itself, so the
+runner finds it as the newest transcript in the session's folder and keeps
+its name, which the chat view reads it by.
