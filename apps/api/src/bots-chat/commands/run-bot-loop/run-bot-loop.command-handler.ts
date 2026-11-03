@@ -4,12 +4,8 @@ import { BotLoopResolver } from '../../application/bot-loop.resolver';
 import { BOT_LOOP_REPOSITORY, BOT_STREAM, BOT_TURN_REPOSITORY } from '../../bots-chat.di-tokens';
 import type { BotLoopRepositoryPort } from '../../database/bot-loop.repository.port';
 import type { BotTurnRepositoryPort } from '../../database/bot-turn.repository.port';
-import {
-  loopRunDecision,
-  loopRunTurn,
-  nextRunAfter,
-  nextRunWhenBusy,
-} from '../../domain/bot-loop.policy';
+import { loopRunDecision, nextRunAfter, nextRunWhenBusy } from '../../domain/bot-loop.policy';
+import { loopRunTurn } from '../../domain/bot-loop-message.factory';
 import type { BotStreamPort } from '../../infrastructure/bot-stream.port';
 import { RunBotLoopCommand } from './run-bot-loop.command';
 

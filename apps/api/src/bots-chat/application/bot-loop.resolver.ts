@@ -4,12 +4,8 @@ import { BOT_LOOP_REPOSITORY, BOT_STREAM, BOT_TURN_REPOSITORY } from '../bots-ch
 import type { BotLoopRepositoryPort } from '../database/bot-loop.repository.port';
 import type { BotTurnRepositoryPort } from '../database/bot-turn.repository.port';
 import type { BotLoopEntity } from '../domain/bot-loop.entity';
-import {
-  type LoopEnding,
-  loopEndLine,
-  loopKeyPrefix,
-  type loopRunTurn,
-} from '../domain/bot-loop.policy';
+import { type LoopEnding, loopKeyPrefix } from '../domain/bot-loop.policy';
+import { loopEndLine, type loopRunTurn } from '../domain/bot-loop-message.factory';
 import type { BotStreamPort } from '../infrastructure/bot-stream.port';
 import { BotModelAccessResolver } from './bot-model-access.resolver';
 import { BotOwnerScopeResolver } from './bot-owner-scope.resolver';

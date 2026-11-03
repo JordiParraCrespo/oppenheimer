@@ -1,6 +1,6 @@
 import { type BotSlashCommand, botGoalCommandOf, botLoopCommandOf } from '@oppenheimer/shared';
 import { goalSetPrompt } from './bot-goal.policy';
-import { loopSetPrompt } from './bot-loop.policy';
+import { loopSetPrompt } from './bot-loop-message.factory';
 
 /** What the prompt and the tools read of a skill. */
 export interface BotSkillView {

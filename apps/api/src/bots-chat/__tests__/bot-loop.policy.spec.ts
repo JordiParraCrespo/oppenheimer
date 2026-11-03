@@ -4,7 +4,6 @@ import {
   loopFromMessage,
   loopRunDecision,
   loopRunEnd,
-  loopRunTurn,
   loopSourceKey,
   mayActOnLoop,
   nextRunAfter,
@@ -165,32 +164,6 @@ describe('loopRunEnd', () => {
     ).toEqual({ kind: 'retry' });
     selfPaced.moveNext(minutes(10));
     expect(loopRunEnd(selfPaced, ended({ id: 'turn-0' }))).toEqual({ kind: 'keep' });
-  });
-});
-
-describe('loopRunTurn', () => {
-  it('queues a run in the background lane, keyed by the loop and its count, opened by its line', () => {
-    const fixed = loop(5);
-    const { turn, opening } = loopRunTurn(
-      {
-        organizationId: 'org-1',
-        botId: 'bot-1',
-        requestedByUserId: 'user-1',
-        provider: 'glm',
-        model: 'glm-5.3',
-        effort: null,
-      },
-      fixed,
-      1,
-    );
-    expect(turn).toMatchObject({
-      origin: 'loop',
-      lane: 'background',
-      sourceKey: loopSourceKey(fixed.id, 1),
-    });
-    // The setting turn was the first run, so the first one queued is the second.
-    expect(opening.event).toMatchObject({ kind: 'loop', activity: 'ran', run: 2 });
-    expect(opening.content).toContain('Run 2 of your loop');
   });
 });
 

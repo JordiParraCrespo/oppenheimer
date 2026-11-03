@@ -11,6 +11,11 @@ const NOTICES = {
   loopBadInterval: 'bots.chat.loop.badInterval',
 } as const;
 
+const FAILURES = {
+  clearGoal: 'bots.chat.goal.stopFailed',
+  clearLoop: 'bots.chat.loop.stopFailed',
+} as const;
+
 /**
  * The composer's side of the built-in commands (`builtInCommandActionOf`):
  * the notice a draft that cannot be sent shows, and `runLocally`, which runs
@@ -26,30 +31,51 @@ export function useBuiltInCommand(botId: string, draft: string) {
   const action = builtInCommandActionOf(draft);
   const notice = action?.kind === 'notice' ? t(NOTICES[action.notice]) : undefined;
 
-  // What each built-in the console runs does; the next one is an entry here, not a branch.
-  const local: Record<BuiltInLocalAction, (onDone: () => void) => void> = {
-    clearGoal: (onDone) => clearGoal.mutate({ id: botId }, { onSuccess: onDone }),
-    clearLoop: (onDone) => clearLoop.mutate({ id: botId }, { onSuccess: onDone }),
-    openUsage: (onDone) => {
-      openUsageCard(botId);
-      onDone();
+  // What each built-in the console runs does, and the request it can fail
+  // with and the words for that; the next one is an entry here, not a branch.
+  const local: Record<
+    BuiltInLocalAction,
+    {
+      run: (onDone: () => void) => void;
+      fails: {
+        request: { error: Error | null; reset: () => void };
+        failure: (typeof FAILURES)[keyof typeof FAILURES];
+      } | null;
+    }
+  > = {
+    clearGoal: {
+      run: (onDone) => clearGoal.mutate({ id: botId }, { onSuccess: onDone }),
+      fails: { request: clearGoal, failure: FAILURES.clearGoal },
+    },
+    clearLoop: {
+      run: (onDone) => clearLoop.mutate({ id: botId }, { onSuccess: onDone }),
+      fails: { request: clearLoop, failure: FAILURES.clearLoop },
+    },
+    openUsage: {
+      run: (onDone) => {
+        openUsageCard(botId);
+        onDone();
+      },
+      fails: null,
     },
   };
+  const failing = Object.values(local).flatMap((entry) => (entry.fails ? [entry.fails] : []));
+  const failed = failing.find((fails) => fails.request.error);
 
   function runLocally(onDone: () => void): boolean {
     if (action?.kind !== 'local') return false;
-    local[action.action](onDone);
+    local[action.action].run(onDone);
     return true;
   }
 
   return {
     notice,
     runLocally,
-    error: clearGoal.error ?? clearLoop.error,
-    failure: t(clearLoop.error ? 'bots.chat.loop.stopFailed' : 'bots.chat.goal.stopFailed'),
+    error: failed?.request.error ?? null,
+    // Read only beside `error`: empty while nothing failed.
+    failure: failed ? t(failed.failure) : '',
     reset: () => {
-      clearGoal.reset();
-      clearLoop.reset();
+      for (const fails of failing) fails.request.reset();
     },
   };
 }

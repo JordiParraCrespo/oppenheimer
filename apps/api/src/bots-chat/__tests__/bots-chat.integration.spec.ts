@@ -77,7 +77,7 @@ import { BotConversationSummaryEntity } from '../domain/bot-conversation-summary
 import { BotGoalEntity } from '../domain/bot-goal.entity';
 import { goalContinuationTurn, goalEndLine } from '../domain/bot-goal.policy';
 import { BotLoopEntity } from '../domain/bot-loop.entity';
-import { loopEndLine, loopRunTurn } from '../domain/bot-loop.policy';
+import { loopEndLine, loopRunTurn } from '../domain/bot-loop-message.factory';
 import { BotMessageEntity } from '../domain/bot-message.entity';
 import { BotQuestionEntity } from '../domain/bot-question.entity';
 import {

@@ -35,9 +35,15 @@ export interface BotLoopProps {
 /**
  * A loop (`25-bots.md` §4.1, `/loop`): one per bot, a prompt run now and
  * again every interval, or when the bot says, until it is stopped, the bot
- * ends it or it expires. A run is claimed on the count and the time it was
- * loaded at, so two dispatches of one run queue one, and a run the bot moved
- * leaves the old dispatch with nothing to do.
+ * ends it or it expires.
+ *
+ * The invariant a write relies on: `runs` and `nextRunAt` are the state this
+ * copy proposes, and `runsAtLoad` and `nextRunAtLoad` the state it was
+ * loaded in, which every conditional write (`claimLoopWithin`, `schedule`,
+ * an `ifUnchanged` end) is checked against. Only `ran` and `moveNext` change
+ * the first pair, and only `markPersisted`, after a write that won, moves the
+ * second to match. So two dispatches of one run queue one, and a run the bot
+ * moved leaves the old dispatch with nothing to do.
  */
 export class BotLoopEntity extends AggregateRoot<BotLoopProps> {
   private loadedRuns: number;
