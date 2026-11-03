@@ -8,7 +8,6 @@ import {
 } from '@oppenheimer/design-system-web';
 import { ArrowDown, ChevronUp } from '@oppenheimer/design-system-web/icons';
 import type { SessionChat as Chat, SessionAgent } from '@oppenheimer/frontend-consumer';
-import { LoadingStatus } from '@oppenheimer/frontend-web';
 import { useState } from 'react';
 import { flushSync } from 'react-dom';
 import { useTranslation } from 'react-i18next';
@@ -102,10 +101,14 @@ export function SessionChat({
           <TerminalColumn ref={content} className="flex min-h-full flex-col">
             {loading ? (
               // The history is still arriving: the conversation is drawn once
-              // it has, at its end, so until then the column stays empty.
-              <div aria-busy className="flex-1">
-                <LoadingStatus />
-              </div>
+              // it has, at its end, so until then the column says so.
+              <EmptyState aria-busy className="flex-1">
+                <EmptyState.Header>
+                  <EmptyState.Description role="status">
+                    {t('sessions.chat.loading')}
+                  </EmptyState.Description>
+                </EmptyState.Header>
+              </EmptyState>
             ) : ids.length === 0 ? (
               <EmptyState className="flex-1">
                 <EmptyState.Header>

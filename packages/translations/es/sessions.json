@@ -534,6 +534,7 @@
       "terminal": "Terminal",
       "chat": "Chat"
     },
+    "loading": "Cargando la conversación…",
     "empty": {
       "title": "Todavía no se ha dicho nada",
       "description": "Lo que el agente dice y hace aparece aquí mientras trabaja."

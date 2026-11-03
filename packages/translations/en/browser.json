@@ -1189,6 +1189,7 @@
         "terminal": "Terminal",
         "chat": "Chat"
       },
+      "loading": "Loading conversation…",
       "empty": {
         "title": "Nothing said yet",
         "description": "The agent's words and work appear here as it goes."
