@@ -7,11 +7,14 @@ import { None, type Option, Some } from 'oxide.ts';
 import { type EntityManager, Repository } from 'typeorm';
 import { BotResource } from '../../bots/bots.resource';
 import { BotGoalMapper } from '../bot-goal.mapper';
+import { BotLoopMapper } from '../bot-loop.mapper';
 import { BotMessageMapper } from '../bot-message.mapper';
 import { BotTurnMapper } from '../bot-turn.mapper';
 import { BOT_CONVERSATION_REPOSITORY } from '../bots-chat.di-tokens';
 import type { BotChainState, BotChainVerdict } from '../domain/bot-chain.policy';
 import type { BotGoalEntity } from '../domain/bot-goal.entity';
+import type { BotLoopEntity } from '../domain/bot-loop.entity';
+import { loopKeyPrefix } from '../domain/bot-loop.policy';
 import type { BotMessageEntity } from '../domain/bot-message.entity';
 import { heldBy } from '../domain/bot-rate-limit.policy';
 import type { BotTurnContext, BotTurnEntity } from '../domain/bot-turn.entity';
@@ -23,9 +26,16 @@ import {
   owesGoalWithin,
   setGoalWithin,
 } from './bot-goal.repository';
+import {
+  claimLoopWithin,
+  owesLoopWithin,
+  setLoopWithin,
+  stageLoopRunWithin,
+} from './bot-loop.repository';
 import { insertMessageWithin } from './bot-message.repository';
 import { BotTurnOrmEntity } from './bot-turn.orm-entity';
 import type {
+  BotLoopRunTimes,
   BotPeerEnqueueOutcome,
   BotSteerTaken,
   BotTurnRepositoryPort,
@@ -39,6 +49,8 @@ export const RUN_BOT_TURN_JOB = 'run-bot-turn';
 export const DELIVER_BOT_ANSWER_JOB = 'deliver-bot-answer';
 /** A turn of a bot with a goal ended: the goal decides whether to go on (`25-bots.md` §4.1). */
 export const CONTINUE_BOT_GOAL_JOB = 'continue-bot-goal';
+/** A run of a bot's loop ended: the loop decides whether it ends (`25-bots.md` §4.1, `/loop`). */
+export const FINISH_BOT_LOOP_RUN_JOB = 'finish-bot-loop-run';
 
 /** The order lanes run in (`BotQueueLanes`), as SQL over `bot_turn."lane"`. */
 const LANE_ORDER = `CASE "lane" WHEN 'owner' THEN 0 WHEN 'bots' THEN 1 ELSE 2 END`;
@@ -89,6 +101,7 @@ export class BotTurnRepository
     @Inject(BOT_CONVERSATION_REPOSITORY)
     private readonly conversations: BotConversationRepositoryPort,
     private readonly goals: BotGoalMapper,
+    private readonly loops: BotLoopMapper,
   ) {
     super();
   }
@@ -98,7 +111,7 @@ export class BotTurnRepository
     message: BotMessageEntity,
     correlationId: string | null,
   ): Promise<'staged' | 'waiting' | 'missing' | 'attachments_taken'> {
-    return (await this.enqueueSetting(turn, message, null, correlationId)).outcome;
+    return (await this.enqueueSetting(turn, message, correlationId, async () => null)).outcome;
   }
 
   enqueueWithGoal(
@@ -110,18 +123,37 @@ export class BotTurnRepository
     outcome: 'staged' | 'waiting' | 'missing' | 'attachments_taken';
     replaced: BotGoalEntity | null;
   }> {
-    return this.enqueueSetting(turn, message, goal, correlationId);
+    return this.enqueueSetting(turn, message, correlationId, (manager) =>
+      setGoalWithin(manager, this.goals, goal),
+    );
   }
 
-  /** A sent message's turn, and the goal it sets when it sets one, in one transaction. */
-  private async enqueueSetting(
+  enqueueWithLoop(
     turn: BotTurnEntity,
     message: BotMessageEntity,
-    goal: BotGoalEntity | null,
+    loop: BotLoopEntity,
     correlationId: string | null,
   ): Promise<{
     outcome: 'staged' | 'waiting' | 'missing' | 'attachments_taken';
-    replaced: BotGoalEntity | null;
+    replaced: BotLoopEntity | null;
+  }> {
+    return this.enqueueSetting(turn, message, correlationId, (manager) =>
+      setLoopWithin(this.outbox, manager, this.loops, loop, correlationId),
+    );
+  }
+
+  /**
+   * A sent message's turn, and what it sets when it sets something (a goal,
+   * a loop), in one transaction; answers what that replaced.
+   */
+  private async enqueueSetting<Replaced>(
+    turn: BotTurnEntity,
+    message: BotMessageEntity,
+    correlationId: string | null,
+    settle: (manager: EntityManager) => Promise<Replaced | null>,
+  ): Promise<{
+    outcome: 'staged' | 'waiting' | 'missing' | 'attachments_taken';
+    replaced: Replaced | null;
   }> {
     try {
       return await this.outbox.transaction(async (manager) => {
@@ -136,8 +168,7 @@ export class BotTurnRepository
         );
         if (outcome === 'missing') return { outcome, replaced: null };
         if (!(await claimAttachmentsTo(manager, turn, message))) throw new AttachmentsTaken();
-        const replaced = goal ? await setGoalWithin(manager, this.goals, goal) : null;
-        return { outcome, replaced };
+        return { outcome, replaced: await settle(manager) };
       });
     } catch (error) {
       if (error instanceof AttachmentsTaken) {
@@ -203,6 +234,46 @@ export class BotTurnRepository
       if (existing) return 'existing';
       // The goal's count and its turn commit together, or neither does.
       if (!(await claimContinuationWithin(manager, this.goals, goal))) return 'lost';
+      return enqueueLocked(
+        manager,
+        this.outbox,
+        this.mapper,
+        this.messages,
+        turn,
+        message,
+        correlationId,
+      );
+    });
+  }
+
+  enqueueLoopRun(
+    turn: BotTurnEntity,
+    message: BotMessageEntity,
+    correlationId: string | null,
+    loop: BotLoopEntity,
+    times: BotLoopRunTimes,
+  ): Promise<'staged' | 'waiting' | 'busy' | 'lost' | 'missing'> {
+    return this.outbox.transaction(async (manager) => {
+      if (!(await lockBot(manager, turn))) return 'missing';
+      // IDX_bot_turn_active: a bot's queued and running turns are a handful.
+      const [busy]: unknown[] = await manager.query(
+        `SELECT 1 FROM bot_turn
+          WHERE "organizationId" = $1 AND "botId" = $2 AND "status" IN ('queued', 'running')
+            AND (starts_with("sourceKey", $3) OR id = $4)
+          LIMIT 1`,
+        [turn.organizationId, turn.botId, loopKeyPrefix(loop.id), loop.originTurnId],
+      );
+      if (busy) {
+        // The run is not queued: it moves, and its count stays for the run that is.
+        loop.moveNext(times.whenBusy);
+        if (!(await claimLoopWithin(manager, loop))) return 'lost';
+        await stageLoopRunWithin(this.outbox, manager, loop, correlationId);
+        return 'busy';
+      }
+      // The loop's count and its turn commit together, or neither does.
+      loop.ran(times.next);
+      if (!(await claimLoopWithin(manager, loop))) return 'lost';
+      await stageLoopRunWithin(this.outbox, manager, loop, correlationId);
       return enqueueLocked(
         manager,
         this.outbox,
@@ -401,6 +472,17 @@ export class BotTurnRepository
           correlationId,
         });
       }
+      // A loop's own run owes it a decision too: whether it ends.
+      if (await owesLoopWithin(manager, turn)) {
+        await this.outbox.stageJob(manager, {
+          queue: QUEUE_NAMES.BOT_TURNS,
+          jobName: FINISH_BOT_LOOP_RUN_JOB,
+          payload: { turnId: turn.id },
+          reason: `bot ${turn.botId}: turn ${turn.id} was a run of its loop`,
+          aggregateId: turn.id,
+          correlationId,
+        });
+      }
       await stageGoalDecisionWithin(this.outbox, manager, this.goals, turn, correlationId);
       return true;
     });
@@ -506,7 +588,6 @@ export async function enqueueWithin(
   return enqueueLocked(manager, outbox, turns, messages, turn, message, correlationId);
 }
 
-/** `enqueueWithin` once the bot is locked. */
 /**
  * A goal's own turn owes it a decision, staged with the end that owes it. A
  * turn a system's rate limit stopped (`heldBy`) holds it until the limit
@@ -536,7 +617,8 @@ async function stageGoalDecisionWithin(
   });
 }
 
-async function enqueueLocked(
+/** `enqueueWithin` once the bot is locked. */
+export async function enqueueLocked(
   manager: EntityManager,
   outbox: OutboxService,
   turns: BotTurnMapper,

@@ -25,6 +25,7 @@ import {
   BOT_APPROVAL_DECISIONS,
   BOT_EVENT_OUTCOMES,
   BOT_GOAL_ACTIVITIES,
+  BOT_LOOP_ACTIVITIES,
   BOT_QUESTION_OUTCOMES,
   BOT_REPLY_OUTCOMES,
   BOT_SESSION_EVENT_STATES,
@@ -32,6 +33,7 @@ import {
   type BotAttachment,
   type BotDocumentName,
   type BotGoal,
+  type BotLoop,
   type BotMessageEvent,
   type BotPermissionRuleEffect,
   type BotProvider,
@@ -306,6 +308,20 @@ function toEvent(dto: NonNullable<BotMessageResponseDto['event']>): BotMessageEv
           }
         : null;
     }
+    case 'loop': {
+      const activity = BOT_LOOP_ACTIVITIES.find((candidate) => candidate === dto.activity);
+      return activity
+        ? {
+            kind: 'loop',
+            activity,
+            loopId: dto.loopId,
+            prompt: dto.prompt,
+            intervalMinutes: dto.intervalMinutes,
+            run: dto.run,
+            reason: dto.reason,
+          }
+        : null;
+    }
   }
 }
 
@@ -535,6 +551,21 @@ export class BotsRepository {
     return callApi(BotsErrors.FETCH_GOAL_FAILED, async (api) => {
       const { goal } = await api.body(heyApiSdk.findBotGoal({ path: { id } }));
       return goal;
+    });
+  }
+
+  /** The loop set with `/loop`: what it runs, how often, and when next; null when it has none. */
+  findLoop(id: string): Promise<BotLoop | null> {
+    return callApi(BotsErrors.FETCH_LOOP_FAILED, async (api) => {
+      const { loop } = await api.body(heyApiSdk.findBotLoop({ path: { id } }));
+      return loop;
+    });
+  }
+
+  /** Stops the bot's loop: no more runs, and one still waiting is cancelled. */
+  clearLoop(id: string): Promise<void> {
+    return callApi(BotsErrors.CLEAR_LOOP_FAILED, async (api) => {
+      await api.result(heyApiSdk.clearBotLoop({ path: { id } }));
     });
   }
 

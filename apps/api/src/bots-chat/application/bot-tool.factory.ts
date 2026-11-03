@@ -70,6 +70,12 @@ export interface BotToolCallContext {
   /** Why the turn exists; a tool offered only to some turns reads it (`notOn`). */
   origin?: BotTurnOrigin;
   /**
+   * The slash command the person's message ran, when the turn opens with
+   * one (`/schedule`): a tool may read it as the person's own ask
+   * (`routineCallAsks`). Null for any other turn.
+   */
+  ranCommand?: string | null;
+  /**
    * The scopes of the credential the turn was sent with; null for a browser
    * session. What a tool saves to act later (a routine) keeps them, so a
    * token reaches no further through the bot than through a message.

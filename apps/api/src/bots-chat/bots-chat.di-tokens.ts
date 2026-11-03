@@ -19,6 +19,7 @@ export const BOT_SUBSCRIPTION_REPOSITORY = Symbol('BOT_SUBSCRIPTION_REPOSITORY')
 /** Where a bot's hand-off is owed its stall check (`27-bot-subscriptions.md` §4.1). */
 export const BOT_STALL_CHECKS = Symbol('BOT_STALL_CHECKS');
 export const BOT_GOAL_REPOSITORY = Symbol('BOT_GOAL_REPOSITORY');
+export const BOT_LOOP_REPOSITORY = Symbol('BOT_LOOP_REPOSITORY');
 export const BOT_USAGE_REPOSITORY = Symbol('BOT_USAGE_REPOSITORY');
 /** A bot's tool settings and standing grants (`25-bots.md` §5). */
 export const BOT_TOOL_PERMISSION_REPOSITORY = Symbol('BOT_TOOL_PERMISSION_REPOSITORY');

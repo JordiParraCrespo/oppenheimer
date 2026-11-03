@@ -152,7 +152,10 @@ routine turn could otherwise start another routine). Saving shows "Allow
 {bot} to save a routine?" with the name, the *when* and the prompt. A new
 action (rotating a webhook key, turning a template on) answers the same
 question and needs no new row. The owner acting on the Routines tab
-(§7) is the consent itself, so the tab never asks.
+(§7) is the consent itself, so the tab never asks. So is the person's own
+`/schedule <request>` (25 §4.1, since 2026-11-03): in that turn a `create`
+runs without a card (`routineCallAsks(action, ranSchedule)`); everything
+else in it still asks.
 
 Every write answers the bot's whole list again, so it never acts on a
 stale picture. It replaces 25 §4.5's `create_automation` family for a
