@@ -18,9 +18,7 @@ import {
 export class FindWorkspaceBotNoticesQueryHandler
   implements IQueryHandler<FindWorkspaceBotNoticesQuery, WorkspaceBotNotice[]>
 {
-  constructor(
-    @Inject(BOT_NOTICE_REPOSITORY) private readonly notices: BotNoticeRepositoryPort,
-  ) {}
+  constructor(@Inject(BOT_NOTICE_REPOSITORY) private readonly notices: BotNoticeRepositoryPort) {}
 
   execute({ scope }: FindWorkspaceBotNoticesQuery): Promise<WorkspaceBotNotice[]> {
     return this.notices.findInWorkspace(scope, WORKSPACE_BOT_NOTICES_MAX);

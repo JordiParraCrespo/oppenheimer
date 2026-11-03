@@ -47,7 +47,11 @@ export class BotNoticeRepository
     // the composite key the notice already holds (and a notice whose bot is
     // gone is gone with it).
     const { entities, raw } = await this.scopedQuery(scope)
-      .innerJoin('bot', 'bot', 'bot."organizationId" = notice."organizationId" AND bot.id = notice."botId"')
+      .innerJoin(
+        'bot',
+        'bot',
+        'bot."organizationId" = notice."organizationId" AND bot.id = notice."botId"',
+      )
       .addSelect('bot.name', 'botName')
       .orderBy('notice.updatedAt', 'DESC')
       .addOrderBy('notice.id', 'DESC')
