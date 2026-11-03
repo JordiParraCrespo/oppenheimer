@@ -24,6 +24,7 @@ describe('readableTypes', () => {
     ]);
     expect([...readableTypes(ability(['Bot']), null)]).toEqual([
       'botApproval.changed',
+      'botNotice.changed',
       'inboxMark.changed',
     ]);
   });

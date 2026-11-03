@@ -19,6 +19,7 @@ import { BotIssueToolsFactory } from './bot-issue-tools.factory';
 import { BotMailOrganizeToolsFactory } from './bot-mail-organize-tools.factory';
 import { BotMailToolsFactory } from './bot-mail-tools.factory';
 import { BotMailWriteToolsFactory } from './bot-mail-write-tools.factory';
+import { BotNoticeToolsFactory } from './bot-notice-tools.factory';
 import { BotPlanToolsFactory } from './bot-plan-tools.factory';
 import { BotPullRequestToolsFactory } from './bot-pull-request-tools.factory';
 import { BotQuestionToolsFactory } from './bot-question-tools.factory';
@@ -68,12 +69,14 @@ export class BotToolboxFactory {
     subagents: BotSubagentToolsFactory,
     goals: BotGoalToolsFactory,
     questions: BotQuestionToolsFactory,
+    notices: BotNoticeToolsFactory,
   ) {
     this.areas = [
       self,
       skills,
       goals,
       questions,
+      notices,
       hosts,
       sessions,
       watches,

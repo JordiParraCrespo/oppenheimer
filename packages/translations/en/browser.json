@@ -2968,7 +2968,7 @@
     "type": {
       "all": "All",
       "pull": "Pull requests",
-      "approval": "Bot approvals",
+      "approval": "Bots",
       "session": "Sessions",
       "run": "Automations"
     },
@@ -2988,7 +2988,8 @@
     "from": {
       "session": "Session",
       "approval": "Bot approval",
-      "run": "Automation"
+      "run": "Automation",
+      "botNotice": "Bot"
     },
     "session": {
       "blockedShort": "{{name}} is waiting on you",
@@ -3067,6 +3068,11 @@
     },
     "notice": {
       "title": "{{name}} has news for you",
+      "done": "Done"
+    },
+    "botNotice": {
+      "title": "{{bot}} has news for you",
+      "openChat": "Open chat",
       "done": "Done"
     }
   },

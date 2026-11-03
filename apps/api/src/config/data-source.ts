@@ -28,6 +28,7 @@ import { BotConversationSummaryOrmEntity } from '../bots-chat/database/bot-conve
 import { BotGoalOrmEntity } from '../bots-chat/database/bot-goal.orm-entity';
 import { BotMessageOrmEntity } from '../bots-chat/database/bot-message.orm-entity';
 import { BotModelCallOrmEntity } from '../bots-chat/database/bot-model-call.orm-entity';
+import { BotNoticeOrmEntity } from '../bots-chat/database/bot-notice.orm-entity';
 import { BotPermissionRuleOrmEntity } from '../bots-chat/database/bot-permission-rule.orm-entity';
 import { BotQuestionOrmEntity } from '../bots-chat/database/bot-question.orm-entity';
 import { BotSubscriptionOrmEntity } from '../bots-chat/database/bot-subscription.orm-entity';
@@ -161,6 +162,7 @@ export default new DataSource({
     BotAttachmentOrmEntity,
     BotSubscriptionOrmEntity,
     BotGoalOrmEntity,
+    BotNoticeOrmEntity,
     BotModelCallOrmEntity,
     InboxMarkOrmEntity,
     BotApprovalOrmEntity,

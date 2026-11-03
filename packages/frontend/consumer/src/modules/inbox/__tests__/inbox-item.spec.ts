@@ -1,7 +1,11 @@
 import type { SessionDecision } from '@oppenheimer/shared/schemas/session-decision';
 import { describe, expect, it } from 'vitest';
 import { AutomationRunEntity } from '../../automations/automation.entity';
-import { BotApprovalEntity, WorkspaceBotApprovalEntity } from '../../bots/bot-conversation.entity';
+import {
+  BotApprovalEntity,
+  WorkspaceBotApprovalEntity,
+  WorkspaceBotNoticeEntity,
+} from '../../bots/bot-conversation.entity';
 import { ProjectEntity } from '../../projects/project.entity';
 import { PullRequestEntity } from '../../pull-requests/pull-request.entity';
 import { SessionEntity, type SessionGroup, type SessionState } from '../../sessions/session.entity';
@@ -203,6 +207,7 @@ function sources(overrides: Partial<InboxSources> = {}): InboxSources {
     requested: [],
     mine: [],
     failedRuns: [],
+    botNotices: [],
     projects: [project('p-app', ['42']), project('p-web', ['42']), project('p-none', [], true)],
     ...overrides,
   };
@@ -423,5 +428,38 @@ describe('composeInbox: what an agent told you', () => {
       ),
     ).toEqual(['notice:s1:n2']);
     expect(inboxSubject('notice:s1:n2')).toBe('notice:s1');
+  });
+});
+
+describe('composeInbox: what a bot told you', () => {
+  const told = (noticeId: string, minutesAgo: number, botId = 'bot-1') =>
+    new WorkspaceBotNoticeEntity(noticeId, botId, 'Ops', 'Release 1.4 is out.', at(minutesAgo));
+
+  it("lists a bot's notice beside the waiting sessions, by when it came, under no project", () => {
+    const view = composeInbox(
+      sources({ botNotices: [told('n1', 3)], sessions: [session('s2', { observedSince: at(1) })] }),
+      [],
+      NOW,
+    );
+    expect(view.open.map((item) => item.key)).toEqual([
+      'botnotice:bot-1:n1',
+      expect.stringMatching(/^session:s2:/),
+    ]);
+    expect(view.open[0]).toMatchObject({ kind: 'botNotice', since: at(3), projectIds: [] });
+  });
+
+  // The regression: a bot's notice keyed by its bot alone, so marking one done
+  // hid every notice the bot sent after it.
+  it('brings the next notice back after the last one was marked done', () => {
+    const done = [mark('botnotice:bot-1:n1', 'done')];
+    const first = composeInbox(sources({ botNotices: [told('n1', 3)] }), done, NOW);
+    expect(first.open).toEqual([]);
+    expect(first.done.map((item) => item.key)).toEqual(['botnotice:bot-1:n1']);
+    expect(
+      composeInbox(sources({ botNotices: [told('n2', 1)] }), done, NOW).open.map(
+        (item) => item.key,
+      ),
+    ).toEqual(['botnotice:bot-1:n2']);
+    expect(inboxSubject('botnotice:bot-1:n2')).toBe('botnotice:bot-1');
   });
 });

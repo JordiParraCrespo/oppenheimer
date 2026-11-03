@@ -29,6 +29,7 @@ export {
   BotTurnEntity,
   type BotWaitingMessage,
   type WorkspaceBotApprovalEntity,
+  type WorkspaceBotNoticeEntity,
 } from './bot-conversation.entity';
 export type {
   BotPermissionRule,

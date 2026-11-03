@@ -321,6 +321,7 @@ export type {
   WatchedRepositoryDto,
   WhatsappAccountResponseDto,
   WorkspaceBotApprovalResponseDto,
+  WorkspaceBotNoticeResponseDto,
   WorkspaceMemberResponseDto,
   WorkspaceResponseDto,
 } from './generated/types.gen';

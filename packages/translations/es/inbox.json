@@ -27,7 +27,7 @@
   "type": {
     "all": "Todos",
     "pull": "Pull requests",
-    "approval": "Aprobaciones de bots",
+    "approval": "Bots",
     "session": "Sesiones",
     "run": "Automatizaciones"
   },
@@ -47,7 +47,8 @@
   "from": {
     "session": "Sesión",
     "approval": "Aprobación de bot",
-    "run": "Automatización"
+    "run": "Automatización",
+    "botNotice": "Bot"
   },
   "session": {
     "blockedShort": "{{name}} te está esperando",
@@ -126,6 +127,11 @@
   },
   "notice": {
     "title": "{{name}} tiene novedades para ti",
+    "done": "Hecho"
+  },
+  "botNotice": {
+    "title": "{{bot}} tiene novedades para ti",
+    "openChat": "Abrir chat",
     "done": "Hecho"
   }
 }

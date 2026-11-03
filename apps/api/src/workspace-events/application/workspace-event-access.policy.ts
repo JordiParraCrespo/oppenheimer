@@ -21,6 +21,7 @@ const READ_BY: Record<
   'task.changed': { subject: 'Task', scope: 'tasks:read' },
   'milestone.changed': { subject: 'Task', scope: 'tasks:read' },
   'botApproval.changed': { subject: 'Bot', scope: 'bots:read' },
+  'botNotice.changed': { subject: 'Bot', scope: 'bots:read' },
   'inboxMark.changed': { subject: null, scope: 'inbox:read' },
 };
 

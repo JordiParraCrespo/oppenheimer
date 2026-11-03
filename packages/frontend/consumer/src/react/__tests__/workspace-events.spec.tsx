@@ -129,6 +129,10 @@ describe('useWorkspaceEvents', () => {
     expect(botsKeys.pendingApprovals()).toEqual(['bots', 'approvals', 'pending']);
 
     invalidated.length = 0;
+    await send({ type: 'botNotice.changed', id: 'n-1', botId: 'b-1' });
+    expect(invalidated).toEqual([botsKeys.workspaceNotices()]);
+
+    invalidated.length = 0;
     await send({ type: 'inboxMark.changed', itemKey: 'approval:ap-1' });
     expect(invalidated).toEqual([inboxKeys.marks()]);
   });

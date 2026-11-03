@@ -25,6 +25,7 @@ import { BotMailToolsFactory } from './application/bot-mail-tools.factory';
 import { BotMailWriteToolsFactory } from './application/bot-mail-write-tools.factory';
 import { BotMessageAttachmentsResolver } from './application/bot-message-attachments.resolver';
 import { BotModelAccessResolver } from './application/bot-model-access.resolver';
+import { BotNoticeToolsFactory } from './application/bot-notice-tools.factory';
 import { BotOwnerPermissionsResolver } from './application/bot-owner-permissions.resolver';
 import { BotOwnerScopeResolver } from './application/bot-owner-scope.resolver';
 import { BotPermissionsResolver } from './application/bot-permissions.resolver';
@@ -61,6 +62,7 @@ import { BotAttachmentMapper } from './bot-attachment.mapper';
 import { BotConversationSummaryMapper } from './bot-conversation-summary.mapper';
 import { BotGoalMapper } from './bot-goal.mapper';
 import { BotMessageMapper } from './bot-message.mapper';
+import { BotNoticeMapper } from './bot-notice.mapper';
 import { BotPermissionRuleMapper } from './bot-permission-rule.mapper';
 import { BotQuestionMapper } from './bot-question.mapper';
 import { BotSubscriptionMapper } from './bot-subscription.mapper';
@@ -76,6 +78,7 @@ import {
   BOT_ENGINE,
   BOT_GOAL_REPOSITORY,
   BOT_MESSAGE_REPOSITORY,
+  BOT_NOTICE_REPOSITORY,
   BOT_PERMISSION_RULE_REPOSITORY,
   BOT_QUESTION_REPOSITORY,
   BOT_STALL_CHECKS,
@@ -132,6 +135,8 @@ import { BotGoalRepository } from './database/bot-goal.repository';
 import { BotMessageOrmEntity } from './database/bot-message.orm-entity';
 import { BotMessageRepository } from './database/bot-message.repository';
 import { BotModelCallOrmEntity } from './database/bot-model-call.orm-entity';
+import { BotNoticeOrmEntity } from './database/bot-notice.orm-entity';
+import { BotNoticeRepository } from './database/bot-notice.repository';
 import { BotPermissionRuleOrmEntity } from './database/bot-permission-rule.orm-entity';
 import { BotPermissionRuleRepository } from './database/bot-permission-rule.repository';
 import { BotQuestionOrmEntity } from './database/bot-question.orm-entity';
@@ -174,6 +179,8 @@ import { FindPendingBotQuestionHttpController } from './queries/find-pending-bot
 import { FindPendingBotQuestionQueryHandler } from './queries/find-pending-bot-question/find-pending-bot-question.query-handler';
 import { FindWorkspaceBotApprovalsHttpController } from './queries/find-workspace-bot-approvals/find-workspace-bot-approvals.http.controller';
 import { FindWorkspaceBotApprovalsQueryHandler } from './queries/find-workspace-bot-approvals/find-workspace-bot-approvals.query-handler';
+import { FindWorkspaceBotNoticesHttpController } from './queries/find-workspace-bot-notices/find-workspace-bot-notices.http.controller';
+import { FindWorkspaceBotNoticesQueryHandler } from './queries/find-workspace-bot-notices/find-workspace-bot-notices.query-handler';
 import { ReadBotAttachmentHttpController } from './queries/read-bot-attachment/read-bot-attachment.http.controller';
 import { ReadBotAttachmentQueryHandler } from './queries/read-bot-attachment/read-bot-attachment.query-handler';
 import { SearchBotConversationQueryHandler } from './queries/search-bot-conversation/search-bot-conversation.query-handler';
@@ -194,6 +201,7 @@ const httpControllers = [
   StreamBotHttpController,
   FindBotApprovalsHttpController,
   FindWorkspaceBotApprovalsHttpController,
+  FindWorkspaceBotNoticesHttpController,
   DecideBotApprovalHttpController,
   FindPendingBotQuestionHttpController,
   AnswerBotQuestionHttpController,
@@ -242,6 +250,7 @@ const queryHandlers: Provider[] = [
   FindPendingBotQuestionQueryHandler,
   FindBotApprovalsQueryHandler,
   FindWorkspaceBotApprovalsQueryHandler,
+  FindWorkspaceBotNoticesQueryHandler,
   FindBotAttachmentQueryHandler,
   ReadBotAttachmentQueryHandler,
   FindBotPermissionsQueryHandler,
@@ -268,6 +277,7 @@ const queryHandlers: Provider[] = [
       BotMessageOrmEntity,
       BotApprovalOrmEntity,
       BotQuestionOrmEntity,
+      BotNoticeOrmEntity,
       BotConversationSummaryOrmEntity,
       BotAttachmentOrmEntity,
       BotSubscriptionOrmEntity,
@@ -293,6 +303,7 @@ const queryHandlers: Provider[] = [
     BotMessageMapper,
     BotApprovalMapper,
     BotQuestionMapper,
+    BotNoticeMapper,
     BotToolPermissionMapper,
     BotPermissionRuleMapper,
     BotConversationSummaryMapper,
@@ -326,6 +337,7 @@ const queryHandlers: Provider[] = [
     BotWatchToolsFactory,
     BotGoalToolsFactory,
     BotQuestionToolsFactory,
+    BotNoticeToolsFactory,
     BotGoalResolver,
     BotGoalReviewResolver,
     BotCompletionResolver,
@@ -361,6 +373,7 @@ const queryHandlers: Provider[] = [
     { provide: BOT_MESSAGE_REPOSITORY, useClass: BotMessageRepository },
     { provide: BOT_APPROVAL_REPOSITORY, useClass: BotApprovalRepository },
     { provide: BOT_QUESTION_REPOSITORY, useClass: BotQuestionRepository },
+    { provide: BOT_NOTICE_REPOSITORY, useClass: BotNoticeRepository },
     { provide: BOT_CONVERSATION_REPOSITORY, useClass: BotConversationRepository },
     { provide: BOT_CONVERSATION_SUMMARY_REPOSITORY, useClass: BotConversationSummaryRepository },
     { provide: BOT_STREAM, useClass: RedisBotStreamAdapter },

@@ -10,11 +10,13 @@ export interface InboxFilter {
 
 /**
  * The Type facet each kind is counted under. A session's notice counts with
- * its sessions: the facet has no option of its own for it.
+ * its sessions, and a bot's notice with the bots' approvals under Bots: the
+ * facet has no option of its own for either.
  */
 const TYPE_OF: Record<InboxItem['kind'], Exclude<InboxTypeFilter, 'all'>> = {
   session: 'session',
   notice: 'session',
+  botNotice: 'approval',
   approval: 'approval',
   pull: 'pull',
   run: 'run',

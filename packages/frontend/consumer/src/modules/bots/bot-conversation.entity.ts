@@ -349,3 +349,20 @@ export class WorkspaceBotApprovalEntity extends BotApprovalEntity {
     return typeof named === 'string' && named ? named : null;
   }
 }
+
+/**
+ * A bot's latest line to the person (its `notify` tool,
+ * `product/next-steps/agent-tools.md` §5), as the workspace's list across its
+ * bots reads it (the Inbox). Each notice has an id of its own, so a mark on
+ * one never hides the next.
+ */
+export class WorkspaceBotNoticeEntity {
+  constructor(
+    public readonly id: string,
+    public readonly botId: string,
+    public readonly botName: string,
+    public readonly text: string,
+    /** When it came. */
+    public readonly at: Date,
+  ) {}
+}

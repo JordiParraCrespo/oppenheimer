@@ -101,6 +101,9 @@ const REFRESHES: RefreshTable = {
       catchUp: false,
     },
   ],
+  // Every notice a bot sends raises it: the Inbox's list across bots. The
+  // bot's chat shows no notice, so it has nothing to refresh.
+  'botNotice.changed': [{ prefix: botsKeys.workspaceNotices(), announcesEvery: true }],
   // Every put and delete of the caller's marks.
   'inboxMark.changed': [{ prefix: inboxKeys.marks(), announcesEvery: true }],
 };
