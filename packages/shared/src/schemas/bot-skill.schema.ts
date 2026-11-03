@@ -78,9 +78,11 @@ export function parseBotSlashCommand(message: string): BotSlashCommand | null {
  * (`25-bots.md` §4.1, "Built-in commands"; from Claude Code's): a built-in
  * drives a feature the product owns, where a skill only puts words in front
  * of the bot. `goal` sets, shows or clears the bot's goal; `usage` shows
- * what the chat has spent, and is the console's alone.
+ * what the chat has spent, and is the console's alone; `loop` runs a prompt
+ * again and again, or stops the loop; `schedule` has the bot save a routine
+ * on a schedule, or opens its routines.
  */
-export const BOT_BUILT_IN_COMMANDS = ['goal', 'usage'] as const;
+export const BOT_BUILT_IN_COMMANDS = ['goal', 'usage', 'loop', 'schedule'] as const;
 export type BotBuiltInCommand = (typeof BOT_BUILT_IN_COMMANDS)[number];
 
 /**
@@ -106,11 +108,15 @@ export type BotGoalCommand =
 
 /**
  * Whether a message is a built-in the console runs itself and never sends:
- * `/goal` alone, `/goal clear` (and its aliases), and `/usage`, whatever
- * follows it. `/goal <condition>` is a message: the API sets the goal.
+ * `/goal` alone, `/goal clear` and `/loop stop` (and their aliases),
+ * `/schedule` alone, and `/usage`, whatever follows it. `/goal <condition>`,
+ * `/loop …` and `/schedule <request>` are messages: the API sets the goal or
+ * the loop, or the bot saves the routine.
  */
 export function isBotConsoleCommand(command: BotSlashCommand | null): boolean {
   if (command?.name === 'usage') return true;
+  if (botScheduleCommandOf(command)?.kind === 'open') return true;
+  if (botLoopCommandOf(command)?.kind === 'clear') return true;
   const goal = botGoalCommandOf(command);
   return goal !== null && goal.kind !== 'set';
 }
@@ -123,6 +129,92 @@ export function botGoalCommandOf(command: BotSlashCommand | null): BotGoalComman
     return { kind: 'clear' };
   }
   return { kind: 'set', condition: args };
+}
+
+/**
+ * `/loop` (`25-bots.md` §4.1; from Claude Code's `/loop`): a prompt run now
+ * and again every interval, from a minute to a day, or self-paced, when the
+ * bot says next (`schedule_loop`, up to an hour away). A loop expires
+ * `BOT_LOOP_LIFETIME_MS` after it was set. This is the longest prompt.
+ */
+export const BOT_LOOP_PROMPT_MAX = 2_000;
+export const BOT_LOOP_INTERVAL_MIN_MINUTES = 1;
+export const BOT_LOOP_INTERVAL_MAX_MINUTES = 1_440;
+/** How far ahead a self-paced loop's next run may be. */
+export const BOT_LOOP_SELF_PACED_MAX_MINUTES = 60;
+export const BOT_LOOP_LIFETIME_MS = 3 * 24 * 60 * 60 * 1_000;
+
+/** What `/loop` with no prompt runs, as Claude Code's runs its maintenance prompt. */
+export const BOT_LOOP_CHECK_IN_PROMPT =
+  'Check in: read your instructions, your open sessions and anything you were asked to watch, and report only what changed since your last run.';
+
+/**
+ * What a `/loop` asks for: a clear word stops the loop; anything else sets
+ * one, with its interval in minutes (null for self-paced) and its prompt
+ * (the check-in prompt when none is written). An interval out of range is
+ * `invalid`, so it is never read as words of the prompt. Null for a command
+ * that is not `/loop`.
+ */
+export type BotLoopCommand =
+  | { kind: 'clear' }
+  | { kind: 'set'; intervalMinutes: number | null; prompt: string }
+  | { kind: 'invalid' };
+
+const INTERVAL = /^(\d{1,6})\s*(s|secs?|seconds?|m|mins?|minutes?|h|hrs?|hours?|d|days?)$/i;
+const TRAILING_EVERY = /\s+every\s+(\d{1,6}\s*[a-z]+)$/i;
+const MINUTES_PER: Record<string, number> = { s: 1 / 60, m: 1, h: 60, d: 1_440 };
+
+/** An interval's minutes, a part minute rounded up; null when the words are no interval. */
+export function botLoopIntervalOf(words: string): number | null {
+  const match = INTERVAL.exec(words.trim());
+  if (!match?.[1] || !match[2]) return null;
+  const unit = match[2].toLowerCase().startsWith('mi') ? 'm' : match[2].toLowerCase().charAt(0);
+  return Math.ceil(Number(match[1]) * (MINUTES_PER[unit] ?? 1));
+}
+
+export function botLoopCommandOf(command: BotSlashCommand | null): BotLoopCommand | null {
+  if (command?.name !== 'loop') return null;
+  let args = command.args.trim();
+  if ((BOT_GOAL_CLEAR_WORDS as readonly string[]).includes(args.toLowerCase())) {
+    return { kind: 'clear' };
+  }
+  let interval: number | null = null;
+  const [first = '', ...rest] = args.split(/\s+/);
+  const leading = botLoopIntervalOf(first);
+  const trailing = TRAILING_EVERY.exec(args);
+  if (leading !== null) {
+    interval = leading;
+    args = rest.join(' ');
+  } else if (trailing?.[1] && botLoopIntervalOf(trailing[1]) !== null) {
+    interval = botLoopIntervalOf(trailing[1]);
+    args = args.slice(0, trailing.index).trim();
+  }
+  if (
+    interval !== null &&
+    (interval < BOT_LOOP_INTERVAL_MIN_MINUTES || interval > BOT_LOOP_INTERVAL_MAX_MINUTES)
+  ) {
+    return { kind: 'invalid' };
+  }
+  return {
+    kind: 'set',
+    intervalMinutes: interval,
+    prompt: args.trim() || BOT_LOOP_CHECK_IN_PROMPT,
+  };
+}
+
+/**
+ * `/schedule` (`25-bots.md` §4.1; from Claude Code's `/schedule`): the bot
+ * saves a routine (`26-bot-routines.md`) from the person's words, what to do
+ * and when ("every weekday at 9, check open PRs"), on a calendar where a
+ * loop runs on minutes. Nothing after it opens the bot's routines instead.
+ * Null for a command that is not `/schedule`.
+ */
+export type BotScheduleCommand = { kind: 'open' } | { kind: 'set'; request: string };
+
+export function botScheduleCommandOf(command: BotSlashCommand | null): BotScheduleCommand | null {
+  if (command?.name !== 'schedule') return null;
+  const request = command.args.trim();
+  return request ? { kind: 'set', request } : { kind: 'open' };
 }
 
 const skillNameSchema = z

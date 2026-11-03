@@ -196,7 +196,8 @@ the `version1/` artboards for what the screens actually do. Its one sentence:
   tree reads too: an identity, like an agent's vendor colour, never a
   state. Never a redrawn logo, never a hue table in a component.
 - **The rail's and the sidebar's order is the reader's.** The rail's items
-  are `SortableRailItem`s in one `SortableGroup`, and each project's sessions
+  are `SortableRailItem`s in one `SortableGroup`, Plan's views
+  `SortableRoutineItem`s in one that takes `routine-item`, and each project's sessions
   are `SortableSessionItem`s in a `SortableGroup` per project, so a row
   reorders in its project or moves to another, a folded or empty one
   included. The projects reorder too: each is a

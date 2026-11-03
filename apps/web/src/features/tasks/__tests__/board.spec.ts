@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 import { afterTaskIdFor, boardCounts, columnOf, filingOf } from '../lib/board';
 import { boardSearchSchema } from '../lib/board-search';
 import { cardView, dueDayLabel } from '../lib/card-view';
+import { projectIdsOfSlugs, projectParamOf, projectSlugsOf } from '../lib/plan-scope';
 
 function task(
   id: string,
@@ -53,11 +54,20 @@ describe('the board', () => {
   });
 
   it('narrows a column to the project and milestone it is filtered to', () => {
-    expect(columnOf(rows, 'todo', { projectId: 'p-2' }).map((row) => row.id)).toEqual(['o']);
+    expect(columnOf(rows, 'todo', { projectIds: ['p-2'] }).map((row) => row.id)).toEqual(['o']);
+  });
+
+  it('shows every project picked, not just the first', () => {
+    // A filter that read only one id hid every other picked project's cards.
+    const more = [...rows, task('q', { projectId: 'p-3', rank: 'ab' })];
+    expect(columnOf(more, 'todo', { projectIds: ['p-2', 'p-3'] }).map((row) => row.id)).toEqual([
+      'o',
+      'q',
+    ]);
   });
 
   it('drops a card after the one above it, or first', () => {
-    const column = columnOf(rows, 'todo', { projectId: 'p-1' });
+    const column = columnOf(rows, 'todo', { projectIds: ['p-1'] });
     expect(afterTaskIdFor(column, 0)).toBeNull();
     expect(afterTaskIdFor(column, 2)).toBe('a');
   });
@@ -69,7 +79,7 @@ describe('the board', () => {
       task('3', { status: 'done', dueDate: '2026-09-01' }),
       task('4', { projectId: 'p-2', dueDate: '2026-10-01' }),
     ];
-    expect(boardCounts(board, { projectId: 'p-1' }, '2026-10-05')).toEqual({
+    expect(boardCounts(board, { projectIds: ['p-1'] }, '2026-10-05')).toEqual({
       open: 2,
       doing: 1,
       done: 1,
@@ -115,9 +125,14 @@ describe('a card', () => {
     expect(cardView(task('1', { status: 'done', dueDate: '2026-10-01' }), context).due).toBeNull();
     const filtered = cardView(task('2', { milestoneId: 'g' }), {
       ...context,
-      filter: { projectId: 'p-1', milestoneId: 'g' },
+      filter: { projectIds: ['p-1'], milestoneId: 'g' },
     });
     expect(filtered).toMatchObject({ projectName: null, milestoneName: null });
+  });
+
+  it('keeps the project on the card while several are picked', () => {
+    const view = cardView(task('3'), { ...context, filter: { projectIds: ['p-1', 'p-2'] } });
+    expect(view.projectName).toBe('Mobile');
   });
 });
 
@@ -143,8 +158,8 @@ describe('filingOf', () => {
     });
   });
 
-  it('files in the filtered project, else Unassigned, when no milestone is filtered', () => {
-    expect(filingOf({ projectId: 'p-3' }, milestones, 'p-unassigned')).toEqual({
+  it('files in the first filtered project, else Unassigned, when no milestone is filtered', () => {
+    expect(filingOf({ projectIds: ['p-3', 'p-4'] }, milestones, 'p-unassigned')).toEqual({
       projectId: 'p-3',
       milestoneId: null,
     });
@@ -157,10 +172,33 @@ describe('filingOf', () => {
   it('sends a filtered milestone the list does not have without a project, for the API to resolve', () => {
     // Dropping it filed the task under Unassigned without a word; guessing a project made the API refuse a real milestone.
     expect(
-      filingOf({ milestoneId: 'm-gone', projectId: 'p-3' }, milestones, 'p-unassigned'),
+      filingOf({ milestoneId: 'm-gone', projectIds: ['p-3'] }, milestones, 'p-unassigned'),
     ).toEqual({
       projectId: undefined,
       milestoneId: 'm-gone',
     });
+  });
+});
+
+describe('?project=', () => {
+  const projects = [
+    { id: 'p-web', slug: 'web', isUnassigned: false },
+    { id: 'p-none', slug: 'unassigned-x', isUnassigned: true },
+  ];
+
+  it('reads one slug as it always did, and several comma-separated, each once', () => {
+    expect(projectSlugsOf('web')).toEqual(['web']);
+    expect(projectSlugsOf('web,billing,,web')).toEqual(['web', 'billing']);
+    expect(projectSlugsOf(undefined)).toEqual([]);
+    expect(projectParamOf([])).toBeUndefined();
+    expect(projectParamOf(['web', 'billing'])).toBe('web,billing');
+  });
+
+  it('turns slugs into ids, leaving a stale one out but never widening to All projects', () => {
+    expect(projectIdsOfSlugs(['web', 'unassigned', 'gone'], projects)).toEqual(['p-web', 'p-none']);
+    // Reading `?project=gone` as no filter would show every project's tasks.
+    expect(projectIdsOfSlugs(['gone'], projects)).toEqual([]);
+    expect(columnOf([task('t')], 'todo', { projectIds: [] })).toEqual([]);
+    expect(projectIdsOfSlugs([], projects)).toBeUndefined();
   });
 });

@@ -967,6 +967,18 @@ earlier note:
   model judges it after every turn (met, not met, impossible), as Claude
   Code's evaluator does; a person's goal takes up to 20 continuations, a
   bot's 5 unless it asks for up to 20 (25 §4.1, "Built-in commands").
+- `versions/mvp/26-bot-routines.md` §4 (2026-10-18) had every routine
+  save by the bot ask the owner first, except on the Routines tab. On
+  2026-11-03 `/schedule <request>` was built (25 §4.1): the bot saves the
+  routine the person's command asks for, and that one create raises no
+  card, since the command is the consent. Changes, deletes and runs still
+  ask.
+- `versions/mvp/25-bots.md` §4.1 (2026-11-02) planned `/loop` or
+  `/schedule` as a routine of the bot's (26). On 2026-11-03 the owner chose
+  `/loop`, and it is its own built-in instead: routines run on a calendar
+  and last until deleted, while a loop runs every few minutes (1 minute to
+  1 day, or when the bot chooses), belongs to the chat it was typed in and
+  expires after 3 days. `/schedule` stays planned as a routine (25 §4.1).
 - `versions/mvp/25-bots.md` §4.1 (2026-11-02) drew `/usage` as three lines
   of this chat's figures and left the context and plan windows to the
   composer's meter. On 2026-11-03 the owner asked for a card like Claude
@@ -1115,6 +1127,12 @@ earlier note:
   `prompt_cache_key`, and the history loses its oldest messages a block of
   about 6,000 tokens at a time, so each turn's request starts as the last
   one's did.
+- `versions/mvp/25-bots.md` §4.3 listed `create_project` and
+  `update_project` as asking first. On 2026-11-03 (issue #647) they were
+  built to run under Approve for me like the task writes, since a project is
+  metadata and an edit can be put back; `archive_project`, which cannot be
+  undone, asks under every preset, one call at a time. `move_session` was
+  added, and the workspace stream gained `project.changed`.
 - `versions/mvp/29-inbox.md` §1 ordered the Inbox most blocked first:
   approvals and waiting sessions oldest wait first, then requested
   reviews, ready merges and failed runs. On 2026-11-03 the owner asked for

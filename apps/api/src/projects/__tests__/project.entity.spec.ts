@@ -34,6 +34,29 @@ describe('ProjectEntity', () => {
     ]);
   });
 
+  it('announces its creation and each settings change, so the console re-reads its projects', () => {
+    const project = ProjectEntity.createNew(VALID);
+    expect(project.domainEvents.map((event) => event.constructor.name)).toEqual([
+      'ProjectChangedDomainEvent',
+    ]);
+    project.clearEvents();
+
+    project.configure({ defaultAgent: 'codex' });
+
+    expect(project.domainEvents.map((event) => event.constructor.name)).toEqual([
+      'ProjectChangedDomainEvent',
+    ]);
+  });
+
+  it('announces nothing when a configure changes nothing', () => {
+    const project = ProjectEntity.createNew(VALID);
+    project.clearEvents();
+
+    project.configure({ name: project.name, repositories: project.repositories });
+
+    expect(project.domainEvents).toHaveLength(0);
+  });
+
   it('keeps the slug when the project is renamed', () => {
     const project = ProjectEntity.createNew(VALID);
 

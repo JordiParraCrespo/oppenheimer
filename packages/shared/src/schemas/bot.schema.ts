@@ -704,6 +704,45 @@ export interface BotGoalEvent {
 }
 
 /**
+ * What a loop line says (`25-bots.md` §4.1, `/loop`): `ran` opens a run's
+ * turn; the others say, outside any turn, how the loop ended when the bot
+ * did not end it itself (its `end_loop` call is the record of that): the
+ * owner stopped it (`cleared`), its 3 days ran out (`expired`), a run of it
+ * failed or was stopped, or its owner lost access (`stopped`), or a
+ * self-paced run did not say when to run next (`ended`).
+ */
+export const BOT_LOOP_ACTIVITIES = ['ran', 'cleared', 'expired', 'stopped', 'ended'] as const;
+export type BotLoopActivity = (typeof BOT_LOOP_ACTIVITIES)[number];
+
+export interface BotLoopEvent {
+  kind: 'loop';
+  activity: BotLoopActivity;
+  loopId: string;
+  /** The loop's prompt at the time. */
+  prompt: string;
+  /** Its interval in minutes; null when self-paced. */
+  intervalMinutes: number | null;
+  /** For `ran`, which run this is, the message that set it being the first; otherwise how many ran. */
+  run: number;
+  /** For `stopped`, a code: the status of the run that ended it, or `access_lost`. */
+  reason: string | null;
+}
+
+/** A bot's loop as the console reads it: `GET /bots/:id/loop`. */
+export interface BotLoop {
+  id: string;
+  prompt: string;
+  /** Null when self-paced. */
+  intervalMinutes: number | null;
+  /** The runs so far, the message that set it being the first. */
+  runs: number;
+  /** When the next run is due; null while a self-paced loop waits for the bot to say. */
+  nextRunAt: string | null;
+  expiresAt: string;
+  createdAt: string;
+}
+
+/**
  * What a bot spends, for `/usage` (`25-bots.md` §4.1, "Built-in commands";
  * from Claude Code's `/usage`): its turns, by the provider and model each ran
  * on, and the calls it makes on its owner's key outside them. Every count is
@@ -752,12 +791,14 @@ export interface BotGoal {
   continuations: number;
   limit: number;
   createdAt: string;
+  /** A turn ended on a system's rate limit, and the goal goes on at `until`; null when nothing holds it. */
+  waiting: { system: string; until: string } | null;
 }
 
 /**
  * Why a bot turn exists: a message (yours or another bot's), an approval's
  * decision, a card of questions answered or dismissed, a routine's run, a
- * session the bot is subscribed to, or a goal it set itself.
+ * session the bot is subscribed to, a goal it set itself, or a loop's run.
  */
 export const BOT_TURN_ORIGINS = [
   'message',
@@ -766,6 +807,7 @@ export const BOT_TURN_ORIGINS = [
   'routine',
   'subscription',
   'goal',
+  'loop',
 ] as const;
 export type BotTurnOrigin = (typeof BOT_TURN_ORIGINS)[number];
 
@@ -881,7 +923,8 @@ export type BotMessageEvent =
   | BotPeerReplyEvent
   | BotSessionEvent
   | BotPullRequestEvent
-  | BotGoalEvent;
+  | BotGoalEvent
+  | BotLoopEvent;
 
 /** The kinds of event, for a reader that checks one before trusting its fields. */
 export const BOT_MESSAGE_EVENT_KINDS = [
@@ -893,6 +936,7 @@ export const BOT_MESSAGE_EVENT_KINDS = [
   'session',
   'pull_request',
   'goal',
+  'loop',
 ] as const;
 export type BotMessageEventKind = (typeof BOT_MESSAGE_EVENT_KINDS)[number];
 

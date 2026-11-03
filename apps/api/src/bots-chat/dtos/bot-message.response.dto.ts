@@ -3,6 +3,7 @@ import {
   BOT_APPROVAL_EVENT_STAGES,
   BOT_EVENT_OUTCOMES,
   BOT_GOAL_ACTIVITIES,
+  BOT_LOOP_ACTIVITIES,
   BOT_MESSAGE_ROLES,
   BOT_QUESTION_OUTCOMES,
   BOT_REPLY_OUTCOMES,
@@ -12,6 +13,7 @@ import {
   type BotApprovalEventStage,
   type BotEventOutcome,
   type BotGoalActivity,
+  type BotLoopActivity,
   type BotMessageRole,
   type BotQuestionOutcome,
   type BotReplyOutcome,
@@ -371,6 +373,45 @@ export class BotGoalEventResponseDto {
   reason!: string | null;
 }
 
+export class BotLoopEventResponseDto {
+  @ApiProperty({ enum: ['loop'] })
+  kind!: 'loop';
+
+  @ApiProperty({
+    enum: BOT_LOOP_ACTIVITIES,
+    description:
+      '`ran` opens a run of the loop; the others say how it ended outside any turn: stopped by its owner (`cleared`), out of its 3 days (`expired`), a run of it failed or was stopped (`stopped`), or a self-paced run did not say when to run next (`ended`).',
+  })
+  activity!: BotLoopActivity;
+
+  @ApiProperty({ format: 'uuid' })
+  loopId!: string;
+
+  @ApiProperty({ description: "The loop's prompt at the time." })
+  prompt!: string;
+
+  @ApiProperty({
+    type: Number,
+    nullable: true,
+    description: 'Minutes between runs; null when the bot says when it runs next.',
+  })
+  intervalMinutes!: number | null;
+
+  @ApiProperty({
+    description:
+      'For `ran`, which run this is, the message that set it being the first; otherwise how many ran.',
+  })
+  run!: number;
+
+  @ApiProperty({
+    nullable: true,
+    type: String,
+    description:
+      'For `stopped`: the status of the run that ended it, or `access_lost`; otherwise null.',
+  })
+  reason!: string | null;
+}
+
 export type BotMessageEventResponseDto =
   | BotApprovalEventResponseDto
   | BotQuestionEventResponseDto
@@ -379,7 +420,8 @@ export type BotMessageEventResponseDto =
   | BotPeerReplyEventResponseDto
   | BotSessionEventResponseDto
   | BotPullRequestEventResponseDto
-  | BotGoalEventResponseDto;
+  | BotGoalEventResponseDto
+  | BotLoopEventResponseDto;
 
 /** One thing the chat draws: your message, the bot's text, an activity line or an event. */
 @ApiExtraModels(
@@ -391,6 +433,7 @@ export type BotMessageEventResponseDto =
   BotSessionEventResponseDto,
   BotPullRequestEventResponseDto,
   BotGoalEventResponseDto,
+  BotLoopEventResponseDto,
 )
 export class BotMessageResponseDto {
   @ApiProperty({ format: 'uuid' })
@@ -424,6 +467,7 @@ export class BotMessageResponseDto {
       { $ref: getSchemaPath(BotSessionEventResponseDto) },
       { $ref: getSchemaPath(BotPullRequestEventResponseDto) },
       { $ref: getSchemaPath(BotGoalEventResponseDto) },
+      { $ref: getSchemaPath(BotLoopEventResponseDto) },
     ],
     nullable: true,
     description: 'What an event says happened, by `kind`; null on every other role.',

@@ -6,6 +6,7 @@ import {
   type CreateEntityProps,
 } from '@oppenheimer/backend-ddd';
 import { ProjectArchivedDomainEvent } from './events/project-archived.domain-event';
+import { ProjectChangedDomainEvent } from './events/project-changed.domain-event';
 import {
   type ProjectRepositoryProps,
   projectRepositoriesProblem,
@@ -113,7 +114,7 @@ export class ProjectEntity extends AggregateRoot<ProjectProps> {
   static createNew(props: CreateProjectProps): ProjectEntity {
     assertNameFree(props.name);
     assertHoldable(props.repositories);
-    return new ProjectEntity({
+    const project = new ProjectEntity({
       id: props.id ?? randomUUID(),
       props: {
         organizationId: props.organizationId,
@@ -127,6 +128,8 @@ export class ProjectEntity extends AggregateRoot<ProjectProps> {
         isUnassigned: false,
       },
     });
+    project.announceChange('A project was made; the console lists it');
+    return project;
   }
 
   get organizationId(): string {
@@ -178,6 +181,7 @@ export class ProjectEntity extends AggregateRoot<ProjectProps> {
    * every call rather than after the last of several.
    */
   configure(settings: ProjectSettings): void {
+    const before = this.settingsKey();
     if (settings.name !== undefined && settings.name !== this.props.name) {
       this.assertNotUnassigned('renamed');
       assertNameFree(settings.name);
@@ -191,6 +195,16 @@ export class ProjectEntity extends AggregateRoot<ProjectProps> {
     if (settings.defaultAgent !== undefined) this.props.defaultAgent = settings.defaultAgent;
     this.setUpdatedAt(new Date());
     this.validate();
+    // Only a real change is announced: the console re-reads on it.
+    if (this.settingsKey() !== before) {
+      this.announceChange("A project's settings changed; the console re-reads it");
+    }
+  }
+
+  /** What `configure` may change, as one comparable value. */
+  private settingsKey(): string {
+    const { name, repositories, defaultHostId, defaultAgent } = this.props;
+    return JSON.stringify({ name, repositories, defaultHostId, defaultAgent });
   }
 
   /**
@@ -250,6 +264,16 @@ export class ProjectEntity extends AggregateRoot<ProjectProps> {
    * place. The handlers ask first and answer with `PROJECTS_008`; this is the
    * aggregate holding the invariant whatever the caller.
    */
+  private announceChange(reason: string): void {
+    this.addEvent(
+      new ProjectChangedDomainEvent({
+        aggregateId: this.id,
+        organizationId: this.props.organizationId,
+        reason,
+      }),
+    );
+  }
+
   private assertNotUnassigned(change: 'renamed' | 'archived'): void {
     if (this.props.isUnassigned) {
       throw new ArgumentInvalidException(`The Unassigned project cannot be ${change}`);

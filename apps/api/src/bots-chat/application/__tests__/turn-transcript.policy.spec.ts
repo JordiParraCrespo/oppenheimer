@@ -63,7 +63,7 @@ describe('TurnTranscript', () => {
       cacheWriteTokens: 1,
       context: null,
       planLimits: null,
-      limitedUntil: null,
+      limited: null,
     });
   });
 
@@ -286,7 +286,10 @@ describe('TurnTranscript', () => {
     }
     const steps = inserted(writes).flatMap((message) => message.steps);
     transcript.endTurn(new Date('2026-11-02T10:00:00.000Z'), null);
-    expect(transcript.result.limitedUntil).toEqual(new Date('2026-11-02T10:02:00.000Z'));
+    expect(transcript.result.limited).toEqual({
+      system: 'Gmail',
+      resetAt: new Date('2026-11-02T10:02:00.000Z'),
+    });
     // Each step keeps its own limit and is stored as no error: the chat draws it as a wait.
     expect(steps.map((step) => step.isError)).toEqual([false, false]);
     expect(steps.map((step) => step.rateLimit?.resetAt)).toEqual([

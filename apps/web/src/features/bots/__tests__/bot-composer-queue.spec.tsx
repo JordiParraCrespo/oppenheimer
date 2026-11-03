@@ -35,6 +35,7 @@ const state = vi.hoisted(() => ({
 vi.mock('@oppenheimer/frontend-consumer/react', () => ({
   useBotActiveTurn: () => ({ id: 'run', status: 'running' }),
   useBotGoal: () => ({ data: null }),
+  useBotLoop: () => ({ data: null }),
   useBotWaitingMessages: () => [
     { turnId: 'q1', text: 'Then the tests', images: 0, steer: false },
     { turnId: 'q2', text: '', images: 2, steer: false },
@@ -44,6 +45,7 @@ vi.mock('@oppenheimer/frontend-consumer/react', () => ({
   useSendBotMessage: () => ({ mutate: state.send, reset: vi.fn(), error: null, isPending: false }),
   useUploadBotImage: () => ({ mutateAsync: vi.fn() }),
   useCancelBotTurn: () => ({ mutate: state.cancel, reset: vi.fn(), error: null, isPending: false }),
+  useClearBotLoop: () => ({ mutate: vi.fn(), reset: vi.fn(), error: null, isPending: false }),
   useClearBotGoal: () => ({ mutate: vi.fn(), reset: vi.fn(), error: null, isPending: false }),
   useVoiceDictation: () => ({ available: false, transcribe: async () => null }),
   useBotSlashCommands: () => ({ data: undefined }),

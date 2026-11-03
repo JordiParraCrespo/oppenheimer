@@ -5,6 +5,7 @@ import {
   BOT_EVENT_OUTCOMES,
   BOT_GOAL_ACTIVITIES,
   BOT_IMAGE_MIME_TYPES,
+  BOT_LOOP_ACTIVITIES,
   BOT_QUESTION_OUTCOMES,
   BOT_REPLY_OUTCOMES,
   BOT_ROUTINE_ACTIVITIES,
@@ -31,6 +32,7 @@ import { BotAttachmentResponseDto } from './dtos/bot-attachment.response.dto';
 import {
   BotApprovalEventResponseDto,
   BotGoalEventResponseDto,
+  BotLoopEventResponseDto,
   type BotMessageEventResponseDto,
   BotMessageResponseDto,
   BotPeerMessageEventResponseDto,
@@ -296,6 +298,8 @@ function toEventResponse(event: BotMessageEvent): BotMessageEventResponseDto {
       return Object.assign(new BotPullRequestEventResponseDto(), event);
     case 'goal':
       return Object.assign(new BotGoalEventResponseDto(), event);
+    case 'loop':
+      return Object.assign(new BotLoopEventResponseDto(), event);
   }
 }
 
@@ -389,6 +393,19 @@ function toEvent(raw: Record<string, unknown> | null): BotMessageEvent | null {
       objective: String(raw.objective ?? ''),
       step: typeof raw.step === 'number' ? raw.step : 0,
       limit: typeof raw.limit === 'number' ? raw.limit : 0,
+      reason: typeof raw.reason === 'string' ? raw.reason : null,
+    };
+  }
+  if (raw.kind === 'loop') {
+    const activity = BOT_LOOP_ACTIVITIES.find((known) => known === raw.activity);
+    if (!activity || typeof raw.loopId !== 'string') return null;
+    return {
+      kind: 'loop',
+      activity,
+      loopId: raw.loopId,
+      prompt: String(raw.prompt ?? ''),
+      intervalMinutes: typeof raw.intervalMinutes === 'number' ? raw.intervalMinutes : null,
+      run: typeof raw.run === 'number' ? raw.run : 0,
       reason: typeof raw.reason === 'string' ? raw.reason : null,
     };
   }

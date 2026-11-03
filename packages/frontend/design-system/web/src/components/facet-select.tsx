@@ -95,8 +95,9 @@ type FacetOption = {
  *   queue shows every facet at once.
  *
  * A facet over a fixed set (the lanes, the checks) is this radio menu; one
- * over a list the workspace grows (Plan's projects and milestones) is
- * `SearchableFacetSelect`, on the same trigger. Several independent facets of
+ * over a list the workspace grows (Plan's milestones) is
+ * `SearchableFacetSelect`, on the same trigger, and `SearchableFacetMultiSelect`
+ * when the reader may pick several (Plan's projects). Several independent facets of
  * one menu (the sessions filter) stay `DropdownMenuSub`s; this is a facet
  * that sits on the page.
  *
@@ -141,13 +142,13 @@ function FacetSelect({
       <DropdownMenuContent style={{ minWidth: menuWidth ?? (variant === 'pill' ? 240 : 200) }}>
         <DropdownMenuRadioGroup value={current?.value} onValueChange={(next) => onValueChange(String(next))}>
           {options.map((option) => (
-            <DropdownMenuRadioItem key={option.value} value={option.value} closeOnClick>
-              <span className="flex items-center gap-2.5">
-                <span className="min-w-0 flex-1 truncate">{option.label}</span>
-                {option.count !== undefined ? (
-                  <span className="figures font-mono text-[11.5px] text-fg-subtle">{option.count}</span>
-                ) : null}
-              </span>
+            <DropdownMenuRadioItem
+              key={option.value}
+              value={option.value}
+              count={option.count}
+              closeOnClick
+            >
+              {option.label}
             </DropdownMenuRadioItem>
           ))}
         </DropdownMenuRadioGroup>
@@ -156,9 +157,64 @@ function FacetSelect({
   );
 }
 
+/** What both searchable facets take from their caller, besides the value. */
+type SearchableFacetProps = {
+  label: string;
+  options: SearchListOption[];
+  searchPlaceholder: string;
+  emptyText: (query: string) => React.ReactNode;
+  variant?: FacetVariant;
+  icon?: React.ReactNode;
+  menuWidth?: number;
+  className?: string;
+};
+
+/**
+ * The body both searchable facets share: the trigger, the popup and the
+ * `SearchList` in it. The public facet says what is picked (`current` on the
+ * trigger, `checked` in the list) and what a pick does; `onPick` gets `close`
+ * for a pick that ends the choice.
+ */
+function SearchableFacet({
+  label,
+  options,
+  searchPlaceholder,
+  emptyText,
+  variant = 'labelled',
+  icon,
+  menuWidth = 272,
+  className,
+  current,
+  set,
+  checked,
+  onPick,
+}: SearchableFacetProps & {
+  current: React.ReactNode;
+  set: boolean;
+  checked: string | readonly string[];
+  onPick: (option: SearchListOption, selected: boolean, close: () => void) => void;
+}) {
+  const [open, setOpen] = React.useState(false);
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger {...facetTriggerProps({ label, current, set, variant, icon, className })} />
+      <ChipSelectPopup density="menu" width={menuWidth} className="p-0">
+        <SearchList
+          aria-label={label}
+          options={options}
+          value={checked}
+          onPick={(option, selected) => onPick(option, selected, () => setOpen(false))}
+          searchPlaceholder={searchPlaceholder}
+          emptyText={emptyText}
+        />
+      </ChipSelectPopup>
+    </Popover>
+  );
+}
+
 /**
  * SearchableFacetSelect — `FacetSelect`'s trigger over a list the workspace
- * grows: Plan's Project and Milestone. It opens the Bots picker's shape, a
+ * grows: Plan's Milestone. It opens the Bots picker's shape, a
  * `SearchList` with the count and the check on each row, and a pick closes it.
  * The first option is still the facet unset, and lights nothing.
  *
@@ -176,52 +232,84 @@ function FacetSelect({
  * ```
  */
 function SearchableFacetSelect({
-  label,
-  options,
   value,
   onValueChange,
-  searchPlaceholder,
-  emptyText,
-  variant = 'labelled',
-  icon,
-  menuWidth = 272,
-  className,
-}: {
-  label: string;
-  options: SearchListOption[];
+  ...props
+}: SearchableFacetProps & {
   value: string;
   onValueChange: (value: string) => void;
-  searchPlaceholder: string;
-  emptyText: (query: string) => React.ReactNode;
-  variant?: FacetVariant;
-  icon?: React.ReactNode;
-  menuWidth?: number;
-  className?: string;
 }) {
-  const [open, setOpen] = React.useState(false);
-  const current = options.find((o) => o.value === value) ?? options[0];
-  const set = current !== undefined && current !== options[0];
+  const current = props.options.find((o) => o.value === value) ?? props.options[0];
   return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger
-        {...facetTriggerProps({ label, current: current?.label, set, variant, icon, className })}
-      />
-      <ChipSelectPopup density="menu" width={menuWidth} className="p-0">
-        <SearchList
-          aria-label={label}
-          options={options}
-          value={current?.value ?? ''}
-          onPick={(option) => {
-            onValueChange(option.value);
-            setOpen(false);
-          }}
-          searchPlaceholder={searchPlaceholder}
-          emptyText={emptyText}
-        />
-      </ChipSelectPopup>
-    </Popover>
+    <SearchableFacet
+      {...props}
+      current={current?.label}
+      set={current !== undefined && current !== props.options[0]}
+      checked={current?.value ?? ''}
+      onPick={(option, _selected, close) => {
+        onValueChange(option.value);
+        close();
+      }}
+    />
   );
 }
 
-export { FacetSelect, SearchableFacetSelect };
+/**
+ * SearchableFacetMultiSelect — `SearchableFacetSelect` over a set: Plan's
+ * Project, where a reader follows several projects at once. Its rows are
+ * checks, and the popup stays open while they are toggled. The first option
+ * is still the facet unset ("All projects"): it is checked while nothing is,
+ * and picking it clears the set. The trigger reads the first picked option's
+ * label, then `+N` in mono for the rest, and lights like a single pick.
+ *
+ * ```tsx
+ * <SearchableFacetMultiSelect
+ *   variant="pill"
+ *   label="Project"
+ *   icon={<FolderIcon />}
+ *   options={[{ value: 'all', label: 'All projects' }, ...projects]}
+ *   values={picked}
+ *   onValuesChange={setPicked}
+ *   searchPlaceholder="Search projects"
+ *   emptyText={(query) => `Nothing matches “${query}”.`}
+ * />
+ * ```
+ */
+function SearchableFacetMultiSelect({
+  values,
+  onValuesChange,
+  ...props
+}: SearchableFacetProps & {
+  /** The options picked, in the order they were picked; empty is the facet unset. */
+  values: readonly string[];
+  onValuesChange: (values: string[]) => void;
+}) {
+  const unset = props.options[0];
+  const picked = props.options.filter((o) => o !== unset && values.includes(o.value));
+  const first = values.map((value) => picked.find((o) => o.value === value)).find(Boolean);
+  return (
+    <SearchableFacet
+      {...props}
+      current={
+        picked.length > 1 ? (
+          <>
+            {first?.label}{' '}
+            <span className="figures font-mono text-[11.5px]">+{picked.length - 1}</span>
+          </>
+        ) : (
+          first?.label
+        )
+      }
+      set={picked.length > 0}
+      checked={picked.length ? picked.map((o) => o.value) : unset ? [unset.value] : []}
+      onPick={(option, selected) => {
+        if (option === unset) return onValuesChange([]);
+        const rest = values.filter((value) => value !== option.value);
+        onValuesChange(selected ? [...rest, option.value] : rest);
+      }}
+    />
+  );
+}
+
+export { FacetSelect, SearchableFacetMultiSelect, SearchableFacetSelect };
 export type { FacetOption };

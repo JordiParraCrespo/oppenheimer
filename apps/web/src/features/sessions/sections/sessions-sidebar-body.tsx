@@ -78,7 +78,7 @@ const DeleteSessionsDialog = lazy(() =>
  *
  * Rows can be picked to act on together (`useSessionSelectionStore`): the
  * store is the sidebar's, each row subscribes to its own pick, and the sidebar
- * reads only whether anything is picked, which swaps the Projects line for
+ * reads only whether anything is picked, which swaps the Sessions line for
  * the selection bar. A Shift-click spans the rows as drawn here.
  */
 export function SessionsSidebarBody() {
@@ -157,7 +157,7 @@ export function SessionsSidebarBody() {
       {/* The pins reach the head too: the selection bar pins what is picked. */}
       <SessionPinsContext value={pins}>
         <SessionsSidebarHead
-          projectCount={projects.length - listing.hiddenCount}
+          sessionCount={pinned.length + listing.sessions.length}
           filters={filters}
           options={options}
           dirty={dirty}

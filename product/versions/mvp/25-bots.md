@@ -450,6 +450,12 @@ it one:
   has a clock and "Gmail limit · until 10:02" in the line's own colour, not
   the red "failed"; a group of calls counts it out of its "N failed". An
   exported chat marks it the same way.
+- **The goal says it waits** (2026-11-03). The end that holds a goal's
+  decision also marks the goal (`bot_goal."waitingFor"`, `"waitingUntil"`,
+  both or neither, in the same transaction as the held job); claiming the
+  next continuation clears it, and a goal that ends is deleted with it. The
+  goal's banner draws a clock and "waiting for Gmail until 10:02" in place
+  of its count, so a held goal does not look stalled.
 
 ### 4.1 Itself
 | Tool | Does | Default |
@@ -609,13 +615,14 @@ under one before it was reserved keeps its row and the bot may still use
 it, but its `/<name>` runs the built-in. The composer's `/` menu lists the
 built-ins first, under Commands, then the skills.
 
-The owner chose them in this order. Only the first is built:
+The owner chose them in this order:
 
 | Command | Does | State |
 |---------|------|-------|
 | `/goal <condition>` | Sets the bot's goal and starts on it (above). `/goal` alone keeps send off and says the condition is missing; `/goal clear` (or `stop`, `off`, `reset`, `none`, `cancel`) stops the goal, as Stop does, and sends nothing. The API refuses both as messages (`GENERIC.ARGUMENT_INVALID`): they are `GET` and `DELETE /bots/:id/goal` | Built |
 | `/usage` | Puts the usage card in the chat: what the chat has spent, in tokens (below). The API refuses it as a message, as it does `/goal` alone | Built |
-| `/loop [interval] <prompt>` or `/schedule` | Run a prompt on an interval, or on a schedule, as a routine of the bot's (26) | Planned |
+| `/loop [interval] [prompt]` | Runs a prompt now and again on an interval, or when the bot chooses, until it is stopped or expires (below). `/loop stop` (or `clear`, `off`, `reset`, `none`, `cancel`) stops it, as Stop does, and sends nothing: the API refuses it as a message, as it is `DELETE /bots/:id/loop` | Built |
+| `/schedule <request>` | Has the bot save a routine (26) from your words, what to do and when, with no card: your command is the consent. `/schedule` alone opens the bot's Routines tab and sends nothing (below) | Built |
 | `/plan <idea>` | Think before acting: break the idea into steps, or tasks on the plan, and ask before starting | Planned |
 | `/grill-me` | Interview the person about a plan, one branch of the decision tree at a time, until it holds (from this repo's own `grill-me` skill) | Planned |
 
@@ -660,6 +667,92 @@ ChatGPT sign-in pays nothing per token. Prices are a table of their own,
 added on top of these counts. Nor a chart over time (Claude Code's card has
 none either); the counts are kept per turn, so a day-by-day view can come
 from the same rows.
+
+**`/loop`** (2026-11-03, from Claude Code's `/loop`,
+`code.claude.com/docs/en/scheduled-tasks`). The person asks the bot to do
+something again and again while they are away from the chat: "check the
+deploy every 5 minutes", "watch PR 42 and tell me when it is green". It is
+not a routine (26): a routine runs on a calendar (daily, weekly, monthly)
+and lasts until deleted, while a loop runs on minutes, belongs to the chat
+it was typed in, and ends on its own.
+
+- **The command.** `/loop 5m check the deploy` or `/loop check the deploy
+  every 5m` runs the prompt now and then every interval: seconds (rounded
+  up to a minute), minutes, hours or days, from 1 minute to 1 day.
+  `/loop check the deploy` with no interval is **self-paced**: after each
+  run the bot says when to run next with `schedule_loop` (1 to 60 minutes:
+  sooner while things move, later when they are quiet), and a run that
+  does not say ends the loop, as Claude Code's dynamic loop ends when the
+  model schedules no wakeup. `/loop` with no prompt runs the check-in
+  prompt: read your instructions, your open sessions and what you were
+  asked to watch, and report only what changed.
+- **One per bot.** A new `/loop` replaces the one there is, and its waiting
+  run goes with it. The message that sets it is the first run.
+- **A run** is a turn in the background lane (after your messages and
+  other bots'), on the bot's provider, model and effort as they are at the
+  run, as the owner, with the setting message's reach; it opens with a line,
+  "Loop · run 3", the message that set it being run 1. A run due while the last one is still
+  queued or running is skipped, so a busy bot is never handed a pile of
+  them; a self-paced run waits a minute and tries again instead.
+- **The bot ends it** with `end_loop` when it has served its purpose (the
+  deploy finished, the PR is green), and says why in its reply.
+- **It ends on its own** 3 days after it was set (`expired`), when you
+  stopped a run of it or a run failed in a way the next would meet again (a
+  refused key, a spent plan, a refusal: `stopped`), when a self-paced run
+  did not schedule the next (`ended`), and when its owner can no longer act
+  in the workspace. A loop meant to run for days rides out the rest: a run
+  stopped by the 4-minute turn limit or a passing failure (a rate limit, an
+  outage) keeps it, and a self-paced one that failed in passing is tried
+  again a minute on.
+  Each end is a line in the chat with how it ended; Stop or `/loop stop` is
+  `cleared`. Clearing the chat deletes the loop with the turn that set it.
+- **Above the composer**, where the goal sits: "Loop · every 5m · check
+  the deploy", when the next run is, and Stop. A goal, when the bot has
+  both, is shown first.
+- **Where it lives.** `bot_loop`, one row per bot (`AddBotLoops`): the
+  prompt, the interval in minutes (null when self-paced), the runs queued
+  so far, when the next is due and when it expires. A run is a queued
+  `bot_turn` of origin `loop` keyed `loop:<id>:<run>`, as a goal's
+  continuation is. The next run is a delayed job on the outbox, held until
+  its time, and it carries the time it was staged for, so a run moved
+  (`schedule_loop` again, a skip) leaves the old job with nothing to do.
+
+| Tool | Does | Default |
+|------|------|---------|
+| `schedule_loop` | Says when a self-paced loop runs next, 1 to 60 minutes from now | auto |
+| `end_loop` | Ends the loop: it has served its purpose. No more runs come | auto |
+
+Neither asks: the person set the loop, its spend is bounded by its
+interval and its 3 days, every run is a line, and Stop is one click. The
+3 days and the 1-minute floor are ours (Claude Code takes the same floor).
+
+**`/schedule`** (2026-11-03, from Claude Code's `/schedule`). Where a loop
+runs every few minutes in this chat and ends in 3 days, a schedule is a
+**routine** (26): an automation whose run target is the bot, on a calendar
+(daily, weekdays, weekly, monthly, or once on a date), that lasts until it is
+deleted, runs whether or not the chat is open, and is listed on the bot's
+Routines tab and on `/automations` with the rest. `/schedule` is the way to
+make one by typing:
+
+- `/schedule every weekday at 9, check open PRs and tell me which need me`
+  is a message. Its turn tells the bot to save the routine now with its
+  `update_routine` tool (a name, the prompt it will run, a schedule trigger
+  in the person's time zone) and say in a line what it saved and when it
+  runs. The words are the bot's to read, as Claude Code's model reads them:
+  no grammar of times to learn.
+- **No card.** `update_routine` asks before a save (26 §4); in the turn of
+  the person's own `/schedule`, a `create` does not, since the command is
+  the consent to that routine. Changing, deleting or running one still
+  asks, in that turn as in any other.
+- A request for minutes ("every 5 minutes") is a loop: the bot says so and
+  points to `/loop`. One that says what but not when is asked about, never
+  guessed.
+- `/schedule` alone opens the bot's Routines tab, where its routines are
+  paused, run now or deleted; the API refuses it as a message.
+
+Loop or schedule, in a line: **`/loop`** for watching something now ("check
+the deploy every 5 minutes"), **`/schedule`** for a habit ("every Monday at
+9, summarise last week's PRs").
 
 Built-ins that change the bot's code tools are not here: a bot has no
 shell, so `/code-review`, `/simplify` and their kind stay the coding
@@ -711,11 +804,46 @@ as the person does and act on them. Three rules hold it:
 | Tool | Does | Default |
 |------|------|---------|
 | `list_projects` / `get_project` | The workspace's projects, or one with its repositories, default host and agent | auto |
-| `create_project` / `update_project` | Make a project, or change its name, repositories, default host or agent | ask |
+| `create_project` / `update_project` | Make a project, or change its name, repositories, default host or agent; a name another project already has is refused unless the person asked for a second one (built 2026-11-03, issue #647) | auto |
+| `archive_project` | Archive a project: nothing new goes in it and its automations pause; refused while it has sessions that are not closed, which the call names (built 2026-11-03, issue #647) | always asks, per call |
+| `move_session` | List an existing session under another project, or Unassigned (built 2026-11-03, issue #647) | auto |
 | `list_tasks` / `get_task` / `plan_summary` | Tasks, milestones, stats | auto |
-| `create_task` / `update_task` / `move_task` | Add a task, edit its title, notes, milestone, due date or blocked reason, or move it to a column | auto |
+| `create_task` / `update_task` / `move_task` | Add a task, edit its title, notes, project, milestone, due date or blocked reason, or move it to a column | auto |
 | `delete_task` | Delete a task | ask |
 | `start_task_session` | A session for a task | ask |
+
+Built 2026-11-03 (issue #647), after a bot told its owner it could not
+create a project called "local SEO" and to do it in the console. The
+project writes go through the projects' and sessions' own commands in the
+owner's scope, with the request schemas the console's routes validate, so a
+bot meets the rules a person does and no rule of its own beyond one:
+
+- **Making and changing run; archiving always asks.** A project is
+  metadata inside Oppenheimer and a create, an edit or a move can be put
+  back, so under Approve for me they run like the task writes (this table
+  said `ask` before). An archive cannot be undone (there is no restore: the
+  slug is a tombstone, `10-api-modules-and-data-model.md`), so it asks under
+  every preset and its card offers this call only. Its card is not raised
+  for the Unassigned project, an archived one, or one with open sessions:
+  the call names those sessions and the bot asks whether to move or close
+  them. There is no delete, for the same reason there is no restore.
+- **No accidental twins.** The console lets two projects share a name; a
+  bot does not, unless the person said so (`allow_same_name`): a name is
+  compared ignoring case and spaces, archived projects included, and the
+  refusal names the project that has it. Ids are what the tools take, so a
+  name the person used loosely is looked up with `list_projects` and a
+  question is asked when more than one fits.
+- **A move is the session's project and nothing else.** `move_session` is
+  the sessions' own move: an entry in the session's log, folded onto its
+  project. The id, history, state, worktree and branch stay, and a running
+  agent is not interrupted. A closed session, a project the workspace does
+  not hold and an archived project are refused in words, with nothing moved.
+  Repositories are no reason to refuse: a session may work on any, in any
+  project.
+- **The console hears of it.** Moving a session raises `session.changed`;
+  making, changing or archiving a project now raises `project.changed` on
+  the workspace stream, so the sidebar and every project picker show what a
+  bot did from chat without a reload.
 
 ### 4.4 GitHub and pull requests
 | Tool | Does | Default |
@@ -1303,6 +1431,17 @@ The decisions it produced:
   card with the plan's windows as bars, this chat's figures in a grid and
   the tokens' breakdown. It replaces 2026-11-02's three lines and its
   leaving the plan windows to the composer's meter.
+- 2026-11-03: **`/loop` is built** (§4.1). The owner chose `/loop` over
+  `/schedule` next. It is its own built-in, not a routine: routines run on a
+  calendar and last until deleted, a loop runs on minutes, from 1 minute to
+  1 day or self-paced, belongs to the chat and expires after 3 days. One
+  loop per bot; a run due while the last is busy is skipped; the bot ends
+  it with `end_loop`, or a self-paced one by not calling `schedule_loop`.
+- 2026-11-03: **`/schedule` is built** (§4.1). The owner asked how
+  `/loop` relates to automations and for `/schedule` too. A schedule is a
+  routine (26), made from the person's words by the bot's own
+  `update_routine`; the person's `/schedule` is the consent to that one
+  create, so it raises no card. `/schedule` alone opens the Routines tab.
 - 2026-11-03: **a bot's requests stay cacheable from turn to turn** (§2).
   `/usage` showed a bot on GPT and Grok reading 1% of its input from the
   prompt cache. Two causes: the OpenAI engine sent no `prompt_cache_key`,

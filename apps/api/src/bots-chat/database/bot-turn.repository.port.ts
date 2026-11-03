@@ -2,6 +2,7 @@ import type { AccessScope } from '@oppenheimer/backend-authz';
 import type { Option } from 'oxide.ts';
 import type { BotChainState, BotChainVerdict } from '../domain/bot-chain.policy';
 import type { BotGoalEntity } from '../domain/bot-goal.entity';
+import type { BotLoopEntity } from '../domain/bot-loop.entity';
 import type { BotMessageEntity } from '../domain/bot-message.entity';
 import type { BotTurnContext, BotTurnEntity } from '../domain/bot-turn.entity';
 
@@ -11,6 +12,14 @@ export type BotPeerEnqueueOutcome =
   /** The chain's first turn is gone (its chat was cleared): nothing more is queued for it. */
   | { outcome: 'chain_gone' }
   | { outcome: 'refused'; refusal: string };
+
+/** When a loop's run due now leaves the next: queued, or skipped because the last is busy. */
+export interface BotLoopRunTimes {
+  /** When the run after it is due; null for a self-paced loop, whose run says. */
+  next: Date | null;
+  /** When the run is tried again if the bot's last run of the loop is still queued or running. */
+  whenBusy: Date;
+}
 
 /** A steer's message, now the running turn's (`takeSteers`). */
 export interface BotSteerTaken {
@@ -53,6 +62,22 @@ export interface BotTurnRepositoryPort {
   }>;
 
   /**
+   * `enqueue` for a message that sets the bot's loop (`/loop`), as
+   * `enqueueWithGoal` is for a goal: the loop is set, and its first
+   * scheduled run staged, in the transaction that queues the turn. Answers
+   * the loop it replaced, whose waiting run the caller cancels.
+   */
+  enqueueWithLoop(
+    turn: BotTurnEntity,
+    message: BotMessageEntity,
+    loop: BotLoopEntity,
+    correlationId: string | null,
+  ): Promise<{
+    outcome: 'staged' | 'waiting' | 'missing' | 'attachments_taken';
+    replaced: BotLoopEntity | null;
+  }>;
+
+  /**
    * `enqueue` for a turn that must happen once, keyed by its `sourceKey`
    * (a routine's run): a key already queued answers that turn instead, so a
    * run dispatched twice queues one turn. With `busyPrefix`, a queued or
@@ -81,6 +106,22 @@ export interface BotTurnRepositoryPort {
   ): Promise<'staged' | 'waiting' | 'existing' | 'lost' | 'missing'>;
 
   /**
+   * A loop's run, due now (`25-bots.md` §4.1, `/loop`), under the bot's
+   * lock: when a run of the loop is still queued or running, nothing is
+   * queued and the run moves to `whenBusy` (`busy`); otherwise the turn is
+   * queued, and the loop's count and its next run are claimed in the same
+   * transaction, with that next run staged. `lost` when the loop was stopped,
+   * ended or replaced, or moved, since it was loaded.
+   */
+  enqueueLoopRun(
+    turn: BotTurnEntity,
+    message: BotMessageEntity,
+    correlationId: string | null,
+    loop: BotLoopEntity,
+    times: BotLoopRunTimes,
+  ): Promise<'staged' | 'waiting' | 'busy' | 'lost' | 'missing'>;
+
+  /**
    * `enqueue` for a turn another bot's call queues: under a lock on its
    * chain's first turn, so two asks of one chain decide in turn, `decide`
    * reads what the chain holds and the turn is queued only when it allows.
@@ -107,7 +148,7 @@ export interface BotTurnRepositoryPort {
   findHolding(scope: AccessScope, botId: string, messageId: string): Promise<Option<BotTurnEntity>>;
   /** The worker's read: by id alone, the job carries nothing else it can trust. */
   findForRun(turnId: string): Promise<Option<BotTurnEntity>>;
-  /** The bot's queued turns whose key begins with `prefix` (a goal's continuations). */
+  /** The bot's queued turns whose key begins with `prefix` (a goal's continuations, a loop's runs). */
   findQueuedBySourcePrefix(
     organizationId: string,
     botId: string,
