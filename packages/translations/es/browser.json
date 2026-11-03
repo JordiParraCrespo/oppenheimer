@@ -961,7 +961,7 @@
       }
     },
     "sidebar": {
-      "projects": "Proyectos",
+      "sessions": "Sesiones",
       "newProject": "Nuevo proyecto",
       "search": "Buscar sesiones",
       "clearSearch": "Borrar búsqueda",
@@ -1629,6 +1629,13 @@
           "stalled": "La sesión «{{name}}» parece atascada",
           "matched_one": "La sesión «{{name}}» imprimió una línea que coincide con «{{pattern}}»",
           "matched_other": "La sesión «{{name}}» imprimió {{count}} líneas que coinciden con «{{pattern}}»"
+        },
+        "pullRequest": {
+          "check_failed": "Pull request #{{number}} de {{repository}}: fallaron los checks",
+          "check_passed": "Pull request #{{number}} de {{repository}}: pasaron los checks",
+          "review": "Pull request #{{number}} de {{repository}}: nueva revisión",
+          "comment": "Pull request #{{number}} de {{repository}}: nuevo comentario",
+          "pr_merged": "Pull request #{{number}} de {{repository}}: fusionada"
         },
         "goal": {
           "continued": "Objetivo · continuación {{step}} de {{limit}}",
@@ -3018,7 +3025,7 @@
     "type": {
       "all": "Todos",
       "pull": "Pull requests",
-      "approval": "Aprobaciones de bots",
+      "bots": "Bots",
       "session": "Sesiones",
       "run": "Automatizaciones"
     },
@@ -3038,7 +3045,8 @@
     "from": {
       "session": "Sesión",
       "approval": "Aprobación de bot",
-      "run": "Automatización"
+      "run": "Automatización",
+      "botNotice": "Bot"
     },
     "session": {
       "blockedShort": "{{name}} te está esperando",
@@ -3117,6 +3125,11 @@
     },
     "notice": {
       "title": "{{name}} tiene novedades para ti",
+      "done": "Hecho"
+    },
+    "botNotice": {
+      "title": "{{bot}} tiene novedades para ti",
+      "openChat": "Abrir chat",
       "done": "Hecho"
     }
   },

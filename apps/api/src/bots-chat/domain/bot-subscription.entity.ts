@@ -13,11 +13,26 @@ import {
   type WakeSubject,
 } from './bot-subscription.policy';
 
+/** The longest `owner/name` GitHub allows: a 39-character owner and a 100-character name. */
+export const PULL_REQUEST_REPOSITORY_MAX = 140;
+
+/** The pull request a subscription follows: GitHub's repository id, its name when watched, and the number. */
+export interface PullRequestRef {
+  /** GitHub's repository id, as a string: the column is a bigint. */
+  githubRepoId: string;
+  /** `owner/name`, as it was when the bot watched it. */
+  repository: string;
+  number: number;
+}
+
 export interface BotSubscriptionProps {
   organizationId: string;
   botId: string;
   resourceKind: BotSubscriptionKind;
-  resourceId: string;
+  /** The session followed; null for a pull request, which is not ours and has no id here. */
+  resourceId: string | null;
+  /** The pull request followed; null for a session. */
+  pullRequest: PullRequestRef | null;
   /** The bot's turn that subscribed; null once its chat is cleared. */
   originTurnId: string | null;
   /** Why the bot follows it, in its words. */
@@ -44,7 +59,7 @@ export interface BotSubscriptionProps {
 
 /**
  * A bot following work it delegated (`27-bot-subscriptions.md`): one bot,
- * one session, the reason and the turn behind it, and the wakes it caused.
+ * one session or pull request, the reason and the turn behind it, and the wakes it caused.
  * Its writes are conditioned on the version it was loaded at, so two wakes
  * of one subscription never both record.
  */
@@ -84,6 +99,7 @@ export class BotSubscriptionEntity extends AggregateRoot<BotSubscriptionProps> {
         botId: props.botId,
         resourceKind: 'session',
         resourceId: props.sessionId,
+        pullRequest: null,
         originTurnId: props.originTurnId,
         purpose: props.purpose?.trim() || null,
         until: props.until,
@@ -92,6 +108,45 @@ export class BotSubscriptionEntity extends AggregateRoot<BotSubscriptionProps> {
         timeZone: props.timeZone,
         lastTurn: props.known?.lastTurn ?? null,
         lastState: props.known?.lastState ?? null,
+        wakes: 0,
+        terminalWatch: null,
+        matches: 0,
+        version: 0,
+      },
+    });
+    subscription.validate();
+    return subscription;
+  }
+
+  /**
+   * A bot starts following a pull request (27 §7): every event on it wakes
+   * the bot until it is merged, the bot unwatches it, or the wake limit.
+   */
+  static subscribeToPullRequest(props: {
+    organizationId: string;
+    botId: string;
+    pullRequest: PullRequestRef;
+    originTurnId: string | null;
+    purpose: string | null;
+    credentialScopes: readonly Scope[] | null;
+    timeZone: string | null;
+  }): BotSubscriptionEntity {
+    const subscription = new BotSubscriptionEntity({
+      id: randomUUID(),
+      props: {
+        organizationId: props.organizationId,
+        botId: props.botId,
+        resourceKind: 'pull_request',
+        resourceId: null,
+        pullRequest: { ...props.pullRequest },
+        originTurnId: props.originTurnId,
+        purpose: props.purpose?.trim() || null,
+        until: 'closed',
+        watchedTurn: null,
+        credentialScopes: props.credentialScopes,
+        timeZone: props.timeZone,
+        lastTurn: null,
+        lastState: null,
         wakes: 0,
         terminalWatch: null,
         matches: 0,
@@ -111,8 +166,11 @@ export class BotSubscriptionEntity extends AggregateRoot<BotSubscriptionProps> {
   get resourceKind(): BotSubscriptionKind {
     return this.props.resourceKind;
   }
-  get resourceId(): string {
+  get resourceId(): string | null {
     return this.props.resourceId;
+  }
+  get pullRequest(): PullRequestRef | null {
+    return this.props.pullRequest;
   }
   get originTurnId(): string | null {
     return this.props.originTurnId;
@@ -184,9 +242,10 @@ export class BotSubscriptionEntity extends AggregateRoot<BotSubscriptionProps> {
 
   public validate(): void {
     const { props } = this;
-    if (!props.organizationId || !props.botId || !props.resourceId) {
+    if (!props.organizationId || !props.botId) {
       throw new ArgumentNotProvidedException('A subscription is a bot following a resource');
     }
+    this.validateSubject();
     if ((props.until === 'task') !== (props.watchedTurn !== null)) {
       throw new ArgumentInvalidException('Only a subscription to one task names the task');
     }
@@ -206,5 +265,35 @@ export class BotSubscriptionEntity extends AggregateRoot<BotSubscriptionProps> {
     }
     if (props.wakes < 0) throw new ArgumentInvalidException('Wakes are never negative');
     if (props.matches < 0) throw new ArgumentInvalidException('Matches are never negative');
+  }
+
+  /**
+   * A session is named by its id; a pull request by its repository and
+   * number, followed until it is merged, with no task and no terminal.
+   */
+  private validateSubject(): void {
+    const { props } = this;
+    if (props.resourceKind === 'session') {
+      if (!props.resourceId || props.pullRequest) {
+        throw new ArgumentNotProvidedException('A session subscription names the session alone');
+      }
+      return;
+    }
+    const pull = props.pullRequest;
+    if (props.resourceId || !pull) {
+      throw new ArgumentNotProvidedException('A pull request subscription names the pull request');
+    }
+    if (!/^[1-9]\d{0,18}$/.test(pull.githubRepoId)) {
+      throw new ArgumentInvalidException('A repository id is a positive integer');
+    }
+    if (!Number.isInteger(pull.number) || pull.number < 1) {
+      throw new ArgumentInvalidException('A pull request is numbered from 1');
+    }
+    if (!pull.repository || pull.repository.length > PULL_REQUEST_REPOSITORY_MAX) {
+      throw new ArgumentInvalidException('A pull request names its repository');
+    }
+    if (props.until !== 'closed' || props.lastTurn !== null || props.terminalWatch) {
+      throw new ArgumentInvalidException('A pull request has no task and no terminal to follow');
+    }
   }
 }

@@ -19,6 +19,7 @@ import {
   heyApiSdk,
   type ModelProviderCredentialResponseDto,
   type WorkspaceBotApprovalResponseDto,
+  type WorkspaceBotNoticeResponseDto,
 } from '@oppenheimer/api-client';
 import { AppError, callApi } from '@oppenheimer/frontend-core';
 import {
@@ -41,6 +42,7 @@ import {
   type BotSection,
   type BotToolDecision,
   type BotUsage,
+  PULL_REQUEST_WAKE_EVENTS,
 } from '@oppenheimer/shared/schemas/bot';
 import {
   type BotMailDraft,
@@ -78,6 +80,7 @@ import {
   type BotToolStep,
   BotTurnEntity,
   WorkspaceBotApprovalEntity,
+  WorkspaceBotNoticeEntity,
 } from './bot-conversation.entity';
 import { BotPermissionsEntity } from './bot-permissions.entity';
 import { BotsErrors } from './bots.errors';
@@ -222,7 +225,7 @@ function toAttachment(dto: BotAttachmentResponseDto): BotAttachment {
 /**
  * The wire's event as the union the chat draws from, kind by kind: an
  * approval, a routine's activity, a message from another bot, or the answer
- * to an ask, or a session the bot follows waking it. An outcome or a state
+ * to an ask, or a session or a pull request the bot follows waking it. An outcome or a state
  * this client does not know reads as no event, and the chat falls back to
  * the message's first line.
  */
@@ -291,6 +294,19 @@ function toEvent(dto: NonNullable<BotMessageResponseDto['event']>): BotMessageEv
             turn: dto.turn,
             state,
             match: dto.match ? { pattern: dto.match.pattern, count: dto.match.count } : null,
+          }
+        : null;
+    }
+    case 'pull_request': {
+      const event = PULL_REQUEST_WAKE_EVENTS.find((candidate) => candidate === dto.event);
+      return event
+        ? {
+            kind: 'pull_request',
+            subscriptionId: dto.subscriptionId,
+            githubRepoId: dto.githubRepoId,
+            repository: dto.repository,
+            number: dto.number,
+            event,
           }
         : null;
     }
@@ -424,6 +440,10 @@ function toWorkspaceApproval(dto: WorkspaceBotApprovalResponseDto): WorkspaceBot
   );
 }
 
+function toWorkspaceNotice(dto: WorkspaceBotNoticeResponseDto): WorkspaceBotNoticeEntity {
+  return new WorkspaceBotNoticeEntity(dto.id, dto.botId, dto.botName, dto.text, new Date(dto.at));
+}
+
 /** The export's lines as messages; a line that cannot be read fails the export. */
 async function* readMessages(body: ReadableStream<Uint8Array>): AsyncIterable<BotMessageEntity> {
   try {
@@ -543,6 +563,14 @@ export class BotsRepository {
         heyApiSdk.findWorkspaceBotApprovals({ query: { status: 'pending' } }),
       );
       return data.map(toWorkspaceApproval);
+    });
+  }
+
+  /** Each bot's latest line to the person, on the bots the caller may read, newest first. */
+  findWorkspaceNotices(): Promise<WorkspaceBotNoticeEntity[]> {
+    return callApi(BotsErrors.FETCH_NOTICES_FAILED, async (api) => {
+      const data = await api.body(heyApiSdk.findWorkspaceBotNotices());
+      return data.map(toWorkspaceNotice);
     });
   }
 

@@ -29,6 +29,8 @@ export const WORKSPACE_EVENT_TYPES = [
   'project.changed',
   /** A bot's approval was raised, decided, expired, or its call ran; `botId` is whose. */
   'botApproval.changed',
+  /** A bot sent the person a new notice (`notify`); `id` is the notice, `botId` whose. */
+  'botNotice.changed',
   /** One of the person's Inbox marks was set or removed; sent to that person only. */
   'inboxMark.changed',
 ] as const;
@@ -44,6 +46,7 @@ export type WorkspaceEvent =
   | { type: 'milestone.changed'; id: string }
   | { type: 'project.changed'; id: string }
   | { type: 'botApproval.changed'; id: string; botId: string }
+  | { type: 'botNotice.changed'; id: string; botId: string }
   | { type: 'inboxMark.changed'; itemKey: string };
 
 /**
@@ -73,6 +76,7 @@ export function isWorkspaceEvent(value: unknown): value is WorkspaceEvent {
     case 'automationRun.changed':
       return typeof event.automationId === 'string';
     case 'botApproval.changed':
+    case 'botNotice.changed':
       return typeof event.botId === 'string';
     default:
       return false;

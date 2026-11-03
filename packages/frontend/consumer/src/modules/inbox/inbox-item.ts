@@ -1,5 +1,8 @@
 import type { AutomationRunEntity } from '../automations/automation.entity';
-import type { WorkspaceBotApprovalEntity } from '../bots/bot-conversation.entity';
+import type {
+  WorkspaceBotApprovalEntity,
+  WorkspaceBotNoticeEntity,
+} from '../bots/bot-conversation.entity';
 import type { ProjectEntity } from '../projects/project.entity';
 import type { PullRequestEntity } from '../pull-requests/pull-request.entity';
 import type { SessionEntity, SessionNotice } from '../sessions/session.entity';
@@ -7,12 +10,13 @@ import type { InboxMarkEntity } from './inbox-mark.entity';
 
 /**
  * The Inbox (`product/versions/mvp/29-inbox.md`): what needs you, composed
- * from four reads the API already serves. Nothing here is stored but the
+ * from five reads the API already serves. Nothing here is stored but the
  * marks; an item is there while its source says it needs you. A `notice` is
  * a line a session's agent sent you (`runner sessions notify`), read off the
- * same sessions as a waiting session is.
+ * same sessions as a waiting session is; a `botNotice` is a bot's own line
+ * (its `notify` tool), each bot's latest.
  */
-export type InboxItemKind = 'session' | 'notice' | 'approval' | 'pull' | 'run';
+export type InboxItemKind = 'session' | 'notice' | 'botNotice' | 'approval' | 'pull' | 'run';
 
 /** Why a pull request is in the Inbox: a review asked of you, or yours, ready to merge. */
 export type InboxPullReason = 'requested' | 'ready';
@@ -31,11 +35,12 @@ interface InboxItemBase {
 export type InboxItem =
   | (InboxItemBase & { kind: 'session'; session: SessionEntity })
   | (InboxItemBase & { kind: 'notice'; session: SessionEntity; notice: SessionNotice })
+  | (InboxItemBase & { kind: 'botNotice'; notice: WorkspaceBotNoticeEntity })
   | (InboxItemBase & { kind: 'approval'; approval: WorkspaceBotApprovalEntity })
   | (InboxItemBase & { kind: 'pull'; pull: PullRequestEntity; reason: InboxPullReason })
   | (InboxItemBase & { kind: 'run'; run: AutomationRunEntity });
 
-/** The four reads, as their hooks answer them. */
+/** The five reads, as their hooks answer them. */
 export interface InboxSources {
   /** Every unresolved session; those `waiting-on-you` become items, and so does each one's notice. */
   sessions: readonly SessionEntity[];
@@ -47,6 +52,8 @@ export interface InboxSources {
   mine: readonly PullRequestEntity[];
   /** Failed runs of the last day. */
   failedRuns: readonly AutomationRunEntity[];
+  /** Each bot's latest notice, on the bots the caller may read. */
+  botNotices: readonly WorkspaceBotNoticeEntity[];
   projects: readonly ProjectEntity[];
 }
 
@@ -85,12 +92,15 @@ export function sessionItemKey(
 
 /**
  * What an occurrence key is an occurrence of: a session (`session:<id>`), a
- * pull request (`pull:<repo>#<number>`), or the approval or run itself,
- * whose key names one wait already. A session's next wait, or a pull
- * request's next push, is the same subject under a new key.
+ * bot's notices (`botnotice:<bot>`), a pull request (`pull:<repo>#<number>`),
+ * or the approval or run itself, whose key names one wait already. A
+ * session's next wait, a bot's next notice, or a pull request's next push, is
+ * the same subject under a new key.
  */
 export function inboxSubject(key: string): string {
-  if (key.startsWith('session:') || key.startsWith('notice:')) return key.split(':', 2).join(':');
+  if (key.startsWith('session:') || key.startsWith('notice:') || key.startsWith('botnotice:')) {
+    return key.split(':', 2).join(':');
+  }
   if (key.startsWith('pull:')) return key.split('@', 1)[0];
   return key;
 }
@@ -98,6 +108,11 @@ export function inboxSubject(key: string): string {
 /** A notice by its session and the host's id for it: the next notice asks again. */
 function noticeItemKey(session: { id: string }, notice: SessionNotice): string {
   return `notice:${session.id}:${notice.id}`;
+}
+
+/** A bot's notice by the bot and the notice's own id: the next notice asks again. */
+function botNoticeItemKey(notice: Pick<WorkspaceBotNoticeEntity, 'botId' | 'id'>): string {
+  return `botnotice:${notice.botId}:${notice.id}`;
 }
 
 function approvalItemKey(approval: { id: string }): string {
@@ -171,6 +186,16 @@ function inboxItems(sources: InboxSources): InboxItem[] {
       key: noticeItemKey(session, session.notice),
       since: session.notice.at,
       projectIds: projectOf(session.projectId),
+      low: false,
+    });
+  }
+  for (const notice of sources.botNotices) {
+    items.push({
+      kind: 'botNotice',
+      notice,
+      key: botNoticeItemKey(notice),
+      since: notice.at,
+      projectIds: [],
       low: false,
     });
   }

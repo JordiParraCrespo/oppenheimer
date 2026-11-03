@@ -88,7 +88,11 @@ import {
 } from '../domain/bot-routine.policy';
 import { takesSteer } from '../domain/bot-steer.policy';
 import { BotSubscriptionEntity } from '../domain/bot-subscription.entity';
-import { type SessionWake, sessionWakeTurn } from '../domain/bot-subscription.policy';
+import {
+  BOT_SUBSCRIPTION_WAKE_LIMIT,
+  type SessionWake,
+  sessionWakeTurn,
+} from '../domain/bot-subscription.policy';
 import { planSummary, type SummarizableMessage } from '../domain/bot-summary.policy';
 import { NO_PERMISSIONS } from '../domain/bot-tool-permission.policy';
 import { BotTurnEntity } from '../domain/bot-turn.entity';
@@ -2113,6 +2117,121 @@ describe('bots chat (integration)', () => {
       expect(await subscriptions.end(b)).toBe(true);
       expect(await subscriptions.end(a)).toBe(false);
       expect(await subscriptions.findForWake(stored.id)).toBeNull();
+    });
+
+    // 27 §7. What breaks this: a second watch of one pull request holding two
+    // rows (two wakes per event), a watch again resetting the wake limit, the
+    // webhook's read finding another pull request's or another workspace's
+    // bots, or a row that names a session and a pull request at once.
+    it('holds one pull request subscription per bot, finds it by repository and number in its workspace, and keeps its subject whole', async () => {
+      const bot = await create('PR watcher');
+      const other = await create('PR watcher two');
+      const pull = (overrides: { number?: number; purpose?: string | null; botId?: string } = {}) =>
+        BotSubscriptionEntity.subscribeToPullRequest({
+          organizationId: bot.organizationId,
+          botId: overrides.botId ?? bot.id,
+          pullRequest: {
+            githubRepoId: '9007199254740993',
+            repository: 'acme-labs/app',
+            number: overrides.number ?? 128,
+          },
+          originTurnId: null,
+          purpose: overrides.purpose === undefined ? 'land it' : overrides.purpose,
+          credentialScopes: ['pulls:read'],
+          timeZone: 'UTC',
+        });
+      const first = await subscriptions.subscribe(pull());
+      expect(await subscriptions.claimWake(first.id, BOT_SUBSCRIPTION_WAKE_LIMIT)).toBe(1);
+      const again = await subscriptions.subscribe(pull({ purpose: null }));
+      expect(again).toMatchObject({
+        id: first.id,
+        resourceKind: 'pull_request',
+        resourceId: null,
+        // A bigint past 2^53 comes back exactly: it is a string end to end.
+        pullRequest: { githubRepoId: '9007199254740993', repository: 'acme-labs/app', number: 128 },
+        purpose: 'land it',
+        wakes: 1,
+      });
+      // A session subscription of the same bot is a row of its own.
+      await subscriptions.subscribe(watching(bot));
+      const theirs = await subscriptions.subscribe(pull({ botId: other.id }));
+      await subscriptions.subscribe(pull({ number: 129 }));
+
+      expect(
+        (
+          await subscriptions.findIdsForPullRequest(bot.organizationId, '9007199254740993', 128)
+        ).sort(),
+      ).toEqual([first.id, theirs.id].sort());
+      expect(
+        await subscriptions.findIdsForPullRequest(
+          await insertOrganization(),
+          '9007199254740993',
+          128,
+        ),
+      ).toEqual([]);
+      expect(await subscriptions.countForBot(bot.organizationId, bot.id)).toBe(3);
+
+      expect(
+        await subscriptions.unsubscribePullRequest(bot.organizationId, bot.id, {
+          githubRepoId: '9007199254740993',
+          number: 128,
+        }),
+      ).toBe(true);
+      expect(
+        await subscriptions.findIdsForPullRequest(bot.organizationId, '9007199254740993', 128),
+      ).toEqual([theirs.id]);
+
+      await expect(
+        dataSource.query(
+          `UPDATE bot_subscription SET "resourceId" = gen_random_uuid() WHERE id = $1`,
+          [theirs.id],
+        ),
+      ).rejects.toThrow(/CHK_bot_subscription_subject/);
+      await expect(
+        dataSource.query(`UPDATE bot_subscription SET "pullNumber" = NULL WHERE id = $1`, [
+          theirs.id,
+        ]),
+      ).rejects.toThrow(/CHK_bot_subscription_subject/);
+      // The webhook's read is served by an index partial on the kind.
+      expect(
+        (
+          await dataSource.query(
+            `SELECT indexdef FROM pg_indexes WHERE indexname = 'IDX_bot_subscription_pull_request'`,
+          )
+        )[0].indexdef,
+      ).toContain(`WHERE (("resourceKind")::text = 'pull_request'::text)`);
+    });
+
+    // Codex on #638. What breaks this: two events on one pull request,
+    // delivered together, both reading the count before either writes it,
+    // so a watch wakes its bot past the limit.
+    it('takes one wake per event, never past the limit, even for events delivered together', async () => {
+      const bot = await create('PR racer');
+      const followed = await subscriptions.subscribe(
+        BotSubscriptionEntity.subscribeToPullRequest({
+          organizationId: bot.organizationId,
+          botId: bot.id,
+          pullRequest: { githubRepoId: '42', repository: 'acme-labs/app', number: 7 },
+          originTurnId: null,
+          purpose: null,
+          credentialScopes: null,
+          timeZone: null,
+        }),
+      );
+      await dataSource.query(`UPDATE bot_subscription SET "wakes" = $2 WHERE id = $1`, [
+        followed.id,
+        BOT_SUBSCRIPTION_WAKE_LIMIT - 1,
+      ]);
+      const claims = await Promise.all([
+        subscriptions.claimWake(followed.id, BOT_SUBSCRIPTION_WAKE_LIMIT),
+        subscriptions.claimWake(followed.id, BOT_SUBSCRIPTION_WAKE_LIMIT),
+      ]);
+      expect(claims.sort()).toEqual([BOT_SUBSCRIPTION_WAKE_LIMIT, null]);
+      // One that queued nothing gives its wake back.
+      await subscriptions.releaseWake(followed.id);
+      expect(await subscriptions.claimWake(followed.id, BOT_SUBSCRIPTION_WAKE_LIMIT)).toBe(
+        BOT_SUBSCRIPTION_WAKE_LIMIT,
+      );
     });
 
     it('names a terminal watch, answers the one it replaced, finds it by the watch, and keeps the newest count', async () => {

@@ -21,7 +21,7 @@ import {
   sharedFileOf,
   withSharedFiles,
 } from './session-chat-files';
-import { LOAD_SETTLE_MS, loadingAfter, Quiet, REPLAY_SETTLE_MS } from './session-chat-history';
+import { FirstLoad, LOAD_SETTLE_MS, Quiet, REPLAY_SETTLE_MS } from './session-chat-history';
 
 /** One item of the agent's task list: the chat module's, which the bots chat reads too. */
 export type ChatTodo = ChatItemTodo;
@@ -384,8 +384,8 @@ class Transcript {
  */
 export class SessionChat {
   private readonly transcript = new Transcript();
-  /** A first load's history is still arriving (`ChatState.loading`). */
-  private loading = false;
+  /** A first load's history, held until it has all come (`ChatState.loading`). */
+  private readonly firstLoad = new FirstLoad();
   private type: ((data: string) => void) | null = null;
   private state: ChatState = EMPTY;
   private readonly listeners = new Set<() => void>();
@@ -405,7 +405,7 @@ export class SessionChat {
   apply(batch: ChatBatch): void {
     // A first load is held back until its history has come, so the chat
     // draws it once, at its end, not each part of a long one in turn.
-    this.loading = loadingAfter(this.loading, batch, this.transcript.empty);
+    this.firstLoad.take(batch, this.transcript.empty);
     let changed = batch.reset ? this.transcript.reset(batch.entries.length > 0) : false;
     let status = this.state.status;
     let files = this.state.files;
@@ -474,7 +474,7 @@ export class SessionChat {
    */
   private settled = (): void => {
     const redraw = this.loading || this.transcript.settle();
-    this.loading = false;
+    this.firstLoad.end();
     if (redraw)
       this.publish({ ...this.state, loading: false, turns: this.turnsOf(this.state.files) });
     this.quiet.watch(this.settleAfter(), this.settled);
@@ -484,6 +484,11 @@ export class SessionChat {
   /** The conversation's turns, with the shared files placed in them. */
   private turnsOf(files: readonly ChatSharedFile[]): ChatTurn[] {
     return withSharedFiles(this.transcript.turns(), files);
+  }
+
+  /** A first load is still arriving. */
+  private get loading(): boolean {
+    return this.firstLoad.loading;
   }
 
   private publish(state: ChatState): void {

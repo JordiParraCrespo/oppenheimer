@@ -382,13 +382,18 @@ describe('SessionChat', () => {
     const seen: number[] = [];
     chat.subscribe(() => seen.push(chat.snapshot().turns.length));
 
-    // The runner's full batches, then the short one that ends its read.
+    // The runner's full batch, then the short one that ends its read: which
+    // could be any read of a longer transcript, so only the quiet ends it.
+    vi.useFakeTimers();
     chat.apply({ reset: true, entries: lines.slice(0, 256) });
     expect(chat.snapshot()).toMatchObject({ available: true, loading: true, turns: [] });
     chat.apply({ entries: lines.slice(256) });
+    expect(chat.snapshot()).toMatchObject({ loading: true, turns: [] });
+    vi.advanceTimersByTime(1_000);
     expect(chat.snapshot().loading).toBe(false);
     expect(chat.snapshot().turns).toHaveLength(300);
     expect(seen).toEqual([0, 300]);
+    vi.useRealTimers();
   });
 
   it('draws a first load whose history goes quiet before a short batch', () => {
@@ -437,6 +442,32 @@ describe('SessionChat', () => {
     vi.advanceTimersByTime(10_000);
     expect(chat.snapshot().loading).toBe(false);
     expect(chat.snapshot().turns).toHaveLength(256);
+    vi.useRealTimers();
+  });
+
+  it('keeps holding a long first load past the short batch that ends one of its reads', () => {
+    // What breaks this: a short batch taken as the end of any history. The
+    // runner reads a long transcript 4MB at a time and ends each read on a
+    // short batch, so the chat drew the first read's turns and then slid
+    // through the rest of the conversation as the later reads landed.
+    vi.useFakeTimers();
+    const answer = 'The reducer folds every entry into the running total. '.repeat(40);
+    const line = (i: number) =>
+      JSON.stringify(assistant(`a${i}`, [{ type: 'text', text: `${answer} ${i}` }]));
+    const prompt = (i: number) => JSON.stringify(user(`u${i}`, `Prompt ${i}`));
+    const history = Array.from({ length: 1_000 }, (_, i) => [prompt(i), line(i)]).flat();
+    const chat = new SessionChat();
+    // The first read: full batches, then the short one it ends on.
+    chat.apply({ reset: true, entries: history.slice(0, 256) });
+    for (let at = 256; at < 1_536; at += 256) chat.apply({ entries: history.slice(at, at + 256) });
+    chat.apply({ entries: history.slice(1_536, 1_556) });
+    expect(chat.snapshot()).toMatchObject({ loading: true, turns: [] });
+    // The next read, 300ms later.
+    vi.advanceTimersByTime(300);
+    chat.apply({ entries: history.slice(1_556) });
+    expect(chat.snapshot()).toMatchObject({ loading: true, turns: [] });
+    vi.advanceTimersByTime(1_000);
+    expect(chat.snapshot().turns).toHaveLength(1_000);
     vi.useRealTimers();
   });
 

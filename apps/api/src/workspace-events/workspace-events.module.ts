@@ -3,6 +3,7 @@ import { CqrsModule } from '@nestjs/cqrs';
 import { AutomationsModule } from '../automations/automations.module';
 import { AutomationRunChangesDomainEventHandler } from './application/event-handlers/automation-run-changes.domain-event-handler';
 import { BotApprovalChangesDomainEventHandler } from './application/event-handlers/bot-approval-changes.domain-event-handler';
+import { BotNoticeChangesDomainEventHandler } from './application/event-handlers/bot-notice-changes.domain-event-handler';
 import { HostChangesDomainEventHandler } from './application/event-handlers/host-changes.domain-event-handler';
 import { InboxMarkChangesDomainEventHandler } from './application/event-handlers/inbox-mark-changes.domain-event-handler';
 import { PlanChangesDomainEventHandler } from './application/event-handlers/plan-changes.domain-event-handler';
@@ -16,7 +17,7 @@ import { WORKSPACE_EVENT_BUS } from './workspace-events.di-tokens';
 /**
  * The console's change feed. The modules that own sessions, runs, hosts, Plan,
  * projects,
- * bots' approvals and the Inbox
+ * bots' approvals and notices, and the Inbox
  * raise domain events as they always do; this module's handlers, run by the
  * outbox after the commit, publish them to the workspace's (or the person's)
  * channel, and `GET /v1/events` streams them to the console tabs listening.
@@ -36,6 +37,7 @@ import { WORKSPACE_EVENT_BUS } from './workspace-events.di-tokens';
     PlanChangesDomainEventHandler,
     ProjectChangesDomainEventHandler,
     BotApprovalChangesDomainEventHandler,
+    BotNoticeChangesDomainEventHandler,
     InboxMarkChangesDomainEventHandler,
   ],
 })

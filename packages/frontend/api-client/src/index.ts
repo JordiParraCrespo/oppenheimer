@@ -64,6 +64,7 @@ export type {
   BotPermissionRuleDto,
   BotPermissionsResponseDto,
   BotPlanWindowDto,
+  BotPullRequestEventResponseDto,
   BotQuestionAnswerResponseDto,
   BotQuestionEventResponseDto,
   BotQuestionItemResponseDto,
@@ -328,6 +329,7 @@ export type {
   WatchedRepositoryDto,
   WhatsappAccountResponseDto,
   WorkspaceBotApprovalResponseDto,
+  WorkspaceBotNoticeResponseDto,
   WorkspaceMemberResponseDto,
   WorkspaceResponseDto,
 } from './generated/types.gen';

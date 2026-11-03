@@ -26,16 +26,20 @@ export const REPLAY_SETTLE_MS = 3000;
  */
 export const LOAD_SETTLE_MS = 500;
 
+/** A batch's size as the runner counts it. */
+function sizeOf(batch: HistoryBatch): number {
+  let bytes = 0;
+  for (const entry of batch.entries) bytes += utf8Length(entry);
+  return bytes;
+}
+
 /**
  * Whether a batch is the last of a read of the transcript: the runner fills
  * a batch to `CHAT_BATCH_MAX_ENTRIES` entries or about 128KB, so one under
  * both, by entries and by a full entry's size, is all that read had.
  */
-function endsARead(batch: HistoryBatch): boolean {
-  if (batch.entries.length >= CHAT_BATCH_MAX_ENTRIES) return false;
-  let bytes = 0;
-  for (const entry of batch.entries) bytes += utf8Length(entry);
-  return bytes < CHAT_ENTRY_MAX_BYTES;
+function endsARead(batch: HistoryBatch, bytes: number): boolean {
+  return batch.entries.length < CHAT_BATCH_MAX_ENTRIES && bytes < CHAT_ENTRY_MAX_BYTES;
 }
 
 /** A line's size as the runner counts it, in UTF-8 bytes rather than UTF-16 units. */
@@ -55,18 +59,28 @@ function utf8Length(text: string): number {
 }
 
 /**
- * Whether a first load is still arriving once `batch` has landed. One starts
- * with a history that arrives where nothing is held yet (a reconnect's replay
- * of what is held is not one), and ends with the batch that ends a read; the
- * quiet after a batch ends it too, which the chat watches for.
+ * A first load: a history that arrives where nothing is held yet (a
+ * reconnect's replay of what is held is not one), held back until it has
+ * all come. The runner reads a transcript 4MB at a time, 300ms apart, and
+ * ends every read on a short batch, so a short batch says only that a read
+ * ended. A first batch that is short is the exception: a read that fills
+ * less than one batch is shorter than 4MB, so it stopped at the end of the
+ * file, and the history is all there. Any longer history ends on the quiet
+ * after its last read, which the chat watches for and ends with `end`.
  */
-export function loadingAfter(
-  loading: boolean,
-  batch: HistoryBatch,
-  holdsNothing: boolean,
-): boolean {
-  const starts = batch.reset === true && batch.entries.length > 0 && holdsNothing;
-  return (loading || starts) && !endsARead(batch);
+export class FirstLoad {
+  /** The history is still arriving. */
+  loading = false;
+
+  /** Reads one batch of the history; `holdsNothing` when the chat has no line yet. */
+  take(batch: HistoryBatch, holdsNothing: boolean): void {
+    if (batch.reset !== true || batch.entries.length === 0 || !holdsNothing) return;
+    this.loading = !endsARead(batch, sizeOf(batch));
+  }
+
+  end(): void {
+    this.loading = false;
+  }
 }
 
 /** One quiet to wait out at a time: each `watch` replaces the last. */

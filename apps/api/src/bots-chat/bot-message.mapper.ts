@@ -20,6 +20,7 @@ import {
   type BotSubagentProgress,
   type BotSubagentRun,
   botMailDraftSchema,
+  PULL_REQUEST_WAKE_EVENTS,
 } from '@oppenheimer/shared';
 import { BotMessageOrmEntity } from './database/bot-message.orm-entity';
 import type { BotSteerTaken } from './database/bot-turn.repository.port';
@@ -36,6 +37,7 @@ import {
   BotMessageResponseDto,
   BotPeerMessageEventResponseDto,
   BotPeerReplyEventResponseDto,
+  BotPullRequestEventResponseDto,
   BotQuestionEventResponseDto,
   BotRoutineEventResponseDto,
   BotSessionEventResponseDto,
@@ -292,6 +294,8 @@ function toEventResponse(event: BotMessageEvent): BotMessageEventResponseDto {
       return Object.assign(new BotPeerReplyEventResponseDto(), event);
     case 'session':
       return Object.assign(new BotSessionEventResponseDto(), event);
+    case 'pull_request':
+      return Object.assign(new BotPullRequestEventResponseDto(), event);
     case 'goal':
       return Object.assign(new BotGoalEventResponseDto(), event);
     case 'loop':
@@ -378,6 +382,7 @@ function toEvent(raw: Record<string, unknown> | null): BotMessageEvent | null {
       ...matchOf(raw.match),
     };
   }
+  if (raw.kind === 'pull_request') return pullRequestEventOf(raw);
   if (raw.kind === 'goal') {
     const activity = BOT_GOAL_ACTIVITIES.find((known) => known === raw.activity);
     if (!activity || typeof raw.goalId !== 'string') return null;
@@ -405,6 +410,22 @@ function toEvent(raw: Record<string, unknown> | null): BotMessageEvent | null {
     };
   }
   return null;
+}
+
+/** A stored pull request event, narrowed once; one the mapper did not write reads as none. */
+function pullRequestEventOf(raw: Record<string, unknown>): BotMessageEvent | null {
+  const event = PULL_REQUEST_WAKE_EVENTS.find((known) => known === raw.event);
+  const { subscriptionId, githubRepoId, number } = raw;
+  if (!event || typeof subscriptionId !== 'string' || typeof githubRepoId !== 'string') return null;
+  if (typeof number !== 'number') return null;
+  return {
+    kind: 'pull_request',
+    subscriptionId,
+    githubRepoId,
+    repository: String(raw.repository ?? ''),
+    number,
+    event,
+  };
 }
 
 /** A stored match, narrowed once: a pattern and a positive count, or no `match` key at all. */

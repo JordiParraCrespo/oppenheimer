@@ -211,6 +211,7 @@ export class PullRequestMapper {
       side: comment.side,
       body: comment.body,
       author: comment.login,
+      authorIsInsider: comment.insider,
       createdAt: comment.createdAt,
     };
   }
@@ -220,6 +221,7 @@ export class PullRequestMapper {
       id: item.id,
       kind: item.kind,
       author: item.login,
+      authorIsInsider: item.kind === 'comment' || item.kind === 'review' ? item.insider : null,
       at: item.at,
       body: item.kind === 'commit' ? item.message : item.kind === 'event' ? null : item.body,
       state: item.kind === 'review' ? item.state : null,

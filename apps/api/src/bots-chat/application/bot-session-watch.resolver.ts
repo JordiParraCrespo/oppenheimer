@@ -77,7 +77,7 @@ export class BotSessionWatchResolver {
       await this.commands.execute(
         new WakeSubscribedBotCommand({ subscriptionId: subscription.id }),
       );
-      await this.checkLater(subscription, from === 'first_task' ? 1 : from.turn);
+      await this.checkLater(subscription, sessionId, from === 'first_task' ? 1 : from.turn);
       return HANDED_OFF;
     } catch (error) {
       const reason = error instanceof Error ? error.message : String(error);
@@ -89,13 +89,17 @@ export class BotSessionWatchResolver {
    * Owes the task its stall check. The watch is stored either way, and its
    * wakes still come, so a check that cannot be staged is logged, not said.
    */
-  private async checkLater(subscription: BotSubscriptionEntity, turn: number): Promise<void> {
+  private async checkLater(
+    subscription: BotSubscriptionEntity,
+    sessionId: string,
+    turn: number,
+  ): Promise<void> {
     try {
       await this.stallChecks.schedule(
         {
           subscriptionId: subscription.id,
           botId: subscription.botId,
-          sessionId: subscription.resourceId,
+          sessionId,
           turn,
         },
         new Date(Date.now() + BOT_STALL_CHECK_DELAY_MS),
@@ -128,7 +132,7 @@ export class BotSessionWatchResolver {
     const already = existing.some((subscription) => subscription.resourceId === sessionId);
     if (!already && existing.length >= BOT_SUBSCRIPTIONS_PER_BOT) {
       throw new BotToolRefusal(
-        `You already follow ${BOT_SUBSCRIPTIONS_PER_BOT} sessions. Unwatch one you no longer need (list_watches shows them) first.`,
+        `You already follow ${BOT_SUBSCRIPTIONS_PER_BOT} sessions and pull requests. Unwatch one you no longer need (list_watches shows them) first.`,
       );
     }
     const subscription = await this.subscriptions.subscribe(
@@ -149,13 +153,15 @@ export class BotSessionWatchResolver {
     subscription: BotSubscriptionEntity,
     pattern: string,
   ): Promise<string[]> {
+    const sessionId = subscription.resourceId;
+    if (!sessionId) throw new BotToolRefusal('Only a session has a terminal to watch.');
     const made = await this.commands.execute<
       WatchSessionTerminalCommand,
       WatchSessionTerminalResult
     >(
       new WatchSessionTerminalCommand({
         scope: context.owner,
-        sessionId: subscription.resourceId,
+        sessionId,
         pattern,
       }),
     );
@@ -163,8 +169,7 @@ export class BotSessionWatchResolver {
       id: made.watchId,
       pattern,
     });
-    if (previous)
-      await this.releaseWatch(subscription.organizationId, subscription.resourceId, previous);
+    if (previous) await this.releaseWatch(subscription.organizationId, sessionId, previous);
     return made.hints;
   }
 
@@ -175,8 +180,9 @@ export class BotSessionWatchResolver {
    */
   async release(subscription: BotSubscriptionEntity): Promise<void> {
     const watch = subscription.terminalWatch;
-    if (watch)
-      await this.releaseWatch(subscription.organizationId, subscription.resourceId, watch.id);
+    const sessionId = subscription.resourceId;
+    if (watch && sessionId)
+      await this.releaseWatch(subscription.organizationId, sessionId, watch.id);
   }
 
   private async releaseWatch(organizationId: string, sessionId: string, watchId: string) {

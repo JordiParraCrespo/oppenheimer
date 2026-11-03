@@ -1095,7 +1095,31 @@ earlier note:
   already knew, with no way for an agent to post into it. Since 2026-11-02
   an agent in a session can: `runner sessions notify "line"` keeps the line
   on its session, and the Inbox lists it until it is marked done
-  (`next-steps/agent-tools.md` §2).
+  (`next-steps/agent-tools.md` §2). Since 2026-11-03 a bot can too, with
+  its `notify` tool: its latest line is a `botNotice` item, and the Type
+  facet's "Bot approvals" is "Bots" (§5).
+- `next-steps/agent-tools.md` §1 kept a shared file between the host and
+  the browser attached to the session's chat; the control plane never
+  heard of it. Since 2026-11-03 the runner also logs `file.shared` with
+  the file's metadata (never its path or bytes), the session keeps the
+  last 20, and a bot lists them and shows an image's preview, asked of
+  the host over the link (`next-steps/agent-tools.md` §7).
+- `versions/mvp/27-bot-subscriptions.md` §1 had every wake re-read what it
+  follows as the bot's owner and wake for what holds now, and §7 planned
+  pull requests from the pull-requests module's webhooks. Built on
+  2026-11-03, a bot following a pull request (`watch_pull_request`) is woken
+  by the inbound-events hub's GitHub events instead, and its wake is the
+  event's metadata alone, never a re-read: the pull request is GitHub's, not
+  ours to re-read on every event. A close without a merge makes no event
+  yet, so only a merge ends it (27 §7.1, `next-steps/agent-tools.md` §6).
+- `versions/mvp/25-bots.md` treated text from tools as information, not
+  instructions, and left every tool to the turn that reads it. On
+  2026-11-03 a pull request watch made that text a stranger's comment
+  starting an unattended turn, and Codex's review asked for narrower tools
+  on such turns. The owner chose full autonomy instead: those turns keep
+  every tool, and the prompt carries the defence, each GitHub author named
+  as a collaborator or as outside the repository and a rule against putting
+  private information where outside text points (27 §7.1).
 - `versions/mvp/25-bots.md` §2 sent a turn the newest messages that fit
   its history budget, and the OpenAI engine named no conversation to the
   provider. On 2026-11-03, after `/usage` showed a bot on GPT and Grok at a

@@ -3544,6 +3544,10 @@ export type PullRequestCommentDto = {
     side: 'LEFT' | 'RIGHT';
     body: string;
     author: string;
+    /**
+     * Whether the author is the repository’s owner, a member or a collaborator (false: anyone else); null when GitHub did not say.
+     */
+    authorIsInsider?: boolean | null;
     createdAt: string;
 };
 
@@ -3554,6 +3558,10 @@ export type PullRequestActivityItemDto = {
      * A GitHub login; a commit’s author name.
      */
     author: string;
+    /**
+     * For a comment or a review: whether its author is the repository’s owner, a member or a collaborator (false: anyone else); null when GitHub did not say or for a commit or event.
+     */
+    authorIsInsider?: boolean | null;
     at: string;
     /**
      * Markdown, or a commit message.
@@ -4022,6 +4030,30 @@ export type BotSessionEventResponseDto = {
     match?: BotSessionMatchResponseDto | null;
 };
 
+export type BotPullRequestEventResponseDto = {
+    kind: 'pull_request';
+    /**
+     * The subscription that woke the bot.
+     */
+    subscriptionId: string;
+    /**
+     * GitHub's repository id, as a string: it is a bigint.
+     */
+    githubRepoId: string;
+    /**
+     * `owner/name`, as it was when the bot watched it.
+     */
+    repository: string;
+    /**
+     * The pull request number.
+     */
+    number: number;
+    /**
+     * What happened on it, from GitHub's metadata; never anyone's words.
+     */
+    event: 'check_failed' | 'check_passed' | 'review' | 'comment' | 'pr_merged';
+};
+
 export type BotGoalEventResponseDto = {
     kind: 'goal';
     /**
@@ -4182,7 +4214,7 @@ export type BotMessageResponseDto = {
     /**
      * What an event says happened, by `kind`; null on every other role.
      */
-    event: BotApprovalEventResponseDto | BotQuestionEventResponseDto | BotRoutineEventResponseDto | BotPeerMessageEventResponseDto | BotPeerReplyEventResponseDto | BotSessionEventResponseDto | BotGoalEventResponseDto | BotLoopEventResponseDto | null;
+    event: BotApprovalEventResponseDto | BotQuestionEventResponseDto | BotRoutineEventResponseDto | BotPeerMessageEventResponseDto | BotPeerReplyEventResponseDto | BotSessionEventResponseDto | BotPullRequestEventResponseDto | BotGoalEventResponseDto | BotLoopEventResponseDto | null;
     /**
      * The images a message of yours carries, in the order attached; read each from `GET /bots/:id/attachments/:attachmentId/content`. Empty on every other role.
      */
@@ -4542,6 +4574,29 @@ export type WorkspaceBotApprovalResponseDto = {
      * The session the call started when it ran on a yes; null before, and when it started none.
      */
     sessionId: string | null;
+};
+
+export type WorkspaceBotNoticeResponseDto = {
+    /**
+     * The notice: a new id with each notice, so a mark on one never hides the next.
+     */
+    id: string;
+    /**
+     * The bot that sent it.
+     */
+    botId: string;
+    /**
+     * The bot's name, as the console shows it.
+     */
+    botName: string;
+    /**
+     * The line, as the bot wrote it.
+     */
+    text: string;
+    /**
+     * When it came.
+     */
+    at: string;
 };
 
 export type DecideBotApprovalRequest = {
@@ -15046,6 +15101,32 @@ export type FindWorkspaceBotApprovalsResponses = {
 };
 
 export type FindWorkspaceBotApprovalsResponse = FindWorkspaceBotApprovalsResponses[keyof FindWorkspaceBotApprovalsResponses];
+
+export type FindWorkspaceBotNoticesData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/bot-notices';
+};
+
+export type FindWorkspaceBotNoticesErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+};
+
+export type FindWorkspaceBotNoticesError = FindWorkspaceBotNoticesErrors[keyof FindWorkspaceBotNoticesErrors];
+
+export type FindWorkspaceBotNoticesResponses = {
+    200: Array<WorkspaceBotNoticeResponseDto>;
+};
+
+export type FindWorkspaceBotNoticesResponse = FindWorkspaceBotNoticesResponses[keyof FindWorkspaceBotNoticesResponses];
 
 export type DecideBotApprovalData = {
     body: DecideBotApprovalRequest;

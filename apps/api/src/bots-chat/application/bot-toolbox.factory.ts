@@ -20,12 +20,15 @@ import { BotLoopToolsFactory } from './bot-loop-tools.factory';
 import { BotMailOrganizeToolsFactory } from './bot-mail-organize-tools.factory';
 import { BotMailToolsFactory } from './bot-mail-tools.factory';
 import { BotMailWriteToolsFactory } from './bot-mail-write-tools.factory';
+import { BotNoticeToolsFactory } from './bot-notice-tools.factory';
 import { BotPlanToolsFactory } from './bot-plan-tools.factory';
 import { BotProjectToolsFactory } from './bot-project-tools.factory';
 import { BotPullRequestToolsFactory } from './bot-pull-request-tools.factory';
+import { BotPullRequestWatchToolsFactory } from './bot-pull-request-watch-tools.factory';
 import { BotQuestionToolsFactory } from './bot-question-tools.factory';
 import { BotRoutineToolsFactory } from './bot-routine-tools.factory';
 import { BotSelfToolsFactory } from './bot-self-tools.factory';
+import { BotSessionFileToolsFactory } from './bot-session-file-tools.factory';
 import { BotSessionToolsFactory } from './bot-session-tools.factory';
 import { BotSkillToolsFactory } from './bot-skill-tools.factory';
 import { BotSubagentToolsFactory } from './bot-subagent-tools.factory';
@@ -54,11 +57,13 @@ export class BotToolboxFactory {
     skills: BotSkillToolsFactory,
     hosts: BotHostToolsFactory,
     sessions: BotSessionToolsFactory,
+    sessionFiles: BotSessionFileToolsFactory,
     watches: BotWatchToolsFactory,
     plan: BotPlanToolsFactory,
     projects: BotProjectToolsFactory,
     github: BotGithubToolsFactory,
     pullRequests: BotPullRequestToolsFactory,
+    pullRequestWatches: BotPullRequestWatchToolsFactory,
     issues: BotIssueToolsFactory,
     automations: BotAutomationToolsFactory,
     routines: BotRoutineToolsFactory,
@@ -72,6 +77,7 @@ export class BotToolboxFactory {
     goals: BotGoalToolsFactory,
     loops: BotLoopToolsFactory,
     questions: BotQuestionToolsFactory,
+    notices: BotNoticeToolsFactory,
   ) {
     this.areas = [
       self,
@@ -79,13 +85,16 @@ export class BotToolboxFactory {
       goals,
       loops,
       questions,
+      notices,
       hosts,
       sessions,
+      sessionFiles,
       watches,
       plan,
       projects,
       github,
       pullRequests,
+      pullRequestWatches,
       issues,
       automations,
       routines,

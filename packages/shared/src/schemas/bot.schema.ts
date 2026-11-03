@@ -7,6 +7,7 @@ import {
   type SessionPermission,
 } from '../agents/catalog.js';
 import { GROK_4_5_LEVELS, GROK_LEVELS, levels } from '../agents/effort-levels.js';
+import type { GithubEventType } from '../automations/catalog.js';
 import { isValidTimeZone } from '../automations/schedule.js';
 
 /**
@@ -612,6 +613,41 @@ export interface BotSessionEvent {
 }
 
 /**
+ * The GitHub events on a pull request that wake whoever follows it: a
+ * session's agent that ran `runner sessions watch-pr`
+ * (`product/next-steps/agent-tools.md` §3), or a bot subscribed with
+ * `watch_pull_request` (`27-bot-subscriptions.md` §7). Each is a type the
+ * GitHub adapter already normalizes a delivery to.
+ */
+export const PULL_REQUEST_WAKE_EVENTS = [
+  'check_failed',
+  'check_passed',
+  'review',
+  'comment',
+  'pr_merged',
+] as const satisfies readonly GithubEventType[];
+export type PullRequestWakeEvent = (typeof PULL_REQUEST_WAKE_EVENTS)[number];
+
+/**
+ * A pull request a bot is subscribed to woke it (`27-bot-subscriptions.md`
+ * §7): what GitHub said happened, from the event's metadata alone. The
+ * repository is the name it had when the bot watched it; never a comment's
+ * or a review's words.
+ */
+export interface BotPullRequestEvent {
+  kind: 'pull_request';
+  /** The subscription that woke the bot. */
+  subscriptionId: string;
+  /** GitHub's repository id, as a string: it is a bigint. */
+  githubRepoId: string;
+  /** `owner/name`. */
+  repository: string;
+  number: number;
+  /** What happened on it. */
+  event: PullRequestWakeEvent;
+}
+
+/**
  * A goal keeps a bot going (`25-bots.md` §4.1; from Grok Bot's goals,
  * `research/lessons-from-grok-bot.md` §9 row 10, and Claude Code's `/goal`):
  * the person sets one with `/goal <condition>`, or the bot with `set_goal`.
@@ -886,6 +922,7 @@ export type BotMessageEvent =
   | BotPeerMessageEvent
   | BotPeerReplyEvent
   | BotSessionEvent
+  | BotPullRequestEvent
   | BotGoalEvent
   | BotLoopEvent;
 
@@ -897,6 +934,7 @@ export const BOT_MESSAGE_EVENT_KINDS = [
   'bot_message',
   'bot_reply',
   'session',
+  'pull_request',
   'goal',
   'loop',
 ] as const;
@@ -1210,6 +1248,29 @@ export type FindWorkspaceBotApprovalsDto = z.infer<typeof findWorkspaceBotApprov
 
 /** The most approvals the workspace read returns, newest first. */
 export const WORKSPACE_BOT_APPROVALS_MAX = 100;
+
+/**
+ * A line a bot sent the person with its `notify` tool
+ * (`product/next-steps/agent-tools.md` §5): a bot keeps only its latest, and
+ * the Inbox shows it until the person marks it done. Each notice has an id
+ * of its own, so a mark on one never hides the next. The bound is the
+ * session notice's (`SESSION_NOTICE_TEXT_MAX`): a line, not a report.
+ */
+export const BOT_NOTICE_TEXT_MAX = 500;
+
+/** The most notices the workspace read (`GET /bot-notices`) returns, newest first. */
+export const WORKSPACE_BOT_NOTICES_MAX = 50;
+
+/** One bot's latest notice, as the workspace read answers it. */
+export const workspaceBotNoticeSchema = z.object({
+  id: z.string().uuid(),
+  botId: z.string().uuid(),
+  botName: z.string(),
+  text: z.string().min(1).max(BOT_NOTICE_TEXT_MAX),
+  /** When it came. */
+  at: z.string().datetime(),
+});
+export type WorkspaceBotNotice = z.infer<typeof workspaceBotNoticeSchema>;
 
 /**
  * Where a piece of a turn's streamed text belongs. `block` counts the blocks

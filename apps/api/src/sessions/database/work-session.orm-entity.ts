@@ -257,6 +257,13 @@ export class WorkSessionOrmEntity {
   watchedPulls!: unknown;
 
   /**
+   * The files the agent shared (`SessionSharedFile[]`), folded from
+   * `file.shared`, the last 20; `[]` for none. Read back through the schema.
+   */
+  @Column({ type: 'jsonb', default: () => "'[]'::jsonb" })
+  sharedFiles!: unknown;
+
+  /**
    * Who asked for the session: `person`, `automation` (whose run points back
    * here), `review` (a pull request's review session, which the Sessions
    * list leaves out) or `bot` (a bot acting for its owner).
