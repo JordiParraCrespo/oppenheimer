@@ -64,6 +64,13 @@ var (
 	// ErrNoLink refuses what only the control plane can do for a session
 	// (watch a pull request, wake it later) on a runner with no link to it.
 	ErrNoLink = problem.New("SESS_015", http.StatusServiceUnavailable, "This host has no link to the control plane")
+	// ErrSharedFileNotFound answers a preview asked for a file the session's
+	// agent never shared on this host, or whose entry the session's clean-up
+	// already took.
+	ErrSharedFileNotFound = problem.New("SESS_016", http.StatusNotFound, "The session has no shared file by that id")
+	// ErrSharedFileNoPreview answers a preview asked for a shared file the
+	// runner kept none of: not an image, or too large to read when shared.
+	ErrSharedFileNoPreview = problem.New("SESS_017", http.StatusConflict, "The shared file has no preview")
 	// ErrInvalidPattern refuses a terminal watch whose pattern is empty, too
 	// long or not an RE2 expression. The code is the protocol's
 	// (`session.watch`), not a SESS_ number: the control plane names it.

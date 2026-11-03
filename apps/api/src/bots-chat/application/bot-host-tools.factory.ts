@@ -17,6 +17,7 @@ import { FindSessionEventsQuery } from '../../sessions/queries/find-session-even
 import { FindSessionsQuery } from '../../sessions/queries/find-sessions/find-sessions.query';
 import { describeDecision, groupScanOf, SESSION_GROUP_PHRASES } from '../bot-session-tool.mapper';
 import { describeSessionActivity } from '../domain/bot-session-activity.policy';
+import { describeSharedFiles } from '../domain/bot-shared-file.policy';
 import {
   cut,
   fenceUntrusted,
@@ -175,7 +176,7 @@ export class BotHostToolsFactory implements BotToolArea {
       readOnly: true,
       scope: 'sessions:read',
       description:
-        "Reads one session: its group and state, project, host, agent, branch, the latest task it was given, the agent's last result when it finished one, what it is waiting on when it asks a question or permission, and when it last did something. It does not read the live terminal; read_session shows what it did lately.",
+        "Reads one session: its group and state, project, host, agent, branch, the latest task it was given, the agent's last result when it finished one, what it is waiting on when it asks a question or permission, when it last did something, and the files its agent shared (show_session_file shows an image one). It does not read the live terminal; read_session shows what it did lately.",
       input: z.object({ session_id: z.uuid().describe('A session id from list_sessions.') }),
       run: async (input, context) => {
         const [session, projects] = await Promise.all([
@@ -207,6 +208,7 @@ export class BotHostToolsFactory implements BotToolArea {
             '  answer it with answer_session, or tell the person.',
           );
         }
+        lines.push(...describeSharedFiles(session.sharedFiles));
         return lines.join('\n');
       },
     });
@@ -217,7 +219,7 @@ export class BotHostToolsFactory implements BotToolArea {
       name: 'read_session',
       readOnly: true,
       scope: 'sessions:read',
-      description: `Reads what a session did, oldest first: its tasks and follow-up prompts (and who sent them), when the agent worked, blocked or finished, the questions it asked, failures, stops and restarts. Without after_seq it reads the latest entries; with after_seq (from send_to_session, answer_session or an earlier read) only what came after that entry, so you read what followed your own input. It reads the session's log, never its terminal or the agent's conversation. At most ${ACTIVITY_LIMIT_MAX} entries.`,
+      description: `Reads what a session did, oldest first: its tasks and follow-up prompts (and who sent them), when the agent worked, blocked or finished, the questions it asked, the files it shared, failures, stops and restarts. Without after_seq it reads the latest entries; with after_seq (from send_to_session, answer_session or an earlier read) only what came after that entry, so you read what followed your own input. It reads the session's log, never its terminal or the agent's conversation. At most ${ACTIVITY_LIMIT_MAX} entries.`,
       input: z.object({
         session_id: z.uuid().describe('A session id from list_sessions.'),
         limit: z.number().int().min(1).max(ACTIVITY_LIMIT_MAX).default(40),

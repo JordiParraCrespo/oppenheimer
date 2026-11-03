@@ -411,6 +411,7 @@ export class RunnerLinkGateway {
       case 'port.listing':
       case 'codex.environments':
       case 'whatsapp.sent':
+      case 'shared.preview':
         // Only ever an answer to a request this process is waiting on; a late
         // one (past its timeout) has nobody left to read it.
         if (!this.replies.settle(link.hostId, message)) {

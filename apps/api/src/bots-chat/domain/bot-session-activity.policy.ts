@@ -1,3 +1,5 @@
+import { fileSharedPayloadSchema } from '@oppenheimer/shared';
+import { sharedFileLine } from './bot-shared-file.policy';
 import { cut, formatToolTime } from './bot-tool-text.policy';
 
 /**
@@ -82,6 +84,8 @@ function describeEntry(entry: SessionActivityEntry, lastObserved: string | null)
       return 'the pending decision was answered';
     case 'command.failed':
       return `the host refused ${textField(payload, 'command') ?? 'a command'} (${textField(payload, 'code') ?? 'no code'})`;
+    case 'file.shared':
+      return sharedFileActivity(payload);
     case 'report.published':
       return 'the agent left a report';
     case 'report.acknowledged':
@@ -98,6 +102,13 @@ function senderOf(entry: SessionActivityEntry): string {
   return sender.kind === 'bot' && typeof sender.botId === 'string'
     ? ` from bot ${sender.botId}`
     : '';
+}
+
+/** A shared file as an activity line, by the fields the fold reads; never a host path. */
+function sharedFileActivity(payload: unknown): string {
+  const parsed = fileSharedPayloadSchema.safeParse(payload);
+  if (!parsed.success) return 'the agent shared a file';
+  return `the agent shared a file ${sharedFileLine({ ...parsed.data, at: '' }).slice(2)}`;
 }
 
 function decisionLine(payload: unknown): string {

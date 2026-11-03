@@ -1098,6 +1098,12 @@ earlier note:
   (`next-steps/agent-tools.md` §2). Since 2026-11-03 a bot can too, with
   its `notify` tool: its latest line is a `botNotice` item, and the Type
   facet's "Bot approvals" is "Bots" (§5).
+- `next-steps/agent-tools.md` §1 kept a shared file between the host and
+  the browser attached to the session's chat; the control plane never
+  heard of it. Since 2026-11-03 the runner also logs `file.shared` with
+  the file's metadata (never its path or bytes), the session keeps the
+  last 20, and a bot lists them and shows an image's preview, asked of
+  the host over the link (`next-steps/agent-tools.md` §7).
 - `versions/mvp/25-bots.md` §2 sent a turn the newest messages that fit
   its history budget, and the OpenAI engine named no conversation to the
   provider. On 2026-11-03, after `/usage` showed a bot on GPT and Grok at a

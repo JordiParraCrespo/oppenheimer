@@ -1219,6 +1219,8 @@ for a 404 or 428, 6 for a 502, 503 or 504, 7 for `PAIR_009`, and 1 for anything 
 | `SESS_013` <a id="sess_013" />         | The file cannot be shared                    | 400  |
 | `SESS_014` <a id="sess_014" />         | The person cannot be notified from this host | 503  |
 | `SESS_015` <a id="sess_015" />         | This host has no link to the control plane   | 503  |
+| `SESS_016` <a id="sess_016" />         | The session has no shared file by that id    | 404  |
+| `SESS_017` <a id="sess_017" />         | The shared file has no preview               | 409  |
 | `TMUX_001` <a id="tmux_001" />         | tmux is not available on this host           | 424  |
 | `TMUX_002` <a id="tmux_002" />         | The tmux server refused the command          | 500  |
 | `GIT_001` <a id="git_001" />           | The worktree could not be prepared           | 500  |

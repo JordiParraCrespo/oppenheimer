@@ -276,7 +276,24 @@ runner does with it and point back.
   is reviewed or commented on, or it merges. When it asks to be woken
   later (`runner sessions wake-in`), the runner logs `wake.requested` with
   `{ id, at, text }`, `at` in UTC; the control plane holds the wake and
-  types the note back in when it is due.
+  types the note back in when it is due. When it shares a file
+  (`runner sessions send-file`, since 2026-11-03), a runner whose hello
+  names `shared.preview` also logs `file.shared` with `{ id, name,
+  mediaType, size, caption?, hasPreview }`
+  (`packages/shared/src/schemas/session-shared-file.schema.ts`): what the
+  file is, never its path on the host nor its bytes. The control plane
+  keeps the last 20 on the session for bots (`next-steps/agent-tools.md`
+  §7).
+- `shared.preview.get` and `shared.preview` — a bot showing a file a
+  session's agent shared (2026-11-03): the control plane asks for the file
+  by the session and the runner's id for it, and the runner answers with
+  the JPEG preview it kept when the file was shared (`{ commandId,
+  mediaType: 'image/jpeg', data }`, base64, under the 64 KB a shared entry
+  is held to, so far below a frame), or `command.failed`: `SESS_001` the
+  session is not on that host, `SESS_016` it has no shared file by that id,
+  `SESS_017` the file has no preview. Sent only to a runner whose `hello`
+  names `shared.preview`, and waited on like `fs.list`, for 5 seconds. The
+  file itself never crosses: a preview is what the chat already showed.
 - `attachment.credit` — the browser's consumed-byte credit, relayed to
   the runner so it resumes that attachment's PTY reads. Without it the
   window below is a one-way valve: a noisy pane stalls for good rather
