@@ -1,9 +1,10 @@
 import { ComposerNotice, ComposerStackAction } from '@oppenheimer/design-system-web';
 import { Clock, Target } from '@oppenheimer/design-system-web/icons';
 import { useClearBotGoal } from '@oppenheimer/frontend-consumer/react';
-import { dateFormatter, useLocale } from '@oppenheimer/frontend-web';
+import { useLocale } from '@oppenheimer/frontend-web';
 import type { BotGoal } from '@oppenheimer/shared/schemas/bot';
 import { useTranslation } from 'react-i18next';
+import { goalBannerLine } from '@/features/bots/lib/goal-banner';
 
 /**
  * The goal the bot keeps working toward (`25-bots.md` §4.1), fused onto the
@@ -18,10 +19,10 @@ export function BotGoalNotice({ botId, goal }: { botId: string; goal: BotGoal })
   const { t } = useTranslation();
   const locale = useLocale();
   const clear = useClearBotGoal();
-  const { waiting } = goal;
+  const line = goalBannerLine(goal, t, locale);
   return (
     <ComposerNotice
-      icon={waiting ? <Clock /> : <Target />}
+      icon={line.waiting ? <Clock /> : <Target />}
       action={
         <ComposerStackAction disabled={clear.isPending} onClick={() => clear.mutate({ id: botId })}>
           {t('bots.chat.goal.stop')}
@@ -35,16 +36,7 @@ export function BotGoalNotice({ botId, goal }: { botId: string; goal: BotGoal })
           <span className="min-w-0 truncate" title={goal.objective}>
             {t('bots.chat.goal.title', { objective: goal.objective })}
           </span>
-          <span className="shrink-0 text-xs text-fg-muted">
-            {waiting
-              ? t('bots.chat.goal.waiting', {
-                  system: waiting.system,
-                  time: dateFormatter(locale, { timeStyle: 'short' }).format(
-                    new Date(waiting.until),
-                  ),
-                })
-              : t('bots.chat.goal.progress', { step: goal.continuations, limit: goal.limit })}
-          </span>
+          <span className="shrink-0 text-xs text-fg-muted">{line.text}</span>
         </span>
       )}
     </ComposerNotice>

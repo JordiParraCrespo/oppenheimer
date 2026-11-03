@@ -41,6 +41,14 @@ export function rateLimitOfRecord(value: unknown): BotRateLimit | null {
   return Number.isNaN(at.getTime()) ? null : { system, resetAt: at };
 }
 
+/**
+ * The limit a turn's end holds its goal's next decision for: the one it
+ * ended on, while it has not passed; null when nothing holds it.
+ */
+export function heldBy(limit: BotRateLimit | null, now: Date): BotRateLimit | null {
+  return limit && limit.resetAt > now ? limit : null;
+}
+
 /** The later of two limits: a turn that met two waits for both, and names the one it waits on. */
 export function laterLimit(held: BotRateLimit | null, limit: BotRateLimit): BotRateLimit {
   return held && held.resetAt >= limit.resetAt ? held : limit;

@@ -12,6 +12,14 @@ import {
 } from '@oppenheimer/shared';
 import type { BotRateLimit } from './bot-rate-limit.policy';
 
+/** What every goal continuation's key begins with. */
+export const GOAL_KEY_PREFIX = 'goal:';
+
+/** What every continuation key of a goal begins with: one queued blocks the next. */
+export function goalKeyPrefix(goalId: string): string {
+  return `${GOAL_KEY_PREFIX}${goalId}:`;
+}
+
 export interface BotGoalProps {
   organizationId: string;
   botId: string;
@@ -29,8 +37,7 @@ export interface BotGoalProps {
   /**
    * The system whose rate limit a turn of the goal ended on, and until when:
    * the goal's next decision is held until then (`bot-rate-limit.policy.ts`).
-   * Null when nothing holds it. Set by the end that holds it and cleared by
-   * the claim of the next continuation, both in SQL, never by this entity.
+   * Null when nothing holds it. `hold` sets it, `advance` clears it.
    */
   waiting?: BotRateLimit | null;
 }
@@ -99,12 +106,30 @@ export class BotGoalEntity extends AggregateRoot<BotGoalProps> {
     return this.props.continuations >= this.props.limit;
   }
 
-  /** Counts the next continuation and answers its number. */
+  /**
+   * Whether `turn` is one of this goal's own: the turn that set it or one of
+   * its continuations. A goal set in place of another is not held by the old
+   * goal's turns.
+   */
+  isHeldBy(turn: { id: string; sourceKey: string | null }): boolean {
+    return (
+      turn.id === this.props.originTurnId ||
+      (turn.sourceKey?.startsWith(goalKeyPrefix(this.id)) ?? false)
+    );
+  }
+
+  /** Its next decision waits out `limit`: the chat says so until it goes on. */
+  hold(limit: BotRateLimit): void {
+    this.props.waiting = { system: limit.system.slice(0, 64), resetAt: limit.resetAt };
+  }
+
+  /** Counts the next continuation and answers its number; a wait it was holding for is over. */
   advance(): number {
     if (this.exhausted) {
       throw new ArgumentInvalidException('A goal past its limit queues no more continuations');
     }
     this.props.continuations += 1;
+    this.props.waiting = null;
     return this.props.continuations;
   }
 

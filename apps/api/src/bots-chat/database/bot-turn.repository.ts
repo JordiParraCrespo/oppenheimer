@@ -13,6 +13,7 @@ import { BOT_CONVERSATION_REPOSITORY } from '../bots-chat.di-tokens';
 import type { BotChainState, BotChainVerdict } from '../domain/bot-chain.policy';
 import type { BotGoalEntity } from '../domain/bot-goal.entity';
 import type { BotMessageEntity } from '../domain/bot-message.entity';
+import { heldBy } from '../domain/bot-rate-limit.policy';
 import type { BotTurnContext, BotTurnEntity } from '../domain/bot-turn.entity';
 import { claimAttachmentsWithin } from './bot-attachment.repository';
 import type { BotConversationRepositoryPort } from './bot-conversation.repository.port';
@@ -201,7 +202,7 @@ export class BotTurnRepository
       );
       if (existing) return 'existing';
       // The goal's count and its turn commit together, or neither does.
-      if (!(await claimContinuationWithin(manager, goal))) return 'lost';
+      if (!(await claimContinuationWithin(manager, this.goals, goal))) return 'lost';
       return enqueueLocked(
         manager,
         this.outbox,
@@ -400,26 +401,7 @@ export class BotTurnRepository
           correlationId,
         });
       }
-      // A goal's own turn owes it a decision, staged with the end that owes it.
-      // A turn a system's rate limit stopped holds it until the limit ends: a
-      // continuation sooner would only meet the limit again, and spend one of
-      // the goal's turns doing it. The goal says it waits, for the chat.
-      if (await owesGoalWithin(manager, turn)) {
-        const limit = turn.limitAtEnd;
-        const held = limit && limit.resetAt > new Date() ? limit : null;
-        if (held) await holdGoalWithin(manager, turn, held);
-        await this.outbox.stageJob(manager, {
-          queue: QUEUE_NAMES.BOT_TURNS,
-          jobName: CONTINUE_BOT_GOAL_JOB,
-          payload: { turnId: turn.id },
-          reason: held
-            ? `bot ${turn.botId}: turn ${turn.id} ended with a goal open, rate limited until ${held.resetAt.toISOString()}`
-            : `bot ${turn.botId}: turn ${turn.id} ended with a goal open`,
-          aggregateId: turn.id,
-          correlationId,
-          ...(held && { availableAt: held.resetAt }),
-        });
-      }
+      await stageGoalDecisionWithin(this.outbox, manager, this.goals, turn, correlationId);
       return true;
     });
   }
@@ -525,6 +507,35 @@ export async function enqueueWithin(
 }
 
 /** `enqueueWithin` once the bot is locked. */
+/**
+ * A goal's own turn owes it a decision, staged with the end that owes it. A
+ * turn a system's rate limit stopped (`heldBy`) holds it until the limit
+ * ends, and holds the goal, so the chat says it waits: a continuation sooner
+ * would only meet the limit again, and spend one of the goal's turns doing it.
+ */
+async function stageGoalDecisionWithin(
+  outbox: OutboxService,
+  manager: EntityManager,
+  goals: BotGoalMapper,
+  turn: BotTurnEntity,
+  correlationId: string | null,
+): Promise<void> {
+  if (!(await owesGoalWithin(manager, turn))) return;
+  const held = heldBy(turn.limitAtEnd, new Date());
+  if (held) await holdGoalWithin(manager, goals, turn, held);
+  await outbox.stageJob(manager, {
+    queue: QUEUE_NAMES.BOT_TURNS,
+    jobName: CONTINUE_BOT_GOAL_JOB,
+    payload: { turnId: turn.id },
+    reason: held
+      ? `bot ${turn.botId}: turn ${turn.id} ended with a goal open, rate limited until ${held.resetAt.toISOString()}`
+      : `bot ${turn.botId}: turn ${turn.id} ended with a goal open`,
+    aggregateId: turn.id,
+    correlationId,
+    ...(held && { availableAt: held.resetAt }),
+  });
+}
+
 async function enqueueLocked(
   manager: EntityManager,
   outbox: OutboxService,

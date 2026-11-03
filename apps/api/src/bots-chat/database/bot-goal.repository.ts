@@ -8,6 +8,7 @@ import { BotMessageMapper } from '../bot-message.mapper';
 import type { BotGoalEntity } from '../domain/bot-goal.entity';
 import { GOAL_KEY_PREFIX } from '../domain/bot-goal.policy';
 import type { BotMessageEntity } from '../domain/bot-message.entity';
+import type { BotRateLimit } from '../domain/bot-rate-limit.policy';
 import { BotGoalOrmEntity } from './bot-goal.orm-entity';
 import type { BotGoalRepositoryPort } from './bot-goal.repository.port';
 import { insertMessageWithin } from './bot-message.repository';
@@ -83,13 +84,15 @@ export async function setGoalWithin(
  */
 export async function claimContinuationWithin(
   manager: EntityManager,
+  mapper: BotGoalMapper,
   goal: BotGoalEntity,
 ): Promise<boolean> {
+  // `advance` ended any wait the goal held for: the write carries what it left.
+  const { continuations, waitingFor, waitingUntil } = mapper.toPersistence(goal);
   const result = await manager
     .createQueryBuilder()
     .update(BotGoalOrmEntity)
-    // A continuation queued is the end of any wait the goal was holding for.
-    .set({ continuations: goal.continuations, waitingFor: null, waitingUntil: null })
+    .set({ continuations, waitingFor, waitingUntil })
     .where('id = :id AND continuations = :at', { id: goal.id, at: goal.continuationsAtLoad })
     .execute();
   if (result.affected !== 1) return false;
@@ -98,32 +101,29 @@ export async function claimContinuationWithin(
 }
 
 /**
- * Marks the ended turn's own goal as waiting out `limit`, in the transaction
- * that stages its held decision (`BotTurnRepository.finish`), so the row says
- * what the queue holds. Its own goal is the one it set (`originTurnId`) or
- * the one its continuation key names: a goal set in its place while it ran
- * is not held by it, and is left as it is. A goal that is gone writes nothing.
+ * Holds the ended turn's own goal for `limit` (`BotGoalEntity.hold`), in the
+ * transaction that stages its held decision (`BotTurnRepository.finish`), so
+ * the row says what the queue holds. The bot's goal is read under the lock a
+ * Stop's delete takes (`UQ_bot_goal_bot`); one the turn does not hold
+ * (`isHeldBy`: a goal set in its place while it ran) is left as it is, and a
+ * goal that is gone writes nothing.
  */
 export async function holdGoalWithin(
   manager: EntityManager,
+  mapper: BotGoalMapper,
   turn: { organizationId: string; botId: string; id: string; sourceKey: string | null },
-  limit: { system: string; resetAt: Date },
+  limit: BotRateLimit,
 ): Promise<void> {
-  // UQ_bot_goal_bot finds the bot's one row; the rest says whether it is this turn's.
-  await manager.query(
-    `UPDATE bot_goal SET "waitingFor" = $5, "waitingUntil" = $6, "updatedAt" = now()
-      WHERE "organizationId" = $1 AND "botId" = $2
-        AND ("originTurnId" = $3 OR left($4, length($7 || id::text || ':')) = $7 || id::text || ':')`,
-    [
-      turn.organizationId,
-      turn.botId,
-      turn.id,
-      turn.sourceKey,
-      limit.system.slice(0, 64),
-      limit.resetAt,
-      GOAL_KEY_PREFIX,
-    ],
-  );
+  const record = await manager.findOne(BotGoalOrmEntity, {
+    where: { organizationId: turn.organizationId, botId: turn.botId },
+    lock: { mode: 'pessimistic_write' },
+  });
+  if (!record) return;
+  const goal = mapper.toDomain(record);
+  if (!goal.isHeldBy(turn)) return;
+  goal.hold(limit);
+  const { waitingFor, waitingUntil } = mapper.toPersistence(goal);
+  await manager.update(BotGoalOrmEntity, { id: goal.id }, { waitingFor, waitingUntil });
 }
 
 /**
