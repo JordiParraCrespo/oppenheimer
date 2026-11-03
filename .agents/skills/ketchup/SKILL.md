@@ -11,8 +11,7 @@ Adapted from poteto's `ketchup` in pstack (`cursor/plugins`, MIT).
 
 Catch Jordi up, and help him understand each change, not only where it
 stands. Then lay out every call waiting on him so he can make it from your
-reply alone. Write in the `bro` voice: plain words, short sentences, what
-changed for him, not how you did it.
+reply alone. Write in the `bro` voice.
 
 ## Scope
 
@@ -65,6 +64,5 @@ Spend the words on the calls, not the story.
    replace a list with a count to save words. A call between options gives
    each option with what it gets him and what it costs.
 
-Leave out hashes, file paths, commands and counts unless he needs one to
-act. Name each pull request by its number and a name he would recognise.
-Link only things that exist.
+Name each pull request by its number and a name he would recognise. Link
+only things that exist.

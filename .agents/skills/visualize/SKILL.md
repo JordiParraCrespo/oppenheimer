@@ -40,8 +40,8 @@ fact twice, in the text and the picture.
 ## Show it
 
 - **In the chat:** write the file (`.mmd`, `.svg` or `.html`) in your
-  scratchpad and send it with `SendUserFile`, `display: "render"`, with a
-  one-line caption.
+  scratchpad and send it to Jordi so it renders inline, with a one-line
+  caption.
 - **In a pull request or issue:** a fenced `mermaid` block in the body
   (GitHub draws it). A chart or screenshot goes in as an image only when
   it is committed or already hosted; otherwise describe the number in a
