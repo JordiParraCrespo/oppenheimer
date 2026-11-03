@@ -56,6 +56,18 @@
       "identifiers": ["apps/extension", "@oppenheimer/extension"],
       "paths": ["apps/extension"]
     },
+    "cli": {
+      "title": "Command-line interface",
+      "summary": "apps/cli — `opp`, the CLI people, scripts and agents on other hosts drive Oppenheimer with, on scoped API tokens",
+      "identifiers": ["apps/cli", "@oppenheimer/cli"],
+      "paths": ["apps/cli", "e2e/tests/fleet/opp-cli.spec.ts", "apps/docs/docs/tooling/cli.md"]
+    },
+    "mcp": {
+      "title": "MCP server",
+      "summary": "apps/mcp — the Model Context Protocol server (stdio + Streamable HTTP) that offers an agent the hosts, sessions, automations, bots and tasks its credential reaches",
+      "identifiers": ["apps/mcp", "@oppenheimer/mcp", "oppenheimer-mcp"],
+      "paths": ["apps/mcp", "apps/docs/docs/tooling/mcp.md"]
+    },
     "docs": {
       "title": "Documentation site",
       "summary": "apps/docs — Docusaurus site (architecture, deployment, error catalog)",
@@ -140,6 +152,10 @@
     "packages/frontend/web": {
       "identifiers": ["packages/frontend/web", "@oppenheimer/frontend-web"],
       "neededBy": ["web"]
+    },
+    "packages/http-client": {
+      "identifiers": ["packages/http-client", "@oppenheimer/http-client"],
+      "neededBy": ["cli", "mcp"]
     },
     "packages/frontend/api-client": {
       "identifiers": ["packages/frontend/api-client", "@oppenheimer/api-client"],

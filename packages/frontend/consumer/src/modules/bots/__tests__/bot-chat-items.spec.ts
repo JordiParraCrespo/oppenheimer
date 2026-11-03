@@ -33,6 +33,7 @@ const step = (
     subagents: null,
     allowedBy: null,
     mailDraft: null,
+    rateLimit: null,
   }) satisfies BotToolStep;
 
 const turn = (id: string, status: 'completed' | 'running' | 'cancelled', start: number) =>

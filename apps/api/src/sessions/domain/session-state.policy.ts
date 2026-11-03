@@ -110,7 +110,8 @@ export const SESSION_EVENT_KINDS = {
   PROMPT_FIRST: 'prompt.first',
   /**
    * A follow-up prompt the API typed into window 0 for somebody other than a
-   * person at the terminal: a bot, for now. Payload `{ text, sender }`, the
+   * person at the terminal: a bot, or a person over the API (`opp`, MCP).
+   * Payload `{ text, sender }`, the
    * sender as the API read it (`SessionPromptSender`), never as the words
    * claim. It opens the next turn when none is live.
    */

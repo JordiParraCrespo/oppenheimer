@@ -9,8 +9,10 @@ control plane. The codebase is a Turborepo + pnpm monorepo started from the
 Flama full-stack starter. The MVP is `apps/api` (control plane), `apps/web`
 (the console), `apps/runner` (the host agent), `apps/docs` and `e2e`; that is
 what `pnpm dev:mvp` starts. Beyond the MVP are `apps/web-showcase`, the
-gallery of the web design system, and `apps/extension`, a Chrome extension
-that tracks your Claude Code cloud sessions and tells you which need you.
+gallery of the web design system, `apps/extension`, a Chrome extension
+that tracks your Claude Code cloud sessions and tells you which need you, and
+`apps/cli` and `apps/mcp`: `opp` and the MCP server, through which people,
+scripts and agents on other hosts drive the same API (0.6).
 
 The runner pairs a macOS, Debian or Ubuntu machine with a workspace, installs
 itself as a user service, keeps itself on the current signed release, and
@@ -44,8 +46,10 @@ All research and decisions live in `product/`; start with `product/README.md`.
 apps/        api (NestJS control plane) · web (Vite + TanStack Router console)
              runner (Go host agent) · docs (Docusaurus) · extension (Chrome)
              web-showcase (Next.js gallery of the design system)
+             cli (`opp`, commander) · mcp (MCP server, stdio + Streamable HTTP)
 packages/    shared (Zod schemas, types, CASL, scope + flag catalogs, the link protocol)
              auth (Better Auth config) · env (root .env loader) · tsconfig
+             http-client (the transport cli and mcp call the API through)
              translations (i18n JSON)
              backend/  agents authz cache core ddd email i18n llm queue storage
              frontend/ core (kernel) · consumer (the console's domain) · web (platform kit)
@@ -63,6 +67,7 @@ translations → web, frontend/web, api (email copy via backend/i18n)
 design-system/web → web, web-showcase, frontend/web
 api-client → frontend/core, frontend/consumer · frontend/core → every frontend package, web
 frontend/consumer, frontend/web → web · go/core → every go module · go/* → runner
+http-client → cli, mcp
 ```
 
 Each app and package has a `README.md` (purpose, exports, usage) and an

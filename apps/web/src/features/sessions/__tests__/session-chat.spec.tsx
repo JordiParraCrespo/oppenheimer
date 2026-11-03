@@ -636,6 +636,8 @@ describe('a long conversation', () => {
       fireEvent.scroll(box);
     };
     scrollTo(9_500);
+    // The reader turns the wheel up: a move up that is theirs.
+    fireEvent.wheel(box, { deltaY: -9_500 });
     scrollTo(0);
 
     act(() => chat.apply({ entries: turn(91) }));

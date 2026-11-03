@@ -67,6 +67,7 @@ import { RenameSessionHttpController } from './commands/rename-session/rename-se
 import { RestartSessionCommandHandler } from './commands/restart-session/restart-session.command-handler';
 import { RestartSessionHttpController } from './commands/restart-session/restart-session.http.controller';
 import { SendSessionPromptCommandHandler } from './commands/send-session-prompt/send-session-prompt.command-handler';
+import { SendSessionPromptHttpController } from './commands/send-session-prompt/send-session-prompt.http.controller';
 import { SetSessionSharePeopleCommandHandler } from './commands/set-session-share-people/set-session-share-people.command-handler';
 import { SetSessionSharePeopleHttpController } from './commands/set-session-share-people/set-session-share-people.http.controller';
 import { StartCloudSessionCommandHandler } from './commands/start-cloud-session/start-cloud-session.command-handler';
@@ -150,6 +151,7 @@ const httpControllers = [
   StopSessionShareHttpController,
   PasteSessionImageHttpController,
   AnswerSessionDecisionHttpController,
+  SendSessionPromptHttpController,
   StopSessionHttpController,
   RecordCloudStatusHttpController,
   PrepareSessionHttpController,

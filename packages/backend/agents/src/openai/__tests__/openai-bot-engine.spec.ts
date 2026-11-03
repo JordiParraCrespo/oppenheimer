@@ -32,7 +32,10 @@ interface Seen {
     instructions: string;
     model: string;
     tools: ToolOptions[];
-    modelSettings: { reasoning?: { effort?: string } };
+    modelSettings: {
+      reasoning?: { effort?: string };
+      providerData?: { prompt_cache_key?: string };
+    };
   };
   input: unknown;
   options: { stream: boolean; signal: AbortSignal; maxTurns: number };
@@ -520,6 +523,16 @@ describe('OpenAiBotEngine', () => {
     expect(run.seen).toMatchObject({
       provider: { apiKey: KEY, baseURL: 'https://api.x.ai/v1' },
       agent: { modelSettings: { reasoning: { effort: 'high' } } },
+    });
+    // No conversation named, no key: each request is routed on its own.
+    expect(run.seen?.agent.modelSettings.providerData).toBeUndefined();
+
+    // xAI's Responses API reads the key as its conversation id (`x-grok-conv-id`).
+    await collect(
+      new XaiBotEngine().run(request({ provider: 'xai', cacheKey: 'conversation-placeholder' })),
+    );
+    expect(run.seen?.agent.modelSettings.providerData).toEqual({
+      prompt_cache_key: 'conversation-placeholder',
     });
 
     await collect(
