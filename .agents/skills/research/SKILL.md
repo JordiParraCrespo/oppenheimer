@@ -21,7 +21,7 @@ is the `research` lane.
 - A proof of concept keeps its code beside the note, in
   `product/research/<topic>/`, outside the workspace. Code that has to land
   in `apps/` or `packages/` to work is a feature: say so and stop; Jordi
-  can `/demo` it.
+  can `/propose` it.
 
 ## 2. Merge it
 

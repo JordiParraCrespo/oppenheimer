@@ -83,16 +83,16 @@ is the protocol: it says what the pull request waits for, and who merges.
 | Label | Started by | Waits for | Merged by |
 | --- | --- | --- | --- |
 | `ship` | `/ship` (a fix) | ready, and a `PASS` from a fresh agent that did not write it | the agent, on its own |
-| `demo` | `/demo` (a feature) | the same, and Jordi accepting it: `/ship`, or swapping the label to `ship` | the agent, once accepted |
+| `propose` | `/propose` (a change Jordi signs off: a feature, a refactor, a fix he wants to see) | the same, and Jordi accepting it: `/ship`, or swapping the label to `ship` | the agent, once accepted |
 | `research` | `/research` (a note or a proof of concept) | ready | the agent, as soon as it is green |
 
 `/cook` picks one of the three for a task and says which. A pull request with none of them merges only when Jordi says so. A review
 is never an approval: the bot reviews post from Jordi's account. The
-lanes are the `ship`, `demo` and `research` skills.
+lanes are the `ship`, `propose` and `research` skills.
 
 ## Babysitting
 
-A `ship` or `demo` pull request stays mergeable until it merges or closes;
+A `ship` or `propose` pull request stays mergeable until it merges or closes;
 its session owns it. On every event and every check-in, fetch it fresh and
 work, in this order:
 

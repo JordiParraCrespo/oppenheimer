@@ -93,7 +93,7 @@ When you add a file that mentions an optional app (CI, compose,
   schedule; a red run opens a `main-red` issue, which comes before new work.
   Driving a pull request, and the order of its steps, is the `/steward` skill.
   Every agent pull request is `/ship` (a fix, merged on its own once a fresh
-  agent verifies it), `/demo` (a feature, merged once Jordi accepts) or
+  agent verifies it), `/propose` (merged once Jordi accepts) or
   `/research` (merged once green), and carries that label; `/cook` picks one
   for you. The protocol is `/steward`, "Merging".
 - **Stage files by path.** `.claude/settings.json` and the hooks in

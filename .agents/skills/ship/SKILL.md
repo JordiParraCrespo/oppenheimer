@@ -1,6 +1,6 @@
 ---
 name: ship
-description: Finish a fix and merge it without asking, or merge a demo pull request Jordi has accepted. Labels the pull request `ship`, drives it with the steward skill, has a fresh agent verify it, babysits it, and merges it. Use only when the user invokes /ship.
+description: Finish a fix and merge it without asking, or merge a proposed pull request Jordi has accepted. Labels the pull request `ship`, drives it with the steward skill, has a fresh agent verify it, babysits it, and merges it. Use only when the user invokes /ship.
 disable-model-invocation: true
 argument-hint: "[what to fix, or a pull request number]"
 ---
@@ -14,9 +14,9 @@ protocol (the three labels and what each one waits for) is
 Two ways in:
 
 - **`/ship <task>`**: a fix. Do the work, then everything below.
-- **`/ship` on a `demo` pull request** (in its session, or with its
-  number): Jordi accepted it. Swap the label `demo` for `ship` and go to
-  step 4; the demo's verdict stands if the code has not changed since.
+- **`/ship` on a `propose` pull request** (in its session, or with its
+  number): Jordi accepted it. Swap the label `propose` for `ship` and go
+  to step 4; its verdict stands if the code has not changed since.
 
 ## 1. Fix it
 
@@ -27,8 +27,8 @@ Two ways in:
   the description as a follow-up.
 - Take the steps in the order `steward` writes down ("The order").
 
-A `/ship <task>` becomes a `/demo` (label `demo`, wait for Jordi), and you
-say why, when the work turns out to need:
+A `/ship <task>` becomes a `/propose` (label `propose`, wait for Jordi),
+and you say why, when the work turns out to need:
 
 - new behavior, an endpoint, a schema or a migration (it is a feature);
 - a change to auth, authorization, scopes or credentials, the agent rules
