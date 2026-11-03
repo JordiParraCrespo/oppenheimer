@@ -102,7 +102,7 @@ function ChatComposer({
   layout?: 'stacked' | 'inline';
 }) {
   const label = { ...DEFAULT_CHAT_COMPOSER_LABELS, ...labels };
-  const { blocked, canSend, submit, onKeyDown } = useComposerSend({
+  const { blocked, canSend, submit, onKeyDown, recorderRef } = useComposerSend({
     value,
     busy,
     disabled,
@@ -111,6 +111,7 @@ function ChatComposer({
     onSubmit,
     onStop,
     onAltSubmit,
+    dictation,
   });
 
   const inline = layout === 'inline';
@@ -179,7 +180,10 @@ function ChatComposer({
   const recorder = dictation?.recorder ? (
     // The bar is 12px taller than the foot row it replaces; it takes
     // that from the field's bottom padding, so the box keeps its height.
-    <div data-slot="chat-composer-recorder" className={inline ? 'w-full' : '-mt-3 px-3 pb-3'}>
+    <div
+      ref={recorderRef}
+      data-slot="chat-composer-recorder"
+      className={inline ? 'w-full' : '-mt-3 px-3 pb-3'}>
       {dictation.recorder}
     </div>
   ) : null;

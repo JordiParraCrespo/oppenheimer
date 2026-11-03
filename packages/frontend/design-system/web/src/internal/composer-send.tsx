@@ -4,6 +4,7 @@ import * as React from 'react';
 
 import { cn } from '../lib/utils';
 import { IconButton } from '../components/icon-button';
+import type { DictationSlot } from '../components/chat-composer-extras';
 
 /**
  * What every composer shares, whatever it looks like (`Composer`, the
@@ -16,6 +17,13 @@ import { IconButton } from '../components/icon-button';
  *   a new line, never mid-composition (an IME). While busy, submitting
  *   stops instead. With `onAltSubmit`, Alt+Enter is a second way to send
  *   (a bot's "queue it for after"), under the same rules as send.
+ *   While `dictation` is recording or transcribing, send (Enter in the
+ *   field, or Enter anywhere in the recorder or with nothing focused, since
+ *   the recorder may stand in for the field) ends the recording and sends
+ *   once what was said has landed in the draft, so the spoken rest is never
+ *   dropped. A transcription that fails sends nothing: the draft stays, with
+ *   the notice under it. Attach `recorderRef` to the element around the
+ *   recorder.
  * - `ComposerSendButton`: the round primary button in the foot's corner.
  *   Blocked, it stays focusable (`aria-disabled`, not `disabled`) with the
  *   reason as its description and title, so a keyboard or screen reader
@@ -31,6 +39,7 @@ function useComposerSend({
   onSubmit,
   onStop,
   onAltSubmit,
+  dictation,
 }: {
   value: string;
   busy: boolean;
@@ -41,15 +50,54 @@ function useComposerSend({
   onSubmit: (value: string) => void;
   onStop?: () => void;
   onAltSubmit?: (value: string) => void;
+  dictation?: DictationSlot;
 }) {
   const blocked = !busy && sendBlockedReason !== undefined;
   const emptyAllowed = allowEmpty && attachmentCount === 0;
   const canSend = (emptyAllowed || value.trim().length > 0) && !disabled && !blocked;
+  const listening = dictation?.recorder != null && dictation.finish !== undefined;
+  const [sendWhenHeard, setSendWhenHeard] = React.useState(false);
+  const recorderRef = React.useRef<HTMLDivElement>(null);
 
   function submit() {
+    // Before Stop: a busy agent is not stopped by a send that is still being heard.
+    if (listening) {
+      setSendWhenHeard(true);
+      dictation?.finish?.();
+      return;
+    }
     if (busy) return onStop?.();
     if (canSend) onSubmit(value);
   }
+
+  // The recording has ended and its text is in `value`, in this same render.
+  React.useEffect(() => {
+    if (!sendWhenHeard || listening) return;
+    setSendWhenHeard(false);
+    if (!dictation?.notice && canSend) onSubmit(value);
+  });
+
+  // While the recorder stands in for the field (or focus fell to the page
+  // when the mic it replaced unmounted), Enter still sends.
+  const latestSubmit = React.useRef(submit);
+  React.useEffect(() => {
+    latestSubmit.current = submit;
+  });
+  React.useEffect(() => {
+    if (!listening) return;
+    function onWindowKeyDown(event: KeyboardEvent) {
+      if (event.key !== 'Enter' || event.shiftKey || event.isComposing || event.defaultPrevented) {
+        return;
+      }
+      const target = event.target;
+      const onPage = !(target instanceof Node) || target === document.body;
+      if (!onPage && !recorderRef.current?.contains(target as Node)) return;
+      event.preventDefault();
+      latestSubmit.current();
+    }
+    window.addEventListener('keydown', onWindowKeyDown);
+    return () => window.removeEventListener('keydown', onWindowKeyDown);
+  }, [listening]);
 
   function onKeyDown(event: React.KeyboardEvent<HTMLTextAreaElement>) {
     if (event.key === 'Enter' && !event.shiftKey && !event.nativeEvent.isComposing) {
@@ -62,7 +110,7 @@ function useComposerSend({
     }
   }
 
-  return { blocked, canSend, submit, onKeyDown };
+  return { blocked, canSend, submit, onKeyDown, recorderRef };
 }
 
 function ComposerSendButton({

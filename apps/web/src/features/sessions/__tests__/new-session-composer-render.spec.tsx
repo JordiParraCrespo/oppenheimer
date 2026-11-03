@@ -27,6 +27,8 @@ const dictation = vi.hoisted(() => {
   return {
     phase: null as null | 'waiting' | 'recording' | 'transcribing',
     onText: null as null | ((text: string) => void),
+    problem: null as null | 'failed',
+    stop: (() => {}) as () => void,
     meter: {
       subscribe: (listener: () => void) => {
         listeners.add(listener);
@@ -56,10 +58,10 @@ vi.mock('@oppenheimer/frontend-web', async (importOriginal) => {
         available: voice.available,
         recording: dictation.phase === 'recording',
         phase: dictation.phase,
-        problem: null,
+        problem: dictation.problem,
         meter: dictation.meter,
         toggle: vi.fn(),
-        stop: vi.fn(),
+        stop: () => dictation.stop(),
         cancel: vi.fn(),
       };
     },
@@ -71,6 +73,8 @@ const VOICE = { available: true, transcribe: vi.fn() };
 afterEach(() => {
   cleanup();
   dictation.phase = null;
+  dictation.problem = null;
+  dictation.stop = () => {};
 });
 
 function Chip({ onRender, label }: { onRender: () => void; label: string }) {
@@ -138,10 +142,12 @@ describe('NewSessionComposer', () => {
     expect((textarea as HTMLTextAreaElement).value).toBe('Fix the wallet list');
   });
 
-  it('holds the task while dictation is open, so what is still being heard is not dropped', () => {
-    // A send mid-recording would start the session on the typed half and
-    // unmount the recorder, losing the spoken rest.
+  it('sends on Enter mid-recording only once what was said is in the draft', () => {
+    // A send on the typed half alone would start the session and unmount the
+    // recorder, losing the spoken rest.
     dictation.phase = 'recording';
+    const stop = vi.fn();
+    dictation.stop = stop;
     const onSubmit = vi.fn();
     render(<NewSessionComposer voice={VOICE} onSubmit={onSubmit} />);
 
@@ -149,7 +155,44 @@ describe('NewSessionComposer', () => {
     fireEvent.change(textarea, { target: { value: 'Fix the wallet' } });
     fireEvent.keyDown(textarea, { key: 'Enter' });
 
-    expect(screen.queryByRole('button', { name: 'sessions.new.composer.send' })).toBeNull();
+    expect(stop).toHaveBeenCalledTimes(1);
+    expect(onSubmit).not.toHaveBeenCalled();
+
+    // The transcription lands: the recorder closes in the render the text arrives in.
+    dictation.phase = null;
+    act(() => dictation.onText?.('list.'));
+
+    expect(onSubmit).toHaveBeenCalledTimes(1);
+    expect(onSubmit).toHaveBeenCalledWith('Fix the wallet list.', []);
+  });
+
+  it('sends on Enter while the recorder holds focus, the field being out of reach', () => {
+    dictation.phase = 'recording';
+    const onSubmit = vi.fn();
+    render(<NewSessionComposer voice={VOICE} onSubmit={onSubmit} />);
+    fireEvent.change(screen.getByRole('textbox'), { target: { value: 'Fix the wallet' } });
+
+    fireEvent.keyDown(screen.getByRole('button', { name: 'common.dictation.stop' }), {
+      key: 'Enter',
+    });
+    dictation.phase = null;
+    act(() => dictation.onText?.('list.'));
+
+    expect(onSubmit).toHaveBeenCalledWith('Fix the wallet list.', []);
+  });
+
+  it('sends nothing when the transcription fails, so the draft is fixed first', () => {
+    dictation.phase = 'recording';
+    const onSubmit = vi.fn();
+    const { rerender } = render(<NewSessionComposer voice={VOICE} onSubmit={onSubmit} />);
+    const textarea = screen.getByRole('textbox');
+    fireEvent.change(textarea, { target: { value: 'Fix the wallet' } });
+    fireEvent.keyDown(textarea, { key: 'Enter' });
+
+    dictation.phase = null;
+    dictation.problem = 'failed';
+    rerender(<NewSessionComposer voice={VOICE} onSubmit={onSubmit} />);
+
     expect(onSubmit).not.toHaveBeenCalled();
   });
 

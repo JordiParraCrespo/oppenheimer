@@ -146,6 +146,11 @@ interface DictationSlot {
   recorder?: React.ReactNode;
   /** What went wrong last, said under the field. */
   notice?: React.ReactNode;
+  /**
+   * Ends the recording and hands it over. Present, a composer's send while
+   * the recorder shows ends it and sends once the text has landed.
+   */
+  finish?: () => void;
 }
 
 function DictationFrame({
