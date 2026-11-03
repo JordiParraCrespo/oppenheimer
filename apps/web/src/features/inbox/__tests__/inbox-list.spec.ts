@@ -2,6 +2,7 @@ import type { InboxItem } from '@oppenheimer/frontend-consumer';
 import { describe, expect, it } from 'vitest';
 import { currentItem } from '../lib/inbox-current';
 import { facetCounts, listedItems } from '../lib/inbox-filter';
+import { inboxSearchSchema } from '../lib/inbox-search';
 import type { InboxVisit } from '../lib/inbox-visit';
 
 /**
@@ -89,5 +90,23 @@ describe('currentItem', () => {
     ]) {
       expect(currentItem(waiting, 'session:s1:perm-abc', settled)?.key).toBe('approval:1');
     }
+  });
+});
+
+describe('the Bots facet', () => {
+  it("counts a bot's notice with the bots' approvals", () => {
+    const items = [item('botnotice:b:n', 'botNotice'), item('approval:1', 'approval')];
+    expect(facetCounts(items, ALL).types.bots).toBe(2);
+    const listed = listedItems(
+      { open: items, done: [] },
+      visit(),
+      { type: 'bots', project: null },
+      false,
+    );
+    expect(listed.open).toHaveLength(2);
+  });
+
+  it('opens from a link saved before its value was `bots`', () => {
+    expect(inboxSearchSchema.parse({ type: 'approval' }).type).toBe('bots');
   });
 });

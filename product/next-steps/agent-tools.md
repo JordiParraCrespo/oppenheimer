@@ -194,7 +194,8 @@ its pending approvals reached the Inbox.
   so marking one done never hides the next. It sorts with the waiting
   sessions and the session notices, by when it came, under no project; the
   Type facet counts it with the bots' approvals, under the option now
-  labelled "Bots" (it was "Bot approvals"). Its card is the bot's words,
+  labelled "Bots" (it was "Bot approvals"), whose search value is `bots`
+  (it was `approval`, which a saved link still opens). Its card is the bot's words,
   with the Bot icon, Later, Open chat (the bot's chat) and Done.
 - **Not yet.** The bot's chat does not show its notice, and a notice does
   not reach a phone (as §2's).

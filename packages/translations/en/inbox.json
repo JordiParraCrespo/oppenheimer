@@ -27,7 +27,7 @@
   "type": {
     "all": "All",
     "pull": "Pull requests",
-    "approval": "Bots",
+    "bots": "Bots",
     "session": "Sessions",
     "run": "Automations"
   },
