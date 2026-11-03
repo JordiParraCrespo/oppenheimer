@@ -10,14 +10,18 @@ import type {
   SessionAgentReport,
   SessionDecision,
   SessionGroup,
+  SessionNotice,
   SessionPlace,
   SessionState,
+  SessionWatchedPull,
 } from '@oppenheimer/shared';
+import { wakeRequestedPayloadSchema } from '@oppenheimer/shared';
 import { SessionCreatedDomainEvent } from './events/session-created.domain-event';
 import { SessionStateChangedDomainEvent } from './events/session-state-changed.domain-event';
 import { SessionTerminalMatchedDomainEvent } from './events/session-terminal-matched.domain-event';
 import { SessionTurnChangedDomainEvent } from './events/session-turn-changed.domain-event';
 import { SessionUpdatedDomainEvent } from './events/session-updated.domain-event';
+import { SessionWakeRequestedDomainEvent } from './events/session-wake-requested.domain-event';
 import type { SessionCheckoutEntity } from './session-checkout.entity';
 import type { SessionCloudRunEntity } from './session-cloud-run.entity';
 import { sessionGroup } from './session-group.policy';
@@ -417,6 +421,16 @@ export class WorkSessionEntity extends AggregateRoot<WorkSessionProps> {
     return this.props.agentReport;
   }
 
+  /** The last line the agent sent the person (`agent.notified`), or null. */
+  get notice(): SessionNotice | null {
+    return this.props.notice;
+  }
+
+  /** The pull requests the agent asked to be woken by (`pull.watched`). */
+  get watchedPulls(): readonly SessionWatchedPull[] {
+    return this.props.watchedPulls;
+  }
+
   /**
    * Why this session cannot take input right now — typed keys, a pasted
    * image — or `null` when it can. Closed is final and stopped has no window
@@ -483,6 +497,8 @@ export class WorkSessionEntity extends AggregateRoot<WorkSessionProps> {
       closeRefusal: this.props.closeRefusal,
       pendingDecision: this.props.pendingDecision,
       agentReport: this.props.agentReport,
+      notice: this.props.notice,
+      watchedPulls: this.props.watchedPulls,
     };
   }
 
@@ -514,6 +530,8 @@ export class WorkSessionEntity extends AggregateRoot<WorkSessionProps> {
     this.props.closeRefusal = fold.closeRefusal;
     this.props.pendingDecision = fold.pendingDecision;
     this.props.agentReport = fold.agentReport;
+    this.props.notice = fold.notice;
+    this.props.watchedPulls = fold.watchedPulls;
   }
 
   /**
@@ -558,6 +576,22 @@ export class WorkSessionEntity extends AggregateRoot<WorkSessionProps> {
             organizationId: this.props.organizationId,
             watchId: match.watchId,
             count: match.count,
+          }),
+        );
+      }
+    }
+
+    if (entry.kind === SESSION_EVENT_KINDS.WAKE_REQUESTED) {
+      const wake = wakeRequestedPayloadSchema.safeParse(entry.payload);
+      if (wake.success) {
+        this.addEvent(
+          new SessionWakeRequestedDomainEvent({
+            aggregateId: this.id,
+            reason: `the session's agent asked to be woken at ${wake.data.at}`,
+            organizationId: this.props.organizationId,
+            wakeId: wake.data.id,
+            at: wake.data.at,
+            text: wake.data.text,
           }),
         );
       }

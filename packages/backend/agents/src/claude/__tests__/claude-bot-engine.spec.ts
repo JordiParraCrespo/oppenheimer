@@ -142,7 +142,13 @@ describe('ClaudeBotEngine', () => {
       { type: 'text.delta', text: 'Hel' },
       { type: 'text.delta', text: 'lo' },
       { type: 'text.done', text: 'Hello' },
-      { type: 'usage', inputTokens: 15, outputTokens: 5 },
+      {
+        type: 'usage',
+        inputTokens: 15,
+        outputTokens: 5,
+        cacheReadTokens: 3,
+        cacheWriteTokens: 2,
+      },
       { type: 'done', reason: 'completed' },
     ]);
   });
@@ -204,6 +210,8 @@ describe('ClaudeBotEngine', () => {
       type: 'usage',
       inputTokens: 15,
       outputTokens: 5,
+      cacheReadTokens: 3,
+      cacheWriteTokens: 2,
       context: { tokens: 41_000, window: 1_000_000 },
     });
   });

@@ -45,7 +45,7 @@ describe('TurnTranscript', () => {
       { type: 'text.delta', text: 'Hel' },
       { type: 'text.delta', text: 'lo' },
       { type: 'text.done', text: 'Hello' },
-      { type: 'usage', inputTokens: 10, outputTokens: 2 },
+      { type: 'usage', inputTokens: 10, outputTokens: 2, cacheReadTokens: 6, cacheWriteTokens: 1 },
       { type: 'done', reason: 'completed' },
     ]);
     expect(writes.filter((write) => write.kind === 'text')).toHaveLength(2);
@@ -58,6 +58,8 @@ describe('TurnTranscript', () => {
       failure: null,
       inputTokens: 10,
       outputTokens: 2,
+      cacheReadTokens: 6,
+      cacheWriteTokens: 1,
       context: null,
       planLimits: null,
     });
@@ -207,7 +209,7 @@ describe('TurnTranscript', () => {
     expect(activity.steps.map((step) => step.mailDraft)).toEqual([draft, null]);
   });
 
-  it('keeps the subagents a delegate call ran on its step, and counts their tokens as the turn’s', () => {
+  it('keeps the subagents a delegate call ran on its step, and counts their tokens and cache as the turn’s', () => {
     const runs = [
       {
         task: 'Check build-01',
@@ -216,6 +218,8 @@ describe('TurnTranscript', () => {
         toolCalls: ['list_hosts'],
         inputTokens: 300,
         outputTokens: 40,
+        cacheReadTokens: 250,
+        cacheWriteTokens: 20,
         durationMs: 2_000,
       },
       {
@@ -225,12 +229,14 @@ describe('TurnTranscript', () => {
         toolCalls: [],
         inputTokens: 50,
         outputTokens: 0,
+        cacheReadTokens: 0,
+        cacheWriteTokens: 0,
         durationMs: 800,
       },
     ];
     const { writes, transcript } = run([
       { type: 'tool.started', callId: 'a', name: 'delegate', input: { tasks: [] } },
-      { type: 'usage', inputTokens: 10, outputTokens: 2 },
+      { type: 'usage', inputTokens: 10, outputTokens: 2, cacheReadTokens: 4 },
       {
         type: 'tool.finished',
         callId: 'a',
@@ -243,7 +249,13 @@ describe('TurnTranscript', () => {
     ]);
     const [activity] = inserted(writes);
     expect(activity.steps[0]?.subagents).toEqual(runs);
-    expect(transcript.result).toMatchObject({ inputTokens: 360, outputTokens: 42 });
+    // Their cache's share counts too, or /usage reads a cached child's input as fresh.
+    expect(transcript.result).toMatchObject({
+      inputTokens: 360,
+      outputTokens: 42,
+      cacheReadTokens: 254,
+      cacheWriteTokens: 20,
+    });
   });
 
   it('keeps text a failed turn streamed but never finished, and says why it failed', () => {

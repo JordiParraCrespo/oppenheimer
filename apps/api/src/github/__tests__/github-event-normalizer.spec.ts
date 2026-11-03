@@ -186,7 +186,7 @@ describe('pushes, checks and releases', () => {
     expect(normalize('push', { ref: 'refs/heads/old', deleted: true })).toEqual([]);
   });
 
-  it('is check_failed for a failing suite, on its branch, and nothing for a green one', () => {
+  it('is check_failed for a failing suite and check_passed for a green one, on its branch', () => {
     const suite = {
       id: 77,
       head_branch: 'fix/env',
@@ -203,12 +203,21 @@ describe('pushes, checks and releases', () => {
       type: 'check_failed',
       attributes: { branch: 'fix/env', number: 124, conclusion: 'failure' },
     });
-    expect(
-      normalize('check_suite', {
-        action: 'completed',
-        check_suite: { ...suite, conclusion: 'success' },
-      }),
-    ).toEqual([]);
+    const [green, ...more] = normalize('check_suite', {
+      action: 'completed',
+      check_suite: { ...suite, conclusion: 'success' },
+    });
+    expect(more).toHaveLength(0);
+    expect(green).toMatchObject({
+      type: 'check_passed',
+      attributes: { branch: 'fix/env', number: 124, conclusion: 'success' },
+    });
+    // Neither a skipped nor a cancelled suite says anything about the code.
+    for (const conclusion of ['skipped', 'cancelled', 'neutral']) {
+      expect(
+        normalize('check_suite', { action: 'completed', check_suite: { ...suite, conclusion } }),
+      ).toEqual([]);
+    }
   });
 
   it('is a release only when published and not a pre-release', () => {
@@ -245,5 +254,47 @@ describe('our own App', () => {
     expect(mentions('@Oppenheimer, please', 'oppenheimer')).toBe(true);
     expect(mentions('ping @oppenheimer-sessions', 'oppenheimer')).toBe(false);
     expect(mentions('mail me at x@oppenheimer.dev', 'oppenheimer')).toBe(false);
+  });
+});
+
+describe('reviews', () => {
+  const review = (body: string, state = 'changes_requested') => ({
+    id: 901,
+    state,
+    body,
+    html_url: 'https://github.com/acme/xrp-mobile/pull/124#pullrequestreview-901',
+    user: { login: 'pau-g' },
+    submitted_at: '2026-09-27T09:50:00Z',
+  });
+
+  // The regression: a review that mentions nobody was dropped, so an agent
+  // watching its pull request never heard that changes were requested.
+  it('is a review whatever its state, by its reviewer, and a mention too when it names us', () => {
+    const [event, ...rest] = normalize('pull_request_review', {
+      action: 'submitted',
+      pull_request: pullRequest(),
+      review: review('Please split this.'),
+    });
+    expect(rest).toHaveLength(0);
+    expect(event).toMatchObject({
+      type: 'review',
+      externalId: 'delivery-1:review:901',
+      attributes: { number: 124, state: 'changes_requested', reviewId: 901 },
+      context: { author: 'pau-g' },
+    });
+    const both = normalize('pull_request_review', {
+      action: 'submitted',
+      pull_request: pullRequest(),
+      review: review('@oppenheimer can you take this?', 'COMMENTED'),
+    });
+    expect(both.map((one) => one.type)).toEqual(['review', 'mention']);
+    expect(both[0]?.attributes).toMatchObject({ state: 'commented' });
+    expect(
+      normalize('pull_request_review', {
+        action: 'dismissed',
+        pull_request: pullRequest(),
+        review: review('x'),
+      }),
+    ).toEqual([]);
   });
 });

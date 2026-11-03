@@ -1,13 +1,13 @@
 name: CI
 
 # The pipeline is `scripts/ci/local.mjs`, and this workflow runs it: every
-# job, on main, every eight hours and on demand. Pull requests get no run
+# job, on main, every four hours and on demand. Pull requests get no run
 # here; each carries the report of the same command, run before it was pushed
 # (a run queued for a shared runner took most of an hour for a few minutes of
 # work). A red run opens the `main-red` issue, and the next green run closes it.
 on:
   schedule:
-    - cron: '17 */8 * * *'
+    - cron: '17 */4 * * *'
   workflow_dispatch:
 
 # A scheduled run is never cancelled by the next one; it waits.

@@ -8,7 +8,6 @@
  * end delivered twice queues two; a `/goal` that shows or clears the goal
  * spending a turn.
  */
-import { ArgumentInvalidException } from '@oppenheimer/backend-ddd';
 import { BOT_GOAL_CONTINUATIONS_MAX, BOT_GOAL_CONTINUATIONS_PERSON } from '@oppenheimer/shared';
 import { BotGoalEntity } from '../domain/bot-goal.entity';
 import {
@@ -179,9 +178,9 @@ describe('goalFromMessage', () => {
     expect(goalFromMessage('what is the goal?', turn)).toBeNull();
   });
 
-  it('refuses /goal alone and /goal clear, which the console runs without a turn', () => {
-    expect(() => goalFromMessage('/goal', turn)).toThrow(ArgumentInvalidException);
-    expect(() => goalFromMessage('/goal stop', turn)).toThrow(ArgumentInvalidException);
+  it('sets nothing for /goal alone or /goal clear, which the console runs', () => {
+    expect(goalFromMessage('/goal', turn)).toBeNull();
+    expect(goalFromMessage('/goal stop', turn)).toBeNull();
   });
 });
 

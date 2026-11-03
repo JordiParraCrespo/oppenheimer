@@ -15,6 +15,12 @@
 import type { ChatItemTodo } from '@oppenheimer/shared/schemas/chat-item';
 import { type ChatAnswer, QUESTION_KEY_GAP_MS, questionKeys } from '@oppenheimer/shared/sessions';
 import { type ChatToolKind, classifyTool, fieldOf, todosOf } from '../../chat/chat-tools';
+import {
+  type ChatSharedFile,
+  SHARED_ENTRY,
+  sharedFileOf,
+  withSharedFiles,
+} from './session-chat-files';
 
 /** One item of the agent's task list: the chat module's, which the bots chat reads too. */
 export type ChatTodo = ChatItemTodo;
@@ -103,7 +109,9 @@ export type ChatStep =
       failed: boolean;
     }
   /** A background task finished: the line Claude Code hands the agent, not a prompt. */
-  | { kind: 'task'; id: string; at: Date | null; status: ChatTaskStatus; summary: string | null };
+  | { kind: 'task'; id: string; at: Date | null; status: ChatTaskStatus; summary: string | null }
+  /** A file the agent showed the person (`runner sessions send-file`), placed by when. */
+  | { kind: 'file'; id: string; at: Date | null; file: ChatSharedFile };
 
 export interface ChatPrompt {
   id: string;
@@ -166,6 +174,8 @@ export interface ChatState {
   queued: readonly ChatQueued[];
   /** The latest status the host sent, if any. */
   status: ChatStatus | null;
+  /** The files the agent shared, in the order they came; each also a step of its turn. */
+  files: readonly ChatSharedFile[];
 }
 
 export interface ChatBatch {
@@ -173,7 +183,7 @@ export interface ChatBatch {
   entries: readonly string[];
 }
 
-const EMPTY: ChatState = { available: false, turns: [], queued: [], status: null };
+const EMPTY: ChatState = { available: false, turns: [], queued: [], status: null, files: [] };
 
 /** The entry the runner adds for the status line's figures. */
 const STATUS_ENTRY = 'oppenheimer.status';
@@ -379,6 +389,7 @@ export class SessionChat {
   apply(batch: ChatBatch): void {
     let changed = batch.reset ? this.transcript.reset(batch.entries.length > 0) : false;
     let status = this.state.status;
+    let files = this.state.files;
     for (const raw of batch.entries) {
       let entry: unknown;
       try {
@@ -387,12 +398,23 @@ export class SessionChat {
         // A line the host sent that is not JSON is the host's bug; skip it.
         continue;
       }
+      const type = record(entry)?.type;
       // The status is the latest one, not a line of the conversation.
-      if (record(entry)?.type === STATUS_ENTRY) status = statusOf(entry);
-      else if (this.transcript.take(raw, entry)) changed = true;
+      if (type === STATUS_ENTRY) status = statusOf(entry);
+      else if (type === SHARED_ENTRY) {
+        // Each attachment sends every shared file again; one is held once.
+        const file = sharedFileOf(entry);
+        if (file && !files.some((held) => held.id === file.id)) files = [...files, file];
+      } else if (this.transcript.take(raw, entry)) changed = true;
     }
-    if (changed || !this.state.available) {
-      this.publish({ ...this.state, available: true, turns: this.transcript.turns(), status });
+    if (changed || !this.state.available || files !== this.state.files) {
+      this.publish({
+        ...this.state,
+        available: true,
+        turns: this.turnsOf(files),
+        status,
+        files,
+      });
     } else if (status !== this.state.status) {
       // A replay so far, or a status alone: the conversation is as drawn.
       this.publish({ ...this.state, status });
@@ -412,9 +434,14 @@ export class SessionChat {
     this.replayTimer = setTimeout(() => {
       this.replayTimer = null;
       if (!this.transcript.settle()) return;
-      this.publish({ ...this.state, turns: this.transcript.turns() });
+      this.publish({ ...this.state, turns: this.turnsOf(this.state.files) });
       this.flush();
     }, REPLAY_SETTLE_MS);
+  }
+
+  /** The conversation's turns, with the shared files placed in them. */
+  private turnsOf(files: readonly ChatSharedFile[]): ChatTurn[] {
+    return withSharedFiles(this.transcript.turns(), files);
   }
 
   private publish(state: ChatState): void {

@@ -28,6 +28,7 @@ const SETTLED_KINDS = new Set<ChatBlock['kind']>([
   'question',
   'changes',
   'images',
+  'file',
 ]);
 
 /** Every block and the prompt rise into place as they arrive; history fades in once. */

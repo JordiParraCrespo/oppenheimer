@@ -12,6 +12,7 @@ import {
 
 const BUILT_IN_DESCRIPTIONS = {
   goal: 'bots.chat.slash.builtIn.goal',
+  usage: 'bots.chat.slash.builtIn.usage',
 } as const satisfies Record<(typeof BOT_BUILT_IN_COMMANDS)[number], string>;
 
 /**

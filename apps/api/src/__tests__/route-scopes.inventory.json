@@ -73,6 +73,7 @@
   "GET /v1/bots/:id/routines": ["automations:read"],
   "GET /v1/bots/:id/skills": ["bots:read"],
   "GET /v1/bots/:id/stream": ["bots:read"],
+  "GET /v1/bots/:id/usage": ["bots:read"],
   "GET /v1/calendar/events": ["calendar:read"],
   "GET /v1/calendar/google/connections": ["calendar:read"],
   "GET /v1/calendar/google/events": ["calendar:read"],

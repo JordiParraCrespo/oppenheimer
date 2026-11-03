@@ -16,6 +16,7 @@ import { BotMessageAttachmentsResolver } from '../../application/bot-message-att
 import { BotWaitingCardResolver } from '../../application/bot-waiting-card.resolver';
 import { BOT_STREAM, BOT_TURN_REPOSITORY } from '../../bots-chat.di-tokens';
 import type { BotTurnRepositoryPort } from '../../database/bot-turn.repository.port';
+import { refuseConsoleCommand } from '../../domain/bot-built-in.policy';
 import { goalFromMessage } from '../../domain/bot-goal.policy';
 import { BotMessageEntity } from '../../domain/bot-message.entity';
 import { maySteer } from '../../domain/bot-steer.policy';
@@ -26,16 +27,14 @@ import { SendBotMessageCommand } from './send-bot-message.command';
 /**
  * A message to a bot (`25-bots.md` §2): a queued turn on the bot's provider,
  * model and effort as they are now, with your message (its words, its images
- * or both) as its first. It runs
- * when the bot's turn before it ends, unless it is a steer the running turn
- * takes first (`BotSteerPolicy`): words alone steer (`maySteer`), since the
- * running turn would not read images and a `/<name>` runs its skill as a turn
- * of its own. A provider with no key is refused here,
- * where the person can fix it, rather than failing in the worker. A card the
- * bot is waiting on expires: the person moved on. `/goal <condition>` sets
- * the bot's goal on the turn it queues (`goalFromMessage`), checked before
- * anything is written and set in the transaction that queues the turn, so
- * the turn never runs or ends without it.
+ * or both) as its first. It runs when the bot's turn before it ends, unless
+ * it is a steer the running turn takes first (`BotSteerPolicy`): words alone
+ * steer (`maySteer`), since the running turn would not read images and a
+ * `/<name>` runs its skill as a turn of its own. A provider with no key is
+ * refused here, where the person can fix it. A card the bot is waiting on
+ * expires: the person moved on. A built-in the console runs is refused
+ * (`refuseConsoleCommand`); `/goal <condition>` sets the bot's goal in the
+ * transaction that queues its turn (`goalFromMessage`).
  */
 /** The turn a send queued, and the message that opens it, which a steer's lookup follows. */
 export interface SentBotMessage {
@@ -69,6 +68,7 @@ export class SendBotMessageCommandHandler
     steer,
     metadata,
   }: SendBotMessageCommand): Promise<SentBotMessage> {
+    refuseConsoleCommand(content);
     const bot = await this.lookup.bot(scope, botId);
     if (!this.sealer.isConfigured()) throw new AppError(BotErrors.PROVIDERS_NOT_CONFIGURED);
     requireFound(

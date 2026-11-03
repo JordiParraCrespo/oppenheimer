@@ -89,9 +89,11 @@ export const SCHEDULE_MAX_DAY_OF_MONTH = 28;
 // ---------------------------------------------------------------------------
 
 /**
- * The eleven GitHub events the frames offer. The ids are the frames' own, and
- * they are also the canonical `ExternalEvent.type` the GitHub adapter
- * normalizes a delivery to — one vocabulary from the webhook to the editor.
+ * The GitHub events a trigger can fire on: the frames' eleven, then
+ * `check_passed` and `review` (2026-11-02), which a session watching its pull
+ * request is woken by too (`product/next-steps/agent-tools.md` §3). The ids
+ * are also the canonical `ExternalEvent.type` the GitHub adapter normalizes a
+ * delivery to — one vocabulary from the webhook to the editor.
  */
 export const GITHUB_EVENT_TYPES = [
   'pr_opened',
@@ -105,6 +107,8 @@ export const GITHUB_EVENT_TYPES = [
   'issue_opened',
   'mention',
   'release',
+  'check_passed',
+  'review',
 ] as const;
 export type GithubEventType = (typeof GITHUB_EVENT_TYPES)[number];
 
@@ -276,6 +280,26 @@ export const EXTERNAL_EVENT_CATALOG: readonly ExternalEventDefinition[] = [
     defaultFilter: ANY_FILTER,
     checkout: 'pull_request_head',
     untrustedContent: false,
+  },
+  {
+    source: 'github',
+    type: 'check_passed',
+    label: 'Checks passed',
+    description: 'An Actions workflow or check suite finished green',
+    filterField: 'branch',
+    defaultFilter: ANY_FILTER,
+    checkout: 'pull_request_head',
+    untrustedContent: false,
+  },
+  {
+    source: 'github',
+    type: 'review',
+    label: 'Review submitted',
+    description: 'An approval, changes requested or a review comment',
+    filterField: null,
+    defaultFilter: ANY_FILTER,
+    checkout: 'pull_request_head',
+    untrustedContent: true,
   },
   {
     source: 'github',

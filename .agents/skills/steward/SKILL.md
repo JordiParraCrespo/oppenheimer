@@ -6,7 +6,7 @@ description: How to drive a pull request in this repository to mergeable. CI is 
 # Driving a pull request here
 
 Pull requests get no GitHub CI. `.github/workflows/ci.yml` runs
-`pnpm ci:local --all` on `main`, every eight hours and on demand. No GitHub
+`pnpm ci:local --all` on `main`, every four hours and on demand. No GitHub
 check gates a pull request: whoever merges reads the local report, and the
 scheduled run is what catches a report that was wrong.
 

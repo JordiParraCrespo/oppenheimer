@@ -288,8 +288,33 @@
       "pick": "Use /{{name}}",
       "builtInLabel": "Commands",
       "builtIn": {
-        "goal": "Keep working until a condition holds, checked after every turn. /goal clear stops it."
+        "goal": "Keep working until a condition holds, checked after every turn. /goal clear stops it.",
+        "usage": "Show what this chat has spent: tokens by model, cache hits, plan windows."
       }
+    },
+    "usage": {
+      "title": "Usage",
+      "since": "since {{date}}",
+      "copy": "Copy usage",
+      "summary_one": "{{count}} turn · {{active}} at work · {{tokens}} tokens",
+      "summary_other": "{{count}} turns · {{active}} at work · {{tokens}} tokens",
+      "cacheHit": "{{percent}}% cache hit",
+      "modelShare": "{{model}} {{percent}}%",
+      "input": "Input {{tokens}}",
+      "output": "Output {{tokens}}",
+      "cacheRead": "Cache read {{tokens}}",
+      "cacheWrite": "Cache write {{tokens}}",
+      "includes": "includes {{calls}} outside its turns",
+      "purpose": {
+        "goalReview_one": "{{count}} goal review",
+        "goalReview_other": "{{count}} goal reviews",
+        "summary_one": "{{count}} summary",
+        "summary_other": "{{count}} summaries",
+        "ruleReview_one": "{{count}} rule review",
+        "ruleReview_other": "{{count}} rule reviews"
+      },
+      "empty": "Nothing spent in this chat yet.",
+      "loadFailed": "Could not load the usage. Try again."
     }
   },
   "settings": {

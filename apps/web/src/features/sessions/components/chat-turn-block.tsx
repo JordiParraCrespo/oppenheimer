@@ -16,6 +16,7 @@ import { ChatCommandOutput } from './chat-command-output';
 import { ChatImages } from './chat-images';
 import { ChatQuestionRecord } from './chat-question-record';
 import { ChatReplyText } from './chat-reply-text';
+import { ChatSharedFileCard } from './chat-shared-file-card';
 import { ChatToolGroup } from './chat-tool-group';
 
 const TASK_ICONS: Record<ChatTaskStatus, ReactNode> = {
@@ -59,6 +60,8 @@ export function ChatTurnBlock({
       return <ChatChanges files={block.files} />;
     case 'images':
       return <ChatImages images={block.images} source={block.source} />;
+    case 'file':
+      return <ChatSharedFileCard file={block.file} />;
     case 'thinking': {
       // Open while it is what the agent is doing, folded once it moves on.
       const thinking = live && last;
