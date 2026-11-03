@@ -26,6 +26,7 @@ const step = (
   subagents: null,
   allowedBy: null,
   mailDraft: null,
+  rateLimit: null,
 });
 
 describe('stepExplore', () => {

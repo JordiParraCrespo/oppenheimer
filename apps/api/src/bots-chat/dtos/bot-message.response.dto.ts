@@ -60,6 +60,15 @@ export class BotSubagentRunResponseDto {
   durationMs!: number;
 }
 
+/** The system that was limiting a call's requests when it ended, and until when. */
+export class BotToolStepRateLimitResponseDto {
+  @ApiProperty({ description: 'The system limiting our requests ("Gmail", "GitHub").' })
+  system!: string;
+
+  @ApiProperty({ format: 'date-time', description: 'When it may be called again.' })
+  resetAt!: string;
+}
+
 /** One tool call in an activity line. */
 export class BotToolStepResponseDto {
   @ApiProperty()
@@ -112,6 +121,14 @@ export class BotToolStepResponseDto {
       'The draft a mail call saved in Gmail (`saved`, `draftId`, `link`, `mail`: the message as planned); null for any other call.',
   })
   mailDraft!: Record<string, unknown> | null;
+
+  @ApiProperty({
+    type: BotToolStepRateLimitResponseDto,
+    nullable: true,
+    description:
+      'The system that was limiting our requests when the call ended, and until when: the chat draws the step as a wait, not a failure. Null when no limit stopped it.',
+  })
+  rateLimit!: BotToolStepRateLimitResponseDto | null;
 }
 
 /** One answered question, as the chat shows it. */

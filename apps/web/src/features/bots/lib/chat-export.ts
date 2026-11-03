@@ -22,10 +22,11 @@ export interface ChatExportWords {
 }
 
 /**
- * One call, as the chat's trace says it, marked when it failed; a
- * `delegate` call with a line under it per subagent and how it ended.
+ * One call, as the chat's trace says it, marked when it failed or when a
+ * system's rate limit stopped it (a wait, with its time); a `delegate` call
+ * with a line under it per subagent and how it ended.
  */
-function stepLine(step: BotToolStep, t: TFunction): string {
+function stepLine(step: BotToolStep, { formatTime, t }: Omit<ChatExportWords, 'botName'>): string {
   const action = toolAction(step);
   const said =
     action.kind === 'search'
@@ -42,7 +43,15 @@ function stepLine(step: BotToolStep, t: TFunction): string {
   const children = (step.subagents ?? []).map(
     (run) => `\n  - ${run.task} (${t(`bots.chat.activity.subagent.${run.status}`)})`,
   );
-  return `- ${said}${step.isError ? ` (${t('bots.chat.activity.stepFailed')})` : ''}${children.join('')}`;
+  const mark = step.rateLimit
+    ? t('bots.chat.activity.stepLimited', {
+        system: step.rateLimit.system,
+        time: formatTime(step.rateLimit.resetAt),
+      })
+    : step.isError
+      ? t('bots.chat.activity.stepFailed')
+      : null;
+  return `- ${said}${mark ? ` (${mark})` : ''}${children.join('')}`;
 }
 
 /** Who said it: you, the bot, another bot that messaged or answered it, or Oppenheimer. */
@@ -54,8 +63,11 @@ function author(message: BotMessageEntity, botName: string, t: TFunction): strin
   return botName;
 }
 
-function body(message: BotMessageEntity, t: TFunction): string {
-  if (message.role === 'activity') return message.steps.map((step) => stepLine(step, t)).join('\n');
+function body(message: BotMessageEntity, words: Omit<ChatExportWords, 'botName'>): string {
+  const { t } = words;
+  if (message.role === 'activity') {
+    return message.steps.map((step) => stepLine(step, words)).join('\n');
+  }
   const { event } = message;
   if (message.role === 'event' && event?.kind === 'routine') return routineEventText(event, t);
   if (message.role === 'event' && event?.kind === 'approval') {
@@ -75,7 +87,7 @@ export function chatExportChunk(
   message: BotMessageEntity,
   { botName, formatTime, t }: ChatExportWords,
 ): string {
-  const text = body(message, t);
+  const text = body(message, { formatTime, t });
   if (!text) return '';
   return `\n**${author(message, botName, t)}** · ${formatTime(message.createdAt)}\n\n${text}\n`;
 }
