@@ -10,11 +10,13 @@ import { SendSessionPromptCommand } from './send-session-prompt.command';
  * Types a follow-up prompt into a running session's agent for a bot (issue
  * #493), the keys the console's chat view types for a message, sent to
  * window 0 as `session.input`. The claim and the keys are
- * `SessionPromptTyperResolver`'s; this command reads the session as the bot's
- * owner and turns what it came to into the errors a bot's tool reads.
+ * `SessionPromptTyperResolver`'s; this command reads the session in the
+ * caller's scope and turns what it came to into the errors the caller reads.
  *
- * No controller: a person types into the terminal itself. A bot's tool sends
- * a prompt this way, and a wake (`DeliverSessionWakeCommand`) shares the typer.
+ * A bot's tool sends a prompt this way, and so does `POST /sessions/{id}/prompt`
+ * for a person not at the terminal (the `opp` CLI, an MCP client); a person
+ * at the terminal types into it. A wake (`DeliverSessionWakeCommand`) shares
+ * the typer.
  */
 @CommandHandler(SendSessionPromptCommand)
 export class SendSessionPromptCommandHandler

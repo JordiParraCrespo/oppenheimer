@@ -1091,3 +1091,9 @@ earlier note:
   `prompt_cache_key`, and the history loses its oldest messages a block of
   about 6,000 tokens at a time, so each turn's request starts as the last
   one's did.
+- `next-steps/0.6-mcp-cli-and-agent.md` asked whether the CLI is a new app
+  or `runner` grows user commands, and noted the starter's CLI and MCP apps
+  were pruned. On 2026-11-02 both came back as their own apps, `apps/cli`
+  (`opp`) and `apps/mcp`, clients of the API on scoped tokens: they reach
+  automations, bots and tasks, which are not the runner's to forward. The
+  runner keeps the same-host verbs.

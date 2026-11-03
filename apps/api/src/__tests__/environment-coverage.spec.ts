@@ -35,6 +35,7 @@ const OTHER_READERS: { pattern: RegExp; reader: string; directory: string }[] = 
   { pattern: /_IMAGE$/, reader: 'the compose files', directory: 'docker' },
   { pattern: /^VITE_/, reader: 'the web console', directory: 'apps/web/src' },
   { pattern: /^RUNNER_/, reader: 'the Go runner', directory: 'apps/runner' },
+  { pattern: /^(OPPENHEIMER_|MCP_PORT$)/, reader: 'the MCP server', directory: 'apps/mcp/src' },
   {
     pattern: /^SCHEMA_TEST_DATABASE_URL$/,
     reader: 'the schema integration suite',
