@@ -3,19 +3,21 @@ import type {
   CommandFailedMessage,
   FsListingMessage,
   PortListingMessage,
+  SharedPreviewMessage,
   WhatsappSentMessage,
 } from '@oppenheimer/shared/protocol';
 
 /**
  * A runner's answer to a command the control plane is waiting on: the reply
  * frame itself, or its refusal: `fs.listing`, `port.listing`,
- * `codex.environments` or `whatsapp.sent`.
+ * `codex.environments`, `whatsapp.sent` or `shared.preview`.
  */
 export type LinkReply =
   | FsListingMessage
   | PortListingMessage
   | CodexEnvironmentsMessage
   | WhatsappSentMessage
+  | SharedPreviewMessage
   | CommandFailedMessage;
 
 /** One waiter: the reply, or null when none came in time. */

@@ -1078,3 +1078,9 @@ earlier note:
   an agent in a session can: `runner sessions notify "line"` keeps the line
   on its session, and the Inbox lists it until it is marked done
   (`next-steps/agent-tools.md` §2).
+- `next-steps/agent-tools.md` §1 kept a shared file between the host and
+  the browser attached to the session's chat; the control plane never
+  heard of it. Since 2026-11-03 the runner also logs `file.shared` with
+  the file's metadata (never its path or bytes), the session keeps the
+  last 20, and a bot lists them and shows an image's preview, asked of
+  the host over the link (`next-steps/agent-tools.md` §7).

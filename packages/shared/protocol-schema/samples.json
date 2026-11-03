@@ -379,6 +379,18 @@
     "id": "3EB0C7A1F3",
     "sentAt": "2026-09-19T10:00:00Z"
   },
+  "shared.preview.get": {
+    "type": "shared.preview.get",
+    "commandId": "b2c3d4e5-6f7a-4b8c-9d0e-1f2a3b4c5d6e",
+    "sessionId": "3f0d9e2c-6a4b-4e9a-9c3d-7b1e5a2f8c40",
+    "fileId": "3f9a7c1e2b4d6a80"
+  },
+  "shared.preview": {
+    "type": "shared.preview",
+    "commandId": "b2c3d4e5-6f7a-4b8c-9d0e-1f2a3b4c5d6e",
+    "mediaType": "image/jpeg",
+    "data": "/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/wAALCAABAAEBAREA/8QAFAABAAAAAAAAAAAAAAAAAAAACf/EABQQAQAAAAAAAAAAAAAAAAAAAAD/2gAIAQEAAD8AKp//2Q=="
+  },
   "session.create": {
     "type": "session.create",
     "commandId": "b2c3d4e5-6f7a-4b8c-9d0e-1f2a3b4c5d6e",

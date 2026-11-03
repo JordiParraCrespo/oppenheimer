@@ -307,7 +307,7 @@ func (h *linkHandler) capabilities() []string {
 		link.CapabilitySessionImage, link.CapabilitySessionCreateImages, link.CapabilitySessionFiles,
 		link.CapabilityRepositoryPrepare, link.CapabilitySessionFolder, link.CapabilityFsList,
 		link.CapabilityAttachmentChat, link.CapabilitySessionCloud, link.CapabilitySessionCloudCodex,
-		link.CapabilitySessionWatch, link.CapabilityCodexEnvironments,
+		link.CapabilitySessionWatch, link.CapabilityCodexEnvironments, link.CapabilitySharedPreview,
 	}
 	if h.direct != nil {
 		named = append(named, link.CapabilityAttachmentDirect, link.CapabilityAttachmentDirectProof)
@@ -621,6 +621,11 @@ func (h *linkHandler) Message(_ context.Context, msg link.Message) {
 			// Off the read loop like any command, on a lane of its own: a
 			// slow disk delays the next listing, never a session.
 			h.lanes.run(laneFsList, func() { h.listFolders(m) })
+		}
+	case link.TypeSharedPreviewGet:
+		var m link.SharedPreviewGet
+		if msg.Decode(&m) == nil {
+			h.lanes.run(laneSharedPreview, func() { h.sharedPreview(m) })
 		}
 	case "host.update":
 		var m link.HostUpdate

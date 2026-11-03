@@ -12,6 +12,7 @@ import type {
   SessionGroup,
   SessionNotice,
   SessionPlace,
+  SessionSharedFile,
   SessionState,
   SessionWatchedPull,
 } from '@oppenheimer/shared';
@@ -431,6 +432,11 @@ export class WorkSessionEntity extends AggregateRoot<WorkSessionProps> {
     return this.props.watchedPulls;
   }
 
+  /** The files the agent shared (`file.shared`), oldest first, the last 20. */
+  get sharedFiles(): readonly SessionSharedFile[] {
+    return this.props.sharedFiles;
+  }
+
   /**
    * Why this session cannot take input right now — typed keys, a pasted
    * image — or `null` when it can. Closed is final and stopped has no window
@@ -499,6 +505,7 @@ export class WorkSessionEntity extends AggregateRoot<WorkSessionProps> {
       agentReport: this.props.agentReport,
       notice: this.props.notice,
       watchedPulls: this.props.watchedPulls,
+      sharedFiles: this.props.sharedFiles,
     };
   }
 
@@ -532,6 +539,7 @@ export class WorkSessionEntity extends AggregateRoot<WorkSessionProps> {
     this.props.agentReport = fold.agentReport;
     this.props.notice = fold.notice;
     this.props.watchedPulls = fold.watchedPulls;
+    this.props.sharedFiles = fold.sharedFiles;
   }
 
   /**
