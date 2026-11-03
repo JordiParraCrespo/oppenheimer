@@ -102,11 +102,13 @@ export function SessionChat({
             {loading ? (
               // The history is still arriving: the conversation is drawn once
               // it has, at its end, so until then the column says so.
-              <div aria-busy className="flex flex-1 items-center justify-center">
-                <p role="status" className="text-fg-muted text-sm">
-                  {t('sessions.chat.loading')}
-                </p>
-              </div>
+              <EmptyState aria-busy className="flex-1">
+                <EmptyState.Header>
+                  <EmptyState.Description role="status">
+                    {t('sessions.chat.loading')}
+                  </EmptyState.Description>
+                </EmptyState.Header>
+              </EmptyState>
             ) : ids.length === 0 ? (
               <EmptyState className="flex-1">
                 <EmptyState.Header>
