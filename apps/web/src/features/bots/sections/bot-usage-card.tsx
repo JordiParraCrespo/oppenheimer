@@ -21,7 +21,7 @@ export function BotUsageCard({ botId }: { botId: string }) {
     // The chat's own column, so the card lines up with its messages and the composer.
     <ChatTranscript className="mt-5">
       <ChatUserMessage>/usage</ChatUserMessage>
-      <Card padded className="w-full max-w-md">
+      <Card className="w-full max-w-sm px-4 py-3">
         <QueryState>
           <QueryState.Pending>
             <BotUsageSkeleton />

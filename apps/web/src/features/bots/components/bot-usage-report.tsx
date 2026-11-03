@@ -16,7 +16,7 @@ import { botUsageTotals, modelShares, uncachedInput } from '@/features/bots/lib/
 const WARN_AT = 80;
 
 /** A figure's cell or a breakdown's line: a rule under each, so the rows read as a table. */
-const ROW = 'flex items-baseline gap-2 border-b border-border-subtle py-1.5';
+const ROW = 'flex items-baseline gap-2 border-b border-border-subtle py-1';
 
 const PURPOSE_KEYS = {
   goal_review: 'bots.chat.usage.purpose.goalReview',
@@ -96,7 +96,7 @@ export function BotUsageReport({
   ].join('\n');
 
   return (
-    <div className="flex flex-col gap-4 text-[13px]">
+    <div className="flex flex-col gap-3 text-[12px]">
       <div className="flex items-center justify-between gap-3">
         <h3 className="font-medium">{t('bots.chat.usage.title')}</h3>
         <span className="flex items-center gap-1">
@@ -110,7 +110,7 @@ export function BotUsageReport({
       </div>
       {windows.map(({ key, limit, when }) =>
         limit ? (
-          <div key={key} className="flex flex-col gap-1.5">
+          <div key={key} className="flex flex-col gap-1">
             <div className="flex items-baseline justify-between gap-3 text-fg-muted">
               <span>{t(`common.chat.usage.${key}`)}</span>
               <span className="flex items-baseline gap-2">
@@ -123,6 +123,7 @@ export function BotUsageReport({
               </span>
             </div>
             <StatBar
+              className="h-1"
               track
               segments={[
                 {
@@ -139,8 +140,8 @@ export function BotUsageReport({
       ) : (
         <>
           <section className="flex flex-col">
-            <h4 className="pb-1 font-medium">{t('bots.chat.usage.thisChat')}</h4>
-            <dl className="grid grid-cols-3">
+            <h4 className="pb-0.5 font-medium">{t('bots.chat.usage.thisChat')}</h4>
+            <dl className="grid grid-cols-[repeat(3,auto)]">
               {figures.map((figure) => (
                 <div key={figure.label} className={`${ROW} min-w-0 pr-3 text-fg-muted`}>
                   <dt className="truncate">{figure.label}</dt>
@@ -150,7 +151,7 @@ export function BotUsageReport({
             </dl>
           </section>
           <section className="flex flex-col">
-            <div className="flex items-baseline justify-between gap-3 pb-1">
+            <div className="flex items-baseline justify-between gap-3 pb-0.5">
               <h4 className="font-medium">{t('bots.chat.usage.breakdown')}</h4>
               <span className="truncate text-fg-muted">{models}</span>
             </div>
@@ -161,7 +162,7 @@ export function BotUsageReport({
               </div>
             ))}
             {outside ? (
-              <p className="pt-2 text-[12px] text-fg-muted">
+              <p className="pt-1.5 text-[11px] text-fg-muted">
                 {t('bots.chat.usage.includes', { calls: outside })}
               </p>
             ) : null}
