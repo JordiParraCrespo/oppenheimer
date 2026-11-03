@@ -478,4 +478,27 @@ describe('canGrantScope', () => {
       }),
     ).toBe(true);
   });
+
+  it("never lets a bypass or an `all` holder hand out a person's own rows", () => {
+    // What breaks this: a platform admin (or a `manage all` holder) granting a
+    // host, a person's machine, which has no tenant to keep the grant inside,
+    // so a grant over it opens someone's computer to whoever receives it.
+    const personOwned = { keys: { owner: 'ownerUserId', id: 'id' } };
+    const host = { organizationId: 'org-1', resourceType: 'Host', resourceId: 'host-1' };
+    expect(canGrantScope(scope({ bypass: true }), host, personOwned)).toBe(false);
+    expect(canGrantScope(scope({ grants: new Map([['Host', 'all']]) }), host, personOwned)).toBe(
+      false,
+    );
+    expect(
+      canGrantScope(
+        scope({ bypass: true, grants: new Map([['Host', 'all']]) }),
+        { ...host, resourceId: null },
+        personOwned,
+      ),
+    ).toBe(false);
+    // A row already granted by name may still be passed on.
+    expect(
+      canGrantScope(scope({ grants: new Map([['Host', new Set(['host-1'])]]) }), host, personOwned),
+    ).toBe(true);
+  });
 });

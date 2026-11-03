@@ -1,3 +1,4 @@
+import type { ResourceDefinition } from '../registry/resource-definition';
 import type { AccessScope } from '../scope/access-scope';
 
 export interface AccessGrantInput {
@@ -17,8 +18,16 @@ export interface AccessGrantInput {
  *
  * Without it, the grant endpoints are a self-service escalation path.
  */
-export function canGrantScope(actorScope: AccessScope, grant: AccessGrantInput): boolean {
-  if (actorScope.bypass) return true;
+export function canGrantScope(
+  actorScope: AccessScope,
+  grant: AccessGrantInput,
+  resource?: Pick<ResourceDefinition, 'keys'>,
+): boolean {
+  // A person's own rows (a resource with no organization key) are passed on
+  // only by name, and only by someone already granted that row: a bypass or an
+  // 'all' grant would hand out every owner's rows on the deployment.
+  const personOwned = resource !== undefined && !resource.keys.organization;
+  if (actorScope.bypass && !personOwned) return true;
 
   // A grant is always written inside one tenant, and never a different one.
   if (!actorScope.organizationId) return false;
@@ -26,7 +35,7 @@ export function canGrantScope(actorScope: AccessScope, grant: AccessGrantInput):
 
   const held = actorScope.grants.get(grant.resourceType);
 
-  if (grant.resourceId === null) return held === 'all';
-  if (held === 'all') return true;
+  if (grant.resourceId === null) return !personOwned && held === 'all';
+  if (held === 'all') return !personOwned;
   return held?.has(grant.resourceId) ?? false;
 }

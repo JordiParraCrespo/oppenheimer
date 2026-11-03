@@ -9,7 +9,9 @@ import type { AccessScope } from './access-scope';
  * The organization key is applied conjunctively — a tenant boundary is not
  * something another dimension may override, a bypass included: a platform
  * operator acting in a workspace sees that workspace, and only a bypass with no
- * active organization reaches every tenant. Team / own / grant are applied
+ * active organization reaches every tenant. A resource with no organization
+ * key belongs to a person, not a tenant, so neither a bypass nor an `'all'`
+ * grant widens it: its rows are the caller's own and the ones granted by id. Team / own / grant are applied
  * disjunctively: satisfying any one of them makes a row visible.
  *
  * **Fails closed.** If no dimension yields a clause, the caller can reach
@@ -35,12 +37,18 @@ export function applyAccessScope<T extends ObjectLiteral>(
     });
   }
 
+  // A person's own rows (a resource with no organization key, such as a host,
+  // which is someone's machine) have no tenant for a bypass or an 'all' grant
+  // to stay inside: either would reach every owner's rows on the deployment.
+  // So on those only the owner and grants of named rows count.
+  const personOwned = !keys.organization;
+
   // A bypass skips the slice within the tenant, never the tenant itself.
-  if (scope.bypass) return qb;
+  if (scope.bypass && !personOwned) return qb;
 
   // An 'all' grant short-circuits the disjunction: the caller reaches every row
   // of this type within the organization boundary already applied above.
-  if (scopes.includes('grant') && scope.grants.get(resource.subject) === 'all') {
+  if (!personOwned && scopes.includes('grant') && scope.grants.get(resource.subject) === 'all') {
     return qb;
   }
 
