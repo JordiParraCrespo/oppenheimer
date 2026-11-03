@@ -252,12 +252,7 @@ export class WorkSessionMapper
     dto.updatedAt = entity.updatedAt;
     dto.hints = options.hints ?? [];
     const { closeRequest, closeRefusal } = entity;
-    dto.closeRequest = closeRequest
-      ? {
-          requestedAt: closeRequest.requestedAt,
-          acceptUnpushedWork: closeRequest.acceptUnpushedWork,
-        }
-      : null;
+    dto.closeRequest = closeRequest ? { ...closeRequest } : null;
     dto.closeRefusal = closeRefusal ? { ...closeRefusal } : null;
     dto.decision = this.decisionToResponse(entity.pendingDecision);
     dto.agentReport = entity.agentReport ? { ...entity.agentReport } : null;
