@@ -108,6 +108,7 @@ import { FindSessionPortsHttpController } from './queries/find-session-ports/fin
 import { FindSessionPortsQueryHandler } from './queries/find-session-ports/find-session-ports.query-handler';
 import { FindSessionShareHttpController } from './queries/find-session-share/find-session-share.http.controller';
 import { FindSessionShareQueryHandler } from './queries/find-session-share/find-session-share.query-handler';
+import { FindSessionSharedPreviewQueryHandler } from './queries/find-session-shared-preview/find-session-shared-preview.query-handler';
 import { FindSessionsHttpController } from './queries/find-sessions/find-sessions.http.controller';
 import { FindSessionsQueryHandler } from './queries/find-sessions/find-sessions.query-handler';
 import { FindSharedSessionHttpController } from './queries/find-shared-session/find-shared-session.http.controller';
@@ -206,6 +207,7 @@ const queryHandlers: Provider[] = [
   FindHostFoldersQueryHandler,
   FindHostCodexEnvironmentsQueryHandler,
   FindSessionPortsQueryHandler,
+  FindSessionSharedPreviewQueryHandler,
   FindCloudFileQueryHandler,
 ];
 

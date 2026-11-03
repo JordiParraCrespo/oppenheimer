@@ -61,6 +61,9 @@ command is taught to every agent by `runner --skill`
   OpenCode session's chat is read through OpenCode's API, not the
   follower, and does not show shared files yet. Codex, Grok and Claude
   Code sessions do.
+- **Since 2026-11-03** the control plane hears of each shared file too,
+  as metadata only, so a bot can name it and show an image (§7). The
+  console's chat is unchanged.
 
 ## 2. Notify (built 2026-11-02)
 
@@ -195,3 +198,44 @@ its pending approvals reached the Inbox.
   with the Bot icon, Later, Open chat (the bot's chat) and Done.
 - **Not yet.** The bot's chat does not show its notice, and a notice does
   not reach a phone (as §2's).
+
+## 7. Bots see shared files (built 2026-11-03)
+
+- **Why.** §1 showed a file only to a browser attached to the session's
+  chat; the control plane never heard of it, so a bot driving the
+  session (`start_session`, `get_session`, `read_session`) could not say
+  "the agent shared a screenshot" nor show it to the person.
+- **What the control plane learns.** When the runner keeps a shared
+  file, it also logs `file.shared { id, name, mediaType, size, caption?,
+  hasPreview }` through the link's reporter (`FileSharer`, optional like
+  §2's notifier): never the path on the host, never the bytes, well under
+  the 8 KB event cap. A runner with no link still shares to the chat and
+  skips the event: the person still sees the file, only bots do not.
+- **What the session keeps.** The fold keeps the last 20 as
+  `sharedFiles` (a `jsonb` column, `[]` for none; the schema
+  `SessionSharedFile` in `@oppenheimer/shared`), oldest first, one per
+  id. They outlive a stop and go when the session closes, as the host's
+  copies do. The session's response does not carry them: bots read them
+  through their tools, and the console has the chat.
+- **What a bot sees.** `get_session` lists them, each by id, name, type,
+  size and caption, and says which can be shown; `read_session` names
+  each share as a line of the session's activity. The name and the
+  caption are the agent's words, so both are fenced as the session's
+  output, data and not instructions.
+- **What a bot shows.** `show_session_file { session_id, file_id }`
+  (scope `sessions:read`). The bytes are on the host, so the API asks the
+  runner over the link (`shared.preview.get`, answered by
+  `shared.preview` with the JPEG preview kept at share time, at most
+  60 KB, or `command.failed`: `SESS_001` the session is not on that host,
+  `SESS_016` no such file, `SESS_017` no preview), behind the runner's
+  `shared.preview` capability and a 5-second wait. The preview is stored
+  as the bot's own image attachment, the way `show_image` stores one from
+  the web, and counts against the same eight images a turn. The API asks
+  only about a file the session lists and the runner kept a preview of;
+  for a text file or anything else the tool says it cannot be shown and
+  that the file stays on the host.
+- **Not yet.** The full file (an image larger than its preview, a PDF, a
+  text file's words) does not reach the bot: that wants the same
+  request-and-reply carrying more than a preview, and a bound on what a
+  bot may pull off a host. Previews are not cached: each show asks the
+  host, so an offline host cannot show one.

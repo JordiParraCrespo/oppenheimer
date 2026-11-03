@@ -5,6 +5,7 @@ import type {
   SessionEffortDto,
   SessionNotice,
   SessionPermissionDto,
+  SessionSharedFile,
   SessionState,
   SessionWatchedPull,
 } from '@oppenheimer/shared';
@@ -15,12 +16,16 @@ import {
   agentNotifiedPayloadSchema,
   CLOUD_AGENT_IDS,
   DECISION_ANSWERED_EVENT_KIND,
+  FILE_SHARED_EVENT_KIND,
+  fileSharedPayloadSchema,
   PULL_WATCHED_EVENT_KIND,
   pullWatchedPayloadSchema,
   SESSION_PERMISSIONS,
+  SESSION_SHARED_FILES_MAX,
   SESSION_WATCHED_PULLS_MAX,
   sessionAgentReportSchema,
   sessionNoticeSchema,
+  sessionSharedFileSchema,
   sessionWatchedPullSchema,
   WAKE_REQUESTED_EVENT_KIND,
 } from '@oppenheimer/shared';
@@ -163,6 +168,13 @@ export const SESSION_EVENT_KINDS = {
    * `SessionWakeRequestedDomainEvent` for it, and the wake is a queued job.
    */
   WAKE_REQUESTED: WAKE_REQUESTED_EVENT_KIND,
+  /**
+   * The agent shared a file (`runner sessions send-file`). Payload
+   * `{ id, name, mediaType, size, caption?, hasPreview }`: what the file is,
+   * never its host path nor its bytes. The session keeps the last
+   * `SESSION_SHARED_FILES_MAX` for bots to list and show.
+   */
+  FILE_SHARED: FILE_SHARED_EVENT_KIND,
   /** The agent left a report. Payload `{ hash }` — never the report itself. */
   REPORT_PUBLISHED: 'report.published',
   /** Somebody read that report. Payload `{ hash }`. */
@@ -295,6 +307,12 @@ export interface SessionFold {
    * it closes.
    */
   watchedPulls: SessionWatchedPull[];
+  /**
+   * The files the agent shared, oldest first, at most
+   * `SESSION_SHARED_FILES_MAX` (a newer one drops the oldest). Kept while
+   * the session lives; cleared when it closes, when the host's copy goes.
+   */
+  sharedFiles: SessionSharedFile[];
 }
 
 export const INITIAL_SESSION_FOLD: SessionFold = {
@@ -318,6 +336,7 @@ export const INITIAL_SESSION_FOLD: SessionFold = {
   agentReport: null,
   notice: null,
   watchedPulls: [],
+  sharedFiles: [],
 };
 
 /**
@@ -413,6 +432,33 @@ export function readWatchedPulls(value: unknown): SessionWatchedPull[] {
   });
 }
 
+/** The shared files in a `jsonb` column, each one this build can read. */
+export function readSharedFiles(value: unknown): SessionSharedFile[] {
+  if (!Array.isArray(value)) return [];
+  return value.flatMap((item) => {
+    const parsed = sessionSharedFileSchema.safeParse(item);
+    return parsed.success ? [parsed.data] : [];
+  });
+}
+
+/**
+ * What the agent left the session, read back from the `jsonb` columns the fold
+ * writes it to, each through its schema: one this build cannot read is none.
+ */
+export function readAgentColumns(record: {
+  agentReport: unknown;
+  notice: unknown;
+  watchedPulls: unknown;
+  sharedFiles: unknown;
+}): Pick<SessionFold, 'agentReport' | 'notice' | 'watchedPulls' | 'sharedFiles'> {
+  return {
+    agentReport: readAgentReport(record.agentReport),
+    notice: readNotice(record.notice),
+    watchedPulls: readWatchedPulls(record.watchedPulls),
+    sharedFiles: readSharedFiles(record.sharedFiles),
+  };
+}
+
 /**
  * A report narrowed by its schema, from the log or from the `jsonb` column it
  * is folded into: null for none, and for one this build cannot read.
@@ -502,6 +548,7 @@ export function foldSessionEvent(fold: SessionFold, event: SessionLogEntry): Ses
       closed.closeRefusal = null;
       closed.notice = null;
       closed.watchedPulls = [];
+      closed.sharedFiles = [];
       return withoutAgentFacts(closed);
     }
     case SESSION_EVENT_KINDS.NAMED: {
@@ -588,6 +635,17 @@ export function foldSessionEvent(fold: SessionFold, event: SessionLogEntry): Ses
       next.watchedPulls = watch
         ? [...others, { githubRepoId, number }].slice(-SESSION_WATCHED_PULLS_MAX)
         : others;
+      return next;
+    }
+    case SESSION_EVENT_KINDS.FILE_SHARED: {
+      if (next.state === 'resolved') return next;
+      const parsed = fileSharedPayloadSchema.safeParse(event.payload);
+      if (!parsed.success) return next;
+      const shared = { ...parsed.data, at: event.occurredAt.toISOString() };
+      next.sharedFiles = [
+        ...next.sharedFiles.filter((file) => file.id !== shared.id),
+        shared,
+      ].slice(-SESSION_SHARED_FILES_MAX);
       return next;
     }
     case SESSION_EVENT_KINDS.REPORT_PUBLISHED:

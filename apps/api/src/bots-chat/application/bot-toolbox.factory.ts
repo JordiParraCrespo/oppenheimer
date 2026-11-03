@@ -25,6 +25,7 @@ import { BotPullRequestToolsFactory } from './bot-pull-request-tools.factory';
 import { BotQuestionToolsFactory } from './bot-question-tools.factory';
 import { BotRoutineToolsFactory } from './bot-routine-tools.factory';
 import { BotSelfToolsFactory } from './bot-self-tools.factory';
+import { BotSessionFileToolsFactory } from './bot-session-file-tools.factory';
 import { BotSessionToolsFactory } from './bot-session-tools.factory';
 import { BotSkillToolsFactory } from './bot-skill-tools.factory';
 import { BotSubagentToolsFactory } from './bot-subagent-tools.factory';
@@ -53,6 +54,7 @@ export class BotToolboxFactory {
     skills: BotSkillToolsFactory,
     hosts: BotHostToolsFactory,
     sessions: BotSessionToolsFactory,
+    sessionFiles: BotSessionFileToolsFactory,
     watches: BotWatchToolsFactory,
     plan: BotPlanToolsFactory,
     github: BotGithubToolsFactory,
@@ -79,6 +81,7 @@ export class BotToolboxFactory {
       notices,
       hosts,
       sessions,
+      sessionFiles,
       watches,
       plan,
       github,

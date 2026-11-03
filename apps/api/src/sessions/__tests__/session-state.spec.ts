@@ -636,3 +636,70 @@ describe('the pull requests the fold keeps watched', () => {
     expect(foldSessionEvent(watching, entry(SESSION_EVENT_KINDS.CLOSED)).watchedPulls).toEqual([]);
   });
 });
+
+describe('the files the fold keeps shared', () => {
+  const shared = (id: string, extra: Record<string, unknown> = {}) =>
+    entry(SESSION_EVENT_KINDS.FILE_SHARED, {
+      id,
+      name: `${id}.png`,
+      mediaType: 'image/png',
+      size: 1024,
+      hasPreview: true,
+      ...extra,
+    });
+  const running = foldSessionLog([
+    entry(SESSION_EVENT_KINDS.REQUESTED),
+    entry(SESSION_EVENT_KINDS.STARTED),
+  ]);
+
+  // The regression: a session that shares screenshots all day grows its row
+  // without bound, or a payload this build cannot read lands on the row.
+  it('keeps the newest twenty, each once, and only ones it can read', () => {
+    const many = foldSessionLog(
+      Array.from({ length: 22 }, (_, i) => shared(`f${i + 1}`)),
+      running,
+    );
+    expect(many.sharedFiles).toHaveLength(20);
+    expect(many.sharedFiles[0]).toMatchObject({ id: 'f3', name: 'f3.png', hasPreview: true });
+    const again = foldSessionEvent(many, shared('f3'));
+    expect(again.sharedFiles.map((file) => file.id).slice(-2)).toEqual(['f22', 'f3']);
+    expect(again.sharedFiles).toHaveLength(20);
+    expect(foldSessionEvent(running, shared('f1', { size: -1 })).sharedFiles).toEqual([]);
+    expect(foldSessionEvent(running, shared('../etc')).sharedFiles).toEqual([]);
+  });
+
+  // The regression: a bot lists files whose host copy the close already took.
+  it('keeps them through a stop and forgets them when the session closes', () => {
+    const at = new Date('2026-11-03T10:00:00.000Z');
+    const one = foldSessionEvent(
+      running,
+      entry(
+        SESSION_EVENT_KINDS.FILE_SHARED,
+        {
+          id: 'f1',
+          name: 'home.png',
+          mediaType: 'image/png',
+          size: 1,
+          caption: 'The home page',
+          hasPreview: true,
+        },
+        at,
+      ),
+    );
+    expect(one.sharedFiles).toEqual([
+      {
+        id: 'f1',
+        name: 'home.png',
+        mediaType: 'image/png',
+        size: 1,
+        caption: 'The home page',
+        hasPreview: true,
+        at: at.toISOString(),
+      },
+    ]);
+    expect(foldSessionEvent(one, entry(SESSION_EVENT_KINDS.STOPPED)).sharedFiles).toHaveLength(1);
+    const closed = foldSessionEvent(one, entry(SESSION_EVENT_KINDS.CLOSED));
+    expect(closed.sharedFiles).toEqual([]);
+    expect(foldSessionEvent(closed, shared('f2')).sharedFiles).toEqual([]);
+  });
+});

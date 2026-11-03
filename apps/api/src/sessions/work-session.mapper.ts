@@ -11,9 +11,7 @@ import type { RecentFolder, SessionListPage } from './database/work-session.repo
 import { encodeSessionListCursor } from './domain/session-list-cursor.policy';
 import {
   launchPermissionFor,
-  readAgentReport,
-  readNotice,
-  readWatchedPulls,
+  readAgentColumns,
   type SessionAgent,
   type SessionFold,
 } from './domain/session-state.policy';
@@ -79,6 +77,7 @@ export class WorkSessionMapper
     record.agentReport = fold.agentReport;
     record.notice = fold.notice;
     record.watchedPulls = fold.watchedPulls;
+    record.sharedFiles = fold.sharedFiles;
     return record;
   }
 
@@ -196,9 +195,7 @@ export class WorkSessionMapper
         ? { code: record.closeRefusalCode, detail: record.closeRefusalDetail }
         : null,
       pendingDecision: this.decisionOf(record.pendingDecision),
-      agentReport: readAgentReport(record.agentReport),
-      notice: readNotice(record.notice),
-      watchedPulls: readWatchedPulls(record.watchedPulls),
+      ...readAgentColumns(record),
     };
   }
 
