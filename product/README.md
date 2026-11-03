@@ -1091,6 +1091,12 @@ earlier note:
   `prompt_cache_key`, and the history loses its oldest messages a block of
   about 6,000 tokens at a time, so each turn's request starts as the last
   one's did.
+- `versions/mvp/29-inbox.md` §1 ordered the Inbox most blocked first:
+  approvals and waiting sessions oldest wait first, then requested
+  reviews, ready merges and failed runs. On 2026-11-03 the owner asked for
+  the most recent first, so the list is newest first across every kind,
+  Low items still last; the order is held by the consumer's
+  `composeInbox` test, no longer by the fleet stress suite.
 - `next-steps/0.6-mcp-cli-and-agent.md` asked whether the CLI is a new app
   or `runner` grows user commands, and noted the starter's CLI and MCP apps
   were pruned. On 2026-11-02 both came back as their own apps, `apps/cli`
