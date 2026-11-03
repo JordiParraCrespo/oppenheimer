@@ -479,6 +479,67 @@ describe('SessionChat', () => {
     expect(chat.snapshot().turns).toHaveLength(1);
   });
 
+  it('holds a first load its runner says is still coming, past any pause, until it says the end', () => {
+    // What breaks this: a first load let go on the size or the pace of its
+    // batches. A runner making previews of a read's screenshots sends a
+    // short first batch, then pauses past any quiet the chat could wait out,
+    // so a chat full of images was drawn once per read on its way down.
+    vi.useFakeTimers();
+    const lines = Array.from({ length: 30 }, (_, i) =>
+      JSON.stringify(user(`u${i}`, `Prompt ${i}`)),
+    );
+    const chat = new SessionChat();
+    const seen: number[] = [];
+    chat.subscribe(() => seen.push(chat.snapshot().turns.length));
+    chat.apply({ reset: true, history: 'more', entries: lines.slice(0, 3) });
+    vi.advanceTimersByTime(2_000);
+    chat.apply({ history: 'more', entries: lines.slice(3, 20) });
+    vi.advanceTimersByTime(2_000);
+    expect(chat.snapshot()).toMatchObject({ loading: true, turns: [] });
+    chat.apply({ history: 'end', entries: lines.slice(20) });
+    expect(chat.snapshot()).toMatchObject({ loading: false });
+    expect(seen).toEqual([0, 30]);
+    vi.useRealTimers();
+  });
+
+  it('draws a long first load the moment its runner says the history ended', () => {
+    // What breaks this: a runner's end ignored, so a full last batch waits
+    // out a quiet before anything is drawn.
+    const lines = Array.from({ length: 256 }, (_, i) =>
+      JSON.stringify(user(`u${i}`, `Prompt ${i}`)),
+    );
+    const chat = new SessionChat();
+    chat.apply({ reset: true, history: 'end', entries: lines });
+    expect(chat.snapshot()).toMatchObject({ loading: false });
+    expect(chat.snapshot().turns).toHaveLength(256);
+  });
+
+  it('keeps what is drawn when a reconnect starts its replay with no lines yet', () => {
+    // What breaks this: a reset with no lines taken as a transcript that is
+    // empty now, when its runner says the history is still coming (a read
+    // that ended inside a screenshot's line), so the chat blanks and is
+    // drawn again from the top.
+    const lines = [user('u1', 'One'), user('u2', 'Two')].map((entry) => JSON.stringify(entry));
+    const chat = new SessionChat();
+    chat.apply({ reset: true, history: 'end', entries: lines });
+    const before = chat.snapshot();
+    chat.apply({ reset: true, history: 'more', entries: [] });
+    chat.apply({ history: 'end', entries: lines });
+    expect(chat.snapshot().turns).toBe(before.turns);
+  });
+
+  it('drops what a replay did not send again as soon as its runner says the history ended', () => {
+    // What breaks this: a replay that came back short kept on screen for
+    // the quiet, when the runner has said there is no more.
+    const lines = [user('u1', 'One'), user('u2', 'Two'), user('u3', 'Three')].map((entry) =>
+      JSON.stringify(entry),
+    );
+    const chat = new SessionChat();
+    chat.apply({ reset: true, history: 'end', entries: lines });
+    chat.apply({ reset: true, history: 'end', entries: lines.slice(0, 2) });
+    expect(chat.snapshot().turns.map((turn) => turn.prompt?.text)).toEqual(['One', 'Two']);
+  });
+
   it('keeps a long conversation drawn while a reconnect replays it, and takes what is new after', () => {
     // What breaks this: a reset that empties the chat and refills it batch by
     // batch, so a long chat on screen collapses to its first turns, every

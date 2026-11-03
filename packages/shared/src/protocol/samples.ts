@@ -125,6 +125,7 @@ export const SAMPLES: Record<ProtocolMessageType, ProtocolMessage> = {
     type: 'attachment.chat',
     attachmentId: 7,
     reset: true,
+    history: 'end',
     entries: [
       '{"type":"user","uuid":"u1","message":{"role":"user","content":"fix the failing test"}}',
     ],

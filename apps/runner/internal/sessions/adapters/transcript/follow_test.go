@@ -31,7 +31,7 @@ func (b *batches) emit(batch app.ChatBatch) error {
 		b.refused++
 		return errors.New("backpressure")
 	}
-	b.got = append(b.got, app.ChatBatch{Reset: batch.Reset, Entries: append([]string(nil), batch.Entries...)})
+	b.got = append(b.got, app.ChatBatch{Reset: batch.Reset, History: batch.History, Entries: append([]string(nil), batch.Entries...)})
 	return nil
 }
 
@@ -102,6 +102,66 @@ func TestTheChatIsTheHistoryThenEachLineTheAgentAppends(t *testing.T) {
 	eventually(t, "the appended line", func() bool { return len(sink.entries()) == 3 })
 	if text := sink.entries()[2]["message"].(map[string]any)["content"].([]any)[0].(map[string]any)["text"]; text != "Done." {
 		t.Fatalf("appended entry: %v", text)
+	}
+}
+
+// The console holds a first load until the history has all come, and only
+// the runner knows when that is: a read slowed by previews of screenshots
+// pauses longer than any quiet the console could wait out. Regression: the
+// batches said nothing, the console took the pause after the first 4MB read
+// for the end, and drew a long chat once per read.
+func TestAHistoryLongerThanOneReadSaysWhereItEnds(t *testing.T) {
+	filler := strings.Repeat("y", 200<<10)
+	lines := make([]string, 30) // about 6MB: two reads of the file
+	for i := range lines {
+		lines[i] = `{"type":"user","uuid":"u` + string(rune('a'+i%26)) + `","message":{"role":"user","content":"` + filler + `"}}`
+	}
+	projects := write(t, lines...)
+	sink := &batches{}
+	follow(t, projects, sink)
+	ended := func() bool {
+		sink.mu.Lock()
+		defer sink.mu.Unlock()
+		return len(sink.got) > 0 && sink.got[len(sink.got)-1].History == app.HistoryEnd
+	}
+	eventually(t, "the end of the history", ended)
+	if n := len(sink.entries()); n != len(lines) {
+		t.Fatalf("the history ended after %d of %d lines", n, len(lines))
+	}
+	sink.mu.Lock()
+	for i, batch := range sink.got[:len(sink.got)-1] {
+		if batch.History != app.HistoryMore {
+			t.Fatalf("batch %d of the history says %q, not that more is coming", i, batch.History)
+		}
+	}
+	sink.mu.Unlock()
+
+	path := filepath.Join(projects, "-w-sessions-bold-otter-3f9a7k-oppenheimer", conversation+".jsonl")
+	file, err := os.OpenFile(path, os.O_APPEND|os.O_WRONLY, 0o600)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() { _ = file.Close() }()
+	_, _ = file.WriteString(answerLine + "\n")
+	eventually(t, "the appended line", func() bool { return len(sink.entries()) == len(lines)+1 })
+	sink.mu.Lock()
+	defer sink.mu.Unlock()
+	if last := sink.got[len(sink.got)-1]; last.History != "" {
+		t.Fatalf("a line appended after the history says %q", last.History)
+	}
+}
+
+// A history that is all there in one read ends on its first batch, so the
+// console draws a short chat at once.
+func TestAShortHistoryEndsOnItsFirstBatch(t *testing.T) {
+	projects := write(t, promptLine, answerLine)
+	sink := &batches{}
+	follow(t, projects, sink)
+	eventually(t, "the history", func() bool { return len(sink.entries()) == 2 })
+	sink.mu.Lock()
+	defer sink.mu.Unlock()
+	if first := sink.got[0]; !first.Reset || first.History != app.HistoryEnd {
+		t.Fatalf("first batch: reset %v, history %q", first.Reset, first.History)
 	}
 }
 

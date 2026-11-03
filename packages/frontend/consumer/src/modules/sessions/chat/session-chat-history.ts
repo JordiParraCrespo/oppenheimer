@@ -1,15 +1,17 @@
 /**
- * How a session's chat reads the history the runner sends, which nothing on
- * the wire marks the end of: whether a first load is still arriving, and how
- * long a quiet means nothing more is coming. The runner's batch sizes are
- * known here and nowhere else in the chat.
+ * How a session's chat reads the history the runner sends: whether a first
+ * load is still arriving, and how long a quiet means nothing more is coming.
+ * A runner says where its history ends (`history` on each batch); for one
+ * that does not, the end is inferred from its batch sizes, which are known
+ * here and nowhere else in the chat.
  */
 
 import { CHAT_BATCH_MAX_ENTRIES, CHAT_ENTRY_MAX_BYTES } from '@oppenheimer/shared/protocol';
 
-/** A batch as the history reads it: its reset, and its lines as sent. */
+/** A batch as the history reads it: its reset, where the history stands, and its lines as sent. */
 interface HistoryBatch {
   reset?: boolean;
+  history?: 'more' | 'end';
   entries: readonly string[];
 }
 
@@ -25,6 +27,14 @@ export const REPLAY_SETTLE_MS = 3000;
  * there: past the runner's 300ms between reads of a long transcript.
  */
 export const LOAD_SETTLE_MS = 500;
+
+/**
+ * How long a history whose runner says where it ends may go quiet before it
+ * is taken as all there anyway: only a runner that stopped partway, since a
+ * slow read is told apart from the end by the runner itself. Well past a
+ * read of 4MB of screenshots, each a preview to make.
+ */
+export const TOLD_SETTLE_MS = 15_000;
 
 /** A batch's size as the runner counts it. */
 function sizeOf(batch: HistoryBatch): number {
@@ -61,21 +71,33 @@ function utf8Length(text: string): number {
 /**
  * A first load: a history that arrives where nothing is held yet (a
  * reconnect's replay of what is held is not one), held back until it has
- * all come. The runner reads a transcript 4MB at a time, 300ms apart, and
- * ends every read on a short batch, so a short batch says only that a read
- * ended. A first batch that is short is the exception: a read that fills
- * less than one batch is shorter than 4MB, so it stopped at the end of the
- * file, and the history is all there. Any longer history ends on the quiet
- * after its last read, which the chat watches for and ends with `end`.
+ * all come.
+ *
+ * A runner that says where its history ends is believed: `more` holds it,
+ * `end` lets it go. One that does not reads a transcript 4MB at a time,
+ * 300ms apart, and ends every read on a short batch, so a short batch says
+ * only that a read ended. A first batch that is short is the exception: a
+ * read that fills less than one batch is shorter than 4MB, so it stopped at
+ * the end of the file, and the history is all there. Any longer history
+ * ends on the quiet after its last read, which the chat watches for and
+ * ends with `end`.
  */
 export class FirstLoad {
   /** The history is still arriving. */
   loading = false;
+  /** The runner says where the history it is sending ends. */
+  told = false;
 
   /** Reads one batch of the history; `holdsNothing` when the chat has no line yet. */
   take(batch: HistoryBatch, holdsNothing: boolean): void {
-    if (batch.reset !== true || batch.entries.length === 0 || !holdsNothing) return;
-    this.loading = !endsARead(batch, sizeOf(batch));
+    if (batch.reset === true) this.told = batch.history !== undefined;
+    if (batch.history === 'end') {
+      this.loading = false;
+      return;
+    }
+    if (batch.reset !== true || !holdsNothing) return;
+    if (batch.history === 'more') this.loading = true;
+    else if (batch.entries.length > 0) this.loading = !endsARead(batch, sizeOf(batch));
   }
 
   end(): void {

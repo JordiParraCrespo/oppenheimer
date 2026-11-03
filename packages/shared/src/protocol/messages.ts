@@ -999,6 +999,14 @@ export const attachmentChatSchema = z.object({
   type: z.literal('attachment.chat'),
   attachmentId: attachmentIdSchema,
   reset: z.boolean().optional(),
+  /**
+   * Where the history a `reset` started stands: `more` on each of its
+   * batches while more of it is on its way, `end` on the one that reaches
+   * the transcript's end, absent on what follows live. A runner that sends
+   * neither leaves the console to infer the end from the batches' size and
+   * pace, which a slow read (a screenshot's preview) defeats.
+   */
+  history: z.enum(['more', 'end']).optional(),
   entries: z.array(z.string().min(1).max(CHAT_ENTRY_MAX_BYTES)).max(CHAT_BATCH_MAX_ENTRIES),
 });
 

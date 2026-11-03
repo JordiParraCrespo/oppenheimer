@@ -580,6 +580,7 @@ class BrowserAttachment implements AttachmentSink {
     this.tell({
       type: 'chat',
       ...(message.reset ? { reset: true } : {}),
+      ...(message.history ? { history: message.history } : {}),
       entries: message.entries,
     });
   }

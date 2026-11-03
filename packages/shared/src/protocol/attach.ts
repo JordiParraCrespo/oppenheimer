@@ -153,6 +153,8 @@ export const attachClosedSchema = z.object({
 export const attachChatSchema = z.object({
   type: z.literal('chat'),
   reset: z.boolean().optional(),
+  /** The runner's `history`: `more` while the history is still coming, `end` on its last batch. */
+  history: z.enum(['more', 'end']).optional(),
   entries: z.array(z.string().min(1).max(CHAT_ENTRY_MAX_BYTES)).max(CHAT_BATCH_MAX_ENTRIES),
 });
 

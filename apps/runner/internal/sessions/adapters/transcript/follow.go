@@ -49,7 +49,7 @@ func (r *Reader) Follow(ctx context.Context, session domain.Session, entryMax, b
 	}
 	f := &follower{
 		find: find, fresh: source.transcriber,
-		entryMax: entryMax, batchMax: batchMax, emit: emit, reset: true,
+		entryMax: entryMax, batchMax: batchMax, emit: emit, reset: true, catching: true,
 	}
 	f.t = f.fresh()
 	if r.statusDir != "" && session.Agent == domain.AgentClaude {
@@ -128,6 +128,12 @@ type follower struct {
 	pending []string
 	// reset is owed to the next batch: the history starts (again) with it.
 	reset bool
+	// catching is true from a reset until a batch has said the history
+	// reached the transcript's end, and ended is owed to the last batch of a
+	// read that got there: the console holds a first load until it is told,
+	// since a read slowed by a screenshot's preview would otherwise look
+	// like the end of the history.
+	catching, ended bool
 
 	// status is the conversation's status file, and statusSeen the version of
 	// it last sent; an empty path follows none.
@@ -151,7 +157,7 @@ type statusVersion struct {
 // it and the console always holds the latest one. A batch the link refuses
 // is offered again on the next check.
 func (f *follower) checkStatus() {
-	if f.status == "" || f.reset || len(f.pending) > 0 {
+	if f.status == "" || f.catching || len(f.pending) > 0 {
 		return
 	}
 	info, err := os.Stat(f.status)
@@ -176,7 +182,7 @@ func (f *follower) checkStatus() {
 // the conversation by its timestamp. A batch the link refuses is offered
 // again on the next check.
 func (f *follower) checkShared() {
-	if f.shared == "" || f.reset || len(f.pending) > 0 {
+	if f.shared == "" || f.catching || len(f.pending) > 0 {
 		return
 	}
 	entries, names := sharedEntries(f.shared, f.sharedSeen)
@@ -203,8 +209,8 @@ func (f *follower) check() {
 	path := f.find()
 	if path == "" {
 		// Nothing written yet: say so once, so the view can wait for it.
-		if f.reset && f.path == "" && f.emit(app.ChatBatch{Reset: true}) == nil {
-			f.reset = false
+		if f.reset && f.path == "" && f.emit(app.ChatBatch{Reset: true, History: app.HistoryEnd}) == nil {
+			f.reset, f.catching = false, false
 			f.path = "-"
 		}
 		return
@@ -217,12 +223,14 @@ func (f *follower) check() {
 		// A new file, or one that shrank: the CLI replaced it, so the
 		// history is read again from its start.
 		f.path, f.offset, f.partial, f.reset = path, 0, nil, true
+		f.catching, f.ended = true, false
 		f.t = f.fresh()
 	}
 	if info.Size() == f.offset {
 		if !f.reset {
 			f.queue(f.t.quiet(time.Since(f.grew), f.entryMax))
 		}
+		f.ended = f.catching
 		f.flush()
 		return
 	}
@@ -240,12 +248,13 @@ func (f *follower) check() {
 	}
 	f.offset += int64(len(chunk))
 	f.grew = time.Now()
+	f.ended = f.catching && f.offset >= info.Size()
 	data := append(append([]byte(nil), f.partial...), chunk...)
 	end := bytes.LastIndexByte(data, '\n')
 	if end < 0 {
 		// A line still being written is left for the next check.
 		f.partial = data
-		if f.reset {
+		if f.reset || f.ended {
 			f.flush()
 		}
 		return
@@ -267,18 +276,30 @@ func (f *follower) queue(entries [][]byte) {
 }
 
 // flush emits the pending entries in batches, and reports whether all of
-// them left.
+// them left. While the history is coming each batch says so, and the last
+// one of a read that reached the transcript's end says that, even with no
+// entries left to carry.
 func (f *follower) flush() bool {
-	for len(f.pending) > 0 || f.reset {
+	for len(f.pending) > 0 || f.reset || f.ended {
 		n, size := 0, 0
 		for n < len(f.pending) && n < f.batchMax && (n == 0 || size+len(f.pending[n]) <= chatBatchBytes) {
 			size += len(f.pending[n])
 			n++
 		}
-		if err := f.emit(app.ChatBatch{Reset: f.reset, Entries: f.pending[:n]}); err != nil {
+		history := ""
+		if f.catching {
+			history = app.HistoryMore
+			if f.ended && n == len(f.pending) {
+				history = app.HistoryEnd
+			}
+		}
+		if err := f.emit(app.ChatBatch{Reset: f.reset, History: history, Entries: f.pending[:n]}); err != nil {
 			return false
 		}
 		f.pending, f.reset = f.pending[n:], false
+		if history == app.HistoryEnd {
+			f.catching, f.ended = false, false
+		}
 	}
 	f.pending = nil
 	return true

@@ -1667,9 +1667,21 @@ describe('browser attach socket', () => {
 
       const chat = nextMessage(browser);
       runner.send(
-        JSON.stringify({ type: 'attachment.chat', attachmentId: 1, reset: true, entries: [entry] }),
+        JSON.stringify({
+          type: 'attachment.chat',
+          attachmentId: 1,
+          reset: true,
+          history: 'end',
+          entries: [entry],
+        }),
       );
-      expect((await chat).text).toEqual({ type: 'chat', reset: true, entries: [entry] });
+      // `history` too: without it the console guesses where a long history ends.
+      expect((await chat).text).toEqual({
+        type: 'chat',
+        reset: true,
+        history: 'end',
+        entries: [entry],
+      });
 
       // An attachment that is not open has nobody to read it.
       const next = nextMessage(browser);
