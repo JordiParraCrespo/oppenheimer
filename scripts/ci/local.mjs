@@ -11,7 +11,7 @@
  *
  * This file is the pipeline's command line. Pull requests get no GitHub CI:
  * every agent runs this before it pushes, and `.github/workflows/ci.yml` runs
- * `pnpm ci:local --all` on main every eight hours, so the report a pull
+ * `pnpm ci:local --all` on main every four hours, so the report a pull
  * request carries and the scheduled run are the same program. A new CI step
  * goes in `plan.mjs` and nowhere else. The jobs, chosen by `affected.mjs`:
  *
