@@ -1670,6 +1670,7 @@
         "summary_one": "{{count}} turno · {{active}} trabajando · {{tokens}} tokens",
         "summary_other": "{{count}} turnos · {{active}} trabajando · {{tokens}} tokens",
         "cacheHit": "{{percent}} % de aciertos de caché",
+        "modelShare": "{{model}} {{percent}} %",
         "input": "Entrada {{tokens}}",
         "output": "Salida {{tokens}}",
         "cacheRead": "Lectura de caché {{tokens}}",
