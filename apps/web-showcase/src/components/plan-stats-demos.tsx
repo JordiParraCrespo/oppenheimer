@@ -10,7 +10,11 @@ import {
 } from '@oppenheimer/design-system-web/calendar-source';
 import { AreaChart, ChartLegend, type ChartSeries } from '@oppenheimer/design-system-web/charts';
 import { type DateRange, DateRangePicker } from '@oppenheimer/design-system-web/date-range-picker';
-import { FacetSelect, SearchableFacetSelect } from '@oppenheimer/design-system-web/facet-select';
+import {
+  FacetSelect,
+  SearchableFacetMultiSelect,
+  SearchableFacetSelect,
+} from '@oppenheimer/design-system-web/facet-select';
 import { FolderIcon } from '@oppenheimer/design-system-web/icons';
 import {
   MilestoneGlyph,
@@ -24,7 +28,7 @@ import { TODAY } from './plan-fixtures';
 /* ── FacetSelect ─────────────────────────────────────────────────────────── */
 
 export function FacetSelectDemo() {
-  const [project, setProject] = React.useState('all');
+  const [projects, setProjects] = React.useState<string[]>(['web', 'xrp']);
   const [milestone, setMilestone] = React.useState('beta');
   const [lane, setLane] = React.useState('all');
   const [checks, setChecks] = React.useState('failing');
@@ -33,14 +37,14 @@ export function FacetSelectDemo() {
   return (
     <div className="flex w-full flex-col gap-6">
       <div className="flex flex-wrap items-center gap-2">
-        <SearchableFacetSelect
+        <SearchableFacetMultiSelect
           variant="pill"
           label="Project"
           searchPlaceholder="Search projects"
           emptyText={(query) => `Nothing matches “${query}”.`}
           icon={<FolderIcon />}
-          value={project}
-          onValueChange={setProject}
+          values={projects}
+          onValuesChange={setProjects}
           options={[
             { value: 'all', label: 'All projects', count: 24 },
             { value: 'web', label: 'acme-web', count: 12 },

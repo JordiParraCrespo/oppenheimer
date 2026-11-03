@@ -16,11 +16,13 @@ import { BotGithubToolsFactory } from './bot-github-tools.factory';
 import { BotGoalToolsFactory } from './bot-goal-tools.factory';
 import { BotHostToolsFactory } from './bot-host-tools.factory';
 import { BotIssueToolsFactory } from './bot-issue-tools.factory';
+import { BotLoopToolsFactory } from './bot-loop-tools.factory';
 import { BotMailOrganizeToolsFactory } from './bot-mail-organize-tools.factory';
 import { BotMailToolsFactory } from './bot-mail-tools.factory';
 import { BotMailWriteToolsFactory } from './bot-mail-write-tools.factory';
 import { BotNoticeToolsFactory } from './bot-notice-tools.factory';
 import { BotPlanToolsFactory } from './bot-plan-tools.factory';
+import { BotProjectToolsFactory } from './bot-project-tools.factory';
 import { BotPullRequestToolsFactory } from './bot-pull-request-tools.factory';
 import { BotQuestionToolsFactory } from './bot-question-tools.factory';
 import { BotRoutineToolsFactory } from './bot-routine-tools.factory';
@@ -55,6 +57,7 @@ export class BotToolboxFactory {
     sessions: BotSessionToolsFactory,
     watches: BotWatchToolsFactory,
     plan: BotPlanToolsFactory,
+    projects: BotProjectToolsFactory,
     github: BotGithubToolsFactory,
     pullRequests: BotPullRequestToolsFactory,
     issues: BotIssueToolsFactory,
@@ -68,6 +71,7 @@ export class BotToolboxFactory {
     web: BotWebToolsFactory,
     subagents: BotSubagentToolsFactory,
     goals: BotGoalToolsFactory,
+    loops: BotLoopToolsFactory,
     questions: BotQuestionToolsFactory,
     notices: BotNoticeToolsFactory,
   ) {
@@ -75,12 +79,14 @@ export class BotToolboxFactory {
       self,
       skills,
       goals,
+      loops,
       questions,
       notices,
       hosts,
       sessions,
       watches,
       plan,
+      projects,
       github,
       pullRequests,
       issues,

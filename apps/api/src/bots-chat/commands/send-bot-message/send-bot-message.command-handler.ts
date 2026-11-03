@@ -11,13 +11,11 @@ import {
 import type { ModelProviderCredentialRepositoryPort } from '../../../bots/database/model-provider-credential.repository.port';
 import { BotErrors } from '../../../bots/domain/bots.errors';
 import type { ProviderKeySealerPort } from '../../../bots/infrastructure/provider-key-sealer.port';
-import { BotGoalResolver } from '../../application/bot-goal.resolver';
 import { BotMessageAttachmentsResolver } from '../../application/bot-message-attachments.resolver';
+import { BotSentTurnResolver } from '../../application/bot-sent-turn.resolver';
 import { BotWaitingCardResolver } from '../../application/bot-waiting-card.resolver';
-import { BOT_STREAM, BOT_TURN_REPOSITORY } from '../../bots-chat.di-tokens';
-import type { BotTurnRepositoryPort } from '../../database/bot-turn.repository.port';
+import { BOT_STREAM } from '../../bots-chat.di-tokens';
 import { refuseConsoleCommand } from '../../domain/bot-built-in.policy';
-import { goalFromMessage } from '../../domain/bot-goal.policy';
 import { BotMessageEntity } from '../../domain/bot-message.entity';
 import { maySteer } from '../../domain/bot-steer.policy';
 import { BotTurnEntity } from '../../domain/bot-turn.entity';
@@ -32,9 +30,9 @@ import { SendBotMessageCommand } from './send-bot-message.command';
  * steer (`maySteer`), since the running turn would not read images and a
  * `/<name>` runs its skill as a turn of its own. A provider with no key is
  * refused here, where the person can fix it. A card the bot is waiting on
- * expires: the person moved on. A built-in the console runs is refused
- * (`refuseConsoleCommand`); `/goal <condition>` sets the bot's goal in the
- * transaction that queues its turn (`goalFromMessage`).
+ * expires. A built-in the console runs is refused (`refuseConsoleCommand`);
+ * `/goal <condition>` and `/loop …` set the bot's goal or loop with the turn
+ * (`BotSentTurnResolver`).
  */
 /** The turn a send queued, and the message that opens it, which a steer's lookup follows. */
 export interface SentBotMessage {
@@ -51,11 +49,10 @@ export class SendBotMessageCommandHandler
     @Inject(MODEL_PROVIDER_CREDENTIAL_REPOSITORY)
     private readonly credentials: ModelProviderCredentialRepositoryPort,
     @Inject(PROVIDER_KEY_SEALER) private readonly sealer: ProviderKeySealerPort,
-    @Inject(BOT_TURN_REPOSITORY) private readonly turns: BotTurnRepositoryPort,
     @Inject(BOT_STREAM) private readonly stream: BotStreamPort,
     private readonly cards: BotWaitingCardResolver,
     private readonly images: BotMessageAttachmentsResolver,
-    private readonly goals: BotGoalResolver,
+    private readonly sent: BotSentTurnResolver,
   ) {}
 
   async execute({
@@ -91,7 +88,6 @@ export class SendBotMessageCommandHandler
       credentialScopes,
       steer: maySteer(steer, content, attachments.length),
     });
-    const goal = goalFromMessage(content, turn);
     const message = BotMessageEntity.createNew({
       organizationId: bot.organizationId,
       botId: bot.id,
@@ -102,16 +98,9 @@ export class SendBotMessageCommandHandler
       position: 0,
       attachments,
     });
-    const { outcome, replaced } = goal
-      ? await this.turns.enqueueWithGoal(turn, message, goal, metadata.correlationId)
-      : {
-          outcome: await this.turns.enqueue(turn, message, metadata.correlationId),
-          replaced: null,
-        };
+    const outcome = await this.sent.queue(turn, message, metadata.correlationId);
     if (outcome === 'missing') throw new AppError(BotErrors.NOT_FOUND);
     if (outcome === 'attachments_taken') throw new AppError(BotErrors.ATTACHMENT_UNSENDABLE);
-    // The goal it replaced goes with the continuation it left waiting.
-    if (replaced) await this.goals.cancelWaiting(replaced, metadata.correlationId);
     await this.stream.publish(bot.id, { type: 'turn', turnId: turn.id, status: 'queued' });
     await this.cards.retire(bot.organizationId, bot.id);
     return { turnId: turn.id, messageId: message.id };

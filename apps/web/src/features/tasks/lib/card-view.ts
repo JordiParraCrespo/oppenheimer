@@ -1,7 +1,7 @@
 import type { TaskDueTone } from '@oppenheimer/design-system-web';
 import type { TaskEntity } from '@oppenheimer/frontend-consumer';
 import { daysBetween, nearDay } from '@oppenheimer/frontend-web';
-import type { BoardFilter } from './board';
+import { type BoardFilter, soleProjectOf } from './board';
 
 /** What a card draws, in the reader's words. */
 export interface TaskCardView {
@@ -9,7 +9,7 @@ export interface TaskCardView {
   title: string;
   notes: string;
   done: boolean;
-  /** Under All projects only: the project the card is filed under. */
+  /** Unless the board is filtered to that one project: the project the card is filed under. */
   projectName: string | null;
   /** Unless the board is filtered to it. */
   milestoneName: string | null;
@@ -19,7 +19,8 @@ export interface TaskCardView {
 }
 
 /**
- * A task as its card draws it: the project only under All projects, the milestone
+ * A task as its card draws it: the project unless the board shows that project
+ * alone (several picked, each card still says which it is in), the milestone
  * unless the board is filtered to it, the due date in words, and none of the
  * three extras once it is done (`18-plan-product.md` §2).
  */
@@ -41,7 +42,7 @@ export function cardView(
     title: task.title,
     notes: task.notes,
     done: task.isDone,
-    projectName: filter.projectId ? null : context.projectName(task.projectId),
+    projectName: soleProjectOf(filter) ? null : context.projectName(task.projectId),
     milestoneName:
       task.milestoneId && task.milestoneId !== filter.milestoneId
         ? context.milestoneName(task.milestoneId)

@@ -11,11 +11,12 @@ import { type ProjectVisibility, SessionsFilterMenu } from './sessions-filter-me
  * The sidebar's head. The filters and the settled query are the section's
  * state, because the list below is what they narrow; the half-typed query is
  * the search box's own. It draws under the sidebar's Suspense boundary, so
- * the count and the filter menu's options are always the answered ones.
- * While rows are picked, `selectionBar` takes the Projects line's place.
+ * the count and the filter menu's options are always the answered ones. The
+ * count is the sessions the list below draws, pinned ones included.
+ * While rows are picked, `selectionBar` takes the Sessions line's place.
  */
 export function SessionsSidebarHead({
-  projectCount,
+  sessionCount,
   filters,
   options,
   dirty,
@@ -28,7 +29,7 @@ export function SessionsSidebarHead({
   onNewProject,
   selectionBar,
 }: {
-  projectCount: number;
+  sessionCount: number;
   filters: SessionFilters;
   options: Record<SessionFacet, FilterOption[]>;
   dirty: boolean;
@@ -46,7 +47,7 @@ export function SessionsSidebarHead({
   return (
     <>
       {selectionBar ?? (
-        <SidebarListHead label={t('sessions.sidebar.projects')} count={projectCount}>
+        <SidebarListHead label={t('sessions.sidebar.sessions')} count={sessionCount}>
           <IconButton
             size="xs"
             variant="quiet"

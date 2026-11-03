@@ -34,7 +34,7 @@ export function MilestonesTimeline({
   const locale = useLocale();
   const today = useToday();
   const navigate = useNavigate();
-  const { projectId } = useScopeProject();
+  const { projectIds } = useScopeProject();
   const { projects, milestones, tasks, error } = useSuspensePlan();
   const alert = <ErrorAlert error={error} fallback={t('tasks.milestones.loadFailed')} />;
 
@@ -42,7 +42,7 @@ export function MilestonesTimeline({
     id: row.id,
     name: row.isUnassigned ? t('tasks.filters.noProject') : row.name,
   }));
-  const rows = timelineRows(named, milestones, tasks, projectId);
+  const rows = timelineRows(named, milestones, tasks, projectIds);
   if (rows.length === 0) {
     return (
       <>
@@ -63,11 +63,11 @@ export function MilestonesTimeline({
 
   return (
     // Edge to edge, as the frame draws it: the pane cancels its gutter for
-    // `data-bleed`. Keyed by the project so a new filter opens on today again.
+    // `data-bleed`. Keyed by the projects so a new filter opens on today again.
     <>
       {alert}
       <MilestoneTimeline
-        key={projectId ?? 'all'}
+        key={projectIds?.join(',') ?? 'all'}
         data-bleed
         controls={controls}
         rows={rows}
