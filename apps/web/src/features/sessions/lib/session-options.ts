@@ -361,6 +361,7 @@ function toAgentOptions(): AgentOption[] {
     models: CODING_AGENTS[id].models.map((model) => ({
       value: model.id,
       label: model.label,
+      legacy: model.legacy,
     })),
   }));
 }

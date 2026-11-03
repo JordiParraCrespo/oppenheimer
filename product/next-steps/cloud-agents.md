@@ -390,6 +390,20 @@ automation's runs now pick **where** as New session does:
   the vendor (the sweep logs it). A Cursor run's state is synced when its
   session is read, as any Cursor session's.
 
+## Bots (2026-11-02)
+
+The owner asked that bots start every kind of cloud session, not only
+Claude Code's. `start_cloud_session` takes an `agent`: `claude-code` (the
+default) or `codex`, which a host starts through `POST /sessions`'s command
+with `cloud: true`, Codex with an optional environment; or `cursor`, which
+is `StartCloudSessionCommand` on the owner's own key with no host. They are
+the same commands as New session, a task and an automation, so the bot gets
+no rule of its own: a missing key is `CLOUD_AGENTS_004`, a host that cannot
+start the cloud is the session's own failure. The approval card says a
+Cursor session runs on the owner's Cursor key, since it bills their plan.
+The tool lists `CLOUD_AGENT_PROVIDERS` beside `HOST_CLOUD_AGENT_IDS`, so the
+next vendor is a value there too (`25-bots.md` §4.2).
+
 ## Questions to answer first
 
 1. ~~Does the control plane holding a person's Cursor API key need F23

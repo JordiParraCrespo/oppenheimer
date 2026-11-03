@@ -38,6 +38,7 @@ import {
   type BotQuestionAnswer,
   type BotSection,
   type BotToolDecision,
+  type BotUsage,
 } from '@oppenheimer/shared/schemas/bot';
 import {
   type BotMailDraft,
@@ -532,6 +533,13 @@ export class BotsRepository {
       const { goal } = await api.body(heyApiSdk.findBotGoal({ path: { id } }));
       return goal;
     });
+  }
+
+  /** What the bot's chat has spent (`/usage`): its turns by model, its calls outside them by purpose. */
+  findUsage(id: string): Promise<BotUsage> {
+    return callApi(BotsErrors.FETCH_USAGE_FAILED, (api) =>
+      api.body(heyApiSdk.findBotUsage({ path: { id } })),
+    );
   }
 
   /** Stops the bot's goal: no more continuation turns, and one still waiting is cancelled. */

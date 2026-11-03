@@ -33,6 +33,9 @@ describe('toSubagentRuns', () => {
         toolCalls: ['list_hosts'],
         inputTokens: 5,
         outputTokens: 0,
+        // A run stored before its cache counts were kept reads them as none.
+        cacheReadTokens: 0,
+        cacheWriteTokens: 0,
         durationMs: 10,
       },
     ];

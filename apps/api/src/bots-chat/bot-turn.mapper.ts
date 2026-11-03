@@ -44,6 +44,8 @@ export class BotTurnMapper implements Mapper<BotTurnEntity, BotTurnOrmEntity, Bo
     record.failure = entity.failure;
     record.inputTokens = entity.inputTokens;
     record.outputTokens = entity.outputTokens;
+    record.cacheReadTokens = entity.cacheReadTokens;
+    record.cacheWriteTokens = entity.cacheWriteTokens;
     record.contextTokens = entity.context?.tokens ?? null;
     record.contextWindow = entity.context?.window ?? null;
     record.planLimits = planLimitsToRecord(entity.planLimits);
@@ -82,6 +84,8 @@ export class BotTurnMapper implements Mapper<BotTurnEntity, BotTurnOrmEntity, Bo
         failure: record.failure ?? null,
         inputTokens: record.inputTokens,
         outputTokens: record.outputTokens,
+        cacheReadTokens: record.cacheReadTokens,
+        cacheWriteTokens: record.cacheWriteTokens,
         context:
           record.contextTokens === null || record.contextTokens === undefined
             ? null
