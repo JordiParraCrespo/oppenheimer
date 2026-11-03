@@ -146,6 +146,12 @@ interface DictationSlot {
   recorder?: React.ReactNode;
   /** What went wrong last, said under the field. */
   notice?: React.ReactNode;
+  /**
+   * Ends the recording and settles once what was said is in the field: true
+   * when it landed (or there was nothing to hear), false when it failed. A
+   * composer's send while the recorder shows waits on it.
+   */
+  finish?: () => Promise<boolean>;
 }
 
 function DictationFrame({
