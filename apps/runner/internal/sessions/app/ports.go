@@ -192,6 +192,13 @@ type Publisher interface {
 	TerminalMatched(sessionID, watchID string, count int)
 }
 
+// Notifier is the part of a Publisher that tells the person something on an
+// agent's behalf (`runner sessions notify`), as `agent.notified`. Optional:
+// a publisher with no link to a control plane has nobody to tell.
+type Notifier interface {
+	Notified(sessionID string, notice domain.Notice)
+}
+
 // Listener hears each session the service saw move, after the change is
 // written: a new state, or the end of it (a state that is not live). It runs
 // on the caller's goroutine, so it must hand anything slow to one of its own.

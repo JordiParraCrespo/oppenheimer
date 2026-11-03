@@ -59,3 +59,30 @@ command is taught to every agent by `runner --skill`
   OpenCode session's chat is read through OpenCode's API, not the
   follower, and does not show shared files yet. Codex, Grok and Claude
   Code sessions do.
+
+## 2. Notify (built 2026-11-02)
+
+- **The command.** `runner sessions notify "line"`, from inside a session:
+  one line, 500 bytes at most, through the daemon's socket
+  (`POST /v1/sessions/{id}/notify`, `apps/runner/internal/cli/share.go`).
+  The runner gives it an id of its own and logs `agent.notified
+  { id, text }` through the link's reporter, which keeps it until the
+  control plane acks it, so a link that is down only delays it. A runner
+  with no link refuses it (`SESS_014`): an agent must never believe the
+  person heard when nobody could.
+- **What the session keeps.** The fold keeps the latest notice as
+  `notice { id, text, at }` (a `jsonb` column on `work_session`, the
+  schema `SessionNotice` in `@oppenheimer/shared`), and the session's
+  response carries it. A newer notice replaces the last one. Unlike what
+  the agent is doing, it outlives a stop and a restart ("done, the tests
+  pass" is said as the agent exits); it goes when the session closes.
+- **The Inbox.** A session with a notice is a `notice` item, keyed
+  `notice:<session>:<notice id>`, so marking one done never hides the
+  next. It sorts with the waiting sessions, by when it came, under the
+  session's project, and the Type facet counts it with sessions. Its card
+  is the agent's words, Open session, Later and Done. Nothing new on the
+  workspace stream: the append already raises `session.changed`.
+- **Not yet.** A push to a phone: the Inbox is where a notice lands, and
+  the phone is 0.5's (`0.5-mobile.md`, its question 3). A browser
+  notification while the console is open in another tab is the cheap step
+  before that.

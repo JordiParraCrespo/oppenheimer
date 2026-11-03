@@ -61,6 +61,35 @@ func (a *App) shareRoutes(router *httpx.Router) {
 	})
 }
 
+// notifyRoutes mounts `runner sessions notify`'s route on the local socket.
+func (a *App) notifyRoutes(router *httpx.Router) {
+	router.HandleFunc("POST /v1/sessions/{id}/notify", func(w http.ResponseWriter, r *http.Request) error {
+		var in textRequest
+		if err := httpx.DecodeJSON(r, &in); err != nil {
+			return err
+		}
+		notice, err := a.Sessions.Notify(r.PathValue("id"), in.Text)
+		if err != nil {
+			return err
+		}
+		return httpx.WriteJSON(w, http.StatusCreated, notice)
+	})
+}
+
+// Notify tells the person a line in the console's Inbox.
+func (d Delegation) Notify(ctx context.Context, text string) error {
+	self, err := d.self("")
+	if err != nil {
+		return err
+	}
+	var notice sessionsdomain.Notice
+	if err := d.call(ctx, http.MethodPost, "/v1/sessions/"+self+"/notify", textRequest{Text: text}, &notice); err != nil {
+		return err
+	}
+	_, err = fmt.Fprintln(d.Out, "sent to the person's Inbox")
+	return err
+}
+
 // SendFile shows the person a file in this session's chat.
 func (d Delegation) SendFile(ctx context.Context, path, caption string) error {
 	self, err := d.self("")

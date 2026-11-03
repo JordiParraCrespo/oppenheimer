@@ -3056,6 +3056,10 @@
       "clear": "New items land here when one needs a decision.",
       "clearRunning_one": "{{count}} session is still running. New items land here when one needs a decision.",
       "clearRunning_other": "{{count}} sessions are still running. New items land here when one needs a decision."
+    },
+    "notice": {
+      "title": "{{name}} has news for you",
+      "done": "Done"
     }
   },
   "settings": {

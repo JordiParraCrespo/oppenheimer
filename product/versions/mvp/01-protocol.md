@@ -264,6 +264,11 @@ runner does with it and point back.
   is `packages/shared/src/schemas/session-decision.schema.ts`, Go twin
   generated, bounded to fit the 8 KB event cap. The answer goes back as
   plain `session.input` frames, one key each; nothing new is on the wire.
+  When the agent tells the person a line (`runner sessions notify`, since
+  2026-11-02), the runner logs `agent.notified` with `{ id, text }`
+  (`packages/shared/src/schemas/session-notice.schema.ts`), the text at most
+  500 bytes; the control plane keeps the latest on the session for the
+  Inbox. Nothing new is on the wire for it either.
 - `attachment.credit` — the browser's consumed-byte credit, relayed to
   the runner so it resumes that attachment's PTY reads. Without it the
   window below is a one-way valve: a noisy pane stalls for good rather

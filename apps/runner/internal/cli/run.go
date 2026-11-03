@@ -227,6 +227,7 @@ func (a *App) localRouter(errorTypeBaseURL string, logger *slog.Logger) http.Han
 	a.delegateRoutes(router)
 	// A session's agent shows the person a file in its chat (share.go).
 	a.shareRoutes(router)
+	a.notifyRoutes(router)
 	router.HandleFunc("POST /v1/credentials", func(w http.ResponseWriter, r *http.Request) error {
 		// The token comes from the control plane, per session and per
 		// repository, over the link. A 404 is the helper's "I have none":

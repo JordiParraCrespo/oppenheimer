@@ -3075,6 +3075,10 @@
       "clear": "Lo nuevo llega aquí cuando algo necesita una decisión.",
       "clearRunning_one": "{{count}} sesión sigue en marcha. Lo nuevo llega aquí cuando algo necesita una decisión.",
       "clearRunning_other": "{{count}} sesiones siguen en marcha. Lo nuevo llega aquí cuando algo necesita una decisión."
+    },
+    "notice": {
+      "title": "{{name}} tiene novedades para ti",
+      "done": "Hecho"
     }
   },
   "settings": {

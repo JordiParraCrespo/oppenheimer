@@ -569,3 +569,36 @@ describe('the agent report the fold keeps', () => {
     }
   });
 });
+
+describe('the notice the fold keeps', () => {
+  const notified = (payload: unknown) => entry(SESSION_EVENT_KINDS.AGENT_NOTIFIED, payload);
+  const running = foldSessionLog([
+    entry(SESSION_EVENT_KINDS.REQUESTED),
+    entry(SESSION_EVENT_KINDS.STARTED),
+  ]);
+
+  it('keeps the latest line with when it came, and only one it can read', () => {
+    const at = new Date('2026-11-02T10:00:00.000Z');
+    const first = foldSessionEvent(
+      running,
+      entry(SESSION_EVENT_KINDS.AGENT_NOTIFIED, { id: 'n1', text: 'Tests pass.' }, at),
+    );
+    expect(first.notice).toEqual({ id: 'n1', text: 'Tests pass.', at: at.toISOString() });
+    const second = foldSessionEvent(first, notified({ id: 'n2', text: 'Deployed.' }));
+    expect(second.notice).toMatchObject({ id: 'n2', text: 'Deployed.' });
+    expect(foldSessionEvent(second, notified({ id: 'n3', text: '' })).notice?.id).toBe('n2');
+    expect(foldSessionEvent(second, notified({ text: 'no id' })).notice?.id).toBe('n2');
+  });
+
+  // The regression: a notice cleared with the agent's facts on a stop, so
+  // "the tests pass, I'm done" vanished from the Inbox as the agent exited.
+  it('outlives a stop or a restart, and goes when the session closes', () => {
+    const told = foldSessionEvent(running, notified({ id: 'n1', text: 'Done.' }));
+    for (const kind of [SESSION_EVENT_KINDS.STOPPED, SESSION_EVENT_KINDS.RESTARTED]) {
+      expect(foldSessionEvent(told, entry(kind)).notice?.id).toBe('n1');
+    }
+    const closed = foldSessionEvent(told, entry(SESSION_EVENT_KINDS.CLOSED));
+    expect(closed.notice).toBeNull();
+    expect(foldSessionEvent(closed, notified({ id: 'n2', text: 'Late.' })).notice).toBeNull();
+  });
+});

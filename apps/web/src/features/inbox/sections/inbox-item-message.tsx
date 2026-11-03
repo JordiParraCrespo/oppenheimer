@@ -1,6 +1,7 @@
 import type { InboxItem } from '@oppenheimer/frontend-consumer';
 import type { InboxCopy } from '@/features/inbox/lib/inbox-copy';
 import { InboxApprovalCard } from '@/features/inbox/sections/inbox-approval-card';
+import { InboxNoticeCard } from '@/features/inbox/sections/inbox-notice-card';
 import { InboxPullCard } from '@/features/inbox/sections/inbox-pull-card';
 import { InboxRunCard } from '@/features/inbox/sections/inbox-run-card';
 import { InboxSessionCard } from '@/features/inbox/sections/inbox-session-card';
@@ -27,6 +28,8 @@ export function InboxItemMessage({
       return <InboxApprovalCard key={item.key} item={item} copy={copy} from={from} age={age} />;
     case 'pull':
       return <InboxPullCard key={item.key} item={item} copy={copy} from={from} age={age} />;
+    case 'notice':
+      return <InboxNoticeCard key={item.key} item={item} copy={copy} from={from} age={age} />;
     case 'run':
       return <InboxRunCard key={item.key} item={item} copy={copy} from={from} age={age} />;
     case 'session':

@@ -711,6 +711,16 @@ func (h *linkHandler) DecisionChanged(session sessionsdomain.Session, decision *
 	h.reporter.Append(session.ID, sessionsdomain.AgentDecisionKind, sessionsdomain.AgentDecisionPayload{Decision: fitDecision(decision)})
 }
 
+// Notified is the session service's notifier: `agent.notified` with the
+// line an agent sent the person, which the control plane keeps on the
+// session for the Inbox (`product/next-steps/agent-tools.md` §2).
+func (h *linkHandler) Notified(sessionID string, notice sessionsdomain.Notice) {
+	if h.reporter == nil {
+		return
+	}
+	h.reporter.Append(sessionID, sessionsdomain.AgentNotifiedKind, notice)
+}
+
 // TerminalMatched is the session service's publisher for a terminal watch's
 // report: `terminal.matched` with the watch and how many lines it has counted.
 // The matched text is never in it, nor in the log: it does not leave the host.
