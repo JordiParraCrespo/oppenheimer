@@ -10,14 +10,16 @@ import type { SessionTurnFold } from './session-turn.policy';
 
 /**
  * Who sent a prompt, as the API read it when it typed it: the bot whose turn
- * made the call and the turn itself, or a wake the session's own agent asked
+ * made the call and the turn itself; a wake the session's own agent asked
  * for (`product/next-steps/agent-tools.md` §3–4): what woke it and the wake's
- * id. Recorded on the `prompt.sent` entry, so the log says who spoke whatever
- * the words claim.
+ * id; or the person whose credential called `POST /sessions/{id}/prompt` (the
+ * `opp` CLI, an MCP client, a script). Recorded on the `prompt.sent` entry, so
+ * the log says who spoke whatever the words claim.
  */
 export type SessionPromptSender =
   | { kind: 'bot'; botId: string; turnId: string }
-  | { kind: 'wake'; source: SessionWakeSource; wakeId: string };
+  | { kind: 'wake'; source: SessionWakeSource; wakeId: string }
+  | { kind: 'person'; userId: string };
 
 /** What a wake comes from: a pull request the agent watches, or a time it set. */
 export const SESSION_WAKE_SOURCES = ['github', 'schedule'] as const;

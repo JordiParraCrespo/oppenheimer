@@ -14,6 +14,7 @@ import {
   type BotMessageRole,
   type BotSubagentRun,
 } from '@oppenheimer/shared';
+import type { BotRateLimit } from './bot-rate-limit.policy';
 
 /** One tool call in an activity line, as the chat opens it to. */
 export interface BotToolStep {
@@ -36,6 +37,12 @@ export interface BotToolStep {
   allowedBy: string | null;
   /** The draft a mail call saved, for the chat's card; null for any other call. */
   mailDraft: BotMailDraft | null;
+  /**
+   * The system that was limiting our requests when the call ended, and until
+   * when (`bot-rate-limit.policy.ts`); null when no limit stopped it. A
+   * limited step is not an error: `isError` is false on it.
+   */
+  rateLimit: BotRateLimit | null;
 }
 
 /** How much of a tool's answer a message keeps: enough to read, never a whole page. */

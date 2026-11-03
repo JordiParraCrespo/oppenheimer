@@ -17,6 +17,8 @@ export default {
         'translations',
         'infra',
         'ci',
+        'cli',
+        'mcp',
       ],
     ],
   },

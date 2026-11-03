@@ -15,11 +15,24 @@ export interface BotCompletionFor {
 }
 
 /**
+ * The prompt cache key of a bot's calls for one purpose: each purpose has a
+ * fixed system prompt of its own, so its calls share a prefix with each
+ * other and with nothing the chat sends. Under 64 characters, a bot's id
+ * and the purpose's name.
+ */
+function completionCacheKey(call: Pick<BotCompletionFor, 'botId' | 'purpose'>): string {
+  return `${call.botId}:${call.purpose}`;
+}
+
+/**
  * One model call for a bot with no tools (a summary, a review of the owner's
  * rules, a goal's verdict), in a scratch directory of its own. The engine
  * needs one even with no tools: the Claude engine runs its SDK's process in
  * it. The directory is made for the call and removed after it, however the
  * call ends; a failure to remove it is not the call's.
+ *
+ * Its requests carry the bot's key for the purpose (`completionCacheKey`),
+ * so the provider sends them to the server that holds the purpose's prompt.
  *
  * What the call spent is recorded against the bot (`25-bots.md` §4.1,
  * `/usage`), when the provider said. The record is best-effort: one that
@@ -40,7 +53,11 @@ export class BotCompletionResolver {
   ): Promise<string> {
     const scratchDir = await mkdtemp(join(tmpdir(), `bot-${call.purpose}-`));
     try {
-      const { text, usage } = await this.engine.completeWithUsage({ ...request, scratchDir });
+      const { text, usage } = await this.engine.completeWithUsage({
+        ...request,
+        cacheKey: completionCacheKey(call),
+        scratchDir,
+      });
       if (usage) {
         await this.usage
           .recordCall({ ...call, provider: request.provider, model: request.model, ...usage })
