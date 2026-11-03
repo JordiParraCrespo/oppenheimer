@@ -406,6 +406,15 @@ func sessions(ctx context.Context, args []string) (int, error) {
 			return cli.ExitUsage, errors.New(`usage: runner sessions watch-pr <number> [--repo owner/name] [--off]`)
 		}
 		return withDelegation(func(d cli.Delegation) error { return d.WatchPull(ctx, *repo, number, !*off) })
+	case "wake-in":
+		if len(args) < 2 {
+			return cli.ExitUsage, errors.New(`usage: runner sessions wake-in <30m|2h|1d> "what to tell yourself then"`)
+		}
+		delay, err := cli.ParseWakeDelay(args[0])
+		if err != nil {
+			return cli.ExitUsage, err
+		}
+		return withDelegation(func(d cli.Delegation) error { return d.WakeIn(ctx, delay, strings.Join(args[1:], " ")) })
 	case "send-file":
 		fs := flag.NewFlagSet("sessions send-file", flag.ContinueOnError)
 		caption := fs.String("caption", "", "a line about the file, shown with it")
@@ -584,6 +593,8 @@ func usage(w *os.File) {
   runner sessions watch-pr <n> [--repo R] [--off]
                                   from inside a session: be woken by a pull request's checks, reviews,
                                   comments and merge
+  runner sessions wake-in <30m|2h|1d> "note"
+                                  from inside a session: be woken then with the note, instead of polling
   runner sessions keep [<id>] [--off]  bring a session back on its own after a reboot
   runner --skill                  the manual for an agent in a session (helpers, messages, waits)
   runner pty [--report F] -- CMD  run CMD on a terminal that speaks OSC 7501 (a session's agent runs under it)
