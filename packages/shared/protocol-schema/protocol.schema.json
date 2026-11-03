@@ -1267,6 +1267,13 @@
         "reset": {
           "type": "boolean"
         },
+        "history": {
+          "type": "string",
+          "enum": [
+            "more",
+            "end"
+          ]
+        },
         "entries": {
           "maxItems": 256,
           "type": "array",

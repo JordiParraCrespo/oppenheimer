@@ -692,6 +692,7 @@ type AttachmentChat struct {
 	Type         string   `json:"type"`
 	AttachmentID uint32   `json:"attachmentId"`
 	Reset        bool     `json:"reset,omitempty"`
+	History      string   `json:"history,omitempty"`
 	Entries      []string `json:"entries"`
 }
 

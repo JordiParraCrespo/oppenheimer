@@ -272,9 +272,19 @@ type Transcripts interface {
 // ChatBatch is a run of transcript entries for the chat view, each one the
 // JSON of one compacted transcript line. Reset starts the history over.
 type ChatBatch struct {
-	Reset   bool
+	Reset bool
+	// History is where the history a Reset started stands: HistoryMore on
+	// each of its batches while more is coming, HistoryEnd on the one that
+	// reaches the transcript's end, "" on what follows live.
+	History string
 	Entries []string
 }
+
+// The values of ChatBatch.History.
+const (
+	HistoryMore = "more"
+	HistoryEnd  = "end"
+)
 
 // ErrNoChat is a session whose agent's transcript this runner cannot follow.
 var ErrNoChat = errors.New("no chat for this agent")

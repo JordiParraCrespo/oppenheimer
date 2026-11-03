@@ -21,7 +21,7 @@ import {
   sharedFileOf,
   withSharedFiles,
 } from './session-chat-files';
-import { FirstLoad, LOAD_SETTLE_MS, Quiet, REPLAY_SETTLE_MS } from './session-chat-history';
+import { FirstLoad, linesToCome, Quiet } from './session-chat-history';
 
 /** One item of the agent's task list: the chat module's, which the bots chat reads too. */
 export type ChatTodo = ChatItemTodo;
@@ -187,6 +187,8 @@ export interface ChatState {
 
 export interface ChatBatch {
   reset?: boolean;
+  /** Where the history a reset started stands: `more` is coming, or this batch is its `end`. */
+  history?: 'more' | 'end';
   entries: readonly string[];
 }
 
@@ -406,7 +408,7 @@ export class SessionChat {
     // A first load is held back until its history has come, so the chat
     // draws it once, at its end, not each part of a long one in turn.
     this.firstLoad.take(batch, this.transcript.empty);
-    let changed = batch.reset ? this.transcript.reset(batch.entries.length > 0) : false;
+    let changed = batch.reset ? this.transcript.reset(linesToCome(batch)) : false;
     let status = this.state.status;
     let files = this.state.files;
     for (const raw of batch.entries) {
@@ -426,6 +428,9 @@ export class SessionChat {
         if (file && !files.some((held) => held.id === file.id)) files = [...files, file];
       } else if (this.transcript.take(raw, entry)) changed = true;
     }
+    // The history's end, before every line held came again: the transcript
+    // is shorter now, without waiting for a quiet to say so.
+    if (batch.history === 'end' && this.transcript.settle()) changed = true;
     this.publishBatch(changed, status, files);
     this.quiet.watch(this.settleAfter(), this.settled);
     this.flush();
@@ -462,10 +467,8 @@ export class SessionChat {
     });
   }
 
-  /** How long a quiet now would mean the history has all come; `null` for nothing to wait on. */
   private settleAfter(): number | null {
-    if (this.loading) return LOAD_SETTLE_MS;
-    return this.transcript.replaying ? REPLAY_SETTLE_MS : null;
+    return this.firstLoad.settleAfter(this.transcript.replaying);
   }
 
   /**

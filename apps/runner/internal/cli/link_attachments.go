@@ -79,7 +79,7 @@ func attachmentChat(id uint32, batch sessionsapp.ChatBatch) link.AttachmentChat 
 	if entries == nil {
 		entries = []string{}
 	}
-	return link.AttachmentChat{Type: link.TypeAttachmentChat, AttachmentID: id, Reset: batch.Reset, Entries: entries}
+	return link.AttachmentChat{Type: link.TypeAttachmentChat, AttachmentID: id, Reset: batch.Reset, History: batch.History, Entries: entries}
 }
 
 // inputPump is the one goroutine writing an attachment's keystrokes to its
