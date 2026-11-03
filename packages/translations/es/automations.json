@@ -118,6 +118,14 @@
       "label": "Check fallido",
       "desc": "Cualquier workflow de Actions o check de estado"
     },
+    "check_passed": {
+      "label": "Checks superados",
+      "desc": "Un workflow de Actions o un check suite terminó en verde"
+    },
+    "review": {
+      "label": "Revisión enviada",
+      "desc": "Una aprobación, cambios pedidos o un comentario de revisión"
+    },
     "issue_opened": {
       "label": "Incidencia abierta",
       "desc": "Solo incidencias nuevas, no reabiertas"

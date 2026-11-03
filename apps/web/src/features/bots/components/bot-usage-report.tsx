@@ -48,7 +48,10 @@ export function BotUsageReport({ usage, onClose }: { usage: BotUsage; onClose: (
     .map(({ percent }, index) => {
       const model = usage.models[index];
       return model
-        ? `${botModelOf(model.provider, model.model)?.label ?? model.model} ${percent}%`
+        ? t('bots.chat.usage.modelShare', {
+            model: botModelOf(model.provider, model.model)?.label ?? model.model,
+            percent,
+          })
         : '';
     })
     .filter(Boolean)

@@ -569,3 +569,70 @@ describe('the agent report the fold keeps', () => {
     }
   });
 });
+
+describe('the notice the fold keeps', () => {
+  const notified = (payload: unknown) => entry(SESSION_EVENT_KINDS.AGENT_NOTIFIED, payload);
+  const running = foldSessionLog([
+    entry(SESSION_EVENT_KINDS.REQUESTED),
+    entry(SESSION_EVENT_KINDS.STARTED),
+  ]);
+
+  it('keeps the latest line with when it came, and only one it can read', () => {
+    const at = new Date('2026-11-02T10:00:00.000Z');
+    const first = foldSessionEvent(
+      running,
+      entry(SESSION_EVENT_KINDS.AGENT_NOTIFIED, { id: 'n1', text: 'Tests pass.' }, at),
+    );
+    expect(first.notice).toEqual({ id: 'n1', text: 'Tests pass.', at: at.toISOString() });
+    const second = foldSessionEvent(first, notified({ id: 'n2', text: 'Deployed.' }));
+    expect(second.notice).toMatchObject({ id: 'n2', text: 'Deployed.' });
+    expect(foldSessionEvent(second, notified({ id: 'n3', text: '' })).notice?.id).toBe('n2');
+    expect(foldSessionEvent(second, notified({ text: 'no id' })).notice?.id).toBe('n2');
+  });
+
+  // The regression: a notice cleared with the agent's facts on a stop, so
+  // "the tests pass, I'm done" vanished from the Inbox as the agent exited.
+  it('outlives a stop or a restart, and goes when the session closes', () => {
+    const told = foldSessionEvent(running, notified({ id: 'n1', text: 'Done.' }));
+    for (const kind of [SESSION_EVENT_KINDS.STOPPED, SESSION_EVENT_KINDS.RESTARTED]) {
+      expect(foldSessionEvent(told, entry(kind)).notice?.id).toBe('n1');
+    }
+    const closed = foldSessionEvent(told, entry(SESSION_EVENT_KINDS.CLOSED));
+    expect(closed.notice).toBeNull();
+    expect(foldSessionEvent(closed, notified({ id: 'n2', text: 'Late.' })).notice).toBeNull();
+  });
+});
+
+describe('the pull requests the fold keeps watched', () => {
+  const watched = (number: number, watch = true, githubRepoId = '821374923') =>
+    entry(SESSION_EVENT_KINDS.PULL_WATCHED, { githubRepoId, number, watch });
+  const running = foldSessionLog([
+    entry(SESSION_EVENT_KINDS.REQUESTED),
+    entry(SESSION_EVENT_KINDS.STARTED),
+  ]);
+
+  it('adds a watch once, ends one, and keeps the newest ten', () => {
+    const two = foldSessionLog([watched(12), watched(12), watched(13)], running);
+    expect(two.watchedPulls).toEqual([
+      { githubRepoId: '821374923', number: 12 },
+      { githubRepoId: '821374923', number: 13 },
+    ]);
+    expect(foldSessionEvent(two, watched(12, false)).watchedPulls).toEqual([
+      { githubRepoId: '821374923', number: 13 },
+    ]);
+    const many = foldSessionLog(
+      Array.from({ length: 12 }, (_, i) => watched(i + 1)),
+      running,
+    );
+    expect(many.watchedPulls.map((pull) => pull.number)).toEqual([3, 4, 5, 6, 7, 8, 9, 10, 11, 12]);
+    expect(foldSessionEvent(two, watched(0)).watchedPulls).toHaveLength(2);
+  });
+
+  it('forgets every watch when the session closes', () => {
+    const watching = foldSessionEvent(running, watched(12));
+    expect(
+      foldSessionEvent(watching, entry(SESSION_EVENT_KINDS.STOPPED)).watchedPulls,
+    ).toHaveLength(1);
+    expect(foldSessionEvent(watching, entry(SESSION_EVENT_KINDS.CLOSED)).watchedPulls).toEqual([]);
+  });
+});

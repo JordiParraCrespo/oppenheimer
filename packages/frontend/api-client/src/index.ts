@@ -256,6 +256,7 @@ export type {
   SessionEventPageResponseDto,
   SessionEventResponseDto,
   SessionLaunchResponseDto,
+  SessionNoticeResponseDto,
   SessionPageMetaDto,
   SessionPermissionDecisionResponseDto,
   SessionPermissionOptionResponseDto,
