@@ -599,21 +599,24 @@ The owner chose them in this order. Only the first is built:
 **`/usage`** (2026-11-02, from Claude Code's `/usage` and its usage card).
 The console puts a card in the chat, below its last message, and sends the
 bot nothing (`GET /bots/:id/usage`). It stays until Close, and goes with the
-tab: it is never part of the conversation. It is three lines under its
-title and the date of the chat's first turn:
+tab: it is never part of the conversation. Since 2026-11-03 it is drawn
+as Claude Code draws its own: the command as sent, on the right, and a
+small card under it (384px) with Copy and Close:
 
-- turns that ran, time at work (each turn's start to its end, summed),
-  tokens in and out, and the cache hit rate (the share of the input read
-  from the provider's prompt cache);
-- those tokens split into Input (sent fresh), Output, Cache read and Cache
-  write;
-- each model's share of what the turns spent, and the calls the bot made
-  on its owner's key that are not a turn (goal reviews, summaries, rule
-  reviews), which the totals include, so a long goal does not look cheaper
-  than it is.
+- the plan's 5-hour and weekly windows as bars, with when each resets,
+  on a sign-in that reports them (a ChatGPT sign-in today);
+- **This chat**, a grid of figures: time active (each turn's start to its
+  end, summed), turns that ran, the cache hit rate (the share of the input
+  read from the provider's prompt cache), tokens in and out, and each
+  model's share of what the turns spent;
+- **Breakdown**, headed by the model (or how many), the tokens split into
+  Input (sent fresh), Output, Cache read and Cache write, and a line naming
+  the calls the bot made on its owner's key that are not a turn (goal
+  reviews, summaries, rule reviews), which the totals include, so a long
+  goal does not look cheaper than it is.
 
-The context and the plan windows are not repeated: the composer's meter
-shows them. Copy puts the lines on the clipboard as text.
+Claude Code's Cost and API time are left out: nothing here knows a model's
+prices. Copy puts the card on the clipboard as text.
 
 Where it comes from:
 
@@ -1270,3 +1273,9 @@ The decisions it produced:
   counts the calls a bot makes outside its turns (goal reviews, summaries,
   rule reviews), which nothing recorded before. Money is left out until
   Oppenheimer keeps prices.
+- 2026-11-03: **the `/usage` card is drawn like Claude Code's** (§4.1). The
+  owner found the three lines hard to read and asked for a card like Claude
+  Code's small one, then for it smaller: the command as a bubble, a 384px
+  card with the plan's windows as bars, this chat's figures in a grid and
+  the tokens' breakdown. It replaces 2026-11-02's three lines and its
+  leaving the plan windows to the composer's meter.
