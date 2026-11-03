@@ -111,7 +111,7 @@ describe('chatExportHeader and chatExportChunk', () => {
             name: 'archive_mail',
             input: {},
             output: 'MAIL_008: Gmail is limiting our requests',
-            isError: true,
+            isError: false,
             sessionId: null,
             subagents: null,
             allowedBy: null,

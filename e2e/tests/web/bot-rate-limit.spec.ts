@@ -41,7 +41,7 @@ test('draws a step a rate limit stopped as a wait with its time, not as failed',
       callId: 'b',
       output:
         'MAIL_008: Gmail is limiting our requests until 2026-11-02T10:02:00.000Z (in about 60 s), and stopped this call there.',
-      isError: true,
+      isError: false,
       rateLimit: { system: 'Gmail', resetAt: '2026-11-02T10:02:00.000Z' },
     },
   ]);

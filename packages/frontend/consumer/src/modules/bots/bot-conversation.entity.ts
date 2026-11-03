@@ -31,11 +31,7 @@ export interface BotToolStep {
   allowedBy: string | null;
   /** The draft a mail call saved in Gmail, for the chat's card; `null` for any other call. */
   mailDraft: BotMailDraft | null;
-  /**
-   * The system that was limiting our requests when the call ended, and until
-   * when: the chat draws the step as a wait, not a failure. `null` when no
-   * limit stopped it.
-   */
+  /** The system that was limiting our requests when the call ended, and until when; `null` when none. */
   rateLimit: BotToolRateLimit | null;
 }
 

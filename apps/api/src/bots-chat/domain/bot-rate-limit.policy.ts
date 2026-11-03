@@ -22,20 +22,18 @@ export function rateLimitData(limit: BotRateLimit): string {
   return JSON.stringify({ system: limit.system, resetAt: limit.resetAt.toISOString() });
 }
 
-/**
- * A limit, narrowed once: from the JSON a call's data carried, or from a
- * stored step's column (`{ system, resetAt }` with the time as ISO). Null when
- * it holds none, or holds it malformed.
- */
-export function rateLimitOfData(raw: unknown): BotRateLimit | null {
-  let value = raw;
-  if (typeof raw === 'string') {
-    try {
-      value = JSON.parse(raw);
-    } catch {
-      return null;
-    }
+/** The limit a call's data carried (JSON, as tool data is strings), or null when none or malformed. */
+export function rateLimitOfData(value: string | undefined): BotRateLimit | null {
+  if (!value) return null;
+  try {
+    return rateLimitOfRecord(JSON.parse(value));
+  } catch {
+    return null;
   }
+}
+
+/** A limit stored as `{ system, resetAt }` with the time as ISO, or null when it is not one. */
+export function rateLimitOfRecord(value: unknown): BotRateLimit | null {
   if (!value || typeof value !== 'object') return null;
   const { system, resetAt } = value as { system?: unknown; resetAt?: unknown };
   if (typeof system !== 'string' || typeof resetAt !== 'string') return null;

@@ -287,7 +287,8 @@ describe('TurnTranscript', () => {
     const steps = inserted(writes).flatMap((message) => message.steps);
     transcript.endTurn(new Date('2026-11-02T10:00:00.000Z'), null);
     expect(transcript.result.limitedUntil).toEqual(new Date('2026-11-02T10:02:00.000Z'));
-    // Each step keeps its own limit, so the chat draws it as a wait.
+    // Each step keeps its own limit and is stored as no error: the chat draws it as a wait.
+    expect(steps.map((step) => step.isError)).toEqual([false, false]);
     expect(steps.map((step) => step.rateLimit?.resetAt)).toEqual([
       new Date('2026-11-02T10:02:00.000Z'),
       new Date('2026-11-02T10:01:00.000Z'),

@@ -39,8 +39,8 @@ export interface BotToolStep {
   mailDraft: BotMailDraft | null;
   /**
    * The system that was limiting our requests when the call ended, and until
-   * when (`bot-rate-limit.policy.ts`): the chat draws the step as a wait, not
-   * a failure. Null when no limit stopped it.
+   * when (`bot-rate-limit.policy.ts`); null when no limit stopped it. A
+   * limited step is not an error: `isError` is false on it.
    */
   rateLimit: BotRateLimit | null;
 }

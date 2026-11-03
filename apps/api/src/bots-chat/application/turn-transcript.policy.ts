@@ -202,13 +202,15 @@ export class TurnTranscript {
     this.running.delete(callId);
     step.output =
       output.length > BOT_TOOL_OUTPUT_MAX ? `${startOf(output, BOT_TOOL_OUTPUT_MAX)}…` : output;
-    step.isError = isError;
+    const limit = rateLimitOfData(data?.[RATE_LIMIT_DATA_KEY]);
+    // A limit is a wait, not a failure: the stored step says so once, and
+    // every reader draws `isError` as a failure and `rateLimit` as a wait.
+    step.isError = isError && limit === null;
+    step.rateLimit = limit;
     step.sessionId = isError ? null : (data?.sessionId ?? null);
     step.subagents = isError ? null : toSubagentRuns(data?.[SUBAGENT_DATA_KEY]);
     step.allowedBy = data?.[ALLOWED_BY_DATA_KEY]?.slice(0, BOT_ALLOWED_BY_MAX) ?? null;
     step.mailDraft = isError ? null : toMailDraft(data?.[MAIL_DRAFT_DATA_KEY]);
-    const limit = rateLimitOfData(data?.[RATE_LIMIT_DATA_KEY]);
-    step.rateLimit = limit;
     if (limit) this.outcome.limitedUntil = laterReset(this.outcome.limitedUntil, limit);
     for (const run of step.subagents ?? []) {
       this.outcome.inputTokens += run.inputTokens;

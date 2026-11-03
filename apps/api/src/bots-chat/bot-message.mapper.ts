@@ -23,7 +23,7 @@ import {
 import { BotMessageOrmEntity } from './database/bot-message.orm-entity';
 import type { BotSteerTaken } from './database/bot-turn.repository.port';
 import { BotMessageEntity, type BotToolStep } from './domain/bot-message.entity';
-import { rateLimitOfData } from './domain/bot-rate-limit.policy';
+import { rateLimitOfRecord } from './domain/bot-rate-limit.policy';
 import type { SummarizableMessage } from './domain/bot-summary.policy';
 import { ENDED_TURN_STATUSES } from './domain/bot-turn.entity';
 import { BotAttachmentResponseDto } from './dtos/bot-attachment.response.dto';
@@ -152,7 +152,7 @@ function toStep(raw: Record<string, unknown>): BotToolStep {
     subagents: toSubagentRuns(raw.subagents),
     allowedBy: typeof raw.allowedBy === 'string' ? raw.allowedBy : null,
     mailDraft: toMailDraft(raw.mailDraft),
-    rateLimit: rateLimitOfData(raw.rateLimit),
+    rateLimit: rateLimitOfRecord(raw.rateLimit),
   };
 }
 

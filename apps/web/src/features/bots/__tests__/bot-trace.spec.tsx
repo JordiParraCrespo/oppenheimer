@@ -65,7 +65,6 @@ describe('BotTrace', () => {
   it('draws a call a rate limit stopped as a wait, not a failure, and does not count it as failed', () => {
     const limited = step('b', {
       name: 'archive_mail',
-      isError: true,
       output: 'MAIL_008: Gmail is limiting our requests',
       rateLimit: { system: 'Gmail', resetAt: new Date('2026-11-02T10:02:00.000Z') },
     });
