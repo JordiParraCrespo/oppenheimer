@@ -2,7 +2,7 @@ import { searchFlag, searchText } from '@oppenheimer/frontend-web';
 import { z } from 'zod';
 
 /** The list's Type facet, in the frame's order; `all` is no key. */
-export const INBOX_TYPES = ['all', 'pull', 'approval', 'session', 'run'] as const;
+export const INBOX_TYPES = ['all', 'pull', 'bots', 'session', 'run'] as const;
 export type InboxTypeFilter = (typeof INBOX_TYPES)[number];
 
 /** The Project facet's first option: every project. Not a search value: it is no key. */
@@ -19,7 +19,11 @@ export const NO_PROJECT = 'none';
 export const inboxSearchSchema = z.object({
   item: searchText,
   q: searchText,
-  type: z.enum(INBOX_TYPES).optional().catch(undefined),
+  // `approval` was Bots' value before a bot's notices joined its approvals
+  // there: a link saved with it still opens Bots.
+  type: z
+    .preprocess((value) => (value === 'approval' ? 'bots' : value), z.enum(INBOX_TYPES).optional())
+    .catch(undefined),
   project: searchText,
   hideDone: searchFlag,
 });

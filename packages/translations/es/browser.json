@@ -2994,7 +2994,7 @@
     "type": {
       "all": "Todos",
       "pull": "Pull requests",
-      "approval": "Bots",
+      "bots": "Bots",
       "session": "Sesiones",
       "run": "Automatizaciones"
     },

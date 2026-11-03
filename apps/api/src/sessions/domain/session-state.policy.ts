@@ -442,24 +442,6 @@ export function readSharedFiles(value: unknown): SessionSharedFile[] {
 }
 
 /**
- * What the agent left the session, read back from the `jsonb` columns the fold
- * writes it to, each through its schema: one this build cannot read is none.
- */
-export function readAgentColumns(record: {
-  agentReport: unknown;
-  notice: unknown;
-  watchedPulls: unknown;
-  sharedFiles: unknown;
-}): Pick<SessionFold, 'agentReport' | 'notice' | 'watchedPulls' | 'sharedFiles'> {
-  return {
-    agentReport: readAgentReport(record.agentReport),
-    notice: readNotice(record.notice),
-    watchedPulls: readWatchedPulls(record.watchedPulls),
-    sharedFiles: readSharedFiles(record.sharedFiles),
-  };
-}
-
-/**
  * A report narrowed by its schema, from the log or from the `jsonb` column it
  * is folded into: null for none, and for one this build cannot read.
  */

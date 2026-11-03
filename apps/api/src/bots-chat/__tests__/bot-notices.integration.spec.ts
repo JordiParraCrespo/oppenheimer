@@ -151,7 +151,7 @@ describe('bot notices (integration)', () => {
     expect(notice.domainEvents).toEqual([]);
   });
 
-  it('reads the workspace’s notices newest first, and none of another workspace', async () => {
+  it('reads the workspace’s notices newest first, each with its bot’s name, and none of another workspace', async () => {
     const ops = await create('Ops');
     const docs = await create('Docs');
     const elsewhere = await create('Other', await insertOrganization());
@@ -161,7 +161,12 @@ describe('bot notices (integration)', () => {
     await send(ops, 'Ops again.');
 
     const found = await notices.findInWorkspace(scopeOf(organizationId), 50);
-    expect(found.map((notice) => notice.text)).toEqual(['Ops again.', 'Docs.']);
+    // The name comes from the same read: a regression to a second roster
+    // read, or a join that pairs rows wrongly, names the wrong bot.
+    expect(found.map(({ notice, botName }) => [botName, notice.text])).toEqual([
+      ['Ops', 'Ops again.'],
+      ['Docs', 'Docs.'],
+    ]);
   });
 
   it('refuses a blank line in the table too', async () => {

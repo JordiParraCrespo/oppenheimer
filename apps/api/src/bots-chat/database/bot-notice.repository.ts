@@ -7,7 +7,7 @@ import { BotResource } from '../../bots/bots.resource';
 import { BotNoticeMapper } from '../bot-notice.mapper';
 import type { BotNoticeEntity } from '../domain/bot-notice.entity';
 import { BotNoticeOrmEntity } from './bot-notice.orm-entity';
-import type { BotNoticeRepositoryPort } from './bot-notice.repository.port';
+import type { BotNoticeRepositoryPort, NamedBotNotice } from './bot-notice.repository.port';
 
 @Injectable()
 export class BotNoticeRepository
@@ -42,13 +42,24 @@ export class BotNoticeRepository
     notice.clearEvents();
   }
 
-  async findInWorkspace(scope: AccessScope, limit: number): Promise<BotNoticeEntity[]> {
-    // IDX_bot_notice_org_updated, read backwards.
-    const records = await this.scopedQuery(scope)
+  async findInWorkspace(scope: AccessScope, limit: number): Promise<NamedBotNotice[]> {
+    // IDX_bot_notice_org_updated, read backwards; the bot's name by PK_bot,
+    // the composite key the notice already holds (and a notice whose bot is
+    // gone is gone with it).
+    const { entities, raw } = await this.scopedQuery(scope)
+      .innerJoin(
+        'bot',
+        'bot',
+        'bot."organizationId" = notice."organizationId" AND bot.id = notice."botId"',
+      )
+      .addSelect('bot.name', 'botName')
       .orderBy('notice.updatedAt', 'DESC')
       .addOrderBy('notice.id', 'DESC')
-      .take(limit)
-      .getMany();
-    return records.map((record) => this.mapper.toDomain(record));
+      .limit(limit)
+      .getRawAndEntities<{ botName: string }>();
+    return entities.map((record, index) => ({
+      notice: this.mapper.toDomain(record),
+      botName: String(raw[index]?.botName ?? ''),
+    }));
   }
 }
