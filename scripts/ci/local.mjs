@@ -29,8 +29,7 @@
  *
  * The jobs run side by side (`run.mjs`); the services start while the build
  * runs, and the suites once the API is up. `--max-parallel <n>` caps how many
- * steps run at once: the scheduled run's VM, starved by every job at once,
- * timed out unit tests' first queries and lost its runner, so it takes 1.
+ * steps run at once (default: no cap); the scheduled run takes 1 (#595).
  * A stack that was already up (a console from `stack.mjs up --web`, for the
  * screenshots) stays up with this commit's API in it; one this run started
  * comes down at the end.

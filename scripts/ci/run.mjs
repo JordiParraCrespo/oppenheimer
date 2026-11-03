@@ -34,6 +34,27 @@ function slug(text) {
     .replace(/^-|-$/g, '');
 }
 
+/**
+ * At most `limit` holders at once: `acquire` resolves when a slot is free,
+ * `release` hands it to the next waiter, first come first served.
+ */
+function slots(limit) {
+  let free = limit;
+  const waiting = [];
+  return {
+    acquire() {
+      if (free === 0) return new Promise((go) => waiting.push(go));
+      free -= 1;
+      return Promise.resolve();
+    },
+    release() {
+      const next = waiting.shift();
+      if (next) next();
+      else free += 1;
+    },
+  };
+}
+
 function deferred() {
   let resolve;
   const promise = new Promise((done) => {
@@ -68,18 +89,7 @@ export async function runSteps(
   /** The steps this run stopped, and the end of each one's process group. */
   const killed = new Map();
   let stopping = false;
-  let free = maxParallel;
-  const queue = [];
-  const acquire = () => {
-    if (free === 0) return new Promise((go) => queue.push(go));
-    free -= 1;
-    return Promise.resolve();
-  };
-  const release = () => {
-    const next = queue.shift();
-    if (next) next();
-    else free += 1;
-  };
+  const { acquire, release } = slots(maxParallel);
 
   const stopAll = () => {
     if (stopping) return;

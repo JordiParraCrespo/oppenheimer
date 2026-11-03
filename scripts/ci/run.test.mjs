@@ -48,7 +48,7 @@ test('maxParallel runs no more steps at once than it allows, and a waiting step 
     { maxParallel: 1 },
   );
   assert.ok(Object.values(rows).every((r) => r.status === 'passed'));
-  assert.ok(Date.now() - started >= 800, 'two 400ms steps ran at once under maxParallel 1');
+  assert.ok(Date.now() - started >= 800, 'independent steps did not serialize under maxParallel 1');
 });
 
 test('a job stops at its first failed step; the others finish without fail-fast', async () => {
