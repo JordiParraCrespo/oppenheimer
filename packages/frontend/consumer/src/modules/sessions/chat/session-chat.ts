@@ -21,13 +21,7 @@ import {
   sharedFileOf,
   withSharedFiles,
 } from './session-chat-files';
-import {
-  FirstLoad,
-  LOAD_SETTLE_MS,
-  Quiet,
-  REPLAY_SETTLE_MS,
-  TOLD_SETTLE_MS,
-} from './session-chat-history';
+import { FirstLoad, linesToCome, Quiet } from './session-chat-history';
 
 /** One item of the agent's task list: the chat module's, which the bots chat reads too. */
 export type ChatTodo = ChatItemTodo;
@@ -414,11 +408,7 @@ export class SessionChat {
     // A first load is held back until its history has come, so the chat
     // draws it once, at its end, not each part of a long one in turn.
     this.firstLoad.take(batch, this.transcript.empty);
-    // A reset with no lines yet and more to come is the start of a replay,
-    // not a transcript that is empty now.
-    let changed = batch.reset
-      ? this.transcript.reset(batch.entries.length > 0 || batch.history === 'more')
-      : false;
+    let changed = batch.reset ? this.transcript.reset(linesToCome(batch)) : false;
     let status = this.state.status;
     let files = this.state.files;
     for (const raw of batch.entries) {
@@ -477,12 +467,8 @@ export class SessionChat {
     });
   }
 
-  /** How long a quiet now would mean the history has all come; `null` for nothing to wait on. */
   private settleAfter(): number | null {
-    const told = this.firstLoad.told;
-    if (this.loading) return told ? TOLD_SETTLE_MS : LOAD_SETTLE_MS;
-    if (!this.transcript.replaying) return null;
-    return told ? TOLD_SETTLE_MS : REPLAY_SETTLE_MS;
+    return this.firstLoad.settleAfter(this.transcript.replaying);
   }
 
   /**

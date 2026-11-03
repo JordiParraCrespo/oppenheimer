@@ -20,13 +20,13 @@ interface HistoryBatch {
  * holds, before those it did not send again are taken as gone: well past
  * the runner's 300ms between reads of a long history.
  */
-export const REPLAY_SETTLE_MS = 3000;
+const REPLAY_SETTLE_MS = 3000;
 
 /**
  * How long a first load's history may go quiet before it is taken as all
  * there: past the runner's 300ms between reads of a long transcript.
  */
-export const LOAD_SETTLE_MS = 500;
+const LOAD_SETTLE_MS = 500;
 
 /**
  * How long a history whose runner says where it ends may go quiet before it
@@ -34,7 +34,7 @@ export const LOAD_SETTLE_MS = 500;
  * slow read is told apart from the end by the runner itself. Well past a
  * read of 4MB of screenshots, each a preview to make.
  */
-export const TOLD_SETTLE_MS = 15_000;
+const TOLD_SETTLE_MS = 15_000;
 
 /** A batch's size as the runner counts it. */
 function sizeOf(batch: HistoryBatch): number {
@@ -103,6 +103,26 @@ export class FirstLoad {
   end(): void {
     this.loading = false;
   }
+
+  /**
+   * How long a quiet now would mean the history has all come, `replaying`
+   * when a reconnect's replay has not yet sent every line held; `null` for
+   * nothing to wait on.
+   */
+  settleAfter(replaying: boolean): number | null {
+    if (this.loading) return this.told ? TOLD_SETTLE_MS : LOAD_SETTLE_MS;
+    if (!replaying) return null;
+    return this.told ? TOLD_SETTLE_MS : REPLAY_SETTLE_MS;
+  }
+}
+
+/**
+ * Whether a reset has lines to come: the start of a replay of what is held,
+ * not a transcript that is empty now. A reset with no lines yet whose
+ * runner says more is coming is one.
+ */
+export function linesToCome(batch: HistoryBatch): boolean {
+  return batch.entries.length > 0 || batch.history === 'more';
 }
 
 /** One quiet to wait out at a time: each `watch` replaces the last. */
