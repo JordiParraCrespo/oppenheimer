@@ -322,7 +322,8 @@
       "builtIn": {
         "goal": "Sigue trabajando hasta que se cumpla una condición, revisada tras cada turno. /goal clear lo detiene.",
         "usage": "Muestra lo que ha gastado este chat: tokens por modelo, aciertos de caché, ventanas del plan.",
-        "loop": "Repite una instrucción ahora y de nuevo: /loop 5m revisa el despliegue, o sin intervalo el bot decide cuándo. /loop stop lo termina."
+        "loop": "Repite una instrucción cada pocos minutos, o cuando el bot decida. /loop stop la termina.",
+        "schedule": "Guarda una rutina programada. /schedule solo abre las rutinas."
       }
     },
     "usage": {

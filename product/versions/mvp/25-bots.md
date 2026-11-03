@@ -615,7 +615,7 @@ The owner chose them in this order:
 | `/goal <condition>` | Sets the bot's goal and starts on it (above). `/goal` alone keeps send off and says the condition is missing; `/goal clear` (or `stop`, `off`, `reset`, `none`, `cancel`) stops the goal, as Stop does, and sends nothing. The API refuses both as messages (`GENERIC.ARGUMENT_INVALID`): they are `GET` and `DELETE /bots/:id/goal` | Built |
 | `/usage` | Puts the usage card in the chat: what the chat has spent, in tokens (below). The API refuses it as a message, as it does `/goal` alone | Built |
 | `/loop [interval] [prompt]` | Runs a prompt now and again on an interval, or when the bot chooses, until it is stopped or expires (below). `/loop stop` (or `clear`, `off`, `reset`, `none`, `cancel`) stops it, as Stop does, and sends nothing: the API refuses it as a message, as it is `DELETE /bots/:id/loop` | Built |
-| `/schedule` | Run a prompt on a schedule, as a routine of the bot's (26) | Planned |
+| `/schedule <request>` | Has the bot save a routine (26) from your words, what to do and when, with no card: your command is the consent. `/schedule` alone opens the bot's Routines tab and sends nothing (below) | Built |
 | `/plan <idea>` | Think before acting: break the idea into steps, or tasks on the plan, and ask before starting | Planned |
 | `/grill-me` | Interview the person about a plan, one branch of the decision tree at a time, until it holds (from this repo's own `grill-me` skill) | Planned |
 
@@ -718,6 +718,34 @@ it was typed in, and ends on its own.
 Neither asks: the person set the loop, its spend is bounded by its
 interval and its 3 days, every run is a line, and Stop is one click. The
 3 days and the 1-minute floor are ours (Claude Code takes the same floor).
+
+**`/schedule`** (2026-11-03, from Claude Code's `/schedule`). Where a loop
+runs every few minutes in this chat and ends in 3 days, a schedule is a
+**routine** (26): an automation whose run target is the bot, on a calendar
+(daily, weekdays, weekly, monthly, or once on a date), that lasts until it is
+deleted, runs whether or not the chat is open, and is listed on the bot's
+Routines tab and on `/automations` with the rest. `/schedule` is the way to
+make one by typing:
+
+- `/schedule every weekday at 9, check open PRs and tell me which need me`
+  is a message. Its turn tells the bot to save the routine now with its
+  `update_routine` tool (a name, the prompt it will run, a schedule trigger
+  in the person's time zone) and say in a line what it saved and when it
+  runs. The words are the bot's to read, as Claude Code's model reads them:
+  no grammar of times to learn.
+- **No card.** `update_routine` asks before a save (26 §4); in the turn of
+  the person's own `/schedule`, a `create` does not, since the command is
+  the consent to that routine. Changing, deleting or running one still
+  asks, in that turn as in any other.
+- A request for minutes ("every 5 minutes") is a loop: the bot says so and
+  points to `/loop`. One that says what but not when is asked about, never
+  guessed.
+- `/schedule` alone opens the bot's Routines tab, where its routines are
+  paused, run now or deleted; the API refuses it as a message.
+
+Loop or schedule, in a line: **`/loop`** for watching something now ("check
+the deploy every 5 minutes"), **`/schedule`** for a habit ("every Monday at
+9, summarise last week's PRs").
 
 Built-ins that change the bot's code tools are not here: a bot has no
 shell, so `/code-review`, `/simplify` and their kind stay the coding
@@ -1366,6 +1394,11 @@ The decisions it produced:
   1 day or self-paced, belongs to the chat and expires after 3 days. One
   loop per bot; a run due while the last is busy is skipped; the bot ends
   it with `end_loop`, or a self-paced one by not calling `schedule_loop`.
+- 2026-11-03: **`/schedule` is built** (§4.1). The owner asked how
+  `/loop` relates to automations and for `/schedule` too. A schedule is a
+  routine (26), made from the person's words by the bot's own
+  `update_routine`; the person's `/schedule` is the consent to that one
+  create, so it raises no card. `/schedule` alone opens the Routines tab.
 - 2026-11-03: **a bot's requests stay cacheable from turn to turn** (§2).
   `/usage` showed a bot on GPT and Grok reading 1% of its input from the
   prompt cache. Two causes: the OpenAI engine sent no `prompt_cache_key`,

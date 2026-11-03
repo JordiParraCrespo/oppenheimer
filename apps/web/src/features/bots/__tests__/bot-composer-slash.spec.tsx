@@ -122,6 +122,7 @@ describe('BotComposer’s / menu', () => {
       '/goalbots.chat.slash.builtIn.goal',
       '/usagebots.chat.slash.builtIn.usage',
       '/loopbots.chat.slash.builtIn.loop',
+      '/schedulebots.chat.slash.builtIn.schedule',
       '/release-notesDoes release-notes.',
       '/reviewDoes review.',
       '/triageDoes triage.',

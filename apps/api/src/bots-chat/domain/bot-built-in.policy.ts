@@ -14,11 +14,13 @@ const CONSOLE_ROUTES: Record<BotBuiltInCommand, string> = {
   goal: 'GET /bots/:id/goal to read the goal, DELETE /bots/:id/goal to stop it',
   usage: 'GET /bots/:id/usage',
   loop: 'GET /bots/:id/loop to read the loop, DELETE /bots/:id/loop to stop it',
+  schedule: 'GET /bots/:id/routines to read the routines /schedule saves',
 };
 
 /**
  * Refuses a message that is a built-in the console runs itself
- * (`isBotConsoleCommand`: `/goal` alone, `/goal clear`, `/loop stop`, `/usage`): as a
+ * (`isBotConsoleCommand`: `/goal` alone, `/goal clear`, `/loop stop`,
+ * `/schedule` alone, `/usage`): as a
  * message it would spend a turn to say what the console shows, and do
  * nothing it asks. The refusal names the command typed and where its
  * console side is.

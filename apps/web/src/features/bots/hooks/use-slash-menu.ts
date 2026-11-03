@@ -14,6 +14,7 @@ const BUILT_IN_DESCRIPTIONS = {
   goal: 'bots.chat.slash.builtIn.goal',
   usage: 'bots.chat.slash.builtIn.usage',
   loop: 'bots.chat.slash.builtIn.loop',
+  schedule: 'bots.chat.slash.builtIn.schedule',
 } as const satisfies Record<(typeof BOT_BUILT_IN_COMMANDS)[number], string>;
 
 /**

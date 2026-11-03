@@ -1,4 +1,5 @@
 import { useClearBotGoal, useClearBotLoop } from '@oppenheimer/frontend-consumer/react';
+import { useNavigate } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import {
   type BuiltInLocalAction,
@@ -21,13 +22,15 @@ const FAILURES = {
  * the notice a draft that cannot be sent shows, and `runLocally`, which runs
  * a built-in the console owns instead of sending it and answers whether it
  * did: `/goal clear` stops the goal, `/loop stop` the loop, `/usage` puts the
- * usage card in the chat (`openUsageCard`). A local action that fails stays
+ * usage card in the chat (`openUsageCard`), `/schedule` alone opens the bot's
+ * Routines tab. A local action that fails stays
  * on screen through `error`, with the words to say it in `failure`.
  */
 export function useBuiltInCommand(botId: string, draft: string) {
   const { t } = useTranslation();
   const clearGoal = useClearBotGoal();
   const clearLoop = useClearBotLoop();
+  const navigate = useNavigate();
   const action = builtInCommandActionOf(draft);
   const notice = action?.kind === 'notice' ? t(NOTICES[action.notice]) : undefined;
 
@@ -55,6 +58,13 @@ export function useBuiltInCommand(botId: string, draft: string) {
       run: (onDone) => {
         openUsageCard(botId);
         onDone();
+      },
+      fails: null,
+    },
+    openRoutines: {
+      run: (onDone) => {
+        onDone();
+        void navigate({ to: '/bots/$botId/settings/routines', params: { botId } });
       },
       fails: null,
     },

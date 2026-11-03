@@ -4,6 +4,7 @@ import {
   BOT_SKILL_NAME_MAX,
   botGoalCommandOf,
   botLoopCommandOf,
+  botScheduleCommandOf,
   botSkillNameDraft,
   botSkillNameOf,
   botSkillSchema,
@@ -124,11 +125,35 @@ describe('botLoopCommandOf', () => {
   });
 });
 
+/**
+ * `/schedule` (`25-bots.md` §4.1). What breaks this: a bare `/schedule`
+ * sent to the bot, spending a turn on nothing, or a request's words lost.
+ */
+describe('botScheduleCommandOf', () => {
+  const schedule = (message: string) => botScheduleCommandOf(parseBotSlashCommand(message));
+
+  it('reads the request as written, and opens the routines with nothing after it', () => {
+    expect(schedule('/schedule every weekday at 9, check open PRs')).toEqual({
+      kind: 'set',
+      request: 'every weekday at 9, check open PRs',
+    });
+    expect(schedule('/schedule')).toEqual({ kind: 'open' });
+    expect(schedule('/loop 5m x')).toBeNull();
+  });
+});
+
 describe('isBotConsoleCommand', () => {
   const runsHere = (message: string) => isBotConsoleCommand(parseBotSlashCommand(message));
 
   it('is the built-ins the console runs: /goal alone, /goal clear, /usage with anything after it', () => {
-    for (const message of ['/goal', '/goal off', '/usage', '/usage this week', '/loop stop']) {
+    for (const message of [
+      '/goal',
+      '/goal off',
+      '/usage',
+      '/usage this week',
+      '/loop stop',
+      '/schedule',
+    ]) {
       expect(runsHere(message)).toBe(true);
     }
   });
@@ -138,6 +163,7 @@ describe('isBotConsoleCommand', () => {
       '/goal CI is green',
       '/loop 5m check CI',
       '/loop',
+      '/schedule every weekday at 9 check open PRs',
       '/release-notes',
       'my usage?',
     ]) {
@@ -175,6 +201,7 @@ describe('botSkillSchema', () => {
       'goal',
       'usage',
       'loop',
+      'schedule',
       '',
     ]) {
       expect(botSkillSchema.safeParse({ ...skill, name }).success).toBe(false);

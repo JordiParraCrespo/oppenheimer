@@ -1,6 +1,12 @@
-import { type BotSlashCommand, botGoalCommandOf, botLoopCommandOf } from '@oppenheimer/shared';
+import {
+  type BotSlashCommand,
+  botGoalCommandOf,
+  botLoopCommandOf,
+  botScheduleCommandOf,
+} from '@oppenheimer/shared';
 import { goalSetPrompt } from './bot-goal.policy';
 import { loopSetPrompt } from './bot-loop-message.factory';
+import { scheduleSetPrompt } from './bot-routine.policy';
 
 /** What the prompt and the tools read of a skill. */
 export interface BotSkillView {
@@ -101,7 +107,8 @@ ${prompt}`;
 
 /**
  * The turn's message, as the person's words become it (`25-bots.md` §4.1):
- * a built-in command's directive (`/goal <condition>`, `/loop …`), the skill their
+ * a built-in command's directive (`/goal <condition>`, `/loop …`,
+ * `/schedule <request>`), the skill their
  * `/<name>` runs before them, a note when the command names no skill they
  * can run, or the words alone when they typed no command. The one place a
  * slash command becomes the turn's message.
@@ -116,6 +123,8 @@ export function composeTurnMessage(
   if (goal) return goal.kind === 'set' ? goalSetPrompt(goal.condition) : goalCommandPrompt(prompt);
   const loop = botLoopCommandOf(command);
   if (loop) return loop.kind === 'set' ? loopSetPrompt(loop.intervalMinutes, loop.prompt) : prompt;
+  const schedule = botScheduleCommandOf(command);
+  if (schedule) return schedule.kind === 'set' ? scheduleSetPrompt(schedule.request) : prompt;
   const skill = invokedSkill(command, skills);
   return skill
     ? skillInvocationPrompt(skill, command, prompt)

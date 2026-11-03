@@ -1,6 +1,7 @@
 import {
   botGoalCommandOf,
   botLoopCommandOf,
+  botScheduleCommandOf,
   parseBotSlashCommand,
 } from '@oppenheimer/shared/schemas/bot-skill';
 
@@ -13,15 +14,16 @@ import {
  *   `/loop` interval out of range);
  * - `local`: the console runs it itself and sends the bot nothing
  *   (`/goal clear` stops the goal, `/loop stop` the loop, `/usage` opens the
- *   usage card);
- * - null: the draft is a message, built-in or not (`/goal <condition>` and
- *   `/loop …` are sent; the API sets the goal or the loop).
+ *   usage card, `/schedule` alone opens the bot's routines);
+ * - null: the draft is a message, built-in or not (`/goal <condition>`,
+ *   `/loop …` and `/schedule <request>` are sent; the API sets the goal or
+ *   the loop, the bot saves the routine).
  *
  * A new built-in adds its case here and its entry to `useBuiltInCommand`'s
  * table of local actions, so the composer keeps one notice and one local
  * action whatever the draft.
  */
-export type BuiltInLocalAction = 'clearGoal' | 'clearLoop' | 'openUsage';
+export type BuiltInLocalAction = 'clearGoal' | 'clearLoop' | 'openUsage' | 'openRoutines';
 
 export type BuiltInCommandAction =
   | { kind: 'notice'; notice: 'goalNeedsCondition' | 'loopBadInterval' }
@@ -31,6 +33,9 @@ export type BuiltInCommandAction =
 export function builtInCommandActionOf(draft: string): BuiltInCommandAction {
   const command = parseBotSlashCommand(draft);
   if (command?.name === 'usage') return { kind: 'local', action: 'openUsage' };
+  if (botScheduleCommandOf(command)?.kind === 'open') {
+    return { kind: 'local', action: 'openRoutines' };
+  }
   const loop = botLoopCommandOf(command);
   if (loop?.kind === 'invalid') return { kind: 'notice', notice: 'loopBadInterval' };
   if (loop?.kind === 'clear') return { kind: 'local', action: 'clearLoop' };

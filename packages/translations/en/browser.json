@@ -1675,7 +1675,8 @@
         "builtIn": {
           "goal": "Keep working until a condition holds, checked after every turn. /goal clear stops it.",
           "usage": "Show what this chat has spent: tokens by model, cache hits, plan windows.",
-          "loop": "Run a prompt now and again: /loop 5m check the deploy, or with no interval the bot chooses when. /loop stop ends it."
+          "loop": "Run a prompt every few minutes, or when the bot chooses. /loop stop ends it.",
+          "schedule": "Save a routine that runs on a schedule. /schedule alone opens the routines."
         }
       },
       "usage": {

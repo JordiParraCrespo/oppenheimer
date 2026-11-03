@@ -79,9 +79,10 @@ export function parseBotSlashCommand(message: string): BotSlashCommand | null {
  * drives a feature the product owns, where a skill only puts words in front
  * of the bot. `goal` sets, shows or clears the bot's goal; `usage` shows
  * what the chat has spent, and is the console's alone; `loop` runs a prompt
- * again and again, or stops the loop.
+ * again and again, or stops the loop; `schedule` has the bot save a routine
+ * on a schedule, or opens its routines.
  */
-export const BOT_BUILT_IN_COMMANDS = ['goal', 'usage', 'loop'] as const;
+export const BOT_BUILT_IN_COMMANDS = ['goal', 'usage', 'loop', 'schedule'] as const;
 export type BotBuiltInCommand = (typeof BOT_BUILT_IN_COMMANDS)[number];
 
 /**
@@ -107,12 +108,14 @@ export type BotGoalCommand =
 
 /**
  * Whether a message is a built-in the console runs itself and never sends:
- * `/goal` alone, `/goal clear` and `/loop stop` (and their aliases), and
- * `/usage`, whatever follows it. `/goal <condition>` and `/loop …` are
- * messages: the API sets the goal or the loop.
+ * `/goal` alone, `/goal clear` and `/loop stop` (and their aliases),
+ * `/schedule` alone, and `/usage`, whatever follows it. `/goal <condition>`,
+ * `/loop …` and `/schedule <request>` are messages: the API sets the goal or
+ * the loop, or the bot saves the routine.
  */
 export function isBotConsoleCommand(command: BotSlashCommand | null): boolean {
   if (command?.name === 'usage') return true;
+  if (botScheduleCommandOf(command)?.kind === 'open') return true;
   if (botLoopCommandOf(command)?.kind === 'clear') return true;
   const goal = botGoalCommandOf(command);
   return goal !== null && goal.kind !== 'set';
@@ -197,6 +200,21 @@ export function botLoopCommandOf(command: BotSlashCommand | null): BotLoopComman
     intervalMinutes: interval,
     prompt: args.trim() || BOT_LOOP_CHECK_IN_PROMPT,
   };
+}
+
+/**
+ * `/schedule` (`25-bots.md` §4.1; from Claude Code's `/schedule`): the bot
+ * saves a routine (`26-bot-routines.md`) from the person's words, what to do
+ * and when ("every weekday at 9, check open PRs"), on a calendar where a
+ * loop runs on minutes. Nothing after it opens the bot's routines instead.
+ * Null for a command that is not `/schedule`.
+ */
+export type BotScheduleCommand = { kind: 'open' } | { kind: 'set'; request: string };
+
+export function botScheduleCommandOf(command: BotSlashCommand | null): BotScheduleCommand | null {
+  if (command?.name !== 'schedule') return null;
+  const request = command.args.trim();
+  return request ? { kind: 'set', request } : { kind: 'open' };
 }
 
 const skillNameSchema = z
