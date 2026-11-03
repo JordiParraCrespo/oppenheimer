@@ -1370,11 +1370,11 @@ const drag = useDraggable({ id, data: { type: 'task' } });    // drag.handleProp
 
       <Spec
         id="facetselect"
-        title="FacetSelect · SearchableFacetSelect · SearchList"
+        title="FacetSelect · SearchableFacetSelect · SearchableFacetMultiSelect · SearchList"
         meta="facet-select.tsx · search-list.tsx"
-        desc="One facet of a list's filter: the first option is the facet unset, and any other pick lights the trigger on the selected wash so a narrowed list never looks whole. FacetSelect is a fixed set as radio rows with the count each pick would leave (the queue's Difficulty, Checks, Waiting). SearchableFacetSelect is the same trigger over a list the workspace grows (Plan's Project and Milestone): it opens a SearchList, the Bots picker's shape, a search field over menu rows with the count and the check. SearchList is that body alone, for a menu's submenu or pane, or a set of checks (the card below). pill (30px) is Plan's board; labelled (34px) is the pull-request queue."
+        desc="One facet of a list's filter: the first option is the facet unset, and any other pick lights the trigger on the selected wash so a narrowed list never looks whole. FacetSelect is a fixed set as radio rows with the count each pick would leave (the queue's Difficulty, Checks, Waiting). SearchableFacetSelect is the same trigger over a list the workspace grows (Plan's Milestone): it opens a SearchList, the Bots picker's shape, a search field over menu rows with the count and the check. SearchableFacetMultiSelect is that list as checks (Plan's Project): it stays open while rows are toggled, the first row clears the set, and the trigger reads the first pick then +N. SearchList is that body alone, for a menu's submenu or pane, or a set of checks (the card below). pill (30px) is Plan's board; labelled (34px) is the pull-request queue."
         code={`<FacetSelect label="Difficulty" options={lanes} value={lane} onValueChange={setLane} />
-<SearchableFacetSelect variant="pill" label="Project" icon={<FolderIcon />} options={projects} value={project} onValueChange={setProject} searchPlaceholder="Search projects" emptyText={(q) => \`Nothing matches “\${q}”.\`} />
+<SearchableFacetMultiSelect variant="pill" label="Project" icon={<FolderIcon />} options={projects} values={picked} onValuesChange={setPicked} searchPlaceholder="Search projects" emptyText={(q) => \`Nothing matches “\${q}”.\`} />
 <SearchList options={projects} value={shown} onPick={(option, selected) => toggle(option.value, selected)} searchPlaceholder="Search projects" emptyText={noMatch} />`}
       >
         <FacetSelectDemo />

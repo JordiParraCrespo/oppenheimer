@@ -7,6 +7,7 @@ import type * as React from 'react';
 
 import { META_GIVES_WAY, ROW_BUTTON_WITH_ACTION, SidebarRow } from '../internal/sidebar-row';
 import { cn } from '../lib/utils';
+import { useSortableControl } from './drag';
 
 /**
  * RoutineItem — the sidebar's row in routines mode: the trigger's glyph (a
@@ -120,6 +121,40 @@ function RoutineItem({
   );
 }
 
+/**
+ * A `RoutineItem` the reader can drag into another place among its
+ * siblings, in a `SortableGroup` that takes `routine-item`: a link and a
+ * sortable item at once (`useSortableControl`), so a click or Enter opens
+ * it and a drag past 5px or Space picks it up. While it moves its own
+ * place is the drop slot and the lifted copy is the caller's overlay. A
+ * row with an `action` is not sortable this way.
+ */
+function SortableRoutineItem({
+  id,
+  className,
+  style,
+  ...props
+}: Omit<React.ComponentProps<typeof RoutineItem>, 'ref' | 'onPointerDown' | 'onKeyDown' | 'action' | 'menuOpen'> & {
+  id: string;
+}) {
+  const label = typeof props.name === 'string' ? props.name : id;
+  const { node, control } = useSortableControl({ id, data: { type: 'routine-item', label } });
+  // The row is both the node and the control; the drag contract goes last, so the caller's props never replace it.
+  return (
+    <RoutineItem
+      {...props}
+      {...control}
+      {...node}
+      className={cn(node.className, className)}
+      style={{ ...style, ...node.style }}
+      ref={(element: HTMLElement | null) => {
+        node.ref(element);
+        control.ref(element);
+      }}
+    />
+  );
+}
+
 type RoutineRunState = 'completed' | 'failed' | 'running';
 
 /** How a run ended, as a dot: the sidebar's last-run dot and every `RoutineRun`. */
@@ -194,5 +229,5 @@ function RoutineRunsEmpty({ className, ...props }: React.ComponentProps<'p'>) {
   );
 }
 
-export { RoutineItem, RoutineRun, RoutineRunList, RoutineRunsEmpty };
+export { RoutineItem, RoutineRun, RoutineRunList, RoutineRunsEmpty, SortableRoutineItem };
 export type { RoutineRunState };
