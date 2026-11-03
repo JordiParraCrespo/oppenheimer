@@ -1629,6 +1629,13 @@
           "matched_one": "La sesión «{{name}}» imprimió una línea que coincide con «{{pattern}}»",
           "matched_other": "La sesión «{{name}}» imprimió {{count}} líneas que coinciden con «{{pattern}}»"
         },
+        "pullRequest": {
+          "check_failed": "Pull request #{{number}} de {{repository}}: fallaron los checks",
+          "check_passed": "Pull request #{{number}} de {{repository}}: pasaron los checks",
+          "review": "Pull request #{{number}} de {{repository}}: nueva revisión",
+          "comment": "Pull request #{{number}} de {{repository}}: nuevo comentario",
+          "pr_merged": "Pull request #{{number}} de {{repository}}: fusionada"
+        },
         "goal": {
           "continued": "Objetivo · continuación {{step}} de {{limit}}",
           "met": "Objetivo cumplido: «{{objective}}»",

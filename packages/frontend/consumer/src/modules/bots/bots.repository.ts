@@ -39,6 +39,7 @@ import {
   type BotSection,
   type BotToolDecision,
   type BotUsage,
+  PULL_REQUEST_WAKE_EVENTS,
 } from '@oppenheimer/shared/schemas/bot';
 import {
   type BotMailDraft,
@@ -217,7 +218,7 @@ function toAttachment(dto: BotAttachmentResponseDto): BotAttachment {
 /**
  * The wire's event as the union the chat draws from, kind by kind: an
  * approval, a routine's activity, a message from another bot, or the answer
- * to an ask, or a session the bot follows waking it. An outcome or a state
+ * to an ask, or a session or a pull request the bot follows waking it. An outcome or a state
  * this client does not know reads as no event, and the chat falls back to
  * the message's first line.
  */
@@ -286,6 +287,19 @@ function toEvent(dto: NonNullable<BotMessageResponseDto['event']>): BotMessageEv
             turn: dto.turn,
             state,
             match: dto.match ? { pattern: dto.match.pattern, count: dto.match.count } : null,
+          }
+        : null;
+    }
+    case 'pull_request': {
+      const event = PULL_REQUEST_WAKE_EVENTS.find((candidate) => candidate === dto.event);
+      return event
+        ? {
+            kind: 'pull_request',
+            subscriptionId: dto.subscriptionId,
+            githubRepoId: dto.githubRepoId,
+            repository: dto.repository,
+            number: dto.number,
+            event,
           }
         : null;
     }

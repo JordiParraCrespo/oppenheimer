@@ -7,6 +7,7 @@ import {
   type SessionPermission,
 } from '../agents/catalog.js';
 import { GROK_4_5_LEVELS, GROK_LEVELS, levels } from '../agents/effort-levels.js';
+import type { GithubEventType } from '../automations/catalog.js';
 import { isValidTimeZone } from '../automations/schedule.js';
 
 /**
@@ -612,6 +613,41 @@ export interface BotSessionEvent {
 }
 
 /**
+ * The GitHub events on a pull request that wake whoever follows it: a
+ * session's agent that ran `runner sessions watch-pr`
+ * (`product/next-steps/agent-tools.md` §3), or a bot subscribed with
+ * `watch_pull_request` (`27-bot-subscriptions.md` §7). Each is a type the
+ * GitHub adapter already normalizes a delivery to.
+ */
+export const PULL_REQUEST_WAKE_EVENTS = [
+  'check_failed',
+  'check_passed',
+  'review',
+  'comment',
+  'pr_merged',
+] as const satisfies readonly GithubEventType[];
+export type PullRequestWakeEvent = (typeof PULL_REQUEST_WAKE_EVENTS)[number];
+
+/**
+ * A pull request a bot is subscribed to woke it (`27-bot-subscriptions.md`
+ * §7): what GitHub said happened, from the event's metadata alone. The
+ * repository is the name it had when the bot watched it; never a comment's
+ * or a review's words.
+ */
+export interface BotPullRequestEvent {
+  kind: 'pull_request';
+  /** The subscription that woke the bot. */
+  subscriptionId: string;
+  /** GitHub's repository id, as a string: it is a bigint. */
+  githubRepoId: string;
+  /** `owner/name`. */
+  repository: string;
+  number: number;
+  /** What happened on it. */
+  event: PullRequestWakeEvent;
+}
+
+/**
  * A goal keeps a bot going (`25-bots.md` §4.1; from Grok Bot's goals,
  * `research/lessons-from-grok-bot.md` §9 row 10, and Claude Code's `/goal`):
  * the person sets one with `/goal <condition>`, or the bot with `set_goal`.
@@ -844,6 +880,7 @@ export type BotMessageEvent =
   | BotPeerMessageEvent
   | BotPeerReplyEvent
   | BotSessionEvent
+  | BotPullRequestEvent
   | BotGoalEvent;
 
 /** The kinds of event, for a reader that checks one before trusting its fields. */
@@ -854,6 +891,7 @@ export const BOT_MESSAGE_EVENT_KINDS = [
   'bot_message',
   'bot_reply',
   'session',
+  'pull_request',
   'goal',
 ] as const;
 export type BotMessageEventKind = (typeof BOT_MESSAGE_EVENT_KINDS)[number];

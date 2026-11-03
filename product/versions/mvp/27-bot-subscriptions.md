@@ -249,10 +249,71 @@ subscriptions, and a pure `wakeFor` for its states:
 idea built earlier for one resource each. They stay as they are; a later
 pass may move them onto subscriptions if a third copy appears.
 
+### 7.1 As built: `pull_request` (2026-11-03)
+
+The plan above held, with three changes it did not foresee: the event is
+the inbound-events hub's, not the pull-requests module's; the wake is the
+event's metadata, not a fresh read; and a close without a merge wakes
+nothing yet. A session's agent already watched pull requests the same way
+(`../../next-steps/agent-tools.md` §3); this is its bot side, and the two
+share their words (`github/domain/github-pull-event.policy.ts`).
+
+- **The subject.** `"resourceKind"` gains `pull_request`. A pull request is
+  not ours and has no uuid here, so `"resourceId"` is null for one and the
+  row names it by `"githubRepoId"` (`bigint`), `"pullNumber"` and
+  `"repositoryFullName"`, the `owner/name` it had when watched, for the
+  list and the wakes. `CHK_bot_subscription_subject` ties the columns to
+  the kind: a session names a session alone; a pull request names all
+  three, no session, `until` `closed`, and no terminal watch.
+  `UQ_bot_subscription_bot_pull_request` holds one per bot and pull request,
+  and `IDX_bot_subscription_pull_request` serves the webhook's read, both
+  partial on the kind (`1793707588046-AddBotPullRequestSubscriptions`).
+- **The tools.** `watch_pull_request { repository, number, purpose? }`,
+  `repository` as `owner/name` or the id `list_repositories` gives, and
+  `unwatch_pull_request { repository, number }`, listed under GitHub in
+  Settings, Permissions (`pulls:read`). A watch looks for the repository
+  among those the workspace's usable installations cover, read as the
+  owner, then reads the pull request as the owner: a repository the owner
+  cannot read, a number that is not a pull request, or one already merged
+  or closed is refused and nothing is stored. Neither asks, as
+  `watch_session` does not. `list_watches` lists both kinds. The limits
+  are the session's: 20 wakes a subscription, and 50 subscriptions a bot,
+  sessions and pull requests together. Watching again keeps the row, its
+  id and its wakes.
+- **What wakes it.** The GitHub events the hub stores, on that repository
+  id and number in the event's workspace: `check_failed`, `check_passed`,
+  `review`, `comment`, `pr_merged` (`PULL_REQUEST_WAKE_EVENTS`, shared with
+  a session's agent). Our own app's events, an event with no pull request
+  number, or one about an issue wake nobody.
+  `BotPullRequestWakeDomainEventHandler` listens to
+  `ExternalEventReceivedDomainEvent` with `suppressErrors: false`, and
+  dispatches `WakeOnPullRequestCommand` per subscription; one that fails is
+  thrown after the others ran, for the outbox to deliver again.
+- **The wake.** The thin-event rule of §1 does not carry over: GitHub is
+  not ours to re-read as the owner on every event. The wake re-resolves the
+  bot and its owner (gone, or no longer a member: it ends, `access_lost`),
+  and is otherwise made of the event's metadata alone, each field held to
+  the characters GitHub allows: the kind, the number, the repository, a
+  check's name and conclusion, a review's state and the actor's login.
+  Never a comment's or a review's words: the bot is told to read the pull
+  request with `get_pull_request`. Its key is
+  `subscription:<id>:github:<inboundEventId>`, so a redelivered event is
+  one turn, and a turn found already queued is not counted again. It opens
+  with an `event` message of kind `pull_request` (the subscription, the
+  repository id and name, the number and what happened), drawn in the chat
+  as one line ("Pull request #128 of acme/app: checks failed"). A merge is
+  the last wake: the subscription ends after it.
+- **Not yet.** GitHub's normalizer makes no event of a pull request closed
+  without a merge, so such a subscription stays until it is unwatched or
+  reaches its wake limit; a `pr_closed` type in the catalog is what would
+  end it. A repository renamed on GitHub is still found (by id), under its
+  old name in the list.
+
 ## 8. Visibility
 
 - `list_watches` shows the bot its active subscriptions: session, purpose,
-  until, wakes so far, since when.
+  until, wakes so far, since when; and, since §7.1, the pull requests it
+  follows.
 - A wake is a line in the chat, so the person sees every one.
 - `GET /v1/bots/:id/subscriptions` and a list in bot settings wait for
   slice B.
@@ -265,7 +326,8 @@ pass may move them onto subscriptions if a third copy appears.
   `unwatch_session` and `list_watches`.
 - **B. Visibility in the console**: the subscriptions list on the bot's
   settings, with Unwatch.
-- **C. More kinds**: automation runs, then pull requests (§7).
+- **C. More kinds**: automation runs, then pull requests (§7). Pull
+  requests were built first, 2026-11-03 (§7.1).
 
 ## Decided
 
@@ -284,3 +346,9 @@ pass may move them onto subscriptions if a third copy appears.
   minutes later, that wakes it only when the task never started or its agent
   was never seen working (§4.1). It changes §2's "`queued` and `in_progress`
   never wake" for that one case; there is still no progress update.
+- 2026-11-03: **a bot follows a pull request** (§7.1). The wake is the
+  GitHub event's metadata, not a re-read as the owner: it changes §1's
+  "the event is thin, the read is fresh" for this kind, because the pull
+  request is GitHub's. The event comes from the inbound-events hub, not the
+  pull-requests module §7 named, and a close without a merge does not end
+  the subscription yet.

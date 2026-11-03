@@ -4010,6 +4010,30 @@ export type BotSessionEventResponseDto = {
     match?: BotSessionMatchResponseDto | null;
 };
 
+export type BotPullRequestEventResponseDto = {
+    kind: 'pull_request';
+    /**
+     * The subscription that woke the bot.
+     */
+    subscriptionId: string;
+    /**
+     * GitHub's repository id, as a string: it is a bigint.
+     */
+    githubRepoId: string;
+    /**
+     * `owner/name`, as it was when the bot watched it.
+     */
+    repository: string;
+    /**
+     * The pull request number.
+     */
+    number: number;
+    /**
+     * What happened on it, from GitHub's metadata; never anyone's words.
+     */
+    event: 'check_failed' | 'check_passed' | 'review' | 'comment' | 'pr_merged';
+};
+
 export type BotGoalEventResponseDto = {
     kind: 'goal';
     /**
@@ -4130,7 +4154,7 @@ export type BotMessageResponseDto = {
     /**
      * What an event says happened, by `kind`; null on every other role.
      */
-    event: BotApprovalEventResponseDto | BotQuestionEventResponseDto | BotRoutineEventResponseDto | BotPeerMessageEventResponseDto | BotPeerReplyEventResponseDto | BotSessionEventResponseDto | BotGoalEventResponseDto | null;
+    event: BotApprovalEventResponseDto | BotQuestionEventResponseDto | BotRoutineEventResponseDto | BotPeerMessageEventResponseDto | BotPeerReplyEventResponseDto | BotSessionEventResponseDto | BotPullRequestEventResponseDto | BotGoalEventResponseDto | null;
     /**
      * The images a message of yours carries, in the order attached; read each from `GET /bots/:id/attachments/:attachmentId/content`. Empty on every other role.
      */
