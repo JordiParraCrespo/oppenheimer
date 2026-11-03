@@ -12,6 +12,7 @@
  * a line this does not recognise is skipped, never an error.
  */
 
+import { CHAT_BATCH_MAX_ENTRIES, CHAT_ENTRY_MAX_BYTES } from '@oppenheimer/shared/protocol';
 import type { ChatItemTodo } from '@oppenheimer/shared/schemas/chat-item';
 import { type ChatAnswer, QUESTION_KEY_GAP_MS, questionKeys } from '@oppenheimer/shared/sessions';
 import { type ChatToolKind, classifyTool, fieldOf, todosOf } from '../../chat/chat-tools';
@@ -169,6 +170,12 @@ export interface ChatQueued {
 export interface ChatState {
   /** The host follows this session's transcript: a first batch has arrived. */
   available: boolean;
+  /**
+   * The conversation's history is still arriving on a first load: `turns`
+   * stays empty until it has, so the chat draws it once, at its end, rather
+   * than every part of it as each lands.
+   */
+  loading: boolean;
   turns: ChatTurn[];
   /** What waits to be sent, in order; the first goes once the agent settles. */
   queued: readonly ChatQueued[];
@@ -183,7 +190,14 @@ export interface ChatBatch {
   entries: readonly string[];
 }
 
-const EMPTY: ChatState = { available: false, turns: [], queued: [], status: null, files: [] };
+const EMPTY: ChatState = {
+  available: false,
+  loading: false,
+  turns: [],
+  queued: [],
+  status: null,
+  files: [],
+};
 
 /** The entry the runner adds for the status line's figures. */
 const STATUS_ENTRY = 'oppenheimer.status';
@@ -199,6 +213,23 @@ const ESCAPE = '\u001b';
  * the runner's 300ms between reads of a long history.
  */
 const REPLAY_SETTLE_MS = 3000;
+/**
+ * How long a first load's history may go quiet before it is taken as all
+ * there: past the runner's 300ms between reads of a long transcript.
+ */
+const LOAD_SETTLE_MS = 500;
+
+/**
+ * Whether a batch is the last of a read of the transcript: the runner fills
+ * a batch to `CHAT_BATCH_MAX_ENTRIES` entries or about 128KB, so one under
+ * both, by entries and by a full entry's size, is all that read had.
+ */
+function endsARead(batch: ChatBatch): boolean {
+  if (batch.entries.length >= CHAT_BATCH_MAX_ENTRIES) return false;
+  let bytes = 0;
+  for (const entry of batch.entries) bytes += entry.length;
+  return bytes < CHAT_ENTRY_MAX_BYTES;
+}
 /** How long the agent's prompt takes the text before Enter submits it. */
 const SUBMIT_AFTER_TEXT_MS = 60;
 /**
@@ -243,6 +274,11 @@ class Transcript {
   private replayed: number | null = null;
 
   /** A replay has not yet sent again every line held. */
+  /** Nothing of the conversation is held yet. */
+  get empty(): boolean {
+    return this.lines.length === 0;
+  }
+
   get replaying(): boolean {
     return this.replayed !== null;
   }
@@ -371,6 +407,8 @@ class Transcript {
  */
 export class SessionChat {
   private readonly transcript = new Transcript();
+  /** A first load's history is still arriving (`ChatState.loading`). */
+  private loading = false;
   private type: ((data: string) => void) | null = null;
   private state: ChatState = EMPTY;
   private readonly listeners = new Set<() => void>();
@@ -385,8 +423,18 @@ export class SessionChat {
   private queuedDuring: string | null = null;
   private queuedIds = 0;
   private replayTimer: ReturnType<typeof setTimeout> | null = null;
+  private loadTimer: ReturnType<typeof setTimeout> | null = null;
 
   apply(batch: ChatBatch): void {
+    // A first load: a history arriving where none is held yet. It is held
+    // back until it has all come, so the chat does not draw each part of a
+    // long one in turn, its window running through the conversation.
+    if (batch.reset && batch.entries.length > 0 && this.transcript.empty) this.loading = true;
+    if (this.loading && endsARead(batch)) {
+      this.loading = false;
+      if (this.loadTimer) clearTimeout(this.loadTimer);
+      this.loadTimer = null;
+    }
     let changed = batch.reset ? this.transcript.reset(batch.entries.length > 0) : false;
     let status = this.state.status;
     let files = this.state.files;
@@ -407,10 +455,18 @@ export class SessionChat {
         if (file && !files.some((held) => held.id === file.id)) files = [...files, file];
       } else if (this.transcript.take(raw, entry)) changed = true;
     }
-    if (changed || !this.state.available || files !== this.state.files) {
+    if (this.loading) {
+      if (!this.state.loading || status !== this.state.status || files !== this.state.files) {
+        this.publish({ ...this.state, available: true, loading: true, status, files });
+      }
+      this.watchLoad();
+      return;
+    }
+    if (changed || !this.state.available || this.state.loading || files !== this.state.files) {
       this.publish({
         ...this.state,
         available: true,
+        loading: false,
         turns: this.turnsOf(files),
         status,
         files,
@@ -421,6 +477,17 @@ export class SessionChat {
     }
     this.watchReplay();
     this.flush();
+  }
+
+  /** Ends a first load that went quiet: what has come is the history. */
+  private watchLoad(): void {
+    if (this.loadTimer) clearTimeout(this.loadTimer);
+    this.loadTimer = setTimeout(() => {
+      this.loadTimer = null;
+      this.loading = false;
+      this.publish({ ...this.state, loading: false, turns: this.turnsOf(this.state.files) });
+      this.flush();
+    }, LOAD_SETTLE_MS);
   }
 
   /**
