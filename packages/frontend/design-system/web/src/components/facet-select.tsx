@@ -95,8 +95,9 @@ type FacetOption = {
  *   queue shows every facet at once.
  *
  * A facet over a fixed set (the lanes, the checks) is this radio menu; one
- * over a list the workspace grows (Plan's projects and milestones) is
- * `SearchableFacetSelect`, on the same trigger. Several independent facets of
+ * over a list the workspace grows (Plan's milestones) is
+ * `SearchableFacetSelect`, on the same trigger, and `SearchableFacetMultiSelect`
+ * when the reader may pick several (Plan's projects). Several independent facets of
  * one menu (the sessions filter) stay `DropdownMenuSub`s; this is a facet
  * that sits on the page.
  *
@@ -158,7 +159,7 @@ function FacetSelect({
 
 /**
  * SearchableFacetSelect — `FacetSelect`'s trigger over a list the workspace
- * grows: Plan's Project and Milestone. It opens the Bots picker's shape, a
+ * grows: Plan's Milestone. It opens the Bots picker's shape, a
  * `SearchList` with the count and the check on each row, and a pick closes it.
  * The first option is still the facet unset, and lights nothing.
  *
@@ -223,5 +224,92 @@ function SearchableFacetSelect({
   );
 }
 
-export { FacetSelect, SearchableFacetSelect };
+/**
+ * SearchableFacetMultiSelect — `SearchableFacetSelect` over a set: Plan's
+ * Project, where a reader follows several projects at once. Its rows are
+ * checks, and the popup stays open while they are toggled. The first option
+ * is still the facet unset ("All projects"): it is checked while nothing is,
+ * and picking it clears the set. The trigger reads the first picked option's
+ * label, then `+N` in mono for the rest, and lights like a single pick.
+ *
+ * ```tsx
+ * <SearchableFacetMultiSelect
+ *   variant="pill"
+ *   label="Project"
+ *   icon={<FolderIcon />}
+ *   options={[{ value: 'all', label: 'All projects' }, ...projects]}
+ *   values={picked}
+ *   onValuesChange={setPicked}
+ *   searchPlaceholder="Search projects"
+ *   emptyText={(query) => `Nothing matches “${query}”.`}
+ * />
+ * ```
+ */
+function SearchableFacetMultiSelect({
+  label,
+  options,
+  values,
+  onValuesChange,
+  searchPlaceholder,
+  emptyText,
+  variant = 'labelled',
+  icon,
+  menuWidth = 272,
+  className,
+}: {
+  label: string;
+  options: SearchListOption[];
+  /** The options picked, in the order they were picked; empty is the facet unset. */
+  values: readonly string[];
+  onValuesChange: (values: string[]) => void;
+  searchPlaceholder: string;
+  emptyText: (query: string) => React.ReactNode;
+  variant?: FacetVariant;
+  icon?: React.ReactNode;
+  menuWidth?: number;
+  className?: string;
+}) {
+  const unset = options[0];
+  const picked = options.filter((o) => o !== unset && values.includes(o.value));
+  const first = values.map((value) => picked.find((o) => o.value === value)).find(Boolean);
+  const current =
+    picked.length > 1 ? (
+      <>
+        {first?.label}{' '}
+        <span className="figures font-mono text-[11.5px]">+{picked.length - 1}</span>
+      </>
+    ) : (
+      first?.label
+    );
+  return (
+    <Popover>
+      <PopoverTrigger
+        {...facetTriggerProps({
+          label,
+          current,
+          set: picked.length > 0,
+          variant,
+          icon,
+          className,
+        })}
+      />
+      <ChipSelectPopup density="menu" width={menuWidth} className="p-0">
+        <SearchList
+          aria-label={label}
+          options={options}
+          value={picked.length ? picked.map((o) => o.value) : unset ? [unset.value] : []}
+          onPick={(option, selected) => {
+            if (option === unset) return onValuesChange([]);
+            const rest = values.filter((value) => value !== option.value);
+            onValuesChange(selected ? [...rest, option.value] : rest);
+          }}
+          searchPlaceholder={searchPlaceholder}
+          emptyText={emptyText}
+        />
+      </ChipSelectPopup>
+    </Popover>
+  );
+}
+
+export { FacetSelect, SearchableFacetMultiSelect, SearchableFacetSelect };
 export type { FacetOption };
