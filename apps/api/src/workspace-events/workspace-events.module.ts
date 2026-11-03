@@ -6,6 +6,7 @@ import { BotApprovalChangesDomainEventHandler } from './application/event-handle
 import { HostChangesDomainEventHandler } from './application/event-handlers/host-changes.domain-event-handler';
 import { InboxMarkChangesDomainEventHandler } from './application/event-handlers/inbox-mark-changes.domain-event-handler';
 import { PlanChangesDomainEventHandler } from './application/event-handlers/plan-changes.domain-event-handler';
+import { ProjectChangesDomainEventHandler } from './application/event-handlers/project-changes.domain-event-handler';
 import { SessionChangesDomainEventHandler } from './application/event-handlers/session-changes.domain-event-handler';
 import { RedisWorkspaceEventsAdapter } from './infrastructure/redis-workspace-events.adapter';
 import { StreamWorkspaceEventsHttpController } from './queries/stream-workspace-events/stream-workspace-events.http.controller';
@@ -14,6 +15,7 @@ import { WORKSPACE_EVENT_BUS } from './workspace-events.di-tokens';
 
 /**
  * The console's change feed. The modules that own sessions, runs, hosts, Plan,
+ * projects,
  * bots' approvals and the Inbox
  * raise domain events as they always do; this module's handlers, run by the
  * outbox after the commit, publish them to the workspace's (or the person's)
@@ -32,6 +34,7 @@ import { WORKSPACE_EVENT_BUS } from './workspace-events.di-tokens';
     AutomationRunChangesDomainEventHandler,
     HostChangesDomainEventHandler,
     PlanChangesDomainEventHandler,
+    ProjectChangesDomainEventHandler,
     BotApprovalChangesDomainEventHandler,
     InboxMarkChangesDomainEventHandler,
   ],

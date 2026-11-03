@@ -22,6 +22,10 @@ describe('readableTypes', () => {
       'pairing.spent',
       'inboxMark.changed',
     ]);
+    expect([...readableTypes(ability(['Project']), null)]).toEqual([
+      'project.changed',
+      'inboxMark.changed',
+    ]);
     expect([...readableTypes(ability(['Bot']), null)]).toEqual([
       'botApproval.changed',
       'inboxMark.changed',

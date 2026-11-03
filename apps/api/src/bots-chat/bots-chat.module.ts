@@ -31,6 +31,7 @@ import { BotOwnerPermissionsResolver } from './application/bot-owner-permissions
 import { BotOwnerScopeResolver } from './application/bot-owner-scope.resolver';
 import { BotPermissionsResolver } from './application/bot-permissions.resolver';
 import { BotPlanToolsFactory } from './application/bot-plan-tools.factory';
+import { BotProjectToolsFactory } from './application/bot-project-tools.factory';
 import { BotPullRequestToolsFactory } from './application/bot-pull-request-tools.factory';
 import { BotQuestionDecisionResolver } from './application/bot-question-decision.resolver';
 import { BotQuestionToolsFactory } from './application/bot-question-tools.factory';
@@ -356,6 +357,7 @@ const queryHandlers: Provider[] = [
     BotSelfToolsFactory,
     BotSkillToolsFactory,
     BotPlanToolsFactory,
+    BotProjectToolsFactory,
     BotGithubToolsFactory,
     BotPullRequestToolsFactory,
     BotIssueToolsFactory,

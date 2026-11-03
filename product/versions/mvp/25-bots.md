@@ -802,11 +802,46 @@ as the person does and act on them. Three rules hold it:
 | Tool | Does | Default |
 |------|------|---------|
 | `list_projects` / `get_project` | The workspace's projects, or one with its repositories, default host and agent | auto |
-| `create_project` / `update_project` | Make a project, or change its name, repositories, default host or agent | ask |
+| `create_project` / `update_project` | Make a project, or change its name, repositories, default host or agent; a name another project already has is refused unless the person asked for a second one (built 2026-11-03, issue #647) | auto |
+| `archive_project` | Archive a project: nothing new goes in it and its automations pause; refused while it has sessions that are not closed, which the call names (built 2026-11-03, issue #647) | always asks, per call |
+| `move_session` | List an existing session under another project, or Unassigned (built 2026-11-03, issue #647) | auto |
 | `list_tasks` / `get_task` / `plan_summary` | Tasks, milestones, stats | auto |
-| `create_task` / `update_task` / `move_task` | Add a task, edit its title, notes, milestone, due date or blocked reason, or move it to a column | auto |
+| `create_task` / `update_task` / `move_task` | Add a task, edit its title, notes, project, milestone, due date or blocked reason, or move it to a column | auto |
 | `delete_task` | Delete a task | ask |
 | `start_task_session` | A session for a task | ask |
+
+Built 2026-11-03 (issue #647), after a bot told its owner it could not
+create a project called "local SEO" and to do it in the console. The
+project writes go through the projects' and sessions' own commands in the
+owner's scope, with the request schemas the console's routes validate, so a
+bot meets the rules a person does and no rule of its own beyond one:
+
+- **Making and changing run; archiving always asks.** A project is
+  metadata inside Oppenheimer and a create, an edit or a move can be put
+  back, so under Approve for me they run like the task writes (this table
+  said `ask` before). An archive cannot be undone (there is no restore: the
+  slug is a tombstone, `10-api-modules-and-data-model.md`), so it asks under
+  every preset and its card offers this call only. Its card is not raised
+  for the Unassigned project, an archived one, or one with open sessions:
+  the call names those sessions and the bot asks whether to move or close
+  them. There is no delete, for the same reason there is no restore.
+- **No accidental twins.** The console lets two projects share a name; a
+  bot does not, unless the person said so (`allow_same_name`): a name is
+  compared ignoring case and spaces, archived projects included, and the
+  refusal names the project that has it. Ids are what the tools take, so a
+  name the person used loosely is looked up with `list_projects` and a
+  question is asked when more than one fits.
+- **A move is the session's project and nothing else.** `move_session` is
+  the sessions' own move: an entry in the session's log, folded onto its
+  project. The id, history, state, worktree and branch stay, and a running
+  agent is not interrupted. A closed session, a project the workspace does
+  not hold and an archived project are refused in words, with nothing moved.
+  Repositories are no reason to refuse: a session may work on any, in any
+  project.
+- **The console hears of it.** Moving a session raises `session.changed`;
+  making, changing or archiving a project now raises `project.changed` on
+  the workspace stream, so the sidebar and every project picker show what a
+  bot did from chat without a reload.
 
 ### 4.4 GitHub and pull requests
 | Tool | Does | Default |
