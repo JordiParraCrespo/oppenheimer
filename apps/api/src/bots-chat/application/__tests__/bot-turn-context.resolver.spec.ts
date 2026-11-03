@@ -221,7 +221,9 @@ describe('BotTurnContextResolver', () => {
     expect(systemPrompt).not.toContain('Your context was');
   });
 
-  it('composes the same system prompt on two turns apart in time, zone and hosts', async () => {
+  // What breaks this: a prompt or a cache key that moves between turns, so
+  // the provider's prompt cache never holds the conversation's prefix.
+  it('composes the same system prompt and cache key on two turns apart in time, zone and hosts', async () => {
     const hosts = vi
       .fn<OwnerHostsPort['hostsOf']>()
       .mockResolvedValueOnce([{ id: HOME, name: 'build-01', online: true, runningSessions: 1 }])
@@ -233,6 +235,8 @@ describe('BotTurnContextResolver', () => {
     const first = await resolve(new Date('2026-10-15T09:00:00Z'), 'Europe/Madrid');
     const second = await resolve(new Date('2026-10-16T21:37:00Z'), 'America/New_York');
     expect(second.systemPrompt).toBe(first.systemPrompt);
+    expect(first.cacheKey).toBe('bot-1');
+    expect(second.cacheKey).toBe(first.cacheKey);
     expect(second.message).not.toBe(first.message);
     expect(second.message).toContain('old-laptop');
   });

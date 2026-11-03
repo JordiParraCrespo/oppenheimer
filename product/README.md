@@ -967,6 +967,12 @@ earlier note:
   model judges it after every turn (met, not met, impossible), as Claude
   Code's evaluator does; a person's goal takes up to 20 continuations, a
   bot's 5 unless it asks for up to 20 (25 §4.1, "Built-in commands").
+- `versions/mvp/25-bots.md` §4.1 (2026-11-02) drew `/usage` as three lines
+  of this chat's figures and left the context and plan windows to the
+  composer's meter. On 2026-11-03 the owner asked for a card like Claude
+  Code's small usage card, and smaller: the command as a bubble, then a
+  384px card with the plan's 5-hour and weekly windows as bars, this chat's
+  figures in a grid and the tokens' breakdown (25 §4.1).
 - 2026-10-31: the owner took the six chat slices drawn from a read of Codex
   and Grok (`research/lessons-from-codex-and-grok-chat.md`); they are listed
   in `next-steps/0.7-chat-protocol.md`.
@@ -1094,3 +1100,22 @@ earlier note:
   event's metadata alone, never a re-read: the pull request is GitHub's, not
   ours to re-read on every event. A close without a merge makes no event
   yet, so only a merge ends it (27 §7.1, `next-steps/agent-tools.md` §6).
+- `versions/mvp/25-bots.md` §2 sent a turn the newest messages that fit
+  its history budget, and the OpenAI engine named no conversation to the
+  provider. On 2026-11-03, after `/usage` showed a bot on GPT and Grok at a
+  1% cache hit rate, each request carries the bot's id as its
+  `prompt_cache_key`, and the history loses its oldest messages a block of
+  about 6,000 tokens at a time, so each turn's request starts as the last
+  one's did.
+- `versions/mvp/29-inbox.md` §1 ordered the Inbox most blocked first:
+  approvals and waiting sessions oldest wait first, then requested
+  reviews, ready merges and failed runs. On 2026-11-03 the owner asked for
+  the most recent first, so the list is newest first across every kind,
+  Low items still last; the order is held by the consumer's
+  `composeInbox` test, no longer by the fleet stress suite.
+- `next-steps/0.6-mcp-cli-and-agent.md` asked whether the CLI is a new app
+  or `runner` grows user commands, and noted the starter's CLI and MCP apps
+  were pruned. On 2026-11-02 both came back as their own apps, `apps/cli`
+  (`opp`) and `apps/mcp`, clients of the API on scoped tokens: they reach
+  automations, bots and tasks, which are not the runner's to forward. The
+  runner keeps the same-host verbs.

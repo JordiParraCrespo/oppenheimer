@@ -24,7 +24,7 @@ export type InboxPullReason = 'requested' | 'ready';
 interface InboxItemBase {
   /** The occurrence (§3): what a mark is keyed by, so a new wait comes back. */
   key: string;
-  /** When the wait began: the list's age, and the order within a rank. */
+  /** When the wait began: the list's age and its order, newest first. */
   since: Date;
   /** Every project the item belongs to; empty is No project. */
   projectIds: readonly string[];
@@ -64,7 +64,7 @@ export interface InboxSnoozed {
 
 /** The Inbox at one moment, after the caller's marks. */
 export interface InboxView {
-  /** What needs you, most blocked first, the deprioritized last. */
+  /** What needs you, newest first, the deprioritized last. */
   open: InboxItem[];
   /** Marked done and still needing you by its source: the list's Show done. */
   done: InboxItem[];
@@ -135,31 +135,10 @@ function sessionSince(session: SessionEntity): Date {
   return session.createdAt;
 }
 
-/**
- * The order of §1: approvals, waiting sessions and what agents and bots told
- * you, requested reviews, ready merges, failed runs.
- */
-const RANK: Record<InboxItemKind | 'ready', number> = {
-  approval: 0,
-  session: 0,
-  notice: 0,
-  botNotice: 0,
-  pull: 1,
-  ready: 2,
-  run: 3,
-};
-
-function rankOf(item: InboxItem): number {
-  if (item.kind === 'pull' && item.reason === 'ready') return RANK.ready;
-  return RANK[item.kind];
-}
-
-/** Most blocked first, oldest wait first within a rank, and every Low item after all of them. */
+/** Newest first, as a mail client lists, and every Low item after all of them. */
 function compareInboxItems(a: InboxItem, b: InboxItem): number {
   if (a.low !== b.low) return a.low ? 1 : -1;
-  const rank = rankOf(a) - rankOf(b);
-  if (rank !== 0) return rank;
-  const since = a.since.getTime() - b.since.getTime();
+  const since = b.since.getTime() - a.since.getTime();
   return since !== 0 ? since : a.key.localeCompare(b.key);
 }
 

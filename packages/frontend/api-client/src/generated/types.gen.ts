@@ -1959,6 +1959,18 @@ export type AnswerSessionDecisionRequest = {
     option?: number;
 };
 
+export type SendSessionPromptRequest = {
+    text: string;
+};
+
+export type SentSessionPromptResponseDto = {
+    /**
+     * The `seq` of the `prompt.sent` entry this request recorded. What follows it in the session's log (`GET /sessions/{id}/events?afterSeq=`) is the agent's answer: a caller waiting on the prompt reads from here, so the state the session was in before the prompt is never taken for its outcome.
+     */
+    seq: number;
+    session: SessionResponseDto;
+};
+
 export type ReportCloudStatusRequest = {
     sessions: Array<{
         cloudSessionId: string;
@@ -4089,6 +4101,17 @@ export type BotSubagentRunResponseDto = {
     durationMs: number;
 };
 
+export type BotToolStepRateLimitResponseDto = {
+    /**
+     * The system limiting our requests ("Gmail", "GitHub").
+     */
+    system: string;
+    /**
+     * When it may be called again.
+     */
+    resetAt: string;
+};
+
 export type BotToolStepResponseDto = {
     callId: string;
     /**
@@ -4124,6 +4147,10 @@ export type BotToolStepResponseDto = {
     mailDraft: {
         [key: string]: unknown;
     } | null;
+    /**
+     * The system that was limiting our requests when the call ended, and until when: the chat draws the step as a wait, not a failure. Null when no limit stopped it.
+     */
+    rateLimit: BotToolStepRateLimitResponseDto | null;
 };
 
 export type BotAttachmentResponseDto = {
@@ -9971,6 +9998,54 @@ export type AnswerSessionDecisionResponses = {
 };
 
 export type AnswerSessionDecisionResponse = AnswerSessionDecisionResponses[keyof AnswerSessionDecisionResponses];
+
+export type SendSessionPromptData = {
+    body: SendSessionPromptRequest;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/sessions/{id}/prompt';
+};
+
+export type SendSessionPromptErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * SESSIONS_001 — Session not found
+     */
+    404: ProblemDetailsDto;
+    /**
+     * SESSIONS_036 — The agent is not waiting for a prompt
+     *
+     * SESSIONS_014 — That session is stopped
+     *
+     * SESSIONS_005 — That session is closed
+     */
+    409: ProblemDetailsDto;
+    /**
+     * RATE_001 — Rate limit reached
+     */
+    429: ProblemDetailsDto;
+    /**
+     * SESSIONS_016 — The host is offline
+     */
+    503: ProblemDetailsDto;
+};
+
+export type SendSessionPromptError = SendSessionPromptErrors[keyof SendSessionPromptErrors];
+
+export type SendSessionPromptResponses = {
+    200: SentSessionPromptResponseDto;
+};
+
+export type SendSessionPromptResponse = SendSessionPromptResponses[keyof SendSessionPromptResponses];
 
 export type StopSessionData = {
     body?: never;

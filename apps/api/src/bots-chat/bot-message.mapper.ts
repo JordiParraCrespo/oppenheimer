@@ -24,6 +24,7 @@ import {
 import { BotMessageOrmEntity } from './database/bot-message.orm-entity';
 import type { BotSteerTaken } from './database/bot-turn.repository.port';
 import { BotMessageEntity, type BotToolStep } from './domain/bot-message.entity';
+import { rateLimitOfRecord } from './domain/bot-rate-limit.policy';
 import type { SummarizableMessage } from './domain/bot-summary.policy';
 import { ENDED_TURN_STATUSES } from './domain/bot-turn.entity';
 import { BotAttachmentResponseDto } from './dtos/bot-attachment.response.dto';
@@ -62,6 +63,7 @@ export class BotMessageMapper
       subagents: step.subagents,
       allowedBy: step.allowedBy,
       mailDraft: step.mailDraft,
+      rateLimit: rateLimitRecordOf(step),
     }));
     record.position = entity.position;
     record.event = entity.event ? { ...entity.event } : null;
@@ -104,6 +106,7 @@ export class BotMessageMapper
       subagents: step.subagents,
       allowedBy: step.allowedBy,
       mailDraft: step.mailDraft,
+      rateLimit: rateLimitRecordOf(step),
     }));
     dto.event = entity.event ? toEventResponse(entity.event) : null;
     dto.attachments = entity.attachments.map((attachment) =>
@@ -151,7 +154,15 @@ function toStep(raw: Record<string, unknown>): BotToolStep {
     subagents: toSubagentRuns(raw.subagents),
     allowedBy: typeof raw.allowedBy === 'string' ? raw.allowedBy : null,
     mailDraft: toMailDraft(raw.mailDraft),
+    rateLimit: rateLimitOfRecord(raw.rateLimit),
   };
+}
+
+/** A step's limit as the column and the response hold it: the time as ISO. */
+function rateLimitRecordOf(step: BotToolStep): { system: string; resetAt: string } | null {
+  return step.rateLimit
+    ? { system: step.rateLimit.system, resetAt: step.rateLimit.resetAt.toISOString() }
+    : null;
 }
 
 /**

@@ -8,11 +8,12 @@ import {
 } from '@oppenheimer/design-system-web';
 import { ArrowDown, ChevronUp } from '@oppenheimer/design-system-web/icons';
 import type { SessionChat as Chat, SessionAgent } from '@oppenheimer/frontend-consumer';
+import { LoadingStatus } from '@oppenheimer/frontend-web';
 import { useState } from 'react';
 import { flushSync } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { TerminalColumn } from '../components/terminal-column';
-import { useChatTurnIds } from '../hooks/use-session-chat';
+import { useChatLoading, useChatTurnIds } from '../hooks/use-session-chat';
 import type { ChatAttach } from '../lib/chat-blocks';
 import { SessionChatAttachingSend } from './session-chat-attaching-send';
 import { SessionChatSend } from './session-chat-send';
@@ -68,6 +69,7 @@ export function SessionChat({
   // The ids alone: each turn subscribes to its own record, so a line the
   // agent writes redraws the turn it lands in and not the list.
   const ids = useChatTurnIds(chat);
+  const loading = useChatLoading(chat);
   const { scroller, content, atLatest, toLatest } = useStickToBottom();
   // The first turn drawn. At the latest it follows the end; away from it,
   // it is held, so a turn arriving never takes one off the top of what the
@@ -98,7 +100,13 @@ export function SessionChat({
           className="min-h-0 flex-1 overflow-y-auto pt-6 pb-4 [overflow-anchor:none]"
         >
           <TerminalColumn ref={content} className="flex min-h-full flex-col">
-            {ids.length === 0 ? (
+            {loading ? (
+              // The history is still arriving: the conversation is drawn once
+              // it has, at its end, so until then the column stays empty.
+              <div aria-busy className="flex-1">
+                <LoadingStatus />
+              </div>
+            ) : ids.length === 0 ? (
               <EmptyState className="flex-1">
                 <EmptyState.Header>
                   {agent ? (

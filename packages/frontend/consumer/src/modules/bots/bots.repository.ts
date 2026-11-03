@@ -200,6 +200,9 @@ function toMessage(dto: BotMessageResponseDto): BotMessageEntity {
   const steps: BotToolStep[] = dto.steps.map((step) => ({
     ...step,
     mailDraft: draftOf(step.mailDraft),
+    rateLimit: step.rateLimit
+      ? { system: step.rateLimit.system, resetAt: new Date(step.rateLimit.resetAt) }
+      : null,
   }));
   return new BotMessageEntity(
     dto.id,

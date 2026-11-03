@@ -21,6 +21,7 @@ import {
   sharedFileOf,
   withSharedFiles,
 } from './session-chat-files';
+import { LOAD_SETTLE_MS, loadingAfter, Quiet, REPLAY_SETTLE_MS } from './session-chat-history';
 
 /** One item of the agent's task list: the chat module's, which the bots chat reads too. */
 export type ChatTodo = ChatItemTodo;
@@ -169,6 +170,12 @@ export interface ChatQueued {
 export interface ChatState {
   /** The host follows this session's transcript: a first batch has arrived. */
   available: boolean;
+  /**
+   * The conversation's history is still arriving on a first load: `turns`
+   * stays empty until it has, so the chat draws it once, at its end, rather
+   * than every part of it as each lands.
+   */
+  loading: boolean;
   turns: ChatTurn[];
   /** What waits to be sent, in order; the first goes once the agent settles. */
   queued: readonly ChatQueued[];
@@ -183,7 +190,14 @@ export interface ChatBatch {
   entries: readonly string[];
 }
 
-const EMPTY: ChatState = { available: false, turns: [], queued: [], status: null, files: [] };
+const EMPTY: ChatState = {
+  available: false,
+  loading: false,
+  turns: [],
+  queued: [],
+  status: null,
+  files: [],
+};
 
 /** The entry the runner adds for the status line's figures. */
 const STATUS_ENTRY = 'oppenheimer.status';
@@ -193,12 +207,6 @@ const PASTE_START = '\u001b[200~';
 const PASTE_END = '\u001b[201~';
 /** The key that stops Claude Code's turn. */
 const ESCAPE = '\u001b';
-/**
- * How long a reconnect's replay may go quiet, short of the lines the chat
- * holds, before those it did not send again are taken as gone: well past
- * the runner's 300ms between reads of a long history.
- */
-const REPLAY_SETTLE_MS = 3000;
 /** How long the agent's prompt takes the text before Enter submits it. */
 const SUBMIT_AFTER_TEXT_MS = 60;
 /**
@@ -243,6 +251,11 @@ class Transcript {
   private replayed: number | null = null;
 
   /** A replay has not yet sent again every line held. */
+  /** Nothing of the conversation is held yet. */
+  get empty(): boolean {
+    return this.lines.length === 0;
+  }
+
   get replaying(): boolean {
     return this.replayed !== null;
   }
@@ -371,6 +384,8 @@ class Transcript {
  */
 export class SessionChat {
   private readonly transcript = new Transcript();
+  /** A first load's history is still arriving (`ChatState.loading`). */
+  private loading = false;
   private type: ((data: string) => void) | null = null;
   private state: ChatState = EMPTY;
   private readonly listeners = new Set<() => void>();
@@ -384,9 +399,13 @@ export class SessionChat {
    */
   private queuedDuring: string | null = null;
   private queuedIds = 0;
-  private replayTimer: ReturnType<typeof setTimeout> | null = null;
+  /** The quiet that ends a first load or a replay that came back short. */
+  private readonly quiet = new Quiet();
 
   apply(batch: ChatBatch): void {
+    // A first load is held back until its history has come, so the chat
+    // draws it once, at its end, not each part of a long one in turn.
+    this.loading = loadingAfter(this.loading, batch, this.transcript.empty);
     let changed = batch.reset ? this.transcript.reset(batch.entries.length > 0) : false;
     let status = this.state.status;
     let files = this.state.files;
@@ -407,37 +426,60 @@ export class SessionChat {
         if (file && !files.some((held) => held.id === file.id)) files = [...files, file];
       } else if (this.transcript.take(raw, entry)) changed = true;
     }
-    if (changed || !this.state.available || files !== this.state.files) {
-      this.publish({
-        ...this.state,
-        available: true,
-        turns: this.turnsOf(files),
-        status,
-        files,
-      });
-    } else if (status !== this.state.status) {
-      // A replay so far, or a status alone: the conversation is as drawn.
-      this.publish({ ...this.state, status });
-    }
-    this.watchReplay();
+    this.publishBatch(changed, status, files);
+    this.quiet.watch(this.settleAfter(), this.settled);
     this.flush();
   }
 
   /**
-   * A replay that stops short of the lines held says the transcript is
-   * shorter now; nothing marks a history's end, so its quiet does.
+   * Publishes what a batch changed, once: the turns are built again only
+   * when the conversation moved and no first load is holding them back.
    */
-  private watchReplay(): void {
-    if (this.replayTimer) clearTimeout(this.replayTimer);
-    this.replayTimer = null;
-    if (!this.transcript.replaying) return;
-    this.replayTimer = setTimeout(() => {
-      this.replayTimer = null;
-      if (!this.transcript.settle()) return;
-      this.publish({ ...this.state, turns: this.turnsOf(this.state.files) });
-      this.flush();
-    }, REPLAY_SETTLE_MS);
+  private publishBatch(
+    changed: boolean,
+    status: ChatStatus | null,
+    files: readonly ChatSharedFile[],
+  ): void {
+    const was = this.state;
+    const redraw =
+      !this.loading && (changed || was.loading || !was.available || files !== was.files);
+    if (
+      !redraw &&
+      was.available &&
+      was.loading === this.loading &&
+      was.status === status &&
+      was.files === files
+    ) {
+      return;
+    }
+    this.publish({
+      ...was,
+      available: true,
+      loading: this.loading,
+      status,
+      files,
+      turns: redraw ? this.turnsOf(files) : was.turns,
+    });
   }
+
+  /** How long a quiet now would mean the history has all come; `null` for nothing to wait on. */
+  private settleAfter(): number | null {
+    if (this.loading) return LOAD_SETTLE_MS;
+    return this.transcript.replaying ? REPLAY_SETTLE_MS : null;
+  }
+
+  /**
+   * The history went quiet: a first load is all there, or a replay that
+   * stopped short of the lines held says the transcript is shorter now.
+   */
+  private settled = (): void => {
+    const redraw = this.loading || this.transcript.settle();
+    this.loading = false;
+    if (redraw)
+      this.publish({ ...this.state, loading: false, turns: this.turnsOf(this.state.files) });
+    this.quiet.watch(this.settleAfter(), this.settled);
+    this.flush();
+  };
 
   /** The conversation's turns, with the shared files placed in them. */
   private turnsOf(files: readonly ChatSharedFile[]): ChatTurn[] {

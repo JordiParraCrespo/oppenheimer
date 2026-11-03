@@ -163,14 +163,31 @@ worker runs it and streams what happens back to the chat.
   hosts, each online or not. The block is added to the message the model
   is sent and never stored: the message kept is what the person wrote, so
   a later turn reads it back without a stale clock.
+- **Each request names its chat to the provider's prompt cache**
+  (2026-11-03). OpenAI, ChatGPT's backend and xAI keep the cache per
+  server, and send the requests that carry one `prompt_cache_key` to the
+  same server; without it a turn's steps, and the next turn, landed on
+  servers that held none of the prefix, and a bot on GPT and Grok read 1%
+  of its input from the cache. The key is the bot's id, since a bot has one
+  conversation (`BotTurnRequest.cacheKey`). xAI reads it as it reads its
+  `x-grok-conv-id` header. Claude Code marks what to cache itself and needs
+  none. A subagent is named by its turn and its place among the children
+  (`<turn>:subagent:<n>`), so each child's steps reach its own prefix and
+  the children that run at once are spread out; a call outside a turn (a
+  summary, a goal or rule review) by its bot and purpose
+  (`<bot>:summary`), since each purpose has a system prompt of its own.
 - **A turn is sent a token budget of history, with a summary of what
   falls out** (2026-10-15). It used to be the last 40 messages, and
   anything older was dropped without a word. Now a turn gets the
   conversation's summary, when there is one, as the first history entry
   (marked as Oppenheimer's record, not instructions, and kept out of the
-  system prompt so the prompt stays stable), then the newest messages after
-  the summary's cutoff that fit 24,000 tokens with it, counted as a token
-  per four characters. When a turn ends and the messages the summary does
+  system prompt so the prompt stays stable), then the messages after the
+  summary's cutoff that fit 24,000 tokens with it, counted as a token per
+  four characters. Past the budget the oldest fall out a block of about
+  6,000 tokens at a time, the blocks cut from the oldest message forward,
+  so a turn's history starts where the last one's did until a whole block
+  no longer fits (2026-11-03): each turn's request is the last one's with
+  the new messages after it, and the provider's prompt cache holds it. When a turn ends and the messages the summary does
   not cover pass one and a half times that budget, a job on the
   `bot-summaries` queue folds the oldest of them into the summary until
   about half the budget is left (at most 32,000 tokens a call; a longer
@@ -428,6 +445,11 @@ it one:
   goal's decision is staged on the outbox for that time instead of now
   (`availableAt`). A continuation queued at once would only meet the limit
   again and spend one of the goal's turns doing it.
+- **The chat draws it as a wait** (2026-11-03). The step keeps its limit
+  (`bot_message.steps[].rateLimit`, `{ system, resetAt }`), and its line
+  has a clock and "Gmail limit · until 10:02" in the line's own colour, not
+  the red "failed"; a group of calls counts it out of its "N failed". An
+  exported chat marks it the same way.
 
 ### 4.1 Itself
 | Tool | Does | Default |
@@ -600,21 +622,24 @@ The owner chose them in this order. Only the first is built:
 **`/usage`** (2026-11-02, from Claude Code's `/usage` and its usage card).
 The console puts a card in the chat, below its last message, and sends the
 bot nothing (`GET /bots/:id/usage`). It stays until Close, and goes with the
-tab: it is never part of the conversation. It is three lines under its
-title and the date of the chat's first turn:
+tab: it is never part of the conversation. Since 2026-11-03 it is drawn
+as Claude Code draws its own: the command as sent, on the right, and a
+small card under it (384px) with Copy and Close:
 
-- turns that ran, time at work (each turn's start to its end, summed),
-  tokens in and out, and the cache hit rate (the share of the input read
-  from the provider's prompt cache);
-- those tokens split into Input (sent fresh), Output, Cache read and Cache
-  write;
-- each model's share of what the turns spent, and the calls the bot made
-  on its owner's key that are not a turn (goal reviews, summaries, rule
-  reviews), which the totals include, so a long goal does not look cheaper
-  than it is.
+- the plan's 5-hour and weekly windows as bars, with when each resets,
+  on a sign-in that reports them (a ChatGPT sign-in today);
+- **This chat**, a grid of figures: time active (each turn's start to its
+  end, summed), turns that ran, the cache hit rate (the share of the input
+  read from the provider's prompt cache), tokens in and out, and each
+  model's share of what the turns spent;
+- **Breakdown**, headed by the model (or how many), the tokens split into
+  Input (sent fresh), Output, Cache read and Cache write, and a line naming
+  the calls the bot made on its owner's key that are not a turn (goal
+  reviews, summaries, rule reviews), which the totals include, so a long
+  goal does not look cheaper than it is.
 
-The context and the plan windows are not repeated: the composer's meter
-shows them. Copy puts the lines on the clipboard as text.
+Claude Code's Cost and API time are left out: nothing here knows a model's
+prices. Copy puts the card on the clipboard as text.
 
 Where it comes from:
 
@@ -1272,3 +1297,23 @@ The decisions it produced:
   counts the calls a bot makes outside its turns (goal reviews, summaries,
   rule reviews), which nothing recorded before. Money is left out until
   Oppenheimer keeps prices.
+- 2026-11-03: **the `/usage` card is drawn like Claude Code's** (§4.1). The
+  owner found the three lines hard to read and asked for a card like Claude
+  Code's small one, then for it smaller: the command as a bubble, a 384px
+  card with the plan's windows as bars, this chat's figures in a grid and
+  the tokens' breakdown. It replaces 2026-11-02's three lines and its
+  leaving the plan windows to the composer's meter.
+- 2026-11-03: **a bot's requests stay cacheable from turn to turn** (§2).
+  `/usage` showed a bot on GPT and Grok reading 1% of its input from the
+  prompt cache. Two causes: the OpenAI engine sent no `prompt_cache_key`,
+  so OpenAI, ChatGPT's backend and xAI routed each request on its own, and
+  the history lost its oldest message on every turn past the budget, which
+  changed the request right after the system prompt. Each request now
+  carries the bot's id as its key (a subagent its turn's and its place, a
+  summary or review its bot's and purpose), and the history loses a block
+  of about 6,000 tokens at a time, so it starts where the last turn's did.
+  From the
+  reconstructed Grok Bot, whose requests carry their conversation's id and
+  whose history only grows until a summary, and Codex, which sends its
+  conversation's id as `prompt_cache_key`. It refines 2026-10-15's history
+  budget, which kept the newest messages that fit.
