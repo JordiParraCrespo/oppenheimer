@@ -636,7 +636,10 @@
     "explored": {
       "title": "Explored"
     },
-    "exploring": "Exploring"
+    "exploring": "Exploring",
+    "file": {
+      "onHost": "It stays on the host: too large for the chat, or not an image or text."
+    }
   },
   "preview": {
     "show": "Show preview",

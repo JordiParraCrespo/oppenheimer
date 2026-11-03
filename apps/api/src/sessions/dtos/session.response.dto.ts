@@ -24,6 +24,7 @@ import {
   SessionPermissionDecisionResponseDto,
   SessionQuestionDecisionResponseDto,
 } from './session-decision.response.dto';
+import { SessionNoticeResponseDto } from './session-notice.response.dto';
 
 /**
  * One repository checked out for this session.
@@ -355,6 +356,14 @@ export class SessionResponseDto {
       'What the agent itself last said it is doing (OSC 7501): why it is blocked, how far along it is, its message. Null when the state was read off its screen.',
   })
   agentReport!: SessionAgentReportResponseDto | null;
+
+  @ApiProperty({
+    type: SessionNoticeResponseDto,
+    nullable: true,
+    description:
+      'The last line the agent sent you (`runner sessions notify`), kept until the session closes. The Inbox shows it until you mark it done.',
+  })
+  notice!: SessionNoticeResponseDto | null;
 
   @ApiProperty()
   createdAt!: Date;

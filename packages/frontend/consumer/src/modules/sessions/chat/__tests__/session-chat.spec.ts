@@ -359,7 +359,13 @@ describe('SessionChat', () => {
 
     const before = chat.snapshot();
     chat.apply({ reset: true, entries: [] });
-    expect(chat.snapshot()).toEqual({ available: true, turns: [], queued: [], status: null });
+    expect(chat.snapshot()).toEqual({
+      available: true,
+      turns: [],
+      queued: [],
+      status: null,
+      files: [],
+    });
     expect(before.turns).toHaveLength(2);
     expect(listener).toHaveBeenCalledTimes(3);
   });
@@ -812,5 +818,77 @@ describe('the status line’s figures', () => {
       ],
     });
     expect(chat.snapshot().status).toEqual({ context: null, fiveHour: null, sevenDay: null });
+  });
+});
+
+describe('files the agent shared', () => {
+  const shared = (id: string, at: string, extra: Record<string, unknown> = {}) =>
+    JSON.stringify({
+      type: 'oppenheimer.file',
+      id,
+      timestamp: at,
+      name: `${id}.png`,
+      path: `/w/shots/${id}.png`,
+      size: 2048,
+      media_type: 'image/png',
+      caption: 'The home page',
+      preview: { type: 'base64', media_type: 'image/jpeg', data: 'AAAA' },
+      ...extra,
+    });
+  const steps = (chat: SessionChat) =>
+    chat.snapshot().turns.map((turn) => turn.steps.map((step) => step.kind));
+
+  // The regression: a file the runner sends after the history (where every
+  // shared entry comes) landing at the end of the latest turn instead of
+  // where the agent shared it.
+  it('places each file in its turn, between the steps written around it', () => {
+    const chat = new SessionChat();
+    chat.apply({
+      reset: true,
+      entries: [
+        JSON.stringify(user('u1', 'Take a screenshot')),
+        JSON.stringify(
+          assistant('a1', [{ type: 'text', text: 'Taking it.' }], '2026-10-21T09:00:10.000Z'),
+        ),
+        JSON.stringify(
+          assistant('a2', [{ type: 'text', text: 'Here it is.' }], '2026-10-21T09:00:30.000Z'),
+        ),
+        JSON.stringify(user('u2', 'Thanks', { timestamp: '2026-10-21T09:05:00.000Z' })),
+        JSON.stringify(
+          assistant('a3', [{ type: 'text', text: 'Welcome.' }], '2026-10-21T09:05:10.000Z'),
+        ),
+      ],
+    });
+    chat.apply({ entries: [shared('f1', '2026-10-21T09:00:20.000Z')] });
+    expect(steps(chat)).toEqual([['reply', 'file', 'reply'], ['reply']]);
+    const file = chat.snapshot().files[0];
+    expect(file).toMatchObject({
+      name: 'f1.png',
+      caption: 'The home page',
+      preview: 'data:image/jpeg;base64,AAAA',
+    });
+  });
+
+  it('holds a file once, though every attachment sends it again', () => {
+    const chat = new SessionChat();
+    const history = [JSON.stringify(user('u1', 'Go'))];
+    chat.apply({ reset: true, entries: [...history, shared('f1', '2026-10-21T09:00:05.000Z')] });
+    chat.apply({ reset: true, entries: [...history, shared('f1', '2026-10-21T09:00:05.000Z')] });
+    expect(chat.snapshot().files).toHaveLength(1);
+    expect(steps(chat)).toEqual([['file']]);
+  });
+
+  it('shows no preview the host did not send as a JPEG', () => {
+    const chat = new SessionChat();
+    chat.apply({
+      reset: true,
+      entries: [
+        JSON.stringify(user('u1', 'Go')),
+        shared('f1', '2026-10-21T09:00:05.000Z', {
+          preview: { type: 'base64', media_type: 'image/svg+xml', data: 'PHN2Zz4=' },
+        }),
+      ],
+    });
+    expect(chat.snapshot().files[0]?.preview).toBeNull();
   });
 });

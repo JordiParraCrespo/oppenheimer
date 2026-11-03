@@ -10,6 +10,7 @@ import type {
   SessionAgentReport,
   SessionDecision,
   SessionGroup,
+  SessionNotice,
   SessionPlace,
   SessionState,
 } from '@oppenheimer/shared';
@@ -417,6 +418,11 @@ export class WorkSessionEntity extends AggregateRoot<WorkSessionProps> {
     return this.props.agentReport;
   }
 
+  /** The last line the agent sent the person (`agent.notified`), or null. */
+  get notice(): SessionNotice | null {
+    return this.props.notice;
+  }
+
   /**
    * Why this session cannot take input right now — typed keys, a pasted
    * image — or `null` when it can. Closed is final and stopped has no window
@@ -483,6 +489,7 @@ export class WorkSessionEntity extends AggregateRoot<WorkSessionProps> {
       closeRefusal: this.props.closeRefusal,
       pendingDecision: this.props.pendingDecision,
       agentReport: this.props.agentReport,
+      notice: this.props.notice,
     };
   }
 
@@ -514,6 +521,7 @@ export class WorkSessionEntity extends AggregateRoot<WorkSessionProps> {
     this.props.closeRefusal = fold.closeRefusal;
     this.props.pendingDecision = fold.pendingDecision;
     this.props.agentReport = fold.agentReport;
+    this.props.notice = fold.notice;
   }
 
   /**

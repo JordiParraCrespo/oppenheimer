@@ -238,6 +238,13 @@ export class WorkSessionOrmEntity {
   agentReport!: unknown;
 
   /**
+   * The last line the agent sent the person (`SessionNotice`), folded from
+   * `agent.notified`. Read back through the schema by the mapper.
+   */
+  @Column({ type: 'jsonb', nullable: true })
+  notice!: unknown;
+
+  /**
    * Who asked for the session: `person`, `automation` (whose run points back
    * here), `review` (a pull request's review session, which the Sessions
    * list leaves out) or `bot` (a bot acting for its owner).

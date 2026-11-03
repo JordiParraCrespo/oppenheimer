@@ -3,16 +3,20 @@ import type {
   SessionAgentReport,
   SessionDecision,
   SessionEffortDto,
+  SessionNotice,
   SessionPermissionDto,
   SessionState,
 } from '@oppenheimer/shared';
 import {
   AGENT_DECISION_EVENT_KIND,
+  AGENT_NOTIFIED_EVENT_KIND,
   agentDecisionPayloadSchema,
+  agentNotifiedPayloadSchema,
   CLOUD_AGENT_IDS,
   DECISION_ANSWERED_EVENT_KIND,
   SESSION_PERMISSIONS,
   sessionAgentReportSchema,
+  sessionNoticeSchema,
 } from '@oppenheimer/shared';
 import { CODING_AGENTS, effortLevelFor, isCodingAgentId } from '@oppenheimer/shared/agents';
 
@@ -138,6 +142,11 @@ export const SESSION_EVENT_KINDS = {
    * state: the entity raises `SessionTerminalMatchedDomainEvent` for it.
    */
   TERMINAL_MATCHED: 'terminal.matched',
+  /**
+   * The agent told the person something (`runner sessions notify`). Payload
+   * `{ id, text }` (`SessionNotice`); the session keeps the latest for the Inbox.
+   */
+  AGENT_NOTIFIED: AGENT_NOTIFIED_EVENT_KIND,
   /** The agent left a report. Payload `{ hash }` — never the report itself. */
   REPORT_PUBLISHED: 'report.published',
   /** Somebody read that report. Payload `{ hash }`. */
@@ -258,6 +267,12 @@ export interface SessionFold {
    * cleared when the agent stops, fails, closes or starts again.
    */
   agentReport: SessionAgentReport | null;
+  /**
+   * The last line the agent sent the person (`agent.notified`), with when it
+   * came. Kept while the session lives, whatever the agent does next: the
+   * Inbox shows it until the person marks it done. Cleared when it closes.
+   */
+  notice: SessionNotice | null;
 }
 
 export const INITIAL_SESSION_FOLD: SessionFold = {
@@ -279,6 +294,7 @@ export const INITIAL_SESSION_FOLD: SessionFold = {
   closeRefusal: null,
   pendingDecision: null,
   agentReport: null,
+  notice: null,
 };
 
 /**
@@ -353,6 +369,16 @@ function decisionOf(payload: unknown): SessionDecision | null {
 function agentReportOf(payload: unknown): SessionAgentReport | null {
   if (typeof payload !== 'object' || payload === null) return null;
   return readAgentReport((payload as { program?: unknown }).program);
+}
+
+/**
+ * A notice narrowed by its schema, from the `jsonb` column it is folded
+ * into: null for none, and for one this build cannot read.
+ */
+export function readNotice(value: unknown): SessionNotice | null {
+  if (value === undefined || value === null) return null;
+  const parsed = sessionNoticeSchema.safeParse(value);
+  return parsed.success ? parsed.data : null;
 }
 
 /**
@@ -442,6 +468,7 @@ export function foldSessionEvent(fold: SessionFold, event: SessionLogEntry): Ses
       closed.stoppedAt = closed.stoppedAt ?? event.occurredAt;
       closed.closeRequest = null;
       closed.closeRefusal = null;
+      closed.notice = null;
       return withoutAgentFacts(closed);
     }
     case SESSION_EVENT_KINDS.NAMED: {
@@ -510,6 +537,13 @@ export function foldSessionEvent(fold: SessionFold, event: SessionLogEntry): Ses
         next.pendingDecision = null;
       }
       return next;
+    case SESSION_EVENT_KINDS.AGENT_NOTIFIED: {
+      if (next.state === 'resolved') return next;
+      const parsed = agentNotifiedPayloadSchema.safeParse(event.payload);
+      if (!parsed.success) return next;
+      next.notice = { ...parsed.data, at: event.occurredAt.toISOString() };
+      return next;
+    }
     case SESSION_EVENT_KINDS.REPORT_PUBLISHED:
       next.reportHash = stringField(event.payload, 'hash') ?? next.reportHash;
       return next;

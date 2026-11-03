@@ -141,7 +141,7 @@ Run the product apps together with `pnpm dev:mvp`.
 
 CI runs where the change is made: `pnpm ci:local` checks the packages a branch
 affects before it is pushed, and GitHub Actions runs everything on `main` every
-eight hours as the safety net.
+four hours as the safety net.
 
 ## Product thinking, in the open
 

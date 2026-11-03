@@ -1293,7 +1293,10 @@
       "explored": {
         "title": "Explored"
       },
-      "exploring": "Exploring"
+      "exploring": "Exploring",
+      "file": {
+        "onHost": "It stays on the host: too large for the chat, or not an image or text."
+      }
     },
     "preview": {
       "show": "Show preview",
@@ -1656,6 +1659,7 @@
         "summary_one": "{{count}} turn · {{active}} at work · {{tokens}} tokens",
         "summary_other": "{{count}} turns · {{active}} at work · {{tokens}} tokens",
         "cacheHit": "{{percent}}% cache hit",
+        "modelShare": "{{model}} {{percent}}%",
         "input": "Input {{tokens}}",
         "output": "Output {{tokens}}",
         "cacheRead": "Cache read {{tokens}}",
@@ -3052,6 +3056,10 @@
       "clear": "New items land here when one needs a decision.",
       "clearRunning_one": "{{count}} session is still running. New items land here when one needs a decision.",
       "clearRunning_other": "{{count}} sessions are still running. New items land here when one needs a decision."
+    },
+    "notice": {
+      "title": "{{name}} has news for you",
+      "done": "Done"
     }
   },
   "settings": {

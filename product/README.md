@@ -1073,6 +1073,11 @@ earlier note:
   the list Claude's own picker shows: Opus 5.5, Fable 5.1, Sonnet 5.5 and
   Haiku 5.5, then Haiku 4.5, Sonnet 5, Opus 5, Fable 5, Opus 4.8, 4.7, 4.6
   and Sonnet 4.6 behind "More models" — the catalog's `legacy` models.
+- `versions/mvp/29-inbox.md` built the Inbox only from what the system
+  already knew, with no way for an agent to post into it. Since 2026-11-02
+  an agent in a session can: `runner sessions notify "line"` keeps the line
+  on its session, and the Inbox lists it until it is marked done
+  (`next-steps/agent-tools.md` §2).
 - `next-steps/0.6-mcp-cli-and-agent.md` asked whether the CLI is a new app
   or `runner` grows user commands, and noted the starter's CLI and MCP apps
   were pruned. On 2026-11-02 both came back as their own apps, `apps/cli`

@@ -299,6 +299,7 @@
       "summary_one": "{{count}} turn · {{active}} at work · {{tokens}} tokens",
       "summary_other": "{{count}} turns · {{active}} at work · {{tokens}} tokens",
       "cacheHit": "{{percent}}% cache hit",
+      "modelShare": "{{model}} {{percent}}%",
       "input": "Input {{tokens}}",
       "output": "Output {{tokens}}",
       "cacheRead": "Cache read {{tokens}}",
