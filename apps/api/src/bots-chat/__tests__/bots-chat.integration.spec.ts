@@ -43,6 +43,7 @@ import { BotApprovalMapper } from '../bot-approval.mapper';
 import { BotAttachmentMapper } from '../bot-attachment.mapper';
 import { BotConversationSummaryMapper } from '../bot-conversation-summary.mapper';
 import { BotGoalMapper } from '../bot-goal.mapper';
+import { BotLoopMapper } from '../bot-loop.mapper';
 import { BotMessageMapper } from '../bot-message.mapper';
 import { BotQuestionMapper } from '../bot-question.mapper';
 import { BotSubscriptionMapper } from '../bot-subscription.mapper';
@@ -57,6 +58,8 @@ import { BotConversationSummaryOrmEntity } from '../database/bot-conversation-su
 import { BotConversationSummaryRepository } from '../database/bot-conversation-summary.repository';
 import { BotGoalOrmEntity } from '../database/bot-goal.orm-entity';
 import { BotGoalRepository } from '../database/bot-goal.repository';
+import { BotLoopOrmEntity } from '../database/bot-loop.orm-entity';
+import { BotLoopRepository } from '../database/bot-loop.repository';
 import { BotMessageOrmEntity } from '../database/bot-message.orm-entity';
 import { BotMessageRepository } from '../database/bot-message.repository';
 import { BotModelCallOrmEntity } from '../database/bot-model-call.orm-entity';
@@ -73,6 +76,8 @@ import { BotAttachmentEntity } from '../domain/bot-attachment.entity';
 import { BotConversationSummaryEntity } from '../domain/bot-conversation-summary.entity';
 import { BotGoalEntity } from '../domain/bot-goal.entity';
 import { goalContinuationTurn, goalEndLine } from '../domain/bot-goal.policy';
+import { BotLoopEntity } from '../domain/bot-loop.entity';
+import { loopEndLine, loopRunTurn } from '../domain/bot-loop.policy';
 import { BotMessageEntity } from '../domain/bot-message.entity';
 import { BotQuestionEntity } from '../domain/bot-question.entity';
 import {
@@ -124,6 +129,7 @@ describe('bots chat (integration)', () => {
   let attachments: BotAttachmentRepository;
   let subscriptions: BotSubscriptionRepository;
   let goals: BotGoalRepository;
+  let loops: BotLoopRepository;
   let usage: BotUsageRepository;
   let organizationId: string;
   let userId: string;
@@ -158,6 +164,7 @@ describe('bots chat (integration)', () => {
         BotAttachmentOrmEntity,
         BotSubscriptionOrmEntity,
         BotGoalOrmEntity,
+        BotLoopOrmEntity,
         BotModelCallOrmEntity,
         OutboxMessageSchema,
       ],
@@ -198,6 +205,7 @@ describe('bots chat (integration)', () => {
       new BotMessageMapper(),
       new BotConversationRepository(),
       new BotGoalMapper(),
+      new BotLoopMapper(),
     );
     messages = new BotMessageRepository(
       dataSource.getRepository(BotMessageOrmEntity),
@@ -239,6 +247,12 @@ describe('bots chat (integration)', () => {
       new BotMessageMapper(),
     );
     usage = new BotUsageRepository(dataSource.getRepository(BotModelCallOrmEntity));
+    loops = new BotLoopRepository(
+      dataSource.getRepository(BotLoopOrmEntity),
+      new OutboxService(dataSource),
+      new BotLoopMapper(),
+      new BotMessageMapper(),
+    );
   }, 180000);
 
   afterAll(async () => {
@@ -2482,6 +2496,205 @@ describe('bots chat (integration)', () => {
       await turns.finish(turn, null);
       expect(await turns.clearConversation(bot.organizationId, bot.id)).toBe('cleared');
       expect(await goals.findForBot(bot.organizationId, bot.id)).toBeNull();
+    });
+  });
+  describe('loops (25-bots.md §4.1, /loop)', () => {
+    function loopFor(bot: BotEntity, originTurnId: string, intervalMinutes: number | null = 5) {
+      return BotLoopEntity.set(
+        {
+          organizationId: bot.organizationId,
+          botId: bot.id,
+          originTurnId,
+          prompt: 'check the deploy',
+          intervalMinutes,
+          credentialScopes: ['bots:read'],
+          timeZone: 'Europe/Madrid',
+        },
+        new Date(),
+      );
+    }
+
+    async function loopJobs(): Promise<{ payload: { loopId: string; run: number; at: string } }[]> {
+      return dataSource.query(
+        `SELECT payload FROM outbox_message WHERE topic = 'bot-turns' AND "eventName" = 'run-bot-loop' ORDER BY "createdAt", id`,
+      );
+    }
+
+    function run(bot: BotEntity, loop: BotLoopEntity) {
+      return loopRunTurn(
+        {
+          organizationId: bot.organizationId,
+          botId: bot.id,
+          requestedByUserId: userId,
+          provider: 'glm',
+          model: 'glm-5.3',
+          effort: null,
+        },
+        loop,
+        loop.runs + 1,
+      );
+    }
+
+    /** The loop as a run's job reads it, and the run queued for it once its first run has ended. */
+    async function setWithEndedFirstRun(bot: BotEntity, intervalMinutes: number | null = 5) {
+      const yours = sent(bot, '/loop 5m check the deploy');
+      const loop = loopFor(bot, yours.turn.id, intervalMinutes);
+      await turns.enqueueWithLoop(yours.turn, yours.message, loop, null);
+      const first = (await turns.findForRun(yours.turn.id)).unwrap();
+      expect(await turns.claim(first)).toBe('claimed');
+      first.end('completed', new Date());
+      await turns.finish(first, null);
+      return (await loops.findForRun(loop.id)) as BotLoopEntity;
+    }
+
+    // What breaks this: a /loop's turn queued in one transaction and its loop
+    // set (or its first run's job staged) in another, so a crash between them
+    // leaves a loop with no run ever due.
+    it('sets a /loop’s loop with its turn and stages its first run, replacing the one there was', async () => {
+      await dataSource.query(`DELETE FROM outbox_message`);
+      const bot = await create('Looper');
+      const before = sent(bot, '/loop watch PR 42');
+      const old = loopFor(bot, before.turn.id, null);
+      await turns.enqueueWithLoop(before.turn, before.message, old, null);
+      const yours = sent(bot, '/loop 5m check the deploy');
+      const loop = loopFor(bot, yours.turn.id);
+      const { outcome, replaced } = await turns.enqueueWithLoop(
+        yours.turn,
+        yours.message,
+        loop,
+        null,
+      );
+      expect(outcome).toBe('waiting');
+      expect(replaced).toMatchObject({ id: old.id });
+      expect(await loops.findForBot(bot.organizationId, bot.id)).toMatchObject({
+        id: loop.id,
+        originTurnId: yours.turn.id,
+        intervalMinutes: 5,
+      });
+      const jobs = await loopJobs();
+      expect(jobs.map((job) => job.payload)).toContainEqual({
+        loopId: loop.id,
+        run: 1,
+        at: loop.nextRunAt?.toISOString(),
+      });
+    });
+
+    // What breaks this: a run's job delivered twice (or two replicas) both
+    // queuing the run, or the count claimed apart from the turn.
+    it('queues a run and claims its count and next run together, once when two jobs race', async () => {
+      await dataSource.query(`DELETE FROM outbox_message`);
+      const bot = await create('Racer');
+      const loaded = await setWithEndedFirstRun(bot);
+      const [a, b] = await Promise.all([loops.findForRun(loaded.id), loops.findForRun(loaded.id)]);
+      const next = new Date(Date.now() + 5 * 60_000);
+      const whenBusy = next;
+      const first = run(bot, a as BotLoopEntity);
+      const second = run(bot, b as BotLoopEntity);
+      const outcomes = await Promise.all([
+        turns.enqueueLoopRun(first.turn, first.opening, null, a as BotLoopEntity, {
+          next,
+          whenBusy,
+        }),
+        turns.enqueueLoopRun(second.turn, second.opening, null, b as BotLoopEntity, {
+          next,
+          whenBusy,
+        }),
+      ]);
+      expect(outcomes.sort()).toEqual(['lost', 'staged']);
+      expect(await loops.findForRun(loaded.id)).toMatchObject({ runs: 1, nextRunAt: next });
+      const queued: unknown[] = await dataSource.query(
+        `SELECT 1 FROM bot_turn WHERE "botId" = $1 AND origin = 'loop'`,
+        [bot.id],
+      );
+      expect(queued).toHaveLength(1);
+      expect((await loopJobs()).map((job) => job.payload.run)).toContain(2);
+    });
+
+    // What breaks this: a bot busy for an hour on a 5-minute loop handed
+    // twelve runs to work through when it is free.
+    it('queues nothing while the last run is busy, and moves the run on', async () => {
+      const bot = await create('Busy');
+      const yours = sent(bot, '/loop 5m check the deploy');
+      const loop = loopFor(bot, yours.turn.id);
+      await turns.enqueueWithLoop(yours.turn, yours.message, loop, null);
+      const loaded = (await loops.findForRun(loop.id)) as BotLoopEntity;
+      const whenBusy = new Date(Date.now() + 10 * 60_000);
+      const next = run(bot, loaded);
+      expect(
+        await turns.enqueueLoopRun(next.turn, next.opening, null, loaded, {
+          next: whenBusy,
+          whenBusy,
+        }),
+      ).toBe('busy');
+      expect(await loops.findForRun(loop.id)).toMatchObject({ runs: 0, nextRunAt: whenBusy });
+      const queued: unknown[] = await dataSource.query(
+        `SELECT 1 FROM bot_turn WHERE "botId" = $1 AND origin = 'loop'`,
+        [bot.id],
+      );
+      expect(queued).toEqual([]);
+    });
+
+    // What breaks this: a Stop deleting the loop while a run is being queued,
+    // and the run queued after the Stop returned.
+    it('queues nothing for a loop stopped before its run was claimed', async () => {
+      const bot = await create('Stopped');
+      const loaded = await setWithEndedFirstRun(bot);
+      await loops.end(loaded, null);
+      const next = run(bot, loaded);
+      const at = new Date(Date.now() + 60_000);
+      expect(
+        await turns.enqueueLoopRun(next.turn, next.opening, null, loaded, {
+          next: at,
+          whenBusy: at,
+        }),
+      ).toBe('lost');
+    });
+
+    it('schedules a self-paced run on the count it was loaded at, the later word winning', async () => {
+      const bot = await create('Paced');
+      const loaded = await setWithEndedFirstRun(bot, null);
+      const soon = new Date(Date.now() + 60_000);
+      const later = new Date(Date.now() + 120_000);
+      expect(await loops.schedule(loaded, soon, null)).toBe(true);
+      const again = (await loops.findForRun(loaded.id)) as BotLoopEntity;
+      expect(await loops.schedule(again, later, null)).toBe(true);
+      expect((await loops.findForRun(loaded.id))?.nextRunAt).toEqual(later);
+      // A run queued meanwhile moved the count: a word from before it is lost.
+      await dataSource.query(`UPDATE bot_loop SET runs = runs + 1 WHERE id = $1`, [loaded.id]);
+      expect(await loops.schedule(again, soon, null)).toBe(false);
+    });
+
+    it('ends once, with its line outside any turn, and a second end writes nothing', async () => {
+      const bot = await create('Ender');
+      const loaded = await setWithEndedFirstRun(bot);
+      expect(await loops.end(loaded, loopEndLine(loaded, 'cleared', null))).toBe(true);
+      expect(await loops.end(loaded, loopEndLine(loaded, 'cleared', null))).toBe(false);
+      const lines: { turnId: string | null }[] = await dataSource.query(
+        `SELECT "turnId" FROM bot_message WHERE "botId" = $1 AND event->>'kind' = 'loop'`,
+        [bot.id],
+      );
+      expect(lines).toEqual([{ turnId: null }]);
+    });
+
+    it('stages the loop’s job when one of its runs ends, and none for any other turn', async () => {
+      await dataSource.query(`DELETE FROM outbox_message`);
+      const bot = await create('Finisher');
+      await setWithEndedFirstRun(bot);
+      const other = await runningTurn(bot);
+      other.end('completed', new Date());
+      await turns.finish(other, null);
+      const jobs: { payload: { turnId: string } }[] = await dataSource.query(
+        `SELECT payload FROM outbox_message WHERE topic = 'bot-turns' AND "eventName" = 'finish-bot-loop-run'`,
+      );
+      expect(jobs).toHaveLength(1);
+      expect(jobs[0]?.payload.turnId).not.toBe(other.id);
+    });
+
+    it('goes with the chat: clearing the conversation deletes the loop its turn set', async () => {
+      const bot = await create('Forgetful');
+      const loaded = await setWithEndedFirstRun(bot);
+      expect(await turns.clearConversation(bot.organizationId, bot.id)).toBe('cleared');
+      expect(await loops.findForRun(loaded.id)).toBeNull();
     });
   });
 });

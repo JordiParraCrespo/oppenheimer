@@ -16,6 +16,7 @@ import { BotGithubToolsFactory } from './bot-github-tools.factory';
 import { BotGoalToolsFactory } from './bot-goal-tools.factory';
 import { BotHostToolsFactory } from './bot-host-tools.factory';
 import { BotIssueToolsFactory } from './bot-issue-tools.factory';
+import { BotLoopToolsFactory } from './bot-loop-tools.factory';
 import { BotMailOrganizeToolsFactory } from './bot-mail-organize-tools.factory';
 import { BotMailToolsFactory } from './bot-mail-tools.factory';
 import { BotMailWriteToolsFactory } from './bot-mail-write-tools.factory';
@@ -67,12 +68,14 @@ export class BotToolboxFactory {
     web: BotWebToolsFactory,
     subagents: BotSubagentToolsFactory,
     goals: BotGoalToolsFactory,
+    loops: BotLoopToolsFactory,
     questions: BotQuestionToolsFactory,
   ) {
     this.areas = [
       self,
       skills,
       goals,
+      loops,
       questions,
       hosts,
       sessions,

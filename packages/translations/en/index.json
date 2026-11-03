@@ -1623,6 +1623,13 @@
           "cleared": "You stopped the goal “{{objective}}”",
           "exhausted": "Goal “{{objective}}” used all {{limit}} continuations",
           "stopped": "Goal “{{objective}}” stopped: a turn of it failed or was stopped"
+        },
+        "loop": {
+          "ran": "Loop · run {{run}}",
+          "cleared": "You stopped the loop “{{prompt}}”",
+          "expired": "Loop “{{prompt}}” ended after 3 days",
+          "stopped": "Loop “{{prompt}}” stopped: a run of it failed or was stopped",
+          "ended": "Loop “{{prompt}}” ended: the bot did not say when to run next"
         }
       },
       "routineReason": {
@@ -1643,6 +1650,23 @@
         "stopFailed": "Could not stop the goal. Try again.",
         "needsCondition": "Write what done looks like after /goal, or /goal clear to stop the goal."
       },
+      "loop": {
+        "title": "Loop: {{prompt}}",
+        "every": {
+          "minutes_one": "every minute",
+          "minutes_other": "every {{count}} minutes",
+          "hours_one": "every hour",
+          "hours_other": "every {{count}} hours",
+          "days_one": "every day",
+          "days_other": "every {{count}} days",
+          "selfPaced": "when the bot chooses"
+        },
+        "next": "next {{time}}",
+        "deciding": "waiting for the bot to say when",
+        "stop": "Stop loop",
+        "stopFailed": "Could not stop the loop. Try again.",
+        "badInterval": "A loop runs every 1 minute to 1 day: /loop 5m <prompt>, or /loop <prompt> to let the bot choose when."
+      },
       "slash": {
         "label": "Skills",
         "menu": "Commands and skills you can run",
@@ -1650,7 +1674,8 @@
         "builtInLabel": "Commands",
         "builtIn": {
           "goal": "Keep working until a condition holds, checked after every turn. /goal clear stops it.",
-          "usage": "Show what this chat has spent: tokens by model, cache hits, plan windows."
+          "usage": "Show what this chat has spent: tokens by model, cache hits, plan windows.",
+          "loop": "Run a prompt now and again: /loop 5m check the deploy, or with no interval the bot chooses when. /loop stop ends it."
         }
       },
       "usage": {

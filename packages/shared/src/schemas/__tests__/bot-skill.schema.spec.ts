@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import {
+  BOT_LOOP_CHECK_IN_PROMPT,
   BOT_SKILL_NAME_MAX,
   botGoalCommandOf,
+  botLoopCommandOf,
   botSkillNameDraft,
   botSkillNameOf,
   botSkillSchema,
@@ -72,17 +74,73 @@ describe('botGoalCommandOf', () => {
   });
 });
 
+/**
+ * `/loop` (`25-bots.md` §4.1). What breaks this: an interval read as words of
+ * the prompt (or the reverse), a part minute rounded down to no interval, an
+ * out-of-range interval set as a loop, or `/loop stop` sent as a loop that
+ * runs "stop".
+ */
+describe('botLoopCommandOf', () => {
+  const loop = (message: string) => botLoopCommandOf(parseBotSlashCommand(message));
+
+  it('takes the interval before the prompt or after "every", in any unit, a part minute rounded up', () => {
+    expect(loop('/loop 5m check the deploy')).toEqual({
+      kind: 'set',
+      intervalMinutes: 5,
+      prompt: 'check the deploy',
+    });
+    expect(loop('/loop check the deploy every 2 hours')).toEqual({
+      kind: 'set',
+      intervalMinutes: 120,
+      prompt: 'check the deploy',
+    });
+    expect(loop('/loop 30s ping')).toMatchObject({ intervalMinutes: 1 });
+    expect(loop('/loop 1d digest')).toMatchObject({ intervalMinutes: 1_440 });
+  });
+
+  it('is self-paced with no interval, and runs the check-in prompt with no prompt', () => {
+    expect(loop('/loop watch PR 42')).toEqual({
+      kind: 'set',
+      intervalMinutes: null,
+      prompt: 'watch PR 42',
+    });
+    expect(loop('/loop')).toEqual({
+      kind: 'set',
+      intervalMinutes: null,
+      prompt: BOT_LOOP_CHECK_IN_PROMPT,
+    });
+    expect(loop('/loop 10m')).toEqual({
+      kind: 'set',
+      intervalMinutes: 10,
+      prompt: BOT_LOOP_CHECK_IN_PROMPT,
+    });
+  });
+
+  it('refuses an interval under a minute or over a day, and stops on a clear word', () => {
+    expect(loop('/loop 0m x')).toEqual({ kind: 'invalid' });
+    expect(loop('/loop 25h x')).toEqual({ kind: 'invalid' });
+    expect(loop('/loop Stop')).toEqual({ kind: 'clear' });
+    expect(loop('/goal x')).toBeNull();
+  });
+});
+
 describe('isBotConsoleCommand', () => {
   const runsHere = (message: string) => isBotConsoleCommand(parseBotSlashCommand(message));
 
   it('is the built-ins the console runs: /goal alone, /goal clear, /usage with anything after it', () => {
-    for (const message of ['/goal', '/goal off', '/usage', '/usage this week']) {
+    for (const message of ['/goal', '/goal off', '/usage', '/usage this week', '/loop stop']) {
       expect(runsHere(message)).toBe(true);
     }
   });
 
   it('leaves /goal <condition>, a skill and a plain message to be sent', () => {
-    for (const message of ['/goal CI is green', '/release-notes', 'my usage?']) {
+    for (const message of [
+      '/goal CI is green',
+      '/loop 5m check CI',
+      '/loop',
+      '/release-notes',
+      'my usage?',
+    ]) {
       expect(runsHere(message)).toBe(false);
     }
   });
@@ -109,7 +167,16 @@ describe('botSkillSchema', () => {
   });
 
   it('refuses a name that could not be typed as a command, or a reserved one', () => {
-    for (const name of ['Release', 'release notes', '-release', 'skill', 'goal', 'usage', '']) {
+    for (const name of [
+      'Release',
+      'release notes',
+      '-release',
+      'skill',
+      'goal',
+      'usage',
+      'loop',
+      '',
+    ]) {
       expect(botSkillSchema.safeParse({ ...skill, name }).success).toBe(false);
     }
   });

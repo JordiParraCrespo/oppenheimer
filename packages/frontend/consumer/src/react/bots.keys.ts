@@ -25,6 +25,7 @@ export const botsKeys = {
   permissions: (id: string) => [...botsKeys.detail(id), 'permissions'] as const,
   goal: (id: string) => [...botsKeys.detail(id), 'goal'] as const,
   usage: (id: string) => [...botsKeys.detail(id), 'usage'] as const,
+  loop: (id: string) => [...botsKeys.detail(id), 'loop'] as const,
   routines: (id: string) => [...botsKeys.detail(id), 'routines'] as const,
   routineList: (id: string) => [...botsKeys.routines(id), 'list'] as const,
   // Every bot's, for `/automations`: apart from any one bot's, so a write to

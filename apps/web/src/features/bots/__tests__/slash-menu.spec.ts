@@ -66,6 +66,16 @@ describe('builtInCommandActionOf', () => {
     expect(builtInCommandActionOf('/goal CI is green')).toBeNull();
     expect(builtInCommandActionOf('/release-notes v2')).toBeNull();
   });
+
+  it('holds a /loop interval out of range, runs /loop stop here, and sends every other /loop', () => {
+    expect(builtInCommandActionOf('/loop 0m check')).toEqual({
+      kind: 'notice',
+      notice: 'loopBadInterval',
+    });
+    expect(builtInCommandActionOf('/loop stop')).toEqual({ kind: 'local', action: 'clearLoop' });
+    expect(builtInCommandActionOf('/loop 5m check the deploy')).toBeNull();
+    expect(builtInCommandActionOf('/loop')).toBeNull();
+  });
 });
 
 describe('skillRowModel', () => {

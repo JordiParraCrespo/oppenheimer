@@ -57,11 +57,13 @@ const state = vi.hoisted(() => ({
 vi.mock('@oppenheimer/frontend-consumer/react', () => ({
   useBotActiveTurn: () => null,
   useBotGoal: () => ({ data: null }),
+  useBotLoop: () => ({ data: null }),
   useBotWaitingMessages: () => [],
   useModelProviders: () => ({ data: true }),
   useSendBotMessage: () => ({ mutate: state.send, reset: vi.fn(), error: null, isPending: false }),
   useUploadBotImage: () => ({ mutateAsync: vi.fn() }),
   useCancelBotTurn: () => ({ mutate: vi.fn(), reset: vi.fn(), error: null, isPending: false }),
+  useClearBotLoop: () => ({ mutate: vi.fn(), reset: vi.fn(), error: null, isPending: false }),
   useClearBotGoal: () => ({
     mutate: state.clearGoal,
     reset: vi.fn(),
@@ -119,6 +121,7 @@ describe('BotComposer’s / menu', () => {
     expect(options()).toEqual([
       '/goalbots.chat.slash.builtIn.goal',
       '/usagebots.chat.slash.builtIn.usage',
+      '/loopbots.chat.slash.builtIn.loop',
       '/release-notesDoes release-notes.',
       '/reviewDoes review.',
       '/triageDoes triage.',

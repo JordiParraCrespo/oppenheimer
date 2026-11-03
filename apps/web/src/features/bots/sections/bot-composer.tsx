@@ -11,6 +11,7 @@ import type { BotWaitingMessage } from '@oppenheimer/frontend-consumer';
 import {
   useBotActiveTurn,
   useBotGoal,
+  useBotLoop,
   useBotWaitingMessages,
   useCancelBotTurn,
   useModelProviders,
@@ -46,6 +47,7 @@ import { botDraft, fillBotDraft, setBotDraft } from '@/features/bots/lib/bot-dra
 import { BOT_IMAGE_ACCEPT, heldImagesBlock } from '@/features/bots/lib/bot-images';
 import { type ComposerTop, composerTopOf } from '@/features/bots/lib/composer-top';
 import { BotGoalNotice } from '@/features/bots/sections/bot-goal-notice';
+import { BotLoopNotice } from '@/features/bots/sections/bot-loop-notice';
 
 /**
  * The bot's composer. Send says it to the bot; while a turn is queued or
@@ -75,7 +77,7 @@ import { BotGoalNotice } from '@/features/bots/sections/bot-goal-notice';
  * alone. A file it will not hold, or one the API refused, is said under the
  * field; while one uploads or failed, or the bot's model reads no images,
  * send is off and says why, and nothing written is lost.
- * A built-in command the console runs itself (`/goal clear`, `/usage`, which
+ * A built-in command the console runs itself (`/goal clear`, `/loop stop`, `/usage`, which
  * puts the usage card in the chat) sends nothing,
  * and one that cannot be sent as typed (`/goal` with no condition) keeps send
  * off and says why on the box's top edge (`useBuiltInCommand`).
@@ -120,8 +122,9 @@ export function BotComposer({
   });
   const cancel = useCancelBotTurn();
   const builtIn = useBuiltInCommand(botId, draft);
-  // The goal is drawn in `above`, fused onto the box, so the box has to know whether there is one.
+  // The goal and the loop are drawn in `above`, fused onto the box, so the box has to know whether there is one.
   const { data: goal } = useBotGoal(botId);
+  const { data: loop } = useBotLoop(botId);
   const noKey = keyed === false ? t('bots.chat.noKey', { provider: providerLabel }) : undefined;
   const imagesBlock = heldImagesBlock(images.images, takesImages);
   const blocked =
@@ -179,6 +182,7 @@ export function BotComposer({
     noKey: Boolean(noKey),
     command: Boolean(builtIn.notice),
     goal: Boolean(goal),
+    loop: Boolean(loop),
   });
   const tops: Record<ComposerTop, () => ReactNode> = {
     queue: () => (
@@ -211,6 +215,7 @@ export function BotComposer({
     ),
     command: () => <ComposerNotice icon={<SquareSlash />}>{builtIn.notice}</ComposerNotice>,
     goal: () => (goal ? <BotGoalNotice botId={botId} goal={goal} /> : null),
+    loop: () => (loop ? <BotLoopNotice botId={botId} loop={loop} /> : null),
   };
 
   return (

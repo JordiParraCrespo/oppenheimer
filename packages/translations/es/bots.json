@@ -270,6 +270,13 @@
         "cleared": "Has detenido el objetivo «{{objective}}»",
         "exhausted": "El objetivo «{{objective}}» usó sus {{limit}} continuaciones",
         "stopped": "El objetivo «{{objective}}» se detuvo: uno de sus turnos falló o se detuvo"
+      },
+      "loop": {
+        "ran": "Bucle · ejecución {{run}}",
+        "cleared": "Detuviste el bucle «{{prompt}}»",
+        "expired": "El bucle «{{prompt}}» terminó tras 3 días",
+        "stopped": "El bucle «{{prompt}}» se detuvo: una ejecución falló o se detuvo",
+        "ended": "El bucle «{{prompt}}» terminó: el bot no dijo cuándo volver a ejecutarlo"
       }
     },
     "routineReason": {
@@ -290,6 +297,23 @@
       "stopFailed": "No se pudo detener el objetivo. Inténtalo de nuevo.",
       "needsCondition": "Escribe tras /goal cómo sabremos que está hecho, o /goal clear para detener el objetivo."
     },
+    "loop": {
+      "title": "Bucle: {{prompt}}",
+      "every": {
+        "minutes_one": "cada minuto",
+        "minutes_other": "cada {{count}} minutos",
+        "hours_one": "cada hora",
+        "hours_other": "cada {{count}} horas",
+        "days_one": "cada día",
+        "days_other": "cada {{count}} días",
+        "selfPaced": "cuando el bot decida"
+      },
+      "next": "siguiente a las {{time}}",
+      "deciding": "esperando a que el bot diga cuándo",
+      "stop": "Detener bucle",
+      "stopFailed": "No se pudo detener el bucle. Inténtalo de nuevo.",
+      "badInterval": "Un bucle se repite cada 1 minuto a 1 día: /loop 5m <instrucción>, o /loop <instrucción> para que el bot decida cuándo."
+    },
     "slash": {
       "label": "Habilidades",
       "menu": "Comandos y habilidades que puedes ejecutar",
@@ -297,7 +321,8 @@
       "builtInLabel": "Comandos",
       "builtIn": {
         "goal": "Sigue trabajando hasta que se cumpla una condición, revisada tras cada turno. /goal clear lo detiene.",
-        "usage": "Muestra lo que ha gastado este chat: tokens por modelo, aciertos de caché, ventanas del plan."
+        "usage": "Muestra lo que ha gastado este chat: tokens por modelo, aciertos de caché, ventanas del plan.",
+        "loop": "Repite una instrucción ahora y de nuevo: /loop 5m revisa el despliegue, o sin intervalo el bot decide cuándo. /loop stop lo termina."
       }
     },
     "usage": {
