@@ -16,7 +16,9 @@ const UP_KEYS = new Set(['ArrowUp', 'PageUp', 'Home']);
 
 /**
  * Whether the scroller's latest move is the reader's: a wheel turned up, a
- * touch, an up key or a press on its scrollbar, just now or still held.
+ * touch, an up key, or a press in the scroller (its scrollbar, or a text
+ * selection the browser scrolls up as it is dragged past the top), just now
+ * or still held.
  * The browser moves the view on its own too (a clamp when the content
  * shrinks), and only this tells the two apart. `stop` removes its listeners.
  */
@@ -32,9 +34,7 @@ function readerInput(box: HTMLElement): { reading: () => boolean; stop: () => vo
   const onKey = (event: KeyboardEvent) => {
     if (UP_KEYS.has(event.key) || (event.key === ' ' && event.shiftKey)) mark();
   };
-  // The scrollbar is the scroller's own: a press on it, not on what it holds.
-  const onPress = (event: PointerEvent) => {
-    if (event.target !== box) return;
+  const onPress = () => {
     dragging = true;
     mark();
   };

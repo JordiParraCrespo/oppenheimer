@@ -121,4 +121,26 @@ describe('useStickToBottom', () => {
     expect(box.scrollTop).toBe(1000);
     expect(box.style.overflowAnchor).toBe('none');
   });
+
+  it('lets go while the reader drags a selection up past the top', () => {
+    // What breaks this: a press on a message not counted as the reader's, so
+    // the browser's scroll as a selection is dragged up snaps back to the
+    // end and text across earlier messages cannot be selected.
+    const view = render(<Harness sent={['m1', 'm2', 'm3']} />);
+    const box = view.getByTestId('scroller');
+    measure(box);
+    act(() => grow?.());
+    box.dispatchEvent(new Event('scroll'));
+
+    const message = box.querySelector('[data-message-id="m3"]');
+    message?.dispatchEvent(new Event('pointerdown', { bubbles: true }));
+    box.scrollTop = 400;
+    act(() => {
+      box.dispatchEvent(new Event('scroll'));
+    });
+    act(() => grow?.());
+    expect(box.scrollTop).toBe(400);
+    expect(box.style.overflowAnchor).toBe('');
+    window.dispatchEvent(new Event('pointerup'));
+  });
 });
