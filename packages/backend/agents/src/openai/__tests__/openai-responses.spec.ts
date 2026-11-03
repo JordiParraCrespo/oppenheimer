@@ -154,6 +154,7 @@ describe('OpenAiBotEngine on the Agents SDK', () => {
         baseUrl,
         model: 'model-placeholder',
         effort: 'low',
+        cacheKey: 'conversation-placeholder',
         systemPrompt: 'You are a bot.',
         history: [
           { role: 'user', text: 'Hi' },
@@ -205,6 +206,10 @@ describe('OpenAiBotEngine on the Agents SDK', () => {
       // OpenAI's API on a key carries none of what ChatGPT's backend requires.
       expect(first.headers['chatgpt-account-id']).toBeUndefined();
       expect(first.body).not.toHaveProperty('store');
+      // Both steps of the turn name the conversation, so they reach the server that cached its prefix.
+      for (const sent of requests) {
+        expect(sent.body.prompt_cache_key).toBe('conversation-placeholder');
+      }
       expect(first.body).toMatchObject({
         model: 'model-placeholder',
         instructions: 'You are a bot.',
@@ -300,6 +305,7 @@ describe('OpenAiBotEngine on the Agents SDK', () => {
         accountId: 'account-placeholder',
         baseUrl,
         model: 'model-placeholder',
+        cacheKey: 'conversation-placeholder',
         systemPrompt: 'You are a bot.',
         history: [],
         message: 'What time is it?',
@@ -337,6 +343,8 @@ describe('OpenAiBotEngine on the Agents SDK', () => {
           stream: true,
           store: false,
           include: ['reasoning.encrypted_content'],
+          // Beside what the backend requires, not in place of it.
+          prompt_cache_key: 'conversation-placeholder',
         });
         expect(sent.body).not.toHaveProperty('extraHeaders');
         expect(sent.body).not.toHaveProperty('extra_headers');

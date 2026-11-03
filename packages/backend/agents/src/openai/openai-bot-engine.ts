@@ -79,6 +79,23 @@ export interface ResponsesEndpoint {
   reportsPlanLimits?: boolean;
 }
 
+/**
+ * The endpoint's settings with the turn's cache key as the request's
+ * `prompt_cache_key`, beside whatever else the endpoint puts in the body
+ * (`providerData` is spread into it by the SDK). OpenAI, ChatGPT's backend
+ * and xAI all keep a prompt cache per server and send the requests of one
+ * key to the same one; without it, a turn's steps and the next turn land
+ * on servers that hold none of the prefix.
+ */
+function withCacheKey(
+  settings: Record<string, unknown>,
+  cacheKey: string | undefined,
+): Record<string, unknown> {
+  if (!cacheKey) return settings;
+  const providerData = (settings.providerData ?? {}) as Record<string, unknown>;
+  return { ...settings, providerData: { ...providerData, prompt_cache_key: cacheKey } };
+}
+
 /** Provider `openai`, on the OpenAI Agents SDK over the Responses API. */
 export class OpenAiBotEngine extends BotEngine {
   run(request: BotTurnRequest): AsyncIterable<BotEngineEvent> {
@@ -156,7 +173,7 @@ export class OpenAiBotEngine extends BotEngine {
       ),
       modelSettings: {
         ...(request.effort ? { reasoning: { effort: request.effort } } : {}),
-        ...endpoint.modelSettings,
+        ...withCacheKey(endpoint.modelSettings, request.cacheKey),
       },
     });
     const run: OpenAiRun = await runner.run(agent, inputItems(request), {

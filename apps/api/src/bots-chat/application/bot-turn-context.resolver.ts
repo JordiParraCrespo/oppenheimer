@@ -162,6 +162,8 @@ export class BotTurnContextResolver {
       documents.find((document) => document.name === name)?.content ?? '';
     const request: BotTurnContext = {
       ...model,
+      // A bot has one conversation: its id names it to the provider's prompt cache.
+      cacheKey: bot.id,
       systemPrompt: composeBotSystemPrompt({
         name: bot.name,
         description: bot.description,
