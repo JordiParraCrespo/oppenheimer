@@ -382,13 +382,18 @@ describe('SessionChat', () => {
     const seen: number[] = [];
     chat.subscribe(() => seen.push(chat.snapshot().turns.length));
 
-    // The runner's full batches, then the short one that ends its read.
+    // The runner's full batch, then the short one that ends its read: which
+    // could be any read of a longer transcript, so only the quiet ends it.
+    vi.useFakeTimers();
     chat.apply({ reset: true, entries: lines.slice(0, 256) });
     expect(chat.snapshot()).toMatchObject({ available: true, loading: true, turns: [] });
     chat.apply({ entries: lines.slice(256) });
+    expect(chat.snapshot()).toMatchObject({ loading: true, turns: [] });
+    vi.advanceTimersByTime(1_000);
     expect(chat.snapshot().loading).toBe(false);
     expect(chat.snapshot().turns).toHaveLength(300);
     expect(seen).toEqual([0, 300]);
+    vi.useRealTimers();
   });
 
   it('draws a first load whose history goes quiet before a short batch', () => {

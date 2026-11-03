@@ -26,16 +26,6 @@ export const REPLAY_SETTLE_MS = 3000;
  */
 export const LOAD_SETTLE_MS = 500;
 
-/**
- * How much of a first load may arrive before a short batch stops meaning the
- * history is all there. The runner reads a transcript 4MB at a time, 300ms
- * apart, and ends each read on a short batch; under this much received, no
- * read can have been cut there, so a short batch is the end and the chat
- * draws at once. Past it, only the quiet after the last read is. It is a
- * quarter of a read because the runner compacts lines before it sends them.
- */
-const ONE_READ_BYTES = 1024 * 1024;
-
 /** A batch's size as the runner counts it. */
 function sizeOf(batch: HistoryBatch): number {
   let bytes = 0;
@@ -71,25 +61,21 @@ function utf8Length(text: string): number {
 /**
  * A first load: a history that arrives where nothing is held yet (a
  * reconnect's replay of what is held is not one), held back until it has
- * all come. A short history ends on the batch that ends its one read; a
- * longer one, which the runner sends over several reads, on the quiet after
- * the last, which the chat watches for and ends with `end`.
+ * all come. The runner reads a transcript 4MB at a time, 300ms apart, and
+ * ends every read on a short batch, so a short batch says only that a read
+ * ended. A first batch that is short is the exception: a read that fills
+ * less than one batch is shorter than 4MB, so it stopped at the end of the
+ * file, and the history is all there. Any longer history ends on the quiet
+ * after its last read, which the chat watches for and ends with `end`.
  */
 export class FirstLoad {
   /** The history is still arriving. */
   loading = false;
-  private received = 0;
 
   /** Reads one batch of the history; `holdsNothing` when the chat has no line yet. */
   take(batch: HistoryBatch, holdsNothing: boolean): void {
-    if (batch.reset === true && batch.entries.length > 0 && holdsNothing) {
-      this.loading = true;
-      this.received = 0;
-    }
-    if (!this.loading) return;
-    const bytes = sizeOf(batch);
-    this.received += bytes;
-    if (endsARead(batch, bytes) && this.received < ONE_READ_BYTES) this.loading = false;
+    if (batch.reset !== true || batch.entries.length === 0 || !holdsNothing) return;
+    this.loading = !endsARead(batch, sizeOf(batch));
   }
 
   end(): void {
