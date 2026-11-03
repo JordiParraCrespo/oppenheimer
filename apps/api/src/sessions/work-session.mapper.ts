@@ -11,7 +11,10 @@ import type { RecentFolder, SessionListPage } from './database/work-session.repo
 import { encodeSessionListCursor } from './domain/session-list-cursor.policy';
 import {
   launchPermissionFor,
-  readAgentColumns,
+  readAgentReport,
+  readNotice,
+  readSharedFiles,
+  readWatchedPulls,
   type SessionAgent,
   type SessionFold,
 } from './domain/session-state.policy';
@@ -195,7 +198,10 @@ export class WorkSessionMapper
         ? { code: record.closeRefusalCode, detail: record.closeRefusalDetail }
         : null,
       pendingDecision: this.decisionOf(record.pendingDecision),
-      ...readAgentColumns(record),
+      agentReport: readAgentReport(record.agentReport),
+      notice: readNotice(record.notice),
+      watchedPulls: readWatchedPulls(record.watchedPulls),
+      sharedFiles: readSharedFiles(record.sharedFiles),
     };
   }
 
@@ -252,9 +258,7 @@ export class WorkSessionMapper
           acceptUnpushedWork: closeRequest.acceptUnpushedWork,
         }
       : null;
-    dto.closeRefusal = closeRefusal
-      ? { code: closeRefusal.code, detail: closeRefusal.detail }
-      : null;
+    dto.closeRefusal = closeRefusal ? { ...closeRefusal } : null;
     dto.decision = this.decisionToResponse(entity.pendingDecision);
     dto.agentReport = entity.agentReport ? { ...entity.agentReport } : null;
     dto.notice = entity.notice ? { ...entity.notice, at: new Date(entity.notice.at) } : null;
