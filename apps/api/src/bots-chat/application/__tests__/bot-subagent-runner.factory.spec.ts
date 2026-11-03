@@ -96,11 +96,16 @@ describe('BotSubagentRunnerFactory', () => {
 
     await runner.run([{ task: 'alpha' }, { task: 'beta' }], new AbortController().signal);
 
+    // The children run side by side, so which reaches the engine first is the
+    // scheduler's: each is keyed by its own place, whatever the order.
     const keys = requests.map((request) => [request.message, request.cacheKey]);
-    expect(keys).toEqual([
-      ['alpha', `${TURN.turnId}:subagent:0`],
-      ['beta', `${TURN.turnId}:subagent:1`],
-    ]);
+    expect(keys).toHaveLength(2);
+    expect(keys).toEqual(
+      expect.arrayContaining([
+        ['alpha', `${TURN.turnId}:subagent:0`],
+        ['beta', `${TURN.turnId}:subagent:1`],
+      ]),
+    );
   });
 
   it('tells the chat where each child is as it moves, under the delegate call, until all have ended', async () => {

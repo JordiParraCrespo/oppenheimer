@@ -19,6 +19,7 @@ import {
   goalOutcome,
   goalSourceKey,
 } from '../domain/bot-goal.policy';
+import { heldBy } from '../domain/bot-rate-limit.policy';
 
 function goal(continuations = 0, limit = 3): BotGoalEntity {
   return BotGoalEntity.create({
@@ -268,5 +269,37 @@ describe('BotGoalEntity', () => {
     const met = goalEndLine(goal(2, 3), 'met', 'CI is green on main');
     expect(met.event).toMatchObject({ activity: 'met', reason: 'CI is green on main' });
     expect(met.content).toContain('CI is green on main');
+  });
+});
+
+describe('a goal waiting out a rate limit', () => {
+  const limit = { system: 'Gmail', resetAt: new Date('2026-11-03T10:02:00.000Z') };
+
+  // What breaks this: a goal set in place of another marked as waiting by
+  // the old goal's continuation, so its banner says it waits while it works.
+  it('is held only by its own turns: the one that set it and its continuations', () => {
+    const own = goal();
+    expect(own.isHeldBy({ id: 'turn-0', sourceKey: null })).toBe(true);
+    expect(own.isHeldBy({ id: 'turn-2', sourceKey: goalSourceKey('goal-1', 2) })).toBe(true);
+    expect(own.isHeldBy({ id: 'turn-9', sourceKey: goalSourceKey('goal-0', 1) })).toBe(false);
+    expect(own.isHeldBy({ id: 'turn-9', sourceKey: null })).toBe(false);
+  });
+
+  // What breaks this: a banner that keeps saying it waits after the next
+  // continuation was queued and the bot is working again.
+  it('says what it waits for once held, and forgets it when its next continuation is counted', () => {
+    const held = goal(1, 3);
+    held.hold(limit);
+    expect(held.waiting).toEqual(limit);
+    held.advance();
+    expect(held.waiting).toBeNull();
+  });
+
+  it('is held by a limit that has not passed, and by none that has', () => {
+    const before = new Date('2026-11-03T10:01:00.000Z');
+    const after = new Date('2026-11-03T10:03:00.000Z');
+    expect(heldBy(limit, before)).toEqual(limit);
+    expect(heldBy(limit, after)).toBeNull();
+    expect(heldBy(null, before)).toBeNull();
   });
 });

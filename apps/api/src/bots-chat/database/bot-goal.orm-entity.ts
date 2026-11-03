@@ -16,6 +16,7 @@ import {
 @Check('CHK_bot_goal_objective', `char_length(objective) > 0`)
 @Check('CHK_bot_goal_limit', `"limit" BETWEEN 1 AND 20`)
 @Check('CHK_bot_goal_continuations', `continuations BETWEEN 0 AND "limit"`)
+@Check('CHK_bot_goal_waiting', `num_nonnulls("waitingFor", "waitingUntil") IN (0, 2)`)
 @Check(
   'CHK_bot_goal_credential_scopes',
   `"credentialScopes" IS NULL OR jsonb_typeof("credentialScopes") = 'array'`,
@@ -49,6 +50,14 @@ export class BotGoalOrmEntity {
 
   @Column({ type: 'varchar', length: 64, nullable: true })
   timeZone!: string | null;
+
+  /** The system whose rate limit holds the goal's next decision; null when none does. */
+  @Column({ type: 'varchar', length: 64, nullable: true })
+  waitingFor!: string | null;
+
+  /** When the held decision runs; set with `waitingFor`, or null with it. */
+  @Column({ type: TIMESTAMP_COLUMN_TYPE, nullable: true })
+  waitingUntil!: Date | null;
 
   @CreateDateColumn({ type: TIMESTAMP_COLUMN_TYPE })
   createdAt!: Date;
