@@ -17,11 +17,12 @@
     "arch": "depcruise src --config .dependency-cruiser.cjs"
   },
   "dependencies": {
+    "@hookform/resolvers": "^5.9.1",
     "@oppenheimer/design-system-web": "workspace:*",
     "@oppenheimer/frontend-core": "workspace:*",
     "@oppenheimer/shared": "workspace:*",
     "@oppenheimer/translations": "workspace:*",
-    "@hookform/resolvers": "^5.9.1",
+    "@sentry/react": "10.68.0",
     "i18next-browser-languagedetector": "^8.2.1",
     "lowlight": "^3",
     "marked": "^16",

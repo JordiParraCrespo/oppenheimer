@@ -34,6 +34,11 @@ const OTHER_READERS: { pattern: RegExp; reader: string; directory: string }[] = 
   // First match wins: `RUNNER_IMAGE` is the compose file's, not the runner's.
   { pattern: /_IMAGE$/, reader: 'the compose files', directory: 'docker' },
   { pattern: /^VITE_/, reader: 'the web console', directory: 'apps/web/src' },
+  {
+    pattern: /^SENTRY_(AUTH_TOKEN|ORG|WEB_PROJECT)$/,
+    reader: 'the console build’s source-map upload',
+    directory: 'apps/web',
+  },
   { pattern: /^RUNNER_/, reader: 'the Go runner', directory: 'apps/runner' },
   {
     pattern: /^SCHEMA_TEST_DATABASE_URL$/,
