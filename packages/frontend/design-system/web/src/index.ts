@@ -444,6 +444,7 @@ export {
   RoutineRun,
   RoutineRunList,
   RoutineRunsEmpty,
+  SortableRoutineItem,
 } from './components/routine-item';
 export { RoutineStep, RoutineStepFields, RoutineSteps } from './components/routine-steps';
 export {
