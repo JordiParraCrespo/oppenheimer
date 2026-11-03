@@ -37,6 +37,20 @@ test('jobs run side by side', async () => {
   assert.ok(Date.now() - started < 1100, 'two 600ms jobs took as long as one after the other');
 });
 
+test('maxParallel runs no more steps at once than it allows, and a waiting step holds no slot', async () => {
+  const started = Date.now();
+  const rows = await run(
+    [
+      node('a', 'one', sleep(400)),
+      node('b', 'waits', sleep(0), { after: ['a/one'] }),
+      node('c', 'one', sleep(400)),
+    ],
+    { maxParallel: 1 },
+  );
+  assert.ok(Object.values(rows).every((r) => r.status === 'passed'));
+  assert.ok(Date.now() - started >= 800, 'two 400ms steps ran at once under maxParallel 1');
+});
+
 test('a job stops at its first failed step; the others finish without fail-fast', async () => {
   const rows = await run([
     node('a', 'fails', 'process.exit(3)'),

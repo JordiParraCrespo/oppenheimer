@@ -8,6 +8,7 @@
  *   pnpm ci:local --skip e2e,integration
  *   pnpm ci:local --dirty              # the lint job on uncommitted work, before a commit
  *   pnpm ci:local --no-fail-fast       # finish every job even after a failure
+ *   pnpm ci:local --all --max-parallel 1  # one step at a time, as the scheduled run does
  *
  * This file is the pipeline's command line. Pull requests get no GitHub CI:
  * every agent runs this before it pushes, and `.github/workflows/ci.yml` runs
@@ -27,9 +28,12 @@
  *   e2e          the API suite against the stack
  *
  * The jobs run side by side (`run.mjs`); the services start while the build
- * runs, and the suites once the API is up. A stack that was already up (a
- * console from `stack.mjs up --web`, for the screenshots) stays up with this
- * commit's API in it; one this run started comes down at the end.
+ * runs, and the suites once the API is up. `--max-parallel <n>` caps how many
+ * steps run at once: the scheduled run's VM, starved by every job at once,
+ * timed out unit tests' first queries and lost its runner, so it takes 1.
+ * A stack that was already up (a console from `stack.mjs up --web`, for the
+ * screenshots) stays up with this commit's API in it; one this run started
+ * comes down at the end.
  *
  * It runs on the commit checked out, so commit first; it refuses a tree with
  * any uncommitted change, untracked files included. A job stops at its first
@@ -65,6 +69,12 @@ const dirty = args.includes('--dirty');
 const failFast = !all && !args.includes('--no-fail-fast');
 const base = all ? null : (flag('--base') ?? 'origin/main');
 const skip = new Set((flag('--skip') ?? '').split(',').filter(Boolean));
+const parallel = flag('--max-parallel');
+const maxParallel = parallel === undefined ? Number.POSITIVE_INFINITY : Number(parallel);
+if (parallel !== undefined && !(Number.isInteger(maxParallel) && maxParallel >= 1)) {
+  console.error('ci:local: --max-parallel takes a whole number of steps, 1 or more');
+  process.exit(2);
+}
 for (const job of skip) {
   if (!SKIPPABLE.includes(job)) {
     console.error(`ci:local: unknown job "${job}" in --skip; jobs are ${SKIPPABLE.join(', ')}`);
@@ -149,6 +159,7 @@ try {
     cwd: ROOT,
     logDir,
     failFast,
+    maxParallel,
     // In GitHub Actions the run's page is the only place to read a log.
     echo: Boolean(process.env.GITHUB_ACTIONS),
     signal: aborted.signal,
