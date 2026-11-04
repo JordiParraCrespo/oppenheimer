@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import type { BotRoutineActivity } from '@oppenheimer/shared';
 import type { AutomationRunOutcome, AutomationSkipReason } from '@oppenheimer/shared/automations';
 import { BotMessageEntity } from './bot-message.entity';
@@ -156,6 +157,45 @@ export function routineFailureOf(
   if (outcome === 'expired') return 'expired';
   if (outcome === 'skipped' && skipReason && FAILED_SKIPS.includes(skipReason)) return skipReason;
   return null;
+}
+
+const HOUR_MS = 60 * 60 * 1000;
+
+/** The skips that come in bursts: one line an hour says the cap was reached. */
+const RATE_LIMITED_SKIPS: readonly string[] = ['automation_rate_limited', 'workspace_rate_limited'];
+
+/**
+ * The id of the line a failed run is told by. Each failure is its own line,
+ * keyed by its event, except a rate limit: every run of the routine refused
+ * by the same cap in the same clock hour is one line, keyed by the routine,
+ * the reason and the hour, so a burst of events past the cap says so once
+ * instead of once a run.
+ */
+export function routineFailureLineId(
+  eventId: string,
+  automationId: string,
+  reason: string,
+  at: Date,
+): string {
+  if (!RATE_LIMITED_SKIPS.includes(reason)) return eventId;
+  const hour = Math.floor(at.getTime() / HOUR_MS);
+  return uuidV5(`${automationId}:${reason}:${hour}`, ROUTINE_FAILURE_NAMESPACE);
+}
+
+/** The RFC 4122 namespace of the coalesced failure lines' names. `bot_message.id` is a uuid. */
+const ROUTINE_FAILURE_NAMESPACE = '6f1c2b8e-3d4a-4f5e-9a7b-1c2d3e4f5a6b';
+
+/** RFC 4122 §4.3 name-based UUID, version 5 (SHA-1): the same name, the same id. */
+function uuidV5(name: string, namespace: string): string {
+  const bytes = createHash('sha1')
+    .update(Buffer.from(namespace.replaceAll('-', ''), 'hex'))
+    .update(name, 'utf8')
+    .digest()
+    .subarray(0, 16);
+  bytes[6] = (bytes[6] & 0x0f) | 0x50;
+  bytes[8] = (bytes[8] & 0x3f) | 0x80;
+  const hex = bytes.toString('hex');
+  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
 }
 
 /** What the bot reads when its history reaches the line: the same news, in words. */

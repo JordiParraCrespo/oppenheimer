@@ -11,8 +11,9 @@ import { InboundEventMapper } from '../inbound-event.mapper';
 /**
  * The inbound-events store against a real Postgres, through the repository the
  * hub uses: the replay defence on `receive` (the same signed bytes under a new
- * delivery id are the delivery already stored) and the delivery's `eventCount`
- * across a re-run.
+ * delivery id are the delivery already stored), the delivery's `eventCount`
+ * across a re-run, and the trigger preview's count of mail that reached the
+ * inbox (`matchesTriggerFilter`'s `anyRequires`).
  */
 describe('inbound events store (integration)', () => {
   let dataSource: DataSource;
@@ -146,6 +147,52 @@ describe('inbound events store (integration)', () => {
         [id],
       );
       expect(row).toEqual({ eventCount: 2, status: 'processed' });
+    });
+  });
+
+  describe('findMatching', () => {
+    // What breaks this: the editor saying a trigger for any mail would have
+    // run on mail archived by a filter, which the trigger never fires on.
+    it('counts only events holding what an any filter requires, and every event without one', async () => {
+      await store.receive(delivery('mail-1', 'f'.repeat(64)));
+      const [{ id }] = await rowsFor('deliveryId', 'mail-1');
+      const stored: InboundDelivery = {
+        id,
+        source: 'gmail',
+        deliveryId: 'mail-1',
+        eventName: 'mail_received',
+        payload: {},
+        receivedAt: new Date(),
+      };
+      const mail = (externalId: string, inbox: boolean): ExternalEvent => ({
+        source: 'gmail',
+        type: 'mail_received',
+        externalId,
+        subject: { kind: 'gmail_connection', ref: 'conn-1', name: 'ana@gmail.test' },
+        actor: { login: 'bo@client.test', isOwnApp: false },
+        attributes: { query: inbox ? [] : ['label:invoices'], inbox },
+        context: {},
+        occurredAt: new Date(),
+        schemaVersion: 1,
+      });
+      await store.recordProcessed(
+        stored,
+        [ORG],
+        [mail('conn-1:in', true), mail('conn-1:archived', false)],
+      );
+      const query = {
+        organizationId: ORG,
+        source: 'gmail',
+        eventType: 'mail_received',
+        subjectRefs: ['conn-1'],
+        since: new Date(Date.now() - 60_000),
+        sampleSize: 5,
+      };
+
+      const inbox = await store.findMatching({ ...query, required: 'inbox' });
+      expect(inbox.count).toBe(1);
+      expect(inbox.sample.map((event) => event.externalId)).toEqual(['conn-1:in']);
+      await expect(store.findMatching(query)).resolves.toMatchObject({ count: 2 });
     });
   });
 });

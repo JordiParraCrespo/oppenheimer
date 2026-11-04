@@ -13,6 +13,8 @@ export interface MatchingEventsQuery {
    * same rule as `matchesTriggerFilter`. Absent matches every event.
    */
   attribute?: { field: string; value: string };
+  /** An attribute the event must hold as `true`: an `any` filter's `anyRequires`. */
+  required?: string;
   /** How many of the newest matches to return beside the count. */
   sampleSize: number;
 }

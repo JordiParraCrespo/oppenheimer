@@ -79,14 +79,42 @@ describe('BotRoutineActivityDomainEventHandler', () => {
       aggregateId: 'run-1',
       automationId: 'automation-1',
       outcome: 'skipped',
-      skipReason: 'workspace_rate_limited',
+      skipReason: 'agent_unavailable',
     });
     expect(execute).toHaveBeenCalledWith(
       new FindBotRoutineRefQuery({ automationId: 'automation-1' }),
     );
     expect(insertOnce.mock.calls[0][0]).toMatchObject({
       id: 'event-2',
-      event: { activity: 'failed', runId: 'run-1', reason: 'workspace_rate_limited' },
+      event: { activity: 'failed', runId: 'run-1', reason: 'agent_unavailable' },
+    });
+  });
+
+  // The trigger storm: forty runs refused by the hourly cap were forty
+  // identical lines in the chat.
+  it('writes the runs a rate limit refuses in one hour as one line, announced once', async () => {
+    const lines = new Set<string>();
+    const { handler, insertOnce, publish } = setup();
+    insertOnce.mockImplementation(async (line: BotMessageEntity) => {
+      if (lines.has(line.id)) return false;
+      lines.add(line.id);
+      return true;
+    });
+    for (const [index, minute] of [1, 20, 59].entries()) {
+      await handler.onRun({
+        id: `event-${index}`,
+        metadata: { ...metadata, timestamp: RAISED + minute * 60_000 },
+        aggregateId: `run-${index}`,
+        automationId: 'automation-1',
+        outcome: 'skipped',
+        skipReason: 'automation_rate_limited',
+      });
+    }
+    expect(insertOnce).toHaveBeenCalledTimes(3);
+    expect(lines.size).toBe(1);
+    expect(publish).toHaveBeenCalledTimes(1);
+    expect(insertOnce.mock.calls[0][0]).toMatchObject({
+      event: { activity: 'failed', runId: 'run-0', reason: 'automation_rate_limited' },
     });
   });
 

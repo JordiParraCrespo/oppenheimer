@@ -406,12 +406,48 @@ describe('GmailGateway', () => {
 
     const mail = await new GmailGateway(config).newMessages(ANA, '100', 50);
 
-    expect(mail).toEqual({ messageIds: ['m1', 'm2'], historyId: '200' });
+    expect(mail).toEqual({ messageIds: ['m1', 'm2'], inboxIds: ['m1', 'm2'], historyId: '200' });
     const first = new URL(fetch.mock.calls[1][0]);
     expect(first.pathname).toBe('/gmail/v1/users/me/history');
     expect(first.searchParams.get('startHistoryId')).toBe('100');
     expect(first.searchParams.get('historyTypes')).toBe('messageAdded');
     expect(new URL(fetch.mock.calls[2][0]).searchParams.get('pageToken')).toBe('p2');
+  });
+
+  // What breaks this: spam or a deleted chat waking a routine that watches for new mail.
+  it('leaves out spam, trash and chats, and says which new messages reached the inbox', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi
+        .fn()
+        .mockResolvedValueOnce(TOKEN())
+        .mockResolvedValueOnce(
+          json(200, {
+            history: [
+              { id: '101', messagesAdded: [{ message: { id: 'spam', labelIds: ['SPAM'] } }] },
+              { id: '102', messagesAdded: [{ message: { id: 'bin', labelIds: ['TRASH'] } }] },
+              { id: '103', messagesAdded: [{ message: { id: 'chat', labelIds: ['CHAT'] } }] },
+              {
+                id: '104',
+                messagesAdded: [{ message: { id: 'filed', labelIds: ['Label_7', 'UNREAD'] } }],
+              },
+              {
+                id: '105',
+                messagesAdded: [
+                  { message: { id: 'promo', labelIds: ['INBOX', 'CATEGORY_PROMOTIONS'] } },
+                ],
+              },
+            ],
+            historyId: '200',
+          }),
+        ),
+    );
+
+    await expect(new GmailGateway(config).newMessages(ANA, '100', 50)).resolves.toEqual({
+      messageIds: ['filed', 'promo'],
+      inboxIds: ['promo'],
+      historyId: '200',
+    });
   });
 
   it('stops at its cap where it stopped, and answers null for history Gmail no longer keeps', async () => {
@@ -434,6 +470,7 @@ describe('GmailGateway', () => {
 
     await expect(gateway.newMessages(ANA, '100', 1)).resolves.toEqual({
       messageIds: ['m1'],
+      inboxIds: ['m1'],
       historyId: '101',
     });
     await expect(gateway.newMessages(ANA, '1', 50)).resolves.toBeNull();
