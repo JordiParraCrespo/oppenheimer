@@ -1,5 +1,5 @@
 import { heyApiSdk } from '@oppenheimer/api-client';
-import type { ClientDeployment } from '@oppenheimer/shared';
+import type { ApiVersion, ClientDeployment } from '@oppenheimer/shared';
 import { injectable } from 'inversify';
 import { callApi } from '../core/errors';
 
@@ -14,6 +14,13 @@ export class CapabilitiesRepository {
   get(): Promise<ClientDeployment> {
     return callApi(CapabilitiesErrors.FETCH_FAILED, async (api) => {
       return api.body(heyApiSdk.deploymentCapabilities());
+    });
+  }
+
+  /** `GET /health/version`: the release the API runs. */
+  getVersion(): Promise<ApiVersion> {
+    return callApi(CapabilitiesErrors.VERSION_FETCH_FAILED, async (api) => {
+      return api.body(heyApiSdk.apiVersion());
     });
   }
 }

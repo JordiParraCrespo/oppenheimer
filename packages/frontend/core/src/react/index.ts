@@ -16,7 +16,7 @@ export {
   useSessionRestore,
   useSocialLogin,
 } from './auth.queries';
-export { useDeploymentCapabilities } from './capabilities.queries';
+export { useApiVersion, useDeploymentCapabilities } from './capabilities.queries';
 export { OppenheimerProvider, useOppenheimerApp } from './context';
 export { type ResolvedErrorMessage, useErrorMessage } from './error-message';
 export {

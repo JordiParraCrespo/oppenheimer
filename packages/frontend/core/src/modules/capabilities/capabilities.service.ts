@@ -1,4 +1,4 @@
-import type { ClientDeployment } from '@oppenheimer/shared';
+import type { ApiVersion, ClientDeployment } from '@oppenheimer/shared';
 import { inject, injectable } from 'inversify';
 import { TOKENS } from '../../di/tokens';
 import type { CapabilitiesRepository } from './capabilities.repository';
@@ -12,5 +12,9 @@ export class CapabilitiesService {
 
   async get(): Promise<ClientDeployment> {
     return this.capabilitiesRepository.get();
+  }
+
+  async getVersion(): Promise<ApiVersion> {
+    return this.capabilitiesRepository.getVersion();
   }
 }

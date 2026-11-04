@@ -3161,7 +3161,9 @@
       "modelProviders": "Proveedores de modelos",
       "cloudAgents": "Agentes en la nube",
       "mail": "Correo",
-      "whatsapp": "WhatsApp"
+      "whatsapp": "WhatsApp",
+      "app": "Oppenheimer",
+      "about": "Acerca de"
     },
     "profile": {
       "title": "Perfil",
@@ -3419,6 +3421,15 @@
       "qrStep2": "Ve a Ajustes → Dispositivos vinculados → Vincular un dispositivo.",
       "qrStep3": "Apunta el teléfono a este código. Cambia cada pocos segundos.",
       "qrWaiting": "Esperando a que el host genere un código…"
+    },
+    "about": {
+      "title": "Acerca de",
+      "versionsHeading": "Versiones",
+      "console": "Consola",
+      "consoleHint": "La aplicación web que se ejecuta en esta pestaña.",
+      "api": "API",
+      "apiHint": "El plano de control con el que habla esta consola.",
+      "unavailable": "No disponible"
     }
   },
   "nav": {

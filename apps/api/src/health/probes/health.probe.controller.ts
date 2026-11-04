@@ -8,12 +8,15 @@ import { NoPolicy } from '../../auth/decorators/check-policies.decorator';
 import { AllowAnyScope } from '../../auth/decorators/require-scopes.decorator';
 import { CapabilitiesResponseDto } from '../dtos/capabilities.response.dto';
 import { LivenessResponseDto, ReadinessResponseDto } from '../dtos/readiness.response.dto';
+import { VersionResponseDto } from '../dtos/version.response.dto';
+import { API_VERSION } from '../infrastructure/api-version.util';
 import { ReadinessIndicator } from './readiness.indicator';
 
 /**
  * The probes. Public and unauthenticated on purpose: the deploy gate and the
  * container healthcheck call them before anything could hold a credential,
- * and nothing they answer describes the deployment beyond "can it serve".
+ * and nothing they answer describes the deployment beyond "can it serve", what
+ * a client may offer, and which release it runs.
  */
 @ApiTags('Health')
 @Controller()
@@ -70,6 +73,21 @@ export class HealthProbeController {
       github_app_install_url:
         flags.github_app && slug ? `https://github.com/apps/${slug}/installations/new` : null,
     };
+  }
+
+  @Get('health/version')
+  @NoPolicy('public version probe; the console bundle already ships its own')
+  // Same reasoning as capabilities: anonymous callers get it, so a scoped
+  // credential may too rather than a fail-closed 403.
+  @AllowAnyScope()
+  @ApiOperation({
+    summary: 'The release this API runs',
+    description:
+      'The `version` of the API package. The console shows it beside its own in Settings → About.',
+  })
+  @ApiResponse({ status: 200, type: VersionResponseDto, description: 'The API version' })
+  apiVersion(): VersionResponseDto {
+    return { version: API_VERSION };
   }
 
   @Get('ready')

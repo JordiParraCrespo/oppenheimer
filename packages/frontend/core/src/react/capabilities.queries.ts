@@ -1,6 +1,6 @@
 'use client';
 
-import type { ClientDeployment } from '@oppenheimer/shared';
+import type { ApiVersion, ClientDeployment } from '@oppenheimer/shared';
 import { type UseQueryOptions } from '@tanstack/react-query';
 import { CORE_CONFIG } from '../config';
 import { useOppenheimerApp } from './context';
@@ -9,6 +9,7 @@ import { useQuery } from './query';
 export const capabilitiesKeys = {
   all: ['capabilities'] as const,
   deployment: () => [...capabilitiesKeys.all, 'deployment'] as const,
+  version: () => [...capabilitiesKeys.all, 'version'] as const,
 };
 
 /**
@@ -29,6 +30,23 @@ export function useDeploymentCapabilities<TData = ClientDeployment>(
   return useQuery({
     queryKey: capabilitiesKeys.deployment(),
     queryFn: () => app.capabilities.get(),
+    staleTime: CORE_CONFIG.query.capabilitiesStaleMs,
+    ...options,
+  });
+}
+
+/**
+ * The release the API runs, from `GET /health/version`, for Settings → About.
+ * Like the capabilities it changes only on a redeploy.
+ */
+export function useApiVersion<TData = ApiVersion>(
+  options?: Omit<UseQueryOptions<ApiVersion, Error, TData>, 'queryKey' | 'queryFn'>,
+) {
+  const app = useOppenheimerApp();
+
+  return useQuery({
+    queryKey: capabilitiesKeys.version(),
+    queryFn: () => app.capabilities.getVersion(),
     staleTime: CORE_CONFIG.query.capabilitiesStaleMs,
     ...options,
   });

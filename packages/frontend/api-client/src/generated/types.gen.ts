@@ -4846,6 +4846,13 @@ export type CapabilitiesResponseDto = {
     github_app_install_url: string | null;
 };
 
+export type VersionResponseDto = {
+    /**
+     * The release this API runs, as in its package.json.
+     */
+    version: string;
+};
+
 export type DependencyStatusDto = {
     /**
      * `ok` when the dependency answered in time, `error` otherwise.
@@ -15698,6 +15705,22 @@ export type DeploymentCapabilitiesResponses = {
 };
 
 export type DeploymentCapabilitiesResponse = DeploymentCapabilitiesResponses[keyof DeploymentCapabilitiesResponses];
+
+export type ApiVersionData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/health/version';
+};
+
+export type ApiVersionResponses = {
+    /**
+     * The API version
+     */
+    200: VersionResponseDto;
+};
+
+export type ApiVersionResponse = ApiVersionResponses[keyof ApiVersionResponses];
 
 export type ReadinessData = {
     body?: never;

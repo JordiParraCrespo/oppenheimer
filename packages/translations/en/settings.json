@@ -9,7 +9,9 @@
     "modelProviders": "Model providers",
     "cloudAgents": "Cloud agents",
     "mail": "Mail",
-    "whatsapp": "WhatsApp"
+    "whatsapp": "WhatsApp",
+    "app": "Oppenheimer",
+    "about": "About"
   },
   "profile": {
     "title": "Profile",
@@ -267,5 +269,14 @@
     "qrStep2": "Go to Settings → Linked devices → Link a device.",
     "qrStep3": "Point the phone at this code. It changes every few seconds.",
     "qrWaiting": "Waiting for the host to issue a code…"
+  },
+  "about": {
+    "title": "About",
+    "versionsHeading": "Versions",
+    "console": "Console",
+    "consoleHint": "The web app running in this tab.",
+    "api": "API",
+    "apiHint": "The control plane this console talks to.",
+    "unavailable": "Unavailable"
   }
 }

@@ -23083,6 +23083,29 @@
         ]
       }
     },
+    "/api/v1/health/version": {
+      "get": {
+        "description": "The `version` of the API package. The console shows it beside its own in Settings → About.",
+        "operationId": "apiVersion",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "The API version",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VersionResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "The release this API runs",
+        "tags": [
+          "Health"
+        ]
+      }
+    },
     "/api/v1/ready": {
       "get": {
         "description": "Answers 200 only when PostgreSQL and Redis both answer within their configured timeouts, and 503 otherwise. Why a dependency failed is logged, never returned.",
@@ -37140,6 +37163,19 @@
           "bot_providers",
           "session_previews",
           "github_app_install_url"
+        ]
+      },
+      "VersionResponseDto": {
+        "type": "object",
+        "properties": {
+          "version": {
+            "type": "string",
+            "description": "The release this API runs, as in its package.json.",
+            "example": "0.3.0"
+          }
+        },
+        "required": [
+          "version"
         ]
       },
       "DependencyStatusDto": {

@@ -98,6 +98,7 @@
   "GET /v1/github/tokens/repositories": ["pulls:read"],
   "GET /v1/health": "session-only",
   "GET /v1/health/capabilities": "any",
+  "GET /v1/health/version": "any",
   "GET /v1/hosts": ["hosts:read"],
   "GET /v1/hosts/:id": ["hosts:read"],
   "GET /v1/hosts/:id/codex-environments": ["hosts:read"],
