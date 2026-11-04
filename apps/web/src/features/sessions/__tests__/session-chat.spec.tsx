@@ -604,7 +604,43 @@ describe('a long conversation', () => {
     }),
   ];
 
-  it('draws its latest turns and the earlier ones on asking, a page at a time', () => {
+  /**
+   * The browser's observer, which jsdom lacks: `reach` puts the elements it
+   * watches in view, as a reader scrolling to the chat's top does.
+   */
+  function observeIntersections() {
+    const watched = new Map<Element, IntersectionObserverCallback>();
+    vi.stubGlobal(
+      'IntersectionObserver',
+      class {
+        constructor(private readonly callback: IntersectionObserverCallback) {}
+        observe(element: Element) {
+          watched.set(element, this.callback);
+        }
+        disconnect() {
+          for (const [element, callback] of watched) {
+            if (callback === this.callback) watched.delete(element);
+          }
+        }
+      },
+    );
+    return {
+      reach(element: Element) {
+        const callback = watched.get(element);
+        if (!callback) throw new Error('the element is not watched');
+        act(() =>
+          callback(
+            [{ isIntersecting: true, target: element } as IntersectionObserverEntry],
+            {} as IntersectionObserver,
+          ),
+        );
+      },
+    };
+  }
+
+  it('draws its latest turns, and the earlier ones a page at a time as the reader scrolls to its top', () => {
+    vi.useFakeTimers();
+    const observer = observeIntersections();
     const chat = new Chat();
     chat.apply({ reset: true, entries: Array.from({ length: 90 }, (_, i) => turn(i + 1)).flat() });
     render(<SessionChat chat={chat} agent="claude-code" readOnly={false} />);
@@ -612,12 +648,22 @@ describe('a long conversation', () => {
     expect(screen.getByText('Prompt 51')).toBeTruthy();
     expect(screen.queryByText('Prompt 50')).toBeNull();
 
-    fireEvent.click(screen.getByRole('button', { name: /sessions.chat.earlier\{"count":40\}/ }));
+    // The top in view shows the spinner a moment, seen twice or once, and
+    // then the page above it.
+    const top = screen.getByRole('status', { name: 'sessions.chat.earlier' });
+    observer.reach(top);
+    observer.reach(top);
+    expect(screen.queryByText('Prompt 50')).toBeNull();
+    act(() => vi.runAllTimers());
     expect(screen.getByText('Prompt 11')).toBeTruthy();
     expect(screen.queryByText('Prompt 10')).toBeNull();
-    fireEvent.click(screen.getByRole('button', { name: /sessions.chat.earlier\{"count":10\}/ }));
+
+    observer.reach(screen.getByRole('status', { name: 'sessions.chat.earlier' }));
+    act(() => vi.runAllTimers());
     expect(screen.getByText('Prompt 1')).toBeTruthy();
-    expect(screen.queryByRole('button', { name: /sessions.chat.earlier/ })).toBeNull();
+    expect(screen.queryByRole('status', { name: 'sessions.chat.earlier' })).toBeNull();
+    vi.useRealTimers();
+    vi.unstubAllGlobals();
     // Ninety turns drawn and two more pages: 2.6s alone, past vitest's 5s
     // default when the whole repository's suites run side by side.
   }, 15_000);

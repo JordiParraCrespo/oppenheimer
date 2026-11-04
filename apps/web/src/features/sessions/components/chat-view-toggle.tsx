@@ -2,7 +2,7 @@ import { SegmentedControl, SegmentedControlItem } from '@oppenheimer/design-syst
 import { useTranslation } from 'react-i18next';
 import type { SessionView } from '../lib/chat-blocks';
 
-/** Chat / Terminal, Chat first as the view a session opens on, first in a session terminal's status bar once the chat is offered. */
+/** Terminal / Chat, Terminal first as the view a session opens on, first in a session terminal's status bar once the chat is offered. */
 export function ChatViewToggle({
   view,
   onViewChange,
@@ -17,10 +17,10 @@ export function ChatViewToggle({
       onValueChange={(next) => onViewChange(next === 'chat' ? 'chat' : 'terminal')}
       aria-label={t('sessions.chat.view.label')}
     >
-      <SegmentedControlItem value="chat">{t('sessions.chat.view.chat')}</SegmentedControlItem>
       <SegmentedControlItem value="terminal">
         {t('sessions.chat.view.terminal')}
       </SegmentedControlItem>
+      <SegmentedControlItem value="chat">{t('sessions.chat.view.chat')}</SegmentedControlItem>
     </SegmentedControl>
   );
 }
