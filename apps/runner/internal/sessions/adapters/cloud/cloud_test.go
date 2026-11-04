@@ -78,6 +78,23 @@ echo 'View: https://claude.ai/code/session_01abcdefgh'
 	}
 }
 
+// Unanswered, Claude Code 2.1.31x's "use this machine's settings in cloud
+// sessions?" holds every start: Prepare answers it before the CLI runs.
+func TestStartPreparesTheMachineBeforeTheCLIRuns(t *testing.T) {
+	answered := filepath.Join(t.TempDir(), "answered")
+	claude := fakeClaude(t, `[ -f '`+answered+`' ] || { echo 'Yes, send my settings'; sleep 60; }
+echo 'View: https://claude.ai/code/session_01abcdefgh'
+`)
+	starter := Starter{
+		Command: claude,
+		Timeout: 5 * time.Second,
+		Prepare: func() error { return os.WriteFile(answered, nil, 0o600) },
+	}
+	if _, err := starter.Start(context.Background(), t.TempDir(), "task"); err != nil {
+		t.Fatalf("Start: %v", err)
+	}
+}
+
 // A checkout that cannot be marked trusted is one the CLI would sit in until
 // the timeout: the start fails at once, naming why, and the CLI never runs.
 func TestStartFailsAtOnceWhenTheCheckoutCannotBeTrusted(t *testing.T) {
