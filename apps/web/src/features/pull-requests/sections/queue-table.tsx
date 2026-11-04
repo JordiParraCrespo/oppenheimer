@@ -81,7 +81,14 @@ export function QueueTable() {
   const lanes = facetCounts(data.items, narrowed, 'lane');
   const checks = facetCounts(data.items, narrowed, 'checks');
   const waits = facetCounts(data.items, narrowed, 'wait');
-  const names = [...new Set(data.items.map((row) => row.repository))].sort();
+  // The repository picked stays an option where this scope has none of its
+  // rows, so the picker still names it, with its 0, beside an empty table.
+  const names = [
+    ...new Set([
+      ...data.items.map((row) => row.repository),
+      ...(filters.repo ? [filters.repo] : []),
+    ]),
+  ].sort();
   return (
     <>
       <ErrorAlert error={error} fallback={t('pullRequests.queue.loadFailed')} />

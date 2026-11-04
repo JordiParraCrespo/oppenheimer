@@ -1,4 +1,8 @@
-import type { PullRequestEntity, PullRequestLane } from '@oppenheimer/frontend-consumer';
+import type {
+  PullRequestEntity,
+  PullRequestLane,
+  PullRequestQueueName,
+} from '@oppenheimer/frontend-consumer';
 import type { QueueChecks, QueueWait } from './queue-search';
 
 export const QUEUE_PAGE_SIZE = 10;
@@ -67,6 +71,30 @@ export function facetCounts(
             ? row.checks
             : waitOf(row.waitingSeconds);
     counts[key] = (counts[key] ?? 0) + 1;
+  }
+  return counts;
+}
+
+/**
+ * How many rows each scope tab would show under the filters in the address
+ * (the repository and the facets; the search is the table's own): read from
+ * the `all` queue, whose rows each carry their scope, so a tab never promises
+ * rows its table then filters away.
+ */
+export function scopeCounts(
+  rows: readonly PullRequestEntity[],
+  filters: QueueFilters,
+): Record<PullRequestQueueName, number> {
+  const counts: Record<PullRequestQueueName, number> = {
+    all: 0,
+    mine: 0,
+    requested: 0,
+    watching: 0,
+  };
+  for (const row of rows) {
+    if (!matches(row, filters)) continue;
+    counts.all += 1;
+    counts[row.scope] += 1;
   }
   return counts;
 }
