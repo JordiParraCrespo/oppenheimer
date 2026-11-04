@@ -19,6 +19,9 @@ export const apiHttpMetricsOptions: HttpMetricsOptions = {
   excludedTemplates: ['/v1/health', '/v1/ready', '/v1/metrics'],
   routes: [
     { templatePrefix: '/v1/health/capabilities', group: 'capabilities' },
+    // The rest of /health a client reads (the API version, Settings → About):
+    // the same kind of rare, static read as the capabilities.
+    { templatePrefix: '/v1/health', group: 'capabilities' },
     { templatePrefix: '/v1/events', group: 'events' },
     { templatePrefix: '/v1/github/webhook', group: 'webhooks' },
     { templatePrefix: '/v1/sessions', group: 'sessions' },

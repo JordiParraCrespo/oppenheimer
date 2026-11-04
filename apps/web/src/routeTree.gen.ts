@@ -49,6 +49,7 @@ import { Route as AuthenticatedSessionsIndexRouteImport } from './routes/_authen
 import { Route as AuthenticatedSessionsSessionIdRouteImport } from './routes/_authenticated/sessions/$sessionId'
 import { Route as AuthenticatedSessionsNewRouteImport } from './routes/_authenticated/sessions/new'
 import { Route as AuthenticatedSettingsIndexRouteImport } from './routes/_authenticated/settings/index'
+import { Route as AuthenticatedSettingsAboutRouteImport } from './routes/_authenticated/settings/about'
 import { Route as AuthenticatedSettingsCloudAgentsRouteImport } from './routes/_authenticated/settings/cloud-agents'
 import { Route as AuthenticatedSettingsMailRouteImport } from './routes/_authenticated/settings/mail'
 import { Route as AuthenticatedSettingsModelProvidersRouteImport } from './routes/_authenticated/settings/model-providers'
@@ -285,6 +286,12 @@ const AuthenticatedSettingsIndexRoute =
     path: '/',
     getParentRoute: () => AuthenticatedSettingsRoute,
   } as any)
+const AuthenticatedSettingsAboutRoute =
+  AuthenticatedSettingsAboutRouteImport.update({
+    id: '/about',
+    path: '/about',
+    getParentRoute: () => AuthenticatedSettingsRoute,
+  } as any)
 const AuthenticatedSettingsCloudAgentsRoute =
   AuthenticatedSettingsCloudAgentsRouteImport.update({
     id: '/cloud-agents',
@@ -473,6 +480,7 @@ export interface FileRoutesByFullPath {
   '/pulls/analytics': typeof AuthenticatedPullsAnalyticsRoute
   '/sessions/$sessionId': typeof AuthenticatedSessionsSessionIdRoute
   '/sessions/new': typeof AuthenticatedSessionsNewRoute
+  '/settings/about': typeof AuthenticatedSettingsAboutRoute
   '/settings/cloud-agents': typeof AuthenticatedSettingsCloudAgentsRoute
   '/settings/mail': typeof AuthenticatedSettingsMailRoute
   '/settings/model-providers': typeof AuthenticatedSettingsModelProvidersRoute
@@ -533,6 +541,7 @@ export interface FileRoutesByTo {
   '/pulls/analytics': typeof AuthenticatedPullsAnalyticsRoute
   '/sessions/$sessionId': typeof AuthenticatedSessionsSessionIdRoute
   '/sessions/new': typeof AuthenticatedSessionsNewRoute
+  '/settings/about': typeof AuthenticatedSettingsAboutRoute
   '/settings/cloud-agents': typeof AuthenticatedSettingsCloudAgentsRoute
   '/settings/mail': typeof AuthenticatedSettingsMailRoute
   '/settings/model-providers': typeof AuthenticatedSettingsModelProvidersRoute
@@ -601,6 +610,7 @@ export interface FileRoutesById {
   '/_authenticated/pulls/analytics': typeof AuthenticatedPullsAnalyticsRoute
   '/_authenticated/sessions/$sessionId': typeof AuthenticatedSessionsSessionIdRoute
   '/_authenticated/sessions/new': typeof AuthenticatedSessionsNewRoute
+  '/_authenticated/settings/about': typeof AuthenticatedSettingsAboutRoute
   '/_authenticated/settings/cloud-agents': typeof AuthenticatedSettingsCloudAgentsRoute
   '/_authenticated/settings/mail': typeof AuthenticatedSettingsMailRoute
   '/_authenticated/settings/model-providers': typeof AuthenticatedSettingsModelProvidersRoute
@@ -668,6 +678,7 @@ export interface FileRouteTypes {
     | '/pulls/analytics'
     | '/sessions/$sessionId'
     | '/sessions/new'
+    | '/settings/about'
     | '/settings/cloud-agents'
     | '/settings/mail'
     | '/settings/model-providers'
@@ -728,6 +739,7 @@ export interface FileRouteTypes {
     | '/pulls/analytics'
     | '/sessions/$sessionId'
     | '/sessions/new'
+    | '/settings/about'
     | '/settings/cloud-agents'
     | '/settings/mail'
     | '/settings/model-providers'
@@ -795,6 +807,7 @@ export interface FileRouteTypes {
     | '/_authenticated/pulls/analytics'
     | '/_authenticated/sessions/$sessionId'
     | '/_authenticated/sessions/new'
+    | '/_authenticated/settings/about'
     | '/_authenticated/settings/cloud-agents'
     | '/_authenticated/settings/mail'
     | '/_authenticated/settings/model-providers'
@@ -1123,6 +1136,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSettingsIndexRouteImport
       parentRoute: typeof AuthenticatedSettingsRoute
     }
+    '/_authenticated/settings/about': {
+      id: '/_authenticated/settings/about'
+      path: '/about'
+      fullPath: '/settings/about'
+      preLoaderRoute: typeof AuthenticatedSettingsAboutRouteImport
+      parentRoute: typeof AuthenticatedSettingsRoute
+    }
     '/_authenticated/settings/cloud-agents': {
       id: '/_authenticated/settings/cloud-agents'
       path: '/cloud-agents'
@@ -1410,6 +1430,7 @@ const AuthenticatedPullsRouteWithChildren =
   AuthenticatedPullsRoute._addFileChildren(AuthenticatedPullsRouteChildren)
 
 interface AuthenticatedSettingsRouteChildren {
+  AuthenticatedSettingsAboutRoute: typeof AuthenticatedSettingsAboutRoute
   AuthenticatedSettingsCloudAgentsRoute: typeof AuthenticatedSettingsCloudAgentsRoute
   AuthenticatedSettingsMailRoute: typeof AuthenticatedSettingsMailRoute
   AuthenticatedSettingsModelProvidersRoute: typeof AuthenticatedSettingsModelProvidersRoute
@@ -1423,6 +1444,7 @@ interface AuthenticatedSettingsRouteChildren {
 }
 
 const AuthenticatedSettingsRouteChildren: AuthenticatedSettingsRouteChildren = {
+  AuthenticatedSettingsAboutRoute: AuthenticatedSettingsAboutRoute,
   AuthenticatedSettingsCloudAgentsRoute: AuthenticatedSettingsCloudAgentsRoute,
   AuthenticatedSettingsMailRoute: AuthenticatedSettingsMailRoute,
   AuthenticatedSettingsModelProvidersRoute:
