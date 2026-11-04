@@ -23083,34 +23083,6 @@
         ]
       }
     },
-    "/api/v1/health/version": {
-      "get": {
-        "description": "The `version` of the API package. The console shows it beside its own in Settings → About.",
-        "operationId": "apiVersion",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "The API version",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/VersionResponseDto"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "The release this API runs",
-        "tags": [
-          "Health"
-        ]
-      }
-    },
     "/api/v1/ready": {
       "get": {
         "description": "Answers 200 only when PostgreSQL and Redis both answer within their configured timeouts, and 503 otherwise. Why a dependency failed is logged, never returned.",
@@ -23139,6 +23111,54 @@
           }
         },
         "summary": "Readiness check",
+        "tags": [
+          "Health"
+        ]
+      }
+    },
+    "/api/v1/health/version": {
+      "get": {
+        "description": "The `version` of the API package. The console shows it beside its own in Settings → About.",
+        "operationId": "findApiVersion",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "The API version",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VersionResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "The release this API runs",
         "tags": [
           "Health"
         ]
@@ -37170,19 +37190,6 @@
           "github_app_install_url"
         ]
       },
-      "VersionResponseDto": {
-        "type": "object",
-        "properties": {
-          "version": {
-            "type": "string",
-            "description": "The release this API runs, as in its package.json.",
-            "example": "0.3.0"
-          }
-        },
-        "required": [
-          "version"
-        ]
-      },
       "DependencyStatusDto": {
         "type": "object",
         "properties": {
@@ -37249,6 +37256,19 @@
         "required": [
           "status",
           "checks"
+        ]
+      },
+      "VersionResponseDto": {
+        "type": "object",
+        "properties": {
+          "version": {
+            "type": "string",
+            "description": "The release this API runs, as in its package.json.",
+            "example": "0.3.0"
+          }
+        },
+        "required": [
+          "version"
         ]
       }
     }

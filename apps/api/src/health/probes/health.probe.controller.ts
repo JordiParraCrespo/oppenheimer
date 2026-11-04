@@ -1,25 +1,19 @@
-import { Controller, Get, HttpStatus, Res, UseGuards } from '@nestjs/common';
+import { Controller, Get, HttpStatus, Res } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { CapabilitiesService } from '@oppenheimer/backend-core';
 import { CLIENT_CAPABILITIES, type DeploymentCapability } from '@oppenheimer/shared';
 import type { Response } from 'express';
 import { NoPolicy } from '../../auth/decorators/check-policies.decorator';
 import { AllowAnyScope } from '../../auth/decorators/require-scopes.decorator';
-import { ApiAuthGuard } from '../../auth/guards/api-auth.guard';
 import { CapabilitiesResponseDto } from '../dtos/capabilities.response.dto';
 import { LivenessResponseDto, ReadinessResponseDto } from '../dtos/readiness.response.dto';
-import { VersionResponseDto } from '../dtos/version.response.dto';
-import { API_VERSION } from '../infrastructure/api-version.util';
 import { ReadinessIndicator } from './readiness.indicator';
 
 /**
  * The probes. Public and unauthenticated on purpose: the deploy gate and the
  * container healthcheck call them before anything could hold a credential,
- * and nothing they answer describes the deployment beyond "can it serve" and
- * what a client may offer. The one exception is `health/version`, which is
- * behind a signed-in session: a release number tells a stranger which known
- * vulnerabilities to try, and only Settings → About reads it.
+ * and nothing they answer describes the deployment beyond "can it serve".
  */
 @ApiTags('Health')
 @Controller()
@@ -76,20 +70,6 @@ export class HealthProbeController {
       github_app_install_url:
         flags.github_app && slug ? `https://github.com/apps/${slug}/installations/new` : null,
     };
-  }
-
-  @Get('health/version')
-  @UseGuards(ApiAuthGuard)
-  @NoPolicy('any signed-in account may see which release it is talking to')
-  @ApiBearerAuth()
-  @ApiOperation({
-    summary: 'The release this API runs',
-    description:
-      'The `version` of the API package. The console shows it beside its own in Settings → About.',
-  })
-  @ApiResponse({ status: 200, type: VersionResponseDto, description: 'The API version' })
-  apiVersion(): VersionResponseDto {
-    return { version: API_VERSION };
   }
 
   @Get('ready')

@@ -7,7 +7,6 @@
 import { ConfigService } from '@nestjs/config';
 import { CapabilitiesService } from '@oppenheimer/backend-core';
 import { describe, expect, it, vi } from 'vitest';
-import apiPackage from '../../../package.json';
 import { resolveCapabilities } from '../../capabilities/capabilities.module';
 import { HealthProbeController } from '../probes/health.probe.controller';
 import type { ReadinessIndicator } from '../probes/readiness.indicator';
@@ -35,12 +34,6 @@ describe('the probes', () => {
 
     expect(probes.check()).toEqual({ status: 'ok' });
     expect(readiness.check).not.toHaveBeenCalled();
-  });
-
-  // The path to package.json is relative to the module: moving it would read
-  // another package's version, or throw at boot.
-  it('answers the API package version, which Settings → About shows', () => {
-    expect(controller('ok').probes.apiVersion()).toEqual({ version: apiPackage.version });
   });
 
   it('serves 503 when a dependency is unavailable, and leaves 200 alone otherwise', async () => {

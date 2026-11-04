@@ -4,12 +4,11 @@ import type { ClientDeployment } from '@oppenheimer/shared';
 import { type UseQueryOptions } from '@tanstack/react-query';
 import { CORE_CONFIG } from '../config';
 import { useOppenheimerApp } from './context';
-import { useQuery, useSuspenseQuery } from './query';
+import { useQuery } from './query';
 
 export const capabilitiesKeys = {
   all: ['capabilities'] as const,
   deployment: () => [...capabilitiesKeys.all, 'deployment'] as const,
-  version: () => [...capabilitiesKeys.all, 'version'] as const,
 };
 
 /**
@@ -32,20 +31,5 @@ export function useDeploymentCapabilities<TData = ClientDeployment>(
     queryFn: () => app.capabilities.get(),
     staleTime: CORE_CONFIG.query.capabilitiesStaleMs,
     ...options,
-  });
-}
-
-/**
- * The release the API runs, from `GET /health/version`, for Settings → About.
- * Read under Suspense: the kit's `QueryState` draws its loading and first
- * failure. Like the capabilities it changes only on a redeploy.
- */
-export function useSuspenseApiVersion() {
-  const app = useOppenheimerApp();
-
-  return useSuspenseQuery({
-    queryKey: capabilitiesKeys.version(),
-    queryFn: () => app.capabilities.getVersion(),
-    staleTime: CORE_CONFIG.query.capabilitiesStaleMs,
   });
 }

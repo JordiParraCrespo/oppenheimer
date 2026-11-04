@@ -20,6 +20,8 @@ export const TOKENS = {
   FeatureFlagsClientContext: Symbol.for('FeatureFlagsClientContext'),
   FeatureFlagsRepository: Symbol.for('FeatureFlagsRepository'),
   FeatureFlagsService: Symbol.for('FeatureFlagsService'),
+  ReleaseRepository: Symbol.for('ReleaseRepository'),
+  ReleaseService: Symbol.for('ReleaseService'),
   UserRepository: Symbol.for('UserRepository'),
   UsersService: Symbol.for('UsersService'),
   UserSettingsRepository: Symbol.for('UserSettingsRepository'),
