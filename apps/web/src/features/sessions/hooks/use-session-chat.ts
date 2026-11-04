@@ -1,6 +1,6 @@
 import type { ChatState, ChatTurn, SessionChat } from '@oppenheimer/frontend-consumer';
 import { shareEntities, useFeatureFlag } from '@oppenheimer/frontend-core/react';
-import { useState, useSyncExternalStore } from 'react';
+import { useEffect, useState, useSyncExternalStore } from 'react';
 import type { PaneReading } from '../lib/chat-blocks';
 import { sessionChatFor } from '../lib/session-chats';
 
@@ -13,6 +13,9 @@ import { sessionChatFor } from '../lib/session-chats';
  */
 export function useSessionChat(key: string): SessionChat {
   const [chat] = useState(() => sessionChatFor(key));
+  // Effect: the kept chat outlives this pane, so the pane hands it back on
+  // unmount, after its terminal stopped feeding it (`SessionChat.detach`).
+  useEffect(() => () => chat.detach(), [chat]);
   return chat;
 }
 

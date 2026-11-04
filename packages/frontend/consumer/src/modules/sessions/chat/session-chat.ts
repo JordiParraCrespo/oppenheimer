@@ -277,6 +277,11 @@ class Transcript {
     return true;
   }
 
+  /** A replay that will send nothing more: what is held stays as it is. */
+  endReplay(): void {
+    this.replayed = null;
+  }
+
   /** One line of the conversation; whether it changed what is held. */
   take(raw: string, entry: unknown): boolean {
     if (this.replayed !== null) {
@@ -563,6 +568,29 @@ export class SessionChat {
     this.publish({ ...this.state, queued: rest });
     this.send(next.text);
     if (rest.length > 0) setTimeout(() => this.flush(), QUEUE_SETTLE_MS);
+  }
+
+  /**
+   * The pane that read this chat is gone, and the stream that fed it with
+   * it, while the chat is kept for the session's next pane. What was on its
+   * way is not waited for: a replay cut short keeps every line held, rather
+   * than taking its quiet for a transcript that got shorter, and a first
+   * load cut short is dropped, so the next stream loads it whole. Messages
+   * queued for the agent go too: they were written in that visit, and
+   * typing them in a later one would drive the agent out of sight.
+   */
+  detach(): void {
+    this.quiet.watch(null, this.settled);
+    this.transcript.endReplay();
+    this.queuedDuring = null;
+    this.sentQueued = null;
+    if (this.loading) {
+      this.firstLoad.end();
+      this.transcript.reset(false);
+      this.publish(EMPTY);
+      return;
+    }
+    if (this.state.queued.length > 0) this.publish({ ...this.state, queued: [] });
   }
 
   /** Lends the chat a way to type into the session's PTY; the function returned takes it back. */
