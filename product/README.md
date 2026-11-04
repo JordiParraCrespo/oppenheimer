@@ -1057,7 +1057,8 @@ earlier note:
   the whole transcript every time a pane mounts, moving between sessions
   too, while the terminal draws at once from the grid the tab kept, so
   opening on Chat meant waiting on a session that was already on screen.
-  Chat stays a press away.
+  Chat stays a press away. A pull request's review session opens on
+  Terminal too, as `0.2-pull-requests.md` says its tab does.
 - Note 13 said herdr's agents do not survive a restart and took its screen
   manifests as the model for agent state. herdr-core, its successor, keeps
   programs alive across its own restarts and takes status only from the
