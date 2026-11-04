@@ -7,6 +7,7 @@ import { ReceiveInboundDeliveryCommand } from '../../../inbound-events/commands/
 import { MailWatchResolver } from '../../application/mail-watch.resolver';
 import type { GmailConnectionRepositoryPort } from '../../database/gmail-connection.repository.port';
 import type { GmailConnectionEntity } from '../../domain/gmail-connection.entity';
+import { watchedConnections } from '../../domain/mail-watch.policy';
 import { GMAIL_DELIVERY_EVENT } from '../../infrastructure/gmail-event-normalizer.util';
 import { GMAIL_CONNECTION_REPOSITORY } from '../../mail.di-tokens';
 import { PollWatchedMailCommand } from './poll-watched-mail.command';
@@ -45,13 +46,7 @@ export class PollWatchedMailCommandHandler
       watched.length > 0
         ? await this.connections.findManyForSystem(watched.map((subject) => subject.subjectRef))
         : [];
-    const read = connections.flatMap((connection) => {
-      const subject = watched.find(
-        (each) =>
-          each.subjectRef === connection.id && each.organizationId === connection.organizationId,
-      );
-      return subject ? [{ connection, filters: subject.filters }] : [];
-    });
+    const read = watchedConnections(connections, watched);
     // A mark this poll does not move goes stale: one kept through a pause, a
     // deleted routine or a revoked grant would hand over that gap's mail as new.
     await this.connections.forgetHistoryExcept(read.map(({ connection }) => connection.id));

@@ -50,3 +50,21 @@ export function takenMessages(
     .map((id) => ({ id, matched: matchedQueries(id, answers), inbox: mail.inboxIds.includes(id) }))
     .filter(({ matched, inbox }) => matched.length > 0 || (anyMail && inbox));
 }
+
+/**
+ * The accounts a poll reads, each with the filters of the triggers that
+ * watch it: a trigger reads only an account of its own workspace, so a
+ * subject naming another workspace's connection reads nothing.
+ */
+export function watchedConnections<C extends { id: string; organizationId: string }, F>(
+  connections: readonly C[],
+  watched: readonly { organizationId: string; subjectRef: string; filters: F }[],
+): { connection: C; filters: F }[] {
+  return connections.flatMap((connection) => {
+    const subject = watched.find(
+      (each) =>
+        each.subjectRef === connection.id && each.organizationId === connection.organizationId,
+    );
+    return subject ? [{ connection, filters: subject.filters }] : [];
+  });
+}
