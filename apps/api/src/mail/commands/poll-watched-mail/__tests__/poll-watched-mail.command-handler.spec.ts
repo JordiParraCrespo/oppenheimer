@@ -198,6 +198,27 @@ describe('PollWatchedMailCommandHandler', () => {
     expect(query.provider.readSummaries).toHaveBeenCalledWith(expect.anything(), ['archived']);
   });
 
+  // What breaks this: a query routine's archived match waking the same
+  // account's routine for any mail (`matchesTriggerFilter` reads `inbox`).
+  it('says of each message it hands over whether it reached the inbox', async () => {
+    const { poll, provider, commands } = setup([account()], watching([null, 'label:invoices']));
+    provider.newMessages.mockResolvedValueOnce({
+      messageIds: ['archived', 'inbox'],
+      inboxIds: ['inbox'],
+      historyId: '200',
+    });
+    provider.matchingIds.mockResolvedValueOnce(['archived']);
+
+    expect(await poll()).toBe(2);
+    const [delivery] = commands.mock.calls[0] as unknown as [ReceiveInboundDeliveryCommand];
+    expect(delivery.payload).toMatchObject({
+      messages: [
+        expect.objectContaining({ id: 'archived', matched: ['label:invoices'], inbox: false }),
+        expect.objectContaining({ id: 'inbox', matched: [], inbox: true }),
+      ],
+    });
+  });
+
   // The trigger storm: a mark days behind handed a backlog over as new mail,
   // each message a run past the hourly cap.
   it('hands over no mail Gmail received too long ago, however far behind the mark was', async () => {

@@ -606,7 +606,7 @@ describe('automations: firing under the caps, and the runs list (integration)', 
       expect(mine[0]).toMatchObject({ organizationId });
       expect([...mine[0].filters].sort()).toEqual(['from:billing@client.test', null].sort());
 
-      const fire = async (externalId: string, matched: string[]) => {
+      const fire = async (externalId: string, matched: string[], inbox = true) => {
         const [row]: { id: string }[] = await dataSource.query(
           `INSERT INTO "inbound_event"
              ("organizationId", "source", "externalId", "eventType", "subjectKind", "subjectRef", "occurredAt")
@@ -622,12 +622,14 @@ describe('automations: firing under the caps, and the runs list (integration)', 
             subjectRef: connectionId,
             externalId,
             actorIsOwnApp: false,
-            attributes: { query: matched },
+            attributes: { query: matched, inbox },
           }),
         );
       };
       expect(await fire(`${connectionId}:m1`, [])).toBe(1);
       expect(await fire(`${connectionId}:m2`, ['from:billing@client.test'])).toBe(2);
+      // Archived by a filter: the query's routine wakes, the one for any mail does not.
+      expect(await fire(`${connectionId}:m3`, ['from:billing@client.test'], false)).toBe(1);
     });
 
     it("records the bot turn its run became, and reads the run's status from it", async () => {

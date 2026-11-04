@@ -34,17 +34,19 @@ export function matchedQueries(
 }
 
 /**
- * The new messages some trigger takes, each with the queries it matched: a
- * trigger that watches for any mail takes what arrived in the inbox, one
- * with a query what its query matched.
+ * The new messages some trigger takes, each with the queries it matched and
+ * whether it reached the inbox: a trigger that watches for any mail takes
+ * what arrived in the inbox, one with a query what its query matched. Which
+ * triggers a message then fires is decided on those two facts
+ * (`matchesTriggerFilter`), so mail a query took never wakes "any mail".
  */
 export function takenMessages(
   mail: { messageIds: readonly string[]; inboxIds: readonly string[] },
   filters: readonly (string | null)[],
   answers: ReadonlyMap<string, readonly string[]>,
-): { id: string; matched: string[] }[] {
+): { id: string; matched: string[]; inbox: boolean }[] {
   const anyMail = filters.includes(null);
   return mail.messageIds
-    .map((id) => ({ id, matched: matchedQueries(id, answers) }))
-    .filter(({ id, matched }) => matched.length > 0 || (anyMail && mail.inboxIds.includes(id)));
+    .map((id) => ({ id, matched: matchedQueries(id, answers), inbox: mail.inboxIds.includes(id) }))
+    .filter(({ matched, inbox }) => matched.length > 0 || (anyMail && inbox));
 }

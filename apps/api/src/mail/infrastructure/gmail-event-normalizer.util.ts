@@ -23,27 +23,33 @@ export type GmailDeliveredMessage = {
   date: string;
   /** The watched queries it matched: a trigger with a query fires when its query is here. */
   matched: string[];
+  /** Whether it arrived in the inbox: a trigger for any mail fires only then. */
+  inbox: boolean;
 };
 
 /** One account's taken mail as the poll hands it to the hub. */
 export function toGmailDelivery(
   connection: { id: string; organizationId: string; accountEmail: string },
   summaries: readonly GmailMessageSummary[],
-  taken: readonly { id: string; matched: string[] }[],
+  taken: readonly { id: string; matched: string[]; inbox: boolean }[],
 ): GmailDeliveryPayload {
   return {
     connectionId: connection.id,
     organizationId: connection.organizationId,
     accountEmail: connection.accountEmail,
-    messages: summaries.map((summary) => ({
-      id: summary.id,
-      threadId: summary.threadId,
-      from: summary.from,
-      subject: summary.subject,
-      snippet: summary.snippet,
-      date: (summary.date ?? new Date()).toISOString(),
-      matched: taken.find(({ id }) => id === summary.id)?.matched ?? [],
-    })),
+    messages: summaries.map((summary) => {
+      const took = taken.find(({ id }) => id === summary.id);
+      return {
+        id: summary.id,
+        threadId: summary.threadId,
+        from: summary.from,
+        subject: summary.subject,
+        snippet: summary.snippet,
+        date: (summary.date ?? new Date()).toISOString(),
+        matched: took?.matched ?? [],
+        inbox: took?.inbox ?? false,
+      };
+    }),
   };
 }
 
@@ -55,8 +61,9 @@ export const GMAIL_DELIVERY_EVENT = 'mail_received';
  * `mail_received` per message, unique per account and message so a message
  * read twice is one event. Who wrote it, the subject and the snippet are the
  * sender's, so they are the event's untrusted context, never its attributes;
- * the attribute is the list of watched queries it matched, which a trigger's
- * filter is found in. Pure.
+ * the attributes are the list of watched queries it matched, which a
+ * trigger's filter is found in, and whether it reached the inbox, which a
+ * trigger for any mail needs. Pure.
  */
 export function normalizeGmailDelivery(delivery: InboundDelivery): ExternalEvent[] {
   const payload = deliveryOf(delivery.payload);
@@ -67,7 +74,7 @@ export function normalizeGmailDelivery(delivery: InboundDelivery): ExternalEvent
     externalId: `${payload.connectionId}:${message.id}`,
     subject: { kind: 'gmail_connection', ref: payload.connectionId, name: payload.accountEmail },
     actor: { login: message.from || null, isOwnApp: false },
-    attributes: { query: message.matched },
+    attributes: { query: message.matched, inbox: message.inbox },
     context: {
       ref: message.id,
       title: message.subject,
@@ -116,5 +123,7 @@ function messageOf(input: unknown): GmailDeliveredMessage | null {
     matched: Array.isArray(matched)
       ? matched.filter((query): query is string => typeof query === 'string')
       : [],
+    // A delivery stored before this field wakes no trigger for any mail.
+    inbox: (input as Record<string, unknown>).inbox === true,
   };
 }
