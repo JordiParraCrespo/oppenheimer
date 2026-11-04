@@ -10,6 +10,7 @@ import {
 } from '@oppenheimer/frontend-web';
 import { useTranslation } from 'react-i18next';
 import { ElapsedClock } from '../components/elapsed-clock';
+import { SessionStatusHead } from '../components/session-status-head';
 import { PENDING_START, provisioningSteps } from '../lib/provisioning-steps';
 
 /**
@@ -59,13 +60,11 @@ export function SessionProvisioning({ session }: { session: SessionEntity }) {
     // (`.op-provision__inner`, centred in the pane).
     <PageFrame size="status">
       <div>
-        <p className="figures text-micro text-fg-muted uppercase">{host}</p>
-        <h1 className="mt-2 font-display text-h2 font-semibold text-fg">
-          {t(failed ? 'sessions.provisioning.failedTitle' : 'sessions.provisioning.title')}
-        </h1>
-        <p className="mt-1.5 text-operate text-fg-muted">
-          {failed ? t('sessions.provisioning.failedLead') : session.scopeLabel}
-        </p>
+        <SessionStatusHead
+          eyebrow={host}
+          title={t(failed ? 'sessions.provisioning.failedTitle' : 'sessions.provisioning.title')}
+          lead={failed ? t('sessions.provisioning.failedLead') : session.scopeLabel}
+        />
 
         {/* The one start that is slow on purpose: said up front, so the wait
             reads as a first time rather than as something stuck. */}

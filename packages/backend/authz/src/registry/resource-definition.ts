@@ -43,6 +43,17 @@ export interface ResourceKeys {
   id?: string;
 }
 
+/**
+ * Whether a resource belongs to a person rather than a tenant: it has no
+ * organization key (a host is someone's machine). A bypass or an `'all'`
+ * grant is bounded by the tenant on every other resource; with no tenant to
+ * stay inside, either would reach every owner's rows on the deployment, so
+ * on these neither applies: the caller's own rows and rows granted by id.
+ */
+export function isPersonOwned(keys: Pick<ResourceKeys, 'organization'>): boolean {
+  return !keys.organization;
+}
+
 export interface ResourceDefinition {
   /** CASL subject string. Unique across the application. */
   subject: string;
