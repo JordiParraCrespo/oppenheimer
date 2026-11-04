@@ -18,6 +18,7 @@ provider on.
 | --------------------- | -------------------------------------------------- | ------------------------------------------------------------------------- |
 | Provider registration | `apps/api/src/auth/infrastructure/better-auth.config.ts`                        | Adds `socialProviders.google` **only** when both env vars are set         |
 | Callback route        | Better Auth                                        | Serves `${BETTER_AUTH_URL}/api/auth/callback/google`                      |
+| Account chooser       | `apps/api/src/auth/infrastructure/better-auth.config.ts` (`prompt`)            | Sets `prompt: 'select_account'`, so Google always asks which account instead of reusing the last one |
 | Name mapping          | `apps/api/src/auth/infrastructure/better-auth.config.ts` (`splitName`)          | Splits Google's `name` into the app's `firstName` / `lastName`            |
 | Capability detection  | `apps/api/src/capabilities/capabilities.module.ts` | Resolves `google_oauth` from config at boot, logs it, serves it over HTTP |
 | Capability endpoint   | `GET /api/v1/health/capabilities`                  | Tells clients whether the provider is configured                          |
@@ -227,7 +228,6 @@ All of these go on the `google` entry in `apps/api/src/auth/infrastructure/bette
 
 | Option                     | Effect                                                               |
 | -------------------------- | -------------------------------------------------------------------- |
-| `prompt: 'select_account'` | Always show the account chooser instead of silently reusing the last |
 | `accessType: 'offline'`    | Ask for a refresh token (Google issues one on first consent only)    |
 | `hd: 'example.com'`        | Restrict sign-in to one Google Workspace domain                      |
 | Extra Google API scopes    | Possible too — see Better Auth's Google provider docs for the option name and shape, and enable the matching API in the console |
