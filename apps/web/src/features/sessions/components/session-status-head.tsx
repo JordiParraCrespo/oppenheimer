@@ -1,3 +1,5 @@
+import type { ReactNode } from 'react';
+
 /**
  * The head of a session's wait (`SessionsConsole.dc.html`, `op-provision`):
  * an eyebrow, the wait as a title, and a muted lead line. "Starting your
@@ -9,7 +11,7 @@ export function SessionStatusHead({
   lead,
 }: {
   eyebrow?: string;
-  title: string;
+  title: ReactNode;
   /** Drawn even when there is none, as the provisioning pane always has. */
   lead: string | null;
 }) {
