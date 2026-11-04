@@ -4,9 +4,10 @@ import { cn } from '../lib/utils';
 
 /**
  * SidebarFoldLabel — a `SidebarListHead` label that folds the list under it:
- * the name, then a chevron that shows on hover and focus and stays, turned
- * right, while the list is folded. The head stays the layout; the caller
- * passes this as its `label` and leaves the list out while `open` is false.
+ * the name, uppercase like the head it sits in, then a chevron that shows on
+ * hover and focus and stays, turned right, while the list is folded. The head
+ * stays the layout; the caller passes this as its `label` and leaves the list
+ * out while `open` is false.
  */
 function SidebarFoldLabel({
   open,
@@ -25,7 +26,7 @@ function SidebarFoldLabel({
       aria-expanded={open}
       onClick={() => onOpenChange(!open)}
       className={cn(
-        'group/fold inline-flex max-w-full items-center gap-1 text-left outline-none transition-colors duration-fast hover:text-fg focus-visible:text-fg',
+        'group/fold inline-flex max-w-full items-center gap-1 text-left uppercase outline-none transition-colors duration-fast hover:text-fg focus-visible:text-fg',
         className,
       )}
       {...props}
