@@ -1,4 +1,4 @@
-import { useStoredList } from '@oppenheimer/frontend-web';
+import { useStoredList, withFold } from '@oppenheimer/frontend-web';
 import type { BotSection } from '@oppenheimer/shared/schemas/bot';
 
 /** The sections whose Bots heading the reader folded, kept on this device. */
@@ -13,10 +13,6 @@ export function useFoldedBots(section: BotSection) {
   const [folded, setFolded] = useStoredList(FOLDED_BOTS_KEY);
   return {
     open: !folded.includes(section),
-    setOpen: (open: boolean) =>
-      setFolded((current) => {
-        const rest = current.filter((key) => key !== section);
-        return open ? rest : [...rest, section];
-      }),
+    setOpen: (open: boolean) => setFolded((current) => withFold(current, section, open)),
   };
 }

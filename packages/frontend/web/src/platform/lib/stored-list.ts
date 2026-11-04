@@ -23,3 +23,9 @@ export function rememberList(key: string, list: readonly string[]) {
     // Private browsing or a full quota: the list holds until the page reloads.
   }
 }
+
+/** `folded` with `key` folded, or opened: a fold is one entry however often it is made. */
+export function withFold(folded: readonly string[], key: string, open: boolean): string[] {
+  const rest = folded.filter((foldedKey) => foldedKey !== key);
+  return open ? rest : [...rest, key];
+}

@@ -1,4 +1,9 @@
-import { BotList, SidebarListHead, Skeleton } from '@oppenheimer/design-system-web';
+import {
+  BotList,
+  SidebarFoldLabel,
+  SidebarListHead,
+  Skeleton,
+} from '@oppenheimer/design-system-web';
 import type { BotEntity } from '@oppenheimer/frontend-consumer';
 import { useUpdateBot } from '@oppenheimer/frontend-consumer/react';
 import { ErrorAlert, QueryState } from '@oppenheimer/frontend-web';
@@ -46,9 +51,11 @@ export function SectionBots({ section }: { section: BotSection }) {
   return (
     <section aria-label={t('bots.section.heading')} className="pb-3">
       <SidebarListHead
-        label={t('bots.section.heading')}
-        open={fold.open}
-        onOpenChange={fold.setOpen}
+        label={
+          <SidebarFoldLabel open={fold.open} onOpenChange={fold.setOpen}>
+            {t('bots.section.heading')}
+          </SidebarFoldLabel>
+        }
       >
         <SectionBotsMenu
           section={section}

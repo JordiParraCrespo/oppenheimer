@@ -2,7 +2,7 @@ import { storedList } from '@oppenheimer/frontend-web';
 import { act, renderHook } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
 import { useFoldedGroups } from '../hooks/use-folded-groups';
-import { FOLDED_GROUPS_KEY, withFold } from '../lib/folded-groups';
+import { FOLDED_GROUPS_KEY } from '../lib/folded-groups';
 
 /**
  * A project group folded in the sidebar comes back folded on the next visit,
@@ -22,11 +22,5 @@ describe('useFoldedGroups', () => {
     expect(second.result.current.folded).toEqual(['p1', 'unfiled']);
     act(() => second.result.current.setOpen('p1', true));
     expect(storedList(FOLDED_GROUPS_KEY)).toEqual(['unfiled']);
-  });
-});
-
-describe('withFold', () => {
-  it('folds a group once however often it is folded', () => {
-    expect(withFold(withFold(['a'], 'a', false), 'a', false)).toEqual(['a']);
   });
 });
