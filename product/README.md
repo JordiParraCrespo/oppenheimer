@@ -1052,7 +1052,12 @@ earlier note:
   Chat). On 2026-11-02 the owner made Chat the default view of every
   session, a member's and a guest's: the terminal shows until the
   transcript arrives and stays the view for an agent with none, and the
-  Terminal tab is still there to type into the PTY.
+  Terminal tab is still there to type into the PTY. On 2026-11-04 the owner
+  put Terminal back as the default: the chat waits for the host to resend
+  the whole transcript every time a pane mounts, moving between sessions
+  too, while the terminal draws at once from the grid the tab kept, so
+  opening on Chat meant waiting on a session that was already on screen.
+  Chat stays a press away.
 - Note 13 said herdr's agents do not survive a restart and took its screen
   manifests as the model for agent state. herdr-core, its successor, keeps
   programs alive across its own restarts and takes status only from the
