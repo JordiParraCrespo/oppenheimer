@@ -10,6 +10,7 @@ import type { SessionChat as Chat, SessionAgent } from '@oppenheimer/frontend-co
 import { useState } from 'react';
 import { flushSync } from 'react-dom';
 import { useTranslation } from 'react-i18next';
+import { SessionChatLoading } from '../components/session-chat-loading';
 import { TerminalColumn } from '../components/terminal-column';
 import { useEarlierOnReach } from '../hooks/use-earlier-on-reach';
 import { useChatLoading, useChatTurnIds } from '../hooks/use-session-chat';
@@ -104,13 +105,7 @@ export function SessionChat({
             {loading ? (
               // The history is still arriving: the conversation is drawn once
               // it has, at its end, so until then the column says so.
-              <EmptyState aria-busy className="flex-1">
-                <EmptyState.Header>
-                  <EmptyState.Description role="status">
-                    {t('sessions.chat.loading')}
-                  </EmptyState.Description>
-                </EmptyState.Header>
-              </EmptyState>
+              <SessionChatLoading agent={agent} />
             ) : ids.length === 0 ? (
               <EmptyState className="flex-1">
                 <EmptyState.Header>
