@@ -1062,3 +1062,69 @@ describe('files the agent shared', () => {
     expect(chat.snapshot().files[0]?.preview).toBeNull();
   });
 });
+
+describe('a chat kept for the next pane', () => {
+  const lines = Array.from({ length: 60 }, (_, i) => JSON.stringify(user(`u${i}`, `Prompt ${i}`)));
+
+  it('keeps every line held when its pane goes in the middle of a replay', () => {
+    // What breaks this: the replay's quiet, still armed once the stream that
+    // fed it is gone, taken for a transcript that got shorter, so the chat
+    // comes back cut to the lines the dead stream had sent again.
+    vi.useFakeTimers();
+    const chat = new SessionChat();
+    chat.apply({ reset: true, history: 'end', entries: lines });
+    chat.apply({ reset: true, history: 'more', entries: lines.slice(0, 20) });
+    chat.detach();
+    vi.advanceTimersByTime(20_000);
+    expect(chat.snapshot().turns).toHaveLength(60);
+
+    // The next pane's replay matches what is held and changes nothing.
+    const before = chat.snapshot().turns;
+    chat.apply({ reset: true, history: 'more', entries: lines.slice(0, 30) });
+    chat.apply({ history: 'end', entries: lines.slice(30) });
+    expect(chat.snapshot().turns).toBe(before);
+    vi.useRealTimers();
+  });
+
+  it('drops a first load its pane left before it all came, so the next one loads it whole', () => {
+    // What breaks this: the quiet ending a first load with half its history,
+    // and that half kept and drawn on the next visit as the conversation.
+    vi.useFakeTimers();
+    const chat = new SessionChat();
+    chat.apply({ reset: true, history: 'more', entries: lines.slice(0, 20) });
+    chat.detach();
+    vi.advanceTimersByTime(20_000);
+    expect(chat.snapshot()).toMatchObject({ loading: false, available: false, turns: [] });
+
+    chat.apply({ reset: true, history: 'more', entries: lines.slice(0, 20) });
+    expect(chat.snapshot()).toMatchObject({ loading: true, turns: [] });
+    chat.apply({ history: 'end', entries: lines.slice(20) });
+    expect(chat.snapshot().turns).toHaveLength(60);
+    vi.useRealTimers();
+  });
+
+  it('never types a message queued in one visit into a later one', () => {
+    // What breaks this: the queue kept with the chat, so the next pane's
+    // input sends it once the turn it waited on ends, with nobody watching.
+    vi.useFakeTimers();
+    const chat = new SessionChat();
+    const first: string[] = [];
+    const release = chat.connect((data) => first.push(data));
+    const working = JSON.stringify(user('w1', 'Fix it'));
+    chat.apply({ reset: true, history: 'end', entries: [working] });
+    chat.post('Queued on the first visit');
+    release();
+    chat.detach();
+    expect(chat.snapshot().queued).toEqual([]);
+
+    const second: string[] = [];
+    chat.connect((data) => second.push(data));
+    chat.apply({ reset: true, history: 'end', entries: [working] });
+    chat.apply({
+      entries: [JSON.stringify(assistant('a1', [{ type: 'text', text: 'Fixed.' }]))],
+    });
+    vi.runAllTimers();
+    expect([...first, ...second]).toEqual([]);
+    vi.useRealTimers();
+  });
+});

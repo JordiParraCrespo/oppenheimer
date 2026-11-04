@@ -1052,7 +1052,13 @@ earlier note:
   Chat). On 2026-11-02 the owner made Chat the default view of every
   session, a member's and a guest's: the terminal shows until the
   transcript arrives and stays the view for an agent with none, and the
-  Terminal tab is still there to type into the PTY.
+  Terminal tab is still there to type into the PTY. On 2026-11-04 the owner
+  put Terminal back as the default: the chat waits for the host to resend
+  the whole transcript every time a pane mounts, moving between sessions
+  too, while the terminal draws at once from the grid the tab kept, so
+  opening on Chat meant waiting on a session that was already on screen.
+  Chat stays a press away. A pull request's review session opens on
+  Terminal too, as `0.2-pull-requests.md` says its tab does.
 - Note 13 said herdr's agents do not survive a restart and took its screen
   manifests as the model for agent state. herdr-core, its successor, keeps
   programs alive across its own restarts and takes status only from the
@@ -1156,6 +1162,3 @@ earlier note:
   *Continue on a host* starts a worktree session there whose agent runs
   `claude --teleport <id>` (`teleport` on the create, runner capability
   `session.teleport`). Codex's `codex apply` stays a command.
-- The entry above made Chat the default view of every session. On
-  2026-11-03 the owner made Terminal the default again, a member's and a
-  guest's; Chat stays a tab beside it once the transcript arrives.

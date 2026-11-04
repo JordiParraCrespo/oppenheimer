@@ -1,4 +1,4 @@
-import { FileIcon } from '@oppenheimer/design-system-web';
+import { FileIcon, Link } from '@oppenheimer/design-system-web';
 import type { ChatSharedFile } from '@oppenheimer/frontend-consumer';
 import { ChatImageGallery, useLocale } from '@oppenheimer/frontend-web';
 import { useTranslation } from 'react-i18next';
@@ -34,13 +34,14 @@ export function ChatSharedFileCard({ file }: { file: ChatSharedFile }) {
           </span>
         ) : null}
         {file.text !== null ? (
-          <a
-            className="ml-auto shrink-0 underline-offset-2 hover:underline"
+          <Link
+            muted
+            className="ml-auto shrink-0"
             href={`data:text/plain;charset=utf-8,${encodeURIComponent(file.text)}`}
             download={file.name}
           >
             {t('common.chat.images.download')}
-          </a>
+          </Link>
         ) : null}
       </figcaption>
       {!file.preview && file.text === null ? (

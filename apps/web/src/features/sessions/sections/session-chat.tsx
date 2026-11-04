@@ -1,18 +1,18 @@
 import {
   AgentMark,
-  Button,
   ChatTranscript,
   EmptyState,
   FloatingChip,
   useStickToBottom,
 } from '@oppenheimer/design-system-web';
-import { ArrowDown, ChevronUp } from '@oppenheimer/design-system-web/icons';
+import { ArrowDown, LoaderIcon } from '@oppenheimer/design-system-web/icons';
 import type { SessionChat as Chat, SessionAgent } from '@oppenheimer/frontend-consumer';
 import { useState } from 'react';
 import { flushSync } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { SessionChatLoading } from '../components/session-chat-loading';
 import { TerminalColumn } from '../components/terminal-column';
+import { useEarlierOnReach } from '../hooks/use-earlier-on-reach';
 import { useChatLoading, useChatTurnIds } from '../hooks/use-session-chat';
 import type { ChatAttach } from '../lib/chat-blocks';
 import { SessionChatAttachingSend } from './session-chat-attaching-send';
@@ -20,7 +20,7 @@ import { SessionChatSend } from './session-chat-send';
 import { SessionChatTurn } from './session-chat-turn';
 
 /**
- * How many turns the chat draws, and how many more each "Show earlier"
+ * How many turns the chat draws, and how many more each scroll to its top
  * adds: a session that has run all day keeps hundreds, and drawing every
  * one makes each line the agent writes cost the whole conversation's layout.
  */
@@ -46,8 +46,9 @@ function keepingPlace(box: HTMLElement | null, grow: () => void): void {
  * workspace's dictation, spelling the files the agent touched as written.
  * With `attach` (a member's own session), a message carries files too: they
  * go to the host and into the agent's prompt ahead of its words. A long
- * conversation draws its latest turns (`TURNS_SHOWN`), the earlier ones a
- * click away above them, opened without moving what the reader is on; while
+ * conversation draws its latest turns (`TURNS_SHOWN`), and scrolling to its
+ * top shows a spinner there and then the earlier ones above, drawn without
+ * moving what the reader is on (`useEarlierOnReach`); while
  * the reader is up in it, new turns add below and never take one off the top.
  * It scrolls the whole pane, its scrollbar at the pane's edge, and its turns
  * and composer stand in the terminal grid's `TerminalColumn`, so Terminal /
@@ -85,8 +86,9 @@ export function SessionChat({
   const last = ids.at(-1);
   const shown = first > 0 ? ids.slice(first) : ids;
 
-  const showEarlier = () =>
-    keepingPlace(scroller.current, () => setHeld(Math.max(0, first - TURNS_SHOWN)));
+  const earlier = useEarlierOnReach(() =>
+    keepingPlace(scroller.current, () => setHeld(Math.max(0, first - TURNS_SHOWN))),
+  );
 
   return (
     <div className="relative flex size-full flex-col">
@@ -121,10 +123,20 @@ export function SessionChat({
             ) : (
               <ChatTranscript className="max-w-none">
                 {first > 0 ? (
-                  <Button variant="ghost" size="sm" className="self-center" onClick={showEarlier}>
-                    <ChevronUp />
-                    {t('sessions.chat.earlier', { count: Math.min(first, TURNS_SHOWN) })}
-                  </Button>
+                  // Keyed by what is left above it, so a spinner still in
+                  // view once a page is drawn is a new one, seen afresh.
+                  <div
+                    key={first}
+                    ref={earlier}
+                    role="status"
+                    aria-label={t('sessions.chat.earlier')}
+                    className="flex justify-center py-2"
+                  >
+                    <LoaderIcon
+                      aria-hidden
+                      className="size-4 text-fg-subtle motion-safe:animate-spin"
+                    />
+                  </div>
                 ) : null}
                 {shown.map((id) => (
                   <SessionChatTurn key={id} chat={chat} id={id} latest={id === last} />

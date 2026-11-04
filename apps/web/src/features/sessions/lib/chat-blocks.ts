@@ -22,8 +22,10 @@ export type SessionView = 'terminal' | 'chat';
 
 /**
  * The view every session pane opens on, a member's and a guest's: the
- * terminal. Chat is a press away once the host sends the agent's transcript
- * (`useChatReading`).
+ * terminal, which draws at once from the grid this tab kept of the session
+ * (`terminal-snapshots.ts`), where the chat waits for the host to resend the
+ * whole transcript each time the pane mounts, moving between sessions too.
+ * Chat is a press away once that transcript has come (`useChatReading`).
  */
 export const DEFAULT_SESSION_VIEW: SessionView = 'terminal';
 
