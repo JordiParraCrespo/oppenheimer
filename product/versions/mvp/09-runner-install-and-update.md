@@ -322,7 +322,9 @@ putting the user's credentials on it.
      from before the bundle updated runs the bare binary out of the new
      archive; its runner sees that `current` does not point into the
      bundle and installs its own version again as the bundle, at the
-     next quiet moment, like any update. A release without a bundle
+     next quiet moment, like any update. If that bundle does not stay
+     up, the rollback returns to the bare binary and the reinstall is not
+     tried again; the next release installs as the bundle. A release without a bundle
      (one from before it) still installs as a bare binary.
   5. Record the update, then restart through the service manager —
      `launchctl kickstart -k` or `systemctl --user restart` — and if

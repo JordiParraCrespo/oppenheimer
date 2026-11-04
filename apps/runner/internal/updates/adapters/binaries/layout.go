@@ -180,6 +180,9 @@ func (s *Store) Activate(version string) error {
 	return s.layout.Activate(version)
 }
 
+// ActivateBinary points `current` at a version's bare binary, bundle or not.
+func (s *Store) ActivateBinary(version string) error { return s.layout.Activate(version) }
+
 // Current is the version `current` points at.
 func (s *Store) Current() (string, error) {
 	if s.bundle != "" && s.linksLive() {
