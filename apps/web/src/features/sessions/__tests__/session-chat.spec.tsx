@@ -668,6 +668,45 @@ describe('a long conversation', () => {
     // default when the whole repository's suites run side by side.
   }, 15_000);
 
+  it('asks the host for the turns before its tail at the top, and draws them when they come', () => {
+    // What breaks this: a chat that holds only the conversation's tail
+    // showing nothing above it, or the page that comes drawn after a second
+    // wait at the top, or moving what the reader is on as it lands.
+    vi.useFakeTimers();
+    const observer = observeIntersections();
+    const chat = new Chat();
+    const asked: number[] = [];
+    chat.connect(
+      () => {},
+      (before) => asked.push(before),
+    );
+    const tail = Array.from({ length: 40 }, (_, i) => turn(i + 51)).flat();
+    chat.apply({ reset: true, history: 'end', before: 4096, entries: tail });
+    render(<SessionChat chat={chat} agent="claude-code" readOnly={false} />);
+    expect(screen.getByText('Prompt 51')).toBeTruthy();
+
+    observer.reach(screen.getByRole('status', { name: 'sessions.chat.earlier' }));
+    act(() => vi.runAllTimers());
+    expect(asked).toEqual([4096]);
+    expect(screen.queryByText('Prompt 50')).toBeNull();
+
+    // The page lands: nothing moves until the spinner, still in view, is
+    // seen again, and then the page is drawn at once.
+    act(() =>
+      chat.apply({
+        older: 'end',
+        before: 0,
+        entries: Array.from({ length: 50 }, (_, i) => turn(i + 1)).flat(),
+      }),
+    );
+    expect(screen.queryByText('Prompt 50')).toBeNull();
+    observer.reach(screen.getByRole('status', { name: 'sessions.chat.earlier' }));
+    expect(screen.getByText('Prompt 11')).toBeTruthy();
+    expect(screen.queryByText('Prompt 10')).toBeNull();
+    vi.useRealTimers();
+    vi.unstubAllGlobals();
+  }, 15_000);
+
   it('keeps the turns a reader scrolled up to while new ones arrive, and follows again at the end', () => {
     const chat = new Chat();
     chat.apply({ reset: true, entries: Array.from({ length: 90 }, (_, i) => turn(i + 1)).flat() });

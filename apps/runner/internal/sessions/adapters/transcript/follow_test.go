@@ -31,11 +31,14 @@ func (b *batches) emit(batch app.ChatBatch) error {
 		b.refused++
 		return errors.New("backpressure")
 	}
-	b.got = append(b.got, app.ChatBatch{Reset: batch.Reset, History: batch.History, Entries: append([]string(nil), batch.Entries...)})
+	b.got = append(b.got, app.ChatBatch{
+		Reset: batch.Reset, History: batch.History, Before: batch.Before, Older: batch.Older,
+		Entries: append([]string(nil), batch.Entries...),
+	})
 	return nil
 }
 
-// entries is every entry received since the last reset.
+// entries is every entry received since the last reset, older pages left out.
 func (b *batches) entries() []map[string]any {
 	b.mu.Lock()
 	defer b.mu.Unlock()
@@ -43,6 +46,9 @@ func (b *batches) entries() []map[string]any {
 	for _, batch := range b.got {
 		if batch.Reset {
 			out = nil
+		}
+		if batch.Older != "" {
+			continue
 		}
 		for _, entry := range batch.Entries {
 			var decoded map[string]any
@@ -60,7 +66,7 @@ func follow(t *testing.T, projects string, sink *batches) {
 	go func() {
 		defer close(done)
 		_ = transcript.New(transcript.Options{ClaudeProjects: projects}).
-			Follow(ctx, domain.Session{Agent: domain.AgentClaude, Launch: domain.Launch{Conversation: conversation}}, 64<<10, 256, sink.emit)
+			Follow(ctx, domain.Session{Agent: domain.AgentClaude, Launch: domain.Launch{Conversation: conversation}}, 64<<10, 256, nil, sink.emit)
 	}()
 	t.Cleanup(func() { cancel(); <-done })
 }
@@ -109,10 +115,12 @@ func TestTheChatIsTheHistoryThenEachLineTheAgentAppends(t *testing.T) {
 // the runner knows when that is: a read slowed by previews of screenshots
 // pauses longer than any quiet the console could wait out. Regression: the
 // batches said nothing, the console took the pause after the first 4MB read
-// for the end, and drew a long chat once per read.
-func TestAHistoryLongerThanOneReadSaysWhereItEnds(t *testing.T) {
+// for the end, and drew a long chat once per read. A Claude Code history is
+// its tail, at most one read (a turn longer than that is cut at a line), and
+// every batch of it but the last still says more is coming.
+func TestALongHistoryIsItsTailAndSaysWhereItEnds(t *testing.T) {
 	filler := strings.Repeat("y", 200<<10)
-	lines := make([]string, 30) // about 6MB: two reads of the file
+	lines := make([]string, 30) // about 6MB: more than one read of the file
 	for i := range lines {
 		lines[i] = `{"type":"user","uuid":"u` + string(rune('a'+i%26)) + `","message":{"role":"user","content":"` + filler + `"}}`
 	}
@@ -125,10 +133,14 @@ func TestAHistoryLongerThanOneReadSaysWhereItEnds(t *testing.T) {
 		return len(sink.got) > 0 && sink.got[len(sink.got)-1].History == app.HistoryEnd
 	}
 	eventually(t, "the end of the history", ended)
-	if n := len(sink.entries()); n != len(lines) {
-		t.Fatalf("the history ended after %d of %d lines", n, len(lines))
+	// One 4MB read back from the end holds the last 20 of the 30 prompts.
+	if n := len(sink.entries()); n != 20 {
+		t.Fatalf("the tail held %d of %d lines, not the 20 one read holds", n, len(lines))
 	}
 	sink.mu.Lock()
+	if want := int64(10 * (len(lines[0]) + 1)); sink.got[0].Before != want {
+		t.Fatalf("the tail says it starts at %d, not at the 11th line's %d", sink.got[0].Before, want)
+	}
 	for i, batch := range sink.got[:len(sink.got)-1] {
 		if batch.History != app.HistoryMore {
 			t.Fatalf("batch %d of the history says %q, not that more is coming", i, batch.History)
@@ -143,7 +155,7 @@ func TestAHistoryLongerThanOneReadSaysWhereItEnds(t *testing.T) {
 	}
 	defer func() { _ = file.Close() }()
 	_, _ = file.WriteString(answerLine + "\n")
-	eventually(t, "the appended line", func() bool { return len(sink.entries()) == len(lines)+1 })
+	eventually(t, "the appended line", func() bool { return len(sink.entries()) == 21 })
 	sink.mu.Lock()
 	defer sink.mu.Unlock()
 	if last := sink.got[len(sink.got)-1]; last.History != "" {
@@ -254,17 +266,17 @@ func TestAnAgentWithNothingToFindHasNoChatToFollow(t *testing.T) {
 	reader := transcript.New(transcript.Options{ClaudeProjects: t.TempDir()})
 	none := func(app.ChatBatch) error { return nil }
 	// A runner told nowhere Codex keeps its rollouts has none to read.
-	err := reader.Follow(context.Background(), domain.Session{Agent: domain.AgentCodex, Worktree: t.TempDir()}, 1, 1, none)
+	err := reader.Follow(context.Background(), domain.Session{Agent: domain.AgentCodex, Worktree: t.TempDir()}, 1, 1, nil, none)
 	if !errors.Is(err, app.ErrNoChat) {
 		t.Fatalf("codex without its folder: %v", err)
 	}
 	// An OpenCode launched before the runner served its API has none to read.
-	err = reader.Follow(context.Background(), domain.Session{Agent: domain.AgentOpenCode}, 1, 1, none)
+	err = reader.Follow(context.Background(), domain.Session{Agent: domain.AgentOpenCode}, 1, 1, nil, none)
 	if !errors.Is(err, app.ErrNoChat) {
 		t.Fatalf("opencode without a server: %v", err)
 	}
 	// The blank terminal keeps no conversation at all.
-	err = reader.Follow(context.Background(), domain.Session{Agent: domain.AgentShell}, 1, 1, none)
+	err = reader.Follow(context.Background(), domain.Session{Agent: domain.AgentShell}, 1, 1, nil, none)
 	if !errors.Is(err, app.ErrNoChat) {
 		t.Fatalf("shell: %v", err)
 	}

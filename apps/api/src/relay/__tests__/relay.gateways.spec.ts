@@ -1645,8 +1645,8 @@ describe('browser attach socket', () => {
   });
 
   describe('the chat view (0.7)', () => {
-    async function attached() {
-      const runner = await runnerUp(h, { capabilities: ['attachment.chat'] });
+    async function attached(capabilities = ['attachment.chat']) {
+      const runner = await runnerUp(h, { capabilities });
       sockets.push(runner);
       const browser = ws(h.origin, '/api/v1/relay/attach', {}, [issueTicket(h)]);
       sockets.push(browser);
@@ -1688,6 +1688,67 @@ describe('browser attach socket', () => {
       runner.send(JSON.stringify({ type: 'attachment.chat', attachmentId: 9, entries: [entry] }));
       runner.send(JSON.stringify({ type: 'attachment.chat', attachmentId: 1, entries: [] }));
       expect((await next).text).toEqual({ type: 'chat', entries: [] });
+    });
+
+    it("relays where a tail starts and an older page's batches, so the console can ask for more", async () => {
+      vi.mocked(h.flags.isEnabled).mockImplementation((key) => key === 'session_chat_view');
+      const { runner, browser } = await attached(['attachment.chat', 'attachment.chat.older']);
+
+      const tail = nextMessage(browser);
+      runner.send(
+        JSON.stringify({
+          type: 'attachment.chat',
+          attachmentId: 1,
+          reset: true,
+          history: 'end',
+          before: 4096,
+          entries: [entry],
+        }),
+      );
+      expect((await tail).text).toEqual({
+        type: 'chat',
+        reset: true,
+        history: 'end',
+        before: 4096,
+        entries: [entry],
+      });
+
+      // The reader scrolls to the top: the runner is asked for the turns before it.
+      const asked = nextMessage(runner);
+      browser.send(JSON.stringify({ type: 'chat.older', before: 4096 }));
+      expect((await asked).text).toEqual({
+        type: 'attachment.chat.older',
+        attachmentId: 1,
+        before: 4096,
+      });
+
+      const page = nextMessage(browser);
+      runner.send(
+        JSON.stringify({
+          type: 'attachment.chat',
+          attachmentId: 1,
+          older: 'end',
+          before: 0,
+          entries: [entry],
+        }),
+      );
+      expect((await page).text).toEqual({
+        type: 'chat',
+        older: 'end',
+        before: 0,
+        entries: [entry],
+      });
+    });
+
+    it('never asks a runner that does not send its conversation tail first', async () => {
+      // What breaks this: a message the runner does not know, sent to one
+      // that predates it.
+      vi.mocked(h.flags.isEnabled).mockImplementation((key) => key === 'session_chat_view');
+      const { runner, browser } = await attached();
+      const next = nextMessage(runner);
+      browser.send(JSON.stringify({ type: 'chat.older', before: 4096 }));
+      browser.close();
+      expect((await next).text).toMatchObject({ type: 'session.detach' });
     });
 
     it('drops them for a person the flag is off for', async () => {

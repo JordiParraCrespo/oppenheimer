@@ -72,6 +72,12 @@ export interface SessionStream {
    * shared pane's, has nothing to say.
    */
   onChat?(listener: (batch: ChatBatch) => void): () => void;
+  /**
+   * Asks the host for the chat's turns before `before`, the offset the chat
+   * holds its conversation from; they come as `onChat` batches marked
+   * `older`. Optional, as `onChat` is.
+   */
+  askOlderChat?(before: number): void;
   /** Keystrokes, already encoded by the terminal. */
   send(data: string): void;
   resize(cols: number, rows: number): void;
@@ -240,6 +246,10 @@ export class AttachSessionStream implements SessionStream {
     if (!this.attached || this.socket?.readyState !== WebSocket.OPEN || data.length === 0) return;
     const socket = this.socket;
     this.paths.send(this.encoder.encode(data), (bytes) => socket.send(bytes));
+  }
+
+  askOlderChat(before: number): void {
+    this.tell({ type: 'chat.older', before });
   }
 
   resize(cols: number, rows: number): void {

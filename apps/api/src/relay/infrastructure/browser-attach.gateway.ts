@@ -581,6 +581,8 @@ class BrowserAttachment implements AttachmentSink {
       type: 'chat',
       ...(message.reset ? { reset: true } : {}),
       ...(message.history ? { history: message.history } : {}),
+      ...(message.before !== undefined ? { before: message.before } : {}),
+      ...(message.older ? { older: message.older } : {}),
       entries: message.entries,
     });
   }
@@ -625,7 +627,22 @@ class BrowserAttachment implements AttachmentSink {
       case 'direct.path':
         this.directPath.fromBrowser(message.data, this.attachmentId, this.attached);
         return;
+      case 'chat.older':
+        this.chatOlder(message.data.before);
+        return;
     }
+  }
+
+  /**
+   * The reader scrolled to the top of the chat and asks for the turns before
+   * `before`: passed to a runner that sends its conversation tail first,
+   * which is the only one that ever said where it starts. A browser the chat
+   * is not for asks nothing of the host.
+   */
+  private chatOlder(before: number): void {
+    if (!this.chatView || !this.attached || this.attachmentId === null) return;
+    if (!this.link.capabilities.includes('attachment.chat.older')) return;
+    this.link.send({ type: 'attachment.chat.older', attachmentId: this.attachmentId, before });
   }
 
   /**

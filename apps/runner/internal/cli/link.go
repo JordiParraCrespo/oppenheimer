@@ -152,6 +152,10 @@ type attachment struct {
 	// path is where its bytes go: the link, or a direct channel
 	// (attachment_path.go).
 	path attachmentPath
+	// chatOlder is the offset the console asked for the chat's older turns
+	// before, for the attachment's chat follower; one at a time, a second
+	// dropped while one waits.
+	chatOlder chan int64
 }
 
 // stop ends an attachment's PTY, its reads and its direct path. The caller
@@ -306,7 +310,8 @@ func (h *linkHandler) capabilities() []string {
 	named := []string{
 		link.CapabilitySessionImage, link.CapabilitySessionCreateImages, link.CapabilitySessionFiles,
 		link.CapabilityRepositoryPrepare, link.CapabilitySessionFolder, link.CapabilityFsList,
-		link.CapabilityAttachmentChat, link.CapabilitySessionCloud, link.CapabilitySessionCloudCodex,
+		link.CapabilityAttachmentChat, link.CapabilityAttachmentChatOlder,
+		link.CapabilitySessionCloud, link.CapabilitySessionCloudCodex,
 		link.CapabilitySessionWatch, link.CapabilityCodexEnvironments, link.CapabilitySessionTeleport,
 		link.CapabilitySharedPreview,
 	}
@@ -525,6 +530,18 @@ func (h *linkHandler) Message(_ context.Context, msg link.Message) {
 		var m link.AttachmentPath
 		if msg.Decode(&m) == nil {
 			h.directInputOffset(m)
+		}
+	case link.TypeAttachmentChatOlder:
+		var m link.AttachmentChatOlder
+		if msg.Decode(&m) == nil {
+			// The reader scrolled to the top of the chat: its follower reads
+			// the page, never the read loop.
+			if att := h.attachmentByID(m.AttachmentID); att != nil {
+				select {
+				case att.chatOlder <- m.Before:
+				default:
+				}
+			}
 		}
 	case "attachment.credit":
 		var m link.AttachmentCredit

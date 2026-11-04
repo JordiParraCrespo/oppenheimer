@@ -1059,6 +1059,13 @@ earlier note:
   opening on Chat meant waiting on a session that was already on screen.
   Chat stays a press away. A pull request's review session opens on
   Terminal too, as `0.2-pull-requests.md` says its tab does.
+- `next-steps/0.7-terminal-and-chat.md` sent a session's whole transcript,
+  from its first line, on every attach (`reset` and the history). On
+  2026-11-04 a Claude Code session's attach sends its last 40 turns
+  instead, with `before`, the offset they start at, and the console asks
+  for the 40 before that (`chat.older`, `attachment.chat.older`) as the
+  reader scrolls to the top: a long conversation was megabytes read,
+  sent and parsed to draw its end.
 - Note 13 said herdr's agents do not survive a restart and took its screen
   manifests as the model for agent state. herdr-core, its successor, keeps
   programs alive across its own restarts and takes status only from the

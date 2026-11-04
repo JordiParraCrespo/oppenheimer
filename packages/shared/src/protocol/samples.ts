@@ -126,10 +126,12 @@ export const SAMPLES: Record<ProtocolMessageType, ProtocolMessage> = {
     attachmentId: 7,
     reset: true,
     history: 'end',
+    before: 524_288,
     entries: [
       '{"type":"user","uuid":"u1","message":{"role":"user","content":"fix the failing test"}}',
     ],
   },
+  'attachment.chat.older': { type: 'attachment.chat.older', attachmentId: 7, before: 1_048_576 },
   'device.attach': { type: 'device.attach', commandId, sessionId, attachmentId: 9 },
   'device.info': {
     type: 'device.info',

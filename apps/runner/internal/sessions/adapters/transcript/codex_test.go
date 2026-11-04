@@ -21,7 +21,7 @@ func followSession(t *testing.T, opts transcript.Options, session domain.Session
 	done := make(chan struct{})
 	go func() {
 		defer close(done)
-		_ = transcript.New(opts).Follow(ctx, session, 64<<10, 256, sink.emit)
+		_ = transcript.New(opts).Follow(ctx, session, 64<<10, 256, nil, sink.emit)
 	}()
 	t.Cleanup(func() { cancel(); <-done })
 }

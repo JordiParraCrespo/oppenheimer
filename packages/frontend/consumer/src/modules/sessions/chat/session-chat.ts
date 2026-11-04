@@ -183,12 +183,26 @@ export interface ChatState {
   status: ChatStatus | null;
   /** The files the agent shared, in the order they came; each also a step of its turn. */
   files: readonly ChatSharedFile[];
+  /**
+   * Turns before the first one held, on the host: `more` to ask for
+   * (`loadOlder`), `loading` while a page of them is on its way, `none`
+   * when the whole conversation is held.
+   */
+  older: 'none' | 'more' | 'loading';
 }
 
 export interface ChatBatch {
   reset?: boolean;
   /** Where the history a reset started stands: `more` is coming, or this batch is its `end`. */
   history?: 'more' | 'end';
+  /**
+   * Where in the transcript what the host sent starts: on a reset that sent
+   * only the last turns, and on an older page's last batch. Absent or 0, the
+   * conversation from its first line.
+   */
+  before?: number;
+  /** Part of an older page asked for (`loadOlder`): `more` is coming, or this batch is its `end`. */
+  older?: 'more' | 'end';
   entries: readonly string[];
 }
 
@@ -199,6 +213,7 @@ const EMPTY: ChatState = {
   queued: [],
   status: null,
   files: [],
+  older: 'none',
 };
 
 /** The entry the runner adds for the status line's figures. */
@@ -251,6 +266,14 @@ class Transcript {
    * it has sent everything held, which `settle` cuts.
    */
   private replayed: number | null = null;
+  /**
+   * A replay that starts mid-conversation (a tail, `ChatBatch.before`): its
+   * first line is looked for among those held, and the replay checked from
+   * there; the held lines before it stay.
+   */
+  private aligning = false;
+  /** A tail whose first line was not among those held: the conversation is drawn from the tail. */
+  private restarted = false;
 
   /** A replay has not yet sent again every line held. */
   /** Nothing of the conversation is held yet. */
@@ -267,23 +290,62 @@ class Transcript {
    * is a replay, checked against what is held; with none, the transcript
    * is empty now. Whether that changed the conversation.
    */
-  reset(replaying: boolean): boolean {
+  reset(replaying: boolean, tail = false): boolean {
+    this.restarted = false;
     if (replaying && this.lines.length > 0) {
       this.replayed = 0;
+      this.aligning = tail;
       return false;
     }
     this.replayed = null;
+    this.aligning = false;
     this.truncate(0);
+    return true;
+  }
+
+  /** Whether the last tail started the conversation over, and forgets it. */
+  takeRestarted(): boolean {
+    const restarted = this.restarted;
+    this.restarted = false;
+    return restarted;
+  }
+
+  /**
+   * Lines from before the first one held, an older page: the conversation
+   * is read again from its new first line, and a replay under way goes on
+   * where it was.
+   */
+  prepend(lines: readonly TranscriptLine[]): boolean {
+    if (lines.length === 0) return false;
+    // A copy: the cut empties the array it holds in place.
+    const held = [...this.lines];
+    const replayed = this.replayed;
+    this.truncate(0);
+    this.lines = [...lines, ...held];
+    this.unread = 0;
+    if (replayed !== null) this.replayed = replayed + lines.length;
     return true;
   }
 
   /** A replay that will send nothing more: what is held stays as it is. */
   endReplay(): void {
     this.replayed = null;
+    this.aligning = false;
   }
 
   /** One line of the conversation; whether it changed what is held. */
   take(raw: string, entry: unknown): boolean {
+    if (this.aligning) {
+      this.aligning = false;
+      const at = this.lastIndexOf(raw);
+      if (at < 0) {
+        this.replayed = null;
+        this.restarted = true;
+        this.truncate(0);
+      } else {
+        this.replayed = at;
+      }
+    }
     if (this.replayed !== null) {
       if (this.lines[this.replayed]?.raw === raw) {
         this.replayed += 1;
@@ -329,6 +391,7 @@ class Transcript {
    * Whether any did.
    */
   settle(): boolean {
+    this.aligning = false;
     if (this.replayed === null) return false;
     const length = this.replayed;
     this.replayed = null;
@@ -367,6 +430,14 @@ class Transcript {
     for (const [call, at] of this.closedCalls) if (at >= turn) this.closedCalls.delete(call);
   }
 
+  /** Where a line is held, looked for from the end, where a tail starts; -1 for nowhere. */
+  private lastIndexOf(raw: string): number {
+    for (let index = this.lines.length - 1; index >= 0; index -= 1) {
+      if (this.lines[index]?.raw === raw) return index;
+    }
+    return -1;
+  }
+
   /** The earliest closed turn a result in this entry lands on; `Infinity` for none. */
   private closedAnswered(entry: unknown, index: number): number {
     if (this.closedCalls.size === 0) return Number.POSITIVE_INFINITY;
@@ -394,6 +465,12 @@ export class SessionChat {
   /** A first load's history, held until it has all come (`ChatState.loading`). */
   private readonly firstLoad = new FirstLoad();
   private type: ((data: string) => void) | null = null;
+  /** Asks the host for the turns before an offset, lent with the input (`connect`). */
+  private askOlder: ((before: number) => void) | null = null;
+  /** Where in the transcript the lines held start: 0 for its first line. */
+  private heldFrom = 0;
+  /** The lines of an older page still coming, while one is asked for. */
+  private olderLines: string[] | null = null;
   private state: ChatState = EMPTY;
   private readonly listeners = new Set<() => void>();
   /** The last queued message sent: how many turns there were, and when. */
@@ -410,10 +487,25 @@ export class SessionChat {
   private readonly quiet = new Quiet();
 
   apply(batch: ChatBatch): void {
+    if (batch.older) {
+      this.takeOlder(batch);
+      return;
+    }
     // A first load is held back until its history has come, so the chat
     // draws it once, at its end, not each part of a long one in turn.
     this.firstLoad.take(batch, this.transcript.empty);
-    let changed = batch.reset ? this.transcript.reset(linesToCome(batch)) : false;
+    const from = batch.before ?? 0;
+    let changed = false;
+    if (batch.reset) {
+      // An older page asked of the attachment before this one never comes.
+      this.olderLines = null;
+      // A tail is checked against what is held from where it starts, and
+      // the turns held before it stay: the held conversation starts at the
+      // earlier of the two.
+      const held = !this.transcript.empty;
+      changed = this.transcript.reset(linesToCome(batch), from > 0);
+      this.heldFrom = held && from > 0 ? Math.min(this.heldFrom, from) : from;
+    }
     let status = this.state.status;
     let files = this.state.files;
     for (const raw of batch.entries) {
@@ -433,6 +525,8 @@ export class SessionChat {
         if (file && !files.some((held) => held.id === file.id)) files = [...files, file];
       } else if (this.transcript.take(raw, entry)) changed = true;
     }
+    // A tail that is not where the held conversation goes is a different one.
+    if (this.transcript.takeRestarted()) this.heldFrom = from;
     // The history's end, before every line held came again: the transcript
     // is shorter now, without waiting for a quiet to say so.
     if (batch.history === 'end' && this.transcript.settle()) changed = true;
@@ -453,12 +547,14 @@ export class SessionChat {
     const was = this.state;
     const redraw =
       !this.loading && (changed || was.loading || !was.available || files !== was.files);
+    const older = this.olderState();
     if (
       !redraw &&
       was.available &&
       was.loading === this.loading &&
       was.status === status &&
-      was.files === files
+      was.files === files &&
+      was.older === older
     ) {
       return;
     }
@@ -468,7 +564,54 @@ export class SessionChat {
       loading: this.loading,
       status,
       files,
+      older,
       turns: redraw ? this.turnsOf(files) : was.turns,
+    });
+  }
+
+  private olderState(): ChatState['older'] {
+    if (this.olderLines !== null) return 'loading';
+    return this.heldFrom > 0 ? 'more' : 'none';
+  }
+
+  /**
+   * Asks the host for the turns before the first one held, once the reader
+   * reaches the top of what is drawn. False when there is nothing older to
+   * ask for, a page is already on its way, or nothing is connected to ask.
+   */
+  loadOlder(): boolean {
+    if (!this.askOlder || this.olderLines !== null || this.heldFrom <= 0 || this.loading) {
+      return false;
+    }
+    this.olderLines = [];
+    this.askOlder(this.heldFrom);
+    this.publish({ ...this.state, older: 'loading' });
+    return true;
+  }
+
+  /**
+   * A batch of the older page asked for: held until its last, then put
+   * before the first line held, the conversation read again from there.
+   * One that nobody asked for (the attachment that asked is gone) is let go.
+   */
+  private takeOlder(batch: ChatBatch): void {
+    if (this.olderLines === null) return;
+    this.olderLines.push(...batch.entries);
+    if (batch.older !== 'end') return;
+    const lines = this.olderLines.flatMap((raw) => {
+      try {
+        return [{ raw, entry: JSON.parse(raw) as unknown }];
+      } catch {
+        return [];
+      }
+    });
+    this.olderLines = null;
+    this.heldFrom = batch.before ?? 0;
+    const changed = this.transcript.prepend(lines);
+    this.publish({
+      ...this.state,
+      older: this.olderState(),
+      turns: changed ? this.turnsOf(this.state.files) : this.state.turns,
     });
   }
 
@@ -584,20 +727,30 @@ export class SessionChat {
     this.transcript.endReplay();
     this.queuedDuring = null;
     this.sentQueued = null;
+    this.olderLines = null;
     if (this.loading) {
       this.firstLoad.end();
       this.transcript.reset(false);
+      this.heldFrom = 0;
       this.publish(EMPTY);
       return;
     }
-    if (this.state.queued.length > 0) this.publish({ ...this.state, queued: [] });
+    const older = this.olderState();
+    if (this.state.queued.length > 0 || this.state.older !== older) {
+      this.publish({ ...this.state, queued: [], older });
+    }
   }
 
-  /** Lends the chat a way to type into the session's PTY; the function returned takes it back. */
-  connect(type: (data: string) => void): () => void {
+  /**
+   * Lends the chat a way to type into the session's PTY, and to ask its host
+   * for older turns; the function returned takes them back.
+   */
+  connect(type: (data: string) => void, askOlder?: (before: number) => void): () => void {
     this.type = type;
+    this.askOlder = askOlder ?? null;
     return () => {
       if (this.type === type) this.type = null;
+      if (askOlder && this.askOlder === askOlder) this.askOlder = null;
     };
   }
 

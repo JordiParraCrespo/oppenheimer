@@ -104,6 +104,13 @@ export const RUNNER_CAPABILITIES = [
    */
   'attachment.chat',
   /**
+   * Sends a Claude Code conversation tail first: an attachment's `reset`
+   * carries the last turns and `before`, the offset they start at, and
+   * `attachment.chat.older` is answered with the turns before an offset
+   * (`product/next-steps/0.7-terminal-and-chat.md`, "Tail first").
+   */
+  'attachment.chat.older',
+  /**
    * Answers `device.attach`: the session has a simulator or emulator of its
    * own on this host, whose screen streams as JPEG frames and which takes
    * `device.input` (`product/research/device-streaming.md`).
@@ -1013,10 +1020,37 @@ export const attachmentChatSchema = z.object({
    * pace, which a slow read (a screenshot's preview) defeats.
    */
   history: z.enum(['more', 'end']).optional(),
+  /**
+   * Where in the transcript what this attachment has sent starts, as a byte
+   * offset: on the batch that carries `reset`, and on the last batch of an
+   * older page. Absent, or 0, is the conversation from its first line, with
+   * nothing older to ask for (`attachment.chat.older`).
+   */
+  before: z.number().int().nonnegative().optional(),
+  /**
+   * The batch is part of a page of older turns asked for with
+   * `attachment.chat.older`, not what follows live: `more` while the page is
+   * still coming, `end` on its last batch, which carries `before`.
+   */
+  older: z.enum(['more', 'end']).optional(),
   entries: z.array(z.string().min(1).max(CHAT_ENTRY_MAX_BYTES)).max(CHAT_BATCH_MAX_ENTRIES),
 });
 
 export type AttachmentChatMessage = z.infer<typeof attachmentChatSchema>;
+
+/**
+ * Asks for the turns of an attachment's conversation before `before`, the
+ * offset the console holds it from: the reader scrolled to the top of the
+ * chat. Answered with `attachment.chat` batches marked `older`. Sent only to
+ * a runner that named `attachment.chat.older`.
+ */
+export const attachmentChatOlderSchema = z.object({
+  type: z.literal('attachment.chat.older'),
+  attachmentId: attachmentIdSchema,
+  before: z.number().int().positive(),
+});
+
+export type AttachmentChatOlderMessage = z.infer<typeof attachmentChatOlderSchema>;
 
 /* ------------------------------------------------------------------ the union */
 
@@ -1063,6 +1097,7 @@ export const protocolMessageSchema = z.discriminatedUnion('type', [
   attachmentDirectRefusedSchema,
   attachmentPathSchema,
   attachmentChatSchema,
+  attachmentChatOlderSchema,
   deviceAttachSchema,
   deviceInfoSchema,
   deviceInputSchema,

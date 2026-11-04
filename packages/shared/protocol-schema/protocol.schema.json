@@ -1274,6 +1274,18 @@
             "end"
           ]
         },
+        "before": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "older": {
+          "type": "string",
+          "enum": [
+            "more",
+            "end"
+          ]
+        },
         "entries": {
           "maxItems": 256,
           "type": "array",
@@ -1288,6 +1300,28 @@
         "type",
         "attachmentId",
         "entries"
+      ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "attachment.chat.older"
+        },
+        "attachmentId": {
+          "$ref": "#/$defs/attachmentId"
+        },
+        "before": {
+          "type": "integer",
+          "exclusiveMinimum": 0,
+          "maximum": 9007199254740991
+        }
+      },
+      "required": [
+        "type",
+        "attachmentId",
+        "before"
       ]
     },
     {
@@ -2292,6 +2326,7 @@
       "session.folder",
       "fs.list",
       "attachment.chat",
+      "attachment.chat.older",
       "device.screen",
       "port.forward",
       "session.cloud",

@@ -12,7 +12,7 @@ import { flushSync } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { TerminalColumn } from '../components/terminal-column';
 import { useEarlierOnReach } from '../hooks/use-earlier-on-reach';
-import { useChatLoading, useChatTurnIds } from '../hooks/use-session-chat';
+import { useChatLoading, useChatOlder, useChatTurnIds } from '../hooks/use-session-chat';
 import type { ChatAttach } from '../lib/chat-blocks';
 import { SessionChatAttachingSend } from './session-chat-attaching-send';
 import { SessionChatSend } from './session-chat-send';
@@ -47,7 +47,8 @@ function keepingPlace(box: HTMLElement | null, grow: () => void): void {
  * go to the host and into the agent's prompt ahead of its words. A long
  * conversation draws its latest turns (`TURNS_SHOWN`), and scrolling to its
  * top shows a spinner there and then the earlier ones above, drawn without
- * moving what the reader is on (`useEarlierOnReach`); while
+ * moving what the reader is on (`useEarlierOnReach`): those the chat holds,
+ * or, past them, a page asked of the host (`SessionChat.loadOlder`); while
  * the reader is up in it, new turns add below and never take one off the top.
  * It scrolls the whole pane, its scrollbar at the pane's edge, and its turns
  * and composer stand in the terminal grid's `TerminalColumn`, so Terminal /
@@ -70,24 +71,41 @@ export function SessionChat({
   // agent writes redraws the turn it lands in and not the list.
   const ids = useChatTurnIds(chat);
   const loading = useChatLoading(chat);
+  const older = useChatOlder(chat);
   const { scroller, content, atLatest, toLatest } = useStickToBottom();
   // The first turn drawn. At the latest it follows the end; away from it,
   // it is held, so a turn arriving never takes one off the top of what the
-  // reader is on. Back at the latest, it follows again.
+  // reader is on. Back at the latest, it follows again. It is held by its
+  // id, so a page of older turns put before it moves nothing; by its
+  // distance from the end if that page made it a turn of another id.
   const following = Math.max(0, ids.length - TURNS_SHOWN);
-  const [held, setHeld] = useState<number | null>(null);
+  const anchor = (at: number) => ({ id: ids[at] ?? '', fromEnd: ids.length - at });
+  const [held, setHeld] = useState<{ id: string; fromEnd: number } | null>(null);
   const [wasAtLatest, setWasAtLatest] = useState(atLatest);
   if (wasAtLatest !== atLatest) {
     setWasAtLatest(atLatest);
-    setHeld(atLatest ? null : (held ?? following));
+    setHeld(atLatest ? null : (held ?? anchor(following)));
   }
-  const first = Math.min(held ?? following, ids.length);
+  const heldAt = held ? ids.indexOf(held.id) : -1;
+  const first = held
+    ? heldAt >= 0
+      ? heldAt
+      : Math.max(0, ids.length - held.fromEnd)
+    : Math.min(following, ids.length);
   const last = ids.at(-1);
   const shown = first > 0 ? ids.slice(first) : ids;
 
-  const earlier = useEarlierOnReach(() =>
-    keepingPlace(scroller.current, () => setHeld(Math.max(0, first - TURNS_SHOWN))),
-  );
+  // A page asked of the host is drawn as soon as it is there: the reader
+  // already waited at the top for it.
+  const [askedHost, setAskedHost] = useState(false);
+  const earlier = useEarlierOnReach(() => {
+    if (first > 0) {
+      setAskedHost(false);
+      keepingPlace(scroller.current, () => setHeld(anchor(Math.max(0, first - TURNS_SHOWN))));
+    } else if (chat.loadOlder()) {
+      setAskedHost(true);
+    }
+  }, askedHost);
 
   return (
     <div className="relative flex size-full flex-col">
@@ -127,7 +145,7 @@ export function SessionChat({
               </EmptyState>
             ) : (
               <ChatTranscript className="max-w-none">
-                {first > 0 ? (
+                {first > 0 || older !== 'none' ? (
                   // Keyed by what is left above it, so a spinner still in
                   // view once a page is drawn is a new one, seen afresh.
                   <div
