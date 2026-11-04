@@ -1,61 +1,65 @@
 import { CONSUMER_CONFIG } from '@oppenheimer/frontend-consumer/config';
-import { describe, expect, it } from 'vitest';
-import { startLogStalled } from '../lib/start-log-stall';
-
-const START_LOG_STALL_MS = CONSUMER_CONFIG.sessions.startLogStallMs;
+import { act, renderHook } from '@testing-library/react';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { useStartLogStalled } from '../hooks/use-start-log-stalled';
+import type { StartLogReadState } from '../lib/start-log-stall';
 
 /**
  * The start pane polls the session's log while it starts. One failed read
  * with a working one a tick later must not put "Could not reach the server"
  * over a stepper that keeps advancing (it did, on most starts over a flaky
- * link); reads that keep failing must still say so. A regression that showed
- * every failed read brings the false alarm back; one that never compared
- * against the last good read hides a real outage.
+ * link); reads that keep failing must still say so, even when no further read
+ * comes (the workspace stream stands the poll down). A regression that showed
+ * every failed read brings the false alarm back; one that waited for another
+ * read to notice the grace ran out hides a real outage.
  */
-const WATCHING_SINCE = 1_000_000;
+const STALL_MS = CONSUMER_CONFIG.sessions.startLogStallMs;
 const error = new Error('Failed to fetch');
 
-describe('startLogStalled', () => {
+beforeEach(() => {
+  vi.useFakeTimers();
+  vi.setSystemTime(1_000_000);
+});
+afterEach(() => vi.useRealTimers());
+
+function mount(read: StartLogReadState) {
+  return renderHook((props: StartLogReadState) => useStartLogStalled(props), {
+    initialProps: read,
+  });
+}
+
+describe('useStartLogStalled', () => {
   it('stays quiet when nothing failed', () => {
-    expect(
-      startLogStalled({ error: null, errorUpdatedAt: 0, dataUpdatedAt: 0 }, WATCHING_SINCE),
-    ).toBe(false);
+    const { result } = mount({ error: null, dataUpdatedAt: 0 });
+    act(() => vi.advanceTimersByTime(STALL_MS * 2));
+    expect(result.current).toBe(false);
   });
 
-  it('stays quiet for a failure soon after the last good read', () => {
-    const lastGood = WATCHING_SINCE + 2000;
-    expect(
-      startLogStalled(
-        { error, errorUpdatedAt: lastGood + START_LOG_STALL_MS - 1, dataUpdatedAt: lastGood },
-        WATCHING_SINCE,
-      ),
-    ).toBe(false);
+  it('stays quiet for a failure the next good read clears within the grace', () => {
+    const { result, rerender } = mount({ error, dataUpdatedAt: 0 });
+    act(() => vi.advanceTimersByTime(STALL_MS - 1000));
+    rerender({ error: null, dataUpdatedAt: Date.now() });
+    act(() => vi.advanceTimersByTime(STALL_MS));
+    expect(result.current).toBe(false);
   });
 
-  it('speaks once reads have failed for the whole grace since the last good one', () => {
-    const lastGood = WATCHING_SINCE + 2000;
-    expect(
-      startLogStalled(
-        { error, errorUpdatedAt: lastGood + START_LOG_STALL_MS, dataUpdatedAt: lastGood },
-        WATCHING_SINCE,
-      ),
-    ).toBe(true);
+  it('speaks once the grace runs out, with no further read to prompt it', () => {
+    // The create seeds the log with `updatedAt: 0`: the grace counts from mount.
+    const { result } = mount({ error, dataUpdatedAt: 0 });
+    act(() => vi.advanceTimersByTime(STALL_MS - 1));
+    expect(result.current).toBe(false);
+    act(() => vi.advanceTimersByTime(1));
+    expect(result.current).toBe(true);
   });
 
-  it('counts from when the pane began watching a log the create seeded and nobody read', () => {
-    // The create seeds the log with `updatedAt: 0`, so the first failed read
-    // would otherwise look like one that had failed since 1970.
-    expect(
-      startLogStalled(
-        { error, errorUpdatedAt: WATCHING_SINCE + 1000, dataUpdatedAt: 0 },
-        WATCHING_SINCE,
-      ),
-    ).toBe(false);
-    expect(
-      startLogStalled(
-        { error, errorUpdatedAt: WATCHING_SINCE + START_LOG_STALL_MS, dataUpdatedAt: 0 },
-        WATCHING_SINCE,
-      ),
-    ).toBe(true);
+  it('counts the grace from the last good read', () => {
+    const { result, rerender } = mount({ error: null, dataUpdatedAt: 0 });
+    act(() => vi.advanceTimersByTime(10_000));
+    const lastGood = Date.now();
+    rerender({ error, dataUpdatedAt: lastGood });
+    act(() => vi.advanceTimersByTime(STALL_MS - 1));
+    expect(result.current).toBe(false);
+    act(() => vi.advanceTimersByTime(1));
+    expect(result.current).toBe(true);
   });
 });
