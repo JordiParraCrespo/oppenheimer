@@ -1,35 +1,24 @@
 import { SegmentedControl, SegmentedControlItem, Skeleton } from '@oppenheimer/design-system-web';
 import type { PullRequestQueueName } from '@oppenheimer/frontend-consumer';
-import { usePullRequestQueue } from '@oppenheimer/frontend-consumer/react';
 import { PULL_REQUEST_QUEUES } from '@oppenheimer/shared/schemas/pull-request';
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
+import { useQueueScopeCounts } from '../hooks/use-queue-scope-counts';
 import { useQueueSearch } from '../hooks/use-queue-search';
-import { scopeCounts } from '../lib/queue-filter';
 import { needsWatchedRepositories } from '../lib/queue-search';
 
 /**
  * Whose pull requests: all of them first, then the three ways to narrow
  * them (mine, review requests, watching), each with its count, and what the
  * scope means. Which repositories are watched is set in
- * Settings, which Watching links to. With a repository or a facet picked,
- * each count is what that tab's table would show under them, read from the
- * `all` queue's rows; with none, the API's counts. A count not answered yet
- * keeps its place, so the tabs do not widen when it lands.
+ * Settings, which Watching links to. Each count is what that tab's table
+ * would show under the filters picked (`useQueueScopeCounts`). A count not
+ * answered yet keeps its place, so the tabs do not widen when it lands.
  */
 export function QueueScopes() {
   const { t } = useTranslation();
-  const { scope, filters, setScope } = useQueueSearch();
-  const filtered = Object.values(filters).some((value) => value !== undefined);
-  const { data: unfiltered } = usePullRequestQueue(scope, {
-    select: (queue) => queue.scopes,
-    enabled: !filtered,
-  });
-  const { data: narrowed } = usePullRequestQueue('all', {
-    select: (queue) => scopeCounts(queue.items, filters),
-    enabled: filtered,
-  });
-  const scopes = filtered ? narrowed : unfiltered;
+  const { scope, setScope } = useQueueSearch();
+  const scopes = useQueueScopeCounts();
 
   return (
     <div className="flex flex-col gap-2.5">

@@ -1,7 +1,13 @@
 import type { PullRequestEntity } from '@oppenheimer/frontend-consumer';
 import { describe, expect, it } from 'vitest';
 import { pullRequestSearchSchema } from '../lib/pull-request-search';
-import { facetCounts, filterQueue, scopeCounts, waitOf } from '../lib/queue-filter';
+import {
+  facetCounts,
+  filterQueue,
+  repositoryNames,
+  scopeCounts,
+  waitOf,
+} from '../lib/queue-filter';
 
 /**
  * The queue's filters: what each facet keeps, what each option would leave
@@ -56,6 +62,12 @@ describe('the scope counts', () => {
       requested: 2,
       watching: 0,
     });
+  });
+
+  // Regression: a repository picked where the scope has none of its rows left the picker blank.
+  it('keeps the picked repository among the picker’s names', () => {
+    expect(repositoryNames(ROWS, 'acme/ios')).toEqual(['acme/api', 'acme/ios', 'acme/web']);
+    expect(repositoryNames(ROWS, undefined)).toEqual(['acme/api', 'acme/web']);
   });
 });
 

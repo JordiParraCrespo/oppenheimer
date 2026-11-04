@@ -3,6 +3,7 @@ import type {
   PullRequestLane,
   PullRequestQueueName,
 } from '@oppenheimer/frontend-consumer';
+import { PULL_REQUEST_QUEUES } from '@oppenheimer/shared/schemas/pull-request';
 import type { QueueChecks, QueueWait } from './queue-search';
 
 export const QUEUE_PAGE_SIZE = 10;
@@ -85,16 +86,28 @@ export function scopeCounts(
   rows: readonly PullRequestEntity[],
   filters: QueueFilters,
 ): Record<PullRequestQueueName, number> {
-  const counts: Record<PullRequestQueueName, number> = {
-    all: 0,
-    mine: 0,
-    requested: 0,
-    watching: 0,
-  };
+  const counts = Object.fromEntries(PULL_REQUEST_QUEUES.map((queue) => [queue, 0])) as Record<
+    PullRequestQueueName,
+    number
+  >;
   for (const row of rows) {
     if (!matches(row, filters)) continue;
     counts.all += 1;
     counts[row.scope] += 1;
   }
   return counts;
+}
+
+/**
+ * The repository picker's names: every repository the rows come from, and the
+ * one picked, so the picker still names it, with its 0, where this scope has
+ * none of its rows.
+ */
+export function repositoryNames(
+  rows: readonly PullRequestEntity[],
+  picked: string | undefined,
+): string[] {
+  const names = new Set(rows.map((row) => row.repository));
+  if (picked) names.add(picked);
+  return [...names].sort();
 }
