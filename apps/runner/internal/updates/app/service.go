@@ -3,6 +3,7 @@ package app
 import (
 	"context"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/updates/domain"
@@ -71,6 +72,12 @@ func (s *Service) Check(ctx context.Context) (domain.Plan, error) {
 	}
 	state, _ := s.state.Load()
 	plan := domain.Decide(s.version, release, s.pinned, s.activities.Snapshot(), state.WaitingSince, s.now())
+	if plan.Action == domain.ActionNone && release.Version == s.version && s.binaries.NeedsReinstall() {
+		// It waits for a quiet moment like any update: nothing is wrong
+		// with the binary, only with how it is installed.
+		plan.Action = domain.ActionUpdate
+		plan.Reason = fmt.Sprintf("%s is installed as a bare binary; installing it again as the app bundle macOS keeps its permissions for", s.version)
+	}
 
 	// Remember when waiting started, so the 24-hour cap survives restarts.
 	if plan.Action == domain.ActionUpdate && state.WaitingSince.IsZero() {

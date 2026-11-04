@@ -455,22 +455,44 @@ Stop here and tell us; do not retry with a different mirror."
 	fi
 	say "    sha256 ok ($DIGEST)"
 
-	# 6. Install under ~/.oppenheimer/bin and link `current`.
+	# 6. Install under ~/.oppenheimer/bin and link `current`. On macOS the
+	#    archive carries OppenheimerRunner.app: a copy is kept per version, and
+	#    the one that runs is always ~/.oppenheimer/bin/OppenheimerRunner.app,
+	#    because macOS keeps the runner's permissions for the signed bundle at
+	#    the path it runs from (09 §2). A release from before the bundle has
+	#    none, and installs as a bare binary as on Linux.
 	tar -xzf "$WORK/runner.tar.gz" -C "$WORK"
-	BINARY="$(find "$WORK" -type f -name runner -perm -u+x | head -n1)"
-	[ -n "$BINARY" ] || die "the archive does not contain a runner binary"
 	mkdir -p "$RUNNER_HOME/bin" "$HOME/.local/bin"
 	chmod 700 "$RUNNER_HOME"
-	install -m 700 "$BINARY" "$RUNNER_HOME/bin/runner-$VERSION"
-	ln -sfn "runner-$VERSION" "$RUNNER_HOME/bin/current"
+	BUNDLE="$(find "$WORK" -type d -name OppenheimerRunner.app | head -n1)"
+	if [ "$GOOS" = "darwin" ] && [ -n "$BUNDLE" ]; then
+		[ -x "$BUNDLE/Contents/MacOS/runner" ] || die "the archive's OppenheimerRunner.app has no runner in it"
+		rm -rf "$RUNNER_HOME/bin/runner-$VERSION.app" "$RUNNER_HOME/bin/.staging/OppenheimerRunner.app"
+		mkdir -p "$RUNNER_HOME/bin/.staging"
+		cp -R "$BUNDLE" "$RUNNER_HOME/bin/runner-$VERSION.app"
+		cp -R "$BUNDLE" "$RUNNER_HOME/bin/.staging/OppenheimerRunner.app"
+		# A running service keeps the bundle it started from until
+		# `runner install` restarts it below.
+		rm -rf "$RUNNER_HOME/bin/OppenheimerRunner.app"
+		mv "$RUNNER_HOME/bin/.staging/OppenheimerRunner.app" "$RUNNER_HOME/bin/OppenheimerRunner.app"
+		ln -sfn "OppenheimerRunner.app/Contents/MacOS/runner" "$RUNNER_HOME/bin/current"
+		INSTALLED="$RUNNER_HOME/bin/OppenheimerRunner.app"
+	else
+		BINARY="$(find "$WORK" -type f -name runner -perm -u+x | head -n1)"
+		[ -n "$BINARY" ] || die "the archive does not contain a runner binary"
+		install -m 700 "$BINARY" "$RUNNER_HOME/bin/runner-$VERSION"
+		ln -sfn "runner-$VERSION" "$RUNNER_HOME/bin/current"
+		INSTALLED="$RUNNER_HOME/bin/runner-$VERSION"
+	fi
 	ln -sfn "$RUNNER_HOME/bin/current" "$HOME/.local/bin/oppenheimer-runner"
 	RUNNER="$RUNNER_HOME/bin/current"
 	if [ "$GOOS" = "darwin" ]; then
-		# Until the binary is signed, Gatekeeper quarantines anything curl wrote.
-		xattr -d com.apple.quarantine "$RUNNER_HOME/bin/runner-$VERSION" 2>/dev/null || true
+		# curl sets no quarantine, but a copy that came through a browser
+		# would carry it.
+		xattr -dr com.apple.quarantine "$INSTALLED" 2>/dev/null || true
 	fi
 	"$RUNNER" version >/dev/null || die "the installed runner does not start on this machine"
-	say "    installed $RUNNER_HOME/bin/runner-$VERSION"
+	say "    installed $INSTALLED"
 
 	# 7. Register. The token goes to the runner in its environment, never on a
 	#    command line, and is spent there and never written to disk. A host

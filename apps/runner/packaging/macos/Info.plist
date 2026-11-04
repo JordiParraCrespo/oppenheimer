@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  The runner's macOS app bundle. scripts/runner/release.sh fills @VERSION@
+  and signs the bundle; the runner reads CFBundleVersion back to know which
+  version is live. The identifier is what macOS keeps every permission for:
+  changing it costs every Mac its grants once more.
+-->
+<plist version="1.0">
+<dict>
+  <key>CFBundleIdentifier</key>
+  <string>dev.oppenheimer.runner</string>
+  <key>CFBundleName</key>
+  <string>Oppenheimer Runner</string>
+  <key>CFBundleDisplayName</key>
+  <string>Oppenheimer Runner</string>
+  <key>CFBundleExecutable</key>
+  <string>runner</string>
+  <key>CFBundlePackageType</key>
+  <string>APPL</string>
+  <key>CFBundleInfoDictionaryVersion</key>
+  <string>6.0</string>
+  <key>CFBundleShortVersionString</key>
+  <string>@VERSION@</string>
+  <key>CFBundleVersion</key>
+  <string>@VERSION@</string>
+  <key>LSMinimumSystemVersion</key>
+  <string>11.0</string>
+  <key>LSUIElement</key>
+  <true/>
+  <key>NSDocumentsFolderUsageDescription</key>
+  <string>The agents in your sessions read and write the projects you keep in Documents.</string>
+  <key>NSDesktopFolderUsageDescription</key>
+  <string>The agents in your sessions read and write the projects you keep on the Desktop.</string>
+  <key>NSDownloadsFolderUsageDescription</key>
+  <string>The agents in your sessions read files you keep in Downloads.</string>
+  <key>NSNetworkVolumesUsageDescription</key>
+  <string>The agents in your sessions work on projects kept on network volumes.</string>
+  <key>NSRemovableVolumesUsageDescription</key>
+  <string>The agents in your sessions work on projects kept on external drives.</string>
+  <key>NSLocalNetworkUsageDescription</key>
+  <string>The runner connects your browser to this Mac's terminals directly when both are on the same network.</string>
+</dict>
+</plist>

@@ -1,7 +1,7 @@
 # Build the host-agent binaries for every supported target and attach them to
 # a GitHub Release, together with the manifest hosts read.
 #
-# The release is **not signed here**. The Ed25519 key that authorises an
+# The release manifest is **not signed here**. The Ed25519 key that authorises an
 # update lives offline and never enters CI — that is the whole property F26
 # buys (see product/versions/mvp/09-runner-install-and-update.md §5). This
 # workflow produces the artifacts and the unsigned manifest; whoever holds the
@@ -50,6 +50,37 @@ jobs:
           echo "version=$version" >> "$GITHUB_OUTPUT"
           echo "channel=$channel" >> "$GITHUB_OUTPUT"
 
+      # The macOS bundles are signed with the Developer ID and notarized here,
+      # unlike the manifest: that certificate decides what macOS calls the
+      # runner and keeps its permissions for, not what code a host accepts,
+      # which only the offline Ed25519 key does. rcodesign signs on Linux.
+      - name: Install rcodesign
+        if: vars.RUNNER_MACOS_UNSIGNED != '1'
+        env:
+          RCODESIGN_VERSION: 0.29.0
+          RCODESIGN_SHA256: dbe85cedd8ee4217b64e9a0e4c2aef92ab8bcaaa41f20bde99781ff02e600002
+        run: |
+          dir="$RUNNER_TEMP/rcodesign"
+          mkdir -p "$dir"
+          tgz="apple-codesign-${RCODESIGN_VERSION}-x86_64-unknown-linux-musl.tar.gz"
+          curl -fsSL "https://github.com/indygreg/apple-platform-rs/releases/download/apple-codesign%2F${RCODESIGN_VERSION}/$tgz" -o "$dir/$tgz"
+          echo "$RCODESIGN_SHA256  $dir/$tgz" | sha256sum -c -
+          tar -xzf "$dir/$tgz" -C "$dir" --strip-components=1
+          echo "$dir" >> "$GITHUB_PATH"
+
+      - name: Write the macOS signing credentials
+        if: vars.RUNNER_MACOS_UNSIGNED != '1'
+        env:
+          P12_BASE64: ${{ secrets.RUNNER_MACOS_P12_BASE64 }}
+          NOTARY_KEY: ${{ secrets.RUNNER_MACOS_NOTARY_KEY }}
+        run: |
+          dir="$RUNNER_TEMP/macos-signing"
+          mkdir -p "$dir" && chmod 700 "$dir"
+          [ -z "$P12_BASE64" ] || printf '%s' "$P12_BASE64" | base64 -d > "$dir/developer-id.p12"
+          [ -z "$NOTARY_KEY" ] || printf '%s' "$NOTARY_KEY" > "$dir/notary-key.json"
+          echo "MACOS_SIGN_P12=$([ -z "$P12_BASE64" ] || echo "$dir/developer-id.p12")" >> "$GITHUB_ENV"
+          echo "MACOS_NOTARY_KEY=$([ -z "$NOTARY_KEY" ] || echo "$dir/notary-key.json")" >> "$GITHUB_ENV"
+
       # The public half of the signing key is a repository variable, not a
       # secret: it is public by nature, and it must be identical in every
       # binary we ship. release.sh fails when it or RUNNER_RELEASE_BASE_URL
@@ -59,6 +90,8 @@ jobs:
           RELEASE_PUBLIC_KEYS: ${{ vars.RUNNER_RELEASE_PUBLIC_KEYS }}
           RELEASE_BASE_URL: ${{ vars.RUNNER_RELEASE_BASE_URL }}
           MIN_SUPPORTED: ${{ vars.RUNNER_MIN_SUPPORTED }}
+          MACOS_SIGN_P12_PASSWORD: ${{ secrets.RUNNER_MACOS_P12_PASSWORD }}
+          MACOS_UNSIGNED: ${{ vars.RUNNER_MACOS_UNSIGNED }}
         run: scripts/runner/release.sh "${{ steps.release.outputs.version }}" "${{ steps.release.outputs.channel }}"
 
       - name: Check the binaries run

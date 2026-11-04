@@ -48,6 +48,9 @@ type releaseServer struct {
 	corrupt bool
 	// signWith replaces the signing key, to fake a forged manifest.
 	signWith ed25519.PrivateKey
+	// bundle ships the binary inside a macOS app bundle of that name, and
+	// the harness installs on the macOS layout.
+	bundle string
 }
 
 func newReleaseServer(t *testing.T, version string) *releaseServer {
@@ -107,14 +110,23 @@ func (rs *releaseServer) manifest(t *testing.T, digest string, size int64) []byt
 func (rs *releaseServer) archive(t *testing.T) []byte {
 	t.Helper()
 	script := "#!/bin/sh\nexit " + string(rune('0'+rs.selfCheckExit)) + "\n"
+	files := map[string]string{"runner": script}
+	if rs.bundle != "" {
+		files = map[string]string{
+			rs.bundle + "/Contents/MacOS/runner": script,
+			rs.bundle + "/Contents/Info.plist":   "<key>CFBundleVersion</key><string>" + rs.version + "</string>",
+		}
+	}
 	var buf bytes.Buffer
 	gz := gzip.NewWriter(&buf)
 	tw := tar.NewWriter(gz)
-	if err := tw.WriteHeader(&tar.Header{Name: "runner", Mode: 0o755, Size: int64(len(script)), Typeflag: tar.TypeReg}); err != nil {
-		t.Fatal(err)
-	}
-	if _, err := tw.Write([]byte(script)); err != nil {
-		t.Fatal(err)
+	for name, body := range files {
+		if err := tw.WriteHeader(&tar.Header{Name: name, Mode: 0o755, Size: int64(len(body)), Typeflag: tar.TypeReg}); err != nil {
+			t.Fatal(err)
+		}
+		if _, err := tw.Write([]byte(body)); err != nil {
+			t.Fatal(err)
+		}
 	}
 	if err := tw.Close(); err != nil {
 		t.Fatal(err)
@@ -136,7 +148,7 @@ type harness struct {
 func newHarness(t *testing.T, rs *releaseServer, running string) *harness {
 	t.Helper()
 	home := t.TempDir()
-	store, err := binaries.New(binaries.Options{Dir: filepath.Join(home, "bin"), Name: "runner", HTTP: rs.Client()})
+	store, err := binaries.New(binaries.Options{Dir: filepath.Join(home, "bin"), Name: "runner", HTTP: rs.Client(), Bundle: rs.bundle})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -400,5 +412,38 @@ func TestApplyRefusesAPinnedHostAndForceOverridesIt(t *testing.T) {
 	}
 	if got, _ := h.store.Current(); got != "1.1.0" {
 		t.Fatalf("current = %q", got)
+	}
+}
+
+// A Mac that a runner from before the app bundle updated runs the new
+// version as a bare binary, and every update would cost it its permissions
+// again. Being current is not enough: it reinstalls its own version as the
+// bundle, at a quiet moment like any update.
+func TestACurrentMacRunningABareBinaryReinstallsItselfAsTheBundle(t *testing.T) {
+	rs := newReleaseServer(t, "1.4.0")
+	rs.bundle = "OppenheimerRunner.app"
+	h := newHarness(t, rs, "1.4.0")
+
+	plan, err := h.svc.Check(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if plan.Action != domain.ActionUpdate {
+		t.Fatalf("plan = %s (%s), want an update to the bundle", plan.Action, plan.Reason)
+	}
+	if _, err := h.svc.Apply(context.Background(), app.ApplyOptions{Force: true}); err != nil {
+		t.Fatalf("apply: %v", err)
+	}
+	if h.store.NeedsReinstall() || h.restarts.calls != 1 {
+		t.Fatalf("after the reinstall: needs reinstall %v, restarts %d", h.store.NeedsReinstall(), h.restarts.calls)
+	}
+	live, err := filepath.EvalSymlinks(filepath.Join(h.home, "bin", "current"))
+	if err != nil || live != filepath.Join(h.home, "bin", rs.bundle, "Contents", "MacOS", "runner") {
+		t.Fatalf("current runs %q (%v), want the live bundle", live, err)
+	}
+
+	plan, err = h.svc.Check(context.Background())
+	if err != nil || plan.Action != domain.ActionNone {
+		t.Fatalf("once on the bundle, plan = %s, %v; want none", plan.Action, err)
 	}
 }

@@ -627,8 +627,13 @@ func (a *App) LinkRunning() error {
 		resolved = executable
 	}
 	// Already inside the layout (an update installed it): just link.
-	if filepath.Dir(resolved) == a.Paths.Bin() {
+	if filepath.Dir(resolved) == a.Paths.Bin() || strings.HasPrefix(resolved, a.Paths.Bin()+string(filepath.Separator)) {
 		return a.Binaries.Activate(a.Version)
+	}
+	// Run from inside an app bundle: the bundle is what gets installed.
+	if macOS := filepath.Dir(resolved); filepath.Base(macOS) == "MacOS" &&
+		filepath.Base(filepath.Dir(macOS)) == "Contents" && filepath.Ext(filepath.Dir(filepath.Dir(macOS))) == ".app" {
+		resolved = filepath.Dir(filepath.Dir(macOS))
 	}
 	if err := a.Binaries.Promote(resolved, a.Version); err != nil {
 		if !strings.Contains(err.Error(), "exist") {

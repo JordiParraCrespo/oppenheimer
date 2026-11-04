@@ -32,6 +32,7 @@ type Store struct {
 	http    *http.Client
 	member  string
 	timeout time.Duration
+	bundle  string
 }
 
 // Options configure the store.
@@ -43,6 +44,12 @@ type Options struct {
 	HTTP *http.Client
 	// Member is the file to take out of the release archive.
 	Member string
+	// Bundle names the macOS app bundle the release archive carries
+	// (`OppenheimerRunner.app`). When set, versions are installed as bundles
+	// and the one that runs is a copy of one at a single fixed path
+	// (bundle.go); a release without the bundle still installs as a bare
+	// binary. Empty on Linux.
+	Bundle string
 }
 
 // New builds the store and creates its directories 0700.
@@ -63,7 +70,7 @@ func New(opts Options) (*Store, error) {
 	if member == "" {
 		member = name
 	}
-	return &Store{layout: layout, http: httpClient, member: member, timeout: selfCheckTimeout}, nil
+	return &Store{layout: layout, http: httpClient, member: member, timeout: selfCheckTimeout, bundle: opts.Bundle}, nil
 }
 
 // CurrentPath is the stable path the service unit executes.
@@ -94,6 +101,13 @@ func (s *Store) Stage(ctx context.Context, artifact domain.Artifact, version str
 		return "", domain.ErrArtifact.WithDetail("%s: %v", artifact.URL, err).WithCause(err)
 	}
 
+	if s.bundle != "" {
+		staged, err := s.stageBundle(archive, version)
+		if err == nil || !errors.Is(err, selfupdate.ErrMemberAbsent) {
+			return staged, err
+		}
+		// A release from before the bundle: install its bare binary.
+	}
 	staged, err := s.stagingFile("runner-" + sanitize(version) + "-*")
 	if err != nil {
 		return "", domain.ErrArtifact.WithDetail("prepare the staging directory: %v", err).WithCause(err)
@@ -127,6 +141,9 @@ func (s *Store) stagingFile(pattern string) (string, error) {
 // catches a wrong-arch or truncated build while the old binary is still the
 // service — the difference between a failed update and a dead host.
 func (s *Store) SelfCheck(ctx context.Context, path string) error {
+	if info, err := os.Stat(path); err == nil && info.IsDir() {
+		path = s.bundleExecutable(path)
+	}
 	res, err := execx.Run(ctx, execx.Spec{
 		Name: path, Args: []string{"selfcheck"}, Timeout: s.timeout, Output: execx.Combined,
 	})
@@ -140,20 +157,52 @@ func (s *Store) SelfCheck(ctx context.Context, path string) error {
 	return nil
 }
 
-// Promote moves a staged binary in as a version.
+// Promote moves a staged binary, or a staged bundle, in as a version.
 func (s *Store) Promote(stagedPath, version string) error {
+	if info, err := os.Stat(stagedPath); err == nil && info.IsDir() && s.bundle != "" {
+		return s.promoteBundle(stagedPath, version)
+	}
 	_, err := s.layout.Promote(stagedPath, version)
 	return err
 }
 
-// Activate points `current` at an installed version.
-func (s *Store) Activate(version string) error { return s.layout.Activate(version) }
+// Activate points `current` at an installed version. On macOS a version
+// installed as a bundle is copied in as the live bundle, and `current` points
+// into that; a version installed as a bare binary is linked as on Linux.
+func (s *Store) Activate(version string) error {
+	if s.bundle != "" {
+		if dir, err := s.versionBundle(version); err == nil {
+			if info, err := os.Stat(dir); err == nil && info.IsDir() {
+				return s.activateBundle(dir)
+			}
+		}
+	}
+	return s.layout.Activate(version)
+}
 
 // Current is the version `current` points at.
-func (s *Store) Current() (string, error) { return s.layout.Current() }
+func (s *Store) Current() (string, error) {
+	if s.bundle != "" && s.linksLive() {
+		return s.liveVersion()
+	}
+	return s.layout.Current()
+}
+
+// NeedsReinstall reports that the version running here is not installed the
+// way this platform runs it: on macOS, a bare binary rather than the bundle,
+// as a host updated by a runner from before the bundle is. Its permissions
+// would be lost on every update, so the same version is worth installing
+// again from the release.
+func (s *Store) NeedsReinstall() bool { return s.bundle != "" && !s.linksLive() }
 
 // Prune keeps the named versions and clears staging.
-func (s *Store) Prune(keep ...string) error { return s.layout.Prune(keep...) }
+func (s *Store) Prune(keep ...string) error {
+	err := s.layout.Prune(keep...)
+	if s.bundle == "" {
+		return err
+	}
+	return errors.Join(err, s.pruneBundles(keep...))
+}
 
 // sanitize keeps a version usable as a file name; the layout rejects anything
 // unsafe, and this keeps the staging name readable in the meantime.

@@ -100,6 +100,7 @@ func (*heldDownload) Promote(string, string) error            { return nil }
 func (*heldDownload) Activate(string) error                   { return nil }
 func (*heldDownload) Current() (string, error)                { return "1.0.0", nil }
 func (*heldDownload) Prune(...string) error                   { return nil }
+func (*heldDownload) NeedsReinstall() bool                    { return false }
 
 type offeredRelease struct{}
 

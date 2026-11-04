@@ -763,6 +763,9 @@ capacity gate, the egress proxy, and the `hypervisor`, `guest` and
    state.
 4. ~~macOS install~~: decided in 09 §2 — a user launchd agent and a
    quarantine-stripped binary need no notarization; only a `.app` would.
+   Changed 2026-11-04 (09 §2): the runner is a signed, notarized `.app` at
+   one fixed path, because a bare binary lost its macOS permissions on
+   every update.
 5. ~~Node and Claude Code presence~~: decided in §10 — check and hint for
    `claude`, installer fixes `tmux`.
 6. ~~Package map~~: decided in §3.
