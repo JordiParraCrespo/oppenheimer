@@ -180,8 +180,30 @@ func (s *Store) Activate(version string) error {
 	return s.layout.Activate(version)
 }
 
-// ActivateBinary points `current` at a version's bare binary, bundle or not.
-func (s *Store) ActivateBinary(version string) error { return s.layout.Activate(version) }
+// ActivateBinary points `current` at a version's bare binary and deletes the
+// bundle of it, which is the one that failed: a later rollback to this
+// version must reach the binary that worked. A version with no bare binary
+// is activated as Activate does.
+func (s *Store) ActivateBinary(version string) error {
+	bare, err := s.layout.VersionPath(version)
+	if err != nil {
+		return err
+	}
+	if info, err := os.Stat(bare); err != nil || info.IsDir() {
+		return s.Activate(version)
+	}
+	if err := s.layout.Activate(version); err != nil {
+		return err
+	}
+	if s.bundle == "" {
+		return nil
+	}
+	dir, err := s.versionBundle(version)
+	if err != nil {
+		return err
+	}
+	return os.RemoveAll(dir)
+}
 
 // Current is the version `current` points at.
 func (s *Store) Current() (string, error) {

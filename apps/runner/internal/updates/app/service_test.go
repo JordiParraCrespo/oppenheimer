@@ -444,7 +444,7 @@ func TestACurrentMacRunningABareBinaryReinstallsItselfAsTheBundle(t *testing.T) 
 }
 
 // A bundle that does not stay up rolls back to the bare binary that did,
-// and the host does not try the same reinstall again.
+// is not kept for a later rollback, and is not tried again.
 func TestAReinstallThatDoesNotStayUpReturnsToTheBareBinary(t *testing.T) {
 	rs := newReleaseServer(t, "1.4.0")
 	rs.bundle = "OppenheimerRunner.app"
@@ -461,6 +461,10 @@ func TestAReinstallThatDoesNotStayUpReturnsToTheBareBinary(t *testing.T) {
 	live, err := filepath.EvalSymlinks(filepath.Join(h.home, "bin", "current"))
 	if err != nil || live != filepath.Join(h.home, "bin", "runner-1.4.0") {
 		t.Fatalf("after the rollback current runs %q (%v), want the bare runner-1.4.0", live, err)
+	}
+	// Kept, it would be what the next release's rollback returns to.
+	if _, err := os.Stat(filepath.Join(h.home, "bin", "runner-1.4.0.app")); !os.IsNotExist(err) {
+		t.Fatalf("the bundle that failed is still installed: %v", err)
 	}
 	if plan, err := h.svc.Check(context.Background()); err != nil || plan.Action != domain.ActionNone {
 		t.Fatalf("after a rolled-back reinstall, plan = %s (%s), %v; want none", plan.Action, plan.Reason, err)

@@ -32,8 +32,8 @@ type Binaries interface {
 	// Activate points `current` at an installed version.
 	Activate(version string) error
 	// ActivateBinary points `current` at a version's bare binary even where
-	// a bundle of it is installed too: what a reinstall that failed rolls
-	// back to.
+	// a bundle of it is installed too, and drops that bundle: what a
+	// reinstall that failed rolls back to, now and on any later rollback.
 	ActivateBinary(version string) error
 	// Current is the version `current` points at.
 	Current() (string, error)
