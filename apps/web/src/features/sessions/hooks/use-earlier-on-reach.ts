@@ -9,18 +9,26 @@ const EARLIER_AFTER_MS = 1000;
 /**
  * Draws a chat's earlier turns once the reader scrolls up to the element
  * given to the returned ref: `showEarlier` runs `EARLIER_AFTER_MS` after it
- * comes into view, once however often it is seen meanwhile.
+ * comes into view, once however often it is seen meanwhile; at once when
+ * `now`, for turns the reader already waited for (a page asked of the host).
  *
  * Effects: an `IntersectionObserver` on that element, and the timer. An
  * element still in view after the turns were added is not seen again by the
  * observer, so the caller keys it by how many turns are left above it, and
  * the new one is observed afresh.
  */
-export function useEarlierOnReach(showEarlier: () => void): (element: HTMLElement | null) => void {
+export function useEarlierOnReach(
+  showEarlier: () => void,
+  now = false,
+): (element: HTMLElement | null) => void {
   const [element, setElement] = useState<HTMLElement | null>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const show = useEffectEvent(showEarlier);
   const reached = useEffectEvent(() => {
+    if (now) {
+      show();
+      return;
+    }
     if (timer.current !== null) return;
     timer.current = setTimeout(() => {
       timer.current = null;

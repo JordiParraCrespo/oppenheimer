@@ -23,6 +23,13 @@ export const attachResizeSchema = z.object({
   type: z.literal('resize'),
   cols: z.number().int().min(1).max(10_000),
   rows: z.number().int().min(1).max(10_000),
+  /**
+   * This browser can ask for a chat's older turns (`chat.older`), so its
+   * host may send the conversation tail first. Read off the resize that
+   * starts the attach; absent, the host sends the whole history, as it does
+   * to a console that predates it.
+   */
+  chatTail: z.boolean().optional(),
 });
 
 /** Bytes the terminal consumed, relayed to the runner as `attachment.credit`. */
@@ -74,12 +81,24 @@ export const attachDeviceInputSchema = z.object({
 
 export type AttachDeviceInput = Omit<z.infer<typeof attachDeviceInputSchema>, 'type'>;
 
+/**
+ * The turns of the chat before `before`, the offset the console holds its
+ * conversation from (`chat`'s `before`): the reader scrolled to its top.
+ * Relayed as `attachment.chat.older`; answered with `chat` batches marked
+ * `older`.
+ */
+export const attachChatOlderSchema = z.object({
+  type: z.literal('chat.older'),
+  before: z.number().int().positive(),
+});
+
 export const attachClientMessageSchema = z.discriminatedUnion('type', [
   attachResizeSchema,
   attachCreditSchema,
   attachDirectOfferSchema,
   attachDirectPathSchema,
   attachDeviceInputSchema,
+  attachChatOlderSchema,
 ]);
 
 export type AttachClientMessage = z.infer<typeof attachClientMessageSchema>;
@@ -155,6 +174,10 @@ export const attachChatSchema = z.object({
   reset: z.boolean().optional(),
   /** The runner's `history`: `more` while the history is still coming, `end` on its last batch. */
   history: z.enum(['more', 'end']).optional(),
+  /** The runner's `before`: where what was sent starts; absent or 0, nothing older to ask for. */
+  before: z.number().int().nonnegative().optional(),
+  /** The runner's `older`: a page asked for with `chat.older`, `end` on its last batch. */
+  older: z.enum(['more', 'end']).optional(),
   entries: z.array(z.string().min(1).max(CHAT_ENTRY_MAX_BYTES)).max(CHAT_BATCH_MAX_ENTRIES),
 });
 

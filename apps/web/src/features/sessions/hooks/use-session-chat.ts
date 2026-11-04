@@ -47,7 +47,8 @@ function sharedRead(chat: SessionChat): () => ChatState {
         turns === shared.turns &&
         next.available === shared.available &&
         next.queued === shared.queued &&
-        next.status === shared.status
+        next.status === shared.status &&
+        next.older === shared.older
           ? shared
           : { ...next, turns };
     }
@@ -111,6 +112,12 @@ export function useChatTurnIds(chat: SessionChat): readonly string[] {
     sharedIds.set(chat, select);
   }
   return useSyncExternalStore(chat.subscribe, select, select);
+}
+
+/** Whether the host holds turns before the first one the chat holds, and whether a page of them is coming. */
+export function useChatOlder(chat: SessionChat): ChatState['older'] {
+  const older = () => chat.snapshot().older;
+  return useSyncExternalStore(chat.subscribe, older, older);
 }
 
 /** Whether a first load's history is still arriving, for the chat to wait for it. */

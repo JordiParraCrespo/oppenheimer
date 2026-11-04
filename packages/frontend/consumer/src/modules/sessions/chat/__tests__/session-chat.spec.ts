@@ -366,6 +366,7 @@ describe('SessionChat', () => {
       queued: [],
       status: null,
       files: [],
+      older: 'none',
     });
     expect(before.turns).toHaveLength(2);
     expect(listener).toHaveBeenCalledTimes(3);
@@ -1126,5 +1127,117 @@ describe('a chat kept for the next pane', () => {
     vi.runAllTimers();
     expect([...first, ...second]).toEqual([]);
     vi.useRealTimers();
+  });
+});
+
+describe('a conversation sent tail first', () => {
+  // Each turn a prompt and a reply, as the runner sends them.
+  const turn = (n: number) => [
+    JSON.stringify(user(`u${n}`, `Prompt ${n}`)),
+    JSON.stringify(assistant(`a${n}`, [{ type: 'text', text: `Reply ${n}` }])),
+  ];
+  const turns = (from: number, to: number) =>
+    Array.from({ length: to - from }, (_, i) => turn(from + i)).flat();
+  const prompts = (chat: SessionChat) =>
+    chat.snapshot().turns.map((each) => each.prompt?.text ?? '(none)');
+
+  it('draws the tail at once and asks the host for the turns before it, a page at a time', () => {
+    // What breaks this: a tail taken for the whole conversation, so the
+    // reader reaching its top is never offered the rest; or a page put after
+    // what is held instead of before it.
+    const chat = new SessionChat();
+    const asked: number[] = [];
+    chat.connect(
+      () => {},
+      (before) => asked.push(before),
+    );
+    chat.apply({ reset: true, history: 'end', before: 900, entries: turns(60, 100) });
+    expect(chat.snapshot()).toMatchObject({ loading: false, older: 'more' });
+    expect(prompts(chat)).toHaveLength(40);
+
+    expect(chat.loadOlder()).toBe(true);
+    expect(asked).toEqual([900]);
+    expect(chat.snapshot().older).toBe('loading');
+    // Asked once until the page is there.
+    expect(chat.loadOlder()).toBe(false);
+
+    chat.apply({ older: 'more', entries: turns(20, 40) });
+    expect(prompts(chat)).toHaveLength(40);
+    chat.apply({ older: 'end', before: 300, entries: turns(40, 60) });
+    expect(chat.snapshot().older).toBe('more');
+    expect(prompts(chat)[0]).toBe('Prompt 20');
+    expect(prompts(chat)).toHaveLength(80);
+
+    chat.loadOlder();
+    expect(asked).toEqual([900, 300]);
+    chat.apply({ older: 'end', before: 0, entries: turns(0, 20) });
+    expect(chat.snapshot().older).toBe('none');
+    expect(prompts(chat)[0]).toBe('Prompt 0');
+    expect(chat.loadOlder()).toBe(false);
+  });
+
+  it('keeps what it holds, older pages too, when a reconnect sends the tail again', () => {
+    // What breaks this: a tail's replay checked from the first line held,
+    // so it differs at once and the conversation is cut to the tail, older
+    // pages and all, on every reconnect.
+    const chat = new SessionChat();
+    chat.connect(
+      () => {},
+      () => {},
+    );
+    chat.apply({ reset: true, history: 'end', before: 900, entries: turns(60, 100) });
+    chat.loadOlder();
+    chat.apply({ older: 'end', before: 300, entries: turns(20, 60) });
+    const before = chat.snapshot().turns;
+
+    // The conversation grew by a turn; the new tail starts a turn later.
+    chat.apply({ reset: true, history: 'more', before: 930, entries: turns(61, 80) });
+    chat.apply({ history: 'end', entries: turns(80, 101) });
+    expect(prompts(chat)[0]).toBe('Prompt 20');
+    expect(prompts(chat)).toHaveLength(81);
+    expect(chat.snapshot().turns.slice(0, 80)).toEqual(before);
+    expect(chat.snapshot().older).toBe('more');
+    chat.loadOlder();
+  });
+
+  it('draws a tail it cannot find among what it holds as a conversation of its own', () => {
+    const chat = new SessionChat();
+    chat.apply({ reset: true, history: 'end', entries: turns(0, 10) });
+    chat.apply({ reset: true, history: 'end', before: 5000, entries: turns(500, 510) });
+    expect(prompts(chat)).toEqual(Array.from({ length: 10 }, (_, i) => `Prompt ${500 + i}`));
+    expect(chat.snapshot().older).toBe('more');
+  });
+
+  it('lets go of a page asked of an attachment that is gone', () => {
+    // What breaks this: the page's lines held across the new attachment's
+    // reset, then put before a conversation they no longer precede.
+    const asked: number[] = [];
+    const chat = new SessionChat();
+    chat.connect(
+      () => {},
+      (before) => asked.push(before),
+    );
+    chat.apply({ reset: true, history: 'end', before: 900, entries: turns(60, 100) });
+    chat.loadOlder();
+    chat.apply({ older: 'more', entries: turns(20, 40) });
+    chat.apply({ reset: true, history: 'end', before: 900, entries: turns(60, 100) });
+    expect(chat.snapshot().older).toBe('more');
+    chat.apply({ older: 'end', before: 300, entries: turns(40, 60) });
+    expect(prompts(chat)[0]).toBe('Prompt 60');
+    expect(chat.loadOlder()).toBe(true);
+    expect(asked).toEqual([900, 900]);
+  });
+
+  it('asks nothing of a host that sent the whole conversation', () => {
+    const chat = new SessionChat();
+    const asked: number[] = [];
+    chat.connect(
+      () => {},
+      (before) => asked.push(before),
+    );
+    chat.apply({ reset: true, history: 'end', entries: turns(0, 50) });
+    expect(chat.snapshot().older).toBe('none');
+    expect(chat.loadOlder()).toBe(false);
+    expect(asked).toEqual([]);
   });
 });

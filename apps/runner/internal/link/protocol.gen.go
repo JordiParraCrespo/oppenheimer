@@ -76,6 +76,7 @@ const (
 	CapabilitySessionFolder         = "session.folder"
 	CapabilityFsList                = "fs.list"
 	CapabilityAttachmentChat        = "attachment.chat"
+	CapabilityAttachmentChatOlder   = "attachment.chat.older"
 	CapabilityDeviceScreen          = "device.screen"
 	CapabilityPortForward           = "port.forward"
 	CapabilitySessionCloud          = "session.cloud"
@@ -124,6 +125,7 @@ const (
 	TypeAttachmentDirectRefused = "attachment.direct.refused"
 	TypeAttachmentPath          = "attachment.path"
 	TypeAttachmentChat          = "attachment.chat"
+	TypeAttachmentChatOlder     = "attachment.chat.older"
 	TypeDeviceAttach            = "device.attach"
 	TypeDeviceInfo              = "device.info"
 	TypeDeviceInput             = "device.input"
@@ -183,6 +185,7 @@ var MessageTypes = []string{
 	TypeAttachmentDirectRefused,
 	TypeAttachmentPath,
 	TypeAttachmentChat,
+	TypeAttachmentChatOlder,
 	TypeDeviceAttach,
 	TypeDeviceInfo,
 	TypeDeviceInput,
@@ -279,6 +282,8 @@ func NewMessage(messageType string) (any, bool) {
 		return new(AttachmentPath), true
 	case TypeAttachmentChat:
 		return new(AttachmentChat), true
+	case TypeAttachmentChatOlder:
+		return new(AttachmentChatOlder), true
 	case TypeDeviceAttach:
 		return new(DeviceAttach), true
 	case TypeDeviceInfo:
@@ -487,6 +492,7 @@ type SessionAttach struct {
 	Cols         int    `json:"cols"`
 	Rows         int    `json:"rows"`
 	ReadOnly     bool   `json:"readOnly,omitempty"`
+	ChatTail     bool   `json:"chatTail,omitempty"`
 }
 
 // SessionInput is the `session.input` message.
@@ -693,7 +699,16 @@ type AttachmentChat struct {
 	AttachmentID uint32   `json:"attachmentId"`
 	Reset        bool     `json:"reset,omitempty"`
 	History      string   `json:"history,omitempty"`
+	Before       int64    `json:"before,omitempty"`
+	Older        string   `json:"older,omitempty"`
 	Entries      []string `json:"entries"`
+}
+
+// AttachmentChatOlder is the `attachment.chat.older` message.
+type AttachmentChatOlder struct {
+	Type         string `json:"type"`
+	AttachmentID uint32 `json:"attachmentId"`
+	Before       int64  `json:"before"`
 }
 
 // DeviceAttach is the `device.attach` message.

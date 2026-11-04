@@ -2,6 +2,7 @@ package transcript
 
 import (
 	"bufio"
+	"bytes"
 	"encoding/json"
 	"errors"
 	"io"
@@ -232,3 +233,14 @@ func (c claudeReader) finder(session domain.Session) (func() string, bool) {
 // transcriber implements chatSource: each line of Claude Code's transcript
 // is one entry, compacted (claude_chat.go).
 func (c claudeReader) transcriber() chatTranscriber { return lineByLine(c.chatEntry) }
+
+// opensTurn implements turnCutter: a line is where a turn starts when it is
+// something the person typed (`prompt`), so the tail can be cut before it.
+func (claudeReader) opensTurn(line []byte) bool {
+	// Most lines are the agent's; only a user line is worth decoding.
+	if !bytes.Contains(line, []byte(`"user"`)) {
+		return false
+	}
+	var entry claudeEntry
+	return json.Unmarshal(line, &entry) == nil && entry.prompt() != ""
+}

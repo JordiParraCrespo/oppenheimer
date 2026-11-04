@@ -147,7 +147,10 @@ export function useTerminal(
       }
     });
     const offChat = chat ? stream.onChat?.((batch) => chat.apply(batch)) : undefined;
-    const releaseChat = chat?.connect((data) => stream.send(data));
+    const releaseChat = chat?.connect(
+      (data) => stream.send(data),
+      stream.askOlderChat ? (before) => stream.askOlderChat?.(before) : undefined,
+    );
     const offEnd = stream.onEnd((reason) => {
       setEnded(reason);
       onEndRef.current?.(reason);

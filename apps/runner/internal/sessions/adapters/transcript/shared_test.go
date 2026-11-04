@@ -127,7 +127,7 @@ func TestTheChatSendsEverySharedFileAfterTheHistoryAndEachNewOne(t *testing.T) {
 			defer close(done)
 			_ = transcript.New(transcript.Options{ClaudeProjects: projects, FilesDir: files}).Follow(ctx,
 				domain.Session{ID: conversation, Agent: domain.AgentClaude, Launch: domain.Launch{Conversation: conversation}},
-				64<<10, 256, sink.emit)
+				64<<10, 256, nil, sink.emit)
 		}()
 		eventually(t, "the history and the shared file", func() bool { return len(sink.entries()) == 3 })
 		if got := sink.entries()[2]["name"]; got != "first.txt" {
@@ -202,7 +202,7 @@ func TestSharedFilesGoInBatchesTheLinkTakes(t *testing.T) {
 		defer close(done)
 		_ = transcript.New(transcript.Options{ClaudeProjects: projects, FilesDir: files}).Follow(ctx,
 			domain.Session{ID: conversation, Agent: domain.AgentClaude, Launch: domain.Launch{Conversation: conversation}},
-			64<<10, 256, sink.emit)
+			64<<10, 256, nil, sink.emit)
 	}()
 	defer func() { cancel(); <-done }()
 	eventually(t, "every shared file", func() bool { return len(sink.entries()) == 2+17 })

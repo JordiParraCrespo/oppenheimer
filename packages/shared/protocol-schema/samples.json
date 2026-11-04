@@ -238,9 +238,15 @@
     "attachmentId": 7,
     "reset": true,
     "history": "end",
+    "before": 524288,
     "entries": [
       "{\"type\":\"user\",\"uuid\":\"u1\",\"message\":{\"role\":\"user\",\"content\":\"fix the failing test\"}}"
     ]
+  },
+  "attachment.chat.older": {
+    "type": "attachment.chat.older",
+    "attachmentId": 7,
+    "before": 1048576
   },
   "device.attach": {
     "type": "device.attach",

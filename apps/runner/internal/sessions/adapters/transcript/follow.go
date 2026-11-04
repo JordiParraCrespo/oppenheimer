@@ -28,10 +28,14 @@ const (
 
 // Follow implements app.Transcripts: it sends the conversation's chat
 // entries to emit until ctx ends — the history first, under Reset, then each
-// line as the CLI appends it. OpenCode's conversation is read through its
-// own API instead (`opencode.go`). A batch emit refuses (the link's queue is full)
+// line as the CLI appends it. Given older, the console can ask for older
+// turns: a transcript that can be cut at a turn's opening (Claude Code's)
+// then sends only its last turns as the history, with Before, and answers
+// each offset on older with the turns before it (`follow_older.go`). Without
+// it, the whole history, so nothing is ever out of the reader's reach. OpenCode's conversation is read through its own API
+// instead (`opencode.go`). A batch emit refuses (the link's queue is full)
 // is offered again on the next check, so nothing is skipped.
-func (r *Reader) Follow(ctx context.Context, session domain.Session, entryMax, batchMax int, emit func(app.ChatBatch) error) error {
+func (r *Reader) Follow(ctx context.Context, session domain.Session, entryMax, batchMax int, older <-chan int64, emit func(app.ChatBatch) error) error {
 	if session.Agent.ServesConversation() {
 		if session.Launch.Server == nil {
 			return app.ErrNoChat
@@ -51,6 +55,9 @@ func (r *Reader) Follow(ctx context.Context, session domain.Session, entryMax, b
 		find: find, fresh: source.transcriber,
 		entryMax: entryMax, batchMax: batchMax, emit: emit, reset: true, history: historyComing,
 	}
+	if cut, ok := source.(turnCutter); ok && older != nil {
+		f.opens = cut.opensTurn
+	}
 	f.t = f.fresh()
 	if r.statusDir != "" && session.Agent == domain.AgentClaude {
 		f.status = statusPath(r.statusDir, session.Launch.Conversation)
@@ -62,11 +69,14 @@ func (r *Reader) Follow(ctx context.Context, session domain.Session, entryMax, b
 	defer ticker.Stop()
 	for {
 		f.check()
+		f.flushOlder()
 		f.checkStatus()
 		f.checkShared()
 		select {
 		case <-ctx.Done():
 			return nil
+		case before := <-older:
+			f.askOlder(before)
 		case <-ticker.C:
 		}
 	}
@@ -137,6 +147,15 @@ type follower struct {
 	// console holds a first load until it is told, since a read slowed by a
 	// screenshot's preview would otherwise look like the end of it.
 	history history
+
+	// opens tells a line that opens a turn, for a transcript sent tail
+	// first; nil sends the whole history (`follow_older.go`).
+	opens func(line []byte) bool
+	// before is where the history the pending reset sends starts: 0 for
+	// the whole of it.
+	before int64
+	// older is the page of older turns asked for, still to send.
+	older olderPage
 
 	// status is the conversation's status file, and statusSeen the version of
 	// it last sent; an empty path follows none.
@@ -254,6 +273,16 @@ func (f *follower) check() {
 		f.path, f.offset, f.partial, f.reset = path, 0, nil, true
 		f.history = historyComing
 		f.t = f.fresh()
+		f.older = olderPage{}
+	}
+	if f.reset && f.offset == 0 && f.opens != nil && info.Size() > 0 {
+		// The history is the tail: the last turns, from the line that opens
+		// the first of them.
+		start, err := pageStart(path, info.Size(), tailTurns, f.opens)
+		if err != nil {
+			return
+		}
+		f.offset, f.before = start, start
 	}
 	if info.Size() == f.offset {
 		if !f.reset {
@@ -327,10 +356,14 @@ func (f *follower) flush() bool {
 			n++
 		}
 		marker := f.history.marker(n == len(f.pending))
-		if err := f.emit(app.ChatBatch{Reset: f.reset, History: marker, Entries: f.pending[:n]}); err != nil {
+		batch := app.ChatBatch{Reset: f.reset, History: marker, Entries: f.pending[:n]}
+		if f.reset {
+			batch.Before = f.before
+		}
+		if err := f.emit(batch); err != nil {
 			return false
 		}
-		f.pending, f.reset = f.pending[n:], false
+		f.pending, f.reset, f.before = f.pending[n:], false, 0
 		if marker == app.HistoryEnd {
 			f.history = historySent
 		}

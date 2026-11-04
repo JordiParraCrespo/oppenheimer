@@ -333,7 +333,7 @@ func (s *Service) sessionEnv(session domain.Session) map[string]string {
 // FollowChat follows a session's conversation for the chat view, sending
 // its transcript entries to emit until ctx ends (Transcripts.Follow).
 // ErrNoChat for a session whose agent's transcript this runner cannot read.
-func (s *Service) FollowChat(ctx context.Context, id string, entryMax, batchMax int, emit func(ChatBatch) error) error {
+func (s *Service) FollowChat(ctx context.Context, id string, entryMax, batchMax int, older <-chan int64, emit func(ChatBatch) error) error {
 	if s.transcripts == nil {
 		return ErrNoChat
 	}
@@ -341,7 +341,7 @@ func (s *Service) FollowChat(ctx context.Context, id string, entryMax, batchMax 
 	if err != nil {
 		return err
 	}
-	return s.transcripts.Follow(ctx, session, entryMax, batchMax, emit)
+	return s.transcripts.Follow(ctx, session, entryMax, batchMax, older, emit)
 }
 
 // Send types into a window, which is how the browser's keystrokes arrive

@@ -256,7 +256,11 @@ type Transcripts interface {
 	// entry over entryMax bytes is left out and a batch holds at most
 	// batchMax. A batch emit refuses is offered again. ErrNoChat when this
 	// runner cannot read the agent's transcript.
-	Follow(ctx context.Context, session domain.Session, entryMax, batchMax int, emit func(ChatBatch) error) error
+	// Each offset on older asks for the turns before it, sent as batches
+	// marked Older; a source that sends its whole history answers that
+	// nothing is older. A nil older is a reader that cannot ask: the whole
+	// history is sent.
+	Follow(ctx context.Context, session domain.Session, entryMax, batchMax int, older <-chan int64, emit func(ChatBatch) error) error
 	// OpenQuestion is the agent's latest AskUserQuestion call that has no
 	// result in the transcript yet, as the decision it asks (29-inbox,
 	// slice 4); false when there is none, or no transcript to read.
@@ -277,6 +281,13 @@ type ChatBatch struct {
 	// each of its batches while more is coming, HistoryEnd on the one that
 	// reaches the transcript's end, "" on what follows live.
 	History string
+	// Before is where in the transcript what was sent starts, as a byte
+	// offset: on a Reset that sends only the last turns, and on an older
+	// page's last batch. 0 is the conversation from its first line.
+	Before int64
+	// Older marks a page of older turns asked for: HistoryMore while it is
+	// coming, HistoryEnd on its last batch.
+	Older   string
 	Entries []string
 }
 
