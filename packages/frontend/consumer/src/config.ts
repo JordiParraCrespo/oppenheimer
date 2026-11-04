@@ -11,6 +11,12 @@ export const CONSUMER_CONFIG = {
     startLogPageSize: 50,
     /** How many pages of start log a start may span before the reader stops asking. */
     maxStartLogPages: 20,
+    /**
+     * How long reads of the start log may keep failing before the start pane
+     * says so. Each read retries once and the log is polled every 0.3–2s, so a
+     * blip is cleared a tick later; this is two or three failed ticks in a row.
+     */
+    startLogStallMs: 6000,
   },
   /** The terminal's link to the host (`product/versions/mvp/01-protocol.md`). */
   stream: {
