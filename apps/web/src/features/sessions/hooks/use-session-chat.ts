@@ -1,15 +1,18 @@
-import { type ChatState, type ChatTurn, SessionChat } from '@oppenheimer/frontend-consumer';
+import type { ChatState, ChatTurn, SessionChat } from '@oppenheimer/frontend-consumer';
 import { shareEntities, useFeatureFlag } from '@oppenheimer/frontend-core/react';
 import { useState, useSyncExternalStore } from 'react';
 import type { PaneReading } from '../lib/chat-blocks';
+import { sessionChatFor } from '../lib/session-chats';
 
 /**
  * One terminal pane's chat view (0.7): the store the pane's stream feeds
- * (`useTerminal`'s `onChat`), made once for the pane's life. The pane holds
- * it without reading it, so a batch re-renders only what subscribes below.
+ * (`useTerminal`'s `onChat`), the one this tab keeps for the session under
+ * `key` (`session-chats.ts`), so a pane mounted again draws what it held.
+ * The pane holds it without reading it, so a batch re-renders only what
+ * subscribes below.
  */
-export function useSessionChat(): SessionChat {
-  const [chat] = useState(() => new SessionChat());
+export function useSessionChat(key: string): SessionChat {
+  const [chat] = useState(() => sessionChatFor(key));
   return chat;
 }
 

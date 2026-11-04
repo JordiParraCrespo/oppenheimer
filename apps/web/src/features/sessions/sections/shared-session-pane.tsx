@@ -35,7 +35,8 @@ import { SharedSessionTerminal } from './shared-session-terminal';
 export function SharedSessionPane({ slug }: { slug: string }) {
   const { t } = useTranslation();
   const { data: session, error, refetch } = useSuspenseSharedSession(slug);
-  const chat = useSessionChat();
+  // A guest's chat is kept apart from a member's of the same session.
+  const chat = useSessionChat(`share:${slug}`);
   const [view, setView] = useState<SessionView>(DEFAULT_SESSION_VIEW);
   const refusal = error ? shareRefusalOf(error) : null;
   if (refusal) return <SharedRefusal refusal={refusal} slug={slug} />;

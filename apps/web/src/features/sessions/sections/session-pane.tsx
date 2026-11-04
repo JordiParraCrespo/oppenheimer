@@ -100,7 +100,7 @@ export function SessionPane({
   ];
   const previewOffered = previewTabs.length > 0 && Boolean(bar);
   const preview = usePreviewPane();
-  const chat = useSessionChat();
+  const chat = useSessionChat(sessionId);
   // Made once: the terminal delivers the files it catches over the chat, the
   // chat's composer takes them.
   const [files] = useState(createFileHandOff);
