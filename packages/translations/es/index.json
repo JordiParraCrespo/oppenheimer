@@ -3429,7 +3429,7 @@
       "consoleHint": "La aplicación web que se ejecuta en esta pestaña.",
       "api": "API",
       "apiHint": "El plano de control con el que habla esta consola.",
-      "unavailable": "No disponible"
+      "failed": "No se pudo leer la versión de la API."
     }
   },
   "nav": {

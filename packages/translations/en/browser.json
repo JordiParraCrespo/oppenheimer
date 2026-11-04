@@ -3410,7 +3410,7 @@
       "consoleHint": "The web app running in this tab.",
       "api": "API",
       "apiHint": "The control plane this console talks to.",
-      "unavailable": "Unavailable"
+      "failed": "Could not read the API version."
     }
   },
   "nav": {
