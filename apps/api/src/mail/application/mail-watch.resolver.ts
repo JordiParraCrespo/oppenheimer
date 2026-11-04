@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import type { GmailConnectionEntity } from '../domain/gmail-connection.entity';
-import { takenMessages, watchedQuery } from '../domain/mail-watch.policy';
+import { isNewArrival, takenMessages, watchedQuery } from '../domain/mail-watch.policy';
 import {
   type GmailDeliveryPayload,
   toGmailDelivery,
@@ -25,7 +25,9 @@ export interface MailWatchRead {
  * `historyId`, each watched query run as a Gmail search crossed with what
  * arrived, and the envelopes of what some trigger takes. An account read for
  * the first time, or whose history Gmail no longer keeps, starts from now
- * and takes nothing. Writes nothing: the caller delivers and moves the mark.
+ * and takes nothing; a message Gmail received too long ago to be new mail
+ * is never taken, however far behind the mark was. Writes nothing: the
+ * caller delivers and moves the mark.
  */
 @Injectable()
 export class MailWatchResolver {
@@ -34,6 +36,7 @@ export class MailWatchResolver {
   read(
     connection: GmailConnectionEntity,
     filters: readonly (string | null)[],
+    now: Date,
   ): Promise<MailWatchRead> {
     return this.gmail.call(connection, async (provider, grant) => {
       const from = connection.historyId;
@@ -48,11 +51,13 @@ export class MailWatchResolver {
           }),
         ),
       );
-      const taken = takenMessages(mail.messageIds, filters, matches);
-      const summaries = await provider.readSummaries(
-        grant,
-        taken.map(({ id }) => id),
-      );
+      const taken = takenMessages(mail, filters, matches);
+      const summaries = (
+        await provider.readSummaries(
+          grant,
+          taken.map(({ id }) => id),
+        )
+      ).filter((summary) => isNewArrival(summary.date, now));
       return {
         from,
         to: mail.historyId,

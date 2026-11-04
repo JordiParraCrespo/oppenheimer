@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import type { BotRoutineActivity } from '@oppenheimer/shared';
 import type { AutomationRunOutcome, AutomationSkipReason } from '@oppenheimer/shared/automations';
 import { BotMessageEntity } from './bot-message.entity';
@@ -156,6 +157,42 @@ export function routineFailureOf(
   if (outcome === 'expired') return 'expired';
   if (outcome === 'skipped' && skipReason && FAILED_SKIPS.includes(skipReason)) return skipReason;
   return null;
+}
+
+const HOUR_MS = 60 * 60 * 1000;
+
+/** The skips that come in bursts: one line an hour says the cap was reached. */
+const RATE_LIMITED_SKIPS: readonly string[] = ['automation_rate_limited', 'workspace_rate_limited'];
+
+/**
+ * The id of the line a failed run is told by. Each failure is its own line,
+ * keyed by its event, except a rate limit: every run of the routine refused
+ * by the same cap in the same clock hour is one line, keyed by the routine,
+ * the reason and the hour, so a burst of events past the cap says so once
+ * instead of once a run.
+ */
+export function routineFailureLineId(
+  eventId: string,
+  automationId: string,
+  reason: string,
+  at: Date,
+): string {
+  if (!RATE_LIMITED_SKIPS.includes(reason)) return eventId;
+  const hour = Math.floor(at.getTime() / HOUR_MS);
+  return nameBasedUuid(`routine-failure:${automationId}:${reason}:${hour}`);
+}
+
+/** A UUID (version 5 layout) named by `name`: the same name, the same id. */
+function nameBasedUuid(name: string): string {
+  const hex = createHash('sha256').update(name).digest('hex');
+  const variant = ((Number.parseInt(hex[16], 16) & 0x3) | 0x8).toString(16);
+  return [
+    hex.slice(0, 8),
+    hex.slice(8, 12),
+    `5${hex.slice(13, 16)}`,
+    `${variant}${hex.slice(17, 20)}`,
+    hex.slice(20, 32),
+  ].join('-');
 }
 
 /** What the bot reads when its history reaches the line: the same news, in words. */

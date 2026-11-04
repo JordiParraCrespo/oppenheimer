@@ -4,9 +4,25 @@
  * condition is written the way a search is.
  */
 
+/** How long ago a message may have reached the account and still be new mail. */
+export const NEW_MAIL_MAX_AGE_DAYS = 2;
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+
 /** A watched query as it is asked of Gmail: only recent mail, where the new mail is. */
 export function watchedQuery(query: string): string {
-  return `(${query}) newer_than:2d`;
+  return `(${query}) newer_than:${NEW_MAIL_MAX_AGE_DAYS}d`;
+}
+
+/**
+ * Whether a message Gmail received at `receivedAt` is still new mail at
+ * `now`. However the history mark came to lag (a backlog, an outage),
+ * mail older than this wakes nothing. One Gmail gives no time for is kept.
+ */
+export function isNewArrival(receivedAt: Date | null, now: Date): boolean {
+  return (
+    receivedAt === null || now.getTime() - receivedAt.getTime() <= NEW_MAIL_MAX_AGE_DAYS * DAY_MS
+  );
 }
 
 /** The watched queries whose answers name a message. */
@@ -18,15 +34,17 @@ export function matchedQueries(
 }
 
 /**
- * The new messages some trigger takes, each with the queries it matched: all
- * of them when a trigger watches for any mail, else those a query matched.
+ * The new messages some trigger takes, each with the queries it matched: a
+ * trigger that watches for any mail takes what arrived in the inbox, one
+ * with a query what its query matched.
  */
 export function takenMessages(
-  messageIds: readonly string[],
+  mail: { messageIds: readonly string[]; inboxIds: readonly string[] },
   filters: readonly (string | null)[],
   answers: ReadonlyMap<string, readonly string[]>,
 ): { id: string; matched: string[] }[] {
-  return messageIds
+  const anyMail = filters.includes(null);
+  return mail.messageIds
     .map((id) => ({ id, matched: matchedQueries(id, answers) }))
-    .filter(({ matched }) => filters.includes(null) || matched.length > 0);
+    .filter(({ id, matched }) => matched.length > 0 || (anyMail && mail.inboxIds.includes(id)));
 }

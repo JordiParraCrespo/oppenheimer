@@ -389,3 +389,16 @@ as a channel (`channels.md` §7.3).
   mail, its subject and its snippet reach the bot as the event's untrusted
   context (§4); what a trigger matches on is only the queries a message
   matched.
+- 2026-11-04: the waking is narrowed after a routine was handed a backlog
+  of old mail as new and wrote dozens of identical rate-limit lines in its
+  chat. The 2026-10-29 rule that an account starts from the moment a
+  routine *first* watches it kept the history mark through a pause, a
+  deleted routine or a revoked grant, so the next watch resumed from it:
+  now the poll drops the mark of every account it does not read, and an
+  account watched again starts from now (mail in the gap wakes nothing, as
+  for history Gmail no longer keeps). A message Gmail received more than
+  two days before the poll is never new mail, whatever the mark. Spam,
+  trash and chats never wake a routine; one watching for any mail wakes on
+  what arrives in the inbox, one with a query on what its query matches.
+  The runs a rate limit refuses in one clock hour are one line in the bot's
+  chat, not one per run (note 26 §4).

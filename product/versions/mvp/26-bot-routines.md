@@ -191,7 +191,12 @@ rendering, not kind:
   `bot_message."turnId"` is null for it, and only for an event. The chat
   places it by when it happened; the bot reads it in its history like
   any event. Each line's id is the domain event's, so an outbox
-  redelivery writes it once.
+  redelivery writes it once. Since 2026-11-04 the runs a rate limit
+  refuses are the exception: every run of a routine one cap refuses in
+  the same clock hour shares one line, keyed by the routine, the reason
+  and the hour, so a burst of events past the cap is said once, not once
+  a run (it was dozens of identical lines when a Gmail routine was handed
+  a backlog of old mail).
 
 **One writer.** The tool and the tab both change a routine through the
 same automations commands (`SaveBotRoutine`, `RunAutomation`,

@@ -18,8 +18,10 @@ import { PollWatchedMailCommand } from './poll-watched-mail.command';
  * units), run each watched query on what arrived, and hand the messages some
  * trigger takes to the inbound-events hub as one delivery, which stores one
  * event per account and message and fires the triggers. An account a
- * routine starts watching starts from now; history Gmail no longer keeps
- * starts again from now. One account failing does not stop the others.
+ * routine starts watching starts from now, and so does one watched again
+ * after a pause or a reconnect: the mark of an account the poll does not
+ * read is dropped. History Gmail no longer keeps starts again from now. One
+ * account failing does not stop the others.
  */
 @CommandHandler(PollWatchedMailCommand)
 export class PollWatchedMailCommandHandler
@@ -35,24 +37,29 @@ export class PollWatchedMailCommandHandler
     private readonly connections: GmailConnectionRepositoryPort,
   ) {}
 
-  async execute(_command: PollWatchedMailCommand): Promise<number> {
+  async execute(command: PollWatchedMailCommand): Promise<number> {
     const watched = await this.queryBus.execute<FindWatchedSubjectsQuery, WatchedSubject[]>(
       new FindWatchedSubjectsQuery({ source: 'gmail' }),
     );
-    if (watched.length === 0) return 0;
-    const connections = await this.connections.findManyForSystem(
-      watched.map((subject) => subject.subjectRef),
-    );
+    const connections =
+      watched.length > 0
+        ? await this.connections.findManyForSystem(watched.map((subject) => subject.subjectRef))
+        : [];
+    const read = connections.flatMap((connection) => {
+      const subject = watched.find(
+        (each) =>
+          each.subjectRef === connection.id && each.organizationId === connection.organizationId,
+      );
+      return subject ? [{ connection, filters: subject.filters }] : [];
+    });
+    // A mark this poll does not move goes stale: one kept through a pause, a
+    // deleted routine or a revoked grant would hand over that gap's mail as new.
+    await this.connections.forgetHistoryExcept(read.map(({ connection }) => connection.id));
     // Each account is its own quota and mark, read side by side; a trigger reads only its workspace's.
     const polled = await Promise.all(
-      connections.map(async (connection) => {
-        const subject = watched.find(
-          (each) =>
-            each.subjectRef === connection.id && each.organizationId === connection.organizationId,
-        );
-        if (!subject) return 0;
+      read.map(async ({ connection, filters }) => {
         try {
-          return await this.poll(connection, subject.filters);
+          return await this.poll(connection, filters, command.now);
         } catch (error) {
           this.logger.warn({
             message: 'A watched Gmail account could not be read',
@@ -69,8 +76,9 @@ export class PollWatchedMailCommandHandler
   private async poll(
     connection: GmailConnectionEntity,
     filters: readonly (string | null)[],
+    now: Date,
   ): Promise<number> {
-    const read = await this.watch.read(connection, filters);
+    const read = await this.watch.read(connection, filters, now);
     if (read.delivery) {
       await this.commandBus.execute(
         new ReceiveInboundDeliveryCommand({

@@ -66,6 +66,9 @@ const LIMITS = {
 };
 /** The most result pages a watched query is read for: 5,000 messages of two days. */
 const MATCH_PAGES_MAX = 10;
+
+/** Messages added to the mailbox that are not mail arriving: what the account wrote, spam, trash, chats. */
+const NOT_ARRIVALS = new Set(['DRAFT', 'SENT', 'SPAM', 'TRASH', 'CHAT']);
 /**
  * The envelope and the part tree of a message, without any part's bytes: what
  * a search line and a draft line show, at a fraction of a full read.
@@ -373,6 +376,7 @@ export class GmailGateway implements GmailProviderPort {
   ): Promise<GmailNewMail | null> {
     const session = await this.session(grant);
     const ids: string[] = [];
+    const inbox: string[] = [];
     let historyId = startHistoryId;
     let pageToken: string | null = null;
     do {
@@ -392,13 +396,15 @@ export class GmailGateway implements GmailProviderPort {
       }
       for (const entry of list(page.history)) {
         // At the cap, the next read starts at this entry: a message seen twice is one event.
-        if (ids.length >= max) return { messageIds: ids, historyId };
+        if (ids.length >= max) return { messageIds: ids, inboxIds: inbox, historyId };
         const entryId = record(entry).id;
         for (const added of list(record(entry).messagesAdded)) {
           const message = record(record(added).message);
           const labels = list(message.labelIds).filter((label) => typeof label === 'string');
-          if (labels.includes('DRAFT') || labels.includes('SENT')) continue;
-          if (typeof message.id === 'string' && !ids.includes(message.id)) ids.push(message.id);
+          if (labels.some((label) => NOT_ARRIVALS.has(label))) continue;
+          if (typeof message.id !== 'string' || ids.includes(message.id)) continue;
+          ids.push(message.id);
+          if (labels.includes('INBOX')) inbox.push(message.id);
         }
         if (typeof entryId === 'string') historyId = entryId;
       }
@@ -406,7 +412,7 @@ export class GmailGateway implements GmailProviderPort {
       // Only the last page moves the mark to where the mailbox stands now.
       if (!pageToken && typeof page.historyId === 'string') historyId = page.historyId;
     } while (pageToken);
-    return { messageIds: ids, historyId };
+    return { messageIds: ids, inboxIds: inbox, historyId };
   }
 
   async readSummaries(

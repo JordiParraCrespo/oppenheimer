@@ -59,6 +59,16 @@ export class GmailConnectionRepository
     return result.affected === 1;
   }
 
+  async forgetHistoryExcept(polledIds: readonly string[]): Promise<number> {
+    // An UPDATE answers `[rows, affected]` through `manager.query` (`typeorm.md`).
+    const [, affected]: [unknown[], number] = await this.repository.manager.query(
+      `UPDATE "gmail_connection" SET "historyId" = NULL
+        WHERE "historyId" IS NOT NULL AND NOT ("id" = ANY($1::uuid[]))`,
+      [[...polledIds]],
+    );
+    return affected;
+  }
+
   async findManyForSystem(ids: readonly string[]): Promise<GmailConnectionEntity[]> {
     if (ids.length === 0) return [];
     const records = await this.repository.findBy({ id: In([...ids]), status: 'active' });

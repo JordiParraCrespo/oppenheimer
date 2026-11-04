@@ -1156,3 +1156,10 @@ earlier note:
   *Continue on a host* starts a worktree session there whose agent runs
   `claude --teleport <id>` (`teleport` on the create, runner capability
   `session.teleport`). Codex's `codex apply` stays a command.
+- `next-steps/mail.md` §5's build log (2026-10-29) had an account start
+  from the moment a routine *first* watched it, so a mark kept through a
+  pause or a revoked grant replayed the gap's mail as new. On 2026-11-04 an
+  account the poll does not read loses its mark and starts again from now;
+  mail older than two days, spam, trash and chats never wake a routine, an
+  any-mail trigger takes only the inbox, and rate-limited runs are one chat
+  line a routine an hour.
