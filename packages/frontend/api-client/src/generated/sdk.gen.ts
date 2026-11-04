@@ -3406,7 +3406,11 @@ export const deploymentCapabilities = <ThrowOnError extends boolean = false>(opt
  *
  * The `version` of the API package. The console shows it beside its own in Settings → About.
  */
-export const apiVersion = <ThrowOnError extends boolean = false>(options?: Options<ApiVersionData, ThrowOnError>): RequestResult<ApiVersionResponses, unknown, ThrowOnError> => (options?.client ?? client).get<ApiVersionResponses, unknown, ThrowOnError>({ url: '/api/v1/health/version', ...options });
+export const apiVersion = <ThrowOnError extends boolean = false>(options?: Options<ApiVersionData, ThrowOnError>): RequestResult<ApiVersionResponses, unknown, ThrowOnError> => (options?.client ?? client).get<ApiVersionResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/health/version',
+    ...options
+});
 
 /**
  * Readiness check

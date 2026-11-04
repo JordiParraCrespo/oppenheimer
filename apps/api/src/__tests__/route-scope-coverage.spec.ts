@@ -34,8 +34,6 @@ const catalog = new Set(
 const ANY_SCOPE: Record<string, string> = {
   'GET /v1/me/credential': 'describes the credential presenting it, and nothing else',
   'GET /v1/health/capabilities': 'served to anonymous callers; the login page reads it',
-  'GET /v1/health/version':
-    'served to anonymous callers; the release the console bundle already names',
   'GET /v1/feature-flags': "the caller's own evaluated flags, which every client reads",
   'GET /v1/events': "the caller's own workspace change feed, filtered by what they may read",
   'DELETE /v1/hosts/self': "a host's own credential unpairing that host, and only it",

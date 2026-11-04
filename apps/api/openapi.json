@@ -23100,6 +23100,11 @@
             }
           }
         },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
         "summary": "The release this API runs",
         "tags": [
           "Health"

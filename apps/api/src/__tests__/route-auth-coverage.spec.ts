@@ -45,8 +45,6 @@ const PUBLIC: Record<string, string> = {
   'GET /v1/ready': 'readiness probe; the deploy gate calls it with no credential',
   'GET /v1/health/capabilities':
     'what the login page needs to draw itself, read before anyone is signed in',
-  'GET /v1/health/version':
-    'the API release number, no more than the console bundle already ships about itself',
   'GET /v1/metrics': 'the Prometheus scrape; METRICS_TOKEN over HTTP Basic, else a 404',
   'GET /v1/cloud-files/:token':
     'a cloud agent with no account of ours; the unguessable, day-long token in the path admits it',
