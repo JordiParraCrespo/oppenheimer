@@ -237,7 +237,12 @@ func New(version string) (*App, error) {
 	})
 	app.Worktrees = worktrees
 	app.Cloud = cloud.Starter{
-		Trust: func(dir string) error { return trust.Trust(sessionsdomain.AgentClaude, dir) },
+		Trust: func(dir string) error {
+			if err := trust.Trust(sessionsdomain.AgentClaude, dir); err != nil {
+				return err
+			}
+			return trust.KeepCloudSettingsLocal()
+		},
 	}
 	app.WorkFolder = places
 	app.Terminals = terminals

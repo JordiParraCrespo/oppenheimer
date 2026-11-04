@@ -141,6 +141,23 @@ sleep 30
 	}
 }
 
+// The settings question Claude Code 2.1.31x asks before a cloud start holds
+// the CLI as the trust question does: the start fails at once and says how to
+// answer it, not after the limit.
+func TestStartFailsAtOnceOnTheSettingsQuestion(t *testing.T) {
+	claude := fakeClaude(t, `printf 'Use this machine'"'"'s settings in cloud sessions?\r\n> Yes, send my settings\r\n'
+sleep 30
+`)
+	start := time.Now()
+	_, err := Starter{Command: claude}.Start(context.Background(), t.TempDir(), "task")
+	if !isCloudStart(err) || !strings.Contains(err.Error(), "use this machine's settings") {
+		t.Fatalf("err = %v, want ErrCloudStart naming the question", err)
+	}
+	if took := time.Since(start); took > 10*time.Second {
+		t.Fatalf("took %s to give up", took)
+	}
+}
+
 func isCloudStart(err error) bool {
 	var prob *problem.Error
 	return errors.As(err, &prob) && prob.Code == domain.ErrCloudStart.Code

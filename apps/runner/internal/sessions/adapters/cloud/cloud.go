@@ -48,10 +48,11 @@ type Starter struct {
 	Command string
 	// Timeout bounds the whole start; zero is two minutes.
 	Timeout time.Duration
-	// Trust answers Claude Code's "do you trust this folder?" for dir before
-	// the CLI runs: each start is in a scratch checkout it has never seen,
-	// and the question would hold it until the timeout, so a folder it cannot
-	// mark fails the start at once. Nil asks nothing.
+	// Trust answers Claude Code's questions before the CLI runs: "do you
+	// trust this folder?" for dir, since each start is in a scratch checkout
+	// it has never seen, and "use this machine's settings in cloud
+	// sessions?". Either would hold the CLI until the timeout, so an answer
+	// it cannot record fails the start at once. Nil asks nothing.
 	Trust func(dir string) error
 }
 
@@ -66,6 +67,12 @@ var (
 // own wording (2.1.x), so a release that rewords it only loses the early
 // failure: the start still ends at the timeout.
 const trustPrompt = "Yes, I trust this folder"
+
+// settingsPrompt is the first choice of Claude Code's "use this machine's
+// settings in cloud sessions?" (2.1.31x), which `claude --cloud` asks once
+// per machine before it creates the session. Trust answers it ahead; seeing
+// it means the answer could not be recorded.
+const settingsPrompt = "Yes, send my settings"
 
 // Start creates the cloud session for prompt from the repository checked out
 // in dir. It answers once the CLI has named the session, and gives the CLI a
@@ -131,6 +138,11 @@ func (s Starter) Start(ctx context.Context, dir, prompt string) (Started, error)
 				_ = cmd.Process.Kill()
 				return Started{}, domain.ErrCloudStart.WithDetail(
 					"claude --cloud asks whether to trust %s, and nobody is there to answer: %s", dir, lastWords(out.String()))
+			}
+			if strings.Contains(clean(out.String()), settingsPrompt) {
+				_ = cmd.Process.Kill()
+				return Started{}, domain.ErrCloudStart.WithDetail(
+					"claude --cloud asks whether to use this machine's settings in cloud sessions, and nobody is there to answer: run `claude --cloud` once on this host and answer it, or set it with /config")
 			}
 		case <-ctx.Done():
 			_ = cmd.Process.Kill()
