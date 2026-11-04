@@ -181,3 +181,42 @@ func TestTrustMarksTheRepositoryOfAWorktree(t *testing.T) {
 		}
 	}
 }
+
+// Claude Code 2.1.31x asks "use this machine's settings in cloud sessions?"
+// before `claude --cloud` creates a session; unanswered, every cloud start the
+// runner makes waits on it until it times out.
+func TestKeepCloudSettingsLocalAnswersTheQuestionOnce(t *testing.T) {
+	config := filepath.Join(t.TempDir(), ".claude.json")
+	if err := os.WriteFile(config, []byte(`{"oauthAccount":{"email":"a@b.c"}}`), 0o600); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := agenttrust.New(agenttrust.Options{ClaudeConfig: config}).KeepCloudSettingsLocal(); err != nil {
+		t.Fatal(err)
+	}
+
+	got := read(t, config)
+	if got["remoteHomeSettingsMode"] != "keep_local" {
+		t.Fatalf("remoteHomeSettingsMode = %v, want keep_local", got["remoteHomeSettingsMode"])
+	}
+	if got["oauthAccount"].(map[string]any)["email"] != "a@b.c" {
+		t.Fatalf("lost the account: %v", got)
+	}
+}
+
+// The person's own answer is theirs: a runner that overwrote "forward" would
+// stop sending the settings they chose to send.
+func TestKeepCloudSettingsLocalLeavesTheirAnswer(t *testing.T) {
+	config := filepath.Join(t.TempDir(), ".claude.json")
+	if err := os.WriteFile(config, []byte(`{"remoteHomeSettingsMode":"forward"}`), 0o600); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := agenttrust.New(agenttrust.Options{ClaudeConfig: config}).KeepCloudSettingsLocal(); err != nil {
+		t.Fatal(err)
+	}
+
+	if got := read(t, config)["remoteHomeSettingsMode"]; got != "forward" {
+		t.Fatalf("remoteHomeSettingsMode = %v, want forward kept", got)
+	}
+}

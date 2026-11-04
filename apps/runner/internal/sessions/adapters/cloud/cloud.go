@@ -53,6 +53,11 @@ type Starter struct {
 	// and the question would hold it until the timeout, so a folder it cannot
 	// mark fails the start at once. Nil asks nothing.
 	Trust func(dir string) error
+	// Prepare answers Claude Code's questions about the machine, not the
+	// folder, before the CLI runs: today "use this machine's settings in cloud
+	// sessions?". An answer it cannot record fails the start at once. Nil
+	// asks nothing.
+	Prepare func() error
 }
 
 var (
@@ -61,11 +66,40 @@ var (
 	created = regexp.MustCompile(`Created cloud session: ([^\r\n]+)`)
 )
 
-// trustPrompt is the confirm label of Claude Code's "do you trust this
-// folder?" dialog: with input closed nobody can answer it. It is the CLI's
-// own wording (2.1.x), so a release that rewords it only loses the early
-// failure: the start still ends at the timeout.
-const trustPrompt = "Yes, I trust this folder"
+// blockingPrompt is a question Claude Code asks before it creates the
+// session, which nobody can answer with input closed. Seen names the CLI's
+// own wording, so a release that rewords one only loses the early failure:
+// the start still ends at the timeout.
+type blockingPrompt struct {
+	seen string
+	// detail is the failure, given dir.
+	detail func(dir string) string
+}
+
+var blockingPrompts = []blockingPrompt{
+	// "Do you trust this folder?" (2.1.x), which Trust answers ahead.
+	{seen: "Yes, I trust this folder", detail: func(dir string) string {
+		return "claude --cloud asks whether to trust " + dir + ", and nobody is there to answer"
+	}},
+	// "Use this machine's settings in cloud sessions?" (2.1.31x), asked once
+	// per machine, which Prepare answers ahead.
+	{seen: "Yes, send my settings", detail: func(string) string {
+		return "claude --cloud asks whether to use this machine's settings in cloud sessions, and nobody is there to answer: " +
+			"run `claude --cloud` once on this host and answer it, or set it with /config"
+	}},
+}
+
+// blockedOn is the question the CLI is waiting on, if it is one it cannot be
+// answered on.
+func blockedOn(raw string) (blockingPrompt, bool) {
+	text := clean(raw)
+	for _, prompt := range blockingPrompts {
+		if strings.Contains(text, prompt.seen) {
+			return prompt, true
+		}
+	}
+	return blockingPrompt{}, false
+}
 
 // Start creates the cloud session for prompt from the repository checked out
 // in dir. It answers once the CLI has named the session, and gives the CLI a
@@ -77,6 +111,11 @@ func (s Starter) Start(ctx context.Context, dir, prompt string) (Started, error)
 	if s.Trust != nil {
 		if err := s.Trust(dir); err != nil {
 			return Started{}, domain.ErrCloudStart.WithDetail("trust %s for claude: %v", dir, err).WithCause(err)
+		}
+	}
+	if s.Prepare != nil {
+		if err := s.Prepare(); err != nil {
+			return Started{}, domain.ErrCloudStart.WithDetail("answer claude's cloud settings question: %v", err).WithCause(err)
 		}
 	}
 
@@ -127,10 +166,9 @@ func (s Starter) Start(ctx context.Context, dir, prompt string) (Started, error)
 				}
 				return started, nil
 			}
-			if strings.Contains(clean(out.String()), trustPrompt) {
+			if prompt, ok := blockedOn(out.String()); ok {
 				_ = cmd.Process.Kill()
-				return Started{}, domain.ErrCloudStart.WithDetail(
-					"claude --cloud asks whether to trust %s, and nobody is there to answer: %s", dir, lastWords(out.String()))
+				return Started{}, domain.ErrCloudStart.WithDetail("%s: %s", prompt.detail(dir), lastWords(out.String()))
 			}
 		case <-ctx.Done():
 			_ = cmd.Process.Kill()

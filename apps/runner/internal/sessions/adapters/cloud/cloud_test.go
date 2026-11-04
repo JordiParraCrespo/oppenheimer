@@ -78,6 +78,23 @@ echo 'View: https://claude.ai/code/session_01abcdefgh'
 	}
 }
 
+// Unanswered, Claude Code 2.1.31x's "use this machine's settings in cloud
+// sessions?" holds every start: Prepare answers it before the CLI runs.
+func TestStartPreparesTheMachineBeforeTheCLIRuns(t *testing.T) {
+	answered := filepath.Join(t.TempDir(), "answered")
+	claude := fakeClaude(t, `[ -f '`+answered+`' ] || { echo 'Yes, send my settings'; sleep 60; }
+echo 'View: https://claude.ai/code/session_01abcdefgh'
+`)
+	starter := Starter{
+		Command: claude,
+		Timeout: 5 * time.Second,
+		Prepare: func() error { return os.WriteFile(answered, nil, 0o600) },
+	}
+	if _, err := starter.Start(context.Background(), t.TempDir(), "task"); err != nil {
+		t.Fatalf("Start: %v", err)
+	}
+}
+
 // A checkout that cannot be marked trusted is one the CLI would sit in until
 // the timeout: the start fails at once, naming why, and the CLI never runs.
 func TestStartFailsAtOnceWhenTheCheckoutCannotBeTrusted(t *testing.T) {
@@ -134,6 +151,23 @@ sleep 30
 	start := time.Now()
 	_, err := Starter{Command: claude}.Start(context.Background(), t.TempDir(), "task")
 	if !isCloudStart(err) || !strings.Contains(err.Error(), "asks whether to trust") {
+		t.Fatalf("err = %v, want ErrCloudStart naming the question", err)
+	}
+	if took := time.Since(start); took > 10*time.Second {
+		t.Fatalf("took %s to give up", took)
+	}
+}
+
+// The settings question Claude Code 2.1.31x asks before a cloud start holds
+// the CLI as the trust question does: the start fails at once and says how to
+// answer it, not after the limit.
+func TestStartFailsAtOnceOnTheSettingsQuestion(t *testing.T) {
+	claude := fakeClaude(t, `printf 'Use this machine'"'"'s settings in cloud sessions?\r\n> Yes, send my settings\r\n'
+sleep 30
+`)
+	start := time.Now()
+	_, err := Starter{Command: claude}.Start(context.Background(), t.TempDir(), "task")
+	if !isCloudStart(err) || !strings.Contains(err.Error(), "use this machine's settings") {
 		t.Fatalf("err = %v, want ErrCloudStart naming the question", err)
 	}
 	if took := time.Since(start); took > 10*time.Second {

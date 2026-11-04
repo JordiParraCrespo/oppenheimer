@@ -76,6 +76,76 @@ func (s *Store) trustClaude(dir string) error {
 	if root := repositoryRoot(dirs[0]); root != "" && root != dirs[0] {
 		dirs = append(dirs, root)
 	}
+	return s.edit(func(root map[string]json.RawMessage) (bool, error) {
+		projects := map[string]map[string]json.RawMessage{}
+		if existing, ok := root["projects"]; ok {
+			if err := json.Unmarshal(existing, &projects); err != nil {
+				return false, err
+			}
+		}
+		if projects == nil {
+			projects = map[string]map[string]json.RawMessage{}
+		}
+		changed := false
+		for _, dir := range dirs {
+			project := projects[dir]
+			if project == nil {
+				project = map[string]json.RawMessage{}
+			}
+			var accepted bool
+			if json.Unmarshal(project["hasTrustDialogAccepted"], &accepted) == nil && accepted {
+				continue
+			}
+			project["hasTrustDialogAccepted"] = json.RawMessage("true")
+			projects[dir] = project
+			changed = true
+		}
+		if !changed {
+			return false, nil
+		}
+		encoded, err := json.Marshal(projects)
+		if err != nil {
+			return false, err
+		}
+		root["projects"] = encoded
+		return true, nil
+	})
+}
+
+// cloudSettingsKey is where Claude Code (2.1.31x) keeps this machine's answer
+// to "Use this machine's settings in cloud sessions?", which `claude --cloud`
+// asks once before it creates a session: "forward" or "keep_local".
+const cloudSettingsKey = "remoteHomeSettingsMode"
+
+// KeepCloudSettingsLocal answers Claude Code's "use this machine's settings in
+// cloud sessions?" with "No, keep them on this machine" when the person has
+// not answered it, so a cloud start with nobody at the terminal is not held on
+// the question. That answer is what cloud sessions did before the question
+// existed: they keep their own defaults and nothing of the host's is sent. An
+// answer already given, either one, is left as it is; `/config` changes it.
+func (s *Store) KeepCloudSettingsLocal() error {
+	if s.claudeConfig == "" {
+		return nil
+	}
+	err := s.edit(func(root map[string]json.RawMessage) (bool, error) {
+		var mode string
+		if json.Unmarshal(root[cloudSettingsKey], &mode) == nil && (mode == "forward" || mode == "keep_local") {
+			return false, nil
+		}
+		root[cloudSettingsKey] = json.RawMessage(`"keep_local"`)
+		return true, nil
+	})
+	if err != nil {
+		s.logger.Warn("could not answer Claude Code's cloud settings question; claude --cloud will ask",
+			slog.Any("error", err))
+	}
+	return err
+}
+
+// edit reads Claude Code's state file, lets change edit its top-level keys,
+// and writes it back when change reports a change. Every key change leaves
+// alone is written back untouched.
+func (s *Store) edit(change func(root map[string]json.RawMessage) (bool, error)) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -98,38 +168,10 @@ func (s *Store) trustClaude(dir string) error {
 	if root == nil {
 		root = map[string]json.RawMessage{}
 	}
-
-	projects := map[string]map[string]json.RawMessage{}
-	if existing, ok := root["projects"]; ok {
-		if err := json.Unmarshal(existing, &projects); err != nil {
-			return err
-		}
-	}
-	if projects == nil {
-		projects = map[string]map[string]json.RawMessage{}
-	}
-	changed := false
-	for _, dir := range dirs {
-		project := projects[dir]
-		if project == nil {
-			project = map[string]json.RawMessage{}
-		}
-		var accepted bool
-		if json.Unmarshal(project["hasTrustDialogAccepted"], &accepted) == nil && accepted {
-			continue
-		}
-		project["hasTrustDialogAccepted"] = json.RawMessage("true")
-		projects[dir] = project
-		changed = true
-	}
-	if !changed {
-		return nil
-	}
-	encoded, err := json.Marshal(projects)
-	if err != nil {
+	changed, err := change(root)
+	if err != nil || !changed {
 		return err
 	}
-	root["projects"] = encoded
 	out, err := json.MarshalIndent(root, "", "  ")
 	if err != nil {
 		return err
