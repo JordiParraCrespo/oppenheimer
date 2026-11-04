@@ -18,7 +18,7 @@ security review, in code.
 | ------- | --- |
 | Manifest + signature | `ParseManifest(raw, signature, keys)` — verifies **before** decoding; `ParsePublicKeys` reads the compiled-in key block |
 | Verified download | `Fetch(ctx, client, artifact, dest)` — streams, caps the size, checks the digest, deletes the file on any mismatch |
-| Archive | `Unpack(archive, member, dest)` — one regular file out of a `.tar.gz`, mode 0700 |
+| Archive | `Unpack(archive, member, dest)` — one regular file out of a `.tar.gz`, mode 0700; `UnpackTree(archive, root, dest)` — a directory such as a macOS app bundle, plain files and directories only |
 | Versioned layout | `Layout{Dir, Name}` — `Promote`, `Activate` (atomic symlink rename), `Current`, `Versions`, `Prune`, `ClearStaging` |
 
 ```

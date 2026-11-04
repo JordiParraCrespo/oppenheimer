@@ -214,8 +214,27 @@ and signed on your machine. The Ed25519 key that signs it never goes to CI or
 to the server, and a manifest without its signature is never published. The
 workflow needs the repository variables `RUNNER_RELEASE_PUBLIC_KEYS` (the
 key's public half) and `RUNNER_RELEASE_BASE_URL`
-(`https://dev.example.com/releases`); it fails without them. Then, from the
-machine that holds the key:
+(`https://dev.example.com/releases`); it fails without them.
+
+The macOS archives carry `OppenheimerRunner.app`, which the workflow signs with
+a Developer ID and notarizes (product/versions/mvp/09-runner-install-and-update.md
+§2), so a Mac keeps the runner's permissions across updates. It needs three
+repository secrets from an Apple Developer Program account, and fails without
+them:
+
+| Secret | What it holds |
+| --- | --- |
+| `RUNNER_MACOS_P12_BASE64` | the **Developer ID Application** certificate and its key, exported as a `.p12` and base64-encoded (`base64 -i developer-id.p12`) |
+| `RUNNER_MACOS_P12_PASSWORD` | the password the `.p12` was exported with |
+| `RUNNER_MACOS_NOTARY_KEY` | an App Store Connect API key (Users and Access → Integrations, the Developer role), as the JSON `rcodesign encode-app-store-connect-api-key -o key.json <issuer-id> <key-id> AuthKey_<key-id>.p8` writes |
+
+The repository variable `RUNNER_MACOS_UNSIGNED=1` builds the bundles without
+them, with only the linker's ad-hoc signature: every Mac that installs one asks
+for its permissions again after each update, so use it only to test a release.
+A local `release.sh` takes the same values as `MACOS_SIGN_P12` (a path),
+`MACOS_SIGN_P12_PASSWORD` and `MACOS_NOTARY_KEY` (a path), or `MACOS_UNSIGNED=1`.
+
+Then, from the machine that holds the Ed25519 key:
 
 ```bash
 # once: the offline release key; its public half goes into every binary

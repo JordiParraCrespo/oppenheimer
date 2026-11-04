@@ -74,6 +74,8 @@ func (*heldStage) Promote(string, string) error            { return nil }
 func (*heldStage) Activate(string) error                   { return nil }
 func (*heldStage) Current() (string, error)                { return "1.0.0", nil }
 func (*heldStage) Prune(...string) error                   { return nil }
+func (*heldStage) ActivateBinary(string) error             { return nil }
+func (*heldStage) NeedsReinstall() bool                    { return false }
 
 func newLockedService(b *heldStage) *app.Service {
 	return app.New(app.Options{

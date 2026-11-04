@@ -774,3 +774,9 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
   unseen id is first use, so a compromised control plane can name a fresh one
   and sit in the middle with a key of its own. 31 now says so, and its open
   question 4 asks how first use stops being automatic.
+- 2026-11-04: **the runner is an app bundle on macOS** (09 §2, §5; 02 open
+  question 4). The bare binary with an ad-hoc signature, a new file per
+  version, was a new program to macOS on every update, so every Mac asked
+  for its permissions again. The macOS archive now carries
+  `OppenheimerRunner.app`, signed with a Developer ID and notarized in CI,
+  and the bundle that runs lives at one path an update swaps atomically.
