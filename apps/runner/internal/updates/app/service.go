@@ -71,11 +71,8 @@ func (s *Service) Check(ctx context.Context) (domain.Plan, error) {
 	}
 	state, _ := s.state.Load()
 	plan := domain.Decide(s.version, release, s.pinned, s.activities.Snapshot(), state.WaitingSince, s.now())
-	// A reinstall that already rolled back is not tried again: the next
-	// release installs as the bundle anyway.
-	rolledBack := state.Phase == domain.PhaseRolled && state.From == s.version && state.To == s.version
-	if plan.Action == domain.ActionNone && release.Version == s.version && !rolledBack && s.binaries.NeedsReinstall() {
-		plan = domain.DecideReinstall(s.version, release, s.activities.Snapshot(), state.WaitingSince, s.now())
+	if plan.Action == domain.ActionNone && release.Version == s.version && s.binaries.NeedsReinstall() {
+		plan = domain.DecideReinstall(s.version, release, state, s.activities.Snapshot(), s.now())
 	}
 
 	// Remember when waiting started, so the 24-hour cap survives restarts.

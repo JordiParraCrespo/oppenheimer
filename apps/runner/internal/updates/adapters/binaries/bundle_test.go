@@ -133,3 +133,26 @@ func TestABareBinaryOnMacOSAsksToBeReinstalledAsTheBundle(t *testing.T) {
 		t.Fatalf("the prune touched the live bundle: %q", body)
 	}
 }
+
+// The version is read from the plist as a plist, not as text: rcodesign or a
+// hand edit may reflow it, and a misread version would make the rollback
+// target the wrong copy.
+func TestTheLiveVersionIsReadFromTheTopLevelDictionary(t *testing.T) {
+	store, dir := bundleStore(t)
+	install(t, store, "1.0.0")
+	plist := `<?xml version="1.0"?>
+<plist version="1.0"><dict>
+  <key>Nested</key><dict><key>CFBundleVersion</key><string>9.9.9</string></dict>
+  <key>LSUIElement</key><true/>
+  <key>CFBundleVersion</key>
+      <string>
+        2.0.0
+      </string>
+</dict></plist>`
+	if err := os.WriteFile(filepath.Join(dir, bundle, "Contents", "Info.plist"), []byte(plist), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if got, err := store.Current(); err != nil || got != "2.0.0" {
+		t.Fatalf("Current() = %q, %v; want 2.0.0", got, err)
+	}
+}

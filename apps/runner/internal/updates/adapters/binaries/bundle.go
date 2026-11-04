@@ -1,13 +1,14 @@
 package binaries
 
 import (
+	"encoding/xml"
 	"errors"
 	"fmt"
 	"io"
 	"io/fs"
 	"os"
 	"path/filepath"
-	"regexp"
+	"strings"
 
 	"github.com/jordiparracrespo/oppenheimer/packages/go/selfupdate"
 )
@@ -31,9 +32,6 @@ import (
 // ErrNotABundle is a directory promoted as a bundle that has no executable
 // where a bundle keeps it.
 var ErrNotABundle = errors.New("binaries: not an app bundle")
-
-// bundleVersion reads the version release.sh wrote into Info.plist.
-var bundleVersion = regexp.MustCompile(`<key>CFBundleVersion</key>\s*<string>([^<]+)</string>`)
 
 func (s *Store) livePath() string { return filepath.Join(s.layout.Dir, s.bundle) }
 
@@ -59,20 +57,81 @@ func (s *Store) linksLive() bool {
 	return err == nil && dest == s.liveLink()
 }
 
+// BundleOf is the app bundle an executable runs from, when its path is
+// `<name>.app/Contents/MacOS/<executable>`.
+func BundleOf(executable string) (string, bool) {
+	macOS := filepath.Dir(executable)
+	contents := filepath.Dir(macOS)
+	root := filepath.Dir(contents)
+	if filepath.Base(macOS) != "MacOS" || filepath.Base(contents) != "Contents" || filepath.Ext(root) != ".app" {
+		return "", false
+	}
+	return root, true
+}
+
+// liveVersion is the live bundle's CFBundleVersion, which release.sh sets to
+// the release's version.
 func (s *Store) liveVersion() (string, error) {
-	raw, err := os.ReadFile(filepath.Join(s.livePath(), "Contents", "Info.plist"))
+	f, err := os.Open(filepath.Join(s.livePath(), "Contents", "Info.plist"))
 	if err != nil {
 		return "", selfupdate.ErrNoCurrent
 	}
-	m := bundleVersion.FindSubmatch(raw)
-	if m == nil {
+	defer f.Close() //nolint:errcheck // read-only
+
+	version, err := plistString(f, "CFBundleVersion")
+	if err != nil || version == "" {
 		return "", selfupdate.ErrNoCurrent
 	}
-	version := string(m[1])
 	if _, err := s.layout.VersionPath(version); err != nil {
 		return "", err
 	}
 	return version, nil
+}
+
+// plistString reads a string value of the top-level dictionary of an XML
+// property list.
+func plistString(r io.Reader, key string) (string, error) {
+	dec := xml.NewDecoder(r)
+	depth, last := 0, ""
+	for {
+		tok, err := dec.Token()
+		if err != nil {
+			return "", err
+		}
+		start, ok := tok.(xml.StartElement)
+		if !ok {
+			if end, ok := tok.(xml.EndElement); ok && end.Name.Local == "dict" {
+				depth--
+			}
+			continue
+		}
+		switch start.Name.Local {
+		case "dict":
+			depth++
+			continue
+		case "key", "string":
+		default:
+			if depth == 1 {
+				last = ""
+			}
+			continue
+		}
+		var text string
+		if err := dec.DecodeElement(&text, &start); err != nil {
+			return "", err
+		}
+		if depth != 1 {
+			continue
+		}
+		if start.Name.Local == "key" {
+			last = text
+			continue
+		}
+		if last == key {
+			return strings.TrimSpace(text), nil
+		}
+		last = ""
+	}
 }
 
 // stageBundle unpacks the archive's bundle into a fresh staging directory.
