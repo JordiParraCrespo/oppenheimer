@@ -37,7 +37,7 @@ const account = (overrides: { historyId?: string | null; organizationId?: string
 const RECEIVED = new Date('2026-10-29T12:00:00Z');
 const NOW = new Date('2026-10-29T12:05:00Z');
 
-const summary = (id: string, date: Date = RECEIVED): GmailMessageSummary => ({
+const summary = (id: string, date: Date | null = RECEIVED): GmailMessageSummary => ({
   id,
   threadId: `t-${id}`,
   from: 'Bo <bo@client.test>',
@@ -221,12 +221,13 @@ describe('PollWatchedMailCommandHandler', () => {
 
   // The trigger storm: a mark days behind handed a backlog over as new mail,
   // each message a run past the hourly cap.
-  it('hands over no mail Gmail received too long ago, however far behind the mark was', async () => {
+  it('hands over no mail Gmail received too long ago, or gives no time for, however far behind the mark was', async () => {
     const connection = account();
     const { poll, provider, repository, commands } = setup([connection], watching([null]));
     provider.readSummaries.mockImplementationOnce(async () => [
       summary('m1', new Date('2026-10-26T12:00:00Z')),
       summary('m2'),
+      summary('undated', null),
     ]);
 
     expect(await poll()).toBe(1);

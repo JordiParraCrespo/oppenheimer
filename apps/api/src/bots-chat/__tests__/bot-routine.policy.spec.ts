@@ -61,6 +61,8 @@ describe('routineFailureLineId', () => {
       'automation_rate_limited',
       at('2026-11-03T09:01:00Z'),
     );
+    // RFC 4122 v5: Python's `uuid.uuid5` gives the same id for this name.
+    expect(first).toBe('1613413e-5943-5ece-b5fb-bce1acfcc7d5');
     expect(first).toMatch(UUID);
     expect(
       routineFailureLineId(

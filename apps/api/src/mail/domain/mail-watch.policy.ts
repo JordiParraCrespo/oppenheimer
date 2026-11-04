@@ -17,11 +17,12 @@ export function watchedQuery(query: string): string {
 /**
  * Whether a message Gmail received at `receivedAt` is still new mail at
  * `now`. However the history mark came to lag (a backlog, an outage),
- * mail older than this wakes nothing. One Gmail gives no time for is kept.
+ * mail older than this wakes nothing, and neither does one Gmail gives no
+ * time for: the guard holds only if nothing passes it unchecked.
  */
 export function isNewArrival(receivedAt: Date | null, now: Date): boolean {
   return (
-    receivedAt === null || now.getTime() - receivedAt.getTime() <= NEW_MAIL_MAX_AGE_DAYS * DAY_MS
+    receivedAt !== null && now.getTime() - receivedAt.getTime() <= NEW_MAIL_MAX_AGE_DAYS * DAY_MS
   );
 }
 

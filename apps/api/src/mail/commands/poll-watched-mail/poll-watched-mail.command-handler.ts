@@ -49,6 +49,10 @@ export class PollWatchedMailCommandHandler
     const read = watchedConnections(connections, watched);
     // A mark this poll does not move goes stale: one kept through a pause, a
     // deleted routine or a revoked grant would hand over that gap's mail as new.
+    // Its bound: when a tick runs past the next and a routine is resumed between
+    // one poll's read of the watched list and this drop, that poll drops a mark
+    // the other just set, and the account starts again from now: under a
+    // minute of mail wakes nothing, never old mail as new.
     await this.connections.forgetHistoryExcept(read.map(({ connection }) => connection.id));
     // Each account is its own quota and mark, read side by side; a trigger reads only its workspace's.
     const polled = await Promise.all(

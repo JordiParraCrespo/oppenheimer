@@ -354,13 +354,24 @@ export function matchesTriggerFilter(
   filter: TriggerFilter,
   attributes: Readonly<Record<string, unknown>>,
 ): boolean {
-  if (filter.op === 'any') {
-    return definition.anyRequires === undefined || attributes[definition.anyRequires] === true;
-  }
+  if (filter.op === 'any') return satisfiesAny(definition, attributes);
   if (definition.filterField === null) return true;
   const actual = attributes[definition.filterField];
   if (Array.isArray(actual)) return actual.includes(filter.value);
   return actual === filter.value;
+}
+
+/**
+ * What `any` means for an event: every event, unless its definition names
+ * an attribute `any` needs (`anyRequires`). The extension point for an
+ * event whose "anything" is narrower than every delivery, as mail is the
+ * mail that reached the inbox; the preview's SQL reads the same field.
+ */
+function satisfiesAny(
+  definition: Pick<ExternalEventDefinition, 'anyRequires'>,
+  attributes: Readonly<Record<string, unknown>>,
+): boolean {
+  return definition.anyRequires === undefined || attributes[definition.anyRequires] === true;
 }
 
 // ---------------------------------------------------------------------------

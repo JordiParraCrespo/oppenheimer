@@ -179,20 +179,23 @@ export function routineFailureLineId(
 ): string {
   if (!RATE_LIMITED_SKIPS.includes(reason)) return eventId;
   const hour = Math.floor(at.getTime() / HOUR_MS);
-  return nameBasedUuid(`routine-failure:${automationId}:${reason}:${hour}`);
+  return uuidV5(`${automationId}:${reason}:${hour}`, ROUTINE_FAILURE_NAMESPACE);
 }
 
-/** A UUID (version 5 layout) named by `name`: the same name, the same id. */
-function nameBasedUuid(name: string): string {
-  const hex = createHash('sha256').update(name).digest('hex');
-  const variant = ((Number.parseInt(hex[16], 16) & 0x3) | 0x8).toString(16);
-  return [
-    hex.slice(0, 8),
-    hex.slice(8, 12),
-    `5${hex.slice(13, 16)}`,
-    `${variant}${hex.slice(17, 20)}`,
-    hex.slice(20, 32),
-  ].join('-');
+/** The RFC 4122 namespace of the coalesced failure lines' names. `bot_message.id` is a uuid. */
+const ROUTINE_FAILURE_NAMESPACE = '6f1c2b8e-3d4a-4f5e-9a7b-1c2d3e4f5a6b';
+
+/** RFC 4122 §4.3 name-based UUID, version 5 (SHA-1): the same name, the same id. */
+function uuidV5(name: string, namespace: string): string {
+  const bytes = createHash('sha1')
+    .update(Buffer.from(namespace.replaceAll('-', ''), 'hex'))
+    .update(name, 'utf8')
+    .digest()
+    .subarray(0, 16);
+  bytes[6] = (bytes[6] & 0x0f) | 0x50;
+  bytes[8] = (bytes[8] & 0x3f) | 0x80;
+  const hex = bytes.toString('hex');
+  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
 }
 
 /** What the bot reads when its history reaches the line: the same news, in words. */
