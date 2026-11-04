@@ -1,5 +1,5 @@
+import { useStoredList } from '@oppenheimer/frontend-web';
 import { FOLDED_GROUPS_KEY, withFold } from '../lib/folded-groups';
-import { useStoredList } from './use-stored-list';
 
 /**
  * The project groups folded in the sidebar, and the toggle that changes them.

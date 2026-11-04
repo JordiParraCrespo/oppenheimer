@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { rememberList, storedList } from '../lib/stored-list';
+import { rememberList, storedList } from './stored-list';
 
 /**
  * What the sidebar keeps on this device (pins, folds) reads back as written,

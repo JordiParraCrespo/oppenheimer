@@ -1,9 +1,9 @@
 import type { ProjectEntity, SessionEntity } from '@oppenheimer/frontend-consumer';
+import { storedList } from '@oppenheimer/frontend-web';
 import { act, renderHook } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
 import { useHiddenProjects } from '../hooks/use-hidden-projects';
 import { HIDDEN_PROJECTS_KEY, listedProjects, withHidden } from '../lib/hidden-projects';
-import { storedList } from '../lib/stored-list';
 
 /**
  * A project hidden from the sidebar stays hidden on the next visit, and one

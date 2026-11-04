@@ -1,8 +1,8 @@
+import { storedList } from '@oppenheimer/frontend-web';
 import { act, renderHook } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
 import { useFoldedGroups } from '../hooks/use-folded-groups';
 import { FOLDED_GROUPS_KEY, withFold } from '../lib/folded-groups';
-import { storedList } from '../lib/stored-list';
 
 /**
  * A project group folded in the sidebar comes back folded on the next visit,

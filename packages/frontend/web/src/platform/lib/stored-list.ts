@@ -1,6 +1,6 @@
 /**
  * A list of ids the reader keeps on this device under `key`: the sidebar's
- * pins and folded groups. One reader and one writer, so a corrupt value,
+ * pins and folded groups, the sections whose Bots heading is folded. One reader and one writer, so a corrupt value,
  * private browsing or a full quota are handled once.
  */
 

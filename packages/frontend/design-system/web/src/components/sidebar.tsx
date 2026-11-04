@@ -358,29 +358,62 @@ function SidebarSearch({
 /**
  * SidebarListHead — the line over a grouped list: the list's name as a muted
  * uppercase label, its count in mono, then any actions (New project, the
- * filter menu). Both of the console's lists open on one.
+ * filter menu). Both of the console's lists open on one. Given `onOpenChange`
+ * the label folds the list: a chevron after it says which way, shown on hover
+ * and while the list is folded, and the caller leaves the list out when
+ * `open` is false.
  */
 function SidebarListHead({
   label,
   count,
+  open = true,
+  onOpenChange,
   className,
   children,
   ...props
 }: Omit<React.ComponentProps<'div'>, 'children'> & {
   label: React.ReactNode;
   count?: React.ReactNode;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
   /** Icon buttons after the count. */
   children?: React.ReactNode;
 }) {
+  const eyebrow = 'eyebrow min-w-0 font-normal tracking-[0.04em] text-fg-muted';
   return (
     <div
       data-slot="sidebar-list-head"
-      className={cn('flex items-center gap-2 px-3 pt-0.5 pb-1.5 [&_button]:rounded-nav', className)}
+      data-open={onOpenChange ? open : undefined}
+      className={cn(
+        'group/list-head flex items-center gap-2 px-3 pt-0.5 pb-1.5 [&_button]:rounded-nav',
+        className,
+      )}
       {...props}
     >
-      <span className="eyebrow min-w-0 flex-1 font-normal tracking-[0.04em] text-fg-muted">
-        {label}
-      </span>
+      {onOpenChange ? (
+        <span className="flex min-w-0 flex-1">
+          <button
+            type="button"
+            aria-expanded={open}
+            onClick={() => onOpenChange(!open)}
+            className={cn(
+              eyebrow,
+              'flex items-center gap-1 text-left outline-none transition-colors duration-fast hover:text-fg focus-visible:text-fg',
+            )}
+          >
+            <span className="truncate">{label}</span>
+            <ChevronDownIcon
+              aria-hidden
+              className={cn(
+                'size-3.25 shrink-0 opacity-0 transition-[opacity,rotate] duration-base ease-standard group-hover/list-head:opacity-100 group-focus-within/list-head:opacity-100',
+                !open && '-rotate-90 opacity-100',
+              )}
+            />
+          </button>
+        </span>
+      ) : (
+        <span className={cn(eyebrow, 'flex-1')}>{label}</span>
+      )}
       {count !== undefined ? (
         <span className="figures text-micro leading-(--leading-body) tracking-normal text-fg-muted">{count}</span>
       ) : null}
