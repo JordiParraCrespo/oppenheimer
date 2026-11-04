@@ -174,6 +174,52 @@ describe('a settled turn', () => {
     fireEvent.click(screen.getByRole('button', { name: /sessions\.chat\.turn\.worked/ }));
     expect(screen.getByText('sessions.chat.thoughtFor{"seconds":4}')).toBeTruthy();
   });
+
+  // Regression: a folded turn kept only the last text block of its answer,
+  // dropping the explanation before a command the same message ended on.
+  it('keeps every block of its answer when it folds, and folds the words before its work', () => {
+    const chat = new Chat();
+    chat.apply({
+      reset: true,
+      entries: [
+        entry({ type: 'user', uuid: 'u1', message: { role: 'user', content: 'Count them' } }),
+        entry({
+          type: 'assistant',
+          uuid: 'a1',
+          message: {
+            role: 'assistant',
+            content: [
+              { type: 'text', text: 'Let me count.' },
+              { type: 'tool_use', id: 't', name: 'Bash', input: { command: 'ls | wc -l' } },
+            ],
+          },
+        }),
+        entry({
+          type: 'user',
+          uuid: 'r',
+          message: {
+            role: 'user',
+            content: [{ type: 'tool_result', tool_use_id: 't', content: '3' }],
+          },
+        }),
+        entry({
+          type: 'assistant',
+          uuid: 'a2',
+          message: {
+            role: 'assistant',
+            content: [
+              { type: 'text', text: 'There are three.' },
+              { type: 'text', text: 'Recount with ls.' },
+            ],
+          },
+        }),
+      ],
+    });
+    render(<SessionChat chat={chat} agent="claude-code" readOnly />);
+    expect(screen.getByText('There are three.')).toBeTruthy();
+    expect(screen.getByText('Recount with ls.')).toBeTruthy();
+    expect(screen.queryByText('Let me count.')).toBeNull();
+  });
 });
 
 describe('a command the CLI answers itself', () => {

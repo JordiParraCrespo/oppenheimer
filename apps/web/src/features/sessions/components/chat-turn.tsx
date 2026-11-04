@@ -31,6 +31,21 @@ const SETTLED_KINDS = new Set<ChatBlock['kind']>([
   'file',
 ]);
 
+/**
+ * A turn's answer: the words it said after its last piece of work, every
+ * one of them, since one message's text blocks arrive as replies of their
+ * own. The cards it closes on do not end the answer.
+ */
+function answerOf(blocks: ChatBlock[]): Set<ChatBlock> {
+  const answer = new Set<ChatBlock>();
+  for (let index = blocks.length - 1; index >= 0; index--) {
+    const block = blocks[index];
+    if (block.kind === 'reply') answer.add(block);
+    else if (!SETTLED_KINDS.has(block.kind)) break;
+  }
+  return answer;
+}
+
 /** Every block and the prompt rise into place as they arrive; history fades in once. */
 const ENTER = 'motion-safe:animate-appear';
 
@@ -52,7 +67,7 @@ export function ChatTurn({ turn }: { turn: Turn }) {
   const blocks = blocksOf(turn);
   const live = turn.working;
   const shown = live || open;
-  const answer = blocks.filter((block) => block.kind === 'reply').at(-1);
+  const answer = answerOf(blocks);
   const pictures = shownImages(turn.prompt?.images ?? null);
   // A file the host only named, an image without a preview or a document,
   // is a count beside the pictures.
@@ -107,7 +122,7 @@ export function ChatTurn({ turn }: { turn: Turn }) {
       ) : null}
       {blocks.map((block, index) => {
         const last = index === blocks.length - 1;
-        if (!shown && block !== answer && !SETTLED_KINDS.has(block.kind)) return null;
+        if (!shown && !answer.has(block) && !SETTLED_KINDS.has(block.kind)) return null;
         return (
           <div key={block.id} className={ENTER}>
             <ChatTurnBlock block={block} live={live} last={last} />
