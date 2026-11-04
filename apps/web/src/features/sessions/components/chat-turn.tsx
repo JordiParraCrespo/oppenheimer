@@ -17,12 +17,12 @@ import { ChatTurnBlock } from './chat-turn-block';
 import { ElapsedClock } from './elapsed-clock';
 
 /**
- * What a folded turn keeps: its words, its cards and its pictures, what was
- * asked and answered among them, and what a slash command printed, which is
- * that command's whole answer.
+ * What a folded turn keeps besides its answer: its cards and its pictures,
+ * what was asked and answered among them, and what a slash command printed,
+ * which is that command's whole answer. The words it said on the way there
+ * fold with the work they narrated.
  */
 const SETTLED_KINDS = new Set<ChatBlock['kind']>([
-  'reply',
   'output',
   'plan',
   'question',
@@ -40,24 +40,19 @@ const ENTER = 'motion-safe:animate-appear';
  * agent's turn under its header — working, with its clock running,
  * or how long it worked and on which model. Its thinking and its calls are in
  * muted ink, what it said is markdown, a plan and the files it changed are
- * cards. Codex's way with settled work: the newest turn stays open, an older
- * one folds to its words and its cards, and the header opens it again.
+ * cards. Codex's way with settled work: a turn is open while it works, and
+ * once it settles it folds to its answer (its last words) and its cards, the
+ * newest one too; the header opens it again.
  */
-export function ChatTurn({ turn, latest }: { turn: Turn; latest: boolean }) {
+export function ChatTurn({ turn }: { turn: Turn }) {
   const { t } = useTranslation();
   const locale = useLocale();
-  const [open, setOpen] = useState(latest);
-  // A turn the next prompt has passed folds away; adjusted while rendering,
-  // not in an effect, so it never draws open first.
-  const [wasLatest, setWasLatest] = useState(latest);
-  if (wasLatest !== latest) {
-    setWasLatest(latest);
-    if (!latest) setOpen(false);
-  }
+  const [open, setOpen] = useState(false);
   const time = dateFormatter(locale, { timeStyle: 'short' });
   const blocks = blocksOf(turn);
   const live = turn.working;
   const shown = live || open;
+  const answer = blocks.filter((block) => block.kind === 'reply').at(-1);
   const pictures = shownImages(turn.prompt?.images ?? null);
   // A file the host only named, an image without a preview or a document,
   // is a count beside the pictures.
@@ -112,7 +107,7 @@ export function ChatTurn({ turn, latest }: { turn: Turn; latest: boolean }) {
       ) : null}
       {blocks.map((block, index) => {
         const last = index === blocks.length - 1;
-        if (!shown && !SETTLED_KINDS.has(block.kind)) return null;
+        if (!shown && block !== answer && !SETTLED_KINDS.has(block.kind)) return null;
         return (
           <div key={block.id} className={ENTER}>
             <ChatTurnBlock block={block} live={live} last={last} />

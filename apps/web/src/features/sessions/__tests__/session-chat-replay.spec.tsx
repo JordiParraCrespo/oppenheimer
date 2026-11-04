@@ -9,9 +9,8 @@ import { replaySessionChat } from './replay/session-chat-replay';
  * read, a command that failed, a question the person answered, a task list,
  * an edit and a reply, then a second prompt whose command runs. What breaks
  * this: a turn's steps drawn out of the order the agent took them (a read
- * folded together with the failed command after it, which is not looking), an
- * older turn left open (or the newest folded) once the next prompt passes
- * it, a question that waits without taking the composer's place, the task
+ * folded together with the failed command after it, which is not looking), a
+ * settled turn left open, or folded past its answer and its cards, a question that waits without taking the composer's place, the task
  * list lost from the composer, the call in flight drawn as done, or a turn
  * that settled still saying it works.
  */
@@ -122,7 +121,16 @@ describe('a session replayed from its transcript', () => {
   it('keeps the turn’s steps in the order the agent took them, the task list on the composer', () => {
     const chat = replaySessionChat(flakySignIn);
     chat.playTo('answered');
+    // Settled, it folds to what it asked, its answer and its card.
+    expect(outline(chat.container)).toEqual([
+      'you: The sign-in test is flaky — find out why',
+      `▸ sessions.chat.turn.worked 1m 20s · ${clock('2026-10-30T10:01:20.000Z')}`,
+      '  answered: Which fix? Wait for the toast',
+      '  reply: Fixed: the test now waits for the toast before it reads the URL.',
+      '  changes: sessions.chat.changes{"count":1} +2 −1 tests/sign-in.spec.ts +2 −1',
+    ]);
 
+    fireEvent.click(screen.getByRole('button', { name: /sessions\.chat\.turn\.worked/ }));
     expect(outline(chat.container)).toEqual([
       'you: The sign-in test is flaky — find out why',
       `▾ sessions.chat.turn.worked 1m 20s · ${clock('2026-10-30T10:01:20.000Z')}`,
@@ -142,6 +150,7 @@ describe('a session replayed from its transcript', () => {
   it('draws the read apart from the command that failed, which opens to its output, the failure in red', () => {
     const chat = replaySessionChat(flakySignIn);
     chat.playTo('answered');
+    fireEvent.click(screen.getByRole('button', { name: /sessions\.chat\.turn\.worked/ }));
 
     // A read alone is its own row, and the failed command ends any run of reads.
     expect(outline(chat.container).slice(3, 5)).toEqual([
@@ -176,10 +185,17 @@ describe('a session replayed from its transcript', () => {
     expect(screen.getByRole('button', { name: 'sessions.chat.composer.stop' })).toBeTruthy();
   });
 
-  it('settles the newest turn open, and opens the older one again from its header', () => {
+  it('folds the newest turn to its answer once it settles, and opens either again from its header', () => {
     const chat = replaySessionChat(flakySignIn);
     chat.playAll();
 
+    // What it said on the way and the command it ran fold away; its answer stays.
+    expect(outline(chat.container).slice(5)).toEqual([
+      'you: Now run the whole suite',
+      `▸ sessions.chat.turn.worked 1m 32s · ${clock('2026-10-30T10:06:32.000Z')}`,
+      '  reply: All 212 tests pass.',
+    ]);
+    fireEvent.click(screen.getByRole('button', { name: /sessions\.chat\.turn\.worked 1m 32s/ }));
     expect(outline(chat.container).slice(5)).toEqual([
       'you: Now run the whole suite',
       `▾ sessions.chat.turn.worked 1m 32s · ${clock('2026-10-30T10:06:32.000Z')}`,
