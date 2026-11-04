@@ -36,10 +36,11 @@ export class CreateAccessGrantCommandHandler
     requireTenant(scope);
 
     // An unknown subject is a warning, not a rejection: the catalog is
-    // advisory and an admin may grant over a resource this deployment has not
-    // declared. It is worth saying out loud though, because the usual cause is
-    // a typo that will silently never match a row.
-    if (!this.registry.get(command.resourceType)) {
+    // advisory. But it is held to the strictest rule (`canGrantScope`, as a
+    // person's own rows): no bypass and no "every row", only a row the granter
+    // already holds by id. The usual cause is a typo that never matches a row.
+    const resource = this.registry.get(command.resourceType);
+    if (!resource) {
       this.logger.warn({
         message: 'Access grant references an unregistered resource type',
         resourceType: command.resourceType,
@@ -48,11 +49,11 @@ export class CreateAccessGrantCommandHandler
 
     const resourceId = command.resourceId ?? null;
 
-    const allowed = canGrantScope(scope, {
-      organizationId: scope.organizationId,
-      resourceType: command.resourceType,
-      resourceId,
-    });
+    const allowed = canGrantScope(
+      scope,
+      { organizationId: scope.organizationId, resourceType: command.resourceType, resourceId },
+      resource,
+    );
     if (!allowed) {
       throw new AppError(AccessGrantErrors.NOT_GRANTABLE, {
         detail:
