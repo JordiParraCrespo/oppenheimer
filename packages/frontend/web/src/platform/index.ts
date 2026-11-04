@@ -5,4 +5,4 @@ export { sanitizeRedirect } from './lib/sanitize-redirect';
 export { searchFlag, searchPage, searchText } from './lib/search-params';
 export { reloadOnStaleBuild } from './lib/stale-build-reload';
 export { LocalStorageService } from './lib/storage';
-export { rememberList, storedList } from './lib/stored-list';
+export { storedList } from './lib/stored-list';
