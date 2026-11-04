@@ -24,5 +24,7 @@ export function startLogStallDeadline(
   watchingSince: number,
 ): number | null {
   if (!read.error) return null;
-  return Math.max(read.dataUpdatedAt, watchingSince) + CONSUMER_CONFIG.sessions.startLogStallMs;
+  // The last good read, or the mount for a log the create seeded (`dataUpdatedAt: 0`).
+  const lastGoodOrMount = Math.max(read.dataUpdatedAt, watchingSince);
+  return lastGoodOrMount + CONSUMER_CONFIG.sessions.startLogStallMs;
 }
