@@ -14,7 +14,9 @@ import { sessionChatFor } from '../lib/session-chats';
 export function useSessionChat(key: string): SessionChat {
   const [chat] = useState(() => sessionChatFor(key));
   // Effect: the kept chat outlives this pane, so the pane hands it back on
-  // unmount, after its terminal stopped feeding it (`SessionChat.detach`).
+  // unmount (`SessionChat.detach`). React runs this cleanup just before its
+  // terminal's, in the same commit; the stream feeds the chat only from its
+  // socket's messages, so nothing reaches it between the two.
   useEffect(() => () => chat.detach(), [chat]);
   return chat;
 }
