@@ -115,12 +115,10 @@ func TestTheChatIsTheHistoryThenEachLineTheAgentAppends(t *testing.T) {
 // the runner knows when that is: a read slowed by previews of screenshots
 // pauses longer than any quiet the console could wait out. Regression: the
 // batches said nothing, the console took the pause after the first 4MB read
-// for the end, and drew a long chat once per read. A Claude Code history is
-// its tail, at most one read (a turn longer than that is cut at a line), and
-// every batch of it but the last still says more is coming.
-func TestALongHistoryIsItsTailAndSaysWhereItEnds(t *testing.T) {
+// for the end, and drew a long chat once per read.
+func TestAHistoryLongerThanOneReadSaysWhereItEnds(t *testing.T) {
 	filler := strings.Repeat("y", 200<<10)
-	lines := make([]string, 30) // about 6MB: more than one read of the file
+	lines := make([]string, 30) // about 6MB: two reads of the file
 	for i := range lines {
 		lines[i] = `{"type":"user","uuid":"u` + string(rune('a'+i%26)) + `","message":{"role":"user","content":"` + filler + `"}}`
 	}
@@ -133,14 +131,10 @@ func TestALongHistoryIsItsTailAndSaysWhereItEnds(t *testing.T) {
 		return len(sink.got) > 0 && sink.got[len(sink.got)-1].History == app.HistoryEnd
 	}
 	eventually(t, "the end of the history", ended)
-	// One 4MB read back from the end holds the last 20 of the 30 prompts.
-	if n := len(sink.entries()); n != 20 {
-		t.Fatalf("the tail held %d of %d lines, not the 20 one read holds", n, len(lines))
+	if n := len(sink.entries()); n != len(lines) {
+		t.Fatalf("the history ended after %d of %d lines", n, len(lines))
 	}
 	sink.mu.Lock()
-	if want := int64(10 * (len(lines[0]) + 1)); sink.got[0].Before != want {
-		t.Fatalf("the tail says it starts at %d, not at the 11th line's %d", sink.got[0].Before, want)
-	}
 	for i, batch := range sink.got[:len(sink.got)-1] {
 		if batch.History != app.HistoryMore {
 			t.Fatalf("batch %d of the history says %q, not that more is coming", i, batch.History)
@@ -155,7 +149,7 @@ func TestALongHistoryIsItsTailAndSaysWhereItEnds(t *testing.T) {
 	}
 	defer func() { _ = file.Close() }()
 	_, _ = file.WriteString(answerLine + "\n")
-	eventually(t, "the appended line", func() bool { return len(sink.entries()) == 21 })
+	eventually(t, "the appended line", func() bool { return len(sink.entries()) == len(lines)+1 })
 	sink.mu.Lock()
 	defer sink.mu.Unlock()
 	if last := sink.got[len(sink.got)-1]; last.History != "" {

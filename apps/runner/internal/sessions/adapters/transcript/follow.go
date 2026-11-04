@@ -28,10 +28,11 @@ const (
 
 // Follow implements app.Transcripts: it sends the conversation's chat
 // entries to emit until ctx ends — the history first, under Reset, then each
-// line as the CLI appends it. A transcript that can be cut at a turn's
-// opening (Claude Code's) sends only its last turns as the history, with
-// Before, and answers each offset on older with the turns before it
-// (`follow_older.go`). OpenCode's conversation is read through its own API
+// line as the CLI appends it. Given older, the console can ask for older
+// turns: a transcript that can be cut at a turn's opening (Claude Code's)
+// then sends only its last turns as the history, with Before, and answers
+// each offset on older with the turns before it (`follow_older.go`). Without
+// it, the whole history, so nothing is ever out of the reader's reach. OpenCode's conversation is read through its own API
 // instead (`opencode.go`). A batch emit refuses (the link's queue is full)
 // is offered again on the next check, so nothing is skipped.
 func (r *Reader) Follow(ctx context.Context, session domain.Session, entryMax, batchMax int, older <-chan int64, emit func(app.ChatBatch) error) error {
@@ -54,7 +55,7 @@ func (r *Reader) Follow(ctx context.Context, session domain.Session, entryMax, b
 		find: find, fresh: source.transcriber,
 		entryMax: entryMax, batchMax: batchMax, emit: emit, reset: true, history: historyComing,
 	}
-	if cut, ok := source.(turnCutter); ok {
+	if cut, ok := source.(turnCutter); ok && older != nil {
 		f.opens = cut.opensTurn
 	}
 	f.t = f.fresh()

@@ -13,4 +13,7 @@ turns before that (`chat.older` on the attach socket, `attachment.chat.older`
 on the link, capability `attachment.chat.older`), shown with the spinner
 until the page has come. A reconnect's tail is checked against what the
 chat holds from where it starts, so older pages stay. Codex, Grok and
-OpenCode sessions still send their whole history.
+OpenCode sessions still send their whole history, and so does any session
+whose console or control plane cannot ask for older turns: the browser says
+it can on the resize that starts the attach (`chatTail`), and the relay
+passes that on only to a runner that names the capability.

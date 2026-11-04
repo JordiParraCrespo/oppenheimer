@@ -258,7 +258,8 @@ type Transcripts interface {
 	// runner cannot read the agent's transcript.
 	// Each offset on older asks for the turns before it, sent as batches
 	// marked Older; a source that sends its whole history answers that
-	// nothing is older.
+	// nothing is older. A nil older is a reader that cannot ask: the whole
+	// history is sent.
 	Follow(ctx context.Context, session domain.Session, entryMax, batchMax int, older <-chan int64, emit func(ChatBatch) error) error
 	// OpenQuestion is the agent's latest AskUserQuestion call that has no
 	// result in the transcript yet, as the decision it asks (29-inbox,

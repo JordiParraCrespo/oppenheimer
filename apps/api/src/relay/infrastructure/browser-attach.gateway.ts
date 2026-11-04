@@ -640,9 +640,17 @@ class BrowserAttachment implements AttachmentSink {
    * is not for asks nothing of the host.
    */
   private chatOlder(before: number): void {
-    if (!this.chatView || !this.attached || this.attachmentId === null) return;
-    if (!this.link.capabilities.includes('attachment.chat.older')) return;
+    if (!this.attached || this.attachmentId === null || !this.chatAsksOlder()) return;
     this.link.send({ type: 'attachment.chat.older', attachmentId: this.attachmentId, before });
+  }
+
+  /**
+   * Whether this attachment's chat can be sent tail first: it reaches the
+   * browser, and the runner answers asks for older turns. The browser says
+   * its own half on the resize that starts the attach (`chatTail`).
+   */
+  private chatAsksOlder(): boolean {
+    return this.chatView && this.link.capabilities.includes('attachment.chat.older');
   }
 
   /**
@@ -661,7 +669,7 @@ class BrowserAttachment implements AttachmentSink {
     this.link.sendBinary(this.attachmentId, bytes);
   }
 
-  private attach(viewport: { cols: number; rows: number }): void {
+  private attach(viewport: { cols: number; rows: number; chatTail?: boolean }): void {
     if (this.attached || this.finished || this.attachmentId === null) return;
     if (this.viewportTimer) clearTimeout(this.viewportTimer);
     this.attached = true;
@@ -674,6 +682,7 @@ class BrowserAttachment implements AttachmentSink {
       cols: viewport.cols,
       rows: viewport.rows,
       ...(this.readOnly ? { readOnly: true } : {}),
+      ...(viewport.chatTail && this.chatAsksOlder() ? { chatTail: true } : {}),
     });
     if (!sent) {
       this.closed('link_lost');

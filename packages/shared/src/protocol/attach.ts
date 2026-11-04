@@ -23,6 +23,13 @@ export const attachResizeSchema = z.object({
   type: z.literal('resize'),
   cols: z.number().int().min(1).max(10_000),
   rows: z.number().int().min(1).max(10_000),
+  /**
+   * This browser can ask for a chat's older turns (`chat.older`), so its
+   * host may send the conversation tail first. Read off the resize that
+   * starts the attach; absent, the host sends the whole history, as it does
+   * to a console that predates it.
+   */
+  chatTail: z.boolean().optional(),
 });
 
 /** Bytes the terminal consumed, relayed to the runner as `attachment.credit`. */

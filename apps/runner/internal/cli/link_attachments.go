@@ -31,7 +31,10 @@ func (h *linkHandler) attach(ctx context.Context, m link.SessionAttach, epoch ui
 	att := &attachment{
 		id: m.AttachmentID, sessionID: m.SessionID, window: m.Window, pty: pty, cancel: cancel,
 		flow: newFlowWindow(), epoch: epoch, input: make(chan []byte, attachmentInput), readOnly: readOnly,
-		chatOlder: make(chan int64, 1),
+	}
+	if m.ChatTail {
+		// The console can ask for older turns, so the chat goes tail first.
+		att.chatOlder = make(chan int64, 1)
 	}
 	h.mu.Lock()
 	if !h.linkUp || h.epoch != epoch {

@@ -707,6 +707,37 @@ describe('a long conversation', () => {
     vi.unstubAllGlobals();
   }, 15_000);
 
+  it('asks again at the top when a reconnect let the page it asked for go', () => {
+    // What breaks this: the spinner left as the same element once the
+    // reconnect's tail put the chat back to "more on the host", so the
+    // observer, which only reports a change, never sees it again and the
+    // reader waits at the top for a page that will never come.
+    vi.useFakeTimers();
+    const observer = observeIntersections();
+    const chat = new Chat();
+    const asked: number[] = [];
+    chat.connect(
+      () => {},
+      (before) => asked.push(before),
+    );
+    const tail = Array.from({ length: 40 }, (_, i) => turn(i + 51)).flat();
+    chat.apply({ reset: true, history: 'end', before: 4096, entries: tail });
+    render(<SessionChat chat={chat} agent="claude-code" readOnly={false} />);
+    const spinner = screen.getByRole('status', { name: 'sessions.chat.earlier' });
+    observer.reach(spinner);
+    act(() => vi.runAllTimers());
+    expect(asked).toEqual([4096]);
+
+    act(() => chat.apply({ reset: true, history: 'end', before: 4096, entries: tail }));
+    const again = screen.getByRole('status', { name: 'sessions.chat.earlier' });
+    expect(again).not.toBe(spinner);
+    observer.reach(again);
+    act(() => vi.runAllTimers());
+    expect(asked).toEqual([4096, 4096]);
+    vi.useRealTimers();
+    vi.unstubAllGlobals();
+  });
+
   it('keeps the turns a reader scrolled up to while new ones arrive, and follows again at the end', () => {
     const chat = new Chat();
     chat.apply({ reset: true, entries: Array.from({ length: 90 }, (_, i) => turn(i + 1)).flat() });

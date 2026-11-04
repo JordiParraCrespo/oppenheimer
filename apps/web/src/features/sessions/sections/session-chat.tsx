@@ -146,10 +146,12 @@ export function SessionChat({
             ) : (
               <ChatTranscript className="max-w-none">
                 {first > 0 || older !== 'none' ? (
-                  // Keyed by what is left above it, so a spinner still in
-                  // view once a page is drawn is a new one, seen afresh.
+                  // Keyed by what is left above it and whether a page is
+                  // coming, so a spinner still in view once a page is drawn,
+                  // or once a reconnect let a page asked for go, is a new
+                  // one, seen afresh.
                   <div
-                    key={first}
+                    key={`${first}:${older}`}
                     ref={earlier}
                     role="status"
                     aria-label={t('sessions.chat.earlier')}

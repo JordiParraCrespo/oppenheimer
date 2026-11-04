@@ -492,6 +492,7 @@ type SessionAttach struct {
 	Cols         int    `json:"cols"`
 	Rows         int    `json:"rows"`
 	ReadOnly     bool   `json:"readOnly,omitempty"`
+	ChatTail     bool   `json:"chatTail,omitempty"`
 }
 
 // SessionInput is the `session.input` message.

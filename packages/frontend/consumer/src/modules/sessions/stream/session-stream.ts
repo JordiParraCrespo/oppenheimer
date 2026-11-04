@@ -255,7 +255,7 @@ export class AttachSessionStream implements SessionStream {
   resize(cols: number, rows: number): void {
     if (cols < 1 || rows < 1) return;
     this.viewport = { cols, rows };
-    this.tell({ type: 'resize', cols, rows });
+    this.tell({ type: 'resize', cols, rows, chatTail: true });
   }
 
   reconnectNow(): void {
@@ -355,7 +355,9 @@ export class AttachSessionStream implements SessionStream {
 
     ws.onopen = () => {
       if (thisEpoch !== this.epoch) return;
-      if (this.viewport) this.tell({ type: 'resize', ...this.viewport });
+      // `chatTail`: this stream can ask for a chat's older turns
+      // (`askOlderChat`), so its host may send the conversation tail first.
+      if (this.viewport) this.tell({ type: 'resize', ...this.viewport, chatTail: true });
     };
     ws.onmessage = (event: MessageEvent) => {
       if (thisEpoch !== this.epoch) return;

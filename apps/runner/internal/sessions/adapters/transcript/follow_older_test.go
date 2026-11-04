@@ -99,7 +99,7 @@ func TestAnAttachSendsTheLastTurnsFromWhereTheFirstOfThemOpens(t *testing.T) {
 	lines := turnLines(100)
 	projects := write(t, lines...)
 	sink := &batches{}
-	follow(t, projects, sink)
+	followAsking(t, projects, sink)
 	eventually(t, "the tail", func() bool { return len(sink.entries()) == 160 })
 
 	sink.mu.Lock()
@@ -113,10 +113,27 @@ func TestAnAttachSendsTheLastTurnsFromWhereTheFirstOfThemOpens(t *testing.T) {
 	}
 }
 
+// A reader that cannot ask for older turns (a console or control plane
+// older than the runner, which updates on its own) gets the whole history.
+// Regression: a new runner cut every conversation to its tail for a
+// console with no way to scroll back past it.
+func TestAReaderThatCannotAskGetsTheWholeHistory(t *testing.T) {
+	lines := turnLines(100)
+	projects := write(t, lines...)
+	sink := &batches{}
+	follow(t, projects, sink)
+	eventually(t, "the whole history", func() bool { return len(sink.entries()) == 400 })
+	sink.mu.Lock()
+	defer sink.mu.Unlock()
+	if sink.got[0].Before != 0 {
+		t.Fatalf("a history sent whole says it starts at %d", sink.got[0].Before)
+	}
+}
+
 func TestAShortConversationIsSentWholeWithNothingOlder(t *testing.T) {
 	projects := write(t, turnLines(10)...)
 	sink := &batches{}
-	follow(t, projects, sink)
+	followAsking(t, projects, sink)
 	eventually(t, "the history", func() bool { return len(sink.entries()) == 40 })
 	sink.mu.Lock()
 	defer sink.mu.Unlock()
@@ -194,7 +211,7 @@ func TestATurnLongerThanOneReadIsCutAtALine(t *testing.T) {
 	}
 	projects := write(t, lines...)
 	sink := &batches{}
-	follow(t, projects, sink)
+	followAsking(t, projects, sink)
 	eventually(t, "the tail", func() bool {
 		sink.mu.Lock()
 		defer sink.mu.Unlock()

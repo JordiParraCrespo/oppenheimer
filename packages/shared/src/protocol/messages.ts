@@ -104,9 +104,10 @@ export const RUNNER_CAPABILITIES = [
    */
   'attachment.chat',
   /**
-   * Sends a Claude Code conversation tail first: an attachment's `reset`
-   * carries the last turns and `before`, the offset they start at, and
-   * `attachment.chat.older` is answered with the turns before an offset
+   * Sends a Claude Code conversation tail first to an attachment whose
+   * `session.attach` says `chatTail`: its `reset` carries the last turns and
+   * `before`, the offset they start at, and `attachment.chat.older` is
+   * answered with the turns before an offset
    * (`product/next-steps/0.7-terminal-and-chat.md`, "Tail first").
    */
   'attachment.chat.older',
@@ -521,6 +522,14 @@ export const sessionAttachSchema = z.object({
    * the host's half of the same rule. Absent is a writer, as before.
    */
   readOnly: z.boolean().optional(),
+  /**
+   * The browser can ask for older turns and the relay will pass its asks
+   * on, so the chat may be sent tail first (`attachment.chat.older`). Set
+   * only for a runner that named that capability; absent, the whole history,
+   * as before, so a runner newer than its control plane or console never
+   * cuts a conversation nobody can scroll back through.
+   */
+  chatTail: z.boolean().optional(),
 });
 
 export type SessionAttachMessage = z.infer<typeof sessionAttachSchema>;

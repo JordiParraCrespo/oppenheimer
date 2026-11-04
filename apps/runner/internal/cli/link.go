@@ -154,7 +154,8 @@ type attachment struct {
 	path attachmentPath
 	// chatOlder is the offset the console asked for the chat's older turns
 	// before, for the attachment's chat follower; one at a time, a second
-	// dropped while one waits.
+	// dropped while one waits. Nil unless the attach said chatTail: the
+	// chat is then sent whole, and an ask has nowhere to go.
 	chatOlder chan int64
 }
 
@@ -536,7 +537,7 @@ func (h *linkHandler) Message(_ context.Context, msg link.Message) {
 		if msg.Decode(&m) == nil {
 			// The reader scrolled to the top of the chat: its follower reads
 			// the page, never the read loop.
-			if att := h.attachmentByID(m.AttachmentID); att != nil {
+			if att := h.attachmentByID(m.AttachmentID); att != nil && att.chatOlder != nil {
 				select {
 				case att.chatOlder <- m.Before:
 				default:
