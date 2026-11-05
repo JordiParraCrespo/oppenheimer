@@ -73,8 +73,10 @@ export function AppShell({ children, ...config }: ShellConfig & { children: Reac
               a `full` screen — whose content *is* the viewport, the session
               terminal — fills the height with `flex-1` instead of guessing at
               a viewport calculation; and a drop's outline is drawn on its
-              edge. */}
-          <main className="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-canvas-recessed">
+              edge. It is its own stacking context (`isolate`), so a screen
+              can lay an image under all of it at `-z-10` (New session's
+              backdrop) without going under the pane's grey. */}
+          <main className="relative isolate flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-canvas-recessed">
             {ownBar ? null : (
               // On the pane's own grey, not a surface: the bar reads as the
               // page's top edge rather than a strip above it. A session draws
