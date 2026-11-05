@@ -1,6 +1,6 @@
-import { createFileRoute, redirect } from '@tanstack/react-router';
+import { createFileRoute } from '@tanstack/react-router';
 import { boardSearchSchema } from '@/features/tasks/lib/board-search';
-import { restorePlanFilters } from '@/features/tasks/lib/plan-filter-memory';
+import { planFilterBeforeLoad } from '@/features/tasks/lib/plan-filter-memory';
 import { BoardScreen } from '@/features/tasks/screens/board';
 
 /**
@@ -11,11 +11,6 @@ import { BoardScreen } from '@/features/tasks/screens/board';
  */
 export const Route = createFileRoute('/_authenticated/plan/')({
   validateSearch: boardSearchSchema,
-  beforeLoad: ({ search, preload }) => {
-    if (preload) return;
-    const restored = restorePlanFilters('board', search);
-    if (restored)
-      throw redirect({ to: '/plan', search: { ...search, ...restored }, replace: true });
-  },
+  beforeLoad: planFilterBeforeLoad('board'),
   component: BoardScreen,
 });

@@ -30,7 +30,7 @@ export function MilestonesScreen() {
         onLater={() => timeline.current?.later()}
         onNew={() => setEditing('new')}
       />
-      <PlanFilters />
+      <PlanFilters view="milestones" />
       <QueryState>
         <QueryState.Pending>
           <MilestonesTimelineSkeleton />

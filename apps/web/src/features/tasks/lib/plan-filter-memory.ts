@@ -1,4 +1,5 @@
 import { searchText } from '@oppenheimer/frontend-web';
+import { redirect } from '@tanstack/react-router';
 import { z } from 'zod';
 
 /**
@@ -12,18 +13,19 @@ import { z } from 'zod';
  * view visited with one remembers it, so a shared link or a timeline row
  * becomes the view's filter. Clear remembers nothing, so it sticks.
  */
-export type PlanFilterView = 'board' | 'milestones';
-
 export const PLAN_FILTERS_KEY = 'oppenheimer.plan.filters';
 
-const filtersSchema = z.object({ project: searchText, milestone: searchText });
-export type PlanFilters = z.infer<typeof filtersSchema>;
+/** Each view's filter: the address keys it owns, and nothing else. */
+const SCHEMAS = {
+  board: z.object({ project: searchText, milestone: searchText }),
+  milestones: z.object({ project: searchText }),
+};
 
-/** Which keys of the address each view's filter is. */
-const KEYS = {
-  board: ['project', 'milestone'],
-  milestones: ['project'],
-} as const satisfies Record<PlanFilterView, readonly (keyof PlanFilters)[]>;
+/** Where each view lives, for the redirect that restores its filter. */
+const PATHS = { board: '/plan', milestones: '/plan/milestones' } as const;
+
+export type PlanFilterView = keyof typeof SCHEMAS;
+type PlanFilters = { project?: string; milestone?: string };
 
 function readAll(): Partial<Record<PlanFilterView, unknown>> {
   try {
@@ -35,19 +37,21 @@ function readAll(): Partial<Record<PlanFilterView, unknown>> {
   }
 }
 
-/** The view's part of a search: only its own filter keys, the empty ones dropped. */
-function planFiltersOf(view: PlanFilterView, search: PlanFilters): PlanFilters {
-  const filters: PlanFilters = {};
-  for (const key of KEYS[view]) if (search[key]) filters[key] = search[key];
-  return filters;
+/**
+ * The view's part of a search, or of what storage holds: only the keys its
+ * schema owns, the empty and unreadable ones dropped.
+ */
+function planFiltersOf(view: PlanFilterView, search: unknown): PlanFilters {
+  const parsed = SCHEMAS[view].safeParse(search);
+  if (!parsed.success) return {};
+  return Object.fromEntries(Object.entries(parsed.data).filter(([, value]) => value));
 }
 
 const isEmpty = (filters: PlanFilters) => Object.keys(filters).length === 0;
 
 /** The filter the view was last left with; empty when there is none or it is unreadable. */
 function storedPlanFilters(view: PlanFilterView): PlanFilters {
-  const parsed = filtersSchema.safeParse(readAll()[view]);
-  return parsed.success ? planFiltersOf(view, parsed.data) : {};
+  return planFiltersOf(view, readAll()[view]);
 }
 
 /** Keep the view's filter (empty for none) for its next visit on this device. */
@@ -63,7 +67,7 @@ export function rememberPlanFilters(view: PlanFilterView, search: PlanFilters) {
 }
 
 /**
- * For a view's `beforeLoad`: the filter to add to the address, or `undefined`
+ * The filter to add to the address, or `undefined`
  * when the address is fine as it is. An address with a filter is remembered
  * and kept; one without is given the remembered filter, if any.
  */
@@ -78,4 +82,18 @@ export function restorePlanFilters(
   }
   const stored = storedPlanFilters(view);
   return isEmpty(stored) ? undefined : stored;
+}
+
+/**
+ * A view's `beforeLoad`: on a navigation (not a preload, which must not
+ * change what is remembered), send an address without a filter to the
+ * remembered one.
+ */
+export function planFilterBeforeLoad(view: PlanFilterView) {
+  return ({ search, preload }: { search: PlanFilters; preload: boolean }) => {
+    if (preload) return;
+    const restored = restorePlanFilters(view, search);
+    if (restored)
+      throw redirect({ to: PATHS[view], search: { ...search, ...restored }, replace: true });
+  };
 }

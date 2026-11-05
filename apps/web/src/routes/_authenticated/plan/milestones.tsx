@@ -1,5 +1,5 @@
-import { createFileRoute, redirect } from '@tanstack/react-router';
-import { restorePlanFilters } from '@/features/tasks/lib/plan-filter-memory';
+import { createFileRoute } from '@tanstack/react-router';
+import { planFilterBeforeLoad } from '@/features/tasks/lib/plan-filter-memory';
 import { planScopeSearchSchema } from '@/features/tasks/lib/plan-scope';
 import { MilestonesScreen } from '@/features/tasks/screens/milestones';
 
@@ -10,11 +10,6 @@ import { MilestonesScreen } from '@/features/tasks/screens/milestones';
  */
 export const Route = createFileRoute('/_authenticated/plan/milestones')({
   validateSearch: planScopeSearchSchema,
-  beforeLoad: ({ search, preload }) => {
-    if (preload) return;
-    const restored = restorePlanFilters('milestones', search);
-    if (restored)
-      throw redirect({ to: '/plan/milestones', search: { ...search, ...restored }, replace: true });
-  },
+  beforeLoad: planFilterBeforeLoad('milestones'),
   component: MilestonesScreen,
 });

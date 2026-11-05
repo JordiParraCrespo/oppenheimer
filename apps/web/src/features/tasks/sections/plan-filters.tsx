@@ -9,7 +9,7 @@ import { useMilestones, useProjects, useTasks } from '@oppenheimer/frontend-cons
 import { useNavigate, useRouterState } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { useScopeProject } from '../hooks/use-scope-project';
-import { rememberPlanFilters } from '../lib/plan-filter-memory';
+import { type PlanFilterView, rememberPlanFilters } from '../lib/plan-filter-memory';
 import { planCounts, projectParamOf, UNASSIGNED_SLUG } from '../lib/plan-scope';
 
 /** The facets' first option: nothing narrowed. */
@@ -23,7 +23,9 @@ const ALL = 'all';
  * picked while its project is one of them. Each pick is remembered on this
  * device, so the view comes back filtered (or cleared) the way it was left.
  */
-export function PlanFilters({ milestone = false }: { milestone?: boolean }) {
+export function PlanFilters({ view }: { view: PlanFilterView }) {
+  // Only the board narrows by milestone.
+  const showsMilestone = view === 'board';
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { slugs, projectIds } = useScopeProject();
@@ -42,8 +44,8 @@ export function PlanFilters({ milestone = false }: { milestone?: boolean }) {
   const set = (search: { project?: string; milestone?: string }) => {
     // Remembered before the address moves: the route restores a remembered
     // filter into an address without one, and a Clear must not be undone.
-    rememberPlanFilters(milestone ? 'board' : 'milestones', {
-      project: slugs.length ? projectParamOf(slugs) : undefined,
+    rememberPlanFilters(view, {
+      project: projectParamOf(slugs),
       milestone: milestoneId,
       ...search,
     });
@@ -98,7 +100,7 @@ export function PlanFilters({ milestone = false }: { milestone?: boolean }) {
             : []),
         ]}
       />
-      {milestone ? (
+      {showsMilestone ? (
         <SearchableFacetSelect
           variant="pill"
           label={t('tasks.filters.milestone')}
@@ -117,7 +119,7 @@ export function PlanFilters({ milestone = false }: { milestone?: boolean }) {
           ]}
         />
       ) : null}
-      {slugs.length || (milestone && milestoneId) ? (
+      {slugs.length || (showsMilestone && milestoneId) ? (
         <Button
           variant="ghost"
           size="sm"
