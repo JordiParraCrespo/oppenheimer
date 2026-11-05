@@ -294,6 +294,22 @@ runner does with it and point back.
   `SESS_017` the file has no preview. Sent only to a runner whose `hello`
   names `shared.preview`, and waited on like `fs.list`, for 5 seconds. The
   file itself never crosses: a preview is what the chat already showed.
+- `transcript.read` and `transcript.page` — a page of a session's
+  conversation for a reader with no browser attached (2026-11-05: a bot's
+  `read_session_transcript`, `GET /v1/sessions/{id}/transcript`, `opp`,
+  MCP; `next-steps/agent-tools.md` §8). The control plane asks for the tail
+  (no `conversation`) or the lines after `after` in the `conversation` a
+  page named; the runner answers with the chat view's entries, the same
+  compacted lines `attachment.chat` carries, `{ conversation, entries,
+  from, next, atEnd, restarted?, dropped?, partial? }`, at most 200 entries
+  and 256 KB, or `command.failed`: `SESS_001` the session is not on that
+  host, `SESS_018` its agent keeps no transcript the runner reads
+  (OpenCode's is behind its own server). The conversation is named by a
+  digest of its file's path, never the path. A cursor for another
+  conversation or not at a line's start is read from the start with
+  `restarted`. Sent only to a runner whose `hello` names `transcript.read`,
+  and waited on like `fs.list`, for 8 seconds. Nothing is kept by the
+  control plane.
 - `attachment.credit` — the browser's consumed-byte credit, relayed to
   the runner so it resumes that attachment's PTY reads. Without it the
   window below is a one-way valve: a noisy pane stalls for good rather

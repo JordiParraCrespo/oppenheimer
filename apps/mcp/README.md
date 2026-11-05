@@ -56,7 +56,7 @@ connects, but every workspace tool answers "not permitted".
 | --- | --- | --- |
 | Who | `whoami` | none |
 | Hosts and projects | `list_hosts`, `list_projects` | `hosts:read`, `projects:read` |
-| Sessions | `list_sessions`, `get_session`, `wait_for_session` | `sessions:read` |
+| Sessions | `list_sessions`, `get_session`, `read_session_transcript`, `wait_for_session` | `sessions:read` |
 | | `start_session` | `sessions:write`, `projects:read` |
 | | `send_to_session`, `stop_session`, `close_session` | `sessions:write` |
 | Automations | `list_automations` | `automations:read` |
@@ -76,6 +76,12 @@ the agent calls again while the work goes on. `send_to_session` answers the
 `seq` its prompt took in the session's log, and `wait_for_session` with that
 `after_seq` (or `0` after `start_session`) waits on that work, rather than
 taking the idle state from before the prompt for its outcome.
+`read_session_transcript` reads what the session's agent said and did, a page
+at a time off its host (`nextCursor` reads on), with secrets replaced and a
+`status` that says when a page is partial or the conversation cannot be read
+here: a cloud session's is at its vendor. A Cursor cloud session takes
+`send_to_session` as a new run once its last run ended; a Claude Code or Codex
+cloud session takes none.
 
 `whoami` needs no permissions and reports what the connection can do. It is
 worth calling first when an expected tool is missing.

@@ -39,6 +39,7 @@ opp hosts list
 opp sessions run --host mac-studio --repo acme/app "Run the iOS tests; report what fails"
 opp sessions wait <id>                    # until it is through, or needs you
 opp sessions get <id>                     # what it said, what it waits on
+opp sessions transcript <id>              # its conversation, a page at a time (--cursor reads on)
 opp sessions send <id> "Fix the first failure and push"
 opp sessions close <id>
 ```
@@ -79,6 +80,7 @@ marks what you may grant. What each command needs:
 | Commands | Scopes |
 | --- | --- |
 | `sessions run` | `sessions:write`, `hosts:read`, `projects:read`, and `repositories:read` for a repository no project holds |
+| `sessions transcript` | `sessions:read` |
 | `sessions send \| stop \| close` | `sessions:write` |
 | `automations create` | `automations:write`, `hosts:read`, `projects:read` |
 | `bots chat` | `bots:write` |

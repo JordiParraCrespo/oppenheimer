@@ -6,7 +6,7 @@ sidebar_position: 2
 
 `apps/mcp` offers an MCP client (Claude Code, Claude Desktop, Cursor) the
 same verbs as `opp` as tools: `list_hosts`, `start_session`,
-`wait_for_session`, `send_to_session`, `create_automation`, `ask_bot`,
+`wait_for_session`, `send_to_session`, `read_session_transcript`, `create_automation`, `ask_bot`,
 `create_task` and the rest. An agent connected to it sees only the tools its
 credential's scopes cover, and the API checks the same scopes on every call.
 
