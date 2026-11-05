@@ -14,63 +14,107 @@ import type {
 export const REDACTED = '[redacted]';
 
 /**
- * Secrets that announce themselves by shape. Each is a credential a tool
- * printed (an `env`, a `.env` read, a `curl -v`), which a transcript would
- * otherwise carry to whoever reads it: a bot's model provider, a script's
- * log. A shape too loose to tell from prose is left out on purpose; the
- * assignment rule below is the net for the rest.
+ * Redaction is three tables and the scanners built from them, so the next
+ * credential is a row, not another hand-ordered regex: shapes a secret
+ * announces itself by, headers whose value is a credential, and words that
+ * make a name's value secret. Shapes run first, so a known token inside a
+ * header or an assignment is counted once.
  */
-const SECRET_SHAPES: readonly RegExp[] = [
-  // A PEM private key, whole, or to the end of the text when it was cut.
-  /-----BEGIN [A-Z0-9 ]*PRIVATE KEY-----[\s\S]*?(?:-----END [A-Z0-9 ]*PRIVATE KEY-----|$)/g,
-  // Oppenheimer's own: an API token and a pairing token.
-  /\boppenheimer_pat_[A-Za-z0-9_-]{8,}/g,
-  /\bopr_reg_[A-Za-z0-9_-]{8,}/g,
-  // GitHub tokens: classic, fine-grained, OAuth, App installation and refresh.
-  /\bgh[pousr]_[A-Za-z0-9]{30,255}\b/g,
-  /\bgithub_pat_[A-Za-z0-9_]{22,255}/g,
-  // Anthropic, then OpenAI (project, service and admin keys included).
-  /\bsk-ant-[A-Za-z0-9_-]{20,}/g,
-  /\bsk-(?:proj-|svcacct-|admin-)?[A-Za-z0-9_-]{20,}/g,
-  // Stripe secret and restricted keys.
-  /\b[rs]k_(?:live|test)_[A-Za-z0-9]{16,}/g,
-  // AWS access key ids.
-  /\b(?:AKIA|ASIA)[0-9A-Z]{16}\b/g,
-  // Google API keys.
-  /\bAIza[0-9A-Za-z_-]{35}\b/g,
-  // Slack tokens.
-  /\bxox[abprs]-[A-Za-z0-9-]{10,}/g,
-  // A JSON Web Token: three base64url parts, the first two JSON objects.
-  /\beyJ[A-Za-z0-9_-]{8,}\.eyJ[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}/g,
+
+/** Matches what a scanner already replaced, so a later one leaves it be. */
+const NOT_REDACTED = '(?!\\[redacted\\])';
+
+/**
+ * Credentials that announce themselves by shape: the whole match is the
+ * secret. Each is one a tool prints (an `env`, a `.env` read, a `curl -v`),
+ * which a transcript would otherwise carry to whoever reads it. A shape too
+ * loose to tell from prose is left out on purpose; the names below are the
+ * net for the rest.
+ */
+const SECRET_SHAPES: readonly { what: string; pattern: RegExp }[] = [
+  {
+    what: 'a PEM private key, whole, or to the end of a text cut inside it',
+    pattern: /-----BEGIN [A-Z0-9 ]*PRIVATE KEY-----[\s\S]*?(?:-----END [A-Z0-9 ]*PRIVATE KEY-----|$)/g,
+  },
+  { what: 'an Oppenheimer API token', pattern: /\boppenheimer_pat_[A-Za-z0-9_-]{8,}/g },
+  { what: 'an Oppenheimer pairing token', pattern: /\bopr_reg_[A-Za-z0-9_-]{8,}/g },
+  {
+    what: 'a GitHub token: classic, OAuth, App installation or refresh',
+    pattern: /\bgh[pousr]_[A-Za-z0-9]{30,255}\b/g,
+  },
+  { what: 'a fine-grained GitHub token', pattern: /\bgithub_pat_[A-Za-z0-9_]{22,255}/g },
+  { what: 'an Anthropic key', pattern: /\bsk-ant-[A-Za-z0-9_-]{20,}/g },
+  {
+    what: 'an OpenAI key, project, service and admin ones included',
+    pattern: /\bsk-(?:proj-|svcacct-|admin-)?[A-Za-z0-9_-]{20,}/g,
+  },
+  { what: 'a Stripe secret or restricted key', pattern: /\b[rs]k_(?:live|test)_[A-Za-z0-9]{16,}/g },
+  { what: 'an AWS access key id', pattern: /\b(?:AKIA|ASIA)[0-9A-Z]{16}\b/g },
+  { what: 'a Google API key', pattern: /\bAIza[0-9A-Za-z_-]{35}\b/g },
+  { what: 'a Slack token', pattern: /\bxox[abprs]-[A-Za-z0-9-]{10,}/g },
+  {
+    what: 'a JSON Web Token: three base64url parts, the first two JSON objects',
+    pattern: /\beyJ[A-Za-z0-9_-]{8,}\.eyJ[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}/g,
+  },
 ];
 
 /**
- * A secret by where it stands rather than what it looks like, keeping what
- * names it so the reader still knows what was there:
- *
- * - an `Authorization` header of any scheme (`Basic`, `Bearer`, `Token`), a
- *   bare `Bearer <token>`, and a `Cookie` or `Set-Cookie` header's value,
- *   which is a session (`curl -v` prints all of them);
- * - a password in a URL (`https://user:<password>@host`);
- * - an assignment to a name that says secret (`API_KEY=…`, `"password": "…"`),
- *   for a value of eight characters or more, so `token = null` is left alone.
- *
- * Each pattern's first group is what stays; the rest is the secret.
+ * Headers whose value is a credential, however they are printed (`curl -v`,
+ * a header object, a JSON log): what names them stays, the value goes. An
+ * `Authorization` value is a credential after an optional scheme (`Basic`,
+ * `Bearer`, `Token`), which stays; a cookie is the rest of the line.
+ */
+const SECRET_HEADERS: readonly { names: readonly string[]; value: 'credential' | 'line' }[] = [
+  { names: ['authorization', 'proxy-authorization'], value: 'credential' },
+  { names: ['cookie', 'set-cookie'], value: 'line' },
+];
+
+/**
+ * Words that make a name's value secret (`API_KEY=…`, `"password": "…"`),
+ * as regex fragments; a value of eight characters or more goes, so
+ * `token = null` is left alone.
+ */
+const SECRET_NAME_WORDS: readonly string[] = [
+  'secret',
+  'token',
+  'passw(?:or)?d',
+  'api[_-]?key',
+  'access[_-]?key',
+  'private[_-]?key',
+  'client[_-]?secret',
+];
+
+/** One header row as a scanner: its first group is what stays. */
+function headerScanner(header: (typeof SECRET_HEADERS)[number]): RegExp {
+  const lead = `(\\b(?:${header.names.join('|')})["']?\\s*[:=]\\s*\\[?\\s*["']?`;
+  const value =
+    header.value === 'credential'
+      ? `(?:[A-Za-z]+\\s+)?)${NOT_REDACTED}[A-Za-z0-9._~+/=-]{8,}`
+      : `)${NOT_REDACTED}[^\\r\\n"']{8,}`;
+  return new RegExp(lead + value, 'gi');
+}
+
+/**
+ * Secrets by where they stand, each scanner's first group the part that
+ * stays: the headers, a bare `Bearer <token>`, a password in a URL
+ * (`https://user:<password>@host`), and an assignment to a secret name.
  */
 const SECRET_PLACES: readonly RegExp[] = [
-  /(\b(?:proxy-)?authorization["']?\s*[:=]\s*["']?(?:[A-Za-z]+\s+)?)(?!\[redacted\])[A-Za-z0-9._~+/=-]{8,}/gi,
-  /(\b(?:set-)?cookie["']?\s*:\s*\[?\s*["']?)(?!\[redacted\])[^\r\n"']{8,}/gi,
-  /(\bBearer\s+)(?!\[redacted\])[A-Za-z0-9._~+/-]{16,}=*/gi,
+  ...SECRET_HEADERS.map(headerScanner),
+  new RegExp(`(\\bBearer\\s+)${NOT_REDACTED}[A-Za-z0-9._~+/-]{16,}=*`, 'gi'),
   /(\b[a-z][a-z0-9+.-]*:\/\/[^\s/:@]+:)[^\s/@]+(?=@)/gi,
-  /(\b[A-Za-z0-9_.-]*(?:secret|token|passw(?:or)?d|api[_-]?key|access[_-]?key|private[_-]?key|client[_-]?secret)[A-Za-z0-9_.-]*["']?\s*[:=]\s*["']?)(?!\[redacted\])[^\s"',;}{)(]{8,}/gi,
+  new RegExp(
+    `(\\b[A-Za-z0-9_.-]*(?:${SECRET_NAME_WORDS.join('|')})[A-Za-z0-9_.-]*["']?\\s*[:=]\\s*["']?)${NOT_REDACTED}[^\\s"',;}{)(]{8,}`,
+    'gi',
+  ),
 ];
 
 /** A text with the secrets in it replaced, and how many were. */
 export function redactSecrets(text: string): { text: string; redactions: number } {
   let redactions = 0;
   let out = text;
-  for (const shape of SECRET_SHAPES) {
-    out = out.replace(shape, () => {
+  for (const { pattern } of SECRET_SHAPES) {
+    out = out.replace(pattern, () => {
       redactions += 1;
       return REDACTED;
     });
