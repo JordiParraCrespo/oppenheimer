@@ -139,6 +139,13 @@ for, and a session is where it gets done.
   New goal. The frames have no empty state drawn; it needs one in the
   next export.
 - **Strings.** All copy goes into `packages/translations`.
+- **Filters stick, like a Notion view's** (owner's ask, 2026-11-05). The
+  board's Project and Milestone filter and Milestones' Project filter are
+  still the address, but each view remembers the one it was left with on
+  this device (`localStorage`), and a visit with no filter in its address
+  takes it back. A link that names a filter wins and becomes the
+  remembered one; Clear is remembered too, so it sticks. Per device, not
+  per account: a filter is a reader's view, and nothing here is shared.
 
 ## Open questions
 
