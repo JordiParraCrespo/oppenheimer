@@ -1,5 +1,4 @@
-import { IconButton, SidebarListHead } from '@oppenheimer/design-system-web';
-import { Plus } from '@oppenheimer/design-system-web/icons';
+import { SidebarListHead } from '@oppenheimer/design-system-web';
 import { SidebarSearchField } from '@oppenheimer/frontend-web';
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -14,6 +13,7 @@ import { type ProjectVisibility, SessionsFilterMenu } from './sessions-filter-me
  * the count and the filter menu's options are always the answered ones. The
  * count is the sessions the list below draws, pinned ones included.
  * While rows are picked, `selectionBar` takes the Sessions line's place.
+ * Projects are not made or edited from here: that is Plan's Projects view.
  */
 export function SessionsSidebarHead({
   sessionCount,
@@ -26,7 +26,6 @@ export function SessionsSidebarHead({
   onFiltersClear,
   onFacetClear,
   onQueryChange,
-  onNewProject,
   selectionBar,
 }: {
   sessionCount: number;
@@ -39,7 +38,6 @@ export function SessionsSidebarHead({
   onFiltersClear: () => void;
   onFacetClear: (key: SessionFacet) => void;
   onQueryChange: (query: string) => void;
-  onNewProject: () => void;
   selectionBar?: ReactNode;
 }) {
   const { t } = useTranslation();
@@ -48,14 +46,6 @@ export function SessionsSidebarHead({
     <>
       {selectionBar ?? (
         <SidebarListHead label={t('sessions.sidebar.sessions')} count={sessionCount}>
-          <IconButton
-            size="xs"
-            variant="quiet"
-            aria-label={t('sessions.sidebar.newProject')}
-            onClick={onNewProject}
-          >
-            <Plus />
-          </IconButton>
           <SessionsFilterMenu
             filters={filters}
             options={options}

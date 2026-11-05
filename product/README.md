@@ -1176,3 +1176,10 @@ earlier note:
   mail older than two days, spam, trash and chats never wake a routine, an
   any-mail trigger takes only the inbox, and rate-limited runs are one chat
   line a routine an hour.
+- `versions/mvp/05-screens.md` had the Sessions sidebar make projects (a
+  plus in its head) and edit them (a settings glyph on each project's
+  header). On 2026-11-05 the owner moved project management to Plan: a
+  **Projects** view in Plan's sidebar (`/plan/projects`) lists the
+  workspace's projects with New project and each one's settings, and the
+  Sessions sidebar keeps only New session here on a project's header.
+  New session's project chip still ends in New project….

@@ -5,8 +5,8 @@ import {
   SortableGroup,
   SortableRoutineItem,
 } from '@oppenheimer/design-system-web';
-import { Bell, CalendarDays, CircleCheck } from '@oppenheimer/design-system-web/icons';
-import { useMilestones, useTasks } from '@oppenheimer/frontend-consumer/react';
+import { Bell, CalendarDays, CircleCheck, Folder } from '@oppenheimer/design-system-web/icons';
+import { useMilestones, useProjects, useTasks } from '@oppenheimer/frontend-consumer/react';
 import { useFeatureFlag } from '@oppenheimer/frontend-core/react';
 import { useDragLabels } from '@oppenheimer/frontend-web';
 import { Link, useMatchRoute } from '@tanstack/react-router';
@@ -23,6 +23,7 @@ const LOOK = {
   tasks: { labelKey: 'tasks.nav.tasks', icon: <CircleCheck /> },
   milestones: { labelKey: 'tasks.nav.milestones', icon: <MilestoneGlyph /> },
   calendar: { labelKey: 'tasks.nav.calendar', icon: <CalendarDays /> },
+  projects: { labelKey: 'tasks.nav.projects', icon: <Folder /> },
 } as const satisfies Record<PlanNavId, { labelKey: string; icon: ReactNode }>;
 
 /**
@@ -33,13 +34,15 @@ const ROUTE = {
   tasks: { to: '/plan', fuzzy: false },
   milestones: { to: '/plan/milestones', fuzzy: true },
   calendar: { to: '/plan/calendar', fuzzy: true },
+  projects: { to: '/plan/projects', fuzzy: false },
 } as const satisfies Record<Exclude<PlanNavId, 'inbox'>, { to: string; fuzzy: boolean }>;
 
 /**
  * The head of Plan's sidebar (the `Tasks` frame): the Inbox with what needs
  * you (while the `inbox` flag is on), Tasks with the open count, Milestones
- * with how many there are, and Calendar with today's events. The calendar
- * puts its layers and accounts under it.
+ * with how many there are, Calendar with today's events, and Projects with
+ * how many the workspace holds. The calendar puts its layers and accounts
+ * under it.
  *
  * The reader drags the views into their own order, as the rail's items do;
  * a press still opens the view, and the order is kept on this device
@@ -50,6 +53,7 @@ export function PlanNav() {
   const { data: open } = useTasks({ select: (rows) => rows.filter((row) => !row.isDone).length });
   const { data: milestones } = useMilestones({ select: (rows) => rows.length });
   const today = useTodayEventCount();
+  const { data: projects } = useProjects({ select: (rows) => rows.length });
   const inbox = useFeatureFlag('inbox');
   const matchRoute = useMatchRoute();
   const dragLabels = useDragLabels();
@@ -58,6 +62,7 @@ export function PlanNav() {
     tasks: open,
     milestones,
     calendar: today,
+    projects,
   };
 
   return (

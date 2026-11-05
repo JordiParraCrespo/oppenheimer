@@ -5,7 +5,8 @@
     "inbox": "Inbox",
     "tasks": "Tasks",
     "calendar": "Calendar",
-    "milestones": "Milestones"
+    "milestones": "Milestones",
+    "projects": "Projects"
   },
   "sidebar": {
     "unassigned": "Unassigned"
