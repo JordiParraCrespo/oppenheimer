@@ -14,6 +14,7 @@ import { useConsoleDialog } from '@/lib/console';
 import { SessionsSidebarHead } from '../components/sessions-sidebar-head';
 import { SidebarDragCopy } from '../components/sidebar-drag-copy';
 import { useFoldedGroups } from '../hooks/use-folded-groups';
+import { useFoldedSessions } from '../hooks/use-folded-sessions';
 import { useHiddenProjects } from '../hooks/use-hidden-projects';
 import { SessionPinsContext, useSessionPins } from '../hooks/use-session-pins';
 import {
@@ -80,6 +81,9 @@ const DeleteSessionsDialog = lazy(() =>
  * store is the sidebar's, each row subscribes to its own pick, and the sidebar
  * reads only whether anything is picked, which swaps the Sessions line for
  * the selection bar. A Shift-click spans the rows as drawn here.
+ *
+ * The Sessions heading folds the whole list away (`useFoldedSessions`), like
+ * a section's Bots heading; the folds of the groups inside it are kept.
  */
 export function SessionsSidebarBody() {
   const { t } = useTranslation();
@@ -89,6 +93,7 @@ export function SessionsSidebarBody() {
   const [filters, setFilters] = useState<SessionFilters>(DEFAULT_FILTERS);
   const [query, setQuery] = useState('');
   const { folded: closed, setOpen } = useFoldedGroups();
+  const list = useFoldedSessions();
   const { hidden, setShown, showAll } = useHiddenProjects();
   const [deleting, setDeleting] = useState<SessionEntity | null>(null);
   const [deletingMany, setDeletingMany] = useState<SessionEntity[] | null>(null);
@@ -142,13 +147,16 @@ export function SessionsSidebarBody() {
     narrowed,
     query,
   });
-  // A folded group's rows are not drawn, so a Shift-click does not reach them.
-  const drawn = [
-    ...pinned,
-    ...shown.flatMap(({ project, sessions: members }) =>
-      closed.includes(project?.id ?? 'unfiled') ? [] : members,
-    ),
-  ];
+  // A folded group's rows are not drawn, so a Shift-click does not reach them;
+  // nor are any while the whole list is folded.
+  const drawn = !list.open
+    ? []
+    : [
+        ...pinned,
+        ...shown.flatMap(({ project, sessions: members }) =>
+          closed.includes(project?.id ?? 'unfiled') ? [] : members,
+        ),
+      ];
   const selection = useSessionSelectionStore(drawn.map((session) => session.id));
   const selecting = useSelecting(selection);
 
@@ -174,6 +182,8 @@ export function SessionsSidebarBody() {
           }
           onFacetClear={(key) => setFilters((current) => ({ ...current, [key]: ALL }))}
           onQueryChange={setQuery}
+          open={list.open}
+          onOpenChange={list.setOpen}
           selectionBar={
             selecting ? (
               <SessionsSelectionBar
@@ -199,68 +209,70 @@ export function SessionsSidebarBody() {
           className="mx-3 mb-2"
         />
 
-        <div className="no-scrollbar min-h-0 flex-1 overflow-y-auto pb-5">
-          {/* No project at all: the way to one is Plan's Projects view and the
+        {list.open ? (
+          <div className="no-scrollbar min-h-0 flex-1 overflow-y-auto pb-5">
+            {/* No project at all: the way to one is Plan's Projects view and the
             chip on New session, and the row says so rather than arguing with
             the pane. */}
-          {empty !== null ? (
-            <div className="px-3 pt-2">
-              <EmptyState compact>
-                <EmptyState.Header>
-                  <EmptyState.Description>{empty}</EmptyState.Description>
-                </EmptyState.Header>
-              </EmptyState>
-            </div>
-          ) : (
-            <DragProvider
-              {...handlers}
-              labels={dragLabels}
-              overlay={(active) => <SidebarDragCopy item={active} />}
-            >
-              {pinnedRows.length > 0 || carrying ? (
-                <PinnedGroup
-                  sessions={pinnedRows}
-                  narrowed={narrowed}
-                  onShare={(target) =>
-                    dialogs.open({ kind: 'share-session', sessionId: target.id })
-                  }
-                  onDelete={setDeleting}
-                  onWrite={setFailure}
-                />
-              ) : null}
-              <SortableGroup
-                id={PROJECTS_GROUP}
-                items={shown.flatMap(({ project }) =>
-                  project ? [sortableProjectId(project.id)] : [],
-                )}
-                accepts={['project']}
+            {empty !== null ? (
+              <div className="px-3 pt-2">
+                <EmptyState compact>
+                  <EmptyState.Header>
+                    <EmptyState.Description>{empty}</EmptyState.Description>
+                  </EmptyState.Header>
+                </EmptyState>
+              </div>
+            ) : (
+              <DragProvider
+                {...handlers}
+                labels={dragLabels}
+                overlay={(active) => <SidebarDragCopy item={active} />}
               >
-                {shown.map(({ project, sessions: members }) => {
-                  const key = project?.id ?? 'unfiled';
-                  return (
-                    <ProjectGroup
-                      key={key}
-                      project={project}
-                      sessions={members}
-                      open={!closed.includes(key)}
-                      onOpenChange={(next) => setOpen(key, next)}
-                      narrowed={narrowed}
-                      query={query}
-                      onNewSessionHere={(target) =>
-                        navigate({ to: '/sessions/new', search: { project: target.id } })
-                      }
-                      onShare={(target) =>
-                        dialogs.open({ kind: 'share-session', sessionId: target.id })
-                      }
-                      onDelete={setDeleting}
-                      onWrite={setFailure}
-                    />
-                  );
-                })}
-              </SortableGroup>
-            </DragProvider>
-          )}
-        </div>
+                {pinnedRows.length > 0 || carrying ? (
+                  <PinnedGroup
+                    sessions={pinnedRows}
+                    narrowed={narrowed}
+                    onShare={(target) =>
+                      dialogs.open({ kind: 'share-session', sessionId: target.id })
+                    }
+                    onDelete={setDeleting}
+                    onWrite={setFailure}
+                  />
+                ) : null}
+                <SortableGroup
+                  id={PROJECTS_GROUP}
+                  items={shown.flatMap(({ project }) =>
+                    project ? [sortableProjectId(project.id)] : [],
+                  )}
+                  accepts={['project']}
+                >
+                  {shown.map(({ project, sessions: members }) => {
+                    const key = project?.id ?? 'unfiled';
+                    return (
+                      <ProjectGroup
+                        key={key}
+                        project={project}
+                        sessions={members}
+                        open={!closed.includes(key)}
+                        onOpenChange={(next) => setOpen(key, next)}
+                        narrowed={narrowed}
+                        query={query}
+                        onNewSessionHere={(target) =>
+                          navigate({ to: '/sessions/new', search: { project: target.id } })
+                        }
+                        onShare={(target) =>
+                          dialogs.open({ kind: 'share-session', sessionId: target.id })
+                        }
+                        onDelete={setDeleting}
+                        onWrite={setFailure}
+                      />
+                    );
+                  })}
+                </SortableGroup>
+              </DragProvider>
+            )}
+          </div>
+        ) : null}
 
         <Suspense fallback={null}>
           {deleting ? (

@@ -5,6 +5,7 @@ import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { useSyncExternalStore } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ConsoleDialogProvider } from '@/lib/console';
+import { FOLDED_SESSIONS_KEY } from '../lib/folded-groups';
 import { SESSION_PINS_KEY } from '../lib/session-pins';
 import { SessionsSidebar } from '../sections/sessions-sidebar';
 
@@ -248,5 +249,21 @@ describe('SessionsSidebar', () => {
     } finally {
       vi.useRealTimers();
     }
+  });
+
+  /** The Sessions heading folds the list away like a Bots heading, and the fold is kept. */
+  it('folds every row and the search away under the Sessions heading', () => {
+    act(() => {
+      fireEvent.click(screen.getByRole('button', { name: 'sessions.sidebar.sessions' }));
+    });
+    expect(screen.queryByRole('button', { name: 'alpha' })).toBeNull();
+    expect(screen.queryByRole('textbox', { name: 'sessions.sidebar.search' })).toBeNull();
+    expect(window.localStorage.getItem(FOLDED_SESSIONS_KEY)).toBe('["sessions"]');
+
+    act(() => {
+      fireEvent.click(screen.getByRole('button', { name: 'sessions.sidebar.sessions' }));
+    });
+    expect(screen.getByRole('button', { name: 'alpha' })).toBeTruthy();
+    window.localStorage.clear();
   });
 });
