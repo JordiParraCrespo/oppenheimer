@@ -2,6 +2,7 @@ import type { RepositoryScope } from '@oppenheimer/design-system-web';
 import {
   CODING_AGENTS,
   type CodingAgentId,
+  DEFAULT_SESSION_PERMISSION,
   isCodingAgentId,
   SESSION_PERMISSIONS,
   type SessionPermission,
@@ -88,7 +89,7 @@ const FALLBACK: NewSessionDraft = {
   folder: null,
   agent: 'claude-code',
   model: defaultModelFor('claude-code'),
-  permission: 'auto',
+  permission: DEFAULT_SESSION_PERMISSION,
   efforts: {},
   codexEnvironment: null,
 };
