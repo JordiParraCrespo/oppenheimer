@@ -37,7 +37,7 @@ Hard delete.
 | `organizationId` | uuid | |
 | `projectId` | uuid | required; "None" is the Unassigned project |
 | `goalId` | uuid null | the goal FK below |
-| `status` | varchar(16) | `later` · `todo` · `doing` · `done`, a `CHECK` and a shared Zod enum |
+| `status` | varchar(16) | `todo` · `doing` · `review` · `done`, a `CHECK` and a shared Zod enum (`later` before 2026-11-05, when In review replaced it: `product/README.md`) |
 | `rank` | text, `COLLATE "C"` | order within a status (§2) |
 | `title` | varchar(500) | |
 | `notes` | text | `''` default, capped in the schema (10 000 chars) |
@@ -162,7 +162,7 @@ when the person clicked; header `Idempotency-Key`):
    session.
 3. In the tasks module's own transaction: insert `task_session` with
    `origin = 'started'`, then apply **the attach rule**, which Link
-   existing shares: if `seenStatus` is `later` or `todo` and the row's
+   existing shares: if `seenStatus` is `todo` (or `later`, while it existed) and the row's
    status is still `seenStatus`, move it to `doing` (top of the column);
    otherwise leave the status alone. A drag made after the click wins.
    Emit `TaskSessionLinked`.

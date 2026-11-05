@@ -13,7 +13,10 @@ import type { MigrationInterface, QueryRunner } from 'typeorm';
  *   The version is bumped, so a client that read the task in Later is refused
  *   (`TASKS_008`) rather than writing over the move.
  * - Down moves In review to the end of In progress the same way, then puts the
- *   old check back.
+ *   old check back. It does not put the moved tasks back in Later: nothing
+ *   marks which To do tasks came from there, and a marker column kept only
+ *   for a rollback is not worth its weight. A deliberate exception to
+ *   `down()` restoring what a backfill moved (`database-design.md`).
  */
 export class ReplaceLaterWithReviewColumn1793894072547 implements MigrationInterface {
   name = 'ReplaceLaterWithReviewColumn1793894072547';
