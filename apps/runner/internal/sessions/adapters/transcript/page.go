@@ -95,45 +95,12 @@ func conversationName(path string) string {
 	return hex.EncodeToString(sum[:8])
 }
 
-// pageTally is a page as it is read: what it holds, and where it ends.
-type pageTally struct {
-	entries []string
-	bytes   int
-	dropped int
-	next    int64
-}
-
-// fits is whether out would join the page whole within its bounds.
-func (p pageTally) fits(out [][]byte, req app.TranscriptPageRequest) bool {
-	n, size := len(p.entries), p.bytes
-	for _, entry := range out {
-		if len(entry) > 0 && len(entry) <= req.EntryMax {
-			n++
-			size += len(entry)
-		}
-	}
-	return n <= req.Limit && size <= req.BytesMax
-}
-
-// take adds out to the page, as much of it as fits; the rest is dropped.
-func (p *pageTally) take(out [][]byte, req app.TranscriptPageRequest) {
-	for _, entry := range out {
-		switch {
-		case len(entry) == 0:
-		case len(entry) > req.EntryMax, len(p.entries) >= req.Limit, p.bytes+len(entry) > req.BytesMax:
-			p.dropped++
-		default:
-			p.entries = append(p.entries, string(entry))
-			p.bytes += len(entry)
-		}
-	}
-}
-
 // readPage reads the file's whole lines forward from start, up to size (its
 // length when the read began), with a fresh transcriber t: at most one
 // Follow read's worth (followReadMax), and stopping before the line whose
 // entries would take the page past its bounds, though never before a first
-// line, so a cursor always moves.
+// line, so a cursor always moves. What a page holds and where it ends is
+// pageTally's (`page_tally.go`).
 //
 // A transcriber that holds lines back (Grok's, whose reply arrives in
 // chunks) is asked for them at the end only once the file has been quiet as
@@ -156,9 +123,8 @@ func readPage(path string, start, size int64, modified time.Time, t chatTranscri
 	}
 	lines := bufio.NewReaderSize(io.LimitReader(file, size-start), 64<<10)
 
-	p := pageTally{entries: []string{}, next: start}
-	settled := p
-	full, atEnd, consumed := false, false, 0
+	p := newPageTally(start, req)
+	full, atEnd := false, false
 	for p.next-start < followReadMax {
 		line, whole, err := nextLine(lines, pageWindowMax)
 		if err != nil {
@@ -172,44 +138,18 @@ func readPage(path string, start, size int64, modified time.Time, t chatTranscri
 		if !line.long {
 			out = t.line(line.text, req.EntryMax)
 		}
-		if consumed > 0 && !p.fits(out, req) {
+		if !p.line(out, line.long, line.size, t.holds()) {
 			full = true
 			break
-		}
-		p.take(out, req)
-		if line.long {
-			p.dropped++
-		}
-		p.next += line.size
-		consumed++
-		if !t.holds() {
-			settled = p
 		}
 	}
 	if atEnd && t.holds() {
 		out := t.quiet(time.Since(modified), req.EntryMax)
-		if len(out) > 0 && !p.fits(out, req) && len(p.entries) > 0 {
-			// quiet has already emptied the transcriber, so the switch below
-			// would keep the cursor past the reply's lines: end the page where
-			// it last held nothing, and the next page reads the reply whole.
+		if !p.quiet(out, t.holds()) {
 			full, atEnd = true, false
-			p = settled
-			p.entries = p.entries[:len(settled.entries):len(settled.entries)]
-		} else {
-			p.take(out, req)
-			if !t.holds() {
-				settled = p
-			}
 		}
 	}
-	switch {
-	case !t.holds():
-	case settled.next > start || atEnd:
-		p = settled
-		p.entries = p.entries[:len(settled.entries):len(settled.entries)]
-	default:
-		// Held since the page's start and cut by its bounds: the page moves
-		// on, and what was held is not placed.
+	if p.finish(t.holds(), atEnd) {
 		page.Partial = true
 	}
 	page.Entries, page.Dropped, page.Next = p.entries, p.dropped, p.next
