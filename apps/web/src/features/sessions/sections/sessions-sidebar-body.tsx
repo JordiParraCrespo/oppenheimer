@@ -183,7 +183,12 @@ export function SessionsSidebarBody() {
           onFacetClear={(key) => setFilters((current) => ({ ...current, [key]: ALL }))}
           onQueryChange={setQuery}
           open={list.open}
-          onOpenChange={list.setOpen}
+          onOpenChange={(next) => {
+            // The search box folds away with the list and comes back empty, so
+            // the search it held goes with it.
+            if (!next) setQuery('');
+            list.setOpen(next);
+          }}
           selectionBar={
             selecting ? (
               <SessionsSelectionBar

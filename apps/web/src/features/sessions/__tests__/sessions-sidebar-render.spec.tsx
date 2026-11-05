@@ -266,4 +266,25 @@ describe('SessionsSidebar', () => {
     expect(screen.getByRole('button', { name: 'alpha' })).toBeTruthy();
     window.localStorage.clear();
   });
+
+  /** The box comes back empty after a fold, so the list must not stay narrowed by what it held. */
+  it('drops a settled search when the list folds', () => {
+    vi.useFakeTimers();
+    try {
+      const search = screen.getByRole('textbox', { name: 'sessions.sidebar.search' });
+      act(() => {
+        fireEvent.change(search, { target: { value: 'alpha' } });
+        vi.advanceTimersByTime(1_000);
+      });
+      expect(screen.queryByRole('button', { name: 'bravo' })).toBeNull();
+
+      const heading = screen.getByRole('button', { name: 'sessions.sidebar.sessions' });
+      act(() => fireEvent.click(heading));
+      act(() => fireEvent.click(heading));
+      expect(screen.getByRole('button', { name: 'bravo' })).toBeTruthy();
+    } finally {
+      vi.useRealTimers();
+      window.localStorage.clear();
+    }
+  });
 });
