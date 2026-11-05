@@ -311,6 +311,19 @@ function DragProvider({
   const reduced = usePrefersReducedMotion();
   const controlInstructions = React.useId();
   const [active, setActive] = React.useState<DragItem | null>(null);
+  // The carried item's data as it was picked up. dnd-kit swaps it for an
+  // empty object once the item's own node unmounts mid-drag (a row carried
+  // into a folded group, which draws none), and without its `type` no target
+  // would take it, so the drop would land nowhere. It is kept past the drop,
+  // whose announcement comes after `onDragEnd`; the next pick-up replaces it.
+  const carried = React.useRef<DragData | null>(null);
+  const withCarried = (entry: DndEntry): DndEntry =>
+    !carried.current || Object.keys(entry.data.current ?? {}).length > 0
+      ? entry
+      : { ...entry, data: { current: carried.current } };
+  const detect = live ? slotCollisions : acceptingCollisions;
+  const collisionDetection: CollisionDetection = (args) =>
+    detect({ ...args, active: withCarried(args.active) as typeof args.active });
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: ACTIVATION_PX } }),
     useSensor(KeyboardSensor, { coordinateGetter: live ? slotKeyboardCoordinates : sortableKeyboardCoordinates }),
@@ -318,9 +331,9 @@ function DragProvider({
 
   const announcements: Announcements = {
     onDragStart: ({ active: a }) => labels.pickedUp(nameOf(a)),
-    onDragOver: ({ active: a, over }) => labels.over(nameOf(a), over ? nameOf(over) : null),
-    onDragEnd: ({ active: a, over }) => labels.dropped(nameOf(a), over ? nameOf(over) : null),
-    onDragCancel: ({ active: a }) => labels.cancelled(nameOf(a)),
+    onDragOver: ({ active: a, over }) => labels.over(nameOf(withCarried(a)), over ? nameOf(over) : null),
+    onDragEnd: ({ active: a, over }) => labels.dropped(nameOf(withCarried(a)), over ? nameOf(over) : null),
+    onDragCancel: ({ active: a }) => labels.cancelled(nameOf(withCarried(a))),
   };
 
   return (
@@ -329,25 +342,26 @@ function DragProvider({
         <ControlInstructions.Provider value={controlInstructions}>
           <DndContext
             sensors={sensors}
-            collisionDetection={live ? slotCollisions : acceptingCollisions}
+            collisionDetection={collisionDetection}
             autoScroll={AUTO_SCROLL}
             measuring={{ droppable: { strategy: MeasuringStrategy.Always } }}
             accessibility={{ announcements, screenReaderInstructions: { draggable: labels.instructions } }}
             onDragStart={(event: DndDragStartEvent) => {
               const item = itemOf(event.active);
+              carried.current = item.data;
               setActive(item);
               onDragStart?.(item);
             }}
             onDragOver={(event: DndDragOverEvent) => {
-              onDragOver?.({ active: itemOf(event.active), over: overOf(event.over) });
+              onDragOver?.({ active: itemOf(withCarried(event.active)), over: overOf(event.over) });
             }}
             onDragEnd={(event: DndDragEndEvent) => {
               setActive(null);
-              onDragEnd?.({ active: itemOf(event.active), over: overOf(event.over) });
+              onDragEnd?.({ active: itemOf(withCarried(event.active)), over: overOf(event.over) });
             }}
             onDragCancel={(event) => {
               setActive(null);
-              onDragCancel?.(itemOf(event.active));
+              onDragCancel?.(itemOf(withCarried(event.active)));
             }}
           >
             {children}
