@@ -4,7 +4,12 @@ import type {
   StartTaskSessionInput,
   TaskEntity,
 } from '@oppenheimer/frontend-consumer';
-import { CODING_AGENTS, type CodingAgentId, isCodingAgentId } from '@oppenheimer/shared/agents';
+import {
+  CODING_AGENTS,
+  type CodingAgentId,
+  DEFAULT_SESSION_PERMISSION,
+  isCodingAgentId,
+} from '@oppenheimer/shared/agents';
 import {
   AUTOMATION_PLACE_RULES,
   AUTOMATION_PLACES,
@@ -119,7 +124,8 @@ export function startDefaults(
 /**
  * The body the choices make: the one repository on its base branch, and
  * - on a host, the launch New session would send for this agent unpicked —
- *   full permission where the agent takes one, the CLI's own effort;
+ *   the default permission level (`auto`) where the agent takes one, the
+ *   CLI's own effort;
  * - in Claude Code's cloud, New session's `cloud: true` body from the host,
  *   on a task (the cloud takes no permission level);
  * - at a vendor, `POST /sessions/cloud`'s body, on a task, with no host.
@@ -163,7 +169,7 @@ export function toStartSession(
       launch: {
         model: values.model,
         ...(!cloud && CODING_AGENTS[agent].launch.permission
-          ? { permission: 'full' as const }
+          ? { permission: DEFAULT_SESSION_PERMISSION }
           : {}),
       },
       prompt,
