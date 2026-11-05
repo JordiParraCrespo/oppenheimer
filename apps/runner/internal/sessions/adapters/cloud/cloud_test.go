@@ -5,7 +5,9 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
+	"syscall"
 	"testing"
 	"time"
 
@@ -187,4 +189,61 @@ func mustReal(t *testing.T, dir string) string {
 		t.Fatal(err)
 	}
 	return real
+}
+
+// The CLI may start helpers of its own (a hook, an MCP server) that outlive
+// it. A start that left them running would leave a claude on the host for
+// every cloud session, holding its scratch checkout open; stopping only the
+// CLI's own process is the regression this guards.
+func TestStartLeavesNothingTheCLIStartedRunning(t *testing.T) {
+	pidFile := filepath.Join(t.TempDir(), "helper.pid")
+	// The helper ignores the hangup the terminal's close sends, as a
+	// daemonising helper does, so only an explicit stop ends it.
+	claude := fakeClaude(t, `(trap '' HUP; exec sleep 300) &
+echo $! > '`+pidFile+`'
+echo 'View: https://claude.ai/code/session_01abcdefgh'
+sleep 300
+`)
+	if _, err := (Starter{Command: claude}).Start(context.Background(), t.TempDir(), "task"); err != nil {
+		t.Fatalf("Start: %v", err)
+	}
+	raw, err := os.ReadFile(pidFile)
+	if err != nil {
+		t.Fatal(err)
+	}
+	pid, err := strconv.Atoi(strings.TrimSpace(string(raw)))
+	if err != nil {
+		t.Fatal(err)
+	}
+	deadline := time.Now().Add(2 * time.Second)
+	for syscall.Kill(pid, 0) == nil {
+		if time.Now().After(deadline) {
+			_ = syscall.Kill(pid, syscall.SIGKILL)
+			t.Fatalf("the CLI's helper %d is still running after Start returned", pid)
+		}
+		time.Sleep(20 * time.Millisecond)
+	}
+}
+
+// The checkout's trust is undone once the CLI is gone, not while it runs.
+func TestStartForgetsTheCheckoutAfterTheCLIIsGone(t *testing.T) {
+	dir := t.TempDir()
+	alive := filepath.Join(t.TempDir(), "alive")
+	claude := fakeClaude(t, `touch '`+alive+`'
+echo 'View: https://claude.ai/code/session_01abcdefgh'
+sleep 300
+`)
+	var forgot string
+	starter := Starter{Command: claude, Forget: func(d string) {
+		forgot = d
+		if err := os.Remove(alive); err != nil {
+			t.Errorf("forgot before the CLI ran: %v", err)
+		}
+	}}
+	if _, err := starter.Start(context.Background(), dir, "task"); err != nil {
+		t.Fatalf("Start: %v", err)
+	}
+	if forgot != dir {
+		t.Fatalf("forgot %q, want %q", forgot, dir)
+	}
 }

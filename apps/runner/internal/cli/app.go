@@ -182,7 +182,9 @@ func New(version string) (*App, error) {
 	app.Devices = devices
 	app.Ports = ports.New()
 	programStatus := statuspty.New(statuspty.Options{Executable: runnerExecutable(), Dir: programStatusDir(paths)})
-	trust := agenttrust.New(agenttrust.Options{ClaudeConfig: claudeConfigPath(paths)})
+	trust := agenttrust.New(agenttrust.Options{
+		ClaudeConfig: claudeConfigPath(paths), ClaudeProjects: claudeProjectsPath(paths),
+	})
 	sessions, err := sessionsapp.New(sessionsapp.Options{
 		Terminals:  terminals,
 		Worktrees:  worktrees,
@@ -239,6 +241,7 @@ func New(version string) (*App, error) {
 	app.Cloud = cloud.Starter{
 		Trust:   func(dir string) error { return trust.Trust(sessionsdomain.AgentClaude, dir) },
 		Prepare: trust.KeepCloudSettingsLocal,
+		Forget:  trust.Forget,
 	}
 	app.WorkFolder = places
 	app.Terminals = terminals

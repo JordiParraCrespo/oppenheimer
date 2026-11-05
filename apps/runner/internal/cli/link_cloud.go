@@ -160,16 +160,30 @@ func (h *linkHandler) createClaudeCloud(
 		return
 	}
 
-	scratch := filepath.Join(os.TempDir(), "oppenheimer-cloud", m.SessionID)
+	scratch := filepath.Join(cloudScratchRoot(), m.SessionID)
+	// A start of this session a stopped runner left half done is removed
+	// through git, which also forgets its record: git refuses to check out
+	// again over a path it still has registered.
+	_ = h.app.Worktrees.Remove(gitCtx, repo, scratch, true)
+	h.sweepCloudScratch()
 	if err := stage(sessionsdomain.StageWorktree, false, func() error {
 		return h.app.Worktrees.AddDetached(gitCtx, repo, scratch, checkout.BaseBranch)
 	}); err != nil {
+		// A checkout git left half made is not left on the disk either.
+		_ = os.RemoveAll(scratch)
 		fail(err)
 		return
 	}
 	defer func() {
-		// Nothing was made in it: the cloud took the commit, not the directory.
-		_ = h.app.Worktrees.Remove(context.WithoutCancel(ctx), repo, scratch, true)
+		// Nothing was made in it: the cloud took the commit, not the
+		// directory. Starter.Start has stopped the CLI and all it ran by now,
+		// so nothing holds it open; what git cannot remove is deleted.
+		if err := h.app.Worktrees.Remove(context.WithoutCancel(ctx), repo, scratch, true); err != nil {
+			h.logger.Warn("cloud checkout not removed by git; deleting it", "session", m.SessionID, "error", err)
+			if err := os.RemoveAll(scratch); err != nil {
+				h.logger.Warn("cloud checkout left on disk", "session", m.SessionID, "path", scratch, "error", err)
+			}
+		}
 	}()
 
 	starter := h.app.Cloud
@@ -190,6 +204,35 @@ func (h *linkHandler) createClaudeCloud(
 		h.logger.Warn("cloud start not remembered", "session", m.SessionID, "error", err)
 	}
 	h.reportCloudStarted(m.SessionID, started)
+}
+
+// cloudScratchRoot holds the scratch checkout of each cloud start while it
+// runs, one folder per session, and nothing once it is done.
+func cloudScratchRoot() string {
+	return filepath.Join(os.TempDir(), "oppenheimer-cloud")
+}
+
+// sweepCloudScratch deletes the scratch checkouts a start no longer running
+// left behind: a runner stopped or restarted mid-start never reached its
+// removal, and the folder would stay on the disk until a reboot clears the
+// temporary directory, if one ever does. A start of this process still
+// running (the caller's own among them) keeps its folder. Git's record of a
+// deleted checkout is pruned the next time its repository removes one.
+func (h *linkHandler) sweepCloudScratch() {
+	entries, err := os.ReadDir(cloudScratchRoot())
+	if err != nil {
+		return
+	}
+	for _, entry := range entries {
+		name := entry.Name()
+		if _, running := h.cloudStarts.Load(name); running {
+			continue
+		}
+		path := filepath.Join(cloudScratchRoot(), name)
+		if err := os.RemoveAll(path); err != nil {
+			h.logger.Warn("stale cloud checkout left on disk", "path", path, "error", err)
+		}
+	}
 }
 
 // reportCloudStarted is `session.started` for a cloud session: its id is the
