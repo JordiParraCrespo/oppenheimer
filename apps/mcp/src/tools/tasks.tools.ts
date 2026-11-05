@@ -1,4 +1,4 @@
-import { TASK_NOTES_MAX, TASK_TITLE_MAX } from '@oppenheimer/shared';
+import { TASK_NOTES_MAX, TASK_STATUSES, TASK_TITLE_MAX } from '@oppenheimer/shared';
 import { z } from 'zod';
 import { defineTool } from './tool';
 
@@ -24,7 +24,7 @@ export const taskTools = [
     inputSchema: z.object({
       title: z.string().trim().min(1).max(TASK_TITLE_MAX),
       notes: z.string().max(TASK_NOTES_MAX).optional(),
-      status: z.enum(['todo', 'doing', 'review', 'done']).optional(),
+      status: z.enum(TASK_STATUSES).optional(),
       project_id: z.string().uuid().optional(),
       due_date: z
         .string()
@@ -49,7 +49,7 @@ export const taskTools = [
     requiredScopes: ['tasks:write'],
     inputSchema: z.object({
       task_id: z.string().uuid(),
-      status: z.enum(['todo', 'doing', 'review', 'done']),
+      status: z.enum(TASK_STATUSES),
     }),
     annotations: { idempotentHint: true },
     handler: ({ task_id, status }, { client }) =>
