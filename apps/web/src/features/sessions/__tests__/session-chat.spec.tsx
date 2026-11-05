@@ -121,7 +121,7 @@ describe('SessionChat', () => {
 });
 
 describe('a settled turn', () => {
-  it('ends on the files it changed, and folds to its words once the next prompt passes it', () => {
+  it('ends on the files it changed, folded to its answer once it settles', () => {
     const chat = new Chat();
     const turn = [
       entry({ type: 'user', uuid: 'u1', message: { role: 'user', content: 'Fix it' } }),
@@ -166,18 +166,59 @@ describe('a settled turn', () => {
     ];
     chat.apply({ reset: true, entries: turn });
     render(<SessionChat chat={chat} agent="claude-code" readOnly />);
-    expect(screen.getByText('sessions.chat.changes{"count":1}')).toBeTruthy();
-    expect(screen.getByText('sessions.chat.thoughtFor{"seconds":4}')).toBeTruthy();
-
-    act(() =>
-      chat.apply({
-        entries: [entry({ type: 'user', uuid: 'u2', message: { role: 'user', content: 'Next' } })],
-      }),
-    );
-    // The older turn keeps its words and its card; its thinking folds away.
+    // The settled turn keeps its answer and its card; its thinking folds away.
     expect(screen.getByText('Done.')).toBeTruthy();
     expect(screen.getByText('sessions.chat.changes{"count":1}')).toBeTruthy();
     expect(screen.queryByText('sessions.chat.thoughtFor{"seconds":4}')).toBeNull();
+
+    fireEvent.click(screen.getByRole('button', { name: /sessions\.chat\.turn\.worked/ }));
+    expect(screen.getByText('sessions.chat.thoughtFor{"seconds":4}')).toBeTruthy();
+  });
+
+  // Regression: a folded turn kept only the last text block of its answer,
+  // dropping the explanation before a command the same message ended on.
+  it('keeps every block of its answer when it folds, and folds the words before its work', () => {
+    const chat = new Chat();
+    chat.apply({
+      reset: true,
+      entries: [
+        entry({ type: 'user', uuid: 'u1', message: { role: 'user', content: 'Count them' } }),
+        entry({
+          type: 'assistant',
+          uuid: 'a1',
+          message: {
+            role: 'assistant',
+            content: [
+              { type: 'text', text: 'Let me count.' },
+              { type: 'tool_use', id: 't', name: 'Bash', input: { command: 'ls | wc -l' } },
+            ],
+          },
+        }),
+        entry({
+          type: 'user',
+          uuid: 'r',
+          message: {
+            role: 'user',
+            content: [{ type: 'tool_result', tool_use_id: 't', content: '3' }],
+          },
+        }),
+        entry({
+          type: 'assistant',
+          uuid: 'a2',
+          message: {
+            role: 'assistant',
+            content: [
+              { type: 'text', text: 'There are three.' },
+              { type: 'text', text: 'Recount with ls.' },
+            ],
+          },
+        }),
+      ],
+    });
+    render(<SessionChat chat={chat} agent="claude-code" readOnly />);
+    expect(screen.getByText('There are three.')).toBeTruthy();
+    expect(screen.getByText('Recount with ls.')).toBeTruthy();
+    expect(screen.queryByText('Let me count.')).toBeNull();
   });
 });
 
@@ -814,6 +855,7 @@ describe('the work in a turn', () => {
       ],
     });
     render(<SessionChat chat={chat} agent="claude-code" readOnly={false} />);
+    fireEvent.click(screen.getByRole('button', { name: /sessions\.chat\.turn\.worked/ }));
     const explored = screen.getByRole('button', { name: /sessions\.chat\.explored\.title/ });
     expect(explored.textContent).toContain('common.chat.explored.read a.ts');
     expect(explored.textContent).toContain('common.chat.explored.search cancel');

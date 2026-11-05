@@ -6,7 +6,7 @@ import { useChatTurn } from '../hooks/use-session-chat';
  * One turn of a session's chat, subscribed to that turn alone: a line the
  * agent writes redraws the turn it lands in, never the forty above it.
  */
-export function SessionChatTurn({ chat, id, latest }: { chat: Chat; id: string; latest: boolean }) {
+export function SessionChatTurn({ chat, id }: { chat: Chat; id: string }) {
   const turn = useChatTurn(chat, id);
-  return turn ? <ChatTurn turn={turn} latest={latest} /> : null;
+  return turn ? <ChatTurn turn={turn} /> : null;
 }

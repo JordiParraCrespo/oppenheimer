@@ -93,7 +93,6 @@ export function SessionChat({
       ? heldAt
       : Math.max(0, ids.length - held.fromEnd)
     : Math.min(following, ids.length);
-  const last = ids.at(-1);
   const shown = first > 0 ? ids.slice(first) : ids;
 
   // A page asked of the host is drawn as soon as it is there: the reader
@@ -159,7 +158,7 @@ export function SessionChat({
                   </div>
                 ) : null}
                 {shown.map((id) => (
-                  <SessionChatTurn key={id} chat={chat} id={id} latest={id === last} />
+                  <SessionChatTurn key={id} chat={chat} id={id} />
                 ))}
               </ChatTranscript>
             )}
