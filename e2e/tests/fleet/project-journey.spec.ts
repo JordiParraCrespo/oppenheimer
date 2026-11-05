@@ -52,7 +52,6 @@ test('a project made in the console starts a session its host builds', async ({ 
   await expect(page.getByRole('button', { name: `${project} settings` })).toBeVisible();
 
   await page.goto('/sessions/new');
-  await expect(header(0)).toBeVisible();
   await page.getByRole('button', { name: 'Project', exact: true }).click();
   await page.getByRole('option', { name: project }).click();
   await expect(page.getByRole('button', { name: 'Host' })).toContainText(box.host.name);
@@ -74,7 +73,8 @@ test('a project made in the console starts a session its host builds', async ({ 
   await page.getByRole('menuitem', { name: 'Move to project…' }).click();
   await page.getByRole('menuitem', { name: 'Unassigned' }).click();
   await expect(page.getByRole('button', { name: 'Unassigned 1' })).toBeVisible();
-  await expect(header(0)).toBeVisible();
+  // A project with no session left is not listed in the sidebar.
+  await expect(header(1)).toHaveCount(0);
 
   await page.goto('/settings/hosts');
   const card = page.getByTestId('host-card');

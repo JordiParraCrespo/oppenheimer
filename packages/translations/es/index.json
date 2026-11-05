@@ -663,6 +663,7 @@
       "new": "Nuevo proyecto",
       "edit": "Ajustes de {{name}}",
       "repositories_one": "{{count}} repositorio",
+      "repositories_many": "{{count}} repositorios",
       "repositories_other": "{{count}} repositorios",
       "noRepositories": "Sin repositorios",
       "empty": "Aún no hay proyectos. Un proyecto agrupa tus sesiones y empieza las nuevas con sus repositorios, host y agente.",
