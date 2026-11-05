@@ -311,19 +311,22 @@ function DragProvider({
   const reduced = usePrefersReducedMotion();
   const controlInstructions = React.useId();
   const [active, setActive] = React.useState<DragItem | null>(null);
-  // The carried item's data as it was picked up. dnd-kit swaps it for an
-  // empty object once the item's own node unmounts mid-drag (a row carried
-  // into a folded group, which draws none), and without its `type` no target
-  // would take it, so the drop would land nowhere. It is kept past the drop,
+  // The carried item's data as it was picked up. It is kept past the drop,
   // whose announcement comes after `onDragEnd`; the next pick-up replaces it.
   const carried = React.useRef<DragData | null>(null);
-  const withCarried = (entry: DndEntry): DndEntry =>
-    !carried.current || Object.keys(entry.data.current ?? {}).length > 0
-      ? entry
-      : { ...entry, data: { current: carried.current } };
+  /**
+   * The active entry as the drag layer reads it. dnd-kit swaps its data for
+   * an empty object once the item's own node unmounts mid-drag (a row
+   * carried into a folded group, which draws none). Without its `type`, no
+   * target's `accepts` would take it and the drop would land nowhere, so an
+   * entry with no `type` takes the data it was picked up with.
+   */
+  const resolveActive = <T extends DndEntry>(entry: T): T =>
+    carried.current && entry.data.current?.type === undefined
+      ? { ...entry, data: { ...entry.data, current: carried.current } }
+      : entry;
   const detect = live ? slotCollisions : acceptingCollisions;
-  const collisionDetection: CollisionDetection = (args) =>
-    detect({ ...args, active: withCarried(args.active) as typeof args.active });
+  const collisionDetection: CollisionDetection = (args) => detect({ ...args, active: resolveActive(args.active) });
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: ACTIVATION_PX } }),
     useSensor(KeyboardSensor, { coordinateGetter: live ? slotKeyboardCoordinates : sortableKeyboardCoordinates }),
@@ -331,9 +334,9 @@ function DragProvider({
 
   const announcements: Announcements = {
     onDragStart: ({ active: a }) => labels.pickedUp(nameOf(a)),
-    onDragOver: ({ active: a, over }) => labels.over(nameOf(withCarried(a)), over ? nameOf(over) : null),
-    onDragEnd: ({ active: a, over }) => labels.dropped(nameOf(withCarried(a)), over ? nameOf(over) : null),
-    onDragCancel: ({ active: a }) => labels.cancelled(nameOf(withCarried(a))),
+    onDragOver: ({ active: a, over }) => labels.over(nameOf(resolveActive(a)), over ? nameOf(over) : null),
+    onDragEnd: ({ active: a, over }) => labels.dropped(nameOf(resolveActive(a)), over ? nameOf(over) : null),
+    onDragCancel: ({ active: a }) => labels.cancelled(nameOf(resolveActive(a))),
   };
 
   return (
@@ -353,15 +356,15 @@ function DragProvider({
               onDragStart?.(item);
             }}
             onDragOver={(event: DndDragOverEvent) => {
-              onDragOver?.({ active: itemOf(withCarried(event.active)), over: overOf(event.over) });
+              onDragOver?.({ active: itemOf(resolveActive(event.active)), over: overOf(event.over) });
             }}
             onDragEnd={(event: DndDragEndEvent) => {
               setActive(null);
-              onDragEnd?.({ active: itemOf(withCarried(event.active)), over: overOf(event.over) });
+              onDragEnd?.({ active: itemOf(resolveActive(event.active)), over: overOf(event.over) });
             }}
             onDragCancel={(event) => {
               setActive(null);
-              onDragCancel?.(itemOf(withCarried(event.active)));
+              onDragCancel?.(itemOf(resolveActive(event.active)));
             }}
           >
             {children}
