@@ -38,10 +38,17 @@ type placesHarness struct {
 
 func newPlacesHarness(t *testing.T, home, account string) *placesHarness {
 	t.Helper()
+	return newPlacesHarnessReading(t, home, account, nil)
+}
+
+// newPlacesHarnessReading is newPlacesHarness whose sessions' transcripts are
+// read by transcripts; nil reads none.
+func newPlacesHarnessReading(t *testing.T, home, account string, transcripts sessionsapp.Transcripts) *placesHarness {
+	t.Helper()
 	terminals, worktrees, places := fake.NewTerminals(), fake.NewWorktrees(), fake.NewPlaces()
 	svc, err := sessionsapp.New(sessionsapp.Options{
 		Terminals: terminals, Worktrees: worktrees, Places: places, Classifier: manifest.New(manifest.Options{}),
-		Layout: sessionsdomain.Layout{Root: "/home/jordi/oppenheimer"},
+		Layout: sessionsdomain.Layout{Root: "/home/jordi/oppenheimer"}, Transcripts: transcripts,
 	})
 	if err != nil {
 		t.Fatal(err)

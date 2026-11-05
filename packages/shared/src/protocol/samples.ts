@@ -219,6 +219,25 @@ export const SAMPLES: Record<ProtocolMessageType, ProtocolMessage> = {
     mediaType: 'image/jpeg',
     data: '/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/wAALCAABAAEBAREA/8QAFAABAAAAAAAAAAAAAAAAAAAACf/EABQQAQAAAAAAAAAAAAAAAAAAAAD/2gAIAQEAAD8AKp//2Q==',
   },
+  'transcript.read': {
+    type: 'transcript.read',
+    commandId,
+    sessionId,
+    conversation: 'c4b1e09a7f2d3e65',
+    after: 18_244,
+    limit: 50,
+  },
+  'transcript.page': {
+    type: 'transcript.page',
+    commandId,
+    conversation: 'c4b1e09a7f2d3e65',
+    entries: [
+      '{"type":"assistant","uuid":"9a1f","timestamp":"2026-11-05T10:00:00.000Z","message":{"role":"assistant","content":[{"type":"text","text":"Tests pass."}]}}',
+    ],
+    from: 18_244,
+    next: 18_391,
+    atEnd: true,
+  },
   'session.create': {
     type: 'session.create',
     commandId,

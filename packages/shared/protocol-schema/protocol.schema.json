@@ -1986,6 +1986,102 @@
         "mediaType",
         "data"
       ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "transcript.read"
+        },
+        "commandId": {
+          "$ref": "#/$defs/commandId"
+        },
+        "sessionId": {
+          "$ref": "#/$defs/sessionId"
+        },
+        "conversation": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64,
+          "pattern": "^[A-Za-z0-9_-]+$"
+        },
+        "after": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "limit": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 200
+        }
+      },
+      "required": [
+        "type",
+        "commandId",
+        "sessionId",
+        "limit"
+      ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "transcript.page"
+        },
+        "commandId": {
+          "$ref": "#/$defs/commandId"
+        },
+        "conversation": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64,
+          "pattern": "^[A-Za-z0-9_-]+$"
+        },
+        "entries": {
+          "maxItems": 200,
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 65536
+          }
+        },
+        "from": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "next": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "atEnd": {
+          "type": "boolean"
+        },
+        "restarted": {
+          "type": "boolean"
+        },
+        "dropped": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "partial": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "type",
+        "commandId",
+        "entries",
+        "from",
+        "next",
+        "atEnd"
+      ]
     }
   ],
   "$defs": {
@@ -2338,7 +2434,8 @@
       "codex.environments",
       "session.watch",
       "whatsapp",
-      "shared.preview"
+      "shared.preview",
+      "transcript.read"
     ],
     "maxEventPayloadBytes": 8192,
     "chatEntryMaxBytes": 65536,

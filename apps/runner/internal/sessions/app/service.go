@@ -344,6 +344,24 @@ func (s *Service) FollowChat(ctx context.Context, id string, entryMax, batchMax 
 	return s.transcripts.Follow(ctx, session, entryMax, batchMax, older, emit)
 }
 
+// ReadTranscript is one page of a session's conversation, read on request
+// (Transcripts.ReadPage). ErrNotFound for a session this host does not hold,
+// ErrNoTranscript for one whose agent keeps no transcript this runner reads.
+func (s *Service) ReadTranscript(id string, req TranscriptPageRequest) (TranscriptPage, error) {
+	session, err := s.recorded(id)
+	if err != nil {
+		return TranscriptPage{}, err
+	}
+	if s.transcripts == nil {
+		return TranscriptPage{}, domain.ErrNoTranscript.WithDetail("this runner reads no transcripts")
+	}
+	page, err := s.transcripts.ReadPage(session, req)
+	if errors.Is(err, ErrNoChat) {
+		return TranscriptPage{}, domain.ErrNoTranscript.WithDetail("session %s runs %s", session.ID, session.Agent)
+	}
+	return page, err
+}
+
 // Send types into a window, which is how the browser's keystrokes arrive
 // while nothing is attached.
 func (s *Service) Send(ctx context.Context, id string, window int, keys string) error {
