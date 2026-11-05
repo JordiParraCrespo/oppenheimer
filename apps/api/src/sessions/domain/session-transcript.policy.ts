@@ -34,7 +34,8 @@ const NOT_REDACTED = '(?!\\[redacted\\])';
 const SECRET_SHAPES: readonly { what: string; pattern: RegExp }[] = [
   {
     what: 'a PEM private key, whole, or to the end of a text cut inside it',
-    pattern: /-----BEGIN [A-Z0-9 ]*PRIVATE KEY-----[\s\S]*?(?:-----END [A-Z0-9 ]*PRIVATE KEY-----|$)/g,
+    pattern:
+      /-----BEGIN [A-Z0-9 ]*PRIVATE KEY-----[\s\S]*?(?:-----END [A-Z0-9 ]*PRIVATE KEY-----|$)/g,
   },
   { what: 'an Oppenheimer API token', pattern: /\boppenheimer_pat_[A-Za-z0-9_-]{8,}/g },
   { what: 'an Oppenheimer pairing token', pattern: /\bopr_reg_[A-Za-z0-9_-]{8,}/g },
