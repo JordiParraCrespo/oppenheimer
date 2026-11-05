@@ -7,7 +7,6 @@
 "@oppenheimer/web": minor
 "@oppenheimer/frontend-web": minor
 "@oppenheimer/translations": minor
-"@oppenheimer/docs": patch
 ---
 
 Update a host's runner from the console: **Update runner** in a host card's
