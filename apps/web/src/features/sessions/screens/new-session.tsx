@@ -37,9 +37,9 @@ export function NewSessionScreen() {
         onRemove={background.remove}
       />
       <div className="flex flex-col gap-2.5">
-        {background.unreadable ? (
+        {background.failure ? (
           <ErrorAlert
-            message={t('sessions.new.background.unreadable')}
+            message={t(`sessions.new.background.${background.failure}`)}
             onDismiss={background.dismiss}
           />
         ) : null}
