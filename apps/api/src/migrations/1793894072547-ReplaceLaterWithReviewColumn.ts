@@ -37,15 +37,15 @@ export class ReplaceLaterWithReviewColumn1793894072547 implements MigrationInter
   private async moveColumn(queryRunner: QueryRunner, from: string, to: string): Promise<void> {
     await queryRunner.query(
       `UPDATE task SET
-         status = $2,
+         status = $2::varchar,
          rank = COALESCE(
            (SELECT max(other.rank) FROM task other
-             WHERE other."organizationId" = task."organizationId" AND other.status = $2),
+             WHERE other."organizationId" = task."organizationId" AND other.status = $2::varchar),
            ''
          ) || task.rank,
          version = version + 1,
          "updatedAt" = now()
-       WHERE status = $1`,
+       WHERE status = $1::varchar`,
       [from, to],
     );
   }
