@@ -132,32 +132,12 @@ func (s Starter) Start(ctx context.Context, dir, prompt string) (Started, error)
 	cmd := exec.CommandContext(ctx, s.command(), "--cloud", prompt) //nolint:gosec // the CLI by name, and the task one argument: no shell reads it
 	cmd.Dir = dir
 	cmd.Env = os.Environ()
-	// A start past its time limit stops the whole group, not only the CLI.
-	cmd.Cancel = func() error { killGroup(cmd); return nil }
-	term, err := pty.StartWithSize(cmd, &pty.Winsize{Rows: 50, Cols: 200})
+	proc, term, err := startProcess(cmd)
 	if err != nil {
 		return Started{}, domain.ErrCloudStart.WithDetail("run %s: %v", s.command(), err).WithCause(err)
 	}
+	defer proc.stop()
 	defer func() { _ = term.Close() }()
-
-	exited := make(chan error, 1)
-	go func() { exited <- cmd.Wait() }()
-	// However the start ends, nothing it ran outlives it: the CLI and every
-	// process it started (pty.Start made it a session leader, so they share
-	// its process group) are stopped and reaped before Start returns, so no
-	// claude is left running on the host and none holds the checkout open
-	// while it is removed.
-	gone := false
-	defer func() {
-		killGroup(cmd)
-		if !gone {
-			select {
-			case <-exited:
-			case <-time.After(5 * time.Second):
-			}
-		}
-	}()
-
 	// End of input, as `claude --cloud … </dev/null` under a terminal gets: it
 	// creates the session and leaves instead of opening the conversation.
 	_, _ = term.Write([]byte{4})
@@ -173,8 +153,7 @@ func (s Starter) Start(ctx context.Context, dir, prompt string) (Started, error)
 	defer tick.Stop()
 	for {
 		select {
-		case exitErr := <-exited:
-			gone = true
+		case <-proc.exited:
 			// The terminal drains after the process: read what is left.
 			select {
 			case <-copied:
@@ -183,16 +162,11 @@ func (s Starter) Start(ctx context.Context, dir, prompt string) (Started, error)
 			if started, ok := parse(out.String()); ok {
 				return started, nil
 			}
-			return Started{}, failed(out.String(), exitErr)
+			return Started{}, failed(out.String(), proc.err)
 		case <-tick.C:
 			if started, ok := parse(out.String()); ok {
-				// Named: let it finish printing and exit; the deferred stop
-				// ends it, and anything it left behind, either way.
-				select {
-				case <-exited:
-					gone = true
-				case <-time.After(5 * time.Second):
-				}
+				// Named: let it finish printing and exit, or stop it.
+				proc.waitUpTo(5 * time.Second)
 				return started, nil
 			}
 			if prompt, ok := blockedOn(out.String()); ok {
@@ -206,14 +180,55 @@ func (s Starter) Start(ctx context.Context, dir, prompt string) (Started, error)
 	}
 }
 
-// killGroup stops the CLI's process group: the CLI and whatever it started
-// that is still there (a hook, an MCP server, a helper it spawned). A group
-// already gone answers ESRCH, which is what stopping it wanted.
-func killGroup(cmd *exec.Cmd) {
-	if cmd.Process == nil {
-		return
+// process is the CLI under its terminal, and everything it starts: pty.Start
+// makes it a session leader, so its helpers (a hook, an MCP server) share its
+// process group unless they leave it. Stopping it stops the group, so no
+// claude outlives a start and none holds its checkout open while that is
+// removed.
+type process struct {
+	cmd *exec.Cmd
+	// exited is closed once the CLI has exited and been reaped; err is then
+	// how it exited.
+	exited chan struct{}
+	err    error
+}
+
+func startProcess(cmd *exec.Cmd) (*process, *os.File, error) {
+	p := &process{cmd: cmd, exited: make(chan struct{})}
+	// A start past its time limit stops the whole group, not only the CLI.
+	cmd.Cancel = func() error { p.kill(); return nil }
+	term, err := pty.StartWithSize(cmd, &pty.Winsize{Rows: 50, Cols: 200})
+	if err != nil {
+		return nil, nil, err
 	}
-	_ = syscall.Kill(-cmd.Process.Pid, syscall.SIGKILL)
+	go func() {
+		p.err = cmd.Wait()
+		close(p.exited)
+	}()
+	return p, term, nil
+}
+
+// waitUpTo waits for the CLI to exit on its own, for at most d.
+func (p *process) waitUpTo(d time.Duration) {
+	select {
+	case <-p.exited:
+	case <-time.After(d):
+	}
+}
+
+// stop ends the group, whatever is left of it, and reaps the CLI.
+func (p *process) stop() {
+	p.kill()
+	p.waitUpTo(5 * time.Second)
+}
+
+// kill sends the group SIGKILL: the CLI and whatever it started that is
+// still there. A group already gone answers ESRCH, which is what stopping it
+// wanted.
+func (p *process) kill() {
+	if p.cmd.Process != nil {
+		_ = syscall.Kill(-p.cmd.Process.Pid, syscall.SIGKILL)
+	}
 }
 
 func parse(raw string) (Started, bool) {

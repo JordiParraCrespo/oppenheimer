@@ -82,16 +82,7 @@ func (s *Store) trustClaude(dir string) error {
 	if root := repositoryRoot(dirs[0]); root != "" && root != dirs[0] {
 		dirs = append(dirs, root)
 	}
-	return s.edit(func(root map[string]json.RawMessage) (bool, error) {
-		projects := map[string]map[string]json.RawMessage{}
-		if existing, ok := root["projects"]; ok {
-			if err := json.Unmarshal(existing, &projects); err != nil {
-				return false, err
-			}
-		}
-		if projects == nil {
-			projects = map[string]map[string]json.RawMessage{}
-		}
+	return s.editProjects(func(projects map[string]map[string]json.RawMessage) bool {
 		changed := false
 		for _, dir := range dirs {
 			project := projects[dir]
@@ -106,7 +97,25 @@ func (s *Store) trustClaude(dir string) error {
 			projects[dir] = project
 			changed = true
 		}
-		if !changed {
+		return changed
+	})
+}
+
+// editProjects lets change edit Claude Code's per-folder entries,
+// `projects` in the state file, and writes them back when it reports a
+// change. Trust and Forget are each one change to that map.
+func (s *Store) editProjects(change func(projects map[string]map[string]json.RawMessage) bool) error {
+	return s.edit(func(root map[string]json.RawMessage) (bool, error) {
+		projects := map[string]map[string]json.RawMessage{}
+		if existing, ok := root["projects"]; ok {
+			if err := json.Unmarshal(existing, &projects); err != nil {
+				return false, err
+			}
+		}
+		if projects == nil {
+			projects = map[string]map[string]json.RawMessage{}
+		}
+		if !change(projects) {
 			return false, nil
 		}
 		encoded, err := json.Marshal(projects)
@@ -128,25 +137,12 @@ func (s *Store) trustClaude(dir string) error {
 func (s *Store) Forget(dir string) {
 	dir = realPath(dir)
 	if s.claudeConfig != "" {
-		err := s.edit(func(root map[string]json.RawMessage) (bool, error) {
-			projects := map[string]json.RawMessage{}
-			existing, ok := root["projects"]
-			if !ok {
-				return false, nil
-			}
-			if err := json.Unmarshal(existing, &projects); err != nil {
-				return false, err
-			}
+		err := s.editProjects(func(projects map[string]map[string]json.RawMessage) bool {
 			if _, ok := projects[dir]; !ok {
-				return false, nil
+				return false
 			}
 			delete(projects, dir)
-			encoded, err := json.Marshal(projects)
-			if err != nil {
-				return false, err
-			}
-			root["projects"] = encoded
-			return true, nil
+			return true
 		})
 		if err != nil {
 			s.logger.Warn("could not forget a removed folder in Claude Code's state",
