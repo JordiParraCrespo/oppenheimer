@@ -9,6 +9,7 @@ import { Settings2 } from '@oppenheimer/design-system-web/icons';
 import { useSuspenseProjects } from '@oppenheimer/frontend-consumer/react';
 import { ErrorAlert } from '@oppenheimer/frontend-web';
 import { useTranslation } from 'react-i18next';
+import { projectListMeta } from '../lib/project-list';
 
 /**
  * The workspace's projects, in API order (newest first): each one's name, its
@@ -54,16 +55,7 @@ export function ProjectsList({
             <SettingsListRow
               key={project.id}
               align="center"
-              meta={
-                project.repositories.length > 0
-                  ? project.shortName
-                  : t('projects.list.noRepositories')
-              }
-              kind={
-                project.repositories.length > 0
-                  ? t('projects.list.repositories', { count: project.repositories.length })
-                  : undefined
-              }
+              {...projectListMeta(project, t)}
               actions={
                 <IconButton
                   size="sm"

@@ -17,25 +17,38 @@ import { useTodayEventCount } from '../hooks/use-today-event-count';
 import { isPlanNavId, type PlanNavId } from '../lib/plan-nav-order';
 import { PlanInboxItem } from './plan-inbox-item';
 
-/** Each view's name and glyph, for its row and the copy a drag lifts. */
-const LOOK = {
-  inbox: { labelKey: 'tasks.nav.inbox', icon: <Bell /> },
-  tasks: { labelKey: 'tasks.nav.tasks', icon: <CircleCheck /> },
-  milestones: { labelKey: 'tasks.nav.milestones', icon: <MilestoneGlyph /> },
-  calendar: { labelKey: 'tasks.nav.calendar', icon: <CalendarDays /> },
-  projects: { labelKey: 'tasks.nav.projects', icon: <Folder /> },
-} as const satisfies Record<PlanNavId, { labelKey: string; icon: ReactNode }>;
-
 /**
- * Where each view but the Inbox goes, and whether a route under it keeps it
+ * Each view's name and glyph, for its row and the copy a drag lifts, and
+ * where each view but the Inbox goes, with whether a route under it keeps it
  * lit. The Inbox is its own row (`PlanInboxItem`), which owns its minute tick.
+ * A new view is a row here and its count below.
  */
-const ROUTE = {
-  tasks: { to: '/plan', fuzzy: false },
-  milestones: { to: '/plan/milestones', fuzzy: true },
-  calendar: { to: '/plan/calendar', fuzzy: true },
-  projects: { to: '/plan/projects', fuzzy: false },
-} as const satisfies Record<Exclude<PlanNavId, 'inbox'>, { to: string; fuzzy: boolean }>;
+const VIEWS = {
+  inbox: { labelKey: 'tasks.nav.inbox', icon: <Bell /> },
+  tasks: {
+    labelKey: 'tasks.nav.tasks',
+    icon: <CircleCheck />,
+    route: { to: '/plan', fuzzy: false },
+  },
+  milestones: {
+    labelKey: 'tasks.nav.milestones',
+    icon: <MilestoneGlyph />,
+    route: { to: '/plan/milestones', fuzzy: true },
+  },
+  calendar: {
+    labelKey: 'tasks.nav.calendar',
+    icon: <CalendarDays />,
+    route: { to: '/plan/calendar', fuzzy: true },
+  },
+  projects: {
+    labelKey: 'tasks.nav.projects',
+    icon: <Folder />,
+    route: { to: '/plan/projects', fuzzy: false },
+  },
+} as const satisfies Record<
+  PlanNavId,
+  { labelKey: string; icon: ReactNode; route?: { to: string; fuzzy: boolean } }
+>;
 
 /**
  * The head of Plan's sidebar (the `Tasks` frame): the Inbox with what needs
@@ -58,7 +71,7 @@ export function PlanNav() {
   const matchRoute = useMatchRoute();
   const dragLabels = useDragLabels();
   const { order, handlers } = usePlanNavOrder((id) => id !== 'inbox' || inbox);
-  const counts: Record<keyof typeof ROUTE, number | undefined> = {
+  const counts: Record<Exclude<PlanNavId, 'inbox'>, number | undefined> = {
     tasks: open,
     milestones,
     calendar: today,
@@ -72,7 +85,7 @@ export function PlanNav() {
         labels={dragLabels}
         overlay={(active) =>
           isPlanNavId(active.id) ? (
-            <RoutineItem name={t(LOOK[active.id].labelKey)} icon={LOOK[active.id].icon} active />
+            <RoutineItem name={t(VIEWS[active.id].labelKey)} icon={VIEWS[active.id].icon} active />
           ) : null
         }
       >
@@ -84,18 +97,18 @@ export function PlanNav() {
         >
           {order.map((id) => {
             if (id === 'inbox') return <PlanInboxItem key={id} id={id} />;
-            const { to, fuzzy } = ROUTE[id];
+            const { labelKey, icon, route } = VIEWS[id];
             const count = counts[id];
             return (
               <SortableRoutineItem
                 key={id}
                 id={id}
-                name={t(LOOK[id].labelKey)}
-                icon={LOOK[id].icon}
+                name={t(labelKey)}
+                icon={icon}
                 meta={count === undefined ? undefined : String(count)}
-                active={Boolean(matchRoute({ to, fuzzy }))}
+                active={Boolean(matchRoute(route))}
                 nativeButton={false}
-                render={<Link to={to} />}
+                render={<Link to={route.to} />}
               />
             );
           })}
