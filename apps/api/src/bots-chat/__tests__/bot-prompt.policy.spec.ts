@@ -96,6 +96,13 @@ describe('composeBotSystemPrompt', () => {
       expect(prompt).toContain('goes to a session on a host');
     });
 
+    it('sends a question the web can answer to research, not to a session', () => {
+      // A bot asked "how does X work" started a session to read the docs.
+      const prompt = composeBotSystemPrompt(sessions);
+      expect(prompt).toContain('Look it up before you start one.');
+      expect(prompt).toContain('Start a session only when the request needs a shell or a checkout');
+    });
+
     it('promises no code work to a turn that cannot start a session, and keeps the plain refusal', () => {
       // An API token without sessions:write gets a catalog with no start_session.
       const prompt = composeBotSystemPrompt({ ...sessions, tools: sessions.tools.slice(0, 1) });

@@ -93,7 +93,7 @@ export class BotSessionToolsFactory implements BotToolArea {
         };
       },
       description:
-        "Starts a coding agent (Claude Code by default) on a host with a task: in a new worktree of one of a project's repositories, or in a folder already on the host. Use it for work on code; it returns at once with the session's id, and the agent works on its own. You are subscribed to it unless watch is false. The host defaults to the project's default host, then your home host.",
+        "Starts a coding agent (Claude Code by default) on a host with a task: in a new worktree of one of a project's repositories, or in a folder already on the host. Use it for work on code that needs a shell or a checkout (changing code, running tests or builds, reproducing a failure), not for a question web search, web_fetch or your other tools can answer; it returns at once with the session's id, and the agent works on its own. You are subscribed to it unless watch is false. The host defaults to the project's default host, then your home host.",
       input: z.object({
         // The session's first prompt, held to the same rule here so a task
         // too long is the tool's own error, before any card is raised. Only
