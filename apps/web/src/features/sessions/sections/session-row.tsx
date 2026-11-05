@@ -49,6 +49,7 @@ const GLYPHS: Record<Exclude<SessionGlyph, 'vendor'>, ReactNode> = {
  * ⌘, Ctrl or Shift picks the row instead of opening it, and so does any click
  * while something is picked. While the list is selecting, the row draws its
  * box, does not drag and hides its menu, since what it acts on is the bar's.
+ * Otherwise a right-click opens the row's menu at its ellipsis.
  */
 export function SessionRow({
   session,
@@ -163,6 +164,13 @@ export function SessionRow({
         if (!how) return;
         event.preventDefault();
         selection.pick(how);
+      }}
+      // A right-click opens the row's own menu, not the browser's; while the
+      // list is selecting or the name is being typed there is no menu to open.
+      onContextMenu={(event) => {
+        if (selection.selecting || draft !== null) return;
+        event.preventDefault();
+        setMenuOpen(true);
       }}
       selected={selection.selecting ? selection.selected : undefined}
       selectedLabel={t('sessions.sidebar.selected')}
