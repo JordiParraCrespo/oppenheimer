@@ -228,6 +228,13 @@
       "refused": "{{vendor}} wouldn't start this session.",
       "refusedSaying": "{{vendor}} wouldn't start this session: “{{says}}”",
       "retry": "Try again"
+    },
+    "background": {
+      "label": "Background",
+      "choose": "Choose image…",
+      "remove": "Remove image",
+      "unreadable": "That image could not be used. Try a JPEG, PNG or WebP.",
+      "unsaved": "Your browser would not keep this background, so it will be gone after a reload."
     }
   },
   "session": {

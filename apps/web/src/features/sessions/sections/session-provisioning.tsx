@@ -11,6 +11,7 @@ import {
 import { useTranslation } from 'react-i18next';
 import { ElapsedClock } from '../components/elapsed-clock';
 import { SessionStatusHead } from '../components/session-status-head';
+import { useStartLogStalled } from '../hooks/use-start-log-stalled';
 import { PENDING_START, provisioningSteps } from '../lib/provisioning-steps';
 
 /**
@@ -29,6 +30,9 @@ export function SessionProvisioning({ session }: { session: SessionEntity }) {
   // Mounted while the start is in hand, which outlasts the row's `starting`:
   // the row opens with the pane, and this pane stays until the agent runs.
   const progress = useSessionStartProgress(session.id, { starting: !failed, failed });
+  // A read that fails once is a blip the next poll clears; only reads that
+  // keep failing are worth an alert over steps that may still be advancing.
+  const stalled = useStartLogStalled(progress);
   // The list is the one place a host's name lives; its presence is the row's.
   // Only that one name is subscribed to, so a refetch of the host list
   // re-renders this pane when the name changes and not otherwise.
@@ -73,7 +77,7 @@ export function SessionProvisioning({ session }: { session: SessionEntity }) {
         ) : null}
 
         <ErrorAlert
-          error={progress.error}
+          error={stalled ? progress.error : null}
           fallback={t('sessions.provisioning.progressFailed')}
           className="mt-6.5"
         />

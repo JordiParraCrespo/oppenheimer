@@ -228,6 +228,13 @@
       "refused": "{{vendor}} no quiso iniciar esta sesión.",
       "refusedSaying": "{{vendor}} no quiso iniciar esta sesión: «{{says}}»",
       "retry": "Reintentar"
+    },
+    "background": {
+      "label": "Fondo",
+      "choose": "Elegir imagen…",
+      "remove": "Quitar imagen",
+      "unreadable": "No se ha podido usar esa imagen. Prueba con un JPEG, PNG o WebP.",
+      "unsaved": "Tu navegador no ha guardado este fondo, así que desaparecerá al recargar."
     }
   },
   "session": {

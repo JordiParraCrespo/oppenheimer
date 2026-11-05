@@ -49,6 +49,7 @@ const GLYPHS: Record<Exclude<SessionGlyph, 'vendor'>, ReactNode> = {
  * ⌘, Ctrl or Shift picks the row instead of opening it, and so does any click
  * while something is picked. While the list is selecting, the row draws its
  * box, does not drag and hides its menu, since what it acts on is the bar's.
+ * Otherwise a right-click opens the row's menu at its ellipsis.
  */
 export function SessionRow({
   session,
@@ -110,6 +111,9 @@ export function SessionRow({
       ? t('sessions.sidebar.deleting')
       : undefined;
   const cloudUrl = session.cloud?.url ?? null;
+  // The row has a menu unless the list is selecting (the bar acts) or its name
+  // is being typed; every way of opening the menu reads this.
+  const hasMenu = !selection.selecting && draft === null;
   const statusHint = session.closeRefusal
     ? t('sessions.sidebar.notDeletedHint')
     : session.isClosing
@@ -164,12 +168,21 @@ export function SessionRow({
         event.preventDefault();
         selection.pick(how);
       }}
+      // A right-click opens the row's own menu, not the browser's.
+      onContextMenu={
+        hasMenu
+          ? (event) => {
+              event.preventDefault();
+              setMenuOpen(true);
+            }
+          : undefined
+      }
       selected={selection.selecting ? selection.selected : undefined}
       selectedLabel={t('sessions.sidebar.selected')}
       menuOpen={menuOpen}
       rename={renameField}
       action={
-        selection.selecting ? undefined : (
+        hasMenu ? (
           <SessionRowMenu
             open={menuOpen}
             onOpenChange={setMenuOpen}
@@ -186,7 +199,7 @@ export function SessionRow({
               isUnassigned: target.isUnassigned,
             }))}
           />
-        )
+        ) : undefined
       }
     />
   );
