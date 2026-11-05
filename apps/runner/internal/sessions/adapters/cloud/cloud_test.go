@@ -216,7 +216,7 @@ sleep 300
 		t.Fatal(err)
 	}
 	deadline := time.Now().Add(2 * time.Second)
-	for syscall.Kill(pid, 0) == nil {
+	for running(pid) {
 		if time.Now().After(deadline) {
 			_ = syscall.Kill(pid, syscall.SIGKILL)
 			t.Fatalf("the CLI's helper %d is still running after Start returned", pid)
@@ -246,4 +246,23 @@ sleep 300
 	if forgot != dir {
 		t.Fatalf("forgot %q, want %q", forgot, dir)
 	}
+}
+
+// running reports a process that has not stopped. A zombie has: killed and
+// orphaned, it waits only for an init to reap it, and a container whose init
+// reaps nothing keeps it, so `kill(pid, 0)`, which still succeeds on one,
+// says nothing. Linux names the state in /proc; elsewhere the signal is the
+// only answer, and launchd reaps.
+func running(pid int) bool {
+	if syscall.Kill(pid, 0) != nil {
+		return false
+	}
+	stat, err := os.ReadFile(filepath.Join("/proc", strconv.Itoa(pid), "stat"))
+	if err != nil {
+		return true
+	}
+	// After "pid (comm) ": comm may hold spaces and parentheses, so the
+	// state is the field after the last ")".
+	fields := strings.Fields(string(stat[strings.LastIndexByte(string(stat), ')')+1:]))
+	return len(fields) == 0 || fields[0] != "Z"
 }
