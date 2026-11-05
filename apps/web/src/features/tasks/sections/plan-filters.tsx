@@ -9,6 +9,7 @@ import { useMilestones, useProjects, useTasks } from '@oppenheimer/frontend-cons
 import { useNavigate, useRouterState } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { useScopeProject } from '../hooks/use-scope-project';
+import { type PlanFilterView, rememberPlanFilters } from '../lib/plan-filter-memory';
 import { planCounts, projectParamOf, UNASSIGNED_SLUG } from '../lib/plan-scope';
 
 /** The facets' first option: nothing narrowed. */
@@ -19,9 +20,12 @@ const ALL = 'all';
  * on Milestones, Milestone on the board only, each with how many tasks it
  * holds, and Clear while either narrows the view. Both live in the address.
  * Project takes several picks (`?project=web,billing`); a milestone stays
- * picked while its project is one of them.
+ * picked while its project is one of them. Each pick is remembered on this
+ * device, so the view comes back filtered (or cleared) the way it was left.
  */
-export function PlanFilters({ milestone = false }: { milestone?: boolean }) {
+export function PlanFilters({ view }: { view: PlanFilterView }) {
+  // Only the board narrows by milestone.
+  const showsMilestone = view === 'board';
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { slugs, projectIds } = useScopeProject();
@@ -37,12 +41,20 @@ export function PlanFilters({ milestone = false }: { milestone?: boolean }) {
     select: (rows) => rows.filter((row) => !projectIds || projectIds.includes(row.projectId)),
   });
   const unassigned = projects?.find((row) => row.isUnassigned);
-  const set = (search: { project?: string; milestone?: string }) =>
-    navigate({
+  const set = (search: { project?: string; milestone?: string }) => {
+    // Remembered before the address moves: the route restores a remembered
+    // filter into an address without one, and a Clear must not be undone.
+    rememberPlanFilters(view, {
+      project: projectParamOf(slugs),
+      milestone: milestoneId,
+      ...search,
+    });
+    return navigate({
       to: '.',
       search: (previous: Record<string, unknown>) => ({ ...previous, ...search }),
       replace: true,
     });
+  };
 
   return (
     <div className="flex flex-wrap items-center gap-2">
@@ -88,7 +100,7 @@ export function PlanFilters({ milestone = false }: { milestone?: boolean }) {
             : []),
         ]}
       />
-      {milestone ? (
+      {showsMilestone ? (
         <SearchableFacetSelect
           variant="pill"
           label={t('tasks.filters.milestone')}
@@ -107,7 +119,7 @@ export function PlanFilters({ milestone = false }: { milestone?: boolean }) {
           ]}
         />
       ) : null}
-      {slugs.length || (milestone && milestoneId) ? (
+      {slugs.length || (showsMilestone && milestoneId) ? (
         <Button
           variant="ghost"
           size="sm"
