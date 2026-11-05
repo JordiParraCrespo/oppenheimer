@@ -25,6 +25,14 @@ export const REDACTED = '[redacted]';
 const NOT_REDACTED = '(?!\\[redacted\\])';
 
 /**
+ * A quote around a name or a value, escaped or not: a tool's input reaches
+ * the reader serialized, so a secret the agent wrote inside a string (a JSON
+ * config through `Write`) has `\"` for each quote. A value stops at a
+ * backslash, so the escape after it is kept.
+ */
+const QUOTE = `\\\\*["']?`;
+
+/**
  * Credentials that announce themselves by shape: the whole match is the
  * secret. Each is one a tool prints (an `env`, a `.env` read, a `curl -v`),
  * which a transcript would otherwise carry to whoever reads it. A shape too
@@ -87,11 +95,11 @@ const SECRET_NAME_WORDS: readonly string[] = [
 
 /** One header row as a scanner: its first group is what stays. */
 function headerScanner(header: (typeof SECRET_HEADERS)[number]): RegExp {
-  const lead = `(\\b(?:${header.names.join('|')})["']?\\s*[:=]\\s*\\[?\\s*["']?`;
+  const lead = `(\\b(?:${header.names.join('|')})${QUOTE}\\s*[:=]\\s*\\[?\\s*${QUOTE}`;
   const value =
     header.value === 'credential'
       ? `(?:[A-Za-z]+\\s+)?)${NOT_REDACTED}[A-Za-z0-9._~+/=-]{8,}`
-      : `)${NOT_REDACTED}[^\\r\\n"']{8,}`;
+      : `)${NOT_REDACTED}[^\\r\\n"'\\\\]{8,}`;
   return new RegExp(lead + value, 'gi');
 }
 
@@ -105,7 +113,7 @@ const SECRET_PLACES: readonly RegExp[] = [
   new RegExp(`(\\bBearer\\s+)${NOT_REDACTED}[A-Za-z0-9._~+/-]{16,}=*`, 'gi'),
   /(\b[a-z][a-z0-9+.-]*:\/\/[^\s/:@]+:)[^\s/@]+(?=@)/gi,
   new RegExp(
-    `(\\b[A-Za-z0-9_.-]*(?:${SECRET_NAME_WORDS.join('|')})[A-Za-z0-9_.-]*["']?\\s*[:=]\\s*["']?)${NOT_REDACTED}[^\\s"',;}{)(]{8,}`,
+    `(\\b[A-Za-z0-9_.-]*(?:${SECRET_NAME_WORDS.join('|')})[A-Za-z0-9_.-]*${QUOTE}\\s*[:=]\\s*${QUOTE})${NOT_REDACTED}[^\\s"',;}{)(\\\\]{8,}`,
     'gi',
   ),
 ];

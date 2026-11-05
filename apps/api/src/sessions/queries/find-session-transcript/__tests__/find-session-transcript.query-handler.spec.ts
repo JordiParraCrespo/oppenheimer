@@ -156,6 +156,38 @@ describe('FindSessionTranscriptQueryHandler', () => {
     expect(result.entries[0]?.parts[0]).toMatchObject({ kind: 'tool_call', tool: 'Bash' });
   });
 
+  // The regression: a tool's input is serialized before redaction, so a
+  // secret inside a string the agent wrote (a JSON config through Write)
+  // reaches the reader with its quotes escaped, past every name scanner.
+  it('replaces secrets inside a tool’s serialized input, escaped quotes and all', async () => {
+    outcome = {
+      kind: 'page',
+      page: page({
+        entries: [
+          line([
+            {
+              type: 'tool_use',
+              name: 'Write',
+              input: {
+                file_path: 'config.json',
+                content: JSON.stringify({
+                  password: 'hunter2hunter2',
+                  db: { api_key: 'abcd1234efgh' },
+                }),
+              },
+            },
+          ]),
+        ],
+      }),
+    };
+    const result = await read();
+    const text = result.entries[0]?.parts[0]?.text ?? '';
+    expect(text).not.toContain('hunter2hunter2');
+    expect(text).not.toContain('abcd1234efgh');
+    expect(text).toContain('config.json');
+    expect(result.redactions).toBe(2);
+  });
+
   it('calls a page partial when the host cut a part or left entries out', async () => {
     outcome = {
       kind: 'page',

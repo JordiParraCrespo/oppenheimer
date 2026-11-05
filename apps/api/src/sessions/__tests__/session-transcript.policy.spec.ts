@@ -74,6 +74,13 @@ describe('redactSecrets', () => {
     expect(redactSecrets('{"set-cookie":["sid=0123456789abcdef; Path=/"]}').text).toBe(
       `{"set-cookie":["${REDACTED}"]}`,
     );
+    // The same inside a JSON string, where every quote is escaped.
+    expect(redactSecrets('{"content":"{\\"password\\":\\"hunter2hunter2\\"}"}').text).toBe(
+      `{"content":"{\\"password\\":\\"${REDACTED}\\"}"}`,
+    );
+    expect(redactSecrets('"{\\"Authorization\\": \\"Basic dXNlcjpwYXNzd29yZA==\\"}"').text).toBe(
+      `"{\\"Authorization\\": \\"Basic ${REDACTED}\\"}"`,
+    );
     expect(redactSecrets('postgres://app:s3cretpass@db:5432/app').text).toBe(
       `postgres://app:${REDACTED}@db:5432/app`,
     );
@@ -102,7 +109,7 @@ describe('redactSecrets', () => {
         },
         {
           kind: 'tool_result',
-          text: 'GITHUB_TOKEN=ghp_' + 'q'.repeat(36),
+          text: `GITHUB_TOKEN=ghp_${'q'.repeat(36)}`,
           tool: null,
           isError: false,
           truncated: false,
