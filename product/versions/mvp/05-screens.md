@@ -46,13 +46,16 @@
   to the top. A session is shown in the session pane under either
   list: opened from a run, it keeps the automations list beside it, at
   `/automations/$automationId/sessions/$sessionId` (13) — the head reads Projects with the
-  count, a New project button and the filter menu, a live search box
+  count and the filter menu, a live search box
   narrows the rows, and each project is a folding header with its count
-  and two hover actions — New session here (`/sessions/new?project=`,
-  which starts the composer on that project with its defaults) and
-  Project settings (the project dialog editing; Delete project on its
-  footer is the archive behind a confirm, and is disabled while the
-  project has unresolved sessions). A
+  and one hover action, New session here (`/sessions/new?project=`,
+  which starts the composer on that project with its defaults). Until
+  2026-11-05 the head also had a New project plus and each header a
+  Project settings glyph; projects are now made and edited in Plan's
+  Projects view (`/plan/projects`, 18 §1), each row's settings the
+  project dialog editing (Delete project on its footer is the archive
+  behind a confirm, and is disabled while the project has unresolved
+  sessions). A
   project with no session is not listed (until 2026-10-28 it showed an
   empty row with a link to start one); with projects but no session at
   all, the list says so in one line. A row's
@@ -164,9 +167,10 @@
   until there is a name, a repository and one cloned by default; it
   closes the dialog with the project picked in the chip, its defaults
   applied. The same dialog, editing, is Project settings behind a
-  header's settings glyph in the sidebar, Delete project on its footer's left; a
-  new project made from the sidebar's plus lands on New session with it
-  picked (`?project=`). Picking a
+  row's settings glyph in Plan's Projects view, Delete project on its
+  footer's left (until 2026-11-05 it was behind a sidebar header's glyph,
+  and the sidebar's plus made a project and landed on New session with it
+  picked). Picking a
   project offers its defaults — its host, its agent, its first default
   repository on its base — and the chips stay the person's to change: a
   repository outside the project is as good as one inside it (10). The

@@ -1,9 +1,10 @@
 /**
  * Plan's sidebar views by id, in the order a reader who never dragged one
- * sees them (the 2026-10-29 `Tasks` frame), and the reader's own order as
+ * sees them (the 2026-10-29 `Tasks` frame, then Projects, which moved here
+ * from the Sessions sidebar), and the reader's own order as
  * this device keeps it.
  */
-export const PLAN_NAV_IDS = ['inbox', 'tasks', 'milestones', 'calendar'] as const;
+export const PLAN_NAV_IDS = ['inbox', 'tasks', 'milestones', 'calendar', 'projects'] as const;
 
 export type PlanNavId = (typeof PLAN_NAV_IDS)[number];
 

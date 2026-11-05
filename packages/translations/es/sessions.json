@@ -301,7 +301,6 @@
   },
   "sidebar": {
     "sessions": "Sesiones",
-    "newProject": "Nuevo proyecto",
     "search": "Buscar sesiones",
     "clearSearch": "Borrar búsqueda",
     "noMatches": "Ninguna sesión coincide con “{{query}}”.",
@@ -309,7 +308,6 @@
     "emptyProject": "Todavía no hay sesiones.",
     "startOne": "Empieza una",
     "newSessionHere": "Nueva sesión en {{name}}",
-    "projectSettings": "Ajustes de {{name}}",
     "unfiled": "Otras sesiones",
     "pinned": "Fijadas",
     "pin": "Fijar",

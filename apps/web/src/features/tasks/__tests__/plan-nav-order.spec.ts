@@ -23,7 +23,7 @@ describe('storedPlanNavOrder', () => {
 
   it('drops unknown and repeated ids and appends the rest', () => {
     store(JSON.stringify(['calendar', 'gone', 'calendar', 'tasks']));
-    expect(storedPlanNavOrder()).toEqual(['calendar', 'tasks', 'inbox', 'milestones']);
+    expect(storedPlanNavOrder()).toEqual(['calendar', 'tasks', 'inbox', 'milestones', 'projects']);
   });
 
   it.each(['{not json', '{}', '"tasks"'])('falls back to the default order on %s', (raw) => {
@@ -39,19 +39,19 @@ describe('usePlanNavOrder', () => {
     act(() => result.current.handlers.onDragStart(item('calendar')));
     act(() => result.current.handlers.onDragEnd({ active: item('calendar'), over: item('inbox') }));
 
-    expect(result.current.order).toEqual(['calendar', 'inbox', 'tasks', 'milestones']);
-    expect(storedPlanNavOrder()).toEqual(['calendar', 'inbox', 'tasks', 'milestones']);
+    expect(result.current.order).toEqual(['calendar', 'inbox', 'tasks', 'milestones', 'projects']);
+    expect(storedPlanNavOrder()).toEqual(['calendar', 'inbox', 'tasks', 'milestones', 'projects']);
   });
 
   it('keeps a hidden view in its place while the shown ones are reordered', () => {
     const { result } = renderHook(() => usePlanNavOrder((id) => id !== 'inbox'));
-    expect(result.current.order).toEqual(['tasks', 'milestones', 'calendar']);
+    expect(result.current.order).toEqual(['tasks', 'milestones', 'calendar', 'projects']);
 
     act(() => result.current.handlers.onDragStart(item('calendar')));
     act(() => result.current.handlers.onDragEnd({ active: item('calendar'), over: item('tasks') }));
 
-    expect(result.current.order).toEqual(['calendar', 'tasks', 'milestones']);
-    expect(storedPlanNavOrder()).toEqual(['inbox', 'calendar', 'tasks', 'milestones']);
+    expect(result.current.order).toEqual(['calendar', 'tasks', 'milestones', 'projects']);
+    expect(storedPlanNavOrder()).toEqual(['inbox', 'calendar', 'tasks', 'milestones', 'projects']);
   });
 
   it('keeps the order when a drag is cancelled', () => {

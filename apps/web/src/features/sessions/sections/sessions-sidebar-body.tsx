@@ -184,15 +184,6 @@ export function SessionsSidebarBody() {
               />
             ) : undefined
           }
-          onNewProject={() =>
-            dialogs.open({
-              kind: 'project',
-              // A project made from here lands on New session with it picked,
-              // which is what a person who just made one wants next.
-              onSaved: (project) =>
-                navigate({ to: '/sessions/new', search: { project: project.id } }),
-            })
-          }
         />
 
         <ErrorAlert
@@ -209,9 +200,9 @@ export function SessionsSidebarBody() {
         />
 
         <div className="no-scrollbar min-h-0 flex-1 overflow-y-auto pb-5">
-          {/* No project at all: the way to one is the plus above and the chip
-            on New session, and the row says so rather than arguing with the
-            pane. */}
+          {/* No project at all: the way to one is Plan's Projects view and the
+            chip on New session, and the row says so rather than arguing with
+            the pane. */}
           {empty !== null ? (
             <div className="px-3 pt-2">
               <EmptyState compact>
@@ -257,9 +248,6 @@ export function SessionsSidebarBody() {
                       query={query}
                       onNewSessionHere={(target) =>
                         navigate({ to: '/sessions/new', search: { project: target.id } })
-                      }
-                      onSettings={(target) =>
-                        dialogs.open({ kind: 'project', projectId: target.id })
                       }
                       onShare={(target) =>
                         dialogs.open({ kind: 'share-session', sessionId: target.id })

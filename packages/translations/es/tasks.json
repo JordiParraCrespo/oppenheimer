@@ -5,7 +5,8 @@
     "inbox": "Bandeja",
     "tasks": "Tareas",
     "calendar": "Calendario",
-    "milestones": "Hitos"
+    "milestones": "Hitos",
+    "projects": "Proyectos"
   },
   "sidebar": {
     "unassigned": "Sin asignar"

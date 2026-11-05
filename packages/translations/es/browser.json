@@ -658,6 +658,17 @@
       "deleting": "Eliminando…",
       "failed": "No se pudo eliminar el proyecto."
     },
+    "list": {
+      "title": "Proyectos",
+      "new": "Nuevo proyecto",
+      "edit": "Ajustes de {{name}}",
+      "repositories_one": "{{count}} repositorio",
+      "repositories_many": "{{count}} repositorios",
+      "repositories_other": "{{count}} repositorios",
+      "noRepositories": "Sin repositorios",
+      "empty": "Aún no hay proyectos. Un proyecto agrupa tus sesiones y empieza las nuevas con sus repositorios, host y agente.",
+      "loadFailed": "No se pudieron cargar tus proyectos."
+    },
     "unassigned": "Sin asignar"
   },
   "sessions": {
@@ -963,7 +974,6 @@
     },
     "sidebar": {
       "sessions": "Sesiones",
-      "newProject": "Nuevo proyecto",
       "search": "Buscar sesiones",
       "clearSearch": "Borrar búsqueda",
       "noMatches": "Ninguna sesión coincide con “{{query}}”.",
@@ -971,7 +981,6 @@
       "emptyProject": "Todavía no hay sesiones.",
       "startOne": "Empieza una",
       "newSessionHere": "Nueva sesión en {{name}}",
-      "projectSettings": "Ajustes de {{name}}",
       "unfiled": "Otras sesiones",
       "pinned": "Fijadas",
       "pin": "Fijar",
@@ -2680,7 +2689,8 @@
       "inbox": "Bandeja",
       "tasks": "Tareas",
       "calendar": "Calendario",
-      "milestones": "Hitos"
+      "milestones": "Hitos",
+      "projects": "Proyectos"
     },
     "sidebar": {
       "unassigned": "Sin asignar"

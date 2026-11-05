@@ -13,7 +13,11 @@ this note says what the real thing does instead.
   (today's event count). Under Tasks: **Projects**: All projects, each
   project with its open count, and Unassigned, plus "+" for New project.
   Under Calendar: the layer toggles (20 §1) and the Google Calendar connection
-  card.
+  card. Since 2026-11-05 the sidebar's views also hold **Projects**
+  (`/plan/projects`, with the workspace's project count): the one place
+  projects are made and edited, a row per project with its repositories
+  and its settings (the project dialog), and New project in the header.
+  The Sessions sidebar no longer makes or edits projects.
 - **Routes.** `/plan` (the board, `?project=<slug>&goal=<id>`),
   `/plan/calendar` (`?month=2026-10`), and `?task=<id>` on either to open
   a task's dialog, which is the deep link the session header uses. The
