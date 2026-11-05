@@ -136,9 +136,11 @@ worker runs it and streams what happens back to the chat.
     tool is a plain "I can't" and never a search of the server;
   - when the turn may start a session (its catalog has `start_session`),
     **working on code through sessions**: a shell or a checkout is what
-    a session is for, so inspecting a repository, running scripts, tests
-    or builds, diagnosing a failure and fixing it go to a coding agent on
-    a host instead of being turned down. The bot delegates a complete
+    a session is for, so running scripts, tests or builds, diagnosing a
+    failure and fixing it go to a coding agent on a host instead of being
+    turned down, while a question its own tools, web search or `web_fetch`
+    can answer is looked up and answered without one (2026-11-05). The
+    bot delegates a complete
     task and never runs a terminal; it picks the named host, then the
     project's default, then its home host, and checks it is online; it
     works only in a known project's repository or a folder it was given;
@@ -1291,6 +1293,14 @@ The decisions it produced:
   section, and the closed list points code work there rather than at a
   refusal. It refines 2026-10-15's closed list: the bot still has no
   shell, and a turn that cannot start a session still says "I can't".
+- 2026-11-05: **a bot looks it up before it starts a session.** The
+  2026-10-21 section called a session "the expected way, not a last
+  resort", and bots started one to answer what web search or `web_fetch`
+  could read (how a library works, what a release changed). The section now
+  says to research first with the bot's own tools, the web included, and to
+  start a session only for work that needs a shell or a checkout, or when
+  the person asks for one; `start_session`'s description says the same. It
+  refines 2026-10-21: code work still goes to a session, never a refusal.
 - 2026-10-18: **an ask's answer comes back as a turn, not by waiting.**
   It replaces "give another bot a task and wait for its answer": one turn
   per bot runs at a time and a turn has four minutes, so an ask that held

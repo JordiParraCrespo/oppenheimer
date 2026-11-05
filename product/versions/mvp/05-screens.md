@@ -189,6 +189,13 @@
   model's own levels in a popover, not a list (changed 2026-09-29; it
   was five product stops, Minimal to Max, for every agent).
 
+  The pane can wear an image of the person's own (added 2026-11-05): an
+  image button in its top-right corner chooses one, or removes it. It
+  covers the pane under the page bar and the composer and fades into the
+  grey at the foot, so the heading keeps its contrast. It is the
+  person's taste on this device, not the workspace's: downscaled and kept
+  in the browser, never sent to the API, and shown on New session only.
+
   **What each agent offers**, from the shared catalog (`CODING_AGENTS`)
   and never a list kept in the console:
 
