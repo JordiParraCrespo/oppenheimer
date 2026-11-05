@@ -136,9 +136,11 @@ worker runs it and streams what happens back to the chat.
     tool is a plain "I can't" and never a search of the server;
   - when the turn may start a session (its catalog has `start_session`),
     **working on code through sessions**: a shell or a checkout is what
-    a session is for, so inspecting a repository, running scripts, tests
-    or builds, diagnosing a failure and fixing it go to a coding agent on
-    a host instead of being turned down. The bot delegates a complete
+    a session is for, so running scripts, tests or builds, diagnosing a
+    failure and fixing it go to a coding agent on a host instead of being
+    turned down, while a question its own tools, web search or `web_fetch`
+    can answer is looked up and answered without one (2026-11-05). The
+    bot delegates a complete
     task and never runs a terminal; it picks the named host, then the
     project's default, then its home host, and checks it is online; it
     works only in a known project's repository or a folder it was given;
