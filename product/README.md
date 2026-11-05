@@ -1133,6 +1133,12 @@ earlier note:
   every tool, and the prompt carries the defence, each GitHub author named
   as a collaborator or as outside the repository and a rule against putting
   private information where outside text points (27 §7.1).
+- `versions/mvp/25-bots.md` (2026-10-21) told a bot that a session was
+  "the expected way, not a last resort" for code work, so bots opened one
+  for questions the web could answer. On 2026-11-05 the owner asked for
+  research first: a bot answers with its own tools, web search and
+  `web_fetch` when it can, and starts a session only for work that needs a
+  shell or a checkout, or when asked.
 - `versions/mvp/25-bots.md` §2 sent a turn the newest messages that fit
   its history budget, and the OpenAI engine named no conversation to the
   provider. On 2026-11-03, after `/usage` showed a bot on GPT and Grok at a
