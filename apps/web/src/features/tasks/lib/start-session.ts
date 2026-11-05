@@ -163,7 +163,7 @@ export function toStartSession(
       launch: {
         model: values.model,
         ...(!cloud && CODING_AGENTS[agent].launch.permission
-          ? { permission: 'full' as const }
+          ? { permission: 'auto' as const }
           : {}),
       },
       prompt,

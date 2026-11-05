@@ -491,6 +491,10 @@ earlier note:
   `research/headless-runs-draft.md`). On 2026-10-15 the owner made `auto`
   Claude Code's own auto mode (`--permission-mode auto`), which checks each
   action before it runs, and made it the level review sessions start at.
+- A session started from a task's Start session dialog launched its agent
+  at `full` (`--permission-mode bypassPermissions` for Claude Code). On
+  2026-11-05 the owner made it start at `auto`, as every other session
+  does; `full` stays a choice in the new-session form.
 - On 2026-10-16 the owner dropped the review session's input row, which
   doubled the agent's own prompt; the Chat tab is now the plain session
   pane (`next-steps/0.2-pull-requests.md`).

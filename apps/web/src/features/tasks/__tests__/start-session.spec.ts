@@ -43,14 +43,14 @@ function values(overrides: Partial<StartSessionValues> = {}): StartSessionValues
 const checkout = { installationId: 'i-1', githubRepoId: 101, baseBranch: 'main' };
 
 describe('the body Start session sends', () => {
-  it('starts the picked agent on the host with full permission', () => {
+  it('starts the picked agent on the host in auto mode, never bypassing permissions', () => {
     expect(toStartSession(values(), project)).toEqual({
       session: {
         hostId: 'h-1',
         agent: 'codex',
         checkouts: [checkout],
         cwdGithubRepoId: 101,
-        launch: { model: null, permission: 'full' },
+        launch: { model: null, permission: 'auto' },
         prompt: 'Fix the login',
       },
     });
