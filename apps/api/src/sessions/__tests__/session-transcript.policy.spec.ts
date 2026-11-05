@@ -64,6 +64,16 @@ describe('redactSecrets', () => {
     expect(redactSecrets('< set-cookie: sid=0123456789abcdef; Path=/').text).toBe(
       `< set-cookie: ${REDACTED}`,
     );
+    // The same headers as a program prints them: a header object, a JSON log.
+    expect(redactSecrets(`headers: { cookie: 'sid=0123456789abcdef' }`).text).toBe(
+      `headers: { cookie: '${REDACTED}' }`,
+    );
+    expect(redactSecrets('{"Cookie": "session=abcdef0123456789"}').text).toBe(
+      `{"Cookie": "${REDACTED}"}`,
+    );
+    expect(redactSecrets('{"set-cookie":["sid=0123456789abcdef; Path=/"]}').text).toBe(
+      `{"set-cookie":["${REDACTED}"]}`,
+    );
     expect(redactSecrets('postgres://app:s3cretpass@db:5432/app').text).toBe(
       `postgres://app:${REDACTED}@db:5432/app`,
     );

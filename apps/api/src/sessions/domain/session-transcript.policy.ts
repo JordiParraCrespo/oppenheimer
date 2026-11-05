@@ -59,7 +59,7 @@ const SECRET_SHAPES: readonly RegExp[] = [
  */
 const SECRET_PLACES: readonly RegExp[] = [
   /(\b(?:proxy-)?authorization["']?\s*[:=]\s*["']?(?:[A-Za-z]+\s+)?)(?!\[redacted\])[A-Za-z0-9._~+/=-]{8,}/gi,
-  /(\b(?:set-)?cookie["']?\s*:\s*)(?!\[redacted\])[^\r\n"']{8,}/gi,
+  /(\b(?:set-)?cookie["']?\s*:\s*\[?\s*["']?)(?!\[redacted\])[^\r\n"']{8,}/gi,
   /(\bBearer\s+)(?!\[redacted\])[A-Za-z0-9._~+/-]{16,}=*/gi,
   /(\b[a-z][a-z0-9+.-]*:\/\/[^\s/:@]+:)[^\s/@]+(?=@)/gi,
   /(\b[A-Za-z0-9_.-]*(?:secret|token|passw(?:or)?d|api[_-]?key|access[_-]?key|private[_-]?key|client[_-]?secret)[A-Za-z0-9_.-]*["']?\s*[:=]\s*["']?)(?!\[redacted\])[^\s"',;}{)(]{8,}/gi,
