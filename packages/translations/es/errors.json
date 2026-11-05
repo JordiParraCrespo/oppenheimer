@@ -292,6 +292,7 @@
     "SESSIONS_048": "El runner de este equipo es demasiado antiguo para continuar una sesión en la nube. Actualízalo o elige otro equipo.",
     "SESSIONS_049": "Ese cursor de transcripción no es válido. Lee desde los últimos turnos y continúa con el cursor que te dé esa página.",
     "SESSIONS_050": "Solo quien lanzó esta sesión en la nube puede enviarle un seguimiento, porque se ejecuta con su clave.",
+    "SESSIONS_051": "El proveedor del agente en la nube no confirmó el seguimiento, así que puede estar ejecutándose allí. Revisa la sesión en el proveedor antes de volver a enviarlo.",
     "VOICE_002": "No se ha grabado nada. Vuelve a dictar.",
     "VOICE_003": "La grabación es demasiado larga. Los dictados deben durar menos de dos minutos.",
     "VOICE_004": "No se ha podido leer la grabación. Vuelve a dictar.",

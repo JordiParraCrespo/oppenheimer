@@ -54,6 +54,16 @@ describe('redactSecrets', () => {
     expect(redactSecrets('Authorization: Bearer abcdefghijklmnop1234').text).toBe(
       `Authorization: Bearer ${REDACTED}`,
     );
+    // `curl -v` against an API on Basic auth (Cursor's own is), and a session cookie.
+    expect(redactSecrets('> Authorization: Basic dXNlcjpzdXBlcnNlY3JldHBhc3N3b3Jk').text).toBe(
+      `> Authorization: Basic ${REDACTED}`,
+    );
+    expect(redactSecrets('> Cookie: session=abcdef0123456789abcdef').text).toBe(
+      `> Cookie: ${REDACTED}`,
+    );
+    expect(redactSecrets('< set-cookie: sid=0123456789abcdef; Path=/').text).toBe(
+      `< set-cookie: ${REDACTED}`,
+    );
     expect(redactSecrets('postgres://app:s3cretpass@db:5432/app').text).toBe(
       `postgres://app:${REDACTED}@db:5432/app`,
     );

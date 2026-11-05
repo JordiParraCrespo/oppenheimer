@@ -292,6 +292,7 @@
     "SESSIONS_048": "This host’s runner is too old to continue a cloud session. Update the runner, or pick another host.",
     "SESSIONS_049": "That transcript cursor isn’t valid. Read from the latest turns and continue from the cursor that page gives.",
     "SESSIONS_050": "Only the person who launched this cloud session can send it a follow-up, since it runs on their key.",
+    "SESSIONS_051": "The cloud agent’s vendor didn’t confirm the follow-up, so it may be running there. Check the session at its vendor before sending it again.",
     "VOICE_002": "Nothing was recorded. Try dictating again.",
     "VOICE_003": "That recording is too long. Keep dictations under two minutes.",
     "VOICE_004": "That recording couldn’t be read. Try dictating again.",

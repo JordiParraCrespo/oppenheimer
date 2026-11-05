@@ -48,7 +48,9 @@ const SECRET_SHAPES: readonly RegExp[] = [
  * A secret by where it stands rather than what it looks like, keeping what
  * names it so the reader still knows what was there:
  *
- * - `Authorization: Bearer <token>` and a bare `Bearer <token>`;
+ * - an `Authorization` header of any scheme (`Basic`, `Bearer`, `Token`), a
+ *   bare `Bearer <token>`, and a `Cookie` or `Set-Cookie` header's value,
+ *   which is a session (`curl -v` prints all of them);
  * - a password in a URL (`https://user:<password>@host`);
  * - an assignment to a name that says secret (`API_KEY=…`, `"password": "…"`),
  *   for a value of eight characters or more, so `token = null` is left alone.
@@ -56,7 +58,9 @@ const SECRET_SHAPES: readonly RegExp[] = [
  * Each pattern's first group is what stays; the rest is the secret.
  */
 const SECRET_PLACES: readonly RegExp[] = [
-  /(\bBearer\s+)[A-Za-z0-9._~+/-]{16,}=*/gi,
+  /(\b(?:proxy-)?authorization["']?\s*[:=]\s*["']?(?:[A-Za-z]+\s+)?)(?!\[redacted\])[A-Za-z0-9._~+/=-]{8,}/gi,
+  /(\b(?:set-)?cookie["']?\s*:\s*)(?!\[redacted\])[^\r\n"']{8,}/gi,
+  /(\bBearer\s+)(?!\[redacted\])[A-Za-z0-9._~+/-]{16,}=*/gi,
   /(\b[a-z][a-z0-9+.-]*:\/\/[^\s/:@]+:)[^\s/@]+(?=@)/gi,
   /(\b[A-Za-z0-9_.-]*(?:secret|token|passw(?:or)?d|api[_-]?key|access[_-]?key|private[_-]?key|client[_-]?secret)[A-Za-z0-9_.-]*["']?\s*[:=]\s*["']?)(?!\[redacted\])[^\s"',;}{)(]{8,}/gi,
 ];

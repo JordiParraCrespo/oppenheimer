@@ -2,11 +2,13 @@ import { Inject, Injectable } from '@nestjs/common';
 import { AppError } from '@oppenheimer/backend-core';
 import type { CloudRunsPort } from '../../cloud-agents/application/cloud-runs.port';
 import { CLOUD_RUNS } from '../../cloud-agents/cloud-agents.di-tokens';
+import { cloudCallNeverActedOn } from '../../cloud-agents/domain/cloud-agent-delivery.policy';
 import type { WorkSessionRepositoryPort } from '../database/work-session.repository.port';
 import type { SessionCloudRunEntity } from '../domain/session-cloud-run.entity';
 import { cloudRunEntries } from '../domain/session-log-entry.factory';
 import { cloudPromptRefusal, type SessionPromptSender } from '../domain/session-prompt.policy';
 import { SESSION_EVENT_KINDS } from '../domain/session-state.policy';
+import { SessionErrors } from '../domain/sessions.errors';
 import { WorkSessionEntity } from '../domain/work-session.entity';
 import { WORK_SESSION_REPOSITORY } from '../sessions.di-tokens';
 import type { TypedPrompt } from './session-prompt-typer.resolver';
@@ -22,9 +24,14 @@ import type { TypedPrompt } from './session-prompt-typer.resolver';
  *    sent at once, one is claimed and the other refused. Keyed by
  *    `commandId`, so a retry claims once.
  * 2. **Deliver.** The vendor is asked on the launcher's own key. A refusal
- *    (still busy at the vendor, a rate limit, a key gone) is
- *    `prompt.undelivered`, which cancels the turn the claim opened, and the
- *    vendor's code is thrown for the caller to read. Nothing is queued.
+ *    that certainly did nothing there (still busy, a rate limit, a key gone,
+ *    the request refused) is `prompt.undelivered`, which cancels the turn
+ *    the claim opened, and the vendor's code is thrown for the caller to
+ *    read. A failure that may have reached the vendor (a timeout, a 5xx) is
+ *    not called undelivered: the claim stays, `cloudPromptRefusal` holds off
+ *    the next follow-up, and the caller is told it is unconfirmed
+ *    (`SESSIONS_051`), so a retry never runs the same instruction twice on
+ *    the launcher's key. Nothing is queued.
  * 3. **Acknowledge.** The new run becomes the one the session follows, and
  *    its first status is folded into the log like any sync's, so the turn
  *    moves on and a bot following the session is woken when it ends.
@@ -72,13 +79,17 @@ export class CloudFollowUpResolver {
         prompt.text,
       );
     } catch (error) {
-      if (error instanceof AppError) {
-        await this.sessions.appendEvents(session, [
-          this.entry(prompt.commandId, SESSION_EVENT_KINDS.PROMPT_UNDELIVERED, {
-            id: prompt.commandId,
-          }),
-        ]);
+      if (!(error instanceof AppError) || !cloudCallNeverActedOn(error.code)) {
+        throw new AppError(SessionErrors.CLOUD_FOLLOW_UP_UNCONFIRMED, {
+          detail: `It may be running at ${session.vendorUrl ?? 'its vendor'}; check there before sending it again.`,
+          extensions: error instanceof AppError ? { upstreamCode: error.code } : undefined,
+        });
       }
+      await this.sessions.appendEvents(session, [
+        this.entry(prompt.commandId, SESSION_EVENT_KINDS.PROMPT_UNDELIVERED, {
+          id: prompt.commandId,
+        }),
+      ]);
       throw error;
     }
 

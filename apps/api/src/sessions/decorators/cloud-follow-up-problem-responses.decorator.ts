@@ -36,7 +36,8 @@ export const CloudFollowUpProblemResponses = () =>
     }),
     ApiProblemResponse({
       status: 502,
-      description: 'The vendor did not answer',
-      code: 'CLOUD_AGENTS_006',
+      description:
+        'The vendor did not confirm the follow-up: it may be running there; check before sending again',
+      code: 'SESSIONS_051',
     }),
   );

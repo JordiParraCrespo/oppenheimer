@@ -305,8 +305,9 @@ its pending approvals reached the Inbox.
 - **Safety.** The session is read in the caller's scope first, so a session
   in another workspace is not found and its host never asked. Secrets that
   look like secrets (our API and pairing tokens, GitHub, Anthropic, OpenAI,
-  Stripe, AWS, Google, Slack keys, JWTs, private keys, bearer tokens, URL
-  passwords, and values assigned to names that say secret) are replaced
+  Stripe, AWS, Google, Slack keys, JWTs, private keys, `Authorization`
+  headers of any scheme, cookies, URL passwords, and values assigned to
+  names that say secret) are replaced
   with `[redacted]` before the page leaves the API, and `redactions`
   counts them. The bot fences the page as the session's output, data not
   instructions; `opp` strips terminal control sequences before printing.

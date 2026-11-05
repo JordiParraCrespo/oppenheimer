@@ -91,8 +91,26 @@ export function cloudPromptRefusal(
   now: Date = new Date(),
 ): string | null {
   if (run.isActive) return 'The cloud agent is still on its last run; wait for it to finish.';
+  // A follow-up still queued is one the vendor never confirmed (a confirmed
+  // one moves its turn on): it may be running there unseen, so another is
+  // held off longer than a terminal's, and never sent blind on a retry.
+  const quietFor = fold.lastEventAt ? (now.getTime() - fold.lastEventAt.getTime()) / 1000 : 0;
+  if (
+    latestTurn?.origin === 'follow_up' &&
+    latestTurn.state === 'queued' &&
+    quietFor < CLOUD_UNCONFIRMED_HOLD_SECONDS
+  ) {
+    return 'An earlier follow-up was not confirmed by the vendor and may be running there; check the session at its vendor before sending another.';
+  }
   return promptRefusal(fold, latestTurn, now);
 }
+
+/**
+ * How long a follow-up the vendor never confirmed holds off the next one:
+ * long enough for a person to look at the vendor's page, short enough that
+ * a lost one does not hold the session for good.
+ */
+export const CLOUD_UNCONFIRMED_HOLD_SECONDS = 15 * 60;
 
 /** The words, then Enter, each one write: the keys the chat view types for a message. */
 export function promptKeys(text: string): string[] {

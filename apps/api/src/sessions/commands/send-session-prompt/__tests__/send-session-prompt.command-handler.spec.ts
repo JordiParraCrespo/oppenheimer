@@ -302,6 +302,21 @@ describe('SendSessionPromptCommandHandler', () => {
       expect(sessions.saveCloudRunIf).not.toHaveBeenCalled();
     });
 
+    // The regression: a timeout after Cursor took the run recorded as
+    // undelivered, hiding a run that is going and inviting a second send.
+    it('answers SESSIONS_051 and keeps the claim when the vendor may have taken it', async () => {
+      const session = cursorSession('finished');
+      const { handler, sessions } = harness(session, true, true, async () => {
+        throw new AppError(CloudAgentErrors.PROVIDER_UNAVAILABLE, { detail: 'Cursor unreachable' });
+      });
+      await expect(handler.execute(prompt(session))).rejects.toMatchObject({
+        code: 'SESSIONS_051',
+        extensions: { upstreamCode: 'CLOUD_AGENTS_006' },
+      });
+      expect(sessions.appendEvents).not.toHaveBeenCalled();
+      expect(sessions.saveCloudRunIf).not.toHaveBeenCalled();
+    });
+
     // The vendor bills its launcher's key: nobody else's credential may spend it.
     it('refuses anyone but its launcher with SESSIONS_050, claiming and sending nothing', async () => {
       const session = cursorSession('finished', 'user-2');

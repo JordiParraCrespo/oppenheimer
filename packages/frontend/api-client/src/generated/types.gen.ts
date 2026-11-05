@@ -10278,7 +10278,7 @@ export type SendSessionPromptErrors = {
      */
     429: ProblemDetailsDto;
     /**
-     * CLOUD_AGENTS_006 — The vendor did not answer
+     * SESSIONS_051 — The vendor did not confirm the follow-up: it may be running there; check before sending again
      */
     502: ProblemDetailsDto;
     /**

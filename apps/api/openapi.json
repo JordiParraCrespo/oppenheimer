@@ -11234,7 +11234,7 @@
             }
           },
           "502": {
-            "description": "CLOUD_AGENTS_006 — The vendor did not answer",
+            "description": "SESSIONS_051 — The vendor did not confirm the follow-up: it may be running there; check before sending again",
             "content": {
               "application/problem+json": {
                 "schema": {

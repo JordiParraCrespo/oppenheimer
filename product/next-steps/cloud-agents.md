@@ -320,8 +320,12 @@ allows:
   `POST /v1/agents/{id}/runs` (`research/cloud-agents.md`), sent by
   `send_to_session`, `POST /v1/sessions/{id}/prompt`, MCP and `opp` alike
   (`CloudFollowUpResolver`). It is claimed in the log as `prompt.sent`
-  first, then sent on the launcher's key; a refusal is
-  `prompt.undelivered` and the vendor's code. Nothing is queued: while a
+  first, then sent on the launcher's key; a refusal that certainly did
+  nothing at Cursor is `prompt.undelivered` and the vendor's code. A
+  failure that may have reached Cursor (a timeout, a 5xx) is not called
+  undelivered: it is `SESSIONS_051`, the claim stays, and the next
+  follow-up is held off for 15 minutes, so a retry never runs the same
+  instruction twice on the launcher's key. Nothing is queued: while a
   run is on, the API refuses (`SESSIONS_036`), and Cursor's own `409
   agent_busy` is `CLOUD_AGENTS_012`. Only the person who launched the
   session may send one, since it bills their key (`SESSIONS_050`). The new

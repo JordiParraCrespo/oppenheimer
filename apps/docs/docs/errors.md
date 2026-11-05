@@ -580,6 +580,7 @@ are never reissued.
 | `SESSIONS_048` <a id="sessions_048" /> | This host's runner cannot continue a cloud session | 409 |
 | `SESSIONS_049` <a id="sessions_049" /> | That transcript cursor is not valid | 400 |
 | `SESSIONS_050` <a id="sessions_050" /> | Only the person who launched a cloud session can send it a follow-up | 403 |
+| `SESSIONS_051` <a id="sessions_051" /> | The cloud session’s vendor did not confirm the follow-up | 502 |
 
 `SESSIONS_001` is also returned for a session that exists in another workspace: the
 scoped read cannot see it, and distinguishing the two would confirm the id.
