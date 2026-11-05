@@ -1,7 +1,7 @@
+import { useStoredList } from '@oppenheimer/frontend-web';
 import { createContext, useContext, useMemo } from 'react';
 import { SESSION_PINS_KEY, withPin } from '../lib/session-pins';
 import { mergeOrder } from '../lib/sidebar-order';
-import { useStoredList } from './use-stored-list';
 
 export type SessionPins = {
   pins: readonly string[];

@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { rememberList, storedList } from '../lib/stored-list';
+import { rememberList, storedList, withFold } from './stored-list';
 
 /**
  * What the sidebar keeps on this device (pins, folds) reads back as written,
@@ -24,5 +24,12 @@ describe('storedList', () => {
   ])('reads %s as what it can make of it', (_, raw, expected) => {
     if (raw !== null) window.localStorage.setItem(KEY, raw);
     expect(storedList(KEY)).toEqual(expected);
+  });
+});
+
+describe('withFold', () => {
+  it('folds a key once however often it is folded, and opens it again', () => {
+    expect(withFold(withFold(['a'], 'a', false), 'a', false)).toEqual(['a']);
+    expect(withFold(['a', 'b'], 'a', true)).toEqual(['b']);
   });
 });

@@ -1,5 +1,5 @@
+import { useStoredList } from '@oppenheimer/frontend-web';
 import { HIDDEN_PROJECTS_KEY, withHidden } from '../lib/hidden-projects';
-import { useStoredList } from './use-stored-list';
 
 /**
  * The projects hidden from the sidebar, and the toggles that change them.

@@ -1,6 +1,6 @@
 /**
  * A list of ids the reader keeps on this device under `key`: the sidebar's
- * pins and folded groups. One reader and one writer, so a corrupt value,
+ * pins and folded groups, the sections whose Bots heading is folded. One reader and one writer, so a corrupt value,
  * private browsing or a full quota are handled once.
  */
 
@@ -22,4 +22,10 @@ export function rememberList(key: string, list: readonly string[]) {
   } catch {
     // Private browsing or a full quota: the list holds until the page reloads.
   }
+}
+
+/** `folded` with `key` folded, or opened: a fold is one entry however often it is made. */
+export function withFold(folded: readonly string[], key: string, open: boolean): string[] {
+  const rest = folded.filter((foldedKey) => foldedKey !== key);
+  return open ? rest : [...rest, key];
 }
