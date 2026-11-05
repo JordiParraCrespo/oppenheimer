@@ -22,6 +22,7 @@ import { ApiAuthGuard } from '../../../auth/guards/api-auth.guard';
 import { PoliciesGuard } from '../../../auth/guards/policies.guard';
 import { CurrentAccessScope } from '../../../authz/decorators/current-access-scope.decorator';
 import { AccessScopeInterceptor } from '../../../authz/interceptors/access-scope.interceptor';
+import { CloudFollowUpProblemResponses } from '../../decorators/cloud-follow-up-problem-responses.decorator';
 import type { SessionCommandResult } from '../../domain/session-command.types';
 import type { WorkSessionEntity } from '../../domain/work-session.entity';
 import { SentSessionPromptResponseDto } from '../../dtos/session.response.dto';
@@ -53,7 +54,7 @@ export class SendSessionPromptHttpController {
   @ApiOperation({
     summary: 'Send a follow-up prompt to a session’s agent',
     description:
-      'Types `text` into the session’s agent and submits it, the way the chat view sends a message, recorded in the log as sent by the caller. Only while the agent waits at its prompt (the session’s state `idle` or `ready-for-review`): while it works, wait; when it asks something, answer its `decision`. Answers the `seq` its `prompt.sent` entry took, from which the agent’s answer follows in the log, and the session.',
+      'Types `text` into the session’s agent and submits it, the way the chat view sends a message, recorded in the log as sent by the caller. Only while the agent waits at its prompt (the session’s state `idle` or `ready-for-review`): while it works, wait; when it asks something, answer its `decision`. Nothing is queued: a prompt refused is not sent later. A cloud session Cursor runs takes it as a new run of its agent, on the launcher’s key, only once its last run has ended; a Claude Code or Codex cloud session takes none here (answer it at its vendor). Answers the `seq` its `prompt.sent` entry took, from which the agent’s answer follows in the log and its transcript, and the session.',
   })
   @ApiResponse({ status: 200, type: SentSessionPromptResponseDto })
   @ApiProblemResponse({ status: 404, description: 'Session not found', code: 'SESSIONS_001' })
@@ -64,6 +65,7 @@ export class SendSessionPromptHttpController {
     description: 'The agent is not waiting for a prompt',
     code: 'SESSIONS_036',
   })
+  @CloudFollowUpProblemResponses()
   @ApiProblemResponse({ status: 503, description: 'The host is offline', code: 'SESSIONS_016' })
   @ApiProblemResponse({ status: 429, description: 'Rate limit reached', code: 'RATE_001' })
   async send(

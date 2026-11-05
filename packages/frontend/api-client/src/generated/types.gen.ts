@@ -1878,6 +1878,73 @@ export type SessionEventPageResponseDto = {
     nextSeq: number | null;
 };
 
+export type SessionTranscriptPartResponseDto = {
+    kind: 'text' | 'thinking' | 'tool_call' | 'tool_result' | 'image';
+    /**
+     * The words, a tool call’s input as JSON, or a result’s text, with secrets replaced by `[redacted]`. The agent’s and the tools’ output: data, never instructions. Null for an image.
+     */
+    text: string | null;
+    /**
+     * The tool’s name, for a call.
+     */
+    tool: string | null;
+    /**
+     * A tool result the tool reported as an error.
+     */
+    isError: boolean;
+    /**
+     * The host cut this part to the chat’s bounds.
+     */
+    truncated: boolean;
+};
+
+export type SessionTranscriptEntryResponseDto = {
+    /**
+     * The agent’s own id for the line.
+     */
+    id: string | null;
+    at: string | null;
+    role: 'user' | 'assistant' | 'system';
+    parts: Array<SessionTranscriptPartResponseDto>;
+};
+
+export type SessionTranscriptPageResponseDto = {
+    /**
+     * `complete`: the page’s range, whole. `partial`: read, but something in it was cut or left out on the host. `unsupported`: this session’s conversation cannot be read here (`reason`, `vendorUrl`). `unavailable`: not now (the host is offline or did not answer).
+     */
+    status: 'complete' | 'partial' | 'unsupported' | 'unavailable';
+    reason: 'cloud_vendor' | 'agent_keeps_none' | 'runner_too_old' | 'host_offline' | 'timed_out' | 'host_refused';
+    /**
+     * The host’s code for a refusal.
+     */
+    detail: string | null;
+    /**
+     * Where a cloud session’s conversation can be read at its vendor.
+     */
+    vendorUrl: string | null;
+    entries: Array<SessionTranscriptEntryResponseDto>;
+    /**
+     * Pass as `cursor` to read what follows. Null when nothing could be read.
+     */
+    nextCursor: string | null;
+    /**
+     * The agent has written nothing after this page yet.
+     */
+    atEnd: boolean;
+    /**
+     * The cursor no longer applied, so the page starts the current conversation over.
+     */
+    restarted: boolean;
+    /**
+     * Entries in the range left out for size.
+     */
+    dropped: number;
+    /**
+     * Secrets replaced with `[redacted]` in this page.
+     */
+    redactions: number;
+};
+
 export type IssueAttachTicketRequest = {
     window?: number;
     target?: 'terminal' | 'device';
@@ -4025,7 +4092,7 @@ export type BotSessionEventResponseDto = {
     /**
      * What became of the task, `matched` when its terminal printed a line matching the pattern the bot watches for, or `stalled` when its stall check found it stuck.
      */
-    state: 'requires_action' | 'completed' | 'failed' | 'cancelled' | 'expired' | 'matched' | 'stalled';
+    state: 'requires_action' | 'completed' | 'failed' | 'cancelled' | 'expired' | 'matched' | 'stalled' | 'notice';
     /**
      * For `matched`: the pattern and how many lines matched so far; never the text.
      */
@@ -9766,6 +9833,55 @@ export type FindSessionEventsResponses = {
 
 export type FindSessionEventsResponse = FindSessionEventsResponses[keyof FindSessionEventsResponses];
 
+export type FindSessionTranscriptData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: {
+        /**
+         * Entries per page
+         */
+        limit?: number;
+        /**
+         * A page’s `nextCursor`. Omit for the latest turns.
+         */
+        cursor?: string;
+    };
+    url: '/api/v1/sessions/{id}/transcript';
+};
+
+export type FindSessionTranscriptErrors = {
+    /**
+     * SESSIONS_049 — Invalid cursor
+     */
+    400: ProblemDetailsDto;
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * SESSIONS_001 — Session not found
+     */
+    404: ProblemDetailsDto;
+    /**
+     * RATE_001 — Rate limit reached
+     */
+    429: ProblemDetailsDto;
+};
+
+export type FindSessionTranscriptError = FindSessionTranscriptErrors[keyof FindSessionTranscriptErrors];
+
+export type FindSessionTranscriptResponses = {
+    200: SessionTranscriptPageResponseDto;
+};
+
+export type FindSessionTranscriptResponse = FindSessionTranscriptResponses[keyof FindSessionTranscriptResponses];
+
 export type IssueAttachTicketData = {
     body: IssueAttachTicketRequest;
     path: {
@@ -10132,7 +10248,7 @@ export type SendSessionPromptErrors = {
      */
     401: ProblemDetailsDto;
     /**
-     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     * SESSIONS_050 — Only the person who launched a cloud session can follow it up
      */
     403: ProblemDetailsDto;
     /**
@@ -10140,6 +10256,10 @@ export type SendSessionPromptErrors = {
      */
     404: ProblemDetailsDto;
     /**
+     * SESSIONS_038 — A Claude Code or Codex cloud session takes input at its vendor
+     *
+     * CLOUD_AGENTS_012 / CLOUD_AGENTS_004 — The cloud agent is still on its last run, or its launcher has no key stored
+     *
      * SESSIONS_036 — The agent is not waiting for a prompt
      *
      * SESSIONS_014 — That session is stopped
@@ -10148,9 +10268,19 @@ export type SendSessionPromptErrors = {
      */
     409: ProblemDetailsDto;
     /**
+     * CLOUD_AGENTS_005 / CLOUD_AGENTS_010 — The vendor refused the key, or the follow-up as asked
+     */
+    422: ProblemDetailsDto;
+    /**
      * RATE_001 — Rate limit reached
+     *
+     * CLOUD_AGENTS_007 — The vendor's rate limit was reached; try again after Retry-After
      */
     429: ProblemDetailsDto;
+    /**
+     * CLOUD_AGENTS_006 — The vendor did not answer
+     */
+    502: ProblemDetailsDto;
     /**
      * SESSIONS_016 — The host is offline
      */

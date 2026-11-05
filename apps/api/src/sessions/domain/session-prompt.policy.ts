@@ -76,6 +76,24 @@ export function promptRefusal(
   return null;
 }
 
+/**
+ * Why a cloud session's agent at its vendor cannot take a next instruction
+ * now, or null when it can (`product/next-steps/cloud-agents.md`, "Follow-ups
+ * to a cloud agent"). A vendor takes one as a new run only while none runs,
+ * so a run still going is a wait; past that, the same rule as a terminal's:
+ * an open session whose agent is not working, with no prompt still waiting
+ * to be taken.
+ */
+export function cloudPromptRefusal(
+  run: { isActive: boolean },
+  fold: Pick<SessionFold, 'state' | 'lastObservedState' | 'lastEventAt'>,
+  latestTurn: Pick<SessionTurnFold, 'origin' | 'state'> | null,
+  now: Date = new Date(),
+): string | null {
+  if (run.isActive) return 'The cloud agent is still on its last run; wait for it to finish.';
+  return promptRefusal(fold, latestTurn, now);
+}
+
 /** The words, then Enter, each one write: the keys the chat view types for a message. */
 export function promptKeys(text: string): string[] {
   const words = text.includes('\n') ? `${PASTE_START}${text}${PASTE_END}` : text;

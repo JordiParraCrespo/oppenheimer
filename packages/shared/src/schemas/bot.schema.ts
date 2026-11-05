@@ -587,11 +587,17 @@ export type BotSessionWakeState = (typeof BOT_SESSION_WAKE_STATES)[number];
 
 /**
  * What a session event says: a task's wake state; `matched`, its terminal
- * printed a line matching a watch's pattern; or `stalled`, the silent stall
+ * printed a line matching a watch's pattern; `stalled`, the silent stall
  * check found the task stuck before it reached any wake state
- * (`27-bot-subscriptions.md` §4.1).
+ * (`27-bot-subscriptions.md` §4.1); or `notice`, its agent sent a line
+ * (`runner sessions notify`, `product/next-steps/agent-tools.md` §9).
  */
-export const BOT_SESSION_EVENT_STATES = [...BOT_SESSION_WAKE_STATES, 'matched', 'stalled'] as const;
+export const BOT_SESSION_EVENT_STATES = [
+  ...BOT_SESSION_WAKE_STATES,
+  'matched',
+  'stalled',
+  'notice',
+] as const;
 export type BotSessionEventState = (typeof BOT_SESSION_EVENT_STATES)[number];
 
 export interface BotSessionEvent {
@@ -603,7 +609,7 @@ export interface BotSessionEvent {
   sessionName: string;
   /** Which of the session's tasks (its turn's number). */
   turn: number;
-  /** What became of the task; `matched`, its terminal printed what the bot watches for; or `stalled`. */
+  /** What became of the task; `matched`, its terminal printed what the bot watches for; `stalled`; or `notice`, its agent sent a line. */
   state: BotSessionEventState;
   /**
    * For `matched`: the pattern the bot watches the terminal for, and how many

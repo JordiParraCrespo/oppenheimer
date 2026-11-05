@@ -142,6 +142,7 @@
   "GET /v1/sessions": ["sessions:read"],
   "GET /v1/sessions/:id": ["sessions:read"],
   "GET /v1/sessions/:id/events": ["sessions:read"],
+  "GET /v1/sessions/:id/transcript": ["sessions:read"],
   "GET /v1/sessions/:id/ports": ["sessions:read"],
   "GET /v1/sessions/:id/share": ["sessions:read"],
   "GET /v1/tasks": ["tasks:read"],

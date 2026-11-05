@@ -12,6 +12,7 @@ import { QueueModule } from '../queue/queue.module';
 import { UsersModule } from '../users/user.module';
 import { AttachTicketFactory } from './application/attach-ticket.factory';
 import { CloudAttachmentsResolver } from './application/cloud-attachments.resolver';
+import { CloudFollowUpResolver } from './application/cloud-follow-up.resolver';
 import { CloudSessionSyncResolver } from './application/cloud-session-sync.resolver';
 import { CloudTaskFactory } from './application/cloud-task.factory';
 import { GithubPullWakesDomainEventHandler } from './application/event-handlers/github-pull-wakes.domain-event-handler';
@@ -110,6 +111,8 @@ import { FindSessionPortsQueryHandler } from './queries/find-session-ports/find-
 import { FindSessionShareHttpController } from './queries/find-session-share/find-session-share.http.controller';
 import { FindSessionShareQueryHandler } from './queries/find-session-share/find-session-share.query-handler';
 import { FindSessionSharedPreviewQueryHandler } from './queries/find-session-shared-preview/find-session-shared-preview.query-handler';
+import { FindSessionTranscriptHttpController } from './queries/find-session-transcript/find-session-transcript.http.controller';
+import { FindSessionTranscriptQueryHandler } from './queries/find-session-transcript/find-session-transcript.query-handler';
 import { FindSessionsHttpController } from './queries/find-sessions/find-sessions.http.controller';
 import { FindSessionsQueryHandler } from './queries/find-sessions/find-sessions.query-handler';
 import { FindSharedSessionHttpController } from './queries/find-shared-session/find-shared-session.http.controller';
@@ -144,6 +147,7 @@ const httpControllers = [
   StartCloudSessionHttpController,
   UploadSessionAttachmentHttpController,
   FindSessionEventsHttpController,
+  FindSessionTranscriptHttpController,
   IssueAttachTicketHttpController,
   IssueSessionPreviewHttpController,
   SetSessionSharePeopleHttpController,
@@ -210,6 +214,7 @@ const queryHandlers: Provider[] = [
   FindHostCodexEnvironmentsQueryHandler,
   FindSessionPortsQueryHandler,
   FindSessionSharedPreviewQueryHandler,
+  FindSessionTranscriptQueryHandler,
   FindCloudFileQueryHandler,
 ];
 
@@ -266,6 +271,7 @@ const adapters: Provider[] = [
     SessionTerminalWatchMapper,
     AttachTicketFactory,
     CloudSessionSyncResolver,
+    CloudFollowUpResolver,
     SessionShareAccessResolver,
     SessionPlanFactory,
     SessionLaunchSpecFactory,

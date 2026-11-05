@@ -6,6 +6,7 @@ import {
   Clock,
   Hand,
   Hourglass,
+  MessageCircle,
   TextSearch,
 } from '@oppenheimer/design-system-web/icons';
 import type { BotSessionEvent } from '@oppenheimer/shared/schemas/bot';
@@ -21,6 +22,7 @@ const SESSION_KEYS = {
   expired: 'bots.chat.event.session.expired',
   stalled: 'bots.chat.event.session.stalled',
   matched: 'bots.chat.event.session.matched',
+  notice: 'bots.chat.event.session.notice',
 } as const;
 
 const SESSION_ICONS = {
@@ -31,14 +33,16 @@ const SESSION_ICONS = {
   expired: <Clock />,
   stalled: <Hourglass />,
   matched: <TextSearch />,
+  notice: <MessageCircle />,
 } as const;
 
 /**
  * A session the bot follows that woke it (`27-bot-subscriptions.md`):
  * "Session “Research” finished" with Open session, in red when it failed;
  * or its terminal printed what the bot watches for: the pattern and how
- * many lines matched, never the lines; or "looks stuck" when its stall
- * check found it so.
+ * many lines matched, never the lines; "looks stuck" when its stall
+ * check found it so; or that its agent sent a message (`runner sessions
+ * notify`), whose words are in the bot's turn, not on the line.
  */
 export function SessionEventLine({ event }: { event: BotSessionEvent }) {
   const { t } = useTranslation();

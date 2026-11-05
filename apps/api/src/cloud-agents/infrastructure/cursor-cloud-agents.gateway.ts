@@ -110,6 +110,24 @@ export class CursorCloudAgentsGateway implements CursorCloudAgentsPort {
     return cursorRunState(body, runId);
   }
 
+  async followUp(
+    access: CursorAccess,
+    agentId: string,
+    prompt: string,
+  ): Promise<CloudAgentRunState> {
+    const body = await this.call(access, 'POST', `/v1/agents/${encodeURIComponent(agentId)}/runs`, {
+      prompt: { text: prompt },
+    });
+    const run = recordOf(body.run);
+    const runId = stringOf(run.id);
+    if (!runId) {
+      throw new AppError(CloudAgentErrors.PROVIDER_UNAVAILABLE, {
+        detail: 'Cursor answered a follow-up with no run id',
+      });
+    }
+    return cursorRunState(run, runId);
+  }
+
   models(access: CursorAccess): Promise<CursorModel[]> {
     return this.cached(
       `cloud-agents:cursor:models:${access.bucket}`,
@@ -221,6 +239,10 @@ function refusalOf(status: number, errorBody: string): AppError {
   const { code, message } = errorOf(errorBody);
   const detail = message ? `Cursor: ${message}` : `Cursor answered ${status}`;
   const extensions = code ? { upstreamCode: code } : undefined;
+  // Checked before the generic 409: the agent is on a run, which is a wait.
+  if (code === 'agent_busy') {
+    return new AppError(CloudAgentErrors.AGENT_BUSY, { detail, extensions });
+  }
   if (status === 401 || code === 'key_not_supported') {
     return new AppError(CloudAgentErrors.KEY_REFUSED, { detail, extensions });
   }
