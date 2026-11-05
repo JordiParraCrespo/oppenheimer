@@ -15,7 +15,9 @@ import { type ProjectVisibility, SessionsFilterMenu } from './sessions-filter-me
  * While rows are picked, `selectionBar` takes the Sessions line's place.
  * Projects are not made or edited from here: that is Plan's Projects view.
  * The Sessions label folds the list away (`open`), and the search and the
- * chips with it, since they narrow nothing while it is folded.
+ * chips with it, since they narrow nothing while it is folded. The settled
+ * query comes back down as the field's `value`, so the box a fold remounts
+ * still says what narrows the list.
  */
 export function SessionsSidebarHead({
   sessionCount,
@@ -27,6 +29,7 @@ export function SessionsSidebarHead({
   onFiltersChange,
   onFiltersClear,
   onFacetClear,
+  query,
   onQueryChange,
   selectionBar,
   open,
@@ -41,6 +44,7 @@ export function SessionsSidebarHead({
   onFiltersChange: (patch: Partial<SessionFilters>) => void;
   onFiltersClear: () => void;
   onFacetClear: (key: SessionFacet) => void;
+  query: string;
   onQueryChange: (query: string) => void;
   selectionBar?: ReactNode;
   open: boolean;
@@ -73,6 +77,7 @@ export function SessionsSidebarHead({
       {open ? (
         <>
           <SidebarSearchField
+            value={query}
             onChange={onQueryChange}
             label={t('sessions.sidebar.search')}
             clearLabel={t('sessions.sidebar.clearSearch')}

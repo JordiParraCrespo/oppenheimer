@@ -1,5 +1,6 @@
 export { useManageRepositoryAccess } from './hooks/use-manage-repository-access';
 export { type MintAddress, useOpenMinted } from './hooks/use-open-minted';
+export { useStoredFold } from './hooks/use-stored-fold';
 export { useStoredList } from './hooks/use-stored-list';
 export { sanitizeRedirect } from './lib/sanitize-redirect';
 export { searchFlag, searchPage, searchText } from './lib/search-params';

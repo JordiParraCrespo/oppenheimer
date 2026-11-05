@@ -5,7 +5,7 @@ import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { useSyncExternalStore } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ConsoleDialogProvider } from '@/lib/console';
-import { FOLDED_SESSIONS_KEY } from '../lib/folded-groups';
+import { FOLDED_SESSIONS_KEY } from '../hooks/use-folded-sessions';
 import { SESSION_PINS_KEY } from '../lib/session-pins';
 import { SessionsSidebar } from '../sections/sessions-sidebar';
 
@@ -267,21 +267,22 @@ describe('SessionsSidebar', () => {
     window.localStorage.clear();
   });
 
-  /** The box comes back empty after a fold, so the list must not stay narrowed by what it held. */
-  it('drops a settled search when the list folds', () => {
+  /** A search outlives a fold: the box comes back holding what still narrows the list. */
+  it('keeps a settled search, in the box and on the list, across a fold', () => {
     vi.useFakeTimers();
     try {
-      const search = screen.getByRole('textbox', { name: 'sessions.sidebar.search' });
       act(() => {
-        fireEvent.change(search, { target: { value: 'alpha' } });
+        fireEvent.change(screen.getByRole('textbox', { name: 'sessions.sidebar.search' }), {
+          target: { value: 'alpha' },
+        });
         vi.advanceTimersByTime(1_000);
       });
-      expect(screen.queryByRole('button', { name: 'bravo' })).toBeNull();
-
       const heading = screen.getByRole('button', { name: 'sessions.sidebar.sessions' });
       act(() => fireEvent.click(heading));
       act(() => fireEvent.click(heading));
-      expect(screen.getByRole('button', { name: 'bravo' })).toBeTruthy();
+      const search = screen.getByRole('textbox', { name: 'sessions.sidebar.search' });
+      expect((search as HTMLInputElement).value).toBe('alpha');
+      expect(screen.queryByRole('button', { name: 'bravo' })).toBeNull();
     } finally {
       vi.useRealTimers();
       window.localStorage.clear();
