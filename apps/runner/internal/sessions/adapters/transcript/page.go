@@ -189,7 +189,12 @@ func readPage(path string, start, size int64, modified time.Time, t chatTranscri
 	if atEnd && t.holds() {
 		out := t.quiet(time.Since(modified), req.EntryMax)
 		if len(out) > 0 && !p.fits(out, req) && len(p.entries) > 0 {
+			// quiet has already emptied the transcriber, so the switch below
+			// would keep the cursor past the reply's lines: end the page where
+			// it last held nothing, and the next page reads the reply whole.
 			full, atEnd = true, false
+			p = settled
+			p.entries = p.entries[:len(settled.entries):len(settled.entries)]
 		} else {
 			p.take(out, req)
 			if !t.holds() {

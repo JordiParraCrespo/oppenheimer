@@ -265,3 +265,62 @@ func TestAReplyStillBeingWrittenWaitsForTheNextPage(t *testing.T) {
 		t.Fatalf("the reply once quiet = %v (partial %v)", second.Entries, second.Partial)
 	}
 }
+
+// A quiet reply that does not fit the page is left for the next one, whole.
+// Regression: quiet flushed the reply out of the transcriber, the page
+// refused it for its bounds, and the cursor still moved past its lines, so
+// the agent's final answer was on no page at all.
+func TestAQuietReplyThatDoesNotFitIsOnTheNextPage(t *testing.T) {
+	sessions := t.TempDir()
+	dir := filepath.Join(sessions, url.PathEscape("/w/sessions/xrp"), conversation)
+	if err := os.MkdirAll(dir, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	path := filepath.Join(dir, "updates.jsonl")
+	lines := []string{
+		chunk("user_message_chunk", "Fix the wallet test"),
+		acpLine(map[string]any{"sessionUpdate": "tool_call", "toolCallId": "t1", "title": "bash", "kind": "execute", "status": "completed",
+			"rawInput": map[string]any{"command": "pnpm test"}}),
+		chunk("agent_message_chunk", "Fixed: it had no initial value."),
+	}
+	if err := os.WriteFile(path, []byte(strings.Join(lines, "\n")+"\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	quiet := time.Now().Add(-time.Minute)
+	if err := os.Chtimes(path, quiet, quiet); err != nil {
+		t.Fatal(err)
+	}
+	reader := transcript.New(transcript.Options{GrokSessions: sessions})
+	session := domain.Session{Agent: domain.AgentGrok, Launch: domain.Launch{Conversation: conversation}}
+	req := app.TranscriptPageRequest{Limit: 200, BytesMax: 256 << 10, EntryMax: 64 << 10}
+
+	whole, err := reader.ReadPage(session, req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(whole.Entries) < 2 || !strings.Contains(whole.Entries[len(whole.Entries)-1], "Fixed") {
+		t.Fatalf("the whole conversation = %v", whole.Entries)
+	}
+
+	req.Limit = len(whole.Entries) - 1
+	first, err := reader.ReadPage(session, req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, entry := range first.Entries {
+		if strings.Contains(entry, "Fixed") {
+			t.Fatalf("the reply is on a page it does not fit: %v", first.Entries)
+		}
+	}
+	if first.AtEnd {
+		t.Fatal("a page that left the reply out says it reached the end")
+	}
+	req.Conversation, req.After = first.Conversation, first.Next
+	second, err := reader.ReadPage(session, req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(second.Entries) == 0 || !strings.Contains(second.Entries[len(second.Entries)-1], "Fixed: it had no initial value.") {
+		t.Fatalf("the reply is on no page: first %v, second %v", first.Entries, second.Entries)
+	}
+}
