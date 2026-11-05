@@ -2705,9 +2705,9 @@
       "keyCancel": "cancel"
     },
     "columns": {
-      "later": "Later",
       "todo": "To do",
       "doing": "In progress",
+      "review": "In review",
       "done": "Done"
     },
     "card": {

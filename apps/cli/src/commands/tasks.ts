@@ -4,7 +4,7 @@ import { contextFor } from '../lib/context';
 import { formatDate, render, style, table } from '../lib/output';
 import { resolveProject } from '../lib/resolve';
 
-const STATUSES = ['later', 'todo', 'doing', 'done'] as const;
+const STATUSES = ['todo', 'doing', 'review', 'done'] as const;
 
 /** Plan's tasks (`product/versions/mvp/17-plan.md`). */
 export function tasksCommand(): Command {

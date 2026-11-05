@@ -187,7 +187,7 @@ export interface BotConversation {
   turns: BotTurn[];
 }
 
-export type TaskStatus = 'later' | 'todo' | 'doing' | 'done';
+export type TaskStatus = 'todo' | 'doing' | 'review' | 'done';
 
 export interface Task {
   id: string;

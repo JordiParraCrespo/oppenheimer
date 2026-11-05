@@ -2,7 +2,7 @@ import { compareRank, type MilestoneEntity, type TaskEntity } from '@oppenheimer
 import type { TaskStatus } from '@oppenheimer/shared/schemas/task';
 
 /** The board's columns, in the frames' order (`Tasks.dc.html`). */
-export const COLUMNS: readonly TaskStatus[] = ['later', 'todo', 'doing', 'done'];
+export const COLUMNS: readonly TaskStatus[] = ['todo', 'doing', 'review', 'done'];
 
 /**
  * What the board is narrowed to: a set of projects (their ids; absent is All

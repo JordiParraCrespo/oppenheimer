@@ -33,7 +33,7 @@ import {
 })
 @Index('IDX_task_due', ['organizationId', 'dueDate'], { where: '"dueDate" IS NOT NULL' })
 @Index('IDX_task_created_by', ['createdByUserId'], { where: '"createdByUserId" IS NOT NULL' })
-@Check('CHK_task_status', `"status" IN ('later', 'todo', 'doing', 'done')`)
+@Check('CHK_task_status', `"status" IN ('todo', 'doing', 'review', 'done')`)
 @Check('CHK_task_due_time', `"dueTime" ~ '^([01][0-9]|2[0-3]):[0-5][0-9]$'`)
 @Check('CHK_task_due_time_has_date', `"dueTime" IS NULL OR "dueDate" IS NOT NULL`)
 @Check('CHK_task_version', `"version" >= 1`)

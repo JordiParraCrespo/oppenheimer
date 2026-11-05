@@ -14,9 +14,9 @@ import { cut, formatToolTime } from './domain/bot-tool-text.policy';
  */
 /** The board's columns as a person reads them. */
 export const COLUMN_NAMES: Record<TaskStatus, string> = {
-  later: 'Later',
   todo: 'To do',
   doing: 'In progress',
+  review: 'In review',
   done: 'Done',
 };
 
@@ -30,7 +30,7 @@ export const timeOfDay = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, 'expected
 
 export const statusInput = z
   .enum(TASK_STATUSES)
-  .describe('The column: later, todo (To do), doing (In progress) or done.');
+  .describe('The column: todo (To do), doing (In progress), review (In review) or done.');
 export const expectedVersionInput = z
   .number()
   .int()

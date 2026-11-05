@@ -14734,7 +14734,7 @@
     },
     "/api/v1/tasks/{id}/sessions": {
       "post": {
-        "description": "New session’s body under `session`, filed under the task’s project whatever its `projectId` says. The session is linked to the task as `started`, and a task in Later or To do moves to the top of In progress if `seenStatus` is still its status.",
+        "description": "New session’s body under `session`, filed under the task’s project whatever its `projectId` says. The session is linked to the task as `started`, and a task in To do moves to the top of In progress if `seenStatus` is still its status.",
         "operationId": "startTaskSession",
         "parameters": [
           {
@@ -14848,7 +14848,7 @@
     },
     "/api/v1/tasks/{id}/sessions/cloud": {
       "post": {
-        "description": "`POST /sessions/cloud`’s body under `cloud`: the vendor’s own agent (Cursor’s) on one repository, on the caller’s key for the vendor, with no host, filed under the task’s project. The session is linked to the task as `started`, and a task in Later or To do moves to the top of In progress if `seenStatus` is still its status.",
+        "description": "`POST /sessions/cloud`’s body under `cloud`: the vendor’s own agent (Cursor’s) on one repository, on the caller’s key for the vendor, with no host, filed under the task’s project. The session is linked to the task as `started`, and a task in To do moves to the top of In progress if `seenStatus` is still its status.",
         "operationId": "startTaskCloudSession",
         "parameters": [
           {
@@ -14982,7 +14982,7 @@
     },
     "/api/v1/tasks/{id}/sessions/{sessionId}": {
       "put": {
-        "description": "A session that already exists, as `linked`. Linking it twice links it once. The same rule as starting one: a task in Later or To do moves to the top of In progress if `seenStatus` is still its status.",
+        "description": "A session that already exists, as `linked`. Linking it twice links it once. The same rule as starting one: a task in To do moves to the top of In progress if `seenStatus` is still its status.",
         "operationId": "linkTaskSession",
         "parameters": [
           {
@@ -31483,9 +31483,9 @@
           "status": {
             "type": "string",
             "enum": [
-              "later",
               "todo",
               "doing",
+              "review",
               "done"
             ]
           },
@@ -31579,9 +31579,9 @@
           "status": {
             "type": "string",
             "enum": [
-              "later",
               "todo",
               "doing",
+              "review",
               "done"
             ],
             "default": "todo"
@@ -31660,9 +31660,9 @@
           "status": {
             "type": "string",
             "enum": [
-              "later",
               "todo",
               "doing",
+              "review",
               "done"
             ]
           },
@@ -31816,9 +31816,9 @@
           "seenStatus": {
             "type": "string",
             "enum": [
-              "later",
               "todo",
               "doing",
+              "review",
               "done"
             ]
           }
@@ -31912,9 +31912,9 @@
           "seenStatus": {
             "type": "string",
             "enum": [
-              "later",
               "todo",
               "doing",
+              "review",
               "done"
             ]
           }
@@ -31930,9 +31930,9 @@
           "seenStatus": {
             "type": "string",
             "enum": [
-              "later",
               "todo",
               "doing",
+              "review",
               "done"
             ]
           }

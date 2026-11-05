@@ -1189,3 +1189,9 @@ earlier note:
   workspace's projects with New project and each one's settings, and the
   Sessions sidebar keeps only New session here on a project's header.
   New session's project chip still ends in New project….
+- `versions/mvp/18-plan-product.md` drew Plan's board as Later, To do, In
+  progress and Done. On 2026-11-05 the owner dropped **Later** and added
+  **In review** between In progress and Done, for finished work waiting to
+  be looked at. Tasks that were in Later moved to the end of To do
+  (migration `ReplaceLaterWithReviewColumn`); attaching a session still
+  moves only a task in To do to In progress.

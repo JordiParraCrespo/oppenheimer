@@ -7,7 +7,7 @@ export const taskTools = [
     name: 'list_tasks',
     title: 'List tasks',
     description:
-      'List the Plan board’s tasks: id, title, status (later, todo, doing, done), project and due date.',
+      'List the Plan board’s tasks: id, title, status (todo, doing, review, done), project and due date.',
     requiredScopes: ['tasks:read'],
     inputSchema: z.object({
       project_id: z.string().uuid().optional().describe('Only this project’s tasks'),
@@ -24,7 +24,7 @@ export const taskTools = [
     inputSchema: z.object({
       title: z.string().trim().min(1).max(TASK_TITLE_MAX),
       notes: z.string().max(TASK_NOTES_MAX).optional(),
-      status: z.enum(['later', 'todo', 'doing', 'done']).optional(),
+      status: z.enum(['todo', 'doing', 'review', 'done']).optional(),
       project_id: z.string().uuid().optional(),
       due_date: z
         .string()
@@ -45,11 +45,11 @@ export const taskTools = [
     name: 'move_task',
     title: 'Move a task',
     description:
-      'Move a task to another column of the board (later, todo, doing, done), at its top.',
+      'Move a task to another column of the board (todo, doing, review, done), at its top.',
     requiredScopes: ['tasks:write'],
     inputSchema: z.object({
       task_id: z.string().uuid(),
-      status: z.enum(['later', 'todo', 'doing', 'done']),
+      status: z.enum(['todo', 'doing', 'review', 'done']),
     }),
     annotations: { idempotentHint: true },
     handler: ({ task_id, status }, { client }) =>
