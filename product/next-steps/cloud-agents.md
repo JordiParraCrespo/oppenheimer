@@ -314,6 +314,37 @@ after them. They are two kinds of the one place, not two places:
   Cursor), the host-started kind if its CLI gets a cloud mode (a runner
   adapter, as Claude). Until then Grok runs as one of Cursor's models.
 
+## Follow-ups to a cloud agent (2026-11-05)
+
+Jordi asked for two-way messaging between bots and coding agents, cloud
+sessions included, through supported vendor APIs only. What each cloud
+allows:
+
+- **Cursor: supported.** A follow-up is a new run of the same agent,
+  `POST /v1/agents/{id}/runs` (`research/cloud-agents.md`), sent by
+  `send_to_session`, `POST /v1/sessions/{id}/prompt`, MCP and `opp` alike
+  (`CloudFollowUpResolver`). It is claimed in the log as `prompt.sent`
+  first, then sent on the launcher's key; a refusal that certainly did
+  nothing at Cursor is `prompt.undelivered` and the vendor's code. A
+  failure that may have reached Cursor (a timeout, a 5xx) is not called
+  undelivered: it is `SESSIONS_051`, the claim stays, and the next
+  follow-up is held off for 15 minutes, so a retry never runs the same
+  instruction twice on the launcher's key. Nothing is queued: while a
+  run is on, the API refuses (`SESSIONS_036`), and Cursor's own `409
+  agent_busy` is `CLOUD_AGENTS_012`. Only the person who launched the
+  session may send one, since it bills their key (`SESSIONS_050`). The new
+  run becomes the one the session follows, and its status folds into the
+  log like any sync's, so a bot following the session is woken when it
+  ends.
+- **Claude Code: not here.** `claude -p --cloud <id>` queues a follow-up
+  from a host's CLI, but the runner does not drive it and a session's
+  conversation is not ours to read; the prompt is refused (`SESSIONS_038`)
+  with the claude.ai link, as before.
+- **Codex: not here.** Follow-ups exist in ChatGPT only; refused the same
+  way, with the chatgpt.com link.
+- **Reading the conversation.** None of the three: see
+  `agent-tools.md` §8. Open question 5 below stays open.
+
 ## Files for a cloud session (2026-10-29)
 
 Until now a Claude Code cloud session took a task and one repository and

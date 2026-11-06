@@ -261,6 +261,12 @@ type Transcripts interface {
 	// nothing is older. A nil older is a reader that cannot ask: the whole
 	// history is sent.
 	Follow(ctx context.Context, session domain.Session, entryMax, batchMax int, older <-chan int64, emit func(ChatBatch) error) error
+	// ReadPage is one page of the session's conversation, read off its file
+	// once, for a reader with no browser attached (`transcript.read`): the
+	// same entries Follow sends, addressed by the conversation and a byte
+	// offset into it. ErrNoChat when the agent keeps no file this runner
+	// reads.
+	ReadPage(session domain.Session, req TranscriptPageRequest) (TranscriptPage, error)
 	// OpenQuestion is the agent's latest AskUserQuestion call that has no
 	// result in the transcript yet, as the decision it asks (29-inbox,
 	// slice 4); false when there is none, or no transcript to read.
@@ -296,6 +302,41 @@ const (
 	HistoryMore = "more"
 	HistoryEnd  = "end"
 )
+
+// TranscriptPageRequest is where a page of a conversation starts and what it
+// may hold. Without Conversation the page is the conversation's tail; with
+// the one a page was read from, the entries after After, a byte offset into
+// it. A cursor that no longer applies is read from the start, Restarted.
+type TranscriptPageRequest struct {
+	Conversation string
+	After        int64
+	// Limit is the most entries, BytesMax the most bytes they add up to and
+	// EntryMax the most one entry takes; one bigger is left out, Dropped.
+	Limit    int
+	BytesMax int
+	EntryMax int
+}
+
+// TranscriptPage is a page of a conversation: the chat view's entries, oldest
+// first, from the byte offset From to Next, which is where the page after it
+// starts. Entries is never nil: the link carries an empty page as [].
+type TranscriptPage struct {
+	// Conversation names the conversation the page was read from, a digest of
+	// where its file is; "" while the agent has written none.
+	Conversation string
+	Entries      []string
+	From, Next   int64
+	// AtEnd is a page that read all the agent has finished writing.
+	AtEnd bool
+	// Restarted is a page read from the start because the cursor asked with
+	// no longer applied.
+	Restarted bool
+	// Dropped counts entries in the page's range left out of it.
+	Dropped int
+	// Partial is a page read from the middle by a transcriber that carries
+	// state from line to line, which may not place every line in it.
+	Partial bool
+}
 
 // ErrNoChat is a session whose agent's transcript this runner cannot follow.
 var ErrNoChat = errors.New("no chat for this agent")

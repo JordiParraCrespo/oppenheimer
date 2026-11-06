@@ -70,6 +70,11 @@ const INTEGER_TYPES = {
   // A byte offset into a transcript file, as Go's `os` reads one.
   'attachment.chat.before': 'int64',
   'attachment.chat.older.before': 'int64',
+  'transcript.read.after': 'int64',
+  'transcript.read.limit': 'int',
+  'transcript.page.from': 'int64',
+  'transcript.page.next': 'int64',
+  'transcript.page.dropped': 'int',
   'session.attach.cols': 'int',
   'session.attach.rows': 'int',
   'session.resize.cols': 'int',

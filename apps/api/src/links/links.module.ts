@@ -5,6 +5,7 @@ import {
   SESSION_DISPATCH,
   SESSION_PORTS,
   SESSION_SHARED_FILES,
+  SESSION_TRANSCRIPT,
 } from '../sessions/sessions.di-tokens';
 import { WHATSAPP_DEVICE } from '../whatsapp/whatsapp.di-tokens';
 import { CacheParkedFileAdapter } from './infrastructure/cache-parked-file.adapter';
@@ -15,6 +16,7 @@ import { RelayHostCodexEnvironmentsAdapter } from './infrastructure/relay-host-c
 import { RelayHostFoldersAdapter } from './infrastructure/relay-host-folders.adapter';
 import { RelaySessionPortsAdapter } from './infrastructure/relay-session-ports.adapter';
 import { RelaySessionSharedFilesAdapter } from './infrastructure/relay-session-shared-files.adapter';
+import { RelaySessionTranscriptAdapter } from './infrastructure/relay-session-transcript.adapter';
 import { RelayWhatsappDeviceAdapter } from './infrastructure/relay-whatsapp-device.adapter';
 import { LINK_REGISTRY, LINK_REPLIES, PARKED_FILES, STAGED_FILE_READER } from './links.di-tokens';
 
@@ -38,6 +40,7 @@ import { LINK_REGISTRY, LINK_REPLIES, PARKED_FILES, STAGED_FILE_READER } from '.
     { provide: HOST_FOLDERS, useClass: RelayHostFoldersAdapter },
     { provide: SESSION_PORTS, useClass: RelaySessionPortsAdapter },
     { provide: SESSION_SHARED_FILES, useClass: RelaySessionSharedFilesAdapter },
+    { provide: SESSION_TRANSCRIPT, useClass: RelaySessionTranscriptAdapter },
     { provide: HOST_CODEX_ENVIRONMENTS, useClass: RelayHostCodexEnvironmentsAdapter },
     { provide: WHATSAPP_DEVICE, useClass: RelayWhatsappDeviceAdapter },
   ],
@@ -50,6 +53,7 @@ import { LINK_REGISTRY, LINK_REPLIES, PARKED_FILES, STAGED_FILE_READER } from '.
     HOST_FOLDERS,
     SESSION_PORTS,
     SESSION_SHARED_FILES,
+    SESSION_TRANSCRIPT,
     HOST_CODEX_ENVIRONMENTS,
     WHATSAPP_DEVICE,
   ],

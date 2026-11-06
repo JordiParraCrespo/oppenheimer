@@ -39,6 +39,7 @@ import {
   SESSION_FILE_MEDIA_TYPES,
 } from './session-file.js';
 import { sharedPreviewGetSchema, sharedPreviewSchema } from './shared-files.js';
+import { transcriptPageSchema, transcriptReadSchema } from './transcript.js';
 import {
   whatsappAckSchema,
   whatsappLinkSchema,
@@ -170,6 +171,12 @@ export const RUNNER_CAPABILITIES = [
    * a shared image, for a bot to show (`product/next-steps/agent-tools.md` §7).
    */
   'shared.preview',
+  /**
+   * Answers `transcript.read` with `transcript.page`: a page of the session's
+   * conversation, the chat view's entries, for a reader with no browser
+   * attached (a bot, the CLI, an MCP client; `product/next-steps/agent-tools.md` §8).
+   */
+  'transcript.read',
 ] as const;
 export type RunnerCapability = (typeof RUNNER_CAPABILITIES)[number];
 
@@ -1127,6 +1134,8 @@ export const protocolMessageSchema = z.discriminatedUnion('type', [
   whatsappSentSchema,
   sharedPreviewGetSchema,
   sharedPreviewSchema,
+  transcriptReadSchema,
+  transcriptPageSchema,
 ]);
 
 export type ProtocolMessage = z.infer<typeof protocolMessageSchema>;

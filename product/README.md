@@ -1143,6 +1143,19 @@ earlier note:
   research first: a bot answers with its own tools, web search and
   `web_fetch` when it can, and starts a session only for work that needs a
   shell or a checkout, or when asked.
+- `next-steps/cloud-agents.md` had a cloud session followed up only at its
+  vendor (`SESSIONS_039` for Cursor's). Since 2026-11-05 a Cursor session
+  takes a follow-up through Oppenheimer as a new run of its agent, on the
+  launcher's key and only once its last run ended; Claude Code's and
+  Codex's still take none here ("Follow-ups to a cloud agent").
+- `read_session` read a session's log and never its agent's conversation,
+  which reached only a browser attached to the chat. Since 2026-11-05 a
+  bot, `opp` and MCP read it a page at a time off the host, redacted, with
+  a status that says how complete each page is; a cloud session's is
+  unsupported, with its vendor's link (`next-steps/agent-tools.md` §8).
+- `next-steps/agent-tools.md` §2's notice reached the Inbox only. Since
+  2026-11-05 it also wakes every bot that follows the session, once per
+  notice (§9).
 - `versions/mvp/25-bots.md` §2 sent a turn the newest messages that fit
   its history budget, and the OpenAI engine named no conversation to the
   provider. On 2026-11-03, after `/usage` showed a bot on GPT and Grok at a

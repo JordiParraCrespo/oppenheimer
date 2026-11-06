@@ -197,7 +197,7 @@ export class BotSessionToolsFactory implements BotToolArea {
         };
       },
       description:
-        "Starts a coding agent in a vendor's cloud with a task on one of a project's repositories, so it runs on the vendor's machines, not on a host. agent picks the cloud: claude-code (default; claude.ai/code) or codex (chatgpt.com/codex) are started by a host whose claude or codex CLI is signed in, and that account runs it; cursor is launched at Cursor on the owner's own Cursor key (Settings → Cloud agents), bills their Cursor plan and takes no host. Use it when the person asks for a cloud session, or for work that should not hold a host. It returns the session's URL at the vendor once it exists; follow-ups happen there, not with send_to_session or answer_session. A host defaults to the project's default host, then your home host.",
+        "Starts a coding agent in a vendor's cloud with a task on one of a project's repositories, so it runs on the vendor's machines, not on a host. agent picks the cloud: claude-code (default; claude.ai/code) or codex (chatgpt.com/codex) are started by a host whose claude or codex CLI is signed in, and that account runs it; cursor is launched at Cursor on the owner's own Cursor key (Settings → Cloud agents), bills their Cursor plan and takes no host. Use it when the person asks for a cloud session, or for work that should not hold a host. It returns the session's URL at the vendor once it exists. A cursor session takes follow-ups with send_to_session once its run ends; a claude-code or codex one takes follow-ups and answers at its vendor, not with send_to_session or answer_session. A host defaults to the project's default host, then your home host.",
       input: z.object({
         task: z
           .string()
@@ -291,7 +291,7 @@ export class BotSessionToolsFactory implements BotToolArea {
       asks: true,
       subject: (input, context) => this.sessionSubject(context, input.session_id),
       description:
-        "Types a follow-up prompt into a running session's agent, as a person would at its prompt: more instructions, a correction, the next step. Only while the agent waits at its prompt (get_session's group idle or ready-for-review); while it works, wait for it; when it asks a question or a permission, use answer_session. The session's log records the prompt as yours. You are subscribed to the task it starts unless watch is false.",
+        "Types a follow-up prompt into a running session's agent, as a person would at its prompt: more instructions, a correction, the next step. Only while the agent waits at its prompt (get_session's group idle or ready-for-review); while it works, wait for it; when it asks a question or a permission, use answer_session. Nothing is queued: a refused prompt is not sent later. A Cursor cloud session takes it as a new run once its last run ended; a Claude Code or Codex cloud session takes none (it is answered at its vendor). The session's log records the prompt as yours; read_session_transcript with its cursor reads what the agent answers. You are subscribed to the task it starts unless watch is false.",
       input: z.object({
         session_id: z.uuid().describe('The session to prompt (from list_sessions).'),
         text: z

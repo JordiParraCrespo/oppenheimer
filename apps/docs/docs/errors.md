@@ -578,6 +578,9 @@ are never reissued.
 | `SESSIONS_046` <a id="sessions_046" /> | Codex on the host could not list its environments | 502 |
 | `SESSIONS_047` <a id="sessions_047" /> | ChatGPT is limiting how often the host may list Codex environments | 429 |
 | `SESSIONS_048` <a id="sessions_048" /> | This host's runner cannot continue a cloud session | 409 |
+| `SESSIONS_049` <a id="sessions_049" /> | That transcript cursor is not valid | 400 |
+| `SESSIONS_050` <a id="sessions_050" /> | Only the person who launched a cloud session can send it a follow-up | 403 |
+| `SESSIONS_051` <a id="sessions_051" /> | The cloud session’s vendor did not confirm the follow-up | 502 |
 
 `SESSIONS_001` is also returned for a session that exists in another workspace: the
 scoped read cannot see it, and distinguishing the two would confirm the id.
@@ -1106,6 +1109,7 @@ refusals of a launch (`POST /sessions/cloud`). See
 | `CLOUD_AGENTS_007` <a id="cloud_agents_007" /> | The cloud agent provider’s rate limit was reached | 429 |
 | `CLOUD_AGENTS_010` <a id="cloud_agents_010" /> | The cloud agent provider refused the request    | 422  |
 | `CLOUD_AGENTS_011` <a id="cloud_agents_011" /> | No such cloud agent provider                    | 404  |
+| `CLOUD_AGENTS_012` <a id="cloud_agents_012" /> | The cloud agent is still working on its last instruction | 409 |
 
 `CLOUD_AGENTS_001`, `008` and `009` are retired: an agent not found, still
 working, or already stopped belonged to the agent's own page, which a cloud
@@ -1227,6 +1231,7 @@ for a 404 or 428, 6 for a 502, 503 or 504, 7 for `PAIR_009`, and 1 for anything 
 | `SESS_015` <a id="sess_015" />         | This host has no link to the control plane   | 503  |
 | `SESS_016` <a id="sess_016" />         | The session has no shared file by that id    | 404  |
 | `SESS_017` <a id="sess_017" />         | The shared file has no preview               | 409  |
+| `SESS_018` <a id="sess_018" />         | The session's agent keeps no transcript this host can read | 409 |
 | `TMUX_001` <a id="tmux_001" />         | tmux is not available on this host           | 424  |
 | `TMUX_002` <a id="tmux_002" />         | The tmux server refused the command          | 500  |
 | `GIT_001` <a id="git_001" />           | The worktree could not be prepared           | 500  |

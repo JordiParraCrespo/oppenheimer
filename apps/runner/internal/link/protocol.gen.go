@@ -86,6 +86,7 @@ const (
 	CapabilitySessionWatch          = "session.watch"
 	CapabilityWhatsapp              = "whatsapp"
 	CapabilitySharedPreview         = "shared.preview"
+	CapabilityTranscriptRead        = "transcript.read"
 )
 
 // The `type` of every message on the link.
@@ -146,6 +147,8 @@ const (
 	TypeWhatsappSent            = "whatsapp.sent"
 	TypeSharedPreviewGet        = "shared.preview.get"
 	TypeSharedPreview           = "shared.preview"
+	TypeTranscriptRead          = "transcript.read"
+	TypeTranscriptPage          = "transcript.page"
 )
 
 // MessageTypes is every message type on the link, in the schema's order.
@@ -206,6 +209,8 @@ var MessageTypes = []string{
 	TypeWhatsappSent,
 	TypeSharedPreviewGet,
 	TypeSharedPreview,
+	TypeTranscriptRead,
+	TypeTranscriptPage,
 }
 
 // NewMessage returns a pointer to a new struct for a message type, and false
@@ -324,6 +329,10 @@ func NewMessage(messageType string) (any, bool) {
 		return new(SharedPreviewGet), true
 	case TypeSharedPreview:
 		return new(SharedPreview), true
+	case TypeTranscriptRead:
+		return new(TranscriptRead), true
+	case TypeTranscriptPage:
+		return new(TranscriptPage), true
 	}
 	return nil, false
 }
@@ -896,6 +905,30 @@ type SharedPreview struct {
 	CommandID string `json:"commandId"`
 	MediaType string `json:"mediaType"`
 	Data      string `json:"data"`
+}
+
+// TranscriptRead is the `transcript.read` message.
+type TranscriptRead struct {
+	Type         string `json:"type"`
+	CommandID    string `json:"commandId"`
+	SessionID    string `json:"sessionId"`
+	Conversation string `json:"conversation,omitempty"`
+	After        int64  `json:"after,omitempty"`
+	Limit        int    `json:"limit"`
+}
+
+// TranscriptPage is the `transcript.page` message.
+type TranscriptPage struct {
+	Type         string   `json:"type"`
+	CommandID    string   `json:"commandId"`
+	Conversation string   `json:"conversation,omitempty"`
+	Entries      []string `json:"entries"`
+	From         int64    `json:"from"`
+	Next         int64    `json:"next"`
+	AtEnd        bool     `json:"atEnd"`
+	Restarted    bool     `json:"restarted,omitempty"`
+	Dropped      int      `json:"dropped,omitempty"`
+	Partial      bool     `json:"partial,omitempty"`
 }
 
 // SessionSnapshot is `#/$defs/sessionSnapshot`.

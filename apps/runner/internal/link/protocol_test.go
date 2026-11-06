@@ -371,6 +371,7 @@ func TestConstantsMatchTheSchema(t *testing.T) {
 		link.CapabilitySessionWatch,
 		link.CapabilityWhatsapp,
 		link.CapabilitySharedPreview,
+		link.CapabilityTranscriptRead,
 	}) {
 		t.Errorf("capabilities: the schema says %v", constants.Capabilities)
 	}

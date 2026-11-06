@@ -387,4 +387,33 @@ export const SessionErrors = {
     message: "This host's runner cannot continue a cloud session",
     httpStatus: 409,
   },
+  /**
+   * A transcript cursor this API did not mint, or one mangled on the way:
+   * read from the start (no cursor) instead.
+   */
+  TRANSCRIPT_CURSOR_INVALID: {
+    code: 'SESSIONS_049',
+    message: 'That transcript cursor is not valid',
+    httpStatus: 400,
+  },
+  /**
+   * A follow-up to a cloud session at its vendor goes out on the key of the
+   * person who launched it, and bills them: nobody else may send one.
+   */
+  CLOUD_FOLLOW_UP_NOT_LAUNCHER: {
+    code: 'SESSIONS_050',
+    message: 'Only the person who launched a cloud session can send it a follow-up',
+    httpStatus: 403,
+  },
+  /**
+   * A follow-up to a cloud session whose vendor call failed in a way that
+   * may still have reached the vendor (a timeout, a dropped connection, a
+   * 5xx): it may be running there. Check the session at its vendor before
+   * sending it again; another follow-up is refused for a while meanwhile.
+   */
+  CLOUD_FOLLOW_UP_UNCONFIRMED: {
+    code: 'SESSIONS_051',
+    message: 'The cloud session’s vendor did not confirm the follow-up',
+    httpStatus: 502,
+  },
 } as const satisfies Record<string, ErrorDefinition>;

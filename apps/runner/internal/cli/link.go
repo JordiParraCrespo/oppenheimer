@@ -314,7 +314,7 @@ func (h *linkHandler) capabilities() []string {
 		link.CapabilityAttachmentChat, link.CapabilityAttachmentChatOlder,
 		link.CapabilitySessionCloud, link.CapabilitySessionCloudCodex,
 		link.CapabilitySessionWatch, link.CapabilityCodexEnvironments, link.CapabilitySessionTeleport,
-		link.CapabilitySharedPreview,
+		link.CapabilitySharedPreview, link.CapabilityTranscriptRead,
 	}
 	if h.direct != nil {
 		named = append(named, link.CapabilityAttachmentDirect, link.CapabilityAttachmentDirectProof)
@@ -645,6 +645,11 @@ func (h *linkHandler) Message(_ context.Context, msg link.Message) {
 		var m link.SharedPreviewGet
 		if msg.Decode(&m) == nil {
 			h.lanes.run(laneSharedPreview, func() { h.sharedPreview(m) })
+		}
+	case link.TypeTranscriptRead:
+		var m link.TranscriptRead
+		if msg.Decode(&m) == nil {
+			h.lanes.run(laneTranscriptRead, func() { h.transcriptRead(m) })
 		}
 	case "host.update":
 		var m link.HostUpdate

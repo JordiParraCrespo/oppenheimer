@@ -1,10 +1,12 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { CommandBus } from '@nestjs/cqrs';
 import { OnEvent } from '@nestjs/event-emitter';
+import { SessionAgentNotifiedDomainEvent } from '../../../sessions/domain/events/session-agent-notified.domain-event';
 import { SessionStateChangedDomainEvent } from '../../../sessions/domain/events/session-state-changed.domain-event';
 import { SessionTerminalMatchedDomainEvent } from '../../../sessions/domain/events/session-terminal-matched.domain-event';
 import { SessionTurnChangedDomainEvent } from '../../../sessions/domain/events/session-turn-changed.domain-event';
 import { BOT_SUBSCRIPTION_REPOSITORY } from '../../bots-chat.di-tokens';
+import { WakeOnAgentNoticeCommand } from '../../commands/wake-on-agent-notice/wake-on-agent-notice.command';
 import { WakeOnTerminalMatchCommand } from '../../commands/wake-on-terminal-match/wake-on-terminal-match.command';
 import { WakeSubscribedBotCommand } from '../../commands/wake-subscribed-bot/wake-subscribed-bot.command';
 import type { BotSubscriptionRepositoryPort } from '../../database/bot-subscription.repository.port';
@@ -63,18 +65,41 @@ export class BotSessionWakeDomainEventHandler {
     );
   }
 
+  /** The session's agent sent a line: every bot that follows the session hears it, once per notice. */
+  @OnEvent(SessionAgentNotifiedDomainEvent.name, { suppressErrors: false })
+  async onNotice(
+    event: Pick<SessionAgentNotifiedDomainEvent, 'aggregateId' | 'organizationId' | 'noticeId'>,
+  ): Promise<void> {
+    await this.wakeEach(
+      event.organizationId,
+      event.aggregateId,
+      (subscriptionId) =>
+        new WakeOnAgentNoticeCommand({ subscriptionId, noticeId: event.noticeId }),
+    );
+  }
+
   /**
    * Each wake reads and decides on its own, so they run together, and one
    * that fails does not hold back the others. A failure is then thrown, for
    * the outbox to deliver the event again: the wakes that went through
    * queue nothing new the second time.
    */
-  private async wake(organizationId: string, sessionId: string): Promise<void> {
+  private wake(organizationId: string, sessionId: string): Promise<void> {
+    return this.wakeEach(
+      organizationId,
+      sessionId,
+      (subscriptionId) => new WakeSubscribedBotCommand({ subscriptionId }),
+    );
+  }
+
+  private async wakeEach(
+    organizationId: string,
+    sessionId: string,
+    commandFor: (subscriptionId: string) => WakeSubscribedBotCommand | WakeOnAgentNoticeCommand,
+  ): Promise<void> {
     const ids = await this.subscriptions.findIdsForSession(organizationId, sessionId);
     const settled = await Promise.allSettled(
-      ids.map((subscriptionId) =>
-        this.commands.execute(new WakeSubscribedBotCommand({ subscriptionId })),
-      ),
+      ids.map((subscriptionId) => this.commands.execute(commandFor(subscriptionId))),
     );
     const failed = settled.find((result) => result.status === 'rejected');
     if (failed) throw failed.reason;
