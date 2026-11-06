@@ -40,8 +40,16 @@ describe('memoryInMind', () => {
       toRecall: 0,
     });
     expect(inMind.log).toEqual([
-      { content: 'Staging moved to devbox', createdAt: new Date('2026-11-02T09:00:00Z') },
-      { content: 'Ticket 412 was the login race', createdAt: new Date('2026-11-05T09:00:00Z') },
+      {
+        content: 'Staging moved to devbox',
+        createdAt: new Date('2026-11-02T09:00:00Z'),
+        scope: 'bot',
+      },
+      {
+        content: 'Ticket 412 was the login race',
+        createdAt: new Date('2026-11-05T09:00:00Z'),
+        scope: 'bot',
+      },
     ]);
   });
 

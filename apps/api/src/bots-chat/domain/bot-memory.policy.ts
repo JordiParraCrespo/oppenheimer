@@ -24,6 +24,8 @@ export interface MemoryBudget {
 export interface LogEntry {
   content: string;
   createdAt: Date;
+  /** `person` when it is about the owner, which any bot of theirs may have saved. */
+  scope: BotMemoryScope;
 }
 
 /** What of a bot's memory a turn is given, and what it is only told it can look up. */
@@ -61,7 +63,7 @@ export function memoryInMind(facts: readonly RememberedFact[], budget: MemoryBud
   return {
     own: profile.filter((fact) => fact.scope === 'bot').map((fact) => fact.content),
     person: profile.filter((fact) => fact.scope === 'person').map((fact) => fact.content),
-    log: log.map(({ content, createdAt }) => ({ content, createdAt })),
+    log: log.map(({ content, createdAt, scope }) => ({ content, createdAt, scope })),
     toRecall: facts.length - profile.length - log.length,
   };
 }
