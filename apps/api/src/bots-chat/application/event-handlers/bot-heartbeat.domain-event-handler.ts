@@ -31,7 +31,10 @@ export class BotHeartbeatDomainEventHandler {
     private readonly queries: QueryBus,
   ) {}
 
-  @OnEvent(BotJobSetDomainEvent.name)
+  // `suppressErrors: false`: by default Nest logs a listener's rejection and
+  // the relay marks the row delivered, so a failed save would leave the bot
+  // without a heartbeat for good; a later edit of its job raises no second event.
+  @OnEvent(BotJobSetDomainEvent.name, { suppressErrors: false })
   async handle(
     event: Pick<BotJobSetDomainEvent, 'organizationId' | 'botId' | 'credentialScopes'>,
   ): Promise<void> {
