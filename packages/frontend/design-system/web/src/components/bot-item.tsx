@@ -7,6 +7,7 @@ import { META_GIVES_WAY, ROW_BUTTON_WITH_ACTION, SidebarRow } from '../internal/
 import { cn } from '../lib/utils';
 import { type AvatarColor, BotAvatar } from './avatar-picker';
 import { useSortableControl } from './drag';
+import { Skeleton } from './skeleton';
 import { Tooltip, TooltipContent, TooltipTrigger } from './tooltip';
 
 function BotList({ className, ...props }: React.ComponentProps<'div'>) {
@@ -124,6 +125,24 @@ function BotItem({
 }
 
 /**
+ * BotItemSkeleton — a `BotItem` while the list loads: the 20px square and a
+ * name's bar on the row's 32px line.
+ */
+function BotItemSkeleton({ className, ...props }: React.ComponentProps<'div'>) {
+  return (
+    <div
+      aria-hidden
+      data-slot="bot-item-skeleton"
+      className={cn('flex h-8 items-center gap-2.5 px-2.5', className)}
+      {...props}
+    >
+      <Skeleton shape="sm" className="size-5 shrink-0 rounded-xs" />
+      <Skeleton shape="sm" className="h-3.5 w-28" />
+    </div>
+  );
+}
+
+/**
  * SortableBotItem — a `BotItem` the reader drags into another group or into
  * another place in its own, on the shell's drag layer the way
  * `SortableSessionItem` moves a session: the row is the sortable node and its
@@ -143,4 +162,4 @@ function SortableBotItem({
   return <BotItem {...props} {...control} rowProps={{ ...node, hidden, className: cn(node.className, 'rounded-nav') }} />;
 }
 
-export { BotItem, BotList, SortableBotItem };
+export { BotItem, BotItemSkeleton, BotList, SortableBotItem };
