@@ -108,14 +108,14 @@ func (p *pageTally) quiet(out [][]byte, holds bool) bool {
 // page held since its start and cut by its bounds moves on, and finish says
 // it is partial: what was held is not placed.
 func (p *pageTally) finish(holds, atEnd bool) (partial bool) {
-	switch {
-	case !holds:
-	case p.settled.next > p.start || atEnd:
-		p.rollback()
-	default:
-		return true
+	if !holds {
+		return false
 	}
-	return false
+	if p.settled.next > p.start || atEnd {
+		p.rollback()
+		return false
+	}
+	return true
 }
 
 // settle marks the page as it stands as the point to go back to.
