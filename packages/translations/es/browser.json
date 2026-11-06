@@ -2723,9 +2723,9 @@
       "keyCancel": "cancelar"
     },
     "columns": {
-      "later": "Más adelante",
       "todo": "Por hacer",
       "doing": "En curso",
+      "review": "En revisión",
       "done": "Hecho"
     },
     "card": {
