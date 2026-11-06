@@ -48,9 +48,7 @@ export function NewSessionBackgroundMenu({
               title={t('sessions.new.background.label')}
               size="sm"
               variant="quiet"
-              className={
-                hasImage ? 'rounded-sm bg-canvas-recessed/60 text-fg backdrop-blur-md' : undefined
-              }
+              data-pane-chrome
             />
           }
         >
