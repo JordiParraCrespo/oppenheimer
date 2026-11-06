@@ -191,9 +191,17 @@ type openCodeChild struct {
 	meta subagentMeta
 	sent []byte
 	read *openCodeFollower
-	// done is a subagent that has ended and been read since.
+	// done is a subagent that has ended and been read since, or whose
+	// conversation OpenCode would not serve openCodeChildTries times.
 	done bool
+	// failed is how many reads of its conversation have failed in a row.
+	failed int
 }
+
+// openCodeChildTries is how many times a subagent's conversation is asked
+// for and refused before it is left: a conversation OpenCode deleted never
+// comes back.
+const openCodeChildTries = 5
 
 func newOpenCodeFollower(api openCodeAPI, since int64, directory string, entryMax, batchMax int, emit func(app.ChatBatch) error) *openCodeFollower {
 	return &openCodeFollower{
@@ -299,8 +307,16 @@ func (f *openCodeFollower) readChildren(ctx context.Context) error {
 		}
 		messages, err := child.read.messages(ctx)
 		if err != nil {
-			return err
+			if ctx.Err() != nil {
+				return err
+			}
+			// One subagent OpenCode will not serve never holds up the
+			// session's own conversation.
+			child.failed++
+			child.done = child.failed >= openCodeChildTries
+			continue
 		}
+		child.failed = 0
 		for _, message := range messages {
 			child.read.read(message)
 		}

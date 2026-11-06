@@ -1,8 +1,11 @@
 package transcript_test
 
 import (
+	"encoding/json"
 	"os"
 	"path/filepath"
+	"strconv"
+	"strings"
 	"testing"
 	"time"
 
@@ -198,6 +201,81 @@ func TestAnOpenCodeSubagentsConversationReachesTheChatUnderItsCall(t *testing.T)
 	if call := blockOf(lines["ses_child"][1]); call["name"] != "Bash" {
 		t.Fatalf("the subagent's call = %v", call)
 	}
+}
+
+// A subagent's line is sent the same, byte for byte, by every attachment,
+// however far into its file each starts sending, so the console holds it
+// once. Regression: Codex numbers a rollout's lines, and the subagent's
+// lines were numbered from where an attachment started (its tail of a long
+// file, or again after a batch the link refused), so a reconnect drew a
+// Codex subagent's steps twice.
+func TestACodexSubagentsLineReadsTheSameToEveryAttachment(t *testing.T) {
+	sessions, worktree := t.TempDir(), t.TempDir()
+	created := time.Now().Add(-time.Minute)
+	writeRollout(t, sessions, "main", time.Now().Add(-10*time.Second),
+		rolloutLine("session_meta", map[string]any{"id": "thr-main", "cwd": worktree}),
+		rolloutLine("event_msg", map[string]any{"type": "user_message", "message": "Go"}))
+	reasoning := func(n int) string {
+		return rolloutLine("response_item", map[string]any{"type": "reasoning", "summary": []any{
+			map[string]any{"type": "summary_text", "text": strings.Repeat("x", 200<<10) + strconv.Itoa(n)},
+		}})
+	}
+	child := writeRollout(t, sessions, "child", time.Now(),
+		rolloutLine("session_meta", map[string]any{"id": "thr-child", "cwd": worktree, "parent_thread_id": "thr-main"}),
+		reasoning(1), reasoning(2), reasoning(3),
+		rolloutLine("response_item", map[string]any{"type": "function_call", "name": "exec_command", "call_id": "call_rg", "arguments": `{"cmd":"rg wallet"}`}))
+	session := domain.Session{Agent: domain.AgentCodex, Worktree: worktree, Created: created}
+	commandOf := func(sink *batches) string {
+		_, lines := subagentEntries(sink)
+		for _, entry := range lines["thr-child"] {
+			if blockOf(entry)["name"] == "Bash" {
+				raw, _ := json.Marshal(entry)
+				return string(raw)
+			}
+		}
+		return ""
+	}
+
+	first := &batches{}
+	followSession(t, transcript.Options{CodexSessions: sessions}, session, first)
+	eventually(t, "the first attachment's command", func() bool { return commandOf(first) != "" })
+	// The file grows past the tail the first attachment started at.
+	appendLines(t, child, reasoning(4), reasoning(5))
+	second := &batches{}
+	followSession(t, transcript.Options{CodexSessions: sessions}, session, second)
+	eventually(t, "the second attachment's command", func() bool { return commandOf(second) != "" })
+	if commandOf(first) != commandOf(second) {
+		t.Fatalf("the same line was sent two ways:\n%s\n%s", commandOf(first), commandOf(second))
+	}
+}
+
+// A subagent whose conversation OpenCode will not serve (one it deleted)
+// never holds up the session's own. Regression: the refusal ended the
+// whole read before anything was sent, again at each retry, and the Chat
+// tab waited for a history that never came.
+func TestAnOpenCodeSubagentOpenCodeWillNotServeLeavesTheChatAlone(t *testing.T) {
+	oc := newOpenCode(t)
+	oc.conversation("ses_main", 1_700_000_000_000)
+	oc.say("ses_main", userMessage("msg_1", "find the picker"))
+	oc.say("ses_main", assistantMessage("msg_2", true, map[string]any{
+		"id": "prt-task", "type": "tool", "callID": "call-task", "tool": "task",
+		"state": map[string]any{
+			"status": "completed", "output": "done",
+			"input":    map[string]any{"description": "Find it", "subagent_type": "explore"},
+			"time":     map[string]any{"start": 1_700_000_002_000, "end": 1_700_000_003_000},
+			"metadata": map[string]any{"sessionId": "ses_gone_child"},
+		},
+	}))
+	sink := &batches{}
+	followOpenCode(t, domain.AgentServer{Port: oc.port(t), Password: openCodePassword}, sink)
+	eventually(t, "the session's own conversation", func() bool {
+		for _, entry := range sink.entries() {
+			if entry["isSidechain"] != true && entry["type"] == "user" && blockOf(entry)["tool_use_id"] == "call-task" {
+				return true
+			}
+		}
+		return false
+	})
 }
 
 func writeFile(t *testing.T, path string, lines ...string) {

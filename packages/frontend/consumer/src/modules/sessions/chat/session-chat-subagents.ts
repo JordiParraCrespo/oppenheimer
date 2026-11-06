@@ -74,7 +74,12 @@ interface SubagentLines {
 
 /** One subagent read into its steps, kept until its lines or its entry change. */
 interface Read {
+  /** Its own version, which its own lines were read at. */
   version: number;
+  turns: ChatTurn[];
+  own: ChatStep[];
+  /** Its key (`keyOf`): its own version and those of every subagent under it. */
+  key: string;
   subagent: ChatSubagent;
 }
 
@@ -160,12 +165,19 @@ export class Subagents {
     this.versions.set(id, (this.versions.get(id) ?? 0) + 1);
   }
 
-  /** The versions of the subagents a turn's steps were given, which change when any of them does. */
+  /**
+   * The versions of the subagents steps were given and of every subagent
+   * under them, which change when any of them does: a subagent's own
+   * subagent writing redraws the turn it hangs in.
+   */
   private keyOf(steps: readonly ChatStep[]): string {
     const ids: string[] = [];
     for (const step of steps) {
-      if (step.kind === 'tool' && step.call.subagent) {
-        ids.push(`${step.call.subagent.id}@${this.versions.get(step.call.subagent.id) ?? 0}`);
+      const subagent = step.kind === 'tool' ? step.call.subagent : null;
+      if (subagent) {
+        ids.push(
+          `${subagent.id}@${this.versions.get(subagent.id) ?? 0}(${this.keyOf(subagent.steps)})`,
+        );
       }
     }
     return ids.join(',');
@@ -210,11 +222,18 @@ export class Subagents {
     const meta = this.metas.get(id);
     if (!meta) return null;
     const version = this.versions.get(id) ?? 0;
-    const held = this.reads.get(id);
-    if (held && held.version === version) return held.subagent;
-    const turns = sidechainTurns(this.lines.get(id)?.entries ?? []);
-    const own = turns.flatMap((turn) => turn.steps);
+    let held = this.reads.get(id);
+    let turns = held?.turns;
+    let own = held?.own;
+    if (!held || held.version !== version || !turns || !own) {
+      turns = sidechainTurns(this.lines.get(id)?.entries ?? []);
+      own = turns.flatMap((turn) => turn.steps);
+      held = undefined;
+    }
+    // Its subagents are put in afresh each time: they move on their own.
     const steps = this.withSubagents(own, depth + 1);
+    const key = `${version}(${this.keyOf(steps)})`;
+    if (held && held.key === key) return held.subagent;
     const last = turns.at(-1);
     const subagent: ChatSubagent = {
       id,
@@ -228,7 +247,7 @@ export class Subagents {
       startedAt: turns[0]?.startedAt ?? null,
       lastAt: last?.lastAt ?? null,
     };
-    this.reads.set(id, { version, subagent });
+    this.reads.set(id, { version, turns, own, key, subagent });
     return subagent;
   }
 }

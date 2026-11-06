@@ -134,6 +134,32 @@ describe('a session chat with subagents', () => {
     expect(secondAfter).not.toBe(second);
   });
 
+  // Regression: a subagent was kept by its own version alone, so its own
+  // subagent's work froze once the parent stopped writing (still running).
+  it("follows a subagent's own subagent after its parent has gone quiet", () => {
+    const chat = chatOf(
+      prompt('u1', 'Go'),
+      call('a1', 'toolu_outer', 'Agent', { description: 'Outer' }),
+      own('outer', call('o1', 'toolu_inner', 'Agent', { description: 'Inner' })),
+      subagent({ id: 'outer', parentToolUseId: 'toolu_outer', state: 'completed' }),
+      subagent({ id: 'inner', parentToolUseId: 'toolu_inner' }),
+    );
+    const innerOf = () => {
+      const outer = callsOf(chat.snapshot().turns[0])[0]?.subagent;
+      const step = outer?.steps[0];
+      return step?.kind === 'tool' ? step.call.subagent : null;
+    };
+    expect(innerOf()?.state).toBe('running');
+
+    chat.apply({
+      entries: [
+        own('inner', call('i1', 'toolu_ls', 'Glob', { pattern: '*' })),
+        subagent({ id: 'inner', parentToolUseId: 'toolu_inner', state: 'completed' }),
+      ],
+    });
+    expect(innerOf()).toMatchObject({ state: 'completed', calls: 1 });
+  });
+
   it('holds each subagent line once when a reconnect sends them again', () => {
     const entries = [
       prompt('u1', 'Go'),

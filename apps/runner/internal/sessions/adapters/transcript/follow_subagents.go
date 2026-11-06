@@ -90,13 +90,21 @@ type subagentFollower struct {
 	files  map[string]*subagentRead
 }
 
-// subagentRead is one subagent's read position, and what was last sent of it.
+// subagentRead is one subagent's read position, what it read and has not
+// sent yet, and what was last sent of it.
 type subagentRead struct {
 	file    subagentFile
 	t       chatTranscriber
 	offset  int64
 	partial []byte
-	read    bool
+	// from is where in its file what it sends starts, set at its first read:
+	// a long subagent sends its tail. Every line goes through the
+	// transcriber all the same, from the file's start, so a line reads the
+	// same however far into the file an attachment starts sending.
+	from int64
+	// pending is what was read and not yet taken by the link: each line
+	// goes through the transcriber once, since Codex's numbers its lines.
+	pending []string
 	state   string
 	tokens  int64
 	sent    []byte
@@ -109,8 +117,9 @@ func newSubagentFollower(source subagentSource, fresh func() chatTranscriber) *s
 
 // checkSubagents sends what each subagent wrote since the last check, and
 // its entry whenever what it says changed, after the history as the status
-// is. The lines read are only taken as sent once the link took them: a
-// batch the link refuses is read again on the next check.
+// is. What a subagent read waits until the link takes all of it: what the
+// link refuses is offered again, whole, on the next check, and the console
+// holds each line once.
 func (f *follower) checkSubagents() {
 	s := f.subs
 	if s == nil || f.history != historySent || len(f.pending) > 0 || f.path == "" || f.path == "-" {
@@ -156,12 +165,20 @@ func (s *subagentFollower) list() {
 	if len(all) > subagentsMax {
 		all = all[:subagentsMax]
 	}
+	newest := make(map[string]bool, len(all))
 	for _, f := range all {
+		newest[f.file.meta.ID] = true
 		if read, ok := s.files[f.file.meta.ID]; ok {
 			read.file, read.mod = f.file, f.mod
 			continue
 		}
-		s.files[f.file.meta.ID] = &subagentRead{file: f.file, t: s.fresh(), mod: f.mod}
+		s.files[f.file.meta.ID] = &subagentRead{file: f.file, t: s.fresh(), mod: f.mod, from: -1}
+	}
+	// One that is no longer among the newest is no longer followed.
+	for id := range s.files {
+		if !newest[id] {
+			delete(s.files, id)
+		}
 	}
 }
 
@@ -181,81 +198,99 @@ func (s *subagentFollower) ordered() []*subagentRead {
 	return reads
 }
 
-// read is what one subagent has to send: its new lines as entries marked
-// as its own, then its entry when what it says changed; and the function
-// that takes them as sent.
+// read is what one subagent has to send: its entry when what it says
+// changed, then its lines read and not yet sent, marked as its own; and the
+// function that takes them as sent. Nothing more of its file is read while
+// what was read waits for the link.
 func (s *subagentFollower) read(r *subagentRead, max int) ([]string, func()) {
-	info, err := os.Stat(r.file.path)
-	if err != nil {
-		return nil, nil
-	}
-	offset, partial, state, tokens := r.offset, r.partial, r.state, r.tokens
-	if info.Size() < offset {
-		// Replaced: read again from its start.
-		offset, partial, r.t = 0, nil, s.fresh()
-	}
-	if !r.read && info.Size() > subagentHistoryMax {
-		start, err := lineAfter(r.file.path, info.Size()-subagentHistoryMax)
-		if err != nil {
-			return nil, nil
-		}
-		offset = start
-	}
-	var entries []string
-	if info.Size() > offset {
-		chunk, err := readFrom(r.file.path, offset, followReadMax)
-		if err != nil {
-			return nil, nil
-		}
-		offset += int64(len(chunk))
-		data := append(append([]byte(nil), partial...), chunk...)
-		end := bytes.LastIndexByte(data, '\n')
-		if end < 0 {
-			partial = data
-		} else {
-			partial = append([]byte(nil), data[end+1:]...)
-			for _, line := range bytes.Split(data[:end], []byte{'\n'}) {
-				if st, n := s.source.subagentLine(line); st != "" || n > 0 {
-					if st != "" {
-						state = st
-					}
-					if n > 0 {
-						tokens = n
-					}
-				}
-				for _, entry := range r.t.line(line, max) {
-					if tagged, ok := sidechainEntry(entry, r.file.meta.ID, max); ok {
-						entries = append(entries, string(tagged))
-					}
-				}
-			}
-		}
+	if len(r.pending) == 0 {
+		s.advance(r, max)
 	}
 	meta := r.file.meta
 	meta.Type = SubagentEntryType
 	if meta.State == "" {
-		meta.State = state
+		meta.State = r.state
 	}
 	if meta.State == "" {
 		meta.State = subagentRunning
 	}
 	if meta.Tokens == 0 {
-		meta.Tokens = tokens
+		meta.Tokens = r.tokens
 	}
 	encoded, err := json.Marshal(meta)
 	if err != nil {
 		return nil, nil
 	}
 	changed := !bytes.Equal(encoded, r.sent)
+	entries := r.pending
 	if changed {
 		// The entry goes first, so its lines never wait for it to be read.
 		entries = append([]string{string(encoded)}, entries...)
 	}
 	return entries, func() {
-		r.offset, r.partial, r.state, r.tokens, r.read = offset, partial, state, tokens, true
+		r.pending = nil
 		if changed {
 			r.sent = encoded
 		}
+	}
+}
+
+// advance reads what the subagent's file grew by, each whole line through
+// its transcriber once, keeping the entries of the lines from r.from on.
+func (s *subagentFollower) advance(r *subagentRead, max int) {
+	info, err := os.Stat(r.file.path)
+	if err != nil {
+		return
+	}
+	if info.Size() < r.offset {
+		// Replaced: read again from its start.
+		r.offset, r.partial, r.t, r.from = 0, nil, s.fresh(), -1
+	}
+	if r.from < 0 {
+		r.from = 0
+		if info.Size() > subagentHistoryMax {
+			start, err := lineAfter(r.file.path, info.Size()-subagentHistoryMax)
+			if err != nil {
+				return
+			}
+			r.from = start
+		}
+	}
+	if info.Size() <= r.offset {
+		return
+	}
+	chunk, err := readFrom(r.file.path, r.offset, followReadMax)
+	if err != nil {
+		return
+	}
+	// Where the first line of what is read starts in the file.
+	at := r.offset - int64(len(r.partial))
+	r.offset += int64(len(chunk))
+	data := append(r.partial, chunk...)
+	end := bytes.LastIndexByte(data, '\n')
+	if end < 0 {
+		r.partial = data
+		return
+	}
+	r.partial = append([]byte(nil), data[end+1:]...)
+	for _, line := range bytes.Split(data[:end], []byte{'\n'}) {
+		if state, tokens := s.source.subagentLine(line); state != "" || tokens > 0 {
+			if state != "" {
+				r.state = state
+			}
+			if tokens > 0 {
+				r.tokens = tokens
+			}
+		}
+		entries := r.t.line(line, max)
+		if at >= r.from {
+			for _, entry := range entries {
+				if tagged, ok := sidechainEntry(entry, r.file.meta.ID, max); ok {
+					r.pending = append(r.pending, string(tagged))
+				}
+			}
+		}
+		at += int64(len(line)) + 1
 	}
 }
 
