@@ -1,0 +1,214 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Cloud chat bridge</title>
+    <style>
+      :root {
+        --bg: #f7f7f5;
+        --panel: #ffffff;
+        --text: #1d1d1b;
+        --muted: #6b6b66;
+        --line: #e4e4df;
+        --user: #eef2ff;
+        --reply: #ecfdf3;
+        --tool: #f3f3f0;
+        --accent: #3b5bdb;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root:not([data-theme='light']) {
+          --bg: #141413;
+          --panel: #1c1c1a;
+          --text: #ecece8;
+          --muted: #9a9a93;
+          --line: #2e2e2b;
+          --user: #1f2540;
+          --reply: #13291d;
+          --tool: #242422;
+          --accent: #8ea2ff;
+        }
+      }
+      :root[data-theme='dark'] {
+        --bg: #141413;
+        --panel: #1c1c1a;
+        --text: #ecece8;
+        --muted: #9a9a93;
+        --line: #2e2e2b;
+        --user: #1f2540;
+        --reply: #13291d;
+        --tool: #242422;
+        --accent: #8ea2ff;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--text);
+        font: 14px/1.5 system-ui, -apple-system, 'Segoe UI', sans-serif;
+      }
+      header {
+        position: sticky;
+        top: 0;
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        padding: 12px 16px;
+        background: var(--panel);
+        border-bottom: 1px solid var(--line);
+      }
+      header h1 { font-size: 15px; margin: 0; }
+      header .meta { color: var(--muted); font-size: 12px; }
+      header select { margin-left: auto; background: var(--panel); color: var(--text); border: 1px solid var(--line); border-radius: 6px; padding: 4px 6px; }
+      main { max-width: 760px; margin: 0 auto; padding: 16px 16px 140px; }
+      .item { margin: 10px 0; padding: 10px 12px; border-radius: 10px; background: var(--panel); border: 1px solid var(--line); white-space: pre-wrap; overflow-wrap: anywhere; }
+      .item .who { display: block; font-size: 11px; font-weight: 600; letter-spacing: 0.02em; text-transform: uppercase; color: var(--muted); margin-bottom: 4px; }
+      .user { background: var(--user); }
+      .reply { background: var(--reply); }
+      .tool { background: var(--tool); font: 12px/1.45 ui-monospace, SFMono-Regular, Menlo, monospace; }
+      .tool .who { font-family: system-ui, sans-serif; }
+      .result { color: var(--muted); }
+      .empty { color: var(--muted); text-align: center; margin-top: 64px; }
+      form {
+        position: fixed;
+        inset: auto 0 0 0;
+        display: flex;
+        gap: 8px;
+        padding: 12px 16px 16px;
+        background: var(--panel);
+        border-top: 1px solid var(--line);
+      }
+      form textarea {
+        flex: 1;
+        min-height: 44px;
+        max-height: 160px;
+        resize: vertical;
+        padding: 10px 12px;
+        border-radius: 10px;
+        border: 1px solid var(--line);
+        background: var(--bg);
+        color: var(--text);
+        font: inherit;
+      }
+      form button { padding: 0 16px; border: 0; border-radius: 10px; background: var(--accent); color: #fff; font: inherit; font-weight: 600; cursor: pointer; }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>Cloud session</h1>
+      <span class="meta" id="status">connecting…</span>
+      <select id="session" aria-label="Session"></select>
+    </header>
+    <main id="chat"><p class="empty">Waiting for a session to stream its transcript…</p></main>
+    <form id="composer">
+      <textarea id="text" placeholder="Reply to the agent. It reads it when its turn ends." aria-label="Reply"></textarea>
+      <button type="submit">Send</button>
+    </form>
+    <script>
+      const params = new URLSearchParams(location.search);
+      const key = params.get('key') ?? '';
+      const chat = document.getElementById('chat');
+      const statusLine = document.getElementById('status');
+      const picker = document.getElementById('session');
+      let current = params.get('session');
+      let source;
+      const replies = new Map();
+
+      const api = (path, init = {}) =>
+        fetch(path, { ...init, headers: { ...(init.headers ?? {}), authorization: `Bearer ${key}`, 'content-type': 'application/json' } });
+
+      function add(cls, who, text) {
+        chat.querySelector('.empty')?.remove();
+        const el = document.createElement('div');
+        el.className = `item ${cls}`;
+        const label = document.createElement('span');
+        label.className = 'who';
+        label.textContent = who;
+        el.append(label, document.createTextNode(text));
+        chat.append(el);
+        window.scrollTo({ top: document.body.scrollHeight });
+        return el;
+      }
+
+      const clip = (text, max = 600) => (text.length > max ? `${text.slice(0, max)}\n… +${text.length - max} characters` : text);
+      const textOf = (content) =>
+        typeof content === 'string' ? content : (content ?? []).filter((b) => b.type === 'text').map((b) => b.text).join('\n');
+
+      // One transcript line as chat items: the same JSONL the runner reads for a
+      // host session's chat view, so the console's adapter would read it as is.
+      function render(line) {
+        const message = line.message;
+        if (line.type === 'user' && message) {
+          if (line.isMeta) return;
+          if (typeof message.content === 'string') return add('user', 'You', message.content);
+          for (const block of message.content ?? []) {
+            if (block.type === 'text') add('user', 'You', block.text);
+            if (block.type === 'tool_result') {
+              const out = typeof block.content === 'string' ? block.content : textOf(block.content);
+              add('tool result', block.is_error ? 'Tool error' : 'Tool output', clip(out || '(empty)'));
+            }
+          }
+          return;
+        }
+        if (line.type === 'assistant' && message) {
+          for (const block of message.content ?? []) {
+            if (block.type === 'text' && block.text.trim()) add('', 'Claude', block.text);
+            if (block.type === 'tool_use') {
+              const input = block.input ?? {};
+              const summary = input.command ?? input.file_path ?? input.pattern ?? input.description ?? JSON.stringify(input);
+              add('tool', block.name, clip(String(summary), 400));
+            }
+          }
+          return;
+        }
+        if (line.type === 'system' && line.content) add('tool', 'System', clip(String(line.content), 400));
+      }
+
+      function connect(id) {
+        source?.close();
+        replies.clear();
+        chat.innerHTML = '<p class="empty">Waiting for the transcript…</p>';
+        current = id;
+        source = new EventSource(`/api/sessions/${id}/events?key=${encodeURIComponent(key)}`);
+        source.onopen = () => (statusLine.textContent = `live · ${id}`);
+        source.onerror = () => (statusLine.textContent = 'reconnecting…');
+        source.onmessage = (event) => {
+          const data = JSON.parse(event.data);
+          if (data.kind === 'line') render(data.line);
+          if (data.kind === 'reply' || data.kind === 'reply-delivered') {
+            const existing = replies.get(data.at);
+            const label = data.state === 'delivered' ? 'Your reply · delivered to the agent' : 'Your reply · waiting for the turn to end';
+            if (existing) existing.querySelector('.who').textContent = label;
+            else replies.set(data.at, add('reply', label, data.text));
+          }
+        };
+      }
+
+      async function refreshSessions() {
+        const response = await api('/api/sessions');
+        if (!response.ok) {
+          statusLine.textContent = 'bad key';
+          return;
+        }
+        const sessions = await response.json();
+        const ids = sessions.map((s) => s.id);
+        picker.replaceChildren(...ids.map((id) => new Option(id, id, false, id === current)));
+        if (!current && ids.length) connect(ids[ids.length - 1]);
+        else if (current && !source) connect(current);
+      }
+
+      picker.addEventListener('change', () => connect(picker.value));
+      document.getElementById('composer').addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const box = document.getElementById('text');
+        const text = box.value.trim();
+        if (!text || !current) return;
+        box.value = '';
+        await api(`/api/sessions/${current}/replies`, { method: 'POST', body: JSON.stringify({ text }) });
+      });
+
+      refreshSessions();
+      setInterval(refreshSessions, 3000);
+    </script>
+  </body>
+</html>
