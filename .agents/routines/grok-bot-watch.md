@@ -58,10 +58,14 @@ A page that is gone is changed too. On the first run, with no hashes, record
 them and treat no page as changed.
 
 **The installer.** Find the newest Linux x64 `.deb` (or AppImage). Try, in
-order, and stop at the first that gives a version:
+order, and stop at the first that gives a version **newer** than the last
+one read. A source that only gives the version already read (a recorded
+URL pins one release) tells you nothing: go on to the next.
 
-1. the installer URL the issue recorded last time, and the same path with
-   the newer version or build where the pattern makes that clear;
+1. the source the issue recorded last time, when it names the latest
+   release rather than one file (an update feed, a "latest" link), and the
+   recorded installer URL with a newer version or build where the pattern
+   makes that clear;
 2. the download links the docs give (`get-started`, `deployment`,
    `faq`), and `https://x.ai/bot`;
 3. Cursor's download endpoints on `cursor.com` and `downloads.cursor.com`,
@@ -70,15 +74,18 @@ order, and stop at the first that gives a version:
    (look for `update`, `feed` and `latest` URLs in its `package.json` and
    main bundle).
 
-Record which source worked, so the next run tries it first. A source that
+Record which source gave the newest version, so the next run tries it
+first. A source that
 needs a sign-in, or that blocks this machine (Cloudflare on `x.ai` does),
 counts as not working: skip it, and never try to get around a block. When
 no source works, say so in the run's comment with what each returned, and
 carry on with the docs alone.
 
-**Nothing new** (no newer version, no changed page, no `--version`): update
-the issue body's "Last checked" line and stop. Do not comment, do not open
-anything.
+**Nothing new** (no newer version, no changed page, no `--version`): write
+the state to the issue (step 6's body) and stop. On the first run, with no
+issue yet, that means creating the label and the issue now, so the docs'
+hashes and the version found are kept for the next run. Otherwise only the
+"Last checked" line changes. Do not comment, do not open a pull request.
 
 ## 3. Read it
 
