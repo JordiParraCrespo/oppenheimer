@@ -75,13 +75,18 @@ export function AppShell({ children, ...config }: ShellConfig & { children: Reac
               a viewport calculation; and a drop's outline is drawn on its
               edge. It is its own stacking context (`isolate`), so a screen
               can lay an image under all of it at `-z-10` (New session's
-              backdrop) without going under the pane's grey. */}
-          <main className="relative isolate flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-canvas-recessed">
+              backdrop) without going under the pane's grey; while one is
+              there (`data-pane-backdrop`) the bar's toggle stands on a
+              frosted chip so it reads over any image. */}
+          <main className="group/pane relative isolate flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-canvas-recessed">
             {ownBar ? null : (
               // On the pane's own grey, not a surface: the bar reads as the
               // page's top edge rather than a strip above it. A session draws
               // its own bar, on its terminal's ground.
-              <header data-slot="page-bar" className="flex h-12 shrink-0 items-center pl-3.5">
+              <header
+                data-slot="page-bar"
+                className="flex h-12 shrink-0 items-center pl-3.5 group-has-data-pane-backdrop/pane:*:rounded-sm group-has-data-pane-backdrop/pane:*:bg-canvas-recessed/60 group-has-data-pane-backdrop/pane:*:text-fg group-has-data-pane-backdrop/pane:*:backdrop-blur-md"
+              >
                 <SidebarToggle />
               </header>
             )}
