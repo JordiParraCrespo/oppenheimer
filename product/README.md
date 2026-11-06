@@ -1217,7 +1217,8 @@ earlier note:
   through `recall`, and refused a save past 200. Bots saved almost nothing
   after their first chat. On 2026-11-06, after a read of Grok Bot 0.79.2
   (`research/lessons-from-grok-bot.md` §10), the owner took its shape: a
-  bot's save is `log` by default, the prompt carries the newest profile and
-  log facts by characters (4,000 and 2,000, the log dated), the turn's
+  bot's save is `log` by default, the system prompt carries the newest
+  profile facts by characters (4,000) and the turn context the newest log
+  entries (2,000, dated), so a save leaves the prompt cache warm, the turn's
   rules tell it to save what it learns without asking, and a full memory
   of 500 drops its oldest log fact instead of refusing.

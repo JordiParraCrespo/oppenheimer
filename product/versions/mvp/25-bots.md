@@ -547,11 +547,13 @@ of `bot_memory_fact`, with two columns more:
 
 - **Tier.** A `profile` fact is in mind every turn, in the system prompt:
   standing instructions and who the person is. A `log` fact is everything
-  else, a dated entry. The prompt carries the newest profile facts up to
-  4,000 characters and the newest log entries up to 2,000, each under its
-  day in the person's time zone, and says how many older facts there are to
-  recall, so a long memory costs the turn's context the same as a short
-  one. (2026-11-06: was the newest 60 profile facts and no log at all.)
+  else, a dated entry. The system prompt carries the newest profile facts
+  up to 4,000 characters. The turn context (§2) carries the newest log
+  entries up to 2,000, each under its day in the sender's zone, and says
+  how many older facts there are to recall: the log changes with every
+  save, and in the system prompt each save would miss the prompt cache for
+  the whole history. A long memory costs the turn the same as a short one.
+  (2026-11-06: was the newest 60 profile facts and no log at all.)
 - **Scope.** A `bot` fact is the bot's alone. A `person` fact is about its
   owner ("prefers squash merges"), and every bot that person made in the
   workspace reads it, in a section of the prompt of its own. It stays the

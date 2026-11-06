@@ -18,8 +18,12 @@ export interface RememberedFact {
 export interface MemoryBudget {
   profileChars: number;
   logChars: number;
-  /** The person's time zone, which a `log` fact's day is told in. */
-  timeZone: string;
+}
+
+/** A `log` fact as a turn carries it, dated in the turn's own zone. */
+export interface LogEntry {
+  content: string;
+  createdAt: Date;
 }
 
 /** What of a bot's memory a turn is given, and what it is only told it can look up. */
@@ -28,8 +32,8 @@ export interface MemoryInMind {
   own: string[];
   /** The `profile` facts about its owner, kept by any bot of theirs, oldest first. */
   person: string[];
-  /** The newest `log` facts, each opened by its day, oldest first. */
-  log: string[];
+  /** The newest `log` facts, oldest first. */
+  log: LogEntry[];
   /** The facts left for `recall`: those past either budget. */
   toRecall: number;
 }
@@ -41,7 +45,9 @@ export interface MemoryInMind {
  * so a long memory costs the prompt the same as a short one and its oldest
  * entries fade to `recall` rather than filling the turn. A tier stops at the
  * first fact past its budget, so what is in mind is always the newest run.
- * `facts` comes newest first.
+ * The profile goes in the system prompt; the log, which changes with every
+ * save, and the count go in the turn context, so a save does not cost the
+ * prompt cache. `facts` comes newest first.
  */
 export function memoryInMind(facts: readonly RememberedFact[], budget: MemoryBudget): MemoryInMind {
   const profile = newestWithin(
@@ -52,11 +58,10 @@ export function memoryInMind(facts: readonly RememberedFact[], budget: MemoryBud
     facts.filter((fact) => fact.tier === 'log'),
     budget.logChars,
   ).reverse();
-  const day = new Intl.DateTimeFormat('en-CA', { timeZone: budget.timeZone });
   return {
     own: profile.filter((fact) => fact.scope === 'bot').map((fact) => fact.content),
     person: profile.filter((fact) => fact.scope === 'person').map((fact) => fact.content),
-    log: log.map((fact) => `${day.format(fact.createdAt)}: ${fact.content}`),
+    log: log.map(({ content, createdAt }) => ({ content, createdAt })),
     toRecall: facts.length - profile.length - log.length,
   };
 }

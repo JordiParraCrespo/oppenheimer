@@ -4,7 +4,8 @@
  * sees what it saved; the log or the profile growing the prompt with every
  * fact kept, where each stops at its budget of characters; the oldest facts
  * kept in mind when there are more than fit, where the newest should win; a
- * log entry without its day; a bot not told there is more to `recall`.
+ * bot not told there is more to `recall`. How the log is dated and where it
+ * is said is `bot-turn-context.policy.spec.ts`.
  */
 import {
   describeKept,
@@ -20,10 +21,11 @@ const fact = (
   createdAt = new Date('2026-11-03T23:30:00Z'),
 ): RememberedFact => ({ content, tier, scope, createdAt });
 
-const budget = { profileChars: 1_000, logChars: 1_000, timeZone: 'UTC' };
+const budget = { profileChars: 1_000, logChars: 1_000 };
+const contents = (entries: { content: string }[]) => entries.map((entry) => entry.content);
 
 describe('memoryInMind', () => {
-  it('keeps profile facts in mind, the person’s apart, and the log under each day, oldest first', () => {
+  it('keeps profile facts in mind, the person’s apart, and the log, oldest first', () => {
     const newestFirst = [
       fact('Uses pnpm'),
       fact('Ana is the release manager', 'profile', 'person'),
@@ -31,12 +33,16 @@ describe('memoryInMind', () => {
       fact('Deploys on Thursdays'),
       fact('Staging moved to devbox', 'log', 'bot', new Date('2026-11-02T09:00:00Z')),
     ];
-    expect(memoryInMind(newestFirst, budget)).toEqual({
+    const inMind = memoryInMind(newestFirst, budget);
+    expect(inMind).toMatchObject({
       own: ['Deploys on Thursdays', 'Uses pnpm'],
       person: ['Ana is the release manager'],
-      log: ['2026-11-02: Staging moved to devbox', '2026-11-05: Ticket 412 was the login race'],
       toRecall: 0,
     });
+    expect(inMind.log).toEqual([
+      { content: 'Staging moved to devbox', createdAt: new Date('2026-11-02T09:00:00Z') },
+      { content: 'Ticket 412 was the login race', createdAt: new Date('2026-11-05T09:00:00Z') },
+    ]);
   });
 
   it('keeps the newest of each tier within its budget of characters, and leaves the rest to recall', () => {
@@ -48,19 +54,9 @@ describe('memoryInMind', () => {
       fact('aaaa'),
       fact('xx', 'log'),
     ];
-    expect(memoryInMind(newestFirst, { ...budget, profileChars: 9, logChars: 4 })).toEqual({
-      own: ['bbbb', 'cccc'],
-      person: [],
-      log: ['2026-11-03: yy', '2026-11-03: zz'],
-      toRecall: 2,
-    });
-  });
-
-  it('dates a log entry in the person’s time zone', () => {
-    const late = fact('Shipped 0.4', 'log');
-    expect(memoryInMind([late], { ...budget, timeZone: 'Europe/Madrid' }).log).toEqual([
-      '2026-11-04: Shipped 0.4',
-    ]);
+    const inMind = memoryInMind(newestFirst, { profileChars: 9, logChars: 4 });
+    expect(inMind).toMatchObject({ own: ['bbbb', 'cccc'], person: [], toRecall: 2 });
+    expect(contents(inMind.log)).toEqual(['yy', 'zz']);
   });
 });
 

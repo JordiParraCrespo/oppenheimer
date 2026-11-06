@@ -133,3 +133,38 @@ describe('composeTurnContext: the room left', () => {
     ).not.toContain('Your context');
   });
 });
+
+// What breaks this: the log or the count in the system prompt, where every
+// save the bot makes would miss the prompt cache for the whole history; a
+// log entry without its day, or dated in another zone than the turn's.
+describe('composeTurnContext: the bot’s log', () => {
+  const base: TurnContextInput = {
+    now: new Date('2026-11-06T09:00:00Z'),
+    timeZone: 'Europe/Madrid',
+    homeHost: null,
+    hosts: [],
+    lastContext: null,
+  };
+
+  it('lists the newest log entries under their day in the sender’s zone, and counts the older facts', () => {
+    const block = composeTurnContext({
+      ...base,
+      memory: {
+        log: [
+          { content: 'Staging moved to devbox', createdAt: new Date('2026-11-02T09:00:00Z') },
+          { content: 'Shipped 0.4', createdAt: new Date('2026-11-03T23:30:00Z') },
+        ],
+        toRecall: 3,
+      },
+    });
+    expect(block).toContain(
+      'Your log, newest last:\n- 2026-11-02: Staging moved to devbox\n- 2026-11-04: Shipped 0.4',
+    );
+    expect(block).toContain('You also keep 3 older facts not shown');
+  });
+
+  it('says nothing of memory when the log is empty and nothing is left to recall', () => {
+    const block = composeTurnContext({ ...base, memory: { log: [], toRecall: 0 } });
+    expect(block).not.toMatch(/Your log|older fact/);
+  });
+});

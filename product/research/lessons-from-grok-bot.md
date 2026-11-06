@@ -479,8 +479,9 @@ by default, the tool asked for a `recall` first to avoid duplicates, a full
 memory refused, and nothing outside the tool's description asked for a save.
 
 **Landed (2026-11-06)** in `versions/mvp/25-bots.md` §4.1: `log` by
-default; the prompt carries the newest profile facts and the newest dated
-log entries by characters; "How a turn goes" asks the bot to save what it
+default; the system prompt carries the newest profile facts and the turn
+context the newest dated log entries, by characters, so a save does not
+cost the prompt cache; "How a turn goes" asks the bot to save what it
 learned in the turn, without asking; no duplicate check; a full memory
 drops its oldest log entry. Left out: a background turn that saves for the
 bot, which Grok Bot does not have either.

@@ -22,6 +22,12 @@ export interface TurnContextInput {
    * do not tell the model how much room it has.
    */
   lastContext: { tokens: number; window: number | null } | null;
+  /**
+   * The bot's newest `log` facts, oldest first, and how many older facts it
+   * keeps only for `recall` (`memoryInMind`). Here rather than in the system
+   * prompt: a bot saves as it goes, and each save would change the prompt.
+   */
+  memory?: { log: readonly { content: string; createdAt: Date }[]; toRecall: number };
 }
 
 /** How many hosts the turn context lists; the rest are counted. */
@@ -62,6 +68,19 @@ export function composeTurnContext(input: TurnContextInput): string {
   }
   const room = describeRoom(input.lastContext);
   if (room) lines.push(room);
+  if (input.memory?.log.length) {
+    const day = new Intl.DateTimeFormat('en-CA', { timeZone: zone });
+    const entries = input.memory.log.map(
+      (entry) => `- ${day.format(entry.createdAt)}: ${entry.content}`,
+    );
+    lines.push(`Your log, newest last:\n${entries.join('\n')}`);
+  }
+  const older = input.memory?.toRecall ?? 0;
+  if (older > 0) {
+    lines.push(
+      `You also keep ${older} older fact${older === 1 ? '' : 's'} not shown; look them up with recall when a question might touch them.`,
+    );
+  }
   return `<${TURN_CONTEXT_TAG}>\n${lines.join('\n')}\n</${TURN_CONTEXT_TAG}>`;
 }
 

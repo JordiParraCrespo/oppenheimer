@@ -164,7 +164,6 @@ export class BotTurnContextResolver {
     const inMind = memoryInMind(facts, {
       profileChars: BOT_MEMORY_PROFILE_IN_PROMPT_CHARS,
       logChars: BOT_MEMORY_LOG_IN_PROMPT_CHARS,
-      timeZone: turn.timeZone ?? 'UTC',
     });
     const documentText = (name: string) =>
       documents.find((document) => document.name === name)?.content ?? '';
@@ -179,8 +178,6 @@ export class BotTurnContextResolver {
         instructions: documentText('instructions'),
         facts: inMind.own,
         personFacts: inMind.person,
-        logFacts: inMind.log,
-        factsToRecall: inMind.toRecall,
         engineCapabilities: engineCapabilities(turn.provider),
         tools: owner
           ? this.toolbox.catalog(turn.credentialScopes, {
@@ -199,6 +196,7 @@ export class BotTurnContextResolver {
           homeHost: hosts?.find((host) => host.id === bot.homeHostId) ?? null,
           hosts,
           lastContext,
+          memory: { log: inMind.log, toRecall: inMind.toRecall },
         }),
         composeTurnMessage(command, skills, prompt),
       ),
