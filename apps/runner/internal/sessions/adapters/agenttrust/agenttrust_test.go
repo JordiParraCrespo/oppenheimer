@@ -220,3 +220,46 @@ func TestKeepCloudSettingsLocalLeavesTheirAnswer(t *testing.T) {
 		t.Fatalf("remoteHomeSettingsMode = %v, want forward kept", got)
 	}
 }
+
+// A cloud start's checkout is removed after every start: what Claude Code
+// kept about it must go with it, or each start leaves an entry in
+// `~/.claude.json` and a folder under `projects/` behind for good. The
+// other folders, and every other key, stay.
+func TestForgetDropsTheFolderAndKeepsEverythingElse(t *testing.T) {
+	home := t.TempDir()
+	config := filepath.Join(home, ".claude.json")
+	projectsDir := filepath.Join(home, "projects")
+	work := workDir(t)
+	before := `{"oauthAccount":{"email":"a@b.c"},"projects":{"/elsewhere":{"hasTrustDialogAccepted":true},"` +
+		work + `":{"hasTrustDialogAccepted":true}}}`
+	if err := os.WriteFile(config, []byte(before), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	conversations := filepath.Join(projectsDir, strings.NewReplacer("/", "-", ".", "-", "_", "-").Replace(work))
+	other := filepath.Join(projectsDir, "-elsewhere")
+	for _, dir := range []string{conversations, other} {
+		if err := os.MkdirAll(dir, 0o700); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	agenttrust.New(agenttrust.Options{ClaudeConfig: config, ClaudeProjects: projectsDir}).Forget(work)
+
+	got := read(t, config)
+	if got["oauthAccount"].(map[string]any)["email"] != "a@b.c" {
+		t.Fatalf("lost the account: %v", got)
+	}
+	projects := got["projects"].(map[string]any)
+	if _, kept := projects[work]; kept {
+		t.Fatalf("kept the removed folder: %v", projects)
+	}
+	if projects["/elsewhere"] == nil {
+		t.Fatalf("dropped another folder: %v", projects)
+	}
+	if _, err := os.Stat(conversations); !os.IsNotExist(err) {
+		t.Fatalf("conversations still on disk: %v", err)
+	}
+	if _, err := os.Stat(other); err != nil {
+		t.Fatalf("removed another folder's conversations: %v", err)
+	}
+}

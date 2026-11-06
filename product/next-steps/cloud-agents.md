@@ -15,7 +15,11 @@ owner asked for it end to end:
   a token sealed into the create, runs `claude --cloud <task>` in a scratch
   checkout of the base (the CLI insists on a terminal, so it gets a
   pseudo-terminal), reports the cloud session's id on `session.started` and
-  removes the checkout. Nothing is left on the host and nothing is polled.
+  removes the checkout. Nothing is left on the host and nothing is polled:
+  since 2026-11-05 the start stops the CLI's whole process group (not only
+  `claude` itself, whose helpers survived it), forgets the checkout in
+  Claude Code's own state (`~/.claude.json`, `projects/`), and deletes the
+  scratch checkouts a runner stopped mid-start left behind.
 - **Status comes from the browser.** `apps/extension` reads the person's
   cloud sessions on claude.ai with the sign-in already in their Chrome, and,
   once connected with a personal token pinned to the workspace, posts what it
