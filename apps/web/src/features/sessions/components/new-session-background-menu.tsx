@@ -48,6 +48,7 @@ export function NewSessionBackgroundMenu({
               title={t('sessions.new.background.label')}
               size="sm"
               variant="quiet"
+              data-pane-chrome
             />
           }
         >
