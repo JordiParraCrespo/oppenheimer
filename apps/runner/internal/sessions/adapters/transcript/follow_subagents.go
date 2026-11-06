@@ -266,7 +266,7 @@ func (s *subagentFollower) advance(r *subagentRead, max int) {
 	// Where the first line of what is read starts in the file.
 	at := r.offset - int64(len(r.partial))
 	r.offset += int64(len(chunk))
-	data := append(r.partial, chunk...)
+	data := append(append([]byte(nil), r.partial...), chunk...)
 	end := bytes.LastIndexByte(data, '\n')
 	if end < 0 {
 		r.partial = data
