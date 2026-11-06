@@ -55,7 +55,7 @@ func newCreateHarness(t *testing.T) (*linkHandler, *sessionsapp.Service, *heldCl
 	}
 	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
 	h := &linkHandler{
-		app: &App{Sessions: svc}, logger: logger,
+		app: &App{Sessions: svc, Conversations: conversationsOf(svc, nil)}, logger: logger,
 		attachments: map[uint32]*attachment{}, decided: map[string]bool{},
 		life: context.Background(), lanes: newLanes(),
 	}

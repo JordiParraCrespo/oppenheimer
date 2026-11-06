@@ -23,7 +23,7 @@ const (
 // host does not hold is SESS_001, an agent with no transcript the runner
 // reads SESS_018, both as command.failed.
 func (h *linkHandler) transcriptRead(m link.TranscriptRead) {
-	page, err := h.app.Sessions.ReadTranscript(m.SessionID, sessionsapp.TranscriptPageRequest{
+	page, err := h.app.Conversations.ReadTranscript(m.SessionID, sessionsapp.TranscriptPageRequest{
 		Conversation: m.Conversation, After: m.After,
 		Limit:    min(max(m.Limit, 1), transcriptPageMaxEntries),
 		BytesMax: transcriptPageMaxBytes, EntryMax: link.ChatEntryMaxBytes,
