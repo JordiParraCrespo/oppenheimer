@@ -1212,3 +1212,12 @@ earlier note:
   be looked at. Tasks that were in Later moved to the end of To do
   (migration `ReplaceLaterWithReviewColumn`); attaching a session still
   moves only a task in To do to In progress.
+- `versions/mvp/26-bot-routines.md` §6 (2026-10-16) said a bot gets a
+  heartbeat only when asked for one in chat, through `update_routine`. On
+  2026-11-06 the owner asked for bots to be proactive by default, the way
+  OpenClaw's are: every new bot is now born with a **Heartbeat** routine,
+  hourly at a minute spread by its id, saved as its owner within the scopes
+  of the credential that made it, which the owner pauses or deletes like
+  any routine. A beat with nothing to say calls `nothing_to_report`, offered
+  only on turns nobody is waiting on. Bots made before it get none until
+  asked (26 §6, "Decided").

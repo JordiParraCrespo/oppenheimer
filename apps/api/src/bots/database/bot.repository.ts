@@ -1,8 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { type AccessScope, ScopedRepositoryBase } from '@oppenheimer/backend-authz';
+import { OutboxService } from '@oppenheimer/backend-ddd';
 import { None, type Option, Some } from 'oxide.ts';
-import { DataSource, type EntityManager, Repository } from 'typeorm';
+import type { EntityManager, Repository } from 'typeorm';
 import { BotMapper } from '../bot.mapper';
 import { BotDocumentMapper } from '../bot-document.mapper';
 import { BotResource } from '../bots.resource';
@@ -27,9 +28,9 @@ export class BotRepository extends ScopedRepositoryBase<BotOrmEntity> implements
   constructor(
     @InjectRepository(BotOrmEntity)
     protected readonly repository: Repository<BotOrmEntity>,
-    private readonly dataSource: DataSource,
     private readonly mapper: BotMapper,
     private readonly documents: BotDocumentMapper,
+    private readonly outbox: OutboxService,
   ) {
     super();
   }
@@ -88,7 +89,7 @@ export class BotRepository extends ScopedRepositoryBase<BotOrmEntity> implements
     documents: readonly BotDocumentEntity[],
     creator?: BotCreatorCheck,
   ): Promise<BotWriteOutcome> {
-    return this.writing(async (manager) => {
+    const outcome = await this.writing(async (manager) => {
       await manager.getRepository(BotOrmEntity).insert(this.mapper.toPersistence(bot));
       for (const document of documents) {
         await manager
@@ -118,9 +119,12 @@ export class BotRepository extends ScopedRepositoryBase<BotOrmEntity> implements
           throw new CreatorChanged();
         }
       }
+      await this.outbox.stageEvents(manager, bot.domainEvents);
       for (const document of documents) document.written();
       return 'saved';
     });
+    if (outcome === 'saved') bot.clearEvents();
+    return outcome;
   }
 
   async save(bot: BotEntity): Promise<BotWriteOutcome> {
@@ -161,7 +165,8 @@ export class BotRepository extends ScopedRepositoryBase<BotOrmEntity> implements
     work: (manager: EntityManager) => Promise<BotWriteOutcome>,
   ): Promise<BotWriteOutcome> {
     try {
-      return await this.dataSource.transaction(work);
+      // The outbox's transaction, so what an insert stages wakes the relay once it commits.
+      return await this.outbox.transaction(work);
     } catch (error) {
       if (violated(error, FOREIGN_KEY_VIOLATION, 'FK_bot_group')) return 'group-missing';
       if (violated(error, UNIQUE_VIOLATION, 'UQ_bot_organization_idempotency')) return 'taken';

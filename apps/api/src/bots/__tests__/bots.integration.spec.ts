@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import type { AccessScope } from '@oppenheimer/backend-authz';
+import { OutboxMessageSchema, OutboxService } from '@oppenheimer/backend-ddd';
 import { DataSource } from 'typeorm';
 import { useTestDatabase } from '../../__tests__/integration-services';
 import { NewBotProviderResolver } from '../application/new-bot-provider.resolver';
@@ -76,6 +77,7 @@ describe('bots (integration)', () => {
         BotMemoryFactOrmEntity,
         BotSkillOrmEntity,
         ModelProviderCredentialOrmEntity,
+        OutboxMessageSchema,
       ],
       synchronize: false,
     });
@@ -83,9 +85,9 @@ describe('bots (integration)', () => {
     const documentMapper = new BotDocumentMapper();
     bots = new BotRepository(
       dataSource.getRepository(BotOrmEntity),
-      dataSource,
       new BotMapper(),
       documentMapper,
+      new OutboxService(dataSource),
     );
     groups = new BotGroupRepository(
       dataSource.getRepository(BotGroupOrmEntity),
@@ -206,6 +208,31 @@ describe('bots (integration)', () => {
     expect(history).toMatchObject([
       { revision: 1, content: 'You are Bea.', author: 'user', authorUserId: userId },
     ]);
+  });
+
+  // What breaks this: a bot committed without the event its heartbeat is
+  // saved from, or the event surviving a creation that rolled back.
+  it('stages its creation on the outbox with the bot, and nothing for a write that failed', async () => {
+    const bot = await create('Cleo');
+    const staged = async (botId: string) =>
+      dataSource.query(`SELECT "eventName" FROM "outbox_message" WHERE "aggregateId" = $1`, [
+        botId,
+      ]) as Promise<{ eventName: string }[]>;
+    expect(await staged(bot.id)).toEqual([{ eventName: 'BotCreatedDomainEvent' }]);
+    expect(bot.domainEvents).toEqual([]);
+
+    const orphan = BotEntity.createNew({
+      organizationId,
+      createdByUserId: userId,
+      name: 'Dax',
+      description: '',
+      avatarColor: 'mint',
+      groupId: randomUUID(),
+      homeHostId: null,
+      provider: 'anthropic',
+    });
+    expect(await bots.insert(orphan, [])).toBe('group-missing');
+    expect(await staged(orphan.id)).toEqual([]);
   });
 
   it('moves a bot into a group at an index and closes up both lists', async () => {

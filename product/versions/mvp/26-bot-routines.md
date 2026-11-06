@@ -1,8 +1,9 @@
 # 26 — Bot routines: how a bot wakes on its own
 
 **Decided 2026-10-16, in review; built in the slices of §8. Built so
-far: slices A, B and the tab of C**: the run-target port, bot routines in
-the API (a bot saves and runs its routines from chat), and the Routines tab. Note 25
+far: slices A, B, the tab of C and part of D**: the run-target port, bot routines in
+the API (a bot saves and runs its routines from chat), the Routines tab, a
+heartbeat every new bot is born with, and quiet turns. Note 25
 builds a bot that only works when you write to it. This note is how it
 works when you do not: on a schedule (its heartbeat), on an event, or
 when a session ends. The 2026-10-13 export already draws it:
@@ -230,9 +231,30 @@ quiet. The bot creates one with `update_routine` (it asks, §4) when asked in
 chat. `INSTRUCTIONS.md` already holds the bot's
 job, so there is no separate heartbeat file.
 
+**Changed 2026-11-06:** every new bot is **born with its heartbeat**, as
+OpenClaw's agents are. Creating a bot raises `BotCreatedDomainEvent` on the
+outbox with the bot, and a listener in bots-chat saves a routine named
+**Heartbeat**: hourly, at a minute past the hour spread by the bot's id
+(`heartbeatMinute`, so a workspace's bots do not all wake at :00), on, as
+the bot's owner and within the scopes of the credential that made the bot.
+Its prompt (`bot-heartbeat.policy.ts`) is the check-in above: reread the
+instructions and the plan, look at the sessions, pull requests and mail the
+bot looks after, act on what needs it, `notify` what the person must know,
+and otherwise call `nothing_to_report`. A redelivered event finds the
+routine by its name and saves no second one; an owner who is gone gets
+none. It is an ordinary routine: the owner pauses, edits or deletes it on
+the Routines tab or in chat. Event wakes (a watched pull request, new
+mail, a followed session) are unchanged and still wake the bot at once;
+the heartbeat is what makes it act between them. Bots made before this get
+no heartbeat until asked.
+
 - **Quiet turns.** A routine turn with nothing to say calls
   `nothing_to_report` instead of writing a message; the chat draws one
-  collapsed activity line. OpenClaw does this with a `HEARTBEAT_OK`
+  collapsed activity line. **Built 2026-11-06**: the tool is offered on
+  every turn nobody is waiting on (a routine, a wake, a goal, a loop) and
+  never on a message, an approval or a question, and a routine's opening
+  tells the bot to use it. Quiet turns are not yet recorded on the turn, so
+  the spend guard below, when built, reads them from the tool call. OpenClaw does this with a `HEARTBEAT_OK`
   reply; a tool is explicit and cannot be confused with prose. Bots only:
   a person's session automation has a run page, not a chat.
 - **Spread, not on the minute.** A schedule trigger's config gains an
@@ -321,7 +343,10 @@ Each is a stacked pull request, green on `pnpm ci:local`.
   pause (until then a routine whose bot has no usable provider is skipped,
   not paused).
 - **D. Heartbeat comfort.** `nothing_to_report`, `spread`, and the spend
-  guard with its two cards.
+  guard with its two cards. **Built 2026-11-06:** `nothing_to_report` and a
+  heartbeat on by default, spread by the bot's id rather than by a
+  trigger's `spread` setting. The general `spread` and the spend guard are
+  still to build.
 - **E. More triggers.** "When a session ends" (§5), then a webhook with a
   key per routine (`POST /automations/webhook/{id}`, `Authorization:
   Bearer`), as Grok Bot offers.
@@ -367,3 +392,8 @@ Each is a stacked pull request, green on `pnpm ci:local`.
 - 2026-10-16, in review of slice A: **the run records a `RunDispatchRef`**,
   a union over targets, and the dispatcher hands the handler a launch
   bound to its target, so a new target does not touch the handler.
+- 2026-11-06, asked by the owner: **a heartbeat by default.** Every new
+  bot gets an hourly Heartbeat routine at its birth (§6), so a bot is
+  proactive without being asked, as OpenClaw's are; its spread is a minute
+  derived from the bot's id. Until the spend guard is built, what bounds
+  its cost is the run budget, the overlap guard and quiet turns.

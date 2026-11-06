@@ -60,6 +60,7 @@ import { BotWaitingCardResolver } from './application/bot-waiting-card.resolver'
 import { BotWatchToolsFactory } from './application/bot-watch-tools.factory';
 import { BotWebToolsFactory } from './application/bot-web-tools.factory';
 import { BotWhatsappToolsFactory } from './application/bot-whatsapp-tools.factory';
+import { BotHeartbeatDomainEventHandler } from './application/event-handlers/bot-heartbeat.domain-event-handler';
 import { BotPullRequestWakeDomainEventHandler } from './application/event-handlers/bot-pull-request-wake.domain-event-handler';
 import { BotRoutineActivityDomainEventHandler } from './application/event-handlers/bot-routine-activity.domain-event-handler';
 import { BotSessionWakeDomainEventHandler } from './application/event-handlers/bot-session-wake.domain-event-handler';
@@ -398,6 +399,7 @@ const queryHandlers: Provider[] = [
     BotSubagentRunnerFactory,
     { provide: WEB_PAGE, useClass: GuardedWebPageAdapter },
     ...AutomationsModule.contributeRunTargets([BotRoutineTarget]),
+    BotHeartbeatDomainEventHandler,
     BotRoutineActivityDomainEventHandler,
     BotSessionWakeDomainEventHandler,
     BotPullRequestWakeDomainEventHandler,

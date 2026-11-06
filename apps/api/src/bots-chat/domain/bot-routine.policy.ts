@@ -75,7 +75,7 @@ export function routinePrefix(automationId: string): string {
 export function routineOpening(firing: RoutineFiring): string {
   return [
     `Your routine "${firing.name}" is running now, on its own: nobody wrote to you.`,
-    'Do what it says, then report briefly what you did or found. If there is nothing worth saying, say so in one line.',
+    'Do what it says, then report briefly what you did or found. If there is nothing worth saying, call nothing_to_report and write nothing.',
     '',
     firing.instructions,
   ].join('\n');
@@ -249,4 +249,13 @@ export function routineActivityLine(activity: RoutineActivity): BotMessageEntity
   });
   line.validate();
   return line;
+}
+
+/**
+ * What `nothing_to_report` answers (`26-bot-routines.md` §6, "Quiet turns"):
+ * the turn ends here, with the call as its one activity line and no message,
+ * so a heartbeat that found nothing is one collapsed line in the chat.
+ */
+export function quietTurnAnswer(): string {
+  return 'Noted: nothing to report. End your turn now without writing anything.';
 }
