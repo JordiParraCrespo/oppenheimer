@@ -258,6 +258,8 @@ type SubagentState = 'running' | 'completed' | 'failed';
  * elapsed time in mono, and what it is doing now (`activity`, mono) or how
  * it ended (`outcome`, "→ 38 tests pass"). `note` trails in subtle ink
  * ("launched 2 subagents"); `actions` (Stop, Message) show on hover.
+ * With `children` (what it did, its own steps) the name folds them: it
+ * turns the chevron, and the steps hang under the row on a hairline.
  */
 function SubagentRow({
   name,
@@ -270,7 +272,9 @@ function SubagentRow({
   outcome,
   note,
   actions,
+  defaultOpen = false,
   className,
+  children,
 }: {
   name: React.ReactNode;
   role?: React.ReactNode;
@@ -283,18 +287,28 @@ function SubagentRow({
   outcome?: React.ReactNode;
   note?: React.ReactNode;
   actions?: React.ReactNode;
+  /** Whether the steps start open. */
+  defaultOpen?: boolean;
   className?: string;
+  /** What it did, folded under the row. */
+  children?: React.ReactNode;
 }) {
   const word = stateLabel ?? { running: 'Running', completed: 'Completed', failed: 'Failed' }[state];
-  return (
+  const row = (
     <div
       data-slot="subagent-row"
       data-state={state}
-      className={cn('group/sub flex min-h-7.5 items-center gap-2 rounded-sm px-1.5 transition-colors duration-instant hover:bg-hover-surface', className)}
+      className={cn('group/sub flex min-h-7.5 min-w-0 items-center gap-2 rounded-sm px-1.5 transition-colors duration-instant hover:bg-hover-surface', className)}
     >
-      <span className="font-medium text-fg">{name}</span>
-      {role ? <span className="text-[12.5px] text-fg-subtle">{role}</span> : null}
-      {model ? <span className="text-[12.5px] text-fg-subtle">{model}</span> : null}
+      {children ? (
+        <FoldTrigger className="flex min-w-0 shrink items-center gap-1.5 font-medium text-fg">
+          <span className="truncate">{name}</span>
+        </FoldTrigger>
+      ) : (
+        <span className="truncate font-medium text-fg">{name}</span>
+      )}
+      {role ? <span className="shrink-0 text-[12.5px] text-fg-subtle">{role}</span> : null}
+      {model ? <span className="shrink-0 text-[12.5px] text-fg-subtle">{model}</span> : null}
       {state === 'running' ? <LoaderIcon aria-hidden className="size-3.25 text-success motion-safe:animate-spin" /> : null}
       {state === 'completed' ? <CheckIcon aria-hidden className="size-3.25 text-fg-muted" /> : null}
       <span className={cn('text-[12.5px]', state === 'failed' ? 'text-danger' : 'text-fg-muted')}>{word}</span>
@@ -316,6 +330,13 @@ function SubagentRow({
         </span>
       ) : null}
     </div>
+  );
+  if (!children) return row;
+  return (
+    <Fold data-slot="subagent-fold" defaultOpen={defaultOpen} className="flex flex-col">
+      {row}
+      <FoldPanel className="ml-3 flex flex-col gap-3 border-border-subtle border-l pt-1 pb-2 pl-4">{children}</FoldPanel>
+    </Fold>
   );
 }
 

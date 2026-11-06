@@ -8,6 +8,8 @@ export {
   type ChatState,
   type ChatStatus,
   type ChatStep,
+  type ChatSubagent,
+  type ChatSubagentState,
   type ChatTaskStatus,
   type ChatTodo,
   type ChatTodoStatus,

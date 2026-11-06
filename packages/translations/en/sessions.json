@@ -647,6 +647,22 @@
     "exploring": "Exploring",
     "file": {
       "onHost": "It stays on the host: too large for the chat, or not an image or text."
+    },
+    "subagents": {
+      "count_one": "{{count}} subagent",
+      "count_other": "{{count}} subagents",
+      "running": "{{count}} running",
+      "failed": "{{count}} failed",
+      "untitled": "Subagent",
+      "calls_one": "{{count}} call",
+      "calls_other": "{{count}} calls",
+      "tokens": "{{tokens}} tokens",
+      "state": {
+        "running": "Running",
+        "completed": "Completed",
+        "failed": "Failed",
+        "stopped": "Stopped"
+      }
     }
   },
   "preview": {

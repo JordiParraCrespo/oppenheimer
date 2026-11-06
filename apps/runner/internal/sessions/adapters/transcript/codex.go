@@ -45,6 +45,9 @@ const (
 // codexSource is Codex's rollouts, under its `sessions/` folder.
 type codexSource struct {
 	sessions string
+	// heads are the first lines of the rollouts read for subagents, kept
+	// once read.
+	heads *codexHeads
 }
 
 func (c codexSource) finder(session domain.Session) (func() string, bool) {
@@ -52,7 +55,7 @@ func (c codexSource) finder(session domain.Session) (func() string, bool) {
 	if cwd == "" {
 		return nil, false
 	}
-	scan := &codexScan{root: c.sessions, dirs: sameDirectory(cwd), since: session.Created, cwds: map[string]string{}}
+	scan := &codexScan{root: c.sessions, dirs: sameDirectory(cwd), since: session.Created, heads: map[string]codexHead{}}
 	return scan.find, true
 }
 
@@ -76,7 +79,7 @@ type codexScan struct {
 	root  string
 	dirs  map[string]bool
 	since time.Time
-	cwds  map[string]string
+	heads map[string]codexHead
 	at    time.Time
 	found string
 }
@@ -111,13 +114,15 @@ func (s *codexScan) find() string {
 				continue
 			}
 			path := filepath.Join(folder, name)
-			cwd, ok := s.cwds[path]
+			head, ok := s.heads[path]
 			if !ok {
-				if cwd = codexDirectory(path); cwd != "" {
-					s.cwds[path] = cwd
+				if head, ok = codexHeadOf(path); ok {
+					s.heads[path] = head
 				}
 			}
-			if !s.dirs[filepath.Clean(cwd)] {
+			// A subagent's rollout runs in the same directory, and is the
+			// conversation's own, under it (`codex_subagents.go`).
+			if !ok || head.child() || !s.dirs[filepath.Clean(head.Cwd)] {
 				continue
 			}
 			if best == "" || info.ModTime().After(bestAt) {
@@ -134,29 +139,57 @@ func midnight(t time.Time) time.Time {
 	return time.Date(year, month, day, 0, 0, 0, 0, t.Location())
 }
 
-// codexDirectory is where a rollout's conversation ran, off its first line;
-// "" when that line is not a `session_meta` (yet).
-func codexDirectory(path string) string {
+// codexHead is a rollout's first line, its `session_meta`: where the
+// conversation ran, its thread, and for a subagent's, the thread that
+// started it and what it was named.
+type codexHead struct {
+	Cwd            string `json:"cwd"`
+	ID             string `json:"id"`
+	ParentThreadID string `json:"parent_thread_id"`
+	Source         struct {
+		Subagent struct {
+			ThreadSpawn *struct {
+				ParentThreadID string `json:"parent_thread_id"`
+				AgentPath      string `json:"agent_path"`
+				AgentNickname  string `json:"agent_nickname"`
+				AgentRole      string `json:"agent_role"`
+			} `json:"thread_spawn"`
+		} `json:"subagent"`
+	} `json:"source"`
+}
+
+// parent is the thread that started this one; "" for a conversation of its own.
+func (h codexHead) parent() string {
+	if spawn := h.Source.Subagent.ThreadSpawn; spawn != nil && spawn.ParentThreadID != "" {
+		return spawn.ParentThreadID
+	}
+	return h.ParentThreadID
+}
+
+// child is whether another thread started this one.
+func (h codexHead) child() bool { return h.parent() != "" }
+
+// codexHeadOf is a rollout's `session_meta`, off its first line; false when
+// that line is not one (yet).
+func codexHeadOf(path string) (codexHead, bool) {
 	file, err := os.Open(path) //nolint:gosec // a rollout under Codex's own sessions folder
 	if err != nil {
-		return ""
+		return codexHead{}, false
 	}
 	defer func() { _ = file.Close() }()
 	scanner := bufio.NewScanner(io.LimitReader(file, codexHeadMax))
 	scanner.Buffer(make([]byte, 64<<10), codexHeadMax)
 	if !scanner.Scan() {
-		return ""
+		return codexHead{}, false
 	}
-	var head struct {
-		Type    string `json:"type"`
-		Payload struct {
-			Cwd string `json:"cwd"`
-		} `json:"payload"`
+	var line struct {
+		Type    string    `json:"type"`
+		Payload codexHead `json:"payload"`
 	}
-	if json.Unmarshal(scanner.Bytes(), &head) != nil || head.Type != "session_meta" {
-		return ""
+	if json.Unmarshal(scanner.Bytes(), &line) != nil || line.Type != "session_meta" {
+		return codexHead{}, false
 	}
-	return head.Payload.Cwd
+	return line.Payload, true
 }
 
 // codexLine is one line of a rollout, its payload read loosely: each type
