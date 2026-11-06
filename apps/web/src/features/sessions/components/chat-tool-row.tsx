@@ -2,12 +2,13 @@ import { DiffStat, ToolCallRow } from '@oppenheimer/design-system-web';
 import type { ChatToolCall } from '@oppenheimer/frontend-consumer';
 import { ChatToolOutput } from '@oppenheimer/frontend-web';
 import { useTranslation } from 'react-i18next';
-import { firstLine, groupKindOf } from '../lib/chat-blocks';
+import { commandPurposeOf, firstLine, groupKindOf } from '../lib/chat-blocks';
 import { chatToolIcon } from '../lib/chat-icons';
 import { ChatToolTarget } from './chat-tool-target';
 
 /**
- * One call the agent made: its glyph and verb, what it acted on, and how it
+ * One call the agent made: its glyph and verb (for a command, what the agent
+ * said it was for, as its terminal shows it), what it acted on, and how it
  * ended — the lines an edit changed, or a failure in red with its first line
  * under the row, readable without opening it. A call that returned something
  * folds over its output on the terminal ground, a JSON answer as a tree.
@@ -16,7 +17,9 @@ export function ChatToolRow({ call }: { call: ChatToolCall }) {
   const { t } = useTranslation();
   const kind = groupKindOf(call.kind);
   const Icon = chatToolIcon(call.kind);
-  const verb = kind === 'mcp' || kind === 'other' ? call.label : t(`sessions.chat.verb.${kind}`);
+  const verb =
+    commandPurposeOf(call) ??
+    (kind === 'mcp' || kind === 'other' ? call.label : t(`sessions.chat.verb.${kind}`));
   const failed = call.status === 'failed';
   const excerpt = failed ? firstLine(call.output) : null;
   const meta = failed ? (

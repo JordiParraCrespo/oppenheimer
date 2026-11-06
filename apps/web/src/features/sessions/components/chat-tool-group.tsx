@@ -2,7 +2,13 @@ import { ToolCallGroup, ToolCallLive } from '@oppenheimer/design-system-web';
 import type { ChatToolCall } from '@oppenheimer/frontend-consumer';
 import { useExploredLine } from '@oppenheimer/frontend-web';
 import { useTranslation } from 'react-i18next';
-import { formatChatElapsed, groupKindOf, sharedKindOf, summaryOf } from '../lib/chat-blocks';
+import {
+  commandPurposeOf,
+  formatChatElapsed,
+  groupKindOf,
+  sharedKindOf,
+  summaryOf,
+} from '../lib/chat-blocks';
 import { chatToolIcon } from '../lib/chat-icons';
 import { exploredPartsOf } from '../lib/explored';
 import { ChatToolRow } from './chat-tool-row';
@@ -65,7 +71,7 @@ export function ChatToolGroup({
       ) : null}
       {running ? (
         <ToolCallLive
-          verb={t(`sessions.chat.verbLive.${runningKind}`)}
+          verb={commandPurposeOf(running) ?? t(`sessions.chat.verbLive.${runningKind}`)}
           target={<ChatToolTarget call={running} />}
           elapsed={
             running.startedAt ? (

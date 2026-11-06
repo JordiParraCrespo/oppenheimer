@@ -15,6 +15,7 @@
 import type { ChatItemTodo } from '@oppenheimer/shared/schemas/chat-item';
 import { type ChatAnswer, QUESTION_KEY_GAP_MS, questionKeys } from '@oppenheimer/shared/sessions';
 import { type ChatToolKind, classifyTool, fieldOf, todosOf } from '../../chat/chat-tools';
+import { type ChatActivity, sameActivity } from './agent-activity';
 import {
   type ChatSharedFile,
   SHARED_ENTRY,
@@ -189,6 +190,12 @@ export interface ChatState {
    * when the whole conversation is held.
    */
   older: 'none' | 'more' | 'loading';
+  /**
+   * What the agent says it is doing this moment, off its spinner line on the
+   * terminal (`setActivity`); none while it is not working, or while no
+   * terminal is drawn to read it from.
+   */
+  activity: ChatActivity | null;
 }
 
 export interface ChatBatch {
@@ -214,6 +221,7 @@ const EMPTY: ChatState = {
   status: null,
   files: [],
   older: 'none',
+  activity: null,
 };
 
 /** The entry the runner adds for the status line's figures. */
@@ -788,6 +796,16 @@ export class SessionChat {
   /** Stops the agent's turn: Escape, as in its terminal. */
   interrupt(): void {
     this.type?.(ESCAPE);
+  }
+
+  /**
+   * What the agent's spinner line says now, as the terminal under the chat
+   * reads it (`readAgentActivity`); none once it is gone. A reading that
+   * says what the last one said publishes nothing.
+   */
+  setActivity(activity: ChatActivity | null): void {
+    if (sameActivity(this.state.activity, activity)) return;
+    this.publish({ ...this.state, activity });
   }
 
   snapshot = (): ChatState => this.state;

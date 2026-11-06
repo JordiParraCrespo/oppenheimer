@@ -108,7 +108,7 @@ describe('a session replayed from its transcript', () => {
       '… sessions.chat.turn.working 50s',
       '  thinking: sessions.chat.thoughtFor{"seconds":4}',
       '  call: sessions.chat.verb.read sign-in.spec.ts tests',
-      '  call: sessions.chat.verb.command pnpm test sign-in --repeat 20 sessions.chat.failedCall',
+      '  call: Run it twenty times pnpm test sign-in --repeat 20 sessions.chat.failedCall',
       '  note: sessions.chat.question.waiting',
     ]);
     // The picker holds the terminal's input: a message typed now would land in it.
@@ -136,7 +136,7 @@ describe('a session replayed from its transcript', () => {
       `▾ sessions.chat.turn.worked 1m 20s · ${clock('2026-10-30T10:01:20.000Z')}`,
       '  thinking: sessions.chat.thoughtFor{"seconds":4}',
       '  call: sessions.chat.verb.read sign-in.spec.ts tests',
-      '  call: sessions.chat.verb.command pnpm test sign-in --repeat 20 sessions.chat.failedCall',
+      '  call: Run it twenty times pnpm test sign-in --repeat 20 sessions.chat.failedCall',
       '  answered: Which fix? Wait for the toast',
       '  call: sessions.chat.verb.edit sign-in.spec.ts tests +2 −1',
       '  reply: Fixed: the test now waits for the toast before it reads the URL.',
@@ -155,7 +155,7 @@ describe('a session replayed from its transcript', () => {
     // A read alone is its own row, and the failed command ends any run of reads.
     expect(outline(chat.container).slice(3, 5)).toEqual([
       '  call: sessions.chat.verb.read sign-in.spec.ts tests',
-      '  call: sessions.chat.verb.command pnpm test sign-in --repeat 20 sessions.chat.failedCall',
+      '  call: Run it twenty times pnpm test sign-in --repeat 20 sessions.chat.failedCall',
     ]);
     expect(screen.queryByRole('button', { name: /sessions\.chat\.explored/ })).toBeNull();
     // Its first line in red under the row, and the whole output once it opens.
@@ -179,7 +179,7 @@ describe('a session replayed from its transcript', () => {
       'you: Now run the whole suite',
       '… sessions.chat.turn.working 15s',
       '  reply: Running the suite.',
-      '  running: sessions.chat.verbLive.command pnpm test 12s',
+      '  running: Run the suite pnpm test 12s',
     ]);
     // While it works, send is Stop.
     expect(screen.getByRole('button', { name: 'sessions.chat.composer.stop' })).toBeTruthy();
@@ -200,7 +200,7 @@ describe('a session replayed from its transcript', () => {
       'you: Now run the whole suite',
       `▾ sessions.chat.turn.worked 1m 32s · ${clock('2026-10-30T10:06:32.000Z')}`,
       '  reply: Running the suite.',
-      '  call: sessions.chat.verb.command pnpm test',
+      '  call: Run the suite pnpm test',
       '  reply: All 212 tests pass.',
     ]);
     expect(screen.queryByRole('button', { name: 'sessions.chat.composer.stop' })).toBeNull();
@@ -211,7 +211,7 @@ describe('a session replayed from its transcript', () => {
       `▾ sessions.chat.turn.worked 1m 20s · ${clock('2026-10-30T10:01:20.000Z')}`,
       '  thinking: sessions.chat.thoughtFor{"seconds":4}',
       '  call: sessions.chat.verb.read sign-in.spec.ts tests',
-      '  call: sessions.chat.verb.command pnpm test sign-in --repeat 20 sessions.chat.failedCall',
+      '  call: Run it twenty times pnpm test sign-in --repeat 20 sessions.chat.failedCall',
       '  answered: Which fix? Wait for the toast',
       '  call: sessions.chat.verb.edit sign-in.spec.ts tests +2 −1',
       '  reply: Fixed: the test now waits for the toast before it reads the URL.',

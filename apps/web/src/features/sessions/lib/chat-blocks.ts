@@ -288,6 +288,15 @@ export function groupKindOf(kind: ChatToolKind): GroupKind {
   return kind === 'todo' || kind === 'plan' ? 'other' : kind;
 }
 
+/**
+ * What a command was for, in the agent's own words ("Measuring gas vs
+ * execution time across iteration counts"), as its terminal names the call;
+ * none for any other kind of call, or a command that did not say.
+ */
+export function commandPurposeOf(call: ChatToolCall): string | null {
+  return call.kind === 'command' && call.description ? call.description : null;
+}
+
 /** The order a summary names the kinds in: what was looked at, then what was changed, then the rest. */
 const SUMMARY_ORDER: GroupKind[] = [
   'read',
