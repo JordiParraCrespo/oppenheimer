@@ -107,7 +107,7 @@ function Button({
   ...props
 }: ButtonProps) {
   const busy = pending ? { 'aria-busy': true as const } : {};
-  const label = pending && pendingLabel !== undefined ? pendingLabel : children;
+  const label = centerLabel(pending && pendingLabel !== undefined ? pendingLabel : children, variant);
   if (isLinkElement(render)) {
     return (
       <LinkButton
@@ -137,6 +137,26 @@ function Button({
     >
       {label}
     </ButtonPrimitive>
+  );
+}
+
+/**
+ * Wraps the label's text in a span trimmed to its cap height and baseline, so
+ * the capitals sit on the pill's centre line and level with a glyph beside
+ * them. Untrimmed, the line box keeps the descender's room below the text and
+ * the label rides a pixel or two high. The `link` variant is left alone: it
+ * has no height of its own and sits in a line of running text.
+ */
+function centerLabel(label: React.ReactNode, variant: ButtonProps['variant']): React.ReactNode {
+  if (variant === 'link') return label;
+  return React.Children.map(label, (child) =>
+    typeof child === 'string' || typeof child === 'number' ? (
+      <span data-slot="button-label" className="[text-box:trim-both_cap_alphabetic]">
+        {child}
+      </span>
+    ) : (
+      child
+    ),
   );
 }
 
