@@ -18,7 +18,7 @@ import type { ChatStep, ChatSubagent, ChatSubagentState, ChatTurn } from './sess
 import { sidechainTurns } from './session-chat';
 
 /** The entry the runner adds for what one subagent is. */
-export const SUBAGENT_ENTRY = 'oppenheimer.subagent';
+const SUBAGENT_ENTRY = 'oppenheimer.subagent';
 
 /** How deep subagents are followed under one another. */
 const DEPTH_MAX = 4;
