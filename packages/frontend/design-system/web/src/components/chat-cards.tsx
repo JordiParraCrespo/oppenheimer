@@ -255,8 +255,8 @@ type SubagentState = 'running' | 'completed' | 'failed';
 /**
  * One subagent, 30px: its name, role and model in subtle ink, then its
  * state (a spinner and Running, a check and Completed, Failed in red), the
- * elapsed time in mono, and what it is doing now (`activity`, mono) or how
- * it ended (`outcome`, "→ 38 tests pass"). `note` trails in subtle ink
+ * elapsed time in mono, and how it ended (`outcome`, "→ 38 tests pass");
+ * while it runs, what it is doing now (`activity`, mono) is a line under it. `note` trails in subtle ink
  * ("launched 2 subagents"); `actions` (Stop, Message) show on hover.
  * With `children` (what it did, its own steps) the name folds them: it
  * turns the chevron, and the steps hang under the row on a hairline.
@@ -314,7 +314,7 @@ function SubagentRow({
       <span className={cn('shrink-0 text-[12.5px]', state === 'failed' ? 'text-danger' : 'text-fg-muted')}>{word}</span>
       {state === 'running' ? (
         <>
-          {activity ? <span className="min-w-0 flex-1 truncate font-mono text-[12px] text-fg-muted">{activity}</span> : <span className="flex-1" />}
+          <span className="flex-1" />
           {elapsed ? <span className="figures shrink-0 whitespace-nowrap font-mono text-[11.5px] text-fg-subtle">{elapsed}</span> : null}
         </>
       ) : (
@@ -331,10 +331,27 @@ function SubagentRow({
       ) : null}
     </div>
   );
-  if (!children) return row;
+  // What it is doing now gets a line of its own: the row is full with the rest.
+  const doing =
+    state === 'running' && activity ? (
+      <p data-slot="subagent-activity" className="m-0 -mt-1 truncate pb-1 pl-1.5 font-mono text-[12px] text-fg-muted">
+        {activity}
+      </p>
+    ) : null;
+  if (!children) {
+    return doing ? (
+      <div className="flex flex-col">
+        {row}
+        {doing}
+      </div>
+    ) : (
+      row
+    );
+  }
   return (
     <Fold data-slot="subagent-fold" defaultOpen={defaultOpen} className="flex flex-col">
       {row}
+      {doing}
       <FoldPanel className="ml-3 flex flex-col gap-3 border-border-subtle border-l pt-1 pb-2 pl-4">{children}</FoldPanel>
     </Fold>
   );
