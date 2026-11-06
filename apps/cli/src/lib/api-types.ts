@@ -190,7 +190,9 @@ export interface BotConversation {
   turns: BotTurn[];
 }
 
-export type TaskStatus = 'later' | 'todo' | 'doing' | 'done';
+export type { TaskStatus } from '@oppenheimer/shared/schemas/task';
+
+import type { TaskStatus } from '@oppenheimer/shared/schemas/task';
 
 export interface Task {
   id: string;

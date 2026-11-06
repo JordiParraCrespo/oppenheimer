@@ -325,7 +325,7 @@ export class BotPlanToolsFactory implements BotToolArea {
       name: 'move_task',
       scope: 'tasks:write',
       description:
-        'Moves a task to a column (later, todo, doing, done), first in it or directly after another task of that column. Moving to done completes it and clears a blocked reason; moving out of done reopens it. Needs the version you read. Use update_task for anything but the column or the order.',
+        'Moves a task to a column (todo, doing, review, done), first in it or directly after another task of that column. Moving to done completes it and clears a blocked reason; moving out of done reopens it. Needs the version you read. Use update_task for anything but the column or the order.',
       input: z.object({
         task_id: z.uuid().describe('A task id from list_tasks.'),
         status: statusInput,

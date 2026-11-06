@@ -52,7 +52,7 @@ export class StartTaskCloudSessionHttpController {
   @ApiOperation({
     summary: 'Start a cloud session from a task',
     description:
-      '`POST /sessions/cloud`’s body under `cloud`: the vendor’s own agent (Cursor’s) on one repository, on the caller’s key for the vendor, with no host, filed under the task’s project. The session is linked to the task as `started`, and a task in Later or To do moves to the top of In progress if `seenStatus` is still its status.',
+      '`POST /sessions/cloud`’s body under `cloud`: the vendor’s own agent (Cursor’s) on one repository, on the caller’s key for the vendor, with no host, filed under the task’s project. The session is linked to the task as `started`, and a task in To do moves to the top of In progress if `seenStatus` is still its status.',
   })
   @ApiHeader({
     name: 'Idempotency-Key',

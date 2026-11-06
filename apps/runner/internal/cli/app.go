@@ -185,7 +185,9 @@ func New(version string) (*App, error) {
 	app.Devices = devices
 	app.Ports = ports.New()
 	programStatus := statuspty.New(statuspty.Options{Executable: runnerExecutable(), Dir: programStatusDir(paths)})
-	trust := agenttrust.New(agenttrust.Options{ClaudeConfig: claudeConfigPath(paths)})
+	trust := agenttrust.New(agenttrust.Options{
+		ClaudeConfig: claudeConfigPath(paths), ClaudeProjects: claudeProjectsPath(paths),
+	})
 	transcripts := transcript.New(transcript.Options{
 		ClaudeProjects: claudeProjectsPath(paths),
 		StatusDir:      StatusDir(paths),
@@ -235,8 +237,6 @@ func New(version string) (*App, error) {
 		return nil, err
 	}
 	app.Sessions = sessions
-	// The chat view and `transcript.read` read a session's conversation off
-	// the same transcripts.
 	app.Conversations = sessionsapp.NewConversations(sessionsapp.ConversationsOptions{
 		Sessions: sessions, Transcripts: transcripts,
 	})
@@ -248,6 +248,7 @@ func New(version string) (*App, error) {
 	app.Cloud = cloud.Starter{
 		Trust:   func(dir string) error { return trust.Trust(sessionsdomain.AgentClaude, dir) },
 		Prepare: trust.KeepCloudSettingsLocal,
+		Forget:  trust.Forget,
 	}
 	app.WorkFolder = places
 	app.Terminals = terminals
