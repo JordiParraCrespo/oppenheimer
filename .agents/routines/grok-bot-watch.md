@@ -42,11 +42,12 @@ Read:
 - `.agents/skills/research/SKILL.md`, `.agents/skills/propose/SKILL.md` and
   `.agents/skills/steward/SKILL.md`.
 
-Find the open issue labelled `grok-bot-watch`. Its body holds the state
-from the last run: the last version read, the installer it came from, and
-the hash of each docs page. With no issue, the last version read is the
-highest version that `lessons-from-grok-bot.md` has a section for, and no
-docs page has a hash yet.
+Make sure the state issue exists before anything else. Find the open issue
+labelled `grok-bot-watch`. If there is none, create the label and the issue
+`Grok Bot watch` (step 6 says what its body holds) with the last version
+read set to the highest version `lessons-from-grok-bot.md` has a section
+for, and no docs hashes. Its body is the state from the last run: the last
+version read, the source it came from, and the hash of each docs page.
 
 ## 2. Has anything changed?
 
@@ -57,35 +58,24 @@ whose hash differs from the issue's, or that is new, is a **changed page**.
 A page that is gone is changed too. On the first run, with no hashes, record
 them and treat no page as changed.
 
-**The installer.** Find the newest Linux x64 `.deb` (or AppImage). Try, in
-order, and stop at the first that gives a version **newer** than the last
-one read. A source that only gives the version already read (a recorded
-URL pins one release) tells you nothing: go on to the next.
+**The installer.** Ask every source below, in order, for the newest Linux
+x64 `.deb` (or AppImage) it offers, and take the highest version across all
+of them. It is new when it is higher than the last version read.
 
-1. the source the issue recorded last time, when it names the latest
-   release rather than one file (an update feed, a "latest" link), and the
-   recorded installer URL with a newer version or build where the pattern
-   makes that clear;
-2. the download links the docs give (`get-started`, `deployment`,
-   `faq`), and `https://x.ai/bot`;
-3. Cursor's download endpoints on `cursor.com` and `downloads.cursor.com`,
-   where the 0.75.0 and 0.78.1 `.deb`s were fetched;
-4. an Electron update feed named inside the last version you unpacked
-   (look for `update`, `feed` and `latest` URLs in its `package.json` and
-   main bundle).
+| # | Source | Notes |
+| --- | --- | --- |
+| 1 | The source the issue recorded | A recorded file URL pins one release; try it also with a newer version or build where the pattern makes that clear |
+| 2 | The docs' download links (`get-started`, `deployment`, `faq`) and `https://x.ai/bot` | |
+| 3 | Cursor's download endpoints on `cursor.com` and `downloads.cursor.com` | Where the 0.75.0 and 0.78.1 `.deb`s were fetched |
+| 4 | An Electron update feed named inside the last version you unpacked | `update`, `feed` and `latest` URLs in its `package.json` and main bundle |
 
-Record which source gave the newest version, so the next run tries it
-first. A source that
-needs a sign-in, or that blocks this machine (Cloudflare on `x.ai` does),
-counts as not working: skip it, and never try to get around a block. When
-no source works, say so in the run's comment with what each returned, and
-carry on with the docs alone.
+A source that needs a sign-in or blocks this machine (Cloudflare on `x.ai`
+does) gives nothing; never try to get around a block. Record the source of
+the highest version, so the next run asks it first, and what each source
+returned. When none gives a version, carry on with the docs alone.
 
-**Nothing new** (no newer version, no changed page, no `--version`): write
-the state to the issue (step 6's body) and stop. On the first run, with no
-issue yet, that means creating the label and the issue now, so the docs'
-hashes and the version found are kept for the next run. Otherwise only the
-"Last checked" line changes. Do not comment, do not open a pull request.
+**Nothing new** (no newer version, no changed page, no `--version`): write the
+"Last checked" line and the docs hashes to the issue body, and stop. Do not comment, do not open a pull request.
 
 ## 3. Read it
 
@@ -177,8 +167,7 @@ comment. Everything else in the table stays in the issue.
 
 ## 6. Report
 
-Find or create the label `grok-bot-watch` and the open issue
-`Grok Bot watch` with it. Use the label on nothing else but this routine's
+The state lives in the issue step 1 made sure of. Use the label on nothing else but this routine's
 issue and pull requests.
 
 - The **body** holds the state:
