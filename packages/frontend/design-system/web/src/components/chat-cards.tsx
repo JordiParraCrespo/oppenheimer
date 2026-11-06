@@ -301,29 +301,29 @@ function SubagentRow({
       className={cn('group/sub flex min-h-7.5 min-w-0 items-center gap-2 rounded-sm px-1.5 transition-colors duration-instant hover:bg-hover-surface', className)}
     >
       {children ? (
-        <FoldTrigger className="flex min-w-0 shrink items-center gap-1.5 font-medium text-fg">
+        <FoldTrigger className="flex min-w-0 max-w-1/2 shrink items-center gap-1.5 font-medium text-fg">
           <span className="truncate">{name}</span>
         </FoldTrigger>
       ) : (
-        <span className="truncate font-medium text-fg">{name}</span>
+        <span className="min-w-0 max-w-1/2 truncate font-medium text-fg">{name}</span>
       )}
       {role ? <span className="shrink-0 text-[12.5px] text-fg-subtle">{role}</span> : null}
       {model ? <span className="shrink-0 text-[12.5px] text-fg-subtle">{model}</span> : null}
       {state === 'running' ? <LoaderIcon aria-hidden className="size-3.25 text-success motion-safe:animate-spin" /> : null}
       {state === 'completed' ? <CheckIcon aria-hidden className="size-3.25 text-fg-muted" /> : null}
-      <span className={cn('text-[12.5px]', state === 'failed' ? 'text-danger' : 'text-fg-muted')}>{word}</span>
+      <span className={cn('shrink-0 text-[12.5px]', state === 'failed' ? 'text-danger' : 'text-fg-muted')}>{word}</span>
       {state === 'running' ? (
         <>
           {activity ? <span className="min-w-0 flex-1 truncate font-mono text-[12px] text-fg-muted">{activity}</span> : <span className="flex-1" />}
-          {elapsed ? <span className="figures font-mono text-[11.5px] text-fg-subtle">{elapsed}</span> : null}
+          {elapsed ? <span className="figures shrink-0 whitespace-nowrap font-mono text-[11.5px] text-fg-subtle">{elapsed}</span> : null}
         </>
       ) : (
         <>
-          {elapsed ? <span className="figures font-mono text-[11.5px] text-fg-subtle">{elapsed}</span> : null}
+          {elapsed ? <span className="figures shrink-0 whitespace-nowrap font-mono text-[11.5px] text-fg-subtle">{elapsed}</span> : null}
           {outcome ? <span className="min-w-0 flex-1 truncate text-[12.5px] text-fg-muted">→ {outcome}</span> : <span className="flex-1" />}
         </>
       )}
-      {note ? <span className="shrink-0 text-[12px] text-fg-subtle">{note}</span> : null}
+      {note ? <span className="shrink-0 whitespace-nowrap text-[12px] text-fg-subtle">{note}</span> : null}
       {actions ? (
         <span className="flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity duration-fast group-hover/sub:opacity-100 group-focus-within/sub:opacity-100">
           {actions}
