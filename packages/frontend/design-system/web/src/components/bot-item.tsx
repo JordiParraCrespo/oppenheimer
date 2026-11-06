@@ -7,25 +7,24 @@ import { META_GIVES_WAY, ROW_BUTTON_WITH_ACTION, SidebarRow } from '../internal/
 import { cn } from '../lib/utils';
 import { type AvatarColor, BotAvatar } from './avatar-picker';
 import { useSortableControl } from './drag';
+import { Tooltip, TooltipContent, TooltipTrigger } from './tooltip';
 
 function BotList({ className, ...props }: React.ComponentProps<'div'>) {
-  return <div data-slot="bot-list" role="list" className={cn('flex flex-col gap-0.5', className)} {...props} />;
+  return <div data-slot="bot-list" role="list" className={cn('flex flex-col gap-px', className)} {...props} />;
 }
 
 /**
- * BotItem — an employee in the sidebar: a chat with a named bot, so the row
- * reads like a conversation rather than a session. A 36px photo (initials in
- * ink until it loads) with a 10px green dot on its corner while the bot is
- * working; the name at 14px and the age in mono on the first line; the last
- * message at 12.5px muted on the second ("You: …" when it was yours). An
- * unread chat sets the name at 600, the preview in full ink and a 7px blue
- * dot at the end; one waiting on the person (`needsInput`: an approval, a
- * question) reads the same with an amber dot instead: both set
- * `data-attention`, which carries the weight. 52px, 6px radius, rows 2px
- * apart in a `BotList`.
+ * BotItem — an employee in the sidebar, on one line: a 20px square photo
+ * (initials in ink until it loads) with a 9px green dot on its corner while
+ * the bot is working, then the name at 14px. The last message is the row's
+ * tooltip, beside it on hover ("You: …" when it was yours). An unread chat
+ * sets the name at 600 with a 7px blue dot at the end; one waiting on the
+ * person (`needsInput`: an approval, a question) does the same with an amber
+ * dot: both set `data-attention`, which carries the weight. 32px, the nav
+ * radius, rows 1px apart in a `BotList`.
  *
  * `action` is the row's ellipsis, shown on hover the way `SessionItem`'s is,
- * hiding the age while it shows.
+ * hiding the dots while it shows.
  */
 function BotItem({
   name,
@@ -33,7 +32,6 @@ function BotItem({
   image,
   color,
   preview,
-  age,
   live = false,
   unread = false,
   needsInput = false,
@@ -51,14 +49,12 @@ function BotItem({
   image?: string;
   /** The avatar colour the initials sit on, for a bot with no photo. */
   color?: AvatarColor;
-  /** The last message, one line. */
+  /** The last message, shown in the row's tooltip. */
   preview?: React.ReactNode;
-  /** Relative age, mono ("2m", "1d"). */
-  age?: string;
   /** The bot is working: the green dot on the photo. */
   live?: boolean;
   unread?: boolean;
-  /** The bot is waiting on the person (an approval, a question): the amber dot in place of the blue. */
+  /** The bot is waiting on the person (an approval, a question): the amber dot. */
   needsInput?: boolean;
   active?: boolean;
   action?: React.ReactNode;
@@ -68,6 +64,7 @@ function BotItem({
 }) {
   const withAction = action !== undefined;
   const inRow = withAction || rowProps !== undefined;
+  const dot = 'size-1.75 shrink-0 rounded-pill';
   const button = (
     <ButtonPrimitive
       data-slot="bot-item"
@@ -80,52 +77,48 @@ function BotItem({
       render={render}
       nativeButton={nativeButton ?? render === undefined}
       className={cn(
-        'group/bot flex w-full items-center gap-3 rounded-nav px-2.5 py-2 text-left text-fg outline-none transition-colors duration-fast ease-standard hover:bg-hover-surface focus-visible:outline-2 focus-visible:outline-ring data-active:bg-selected-surface data-active:hover:bg-selected-surface',
+        'group/bot flex h-8 w-full items-center gap-2.5 rounded-nav px-2.5 text-left text-fg outline-none transition-colors duration-fast ease-standard hover:bg-hover-surface focus-visible:outline-2 focus-visible:outline-ring data-active:bg-selected-surface data-active:hover:bg-selected-surface',
         withAction && ROW_BUTTON_WITH_ACTION,
         className,
       )}
       {...props}
     >
       <span className="relative flex shrink-0">
-        <BotAvatar option={{ image, initials }} size={36} color={color} />
+        <BotAvatar option={{ image, initials }} size={20} color={color} className="rounded-xs" />
         {live ? (
           <span
             aria-hidden
-            className="absolute -right-0.5 bottom-0.75 size-2.5 rounded-pill border-2 border-sidebar bg-success"
+            className="absolute -right-0.75 -bottom-0.75 size-2.25 rounded-pill border-2 border-sidebar bg-success"
           />
         ) : null}
       </span>
-      <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-        <span className="flex items-baseline gap-2">
-          <span className="min-w-0 flex-1 truncate text-[14px] font-medium tracking-[-0.009em] group-data-attention/bot:font-semibold">
-            {name}
-          </span>
-          {age ? (
-            <span className={cn('figures shrink-0 font-mono text-[11px] text-fg-subtle', withAction && META_GIVES_WAY)}>
-              {age}
-            </span>
-          ) : null}
-        </span>
-        {preview ? (
-          <span className="flex items-center gap-2">
-            <span className="min-w-0 flex-1 truncate text-[12.5px] text-fg-muted group-data-attention/bot:text-fg">
-              {preview}
-            </span>
-            {needsInput ? (
-              <span aria-label="Needs input" className="size-1.75 shrink-0 rounded-pill bg-warning" />
-            ) : unread ? (
-              <span aria-label="Unread" className="size-1.75 shrink-0 rounded-pill bg-primary" />
-            ) : null}
-          </span>
-        ) : null}
+      <span className="min-w-0 flex-1 truncate text-[14px] font-medium group-data-attention/bot:font-semibold">
+        {name}
       </span>
+      {needsInput || unread ? (
+        <span className={cn('flex shrink-0 items-center gap-1.5', withAction && META_GIVES_WAY)}>
+          {needsInput ? <span aria-label="Needs input" className={cn(dot, 'bg-warning')} /> : null}
+          {unread ? <span aria-label="Unread" className={cn(dot, 'bg-primary')} /> : null}
+        </span>
+      ) : null}
     </ButtonPrimitive>
   );
 
-  if (!inRow) return button;
+  const row = preview ? (
+    <Tooltip>
+      <TooltipTrigger render={button} />
+      <TooltipContent side="right" align="center" sideOffset={8}>
+        <span className="line-clamp-3">{preview}</span>
+      </TooltipContent>
+    </Tooltip>
+  ) : (
+    button
+  );
+
+  if (!inRow) return row;
   return (
     <SidebarRow slot="bot-row" action={action} menuOpen={menuOpen} {...rowProps}>
-      {button}
+      {row}
     </SidebarRow>
   );
 }

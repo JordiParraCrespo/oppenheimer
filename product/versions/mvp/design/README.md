@@ -401,9 +401,11 @@ artboards at `../_ds/<folder>`; the layout here already matches it.
 - Left out of the 2026-10-25 export, as before: `uploads/`, `github.md`,
   `assets/prod/` and `version1/assets/scientists/`. The 2026-11-06 export
   was merged the same way.
-- The 2026-11-06 export is synced here, not ported. When it is, the owner's
-  call of 2026-11-06 is that the one-line bot row replaces `BotItem`'s
-  two-line form rather than sitting beside it as a density. The chat's
+- The 2026-11-06 export is synced here; its one-line bot row is ported. By
+  the owner's call of 2026-11-06 it replaced `BotItem`'s two-line form
+  rather than sitting beside it as a density, so the sidebar no longer
+  shows a bot's age. The sidebar toggle's move into the header is not
+  ported yet. The chat's
   event lines, notice and goal bar are already in the console (the canvas
   drew them from it). The Shell tab is in no note and needs the runner to
   open a shell on its own. `Mobile` is `../../../next-steps/0.5-mobile.md`,

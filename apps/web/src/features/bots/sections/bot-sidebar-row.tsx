@@ -1,7 +1,7 @@
 import { SortableBotItem } from '@oppenheimer/design-system-web';
 import type { BotEntity, BotGroupEntity } from '@oppenheimer/frontend-consumer';
 import { useUpdateBot } from '@oppenheimer/frontend-consumer/react';
-import { ErrorAlert, formatAge, MarkdownLine } from '@oppenheimer/frontend-web';
+import { ErrorAlert, MarkdownLine } from '@oppenheimer/frontend-web';
 import { Link, useNavigate, useRouterState } from '@tanstack/react-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -9,23 +9,21 @@ import { BotRowMenu } from '@/features/bots/components/bot-row-menu';
 import { DeleteBotDialog } from '@/features/bots/dialogs/delete-bot';
 
 /**
- * One bot in the Employees sidebar: its initials on its colour, the name, how
- * long since it last changed, and its last message as the preview line (its
- * description before the first), its markdown read rather than shown. A section because it subscribes to the
- * route (lit on its chat and on its settings), owns the move, and keeps the
- * delete dialog open past the menu that asked for it. `now` is its group's
- * minute clock; `groups` are the Move pane's targets. The row drags by
+ * One bot in the Employees sidebar, on one line: its initials on its colour
+ * and the name, with its last message (its description before the first) in
+ * the row's tooltip, its markdown read rather than shown. A section because it
+ * subscribes to the route (lit on its chat and on its settings), owns the
+ * move, and keeps the delete dialog open past the menu that asked for it.
+ * `groups` are the Move pane's targets. The row drags by
  * itself (a click still opens the chat) unless `dragDisabled`.
  */
 export function BotSidebarRow({
   bot,
   groups,
-  now,
   dragDisabled,
 }: {
   bot: BotEntity;
   groups: readonly BotGroupEntity[];
-  now: number;
   dragDisabled: boolean;
 }) {
   const { t } = useTranslation();
@@ -48,7 +46,6 @@ export function BotSidebarRow({
         name={bot.name}
         initials={bot.initials}
         color={bot.avatarColor}
-        age={formatAge(bot.lastActivityAt, now, t)}
         preview={line ? <MarkdownLine source={line} /> : t('bots.sidebar.noMessages')}
         active={active}
         menuOpen={menuOpen}
