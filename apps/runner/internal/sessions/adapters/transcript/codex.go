@@ -146,21 +146,37 @@ type codexHead struct {
 	Cwd            string `json:"cwd"`
 	ID             string `json:"id"`
 	ParentThreadID string `json:"parent_thread_id"`
-	Source         struct {
+	// Source is a string for a conversation of its own (`"cli"`, `"exec"`)
+	// and an object for a subagent's (`{"subagent": {"thread_spawn": …}}`),
+	// so it is read apart (spawn), and a string never fails the line.
+	Source json.RawMessage `json:"source"`
+}
+
+// codexSpawn is what a subagent's `source` says of the thread that started it.
+type codexSpawn struct {
+	ParentThreadID string `json:"parent_thread_id"`
+	AgentPath      string `json:"agent_path"`
+	AgentNickname  string `json:"agent_nickname"`
+	AgentRole      string `json:"agent_role"`
+}
+
+// spawn is the thread that started this one and what it named it; nil for
+// a conversation of its own.
+func (h codexHead) spawn() *codexSpawn {
+	var source struct {
 		Subagent struct {
-			ThreadSpawn *struct {
-				ParentThreadID string `json:"parent_thread_id"`
-				AgentPath      string `json:"agent_path"`
-				AgentNickname  string `json:"agent_nickname"`
-				AgentRole      string `json:"agent_role"`
-			} `json:"thread_spawn"`
+			ThreadSpawn *codexSpawn `json:"thread_spawn"`
 		} `json:"subagent"`
-	} `json:"source"`
+	}
+	if len(h.Source) == 0 || h.Source[0] != '{' || json.Unmarshal(h.Source, &source) != nil {
+		return nil
+	}
+	return source.Subagent.ThreadSpawn
 }
 
 // parent is the thread that started this one; "" for a conversation of its own.
 func (h codexHead) parent() string {
-	if spawn := h.Source.Subagent.ThreadSpawn; spawn != nil && spawn.ParentThreadID != "" {
+	if spawn := h.spawn(); spawn != nil && spawn.ParentThreadID != "" {
 		return spawn.ParentThreadID
 	}
 	return h.ParentThreadID

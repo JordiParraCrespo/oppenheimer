@@ -104,7 +104,7 @@ func (c codexSource) subagents(main string) []subagentFile {
 			}
 			ours[ch.head.ID], grew = true, true
 			meta := subagentMeta{ID: ch.head.ID}
-			if spawn := ch.head.Source.Subagent.ThreadSpawn; spawn != nil {
+			if spawn := ch.head.spawn(); spawn != nil {
 				meta.Path, meta.Name, meta.AgentType = spawn.AgentPath, spawn.AgentNickname, spawn.AgentRole
 			}
 			files = append(files, subagentFile{path: ch.path, meta: meta})

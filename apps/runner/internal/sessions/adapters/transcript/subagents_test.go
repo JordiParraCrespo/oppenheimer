@@ -91,13 +91,16 @@ func TestAClaudeCodeSubagentsWorkReachesTheChatUnderItsCall(t *testing.T) {
 // directory: it is followed as the session's subagent, never taken for the
 // session's own conversation however new it is, with its nickname, role
 // and path as Codex named them and its state off its turns, and a thread it
-// started in turn is the session's too. Regression: a spawned agent's
-// rollout, newer than the session's, took over the session's Chat tab.
+// started in turn is the session's too. Regressions: a spawned agent's
+// rollout, newer than the session's, took over the session's Chat tab; and
+// the session's own rollout, whose `source` is a word (`"cli"`) where a
+// subagent's is an object, failed to read and left the Chat tab empty.
 func TestACodexSubagentsRolloutIsFollowedAsTheSessionsSubagent(t *testing.T) {
 	sessions, worktree := t.TempDir(), t.TempDir()
 	created := time.Now().Add(-time.Minute)
 	writeRollout(t, sessions, "main", time.Now().Add(-10*time.Second),
-		rolloutLine("session_meta", map[string]any{"id": "thr-main", "cwd": worktree}),
+		// A conversation of its own names its source as a word, a subagent's as an object.
+		rolloutLine("session_meta", map[string]any{"id": "thr-main", "cwd": worktree, "source": "cli"}),
 		rolloutLine("event_msg", map[string]any{"type": "user_message", "message": "Review the wallet"}),
 		rolloutLine("response_item", map[string]any{"type": "function_call", "name": "spawn_agent", "call_id": "call_spawn",
 			"arguments": `{"message":"Read the tests","agent_type":"explorer"}`}),
