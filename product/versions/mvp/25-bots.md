@@ -162,7 +162,11 @@ worker runs it and streams what happens back to the chat.
   `<turn_context>` block at the start of the turn's message: the time in
   the sender's time zone (the console sends the browser's with each
   message; UTC when none comes), the bot's home host and the owner's
-  hosts, each online or not. The block is added to the message the model
+  hosts, each online or not. Since 2026-11-06 it also carries the bot's
+  newest log entries and how many older facts it keeps (§4.1), which change
+  with every save. A log entry is the bot's own note, often copied from
+  outside text, so it is folded onto one line, cannot close the block, and
+  is labelled as notes rather than as Oppenheimer's facts. The block is added to the message the model
   is sent and never stored: the message kept is what the person wrote, so
   a later turn reads it back without a stale clock.
 - **Each request names its chat to the provider's prompt cache**
