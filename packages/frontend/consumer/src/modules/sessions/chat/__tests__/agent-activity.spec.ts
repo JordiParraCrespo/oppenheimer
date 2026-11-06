@@ -67,6 +67,25 @@ describe('readAgentActivity', () => {
     });
   });
 
+  it('reads nothing when Claude stopped under its spinner to ask, so a waiting agent is not shown working', () => {
+    expect(
+      readAgentActivity([
+        '✻ Editing src/main.go… (18s · esc to interrupt)',
+        '',
+        'Do you want to proceed?',
+        '❯ 1. Yes',
+        '  2. No',
+      ]),
+    ).toBeNull();
+    expect(
+      readAgentActivity([
+        '✻ Editing… (18s · ↓ 1k tokens)',
+        ' Do you want to make this edit to src/app.ts?',
+        ' ❯ 1. Yes',
+      ]),
+    ).toBeNull();
+  });
+
   it('reads nothing off a settled screen or a line of output that only starts with a star, so a done turn is not shown working', () => {
     expect(readAgentActivity(screen('✻ Worked for 4m 31s'))).toBeNull();
     expect(readAgentActivity(screen('* Building… (see the log above)'))).toBeNull();

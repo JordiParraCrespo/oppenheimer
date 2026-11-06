@@ -24,12 +24,27 @@ const SPINNER = /^\s*[·✢✳✶✻✽*]\s+(\S.{0,119}?)(?:…|\.\.\.)\s+\(([^)
 const COUNTS = /^\s*(?:\d+[hms]\b|.*\besc to interrupt\b)/i;
 const HINT = /\s*·?\s*esc to interrupt\s*·?\s*/i;
 
+/**
+ * Claude Code leaves its last spinner frame on screen when it stops to ask
+ * (a permission, an edit, a numbered Yes / No). The same phrases the runner's
+ * manifest reads as `blocked` (`manifests/claude.json`, `question`) say the
+ * line above them is not work in progress.
+ */
+const ASKING = [
+  /\bdo you want to (?:proceed|continue|allow|make|create)\b/i,
+  /\b(?:waiting for (?:your )?(?:permission|input|approval|confirmation)|(?:permission|approval) (?:needed|required))\b/i,
+  /\bpress enter to (?:continue|confirm)\b/i,
+  /[([]\s*y\/n\s*[)\]]/i,
+  /^\s*(?:[❯›>▶➤]\s*)?\d\.\s+(?:yes|no)\b/i,
+];
+
 /** How many rows a spinner line wrapped onto past its first: its counts never run longer. */
 const WRAPPED_ROWS = 2;
 
 /**
  * The spinner line on a screen, given as its rows top to bottom; none when
- * the agent is not working. The whole screen is read, since a todo list or a
+ * the agent is not working, or when it stopped under the spinner to ask
+ * something. The whole screen is read, since a todo list or a
  * long draft can stand between the spinner and the foot. The lowest match
  * wins, since an earlier frame's line can survive above the live one. A line
  * whose bracket is still open takes the rows under it when they close it,
@@ -51,6 +66,7 @@ export function readAgentActivity(rows: readonly string[]): ChatActivity | null 
     if (!match) continue;
     const [, verb = '', counts = ''] = match;
     if (!COUNTS.test(counts)) continue;
+    if (rows.slice(index + 1).some((row) => ASKING.some((asking) => asking.test(row)))) return null;
     const detail = counts.replace(HINT, ' · ').replace(/^[\s·]+|[\s·]+$/g, '');
     return { verb: verb.trim(), detail: detail === '' ? null : detail };
   }
