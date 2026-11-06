@@ -10,6 +10,16 @@ export interface RememberedFact {
   content: string;
   tier: BotMemoryTier;
   scope: BotMemoryScope;
+  /** When it was saved: a `log` fact is shown under its day. */
+  createdAt: Date;
+}
+
+/** How much of a bot's memory one turn carries, in characters of fact. */
+export interface MemoryBudget {
+  profileChars: number;
+  logChars: number;
+  /** The person's time zone, which a `log` fact's day is told in. */
+  timeZone: string;
 }
 
 /** What of a bot's memory a turn is given, and what it is only told it can look up. */
@@ -18,41 +28,69 @@ export interface MemoryInMind {
   own: string[];
   /** The `profile` facts about its owner, kept by any bot of theirs, oldest first. */
   person: string[];
-  /** The facts left for `recall`: every `log` fact, and the `profile` facts past the cap. */
+  /** The newest `log` facts, each opened by its day, oldest first. */
+  log: string[];
+  /** The facts left for `recall`: those past either budget. */
   toRecall: number;
 }
 
 /**
- * Which facts a turn keeps in mind (`25-bots.md` §4.1): the newest `max`
- * `profile` facts, the bot's own apart from those about its owner, which
- * every bot of theirs reads. The rest is counted, so the prompt can say
- * there is more to `recall`. `facts` comes newest first.
+ * Which facts a turn keeps in mind (`25-bots.md` §4.1), the way Grok Bot
+ * does (`research/lessons-from-grok-bot.md` §10): the newest `profile`
+ * facts and the newest `log` facts, each tier up to a budget of characters,
+ * so a long memory costs the prompt the same as a short one and its oldest
+ * entries fade to `recall` rather than filling the turn. A tier stops at the
+ * first fact past its budget, so what is in mind is always the newest run.
+ * `facts` comes newest first.
  */
-export function memoryInMind(facts: readonly RememberedFact[], max: number): MemoryInMind {
-  const profile = facts.filter((fact) => fact.tier === 'profile').slice(0, max);
-  const inMind = [...profile].reverse();
+export function memoryInMind(facts: readonly RememberedFact[], budget: MemoryBudget): MemoryInMind {
+  const profile = newestWithin(
+    facts.filter((fact) => fact.tier === 'profile'),
+    budget.profileChars,
+  ).reverse();
+  const log = newestWithin(
+    facts.filter((fact) => fact.tier === 'log'),
+    budget.logChars,
+  ).reverse();
+  const day = new Intl.DateTimeFormat('en-CA', { timeZone: budget.timeZone });
   return {
-    own: inMind.filter((fact) => fact.scope === 'bot').map((fact) => fact.content),
-    person: inMind.filter((fact) => fact.scope === 'person').map((fact) => fact.content),
-    toRecall: facts.length - profile.length,
+    own: profile.filter((fact) => fact.scope === 'bot').map((fact) => fact.content),
+    person: profile.filter((fact) => fact.scope === 'person').map((fact) => fact.content),
+    log: log.map((fact) => `${day.format(fact.createdAt)}: ${fact.content}`),
+    toRecall: facts.length - profile.length - log.length,
   };
 }
 
+function newestWithin(facts: readonly RememberedFact[], chars: number): RememberedFact[] {
+  const kept: RememberedFact[] = [];
+  let used = 0;
+  for (const fact of facts) {
+    used += fact.content.length;
+    if (used > chars) break;
+    kept.push(fact);
+  }
+  return kept;
+}
+
 /**
- * What `remember` tells the model (`25-bots.md` §4.1): when to save, and
- * how the two choices it makes keep a fact. Kept beside the policy that
- * reads the tiers, so the words and the rule change together.
+ * What `remember` tells the model (`25-bots.md` §4.1): save as it goes,
+ * without asking or checking for duplicates, and how the two choices it
+ * makes keep a fact. Kept beside the policy that reads the tiers, so the
+ * words and the rule change together.
  */
 export const REMEMBER_DESCRIPTION = [
   `Saves one fact to your memory, in a sentence of at most ${BOT_MEMORY_FACT_MAX} characters, for every later conversation.`,
-  'Only when "Learn automatically" is on in your settings; when it is off nothing is saved, and you ask the person in the chat first.',
-  `Keep facts durable (preferences, names, decisions), one per call; you hold at most ${BOT_MEMORY_FACTS_MAX}, so forget one that no longer holds. Check recall first to avoid duplicates.`,
-  'tier "profile" (the default) keeps it in mind in every turn: who the person is, how they like to work, standing rules. tier "log" keeps it to look up with recall: a detail, a past decision, something you will want only now and then.',
+  'Save as you go, in the turn you learn it: a preference, a correction, a decision, a name, how the person likes work done, what you found out about their repositories, hosts and projects. Do not ask first and do not check recall for duplicates; when a fact you keep has changed, forget it and remember the new one.',
+  'When "Learn automatically" is off in your settings, nothing is saved: ask the person in the chat instead.',
+  `tier "log" (the default) is a dated entry: your newest entries are in your prompt every turn and the rest are looked up with recall; once you keep ${BOT_MEMORY_FACTS_MAX} facts, your oldest log entry makes room. tier "profile" is for standing instructions and who the person is (their name, role, time zone, rules they gave you), in mind every turn; keep it short.`,
   'about "person" is for a fact about the person themselves (their name, their role, their preferences), which every bot of theirs then knows too; about "you" (the default) keeps it yours.',
 ].join(' ');
 
 export const REMEMBER_TIER_HINT =
-  '"profile" (default): in mind every turn. "log": looked up with recall.';
+  '"log" (default): dated; the newest in mind, the rest looked up with recall. "profile": standing instructions and who the person is, in mind every turn.';
+
+/** The tier `remember` keeps a fact in when the model names none. */
+export const REMEMBER_DEFAULT_TIER: BotMemoryTier = 'log';
 
 /** Who a fact is about, as the model says it: itself (`you`) or the person. */
 export const REMEMBER_ABOUT = ['you', 'person'] as const;
@@ -66,14 +104,14 @@ export function memoryScopeOf(about: (typeof REMEMBER_ABOUT)[number] | undefined
 }
 
 /**
- * How a fact is kept, in a few words: in mind or to look up, yours or about
+ * How a fact is kept, in a few words: in mind or in the log, yours or about
  * the person, and, read by `botId`, whether another of their bots keeps it.
  */
 export function describeKept(
   fact: { tier: BotMemoryTier; scope: BotMemoryScope; botId: string },
   botId?: string,
 ): string {
-  const tier = fact.tier === 'profile' ? 'in mind' : 'to look up';
+  const tier = fact.tier === 'profile' ? 'in mind' : 'in the log';
   if (fact.scope === 'bot') return tier;
   const by = botId && fact.botId !== botId ? ', shared by another of their bots' : '';
   return `${tier}, about the person${by}`;

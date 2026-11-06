@@ -32,6 +32,8 @@ export interface BotPromptInput {
   facts: readonly string[];
   /** What it keeps in mind about the person, shared by every bot of theirs. */
   personFacts?: readonly string[];
+  /** Its newest `log` facts, each opened by its day, oldest first. */
+  logFacts?: readonly string[];
   /** How many more facts it keeps to look up with `recall`. */
   factsToRecall?: number;
   /** What the turn's engine does on its own (web search, a to-do list), in words. */
@@ -60,7 +62,7 @@ export function composeBotSystemPrompt(input: BotPromptInput): string {
   if (input.description.trim()) parts.push(`Your description: ${input.description.trim()}`);
   const sessions = offersSessions(input.tools);
   parts.push(
-    HOW_A_TURN_GOES,
+    howATurnGoes(input.tools.some((tool) => tool.name === 'remember')),
     THE_TURN_CONTEXT,
     whatYouCanDo(input.engineCapabilities, input.tools, sessions),
     RULES,
@@ -85,9 +87,14 @@ export function composeBotSystemPrompt(input: BotPromptInput): string {
   if (input.facts.length) {
     parts.push(`# What you remember\n\n${input.facts.map((fact) => `- ${fact}`).join('\n')}`);
   }
+  if (input.logFacts?.length) {
+    parts.push(
+      `# Your log (newest last)\n\n${input.logFacts.map((fact) => `- ${fact}`).join('\n')}`,
+    );
+  }
   if (input.factsToRecall) {
     parts.push(
-      `You also keep ${input.factsToRecall} fact${input.factsToRecall === 1 ? '' : 's'} not shown here; look them up with recall when a question might touch them.`,
+      `You also keep ${input.factsToRecall} older fact${input.factsToRecall === 1 ? '' : 's'} not shown here; look them up with recall when a question might touch them.`,
     );
   }
   return parts.join('\n\n');
@@ -115,6 +122,18 @@ You are new: INSTRUCTIONS.md is empty, so you do not know your job yet. Until it
 
 ${steps.map((step, i) => `${i + 1}. ${step}`).join('\n')}`;
 }
+
+/**
+ * How a turn goes. With `remember` offered it also says to save as it goes:
+ * Grok Bot saves without asking, and a bot told only in the tool's own
+ * description saved almost nothing past its first chat.
+ */
+function howATurnGoes(remembers: boolean): string {
+  return remembers ? `${HOW_A_TURN_GOES}\n${SAVE_AS_YOU_GO}` : HOW_A_TURN_GOES;
+}
+
+const SAVE_AS_YOU_GO =
+  '- Before you reply, ask what you learned that will matter in a later conversation: a preference, a correction, a decision, a name, a fact about their work. Save each with `remember` in this turn, without asking. A correction from the person is the one to save above all.';
 
 const HOW_A_TURN_GOES = `# How a turn goes
 

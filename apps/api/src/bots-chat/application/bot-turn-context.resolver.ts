@@ -6,7 +6,10 @@ import {
 } from '@oppenheimer/backend-agents';
 import type { AccessScope } from '@oppenheimer/backend-authz';
 import { AppError } from '@oppenheimer/backend-core';
-import { BOT_MEMORY_PROFILE_IN_PROMPT_MAX } from '@oppenheimer/shared';
+import {
+  BOT_MEMORY_LOG_IN_PROMPT_CHARS,
+  BOT_MEMORY_PROFILE_IN_PROMPT_CHARS,
+} from '@oppenheimer/shared';
 import {
   BOT_DOCUMENT_REPOSITORY,
   BOT_MEMORY_FACT_REPOSITORY,
@@ -158,7 +161,11 @@ export class BotTurnContextResolver {
       });
       tools = this.toolbox.tools({ ...context, subagents }, turn.credentialScopes, held);
     }
-    const inMind = memoryInMind(facts, BOT_MEMORY_PROFILE_IN_PROMPT_MAX);
+    const inMind = memoryInMind(facts, {
+      profileChars: BOT_MEMORY_PROFILE_IN_PROMPT_CHARS,
+      logChars: BOT_MEMORY_LOG_IN_PROMPT_CHARS,
+      timeZone: turn.timeZone ?? 'UTC',
+    });
     const documentText = (name: string) =>
       documents.find((document) => document.name === name)?.content ?? '';
     const request: BotTurnContext = {
@@ -172,6 +179,7 @@ export class BotTurnContextResolver {
         instructions: documentText('instructions'),
         facts: inMind.own,
         personFacts: inMind.person,
+        logFacts: inMind.log,
         factsToRecall: inMind.toRecall,
         engineCapabilities: engineCapabilities(turn.provider),
         tools: owner

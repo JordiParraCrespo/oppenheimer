@@ -812,8 +812,9 @@ loaded, and a save over a newer one is refused rather than silently winning. Whe
 the save was stale, the problem's `revision` extension is the revision that is
 current now. Reload and save again.
 
-`BOTS_009` is a bot that already keeps 200 facts: it reads every one before each
-turn. Forget one first.
+`BOTS_009` is a fact added by hand to a bot that already keeps 500, both tiers
+together. Forget one first. A bot saving through `remember` is not refused: its
+oldest log fact makes room, and only a memory of profile facts alone is full.
 
 `BOTS_010` is a model id the bot's provider does not offer
 (`BOT_PROVIDER_CATALOG`); leave `model` null for the provider's default.

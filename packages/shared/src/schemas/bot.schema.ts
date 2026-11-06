@@ -64,14 +64,20 @@ export const BOT_GROUP_NAME_MAX = 60;
 export const BOT_DOCUMENT_MAX = 32_768;
 export const BOT_REVISION_NOTE_MAX = 200;
 export const BOT_MEMORY_FACT_MAX = 500;
-/** How many facts one bot may keep, both tiers together. */
-export const BOT_MEMORY_FACTS_MAX = 200;
+/**
+ * How many facts one bot may keep, both tiers together. A person adding one
+ * by hand to a full memory is refused; the bot's own `remember` makes room
+ * by dropping its oldest `log` fact, as Grok Bot's journal lets old entries
+ * go (`research/lessons-from-grok-bot.md` §10).
+ */
+export const BOT_MEMORY_FACTS_MAX = 500;
 
 /**
- * How a fact is kept (`25-bots.md` §4.1; from Grok Bot's memory tiers,
- * `research/lessons-from-grok-bot.md` §9 row 11): `profile`, in mind in
- * every turn (who the person is, standing preferences); `log`, kept to be
- * looked up with `recall` (a detail, a past decision), never in the prompt.
+ * How a fact is kept (`25-bots.md` §4.1; from Grok Bot's profile and
+ * journal, `research/lessons-from-grok-bot.md` §9 row 11 and §10):
+ * `profile`, standing instructions and who the person is, in mind every
+ * turn; `log`, everything else, dated, its newest entries in the prompt and
+ * the rest looked up with `recall`.
  */
 export const BOT_MEMORY_TIERS = ['profile', 'log'] as const;
 export type BotMemoryTier = (typeof BOT_MEMORY_TIERS)[number];
@@ -83,8 +89,10 @@ export type BotMemoryTier = (typeof BOT_MEMORY_TIERS)[number];
 export const BOT_MEMORY_SCOPES = ['bot', 'person'] as const;
 export type BotMemoryScope = (typeof BOT_MEMORY_SCOPES)[number];
 
-/** The `profile` facts one turn is given, newest first: the rest wait for `recall`. */
-export const BOT_MEMORY_PROFILE_IN_PROMPT_MAX = 60;
+/** The characters of `profile` facts one turn is given, newest first: the rest wait for `recall`. */
+export const BOT_MEMORY_PROFILE_IN_PROMPT_CHARS = 4_000;
+/** The characters of the newest `log` facts one turn is given, each with its date. */
+export const BOT_MEMORY_LOG_IN_PROMPT_CHARS = 2_000;
 /** The most revisions one read returns, newest first. */
 export const BOT_REVISIONS_PAGE_MAX = 100;
 export const BOT_REVISIONS_PAGE_DEFAULT = 50;

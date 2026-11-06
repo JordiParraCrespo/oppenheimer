@@ -466,7 +466,7 @@ it one:
 | `edit_soul` | Rewrite SOUL.md, saved as a revision | auto |
 | `edit_instructions` | Rewrite INSTRUCTIONS.md, saved as a revision | auto |
 | `update_profile` | Change its name and description; an activity line, no revision | auto |
-| `remember` | Save a fact with its source, kept in mind or to look up, about the work or about the person (below); an activity line, no revision | auto with *Learn automatically*, else ask |
+| `remember` | Save a fact with its source, in the profile or the dated log, about the work or about the person (below); an activity line, no revision | auto with *Learn automatically*, else ask |
 | `forget` | Delete a fact; an activity line with the fact, no revision | auto |
 | `recall` | Search its memory, every fact it keeps and those the person's other bots share | auto |
 | `search_chat` | Search its own chat's past messages, the person's and its own, including what only the summary holds: web-search syntax, best matches first, an excerpt around each match, fenced as data (2026-10-29) | auto |
@@ -545,21 +545,38 @@ branch"), up to 2,000 characters.
 `research/lessons-from-grok-bot.md` §9 row 11). Each fact is still one row
 of `bot_memory_fact`, with two columns more:
 
-- **Tier.** A `profile` fact is in mind every turn, in the system prompt.
-  A `log` fact is kept to look up with `recall`: a detail that matters
-  once in a while. The prompt carries the newest 60 profile facts and says
-  how many more there are to recall, so a long memory does not crowd the
-  turn's context.
+- **Tier.** A `profile` fact is in mind every turn, in the system prompt:
+  standing instructions and who the person is. A `log` fact is everything
+  else, a dated entry. The prompt carries the newest profile facts up to
+  4,000 characters and the newest log entries up to 2,000, each under its
+  day in the person's time zone, and says how many older facts there are to
+  recall, so a long memory costs the turn's context the same as a short
+  one. (2026-11-06: was the newest 60 profile facts and no log at all.)
 - **Scope.** A `bot` fact is the bot's alone. A `person` fact is about its
   owner ("prefers squash merges"), and every bot that person made in the
   workspace reads it, in a section of the prompt of its own. It stays the
   row of the bot that learned it: that bot edits and forgets it, the
   others read it, and it goes with that bot when the bot is deleted or its
   memory cleared. Copying it to each bot would make "forget" mean nothing.
-- **Defaults.** A fact is `profile` and `bot` unless the bot or the owner
-  says otherwise: `remember` takes `tier` and `about: 'person'`, and the
-  owner moves a fact from its row's menu in Settings → Memory. A fact
-  another bot shared is shown there muted, with nothing to change.
+- **Defaults.** A fact the bot saves is `log` and `bot` unless it says
+  otherwise: `remember` takes `tier` and `about: 'person'`. One the owner
+  adds in Settings → Memory is `profile`, and the owner moves a fact from
+  its row's menu there. A fact another bot shared is shown there muted,
+  with nothing to change.
+- **The bot saves as it goes** (2026-11-06, from Grok Bot 0.79.2,
+  `research/lessons-from-grok-bot.md` §10). Bots saved almost nothing after
+  their first chat: the only nudge was the tool's own description, which
+  told them to check `recall` for duplicates first, and every save went into
+  the prompt. Now "How a turn goes" tells a bot that has `remember` to ask,
+  before it replies, what it learned that will matter later, and save it in
+  the turn without asking; a correction above all. The tool no longer asks
+  for a duplicate check: a fact that changed is forgotten and remembered
+  anew. *Learn automatically* off still saves nothing and asks.
+- **A full memory lets the log go.** A bot keeps at most 500 facts. When
+  its own save finds it full, its oldest `log` fact is deleted to make room,
+  under the same lock as the count; a fact added by hand is refused
+  (`BOTS_009`), as is a save when every fact is `profile`. A fact the bot
+  saved names the bot as its source (it named the person before).
 - **Not built.** Grok Bot's review queue for shared learnings: a fact
   about you comes from your own bots, so it is a line in their chat like
   any other memory change.
