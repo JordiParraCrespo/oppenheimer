@@ -2,10 +2,10 @@ import { createHash } from 'node:crypto';
 import type { ScheduleTriggerInputDto } from '@oppenheimer/shared';
 
 /**
- * A bot's heartbeat (`26-bot-routines.md` §6): the routine every new bot is
- * born with, which wakes it on its own once an hour to check in, read what it
- * looks after, act on what needs it and otherwise stay quiet
- * (`nothing_to_report`). Event wakes (a pull request it watches, new mail, a
+ * A bot's heartbeat (`26-bot-routines.md` §6): the routine a bot is given
+ * once it has a job (its `INSTRUCTIONS.md` first written), which wakes it on
+ * its own once an hour to check in, read what it looks after, act on what
+ * needs it and otherwise stay quiet (`nothing_to_report`). Event wakes (a pull request it watches, new mail, a
  * session it follows) still wake it at once; this is what makes it proactive
  * between them. It is an ordinary routine: the owner pauses, edits or deletes
  * it from the Routines tab or in chat.

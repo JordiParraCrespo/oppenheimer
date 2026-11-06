@@ -119,11 +119,14 @@ export class BotRepository extends ScopedRepositoryBase<BotOrmEntity> implements
           throw new CreatorChanged();
         }
       }
-      await this.outbox.stageEvents(manager, bot.domainEvents);
+      await this.outbox.stageEvents(
+        manager,
+        documents.flatMap((document) => document.domainEvents),
+      );
       for (const document of documents) document.written();
       return 'saved';
     });
-    if (outcome === 'saved') bot.clearEvents();
+    if (outcome === 'saved') for (const document of documents) document.clearEvents();
     return outcome;
   }
 

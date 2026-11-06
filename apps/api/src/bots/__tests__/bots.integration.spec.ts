@@ -97,7 +97,7 @@ describe('bots (integration)', () => {
     documents = new BotDocumentRepository(
       dataSource.getRepository(BotDocumentOrmEntity),
       dataSource.getRepository(BotDocumentRevisionOrmEntity),
-      dataSource,
+      new OutboxService(dataSource),
       documentMapper,
     );
     memory = new BotMemoryFactRepository(
@@ -210,29 +210,32 @@ describe('bots (integration)', () => {
     ]);
   });
 
-  // What breaks this: a bot committed without the event its heartbeat is
-  // saved from, or the event surviving a creation that rolled back.
-  it('stages its creation on the outbox with the bot, and nothing for a write that failed', async () => {
-    const bot = await create('Cleo');
+  // What breaks this: a bot given a job at its creation, or later, without the
+  // event its heartbeat is saved from; or an event left by a write that lost.
+  it('stages a first job on the outbox with the write that sets it, and nothing for a blank bot', async () => {
     const staged = async (botId: string) =>
       dataSource.query(`SELECT "eventName" FROM "outbox_message" WHERE "aggregateId" = $1`, [
         botId,
       ]) as Promise<{ eventName: string }[]>;
-    expect(await staged(bot.id)).toEqual([{ eventName: 'BotCreatedDomainEvent' }]);
-    expect(bot.domainEvents).toEqual([]);
 
-    const orphan = BotEntity.createNew({
-      organizationId,
-      createdByUserId: userId,
-      name: 'Dax',
-      description: '',
-      avatarColor: 'mint',
-      groupId: randomUUID(),
-      homeHostId: null,
-      provider: 'anthropic',
+    const blank = await create('Cleo');
+    expect(await staged(blank.id)).toEqual([]);
+
+    const instructions = await documents.findOne(scope(), blank.id, 'instructions');
+    const document = instructions.unwrap();
+    document.write({ content: 'Review PRs.', baseRevision: 1, actor: userActor(userId) });
+    expect(await documents.save(document)).toBe('saved');
+    expect(await staged(blank.id)).toEqual([{ eventName: 'BotJobSetDomainEvent' }]);
+    expect(document.domainEvents).toEqual([]);
+
+    const stale = (await documents.findOne(scope(), blank.id, 'instructions')).unwrap();
+    const rival = BotDocumentEntity.create({
+      id: stale.id,
+      props: { ...stale.getProps(), content: '', revision: 1 },
     });
-    expect(await bots.insert(orphan, [])).toBe('group-missing');
-    expect(await staged(orphan.id)).toEqual([]);
+    rival.write({ content: 'Something else.', baseRevision: 1, actor: userActor(userId) });
+    expect(await documents.save(rival)).toBe('conflict');
+    expect(await staged(blank.id)).toHaveLength(1);
   });
 
   it('moves a bot into a group at an index and closes up both lists', async () => {

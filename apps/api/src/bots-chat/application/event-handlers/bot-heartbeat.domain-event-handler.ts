@@ -4,38 +4,41 @@ import { OnEvent } from '@nestjs/event-emitter';
 import { SaveBotRoutineCommand } from '../../../automations/commands/save-bot-routine/save-bot-routine.command';
 import type { AutomationListing } from '../../../automations/domain/automation-read.types';
 import { FindBotRoutinesQuery } from '../../../automations/queries/find-bot-routines/find-bot-routines.query';
-import { BotCreatedDomainEvent } from '../../../bots/domain/events/bot-created.domain-event';
+import { BotJobSetDomainEvent } from '../../../bots/domain/events/bot-job-set.domain-event';
 import {
   HEARTBEAT_NAME,
   HEARTBEAT_PROMPT,
   heartbeatTrigger,
   needsHeartbeat,
 } from '../../domain/bot-heartbeat.policy';
+import { BotModelAccessResolver } from '../bot-model-access.resolver';
 import { BotOwnerScopeResolver } from '../bot-owner-scope.resolver';
 
 /**
- * Gives a new bot its heartbeat (`26-bot-routines.md` §6): an hourly routine,
- * on, saved as the bot's owner within the scopes of the credential that made
- * the bot. The outbox delivers at least once, so a bot that already has one
- * gets no second; a bot whose owner is gone, or left the workspace, gets none.
+ * Gives a bot its heartbeat once it has a job (`26-bot-routines.md` §6): when
+ * its `INSTRUCTIONS.md` is first written, at its creation or later, an hourly
+ * routine, on, saved as the bot's owner within the scopes of the credential
+ * that wrote them. A bot with no job gets none, so it never wakes to greet
+ * nobody. The outbox delivers at least once, so a bot that already has one
+ * gets no second; a bot that is gone, or whose owner is, gets none.
  */
 @Injectable()
 export class BotHeartbeatDomainEventHandler {
   constructor(
+    private readonly bots: BotModelAccessResolver,
     private readonly owners: BotOwnerScopeResolver,
     private readonly commands: CommandBus,
     private readonly queries: QueryBus,
   ) {}
 
-  @OnEvent(BotCreatedDomainEvent.name)
+  @OnEvent(BotJobSetDomainEvent.name)
   async handle(
-    event: Pick<
-      BotCreatedDomainEvent,
-      'aggregateId' | 'organizationId' | 'createdByUserId' | 'credentialScopes'
-    >,
+    event: Pick<BotJobSetDomainEvent, 'organizationId' | 'botId' | 'credentialScopes'>,
   ): Promise<void> {
-    const botId = event.aggregateId;
-    const scope = await this.owners.resolve(event.organizationId, event.createdByUserId);
+    const { botId } = event;
+    const bot = await this.bots.findBot(event.organizationId, botId);
+    if (!bot) return;
+    const scope = await this.owners.resolve(event.organizationId, bot.createdByUserId);
     if (!scope) return;
     const { automations } = await this.queries.execute<FindBotRoutinesQuery, AutomationListing>(
       new FindBotRoutinesQuery({ scope, botId }),

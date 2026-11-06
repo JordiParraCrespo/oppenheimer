@@ -17,13 +17,11 @@ import {
   type BotProvider,
   type BotSection,
   botModelOf,
-  type Scope,
 } from '@oppenheimer/shared';
 import type { SessionEffort } from '@oppenheimer/shared/agents';
 import type { Placement } from './bot.types';
 import { BOT_DEFAULT_PERMISSION } from './bot-creation.policy';
 import { resolveBotEngine } from './bot-launch.policy';
-import { BotCreatedDomainEvent } from './events/bot-created.domain-event';
 
 export interface BotProps {
   organizationId: string;
@@ -77,8 +75,6 @@ export interface CreateBotProps {
   idempotencyKey?: string | null;
   /** None unless named. */
   sections?: readonly BotSection[];
-  /** The scopes of the credential making it; null or absent for a browser session. */
-  credentialScopes?: readonly Scope[] | null;
 }
 
 export interface BotEdit {
@@ -159,15 +155,6 @@ export class BotEntity extends AggregateRoot<BotProps> {
     });
     bot.pendingPlacement = 'last';
     bot.validate();
-    bot.addEvent(
-      new BotCreatedDomainEvent({
-        aggregateId: bot.id,
-        reason: 'a bot was created, and is owed its heartbeat',
-        organizationId: props.organizationId,
-        createdByUserId: props.createdByUserId,
-        credentialScopes: props.credentialScopes ?? null,
-      }),
-    );
     return bot;
   }
 

@@ -1,6 +1,5 @@
 import { randomUUID } from 'node:crypto';
 import { BotEntity } from '../domain/bot.entity';
-import { BotCreatedDomainEvent } from '../domain/events/bot-created.domain-event';
 
 /**
  * A bot's launch settings and its place in the sidebar. The update handler's
@@ -30,21 +29,6 @@ describe('BotEntity', () => {
       learnAutomatically: true,
       placement: 'last',
     });
-  });
-
-  // What breaks this: a bot born without the event its heartbeat is saved from,
-  // or one that drops the creating token's scopes, so its routine runs wider.
-  it("announces its birth with its owner and the creating credential's scopes", () => {
-    const bot = newBot({ createdByUserId: 'owner-1', credentialScopes: ['bots:write'] });
-    expect(bot.domainEvents).toHaveLength(1);
-    expect(bot.domainEvents[0]).toBeInstanceOf(BotCreatedDomainEvent);
-    expect(bot.domainEvents[0]).toMatchObject({
-      aggregateId: bot.id,
-      organizationId: bot.organizationId,
-      createdByUserId: 'owner-1',
-      credentialScopes: ['bots:write'],
-    });
-    expect(newBot().domainEvents[0]).toMatchObject({ credentialScopes: null });
   });
 
   it('remembers which columns an edit set, so a write stores those alone', () => {

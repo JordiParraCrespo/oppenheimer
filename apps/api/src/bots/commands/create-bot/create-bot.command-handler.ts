@@ -74,7 +74,6 @@ export class CreateBotCommandHandler implements ICommandHandler<CreateBotCommand
       createdByBotId: command.creatorBotId,
       idempotencyKey: command.idempotencyKey,
       sections: input.sections,
-      credentialScopes: command.credentialScopes,
     });
     const documents = BotDocumentEntity.firstOf(bot, userActor(scope.userId), command);
     const outcome = await this.bots.insert(bot, documents, creator);

@@ -185,7 +185,7 @@ describe('bots chat (integration)', () => {
     documents = new BotDocumentRepository(
       dataSource.getRepository(BotDocumentOrmEntity),
       dataSource.getRepository(BotDocumentRevisionOrmEntity),
-      dataSource,
+      new OutboxService(dataSource),
       documentMapper,
     );
     memory = new BotMemoryFactRepository(

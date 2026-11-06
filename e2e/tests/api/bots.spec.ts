@@ -239,6 +239,39 @@ test.describe('Bots', () => {
     await api.dispose();
   });
 
+  // `26-bot-routines.md` §6. What breaks this: a bot with a job that never
+  // wakes on its own, a blank bot woken hourly to greet nobody, or a second
+  // heartbeat on the next edit of its job.
+  test('a bot is given an hourly heartbeat once it has a job, and only one', async () => {
+    const { api } = await signedUpContext();
+    const bot = await ok<Bot>(await api.post('/api/v1/bots', { data: {} }), 201);
+    const routines = async () =>
+      ok<{ name: string; status: string; triggers: { source: string }[] }[]>(
+        await api.get(`/api/v1/bots/${bot.id}/routines`),
+      );
+    expect(await routines()).toEqual([]);
+
+    await ok<BotDocument>(
+      await api.put(`/api/v1/bots/${bot.id}/documents/instructions`, {
+        data: { content: 'Review the open pull requests of acme/api.', baseRevision: 1 },
+      }),
+    );
+    await expect
+      .poll(async () => (await routines()).map((routine) => routine.name))
+      .toEqual(['Heartbeat']);
+    const [heartbeat] = await routines();
+    expect(heartbeat).toMatchObject({ status: 'active', triggers: [{ source: 'schedule' }] });
+
+    await ok<BotDocument>(
+      await api.put(`/api/v1/bots/${bot.id}/documents/instructions`, {
+        data: { content: 'Review and label the open pull requests.', baseRevision: 2 },
+      }),
+    );
+    // The outbox delivers soon after the write; give a second event time to land.
+    await new Promise((resolve) => setTimeout(resolve, 1500));
+    expect((await routines()).map((routine) => routine.name)).toEqual(['Heartbeat']);
+  });
+
   test('a workspace keeps one key per model provider, and never shows it', async () => {
     const { api } = await signedUpContext('botproviders');
     type Provider = {
