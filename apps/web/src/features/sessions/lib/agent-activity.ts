@@ -22,9 +22,14 @@ export function bindAgentActivity(
   const read = () => {
     timer = null;
     const buffer = term.buffer.active;
+    // A row xterm wrapped onto is joined to the one it continues, so a
+    // spinner line wider than the grid reads as the one line it is.
     const rows: string[] = [];
     for (let row = 0; row < term.rows; row++) {
-      rows.push(buffer.getLine(buffer.baseY + row)?.translateToString(true) ?? '');
+      const line = buffer.getLine(buffer.baseY + row);
+      const text = line?.translateToString(true) ?? '';
+      if (line?.isWrapped && rows.length > 0) rows[rows.length - 1] += text;
+      else rows.push(text);
     }
     onActivity(readAgentActivity(rows));
   };

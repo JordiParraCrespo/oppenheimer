@@ -16,6 +16,13 @@ function screen(spinner: string): string[] {
   ];
 }
 
+/** The spinner with a long todo list under it, as Claude Code draws it while it works through one. */
+function screenWithTodos(spinner: string, todos: number): string[] {
+  const list = Array.from({ length: todos }, (_, i) => `     ☐ Step ${i + 1} of the plan`);
+  const [first = '', ...rest] = screen(spinner).slice(2);
+  return ['● Working through the plan.', '', first, ...list, ...rest];
+}
+
 describe('readAgentActivity', () => {
   it("reads the word Claude Code picked and the counts beside it, so the chat says what the terminal's spinner says", () => {
     expect(
@@ -32,6 +39,32 @@ describe('readAgentActivity', () => {
     expect(
       readAgentActivity(screen('✢ Running the tests… (12s · ↑ 1.2k tokens · esc to interrupt)')),
     ).toEqual({ verb: 'Running the tests', detail: '12s · ↑ 1.2k tokens' });
+  });
+
+  it('finds the spinner above a long todo list, so a multi-step turn keeps its line', () => {
+    expect(
+      readAgentActivity(screenWithTodos('✶ Implementing… (2m 3s · ↓ 4.1k tokens)', 14)),
+    ).toEqual({ verb: 'Implementing', detail: '2m 3s · ↓ 4.1k tokens' });
+  });
+
+  it('reads a spinner line a narrow screen wrapped or cut short, so a phone shows it too', () => {
+    expect(
+      readAgentActivity([
+        '✻ Mustering… (4m 31s · ↓ 15.9k tokens · thinking',
+        'some more with medium effort)',
+        '',
+        '> ',
+      ]),
+    ).toEqual({
+      verb: 'Mustering',
+      detail: '4m 31s · ↓ 15.9k tokens · thinking some more with medium effort',
+    });
+    expect(
+      readAgentActivity(['✻ Mustering… (4m 31s · ↓ 15.9k tok', '     ☐ Step 1 of the plan', '> ']),
+    ).toEqual({
+      verb: 'Mustering',
+      detail: '4m 31s · ↓ 15.9k tok',
+    });
   });
 
   it('reads nothing off a settled screen or a line of output that only starts with a star, so a done turn is not shown working', () => {
