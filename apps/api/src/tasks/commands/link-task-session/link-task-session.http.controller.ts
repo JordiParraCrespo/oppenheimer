@@ -47,7 +47,7 @@ export class LinkTaskSessionHttpController {
   @ApiOperation({
     summary: 'Link a session to a task',
     description:
-      'A session that already exists, as `linked`. Linking it twice links it once. The same rule as starting one: a task in Later or To do moves to the top of In progress if `seenStatus` is still its status.',
+      'A session that already exists, as `linked`. Linking it twice links it once. The same rule as starting one: a task in To do moves to the top of In progress if `seenStatus` is still its status.',
   })
   @ApiResponse({ status: 200, type: TaskResponseDto })
   @ApiProblemResponse({ status: 404, description: 'Task not found', code: 'TASKS_001' })

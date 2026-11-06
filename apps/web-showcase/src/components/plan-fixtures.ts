@@ -8,8 +8,8 @@ import type { TaskStatus } from '@oppenheimer/design-system-web/task-board';
 export const TODAY = '2026-10-05';
 
 export const COLUMNS: { id: TaskStatus; label: string }[] = [
-  { id: 'later', label: 'Later' },
   { id: 'todo', label: 'To do' },
   { id: 'doing', label: 'In progress' },
+  { id: 'review', label: 'In review' },
   { id: 'done', label: 'Done' },
 ];

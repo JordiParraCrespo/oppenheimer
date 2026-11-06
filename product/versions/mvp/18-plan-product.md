@@ -36,8 +36,11 @@ this note says what the real thing does instead.
   *total* tasks" with its percentage, green at 100%. Clicking a goal
   filters the board to it (and back); "…" opens Edit goal. **New goal**
   on the strip's header.
-- **Columns**, in this order: **Later** (hollow dot), **To do**, **In
-  progress** (amber), **Done** (green), each with a count and "+".
+- **Columns**, in this order: **To do**, **In progress** (amber), **In
+  review** (hollow dot), **Done** (green), each with a count and "+".
+  (Changed 2026-11-05: the board first had **Later** before To do; Jordi
+  dropped it for **In review**, where finished work waits to be looked at
+  before Done. Tasks in Later moved to the end of To do.)
 - **A card** shows: a done checkbox, the title, notes (two lines, hidden
   when done), the project (only under All projects), the goal (unless
   filtered to it), the due date as Today / Tomorrow / Yesterday / *Oct 7*
@@ -90,7 +93,7 @@ for, and a session is where it gets done.
   host (Claude Code only), or Cursor's cloud with no host and on a task
   (`../../next-steps/cloud-agents.md`, "Tasks and automations").
 - **One status rule for attaching a session.** Start and Link existing
-  both link the session, and both move a task that is in Later or To do
+  both link the session, and both move a task that is in To do (Later, before 2026-11-05)
   to **In progress**; In progress and Done stay as they are. So a card
   never shows a live session line while it sits in To do. The move is
   conditional on the status the person saw when they clicked: if the

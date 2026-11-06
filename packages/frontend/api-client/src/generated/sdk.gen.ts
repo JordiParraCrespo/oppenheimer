@@ -2180,7 +2180,7 @@ export const moveTask = <ThrowOnError extends boolean = false>(options: Options<
 /**
  * Start a session from a task
  *
- * New session’s body under `session`, filed under the task’s project whatever its `projectId` says. The session is linked to the task as `started`, and a task in Later or To do moves to the top of In progress if `seenStatus` is still its status.
+ * New session’s body under `session`, filed under the task’s project whatever its `projectId` says. The session is linked to the task as `started`, and a task in To do moves to the top of In progress if `seenStatus` is still its status.
  */
 export const startTaskSession = <ThrowOnError extends boolean = false>(options: Options<StartTaskSessionData, ThrowOnError>): RequestResult<StartTaskSessionResponses, StartTaskSessionErrors, ThrowOnError> => (options.client ?? client).post<StartTaskSessionResponses, StartTaskSessionErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -2195,7 +2195,7 @@ export const startTaskSession = <ThrowOnError extends boolean = false>(options: 
 /**
  * Start a cloud session from a task
  *
- * `POST /sessions/cloud`’s body under `cloud`: the vendor’s own agent (Cursor’s) on one repository, on the caller’s key for the vendor, with no host, filed under the task’s project. The session is linked to the task as `started`, and a task in Later or To do moves to the top of In progress if `seenStatus` is still its status.
+ * `POST /sessions/cloud`’s body under `cloud`: the vendor’s own agent (Cursor’s) on one repository, on the caller’s key for the vendor, with no host, filed under the task’s project. The session is linked to the task as `started`, and a task in To do moves to the top of In progress if `seenStatus` is still its status.
  */
 export const startTaskCloudSession = <ThrowOnError extends boolean = false>(options: Options<StartTaskCloudSessionData, ThrowOnError>): RequestResult<StartTaskCloudSessionResponses, StartTaskCloudSessionErrors, ThrowOnError> => (options.client ?? client).post<StartTaskCloudSessionResponses, StartTaskCloudSessionErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -2221,7 +2221,7 @@ export const unlinkTaskSession = <ThrowOnError extends boolean = false>(options:
 /**
  * Link a session to a task
  *
- * A session that already exists, as `linked`. Linking it twice links it once. The same rule as starting one: a task in Later or To do moves to the top of In progress if `seenStatus` is still its status.
+ * A session that already exists, as `linked`. Linking it twice links it once. The same rule as starting one: a task in To do moves to the top of In progress if `seenStatus` is still its status.
  */
 export const linkTaskSession = <ThrowOnError extends boolean = false>(options: Options<LinkTaskSessionData, ThrowOnError>): RequestResult<LinkTaskSessionResponses, LinkTaskSessionErrors, ThrowOnError> => (options.client ?? client).put<LinkTaskSessionResponses, LinkTaskSessionErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],

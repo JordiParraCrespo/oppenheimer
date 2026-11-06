@@ -41,6 +41,12 @@ func newPlacesHarness(t *testing.T, home, account string) *placesHarness {
 	return newPlacesHarnessReading(t, home, account, nil)
 }
 
+// conversationsOf reads svc's sessions' conversations through transcripts,
+// as the composition root wires it; nil reads none.
+func conversationsOf(svc *sessionsapp.Service, transcripts sessionsapp.Transcripts) *sessionsapp.Conversations {
+	return sessionsapp.NewConversations(sessionsapp.ConversationsOptions{Sessions: svc, Transcripts: transcripts})
+}
+
 // newPlacesHarnessReading is newPlacesHarness whose sessions' transcripts are
 // read by transcripts; nil reads none.
 func newPlacesHarnessReading(t *testing.T, home, account string, transcripts sessionsapp.Transcripts) *placesHarness {
@@ -59,8 +65,9 @@ func newPlacesHarnessReading(t *testing.T, home, account string, transcripts ses
 	sent := &capturedLink{}
 	h := &linkHandler{
 		app: &App{
-			Sessions: svc,
-			Host:     hostapp.New(hostapp.Options{Prober: prober, Directories: folders.Disk{}}),
+			Sessions:      svc,
+			Conversations: conversationsOf(svc, transcripts),
+			Host:          hostapp.New(hostapp.Options{Prober: prober, Directories: folders.Disk{}}),
 		},
 		identity: pairdomain.Identity{HostID: "host-1", AccountID: account},
 		logger:   logger, client: sent, reporter: link.NewReporter("run-test", sent, logger),
