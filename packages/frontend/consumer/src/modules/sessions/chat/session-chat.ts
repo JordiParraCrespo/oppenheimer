@@ -495,7 +495,7 @@ class Transcript {
 export class SessionChat {
   private readonly transcript = new Transcript();
   /** The subagents the agent ran, held apart and put into their calls (`turnsOf`). */
-  private readonly subagents = new Subagents();
+  private readonly subagents = new Subagents(sidechainTurns);
   /** A first load's history, held until it has all come (`ChatState.loading`). */
   private readonly firstLoad = new FirstLoad();
   private type: ((data: string) => void) | null = null;
@@ -1065,7 +1065,7 @@ export function toTurns(entries: readonly unknown[]): ChatTurn[] {
  * A subagent's own lines in turns, read as the session's are: its first
  * prompt is the task it was given.
  */
-export function sidechainTurns(entries: readonly unknown[]): ChatTurn[] {
+function sidechainTurns(entries: readonly unknown[]): ChatTurn[] {
   return buildTurns(entries.length, (index) => entries[index], 0, true).turns;
 }
 

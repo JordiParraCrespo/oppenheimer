@@ -15,7 +15,6 @@
  */
 
 import type { ChatStep, ChatSubagent, ChatSubagentState, ChatTurn } from './session-chat';
-import { sidechainTurns } from './session-chat';
 
 /** The entry the runner adds for what one subagent is. */
 const SUBAGENT_ENTRY = 'oppenheimer.subagent';
@@ -88,6 +87,13 @@ interface Read {
  * moves whenever either changes, which is what tells a turn to draw again.
  */
 export class Subagents {
+  /**
+   * @param turnsOf reads a subagent's own lines into turns as the session's
+   *   are read (`sidechainTurns`), handed in so this module never imports
+   *   the chat that holds it.
+   */
+  constructor(private readonly turnsOf: (entries: readonly unknown[]) => ChatTurn[]) {}
+
   private readonly metas = new Map<string, SubagentMeta>();
   private readonly lines = new Map<string, SubagentLines>();
   private readonly versions = new Map<string, number>();
@@ -226,7 +232,7 @@ export class Subagents {
     let turns = held?.turns;
     let own = held?.own;
     if (!held || held.version !== version || !turns || !own) {
-      turns = sidechainTurns(this.lines.get(id)?.entries ?? []);
+      turns = this.turnsOf(this.lines.get(id)?.entries ?? []);
       own = turns.flatMap((turn) => turn.steps);
       held = undefined;
     }
