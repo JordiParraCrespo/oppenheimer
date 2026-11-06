@@ -58,15 +58,16 @@ whose hash differs from the issue's, or that is new, is a **changed page**.
 A page that is gone is changed too. On the first run, with no hashes, record
 them and treat no page as changed.
 
-**The installer.** Ask every source below, in order, for the newest Linux
-x64 `.deb` (or AppImage) it offers, and take the highest version across all
+**The installer.** Always download the Linux x64 build: its `.deb` (the
+AppImage when there is no `.deb`) is what step 3 unpacks to read the app's
+source. Ask every source below, in order, for the newest one it offers, and take the highest version across all
 of them. It is new when it is higher than the last version read.
 
 | # | Source | Notes |
 | --- | --- | --- |
-| 1 | The source the issue recorded | A recorded file URL pins one release; try it also with a newer version or build where the pattern makes that clear |
-| 2 | The docs' download links (`get-started`, `deployment`, `faq`) and `https://x.ai/bot` | |
-| 3 | Cursor's download endpoints on `cursor.com` and `downloads.cursor.com` | Where the 0.75.0 and 0.78.1 `.deb`s were fetched |
+| 1 | Cursor's update API: `curl -sS https://api2.cursor.sh/updates/api/download/stable/linux-x64/sand` | The Linux build. Answers JSON with `version`, `commitSha`, `debUrl`, `rpmUrl` and `downloadUrl` (AppImage) on `downloads.cursor.com/grokbot/stable/…`; `sand` is Grok Bot's app name there. On 2026-11-06 it gave 0.79.2 |
+| 2 | The source the issue recorded, if it is not row 1 | A recorded file URL pins one release; try it also with a newer version or build where the pattern makes that clear |
+| 3 | The docs' download links (`get-started`, `deployment`, `faq`) and `https://x.ai/bot` | `x.ai` blocks cloud machines |
 | 4 | An Electron update feed named inside the last version you unpacked | `update`, `feed` and `latest` URLs in its `package.json` and main bundle |
 
 A source that needs a sign-in or blocks this machine (Cloudflare on `x.ai`
