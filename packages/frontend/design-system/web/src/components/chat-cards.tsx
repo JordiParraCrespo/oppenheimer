@@ -253,13 +253,16 @@ function SubagentRunCard({
 type SubagentState = 'running' | 'completed' | 'failed';
 
 /**
- * One subagent, 30px: its name, role and model in subtle ink, then its
- * state (a spinner and Running, a check and Completed, Failed in red), the
- * elapsed time in mono, and how it ended (`outcome`, "→ 38 tests pass");
- * while it runs, what it is doing now (`activity`, mono) is a line under it. `note` trails in subtle ink
- * ("launched 2 subagents"); `actions` (Stop, Message) show on hover.
- * With `children` (what it did, its own steps) the name folds them: it
- * turns the chevron, and the steps hang under the row on a hairline.
+ * One subagent, one 30px line, the way a terminal lists them under its
+ * prompt: the run-state dot (pulsing while it runs, quiet once done, red
+ * when it failed), its role in subtle ink, its name (the task), and on the
+ * right its clock and `note` ("61K tokens") in mono. The state's word is
+ * shown when it failed and read out otherwise; `model`, `activity` and
+ * `outcome` say more where the row has room for them: the model after the
+ * role, what it is doing now or how it ended after the name, in subtle ink.
+ * `actions` (Stop, Message) show on hover. With `children` (what it did,
+ * its own steps) the whole line folds them, its chevron at the end, and the
+ * steps hang under it on a hairline.
  */
 function SubagentRow({
   name,
@@ -294,65 +297,54 @@ function SubagentRow({
   children?: React.ReactNode;
 }) {
   const word = stateLabel ?? { running: 'Running', completed: 'Completed', failed: 'Failed' }[state];
-  const row = (
-    <div
-      data-slot="subagent-row"
-      data-state={state}
-      className={cn('group/sub flex min-h-7.5 min-w-0 items-center gap-2 rounded-sm px-1.5 transition-colors duration-instant hover:bg-hover-surface', className)}
-    >
-      {children ? (
-        <FoldTrigger className="flex min-w-0 max-w-1/2 shrink items-center gap-1.5 font-medium text-fg">
-          <span className="truncate">{name}</span>
-        </FoldTrigger>
-      ) : (
-        <span className="min-w-0 max-w-1/2 truncate font-medium text-fg">{name}</span>
-      )}
+  const detail = state === 'running' ? activity : outcome;
+  const line = (
+    <>
+      <span
+        aria-hidden
+        className={cn(
+          'size-1.5 shrink-0 rounded-pill',
+          state === 'running' && 'bg-success motion-safe:animate-pulse',
+          state === 'completed' && 'bg-fg-subtle',
+          state === 'failed' && 'bg-danger',
+        )}
+      />
       {role ? <span className="shrink-0 text-[12.5px] text-fg-subtle">{role}</span> : null}
       {model ? <span className="shrink-0 text-[12.5px] text-fg-subtle">{model}</span> : null}
-      {state === 'running' ? <LoaderIcon aria-hidden className="size-3.25 text-success motion-safe:animate-spin" /> : null}
-      {state === 'completed' ? <CheckIcon aria-hidden className="size-3.25 text-fg-muted" /> : null}
-      <span className={cn('shrink-0 text-[12.5px]', state === 'failed' ? 'text-danger' : 'text-fg-muted')}>{word}</span>
-      {state === 'running' ? (
-        <>
-          <span className="flex-1" />
-          {elapsed ? <span className="figures shrink-0 whitespace-nowrap font-mono text-[11.5px] text-fg-subtle">{elapsed}</span> : null}
-        </>
-      ) : (
-        <>
-          {elapsed ? <span className="figures shrink-0 whitespace-nowrap font-mono text-[11.5px] text-fg-subtle">{elapsed}</span> : null}
-          {outcome ? <span className="min-w-0 flex-1 truncate text-[12.5px] text-fg-muted">→ {outcome}</span> : <span className="flex-1" />}
-        </>
-      )}
-      {note ? <span className="shrink-0 whitespace-nowrap text-[12px] text-fg-subtle">{note}</span> : null}
-      {actions ? (
-        <span className="flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity duration-fast group-hover/sub:opacity-100 group-focus-within/sub:opacity-100">
-          {actions}
+      <span className={cn('min-w-0 truncate', detail ? 'shrink' : 'flex-1', state === 'running' ? 'text-fg' : 'text-fg-muted')}>{name}</span>
+      {detail ? <span className="min-w-0 flex-1 truncate text-[12.5px] text-fg-subtle">{detail}</span> : null}
+      {state === 'failed' ? <span className="shrink-0 text-[12.5px] text-danger">{word}</span> : <span className="sr-only">{word}</span>}
+      {elapsed || note ? (
+        <span className="figures shrink-0 whitespace-nowrap font-mono text-[11.5px] text-fg-subtle">
+          {elapsed}
+          {elapsed && note ? ' · ' : null}
+          {note}
         </span>
       ) : null}
-    </div>
+    </>
   );
-  // What it is doing now gets a line of its own: the row is full with the rest.
-  const doing =
-    state === 'running' && activity ? (
-      <p data-slot="subagent-activity" className="m-0 -mt-1 truncate pb-1 pl-1.5 font-mono text-[12px] text-fg-muted">
-        {activity}
-      </p>
-    ) : null;
+  const rowClass = cn(
+    'group/sub flex min-h-7.5 w-full min-w-0 items-center gap-2.5 rounded-sm px-1.5 text-[13.5px] transition-colors duration-instant hover:bg-hover-surface',
+    className,
+  );
   if (!children) {
-    return doing ? (
-      <div className="flex flex-col">
-        {row}
-        {doing}
+    return (
+      <div data-slot="subagent-row" data-state={state} className={rowClass}>
+        {line}
+        {actions ? (
+          <span className="flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity duration-fast group-hover/sub:opacity-100 group-focus-within/sub:opacity-100">
+            {actions}
+          </span>
+        ) : null}
       </div>
-    ) : (
-      row
     );
   }
   return (
     <Fold data-slot="subagent-fold" defaultOpen={defaultOpen} className="flex flex-col">
-      {row}
-      {doing}
-      <FoldPanel className="ml-3 flex flex-col gap-3 border-border-subtle border-l pt-1 pb-2 pl-4">{children}</FoldPanel>
+      <FoldTrigger data-slot="subagent-row" data-state={state} className={rowClass}>
+        {line}
+      </FoldTrigger>
+      <FoldPanel className="ml-2.25 flex flex-col gap-3 border-border-subtle border-l pt-1.5 pb-2 pl-4">{children}</FoldPanel>
     </Fold>
   );
 }

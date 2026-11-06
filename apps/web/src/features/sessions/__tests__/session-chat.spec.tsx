@@ -1119,11 +1119,9 @@ describe('subagents', () => {
     ).toBeTruthy();
     const running = screen.getByText('Read the collector').closest('[data-slot="subagent-row"]');
     expect(running?.getAttribute('data-state')).toBe('running');
-    // What it is doing now, on the line under its row.
-    const doing = running?.nextElementSibling;
-    expect(doing?.getAttribute('data-slot')).toBe('subagent-activity');
-    expect(doing?.textContent).toContain('sessions.chat.verbLive.search');
-    expect(doing?.textContent).toContain('Collector');
+    // What it is doing now, on its line.
+    expect(running?.textContent).toContain('sessions.chat.verbLive.search');
+    expect(running?.textContent).toContain('Collector');
     expect(
       screen.getByText('Fix the table').closest('[data-slot="subagent-row"]')?.textContent,
     ).toContain('sessions.chat.subagents.state.failed');
