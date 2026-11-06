@@ -491,6 +491,10 @@ earlier note:
   `research/headless-runs-draft.md`). On 2026-10-15 the owner made `auto`
   Claude Code's own auto mode (`--permission-mode auto`), which checks each
   action before it runs, and made it the level review sessions start at.
+- A session started from a task's Start session dialog launched its agent
+  at `full` (`--permission-mode bypassPermissions` for Claude Code). On
+  2026-11-05 the owner made it start at `auto`, as every other session
+  does; `full` stays a choice in the new-session form.
 - On 2026-10-16 the owner dropped the review session's input row, which
   doubled the agent's own prompt; the Chat tab is now the plain session
   pane (`next-steps/0.2-pull-requests.md`).
@@ -1202,3 +1206,9 @@ earlier note:
   workspace's projects with New project and each one's settings, and the
   Sessions sidebar keeps only New session here on a project's header.
   New session's project chip still ends in New project….
+- `versions/mvp/18-plan-product.md` drew Plan's board as Later, To do, In
+  progress and Done. On 2026-11-05 the owner dropped **Later** and added
+  **In review** between In progress and Done, for finished work waiting to
+  be looked at. Tasks that were in Later moved to the end of To do
+  (migration `ReplaceLaterWithReviewColumn`); attaching a session still
+  moves only a task in To do to In progress.

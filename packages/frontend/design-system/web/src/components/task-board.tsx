@@ -33,18 +33,19 @@ import { StatusDot, type StatusState } from './status-dot';
  *   when due within a day), the linked session, and Start session on hover.
  */
 
-type TaskStatus = 'later' | 'todo' | 'doing' | 'done';
+type TaskStatus = 'todo' | 'doing' | 'review' | 'done';
 
 /**
  * A task's status on the run-state vocabulary, so a task reads with the
- * same dot as everything else: Later is pending, To do idle, In progress
- * amber (`waiting`, as the 2026-10-13 frame draws it: work under way, not yet
- * settled), and Done completed (the check, since a done task is finished).
+ * same dot as everything else: To do idle, In progress amber (`waiting`, as
+ * the 2026-10-13 frame draws it: work under way, not yet settled), In review
+ * pending (the work is in, waiting on someone to look), and Done completed
+ * (the check, since a done task is finished).
  */
 const TASK_STATUS_STATE: Record<TaskStatus, StatusState> = {
-  later: 'pending',
   todo: 'idle',
   doing: 'waiting',
+  review: 'pending',
   done: 'completed',
 };
 

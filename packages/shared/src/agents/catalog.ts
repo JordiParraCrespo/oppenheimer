@@ -70,6 +70,12 @@ export const SESSION_PERMISSIONS = ['ask', 'auto', 'full'] as const;
 export type SessionPermission = (typeof SESSION_PERMISSIONS)[number];
 
 /**
+ * The level a session starts at when nobody picked one: "Approve for me",
+ * never "Full access", so no start path bypasses the agent's own checks.
+ */
+export const DEFAULT_SESSION_PERMISSION: SessionPermission = 'auto';
+
+/**
  * Every effort level name any CLI here takes: the wire's and the columns'
  * vocabulary, and **not a scale**. Which names a launch may carry, and in what
  * order they run from faster to smarter, is each model's own list

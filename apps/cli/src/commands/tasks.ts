@@ -1,10 +1,9 @@
+import { TASK_STATUSES } from '@oppenheimer/shared/schemas/task';
 import { Command, Option } from 'commander';
 import type { Task, TaskStatus } from '../lib/api-types';
 import { contextFor } from '../lib/context';
 import { formatDate, render, style, table } from '../lib/output';
 import { resolveProject } from '../lib/resolve';
-
-const STATUSES = ['later', 'todo', 'doing', 'done'] as const;
 
 /** Plan's tasks (`product/versions/mvp/17-plan.md`). */
 export function tasksCommand(): Command {
@@ -15,7 +14,9 @@ export function tasksCommand(): Command {
       .alias('ls')
       .description('List tasks')
       .option('--project <project>', 'Only this project’s (name or id)')
-      .addOption(new Option('--status <status>', 'Only tasks in this column').choices(STATUSES))
+      .addOption(
+        new Option('--status <status>', 'Only tasks in this column').choices(TASK_STATUSES),
+      )
       .action(async function (this: Command) {
         const options = this.opts<{ project?: string; status?: TaskStatus }>();
         const context = contextFor(this);
@@ -47,7 +48,7 @@ export function tasksCommand(): Command {
       .argument('<title...>', 'What needs doing')
       .option('--project <project>', 'Project it belongs to (name or id)')
       .option('--notes <notes>', 'Notes')
-      .addOption(new Option('--status <status>', 'Column').choices(STATUSES).default('todo'))
+      .addOption(new Option('--status <status>', 'Column').choices(TASK_STATUSES).default('todo'))
       .option('--due <YYYY-MM-DD>', 'Due date')
       .action(async function (this: Command, words: string[]) {
         const options = this.opts<{
@@ -81,7 +82,7 @@ export function tasksCommand(): Command {
     new Command('move')
       .description('Move a task to another column, at its top')
       .argument('<id>', 'Task id')
-      .addOption(new Option('--to <status>', 'Column').choices(STATUSES).makeOptionMandatory())
+      .addOption(new Option('--to <status>', 'Column').choices(TASK_STATUSES).makeOptionMandatory())
       .action(async function (this: Command, id: string) {
         const { to } = this.opts<{ to: TaskStatus }>();
         const context = contextFor(this);

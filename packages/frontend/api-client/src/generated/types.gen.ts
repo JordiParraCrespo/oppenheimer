@@ -2717,7 +2717,7 @@ export type TaskResponseDto = {
      */
     projectId: string;
     milestoneId?: string | null;
-    status: 'later' | 'todo' | 'doing' | 'done';
+    status: 'todo' | 'doing' | 'review' | 'done';
     /**
      * Its place in the column. Compare byte by byte (not with a locale): the board is ordered by it.
      */
@@ -2753,7 +2753,7 @@ export type TaskResponseDto = {
 export type CreateTaskRequest = {
     title: string;
     notes?: string;
-    status?: 'later' | 'todo' | 'doing' | 'done';
+    status?: 'todo' | 'doing' | 'review' | 'done';
     projectId?: string;
     milestoneId?: string | null;
     dueDate?: string | null;
@@ -2772,7 +2772,7 @@ export type UpdateTaskRequest = {
 };
 
 export type MoveTaskRequest = {
-    status: 'later' | 'todo' | 'doing' | 'done';
+    status: 'todo' | 'doing' | 'review' | 'done';
     afterTaskId: string | null;
     expectedVersion?: number;
 };
@@ -2801,7 +2801,7 @@ export type StartTaskSessionRequest = {
         prompt?: string;
         attachmentIds?: Array<string>;
     };
-    seenStatus: 'later' | 'todo' | 'doing' | 'done';
+    seenStatus: 'todo' | 'doing' | 'review' | 'done';
 };
 
 export type StartTaskSessionResponseDto = {
@@ -2825,11 +2825,11 @@ export type StartTaskCloudSessionRequest = {
         prompt: string;
         model?: string;
     };
-    seenStatus: 'later' | 'todo' | 'doing' | 'done';
+    seenStatus: 'todo' | 'doing' | 'review' | 'done';
 };
 
 export type LinkTaskSessionRequest = {
-    seenStatus: 'later' | 'todo' | 'doing' | 'done';
+    seenStatus: 'todo' | 'doing' | 'review' | 'done';
 };
 
 export type MilestoneResponseDto = {

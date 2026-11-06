@@ -66,9 +66,9 @@ const MILESTONES = [
 export function TaskBoardDemo() {
   const [tasks, setTasks] = React.useState(TASKS);
   const [groups, setGroups] = React.useState<SortableGroups>({
-    later: ['t1', 't2'],
-    todo: ['t3', 't4', 't5'],
-    doing: ['t6', 't7'],
+    todo: ['t1', 't2', 't3'],
+    doing: ['t4', 't5', 't6'],
+    review: ['t7'],
     done: ['t8', 't9'],
   });
   const [milestone, setMilestone] = React.useState<string | null>(null);
