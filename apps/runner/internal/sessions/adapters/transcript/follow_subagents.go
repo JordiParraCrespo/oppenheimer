@@ -81,7 +81,7 @@ type subagentMeta struct {
 	Tokens int64 `json:"tokens,omitempty"`
 }
 
-// subagentFollower follows one conversation's subagents.
+// subagentFollower is where one conversation's subagents have been read to.
 type subagentFollower struct {
 	source subagentSource
 	fresh  func() chatTranscriber
