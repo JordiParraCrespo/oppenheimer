@@ -11,7 +11,11 @@ import { BotMemoryFactEntity } from '../../domain/bot-memory-fact.entity';
 import { BotErrors } from '../../domain/bots.errors';
 import { CreateBotMemoryFactCommand } from './create-bot-memory-fact.command';
 
-/** A fact added by hand in Settings → Memory, while the bot has room for one. */
+/**
+ * A fact added by hand in Settings → Memory while the bot has room for one,
+ * or saved by the bot through `remember`, which makes room by letting its
+ * oldest `log` fact go (`25-bots.md` §4.1).
+ */
 @CommandHandler(CreateBotMemoryFactCommand)
 export class CreateBotMemoryFactCommandHandler
   implements ICommandHandler<CreateBotMemoryFactCommand, AggregateID>
@@ -25,15 +29,16 @@ export class CreateBotMemoryFactCommandHandler
   async execute(command: CreateBotMemoryFactCommand): Promise<AggregateID> {
     const { scope, botId, content } = command;
     const bot = await this.lookup.bot(scope, botId);
+    const byBot = command.author === 'bot';
     const fact = BotMemoryFactEntity.createNew({
       organizationId: bot.organizationId,
       botId: bot.id,
       content,
-      actor: userActor(scope.userId),
+      actor: byBot ? { kind: 'bot' } : userActor(scope.userId),
       tier: command.tier,
       scope: command.memoryScope,
     });
-    const outcome = await this.memory.insert(fact, BOT_MEMORY_FACTS_MAX);
+    const outcome = await this.memory.insert(fact, BOT_MEMORY_FACTS_MAX, byBot);
     if (outcome === 'full') {
       throw new AppError(BotErrors.MEMORY_FULL, {
         detail: `A bot keeps at most ${BOT_MEMORY_FACTS_MAX} facts; forget one first`,

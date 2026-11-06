@@ -1212,3 +1212,13 @@ earlier note:
   be looked at. Tasks that were in Later moved to the end of To do
   (migration `ReplaceLaterWithReviewColumn`); attaching a session still
   moves only a task in To do to In progress.
+- `versions/mvp/25-bots.md` §4.1 (2026-10-29) kept a bot's facts as
+  `profile` by default, the newest 60 in every prompt, `log` facts only
+  through `recall`, and refused a save past 200. Bots saved almost nothing
+  after their first chat. On 2026-11-06, after a read of Grok Bot 0.79.2
+  (`research/lessons-from-grok-bot.md` §10), the owner took its shape: a
+  bot's save is `log` by default, the system prompt carries the newest
+  profile facts by characters (4,000) and the turn context the newest log
+  entries (2,000, dated), so a save leaves the prompt cache warm, the turn's
+  rules tell it to save what it learns without asking, and a full memory
+  of 500 drops its oldest log fact instead of refusing.

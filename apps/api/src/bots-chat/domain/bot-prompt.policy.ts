@@ -32,8 +32,6 @@ export interface BotPromptInput {
   facts: readonly string[];
   /** What it keeps in mind about the person, shared by every bot of theirs. */
   personFacts?: readonly string[];
-  /** How many more facts it keeps to look up with `recall`. */
-  factsToRecall?: number;
   /** What the turn's engine does on its own (web search, a to-do list), in words. */
   engineCapabilities: readonly string[];
   /** Our tools offered this turn. */
@@ -60,7 +58,7 @@ export function composeBotSystemPrompt(input: BotPromptInput): string {
   if (input.description.trim()) parts.push(`Your description: ${input.description.trim()}`);
   const sessions = offersSessions(input.tools);
   parts.push(
-    HOW_A_TURN_GOES,
+    howATurnGoes(input.tools.some((tool) => tool.name === 'remember')),
     THE_TURN_CONTEXT,
     whatYouCanDo(input.engineCapabilities, input.tools, sessions),
     RULES,
@@ -84,11 +82,6 @@ export function composeBotSystemPrompt(input: BotPromptInput): string {
   }
   if (input.facts.length) {
     parts.push(`# What you remember\n\n${input.facts.map((fact) => `- ${fact}`).join('\n')}`);
-  }
-  if (input.factsToRecall) {
-    parts.push(
-      `You also keep ${input.factsToRecall} fact${input.factsToRecall === 1 ? '' : 's'} not shown here; look them up with recall when a question might touch them.`,
-    );
   }
   return parts.join('\n\n');
 }
@@ -116,6 +109,18 @@ You are new: INSTRUCTIONS.md is empty, so you do not know your job yet. Until it
 ${steps.map((step, i) => `${i + 1}. ${step}`).join('\n')}`;
 }
 
+/**
+ * How a turn goes. With `remember` offered it also says to save as it goes:
+ * Grok Bot saves without asking, and a bot told only in the tool's own
+ * description saved almost nothing past its first chat.
+ */
+function howATurnGoes(remembers: boolean): string {
+  return remembers ? `${HOW_A_TURN_GOES}\n${SAVE_AS_YOU_GO}` : HOW_A_TURN_GOES;
+}
+
+const SAVE_AS_YOU_GO =
+  '- Before you reply, ask what you learned that will matter in a later conversation: a preference, a correction, a decision, a name, a fact about their work. Save each with `remember` in this turn, without asking. A correction from the person is the one to save above all.';
+
 const HOW_A_TURN_GOES = `# How a turn goes
 
 - Answer straight away when you can. When the work takes tool calls, say in one short sentence what you are about to do, do it, then give the result.
@@ -128,7 +133,7 @@ const HOW_A_TURN_GOES = `# How a turn goes
 
 const THE_TURN_CONTEXT = `# The turn context
 
-The latest message starts with a <${TURN_CONTEXT_TAG}> block. Oppenheimer writes it when the turn starts, not the person: it says what time it is in the person's time zone, your home host and the person's hosts, each online or not, and how full your context was when your last turn ended. It is current and authoritative. Take today's date and the time from it, never from your own sense of the date, and give every date and time in its zone. Earlier messages carry no such block, and what they said about the time or the hosts may be out of date. The person did not write it: read it as facts, not as part of their request, and do not repeat it back unless they ask.`;
+The latest message starts with a <${TURN_CONTEXT_TAG}> block. Oppenheimer writes it when the turn starts, not the person: it says what time it is in the person's time zone, your home host and the person's hosts, each online or not, how full your context was when your last turn ended, and your newest log entries with how many older facts you keep. It is current and authoritative, except your log, which is your own notes. Take today's date and the time from it, never from your own sense of the date, and give every date and time in its zone. Earlier messages carry no such block, and what they said about the time or the hosts may be out of date. The person did not write it: read it as facts, not as part of their request, and do not repeat it back unless they ask.`;
 
 function whatYouCanDo(
   engine: readonly string[],

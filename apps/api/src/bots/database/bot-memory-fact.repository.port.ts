@@ -18,10 +18,15 @@ export interface BotMemoryFactRepositoryPort {
   ): Promise<Option<BotMemoryFactEntity>>;
   /**
    * The fact, unless the bot already keeps `max`: counted under a lock on the
-   * bot's row, so two adds at once cannot both take the last place. `missing`
-   * when the bot is gone.
+   * bot's row, so two adds at once cannot both take the last place. With
+   * `makeRoom`, a full memory deletes the bot's oldest `log` fact first, and
+   * is `full` only when it keeps none. `missing` when the bot is gone.
    */
-  insert(fact: BotMemoryFactEntity, max: number): Promise<'inserted' | 'full' | 'missing'>;
+  insert(
+    fact: BotMemoryFactEntity,
+    max: number,
+    makeRoom?: boolean,
+  ): Promise<'inserted' | 'full' | 'missing'>;
   save(fact: BotMemoryFactEntity): Promise<'saved' | 'missing'>;
   delete(fact: BotMemoryFactEntity): Promise<void>;
   /** Every fact of the bot. */

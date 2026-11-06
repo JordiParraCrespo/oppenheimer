@@ -1,9 +1,11 @@
 /**
  * Which facts a turn keeps in mind (`25-bots.md` §4.1). What breaks this: a
- * `log` fact in every prompt, so the prompt grows with every detail kept; a
- * fact about the person drawn as the bot's own; the oldest facts kept in mind
- * when there are more than fit, where the newest should win; a bot not told
- * there is more to `recall`.
+ * `log` fact left out of every prompt, so a bot that saves as it goes never
+ * sees what it saved; the log or the profile growing the prompt with every
+ * fact kept, where each stops at its budget of characters; the oldest facts
+ * kept in mind when there are more than fit, where the newest should win; a
+ * bot not told there is more to `recall`. How the log is dated and where it
+ * is said is `bot-turn-context.policy.spec.ts`.
  */
 import {
   describeKept,
@@ -16,32 +18,59 @@ const fact = (
   content: string,
   tier: RememberedFact['tier'] = 'profile',
   scope: RememberedFact['scope'] = 'bot',
-): RememberedFact => ({ content, tier, scope });
+  createdAt = new Date('2026-11-03T23:30:00Z'),
+): RememberedFact => ({ content, tier, scope, createdAt });
+
+const budget = { profileChars: 1_000, logChars: 1_000 };
+const contents = (entries: { content: string }[]) => entries.map((entry) => entry.content);
 
 describe('memoryInMind', () => {
-  it('keeps profile facts in mind, the person’s apart, oldest first, and counts the rest for recall', () => {
+  it('keeps profile facts in mind, the person’s apart, and the log, oldest first', () => {
     const newestFirst = [
       fact('Uses pnpm'),
       fact('Ana is the release manager', 'profile', 'person'),
-      fact('Ticket 412 was about the login race', 'log'),
+      fact('Ticket 412 was the login race', 'log', 'bot', new Date('2026-11-05T09:00:00Z')),
       fact('Deploys on Thursdays'),
+      fact('Staging moved to devbox', 'log', 'bot', new Date('2026-11-02T09:00:00Z')),
     ];
-    expect(memoryInMind(newestFirst, 10)).toEqual({
+    const inMind = memoryInMind(newestFirst, budget);
+    expect(inMind).toMatchObject({
       own: ['Deploys on Thursdays', 'Uses pnpm'],
       person: ['Ana is the release manager'],
-      toRecall: 1,
+      toRecall: 0,
     });
+    expect(inMind.log).toEqual([
+      {
+        content: 'Staging moved to devbox',
+        createdAt: new Date('2026-11-02T09:00:00Z'),
+        scope: 'bot',
+      },
+      {
+        content: 'Ticket 412 was the login race',
+        createdAt: new Date('2026-11-05T09:00:00Z'),
+        scope: 'bot',
+      },
+    ]);
   });
 
-  it('keeps the newest profile facts when there are more than fit, and leaves the rest to recall', () => {
-    const newestFirst = [fact('c'), fact('b'), fact('a')];
-    expect(memoryInMind(newestFirst, 2)).toEqual({ own: ['b', 'c'], person: [], toRecall: 1 });
+  it('keeps the newest of each tier within its budget of characters, and leaves the rest to recall', () => {
+    const newestFirst = [
+      fact('cccc'),
+      fact('zz', 'log'),
+      fact('bbbb'),
+      fact('yy', 'log'),
+      fact('aaaa'),
+      fact('xx', 'log'),
+    ];
+    const inMind = memoryInMind(newestFirst, { profileChars: 9, logChars: 4 });
+    expect(inMind).toMatchObject({ own: ['bbbb', 'cccc'], person: [], toRecall: 2 });
+    expect(contents(inMind.log)).toEqual(['yy', 'zz']);
   });
 });
 
 describe('describeKept', () => {
   it('says how a fact is kept, and which another of the person’s bots keeps', () => {
-    expect(describeKept({ tier: 'log', scope: 'bot', botId: 'b1' }, 'b1')).toBe('to look up');
+    expect(describeKept({ tier: 'log', scope: 'bot', botId: 'b1' }, 'b1')).toBe('in the log');
     expect(describeKept({ tier: 'profile', scope: 'person', botId: 'b1' }, 'b1')).toBe(
       'in mind, about the person',
     );
