@@ -167,6 +167,7 @@ export {
 } from './components/chat-transcript';
 export type { ToolCallOutputLabels } from './components/chat-work';
 export {
+  AgentActivity,
   ReasoningRow,
   ToolCallGroup,
   ToolCallLive,

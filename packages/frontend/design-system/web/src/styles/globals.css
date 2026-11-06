@@ -199,6 +199,14 @@
        frame draws its chat on the same card as its terminal). The chat's
        cards (the composer, the code) keep their hairlines to stand on it. */
     --chat-ground: var(--term-bg);
+    /* The agent's word for what it is doing, under a session's chat while it
+       works ("✻ Mustering…"): Claude's clay, the hue its own terminal draws
+       the spinner in. The glyph is decoration and wears the mark's orange;
+       the word is text, so light mode takes a deeper clay that holds 4.5:1
+       on paper, and the glint is the lighter band that sweeps across it. */
+    --chat-spinner: #d97757;
+    --chat-verb: #b0502c;
+    --chat-verb-glint: #e9967a;
     --term-success: var(--op-green-700);
     --term-warning: var(--op-amber-700);
     --term-danger: var(--op-red-700);
@@ -594,6 +602,9 @@
     --term-border: #262629;
     --term-accent: var(--op-blue-400);
     --chat-ground: var(--term-bg);
+    --chat-spinner: #d97757;
+    --chat-verb: #e3896a;
+    --chat-verb-glint: #ffd6c4;
     --term-success: var(--op-green-400);
     --term-warning: var(--op-amber-400);
     --term-danger: var(--op-red-400);
@@ -781,6 +792,10 @@
      the write head of a streaming reply blinks. Both sit behind
      `motion-safe:`, since reduced motion zeroes durations, not animations. */
   --animate-shimmer: op-chat-shimmer 2s linear infinite;
+  /* The agent's spinner: its glyph turns through Claude Code's own frames,
+     and a glint sweeps its word in the verb's clay. */
+  --animate-agent-glyph: op-agent-glyph 1.2s linear infinite;
+  --animate-verb-shimmer: op-verb-shimmer 2.4s linear infinite;
   --animate-caret: op-caret 1s steps(2) infinite;
   --ease-out: var(--ease-out);
   --ease-in: var(--ease-in);
@@ -834,6 +849,8 @@
   --color-term-accent: var(--term-accent);
   --color-device-bezel: var(--device-bezel);
   --color-chat-ground: var(--chat-ground);
+  --color-chat-spinner: var(--chat-spinner);
+  --color-chat-verb: var(--chat-verb);
   --color-term-success: var(--term-success);
   --color-term-warning: var(--term-warning);
   --color-term-danger: var(--term-danger);
@@ -1061,6 +1078,53 @@
       var(--fg) 50%,
       var(--fg-subtle) 60%,
       var(--fg-subtle) 100%
+    );
+    background-size: 250% 100%;
+    background-clip: text;
+    -webkit-background-clip: text;
+    color: transparent;
+  }
+  0% {
+    background-position: 100% 0;
+  }
+  100% {
+    background-position: 0% 0;
+  }
+}
+
+/* `content` animates in discrete steps, one frame per stop. */
+@keyframes op-agent-glyph {
+  0%,
+  100% {
+    content: "·";
+  }
+  17% {
+    content: "✢";
+  }
+  33% {
+    content: "✳";
+  }
+  50% {
+    content: "✶";
+  }
+  67% {
+    content: "✻";
+  }
+  83% {
+    content: "✽";
+  }
+}
+
+@keyframes op-verb-shimmer {
+  0%,
+  100% {
+    background-image: linear-gradient(
+      90deg,
+      var(--chat-verb) 0%,
+      var(--chat-verb) 40%,
+      var(--chat-verb-glint) 50%,
+      var(--chat-verb) 60%,
+      var(--chat-verb) 100%
     );
     background-size: 250% 100%;
     background-clip: text;

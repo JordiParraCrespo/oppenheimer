@@ -131,6 +131,8 @@ export function useTerminal(
       // A reconnect replays the scrollback, so a session that has already run
       // answers this on its first frame and the waiting state never shows.
       onFirstOutput: () => setHasOutput(true),
+      // The chat over the grid says what the agent's spinner says.
+      onActivity: chat ? (activity) => chat.setActivity(activity) : undefined,
     });
     const offStatus = stream.onStatus((next) => {
       setStatus(next);

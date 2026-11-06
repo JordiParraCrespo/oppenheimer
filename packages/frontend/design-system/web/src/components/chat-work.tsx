@@ -26,6 +26,10 @@ import { cn } from '../lib/utils';
  *   it, which shows the whole output as it came.
  * - `ToolCallLive`: the call in flight, in place of the summary: a spinner,
  *   the verb and target breathing, the elapsed time, on a row's one line.
+ * - `AgentActivity`: rising into place, what the agent says it is doing now, at the
+ *   foot of a working turn, as its own terminal draws it: the glyph turning
+ *   in Claude's clay, its word ("Mustering…") with a glint sweeping it, and
+ *   the counts it keeps beside it in mono ("4m 31s · ↓ 15.9k tokens").
  * - `ReasoningRow`: "Thought for 9s", folded; open, the thinking reads in
  *   the muted tone behind a hairline.
  *
@@ -234,6 +238,37 @@ function ToolCallLive({
   );
 }
 
+function AgentActivity({
+  verb,
+  detail,
+  className,
+}: {
+  /** The agent's word, without its ellipsis ("Mustering", "Running the tests"). */
+  verb: React.ReactNode;
+  /** "4m 31s · ↓ 15.9k tokens"; it moves every second, so it is not announced. */
+  detail?: React.ReactNode;
+  className?: string;
+}) {
+  return (
+    <div
+      data-slot="agent-activity"
+      role="status"
+      className={cn('flex min-w-0 items-center gap-2 py-1 text-[14px] motion-safe:animate-appear', className)}
+    >
+      <span
+        aria-hidden
+        className="flex w-4 shrink-0 justify-center font-mono text-[15px] leading-none text-chat-spinner before:content-['✻'] motion-safe:before:animate-agent-glyph"
+      />
+      <span className="shrink-0 font-medium text-chat-verb motion-safe:animate-verb-shimmer">{verb}…</span>
+      {detail ? (
+        <span aria-hidden className="figures min-w-0 truncate font-mono text-[12px] text-fg-subtle">
+          ({detail})
+        </span>
+      ) : null}
+    </div>
+  );
+}
+
 function ReasoningRow({
   label,
   defaultOpen = false,
@@ -266,5 +301,5 @@ function ReasoningRow({
   );
 }
 
-export { ReasoningRow, ToolCallGroup, ToolCallLive, ToolCallOutput, ToolCallRow };
+export { AgentActivity, ReasoningRow, ToolCallGroup, ToolCallLive, ToolCallOutput, ToolCallRow };
 export type { ToolCallOutputLabels };

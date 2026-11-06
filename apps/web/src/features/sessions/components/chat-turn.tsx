@@ -79,8 +79,9 @@ export function ChatTurn({ turn }: { turn: Turn }) {
       {turn.prompt ? (
         <ChatUserMessage
           // A session's chat stands on its terminal's ground, the card's own
-          // colour, so the turn takes the wash to stay a shape on it.
-          tone="wash"
+          // colour, so the turn takes the blue wash: a shape on it, and the
+          // person's words told from the agent's at a glance.
+          tone="accent"
           className={ENTER}
           time={turn.prompt.at ? time.format(turn.prompt.at) : undefined}
           attachments={
