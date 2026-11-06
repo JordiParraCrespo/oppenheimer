@@ -19,7 +19,7 @@ import {
 import { BotDocumentEntity } from '../../domain/bot-document.entity';
 import { avatarColorFor, nameForNewBot } from '../../domain/bot-naming.policy';
 import { BotErrors } from '../../domain/bots.errors';
-import { CreateBotCommand } from './create-bot.command';
+import { CreateBotCommand, firstDocumentsOf } from './create-bot.command';
 
 /**
  * A blank bot (`product/versions/mvp/25-bots.md` §1): named by `nameForNewBot`, on the
@@ -75,7 +75,8 @@ export class CreateBotCommandHandler implements ICommandHandler<CreateBotCommand
       idempotencyKey: command.idempotencyKey,
       sections: input.sections,
     });
-    const documents = BotDocumentEntity.firstOf(bot, userActor(scope.userId), command);
+    const author = userActor(scope.userId);
+    const documents = BotDocumentEntity.firstOf(bot, author, firstDocumentsOf(command));
     const outcome = await this.bots.insert(bot, documents, creator);
     if (outcome === 'group-missing') throw new AppError(BotErrors.GROUP_NOT_FOUND);
     if (outcome === 'creator-changed') throw new BotLooserThanCreatorException();

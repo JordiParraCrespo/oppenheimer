@@ -43,3 +43,16 @@ export class CreateBotCommand extends CommandBase {
     this.credentialScopes = props.credentialScopes;
   }
 }
+
+/** What a new bot's first documents are written from: their text, and the writing credential's scopes. */
+export function firstDocumentsOf(command: CreateBotCommand): {
+  soul?: string;
+  instructions?: string;
+  credentialScopes?: readonly Scope[] | null;
+} {
+  return {
+    soul: command.soul,
+    instructions: command.instructions,
+    credentialScopes: command.credentialScopes,
+  };
+}
