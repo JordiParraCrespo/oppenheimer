@@ -41,6 +41,8 @@ export function ChatToolGroup({
   const failed = calls.filter((call) => call.status === 'failed').length;
   const Icon = chatToolIcon(explored ? 'search' : sharedKindOf(calls));
   const runningKind = running ? groupKindOf(running.kind) : 'other';
+  // As on a settled row: a command's own words lead, the command goes quiet.
+  const runningPurpose = running ? commandPurposeOf(running) : null;
   const [only] = done;
   // A run still exploring keeps its heading over the one call it has done.
   const grouped = done.length > 1 || (explored && running !== undefined && done.length > 0);
@@ -71,8 +73,16 @@ export function ChatToolGroup({
       ) : null}
       {running ? (
         <ToolCallLive
-          verb={commandPurposeOf(running) ?? t(`sessions.chat.verbLive.${runningKind}`)}
-          target={<ChatToolTarget call={running} />}
+          verb={runningPurpose ?? t(`sessions.chat.verbLive.${runningKind}`)}
+          target={
+            runningPurpose && running.target ? (
+              <span title={running.target} className="text-fg-subtle">
+                {running.target}
+              </span>
+            ) : (
+              <ChatToolTarget call={running} />
+            )
+          }
           elapsed={
             running.startedAt ? (
               <ElapsedClock since={running.startedAt} ticking format={formatChatElapsed} />

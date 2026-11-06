@@ -17,9 +17,11 @@ export function ChatToolRow({ call }: { call: ChatToolCall }) {
   const { t } = useTranslation();
   const kind = groupKindOf(call.kind);
   const Icon = chatToolIcon(call.kind);
+  // A command that said what it was for leads with those words; the
+  // command after them is there to check, not to read, so it goes quiet.
+  const purpose = commandPurposeOf(call);
   const verb =
-    commandPurposeOf(call) ??
-    (kind === 'mcp' || kind === 'other' ? call.label : t(`sessions.chat.verb.${kind}`));
+    purpose ?? (kind === 'mcp' || kind === 'other' ? call.label : t(`sessions.chat.verb.${kind}`));
   const failed = call.status === 'failed';
   const excerpt = failed ? firstLine(call.output) : null;
   const meta = failed ? (
@@ -37,7 +39,15 @@ export function ChatToolRow({ call }: { call: ChatToolCall }) {
       <ToolCallRow
         icon={<Icon />}
         verb={verb}
-        target={<ChatToolTarget call={call} />}
+        target={
+          purpose && call.target ? (
+            <span title={call.target} className="text-fg-subtle">
+              {call.target}
+            </span>
+          ) : (
+            <ChatToolTarget call={call} />
+          )
+        }
         meta={meta}
         tone={failed ? 'danger' : 'default'}
         output={output}
