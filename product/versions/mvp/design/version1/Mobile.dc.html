@@ -1,0 +1,1300 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<script src="./ds-base.js"></script>
+<style>
+body{margin:0}
+[data-om-starter] *::-webkit-scrollbar{display:none}
+[data-om-starter] *{scrollbar-width:none}
+:root{--glass-edge:rgba(255,255,255,.65);--glass-hi:rgba(255,255,255,.9)}
+[data-theme="dark"]{--glass-edge:rgba(255,255,255,.10);--glass-hi:rgba(255,255,255,.12);--glass:rgba(44,44,48,.62)}
+a{color:var(--link);text-decoration:none}
+a:hover{text-decoration:underline;text-underline-offset:2px}
+</style>
+</helmet>
+<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:32px;box-sizing:border-box;background:var(--canvas)">
+<x-import component-from-global-scope="{{ frameComp }}" from="./ios-frame.jsx ./android-frame.jsx" dark="{{ isDark }}" hint-size="402px,874px">
+<div data-screen-label="{{ screenLabel }}" style="position:relative;height:100%;display:flex;flex-direction:column;overflow:hidden;background:var(--background);color:var(--fg);font-family:var(--font-sans);-webkit-font-smoothing:antialiased">
+
+<sc-if value="{{ isWelcome }}" hint-placeholder-val="{{ true }}">
+<div style="position:relative;flex:1;min-height:0;display:flex;flex-direction:column;justify-content:space-between;padding:{{ topPad }} 10px {{ authBottomGlass }};background:#1d1d1f">
+<img src="./assets/imagery/oppenheimer-portrait.png" alt="J. Robert Oppenheimer" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 18%">
+<div style="position:relative;display:flex;align-items:center;justify-content:space-between;gap:12px;height:44px;padding:0 10px"><span class="op-wordmark" style="font-size:20px;color:#fff">Oppenheimer</span><span style="padding:6px 12px;border-radius:980px;font-size:12px;color:var(--fg);background:var(--glass);backdrop-filter:var(--glass-blur);-webkit-backdrop-filter:var(--glass-blur);border:1px solid var(--glass-edge);box-shadow:inset 0 1px 0 var(--glass-hi)">J. Robert Oppenheimer, 1946</span></div>
+<div style="position:relative;display:flex;flex-direction:column;gap:18px;padding:22px 18px 18px;border-radius:28px;background:var(--glass);backdrop-filter:var(--glass-blur);-webkit-backdrop-filter:var(--glass-blur);border:1px solid var(--glass-edge);box-shadow:var(--shadow-popover),inset 0 1px 0 var(--glass-hi)">
+<div style="display:flex;flex-direction:column;gap:6px">
+<h1 style="margin:0;font-family:var(--font-display);font-size:34px;font-weight:600;letter-spacing:-0.022em;line-height:1.1">Simple but powerful</h1>
+<p style="margin:0;font-size:15px;color:var(--fg-muted)">Sign in to reach your workspaces.</p>
+</div>
+<div style="display:flex;flex-direction:column;gap:10px">
+<button class="op-btn op-btn--social op-btn--lg op-btn--block" type="button" onClick="{{ signIn }}" style="height:48px;border-color:var(--glass-edge)"><img class="op-btn__glyph op-btn__glyph--color" src="./assets/brand/google-color.svg" alt="">Continue with Google</button>
+<button class="op-btn op-btn--social op-btn--lg op-btn--block" type="button" onClick="{{ signIn }}" style="height:48px;border-color:var(--glass-edge)"><img class="op-btn__glyph" src="./assets/brand/github.svg" alt="">Continue with GitHub</button>
+<button class="op-btn op-btn--ghost op-btn--lg op-btn--block" type="button" onClick="{{ goEmail }}" style="height:48px;gap:10px"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="mail" size="17" hint-size="17px,17px"></x-import>Continue with email</button>
+</div>
+<p style="margin:0;font-size:12px;color:var(--fg-muted);line-height:1.5">By continuing you accept the <a href="#terms">Terms</a> and <a href="#privacy">Privacy Policy</a>.</p>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ isEmail }}">
+<div style="flex:1;min-height:0;display:flex;flex-direction:column;gap:24px;padding:{{ topPad }} 20px {{ authBottom }}">
+<div style="height:44px;display:flex;align-items:center;margin-left:-10px"><button class="op-iconbtn op-iconbtn--lg" type="button" aria-label="Back" onClick="{{ goWelcome }}" style="width:44px;height:44px"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="chevron-left" size="22" hint-size="22px,22px"></x-import></button></div>
+<div style="display:flex;flex-direction:column;gap:6px">
+<h1 style="margin:0;font-family:var(--font-display);font-size:34px;font-weight:600;letter-spacing:-0.022em;line-height:1.1">Sign in</h1>
+<p style="margin:0;font-size:15px;color:var(--fg-muted)">Use your work address.</p>
+</div>
+<div style="display:flex;flex-direction:column;gap:16px">
+<div class="op-field">
+<label class="op-label" for="m-email">Email</label>
+<div class="op-input op-input--lg" style="height:48px"><input class="op-input__el" id="m-email" type="email" autoComplete="email" placeholder="you@company.com" value="{{ email }}" onChange="{{ setEmail }}" style="font-size:16px"></div>
+</div>
+<div class="op-field">
+<div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px"><label class="op-label" for="m-pw">Password</label><a href="#forgot" style="font-size:13px">Forgot password?</a></div>
+<div class="op-input op-input--lg" style="height:48px"><input class="op-input__el" id="m-pw" type="{{ pwType }}" placeholder="••••••••••••" value="{{ pw }}" onChange="{{ setPw }}" onKeyDown="{{ pwKey }}" style="font-size:16px"><button type="button" aria-label="{{ pwToggleLabel }}" onClick="{{ togglePw }}" style="display:flex;align-items:center;justify-content:center;width:44px;height:44px;margin-right:-12px;border:0;background:none;color:var(--fg-subtle);cursor:pointer"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="{{ pwIcon }}" size="17" hint-size="17px,17px"></x-import></button></div>
+</div>
+</div>
+<button class="op-btn op-btn--primary op-btn--lg op-btn--block" type="button" onClick="{{ signIn }}" style="height:48px">Sign in</button>
+<div style="flex:1"></div>
+<p style="margin:0;font-size:14px;color:var(--fg-muted)">No account? <a href="#create">Create one</a></p>
+</div>
+</sc-if>
+
+<sc-if value="{{ isApp }}">
+
+<sc-if value="{{ inList }}">
+<div onScroll="{{ onListScroll }}" style="flex:1;min-height:0;overflow-y:auto;scrollbar-width:none">
+<div style="position:sticky;top:0;z-index:4;padding-top:{{ topPad }};background:{{ barBg }};backdrop-filter:{{ barBlur }};-webkit-backdrop-filter:{{ barBlur }};border-bottom:1px solid {{ barEdge }};transition:background 220ms cubic-bezier(.4,0,.2,1),border-color 220ms cubic-bezier(.4,0,.2,1)">
+<div style="display:flex;align-items:center;gap:8px;height:{{ barH }};padding:0 8px 0 20px">
+<span style="flex:1;min-width:0;font-size:{{ barFs }};font-weight:600;letter-spacing:-0.015em;opacity:{{ barTitleOp }};transition:opacity 140ms cubic-bezier(.4,0,.2,1)">{{ tabTitle }}</span>
+<sc-if value="{{ showPlus }}" hint-placeholder-val="{{ true }}"><button class="op-iconbtn op-iconbtn--lg" type="button" aria-label="{{ plusLabel }}" onClick="{{ onPlus }}" style="width:44px;height:44px"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="plus" size="22" hint-size="22px,22px"></x-import></button></sc-if>
+</div>
+</div>
+
+<sc-if value="{{ tabSessions }}">
+<sc-if value="{{ isIos }}" hint-placeholder-val="{{ true }}">
+<h1 style="margin:0;padding:8px 20px 0;font-family:var(--font-display);font-size:34px;font-weight:600;letter-spacing:-0.022em;line-height:1.15">Sessions</h1>
+</sc-if>
+<div style="padding:12px 16px 0">
+<label class="op-input op-input--lg" style="height:44px;cursor:text"><span class="op-input__icon"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="search" size="16" hint-size="16px,16px"></x-import></span><input class="op-input__el" type="search" aria-label="Search sessions" placeholder="Search sessions" value="{{ q }}" onChange="{{ setQ }}" style="font-size:16px"></label>
+</div>
+<div style="display:flex;gap:8px;overflow-x:auto;padding:12px 16px 4px;scrollbar-width:none">
+<sc-for list="{{ filters }}" as="f" hint-placeholder-count="4">
+<button class="op-chip" type="button" data-selected="{{ f.on }}" onClick="{{ f.pick }}" style="flex:none;height:36px;font-size:14px;gap:7px">{{ f.label }}<span style="font-family:var(--font-mono);font-size:12px;font-variant-numeric:tabular-nums;opacity:.7">{{ f.count }}</span></button>
+</sc-for>
+</div>
+<sc-for list="{{ groups }}" as="g" hint-placeholder-count="3">
+<div style="padding:12px 16px 0">
+<div style="display:flex;align-items:center;gap:8px;padding:6px 4px 8px"><sc-if value="{{ g.dot }}"><span style="width:7px;height:7px;border-radius:980px;background:var(--warning)"></span></sc-if><span style="font-size:11px;text-transform:uppercase;letter-spacing:.02em;color:var(--fg-muted)">{{ g.name }}</span><span style="font-family:var(--font-mono);font-size:11px;color:var(--fg-subtle)">{{ g.count }}</span></div>
+<div style="border-radius:18px;overflow:hidden;background:var(--glass);backdrop-filter:var(--glass-blur);-webkit-backdrop-filter:var(--glass-blur);border:1px solid var(--glass-edge);box-shadow:inset 0 1px 0 var(--glass-hi)">
+<sc-for list="{{ g.items }}" as="r" hint-placeholder-count="3">
+<div style="position:relative;overflow:hidden;border-top:{{ r.sep }}">
+<button type="button" onClick="{{ r.act }}" aria-label="{{ r.actLabel }}" style="position:absolute;top:0;right:0;bottom:0;width:{{ r.actW }};display:flex;align-items:center;justify-content:center;border:0;padding:0;overflow:hidden;background:{{ r.actBg }};color:{{ r.actFg }};font:inherit;font-size:14px;font-weight:500;white-space:nowrap;cursor:pointer;transition:{{ r.wTr }}">{{ r.actLabel }}</button>
+<div role="button" tabIndex="0" onClick="{{ r.open }}" onPointerDown="{{ r.down }}" onPointerMove="{{ r.move }}" onPointerUp="{{ r.up }}" onPointerCancel="{{ r.up }}" style="position:relative;display:grid;grid-template-columns:32px minmax(0,1fr) auto;align-items:start;column-gap:12px;min-height:64px;padding:12px 16px;box-sizing:border-box;color:var(--fg);cursor:pointer;touch-action:pan-y;user-select:none;-webkit-user-select:none;transform:translateX({{ r.x }});transition:{{ r.tr }}" style-active="background:var(--hover-surface)">
+<span style="position:relative;width:32px;height:32px;margin-top:1px;border-radius:980px;background:var(--control);display:flex;align-items:center;justify-content:center"><img src="{{ r.logo }}" alt="" draggable="false" style="width:16px;height:16px;object-fit:contain;filter:{{ r.logoFilter }}"><span style="position:absolute;right:-2px;bottom:-2px;width:11px;height:11px;box-sizing:border-box;border-radius:980px;border:2px solid var(--background);background:{{ r.color }}"></span></span>
+<span style="min-width:0;display:flex;flex-direction:column;gap:2px"><span style="font-size:15px;letter-spacing:-0.011em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.name }}</span><span style="font-size:13px;color:var(--fg-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.meta }}</span><sc-if value="{{ r.ask }}"><span style="margin-top:4px;font-size:14px;line-height:1.35;color:var(--fg);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;text-wrap:pretty">{{ r.ask }}</span></sc-if><sc-if value="{{ r.preview }}"><span style="margin-top:3px;font-family:var(--font-mono);font-size:11.5px;color:var(--fg-subtle);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.preview }}</span></sc-if></span>
+<span style="padding-top:2px;font-family:var(--font-mono);font-size:12px;color:var(--fg-subtle);font-variant-numeric:tabular-nums">{{ r.age }}</span>
+</div>
+</div>
+</sc-for>
+</div>
+</div>
+</sc-for>
+<sc-if value="{{ noMatch }}"><p style="margin:0;padding:24px 20px;font-size:14px;color:var(--fg-muted)">No sessions match.</p></sc-if>
+<div style="height:{{ listTail }}"></div>
+</sc-if>
+
+<sc-if value="{{ tabEmployees }}">
+<sc-if value="{{ isIos }}" hint-placeholder-val="{{ true }}"><h1 style="margin:0;padding:8px 20px 0;font-family:var(--font-display);font-size:34px;font-weight:600;letter-spacing:-0.022em;line-height:1.15">Employees</h1></sc-if>
+<div style="padding:12px 16px 0">
+<label class="op-input op-input--lg" style="height:44px;cursor:text"><span class="op-input__icon"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="search" size="16" hint-size="16px,16px"></x-import></span><input class="op-input__el" type="search" aria-label="Search employees" placeholder="Search employees" value="{{ bq }}" onChange="{{ setBq }}" style="font-size:16px"></label>
+</div>
+<sc-for list="{{ botGroups }}" as="g" hint-placeholder-count="3">
+<div style="padding:12px 16px 0">
+<sc-if value="{{ g.name }}"><div style="display:flex;align-items:center;gap:8px;padding:6px 4px 8px"><span style="font-size:11px;text-transform:uppercase;letter-spacing:.02em;color:var(--fg-muted)">{{ g.name }}</span><span style="font-family:var(--font-mono);font-size:11px;color:var(--fg-subtle)">{{ g.count }}</span></div></sc-if>
+<div style="border-radius:18px;overflow:hidden;background:var(--glass);backdrop-filter:var(--glass-blur);-webkit-backdrop-filter:var(--glass-blur);border:1px solid var(--glass-edge);box-shadow:inset 0 1px 0 var(--glass-hi)">
+<sc-for list="{{ g.items }}" as="b" hint-placeholder-count="2">
+<button type="button" onClick="{{ b.open }}" style="display:grid;grid-template-columns:40px minmax(0,1fr) auto;align-items:start;column-gap:12px;width:100%;min-height:72px;padding:12px 16px;border:0;border-top:{{ b.sep }};background:transparent;color:var(--fg);font:inherit;text-align:left;cursor:pointer;transition:background 80ms cubic-bezier(.4,0,.2,1)" style-active="background:var(--hover-surface)">
+<span style="position:relative;width:40px;height:40px;border-radius:980px;background:{{ b.bg }};color:{{ b.fg }};display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:600;letter-spacing:0">{{ b.ini }}<span style="position:absolute;right:-1px;bottom:-1px;width:12px;height:12px;box-sizing:border-box;border-radius:980px;border:2px solid var(--background);background:{{ b.color }}"></span></span>
+<span style="min-width:0;display:flex;flex-direction:column;gap:3px"><span style="font-size:15px;font-weight:500;letter-spacing:-0.011em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ b.name }}</span><span style="font-size:13.5px;line-height:1.35;color:{{ b.previewFg }};display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">{{ b.preview }}</span></span>
+<span style="display:flex;flex-direction:column;align-items:flex-end;gap:8px;padding-top:2px"><span style="font-family:var(--font-mono);font-size:12px;color:var(--fg-subtle);font-variant-numeric:tabular-nums">{{ b.age }}</span><sc-if value="{{ b.unread }}"><span aria-label="Unread" style="width:8px;height:8px;border-radius:980px;background:var(--fg)"></span></sc-if></span>
+</button>
+</sc-for>
+</div>
+</div>
+</sc-for>
+<sc-if value="{{ botNoMatch }}"><p style="margin:0;padding:24px 20px;font-size:14px;color:var(--fg-muted)">No employees match.</p></sc-if>
+<div style="height:{{ listTail }}"></div>
+</sc-if>
+
+<sc-if value="{{ tabAccount }}">
+<sc-if value="{{ isIos }}" hint-placeholder-val="{{ true }}"><h1 style="margin:0;padding:8px 20px 0;font-family:var(--font-display);font-size:34px;font-weight:600;letter-spacing:-0.022em;line-height:1.15">Account</h1></sc-if>
+<div style="padding:16px 16px 0;display:flex;flex-direction:column;gap:24px">
+<div style="display:flex;align-items:center;gap:14px;padding:16px;border-radius:18px;background:var(--glass);backdrop-filter:var(--glass-blur);-webkit-backdrop-filter:var(--glass-blur);border:1px solid var(--glass-edge);box-shadow:inset 0 1px 0 var(--glass-hi)"><span class="op-avatar op-avatar--lg op-avatar--accent" style="width:44px;height:44px;font-size:15px">JP</span><span style="min-width:0;display:flex;flex-direction:column;gap:2px"><span style="font-size:16px;font-weight:500">Jordi Parra</span><span style="font-size:13px;color:var(--fg-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">jordiparra99@gmail.com</span></span></div>
+<div>
+<div style="padding:0 4px 8px;font-size:11px;text-transform:uppercase;letter-spacing:.02em;color:var(--fg-muted)">Appearance</div>
+<div style="border-radius:18px;overflow:hidden;background:var(--glass);backdrop-filter:var(--glass-blur);-webkit-backdrop-filter:var(--glass-blur);border:1px solid var(--glass-edge);box-shadow:inset 0 1px 0 var(--glass-hi)">
+<sc-for list="{{ themeRows }}" as="t" hint-placeholder-count="2">
+<button type="button" onClick="{{ t.pick }}" style="display:flex;align-items:center;gap:12px;width:100%;height:52px;padding:0 16px;border:0;border-top:{{ t.sep }};background:transparent;color:var(--fg);font:inherit;font-size:15px;text-align:left;cursor:pointer"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="{{ t.icon }}" size="17" hint-size="17px,17px"></x-import><span style="flex:1">{{ t.label }}</span><sc-if value="{{ t.on }}"><span style="display:flex;color:var(--primary)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="check" size="17" hint-size="17px,17px"></x-import></span></sc-if></button>
+</sc-for>
+</div>
+</div>
+<div style="border-radius:18px;overflow:hidden;background:var(--glass);backdrop-filter:var(--glass-blur);-webkit-backdrop-filter:var(--glass-blur);border:1px solid var(--glass-edge);box-shadow:inset 0 1px 0 var(--glass-hi)"><button type="button" onClick="{{ signOut }}" style="display:flex;align-items:center;gap:12px;width:100%;height:52px;padding:0 16px;border:0;background:transparent;color:var(--danger);font:inherit;font-size:15px;text-align:left;cursor:pointer"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="log-out" size="17" hint-size="17px,17px"></x-import>Sign out</button></div>
+</div>
+</sc-if>
+
+<sc-if value="{{ tabOther }}">
+<sc-if value="{{ isIos }}" hint-placeholder-val="{{ true }}"><h1 style="margin:0;padding:8px 20px 0;font-family:var(--font-display);font-size:34px;font-weight:600;letter-spacing:-0.022em;line-height:1.15">{{ tabTitle }}</h1></sc-if>
+<sc-if value="{{ tabPrs }}">
+<div style="padding:12px 16px 0"><div role="tablist" aria-label="Pull request views" style="display:flex;gap:2px;padding:3px;border-radius:980px;background:var(--active-surface)">
+<sc-for list="{{ prViews }}" as="v" hint-placeholder-count="3">
+<button role="tab" type="button" aria-selected="{{ v.sel }}" onClick="{{ v.pick }}" style="flex:1;min-width:0;display:flex;align-items:center;justify-content:center;gap:6px;height:36px;border:0;border-radius:980px;background:{{ v.bg }};color:{{ v.fg }};font:inherit;font-size:14px;cursor:pointer;transition:background 140ms cubic-bezier(.4,0,.2,1)">{{ v.label }}<span style="font-family:var(--font-mono);font-size:12px;opacity:.7">{{ v.count }}</span></button>
+</sc-for>
+</div></div>
+<div style="padding:12px 16px 0">
+<p style="margin:0 4px 10px;font-size:13px;line-height:1.4;color:var(--fg-muted);text-wrap:pretty">{{ prViewDesc }}</p>
+<div style="border-radius:18px;overflow:hidden;background:var(--glass);backdrop-filter:var(--glass-blur);-webkit-backdrop-filter:var(--glass-blur);border:1px solid var(--glass-edge);box-shadow:inset 0 1px 0 var(--glass-hi)">
+<sc-for list="{{ prRows }}" as="prow" hint-placeholder-count="4">
+<button type="button" onClick="{{ prow.open }}" style="display:grid;grid-template-columns:minmax(0,1fr) auto;column-gap:12px;width:100%;padding:12px 16px;border:0;border-top:{{ prow.sep }};background:transparent;color:var(--fg);font:inherit;text-align:left;cursor:pointer" style-active="background:var(--hover-surface)">
+<span style="min-width:0;display:flex;flex-direction:column;gap:4px">
+<span style="display:flex;align-items:center;gap:8px"><span style="font-family:var(--font-mono);font-size:12px;color:var(--fg-subtle)">{{ prow.ref }}</span><span style="height:20px;padding:0 8px;border-radius:980px;border:1px solid var(--border);font-size:11px;line-height:18px;color:var(--fg-muted)">{{ prow.lane }}</span></span>
+<span style="font-size:15px;font-weight:500;line-height:1.35;letter-spacing:-0.011em;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">{{ prow.title }}</span>
+<span style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--fg-muted);white-space:nowrap;overflow:hidden"><span style="overflow:hidden;text-overflow:ellipsis">{{ prow.author }}</span><span style="flex:none;width:6px;height:6px;border-radius:980px;background:{{ prow.ckColor }}"></span><span style="flex:none">{{ prow.ckLabel }}</span></span>
+</span>
+<span style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;font-family:var(--font-mono);font-size:12px;color:var(--fg-subtle);font-variant-numeric:tabular-nums"><span>{{ prow.age }}</span><span style="white-space:nowrap">+{{ prow.add }} −{{ prow.del }}</span></span>
+</button>
+</sc-for>
+<sc-if value="{{ prEmpty }}"><p style="margin:0;padding:20px 16px;font-size:14px;color:var(--fg-muted)">Nothing here. Pull requests that need you appear in To review.</p></sc-if>
+</div>
+</div>
+<div style="height:{{ listTail }}"></div>
+</sc-if>
+<sc-if value="{{ tabAuto }}">
+<div style="padding:12px 16px 0">
+<div style="border-radius:18px;overflow:hidden;background:var(--glass);backdrop-filter:var(--glass-blur);-webkit-backdrop-filter:var(--glass-blur);border:1px solid var(--glass-edge);box-shadow:inset 0 1px 0 var(--glass-hi)">
+<sc-for list="{{ rRows }}" as="r" hint-placeholder-count="5">
+<div role="button" tabIndex="0" onClick="{{ r.open }}" style="display:grid;grid-template-columns:32px minmax(0,1fr) auto;align-items:center;column-gap:12px;padding:12px 12px 12px 16px;border-top:{{ r.sep }};cursor:pointer" style-active="background:var(--hover-surface)">
+<span style="width:32px;height:32px;border-radius:980px;background:var(--control);color:var(--fg-muted);display:flex;align-items:center;justify-content:center;opacity:{{ r.op }}"><sc-if value="{{ r.isGh }}"><img src="./assets/brand/github.svg" alt="" style="width:15px;height:15px;filter:var(--brand-glyph-filter,none)"></sc-if><sc-if value="{{ r.isSched }}" hint-placeholder-val="{{ true }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="clock" size="15" hint-size="15px,15px"></x-import></sc-if></span>
+<span style="min-width:0;display:flex;flex-direction:column;gap:3px;opacity:{{ r.op }}"><span style="font-size:15px;letter-spacing:-0.011em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.name }}</span><span style="font-size:13px;color:var(--fg-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.trigger }}</span><span style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--fg-subtle)"><span style="flex:none;width:6px;height:6px;border-radius:980px;background:{{ r.lastColor }}"></span><span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.last }}</span></span></span>
+<label class="op-switch" onClick="{{ stop }}" aria-label="{{ r.switchLabel }}" style="padding:10px 4px"><input type="checkbox" checked="{{ r.active }}" onChange="{{ r.toggle }}"><span class="op-switch__track"><span class="op-switch__thumb"></span></span></label>
+</div>
+</sc-for>
+</div>
+</div>
+<div style="height:{{ listTail }}"></div>
+</sc-if>
+</sc-if>
+
+</div>
+
+<sc-if value="{{ showFab }}">
+<button class="op-btn op-btn--primary op-btn--lg" type="button" onClick="{{ onPlus }}" style="position:absolute;right:16px;bottom:96px;z-index:5;height:52px;gap:8px;padding:0 22px;box-shadow:var(--shadow-popover)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="plus" size="18" hint-size="18px,18px"></x-import>{{ plusLabel }}</button>
+</sc-if>
+
+<nav aria-label="Sections" style="position:absolute;left:12px;right:12px;bottom:{{ tabBottom }};z-index:6;display:flex;gap:2px;padding:5px;border-radius:980px;background:var(--glass);backdrop-filter:var(--glass-blur);-webkit-backdrop-filter:var(--glass-blur);border:1px solid var(--glass-edge);box-shadow:var(--shadow-popover),inset 0 1px 0 var(--glass-hi)">
+<sc-for list="{{ tabs }}" as="t" hint-placeholder-count="5">
+<button type="button" aria-current="{{ t.cur }}" onClick="{{ t.pick }}" style="flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;height:54px;padding:0 2px;border:0;border-radius:980px;background:{{ t.pill }};color:{{ t.fg }};font:inherit;font-size:{{ tabFs }};letter-spacing:-0.004em;cursor:pointer;transition:background 140ms cubic-bezier(.4,0,.2,1),color 80ms cubic-bezier(.4,0,.2,1)">
+<span style="position:relative;display:flex;align-items:center;justify-content:center;height:26px"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="{{ t.icon }}" size="22" hint-size="22px,22px"></x-import><sc-if value="{{ t.badge }}"><span style="position:absolute;top:-3px;left:15px;min-width:16px;height:16px;padding:0 4px;box-sizing:border-box;border-radius:980px;background:var(--fg);color:var(--background);font-family:var(--font-mono);font-size:10px;font-weight:600;line-height:16px;text-align:center;font-variant-numeric:tabular-nums">{{ t.badge }}</span></sc-if></span>
+<span style="max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ t.label }}</span>
+</button>
+</sc-for>
+</nav>
+</sc-if>
+
+<sc-if value="{{ inPr }}">
+<div style="position:relative;flex:1;min-height:0;display:flex;flex-direction:column;background:var(--background)">
+<div style="position:absolute;left:0;right:0;top:0;z-index:4;padding-top:{{ topPad }};background:color-mix(in srgb, var(--background) 72%, transparent);backdrop-filter:var(--glass-blur);-webkit-backdrop-filter:var(--glass-blur);border-bottom:1px solid var(--glass-edge)">
+<div style="display:flex;align-items:center;gap:4px;height:56px;padding:0 12px 0 6px">
+<button class="op-iconbtn op-iconbtn--lg" type="button" aria-label="Back to pull requests" onClick="{{ back }}" style="width:44px;height:44px"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="chevron-left" size="22" hint-size="22px,22px"></x-import></button>
+<span style="flex:1;min-width:0;font-family:var(--font-mono);font-size:13px;color:var(--fg-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ pr.ref }}</span>
+<button class="op-iconbtn op-iconbtn--lg" type="button" aria-label="Pull request actions" onClick="{{ openPrActions }}" style="width:44px;height:44px"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="ellipsis" size="20" hint-size="20px,20px"></x-import></button>
+</div>
+</div>
+<div ref="{{ termRef }}" style="flex:1;min-height:0;overflow-y:auto;scrollbar-width:none;display:flex;flex-direction:column;gap:22px;padding:{{ detTop }} 16px {{ detPadBottom }}">
+<div style="display:flex;flex-direction:column;gap:8px;padding:0 4px">
+<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><span style="height:22px;padding:0 9px;border-radius:980px;border:1px solid var(--border);font-size:12px;line-height:20px;color:var(--fg-muted)">{{ pr.lane }}</span><span style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--fg-muted)"><span style="width:7px;height:7px;border-radius:980px;background:{{ pr.ckColor }}"></span>{{ pr.ckLabel }}</span></div>
+<h1 style="margin:0;font-family:var(--font-display);font-size:24px;font-weight:600;letter-spacing:-0.018em;line-height:1.2;text-wrap:pretty">{{ pr.title }}</h1>
+<div style="display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;font-size:13px;color:var(--fg-muted)"><span>{{ pr.author }}</span><span style="display:flex;align-items:center;gap:5px;font-family:var(--font-mono);font-size:12px"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="git-branch" size="12" hint-size="12px,12px"></x-import>{{ pr.branch }}</span><span style="flex:none;white-space:nowrap;font-family:var(--font-mono);font-size:12px">+{{ pr.add }} −{{ pr.del }}</span></div>
+</div>
+<sc-if value="{{ pr.block }}"><div style="display:flex;gap:10px;padding:14px;border-radius:18px;background:var(--hover-surface);font-size:14.5px;line-height:1.45"><span style="flex:none;width:7px;height:7px;margin-top:7px;border-radius:980px;background:var(--warning)"></span><span style="text-wrap:pretty">{{ pr.block }}</span></div></sc-if>
+<div style="display:flex;flex-direction:column;gap:8px"><div style="padding:0 4px;font-size:11px;text-transform:uppercase;letter-spacing:.02em;color:var(--fg-muted)">Why this lane</div><p style="margin:0;padding:0 4px;font-size:14.5px;line-height:1.5;color:var(--fg);text-wrap:pretty">{{ pr.why }}</p></div>
+<div style="display:flex;flex-direction:column;gap:8px"><div style="padding:0 4px;font-size:11px;text-transform:uppercase;letter-spacing:.02em;color:var(--fg-muted)">What it changes</div>
+<div style="display:flex;flex-direction:column;gap:10px;padding:14px 16px;border-radius:18px;background:var(--glass);backdrop-filter:var(--glass-blur);-webkit-backdrop-filter:var(--glass-blur);border:1px solid var(--glass-edge);box-shadow:inset 0 1px 0 var(--glass-hi)"><sc-for list="{{ pr.bp }}" as="bpt" hint-placeholder-count="3"><div style="display:flex;gap:10px;font-size:14.5px;line-height:1.45"><span style="flex:none;width:4px;height:4px;margin-top:9px;border-radius:980px;background:var(--fg-muted)"></span><span style="text-wrap:pretty">{{ bpt.t }}</span></div></sc-for></div></div>
+<div style="display:flex;flex-direction:column;gap:8px"><div style="padding:0 4px;font-size:11px;text-transform:uppercase;letter-spacing:.02em;color:var(--fg-muted)">Review prep</div>
+<div style="border-radius:18px;overflow:hidden;background:var(--glass);backdrop-filter:var(--glass-blur);-webkit-backdrop-filter:var(--glass-blur);border:1px solid var(--glass-edge);box-shadow:inset 0 1px 0 var(--glass-hi)"><sc-for list="{{ pr.prep }}" as="prep" hint-placeholder-count="3"><div style="display:flex;align-items:center;gap:10px;min-height:48px;padding:0 16px;border-top:{{ prep.sep }}"><span style="flex:none;width:7px;height:7px;border-radius:980px;background:{{ prep.color }}"></span><span style="flex:1;min-width:0;font-size:14.5px">{{ prep.label }}</span><span style="font-family:var(--font-mono);font-size:12px;color:var(--fg-muted)">{{ prep.value }}</span></div></sc-for></div></div>
+<sc-if value="{{ pr.hasFindings }}"><div style="display:flex;flex-direction:column;gap:8px"><div style="padding:0 4px;font-size:11px;text-transform:uppercase;letter-spacing:.02em;color:var(--fg-muted)">Findings · {{ pr.findingCount }}</div>
+<sc-for list="{{ pr.findings }}" as="finding" hint-placeholder-count="2"><div style="display:flex;flex-direction:column;gap:6px;padding:14px 16px;border-radius:18px;background:var(--glass);backdrop-filter:var(--glass-blur);-webkit-backdrop-filter:var(--glass-blur);border:1px solid var(--glass-edge);box-shadow:inset 0 1px 0 var(--glass-hi)"><span style="font-family:var(--font-mono);font-size:12px;color:var(--fg-muted);overflow-wrap:anywhere">{{ finding.path }}</span><span style="font-size:14.5px;line-height:1.45;text-wrap:pretty">{{ finding.text }}</span></div></sc-for></div></sc-if>
+</div>
+<div style="position:absolute;left:8px;right:8px;bottom:{{ dockBottom }};z-index:4;display:flex;gap:8px;padding:10px;border-radius:28px;background:var(--glass);backdrop-filter:var(--glass-blur);-webkit-backdrop-filter:var(--glass-blur);border:1px solid var(--glass-edge);box-shadow:var(--shadow-popover),inset 0 1px 0 var(--glass-hi)">
+<sc-if value="{{ pr.canMerge }}" hint-placeholder-val="{{ true }}"><button class="op-btn op-btn--secondary op-btn--lg" type="button" onClick="{{ prChanges }}" style="flex:1;height:48px">Request changes</button><button class="op-btn op-btn--primary op-btn--lg" type="button" onClick="{{ prMerge }}" disabled="{{ pr.mergeOff }}" style="flex:1;height:48px">Merge</button></sc-if>
+<sc-if value="{{ pr.waitAct }}"><button class="op-btn op-btn--secondary op-btn--lg op-btn--block" type="button" onClick="{{ prNudge }}" style="height:48px">{{ pr.waitAct }}</button></sc-if>
+<sc-if value="{{ pr.quiet }}"><div style="flex:1;display:flex;align-items:center;justify-content:center;gap:8px;height:48px;font-size:14px;color:var(--fg-muted)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="{{ pr.quietIcon }}" size="15" hint-size="15px,15px"></x-import>{{ pr.quiet }}</div></sc-if>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ inAuto }}">
+<div style="position:relative;flex:1;min-height:0;display:flex;flex-direction:column;background:var(--background)">
+<div style="position:absolute;left:0;right:0;top:0;z-index:4;padding-top:{{ topPad }};background:color-mix(in srgb, var(--background) 72%, transparent);backdrop-filter:var(--glass-blur);-webkit-backdrop-filter:var(--glass-blur);border-bottom:1px solid var(--glass-edge)">
+<div style="display:flex;align-items:center;gap:4px;height:56px;padding:0 12px 0 6px">
+<button class="op-iconbtn op-iconbtn--lg" type="button" aria-label="Back to automations" onClick="{{ back }}" style="width:44px;height:44px"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="chevron-left" size="22" hint-size="22px,22px"></x-import></button>
+<span style="flex:1;min-width:0;font-size:16px;font-weight:600;letter-spacing:-0.012em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ rt.name }}</span>
+<button class="op-iconbtn op-iconbtn--lg" type="button" aria-label="Automation actions" onClick="{{ openAutoActions }}" style="width:44px;height:44px"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="ellipsis" size="20" hint-size="20px,20px"></x-import></button>
+</div>
+</div>
+<div style="flex:1;min-height:0;overflow-y:auto;scrollbar-width:none;display:flex;flex-direction:column;gap:22px;padding:{{ detTop }} 16px {{ detPadBottom }}">
+<label class="op-switch" style="display:flex;justify-content:space-between;min-height:52px;padding:0 16px;border-radius:18px;background:var(--glass);backdrop-filter:var(--glass-blur);-webkit-backdrop-filter:var(--glass-blur);border:1px solid var(--glass-edge);box-shadow:inset 0 1px 0 var(--glass-hi);font-size:15px"><span style="display:flex;flex-direction:column;gap:2px"><span>Active</span><span style="font-size:12.5px;color:var(--fg-muted)">{{ rt.nextLabel }}</span></span><input type="checkbox" checked="{{ rt.active }}" onChange="{{ rt.toggle }}"><span class="op-switch__track"><span class="op-switch__thumb"></span></span></label>
+<div style="display:flex;flex-direction:column;gap:8px"><div style="padding:0 4px;font-size:11px;text-transform:uppercase;letter-spacing:.02em;color:var(--fg-muted)">Trigger</div><div style="display:flex;align-items:center;gap:12px;padding:14px 16px;border-radius:18px;background:var(--glass);backdrop-filter:var(--glass-blur);-webkit-backdrop-filter:var(--glass-blur);border:1px solid var(--glass-edge);box-shadow:inset 0 1px 0 var(--glass-hi);font-size:14.5px;line-height:1.4"><span style="flex:none;display:flex;color:var(--fg-muted)"><sc-if value="{{ rt.isGh }}"><img src="./assets/brand/github.svg" alt="" style="width:16px;height:16px;filter:var(--brand-glyph-filter,none)"></sc-if><sc-if value="{{ rt.isSched }}" hint-placeholder-val="{{ true }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="clock" size="16" hint-size="16px,16px"></x-import></sc-if></span><span style="text-wrap:pretty">{{ rt.trigger }}</span></div></div>
+<div style="display:flex;flex-direction:column;gap:8px"><div style="padding:0 4px;font-size:11px;text-transform:uppercase;letter-spacing:.02em;color:var(--fg-muted)">Instructions</div><p style="margin:0;padding:14px 16px;border-radius:18px;background:var(--glass);backdrop-filter:var(--glass-blur);-webkit-backdrop-filter:var(--glass-blur);border:1px solid var(--glass-edge);box-shadow:inset 0 1px 0 var(--glass-hi);font-size:14.5px;line-height:1.5;text-wrap:pretty">{{ rt.prompt }}</p></div>
+<div style="display:flex;flex-direction:column;gap:8px"><div style="padding:0 4px;font-size:11px;text-transform:uppercase;letter-spacing:.02em;color:var(--fg-muted)">Where it runs</div>
+<div style="border-radius:18px;overflow:hidden;background:var(--glass);backdrop-filter:var(--glass-blur);-webkit-backdrop-filter:var(--glass-blur);border:1px solid var(--glass-edge);box-shadow:inset 0 1px 0 var(--glass-hi)"><sc-for list="{{ rt.where }}" as="w" hint-placeholder-count="3"><div style="display:flex;align-items:center;gap:12px;min-height:48px;padding:0 16px;border-top:{{ w.sep }}"><span style="flex:1;font-size:14.5px">{{ w.label }}</span><span style="font-family:var(--font-mono);font-size:12.5px;color:var(--fg-muted)">{{ w.value }}</span></div></sc-for></div></div>
+<div style="display:flex;flex-direction:column;gap:8px"><div style="padding:0 4px;font-size:11px;text-transform:uppercase;letter-spacing:.02em;color:var(--fg-muted)">Recent runs</div>
+<div style="border-radius:18px;overflow:hidden;background:var(--glass);backdrop-filter:var(--glass-blur);-webkit-backdrop-filter:var(--glass-blur);border:1px solid var(--glass-edge);box-shadow:inset 0 1px 0 var(--glass-hi)"><sc-for list="{{ rt.runs }}" as="run" hint-placeholder-count="3"><div style="display:grid;grid-template-columns:minmax(0,1fr) auto;column-gap:12px;align-items:center;min-height:56px;padding:8px 16px;border-top:{{ run.sep }}"><span style="min-width:0;display:flex;flex-direction:column;gap:2px"><span style="display:flex;align-items:center;gap:7px;font-size:14.5px"><span style="flex:none;width:7px;height:7px;border-radius:980px;background:{{ run.color }}"></span>{{ run.word }}</span><span style="font-size:12.5px;color:var(--fg-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ run.cause }}</span></span><span style="display:flex;flex-direction:column;align-items:flex-end;gap:2px;font-family:var(--font-mono);font-size:12px;color:var(--fg-subtle)"><span>{{ run.when }}</span><span>{{ run.dur }}</span></span></div></sc-for></div></div>
+</div>
+<div style="position:absolute;left:8px;right:8px;bottom:{{ dockBottom }};z-index:4;display:flex;padding:10px;border-radius:28px;background:var(--glass);backdrop-filter:var(--glass-blur);-webkit-backdrop-filter:var(--glass-blur);border:1px solid var(--glass-edge);box-shadow:var(--shadow-popover),inset 0 1px 0 var(--glass-hi)">
+<button class="op-btn op-btn--primary op-btn--lg op-btn--block" type="button" onClick="{{ runNow }}" disabled="{{ rt.runOff }}" style="height:48px;gap:8px"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="play" size="15" hint-size="15px,15px"></x-import>{{ rt.runLabel }}</button>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ inBot }}">
+<div style="position:relative;flex:1;min-height:0;display:flex;flex-direction:column;background:var(--background)">
+<div style="position:absolute;left:0;right:0;top:0;z-index:4;padding-top:{{ topPad }};background:color-mix(in srgb, var(--background) 72%, transparent);backdrop-filter:var(--glass-blur);-webkit-backdrop-filter:var(--glass-blur);border-bottom:1px solid var(--glass-edge)">
+<div style="display:flex;align-items:center;gap:8px;height:60px;padding:0 12px 0 6px">
+<button class="op-iconbtn op-iconbtn--lg" type="button" aria-label="Back to employees" onClick="{{ back }}" style="width:44px;height:44px"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="chevron-left" size="22" hint-size="22px,22px"></x-import></button>
+<span style="position:relative;flex:none;width:36px;height:36px;border-radius:980px;background:{{ bot.bg }};color:{{ bot.fg }};display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600">{{ bot.ini }}<span style="position:absolute;right:-1px;bottom:-1px;width:11px;height:11px;box-sizing:border-box;border-radius:980px;border:2px solid var(--background);background:{{ bot.color }}"></span></span>
+<div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px">
+<span style="font-size:16px;font-weight:600;letter-spacing:-0.012em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ bot.name }}</span>
+<span style="font-size:12.5px;color:var(--fg-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ bot.sub }}</span>
+</div>
+<button class="op-iconbtn op-iconbtn--lg" type="button" aria-label="Employee actions" onClick="{{ openBotActions }}" style="width:44px;height:44px"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="ellipsis" size="20" hint-size="20px,20px"></x-import></button>
+</div>
+</div>
+
+<div ref="{{ termRef }}" style="flex:1;min-height:0;overflow-y:auto;scrollbar-width:none;overscroll-behavior:contain;display:flex;flex-direction:column;gap:16px;padding:{{ botTop }} 16px {{ botPadBottom }}">
+<sc-for list="{{ botMsgs }}" as="m" hint-placeholder-count="5">
+<sc-if value="{{ m.isUser }}"><div style="align-self:flex-end;max-width:82%;display:flex;flex-direction:column;align-items:flex-end;gap:6px"><sc-if value="{{ m.hasFiles }}"><div style="display:flex;flex-wrap:wrap;justify-content:flex-end;gap:6px"><sc-for list="{{ m.files }}" as="f" hint-placeholder-count="1"><span style="display:flex;align-items:center;gap:8px;height:34px;padding:0 12px;border-radius:980px;border:1px solid var(--border-subtle);font-size:13px"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="{{ f.icon }}" size="14" hint-size="14px,14px"></x-import>{{ f.name }}<span style="font-family:var(--font-mono);font-size:11.5px;color:var(--fg-subtle)">{{ f.size }}</span></span></sc-for></div></sc-if><sc-if value="{{ m.text }}"><div style="padding:10px 14px;border-radius:18px;background:var(--active-surface);font-size:15px;line-height:1.45;text-wrap:pretty">{{ m.text }}</div></sc-if></div></sc-if>
+<sc-if value="{{ m.isAsst }}"><div style="display:flex;flex-direction:column;gap:6px"><p style="margin:0;font-size:15px;line-height:1.5;letter-spacing:-0.011em;text-wrap:pretty"><sc-for list="{{ m.spans }}" as="sp" hint-placeholder-count="1"><sc-if value="{{ sp.code }}"><code style="font-family:var(--font-mono);font-size:13px;padding:1px 5px;border-radius:6px;background:var(--active-surface)">{{ sp.t }}</code></sc-if><sc-if value="{{ sp.bold }}"><strong style="font-weight:600">{{ sp.t }}</strong></sc-if><sc-if value="{{ sp.plain }}"><span>{{ sp.t }}</span></sc-if></sc-for></p><sc-if value="{{ m.meta }}"><span style="font-family:var(--font-mono);font-size:11.5px;color:var(--fg-subtle)">{{ m.meta }}</span></sc-if></div></sc-if>
+<sc-if value="{{ m.isWork }}"><div style="display:flex;flex-direction:column;align-items:flex-start;gap:6px">
+<button type="button" onClick="{{ m.toggle }}" aria-expanded="{{ m.openS }}" style="display:flex;align-items:center;gap:8px;max-width:100%;height:36px;padding:0 12px;border:0;border-radius:980px;background:var(--active-surface);color:var(--fg-muted);font:inherit;font-size:13px;cursor:pointer"><sc-if value="{{ m.live }}"><span style="font-family:var(--font-mono);color:var(--fg)">{{ spinner }}</span></sc-if><span style="color:var(--fg)">{{ m.label }}</span><span style="font-family:var(--font-mono);font-size:12px">{{ m.count }}</span><span style="display:flex;flex:none;transition:transform 140ms cubic-bezier(.4,0,.2,1);transform:rotate({{ m.rot }})"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="chevron-down" size="13" hint-size="13px,13px"></x-import></span></button>
+<sc-if value="{{ m.open }}"><div style="align-self:stretch;display:flex;flex-direction:column;padding:6px 0;border-radius:14px;background:var(--hover-surface);animation:op-fade-in 140ms cubic-bezier(.16,1,.3,1)">
+<sc-for list="{{ m.steps }}" as="st" hint-placeholder-count="3">
+<div style="display:grid;grid-template-columns:16px minmax(0,1fr) auto;column-gap:10px;align-items:start;padding:6px 12px">
+<span style="display:flex;padding-top:2px;color:var(--fg-subtle)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="{{ st.icon }}" size="13" hint-size="13px,13px"></x-import></span>
+<span style="min-width:0;display:flex;flex-direction:column;gap:3px;font-size:13.5px"><span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ st.verb }} <span style="font-family:var(--font-mono);font-size:12.5px;color:var(--fg-muted)">{{ st.target }}</span></span><sc-if value="{{ st.note }}"><span style="font-size:12.5px;line-height:1.45;color:var(--fg-muted);text-wrap:pretty">{{ st.note }}</span></sc-if></span>
+<span style="font-family:var(--font-mono);font-size:12px;color:{{ st.metaFg }};white-space:nowrap;padding-top:1px">{{ st.meta }}</span>
+</div>
+</sc-for>
+</div></sc-if>
+</div></sc-if>
+<sc-if value="{{ m.isPeer }}"><div style="display:flex;flex-direction:column;gap:8px;padding:12px 14px;border-radius:18px;background:var(--hover-surface)"><div style="display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--fg-muted)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="bot" size="13" hint-size="13px,13px"></x-import>Asked {{ m.peer }} · {{ m.time }}</div><p style="margin:0;font-size:14px;line-height:1.45">{{ m.q }}</p><p style="margin:0;font-size:14px;line-height:1.45;color:var(--fg-muted)">{{ m.a }}</p></div></sc-if>
+<sc-if value="{{ m.isEvent }}"><div style="display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:6px 10px;padding:0 8px;font-size:12.5px;color:var(--fg-muted);text-align:center"><span style="display:flex;align-items:center;gap:6px"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="{{ m.icon }}" size="13" hint-size="13px,13px"></x-import>{{ m.text }}</span><sc-if value="{{ m.link }}"><a href="#open" onClick="{{ m.go }}" style="font-size:12.5px">{{ m.link }}</a></sc-if></div></sc-if>
+<sc-if value="{{ m.isProposal }}"><div style="display:flex;flex-direction:column;gap:12px;padding:14px;border-radius:18px;background:var(--glass);backdrop-filter:var(--glass-blur);-webkit-backdrop-filter:var(--glass-blur);border:1px solid var(--glass-edge);box-shadow:inset 0 1px 0 var(--glass-hi)">
+<div style="display:flex;align-items:center;gap:8px;font-size:11px;text-transform:uppercase;letter-spacing:.02em;color:var(--fg-muted)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="file-text" size="13" hint-size="13px,13px"></x-import>INSTRUCTIONS.md · revision 1</div>
+<div class="op-term" style="height:auto;max-height:200px;overflow-y:auto;padding:10px 12px;border-radius:14px;background:var(--hover-surface);font-size:12px;scrollbar-width:none"><sc-for list="{{ m.lines }}" as="pl" hint-placeholder-count="6"><div class="op-term__line" data-tone="{{ pl.tone }}">{{ pl.t }}</div></sc-for></div>
+<sc-if value="{{ m.pending }}"><div style="display:flex;gap:8px"><button class="op-btn op-btn--primary op-btn--lg" type="button" onClick="{{ m.accept }}" style="flex:1;height:44px">Accept</button><button class="op-btn op-btn--secondary op-btn--lg" type="button" onClick="{{ m.edit }}" style="flex:1;height:44px">Edit</button></div></sc-if>
+<sc-if value="{{ m.accepted }}"><div style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--fg-muted)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="check" size="14" hint-size="14px,14px"></x-import>Accepted as revision 1</div></sc-if>
+</div></sc-if>
+</sc-for>
+</div>
+
+<div style="position:absolute;left:8px;right:8px;bottom:{{ dockBottom }};z-index:4;display:flex;flex-direction:column;gap:12px;padding:10px;border-radius:28px;background:var(--glass);backdrop-filter:var(--glass-blur);-webkit-backdrop-filter:var(--glass-blur);border:1px solid var(--glass-edge);box-shadow:var(--shadow-popover),inset 0 1px 0 var(--glass-hi)">
+<sc-if value="{{ botHasGoal }}"><div style="display:flex;flex-direction:column;gap:8px;padding:4px 6px 0"><div style="display:flex;align-items:center;gap:10px"><span style="flex:none;font-size:11px;text-transform:uppercase;letter-spacing:.02em;color:var(--fg-muted)">Goal</span><span style="flex:1;min-width:0;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ goal.objective }}</span><span style="flex:none;font-family:var(--font-mono);font-size:12px;color:var(--fg-muted)">{{ goal.step }} of {{ goal.limit }}</span><button class="op-btn op-btn--ghost op-btn--sm" type="button" onClick="{{ stopGoal }}" style="flex:none;height:32px">Stop</button></div><div style="height:3px;border-radius:980px;background:var(--active-surface);overflow:hidden"><div style="height:100%;width:{{ goal.pct }};border-radius:980px;background:var(--fg-muted);transition:width 400ms cubic-bezier(.4,0,.2,1)"></div></div></div></sc-if>
+<sc-if value="{{ botHasPend }}"><div style="display:flex;flex-direction:column;gap:10px;padding:6px 4px 0;animation:op-fade-in 220ms cubic-bezier(.16,1,.3,1)">
+<div style="display:flex;align-items:center;gap:8px;font-size:11px;text-transform:uppercase;letter-spacing:.02em;color:var(--fg-muted)"><span style="width:7px;height:7px;border-radius:980px;background:var(--warning)"></span>Needs approval · {{ pend.tool }}</div>
+<p style="margin:0;font-size:15px;line-height:1.4">{{ pend.prompt }}</p>
+<code style="display:block;padding:9px 12px;border-radius:10px;background:var(--hover-surface);font-family:var(--font-mono);font-size:12.5px;color:var(--fg);overflow-x:auto;white-space:nowrap;scrollbar-width:none">{{ pend.detail }}</code>
+<button class="op-btn op-btn--primary op-btn--lg op-btn--block" type="button" onClick="{{ approve }}" style="height:44px">Approve</button>
+<div style="display:flex;gap:8px"><button class="op-btn op-btn--secondary op-btn--lg" type="button" onClick="{{ alwaysAllow }}" style="flex:1;height:44px">Always allow</button><button class="op-btn op-btn--secondary op-btn--lg" type="button" onClick="{{ deny }}" style="flex:1;height:44px">Deny</button></div>
+</div></sc-if>
+<sc-if value="{{ attachOpen }}"><div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;animation:op-fade-in 140ms cubic-bezier(.16,1,.3,1)">
+<sc-for list="{{ attachOpts }}" as="ao" hint-placeholder-count="3">
+<button type="button" onClick="{{ ao.pick }}" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;height:72px;border:0;border-radius:18px;background:var(--active-surface);color:var(--fg);font:inherit;font-size:12.5px;cursor:pointer" style-active="background:var(--control-active)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="{{ ao.icon }}" size="19" hint-size="19px,19px"></x-import>{{ ao.label }}</button>
+</sc-for>
+</div></sc-if>
+<sc-if value="{{ hasFiles }}"><div style="display:flex;gap:6px;overflow-x:auto;scrollbar-width:none">
+<sc-for list="{{ files }}" as="f" hint-placeholder-count="1">
+<span style="flex:none;display:flex;align-items:center;gap:8px;height:36px;padding:0 4px 0 12px;border-radius:980px;background:var(--active-surface);font-size:13px"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="{{ f.icon }}" size="14" hint-size="14px,14px"></x-import><span style="max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ f.name }}</span><span style="font-family:var(--font-mono);font-size:11.5px;color:var(--fg-subtle)">{{ f.size }}</span><button type="button" aria-label="Remove {{ f.name }}" onClick="{{ f.remove }}" style="display:flex;align-items:center;justify-content:center;width:28px;height:28px;border:0;border-radius:980px;background:transparent;color:var(--fg-muted);cursor:pointer"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="x" size="13" hint-size="13px,13px"></x-import></button></span>
+</sc-for>
+</div></sc-if>
+<sc-if value="{{ notRec }}" hint-placeholder-val="{{ true }}">
+<div style="display:flex;align-items:center;gap:6px">
+<button type="button" aria-label="Attach" aria-expanded="{{ attachOpenS }}" onClick="{{ toggleAttach }}" style="flex:none;width:44px;height:44px;display:flex;align-items:center;justify-content:center;border:0;border-radius:980px;background:var(--active-surface);color:var(--fg);cursor:pointer;transition:transform 140ms cubic-bezier(.4,0,.2,1);transform:rotate({{ attachRot }})"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="plus" size="20" hint-size="20px,20px"></x-import></button>
+<div style="flex:1;min-width:0;display:flex;align-items:center;height:44px;padding:0 4px 0 16px;box-sizing:border-box;border-radius:980px;background:var(--field);border:1px solid var(--field-border)">
+<input type="text" aria-label="Message" placeholder="{{ botPh }}" value="{{ botDraft }}" onChange="{{ setBotDraft }}" onKeyDown="{{ botKey }}" style="flex:1;min-width:0;height:100%;padding:0;border:0;outline:none;background:transparent;color:var(--fg);font-family:var(--font-sans);font-size:16px">
+<sc-if value="{{ showMic }}" hint-placeholder-val="{{ true }}"><button type="button" aria-label="Dictate" onClick="{{ startRec }}" style="flex:none;width:36px;height:36px;display:flex;align-items:center;justify-content:center;border:0;border-radius:980px;background:transparent;color:var(--fg-muted);cursor:pointer"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="mic" size="18" hint-size="18px,18px"></x-import></button></sc-if>
+</div>
+<sc-if value="{{ showSend }}"><button type="button" aria-label="Send" onClick="{{ botSend }}" style="flex:none;width:44px;height:44px;display:flex;align-items:center;justify-content:center;border:0;border-radius:980px;background:var(--fg);color:var(--background);cursor:pointer;animation:op-fade-in 140ms cubic-bezier(.16,1,.3,1)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="arrow-up" size="20" hint-size="20px,20px"></x-import></button></sc-if>
+</div>
+</sc-if>
+<sc-if value="{{ isRec }}">
+<div style="display:flex;align-items:center;gap:6px;animation:op-fade-in 140ms cubic-bezier(.16,1,.3,1)">
+<button type="button" aria-label="Cancel dictation" onClick="{{ cancelRec }}" style="flex:none;width:44px;height:44px;display:flex;align-items:center;justify-content:center;border:0;border-radius:980px;background:var(--active-surface);color:var(--fg);cursor:pointer"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="x" size="18" hint-size="18px,18px"></x-import></button>
+<div style="flex:1;min-width:0;display:flex;align-items:center;gap:10px;height:44px;padding:0 16px;box-sizing:border-box;border-radius:980px;background:var(--field);border:1px solid var(--field-border)">
+<span style="flex:none;width:8px;height:8px;border-radius:980px;background:var(--danger);opacity:{{ recDot }}"></span>
+<span style="flex:none;font-family:var(--font-mono);font-size:13px;font-variant-numeric:tabular-nums;color:var(--fg)">{{ recTime }}</span>
+<div aria-hidden="true" style="flex:1;min-width:0;height:24px;display:flex;align-items:center;justify-content:flex-end;gap:2px;overflow:hidden"><sc-for list="{{ wave }}" as="w" hint-placeholder-count="24"><span style="flex:none;width:3px;height:{{ w }};border-radius:980px;background:var(--fg-muted);transition:height 120ms linear"></span></sc-for></div>
+</div>
+<button type="button" aria-label="Finish dictation" onClick="{{ finishRec }}" style="flex:none;width:44px;height:44px;display:flex;align-items:center;justify-content:center;border:0;border-radius:980px;background:var(--fg);color:var(--background);cursor:pointer"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="check" size="20" hint-size="20px,20px"></x-import></button>
+</div>
+</sc-if>
+<sc-if value="{{ transcribing }}"><div style="padding:0 8px;font-size:12.5px;color:var(--fg-muted)">{{ spinner }} Transcribing</div></sc-if>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ inSession }}">
+<div style="position:relative;flex:1;min-height:0;display:flex;flex-direction:column;background:var(--term-bg)">
+<div style="position:absolute;left:0;right:0;top:0;z-index:4;padding-top:{{ topPad }};background:color-mix(in srgb, var(--term-bg) 70%, transparent);backdrop-filter:var(--glass-blur);-webkit-backdrop-filter:var(--glass-blur);border-bottom:1px solid var(--glass-edge)">
+<div style="display:flex;align-items:center;gap:2px;height:56px;padding:0 6px">
+<button class="op-iconbtn op-iconbtn--lg" type="button" aria-label="Back to sessions" onClick="{{ back }}" style="width:44px;height:44px"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="chevron-left" size="22" hint-size="22px,22px"></x-import></button>
+<div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px">
+<span style="font-size:16px;font-weight:600;letter-spacing:-0.012em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ cur.name }}</span>
+<span style="display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--fg-muted);white-space:nowrap;overflow:hidden"><span style="flex:none;width:7px;height:7px;border-radius:980px;background:{{ cur.color }}"></span>{{ cur.sub }}</span>
+</div>
+<button class="op-iconbtn op-iconbtn--lg" type="button" aria-label="Session actions" onClick="{{ openActions }}" style="width:44px;height:44px"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="ellipsis" size="20" hint-size="20px,20px"></x-import></button>
+</div>
+<div style="display:flex;align-items:center;gap:12px;height:44px;padding:0 10px 6px 16px">
+<div style="flex:1;min-width:0;display:flex;align-items:center;gap:14px;font-family:var(--font-mono);font-size:11.5px;color:var(--fg-muted);white-space:nowrap;overflow:hidden">
+<span style="display:flex;align-items:center;gap:6px;min-width:0;overflow:hidden"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="git-branch" size="12" hint-size="12px,12px"></x-import><span style="min-width:0;overflow:hidden;text-overflow:ellipsis">{{ cur.branch }}</span></span>
+<span style="display:flex;align-items:center;gap:6px;flex:none"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="clock" size="12" hint-size="12px,12px"></x-import>{{ cur.age }}</span>
+</div>
+<div role="tablist" aria-label="View" style="flex:none;display:flex;gap:2px;padding:3px;border-radius:980px;background:var(--active-surface)">
+<button role="tab" type="button" aria-selected="{{ modeTermOn }}" onClick="{{ setTerm }}" style="height:32px;padding:0 12px;border:0;border-radius:980px;background:{{ modeTermBg }};color:{{ modeTermFg }};font:inherit;font-size:13px;cursor:pointer;transition:background 140ms cubic-bezier(.4,0,.2,1)">Terminal</button>
+<button role="tab" type="button" aria-selected="{{ modeChatOn }}" onClick="{{ setChat }}" style="height:32px;padding:0 12px;border:0;border-radius:980px;background:{{ modeChatBg }};color:{{ modeChatFg }};font:inherit;font-size:13px;cursor:pointer;transition:background 140ms cubic-bezier(.4,0,.2,1)">Chat</button>
+</div>
+</div>
+</div>
+
+<sc-if value="{{ provisioning }}">
+<div class="op-provision" style="align-items:flex-start;padding-top:{{ sessTop }}">
+<div class="op-provision__inner" style="margin:0;padding:28px 24px">
+<div class="op-provision__eyebrow">Queued · {{ cur.host }}</div>
+<div class="op-provision__title">Preparing the session</div>
+<div class="op-provision__sub">The terminal opens when the agent is ready.</div>
+<div class="op-steps">
+<sc-for list="{{ provSteps }}" as="st" hint-placeholder-count="4">
+<div class="op-step" data-state="{{ st.state }}"><div class="op-step__rail"><span class="op-step__mark">{{ st.mark }}</span><span class="op-step__line"></span></div><div class="op-step__body"><span class="op-step__label">{{ st.label }}</span><span class="op-step__meta">{{ st.meta }}</span></div></div>
+</sc-for>
+</div>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ live }}" hint-placeholder-val="{{ true }}">
+<div class="op-term" style="flex:1;min-height:0;height:auto;font-size:12.5px;background:transparent">
+<sc-if value="{{ isTerm }}" hint-placeholder-val="{{ true }}">
+<div class="op-term__scroll" ref="{{ termRef }}" style="padding:{{ sessTop }} 16px {{ termPadBottom }};scrollbar-width:none">
+<sc-for list="{{ termLines }}" as="ln" hint-placeholder-count="10">
+<sc-if value="{{ ln.isCmd }}"><div class="op-term__line op-term__cmd">{{ ln.text }}</div></sc-if>
+<sc-if value="{{ ln.isTurn }}"><div class="op-term__turn"><div class="op-term__turnbody">{{ ln.text }}</div></div></sc-if>
+<sc-if value="{{ ln.isYou }}"><div class="op-term__line" data-tone="accent" style="margin:10px 0">› {{ ln.text }}</div></sc-if>
+<sc-if value="{{ ln.isLine }}"><div class="op-term__line" data-tone="{{ ln.tone }}">{{ ln.text }}</div></sc-if>
+</sc-for>
+<sc-if value="{{ working }}"><div class="op-term__line" data-tone="dim" style="margin-top:6px">{{ spinner }} working</div></sc-if>
+</div>
+</sc-if>
+<sc-if value="{{ isChat }}">
+<div class="op-term__scroll" ref="{{ termRef }}" style="padding:{{ sessTop }} 16px {{ termPadBottom }};scrollbar-width:none;display:flex;flex-direction:column;gap:14px;font-family:var(--font-sans);color:var(--fg)">
+<sc-for list="{{ chatItems }}" as="it" hint-placeholder-count="6">
+<sc-if value="{{ it.isTool }}"><div style="display:flex;flex-direction:column;align-items:flex-start;gap:6px">
+<button type="button" onClick="{{ it.toggle }}" aria-expanded="{{ it.openS }}" style="display:flex;align-items:center;gap:8px;max-width:100%;height:36px;padding:0 12px;border:0;border-radius:980px;background:var(--active-surface);color:var(--fg-muted);font:inherit;font-size:13px;cursor:pointer"><span style="display:flex;flex:none"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="terminal" size="13" hint-size="13px,13px"></x-import></span><span style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ it.summary }}</span><sc-if value="{{ it.failText }}"><span style="display:flex;align-items:center;gap:5px;flex:none;color:var(--fg)"><span style="width:6px;height:6px;border-radius:980px;background:var(--danger)"></span>{{ it.failText }}</span></sc-if><span style="display:flex;flex:none;transition:transform 140ms cubic-bezier(.4,0,.2,1);transform:rotate({{ it.rot }})"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="chevron-down" size="13" hint-size="13px,13px"></x-import></span></button>
+<sc-if value="{{ it.open }}"><div style="align-self:stretch;padding:10px 12px;border-radius:14px;background:var(--hover-surface);font-family:var(--font-mono);font-size:12px;line-height:1.55;animation:op-fade-in 140ms cubic-bezier(.16,1,.3,1)"><sc-for list="{{ it.lines }}" as="tl" hint-placeholder-count="3"><div class="op-term__line" data-tone="{{ tl.tone }}">{{ tl.text }}</div></sc-for></div></sc-if>
+</div></sc-if>
+<sc-if value="{{ it.isAgent }}"><div style="display:flex;gap:10px;align-items:flex-start"><span style="flex:none;width:24px;height:24px;margin-top:1px;border-radius:980px;background:var(--control);display:flex;align-items:center;justify-content:center"><img src="{{ cur.logo }}" alt="" style="width:13px;height:13px;object-fit:contain;filter:{{ cur.logoFilter }}"></span><p style="margin:0;min-width:0;font-size:15px;line-height:1.5;letter-spacing:-0.011em;text-wrap:pretty">{{ it.text }}</p></div></sc-if>
+<sc-if value="{{ it.isYou }}"><div style="align-self:flex-end;max-width:82%;padding:10px 14px;border-radius:18px;background:var(--active-surface);font-size:15px;line-height:1.45">{{ it.text }}</div></sc-if>
+</sc-for>
+<sc-if value="{{ working }}"><div style="font-size:13px;color:var(--fg-muted)">{{ spinner }} Working</div></sc-if>
+</div>
+</sc-if>
+
+<div style="position:absolute;left:8px;right:8px;bottom:{{ dockBottom }};z-index:4;display:flex;flex-direction:column;gap:10px;padding:10px 0;border-radius:28px;background:var(--glass);backdrop-filter:var(--glass-blur);-webkit-backdrop-filter:var(--glass-blur);border:1px solid var(--glass-edge);box-shadow:var(--shadow-popover),inset 0 1px 0 var(--glass-hi)">
+<sc-if value="{{ hasAsk }}">
+<div style="display:flex;flex-direction:column;gap:10px;padding:6px 14px 4px;font-family:var(--font-sans);animation:op-fade-in 220ms cubic-bezier(.16,1,.3,1)">
+<div style="display:flex;align-items:center;gap:8px;font-size:11px;text-transform:uppercase;letter-spacing:.02em;color:var(--fg-muted)"><span style="width:7px;height:7px;border-radius:980px;background:var(--warning)"></span>Needs input</div>
+<p style="margin:0;font-size:15px;line-height:1.4;color:var(--fg);text-wrap:pretty">{{ ask.q }}</p>
+<div style="display:flex;flex-direction:column;gap:8px">
+<sc-for list="{{ ask.options }}" as="o" hint-placeholder-count="2">
+<button class="op-btn op-btn--secondary op-btn--lg op-btn--block" type="button" onClick="{{ o.pick }}" style="height:44px;justify-content:flex-start;gap:12px;font-size:15px"><span style="font-family:var(--font-mono);font-size:12.5px;color:var(--fg-subtle)">{{ o.n }}</span><span style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ o.label }}</span></button>
+</sc-for>
+</div>
+</div>
+</sc-if>
+
+<div style="display:flex;gap:6px;overflow-x:auto;padding:0 10px;scrollbar-width:none">
+<sc-for list="{{ keys }}" as="k" hint-placeholder-count="8">
+<button type="button" onClick="{{ k.press }}" aria-label="{{ k.aria }}" style="flex:none;min-width:44px;height:36px;padding:0 12px;border:0;border-radius:980px;background:var(--active-surface);color:var(--fg);font-family:var(--font-mono);font-size:12.5px;cursor:pointer;transition:background 80ms cubic-bezier(.4,0,.2,1)" style-active="background:var(--control-active)">{{ k.label }}</button>
+</sc-for>
+</div>
+<div style="display:flex;align-items:center;gap:8px;padding:0 10px">
+<div class="op-input op-input--lg" style="flex:1;min-width:0;height:44px;font-family:var(--font-mono)"><span style="color:var(--term-accent);flex:none">›</span><input class="op-input__el" type="text" aria-label="Reply or run a command" placeholder="{{ promptPh }}" value="{{ draft }}" onChange="{{ setDraft }}" onKeyDown="{{ draftKey }}" style="font-family:var(--font-mono);font-size:15px"></div>
+<button type="button" aria-label="Send" onClick="{{ send }}" disabled="{{ sendOff }}" style="flex:none;width:44px;height:44px;display:flex;align-items:center;justify-content:center;border:0;border-radius:980px;background:var(--primary);color:var(--primary-fg);cursor:pointer;opacity:{{ sendOpacity }};transition:opacity 80ms cubic-bezier(.4,0,.2,1)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="arrow-up" size="20" hint-size="20px,20px"></x-import></button>
+</div>
+</div>
+</div>
+</sc-if>
+</div>
+</sc-if>
+
+</sc-if>
+
+<sc-if value="{{ hasBanner }}">
+<div role="alert" onClick="{{ bannerOpen }}" style="position:absolute;left:8px;right:8px;top:{{ bannerTop }};z-index:58;display:flex;align-items:flex-start;gap:12px;padding:12px 6px 12px 14px;border-radius:18px;cursor:pointer;background:var(--glass);backdrop-filter:var(--glass-blur);-webkit-backdrop-filter:var(--glass-blur);border:1px solid var(--glass-edge);box-shadow:var(--shadow-popover),inset 0 1px 0 var(--glass-hi);animation:op-fade-in 220ms cubic-bezier(.16,1,.3,1)">
+<span style="flex:none;width:36px;height:36px;border-radius:980px;background:var(--control);display:flex;align-items:center;justify-content:center"><img src="{{ bn.logo }}" alt="" style="width:17px;height:17px;object-fit:contain;filter:{{ bn.logoFilter }}"></span>
+<div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:3px"><div style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--fg-muted);white-space:nowrap;overflow:hidden"><span style="flex:none;width:7px;height:7px;border-radius:980px;background:var(--warning)"></span>Needs input · {{ bn.name }}</div><p style="margin:0;font-size:14.5px;line-height:1.35;color:var(--fg);text-wrap:pretty">{{ bn.q }}</p></div>
+<button class="op-iconbtn op-iconbtn--md" type="button" aria-label="Dismiss" onClick="{{ bannerClose }}" style="flex:none;width:36px;height:36px;margin-top:-4px"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="x" size="15" hint-size="15px,15px"></x-import></button>
+</div>
+</sc-if>
+
+<sc-if value="{{ toast }}">
+<div role="status" style="position:absolute;left:50%;bottom:120px;transform:translateX(-50%);z-index:60;padding:10px 16px;border-radius:980px;color:var(--fg);font-size:14px;white-space:nowrap;background:var(--glass);backdrop-filter:var(--glass-blur);-webkit-backdrop-filter:var(--glass-blur);border:1px solid var(--glass-edge);box-shadow:var(--shadow-popover),inset 0 1px 0 var(--glass-hi);animation:op-fade-in 140ms cubic-bezier(.16,1,.3,1)">{{ toast }}</div>
+</sc-if>
+
+<sc-if value="{{ sheetOpen }}">
+<div onClick="{{ closeSheet }}" style="position:absolute;inset:0;z-index:50;display:flex;flex-direction:column;justify-content:flex-end;background:var(--overlay);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);animation:op-fade-in 220ms cubic-bezier(.16,1,.3,1)">
+<div role="dialog" aria-modal="true" onClick="{{ stop }}" style="display:flex;flex-direction:column;gap:18px;margin:0 8px {{ sheetGap }};padding:8px 18px 20px;border-radius:28px;background:color-mix(in srgb, var(--popover) 94%, transparent);backdrop-filter:var(--glass-blur);-webkit-backdrop-filter:var(--glass-blur);border:1px solid var(--glass-edge);box-shadow:var(--shadow-modal),inset 0 1px 0 var(--glass-hi);animation:op-fade-in 220ms cubic-bezier(.16,1,.3,1)">
+<div style="align-self:center;width:36px;height:5px;border-radius:980px;background:var(--border-strong)"></div>
+
+<sc-if value="{{ sheetNew }}">
+<div style="display:flex;align-items:center;justify-content:space-between;gap:12px"><h2 style="margin:0;font-size:21px;font-weight:600;letter-spacing:-0.016em">New session</h2><button class="op-iconbtn op-iconbtn--lg" type="button" aria-label="Close" onClick="{{ closeSheet }}" style="width:44px;height:44px;margin-right:-10px"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="x" size="18" hint-size="18px,18px"></x-import></button></div>
+<textarea class="op-textarea" aria-label="Instructions" placeholder="Describe the work for this session…" value="{{ newPrompt }}" onChange="{{ setNewPrompt }}" style="min-height:112px;resize:none;font-size:16px;line-height:1.5"></textarea>
+<sc-for list="{{ scopes }}" as="sc" hint-placeholder-count="3">
+<div style="display:flex;flex-direction:column;gap:8px">
+<span style="font-size:13px;color:var(--fg-muted)">{{ sc.label }}</span>
+<div style="display:flex;flex-wrap:wrap;gap:8px">
+<sc-for list="{{ sc.options }}" as="o" hint-placeholder-count="3">
+<button class="op-chip" type="button" data-selected="{{ o.on }}" onClick="{{ o.pick }}" style="height:36px;font-size:14px">{{ o.label }}</button>
+</sc-for>
+</div>
+</div>
+</sc-for>
+<button class="op-btn op-btn--primary op-btn--lg op-btn--block" type="button" disabled="{{ newOff }}" onClick="{{ startNew }}" style="height:48px">Start session</button>
+</sc-if>
+
+<sc-if value="{{ sheetNewBot }}">
+<div style="display:flex;align-items:center;justify-content:space-between;gap:12px"><h2 style="margin:0;font-size:21px;font-weight:600;letter-spacing:-0.016em">New employee</h2><button class="op-iconbtn op-iconbtn--lg" type="button" aria-label="Close" onClick="{{ closeSheet }}" style="width:44px;height:44px;margin-right:-10px"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="x" size="18" hint-size="18px,18px"></x-import></button></div>
+<div class="op-field"><label class="op-label" for="nb-name">Name</label><div class="op-input op-input--lg" style="height:48px"><input class="op-input__el" id="nb-name" type="text" placeholder="Flaky Test Bot" value="{{ nbName }}" onChange="{{ setNbName }}" style="font-size:16px"></div></div>
+<div class="op-field"><label class="op-label" for="nb-job">What is the job?</label><textarea class="op-textarea" id="nb-job" placeholder="Watch the nightly builds and tell me which tests turned flaky." value="{{ nbJob }}" onChange="{{ setNbJob }}" style="min-height:104px;resize:none;font-size:16px;line-height:1.5"></textarea><span class="op-hint">It drafts its own instructions from this. You review them before it starts.</span></div>
+<button class="op-btn op-btn--primary op-btn--lg op-btn--block" type="button" disabled="{{ nbOff }}" onClick="{{ createBot }}" style="height:48px">Create employee</button>
+</sc-if>
+
+<sc-if value="{{ sheetNewAuto }}">
+<div style="display:flex;align-items:center;justify-content:space-between;gap:12px"><h2 style="margin:0;font-size:21px;font-weight:600;letter-spacing:-0.016em">New automation</h2><button class="op-iconbtn op-iconbtn--lg" type="button" aria-label="Close" onClick="{{ closeSheet }}" style="width:44px;height:44px;margin-right:-10px"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="x" size="18" hint-size="18px,18px"></x-import></button></div>
+<div style="display:flex;flex-direction:column;gap:16px;max-height:520px;overflow-y:auto;scrollbar-width:none;margin:0 -4px;padding:4px">
+<div class="op-field"><label class="op-label" for="na-name">Name</label><div class="op-input op-input--lg" style="height:48px"><input class="op-input__el" id="na-name" type="text" placeholder="Review new pull requests" value="{{ naName }}" onChange="{{ setNaName }}" style="font-size:16px"></div></div>
+<div class="op-field"><label class="op-label" for="na-prompt">What should the agent do?</label><textarea class="op-textarea" id="na-prompt" placeholder="Describe the work for every run…" value="{{ naPrompt }}" onChange="{{ setNaPrompt }}" style="min-height:96px;resize:none;font-size:16px;line-height:1.5"></textarea><span class="op-hint">The pull request, issue or schedule that fired the run is passed in as context.</span></div>
+<sc-for list="{{ naScopes }}" as="sc" hint-placeholder-count="3">
+<div style="display:flex;flex-direction:column;gap:8px"><span style="font-size:13px;color:var(--fg-muted)">{{ sc.label }}</span><div style="display:flex;flex-wrap:wrap;gap:8px"><sc-for list="{{ sc.options }}" as="o" hint-placeholder-count="3"><button class="op-chip" type="button" data-selected="{{ o.on }}" onClick="{{ o.pick }}" style="height:36px;font-size:14px">{{ o.label }}</button></sc-for></div></div>
+</sc-for>
+</div>
+<button class="op-btn op-btn--primary op-btn--lg op-btn--block" type="button" disabled="{{ naOff }}" onClick="{{ createAuto }}" style="height:48px">Create automation</button>
+</sc-if>
+
+<sc-if value="{{ sheetGeneric }}">
+<div style="display:flex;flex-direction:column;gap:3px"><h2 style="margin:0;font-size:17px;font-weight:600;letter-spacing:-0.012em">{{ gs.title }}</h2><span style="font-size:13px;color:var(--fg-muted)">{{ gs.sub }}</span></div>
+<div style="border-radius:18px;overflow:hidden;background:var(--active-surface)">
+<sc-for list="{{ gs.items }}" as="gi" hint-placeholder-count="3">
+<button type="button" onClick="{{ gi.run }}" disabled="{{ gi.off }}" style="display:flex;align-items:center;gap:12px;width:100%;height:52px;padding:0 16px;border:0;border-top:{{ gi.sep }};background:transparent;color:{{ gi.fg }};font:inherit;font-size:15px;text-align:left;cursor:pointer;opacity:{{ gi.op }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="{{ gi.icon }}" size="17" hint-size="17px,17px"></x-import>{{ gi.label }}</button>
+</sc-for>
+</div>
+<button class="op-btn op-btn--secondary op-btn--lg op-btn--block" type="button" onClick="{{ closeSheet }}" style="height:48px">Cancel</button>
+</sc-if>
+
+<sc-if value="{{ sheetConfirm }}">
+<div style="display:flex;flex-direction:column;gap:8px"><h2 style="margin:0;font-size:21px;font-weight:600;letter-spacing:-0.016em;text-wrap:pretty">{{ cf.title }}</h2><p style="margin:0;font-size:15px;line-height:1.45;color:var(--fg-muted);text-wrap:pretty">{{ cf.body }}</p></div>
+<div style="display:flex;flex-direction:column;gap:10px">
+<button class="op-btn op-btn--danger op-btn--lg op-btn--block" type="button" onClick="{{ cf.run }}" style="height:48px">{{ cf.action }}</button>
+<button class="op-btn op-btn--secondary op-btn--lg op-btn--block" type="button" onClick="{{ closeSheet }}" style="height:48px">Cancel</button>
+</div>
+</sc-if>
+
+<sc-if value="{{ sheetActions }}">
+<div style="display:flex;flex-direction:column;gap:3px"><h2 style="margin:0;font-size:17px;font-weight:600;letter-spacing:-0.012em">{{ cur.name }}</h2><span style="font-size:13px;color:var(--fg-muted)">{{ cur.sub }}</span></div>
+<div style="border-radius:18px;overflow:hidden;background:var(--active-surface)">
+<button type="button" onClick="{{ copyLink }}" style="display:flex;align-items:center;gap:12px;width:100%;height:52px;padding:0 16px;border:0;background:transparent;color:var(--fg);font:inherit;font-size:15px;text-align:left;cursor:pointer"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="copy" size="17" hint-size="17px,17px"></x-import>Copy link</button>
+<sc-if value="{{ canStop }}"><button type="button" onClick="{{ askStop }}" style="display:flex;align-items:center;gap:12px;width:100%;height:52px;padding:0 16px;border:0;border-top:1px solid var(--border-subtle);background:transparent;color:var(--danger);font:inherit;font-size:15px;text-align:left;cursor:pointer"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="x" size="17" hint-size="17px,17px"></x-import>Stop session</button></sc-if>
+<sc-if value="{{ canRequeue }}"><button type="button" onClick="{{ requeue }}" style="display:flex;align-items:center;gap:12px;width:100%;height:52px;padding:0 16px;border:0;border-top:1px solid var(--border-subtle);background:transparent;color:var(--fg);font:inherit;font-size:15px;text-align:left;cursor:pointer"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="refresh" size="17" hint-size="17px,17px"></x-import>Re-queue</button></sc-if>
+</div>
+<button class="op-btn op-btn--secondary op-btn--lg op-btn--block" type="button" onClick="{{ closeSheet }}" style="height:48px">Cancel</button>
+</sc-if>
+
+<sc-if value="{{ sheetStop }}">
+<div style="display:flex;flex-direction:column;gap:8px"><h2 style="margin:0;font-size:21px;font-weight:600;letter-spacing:-0.016em;text-wrap:pretty">Stop {{ cur.name }}?</h2><p style="margin:0;font-size:15px;line-height:1.45;color:var(--fg-muted);text-wrap:pretty">In-flight tool calls are cancelled. Completed work and commits are kept.</p></div>
+<div style="display:flex;flex-direction:column;gap:10px">
+<button class="op-btn op-btn--danger op-btn--lg op-btn--block" type="button" onClick="{{ confirmStop }}" style="height:48px">Stop session</button>
+<button class="op-btn op-btn--secondary op-btn--lg op-btn--block" type="button" onClick="{{ closeSheet }}" style="height:48px">Cancel</button>
+</div>
+</sc-if>
+
+</div>
+</div>
+</sc-if>
+
+</div>
+</x-import>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;platform&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;ios&quot;,&quot;android&quot;],&quot;default&quot;:&quot;ios&quot;,&quot;tsType&quot;:&quot;'ios' | 'android'&quot;},&quot;theme&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;dark&quot;,&quot;light&quot;],&quot;default&quot;:&quot;dark&quot;,&quot;tsType&quot;:&quot;'dark' | 'light'&quot;},&quot;start&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;signin&quot;,&quot;sessions&quot;,&quot;session&quot;],&quot;default&quot;:&quot;signin&quot;,&quot;tsType&quot;:&quot;'signin' | 'sessions' | 'session'&quot;}}">
+const AGENTS = {
+  'claude-code': { label: 'Claude Code', logo: './assets/agents/claude.svg', cmd: 'claude' },
+  codex: { label: 'Codex', logo: './assets/agents/codex.svg', mono: true, cmd: 'codex' },
+  opencode: { label: 'OpenCode', logo: './assets/agents/opencode.png', cmd: 'opencode run' },
+  cursor: { label: 'Cursor', logo: './assets/agents/cursor.png', cmd: 'cursor-agent' },
+};
+const STATES = {
+  running: { word: 'Running', color: 'var(--success)' },
+  waiting: { word: 'Needs input', color: 'var(--warning)' },
+  failed: { word: 'Failed', color: 'var(--danger)' },
+  queued: { word: 'Queued', color: 'var(--fg-subtle)' },
+  idle: { word: 'Idle', color: 'var(--fg-subtle)' },
+};
+const L = (rows) => rows.map(([k, t, tone]) => ({ k, t, tone: tone || '' }));
+const SEED = [
+  { id: 'pr121', name: 'PR #121 porting to peersyst', state: 'running', age: '2m', repo: 'xrp-mobile', agent: 'claude-code', host: 'optimus', branch: 'port/121-api-config-hardening', lines: L([
+    ['c', 'claude "port PR #121 to peersyst/xrp-mobile"'],
+    ['l', 'Read 9 files · src/config/*', 'dim'],
+    ['t', 'The PR hardens the API config. Porting it means moving env parsing into the shared package and keeping the old exports as re-exports.'],
+    ['c', 'git checkout -b port/121-api-config-hardening'],
+    ['l', '✓ Switched to a new branch', 'success'],
+    ['l', 'Edited src/config/api.ts (+48 −21)', 'dim'],
+    ['l', 'Edited packages/shared/env.ts (+31 −0)', 'dim'],
+    ['c', 'pnpm test --filter api'],
+    ['l', '✓ 112 passed · 0 failed · 8.4s', 'success'],
+    ['c', 'git push -u origin port/121-api-config-hardening'],
+    ['l', '✓ Pushed to origin', 'success'],
+    ['c', 'gh pr create --fill'],
+    ['l', '✗ gh: not authenticated on optimus', 'danger'],
+    ['t', 'GitHub CLI is not logged in on this host. Running the browser flow instead.'],
+    ['c', 'gh auth login --web'],
+    ['l', 'https://github.com/login/device', 'accent'],
+    ['l', '  code: 5192-177E', 'strong'],
+    ['l', '! waiting for device authorization', 'warning'],
+  ]) },
+  { id: 'invoice', name: 'invoice triage', state: 'waiting', age: '18m', repo: 'atlas', agent: 'codex', host: 'optimus', branch: 'triage/invoice-parsing', lines: L([
+    ['c', 'codex "triage the open invoice parsing failures"'],
+    ['l', 'Read 14 files · 3 failing fixtures', 'dim'],
+    ['c', 'pytest tests/invoices -q'],
+    ['l', '3 failed, 41 passed in 2.1s', 'danger'],
+    ['t', 'Two causes. Fixtures 7 and 11 use a comma decimal separator; fixture 3 has a null due date the parser never expected.'],
+    ['t', 'Plan ready. Two approaches fit:'],
+    ['l', '  1. Patch the existing parser and keep the public API'],
+    ['l', '  2. Replace it behind a feature flag'],
+  ]), ask: { q: 'Plan ready. Which approach do you want?', options: ['Patch the existing parser', 'Replace it behind a feature flag'] } },
+  { id: 'ingest', name: 'nightly ingest', state: 'running', age: '9m', repo: 'atlas', agent: 'claude-code', host: 'fable', branch: 'main', lines: L([
+    ['c', 'claude "run the nightly ingest and report anomalies"'],
+    ['c', 'python -m atlas.ingest --since 24h'],
+    ['l', '[1/4] crm .......... 6,112 ok', 'dim'],
+    ['l', '[2/4] billing ...... 4,870 ok', 'dim'],
+    ['l', '[3/4] support ...... 5,301 ok', 'dim'],
+    ['l', '[4/4] web-events ... loading'],
+    ['t', 'Three sources clean. web-events is 38% above its 7-day median; checking for duplicates before loading.'],
+  ]) },
+  { id: 'flaky', name: 'Fix flaky auth tests', state: 'running', age: '6m', repo: 'xrp-mobile', agent: 'cursor', host: 'cursor cloud', branch: 'fix/flaky-auth', lines: L([
+    ['c', 'cursor-agent "fix the flaky auth tests"'],
+    ['c', 'pnpm test auth --repeat 20'],
+    ['l', '17/20 passed · session.spec.ts flaked 3×', 'warning'],
+    ['t', 'The flake is a shared clock between tests. Switching session.spec.ts to fake timers.'],
+    ['l', 'Edited test/auth/session.spec.ts (+9 −3)', 'dim'],
+  ]) },
+  { id: 'cleanup', name: 'XRP Mobile API cleanup', state: 'waiting', age: '3h', repo: 'xrp-mobile', agent: 'opencode', host: 'mac-studio', branch: 'chore/api-cleanup', lines: L([
+    ['c', 'opencode run "remove dead API endpoints"'],
+    ['l', 'Scanned 212 routes · 4 have no callers in 90 days', 'dim'],
+    ['l', '  GET    /v1/wallets/legacy', 'dim'],
+    ['l', '  POST   /v1/trustlines/bulk', 'dim'],
+    ['l', '  GET    /v1/rates/cached', 'dim'],
+    ['l', '  DELETE /v1/sessions/all', 'dim'],
+    ['t', 'None of these four has a caller in 90 days of logs. Delete them now, or deprecate for one release first?'],
+  ]), ask: { q: 'Delete the 4 unused endpoints now, or deprecate them first?', options: ['Delete them now', 'Deprecate for one release'] } },
+  { id: 'landing', name: 'Landing copy pass', state: 'waiting', age: '5h', repo: 'flama-ai', agent: 'cursor', host: 'cursor cloud', branch: 'copy/landing', lines: L([
+    ['c', 'cursor-agent "tighten the landing page copy"'],
+    ['l', 'Edited app/(marketing)/page.tsx (+14 −22)', 'dim'],
+    ['t', 'Two hero lines fit the new layout:'],
+    ['l', '  1. Every agent, one control plane.'],
+    ['l', '  2. Run agents. Watch every step.'],
+  ]), ask: { q: 'Which hero line goes on the landing page?', options: ['Every agent, one control plane.', 'Run agents. Watch every step.'] } },
+  { id: 'eval', name: 'retriever eval', state: 'failed', age: '4h', repo: 'atlas', agent: 'claude-code', host: 'fable', branch: 'eval/chunk-size', lines: L([
+    ['c', 'claude "run the retriever eval against main"'],
+    ['c', 'pnpm eval:retriever'],
+    ['l', 'recall@10  0.812   baseline 0.847', 'warning'],
+    ['l', '✗ eval/retriever.spec.ts › recall regression', 'danger'],
+    ['l', '✗ eval/rerank.spec.ts › timeout after 30000ms', 'danger'],
+    ['t', 'Tests failed in 2 files. Stopped before committing. Recall dropped 3.5 points after the chunk-size change in 4f2a91c.'],
+  ]) },
+  { id: 'design', name: 'First version page design', state: 'idle', age: '1d', repo: 'flama-ai', agent: 'claude-code', host: 'optimus', branch: 'design/v1', lines: L([
+    ['c', 'claude "first version of the pricing page"'],
+    ['l', 'Edited 6 files (+412 −38)', 'dim'],
+    ['c', 'git commit -m "pricing page v1"'],
+    ['l', '✓ Committed to design/v1', 'success'],
+    ['t', 'Done. The page builds and passes lint. Idle until you reply.'],
+  ]) },
+  { id: 'docs', name: 'doc summariser', state: 'idle', age: '1d', repo: 'atlas', agent: 'codex', host: 'optimus', branch: 'main', lines: L([
+    ['c', 'codex "summarise the Q3 design docs"'],
+    ['l', '✓ Wrote docs/summaries/q3.md · 1,240 words', 'success'],
+    ['t', 'Summary written. Idle until you reply.'],
+  ]) },
+  { id: 'router', name: 'tool router', state: 'idle', age: '3w', repo: 'xrp-mobile', agent: 'codex', host: 'mac-studio', branch: 'feat/tool-router', lines: L([
+    ['c', 'codex "add a tool router for the wallet agent"'],
+    ['l', '✓ Opened #98 · peersyst/xrp-mobile', 'success'],
+  ]) },
+];
+const POOL = L([
+  ['l', 'Read src/lib/retry.ts', 'dim'],
+  ['l', 'Edited src/lib/retry.ts (+6 −2)', 'dim'],
+  ['c', 'pnpm test --filter api'],
+  ['l', '✓ 114 passed · 0 failed · 8.1s', 'success'],
+  ['t', 'Checks pass. Moving on to the next file.'],
+  ['l', 'Read src/lib/http.ts', 'dim'],
+  ['l', 'Edited src/lib/http.ts (+11 −7)', 'dim'],
+  ['c', 'pnpm lint'],
+  ['l', '✓ No problems', 'success'],
+]);
+const REPO_ORDER = ['xrp-mobile', 'atlas', 'flama-ai'];
+const PROJECTS = ['atlas', 'xrp-mobile', 'flama-ai'];
+const HOSTS = ['optimus', 'fable', 'mac-studio'];
+const AGENT_KEYS = ['claude-code', 'codex', 'opencode'];
+const TABS = [
+  { id: 'sessions', label: 'Sessions', icon: 'terminal' },
+  { id: 'employees', label: 'Employees', icon: 'bot' },
+  { id: 'prs', label: 'PRs', icon: 'git-pull-request', title: 'Pull requests' },
+  { id: 'automations', label: 'Automations', icon: 'zap' },
+  { id: 'account', label: 'Account', icon: 'user' },
+];
+const KEYS = [
+  { label: 'esc', aria: 'Escape' }, { label: 'tab', aria: 'Tab' }, { label: 'ctrl', aria: 'Control' },
+  { label: '⌃C', aria: 'Interrupt', interrupt: true }, { label: '↑', aria: 'Up' }, { label: '↓', aria: 'Down' },
+  { label: '←', aria: 'Left' }, { label: '→', aria: 'Right' }, { label: '/', aria: 'Slash', insert: '/' }, { label: '|', aria: 'Pipe', insert: '|' },
+];
+const SPIN = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'];
+const AVC = { mint: 'oklch(0.74 0.13 175)', tangerine: 'oklch(0.72 0.18 50)', sky: 'oklch(0.74 0.12 240)', lilac: 'oklch(0.74 0.12 300)', lemon: 'oklch(0.86 0.15 95)' };
+const STEP_ICON = { Thought: 'cpu', Searched: 'search', Read: 'file-text', Edited: 'file-text', Ran: 'terminal', Opened: 'git-pull-request', Wrote: 'file-text' };
+const spansOf = (text) => text.split(/(`[^`]+`|\*\*[^*]+\*\*)/).filter(Boolean).map(p => p[0] === '`' ? { t: p.slice(1, -1), code: true } : p.startsWith('**') ? { t: p.slice(2, -2), bold: true } : { t: p, plain: true });
+const JOB3 = 'Watch the nightly builds on build-01 and tell me which tests turned flaky.';
+const propLines = (job) => ['# Instructions', '', '+ ## Job', '+ ' + job, '+', '+ ## Rules', '+ - Work only in projects and repositories I can access.', '+ - Ask before merging, deleting or pushing.', '+ - Report each finding with the run ID and a link.'];
+const BOTS = [
+  { id: 'op', name: 'Oppenheimer', role: 'General bot · merges pull requests, opens issues, runs Plan', ini: 'O', bg: 'var(--fg)', fg: 'var(--background)', builtin: true, age: '1h', msgs: [
+    { k: 'e', icon: 'check-circle', text: 'Session PR #121 porting to peersyst pushed its branch', link: 'Open session', sid: 'pr121' },
+    { k: 'a', text: 'Merged **#118** after checks passed. Opened issue **#124** for the flaky auth test Cursor is fixing.', meta: 'Claude Sonnet 4.6' },
+  ] },
+  { id: 'release', name: 'Release Bot', role: 'Ships changes and watches runs', ini: 'RB', bg: AVC.mint, fg: '#1d1d1f', group: 'Engineering', age: '2m',
+    pending: { prompt: 'Push synara/cancel-path to origin?', tool: 'Bash', detail: 'git push -u origin synara/cancel-path' }, msgs: [
+    { k: 'u', text: 'When a run is stopped from the console, in-flight tool calls keep running until they time out. Wire cancel through the agent gateway so the step actually aborts.' },
+    { k: 'w', label: 'Worked for 1m 13s', steps: [
+      { verb: 'Thought', target: '', meta: '4s', note: 'stopRun() only flips run.status. Tool calls already in flight never see it, so cancel has to reach the step itself.' },
+      { verb: 'Searched', target: 'abortSignal', meta: '14 results' },
+      { verb: 'Read', target: 'runner/step.ts', meta: '' },
+      { verb: 'Edited', target: 'runner/step.ts', meta: '+42 −8' },
+      { verb: 'Edited', target: 'gateway/cancel.ts', meta: '+17 −3' },
+      { verb: 'Ran', target: 'pnpm test runner', meta: '2 failed', err: true },
+      { verb: 'Edited', target: 'runner/step.ts', meta: '+6 −1' },
+      { verb: 'Ran', target: 'pnpm test runner', meta: '40 passed' },
+    ] },
+    { k: 'p', peer: 'Plan Bot', time: '09:13', q: 'Which task is the cancel-path fix linked to?', a: '“Stop cancels in-flight tool calls” in XRP Mobile, milestone Public beta.' },
+    { k: 'a', text: 'The stop path now reaches the tool layer. Previously `stopRun()` only flipped the run state, so steps inside a tool call never heard about it. Each step now gets its own `AbortController`, and all **40 tests** pass.', meta: 'Claude Sonnet 4.6 · 3.1k tokens' },
+  ] },
+  { id: 'quota', name: 'Quota Bot', role: 'Billing, limits and usage', ini: 'QB', bg: AVC.tangerine, fg: '#1d1d1f', group: 'Engineering', age: '1d', msgs: [
+    { k: 'u', text: 'Draft a quota warning for workspaces above 90% of their monthly minutes.' },
+    { k: 'a', text: 'Added a banner to the workspace header that appears at 90% and names the figure: `9,140 / 10,000 minutes used`. It links to billing and hides once usage drops.', meta: 'GPT-5.2 Codex · 1.2k tokens' },
+  ] },
+  { id: 'newbot', name: 'New Bot', role: 'No instructions yet', ini: 'NB', bg: AVC.sky, fg: '#1d1d1f', group: 'Engineering', age: '3h', unread: true, msgs: [
+    { k: 'a', text: 'What would you most like help with? Tell me the job and I will write my own instructions from it.', meta: 'Claude Sonnet 4.6' },
+    { k: 'u', text: JOB3 },
+    { k: 'w', label: 'Worked for 9s', steps: [{ verb: 'Read', target: '.github/workflows/nightly.yml', meta: '' }, { verb: 'Searched', target: 'retry: flaky', meta: '6 results' }] },
+    { k: 'a', text: 'Here is what I will follow. Accept it and it becomes revision 1 of `INSTRUCTIONS.md`; you can change it any time.', meta: 'Claude Sonnet 4.6' },
+    { k: 'pr', status: 'pending', lines: propLines(JOB3) },
+  ] },
+  { id: 'research', name: 'Research Bot', role: 'Reads the web and cites sources', ini: 'RS', bg: AVC.lilac, fg: '#1d1d1f', group: 'Research', age: '4d',
+    goal: { objective: 'Map every SDK’s abort path with sources', step: 2, limit: 5 }, msgs: [
+    { k: 'u', text: 'Map how every model SDK handles abort, with sources.' },
+    { k: 'w', label: 'Worked for 3m 40s', steps: [
+      { verb: 'Searched', target: 'AbortSignal openai-node', meta: '9 results' },
+      { verb: 'Read', target: 'openai-node/src/core.ts', meta: '' },
+      { verb: 'Searched', target: 'anthropic-sdk-typescript abort', meta: '7 results' },
+      { verb: 'Read', target: 'anthropic-sdk-typescript/src/core.ts', meta: '' },
+    ] },
+    { k: 'a', text: 'Two of five mapped. **openai-node** and **anthropic-sdk-typescript** both forward `signal` to fetch. The Python SDKs need a cancel scope instead; starting there next.', meta: 'Claude Opus 4.5 · 8.4k tokens' },
+  ] },
+];
+const PRS = [
+  { id: 482, view: 'review', lane: 'Deep', repo: 'oppenheimer', title: 'Move session tokens to the runner keychain', author: 'Session · auth-hardening', agent: true, add: 612, del: 248, ck: 'pass', age: '26h', branch: 'agent/auth-keychain',
+    why: 'Deep by policy: touches auth/ and changes 860 lines. The full-review agent prepared a review session on mac-studio.',
+    bp: ['Adds a keychain store on the runner and moves every token read and write behind it.', 'Migrates existing tokens from the token file on first start, then deletes the file.', 'Guards the migration with an epoch so it runs once, even if the runner restarts mid-way.'],
+    prep: [['Checkout built', '1m 42s', 'ok'], ['Affected checks', '214 / 214', 'ok'], ['App started', 'localhost:5173', 'ok'], ['Context pack', '9 callers · 3 rules', 'ok']],
+    findings: [['runner/internal/keychain/keychain.go:87', 'The token file is removed before the keychain writes are confirmed. A crash between the two loses every token. Write first, then remove.'], ['web/src/session/reconnect.ts:131', 'Versions are compared as strings, so 0.1.10 sorts before 0.1.8. Use the semver helper.']] },
+  { id: 479, view: 'review', lane: 'Deep', repo: 'oppenheimer', title: 'Resumable migration stream for workspace moves', author: 'Marta Vidal', add: 1204, del: 391, ck: 'fail', age: '19h', branch: 'marta/resumable-moves', requested: true,
+    why: 'Deep by policy: over 1,000 lines and a new protocol message.',
+    bp: ['Splits a workspace move into checkpoints written after each batch of files.', 'An interrupted move resumes from the last checkpoint instead of starting over.', 'One check fails: the protocol compatibility test for older runners.'],
+    prep: [['Checkout built', '2m 05s', 'ok'], ['Affected checks', '187 / 188', 'fail'], ['Context pack', '14 callers · 2 rules', 'ok']],
+    findings: [['packages/protocol/src/move.ts:52', 'MoveResume has no version field; older runners will reject it silently.']] },
+  { id: 486, view: 'review', lane: 'Medium', repo: 'oppenheimer', title: 'Show the terminal title in the session row', author: 'Session · term-title', agent: true, add: 64, del: 12, ck: 'pass', age: '3h', branch: 'agent/term-title',
+    why: 'Quick: 76 lines in web/ only, checks pass, no new dependencies.',
+    bp: ['Parses OSC 2 title sequences from the terminal stream.', 'Shows the latest title under the session name.', 'Falls back to the running command when no title is set.'],
+    prep: [['Affected checks', '48 / 48', 'ok'], ['Verification agent', 'No issues', 'ok']], findings: [] },
+  { id: 131, view: 'review', lane: 'Medium', repo: 'runner', title: 'Report disk pressure above 90%', author: 'Session · disk-pressure', agent: true, add: 118, del: 7, ck: 'running', age: '1h', branch: 'agent/disk-pressure',
+    why: 'Quick: small, isolated to runner/health, matches an existing pattern.',
+    bp: ['Adds a disk probe to the runner health loop.', 'Emits a disk.pressure event above 90% of the data volume.'],
+    prep: [['Affected checks', '31 / 40', 'run'], ['Verification agent', 'Waiting on checks', 'run']], findings: [] },
+  { id: 57, view: 'review', lane: 'Quick', repo: 'docs', title: 'Document the review lanes', author: 'Pau Serra', add: 142, del: 3, ck: 'pass', age: '36m', branch: 'pau/lanes-docs',
+    why: 'Quick: docs only, one new page.', bp: ['New page explaining the Quick, Medium and Deep lanes.', 'Adds the page to the docs sidebar under Sessions.'], prep: [['Link check', '0 broken', 'ok']], findings: [] },
+  { id: 140, view: 'waiting', lane: 'Deep', repo: 'runner', title: 'Rotate the GitHub App key on deploy', author: 'Session · key-rotation', agent: true, add: 233, del: 41, ck: 'pass', age: '9h', branch: 'agent/key-rotation',
+    block: 'The branch rule needs 2 approvals and has 1 (yours). Review requested from Marta Vidal.', waitAct: 'Nudge reviewer',
+    why: 'Deep by policy: touches deploy/ and secrets.', bp: ['Creates a new GitHub App private key on deploy.', 'Revokes the old key only after the next healthy deploy.'], prep: [['Affected checks', '36 / 36', 'ok'], ['Approved', 'by you, 9h ago', 'ok']], findings: [] },
+  { id: 133, view: 'waiting', lane: 'Quick', repo: 'runner', title: 'Pin the Go toolchain in CI to 1.23.4', author: 'Session · ci-pin', agent: true, add: 6, del: 2, ck: 'pass', age: '48m', branch: 'agent/ci-go-pin',
+    block: 'In the merge queue with 2 pull requests ahead. Merges in your name when it reaches the front.', waitAct: '',
+    why: 'Quick: CI config only, 6 lines.', bp: ['Pins the Go toolchain so CI matches the runner release build.'], prep: [['Affected checks', '12 / 12', 'ok'], ['Approved', 'by you, 48m ago', 'ok']], findings: [] },
+  { id: 485, view: 'merged', lane: 'Quick', repo: 'oppenheimer', title: 'Fix typos in session empty states', author: 'Session · copy-pass', agent: true, add: 6, del: 6, ck: 'pass', age: '10:42', branch: 'agent/copy-pass',
+    why: 'Auto: copy only, matches the text-only change rule.', bp: ['Six string fixes in empty states.'], prep: [['Affected checks', '22 / 22', 'ok'], ['Merged', 'in your name, 10:42', 'ok']], findings: [] },
+  { id: 483, view: 'merged', lane: 'Quick', repo: 'oppenheimer', title: 'Format the protocol package', author: 'Session · fmt', agent: true, add: 14, del: 14, ck: 'pass', age: '08:02', branch: 'agent/fmt',
+    why: 'Auto: formatting only. The formatter proved no syntax tree changed.', bp: ['Runs the formatter over packages/protocol. No behaviour change.'], prep: [['Syntax tree unchanged', '14 / 14 files', 'ok'], ['Merged', 'in your name, 08:02', 'ok']], findings: [] },
+];
+const ROUTINES = [
+  { id: 'r1', name: 'Review new pull requests', active: true, repo: 'xrp-mobile', agent: 'claude-code', model: 'Sonnet', host: 'optimus', kind: 'github', trigger: 'Pull request opened on xrp-mobile → main', next: 'On the next pull request',
+    prompt: 'Review the diff against CONTRIBUTING.md. Leave inline comments only for real problems, then post one summary comment with a verdict: approve, or the changes you need.',
+    runs: [['completed', 'PR #124 opened by jordiparra', '2h ago', '4m 12s'], ['completed', 'PR #123 opened by dependabot', '9h ago', '2m 48s'], ['failed', 'PR #119 opened by adri-rdz', '3d ago', '0m 41s']] },
+  { id: 'r2', name: 'Nightly dependency audit', active: true, repo: 'atlas', agent: 'claude-code', model: 'Sonnet', host: 'fable', kind: 'schedule', trigger: 'Every day at 02:00', next: 'Tomorrow, 02:00',
+    prompt: 'Audit every package manifest for known advisories. Open one PR that bumps what is safe to bump, and list anything that needs a human in the PR body.',
+    runs: [['completed', 'Schedule', 'Today, 02:00', '11m 32s'], ['completed', 'Schedule', 'Yesterday, 02:00', '9m 05s'], ['failed', 'Schedule', 'Wed, 02:00', '1m 12s']] },
+  { id: 'r3', name: 'Weekly changelog', active: true, repo: 'flama-ai', agent: 'claude-code', model: 'Opus', host: 'optimus', kind: 'schedule', trigger: 'Mondays at 09:00 · or a release on flama-ai', next: 'Mon, 09:00',
+    prompt: 'Summarise everything merged since the last changelog entry into CHANGELOG.md, grouped by Added, Changed and Fixed. Open a PR; do not merge it.',
+    runs: [['completed', 'Schedule', 'Mon, 09:00', '6m 20s'], ['completed', 'Release v2.3.0 published', 'Fri, 16:42', '5m 02s']] },
+  { id: 'r4', name: 'Standup digest', active: true, repo: 'xrp-mobile', agent: 'claude-code', model: 'Haiku', host: 'claude-cloud', kind: 'schedule', trigger: 'Weekdays at 08:30', next: 'Mon, 08:30',
+    prompt: 'Read yesterday’s merged PRs, open PRs and failing checks. Post a five-line digest as a comment on the pinned Standup issue.',
+    runs: [['completed', 'Schedule', 'Today, 08:30', '1m 54s'], ['completed', 'Schedule', 'Thu, 08:30', '2m 03s']] },
+  { id: 'r5', name: 'Triage bug reports', active: false, repo: 'atlas', agent: 'codex', model: 'GPT-5.2', host: 'fable', kind: 'github', trigger: 'Issue labeled bug on atlas', next: 'Paused',
+    prompt: 'Reproduce the issue on main. Comment with the failing step and the smallest repro, then add the area label. If it does not reproduce, ask for the missing detail.',
+    runs: [['completed', 'Issue #199 labeled bug', '2d ago', '7m 40s']] },
+];
+const RUN_STATE = { completed: ['Completed', 'var(--success)'], failed: ['Failed', 'var(--danger)'], running: ['Running', 'var(--success)'] };
+const CK = { pass: ['Checks pass', 'var(--success)'], fail: ['1 check failing', 'var(--danger)'], running: ['Checks running', 'var(--fg-subtle)'] };
+const NA_TRIGGERS = [
+  { label: 'Every day 02:00', kind: 'schedule', trigger: () => 'Every day at 02:00', next: 'Tomorrow, 02:00' },
+  { label: 'Weekdays 08:30', kind: 'schedule', trigger: () => 'Weekdays at 08:30', next: 'Mon, 08:30' },
+  { label: 'Mondays 09:00', kind: 'schedule', trigger: () => 'Mondays at 09:00', next: 'Mon, 09:00' },
+  { label: 'Pull request opened', kind: 'github', trigger: r => 'Pull request opened on ' + r + ' → main', next: 'On the next pull request' },
+  { label: 'Issue labeled bug', kind: 'github', trigger: r => 'Issue labeled bug on ' + r, next: 'On the next labeled issue' },
+];
+const NA_REPOS = ['xrp-mobile', 'atlas', 'flama-ai'];
+const BOT_WORK = [
+  { verb: 'Thought', target: '', meta: '2s' },
+  { verb: 'Searched', target: 'cancelRun', meta: '5 results' },
+  { verb: 'Read', target: 'gateway/cancel.ts', meta: '' },
+];
+const BOT_REPLIES = [
+  'Done. I checked the last three runs and nothing else calls `cancelRun()` directly, so the change is contained.',
+  'Understood. I will apply that and report back here when the checks finish.',
+];
+const PUSH_REPLY = 'Pushed. Opened **PR #668** from `synara/cancel-path` into `main` and linked it to the task. 2 checks are running; I will tell you when they finish.';
+const DENY_REPLY = 'Stopped before pushing. The branch stays local on `mac-studio`. Tell me what to change and I will pick it up from here.';
+
+class Component extends DCLogic {
+  state = this.initial(this.props.start);
+  termRef = React.createRef();
+  _timers = [];
+
+  initial(start) {
+    const st = start || 'signin';
+    return {
+      screen: st === 'signin' ? 'welcome' : 'app', tab: 'sessions',
+      view: st === 'session' ? 'session' : 'list', sid: 'invoice',
+      sessions: SEED.map(s => ({ ...s, tick: 0 })), filter: 'all', q: '',
+      email: '', pw: '', showPw: false, sheet: null, toast: '',
+      newPrompt: '', np: 0, nh: 0, na: 0, draft: '', theme: null, spin: 0,
+      mode: 'term', swipe: { id: null, x: 0, drag: false }, openTools: {}, banner: null,
+      bots: BOTS.map(b => ({ ...b, msgs: b.msgs.map((m, i) => ({ ...m, id: b.id + i })) })), botId: 'release', bq: '', botDraft: '', openWork: {}, nbName: '', nbJob: '', rn: 0, files: [], attachOpen: false, rec: false, recStart: 0, transcribing: false,
+      prs: PRS.map(p => ({ ...p })), prView: 'review', prId: 482, routines: ROUTINES.map(r => ({ ...r, runs: r.runs.slice() })), rId: 'r1',
+      naName: '', naPrompt: '', naT: 0, naRepo: 0, naHost: 0, naAgent: 0, confirm: null,
+    };
+  }
+  bot() { return this.state.bots.find(b => b.id === this.state.botId); }
+  botUpd(id, fn) { this.setState(s => ({ bots: s.bots.map(b => b.id === id ? fn(b) : b) })); }
+  botAdd(id, m, extra) { this.botUpd(id, b => ({ ...b, age: 'now', msgs: b.msgs.concat([{ id: 'm' + Date.now() + Math.random(), ...m }]), ...(extra || {}) })); }
+  botWork(id, steps, done) {
+    const wid = 'w' + Date.now();
+    this.botUpd(id, b => ({ ...b, busy: true, msgs: b.msgs.concat([{ id: wid, k: 'w', live: true, label: 'Working', steps: [] }]) }));
+    this.setState(s => ({ openWork: { ...s.openWork, [wid]: true } }));
+    steps.forEach((st, i) => this.later(() => this.botUpd(id, b => ({ ...b, msgs: b.msgs.map(m => m.id === wid ? { ...m, steps: m.steps.concat([st]) } : m) })), 600 + i * 700));
+    this.later(() => {
+      this.botUpd(id, b => ({ ...b, busy: false, msgs: b.msgs.map(m => m.id === wid ? { ...m, live: false, label: 'Worked for ' + (2 + steps.length * 2) + 's' } : m) }));
+      this.setState(s => ({ openWork: { ...s.openWork, [wid]: false } }));
+      done();
+    }, 900 + steps.length * 700);
+  }
+  scheduleAlert() {
+    if (this._alerted) return; this._alerted = true;
+    this.later(() => {
+      const x = this.state.sessions.find(y => y.id === 'ingest'); if (!x || x.state !== 'running') return;
+      const q = 'web-events has 2,140 duplicate rows from a replayed webhook. Drop them before loading?';
+      this.push('ingest', [['c', 'atlas dedupe web-events --dry-run'], ['l', '2,140 duplicates · 11.8% of the batch', 'warning'], ['t', q]], { state: 'waiting', busy: false, age: 'now', ask: { q, options: ['Drop duplicates and load', 'Load as-is'] } });
+      if (!(this.state.view === 'session' && this.state.sid === 'ingest')) {
+        this.setState({ banner: 'ingest' });
+        this.later(() => { if (this.state.banner === 'ingest') this.setState({ banner: null }); }, 8000);
+      }
+    }, 9000);
+  }
+  requeueId(id) {
+    const x = this.state.sessions.find(y => y.id === id); if (!x) return;
+    this.push(id, [['l', '— re-queued by you —', 'dim']], { state: 'queued', prov: 0, prompt: x.name, age: 'now', ask: null });
+    this.provision(id);
+  }
+  componentDidMount() {
+    this.applyTheme();
+    if (this.state.screen === 'app') this.scheduleAlert();
+    this._live = setInterval(() => this.liveTick(), 2600);
+    this._spin = setInterval(() => { if (this.isWorking()) this.setState(s => ({ spin: (s.spin + 1) % SPIN.length })); }, 120);
+    this.scrollBottom();
+  }
+  componentWillUnmount() { clearInterval(this._live); clearInterval(this._spin); this._timers.forEach(clearTimeout); }
+  componentDidUpdate() {
+    const p = this.props, lp = this._lp || { theme: p.theme, start: p.start };
+    this._lp = { theme: p.theme, start: p.start };
+    if (lp.theme !== p.theme && this.state.theme) this.setState({ theme: null });
+    if (lp.start !== p.start) { this.setState(this.initial(p.start)); return; }
+    this.applyTheme();
+    const c = this.cur();
+    const bb = this.bot();
+    const sig = this.state.view === 'session' && c ? [c.id, c.lines.length, !!c.ask, c.prov, !!c.busy, this.state.mode].join('|') : this.state.view === 'bot' && bb ? ['b', bb.id, bb.msgs.length, bb.msgs.reduce((n, m) => n + (m.steps ? m.steps.length : 0), 0), !!bb.pending].join('|') : '';
+    if (sig && sig !== this._sig) this.scrollBottom();
+    this._sig = sig;
+  }
+  scrollBottom() { requestAnimationFrame(() => { const el = this.termRef.current; if (el) el.scrollTop = el.scrollHeight; }); }
+  theme() { return this.state.theme || this.props.theme || 'dark'; }
+  applyTheme() { const t = this.theme(); if (document.documentElement.getAttribute('data-theme') !== t) document.documentElement.setAttribute('data-theme', t); }
+  later(fn, ms) { this._timers.push(setTimeout(fn, ms)); }
+  cur() { return this.state.sessions.find(x => x.id === this.state.sid); }
+  isWorking() { const c = this.cur(), b = this.bot(); return this.state.rec || this.state.transcribing || (this.state.view === 'session' && c && c.busy) || (this.state.view === 'bot' && b && b.busy); }
+  upd(id, fn) { this.setState(s => ({ sessions: s.sessions.map(x => x.id === id ? fn(x) : x) })); }
+  push(id, rows, extra) { this.upd(id, x => ({ ...x, lines: x.lines.concat(L(rows)), ...(extra || {}) })); }
+
+  liveTick() {
+    if (this.state.screen !== 'app') return;
+    const open = this.state.view === 'session' ? this.state.sid : null;
+    this.setState(s => ({ sessions: s.sessions.map(x => {
+      if (x.state !== 'running' || x.busy || x.prov != null || x.tick >= POOL.length) return x;
+      if (x.id !== open && Math.random() < 0.6) return x;
+      return { ...x, lines: x.lines.concat([POOL[x.tick]]), tick: x.tick + 1 };
+    }) }));
+  }
+  reply(text) {
+    const c = this.cur(); if (!c || !text.trim()) return;
+    const id = c.id;
+    this.upd(id, x => ({ ...x, lines: x.lines.concat([{ k: 'y', t: text, tone: '' }]), ask: null, state: 'running', age: 'now', busy: true }));
+    this.later(() => this.push(id, [['t', 'Understood. Applying that now.']]), 800);
+    this.later(() => this.push(id, [['l', 'Edited 3 files (+41 −12)', 'dim'], ['c', 'git diff --stat']]), 1800);
+    this.later(() => this.push(id, [['l', '3 files changed, 41 insertions(+), 12 deletions(-)', 'dim']], { busy: false }), 2700);
+  }
+  provision(id) {
+    [900, 1900, 2800, 3600].forEach((ms, i) => this.later(() => this.upd(id, x => ({ ...x, prov: i + 1 })), ms));
+    this.later(() => {
+      const s = this.state.sessions.find(x => x.id === id);
+      const ag = AGENTS[s.agent];
+      this.upd(id, x => ({ ...x, prov: null, state: 'running', age: 'now', lines: x.lines.concat(L([
+        ['c', ag.cmd + ' "' + s.prompt + '"'],
+        ['l', 'Read 23 files · ' + s.repo, 'dim'],
+        ['t', 'Reading the repository before changing anything. I will report each step here.'],
+      ])) }));
+    }, 4200);
+  }
+
+  renderVals() {
+    const s = this.state, ios = (this.props.platform || 'ios') !== 'android', dark = this.theme() === 'dark';
+    const c = this.cur() || s.sessions[0];
+    const meta = (x) => STATES[x.state].word + ' · ' + AGENTS[x.agent].label + ' · ' + x.host;
+    const q = s.q.trim().toLowerCase();
+    const counts = { all: s.sessions.length, waiting: 0, running: 0, failed: 0 };
+    s.sessions.forEach(x => { if (counts[x.state] != null) counts[x.state]++; });
+    const visible = s.sessions.filter(x => (s.filter === 'all' || x.state === s.filter) && (!q || x.name.toLowerCase().includes(q) || x.repo.includes(q)));
+    const lastOf = (x, k) => { for (let i = x.lines.length - 1; i >= 0; i--) if (k.includes(x.lines[i].k)) return x.lines[i]; return null; };
+    const row = (x, i, pinned) => {
+      const sw = s.swipe, sx = sw.id === x.id ? sw.x : 0, drag = sw.id === x.id && sw.drag;
+      const stoppable = x.state === 'running' || x.state === 'waiting';
+      const ll = x.state === 'running' ? lastOf(x, 'clt') : x.state === 'failed' ? lastOf(x, 't') : null;
+      const ag = AGENTS[x.agent];
+      return {
+        name: x.name, age: x.age, color: STATES[x.state].color,
+        meta: pinned ? x.repo + ' · ' + ag.label + ' · ' + x.host : meta(x),
+        ask: x.state === 'waiting' && x.ask ? x.ask.q : '',
+        preview: x.prov != null ? 'Preparing the session' : ll ? (ll.k === 'c' ? '$ ' : '') + ll.t : '',
+        logo: ag.logo, logoFilter: ag.mono ? 'var(--brand-glyph-filter,none)' : 'none',
+        sep: i ? '1px solid var(--border-subtle)' : '0',
+        x: sx + 'px', actW: (-sx) + 'px',
+        tr: drag ? 'none' : 'transform 220ms cubic-bezier(.4,0,.2,1)', wTr: drag ? 'none' : 'width 220ms cubic-bezier(.4,0,.2,1)',
+        actLabel: stoppable ? 'Stop' : 'Re-queue', actBg: stoppable ? 'var(--danger)' : 'var(--control-active)', actFg: stoppable ? '#fff' : 'var(--fg)',
+        down: e => { this._drag = { id: x.id, x0: e.clientX, base: sx, moved: false }; },
+        move: e => {
+          const d = this._drag; if (!d || d.id !== x.id) return;
+          const dx = e.clientX - d.x0;
+          if (!d.moved && Math.abs(dx) < 6) return;
+          if (!d.moved) { d.moved = true; try { e.currentTarget.setPointerCapture(e.pointerId); } catch (_) {} }
+          this.setState({ swipe: { id: x.id, x: Math.max(-104, Math.min(0, d.base + dx)), drag: true } });
+        },
+        up: () => {
+          const d = this._drag; this._drag = null; if (!d || !d.moved) return;
+          this._suppress = true;
+          const cx = this.state.swipe.id === x.id ? this.state.swipe.x : 0;
+          this.setState({ swipe: { id: x.id, x: cx < -48 ? -104 : 0, drag: false } });
+        },
+        open: () => {
+          if (this._suppress) { this._suppress = false; return; }
+          if (this.state.swipe.x < 0) { this.setState({ swipe: { id: null, x: 0, drag: false } }); return; }
+          this.setState({ view: 'session', sid: x.id, draft: '', banner: this.state.banner === x.id ? null : this.state.banner });
+        },
+        act: () => {
+          this.setState({ swipe: { id: null, x: 0, drag: false } });
+          if (stoppable) this.setState({ sid: x.id, sheet: 'stop' }); else this.requeueId(x.id);
+        },
+      };
+    };
+    const pinned = visible.filter(x => x.state === 'waiting');
+    const rest = visible.filter(x => x.state !== 'waiting');
+    const groups = (pinned.length ? [{ name: 'Needs input', dot: true, count: String(pinned.length), items: pinned.map((x, i) => row(x, i, true)) }] : []).concat(REPO_ORDER.map(repo => {
+      const items = rest.filter(x => x.repo === repo);
+      return { name: repo, dot: false, count: String(items.length), items: items.map((x, i) => row(x, i, false)) };
+    }).filter(g => g.items.length));
+    const chatItems = [];
+    if (c) c.lines.forEach((l, i) => {
+      if (l.k === 'c' || l.k === 'l') {
+        let g = chatItems[chatItems.length - 1];
+        if (!g || !g.isTool) { g = { isTool: true, key: c.id + ':' + i, raw: [] }; chatItems.push(g); }
+        g.raw.push(l);
+      } else chatItems.push({ isAgent: l.k === 't', isYou: l.k === 'y', text: l.t });
+    });
+    chatItems.forEach(g => {
+      if (!g.isTool) return;
+      const cmds = g.raw.filter(l => l.k === 'c'), fails = g.raw.filter(l => l.tone === 'danger').length;
+      const one = cmds.length === 1 ? cmds[0].t : '';
+      g.summary = one ? 'Ran ' + (one.length > 30 ? one.slice(0, 29) + '…' : one) : cmds.length ? 'Ran ' + cmds.length + ' commands' : g.raw.length + (g.raw.length === 1 ? ' line' : ' lines') + ' of output';
+      g.failText = fails ? fails + ' failed' : '';
+      g.open = !!s.openTools[g.key]; g.openS = String(g.open); g.rot = g.open ? '180deg' : '0deg';
+      g.lines = g.raw.map(l => ({ text: (l.k === 'c' ? '$ ' : '') + l.t, tone: l.k === 'c' ? 'strong' : l.tone }));
+      const key = g.key;
+      g.toggle = () => this.setState(x => ({ openTools: { ...x.openTools, [key]: !x.openTools[key] } }));
+    });
+    const bState = b => (b.pending || b.msgs.some(m => m.k === 'pr' && m.status === 'pending')) ? 'waiting' : (b.busy || b.goal) ? 'running' : 'idle';
+    const bPreview = b => {
+      if (b.pending) return b.pending.prompt;
+      if (b.msgs.some(m => m.k === 'pr' && m.status === 'pending')) return 'Instructions ready for your review';
+      for (let i = b.msgs.length - 1; i >= 0; i--) { const m = b.msgs[i]; if (m.k === 'a') return m.text.replace(/\*\*|`/g, ''); if (m.k === 'u') return 'You: ' + m.text; if (m.k === 'e') return m.text; }
+      return b.role;
+    };
+    const bq = s.bq.trim().toLowerCase();
+    const bVisible = s.bots.filter(b => !bq || b.name.toLowerCase().includes(bq) || b.role.toLowerCase().includes(bq));
+    const bRow = (b, i) => {
+      const st = bState(b);
+      return { name: b.name, ini: b.ini, bg: b.bg, fg: b.fg, age: b.age, unread: !!b.unread, color: STATES[st].color,
+        preview: bPreview(b), previewFg: st === 'waiting' ? 'var(--fg)' : 'var(--fg-muted)',
+        sep: i ? '1px solid var(--border-subtle)' : '0',
+        open: () => { this.botUpd(b.id, x => ({ ...x, unread: false })); this.setState({ view: 'bot', botId: b.id, botDraft: '' }); } };
+    };
+    const botGroups = [];
+    const builtins = bVisible.filter(b => b.builtin), ungrouped = bVisible.filter(b => !b.builtin && !b.group);
+    if (builtins.length) botGroups.push({ name: '', count: '', items: builtins.map(bRow) });
+    ['Engineering', 'Research'].forEach(gn => { const it = bVisible.filter(b => b.group === gn); if (it.length) botGroups.push({ name: gn, count: String(it.length), items: it.map(bRow) }); });
+    if (ungrouped.length) botGroups.unshift.apply(botGroups, [{ name: 'New', count: String(ungrouped.length), items: ungrouped.map(bRow) }]);
+    const botsWaiting = s.bots.filter(b => bState(b) === 'waiting').length;
+    const B = this.bot();
+    const bst = B ? bState(B) : 'idle';
+    const botMsgs = B && s.view === 'bot' ? B.msgs.map(m => {
+      const o = { isUser: m.k === 'u', isAsst: m.k === 'a', isWork: m.k === 'w', isPeer: m.k === 'p', isEvent: m.k === 'e' || m.k === 'd', isProposal: m.k === 'pr' };
+      if (o.isUser) { o.text = m.text; o.files = m.files || []; o.hasFiles = o.files.length > 0; }
+      if (o.isAsst) { o.spans = spansOf(m.text); o.meta = m.meta || ''; }
+      if (o.isWork) {
+        const open = s.openWork[m.id] != null ? s.openWork[m.id] : false;
+        Object.assign(o, { live: !!m.live, label: m.live ? 'Working' : m.label, count: m.steps.length + (m.steps.length === 1 ? ' step' : ' steps'), open, openS: String(open), rot: open ? '180deg' : '0deg',
+          toggle: () => this.setState(x => ({ openWork: { ...x.openWork, [m.id]: !open } })),
+          steps: m.steps.map(st => ({ icon: STEP_ICON[st.verb] || 'terminal', verb: st.verb, target: st.target, meta: st.meta, note: st.note || '', metaFg: st.err ? 'var(--danger)' : 'var(--fg-subtle)' })) });
+      }
+      if (o.isPeer) Object.assign(o, { peer: m.peer, time: m.time, q: m.q, a: m.a });
+      if (o.isEvent) Object.assign(o, { icon: m.icon || 'check', text: m.text, link: m.link || '', go: e => { e.preventDefault(); if (m.sid) this.setState({ view: 'session', sid: m.sid, tab: 'sessions' }); } });
+      if (o.isProposal) Object.assign(o, { pending: m.status === 'pending', accepted: m.status === 'accepted',
+        lines: m.lines.map(t => ({ t, tone: t[0] === '+' ? 'success' : t[0] === '#' ? 'strong' : '' })),
+        accept: () => {
+          const id = B.id;
+          this.botUpd(id, x => ({ ...x, role: 'Watches nightly builds for flaky tests', msgs: x.msgs.map(y => y.id === m.id ? { ...y, status: 'accepted' } : y) }));
+          this.botAdd(id, { k: 'e', icon: 'file-text', text: 'Instructions saved as revision 1' });
+          this.later(() => this.botAdd(id, { k: 'a', text: 'Saved. I will check **build-01** after every nightly run and post flaky tests here with the run ID.', meta: 'Claude Sonnet 4.6' }), 700);
+        },
+        edit: () => this.setState({ botDraft: 'Change the instructions: ' }) });
+      return o;
+    }) : [];
+    const botReply = (text) => {
+      const id = B.id;
+      this.botAdd(id, { k: 'u', text });
+      const r = BOT_REPLIES[s.rn % BOT_REPLIES.length];
+      this.setState(x => ({ rn: x.rn + 1 }));
+      this.later(() => this.botWork(id, BOT_WORK, () => this.botAdd(id, { k: 'a', text: r, meta: 'Claude Sonnet 4.6' })), 300);
+    };
+    const decide = (kind) => {
+      const id = B.id, p = B.pending;
+      const label = { approve: 'You approved', always: 'You always allowed', deny: 'You denied' }[kind];
+      this.botUpd(id, x => ({ ...x, pending: null }));
+      this.botAdd(id, { k: 'd', icon: kind === 'deny' ? 'x' : 'check', text: label + ' · ' + p.detail });
+      if (kind === 'deny') { this.later(() => this.botAdd(id, { k: 'a', text: DENY_REPLY, meta: 'Claude Sonnet 4.6' }), 500); return; }
+      if (kind === 'always') showToast('Pushes always allowed for Release Bot');
+      this.later(() => this.botWork(id, [{ verb: 'Ran', target: p.detail, meta: 'ok' }, { verb: 'Ran', target: 'gh pr create --fill', meta: '#668' }], () => this.botAdd(id, { k: 'a', text: PUSH_REPLY, meta: 'Claude Sonnet 4.6' })), 300);
+    };
+    const botSend = () => {
+      const t = s.botDraft.trim(); if ((!t && !s.files.length) || !B) return;
+      const files = s.files.map(f => ({ name: f.name, size: f.size, icon: f.icon }));
+      this.setState({ botDraft: '', files: [], attachOpen: false });
+      const id = B.id;
+      this.botAdd(id, { k: 'u', text: t, files });
+      const r = files.length && !t ? 'Got ' + files.map(f => '`' + f.name + '`').join(' and ') + '. Reading it now; I will flag anything that looks off.' : BOT_REPLIES[s.rn % BOT_REPLIES.length];
+      this.setState(x => ({ rn: x.rn + 1 }));
+      this.later(() => this.botWork(id, files.length ? [{ verb: 'Read', target: files[0].name, meta: files[0].size }].concat(BOT_WORK.slice(1)) : BOT_WORK, () => this.botAdd(id, { k: 'a', text: r, meta: 'Claude Sonnet 4.6' })), 300);
+    };
+    const recMs = s.rec ? Date.now() - s.recStart : 0;
+    const recS = Math.floor(recMs / 1000);
+    const ATTACH = [
+      { icon: 'folder', label: 'Files', file: { name: 'trace-0941.json', size: '84 KB', icon: 'file-text' } },
+      { icon: 'terminal', label: 'Session log', file: { name: 'nightly-ingest.log', size: '212 KB', icon: 'terminal' } },
+      { icon: 'copy', label: 'Clipboard', file: { name: 'clipboard.txt', size: '2 KB', icon: 'copy' } },
+    ];
+    const PRV = [['review', 'To review', 'Opened by you, your sessions, or where someone asked for your review. The review agent checked each one first.'], ['waiting', 'Waiting', 'Approved, but held by a branch rule or the merge queue.'], ['merged', 'Merged', 'Merged in your name by the lane policy today.']];
+    const prViews = PRV.map(([id, label]) => { const on = s.prView === id; return { label, count: String(s.prs.filter(p => p.view === id).length), sel: String(on), bg: on ? 'var(--card)' : 'transparent', fg: on ? 'var(--fg)' : 'var(--fg-muted)', pick: () => this.setState({ prView: id }) }; });
+    const prRows = s.prs.filter(p => p.view === s.prView).map((p, i) => ({ ref: p.repo + ' #' + p.id, lane: p.lane, title: p.title, author: p.author, age: p.age, add: p.add.toLocaleString('en-US'), del: p.del.toLocaleString('en-US'),
+      ckColor: CK[p.ck][1], ckLabel: CK[p.ck][0], sep: i ? '1px solid var(--border-subtle)' : '0', open: () => this.setState({ view: 'pr', prId: p.id }) }));
+    const P = s.prs.find(p => p.id === s.prId);
+    const updPr = (fn) => this.setState(x => ({ prs: x.prs.map(p => p.id === s.prId ? fn(p) : p) }));
+    const R = s.routines.find(r => r.id === s.rId);
+    const updR = (id, fn) => this.setState(x => ({ routines: x.routines.map(r => r.id === id ? fn(r) : r) }));
+    const rRows = s.routines.map((r, i) => { const lr = r.runs[0]; return { name: r.name, trigger: r.trigger, isGh: r.kind === 'github', isSched: r.kind !== 'github', op: r.active ? 1 : 0.5, active: r.active,
+      last: r.active ? (lr ? RUN_STATE[lr[0]][0] + ' · ' + lr[2] : 'No runs yet') : 'Paused', lastColor: r.active && lr ? RUN_STATE[lr[0]][1] : 'var(--fg-subtle)',
+      switchLabel: (r.active ? 'Pause ' : 'Resume ') + r.name, sep: i ? '1px solid var(--border-subtle)' : '0',
+      toggle: () => updR(r.id, x => ({ ...x, active: !x.active })), open: () => this.setState({ view: 'auto', rId: r.id }) }; });
+    const bs = s.banner ? s.sessions.find(x => x.id === s.banner) : null;
+    const item = (label, icon, run, o) => ({ label, icon, run, danger: !!(o && o.danger), off: !!(o && o.off) });
+    const ask = (title, body, action, run) => this.setState({ sheet: 'confirm', confirm: { title, body, action, run: () => { this.setState({ sheet: null, confirm: null }); run(); } } });
+    const toast2 = (t) => { this.setState({ toast: t }); this.later(() => this.setState({ toast: '' }), 1600); };
+    const genericSheet = () => {
+      let title = '', sub = '', items = [];
+      if (s.sheet === 'prActions' && P) {
+        title = P.title; sub = P.repo + ' #' + P.id;
+        items = [
+          item('Open on GitHub', 'external-link', () => { this.setState({ sheet: null }); toast2('Opened on GitHub'); }),
+          item('Copy link', 'copy', () => { this.setState({ sheet: null }); toast2('Link copied'); }),
+          item('Re-run checks', 'refresh', () => {
+            const id = P.id; this.setState({ sheet: null });
+            this.setState(x => ({ prs: x.prs.map(p => p.id === id ? { ...p, ck: 'running' } : p) }));
+            this.later(() => this.setState(x => ({ prs: x.prs.map(p => p.id === id ? { ...p, ck: 'pass', prep: p.prep.map(r => r[2] === 'fail' || r[2] === 'run' ? [r[0], 'passing', 'ok'] : r) } : p) })), 3200);
+          }, { off: P.view === 'merged' || P.ck === 'running' }),
+          item('Close pull request', 'x', () => ask('Close #' + P.id + '?', 'The branch stays on the remote. You can reopen it on GitHub.', 'Close pull request', () => {
+            const id = P.id; this.setState(x => ({ prs: x.prs.filter(p => p.id !== id), view: 'list' })); toast2('Closed #' + id);
+          }), { danger: true, off: P.view === 'merged' }),
+        ];
+      }
+      if (s.sheet === 'autoActions' && R) {
+        title = R.name; sub = R.trigger;
+        const running = R.runs.some(r => r[0] === 'running');
+        items = [
+          item('Run now', 'play', () => { this.setState({ sheet: null }); const id = R.id; updR(id, x => ({ ...x, runs: [['running', 'Run now by you', 'just now', '\u2014']].concat(x.runs) })); this.later(() => updR(id, x => ({ ...x, runs: x.runs.map((r, i) => i === 0 && r[0] === 'running' ? ['completed', r[1], 'just now', '0m 04s'] : r) })), 4000); }, { off: running }),
+          item(R.active ? 'Pause' : 'Resume', R.active ? 'pause' : 'play', () => { this.setState({ sheet: null }); updR(R.id, x => ({ ...x, active: !x.active })); }),
+          item('Duplicate', 'copy', () => { const nid = 'r' + Date.now(); this.setState(x => ({ sheet: null, routines: [{ ...R, id: nid, name: R.name + ' copy', active: false, runs: [] }].concat(x.routines), rId: nid })); toast2('Duplicated as a paused copy'); }),
+          item('Delete', 'x', () => ask('Delete ' + R.name + '?', 'Future runs stop. Past runs and the sessions they created are kept.', 'Delete automation', () => {
+            const id = R.id; this.setState(x => ({ routines: x.routines.filter(r => r.id !== id), view: 'list' })); toast2('Automation deleted');
+          }), { danger: true }),
+        ];
+      }
+      if (s.sheet === 'botActions' && B) {
+        title = B.name; sub = B.role;
+        items = [
+          item('Mark as unread', 'mail', () => { this.botUpd(B.id, x => ({ ...x, unread: true })); this.setState({ sheet: null, view: 'list' }); }),
+          item('Clear conversation', 'refresh', () => ask('Clear the conversation with ' + B.name + '?', 'Messages are removed from this device and the console. Instructions and approvals are kept.', 'Clear conversation', () => {
+            this.botUpd(B.id, x => ({ ...x, pending: null, msgs: [{ id: 'c' + Date.now(), k: 'e', icon: 'refresh', text: 'Conversation cleared' }] }));
+          })),
+          item('Delete employee', 'x', () => ask('Delete ' + B.name + '?', 'Its automations stop and its GitHub access is revoked. Sessions it started are kept.', 'Delete employee', () => {
+            const id = B.id; this.setState(x => ({ bots: x.bots.filter(b => b.id !== id), view: 'list' })); toast2(B.name + ' deleted');
+          }), { danger: true, off: !!B.builtin }),
+        ];
+      }
+      return { title, sub, items: items.map((it, i) => ({ ...it, fg: it.danger ? 'var(--danger)' : 'var(--fg)', op: it.off ? 0.4 : 1, sep: i ? '1px solid var(--border-subtle)' : '0' })) };
+    };
+    const filters = [['all', 'All'], ['waiting', 'Needs input'], ['running', 'Running'], ['failed', 'Failed']].map(([id, label]) => ({
+      label, count: String(counts[id]), on: s.filter === id, pick: () => this.setState({ filter: id }),
+    }));
+    const tabs = TABS.map(t => {
+      const on = s.tab === t.id;
+      return { ...t, cur: on ? 'page' : undefined, fg: on ? 'var(--fg)' : 'var(--fg-subtle)',
+        pill: on ? 'var(--active-surface)' : 'transparent',
+        badge: t.id === 'sessions' && counts.waiting ? String(counts.waiting) : t.id === 'employees' && botsWaiting ? String(botsWaiting) : t.id === 'prs' ? String(s.prs.filter(p => p.view === 'review').length) : '',
+        pick: () => this.setState({ tab: t.id, view: 'list', scrolled: false }) };
+    });
+    const askObj = c && c.ask ? { q: c.ask.q, options: c.ask.options.map((o, i) => ({ n: String(i + 1), label: o, pick: () => this.reply(o) })) } : null;
+    const provLabels = c ? ['Provisioning a VM on ' + c.host, 'Cloning ' + c.repo, 'Checking out ' + c.branch, 'Starting ' + AGENTS[c.agent].label] : [];
+    const provMeta = ['3.8s', '1.1s', '0.4s', '0.9s'];
+    const provSteps = provLabels.map((label, i) => {
+      const p = c.prov || 0, state = i < p ? 'done' : i === p ? 'running' : 'pending';
+      return { label, state, mark: state === 'done' ? '✓' : '', meta: state === 'done' ? provMeta[i] : state === 'running' ? 'in progress' : '' };
+    });
+    const pickers = [['Project', PROJECTS, 'np'], ['Host', HOSTS, 'nh'], ['Agent', AGENT_KEYS, 'na']];
+    const scopes = pickers.map(([label, opts, key]) => ({ label, options: opts.map((o, i) => ({
+      label: AGENTS[o] ? AGENTS[o].label : o, on: s[key] === i, pick: () => this.setState({ [key]: i }),
+    })) }));
+    const closeSheet = () => this.setState({ sheet: null });
+    const showToast = (t) => { this.setState({ toast: t }); this.later(() => this.setState({ toast: '' }), 1600); };
+    const send = () => {
+      const t = s.draft.trim(); if (!t) return;
+      this.setState({ draft: '' }); this.reply(t);
+    };
+    const live = s.view === 'session' && c && c.prov == null;
+    return {
+      frameComp: ios ? 'IOSDevice' : 'AndroidDevice', isDark: dark, isIos: ios, isAndroid: !ios,
+      topPad: ios ? '54px' : '0px', authBottom: ios ? '40px' : '16px', authBottomGlass: ios ? '30px' : '10px',
+      barBg: s.scrolled ? 'color-mix(in srgb, var(--background) 72%, transparent)' : 'transparent',
+      barBlur: s.scrolled ? 'var(--glass-blur)' : 'none', barEdge: s.scrolled ? 'var(--glass-edge)' : 'transparent',
+      barTitleOp: ios ? (s.scrolled ? 1 : 0) : 1,
+      onListScroll: e => { const v = e.currentTarget.scrollTop > 6; if (v !== this.state.scrolled) this.setState({ scrolled: v }); },
+      barH: ios ? '44px' : '64px', barFs: ios ? '17px' : '22px', showPlus: ios && ['sessions', 'employees', 'automations'].includes(s.tab),
+      plusLabel: s.tab === 'employees' ? 'New employee' : s.tab === 'automations' ? 'New automation' : 'New session',
+      onPlus: () => this.setState({ sheet: s.tab === 'employees' ? 'newBot' : s.tab === 'automations' ? 'newAuto' : 'new' }),
+      sheetNewAuto: s.sheet === 'newAuto', naName: s.naName, naPrompt: s.naPrompt,
+      setNaName: e => this.setState({ naName: e.target.value }), setNaPrompt: e => this.setState({ naPrompt: e.target.value }),
+      naOff: !s.naName.trim() || !s.naPrompt.trim(),
+      naScopes: [['Trigger', NA_TRIGGERS.map(t => t.label), 'naT'], ['Repository', NA_REPOS, 'naRepo'], ['Host', HOSTS, 'naHost'], ['Agent', AGENT_KEYS.map(a => AGENTS[a].label), 'naAgent']].map(([label, opts, key]) => ({ label, options: opts.map((o, i) => ({ label: o, on: s[key] === i, pick: () => this.setState({ [key]: i }) })) })),
+      createAuto: () => {
+        const t = NA_TRIGGERS[s.naT], repo = NA_REPOS[s.naRepo], id = 'r' + Date.now();
+        const nr = { id, name: s.naName.trim(), prompt: s.naPrompt.trim(), active: true, repo, host: HOSTS[s.naHost], agent: AGENT_KEYS[s.naAgent], model: ['Sonnet', 'GPT-5.2', 'Default'][s.naAgent], kind: t.kind, trigger: t.trigger(repo), next: t.next, runs: [] };
+        this.setState(x => ({ routines: [nr].concat(x.routines), sheet: null, naName: '', naPrompt: '', view: 'auto', rId: id, tab: 'automations' }));
+        showToast('Automation created');
+      },
+      openPrActions: () => this.setState({ sheet: 'prActions' }), openAutoActions: () => this.setState({ sheet: 'autoActions' }), openBotActions: () => this.setState({ sheet: 'botActions' }),
+      sheetGeneric: ['prActions', 'autoActions', 'botActions'].includes(s.sheet), gs: genericSheet(),
+      sheetConfirm: s.sheet === 'confirm' && !!s.confirm, cf: s.confirm || {},
+      tabEmployees: s.tab === 'employees', bq: s.bq, setBq: e => this.setState({ bq: e.target.value }), botGroups, botNoMatch: !botGroups.length,
+      inBot: s.view === 'bot' && !!B, botMsgs,
+      bot: B ? { name: B.name, ini: B.ini, bg: B.bg, fg: B.fg, color: STATES[bst].color, sub: (B.busy ? 'Working' : STATES[bst].word) + ' · ' + B.role } : {},
+      botTop: ios ? '130px' : '76px',
+      botPadBottom: (90 + (B && B.pending ? 250 : 0) + (B && B.goal && !B.pending ? 56 : 0) + (s.attachOpen ? 84 : 0) + (s.files.length ? 46 : 0) + (ios ? 26 : 8)) + 'px',
+      botHasGoal: !!(B && B.goal && !B.pending), goal: B && B.goal ? { ...B.goal, pct: Math.round(B.goal.step / B.goal.limit * 100) + '%' } : {},
+      stopGoal: () => { const id = B.id, g = B.goal; this.botUpd(id, x => ({ ...x, goal: null })); this.botAdd(id, { k: 'e', icon: 'x', text: 'Goal stopped at ' + g.step + ' of ' + g.limit }); },
+      botHasPend: !!(B && B.pending), pend: (B && B.pending) || {},
+      approve: () => decide('approve'), alwaysAllow: () => decide('always'), deny: () => decide('deny'),
+      botPh: B ? 'Message ' + B.name : '', botDraft: s.botDraft, setBotDraft: e => this.setState({ botDraft: e.target.value }),
+      botKey: e => { if (e.key === 'Enter') botSend(); }, botSend,
+      showSend: !!(s.botDraft.trim() || s.files.length), showMic: !s.botDraft.trim(),
+      attachOpen: !!s.attachOpen, attachOpenS: String(!!s.attachOpen), attachRot: s.attachOpen ? '45deg' : '0deg',
+      toggleAttach: () => this.setState(x => ({ attachOpen: !x.attachOpen })),
+      attachOpts: ATTACH.map(a => ({ ...a, pick: () => this.setState(x => ({ attachOpen: false, files: x.files.some(f => f.name === a.file.name) ? x.files : x.files.concat([{ ...a.file, key: a.file.name }]) })) })),
+      hasFiles: s.files.length > 0, files: s.files.map(f => ({ ...f, remove: () => this.setState(x => ({ files: x.files.filter(y => y.name !== f.name) })) })),
+      isRec: !!s.rec, notRec: !s.rec, recTime: Math.floor(recS / 60) + ':' + String(recS % 60).padStart(2, '0'), recDot: (Math.floor(recMs / 500) % 2) ? 0.35 : 1,
+      wave: Array.from({ length: 28 }, (_, i) => s.rec ? Math.round(4 + Math.abs(Math.sin(i * 1.7 + s.spin * 0.9) * Math.cos(i * 0.6 + s.spin * 0.35)) * 20) + 'px' : '4px'),
+      startRec: () => this.setState({ rec: true, recStart: Date.now(), attachOpen: false }),
+      cancelRec: () => this.setState({ rec: false }),
+      finishRec: () => {
+        this.setState({ rec: false, transcribing: true });
+        this.later(() => this.setState(x => ({ transcribing: false, botDraft: (x.botDraft ? x.botDraft + ' ' : '') + 'Check whether the cancel path also covers tool calls started by subagents.' })), 900);
+      },
+      transcribing: !!s.transcribing,
+      sheetNewBot: s.sheet === 'newBot', nbName: s.nbName, nbJob: s.nbJob, nbOff: !s.nbName.trim() || !s.nbJob.trim(),
+      setNbName: e => this.setState({ nbName: e.target.value }), setNbJob: e => this.setState({ nbJob: e.target.value }),
+      createBot: () => {
+        const name = s.nbName.trim(), job = s.nbJob.trim(), id = 'b' + Date.now();
+        const ini = name.split(/\s+/).map(w => w[0]).join('').slice(0, 2).toUpperCase();
+        const nb = { id, name, role: 'No instructions yet', ini, bg: AVC.lemon, fg: '#1d1d1f', age: 'now', msgs: [{ id: id + '0', k: 'u', text: job }] };
+        this.setState(x => ({ bots: [nb].concat(x.bots), sheet: null, nbName: '', nbJob: '', view: 'bot', botId: id, tab: 'employees', bq: '' }));
+        this.later(() => this.botWork(id, [{ verb: 'Thought', target: '', meta: '2s' }, { verb: 'Read', target: 'workspace projects', meta: '3' }], () => {
+          this.botAdd(id, { k: 'a', text: 'Here is what I will follow. Accept it and it becomes revision 1 of `INSTRUCTIONS.md`; you can change it any time.', meta: 'Claude Sonnet 4.6' });
+          this.botAdd(id, { k: 'pr', status: 'pending', lines: propLines(job) });
+        }), 400);
+      },
+      tabBottom: ios ? '24px' : '10px', sessTop: ios ? '166px' : '112px', dockBottom: ios ? '26px' : '8px', sheetGap: ios ? '26px' : '8px', bannerTop: ios ? '50px' : '8px',
+      isTerm: live && s.mode === 'term', isChat: live && s.mode === 'chat', chatItems: live ? chatItems : [],
+      modeTermOn: String(s.mode === 'term'), modeChatOn: String(s.mode === 'chat'),
+      modeTermBg: s.mode === 'term' ? 'var(--card)' : 'transparent', modeChatBg: s.mode === 'chat' ? 'var(--card)' : 'transparent',
+      modeTermFg: s.mode === 'term' ? 'var(--fg)' : 'var(--fg-muted)', modeChatFg: s.mode === 'chat' ? 'var(--fg)' : 'var(--fg-muted)',
+      setTerm: () => this.setState({ mode: 'term' }), setChat: () => this.setState({ mode: 'chat' }),
+      hasBanner: !!bs, bn: bs ? { name: bs.name, q: bs.ask ? bs.ask.q : '', logo: AGENTS[bs.agent].logo, logoFilter: AGENTS[bs.agent].mono ? 'var(--brand-glyph-filter,none)' : 'none' } : {},
+      bannerOpen: () => this.setState({ view: 'session', sid: s.banner, tab: 'sessions', banner: null, sheet: null }),
+      bannerClose: e => { e.stopPropagation(); this.setState({ banner: null }); },
+      termPadBottom: (c && c.ask ? (ios ? 360 : 340) : (ios ? 170 : 150)) + 'px',
+      tabFs: ios ? '10.5px' : '11.5px', listTail: '120px',
+      screenLabel: s.screen === 'app' ? (s.view === 'session' ? 'Session' : s.view === 'bot' ? 'Employee chat' : s.view === 'pr' ? 'Pull request' : s.view === 'auto' ? 'Automation' : TABS.find(t => t.id === s.tab).label) : s.screen === 'email' ? 'Sign in with email' : 'Welcome',
+      isWelcome: s.screen === 'welcome', isEmail: s.screen === 'email', isApp: s.screen === 'app',
+      goEmail: () => this.setState({ screen: 'email' }), goWelcome: () => this.setState({ screen: 'welcome' }),
+      signIn: () => { this.setState({ screen: 'app', tab: 'sessions', view: 'list' }); this.scheduleAlert(); },
+      email: s.email, setEmail: e => this.setState({ email: e.target.value }),
+      pw: s.pw, setPw: e => this.setState({ pw: e.target.value }),
+      pwKey: e => { if (e.key === 'Enter') { this.setState({ screen: 'app', tab: 'sessions', view: 'list' }); this.scheduleAlert(); } },
+      pwType: s.showPw ? 'text' : 'password', pwIcon: s.showPw ? 'eye-off' : 'eye', pwToggleLabel: s.showPw ? 'Hide password' : 'Show password',
+      togglePw: () => this.setState(x => ({ showPw: !x.showPw })),
+      inList: s.view === 'list', inSession: s.view === 'session',
+      tabSessions: s.tab === 'sessions', tabAccount: s.tab === 'account', tabOther: ['prs', 'automations'].includes(s.tab), tabPrs: s.tab === 'prs', tabAuto: s.tab === 'automations',
+      prViews, prRows, prEmpty: !prRows.length, prViewDesc: PRV.find(v => v[0] === s.prView)[2],
+      inPr: s.view === 'pr' && !!P, inAuto: s.view === 'auto' && !!R,
+      detTop: ios ? '126px' : '72px', detPadBottom: '112px',
+      pr: P ? { ref: P.repo + ' #' + P.id, title: P.title, lane: P.lane, author: P.author, branch: P.branch, add: P.add.toLocaleString('en-US'), del: P.del.toLocaleString('en-US'),
+        ckColor: CK[P.ck][1], ckLabel: CK[P.ck][0], why: P.why, bp: P.bp.map(t => ({ t })), block: P.view === 'waiting' ? P.block : '',
+        prep: P.prep.map((x, i) => ({ label: x[0], value: x[1], color: x[2] === 'ok' ? 'var(--success)' : x[2] === 'fail' ? 'var(--danger)' : 'var(--fg-subtle)', sep: i ? '1px solid var(--border-subtle)' : '0' })),
+        findings: P.findings.map(f => ({ path: f[0], text: f[1] })), hasFindings: P.findings.length > 0, findingCount: String(P.findings.length),
+        canMerge: P.view === 'review', mergeOff: P.ck !== 'pass', waitAct: P.view === 'waiting' ? (P.waitAct || '') : '',
+        quiet: P.view === 'merged' ? 'Merged in your name' : P.view === 'waiting' && !P.waitAct ? 'Merges when it reaches the front' : '', quietIcon: P.view === 'merged' ? 'check' : 'clock' } : {},
+      prMerge: () => { updPr(p => ({ ...p, view: 'merged', age: 'now', prep: p.prep.concat([['Merged', 'in your name, just now', 'ok']]) })); this.setState({ view: 'list', prView: 'merged' }); showToast('Merged #' + P.id + ' in your name'); },
+      prChanges: () => { updPr(p => ({ ...p, view: 'waiting', waitAct: '', block: 'You requested changes. ' + (p.agent ? 'The session is working through the findings.' : p.author + ' has been notified.') })); showToast('Changes requested'); },
+      prNudge: () => showToast('Reminded Marta Vidal'),
+      rRows, rt: R ? { name: R.name, trigger: R.trigger, prompt: R.prompt, active: R.active, isGh: R.kind === 'github', isSched: R.kind !== 'github',
+        nextLabel: R.active ? 'Next run · ' + R.next : 'Paused. Triggers are ignored.',
+        toggle: () => updR(R.id, x => ({ ...x, active: !x.active })),
+        where: [['Repository', R.repo], ['Host', R.host], ['Agent', AGENTS[R.agent].label + ' · ' + R.model]].map((w, i) => ({ label: w[0], value: w[1], sep: i ? '1px solid var(--border-subtle)' : '0' })),
+        runs: R.runs.map((r, i) => ({ word: RUN_STATE[r[0]][0], color: RUN_STATE[r[0]][1], cause: r[1], when: r[2], dur: r[3], sep: i ? '1px solid var(--border-subtle)' : '0' })),
+        runOff: R.runs.some(r => r[0] === 'running'), runLabel: R.runs.some(r => r[0] === 'running') ? 'Running' : 'Run now' } : {},
+      runNow: () => {
+        const id = R.id;
+        updR(id, x => ({ ...x, runs: [['running', 'Run now by you', 'just now', '—']].concat(x.runs) }));
+        this.later(() => updR(id, x => ({ ...x, runs: x.runs.map((r, i) => i === 0 && r[0] === 'running' ? ['completed', r[1], 'just now', '0m 04s'] : r) })), 4000);
+      },
+      tabTitle: (t => t.title || t.label)(TABS.find(t => t.id === s.tab)), tabs,
+      showFab: !ios && s.view === 'list' && ['sessions', 'employees', 'automations'].includes(s.tab),
+      q: s.q, setQ: e => this.setState({ q: e.target.value }), filters, groups, noMatch: !groups.length,
+      themeRows: [['light', 'Light', 'sun'], ['dark', 'Dark', 'moon']].map(([id, label, icon], i) => ({
+        label, icon, on: this.theme() === id, sep: i ? '1px solid var(--border-subtle)' : '0', pick: () => this.setState({ theme: id }),
+      })),
+      signOut: () => this.setState({ screen: 'welcome', pw: '', tab: 'sessions', view: 'list' }),
+      back: () => this.setState({ view: 'list', draft: '', scrolled: false }),
+      cur: c ? { name: c.name, color: STATES[c.state].color, sub: meta(c), host: c.host, branch: c.branch, age: c.age, logo: AGENTS[c.agent].logo, logoFilter: AGENTS[c.agent].mono ? 'var(--brand-glyph-filter,none)' : 'none' } : {},
+      provisioning: s.view === 'session' && c && c.prov != null, provSteps, live,
+      termRef: this.termRef,
+      termLines: live ? c.lines.map(l => ({ text: l.t, tone: l.tone, isCmd: l.k === 'c', isTurn: l.k === 't', isYou: l.k === 'y', isLine: l.k === 'l' })) : [],
+      working: !!(c && c.busy), spinner: SPIN[s.spin],
+      hasAsk: !!askObj, ask: askObj || { q: '', options: [] },
+      keys: KEYS.map(k => ({ ...k, press: () => {
+        if (k.interrupt) { if (c && (c.state === 'running' || c.state === 'waiting')) this.setState({ sheet: 'stop' }); }
+        else if (k.insert) this.setState(x => ({ draft: x.draft + k.insert }));
+      } })),
+      promptPh: c && c.state === 'waiting' ? 'Reply to the agent' : 'Reply or run a command',
+      draft: s.draft, setDraft: e => this.setState({ draft: e.target.value }),
+      draftKey: e => { if (e.key === 'Enter') send(); }, send,
+      sendOff: !s.draft.trim(), sendOpacity: s.draft.trim() ? 1 : 0.4,
+      openActions: () => this.setState({ sheet: 'actions' }),
+      openNew: () => this.setState({ sheet: 'new' }),
+      sheetOpen: !!s.sheet, sheetNew: s.sheet === 'new', sheetActions: s.sheet === 'actions', sheetStop: s.sheet === 'stop',
+      closeSheet, stop: e => e.stopPropagation(),
+      canStop: c && (c.state === 'running' || c.state === 'waiting'),
+      canRequeue: c && (c.state === 'failed' || c.state === 'idle'),
+      askStop: () => this.setState({ sheet: 'stop' }),
+      confirmStop: () => {
+        this.push(c.id, [['l', '^C', 'dim'], ['l', 'Session stopped by you. 2 in-flight tool calls cancelled.', 'warning']], { state: 'idle', ask: null, busy: false });
+        this.setState({ sheet: null });
+      },
+      requeue: () => { this.setState({ sheet: null }); this.requeueId(c.id); },
+      copyLink: () => { this.setState({ sheet: null }); showToast('Link copied'); },
+      toast: s.toast,
+      newPrompt: s.newPrompt, setNewPrompt: e => this.setState({ newPrompt: e.target.value }),
+      scopes, newOff: !s.newPrompt.trim(),
+      startNew: () => {
+        const prompt = s.newPrompt.trim(); if (!prompt) return;
+        const id = 'n' + Date.now();
+        const repo = PROJECTS[s.np];
+        const name = prompt.length > 38 ? prompt.slice(0, 36).trim() + '…' : prompt;
+        const ns = { id, name, prompt, state: 'queued', age: 'now', repo, agent: AGENT_KEYS[s.na], host: HOSTS[s.nh], branch: 'op/' + prompt.toLowerCase().replace(/[^a-z0-9]+/g, '-').slice(0, 24).replace(/-+$/, ''), lines: [], prov: 0, tick: 0 };
+        this.setState(x => ({ sessions: [ns].concat(x.sessions), sheet: null, newPrompt: '', view: 'session', sid: id, tab: 'sessions', filter: 'all', q: '' }));
+        this.provision(id);
+      },
+    };
+  }
+}
+</script>
+</body>
+</html>
