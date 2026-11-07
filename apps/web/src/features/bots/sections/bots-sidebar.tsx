@@ -1,4 +1,4 @@
-import { BotList, Skeleton } from '@oppenheimer/design-system-web';
+import { BotItemSkeleton, BotList } from '@oppenheimer/design-system-web';
 import { QueryState } from '@oppenheimer/frontend-web';
 import { useTranslation } from 'react-i18next';
 import { BotsSidebarList } from './bots-sidebar-list';
@@ -17,9 +17,9 @@ export function BotsSidebar() {
       <QueryState>
         <QueryState.Pending>
           <BotList className="mx-3 mt-1">
-            <Skeleton shape="sm" className="h-13 w-full" />
-            <Skeleton shape="sm" className="h-13 w-full" />
-            <Skeleton shape="sm" className="h-13 w-full" />
+            <BotItemSkeleton />
+            <BotItemSkeleton />
+            <BotItemSkeleton />
           </BotList>
         </QueryState.Pending>
         <QueryState.Error fallback={t('bots.sidebar.loadFailed')} className="mx-3 mt-1" />

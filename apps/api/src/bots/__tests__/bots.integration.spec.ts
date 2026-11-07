@@ -433,6 +433,44 @@ describe('bots (integration)', () => {
     expect(await memory.findAll(scope(), bot.id)).toHaveLength(1);
   });
 
+  // What breaks this: a bot that saves as it goes refused once full, its
+  // newest entry dropped instead of its oldest, or a profile fact (a standing
+  // instruction) let go to make room.
+  it('makes room for a bot’s own save by dropping its oldest log fact, never a profile one', async () => {
+    const bot = await create('Ana');
+    const fact = (content: string, tier: 'profile' | 'log') =>
+      BotMemoryFactEntity.createNew({
+        organizationId,
+        botId: bot.id,
+        content,
+        actor: { kind: 'bot' },
+        tier,
+      });
+    await memory.insert(fact('Always squash merge.', 'profile'), 3);
+    await memory.insert(fact('Staging moved to devbox.', 'log'), 3);
+    await memory.insert(fact('Ticket 412 was the login race.', 'log'), 3);
+
+    expect(await memory.insert(fact('Shipped 0.4.', 'log'), 3)).toBe('full');
+    expect(await memory.insert(fact('Shipped 0.4.', 'log'), 3, true)).toBe('inserted');
+    expect((await memory.findAll(scope(), bot.id)).map((kept) => kept.content).sort()).toEqual([
+      'Always squash merge.',
+      'Shipped 0.4.',
+      'Ticket 412 was the login race.',
+    ]);
+
+    const profileOnly = await create('Bea');
+    const own = (content: string) =>
+      BotMemoryFactEntity.createNew({
+        organizationId,
+        botId: profileOnly.id,
+        content,
+        actor: { kind: 'bot' },
+        tier: 'profile',
+      });
+    await memory.insert(own('Always squash merge.'), 1);
+    expect(await memory.insert(own('Reviews in Spanish.'), 1, true)).toBe('full');
+  });
+
   it('edits, forgets and clears memory', async () => {
     const bot = await create('Ana');
     const first = BotMemoryFactEntity.createNew({

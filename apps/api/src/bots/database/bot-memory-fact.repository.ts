@@ -76,7 +76,11 @@ export class BotMemoryFactRepository
     return record ? Some(this.mapper.toDomain(record)) : None;
   }
 
-  async insert(fact: BotMemoryFactEntity, max: number): Promise<'inserted' | 'full' | 'missing'> {
+  async insert(
+    fact: BotMemoryFactEntity,
+    max: number,
+    makeRoom = false,
+  ): Promise<'inserted' | 'full' | 'missing'> {
     return this.dataSource.transaction(async (manager) => {
       const locked: unknown[] = await manager.query(
         `SELECT id FROM bot WHERE "organizationId" = $1 AND id = $2 FOR NO KEY UPDATE`,
@@ -88,7 +92,18 @@ export class BotMemoryFactRepository
           WHERE "organizationId" = $1 AND "botId" = $2`,
         [fact.organizationId, fact.botId],
       );
-      if (count >= max) return 'full' as const;
+      if (count >= max) {
+        if (!makeRoom) return 'full' as const;
+        // The oldest log fact, through IDX_bot_memory_fact_bot.
+        const [, dropped]: [unknown[], number] = await manager.query(
+          `DELETE FROM bot_memory_fact WHERE id = (
+             SELECT id FROM bot_memory_fact
+              WHERE "organizationId" = $1 AND "botId" = $2 AND tier = 'log'
+              ORDER BY "createdAt", id LIMIT 1)`,
+          [fact.organizationId, fact.botId],
+        );
+        if (dropped === 0) return 'full' as const;
+      }
       await manager.getRepository(BotMemoryFactOrmEntity).insert(this.mapper.toPersistence(fact));
       return 'inserted' as const;
     });
@@ -117,7 +132,22 @@ export class BotMemoryFactRepository
   }
 
   async clear(bot: { organizationId: string; id: string }): Promise<void> {
-    // At most BOT_MEMORY_FACTS_MAX rows, through IDX_bot_memory_fact_bot.
-    await this.repository.delete({ organizationId: bot.organizationId, botId: bot.id });
+    await this.dataSource.transaction(async (manager) => {
+      // The lock a dream and its undo take, so neither writes between these deletes.
+      await manager.query(
+        `SELECT id FROM bot WHERE "organizationId" = $1 AND id = $2 FOR NO KEY UPDATE`,
+        [bot.organizationId, bot.id],
+      );
+      // At most BOT_MEMORY_FACTS_MAX rows, through IDX_bot_memory_fact_bot.
+      await manager.delete(BotMemoryFactOrmEntity, {
+        organizationId: bot.organizationId,
+        botId: bot.id,
+      });
+      // The bot's latest dream, by its key: undoing it would bring cleared facts back.
+      await manager.query(
+        `DELETE FROM bot_memory_dream WHERE "organizationId" = $1 AND "botId" = $2`,
+        [bot.organizationId, bot.id],
+      );
+    });
   }
 }

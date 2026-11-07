@@ -797,6 +797,7 @@ See `product/versions/mvp/25-bots.md`.
 | `BOTS_038` <a id="bots_038" />       | Skill not found | 404  |
 | `BOTS_039` <a id="bots_039" />       | The bot already has a skill with that name | 409  |
 | `BOTS_040` <a id="bots_040" />       | The bot has as many skills as it can keep | 422  |
+| `BOTS_041` <a id="bots_041" />       | The bot has no dream to undo | 404  |
 
 `BOTS_001`, `BOTS_003` and `BOTS_008` are also returned for a bot, group or fact in
 another workspace.
@@ -812,8 +813,9 @@ loaded, and a save over a newer one is refused rather than silently winning. Whe
 the save was stale, the problem's `revision` extension is the revision that is
 current now. Reload and save again.
 
-`BOTS_009` is a bot that already keeps 200 facts: it reads every one before each
-turn. Forget one first.
+`BOTS_009` is a fact added by hand to a bot that already keeps 500, both tiers
+together. Forget one first. A bot saving through `remember` is not refused: its
+oldest log fact makes room, and only a memory of profile facts alone is full.
 
 `BOTS_010` is a model id the bot's provider does not offer
 (`BOT_PROVIDER_CATALOG`); leave `model` null for the provider's default.
@@ -890,6 +892,9 @@ own `save_skill`). `BOTS_038` is a skill that is not this bot's or not in the
 caller's workspace. `BOTS_039` is a name another of the bot's skills has: a
 skill's name is its slash command, so rename one of them. `BOTS_040` is a
 skill past the bot's fifty: delete one first.
+
+`BOTS_041` is an undo of a bot's dream (Settings → Memory) when its memory was
+never dreamed, or its latest dream was undone already: only the latest can be.
 
 A home host the caller may not use answers `HOSTS_001`, as a session's does.
 

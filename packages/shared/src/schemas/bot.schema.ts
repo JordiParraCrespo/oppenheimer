@@ -64,14 +64,20 @@ export const BOT_GROUP_NAME_MAX = 60;
 export const BOT_DOCUMENT_MAX = 32_768;
 export const BOT_REVISION_NOTE_MAX = 200;
 export const BOT_MEMORY_FACT_MAX = 500;
-/** How many facts one bot may keep, both tiers together. */
-export const BOT_MEMORY_FACTS_MAX = 200;
+/**
+ * How many facts one bot may keep, both tiers together. A person adding one
+ * by hand to a full memory is refused; the bot's own `remember` makes room
+ * by dropping its oldest `log` fact, as Grok Bot's journal lets old entries
+ * go (`research/lessons-from-grok-bot.md` §10).
+ */
+export const BOT_MEMORY_FACTS_MAX = 500;
 
 /**
- * How a fact is kept (`25-bots.md` §4.1; from Grok Bot's memory tiers,
- * `research/lessons-from-grok-bot.md` §9 row 11): `profile`, in mind in
- * every turn (who the person is, standing preferences); `log`, kept to be
- * looked up with `recall` (a detail, a past decision), never in the prompt.
+ * How a fact is kept (`25-bots.md` §4.1; from Grok Bot's profile and
+ * journal, `research/lessons-from-grok-bot.md` §9 row 11 and §10):
+ * `profile`, standing instructions and who the person is, in mind every
+ * turn; `log`, everything else, dated, its newest entries in the prompt and
+ * the rest looked up with `recall`.
  */
 export const BOT_MEMORY_TIERS = ['profile', 'log'] as const;
 export type BotMemoryTier = (typeof BOT_MEMORY_TIERS)[number];
@@ -83,8 +89,52 @@ export type BotMemoryTier = (typeof BOT_MEMORY_TIERS)[number];
 export const BOT_MEMORY_SCOPES = ['bot', 'person'] as const;
 export type BotMemoryScope = (typeof BOT_MEMORY_SCOPES)[number];
 
-/** The `profile` facts one turn is given, newest first: the rest wait for `recall`. */
-export const BOT_MEMORY_PROFILE_IN_PROMPT_MAX = 60;
+/** The characters of `profile` facts one turn is given, newest first: the rest wait for `recall`. */
+export const BOT_MEMORY_PROFILE_IN_PROMPT_CHARS = 4_000;
+/** The characters of the newest `log` facts one turn is given, each with its date. */
+export const BOT_MEMORY_LOG_IN_PROMPT_CHARS = 2_000;
+/**
+ * A bot's dream (`25-bots.md` §4.1, "Dreaming"; from Managed Agents' dreams):
+ * an offline pass of its own model over the memory it wrote and its recent
+ * conversation that merges duplicates, rewrites each fact as one clear
+ * sentence, drops what is stale or contradicted, and keeps what the
+ * conversation shows will matter. It replaces the bot's own facts in one
+ * write; the facts as they were are kept, so the owner can undo the latest.
+ *
+ * It runs after a turn once the bot has written `BOT_DREAM_WRITES_MIN` facts
+ * since its last dream (or since it began) and keeps at least
+ * `BOT_DREAM_FACTS_MIN`, at most once every `BOT_DREAM_INTERVAL_MS`; and
+ * when the owner asks, from Settings → Memory.
+ */
+export const BOT_DREAM_FACTS_MIN = 8;
+export const BOT_DREAM_WRITES_MIN = 10;
+export const BOT_DREAM_INTERVAL_MS = 24 * 60 * 60 * 1000;
+/** The longest note a dream leaves on what it changed. */
+export const BOT_DREAM_NOTE_MAX = 300;
+
+/** What a dream did: `dreamed`, it rewrote the memory; `undone`, the owner put the old one back. */
+export const BOT_DREAM_ACTIVITIES = ['dreamed', 'undone'] as const;
+export type BotDreamActivity = (typeof BOT_DREAM_ACTIVITIES)[number];
+
+/** A bot's latest dream, as Settings → Memory reads it. */
+export interface BotMemoryDream {
+  id: string;
+  /** The bot's own facts before and after it. */
+  factsBefore: number;
+  factsAfter: number;
+  /** What it changed, in its own words; null when it said nothing. */
+  note: string | null;
+  createdAt: string;
+  /** When the owner undid it; null while it stands. */
+  undoneAt: string | null;
+}
+
+/** `GET /bots/:id/memory/dream`: the latest dream, and whether one its owner asked for is under way. */
+export interface BotMemoryDreamState {
+  latest: BotMemoryDream | null;
+  pending: boolean;
+}
+
 /** The most revisions one read returns, newest first. */
 export const BOT_REVISIONS_PAGE_MAX = 100;
 export const BOT_REVISIONS_PAGE_DEFAULT = 50;
@@ -757,7 +807,7 @@ export interface BotLoop {
  * the chat's as it stands: clearing the conversation starts them again.
  * Cache reads and writes are part of the input, never on top of it.
  */
-export const BOT_MODEL_CALL_PURPOSES = ['goal_review', 'summary', 'rule_review'] as const;
+export const BOT_MODEL_CALL_PURPOSES = ['goal_review', 'summary', 'rule_review', 'dream'] as const;
 export type BotModelCallPurpose = (typeof BOT_MODEL_CALL_PURPOSES)[number];
 
 export interface BotTokenCounts {
@@ -923,6 +973,15 @@ export interface BotPeerReplyEvent {
   outcome: BotReplyOutcome;
 }
 
+/** A dream rewrote the bot's memory, or the owner undid it (`25-bots.md` §4.1, "Dreaming"). */
+export interface BotDreamEvent {
+  kind: 'dream';
+  activity: BotDreamActivity;
+  dreamId: string;
+  factsBefore: number;
+  factsAfter: number;
+}
+
 export type BotMessageEvent =
   | BotApprovalEvent
   | BotQuestionEvent
@@ -932,7 +991,8 @@ export type BotMessageEvent =
   | BotSessionEvent
   | BotPullRequestEvent
   | BotGoalEvent
-  | BotLoopEvent;
+  | BotLoopEvent
+  | BotDreamEvent;
 
 /** The kinds of event, for a reader that checks one before trusting its fields. */
 export const BOT_MESSAGE_EVENT_KINDS = [
@@ -945,6 +1005,7 @@ export const BOT_MESSAGE_EVENT_KINDS = [
   'pull_request',
   'goal',
   'loop',
+  'dream',
 ] as const;
 export type BotMessageEventKind = (typeof BOT_MESSAGE_EVENT_KINDS)[number];
 

@@ -65,5 +65,8 @@ export const BotsErrors = {
   FETCH_LOOP_FAILED: { code: 'BOTS_CLIENT_045', message: 'Failed to load the loop' },
   CLEAR_LOOP_FAILED: { code: 'BOTS_CLIENT_046', message: 'Failed to stop the loop' },
   FETCH_NOTICES_FAILED: { code: 'BOTS_CLIENT_047', message: "Failed to load the bots' notices" },
-  MARK_SEEN_FAILED: { code: 'BOTS_CLIENT_048', message: 'Failed to mark the chat as seen' },
+  FETCH_DREAM_FAILED: { code: 'BOTS_CLIENT_048', message: "Failed to load the memory's last tidy" },
+  REQUEST_DREAM_FAILED: { code: 'BOTS_CLIENT_049', message: 'Failed to start tidying the memory' },
+  UNDO_DREAM_FAILED: { code: 'BOTS_CLIENT_050', message: 'Failed to undo the tidy' },
+  MARK_SEEN_FAILED: { code: 'BOTS_CLIENT_051', message: 'Failed to mark the chat as seen' },
 } as const satisfies Record<string, ErrorDefinition>;
