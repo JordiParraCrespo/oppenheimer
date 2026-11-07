@@ -2,7 +2,6 @@
 '@oppenheimer/design-system-web': minor
 '@oppenheimer/web': minor
 '@oppenheimer/extension': patch
-'@oppenheimer/docs': patch
 ---
 
 The product's mark is a white fedora on an ink tile, the same in both

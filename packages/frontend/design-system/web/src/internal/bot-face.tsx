@@ -1,5 +1,7 @@
 import type * as React from 'react';
 
+import { cn } from '../lib/utils';
+
 /** The avatar colours a face is drawn in; `AvatarColor` in `avatar-picker`. */
 type FaceColor = 'mint' | 'tangerine' | 'snow' | 'sky' | 'lilac' | 'lemon' | 'coral' | 'moss';
 
@@ -168,7 +170,8 @@ function Mouth({ mouth }: { mouth: Face['mouth'] }) {
  * avatar colour wearing a hat, cut out like a sticker (a white margin) on a
  * darker shade of the same colour. The hat, the eyes and the mouth come from
  * `seed`, so a bot keeps its face for as long as it keeps its seed. Flat
- * colour only; it fills its box and lets the avatar clip it.
+ * colour only; it fills its box (`size-full`, so a slot's own svg sizing
+ * passes it by) and lets the avatar clip it.
  */
 function BotFace({ seed, color, className }: { seed: string; color: FaceColor; className?: string }) {
   const face = faceFor(seed);
@@ -179,9 +182,7 @@ function BotFace({ seed, color, className }: { seed: string; color: FaceColor; c
       data-hat={face.hat}
       viewBox="0 0 64 64"
       aria-hidden="true"
-      className={className}
-      width="100%"
-      height="100%"
+      className={cn('size-full', className)}
     >
       <rect width="64" height="64" fill={`color-mix(in oklch, ${fill} 70%, black)`} />
       <g transform="translate(5.5 6.5) scale(.83)">
