@@ -70,19 +70,13 @@ func (s *Service) Exec(ctx context.Context, req domain.ExecRequest) (domain.Exec
 			"the person on this host can allow it with `runner exec mode allowlist` and `runner exec allow <program>`")
 	}
 
-	// Under an allowlist, a program named by a path is checked, and run, as
-	// one absolute path whose folders are their real ones: the policy matches
-	// text while the kernel follows symlinks and `..`, so the relative text
-	// is never handed to the kernel to read again from a symlinked folder.
-	// The program file itself is not followed, so a virtualenv's python or a
-	// Homebrew link still runs under the name it was called by.
-	if policy.Mode == domain.ExecAllowlist && strings.Contains(req.Argv[0], "/") {
-		path, err := realFolders(req.Argv[0], dir)
+	if policy.Mode == domain.ExecAllowlist {
+		program, checked, err := canonicalForAllowlist(req.Argv[0], dir, policy)
 		if err != nil {
 			return domain.ExecResult{}, domain.ErrExecStart.WithDetail("%s: %v", req.Argv[0], err).WithCause(err)
 		}
-		req.Argv = append([]string{path}, req.Argv[1:]...)
-		policy = withRealFolders(policy)
+		req.Argv = append([]string{program}, req.Argv[1:]...)
+		policy = checked
 	}
 
 	switch err := policy.Permits(req.Argv[0], dir); {
@@ -127,37 +121,47 @@ func (s *Service) Exec(ctx context.Context, req domain.ExecRequest) (domain.Exec
 	return result, nil
 }
 
-// realFolders is program, made absolute against dir, with the symlinks in
-// its folders resolved and its last element left as written.
-func realFolders(program, dir string) (string, error) {
+// canonicalForAllowlist is the one place an allowlist call is put into the
+// form that is both matched and run. It returns the program to run and the
+// policy to match it against, with this contract:
+//
+//   - a bare name (`python3`) is returned as is: PATH decides, as it does for
+//     the person, and only a bare entry matches it;
+//   - a path is made absolute against dir, and the symlinks in its folders
+//     are resolved, but never the program file itself: the policy matches
+//     text while the kernel follows links and `..`, so the relative text is
+//     never handed to the kernel to read again from a symlinked folder, and
+//     a virtualenv's python or a Homebrew link still runs under the name it
+//     was called by;
+//   - each path entry's folders are resolved the same way, so an entry
+//     written through a link (`/bin` on Debian) names what a program is
+//     checked as. A folder with a glob in it, or one that is not there, is
+//     kept as written.
+//
+// The program returned is exactly the string Permits checks and the
+// executor runs. A path whose folder is not there is an error.
+func canonicalForAllowlist(program, dir string, policy domain.ExecPolicy) (string, domain.ExecPolicy, error) {
+	if !strings.Contains(program, "/") {
+		return program, policy, nil
+	}
 	path := program
 	if !filepath.IsAbs(path) {
 		path = filepath.Join(dir, path)
 	}
 	folder, err := filepath.EvalSymlinks(filepath.Dir(path))
 	if err != nil {
-		return "", err
+		return "", policy, err
 	}
-	return filepath.Join(folder, filepath.Base(path)), nil
-}
-
-// withRealFolders is the policy with each path entry's folders resolved the
-// same way, so an entry written through a link (`/bin` on Debian, a folder
-// the person reached through one) names what a program is checked as. A
-// folder with a glob in it, or one that is not there, is kept as written.
-func withRealFolders(policy domain.ExecPolicy) domain.ExecPolicy {
 	allow := make([]string, 0, len(policy.Allow))
 	for _, entry := range policy.Allow {
-		folder := filepath.Dir(entry)
-		if !strings.Contains(entry, "/") || strings.ContainsAny(folder, `*?[\`) {
-			allow = append(allow, entry)
-			continue
-		}
-		if real, err := filepath.EvalSymlinks(folder); err == nil {
-			entry = filepath.Join(real, filepath.Base(entry))
+		entryFolder := filepath.Dir(entry)
+		if strings.Contains(entry, "/") && !strings.ContainsAny(entryFolder, `*?[\`) {
+			if real, err := filepath.EvalSymlinks(entryFolder); err == nil {
+				entry = filepath.Join(real, filepath.Base(entry))
+			}
 		}
 		allow = append(allow, entry)
 	}
 	policy.Allow = allow
-	return policy
+	return filepath.Join(folder, filepath.Base(path)), policy, nil
 }

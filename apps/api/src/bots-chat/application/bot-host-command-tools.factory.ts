@@ -84,18 +84,9 @@ export class BotHostCommandToolsFactory implements BotToolArea {
             `How long it may run before it is stopped; ${HOST_EXEC_DEFAULT_TIMEOUT_SECONDS} when omitted.`,
           ),
       }),
-      normalize: (input, context) => {
-        const hostId = input.host_id ?? context.homeHostId;
-        if (!hostId) {
-          throw new BotToolRefusal(
-            'No host named and you have no home host: ask which host to use, and say they can set one in Settings → Home host.',
-          );
-        }
-        return { ...input, host_id: hostId };
-      },
+      normalize: (input, context) => ({ ...input, host_id: hostOf(input, context) }),
       subject: async (input, context) => {
-        const hostId = input.host_id ?? context.homeHostId;
-        if (!hostId) return null;
+        const hostId = hostOf(input, context);
         const program = input.argv[0] ?? '';
         // Hashed, so a standing yes is for this program alone: a grant's key
         // is cut to fit its column, and a cut path would match any program
@@ -107,13 +98,11 @@ export class BotHostCommandToolsFactory implements BotToolArea {
         };
       },
       summarize: async (input, context) => {
-        const hostId = input.host_id ?? context.homeHostId;
-        const host = hostId ? await this.hostName(context, hostId) : 'your home host';
+        const host = await this.hostName(context, hostOf(input, context));
         return hostCommandSummary(input.argv, host, input.cwd);
       },
       run: async (input, context) => {
-        const hostId = input.host_id ?? context.homeHostId;
-        if (!hostId) throw new BotToolRefusal('No host named and you have no home host.');
+        const hostId = hostOf(input, context);
         const outcome = await this.commandBus.execute<RunHostCommandCommand, HostExecOutcome>(
           new RunHostCommandCommand({
             scope: context.owner,
@@ -139,4 +128,18 @@ export class BotHostCommandToolsFactory implements BotToolArea {
       .catch(() => null);
     return overview?.host.name ?? `host ${hostId}`;
   }
+}
+
+/**
+ * The host a call runs on: the one it names, else the bot's home host. One
+ * decision for every hook of the call, refused in words when there is none.
+ */
+function hostOf(input: { host_id?: string }, context: BotToolCallContext): string {
+  const hostId = input.host_id ?? context.homeHostId;
+  if (!hostId) {
+    throw new BotToolRefusal(
+      'No host named and you have no home host: ask which host to use, and say they can set one in Settings → Home host.',
+    );
+  }
+  return hostId;
 }
