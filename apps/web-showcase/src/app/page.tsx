@@ -224,7 +224,7 @@ export default function Page() {
         id="wordmark"
         title="Wordmark · BrandMark"
         meta="wordmark.tsx · brand-mark.tsx"
-        desc="No logotype exists, so the name is the mark: SF Pro Display 600 at -0.032em."
+        desc="The mark, a white fedora on an ink tile the same in both themes, then the name in SF Pro Display 600 at -0.032em. The favicons and the extension's icons are the same drawing."
         code={`<Wordmark />`}
       >
         <Swatch label="18px">
@@ -238,8 +238,12 @@ export default function Page() {
             <Wordmark />
           </div>
         </Swatch>
-        <Swatch label="BrandMark, the auth chrome's glyph">
-          <BrandMark size={28} />
+        <Swatch label="BrandMark at 16, 32 and 64px">
+          <div className="flex items-end gap-3">
+            <BrandMark size={16} />
+            <BrandMark size={32} />
+            <BrandMark size={64} />
+          </div>
         </Swatch>
       </Spec>
 

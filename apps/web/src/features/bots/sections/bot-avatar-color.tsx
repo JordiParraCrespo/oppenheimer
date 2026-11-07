@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 import type { BotProfileControl } from '@/features/bots/forms/bot-profile-form';
 
 /**
- * The bot's colour, a row of the Profile card: its initials on the colour
+ * The bot's colour, a row of the Profile card: its face on the colour
  * over its name, then the eight colours. A pick changes the card's draft;
  * the sidebar and the chat follow once it is saved.
  */
@@ -14,7 +14,7 @@ export function BotAvatarColor({
   control,
   pending,
 }: {
-  bot: Pick<BotEntity, 'initials' | 'name'>;
+  bot: Pick<BotEntity, 'id' | 'initials' | 'name'>;
   control: BotProfileControl;
   /** A save is in flight: the pick waits for it. */
   pending: boolean;
@@ -29,6 +29,7 @@ export function BotAvatarColor({
         onValueChange={field.onChange}
         disabled={pending}
         initials={bot.initials}
+        seed={bot.id}
         name={bot.name}
         label={t('bots.settings.profile.color')}
         colorNames={{

@@ -33,7 +33,7 @@ function Pickers({ pending }: { pending: boolean }) {
   return (
     <>
       <BotAvatarColor
-        bot={{ initials: 'RB', name: 'Release Bot' }}
+        bot={{ id: 'bot-1', initials: 'RB', name: 'Release Bot' }}
         control={control}
         pending={pending}
       />
@@ -62,5 +62,26 @@ describe('Profile pickers', () => {
     expect(
       group().hasAttribute('disabled') || group().getAttribute('aria-disabled') === 'true',
     ).toBe(true);
+  });
+});
+
+/**
+ * A bot with no photo shows its drawn face, picked from its id, never its
+ * initials. What breaks this: a caller that stops passing the id as `seed`,
+ * so the face falls back to letters, or a face drawn from something that
+ * changes (the name), so a rename gives the bot a new face.
+ */
+describe('Profile colour preview', () => {
+  it("draws the bot's face, the same one for the same id", () => {
+    const { container, unmount } = render(<Pickers pending={false} />);
+    const face = container.querySelector('[data-slot="bot-face"]');
+    expect(face).not.toBeNull();
+    expect(screen.queryByText('RB')).toBeNull();
+    const hat = face?.getAttribute('data-hat');
+    unmount();
+    const again = render(<Pickers pending={false} />).container.querySelector(
+      '[data-slot="bot-face"]',
+    );
+    expect(again?.getAttribute('data-hat')).toBe(hat);
   });
 });

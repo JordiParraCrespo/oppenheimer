@@ -32,9 +32,9 @@ import { GroupHead, Spec } from './page-shell';
 /* ── BotItem ─────────────────────────────────────────────────────────────── */
 
 const BUILT_IN = [
-  { id: 'plan', name: 'Plan Bot', initials: 'PB', preview: 'Friday’s milestone has two tasks left.' },
-  { id: 'github', name: 'GitHub Bot', initials: 'GB', preview: '3 pull requests wait on review.' },
-];
+  { id: 'plan', name: 'Plan Bot', initials: 'PB', color: 'lilac', preview: 'Friday’s milestone has two tasks left.' },
+  { id: 'github', name: 'GitHub Bot', initials: 'GB', color: 'moss', preview: '3 pull requests wait on review.' },
+] as const;
 
 function BuiltInGroup({ active, onPick }: { active: string; onPick: (id: string) => void }) {
   const [open, setOpen] = React.useState(true);
@@ -51,7 +51,7 @@ function BuiltInGroup({ active, onPick }: { active: string; onPick: (id: string)
       {open ? (
         <BotList>
           {BUILT_IN.map((bot) => (
-            <BotItem key={bot.id} {...bot} active={bot.id === active} onClick={() => onPick(bot.id)} />
+            <BotItem key={bot.id} {...bot} seed={bot.id} active={bot.id === active} onClick={() => onPick(bot.id)} />
           ))}
         </BotList>
       ) : null}
@@ -63,11 +63,11 @@ export function BotItemsDemo() {
   const [active, setActive] = React.useState('release');
   const [open, setOpen] = React.useState(true);
   const bots = [
-    { id: 'release', name: 'Release Bot', initials: 'RB', preview: 'The stop path now reaches the tool layer.', live: true },
-    { id: 'deploy', name: 'Deploy Bot', initials: 'DB', preview: 'Needs input · Tag v0.9.0 and push it?', needsInput: true },
-    { id: 'quota', name: 'Quota Bot', initials: 'QB', preview: 'You: Added a banner to the workspace page' },
-    { id: 'new', name: 'New Bot', initials: 'NB', preview: 'What would you most like help with?', unread: true },
-  ];
+    { id: 'release', name: 'Release Bot', initials: 'RB', color: 'coral', preview: 'The stop path now reaches the tool layer.', live: true },
+    { id: 'deploy', name: 'Deploy Bot', initials: 'DB', color: 'sky', preview: 'Needs input · Tag v0.9.0 and push it?', needsInput: true },
+    { id: 'quota', name: 'Quota Bot', initials: 'QB', color: 'lemon', preview: 'You: Added a banner to the workspace page' },
+    { id: 'new', name: 'New Bot', initials: 'NB', color: 'mint', preview: 'What would you most like help with?', unread: true },
+  ] as const;
   return (
     <div className="flex flex-wrap items-start gap-6">
       <div className="flex w-72 flex-col gap-1 rounded-lg bg-sidebar py-1.5">
@@ -76,7 +76,7 @@ export function BotItemsDemo() {
           {open ? (
             <BotList>
               {bots.map((bot) => (
-                <BotItem key={bot.id} {...bot} active={bot.id === active} onClick={() => setActive(bot.id)} />
+                <BotItem key={bot.id} {...bot} seed={bot.id} active={bot.id === active} onClick={() => setActive(bot.id)} />
               ))}
             </BotList>
           ) : null}
@@ -153,7 +153,7 @@ export function AvatarColorPickerDemo() {
     <div className="flex w-full flex-col gap-6">
       <div className="flex items-center gap-3">
         {(Object.keys(COLOR_NAMES) as AvatarColor[]).map((key) => (
-          <BotAvatar key={key} option={{ initials: 'NB' }} size={36} color={key} />
+          <BotAvatar key={key} option={{ initials: 'NB', seed: 'new-bot' }} size={36} color={key} />
         ))}
       </div>
       <div className="w-full max-w-180 rounded-lg bg-canvas-recessed p-4">
@@ -162,6 +162,7 @@ export function AvatarColorPickerDemo() {
             value={color}
             onValueChange={setColor}
             initials="NB"
+            seed="new-bot"
             name="New Bot"
             colorNames={COLOR_NAMES}
           />
@@ -360,7 +361,7 @@ export function EmployeesSection() {
         id="botitem"
         title="BotItem"
         meta="bot-item.tsx"
-        desc="An employee in the sidebar, on one line: a 20px square photo (initials in ink until it loads) with a green dot on its corner while the bot works, then the name. The last message is the row's tooltip, beside it on hover. Unread sets the name at 600 with a blue dot at the end; a bot that needs input reads the same with an amber dot. Groups head with SidebarProjectHeader's eyebrow tone, the Built-in one with a lock marker; before the first bot, SidebarEmptyCard says what will appear and offers New bot; the open chat rests on the selected wash. 32px, the nav radius, rows 1px apart in a BotList. SortableBotItem moves one to another group on the shell's drag layer."
+        desc="An employee in the sidebar, on one line: a 20px square photo (its drawn face until one loads) with a green dot on its corner while the bot works, then the name. The last message is the row's tooltip, beside it on hover. Unread sets the name at 600 with a blue dot at the end; a bot that needs input reads the same with an amber dot. Groups head with SidebarProjectHeader's eyebrow tone, the Built-in one with a lock marker; before the first bot, SidebarEmptyCard says what will appear and offers New bot; the open chat rests on the selected wash. 32px, the nav radius, rows 1px apart in a BotList. SortableBotItem moves one to another group on the shell's drag layer."
         code={`<BotList><SortableBotItem id={bot.id} name="Release Bot" initials="RB" image={photo} preview={last} live active /></BotList>`}
       >
         <BotItemsDemo />
@@ -380,8 +381,8 @@ export function EmployeesSection() {
         id="avatarcolorpicker"
         title="AvatarColorPicker"
         meta="avatar-picker.tsx"
-        desc="A bot's colour, while avatars are initials rather than photos: the 72px initials on the current colour over the bot's name, then the eight colours as 32px swatches, the picked one ringed in ink with the card's gap inside the ring. The colours are the --avatar-* tokens, the same in both themes, with the initials in dark ink on each. BotAvatar and BotItem take color to draw the initials on it."
-        code={`<AvatarColorPicker value={color} onValueChange={save} initials="NB" name="New Bot" colorNames={names} />`}
+        desc="A bot's colour, while avatars are drawn rather than photos: the 72px face on the current colour over the bot's name, then the eight colours as 32px swatches, the picked one ringed in ink with the card's gap inside the ring. The colours are the --avatar-* tokens, the same in both themes. BotAvatar and BotItem take color and the bot's id as seed to draw its face (a hat, eyes and a mouth picked from the id, cut out like a sticker on a darker shade); without a seed they draw the initials."
+        code={`<AvatarColorPicker value={color} onValueChange={save} initials="NB" seed={bot.id} name="New Bot" colorNames={names} />`}
       >
         <AvatarColorPickerDemo />
       </Spec>

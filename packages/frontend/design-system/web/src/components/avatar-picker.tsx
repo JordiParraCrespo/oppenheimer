@@ -4,6 +4,7 @@ import { Toggle as TogglePrimitive } from '@base-ui/react/toggle';
 import { ToggleGroup as ToggleGroupPrimitive } from '@base-ui/react/toggle-group';
 import type * as React from 'react';
 
+import { BotFace } from '../internal/bot-face';
 import { cn } from '../lib/utils';
 import { Avatar, AvatarFallback, AvatarImage } from './avatar';
 
@@ -34,10 +35,11 @@ const AVATAR_COLOR_CLASS: Record<AvatarColor, string> = {
 };
 
 /**
- * A bot's face: its photo, or its initials until one loads. With `color` the
- * initials sit in dark ink on that avatar colour (a bot with no photo, which
- * is every bot until there is a set we may use); without it, in ink on the
- * control fill, never a tint.
+ * A bot's face: its photo, or a drawn face until one loads. With `color` and
+ * `seed` (the bot's id) it is a `BotFace`, a hatted face in that avatar colour
+ * that the seed keeps the same (a bot with no photo, which is every bot until
+ * there is a set we may use); with `color` alone, the initials in dark ink on
+ * that colour; without either, the initials in ink on the control fill.
  */
 function BotAvatar({
   option,
@@ -45,7 +47,7 @@ function BotAvatar({
   color,
   className,
 }: {
-  option: Pick<AvatarOption, 'image' | 'initials'>;
+  option: Pick<AvatarOption, 'image' | 'initials'> & { seed?: string };
   size: number;
   color?: AvatarColor;
   className?: string;
@@ -63,7 +65,9 @@ function BotAvatar({
       )}
     >
       {option.image ? <AvatarImage src={option.image} alt="" /> : null}
-      <AvatarFallback>{option.initials}</AvatarFallback>
+      <AvatarFallback>
+        {color && option.seed ? <BotFace seed={option.seed} color={color} /> : option.initials}
+      </AvatarFallback>
     </Avatar>
   );
 }
@@ -79,6 +83,7 @@ function AvatarColorPicker({
   value,
   onValueChange,
   initials,
+  seed,
   name,
   colorNames,
   label = 'Colour',
@@ -88,6 +93,8 @@ function AvatarColorPicker({
   value: AvatarColor;
   onValueChange: (value: AvatarColor) => void;
   initials: string;
+  /** The bot's id: the preview draws its face rather than its initials. */
+  seed?: string;
   /** The bot's name, under the preview. */
   name?: React.ReactNode;
   /** Each colour's accessible name ("Mint"); the caller's language. */
@@ -99,7 +106,7 @@ function AvatarColorPicker({
   return (
     <div data-slot="avatar-color-picker" className={cn('flex items-center gap-10', className)}>
       <div className="flex shrink-0 flex-col items-center gap-2">
-        <BotAvatar option={{ initials }} size={72} color={value} />
+        <BotAvatar option={{ initials, seed }} size={72} color={value} />
         {name ? <span className="max-w-30 truncate text-[14px]">{name}</span> : null}
       </div>
       <div className="flex min-w-0 flex-1 flex-col gap-3">

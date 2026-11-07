@@ -2,12 +2,12 @@
 import type * as React from 'react';
 
 import { cn } from '../lib/utils';
+import { BrandMark } from './brand-mark';
 
 /**
- * Wordmark — no logotype file exists, so the name is the mark: "Oppenheimer" in
- * SF Pro Display at 600 with -0.032em tracking, sized with `size` in px.
- *
- * When a real logo lands, swap the inside of this component; nothing else moves.
+ * Wordmark — the mark, then the name: `BrandMark` at 1.2 times `size`, and
+ * "Oppenheimer" in SF Pro Display at 600 with -0.032em tracking, sized with
+ * `size` in px. The mark is decorative here; the name is what is read.
  */
 function Wordmark({
   size = 18,
@@ -19,12 +19,13 @@ function Wordmark({
     <span
       data-slot="wordmark"
       className={cn(
-        'inline-flex items-baseline font-display font-semibold leading-none tracking-[-0.032em] whitespace-nowrap text-fg',
+        'inline-flex items-center gap-[0.4em] font-display font-semibold leading-none tracking-[-0.032em] whitespace-nowrap text-fg',
         className,
       )}
       style={{ fontSize: size, ...style }}
       {...props}
     >
+      <BrandMark size={Math.round(size * 1.2)} aria-hidden="true" />
       Oppenheimer
     </span>
   );

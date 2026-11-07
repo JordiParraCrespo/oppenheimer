@@ -246,9 +246,12 @@ the `version1/` artboards for what the screens actually do. Its one sentence:
   instructions it proposes for itself a `ProposedFile`. Its photo is
   picked with `AvatarPicker`. The photos are the product's own: the
   export's portraits are of real people and never ship. Until there is a
-  set we may use, a bot's face is its initials in dark ink on one of the
-  export's eight colours (`--avatar-*`, the same in both themes): `BotAvatar`
-  and `BotItem` take `color`, and Profile picks it with `AvatarColorPicker`.
+  set we may use, a bot's face is drawn: a hatted face in one of the
+  export's eight colours (`--avatar-*`, the same in both themes), cut out
+  like a sticker on a darker shade of it, the hat, eyes and mouth picked
+  from the bot's id (`internal/bot-face.tsx`). `BotAvatar` and `BotItem`
+  take `color` and `seed`; with no seed they fall back to the initials.
+  Profile picks the colour with `AvatarColorPicker`.
   A bot's routine is a `RoutineCard`, read and edited in place
   (`RoutineItem` is the workspace's, in the sidebar); records in a settings
   card are `SettingsListRow`s over a `SettingsAddRow`; `SettingsTopBar`

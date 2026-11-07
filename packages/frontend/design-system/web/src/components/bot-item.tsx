@@ -31,6 +31,7 @@ function BotItem({
   name,
   initials,
   image,
+  seed,
   color,
   preview,
   live = false,
@@ -48,7 +49,9 @@ function BotItem({
   name: string;
   initials: string;
   image?: string;
-  /** The avatar colour the initials sit on, for a bot with no photo. */
+  /** The bot's id: with `color`, a bot with no photo shows its drawn face. */
+  seed?: string;
+  /** The avatar colour of the face, or of the initials without a `seed`. */
   color?: AvatarColor;
   /** The last message, shown in the row's tooltip. */
   preview?: React.ReactNode;
@@ -85,7 +88,7 @@ function BotItem({
       {...props}
     >
       <span className="relative flex shrink-0">
-        <BotAvatar option={{ image, initials }} size={20} color={color} className="rounded-xs" />
+        <BotAvatar option={{ image, initials, seed }} size={20} color={color} className="rounded-xs" />
         {live ? (
           <span
             aria-hidden

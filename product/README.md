@@ -1250,3 +1250,10 @@ earlier note:
   cards; the thresholds are workspace automation settings, and a per-bot
   "Pause while you're away" switch turns it off (26 §6, "Changed
   2026-11-07").
+- `versions/mvp/25-bots.md` §7 (2026-10-14) made a bot's avatar its
+  initials on one of eight colours. On 2026-11-07 the owner asked for
+  better avatars: each bot now has a drawn face, a hatted face in its
+  colour cut out like a sticker, generated from its id. The same day the
+  product's mark became a white fedora on an ink tile (favicons, the
+  extension, `BrandMark` and `Wordmark`), replacing the starter's asterisk
+  and the three-part hat favicon.

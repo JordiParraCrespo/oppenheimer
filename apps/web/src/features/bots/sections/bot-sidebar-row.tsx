@@ -9,7 +9,7 @@ import { BotRowMenu } from '@/features/bots/components/bot-row-menu';
 import { DeleteBotDialog } from '@/features/bots/dialogs/delete-bot';
 
 /**
- * One bot in the Employees sidebar, on one line: its initials on its colour
+ * One bot in the Employees sidebar, on one line: its face on its colour
  * and the name, with its last message (its description before the first) in
  * the row's tooltip, its markdown read rather than shown. A section because it
  * subscribes to the route (lit on its chat and on its settings), owns the
@@ -45,6 +45,7 @@ export function BotSidebarRow({
         disabled={dragDisabled}
         name={bot.name}
         initials={bot.initials}
+        seed={bot.id}
         color={bot.avatarColor}
         preview={line ? <MarkdownLine source={line} /> : t('bots.sidebar.noMessages')}
         active={active}

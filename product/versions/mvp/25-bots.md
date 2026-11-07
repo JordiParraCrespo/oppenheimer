@@ -1239,6 +1239,13 @@ The design's avatar photos are photographs of people; until there is a
 set we may use, an avatar is the bot's initials on one of the design's
 eight colours (`AV_COLORS`).
 
+Changed 2026-11-07: the avatar is a drawn face instead of the initials, a
+round face in the bot's colour wearing a hat, cut out like a sticker on a
+darker shade of that colour. The hat, the eyes and the mouth come from the
+bot's id, so a bot keeps its face through a rename and nobody has to pick
+one; the colour is still the one picked in Profile. Still no photos of
+people.
+
 ## 8. Where things live
 
 - **API:** the `bots` module. `bot`, `bot_group`, `bot_document`,
@@ -1292,6 +1299,7 @@ The decisions it produced:
   **Employees**.
 - 2026-10-11: bots' documents and memory live in Postgres.
 - 2026-10-14: no photos of people as avatars; initials on a colour.
+  Changed 2026-11-07 to a face drawn from the bot's id, on its colour (§7).
 - 2026-10-15: **the loop runs in Oppenheimer**, not on a host. It
   replaces 2026-10-14's "a headless turn on the home host"; the home host
   becomes where the bot's sessions run.
