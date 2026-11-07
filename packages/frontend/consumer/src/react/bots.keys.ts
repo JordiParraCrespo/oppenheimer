@@ -20,6 +20,7 @@ export const botsKeys = {
     [...botsKeys.documents(id), name, 'revisions'] as const,
   memory: (id: string) => [...botsKeys.detail(id), 'memory'] as const,
   memoryList: (id: string) => [...botsKeys.memory(id), 'list'] as const,
+  memoryDream: (id: string) => [...botsKeys.memory(id), 'dream'] as const,
   skills: (id: string) => [...botsKeys.detail(id), 'skills'] as const,
   skillList: (id: string) => [...botsKeys.skills(id), 'list'] as const,
   permissions: (id: string) => [...botsKeys.detail(id), 'permissions'] as const,
