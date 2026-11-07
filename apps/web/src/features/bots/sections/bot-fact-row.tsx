@@ -7,7 +7,7 @@ import { BOT_MEMORY_FACT_MAX } from '@oppenheimer/shared/schemas/bot';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { FactKeptMenu } from '@/features/bots/components/fact-kept-menu';
-import { factRowModel } from '@/features/bots/lib/fact-row';
+import { factRowModel, keptFactRowModel } from '@/features/bots/lib/fact-row';
 
 /**
  * One fact the bot remembers: the sentence, who wrote it and when, a tag when
@@ -15,18 +15,31 @@ import { factRowModel } from '@/features/bots/lib/fact-row';
  * forget. Edit rewords it in place (Enter saves, Escape cancels). A fact
  * another of the person's bots shared is shown muted, to read only. The row
  * owns its writes and its draft, so editing one fact re-renders that row alone.
+ *
+ * With `keptBy` it is a row of the account's Settings → Memory: every fact
+ * there is about the reader, changed on the bot that keeps it, which its line
+ * names.
  */
-export function BotFactRow({ botId, fact }: { botId: string; fact: BotMemoryFactEntity }) {
+export function BotFactRow({
+  botId,
+  fact,
+  keptBy,
+}: {
+  botId: string;
+  fact: BotMemoryFactEntity;
+  /** The name of the bot that keeps it, on the account's Settings → Memory. */
+  keptBy?: string;
+}) {
   const { t } = useTranslation();
   const locale = useLocale();
   const [draft, setDraft] = useState<string | null>(null);
   const update = useUpdateBotFact({ onSuccess: () => setDraft(null) });
   const remove = useDeleteBotFact();
-  const row = factRowModel(fact, botId);
+  const date = formatMediumDate(fact.updatedAt, locale);
+  const row =
+    keptBy === undefined ? factRowModel(fact, botId) : { shared: false, ...keptFactRowModel(fact) };
   const kind = row.kind && t(`bots.settings.memory.${row.kind}`);
-  const meta = t(`bots.settings.memory.${row.meta}`, {
-    date: formatMediumDate(fact.updatedAt, locale),
-  });
+  const meta = t(`bots.settings.memory.${row.meta}`, { date, bot: keptBy });
 
   function save() {
     const content = draft?.trim();
@@ -104,6 +117,7 @@ export function BotFactRow({ botId, fact }: { botId: string; fact: BotMemoryFact
               fact={fact.content}
               tier={fact.tier}
               scope={fact.scope}
+              keptBy={keptBy}
               disabled={update.isPending}
               onChange={(change) => update.mutate({ id: botId, factId: fact.id, ...change })}
             />

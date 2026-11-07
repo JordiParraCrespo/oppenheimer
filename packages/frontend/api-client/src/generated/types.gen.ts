@@ -3837,6 +3837,32 @@ export type BotMemoryFactResponseDto = {
     updatedAt: string;
 };
 
+export type PersonAboutResponseDto = {
+    /**
+     * What the person wrote about themselves; empty when nothing was written.
+     */
+    about: string;
+    /**
+     * When it was last saved; null when it never was.
+     */
+    updatedAt: string | null;
+};
+
+export type PersonMemoryResponseDto = {
+    /**
+     * In every one of the person's bots' system prompt; the bots never change it.
+     */
+    about: PersonAboutResponseDto;
+    /**
+     * Every fact about the person (`scope: person`) that any of their bots keeps, newest first. Each is changed on the bot that keeps it (`botId`).
+     */
+    facts: Array<BotMemoryFactResponseDto>;
+};
+
+export type UpdatePersonAboutRequest = {
+    about: string;
+};
+
 export type CreateBotMemoryFactRequest = {
     content: string;
     tier?: 'profile' | 'log';
@@ -14145,6 +14171,58 @@ export type CreateBotMemoryFactResponses = {
 };
 
 export type CreateBotMemoryFactResponse = CreateBotMemoryFactResponses[keyof CreateBotMemoryFactResponses];
+
+export type FindPersonMemoryData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/bot-memory/person';
+};
+
+export type FindPersonMemoryErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+};
+
+export type FindPersonMemoryError = FindPersonMemoryErrors[keyof FindPersonMemoryErrors];
+
+export type FindPersonMemoryResponses = {
+    200: PersonMemoryResponseDto;
+};
+
+export type FindPersonMemoryResponse = FindPersonMemoryResponses[keyof FindPersonMemoryResponses];
+
+export type UpdatePersonAboutData = {
+    body: UpdatePersonAboutRequest;
+    path?: never;
+    query?: never;
+    url: '/api/v1/bot-memory/person/about';
+};
+
+export type UpdatePersonAboutErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+};
+
+export type UpdatePersonAboutError = UpdatePersonAboutErrors[keyof UpdatePersonAboutErrors];
+
+export type UpdatePersonAboutResponses = {
+    200: PersonAboutResponseDto;
+};
+
+export type UpdatePersonAboutResponse = UpdatePersonAboutResponses[keyof UpdatePersonAboutResponses];
 
 export type DeleteBotMemoryFactData = {
     body?: never;

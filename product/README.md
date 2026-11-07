@@ -1222,3 +1222,12 @@ earlier note:
   entries (2,000, dated), so a save leaves the prompt cache warm, the turn's
   rules tell it to save what it learns without asking, and a full memory
   of 500 drops its oldest log fact instead of refusing.
+- `versions/mvp/25-bots.md` §4.1 (2026-10-29) left what a bot knows about
+  its owner spread across their bots: each `person` fact was edited on the
+  bot that learned it, read only on the others, and the owner had no place
+  of their own. On 2026-11-07 the owner asked for one page, the way
+  Claude's memory works: Settings → Memory, at the account, holds an
+  *About you* text the owner writes (table `person_memory`, migration
+  `AddPersonMemory`), in every bot's system prompt and never written by a
+  bot, and lists every `person` fact their bots learned, each still the row
+  of the bot that keeps it and changed there.

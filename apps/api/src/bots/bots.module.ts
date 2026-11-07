@@ -24,6 +24,7 @@ import {
   BOT_SKILL_REPOSITORY,
   CHATGPT_AUTH,
   MODEL_PROVIDER_CREDENTIAL_REPOSITORY,
+  PERSON_MEMORY_REPOSITORY,
   PROVIDER_KEY_SEALER,
   TURN_CREDENTIALS,
 } from './bots.di-tokens';
@@ -69,6 +70,8 @@ import { UpdateBotMemoryFactCommandHandler } from './commands/update-bot-memory-
 import { UpdateBotMemoryFactHttpController } from './commands/update-bot-memory-fact/update-bot-memory-fact.http.controller';
 import { UpdateBotSkillCommandHandler } from './commands/update-bot-skill/update-bot-skill.command-handler';
 import { UpdateBotSkillHttpController } from './commands/update-bot-skill/update-bot-skill.http.controller';
+import { UpdatePersonAboutCommandHandler } from './commands/update-person-about/update-person-about.command-handler';
+import { UpdatePersonAboutHttpController } from './commands/update-person-about/update-person-about.http.controller';
 import { BotOrmEntity } from './database/bot.orm-entity';
 import { BotRepository } from './database/bot.repository';
 import { BotDocumentOrmEntity } from './database/bot-document.orm-entity';
@@ -82,9 +85,11 @@ import { BotSkillOrmEntity } from './database/bot-skill.orm-entity';
 import { BotSkillRepository } from './database/bot-skill.repository';
 import { ModelProviderCredentialOrmEntity } from './database/model-provider-credential.orm-entity';
 import { ModelProviderCredentialRepository } from './database/model-provider-credential.repository';
-
+import { PersonMemoryOrmEntity } from './database/person-memory.orm-entity';
+import { PersonMemoryRepository } from './database/person-memory.repository';
 import { OpenAiChatgptAuthAdapter } from './infrastructure/openai-chatgpt-auth.adapter';
 import { ModelProviderCredentialMapper } from './model-provider-credential.mapper';
+import { PersonMemoryMapper } from './person-memory.mapper';
 import { FindBotHttpController } from './queries/find-bot/find-bot.http.controller';
 import { FindBotQueryHandler } from './queries/find-bot/find-bot.query-handler';
 import { FindBotDocumentQueryHandler } from './queries/find-bot-document/find-bot-document.query-handler';
@@ -105,6 +110,8 @@ import { FindBotsHttpController } from './queries/find-bots/find-bots.http.contr
 import { FindBotsQueryHandler } from './queries/find-bots/find-bots.query-handler';
 import { FindModelProviderCredentialsHttpController } from './queries/find-model-provider-credentials/find-model-provider-credentials.http.controller';
 import { FindModelProviderCredentialsQueryHandler } from './queries/find-model-provider-credentials/find-model-provider-credentials.query-handler';
+import { FindPersonMemoryHttpController } from './queries/find-person-memory/find-person-memory.http.controller';
+import { FindPersonMemoryQueryHandler } from './queries/find-person-memory/find-person-memory.query-handler';
 
 const httpControllers = [
   FindBotsHttpController,
@@ -117,6 +124,8 @@ const httpControllers = [
   FindBotDocumentRevisionsHttpController,
   RevertBotDocumentHttpController,
   FindBotMemoryHttpController,
+  FindPersonMemoryHttpController,
+  UpdatePersonAboutHttpController,
   CreateBotMemoryFactHttpController,
   ClearBotMemoryHttpController,
   UpdateBotMemoryFactHttpController,
@@ -150,6 +159,7 @@ const commandHandlers: Provider[] = [
   UpdateBotMemoryFactCommandHandler,
   DeleteBotMemoryFactCommandHandler,
   ClearBotMemoryCommandHandler,
+  UpdatePersonAboutCommandHandler,
   CreateBotSkillCommandHandler,
   UpdateBotSkillCommandHandler,
   DeleteBotSkillCommandHandler,
@@ -170,6 +180,7 @@ const queryHandlers: Provider[] = [
   FindBotDocumentRevisionsQueryHandler,
   FindBotMemoryQueryHandler,
   FindBotMemoryFactQueryHandler,
+  FindPersonMemoryQueryHandler,
   FindBotSkillsQueryHandler,
   FindBotSkillQueryHandler,
   FindModelProviderCredentialsQueryHandler,
@@ -189,6 +200,7 @@ const queryHandlers: Provider[] = [
       BotDocumentOrmEntity,
       BotDocumentRevisionOrmEntity,
       BotMemoryFactOrmEntity,
+      PersonMemoryOrmEntity,
       BotSkillOrmEntity,
       ModelProviderCredentialOrmEntity,
     ]),
@@ -204,6 +216,7 @@ const queryHandlers: Provider[] = [
     BotGroupMapper,
     BotDocumentMapper,
     BotMemoryFactMapper,
+    PersonMemoryMapper,
     BotSkillMapper,
     BotLookupResolver,
     ModelProviderCredentialMapper,
@@ -227,6 +240,7 @@ const queryHandlers: Provider[] = [
     { provide: BOT_GROUP_REPOSITORY, useClass: BotGroupRepository },
     { provide: BOT_DOCUMENT_REPOSITORY, useClass: BotDocumentRepository },
     { provide: BOT_MEMORY_FACT_REPOSITORY, useClass: BotMemoryFactRepository },
+    { provide: PERSON_MEMORY_REPOSITORY, useClass: PersonMemoryRepository },
     { provide: BOT_SKILL_REPOSITORY, useClass: BotSkillRepository },
     { provide: BOT_LOOKUP, useExisting: BotLookupResolver },
   ],
@@ -236,6 +250,7 @@ const queryHandlers: Provider[] = [
     BOT_REPOSITORY,
     BOT_DOCUMENT_REPOSITORY,
     BOT_MEMORY_FACT_REPOSITORY,
+    PERSON_MEMORY_REPOSITORY,
     BOT_SKILL_REPOSITORY,
     MODEL_PROVIDER_CREDENTIAL_REPOSITORY,
     PROVIDER_KEY_SEALER,

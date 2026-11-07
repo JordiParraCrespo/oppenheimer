@@ -2,6 +2,8 @@ export const BOT_REPOSITORY = Symbol('BOT_REPOSITORY');
 export const BOT_GROUP_REPOSITORY = Symbol('BOT_GROUP_REPOSITORY');
 export const BOT_DOCUMENT_REPOSITORY = Symbol('BOT_DOCUMENT_REPOSITORY');
 export const BOT_MEMORY_FACT_REPOSITORY = Symbol('BOT_MEMORY_FACT_REPOSITORY');
+/** What a person wrote about themselves for their bots (`PersonMemoryRepositoryPort`). */
+export const PERSON_MEMORY_REPOSITORY = Symbol('PERSON_MEMORY_REPOSITORY');
 export const BOT_SKILL_REPOSITORY = Symbol('BOT_SKILL_REPOSITORY');
 export const MODEL_PROVIDER_CREDENTIAL_REPOSITORY = Symbol('MODEL_PROVIDER_CREDENTIAL_REPOSITORY');
 export const PROVIDER_KEY_SEALER = Symbol('PROVIDER_KEY_SEALER');

@@ -23,6 +23,8 @@ import { BotSkillOrmEntity } from '../database/bot-skill.orm-entity';
 import { BotSkillRepository } from '../database/bot-skill.repository';
 import { ModelProviderCredentialOrmEntity } from '../database/model-provider-credential.orm-entity';
 import { ModelProviderCredentialRepository } from '../database/model-provider-credential.repository';
+import { PersonMemoryOrmEntity } from '../database/person-memory.orm-entity';
+import { PersonMemoryRepository } from '../database/person-memory.repository';
 import { BotEntity } from '../domain/bot.entity';
 import { userActor } from '../domain/bot.types';
 import { BotDocumentEntity } from '../domain/bot-document.entity';
@@ -31,6 +33,7 @@ import { BotMemoryFactEntity } from '../domain/bot-memory-fact.entity';
 import { BotSkillEntity } from '../domain/bot-skill.entity';
 import { ModelProviderCredentialEntity } from '../domain/model-provider-credential.entity';
 import { ModelProviderCredentialMapper } from '../model-provider-credential.mapper';
+import { PersonMemoryMapper } from '../person-memory.mapper';
 
 /**
  * Bots against a real Postgres (`product/versions/mvp/25-bots.md`, slice 1):
@@ -76,6 +79,7 @@ describe('bots (integration)', () => {
         BotMemoryFactOrmEntity,
         BotSkillOrmEntity,
         ModelProviderCredentialOrmEntity,
+        PersonMemoryOrmEntity,
       ],
       synchronize: false,
     });
@@ -481,6 +485,36 @@ describe('bots (integration)', () => {
     expect((await memory.findAll(scope(), evas.id)).map((fact) => fact.content)).toEqual([
       'Eva works in Lisbon.',
     ]);
+    // Settings → Memory: every bot of the caller's, nobody else's, about them only.
+    expect(seen(await memory.findAboutPerson(scope()))).toEqual([
+      ['Ana prefers squash merges.', 'profile', 'person', true],
+    ]);
+  });
+
+  // What breaks this: a save that writes a second row, or keeps the old text,
+  // or one person's text read for another, so a bot reads the wrong person.
+  it('keeps one text per person per workspace, written over by each save', async () => {
+    const people = new PersonMemoryRepository(
+      dataSource.getRepository(PersonMemoryOrmEntity),
+      new PersonMemoryMapper(),
+    );
+    expect(await people.find(organizationId, userId)).toEqual({
+      organizationId,
+      userId,
+      about: '',
+      updatedAt: null,
+    });
+    await people.put(organizationId, userId, 'I am Jordi.');
+    const saved = await people.put(organizationId, userId, 'I am Jordi, in Barcelona.');
+    expect(saved.about).toBe('I am Jordi, in Barcelona.');
+    expect(saved.updatedAt).toBeInstanceOf(Date);
+    expect((await people.find(organizationId, userId)).about).toBe('I am Jordi, in Barcelona.');
+
+    const other = await insertOrganization();
+    expect((await people.find(other, userId)).about).toBe('');
+    await expect(people.put(organizationId, userId, 'x'.repeat(4001))).rejects.toThrow(
+      /CHK_person_memory_about/,
+    );
   });
 
   it('reads nothing of another workspace’s bot', async () => {

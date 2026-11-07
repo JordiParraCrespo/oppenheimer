@@ -19,3 +19,19 @@ export function factRowModel(fact: BotMemoryFactEntity, botId: string): FactRowM
   if (fact.source === 'bot') return { shared, kind, meta: 'learned' };
   return { shared, kind, meta: fact.isEdited ? 'editedByYou' : 'addedByYou' };
 }
+
+/**
+ * The same row in the account's Settings → Memory, where every fact is about
+ * the reader and changed on the bot that keeps it: no tag but looked up, and
+ * a line naming that bot (`bots.settings.memory` keys).
+ */
+export interface KeptFactRowModel {
+  kind: 'lookedUp' | null;
+  meta: 'learnedBy' | 'editedByYouOn' | 'addedByYouOn';
+}
+
+export function keptFactRowModel(fact: BotMemoryFactEntity): KeptFactRowModel {
+  const kind = fact.tier === 'log' ? 'lookedUp' : null;
+  if (fact.source === 'bot') return { kind, meta: 'learnedBy' };
+  return { kind, meta: fact.isEdited ? 'editedByYouOn' : 'addedByYouOn' };
+}

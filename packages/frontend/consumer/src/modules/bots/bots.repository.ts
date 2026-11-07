@@ -18,6 +18,7 @@ import {
   type ChatgptLoginResponseDto,
   heyApiSdk,
   type ModelProviderCredentialResponseDto,
+  type PersonMemoryResponseDto,
   type WorkspaceBotApprovalResponseDto,
   type WorkspaceBotNoticeResponseDto,
 } from '@oppenheimer/api-client';
@@ -65,6 +66,7 @@ import {
   type ChatgptLoginState,
   type CreateBotSkillInput,
   ModelProviderEntity,
+  PersonMemoryEntity,
   type SaveBotDocumentInput,
   type UpdateBotFactInput,
   type UpdateBotInput,
@@ -181,6 +183,14 @@ function toFact(dto: BotMemoryFactResponseDto): BotMemoryFactEntity {
     dto.botId,
     new Date(dto.createdAt),
     new Date(dto.updatedAt),
+  );
+}
+
+function toPersonMemory(dto: PersonMemoryResponseDto): PersonMemoryEntity {
+  return new PersonMemoryEntity(
+    dto.about.about,
+    dto.about.updatedAt ? new Date(dto.about.updatedAt) : null,
+    dto.facts.map(toFact),
   );
 }
 
@@ -859,6 +869,21 @@ export class BotsRepository {
   removeFact(id: string, factId: string): Promise<void> {
     return callApi(BotsErrors.DELETE_FACT_FAILED, async (api) => {
       await api.result(heyApiSdk.deleteBotMemoryFact({ path: { id, factId } }));
+    });
+  }
+
+  /** Settings → Memory: what the reader wrote about themselves, and what their bots learned. */
+  findPersonMemory(): Promise<PersonMemoryEntity> {
+    return callApi(BotsErrors.FETCH_PERSON_MEMORY_FAILED, async (api) =>
+      toPersonMemory(await api.body(heyApiSdk.findPersonMemory())),
+    );
+  }
+
+  /** Writes what the reader says about themselves; their bots read it every turn. */
+  saveAbout(about: string): Promise<{ about: string; updatedAt: Date | null }> {
+    return callApi(BotsErrors.SAVE_PERSON_ABOUT_FAILED, async (api) => {
+      const data = await api.body(heyApiSdk.updatePersonAbout({ body: { about } }));
+      return { about: data.about, updatedAt: data.updatedAt ? new Date(data.updatedAt) : null };
     });
   }
 

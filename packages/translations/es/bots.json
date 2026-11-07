@@ -491,7 +491,11 @@
       "toLog": "Consultarlo solo cuando haga falta",
       "toProfile": "Tenerlo presente en cada chat",
       "toPerson": "Compartirlo con todos tus bots",
-      "toBot": "Guardarlo solo para este bot"
+      "toBot": "Guardarlo solo para este bot",
+      "learnedBy": "Aprendido por {{bot}} · {{date}}",
+      "editedByYouOn": "Editado por ti, lo guarda {{bot}} · {{date}}",
+      "addedByYouOn": "Añadido por ti, lo guarda {{bot}} · {{date}}",
+      "toBotNamed": "Que solo lo sepa {{bot}}"
     },
     "skills": {
       "title": "Habilidades",

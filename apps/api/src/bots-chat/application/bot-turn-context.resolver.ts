@@ -14,10 +14,12 @@ import {
   BOT_DOCUMENT_REPOSITORY,
   BOT_MEMORY_FACT_REPOSITORY,
   BOT_SKILL_REPOSITORY,
+  PERSON_MEMORY_REPOSITORY,
 } from '../../bots/bots.di-tokens';
 import type { BotDocumentRepositoryPort } from '../../bots/database/bot-document.repository.port';
 import type { BotMemoryFactRepositoryPort } from '../../bots/database/bot-memory-fact.repository.port';
 import type { BotSkillRepositoryPort } from '../../bots/database/bot-skill.repository.port';
+import type { PersonMemoryRepositoryPort } from '../../bots/database/person-memory.repository.port';
 import {
   BOT_CONVERSATION_SUMMARY_REPOSITORY,
   BOT_MESSAGE_REPOSITORY,
@@ -80,6 +82,7 @@ export class BotTurnContextResolver {
     @Inject(BOT_DOCUMENT_REPOSITORY) private readonly documents: BotDocumentRepositoryPort,
     @Inject(BOT_MEMORY_FACT_REPOSITORY) private readonly memory: BotMemoryFactRepositoryPort,
     @Inject(BOT_SKILL_REPOSITORY) private readonly skills: BotSkillRepositoryPort,
+    @Inject(PERSON_MEMORY_REPOSITORY) private readonly people: PersonMemoryRepositoryPort,
     @Inject(BOT_MESSAGE_REPOSITORY) private readonly messages: BotMessageRepositoryPort,
     @Inject(BOT_CONVERSATION_SUMMARY_REPOSITORY)
     private readonly summaries: BotConversationSummaryRepositoryPort,
@@ -105,21 +108,24 @@ export class BotTurnContextResolver {
     const owner = await this.owners.resolve(turn.organizationId, bot.createdByUserId);
     const summarized = await this.summaries.findForBot(turn.organizationId, bot.id);
     const summary = summarized.isSome() ? summarized.unwrap() : null;
-    const [documents, facts, skills, earlier, hosts, lastContext, permissions] = await Promise.all([
-      this.documents.findAllForTurn(turn.organizationId, bot.id),
-      this.memory.findAllForTurn(turn.organizationId, bot.id),
-      this.skills.findAllForTurn(turn.organizationId, bot.id),
-      this.messages.findHistory(
-        turn.organizationId,
-        bot.id,
-        turn.id,
-        summary?.coversThroughMessageId ?? null,
-        BOT_HISTORY_READ_MAX,
-      ),
-      this.hostsOf(owner, turn.id),
-      this.turns.findLastContext(turn.organizationId, bot.id),
-      this.settings.forBot(turn.organizationId, bot.id),
-    ]);
+    const [documents, facts, skills, earlier, hosts, lastContext, permissions, about] =
+      await Promise.all([
+        this.documents.findAllForTurn(turn.organizationId, bot.id),
+        this.memory.findAllForTurn(turn.organizationId, bot.id),
+        this.skills.findAllForTurn(turn.organizationId, bot.id),
+        this.messages.findHistory(
+          turn.organizationId,
+          bot.id,
+          turn.id,
+          summary?.coversThroughMessageId ?? null,
+          BOT_HISTORY_READ_MAX,
+        ),
+        this.hostsOf(owner, turn.id),
+        this.turns.findLastContext(turn.organizationId, bot.id),
+        this.settings.forBot(turn.organizationId, bot.id),
+        // A bot with no owner has nobody to read about.
+        bot.createdByUserId ? this.people.find(turn.organizationId, bot.createdByUserId) : null,
+      ]);
     const model = {
       provider: turn.provider,
       ...credential,
@@ -178,6 +184,7 @@ export class BotTurnContextResolver {
         instructions: documentText('instructions'),
         facts: inMind.own,
         personFacts: inMind.person,
+        personAbout: about?.about ?? '',
         engineCapabilities: engineCapabilities(turn.provider),
         tools: owner
           ? this.toolbox.catalog(turn.credentialScopes, {

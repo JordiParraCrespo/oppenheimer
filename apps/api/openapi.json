@@ -19636,6 +19636,112 @@
         ]
       }
     },
+    "/api/v1/bot-memory/person": {
+      "get": {
+        "description": "What you wrote about yourself, and every fact about you that a bot of yours keeps, newest first.",
+        "operationId": "findPersonMemory",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PersonMemoryResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Read what your bots know about you",
+        "tags": [
+          "Bots"
+        ]
+      }
+    },
+    "/api/v1/bot-memory/person/about": {
+      "put": {
+        "description": "In the system prompt of every bot you made in the workspace. Your bots read it and never change it; an empty text clears it.",
+        "operationId": "updatePersonAbout",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdatePersonAboutRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PersonAboutResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Write what your bots know about you",
+        "tags": [
+          "Bots"
+        ]
+      }
+    },
     "/api/v1/bots/{id}/memory/{factId}": {
       "patch": {
         "operationId": "updateBotMemoryFact",
@@ -34970,6 +35076,62 @@
           "botId",
           "createdAt",
           "updatedAt"
+        ]
+      },
+      "PersonAboutResponseDto": {
+        "type": "object",
+        "properties": {
+          "about": {
+            "type": "string",
+            "example": "I am Jordi. I work from Barcelona and like short answers.",
+            "description": "What the person wrote about themselves; empty when nothing was written."
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true,
+            "description": "When it was last saved; null when it never was."
+          }
+        },
+        "required": [
+          "about",
+          "updatedAt"
+        ]
+      },
+      "PersonMemoryResponseDto": {
+        "type": "object",
+        "properties": {
+          "about": {
+            "description": "In every one of the person's bots' system prompt; the bots never change it.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PersonAboutResponseDto"
+              }
+            ]
+          },
+          "facts": {
+            "description": "Every fact about the person (`scope: person`) that any of their bots keeps, newest first. Each is changed on the bot that keeps it (`botId`).",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BotMemoryFactResponseDto"
+            }
+          }
+        },
+        "required": [
+          "about",
+          "facts"
+        ]
+      },
+      "UpdatePersonAboutRequest": {
+        "type": "object",
+        "properties": {
+          "about": {
+            "type": "string",
+            "maxLength": 4000
+          }
+        },
+        "required": [
+          "about"
         ]
       },
       "CreateBotMemoryFactRequest": {
