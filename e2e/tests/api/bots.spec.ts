@@ -267,6 +267,25 @@ test.describe('Bots', () => {
         data: { content: 'Review and label the open pull requests.', baseRevision: 2 },
       }),
     );
+    // Opening the chat (`26-bot-routines.md` §6): the owner is seen, and a
+    // running routine stays running; a bot the workspace lacks is not found.
+    expect((await api.post(`/api/v1/bots/${bot.id}/seen`)).status()).toBe(204);
+    expect((await routines())[0]).toMatchObject({ status: 'active' });
+    await expectProblemDocument(await api.post(`/api/v1/bots/${randomUUID()}/seen`), {
+      status: 404,
+      code: 'BOTS_001',
+    });
+
+    // The spend guard is on for every bot, until its owner turns it off.
+    const guarded = await ok<{ routineSpendGuard: boolean }>(
+      await api.get(`/api/v1/bots/${bot.id}`),
+    );
+    expect(guarded.routineSpendGuard).toBe(true);
+    const unguarded = await ok<{ routineSpendGuard: boolean }>(
+      await api.patch(`/api/v1/bots/${bot.id}`, { data: { routineSpendGuard: false } }),
+    );
+    expect(unguarded.routineSpendGuard).toBe(false);
+
     // The outbox delivers soon after the write; give a second event time to land.
     await new Promise((resolve) => setTimeout(resolve, 1500));
     expect((await routines()).map((routine) => routine.name)).toEqual(['Heartbeat']);

@@ -72,6 +72,7 @@ export {
   type RunBotRoutineVariables,
   type SetBotRoutineEnabledVariables,
   useDeleteBotRoutine,
+  useMarkBotSeen,
   useRunBotRoutine,
   useSetBotRoutineEnabled,
   useSuspenseAllBotRoutines,

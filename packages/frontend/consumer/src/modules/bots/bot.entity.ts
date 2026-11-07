@@ -46,6 +46,8 @@ export class BotEntity {
     public readonly lastMessagePreview: string | null = null,
     /** The console sections whose sidebar lists it beside Employees, in catalog order. */
     public readonly sections: BotSection[] = [],
+    /** Whether its routines pause while its owner is away, and start again when they are back. */
+    public readonly routineSpendGuard: boolean = true,
   ) {}
 
   /**
@@ -204,6 +206,7 @@ export interface UpdateBotInput {
   effort?: SessionEffort | null;
   permission?: BotPermission;
   learnAutomatically?: boolean;
+  routineSpendGuard?: boolean;
   /** The whole set; `[]` shows it in Employees only. */
   sections?: BotSection[];
 }

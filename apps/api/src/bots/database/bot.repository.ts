@@ -84,6 +84,28 @@ export class BotRepository extends ScopedRepositoryBase<BotOrmEntity> implements
     return rows.map((row) => row.name);
   }
 
+  async markSeen(scope: AccessScope, botId: string, now: Date): Promise<boolean> {
+    const found = await this.scopedQuery(scope)
+      .andWhere('bot.id = :botId', { botId })
+      .select('bot.id', 'id')
+      .getRawOne<{ id: string }>();
+    if (!found) return false;
+    // Every visit is stored: a late pause reads it to know the owner came
+    // back, so a skipped write would let it stop again what the visit resumed.
+    // Never backwards, though: two visits that land out of order keep the later.
+    await this.repository
+      .createQueryBuilder()
+      .update(BotOrmEntity)
+      .set({ ownerSeenAt: now })
+      .where('id = :botId AND "organizationId" = :organizationId AND "ownerSeenAt" < :now', {
+        botId,
+        organizationId: scope.organizationId,
+        now,
+      })
+      .execute();
+    return true;
+  }
+
   async insert(
     bot: BotEntity,
     documents: readonly BotDocumentEntity[],

@@ -21,6 +21,7 @@ import { ApiAuthGuard } from '../../../auth/guards/api-auth.guard';
 import { PoliciesGuard } from '../../../auth/guards/policies.guard';
 import { CurrentAccessScope } from '../../../authz/decorators/current-access-scope.decorator';
 import { AccessScopeInterceptor } from '../../../authz/interceptors/access-scope.interceptor';
+import { MarkBotSeenCommand } from '../../../bots/commands/mark-bot-seen/mark-bot-seen.command';
 import { BotQuestionMapper } from '../../bot-question.mapper';
 import type { BotQuestionEntity } from '../../domain/bot-question.entity';
 import { BotQuestionResponseDto } from '../../dtos/bot-question.response.dto';
@@ -72,6 +73,8 @@ export class DismissBotQuestionHttpController {
         credentialScopes: credential ? credential.scopes : null,
       }),
     );
+    // The owner in the chat: the spend guard counts from here, and resumes their routines.
+    await this.commandBus.execute(new MarkBotSeenCommand({ scope, botId }));
     const question = await this.queryBus.execute<FindBotQuestionQuery, BotQuestionEntity>(
       new FindBotQuestionQuery(scope, botId, questionId),
     );

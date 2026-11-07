@@ -5,6 +5,7 @@ import { createBotEngine } from '@oppenheimer/backend-agents';
 import { AutomationsModule } from '../automations/automations.module';
 import { BotsModule } from '../bots/bots.module';
 import { OrganizationsModule } from '../organizations/organizations.module';
+import { ProfileModule } from '../profile/profile.module';
 import { QueueModule } from '../queue/queue.module';
 import { BotApprovalRequestFactory } from './application/bot-approval-request.factory';
 import { BotApprovalStartedPolicy } from './application/bot-approval-started.policy';
@@ -66,6 +67,7 @@ import { BotHeartbeatDomainEventHandler } from './application/event-handlers/bot
 import { BotPullRequestWakeDomainEventHandler } from './application/event-handlers/bot-pull-request-wake.domain-event-handler';
 import { BotRoutineActivityDomainEventHandler } from './application/event-handlers/bot-routine-activity.domain-event-handler';
 import { BotSessionWakeDomainEventHandler } from './application/event-handlers/bot-session-wake.domain-event-handler';
+import { BotUnattendedRoutinesDomainEventHandler } from './application/event-handlers/bot-unattended-routines.domain-event-handler';
 import { TurnCancelWatchFactory } from './application/turn-cancel-watch.factory';
 import { TurnWriteFactory } from './application/turn-write.factory';
 import { BotApprovalMapper } from './bot-approval.mapper';
@@ -344,6 +346,8 @@ const queryHandlers: Provider[] = [
     // A routine is an automation whose run is a turn of its bot: this module
     // contributes that run target (`BotRoutineTarget`).
     AutomationsModule,
+    // `LOCALE_RESOLVER`: what the bot says on its owner's behalf is in their language.
+    ProfileModule,
     // A turn acts as the bot's owner, who must still be a member.
     OrganizationsModule,
   ],
@@ -426,6 +430,7 @@ const queryHandlers: Provider[] = [
     ...AutomationsModule.contributeRunTargets([BotRoutineTarget]),
     BotHeartbeatDomainEventHandler,
     BotRoutineActivityDomainEventHandler,
+    BotUnattendedRoutinesDomainEventHandler,
     BotSessionWakeDomainEventHandler,
     BotPullRequestWakeDomainEventHandler,
     TurnCancelWatchFactory,

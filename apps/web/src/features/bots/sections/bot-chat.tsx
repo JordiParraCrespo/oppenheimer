@@ -9,6 +9,7 @@ import { BotChatScroller } from '@/features/bots/components/bot-chat-scroller';
 import { BotPermissionChip } from '@/features/bots/components/bot-permission-chip';
 import { DeleteBotDialog } from '@/features/bots/dialogs/delete-bot';
 import { useKeyedProvider } from '@/features/bots/hooks/use-keyed-provider';
+import { useMarkSeen } from '@/features/bots/hooks/use-mark-seen';
 import { BotApprovalCard } from './bot-approval-card';
 import { BotComposer } from './bot-composer';
 import { BotEngine } from './bot-engine';
@@ -40,6 +41,7 @@ export function BotChat({ botId }: { botId: string }) {
   const update = useUpdateBotOptimistically();
   const [deleting, setDeleting] = useState(false);
   useKeyedProvider(bot.provider, (next) => update.mutate({ id: bot.id, input: next }));
+  useMarkSeen(bot.id);
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
