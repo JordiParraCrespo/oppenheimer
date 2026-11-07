@@ -9,7 +9,6 @@ import { ApiAuthGuard } from '../../../auth/guards/api-auth.guard';
 import { PoliciesGuard } from '../../../auth/guards/policies.guard';
 import { CurrentAccessScope } from '../../../authz/decorators/current-access-scope.decorator';
 import { AccessScopeInterceptor } from '../../../authz/interceptors/access-scope.interceptor';
-import { BotMemoryFactMapper } from '../../bot-memory-fact.mapper';
 import { PersonMemoryResponseDto } from '../../dtos/person-memory.response.dto';
 import { PersonMemoryMapper } from '../../person-memory.mapper';
 import { FindPersonMemoryQuery, type PersonMemory } from './find-person-memory.query';
@@ -23,8 +22,7 @@ import { FindPersonMemoryQuery, type PersonMemory } from './find-person-memory.q
 export class FindPersonMemoryHttpController {
   constructor(
     private readonly queryBus: QueryBus,
-    private readonly people: PersonMemoryMapper,
-    private readonly facts: BotMemoryFactMapper,
+    private readonly mapper: PersonMemoryMapper,
   ) {}
 
   @Get('person')
@@ -41,9 +39,6 @@ export class FindPersonMemoryHttpController {
     const memory = await this.queryBus.execute<FindPersonMemoryQuery, PersonMemory>(
       new FindPersonMemoryQuery({ scope }),
     );
-    const dto = new PersonMemoryResponseDto();
-    dto.about = this.people.toResponse(memory.about);
-    dto.facts = memory.facts.map((fact) => this.facts.toResponse(fact));
-    return dto;
+    return this.mapper.toMemoryResponse(memory);
   }
 }
