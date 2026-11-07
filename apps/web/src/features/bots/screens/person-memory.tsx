@@ -10,7 +10,7 @@ import { PersonFacts } from '@/features/bots/sections/person-facts';
  * `/settings/memory`: what every bot of the person's knows about them. First
  * what they wrote themselves, which the bots read and never change, then the
  * facts about them the bots learned, each changed on the bot that keeps it.
- * Both read one query, each under its own boundary.
+ * Both read one query, under one boundary.
  */
 export function PersonMemoryScreen() {
   const { t } = useTranslation();
@@ -24,18 +24,11 @@ export function PersonMemoryScreen() {
       <QueryState>
         <QueryState.Pending>
           <PersonAboutSkeleton />
-        </QueryState.Pending>
-        <QueryState.Error fallback={t('settings.memory.loadFailed')} />
-        <QueryState.Data>
-          <PersonAbout />
-        </QueryState.Data>
-      </QueryState>
-      <QueryState>
-        <QueryState.Pending>
           <BotMemorySkeleton />
         </QueryState.Pending>
         <QueryState.Error fallback={t('settings.memory.loadFailed')} />
         <QueryState.Data>
+          <PersonAbout />
           <PersonFacts />
         </QueryState.Data>
       </QueryState>

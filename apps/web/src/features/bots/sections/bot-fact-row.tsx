@@ -7,7 +7,7 @@ import { BOT_MEMORY_FACT_MAX } from '@oppenheimer/shared/schemas/bot';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { FactKeptMenu } from '@/features/bots/components/fact-kept-menu';
-import { factRowModel, keptFactRowModel } from '@/features/bots/lib/fact-row';
+import { factRowModel } from '@/features/bots/lib/fact-row';
 
 /**
  * One fact the bot remembers: the sentence, who wrote it and when, a tag when
@@ -36,8 +36,7 @@ export function BotFactRow({
   const update = useUpdateBotFact({ onSuccess: () => setDraft(null) });
   const remove = useDeleteBotFact();
   const date = formatMediumDate(fact.updatedAt, locale);
-  const row =
-    keptBy === undefined ? factRowModel(fact, botId) : { shared: false, ...keptFactRowModel(fact) };
+  const row = factRowModel(fact, keptBy === undefined ? { botId } : { account: true });
   const kind = row.kind && t(`bots.settings.memory.${row.kind}`);
   const meta = t(`bots.settings.memory.${row.meta}`, { date, bot: keptBy });
 

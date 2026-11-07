@@ -123,8 +123,7 @@ export class BotTurnContextResolver {
         this.hostsOf(owner, turn.id),
         this.turns.findLastContext(turn.organizationId, bot.id),
         this.settings.forBot(turn.organizationId, bot.id),
-        // A bot with no owner has nobody to read about.
-        bot.createdByUserId ? this.people.find(turn.organizationId, bot.createdByUserId) : null,
+        this.aboutOf(turn.organizationId, bot.createdByUserId),
       ]);
     const model = {
       provider: turn.provider,
@@ -184,7 +183,7 @@ export class BotTurnContextResolver {
         instructions: documentText('instructions'),
         facts: inMind.own,
         personFacts: inMind.person,
-        personAbout: about?.about ?? '',
+        personAbout: about,
         engineCapabilities: engineCapabilities(turn.provider),
         tools: owner
           ? this.toolbox.catalog(turn.credentialScopes, {
@@ -220,6 +219,15 @@ export class BotTurnContextResolver {
    * that there are none. Anything else the read throws is a fault, and
    * fails the turn like any other.
    */
+  /**
+   * What the bot's owner wrote about themselves in Settings → Memory, or
+   * nothing: a bot with no owner has nobody to read about.
+   */
+  private async aboutOf(organizationId: string, ownerId: string | null): Promise<string> {
+    if (!ownerId) return '';
+    return (await this.people.find(organizationId, ownerId)).about;
+  }
+
   private async hostsOf(owner: AccessScope | null, turnId: string): Promise<OwnerHost[] | null> {
     if (!owner) return null;
     try {
