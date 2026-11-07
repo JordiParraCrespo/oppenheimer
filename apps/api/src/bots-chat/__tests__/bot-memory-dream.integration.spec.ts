@@ -292,15 +292,23 @@ describe('BotMemoryDreamRepository (integration)', () => {
     expect(await contents(ada)).toEqual(['Ana squashes, she said so herself', 'Call me Ana']);
   });
 
-  it('records a try that wrote nothing, so the trigger waits from it', async () => {
+  it('claims the day when the trigger stages a dream, so a second turn stages none', async () => {
     const ada = await createBot();
     await remember(ada, 'one');
-    await dreams.markTried(organizationId, ada.id);
+    const day = 24 * 60 * 60 * 1000;
 
+    expect(await dreams.stageDream(organizationId, ada.id, day, null)).toBe(true);
+    expect(await dreams.stageDream(organizationId, ada.id, day, null)).toBe(false);
     const weight = await dreams.weigh(organizationId, ada.id);
     expect(weight.lastDreamAt).toBeInstanceOf(Date);
     expect(weight.writesSince).toBe(1);
     expect((await dreams.findState(organizationId, ada.id)).latest).toBeNull();
     expect(await dreams.undo(organizationId, ada.id, BOT_MEMORY_FACTS_MAX)).toBeNull();
+    const staged: unknown[] = await dataSource.query(
+      `SELECT 1 FROM outbox_message WHERE "aggregateId" = $1 AND topic = 'bot-dreams'`,
+      [ada.id],
+    );
+    expect(staged).toHaveLength(1);
+    expect(await dreams.stageDream(organizationId, ada.id, 0, null)).toBe(true);
   });
 });

@@ -601,8 +601,8 @@ of `bot_memory_fact`, with two columns more:
     neither. A merged log fact keeps the newest day of those it came from.
   - *When.* After a turn, once the bot keeps at least 8 facts of its own,
     has written 10 since its last dream, and last dreamed a day ago or
-    never (a dream that wrote nothing counts: each one that reaches the
-    model is recorded first); only while *Learn automatically* is on, since a dream changes
+    never (a dream that wrote nothing counts: the day is claimed when the
+    dream is staged, so a retry of a failed job still runs); only while *Learn automatically* is on, since a dream changes
     memory the way `remember` does. Settings → Memory's **Tidy now** runs
     one whatever those say; the API records the ask, so the row reads
     "tidying" until the job ends (ten minutes at most). It runs on the `bot-dreams` queue and is

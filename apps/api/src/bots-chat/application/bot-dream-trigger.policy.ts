@@ -1,4 +1,5 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
+import { BOT_DREAM_INTERVAL_MS } from '@oppenheimer/shared';
 import { BOT_REPOSITORY } from '../../bots/bots.di-tokens';
 import type { BotRepositoryPort } from '../../bots/database/bot.repository.port';
 import { BOT_MEMORY_DREAM_REPOSITORY } from '../bots-chat.di-tokens';
@@ -31,8 +32,12 @@ export class BotDreamTriggerPolicy {
       if (!shouldDream({ ...weight, learns: bot.unwrap().learnAutomatically }, new Date())) {
         return false;
       }
-      await this.dreams.stageDream(turn.organizationId, turn.botId, correlationId);
-      return true;
+      return await this.dreams.stageDream(
+        turn.organizationId,
+        turn.botId,
+        BOT_DREAM_INTERVAL_MS,
+        correlationId,
+      );
     } catch (error) {
       this.logger.warn({
         message: 'Could not decide whether a bot should dream',

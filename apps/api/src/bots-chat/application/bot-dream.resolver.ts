@@ -5,14 +5,10 @@ import type { BotMemoryFactRepositoryPort } from '../../bots/database/bot-memory
 import { BotMemoryDreamMapper } from '../bot-memory-dream.mapper';
 import {
   BOT_CONVERSATION_SUMMARY_REPOSITORY,
-  BOT_MEMORY_DREAM_REPOSITORY,
   BOT_MESSAGE_REPOSITORY,
 } from '../bots-chat.di-tokens';
 import type { BotConversationSummaryRepositoryPort } from '../database/bot-conversation-summary.repository.port';
-import type {
-  BotMemoryDreamRepositoryPort,
-  DreamWrite,
-} from '../database/bot-memory-dream.repository.port';
+import type { DreamWrite } from '../database/bot-memory-dream.repository.port';
 import type { BotMessageRepositoryPort } from '../database/bot-message.repository.port';
 import {
   BOT_DREAM_READ_MAX,
@@ -21,20 +17,18 @@ import {
   factRefs,
   readDream,
   rewritableFacts,
-  shouldDream,
 } from '../domain/bot-dream.policy';
 import { BOT_TURN_TIME_LIMIT_MS } from '../domain/bot-turn.entity';
 import { BotCompletionResolver } from './bot-completion.resolver';
 import { BotModelAccessResolver } from './bot-model-access.resolver';
 
 /**
- * What a dream would write (`25-bots.md` §4.1, "Dreaming"): the bot, unless
- * the trigger says it has nothing to tidy (`shouldDream`; skipped when its
- * owner asked); its facts, the ones it wrote itself to rewrite and the rest to
+ * What a dream would write (`25-bots.md` §4.1, "Dreaming"): the bot (the
+ * trigger already decided it should dream, and claimed the day for it); its
+ * facts, the ones it wrote itself to rewrite and the rest to
  * leave; its conversation summary and newest messages, the ground truth the
  * notes are checked against; and one tool-less call of its own model, read by
- * `readDream`. Each one that reaches the model is recorded first
- * (`markTried`). Null when there is nothing to do, or when the answer is one
+ * `readDream`. Null when there is nothing to do, or when the answer is one
  * nothing of should be used. A model that fails throws, and the queue retries.
  */
 @Injectable()
@@ -46,7 +40,6 @@ export class BotDreamResolver {
     private readonly completions: BotCompletionResolver,
     private readonly mapper: BotMemoryDreamMapper,
     @Inject(BOT_MEMORY_FACT_REPOSITORY) private readonly memory: BotMemoryFactRepositoryPort,
-    @Inject(BOT_MEMORY_DREAM_REPOSITORY) private readonly dreams: BotMemoryDreamRepositoryPort,
     @Inject(BOT_CONVERSATION_SUMMARY_REPOSITORY)
     private readonly summaries: BotConversationSummaryRepositoryPort,
     @Inject(BOT_MESSAGE_REPOSITORY) private readonly messages: BotMessageRepositoryPort,
@@ -56,15 +49,11 @@ export class BotDreamResolver {
     const now = new Date();
     const bot = await this.access.findBot(organizationId, botId);
     if (!bot) return null;
-    if (!force) {
-      const weight = await this.dreams.weigh(organizationId, botId);
-      if (!shouldDream({ ...weight, learns: bot.learnAutomatically }, now)) return null;
-    }
+    // The trigger claimed the day's slot when it staged this job, so a retry
+    // of it runs; only a bot that stopped learning since is let be.
+    if (!force && !bot.learnAutomatically) return null;
     const target = await this.access.ownModel(organizationId, botId, now);
     if (!target) return null;
-    // Before the call: a dream that answers nothing usable, or loses to a
-    // save, still holds the next one off for a day.
-    await this.dreams.markTried(organizationId, botId);
     const [stored, summary, messages] = await Promise.all([
       this.memory.findAllForTurn(organizationId, botId),
       this.summaries.findForBot(organizationId, botId),

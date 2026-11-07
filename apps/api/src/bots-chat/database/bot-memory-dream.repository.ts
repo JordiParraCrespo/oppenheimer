@@ -82,10 +82,6 @@ export class BotMemoryDreamRepository implements BotMemoryDreamRepositoryPort {
     };
   }
 
-  async markTried(organizationId: string, botId: string): Promise<void> {
-    await this.upsertRow(this.dataSource.manager, organizationId, botId, '"triedAt"');
-  }
-
   async apply(dream: DreamWrite, max: number): Promise<'applied' | 'changed' | 'missing'> {
     return this.outbox.transaction(async (manager) => {
       if (!(await this.lockBot(manager, dream.organizationId, dream.botId))) {
@@ -128,11 +124,24 @@ export class BotMemoryDreamRepository implements BotMemoryDreamRepositoryPort {
   async stageDream(
     organizationId: string,
     botId: string,
+    intervalMs: number,
     correlationId: string | null,
-  ): Promise<void> {
-    await this.outbox.transaction((manager) =>
-      this.stageJob(manager, organizationId, botId, false, correlationId),
-    );
+  ): Promise<boolean> {
+    return this.outbox.transaction(async (manager) => {
+      // The day's slot, claimed in the row's own write: of two turns ending
+      // at once, one stages the dream and the other finds the slot taken.
+      const claimed: unknown[] = await manager.query(
+        `INSERT INTO bot_memory_dream ("organizationId", "botId", "triedAt")
+         SELECT "organizationId", id, now() FROM bot WHERE "organizationId" = $1 AND id = $2
+         ON CONFLICT ("organizationId", "botId") DO UPDATE SET "triedAt" = now(), "updatedAt" = now()
+          WHERE bot_memory_dream."triedAt" <= now() - make_interval(secs => $3::double precision / 1000)
+         RETURNING 1`,
+        [organizationId, botId, intervalMs],
+      );
+      if (claimed.length === 0) return false;
+      await this.stageJob(manager, organizationId, botId, false, correlationId);
+      return true;
+    });
   }
 
   async requestDream(
@@ -141,7 +150,13 @@ export class BotMemoryDreamRepository implements BotMemoryDreamRepositoryPort {
     correlationId: string | null,
   ): Promise<void> {
     await this.outbox.transaction(async (manager) => {
-      await this.upsertRow(manager, organizationId, botId, '"requestedAt"');
+      await manager.query(
+        `INSERT INTO bot_memory_dream ("organizationId", "botId", "triedAt", "requestedAt")
+         SELECT "organizationId", id, now(), now() FROM bot WHERE "organizationId" = $1 AND id = $2
+         ON CONFLICT ("organizationId", "botId")
+         DO UPDATE SET "triedAt" = now(), "requestedAt" = now(), "updatedAt" = now()`,
+        [organizationId, botId],
+      );
       await this.stageJob(manager, organizationId, botId, true, correlationId);
     });
   }
@@ -150,21 +165,6 @@ export class BotMemoryDreamRepository implements BotMemoryDreamRepositoryPort {
     await this.dataSource.query(
       `UPDATE bot_memory_dream SET "requestedAt" = NULL, "updatedAt" = now()
         WHERE "organizationId" = $1 AND "botId" = $2 AND "requestedAt" IS NOT NULL`,
-      [organizationId, botId],
-    );
-  }
-
-  /** The bot's row, made if it has none (only while the bot exists), with `column` set to now. */
-  private async upsertRow(
-    manager: EntityManager,
-    organizationId: string,
-    botId: string,
-    column: '"triedAt"' | '"requestedAt"',
-  ): Promise<void> {
-    await manager.query(
-      `INSERT INTO bot_memory_dream ("organizationId", "botId", ${column})
-       SELECT "organizationId", id, now() FROM bot WHERE "organizationId" = $1 AND id = $2
-       ON CONFLICT ("organizationId", "botId") DO UPDATE SET ${column} = now(), "updatedAt" = now()`,
       [organizationId, botId],
     );
   }

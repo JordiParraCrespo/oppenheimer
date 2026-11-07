@@ -5,7 +5,7 @@ export interface DreamWeight {
   rewritable: number;
   /** The bot's facts written since its last dream that wrote, or since it began. */
   writesSince: number;
-  /** When a dream last started, whether or not it wrote anything. */
+  /** When a dream was last staged or asked for, whether or not it wrote anything. */
   lastDreamAt: Date | null;
 }
 
@@ -24,8 +24,6 @@ export interface BotMemoryDreamRepositoryPort {
   findState(organizationId: string, botId: string): Promise<DreamState>;
   /** How many facts the bot wrote itself, how many it wrote since its last dream, and when one last started. */
   weigh(organizationId: string, botId: string): Promise<DreamWeight>;
-  /** Records that a dream of the bot starts now, so the trigger waits a day whatever it comes to. */
-  markTried(organizationId: string, botId: string): Promise<void>;
   /**
    * Replaces the facts the dream read with the ones it wrote, and stores the
    * dream with the facts it replaced, under a lock on the bot's row and on
@@ -41,8 +39,18 @@ export interface BotMemoryDreamRepositoryPort {
    * the bot's own oldest `log` facts making room past `max`. The dream as it was undone, or null when there is none to undo.
    */
   undo(organizationId: string, botId: string, max: number): Promise<StoredDream | null>;
-  /** Stages a dream the trigger owes the bot. */
-  stageDream(organizationId: string, botId: string, correlationId: string | null): Promise<void>;
+  /**
+   * Stages a dream the trigger owes the bot, unless one was staged or asked
+   * for within `intervalMs`: the slot is claimed in the same write, so a job
+   * that fails and is retried still runs, and two turns ending at once stage
+   * one. Whether this call staged it.
+   */
+  stageDream(
+    organizationId: string,
+    botId: string,
+    intervalMs: number,
+    correlationId: string | null,
+  ): Promise<boolean>;
   /**
    * Its owner's Tidy now: marks a dream under way and stages it, in one
    * write, so the console reads `pending` until the job settles it.

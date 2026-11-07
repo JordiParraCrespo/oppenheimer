@@ -10,10 +10,12 @@ import type { MigrationInterface, QueryRunner } from 'typeorm';
  *   `("organizationId", "botId")`, which is also the composite foreign key to
  *   `bot` (`ON DELETE CASCADE`). A new dream overwrites the row: only the
  *   latest can be undone, and what came before it is what that dream read.
- *   - `triedAt`: when a dream last started, whether or not it wrote
- *     anything. The trigger waits a day from it, so a bot whose dreams keep
- *     coming back unusable (or losing to a save) pays for one a day, not one
- *     a turn. A row may hold only this, before the first dream that wrote.
+ *   - `triedAt`: when a dream was last staged or asked for, whether or not
+ *     it wrote anything. The trigger claims the day in the same write that
+ *     stages the job (`... WHERE "triedAt" <= now() - interval`), so a bot
+ *     whose dreams keep coming back unusable pays for one a day, not one a
+ *     turn, and a retry of a failed job still runs. A row may hold only
+ *     this, before the first dream that wrote.
  *   - `requestedAt`: when its owner asked for one (Tidy now), cleared by the
  *     job when it ends, whatever it came to; the console reads the dream as
  *     under way while it is set, for ten minutes at most, so a lost job
