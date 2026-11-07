@@ -65,15 +65,16 @@ export class BotDreamResolver {
     // Before the call: a dream that answers nothing usable, or loses to a
     // save, still holds the next one off for a day.
     await this.dreams.markTried(organizationId, botId);
-    const facts = (await this.memory.findAllForTurn(organizationId, botId))
-      .map((fact) => this.mapper.toDreamFact(fact))
-      .reverse();
+    const [stored, summary, messages] = await Promise.all([
+      this.memory.findAllForTurn(organizationId, botId),
+      this.summaries.findForBot(organizationId, botId),
+      this.messages.findRecent(organizationId, botId, BOT_DREAM_READ_MAX),
+    ]);
+    const facts = stored.map((fact) => this.mapper.toDreamFact(fact)).reverse();
     const rewrite = rewritableFacts(facts, botId);
     if (rewrite.length === 0) return null;
     const rewriting = new Set(rewrite.map((fact) => fact.id));
     const keep = facts.filter((fact) => !rewriting.has(fact.id));
-    const summary = await this.summaries.findForBot(organizationId, botId);
-    const messages = await this.messages.findRecent(organizationId, botId, BOT_DREAM_READ_MAX);
     const refs = factRefs(rewrite);
     const answer = await this.completions.complete(
       {

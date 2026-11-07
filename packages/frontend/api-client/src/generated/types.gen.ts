@@ -4549,6 +4549,10 @@ export type BotMemoryDreamResponseDto = {
 
 export type BotMemoryDreamStateResponseDto = {
     latest: BotMemoryDreamResponseDto | null;
+    /**
+     * Whether a dream its owner asked for (Tidy now) is under way: from the ask until its job ends, ten minutes at most.
+     */
+    pending: boolean;
 };
 
 export type BotApprovalResponseDto = {

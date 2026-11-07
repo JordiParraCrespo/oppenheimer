@@ -10,21 +10,17 @@ import { useTranslation } from 'react-i18next';
 /**
  * Tidy memory (`25-bots.md` §4.1, "Dreaming"): what the bot's last dream
  * did, Undo while it stands, and Tidy now, which queues one. A dream runs in
- * the background and says so in the chat; until it lands this row says it is
- * under way, and reads the dream again every few seconds.
+ * the background and says so in the chat; while the API says it is under
+ * way, this row says so.
  */
 export function BotDreaming({ botId }: { botId: string }) {
   const { t } = useTranslation();
   const locale = useLocale();
+  const { data: state, error } = useBotMemoryDream(botId);
   const request = useRequestBotMemoryDream();
   const undo = useUndoBotMemoryDream();
-  const { data: dream, error } = useBotMemoryDream(
-    botId,
-    request.isSuccess ? request.submittedAt : undefined,
-  );
-  const latest = dream ?? null;
-  const requested =
-    request.isSuccess && (!latest || Date.parse(latest.createdAt) < request.submittedAt);
+  const latest = state?.latest ?? null;
+  const requested = state?.pending === true;
 
   const hint = requested
     ? t('bots.settings.memory.dream.queued')

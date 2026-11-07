@@ -3180,7 +3180,7 @@ export const findBotUsage = <ThrowOnError extends boolean = false>(options: Opti
 /**
  * Read a bot's latest dream of its memory
  *
- * `latest` is null before its first.
+ * `latest` is null before its first; `pending` while one its owner asked for is under way.
  */
 export const findBotMemoryDream = <ThrowOnError extends boolean = false>(options: Options<FindBotMemoryDreamData, ThrowOnError>): RequestResult<FindBotMemoryDreamResponses, FindBotMemoryDreamErrors, ThrowOnError> => (options.client ?? client).get<FindBotMemoryDreamResponses, FindBotMemoryDreamErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],

@@ -14,6 +14,10 @@ import type { MigrationInterface, QueryRunner } from 'typeorm';
  *     anything. The trigger waits a day from it, so a bot whose dreams keep
  *     coming back unusable (or losing to a save) pays for one a day, not one
  *     a turn. A row may hold only this, before the first dream that wrote.
+ *   - `requestedAt`: when its owner asked for one (Tidy now), cleared by the
+ *     job when it ends, whatever it came to; the console reads the dream as
+ *     under way while it is set, for ten minutes at most, so a lost job
+ *     does not hold the row.
  *   - The dream itself: `id`, `factsBefore`, `factsAfter`, `snapshot`,
  *     `outputFactIds` and `createdAt`, all set or none
  *     (`CHK_bot_memory_dream_applied`), and `undoneAt` only on a dream.
@@ -44,6 +48,7 @@ export class AddBotMemoryDreams1794040957267 implements MigrationInterface {
         "organizationId" uuid NOT NULL,
         "botId" uuid NOT NULL,
         "triedAt" timestamptz NOT NULL DEFAULT now(),
+        "requestedAt" timestamptz,
         id uuid,
         "factsBefore" integer,
         "factsAfter" integer,

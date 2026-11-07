@@ -361,3 +361,9 @@ export interface StoredDream {
   createdAt: Date;
   undoneAt: Date | null;
 }
+
+/** A bot's latest dream, and whether one its owner asked for is under way. */
+export interface DreamState {
+  latest: StoredDream | null;
+  pending: boolean;
+}

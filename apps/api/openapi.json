@@ -21756,7 +21756,7 @@
     },
     "/api/v1/bots/{id}/memory/dream": {
       "get": {
-        "description": "`latest` is null before its first.",
+        "description": "`latest` is null before its first; `pending` while one its owner asked for is under way.",
         "operationId": "findBotMemoryDream",
         "parameters": [
           {
@@ -36809,10 +36809,15 @@
                 "$ref": "#/components/schemas/BotMemoryDreamResponseDto"
               }
             ]
+          },
+          "pending": {
+            "type": "boolean",
+            "description": "Whether a dream its owner asked for (Tidy now) is under way: from the ask until its job ends, ten minutes at most."
           }
         },
         "required": [
-          "latest"
+          "latest",
+          "pending"
         ]
       },
       "BotApprovalResponseDto": {

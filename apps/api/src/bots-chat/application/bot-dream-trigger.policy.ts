@@ -31,7 +31,7 @@ export class BotDreamTriggerPolicy {
       if (!shouldDream({ ...weight, learns: bot.unwrap().learnAutomatically }, new Date())) {
         return false;
       }
-      await this.dreams.stageDream(turn.organizationId, turn.botId, false, correlationId);
+      await this.dreams.stageDream(turn.organizationId, turn.botId, correlationId);
       return true;
     } catch (error) {
       this.logger.warn({

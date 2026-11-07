@@ -31,4 +31,10 @@ export class BotMemoryDreamResponseDto implements BotMemoryDream {
 export class BotMemoryDreamStateResponseDto {
   @ApiProperty({ type: BotMemoryDreamResponseDto, nullable: true })
   latest!: BotMemoryDreamResponseDto | null;
+
+  @ApiProperty({
+    description:
+      'Whether a dream its owner asked for (Tidy now) is under way: from the ask until its job ends, ten minutes at most.',
+  })
+  pending!: boolean;
 }

@@ -28,6 +28,10 @@ export class BotMemoryDreamOrmEntity {
   @Column({ type: TIMESTAMP_COLUMN_TYPE, default: () => 'now()' })
   triedAt!: Date;
 
+  /** When its owner asked for one (Tidy now); cleared when that job ends. */
+  @Column({ type: TIMESTAMP_COLUMN_TYPE, nullable: true })
+  requestedAt!: Date | null;
+
   @Column({ type: 'uuid', nullable: true })
   id!: string | null;
 

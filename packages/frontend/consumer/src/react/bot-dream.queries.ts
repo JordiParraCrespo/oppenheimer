@@ -1,7 +1,7 @@
 'use client';
 
 import { useQuery } from '@oppenheimer/frontend-core/react';
-import type { BotMemoryDream } from '@oppenheimer/shared/schemas/bot';
+import type { BotMemoryDreamState } from '@oppenheimer/shared/schemas/bot';
 import { useQueryClient } from '@tanstack/react-query';
 import { botsKeys } from './bots.keys';
 import { useConsumerApp } from './context';
@@ -10,44 +10,43 @@ import { mutation } from './mutation';
 
 /**
  * A bot's dreams of its memory (`product/versions/mvp/25-bots.md` §4.1,
- * "Dreaming"): its latest, "Tidy now", and Undo. A dream runs in the
- * background and says so in the chat, whose stream reads the memory again.
+ * "Dreaming"): its latest, "Tidy now", and Undo.
  */
-
-/** How long a requested dream is asked after at most. */
-const DREAM_WATCH_MS = 3 * 60_000;
 
 /**
- * The latest dream; `null` before the first. Not a Suspense read: Memory is
- * whole without it. After a Tidy now sent at `requestedAt`, it is read again
- * every few seconds until a dream newer than that lands, for a few minutes at
- * most (a dream with nothing to tidy writes none); a read that finds a newer
+ * The latest dream (`null` before the first) and whether one its owner asked
+ * for is under way. Not a Suspense read: Memory is whole without it. While one
+ * is pending it is read again every few seconds; a read that finds a newer
  * dream reads the facts again, which it rewrote.
  */
-export function useBotMemoryDream(id: string, requestedAt?: number) {
+export function useBotMemoryDream(id: string) {
   const app = useConsumerApp();
   const queryClient = useQueryClient();
   const queryKey = botsKeys.memoryDream(id);
-  const poll = usePollWhile<BotMemoryDream | null>('memoryDream', queryKey, (latest) => {
-    if (requestedAt === undefined || Date.now() - requestedAt > DREAM_WATCH_MS) return false;
-    return !latest || Date.parse(latest.createdAt) < requestedAt;
-  });
-  return useQuery<BotMemoryDream | null, Error>({
+  const poll = usePollWhile<BotMemoryDreamState>(
+    'memoryDream',
+    queryKey,
+    (state) => state?.pending === true,
+  );
+  return useQuery<BotMemoryDreamState, Error>({
     queryKey,
     queryFn: async () => {
-      const before = queryClient.getQueryData<BotMemoryDream | null>(botsKeys.memoryDream(id));
-      const latest = await app.bots.findDream(id);
-      if (before !== undefined && latest?.id !== before?.id) {
+      const before = queryClient.getQueryData<BotMemoryDreamState>(queryKey);
+      const state = await app.bots.findDream(id);
+      if (before && state.latest?.id !== before.latest?.id) {
         await queryClient.invalidateQueries({ queryKey: botsKeys.memoryList(id) });
       }
-      return latest;
+      return state;
     },
     ...poll,
   });
 }
 
+/** Tidy now: the dream is read again, which now says it is under way. */
 export const useRequestBotMemoryDream = mutation<void, string>({
   run: (app, id) => app.bots.requestDream(id),
+  update: (queryClient, _data, id) =>
+    queryClient.invalidateQueries({ queryKey: botsKeys.memoryDream(id) }),
 });
 
 /** The facts come back: the memory and the dream are read again, and the chat, which says so. */

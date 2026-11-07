@@ -116,7 +116,7 @@ export const BOT_DREAM_NOTE_MAX = 300;
 export const BOT_DREAM_ACTIVITIES = ['dreamed', 'undone'] as const;
 export type BotDreamActivity = (typeof BOT_DREAM_ACTIVITIES)[number];
 
-/** A bot's latest dream, as Settings → Memory reads it: `GET /bots/:id/memory/dream`. */
+/** A bot's latest dream, as Settings → Memory reads it. */
 export interface BotMemoryDream {
   id: string;
   /** The bot's own facts before and after it. */
@@ -127,6 +127,12 @@ export interface BotMemoryDream {
   createdAt: string;
   /** When the owner undid it; null while it stands. */
   undoneAt: string | null;
+}
+
+/** `GET /bots/:id/memory/dream`: the latest dream, and whether one its owner asked for is under way. */
+export interface BotMemoryDreamState {
+  latest: BotMemoryDream | null;
+  pending: boolean;
 }
 
 /** The most revisions one read returns, newest first. */

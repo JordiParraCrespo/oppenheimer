@@ -36,7 +36,7 @@ import {
   type BotDocumentName,
   type BotGoal,
   type BotLoop,
-  type BotMemoryDream,
+  type BotMemoryDreamState,
   type BotMessageEvent,
   type BotPermissionRuleEffect,
   type BotProvider,
@@ -882,12 +882,11 @@ export class BotsRepository {
     });
   }
 
-  /** The bot's latest dream of its memory; null before its first. */
-  findDream(id: string): Promise<BotMemoryDream | null> {
-    return callApi(BotsErrors.FETCH_DREAM_FAILED, async (api) => {
-      const data = await api.body(heyApiSdk.findBotMemoryDream({ path: { id } }));
-      return data.latest;
-    });
+  /** The bot's latest dream of its memory (null before its first), and whether one is under way. */
+  findDream(id: string): Promise<BotMemoryDreamState> {
+    return callApi(BotsErrors.FETCH_DREAM_FAILED, (api) =>
+      api.body(heyApiSdk.findBotMemoryDream({ path: { id } })),
+    );
   }
 
   /** Has the bot tidy its memory now; the chat says when it is done. */

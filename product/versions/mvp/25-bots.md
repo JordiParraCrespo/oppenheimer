@@ -604,7 +604,8 @@ of `bot_memory_fact`, with two columns more:
     never (a dream that wrote nothing counts: each one that reaches the
     model is recorded first); only while *Learn automatically* is on, since a dream changes
     memory the way `remember` does. Settings → Memory's **Tidy now** runs
-    one whatever those say. It runs on the `bot-dreams` queue and is
+    one whatever those say; the API records the ask, so the row reads
+    "tidying" until the job ends (ten minutes at most). It runs on the `bot-dreams` queue and is
     counted under `/usage` as `dream`.
   - *Guards.* An answer that is not the JSON asked for, keeps none of the
     facts, keeps fewer than a fifth of them or would overfill the memory is

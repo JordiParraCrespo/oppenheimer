@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import type { BotMemoryDream } from '@oppenheimer/shared';
 import type { BotMemoryFactEntity } from '../bots/domain/bot-memory-fact.entity';
 import type { BotMemoryDreamOrmEntity } from './database/bot-memory-dream.orm-entity';
-import type { DreamFact, StoredDream } from './domain/bot-dream.policy';
+import type { DreamFact, DreamState, StoredDream } from './domain/bot-dream.policy';
 import {
   BotMemoryDreamResponseDto,
   BotMemoryDreamStateResponseDto,
@@ -65,9 +65,10 @@ export class BotMemoryDreamMapper {
     return Object.assign(dto, shape);
   }
 
-  toState(dream: StoredDream | null): BotMemoryDreamStateResponseDto {
+  toState(state: DreamState): BotMemoryDreamStateResponseDto {
     const dto = new BotMemoryDreamStateResponseDto();
-    dto.latest = dream ? this.toResponse(dream) : null;
+    dto.latest = state.latest ? this.toResponse(state.latest) : null;
+    dto.pending = state.pending;
     return dto;
   }
 }

@@ -33,6 +33,15 @@ export class DreamBotMemoryCommandHandler implements ICommandHandler<DreamBotMem
   ) {}
 
   async execute({ organizationId, botId, force }: DreamBotMemoryCommand): Promise<void> {
+    try {
+      await this.dreamOnce(organizationId, botId, force);
+    } finally {
+      // A Tidy now is no longer under way, whatever the dream came to.
+      if (force) await this.dreams.settle(organizationId, botId);
+    }
+  }
+
+  private async dreamOnce(organizationId: string, botId: string, force: boolean): Promise<void> {
     const dream = await this.dreamer.dream(organizationId, botId, force);
     if (!dream) return;
     const outcome = await this.dreams.apply(dream, BOT_MEMORY_FACTS_MAX);

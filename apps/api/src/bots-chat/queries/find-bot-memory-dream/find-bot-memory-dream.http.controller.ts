@@ -18,7 +18,7 @@ import { PoliciesGuard } from '../../../auth/guards/policies.guard';
 import { CurrentAccessScope } from '../../../authz/decorators/current-access-scope.decorator';
 import { AccessScopeInterceptor } from '../../../authz/interceptors/access-scope.interceptor';
 import { BotMemoryDreamMapper } from '../../bot-memory-dream.mapper';
-import type { StoredDream } from '../../domain/bot-dream.policy';
+import type { DreamState } from '../../domain/bot-dream.policy';
 import { BotMemoryDreamStateResponseDto } from '../../dtos/bot-memory-dream.response.dto';
 import { FindBotMemoryDreamQuery } from './find-bot-memory-dream.query';
 
@@ -40,7 +40,8 @@ export class FindBotMemoryDreamHttpController {
   @RequireScopes('bots:read')
   @ApiOperation({
     summary: "Read a bot's latest dream of its memory",
-    description: '`latest` is null before its first.',
+    description:
+      '`latest` is null before its first; `pending` while one its owner asked for is under way.',
   })
   @ApiResponse({ status: 200, type: BotMemoryDreamStateResponseDto })
   @ApiProblemResponse({ status: 404, description: 'Bot not found', code: 'BOTS_001' })
@@ -48,9 +49,9 @@ export class FindBotMemoryDreamHttpController {
     @CurrentAccessScope() scope: AccessScope,
     @Param('id', new ParseUUIDPipe()) botId: string,
   ): Promise<BotMemoryDreamStateResponseDto> {
-    const dream = await this.queryBus.execute<FindBotMemoryDreamQuery, StoredDream | null>(
+    const state = await this.queryBus.execute<FindBotMemoryDreamQuery, DreamState>(
       new FindBotMemoryDreamQuery({ scope, botId }),
     );
-    return this.mapper.toState(dream);
+    return this.mapper.toState(state);
   }
 }

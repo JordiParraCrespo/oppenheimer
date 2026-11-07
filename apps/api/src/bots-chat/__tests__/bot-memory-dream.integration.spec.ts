@@ -177,7 +177,7 @@ describe('BotMemoryDreamRepository (integration)', () => {
     const written = facts.find((fact) => fact.source === 'bot');
     expect(written).toMatchObject({ tier: 'profile', scope: 'person' });
     expect(written?.createdAt).toEqual(new Date('2026-10-20T00:00:00Z'));
-    const latest = (await dreams.findLatest(organizationId, ada.id)).unwrap();
+    const { latest } = await dreams.findState(organizationId, ada.id);
     expect(latest).toMatchObject({ id: dream.id, factsBefore: 2, factsAfter: 1, undoneAt: null });
     expect(await dreams.weigh(organizationId, ada.id)).toMatchObject({
       rewritable: 1,
@@ -193,7 +193,7 @@ describe('BotMemoryDreamRepository (integration)', () => {
 
     expect(await dreams.apply(dreamOf(ada, read), BOT_MEMORY_FACTS_MAX)).toBe('changed');
     expect(await contents(ada)).toEqual(['one', 'two, learned meanwhile']);
-    expect((await dreams.findLatest(organizationId, ada.id)).isNone()).toBe(true);
+    expect((await dreams.findState(organizationId, ada.id)).latest).toBeNull();
   });
 
   it('undoes once: the old facts come back, and what the bot saved since stays', async () => {
@@ -246,12 +246,13 @@ describe('BotMemoryDreamRepository (integration)', () => {
     expect(await contents(ada)).toEqual([]);
   });
 
-  it("answers missing for a bot that is gone, and stages a dream on the bot's queue", async () => {
+  it('answers missing for a bot that is gone; a Tidy now is pending until its job settles', async () => {
     const ada = await createBot();
     const gone = { ...dreamOf(ada, []), botId: randomUUID() };
     expect(await dreams.apply(gone, BOT_MEMORY_FACTS_MAX)).toBe('missing');
 
-    await dreams.stageDream(organizationId, ada.id, true, null);
+    await dreams.requestDream(organizationId, ada.id, null);
+    expect(await dreams.findState(organizationId, ada.id)).toEqual({ latest: null, pending: true });
     const staged: { topic: string; payload: unknown }[] = await dataSource.query(
       `SELECT topic, payload FROM outbox_message WHERE "aggregateId" = $1`,
       [ada.id],
@@ -259,6 +260,8 @@ describe('BotMemoryDreamRepository (integration)', () => {
     expect(staged).toEqual([
       { topic: 'bot-dreams', payload: { organizationId, botId: ada.id, force: true } },
     ]);
+    await dreams.settle(organizationId, ada.id);
+    expect((await dreams.findState(organizationId, ada.id)).pending).toBe(false);
   });
 
   it('refuses the swap when the owner edited a fact after the dream read it', async () => {
@@ -297,7 +300,7 @@ describe('BotMemoryDreamRepository (integration)', () => {
     const weight = await dreams.weigh(organizationId, ada.id);
     expect(weight.lastDreamAt).toBeInstanceOf(Date);
     expect(weight.writesSince).toBe(1);
-    expect((await dreams.findLatest(organizationId, ada.id)).isNone()).toBe(true);
+    expect((await dreams.findState(organizationId, ada.id)).latest).toBeNull();
     expect(await dreams.undo(organizationId, ada.id, BOT_MEMORY_FACTS_MAX)).toBeNull();
   });
 });

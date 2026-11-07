@@ -1,5 +1,4 @@
-import type { Option } from 'oxide.ts';
-import type { DreamedFact, StoredDream } from '../domain/bot-dream.policy';
+import type { DreamedFact, DreamState, StoredDream } from '../domain/bot-dream.policy';
 
 /** What the trigger weighs: the facts a dream would rewrite, and the writes since the last one. */
 export interface DreamWeight {
@@ -21,8 +20,8 @@ export interface DreamWrite {
 }
 
 export interface BotMemoryDreamRepositoryPort {
-  /** The bot's latest dream, in its workspace. */
-  findLatest(organizationId: string, botId: string): Promise<Option<StoredDream>>;
+  /** The bot's latest dream, in its workspace, and whether one its owner asked for is under way. */
+  findState(organizationId: string, botId: string): Promise<DreamState>;
   /** How many facts the bot wrote itself, how many it wrote since its last dream, and when one last started. */
   weigh(organizationId: string, botId: string): Promise<DreamWeight>;
   /** Records that a dream of the bot starts now, so the trigger waits a day whatever it comes to. */
@@ -42,11 +41,13 @@ export interface BotMemoryDreamRepositoryPort {
    * the bot's own oldest `log` facts making room past `max`. The dream as it was undone, or null when there is none to undo.
    */
   undo(organizationId: string, botId: string, max: number): Promise<StoredDream | null>;
-  /** Stages a dream of the bot's memory; `force` runs it whatever the trigger would say. */
-  stageDream(
-    organizationId: string,
-    botId: string,
-    force: boolean,
-    correlationId: string | null,
-  ): Promise<void>;
+  /** Stages a dream the trigger owes the bot. */
+  stageDream(organizationId: string, botId: string, correlationId: string | null): Promise<void>;
+  /**
+   * Its owner's Tidy now: marks a dream under way and stages it, in one
+   * write, so the console reads `pending` until the job settles it.
+   */
+  requestDream(organizationId: string, botId: string, correlationId: string | null): Promise<void>;
+  /** The dream job is done, whatever it came to: nothing is under way any more. */
+  settle(organizationId: string, botId: string): Promise<void>;
 }
