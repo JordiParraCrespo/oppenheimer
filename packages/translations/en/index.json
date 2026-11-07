@@ -477,7 +477,8 @@
       "BOTS_037": "Those questions were already answered.",
       "BOTS_038": "That skill could not be found.",
       "BOTS_039": "This bot already has a skill with that name. Pick another.",
-      "BOTS_040": "This bot has as many skills as it can keep. Delete one first."
+      "BOTS_040": "This bot has as many skills as it can keep. Delete one first.",
+      "BOTS_041": "This bot has no tidy of its memory to undo."
     },
     "notFound": {
       "title": "That page does not exist",
@@ -1690,6 +1691,10 @@
           "expired": "Loop “{{prompt}}” ended after 3 days",
           "stopped": "Loop “{{prompt}}” stopped: a run of it failed or was stopped",
           "ended": "Loop “{{prompt}}” ended: the bot did not say when to run next"
+        },
+        "dream": {
+          "dreamed": "Tidied its memory · {{before}} facts → {{after}}",
+          "undone": "You undid the tidy · {{before}} facts are back"
         }
       },
       "routineReason": {
@@ -1762,7 +1767,9 @@
           "summary_one": "{{count}} summary",
           "summary_other": "{{count}} summaries",
           "ruleReview_one": "{{count}} rule review",
-          "ruleReview_other": "{{count}} rule reviews"
+          "ruleReview_other": "{{count}} rule reviews",
+          "dream_one": "{{count}} memory tidy",
+          "dream_other": "{{count}} memory tidies"
         },
         "empty": "Nothing spent in this chat yet.",
         "loadFailed": "Could not load the usage. Try again."
@@ -1895,7 +1902,19 @@
         "toLog": "Look it up only when needed",
         "toProfile": "Keep it in mind in every chat",
         "toPerson": "Share it with all your bots",
-        "toBot": "Keep it to this bot"
+        "toBot": "Keep it to this bot",
+        "dream": {
+          "title": "Tidy memory",
+          "never": "Merges repeats, rewrites each fact clearly and drops what’s stale, checked against the chat. Runs about once a day once the bot has learned enough.",
+          "last": "Last tidied {{date}} · {{before}} facts → {{after}}",
+          "lastUndone": "Last tidy, {{date}}, was undone",
+          "queued": "Tidying in the background. The chat says when it’s done.",
+          "tidyNow": "Tidy now",
+          "undo": "Undo",
+          "loadFailed": "Could not load the memory’s last tidy.",
+          "requestFailed": "Could not start tidying the memory.",
+          "undoFailed": "Could not undo the tidy."
+        }
       },
       "skills": {
         "title": "Skills",

@@ -21754,6 +21754,191 @@
         ]
       }
     },
+    "/api/v1/bots/{id}/memory/dream": {
+      "get": {
+        "description": "`latest` is null before its first; `pending` while one its owner asked for is under way.",
+        "operationId": "findBotMemoryDream",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BotMemoryDreamStateResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "BOTS_001 — Bot not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Read a bot's latest dream of its memory",
+        "tags": [
+          "Bots"
+        ]
+      },
+      "post": {
+        "description": "Queues a dream: the bot's own model merges, rewrites and checks the facts it wrote against its conversation. The chat says when it is done.",
+        "operationId": "requestBotMemoryDream",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": ""
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "BOTS_001 — Bot not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Have a bot tidy its memory now",
+        "tags": [
+          "Bots"
+        ]
+      }
+    },
+    "/api/v1/bots/{id}/memory/dream/undo": {
+      "post": {
+        "description": "Puts back the facts the dream replaced and deletes those it wrote; what the bot saved since stays.",
+        "operationId": "undoBotMemoryDream",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "BOTS_041 — No dream to undo\n\nBOTS_001 — Bot not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Undo a bot's latest dream",
+        "tags": [
+          "Bots"
+        ]
+      }
+    },
     "/api/v1/bots/{id}/stream": {
       "get": {
         "description": "Server-Sent Events. `ready` once subscribed, then a `bot` event per change, its `data` one of: `{ type: \"snapshot\", turnId, block, seq, text }` right after `ready`, once per running turn: the whole block of text it is writing and has not stored, in place of what the reader held for that block; `{ type: \"text\", turnId, block, seq, text }` as a turn writes (`block` counts the blocks the turn stored before it, `seq` its text writes; one at or below what the reader holds is a duplicate); `{ type: \"retrying\", turnId, reason }` while a turn waits on a provider that refused a call; `{ type: \"subagents\", turnId, callId, runs }` where each child of a running `delegate` call is; `{ type: \"message\", turnId, messageId }` when a message is stored; `{ type: \"turn\", turnId, status }` when a turn moves; `{ type: \"approval\", approvalId, status }` and `{ type: \"question\", questionId, status }` when a card is raised or settled. The stored conversation is the record; read it again on `ready`, `message` and `turn`. A `keepalive` holds an idle stream open, and the stream ends after 15 minutes so the redial is authenticated again.",
@@ -35768,6 +35953,44 @@
           "reason"
         ]
       },
+      "BotDreamEventResponseDto": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "dream"
+            ]
+          },
+          "activity": {
+            "type": "string",
+            "enum": [
+              "dreamed",
+              "undone"
+            ],
+            "description": "`dreamed`: the bot's memory was rewritten by a dream; `undone`: its owner put the facts back."
+          },
+          "dreamId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "factsBefore": {
+            "type": "number",
+            "description": "The facts the dream rewrote."
+          },
+          "factsAfter": {
+            "type": "number",
+            "description": "The facts it wrote in their place."
+          }
+        },
+        "required": [
+          "kind",
+          "activity",
+          "dreamId",
+          "factsBefore",
+          "factsAfter"
+        ]
+      },
       "BotSubagentRunResponseDto": {
         "type": "object",
         "properties": {
@@ -36006,6 +36229,9 @@
               },
               {
                 "$ref": "#/components/schemas/BotLoopEventResponseDto"
+              },
+              {
+                "$ref": "#/components/schemas/BotDreamEventResponseDto"
               }
             ],
             "nullable": true,
@@ -36475,9 +36701,10 @@
             "enum": [
               "goal_review",
               "summary",
-              "rule_review"
+              "rule_review",
+              "dream"
             ],
-            "description": "Why the bot called its model outside a turn: a goal's review, the conversation's summary, or a review of the owner's rules."
+            "description": "Why the bot called its model outside a turn: a goal's review, the conversation's summary, a review of the owner's rules, or a dream of its memory."
           },
           "calls": {
             "type": "number"
@@ -36529,6 +36756,68 @@
           "activeMs",
           "models",
           "background"
+        ]
+      },
+      "BotMemoryDreamResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "factsBefore": {
+            "type": "number",
+            "description": "The facts it rewrote: those the bot wrote itself"
+          },
+          "factsAfter": {
+            "type": "number",
+            "description": "The facts it wrote in their place"
+          },
+          "note": {
+            "type": "string",
+            "nullable": true,
+            "description": "What it changed, in its words"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "undoneAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true,
+            "description": "When the owner undid it; null while it stands"
+          }
+        },
+        "required": [
+          "id",
+          "factsBefore",
+          "factsAfter",
+          "note",
+          "createdAt",
+          "undoneAt"
+        ]
+      },
+      "BotMemoryDreamStateResponseDto": {
+        "type": "object",
+        "properties": {
+          "latest": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/BotMemoryDreamResponseDto"
+              }
+            ]
+          },
+          "pending": {
+            "type": "boolean",
+            "description": "Whether a dream its owner asked for (Tidy now) is under way: from the ask until its job ends, ten minutes at most."
+          }
+        },
+        "required": [
+          "latest",
+          "pending"
         ]
       },
       "BotApprovalResponseDto": {

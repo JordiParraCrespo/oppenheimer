@@ -82,6 +82,13 @@ export const LIVE_POLL = {
    * "the read has stopped filling", so it never stands this poll down.
    */
   pullRequestsFilling: { interval: 4000, inBackground: false },
+  /**
+   * A bot's dream after Settings → Memory's Tidy now, until a dream newer
+   * than the ask lands (a few minutes at most: one with nothing to tidy
+   * writes none). A model call of seconds to a minute. Not in the background,
+   * and the workspace stream carries no dream.
+   */
+  memoryDream: { interval: 5000, inBackground: false },
 } as const;
 
 export type LivePollKind = keyof typeof LIVE_POLL;
