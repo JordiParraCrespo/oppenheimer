@@ -5,6 +5,7 @@ import type { BotMemoryDream } from '@oppenheimer/shared/schemas/bot';
 import { useQueryClient } from '@tanstack/react-query';
 import { botsKeys } from './bots.keys';
 import { useConsumerApp } from './context';
+import { usePollWhile } from './live-poll';
 import { mutation } from './mutation';
 
 /**
@@ -13,9 +14,8 @@ import { mutation } from './mutation';
  * background and says so in the chat, whose stream reads the memory again.
  */
 
-/** How often a requested dream is asked after until it lands, and for how long at most. */
-const DREAM_POLL_MS = 5_000;
-const DREAM_POLL_FOR_MS = 3 * 60_000;
+/** How long a requested dream is asked after at most. */
+const DREAM_WATCH_MS = 3 * 60_000;
 
 /**
  * The latest dream; `null` before the first. Not a Suspense read: Memory is
@@ -27,8 +27,13 @@ const DREAM_POLL_FOR_MS = 3 * 60_000;
 export function useBotMemoryDream(id: string, requestedAt?: number) {
   const app = useConsumerApp();
   const queryClient = useQueryClient();
+  const queryKey = botsKeys.memoryDream(id);
+  const poll = usePollWhile<BotMemoryDream | null>('memoryDream', queryKey, (latest) => {
+    if (requestedAt === undefined || Date.now() - requestedAt > DREAM_WATCH_MS) return false;
+    return !latest || Date.parse(latest.createdAt) < requestedAt;
+  });
   return useQuery<BotMemoryDream | null, Error>({
-    queryKey: botsKeys.memoryDream(id),
+    queryKey,
     queryFn: async () => {
       const before = queryClient.getQueryData<BotMemoryDream | null>(botsKeys.memoryDream(id));
       const latest = await app.bots.findDream(id);
@@ -37,11 +42,7 @@ export function useBotMemoryDream(id: string, requestedAt?: number) {
       }
       return latest;
     },
-    refetchInterval: (query) => {
-      if (requestedAt === undefined || Date.now() - requestedAt > DREAM_POLL_FOR_MS) return false;
-      const latest = query.state.data;
-      return latest && Date.parse(latest.createdAt) >= requestedAt ? false : DREAM_POLL_MS;
-    },
+    ...poll,
   });
 }
 
