@@ -10,8 +10,8 @@ import { useTranslation } from 'react-i18next';
 /**
  * Tidy memory (`25-bots.md` §4.1, "Dreaming"): what the bot's last dream
  * did, Undo while it stands, and Tidy now, which queues one. A dream runs in
- * the background and says so in the chat; the chat's stream reads the memory
- * again, so this row's hint says it is under way until then.
+ * the background and says so in the chat; until it lands this row says it is
+ * under way, and reads the dream again every few seconds.
  */
 export function BotDreaming({ botId }: { botId: string }) {
   const { t } = useTranslation();
