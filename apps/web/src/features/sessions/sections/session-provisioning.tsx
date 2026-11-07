@@ -101,8 +101,11 @@ export function SessionProvisioning({ session }: { session: SessionEntity }) {
         {failed && failure?.detail ? (
           <StartFailureDetail detail={failure.detail} className="mt-4" />
         ) : null}
-        {/* A start on a host can be sent again; one at a vendor has none to send it to. */}
-        {failed && session.hostId ? <SessionRetryStart sessionId={session.id} /> : null}
+        {/* A start on a host can be sent again: not one at a vendor, which has no
+            host, nor a cloud task its vendor took and later failed. */}
+        {failed && session.hostId && !session.cloudSessionId ? (
+          <SessionRetryStart sessionId={session.id} />
+        ) : null}
       </div>
     </PageFrame>
   );

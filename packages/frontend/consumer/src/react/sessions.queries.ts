@@ -550,7 +550,9 @@ export const useRetrySession = mutation<SessionEntity, string>({
   run: (app, id) => app.sessions.retry(id),
   update: (queryClient, session) => {
     queryClient.setQueryData(sessionsKeys.detail(session.id), session);
-    queryClient.removeQueries({ queryKey: sessionsKeys.start(session.id, false) });
+    // Both reads: the failed one would otherwise come back, settled and fresh,
+    // if this attempt fails too, and show the last attempt's reason.
+    queryClient.removeQueries({ queryKey: sessionsKeys.starts(session.id) });
     return queryClient.invalidateQueries({ queryKey: sessionsKeys.lists() });
   },
 });

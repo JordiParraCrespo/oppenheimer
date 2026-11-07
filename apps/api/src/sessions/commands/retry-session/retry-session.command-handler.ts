@@ -56,6 +56,13 @@ export class RetrySessionCommandHandler
         detail: `Session ${session.slug} is ${session.state}`,
       });
     }
+    // A cloud task its vendor took and later failed did start: its host keeps
+    // it, and would answer the create with that task rather than a new one.
+    if (session.cloudSessionId) {
+      throw new AppError(SessionErrors.NOT_FAILED, {
+        detail: `Session ${session.slug} started at its vendor as ${session.cloudSessionId}; its task failed there`,
+      });
+    }
 
     await requireActiveProject(this.projects, command.scope, session.projectId);
     await this.hosts.assertUsable(command.scope, session.hostId);

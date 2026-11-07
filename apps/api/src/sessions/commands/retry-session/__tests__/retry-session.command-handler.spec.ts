@@ -127,6 +127,34 @@ describe('RetrySessionCommandHandler', () => {
     expect(dispatch.create).not.toHaveBeenCalled();
   });
 
+  it('refuses with SESSIONS_052 a cloud task that started at its vendor and failed there', () => {
+    // Regression: its host holds the task, so the create was ignored and the
+    // session sat in starting for good.
+    const work = WorkSessionEntity.request({
+      organizationId: 'org-acme',
+      projectId: 'project-1',
+      createdByUserId: 'user-1',
+      hostId: 'host-1',
+      slug: 'quiet-heron-k2p9x1',
+      agent: 'codex',
+      place: 'cloud',
+    });
+    const at = new Date();
+    work.recordEvent({ seq: 1, kind: SESSION_EVENT_KINDS.REQUESTED, payload: {}, occurredAt: at });
+    work.recordEvent({
+      seq: 2,
+      kind: SESSION_EVENT_KINDS.STARTED,
+      payload: { agentSessionId: 'task_e_123' },
+      occurredAt: at,
+    });
+    work.recordEvent({ seq: 3, kind: SESSION_EVENT_KINDS.FAILED, payload: {}, occurredAt: at });
+    expect(work.cloudSessionId).toBe('task_e_123');
+
+    return expect(handler.execute(given(work)))
+      .rejects.toMatchObject({ code: 'SESSIONS_052' })
+      .then(() => expect(dispatch.create).not.toHaveBeenCalled());
+  });
+
   it('sends one create when two presses race: the one that lost the append sends none', async () => {
     sessions.appendEventsIf.mockResolvedValue(null);
     await handler.execute(given(session(true)));
