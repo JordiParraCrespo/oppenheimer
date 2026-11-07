@@ -90,6 +90,10 @@ export class BotOrmEntity {
   @Column({ type: 'boolean', default: true })
   learnAutomatically!: boolean;
 
+  /** Whether its routines pause while its owner is away (`1794045167486-AddRoutineSpendGuard`). */
+  @Column({ type: 'boolean', default: true })
+  routineSpendGuard!: boolean;
+
   /** The console sections whose sidebar lists it (`1791003500000-AddBotSections`). */
   @Column({ type: 'varchar', length: 16, array: true, default: () => "'{}'" })
   sections!: string[];
@@ -101,6 +105,14 @@ export class BotOrmEntity {
   /** The start of that message, for the sidebar's line. */
   @Column({ type: 'varchar', length: 200, nullable: true })
   lastMessagePreview!: string | null;
+
+  /**
+   * When its owner was last in its chat: opened it, wrote to it or decided a
+   * card (`1794045167486-AddRoutineSpendGuard`). Its routines' spend guard
+   * counts from here.
+   */
+  @Column({ type: TIMESTAMP_COLUMN_TYPE, default: () => 'now()' })
+  ownerSeenAt!: Date;
 
   @CreateDateColumn({ type: TIMESTAMP_COLUMN_TYPE })
   createdAt!: Date;

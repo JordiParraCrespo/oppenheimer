@@ -144,3 +144,9 @@ export function useChatReading(reading: PaneReading): { offered: boolean; shown:
   const offered = available && flag;
   return { offered, shown: offered && reading.view === 'chat' };
 }
+
+/** What the agent's spinner says this moment, for the line at the chat's foot; external store: `SessionChat`. */
+export function useChatActivity(chat: SessionChat): ChatState['activity'] {
+  const activity = () => chat.snapshot().activity;
+  return useSyncExternalStore(chat.subscribe, activity, activity);
+}

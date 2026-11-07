@@ -2433,7 +2433,7 @@ export type AutomationResponseDto = {
      */
     status: 'active' | 'paused' | 'running';
     pausedAt?: string | null;
-    pausedReason?: 'user' | 'project_archived' | 'host_unpaired' | 'owner_lost_access' | 'bot_provider_missing' | 'cloud_key_missing' | null;
+    pausedReason?: 'user' | 'project_archived' | 'host_unpaired' | 'owner_lost_access' | 'bot_provider_missing' | 'cloud_key_missing' | 'unattended' | null;
     /**
      * The earliest next slot of its schedule triggers. Null when paused or event-only.
      */
@@ -2473,7 +2473,7 @@ export type BotRoutineResponseDto = {
      * `running` while a run is queued or its turn runs, else `active` or `paused`.
      */
     status: 'active' | 'paused' | 'running';
-    pausedReason?: 'user' | 'project_archived' | 'host_unpaired' | 'owner_lost_access' | 'bot_provider_missing' | 'cloud_key_missing' | null;
+    pausedReason?: 'user' | 'project_archived' | 'host_unpaired' | 'owner_lost_access' | 'bot_provider_missing' | 'cloud_key_missing' | 'unattended' | null;
     /**
      * The earliest next slot of its schedules. Null when paused or event-only.
      */
@@ -2664,7 +2664,7 @@ export type AutomationRunResponseDto = {
      * What became of the firing before a session.
      */
     outcome: 'pending' | 'skipped' | 'expired' | 'dispatched';
-    skipReason?: 'paused' | 'deleted' | 'own_event' | 'automation_rate_limited' | 'workspace_rate_limited' | 'overlapping' | 'missed' | 'not_launchable' | 'agent_unavailable' | null;
+    skipReason?: 'paused' | 'deleted' | 'own_event' | 'automation_rate_limited' | 'workspace_rate_limited' | 'overlapping' | 'missed' | 'not_launchable' | 'agent_unavailable' | 'unattended' | null;
     cause: 'schedule' | 'event' | 'manual';
     causeSummary: RunCauseResponseDto;
     title: string;
@@ -2747,6 +2747,14 @@ export type AutomationSettingsResponseDto = {
     staleTtlSeconds: number;
     missedGraceSeconds: number;
     maxRunSeconds: number;
+    /**
+     * Routine reports a bot’s owner has not seen before its routines pause.
+     */
+    unattendedReports: number;
+    /**
+     * How long a bot’s owner may be away from its chat before its routines pause.
+     */
+    unattendedAwaySeconds: number;
 };
 
 export type UpdateAutomationSettingsRequest = {
@@ -2757,6 +2765,8 @@ export type UpdateAutomationSettingsRequest = {
     staleTtlSeconds?: number | null;
     missedGraceSeconds?: number | null;
     maxRunSeconds?: number | null;
+    unattendedReports?: number | null;
+    unattendedAwaySeconds?: number | null;
 };
 
 export type UpdateBotRoutineRequest = {
@@ -3794,6 +3804,10 @@ export type BotResponseDto = {
      */
     learnAutomatically: boolean;
     /**
+     * Whether its routines pause while its owner is away from its chat, and start again when they are back.
+     */
+    routineSpendGuard: boolean;
+    /**
      * The console sections whose sidebar lists it beside Employees, in catalog order; empty shows it in Employees only.
      */
     sections: Array<'sessions' | 'automations' | 'plan' | 'pulls'>;
@@ -3831,6 +3845,7 @@ export type UpdateBotRequest = {
     effort?: 'none' | 'minimal' | 'low' | 'medium' | 'high' | 'xhigh' | 'max' | 'ultra' | null;
     permission?: 'auto' | 'full';
     learnAutomatically?: boolean;
+    routineSpendGuard?: boolean;
     sections?: Array<'sessions' | 'automations' | 'plan' | 'pulls'>;
 };
 
@@ -3897,6 +3912,32 @@ export type BotMemoryFactResponseDto = {
     botId: string;
     createdAt: string;
     updatedAt: string;
+};
+
+export type PersonAboutResponseDto = {
+    /**
+     * What the person wrote about themselves; empty when nothing was written.
+     */
+    about: string;
+    /**
+     * When it was last saved; null when it never was.
+     */
+    updatedAt: string | null;
+};
+
+export type PersonMemoryResponseDto = {
+    /**
+     * In every one of the person's bots' system prompt; the bots never change it.
+     */
+    about: PersonAboutResponseDto;
+    /**
+     * Every fact about the person (`scope: person`) that any of their bots keeps, newest first. Each is changed on the bot that keeps it (`botId`).
+     */
+    facts: Array<BotMemoryFactResponseDto>;
+};
+
+export type UpdatePersonAboutRequest = {
+    about: string;
 };
 
 export type CreateBotMemoryFactRequest = {
@@ -4235,6 +4276,23 @@ export type BotLoopEventResponseDto = {
     reason: string | null;
 };
 
+export type BotDreamEventResponseDto = {
+    kind: 'dream';
+    /**
+     * `dreamed`: the bot's memory was rewritten by a dream; `undone`: its owner put the facts back.
+     */
+    activity: 'dreamed' | 'undone';
+    dreamId: string;
+    /**
+     * The facts the dream rewrote.
+     */
+    factsBefore: number;
+    /**
+     * The facts it wrote in their place.
+     */
+    factsAfter: number;
+};
+
 export type BotSubagentRunResponseDto = {
     /**
      * The task the bot gave it.
@@ -4345,7 +4403,7 @@ export type BotMessageResponseDto = {
     /**
      * What an event says happened, by `kind`; null on every other role.
      */
-    event: BotApprovalEventResponseDto | BotQuestionEventResponseDto | BotRoutineEventResponseDto | BotPeerMessageEventResponseDto | BotPeerReplyEventResponseDto | BotSessionEventResponseDto | BotPullRequestEventResponseDto | BotGoalEventResponseDto | BotLoopEventResponseDto | null;
+    event: BotApprovalEventResponseDto | BotQuestionEventResponseDto | BotRoutineEventResponseDto | BotPeerMessageEventResponseDto | BotPeerReplyEventResponseDto | BotSessionEventResponseDto | BotPullRequestEventResponseDto | BotGoalEventResponseDto | BotLoopEventResponseDto | BotDreamEventResponseDto | null;
     /**
      * The images a message of yours carries, in the order attached; read each from `GET /bots/:id/attachments/:attachmentId/content`. Empty on every other role.
      */
@@ -4545,9 +4603,9 @@ export type BotUsageBackgroundResponseDto = {
      */
     cacheWriteTokens: number;
     /**
-     * Why the bot called its model outside a turn: a goal's review, the conversation's summary, or a review of the owner's rules.
+     * Why the bot called its model outside a turn: a goal's review, the conversation's summary, a review of the owner's rules, or a dream of its memory.
      */
-    purpose: 'goal_review' | 'summary' | 'rule_review';
+    purpose: 'goal_review' | 'summary' | 'rule_review' | 'dream';
     calls: number;
 };
 
@@ -4569,6 +4627,35 @@ export type BotUsageResponseDto = {
      */
     models: Array<BotUsageModelResponseDto>;
     background: Array<BotUsageBackgroundResponseDto>;
+};
+
+export type BotMemoryDreamResponseDto = {
+    id: string;
+    /**
+     * The facts it rewrote: those the bot wrote itself
+     */
+    factsBefore: number;
+    /**
+     * The facts it wrote in their place
+     */
+    factsAfter: number;
+    /**
+     * What it changed, in its words
+     */
+    note: string | null;
+    createdAt: string;
+    /**
+     * When the owner undid it; null while it stands
+     */
+    undoneAt: string | null;
+};
+
+export type BotMemoryDreamStateResponseDto = {
+    latest: BotMemoryDreamResponseDto | null;
+    /**
+     * Whether a dream its owner asked for (Tidy now) is under way: from the ask until its job ends, ten minutes at most.
+     */
+    pending: boolean;
 };
 
 export type BotApprovalResponseDto = {
@@ -14367,6 +14454,90 @@ export type CreateBotMemoryFactResponses = {
 
 export type CreateBotMemoryFactResponse = CreateBotMemoryFactResponses[keyof CreateBotMemoryFactResponses];
 
+export type FindPersonMemoryData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/bot-memory/person';
+};
+
+export type FindPersonMemoryErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+};
+
+export type FindPersonMemoryError = FindPersonMemoryErrors[keyof FindPersonMemoryErrors];
+
+export type FindPersonMemoryResponses = {
+    200: PersonMemoryResponseDto;
+};
+
+export type FindPersonMemoryResponse = FindPersonMemoryResponses[keyof FindPersonMemoryResponses];
+
+export type UpdatePersonAboutData = {
+    body: UpdatePersonAboutRequest;
+    path?: never;
+    query?: never;
+    url: '/api/v1/bot-memory/person/about';
+};
+
+export type UpdatePersonAboutErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+};
+
+export type UpdatePersonAboutError = UpdatePersonAboutErrors[keyof UpdatePersonAboutErrors];
+
+export type UpdatePersonAboutResponses = {
+    200: PersonAboutResponseDto;
+};
+
+export type UpdatePersonAboutResponse = UpdatePersonAboutResponses[keyof UpdatePersonAboutResponses];
+
+export type MarkBotSeenData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/bots/{id}/seen';
+};
+
+export type MarkBotSeenErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * BOTS_001 — Bot not found
+     */
+    404: ProblemDetailsDto;
+};
+
+export type MarkBotSeenError = MarkBotSeenErrors[keyof MarkBotSeenErrors];
+
+export type MarkBotSeenResponses = {
+    204: void;
+};
+
+export type MarkBotSeenResponse = MarkBotSeenResponses[keyof MarkBotSeenResponses];
+
 export type DeleteBotMemoryFactData = {
     body?: never;
     path: {
@@ -15366,6 +15537,102 @@ export type FindBotUsageResponses = {
 };
 
 export type FindBotUsageResponse = FindBotUsageResponses[keyof FindBotUsageResponses];
+
+export type FindBotMemoryDreamData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/bots/{id}/memory/dream';
+};
+
+export type FindBotMemoryDreamErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * BOTS_001 — Bot not found
+     */
+    404: ProblemDetailsDto;
+};
+
+export type FindBotMemoryDreamError = FindBotMemoryDreamErrors[keyof FindBotMemoryDreamErrors];
+
+export type FindBotMemoryDreamResponses = {
+    200: BotMemoryDreamStateResponseDto;
+};
+
+export type FindBotMemoryDreamResponse = FindBotMemoryDreamResponses[keyof FindBotMemoryDreamResponses];
+
+export type RequestBotMemoryDreamData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/bots/{id}/memory/dream';
+};
+
+export type RequestBotMemoryDreamErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * BOTS_001 — Bot not found
+     */
+    404: ProblemDetailsDto;
+};
+
+export type RequestBotMemoryDreamError = RequestBotMemoryDreamErrors[keyof RequestBotMemoryDreamErrors];
+
+export type RequestBotMemoryDreamResponses = {
+    202: unknown;
+};
+
+export type UndoBotMemoryDreamData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/bots/{id}/memory/dream/undo';
+};
+
+export type UndoBotMemoryDreamErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * BOTS_041 — No dream to undo
+     *
+     * BOTS_001 — Bot not found
+     */
+    404: ProblemDetailsDto;
+};
+
+export type UndoBotMemoryDreamError = UndoBotMemoryDreamErrors[keyof UndoBotMemoryDreamErrors];
+
+export type UndoBotMemoryDreamResponses = {
+    204: void;
+};
+
+export type UndoBotMemoryDreamResponse = UndoBotMemoryDreamResponses[keyof UndoBotMemoryDreamResponses];
 
 export type StreamBotData = {
     body?: never;

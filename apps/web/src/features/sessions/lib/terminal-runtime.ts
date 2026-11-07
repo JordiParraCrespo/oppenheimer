@@ -1,10 +1,15 @@
-import { createResizeCoalescer, type SessionStream } from '@oppenheimer/frontend-consumer';
+import {
+  type ChatActivity,
+  createResizeCoalescer,
+  type SessionStream,
+} from '@oppenheimer/frontend-consumer';
 import { ClipboardAddon, type IClipboardProvider } from '@xterm/addon-clipboard';
 import { FitAddon } from '@xterm/addon-fit';
 import { SerializeAddon } from '@xterm/addon-serialize';
 import { Unicode11Addon } from '@xterm/addon-unicode11';
 import { WebLinksAddon } from '@xterm/addon-web-links';
 import { Terminal } from '@xterm/xterm';
+import { bindAgentActivity } from './agent-activity';
 import { CursorFrames } from './cursor-frames';
 import { createSnapshotHandover } from './snapshot-handover';
 import { bindTerminalEcho } from './terminal-echo';
@@ -65,6 +70,11 @@ export interface SessionTerminalOptions {
   keepSnapshot?: (snapshot: string) => void;
   /** The key the echo readout is published under, for the session's bar. */
   latencyKey?: string;
+  /**
+   * What the agent's spinner line says as the screen changes, for the chat
+   * drawn over the grid (`bindAgentActivity`); none once it is gone.
+   */
+  onActivity?: (activity: ChatActivity | null) => void;
 }
 
 /** How much scrollback a kept picture carries: enough to look like the pane. */
@@ -323,8 +333,12 @@ export function mountSessionTerminal(
     term.scrollToBottom();
   });
   const input = term.onData(send);
+  const unbindActivity = options.onActivity
+    ? bindAgentActivity(term, options.onActivity)
+    : undefined;
 
   return () => {
+    unbindActivity?.();
     if (wheelFrame !== null) cancelAnimationFrame(wheelFrame);
     if (frame !== null) cancelAnimationFrame(frame);
     unbindFiles();

@@ -78,6 +78,8 @@ export type ChatBlock =
   | { kind: 'thinking'; id: string; text: string; seconds: number | null }
   | { kind: 'tools'; id: string; calls: ChatToolCall[] }
   | { kind: 'explored'; id: string; calls: ChatToolCall[] }
+  /** Calls that each started a subagent, side by side, each with what it did. */
+  | { kind: 'subagents'; id: string; calls: ChatToolCall[] }
   | { kind: 'plan'; id: string; call: ChatToolCall }
   | { kind: 'question'; id: string; call: ChatToolCall }
   | { kind: 'notice'; id: string; notice: 'interrupted' | 'compacted' }
@@ -96,7 +98,10 @@ export function blocksOf(turn: ChatTurn): ChatBlock[] {
     const block = blockOf(step, turn.steps[index + 1]);
     if (!block) return;
     const previous = blocks.at(-1);
-    if (block.kind === 'tools' && previous?.kind === 'tools') {
+    if (
+      (block.kind === 'tools' && previous?.kind === 'tools') ||
+      (block.kind === 'subagents' && previous?.kind === 'subagents')
+    ) {
       previous.calls.push(...block.calls);
       return;
     }
@@ -161,6 +166,7 @@ function blockOf(step: ChatStep, next: ChatStep | undefined): ChatBlock | null {
       if (step.call.kind === 'question' && step.call.questions?.length) {
         return { kind: 'question', id: step.id, call: step.call };
       }
+      if (step.call.kind === 'agent') return { kind: 'subagents', id: step.id, calls: [step.call] };
       return { kind: 'tools', id: step.id, calls: [step.call] };
   }
 }
@@ -286,6 +292,15 @@ export type GroupKind = Exclude<ChatToolKind, 'todo' | 'plan'>;
 
 export function groupKindOf(kind: ChatToolKind): GroupKind {
   return kind === 'todo' || kind === 'plan' ? 'other' : kind;
+}
+
+/**
+ * What a command was for, in the agent's own words ("Measuring gas vs
+ * execution time across iteration counts"), as its terminal names the call;
+ * none for any other kind of call, or a command that did not say.
+ */
+export function commandPurposeOf(call: ChatToolCall): string | null {
+  return call.kind === 'command' && call.description ? call.description : null;
 }
 
 /** The order a summary names the kinds in: what was looked at, then what was changed, then the rest. */

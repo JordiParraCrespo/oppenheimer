@@ -32,8 +32,8 @@ import { GroupHead, Spec } from './page-shell';
 /* ── BotItem ─────────────────────────────────────────────────────────────── */
 
 const BUILT_IN = [
-  { id: 'plan', name: 'Plan Bot', initials: 'PB', age: '1h', preview: 'Friday’s milestone has two tasks left.' },
-  { id: 'github', name: 'GitHub Bot', initials: 'GB', age: '5h', preview: '3 pull requests wait on review.' },
+  { id: 'plan', name: 'Plan Bot', initials: 'PB', preview: 'Friday’s milestone has two tasks left.' },
+  { id: 'github', name: 'GitHub Bot', initials: 'GB', preview: '3 pull requests wait on review.' },
 ];
 
 function BuiltInGroup({ active, onPick }: { active: string; onPick: (id: string) => void }) {
@@ -63,10 +63,10 @@ export function BotItemsDemo() {
   const [active, setActive] = React.useState('release');
   const [open, setOpen] = React.useState(true);
   const bots = [
-    { id: 'release', name: 'Release Bot', initials: 'RB', age: '2m', preview: 'The stop path now reaches the tool layer.', live: true },
-    { id: 'deploy', name: 'Deploy Bot', initials: 'DB', age: '6m', preview: 'Needs input · Tag v0.9.0 and push it?', needsInput: true },
-    { id: 'quota', name: 'Quota Bot', initials: 'QB', age: '1d', preview: 'You: Added a banner to the workspace page' },
-    { id: 'new', name: 'New Bot', initials: 'NB', age: '3h', preview: 'What would you most like help with?', unread: true },
+    { id: 'release', name: 'Release Bot', initials: 'RB', preview: 'The stop path now reaches the tool layer.', live: true },
+    { id: 'deploy', name: 'Deploy Bot', initials: 'DB', preview: 'Needs input · Tag v0.9.0 and push it?', needsInput: true },
+    { id: 'quota', name: 'Quota Bot', initials: 'QB', preview: 'You: Added a banner to the workspace page' },
+    { id: 'new', name: 'New Bot', initials: 'NB', preview: 'What would you most like help with?', unread: true },
   ];
   return (
     <div className="flex flex-wrap items-start gap-6">
@@ -360,8 +360,8 @@ export function EmployeesSection() {
         id="botitem"
         title="BotItem"
         meta="bot-item.tsx"
-        desc="An employee in the sidebar, read like a conversation: a 36px photo (initials in ink until it loads) with a green dot on its corner while the bot works, the name and the age in mono, then the last message in muted ink. Unread sets the name at 600, the preview in full ink and a blue dot at the end; a bot that needs input reads the same with an amber dot. Groups head with SidebarProjectHeader's eyebrow tone, the Built-in one with a lock marker; before the first bot, SidebarEmptyCard says what will appear and offers New bot; the open chat rests on the selected wash. 14px radius, rows 2px apart in a BotList. SortableBotItem moves one to another group on the shell's drag layer."
-        code={`<BotList><SortableBotItem id={bot.id} name="Release Bot" initials="RB" image={photo} preview={last} age="2m" live active /></BotList>`}
+        desc="An employee in the sidebar, on one line: a 20px square photo (initials in ink until it loads) with a green dot on its corner while the bot works, then the name. The last message is the row's tooltip, beside it on hover. Unread sets the name at 600 with a blue dot at the end; a bot that needs input reads the same with an amber dot. Groups head with SidebarProjectHeader's eyebrow tone, the Built-in one with a lock marker; before the first bot, SidebarEmptyCard says what will appear and offers New bot; the open chat rests on the selected wash. 32px, the nav radius, rows 1px apart in a BotList. SortableBotItem moves one to another group on the shell's drag layer."
+        code={`<BotList><SortableBotItem id={bot.id} name="Release Bot" initials="RB" image={photo} preview={last} live active /></BotList>`}
       >
         <BotItemsDemo />
       </Spec>

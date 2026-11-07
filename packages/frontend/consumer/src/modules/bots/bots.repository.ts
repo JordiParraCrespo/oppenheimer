@@ -18,12 +18,14 @@ import {
   type ChatgptLoginResponseDto,
   heyApiSdk,
   type ModelProviderCredentialResponseDto,
+  type PersonMemoryResponseDto,
   type WorkspaceBotApprovalResponseDto,
   type WorkspaceBotNoticeResponseDto,
 } from '@oppenheimer/api-client';
 import { AppError, callApi } from '@oppenheimer/frontend-core';
 import {
   BOT_APPROVAL_DECISIONS,
+  BOT_DREAM_ACTIVITIES,
   BOT_EVENT_OUTCOMES,
   BOT_GOAL_ACTIVITIES,
   BOT_LOOP_ACTIVITIES,
@@ -35,6 +37,7 @@ import {
   type BotDocumentName,
   type BotGoal,
   type BotLoop,
+  type BotMemoryDreamState,
   type BotMessageEvent,
   type BotPermissionRuleEffect,
   type BotProvider,
@@ -65,6 +68,7 @@ import {
   type ChatgptLoginState,
   type CreateBotSkillInput,
   ModelProviderEntity,
+  PersonMemoryEntity,
   type SaveBotDocumentInput,
   type UpdateBotFactInput,
   type UpdateBotInput,
@@ -106,6 +110,7 @@ function toBot(dto: BotResponseDto): BotEntity {
     new Date(dto.lastActivityAt),
     dto.lastMessagePreview,
     dto.sections,
+    dto.routineSpendGuard,
   );
 }
 
@@ -181,6 +186,14 @@ function toFact(dto: BotMemoryFactResponseDto): BotMemoryFactEntity {
     dto.botId,
     new Date(dto.createdAt),
     new Date(dto.updatedAt),
+  );
+}
+
+function toPersonMemory(dto: PersonMemoryResponseDto): PersonMemoryEntity {
+  return new PersonMemoryEntity(
+    dto.about.about,
+    dto.about.updatedAt ? new Date(dto.about.updatedAt) : null,
+    dto.facts.map(toFact),
   );
 }
 
@@ -321,6 +334,18 @@ function toEvent(dto: NonNullable<BotMessageResponseDto['event']>): BotMessageEv
             step: dto.step,
             limit: dto.limit,
             reason: dto.reason,
+          }
+        : null;
+    }
+    case 'dream': {
+      const activity = BOT_DREAM_ACTIVITIES.find((candidate) => candidate === dto.activity);
+      return activity
+        ? {
+            kind: 'dream',
+            activity,
+            dreamId: dto.dreamId,
+            factsBefore: dto.factsBefore,
+            factsAfter: dto.factsAfter,
           }
         : null;
     }
@@ -545,6 +570,16 @@ export class BotsRepository {
         heyApiSdk.readBotAttachment({ path: { id, attachmentId }, parseAs: 'blob' }),
       );
       return body as unknown as Blob;
+    });
+  }
+
+  /**
+   * The owner is in the bot's chat: what its routines' spend guard counts
+   * from, and what resumes the routines it paused while they were away.
+   */
+  markSeen(id: string): Promise<void> {
+    return callApi(BotsErrors.MARK_SEEN_FAILED, async (api) => {
+      await api.body(heyApiSdk.markBotSeen({ path: { id } }));
     });
   }
 
@@ -862,9 +897,45 @@ export class BotsRepository {
     });
   }
 
+  /** Settings → Memory: what the reader wrote about themselves, and what their bots learned. */
+  findPersonMemory(): Promise<PersonMemoryEntity> {
+    return callApi(BotsErrors.FETCH_PERSON_MEMORY_FAILED, async (api) =>
+      toPersonMemory(await api.body(heyApiSdk.findPersonMemory())),
+    );
+  }
+
+  /** Writes what the reader says about themselves; their bots read it every turn. */
+  saveAbout(about: string): Promise<{ about: string; updatedAt: Date | null }> {
+    return callApi(BotsErrors.SAVE_PERSON_ABOUT_FAILED, async (api) => {
+      const data = await api.body(heyApiSdk.updatePersonAbout({ body: { about } }));
+      return { about: data.about, updatedAt: data.updatedAt ? new Date(data.updatedAt) : null };
+    });
+  }
+
   clearMemory(id: string): Promise<void> {
     return callApi(BotsErrors.CLEAR_MEMORY_FAILED, async (api) => {
       await api.result(heyApiSdk.clearBotMemory({ path: { id } }));
+    });
+  }
+
+  /** The bot's latest dream of its memory (null before its first), and whether one is under way. */
+  findDream(id: string): Promise<BotMemoryDreamState> {
+    return callApi(BotsErrors.FETCH_DREAM_FAILED, (api) =>
+      api.body(heyApiSdk.findBotMemoryDream({ path: { id } })),
+    );
+  }
+
+  /** Has the bot tidy its memory now; the chat says when it is done. */
+  requestDream(id: string): Promise<void> {
+    return callApi(BotsErrors.REQUEST_DREAM_FAILED, async (api) => {
+      await api.result(heyApiSdk.requestBotMemoryDream({ path: { id } }));
+    });
+  }
+
+  /** Puts back the facts the latest dream replaced. */
+  undoDream(id: string): Promise<void> {
+    return callApi(BotsErrors.UNDO_DREAM_FAILED, async (api) => {
+      await api.result(heyApiSdk.undoBotMemoryDream({ path: { id } }));
     });
   }
 

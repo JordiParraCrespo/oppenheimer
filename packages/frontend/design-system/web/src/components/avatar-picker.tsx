@@ -43,10 +43,12 @@ function BotAvatar({
   option,
   size,
   color,
+  className,
 }: {
   option: Pick<AvatarOption, 'image' | 'initials'>;
   size: number;
   color?: AvatarColor;
+  className?: string;
 }) {
   return (
     <Avatar
@@ -57,6 +59,7 @@ function BotAvatar({
         color
           ? cn(AVATAR_COLOR_CLASS[color], 'text-avatar-ink shadow-[inset_0_0_0_1px_var(--border-subtle)]')
           : 'bg-control text-fg',
+        className,
       )}
     >
       {option.image ? <AvatarImage src={option.image} alt="" /> : null}

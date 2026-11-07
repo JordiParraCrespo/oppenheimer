@@ -162,7 +162,11 @@ worker runs it and streams what happens back to the chat.
   `<turn_context>` block at the start of the turn's message: the time in
   the sender's time zone (the console sends the browser's with each
   message; UTC when none comes), the bot's home host and the owner's
-  hosts, each online or not. The block is added to the message the model
+  hosts, each online or not. Since 2026-11-06 it also carries the bot's
+  newest log entries and how many older facts it keeps (§4.1), which change
+  with every save. A log entry is the bot's own note, often copied from
+  outside text, so it is folded onto one line, cannot close the block, and
+  is labelled as notes rather than as Oppenheimer's facts. The block is added to the message the model
   is sent and never stored: the message kept is what the person wrote, so
   a later turn reads it back without a stale clock.
 - **Each request names its chat to the provider's prompt cache**
@@ -466,7 +470,7 @@ it one:
 | `edit_soul` | Rewrite SOUL.md, saved as a revision | auto |
 | `edit_instructions` | Rewrite INSTRUCTIONS.md, saved as a revision | auto |
 | `update_profile` | Change its name and description; an activity line, no revision | auto |
-| `remember` | Save a fact with its source, kept in mind or to look up, about the work or about the person (below); an activity line, no revision | auto with *Learn automatically*, else ask |
+| `remember` | Save a fact with its source, in the profile or the dated log, about the work or about the person (below); an activity line, no revision | auto with *Learn automatically*, else ask |
 | `forget` | Delete a fact; an activity line with the fact, no revision | auto |
 | `recall` | Search its memory, every fact it keeps and those the person's other bots share | auto |
 | `search_chat` | Search its own chat's past messages, the person's and its own, including what only the summary holds: web-search syntax, best matches first, an excerpt around each match, fenced as data (2026-10-29) | auto |
@@ -545,21 +549,100 @@ branch"), up to 2,000 characters.
 `research/lessons-from-grok-bot.md` §9 row 11). Each fact is still one row
 of `bot_memory_fact`, with two columns more:
 
-- **Tier.** A `profile` fact is in mind every turn, in the system prompt.
-  A `log` fact is kept to look up with `recall`: a detail that matters
-  once in a while. The prompt carries the newest 60 profile facts and says
-  how many more there are to recall, so a long memory does not crowd the
-  turn's context.
+- **Tier.** A `profile` fact is in mind every turn, in the system prompt:
+  standing instructions and who the person is. A `log` fact is everything
+  else, a dated entry. The system prompt carries the newest profile facts
+  up to 4,000 characters. The turn context (§2) carries the newest log
+  entries up to 2,000, each under its day in the sender's zone, and says
+  how many older facts there are to recall: the log changes with every
+  save, and in the system prompt each save would miss the prompt cache for
+  the whole history. A long memory costs the turn the same as a short one.
+  (2026-11-06: was the newest 60 profile facts and no log at all.)
 - **Scope.** A `bot` fact is the bot's alone. A `person` fact is about its
   owner ("prefers squash merges"), and every bot that person made in the
   workspace reads it, in a section of the prompt of its own. It stays the
   row of the bot that learned it: that bot edits and forgets it, the
   others read it, and it goes with that bot when the bot is deleted or its
   memory cleared. Copying it to each bot would make "forget" mean nothing.
-- **Defaults.** A fact is `profile` and `bot` unless the bot or the owner
-  says otherwise: `remember` takes `tier` and `about: 'person'`, and the
-  owner moves a fact from its row's menu in Settings → Memory. A fact
-  another bot shared is shown there muted, with nothing to change.
+- **Defaults.** A fact the bot saves is `log` and `bot` unless it says
+  otherwise: `remember` takes `tier` and `about: 'person'`. One the owner
+  adds in Settings → Memory is `profile`, and the owner moves a fact from
+  its row's menu there. A fact another bot shared is shown there muted,
+  with nothing to change.
+- **The bot saves as it goes** (2026-11-06, from Grok Bot 0.79.2,
+  `research/lessons-from-grok-bot.md` §10). Bots saved almost nothing after
+  their first chat: the only nudge was the tool's own description, which
+  told them to check `recall` for duplicates first, and every save went into
+  the prompt. Now "How a turn goes" tells a bot that has `remember` to ask,
+  before it replies, what it learned that will matter later, and save it in
+  the turn without asking; a correction above all. The tool no longer asks
+  for a duplicate check: a fact that changed is forgotten and remembered
+  anew. *Learn automatically* off still saves nothing and asks.
+- **A full memory lets the log go.** A bot keeps at most 500 facts. When
+  its own save finds it full, its oldest `log` fact is deleted to make room,
+  under the same lock as the count; a fact added by hand is refused
+  (`BOTS_009`), as is a save when every fact is `profile`. A fact the bot
+  saved names the bot as its source (it named the person before).
+- **Settings → Memory at the account** (2026-11-07, asked by the owner,
+  the way Claude's memory works). One page, beside Profile, for what all
+  the person's bots know about them:
+  - *About you*: a text the person writes about themselves, up to 4,000
+    characters, one per person per workspace (`person_memory`). It is in
+    the system prompt of every bot they made there, in a section of its
+    own ahead of the shared facts, and no tool writes it: a bot that
+    learns something about the person saves a `person` fact instead. It
+    changes only when the person saves it, so the prompt cache holds.
+  - *What your bots learned*: every `person` fact any of their bots keeps,
+    newest first, each naming that bot. Edit, move and forget act on the
+    bot that keeps it, as on that bot's own page; nothing is added here,
+    since what the person wants every bot to know goes in About you.
+  - `GET /v1/bot-memory/person` reads both; `PUT
+    /v1/bot-memory/person/about` writes the text. A fact is changed through
+    the bot's own memory routes.
+- **Dreaming** (2026-11-07, from Managed Agents' dreams and Anthropic's
+  "Components of agent memory"). A bot saves as it goes without checking
+  what it has, so its memory fills with repeats, contradictions and stale
+  entries. A dream is an offline pass of the bot's own model, with no tools,
+  that rewrites it: duplicates merged, what is contradicted or stale
+  dropped, each fact one clear sentence that still makes sense in a month,
+  standing instructions kept in the profile and the rest in the log, and at
+  most five new facts the conversation clearly shows will matter; a secret
+  a note holds (a password, a key, a token) is dropped. It reads
+  the conversation summary and the newest messages (24,000 tokens) as the
+  ground truth the notes are checked against: a note is a guess at what
+  will matter, written in the moment.
+  - *What it rewrites.* Only the facts the bot wrote itself. What the
+    person wrote in Settings → Memory stays word for word, and a fact
+    another bot shared is that bot's; the dream reads both so it repeats
+    neither. A merged log fact keeps the newest day of those it came from.
+  - *When.* After a turn, once the bot keeps at least 8 facts of its own,
+    has written 10 since its last dream, and last dreamed a day ago or
+    never (a dream that wrote nothing counts: the day is claimed when the
+    dream is staged, so a retry of a failed job still runs); only while *Learn automatically* is on, since a dream changes
+    memory the way `remember` does. Settings → Memory's **Tidy now** runs
+    one whatever those say; the API records the ask, so the row reads
+    "tidying" until the job ends (ten minutes at most). It runs on the `bot-dreams` queue and is
+    counted under `/usage` as `dream`.
+  - *Guards.* An answer that is not the JSON asked for, keeps none of the
+    facts, keeps fewer than a fifth of them or would overfill the memory is
+    not used. The write swaps the facts it read for the ones it wrote under
+    the bot's lock and a lock on each of its facts, and is refused if any of
+    them changed since it read them (the bot saved, the owner edited or
+    forgot one): the next dream reads them again. Clear all takes the same
+    lock.
+  - *Undo.* The facts it replaced are kept with the dream
+    (`bot_memory_dream`, one row a bot, its latest). Undo in Settings →
+    Memory puts them back with their ids and dates and deletes what the
+    dream wrote, except one the owner has edited since; what was saved since
+    stays, the bot's own oldest log facts making room past 500. Only the latest dream can be undone, once (`BOTS_041`).
+    Clear all forgets the dream too.
+  - *In the chat.* Each dream and each undo is a line outside any turn
+    ("Tidied its memory · 40 facts → 22"), which the bot reads back as a
+    note from Oppenheimer.
+  - *Not built.* A review step before the rewrite is used (Managed Agents'
+    dreams write a new store and leave adopting it to you); here it is
+    applied and undone instead, as every other memory change is a line you
+    undo. Dreaming a project's memory, and repeated passes.
 - **Not built.** Grok Bot's review queue for shared learnings: a fact
   about you comes from your own bots, so it is a line in their chat like
   any other memory change.
@@ -1471,3 +1554,15 @@ The decisions it produced:
   whose history only grows until a summary, and Codex, which sends its
   conversation's id as `prompt_cache_key`. It refines 2026-10-15's history
   budget, which kept the newest messages that fit.
+- 2026-11-07: **the person has a memory page of their own**: Settings →
+  Memory at the account, an *About you* text in every bot's prompt that
+  only the person writes, and every `person` fact their bots keep, changed
+  on the bot that keeps it (§4.1). Asked by the owner, after Claude's.
+- 2026-11-07: **bots dream** (§4.1, "Dreaming"). The owner found each
+  bot's memory "a bit like slop" once bots saved as they go, and asked for
+  a process that unifies, rewrites and deduplicates it, from Managed Agents'
+  dreams and "Components of agent memory". A dream is the bot's own model,
+  no tools, over the facts it wrote and its latest conversation, after a
+  turn once it has written 10 since the last (at most daily), or when the
+  owner asks; it is applied at once and undone from Settings → Memory,
+  rather than reviewed first.

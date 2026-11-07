@@ -32,17 +32,26 @@ describe('composeBotSystemPrompt', () => {
     expect(prompt).toContain('- Staging is devbox.');
   });
 
-  it('adds what it knows about the person under its own heading, and how many facts are left to recall', () => {
-    const prompt = composeBotSystemPrompt({
-      ...base,
-      personFacts: ['Prefers squash merges.'],
-      factsToRecall: 3,
-    });
+  it('adds what it knows about the person under its own heading', () => {
+    const prompt = composeBotSystemPrompt({ ...base, personFacts: ['Prefers squash merges.'] });
     expect(prompt).toContain(
       '# What you know about the person (shared by all their bots)\n\n- Prefers squash merges.',
     );
-    expect(prompt).toContain('You also keep 3 facts not shown here');
-    expect(composeBotSystemPrompt(base)).not.toMatch(/about the person|You also keep/);
+    expect(composeBotSystemPrompt(base)).not.toMatch(/about the person/);
+  });
+
+  // What breaks this: a bot told to save only in the tool's own description,
+  // which saved almost nothing after its first chat; or one told to save
+  // with no `remember` to save with.
+  it('tells a bot that can remember to save what it learns in the turn, without asking', () => {
+    const remembers = composeBotSystemPrompt({
+      ...base,
+      tools: [{ name: 'remember', description: 'Saves one fact.' }],
+    });
+    expect(remembers).toMatch(
+      /# How a turn goes[\s\S]*Save each with `remember` in this turn, without asking/,
+    );
+    expect(composeBotSystemPrompt(base)).not.toContain('Save each with `remember`');
   });
 
   it('walks a new bot through learning its job while INSTRUCTIONS.md is empty, and drops it once written', () => {

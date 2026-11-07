@@ -15,6 +15,7 @@
 import type { ChatItemTodo } from '@oppenheimer/shared/schemas/chat-item';
 import { type ChatAnswer, QUESTION_KEY_GAP_MS, questionKeys } from '@oppenheimer/shared/sessions';
 import { type ChatToolKind, classifyTool, fieldOf, todosOf } from '../../chat/chat-tools';
+import { type ChatActivity, sameActivity } from './agent-activity';
 import {
   type ChatSharedFile,
   SHARED_ENTRY,
@@ -22,6 +23,7 @@ import {
   withSharedFiles,
 } from './session-chat-files';
 import { FirstLoad, linesToCome, Quiet } from './session-chat-history';
+import { Subagents } from './session-chat-subagents';
 
 /** One item of the agent's task list: the chat module's, which the bots chat reads too. */
 export type ChatTodo = ChatItemTodo;
@@ -83,6 +85,37 @@ export interface ChatToolCall {
   /** When the agent made the call, and when its result landed (none while it runs). */
   startedAt: Date | null;
   finishedAt: Date | null;
+  /**
+   * The subagent the call started, with its own work, once the host has
+   * sent it (`session-chat-subagents.ts`); none for any other call, and for
+   * one from a host or an agent whose subagents it does not follow.
+   */
+  subagent: ChatSubagent | null;
+}
+
+/**
+ * How a subagent stands: at work, finished, failed, or stopped before it
+ * finished (a Codex turn aborted).
+ */
+export type ChatSubagentState = 'running' | 'completed' | 'failed' | 'stopped';
+
+/** A subagent one of the agent's calls started, and what it did. */
+export interface ChatSubagent {
+  id: string;
+  /** Its kind, as the agent names it (`Explore`, `general-purpose`, a Codex role). */
+  type: string | null;
+  /** The name the agent gave it (Codex's nickname). */
+  name: string | null;
+  model: string | null;
+  state: ChatSubagentState;
+  /** Its own steps, in order: what it read, ran and said, its subagents among them. */
+  steps: ChatStep[];
+  /** What its context held at its last answer, when counted. */
+  tokens: number | null;
+  /** How many calls it made. */
+  calls: number;
+  startedAt: Date | null;
+  lastAt: Date | null;
 }
 
 /**
@@ -189,6 +222,12 @@ export interface ChatState {
    * when the whole conversation is held.
    */
   older: 'none' | 'more' | 'loading';
+  /**
+   * What the agent says it is doing this moment, off its spinner line on the
+   * terminal (`setActivity`); none while it is not working, or while no
+   * terminal is drawn to read it from.
+   */
+  activity: ChatActivity | null;
 }
 
 export interface ChatBatch {
@@ -214,6 +253,7 @@ const EMPTY: ChatState = {
   status: null,
   files: [],
   older: 'none',
+  activity: null,
 };
 
 /** The entry the runner adds for the status line's figures. */
@@ -462,6 +502,8 @@ class Transcript {
  */
 export class SessionChat {
   private readonly transcript = new Transcript();
+  /** The subagents the agent ran, held apart and put into their calls (`turnsOf`). */
+  private readonly subagents = new Subagents(sidechainTurns);
   /** A first load's history, held until it has all come (`ChatState.loading`). */
   private readonly firstLoad = new FirstLoad();
   private type: ((data: string) => void) | null = null;
@@ -504,6 +546,8 @@ export class SessionChat {
       // earlier of the two.
       const held = !this.transcript.empty;
       changed = this.transcript.reset(linesToCome(batch), from > 0);
+      // A conversation that starts over takes its subagents with it.
+      if (changed) this.subagents.clear();
       this.heldFrom = held && from > 0 ? Math.min(this.heldFrom, from) : from;
     }
     let status = this.state.status;
@@ -523,7 +567,10 @@ export class SessionChat {
         // Each attachment sends every shared file again; one is held once.
         const file = sharedFileOf(entry);
         if (file && !files.some((held) => held.id === file.id)) files = [...files, file];
-      } else if (this.transcript.take(raw, entry)) changed = true;
+      } else {
+        const subagent = this.subagents.take(raw, entry);
+        if (subagent === null ? this.transcript.take(raw, entry) : subagent) changed = true;
+      }
     }
     // A tail that is not where the held conversation goes is a different one.
     if (this.transcript.takeRestarted()) this.heldFrom = from;
@@ -634,7 +681,7 @@ export class SessionChat {
 
   /** The conversation's turns, with the shared files placed in them. */
   private turnsOf(files: readonly ChatSharedFile[]): ChatTurn[] {
-    return withSharedFiles(this.transcript.turns(), files);
+    return withSharedFiles(this.subagents.place(this.transcript.turns()), files);
   }
 
   /** A first load is still arriving. */
@@ -731,6 +778,7 @@ export class SessionChat {
     if (this.loading) {
       this.firstLoad.end();
       this.transcript.reset(false);
+      this.subagents.clear();
       this.heldFrom = 0;
       this.publish(EMPTY);
       return;
@@ -790,6 +838,16 @@ export class SessionChat {
     this.type?.(ESCAPE);
   }
 
+  /**
+   * What the agent's spinner line says now, as the terminal under the chat
+   * reads it (`readAgentActivity`); none once it is gone. A reading that
+   * says what the last one said publishes nothing.
+   */
+  setActivity(activity: ChatActivity | null): void {
+    if (sameActivity(this.state.activity, activity)) return;
+    this.publish({ ...this.state, activity });
+  }
+
   snapshot = (): ChatState => this.state;
 
   subscribe = (listener: () => void): (() => void) => {
@@ -847,10 +905,11 @@ interface ChatResult {
   truncated: boolean;
 }
 
-export function classify(value: unknown, index: number): Reading {
+export function classify(value: unknown, index: number, sidechain = false): Reading {
   const entry = record(value);
   const message = record(entry?.message);
-  if (!entry || !message || entry.isSidechain === true) return null;
+  // A subagent's lines are its own conversation, read apart (`session-chat-subagents.ts`).
+  if (!entry || !message || (entry.isSidechain === true) !== sidechain) return null;
   const id = text(entry.uuid) ?? `entry-${index}`;
   const at = date(entry.timestamp);
   const content = message.content;
@@ -1021,6 +1080,14 @@ export function toTurns(entries: readonly unknown[]): ChatTurn[] {
 }
 
 /**
+ * A subagent's own lines in turns, read as the session's are: its first
+ * prompt is the task it was given.
+ */
+function sidechainTurns(entries: readonly unknown[]): ChatTurn[] {
+  return buildTurns(entries.length, (index) => entries[index], 0, true).turns;
+}
+
+/**
  * The turns from entry `from` of `count` on, with the entry each one starts
  * at. `from` is where a turn starts (a prompt), or the first entry.
  */
@@ -1028,6 +1095,7 @@ function buildTurns(
   count: number,
   entryAt: (index: number) => unknown,
   from: number,
+  sidechain = false,
 ): { turns: ChatTurn[]; starts: number[] } {
   const turns: ChatTurn[] = [];
   const starts: number[] = [];
@@ -1041,7 +1109,7 @@ function buildTurns(
   };
 
   for (let index = from; index < count; index += 1) {
-    const reading = classify(entryAt(index), index);
+    const reading = classify(entryAt(index), index, sidechain);
     if (!reading) continue;
     switch (reading.kind) {
       case 'prompt':
@@ -1155,7 +1223,7 @@ function toolCall(block: Loose): ChatToolCall {
     label,
     target,
     opensPage,
-    description: fieldOf(input, ['description', 'prompt']),
+    description: fieldOf(input, ['description', 'prompt', 'message']),
     status: 'running',
     output: null,
     diff: kind === 'edit' || kind === 'write' ? diffOf(name, input) : null,
@@ -1167,6 +1235,7 @@ function toolCall(block: Loose): ChatToolCall {
     truncated: block.truncated === true,
     startedAt: null,
     finishedAt: null,
+    subagent: null,
   };
 }
 

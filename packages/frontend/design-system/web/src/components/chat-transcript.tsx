@@ -53,10 +53,11 @@ function ChatUserMessage({
   attachments?: React.ReactNode;
   /**
    * The bubble's fill, chosen by the ground it stands on: `card` lifts off a
-   * bot's recessed chat; `wash` (the hover surface) is for a chat on a
-   * card-coloured ground, a session's, where a card would vanish.
+   * bot's recessed chat; `accent` (the selected blue wash) is for a chat on
+   * a card-coloured ground, a session's, where a card would vanish, and
+   * tints the person's words apart from the agent's there.
    */
-  tone?: 'card' | 'wash';
+  tone?: 'card' | 'accent';
 }) {
   return (
     <div data-slot="chat-user-message" className={cn('group/turn flex flex-col items-end gap-1 pt-2', className)} {...props}>
@@ -65,7 +66,7 @@ function ChatUserMessage({
         <div
           className={cn(
             'max-w-[80%] rounded-xl px-5 py-3 text-[15px] leading-[1.55] tracking-[-0.011em] whitespace-pre-wrap wrap-anywhere text-pretty text-fg',
-            tone === 'wash' ? 'bg-hover-surface' : 'bg-card',
+            tone === 'accent' ? 'bg-selected-surface' : 'bg-card',
           )}
         >
           {children}
@@ -250,7 +251,7 @@ function TurnHeader({
         {state === 'done' && model ? (
           <>
             {dot}
-            <span className="inline-flex items-center rounded-xs bg-card px-1.5 py-px text-fg">{model}</span>
+            <span className="inline-flex items-center rounded-xs bg-hover-surface px-1.5 py-px text-fg">{model}</span>
           </>
         ) : null}
         {state === 'done' && time ? (
@@ -293,7 +294,7 @@ function TurnHeader({
  * column, its blocks 12px apart. Pass the rendered markdown as children; it
  * styles the elements the way `Prose` does at a chat's scale: headings a step
  * or two over the text, lists with muted markers, links in the link blue,
- * a quote behind a 2px rule, inline code on the card, and tables full width
+ * a quote behind a 2px rule, inline code on the wash, and tables full width
  * on hairlines, each scrolling sideways in its own box when it is wider
  * than the column. A fenced block is a `ChatCodeBlock` the renderer draws.
  */
@@ -316,8 +317,9 @@ function ChatReply({ className, ...props }: React.ComponentProps<'div'>) {
         '[&_a]:text-link [&_a]:underline-offset-2 [&_a:hover]:underline',
         '[&_img]:block [&_img]:h-auto [&_img]:max-h-[min(60vh,32rem)] [&_img]:max-w-full [&_img]:rounded-sm',
         '[&_summary]:cursor-pointer [&_summary]:font-medium',
-        // Inline code, on the card (a fenced block is a `ChatCodeBlock`)
-        '[&_:not(pre)>code]:rounded-xs [&_:not(pre)>code]:bg-card [&_:not(pre)>code]:px-1.5 [&_:not(pre)>code]:py-0.5 [&_:not(pre)>code]:font-mono [&_:not(pre)>code]:text-[0.86em]',
+        // Inline code, on the wash, which shows on a recessed ground and on a
+        // card-coloured one alike (a fenced block is a `ChatCodeBlock`)
+        '[&_:not(pre)>code]:rounded-xs [&_:not(pre)>code]:bg-hover-surface [&_:not(pre)>code]:px-1.5 [&_:not(pre)>code]:py-0.5 [&_:not(pre)>code]:font-mono [&_:not(pre)>code]:text-[0.86em]',
         // Tables
         '[&_table]:w-full [&_table]:border-separate [&_table]:border-spacing-0 [&_table]:text-[13.5px] [&_table]:leading-normal [&_table]:tabular-nums',
         '[&_th]:border-b [&_th]:border-border-strong [&_th]:px-2 [&_th]:py-1.5 [&_th]:text-start [&_th]:font-semibold',

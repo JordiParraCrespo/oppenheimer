@@ -4,11 +4,9 @@ import {
   SidebarProjectGroup,
   SidebarProjectHeader,
   SortableGroup,
-  useNow,
 } from '@oppenheimer/design-system-web';
 import type { BotGroupEntity } from '@oppenheimer/frontend-consumer';
 import { useDeleteBotGroup, useRenameBotGroup } from '@oppenheimer/frontend-consumer/react';
-import { CORE_CONFIG } from '@oppenheimer/frontend-core/config';
 import { ErrorAlert } from '@oppenheimer/frontend-web';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -21,8 +19,7 @@ import { BotSidebarRow } from './bot-sidebar-row';
  * One section of the Employees sidebar: its eyebrow head with the count and,
  * for a group of the reader's, Rename group and Delete group; then its bots,
  * or a line saying the group is empty. Ungrouped has no menu. A rename is
- * typed in the head's place. The section owns its ages' minute clock, so a
- * tick redraws its rows and not the sidebar's search or the other sections.
+ * typed in the head's place.
  *
  * Its rows are a `SortableGroup` that takes bots, folded or empty, so a bot
  * drags into another place here or into this group from another.
@@ -43,7 +40,6 @@ export function BotGroup({
   searching: boolean;
 }) {
   const { t } = useTranslation();
-  const now = useNow(CORE_CONFIG.clock.everyMinuteMs);
   const [renaming, setRenaming] = useState(false);
   const rename = useRenameBotGroup({ onSettled: () => setRenaming(false) });
   const remove = useDeleteBotGroup();
@@ -99,13 +95,7 @@ export function BotGroup({
         {open && bots.length ? (
           <BotList>
             {bots.map((bot) => (
-              <BotSidebarRow
-                key={bot.id}
-                bot={bot}
-                groups={groups}
-                now={now}
-                dragDisabled={searching}
-              />
+              <BotSidebarRow key={bot.id} bot={bot} groups={groups} dragDisabled={searching} />
             ))}
           </BotList>
         ) : null}
