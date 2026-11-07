@@ -60,7 +60,7 @@ export function useCloudChatFeed(sessionId: string): (
     onWaiting: (waiting: readonly CloudChatReply[]) => void;
     onReplyFailed: (error: unknown) => void;
   },
-) => CloudChatFeed {
+) => Promise<CloudChatFeed> {
   const app = useConsumerApp();
   return useCallback(
     (chat, callbacks) => app.sessions.openCloudChat(sessionId, chat, callbacks),

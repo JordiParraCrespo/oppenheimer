@@ -3,7 +3,7 @@ import type { PutSessionShareDto } from '@oppenheimer/shared/schemas/session-sha
 import { inject, injectable, optional } from 'inversify';
 import { CONSUMER_CONFIG } from '../../config';
 import { TOKENS } from '../../di/tokens';
-import { CloudChatFeed, type CloudChatReply } from './chat/cloud-chat-feed';
+import type { CloudChatFeed, CloudChatReply } from './chat/cloud-chat-feed';
 import type { SessionChat } from './chat/session-chat';
 import type {
   AttachTicket,
@@ -91,16 +91,19 @@ export class SessionsService {
   /**
    * A Claude Code cloud session's chat, kept current in `chat` from what its
    * hook sent, with the chat's composer sending replies; started and stopped
-   * by the caller (`CloudChatFeed.start`).
+   * by the caller (`CloudChatFeed.start`). The feed's code loads with the
+   * first cloud chat opened, not with the console.
    */
-  openCloudChat(
+  async openCloudChat(
     id: string,
     chat: SessionChat,
     callbacks: {
       onWaiting: (waiting: readonly CloudChatReply[]) => void;
       onReplyFailed: (error: unknown) => void;
     },
-  ): CloudChatFeed {
+  ): Promise<CloudChatFeed> {
+    // Loaded with the first cloud chat opened, not with the console.
+    const { CloudChatFeed } = await import('./chat/cloud-chat-feed');
     const source = {
       read: (after: number) => this.repository.findCloudChat(id, after),
       reply: (text: string) => this.repository.sendCloudReply(id, text),

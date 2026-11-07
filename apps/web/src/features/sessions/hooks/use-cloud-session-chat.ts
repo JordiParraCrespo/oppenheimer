@@ -23,13 +23,19 @@ export function useCloudSessionChat(sessionId: string): {
   const [failure, setFailure] = useState<unknown>(null);
   // Effect: reads the session's chat from the API on a timer, and lends the
   // chat's composer the way to send a reply, until the pane goes.
-  useEffect(
-    () =>
-      open(chat, {
-        onWaiting: (next) => setWaiting((now) => (idsOf(now) === idsOf(next) ? now : next)),
-        onReplyFailed: setFailure,
-      }).start(),
-    [open, chat],
-  );
+  useEffect(() => {
+    let stop: (() => void) | null = null;
+    let gone = false;
+    void open(chat, {
+      onWaiting: (next) => setWaiting((now) => (idsOf(now) === idsOf(next) ? now : next)),
+      onReplyFailed: setFailure,
+    }).then((feed) => {
+      if (!gone) stop = feed.start();
+    });
+    return () => {
+      gone = true;
+      stop?.();
+    };
+  }, [open, chat]);
   return { chat, waiting, failure, dismissFailure: () => setFailure(null) };
 }
