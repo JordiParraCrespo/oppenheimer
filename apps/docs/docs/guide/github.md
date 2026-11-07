@@ -17,7 +17,7 @@ Only repositories an installation covers appear in the pickers. Archived reposit
 ## Git in a session
 
 - A worktree session clones the repository onto a branch of its own, `oppenheimer/<slug>`, cut from the base branch you picked.
-- Git authenticates through a credential helper the runner sets up for that session: it hands git a **one-hour token scoped to the session's repositories**, minted by Oppenheimer when needed. No GitHub token is written to the host's disk, and Oppenheimer keeps none beyond those short tokens.
+- Git authenticates through a credential helper the runner sets up for that session: it hands git a **one-hour token scoped to the session's repositories**, minted by Oppenheimer when needed. No GitHub token is written to the host's disk. Separately, when the deployment has a key for it (`GITHUB_USER_TOKEN_KEY`), connecting GitHub keeps your own GitHub user token, encrypted in Oppenheimer's database, so the Pull requests section can comment, review and merge as you; it is refreshed as needed and dropped when it can no longer be opened or refreshed, and you are asked to connect again.
 - Deleting a session pushes its branch if it has commits, then removes the worktree.
 - There is no "Create pull request" button. The agent opens pull requests itself, for example with `gh pr create` (install `gh` on the host), and can then run `runner sessions watch-pr <number>` to be woken when its checks finish, it is reviewed or commented on, or it merges.
 - A folder session uses your own git credentials on the host, not the App.
@@ -52,7 +52,7 @@ Your review over a week, month or quarter on watched repositories: pull requests
 ## GitHub in the rest of Oppenheimer
 
 - **Automations** start on GitHub events such as a pull request opened, a check failed or a mention ([Automations](./automations.md)).
-- **Bots** list repositories and pull requests, read them, comment, review, merge (always asking, pinned to the commit the card showed), start review sessions, read and open issues, and follow a pull request with a watch ([Bots](./bots.md), [Routines and watches](./routines-and-watches.md)). Issue tools need the App's Issues permission accepted on the installation.
+- **Bots** list repositories and pull requests, read them, comment, review, merge (asking first under Approve for me, one call at a time and pinned to the commit the card showed; under Full access it merges without asking unless you set merging to Ask in Settings → Permissions), start review sessions, read and open issues, and follow a pull request with a watch ([Bots](./bots.md), [Routines and watches](./routines-and-watches.md)). Issue tools need the App's Issues permission accepted on the installation.
 - The **Inbox** lists review requests and your pull requests that are ready to merge.
 
 ## Not available yet

@@ -42,7 +42,7 @@ Claude through Anthropic, GPT through OpenAI or a ChatGPT subscription, Grok thr
 
 ## Does Oppenheimer store my GitHub token or my agents' logins?
 
-No. Sessions get one-hour tokens scoped to their repositories, handed to git on the host and never written to disk. Agent logins stay in each agent's own config on the host. Model provider keys you add for bots are stored encrypted and never shown again.
+Sessions get one-hour tokens scoped to their repositories, handed to git on the host and never written to disk. Your own GitHub user token is kept only when the deployment has a key for it: connecting GitHub then stores it encrypted, so the Pull requests section can act as you, and drops it when it can no longer be refreshed. Agent logins stay in each agent's own config on the host. Model provider keys you add for bots are stored encrypted and never shown again.
 
 ## What happens to a session's branch when I delete it?
 

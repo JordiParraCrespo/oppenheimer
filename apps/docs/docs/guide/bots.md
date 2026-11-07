@@ -82,9 +82,9 @@ Built-in commands work for every bot:
 
 ## Permissions and approvals
 
-The composer's **approval level** is a preset: **Approve for me** (what stays inside Oppenheimer runs; what reaches outside asks: starting or prompting sessions, GitHub writes, creating bots, sends) or **Full access** (everything runs without asking). **Settings → Permissions** overrides any tool with **Allow**, **Ask** or **Off** (Off hides it from the bot).
+The composer's **approval level** is a preset: **Approve for me** (what stays inside Oppenheimer runs; what reaches outside asks: starting or prompting sessions, GitHub writes, creating bots, sends) or **Full access** (everything runs without asking, except the few calls below that always ask). **Settings → Permissions** overrides any tool with **Allow**, **Ask** or **Off** (Off hides it from the bot).
 
-When a tool asks, the turn ends on a **Needs input** card in the chat and in the Inbox. The card offers what fits the call: **Approve once**, **Always allow for** the repository, project, session or chat it acts on, **Always allow**, **Deny** (the bot is told and carries on), or **Deny and stop**. Writing to the bot instead dismisses the card. Some calls always ask: merging a pull request, archiving a project and sending mail can never be set to Allow. Rules ("Ask me first when…", "Go ahead without asking when…") are checked before an asking call; an ask rule wins.
+When a tool asks, the turn ends on a **Needs input** card in the chat and in the Inbox. The card offers what fits the call: **Approve once**, **Always allow for** the repository, project, session or chat it acts on, **Always allow**, **Deny** (the bot is told and carries on), or **Deny and stop**. Writing to the bot instead dismisses the card. Some calls always ask, under Full access too: sending, scheduling or trashing mail, and archiving a project. Merging a pull request is approved one call at a time (no **Always allow**, and setting it to Allow does not stop it asking under Approve for me), but under **Full access** a bot merges without asking unless you set merging to **Ask** in **Settings → Permissions**. Rules ("Ask me first when…", "Go ahead without asking when…") are checked before an asking call; an ask rule wins.
 
 ## Limits
 
