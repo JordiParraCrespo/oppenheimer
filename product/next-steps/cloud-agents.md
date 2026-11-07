@@ -345,6 +345,17 @@ answer it there, the way claude.ai shows it. The research is
   from a host (`claude -p … --cloud <id>`) is the next step. Stop does
   nothing: no hook can interrupt a turn. A session started on claude.ai,
   not from the console, is refused until there is a way to adopt one.
+- **Decided with the owner (2026-11-07).**
+  1. A session started on claude.ai, not from the console, keeps no chat
+     here: only sessions the console launched (`SESSIONS_053`). Not adopted.
+  2. A reply to an idle session is sent from one of the person's hosts,
+     signed in to the same claude.ai account (`claude -p … --cloud <id>`),
+     so it wakes the session. The next pull request.
+  3. The console gets a "turn on chat" panel on a cloud session: the key,
+     the hooks to add to the repository, and the host to allow in the cloud
+     environment. The next pull request.
+  4. Stop and the Terminal/Chat switch are hidden on a cloud session's chat,
+     where neither can do anything. The next pull request.
 
 ## Follow-ups to a cloud agent (2026-11-05)
 
