@@ -2,8 +2,8 @@
  * The spend guard's rule (`26-bot-routines.md` §6), as a table. What breaks
  * this: routines that run on for an owner who stopped reading, a quiet
  * heartbeat that never stops, a guard that stops a bot whose owner is there,
- * a workspace's own thresholds ignored, or a bot the owner switched off
- * stopped anyway. Where it is read and what the pause does is
+ * or a workspace's own thresholds ignored. The per-bot switch, and where it
+ * is read and what the pause does, is
  * `bot-routine-target.adapter.spec.ts` and `automations/__tests__/unattended-routines.spec.ts`.
  */
 import { DEFAULT_PLATFORM_LIMITS } from '../../automations/domain/automation-limits.policy';
@@ -31,30 +31,16 @@ describe('routineSpendGuard', () => {
     ['never stored as seen, nothing unseen', 0, null, 'allow'],
     ['never stored as seen, three unseen', 3, null, 'pause'],
   ])('%s → %s', (_case, unreadReports, ownerSeenAt, expected) => {
-    expect(
-      routineSpendGuard({ enabled: true, unreadReports, ownerSeenAt, limits: platform, now }),
-    ).toBe(expected);
+    expect(routineSpendGuard({ unreadReports, ownerSeenAt, limits: platform, now })).toBe(expected);
   });
 
   it("reads the workspace's own thresholds", () => {
     const strict = { unattendedReports: 1, unattendedAwaySeconds: 3600 };
     const guard = (unreadReports: number, ownerSeenAt: Date) =>
-      routineSpendGuard({ enabled: true, unreadReports, ownerSeenAt, limits: strict, now });
+      routineSpendGuard({ unreadReports, ownerSeenAt, limits: strict, now });
     expect(guard(1, ago(60_000))).toBe('pause');
     expect(guard(0, ago(HOUR))).toBe('pause');
     expect(guard(0, ago(HOUR - 1))).toBe('allow');
-  });
-
-  it('lets every routine of a bot the owner switched off run, however long they are away', () => {
-    expect(
-      routineSpendGuard({
-        enabled: false,
-        unreadReports: 50,
-        ownerSeenAt: ago(900 * HOUR),
-        limits: platform,
-        now,
-      }),
-    ).toBe('allow');
   });
 });
 

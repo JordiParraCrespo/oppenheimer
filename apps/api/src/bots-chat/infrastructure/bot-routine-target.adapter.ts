@@ -115,9 +115,7 @@ export class BotRoutineTarget implements AutomationRunTargetPort<RoutineLaunch> 
       ownerSeenAt ?? bot.createdAt,
     );
     const { limits, now } = context;
-    return (
-      routineSpendGuard({ enabled: true, unreadReports, ownerSeenAt, limits, now }) === 'pause'
-    );
+    return routineSpendGuard({ unreadReports, ownerSeenAt, limits, now }) === 'pause';
   }
 
   async launch(context: RunTargetContext, input: RoutineLaunch): Promise<RunDispatchRef> {

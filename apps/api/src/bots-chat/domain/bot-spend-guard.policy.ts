@@ -13,12 +13,11 @@
  * - the owner has not been in its chat for that long, whatever the routines
  *   said, so a heartbeat that only ever stays quiet still stops.
  *
- * The owner can turn it off for one bot (`bot."routineSpendGuard"`).
+ * The owner can turn it off for one bot (`bot."routineSpendGuard"`); the
+ * caller asks only for a bot that has it on.
  */
 
 export interface RoutineSpendGuardInput {
-  /** The bot's own switch: off lets its routines run whoever reads them. */
-  enabled: boolean;
   /** The bot's routine turns that wrote something, since `ownerSeenAt`. */
   unreadReports: number;
   /** When the owner was last in the bot's chat; null when it was never stored. */
@@ -30,7 +29,6 @@ export interface RoutineSpendGuardInput {
 
 /** Whether a routine of the bot may run now, or its routines stop until the owner is back. */
 export function routineSpendGuard(input: RoutineSpendGuardInput): 'allow' | 'pause' {
-  if (!input.enabled) return 'allow';
   if (input.unreadReports >= input.limits.unattendedReports) return 'pause';
   if (!input.ownerSeenAt) return 'allow';
   const away = input.now.getTime() - input.ownerSeenAt.getTime();
