@@ -1213,6 +1213,10 @@ earlier note:
   workspace's projects with New project and each one's settings, and the
   Sessions sidebar keeps only New session here on a project's header.
   New session's project chip still ends in New project….
+- The 2026-11-05 line above left the Sessions sidebar no way to make a
+  project. On 2026-11-07 the owner asked for one back, in the filter menu:
+  the Project facet's list ends in **New project…**, opening the project
+  dialog (`05-screens.md`). Editing projects stays in Plan.
 - `versions/mvp/18-plan-product.md` drew Plan's board as Later, To do, In
   progress and Done. On 2026-11-05 the owner dropped **Later** and added
   **In review** between In progress and Done, for finished work waiting to
@@ -1250,6 +1254,21 @@ earlier note:
   cards; the thresholds are workspace automation settings, and a per-bot
   "Pause while you're away" switch turns it off (26 §6, "Changed
   2026-11-07").
+- `versions/mvp/25-bots.md` §4.1 (2026-10-29) left what a bot knows about
+  its owner spread across their bots: each `person` fact was edited on the
+  bot that learned it, read only on the others, and the owner had no place
+  of their own. On 2026-11-07 the owner asked for one page, the way
+  Claude's memory works: Settings → Memory, at the account, holds an
+  *About you* text the owner writes (table `person_memory`, migration
+  `AddPersonMemory`), in every bot's system prompt and never written by a
+  bot, and lists every `person` fact their bots learned, each still the row
+  of the bot that keeps it and changed there.
+- `next-steps/cloud-agents.md` ("Follow-ups to a cloud agent") said a
+  Claude Code cloud session's conversation is not ours to read, so the
+  console only linked to claude.ai. On 2026-11-07 the owner asked for its
+  chat in the console: two hooks in the session's repository send its
+  transcript to the API and collect replies typed in the console ("The chat
+  of a cloud session"; `research/cloud-chat-bridge/`).
 - `versions/mvp/25-bots.md` §7 (2026-10-14) made a bot's avatar its
   initials on one of eight colours. On 2026-11-07 the owner asked for
   better avatars: each bot now has a drawn face, a hatted face in its

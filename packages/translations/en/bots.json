@@ -517,6 +517,10 @@
       "toProfile": "Keep it in mind in every chat",
       "toPerson": "Share it with all your bots",
       "toBot": "Keep it to this bot",
+      "learnedBy": "Learned by {{bot}} · {{date}}",
+      "editedByYouOn": "Edited by you, kept by {{bot}} · {{date}}",
+      "addedByYouOn": "Added by you, kept by {{bot}} · {{date}}",
+      "toBotNamed": "Keep it to {{bot}} only",
       "dream": {
         "title": "Tidy memory",
         "never": "Merges repeats, rewrites each fact clearly and drops what’s stale, checked against the chat. Runs about once a day once the bot has learned enough.",

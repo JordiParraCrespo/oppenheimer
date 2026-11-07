@@ -2053,6 +2053,68 @@ export type ReportCloudStatusResponse = {
     matched: number;
 };
 
+export type AppendCloudTranscriptRequest = {
+    cloudSessionId: string;
+    from: number;
+    lines: Array<string>;
+};
+
+export type AppendedCloudTranscriptResponseDto = {
+    /**
+     * How many of the lines were new; a resent line is not.
+     */
+    accepted: number;
+};
+
+export type TakeCloudReplyRequest = {
+    cloudSessionId: string;
+    wait?: number;
+};
+
+export type CollectedCloudReplyResponseDto = {
+    /**
+     * The reply for the agent; null when none came within the wait.
+     */
+    text?: string | null;
+};
+
+export type SendCloudReplyRequest = {
+    text: string;
+};
+
+export type SentCloudReplyResponseDto = {
+    /**
+     * The reply, as the chat lists it.
+     */
+    id: string;
+};
+
+export type CloudChatReplyResponseDto = {
+    id: string;
+    text: string;
+    authorId?: string | null;
+    createdAt: string;
+    /**
+     * When the session’s Stop hook took it to the agent; null while it waits.
+     */
+    collectedAt?: string | null;
+};
+
+export type CloudChatResponseDto = {
+    /**
+     * Transcript lines from `after` on, each as Claude Code wrote it (JSON text): the same lines a runner sends for a host session’s chat.
+     */
+    lines: Array<string>;
+    /**
+     * The number to ask from next.
+     */
+    next: number;
+    /**
+     * The replies typed here, oldest first.
+     */
+    replies: Array<CloudChatReplyResponseDto>;
+};
+
 export type PrepareSessionRequest = {
     hostId: string;
     checkouts: Array<{
@@ -3865,6 +3927,32 @@ export type BotMemoryFactResponseDto = {
     botId: string;
     createdAt: string;
     updatedAt: string;
+};
+
+export type PersonAboutResponseDto = {
+    /**
+     * What the person wrote about themselves; empty when nothing was written.
+     */
+    about: string;
+    /**
+     * When it was last saved; null when it never was.
+     */
+    updatedAt: string | null;
+};
+
+export type PersonMemoryResponseDto = {
+    /**
+     * In every one of the person's bots' system prompt; the bots never change it.
+     */
+    about: PersonAboutResponseDto;
+    /**
+     * Every fact about the person (`scope: person`) that any of their bots keeps, newest first. Each is changed on the bot that keeps it (`botId`).
+     */
+    facts: Array<BotMemoryFactResponseDto>;
+};
+
+export type UpdatePersonAboutRequest = {
+    about: string;
 };
 
 export type CreateBotMemoryFactRequest = {
@@ -10433,6 +10521,165 @@ export type RecordCloudStatusResponses = {
 
 export type RecordCloudStatusResponse = RecordCloudStatusResponses[keyof RecordCloudStatusResponses];
 
+export type AppendCloudTranscriptData = {
+    body: AppendCloudTranscriptRequest;
+    path?: never;
+    query?: never;
+    url: '/api/v1/sessions/cloud-transcript';
+};
+
+export type AppendCloudTranscriptErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * SESSIONS_053 — No cloud session of this workspace has that id
+     */
+    404: ProblemDetailsDto;
+    /**
+     * RATE_001 — Rate limit reached
+     */
+    429: ProblemDetailsDto;
+};
+
+export type AppendCloudTranscriptError = AppendCloudTranscriptErrors[keyof AppendCloudTranscriptErrors];
+
+export type AppendCloudTranscriptResponses = {
+    200: AppendedCloudTranscriptResponseDto;
+};
+
+export type AppendCloudTranscriptResponse = AppendCloudTranscriptResponses[keyof AppendCloudTranscriptResponses];
+
+export type CollectCloudReplyData = {
+    body: TakeCloudReplyRequest;
+    path?: never;
+    query?: never;
+    url: '/api/v1/sessions/cloud-replies/take';
+};
+
+export type CollectCloudReplyErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * SESSIONS_053 — No cloud session of this workspace has that id
+     */
+    404: ProblemDetailsDto;
+    /**
+     * RATE_001 — Rate limit reached
+     */
+    429: ProblemDetailsDto;
+};
+
+export type CollectCloudReplyError = CollectCloudReplyErrors[keyof CollectCloudReplyErrors];
+
+export type CollectCloudReplyResponses = {
+    200: CollectedCloudReplyResponseDto;
+};
+
+export type CollectCloudReplyResponse = CollectCloudReplyResponses[keyof CollectCloudReplyResponses];
+
+export type SendCloudReplyData = {
+    body: SendCloudReplyRequest;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/sessions/{id}/cloud-replies';
+};
+
+export type SendCloudReplyErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * SESSIONS_001 — Session not found
+     */
+    404: ProblemDetailsDto;
+    /**
+     * SESSIONS_054 — This session has no cloud chat
+     *
+     * SESSIONS_005 — That session is closed
+     */
+    409: ProblemDetailsDto;
+    /**
+     * RATE_001 — Rate limit reached
+     */
+    429: ProblemDetailsDto;
+};
+
+export type SendCloudReplyError = SendCloudReplyErrors[keyof SendCloudReplyErrors];
+
+export type SendCloudReplyResponses = {
+    201: SentCloudReplyResponseDto;
+};
+
+export type SendCloudReplyResponse = SendCloudReplyResponses[keyof SendCloudReplyResponses];
+
+export type FindCloudChatData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: {
+        /**
+         * Lines at most
+         */
+        limit?: number;
+        /**
+         * The first line to read
+         */
+        after?: number;
+    };
+    url: '/api/v1/sessions/{id}/cloud-chat';
+};
+
+export type FindCloudChatErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * SESSIONS_001 — Session not found
+     */
+    404: ProblemDetailsDto;
+    /**
+     * SESSIONS_054 — This session has no cloud chat
+     */
+    409: ProblemDetailsDto;
+    /**
+     * RATE_001 — Rate limit reached
+     */
+    429: ProblemDetailsDto;
+};
+
+export type FindCloudChatError = FindCloudChatErrors[keyof FindCloudChatErrors];
+
+export type FindCloudChatResponses = {
+    200: CloudChatResponseDto;
+};
+
+export type FindCloudChatResponse = FindCloudChatResponses[keyof FindCloudChatResponses];
+
 export type PrepareSessionData = {
     body: PrepareSessionRequest;
     path?: never;
@@ -10510,6 +10757,48 @@ export type RestartSessionResponses = {
 };
 
 export type RestartSessionResponse = RestartSessionResponses[keyof RestartSessionResponses];
+
+export type RetrySessionData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/sessions/{id}/retry';
+};
+
+export type RetrySessionErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * HOSTS_001 — Host not found
+     *
+     * SESSIONS_001 — Session not found
+     */
+    404: ProblemDetailsDto;
+    /**
+     * SESSIONS_052 — Only a session whose start failed can be tried again
+     *
+     * SESSIONS_039 — That session runs at its vendor, not on a host
+     *
+     * SESSIONS_005 — That session is closed
+     */
+    409: ProblemDetailsDto;
+};
+
+export type RetrySessionError = RetrySessionErrors[keyof RetrySessionErrors];
+
+export type RetrySessionResponses = {
+    200: SessionResponseDto;
+};
+
+export type RetrySessionResponse = RetrySessionResponses[keyof RetrySessionResponses];
 
 export type AddCheckoutData = {
     body: AddCheckoutRequest;
@@ -14221,6 +14510,58 @@ export type CreateBotMemoryFactResponses = {
 };
 
 export type CreateBotMemoryFactResponse = CreateBotMemoryFactResponses[keyof CreateBotMemoryFactResponses];
+
+export type FindPersonMemoryData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/bot-memory/person';
+};
+
+export type FindPersonMemoryErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+};
+
+export type FindPersonMemoryError = FindPersonMemoryErrors[keyof FindPersonMemoryErrors];
+
+export type FindPersonMemoryResponses = {
+    200: PersonMemoryResponseDto;
+};
+
+export type FindPersonMemoryResponse = FindPersonMemoryResponses[keyof FindPersonMemoryResponses];
+
+export type UpdatePersonAboutData = {
+    body: UpdatePersonAboutRequest;
+    path?: never;
+    query?: never;
+    url: '/api/v1/bot-memory/person/about';
+};
+
+export type UpdatePersonAboutErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+};
+
+export type UpdatePersonAboutError = UpdatePersonAboutErrors[keyof UpdatePersonAboutErrors];
+
+export type UpdatePersonAboutResponses = {
+    200: PersonAboutResponseDto;
+};
+
+export type UpdatePersonAboutResponse = UpdatePersonAboutResponses[keyof UpdatePersonAboutResponses];
 
 export type MarkBotSeenData = {
     body?: never;

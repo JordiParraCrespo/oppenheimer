@@ -3,6 +3,9 @@
     "title": "Iniciando tu sesión",
     "failedTitle": "La sesión no se inició",
     "failedLead": "El host no pudo iniciar esta sesión.",
+    "retry": "Reintentar",
+    "retrying": "Reintentando",
+    "retryFailed": "No se pudo volver a iniciar la sesión.",
     "working": "Trabajando…",
     "downloading": "Este host aún no tenía este repositorio, así que primero lo descarga. Esta vez tardará un poco más; las siguientes sesiones arrancan en un segundo.",
     "failed": "Error",
@@ -390,7 +393,8 @@
     "shown": "Mostrar proyectos",
     "shownAll": "Todos",
     "shownSome": "{{shown}} de {{total}}",
-    "showAll": "Mostrar todos los proyectos"
+    "showAll": "Mostrar todos los proyectos",
+    "newProject": "Nuevo proyecto…"
   },
   "sort": {
     "custom": "Orden personalizado",
@@ -739,5 +743,11 @@
       "open": "Abrir en ChatGPT",
       "teleport": "Para traer sus cambios a una terminal, ejecuta esto en una copia del repositorio:"
     }
+  },
+  "cloudChat": {
+    "title": "En directo desde la nube de Claude Code",
+    "waiting_one": "Tu respuesta espera a que el agente termine su turno.",
+    "waiting_other": "{{count}} respuestas esperan a que el agente termine su turno.",
+    "replyFailed": "La respuesta no llegó a la sesión. Vuelve a intentarlo."
   }
 }

@@ -462,6 +462,9 @@
       "SESSIONS_049": "Ese cursor de transcripción no es válido. Lee desde los últimos turnos y continúa con el cursor que te dé esa página.",
       "SESSIONS_050": "Solo quien lanzó esta sesión en la nube puede enviarle un seguimiento, porque se ejecuta con su clave.",
       "SESSIONS_051": "El proveedor del agente en la nube no confirmó el seguimiento, así que puede estar ejecutándose allí. Revisa la sesión en el proveedor antes de volver a enviarlo.",
+      "SESSIONS_052": "Solo se puede reintentar una sesión que no llegó a iniciarse.",
+      "SESSIONS_053": "Ninguna sesión en la nube de este espacio de trabajo tiene ese id. Solo las sesiones iniciadas desde la consola envían su chat aquí.",
+      "SESSIONS_054": "El chat de esta sesión no se muestra aquí.",
       "VOICE_002": "No se ha grabado nada. Vuelve a dictar.",
       "VOICE_003": "La grabación es demasiado larga. Los dictados deben durar menos de dos minutos.",
       "VOICE_004": "No se ha podido leer la grabación. Vuelve a dictar.",
@@ -495,7 +498,8 @@
     "startFailure": {
       "codes": {
         "SESS_002": "Este host crea sesiones con un solo repositorio.",
-        "SESS_010": "La CLI de Codex no tiene un entorno en la nube para este repositorio."
+        "SESS_010": "La CLI de Codex no tiene un entorno en la nube para este repositorio.",
+        "SESS_019": "Sin sesión en claude.ai. Ejecuta claude auth login en el host."
       },
       "help": {
         "SESS_010": {
@@ -681,6 +685,9 @@
       "title": "Iniciando tu sesión",
       "failedTitle": "La sesión no se inició",
       "failedLead": "El host no pudo iniciar esta sesión.",
+      "retry": "Reintentar",
+      "retrying": "Reintentando",
+      "retryFailed": "No se pudo volver a iniciar la sesión.",
       "working": "Trabajando…",
       "downloading": "Este host aún no tenía este repositorio, así que primero lo descarga. Esta vez tardará un poco más; las siguientes sesiones arrancan en un segundo.",
       "failed": "Error",
@@ -1068,7 +1075,8 @@
       "shown": "Mostrar proyectos",
       "shownAll": "Todos",
       "shownSome": "{{shown}} de {{total}}",
-      "showAll": "Mostrar todos los proyectos"
+      "showAll": "Mostrar todos los proyectos",
+      "newProject": "Nuevo proyecto…"
     },
     "sort": {
       "custom": "Orden personalizado",
@@ -1417,6 +1425,12 @@
         "open": "Abrir en ChatGPT",
         "teleport": "Para traer sus cambios a una terminal, ejecuta esto en una copia del repositorio:"
       }
+    },
+    "cloudChat": {
+      "title": "En directo desde la nube de Claude Code",
+      "waiting_one": "Tu respuesta espera a que el agente termine su turno.",
+      "waiting_other": "{{count}} respuestas esperan a que el agente termine su turno.",
+      "replyFailed": "La respuesta no llegó a la sesión. Vuelve a intentarlo."
     }
   },
   "bots": {
@@ -1946,6 +1960,10 @@
         "toProfile": "Tenerlo presente en cada chat",
         "toPerson": "Compartirlo con todos tus bots",
         "toBot": "Guardarlo solo para este bot",
+        "learnedBy": "Aprendido por {{bot}} · {{date}}",
+        "editedByYouOn": "Editado por ti, lo guarda {{bot}} · {{date}}",
+        "addedByYouOn": "Añadido por ti, lo guarda {{bot}} · {{date}}",
+        "toBotNamed": "Que solo lo sepa {{bot}}",
         "dream": {
           "title": "Ordenar la memoria",
           "never": "Une los repetidos, reescribe cada dato con claridad y quita lo que ya no vale, contrastado con el chat. Se hace más o menos una vez al día cuando el bot ha aprendido bastante.",
@@ -3248,6 +3266,7 @@
       "account": "Cuenta",
       "workspace": "Espacio de trabajo",
       "profile": "Perfil",
+      "memory": "Memoria",
       "hosts": "Hosts",
       "repositories": "Repositorios observados",
       "modelProviders": "Proveedores de modelos",
@@ -3327,6 +3346,27 @@
       "heading": "Cuenta",
       "delete": "Eliminar cuenta",
       "deleteHint": "Detiene todas las sesiones y elimina tus automatizaciones y los hosts registrados. No se puede deshacer."
+    },
+    "memory": {
+      "title": "Memoria",
+      "description": "Lo que tus bots saben de ti. Todos los bots que crees lo leen, en cada chat.",
+      "aboutTitle": "Sobre ti",
+      "aboutHint": "Con tus palabras: quién eres, cómo trabajas, qué deben tener siempre presente tus bots. Tus bots lo leen y nunca lo cambian.",
+      "aboutLabel": "Sobre ti",
+      "aboutPlaceholder": "p. ej. Soy Jordi, construyo Oppenheimer desde Barcelona. Responde con frases cortas y pregunta antes de fusionar.",
+      "unsaved": "Cambios sin guardar",
+      "saved": "Guardado {{date}}",
+      "neverSaved": "Aún sin escribir",
+      "save": "Guardar",
+      "saving": "Guardando…",
+      "discard": "Descartar",
+      "saveFailed": "No se pudo guardar lo que escribiste.",
+      "learnedTitle_one": "Lo que aprendieron tus bots · {{count}}",
+      "learnedTitle_other": "Lo que aprendieron tus bots · {{count}}",
+      "learnedHint": "Datos sobre ti que un bot guardó en un chat. Cada uno se queda con el bot que lo aprendió: cámbialo u olvídalo aquí y todos los bots leen el cambio.",
+      "learnedEmpty": "Tus bots aún no han aprendido nada sobre ti.",
+      "loadFailed": "No se pudo cargar lo que tus bots saben de ti.",
+      "aBot": "un bot"
     },
     "deleteAccount": {
       "title": "¿Eliminar tu cuenta?",

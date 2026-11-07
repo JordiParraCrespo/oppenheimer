@@ -542,6 +542,22 @@ export const useRestartSession = mutation<SessionEntity, string>({
 });
 
 /**
+ * Try a failed start again. The answer is the row, `starting` again: the
+ * session polls while it is provisioning, and its start pane reads the log
+ * afresh, from the retry on, so the steps run again in place.
+ */
+export const useRetrySession = mutation<SessionEntity, string>({
+  run: (app, id) => app.sessions.retry(id),
+  update: (queryClient, session) => {
+    queryClient.setQueryData(sessionsKeys.detail(session.id), session);
+    // Both reads: the failed one would otherwise come back, settled and fresh,
+    // if this attempt fails too, and show the last attempt's reason.
+    queryClient.removeQueries({ queryKey: sessionsKeys.starts(session.id) });
+    return queryClient.invalidateQueries({ queryKey: sessionsKeys.lists() });
+  },
+});
+
+/**
  * Delete a session. The row leaves the lists on the click: the close is the
  * host's to carry out and can take seconds, and a reader who pressed Delete
  * is done with it. The watch ({@link closesOf}) is the one owner of that — the

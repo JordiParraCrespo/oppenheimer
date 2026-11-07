@@ -69,4 +69,9 @@ export const BotsErrors = {
   REQUEST_DREAM_FAILED: { code: 'BOTS_CLIENT_049', message: 'Failed to start tidying the memory' },
   UNDO_DREAM_FAILED: { code: 'BOTS_CLIENT_050', message: 'Failed to undo the tidy' },
   MARK_SEEN_FAILED: { code: 'BOTS_CLIENT_051', message: 'Failed to mark the chat as seen' },
+  FETCH_PERSON_MEMORY_FAILED: {
+    code: 'BOTS_CLIENT_052',
+    message: 'Failed to load what your bots know about you',
+  },
+  SAVE_PERSON_ABOUT_FAILED: { code: 'BOTS_CLIENT_053', message: 'Failed to save what you wrote' },
 } as const satisfies Record<string, ErrorDefinition>;

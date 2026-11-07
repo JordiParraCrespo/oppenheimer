@@ -25,6 +25,7 @@ import { BotGroupOrmEntity } from '../bots/database/bot-group.orm-entity';
 import { BotMemoryFactOrmEntity } from '../bots/database/bot-memory-fact.orm-entity';
 import { BotSkillOrmEntity } from '../bots/database/bot-skill.orm-entity';
 import { ModelProviderCredentialOrmEntity } from '../bots/database/model-provider-credential.orm-entity';
+import { PersonMemoryOrmEntity } from '../bots/database/person-memory.orm-entity';
 import { BotApprovalOrmEntity } from '../bots-chat/database/bot-approval.orm-entity';
 import { BotAttachmentOrmEntity } from '../bots-chat/database/bot-attachment.orm-entity';
 import { BotConversationSummaryOrmEntity } from '../bots-chat/database/bot-conversation-summary.orm-entity';
@@ -82,6 +83,8 @@ import { UserRoleRepository } from '../roles/database/user-role.repository';
 import { UserRoleVersionOrmEntity } from '../roles/database/user-role-version.orm-entity';
 import { RoleMapper } from '../roles/roles.mapper';
 import { SessionCheckoutOrmEntity } from '../sessions/database/session-checkout.orm-entity';
+import { SessionCloudLineOrmEntity } from '../sessions/database/session-cloud-line.orm-entity';
+import { SessionCloudReplyOrmEntity } from '../sessions/database/session-cloud-reply.orm-entity';
 import { SessionCloudRunOrmEntity } from '../sessions/database/session-cloud-run.orm-entity';
 import { SessionShareOrmEntity } from '../sessions/database/session-share.orm-entity';
 import { SessionTerminalWatchOrmEntity } from '../sessions/database/session-terminal-watch.orm-entity';
@@ -135,6 +138,8 @@ const dataSource = new DataSource({
     WorkSessionEventOrmEntity,
     SessionTurnOrmEntity,
     SessionShareOrmEntity,
+    SessionCloudLineOrmEntity,
+    SessionCloudReplyOrmEntity,
     SessionTerminalWatchOrmEntity,
     InboundDeliveryOrmEntity,
     InboundEventOrmEntity,
@@ -165,6 +170,7 @@ const dataSource = new DataSource({
     BotDocumentOrmEntity,
     BotDocumentRevisionOrmEntity,
     BotMemoryFactOrmEntity,
+    PersonMemoryOrmEntity,
     BotSkillOrmEntity,
     ModelProviderCredentialOrmEntity,
     BotTurnOrmEntity,

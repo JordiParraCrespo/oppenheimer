@@ -21,6 +21,7 @@ import {
   BotEntity,
   type BotGroupEntity,
   type BotMemoryFactEntity,
+  type PersonMemoryEntity,
   type SaveBotDocumentInput,
   type UpdateBotFactInput,
   type UpdateBotInput,
@@ -166,6 +167,18 @@ export function useSuspenseBotMemory(id: string) {
   });
 }
 
+/**
+ * What every bot of the reader's knows about them, under a Suspense
+ * `QueryState`: what they wrote, and the facts their bots learned.
+ */
+export function useSuspensePersonMemory() {
+  const app = useConsumerApp();
+  return useSuspenseQuery<PersonMemoryEntity, Error>({
+    queryKey: botsKeys.personMemory(),
+    queryFn: () => app.bots.findPersonMemory(),
+  });
+}
+
 /** A row's place in a list, written over by the row the server answered with. */
 function replaced<TRow extends { id: string }>(saved: TRow) {
   return (rows: TRow[]) => rows.map((row) => (row.id === saved.id ? saved : row));
@@ -236,16 +249,22 @@ function settleFacts(
  * every bot's memory that was read, not only the bot that keeps it.
  */
 function refreshSharedMemory(queryClient: QueryClient) {
-  return queryClient.invalidateQueries({
-    queryKey: botsKeys.details(),
-    predicate: (query) => query.queryKey[3] === 'memory',
-  });
+  return Promise.all([
+    queryClient.invalidateQueries({
+      queryKey: botsKeys.details(),
+      predicate: (query) => query.queryKey[3] === 'memory',
+    }),
+    queryClient.invalidateQueries({ queryKey: botsKeys.personMemory() }),
+  ]);
 }
 
 /** Whether a fact this bot's list holds is about the person, so its siblings read it too. */
 function isSharedFact(queryClient: QueryClient, id: string, factId: string): boolean {
   const rows = queryClient.getQueryData<BotMemoryFactEntity[]>(botsKeys.memoryList(id));
-  return rows?.find((row) => row.id === factId)?.scope === 'person';
+  if (rows?.find((row) => row.id === factId)?.scope === 'person') return true;
+  // Forgotten from Settings → Memory, where the bot's own list may not be read.
+  const person = queryClient.getQueryData<PersonMemoryEntity>(botsKeys.personMemory());
+  return person?.facts.some((row) => row.id === factId) ?? false;
 }
 
 /** A blank bot (a first name such as "Juno"), ungrouped. Open its chat with the answer. */
@@ -440,6 +459,16 @@ export const useDeleteBotFact = mutation<void, DeleteBotFactVariables>({
     const shared = isSharedFact(queryClient, id, factId);
     settleFacts(queryClient, id, without(factId));
     return shared ? refreshSharedMemory(queryClient) : undefined;
+  },
+});
+
+/** Write what the reader says about themselves; every bot of theirs reads it from its next turn. */
+export const useSavePersonAbout = mutation<{ about: string; updatedAt: Date | null }, string>({
+  run: (app, about) => app.bots.saveAbout(about),
+  update: (queryClient, saved) => {
+    queryClient.setQueryData<PersonMemoryEntity>(botsKeys.personMemory(), (memory) =>
+      memory?.withAbout(saved.about, saved.updatedAt),
+    );
   },
 });
 

@@ -581,6 +581,9 @@ are never reissued.
 | `SESSIONS_049` <a id="sessions_049" /> | That transcript cursor is not valid | 400 |
 | `SESSIONS_050` <a id="sessions_050" /> | Only the person who launched a cloud session can send it a follow-up | 403 |
 | `SESSIONS_051` <a id="sessions_051" /> | The cloud session’s vendor did not confirm the follow-up | 502 |
+| `SESSIONS_052` <a id="sessions_052" /> | Only a session whose start failed can be tried again | 409 |
+| `SESSIONS_053` <a id="sessions_053" /> | No cloud session of this workspace has that id | 404 |
+| `SESSIONS_054` <a id="sessions_054" /> | This session has no cloud chat | 409 |
 
 `SESSIONS_001` is also returned for a session that exists in another workspace: the
 scoped read cannot see it, and distinguishing the two would confirm the id.
@@ -1237,6 +1240,7 @@ for a 404 or 428, 6 for a 502, 503 or 504, 7 for `PAIR_009`, and 1 for anything 
 | `SESS_016` <a id="sess_016" />         | The session has no shared file by that id    | 404  |
 | `SESS_017` <a id="sess_017" />         | The shared file has no preview               | 409  |
 | `SESS_018` <a id="sess_018" />         | The session's agent keeps no transcript this host can read | 409 |
+| `SESS_019` <a id="sess_019" />         | Claude Code on this host is not signed in to claude.ai | 502 |
 | `TMUX_001` <a id="tmux_001" />         | tmux is not available on this host           | 424  |
 | `TMUX_002` <a id="tmux_002" />         | The tmux server refused the command          | 500  |
 | `GIT_001` <a id="git_001" />           | The worktree could not be prepared           | 500  |
@@ -1272,6 +1276,13 @@ labels the CLI showed in the account's twenty newest tasks
 outside its interactive TUI, so that list is partial, and the full one is
 `codex cloud` on the host. `SESS_009` stays every other refusal, in the CLI's
 words.
+
+`SESS_019` is `claude --cloud` saying the host's Claude Code has no claude.ai
+account to start the session with. Sign in on the host as the account the
+runner runs as (`claude auth login`, or `/login` in an interactive `claude`),
+then press **Try again** on the session: it sends the host the same start, with
+the same task (`POST /v1/sessions/{id}/retry`). Every other refusal of
+`claude --cloud` stays `SESS_008`, in the CLI's own words.
 
 `HOST_009` is `runner agents update` reporting that at least one agent CLI's
 updater failed; the service only logs it and retries. What to do about it is
