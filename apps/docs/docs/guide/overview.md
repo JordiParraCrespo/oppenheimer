@@ -45,6 +45,7 @@ You can drag the rail items into another order; the order is kept on that device
 | Page | Use it to |
 | --- | --- |
 | Profile | Change your name, picture, username, email, password, signed-in devices, or delete the account. |
+| Memory | Write **About you**, which every bot reads, and see, edit or forget what your bots learned about you. |
 | Hosts | See, rename, update and remove hosts; Add host; open a blank terminal on a host. |
 | Watched repositories | Pick repositories whose open pull requests fill the Watching tab of the PR queue. |
 | Model providers | Add the API keys (or a ChatGPT sign-in) your bots run on. |

@@ -77,6 +77,10 @@ export class SessionsService {
     return this.repository.restart(id);
   }
 
+  retry(id: string): Promise<SessionEntity> {
+    return this.repository.retry(id);
+  }
+
   close(id: string, acceptUnpushedWork = false): Promise<SessionEntity> {
     return this.repository.close(id, acceptUnpushedWork);
   }

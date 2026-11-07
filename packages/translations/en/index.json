@@ -460,6 +460,7 @@
       "SESSIONS_049": "That transcript cursor isn’t valid. Read from the latest turns and continue from the cursor that page gives.",
       "SESSIONS_050": "Only the person who launched this cloud session can send it a follow-up, since it runs on their key.",
       "SESSIONS_051": "The cloud agent’s vendor didn’t confirm the follow-up, so it may be running there. Check the session at its vendor before sending it again.",
+      "SESSIONS_052": "Only a session that failed to start can be tried again.",
       "VOICE_002": "Nothing was recorded. Try dictating again.",
       "VOICE_003": "That recording is too long. Keep dictations under two minutes.",
       "VOICE_004": "That recording couldn’t be read. Try dictating again.",
@@ -493,7 +494,8 @@
     "startFailure": {
       "codes": {
         "SESS_002": "This host makes sessions with one repository.",
-        "SESS_010": "Codex's CLI has no cloud environment for this repository."
+        "SESS_010": "Codex's CLI has no cloud environment for this repository.",
+        "SESS_019": "Not signed in to claude.ai. Run claude auth login on the host."
       },
       "help": {
         "SESS_010": {
@@ -676,6 +678,9 @@
       "title": "Starting your session",
       "failedTitle": "The session did not start",
       "failedLead": "The host could not start this session.",
+      "retry": "Try again",
+      "retrying": "Trying again",
+      "retryFailed": "The session could not be started again.",
       "working": "Working…",
       "downloading": "This host has not had this repository before, so it is downloading it first. This one takes a bit longer; later sessions on it start in about a second.",
       "failed": "Failed",
@@ -1705,6 +1710,7 @@
         "agent_unavailable": "the agent could not start",
         "bot_provider_missing": "the bot’s model provider has no key or sign-in",
         "owner_lost_access": "its owner can no longer run it",
+        "unattended": "you were away; it starts again now that you are back",
         "unknown": "something went wrong"
       },
       "openSession": "Open session",
@@ -1903,6 +1909,10 @@
         "toProfile": "Keep it in mind in every chat",
         "toPerson": "Share it with all your bots",
         "toBot": "Keep it to this bot",
+        "learnedBy": "Learned by {{bot}} · {{date}}",
+        "editedByYouOn": "Edited by you, kept by {{bot}} · {{date}}",
+        "addedByYouOn": "Added by you, kept by {{bot}} · {{date}}",
+        "toBotNamed": "Keep it to {{bot}} only",
         "dream": {
           "title": "Tidy memory",
           "never": "Merges repeats, rewrites each fact clearly and drops what’s stale, checked against the chat. Runs about once a day once the bot has learned enough.",
@@ -1957,6 +1967,9 @@
         "title": "Routines",
         "subtitle": "Work the bot does on a schedule or when something happens.",
         "empty": "Routines are tasks this bot runs on a schedule or when something happens. Ask it in chat to set one up.",
+        "guard": "Pause while you’re away",
+        "guardHint": "Stop its routines while you’re not reading what they say. They start again when you open this chat.",
+        "guardFailed": "Could not change whether the routines pause while you’re away.",
         "askInChat": "Ask in chat",
         "schedule": "Schedule · {{when}}",
         "github": "GitHub · {{when}}",
@@ -2064,6 +2077,9 @@
       "checkedHint": "Checked bots show in {{section}}.",
       "manageAll": "Manage in {{employees}}",
       "hide": "Hide from {{section}}"
+    },
+    "routineGuard": {
+      "notice": "I paused my routines while you were away. They start again when you open this chat."
     }
   },
   "automations": {
@@ -2117,7 +2133,8 @@
       "overlapping": "Skipped: a run was still going",
       "missed": "Skipped: the slot was missed",
       "not_launchable": "Skipped: the session could not start",
-      "agent_unavailable": "Skipped: the agent is not on the host"
+      "agent_unavailable": "Skipped: the agent is not on the host",
+      "unattended": "Skipped: its bot’s owner is away"
     },
     "pausedReason": {
       "user": "Paused. Triggers are ignored until you resume it; Run now still works.",
@@ -2125,7 +2142,8 @@
       "host_unpaired": "Paused because its host was removed. Pick another host in Edit to resume it.",
       "owner_lost_access": "Paused because its owner can no longer run it.",
       "bot_provider_missing": "Paused because its bot’s model provider has no key or sign-in. Add one, then resume it.",
-      "cloud_key_missing": "Paused because its owner has no key for its cloud provider, or the provider refused it. Connect it in Settings → Cloud agents, then resume it."
+      "cloud_key_missing": "Paused because its owner has no key for its cloud provider, or the provider refused it. Connect it in Settings → Cloud agents, then resume it.",
+      "unattended": "Paused while you were away from its bot’s chat. It starts again when you open the chat."
     },
     "frequency": {
       "once": {
@@ -3193,6 +3211,7 @@
       "account": "Account",
       "workspace": "Workspace",
       "profile": "Profile",
+      "memory": "Memory",
       "hosts": "Hosts",
       "repositories": "Watched repositories",
       "modelProviders": "Model providers",
@@ -3272,6 +3291,27 @@
       "heading": "Account",
       "delete": "Delete account",
       "deleteHint": "Stops every session and removes your automations and host registrations. This cannot be undone."
+    },
+    "memory": {
+      "title": "Memory",
+      "description": "What your bots know about you. Every bot you make reads it, in every chat.",
+      "aboutTitle": "About you",
+      "aboutHint": "In your own words: who you are, how you work, what your bots should always keep in mind. Your bots read it and never change it.",
+      "aboutLabel": "About you",
+      "aboutPlaceholder": "e.g. I’m Jordi, I build Oppenheimer from Barcelona. Answer in short sentences, and ask before you merge.",
+      "unsaved": "Unsaved changes",
+      "saved": "Saved {{date}}",
+      "neverSaved": "Not written yet",
+      "save": "Save",
+      "saving": "Saving…",
+      "discard": "Discard",
+      "saveFailed": "Couldn’t save what you wrote.",
+      "learnedTitle_one": "What your bots learned · {{count}}",
+      "learnedTitle_other": "What your bots learned · {{count}}",
+      "learnedHint": "Facts about you a bot saved in a chat. Each stays with the bot that learned it: change or forget it here, and every bot reads the change.",
+      "learnedEmpty": "Your bots haven’t learned anything about you yet.",
+      "loadFailed": "Couldn’t load what your bots know about you.",
+      "aBot": "a bot"
     },
     "deleteAccount": {
       "title": "Delete your account?",

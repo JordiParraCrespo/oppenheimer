@@ -37,6 +37,11 @@ export interface BotPromptInput {
   facts: readonly string[];
   /** What it keeps in mind about the person, shared by every bot of theirs. */
   personFacts?: readonly string[];
+  /**
+   * What the person wrote about themselves in Settings → Memory, for every
+   * bot of theirs; the bots read it and never change it.
+   */
+  personAbout?: string;
   /** What the turn's engine does on its own (web search, a to-do list), in words. */
   engineCapabilities: readonly string[];
   /** Our tools offered this turn. */
@@ -85,6 +90,11 @@ export function composeBotSystemPrompt(input: BotPromptInput): string {
     offered.includes('use_skill'),
   );
   if (skills) parts.push(skills);
+  if (input.personAbout?.trim()) {
+    parts.push(
+      `# About the person, in their own words (they wrote it; you cannot change it)\n\n${input.personAbout.trim()}`,
+    );
+  }
   if (input.personFacts?.length) {
     parts.push(
       `# What you know about the person (shared by all their bots)\n\n${input.personFacts.map((fact) => `- ${fact}`).join('\n')}`,

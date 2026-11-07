@@ -583,6 +583,22 @@ of `bot_memory_fact`, with two columns more:
   under the same lock as the count; a fact added by hand is refused
   (`BOTS_009`), as is a save when every fact is `profile`. A fact the bot
   saved names the bot as its source (it named the person before).
+- **Settings → Memory at the account** (2026-11-07, asked by the owner,
+  the way Claude's memory works). One page, beside Profile, for what all
+  the person's bots know about them:
+  - *About you*: a text the person writes about themselves, up to 4,000
+    characters, one per person per workspace (`person_memory`). It is in
+    the system prompt of every bot they made there, in a section of its
+    own ahead of the shared facts, and no tool writes it: a bot that
+    learns something about the person saves a `person` fact instead. It
+    changes only when the person saves it, so the prompt cache holds.
+  - *What your bots learned*: every `person` fact any of their bots keeps,
+    newest first, each naming that bot. Edit, move and forget act on the
+    bot that keeps it, as on that bot's own page; nothing is added here,
+    since what the person wants every bot to know goes in About you.
+  - `GET /v1/bot-memory/person` reads both; `PUT
+    /v1/bot-memory/person/about` writes the text. A fact is changed through
+    the bot's own memory routes.
 - **Dreaming** (2026-11-07, from Managed Agents' dreams and Anthropic's
   "Components of agent memory"). A bot saves as it goes without checking
   what it has, so its memory fills with repeats, contradictions and stale
@@ -1588,6 +1604,10 @@ The decisions it produced:
   whose history only grows until a summary, and Codex, which sends its
   conversation's id as `prompt_cache_key`. It refines 2026-10-15's history
   budget, which kept the newest messages that fit.
+- 2026-11-07: **the person has a memory page of their own**: Settings →
+  Memory at the account, an *About you* text in every bot's prompt that
+  only the person writes, and every `person` fact their bots keep, changed
+  on the bot that keeps it (§4.1). Asked by the owner, after Claude's.
 - 2026-11-07: **bots dream** (§4.1, "Dreaming"). The owner found each
   bot's memory "a bit like slop" once bots saved as they go, and asked for
   a process that unifies, rewrites and deduplicates it, from Managed Agents'

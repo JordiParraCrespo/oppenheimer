@@ -1,6 +1,6 @@
 ---
 title: Routines and watches
-description: How a bot works when nobody writes to it, routines on a schedule or on a GitHub or Gmail event, loops and goals, watches on sessions and pull requests, the stall check, and the full list of what wakes a bot.
+description: How a bot works when nobody writes to it, routines on a schedule or on a GitHub or Gmail event, its hourly heartbeat, quiet runs, routines pausing while you are away, loops and goals, watches on sessions and pull requests, the stall check, and the full list of what wakes a bot.
 sidebar_position: 6
 ---
 
@@ -23,6 +23,12 @@ Triggers a routine can have:
 **The Routines tab** is controls, not an editor. Each row shows the name, when it runs (or Paused) and its last and next run, with a switch, **Run now**, **Edit in chat** (puts "Edit your routine: …" in the composer for the bot to change it), and **Delete**. Using the tab yourself raises no card.
 
 A routine is skipped and paused when it cannot run, with the reason in the chat: the bot's provider has no key, its owner lost access, or an hourly run limit was hit (10 runs an hour per routine, 100 per workspace by default). A run due while the last one is still running is skipped.
+
+**The heartbeat.** Once a bot has a job (its `INSTRUCTIONS.md` is written), it is given one routine of its own, **Heartbeat**: hourly, at a minute past the hour that differs from bot to bot, so your bots do not all wake at once. Each run the bot rereads its instructions and the plan, looks at the sessions, pull requests and mail it looks after, acts on what needs it and tells you what you must know; when nothing does, it stays quiet. It is an ordinary routine: pause, edit or delete it on the Routines tab or in chat. A bot that already had a job before heartbeats existed has none until you ask for one.
+
+**Quiet runs.** A turn nobody is waiting on (a routine, a wake, a goal, a loop) can end with nothing to report: the chat shows only a collapsed line, and you get no message.
+
+**While you're away.** A bot's routines stop on their own when you stop reading them: after 3 routine reports you have not seen (quiet runs do not count), or 72 hours since you were last in the bot's chat. You are told once in the Inbox, and every routine stopped that way starts again as soon as you are back: you open or look at the bot's chat, write to it, or decide one of its cards. A routine you paused yourself, or one paused for a missing key, stays paused. Your own **Run now** always runs. The two numbers are workspace settings for automations, and **Pause while you're away**, a switch on the bot's Routines tab, turns this off for a bot that should run unattended.
 
 Mail older than two days, spam, trash and chats never wake a Gmail routine; email and event text reach the bot marked as outside data, never as instructions.
 
@@ -72,4 +78,4 @@ Turns run one at a time per bot: your messages first, then other bots', then bac
 
 ## Not available yet
 
-A "check-in" that stays silent when there is nothing to report, spreading routine times, a guard that pauses routines nobody reads, routines triggered by a session ending or by a webhook, and WhatsApp messages as a trigger.
+Spreading the run times of routines other than the heartbeat, routines triggered by a session ending or by a webhook, and WhatsApp messages as a trigger.
