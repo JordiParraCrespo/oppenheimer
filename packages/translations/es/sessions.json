@@ -393,7 +393,8 @@
     "shown": "Mostrar proyectos",
     "shownAll": "Todos",
     "shownSome": "{{shown}} de {{total}}",
-    "showAll": "Mostrar todos los proyectos"
+    "showAll": "Mostrar todos los proyectos",
+    "newProject": "Nuevo proyecto…"
   },
   "sort": {
     "custom": "Orden personalizado",

@@ -53,6 +53,7 @@ export function SessionsFilterMenu({
   visibility,
   onChange,
   onClear,
+  onNewProject,
 }: {
   filters: SessionFilters;
   options: Record<SessionFacet, FilterOption[]>;
@@ -60,6 +61,8 @@ export function SessionsFilterMenu({
   visibility: ProjectVisibility;
   onChange: (patch: Partial<SessionFilters>) => void;
   onClear: () => void;
+  /** Opens the New project dialog, from the foot of the Project facet. */
+  onNewProject: () => void;
 }) {
   const { t } = useTranslation();
   const projects = options.project.filter((option) => option.value !== ALL);
@@ -91,6 +94,7 @@ export function SessionsFilterMenu({
           value={filters.project}
           searchPlaceholder={t('common.search.projects')}
           onValueChange={(project) => onChange({ project })}
+          action={{ label: t('sessions.filters.newProject'), onSelect: onNewProject }}
         />
         <FacetSearchSub
           label={t('sessions.filters.repository')}
