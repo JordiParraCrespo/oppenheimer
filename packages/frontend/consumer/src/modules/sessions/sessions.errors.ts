@@ -98,4 +98,12 @@ export const SessionsErrors = {
     code: 'SESSIONS_CLIENT_022',
     message: 'Failed to try the session again',
   },
+  CLOUD_CHAT_FAILED: {
+    code: 'SESSIONS_CLIENT_023',
+    message: "Failed to read the cloud session's chat",
+  },
+  CLOUD_REPLY_FAILED: {
+    code: 'SESSIONS_CLIENT_024',
+    message: 'Failed to send the reply',
+  },
 } as const satisfies Record<string, ErrorDefinition>;

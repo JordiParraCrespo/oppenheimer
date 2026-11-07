@@ -39,8 +39,12 @@ import { AddCheckoutCommandHandler } from './commands/add-checkout/add-checkout.
 import { AddCheckoutHttpController } from './commands/add-checkout/add-checkout.http.controller';
 import { AnswerSessionDecisionCommandHandler } from './commands/answer-session-decision/answer-session-decision.command-handler';
 import { AnswerSessionDecisionHttpController } from './commands/answer-session-decision/answer-session-decision.http.controller';
+import { AppendCloudTranscriptCommandHandler } from './commands/append-cloud-transcript/append-cloud-transcript.command-handler';
+import { AppendCloudTranscriptHttpController } from './commands/append-cloud-transcript/append-cloud-transcript.http.controller';
 import { CloseSessionCommandHandler } from './commands/close-session/close-session.command-handler';
 import { CloseSessionHttpController } from './commands/close-session/close-session.http.controller';
+import { CollectCloudReplyCommandHandler } from './commands/collect-cloud-reply/collect-cloud-reply.command-handler';
+import { CollectCloudReplyHttpController } from './commands/collect-cloud-reply/collect-cloud-reply.http.controller';
 import { CreateSessionCommandHandler } from './commands/create-session/create-session.command-handler';
 import { CreateSessionHttpController } from './commands/create-session/create-session.http.controller';
 import { DeliverSessionWakeCommandHandler } from './commands/deliver-session-wake/deliver-session-wake.command-handler';
@@ -69,6 +73,8 @@ import { RestartSessionCommandHandler } from './commands/restart-session/restart
 import { RestartSessionHttpController } from './commands/restart-session/restart-session.http.controller';
 import { RetrySessionCommandHandler } from './commands/retry-session/retry-session.command-handler';
 import { RetrySessionHttpController } from './commands/retry-session/retry-session.http.controller';
+import { SendCloudReplyCommandHandler } from './commands/send-cloud-reply/send-cloud-reply.command-handler';
+import { SendCloudReplyHttpController } from './commands/send-cloud-reply/send-cloud-reply.http.controller';
 import { SendSessionPromptCommandHandler } from './commands/send-session-prompt/send-session-prompt.command-handler';
 import { SendSessionPromptHttpController } from './commands/send-session-prompt/send-session-prompt.http.controller';
 import { SetSessionSharePeopleCommandHandler } from './commands/set-session-share-people/set-session-share-people.command-handler';
@@ -84,6 +90,9 @@ import { UploadSessionAttachmentCommandHandler } from './commands/upload-session
 import { UploadSessionAttachmentHttpController } from './commands/upload-session-attachment/upload-session-attachment.http.controller';
 import { WatchSessionTerminalCommandHandler } from './commands/watch-session-terminal/watch-session-terminal.command-handler';
 import { SessionCheckoutOrmEntity } from './database/session-checkout.orm-entity';
+import { SessionCloudChatRepository } from './database/session-cloud-chat.repository';
+import { SessionCloudLineOrmEntity } from './database/session-cloud-line.orm-entity';
+import { SessionCloudReplyOrmEntity } from './database/session-cloud-reply.orm-entity';
 import { SessionCloudRunOrmEntity } from './database/session-cloud-run.orm-entity';
 import { SessionShareOrmEntity } from './database/session-share.orm-entity';
 import { SessionShareRepository } from './database/session-share.repository';
@@ -97,6 +106,8 @@ import { WorkSessionEventOrmEntity } from './database/work-session-event.orm-ent
 import { OutboxSessionWakesAdapter } from './infrastructure/outbox-session-wakes.adapter';
 import { SessionWakesProcessor } from './infrastructure/session-wakes.processor';
 import { StorageCloudFilesAdapter } from './infrastructure/storage-cloud-files.adapter';
+import { FindCloudChatHttpController } from './queries/find-cloud-chat/find-cloud-chat.http.controller';
+import { FindCloudChatQueryHandler } from './queries/find-cloud-chat/find-cloud-chat.query-handler';
 import { FindCloudFileHttpController } from './queries/find-cloud-file/find-cloud-file.http.controller';
 import { FindCloudFileQueryHandler } from './queries/find-cloud-file/find-cloud-file.query-handler';
 import { FindHostCodexEnvironmentsHttpController } from './queries/find-host-codex-environments/find-host-codex-environments.http.controller';
@@ -124,6 +135,7 @@ import { SessionTerminalWatchMapper } from './session-terminal-watch.mapper';
 import {
   CLOUD_FILES,
   RECORD_SESSION_EVENTS,
+  SESSION_CLOUD_CHAT_REPOSITORY,
   SESSION_LOOKUP,
   SESSION_RECONCILIATION,
   SESSION_SHARE_REPOSITORY,
@@ -161,6 +173,10 @@ const httpControllers = [
   SendSessionPromptHttpController,
   StopSessionHttpController,
   RecordCloudStatusHttpController,
+  AppendCloudTranscriptHttpController,
+  CollectCloudReplyHttpController,
+  SendCloudReplyHttpController,
+  FindCloudChatHttpController,
   PrepareSessionHttpController,
   RestartSessionHttpController,
   RetrySessionHttpController,
@@ -187,6 +203,9 @@ const commandHandlers: Provider[] = [
   WatchSessionTerminalCommandHandler,
   UnwatchSessionTerminalCommandHandler,
   RecordCloudStatusCommandHandler,
+  AppendCloudTranscriptCommandHandler,
+  CollectCloudReplyCommandHandler,
+  SendCloudReplyCommandHandler,
   PrepareSessionCommandHandler,
   RestartSessionCommandHandler,
   RetrySessionCommandHandler,
@@ -220,6 +239,7 @@ const queryHandlers: Provider[] = [
   FindSessionSharedPreviewQueryHandler,
   FindSessionTranscriptQueryHandler,
   FindCloudFileQueryHandler,
+  FindCloudChatQueryHandler,
 ];
 
 const adapters: Provider[] = [
@@ -241,6 +261,8 @@ const adapters: Provider[] = [
       SessionTurnOrmEntity,
       SessionShareOrmEntity,
       SessionCloudRunOrmEntity,
+      SessionCloudLineOrmEntity,
+      SessionCloudReplyOrmEntity,
       SessionTerminalWatchOrmEntity,
     ]),
     AuthzKernelModule.forFeature([SessionResource]),
@@ -304,6 +326,7 @@ const adapters: Provider[] = [
     { provide: WORK_SESSION_REPOSITORY, useClass: WorkSessionRepository },
     { provide: SESSION_SHARE_REPOSITORY, useClass: SessionShareRepository },
     { provide: SESSION_TERMINAL_WATCH_REPOSITORY, useClass: SessionTerminalWatchRepository },
+    { provide: SESSION_CLOUD_CHAT_REPOSITORY, useClass: SessionCloudChatRepository },
   ],
   // The three application ports and the usage read, and nothing else. The
   // repository is this module's persistence adapter: publishing it would let the
