@@ -41,7 +41,7 @@ describe('useMarkSeen', () => {
     expect(state.mutate).toHaveBeenCalledWith({ id: 'bot-1' });
   });
 
-  it('says it again while the owner is active, at most once a minute', () => {
+  it('says it again while the owner is active, at most once a minute, and at the minute’s end', () => {
     renderHook(() => useMarkSeen('bot-1'));
     act(() => {
       vi.advanceTimersByTime(30 * 1000);
@@ -50,11 +50,14 @@ describe('useMarkSeen', () => {
     });
     expect(state.mutate).toHaveBeenCalledTimes(1);
 
-    act(() => {
-      vi.advanceTimersByTime(31 * 1000);
-      move();
-    });
+    // The activity inside the minute is said when the minute ends, once.
+    act(() => vi.advanceTimersByTime(30 * 1000));
     expect(state.mutate).toHaveBeenCalledTimes(2);
+    act(() => vi.advanceTimersByTime(5 * MINUTE));
+    expect(state.mutate).toHaveBeenCalledTimes(2);
+
+    act(() => move());
+    expect(state.mutate).toHaveBeenCalledTimes(3);
   });
 
   it('counts a tab left open with nobody at it as nobody, however long it stays in view', () => {

@@ -334,7 +334,10 @@ before this get no heartbeat until asked.
   - **Pause while you're away**, a switch on the bot's Routines tab
     (`bot."routineSpendGuard"`, on by default), turns the guard off for a
     bot that should run unattended; turning it off resumes what it had
-    paused, and a pause delivered after it was turned off does nothing.
+    paused, and a pause delivered after it was turned off stops nothing
+    more. A run the guard was already skipping as the switch flipped may
+    leave its own routine paused; the owner's next visit to the chat
+    resumes it.
 - A routine **runs as its owner** (note 16 §Q5), re-checked at dispatch,
   with the bot's permissions as they are at the run; a routine never
   widens them. A routine created **by the bot** goes through

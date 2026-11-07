@@ -27,13 +27,18 @@ export function useMarkSeen(botId: string): void {
   // another mount.
   useEffect(() => {
     let last = Date.now();
+    let trailing: number | undefined;
     const arrive = () => {
+      window.clearTimeout(trailing);
+      trailing = undefined;
       last = Date.now();
       mark();
     };
+    // Activity inside the minute is said at its end, so none of it goes unrecorded.
     const active = () => {
-      if (Date.now() - last < STILL_HERE_MS) return;
-      arrive();
+      const wait = STILL_HERE_MS - (Date.now() - last);
+      if (wait <= 0) return arrive();
+      trailing ??= window.setTimeout(arrive, wait);
     };
     const onVisibility = () => {
       if (document.visibilityState === 'visible') arrive();
@@ -42,6 +47,7 @@ export function useMarkSeen(botId: string): void {
     document.addEventListener('visibilitychange', onVisibility);
     for (const type of ACTIVITY) window.addEventListener(type, active, { passive: true });
     return () => {
+      window.clearTimeout(trailing);
       document.removeEventListener('visibilitychange', onVisibility);
       for (const type of ACTIVITY) window.removeEventListener(type, active);
     };
