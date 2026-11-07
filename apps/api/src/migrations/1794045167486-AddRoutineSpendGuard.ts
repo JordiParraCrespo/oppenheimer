@@ -22,10 +22,10 @@ import type { MigrationInterface, QueryRunner } from 'typeorm';
  * - `automation."pausedReason"` gains `unattended`, the guard's pause, which
  *   the owner's return lifts on its own.
  *
- * No new index: the guard reads a bot's routine turns since `ownerSeenAt`
- * through `IDX_bot_turn_bot` ("organizationId", "botId", "createdAt", "id")
- * and their messages through `IDX_bot_message_turn`; the routines to pause
- * or resume through `IDX_automation_bot`. A run's skip reason is a
+ * No new index: the guard reads what a bot's routines said since
+ * `ownerSeenAt` through `IDX_bot_message_bot` ("organizationId", "botId",
+ * "createdAt", "id") and each message's turn by primary key; the routines
+ * to pause or resume through `IDX_automation_bot`. A run's skip reason is a
  * `varchar(40)` with no list, so `unattended` needs no change there.
  */
 export class AddRoutineSpendGuard1794045167486 implements MigrationInterface {

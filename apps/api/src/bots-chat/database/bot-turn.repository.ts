@@ -372,18 +372,17 @@ export class BotTurnRepository
     botId: string,
     since: Date,
   ): Promise<number> {
-    // IDX_bot_turn_bot for the bot's turns since then, IDX_bot_message_turn for
-    // each one's text. A routine turn opens with its event line, so only an
-    // assistant message counts as something it said.
+    // By when it was said, not when its turn was queued: a turn queued before
+    // the owner's visit that reports after they left is unseen too.
+    // IDX_bot_message_bot for the bot's messages since then, the turn's
+    // primary key for its origin. A routine turn opens with its event line,
+    // so only an assistant message counts as something it said.
     const rows: { count: string }[] = await this.repository.manager.query(
-      `SELECT count(*) AS count FROM bot_turn turn
-        WHERE turn."organizationId" = $1 AND turn."botId" = $2
-          AND turn."createdAt" > $3 AND turn.origin = 'routine'
-          AND EXISTS (
-            SELECT 1 FROM bot_message message
-             WHERE message."organizationId" = turn."organizationId"
-               AND message."turnId" = turn.id AND message.role = 'assistant'
-          )`,
+      `SELECT count(DISTINCT message."turnId") AS count FROM bot_message message
+         JOIN bot_turn turn ON turn.id = message."turnId"
+        WHERE message."organizationId" = $1 AND message."botId" = $2
+          AND message."createdAt" > $3 AND message.role = 'assistant'
+          AND turn.origin = 'routine'`,
       [organizationId, botId, since],
     );
     return Number(rows[0]?.count ?? 0);

@@ -3,6 +3,7 @@ import { CommandBus } from '@nestjs/cqrs';
 import { OnEvent } from '@nestjs/event-emitter';
 import { I18nService } from '@oppenheimer/backend-i18n';
 import { PauseUnattendedRoutinesCommand } from '../../../automations/commands/pause-unattended-routines/pause-unattended-routines.command';
+import { ResumeUnattendedRoutinesCommand } from '../../../automations/commands/resume-unattended-routines/resume-unattended-routines.command';
 import { BotRoutineChangedDomainEvent } from '../../../automations/domain/events/bot-routine-changed.domain-event';
 import type { LocaleResolverPort } from '../../../profile/application/locale-resolver.port';
 import { LOCALE_RESOLVER } from '../../../profile/profile.di-tokens';
@@ -46,11 +47,20 @@ export class BotUnattendedRoutinesDomainEventHandler {
     if (event.activity !== 'paused' || event.pausedReason !== 'unattended') return;
     const { organizationId, botId } = event;
     const bot = await this.bots.findBot(organizationId, botId);
+    const pausedAt = new Date(event.metadata.timestamp);
     if (!bot?.routineSpendGuard) return;
-    if (ownerBackSince(bot.ownerSeenAt, new Date(event.metadata.timestamp))) return;
+    if (ownerBackSince(bot.ownerSeenAt, pausedAt)) return;
     const teller = await this.commands.execute<PauseUnattendedRoutinesCommand, string | null>(
       new PauseUnattendedRoutinesCommand({ organizationId, botId }),
     );
+    // The owner may have come back while the rest were pausing: their visit's
+    // resume ran before those pauses landed, so resume them here. A visit
+    // after this read resumes them itself, so the two always end resumed.
+    const now = await this.bots.findBot(organizationId, botId);
+    if (!now?.routineSpendGuard || ownerBackSince(now.ownerSeenAt, pausedAt)) {
+      await this.commands.execute(new ResumeUnattendedRoutinesCommand({ organizationId, botId }));
+      return;
+    }
     if (teller !== event.aggregateId || !bot.createdByUserId) return;
     const { locale, timeZone } = await this.locales.resolveForRecipient(bot.createdByUserId);
     const text = this.i18n.for(locale, timeZone).t('bots.routineGuard.notice');

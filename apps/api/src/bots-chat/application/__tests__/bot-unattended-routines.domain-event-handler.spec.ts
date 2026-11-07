@@ -8,6 +8,7 @@
 import type { CommandBus } from '@nestjs/cqrs';
 import type { I18nService } from '@oppenheimer/backend-i18n';
 import { PauseUnattendedRoutinesCommand } from '../../../automations/commands/pause-unattended-routines/pause-unattended-routines.command';
+import { ResumeUnattendedRoutinesCommand } from '../../../automations/commands/resume-unattended-routines/resume-unattended-routines.command';
 import type { BotEntity } from '../../../bots/domain/bot.entity';
 import type { LocaleResolverPort } from '../../../profile/application/locale-resolver.port';
 import type { BotNoticeRepositoryPort } from '../../database/bot-notice.repository.port';
@@ -46,7 +47,7 @@ function setup(
     locales as unknown as LocaleResolverPort,
     i18n as unknown as I18nService,
   );
-  return { commands, put, locales, i18n, handler };
+  return { commands, put, locales, i18n, handler, bots, bot };
 }
 
 const paused = (aggregateId: string, pausedReason: string | null = 'unattended') => ({
@@ -85,6 +86,23 @@ describe('BotUnattendedRoutinesDomainEventHandler', () => {
     const { commands, put, handler } = setup({ seenAt: new Date(pausedAt.getTime() + 1000) });
     await handler.handle(paused('routine-1'));
     expect(commands.execute).not.toHaveBeenCalled();
+    expect(put).not.toHaveBeenCalled();
+  });
+
+  // The regression: the owner's visit landed while the rest were pausing, its
+  // resume ran first, and the pauses left everything stopped while they read.
+  it('resumes them again when the owner came back while the rest were pausing', async () => {
+    const { commands, put, handler, bots, bot } = setup();
+    bots.findBot.mockResolvedValueOnce(bot).mockResolvedValueOnce({
+      ...bot,
+      ownerSeenAt: new Date(pausedAt.getTime() + 500),
+      routineSpendGuard: true,
+    } as BotEntity);
+    await handler.handle(paused('routine-1'));
+
+    const sent = commands.execute.mock.calls.map(([command]) => command as unknown);
+    expect(sent[0]).toBeInstanceOf(PauseUnattendedRoutinesCommand);
+    expect(sent[1]).toBeInstanceOf(ResumeUnattendedRoutinesCommand);
     expect(put).not.toHaveBeenCalled();
   });
 

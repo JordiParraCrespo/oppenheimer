@@ -449,7 +449,8 @@ describe('bots chat (integration)', () => {
 
   // The spend guard's count (`26-bot-routines.md` §6). What breaks this: a
   // quiet heartbeat counted as a report nobody read, a report from before the
-  // owner was last in the chat counted again, or another bot's counted.
+  // owner was last in the chat counted again, a report written after it from
+  // a turn queued before it missed, or another bot's counted.
   it('counts the routine turns that said something since a time, and nothing else', async () => {
     const bot = await create('Guarded Bot');
     const other = await create('Other Bot');
@@ -479,12 +480,19 @@ describe('bots chat (integration)', () => {
       return turn;
     };
     const since = new Date(Date.now() - 60_000);
-    const before = await queueRoutineTurn(bot.id, 1, true);
-    await dataSource.query(`UPDATE bot_turn SET "createdAt" = $2 WHERE id = $1`, [
-      before.id,
-      new Date(since.getTime() - 60_000),
+    const earlier = new Date(since.getTime() - 60_000);
+    // Said before the owner's visit: seen.
+    const said = await queueRoutineTurn(bot.id, 1, true);
+    await dataSource.query(`UPDATE bot_message SET "createdAt" = $2 WHERE "turnId" = $1`, [
+      said.id,
+      earlier,
     ]);
-    await queueRoutineTurn(bot.id, 2, true);
+    // Queued before the visit, said after it: unseen (the regression).
+    const late = await queueRoutineTurn(bot.id, 2, true);
+    await dataSource.query(`UPDATE bot_turn SET "createdAt" = $2 WHERE id = $1`, [
+      late.id,
+      earlier,
+    ]);
     await queueRoutineTurn(bot.id, 3, false);
     await queueRoutineTurn(bot.id, 4, true);
     await queueRoutineTurn(other.id, 5, true);
