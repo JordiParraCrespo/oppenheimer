@@ -186,7 +186,7 @@ export function routineFailureLineId(
 const ROUTINE_FAILURE_NAMESPACE = '6f1c2b8e-3d4a-4f5e-9a7b-1c2d3e4f5a6b';
 
 /** RFC 4122 §4.3 name-based UUID, version 5 (SHA-1): the same name, the same id. */
-function uuidV5(name: string, namespace: string): string {
+export function uuidV5(name: string, namespace: string): string {
   const bytes = createHash('sha1')
     .update(Buffer.from(namespace.replaceAll('-', ''), 'hex'))
     .update(name, 'utf8')

@@ -84,6 +84,7 @@ import {
   BOT_ATTACHMENT_REPOSITORY,
   BOT_CONVERSATION_REPOSITORY,
   BOT_CONVERSATION_SUMMARY_REPOSITORY,
+  BOT_MEMORY_DREAM_REPOSITORY,
   BOT_ENGINE,
   BOT_GOAL_REPOSITORY,
   BOT_LOOP_REPOSITORY,
@@ -206,6 +207,19 @@ import { ReadBotAttachmentQueryHandler } from './queries/read-bot-attachment/rea
 import { SearchBotConversationQueryHandler } from './queries/search-bot-conversation/search-bot-conversation.query-handler';
 import { StreamBotHttpController } from './queries/stream-bot/stream-bot.http.controller';
 import { StreamBotQueryHandler } from './queries/stream-bot/stream-bot.query-handler';
+import { BotDreamTriggerPolicy } from './application/bot-dream-trigger.policy';
+import { BotDreamResolver } from './application/bot-dream.resolver';
+import { BotMemoryDreamMapper } from './bot-memory-dream.mapper';
+import { DreamBotMemoryCommandHandler } from './commands/dream-bot-memory/dream-bot-memory.command-handler';
+import { RequestBotMemoryDreamCommandHandler } from './commands/request-bot-memory-dream/request-bot-memory-dream.command-handler';
+import { RequestBotMemoryDreamHttpController } from './commands/request-bot-memory-dream/request-bot-memory-dream.http.controller';
+import { UndoBotMemoryDreamCommandHandler } from './commands/undo-bot-memory-dream/undo-bot-memory-dream.command-handler';
+import { UndoBotMemoryDreamHttpController } from './commands/undo-bot-memory-dream/undo-bot-memory-dream.http.controller';
+import { BotMemoryDreamOrmEntity } from './database/bot-memory-dream.orm-entity';
+import { BotMemoryDreamRepository } from './database/bot-memory-dream.repository';
+import { BotDreamsProcessor } from './infrastructure/bot-dreams.processor';
+import { FindBotMemoryDreamHttpController } from './queries/find-bot-memory-dream/find-bot-memory-dream.http.controller';
+import { FindBotMemoryDreamQueryHandler } from './queries/find-bot-memory-dream/find-bot-memory-dream.query-handler';
 
 const httpControllers = [
   ExportBotConversationHttpController,
@@ -220,6 +234,9 @@ const httpControllers = [
   ClearBotLoopHttpController,
   FindBotLoopHttpController,
   FindBotUsageHttpController,
+  FindBotMemoryDreamHttpController,
+  RequestBotMemoryDreamHttpController,
+  UndoBotMemoryDreamHttpController,
   StreamBotHttpController,
   FindBotApprovalsHttpController,
   FindWorkspaceBotApprovalsHttpController,
@@ -248,6 +265,9 @@ const commandHandlers: Provider[] = [
   DismissBotQuestionCommandHandler,
   RunApprovedCallCommandHandler,
   SummarizeBotConversationCommandHandler,
+  DreamBotMemoryCommandHandler,
+  RequestBotMemoryDreamCommandHandler,
+  UndoBotMemoryDreamCommandHandler,
   WakeSubscribedBotCommandHandler,
   CheckStalledSessionCommandHandler,
   WakeOnAgentNoticeCommandHandler,
@@ -268,6 +288,7 @@ const commandHandlers: Provider[] = [
 ];
 
 const queryHandlers: Provider[] = [
+  FindBotMemoryDreamQueryHandler,
   FindBotTurnQueryHandler,
   SearchBotConversationQueryHandler,
   FindBotConversationQueryHandler,
@@ -307,6 +328,7 @@ const queryHandlers: Provider[] = [
       BotQuestionOrmEntity,
       BotNoticeOrmEntity,
       BotConversationSummaryOrmEntity,
+      BotMemoryDreamOrmEntity,
       BotAttachmentOrmEntity,
       BotSubscriptionOrmEntity,
       BotGoalOrmEntity,
@@ -336,6 +358,7 @@ const queryHandlers: Provider[] = [
     BotToolPermissionMapper,
     BotPermissionRuleMapper,
     BotConversationSummaryMapper,
+    BotMemoryDreamMapper,
     BotAttachmentMapper,
     BotSubscriptionMapper,
     BotGoalMapper,
@@ -348,6 +371,8 @@ const queryHandlers: Provider[] = [
     BotSteeringFactory,
     TurnWriteFactory,
     BotSummaryTriggerPolicy,
+    BotDreamTriggerPolicy,
+    BotDreamResolver,
     BotModelAccessResolver,
     BotApprovalRequestFactory,
     BotQuestionDecisionResolver,
@@ -405,6 +430,7 @@ const queryHandlers: Provider[] = [
     BotTurnsProcessor,
     BotApprovalsProcessor,
     BotSummariesProcessor,
+    BotDreamsProcessor,
     BotStallChecksProcessor,
     BotAttachmentRetentionProcessor,
     { provide: BOT_TURN_REPOSITORY, useClass: BotTurnRepository },
@@ -414,6 +440,7 @@ const queryHandlers: Provider[] = [
     { provide: BOT_NOTICE_REPOSITORY, useClass: BotNoticeRepository },
     { provide: BOT_CONVERSATION_REPOSITORY, useClass: BotConversationRepository },
     { provide: BOT_CONVERSATION_SUMMARY_REPOSITORY, useClass: BotConversationSummaryRepository },
+    { provide: BOT_MEMORY_DREAM_REPOSITORY, useClass: BotMemoryDreamRepository },
     { provide: BOT_STREAM, useClass: RedisBotStreamAdapter },
     { provide: BOT_ATTACHMENT_REPOSITORY, useClass: BotAttachmentRepository },
     { provide: BOT_SUBSCRIPTION_REPOSITORY, useClass: BotSubscriptionRepository },

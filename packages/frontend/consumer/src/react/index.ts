@@ -119,6 +119,11 @@ export {
   useUpdateBotOptimistically,
 } from './bots.queries';
 export {
+  useBotMemoryDream,
+  useRequestBotMemoryDream,
+  useUndoBotMemoryDream,
+} from './bot-dream.queries';
+export {
   type UpdateCalendarEventVariables,
   useCalendarEvents,
   useConnectGoogleCalendar,

@@ -78,6 +78,8 @@ export const QUEUE_NAMES = {
   BOT_APPROVALS: 'bot-approvals',
   /** Fold a bot's oldest messages into its conversation summary, once they pass the history budget. */
   BOT_SUMMARIES: 'bot-summaries',
+  /** Rewrite a bot's own memory with its model: merged, deduplicated, checked against the chat. */
+  BOT_DREAMS: 'bot-dreams',
   /** The silent check, a few minutes after a bot hands a session a task, that the task got going. */
   BOT_STALL_CHECKS: 'bot-stall-checks',
   /**
