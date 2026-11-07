@@ -548,6 +548,16 @@ export class BotsRepository {
     });
   }
 
+  /**
+   * The owner is in the bot's chat: what its routines' spend guard counts
+   * from, and what resumes the routines it paused while they were away.
+   */
+  markSeen(id: string): Promise<void> {
+    return callApi(BotsErrors.MARK_SEEN_FAILED, async (api) => {
+      await api.body(heyApiSdk.markBotSeen({ path: { id } }));
+    });
+  }
+
   /** Stop: a queued turn ends now, a running one at its next step. */
   cancelTurn(id: string, turnId: string): Promise<BotTurnEntity> {
     return callApi(BotsErrors.STOP_FAILED, async (api) => {

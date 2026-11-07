@@ -1222,3 +1222,12 @@ earlier note:
   A beat with nothing to say calls `nothing_to_report`, offered only on
   turns nobody is waiting on. Bots that had a job before get none until
   asked (26 §6, "Decided").
+- `versions/mvp/26-bot-routines.md` §6 (2026-10-18) designed the routines'
+  spend guard as a nudge card, then a pause with a card to resume, and a
+  per-bot "don't ask again". On 2026-11-07 the owner asked for it to work
+  like an agent that stops watching a pull request: it stops on its own and
+  comes back when the person does. Built that way: after 3 routine reports
+  the owner has not seen, or 72 h away from the bot's chat, every routine
+  of the bot pauses as `unattended` with one Inbox line, and the owner's
+  next visit to the chat (or message, or decided card) resumes them. No
+  cards, and no switch yet (26 §6, "Changed 2026-11-07").

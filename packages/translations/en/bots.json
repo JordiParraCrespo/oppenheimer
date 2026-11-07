@@ -288,6 +288,7 @@
       "agent_unavailable": "the agent could not start",
       "bot_provider_missing": "the bot’s model provider has no key or sign-in",
       "owner_lost_access": "its owner can no longer run it",
+      "unattended": "you were away; it starts again now that you are back",
       "unknown": "something went wrong"
     },
     "openSession": "Open session",

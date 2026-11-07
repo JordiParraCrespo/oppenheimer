@@ -55,6 +55,7 @@ export class BotMapper implements Mapper<BotEntity, BotOrmEntity, BotResponseDto
         sections: (record.sections ?? []) as BotSection[],
         lastMessageAt: record.lastMessageAt ?? null,
         lastMessagePreview: record.lastMessagePreview ?? null,
+        ownerSeenAt: record.ownerSeenAt ?? null,
       },
     });
   }

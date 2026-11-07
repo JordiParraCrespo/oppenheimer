@@ -84,6 +84,26 @@ export class BotRepository extends ScopedRepositoryBase<BotOrmEntity> implements
     return rows.map((row) => row.name);
   }
 
+  async markSeen(scope: AccessScope, botId: string, now: Date): Promise<boolean> {
+    const found = await this.scopedQuery(scope)
+      .andWhere('bot.id = :botId', { botId })
+      .select('bot.id', 'id')
+      .getRawOne<{ id: string }>();
+    if (!found) return false;
+    // At most once a minute: a chat opened and written to in a burst is one write.
+    await this.repository
+      .createQueryBuilder()
+      .update(BotOrmEntity)
+      .set({ ownerSeenAt: now })
+      .where('id = :botId AND "organizationId" = :organizationId AND "ownerSeenAt" < :fresh', {
+        botId,
+        organizationId: scope.organizationId,
+        fresh: new Date(now.getTime() - 60_000),
+      })
+      .execute();
+    return true;
+  }
+
   async insert(
     bot: BotEntity,
     documents: readonly BotDocumentEntity[],

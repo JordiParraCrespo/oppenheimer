@@ -1699,6 +1699,7 @@
         "agent_unavailable": "el agente no pudo arrancar",
         "bot_provider_missing": "el proveedor de modelos del bot no tiene clave ni sesión",
         "owner_lost_access": "su propietario ya no puede ejecutarla",
+        "unattended": "no estabas; vuelve a funcionar ahora que has vuelto",
         "unknown": "algo salió mal"
       },
       "openSession": "Abrir sesión",
@@ -2098,7 +2099,8 @@
       "overlapping": "Omitida: otra ejecución seguía en curso",
       "missed": "Omitida: se perdió el turno",
       "not_launchable": "Omitida: la sesión no pudo iniciarse",
-      "agent_unavailable": "Omitida: el agente no está en el host"
+      "agent_unavailable": "Omitida: el agente no está en el host",
+      "unattended": "Omitida: el propietario de su bot no está"
     },
     "pausedReason": {
       "user": "En pausa. Los disparadores se ignoran hasta que la reanudes; Ejecutar ahora sigue funcionando.",
@@ -2106,7 +2108,8 @@
       "host_unpaired": "En pausa porque se quitó su host. Elige otro host en Editar para reanudarla.",
       "owner_lost_access": "En pausa porque su propietario ya no puede ejecutarla.",
       "bot_provider_missing": "En pausa porque el proveedor de modelos de su bot no tiene clave ni sesión. Añade una y reanúdala.",
-      "cloud_key_missing": "En pausa porque su propietario no tiene clave para su proveedor en la nube, o el proveedor la rechazó. Conéctalo en Ajustes → Agentes en la nube y reanúdala."
+      "cloud_key_missing": "En pausa porque su propietario no tiene clave para su proveedor en la nube, o el proveedor la rechazó. Conéctalo en Ajustes → Agentes en la nube y reanúdala.",
+      "unattended": "En pausa mientras no estabas en el chat de su bot. Vuelve a funcionar cuando abras el chat."
     },
     "frequency": {
       "once": {

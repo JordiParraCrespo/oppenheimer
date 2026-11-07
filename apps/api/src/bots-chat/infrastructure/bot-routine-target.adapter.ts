@@ -9,12 +9,14 @@ import type {
 import type { RunDispatchRef } from '../../automations/domain/automation.types';
 import { composeRunPrompt } from '../../automations/domain/run-launch.policy';
 import type { RunRefusal } from '../../automations/domain/run-refusal.policy';
+import type { BotEntity } from '../../bots/domain/bot.entity';
 import { BotErrors } from '../../bots/domain/bots.errors';
 import { BotModelAccessResolver } from '../application/bot-model-access.resolver';
 import { BOT_STREAM, BOT_TURN_REPOSITORY } from '../bots-chat.di-tokens';
 import type { BotTurnRepositoryPort } from '../database/bot-turn.repository.port';
 import type { BotMessageEntity } from '../domain/bot-message.entity';
 import { routinePrefix, routineTurn } from '../domain/bot-routine.policy';
+import { routineSpendGuard } from '../domain/bot-spend-guard.policy';
 import type { BotTurnEntity } from '../domain/bot-turn.entity';
 import type { BotStreamPort } from './bot-stream.port';
 
@@ -46,8 +48,9 @@ class RoutineBusyError extends Error {
 /**
  * A bot routine's run (`26-bot-routines.md` §4): one more queued turn of the
  * bot, on its provider, model and effort as they are now, as the routine's
- * owner and within the scopes of the credential that saved it. The turn
- * queue is what holds a busy bot and survives a restart, and the turn's
+ * owner and within the scopes of the credential that saved it, unless its
+ * owner is away (the spend guard), which pauses it until they are back. The
+ * turn queue is what holds a busy bot and survives a restart, and the turn's
  * source key makes a run dispatched twice queue it once.
  */
 @Injectable()
@@ -77,6 +80,11 @@ export class BotRoutineTarget implements AutomationRunTargetPort<RoutineLaunch> 
     if (instructions === null) return { kind: 'skip', reason: 'not_launchable', pause: null };
 
     const bot = await this.access.bot(automation.organizationId, botId);
+    // The spend guard: while the owner is away, the bot's routines stop. Run
+    // now is the owner (or the bot in a turn they started), so it passes.
+    if (run.cause !== 'manual' && (await this.unattended(automation.organizationId, bot, now))) {
+      return { kind: 'skip', reason: 'unattended', pause: 'unattended' };
+    }
     const trigger = automation.triggers.find((candidate) => candidate.id === run.triggerId);
     return {
       kind: 'launch',
@@ -95,6 +103,17 @@ export class BotRoutineTarget implements AutomationRunTargetPort<RoutineLaunch> 
         { automationId: automation.id, runId: run.id, name: automation.name, instructions },
       ),
     };
+  }
+
+  /** Whether the bot's owner is away, as the spend guard reads it. */
+  private async unattended(organizationId: string, bot: BotEntity, now: Date): Promise<boolean> {
+    const ownerSeenAt = bot.ownerSeenAt;
+    const unreadReports = await this.turns.countRoutineReportsSince(
+      organizationId,
+      bot.id,
+      ownerSeenAt ?? bot.createdAt,
+    );
+    return routineSpendGuard({ unreadReports, ownerSeenAt, now }) === 'pause';
   }
 
   async launch(context: RunTargetContext, input: RoutineLaunch): Promise<RunDispatchRef> {

@@ -386,6 +386,28 @@ describe('bots (integration)', () => {
     expect((await documents.findRevision(scope(), bot.id, 'soul', 2 ** 40)).isNone()).toBe(true);
   });
 
+  // `26-bot-routines.md` §6. What breaks this: a chat opened in a burst writing
+  // the bot row each time, the owner's visit not recorded, or another
+  // workspace's bot marked through a guessed id.
+  it('records the owner in the chat at most once a minute, and only for its own bot', async () => {
+    const bot = await create('Seen Bot');
+    const seenAt = async () =>
+      ((await bots.findOneById(scope(), bot.id)).unwrap().ownerSeenAt as Date).getTime();
+    const born = await seenAt();
+
+    expect(await bots.markSeen(scope(), bot.id, new Date(born + 30_000))).toBe(true);
+    expect(await seenAt()).toBe(born);
+
+    const later = new Date(born + 5 * 60_000);
+    expect(await bots.markSeen(scope(), bot.id, later)).toBe(true);
+    expect(await seenAt()).toBe(later.getTime());
+
+    expect(await bots.markSeen(scopeOf(randomUUID()), bot.id, new Date(born + 10 * 60_000))).toBe(
+      false,
+    );
+    expect(await seenAt()).toBe(later.getTime());
+  });
+
   it('lets only one of two adders take the last memory place', async () => {
     const bot = await create('Ana');
     const fact = (content: string) =>

@@ -19636,6 +19636,66 @@
         ]
       }
     },
+    "/api/v1/bots/{id}/seen": {
+      "post": {
+        "description": "The console sends it when the chat opens. It resumes the routines the spend guard paused while the owner was away, and is written at most once a minute.",
+        "operationId": "markBotSeen",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "BOTS_001 — Bot not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Say the owner is in a bot’s chat",
+        "tags": [
+          "Bots"
+        ]
+      }
+    },
     "/api/v1/bots/{id}/memory/{factId}": {
       "patch": {
         "operationId": "updateBotMemoryFact",
@@ -30278,6 +30338,7 @@
               "owner_lost_access",
               "bot_provider_missing",
               "cloud_key_missing",
+              "unattended",
               null
             ],
             "nullable": true
@@ -30389,6 +30450,7 @@
               "owner_lost_access",
               "bot_provider_missing",
               "cloud_key_missing",
+              "unattended",
               null
             ],
             "nullable": true
@@ -31385,6 +31447,7 @@
               "missed",
               "not_launchable",
               "agent_unavailable",
+              "unattended",
               null
             ],
             "nullable": true

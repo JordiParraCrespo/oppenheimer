@@ -102,6 +102,14 @@ export class BotOrmEntity {
   @Column({ type: 'varchar', length: 200, nullable: true })
   lastMessagePreview!: string | null;
 
+  /**
+   * When its owner was last in its chat: opened it, wrote to it or decided a
+   * card (`1794045167486-AddRoutineSpendGuard`). Its routines' spend guard
+   * counts from here.
+   */
+  @Column({ type: TIMESTAMP_COLUMN_TYPE, default: () => 'now()' })
+  ownerSeenAt!: Date;
+
   @CreateDateColumn({ type: TIMESTAMP_COLUMN_TYPE })
   createdAt!: Date;
 

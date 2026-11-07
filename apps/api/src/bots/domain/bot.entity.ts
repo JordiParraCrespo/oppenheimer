@@ -53,6 +53,8 @@ export interface BotProps {
   /** When its chat last had a message, and the start of it; written by the chat, never an edit. */
   lastMessageAt?: Date | null;
   lastMessagePreview?: string | null;
+  /** When its owner was last in its chat; written by the chat, never an edit. Null before it is stored. */
+  ownerSeenAt?: Date | null;
 }
 
 export interface CreateBotProps {
@@ -214,6 +216,9 @@ export class BotEntity extends AggregateRoot<BotProps> {
 
   get lastMessagePreview(): string | null {
     return this.props.lastMessagePreview ?? null;
+  }
+  get ownerSeenAt(): Date | null {
+    return this.props.ownerSeenAt ?? null;
   }
 
   /** Where the next write puts it among its group's bots, when it moved; null when it did not. */
