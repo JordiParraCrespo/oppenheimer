@@ -130,7 +130,10 @@ worker runs it and streams what happens back to the chat.
     only what a tool confirmed; a reply commits to something (what it took
     on, where it stands, when the person hears next), and asking again for
     work under way is the same errand, reported rather than started again
-    (2026-10-29);
+    (2026-10-29); every action that changes something is checked before it
+    is reported, from what the tool returned and then, where a tool can
+    read it back, from that read, and a failure is said first and
+    unprompted (2026-11-07);
   - **a closed list of what it can do**: its tools, and that it has no
     shell, no files and no access to the machine it runs on, so a missing
     tool is a plain "I can't" and never a search of the server;
@@ -145,8 +148,10 @@ worker runs it and streams what happens back to the chat.
     project's default, then its home host, and checks it is online; it
     works only in a known project's repository or a folder it was given;
     it follows a session already on the task rather than starting a
-    second; it says "started", not "done", and reports what `get_session`
-    shows. Approvals and permissions do not change. Without
+    second; it says "started", not "done", checks in the same turn that the
+    session did start, and reports what `get_session` shows, reading the
+    agent's own report as a claim to check against its evidence (the
+    checks it ran, the pull request) before calling the work done. Approvals and permissions do not change. Without
     `start_session` the section is left out and the closed list keeps its
     plain refusal (2026-10-21);
   - the rules no instruction overrides: never ask for a secret, never
@@ -1494,3 +1499,13 @@ The decisions it produced:
   whose history only grows until a summary, and Codex, which sends its
   conversation's id as `prompt_cache_key`. It refines 2026-10-15's history
   budget, which kept the newest messages that fit.
+- 2026-11-07: **a bot checks that what it did worked.** The owner saw a bot
+  start a cloud session that could not start (its host's Claude Code was not
+  signed in to claude.ai) and say so only once asked whether it had failed.
+  "How a turn goes" now asks every action that changes something to be
+  checked before it is reported: the tool's own answer first ("could not
+  start", "failed", "queued" are not success), then one read back where a
+  tool can do it, or "unchecked" and how to check where none can. A failure
+  is said first, without retrying blindly or working around it. Starting a
+  session is checked in the same turn, and a finished session's report is
+  the agent's claim until its transcript shows the evidence.
