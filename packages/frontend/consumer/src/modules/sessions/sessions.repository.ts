@@ -16,6 +16,7 @@ import type {
 import type { PutSessionShareDto } from '@oppenheimer/shared/schemas/session-share';
 import { injectable } from 'inversify';
 import { CONSUMER_CONFIG } from '../../config';
+import type { CloudChatPage } from './chat/cloud-chat-feed';
 import {
   type AttachTicket,
   type CreateSessionInput,
@@ -406,6 +407,30 @@ export class SessionsRepository {
         }),
       );
       return toTicket(data);
+    });
+  }
+
+  /** A Claude Code cloud session's chat: transcript lines from `after` on, and its replies. */
+  findCloudChat(id: string, after: number): Promise<CloudChatPage> {
+    return callApi(SessionsErrors.CLOUD_CHAT_FAILED, async (api) => {
+      const data = await api.body(heyApiSdk.findCloudChat({ path: { id }, query: { after } }));
+      return {
+        lines: data.lines,
+        next: data.next,
+        replies: data.replies.map((reply) => ({
+          id: reply.id,
+          text: reply.text,
+          createdAt: new Date(reply.createdAt),
+          collectedAt: reply.collectedAt ? new Date(reply.collectedAt) : null,
+        })),
+      };
+    });
+  }
+
+  /** A reply for a cloud session's agent, collected by its Stop hook when its turn ends. */
+  sendCloudReply(id: string, text: string): Promise<void> {
+    return callApi(SessionsErrors.CLOUD_REPLY_FAILED, async (api) => {
+      await api.body(heyApiSdk.sendCloudReply({ path: { id }, body: { text } }));
     });
   }
 

@@ -84,12 +84,45 @@ function collect(s) {
   return reply;
 }
 
+/** A transcript line as the page reads it; one that is not JSON goes as it is. */
+function parseLine(raw) {
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return { type: 'unparsed', raw };
+  }
+}
+
+/** The Stop hook: the oldest queued reply, waiting up to `waitSeconds` for one. */
+function takeReply(s, waitSeconds, req, res) {
+  const now = collect(s);
+  if (now) return send(res, 200, { text: now.text });
+  const wait = Math.min(waitSeconds, 120) * 1000;
+  if (wait <= 0) return send(res, 200, { text: null });
+  const done = () => {
+    clearTimeout(timer);
+    s.wakers.delete(wake);
+  };
+  const wake = () => {
+    const reply = collect(s);
+    if (!reply) return;
+    done();
+    send(res, 200, { text: reply.text });
+  };
+  const timer = setTimeout(() => {
+    done();
+    send(res, 200, { text: null });
+  }, wait);
+  s.wakers.add(wake);
+  req.on('close', done);
+}
+
 function authorized(req, url) {
   const header = req.headers.authorization ?? '';
   return header === `Bearer ${values.key}` || url.searchParams.get('key') === values.key;
 }
 
-const ROUTE = /^\/api\/sessions\/([\w-]{1,80})\/(transcript|events|replies|replies\/next)$/;
+const ROUTE = /^\/api\/sessions\/([\w-]{1,80})\/(events|replies)$/;
 
 const server = createServer(async (req, res) => {
   const url = new URL(req.url ?? '/', 'http://localhost');
@@ -112,23 +145,40 @@ const server = createServer(async (req, res) => {
     );
   }
 
+  // The two routes the hooks call, as the real API names them: the session
+  // is in the body, as Claude Code hands it over.
+  if (url.pathname === '/api/v1/sessions/cloud-transcript' && req.method === 'POST') {
+    const body = await readJson(req).catch(() => ({}));
+    if (typeof body.cloudSessionId !== 'string' || !Array.isArray(body.lines)) {
+      return send(res, 400, { error: 'cloudSessionId and lines required' });
+    }
+    const s = session(sessionIdOf(body.cloudSessionId));
+    const from = Number(body.from) || 0;
+    let accepted = 0;
+    body.lines.forEach((raw, index) => {
+      // Numbered by the hook, so a batch sent again stores nothing twice.
+      if (from + index < s.lines.length) return;
+      const line = parseLine(raw);
+      s.lines.push(line);
+      emit(s, { kind: 'line', line });
+      accepted++;
+    });
+    return send(res, 200, { accepted });
+  }
+  if (url.pathname === '/api/v1/sessions/cloud-replies/take' && req.method === 'POST') {
+    const body = await readJson(req).catch(() => ({}));
+    if (typeof body.cloudSessionId !== 'string') {
+      return send(res, 400, { error: 'cloudSessionId required' });
+    }
+    return takeReply(session(sessionIdOf(body.cloudSessionId)), Number(body.wait) || 0, req, res);
+  }
+
   const match = url.pathname.match(ROUTE);
   if (!match) return send(res, 404, { error: 'not found' });
   const [, rawId, route] = match;
   const s = session(sessionIdOf(rawId));
 
   try {
-    // The streamer in the session: a batch of transcript lines, in order.
-    if (route === 'transcript' && req.method === 'POST') {
-      const body = await readJson(req);
-      const lines = Array.isArray(body.lines) ? body.lines : [];
-      for (const line of lines) {
-        s.lines.push(line);
-        emit(s, { kind: 'line', line });
-      }
-      return send(res, 200, { accepted: lines.length, total: s.lines.length });
-    }
-
     // The chat page: the conversation so far, replies where they were sent,
     // then every new line and every reply's change as it happens.
     if (route === 'events' && req.method === 'GET') {
@@ -169,30 +219,6 @@ const server = createServer(async (req, res) => {
       return send(res, 202, { id: reply.id });
     }
 
-    // The Stop hook: the oldest queued reply, waiting up to `wait` seconds.
-    if (route === 'replies/next' && req.method === 'GET') {
-      const now = collect(s);
-      if (now) return send(res, 200, { text: now.text });
-      const wait = Math.min(Number(url.searchParams.get('wait') ?? 0), 600) * 1000;
-      if (wait <= 0) return res.writeHead(204).end();
-      const done = () => {
-        clearTimeout(timer);
-        s.wakers.delete(wake);
-      };
-      const wake = () => {
-        const reply = collect(s);
-        if (!reply) return;
-        done();
-        send(res, 200, { text: reply.text });
-      };
-      const timer = setTimeout(() => {
-        done();
-        res.writeHead(204).end();
-      }, wait);
-      s.wakers.add(wake);
-      req.on('close', done);
-      return;
-    }
   } catch (error) {
     return send(res, 400, { error: String(error.message ?? error) });
   }

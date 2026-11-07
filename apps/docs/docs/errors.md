@@ -581,6 +581,8 @@ are never reissued.
 | `SESSIONS_049` <a id="sessions_049" /> | That transcript cursor is not valid | 400 |
 | `SESSIONS_050` <a id="sessions_050" /> | Only the person who launched a cloud session can send it a follow-up | 403 |
 | `SESSIONS_051` <a id="sessions_051" /> | The cloud session’s vendor did not confirm the follow-up | 502 |
+| `SESSIONS_052` <a id="sessions_052" /> | No cloud session of this workspace has that id | 404 |
+| `SESSIONS_053` <a id="sessions_053" /> | This session has no cloud chat | 409 |
 
 `SESSIONS_001` is also returned for a session that exists in another workspace: the
 scoped read cannot see it, and distinguishing the two would confirm the id.

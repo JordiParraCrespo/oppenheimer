@@ -460,6 +460,8 @@
       "SESSIONS_049": "That transcript cursor isn’t valid. Read from the latest turns and continue from the cursor that page gives.",
       "SESSIONS_050": "Only the person who launched this cloud session can send it a follow-up, since it runs on their key.",
       "SESSIONS_051": "The cloud agent’s vendor didn’t confirm the follow-up, so it may be running there. Check the session at its vendor before sending it again.",
+      "SESSIONS_052": "No cloud session in this workspace has that id. Only sessions started from the console send their chat here.",
+      "SESSIONS_053": "This session’s chat isn’t shown here.",
       "VOICE_002": "Nothing was recorded. Try dictating again.",
       "VOICE_003": "That recording is too long. Keep dictations under two minutes.",
       "VOICE_004": "That recording couldn’t be read. Try dictating again.",
@@ -1392,6 +1394,12 @@
         "open": "Open in ChatGPT",
         "teleport": "To bring its changes into a terminal, run this in a checkout of the repository:"
       }
+    },
+    "cloudChat": {
+      "title": "Live from Claude Code cloud",
+      "waiting_one": "Your reply is waiting for the agent to finish its turn.",
+      "waiting_other": "{{count}} replies are waiting for the agent to finish its turn.",
+      "replyFailed": "The reply didn’t reach the session. Try again."
     }
   },
   "bots": {

@@ -283,6 +283,7 @@ export {
   useUploadSessionAttachment,
 } from './sessions.queries';
 export {
+  useCloudChatFeed,
   useSessionDeviceStream,
   useSessionStream,
   useSharedSessionStream,

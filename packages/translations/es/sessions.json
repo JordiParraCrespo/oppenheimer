@@ -723,5 +723,11 @@
       "open": "Abrir en ChatGPT",
       "teleport": "Para traer sus cambios a una terminal, ejecuta esto en una copia del repositorio:"
     }
+  },
+  "cloudChat": {
+    "title": "En directo desde la nube de Claude Code",
+    "waiting_one": "Tu respuesta espera a que el agente termine su turno.",
+    "waiting_other": "{{count}} respuestas esperan a que el agente termine su turno.",
+    "replyFailed": "La respuesta no llegó a la sesión. Vuelve a intentarlo."
   }
 }

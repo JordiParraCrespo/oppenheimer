@@ -2053,6 +2053,68 @@ export type ReportCloudStatusResponse = {
     matched: number;
 };
 
+export type AppendCloudTranscriptRequest = {
+    cloudSessionId: string;
+    from: number;
+    lines: Array<string>;
+};
+
+export type AppendedCloudTranscriptResponseDto = {
+    /**
+     * How many of the lines were new; a resent line is not.
+     */
+    accepted: number;
+};
+
+export type TakeCloudReplyRequest = {
+    cloudSessionId: string;
+    wait?: number;
+};
+
+export type CollectedCloudReplyResponseDto = {
+    /**
+     * The reply for the agent; null when none came within the wait.
+     */
+    text?: string | null;
+};
+
+export type SendCloudReplyRequest = {
+    text: string;
+};
+
+export type SentCloudReplyResponseDto = {
+    /**
+     * The reply, as the chat lists it.
+     */
+    id: string;
+};
+
+export type CloudChatReplyResponseDto = {
+    id: string;
+    text: string;
+    authorId?: string | null;
+    createdAt: string;
+    /**
+     * When the session’s Stop hook took it to the agent; null while it waits.
+     */
+    collectedAt?: string | null;
+};
+
+export type CloudChatResponseDto = {
+    /**
+     * Transcript lines from `after` on, each as Claude Code wrote it (JSON text): the same lines a runner sends for a host session’s chat.
+     */
+    lines: Array<string>;
+    /**
+     * The number to ask from next.
+     */
+    next: number;
+    /**
+     * The replies typed here, oldest first.
+     */
+    replies: Array<CloudChatReplyResponseDto>;
+};
+
 export type PrepareSessionRequest = {
     hostId: string;
     checkouts: Array<{
@@ -10356,6 +10418,165 @@ export type RecordCloudStatusResponses = {
 };
 
 export type RecordCloudStatusResponse = RecordCloudStatusResponses[keyof RecordCloudStatusResponses];
+
+export type AppendCloudTranscriptData = {
+    body: AppendCloudTranscriptRequest;
+    path?: never;
+    query?: never;
+    url: '/api/v1/sessions/cloud-transcript';
+};
+
+export type AppendCloudTranscriptErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * SESSIONS_052 — No cloud session of this workspace has that id
+     */
+    404: ProblemDetailsDto;
+    /**
+     * RATE_001 — Rate limit reached
+     */
+    429: ProblemDetailsDto;
+};
+
+export type AppendCloudTranscriptError = AppendCloudTranscriptErrors[keyof AppendCloudTranscriptErrors];
+
+export type AppendCloudTranscriptResponses = {
+    200: AppendedCloudTranscriptResponseDto;
+};
+
+export type AppendCloudTranscriptResponse = AppendCloudTranscriptResponses[keyof AppendCloudTranscriptResponses];
+
+export type CollectCloudReplyData = {
+    body: TakeCloudReplyRequest;
+    path?: never;
+    query?: never;
+    url: '/api/v1/sessions/cloud-replies/take';
+};
+
+export type CollectCloudReplyErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * SESSIONS_052 — No cloud session of this workspace has that id
+     */
+    404: ProblemDetailsDto;
+    /**
+     * RATE_001 — Rate limit reached
+     */
+    429: ProblemDetailsDto;
+};
+
+export type CollectCloudReplyError = CollectCloudReplyErrors[keyof CollectCloudReplyErrors];
+
+export type CollectCloudReplyResponses = {
+    200: CollectedCloudReplyResponseDto;
+};
+
+export type CollectCloudReplyResponse = CollectCloudReplyResponses[keyof CollectCloudReplyResponses];
+
+export type SendCloudReplyData = {
+    body: SendCloudReplyRequest;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/sessions/{id}/cloud-replies';
+};
+
+export type SendCloudReplyErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * SESSIONS_001 — Session not found
+     */
+    404: ProblemDetailsDto;
+    /**
+     * SESSIONS_053 — This session has no cloud chat
+     *
+     * SESSIONS_005 — That session is closed
+     */
+    409: ProblemDetailsDto;
+    /**
+     * RATE_001 — Rate limit reached
+     */
+    429: ProblemDetailsDto;
+};
+
+export type SendCloudReplyError = SendCloudReplyErrors[keyof SendCloudReplyErrors];
+
+export type SendCloudReplyResponses = {
+    201: SentCloudReplyResponseDto;
+};
+
+export type SendCloudReplyResponse = SendCloudReplyResponses[keyof SendCloudReplyResponses];
+
+export type FindCloudChatData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: {
+        /**
+         * Lines at most
+         */
+        limit?: number;
+        /**
+         * The first line to read
+         */
+        after?: number;
+    };
+    url: '/api/v1/sessions/{id}/cloud-chat';
+};
+
+export type FindCloudChatErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * SESSIONS_001 — Session not found
+     */
+    404: ProblemDetailsDto;
+    /**
+     * SESSIONS_053 — This session has no cloud chat
+     */
+    409: ProblemDetailsDto;
+    /**
+     * RATE_001 — Rate limit reached
+     */
+    429: ProblemDetailsDto;
+};
+
+export type FindCloudChatError = FindCloudChatErrors[keyof FindCloudChatErrors];
+
+export type FindCloudChatResponses = {
+    200: CloudChatResponseDto;
+};
+
+export type FindCloudChatResponse = FindCloudChatResponses[keyof FindCloudChatResponses];
 
 export type PrepareSessionData = {
     body: PrepareSessionRequest;

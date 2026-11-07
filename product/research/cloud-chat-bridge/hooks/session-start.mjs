@@ -42,15 +42,6 @@ export function takeCompleteLines(buffer) {
   return { lines: buffer.slice(0, cut).split('\n'), rest: buffer.slice(cut + 1) };
 }
 
-/** A transcript line as the server takes it; a line that is not JSON goes as it is. */
-function parseLine(raw) {
-  try {
-    return JSON.parse(raw);
-  } catch {
-    return { type: 'unparsed', raw };
-  }
-}
-
 async function start() {
   const { OPPENHEIMER_URL: url, OPPENHEIMER_CLOUD_KEY: key } = process.env;
   if (!url || !key) return;
@@ -105,14 +96,18 @@ function readFrom(path, offset) {
 
 /**
  * Read what was added, post the complete lines, remember how far the server
- * has them. `unsent` holds raw lines the server has not taken yet, so a
- * refusal keeps them as they were read and nothing is ever dropped.
+ * has them: the bytes of the file it holds, and how many lines that is, which
+ * numbers the next batch. `unsent` holds raw lines the server has not taken
+ * yet, so a refusal keeps them as they were read and nothing is ever dropped.
  */
 async function followTranscript(job) {
-  const offsetFile = join(STATE_DIR, `${job.session}.offset`);
-  // Where the server's copy ends: every byte before it has been accepted.
-  let sentTo = existsSync(offsetFile) ? Number(readFileSync(offsetFile, 'utf8')) || 0 : 0;
-  let readTo = sentTo;
+  const stateFile = join(STATE_DIR, `${job.session}.sent.json`);
+  // Where the server's copy ends: every byte and line before it was accepted.
+  let sent = { bytes: 0, lines: 0 };
+  try {
+    sent = JSON.parse(readFileSync(stateFile, 'utf8'));
+  } catch {}
+  let readTo = sent.bytes;
   let partial = '';
   let unsent = [];
   let lastGrowth = Date.now();
@@ -130,10 +125,17 @@ async function followTranscript(job) {
 
     while (unsent.length > 0) {
       const batch = unsent.slice(0, BATCH_LINES);
-      if (!(await post(job, batch.filter(Boolean).map(parseLine)))) break;
+      const lines = batch.filter(Boolean);
+      const outcome = lines.length === 0 ? 'stored' : await post(job, sent.lines, lines);
+      if (outcome === 'retry') break;
       unsent = unsent.slice(batch.length);
-      sentTo += batch.reduce((bytes, line) => bytes + Buffer.byteLength(line) + 1, 0);
-      writeFileSync(offsetFile, String(sentTo));
+      sent = {
+        bytes: sent.bytes + batch.reduce((bytes, line) => bytes + Buffer.byteLength(line) + 1, 0),
+        // A batch refused for good is skipped, and its numbers with it, so
+        // the lines after it keep the numbers they have in the file.
+        lines: sent.lines + lines.length,
+      };
+      writeFileSync(stateFile, JSON.stringify(sent));
     }
     backoff = unsent.length > 0 ? Math.min(backoff * 2, MAX_BACKOFF_MS) : POLL_MS;
 
@@ -143,17 +145,24 @@ async function followTranscript(job) {
   }
 }
 
-async function post(job, lines) {
+/**
+ * Sends lines numbered `from` on. `stored` once the API has them; `refused`
+ * when it never will (a line too large, a malformed batch), so the streamer
+ * moves past them; `retry` for anything that may pass later: no network, a
+ * rate limit, a session the console has not learned of yet.
+ */
+async function post(job, from, lines) {
   try {
-    const response = await fetch(`${job.url}/api/sessions/${job.session}/transcript`, {
+    const response = await fetch(`${job.url}/api/v1/sessions/cloud-transcript`, {
       method: 'POST',
       headers: { 'content-type': 'application/json', authorization: `Bearer ${job.key}` },
-      body: JSON.stringify({ lines }),
+      body: JSON.stringify({ cloudSessionId: job.session, from, lines }),
       signal: AbortSignal.timeout(10_000),
     });
-    return response.ok;
+    if (response.ok) return 'stored';
+    return response.status === 400 || response.status === 413 ? 'refused' : 'retry';
   } catch {
-    return false;
+    return 'retry';
   }
 }
 

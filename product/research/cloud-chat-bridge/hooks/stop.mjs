@@ -8,7 +8,7 @@
 // what to do next. That is the documented way a hook steers a session, and it
 // needs nothing from claude.ai.
 //
-// It waits up to OPPENHEIMER_REPLY_WAIT seconds (default 30) for a reply, so
+// It waits up to OPPENHEIMER_REPLY_WAIT seconds (default 30, at most 120) for a reply, so
 // one typed just after the turn ends still lands; with none it lets the agent
 // stop. The hook's own `timeout` in settings must be longer than the wait.
 // It never fails the session: whatever happens it exits 0.
@@ -19,22 +19,23 @@ async function main() {
   const { OPPENHEIMER_URL: url, OPPENHEIMER_CLOUD_KEY: key } = process.env;
   if (!url || !key) return;
   const input = JSON.parse(readFileSync(0, 'utf8') || '{}');
-  const wait = Math.max(0, Math.min(Number(process.env.OPPENHEIMER_REPLY_WAIT ?? 30), 600));
+  const wait = Math.max(0, Math.min(Number(process.env.OPPENHEIMER_REPLY_WAIT ?? 30), 120));
 
-  const response = await fetch(
-    `${url}/api/sessions/${sessionKey(input)}/replies/next?wait=${wait}`,
-    {
-      headers: { authorization: `Bearer ${key}` },
-      signal: AbortSignal.timeout((wait + 10) * 1000),
-    },
-  );
-  if (response.status !== 200) return;
+  const response = await fetch(`${url}/api/v1/sessions/cloud-replies/take`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', authorization: `Bearer ${key}` },
+    body: JSON.stringify({ cloudSessionId: sessionKey(input), wait }),
+    signal: AbortSignal.timeout((wait + 10) * 1000),
+  });
+  if (!response.ok) return;
   const { text } = await response.json();
   if (!text) return;
 
   process.stdout.write(
     JSON.stringify({
       decision: 'block',
+      // The console reads a "Stop hook feedback" line carrying this first line
+      // as the person's message (CLOUD_REPLY_PREAMBLE in @oppenheimer/shared).
       reason: `The person following this session in Oppenheimer replied:\n\n${text}`,
     }),
   );

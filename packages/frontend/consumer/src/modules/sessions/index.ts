@@ -1,4 +1,5 @@
 export type { ChatAnswer } from '@oppenheimer/shared/sessions';
+export type { CloudChatFeed, CloudChatReply } from './chat/cloud-chat-feed';
 export {
   type ChatBatch,
   type ChatLimit,
