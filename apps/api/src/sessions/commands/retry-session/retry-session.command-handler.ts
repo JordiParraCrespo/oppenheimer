@@ -11,7 +11,7 @@ import { SessionLaunchSpecFactory } from '../../application/session-launch.facto
 import { SessionLoaderResolver } from '../../application/session-loader.resolver';
 import type { WorkSessionRepositoryPort } from '../../database/work-session.repository.port';
 import type { SessionCommandResult } from '../../domain/session-command.types';
-import { SESSION_EVENT_KINDS } from '../../domain/session-state.policy';
+import { SESSION_EVENT_KINDS, startCanBeRetried } from '../../domain/session-state.policy';
 import { SessionErrors } from '../../domain/sessions.errors';
 import { WorkSessionEntity } from '../../domain/work-session.entity';
 import { SESSION_DISPATCH, WORK_SESSION_REPOSITORY } from '../../sessions.di-tokens';
@@ -51,16 +51,13 @@ export class RetrySessionCommandHandler
 
   async execute(command: RetrySessionCommand): Promise<SessionCommandResult> {
     const session = await this.loader.requireLiveOnHost(command.scope, command.sessionId);
-    if (session.state !== 'failed') {
+    // `startCanBeRetried` is the rule, asked again under the row's lock below;
+    // this read of it only turns a refusal into SESSIONS_052 rather than a no-op.
+    if (!startCanBeRetried(session.fold, session.place)) {
       throw new AppError(SessionErrors.NOT_FAILED, {
-        detail: `Session ${session.slug} is ${session.state}`,
-      });
-    }
-    // A cloud task its vendor took and later failed did start: its host keeps
-    // it, and would answer the create with that task rather than a new one.
-    if (session.cloudSessionId) {
-      throw new AppError(SessionErrors.NOT_FAILED, {
-        detail: `Session ${session.slug} started at its vendor as ${session.cloudSessionId}; its task failed there`,
+        detail: session.cloudSessionId
+          ? `Session ${session.slug} started at its vendor as ${session.cloudSessionId}; its task failed there`
+          : `Session ${session.slug} is ${session.state}`,
       });
     }
 
@@ -80,7 +77,7 @@ export class RetrySessionCommandHandler
           payload: { requestedBy: 'api' },
         },
       ],
-      (fold) => fold.state === 'failed',
+      (fold) => startCanBeRetried(fold, session.place),
     );
     // Another press got there first and sent the create: this one has nothing to add.
     if (!appended) return { sessionId: session.id, hints: [] };

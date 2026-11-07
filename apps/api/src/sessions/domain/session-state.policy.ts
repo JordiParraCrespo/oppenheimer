@@ -5,6 +5,7 @@ import type {
   SessionEffortDto,
   SessionNotice,
   SessionPermissionDto,
+  SessionPlace,
   SessionSharedFile,
   SessionState,
   SessionWatchedPull,
@@ -488,6 +489,20 @@ function observedStateOf(payload: unknown): AgentObservedState | null {
  * moves — an event the fold does not recognise still moves `lastEventAt`, because
  * "when did anything last happen here" is true of every entry.
  */
+/**
+ * Whether a session's start can be tried again (`session.retry_requested`):
+ * the one rule, which the retry asks before it writes and again under the
+ * row's lock. Only a start that failed; and not a cloud task its vendor took
+ * and later failed, which did start: its host keeps it, and would answer a
+ * create with that task rather than a new one.
+ */
+export function startCanBeRetried(
+  fold: Pick<SessionFold, 'state' | 'agentSessionId'>,
+  place: SessionPlace,
+): boolean {
+  return fold.state === 'failed' && !(place === 'cloud' && fold.agentSessionId);
+}
+
 export function foldSessionEvent(fold: SessionFold, event: SessionLogEntry): SessionFold {
   const next: SessionFold = { ...fold, lastEventAt: event.occurredAt };
 

@@ -143,16 +143,16 @@ export function deriveSessionStartProgress(
   let reported = false;
   let failure: SessionStartProgress['failure'] = null;
 
-  for (const entry of [...entries].sort((a, b) => a.seq - b.seq)) {
-    if (entry.kind === 'retried') {
-      // The attempt before it failed; the steps are this one's from here.
-      for (const step of steps.values()) {
-        Object.assign(step, { state: 'pending', durationMs: null, download: false });
-      }
-      started = false;
-      reported = false;
-      failure = null;
-    } else if (entry.kind === 'step') {
+  // The attempt on screen is what follows the last retry: what came before it
+  // is an attempt that failed.
+  const log = [...entries].sort((a, b) => a.seq - b.seq);
+  let from = 0;
+  log.forEach((entry, index) => {
+    if (entry.kind === 'retried') from = index + 1;
+  });
+
+  for (const entry of log.slice(from)) {
+    if (entry.kind === 'step') {
       reported = true;
       const step = steps.get(entry.step) as SessionStartStep;
       step.state = entry.status;
@@ -160,7 +160,7 @@ export function deriveSessionStartProgress(
       step.download ||= entry.download;
     } else if (entry.kind === 'started') {
       started = true;
-    } else {
+    } else if (entry.kind === 'failed') {
       failure = { detail: entry.detail, code: entry.code };
     }
   }

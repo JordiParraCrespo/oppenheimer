@@ -67,20 +67,24 @@ type Starter struct {
 }
 
 var (
-	// ansi is every escape sequence the CLI's renderer writes: CSI (colours,
-	// cursor moves), OSC (titles, links), a character-set choice (`ESC ( B`)
-	// and the two-byte ones, `ESC 7`/`ESC 8` (save and restore the cursor)
-	// among them.
-	ansi = regexp.MustCompile(`\x1b\[[0-9;?<>=]*[ -/]*[@-~]|\x1b\][^\x07\x1b]*(\x07|\x1b\\)|\x1b[ -/]+[0-~]|\x1b[0-~]`)
-	// cursorForward is CSI n C, which the renderer writes for the spaces
-	// between words: dropped like any other sequence, the words run together.
-	cursorForward = regexp.MustCompile(`\x1b\[([0-9]*)C`)
-	// controls is what is left that a terminal acts on and a reader cannot
-	// see, tabs and newlines kept.
-	controls = regexp.MustCompile(`[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]`)
+	// terminal is everything in the CLI's output a terminal acts on rather
+	// than shows: a CSI sequence (colours, cursor moves; group 1 its
+	// parameters and final byte), an OSC (titles, links), a character-set
+	// choice (`ESC ( B`), a two-byte escape (`ESC 7`/`ESC 8`, save and restore
+	// the cursor) and the control characters but tab and newline. `clean` reads
+	// each match once.
+	terminal = regexp.MustCompile(`\x1b\[([0-9;?<>=]*[ -/]*[@-~])|\x1b\][^\x07\x1b]*(?:\x07|\x1b\\)|\x1b[ -/]+[0-~]|\x1b[0-~]|[\x00-\x08\x0b-\x1f\x7f]`)
+	// cursorForward is a CSI sequence's parameters and final byte when it
+	// moves the cursor right (CSI n C), which the renderer writes for the
+	// spaces between words.
+	cursorForward = regexp.MustCompile(`^([0-9]*)C$`)
 	// signedOut is the CLI saying it has no claude.ai account to start the
-	// session with: "Cloud sessions need a claude.ai sign-in. Run `claude
-	// auth login` …" (2.1.x), or older wordings of the same.
+	// session with, in the wordings seen, pinned like blockingPrompts': a
+	// release that rewords it only loses the code of its own, SESS_019, and
+	// the refusal reads as SESS_008 in its own words. "Cloud sessions need a
+	// claude.ai sign-in. Run `claude auth login` (or log in in a local
+	// session), then try again." (2.1.x); "not signed in" / "not logged in"
+	// (earlier releases).
 	signedOut = regexp.MustCompile(`(?i)claude\.ai sign-in|not (signed|logged) in|claude auth login`)
 	viewURL   = regexp.MustCompile(`https://claude\.ai/code/(session_[A-Za-z0-9]+)`)
 	created   = regexp.MustCompile(`Created cloud session: ([^\r\n]+)`)
@@ -300,15 +304,23 @@ func lastWords(raw string) string {
 // between words as spaces, every other escape sequence and control character
 // gone, and without the echo of the end of input.
 func clean(raw string) string {
-	text := cursorForward.ReplaceAllStringFunc(raw, func(seq string) string {
-		n, err := strconv.Atoi(cursorForward.FindStringSubmatch(seq)[1])
+	text := terminal.ReplaceAllStringFunc(raw, func(seq string) string {
+		if seq == "\r" {
+			return "\n"
+		}
+		if !strings.HasPrefix(seq, "\x1b[") {
+			return ""
+		}
+		move := cursorForward.FindStringSubmatch(seq[2:])
+		if move == nil {
+			return ""
+		}
+		n, err := strconv.Atoi(move[1])
 		if err != nil || n < 1 {
 			n = 1
 		}
 		return strings.Repeat(" ", min(n, 200))
 	})
-	text = strings.ReplaceAll(text, "\r", "\n")
-	text = controls.ReplaceAllString(ansi.ReplaceAllString(text, ""), "")
 	return strings.ReplaceAll(text, "^D", "")
 }
 
