@@ -77,15 +77,20 @@ describe('composeBotSystemPrompt', () => {
     );
   });
 
-  it('closes the list of what it can do, and lists our tools by their first sentence', () => {
+  // What breaks this: the list quoting each tool's first sentence, which
+  // the tool definitions already carry; it was 62% of the prompt.
+  it('closes the list of what it can do, and names our tools by area without their descriptions', () => {
     const prompt = composeBotSystemPrompt({
       ...base,
       tools: [
-        { name: 'list_hosts', description: 'Lists your hosts. Use it before starting work.' },
+        { name: 'list_hosts', description: 'Lists your hosts. Use it.', group: 'sessions' },
+        { name: 'get_session', description: 'Reads one session.', group: 'sessions' },
+        { name: 'remember', description: 'Saves one fact.', group: 'self' },
       ],
     });
-    expect(prompt).toContain('- Lists your hosts. (`list_hosts`)');
-    expect(prompt).not.toContain('Use it before starting work');
+    expect(prompt).toContain('- Hosts and sessions: `list_hosts`, `get_session`');
+    expect(prompt).toMatch(/- Yourself \(.*\): `remember`\n- Hosts and sessions/);
+    expect(prompt).not.toContain('Lists your hosts');
     expect(prompt).toContain('You have no shell, no files, no access to the machine you run on');
     expect(prompt).toContain('Never try to discover other capabilities');
   });
@@ -103,6 +108,7 @@ describe('composeBotSystemPrompt', () => {
       const prompt = composeBotSystemPrompt(sessions);
       expect(prompt).toContain('# Working on code through sessions');
       expect(prompt).toContain('goes to a session on a host');
+      expect(prompt).toContain('an answer with no link is not a start');
     });
 
     it('sends a question the web can answer to research, not to a session', () => {

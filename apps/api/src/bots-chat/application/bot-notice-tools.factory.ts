@@ -39,7 +39,7 @@ export class BotNoticeToolsFactory implements BotToolArea {
       defineBotTool({
         name: 'notify',
         scope: 'bots:write',
-        description: `Puts one line in the person's Inbox, where they see it whether or not they are in this chat. Use it when you finish something they asked to hear about, or when you need them and they may not be in your chat (a routine's run, a wake, a long task). One line, at most ${BOT_NOTICE_TEXT_MAX} characters: what is done or what you need, not a report. It replaces your previous notice. At most ${BOT_NOTICES_PER_TURN} a turn; not for what you are already saying to them in the chat.`,
+        description: `Puts one line in the person's Inbox, where they see it whether or not they are in this chat. Use it when you finish something they asked to hear about, or when you need them and they may not be in your chat (a routine's run, a wake, a long task). One line, at most ${BOT_NOTICE_TEXT_MAX} characters: what is done or what you need, not a report. The Inbox keeps one line per bot, so a new notice replaces your last one; at most ${BOT_NOTICES_PER_TURN} a turn; not for what you are already saying to them in the chat.`,
         input: notifyInput,
         run: async (input, context) => {
           if (!context.budget.take('notify', BOT_NOTICES_PER_TURN)) {

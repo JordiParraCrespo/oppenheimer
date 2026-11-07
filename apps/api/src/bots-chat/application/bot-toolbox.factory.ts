@@ -114,10 +114,14 @@ export class BotToolboxFactory {
    * session (every tool), or a token's scopes (only the tools they cover).
    */
   catalog(granted: readonly Scope[] | null, standing: BotStanding): BotPromptTool[] {
+    const groups = new Map(
+      this.areas.flatMap((area) => area.definitions().map((tool) => [tool.name, area.group])),
+    );
     return this.offered(granted, standing).map(({ name, description, setupStep }) => ({
       name,
       description,
       setupStep,
+      group: groups.get(name),
     }));
   }
 

@@ -1230,3 +1230,9 @@ earlier note:
   is read, then read back where a tool can, a failure is said first and
   unasked, and a coding agent's report is a claim checked against its
   evidence.
+- `versions/mvp/25-bots.md` §4.2 (2026-10-30) left `start_cloud_session`
+  unwatched, since a cloud session is followed at its vendor, and §2's
+  closed list quoted each tool's first sentence. On 2026-11-07, after a
+  review of every prompt, a cloud or review session is watched like any
+  other (a failed cloud start had gone unreported), and the list names the
+  tools by area: quoting them made it 62% of the system prompt.

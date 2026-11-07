@@ -149,7 +149,13 @@ export class BotHostToolsFactory implements BotToolArea {
           .describe(
             `Only sessions in this group, as the console's dot shows it; looks through the ${GROUP_SCAN} newest.`,
           ),
-        limit: z.number().int().min(1).max(SESSIONS_LIMIT_MAX).default(10),
+        limit: z
+          .number()
+          .int()
+          .min(1)
+          .max(SESSIONS_LIMIT_MAX)
+          .default(10)
+          .describe(`How many to list: 10 unless you ask for up to ${SESSIONS_LIMIT_MAX}.`),
       }),
       run: async (input, context) => {
         const now = new Date();
