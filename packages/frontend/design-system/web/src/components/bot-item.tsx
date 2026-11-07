@@ -5,7 +5,7 @@ import type * as React from 'react';
 
 import { META_GIVES_WAY, ROW_BUTTON_WITH_ACTION, SidebarRow } from '../internal/sidebar-row';
 import { cn } from '../lib/utils';
-import { type AvatarColor, BotAvatar } from './avatar-picker';
+import { BotAvatar, type BotFaceSpec } from './avatar-picker';
 import { useSortableControl } from './drag';
 import { Skeleton } from './skeleton';
 import { Tooltip, TooltipContent, TooltipTrigger } from './tooltip';
@@ -31,8 +31,7 @@ function BotItem({
   name,
   initials,
   image,
-  seed,
-  color,
+  face,
   preview,
   live = false,
   unread = false,
@@ -49,10 +48,8 @@ function BotItem({
   name: string;
   initials: string;
   image?: string;
-  /** The bot's id: with `color`, a bot with no photo shows its drawn face. */
-  seed?: string;
-  /** The avatar colour of the face, or of the initials without a `seed`. */
-  color?: AvatarColor;
+  /** The bot's colour and id: with no photo, its drawn face; without, its initials. */
+  face?: BotFaceSpec;
   /** The last message, shown in the row's tooltip. */
   preview?: React.ReactNode;
   /** The bot is working: the green dot on the photo. */
@@ -88,7 +85,7 @@ function BotItem({
       {...props}
     >
       <span className="relative flex shrink-0">
-        <BotAvatar option={{ image, initials, seed }} size={20} color={color} className="rounded-xs" />
+        <BotAvatar option={{ image, initials }} size={20} face={face} className="rounded-xs" />
         {live ? (
           <span
             aria-hidden

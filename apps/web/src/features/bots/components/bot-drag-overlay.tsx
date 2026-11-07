@@ -12,8 +12,7 @@ export function BotDragOverlay({ bot }: { bot: BotEntity | undefined }) {
       <BotItem
         name={bot.name}
         initials={bot.initials}
-        seed={bot.id}
-        color={bot.avatarColor}
+        face={{ color: bot.avatarColor, seed: bot.id }}
         active
       />
     </div>

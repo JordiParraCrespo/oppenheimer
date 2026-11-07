@@ -1,19 +1,59 @@
-import type * as React from 'react';
-
+import type { AvatarColor } from '../components/avatar-picker';
 import { cn } from '../lib/utils';
-
-/** The avatar colours a face is drawn in; `AvatarColor` in `avatar-picker`. */
-type FaceColor = 'mint' | 'tangerine' | 'snow' | 'sky' | 'lilac' | 'lemon' | 'coral' | 'moss';
 
 const INK = 'var(--avatar-ink)';
 const EDGE = '#fff';
 
-const HATS = ['fedora', 'porkpie', 'bowler', 'tophat', 'cap', 'beanie'] as const;
+/** One shape of a hat and what it is made of: ink, a felt in the face's colour, or the blue band. */
+type HatShape = { d: string; tone: 'ink' | 'felt' | 'band' };
+
+/**
+ * The hats, as data: the same shapes are drawn twice, first as the sticker's
+ * white margin under the face, then in their tones over it. A band sits
+ * inside its hat's silhouette, so the margin leaves it out.
+ */
+const HAT_SHAPES = {
+  fedora: [
+    { tone: 'ink', d: 'M19.5 22 22 8.8c.6-3.2 3-4.4 5.7-3.4L32 7l4.3-1.6c2.7-1 5.1.2 5.7 3.4L44.5 22Z' },
+    { tone: 'band', d: 'M19.4 18.6h25.2v3.4H19.4Z' },
+    { tone: 'ink', d: 'M5 25c0-1.8 5-2.3 12-2h30c7-.3 12 .2 12 2 0 1.5-3 2.4-8 3H13c-5-.6-8-1.5-8-3Z' },
+  ],
+  porkpie: [
+    { tone: 'ink', d: 'M20.5 22 22 10c.2-1.7 1.4-2.6 3-2.6h14c1.6 0 2.8.9 3 2.6L43.5 22Z' },
+    { tone: 'band', d: 'M20.3 18.6h23.4v3.4H20.3Z' },
+    {
+      tone: 'ink',
+      d: 'M8 25.2c0-1.6 4.5-2 10.5-1.8h27c6-.2 10.5.2 10.5 1.8 0 1.5-3 2.3-7 2.8H15c-4-.5-7-1.3-7-2.8Z',
+    },
+  ],
+  bowler: [
+    { tone: 'ink', d: 'M17 25a15 15 0 0 1 30 0Z' },
+    { tone: 'band', d: 'M17 21.5h30V25H17Z' },
+    { tone: 'ink', d: 'M11 26.5c0-1.6 9-2.3 21-2.3s21 .7 21 2.3-9 2.5-21 2.5-21-.9-21-2.5Z' },
+  ],
+  tophat: [
+    { tone: 'ink', d: 'M22 3h20a2 2 0 0 1 2 2v19H20V5a2 2 0 0 1 2-2Z' },
+    { tone: 'band', d: 'M20 17h24v4H20Z' },
+    { tone: 'ink', d: 'M13.5 23h37a2.5 2.5 0 0 1 0 5h-37a2.5 2.5 0 0 1 0-5Z' },
+  ],
+  cap: [
+    { tone: 'ink', d: 'M13 28a19 18 0 0 1 38 0Z' },
+    { tone: 'ink', d: 'M40 27h17c0 2.5-2 4-5 4H38Z' },
+    { tone: 'band', d: 'M30 10.5a2 2 0 1 0 4 0 2 2 0 1 0-4 0Z' },
+  ],
+  beanie: [
+    { tone: 'felt', d: 'M13 27a19 17 0 0 1 38 0Z' },
+    { tone: 'ink', d: 'M14.5 24h35a3.5 3.5 0 0 1 0 7h-35a3.5 3.5 0 0 1 0-7Z' },
+    { tone: 'felt', d: 'M27.5 9a4.5 4.5 0 1 0 9 0 4.5 4.5 0 1 0-9 0Z' },
+  ],
+} satisfies Record<string, HatShape[]>;
+
+const HATS = Object.keys(HAT_SHAPES) as (keyof typeof HAT_SHAPES)[];
 const EYES = ['dots', 'happy', 'wink', 'big'] as const;
 const MOUTHS = ['smile', 'grin', 'o'] as const;
 
 type Face = {
-  hat: (typeof HATS)[number];
+  hat: keyof typeof HAT_SHAPES;
   eyes: (typeof EYES)[number];
   mouth: (typeof MOUTHS)[number];
 };
@@ -37,71 +77,30 @@ function faceFor(seed: string): Face {
   };
 }
 
-/**
- * The hat's shapes. `edge` draws them as the sticker's white margin: every
- * shape filled and stroked white, so the cut line follows the silhouette.
- */
+/** A hat's shapes, as the white margin (`edge`) or in their tones. */
 function Hat({ hat, color, edge }: { hat: Face['hat']; color: string; edge?: boolean }) {
-  const solid = (fill: string): React.SVGProps<SVGPathElement> =>
-    edge ? { fill: EDGE, stroke: EDGE, strokeWidth: 7, strokeLinejoin: 'round' } : { fill };
-  const band = 'var(--primary)';
-  const felt = `color-mix(in oklch, ${color} 70%, black)`;
-  switch (hat) {
-    case 'fedora':
-      return (
-        <>
-          <path {...solid(INK)} d="M19.5 22 22 8.8c.6-3.2 3-4.4 5.7-3.4L32 7l4.3-1.6c2.7-1 5.1.2 5.7 3.4L44.5 22Z" />
-          {edge ? null : <path fill={band} d="M19.4 18.6h25.2v3.4H19.4Z" />}
-          <path {...solid(INK)} d="M5 25c0-1.8 5-2.3 12-2h30c7-.3 12 .2 12 2 0 1.5-3 2.4-8 3H13c-5-.6-8-1.5-8-3Z" />
-        </>
-      );
-    case 'porkpie':
-      return (
-        <>
-          <path
-            {...solid(INK)}
-            d="M20.5 22 22 10c.2-1.7 1.4-2.6 3-2.6h14c1.6 0 2.8.9 3 2.6L43.5 22Z"
-          />
-          {edge ? null : <path fill={band} d="M20.3 18.6h23.4v3.4H20.3Z" />}
-          <path
-            {...solid(INK)}
-            d="M8 25.2c0-1.6 4.5-2 10.5-1.8h27c6-.2 10.5.2 10.5 1.8 0 1.5-3 2.3-7 2.8H15c-4-.5-7-1.3-7-2.8Z"
-          />
-        </>
-      );
-    case 'bowler':
-      return (
-        <>
-          <path {...solid(INK)} d="M17 25a15 15 0 0 1 30 0Z" />
-          {edge ? null : <path fill={band} d="M17 21.5h30V25H17Z" />}
-          <path {...solid(INK)} d="M11 26.5c0-1.6 9-2.3 21-2.3s21 .7 21 2.3-9 2.5-21 2.5-21-.9-21-2.5Z" />
-        </>
-      );
-    case 'tophat':
-      return (
-        <>
-          <path {...solid(INK)} d="M22 3h20a2 2 0 0 1 2 2v19H20V5a2 2 0 0 1 2-2Z" />
-          {edge ? null : <path fill={band} d="M20 17h24v4H20Z" />}
-          <path {...solid(INK)} d="M13.5 23h37a2.5 2.5 0 0 1 0 5h-37a2.5 2.5 0 0 1 0-5Z" />
-        </>
-      );
-    case 'cap':
-      return (
-        <>
-          <path {...solid(INK)} d="M13 28a19 18 0 0 1 38 0Z" />
-          <path {...solid(INK)} d="M40 27h17c0 2.5-2 4-5 4H38Z" />
-          {edge ? null : <circle fill={band} cx="32" cy="10.5" r="2" />}
-        </>
-      );
-    case 'beanie':
-      return (
-        <>
-          <path {...solid(felt)} d="M13 27a19 17 0 0 1 38 0Z" />
-          <path {...solid(INK)} d="M14.5 24h35a3.5 3.5 0 0 1 0 7h-35a3.5 3.5 0 0 1 0-7Z" />
-          <circle {...(solid(felt) as React.SVGProps<SVGCircleElement>)} cx="32" cy="9" r="4.5" />
-        </>
-      );
-  }
+  const tones = { ink: INK, felt: `color-mix(in oklch, ${color} 70%, black)`, band: 'var(--primary)' };
+  const shapes: HatShape[] = HAT_SHAPES[hat];
+  return (
+    <>
+      {shapes.map((shape) =>
+        edge ? (
+          shape.tone === 'band' ? null : (
+            <path
+              key={shape.d}
+              d={shape.d}
+              fill={EDGE}
+              stroke={EDGE}
+              strokeWidth={7}
+              strokeLinejoin="round"
+            />
+          )
+        ) : (
+          <path key={shape.d} d={shape.d} fill={tones[shape.tone]} />
+        ),
+      )}
+    </>
+  );
 }
 
 function Eyes({ eyes }: { eyes: Face['eyes'] }) {
@@ -173,7 +172,7 @@ function Mouth({ mouth }: { mouth: Face['mouth'] }) {
  * colour only; it fills its box (`size-full`, so a slot's own svg sizing
  * passes it by) and lets the avatar clip it.
  */
-function BotFace({ seed, color, className }: { seed: string; color: FaceColor; className?: string }) {
+function BotFace({ seed, color, className }: { seed: string; color: AvatarColor; className?: string }) {
   const face = faceFor(seed);
   const fill = `var(--avatar-${color})`;
   return (

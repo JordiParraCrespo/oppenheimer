@@ -250,7 +250,7 @@ the `version1/` artboards for what the screens actually do. Its one sentence:
   export's eight colours (`--avatar-*`, the same in both themes), cut out
   like a sticker on a darker shade of it, the hat, eyes and mouth picked
   from the bot's id (`internal/bot-face.tsx`). `BotAvatar` and `BotItem`
-  take `color` and `seed`; with no seed they fall back to the initials.
+  take `face` (the colour and the id together); without it, the initials.
   Profile picks the colour with `AvatarColorPicker`.
   A bot's routine is a `RoutineCard`, read and edited in place
   (`RoutineItem` is the workspace's, in the sidebar); records in a settings

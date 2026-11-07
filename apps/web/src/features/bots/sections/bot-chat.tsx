@@ -48,9 +48,9 @@ export function BotChat({ botId }: { botId: string }) {
       <PageBar
         leading={
           <BotAvatar
-            option={{ initials: bot.initials, seed: bot.id }}
+            option={{ initials: bot.initials }}
             size={26}
-            color={bot.avatarColor}
+            face={{ color: bot.avatarColor, seed: bot.id }}
           />
         }
         title={bot.name}

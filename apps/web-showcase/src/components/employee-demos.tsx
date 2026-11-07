@@ -50,8 +50,8 @@ function BuiltInGroup({ active, onPick }: { active: string; onPick: (id: string)
       />
       {open ? (
         <BotList>
-          {BUILT_IN.map((bot) => (
-            <BotItem key={bot.id} {...bot} seed={bot.id} active={bot.id === active} onClick={() => onPick(bot.id)} />
+          {BUILT_IN.map(({ color, ...bot }) => (
+            <BotItem key={bot.id} {...bot} face={{ color, seed: bot.id }} active={bot.id === active} onClick={() => onPick(bot.id)} />
           ))}
         </BotList>
       ) : null}
@@ -75,8 +75,8 @@ export function BotItemsDemo() {
           <SidebarProjectHeader tone="eyebrow" name="Engineering" count={bots.length} open={open} onOpenChange={setOpen} />
           {open ? (
             <BotList>
-              {bots.map((bot) => (
-                <BotItem key={bot.id} {...bot} seed={bot.id} active={bot.id === active} onClick={() => setActive(bot.id)} />
+              {bots.map(({ color, ...bot }) => (
+                <BotItem key={bot.id} {...bot} face={{ color, seed: bot.id }} active={bot.id === active} onClick={() => setActive(bot.id)} />
               ))}
             </BotList>
           ) : null}
@@ -153,7 +153,7 @@ export function AvatarColorPickerDemo() {
     <div className="flex w-full flex-col gap-6">
       <div className="flex items-center gap-3">
         {(Object.keys(COLOR_NAMES) as AvatarColor[]).map((key) => (
-          <BotAvatar key={key} option={{ initials: 'NB', seed: 'new-bot' }} size={36} color={key} />
+          <BotAvatar key={key} option={{ initials: 'NB' }} size={36} face={{ color: key, seed: 'new-bot' }} />
         ))}
       </div>
       <div className="w-full max-w-180 rounded-lg bg-canvas-recessed p-4">
@@ -381,7 +381,7 @@ export function EmployeesSection() {
         id="avatarcolorpicker"
         title="AvatarColorPicker"
         meta="avatar-picker.tsx"
-        desc="A bot's colour, while avatars are drawn rather than photos: the 72px face on the current colour over the bot's name, then the eight colours as 32px swatches, the picked one ringed in ink with the card's gap inside the ring. The colours are the --avatar-* tokens, the same in both themes. BotAvatar and BotItem take color and the bot's id as seed to draw its face (a hat, eyes and a mouth picked from the id, cut out like a sticker on a darker shade); without a seed they draw the initials."
+        desc="A bot's colour, while avatars are drawn rather than photos: the 72px face on the current colour over the bot's name, then the eight colours as 32px swatches, the picked one ringed in ink with the card's gap inside the ring. The colours are the --avatar-* tokens, the same in both themes. BotAvatar and BotItem take face (the colour and the bot's id) to draw it (a hat, eyes and a mouth picked from the id, cut out like a sticker on a darker shade); without one they draw the initials."
         code={`<AvatarColorPicker value={color} onValueChange={save} initials="NB" seed={bot.id} name="New Bot" colorNames={names} />`}
       >
         <AvatarColorPickerDemo />

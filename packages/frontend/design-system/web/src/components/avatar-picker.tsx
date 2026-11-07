@@ -34,40 +34,40 @@ const AVATAR_COLOR_CLASS: Record<AvatarColor, string> = {
   moss: 'bg-avatar-moss',
 };
 
+/** A bot's drawn face: its avatar colour and its id, which picks the hat, eyes and mouth. */
+type BotFaceSpec = { color: AvatarColor; seed: string };
+
 /**
- * A bot's face: its photo, or a drawn face until one loads. With `color` and
- * `seed` (the bot's id) it is a `BotFace`, a hatted face in that avatar colour
- * that the seed keeps the same (a bot with no photo, which is every bot until
- * there is a set we may use); with `color` alone, the initials in dark ink on
- * that colour; without either, the initials in ink on the control fill.
+ * A bot's face: its photo, or until one loads its drawn `face`, a hatted
+ * face in its avatar colour that its id keeps the same (every bot, until
+ * there is a set of photos we may use). Without `face`, the initials in ink
+ * on the control fill: an avatar with no bot behind it yet.
  */
 function BotAvatar({
   option,
   size,
-  color,
+  face,
   className,
 }: {
-  option: Pick<AvatarOption, 'image' | 'initials'> & { seed?: string };
+  option: Pick<AvatarOption, 'image' | 'initials'>;
   size: number;
-  color?: AvatarColor;
+  face?: BotFaceSpec;
   className?: string;
 }) {
   return (
     <Avatar
       size={size}
-      data-color={color}
+      data-color={face?.color}
       className={cn(
         'font-semibold tracking-[-0.01em]',
-        color
-          ? cn(AVATAR_COLOR_CLASS[color], 'text-avatar-ink shadow-[inset_0_0_0_1px_var(--border-subtle)]')
+        face
+          ? cn(AVATAR_COLOR_CLASS[face.color], 'text-avatar-ink shadow-[inset_0_0_0_1px_var(--border-subtle)]')
           : 'bg-control text-fg',
         className,
       )}
     >
       {option.image ? <AvatarImage src={option.image} alt="" /> : null}
-      <AvatarFallback>
-        {color && option.seed ? <BotFace seed={option.seed} color={color} /> : option.initials}
-      </AvatarFallback>
+      <AvatarFallback>{face ? <BotFace seed={face.seed} color={face.color} /> : option.initials}</AvatarFallback>
     </Avatar>
   );
 }
@@ -93,8 +93,8 @@ function AvatarColorPicker({
   value: AvatarColor;
   onValueChange: (value: AvatarColor) => void;
   initials: string;
-  /** The bot's id: the preview draws its face rather than its initials. */
-  seed?: string;
+  /** The bot's id, which picks the preview's face. */
+  seed: string;
   /** The bot's name, under the preview. */
   name?: React.ReactNode;
   /** Each colour's accessible name ("Mint"); the caller's language. */
@@ -106,7 +106,7 @@ function AvatarColorPicker({
   return (
     <div data-slot="avatar-color-picker" className={cn('flex items-center gap-10', className)}>
       <div className="flex shrink-0 flex-col items-center gap-2">
-        <BotAvatar option={{ initials, seed }} size={72} color={value} />
+        <BotAvatar option={{ initials }} size={72} face={{ color: value, seed }} />
         {name ? <span className="max-w-30 truncate text-[14px]">{name}</span> : null}
       </div>
       <div className="flex min-w-0 flex-1 flex-col gap-3">
@@ -248,4 +248,4 @@ function AvatarPicker({
 }
 
 export { AvatarColorPicker, AvatarPicker, BotAvatar };
-export type { AvatarColor, AvatarOption };
+export type { AvatarColor, AvatarOption, BotFaceSpec };

@@ -12,6 +12,7 @@ the extension's icons are the same drawing.
 A bot with no photo shows a drawn face instead of its initials: a round
 face in its avatar colour wearing a hat, cut out like a sticker on a darker
 shade of that colour. The hat, eyes and mouth are picked from the bot's id,
-so the face survives a rename. `BotAvatar` takes `seed` in its option,
-`BotItem` and `AvatarColorPicker` take `seed`; without one they draw the
-initials as before.
+so the face survives a rename. `BotAvatar` and `BotItem` take `face`
+(`{ color, seed }`, the bot's colour and id) in place of `color`, and
+`AvatarColorPicker` takes `seed`; without a `face` they draw the initials
+on the control fill.
