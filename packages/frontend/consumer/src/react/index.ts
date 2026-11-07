@@ -44,6 +44,11 @@ export {
   useSuspenseBotHistory,
   useUploadBotImage,
 } from './bot-chat.queries';
+export {
+  useBotMemoryDream,
+  useRequestBotMemoryDream,
+  useUndoBotMemoryDream,
+} from './bot-dream.queries';
 export { useBotGoal, useClearBotGoal } from './bot-goal.queries';
 export { useBotLoop, useClearBotLoop } from './bot-loop.queries';
 export {
@@ -118,11 +123,6 @@ export {
   useUpdateBotFact,
   useUpdateBotOptimistically,
 } from './bots.queries';
-export {
-  useBotMemoryDream,
-  useRequestBotMemoryDream,
-  useUndoBotMemoryDream,
-} from './bot-dream.queries';
 export {
   type UpdateCalendarEventVariables,
   useCalendarEvents,

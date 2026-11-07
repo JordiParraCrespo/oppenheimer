@@ -25,9 +25,9 @@ import { ModelProviderCredentialOrmEntity } from '../bots/database/model-provide
 import { BotApprovalOrmEntity } from '../bots-chat/database/bot-approval.orm-entity';
 import { BotAttachmentOrmEntity } from '../bots-chat/database/bot-attachment.orm-entity';
 import { BotConversationSummaryOrmEntity } from '../bots-chat/database/bot-conversation-summary.orm-entity';
-import { BotMemoryDreamOrmEntity } from '../bots-chat/database/bot-memory-dream.orm-entity';
 import { BotGoalOrmEntity } from '../bots-chat/database/bot-goal.orm-entity';
 import { BotLoopOrmEntity } from '../bots-chat/database/bot-loop.orm-entity';
+import { BotMemoryDreamOrmEntity } from '../bots-chat/database/bot-memory-dream.orm-entity';
 import { BotMessageOrmEntity } from '../bots-chat/database/bot-message.orm-entity';
 import { BotModelCallOrmEntity } from '../bots-chat/database/bot-model-call.orm-entity';
 import { BotNoticeOrmEntity } from '../bots-chat/database/bot-notice.orm-entity';

@@ -20,7 +20,14 @@ const DREAM_COLUMNS = `id, "organizationId", "botId", "factsBefore", "factsAfter
 
 type DreamRow = Pick<
   BotMemoryDreamOrmEntity,
-  'id' | 'organizationId' | 'botId' | 'factsBefore' | 'factsAfter' | 'note' | 'createdAt' | 'undoneAt'
+  | 'id'
+  | 'organizationId'
+  | 'botId'
+  | 'factsBefore'
+  | 'factsAfter'
+  | 'note'
+  | 'createdAt'
+  | 'undoneAt'
 > & { outputFactIds?: string[] };
 
 /**

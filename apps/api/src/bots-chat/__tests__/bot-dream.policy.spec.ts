@@ -113,13 +113,17 @@ describe('readDream', () => {
     fact('c'),
     fact('d'),
   ]);
-  const answer = (notes: unknown[], summary = 'Merged two.') =>
-    JSON.stringify({ notes, summary });
+  const answer = (notes: unknown[], summary = 'Merged two.') => JSON.stringify({ notes, summary });
 
   it('reads the notes, keeping the newest day of the facts a note was merged from', () => {
     const plan = readDream(
       `\`\`\`json\n${answer([
-        { content: ' Prefers   squash merges. ', tier: 'profile', about: 'person', from: ['n1', '[n2]'] },
+        {
+          content: ' Prefers   squash merges. ',
+          tier: 'profile',
+          about: 'person',
+          from: ['n1', '[n2]'],
+        },
         { content: 'Deploys go through dev.', tier: 'log', about: 'you', from: ['n3', 'n9'] },
       ])}\n\`\`\``,
       refs,

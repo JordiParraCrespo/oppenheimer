@@ -8,7 +8,10 @@ import { Check, Column, CreateDateColumn, Entity, Index, PrimaryGeneratedColumn 
  */
 @Entity('bot_model_call')
 @Index('IDX_bot_model_call_bot', ['organizationId', 'botId', 'createdAt'])
-@Check('CHK_bot_model_call_purpose', `purpose IN ('goal_review', 'summary', 'rule_review', 'dream')`)
+@Check(
+  'CHK_bot_model_call_purpose',
+  `purpose IN ('goal_review', 'summary', 'rule_review', 'dream')`,
+)
 @Check(
   'CHK_bot_model_call_provider',
   `provider IN ('anthropic', 'glm', 'openai', 'chatgpt', 'xai')`,

@@ -2,10 +2,10 @@ import { Injectable } from '@nestjs/common';
 import type { BotSteer } from '@oppenheimer/backend-agents';
 import type { Mapper } from '@oppenheimer/backend-ddd';
 import {
+  BOT_DREAM_ACTIVITIES,
   BOT_EVENT_OUTCOMES,
   BOT_GOAL_ACTIVITIES,
   BOT_IMAGE_MIME_TYPES,
-  BOT_DREAM_ACTIVITIES,
   BOT_LOOP_ACTIVITIES,
   BOT_QUESTION_OUTCOMES,
   BOT_REPLY_OUTCOMES,
@@ -32,9 +32,9 @@ import { ENDED_TURN_STATUSES } from './domain/bot-turn.entity';
 import { BotAttachmentResponseDto } from './dtos/bot-attachment.response.dto';
 import {
   BotApprovalEventResponseDto,
+  BotDreamEventResponseDto,
   BotGoalEventResponseDto,
   BotLoopEventResponseDto,
-  BotDreamEventResponseDto,
   type BotMessageEventResponseDto,
   BotMessageResponseDto,
   BotPeerMessageEventResponseDto,

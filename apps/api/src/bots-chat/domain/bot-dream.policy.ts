@@ -11,8 +11,8 @@ import {
   type BotMemoryTier,
   type BotMessageRole,
 } from '@oppenheimer/shared';
-import { BotMessageEntity } from './bot-message.entity';
 import { estimateTokens } from './bot-history.policy';
+import { BotMessageEntity } from './bot-message.entity';
 import { uuidV5 } from './bot-routine.policy';
 
 /** A fact as the dream reads it. */

@@ -12,6 +12,8 @@ import { BotApprovedCallResolver } from './application/bot-approved-call.resolve
 import { BotAutomationToolsFactory } from './application/bot-automation-tools.factory';
 import { BotPeerToolsFactory } from './application/bot-bots-tools.factory';
 import { BotCompletionResolver } from './application/bot-completion.resolver';
+import { BotDreamResolver } from './application/bot-dream.resolver';
+import { BotDreamTriggerPolicy } from './application/bot-dream-trigger.policy';
 import { BotGithubToolsFactory } from './application/bot-github-tools.factory';
 import { BotGoalResolver } from './application/bot-goal.resolver';
 import { BotGoalReviewResolver } from './application/bot-goal-review.resolver';
@@ -70,6 +72,7 @@ import { BotAttachmentMapper } from './bot-attachment.mapper';
 import { BotConversationSummaryMapper } from './bot-conversation-summary.mapper';
 import { BotGoalMapper } from './bot-goal.mapper';
 import { BotLoopMapper } from './bot-loop.mapper';
+import { BotMemoryDreamMapper } from './bot-memory-dream.mapper';
 import { BotMessageMapper } from './bot-message.mapper';
 import { BotNoticeMapper } from './bot-notice.mapper';
 import { BotPermissionRuleMapper } from './bot-permission-rule.mapper';
@@ -84,10 +87,10 @@ import {
   BOT_ATTACHMENT_REPOSITORY,
   BOT_CONVERSATION_REPOSITORY,
   BOT_CONVERSATION_SUMMARY_REPOSITORY,
-  BOT_MEMORY_DREAM_REPOSITORY,
   BOT_ENGINE,
   BOT_GOAL_REPOSITORY,
   BOT_LOOP_REPOSITORY,
+  BOT_MEMORY_DREAM_REPOSITORY,
   BOT_MESSAGE_REPOSITORY,
   BOT_NOTICE_REPOSITORY,
   BOT_PERMISSION_RULE_REPOSITORY,
@@ -124,7 +127,10 @@ import { DeleteBotToolGrantHttpController } from './commands/delete-bot-tool-gra
 import { DeliverBotAnswerCommandHandler } from './commands/deliver-bot-answer/deliver-bot-answer.command-handler';
 import { DismissBotQuestionCommandHandler } from './commands/dismiss-bot-question/dismiss-bot-question.command-handler';
 import { DismissBotQuestionHttpController } from './commands/dismiss-bot-question/dismiss-bot-question.http.controller';
+import { DreamBotMemoryCommandHandler } from './commands/dream-bot-memory/dream-bot-memory.command-handler';
 import { FinishBotLoopRunCommandHandler } from './commands/finish-bot-loop-run/finish-bot-loop-run.command-handler';
+import { RequestBotMemoryDreamCommandHandler } from './commands/request-bot-memory-dream/request-bot-memory-dream.command-handler';
+import { RequestBotMemoryDreamHttpController } from './commands/request-bot-memory-dream/request-bot-memory-dream.http.controller';
 import { RunApprovedCallCommandHandler } from './commands/run-approved-call/run-approved-call.command-handler';
 import { RunBotLoopCommandHandler } from './commands/run-bot-loop/run-bot-loop.command-handler';
 import { RunBotTurnCommandHandler } from './commands/run-bot-turn/run-bot-turn.command-handler';
@@ -134,6 +140,8 @@ import { SendBotPeerMessageCommandHandler } from './commands/send-bot-peer-messa
 import { SetBotToolDecisionCommandHandler } from './commands/set-bot-tool-decision/set-bot-tool-decision.command-handler';
 import { SetBotToolDecisionHttpController } from './commands/set-bot-tool-decision/set-bot-tool-decision.http.controller';
 import { SummarizeBotConversationCommandHandler } from './commands/summarize-bot-conversation/summarize-bot-conversation.command-handler';
+import { UndoBotMemoryDreamCommandHandler } from './commands/undo-bot-memory-dream/undo-bot-memory-dream.command-handler';
+import { UndoBotMemoryDreamHttpController } from './commands/undo-bot-memory-dream/undo-bot-memory-dream.http.controller';
 import { UploadBotAttachmentCommandHandler } from './commands/upload-bot-attachment/upload-bot-attachment.command-handler';
 import { UploadBotAttachmentHttpController } from './commands/upload-bot-attachment/upload-bot-attachment.http.controller';
 import { WakeOnAgentNoticeCommandHandler } from './commands/wake-on-agent-notice/wake-on-agent-notice.command-handler';
@@ -151,6 +159,8 @@ import { BotGoalOrmEntity } from './database/bot-goal.orm-entity';
 import { BotGoalRepository } from './database/bot-goal.repository';
 import { BotLoopOrmEntity } from './database/bot-loop.orm-entity';
 import { BotLoopRepository } from './database/bot-loop.repository';
+import { BotMemoryDreamOrmEntity } from './database/bot-memory-dream.orm-entity';
+import { BotMemoryDreamRepository } from './database/bot-memory-dream.repository';
 import { BotMessageOrmEntity } from './database/bot-message.orm-entity';
 import { BotMessageRepository } from './database/bot-message.repository';
 import { BotModelCallOrmEntity } from './database/bot-model-call.orm-entity';
@@ -169,6 +179,7 @@ import { BotTurnRepository } from './database/bot-turn.repository';
 import { BotUsageRepository } from './database/bot-usage.repository';
 import { BotApprovalsProcessor } from './infrastructure/bot-approvals.processor';
 import { BotAttachmentRetentionProcessor } from './infrastructure/bot-attachment-retention.processor';
+import { BotDreamsProcessor } from './infrastructure/bot-dreams.processor';
 import { BotRoutineTarget } from './infrastructure/bot-routine-target.adapter';
 import { BotStallChecksProcessor } from './infrastructure/bot-stall-checks.processor';
 import { BotSummariesProcessor } from './infrastructure/bot-summaries.processor';
@@ -190,6 +201,8 @@ import { FindBotGoalHttpController } from './queries/find-bot-goal/find-bot-goal
 import { FindBotGoalQueryHandler } from './queries/find-bot-goal/find-bot-goal.query-handler';
 import { FindBotLoopHttpController } from './queries/find-bot-loop/find-bot-loop.http.controller';
 import { FindBotLoopQueryHandler } from './queries/find-bot-loop/find-bot-loop.query-handler';
+import { FindBotMemoryDreamHttpController } from './queries/find-bot-memory-dream/find-bot-memory-dream.http.controller';
+import { FindBotMemoryDreamQueryHandler } from './queries/find-bot-memory-dream/find-bot-memory-dream.query-handler';
 import { FindBotPermissionsHttpController } from './queries/find-bot-permissions/find-bot-permissions.http.controller';
 import { FindBotPermissionsQueryHandler } from './queries/find-bot-permissions/find-bot-permissions.query-handler';
 import { FindBotQuestionQueryHandler } from './queries/find-bot-question/find-bot-question.query-handler';
@@ -207,19 +220,6 @@ import { ReadBotAttachmentQueryHandler } from './queries/read-bot-attachment/rea
 import { SearchBotConversationQueryHandler } from './queries/search-bot-conversation/search-bot-conversation.query-handler';
 import { StreamBotHttpController } from './queries/stream-bot/stream-bot.http.controller';
 import { StreamBotQueryHandler } from './queries/stream-bot/stream-bot.query-handler';
-import { BotDreamTriggerPolicy } from './application/bot-dream-trigger.policy';
-import { BotDreamResolver } from './application/bot-dream.resolver';
-import { BotMemoryDreamMapper } from './bot-memory-dream.mapper';
-import { DreamBotMemoryCommandHandler } from './commands/dream-bot-memory/dream-bot-memory.command-handler';
-import { RequestBotMemoryDreamCommandHandler } from './commands/request-bot-memory-dream/request-bot-memory-dream.command-handler';
-import { RequestBotMemoryDreamHttpController } from './commands/request-bot-memory-dream/request-bot-memory-dream.http.controller';
-import { UndoBotMemoryDreamCommandHandler } from './commands/undo-bot-memory-dream/undo-bot-memory-dream.command-handler';
-import { UndoBotMemoryDreamHttpController } from './commands/undo-bot-memory-dream/undo-bot-memory-dream.http.controller';
-import { BotMemoryDreamOrmEntity } from './database/bot-memory-dream.orm-entity';
-import { BotMemoryDreamRepository } from './database/bot-memory-dream.repository';
-import { BotDreamsProcessor } from './infrastructure/bot-dreams.processor';
-import { FindBotMemoryDreamHttpController } from './queries/find-bot-memory-dream/find-bot-memory-dream.http.controller';
-import { FindBotMemoryDreamQueryHandler } from './queries/find-bot-memory-dream/find-bot-memory-dream.query-handler';
 
 const httpControllers = [
   ExportBotConversationHttpController,

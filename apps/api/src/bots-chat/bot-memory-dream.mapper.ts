@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import type { BotMemoryDream } from '@oppenheimer/shared';
-import type { BotMemoryDreamOrmEntity } from './database/bot-memory-dream.orm-entity';
 import type { BotMemoryFactEntity } from '../bots/domain/bot-memory-fact.entity';
+import type { BotMemoryDreamOrmEntity } from './database/bot-memory-dream.orm-entity';
 import type { DreamFact, StoredDream } from './domain/bot-dream.policy';
 import {
   BotMemoryDreamResponseDto,

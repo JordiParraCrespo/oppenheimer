@@ -24,8 +24,8 @@ import {
 import { AppError, callApi } from '@oppenheimer/frontend-core';
 import {
   BOT_APPROVAL_DECISIONS,
-  BOT_EVENT_OUTCOMES,
   BOT_DREAM_ACTIVITIES,
+  BOT_EVENT_OUTCOMES,
   BOT_GOAL_ACTIVITIES,
   BOT_LOOP_ACTIVITIES,
   BOT_QUESTION_OUTCOMES,

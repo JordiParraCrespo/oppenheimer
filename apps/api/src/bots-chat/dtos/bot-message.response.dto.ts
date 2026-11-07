@@ -1,9 +1,9 @@
 import { ApiExtraModels, ApiProperty, getSchemaPath } from '@nestjs/swagger';
 import {
   BOT_APPROVAL_EVENT_STAGES,
+  BOT_DREAM_ACTIVITIES,
   BOT_EVENT_OUTCOMES,
   BOT_GOAL_ACTIVITIES,
-  BOT_DREAM_ACTIVITIES,
   BOT_LOOP_ACTIVITIES,
   BOT_MESSAGE_ROLES,
   BOT_QUESTION_OUTCOMES,
@@ -12,9 +12,9 @@ import {
   BOT_SESSION_EVENT_STATES,
   BOT_SUBAGENT_STATUSES,
   type BotApprovalEventStage,
+  type BotDreamActivity,
   type BotEventOutcome,
   type BotGoalActivity,
-  type BotDreamActivity,
   type BotLoopActivity,
   type BotMessageRole,
   type BotQuestionOutcome,

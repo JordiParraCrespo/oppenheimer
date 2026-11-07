@@ -20,7 +20,8 @@ export function BotDreaming({ botId }: { botId: string }) {
   const request = useRequestBotMemoryDream();
   const undo = useUndoBotMemoryDream();
   const latest = dream ?? null;
-  const requested = request.isSuccess && (!latest || Date.parse(latest.createdAt) < request.submittedAt);
+  const requested =
+    request.isSuccess && (!latest || Date.parse(latest.createdAt) < request.submittedAt);
 
   const hint = requested
     ? t('bots.settings.memory.dream.queued')
