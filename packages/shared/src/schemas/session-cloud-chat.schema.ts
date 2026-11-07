@@ -19,8 +19,12 @@ export const cloudSessionRefSchema = z
 
 /** Lines one append may carry: a long history arrives as several. */
 export const MAX_CLOUD_TRANSCRIPT_BATCH = 200;
-/** One transcript line, as Claude Code wrote it: a tool's output can be large. */
-export const MAX_CLOUD_TRANSCRIPT_LINE_BYTES = 1_000_000;
+/**
+ * One transcript line, at most: under the API's request body limit with room
+ * for a few beside it. A tool's output can run past it, so the hook shortens
+ * a line's long strings before it sends it (the chat clips them anyway).
+ */
+export const MAX_CLOUD_TRANSCRIPT_LINE_BYTES = 64_000;
 
 /**
  * `POST /sessions/cloud-transcript`, from the session's SessionStart hook: the

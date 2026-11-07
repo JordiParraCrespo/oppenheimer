@@ -28,7 +28,16 @@ import { sessionKey } from './session-key.mjs';
 const STATE_DIR = join(tmpdir(), 'oppenheimer-cloud-chat');
 const POLL_MS = 300;
 const MAX_BACKOFF_MS = 10_000;
-const BATCH_LINES = 200;
+/** A request's body, at most: the API takes about 100 KB. */
+const BATCH_BYTES = 90_000;
+/** One line, at most (`MAX_CLOUD_TRANSCRIPT_LINE_BYTES` in @oppenheimer/shared). */
+const MAX_LINE_BYTES = 64_000;
+/** How long a string in a line too large may stay. */
+const KEEP_CHARS = 4_000;
+const TOO_LARGE = JSON.stringify({
+  type: 'system',
+  content: '(a transcript line too large to send)',
+});
 /** A transcript that has not grown for this long, whose agent is gone, is finished. */
 const IDLE_EXIT_MS = 10 * 60_000;
 
@@ -40,6 +49,44 @@ export function takeCompleteLines(buffer) {
   const cut = buffer.lastIndexOf('\n');
   if (cut < 0) return { lines: [], rest: buffer };
   return { lines: buffer.slice(0, cut).split('\n'), rest: buffer.slice(cut + 1) };
+}
+
+/**
+ * A line the API will take: as it is when it fits, else with every long
+ * string in it cut short (a tool's output, a file it read), else a stand-in
+ * that says a line was there. Its number is kept either way.
+ */
+export function fitLine(line) {
+  if (Buffer.byteLength(line) <= MAX_LINE_BYTES) return line;
+  const cut = (value) => {
+    if (typeof value === 'string') {
+      return value.length > KEEP_CHARS ? `${value.slice(0, KEEP_CHARS)}… [cut short]` : value;
+    }
+    if (Array.isArray(value)) return value.map(cut);
+    if (value && typeof value === 'object') {
+      return Object.fromEntries(Object.entries(value).map(([key, inner]) => [key, cut(inner)]));
+    }
+    return value;
+  };
+  try {
+    const shorter = JSON.stringify(cut(JSON.parse(line)));
+    return Buffer.byteLength(shorter) <= MAX_LINE_BYTES ? shorter : TOO_LARGE;
+  } catch {
+    return TOO_LARGE;
+  }
+}
+
+/** The raw lines at the front of `lines` that fit one request: at least one. */
+function takeBatch(lines) {
+  let bytes = 0;
+  let count = 0;
+  for (const line of lines) {
+    const size = line ? Buffer.byteLength(fitLine(line)) + 4 : 0;
+    if (count > 0 && bytes + size > BATCH_BYTES) break;
+    bytes += size;
+    count++;
+  }
+  return lines.slice(0, count);
 }
 
 async function start() {
@@ -124,15 +171,12 @@ async function followTranscript(job) {
     }
 
     while (unsent.length > 0) {
-      const batch = unsent.slice(0, BATCH_LINES);
-      const lines = batch.filter(Boolean);
-      const outcome = lines.length === 0 ? 'stored' : await post(job, sent.lines, lines);
-      if (outcome === 'retry') break;
+      const batch = takeBatch(unsent);
+      const lines = batch.filter(Boolean).map(fitLine);
+      if (lines.length > 0 && !(await post(job, sent.lines, lines))) break;
       unsent = unsent.slice(batch.length);
       sent = {
         bytes: sent.bytes + batch.reduce((bytes, line) => bytes + Buffer.byteLength(line) + 1, 0),
-        // A batch refused for good is skipped, and its numbers with it, so
-        // the lines after it keep the numbers they have in the file.
         lines: sent.lines + lines.length,
       };
       writeFileSync(stateFile, JSON.stringify(sent));
@@ -146,10 +190,9 @@ async function followTranscript(job) {
 }
 
 /**
- * Sends lines numbered `from` on. `stored` once the API has them; `refused`
- * when it never will (a line too large, a malformed batch), so the streamer
- * moves past them; `retry` for anything that may pass later: no network, a
- * rate limit, a session the console has not learned of yet.
+ * Sends lines numbered `from` on; whether the API has them. Anything else is
+ * tried again later: no network, a rate limit, a session the console has not
+ * learned of yet. The lines stay unsent meanwhile, never dropped.
  */
 async function post(job, from, lines) {
   try {
@@ -159,10 +202,9 @@ async function post(job, from, lines) {
       body: JSON.stringify({ cloudSessionId: job.session, from, lines }),
       signal: AbortSignal.timeout(10_000),
     });
-    if (response.ok) return 'stored';
-    return response.status === 400 || response.status === 413 ? 'refused' : 'retry';
+    return response.ok;
   } catch {
-    return 'retry';
+    return false;
   }
 }
 

@@ -218,7 +218,6 @@ const server = createServer(async (req, res) => {
       for (const wake of s.wakers) wake();
       return send(res, 202, { id: reply.id });
     }
-
   } catch (error) {
     return send(res, 400, { error: String(error.message ?? error) });
   }
