@@ -13,10 +13,15 @@ interface SentEvent {
   user?: Record<string, unknown>;
   extra?: Record<string, unknown>;
   fingerprint?: string[];
+  exception?: { values?: { value?: string }[] };
 }
 
 /** What left the process: the events of every envelope the client built. */
 const sent: SentEvent[] = [];
+
+/** Events leave in whatever order the SDK finishes them, not the order captured. */
+const sentFor = (message: string) =>
+  sent.find((event) => event.exception?.values?.[0]?.value === message);
 
 // Regression: a report without the correlation id (nothing ties it to the
 // logs), with one report's tags leaking into the next, or with a secret.
@@ -57,7 +62,9 @@ describe('ErrorReportingModule with a DSN', () => {
     reporter.capture(new Error('second'));
     await reporter.flush(500);
 
-    const [first, second] = sent;
+    expect(sent).toHaveLength(2);
+    const first = sentFor('boom');
+    const second = sentFor('second');
     expect(first?.level).toBe('warning');
     expect(first?.tags).toMatchObject({
       service: 'api',
