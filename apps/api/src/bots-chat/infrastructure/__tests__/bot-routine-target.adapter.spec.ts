@@ -49,6 +49,7 @@ function setup(
     unread?: number;
     seenAt?: Date;
     cause?: 'schedule' | 'manual';
+    guard?: boolean;
   } = {},
 ) {
   const automation = routine();
@@ -78,6 +79,7 @@ function setup(
       effort: null,
       createdAt: new Date(now.getTime() - 30 * 24 * 3_600_000),
       ownerSeenAt: options.seenAt ?? now,
+      routineSpendGuard: options.guard ?? true,
     })),
   } as unknown as BotModelAccessResolver;
   const enqueueOnce = vi.fn(async (turn: { id: string }) => ({
@@ -204,6 +206,23 @@ describe('BotRoutineTarget', () => {
     it('runs with fewer reports unseen, and the owner seen within three days', async () => {
       const { target, context } = setup({ unread: 2, seenAt: new Date(now.getTime() - 71 * HOUR) });
       expect((await target.decide(context)).kind).toBe('launch');
+    });
+
+    it('reads the workspace’s own thresholds from the run’s limits', async () => {
+      const { target, context } = setup({ unread: 1, seenAt: new Date(now.getTime() - HOUR) });
+      expect((await target.decide(context)).kind).toBe('launch');
+      const strict = { ...context, limits: { ...context.limits, unattendedReports: 1 } };
+      expect(await target.decide(strict)).toMatchObject({ kind: 'skip', reason: 'unattended' });
+    });
+
+    it('runs every routine of a bot whose owner turned the guard off, counting nothing', async () => {
+      const { target, context, countRoutineReportsSince } = setup({
+        unread: 9,
+        seenAt: new Date(now.getTime() - 300 * HOUR),
+        guard: false,
+      });
+      expect((await target.decide(context)).kind).toBe('launch');
+      expect(countRoutineReportsSince).not.toHaveBeenCalled();
     });
 
     it("lets the owner's Run now through, however long they were away", async () => {

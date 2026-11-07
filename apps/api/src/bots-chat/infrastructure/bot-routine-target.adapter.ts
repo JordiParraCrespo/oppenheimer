@@ -82,7 +82,7 @@ export class BotRoutineTarget implements AutomationRunTargetPort<RoutineLaunch> 
     const bot = await this.access.bot(automation.organizationId, botId);
     // The spend guard: while the owner is away, the bot's routines stop. Run
     // now is the owner (or the bot in a turn they started), so it passes.
-    if (run.cause !== 'manual' && (await this.unattended(automation.organizationId, bot, now))) {
+    if (run.cause !== 'manual' && (await this.unattended(context, bot))) {
       return { kind: 'skip', reason: 'unattended', pause: 'unattended' };
     }
     const trigger = automation.triggers.find((candidate) => candidate.id === run.triggerId);
@@ -105,15 +105,19 @@ export class BotRoutineTarget implements AutomationRunTargetPort<RoutineLaunch> 
     };
   }
 
-  /** Whether the bot's owner is away, as the spend guard reads it. */
-  private async unattended(organizationId: string, bot: BotEntity, now: Date): Promise<boolean> {
-    const ownerSeenAt = bot.ownerSeenAt;
+  /** Whether the bot's owner is away, as the spend guard reads it at the workspace's thresholds. */
+  private async unattended(context: RunTargetContext, bot: BotEntity): Promise<boolean> {
+    if (!bot.routineSpendGuard) return false;
+    const { ownerSeenAt } = bot;
     const unreadReports = await this.turns.countRoutineReportsSince(
-      organizationId,
+      context.automation.organizationId,
       bot.id,
       ownerSeenAt ?? bot.createdAt,
     );
-    return routineSpendGuard({ unreadReports, ownerSeenAt, now }) === 'pause';
+    const { limits, now } = context;
+    return (
+      routineSpendGuard({ enabled: true, unreadReports, ownerSeenAt, limits, now }) === 'pause'
+    );
   }
 
   async launch(context: RunTargetContext, input: RoutineLaunch): Promise<RunDispatchRef> {

@@ -347,6 +347,8 @@ export const updateBotSchema = z.object({
   effort: z.enum(SESSION_EFFORTS).nullable().optional(),
   permission: botPermissionSchema.optional(),
   learnAutomatically: z.boolean().optional(),
+  /** Whether its routines pause while its owner is away (`26-bot-routines.md` §6). */
+  routineSpendGuard: z.boolean().optional(),
   /** The whole set of sections it shows in; `[]` shows it in Employees only. */
   sections: botSectionsSchema.optional(),
 });

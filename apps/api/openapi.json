@@ -31691,6 +31691,14 @@
           },
           "maxRunSeconds": {
             "type": "number"
+          },
+          "unattendedReports": {
+            "type": "number",
+            "description": "Routine reports a bot’s owner has not seen before its routines pause."
+          },
+          "unattendedAwaySeconds": {
+            "type": "number",
+            "description": "How long a bot’s owner may be away from its chat before its routines pause."
           }
         },
         "required": [
@@ -31700,7 +31708,9 @@
           "overlap",
           "staleTtlSeconds",
           "missedGraceSeconds",
-          "maxRunSeconds"
+          "maxRunSeconds",
+          "unattendedReports",
+          "unattendedAwaySeconds"
         ]
       },
       "UpdateAutomationSettingsRequest": {
@@ -31760,6 +31770,22 @@
             "minimum": 60,
             "exclusiveMinimum": false,
             "maximum": 604800,
+            "exclusiveMaximum": false,
+            "nullable": true
+          },
+          "unattendedReports": {
+            "type": "integer",
+            "minimum": 1,
+            "exclusiveMinimum": false,
+            "maximum": 1000,
+            "exclusiveMaximum": false,
+            "nullable": true
+          },
+          "unattendedAwaySeconds": {
+            "type": "integer",
+            "minimum": 3600,
+            "exclusiveMinimum": false,
+            "maximum": 7776000,
             "exclusiveMaximum": false,
             "nullable": true
           }
@@ -34636,6 +34662,10 @@
             "type": "boolean",
             "description": "Whether what it decides to remember is saved without asking."
           },
+          "routineSpendGuard": {
+            "type": "boolean",
+            "description": "Whether its routines pause while its owner is away from its chat, and start again when they are back."
+          },
           "sections": {
             "type": "array",
             "description": "The console sections whose sidebar lists it beside Employees, in catalog order; empty shows it in Employees only.",
@@ -34682,6 +34712,7 @@
           "permission",
           "createdByBotId",
           "learnAutomatically",
+          "routineSpendGuard",
           "sections",
           "createdAt",
           "updatedAt",
@@ -34830,6 +34861,9 @@
             ]
           },
           "learnAutomatically": {
+            "type": "boolean"
+          },
+          "routineSpendGuard": {
             "type": "boolean"
           },
           "sections": {

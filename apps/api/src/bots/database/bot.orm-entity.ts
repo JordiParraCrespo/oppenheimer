@@ -90,6 +90,10 @@ export class BotOrmEntity {
   @Column({ type: 'boolean', default: true })
   learnAutomatically!: boolean;
 
+  /** Whether its routines pause while its owner is away (`1794045167486-AddRoutineSpendGuard`). */
+  @Column({ type: 'boolean', default: true })
+  routineSpendGuard!: boolean;
+
   /** The console sections whose sidebar lists it (`1791003500000-AddBotSections`). */
   @Column({ type: 'varchar', length: 16, array: true, default: () => "'{}'" })
   sections!: string[];

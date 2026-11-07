@@ -12,6 +12,13 @@ import type { MigrationInterface, QueryRunner } from 'typeorm';
  *   (the write is conditional on the old value), and only on what is
  *   already a person's action in the chat, so it adds no hot write to `bot`
  *   beyond the `lastMessageAt` a message already writes.
+ * - `bot."routineSpendGuard"`: the owner can turn the guard off for one bot
+ *   that should run unattended. `NOT NULL DEFAULT true`: on for every bot.
+ * - `automation_settings."unattendedReports"` and `"unattendedAwaySeconds"`:
+ *   the workspace's thresholds, null for the platform's (3 reports, 72 h).
+ *   No ceiling: they only ever stop routines sooner or later, never spend
+ *   past the run limits. `CHK_automation_settings_unattended` holds the
+ *   bounds the API's schema sends.
  * - `automation."pausedReason"` gains `unattended`, the guard's pause, which
  *   the owner's return lifts on its own.
  *
@@ -27,6 +34,15 @@ export class AddRoutineSpendGuard1794045167486 implements MigrationInterface {
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(
       `ALTER TABLE bot ADD COLUMN "ownerSeenAt" timestamptz NOT NULL DEFAULT now()`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE bot ADD COLUMN "routineSpendGuard" boolean NOT NULL DEFAULT true`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE automation_settings ADD COLUMN "unattendedReports" integer, ADD COLUMN "unattendedAwaySeconds" integer`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE automation_settings ADD CONSTRAINT "CHK_automation_settings_unattended" CHECK ((COALESCE("unattendedReports", 1) >= 1) AND (COALESCE("unattendedAwaySeconds", 3600) >= 3600))`,
     );
     await queryRunner.query(
       `ALTER TABLE automation DROP CONSTRAINT "CHK_automation_paused_reason"`,
@@ -47,6 +63,13 @@ export class AddRoutineSpendGuard1794045167486 implements MigrationInterface {
     await queryRunner.query(
       `ALTER TABLE automation ADD CONSTRAINT "CHK_automation_paused_reason" CHECK ("pausedReason" IN ('user', 'project_archived', 'host_unpaired', 'owner_lost_access', 'bot_provider_missing', 'cloud_key_missing'))`,
     );
+    await queryRunner.query(
+      `ALTER TABLE automation_settings DROP CONSTRAINT "CHK_automation_settings_unattended"`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE automation_settings DROP COLUMN "unattendedAwaySeconds", DROP COLUMN "unattendedReports"`,
+    );
+    await queryRunner.query(`ALTER TABLE bot DROP COLUMN "routineSpendGuard"`);
     await queryRunner.query(`ALTER TABLE bot DROP COLUMN "ownerSeenAt"`);
   }
 }

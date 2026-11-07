@@ -1939,6 +1939,9 @@
         "title": "Rutinas",
         "subtitle": "Trabajo que el bot hace según un horario o cuando pasa algo.",
         "empty": "Las rutinas son tareas que este bot ejecuta según un horario o cuando pasa algo. Pídele en el chat que configure una.",
+        "guard": "Pausar mientras no estás",
+        "guardHint": "Detén sus rutinas mientras no lees lo que dicen. Vuelven a funcionar cuando abres este chat.",
+        "guardFailed": "No se pudo cambiar si las rutinas se pausan mientras no estás.",
         "askInChat": "Pedir en el chat",
         "schedule": "Horario · {{when}}",
         "github": "GitHub · {{when}}",
@@ -2046,6 +2049,9 @@
       "checkedHint": "Los bots marcados aparecen en {{section}}.",
       "manageAll": "Gestionar en {{employees}}",
       "hide": "Ocultar de {{section}}"
+    },
+    "routineGuard": {
+      "notice": "He pausado mis rutinas mientras no estabas. Vuelven a funcionar cuando abras este chat."
     }
   },
   "automations": {

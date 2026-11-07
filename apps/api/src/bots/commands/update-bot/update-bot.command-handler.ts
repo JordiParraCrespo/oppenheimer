@@ -49,6 +49,7 @@ export class UpdateBotCommandHandler implements ICommandHandler<UpdateBotCommand
         effort: input.effort,
         permission: input.permission,
         learnAutomatically: input.learnAutomatically,
+        routineSpendGuard: input.routineSpendGuard,
         sections: input.sections,
       });
     } catch (error) {

@@ -106,6 +106,7 @@ function toBot(dto: BotResponseDto): BotEntity {
     new Date(dto.lastActivityAt),
     dto.lastMessagePreview,
     dto.sections,
+    dto.routineSpendGuard,
   );
 }
 

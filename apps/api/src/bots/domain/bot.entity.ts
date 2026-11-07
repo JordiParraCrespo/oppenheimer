@@ -48,6 +48,8 @@ export interface BotProps {
   permission: BotPermission;
   /** Whether what it decides to remember is saved without asking (slice 3). */
   learnAutomatically: boolean;
+  /** Whether its routines pause while its owner is away (the spend guard); on unless turned off. */
+  routineSpendGuard?: boolean;
   /** The console sections it shows in beside Employees, each once; none when absent. */
   sections?: readonly BotSection[];
   /** When its chat last had a message, and the start of it; written by the chat, never an edit. */
@@ -89,6 +91,7 @@ export interface BotEdit {
   effort?: SessionEffort | null;
   permission?: BotPermission;
   learnAutomatically?: boolean;
+  routineSpendGuard?: boolean;
   sections?: readonly BotSection[];
 }
 
@@ -104,6 +107,7 @@ export type BotEditedField =
   | 'effort'
   | 'permission'
   | 'learnAutomatically'
+  | 'routineSpendGuard'
   | 'sections';
 
 /**
@@ -206,6 +210,9 @@ export class BotEntity extends AggregateRoot<BotProps> {
   get learnAutomatically(): boolean {
     return this.props.learnAutomatically;
   }
+  get routineSpendGuard(): boolean {
+    return this.props.routineSpendGuard ?? true;
+  }
   get sections(): readonly BotSection[] {
     return this.props.sections ?? [];
   }
@@ -251,6 +258,10 @@ export class BotEntity extends AggregateRoot<BotProps> {
     if (changes.learnAutomatically !== undefined) {
       props.learnAutomatically = changes.learnAutomatically;
       edited.add('learnAutomatically');
+    }
+    if (changes.routineSpendGuard !== undefined) {
+      props.routineSpendGuard = changes.routineSpendGuard;
+      edited.add('routineSpendGuard');
     }
     if (changes.sections !== undefined) {
       props.sections = inSectionOrder(changes.sections);

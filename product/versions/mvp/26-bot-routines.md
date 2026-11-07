@@ -307,9 +307,12 @@ before this get no heartbeat until asked.
   | The owner is back: opens the bot's chat (or brings its tab back into view), writes to it, or decides one of its cards | **Resume**: every routine paused as `unattended`, and only those, starts again; the chat's lines say so |
 
   - Presence is `bot."ownerSeenAt"` (not `ownerReadAt`), written at most
-    once a minute by `POST /bots/:id/seen` (the console's chat sends it)
-    and by sending a message, deciding an approval, or answering or
-    dismissing a question. A new bot is seen at its creation.
+    once a minute by `POST /bots/:id/seen` and by sending a message,
+    deciding an approval, or answering or dismissing a question. The
+    console's chat sends it when it opens, when its tab comes back into
+    view, and every five minutes while it stays in view, so what a routine
+    says into an open chat counts as read. A new bot is seen at its
+    creation.
   - The 72 h rule stops a heartbeat that only ever stays quiet: quiet
     beats still cost a model turn each.
   - The owner's own Run now passes the guard.
@@ -319,10 +322,16 @@ before this get no heartbeat until asked.
     raised by a bots-chat listener on the first routine's pause. It answers
     the oldest routine paused as `unattended`, and only that routine's
     pause puts the Inbox line, so the owner hears it once however many
-    routines stopped.
-  - Not built: the numbers as `AutomationPolicy` settings (they are
-    constants in `bot-spend-guard.policy.ts`), and a switch to turn the
-    guard off for one bot.
+    routines stopped. The line is in the owner's saved language
+    (`bots.routineGuard.notice`). A pause delivered after the owner was
+    back in the chat stops nothing more (`ownerBackSince`).
+  - The numbers are the workspace's automation settings
+    (`unattendedReports`, `unattendedAwaySeconds` on
+    `PATCH /automation-settings`), the platform's 3 and 72 h by default,
+    with no ceiling: they only stop routines sooner or later.
+  - **Pause while you're away**, a switch on the bot's Routines tab
+    (`bot."routineSpendGuard"`, on by default), turns the guard off for a
+    bot that should run unattended.
 - A routine **runs as its owner** (note 16 §Q5), re-checked at dispatch,
   with the bot's permissions as they are at the run; a routine never
   widens them. A routine created **by the bot** goes through
@@ -436,6 +445,7 @@ Each is a stacked pull request, green on `pnpm ci:local`.
   its cost is the run budget, the overlap guard and quiet turns.
 - 2026-11-07, asked by the owner: **the spend guard stops and comes back on
   its own**, like an agent that stops watching a pull request when nobody
-  writes, says so once, and resumes when written to. No nudge, no cards, no
-  per-bot switch yet: a pause after 3 unseen reports or 72 h away, one
-  Inbox line, and a resume as soon as the owner is back in the chat (§6).
+  writes, says so once, and resumes when written to. No nudge and no cards:
+  a pause after 3 unseen reports or 72 h away (the workspace's settings),
+  one Inbox line, a resume as soon as the owner is back in the chat, and a
+  per-bot switch to turn it off (§6).

@@ -1230,4 +1230,6 @@ earlier note:
   the owner has not seen, or 72 h away from the bot's chat, every routine
   of the bot pauses as `unattended` with one Inbox line, and the owner's
   next visit to the chat (or message, or decided card) resumes them. No
-  cards, and no switch yet (26 §6, "Changed 2026-11-07").
+  cards; the thresholds are workspace automation settings, and a per-bot
+  "Pause while you're away" switch turns it off (26 §6, "Changed
+  2026-11-07").

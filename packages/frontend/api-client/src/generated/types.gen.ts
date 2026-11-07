@@ -2685,6 +2685,14 @@ export type AutomationSettingsResponseDto = {
     staleTtlSeconds: number;
     missedGraceSeconds: number;
     maxRunSeconds: number;
+    /**
+     * Routine reports a bot’s owner has not seen before its routines pause.
+     */
+    unattendedReports: number;
+    /**
+     * How long a bot’s owner may be away from its chat before its routines pause.
+     */
+    unattendedAwaySeconds: number;
 };
 
 export type UpdateAutomationSettingsRequest = {
@@ -2695,6 +2703,8 @@ export type UpdateAutomationSettingsRequest = {
     staleTtlSeconds?: number | null;
     missedGraceSeconds?: number | null;
     maxRunSeconds?: number | null;
+    unattendedReports?: number | null;
+    unattendedAwaySeconds?: number | null;
 };
 
 export type UpdateBotRoutineRequest = {
@@ -3732,6 +3742,10 @@ export type BotResponseDto = {
      */
     learnAutomatically: boolean;
     /**
+     * Whether its routines pause while its owner is away from its chat, and start again when they are back.
+     */
+    routineSpendGuard: boolean;
+    /**
      * The console sections whose sidebar lists it beside Employees, in catalog order; empty shows it in Employees only.
      */
     sections: Array<'sessions' | 'automations' | 'plan' | 'pulls'>;
@@ -3769,6 +3783,7 @@ export type UpdateBotRequest = {
     effort?: 'none' | 'minimal' | 'low' | 'medium' | 'high' | 'xhigh' | 'max' | 'ultra' | null;
     permission?: 'auto' | 'full';
     learnAutomatically?: boolean;
+    routineSpendGuard?: boolean;
     sections?: Array<'sessions' | 'automations' | 'plan' | 'pulls'>;
 };
 
