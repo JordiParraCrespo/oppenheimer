@@ -314,6 +314,49 @@ after them. They are two kinds of the one place, not two places:
   Cursor), the host-started kind if its CLI gets a cloud mode (a runner
   adapter, as Claude). Until then Grok runs as one of Cursor's models.
 
+## The chat of a cloud session (2026-11-07)
+
+The owner asked to see a Claude Code cloud session's chat in the console and
+answer it there, the way claude.ai shows it. The research is
+`../research/cloud-chat-bridge/README.md`; what was built:
+
+- **The session sends its own chat.** A cloud session streams to claude.ai
+  over Anthropic's private session API, which we cannot join, but Claude
+  Code also writes the same conversation to its transcript file in the VM.
+  A SessionStart hook in the repository starts a streamer that follows that
+  file and posts its lines to `POST /v1/sessions/cloud-transcript`, numbered
+  so a resend stores nothing twice, in batches under the API's body limit
+  (a line over 64 KB has its long strings cut short). The API keeps them in
+  `session_cloud_line`, for the cloud sessions this workspace launched only
+  (`SESSIONS_053` otherwise), on a personal token with `sessions:write`.
+- **The console draws it with the chat it already has.** A Claude Code
+  cloud session's pane reads `GET /v1/sessions/{id}/cloud-chat` from where
+  it stopped, every 1.5 s, into the same `SessionChat` a host session's
+  terminal feeds. Until a line has come it is the cloud pane it was.
+- **A reply waits for the agent's turn to end.** The composer's message is
+  kept (`POST /v1/sessions/{id}/cloud-replies`, `session_cloud_reply`) until
+  the session's Stop hook collects it (`POST /v1/sessions/cloud-replies/take`,
+  waiting up to two minutes) and hands it to the agent as its block
+  decision, Claude Code's documented way for a hook to keep an agent going.
+  Claude Code keeps that as a hidden "Stop hook feedback" line, which the
+  console reads as the person's message, where the agent took it.
+- **What it cannot do.** An idle session is only woken by a message, so a
+  reply typed after the Stop hook gave up waits for the next turn; waking it
+  from a host (`claude -p … --cloud <id>`) is the next step. Stop does
+  nothing: no hook can interrupt a turn. A session started on claude.ai,
+  not from the console, is refused until there is a way to adopt one.
+- **Decided with the owner (2026-11-07).**
+  1. A session started on claude.ai, not from the console, keeps no chat
+     here: only sessions the console launched (`SESSIONS_053`). Not adopted.
+  2. A reply to an idle session is sent from one of the person's hosts,
+     signed in to the same claude.ai account (`claude -p … --cloud <id>`),
+     so it wakes the session. The next pull request.
+  3. The console gets a "turn on chat" panel on a cloud session: the key,
+     the hooks to add to the repository, and the host to allow in the cloud
+     environment. The next pull request.
+  4. Stop and the Terminal/Chat switch are hidden on a cloud session's chat,
+     where neither can do anything. The next pull request.
+
 ## Follow-ups to a cloud agent (2026-11-05)
 
 Jordi asked for two-way messaging between bots and coding agents, cloud
@@ -339,7 +382,9 @@ allows:
 - **Claude Code: not here.** `claude -p --cloud <id>` queues a follow-up
   from a host's CLI, but the runner does not drive it and a session's
   conversation is not ours to read; the prompt is refused (`SESSIONS_038`)
-  with the claude.ai link, as before.
+  with the claude.ai link, as before. *Changed 2026-11-07:* a session whose
+  repository carries the hooks sends its chat and takes replies through
+  them ("The chat of a cloud session", above).
 - **Codex: not here.** Follow-ups exist in ChatGPT only; refused the same
   way, with the chatgpt.com link.
 - **Reading the conversation.** None of the three: see

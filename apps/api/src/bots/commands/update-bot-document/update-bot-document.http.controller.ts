@@ -14,7 +14,9 @@ import type { AccessScope } from '@oppenheimer/backend-authz';
 import { ApiAuthProblemResponses, ApiProblemResponse } from '@oppenheimer/backend-core';
 import { BOT_DOCUMENT_NAMES } from '@oppenheimer/shared';
 import { CheckPolicies } from '../../../auth/decorators/check-policies.decorator';
+import { CurrentScope } from '../../../auth/decorators/current-scope.decorator';
 import { RequireScopes } from '../../../auth/decorators/require-scopes.decorator';
+import type { ScopeContext } from '../../../auth/domain/scope-context.types';
 import { ApiAuthGuard } from '../../../auth/guards/api-auth.guard';
 import { PoliciesGuard } from '../../../auth/guards/policies.guard';
 import { CurrentAccessScope } from '../../../authz/decorators/current-access-scope.decorator';
@@ -62,9 +64,16 @@ export class UpdateBotDocumentHttpController {
     @Param('id', new ParseUUIDPipe()) botId: string,
     @Param('name') name: string,
     @Body() body: UpdateBotDocumentRequest,
+    @CurrentScope() credential: ScopeContext | null,
   ): Promise<BotDocumentResponseDto> {
     await this.commandBus.execute<UpdateBotDocumentCommand, string>(
-      new UpdateBotDocumentCommand({ scope, botId, name, input: body }),
+      new UpdateBotDocumentCommand({
+        scope,
+        botId,
+        name,
+        input: body,
+        credentialScopes: credential ? credential.scopes : null,
+      }),
     );
     const document = await this.queryBus.execute<FindBotDocumentQuery, BotDocumentEntity>(
       new FindBotDocumentQuery({ scope, botId, name }),

@@ -148,6 +148,13 @@ export interface BotTurnRepositoryPort {
   findHolding(scope: AccessScope, botId: string, messageId: string): Promise<Option<BotTurnEntity>>;
   /** The worker's read: by id alone, the job carries nothing else it can trust. */
   findForRun(turnId: string): Promise<Option<BotTurnEntity>>;
+  /**
+   * How many of the bot's routine turns wrote something to the chat after
+   * `since`, by when it was written: the reports the owner has not seen (the
+   * spend guard, `26-bot-routines.md` §6). A quiet turn writes no message
+   * and is not one.
+   */
+  countRoutineReportsSince(organizationId: string, botId: string, since: Date): Promise<number>;
   /** The bot's queued turns whose key begins with `prefix` (a goal's continuations, a loop's runs). */
   findQueuedBySourcePrefix(
     organizationId: string,

@@ -135,6 +135,12 @@ export interface BotMemoryDreamState {
   pending: boolean;
 }
 
+/**
+ * What a person writes about themselves in Settings → Memory, in characters:
+ * in the system prompt of every bot they made in the workspace, beside the
+ * facts their bots learned about them.
+ */
+export const PERSON_ABOUT_MAX = 4_000;
 /** The most revisions one read returns, newest first. */
 export const BOT_REVISIONS_PAGE_MAX = 100;
 export const BOT_REVISIONS_PAGE_DEFAULT = 50;
@@ -397,6 +403,8 @@ export const updateBotSchema = z.object({
   effort: z.enum(SESSION_EFFORTS).nullable().optional(),
   permission: botPermissionSchema.optional(),
   learnAutomatically: z.boolean().optional(),
+  /** Whether its routines pause while its owner is away (`26-bot-routines.md` §6). */
+  routineSpendGuard: z.boolean().optional(),
   /** The whole set of sections it shows in; `[]` shows it in Employees only. */
   sections: botSectionsSchema.optional(),
 });
@@ -1424,3 +1432,12 @@ export type BotStreamSnapshot = Extract<BotStreamEvent, { type: 'snapshot' }>;
 /** The SSE event names on a bot's stream. */
 export const BOT_STREAM_READY = 'ready';
 export const BOT_STREAM_EVENT = 'bot';
+
+/**
+ * `PUT /bot-memory/person/about`: what the person writes about themselves,
+ * in every bot's system prompt. Empty clears it.
+ */
+export const updatePersonAboutSchema = z.object({
+  about: z.string().trim().max(PERSON_ABOUT_MAX),
+});
+export type UpdatePersonAboutDto = z.infer<typeof updatePersonAboutSchema>;
