@@ -96,13 +96,17 @@ export function NewSessionSend({
   const attempt = useRef<{ key: string; body: string } | null>(null);
   const upload = useUploadSessionAttachment();
   const create = useCreateSession({
-    onSuccess: (session) => {
+    onSuccess: (session, { input }) => {
       attempt.current = null;
-      setNewSessionTask('');
+      // Only a session that started from the task forgets it: Open terminal's
+      // blank one (`useAutoStart`) leaves a half-written task alone.
+      if (input.prompt) setNewSessionTask('');
       navigate({ to: '/sessions/$sessionId', params: { sessionId: session.id } });
     },
   });
-  const startCloud = useStartCloudSession();
+  // Forgotten here, not in the launch's own callback, which does not run once
+  // the screen is left while the launch is in flight.
+  const startCloud = useStartCloudSession({ onSuccess: () => setNewSessionTask('') });
   const lastCloudLaunch = useRef<StartCloudSessionInput | null>(null);
   // Files ride a host session's first task; a vendor's agent takes none, and
   // a file is never dropped without a word.
@@ -124,7 +128,6 @@ export function NewSessionSend({
       {
         onSuccess: (session) => {
           attempt.current = null;
-          setNewSessionTask('');
           if (tab && session.cloud?.url) {
             tab.opener = null;
             tab.location.href = session.cloud.url;

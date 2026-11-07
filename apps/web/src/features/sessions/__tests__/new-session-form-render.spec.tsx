@@ -24,10 +24,10 @@ const renders = vi.hoisted(() => new Map<string, number>());
 const prepared = vi.hoisted(() => vi.fn());
 const created = vi.hoisted(() => vi.fn());
 /** The options the send handed `useCreateSession`, so a test can answer as the API would. */
-const createOptions = vi.hoisted(
-  () =>
-    ({ current: null }) as { current: null | { onSuccess?: (session: { id: string }) => void } },
-);
+type CreateOptions = {
+  onSuccess?: (session: { id: string }, variables: { input: { prompt?: string } }) => void;
+};
+const createOptions = vi.hoisted(() => ({ current: null }) as { current: null | CreateOptions });
 
 vi.mock('../components/project-select', () => ({
   ProjectSelect: chip('project', 'project-1'),
@@ -165,7 +165,7 @@ vi.mock('@oppenheimer/frontend-consumer/react', () => ({
   usePrepareSession: () => ({ mutate: prepared }),
   useHostFolders: () => ({ data: undefined, isPending: true, error: null }),
   // Called once per render of NewSessionSend, so it doubles as that section's count.
-  useCreateSession: (options: { onSuccess?: (session: { id: string }) => void }) => {
+  useCreateSession: (options: CreateOptions) => {
     createOptions.current = options;
     renders.set('send', (renders.get('send') ?? 0) + 1);
     return {
@@ -467,6 +467,22 @@ describe('NewSessionForm', () => {
       });
     });
 
+    it('keeps the half-written task when a blank terminal starts without it', async () => {
+      // Open terminal starts a shell with no prompt; the task typed earlier
+      // was not sent, so it must still be there.
+      setNewSessionTask('Fix the wallet');
+      created.mockClear();
+      fireEvent.click(screen.getByRole('button', { name: 'where' }));
+      fireEvent.click(screen.getByRole('button', { name: 'host' }));
+      fireEvent.click(screen.getByRole('button', { name: 'folder:use' }));
+      fireEvent.click(screen.getByRole('button', { name: 'agent:shell' }));
+
+      act(() =>
+        createOptions.current?.onSuccess?.({ id: 'session-1' }, { input: { prompt: undefined } }),
+      );
+      expect(newSessionTask()).toBe('Fix the wallet');
+    });
+
     it('forgets the half-written task once a session starts from it, and not before', async () => {
       created.mockClear();
       fireEvent.click(screen.getByRole('button', { name: 'where' }));
@@ -480,7 +496,9 @@ describe('NewSessionForm', () => {
       expect(created).toHaveBeenCalledTimes(1);
       expect(newSessionTask()).toBe('Fix the wallet');
 
-      act(() => createOptions.current?.onSuccess?.({ id: 'session-1' }));
+      act(() =>
+        createOptions.current?.onSuccess?.({ id: 'session-1' }, created.mock.calls[0]?.[0]),
+      );
       expect(newSessionTask()).toBe('');
       expect(window.localStorage.getItem('oppenheimer.new-session.task')).toBeNull();
     });
