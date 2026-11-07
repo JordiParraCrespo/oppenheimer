@@ -52,6 +52,30 @@ describe('factRowModel', () => {
       { shared: false, kind: null, meta: 'editedByYou' },
     ],
   ])('reads %s', (_, row, model) => {
-    expect(factRowModel(row, 'bot-1')).toEqual(model);
+    expect(factRowModel(row, { botId: 'bot-1' })).toEqual(model);
+  });
+});
+
+// What breaks this: on Settings → Memory a fact another bot keeps reads as
+// shared and read-only, so the person cannot change what their bots know.
+describe('factRowModel on the account', () => {
+  it.each([
+    [
+      'a fact another bot learned',
+      fact({ scope: 'person', botId: 'bot-2', source: 'bot' }),
+      { shared: false, kind: null, meta: 'learnedBy' },
+    ],
+    [
+      'a fact you added, kept to look up',
+      fact({ scope: 'person', tier: 'log' }),
+      { shared: false, kind: 'lookedUp', meta: 'addedByYouOn' },
+    ],
+    [
+      'a fact you reworded',
+      fact({ scope: 'person', updatedAt: later }),
+      { shared: false, kind: null, meta: 'editedByYouOn' },
+    ],
+  ])('reads %s by the bot that keeps it', (_, row, model) => {
+    expect(factRowModel(row, { account: true })).toEqual(model);
   });
 });

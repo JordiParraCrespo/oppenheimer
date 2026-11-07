@@ -24,6 +24,10 @@ const OWNERS_BOTS = `SELECT sibling.id FROM bot sibling
 /** The bot's own facts, and the facts about its owner that any bot of theirs keeps. */
 const KEPT_BY_OR_SHARED_WITH = `(fact."botId" = :botId OR (fact."scope" = 'person' AND fact."botId" IN (${OWNERS_BOTS})))`;
 
+/** Every bot the caller made in the fact's workspace. */
+const CALLERS_BOTS = `SELECT mine.id FROM bot mine
+   WHERE mine."organizationId" = fact."organizationId" AND mine."createdByUserId" = :userId`;
+
 @Injectable()
 export class BotMemoryFactRepository
   extends ScopedRepositoryBase<BotMemoryFactOrmEntity>
@@ -43,6 +47,16 @@ export class BotMemoryFactRepository
 
   async findAll(scope: AccessScope, botId: string): Promise<BotMemoryFactEntity[]> {
     return this.newestFirst(this.scopedQuery(scope).andWhere(KEPT_BY_OR_SHARED_WITH, { botId }));
+  }
+
+  async findAboutPerson(scope: AccessScope): Promise<BotMemoryFactEntity[]> {
+    // IDX_bot_memory_fact_person, by the ids of the caller's bots (IDX_bot_created_by).
+    return this.newestFirst(
+      this.scopedQuery(scope).andWhere(
+        `fact."scope" = 'person' AND fact."botId" IN (${CALLERS_BOTS})`,
+        { userId: scope.userId },
+      ),
+    );
   }
 
   async findAllForTurn(organizationId: string, botId: string): Promise<BotMemoryFactEntity[]> {

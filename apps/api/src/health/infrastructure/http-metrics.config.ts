@@ -36,6 +36,7 @@ export const apiHttpMetricsOptions: HttpMetricsOptions = {
     { templatePrefix: '/v1/bot-groups', group: 'bots' },
     { templatePrefix: '/v1/bot-approvals', group: 'bots' },
     { templatePrefix: '/v1/bot-notices', group: 'bots' },
+    { templatePrefix: '/v1/bot-memory', group: 'bots' },
     { templatePrefix: '/v1/model-providers', group: 'bots' },
     { templatePrefix: '/v1/voice', group: 'voice' },
     { templatePrefix: '/v1/inbox', group: 'inbox' },
