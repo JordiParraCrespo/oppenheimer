@@ -266,6 +266,7 @@ export {
   type StopSessionShareVariables,
   useAnswerSessionDecision,
   useCloseSession,
+  useCreateCloudChatKey,
   useCreateSession,
   useInvalidateSession,
   useMoveSession,

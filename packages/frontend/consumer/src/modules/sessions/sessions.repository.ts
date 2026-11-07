@@ -445,6 +445,27 @@ export class SessionsRepository {
     });
   }
 
+  /**
+   * A key for a workspace's Claude Code cloud sessions to send their chat
+   * with: a personal token that can only write sessions, pinned to the
+   * workspace, for 90 days. The secret is answered once, here.
+   */
+  createCloudChatKey(organizationId: string): Promise<string> {
+    return callApi(SessionsErrors.CLOUD_KEY_FAILED, async (api) => {
+      const data = await api.body(
+        heyApiSdk.createApiToken({
+          body: {
+            name: 'Claude Code cloud chat',
+            scopes: ['sessions:write'],
+            organizationIds: [organizationId],
+            expiresInDays: 90,
+          },
+        }),
+      );
+      return data.token;
+    });
+  }
+
   /** The ports the session listens on, as its host lists them now. */
   findPorts(id: string): Promise<SessionPorts> {
     return callApi(SessionsErrors.PORTS_FAILED, async (api) => {

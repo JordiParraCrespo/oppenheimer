@@ -760,3 +760,11 @@ export const useOpenSessionPreviewTab = mutation<
   run: (app, { sessionId, port, path }) =>
     app.sessions.openPreview(sessionId, { port, path, embed: false }),
 });
+
+/**
+ * Creates the key a workspace's Claude Code cloud sessions send their chat
+ * with (the setup panel on a cloud session). Its secret is only in the result.
+ */
+export const useCreateCloudChatKey = mutation<string, string>({
+  run: ({ sessions }, organizationId) => sessions.createCloudChatKey(organizationId),
+});

@@ -2,7 +2,7 @@ import { Button, CommandRow, StatusDot } from '@oppenheimer/design-system-web';
 import { ExternalLink } from '@oppenheimer/design-system-web/icons';
 import type { SessionEntity } from '@oppenheimer/frontend-consumer';
 import { PageFrame } from '@oppenheimer/frontend-web';
-import { lazy, Suspense, useState } from 'react';
+import { lazy, type ReactNode, Suspense, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { CloudLink } from '../components/cloud-link';
 import { canContinueOnHost } from '../lib/cloud-continue';
@@ -29,7 +29,14 @@ const DeleteSessionDialog = lazy(() =>
  * off `codex cloud list` for Codex: the one witness each has. Delete takes it
  * out of Oppenheimer at once; it stays at its vendor.
  */
-export function SessionCloud({ session }: { session: SessionEntity }) {
+export function SessionCloud({
+  session,
+  children,
+}: {
+  session: SessionEntity;
+  /** Drawn under the pane's own parts: the chat's setup on a Claude Code one. */
+  children?: ReactNode;
+}) {
   const { t } = useTranslation();
   const dot = dotFor(session);
   const [deleting, setDeleting] = useState(false);
@@ -71,6 +78,7 @@ export function SessionCloud({ session }: { session: SessionEntity }) {
             copiedLabel={t('sessions.cloud.copied')}
           />
         ) : null}
+        {children}
       </div>
       <Suspense fallback={null}>
         {deleting ? (

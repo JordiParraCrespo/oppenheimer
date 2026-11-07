@@ -118,6 +118,11 @@ export class SessionsService {
     });
   }
 
+  /** A key for the workspace's cloud sessions' chat hooks; its secret is seen once. */
+  createCloudChatKey(organizationId: string): Promise<string> {
+    return this.repository.createCloudChatKey(organizationId);
+  }
+
   /** The ports the session's processes listen on, for its Browser tab. */
   findPorts(id: string): Promise<SessionPorts> {
     return this.repository.findPorts(id);

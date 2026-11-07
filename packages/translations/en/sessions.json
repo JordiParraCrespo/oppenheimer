@@ -744,6 +744,25 @@
     "title": "Live from Claude Code cloud",
     "waiting_one": "Your reply is waiting for the agent to finish its turn.",
     "waiting_other": "{{count}} replies are waiting for the agent to finish its turn.",
-    "replyFailed": "The reply didn’t reach the session. Try again."
+    "replyFailed": "The reply didn’t reach the session. Try again.",
+    "setup": {
+      "title": "Turn on this session’s chat",
+      "intro": "A Claude Code cloud session sends its chat here through a hook in its repository. Set it up once for each repository and cloud environment; sessions you start from Oppenheimer then show their chat here, and you can answer them.",
+      "keyTitle": "1. Create a key",
+      "keyBody": "It lets cloud sessions send this workspace their chat, and nothing else. It’s shown once, so copy it now.",
+      "createKey": "Create key",
+      "creatingKey": "Creating key…",
+      "keyLabel": "Your key",
+      "hookTitle": "2. Add the hook to the repository",
+      "hookBody": "Save this file in the repository as .claude/hooks/oppenheimer-cloud-chat.mjs, then add these lines to .claude/settings.json.",
+      "downloadHook": "Download the hook",
+      "settingsLabel": ".claude/settings.json",
+      "envTitle": "3. Set up the cloud environment",
+      "envBody": "In claude.ai, open the cloud environment’s settings. Add these environment variables, and allow this host in its network access.",
+      "envLabel": "Environment variables",
+      "hostLabel": "Allowed host",
+      "keyPlaceholder": "<your key>",
+      "keyFailed": "The key couldn’t be created. Try again."
+    }
   }
 }
