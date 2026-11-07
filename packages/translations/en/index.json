@@ -494,7 +494,7 @@
       "codes": {
         "SESS_002": "This host makes sessions with one repository.",
         "SESS_010": "Codex's CLI has no cloud environment for this repository.",
-        "SESS_019": "Claude Code on this host isn’t signed in to claude.ai. Run claude auth login on the host, then try again."
+        "SESS_019": "Not signed in to claude.ai. Run claude auth login on the host."
       },
       "help": {
         "SESS_010": {

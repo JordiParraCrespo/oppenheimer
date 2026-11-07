@@ -327,7 +327,7 @@
     "codes": {
       "SESS_002": "Este host crea sesiones con un solo repositorio.",
       "SESS_010": "La CLI de Codex no tiene un entorno en la nube para este repositorio.",
-      "SESS_019": "Claude Code no ha iniciado sesión en claude.ai en este host. Ejecuta claude auth login en el host y vuelve a intentarlo."
+      "SESS_019": "Sin sesión en claude.ai. Ejecuta claude auth login en el host."
     },
     "help": {
       "SESS_010": {
