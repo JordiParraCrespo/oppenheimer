@@ -112,6 +112,9 @@ importers:
       '@oppenheimer/backend-email':
         specifier: workspace:*
         version: link:../../packages/backend/email
+      '@oppenheimer/backend-error-reporting':
+        specifier: workspace:*
+        version: link:../../packages/backend/error-reporting
       '@oppenheimer/backend-i18n':
         specifier: workspace:*
         version: link:../../packages/backend/i18n
@@ -130,9 +133,6 @@ importers:
       '@oppenheimer/translations':
         specifier: workspace:*
         version: link:../../packages/translations
-      '@sentry/nestjs':
-        specifier: ^10.68.0
-        version: 10.68.0(@nestjs/common@11.1.28(class-transformer@0.5.1)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.1.28)(@opentelemetry/core@2.10.0(@opentelemetry/api@1.9.1))
       '@thallesp/nestjs-better-auth':
         specifier: ^2.7.0
         version: 2.7.0(@nestjs/common@11.1.28(class-transformer@0.5.1)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.1.28)(better-auth@1.6.25(@opentelemetry/api@1.9.1)(next@16.3.5(@opentelemetry/api@1.9.1)(@playwright/test@1.62.1)(@types/node@22.20.1)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(pg@8.22.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(vitest@5.0.0(@opentelemetry/api@1.9.1)(@types/node@22.20.1)(jsdom@30.0.1(@noble/hashes@2.2.0))(vite@8.3.0(@types/node@22.20.1)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(tsx@4.21.0)(yaml@2.9.1))))(express@5.2.1)(qs@6.15.3)(typescript@6.0.3)
@@ -778,6 +778,9 @@ importers:
       '@oppenheimer/backend-ddd':
         specifier: workspace:*
         version: link:../ddd
+      '@oppenheimer/backend-error-reporting':
+        specifier: workspace:*
+        version: link:../error-reporting
       '@oppenheimer/shared':
         specifier: workspace:*
         version: link:../../shared
@@ -877,6 +880,43 @@ importers:
       react-dom:
         specifier: 19.2.3
         version: 19.2.3(react@19.2.3)
+      reflect-metadata:
+        specifier: ^0.2.2
+        version: 0.2.2
+      rxjs:
+        specifier: ^7.8.2
+        version: 7.8.2
+      typescript:
+        specifier: ^6.0.3
+        version: 6.0.3
+      vitest:
+        specifier: ^5.0.0
+        version: 5.0.0(@opentelemetry/api@1.9.1)(@types/node@22.20.1)(jsdom@30.0.1(@noble/hashes@2.2.0))(vite@8.3.0(@types/node@22.20.1)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(tsx@4.21.0)(yaml@2.9.1))
+
+  packages/backend/error-reporting:
+    dependencies:
+      '@nestjs/common':
+        specifier: ^11.1.28
+        version: 11.1.28(class-transformer@0.5.1)(reflect-metadata@0.2.2)(rxjs@7.8.2)
+      '@oppenheimer/backend-ddd':
+        specifier: workspace:*
+        version: link:../ddd
+      '@sentry/nestjs':
+        specifier: ^10.68.0
+        version: 10.68.0(@nestjs/common@11.1.28(class-transformer@0.5.1)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.1.28)(@opentelemetry/core@2.10.0(@opentelemetry/api@1.9.1))
+    devDependencies:
+      '@nestjs/core':
+        specifier: ^11.1.28
+        version: 11.1.28(@nestjs/common@11.1.28(class-transformer@0.5.1)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/platform-express@11.1.28)(reflect-metadata@0.2.2)(rxjs@7.8.2)
+      '@nestjs/testing':
+        specifier: ^11.1.28
+        version: 11.1.28(@nestjs/common@11.1.28(class-transformer@0.5.1)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.1.28)(@nestjs/platform-express@11.1.28)
+      '@oppenheimer/tsconfig':
+        specifier: workspace:^
+        version: link:../../tsconfig
+      '@types/node':
+        specifier: 22.20.1
+        version: 22.20.1
       reflect-metadata:
         specifier: ^0.2.2
         version: 0.2.2

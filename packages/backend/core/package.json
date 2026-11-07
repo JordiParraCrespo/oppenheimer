@@ -24,6 +24,7 @@
     "@nestjs/core": "^11.1.28",
     "@nestjs/swagger": "^11.4.6",
     "@oppenheimer/backend-ddd": "workspace:*",
+    "@oppenheimer/backend-error-reporting": "workspace:*",
     "@oppenheimer/shared": "workspace:*",
     "@prometheus-io/client": "^0.16.1",
     "nestjs-pino": "^4.6.1",
