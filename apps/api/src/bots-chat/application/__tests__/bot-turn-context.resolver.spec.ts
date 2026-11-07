@@ -7,6 +7,7 @@ import type { BotRepositoryPort } from '../../../bots/database/bot.repository.po
 import type { BotDocumentRepositoryPort } from '../../../bots/database/bot-document.repository.port';
 import type { BotMemoryFactRepositoryPort } from '../../../bots/database/bot-memory-fact.repository.port';
 import type { BotSkillRepositoryPort } from '../../../bots/database/bot-skill.repository.port';
+import type { PersonMemoryRepositoryPort } from '../../../bots/database/person-memory.repository.port';
 import { BotSkillEntity } from '../../../bots/domain/bot-skill.entity';
 import type { BotApprovalRepositoryPort } from '../../database/bot-approval.repository.port';
 import type { BotConversationSummaryRepositoryPort } from '../../database/bot-conversation-summary.repository.port';
@@ -71,6 +72,8 @@ function setup(
     message?: BotMessageEntity;
     /** The approval it names, as the worker reads it. */
     approval?: 'running' | 'ran';
+    /** What the owner wrote about themselves in Settings → Memory. */
+    about?: string;
   } = {},
 ) {
   const opening = conversation.opening ?? 'Hi';
@@ -97,6 +100,14 @@ function setup(
     { findAllForTurn: async () => [] } as unknown as BotDocumentRepositoryPort,
     { findAllForTurn: async () => [] } as unknown as BotMemoryFactRepositoryPort,
     { findAllForTurn: async () => skills } as unknown as BotSkillRepositoryPort,
+    {
+      find: async (organizationId: string, userId: string) => ({
+        organizationId,
+        userId,
+        about: userId === 'owner-1' ? (conversation.about ?? '') : 'Not the owner.',
+        updatedAt: null,
+      }),
+    } as unknown as PersonMemoryRepositoryPort,
     {
       findHistory: conversation.findHistory ?? (async () => []),
     } as unknown as BotMessageRepositoryPort,
@@ -194,6 +205,21 @@ describe('BotTurnContextResolver', () => {
     await expect(
       setup(async () => [], { message: started, approval: 'ran' }).shape(),
     ).resolves.toBe(null);
+  });
+
+  // What breaks this: the text the person wrote in Settings → Memory is saved
+  // but never read, or read as someone else's, so every bot asks again who
+  // they are.
+  it('puts what the owner wrote about themselves in the system prompt, and nothing when they wrote nothing', async () => {
+    const written = await setup(async () => [], {
+      about: 'I am Jordi. Answer in short sentences.',
+    }).resolve();
+    expect(written.systemPrompt).toContain(
+      '# About the person, in their own words (they wrote it; you cannot change it)\n\nI am Jordi. Answer in short sentences.',
+    );
+
+    const blank = await setup(async () => []).resolve();
+    expect(blank.systemPrompt).not.toContain('About the person, in their own words');
   });
 
   it('names the home host among the owner’s hosts', async () => {

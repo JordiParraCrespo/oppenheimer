@@ -19713,6 +19713,172 @@
         ]
       }
     },
+    "/api/v1/bot-memory/person": {
+      "get": {
+        "description": "What you wrote about yourself, and every fact about you that a bot of yours keeps, newest first.",
+        "operationId": "findPersonMemory",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PersonMemoryResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Read what your bots know about you",
+        "tags": [
+          "Bots"
+        ]
+      }
+    },
+    "/api/v1/bot-memory/person/about": {
+      "put": {
+        "description": "In the system prompt of every bot you made in the workspace. Your bots read it and never change it; an empty text clears it.",
+        "operationId": "updatePersonAbout",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdatePersonAboutRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PersonAboutResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Write what your bots know about you",
+        "tags": [
+          "Bots"
+        ]
+      }
+    },
+    "/api/v1/bots/{id}/seen": {
+      "post": {
+        "description": "The console sends it when the chat opens, when its tab comes back into view, and at most once a minute while the owner is active in it. It resumes the routines the spend guard paused while the owner was away.",
+        "operationId": "markBotSeen",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "BOTS_001 — Bot not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Say the owner is in a bot’s chat",
+        "tags": [
+          "Bots"
+        ]
+      }
+    },
     "/api/v1/bots/{id}/memory/{factId}": {
       "patch": {
         "operationId": "updateBotMemoryFact",
@@ -30540,6 +30706,7 @@
               "owner_lost_access",
               "bot_provider_missing",
               "cloud_key_missing",
+              "unattended",
               null
             ],
             "nullable": true
@@ -30651,6 +30818,7 @@
               "owner_lost_access",
               "bot_provider_missing",
               "cloud_key_missing",
+              "unattended",
               null
             ],
             "nullable": true
@@ -31647,6 +31815,7 @@
               "missed",
               "not_launchable",
               "agent_unavailable",
+              "unattended",
               null
             ],
             "nullable": true
@@ -31890,6 +32059,14 @@
           },
           "maxRunSeconds": {
             "type": "number"
+          },
+          "unattendedReports": {
+            "type": "number",
+            "description": "Routine reports a bot’s owner has not seen before its routines pause."
+          },
+          "unattendedAwaySeconds": {
+            "type": "number",
+            "description": "How long a bot’s owner may be away from its chat before its routines pause."
           }
         },
         "required": [
@@ -31899,7 +32076,9 @@
           "overlap",
           "staleTtlSeconds",
           "missedGraceSeconds",
-          "maxRunSeconds"
+          "maxRunSeconds",
+          "unattendedReports",
+          "unattendedAwaySeconds"
         ]
       },
       "UpdateAutomationSettingsRequest": {
@@ -31959,6 +32138,22 @@
             "minimum": 60,
             "exclusiveMinimum": false,
             "maximum": 604800,
+            "exclusiveMaximum": false,
+            "nullable": true
+          },
+          "unattendedReports": {
+            "type": "integer",
+            "minimum": 1,
+            "exclusiveMinimum": false,
+            "maximum": 1000,
+            "exclusiveMaximum": false,
+            "nullable": true
+          },
+          "unattendedAwaySeconds": {
+            "type": "integer",
+            "minimum": 3600,
+            "exclusiveMinimum": false,
+            "maximum": 7776000,
             "exclusiveMaximum": false,
             "nullable": true
           }
@@ -34835,6 +35030,10 @@
             "type": "boolean",
             "description": "Whether what it decides to remember is saved without asking."
           },
+          "routineSpendGuard": {
+            "type": "boolean",
+            "description": "Whether its routines pause while its owner is away from its chat, and start again when they are back."
+          },
           "sections": {
             "type": "array",
             "description": "The console sections whose sidebar lists it beside Employees, in catalog order; empty shows it in Employees only.",
@@ -34881,6 +35080,7 @@
           "permission",
           "createdByBotId",
           "learnAutomatically",
+          "routineSpendGuard",
           "sections",
           "createdAt",
           "updatedAt",
@@ -35029,6 +35229,9 @@
             ]
           },
           "learnAutomatically": {
+            "type": "boolean"
+          },
+          "routineSpendGuard": {
             "type": "boolean"
           },
           "sections": {
@@ -35232,6 +35435,62 @@
           "botId",
           "createdAt",
           "updatedAt"
+        ]
+      },
+      "PersonAboutResponseDto": {
+        "type": "object",
+        "properties": {
+          "about": {
+            "type": "string",
+            "example": "I am Jordi. I work from Barcelona and like short answers.",
+            "description": "What the person wrote about themselves; empty when nothing was written."
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true,
+            "description": "When it was last saved; null when it never was."
+          }
+        },
+        "required": [
+          "about",
+          "updatedAt"
+        ]
+      },
+      "PersonMemoryResponseDto": {
+        "type": "object",
+        "properties": {
+          "about": {
+            "description": "In every one of the person's bots' system prompt; the bots never change it.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PersonAboutResponseDto"
+              }
+            ]
+          },
+          "facts": {
+            "description": "Every fact about the person (`scope: person`) that any of their bots keeps, newest first. Each is changed on the bot that keeps it (`botId`).",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BotMemoryFactResponseDto"
+            }
+          }
+        },
+        "required": [
+          "about",
+          "facts"
+        ]
+      },
+      "UpdatePersonAboutRequest": {
+        "type": "object",
+        "properties": {
+          "about": {
+            "type": "string",
+            "maxLength": 4000
+          }
+        },
+        "required": [
+          "about"
         ]
       },
       "CreateBotMemoryFactRequest": {

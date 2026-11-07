@@ -46,6 +46,8 @@ export class BotEntity {
     public readonly lastMessagePreview: string | null = null,
     /** The console sections whose sidebar lists it beside Employees, in catalog order. */
     public readonly sections: BotSection[] = [],
+    /** Whether its routines pause while its owner is away, and start again when they are back. */
+    public readonly routineSpendGuard: boolean = true,
   ) {}
 
   /**
@@ -143,6 +145,26 @@ export class BotMemoryFactEntity {
 }
 
 /**
+ * What the reader's bots know about them (Settings → Memory, `25-bots.md`
+ * §4.1): what they wrote about themselves, in every bot's prompt and never
+ * changed by a bot, and every fact about them a bot of theirs keeps, newest
+ * first, each changed on the bot that keeps it.
+ */
+export class PersonMemoryEntity {
+  constructor(
+    public readonly about: string,
+    /** When `about` was last saved; `null` when it never was. */
+    public readonly aboutUpdatedAt: Date | null,
+    public readonly facts: readonly BotMemoryFactEntity[],
+  ) {}
+
+  /** The same memory with the text as it was just saved. */
+  withAbout(about: string, updatedAt: Date | null): PersonMemoryEntity {
+    return new PersonMemoryEntity(about, updatedAt, this.facts);
+  }
+}
+
+/**
  * One of a bot's skills (`25-bots.md` §4.1): a reusable way of doing one task,
  * run by the person as `/<name>` and used by the bot when a request fits.
  */
@@ -204,6 +226,7 @@ export interface UpdateBotInput {
   effort?: SessionEffort | null;
   permission?: BotPermission;
   learnAutomatically?: boolean;
+  routineSpendGuard?: boolean;
   /** The whole set; `[]` shows it in Employees only. */
   sections?: BotSection[];
 }

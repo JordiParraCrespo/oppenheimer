@@ -174,6 +174,7 @@ export class BotSelfToolsFactory implements BotToolArea {
               baseRevision: input.base_revision,
               note: input.note ? `${BOT_NOTE_PREFIX}: ${input.note}` : BOT_NOTE_PREFIX,
             },
+            credentialScopes: context.credentialScopes,
           }),
         );
         const saved = await this.queryBus.execute<FindBotDocumentQuery, BotDocumentEntity>(

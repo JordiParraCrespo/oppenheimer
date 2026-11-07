@@ -292,6 +292,7 @@
       "agent_unavailable": "the agent could not start",
       "bot_provider_missing": "the bot’s model provider has no key or sign-in",
       "owner_lost_access": "its owner can no longer run it",
+      "unattended": "you were away; it starts again now that you are back",
       "unknown": "something went wrong"
     },
     "openSession": "Open session",
@@ -490,6 +491,10 @@
       "toProfile": "Keep it in mind in every chat",
       "toPerson": "Share it with all your bots",
       "toBot": "Keep it to this bot",
+      "learnedBy": "Learned by {{bot}} · {{date}}",
+      "editedByYouOn": "Edited by you, kept by {{bot}} · {{date}}",
+      "addedByYouOn": "Added by you, kept by {{bot}} · {{date}}",
+      "toBotNamed": "Keep it to {{bot}} only",
       "dream": {
         "title": "Tidy memory",
         "never": "Merges repeats, rewrites each fact clearly and drops what’s stale, checked against the chat. Runs about once a day once the bot has learned enough.",
@@ -544,6 +549,9 @@
       "title": "Routines",
       "subtitle": "Work the bot does on a schedule or when something happens.",
       "empty": "Routines are tasks this bot runs on a schedule or when something happens. Ask it in chat to set one up.",
+      "guard": "Pause while you’re away",
+      "guardHint": "Stop its routines while you’re not reading what they say. They start again when you open this chat.",
+      "guardFailed": "Could not change whether the routines pause while you’re away.",
       "askInChat": "Ask in chat",
       "schedule": "Schedule · {{when}}",
       "github": "GitHub · {{when}}",
@@ -651,5 +659,8 @@
     "checkedHint": "Checked bots show in {{section}}.",
     "manageAll": "Manage in {{employees}}",
     "hide": "Hide from {{section}}"
+  },
+  "routineGuard": {
+    "notice": "I paused my routines while you were away. They start again when you open this chat."
   }
 }

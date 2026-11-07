@@ -49,7 +49,8 @@
     "overlapping": "Skipped: a run was still going",
     "missed": "Skipped: the slot was missed",
     "not_launchable": "Skipped: the session could not start",
-    "agent_unavailable": "Skipped: the agent is not on the host"
+    "agent_unavailable": "Skipped: the agent is not on the host",
+    "unattended": "Skipped: its bot’s owner is away"
   },
   "pausedReason": {
     "user": "Paused. Triggers are ignored until you resume it; Run now still works.",
@@ -57,7 +58,8 @@
     "host_unpaired": "Paused because its host was removed. Pick another host in Edit to resume it.",
     "owner_lost_access": "Paused because its owner can no longer run it.",
     "bot_provider_missing": "Paused because its bot’s model provider has no key or sign-in. Add one, then resume it.",
-    "cloud_key_missing": "Paused because its owner has no key for its cloud provider, or the provider refused it. Connect it in Settings → Cloud agents, then resume it."
+    "cloud_key_missing": "Paused because its owner has no key for its cloud provider, or the provider refused it. Connect it in Settings → Cloud agents, then resume it.",
+    "unattended": "Paused while you were away from its bot’s chat. It starts again when you open the chat."
   },
   "frequency": {
     "once": {

@@ -57,9 +57,9 @@ describe('BotMemoryDreamRepository (integration)', () => {
     await dataSource.initialize();
     bots = new BotRepository(
       dataSource.getRepository(BotOrmEntity),
-      dataSource,
       new BotMapper(),
       new BotDocumentMapper(),
+      new OutboxService(dataSource),
     );
     memory = new BotMemoryFactRepository(
       dataSource.getRepository(BotMemoryFactOrmEntity),
