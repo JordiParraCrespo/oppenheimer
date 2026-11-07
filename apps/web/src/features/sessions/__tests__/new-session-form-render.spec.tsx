@@ -467,6 +467,24 @@ describe('NewSessionForm', () => {
       });
     });
 
+    it('keeps a task rewritten while the start was in flight, which was not sent', async () => {
+      created.mockClear();
+      fireEvent.click(screen.getByRole('button', { name: 'where' }));
+      fireEvent.click(screen.getByRole('button', { name: 'host' }));
+      fireEvent.click(screen.getByRole('button', { name: 'folder:use' }));
+      const textarea = screen.getByRole('textbox');
+      fireEvent.change(textarea, { target: { value: 'Fix the wallet' } });
+      await act(async () =>
+        fireEvent.click(screen.getByRole('button', { name: 'sessions.new.composer.send' })),
+      );
+      fireEvent.change(textarea, { target: { value: 'Then the login redirect' } });
+
+      act(() =>
+        createOptions.current?.onSuccess?.({ id: 'session-1' }, created.mock.calls[0]?.[0]),
+      );
+      expect(newSessionTask()).toBe('Then the login redirect');
+    });
+
     it('keeps the half-written task when a blank terminal starts without it', async () => {
       // Open terminal starts a shell with no prompt; the task typed earlier
       // was not sent, so it must still be there.

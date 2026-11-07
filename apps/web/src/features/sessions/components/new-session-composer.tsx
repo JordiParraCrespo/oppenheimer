@@ -3,6 +3,7 @@ import {
   dictateInto,
   dictationSlots,
   useDictation,
+  useStoredText,
   type VoiceInput,
 } from '@oppenheimer/frontend-web';
 import { SESSION_CREATE_MAX_FILES, SESSION_FILE_ACCEPT } from '@oppenheimer/shared/protocol';
@@ -11,7 +12,12 @@ import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useHeldFiles } from '../hooks/use-held-files';
 import { useReceiveDrops } from '../hooks/use-new-session-drop';
-import { useNewSessionTask } from '../hooks/use-new-session-task';
+import {
+  NEW_SESSION_TASK,
+  newSessionTask,
+  newSessionTexts,
+  setNewSessionTask,
+} from '../lib/new-session-task';
 import { refusalText } from '../lib/session-files';
 
 /**
@@ -60,12 +66,12 @@ export function NewSessionComposer({
   voice: VoiceInput;
 }) {
   const { t } = useTranslation();
-  const [draft, setDraft] = useNewSessionTask();
+  const draft = useStoredText(newSessionTexts, NEW_SESSION_TASK);
   const { files, refusal, hold, release } = useHeldFiles(SESSION_CREATE_MAX_FILES);
   const picker = useRef<HTMLInputElement>(null);
   const dictation = useDictation({
     voice,
-    onText: dictateInto(setDraft),
+    onText: dictateInto((update) => setNewSessionTask(update(newSessionTask()))),
   });
 
   useReceiveDrops(hold);
@@ -95,7 +101,7 @@ export function NewSessionComposer({
       />
       <ComposerPill
         value={draft}
-        onValueChange={setDraft}
+        onValueChange={setNewSessionTask}
         busy={busy}
         disabled={disabled}
         allowEmpty={taskOptional}

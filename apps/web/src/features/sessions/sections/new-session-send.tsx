@@ -21,7 +21,7 @@ import { useAutoStart } from '../hooks/use-auto-start';
 import { useNewSessionDraft } from '../hooks/use-new-session-form';
 import { cloudLaunchFailure } from '../lib/cloud-launch-failure';
 import { dictationVocabulary } from '../lib/dictation-vocabulary';
-import { setNewSessionTask } from '../lib/new-session-task';
+import { forgetSentTask } from '../lib/new-session-task';
 import { hasPlace, toCreateInput, toStartCloudInput } from '../lib/session-options';
 
 /**
@@ -98,15 +98,15 @@ export function NewSessionSend({
   const create = useCreateSession({
     onSuccess: (session, { input }) => {
       attempt.current = null;
-      // Only a session that started from the task forgets it: Open terminal's
-      // blank one (`useAutoStart`) leaves a half-written task alone.
-      if (input.prompt) setNewSessionTask('');
+      forgetSentTask(input.prompt);
       navigate({ to: '/sessions/$sessionId', params: { sessionId: session.id } });
     },
   });
   // Forgotten here, not in the launch's own callback, which does not run once
   // the screen is left while the launch is in flight.
-  const startCloud = useStartCloudSession({ onSuccess: () => setNewSessionTask('') });
+  const startCloud = useStartCloudSession({
+    onSuccess: (_session, { input }) => forgetSentTask(input.prompt),
+  });
   const lastCloudLaunch = useRef<StartCloudSessionInput | null>(null);
   // Files ride a host session's first task; a vendor's agent takes none, and
   // a file is never dropped without a word.
