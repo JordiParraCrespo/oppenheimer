@@ -294,6 +294,8 @@
     "SESSIONS_050": "Solo quien lanzó esta sesión en la nube puede enviarle un seguimiento, porque se ejecuta con su clave.",
     "SESSIONS_051": "El proveedor del agente en la nube no confirmó el seguimiento, así que puede estar ejecutándose allí. Revisa la sesión en el proveedor antes de volver a enviarlo.",
     "SESSIONS_052": "Solo se puede reintentar una sesión que no llegó a iniciarse.",
+    "SESSIONS_053": "Ninguna sesión en la nube de este espacio de trabajo tiene ese id. Solo las sesiones iniciadas desde la consola envían su chat aquí.",
+    "SESSIONS_054": "El chat de esta sesión no se muestra aquí.",
     "VOICE_002": "No se ha grabado nada. Vuelve a dictar.",
     "VOICE_003": "La grabación es demasiado larga. Los dictados deben durar menos de dos minutos.",
     "VOICE_004": "No se ha podido leer la grabación. Vuelve a dictar.",

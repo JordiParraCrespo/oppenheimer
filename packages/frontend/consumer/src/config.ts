@@ -18,6 +18,18 @@ export const CONSUMER_CONFIG = {
      */
     startLogStallMs: 6000,
   },
+  /**
+   * A Claude Code cloud session's chat, read from what its hook sent the API
+   * (`product/next-steps/cloud-agents.md`, "The chat of a cloud session").
+   */
+  cloudChat: {
+    /**
+     * How often the open chat reads on from where it stopped. The hook posts
+     * as the agent writes, so this is how far behind the chat may draw it;
+     * each read is the lines since the last one, so it costs little.
+     */
+    readEveryMs: 1500,
+  },
   /** The terminal's link to the host (`product/versions/mvp/01-protocol.md`). */
   stream: {
     /** The delays between reconnect attempts, with jitter on top (`product/research/lessons-from-grok-bot.md`). */

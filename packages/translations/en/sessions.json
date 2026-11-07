@@ -739,5 +739,11 @@
       "open": "Open in ChatGPT",
       "teleport": "To bring its changes into a terminal, run this in a checkout of the repository:"
     }
+  },
+  "cloudChat": {
+    "title": "Live from Claude Code cloud",
+    "waiting_one": "Your reply is waiting for the agent to finish its turn.",
+    "waiting_other": "{{count}} replies are waiting for the agent to finish its turn.",
+    "replyFailed": "The reply didn’t reach the session. Try again."
   }
 }

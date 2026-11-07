@@ -1259,3 +1259,9 @@ earlier note:
   `AddPersonMemory`), in every bot's system prompt and never written by a
   bot, and lists every `person` fact their bots learned, each still the row
   of the bot that keeps it and changed there.
+- `next-steps/cloud-agents.md` ("Follow-ups to a cloud agent") said a
+  Claude Code cloud session's conversation is not ours to read, so the
+  console only linked to claude.ai. On 2026-11-07 the owner asked for its
+  chat in the console: two hooks in the session's repository send its
+  transcript to the API and collect replies typed in the console ("The chat
+  of a cloud session"; `research/cloud-chat-bridge/`).
