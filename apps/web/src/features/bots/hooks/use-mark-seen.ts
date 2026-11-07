@@ -38,7 +38,7 @@ export function useMarkSeen(botId: string): void {
     const active = () => {
       const wait = STILL_HERE_MS - (Date.now() - last);
       if (wait <= 0) return arrive();
-      trailing ??= window.setTimeout(arrive, wait);
+      if (trailing === undefined) trailing = window.setTimeout(arrive, wait);
     };
     const onVisibility = () => {
       if (document.visibilityState === 'visible') arrive();
