@@ -20,6 +20,7 @@ import { BotSkillOrmEntity } from '../../bots/database/bot-skill.orm-entity';
 import { BotSkillRepository } from '../../bots/database/bot-skill.repository';
 import { ModelProviderCredentialOrmEntity } from '../../bots/database/model-provider-credential.orm-entity';
 import { ModelProviderCredentialRepository } from '../../bots/database/model-provider-credential.repository';
+import type { PersonMemoryRepositoryPort } from '../../bots/database/person-memory.repository.port';
 import { BotEntity } from '../../bots/domain/bot.entity';
 import { userActor } from '../../bots/domain/bot.types';
 import { BotDocumentEntity } from '../../bots/domain/bot-document.entity';
@@ -749,11 +750,24 @@ describe('bots chat (integration)', () => {
     // An owner who is no longer a member: the turn still runs, reading no hosts.
     const owners = { resolve: async () => null } as unknown as BotOwnerScopeResolver;
     const hosts: OwnerHostsPort = { hostsOf: vi.fn(async () => []) };
+    // The owner wrote nothing about themselves: the prompt has no such section.
+    const people: PersonMemoryRepositoryPort = {
+      find: async (organizationId, userId) => ({
+        organizationId,
+        userId,
+        about: '',
+        updatedAt: null,
+      }),
+      put: async () => {
+        throw new Error('a turn never writes what the person wrote');
+      },
+    };
     return new BotTurnContextResolver(
       new BotModelAccessResolver(bots, new TurnCredentialsResolver(credentials, sealer, chatgpt)),
       documents,
       memory,
       skills,
+      people,
       messages,
       summaries,
       owners,
