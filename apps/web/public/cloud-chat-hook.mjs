@@ -1,14 +1,23 @@
 #!/usr/bin/env node
-// SessionStart hook: start the streamer that sends this session's transcript
-// to Oppenheimer, and return at once. Claude Code waits for a SessionStart
-// hook, so the streamer runs as a detached child that outlives it.
+// Oppenheimer's hook for a Claude Code cloud session: its chat in the
+// console, both ways (`product/next-steps/cloud-agents.md`, "The chat of a
+// cloud session"). One file, two hooks, in the repository's
+// `.claude/settings.json`:
 //
-// Claude Code hands every hook the transcript's path and the session's id on
-// stdin. The streamer follows that file, the same JSONL the runner reads for a
-// host session's chat view, and posts each complete line it has not sent yet.
+//   SessionStart: node .claude/hooks/oppenheimer-cloud-chat.mjs session-start
+//   Stop:         node .claude/hooks/oppenheimer-cloud-chat.mjs stop
 //
-// Needs OPPENHEIMER_URL and OPPENHEIMER_CLOUD_KEY; without them it does
-// nothing. It never fails the session: whatever happens it exits 0.
+// `session-start` starts a streamer that follows the session's transcript (the
+// file Claude Code names on the hook's stdin) and posts each complete line to
+// the API. `stop` collects a reply typed in the console when the agent ends a
+// turn and hands it back as the hook's block decision, so the agent carries
+// on with it.
+//
+// Reads OPPENHEIMER_URL (the API's address) and OPPENHEIMER_CLOUD_KEY (a
+// token with sessions:write, from the session's pane in the console), and
+// OPPENHEIMER_REPLY_WAIT (seconds the Stop hook waits for a reply, default 30,
+// at most 120). Without the first two it does nothing. It never fails the
+// session: whatever happens it exits 0.
 import { spawn } from 'node:child_process';
 import {
   closeSync,
@@ -23,7 +32,6 @@ import {
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { sessionKey } from './session-key.mjs';
 
 const STATE_DIR = join(tmpdir(), 'oppenheimer-cloud-chat');
 const POLL_MS = 300;
@@ -208,11 +216,46 @@ async function post(job, from, lines) {
   }
 }
 
+/**
+ * The session id both hooks send, as Claude Code hands it over: in a cloud
+ * session the one claude.ai knows it by (`CLAUDE_CODE_REMOTE_SESSION_ID`,
+ * `cse_…`), elsewhere Claude Code's own (`session_id` on the hook's stdin).
+ * The server maps it to the console's id; the hooks know no prefixes.
+ */
+export function sessionKey(input, env = process.env) {
+  return env.CLAUDE_CODE_REMOTE_SESSION_ID || input.session_id;
+}
+
+async function stop() {
+  const { OPPENHEIMER_URL: url, OPPENHEIMER_CLOUD_KEY: key } = process.env;
+  if (!url || !key) return;
+  const input = JSON.parse(readFileSync(0, 'utf8') || '{}');
+  const wait = Math.max(0, Math.min(Number(process.env.OPPENHEIMER_REPLY_WAIT ?? 30), 120));
+
+  const response = await fetch(`${url}/api/v1/sessions/cloud-replies/take`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', authorization: `Bearer ${key}` },
+    body: JSON.stringify({ cloudSessionId: sessionKey(input), wait }),
+    signal: AbortSignal.timeout((wait + 10) * 1000),
+  });
+  if (!response.ok) return;
+  const { text } = await response.json();
+  if (!text) return;
+
+  process.stdout.write(
+    JSON.stringify({
+      decision: 'block',
+      // The console reads a "Stop hook feedback" line carrying this first line
+      // as the person's message (CLOUD_REPLY_PREAMBLE in @oppenheimer/shared).
+      reason: `The person following this session in Oppenheimer replied:\n\n${text}`,
+    }),
+  );
+}
+
+const mode = process.argv[2];
 const isEntry = process.argv[1] === fileURLToPath(import.meta.url);
-if (isEntry && process.argv[2] === '--follow') {
+if (isEntry && mode === '--follow') {
   followTranscript(JSON.parse(process.argv[3])).catch(() => {});
 } else if (isEntry) {
-  start()
-    .catch(() => {})
-    .finally(() => process.exit(0));
+  (mode === 'stop' ? stop() : start()).catch(() => {}).finally(() => process.exit(0));
 }
