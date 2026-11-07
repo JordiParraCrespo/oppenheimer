@@ -29,7 +29,7 @@ export {
 export type { AvatarColor, AvatarOption } from './components/avatar-picker';
 export { AvatarColorPicker, AvatarPicker, BotAvatar } from './components/avatar-picker';
 export { Badge, badgeVariants } from './components/badge';
-export { BotItem, BotList, SortableBotItem } from './components/bot-item';
+export { BotItem, BotItemSkeleton, BotList, SortableBotItem } from './components/bot-item';
 export type { BrandGlyphName } from './components/brand-glyph';
 /* ── MVP design system (product/versions/mvp/design) ───────────────────── */
 export { BrandGlyph } from './components/brand-glyph';

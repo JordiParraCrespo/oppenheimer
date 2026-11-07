@@ -897,6 +897,13 @@ earlier note:
   waiting or running with its clock or how it ended, the tools it has
   called so far), from frames the bot's stream sends each time one moves,
   until the stored line replaces them (`versions/mvp/25-bots.md` §4.7).
+- 2026-11-06 the owner asked to see a session's subagents the way the
+  terminal's footer lists them: Claude Code's, Codex's and OpenCode's
+  subagents now send their own work beside the transcript, and the chat
+  hangs each under the call that started it, a row with its task, kind,
+  model, clock, tokens and what it is doing, that opens to its work.
+  Grok's stay a row with no work under it (`next-steps/0.7-terminal-and-chat.md`,
+  "Subagents").
 - 2026-10-29 the owner asked for Codex cloud tasks the way Claude Code's
   cloud works, though the research note put Codex cloud last: a Codex row
   under Cloud starts the task from a host with `codex cloud exec`, and the
@@ -1212,6 +1219,16 @@ earlier note:
   be looked at. Tasks that were in Later moved to the end of To do
   (migration `ReplaceLaterWithReviewColumn`); attaching a session still
   moves only a task in To do to In progress.
+- `versions/mvp/25-bots.md` §4.1 (2026-10-29) kept a bot's facts as
+  `profile` by default, the newest 60 in every prompt, `log` facts only
+  through `recall`, and refused a save past 200. Bots saved almost nothing
+  after their first chat. On 2026-11-06, after a read of Grok Bot 0.79.2
+  (`research/lessons-from-grok-bot.md` §10), the owner took its shape: a
+  bot's save is `log` by default, the system prompt carries the newest
+  profile facts by characters (4,000) and the turn context the newest log
+  entries (2,000, dated), so a save leaves the prompt cache warm, the turn's
+  rules tell it to save what it learns without asking, and a full memory
+  of 500 drops its oldest log fact instead of refusing.
 - `versions/mvp/26-bot-routines.md` §6 (2026-10-16) said a bot gets a
   heartbeat only when asked for one in chat, through `update_routine`. On
   2026-11-06 the owner asked for bots to be proactive by default, the way
