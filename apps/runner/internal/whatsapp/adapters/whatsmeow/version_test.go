@@ -6,9 +6,10 @@ import (
 	"go.mau.fi/whatsmeow/store"
 )
 
-// The handshake has to carry the version WhatsApp Web serves today. Setting
-// only whatsmeow's SetWAVersion left the compiled-in AppVersion in the
-// payload, and WhatsApp refused pairing with err-client-outdated.
+// The handshake has to carry the version WhatsApp Web serves today. A
+// whatsmeow whose SetWAVersion changed only the build hash left the
+// compiled-in AppVersion in the payload, and WhatsApp refused pairing with
+// err-client-outdated.
 func TestAnnounceVersionReachesTheHandshake(t *testing.T) {
 	before := store.GetWAVersion()
 	t.Cleanup(func() { announceVersion(before) })

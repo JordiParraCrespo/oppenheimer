@@ -175,11 +175,8 @@ func (d *Device) refreshVersion(ctx context.Context) bool {
 // every handshake (Connect, GetQRChannel, whatsmeow's own reconnects) reads it.
 var versionMu sync.Mutex
 
-// announceVersion sets the version whatsmeow sends. Its SetWAVersion only
-// changes the build hash: the AppVersion in the handshake is copied from the
-// compiled-in version when the package loads, so WhatsApp kept reading the
-// old one and called the client outdated. Set both. It reports whether the
-// version changed.
+// announceVersion sets the version whatsmeow sends in every handshake and
+// reports whether it changed.
 func announceVersion(version store.WAVersionContainer) bool {
 	versionMu.Lock()
 	defer versionMu.Unlock()
@@ -187,7 +184,6 @@ func announceVersion(version store.WAVersionContainer) bool {
 		return false
 	}
 	store.SetWAVersion(version)
-	store.BaseClientPayload.UserAgent.AppVersion = version.ProtoAppVersion()
 	return true
 }
 
