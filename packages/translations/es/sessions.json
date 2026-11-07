@@ -653,6 +653,22 @@
     "exploring": "Explorando",
     "file": {
       "onHost": "Se queda en el equipo: es demasiado grande para el chat, o no es una imagen ni texto."
+    },
+    "subagents": {
+      "count_one": "{{count}} subagente",
+      "count_other": "{{count}} subagentes",
+      "running": "{{count}} en marcha",
+      "failed": "{{count}} fallidos",
+      "untitled": "Subagente",
+      "calls_one": "{{count}} llamada",
+      "calls_other": "{{count}} llamadas",
+      "tokens": "{{tokens}} tokens",
+      "state": {
+        "running": "En marcha",
+        "completed": "Terminado",
+        "failed": "Falló",
+        "stopped": "Detenido"
+      }
     }
   },
   "preview": {

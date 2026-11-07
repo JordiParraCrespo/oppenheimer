@@ -480,7 +480,8 @@
       "BOTS_037": "Esas preguntas ya tenían respuesta.",
       "BOTS_038": "No se ha encontrado esa habilidad.",
       "BOTS_039": "Este bot ya tiene una habilidad con ese nombre. Elige otro.",
-      "BOTS_040": "Este bot ya tiene tantas habilidades como puede guardar. Borra una primero."
+      "BOTS_040": "Este bot ya tiene tantas habilidades como puede guardar. Borra una primero.",
+      "BOTS_041": "Este bot no tiene ninguna ordenación de su memoria que deshacer."
     },
     "notFound": {
       "title": "Esta página no existe",
@@ -1332,6 +1333,22 @@
       "exploring": "Explorando",
       "file": {
         "onHost": "Se queda en el equipo: es demasiado grande para el chat, o no es una imagen ni texto."
+      },
+      "subagents": {
+        "count_one": "{{count}} subagente",
+        "count_other": "{{count}} subagentes",
+        "running": "{{count}} en marcha",
+        "failed": "{{count}} fallidos",
+        "untitled": "Subagente",
+        "calls_one": "{{count}} llamada",
+        "calls_other": "{{count}} llamadas",
+        "tokens": "{{tokens}} tokens",
+        "state": {
+          "running": "En marcha",
+          "completed": "Terminado",
+          "failed": "Falló",
+          "stopped": "Detenido"
+        }
       }
     },
     "preview": {
@@ -1694,6 +1711,10 @@
           "expired": "El bucle «{{prompt}}» terminó tras 3 días",
           "stopped": "El bucle «{{prompt}}» se detuvo: una ejecución falló o se detuvo",
           "ended": "El bucle «{{prompt}}» terminó: el bot no dijo cuándo volver a ejecutarlo"
+        },
+        "dream": {
+          "dreamed": "Ordenó su memoria · {{before}} datos → {{after}}",
+          "undone": "Deshiciste el orden · vuelven {{before}} datos"
         }
       },
       "routineReason": {
@@ -1766,7 +1787,9 @@
           "summary_one": "{{count}} resumen",
           "summary_other": "{{count}} resúmenes",
           "ruleReview_one": "{{count}} revisión de reglas",
-          "ruleReview_other": "{{count}} revisiones de reglas"
+          "ruleReview_other": "{{count}} revisiones de reglas",
+          "dream_one": "{{count}} orden de memoria",
+          "dream_other": "{{count}} órdenes de memoria"
         },
         "empty": "Este chat aún no ha gastado nada.",
         "loadFailed": "No se pudo cargar el uso. Inténtalo de nuevo."
@@ -1900,7 +1923,19 @@
         "toLog": "Consultarlo solo cuando haga falta",
         "toProfile": "Tenerlo presente en cada chat",
         "toPerson": "Compartirlo con todos tus bots",
-        "toBot": "Guardarlo solo para este bot"
+        "toBot": "Guardarlo solo para este bot",
+        "dream": {
+          "title": "Ordenar la memoria",
+          "never": "Une los repetidos, reescribe cada dato con claridad y quita lo que ya no vale, contrastado con el chat. Se hace más o menos una vez al día cuando el bot ha aprendido bastante.",
+          "last": "Ordenada el {{date}} · {{before}} datos → {{after}}",
+          "lastUndone": "El último orden, del {{date}}, se deshizo",
+          "queued": "Ordenando en segundo plano. El chat avisará cuando termine.",
+          "tidyNow": "Ordenar ahora",
+          "undo": "Deshacer",
+          "loadFailed": "No se pudo cargar el último orden de la memoria.",
+          "requestFailed": "No se pudo empezar a ordenar la memoria.",
+          "undoFailed": "No se pudo deshacer el orden."
+        }
       },
       "skills": {
         "title": "Habilidades",

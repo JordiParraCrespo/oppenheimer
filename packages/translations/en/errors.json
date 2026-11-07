@@ -311,7 +311,8 @@
     "BOTS_037": "Those questions were already answered.",
     "BOTS_038": "That skill could not be found.",
     "BOTS_039": "This bot already has a skill with that name. Pick another.",
-    "BOTS_040": "This bot has as many skills as it can keep. Delete one first."
+    "BOTS_040": "This bot has as many skills as it can keep. Delete one first.",
+    "BOTS_041": "This bot has no tidy of its memory to undo."
   },
   "notFound": {
     "title": "That page does not exist",

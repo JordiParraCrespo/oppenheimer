@@ -311,7 +311,8 @@
     "BOTS_037": "Esas preguntas ya tenían respuesta.",
     "BOTS_038": "No se ha encontrado esa habilidad.",
     "BOTS_039": "Este bot ya tiene una habilidad con ese nombre. Elige otro.",
-    "BOTS_040": "Este bot ya tiene tantas habilidades como puede guardar. Borra una primero."
+    "BOTS_040": "Este bot ya tiene tantas habilidades como puede guardar. Borra una primero.",
+    "BOTS_041": "Este bot no tiene ninguna ordenación de su memoria que deshacer."
   },
   "notFound": {
     "title": "Esta página no existe",

@@ -27,3 +27,5 @@ export const BOT_USAGE_REPOSITORY = Symbol('BOT_USAGE_REPOSITORY');
 export const BOT_TOOL_PERMISSION_REPOSITORY = Symbol('BOT_TOOL_PERMISSION_REPOSITORY');
 /** A bot's plain-language permission rules (`25-bots.md` §5). */
 export const BOT_PERMISSION_RULE_REPOSITORY = Symbol('BOT_PERMISSION_RULE_REPOSITORY');
+/** Each bot's latest dream of its memory, and what undoing it puts back. */
+export const BOT_MEMORY_DREAM_REPOSITORY = Symbol('BOT_MEMORY_DREAM_REPOSITORY');
