@@ -90,6 +90,8 @@ Under **Cloud** in the where-it-runs chip:
 
 A cloud session needs a task and has no terminal here. Follow-ups go to the vendor, except Cursor's, which take one through Oppenheimer after the last run ends. Deleting one removes it from Oppenheimer only.
 
+**The chat of a Claude Code cloud session.** A Claude Code cloud session that Oppenheimer started can show its chat in the session's pane, and take your replies, once its repository carries Oppenheimer's two hooks: one sends the session's conversation to Oppenheimer, the other collects what you type. Setting the hooks up is not in the console yet. Until the first line arrives, the pane is the usual cloud pane with its claude.ai link. A reply is handed to the agent when its current turn ends; one typed after the session has gone idle waits for its next turn. Stop does nothing on a cloud session, and a session started on claude.ai rather than from Oppenheimer shows no chat here.
+
 ## Child sessions and in-session tools
 
 An agent inside a session has a `runner` command (its manual is `runner --skill`). With it the agent can start helper agents on the same host as **child sessions** (`runner sessions run`), message and wait on them, show you a file in the session's chat (`send-file`), send you a line in the Inbox (`notify`), be woken when its pull request's checks finish or it is reviewed (`watch-pr`), and set a wake-up up to 7 days ahead (`wake-in`). Child sessions run on the host, end when their parent ends unless started with `--outlive-parent`, and are not shown in the console's sidebar; the parent agent manages and closes them. To start work on another host, an agent uses `opp` ([CLI and MCP](./cli-and-mcp.md)).
