@@ -25,6 +25,13 @@ redis.call('SET', KEYS[1], ARGV[1], 'EX', ARGV[2])
 return ARGV[1]
 `;
 
+/** `KEYS[1]` grows by `ARGV[1]`; the add that creates it sets the TTL (`ARGV[2]` seconds). */
+const INCREMENT_SCRIPT = `
+local total = redis.call('INCRBY', KEYS[1], ARGV[1])
+if total == tonumber(ARGV[1]) then redis.call('EXPIRE', KEYS[1], ARGV[2]) end
+return total
+`;
+
 /**
  * `CacheService` over a Redis client it is handed and does not own.
  *
@@ -118,6 +125,18 @@ export class RedisCacheService extends CacheService {
       Math.max(1, Math.ceil(ttlSeconds)),
     );
     return Number(kept);
+  }
+
+  /** One `EVAL`: the add and the TTL of a new key land together. */
+  async incrementBy(key: string, by: number, ttlSeconds: number): Promise<number> {
+    const total = await this.redis.eval(
+      INCREMENT_SCRIPT,
+      1,
+      this.key(key),
+      Math.trunc(by),
+      Math.max(1, Math.ceil(ttlSeconds)),
+    );
+    return Number(total);
   }
 
   async del(key: string): Promise<void> {

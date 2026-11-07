@@ -133,7 +133,6 @@ func (d *Device) Open(ctx context.Context, listener app.Events) (app.Paired, err
 		_ = db.Close()
 		return app.Paired{}, err
 	}
-	d.refreshVersion(ctx)
 	device, err := container.GetFirstDevice(ctx)
 	if err != nil {
 		_ = db.Close()
@@ -149,10 +148,13 @@ func (d *Device) Open(ctx context.Context, listener app.Events) (app.Paired, err
 	return app.Paired{Phone: device.ID.ToNonAD().String(), Name: device.PushName}, nil
 }
 
-// refreshVersion asks WhatsApp Web which client version it serves, so a
-// runner older than WhatsApp's floor is not refused as outdated. A failure
-// keeps the version compiled in.
-func (d *Device) refreshVersion(ctx context.Context) {
+// refreshVersion asks WhatsApp Web which client version it serves and makes
+// the next handshake announce it, the way OpenClaw's gateway passes Baileys'
+// fetched version to every socket it opens: WhatsApp refuses a version below
+// its floor as outdated (405, "err-client-outdated" while pairing), and the
+// floor moves every few weeks. A failure keeps the last version known. It
+// reports whether the version changed.
+func (d *Device) refreshVersion(ctx context.Context) bool {
 	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
 	client := d.opts.HTTPClient
@@ -161,10 +163,28 @@ func (d *Device) refreshVersion(ctx context.Context) {
 	}
 	version, err := whatsmeow.GetLatestVersion(ctx, client)
 	if err != nil {
-		d.logger.Debug("whatsapp: could not read the current web version; keeping the built-in one", slog.Any("error", err))
-		return
+		d.logger.Warn("whatsapp: could not read the current web version; keeping the last known",
+			slog.String("version", store.GetWAVersion().String()),
+			slog.Any("error", err))
+		return false
 	}
-	store.SetWAVersion(*version)
+	return announceVersion(*version)
+}
+
+// versionMu guards the version whatsmeow announces, which is process-wide:
+// every handshake (Connect, GetQRChannel, whatsmeow's own reconnects) reads it.
+var versionMu sync.Mutex
+
+// announceVersion sets the version whatsmeow sends in every handshake and
+// reports whether it changed.
+func announceVersion(version store.WAVersionContainer) bool {
+	versionMu.Lock()
+	defer versionMu.Unlock()
+	if store.GetWAVersion() == version {
+		return false
+	}
+	store.SetWAVersion(version)
+	return true
 }
 
 // useClientLocked makes the client for device, replacing any earlier one.
@@ -191,7 +211,7 @@ func (d *Device) current() (*whatsmeow.Client, app.Events) {
 }
 
 // Connect brings the stored device online; whatsmeow keeps it there.
-func (d *Device) Connect(_ context.Context) error {
+func (d *Device) Connect(ctx context.Context) error {
 	client, _ := d.current()
 	if client == nil {
 		return errors.New("whatsapp store not open")
@@ -199,6 +219,7 @@ func (d *Device) Connect(_ context.Context) error {
 	if client.Store.ID == nil {
 		return errors.New("no device is paired")
 	}
+	d.refreshVersion(ctx)
 	return client.Connect()
 }
 
@@ -212,6 +233,7 @@ func (d *Device) Pair(ctx context.Context, onCode func(code string, expires time
 	d.useClientLocked(d.container.NewDevice())
 	client := d.client
 	d.mu.Unlock()
+	d.refreshVersion(ctx)
 
 	codes, err := client.GetQRChannel(ctx)
 	if err != nil {
@@ -379,9 +401,32 @@ func (d *Device) onEvent(raw any) {
 	case *events.TemporaryBan:
 		listener.LoggedOut("WhatsApp banned the number for now: " + evt.String())
 	case *events.ClientOutdated:
+		// WhatsApp raised its floor since the version was read, and whatsmeow
+		// has stopped reconnecting. Read the version again and, when it moved,
+		// reconnect with it; an unchanged one would only be refused again.
+		// While pairing, Pair's QR channel reports the failure instead.
 		listener.Disconnected()
+		if client.Store.ID != nil {
+			go d.reconnectOutdated(client)
+		}
 	case *events.HistorySync:
 		// Asked for none; dropped unread.
+	}
+}
+
+// reconnectOutdated reconnects client after WhatsApp refused it as outdated,
+// once the version it announces has moved.
+func (d *Device) reconnectOutdated(client *whatsmeow.Client) {
+	if !d.refreshVersion(context.Background()) {
+		d.logger.Warn("whatsapp: refused as outdated and no newer web version found; staying offline",
+			slog.String("version", store.GetWAVersion().String()))
+		return
+	}
+	if current, _ := d.current(); current != client {
+		return
+	}
+	if err := client.Connect(); err != nil {
+		d.logger.Warn("whatsapp: reconnecting with the new web version failed", slog.Any("error", err))
 	}
 }
 

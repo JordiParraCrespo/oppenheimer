@@ -117,7 +117,7 @@
     "SESSIONS_008": "We could not open a terminal right now. Try again in a moment.",
     "SESSIONS_009": "Choose a project for this session.",
     "SESSIONS_010": "A running session keeps the repositories it started with. Pick up to five when you start a session.",
-    "SESSIONS_011": "This host's runner is too old for that agent. Update the runner, or pick another agent.",
+    "SESSIONS_011": "This host’s runner is too old for that agent. Update the runner, or pick another agent.",
     "HOSTS_001": "That host could not be found.",
     "HOSTS_002": "That pairing token could not be found.",
     "HOSTS_003": "That registration token was refused. Mint a new one and try again.",
@@ -245,6 +245,7 @@
     "CLOUD_AGENTS_007": "The provider's rate limit was reached. Try again shortly.",
     "CLOUD_AGENTS_010": "The provider refused the request.",
     "CLOUD_AGENTS_011": "That cloud agent provider isn't offered here.",
+    "CLOUD_AGENTS_012": "The cloud agent is still working on its last instruction. Wait for it to finish, then send this again.",
     "SENTRY_001": "This server can't keep a Sentry secret. Ask whoever runs it to set SENTRY_CONNECTION_KEY.",
     "SENTRY_002": "Connect Sentry in Settings → Sentry first.",
     "SENTRY_003": "That webhook isn't signed with the connected integration's secret.",
@@ -291,6 +292,13 @@
     "SESSIONS_045": "The host is offline, so its Codex environments can’t be listed.",
     "SESSIONS_046": "Codex on the host couldn’t list its environments. Check that codex is installed and signed in with ChatGPT.",
     "SESSIONS_047": "ChatGPT is limiting how often its Codex environments can be listed. Wait a minute and try again, or start the session and let the host pick.",
+    "SESSIONS_048": "This host’s runner is too old to continue a cloud session. Update the runner, or pick another host.",
+    "SESSIONS_049": "That transcript cursor isn’t valid. Read from the latest turns and continue from the cursor that page gives.",
+    "SESSIONS_050": "Only the person who launched this cloud session can send it a follow-up, since it runs on their key.",
+    "SESSIONS_051": "The cloud agent’s vendor didn’t confirm the follow-up, so it may be running there. Check the session at its vendor before sending it again.",
+    "SESSIONS_052": "Only a session that failed to start can be tried again.",
+    "SESSIONS_053": "No cloud session in this workspace has that id. Only sessions started from the console send their chat here.",
+    "SESSIONS_054": "This session’s chat isn’t shown here.",
     "VOICE_002": "Nothing was recorded. Try dictating again.",
     "VOICE_003": "That recording is too long. Keep dictations under two minutes.",
     "VOICE_004": "That recording couldn’t be read. Try dictating again.",
@@ -308,7 +316,8 @@
     "BOTS_037": "Those questions were already answered.",
     "BOTS_038": "That skill could not be found.",
     "BOTS_039": "This bot already has a skill with that name. Pick another.",
-    "BOTS_040": "This bot has as many skills as it can keep. Delete one first."
+    "BOTS_040": "This bot has as many skills as it can keep. Delete one first.",
+    "BOTS_041": "This bot has no tidy of its memory to undo."
   },
   "notFound": {
     "title": "That page does not exist",
@@ -323,7 +332,8 @@
   "startFailure": {
     "codes": {
       "SESS_002": "This host makes sessions with one repository.",
-      "SESS_010": "Codex's CLI has no cloud environment for this repository."
+      "SESS_010": "Codex's CLI has no cloud environment for this repository.",
+      "SESS_019": "Not signed in to claude.ai. Run claude auth login on the host."
     },
     "help": {
       "SESS_010": {

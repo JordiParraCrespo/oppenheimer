@@ -60,8 +60,10 @@ export interface CloudAgentModel {
  * - Every verb takes the grant and may throw the module's vendor codes
  *   (`CLOUD_AGENTS_005` to `007`, `010`), through its gateway's `UpstreamLimiter`.
  *
- * What a person follows up or stops, they do at the vendor: a cloud session's
- * row opens the agent's own page (`product/next-steps/cloud-agents.md`).
+ * A follow-up is a new run on the same agent, sent only while none runs
+ * (`send_to_session`, `POST /sessions/{id}/prompt`); stopping one is done at
+ * the vendor, whose page a cloud session's row opens
+ * (`product/next-steps/cloud-agents.md`).
  */
 export interface CloudAgentProvider<G = unknown> {
   readonly id: CloudAgentProviderId;
@@ -70,6 +72,8 @@ export interface CloudAgentProvider<G = unknown> {
   grantFor(organizationId: string, userId: string): Promise<G>;
   launch(grant: G, launch: CloudAgentLaunch): Promise<LaunchedCloudAgent>;
   read(grant: G, externalId: string, runId: string): Promise<CloudAgentRunState>;
+  /** A next instruction as a new run; `CLOUD_AGENTS_012` while the agent is on one. */
+  followUp(grant: G, externalId: string, prompt: string): Promise<CloudAgentRunState>;
   models(grant: G): Promise<CloudAgentModel[]>;
   repositories(grant: G): Promise<string[]>;
 }

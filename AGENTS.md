@@ -9,8 +9,10 @@ control plane. The codebase is a Turborepo + pnpm monorepo started from the
 Flama full-stack starter. The MVP is `apps/api` (control plane), `apps/web`
 (the console), `apps/runner` (the host agent), `apps/docs` and `e2e`; that is
 what `pnpm dev:mvp` starts. Beyond the MVP are `apps/web-showcase`, the
-gallery of the web design system, and `apps/extension`, a Chrome extension
-that tracks your Claude Code cloud sessions and tells you which need you.
+gallery of the web design system, `apps/extension`, a Chrome extension
+that tracks your Claude Code cloud sessions and tells you which need you, and
+`apps/cli` and `apps/mcp`: `opp` and the MCP server, through which people,
+scripts and agents on other hosts drive the same API (0.6).
 
 The runner pairs a macOS, Debian or Ubuntu machine with a workspace, installs
 itself as a user service, keeps itself on the current signed release, and
@@ -44,8 +46,10 @@ All research and decisions live in `product/`; start with `product/README.md`.
 apps/        api (NestJS control plane) · web (Vite + TanStack Router console)
              runner (Go host agent) · docs (Docusaurus) · extension (Chrome)
              web-showcase (Next.js gallery of the design system)
+             cli (`opp`, commander) · mcp (MCP server, stdio + Streamable HTTP)
 packages/    shared (Zod schemas, types, CASL, scope + flag catalogs, the link protocol)
              auth (Better Auth config) · env (root .env loader) · tsconfig
+             http-client (the transport cli and mcp call the API through)
              translations (i18n JSON)
              backend/  agents authz cache core ddd email error-reporting i18n llm queue storage
              frontend/ core (kernel) · consumer (the console's domain) · web (platform kit)
@@ -63,6 +67,7 @@ translations → web, frontend/web, api (email copy via backend/i18n)
 design-system/web → web, web-showcase, frontend/web
 api-client → frontend/core, frontend/consumer · frontend/core → every frontend package, web
 frontend/consumer, frontend/web → web · go/core → every go module · go/* → runner
+http-client → cli, mcp
 ```
 
 Each app and package has a `README.md` (purpose, exports, usage) and an
@@ -92,6 +97,12 @@ When you add a file that mentions an optional app (CI, compose,
   `.github/workflows/ci.yml` runs `pnpm ci:local --all` on `main` on a
   schedule; a red run opens a `main-red` issue, which comes before new work.
   Driving a pull request, and the order of its steps, is the `/steward` skill.
+  Every agent pull request is `/ship` (a fix, merged on its own once a fresh
+  agent verifies it), `/propose` (merged once Jordi accepts) or
+  `/research` (merged once green), and carries that label. **Every task that
+  changes the repository starts with `/cook`**, typed or not: it picks the
+  lane, says why, and runs it. Only a lane the user names themselves, or a
+  plain question, skips it. The protocol is `/steward`, "Merging".
 - **Stage files by path.** `.claude/settings.json` and the hooks in
   `.agents/hooks/` refuse `git add -A`/`.`, pushes to `main`, force pushes,
   `git reset --hard` and the like; read them for the exact policy and for

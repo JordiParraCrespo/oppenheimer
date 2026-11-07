@@ -42,5 +42,15 @@
     "deleting": "Deleting…",
     "failed": "The project could not be deleted."
   },
+  "list": {
+    "title": "Projects",
+    "new": "New project",
+    "edit": "{{name}} settings",
+    "repositories_one": "{{count}} repository",
+    "repositories_other": "{{count}} repositories",
+    "noRepositories": "No repositories",
+    "empty": "No projects yet. A project groups your sessions and starts new ones with its repositories, host and agent.",
+    "loadFailed": "Could not load your projects."
+  },
   "unassigned": "Unassigned"
 }

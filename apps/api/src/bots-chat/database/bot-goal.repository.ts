@@ -8,6 +8,7 @@ import { BotMessageMapper } from '../bot-message.mapper';
 import type { BotGoalEntity } from '../domain/bot-goal.entity';
 import { GOAL_KEY_PREFIX } from '../domain/bot-goal.policy';
 import type { BotMessageEntity } from '../domain/bot-message.entity';
+import type { BotRateLimit } from '../domain/bot-rate-limit.policy';
 import { BotGoalOrmEntity } from './bot-goal.orm-entity';
 import type { BotGoalRepositoryPort } from './bot-goal.repository.port';
 import { insertMessageWithin } from './bot-message.repository';
@@ -83,17 +84,46 @@ export async function setGoalWithin(
  */
 export async function claimContinuationWithin(
   manager: EntityManager,
+  mapper: BotGoalMapper,
   goal: BotGoalEntity,
 ): Promise<boolean> {
+  // `advance` ended any wait the goal held for: the write carries what it left.
+  const { continuations, waitingFor, waitingUntil } = mapper.toPersistence(goal);
   const result = await manager
     .createQueryBuilder()
     .update(BotGoalOrmEntity)
-    .set({ continuations: goal.continuations })
+    .set({ continuations, waitingFor, waitingUntil })
     .where('id = :id AND continuations = :at', { id: goal.id, at: goal.continuationsAtLoad })
     .execute();
   if (result.affected !== 1) return false;
   goal.markPersisted();
   return true;
+}
+
+/**
+ * Holds the ended turn's own goal for `limit` (`BotGoalEntity.hold`), in the
+ * transaction that stages its held decision (`BotTurnRepository.finish`), so
+ * the row says what the queue holds. The bot's goal is read under the lock a
+ * Stop's delete takes (`UQ_bot_goal_bot`); one the turn does not hold
+ * (`isHeldBy`: a goal set in its place while it ran) is left as it is, and a
+ * goal that is gone writes nothing.
+ */
+export async function holdGoalWithin(
+  manager: EntityManager,
+  mapper: BotGoalMapper,
+  turn: { organizationId: string; botId: string; id: string; sourceKey: string | null },
+  limit: BotRateLimit,
+): Promise<void> {
+  const record = await manager.findOne(BotGoalOrmEntity, {
+    where: { organizationId: turn.organizationId, botId: turn.botId },
+    lock: { mode: 'pessimistic_write' },
+  });
+  if (!record) return;
+  const goal = mapper.toDomain(record);
+  if (!goal.isHeldBy(turn)) return;
+  goal.hold(limit);
+  const { waitingFor, waitingUntil } = mapper.toPersistence(goal);
+  await manager.update(BotGoalOrmEntity, { id: goal.id }, { waitingFor, waitingUntil });
 }
 
 /**

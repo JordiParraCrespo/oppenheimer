@@ -14,6 +14,7 @@ import type {
   GmailMessage,
   GmailMessageSummary,
 } from '../mail/infrastructure/gmail-provider.port';
+import { rateLimitedPartwayLine } from './domain/bot-rate-limit.policy';
 import { cut, fenceUntrusted, formatToolTime } from './domain/bot-tool-text.policy';
 
 /**
@@ -245,10 +246,16 @@ export function targetCount(call: { thread_ids: string[]; message_ids?: string[]
   return parts.join(' and ') || 'nothing';
 }
 
-/** What an organizing write did, in one line: how many, and the ids Gmail did not have. */
-export function organizeAnswer(outcome: GmailBulkOutcome): string {
+/**
+ * What an organizing write did: how many, the ids Gmail did not have, and,
+ * when Gmail's limit stopped it partway, the ids it did not reach and when
+ * they can be tried.
+ */
+export function organizeAnswer(outcome: GmailBulkOutcome, now: Date): string {
   const done = `${outcome.changed.length} changed`;
-  return outcome.missing.length
-    ? `${done}; Gmail has no ${outcome.missing.join(', ')} (deleted, or an id from another account)`
+  const line = outcome.missing.length
+    ? `${done}; Gmail has no ${outcome.missing.join(', ')} (deleted, or an id from another account).`
     : `${done}.`;
+  if (!outcome.limited) return line;
+  return `${line} ${rateLimitedPartwayLine(outcome.limited, outcome.notReached.length, now)} Not reached: ${outcome.notReached.join(', ')}.`;
 }

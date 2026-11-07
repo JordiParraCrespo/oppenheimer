@@ -39,6 +39,7 @@ afterEach(() => {
   recorder.state = 'idle';
   recorder.failure = null;
   vi.clearAllMocks();
+  recorder.stop.mockReset();
 });
 
 const WAV = new Blob(['wav'], { type: 'audio/wav' });
@@ -98,6 +99,61 @@ describe('useDictation', () => {
     act(() => view.result.current.toggle());
     expect(recorder.stop).toHaveBeenCalled();
     expect(recorder.start).not.toHaveBeenCalled();
+  });
+});
+
+describe('useDictation.finish', () => {
+  it('settles true only once the text is in the field, and a second call while it waits answers false', async () => {
+    recorder.state = 'recording';
+    recorder.stop.mockReturnValue(true);
+    let answer: (text: string) => void = () => {};
+    const { onText, view } = dictate({
+      available: true,
+      transcribe: () => new Promise<string | null>((done) => (answer = done)),
+    });
+
+    let settled: boolean | null = null;
+    act(() => {
+      void view.result.current.finish().then((landed) => (settled = landed));
+    });
+    expect(recorder.stop).toHaveBeenCalled();
+    await expect(view.result.current.finish()).resolves.toBe(false);
+
+    let finished: Promise<void> | void;
+    act(() => {
+      finished = recorder.onRecorded?.(WAV);
+    });
+    await act(async () => {
+      answer('fix the login.');
+      await finished;
+    });
+
+    expect(onText).toHaveBeenCalledWith('fix the login.');
+    expect(settled).toBe(true);
+  });
+
+  it('settles false when the recording could not be transcribed', async () => {
+    recorder.state = 'recording';
+    recorder.stop.mockReturnValue(true);
+    const { view } = dictate({ available: true, transcribe: async () => null });
+
+    let settled: boolean | null = null;
+    act(() => {
+      void view.result.current.finish().then((landed) => (settled = landed));
+    });
+    await act(async () => {
+      await recorder.onRecorded?.(WAV);
+    });
+
+    expect(settled).toBe(false);
+  });
+
+  it('settles true at once when nothing was recorded to wait for', async () => {
+    recorder.state = 'waiting';
+    recorder.stop.mockReturnValue(false);
+    const { view } = dictate({ available: true, transcribe: vi.fn() });
+
+    await expect(view.result.current.finish()).resolves.toBe(true);
   });
 });
 

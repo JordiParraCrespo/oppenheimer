@@ -6,6 +6,7 @@ import {
   ConcurrencyLimitSaturatedError,
 } from './concurrency-limit';
 import { type RateLimitedResponse, readRateLimit } from './rate-limit-signal';
+import { UpstreamBudget, type UpstreamBudgetOptions } from './upstream-budget';
 import {
   UpstreamPause,
   type UpstreamPauseOptions,
@@ -28,6 +29,11 @@ export type RefusalReader = (errorBody: string) => { limited: boolean; bucket?: 
 export interface UpstreamLimiterOptions extends UpstreamPauseOptions, ConcurrencyLimitOptions {
   /** Calls to this system in flight from this process at once. */
   maxInFlight: number;
+  /**
+   * What a call's first bucket may spend a window, when the provider
+   * publishes it: the limiter then stops a bucket before the provider has to.
+   */
+  budget?: UpstreamBudgetOptions;
 }
 
 /**
@@ -39,13 +45,17 @@ export interface UpstreamLimiterOptions extends UpstreamPauseOptions, Concurrenc
  *    many are waiting;
  * 2. inside the slot, refuses without calling when any of the call's buckets
  *    is paused;
- * 3. sends;
- * 4. reads the answer (headers, and for a refusal the body through the
+ * 3. with a budget, spends the call's cost from its first bucket, and when
+ *    the window cannot hold it pauses the bucket until the window ends and
+ *    refuses without calling: a limit we know is kept before the provider
+ *    has to refuse (and escalate);
+ * 4. sends;
+ * 5. reads the answer (headers, and for a refusal the body through the
  *    adapter's {@link RefusalReader});
- * 5. on a refusal for rate, pauses the bucket and throws the system's
+ * 6. on a refusal for rate, pauses the bucket and throws the system's
  *    rate-limit problem; on a success that spent the last call, pauses the
  *    bucket and returns;
- * 6. otherwise returns the response, with a refusal's body already read.
+ * 7. otherwise returns the response, with a refusal's body already read.
  *
  * Every refusal it throws is `upstreamRateLimited(error, …)`: a `429` with
  * `Retry-After`. Anything else — a network failure, a 404 — is the adapter's
@@ -55,6 +65,7 @@ export class UpstreamLimiter {
   private readonly logger = new Logger(UpstreamLimiter.name);
   private readonly pauses: UpstreamPause;
   private readonly inFlight: ConcurrencyLimit;
+  private readonly budget: UpstreamBudget | null;
 
   constructor(
     private readonly system: string,
@@ -64,20 +75,24 @@ export class UpstreamLimiter {
   ) {
     this.pauses = new UpstreamPause(system, store, options);
     this.inFlight = new ConcurrencyLimit(options.maxInFlight, options);
+    this.budget = options.budget ? new UpstreamBudget(system, store, options.budget) : null;
   }
 
   /**
    * One call. `buckets` are what it counts against; the first is the one a
-   * spent budget or an unattributed refusal pauses.
+   * spent budget or an unattributed refusal pauses. `cost` is what the call
+   * spends of the budget, in the provider's units (0 for a call the provider
+   * does not count).
    */
   async exchange<R extends ExchangedResponse>(
     buckets: string | readonly string[],
     send: () => Promise<R>,
     readRefusal?: RefusalReader,
+    cost = 1,
   ): Promise<{ response: R; errorBody: string | null }> {
     const list = typeof buckets === 'string' ? [buckets] : buckets;
     try {
-      return await this.inFlight.run(() => this.once(list, send, readRefusal));
+      return await this.inFlight.run(() => this.once(list, send, readRefusal, cost));
     } catch (error) {
       if (!(error instanceof ConcurrencyLimitSaturatedError)) throw error;
       this.logger.warn({
@@ -96,11 +111,13 @@ export class UpstreamLimiter {
     buckets: readonly string[],
     send: () => Promise<R>,
     readRefusal: RefusalReader | undefined,
+    cost: number,
   ): Promise<{ response: R; errorBody: string | null }> {
     for (const bucket of buckets) {
       const until = await this.pauses.pausedUntil(bucket);
       if (until) throw upstreamRateLimited(this.error, { system: this.system, resetAt: until });
     }
+    if (this.budget && cost > 0) await this.spend(buckets[0], cost, this.budget);
 
     const response = await send();
     // A refusal's body names the problem and carries no credential; a success
@@ -126,6 +143,27 @@ export class UpstreamLimiter {
     }
     if (signal.remaining === 0) await this.pauses.pause(buckets[0], signal.resetAt);
     return { response, errorBody };
+  }
+
+  /**
+   * Spends a call's cost from its bucket. A window that cannot hold it pauses
+   * the bucket until the window ends, on every replica, and refuses the call
+   * before it is sent.
+   */
+  private async spend(bucket: string, cost: number, budget: UpstreamBudget): Promise<void> {
+    const windowEnds = await budget.spend(bucket, cost);
+    if (!windowEnds) return;
+    const resetAt = await this.pauses.pause(bucket, windowEnds);
+    this.logger.warn({
+      message: `${this.system} budget spent; pausing calls before the provider refuses them`,
+      bucket,
+      resetAt: resetAt.toISOString(),
+    });
+    throw upstreamRateLimited(this.error, {
+      system: this.system,
+      resetAt,
+      detail: `Oppenheimer keeps ${this.system} under ${budget.units} units every ${Math.round(budget.windowMs / 1000)} s per account, inside its limit; this call would pass it.`,
+    });
   }
 }
 

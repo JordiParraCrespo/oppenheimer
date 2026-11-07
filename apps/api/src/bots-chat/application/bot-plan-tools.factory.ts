@@ -18,6 +18,7 @@ import {
   COLUMN_NAMES,
   calendarDate,
   describeProject,
+  describeProjectInFull,
   describeSummary,
   describeTask,
   describeTaskInFull,
@@ -28,7 +29,7 @@ import {
   timeOfDay,
   todayIn,
 } from '../bot-plan-tool.mapper';
-import { formatToolList, formatToolTime } from '../domain/bot-tool-text.policy';
+import { formatToolList } from '../domain/bot-tool-text.policy';
 import {
   type BotToolArea,
   type BotToolCallContext,
@@ -40,9 +41,9 @@ import {
  * Projects and the plan (`25-bots.md` §4.3), the tools that run without
  * asking: reading projects, tasks and where each project stands, and adding,
  * editing and moving tasks. Every write is made as an agent acting for the
- * owner, so Plan's log names the bot and the person. Deleting a task,
- * starting a session for one, and making or changing a project ask the owner
- * first, and come with the Needs input card.
+ * owner, so Plan's log names the bot and the person. Making, changing and
+ * archiving projects, and moving a session between them, are
+ * `BotProjectToolsFactory`'s.
  */
 @Injectable()
 export class BotPlanToolsFactory implements BotToolArea {
@@ -102,27 +103,13 @@ export class BotPlanToolsFactory implements BotToolArea {
       readOnly: true,
       scope: 'projects:read',
       description:
-        'Reads one project: its name, its repositories with their base branches (the default marked), and the host and agent a new session is offered. Use plan_summary for how its tasks stand.',
+        'Reads one project: its name, its repositories with their base branches (the default marked) and the installation_id and github_repo_id update_project takes back, and the host and agent a new session is offered. Use plan_summary for how its tasks stand, and list_sessions with project_id for the sessions in it.',
       input: z.object({ project_id: z.uuid().describe('A project id from list_projects.') }),
       run: async (input, context) => {
         const project = await this.queryBus.execute<FindProjectQuery, ProjectEntity>(
           new FindProjectQuery({ scope: context.owner, projectId: input.project_id }),
         );
-        const repositories = project.repositories.map(
-          (repository) =>
-            `  - ${repository.repositoryFullName} (base ${repository.baseBranch})${repository.isDefault ? ' default' : ''}`,
-        );
-        return [
-          `Project ${project.id} "${project.name}"${project.isUnassigned ? ' (Unassigned: where work with no project goes)' : ''}`,
-          `- slug: ${project.slug}`,
-          `- archived: ${project.archivedAt ? formatToolTime(project.archivedAt, context.timeZone) : 'no'}`,
-          `- default host: ${project.defaultHostId ?? 'none'}`,
-          `- default agent: ${project.defaultAgent ?? 'none'}`,
-          repositories.length
-            ? `- repositories (${repositories.length}):\n${repositories.join('\n')}`
-            : '- repositories: none',
-          `- created: ${formatToolTime(project.createdAt, context.timeZone)}`,
-        ].join('\n');
+        return describeProjectInFull(project, context);
       },
     });
   }
@@ -338,7 +325,7 @@ export class BotPlanToolsFactory implements BotToolArea {
       name: 'move_task',
       scope: 'tasks:write',
       description:
-        'Moves a task to a column (later, todo, doing, done), first in it or directly after another task of that column. Moving to done completes it and clears a blocked reason; moving out of done reopens it. Needs the version you read. Use update_task for anything but the column or the order.',
+        'Moves a task to a column (todo, doing, review, done), first in it or directly after another task of that column. Moving to done completes it and clears a blocked reason; moving out of done reopens it. Needs the version you read. Use update_task for anything but the column or the order.',
       input: z.object({
         task_id: z.uuid().describe('A task id from list_tasks.'),
         status: statusInput,

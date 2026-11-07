@@ -19,10 +19,11 @@ export interface CloudRunOwner {
 
 /**
  * What the sessions module asks a vendor, on the owner's own key: start a
- * cloud session's agent, and say where its latest run stands. Published by
+ * cloud session's agent, give it a next instruction, and say where its
+ * latest run stands. Published by
  * this module (`CLOUD_RUNS`) so a session never names a vendor's gateway.
  *
- * Both throw this module's codes: `CLOUD_AGENTS_004` with no key stored,
+ * Each throws this module's codes: `CLOUD_AGENTS_004` with no key stored,
  * `005`–`007` and `010` from the vendor.
  */
 export interface CloudRunsPort {
@@ -36,5 +37,12 @@ export interface CloudRunsPort {
     provider: CloudAgentProviderId,
     externalId: string,
     runId: string,
+  ): Promise<CloudAgentRunState>;
+  /** A next instruction to the agent, as a new run; `CLOUD_AGENTS_012` while one runs. */
+  followUp(
+    owner: CloudRunOwner,
+    provider: CloudAgentProviderId,
+    externalId: string,
+    prompt: string,
   ): Promise<CloudAgentRunState>;
 }

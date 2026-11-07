@@ -2,9 +2,11 @@ import { Injectable } from '@nestjs/common';
 import type { BotSteer } from '@oppenheimer/backend-agents';
 import type { Mapper } from '@oppenheimer/backend-ddd';
 import {
+  BOT_DREAM_ACTIVITIES,
   BOT_EVENT_OUTCOMES,
   BOT_GOAL_ACTIVITIES,
   BOT_IMAGE_MIME_TYPES,
+  BOT_LOOP_ACTIVITIES,
   BOT_QUESTION_OUTCOMES,
   BOT_REPLY_OUTCOMES,
   BOT_ROUTINE_ACTIVITIES,
@@ -19,20 +21,25 @@ import {
   type BotSubagentProgress,
   type BotSubagentRun,
   botMailDraftSchema,
+  PULL_REQUEST_WAKE_EVENTS,
 } from '@oppenheimer/shared';
 import { BotMessageOrmEntity } from './database/bot-message.orm-entity';
 import type { BotSteerTaken } from './database/bot-turn.repository.port';
 import { BotMessageEntity, type BotToolStep } from './domain/bot-message.entity';
+import { rateLimitOfRecord } from './domain/bot-rate-limit.policy';
 import type { SummarizableMessage } from './domain/bot-summary.policy';
 import { ENDED_TURN_STATUSES } from './domain/bot-turn.entity';
 import { BotAttachmentResponseDto } from './dtos/bot-attachment.response.dto';
 import {
   BotApprovalEventResponseDto,
+  BotDreamEventResponseDto,
   BotGoalEventResponseDto,
+  BotLoopEventResponseDto,
   type BotMessageEventResponseDto,
   BotMessageResponseDto,
   BotPeerMessageEventResponseDto,
   BotPeerReplyEventResponseDto,
+  BotPullRequestEventResponseDto,
   BotQuestionEventResponseDto,
   BotRoutineEventResponseDto,
   BotSessionEventResponseDto,
@@ -60,6 +67,7 @@ export class BotMessageMapper
       subagents: step.subagents,
       allowedBy: step.allowedBy,
       mailDraft: step.mailDraft,
+      rateLimit: rateLimitRecordOf(step),
     }));
     record.position = entity.position;
     record.event = entity.event ? { ...entity.event } : null;
@@ -102,6 +110,7 @@ export class BotMessageMapper
       subagents: step.subagents,
       allowedBy: step.allowedBy,
       mailDraft: step.mailDraft,
+      rateLimit: rateLimitRecordOf(step),
     }));
     dto.event = entity.event ? toEventResponse(entity.event) : null;
     dto.attachments = entity.attachments.map((attachment) =>
@@ -149,7 +158,15 @@ function toStep(raw: Record<string, unknown>): BotToolStep {
     subagents: toSubagentRuns(raw.subagents),
     allowedBy: typeof raw.allowedBy === 'string' ? raw.allowedBy : null,
     mailDraft: toMailDraft(raw.mailDraft),
+    rateLimit: rateLimitOfRecord(raw.rateLimit),
   };
+}
+
+/** A step's limit as the column and the response hold it: the time as ISO. */
+function rateLimitRecordOf(step: BotToolStep): { system: string; resetAt: string } | null {
+  return step.rateLimit
+    ? { system: step.rateLimit.system, resetAt: step.rateLimit.resetAt.toISOString() }
+    : null;
 }
 
 /**
@@ -279,8 +296,14 @@ function toEventResponse(event: BotMessageEvent): BotMessageEventResponseDto {
       return Object.assign(new BotPeerReplyEventResponseDto(), event);
     case 'session':
       return Object.assign(new BotSessionEventResponseDto(), event);
+    case 'pull_request':
+      return Object.assign(new BotPullRequestEventResponseDto(), event);
     case 'goal':
       return Object.assign(new BotGoalEventResponseDto(), event);
+    case 'loop':
+      return Object.assign(new BotLoopEventResponseDto(), event);
+    case 'dream':
+      return Object.assign(new BotDreamEventResponseDto(), event);
   }
 }
 
@@ -363,6 +386,7 @@ function toEvent(raw: Record<string, unknown> | null): BotMessageEvent | null {
       ...matchOf(raw.match),
     };
   }
+  if (raw.kind === 'pull_request') return pullRequestEventOf(raw);
   if (raw.kind === 'goal') {
     const activity = BOT_GOAL_ACTIVITIES.find((known) => known === raw.activity);
     if (!activity || typeof raw.goalId !== 'string') return null;
@@ -376,7 +400,47 @@ function toEvent(raw: Record<string, unknown> | null): BotMessageEvent | null {
       reason: typeof raw.reason === 'string' ? raw.reason : null,
     };
   }
+  if (raw.kind === 'loop') {
+    const activity = BOT_LOOP_ACTIVITIES.find((known) => known === raw.activity);
+    if (!activity || typeof raw.loopId !== 'string') return null;
+    return {
+      kind: 'loop',
+      activity,
+      loopId: raw.loopId,
+      prompt: String(raw.prompt ?? ''),
+      intervalMinutes: typeof raw.intervalMinutes === 'number' ? raw.intervalMinutes : null,
+      run: typeof raw.run === 'number' ? raw.run : 0,
+      reason: typeof raw.reason === 'string' ? raw.reason : null,
+    };
+  }
+  if (raw.kind === 'dream') {
+    const activity = BOT_DREAM_ACTIVITIES.find((known) => known === raw.activity);
+    if (!activity || typeof raw.dreamId !== 'string') return null;
+    return {
+      kind: 'dream',
+      activity,
+      dreamId: raw.dreamId,
+      factsBefore: typeof raw.factsBefore === 'number' ? raw.factsBefore : 0,
+      factsAfter: typeof raw.factsAfter === 'number' ? raw.factsAfter : 0,
+    };
+  }
   return null;
+}
+
+/** A stored pull request event, narrowed once; one the mapper did not write reads as none. */
+function pullRequestEventOf(raw: Record<string, unknown>): BotMessageEvent | null {
+  const event = PULL_REQUEST_WAKE_EVENTS.find((known) => known === raw.event);
+  const { subscriptionId, githubRepoId, number } = raw;
+  if (!event || typeof subscriptionId !== 'string' || typeof githubRepoId !== 'string') return null;
+  if (typeof number !== 'number') return null;
+  return {
+    kind: 'pull_request',
+    subscriptionId,
+    githubRepoId,
+    repository: String(raw.repository ?? ''),
+    number,
+    event,
+  };
 }
 
 /** A stored match, narrowed once: a pattern and a positive count, or no `match` key at all. */

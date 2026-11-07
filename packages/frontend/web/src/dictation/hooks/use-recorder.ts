@@ -14,8 +14,8 @@ export interface Recorder {
   /** The live levels and time, for the recorder bar alone to subscribe to. */
   meter: DictationMeter;
   start: () => void;
-  /** Ends the recording and hands it over as a WAV. */
-  stop: () => void;
+  /** Ends the recording and hands it over as a WAV; false when there was nothing to hand over. */
+  stop: () => boolean;
   /** Ends the recording and drops it. */
   cancel: () => void;
 }
@@ -81,14 +81,17 @@ export function useRecorder({
     deliver.current = onRecorded;
   });
 
-  function finish(keep: boolean): void {
+  /** Whether a recording was handed over to `onRecorded`. */
+  function finish(keep: boolean): boolean {
     attempt.current += 1;
     const open = closeRecording(recording);
     meter.reset();
     setState('idle');
     if (keep && open && open.chunks.length > 0) {
       deliver.current(encodeWav(open.chunks, open.context.sampleRate, sampleRate));
+      return true;
     }
+    return false;
   }
 
   async function start(): Promise<void> {
@@ -156,6 +159,8 @@ export function useRecorder({
     meter,
     start: () => void start(),
     stop: () => finish(true),
-    cancel: () => finish(false),
+    cancel: () => {
+      finish(false);
+    },
   };
 }

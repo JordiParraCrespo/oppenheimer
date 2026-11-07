@@ -19,18 +19,17 @@ import {
 import { BotDocumentEntity } from '../../domain/bot-document.entity';
 import { avatarColorFor, nameForNewBot } from '../../domain/bot-naming.policy';
 import { BotErrors } from '../../domain/bots.errors';
-import { CreateBotCommand } from './create-bot.command';
+import { CreateBotCommand, firstDocumentsOf } from './create-bot.command';
 
 /**
- * A blank bot (`product/versions/mvp/25-bots.md` §1): named by `nameForNewBot`,
- * on the next avatar colour, last in its group, in the sections named. It is born
- * with a `SOUL.md` that says its name and an empty `INSTRUCTIONS.md`, both at revision 1,
- * so its history starts with its creation. A home host, when given, is one the caller may use.
- * The optional fields set what the form does not: the engine, the level,
- * both documents, a creating bot and an idempotency key (`create_bot`,
- * §4.6). The new bot is the caller's whoever creates it; a creating bot
- * marks it and caps its level, held under a lock on the creator's row until
- * the write commits; a key makes it once, however often it is retried.
+ * A blank bot (`product/versions/mvp/25-bots.md` §1): named by `nameForNewBot`, on the
+ * next avatar colour, last in its group, in the sections named, born with a `SOUL.md` that
+ * says its name and an empty `INSTRUCTIONS.md`, both at revision 1, so its history starts
+ * with its creation. A home host, when given, is one the caller may use.
+ * The optional fields set what the form does not: the engine, the level, both documents,
+ * a creating bot, an idempotency key (`create_bot`, §4.6) and the credential's scopes,
+ * which its heartbeat keeps. The new bot is the caller's whoever creates it; a creating
+ * bot marks it and caps its level, under a lock on its row until the write commits.
  */
 @CommandHandler(CreateBotCommand)
 export class CreateBotCommandHandler implements ICommandHandler<CreateBotCommand, AggregateID> {
@@ -76,7 +75,8 @@ export class CreateBotCommandHandler implements ICommandHandler<CreateBotCommand
       idempotencyKey: command.idempotencyKey,
       sections: input.sections,
     });
-    const documents = BotDocumentEntity.firstOf(bot, userActor(scope.userId), command);
+    const author = userActor(scope.userId);
+    const documents = BotDocumentEntity.firstOf(bot, author, firstDocumentsOf(command));
     const outcome = await this.bots.insert(bot, documents, creator);
     if (outcome === 'group-missing') throw new AppError(BotErrors.GROUP_NOT_FOUND);
     if (outcome === 'creator-changed') throw new BotLooserThanCreatorException();

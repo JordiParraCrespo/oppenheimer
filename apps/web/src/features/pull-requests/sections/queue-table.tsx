@@ -17,7 +17,7 @@ import { useOpenPullRequest } from '../hooks/use-open-pull-request';
 import { useQueueKeys } from '../hooks/use-queue-keys';
 import { useQueueSearch } from '../hooks/use-queue-search';
 import { useReadNotices } from '../hooks/use-read-notices';
-import { facetCounts, filterQueue, QUEUE_PAGE_SIZE } from '../lib/queue-filter';
+import { facetCounts, filterQueue, QUEUE_PAGE_SIZE, repositoryNames } from '../lib/queue-filter';
 import { QUEUE_CHECKS, QUEUE_WAITS, type QueueChecks, type QueueWait } from '../lib/queue-search';
 import { QueueEmpty } from './queue-empty';
 import { QueueRow } from './queue-row';
@@ -81,7 +81,7 @@ export function QueueTable() {
   const lanes = facetCounts(data.items, narrowed, 'lane');
   const checks = facetCounts(data.items, narrowed, 'checks');
   const waits = facetCounts(data.items, narrowed, 'wait');
-  const names = [...new Set(data.items.map((row) => row.repository))].sort();
+  const names = repositoryNames(data.items, filters.repo);
   return (
     <>
       <ErrorAlert error={error} fallback={t('pullRequests.queue.loadFailed')} />

@@ -5,6 +5,8 @@ import type {
   SessionEffortDto,
   SessionNotice,
   SessionPermissionDto,
+  SessionPlace,
+  SessionSharedFile,
   SessionState,
   SessionWatchedPull,
 } from '@oppenheimer/shared';
@@ -15,12 +17,17 @@ import {
   agentNotifiedPayloadSchema,
   CLOUD_AGENT_IDS,
   DECISION_ANSWERED_EVENT_KIND,
+  FILE_SHARED_EVENT_KIND,
+  fileSharedPayloadSchema,
   PULL_WATCHED_EVENT_KIND,
   pullWatchedPayloadSchema,
   SESSION_PERMISSIONS,
+  SESSION_SHARED_FILES_MAX,
   SESSION_WATCHED_PULLS_MAX,
   sessionAgentReportSchema,
+  sessionDecisionSchema,
   sessionNoticeSchema,
+  sessionSharedFileSchema,
   sessionWatchedPullSchema,
   WAKE_REQUESTED_EVENT_KIND,
 } from '@oppenheimer/shared';
@@ -84,6 +91,13 @@ export const SESSION_EVENT_KINDS = {
    * handlers say why. It does end a close still owed: restarting is keeping it.
    */
   RESTART_REQUESTED: 'session.restart_requested',
+  /**
+   * Somebody asked a failed start to be tried again: the same create, sent to the
+   * same host with the same first task. Unlike a restart it does move the
+   * lifecycle, back to `starting`, as `session.requested` does: the host is asked
+   * to start the session from nothing, and the log after it is the new attempt.
+   */
+  RETRY_REQUESTED: 'session.retry_requested',
   /** Window 0 was recreated in the same worktrees after a stop or a host reboot. */
   RESTARTED: 'session.restarted',
   /**
@@ -110,7 +124,8 @@ export const SESSION_EVENT_KINDS = {
   PROMPT_FIRST: 'prompt.first',
   /**
    * A follow-up prompt the API typed into window 0 for somebody other than a
-   * person at the terminal: a bot, for now. Payload `{ text, sender }`, the
+   * person at the terminal: a bot, or a person over the API (`opp`, MCP).
+   * Payload `{ text, sender }`, the
    * sender as the API read it (`SessionPromptSender`), never as the words
    * claim. It opens the next turn when none is live.
    */
@@ -163,6 +178,13 @@ export const SESSION_EVENT_KINDS = {
    * `SessionWakeRequestedDomainEvent` for it, and the wake is a queued job.
    */
   WAKE_REQUESTED: WAKE_REQUESTED_EVENT_KIND,
+  /**
+   * The agent shared a file (`runner sessions send-file`). Payload
+   * `{ id, name, mediaType, size, caption?, hasPreview }`: what the file is,
+   * never its host path nor its bytes. The session keeps the last
+   * `SESSION_SHARED_FILES_MAX` for bots to list and show.
+   */
+  FILE_SHARED: FILE_SHARED_EVENT_KIND,
   /** The agent left a report. Payload `{ hash }` — never the report itself. */
   REPORT_PUBLISHED: 'report.published',
   /** Somebody read that report. Payload `{ hash }`. */
@@ -189,6 +211,11 @@ export interface SessionLaunchFold {
    * pick, the environment linked to the repository.
    */
   environment: string | null;
+  /**
+   * The Claude Code cloud session this one continues (`claude --teleport`);
+   * null is a conversation of its own.
+   */
+  teleport: string | null;
 }
 
 export interface SessionLogEntry {
@@ -295,6 +322,12 @@ export interface SessionFold {
    * it closes.
    */
   watchedPulls: SessionWatchedPull[];
+  /**
+   * The files the agent shared, oldest first, at most
+   * `SESSION_SHARED_FILES_MAX` (a newer one drops the oldest). Kept while
+   * the session lives; cleared when it closes, when the host's copy goes.
+   */
+  sharedFiles: SessionSharedFile[];
 }
 
 export const INITIAL_SESSION_FOLD: SessionFold = {
@@ -310,7 +343,7 @@ export const INITIAL_SESSION_FOLD: SessionFold = {
   observedSince: null,
   reportHash: null,
   ackedReportHash: null,
-  launch: { model: null, permission: 'ask', effort: null, environment: null },
+  launch: { model: null, permission: 'ask', effort: null, environment: null, teleport: null },
   projectId: null,
   closeRequest: null,
   closeRefusal: null,
@@ -318,6 +351,7 @@ export const INITIAL_SESSION_FOLD: SessionFold = {
   agentReport: null,
   notice: null,
   watchedPulls: [],
+  sharedFiles: [],
 };
 
 /**
@@ -370,6 +404,7 @@ function launchOf(payload: unknown): SessionLaunchFold | null {
     // log records exactly what the create did.
     effort: effortLevelFor(agent, model, stringField(launch, 'effort')),
     environment: stringField(launch, 'environment'),
+    teleport: stringField(launch, 'teleport'),
   };
 }
 
@@ -395,6 +430,16 @@ function agentReportOf(payload: unknown): SessionAgentReport | null {
 }
 
 /**
+ * The stored decision, read back through its schema: a `jsonb` value is only as
+ * typed as whatever wrote it, and one this build cannot read is no decision.
+ */
+export function readDecision(value: unknown): SessionDecision | null {
+  if (value === null || value === undefined) return null;
+  const parsed = sessionDecisionSchema.safeParse(value);
+  return parsed.success ? parsed.data : null;
+}
+
+/**
  * A notice narrowed by its schema, from the `jsonb` column it is folded
  * into: null for none, and for one this build cannot read.
  */
@@ -409,6 +454,15 @@ export function readWatchedPulls(value: unknown): SessionWatchedPull[] {
   if (!Array.isArray(value)) return [];
   return value.flatMap((item) => {
     const parsed = sessionWatchedPullSchema.safeParse(item);
+    return parsed.success ? [parsed.data] : [];
+  });
+}
+
+/** The shared files in a `jsonb` column, each one this build can read. */
+export function readSharedFiles(value: unknown): SessionSharedFile[] {
+  if (!Array.isArray(value)) return [];
+  return value.flatMap((item) => {
+    const parsed = sessionSharedFileSchema.safeParse(item);
     return parsed.success ? [parsed.data] : [];
   });
 }
@@ -435,6 +489,20 @@ function observedStateOf(payload: unknown): AgentObservedState | null {
  * moves — an event the fold does not recognise still moves `lastEventAt`, because
  * "when did anything last happen here" is true of every entry.
  */
+/**
+ * Whether a session's start can be tried again (`session.retry_requested`):
+ * the one rule, which the retry asks before it writes and again under the
+ * row's lock. Only a start that failed; and not a cloud task its vendor took
+ * and later failed, which did start: its host keeps it, and would answer a
+ * create with that task rather than a new one.
+ */
+export function startCanBeRetried(
+  fold: Pick<SessionFold, 'state' | 'agentSessionId'>,
+  place: SessionPlace,
+): boolean {
+  return fold.state === 'failed' && !(place === 'cloud' && fold.agentSessionId);
+}
+
 export function foldSessionEvent(fold: SessionFold, event: SessionLogEntry): SessionFold {
   const next: SessionFold = { ...fold, lastEventAt: event.occurredAt };
 
@@ -475,6 +543,11 @@ export function foldSessionEvent(fold: SessionFold, event: SessionLogEntry): Ses
       };
       next.closeRefusal = null;
       return next;
+    case SESSION_EVENT_KINDS.RETRY_REQUESTED:
+      // Only a failed start is tried again; on any other state the entry is a
+      // replay that already moved it.
+      if (next.state !== 'failed') return next;
+      return transition(next, 'starting');
     case SESSION_EVENT_KINDS.RESTART_REQUESTED:
       // Restarting is keeping the session: the person changed their mind, so a
       // close still owed is no longer wanted and a refusal no longer matters.
@@ -502,6 +575,7 @@ export function foldSessionEvent(fold: SessionFold, event: SessionLogEntry): Ses
       closed.closeRefusal = null;
       closed.notice = null;
       closed.watchedPulls = [];
+      closed.sharedFiles = [];
       return withoutAgentFacts(closed);
     }
     case SESSION_EVENT_KINDS.NAMED: {
@@ -588,6 +662,17 @@ export function foldSessionEvent(fold: SessionFold, event: SessionLogEntry): Ses
       next.watchedPulls = watch
         ? [...others, { githubRepoId, number }].slice(-SESSION_WATCHED_PULLS_MAX)
         : others;
+      return next;
+    }
+    case SESSION_EVENT_KINDS.FILE_SHARED: {
+      if (next.state === 'resolved') return next;
+      const parsed = fileSharedPayloadSchema.safeParse(event.payload);
+      if (!parsed.success) return next;
+      const shared = { ...parsed.data, at: event.occurredAt.toISOString() };
+      next.sharedFiles = [
+        ...next.sharedFiles.filter((file) => file.id !== shared.id),
+        shared,
+      ].slice(-SESSION_SHARED_FILES_MAX);
       return next;
     }
     case SESSION_EVENT_KINDS.REPORT_PUBLISHED:

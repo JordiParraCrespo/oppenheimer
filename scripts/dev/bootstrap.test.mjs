@@ -40,22 +40,22 @@ test('--check names a Node older than 22 and the tools that are missing, and fai
   const result = run(['--check'], {
     node: 'v20.11.1',
     pnpm: '9.15.4',
-    go: 'go version go1.24.7 linux/amd64',
-    'golangci-lint': 'golangci-lint has version 2.5.0',
+    go: 'go version go1.26.10 linux/amd64',
+    'golangci-lint': 'golangci-lint has version 2.15.0',
     gh: 'gh version 2.80.0 (2025-10-01)',
     mise: 'mise must not run under --check',
   });
   assert.equal(result.status, 1, result.stdout + result.stderr);
   assert.match(result.stdout, /todo {2}missing or too old: node\b/);
-  assert.match(result.stdout, /ok {4}go 1\.24\.7/);
+  assert.match(result.stdout, /ok {4}go 1\.26\.10/);
   assert.doesNotMatch(result.stdout, /done/);
 });
 
 const READY = {
   node: 'v22.22.2',
   pnpm: '9.15.4',
-  go: 'go version go1.24.7 linux/amd64',
-  'golangci-lint': 'golangci-lint has version 2.5.0',
+  go: 'go version go1.26.10 linux/amd64',
+  'golangci-lint': 'golangci-lint has version 2.15.0',
 };
 
 test('--check holds Node to the patch package.json engines names', () => {

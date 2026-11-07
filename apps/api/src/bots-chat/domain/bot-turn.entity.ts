@@ -16,6 +16,7 @@ import {
   type Scope,
 } from '@oppenheimer/shared';
 import type { SessionEffort } from '@oppenheimer/shared/agents';
+import type { BotRateLimit } from './bot-rate-limit.policy';
 
 export interface BotTurnProps {
   organizationId: string;
@@ -123,6 +124,7 @@ export const ENDED_TURN_STATUSES: readonly BotTurnStatus[] = ['completed', 'canc
  */
 export class BotTurnEntity extends AggregateRoot<BotTurnProps> {
   private loadedStatus: BotTurnStatus;
+  private limited: BotRateLimit | null = null;
 
   constructor(create: CreateEntityProps<BotTurnProps>) {
     super(create);
@@ -352,6 +354,16 @@ export class BotTurnEntity extends AggregateRoot<BotTurnProps> {
     return ENDED_TURN_STATUSES.includes(this.props.status);
   }
 
+  /**
+   * The system the turn's tools last had to wait on as the turn ended, and
+   * until when (`bot-rate-limit.policy.ts`). Not stored on the turn: it is
+   * read once, by the end's write, which holds the goal's next decision
+   * until then and marks the goal as waiting on it.
+   */
+  get limitAtEnd(): BotRateLimit | null {
+    return this.limited;
+  }
+
   /** A worker takes it. Only a queued turn starts. */
   start(now: Date): void {
     if (this.props.status !== 'queued') {
@@ -374,9 +386,11 @@ export class BotTurnEntity extends AggregateRoot<BotTurnProps> {
       cacheWriteTokens?: number;
       context?: BotTurnContext | null;
       planLimits?: BotTurnPlanLimits | null;
+      limited?: BotRateLimit | null;
     } = {},
   ): void {
     if (this.ended) throw new ArgumentInvalidException(`The turn already ${this.props.status}`);
+    this.limited = outcome.limited ?? null;
     this.props.status = status;
     this.props.endedAt = now;
     this.props.error = status === 'failed' ? fitError(outcome.error ?? 'The turn failed') : null;

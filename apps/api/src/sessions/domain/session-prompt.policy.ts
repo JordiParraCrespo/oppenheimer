@@ -10,14 +10,16 @@ import type { SessionTurnFold } from './session-turn.policy';
 
 /**
  * Who sent a prompt, as the API read it when it typed it: the bot whose turn
- * made the call and the turn itself, or a wake the session's own agent asked
+ * made the call and the turn itself; a wake the session's own agent asked
  * for (`product/next-steps/agent-tools.md` §3–4): what woke it and the wake's
- * id. Recorded on the `prompt.sent` entry, so the log says who spoke whatever
- * the words claim.
+ * id; or the person whose credential called `POST /sessions/{id}/prompt` (the
+ * `opp` CLI, an MCP client, a script). Recorded on the `prompt.sent` entry, so
+ * the log says who spoke whatever the words claim.
  */
 export type SessionPromptSender =
   | { kind: 'bot'; botId: string; turnId: string }
-  | { kind: 'wake'; source: SessionWakeSource; wakeId: string };
+  | { kind: 'wake'; source: SessionWakeSource; wakeId: string }
+  | { kind: 'person'; userId: string };
 
 /** What a wake comes from: a pull request the agent watches, or a time it set. */
 export const SESSION_WAKE_SOURCES = ['github', 'schedule'] as const;
@@ -73,6 +75,42 @@ export function promptRefusal(
   }
   return null;
 }
+
+/**
+ * Why a cloud session's agent at its vendor cannot take a next instruction
+ * now, or null when it can (`product/next-steps/cloud-agents.md`, "Follow-ups
+ * to a cloud agent"). A vendor takes one as a new run only while none runs,
+ * so a run still going is a wait; past that, the same rule as a terminal's:
+ * an open session whose agent is not working, with no prompt still waiting
+ * to be taken.
+ */
+export function cloudPromptRefusal(
+  run: { isActive: boolean },
+  fold: Pick<SessionFold, 'state' | 'lastObservedState' | 'lastEventAt'>,
+  latestTurn: Pick<SessionTurnFold, 'origin' | 'state'> | null,
+  now: Date = new Date(),
+): string | null {
+  if (run.isActive) return 'The cloud agent is still on its last run; wait for it to finish.';
+  // A follow-up still queued is one the vendor never confirmed (a confirmed
+  // one moves its turn on): it may be running there unseen, so another is
+  // held off longer than a terminal's, and never sent blind on a retry.
+  const quietFor = fold.lastEventAt ? (now.getTime() - fold.lastEventAt.getTime()) / 1000 : 0;
+  if (
+    latestTurn?.origin === 'follow_up' &&
+    latestTurn.state === 'queued' &&
+    quietFor < CLOUD_UNCONFIRMED_HOLD_SECONDS
+  ) {
+    return 'An earlier follow-up was not confirmed by the vendor and may be running there; check the session at its vendor before sending another.';
+  }
+  return promptRefusal(fold, latestTurn, now);
+}
+
+/**
+ * How long a follow-up the vendor never confirmed holds off the next one:
+ * long enough for a person to look at the vendor's page, short enough that
+ * a lost one does not hold the session for good.
+ */
+export const CLOUD_UNCONFIRMED_HOLD_SECONDS = 15 * 60;
 
 /** The words, then Enter, each one write: the keys the chat view types for a message. */
 export function promptKeys(text: string): string[] {

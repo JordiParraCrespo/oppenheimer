@@ -31,6 +31,14 @@ export interface BotToolStep {
   allowedBy: string | null;
   /** The draft a mail call saved in Gmail, for the chat's card; `null` for any other call. */
   mailDraft: BotMailDraft | null;
+  /** The system that was limiting our requests when the call ended, and until when; `null` when none. */
+  rateLimit: BotToolRateLimit | null;
+}
+
+/** A system limiting a call's requests, and when it may be called again. */
+export interface BotToolRateLimit {
+  system: string;
+  resetAt: Date;
 }
 
 /**
@@ -348,4 +356,21 @@ export class WorkspaceBotApprovalEntity extends BotApprovalEntity {
     const named = this.input.session_id ?? this.input.sessionId;
     return typeof named === 'string' && named ? named : null;
   }
+}
+
+/**
+ * A bot's latest line to the person (its `notify` tool,
+ * `product/next-steps/agent-tools.md` §5), as the workspace's list across its
+ * bots reads it (the Inbox). Each notice has an id of its own, so a mark on
+ * one never hides the next.
+ */
+export class WorkspaceBotNoticeEntity {
+  constructor(
+    public readonly id: string,
+    public readonly botId: string,
+    public readonly botName: string,
+    public readonly text: string,
+    /** When it came. */
+    public readonly at: Date,
+  ) {}
 }

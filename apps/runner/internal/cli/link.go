@@ -152,6 +152,11 @@ type attachment struct {
 	// path is where its bytes go: the link, or a direct channel
 	// (attachment_path.go).
 	path attachmentPath
+	// chatOlder is the offset the console asked for the chat's older turns
+	// before, for the attachment's chat follower; one at a time, a second
+	// dropped while one waits. Nil unless the attach said chatTail: the
+	// chat is then sent whole, and an ask has nowhere to go.
+	chatOlder chan int64
 }
 
 // stop ends an attachment's PTY, its reads and its direct path. The caller
@@ -306,8 +311,10 @@ func (h *linkHandler) capabilities() []string {
 	named := []string{
 		link.CapabilitySessionImage, link.CapabilitySessionCreateImages, link.CapabilitySessionFiles,
 		link.CapabilityRepositoryPrepare, link.CapabilitySessionFolder, link.CapabilityFsList,
-		link.CapabilityAttachmentChat, link.CapabilitySessionCloud, link.CapabilitySessionCloudCodex,
-		link.CapabilitySessionWatch, link.CapabilityCodexEnvironments,
+		link.CapabilityAttachmentChat, link.CapabilityAttachmentChatOlder,
+		link.CapabilitySessionCloud, link.CapabilitySessionCloudCodex,
+		link.CapabilitySessionWatch, link.CapabilityCodexEnvironments, link.CapabilitySessionTeleport,
+		link.CapabilitySharedPreview, link.CapabilityTranscriptRead,
 	}
 	if h.direct != nil {
 		named = append(named, link.CapabilityAttachmentDirect, link.CapabilityAttachmentDirectProof)
@@ -525,6 +532,18 @@ func (h *linkHandler) Message(_ context.Context, msg link.Message) {
 		if msg.Decode(&m) == nil {
 			h.directInputOffset(m)
 		}
+	case link.TypeAttachmentChatOlder:
+		var m link.AttachmentChatOlder
+		if msg.Decode(&m) == nil {
+			// The reader scrolled to the top of the chat: its follower reads
+			// the page, never the read loop.
+			if att := h.attachmentByID(m.AttachmentID); att != nil && att.chatOlder != nil {
+				select {
+				case att.chatOlder <- m.Before:
+				default:
+				}
+			}
+		}
 	case "attachment.credit":
 		var m link.AttachmentCredit
 		if msg.Decode(&m) == nil {
@@ -621,6 +640,16 @@ func (h *linkHandler) Message(_ context.Context, msg link.Message) {
 			// Off the read loop like any command, on a lane of its own: a
 			// slow disk delays the next listing, never a session.
 			h.lanes.run(laneFsList, func() { h.listFolders(m) })
+		}
+	case link.TypeSharedPreviewGet:
+		var m link.SharedPreviewGet
+		if msg.Decode(&m) == nil {
+			h.lanes.run(laneSharedPreview, func() { h.sharedPreview(m) })
+		}
+	case link.TypeTranscriptRead:
+		var m link.TranscriptRead
+		if msg.Decode(&m) == nil {
+			h.lanes.run(laneTranscriptRead, func() { h.transcriptRead(m) })
 		}
 	case "host.update":
 		var m link.HostUpdate

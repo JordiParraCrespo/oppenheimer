@@ -13,6 +13,7 @@ import { type InboxMark, InboxMarkEntity } from '../modules/inbox/inbox-mark.ent
 import type { ProjectEntity } from '../modules/projects/project.entity';
 import { automationsKeys } from './automations.keys';
 import { usePendingBotApprovalsQuery } from './bot-approvals.queries';
+import { useBotNoticesQuery } from './bot-notices.queries';
 import { useConsumerApp } from './context';
 import { inboxKeys } from './inbox.keys';
 import { useProjectListQuery } from './projects.queries';
@@ -75,10 +76,11 @@ function useFailedRunsQuery() {
 }
 
 /**
- * The Inbox's seven reads, side by side: the four sources, the two pull
+ * The Inbox's eight reads, side by side: the five sources, the two pull
  * request scopes counted as one, the projects every item is filed under, and
  * the caller's marks. Each keeps its own key, poll and stream coverage, so a
- * session, a run or an approval that changes moves the Inbox with it.
+ * session, a run, an approval or a bot's notice that changes moves the Inbox
+ * with it.
  */
 function useInboxQueries() {
   return [
@@ -87,6 +89,7 @@ function useInboxQueries() {
     usePullRequestQueueQuery('requested'),
     usePullRequestQueueQuery('mine'),
     useFailedRunsQuery(),
+    useBotNoticesQuery(),
     useProjectListQuery(),
     useInboxMarksQuery(),
   ] as const;
@@ -102,7 +105,8 @@ function sourcesOf(
   requested: Answer<2>,
   mine: Answer<3>,
   runs: Answer<4>,
-  projects: Answer<5>,
+  botNotices: Answer<5>,
+  projects: Answer<6>,
 ): InboxSources {
   return {
     sessions,
@@ -110,6 +114,7 @@ function sourcesOf(
     requested: requested.items,
     mine: mine.items,
     failedRuns: runs.items,
+    botNotices,
     projects,
   };
 }
@@ -127,9 +132,10 @@ function sourcesOf(
 export function useSuspenseInbox(
   now: number,
 ): InboxView & { projects: ProjectEntity[]; answered: ReadonlySet<string>; error: Error | null } {
-  const [sessions, approvals, requested, mine, runs, projects, marks] = useSuspenseQueries({
-    queries: useInboxQueries(),
-  });
+  const [sessions, approvals, requested, mine, runs, botNotices, projects, marks] =
+    useSuspenseQueries({
+      queries: useInboxQueries(),
+    });
   const answered = useAnsweredKeys();
   const view = useMemo(
     () =>
@@ -140,6 +146,7 @@ export function useSuspenseInbox(
           requested.data,
           mine.data,
           runs.data,
+          botNotices.data,
           projects.data,
         ),
         marks.data,
@@ -152,6 +159,7 @@ export function useSuspenseInbox(
       requested.data,
       mine.data,
       runs.data,
+      botNotices.data,
       projects.data,
       marks.data,
       now,
@@ -164,6 +172,7 @@ export function useSuspenseInbox(
     requested.error ??
     mine.error ??
     runs.error ??
+    botNotices.error ??
     projects.error ??
     marks.error;
   return { ...view, projects: projects.data, answered, error };
@@ -176,13 +185,14 @@ export function useSuspenseInbox(
 export function useInboxCount(now: number): number | undefined {
   const results = useQueries({ queries: useInboxQueries() });
   const answered = useAnsweredKeys();
-  const [sessions, approvals, requested, mine, runs, projects, marks] = results;
+  const [sessions, approvals, requested, mine, runs, botNotices, projects, marks] = results;
   if (
     !sessions?.data ||
     !approvals?.data ||
     !requested?.data ||
     !mine?.data ||
     !runs?.data ||
+    !botNotices?.data ||
     !projects?.data ||
     !marks?.data
   ) {
@@ -195,7 +205,8 @@ export function useInboxCount(now: number): number | undefined {
       requested.data as Answer<2>,
       mine.data as Answer<3>,
       runs.data as Answer<4>,
-      projects.data as Answer<5>,
+      botNotices.data as Answer<5>,
+      projects.data as Answer<6>,
     ),
     marks.data as InboxMarkEntity[],
     now,

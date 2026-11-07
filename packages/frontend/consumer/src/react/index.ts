@@ -44,7 +44,13 @@ export {
   useSuspenseBotHistory,
   useUploadBotImage,
 } from './bot-chat.queries';
+export {
+  useBotMemoryDream,
+  useRequestBotMemoryDream,
+  useUndoBotMemoryDream,
+} from './bot-dream.queries';
 export { useBotGoal, useClearBotGoal } from './bot-goal.queries';
+export { useBotLoop, useClearBotLoop } from './bot-loop.queries';
 export {
   type AddBotPermissionRuleVariables,
   type DeleteBotPermissionRuleVariables,
@@ -66,6 +72,7 @@ export {
   type RunBotRoutineVariables,
   type SetBotRoutineEnabledVariables,
   useDeleteBotRoutine,
+  useMarkBotSeen,
   useRunBotRoutine,
   useSetBotRoutineEnabled,
   useSuspenseAllBotRoutines,
@@ -106,12 +113,14 @@ export {
   useRenameBotGroup,
   useRevertBotDocument,
   useSaveBotDocument,
+  useSavePersonAbout,
   useSuspenseBot,
   useSuspenseBotAndHosts,
   useSuspenseBotDocuments,
   useSuspenseBotMemory,
   useSuspenseBotRevisions,
   useSuspenseBotsAndGroups,
+  useSuspensePersonMemory,
   useSuspenseSectionBots,
   useUpdateBot,
   useUpdateBotFact,
@@ -272,6 +281,7 @@ export {
   usePutSessionShare,
   useRenameSession,
   useRestartSession,
+  useRetrySession,
   useSessionOpening,
   useSessionShare,
   useSessionStartProgress,
@@ -288,6 +298,7 @@ export {
   useUploadSessionAttachment,
 } from './sessions.queries';
 export {
+  useCloudChatFeed,
   useSessionDeviceStream,
   useSessionStream,
   useSharedSessionStream,

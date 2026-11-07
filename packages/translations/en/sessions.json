@@ -3,6 +3,9 @@
     "title": "Starting your session",
     "failedTitle": "The session did not start",
     "failedLead": "The host could not start this session.",
+    "retry": "Try again",
+    "retrying": "Trying again",
+    "retryFailed": "The session could not be started again.",
     "working": "Working…",
     "downloading": "This host has not had this repository before, so it is downloading it first. This one takes a bit longer; later sessions on it start in about a second.",
     "failed": "Failed",
@@ -228,6 +231,13 @@
       "refused": "{{vendor}} wouldn't start this session.",
       "refusedSaying": "{{vendor}} wouldn't start this session: “{{says}}”",
       "retry": "Try again"
+    },
+    "background": {
+      "label": "Background",
+      "choose": "Choose image…",
+      "remove": "Remove image",
+      "unreadable": "That image could not be used. Try a JPEG, PNG or WebP.",
+      "unsaved": "Your browser would not keep this background, so it will be gone after a reload."
     }
   },
   "session": {
@@ -300,8 +310,7 @@
     }
   },
   "sidebar": {
-    "projects": "Projects",
-    "newProject": "New project",
+    "sessions": "Sessions",
     "search": "Search sessions",
     "clearSearch": "Clear search",
     "noMatches": "No sessions match “{{query}}”.",
@@ -309,7 +318,6 @@
     "emptyProject": "No sessions yet.",
     "startOne": "Start one",
     "newSessionHere": "New session in {{name}}",
-    "projectSettings": "{{name}} settings",
     "unfiled": "Other sessions",
     "pinned": "Pinned",
     "pin": "Pin",
@@ -531,6 +539,10 @@
       "terminal": "Terminal",
       "chat": "Chat"
     },
+    "loading": {
+      "title": "Loading conversation",
+      "lead": "The agent's history is on its way from the host."
+    },
     "empty": {
       "title": "Nothing said yet",
       "description": "The agent's words and work appear here as it goes."
@@ -556,8 +568,7 @@
     "thinking": "Thinking",
     "plan": "Plan",
     "latest": "Jump to latest",
-    "earlier_one": "Show {{count}} earlier turn",
-    "earlier_other": "Show {{count}} earlier turns",
+    "earlier": "Loading earlier turns",
     "truncated": "cut on the host",
     "failedCall": "failed",
     "failed_one": "{{count}} failed",
@@ -639,6 +650,22 @@
     "exploring": "Exploring",
     "file": {
       "onHost": "It stays on the host: too large for the chat, or not an image or text."
+    },
+    "subagents": {
+      "count_one": "{{count}} subagent",
+      "count_other": "{{count}} subagents",
+      "running": "{{count}} running",
+      "failed": "{{count}} failed",
+      "untitled": "Subagent",
+      "calls_one": "{{count}} call",
+      "calls_other": "{{count}} calls",
+      "tokens": "{{tokens}} tokens",
+      "state": {
+        "running": "Running",
+        "completed": "Completed",
+        "failed": "Failed",
+        "stopped": "Stopped"
+      }
     }
   },
   "preview": {
@@ -680,6 +707,19 @@
     "statusSource": "This status comes from the Oppenheimer extension in Chrome while you’re signed in to claude.ai.",
     "open": "Open in claude.ai",
     "teleport": "To continue it in a terminal, run this in a checkout of the repository:",
+    "continue": {
+      "title": "Continue on a host",
+      "description": "Opens a session on the host you pick with this one’s branch and conversation. Claude Code on that host needs to be signed in to the same claude.ai account.",
+      "host": "Host",
+      "search": "Search hosts…",
+      "empty": "No host matches.",
+      "offline": "offline",
+      "noHost": "No host is online. Start the runner on one of your machines, or run the command below yourself.",
+      "start": "Continue on host",
+      "starting": "Starting…",
+      "failed": "Could not continue it on that host."
+    },
+    "teleportManual": "Or run this yourself in a checkout of the repository:",
     "copy": "Copy command",
     "copyLink": "Copy link",
     "copied": "Copied",
@@ -699,5 +739,11 @@
       "open": "Open in ChatGPT",
       "teleport": "To bring its changes into a terminal, run this in a checkout of the repository:"
     }
+  },
+  "cloudChat": {
+    "title": "Live from Claude Code cloud",
+    "waiting_one": "Your reply is waiting for the agent to finish its turn.",
+    "waiting_other": "{{count}} replies are waiting for the agent to finish its turn.",
+    "replyFailed": "The reply didn’t reach the session. Try again."
   }
 }

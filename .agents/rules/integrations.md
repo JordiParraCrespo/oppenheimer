@@ -45,18 +45,22 @@ when it has one. A reviewer should not have to look them up.
 
 Every call to the system goes through **one `UpstreamLimiter`**
 (`@oppenheimer/backend-core`, `src/upstream/`), built once in the adapter that
-owns the system's HTTP. `exchange(buckets, send, readRefusal)` does every step,
+owns the system's HTTP. `exchange(buckets, send, readRefusal, cost)` does every step,
 in order, so no call site can skip one:
 
 1. it waits for a slot under the in-flight cap, or refuses at once when too
    many calls are waiting, instead of hanging the request;
 2. inside the slot, it refuses without calling when any of the call's buckets
    is paused (shared through Redis, so every replica stops together);
-3. it sends;
-4. it reads the answer: the headers (`readRateLimit`), and for a refusal the
+3. when the adapter gave it a `budget` (the provider's published numbers,
+   set below them), it spends the call's `cost` from the first bucket's
+   window, shared through Redis, and a call the window cannot hold pauses
+   the bucket until the window ends and is refused without being sent;
+4. it sends;
+5. it reads the answer: the headers (`readRateLimit`), and for a refusal the
    body, through the adapter's `readRefusal`, which only says whether the body
    names a rate or quota refusal and which bucket it covers;
-5. on a refusal for rate, it pauses that bucket (never shortening a pause
+6. on a refusal for rate, it pauses that bucket (never shortening a pause
    another replica holds) and throws the system's own rate-limit code, a `429`
    with `Retry-After`; on a success that spent the last call, it pauses the
    bucket and returns.
@@ -64,6 +68,14 @@ in order, so no call site can skip one:
 The adapter maps everything else as before. The worked examples are
 `github/infrastructure/github-http.adapter.ts` (the one client both GitHub
 adapters call) and `calendar/infrastructure/google-calendar.gateway.ts`.
+
+**Keep a known limit before the provider has to.** When the provider
+publishes its budget per bucket (Gmail's quota units a minute per person),
+give the limiter that `budget` and price each call in the provider's units
+(`gmailUnitsOf`). A provider that only says what is left in headers
+(GitHub) is kept by step 6's pause at zero. Learning a limit from its `429`
+is the fallback, not the plan: each refusal counts against us, and a
+provider that keeps seeing them escalates.
 
 **Buckets are what the provider counts, and the caller passes them.** An
 installation token is counted against the installation, whatever token string
@@ -79,6 +91,15 @@ message in every locale, and an `@ApiProblemResponse` with status 429 on every
 route that can reach the system. Never let it fold into the call site's
 mapping of `403`: that is how a rate limit reads as "installation suspended"
 and tells the person to reinstall something that works.
+
+**What the caller does with it.** A rate limit is a wait, not a fault.
+`upstreamRateLimitOf(error)` reads any integration's limit back as
+`{ system, resetAt }`, whichever module raised it. A bot's tool answers it
+as a wait with its time and never as the provider's text
+(`bots-chat/domain/bot-rate-limit.policy.ts`); a loop over many items keeps
+what it did and returns the rest as not reached (Gmail's `eachThread`);
+and work queued after it waits for `resetAt` (a goal's next turn) instead
+of running into the limit again.
 
 ## Outside the API
 

@@ -65,18 +65,44 @@ function userMessage(request: BotTurnRequest): AgentInputItem {
 }
 
 /**
+ * What an endpoint requires a turn's requests to carry, besides their input
+ * and effort: the settings the SDK names, and `providerData`, the fields it
+ * has none for, which it spreads into the request body as they are.
+ */
+export interface ResponsesModelSettings {
+  /** Whether the provider keeps the response; ChatGPT's backend takes only `false`. */
+  store?: boolean;
+  providerData?: Record<string, unknown>;
+}
+
+/**
  * Where a turn's requests go and what they carry besides its effort: the
  * endpoint, and the model settings that endpoint requires. A subclass that
  * reaches another Responses API endpoint says so here and nowhere else.
  */
 export interface ResponsesEndpoint {
   baseUrl?: string;
-  modelSettings: Record<string, unknown>;
+  modelSettings: ResponsesModelSettings;
   /**
    * The endpoint answers with the subscription's usage windows in its
    * headers (ChatGPT's Codex backend), which the turn's `usage` then carries.
    */
   reportsPlanLimits?: boolean;
+}
+
+/**
+ * The endpoint's settings with the turn's cache key in the body, as
+ * `prompt_cache_key`, beside whatever else the endpoint puts there. OpenAI,
+ * ChatGPT's backend and xAI all keep a prompt cache per server and send the
+ * requests of one key to the same one; without it, a turn's steps and the
+ * next turn land on servers that hold none of the prefix.
+ */
+function withCacheKey(
+  settings: ResponsesModelSettings,
+  cacheKey: string | undefined,
+): ResponsesModelSettings {
+  if (!cacheKey) return settings;
+  return { ...settings, providerData: { ...settings.providerData, prompt_cache_key: cacheKey } };
 }
 
 /** Provider `openai`, on the OpenAI Agents SDK over the Responses API. */
@@ -156,7 +182,7 @@ export class OpenAiBotEngine extends BotEngine {
       ),
       modelSettings: {
         ...(request.effort ? { reasoning: { effort: request.effort } } : {}),
-        ...endpoint.modelSettings,
+        ...withCacheKey(endpoint.modelSettings, request.cacheKey),
       },
     });
     const run: OpenAiRun = await runner.run(agent, inputItems(request), {

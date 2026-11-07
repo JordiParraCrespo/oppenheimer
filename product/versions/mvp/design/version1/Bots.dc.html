@@ -59,11 +59,11 @@ textarea::placeholder{color:var(--fg-subtle)}
 </sc-if>
 </div>
 <sc-if value="{{ g.open }}" hint-placeholder-val="{{ true }}">
-<div style="display:flex;flex-direction:column;gap:2px">
+<div style="display:flex;flex-direction:column;gap:1px">
 <sc-for list="{{ g.bots }}" as="b" hint-placeholder-count="2">
-<button type="button" draggable="{{ b.draggable }}" onDragStart="{{ b.drag }}" onDragEnd="{{ b.dragEnd }}" onClick="{{ b.open }}" style="display:flex;align-items:center;gap:12px;width:100%;padding:8px 10px;border:0;border-radius:14px;background:{{ b.bg }};color:var(--fg);font:inherit;text-align:left;cursor:pointer" style-hover="background:var(--hover-surface)">
-<span style="position:relative;flex:none;width:40px;height:36px;display:flex;align-items:center;justify-content:center"><span title="{{ b.sciName }}" style="position:relative;flex:none;width:36px;height:36px;border-radius:980px;overflow:hidden;background:var(--control);color:var(--fg);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;letter-spacing:-0.01em">{{ b.ini }}<img src="{{ b.img }}" alt="" onError="{{ b.onErr }}" loading="lazy" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center;filter:none"></span><sc-if value="{{ b.live }}"><span style="position:absolute;right:-2px;bottom:3px;width:10px;height:10px;box-sizing:border-box;border-radius:980px;border:2px solid var(--sidebar,var(--background));background:var(--success)"></span></sc-if></span>
-<span style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px"><span style="display:flex;align-items:baseline;gap:8px"><span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:14px;font-weight:{{ b.weight }};letter-spacing:-0.009em">{{ b.title }}</span><span style="font-family:var(--font-mono);font-size:11px;font-variant-numeric:tabular-nums;color:var(--fg-subtle)">{{ b.age }}</span></span><span style="display:flex;align-items:center;gap:8px"><span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12.5px;color:{{ b.prevColor }}">{{ b.preview }}</span><sc-if value="{{ b.unread }}"><span aria-label="Unread" style="width:7px;height:7px;flex:none;border-radius:980px;background:var(--primary)"></span></sc-if><sc-if value="{{ b.needs }}"><span aria-label="Needs input" style="width:7px;height:7px;flex:none;border-radius:980px;background:var(--warning)"></span></sc-if></span></span>
+<button type="button" draggable="{{ b.draggable }}" onDragStart="{{ b.drag }}" onDragEnd="{{ b.dragEnd }}" onClick="{{ b.open }}" title="{{ b.preview }}" style="display:flex;align-items:center;gap:10px;width:100%;height:32px;padding:0 10px;border:0;border-radius:10px;background:{{ b.bg }};color:var(--fg);font:inherit;text-align:left;cursor:pointer" style-hover="background:var(--hover-surface)">
+<span style="position:relative;flex:none;width:20px;height:20px"><span title="{{ b.sciName }}" style="position:relative;width:20px;height:20px;border-radius:6px;overflow:hidden;background:var(--control);color:var(--fg);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:600">{{ b.ini }}<img src="{{ b.img }}" alt="" onError="{{ b.onErr }}" loading="lazy" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center"></span><sc-if value="{{ b.live }}"><span style="position:absolute;right:-3px;bottom:-3px;width:9px;height:9px;box-sizing:border-box;border-radius:980px;border:2px solid var(--sidebar,var(--background));background:var(--success)"></span></sc-if></span>
+<span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:14px;font-weight:{{ b.weight }}">{{ b.title }}</span><sc-if value="{{ b.needs }}"><span aria-label="Needs input" style="width:7px;height:7px;flex:none;border-radius:980px;background:var(--warning)"></span></sc-if><sc-if value="{{ b.unread }}"><span aria-label="Unread" style="width:7px;height:7px;flex:none;border-radius:980px;background:var(--primary)"></span></sc-if>
 </button>
 </sc-for>
 <sc-if value="{{ g.empty }}"><div style="margin:2px 4px 4px;padding:10px 12px;border:1px dashed var(--border-subtle);border-radius:10px;font-size:12.5px;color:var(--fg-subtle)">No bots yet. Drag one here.</div></sc-if>
@@ -239,6 +239,23 @@ textarea::placeholder{color:var(--fg-subtle)}
 <div role="separator" aria-label="{{ m.label }}" style="display:flex;align-items:center;gap:10px;min-height:24px;font-size:12.5px;color:var(--fg-muted)"><span style="flex:1;height:1px;background:var(--border-subtle)"></span><span style="flex:0 1 auto;min-width:0;display:inline-flex;align-items:center;gap:6px"><span style="display:flex;color:{{ m.tone }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="shield" size="12" hint-size="12px,12px"></x-import></span><span style="flex:none">{{ m.label }}</span><code style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:var(--font-mono);font-size:11.5px;color:var(--fg)">{{ m.detail }}</code><span style="flex:none;font-family:var(--font-mono);font-size:11px;font-variant-numeric:tabular-nums;color:var(--fg-subtle)">· {{ m.time }}</span></span><span style="flex:1;height:1px;background:var(--border-subtle)"></span></div>
 </sc-if>
 
+<sc-if value="{{ m.isEvent }}">
+<div role="{{ m.role }}" style="display:flex;align-items:center;gap:16px;padding:10px 0;font-size:13px">
+<span style="flex:1;min-width:24px;height:1px;background:var(--border-subtle)"></span>
+<span style="flex:0 1 auto;min-width:0;display:inline-flex;align-items:center;gap:8px;color:{{ m.tone }}"><span style="flex:none;display:flex"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="{{ m.icon }}" size="14" hint-size="14px,14px"></x-import></span><span title="{{ m.text }}" style="min-width:0;max-width:36rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ m.text }}</span></span>
+<sc-if value="{{ m.action }}"><button type="button" onClick="{{ m.run }}" style="flex:none;display:inline-flex;align-items:center;gap:4px;height:26px;margin:0 -8px;padding:0 8px;border:0;border-radius:980px;background:none;color:var(--fg);font:inherit;font-size:12.5px;cursor:pointer" style-hover="background:var(--hover-surface)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="external-link" size="13" hint-size="13px,13px"></x-import>{{ m.action }}</button></sc-if>
+<span style="flex:1;min-width:24px;height:1px;background:var(--border-subtle)"></span>
+</div>
+</sc-if>
+
+<sc-if value="{{ m.isNotice }}">
+<div role="status" style="display:flex;align-items:center;gap:10px;padding:10px 10px 10px 14px;border-radius:14px;background:var(--card);font-size:13px;color:var(--fg)">
+<span style="flex:none;display:flex;color:{{ m.tone }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="{{ m.icon }}" size="14" hint-size="14px,14px"></x-import></span>
+<span style="flex:1;min-width:0;text-wrap:pretty">{{ m.text }}</span>
+<button type="button" onClick="{{ m.run }}" style="flex:none;display:inline-flex;align-items:center;height:26px;padding:0 10px;border:1px solid var(--border);border-radius:980px;background:none;color:var(--fg);font:inherit;font-size:12.5px;cursor:pointer" style-hover="background:var(--hover-surface)">{{ m.action }}</button>
+</div>
+</sc-if>
+
 <sc-if value="{{ m.isProposal }}">
 <div style="display:flex;flex-direction:column;border-radius:18px;background:var(--card);overflow:hidden">
 <div style="display:flex;align-items:center;gap:8px;padding:10px 10px 10px 16px;flex-wrap:wrap">
@@ -287,6 +304,13 @@ textarea::placeholder{color:var(--fg-subtle)}
 </div>
 </sc-if>
 
+<sc-if value="{{ hasGoal }}">
+<div role="status" style="display:flex;align-items:center;gap:10px;height:40px;padding:0 10px 0 20px;border:1px solid {{ composerBorder }};border-bottom:0;border-radius:28px 28px 0 0;background:var(--card);font-size:13px;color:var(--fg)">
+<span style="flex:none;display:flex;color:var(--fg-muted)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="activity" size="14" hint-size="14px,14px"></x-import></span>
+<span style="flex:1;min-width:0;display:flex;align-items:baseline;gap:8px"><span style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="{{ goal.objective }}">Goal · {{ goal.objective }}</span><span style="flex:none;font-family:var(--font-mono);font-size:12px;font-variant-numeric:tabular-nums;color:var(--fg-muted)">{{ goal.step }} of {{ goal.limit }}</span></span>
+<button type="button" onClick="{{ stopGoal }}" style="flex:none;display:inline-flex;align-items:center;height:26px;padding:0 10px;border:0;border-radius:980px;background:none;color:var(--fg-muted);font:inherit;font-size:12.5px;cursor:pointer" style-hover="background:var(--hover-surface);color:var(--fg)">Stop</button>
+</div>
+</sc-if>
 <sc-if value="{{ hasPending }}">
 <div role="group" aria-label="Approval needed" style="padding:16px 20px 10px;border:1px solid {{ composerBorder }};border-bottom:0;border-radius:28px 28px 0 0;background:var(--card);display:flex;flex-direction:column;gap:10px;animation:op-rise 220ms cubic-bezier(.16,1,.3,1)">
 <div style="display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--fg-muted)"><span style="width:6px;height:6px;border-radius:980px;background:var(--warning)"></span>Needs input<span style="flex:1"></span><span>{{ pend.why }}</span></div>
@@ -494,8 +518,8 @@ class Component extends DCLogic {
         { id: 'c2', role: 'work', label: 'Worked for 9s', open: false, steps: [{ icon: 'file-text', verb: 'Read', target: '.github/workflows/nightly.yml' }, { icon: 'search', verb: 'Searched', target: 'retry: flaky', meta: '3 results' }] },
         { id: 'c3', role: 'assistant', md: 'Here is what I will follow. Accept it and it becomes revision 1 of `INSTRUCTIONS.md`; you can change it any time in settings.', meta: 'Claude Sonnet 4.6 · 0.6k tokens' },
         { id: 'c4', role: 'proposal', status: 'pending', job: T3_JOB, lines: proposalLines(T3_JOB) }] },
-      t4: { title: 'Research Bot', role: 'Reads the web and cites sources', icon: 'globe', age: '4d', group: 'g2', msgs: [{ id: 'd0', role: 'user', text: 'Compare the cancellation semantics of the three agent SDKs we use.', time: 'Oct 7' }, { id: 'd1', role: 'assistant', md: 'Only one of the three propagates an abort into in-flight tool calls; the other two stop at the next step boundary.', meta: 'Claude Opus 4.6' }, { id: 'd2', role: 'b2b', dir: 'in', bot: 'Release Bot', time: 'Oct 7', text: 'Find the SDK changelog entry for AbortSignal support.', reply: 'Sent 3 changelog links, newest first.' }] },
-      op: { title: 'Oppenheimer', role: 'General bot · merges pull requests, opens issues, runs Plan', builtin: true, ini: 'OP', age: '1h', msgs: [{ id: 'o0', role: 'user', text: 'Merge what is ready and open issues for anything that fails.', time: '08:40' }, { id: 'o1', role: 'work', label: 'Worked across 3 repositories', open: false, steps: [{ icon: 'git-pull-request', verb: 'Merged', target: 'oppenheimer #485', meta: 'squash' }, { icon: 'git-pull-request', verb: 'Merged', target: 'runner #130', meta: 'squash' }, { icon: 'alert-triangle', verb: 'Opened', target: 'issue runner #212', meta: 'checks failing' }, { icon: 'check-circle', verb: 'Moved', target: '2 tasks to Done', meta: 'Plan' }] }, { id: 'o2', role: 'assistant', md: 'Merged 2 pull requests. runner #131 has a failing check, so I opened **runner #212** with the log and assigned it to the runner agent. Both linked tasks moved to Done on Plan.', meta: 'Claude Opus 4.6' }] },
+      t4: { title: 'Research Bot', role: 'Reads the web and cites sources', icon: 'globe', age: '4d', group: 'g2', goal: { objective: 'Map every SDK’s abort path with sources', step: 2, limit: 5 }, msgs: [{ id: 'd0', role: 'user', text: 'Compare the cancellation semantics of the three agent SDKs we use.', time: 'Oct 7' }, { id: 'd1', role: 'assistant', md: 'Only one of the three propagates an abort into in-flight tool calls; the other two stop at the next step boundary.', meta: 'Claude Opus 4.6' }, { id: 'd2', role: 'b2b', dir: 'in', bot: 'Release Bot', time: 'Oct 7', text: 'Find the SDK changelog entry for AbortSignal support.', reply: 'Sent 3 changelog links, newest first.' }, { id: 'de0', role: 'event', icon: 'activity', text: 'Goal · continuation 2 of 5' }] },
+      op: { title: 'Oppenheimer', role: 'General bot · merges pull requests, opens issues, runs Plan', builtin: true, ini: 'OP', age: '1h', msgs: [{ id: 'oe0', role: 'event', icon: 'calendar', text: 'Routine · Morning merge sweep' }, { id: 'o0', role: 'user', text: 'Merge what is ready and open issues for anything that fails.', time: '08:40' }, { id: 'o1', role: 'work', label: 'Worked across 3 repositories', open: false, steps: [{ icon: 'git-pull-request', verb: 'Merged', target: 'oppenheimer #485', meta: 'squash' }, { icon: 'git-pull-request', verb: 'Merged', target: 'runner #130', meta: 'squash' }, { icon: 'alert-triangle', verb: 'Opened', target: 'issue runner #212', meta: 'checks failing' }, { icon: 'check-circle', verb: 'Moved', target: '2 tasks to Done', meta: 'Plan' }] }, { id: 'o2', role: 'assistant', md: 'Merged 2 pull requests. runner #131 has a failing check, so I opened **runner #212** with the log and assigned it to the runner agent. Both linked tasks moved to Done on Plan.', meta: 'Claude Opus 4.6' }, { id: 'oe1', role: 'event', icon: 'alert-circle', danger: true, text: 'Session “Fix runner #212” failed', action: 'Open session' }, { id: 'oe2', role: 'event', icon: 'check-circle', text: 'Session “Retry nightly build” finished', action: 'Open session' }, { id: 'oe3', role: 'notice', text: 'Routine “Nightly triage” was paused: the GitHub token it uses has expired.', action: 'Open routines' }] },
     },
     draft: '', focused: false, slashIdx: 0,
     approval: 'ask', approvalOpen: false, model: (window.OP_CATALOG || {}).defaultModel || 'sonnet', effort: 'high', effortShown: 'high', effortOpen: false, modelOpen: false,
@@ -743,6 +767,8 @@ class Component extends DCLogic {
     const msgs = (t ? t.msgs : []).map(m => {
       if (m.role === 'user') { const ck = m.id + ':u'; return { isUser: true, text: m.text, time: m.time, actOp: s.hoverMsg === m.id ? 1 : 0, enter: () => this.setState({ hoverMsg: m.id }), leave: () => this.setState(x => x.hoverMsg === m.id ? { hoverMsg: null } : null), copyIcon: s.copied === ck ? 'check' : 'copy', copy: () => copyKey(ck, m.text), edit: () => { this.setState({ draft: m.text }); setTimeout(() => { const el = this.taRef.current; if (el) el.focus(); }, 20); } }; }
       if (m.role === 'b2b') { const out = m.dir === 'out'; return { isB2b: true, bot: m.bot, text: m.text, time: m.time, dirLabel: out ? 'Sent to' : 'From', rot: out ? 'none' : 'rotate(180deg)', replyRot: out ? 'rotate(180deg)' : 'none', hasReply: !!m.reply, reply: m.reply, replyLabel: out ? m.bot + ' replied' : 'Replied' }; }
+      if (m.role === 'event') return { isEvent: true, role: m.action ? 'group' : 'separator', icon: m.icon, text: m.text, tone: m.danger ? 'var(--danger)' : 'var(--fg-muted)', action: m.action, run: () => this.flash(m.action === 'Open session' ? 'Opening the session' : m.action) };
+      if (m.role === 'notice') return { isNotice: true, icon: m.danger ? 'alert-circle' : 'alert-triangle', tone: m.danger ? 'var(--danger)' : 'var(--warning)', text: m.text, action: m.action, run: () => this.flash('Opening ' + m.action.replace(/^Open /, '')) };
       if (m.role === 'decision') return { isDecision: true, label: m.label, detail: m.detail, time: m.time, tone: /denied/.test(m.label) ? 'var(--danger)' : 'var(--fg-subtle)' };
       if (m.role === 'proposal') {
         const setP = st => this.setThread(s.active, th => ({ ...th, role: st === 'accepted' ? (m.job.length > 48 ? m.job.slice(0, 46).trim() + '…' : m.job) : th.role, msgs: th.msgs.map(x => x.id === m.id ? { ...x, status: st } : x) }));
@@ -810,6 +836,7 @@ class Component extends DCLogic {
       isNew: !t, groups: groupsV, noBots: entries.length === 0 && !!bq,
       noOwnBots: !bq && !visible.some(([, b]) => !b.builtin),
       templates: cat.templates.map(tp => ({ ...tp, pick: () => this.fromTemplate(tp) })),
+      hasGoal: !!(t && t.goal && !t.pending), goal: (t && t.goal) || {}, stopGoal: () => { this.setThread(s.active, th => ({ ...th, goal: null, msgs: [...th.msgs, { id: 'g' + Date.now(), role: 'event', icon: 'alert-triangle', danger: true, text: 'Goal stopped by you · ' + th.goal.step + ' of ' + th.goal.limit }] })); },
       hasPending: !!(t && t.pending), noPending: !(t && t.pending), pend: (t && t.pending) || {},
       pendActions: [
         { n: '1', label: 'Approve', desc: 'Run it this once', pick: () => this.decide('approve') },
@@ -898,8 +925,8 @@ class Component extends DCLogic {
       onDraft: (e) => this.setState({ draft: e.target.value, slashIdx: 0 }),
       onKey: this.onKey, onFocus: () => this.setState({ focused: true }), onBlur: () => this.setState({ focused: false }),
       composerBorder: s.focused ? 'var(--border)' : 'transparent',
-      composerRadius: t && t.pending ? '0 0 28px 28px' : '28px',
-      composerTop: t && t.pending ? 'var(--border-subtle)' : (s.focused ? 'var(--border)' : 'transparent'),
+      composerRadius: t && (t.pending || t.goal) ? '0 0 28px 28px' : '28px',
+      composerTop: t && (t.pending || t.goal) ? 'var(--border-subtle)' : (s.focused ? 'var(--border)' : 'transparent'),
       send: this.send, stopRun: this.stopRun, cantSend: !s.draft.trim(), sendOpacity: s.draft.trim() ? 1 : 0.4,
       slashOpen: !!sm, slashEmpty: !!sm && sm.length === 0,
       slashItems: (sm || []).map((c, i) => ({ ...c, bg: i === slashIdx ? 'var(--hover-surface)' : 'transparent', pick: () => this.pickCmd(c), hover: () => this.setState({ slashIdx: i }) })),

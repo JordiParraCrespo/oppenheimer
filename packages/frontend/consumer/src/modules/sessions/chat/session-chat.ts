@@ -15,12 +15,15 @@
 import type { ChatItemTodo } from '@oppenheimer/shared/schemas/chat-item';
 import { type ChatAnswer, QUESTION_KEY_GAP_MS, questionKeys } from '@oppenheimer/shared/sessions';
 import { type ChatToolKind, classifyTool, fieldOf, todosOf } from '../../chat/chat-tools';
+import { type ChatActivity, sameActivity } from './agent-activity';
 import {
   type ChatSharedFile,
   SHARED_ENTRY,
   sharedFileOf,
   withSharedFiles,
 } from './session-chat-files';
+import { FirstLoad, linesToCome, Quiet } from './session-chat-history';
+import { Subagents } from './session-chat-subagents';
 
 /** One item of the agent's task list: the chat module's, which the bots chat reads too. */
 export type ChatTodo = ChatItemTodo;
@@ -82,6 +85,37 @@ export interface ChatToolCall {
   /** When the agent made the call, and when its result landed (none while it runs). */
   startedAt: Date | null;
   finishedAt: Date | null;
+  /**
+   * The subagent the call started, with its own work, once the host has
+   * sent it (`session-chat-subagents.ts`); none for any other call, and for
+   * one from a host or an agent whose subagents it does not follow.
+   */
+  subagent: ChatSubagent | null;
+}
+
+/**
+ * How a subagent stands: at work, finished, failed, or stopped before it
+ * finished (a Codex turn aborted).
+ */
+export type ChatSubagentState = 'running' | 'completed' | 'failed' | 'stopped';
+
+/** A subagent one of the agent's calls started, and what it did. */
+export interface ChatSubagent {
+  id: string;
+  /** Its kind, as the agent names it (`Explore`, `general-purpose`, a Codex role). */
+  type: string | null;
+  /** The name the agent gave it (Codex's nickname). */
+  name: string | null;
+  model: string | null;
+  state: ChatSubagentState;
+  /** Its own steps, in order: what it read, ran and said, its subagents among them. */
+  steps: ChatStep[];
+  /** What its context held at its last answer, when counted. */
+  tokens: number | null;
+  /** How many calls it made. */
+  calls: number;
+  startedAt: Date | null;
+  lastAt: Date | null;
 }
 
 /**
@@ -169,6 +203,12 @@ export interface ChatQueued {
 export interface ChatState {
   /** The host follows this session's transcript: a first batch has arrived. */
   available: boolean;
+  /**
+   * The conversation's history is still arriving on a first load: `turns`
+   * stays empty until it has, so the chat draws it once, at its end, rather
+   * than every part of it as each lands.
+   */
+  loading: boolean;
   turns: ChatTurn[];
   /** What waits to be sent, in order; the first goes once the agent settles. */
   queued: readonly ChatQueued[];
@@ -176,14 +216,45 @@ export interface ChatState {
   status: ChatStatus | null;
   /** The files the agent shared, in the order they came; each also a step of its turn. */
   files: readonly ChatSharedFile[];
+  /**
+   * Turns before the first one held, on the host: `more` to ask for
+   * (`loadOlder`), `loading` while a page of them is on its way, `none`
+   * when the whole conversation is held.
+   */
+  older: 'none' | 'more' | 'loading';
+  /**
+   * What the agent says it is doing this moment, off its spinner line on the
+   * terminal (`setActivity`); none while it is not working, or while no
+   * terminal is drawn to read it from.
+   */
+  activity: ChatActivity | null;
 }
 
 export interface ChatBatch {
   reset?: boolean;
+  /** Where the history a reset started stands: `more` is coming, or this batch is its `end`. */
+  history?: 'more' | 'end';
+  /**
+   * Where in the transcript what the host sent starts: on a reset that sent
+   * only the last turns, and on an older page's last batch. Absent or 0, the
+   * conversation from its first line.
+   */
+  before?: number;
+  /** Part of an older page asked for (`loadOlder`): `more` is coming, or this batch is its `end`. */
+  older?: 'more' | 'end';
   entries: readonly string[];
 }
 
-const EMPTY: ChatState = { available: false, turns: [], queued: [], status: null, files: [] };
+const EMPTY: ChatState = {
+  available: false,
+  loading: false,
+  turns: [],
+  queued: [],
+  status: null,
+  files: [],
+  older: 'none',
+  activity: null,
+};
 
 /** The entry the runner adds for the status line's figures. */
 const STATUS_ENTRY = 'oppenheimer.status';
@@ -193,12 +264,6 @@ const PASTE_START = '\u001b[200~';
 const PASTE_END = '\u001b[201~';
 /** The key that stops Claude Code's turn. */
 const ESCAPE = '\u001b';
-/**
- * How long a reconnect's replay may go quiet, short of the lines the chat
- * holds, before those it did not send again are taken as gone: well past
- * the runner's 300ms between reads of a long history.
- */
-const REPLAY_SETTLE_MS = 3000;
 /** How long the agent's prompt takes the text before Enter submits it. */
 const SUBMIT_AFTER_TEXT_MS = 60;
 /**
@@ -241,8 +306,21 @@ class Transcript {
    * it has sent everything held, which `settle` cuts.
    */
   private replayed: number | null = null;
+  /**
+   * A replay that starts mid-conversation (a tail, `ChatBatch.before`): its
+   * first line is looked for among those held, and the replay checked from
+   * there; the held lines before it stay.
+   */
+  private aligning = false;
+  /** A tail whose first line was not among those held: the conversation is drawn from the tail. */
+  private restarted = false;
 
   /** A replay has not yet sent again every line held. */
+  /** Nothing of the conversation is held yet. */
+  get empty(): boolean {
+    return this.lines.length === 0;
+  }
+
   get replaying(): boolean {
     return this.replayed !== null;
   }
@@ -252,18 +330,62 @@ class Transcript {
    * is a replay, checked against what is held; with none, the transcript
    * is empty now. Whether that changed the conversation.
    */
-  reset(replaying: boolean): boolean {
+  reset(replaying: boolean, tail = false): boolean {
+    this.restarted = false;
     if (replaying && this.lines.length > 0) {
       this.replayed = 0;
+      this.aligning = tail;
       return false;
     }
     this.replayed = null;
+    this.aligning = false;
     this.truncate(0);
     return true;
   }
 
+  /** Whether the last tail started the conversation over, and forgets it. */
+  takeRestarted(): boolean {
+    const restarted = this.restarted;
+    this.restarted = false;
+    return restarted;
+  }
+
+  /**
+   * Lines from before the first one held, an older page: the conversation
+   * is read again from its new first line, and a replay under way goes on
+   * where it was.
+   */
+  prepend(lines: readonly TranscriptLine[]): boolean {
+    if (lines.length === 0) return false;
+    // A copy: the cut empties the array it holds in place.
+    const held = [...this.lines];
+    const replayed = this.replayed;
+    this.truncate(0);
+    this.lines = [...lines, ...held];
+    this.unread = 0;
+    if (replayed !== null) this.replayed = replayed + lines.length;
+    return true;
+  }
+
+  /** A replay that will send nothing more: what is held stays as it is. */
+  endReplay(): void {
+    this.replayed = null;
+    this.aligning = false;
+  }
+
   /** One line of the conversation; whether it changed what is held. */
   take(raw: string, entry: unknown): boolean {
+    if (this.aligning) {
+      this.aligning = false;
+      const at = this.lastIndexOf(raw);
+      if (at < 0) {
+        this.replayed = null;
+        this.restarted = true;
+        this.truncate(0);
+      } else {
+        this.replayed = at;
+      }
+    }
     if (this.replayed !== null) {
       if (this.lines[this.replayed]?.raw === raw) {
         this.replayed += 1;
@@ -309,6 +431,7 @@ class Transcript {
    * Whether any did.
    */
   settle(): boolean {
+    this.aligning = false;
     if (this.replayed === null) return false;
     const length = this.replayed;
     this.replayed = null;
@@ -347,6 +470,14 @@ class Transcript {
     for (const [call, at] of this.closedCalls) if (at >= turn) this.closedCalls.delete(call);
   }
 
+  /** Where a line is held, looked for from the end, where a tail starts; -1 for nowhere. */
+  private lastIndexOf(raw: string): number {
+    for (let index = this.lines.length - 1; index >= 0; index -= 1) {
+      if (this.lines[index]?.raw === raw) return index;
+    }
+    return -1;
+  }
+
   /** The earliest closed turn a result in this entry lands on; `Infinity` for none. */
   private closedAnswered(entry: unknown, index: number): number {
     if (this.closedCalls.size === 0) return Number.POSITIVE_INFINITY;
@@ -371,7 +502,17 @@ class Transcript {
  */
 export class SessionChat {
   private readonly transcript = new Transcript();
+  /** The subagents the agent ran, held apart and put into their calls (`turnsOf`). */
+  private readonly subagents = new Subagents(sidechainTurns);
+  /** A first load's history, held until it has all come (`ChatState.loading`). */
+  private readonly firstLoad = new FirstLoad();
   private type: ((data: string) => void) | null = null;
+  /** Asks the host for the turns before an offset, lent with the input (`connect`). */
+  private askOlder: ((before: number) => void) | null = null;
+  /** Where in the transcript the lines held start: 0 for its first line. */
+  private heldFrom = 0;
+  /** The lines of an older page still coming, while one is asked for. */
+  private olderLines: string[] | null = null;
   private state: ChatState = EMPTY;
   private readonly listeners = new Set<() => void>();
   /** The last queued message sent: how many turns there were, and when. */
@@ -384,10 +525,31 @@ export class SessionChat {
    */
   private queuedDuring: string | null = null;
   private queuedIds = 0;
-  private replayTimer: ReturnType<typeof setTimeout> | null = null;
+  /** The quiet that ends a first load or a replay that came back short. */
+  private readonly quiet = new Quiet();
 
   apply(batch: ChatBatch): void {
-    let changed = batch.reset ? this.transcript.reset(batch.entries.length > 0) : false;
+    if (batch.older) {
+      this.takeOlder(batch);
+      return;
+    }
+    // A first load is held back until its history has come, so the chat
+    // draws it once, at its end, not each part of a long one in turn.
+    this.firstLoad.take(batch, this.transcript.empty);
+    const from = batch.before ?? 0;
+    let changed = false;
+    if (batch.reset) {
+      // An older page asked of the attachment before this one never comes.
+      this.olderLines = null;
+      // A tail is checked against what is held from where it starts, and
+      // the turns held before it stay: the held conversation starts at the
+      // earlier of the two.
+      const held = !this.transcript.empty;
+      changed = this.transcript.reset(linesToCome(batch), from > 0);
+      // A conversation that starts over takes its subagents with it.
+      if (changed) this.subagents.clear();
+      this.heldFrom = held && from > 0 ? Math.min(this.heldFrom, from) : from;
+    }
     let status = this.state.status;
     let files = this.state.files;
     for (const raw of batch.entries) {
@@ -405,43 +567,126 @@ export class SessionChat {
         // Each attachment sends every shared file again; one is held once.
         const file = sharedFileOf(entry);
         if (file && !files.some((held) => held.id === file.id)) files = [...files, file];
-      } else if (this.transcript.take(raw, entry)) changed = true;
+      } else {
+        const subagent = this.subagents.take(raw, entry);
+        if (subagent === null ? this.transcript.take(raw, entry) : subagent) changed = true;
+      }
     }
-    if (changed || !this.state.available || files !== this.state.files) {
-      this.publish({
-        ...this.state,
-        available: true,
-        turns: this.turnsOf(files),
-        status,
-        files,
-      });
-    } else if (status !== this.state.status) {
-      // A replay so far, or a status alone: the conversation is as drawn.
-      this.publish({ ...this.state, status });
-    }
-    this.watchReplay();
+    // A tail that is not where the held conversation goes is a different one.
+    if (this.transcript.takeRestarted()) this.heldFrom = from;
+    // The history's end, before every line held came again: the transcript
+    // is shorter now, without waiting for a quiet to say so.
+    if (batch.history === 'end' && this.transcript.settle()) changed = true;
+    this.publishBatch(changed, status, files);
+    this.quiet.watch(this.settleAfter(), this.settled);
     this.flush();
   }
 
   /**
-   * A replay that stops short of the lines held says the transcript is
-   * shorter now; nothing marks a history's end, so its quiet does.
+   * Publishes what a batch changed, once: the turns are built again only
+   * when the conversation moved and no first load is holding them back.
    */
-  private watchReplay(): void {
-    if (this.replayTimer) clearTimeout(this.replayTimer);
-    this.replayTimer = null;
-    if (!this.transcript.replaying) return;
-    this.replayTimer = setTimeout(() => {
-      this.replayTimer = null;
-      if (!this.transcript.settle()) return;
-      this.publish({ ...this.state, turns: this.turnsOf(this.state.files) });
-      this.flush();
-    }, REPLAY_SETTLE_MS);
+  private publishBatch(
+    changed: boolean,
+    status: ChatStatus | null,
+    files: readonly ChatSharedFile[],
+  ): void {
+    const was = this.state;
+    const redraw =
+      !this.loading && (changed || was.loading || !was.available || files !== was.files);
+    const older = this.olderState();
+    if (
+      !redraw &&
+      was.available &&
+      was.loading === this.loading &&
+      was.status === status &&
+      was.files === files &&
+      was.older === older
+    ) {
+      return;
+    }
+    this.publish({
+      ...was,
+      available: true,
+      loading: this.loading,
+      status,
+      files,
+      older,
+      turns: redraw ? this.turnsOf(files) : was.turns,
+    });
   }
+
+  private olderState(): ChatState['older'] {
+    if (this.olderLines !== null) return 'loading';
+    return this.heldFrom > 0 ? 'more' : 'none';
+  }
+
+  /**
+   * Asks the host for the turns before the first one held, once the reader
+   * reaches the top of what is drawn. False when there is nothing older to
+   * ask for, a page is already on its way, or nothing is connected to ask.
+   */
+  loadOlder(): boolean {
+    if (!this.askOlder || this.olderLines !== null || this.heldFrom <= 0 || this.loading) {
+      return false;
+    }
+    this.olderLines = [];
+    this.askOlder(this.heldFrom);
+    this.publish({ ...this.state, older: 'loading' });
+    return true;
+  }
+
+  /**
+   * A batch of the older page asked for: held until its last, then put
+   * before the first line held, the conversation read again from there.
+   * One that nobody asked for (the attachment that asked is gone) is let go.
+   */
+  private takeOlder(batch: ChatBatch): void {
+    if (this.olderLines === null) return;
+    this.olderLines.push(...batch.entries);
+    if (batch.older !== 'end') return;
+    const lines = this.olderLines.flatMap((raw) => {
+      try {
+        return [{ raw, entry: JSON.parse(raw) as unknown }];
+      } catch {
+        return [];
+      }
+    });
+    this.olderLines = null;
+    this.heldFrom = batch.before ?? 0;
+    const changed = this.transcript.prepend(lines);
+    this.publish({
+      ...this.state,
+      older: this.olderState(),
+      turns: changed ? this.turnsOf(this.state.files) : this.state.turns,
+    });
+  }
+
+  private settleAfter(): number | null {
+    return this.firstLoad.settleAfter(this.transcript.replaying);
+  }
+
+  /**
+   * The history went quiet: a first load is all there, or a replay that
+   * stopped short of the lines held says the transcript is shorter now.
+   */
+  private settled = (): void => {
+    const redraw = this.loading || this.transcript.settle();
+    this.firstLoad.end();
+    if (redraw)
+      this.publish({ ...this.state, loading: false, turns: this.turnsOf(this.state.files) });
+    this.quiet.watch(this.settleAfter(), this.settled);
+    this.flush();
+  };
 
   /** The conversation's turns, with the shared files placed in them. */
   private turnsOf(files: readonly ChatSharedFile[]): ChatTurn[] {
-    return withSharedFiles(this.transcript.turns(), files);
+    return withSharedFiles(this.subagents.place(this.transcript.turns()), files);
+  }
+
+  /** A first load is still arriving. */
+  private get loading(): boolean {
+    return this.firstLoad.loading;
   }
 
   private publish(state: ChatState): void {
@@ -515,11 +760,45 @@ export class SessionChat {
     if (rest.length > 0) setTimeout(() => this.flush(), QUEUE_SETTLE_MS);
   }
 
-  /** Lends the chat a way to type into the session's PTY; the function returned takes it back. */
-  connect(type: (data: string) => void): () => void {
+  /**
+   * The pane that read this chat is gone, and the stream that fed it with
+   * it, while the chat is kept for the session's next pane. What was on its
+   * way is not waited for: a replay cut short keeps every line held, rather
+   * than taking its quiet for a transcript that got shorter, and a first
+   * load cut short is dropped, so the next stream loads it whole. Messages
+   * queued for the agent go too: they were written in that visit, and
+   * typing them in a later one would drive the agent out of sight.
+   */
+  detach(): void {
+    this.quiet.watch(null, this.settled);
+    this.transcript.endReplay();
+    this.queuedDuring = null;
+    this.sentQueued = null;
+    this.olderLines = null;
+    if (this.loading) {
+      this.firstLoad.end();
+      this.transcript.reset(false);
+      this.subagents.clear();
+      this.heldFrom = 0;
+      this.publish(EMPTY);
+      return;
+    }
+    const older = this.olderState();
+    if (this.state.queued.length > 0 || this.state.older !== older) {
+      this.publish({ ...this.state, queued: [], older });
+    }
+  }
+
+  /**
+   * Lends the chat a way to type into the session's PTY, and to ask its host
+   * for older turns; the function returned takes them back.
+   */
+  connect(type: (data: string) => void, askOlder?: (before: number) => void): () => void {
     this.type = type;
+    this.askOlder = askOlder ?? null;
     return () => {
       if (this.type === type) this.type = null;
+      if (askOlder && this.askOlder === askOlder) this.askOlder = null;
     };
   }
 
@@ -557,6 +836,16 @@ export class SessionChat {
   /** Stops the agent's turn: Escape, as in its terminal. */
   interrupt(): void {
     this.type?.(ESCAPE);
+  }
+
+  /**
+   * What the agent's spinner line says now, as the terminal under the chat
+   * reads it (`readAgentActivity`); none once it is gone. A reading that
+   * says what the last one said publishes nothing.
+   */
+  setActivity(activity: ChatActivity | null): void {
+    if (sameActivity(this.state.activity, activity)) return;
+    this.publish({ ...this.state, activity });
   }
 
   snapshot = (): ChatState => this.state;
@@ -616,10 +905,11 @@ interface ChatResult {
   truncated: boolean;
 }
 
-export function classify(value: unknown, index: number): Reading {
+export function classify(value: unknown, index: number, sidechain = false): Reading {
   const entry = record(value);
   const message = record(entry?.message);
-  if (!entry || !message || entry.isSidechain === true) return null;
+  // A subagent's lines are its own conversation, read apart (`session-chat-subagents.ts`).
+  if (!entry || !message || (entry.isSidechain === true) !== sidechain) return null;
   const id = text(entry.uuid) ?? `entry-${index}`;
   const at = date(entry.timestamp);
   const content = message.content;
@@ -790,6 +1080,14 @@ export function toTurns(entries: readonly unknown[]): ChatTurn[] {
 }
 
 /**
+ * A subagent's own lines in turns, read as the session's are: its first
+ * prompt is the task it was given.
+ */
+function sidechainTurns(entries: readonly unknown[]): ChatTurn[] {
+  return buildTurns(entries.length, (index) => entries[index], 0, true).turns;
+}
+
+/**
  * The turns from entry `from` of `count` on, with the entry each one starts
  * at. `from` is where a turn starts (a prompt), or the first entry.
  */
@@ -797,6 +1095,7 @@ function buildTurns(
   count: number,
   entryAt: (index: number) => unknown,
   from: number,
+  sidechain = false,
 ): { turns: ChatTurn[]; starts: number[] } {
   const turns: ChatTurn[] = [];
   const starts: number[] = [];
@@ -810,7 +1109,7 @@ function buildTurns(
   };
 
   for (let index = from; index < count; index += 1) {
-    const reading = classify(entryAt(index), index);
+    const reading = classify(entryAt(index), index, sidechain);
     if (!reading) continue;
     switch (reading.kind) {
       case 'prompt':
@@ -924,7 +1223,7 @@ function toolCall(block: Loose): ChatToolCall {
     label,
     target,
     opensPage,
-    description: fieldOf(input, ['description', 'prompt']),
+    description: fieldOf(input, ['description', 'prompt', 'message']),
     status: 'running',
     output: null,
     diff: kind === 'edit' || kind === 'write' ? diffOf(name, input) : null,
@@ -936,6 +1235,7 @@ function toolCall(block: Loose): ChatToolCall {
     truncated: block.truncated === true,
     startedAt: null,
     finishedAt: null,
+    subagent: null,
   };
 }
 

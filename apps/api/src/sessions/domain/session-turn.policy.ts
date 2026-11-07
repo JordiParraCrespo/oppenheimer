@@ -229,6 +229,12 @@ export function foldTurnEvent(
       if (latest?.state !== 'queued') return latest;
       return { ...latest, state: 'in_progress', startedAt: latest.startedAt ?? at };
     }
+    case SESSION_EVENT_KINDS.RETRY_REQUESTED: {
+      // A failed start tried again sends the first task again: the turn it
+      // failed stays as it ended, and the same task is queued as the next one.
+      if (latest?.state !== 'failed') return latest;
+      return newTurn(latest.seq + 1, latest.origin, latest.prompt, latest.drive);
+    }
     case SESSION_EVENT_KINDS.RESTARTED: {
       if (!latest) return latest;
       // A restart relaunches the agent with the stored prompt: a queued turn

@@ -15,6 +15,7 @@ export {
 } from './guards/decorators';
 export {
   defineResource,
+  isPersonOwned,
   type ResourceActionDefinition,
   type ResourceDefinition,
   type ResourceKeys,

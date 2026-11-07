@@ -103,6 +103,7 @@
       "planning": "Updating its plan",
       "using": "Using {{name}}",
       "stepFailed": "failed",
+      "stepLimited": "{{system}} limit · until {{time}}",
       "results_one": "{{count}} result",
       "results_other": "{{count}} results",
       "rawOutput": "Show raw output",
@@ -252,8 +253,16 @@
         "cancelled": "Session “{{name}}” was stopped",
         "expired": "Session “{{name}}” expired before it ran",
         "stalled": "Session “{{name}}” looks stuck",
+        "notice": "Session “{{name}}” sent a message",
         "matched_one": "Session “{{name}}” printed a line matching “{{pattern}}”",
         "matched_other": "Session “{{name}}” printed {{count}} lines matching “{{pattern}}”"
+      },
+      "pullRequest": {
+        "check_failed": "Pull request #{{number}} of {{repository}}: checks failed",
+        "check_passed": "Pull request #{{number}} of {{repository}}: checks passed",
+        "review": "Pull request #{{number}} of {{repository}}: new review",
+        "comment": "Pull request #{{number}} of {{repository}}: new comment",
+        "pr_merged": "Pull request #{{number}} of {{repository}} was merged"
       },
       "goal": {
         "continued": "Goal · continuation {{step}} of {{limit}}",
@@ -262,6 +271,17 @@
         "cleared": "You stopped the goal “{{objective}}”",
         "exhausted": "Goal “{{objective}}” used all {{limit}} continuations",
         "stopped": "Goal “{{objective}}” stopped: a turn of it failed or was stopped"
+      },
+      "loop": {
+        "ran": "Loop · run {{run}}",
+        "cleared": "You stopped the loop “{{prompt}}”",
+        "expired": "Loop “{{prompt}}” ended after 3 days",
+        "stopped": "Loop “{{prompt}}” stopped: a run of it failed or was stopped",
+        "ended": "Loop “{{prompt}}” ended: the bot did not say when to run next"
+      },
+      "dream": {
+        "dreamed": "Tidied its memory · {{before}} facts → {{after}}",
+        "undone": "You undid the tidy · {{before}} facts are back"
       }
     },
     "routineReason": {
@@ -272,15 +292,34 @@
       "agent_unavailable": "the agent could not start",
       "bot_provider_missing": "the bot’s model provider has no key or sign-in",
       "owner_lost_access": "its owner can no longer run it",
+      "unattended": "you were away; it starts again now that you are back",
       "unknown": "something went wrong"
     },
     "openSession": "Open session",
     "goal": {
       "title": "Goal: {{objective}}",
       "progress": "{{step}} of {{limit}} continuations",
+      "waiting": "waiting for {{system}} until {{time}}",
       "stop": "Stop goal",
       "stopFailed": "Could not stop the goal. Try again.",
       "needsCondition": "Write what done looks like after /goal, or /goal clear to stop the goal."
+    },
+    "loop": {
+      "title": "Loop: {{prompt}}",
+      "every": {
+        "minutes_one": "every minute",
+        "minutes_other": "every {{count}} minutes",
+        "hours_one": "every hour",
+        "hours_other": "every {{count}} hours",
+        "days_one": "every day",
+        "days_other": "every {{count}} days",
+        "selfPaced": "when the bot chooses"
+      },
+      "next": "next {{time}}",
+      "deciding": "waiting for the bot to say when",
+      "stop": "Stop loop",
+      "stopFailed": "Could not stop the loop. Try again.",
+      "badInterval": "A loop runs every 1 minute to 1 day: /loop 5m <prompt>, or /loop <prompt> to let the bot choose when."
     },
     "slash": {
       "label": "Skills",
@@ -289,21 +328,26 @@
       "builtInLabel": "Commands",
       "builtIn": {
         "goal": "Keep working until a condition holds, checked after every turn. /goal clear stops it.",
-        "usage": "Show what this chat has spent: tokens by model, cache hits, plan windows."
+        "usage": "Show what this chat has spent: tokens by model, cache hits, plan windows.",
+        "loop": "Run a prompt every few minutes, or when the bot chooses. /loop stop ends it.",
+        "schedule": "Save a routine that runs on a schedule. /schedule alone opens the routines."
       }
     },
     "usage": {
       "title": "Usage",
-      "since": "since {{date}}",
       "copy": "Copy usage",
-      "summary_one": "{{count}} turn · {{active}} at work · {{tokens}} tokens",
-      "summary_other": "{{count}} turns · {{active}} at work · {{tokens}} tokens",
-      "cacheHit": "{{percent}}% cache hit",
-      "modelShare": "{{model}} {{percent}}%",
-      "input": "Input {{tokens}}",
-      "output": "Output {{tokens}}",
-      "cacheRead": "Cache read {{tokens}}",
-      "cacheWrite": "Cache write {{tokens}}",
+      "thisChat": "This chat",
+      "active": "Active",
+      "turns": "Turns",
+      "cacheHit": "Cache hit",
+      "tokens": "Tokens",
+      "breakdown": "Breakdown",
+      "models_one": "{{count}} model",
+      "models_other": "{{count}} models",
+      "input": "Input",
+      "output": "Output",
+      "cacheRead": "Cache read",
+      "cacheWrite": "Cache write",
       "includes": "includes {{calls}} outside its turns",
       "purpose": {
         "goalReview_one": "{{count}} goal review",
@@ -311,7 +355,9 @@
         "summary_one": "{{count}} summary",
         "summary_other": "{{count}} summaries",
         "ruleReview_one": "{{count}} rule review",
-        "ruleReview_other": "{{count}} rule reviews"
+        "ruleReview_other": "{{count}} rule reviews",
+        "dream_one": "{{count}} memory tidy",
+        "dream_other": "{{count}} memory tidies"
       },
       "empty": "Nothing spent in this chat yet.",
       "loadFailed": "Could not load the usage. Try again."
@@ -444,7 +490,23 @@
       "toLog": "Look it up only when needed",
       "toProfile": "Keep it in mind in every chat",
       "toPerson": "Share it with all your bots",
-      "toBot": "Keep it to this bot"
+      "toBot": "Keep it to this bot",
+      "learnedBy": "Learned by {{bot}} · {{date}}",
+      "editedByYouOn": "Edited by you, kept by {{bot}} · {{date}}",
+      "addedByYouOn": "Added by you, kept by {{bot}} · {{date}}",
+      "toBotNamed": "Keep it to {{bot}} only",
+      "dream": {
+        "title": "Tidy memory",
+        "never": "Merges repeats, rewrites each fact clearly and drops what’s stale, checked against the chat. Runs about once a day once the bot has learned enough.",
+        "last": "Last tidied {{date}} · {{before}} facts → {{after}}",
+        "lastUndone": "Last tidy, {{date}}, was undone",
+        "queued": "Tidying in the background. The chat says when it’s done.",
+        "tidyNow": "Tidy now",
+        "undo": "Undo",
+        "loadFailed": "Could not load the memory’s last tidy.",
+        "requestFailed": "Could not start tidying the memory.",
+        "undoFailed": "Could not undo the tidy."
+      }
     },
     "skills": {
       "title": "Skills",
@@ -487,6 +549,9 @@
       "title": "Routines",
       "subtitle": "Work the bot does on a schedule or when something happens.",
       "empty": "Routines are tasks this bot runs on a schedule or when something happens. Ask it in chat to set one up.",
+      "guard": "Pause while you’re away",
+      "guardHint": "Stop its routines while you’re not reading what they say. They start again when you open this chat.",
+      "guardFailed": "Could not change whether the routines pause while you’re away.",
       "askInChat": "Ask in chat",
       "schedule": "Schedule · {{when}}",
       "github": "GitHub · {{when}}",
@@ -595,5 +660,8 @@
     "checkedHint": "Checked bots show in {{section}}.",
     "manageAll": "Manage in {{employees}}",
     "hide": "Hide from {{section}}"
+  },
+  "routineGuard": {
+    "notice": "I paused my routines while you were away. They start again when you open this chat."
   }
 }

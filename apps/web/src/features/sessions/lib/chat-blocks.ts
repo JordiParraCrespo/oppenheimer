@@ -21,12 +21,13 @@ import type { FileHandOff } from './file-hand-off';
 export type SessionView = 'terminal' | 'chat';
 
 /**
- * The view every session pane opens on, a member's and a guest's. Chat is
- * drawn only once the host sends the agent's transcript (`useChatReading`),
- * so until then, and for an agent with none, the pane is the terminal; the
- * Terminal / Chat switch is always there to type into the PTY itself.
+ * The view every session pane opens on, a member's and a guest's: the
+ * terminal, which draws at once from the grid this tab kept of the session
+ * (`terminal-snapshots.ts`), where the chat waits for the host to resend the
+ * whole transcript each time the pane mounts, moving between sessions too.
+ * Chat is a press away once that transcript has come (`useChatReading`).
  */
-export const DEFAULT_SESSION_VIEW: SessionView = 'chat';
+export const DEFAULT_SESSION_VIEW: SessionView = 'terminal';
 
 /**
  * What a session pane hands its terminal about the chat: the chat its stream
@@ -77,6 +78,8 @@ export type ChatBlock =
   | { kind: 'thinking'; id: string; text: string; seconds: number | null }
   | { kind: 'tools'; id: string; calls: ChatToolCall[] }
   | { kind: 'explored'; id: string; calls: ChatToolCall[] }
+  /** Calls that each started a subagent, side by side, each with what it did. */
+  | { kind: 'subagents'; id: string; calls: ChatToolCall[] }
   | { kind: 'plan'; id: string; call: ChatToolCall }
   | { kind: 'question'; id: string; call: ChatToolCall }
   | { kind: 'notice'; id: string; notice: 'interrupted' | 'compacted' }
@@ -95,7 +98,10 @@ export function blocksOf(turn: ChatTurn): ChatBlock[] {
     const block = blockOf(step, turn.steps[index + 1]);
     if (!block) return;
     const previous = blocks.at(-1);
-    if (block.kind === 'tools' && previous?.kind === 'tools') {
+    if (
+      (block.kind === 'tools' && previous?.kind === 'tools') ||
+      (block.kind === 'subagents' && previous?.kind === 'subagents')
+    ) {
       previous.calls.push(...block.calls);
       return;
     }
@@ -160,6 +166,7 @@ function blockOf(step: ChatStep, next: ChatStep | undefined): ChatBlock | null {
       if (step.call.kind === 'question' && step.call.questions?.length) {
         return { kind: 'question', id: step.id, call: step.call };
       }
+      if (step.call.kind === 'agent') return { kind: 'subagents', id: step.id, calls: [step.call] };
       return { kind: 'tools', id: step.id, calls: [step.call] };
   }
 }
@@ -285,6 +292,15 @@ export type GroupKind = Exclude<ChatToolKind, 'todo' | 'plan'>;
 
 export function groupKindOf(kind: ChatToolKind): GroupKind {
   return kind === 'todo' || kind === 'plan' ? 'other' : kind;
+}
+
+/**
+ * What a command was for, in the agent's own words ("Measuring gas vs
+ * execution time across iteration counts"), as its terminal names the call;
+ * none for any other kind of call, or a command that did not say.
+ */
+export function commandPurposeOf(call: ChatToolCall): string | null {
+  return call.kind === 'command' && call.description ? call.description : null;
 }
 
 /** The order a summary names the kinds in: what was looked at, then what was changed, then the rest. */

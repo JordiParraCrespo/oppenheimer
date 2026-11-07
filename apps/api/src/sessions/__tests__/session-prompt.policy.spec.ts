@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { PROMPT_SETTLE_SECONDS, promptRefusal } from '../domain/session-prompt.policy';
+import {
+  CLOUD_UNCONFIRMED_HOLD_SECONDS,
+  cloudPromptRefusal,
+  PROMPT_SETTLE_SECONDS,
+  promptRefusal,
+} from '../domain/session-prompt.policy';
 
 /**
  * When a bot's follow-up prompt may be typed: only into an open session whose
@@ -35,5 +40,36 @@ describe('promptRefusal', () => {
 
   it('does not count a person’s own task waiting to start as a prompt in flight', () => {
     expect(promptRefusal(open('idle'), { origin: 'person', state: 'queued' }, NOW)).toBeNull();
+  });
+});
+
+describe('cloudPromptRefusal', () => {
+  const now = new Date('2026-11-05T12:00:00.000Z');
+  const ago = (seconds: number) => new Date(now.getTime() - seconds * 1000);
+  const fold = (lastEventAt: Date) => ({
+    state: 'open' as const,
+    lastObservedState: 'done' as const,
+    lastEventAt,
+  });
+  const unconfirmed = { origin: 'follow_up' as const, state: 'queued' as const };
+
+  it('waits while the agent is on a run', () => {
+    expect(cloudPromptRefusal({ isActive: true }, fold(ago(600)), null, now)).toMatch(
+      /still on its last run/,
+    );
+  });
+
+  // The regression: a follow-up whose vendor call timed out (it may be running
+  // at the vendor) sent again a minute later, running the instruction twice on
+  // the launcher's key.
+  it('holds off the next follow-up while an earlier one is unconfirmed, then lets it through', () => {
+    const run = { isActive: false };
+    expect(cloudPromptRefusal(run, fold(ago(5 * 60)), unconfirmed, now)).toMatch(/not confirmed/);
+    expect(
+      cloudPromptRefusal(run, fold(ago(CLOUD_UNCONFIRMED_HOLD_SECONDS + 1)), unconfirmed, now),
+    ).toBeNull();
+    expect(
+      cloudPromptRefusal(run, fold(ago(5)), { origin: 'follow_up', state: 'completed' }, now),
+    ).toBeNull();
   });
 });

@@ -215,8 +215,14 @@ function harness(direct = true) {
     const hello = channel.handshake().find((m) => m.t === 'hello');
     if (!hello) throw new Error('the browser said no hello');
     channel.text(await (with_ ?? key).prove(String(hello.nonce)));
-    // The verdict is async (WebCrypto): let it land.
-    for (let i = 0; i < 20; i += 1) await new Promise((resolve) => setTimeout(resolve, 0));
+    // The verdict is async (WebCrypto), and slower under load than any count of
+    // ticks: wait for it to land, a `ready` for a proof that holds or the
+    // channel closed for one that does not.
+    await vi.waitFor(() => {
+      const verdict =
+        channel.handshake().some((m) => m.t === 'ready') || peers[index]?.closed === true;
+      if (!verdict) throw new Error('the browser has not judged the proof yet');
+    });
     return channel;
   };
   return { stream, sockets, peers, chunks, paths, settle, attach, prove, hostId };

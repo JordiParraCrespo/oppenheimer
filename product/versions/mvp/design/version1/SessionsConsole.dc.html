@@ -32,7 +32,7 @@
 <div class="op-sbsearch" data-on="{{ sQOn }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="search" size="14" hint-size="14px,14px"></x-import><input type="text" aria-label="Search sessions" placeholder="Search sessions" value="{{ sQ }}" onChange="{{ sQSet }}" onKeyDown="{{ sQKey }}"><sc-if value="{{ sQOn }}"><button class="op-sbsearch__x" type="button" aria-label="Clear search" onClick="{{ sQClear }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="x" size="13" hint-size="13px,13px"></x-import></button></sc-if></div>
 <div class="op-listhead"><span class="op-listhead__title">Bots</span><a class="op-iconbtn-sm" href="./Bots.dc.html" aria-label="New bot" title="New bot" style="margin-left:auto;color:inherit;text-decoration:none;display:flex;align-items:center;justify-content:center"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="plus" size="15" hint-size="15px,15px"></x-import></a></div>
 <div class="op-sessionlist" style="margin-bottom:14px">
-<a href="./Bots.dc.html" style="display:flex;align-items:center;gap:12px;width:calc(100% - 12px);margin:0 6px;box-sizing:border-box;padding:8px 10px;border-radius:14px;color:var(--fg);text-decoration:none" style-hover="background:var(--hover-surface);text-decoration:none"><span style="position:relative;flex:none;width:40px;height:36px;display:flex;align-items:center;justify-content:center"><span style="flex:none;width:36px;height:36px;border-radius:980px;background:var(--control);color:var(--fg);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;letter-spacing:-0.01em">SB</span><span style="position:absolute;right:-2px;bottom:3px;width:10px;height:10px;box-sizing:border-box;border-radius:980px;border:2px solid var(--sidebar,var(--background));background:var(--success)"></span></span><span style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px"><span style="display:flex;align-items:baseline;gap:8px"><span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:14px;font-weight:500;letter-spacing:-0.009em">Session Bot</span><span style="font-family:var(--font-mono);font-size:11px;font-variant-numeric:tabular-nums;color:var(--fg-subtle)">4m</span></span><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12.5px;color:var(--fg-muted)">Two sessions are waiting on input</span></span></a>
+<a href="./Bots.dc.html" style="display:flex;align-items:center;gap:10px;width:calc(100% - 12px);margin:0 6px;box-sizing:border-box;height:32px;padding:0 10px;border-radius:10px;color:var(--fg);text-decoration:none" title="Session Bot · Two sessions are waiting on input" style-hover="background:var(--hover-surface);text-decoration:none"><span style="position:relative;flex:none;width:20px;height:20px"><span style="width:20px;height:20px;border-radius:6px;background:var(--control);color:var(--fg);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:600;letter-spacing:0">SB</span><span style="position:absolute;right:-3px;bottom:-3px;width:9px;height:9px;box-sizing:border-box;border-radius:980px;border:2px solid var(--sidebar,var(--background));background:var(--success)"></span></span><span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:14px;color:var(--fg)">Session Bot</span></a>
 </div>
 <div class="op-listhead">
 <span class="op-listhead__title">{{ listHeadTitle }}</span>
@@ -118,7 +118,7 @@
 <div class="op-sbsearch" data-on="{{ rQOn }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="search" size="14" hint-size="14px,14px"></x-import><input type="text" aria-label="Search automations" placeholder="Search automations" value="{{ rQ }}" onChange="{{ rQSet }}" onKeyDown="{{ rQKey }}"><sc-if value="{{ rQOn }}"><button class="op-sbsearch__x" type="button" aria-label="Clear search" onClick="{{ rQClear }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="x" size="13" hint-size="13px,13px"></x-import></button></sc-if></div>
 <div class="op-listhead"><span class="op-listhead__title">Bots</span><a class="op-iconbtn-sm" href="./Bots.dc.html" aria-label="New bot" title="New bot" style="margin-left:auto;color:inherit;text-decoration:none;display:flex;align-items:center;justify-content:center"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="plus" size="15" hint-size="15px,15px"></x-import></a></div>
 <div class="op-sessionlist" style="margin-bottom:14px">
-<a href="./Bots.dc.html" style="display:flex;align-items:center;gap:12px;width:calc(100% - 12px);margin:0 6px;box-sizing:border-box;padding:8px 10px;border-radius:14px;color:var(--fg);text-decoration:none" style-hover="background:var(--hover-surface);text-decoration:none"><span style="position:relative;flex:none;width:40px;height:36px;display:flex;align-items:center;justify-content:center"><span style="flex:none;width:36px;height:36px;border-radius:980px;background:var(--control);color:var(--fg);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;letter-spacing:-0.01em">AB</span></span><span style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px"><span style="display:flex;align-items:baseline;gap:8px"><span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:14px;font-weight:500;letter-spacing:-0.009em">Automation Bot</span><span style="font-family:var(--font-mono);font-size:11px;font-variant-numeric:tabular-nums;color:var(--fg-subtle)">1h</span></span><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12.5px;color:var(--fg-muted)">Nightly e2e failed twice this week</span></span></a>
+<a href="./Bots.dc.html" style="display:flex;align-items:center;gap:10px;width:calc(100% - 12px);margin:0 6px;box-sizing:border-box;height:32px;padding:0 10px;border-radius:10px;color:var(--fg);text-decoration:none" title="Automation Bot · Nightly e2e failed twice this week" style-hover="background:var(--hover-surface);text-decoration:none"><span style="position:relative;flex:none;width:20px;height:20px"><span style="width:20px;height:20px;border-radius:6px;background:var(--control);color:var(--fg);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:600;letter-spacing:0">AB</span><span style="position:absolute;right:-3px;bottom:-3px;width:9px;height:9px;box-sizing:border-box;border-radius:980px;border:2px solid var(--sidebar,var(--background));background:var(--fg-subtle)"></span></span><span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:14px;color:var(--fg)">Automation Bot</span></a>
 </div>
 <div class="op-listhead">
 <span class="op-listhead__title">Projects</span>
@@ -715,6 +715,8 @@
 </div>
 </sc-if>
 
+
+
 <sc-if value="{{ isNew }}" hint-placeholder-val="{{ true }}">
 <div class="op-newsession" style="display:flex;flex-direction:column;justify-content:flex-end;align-items:center;min-height:0;height:100%;padding:0 32px">
 <div class="op-newsession__inner" style="max-width:760px;width:100%;min-width:0;box-sizing:border-box;margin:auto 0 0;padding:0 0 32px;flex:none">
@@ -789,7 +791,7 @@
 <sc-for list="{{ surfaces }}" as="s" hint-placeholder-count="2">
 <div style="display:flex;align-items:center;border-radius:10px;background:{{ s.bg }}" style-hover="background:var(--hover-surface)">
 <button type="button" role="menuitemcheckbox" aria-checked="{{ s.onS }}" onClick="{{ s.pick }}" style="flex:1;min-width:0;display:flex;align-items:center;gap:10px;padding:7px 10px;border:0;background:none;font:inherit;text-align:left;cursor:pointer">
-<span style="flex:none;display:flex;color:var(--fg-muted)"><sc-if value="{{ s.globe }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="globe" size="15" hint-size="15px,15px"></x-import></sc-if><sc-if value="{{ s.phone }}"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="14" height="20" x="5" y="2" rx="2" ry="2"></rect><path d="M12 18h.01"></path></svg></sc-if></span>
+<span style="flex:none;display:flex;color:var(--fg-muted)"><sc-if value="{{ s.term }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="terminal" size="15" hint-size="15px,15px"></x-import></sc-if><sc-if value="{{ s.globe }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="globe" size="15" hint-size="15px,15px"></x-import></sc-if><sc-if value="{{ s.phone }}"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="14" height="20" x="5" y="2" rx="2" ry="2"></rect><path d="M12 18h.01"></path></svg></sc-if></span>
 <span style="flex:1;min-width:0;display:flex;flex-direction:column;gap:1px"><span style="font-size:13.5px;color:var(--fg)">{{ s.label }}</span><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11.5px;color:var(--fg-subtle)">{{ s.desc }}</span></span>
 <sc-if value="{{ s.on }}"><span style="flex:none;font-size:12px;color:var(--primary)">✓</span></sc-if>
 <span style="flex:none;display:inline-flex;align-items:center;justify-content:center;min-width:20px;height:20px;border-radius:6px;background:var(--hover-surface);font-family:var(--font-mono);font-size:11px;color:var(--fg-muted)">{{ s.kbd }}</span>
@@ -953,7 +955,7 @@
 <div style="flex:none;display:flex;flex-wrap:wrap;align-items:center;gap:8px;min-width:0;min-height:46px;padding:8px;box-sizing:border-box;border-bottom:1px solid var(--border-subtle)">
 <div role="tablist" aria-label="Preview" style="flex:none;display:flex;gap:2px;padding:2px;border-radius:980px;background:var(--hover-surface)">
 <sc-for list="{{ pvTabs }}" as="t" hint-placeholder-count="2">
-<button type="button" role="tab" aria-selected="{{ t.onS }}" onClick="{{ t.pick }}" style="display:inline-flex;align-items:center;gap:6px;height:26px;padding:0 10px;border:0;border-radius:980px;background:{{ t.bg }};box-shadow:{{ t.shadow }};color:{{ t.fg }};font:inherit;font-size:12.5px;cursor:pointer"><sc-if value="{{ t.globe }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="globe" size="13" hint-size="13px,13px"></x-import></sc-if><sc-if value="{{ t.phone }}"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="14" height="20" x="5" y="2" rx="2" ry="2"></rect><path d="M12 18h.01"></path></svg></sc-if>{{ t.label }}</button>
+<button type="button" role="tab" aria-selected="{{ t.onS }}" onClick="{{ t.pick }}" style="display:inline-flex;align-items:center;gap:6px;height:26px;padding:0 10px;border:0;border-radius:980px;background:{{ t.bg }};box-shadow:{{ t.shadow }};color:{{ t.fg }};font:inherit;font-size:12.5px;cursor:pointer"><sc-if value="{{ t.term }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="terminal" size="13" hint-size="13px,13px"></x-import></sc-if><sc-if value="{{ t.globe }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="globe" size="13" hint-size="13px,13px"></x-import></sc-if><sc-if value="{{ t.phone }}"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="14" height="20" x="5" y="2" rx="2" ry="2"></rect><path d="M12 18h.01"></path></svg></sc-if>{{ t.label }}</button>
 </sc-for>
 </div>
 <sc-if value="{{ pvWebHead }}">
@@ -965,6 +967,12 @@
 <button class="op-iconbtn op-iconbtn--sm" type="button" aria-pressed="{{ pvMaxS }}" aria-label="{{ pvMaxLabel }}" title="{{ pvMaxLabel }}" onClick="{{ pvToggleMax }}" style="margin-left:auto;background:{{ pvMaxBg }}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 3h6v6"></path><path d="m21 3-7 7"></path><path d="m3 21 7-7"></path><path d="M9 21H3v-6"></path></svg></button>
 <a class="op-iconbtn op-iconbtn--sm" href="{{ pvNewTab }}" target="_blank" rel="noopener" aria-label="Open in a new tab" title="Open in a new tab"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="external-link" size="14" hint-size="14px,14px"></x-import></a>
 </sc-if>
+<sc-if value="{{ pvShell }}">
+<div title="{{ shTitle }}" style="flex:1;min-width:0;display:flex;align-items:center;gap:8px;padding-left:6px">
+<span style="flex:none;width:6px;height:6px;border-radius:980px;background:{{ shDot }};animation:{{ shDotAnim }}"></span>
+<span style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:var(--font-mono);font-size:12px;color:var(--fg-muted)">{{ shTitle }}</span>
+</div>
+</sc-if>
 <sc-if value="{{ pvDevHead }}" hint-placeholder-val="{{ true }}">
 <div title="{{ pvTitle }}" style="flex:1;min-width:0;display:flex;align-items:center;gap:8px;padding-left:6px">
 <span style="flex:none;width:6px;height:6px;border-radius:980px;background:{{ pvDot }};animation:{{ pvDotAnim }}"></span>
@@ -975,6 +983,30 @@
 <button class="op-iconbtn op-iconbtn--sm" type="button" aria-label="Close preview" title="Close preview" onClick="{{ togglePv }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="x" size="14" hint-size="14px,14px"></x-import></button>
 </div>
 <div ref="{{ pvBodyRef }}" style="flex:1;min-height:0;position:relative;display:flex;overflow-x:hidden;overflow-y:auto;background:var(--bg)">
+<sc-if value="{{ pvShell }}">
+<div onClick="{{ shFocus }}" style="flex:1;min-width:0;display:flex;flex-direction:column;padding:12px 14px;box-sizing:border-box;background:var(--term-bg, var(--bg));font-family:var(--font-mono);font-size:12.5px;line-height:1.6;color:var(--term-fg, var(--fg));cursor:text">
+<sc-if value="{{ shBooting }}">
+<div role="status" aria-live="polite" style="display:flex;flex-direction:column;gap:2px">
+<sc-for list="{{ shSteps }}" as="b" hint-placeholder-count="3">
+<div style="display:flex;align-items:baseline;gap:10px;color:{{ b.color }}"><span style="flex:none;width:12px;text-align:center">{{ b.mark }}</span><span style="flex:1;min-width:0">{{ b.text }}</span><span style="flex:none;font-variant-numeric:tabular-nums;color:var(--fg-subtle)">{{ b.ms }}</span></div>
+<sc-if value="{{ b.cmd }}"><div style="padding-left:22px;color:var(--fg-subtle)">{{ b.cmd }}</div></sc-if>
+</sc-for>
+</div>
+</sc-if>
+<sc-if value="{{ shFailed }}">
+<div style="display:flex;flex-direction:column;align-items:flex-start;gap:10px;margin-top:12px;font-family:var(--font-sans)">
+<span style="font-size:13px;line-height:1.45;color:var(--fg);text-wrap:pretty">{{ shErr }}</span>
+<button class="op-btn op-btn--secondary op-btn--sm" type="button" onClick="{{ shRetry }}">Retry</button>
+</div>
+</sc-if>
+<sc-if value="{{ shLive }}" hint-placeholder-val="{{ true }}">
+<sc-for list="{{ shLines }}" as="l" hint-placeholder-count="4">
+<div style="white-space:pre-wrap;word-break:break-all;color:{{ l.color }}">{{ l.text }}</div>
+</sc-for>
+<div style="display:flex;align-items:baseline;gap:8px"><span style="flex:none;color:var(--success)">{{ shPrompt }}</span><input ref="{{ shRef }}" type="text" value="{{ shInput }}" onChange="{{ shSet }}" onKeyDown="{{ shKey }}" aria-label="Shell input" spellCheck="{{ false }}" autoComplete="off" style="flex:1;min-width:0;padding:0;border:0;outline:none;background:none;font:inherit;color:inherit;caret-color:var(--fg)"></div>
+</sc-if>
+</div>
+</sc-if>
 <sc-if value="{{ pvStarting }}">
 <div role="status" style="margin:auto;display:flex;flex-direction:column;align-items:center;gap:8px;padding:24px;text-align:center">
 <span style="width:7px;height:7px;border-radius:980px;background:var(--fg-subtle);animation:op-pulse-dot 1.4s ease-in-out infinite"></span>
@@ -2085,7 +2117,7 @@ class Component extends DCLogic {
       ],
     };
   }
-  componentDidUpdate(prev) {
+  componentDidUpdate(prev, prevS) {
     this.syncLink(prev);
     if (this.props.page !== 'routines' && this.props.emptyAccount && !(prev && prev.emptyAccount) && this.state.view !== 'new') this.setState({ view: 'new', session: null });
     this.syncEffort();
@@ -2868,12 +2900,61 @@ class Component extends DCLogic {
     return { ccSigned, ccL: HOSTS.find(h => h.value === pick) };
   }
 
+  shVals(host) {
+    const h = String(host || 'optimus').replace(/^the host$/, 'optimus');
+    const repo = 'xrp-mobile', cwd = '~/code/' + repo;
+    const prompt = h + ':' + cwd + ' ' + String.fromCharCode(36);
+    const seed = [
+      { text: '[tmux] attached · session shell-' + repo + ' · window 1', color: 'var(--fg-subtle)' },
+      { text: prompt + ' git status -sb', color: 'var(--fg)' },
+      { text: '## port-121...origin/port-121 [ahead 3]', color: 'var(--fg-muted)' },
+      { text: ' M src/screens/SignIn.tsx', color: 'var(--fg-muted)' },
+    ];
+    const OUT = { ls: 'app.json  package.json  src  ios  android  node_modules', pwd: cwd.replace('~', '/home/adri'), whoami: 'adri', 'git branch': '* port-121\n  main' };
+    if (!this._shRef) this._shRef = React.createRef();
+    const offline = this.offlineHosts().indexOf(h) > -1;
+    const STEPS = [
+      ['Connecting to ' + h, 'ssh ' + h + ' · via host daemon', 600],
+      ['Starting tmux session shell-' + repo, 'tmux new-session -A -s shell-' + repo + ' -c ' + cwd, 500],
+      ['Attaching terminal', 'pty 120×32 · streaming', 350],
+    ];
+    const step = this.state.shStep ?? 0, failed = offline && step >= 1, live = !offline && step >= STEPS.length;
+    if (this.state.pvDevice === 'shell' && !live && !failed && !this._shT) {
+      this._shT = setTimeout(() => { this._shT = null; this.setState(x => ({ shStep: (x.shStep ?? 0) + 1 })); }, STEPS[Math.min(step, STEPS.length - 1)][2]);
+    }
+    const shSteps = STEPS.slice(0, failed ? 1 : Math.min(step + 1, STEPS.length)).map((x, i) => {
+      const bad = failed && i === 0, done = !bad && i < step, cur = !bad && i === step;
+      return { text: x[0] + (cur ? '…' : ''), cmd: cur || bad ? x[1] : undefined, mark: bad ? '×' : done ? '✓' : '·',
+        color: bad ? 'var(--danger)' : done ? 'var(--fg-muted)' : 'var(--fg)', ms: done ? x[2] + 'ms' : bad ? 'timed out' : '' };
+    });
+    return {
+      shBooting: live ? undefined : 'true', shLive: live ? 'true' : undefined, shFailed: failed ? 'true' : undefined, shSteps,
+      shErr: h + ' is offline, so the shell could not open. It reconnects on its own when the host is back.',
+      shRetry: e => { if (e) e.stopPropagation(); this.setState({ shStep: 0 }); },
+      shDot: failed ? 'var(--danger)' : live ? 'var(--success)' : 'var(--fg-subtle)', shDotAnim: live || failed ? 'none' : 'op-pulse-dot 1.4s ease-in-out infinite',
+      shTitle: (live ? 'tmux · ' : failed ? 'Offline · ' : 'Connecting · ') + h + ':' + cwd, shPrompt: prompt, shInput: this.state.shIn || '',
+      shLines: (this.state.shLog || seed),
+      shRef: this._shRef, shFocus: () => this._shRef.current && this._shRef.current.focus(),
+      shSet: e => this.setState({ shIn: e.target.value }),
+      shKey: e => {
+        if (e.key !== 'Enter') return;
+        const cmd = (this.state.shIn || '').trim();
+        this.setState(s => {
+          if (cmd === 'clear') return { shLog: [], shIn: '' };
+          const log = (s.shLog || seed).slice();
+          log.push({ text: prompt + ' ' + cmd, color: 'var(--fg)' });
+          if (cmd) { const o = OUT[cmd]; log.push({ text: o !== undefined ? o : cmd.split(' ')[0] + ': ran on ' + h, color: 'var(--fg-muted)' }); }
+          return { shLog: log, shIn: '' };
+        });
+      },
+    };
+  }
   pvVals(v) {
     const st = this.state, p = this.props;
     const ps = p.previewState ?? 'live', has = ps !== 'none', starting = ps === 'starting';
-    const mobile = (p.projectType ?? 'mobile app') === 'mobile app', dev = (st.pvDevice ?? (mobile ? 'phone' : 'desktop')) === 'phone';
+    const mobile = (p.projectType ?? 'mobile app') === 'mobile app', shell = st.pvDevice === 'shell', dev = !shell && (st.pvDevice ?? (mobile ? 'phone' : 'desktop')) === 'phone';
     const rowW = st.pvRowW || 1200, narrow = rowW < 872;
-    const open = has && (st.pvOpen ?? (narrow ? false : (mobile && (p.previewOpen ?? true))));
+    const open = (has || shell) && (st.pvOpen ?? (narrow ? false : (mobile && (p.previewOpen ?? true))));
     const maxed = !!st.pvMax && !dev, solo = open && (narrow || maxed);
     const pvW = Math.max(360, Math.min(st.pvW || 440, rowW - 432));
     const bodyH = st.pvBodyH || 760, bodyW = st.pvBodyW || 380;
@@ -2892,19 +2973,19 @@ class Component extends DCLogic {
     const T = x => x ? 'true' : undefined;
     const chat = st.sView === 'chat', sh = st.shared, shLink = 'oppenheimer.dev/s/k7f2-pricing';
     const stop = e => e && e.stopPropagation && e.stopPropagation();
-    const surf = (id, label, desc, on, icon, kbd) => ({ id, label, desc, globe: T(id === 'browser'), phone: T(id === 'sim'), kbd, on: T(on), onS: on ? 'true' : 'false', bg: on ? 'var(--selected-surface)' : 'transparent',
-      pick: e => { stop(e); this.setState(on ? { pvOpen: false, pvMenu: false } : { pvDevice: id === 'sim' ? 'phone' : 'desktop', pvOpen: true, pvMenu: false }); } });
-    const browserOn = open && !dev, simOn = open && dev;
+    const surf = (id, label, desc, on, icon, kbd) => ({ id, label, desc, globe: T(id === 'browser'), phone: T(id === 'sim'), term: T(id === 'shell'), kbd, on: T(on), onS: on ? 'true' : 'false', bg: on ? 'var(--selected-surface)' : 'transparent',
+      pick: e => { stop(e); this.setState(on ? { pvOpen: false, pvMenu: false } : { pvDevice: id === 'sim' ? 'phone' : id === 'shell' ? 'shell' : 'desktop', pvOpen: true, pvMenu: false, ...(id === 'shell' && this.state.pvDevice !== 'shell' ? { shStep: 0 } : {}) }); } });
+    const browserOn = open && !dev && !shell, simOn = open && dev, shellOn = open && shell;
     return {
       pvDeskScale: String(Math.min(1, (st.pvBodyW || 440) / 1280)), pvDeskH: Math.round((st.pvBodyH || 600) / Math.min(1, (st.pvBodyW || 440) / 1280)) + 'px',
       pvToggleLabel: open ? 'Hide preview' : 'Show preview', pvToggleBg: open ? 'var(--selected-surface)' : 'transparent', pvToggleFg: open ? 'var(--fg)' : 'var(--fg-muted)',
-      pvTabs: [{ id: 'browser', label: 'Browser' }, { id: 'sim', label: 'Simulator' }].map(t => { const on = t.id === 'sim' ? dev : !dev; return { label: t.label, globe: T(t.id === 'browser'), phone: T(t.id === 'sim'), onS: on ? 'true' : 'false', bg: on ? 'var(--card)' : 'transparent', shadow: on ? '0 0 0 1px var(--border-subtle)' : 'none', fg: on ? 'var(--fg)' : 'var(--fg-muted)', pick: e => { stop(e); this.setState({ pvDevice: t.id === 'sim' ? 'phone' : 'desktop' }); } }; }),
+      pvTabs: [{ id: 'browser', label: 'Browser' }, { id: 'sim', label: 'Simulator' }, { id: 'shell', label: 'Shell' }].map(t => { const on = t.id === 'shell' ? shell : t.id === 'sim' ? dev : !dev && !shell; return { label: t.label, globe: T(t.id === 'browser'), phone: T(t.id === 'sim'), term: T(t.id === 'shell'), onS: on ? 'true' : 'false', bg: on ? 'var(--card)' : 'transparent', shadow: on ? '0 0 0 1px var(--border-subtle)' : 'none', fg: on ? 'var(--fg)' : 'var(--fg-muted)', pick: e => { stop(e); this.setState({ pvDevice: t.id === 'sim' ? 'phone' : t.id === 'shell' ? 'shell' : 'desktop', ...(t.id === 'shell' && this.state.pvDevice !== 'shell' ? { shStep: 0 } : {}) }); } }; }),
       sView: chat ? 'chat' : 'terminal', chatOn: T(chat), termOn: T(!chat),
       viewTabs: [{ id: 'terminal', label: 'Terminal' }, { id: 'chat', label: 'Chat' }].map(t => { const on = (chat ? 'chat' : 'terminal') === t.id; return { label: t.label, onS: on ? 'true' : 'false', bg: on ? 'var(--card)' : 'transparent', fg: on ? 'var(--fg)' : 'var(--fg-muted)', shadow: on ? '0 0 0 1px var(--border-subtle)' : 'none', pick: e => { stop(e); this.setState({ sView: t.id }); } }; }),
       pvMenuOpen: T(st.pvMenu), pvMenuS: st.pvMenu ? 'true' : 'false', pvMenuBg: st.pvMenu || open ? 'var(--hover-surface)' : 'transparent',
       togglePvMenu: e => { stop(e); this.setState(s => ({ pvMenu: !s.pvMenu, shareOpen: false })); },
-      pvMenuLabel: browserOn ? 'Browser' : simOn ? 'Simulator' : 'Preview', pvMenuDot: starting ? 'var(--fg-subtle)' : 'var(--success)',
-      surfaces: [surf('browser', 'Browser', starting ? 'Waiting for localhost:5173…' : 'localhost:5173 · Vite dev server', browserOn, 'globe', 'B'), surf('sim', 'Simulator', starting ? 'Booting iPhone 15…' : 'iPhone 15 · iOS 18 · Expo', simOn, 'smartphone', 'M')],
+      pvMenuLabel: browserOn ? 'Browser' : simOn ? 'Simulator' : shellOn ? 'Shell' : 'Preview', pvMenuDot: starting ? 'var(--fg-subtle)' : 'var(--success)',
+      surfaces: [surf('browser', 'Browser', starting ? 'Waiting for localhost:5173…' : 'localhost:5173 · Vite dev server', browserOn, 'globe', 'B'), surf('sim', 'Simulator', starting ? 'Booting iPhone 15…' : 'iPhone 15 · iOS 18 · Expo', simOn, 'smartphone', 'M'), surf('shell', 'Shell', 'Raw tmux shell on ' + host + ' · no agent', shellOn, 'terminal', 'T')],
       pvNewTab: './SignIn.dc.html', pvPorts: 'Ports forwarded from ' + host + ' · 5173, 8081',
       shareOpen: T(st.shareOpen), shareBg: st.shareOpen ? 'var(--hover-surface)' : 'transparent',
       shareLabel: sh ? 'Shared' : 'Share', shareTitle: sh ? 'Shared · view only · link' : 'Share this session',
@@ -2940,13 +3021,13 @@ class Component extends DCLogic {
       pvHandleBg: st.pvDragging ? 'var(--primary)' : 'transparent',
       pvRowRef: this._pvRowRef, pvBodyRef: this._pvBodyRef,
       pvScale: String(sc), pvPct: Math.round(sc * 100) + '%',
-      pvPhoneW: Math.round(410 * sc) + 'px', pvPhoneH: Math.round(864 * sc) + 'px', pvDevHead: T(dev), pvWebHead: T(!dev),
+      pvPhoneW: Math.round(410 * sc) + 'px', pvPhoneH: Math.round(864 * sc) + 'px', pvDevHead: T(dev), pvWebHead: T(!dev && !shell), pvShell: T(shell), ...this.shVals(host),
       pvBtnBg: open ? 'var(--selected-surface)' : 'transparent', pvBtnFg: open ? 'var(--fg)' : 'var(--fg-muted)', pvBtnIcon: open ? 'eye' : 'eye-off',
       pvUrl: url, pvHost: host, pvHref: './SignIn.dc.html', pvSrc: './SignIn.dc.html', pvKey: 'pv' + (st.pvKey || 0),
       pvWeb: T(has && !mobile), pvMobile: T(has && mobile),
       pvTitle: mobile ? 'Simulator running on ' + host : starting ? 'Waiting for the dev server on ' + host : 'Open in browser · port 5173 forwarded from ' + host,
       pvDot: starting ? 'var(--fg-subtle)' : 'var(--success)', pvDotAnim: starting ? 'op-pulse-dot 1.4s ease-in-out infinite' : 'none',
-      pvStarting: T(starting), pvPhoneLive: T(!starting && dev), pvDeskLive: T(!starting && !dev),
+      pvStarting: T(starting && !shell), pvPhoneLive: T(!starting && dev), pvDeskLive: T(!starting && !dev && !shell),
       pvPhoneS: dev ? 'true' : 'false', pvDeskS: dev ? 'false' : 'true',
       togglePv: () => this.setState({ pvOpen: !open }),
       pvSetPhone: () => this.setState({ pvDevice: 'phone' }), pvSetDesk: () => this.setState({ pvDevice: 'desktop' }),
@@ -3096,6 +3177,8 @@ class Component extends DCLogic {
         tip: isCloud(x.host) ? 'Open in ' + cloudOf(x.host).label + (cloudOf(x.host).status ? '' : ' · no status after launch') : undefined,
         open: e => {
           if (isCloud(x.host)) { if (e) e.stopPropagation(); window.open(x.url || cloudOf(x.host).url, '_blank', 'noopener'); return; }
+          const cur = this.state.session;
+          if (!cur || cur.label !== x.name) this.setState({ session: { label: x.name, state: x.state === 'waiting' ? 'waiting' : x.state === 'failed' ? 'failed' : 'running', meta: [findL(AGENTS, x.agent) || 'Claude Code', x.repo].filter(Boolean).join(' · ') } });
           if (this._openTerm) this._openTerm(e);
         },
 

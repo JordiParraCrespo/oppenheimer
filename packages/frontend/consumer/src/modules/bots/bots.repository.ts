@@ -18,13 +18,17 @@ import {
   type ChatgptLoginResponseDto,
   heyApiSdk,
   type ModelProviderCredentialResponseDto,
+  type PersonMemoryResponseDto,
   type WorkspaceBotApprovalResponseDto,
+  type WorkspaceBotNoticeResponseDto,
 } from '@oppenheimer/api-client';
 import { AppError, callApi } from '@oppenheimer/frontend-core';
 import {
   BOT_APPROVAL_DECISIONS,
+  BOT_DREAM_ACTIVITIES,
   BOT_EVENT_OUTCOMES,
   BOT_GOAL_ACTIVITIES,
+  BOT_LOOP_ACTIVITIES,
   BOT_QUESTION_OUTCOMES,
   BOT_REPLY_OUTCOMES,
   BOT_SESSION_EVENT_STATES,
@@ -32,6 +36,8 @@ import {
   type BotAttachment,
   type BotDocumentName,
   type BotGoal,
+  type BotLoop,
+  type BotMemoryDreamState,
   type BotMessageEvent,
   type BotPermissionRuleEffect,
   type BotProvider,
@@ -39,6 +45,7 @@ import {
   type BotSection,
   type BotToolDecision,
   type BotUsage,
+  PULL_REQUEST_WAKE_EVENTS,
 } from '@oppenheimer/shared/schemas/bot';
 import {
   type BotMailDraft,
@@ -61,6 +68,7 @@ import {
   type ChatgptLoginState,
   type CreateBotSkillInput,
   ModelProviderEntity,
+  PersonMemoryEntity,
   type SaveBotDocumentInput,
   type UpdateBotFactInput,
   type UpdateBotInput,
@@ -76,6 +84,7 @@ import {
   type BotToolStep,
   BotTurnEntity,
   WorkspaceBotApprovalEntity,
+  WorkspaceBotNoticeEntity,
 } from './bot-conversation.entity';
 import { BotPermissionsEntity } from './bot-permissions.entity';
 import { BotsErrors } from './bots.errors';
@@ -101,6 +110,7 @@ function toBot(dto: BotResponseDto): BotEntity {
     new Date(dto.lastActivityAt),
     dto.lastMessagePreview,
     dto.sections,
+    dto.routineSpendGuard,
   );
 }
 
@@ -179,6 +189,14 @@ function toFact(dto: BotMemoryFactResponseDto): BotMemoryFactEntity {
   );
 }
 
+function toPersonMemory(dto: PersonMemoryResponseDto): PersonMemoryEntity {
+  return new PersonMemoryEntity(
+    dto.about.about,
+    dto.about.updatedAt ? new Date(dto.about.updatedAt) : null,
+    dto.facts.map(toFact),
+  );
+}
+
 function toSkill(dto: BotSkillResponseDto): BotSkillEntity {
   return new BotSkillEntity(
     dto.id,
@@ -197,6 +215,9 @@ function toMessage(dto: BotMessageResponseDto): BotMessageEntity {
   const steps: BotToolStep[] = dto.steps.map((step) => ({
     ...step,
     mailDraft: draftOf(step.mailDraft),
+    rateLimit: step.rateLimit
+      ? { system: step.rateLimit.system, resetAt: new Date(step.rateLimit.resetAt) }
+      : null,
   }));
   return new BotMessageEntity(
     dto.id,
@@ -217,7 +238,7 @@ function toAttachment(dto: BotAttachmentResponseDto): BotAttachment {
 /**
  * The wire's event as the union the chat draws from, kind by kind: an
  * approval, a routine's activity, a message from another bot, or the answer
- * to an ask, or a session the bot follows waking it. An outcome or a state
+ * to an ask, or a session or a pull request the bot follows waking it. An outcome or a state
  * this client does not know reads as no event, and the chat falls back to
  * the message's first line.
  */
@@ -289,6 +310,19 @@ function toEvent(dto: NonNullable<BotMessageResponseDto['event']>): BotMessageEv
           }
         : null;
     }
+    case 'pull_request': {
+      const event = PULL_REQUEST_WAKE_EVENTS.find((candidate) => candidate === dto.event);
+      return event
+        ? {
+            kind: 'pull_request',
+            subscriptionId: dto.subscriptionId,
+            githubRepoId: dto.githubRepoId,
+            repository: dto.repository,
+            number: dto.number,
+            event,
+          }
+        : null;
+    }
     case 'goal': {
       const activity = BOT_GOAL_ACTIVITIES.find((candidate) => candidate === dto.activity);
       return activity
@@ -299,6 +333,32 @@ function toEvent(dto: NonNullable<BotMessageResponseDto['event']>): BotMessageEv
             objective: dto.objective,
             step: dto.step,
             limit: dto.limit,
+            reason: dto.reason,
+          }
+        : null;
+    }
+    case 'dream': {
+      const activity = BOT_DREAM_ACTIVITIES.find((candidate) => candidate === dto.activity);
+      return activity
+        ? {
+            kind: 'dream',
+            activity,
+            dreamId: dto.dreamId,
+            factsBefore: dto.factsBefore,
+            factsAfter: dto.factsAfter,
+          }
+        : null;
+    }
+    case 'loop': {
+      const activity = BOT_LOOP_ACTIVITIES.find((candidate) => candidate === dto.activity);
+      return activity
+        ? {
+            kind: 'loop',
+            activity,
+            loopId: dto.loopId,
+            prompt: dto.prompt,
+            intervalMinutes: dto.intervalMinutes,
+            run: dto.run,
             reason: dto.reason,
           }
         : null;
@@ -405,6 +465,10 @@ function toWorkspaceApproval(dto: WorkspaceBotApprovalResponseDto): WorkspaceBot
   );
 }
 
+function toWorkspaceNotice(dto: WorkspaceBotNoticeResponseDto): WorkspaceBotNoticeEntity {
+  return new WorkspaceBotNoticeEntity(dto.id, dto.botId, dto.botName, dto.text, new Date(dto.at));
+}
+
 /** The export's lines as messages; a line that cannot be read fails the export. */
 async function* readMessages(body: ReadableStream<Uint8Array>): AsyncIterable<BotMessageEntity> {
   try {
@@ -509,6 +573,16 @@ export class BotsRepository {
     });
   }
 
+  /**
+   * The owner is in the bot's chat: what its routines' spend guard counts
+   * from, and what resumes the routines it paused while they were away.
+   */
+  markSeen(id: string): Promise<void> {
+    return callApi(BotsErrors.MARK_SEEN_FAILED, async (api) => {
+      await api.body(heyApiSdk.markBotSeen({ path: { id } }));
+    });
+  }
+
   /** Stop: a queued turn ends now, a running one at its next step. */
   cancelTurn(id: string, turnId: string): Promise<BotTurnEntity> {
     return callApi(BotsErrors.STOP_FAILED, async (api) => {
@@ -527,11 +601,34 @@ export class BotsRepository {
     });
   }
 
+  /** Each bot's latest line to the person, on the bots the caller may read, newest first. */
+  findWorkspaceNotices(): Promise<WorkspaceBotNoticeEntity[]> {
+    return callApi(BotsErrors.FETCH_NOTICES_FAILED, async (api) => {
+      const data = await api.body(heyApiSdk.findWorkspaceBotNotices());
+      return data.map(toWorkspaceNotice);
+    });
+  }
+
   /** The goal the bot set itself and keeps working toward; null when it has none. */
   findGoal(id: string): Promise<BotGoal | null> {
     return callApi(BotsErrors.FETCH_GOAL_FAILED, async (api) => {
       const { goal } = await api.body(heyApiSdk.findBotGoal({ path: { id } }));
       return goal;
+    });
+  }
+
+  /** The loop set with `/loop`: what it runs, how often, and when next; null when it has none. */
+  findLoop(id: string): Promise<BotLoop | null> {
+    return callApi(BotsErrors.FETCH_LOOP_FAILED, async (api) => {
+      const { loop } = await api.body(heyApiSdk.findBotLoop({ path: { id } }));
+      return loop;
+    });
+  }
+
+  /** Stops the bot's loop: no more runs, and one still waiting is cancelled. */
+  clearLoop(id: string): Promise<void> {
+    return callApi(BotsErrors.CLEAR_LOOP_FAILED, async (api) => {
+      await api.result(heyApiSdk.clearBotLoop({ path: { id } }));
     });
   }
 
@@ -800,9 +897,45 @@ export class BotsRepository {
     });
   }
 
+  /** Settings → Memory: what the reader wrote about themselves, and what their bots learned. */
+  findPersonMemory(): Promise<PersonMemoryEntity> {
+    return callApi(BotsErrors.FETCH_PERSON_MEMORY_FAILED, async (api) =>
+      toPersonMemory(await api.body(heyApiSdk.findPersonMemory())),
+    );
+  }
+
+  /** Writes what the reader says about themselves; their bots read it every turn. */
+  saveAbout(about: string): Promise<{ about: string; updatedAt: Date | null }> {
+    return callApi(BotsErrors.SAVE_PERSON_ABOUT_FAILED, async (api) => {
+      const data = await api.body(heyApiSdk.updatePersonAbout({ body: { about } }));
+      return { about: data.about, updatedAt: data.updatedAt ? new Date(data.updatedAt) : null };
+    });
+  }
+
   clearMemory(id: string): Promise<void> {
     return callApi(BotsErrors.CLEAR_MEMORY_FAILED, async (api) => {
       await api.result(heyApiSdk.clearBotMemory({ path: { id } }));
+    });
+  }
+
+  /** The bot's latest dream of its memory (null before its first), and whether one is under way. */
+  findDream(id: string): Promise<BotMemoryDreamState> {
+    return callApi(BotsErrors.FETCH_DREAM_FAILED, (api) =>
+      api.body(heyApiSdk.findBotMemoryDream({ path: { id } })),
+    );
+  }
+
+  /** Has the bot tidy its memory now; the chat says when it is done. */
+  requestDream(id: string): Promise<void> {
+    return callApi(BotsErrors.REQUEST_DREAM_FAILED, async (api) => {
+      await api.result(heyApiSdk.requestBotMemoryDream({ path: { id } }));
+    });
+  }
+
+  /** Puts back the facts the latest dream replaced. */
+  undoDream(id: string): Promise<void> {
+    return callApi(BotsErrors.UNDO_DREAM_FAILED, async (api) => {
+      await api.result(heyApiSdk.undoBotMemoryDream({ path: { id } }));
     });
   }
 

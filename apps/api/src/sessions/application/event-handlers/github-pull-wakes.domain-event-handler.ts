@@ -1,8 +1,9 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { OnEvent } from '@nestjs/event-emitter';
+import { followedPullEvent } from '../../../github/domain/github-pull-event.policy';
 import { ExternalEventReceivedDomainEvent } from '../../../inbound-events/domain/events/external-event-received.domain-event';
 import type { WorkSessionRepositoryPort } from '../../database/work-session.repository.port';
-import { githubWakeText, isWakingGithubEvent, wakeIds } from '../../domain/session-wake.policy';
+import { githubWakeText, wakeIds } from '../../domain/session-wake.policy';
 import { SESSION_WAKES, WORK_SESSION_REPOSITORY } from '../../sessions.di-tokens';
 import type { SessionWakesPort } from '../session-wakes.port';
 
@@ -40,17 +41,14 @@ export class GithubPullWakesDomainEventHandler {
       | 'metadata'
     >,
   ): Promise<void> {
-    if (event.source !== 'github' || event.actorIsOwnApp) return;
-    if (!isWakingGithubEvent(event.eventType)) return;
-    const number = event.attributes?.number;
-    if (typeof number !== 'number' || !Number.isInteger(number) || number < 1) return;
-    if (event.attributes?.isPullRequest === false) return;
+    const pull = followedPullEvent(event);
+    if (!pull) return;
+    const { githubRepoId, number, type } = pull;
     const watching = await this.sessions.findWatchingPullForSystem(
       event.organizationId,
-      event.subjectRef,
+      githubRepoId,
       number,
     );
-    const type = event.eventType;
     // Each wake on its own outbox row: the stages do not depend on each other.
     await Promise.all(
       watching.map((session) =>
@@ -64,7 +62,7 @@ export class GithubPullWakesDomainEventHandler {
               number,
               event.attributes ?? {},
               event.actorLogin ?? null,
-              session.checkouts.find((checkout) => checkout.githubRepoId === event.subjectRef)
+              session.checkouts.find((checkout) => checkout.githubRepoId === githubRepoId)
                 ?.repositoryFullName ?? null,
             ),
             attempt: 0,

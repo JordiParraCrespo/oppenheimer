@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"strconv"
+	"strings"
 	"sync"
 	"testing"
 
@@ -48,6 +49,11 @@ func newOpenCode(t *testing.T) *openCode {
 		oc.mu.Lock()
 		defer oc.mu.Unlock()
 		oc.reads++
+		// A conversation OpenCode deleted: it answers for it no more.
+		if strings.HasPrefix(r.PathValue("id"), "ses_gone") {
+			http.NotFound(w, r)
+			return
+		}
 		list := oc.messages[r.PathValue("id")]
 		if limit, err := strconv.Atoi(r.URL.Query().Get("limit")); err == nil && limit < len(list) {
 			list = list[len(list)-limit:]
@@ -157,7 +163,7 @@ func followOpenCode(t *testing.T, server domain.AgentServer, sink *batches) {
 	go func() {
 		defer close(done)
 		_ = transcript.New(transcript.Options{}).
-			Follow(ctx, domain.Session{Agent: domain.AgentOpenCode, Launch: domain.Launch{Server: &server}}, 64<<10, 256, sink.emit)
+			Follow(ctx, domain.Session{Agent: domain.AgentOpenCode, Launch: domain.Launch{Server: &server}}, 64<<10, 256, nil, sink.emit)
 	}()
 	t.Cleanup(func() { cancel(); <-done })
 }

@@ -1,7 +1,7 @@
 /**
  * What a bot's chat says about its routines outside any turn
  * (`26-bot-routines.md` §4, "In the chat"): which run outcomes are failures
- * worth a line, and the line itself. The listener that writes it is
+ * worth a line, the line itself, and which failures share one line. The listener that writes it is
  * `bot-routine-activity.domain-event-handler.spec.ts`; the column and its
  * check are the integration suite's.
  */
@@ -9,6 +9,7 @@ import { AUTOMATION_SKIP_REASONS } from '@oppenheimer/shared/automations';
 import {
   type RoutineActivity,
   routineActivityLine,
+  routineFailureLineId,
   routineFailureOf,
 } from '../domain/bot-routine.policy';
 
@@ -44,6 +45,71 @@ describe('routineFailureOf', () => {
     ]);
     expect(routineFailureOf('dispatched', null)).toBeNull();
     expect(routineFailureOf('pending', null)).toBeNull();
+  });
+});
+
+describe('routineFailureLineId', () => {
+  const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-5[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
+  const at = (iso: string) => new Date(iso);
+
+  // What breaks this: a burst of new mail past the hourly cap writing one
+  // identical "did not start" line per message into the chat.
+  it('gives every run a rate limit refuses in one hour of one routine the same line', () => {
+    const first = routineFailureLineId(
+      'event-1',
+      'automation-1',
+      'automation_rate_limited',
+      at('2026-11-03T09:01:00Z'),
+    );
+    // RFC 4122 v5: Python's `uuid.uuid5` gives the same id for this name.
+    expect(first).toBe('1613413e-5943-5ece-b5fb-bce1acfcc7d5');
+    expect(first).toMatch(UUID);
+    expect(
+      routineFailureLineId(
+        'event-2',
+        'automation-1',
+        'automation_rate_limited',
+        at('2026-11-03T09:59:59Z'),
+      ),
+    ).toBe(first);
+  });
+
+  it('starts a new line for the next hour, another routine, or the other cap', () => {
+    const first = routineFailureLineId(
+      'event-1',
+      'automation-1',
+      'automation_rate_limited',
+      at('2026-11-03T09:01:00Z'),
+    );
+    const others = [
+      routineFailureLineId(
+        'e',
+        'automation-1',
+        'automation_rate_limited',
+        at('2026-11-03T10:00:00Z'),
+      ),
+      routineFailureLineId(
+        'e',
+        'automation-2',
+        'automation_rate_limited',
+        at('2026-11-03T09:01:00Z'),
+      ),
+      routineFailureLineId(
+        'e',
+        'automation-1',
+        'workspace_rate_limited',
+        at('2026-11-03T09:01:00Z'),
+      ),
+    ];
+    expect(new Set([first, ...others]).size).toBe(4);
+  });
+
+  it('keeps every other failure its own line, keyed by its event', () => {
+    for (const reason of ['missed', 'agent_unavailable', 'expired']) {
+      expect(
+        routineFailureLineId('event-7', 'automation-1', reason, at('2026-11-03T09:00:00Z')),
+      ).toBe('event-7');
+    }
   });
 });
 

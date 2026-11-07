@@ -123,6 +123,20 @@ export class SessionCloudRunEntity extends Entity<SessionCloudRunProps> {
     this.props.syncedAt = now;
   }
 
+  /**
+   * The vendor took a next instruction as a new run: the run this half
+   * follows from now on. The branch and pull request stay the agent's; the
+   * last run's reply is not this one's.
+   */
+  followedUp(report: CloudRunReport, now: Date): void {
+    this.props.latestRunId = report.runId;
+    this.props.status = report.status;
+    this.props.branch = report.branch ?? this.props.branch;
+    this.props.pullRequestUrl = report.pullRequestUrl ?? this.props.pullRequestUrl;
+    this.props.summary = report.summary;
+    this.props.syncedAt = now;
+  }
+
   public validate(): void {
     if (!CLOUD_AGENT_STATUSES.includes(this.props.status)) {
       throw new ArgumentInvalidException(`Unknown cloud run status: ${this.props.status}`);

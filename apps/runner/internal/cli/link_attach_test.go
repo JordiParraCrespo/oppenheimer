@@ -125,7 +125,7 @@ func newAttachHarness(t *testing.T, pty *heldPTY, gate chan struct{}) (*linkHand
 	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
 	sent := &capturedLink{}
 	h := &linkHandler{
-		app: &App{Sessions: svc}, logger: logger, client: sent,
+		app: &App{Sessions: svc, Conversations: conversationsOf(svc, nil)}, logger: logger, client: sent,
 		reporter:    link.NewReporter("run-test", sent, logger),
 		attachments: map[uint32]*attachment{}, decided: map[string]bool{},
 		life: context.Background(), lanes: newLanes(),

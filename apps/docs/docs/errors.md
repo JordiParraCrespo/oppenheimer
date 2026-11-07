@@ -577,6 +577,13 @@ are never reissued.
 | `SESSIONS_045` <a id="sessions_045" /> | The host is offline, so its Codex environments cannot be listed | 503 |
 | `SESSIONS_046` <a id="sessions_046" /> | Codex on the host could not list its environments | 502 |
 | `SESSIONS_047` <a id="sessions_047" /> | ChatGPT is limiting how often the host may list Codex environments | 429 |
+| `SESSIONS_048` <a id="sessions_048" /> | This host's runner cannot continue a cloud session | 409 |
+| `SESSIONS_049` <a id="sessions_049" /> | That transcript cursor is not valid | 400 |
+| `SESSIONS_050` <a id="sessions_050" /> | Only the person who launched a cloud session can send it a follow-up | 403 |
+| `SESSIONS_051` <a id="sessions_051" /> | The cloud session’s vendor did not confirm the follow-up | 502 |
+| `SESSIONS_052` <a id="sessions_052" /> | Only a session whose start failed can be tried again | 409 |
+| `SESSIONS_053` <a id="sessions_053" /> | No cloud session of this workspace has that id | 404 |
+| `SESSIONS_054` <a id="sessions_054" /> | This session has no cloud chat | 409 |
 
 `SESSIONS_001` is also returned for a session that exists in another workspace: the
 scoped read cannot see it, and distinguishing the two would confirm the id.
@@ -623,6 +630,11 @@ terminal, or refuse the agent, instead of starting the task. As with `025`, a ho
 link right now is not refused. `SESSIONS_038` refuses a prompt, a decision's answer or a
 pasted file for a cloud session: it has no terminal on its host, and is answered at its
 vendor, on claude.ai or chatgpt.com/codex.
+
+`SESSIONS_048` is a create with `teleport`, a Claude Code cloud session to continue in a
+worktree on the host (`claude --teleport <id>`), for a host whose live runner did not
+announce `session.teleport`: it would drop the id and start an empty conversation. Update
+the runner. As with `025`, a host with no link right now is not refused.
 
 `SESSIONS_040` and `SESSIONS_041` are a cloud session's files. A first task's files never
 reach the host, which only starts the session: the API keeps them, and the task the cloud
@@ -788,6 +800,7 @@ See `product/versions/mvp/25-bots.md`.
 | `BOTS_038` <a id="bots_038" />       | Skill not found | 404  |
 | `BOTS_039` <a id="bots_039" />       | The bot already has a skill with that name | 409  |
 | `BOTS_040` <a id="bots_040" />       | The bot has as many skills as it can keep | 422  |
+| `BOTS_041` <a id="bots_041" />       | The bot has no dream to undo | 404  |
 
 `BOTS_001`, `BOTS_003` and `BOTS_008` are also returned for a bot, group or fact in
 another workspace.
@@ -803,8 +816,9 @@ loaded, and a save over a newer one is refused rather than silently winning. Whe
 the save was stale, the problem's `revision` extension is the revision that is
 current now. Reload and save again.
 
-`BOTS_009` is a bot that already keeps 200 facts: it reads every one before each
-turn. Forget one first.
+`BOTS_009` is a fact added by hand to a bot that already keeps 500, both tiers
+together. Forget one first. A bot saving through `remember` is not refused: its
+oldest log fact makes room, and only a memory of profile facts alone is full.
 
 `BOTS_010` is a model id the bot's provider does not offer
 (`BOT_PROVIDER_CATALOG`); leave `model` null for the provider's default.
@@ -881,6 +895,9 @@ own `save_skill`). `BOTS_038` is a skill that is not this bot's or not in the
 caller's workspace. `BOTS_039` is a name another of the bot's skills has: a
 skill's name is its slash command, so rename one of them. `BOTS_040` is a
 skill past the bot's fifty: delete one first.
+
+`BOTS_041` is an undo of a bot's dream (Settings → Memory) when its memory was
+never dreamed, or its latest dream was undone already: only the latest can be.
 
 A home host the caller may not use answers `HOSTS_001`, as a session's does.
 
@@ -1100,6 +1117,7 @@ refusals of a launch (`POST /sessions/cloud`). See
 | `CLOUD_AGENTS_007` <a id="cloud_agents_007" /> | The cloud agent provider’s rate limit was reached | 429 |
 | `CLOUD_AGENTS_010` <a id="cloud_agents_010" /> | The cloud agent provider refused the request    | 422  |
 | `CLOUD_AGENTS_011` <a id="cloud_agents_011" /> | No such cloud agent provider                    | 404  |
+| `CLOUD_AGENTS_012` <a id="cloud_agents_012" /> | The cloud agent is still working on its last instruction | 409 |
 
 `CLOUD_AGENTS_001`, `008` and `009` are retired: an agent not found, still
 working, or already stopped belonged to the agent's own page, which a cloud
@@ -1242,6 +1260,10 @@ for a 404 or 428, 6 for a 502, 503 or 504, 7 for `PAIR_009`, and 1 for anything 
 | `SESS_013` <a id="sess_013" />         | The file cannot be shared                    | 400  |
 | `SESS_014` <a id="sess_014" />         | The person cannot be notified from this host | 503  |
 | `SESS_015` <a id="sess_015" />         | This host has no link to the control plane   | 503  |
+| `SESS_016` <a id="sess_016" />         | The session has no shared file by that id    | 404  |
+| `SESS_017` <a id="sess_017" />         | The shared file has no preview               | 409  |
+| `SESS_018` <a id="sess_018" />         | The session's agent keeps no transcript this host can read | 409 |
+| `SESS_019` <a id="sess_019" />         | Claude Code on this host is not signed in to claude.ai | 502 |
 | `TMUX_001` <a id="tmux_001" />         | tmux is not available on this host           | 424  |
 | `TMUX_002` <a id="tmux_002" />         | The tmux server refused the command          | 500  |
 | `GIT_001` <a id="git_001" />           | The worktree could not be prepared           | 500  |
@@ -1277,6 +1299,13 @@ labels the CLI showed in the account's twenty newest tasks
 outside its interactive TUI, so that list is partial, and the full one is
 `codex cloud` on the host. `SESS_009` stays every other refusal, in the CLI's
 words.
+
+`SESS_019` is `claude --cloud` saying the host's Claude Code has no claude.ai
+account to start the session with. Sign in on the host as the account the
+runner runs as (`claude auth login`, or `/login` in an interactive `claude`),
+then press **Try again** on the session: it sends the host the same start, with
+the same task (`POST /v1/sessions/{id}/retry`). Every other refusal of
+`claude --cloud` stays `SESS_008`, in the CLI's own words.
 
 `HOST_009` is `runner agents update` reporting that at least one agent CLI's
 updater failed; the service only logs it and retries. What to do about it is

@@ -40,6 +40,7 @@ const OTHER_READERS: { pattern: RegExp; reader: string; directory: string }[] = 
     directory: 'apps/web',
   },
   { pattern: /^RUNNER_/, reader: 'the Go runner', directory: 'apps/runner' },
+  { pattern: /^(OPPENHEIMER_|MCP_PORT$)/, reader: 'the MCP server', directory: 'apps/mcp/src' },
   {
     pattern: /^SCHEMA_TEST_DATABASE_URL$/,
     reader: 'the schema integration suite',

@@ -151,7 +151,9 @@ describe('AttachSessionStream', () => {
     expect(socket.protocols).toEqual(['t-1']);
     expect(socket.binaryType).toBe('arraybuffer');
     socket.open();
-    expect(socket.controls()).toEqual([{ type: 'resize', cols: 120, rows: 40 }]);
+    // `chatTail`: this stream asks for a chat's older turns, so the host may
+    // send the conversation tail first; without it, the whole history.
+    expect(socket.controls()).toEqual([{ type: 'resize', cols: 120, rows: 40, chatTail: true }]);
   });
 
   it('credits only what the terminal consumed, and only once attached', async () => {

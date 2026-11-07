@@ -1,3 +1,4 @@
+import type { UpstreamRateLimit } from '@oppenheimer/backend-core';
 import type { MailLabelChange } from '../domain/mail-organize.policy';
 /** The account a grant is for, from the ID token on Google's token response. */
 export interface GmailAccount {
@@ -93,16 +94,25 @@ export interface GmailDraftRead {
 /** Mail that arrived since a history id, and the id to read from next. */
 export interface GmailNewMail {
   messageIds: string[];
+  /** Those of `messageIds` that arrived in the inbox. */
+  inboxIds: string[];
   historyId: string;
 }
 
 /** Labels to add and to take off, by Gmail's label ids. */
 export type GmailLabelChange = MailLabelChange;
 
-/** What a change over several threads did: the ones changed, and the ones Gmail has not. */
+/**
+ * What a change over several threads did: the ones changed, the ones Gmail
+ * has not, and, when Gmail's limit stopped it partway, the ones it did not
+ * reach and until when Gmail is limited. A limit before anything changed is
+ * the rate-limit problem itself, not an outcome.
+ */
 export interface GmailBulkOutcome {
   changed: string[];
   missing: string[];
+  notReached: string[];
+  limited: UpstreamRateLimit | null;
 }
 
 export interface GmailThread {
@@ -236,8 +246,10 @@ export interface GmailProviderPort {
   currentHistoryId(grant: GmailCallGrant): Promise<string>;
   /**
    * The messages that arrived since `startHistoryId` (`users.history.list`),
-   * oldest first, at most `max`, leaving out drafts and the account's own
-   * sent mail; and the history id to read from next. Null when Gmail no
+   * oldest first, at most `max`, leaving out drafts, the account's own sent
+   * mail, spam, trash and chats, which no routine means by mail arriving;
+   * which of them arrived in the inbox; and the history id to read from
+   * next. Null when Gmail no
    * longer keeps history that old: start again from `currentHistoryId`.
    */
   newMessages(

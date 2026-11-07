@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { AppError } from '@oppenheimer/backend-core';
 import { GithubErrors } from '../domain/github.errors';
+import { isRepositoryInsider } from '../domain/github-pull-event.policy';
 import { GithubHttp, type StatusMap } from './github-http.adapter';
 import {
   OPEN_PULLS_PAGES,
@@ -117,6 +118,7 @@ interface RawComment {
   side?: 'LEFT' | 'RIGHT';
   body: string;
   user: RawUser | null;
+  author_association?: string;
   created_at: string;
 }
 
@@ -266,6 +268,7 @@ export class GithubPullsAdapter implements GithubPullsPort {
       side: comment.side ?? 'RIGHT',
       body: comment.body,
       login: comment.user?.login ?? 'ghost',
+      insider: isRepositoryInsider(comment.author_association),
       createdAt: comment.created_at,
     }));
   }
@@ -492,6 +495,7 @@ export interface RawTimelineEntry {
   author?: { name?: string; date?: string } | null;
   requested_reviewer?: { login: string } | null;
   requested_team?: { name: string } | null;
+  author_association?: string;
 }
 
 const EVENTS = new Set<GithubTimelineEvent>([
@@ -519,6 +523,7 @@ export function timelineItemOf(entry: RawTimelineEntry, index: number): GithubTi
         kind: 'comment',
         id: `comment:${entry.id ?? index}`,
         login,
+        insider: isRepositoryInsider(entry.author_association),
         body: entry.body ?? '',
         at: entry.created_at ?? '',
       };
@@ -539,6 +544,7 @@ export function timelineItemOf(entry: RawTimelineEntry, index: number): GithubTi
         kind: 'review',
         id: `review:${entry.id ?? index}`,
         login,
+        insider: isRepositoryInsider(entry.author_association),
         state: state as 'approved' | 'changes_requested' | 'commented' | 'dismissed',
         body: entry.body ?? '',
         at: entry.submitted_at ?? entry.created_at ?? '',

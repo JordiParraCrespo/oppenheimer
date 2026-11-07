@@ -8,6 +8,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"time"
 )
 
 // Launch is how a session's agent was started: the structured choices
@@ -33,6 +34,17 @@ type Launch struct {
 	// re-sending the first task would replay it.
 	Conversation string `json:"conversation,omitempty"`
 	Resume       bool   `json:"resume,omitempty"`
+	// Teleport is a cloud session of the agent's own that this session
+	// continues: the agent starts with its branch and history (`claude
+	// --teleport <id>`) in place of a new conversation, and a resume reopens
+	// what that left. It is saved, so a restart takes the resume form.
+	Teleport string `json:"teleport,omitempty"`
+	// TeleportSince is when the agent last opened the teleported
+	// conversation, at a restart; zero is the session's creation. The CLI
+	// names that conversation itself, so the runner finds it by the newest
+	// transcript in the session's folder from then on and keeps its name in
+	// Conversation, which every transcript reader reads it by.
+	TeleportSince time.Time `json:"teleportSince,omitzero"`
 	// Prompt is the first task, appended as the trailing positional so it is
 	// in the process's arguments before it starts (02-runner §5). It is kept
 	// for restart only and never logged.
@@ -141,6 +153,10 @@ type launchMap struct {
 	// The resume form is a subcommand, so it leads the argv instead of
 	// following it.
 	conversationResumeLeads bool
+	// How a cloud session is continued here, `<teleport>` its id, and how
+	// the conversation that left is reopened. Neither names a conversation.
+	teleportStart  []string
+	teleportResume []string
 }
 
 // launchLevel is one permission or effort level: the argv appended to the
@@ -188,6 +204,38 @@ func (l Launch) Args(agent Agent) []string {
 	}
 	args = append(args, m.permission[l.Permission].argv...)
 	args = append(args, l.effortLevel(m).argv...)
+	open := l.conversation(m)
+	if open.leads {
+		return append(open.argv, args...)
+	}
+	args = append(args, open.argv...)
+	if open.prompt && l.Prompt != "" && m.prompt != nil {
+		args = append(args, substitute(m.prompt, "<prompt>", l.Prompt)...)
+	}
+	return args
+}
+
+// conversationArgs is how a launch opens the agent's conversation: the
+// vector that follows the flags every launch carries (or leads them, for a
+// subcommand), and whether the first task rides after it.
+type conversationArgs struct {
+	argv   []string
+	leads  bool
+	prompt bool
+}
+
+// conversation picks which of the catalog's vector sets this launch opens
+// its conversation with. A choice the catalog has no vector for falls to the
+// next, down to a fresh conversation with the first task.
+func (l Launch) conversation(m launchMap) conversationArgs {
+	switch {
+	// Continuing a cloud session: its conversation has a name of its own and
+	// already holds the task, so neither the session's id nor a prompt is
+	// sent; a restart reopens what the teleport left.
+	case l.Teleport != "" && m.teleportStart != nil && l.Resume:
+		return conversationArgs{argv: m.teleportResume}
+	case l.Teleport != "" && m.teleportStart != nil:
+		return conversationArgs{argv: substitute(m.teleportStart, "<teleport>", l.Teleport)}
 	// Reopening the conversation, and then there is no first task to send: the
 	// conversation already holds it, and sending it again would ask for the
 	// same work twice.
@@ -197,24 +245,23 @@ func (l Launch) Args(agent Agent) []string {
 	// started in, and a session's worktree is its own and never reused, so
 	// that is this session's conversation. Only a resume that asks for an id
 	// needs one.
-	if l.Resume && m.conversationResume != nil && (l.Conversation != "" || !namesConversation(m.conversationResume)) {
-		resume := substitute(m.conversationResume, "<conversation>", l.Conversation)
-		if m.conversationResumeLeads {
-			return append(resume, args...)
+	case l.Resume && m.conversationResume != nil && (l.Conversation != "" || !namesConversation(m.conversationResume)):
+		return conversationArgs{
+			argv:  substitute(m.conversationResume, "<conversation>", l.Conversation),
+			leads: m.conversationResumeLeads,
 		}
-		return append(args, resume...)
-	}
 	// Naming it, on a create. Never on a resume: an agent that can be told an
 	// id but not reopen one would be handed an id that already exists, which
 	// its CLI refuses — so such an agent restarts the way it always did, with
 	// a fresh conversation and the first task sent again.
-	if !l.Resume && l.Conversation != "" && m.conversationCreate != nil {
-		args = append(args, substitute(m.conversationCreate, "<conversation>", l.Conversation)...)
+	case !l.Resume && l.Conversation != "" && m.conversationCreate != nil:
+		return conversationArgs{
+			argv:   substitute(m.conversationCreate, "<conversation>", l.Conversation),
+			prompt: true,
+		}
+	default:
+		return conversationArgs{prompt: true}
 	}
-	if l.Prompt != "" && m.prompt != nil {
-		args = append(args, substitute(m.prompt, "<prompt>", l.Prompt)...)
-	}
-	return args
 }
 
 // effortLevel is the chosen effort level, spelled for the model this launch

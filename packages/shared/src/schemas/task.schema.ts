@@ -13,7 +13,7 @@ import { createSessionSchema, startCloudSessionSchema } from './session.schema.j
  */
 
 /** The board's columns, in the order the board draws them. */
-export const TASK_STATUSES = ['later', 'todo', 'doing', 'done'] as const;
+export const TASK_STATUSES = ['todo', 'doing', 'review', 'done'] as const;
 export const taskStatusSchema = z.enum(TASK_STATUSES);
 export type TaskStatus = z.infer<typeof taskStatusSchema>;
 
@@ -21,7 +21,7 @@ export type TaskStatus = z.infer<typeof taskStatusSchema>;
  * The statuses attaching a session moves to In progress: work not started yet.
  * In progress and Done stay as they are (`product/versions/mvp/19-plan-tasks-and-goals.md` §5).
  */
-export const TASK_STATUSES_BEFORE_WORK: readonly TaskStatus[] = ['later', 'todo'];
+export const TASK_STATUSES_BEFORE_WORK: readonly TaskStatus[] = ['todo'];
 
 export const TASK_TITLE_MAX = 500;
 export const TASK_NOTES_MAX = 10_000;

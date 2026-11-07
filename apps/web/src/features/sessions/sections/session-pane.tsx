@@ -23,6 +23,7 @@ import { LatencyReadout } from './latency-readout';
 import { SessionBar } from './session-bar';
 import { SessionChat } from './session-chat';
 import { SessionCloud } from './session-cloud';
+import { SessionCloudChat } from './session-cloud-chat';
 import { SessionProvisioning } from './session-provisioning';
 import { SessionShareButton } from './session-share-button';
 
@@ -100,7 +101,7 @@ export function SessionPane({
   ];
   const previewOffered = previewTabs.length > 0 && Boolean(bar);
   const preview = usePreviewPane();
-  const chat = useSessionChat();
+  const chat = useSessionChat(sessionId);
   // Made once: the terminal delivers the files it catches over the chat, the
   // chat's composer takes them.
   const [files] = useState(createFileHandOff);
@@ -194,7 +195,11 @@ export function SessionPane({
     return (
       <>
         {alert}
-        <SessionCloud session={session} />
+        {session.agent === 'claude-code' ? (
+          <SessionCloudChat session={session} />
+        ) : (
+          <SessionCloud session={session} />
+        )}
       </>
     );
   }

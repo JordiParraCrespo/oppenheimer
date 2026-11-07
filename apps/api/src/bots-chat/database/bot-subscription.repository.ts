@@ -8,6 +8,25 @@ import type { BotSubscriptionEntity } from '../domain/bot-subscription.entity';
 import { BotSubscriptionOrmEntity } from './bot-subscription.orm-entity';
 import type { BotSubscriptionRepositoryPort } from './bot-subscription.repository.port';
 
+/**
+ * What subscribing again sets, whatever is followed: from which turn, why
+ * (kept when the bot gives no new reason), under which scopes and time zone.
+ * Each kind's upsert adds what only it holds.
+ */
+const RESUBSCRIBED = `"originTurnId" = EXCLUDED."originTurnId",
+             "purpose" = COALESCE(EXCLUDED."purpose", s."purpose"),
+             "credentialScopes" = EXCLUDED."credentialScopes",
+             "timeZone" = EXCLUDED."timeZone"`;
+
+/** Every write of an existing subscription moves its version. */
+const VERSIONED = `"version" = s."version" + 1,
+             "updatedAt" = now()`;
+
+/** The scopes as the `jsonb` parameter: null for a browser session's turn. */
+function scopesParam(record: BotSubscriptionOrmEntity): string | null {
+  return record.credentialScopes === null ? null : JSON.stringify(record.credentialScopes);
+}
+
 @Injectable()
 export class BotSubscriptionRepository
   extends ScopedRepositoryBase<BotSubscriptionOrmEntity>
@@ -25,6 +44,8 @@ export class BotSubscriptionRepository
   }
 
   async subscribe(subscription: BotSubscriptionEntity): Promise<BotSubscriptionEntity> {
+    if (subscription.resourceKind === 'pull_request')
+      return this.subscribePullRequest(subscription);
     const record = this.mapper.toPersistence(subscription);
     // UQ_bot_subscription_bot_resource. A second subscribe replaces what is
     // followed and why, and keeps the id, the newest wake recorded (the
@@ -37,18 +58,14 @@ export class BotSubscriptionRepository
           "until", "watchedTurn", "credentialScopes", "timeZone", "lastTurn", "lastState")
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
        ON CONFLICT ("organizationId", "botId", "resourceKind", "resourceId") DO UPDATE
-         SET "originTurnId" = EXCLUDED."originTurnId",
-             "purpose" = COALESCE(EXCLUDED."purpose", s."purpose"),
+         SET ${RESUBSCRIBED},
              "until" = EXCLUDED."until",
              "watchedTurn" = EXCLUDED."watchedTurn",
-             "credentialScopes" = EXCLUDED."credentialScopes",
-             "timeZone" = EXCLUDED."timeZone",
              "lastTurn" = CASE WHEN s."lastTurn" IS NULL OR EXCLUDED."lastTurn" > s."lastTurn"
                                THEN COALESCE(EXCLUDED."lastTurn", s."lastTurn") ELSE s."lastTurn" END,
              "lastState" = CASE WHEN s."lastTurn" IS NULL OR EXCLUDED."lastTurn" > s."lastTurn"
                                 THEN COALESCE(EXCLUDED."lastState", s."lastState") ELSE s."lastState" END,
-             "version" = s."version" + 1,
-             "updatedAt" = now()
+             ${VERSIONED}
        RETURNING *`,
       [
         record.id,
@@ -60,10 +77,46 @@ export class BotSubscriptionRepository
         record.purpose,
         record.until,
         record.watchedTurn,
-        record.credentialScopes === null ? null : JSON.stringify(record.credentialScopes),
+        scopesParam(record),
         record.timeZone,
         record.lastTurn,
         record.lastState,
+      ],
+    );
+    return this.mapper.toDomain(this.repository.create(rows[0]));
+  }
+
+  /**
+   * UQ_bot_subscription_bot_pull_request. Watching again replaces why and
+   * from which turn, and keeps the id and the wake count, so it never resets
+   * the wake limit; the name is refreshed, since the bot just read it.
+   */
+  private async subscribePullRequest(
+    subscription: BotSubscriptionEntity,
+  ): Promise<BotSubscriptionEntity> {
+    const record = this.mapper.toPersistence(subscription);
+    const rows: BotSubscriptionOrmEntity[] = await this.repository.query(
+      `INSERT INTO bot_subscription AS s
+         ("id", "organizationId", "botId", "resourceKind", "githubRepoId", "pullNumber",
+          "repositoryFullName", "originTurnId", "purpose", "until", "credentialScopes", "timeZone")
+       VALUES ($1, $2, $3, 'pull_request', $4, $5, $6, $7, $8, 'closed', $9, $10)
+       ON CONFLICT ("organizationId", "botId", "githubRepoId", "pullNumber")
+         WHERE "resourceKind" = 'pull_request' DO UPDATE
+         SET "repositoryFullName" = EXCLUDED."repositoryFullName",
+             ${RESUBSCRIBED},
+             ${VERSIONED}
+       RETURNING *`,
+      [
+        record.id,
+        record.organizationId,
+        record.botId,
+        record.githubRepoId,
+        record.pullNumber,
+        record.repositoryFullName,
+        record.originTurnId,
+        record.purpose,
+        scopesParam(record),
+        record.timeZone,
       ],
     );
     return this.mapper.toDomain(this.repository.create(rows[0]));
@@ -80,6 +133,19 @@ export class BotSubscriptionRepository
     const records = await this.repository.find({
       select: { id: true },
       where: { organizationId, resourceKind: 'session', resourceId: sessionId },
+    });
+    return records.map((record) => record.id);
+  }
+
+  async findIdsForPullRequest(
+    organizationId: string,
+    githubRepoId: string,
+    pullNumber: number,
+  ): Promise<string[]> {
+    // IDX_bot_subscription_pull_request.
+    const records = await this.repository.find({
+      select: { id: true },
+      where: { organizationId, resourceKind: 'pull_request', githubRepoId, pullNumber },
     });
     return records.map((record) => record.id);
   }
@@ -119,6 +185,27 @@ export class BotSubscriptionRepository
     return won;
   }
 
+  async claimWake(subscriptionId: string, limit: number): Promise<number | null> {
+    // PK_bot_subscription. The count moves by itself, outside the version:
+    // a wake taken is never a write another writer could undo.
+    const [rows]: [{ wakes: number }[], number] = await this.repository.query(
+      `UPDATE bot_subscription SET "wakes" = "wakes" + 1, "updatedAt" = now()
+       WHERE "id" = $1 AND "wakes" < $2
+       RETURNING "wakes"`,
+      [subscriptionId, limit],
+    );
+    return rows[0]?.wakes ?? null;
+  }
+
+  async releaseWake(subscriptionId: string): Promise<void> {
+    // PK_bot_subscription.
+    await this.repository.query(
+      `UPDATE bot_subscription SET "wakes" = "wakes" - 1, "updatedAt" = now()
+       WHERE "id" = $1 AND "wakes" > 0`,
+      [subscriptionId],
+    );
+  }
+
   async findForTerminalWatch(watchId: string): Promise<BotSubscriptionEntity | null> {
     // IDX_bot_subscription_terminal_watch: at most one subscription names a watch.
     const record = await this.repository.findOne({ where: { terminalWatchId: watchId } });
@@ -154,6 +241,22 @@ export class BotSubscriptionRepository
       botId,
       resourceKind: 'session',
       resourceId: sessionId,
+    });
+    return (result.affected ?? 0) > 0;
+  }
+
+  async unsubscribePullRequest(
+    organizationId: string,
+    botId: string,
+    pull: { githubRepoId: string; number: number },
+  ): Promise<boolean> {
+    // UQ_bot_subscription_bot_pull_request.
+    const result = await this.repository.delete({
+      organizationId,
+      botId,
+      resourceKind: 'pull_request',
+      githubRepoId: pull.githubRepoId,
+      pullNumber: pull.number,
     });
     return (result.affected ?? 0) > 0;
   }

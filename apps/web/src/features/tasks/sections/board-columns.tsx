@@ -20,7 +20,7 @@ import {
   useDragLabels,
   useLocale,
 } from '@oppenheimer/frontend-web';
-import type { TaskStatus } from '@oppenheimer/shared/schemas/task';
+import { TASK_STATUSES, type TaskStatus } from '@oppenheimer/shared/schemas/task';
 import { getRouteApi, useNavigate } from '@tanstack/react-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -28,7 +28,7 @@ import { ColumnComposer } from '../components/column-composer';
 import { useBoardDrag } from '../hooks/use-board-drag';
 import { useBoardFilter } from '../hooks/use-board-filter';
 import { useToday } from '../hooks/use-today';
-import { COLUMNS, columnOf, filingOf } from '../lib/board';
+import { columnOf, filingOf } from '../lib/board';
 import { cardView, dueDayLabel } from '../lib/card-view';
 import { sessionLineOf } from '../lib/session-line';
 import { SESSION_STATUS } from '../lib/session-state';
@@ -67,7 +67,7 @@ export function BoardColumns() {
   const byId = new Map(rows.map((row) => [row.id, row]));
   const drag = useBoardDrag(
     Object.fromEntries(
-      COLUMNS.map((status) => [status, columnOf(rows, status, filter).map((row) => row.id)]),
+      TASK_STATUSES.map((status) => [status, columnOf(rows, status, filter).map((row) => row.id)]),
     ),
     (next) => move.mutate(next),
   );
@@ -86,8 +86,10 @@ export function BoardColumns() {
       dueDayLabel(iso, today, words, (day) => formatCalendarDay(day, locale, 'short')),
   };
   const milestone = filter.milestoneId ? milestones.get(filter.milestoneId) : undefined;
-  const filed = milestone?.name ?? (filter.projectId ? projectNames.get(filter.projectId) : null);
   const filing = filingOf(filter, read.milestones, unassignedId);
+  const filed =
+    milestone?.name ??
+    (filter.projectIds?.length && filing.projectId ? projectNames.get(filing.projectId) : null);
 
   const card = (task: TaskEntity, lifted = false) => {
     const view = cardView(task, context);
@@ -158,7 +160,7 @@ export function BoardColumns() {
         }}
       >
         <TaskBoard data-bleed>
-          {COLUMNS.map((status) => {
+          {TASK_STATUSES.map((status) => {
             const ids = drag.groups[status] ?? [];
             const label = t(`tasks.columns.${status}`);
             return (

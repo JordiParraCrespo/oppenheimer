@@ -49,6 +49,7 @@ export {
   createQueryClient,
   type SessionExpiryTarget,
 } from './query-client';
+export { useSuspenseApiVersion } from './release.queries';
 export { shareEntities } from './share-entities';
 export { useUserSettings } from './user-settings.queries';
 export {

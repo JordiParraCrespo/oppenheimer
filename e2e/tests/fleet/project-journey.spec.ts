@@ -6,8 +6,8 @@ import { connectInstallation, STUB_REPOSITORIES, waitForLifecycle } from '../../
 import { signInAs } from '../../support/web';
 
 /**
- * A project's journey through the console on a real runner: made from the
- * sidebar's plus, picked on New session so its defaults fill the host and the
+ * A project's journey through the console on a real runner: made in Plan's
+ * Projects view, picked on New session so its defaults fill the host and the
  * repository, a session sent from it that the host builds, that session moved
  * to Unassigned from its row, and the host renamed from Settings. Every step is
  * the UI; the API is read only to prove what the screen claims. Delete and
@@ -32,8 +32,10 @@ test('a project made in the console starts a session its host builds', async ({ 
 
   await signInAs(page, user);
 
-  // New project is a dialog over the console: the name, a repository added
-  // from the field (cloned by default), the default host in the Defaults fold.
+  // Projects are made in Plan's Projects view, in a dialog over the console:
+  // the name, a repository added from the field (cloned by default), the
+  // default host in the Defaults fold.
+  await page.goto('/plan/projects');
   await page.getByRole('button', { name: 'New project' }).click();
   const dialog = page.getByRole('dialog', { name: 'New project' });
   await dialog.getByLabel('Name').fill(project);
@@ -47,7 +49,7 @@ test('a project made in the console starts a session its host builds', async ({ 
   await dialog.getByRole('button', { name: box.host.name }).click();
   await dialog.getByRole('button', { name: 'Create project' }).click();
   await expect(dialog).toHaveCount(0);
-  await expect(header(0)).toBeVisible();
+  await expect(page.getByRole('button', { name: `${project} settings` })).toBeVisible();
 
   await page.goto('/sessions/new');
   await page.getByRole('button', { name: 'Project', exact: true }).click();
@@ -71,7 +73,8 @@ test('a project made in the console starts a session its host builds', async ({ 
   await page.getByRole('menuitem', { name: 'Move to project…' }).click();
   await page.getByRole('menuitem', { name: 'Unassigned' }).click();
   await expect(page.getByRole('button', { name: 'Unassigned 1' })).toBeVisible();
-  await expect(header(0)).toBeVisible();
+  // A project with no session left is not listed in the sidebar.
+  await expect(header(1)).toHaveCount(0);
 
   await page.goto('/settings/hosts');
   const card = page.getByTestId('host-card');

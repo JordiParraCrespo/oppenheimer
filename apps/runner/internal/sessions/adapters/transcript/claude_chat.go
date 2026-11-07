@@ -62,13 +62,16 @@ type claudeBlock struct {
 // as Claude Code's own, so the console reads one shape, with everything the
 // view does not draw left out.
 type chatEntry struct {
-	Type             string      `json:"type"`
-	UUID             string      `json:"uuid,omitempty"`
-	Timestamp        string      `json:"timestamp,omitempty"`
-	IsMeta           bool        `json:"isMeta,omitempty"`
-	IsSidechain      bool        `json:"isSidechain,omitempty"`
-	IsCompactSummary bool        `json:"isCompactSummary,omitempty"`
-	Message          chatMessage `json:"message"`
+	Type             string `json:"type"`
+	UUID             string `json:"uuid,omitempty"`
+	Timestamp        string `json:"timestamp,omitempty"`
+	IsMeta           bool   `json:"isMeta,omitempty"`
+	IsSidechain      bool   `json:"isSidechain,omitempty"`
+	IsCompactSummary bool   `json:"isCompactSummary,omitempty"`
+	// AgentID is the subagent whose conversation the line is, with
+	// IsSidechain (SubagentEntryType); none for the session's own.
+	AgentID string      `json:"agentId,omitempty"`
+	Message chatMessage `json:"message"`
 }
 
 type chatMessage struct {

@@ -78,6 +78,7 @@ This page lives outside `.agents/rules/` on purpose: a file there without a
 | Volume over time (tokens, cost) | `AreaChart` | `LineChart` with a fill of your own, a chart library |
 | Several connected calendar accounts | `CalendarAccountList` + `CalendarAccountRow` + `CalendarAccountAdd` | a `Card` per account |
 | An employee in the sidebar | `BotList` + `BotItem` (`SortableBotItem` to move it; `needsInput` when it waits on the reader) | a `SessionItem` with an avatar |
+| A sidebar list head that folds its list (a section's Bots) | `SidebarFoldLabel` as the `SidebarListHead`'s `label`, the fold kept with `useStoredList` + `withFold` from the kit | a `button` and chevron of the feature's own, a fold mode on `SidebarListHead` |
 | Employees' group heads, and the list before the first bot | `SidebarProjectHeader tone="eyebrow"` (`marker` for the Built-in lock); `SidebarEmptyCard` | an uppercase `span`, a `Callout` in the sidebar |
 | A bot's photo | `AvatarPicker` (`compact` in a popover, `wide` on Profile); `BotAvatar` to draw one | a grid of `Avatar` buttons |
 | A bot's colour, while its avatar is its initials | `AvatarColorPicker`; `BotAvatar` / `BotItem` with `color` | a row of coloured `div`s, a hex from the database |
@@ -86,7 +87,7 @@ This page lives outside `.agents/rules/` on purpose: a file there without a
 | Records in a settings card (revisions, facts, connectors) and adding one | `SettingsListRow` + `SettingsAddRow` | a `SettingsRow` per record, an `Input` and a `Button` |
 | The bar over one thing's own settings | `SettingsTopBar` | a `PageHeader`, a hand-built header |
 | The agent chat's transcript | `ChatTranscript` with `ChatUserMessage`, `TurnHeader`, `ChatReply`, `MessageTrail` | a `Card` per message, `Prose` alone |
-| What the agent did in a turn | `ToolCallGroup` + `ToolCallRow`, `ToolCallLive`, `ReasoningRow`; in a bot's chat, a `Trace` of `TraceStep`s (each opening to a `TraceOutput` or `TraceNote`) and `TraceLive` while it runs | a `Disclosure` per call, a `CodeBlock` of the log |
+| What the agent did in a turn | `ToolCallGroup` + `ToolCallRow`, `ToolCallLive`, `ReasoningRow`, and `AgentActivity` at the foot of a working session chat (the spinner line the terminal shows); in a bot's chat, a `Trace` of `TraceStep`s (each opening to a `TraceOutput` or `TraceNote`) and `TraceLive` while it runs | a `Disclosure` per call, a `CodeBlock` of the log |
 | A note between turns, next steps to offer, a fenced block in a bot's reply | `ChatMarker` (a day is a `TranscriptDivider`), `ChatSuggestions` + `ChatSuggestion`, the kit's `ChatCode` in `Markdown`'s `code` slot (a `ChatCodeBlock`, or a `ChatJsonBlock` when the fence holds JSON) | a `Callout`, a row of `Button`s, a `CodeBlock` |
 | JSON in the chat: a fence, a tool call's answer | `JsonTree`, through the kit's `ChatCode` and `ChatToolOutput` (its ISO times read in words) | `JSON.stringify` into a `pre`, a JSON viewer library |
 | A turn's files, plan, subagents, questions, objects | `ChangedFilesCard`, `ProposedPlanCard`, `SubagentRunCard`, `QuestionsPill`, `ContextCard` | a `Card` of `div`s, a `PullRequestRow` |

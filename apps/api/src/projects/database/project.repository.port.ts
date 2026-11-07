@@ -18,6 +18,14 @@ export type ArchiveOutcome =
   | { result: 'not-found' };
 
 /**
+ * What restoring came back with: the project, restored now or already active;
+ * `not-found` for a project that is missing or in another workspace alike.
+ */
+export type RestoreOutcome =
+  | { result: 'restored' | 'active'; project: ProjectEntity }
+  | { result: 'not-found' };
+
+/**
  * Every read takes an {@link AccessScope}, which is what turns "this query is
  * authorized" from something a handler has to remember into something the
  * compiler asks for; the adapter throws rather than falling back to an
@@ -58,6 +66,13 @@ export interface ProjectRepositoryPort {
     projectId: string,
     stillInUse: () => Promise<boolean>,
   ): Promise<ArchiveOutcome>;
+  /**
+   * Bring an archived project back, in one transaction: the row is locked
+   * `FOR UPDATE` through the caller's scope, its `archivedAt` cleared, and the
+   * change it owes staged with the write. An active project is answered as
+   * `active` and nothing is written.
+   */
+  restoreIfArchived(scope: AccessScope, projectId: string): Promise<RestoreOutcome>;
   /**
    * Projects the caller can reach, newest first. Archived rows are left out unless
    * asked for: a retired project keeps its slug for ever, so the listing would

@@ -5,7 +5,8 @@
     "inbox": "Inbox",
     "tasks": "Tasks",
     "calendar": "Calendar",
-    "milestones": "Milestones"
+    "milestones": "Milestones",
+    "projects": "Projects"
   },
   "sidebar": {
     "unassigned": "Unassigned"
@@ -31,9 +32,9 @@
     "keyCancel": "cancel"
   },
   "columns": {
-    "later": "Later",
     "todo": "To do",
     "doing": "In progress",
+    "review": "In review",
     "done": "Done"
   },
   "card": {

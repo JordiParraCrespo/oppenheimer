@@ -46,6 +46,16 @@ export const CloudAgentErrors = {
     message: 'The cloud agent provider refused the request',
     httpStatus: 422,
   },
+  /**
+   * The agent is still on a run, so it takes no follow-up yet (Cursor's
+   * `409 agent_busy`). Nothing is queued: wait for the run to end, then send
+   * it again. Not `008`, which an agent's own page retired.
+   */
+  AGENT_BUSY: {
+    code: 'CLOUD_AGENTS_012',
+    message: 'The cloud agent is still working on its last instruction',
+    httpStatus: 409,
+  },
   /** A provider this server does not offer. */
   PROVIDER_NOT_FOUND: {
     code: 'CLOUD_AGENTS_011',

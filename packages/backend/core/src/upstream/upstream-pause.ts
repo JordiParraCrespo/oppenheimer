@@ -12,6 +12,12 @@ export interface UpstreamPauseStore {
    * shorter reset (clock skew, a missing header) must not cut another's short.
    */
   setMax(key: string, value: number, ttlSeconds: number): Promise<number>;
+  /**
+   * Add `by` to the number stored at `key`, in one atomic step, and answer the
+   * sum; the first add sets the TTL. What a shared `UpstreamBudget` counts
+   * with; a store without it keeps each budget in its process.
+   */
+  incrementBy?(key: string, by: number, ttlSeconds: number): Promise<number>;
 }
 
 export interface UpstreamPauseOptions {

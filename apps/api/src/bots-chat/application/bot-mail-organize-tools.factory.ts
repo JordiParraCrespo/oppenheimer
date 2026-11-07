@@ -22,6 +22,7 @@ import {
 } from '../bot-mail-tool.mapper';
 import { BotMailAccountsResolver } from './bot-mail-accounts.resolver';
 import {
+  type BotToolAnswer,
   type BotToolArea,
   type BotToolCallContext,
   type BotToolDefinition,
@@ -119,7 +120,10 @@ export class BotMailOrganizeToolsFactory implements BotToolArea {
       summarize: async (call, context) =>
         `Mark ${targetCount(call)} ${marksOf(call)} in ${describeAccount(await this.connection(call, context))}`,
       run: async (call, context) =>
-        `Marked ${marksOf(call)}: ${organizeAnswer(await this.change(call, changeOf(markChange(call)), context))}`,
+        organized(
+          `Marked ${marksOf(call)}`,
+          await this.change(call, changeOf(markChange(call)), context),
+        ),
     });
   }
 
@@ -153,7 +157,10 @@ export class BotMailOrganizeToolsFactory implements BotToolArea {
       },
       // Approved, the call holds ids; run on its own, names: either resolves the same way.
       run: async (call, context) =>
-        `Labels changed: ${organizeAnswer(await this.change(call, await this.labelChange(call, context), context))}`,
+        organized(
+          'Labels changed',
+          await this.change(call, await this.labelChange(call, context), context),
+        ),
     });
   }
 
@@ -168,7 +175,7 @@ export class BotMailOrganizeToolsFactory implements BotToolArea {
       summarize: async (call, context) =>
         `Archive ${targetCount(call)} in ${describeAccount(await this.connection(call, context))}`,
       run: async (call, context) =>
-        `Archived: ${organizeAnswer(await this.change(call, ARCHIVE_CHANGE, context))}`,
+        organized('Archived', await this.change(call, ARCHIVE_CHANGE, context)),
     });
   }
 
@@ -183,7 +190,7 @@ export class BotMailOrganizeToolsFactory implements BotToolArea {
       summarize: async (call, context) =>
         `Move ${targetCount(call)} to Trash in ${describeAccount(await this.connection(call, context))} (Gmail empties Trash after 30 days)`,
       run: async (call, context) =>
-        `Moved to Trash: ${organizeAnswer(await this.trash(call, true, context))}`,
+        organized('Moved to Trash', await this.trash(call, true, context)),
     });
   }
 
@@ -194,7 +201,7 @@ export class BotMailOrganizeToolsFactory implements BotToolArea {
       description: `Brings threads of the person's Gmail back out of Trash, where they were before. At most ${MAIL_ORGANIZE_MAX} threads at once.`,
       input: threadsOnly,
       run: async (call, context) =>
-        `Brought back from Trash: ${organizeAnswer(await this.trash(call, false, context))}`,
+        organized('Brought back from Trash', await this.trash(call, false, context)),
     });
   }
 
@@ -307,6 +314,14 @@ export class BotMailOrganizeToolsFactory implements BotToolArea {
       command(connection.id),
     );
   }
+}
+
+/** An organizing write's answer, carrying the limit that stopped it partway so the turn waits for it. */
+function organized(done: string, outcome: GmailBulkOutcome): BotToolAnswer {
+  return {
+    content: `${done}: ${organizeAnswer(outcome, new Date())}`,
+    ...(outcome.limited && { rateLimit: outcome.limited }),
+  };
 }
 
 /** A label change that changes nothing is refused, before a card or a call. */

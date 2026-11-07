@@ -32,10 +32,15 @@ var (
 	ErrFolderMissing      = problem.New("SESS_006", http.StatusNotFound, "The session's folder is not on this host")
 	ErrFolderNotDirectory = problem.New("SESS_007", http.StatusBadRequest, "The session's folder is not a directory")
 	// ErrCloudStart is `claude --cloud` ending without naming the cloud
-	// session it made: not signed in to claude.ai, no access to the
-	// repository there, or a CLI too old to know the flag. Its detail is
+	// session it made: no access to the repository on claude.ai, or a CLI
+	// too old to know the flag (not signed in is ErrCloudSignIn). Its detail is
 	// the CLI's own last words.
 	ErrCloudStart = problem.New("SESS_008", http.StatusBadGateway, "Claude Code could not start the session in the cloud")
+	// ErrCloudSignIn is `claude --cloud` refusing because the host's Claude
+	// Code has no claude.ai account signed in: the one SESS_008 the person
+	// fixes on the host, with `claude auth login`. Its detail is the CLI's
+	// own last words.
+	ErrCloudSignIn = problem.New("SESS_019", http.StatusBadGateway, "Claude Code on this host is not signed in to claude.ai")
 	// ErrCodexCloudStart is `codex cloud` refusing or failing: not signed in
 	// to ChatGPT, no Codex cloud environment for the repository, or a CLI too
 	// old to know the command. Its detail is the CLI's own last words.
@@ -64,6 +69,18 @@ var (
 	// ErrNoLink refuses what only the control plane can do for a session
 	// (watch a pull request, wake it later) on a runner with no link to it.
 	ErrNoLink = problem.New("SESS_015", http.StatusServiceUnavailable, "This host has no link to the control plane")
+	// ErrSharedFileNotFound answers a preview asked for a file the session's
+	// agent never shared on this host, or whose entry the session's clean-up
+	// already took.
+	ErrSharedFileNotFound = problem.New("SESS_016", http.StatusNotFound, "The session has no shared file by that id")
+	// ErrSharedFileNoPreview answers a preview asked for a shared file the
+	// runner kept none of: not an image, or too large to read when shared.
+	ErrSharedFileNoPreview = problem.New("SESS_017", http.StatusConflict, "The shared file has no preview")
+	// ErrNoTranscript answers a page of a session's conversation
+	// (`transcript.read`) for an agent that keeps none in a file this runner
+	// reads: OpenCode, which serves its conversation through its own API, or
+	// a session with no conversation to find its file by.
+	ErrNoTranscript = problem.New("SESS_018", http.StatusConflict, "The session's agent keeps no transcript this host can read")
 	// ErrInvalidPattern refuses a terminal watch whose pattern is empty, too
 	// long or not an RE2 expression. The code is the protocol's
 	// (`session.watch`), not a SESS_ number: the control plane names it.

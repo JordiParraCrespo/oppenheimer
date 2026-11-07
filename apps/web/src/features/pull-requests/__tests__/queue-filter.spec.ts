@@ -1,7 +1,13 @@
 import type { PullRequestEntity } from '@oppenheimer/frontend-consumer';
 import { describe, expect, it } from 'vitest';
 import { pullRequestSearchSchema } from '../lib/pull-request-search';
-import { facetCounts, filterQueue, waitOf } from '../lib/queue-filter';
+import {
+  facetCounts,
+  filterQueue,
+  repositoryNames,
+  scopeCounts,
+  waitOf,
+} from '../lib/queue-filter';
 
 /**
  * The queue's filters: what each facet keeps, what each option would leave
@@ -10,7 +16,9 @@ import { facetCounts, filterQueue, waitOf } from '../lib/queue-filter';
  */
 function row(
   number: number,
-  fields: Partial<Pick<PullRequestEntity, 'repository' | 'lane' | 'checks' | 'waitingSeconds'>>,
+  fields: Partial<
+    Pick<PullRequestEntity, 'repository' | 'lane' | 'checks' | 'waitingSeconds' | 'scope'>
+  >,
 ): PullRequestEntity {
   return {
     number,
@@ -20,6 +28,7 @@ function row(
     lane: 'quick',
     checks: 'passing',
     waitingSeconds: 60,
+    scope: 'watching',
     ...fields,
   } as PullRequestEntity;
 }
@@ -30,6 +39,37 @@ const ROWS = [
   row(3, { lane: 'quick', checks: 'running', waitingSeconds: 600 }),
   row(4, { lane: 'medium', checks: 'passing', waitingSeconds: 30, repository: 'acme/api' }),
 ];
+
+describe('the scope counts', () => {
+  // Regression: the tabs counted every watched repository while the table
+  // kept the picked one, so Review requests said 4 over an empty table.
+  it('counts each scope under the repository and facets picked', () => {
+    const rows = [
+      row(1, { scope: 'requested', repository: 'acme/api' }),
+      row(2, { scope: 'requested', repository: 'acme/api' }),
+      row(3, { scope: 'mine' }),
+      row(4, { scope: 'watching', lane: 'deep' }),
+    ];
+    expect(scopeCounts(rows, { repo: 'acme/web' })).toEqual({
+      all: 2,
+      mine: 1,
+      requested: 0,
+      watching: 1,
+    });
+    expect(scopeCounts(rows, { lane: 'quick' })).toEqual({
+      all: 3,
+      mine: 1,
+      requested: 2,
+      watching: 0,
+    });
+  });
+
+  // Regression: a repository picked where the scope has none of its rows left the picker blank.
+  it('keeps the picked repository among the picker’s names', () => {
+    expect(repositoryNames(ROWS, 'acme/ios')).toEqual(['acme/api', 'acme/ios', 'acme/web']);
+    expect(repositoryNames(ROWS, undefined)).toEqual(['acme/api', 'acme/web']);
+  });
+});
 
 describe('the queue filters', () => {
   it('puts a wait in the Waiting facet’s three steps', () => {

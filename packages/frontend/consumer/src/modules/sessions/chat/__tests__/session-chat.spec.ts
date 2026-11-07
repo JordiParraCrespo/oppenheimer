@@ -361,13 +361,185 @@ describe('SessionChat', () => {
     chat.apply({ reset: true, entries: [] });
     expect(chat.snapshot()).toEqual({
       available: true,
+      loading: false,
       turns: [],
       queued: [],
       status: null,
       files: [],
+      older: 'none',
+      activity: null,
     });
     expect(before.turns).toHaveLength(2);
     expect(listener).toHaveBeenCalledTimes(3);
+  });
+
+  it('draws a long first load once, when its history has all come', () => {
+    // What breaks this: each part of a long history drawn as it lands, so the
+    // chat's window runs through the whole conversation on a first load,
+    // mounting every turn on its way to the end.
+    const lines = Array.from({ length: 300 }, (_, i) =>
+      JSON.stringify(user(`u${i}`, `Prompt ${i}`)),
+    );
+    const chat = new SessionChat();
+    const seen: number[] = [];
+    chat.subscribe(() => seen.push(chat.snapshot().turns.length));
+
+    // The runner's full batch, then the short one that ends its read: which
+    // could be any read of a longer transcript, so only the quiet ends it.
+    vi.useFakeTimers();
+    chat.apply({ reset: true, entries: lines.slice(0, 256) });
+    expect(chat.snapshot()).toMatchObject({ available: true, loading: true, turns: [] });
+    chat.apply({ entries: lines.slice(256) });
+    expect(chat.snapshot()).toMatchObject({ loading: true, turns: [] });
+    vi.advanceTimersByTime(1_000);
+    expect(chat.snapshot().loading).toBe(false);
+    expect(chat.snapshot().turns).toHaveLength(300);
+    expect(seen).toEqual([0, 300]);
+    vi.useRealTimers();
+  });
+
+  it('draws a first load whose history goes quiet before a short batch', () => {
+    // What breaks this: a history that ends on a full batch, never drawn.
+    vi.useFakeTimers();
+    const lines = Array.from({ length: 256 }, (_, i) =>
+      JSON.stringify(user(`u${i}`, `Prompt ${i}`)),
+    );
+    const chat = new SessionChat();
+    chat.apply({ reset: true, entries: lines });
+    expect(chat.snapshot().turns).toHaveLength(0);
+    vi.advanceTimersByTime(1_000);
+    expect(chat.snapshot()).toMatchObject({ loading: false });
+    expect(chat.snapshot().turns).toHaveLength(256);
+    vi.useRealTimers();
+  });
+
+  it('keeps holding a first load whose short-looking batch is full in UTF-8', () => {
+    // What breaks this: a batch measured in UTF-16 units, so one the runner
+    // closed at its byte limit, heavy in CJK text, reads as the end of the
+    // history and each part of the rest is drawn as it lands.
+    vi.useFakeTimers();
+    const text = '漢'.repeat(14_000);
+    const lines = [0, 1, 2].map((i) => JSON.stringify(user(`u${i}`, `${text} ${i}`)));
+    const chat = new SessionChat();
+    chat.apply({ reset: true, entries: lines });
+    expect(chat.snapshot()).toMatchObject({ loading: true, turns: [] });
+    vi.advanceTimersByTime(1_000);
+    expect(chat.snapshot().turns).toHaveLength(3);
+    vi.useRealTimers();
+  });
+
+  it('settles a replay that came back short while a first load was held', () => {
+    // What breaks this: a first load's quiet that ends the hold but not the
+    // replay a reconnect started under it, so turns the transcript no longer
+    // has stay drawn.
+    vi.useFakeTimers();
+    const lines = Array.from({ length: 512 }, (_, i) =>
+      JSON.stringify(user(`u${i}`, `Prompt ${i}`)),
+    );
+    const chat = new SessionChat();
+    chat.apply({ reset: true, entries: lines.slice(0, 256) });
+    chat.apply({ entries: lines.slice(256) });
+    // The link drops; the reconnect sends back only the first full batch.
+    chat.apply({ reset: true, entries: lines.slice(0, 256) });
+    vi.advanceTimersByTime(10_000);
+    expect(chat.snapshot().loading).toBe(false);
+    expect(chat.snapshot().turns).toHaveLength(256);
+    vi.useRealTimers();
+  });
+
+  it('keeps holding a long first load past the short batch that ends one of its reads', () => {
+    // What breaks this: a short batch taken as the end of any history. The
+    // runner reads a long transcript 4MB at a time and ends each read on a
+    // short batch, so the chat drew the first read's turns and then slid
+    // through the rest of the conversation as the later reads landed.
+    vi.useFakeTimers();
+    const answer = 'The reducer folds every entry into the running total. '.repeat(40);
+    const line = (i: number) =>
+      JSON.stringify(assistant(`a${i}`, [{ type: 'text', text: `${answer} ${i}` }]));
+    const prompt = (i: number) => JSON.stringify(user(`u${i}`, `Prompt ${i}`));
+    const history = Array.from({ length: 1_000 }, (_, i) => [prompt(i), line(i)]).flat();
+    const chat = new SessionChat();
+    // The first read: full batches, then the short one it ends on.
+    chat.apply({ reset: true, entries: history.slice(0, 256) });
+    for (let at = 256; at < 1_536; at += 256) chat.apply({ entries: history.slice(at, at + 256) });
+    chat.apply({ entries: history.slice(1_536, 1_556) });
+    expect(chat.snapshot()).toMatchObject({ loading: true, turns: [] });
+    // The next read, 300ms later.
+    vi.advanceTimersByTime(300);
+    chat.apply({ entries: history.slice(1_556) });
+    expect(chat.snapshot()).toMatchObject({ loading: true, turns: [] });
+    vi.advanceTimersByTime(1_000);
+    expect(chat.snapshot().turns).toHaveLength(1_000);
+    vi.useRealTimers();
+  });
+
+  it('draws a short first load at once', () => {
+    // What breaks this: every chat held for the quiet, a short one too.
+    const chat = new SessionChat();
+    chat.apply({ reset: true, entries: [JSON.stringify(user('u1', 'One'))] });
+    expect(chat.snapshot()).toMatchObject({ loading: false });
+    expect(chat.snapshot().turns).toHaveLength(1);
+  });
+
+  it('holds a first load its runner says is still coming, past any pause, until it says the end', () => {
+    // What breaks this: a first load let go on the size or the pace of its
+    // batches. A runner making previews of a read's screenshots sends a
+    // short first batch, then pauses past any quiet the chat could wait out,
+    // so a chat full of images was drawn once per read on its way down.
+    vi.useFakeTimers();
+    const lines = Array.from({ length: 30 }, (_, i) =>
+      JSON.stringify(user(`u${i}`, `Prompt ${i}`)),
+    );
+    const chat = new SessionChat();
+    const seen: number[] = [];
+    chat.subscribe(() => seen.push(chat.snapshot().turns.length));
+    chat.apply({ reset: true, history: 'more', entries: lines.slice(0, 3) });
+    vi.advanceTimersByTime(2_000);
+    chat.apply({ history: 'more', entries: lines.slice(3, 20) });
+    vi.advanceTimersByTime(2_000);
+    expect(chat.snapshot()).toMatchObject({ loading: true, turns: [] });
+    chat.apply({ history: 'end', entries: lines.slice(20) });
+    expect(chat.snapshot()).toMatchObject({ loading: false });
+    expect(seen).toEqual([0, 30]);
+    vi.useRealTimers();
+  });
+
+  it('draws a long first load the moment its runner says the history ended', () => {
+    // What breaks this: a runner's end ignored, so a full last batch waits
+    // out a quiet before anything is drawn.
+    const lines = Array.from({ length: 256 }, (_, i) =>
+      JSON.stringify(user(`u${i}`, `Prompt ${i}`)),
+    );
+    const chat = new SessionChat();
+    chat.apply({ reset: true, history: 'end', entries: lines });
+    expect(chat.snapshot()).toMatchObject({ loading: false });
+    expect(chat.snapshot().turns).toHaveLength(256);
+  });
+
+  it('keeps what is drawn when a reconnect starts its replay with no lines yet', () => {
+    // What breaks this: a reset with no lines taken as a transcript that is
+    // empty now, when its runner says the history is still coming (a read
+    // that ended inside a screenshot's line), so the chat blanks and is
+    // drawn again from the top.
+    const lines = [user('u1', 'One'), user('u2', 'Two')].map((entry) => JSON.stringify(entry));
+    const chat = new SessionChat();
+    chat.apply({ reset: true, history: 'end', entries: lines });
+    const before = chat.snapshot();
+    chat.apply({ reset: true, history: 'more', entries: [] });
+    chat.apply({ history: 'end', entries: lines });
+    expect(chat.snapshot().turns).toBe(before.turns);
+  });
+
+  it('drops what a replay did not send again as soon as its runner says the history ended', () => {
+    // What breaks this: a replay that came back short kept on screen for
+    // the quiet, when the runner has said there is no more.
+    const lines = [user('u1', 'One'), user('u2', 'Two'), user('u3', 'Three')].map((entry) =>
+      JSON.stringify(entry),
+    );
+    const chat = new SessionChat();
+    chat.apply({ reset: true, history: 'end', entries: lines });
+    chat.apply({ reset: true, history: 'end', entries: lines.slice(0, 2) });
+    expect(chat.snapshot().turns.map((turn) => turn.prompt?.text)).toEqual(['One', 'Two']);
   });
 
   it('keeps a long conversation drawn while a reconnect replays it, and takes what is new after', () => {
@@ -890,5 +1062,183 @@ describe('files the agent shared', () => {
       ],
     });
     expect(chat.snapshot().files[0]?.preview).toBeNull();
+  });
+});
+
+describe('a chat kept for the next pane', () => {
+  const lines = Array.from({ length: 60 }, (_, i) => JSON.stringify(user(`u${i}`, `Prompt ${i}`)));
+
+  it('keeps every line held when its pane goes in the middle of a replay', () => {
+    // What breaks this: the replay's quiet, still armed once the stream that
+    // fed it is gone, taken for a transcript that got shorter, so the chat
+    // comes back cut to the lines the dead stream had sent again.
+    vi.useFakeTimers();
+    const chat = new SessionChat();
+    chat.apply({ reset: true, history: 'end', entries: lines });
+    chat.apply({ reset: true, history: 'more', entries: lines.slice(0, 20) });
+    chat.detach();
+    vi.advanceTimersByTime(20_000);
+    expect(chat.snapshot().turns).toHaveLength(60);
+
+    // The next pane's replay matches what is held and changes nothing.
+    const before = chat.snapshot().turns;
+    chat.apply({ reset: true, history: 'more', entries: lines.slice(0, 30) });
+    chat.apply({ history: 'end', entries: lines.slice(30) });
+    expect(chat.snapshot().turns).toBe(before);
+    vi.useRealTimers();
+  });
+
+  it('drops a first load its pane left before it all came, so the next one loads it whole', () => {
+    // What breaks this: the quiet ending a first load with half its history,
+    // and that half kept and drawn on the next visit as the conversation.
+    vi.useFakeTimers();
+    const chat = new SessionChat();
+    chat.apply({ reset: true, history: 'more', entries: lines.slice(0, 20) });
+    chat.detach();
+    vi.advanceTimersByTime(20_000);
+    expect(chat.snapshot()).toMatchObject({ loading: false, available: false, turns: [] });
+
+    chat.apply({ reset: true, history: 'more', entries: lines.slice(0, 20) });
+    expect(chat.snapshot()).toMatchObject({ loading: true, turns: [] });
+    chat.apply({ history: 'end', entries: lines.slice(20) });
+    expect(chat.snapshot().turns).toHaveLength(60);
+    vi.useRealTimers();
+  });
+
+  it('never types a message queued in one visit into a later one', () => {
+    // What breaks this: the queue kept with the chat, so the next pane's
+    // input sends it once the turn it waited on ends, with nobody watching.
+    vi.useFakeTimers();
+    const chat = new SessionChat();
+    const first: string[] = [];
+    const release = chat.connect((data) => first.push(data));
+    const working = JSON.stringify(user('w1', 'Fix it'));
+    chat.apply({ reset: true, history: 'end', entries: [working] });
+    chat.post('Queued on the first visit');
+    release();
+    chat.detach();
+    expect(chat.snapshot().queued).toEqual([]);
+
+    const second: string[] = [];
+    chat.connect((data) => second.push(data));
+    chat.apply({ reset: true, history: 'end', entries: [working] });
+    chat.apply({
+      entries: [JSON.stringify(assistant('a1', [{ type: 'text', text: 'Fixed.' }]))],
+    });
+    vi.runAllTimers();
+    expect([...first, ...second]).toEqual([]);
+    vi.useRealTimers();
+  });
+});
+
+describe('a conversation sent tail first', () => {
+  // Each turn a prompt and a reply, as the runner sends them.
+  const turn = (n: number) => [
+    JSON.stringify(user(`u${n}`, `Prompt ${n}`)),
+    JSON.stringify(assistant(`a${n}`, [{ type: 'text', text: `Reply ${n}` }])),
+  ];
+  const turns = (from: number, to: number) =>
+    Array.from({ length: to - from }, (_, i) => turn(from + i)).flat();
+  const prompts = (chat: SessionChat) =>
+    chat.snapshot().turns.map((each) => each.prompt?.text ?? '(none)');
+
+  it('draws the tail at once and asks the host for the turns before it, a page at a time', () => {
+    // What breaks this: a tail taken for the whole conversation, so the
+    // reader reaching its top is never offered the rest; or a page put after
+    // what is held instead of before it.
+    const chat = new SessionChat();
+    const asked: number[] = [];
+    chat.connect(
+      () => {},
+      (before) => asked.push(before),
+    );
+    chat.apply({ reset: true, history: 'end', before: 900, entries: turns(60, 100) });
+    expect(chat.snapshot()).toMatchObject({ loading: false, older: 'more' });
+    expect(prompts(chat)).toHaveLength(40);
+
+    expect(chat.loadOlder()).toBe(true);
+    expect(asked).toEqual([900]);
+    expect(chat.snapshot().older).toBe('loading');
+    // Asked once until the page is there.
+    expect(chat.loadOlder()).toBe(false);
+
+    chat.apply({ older: 'more', entries: turns(20, 40) });
+    expect(prompts(chat)).toHaveLength(40);
+    chat.apply({ older: 'end', before: 300, entries: turns(40, 60) });
+    expect(chat.snapshot().older).toBe('more');
+    expect(prompts(chat)[0]).toBe('Prompt 20');
+    expect(prompts(chat)).toHaveLength(80);
+
+    chat.loadOlder();
+    expect(asked).toEqual([900, 300]);
+    chat.apply({ older: 'end', before: 0, entries: turns(0, 20) });
+    expect(chat.snapshot().older).toBe('none');
+    expect(prompts(chat)[0]).toBe('Prompt 0');
+    expect(chat.loadOlder()).toBe(false);
+  });
+
+  it('keeps what it holds, older pages too, when a reconnect sends the tail again', () => {
+    // What breaks this: a tail's replay checked from the first line held,
+    // so it differs at once and the conversation is cut to the tail, older
+    // pages and all, on every reconnect.
+    const chat = new SessionChat();
+    chat.connect(
+      () => {},
+      () => {},
+    );
+    chat.apply({ reset: true, history: 'end', before: 900, entries: turns(60, 100) });
+    chat.loadOlder();
+    chat.apply({ older: 'end', before: 300, entries: turns(20, 60) });
+    const before = chat.snapshot().turns;
+
+    // The conversation grew by a turn; the new tail starts a turn later.
+    chat.apply({ reset: true, history: 'more', before: 930, entries: turns(61, 80) });
+    chat.apply({ history: 'end', entries: turns(80, 101) });
+    expect(prompts(chat)[0]).toBe('Prompt 20');
+    expect(prompts(chat)).toHaveLength(81);
+    expect(chat.snapshot().turns.slice(0, 80)).toEqual(before);
+    expect(chat.snapshot().older).toBe('more');
+    chat.loadOlder();
+  });
+
+  it('draws a tail it cannot find among what it holds as a conversation of its own', () => {
+    const chat = new SessionChat();
+    chat.apply({ reset: true, history: 'end', entries: turns(0, 10) });
+    chat.apply({ reset: true, history: 'end', before: 5000, entries: turns(500, 510) });
+    expect(prompts(chat)).toEqual(Array.from({ length: 10 }, (_, i) => `Prompt ${500 + i}`));
+    expect(chat.snapshot().older).toBe('more');
+  });
+
+  it('lets go of a page asked of an attachment that is gone', () => {
+    // What breaks this: the page's lines held across the new attachment's
+    // reset, then put before a conversation they no longer precede.
+    const asked: number[] = [];
+    const chat = new SessionChat();
+    chat.connect(
+      () => {},
+      (before) => asked.push(before),
+    );
+    chat.apply({ reset: true, history: 'end', before: 900, entries: turns(60, 100) });
+    chat.loadOlder();
+    chat.apply({ older: 'more', entries: turns(20, 40) });
+    chat.apply({ reset: true, history: 'end', before: 900, entries: turns(60, 100) });
+    expect(chat.snapshot().older).toBe('more');
+    chat.apply({ older: 'end', before: 300, entries: turns(40, 60) });
+    expect(prompts(chat)[0]).toBe('Prompt 60');
+    expect(chat.loadOlder()).toBe(true);
+    expect(asked).toEqual([900, 900]);
+  });
+
+  it('asks nothing of a host that sent the whole conversation', () => {
+    const chat = new SessionChat();
+    const asked: number[] = [];
+    chat.connect(
+      () => {},
+      (before) => asked.push(before),
+    );
+    chat.apply({ reset: true, history: 'end', entries: turns(0, 50) });
+    expect(chat.snapshot().older).toBe('none');
+    expect(chat.loadOlder()).toBe(false);
+    expect(asked).toEqual([]);
   });
 });

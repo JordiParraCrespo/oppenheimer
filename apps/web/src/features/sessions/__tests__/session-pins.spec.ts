@@ -1,9 +1,9 @@
 import type { SessionEntity } from '@oppenheimer/frontend-consumer';
+import { storedList } from '@oppenheimer/frontend-web';
 import { act, renderHook } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
 import { useSessionPins } from '../hooks/use-session-pins';
 import { SESSION_PINS_KEY, splitPinned, withPin } from '../lib/session-pins';
-import { storedList } from '../lib/stored-list';
 
 /**
  * A pinned session comes back pinned on the next visit, on top of the ones

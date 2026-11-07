@@ -244,6 +244,11 @@ export class InboundEventRepository implements InboundEventRepositoryPort {
           { field: query.attribute.field, value: query.attribute.value },
         );
       }
+      if (query.required) {
+        builder.andWhere(`event.attributes -> :required = 'true'::jsonb`, {
+          required: query.required,
+        });
+      }
       return builder;
     };
     const [count, records] = await Promise.all([

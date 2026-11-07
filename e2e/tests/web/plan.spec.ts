@@ -2,7 +2,12 @@ import { expect, type Locator, type Page, test } from '@playwright/test';
 import { connectInstallation, createProject, pairHost } from '../../support/sessions';
 import { provisionedUser, signInAs } from '../../support/web';
 
-const STATUS = { Later: 'later', 'To do': 'todo', 'In progress': 'doing', Done: 'done' } as const;
+const STATUS = {
+  'To do': 'todo',
+  'In progress': 'doing',
+  'In review': 'review',
+  Done: 'done',
+} as const;
 /** A board column, by its heading. */
 const column = (page: Page, name: keyof typeof STATUS) =>
   page.locator(`[data-slot="task-column"][data-status="${STATUS[name]}"]`);
@@ -44,7 +49,7 @@ test('a task from the dialog to deletion, across the board', async ({ page }) =>
 
   await page.getByRole('link', { name: 'Plan', exact: true }).click();
   await expect(page).toHaveURL(/\/plan$/);
-  for (const name of ['Later', 'To do', 'In progress', 'Done'] as const) {
+  for (const name of ['To do', 'In progress', 'In review', 'Done'] as const) {
     await expect(column(page, name)).toBeVisible();
   }
 
@@ -58,11 +63,11 @@ test('a task from the dialog to deletion, across the board', async ({ page }) =>
   await expect(page.getByText('1 open')).toBeVisible();
 
   // Inline: Enter adds and stays open for the next.
-  await column(page, 'Later').getByRole('button', { name: 'Add task', exact: true }).click();
-  const quick = column(page, 'Later').getByRole('textbox', { name: 'Task title' });
+  await column(page, 'In review').getByRole('button', { name: 'Add task', exact: true }).click();
+  const quick = column(page, 'In review').getByRole('textbox', { name: 'Task title' });
   await quick.fill('Write the release notes');
   await quick.press('Enter');
-  await expect(column(page, 'Later').getByText('Write the release notes')).toBeVisible();
+  await expect(column(page, 'In review').getByText('Write the release notes')).toBeVisible();
   await quick.press('Escape');
 
   // Drag a card into In progress; it stays there after a reload.
