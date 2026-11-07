@@ -21,6 +21,7 @@ import { useAutoStart } from '../hooks/use-auto-start';
 import { useNewSessionDraft } from '../hooks/use-new-session-form';
 import { cloudLaunchFailure } from '../lib/cloud-launch-failure';
 import { dictationVocabulary } from '../lib/dictation-vocabulary';
+import { setNewSessionTask } from '../lib/new-session-task';
 import { hasPlace, toCreateInput, toStartCloudInput } from '../lib/session-options';
 
 /**
@@ -97,6 +98,7 @@ export function NewSessionSend({
   const create = useCreateSession({
     onSuccess: (session) => {
       attempt.current = null;
+      setNewSessionTask('');
       navigate({ to: '/sessions/$sessionId', params: { sessionId: session.id } });
     },
   });
@@ -122,6 +124,7 @@ export function NewSessionSend({
       {
         onSuccess: (session) => {
           attempt.current = null;
+          setNewSessionTask('');
           if (tab && session.cloud?.url) {
             tab.opener = null;
             tab.location.href = session.cloud.url;

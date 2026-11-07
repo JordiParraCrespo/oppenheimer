@@ -2,6 +2,7 @@ import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { type ReactNode, useSyncExternalStore } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ConsoleDialogProvider } from '@/lib/console';
+import { newSessionTask, setNewSessionTask } from '../lib/new-session-task';
 import { NewSessionForm } from '../sections/new-session-form';
 
 /**
@@ -22,6 +23,11 @@ vi.mock('@tanstack/react-router', () => ({ useNavigate: () => vi.fn(), useSearch
 const renders = vi.hoisted(() => new Map<string, number>());
 const prepared = vi.hoisted(() => vi.fn());
 const created = vi.hoisted(() => vi.fn());
+/** The options the send handed `useCreateSession`, so a test can answer as the API would. */
+const createOptions = vi.hoisted(
+  () =>
+    ({ current: null }) as { current: null | { onSuccess?: (session: { id: string }) => void } },
+);
 
 vi.mock('../components/project-select', () => ({
   ProjectSelect: chip('project', 'project-1'),
@@ -159,7 +165,8 @@ vi.mock('@oppenheimer/frontend-consumer/react', () => ({
   usePrepareSession: () => ({ mutate: prepared }),
   useHostFolders: () => ({ data: undefined, isPending: true, error: null }),
   // Called once per render of NewSessionSend, so it doubles as that section's count.
-  useCreateSession: () => {
+  useCreateSession: (options: { onSuccess?: (session: { id: string }) => void }) => {
+    createOptions.current = options;
     renders.set('send', (renders.get('send') ?? 0) + 1);
     return {
       mutate: created,
@@ -239,6 +246,7 @@ function rendered(): string[] {
 
 beforeEach(() => {
   window.localStorage.clear();
+  setNewSessionTask('');
   reads.set({ hosts: [], projects: PROJECTS });
   // The console's dialog owner sits above the composer in the app; here it
   // holds nothing, so the chips can ask for a dialog and none opens.
@@ -457,6 +465,24 @@ describe('NewSessionForm', () => {
         folder: '/home/me/code/atlas',
         launch: { model: null },
       });
+    });
+
+    it('forgets the half-written task once a session starts from it, and not before', async () => {
+      created.mockClear();
+      fireEvent.click(screen.getByRole('button', { name: 'where' }));
+      fireEvent.click(screen.getByRole('button', { name: 'host' }));
+      fireEvent.click(screen.getByRole('button', { name: 'folder:use' }));
+      fireEvent.change(screen.getByRole('textbox'), { target: { value: 'Fix the wallet' } });
+      await act(async () =>
+        fireEvent.click(screen.getByRole('button', { name: 'sessions.new.composer.send' })),
+      );
+
+      expect(created).toHaveBeenCalledTimes(1);
+      expect(newSessionTask()).toBe('Fix the wallet');
+
+      act(() => createOptions.current?.onSuccess?.({ id: 'session-1' }));
+      expect(newSessionTask()).toBe('');
+      expect(window.localStorage.getItem('oppenheimer.new-session.task')).toBeNull();
     });
   });
 });

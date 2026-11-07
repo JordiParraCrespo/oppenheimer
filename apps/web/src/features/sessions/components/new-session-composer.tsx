@@ -7,17 +7,20 @@ import {
 } from '@oppenheimer/frontend-web';
 import { SESSION_CREATE_MAX_FILES, SESSION_FILE_ACCEPT } from '@oppenheimer/shared/protocol';
 import type { ClipboardEvent, ReactNode } from 'react';
-import { useRef, useState } from 'react';
+import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useHeldFiles } from '../hooks/use-held-files';
 import { useReceiveDrops } from '../hooks/use-new-session-drop';
+import { useNewSessionTask } from '../hooks/use-new-session-task';
 import { refusalText } from '../lib/session-files';
 
 /**
  * The composer of New session. **The task's text and files live here**, the
  * lowest component that reads them: held higher, every keystroke would
  * re-render the host chip, the repository picker and the branch pane. They
- * leave once, on submit.
+ * leave once, on submit. The text is also kept outside the screen
+ * (`new-session-task.ts`), so leaving New session or reloading the page keeps
+ * a half-written task until a session starts from it.
  *
  * Every way in — the paperclip, a paste, a drop on the screen's pane, which
  * hands its files here (`useReceiveDrops`) — goes through `useHeldFiles`,
@@ -57,7 +60,7 @@ export function NewSessionComposer({
   voice: VoiceInput;
 }) {
   const { t } = useTranslation();
-  const [draft, setDraft] = useState('');
+  const [draft, setDraft] = useNewSessionTask();
   const { files, refusal, hold, release } = useHeldFiles(SESSION_CREATE_MAX_FILES);
   const picker = useRef<HTMLInputElement>(null);
   const dictation = useDictation({
@@ -120,9 +123,9 @@ export function NewSessionComposer({
             task,
             files.map(({ file }) => file),
           );
-          // Deliberately not cleared. A successful submit navigates to the new
-          // session and this unmounts with it; a failed one leaves the sentence
-          // and its files where their author can fix them and send again.
+          // Deliberately not cleared. A successful start forgets the text
+          // (`NewSessionSend`) and navigates away; a failed one leaves the
+          // sentence and its files where their author can fix them and send again.
         }}
       />
       <ComposerChoices engine={engine}>
