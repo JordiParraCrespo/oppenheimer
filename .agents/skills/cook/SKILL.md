@@ -9,12 +9,6 @@ argument-hint: "[the task]"
 The router over the three lanes in `.agents/skills/steward/SKILL.md`,
 "Merging". It picks one and runs that skill; it adds no steps of its own.
 
-It is the default entry point: every task that will change the repository
-or open a pull request goes through it, typed as `/cook` or not. The only
-ways around it are the user naming a lane (`/ship`, `/propose`,
-`/research`), which skips straight to that skill, and a plain question,
-which gets an answer and no pull request.
-
 ## 1. Pick the lane
 
 Read the task, the conversation and, when it names one, the code or pull
