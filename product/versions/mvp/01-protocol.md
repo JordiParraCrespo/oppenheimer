@@ -323,7 +323,10 @@ runner does with it and point back.
   to a runner whose `hello` names `host.exec`, and waited on for the run's
   timeout and 15 seconds more. A command runs the moment it arrives, never
   queued (a queued one would outlive that wait); past 8 at once on a host it
-  is refused with `EXEC_004`.
+  is refused with `EXEC_004`. A `commandId` the runner ran recently (its
+  last 256) is answered with that run's result rather than run again: the
+  control plane reuses one, derived from the approval, when it retries an
+  approved call.
 - `attachment.credit` — the browser's consumed-byte credit, relayed to
   the runner so it resumes that attachment's PTY reads. Without it the
   window below is a one-way valve: a noisy pane stalls for good rather

@@ -902,8 +902,13 @@ more (`10-sleep-wake-and-pricing.md` §7 prices the sandbox services).
   the bot's machine without a VM: its scripts, data and virtualenvs.
 - **Bounded to the turn.** At most 120 s a call (the protocol allows 600;
   a turn has 4 minutes), its whole process group killed at the timeout,
-  and the last 32 KB of each stream kept; at most 8 at once on a host, a
-  ninth refused rather than queued. Longer work is a session.
+  and whatever it left running in its group killed when it exits; the last
+  32 KB of each stream kept; at most 8 at once on a host, a ninth refused
+  rather than queued. Longer work is a session.
+- **Once per approval.** An approved call's `host.exec` carries a command
+  id derived from the approval, and the runner answers an id it ran
+  recently (its last 256) with that run's result, so a worker that crashed
+  after the host ran the program does not run it a second time.
 - **Asked, then answered in words.** It asks under Approve for me, with the
   command line on the card; a standing yes is per program and host. A run
   is an answer whatever its exit code; a refusal (`EXEC_001` off, `EXEC_002`

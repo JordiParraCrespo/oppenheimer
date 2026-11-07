@@ -26,6 +26,6 @@ export class RunHostCommandCommandHandler
 
   async execute(command: RunHostCommandCommand): Promise<HostExecOutcome> {
     await this.hosts.assertUsable(command.scope, command.hostId);
-    return this.exec.run(command.hostId, command.request);
+    return this.exec.run(command.hostId, command.request, command.commandId);
   }
 }

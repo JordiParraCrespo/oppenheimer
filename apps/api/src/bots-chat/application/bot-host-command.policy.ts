@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import type { HostExecOutcome } from '../../sessions/application/host-exec.port';
 import { cut, fenceUntrusted } from '../domain/bot-tool-text.policy';
 
@@ -50,4 +51,15 @@ function stream(name: 'stdout' | 'stderr', text: string, truncated?: boolean): s
   if (text === '') return `${name}: (empty)`;
   const note = truncated ? ' (only its last 32 KB)' : '';
   return `${name}${note}:\n${fenceUntrusted('command_output', text)}`;
+}
+
+/**
+ * The `host.exec` command id of an approved call: the same for every retry
+ * of that approval's job, so a worker that crashed after the host ran the
+ * program gets that run's result back instead of running it a second time
+ * with no second approval. UUID-shaped, as the link's command ids are.
+ */
+export function hostCommandIdOf(approvalId: string): string {
+  const hex = createHash('sha256').update(`host.exec:${approvalId}`).digest('hex');
+  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-8${hex.slice(13, 16)}-a${hex.slice(17, 20)}-${hex.slice(20, 32)}`;
 }

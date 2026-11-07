@@ -31,12 +31,20 @@ export class RelayHostExecAdapter implements HostExecPort {
     private readonly replies: LinkRepliesPort,
   ) {}
 
-  async run(hostId: string, request: HostExecRequest): Promise<HostExecOutcome> {
+  async run(
+    hostId: string,
+    request: HostExecRequest,
+    commandId?: string,
+  ): Promise<HostExecOutcome> {
     const link = this.links.find(hostId);
     if (!link) return { kind: 'host_offline' };
     if (!link.capabilities.includes('host.exec')) return { kind: 'not_supported' };
 
-    const message: HostExecMessage = { type: 'host.exec', commandId: randomUUID(), ...request };
+    const message: HostExecMessage = {
+      type: 'host.exec',
+      commandId: commandId ?? randomUUID(),
+      ...request,
+    };
     const waitMs = request.timeoutSeconds * 1000 + HOST_EXEC_REPLY_GRACE_MS;
     // Waiting before sending, so an answer faster than this line cannot be missed.
     const pending = this.replies.expect(hostId, message.commandId, waitMs);

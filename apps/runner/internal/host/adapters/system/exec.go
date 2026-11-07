@@ -23,7 +23,7 @@ func (Executor) Run(ctx context.Context, req domain.ExecRequest) (domain.ExecRes
 	started := time.Now()
 	res, err := execx.Run(ctx, execx.Spec{
 		Name: req.Argv[0], Args: req.Argv[1:], Dir: req.Dir,
-		Timeout: req.Timeout, KillGroup: true, Output: execx.Separate, Limit: req.Limit,
+		Timeout: req.Timeout, KillGroup: true, ReapGroup: true, Output: execx.Separate, Limit: req.Limit,
 	})
 	result := domain.ExecResult{
 		Stdout: res.Out, Stderr: res.Stderr,

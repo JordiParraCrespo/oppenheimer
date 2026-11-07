@@ -1,5 +1,10 @@
+import { hostExecSchema } from '@oppenheimer/shared/protocol';
 import { describe, expect, it } from 'vitest';
-import { describeHostCommand, hostCommandSummary } from '../application/bot-host-command.policy';
+import {
+  describeHostCommand,
+  hostCommandIdOf,
+  hostCommandSummary,
+} from '../application/bot-host-command.policy';
 
 describe('describeHostCommand', () => {
   const run = {
@@ -52,5 +57,14 @@ describe('hostCommandSummary', () => {
     expect(hostCommandSummary(['python3', '-c', "print('hi')"], 'build-02')).toBe(
       "Run `python3 -c 'print('\\''hi'\\'')'` on build-02",
     );
+  });
+});
+
+describe('hostCommandIdOf', () => {
+  it('names one approval the same way every time, as a command id the link accepts', () => {
+    const id = hostCommandIdOf('approval-1');
+    expect(hostCommandIdOf('approval-1')).toBe(id);
+    expect(hostCommandIdOf('approval-2')).not.toBe(id);
+    expect(hostExecSchema.shape.commandId.safeParse(id).success).toBe(true);
   });
 });

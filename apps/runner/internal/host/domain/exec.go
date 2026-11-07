@@ -69,7 +69,11 @@ func (p ExecPolicy) Normalized() ExecPolicy {
 }
 
 // Permits reports whether the policy lets program run when it starts in dir.
-// program is argv[0] as the bot sent it; dir is absolute.
+// It is a match on text only, so program must already be the string that will
+// run: a bare name as the bot sent it, or, for a path, the absolute form with
+// its folders resolved that the use case builds (app's canonicalForAllowlist,
+// which also hands in the policy with its entries resolved the same way).
+// dir is absolute.
 func (p ExecPolicy) Permits(program, dir string) error {
 	switch p.Normalized().Mode {
 	case ExecFull:

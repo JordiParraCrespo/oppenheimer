@@ -10,7 +10,11 @@ import { z } from 'zod/v4';
 import { FindHostQuery } from '../../hosts/queries/find-host/find-host.query';
 import type { HostExecOutcome } from '../../sessions/application/host-exec.port';
 import { RunHostCommandCommand } from '../../sessions/commands/run-host-command/run-host-command.command';
-import { describeHostCommand, hostCommandSummary } from './bot-host-command.policy';
+import {
+  describeHostCommand,
+  hostCommandIdOf,
+  hostCommandSummary,
+} from './bot-host-command.policy';
 import {
   type BotToolArea,
   type BotToolCallContext,
@@ -107,6 +111,7 @@ export class BotHostCommandToolsFactory implements BotToolArea {
           new RunHostCommandCommand({
             scope: context.owner,
             hostId,
+            ...(context.approvalId ? { commandId: hostCommandIdOf(context.approvalId) } : {}),
             request: {
               argv: input.argv,
               ...(input.cwd ? { cwd: input.cwd } : {}),

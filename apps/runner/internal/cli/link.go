@@ -62,7 +62,9 @@ type linkSender interface {
 // the one thing that is neither a session (they outlive none) nor the link
 // (they outlive no epoch).
 type linkHandler struct {
-	app      *App
+	app *App
+	// execs answers a retried `host.exec` with the run it already made.
+	execs    execMemo
 	identity pairdomain.Identity
 	logger   *slog.Logger
 	client   linkSender

@@ -101,6 +101,14 @@ describe('RelayHostExecAdapter', () => {
     await expect(pending).resolves.toEqual({ kind: 'timed_out' });
   });
 
+  // A retried approved call must reach the runner under its first id, or
+  // the runner cannot tell it already ran the program.
+  it('sends the command id it is given, so a retry names the same run', () => {
+    const { adapter, link } = harness(true);
+    void adapter.run(HOST, REQUEST, '9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d');
+    expect(sentCommand(link)).toBe('9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d');
+  });
+
   it('sends nothing to a host with no link, or to a runner that runs no commands', async () => {
     await expect(harness(false).adapter.run(HOST, REQUEST)).resolves.toEqual({
       kind: 'host_offline',

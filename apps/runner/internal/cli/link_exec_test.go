@@ -68,6 +68,19 @@ func (e *execHarness) run(t *testing.T, argv []string, timeout int) {
 	}))
 }
 
+// results counts the host.exec.result frames sent for execCommandID.
+func (e *execHarness) results() int {
+	e.sent.mu.Lock()
+	defer e.sent.mu.Unlock()
+	count := 0
+	for _, sent := range e.sent.sent {
+		if r, ok := sent.(link.HostExecResult); ok && r.CommandID == execCommandID {
+			count++
+		}
+	}
+	return count
+}
+
 func (e *execHarness) result(t *testing.T) link.HostExecResult {
 	t.Helper()
 	return e.sent.waitFor(t, "host.exec.result", func(m any) bool {
@@ -243,5 +256,33 @@ func TestAnOffHostAnswersTheSameForAnyPath(t *testing.T) {
 	failed := e.sent.waitFor(t, "command.failed", isCommandFailed(execCommandID)).(link.CommandFailed)
 	if failed.Code != hostdomain.ErrExecDisabled.Code {
 		t.Fatalf("code = %s, want %s", failed.Code, hostdomain.ErrExecDisabled.Code)
+	}
+}
+
+// A retried approved call arrives with the command id of its first try. The
+// program it names ran once; the retry gets that run back. A regression that
+// ran it again would repeat whatever the program did, with no second approval.
+func TestARetriedCommandIsAnsweredWithoutRunningItAgain(t *testing.T) {
+	e := newExecHarness(t)
+	e.allow(t, hostdomain.ExecPolicy{Mode: hostdomain.ExecFull})
+	counter := filepath.Join(t.TempDir(), "runs")
+	argv := []string{"sh", "-c", "echo x >> " + counter}
+
+	e.run(t, argv, 5)
+	e.result(t)
+	e.run(t, argv, 5)
+	deadline := time.Now().Add(5 * time.Second)
+	for e.results() < 2 {
+		if time.Now().After(deadline) {
+			t.Fatal("the retry was not answered")
+		}
+		time.Sleep(time.Millisecond)
+	}
+	raw, err := os.ReadFile(counter)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := string(raw); got != "x\n" {
+		t.Fatalf("the program ran %d times", len(got)/2)
 	}
 }

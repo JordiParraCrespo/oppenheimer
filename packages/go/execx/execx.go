@@ -51,6 +51,10 @@ type Spec struct {
 	// it started go too. It is a no-op where there are no process groups.
 	// Leave it off for a command that starts a daemon meant to outlive it.
 	KillGroup bool
+	// ReapGroup, with KillGroup, also kills whatever is left in the group
+	// once the command exits on its own: a background child it started does
+	// not outlive the call. Leave it off when the leftovers are wanted.
+	ReapGroup bool
 	// WaitDelay bounds how long output is waited on once the command has
 	// exited or been killed: a child that inherited the output and outlived
 	// it would otherwise hold the call open. Zero is DefaultWaitDelay.
@@ -145,6 +149,9 @@ func Run(ctx context.Context, spec Spec) (Result, error) {
 	}
 
 	err := cmd.Run()
+	if spec.KillGroup && spec.ReapGroup && cmd.Process != nil {
+		killGroup(cmd.Process.Pid)
+	}
 	result := Result{Out: strings.TrimRight(out.String(), "\n"), OutTruncated: out.cut}
 	if spec.Output == Separate {
 		result.Stderr = strings.TrimRight(stderr.String(), "\n")

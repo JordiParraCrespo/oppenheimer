@@ -28,5 +28,10 @@ export type HostExecOutcome =
  * policy, which nothing here sees.
  */
 export interface HostExecPort {
-  run(hostId: string, request: HostExecRequest): Promise<HostExecOutcome>;
+  /**
+   * Run `request` on the host. `commandId`, when given, names the run across
+   * retries: a runner that already ran it answers with that run's result
+   * instead of running it again. Absent, every call is a new run.
+   */
+  run(hostId: string, request: HostExecRequest, commandId?: string): Promise<HostExecOutcome>;
 }
