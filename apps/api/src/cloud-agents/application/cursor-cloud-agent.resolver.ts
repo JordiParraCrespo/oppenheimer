@@ -83,6 +83,10 @@ export class CursorCloudAgentResolver implements CloudAgentProvider<CursorAccess
     return this.cursor.read(access, externalId, runId);
   }
 
+  followUp(access: CursorAccess, externalId: string, prompt: string): Promise<CloudAgentRunState> {
+    return this.cursor.followUp(access, externalId, prompt);
+  }
+
   models(access: CursorAccess): Promise<CloudAgentModel[]> {
     return this.cursor.models(access);
   }

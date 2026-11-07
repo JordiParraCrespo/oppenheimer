@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { SessionAgentNotifiedDomainEvent } from '../domain/events/session-agent-notified.domain-event';
 import { SessionStateChangedDomainEvent } from '../domain/events/session-state-changed.domain-event';
 import { SessionUpdatedDomainEvent } from '../domain/events/session-updated.domain-event';
 import { SessionWakeRequestedDomainEvent } from '../domain/events/session-wake-requested.domain-event';
@@ -357,5 +358,33 @@ describe('a wake the agent asked for', () => {
         text: 'Check whether the deploy finished.',
       }),
     ]);
+  });
+});
+
+describe('a notice its agent sent', () => {
+  const notified = (work: WorkSessionEntity) =>
+    work.domainEvents.filter((event) => event instanceof SessionAgentNotifiedDomainEvent);
+
+  // Bots that follow the session hear it by this event (agent-tools.md §9).
+  it('is announced once, by the id the entry carried and never its words', () => {
+    const work = session();
+    work.recordEvent(entry(SESSION_EVENT_KINDS.STARTED));
+    work.recordEvent(entry(SESSION_EVENT_KINDS.AGENT_NOTIFIED, { id: 'n-1', text: 'Need a key' }));
+    expect(notified(work)).toEqual([expect.objectContaining({ noticeId: 'n-1' })]);
+    expect(JSON.stringify(notified(work))).not.toContain('Need a key');
+  });
+
+  // The regression: a malformed entry, which leaves the last notice in the
+  // fold, announcing that older notice a second time.
+  it('is not announced for a malformed entry, nor once the session is closed', () => {
+    const work = session();
+    work.recordEvent(entry(SESSION_EVENT_KINDS.STARTED));
+    work.recordEvent(entry(SESSION_EVENT_KINDS.AGENT_NOTIFIED, { id: 'n-1', text: 'One' }));
+    work.clearEvents();
+    work.recordEvent(entry(SESSION_EVENT_KINDS.AGENT_NOTIFIED, { text: 'no id' }));
+    expect(notified(work)).toHaveLength(0);
+    work.recordEvent(entry(SESSION_EVENT_KINDS.CLOSED));
+    work.recordEvent(entry(SESSION_EVENT_KINDS.AGENT_NOTIFIED, { id: 'n-2', text: 'Late' }));
+    expect(notified(work)).toHaveLength(0);
   });
 });

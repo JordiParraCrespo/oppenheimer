@@ -7,6 +7,7 @@ import {
   type SessionPermission,
 } from '../agents/catalog.js';
 import { GROK_4_5_LEVELS, GROK_LEVELS, levels } from '../agents/effort-levels.js';
+import type { GithubEventType } from '../automations/catalog.js';
 import { isValidTimeZone } from '../automations/schedule.js';
 
 /**
@@ -63,14 +64,20 @@ export const BOT_GROUP_NAME_MAX = 60;
 export const BOT_DOCUMENT_MAX = 32_768;
 export const BOT_REVISION_NOTE_MAX = 200;
 export const BOT_MEMORY_FACT_MAX = 500;
-/** How many facts one bot may keep, both tiers together. */
-export const BOT_MEMORY_FACTS_MAX = 200;
+/**
+ * How many facts one bot may keep, both tiers together. A person adding one
+ * by hand to a full memory is refused; the bot's own `remember` makes room
+ * by dropping its oldest `log` fact, as Grok Bot's journal lets old entries
+ * go (`research/lessons-from-grok-bot.md` §10).
+ */
+export const BOT_MEMORY_FACTS_MAX = 500;
 
 /**
- * How a fact is kept (`25-bots.md` §4.1; from Grok Bot's memory tiers,
- * `research/lessons-from-grok-bot.md` §9 row 11): `profile`, in mind in
- * every turn (who the person is, standing preferences); `log`, kept to be
- * looked up with `recall` (a detail, a past decision), never in the prompt.
+ * How a fact is kept (`25-bots.md` §4.1; from Grok Bot's profile and
+ * journal, `research/lessons-from-grok-bot.md` §9 row 11 and §10):
+ * `profile`, standing instructions and who the person is, in mind every
+ * turn; `log`, everything else, dated, its newest entries in the prompt and
+ * the rest looked up with `recall`.
  */
 export const BOT_MEMORY_TIERS = ['profile', 'log'] as const;
 export type BotMemoryTier = (typeof BOT_MEMORY_TIERS)[number];
@@ -82,8 +89,58 @@ export type BotMemoryTier = (typeof BOT_MEMORY_TIERS)[number];
 export const BOT_MEMORY_SCOPES = ['bot', 'person'] as const;
 export type BotMemoryScope = (typeof BOT_MEMORY_SCOPES)[number];
 
-/** The `profile` facts one turn is given, newest first: the rest wait for `recall`. */
-export const BOT_MEMORY_PROFILE_IN_PROMPT_MAX = 60;
+/** The characters of `profile` facts one turn is given, newest first: the rest wait for `recall`. */
+export const BOT_MEMORY_PROFILE_IN_PROMPT_CHARS = 4_000;
+/** The characters of the newest `log` facts one turn is given, each with its date. */
+export const BOT_MEMORY_LOG_IN_PROMPT_CHARS = 2_000;
+/**
+ * A bot's dream (`25-bots.md` §4.1, "Dreaming"; from Managed Agents' dreams):
+ * an offline pass of its own model over the memory it wrote and its recent
+ * conversation that merges duplicates, rewrites each fact as one clear
+ * sentence, drops what is stale or contradicted, and keeps what the
+ * conversation shows will matter. It replaces the bot's own facts in one
+ * write; the facts as they were are kept, so the owner can undo the latest.
+ *
+ * It runs after a turn once the bot has written `BOT_DREAM_WRITES_MIN` facts
+ * since its last dream (or since it began) and keeps at least
+ * `BOT_DREAM_FACTS_MIN`, at most once every `BOT_DREAM_INTERVAL_MS`; and
+ * when the owner asks, from Settings → Memory.
+ */
+export const BOT_DREAM_FACTS_MIN = 8;
+export const BOT_DREAM_WRITES_MIN = 10;
+export const BOT_DREAM_INTERVAL_MS = 24 * 60 * 60 * 1000;
+/** The longest note a dream leaves on what it changed. */
+export const BOT_DREAM_NOTE_MAX = 300;
+
+/** What a dream did: `dreamed`, it rewrote the memory; `undone`, the owner put the old one back. */
+export const BOT_DREAM_ACTIVITIES = ['dreamed', 'undone'] as const;
+export type BotDreamActivity = (typeof BOT_DREAM_ACTIVITIES)[number];
+
+/** A bot's latest dream, as Settings → Memory reads it. */
+export interface BotMemoryDream {
+  id: string;
+  /** The bot's own facts before and after it. */
+  factsBefore: number;
+  factsAfter: number;
+  /** What it changed, in its own words; null when it said nothing. */
+  note: string | null;
+  createdAt: string;
+  /** When the owner undid it; null while it stands. */
+  undoneAt: string | null;
+}
+
+/** `GET /bots/:id/memory/dream`: the latest dream, and whether one its owner asked for is under way. */
+export interface BotMemoryDreamState {
+  latest: BotMemoryDream | null;
+  pending: boolean;
+}
+
+/**
+ * What a person writes about themselves in Settings → Memory, in characters:
+ * in the system prompt of every bot they made in the workspace, beside the
+ * facts their bots learned about them.
+ */
+export const PERSON_ABOUT_MAX = 4_000;
 /** The most revisions one read returns, newest first. */
 export const BOT_REVISIONS_PAGE_MAX = 100;
 export const BOT_REVISIONS_PAGE_DEFAULT = 50;
@@ -346,6 +403,8 @@ export const updateBotSchema = z.object({
   effort: z.enum(SESSION_EFFORTS).nullable().optional(),
   permission: botPermissionSchema.optional(),
   learnAutomatically: z.boolean().optional(),
+  /** Whether its routines pause while its owner is away (`26-bot-routines.md` §6). */
+  routineSpendGuard: z.boolean().optional(),
   /** The whole set of sections it shows in; `[]` shows it in Employees only. */
   sections: botSectionsSchema.optional(),
 });
@@ -586,11 +645,17 @@ export type BotSessionWakeState = (typeof BOT_SESSION_WAKE_STATES)[number];
 
 /**
  * What a session event says: a task's wake state; `matched`, its terminal
- * printed a line matching a watch's pattern; or `stalled`, the silent stall
+ * printed a line matching a watch's pattern; `stalled`, the silent stall
  * check found the task stuck before it reached any wake state
- * (`27-bot-subscriptions.md` §4.1).
+ * (`27-bot-subscriptions.md` §4.1); or `notice`, its agent sent a line
+ * (`runner sessions notify`, `product/next-steps/agent-tools.md` §9).
  */
-export const BOT_SESSION_EVENT_STATES = [...BOT_SESSION_WAKE_STATES, 'matched', 'stalled'] as const;
+export const BOT_SESSION_EVENT_STATES = [
+  ...BOT_SESSION_WAKE_STATES,
+  'matched',
+  'stalled',
+  'notice',
+] as const;
 export type BotSessionEventState = (typeof BOT_SESSION_EVENT_STATES)[number];
 
 export interface BotSessionEvent {
@@ -602,13 +667,48 @@ export interface BotSessionEvent {
   sessionName: string;
   /** Which of the session's tasks (its turn's number). */
   turn: number;
-  /** What became of the task; `matched`, its terminal printed what the bot watches for; or `stalled`. */
+  /** What became of the task; `matched`, its terminal printed what the bot watches for; `stalled`; or `notice`, its agent sent a line. */
   state: BotSessionEventState;
   /**
    * For `matched`: the pattern the bot watches the terminal for, and how many
    * new lines have matched it so far. Never the text: it stays on the host.
    */
   match?: { pattern: string; count: number } | null;
+}
+
+/**
+ * The GitHub events on a pull request that wake whoever follows it: a
+ * session's agent that ran `runner sessions watch-pr`
+ * (`product/next-steps/agent-tools.md` §3), or a bot subscribed with
+ * `watch_pull_request` (`27-bot-subscriptions.md` §7). Each is a type the
+ * GitHub adapter already normalizes a delivery to.
+ */
+export const PULL_REQUEST_WAKE_EVENTS = [
+  'check_failed',
+  'check_passed',
+  'review',
+  'comment',
+  'pr_merged',
+] as const satisfies readonly GithubEventType[];
+export type PullRequestWakeEvent = (typeof PULL_REQUEST_WAKE_EVENTS)[number];
+
+/**
+ * A pull request a bot is subscribed to woke it (`27-bot-subscriptions.md`
+ * §7): what GitHub said happened, from the event's metadata alone. The
+ * repository is the name it had when the bot watched it; never a comment's
+ * or a review's words.
+ */
+export interface BotPullRequestEvent {
+  kind: 'pull_request';
+  /** The subscription that woke the bot. */
+  subscriptionId: string;
+  /** GitHub's repository id, as a string: it is a bigint. */
+  githubRepoId: string;
+  /** `owner/name`. */
+  repository: string;
+  number: number;
+  /** What happened on it. */
+  event: PullRequestWakeEvent;
 }
 
 /**
@@ -668,13 +768,52 @@ export interface BotGoalEvent {
 }
 
 /**
+ * What a loop line says (`25-bots.md` §4.1, `/loop`): `ran` opens a run's
+ * turn; the others say, outside any turn, how the loop ended when the bot
+ * did not end it itself (its `end_loop` call is the record of that): the
+ * owner stopped it (`cleared`), its 3 days ran out (`expired`), a run of it
+ * failed or was stopped, or its owner lost access (`stopped`), or a
+ * self-paced run did not say when to run next (`ended`).
+ */
+export const BOT_LOOP_ACTIVITIES = ['ran', 'cleared', 'expired', 'stopped', 'ended'] as const;
+export type BotLoopActivity = (typeof BOT_LOOP_ACTIVITIES)[number];
+
+export interface BotLoopEvent {
+  kind: 'loop';
+  activity: BotLoopActivity;
+  loopId: string;
+  /** The loop's prompt at the time. */
+  prompt: string;
+  /** Its interval in minutes; null when self-paced. */
+  intervalMinutes: number | null;
+  /** For `ran`, which run this is, the message that set it being the first; otherwise how many ran. */
+  run: number;
+  /** For `stopped`, a code: the status of the run that ended it, or `access_lost`. */
+  reason: string | null;
+}
+
+/** A bot's loop as the console reads it: `GET /bots/:id/loop`. */
+export interface BotLoop {
+  id: string;
+  prompt: string;
+  /** Null when self-paced. */
+  intervalMinutes: number | null;
+  /** The runs so far, the message that set it being the first. */
+  runs: number;
+  /** When the next run is due; null while a self-paced loop waits for the bot to say. */
+  nextRunAt: string | null;
+  expiresAt: string;
+  createdAt: string;
+}
+
+/**
  * What a bot spends, for `/usage` (`25-bots.md` §4.1, "Built-in commands";
  * from Claude Code's `/usage`): its turns, by the provider and model each ran
  * on, and the calls it makes on its owner's key outside them. Every count is
  * the chat's as it stands: clearing the conversation starts them again.
  * Cache reads and writes are part of the input, never on top of it.
  */
-export const BOT_MODEL_CALL_PURPOSES = ['goal_review', 'summary', 'rule_review'] as const;
+export const BOT_MODEL_CALL_PURPOSES = ['goal_review', 'summary', 'rule_review', 'dream'] as const;
 export type BotModelCallPurpose = (typeof BOT_MODEL_CALL_PURPOSES)[number];
 
 export interface BotTokenCounts {
@@ -716,12 +855,14 @@ export interface BotGoal {
   continuations: number;
   limit: number;
   createdAt: string;
+  /** A turn ended on a system's rate limit, and the goal goes on at `until`; null when nothing holds it. */
+  waiting: { system: string; until: string } | null;
 }
 
 /**
  * Why a bot turn exists: a message (yours or another bot's), an approval's
  * decision, a card of questions answered or dismissed, a routine's run, a
- * session the bot is subscribed to, or a goal it set itself.
+ * session the bot is subscribed to, a goal it set itself, or a loop's run.
  */
 export const BOT_TURN_ORIGINS = [
   'message',
@@ -730,6 +871,7 @@ export const BOT_TURN_ORIGINS = [
   'routine',
   'subscription',
   'goal',
+  'loop',
 ] as const;
 export type BotTurnOrigin = (typeof BOT_TURN_ORIGINS)[number];
 
@@ -837,6 +979,15 @@ export interface BotPeerReplyEvent {
   outcome: BotReplyOutcome;
 }
 
+/** A dream rewrote the bot's memory, or the owner undid it (`25-bots.md` §4.1, "Dreaming"). */
+export interface BotDreamEvent {
+  kind: 'dream';
+  activity: BotDreamActivity;
+  dreamId: string;
+  factsBefore: number;
+  factsAfter: number;
+}
+
 export type BotMessageEvent =
   | BotApprovalEvent
   | BotQuestionEvent
@@ -844,7 +995,10 @@ export type BotMessageEvent =
   | BotPeerMessageEvent
   | BotPeerReplyEvent
   | BotSessionEvent
-  | BotGoalEvent;
+  | BotPullRequestEvent
+  | BotGoalEvent
+  | BotLoopEvent
+  | BotDreamEvent;
 
 /** The kinds of event, for a reader that checks one before trusting its fields. */
 export const BOT_MESSAGE_EVENT_KINDS = [
@@ -854,7 +1008,10 @@ export const BOT_MESSAGE_EVENT_KINDS = [
   'bot_message',
   'bot_reply',
   'session',
+  'pull_request',
   'goal',
+  'loop',
+  'dream',
 ] as const;
 export type BotMessageEventKind = (typeof BOT_MESSAGE_EVENT_KINDS)[number];
 
@@ -1168,6 +1325,29 @@ export type FindWorkspaceBotApprovalsDto = z.infer<typeof findWorkspaceBotApprov
 export const WORKSPACE_BOT_APPROVALS_MAX = 100;
 
 /**
+ * A line a bot sent the person with its `notify` tool
+ * (`product/next-steps/agent-tools.md` §5): a bot keeps only its latest, and
+ * the Inbox shows it until the person marks it done. Each notice has an id
+ * of its own, so a mark on one never hides the next. The bound is the
+ * session notice's (`SESSION_NOTICE_TEXT_MAX`): a line, not a report.
+ */
+export const BOT_NOTICE_TEXT_MAX = 500;
+
+/** The most notices the workspace read (`GET /bot-notices`) returns, newest first. */
+export const WORKSPACE_BOT_NOTICES_MAX = 50;
+
+/** One bot's latest notice, as the workspace read answers it. */
+export const workspaceBotNoticeSchema = z.object({
+  id: z.string().uuid(),
+  botId: z.string().uuid(),
+  botName: z.string(),
+  text: z.string().min(1).max(BOT_NOTICE_TEXT_MAX),
+  /** When it came. */
+  at: z.string().datetime(),
+});
+export type WorkspaceBotNotice = z.infer<typeof workspaceBotNoticeSchema>;
+
+/**
  * Where a piece of a turn's streamed text belongs. `block` counts the blocks
  * of text the turn stored before this one (a block of only whitespace is not
  * stored, and does not count), so a block is drawn live until the
@@ -1252,3 +1432,12 @@ export type BotStreamSnapshot = Extract<BotStreamEvent, { type: 'snapshot' }>;
 /** The SSE event names on a bot's stream. */
 export const BOT_STREAM_READY = 'ready';
 export const BOT_STREAM_EVENT = 'bot';
+
+/**
+ * `PUT /bot-memory/person/about`: what the person writes about themselves,
+ * in every bot's system prompt. Empty clears it.
+ */
+export const updatePersonAboutSchema = z.object({
+  about: z.string().trim().max(PERSON_ABOUT_MAX),
+});
+export type UpdatePersonAboutDto = z.infer<typeof updatePersonAboutSchema>;

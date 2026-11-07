@@ -196,7 +196,8 @@ the `version1/` artboards for what the screens actually do. Its one sentence:
   tree reads too: an identity, like an agent's vendor colour, never a
   state. Never a redrawn logo, never a hue table in a component.
 - **The rail's and the sidebar's order is the reader's.** The rail's items
-  are `SortableRailItem`s in one `SortableGroup`, and each project's sessions
+  are `SortableRailItem`s in one `SortableGroup`, Plan's views
+  `SortableRoutineItem`s in one that takes `routine-item`, and each project's sessions
   are `SortableSessionItem`s in a `SortableGroup` per project, so a row
   reorders in its project or moves to another, a folded or empty one
   included. The projects reorder too: each is a
@@ -234,9 +235,10 @@ the `version1/` artboards for what the screens actually do. Its one sentence:
   volume over time is an `AreaChart` (monotone, so it never overshoots),
   rates without volume a `LineChart`. Several Google accounts are a
   `CalendarAccountList`.
-- **An employee reads like a conversation.** `BotItem` is a photo, the
-  name, the age and the last message, unread in full ink with the blue
-  dot, waiting on the reader (`needsInput`) the same with the amber one.
+- **An employee is one line.** `BotItem` is a 20px square photo and the
+  name, 32px tall, its last message in the row's tooltip; unread sets the
+  name at 600 with the blue dot, waiting on the reader (`needsInput`) the
+  same with the amber one.
   Its groups head with `SidebarProjectHeader tone="eyebrow"`, the Built-in
   group with a lock `marker`; before the first bot the list is a
   `SidebarEmptyCard`, and the chat a centred `ChatEmptyState` over

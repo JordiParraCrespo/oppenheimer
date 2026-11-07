@@ -88,6 +88,8 @@ const KINDS: Record<string, ChatToolKind> = {
   todo_write: 'todo',
   Task: 'agent',
   Agent: 'agent',
+  // Codex's subagents, each a thread of its own.
+  spawn_agent: 'agent',
   // A bot's subagents, run in parallel.
   delegate: 'agent',
   ExitPlanMode: 'plan',
@@ -146,7 +148,7 @@ const TARGET_FIELDS: Partial<Record<ChatToolKind, readonly string[]>> = {
   command: ['command', 'bash_id', 'shell_id'],
   search: ['pattern', 'path'],
   web: ['url', 'query'],
-  agent: ['subagent_type', 'description'],
+  agent: ['subagent_type', 'agent_type', 'description', 'task_name'],
 };
 const DEFAULT_TARGET_FIELDS = ['file_path', 'notebook_path', 'path', 'url', 'query', 'command'];
 

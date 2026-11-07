@@ -87,7 +87,7 @@ import {
   TurnHeader,
 } from '@oppenheimer/design-system-web/chat-transcript';
 import { Trace, TraceGroup, TraceLive, TraceNote, TraceOutput, TraceStep } from '@oppenheimer/design-system-web/chat-trace';
-import { ReasoningRow, ToolCallGroup, ToolCallLive, ToolCallOutput, ToolCallRow } from '@oppenheimer/design-system-web/chat-work';
+import { AgentActivity, ReasoningRow, ToolCallGroup, ToolCallLive, ToolCallOutput, ToolCallRow } from '@oppenheimer/design-system-web/chat-work';
 import { CodeBlock } from '@oppenheimer/design-system-web/code-block';
 import { DiffStat } from '@oppenheimer/design-system-web/diff-stat';
 import { DropdownMenuItem } from '@oppenheimer/design-system-web/dropdown-menu';
@@ -259,6 +259,7 @@ function ChatWorkBody() {
         <ToolCallRow icon={<DatabaseIcon />} verb="Called" target="linear.get_issue" meta="MCP" />
       </ToolCallGroup>
       <ToolCallLive verb="Running" target="pnpm build --filter console" elapsed="6s" />
+      <AgentActivity verb="Mustering" detail="4m 31s · ↓ 15.9k tokens · thinking with medium effort" />
       <ReasoningRow label="Thought for 9s" defaultOpen>
         The gateway already holds the run registry, so registering controllers there avoids a second lookup. A tool
         that ignores the signal still needs a ceiling, so the grace period stays.
@@ -1181,7 +1182,7 @@ export function ChatSection() {
         id="chatwork"
         title="Work and tools"
         meta="chat-work.tsx · chat-trace.tsx"
-        desc="What the agent did, in muted ink so it never reads as the answer. A settled run of calls folds into one verb summary with failures named in red; open, each ToolCallRow hangs from a hairline: the glyph, the verb, the target in mono, its meta. A command with output folds over it on the terminal ground. A run of read-only calls is the same fold as Explored (Exploring while it runs) with its targets in detail, a file read twice named once. ToolCallOutput keeps a call's text to its first five lines, a line too long to read cut to its head and tail, under +N lines. ToolCallLive is the call in flight; ReasoningRow folds the thinking into Thought for 9s. A bot\'s chat draws its work as a Trace instead (chat-trace.tsx): a 15px TraceStep per call that opens to its TraceOutput (numbered lines, cut with Show more or kept behind Show raw output) or TraceNote, and TraceLive while it runs. A step's action sits at the end of its line, outside the fold (Open session on a call that started one)."
+        desc="What the agent did, in muted ink so it never reads as the answer. A settled run of calls folds into one verb summary with failures named in red; open, each ToolCallRow hangs from a hairline: the glyph, the verb, the target in mono, its meta. A command with output folds over it on the terminal ground. A run of read-only calls is the same fold as Explored (Exploring while it runs) with its targets in detail, a file read twice named once. ToolCallOutput keeps a call's text to its first five lines, a line too long to read cut to its head and tail, under +N lines. ToolCallLive is the call in flight; AgentActivity is the agent's own word for the moment at the foot of a session's chat, its spinner glyph turning in Claude's clay and its counts in mono; ReasoningRow folds the thinking into Thought for 9s. A bot\'s chat draws its work as a Trace instead (chat-trace.tsx): a 15px TraceStep per call that opens to its TraceOutput (numbered lines, cut with Show more or kept behind Show raw output) or TraceNote, and TraceLive while it runs. A step's action sits at the end of its line, outside the fold (Open session on a call that started one)."
         code={`<ToolCallGroup summary="Read 3 files, ran 2 commands" failed="1 failed"><ToolCallRow icon={<TerminalIcon />} verb="Ran" target="pnpm test" meta="exit 1" tone="danger" output={log} /></ToolCallGroup>`}
       >
         <ChatWorkDemo />

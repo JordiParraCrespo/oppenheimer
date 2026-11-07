@@ -83,6 +83,15 @@ export interface BotTurnRequest {
   model: string;
   /** Ignored by a model or endpoint that takes no effort setting. */
   effort?: BotEffort | null;
+  /**
+   * A stable id for the conversation the turn continues, the same on every
+   * turn of it. A provider whose prompt cache lives per server sends the
+   * requests that carry one key to the same server: the Responses API's
+   * `prompt_cache_key` (OpenAI, ChatGPT's backend, xAI). Absent, the
+   * provider routes each request on its own, and most of them miss. The
+   * Claude engine has no use for it: Claude Code marks what to cache itself.
+   */
+  cacheKey?: string;
   systemPrompt: string;
   /** Earlier turns, oldest first. */
   history: { role: 'user' | 'assistant'; text: string }[];
@@ -222,6 +231,7 @@ export type BotCompletionRequest = Pick<
   | 'baseUrl'
   | 'model'
   | 'effort'
+  | 'cacheKey'
   | 'systemPrompt'
   | 'message'
   | 'signal'

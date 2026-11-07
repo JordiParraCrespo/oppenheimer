@@ -5,7 +5,8 @@
     "inbox": "Bandeja",
     "tasks": "Tareas",
     "calendar": "Calendario",
-    "milestones": "Hitos"
+    "milestones": "Hitos",
+    "projects": "Proyectos"
   },
   "sidebar": {
     "unassigned": "Sin asignar"
@@ -31,9 +32,9 @@
     "keyCancel": "cancelar"
   },
   "columns": {
-    "later": "Más adelante",
     "todo": "Por hacer",
     "doing": "En curso",
+    "review": "En revisión",
     "done": "Hecho"
   },
   "card": {

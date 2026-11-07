@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import type { BotRoutineActivity } from '@oppenheimer/shared';
 import type { AutomationRunOutcome, AutomationSkipReason } from '@oppenheimer/shared/automations';
 import { BotMessageEntity } from './bot-message.entity';
@@ -40,10 +41,29 @@ export type RoutineAction = (typeof ROUTINE_ACTIONS)[number];
  * Whether the owner has to consent to the bot doing this to a routine
  * (`26-bot-routines.md` §4): only what spends nothing and can be undone runs
  * without a card, which is reading the list and pausing. A run the bot starts
- * is spend nobody clicked for, so `run_now` asks like a save does.
+ * is spend nobody clicked for, so `run_now` asks like a save does. The one
+ * exception is the turn of the person's own `/schedule` (`25-bots.md` §4.1):
+ * their command is the consent to the routine it asks for, so a `create` in
+ * that turn runs; changing or deleting one still asks.
  */
-export function routineCallAsks(action: RoutineAction): boolean {
+export function routineCallAsks(action: RoutineAction, ranSchedule = false): boolean {
+  if (action === 'create' && ranSchedule) return false;
   return action !== 'list' && action !== 'pause';
+}
+
+/**
+ * The turn's message when the person runs `/schedule <request>`: save the
+ * routine it asks for now, on a schedule in their time zone, and say what was
+ * saved. A schedule runs at most once a day at a time of day; a request for
+ * minutes is a `/loop`, and one with no time is asked about, never guessed.
+ */
+export function scheduleSetPrompt(request: string): string {
+  return [
+    `The person ran /schedule to have you save a routine: ${request}`,
+    'Create it now with update_routine (action create): a short name, the prompt you will run each time written to yourself, and a schedule trigger in their time zone. Their /schedule is their consent to this one routine, so it does not ask them.',
+    'A schedule runs once at a time of day on the days it names (daily, weekdays, weekly, monthly, or once on a date). If they want it every few minutes, tell them /loop does that instead and save nothing. If the request says what to do but not when, ask them when in one line and save nothing yet.',
+    'Then say in one line what you scheduled and when it runs.',
+  ].join('\n');
 }
 
 /** Every turn of one routine's runs begins with this. */
@@ -55,7 +75,7 @@ export function routinePrefix(automationId: string): string {
 export function routineOpening(firing: RoutineFiring): string {
   return [
     `Your routine "${firing.name}" is running now, on its own: nobody wrote to you.`,
-    'Do what it says, then report briefly what you did or found. If there is nothing worth saying, say so in one line.',
+    'Do what it says, then report briefly what you did or found. If there is nothing worth saying, call nothing_to_report and write nothing.',
     '',
     firing.instructions,
   ].join('\n');
@@ -139,6 +159,45 @@ export function routineFailureOf(
   return null;
 }
 
+const HOUR_MS = 60 * 60 * 1000;
+
+/** The skips that come in bursts: one line an hour says the cap was reached. */
+const RATE_LIMITED_SKIPS: readonly string[] = ['automation_rate_limited', 'workspace_rate_limited'];
+
+/**
+ * The id of the line a failed run is told by. Each failure is its own line,
+ * keyed by its event, except a rate limit: every run of the routine refused
+ * by the same cap in the same clock hour is one line, keyed by the routine,
+ * the reason and the hour, so a burst of events past the cap says so once
+ * instead of once a run.
+ */
+export function routineFailureLineId(
+  eventId: string,
+  automationId: string,
+  reason: string,
+  at: Date,
+): string {
+  if (!RATE_LIMITED_SKIPS.includes(reason)) return eventId;
+  const hour = Math.floor(at.getTime() / HOUR_MS);
+  return uuidV5(`${automationId}:${reason}:${hour}`, ROUTINE_FAILURE_NAMESPACE);
+}
+
+/** The RFC 4122 namespace of the coalesced failure lines' names. `bot_message.id` is a uuid. */
+const ROUTINE_FAILURE_NAMESPACE = '6f1c2b8e-3d4a-4f5e-9a7b-1c2d3e4f5a6b';
+
+/** RFC 4122 §4.3 name-based UUID, version 5 (SHA-1): the same name, the same id. */
+export function uuidV5(name: string, namespace: string): string {
+  const bytes = createHash('sha1')
+    .update(Buffer.from(namespace.replaceAll('-', ''), 'hex'))
+    .update(name, 'utf8')
+    .digest()
+    .subarray(0, 16);
+  bytes[6] = (bytes[6] & 0x0f) | 0x50;
+  bytes[8] = (bytes[8] & 0x3f) | 0x80;
+  const hex = bytes.toString('hex');
+  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
+}
+
 /** What the bot reads when its history reaches the line: the same news, in words. */
 export function routineActivityText(activity: RoutineActivity): string {
   const name = `"${activity.name}"`;
@@ -190,4 +249,13 @@ export function routineActivityLine(activity: RoutineActivity): BotMessageEntity
   });
   line.validate();
   return line;
+}
+
+/**
+ * What `nothing_to_report` answers (`26-bot-routines.md` §6, "Quiet turns"):
+ * the turn ends here, with the call as its one activity line and no message,
+ * so a heartbeat that found nothing is one collapsed line in the chat.
+ */
+export function quietTurnAnswer(): string {
+  return 'Noted: nothing to report. End your turn now without writing anything.';
 }

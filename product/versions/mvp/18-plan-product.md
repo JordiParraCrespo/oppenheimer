@@ -13,7 +13,11 @@ this note says what the real thing does instead.
   (today's event count). Under Tasks: **Projects**: All projects, each
   project with its open count, and Unassigned, plus "+" for New project.
   Under Calendar: the layer toggles (20 §1) and the Google Calendar connection
-  card.
+  card. Since 2026-11-05 the sidebar's views also hold **Projects**
+  (`/plan/projects`, with the workspace's project count): the one place
+  projects are made and edited, a row per project with its repositories
+  and its settings (the project dialog), and New project in the header.
+  The Sessions sidebar no longer makes or edits projects.
 - **Routes.** `/plan` (the board, `?project=<slug>&goal=<id>`),
   `/plan/calendar` (`?month=2026-10`), and `?task=<id>` on either to open
   a task's dialog, which is the deep link the session header uses. The
@@ -32,8 +36,11 @@ this note says what the real thing does instead.
   *total* tasks" with its percentage, green at 100%. Clicking a goal
   filters the board to it (and back); "…" opens Edit goal. **New goal**
   on the strip's header.
-- **Columns**, in this order: **Later** (hollow dot), **To do**, **In
-  progress** (amber), **Done** (green), each with a count and "+".
+- **Columns**, in this order: **To do**, **In progress** (amber), **In
+  review** (hollow dot), **Done** (green), each with a count and "+".
+  (Changed 2026-11-05: the board first had **Later** before To do; Jordi
+  dropped it for **In review**, where finished work waits to be looked at
+  before Done. Tasks in Later moved to the end of To do.)
 - **A card** shows: a done checkbox, the title, notes (two lines, hidden
   when done), the project (only under All projects), the goal (unless
   filtered to it), the due date as Today / Tomorrow / Yesterday / *Oct 7*
@@ -86,7 +93,7 @@ for, and a session is where it gets done.
   host (Claude Code only), or Cursor's cloud with no host and on a task
   (`../../next-steps/cloud-agents.md`, "Tasks and automations").
 - **One status rule for attaching a session.** Start and Link existing
-  both link the session, and both move a task that is in Later or To do
+  both link the session, and both move a task that is in To do (Later, before 2026-11-05)
   to **In progress**; In progress and Done stay as they are. So a card
   never shows a live session line while it sits in To do. The move is
   conditional on the status the person saw when they clicked: if the
@@ -139,6 +146,13 @@ for, and a session is where it gets done.
   New goal. The frames have no empty state drawn; it needs one in the
   next export.
 - **Strings.** All copy goes into `packages/translations`.
+- **Filters stick, like a Notion view's** (owner's ask, 2026-11-05). The
+  board's Project and Milestone filter and Milestones' Project filter are
+  still the address, but each view remembers the one it was left with on
+  this device (`localStorage`), and a visit with no filter in its address
+  takes it back. A link that names a filter wins and becomes the
+  remembered one; Clear is remembered too, so it sticks. Per device, not
+  per account: a filter is a reader's view, and nothing here is shared.
 
 ## Open questions
 

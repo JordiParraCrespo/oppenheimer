@@ -5,8 +5,9 @@ package domain
 
 // launchCatalog is each agent's `launch` entry of the catalog, and the effort
 // levels its models offer: the argument vectors a structured launch becomes.
-// `<model>`, `<prompt>` and `<conversation>` are substituted whole; an effort
-// spelling has `<effort>` and `<model>` replaced inside each word.
+// `<model>`, `<prompt>`, `<conversation>` and `<teleport>` are substituted
+// whole; an effort spelling has `<effort>` and `<model>` replaced inside
+// each word.
 var launchCatalog = map[string]launchMap{
 	"claude-code": {
 		command:      "claude",
@@ -34,6 +35,8 @@ var launchCatalog = map[string]launchMap{
 		prompt:             []string{"<prompt>"},
 		conversationCreate: []string{"--session-id", "<conversation>"},
 		conversationResume: []string{"--resume", "<conversation>"},
+		teleportStart:      []string{"--teleport", "<teleport>"},
+		teleportResume:     []string{"--continue"},
 	},
 	"codex": {
 		command:      "codex",

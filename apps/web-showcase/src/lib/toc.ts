@@ -165,7 +165,7 @@ export const TOC: TocGroup[] = [
   {
     group: 'Navigation',
     items: [
-      { id: 'sidebar', label: 'Rail · Sidebar', icon: PanelLeftIcon, components: ['rail', 'sidebar', 'session-item'] },
+      { id: 'sidebar', label: 'Rail · Sidebar', icon: PanelLeftIcon, components: ['rail', 'sidebar', 'sidebar-fold-label', 'session-item'] },
       { id: 'routineitem', label: 'RoutineItem', icon: ZapIcon, components: ['routine-item'] },
       { id: 'inbox', label: 'Inbox', icon: BellIcon, components: ['inbox'] },
       { id: 'pilltabs', label: 'PillTabs', icon: ToggleLeftIcon, components: ['pill-tabs'] },

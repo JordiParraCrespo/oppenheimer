@@ -491,6 +491,10 @@ earlier note:
   `research/headless-runs-draft.md`). On 2026-10-15 the owner made `auto`
   Claude Code's own auto mode (`--permission-mode auto`), which checks each
   action before it runs, and made it the level review sessions start at.
+- A session started from a task's Start session dialog launched its agent
+  at `full` (`--permission-mode bypassPermissions` for Claude Code). On
+  2026-11-05 the owner made it start at `auto`, as every other session
+  does; `full` stays a choice in the new-session form.
 - On 2026-10-16 the owner dropped the review session's input row, which
   doubled the agent's own prompt; the Chat tab is now the plain session
   pane (`next-steps/0.2-pull-requests.md`).
@@ -893,6 +897,13 @@ earlier note:
   waiting or running with its clock or how it ended, the tools it has
   called so far), from frames the bot's stream sends each time one moves,
   until the stored line replaces them (`versions/mvp/25-bots.md` §4.7).
+- 2026-11-06 the owner asked to see a session's subagents the way the
+  terminal's footer lists them: Claude Code's, Codex's and OpenCode's
+  subagents now send their own work beside the transcript, and the chat
+  hangs each under the call that started it, a row with its task, kind,
+  model, clock, tokens and what it is doing, that opens to its work.
+  Grok's stay a row with no work under it (`next-steps/0.7-terminal-and-chat.md`,
+  "Subagents").
 - 2026-10-29 the owner asked for Codex cloud tasks the way Claude Code's
   cloud works, though the research note put Codex cloud last: a Codex row
   under Cloud starts the task from a host with `codex cloud exec`, and the
@@ -967,6 +978,24 @@ earlier note:
   model judges it after every turn (met, not met, impossible), as Claude
   Code's evaluator does; a person's goal takes up to 20 continuations, a
   bot's 5 unless it asks for up to 20 (25 §4.1, "Built-in commands").
+- `versions/mvp/26-bot-routines.md` §4 (2026-10-18) had every routine
+  save by the bot ask the owner first, except on the Routines tab. On
+  2026-11-03 `/schedule <request>` was built (25 §4.1): the bot saves the
+  routine the person's command asks for, and that one create raises no
+  card, since the command is the consent. Changes, deletes and runs still
+  ask.
+- `versions/mvp/25-bots.md` §4.1 (2026-11-02) planned `/loop` or
+  `/schedule` as a routine of the bot's (26). On 2026-11-03 the owner chose
+  `/loop`, and it is its own built-in instead: routines run on a calendar
+  and last until deleted, while a loop runs every few minutes (1 minute to
+  1 day, or when the bot chooses), belongs to the chat it was typed in and
+  expires after 3 days. `/schedule` stays planned as a routine (25 §4.1).
+- `versions/mvp/25-bots.md` §4.1 (2026-11-02) drew `/usage` as three lines
+  of this chat's figures and left the context and plan windows to the
+  composer's meter. On 2026-11-03 the owner asked for a card like Claude
+  Code's small usage card, and smaller: the command as a bubble, then a
+  384px card with the plan's 5-hour and weekly windows as bars, this chat's
+  figures in a grid and the tokens' breakdown (25 §4.1).
 - 2026-10-31: the owner took the six chat slices drawn from a read of Codex
   and Grok (`research/lessons-from-codex-and-grok-chat.md`); they are listed
   in `next-steps/0.7-chat-protocol.md`.
@@ -1034,7 +1063,20 @@ earlier note:
   Chat). On 2026-11-02 the owner made Chat the default view of every
   session, a member's and a guest's: the terminal shows until the
   transcript arrives and stays the view for an agent with none, and the
-  Terminal tab is still there to type into the PTY.
+  Terminal tab is still there to type into the PTY. On 2026-11-04 the owner
+  put Terminal back as the default: the chat waits for the host to resend
+  the whole transcript every time a pane mounts, moving between sessions
+  too, while the terminal draws at once from the grid the tab kept, so
+  opening on Chat meant waiting on a session that was already on screen.
+  Chat stays a press away. A pull request's review session opens on
+  Terminal too, as `0.2-pull-requests.md` says its tab does.
+- `next-steps/0.7-terminal-and-chat.md` sent a session's whole transcript,
+  from its first line, on every attach (`reset` and the history). On
+  2026-11-04 a Claude Code session's attach sends its last 40 turns
+  instead, with `before`, the offset they start at, and the console asks
+  for the 40 before that (`chat.older`, `attachment.chat.older`) as the
+  reader scrolls to the top: a long conversation was megabytes read,
+  sent and parsed to draw its end.
 - Note 13 said herdr's agents do not survive a restart and took its screen
   manifests as the model for agent state. herdr-core, its successor, keeps
   programs alive across its own restarts and takes status only from the
@@ -1077,4 +1119,149 @@ earlier note:
   already knew, with no way for an agent to post into it. Since 2026-11-02
   an agent in a session can: `runner sessions notify "line"` keeps the line
   on its session, and the Inbox lists it until it is marked done
-  (`next-steps/agent-tools.md` §2).
+  (`next-steps/agent-tools.md` §2). Since 2026-11-03 a bot can too, with
+  its `notify` tool: its latest line is a `botNotice` item, and the Type
+  facet's "Bot approvals" is "Bots" (§5).
+- `next-steps/agent-tools.md` §1 kept a shared file between the host and
+  the browser attached to the session's chat; the control plane never
+  heard of it. Since 2026-11-03 the runner also logs `file.shared` with
+  the file's metadata (never its path or bytes), the session keeps the
+  last 20, and a bot lists them and shows an image's preview, asked of
+  the host over the link (`next-steps/agent-tools.md` §7).
+- `versions/mvp/27-bot-subscriptions.md` §1 had every wake re-read what it
+  follows as the bot's owner and wake for what holds now, and §7 planned
+  pull requests from the pull-requests module's webhooks. Built on
+  2026-11-03, a bot following a pull request (`watch_pull_request`) is woken
+  by the inbound-events hub's GitHub events instead, and its wake is the
+  event's metadata alone, never a re-read: the pull request is GitHub's, not
+  ours to re-read on every event. A close without a merge makes no event
+  yet, so only a merge ends it (27 §7.1, `next-steps/agent-tools.md` §6).
+- `versions/mvp/25-bots.md` treated text from tools as information, not
+  instructions, and left every tool to the turn that reads it. On
+  2026-11-03 a pull request watch made that text a stranger's comment
+  starting an unattended turn, and Codex's review asked for narrower tools
+  on such turns. The owner chose full autonomy instead: those turns keep
+  every tool, and the prompt carries the defence, each GitHub author named
+  as a collaborator or as outside the repository and a rule against putting
+  private information where outside text points (27 §7.1).
+- `versions/mvp/25-bots.md` (2026-10-21) told a bot that a session was
+  "the expected way, not a last resort" for code work, so bots opened one
+  for questions the web could answer. On 2026-11-05 the owner asked for
+  research first: a bot answers with its own tools, web search and
+  `web_fetch` when it can, and starts a session only for work that needs a
+  shell or a checkout, or when asked.
+- `next-steps/cloud-agents.md` had a cloud session followed up only at its
+  vendor (`SESSIONS_039` for Cursor's). Since 2026-11-05 a Cursor session
+  takes a follow-up through Oppenheimer as a new run of its agent, on the
+  launcher's key and only once its last run ended; Claude Code's and
+  Codex's still take none here ("Follow-ups to a cloud agent").
+- `read_session` read a session's log and never its agent's conversation,
+  which reached only a browser attached to the chat. Since 2026-11-05 a
+  bot, `opp` and MCP read it a page at a time off the host, redacted, with
+  a status that says how complete each page is; a cloud session's is
+  unsupported, with its vendor's link (`next-steps/agent-tools.md` §8).
+- `next-steps/agent-tools.md` §2's notice reached the Inbox only. Since
+  2026-11-05 it also wakes every bot that follows the session, once per
+  notice (§9).
+- `versions/mvp/25-bots.md` §2 sent a turn the newest messages that fit
+  its history budget, and the OpenAI engine named no conversation to the
+  provider. On 2026-11-03, after `/usage` showed a bot on GPT and Grok at a
+  1% cache hit rate, each request carries the bot's id as its
+  `prompt_cache_key`, and the history loses its oldest messages a block of
+  about 6,000 tokens at a time, so each turn's request starts as the last
+  one's did.
+- `versions/mvp/25-bots.md` §4.3 listed `create_project` and
+  `update_project` as asking first. On 2026-11-03 (issue #647) they were
+  built to run under Approve for me like the task writes, since a project is
+  metadata and an edit can be put back; `archive_project`, which cannot be
+  undone, asks under every preset, one call at a time. `move_session` was
+  added, and the workspace stream gained `project.changed`.
+- `versions/mvp/10-api-modules-and-data-model.md` kept an archived project
+  for ever with no way back ("there is no un-archive"). On 2026-11-03 the
+  owner asked for restore: `POST /projects/{id}/restore` and the bot's
+  `restore_project` bring the same row back with its slug, so a slug is
+  still never reissued. The automations its archive paused stay paused.
+- `versions/mvp/29-inbox.md` §1 ordered the Inbox most blocked first:
+  approvals and waiting sessions oldest wait first, then requested
+  reviews, ready merges and failed runs. On 2026-11-03 the owner asked for
+  the most recent first, so the list is newest first across every kind,
+  Low items still last; the order is held by the consumer's
+  `composeInbox` test, no longer by the fleet stress suite.
+- `next-steps/0.6-mcp-cli-and-agent.md` asked whether the CLI is a new app
+  or `runner` grows user commands, and noted the starter's CLI and MCP apps
+  were pruned. On 2026-11-02 both came back as their own apps, `apps/cli`
+  (`opp`) and `apps/mcp`, clients of the API on scoped tokens: they reach
+  automations, bots and tasks, which are not the runner's to forward. The
+  runner keeps the same-host verbs.
+- `next-steps/cloud-agents.md` left bringing a Claude Code cloud session
+  back as a command to copy, with no button that opens a worktree session.
+  On 2026-11-03 the owner asked to pick the host from the session's pane:
+  *Continue on a host* starts a worktree session there whose agent runs
+  `claude --teleport <id>` (`teleport` on the create, runner capability
+  `session.teleport`). Codex's `codex apply` stays a command.
+- `next-steps/mail.md` §5's build log (2026-10-29) had an account start
+  from the moment a routine *first* watched it, so a mark kept through a
+  pause or a revoked grant replayed the gap's mail as new. On 2026-11-04 an
+  account the poll does not read loses its mark and starts again from now;
+  mail older than two days, spam, trash and chats never wake a routine, an
+  any-mail trigger takes only the inbox, and rate-limited runs are one chat
+  line a routine an hour.
+- `versions/mvp/05-screens.md` had the Sessions sidebar make projects (a
+  plus in its head) and edit them (a settings glyph on each project's
+  header). On 2026-11-05 the owner moved project management to Plan: a
+  **Projects** view in Plan's sidebar (`/plan/projects`) lists the
+  workspace's projects with New project and each one's settings, and the
+  Sessions sidebar keeps only New session here on a project's header.
+  New session's project chip still ends in New project….
+- `versions/mvp/18-plan-product.md` drew Plan's board as Later, To do, In
+  progress and Done. On 2026-11-05 the owner dropped **Later** and added
+  **In review** between In progress and Done, for finished work waiting to
+  be looked at. Tasks that were in Later moved to the end of To do
+  (migration `ReplaceLaterWithReviewColumn`); attaching a session still
+  moves only a task in To do to In progress.
+- `versions/mvp/25-bots.md` §4.1 (2026-10-29) kept a bot's facts as
+  `profile` by default, the newest 60 in every prompt, `log` facts only
+  through `recall`, and refused a save past 200. Bots saved almost nothing
+  after their first chat. On 2026-11-06, after a read of Grok Bot 0.79.2
+  (`research/lessons-from-grok-bot.md` §10), the owner took its shape: a
+  bot's save is `log` by default, the system prompt carries the newest
+  profile facts by characters (4,000) and the turn context the newest log
+  entries (2,000, dated), so a save leaves the prompt cache warm, the turn's
+  rules tell it to save what it learns without asking, and a full memory
+  of 500 drops its oldest log fact instead of refusing.
+- `versions/mvp/26-bot-routines.md` §6 (2026-10-16) said a bot gets a
+  heartbeat only when asked for one in chat, through `update_routine`. On
+  2026-11-06 the owner asked for bots to be proactive by default, the way
+  OpenClaw's are: a bot is now given a **Heartbeat** routine as soon as it
+  has a job (its `INSTRUCTIONS.md` first written), hourly at a minute
+  spread by its id, saved as its owner within the scopes of the credential
+  that wrote the job, which the owner pauses or deletes like any routine.
+  A beat with nothing to say calls `nothing_to_report`, offered only on
+  turns nobody is waiting on. Bots that had a job before get none until
+  asked (26 §6, "Decided").
+- `versions/mvp/26-bot-routines.md` §6 (2026-10-18) designed the routines'
+  spend guard as a nudge card, then a pause with a card to resume, and a
+  per-bot "don't ask again". On 2026-11-07 the owner asked for it to work
+  like an agent that stops watching a pull request: it stops on its own and
+  comes back when the person does. Built that way: after 3 routine reports
+  the owner has not seen, or 72 h away from the bot's chat, every routine
+  of the bot pauses as `unattended` with one Inbox line, and the owner's
+  next visit to the chat (or message, or decided card) resumes them. No
+  cards; the thresholds are workspace automation settings, and a per-bot
+  "Pause while you're away" switch turns it off (26 §6, "Changed
+  2026-11-07").
+- `versions/mvp/25-bots.md` §4.1 (2026-10-29) left what a bot knows about
+  its owner spread across their bots: each `person` fact was edited on the
+  bot that learned it, read only on the others, and the owner had no place
+  of their own. On 2026-11-07 the owner asked for one page, the way
+  Claude's memory works: Settings → Memory, at the account, holds an
+  *About you* text the owner writes (table `person_memory`, migration
+  `AddPersonMemory`), in every bot's system prompt and never written by a
+  bot, and lists every `person` fact their bots learned, each still the row
+  of the bot that keeps it and changed there.
+- `next-steps/cloud-agents.md` ("Follow-ups to a cloud agent") said a
+  Claude Code cloud session's conversation is not ours to read, so the
+  console only linked to claude.ai. On 2026-11-07 the owner asked for its
+  chat in the console: two hooks in the session's repository send its
+  transcript to the API and collect replies typed in the console ("The chat
+  of a cloud session"; `research/cloud-chat-bridge/`).

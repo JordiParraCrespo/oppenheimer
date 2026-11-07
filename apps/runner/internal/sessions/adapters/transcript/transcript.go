@@ -15,6 +15,7 @@ import (
 	"log/slog"
 	"regexp"
 	"sync"
+	"time"
 
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/app"
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/domain"
@@ -95,12 +96,25 @@ func New(opts Options) *Reader {
 		chats[domain.AgentClaude] = claude
 	}
 	if opts.CodexSessions != "" {
-		chats[domain.AgentCodex] = codexSource{sessions: opts.CodexSessions}
+		chats[domain.AgentCodex] = codexSource{sessions: opts.CodexSessions, heads: newCodexHeads()}
 	}
 	if opts.GrokSessions != "" {
 		chats[domain.AgentGrok] = grokSource{sessions: opts.GrokSessions}
 	}
 	return &Reader{agents: agents, chats: chats, logger: logger, statusDir: opts.StatusDir, filesDir: opts.FilesDir}
+}
+
+// Teleported implements app.Transcripts. Only Claude Code teleports.
+func (r *Reader) Teleported(agent domain.Agent, dir string, since time.Time) string {
+	reader, ok := r.agents[agent]
+	if !ok || agent != domain.AgentClaude {
+		return ""
+	}
+	claude, ok := reader.(claudeReader)
+	if !ok {
+		return ""
+	}
+	return claude.conversationIn(dir, since)
 }
 
 // FirstPrompt implements app.Transcripts.

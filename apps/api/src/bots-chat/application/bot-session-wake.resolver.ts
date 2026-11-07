@@ -8,14 +8,17 @@ import {
 } from '../bots-chat.di-tokens';
 import type { BotSubscriptionRepositoryPort } from '../database/bot-subscription.repository.port';
 import type { BotTurnRepositoryPort } from '../database/bot-turn.repository.port';
+import type { BotMessageEntity } from '../domain/bot-message.entity';
 import type { BotSubscriptionEntity } from '../domain/bot-subscription.entity';
 import { type SessionWake, sessionWakeTurn } from '../domain/bot-subscription.policy';
+import type { BotTurnEntity } from '../domain/bot-turn.entity';
 import type { BotStreamPort } from '../infrastructure/bot-stream.port';
 import { BotSessionWatchResolver } from './bot-session-watch.resolver';
 
 /**
  * The one way a subscription wakes its bot, or ends (`27-bot-subscriptions.md`
- * §4), whatever woke it: a task's state or a terminal match. A wake is a
+ * §4), whatever woke it: a task's state, a terminal match, or an event on a
+ * pull request it follows (§7). A wake is a
  * queued turn keyed by `wakeSourceKey`, so an event delivered twice queues
  * one; an end deletes the subscription and the terminal watch it named.
  */
@@ -42,10 +45,26 @@ export class BotSessionWakeResolver {
     wake: SessionWake,
     correlationId: string | null,
   ): Promise<'queued' | 'missing'> {
-    const { turn, opening } = sessionWakeTurn(
+    const built = sessionWakeTurn(
       this.mapper.toWakeTurnProps(subscription, owner.bot, owner.ownerUserId),
       wake,
     );
+    const queued = await this.queueTurn(subscription, owner, built, correlationId);
+    return queued === 'missing' ? 'missing' : 'queued';
+  }
+
+  /**
+   * Queues a wake's turn and its opening, built by the kind's policy (a
+   * session's or a pull request's), and says so on the bot's stream;
+   * `existing` when a delivery before this one queued it already, `missing`
+   * when the bot is gone, which ends the subscription.
+   */
+  async queueTurn(
+    subscription: BotSubscriptionEntity,
+    owner: { bot: BotEntity },
+    { turn, opening }: { turn: BotTurnEntity; opening: BotMessageEntity },
+    correlationId: string | null,
+  ): Promise<'queued' | 'existing' | 'missing'> {
     const queued = await this.turns.enqueueOnce(turn, opening, correlationId, null);
     if (queued.outcome === 'missing') {
       await this.end(subscription, 'access_lost');
@@ -58,7 +77,7 @@ export class BotSessionWakeResolver {
         status: 'queued',
       });
     }
-    return 'queued';
+    return queued.outcome === 'existing' ? 'existing' : 'queued';
   }
 
   /** Ends the subscription, once, and releases its terminal watch: nobody would be woken by it. */
@@ -69,6 +88,7 @@ export class BotSessionWakeResolver {
       message: 'A bot subscription ended',
       subscriptionId: subscription.id,
       botId: subscription.botId,
+      resourceKind: subscription.resourceKind,
       sessionId: subscription.resourceId,
       reason,
     });

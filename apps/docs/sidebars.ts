@@ -28,6 +28,20 @@ const sidebars: SidebarsConfig = {
         // oppenheimer:end runner
       ],
     },
+    // oppenheimer:begin cli|mcp
+    {
+      type: 'category',
+      label: 'CLI and MCP',
+      items: [
+        // oppenheimer:begin cli
+        'tooling/cli',
+        // oppenheimer:end cli
+        // oppenheimer:begin mcp
+        'tooling/mcp',
+        // oppenheimer:end mcp
+      ],
+    },
+    // oppenheimer:end cli|mcp
     'errors',
     {
       type: 'category',

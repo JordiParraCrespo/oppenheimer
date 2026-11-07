@@ -160,17 +160,21 @@ func (h *linkHandler) createClaudeCloud(
 		return
 	}
 
-	scratch := filepath.Join(os.TempDir(), "oppenheimer-cloud", m.SessionID)
+	scratch := filepath.Join(cloudScratchRoot(), m.SessionID)
+	// Whatever a start a stopped runner left there, this session's own
+	// leftover among it, goes before git is asked for a checkout again.
+	h.sweepCloudScratch(gitCtx, repo, m.SessionID)
 	if err := stage(sessionsdomain.StageWorktree, false, func() error {
 		return h.app.Worktrees.AddDetached(gitCtx, repo, scratch, checkout.BaseBranch)
 	}); err != nil {
+		h.clearCloudScratch(context.WithoutCancel(ctx), repo, scratch)
 		fail(err)
 		return
 	}
-	defer func() {
-		// Nothing was made in it: the cloud took the commit, not the directory.
-		_ = h.app.Worktrees.Remove(context.WithoutCancel(ctx), repo, scratch, true)
-	}()
+	// Nothing was made in it: the cloud took the commit, not the directory.
+	// Starter.Start has stopped the CLI and all it ran by then, so nothing
+	// holds it open.
+	defer h.clearCloudScratch(context.WithoutCancel(ctx), repo, scratch)
 
 	starter := h.app.Cloud
 	if starter == nil {
@@ -190,6 +194,46 @@ func (h *linkHandler) createClaudeCloud(
 		h.logger.Warn("cloud start not remembered", "session", m.SessionID, "error", err)
 	}
 	h.reportCloudStarted(m.SessionID, started)
+}
+
+// cloudScratchRoot holds the scratch checkout of each cloud start while it
+// runs, one folder per session, and nothing once it is done.
+func cloudScratchRoot() string {
+	return filepath.Join(os.TempDir(), "oppenheimer-cloud")
+}
+
+// sweepCloudScratch clears the scratch checkouts a start no longer running
+// left behind: a runner stopped or restarted mid-start never reached its
+// removal, and the folder would stay on the disk until a reboot clears the
+// temporary directory, if one ever does. A start of this process still
+// running keeps its folder; current, the session about to start, has not
+// made one yet, so a leftover at its path is cleared too.
+func (h *linkHandler) sweepCloudScratch(ctx context.Context, repo sessionsdomain.Repository, current string) {
+	entries, err := os.ReadDir(cloudScratchRoot())
+	if err != nil {
+		return
+	}
+	for _, entry := range entries {
+		name := entry.Name()
+		if _, running := h.cloudStarts.Load(name); running && name != current {
+			continue
+		}
+		h.clearCloudScratch(ctx, repo, filepath.Join(cloudScratchRoot(), name))
+	}
+}
+
+// clearCloudScratch is the one way a scratch checkout leaves the disk: git
+// removes it and forgets its record (a path it still has registered is one
+// it refuses to check out again), and a folder git cannot remove, or has no
+// record of in repo's store, is deleted outright.
+func (h *linkHandler) clearCloudScratch(ctx context.Context, repo sessionsdomain.Repository, path string) {
+	err := h.app.Worktrees.Remove(ctx, repo, path, true)
+	if err == nil && !h.app.Worktrees.Exists(path) {
+		return
+	}
+	if err := os.RemoveAll(path); err != nil {
+		h.logger.Warn("cloud checkout left on disk", "path", path, "error", err)
+	}
 }
 
 // reportCloudStarted is `session.started` for a cloud session: its id is the

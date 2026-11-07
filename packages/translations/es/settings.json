@@ -4,12 +4,15 @@
     "account": "Cuenta",
     "workspace": "Espacio de trabajo",
     "profile": "Perfil",
+    "memory": "Memoria",
     "hosts": "Hosts",
     "repositories": "Repositorios observados",
     "modelProviders": "Proveedores de modelos",
     "cloudAgents": "Agentes en la nube",
     "mail": "Correo",
-    "whatsapp": "WhatsApp"
+    "whatsapp": "WhatsApp",
+    "app": "Oppenheimer",
+    "about": "Acerca de"
   },
   "profile": {
     "title": "Perfil",
@@ -81,6 +84,27 @@
     "heading": "Cuenta",
     "delete": "Eliminar cuenta",
     "deleteHint": "Detiene todas las sesiones y elimina tus automatizaciones y los hosts registrados. No se puede deshacer."
+  },
+  "memory": {
+    "title": "Memoria",
+    "description": "Lo que tus bots saben de ti. Todos los bots que crees lo leen, en cada chat.",
+    "aboutTitle": "Sobre ti",
+    "aboutHint": "Con tus palabras: quién eres, cómo trabajas, qué deben tener siempre presente tus bots. Tus bots lo leen y nunca lo cambian.",
+    "aboutLabel": "Sobre ti",
+    "aboutPlaceholder": "p. ej. Soy Jordi, construyo Oppenheimer desde Barcelona. Responde con frases cortas y pregunta antes de fusionar.",
+    "unsaved": "Cambios sin guardar",
+    "saved": "Guardado {{date}}",
+    "neverSaved": "Aún sin escribir",
+    "save": "Guardar",
+    "saving": "Guardando…",
+    "discard": "Descartar",
+    "saveFailed": "No se pudo guardar lo que escribiste.",
+    "learnedTitle_one": "Lo que aprendieron tus bots · {{count}}",
+    "learnedTitle_other": "Lo que aprendieron tus bots · {{count}}",
+    "learnedHint": "Datos sobre ti que un bot guardó en un chat. Cada uno se queda con el bot que lo aprendió: cámbialo u olvídalo aquí y todos los bots leen el cambio.",
+    "learnedEmpty": "Tus bots aún no han aprendido nada sobre ti.",
+    "loadFailed": "No se pudo cargar lo que tus bots saben de ti.",
+    "aBot": "un bot"
   },
   "deleteAccount": {
     "title": "¿Eliminar tu cuenta?",
@@ -267,5 +291,14 @@
     "qrStep2": "Ve a Ajustes → Dispositivos vinculados → Vincular un dispositivo.",
     "qrStep3": "Apunta el teléfono a este código. Cambia cada pocos segundos.",
     "qrWaiting": "Esperando a que el host genere un código…"
+  },
+  "about": {
+    "title": "Acerca de",
+    "versionsHeading": "Versiones",
+    "console": "Consola",
+    "consoleHint": "La aplicación web que se ejecuta en esta pestaña.",
+    "api": "API",
+    "apiHint": "El plano de control con el que habla esta consola.",
+    "failed": "No se pudo leer la versión de la API."
   }
 }

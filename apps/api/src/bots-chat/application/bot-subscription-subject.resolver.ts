@@ -33,13 +33,27 @@ export class BotSubscriptionSubjectResolver {
   ) {}
 
   async resolve(subscription: BotSubscriptionEntity): Promise<WakeSubjectRead | null> {
+    const sessionId = subscription.resourceId;
+    if (!sessionId) return null;
+    const acting = await this.resolveOwner(subscription);
+    if (!acting) return null;
+    const session = await this.readable(acting.owner, sessionId);
+    return session ? { bot: acting.bot, ownerUserId: acting.ownerUserId, session } : null;
+  }
+
+  /**
+   * The bot and the owner it acts as, or null when the bot is gone, has no
+   * owner, or the owner left the workspace: all a pull request's wake reads,
+   * since the pull request itself is GitHub's, not ours to re-read (27 §7).
+   */
+  async resolveOwner(
+    subscription: BotSubscriptionEntity,
+  ): Promise<{ bot: BotEntity; ownerUserId: string; owner: AccessScope } | null> {
     const bot = await this.access.findBot(subscription.organizationId, subscription.botId);
     const ownerUserId = bot?.createdByUserId;
     if (!bot || !ownerUserId) return null;
     const owner = await this.owners.resolve(subscription.organizationId, ownerUserId);
-    if (!owner) return null;
-    const session = await this.readable(owner, subscription.resourceId);
-    return session ? { bot, ownerUserId, session } : null;
+    return owner ? { bot, ownerUserId, owner } : null;
   }
 
   /**

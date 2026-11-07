@@ -15,6 +15,7 @@ export interface PaginatedResponse<T> {
   };
 }
 
+export type { ApiVersion } from './api-version.js';
 export {
   CLIENT_CAPABILITIES,
   type ClientCapabilities,

@@ -4,7 +4,16 @@
 // session-start install is a no-op when node_modules matches the lockfile.
 import assert from 'node:assert/strict';
 import { execFileSync, spawnSync } from 'node:child_process';
-import { chmodSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import {
+  chmodSync,
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  realpathSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { after, describe, it } from 'node:test';
@@ -13,7 +22,9 @@ import { fileURLToPath } from 'node:url';
 const HOOKS = dirname(fileURLToPath(import.meta.url));
 
 function repo(prefix) {
-  const root = mkdtempSync(join(tmpdir(), prefix));
+  // The real path: macOS's tmpdir is a symlink (/var -> /private/var), and the
+  // hooks report where they ran as git resolves it.
+  const root = realpathSync(mkdtempSync(join(tmpdir(), prefix)));
   const git = (...args) =>
     execFileSync('git', ['-c', 'user.name=t', '-c', 'user.email=t@t', ...args], {
       cwd: root,

@@ -368,6 +368,14 @@ export class WorkSessionRepository
     return this.withCheckouts(record);
   }
 
+  async findFirstPrompt(session: WorkSessionEntity): Promise<Omit<HostSessionRow, 'session'>> {
+    const first = (await this.log.findFirstPrompts([session.id])).get(session.id);
+    return {
+      ...(first ? { prompt: first.prompt } : {}),
+      ...(first?.images.length ? { images: first.images } : {}),
+    };
+  }
+
   async findOneByIdForMachine(id: string): Promise<Option<WorkSessionEntity>> {
     const record = await this.unscopedQuery(
       'a runner reports about a session on the host it proved it is; there is no person on the request to scope by, and the caller checks the session belongs to that host',
@@ -621,7 +629,8 @@ export class WorkSessionRepository
                 "closeRefusalCode" = $20, "closeRefusalDetail" = $21,
                 "pendingDecision" = $22::jsonb, "launchEnvironment" = $23,
                 "agentReport" = $24::jsonb, "notice" = $25::jsonb,
-                "watchedPulls" = $26::jsonb,
+                "watchedPulls" = $26::jsonb, "sharedFiles" = $27::jsonb,
+                "launchTeleport" = $28,
                 "updatedAt" = now()
           WHERE "id" = $1`,
         [
@@ -651,6 +660,8 @@ export class WorkSessionRepository
           record.agentReport === null ? null : JSON.stringify(record.agentReport),
           record.notice === null ? null : JSON.stringify(record.notice),
           JSON.stringify(record.watchedPulls ?? []),
+          JSON.stringify(record.sharedFiles ?? []),
+          record.launchTeleport,
         ],
       );
       await this.turns.writeChanged(manager, session);

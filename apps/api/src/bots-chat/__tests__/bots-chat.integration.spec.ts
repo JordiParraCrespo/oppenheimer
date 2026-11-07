@@ -20,6 +20,7 @@ import { BotSkillOrmEntity } from '../../bots/database/bot-skill.orm-entity';
 import { BotSkillRepository } from '../../bots/database/bot-skill.repository';
 import { ModelProviderCredentialOrmEntity } from '../../bots/database/model-provider-credential.orm-entity';
 import { ModelProviderCredentialRepository } from '../../bots/database/model-provider-credential.repository';
+import type { PersonMemoryRepositoryPort } from '../../bots/database/person-memory.repository.port';
 import { BotEntity } from '../../bots/domain/bot.entity';
 import { userActor } from '../../bots/domain/bot.types';
 import { BotDocumentEntity } from '../../bots/domain/bot-document.entity';
@@ -43,6 +44,7 @@ import { BotApprovalMapper } from '../bot-approval.mapper';
 import { BotAttachmentMapper } from '../bot-attachment.mapper';
 import { BotConversationSummaryMapper } from '../bot-conversation-summary.mapper';
 import { BotGoalMapper } from '../bot-goal.mapper';
+import { BotLoopMapper } from '../bot-loop.mapper';
 import { BotMessageMapper } from '../bot-message.mapper';
 import { BotQuestionMapper } from '../bot-question.mapper';
 import { BotSubscriptionMapper } from '../bot-subscription.mapper';
@@ -57,6 +59,8 @@ import { BotConversationSummaryOrmEntity } from '../database/bot-conversation-su
 import { BotConversationSummaryRepository } from '../database/bot-conversation-summary.repository';
 import { BotGoalOrmEntity } from '../database/bot-goal.orm-entity';
 import { BotGoalRepository } from '../database/bot-goal.repository';
+import { BotLoopOrmEntity } from '../database/bot-loop.orm-entity';
+import { BotLoopRepository } from '../database/bot-loop.repository';
 import { BotMessageOrmEntity } from '../database/bot-message.orm-entity';
 import { BotMessageRepository } from '../database/bot-message.repository';
 import { BotModelCallOrmEntity } from '../database/bot-model-call.orm-entity';
@@ -73,6 +77,8 @@ import { BotAttachmentEntity } from '../domain/bot-attachment.entity';
 import { BotConversationSummaryEntity } from '../domain/bot-conversation-summary.entity';
 import { BotGoalEntity } from '../domain/bot-goal.entity';
 import { goalContinuationTurn, goalEndLine } from '../domain/bot-goal.policy';
+import { BotLoopEntity } from '../domain/bot-loop.entity';
+import { loopEndLine, loopRunTurn } from '../domain/bot-loop-message.factory';
 import { BotMessageEntity } from '../domain/bot-message.entity';
 import { BotQuestionEntity } from '../domain/bot-question.entity';
 import {
@@ -83,7 +89,11 @@ import {
 } from '../domain/bot-routine.policy';
 import { takesSteer } from '../domain/bot-steer.policy';
 import { BotSubscriptionEntity } from '../domain/bot-subscription.entity';
-import { type SessionWake, sessionWakeTurn } from '../domain/bot-subscription.policy';
+import {
+  BOT_SUBSCRIPTION_WAKE_LIMIT,
+  type SessionWake,
+  sessionWakeTurn,
+} from '../domain/bot-subscription.policy';
 import { planSummary, type SummarizableMessage } from '../domain/bot-summary.policy';
 import { NO_PERMISSIONS } from '../domain/bot-tool-permission.policy';
 import { BotTurnEntity } from '../domain/bot-turn.entity';
@@ -124,6 +134,7 @@ describe('bots chat (integration)', () => {
   let attachments: BotAttachmentRepository;
   let subscriptions: BotSubscriptionRepository;
   let goals: BotGoalRepository;
+  let loops: BotLoopRepository;
   let usage: BotUsageRepository;
   let organizationId: string;
   let userId: string;
@@ -158,6 +169,7 @@ describe('bots chat (integration)', () => {
         BotAttachmentOrmEntity,
         BotSubscriptionOrmEntity,
         BotGoalOrmEntity,
+        BotLoopOrmEntity,
         BotModelCallOrmEntity,
         OutboxMessageSchema,
       ],
@@ -167,14 +179,14 @@ describe('bots chat (integration)', () => {
     const documentMapper = new BotDocumentMapper();
     bots = new BotRepository(
       dataSource.getRepository(BotOrmEntity),
-      dataSource,
       new BotMapper(),
       documentMapper,
+      new OutboxService(dataSource),
     );
     documents = new BotDocumentRepository(
       dataSource.getRepository(BotDocumentOrmEntity),
       dataSource.getRepository(BotDocumentRevisionOrmEntity),
-      dataSource,
+      new OutboxService(dataSource),
       documentMapper,
     );
     memory = new BotMemoryFactRepository(
@@ -198,6 +210,7 @@ describe('bots chat (integration)', () => {
       new BotMessageMapper(),
       new BotConversationRepository(),
       new BotGoalMapper(),
+      new BotLoopMapper(),
     );
     messages = new BotMessageRepository(
       dataSource.getRepository(BotMessageOrmEntity),
@@ -239,6 +252,12 @@ describe('bots chat (integration)', () => {
       new BotMessageMapper(),
     );
     usage = new BotUsageRepository(dataSource.getRepository(BotModelCallOrmEntity));
+    loops = new BotLoopRepository(
+      dataSource.getRepository(BotLoopOrmEntity),
+      new OutboxService(dataSource),
+      new BotLoopMapper(),
+      new BotMessageMapper(),
+    );
   }, 180000);
 
   afterAll(async () => {
@@ -427,6 +446,60 @@ describe('bots chat (integration)', () => {
         reason: null,
       },
     });
+  });
+
+  // The spend guard's count (`26-bot-routines.md` §6). What breaks this: a
+  // quiet heartbeat counted as a report nobody read, a report from before the
+  // owner was last in the chat counted again, a report written after it from
+  // a turn queued before it missed, or another bot's counted.
+  it('counts the routine turns that said something since a time, and nothing else', async () => {
+    const bot = await create('Guarded Bot');
+    const other = await create('Other Bot');
+    const props = (botId: string) => ({
+      organizationId: bot.organizationId,
+      botId,
+      requestedByUserId: userId,
+      provider: 'glm' as const,
+      model: 'glm-5.3',
+      effort: null,
+    });
+    const queueRoutineTurn = async (botId: string, n: number, says: boolean) => {
+      const { turn, opening } = routineTurn(props(botId), {
+        automationId: `7b2d5a0f-0000-4000-8000-00000000000${n}`,
+        runId: `7b2d5a0f-0000-4000-8000-00000000010${n}`,
+        name: 'Heartbeat',
+        instructions: 'Check in.',
+      });
+      await turns.enqueueOnce(turn, opening, null, null);
+      if (says) {
+        await dataSource.query(
+          `INSERT INTO bot_message ("organizationId", "botId", "turnId", role, content, position)
+           VALUES ($1, $2, $3, 'assistant', 'Two PRs need you.', 1)`,
+          [bot.organizationId, botId, turn.id],
+        );
+      }
+      return turn;
+    };
+    const since = new Date(Date.now() - 60_000);
+    const earlier = new Date(since.getTime() - 60_000);
+    // Said before the owner's visit: seen.
+    const said = await queueRoutineTurn(bot.id, 1, true);
+    await dataSource.query(`UPDATE bot_message SET "createdAt" = $2 WHERE "turnId" = $1`, [
+      said.id,
+      earlier,
+    ]);
+    // Queued before the visit, said after it: unseen (the regression).
+    const late = await queueRoutineTurn(bot.id, 2, true);
+    await dataSource.query(`UPDATE bot_turn SET "createdAt" = $2 WHERE id = $1`, [
+      late.id,
+      earlier,
+    ]);
+    await queueRoutineTurn(bot.id, 3, false);
+    await queueRoutineTurn(bot.id, 4, true);
+    await queueRoutineTurn(other.id, 5, true);
+
+    expect(await turns.countRoutineReportsSince(bot.organizationId, bot.id, since)).toBe(2);
+    expect(await turns.countRoutineReportsSince(bot.organizationId, other.id, since)).toBe(1);
   });
 
   it('never strands a message sent while the running turn ends: it is staged by one or the other', async () => {
@@ -731,11 +804,24 @@ describe('bots chat (integration)', () => {
     // An owner who is no longer a member: the turn still runs, reading no hosts.
     const owners = { resolve: async () => null } as unknown as BotOwnerScopeResolver;
     const hosts: OwnerHostsPort = { hostsOf: vi.fn(async () => []) };
+    // The owner wrote nothing about themselves: the prompt has no such section.
+    const people: PersonMemoryRepositoryPort = {
+      find: async (organizationId, userId) => ({
+        organizationId,
+        userId,
+        about: '',
+        updatedAt: null,
+      }),
+      put: async () => {
+        throw new Error('a turn never writes what the person wrote');
+      },
+    };
     return new BotTurnContextResolver(
       new BotModelAccessResolver(bots, new TurnCredentialsResolver(credentials, sealer, chatgpt)),
       documents,
       memory,
       skills,
+      people,
       messages,
       summaries,
       owners,
@@ -2101,6 +2187,121 @@ describe('bots chat (integration)', () => {
       expect(await subscriptions.findForWake(stored.id)).toBeNull();
     });
 
+    // 27 §7. What breaks this: a second watch of one pull request holding two
+    // rows (two wakes per event), a watch again resetting the wake limit, the
+    // webhook's read finding another pull request's or another workspace's
+    // bots, or a row that names a session and a pull request at once.
+    it('holds one pull request subscription per bot, finds it by repository and number in its workspace, and keeps its subject whole', async () => {
+      const bot = await create('PR watcher');
+      const other = await create('PR watcher two');
+      const pull = (overrides: { number?: number; purpose?: string | null; botId?: string } = {}) =>
+        BotSubscriptionEntity.subscribeToPullRequest({
+          organizationId: bot.organizationId,
+          botId: overrides.botId ?? bot.id,
+          pullRequest: {
+            githubRepoId: '9007199254740993',
+            repository: 'acme-labs/app',
+            number: overrides.number ?? 128,
+          },
+          originTurnId: null,
+          purpose: overrides.purpose === undefined ? 'land it' : overrides.purpose,
+          credentialScopes: ['pulls:read'],
+          timeZone: 'UTC',
+        });
+      const first = await subscriptions.subscribe(pull());
+      expect(await subscriptions.claimWake(first.id, BOT_SUBSCRIPTION_WAKE_LIMIT)).toBe(1);
+      const again = await subscriptions.subscribe(pull({ purpose: null }));
+      expect(again).toMatchObject({
+        id: first.id,
+        resourceKind: 'pull_request',
+        resourceId: null,
+        // A bigint past 2^53 comes back exactly: it is a string end to end.
+        pullRequest: { githubRepoId: '9007199254740993', repository: 'acme-labs/app', number: 128 },
+        purpose: 'land it',
+        wakes: 1,
+      });
+      // A session subscription of the same bot is a row of its own.
+      await subscriptions.subscribe(watching(bot));
+      const theirs = await subscriptions.subscribe(pull({ botId: other.id }));
+      await subscriptions.subscribe(pull({ number: 129 }));
+
+      expect(
+        (
+          await subscriptions.findIdsForPullRequest(bot.organizationId, '9007199254740993', 128)
+        ).sort(),
+      ).toEqual([first.id, theirs.id].sort());
+      expect(
+        await subscriptions.findIdsForPullRequest(
+          await insertOrganization(),
+          '9007199254740993',
+          128,
+        ),
+      ).toEqual([]);
+      expect(await subscriptions.countForBot(bot.organizationId, bot.id)).toBe(3);
+
+      expect(
+        await subscriptions.unsubscribePullRequest(bot.organizationId, bot.id, {
+          githubRepoId: '9007199254740993',
+          number: 128,
+        }),
+      ).toBe(true);
+      expect(
+        await subscriptions.findIdsForPullRequest(bot.organizationId, '9007199254740993', 128),
+      ).toEqual([theirs.id]);
+
+      await expect(
+        dataSource.query(
+          `UPDATE bot_subscription SET "resourceId" = gen_random_uuid() WHERE id = $1`,
+          [theirs.id],
+        ),
+      ).rejects.toThrow(/CHK_bot_subscription_subject/);
+      await expect(
+        dataSource.query(`UPDATE bot_subscription SET "pullNumber" = NULL WHERE id = $1`, [
+          theirs.id,
+        ]),
+      ).rejects.toThrow(/CHK_bot_subscription_subject/);
+      // The webhook's read is served by an index partial on the kind.
+      expect(
+        (
+          await dataSource.query(
+            `SELECT indexdef FROM pg_indexes WHERE indexname = 'IDX_bot_subscription_pull_request'`,
+          )
+        )[0].indexdef,
+      ).toContain(`WHERE (("resourceKind")::text = 'pull_request'::text)`);
+    });
+
+    // Codex on #638. What breaks this: two events on one pull request,
+    // delivered together, both reading the count before either writes it,
+    // so a watch wakes its bot past the limit.
+    it('takes one wake per event, never past the limit, even for events delivered together', async () => {
+      const bot = await create('PR racer');
+      const followed = await subscriptions.subscribe(
+        BotSubscriptionEntity.subscribeToPullRequest({
+          organizationId: bot.organizationId,
+          botId: bot.id,
+          pullRequest: { githubRepoId: '42', repository: 'acme-labs/app', number: 7 },
+          originTurnId: null,
+          purpose: null,
+          credentialScopes: null,
+          timeZone: null,
+        }),
+      );
+      await dataSource.query(`UPDATE bot_subscription SET "wakes" = $2 WHERE id = $1`, [
+        followed.id,
+        BOT_SUBSCRIPTION_WAKE_LIMIT - 1,
+      ]);
+      const claims = await Promise.all([
+        subscriptions.claimWake(followed.id, BOT_SUBSCRIPTION_WAKE_LIMIT),
+        subscriptions.claimWake(followed.id, BOT_SUBSCRIPTION_WAKE_LIMIT),
+      ]);
+      expect(claims.sort()).toEqual([BOT_SUBSCRIPTION_WAKE_LIMIT, null]);
+      // One that queued nothing gives its wake back.
+      await subscriptions.releaseWake(followed.id);
+      expect(await subscriptions.claimWake(followed.id, BOT_SUBSCRIPTION_WAKE_LIMIT)).toBe(
+        BOT_SUBSCRIPTION_WAKE_LIMIT,
+      );
+    });
+
     it('names a terminal watch, answers the one it replaced, finds it by the watch, and keeps the newest count', async () => {
       const bot = await create('Pattern watcher');
       const stored = await subscriptions.subscribe(watching(bot));
@@ -2474,6 +2675,59 @@ describe('bots chat (integration)', () => {
       expect(jobs.map((job) => job.payload.turnId)).toEqual([driven.id]);
     });
 
+    // What breaks this: a goal held for a rate limit that the chat cannot see,
+    // so its banner looks stalled, or a wait left on the goal after its next
+    // continuation was queued, so the banner says it waits while it works.
+    it('holds the goal’s decision until a rate limit ends, says it waits, and forgets the wait once it goes on', async () => {
+      await dataSource.query(`DELETE FROM outbox_message`);
+      const bot = await create('Patient');
+      const turn = await runningTurn(bot);
+      await goals.set(goalFor(bot, turn.id));
+      const resetAt = new Date(Date.now() + 60_000);
+      turn.end('completed', new Date(), { limited: { system: 'Gmail', resetAt } });
+      expect(await turns.finish(turn, null)).toBe(true);
+
+      const held = (await goals.findForBot(bot.organizationId, bot.id)) as BotGoalEntity;
+      expect(held.waiting).toEqual({ system: 'Gmail', resetAt });
+      const [job]: { availableAt: Date }[] = await dataSource.query(
+        `SELECT "availableAt" FROM outbox_message WHERE topic = 'bot-turns' AND "eventName" = 'continue-bot-goal'`,
+      );
+      expect(job?.availableAt).toEqual(resetAt);
+
+      const next = continuation(bot, held);
+      expect(await turns.enqueueContinuation(next.turn, next.opening, null, held)).toBe('staged');
+      expect((await goals.findForBot(bot.organizationId, bot.id))?.waiting).toBeNull();
+    });
+
+    // What breaks this: a goal replaced while the old one's continuation ran,
+    // marked as waiting by that continuation's limit, though nothing holds it.
+    it('marks only the ended turn’s own goal as waiting, never one set in its place', async () => {
+      const bot = await create('Replaced');
+      const setter = await runningTurn(bot);
+      const old = goalFor(bot, setter.id, 'Old goal');
+      await goals.set(old);
+      setter.end('completed', new Date());
+      expect(await turns.finish(setter, null)).toBe(true);
+      const loaded = (await goals.findForBot(bot.organizationId, bot.id)) as BotGoalEntity;
+      const next = continuation(bot, loaded);
+      expect(await turns.enqueueContinuation(next.turn, next.opening, null, loaded)).toBe('staged');
+      const running = (await turns.findForRun(next.turn.id)).unwrap();
+      running.start(new Date());
+      expect(await turns.claim(running)).toBe('claimed');
+      // The person sets a new goal while the old one's continuation runs.
+      const yours = sent(bot, '/goal New goal');
+      await turns.enqueue(yours.turn, yours.message, null);
+      await goals.set(goalFor(bot, yours.turn.id, 'New goal'));
+
+      running.end('completed', new Date(), {
+        limited: { system: 'Gmail', resetAt: new Date(Date.now() + 60_000) },
+      });
+      expect(await turns.finish(running, null)).toBe(true);
+      const current = (await goals.findForBot(bot.organizationId, bot.id)) as BotGoalEntity;
+      expect(current.objective).toBe('New goal');
+      expect(current.waiting).toBeNull();
+    });
+
     it('goes with the chat: clearing the conversation deletes the goal its turn set', async () => {
       const bot = await create('Forgetful');
       const turn = await runningTurn(bot);
@@ -2482,6 +2736,218 @@ describe('bots chat (integration)', () => {
       await turns.finish(turn, null);
       expect(await turns.clearConversation(bot.organizationId, bot.id)).toBe('cleared');
       expect(await goals.findForBot(bot.organizationId, bot.id)).toBeNull();
+    });
+  });
+  describe('loops (25-bots.md §4.1, /loop)', () => {
+    function loopFor(bot: BotEntity, originTurnId: string, intervalMinutes: number | null = 5) {
+      return BotLoopEntity.set(
+        {
+          organizationId: bot.organizationId,
+          botId: bot.id,
+          originTurnId,
+          prompt: 'check the deploy',
+          intervalMinutes,
+          credentialScopes: ['bots:read'],
+          timeZone: 'Europe/Madrid',
+        },
+        new Date(),
+      );
+    }
+
+    async function loopJobs(): Promise<{ payload: { loopId: string; run: number; at: string } }[]> {
+      return dataSource.query(
+        `SELECT payload FROM outbox_message WHERE topic = 'bot-turns' AND "eventName" = 'run-bot-loop' ORDER BY "createdAt", id`,
+      );
+    }
+
+    function run(bot: BotEntity, loop: BotLoopEntity) {
+      return loopRunTurn(
+        {
+          organizationId: bot.organizationId,
+          botId: bot.id,
+          requestedByUserId: userId,
+          provider: 'glm',
+          model: 'glm-5.3',
+          effort: null,
+        },
+        loop,
+        loop.runs + 1,
+      );
+    }
+
+    /** The loop as a run's job reads it, and the run queued for it once its first run has ended. */
+    async function setWithEndedFirstRun(bot: BotEntity, intervalMinutes: number | null = 5) {
+      const yours = sent(bot, '/loop 5m check the deploy');
+      const loop = loopFor(bot, yours.turn.id, intervalMinutes);
+      await turns.enqueueWithLoop(yours.turn, yours.message, loop, null);
+      const first = (await turns.findForRun(yours.turn.id)).unwrap();
+      expect(await turns.claim(first)).toBe('claimed');
+      first.end('completed', new Date());
+      await turns.finish(first, null);
+      return (await loops.findForRun(loop.id)) as BotLoopEntity;
+    }
+
+    // What breaks this: a /loop's turn queued in one transaction and its loop
+    // set (or its first run's job staged) in another, so a crash between them
+    // leaves a loop with no run ever due.
+    it('sets a /loop’s loop with its turn and stages its first run, replacing the one there was', async () => {
+      await dataSource.query(`DELETE FROM outbox_message`);
+      const bot = await create('Looper');
+      const before = sent(bot, '/loop watch PR 42');
+      const old = loopFor(bot, before.turn.id, null);
+      await turns.enqueueWithLoop(before.turn, before.message, old, null);
+      const yours = sent(bot, '/loop 5m check the deploy');
+      const loop = loopFor(bot, yours.turn.id);
+      const { outcome, replaced } = await turns.enqueueWithLoop(
+        yours.turn,
+        yours.message,
+        loop,
+        null,
+      );
+      expect(outcome).toBe('waiting');
+      expect(replaced).toMatchObject({ id: old.id });
+      expect(await loops.findForBot(bot.organizationId, bot.id)).toMatchObject({
+        id: loop.id,
+        originTurnId: yours.turn.id,
+        intervalMinutes: 5,
+      });
+      const jobs = await loopJobs();
+      expect(jobs.map((job) => job.payload)).toContainEqual({
+        loopId: loop.id,
+        run: 1,
+        at: loop.nextRunAt?.toISOString(),
+      });
+    });
+
+    // What breaks this: a run's job delivered twice (or two replicas) both
+    // queuing the run, or the count claimed apart from the turn.
+    it('queues a run and claims its count and next run together, once when two jobs race', async () => {
+      await dataSource.query(`DELETE FROM outbox_message`);
+      const bot = await create('Racer');
+      const loaded = await setWithEndedFirstRun(bot);
+      const [a, b] = await Promise.all([loops.findForRun(loaded.id), loops.findForRun(loaded.id)]);
+      const next = new Date(Date.now() + 5 * 60_000);
+      const whenBusy = next;
+      const first = run(bot, a as BotLoopEntity);
+      const second = run(bot, b as BotLoopEntity);
+      const outcomes = await Promise.all([
+        turns.enqueueLoopRun(first.turn, first.opening, null, a as BotLoopEntity, {
+          next,
+          whenBusy,
+        }),
+        turns.enqueueLoopRun(second.turn, second.opening, null, b as BotLoopEntity, {
+          next,
+          whenBusy,
+        }),
+      ]);
+      expect(outcomes.sort()).toEqual(['lost', 'staged']);
+      expect(await loops.findForRun(loaded.id)).toMatchObject({ runs: 1, nextRunAt: next });
+      const queued: unknown[] = await dataSource.query(
+        `SELECT 1 FROM bot_turn WHERE "botId" = $1 AND origin = 'loop'`,
+        [bot.id],
+      );
+      expect(queued).toHaveLength(1);
+      expect((await loopJobs()).map((job) => job.payload.run)).toContain(2);
+    });
+
+    // What breaks this: a bot busy for an hour on a 5-minute loop handed
+    // twelve runs to work through when it is free.
+    it('queues nothing while the last run is busy, and moves the run on', async () => {
+      const bot = await create('Busy');
+      const yours = sent(bot, '/loop 5m check the deploy');
+      const loop = loopFor(bot, yours.turn.id);
+      await turns.enqueueWithLoop(yours.turn, yours.message, loop, null);
+      const loaded = (await loops.findForRun(loop.id)) as BotLoopEntity;
+      const whenBusy = new Date(Date.now() + 10 * 60_000);
+      const next = run(bot, loaded);
+      expect(
+        await turns.enqueueLoopRun(next.turn, next.opening, null, loaded, {
+          next: whenBusy,
+          whenBusy,
+        }),
+      ).toBe('busy');
+      expect(await loops.findForRun(loop.id)).toMatchObject({ runs: 0, nextRunAt: whenBusy });
+      const queued: unknown[] = await dataSource.query(
+        `SELECT 1 FROM bot_turn WHERE "botId" = $1 AND origin = 'loop'`,
+        [bot.id],
+      );
+      expect(queued).toEqual([]);
+    });
+
+    // What breaks this: a Stop deleting the loop while a run is being queued,
+    // and the run queued after the Stop returned.
+    it('queues nothing for a loop stopped before its run was claimed', async () => {
+      const bot = await create('Stopped');
+      const loaded = await setWithEndedFirstRun(bot);
+      await loops.end(loaded, null);
+      const next = run(bot, loaded);
+      const at = new Date(Date.now() + 60_000);
+      expect(
+        await turns.enqueueLoopRun(next.turn, next.opening, null, loaded, {
+          next: at,
+          whenBusy: at,
+        }),
+      ).toBe('lost');
+    });
+
+    it('schedules a self-paced run on the count it was loaded at, the later word winning', async () => {
+      const bot = await create('Paced');
+      const loaded = await setWithEndedFirstRun(bot, null);
+      const soon = new Date(Date.now() + 60_000);
+      const later = new Date(Date.now() + 120_000);
+      expect(await loops.schedule(loaded, soon, null)).toBe(true);
+      const again = (await loops.findForRun(loaded.id)) as BotLoopEntity;
+      expect(await loops.schedule(again, later, null)).toBe(true);
+      expect((await loops.findForRun(loaded.id))?.nextRunAt).toEqual(later);
+      // A run queued meanwhile moved the count: a word from before it is lost.
+      await dataSource.query(`UPDATE bot_loop SET runs = runs + 1 WHERE id = $1`, [loaded.id]);
+      expect(await loops.schedule(again, soon, null)).toBe(false);
+    });
+
+    it('ends once, with its line outside any turn, and a second end writes nothing', async () => {
+      const bot = await create('Ender');
+      const loaded = await setWithEndedFirstRun(bot);
+      expect(await loops.end(loaded, loopEndLine(loaded, 'cleared', null))).toBe(true);
+      expect(await loops.end(loaded, loopEndLine(loaded, 'cleared', null))).toBe(false);
+      const lines: { turnId: string | null }[] = await dataSource.query(
+        `SELECT "turnId" FROM bot_message WHERE "botId" = $1 AND event->>'kind' = 'loop'`,
+        [bot.id],
+      );
+      expect(lines).toEqual([{ turnId: null }]);
+    });
+
+    // What breaks this: a decision read off the loop applied after a run was
+    // queued or rescheduled meanwhile, ending the loop that run keeps going.
+    it('ends a loop only while it is as it was read, when asked to', async () => {
+      const bot = await create('Careful');
+      const read = await setWithEndedFirstRun(bot, null);
+      expect(await loops.schedule(read, new Date(Date.now() + 60_000), null)).toBe(true);
+      const stale = (await loops.findForRun(read.id)) as BotLoopEntity;
+      await dataSource.query(`UPDATE bot_loop SET runs = runs + 1 WHERE id = $1`, [read.id]);
+      expect(await loops.end(stale, null, true)).toBe(false);
+      expect(await loops.findForRun(read.id)).not.toBeNull();
+      expect(await loops.end(stale, null)).toBe(true);
+    });
+
+    it('stages the loop’s job when one of its runs ends, and none for any other turn', async () => {
+      await dataSource.query(`DELETE FROM outbox_message`);
+      const bot = await create('Finisher');
+      await setWithEndedFirstRun(bot);
+      const other = await runningTurn(bot);
+      other.end('completed', new Date());
+      await turns.finish(other, null);
+      const jobs: { payload: { turnId: string } }[] = await dataSource.query(
+        `SELECT payload FROM outbox_message WHERE topic = 'bot-turns' AND "eventName" = 'finish-bot-loop-run'`,
+      );
+      expect(jobs).toHaveLength(1);
+      expect(jobs[0]?.payload.turnId).not.toBe(other.id);
+    });
+
+    it('goes with the chat: clearing the conversation deletes the loop its turn set', async () => {
+      const bot = await create('Forgetful');
+      const loaded = await setWithEndedFirstRun(bot);
+      expect(await turns.clearConversation(bot.organizationId, bot.id)).toBe('cleared');
+      expect(await loops.findForRun(loaded.id)).toBeNull();
     });
   });
 });

@@ -2,6 +2,7 @@ package transcript
 
 import (
 	"bufio"
+	"bytes"
 	"encoding/json"
 	"errors"
 	"io"
@@ -10,6 +11,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+	"time"
 
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/domain"
 )
@@ -43,6 +45,47 @@ func (c claudeReader) path(conversation string) string {
 		return ""
 	}
 	return newest(matches)
+}
+
+// conversationIn is the newest conversation Claude Code wrote in dir's
+// folder on or after since, by its own name, or "". The folder is dir as
+// Claude Code encodes it, every character but a letter or a digit a dash; a
+// version that encodes it otherwise finds nothing, and the session's chat
+// stays empty as it was before the name was looked for.
+func (c claudeReader) conversationIn(dir string, since time.Time) string {
+	if dir == "" {
+		return ""
+	}
+	matches, err := filepath.Glob(filepath.Join(c.projects, claudeProjectFolder(dir), "*.jsonl"))
+	if err != nil {
+		return ""
+	}
+	var recent []string
+	for _, match := range matches {
+		info, err := os.Stat(match)
+		if err != nil || info.ModTime().Before(since) {
+			continue
+		}
+		if conversationPattern.MatchString(strings.TrimSuffix(filepath.Base(match), ".jsonl")) {
+			recent = append(recent, match)
+		}
+	}
+	path := newest(recent)
+	if path == "" {
+		return ""
+	}
+	return strings.TrimSuffix(filepath.Base(path), ".jsonl")
+}
+
+// claudeProjectFolder is dir as Claude Code names its folder under
+// `projects/`.
+func claudeProjectFolder(dir string) string {
+	return strings.Map(func(r rune) rune {
+		if r >= 'a' && r <= 'z' || r >= 'A' && r <= 'Z' || r >= '0' && r <= '9' {
+			return r
+		}
+		return '-'
+	}, dir)
 }
 
 // newest is the most recently written of paths, so a conversation found in
@@ -190,3 +233,14 @@ func (c claudeReader) finder(session domain.Session) (func() string, bool) {
 // transcriber implements chatSource: each line of Claude Code's transcript
 // is one entry, compacted (claude_chat.go).
 func (c claudeReader) transcriber() chatTranscriber { return lineByLine(c.chatEntry) }
+
+// opensTurn implements turnCutter: a line is where a turn starts when it is
+// something the person typed (`prompt`), so the tail can be cut before it.
+func (claudeReader) opensTurn(line []byte) bool {
+	// Most lines are the agent's; only a user line is worth decoding.
+	if !bytes.Contains(line, []byte(`"user"`)) {
+		return false
+	}
+	var entry claudeEntry
+	return json.Unmarshal(line, &entry) == nil && entry.prompt() != ""
+}

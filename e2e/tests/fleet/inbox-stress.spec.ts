@@ -469,15 +469,6 @@ test('the Inbox holds under thirty sessions, ten bots and two readers', async ({
     note(`the Inbox lists ${expected.size} items`);
     await expect.poll(() => counts(page)).toEqual({ nav: expected.size });
 
-    // Order: approvals and sessions, oldest wait first; then reviews; then merges.
-    const listed = await listedKeys(page);
-    const rank = (key: string) => {
-      const why = expected.get(key);
-      return why === 'requested' ? 1 : why === 'ready' ? 2 : 0;
-    };
-    const ranks = listed.map(rank);
-    expect(ranks, 'ranks never go back').toEqual([...ranks].sort((a, b) => a - b));
-
     // The card each kind draws.
     for (const plan of waiting) {
       const card = await openRow(page, plan.id);

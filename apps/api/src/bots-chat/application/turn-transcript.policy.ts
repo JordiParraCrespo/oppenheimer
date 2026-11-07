@@ -10,6 +10,12 @@ import {
   BotMessageEntity,
   type BotToolStep,
 } from '../domain/bot-message.entity';
+import {
+  type BotRateLimit,
+  laterLimit,
+  RATE_LIMIT_DATA_KEY,
+  rateLimitOfData,
+} from '../domain/bot-rate-limit.policy';
 import { SHOWN_IMAGES_DATA_KEY } from '../domain/bot-shown-image.policy';
 import { SUBAGENT_DATA_KEY } from '../domain/bot-subagent.policy';
 import { startOf } from '../domain/bot-tool-text.policy';
@@ -49,6 +55,8 @@ export interface TranscriptOutcome {
   context: BotTurnContext | null;
   /** A subscription's windows as its last answer said them. */
   planLimits: BotTurnPlanLimits | null;
+  /** The latest moment a system its tools called asked us to wait until; null when none did. */
+  limited: BotRateLimit | null;
 }
 
 /**
@@ -86,6 +94,7 @@ export class TurnTranscript {
     cacheWriteTokens: 0,
     context: null,
     planLimits: null,
+    limited: null,
   };
 
   constructor(private readonly turn: BotTurnEntity) {}
@@ -172,6 +181,7 @@ export class TurnTranscript {
       subagents: null,
       allowedBy: null,
       mailDraft: null,
+      rateLimit: null,
     };
     if (this.activity) {
       this.activity.steps.push(step);
@@ -197,11 +207,16 @@ export class TurnTranscript {
     this.running.delete(callId);
     step.output =
       output.length > BOT_TOOL_OUTPUT_MAX ? `${startOf(output, BOT_TOOL_OUTPUT_MAX)}…` : output;
-    step.isError = isError;
+    const limit = rateLimitOfData(data?.[RATE_LIMIT_DATA_KEY]);
+    // A limit is a wait, not a failure: the stored step says so once, and
+    // every reader draws `isError` as a failure and `rateLimit` as a wait.
+    step.isError = isError && limit === null;
+    step.rateLimit = limit;
     step.sessionId = isError ? null : (data?.sessionId ?? null);
     step.subagents = isError ? null : toSubagentRuns(data?.[SUBAGENT_DATA_KEY]);
     step.allowedBy = data?.[ALLOWED_BY_DATA_KEY]?.slice(0, BOT_ALLOWED_BY_MAX) ?? null;
     step.mailDraft = isError ? null : toMailDraft(data?.[MAIL_DRAFT_DATA_KEY]);
+    if (limit) this.outcome.limited = laterLimit(this.outcome.limited, limit);
     for (const run of step.subagents ?? []) {
       this.outcome.inputTokens += run.inputTokens;
       this.outcome.outputTokens += run.outputTokens;

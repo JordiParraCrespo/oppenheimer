@@ -1,4 +1,6 @@
 export type { ChatAnswer } from '@oppenheimer/shared/sessions';
+export { type ChatActivity, readAgentActivity } from './chat/agent-activity';
+export type { CloudChatFeed, CloudChatReply } from './chat/cloud-chat-feed';
 export {
   type ChatBatch,
   type ChatLimit,
@@ -8,6 +10,8 @@ export {
   type ChatState,
   type ChatStatus,
   type ChatStep,
+  type ChatSubagent,
+  type ChatSubagentState,
   type ChatTaskStatus,
   type ChatTodo,
   type ChatTodoStatus,

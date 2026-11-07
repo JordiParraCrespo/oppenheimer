@@ -289,6 +289,9 @@ func (a *App) sessionLoop(ctx context.Context, logger *slog.Logger) {
 		for _, session := range a.Sessions.RecoverKept(ctx) {
 			logger.Info("kept session restarted after a reboot", slog.String("session", session.ID))
 		}
+		// A session that continues a cloud one learns the name its agent gave
+		// the conversation, which its transcript is read by.
+		a.Sessions.FindTeleported()
 		// A session started with no task is named from the first message
 		// typed into its agent, read off the agent's own transcript.
 		a.Sessions.ReportFirstPrompts()

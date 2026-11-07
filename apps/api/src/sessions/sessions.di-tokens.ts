@@ -13,6 +13,10 @@ export const SESSION_DISPATCH = Symbol('SESSION_DISPATCH');
 export const HOST_FOLDERS = Symbol('HOST_FOLDERS');
 /** The Browser tab's listing of a session's ports; bound by `links/` like `HOST_FOLDERS`. */
 export const SESSION_PORTS = Symbol('SESSION_PORTS');
+/** A shared file's preview, asked of the session's host; bound by `links/` like `SESSION_PORTS`. */
+export const SESSION_SHARED_FILES = Symbol('SESSION_SHARED_FILES');
+/** A page of a session's conversation, asked of the session's host; bound by `links/` like `SESSION_SHARED_FILES`. */
+export const SESSION_TRANSCRIPT = Symbol('SESSION_TRANSCRIPT');
 /** The composer's listing of a host's Codex cloud environments; bound by `links/` like `HOST_FOLDERS`. */
 export const HOST_CODEX_ENVIRONMENTS = Symbol('HOST_CODEX_ENVIRONMENTS');
 export const RECORD_SESSION_EVENTS = Symbol('RECORD_SESSION_EVENTS');
@@ -26,3 +30,5 @@ export const CLOUD_FILES = Symbol('CLOUD_FILES');
 export const SESSION_TERMINAL_WATCH_REPOSITORY = Symbol('SESSION_TERMINAL_WATCH_REPOSITORY');
 /** Where a wake for a session's own agent waits for its time (`SessionWakesPort`). */
 export const SESSION_WAKES = Symbol('SESSION_WAKES');
+/** A Claude Code cloud session's transcript lines and waiting replies (`session_cloud_line`, `session_cloud_reply`). */
+export const SESSION_CLOUD_CHAT_REPOSITORY = Symbol('SESSION_CLOUD_CHAT_REPOSITORY');

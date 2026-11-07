@@ -7,6 +7,7 @@ import {
 } from '../agents/catalog.js';
 import { loginUrlPattern } from '../agents/login.js';
 import {
+  CLOUD_SESSION_ID_PATTERN,
   FIELD_BOUNDS,
   fitsPromptBound,
   HOST_PLATFORMS,
@@ -98,6 +99,14 @@ export const launchOptionsSchema = z.object({
    */
   conversation: z.string().uuid().optional(),
   resume: z.boolean().optional(),
+  /**
+   * A Claude Code cloud session to continue here: the agent starts with its
+   * branch and history (the catalog's `launch.teleport`) rather than a new
+   * conversation, so it is sent with no `conversation` and no first task.
+   * Sent only to a runner whose `hello` named `session.teleport`; an older
+   * one would drop it and start an empty conversation.
+   */
+  teleport: z.string().regex(CLOUD_SESSION_ID_PATTERN).optional(),
 });
 
 export type LaunchOptions = z.infer<typeof launchOptionsSchema>;

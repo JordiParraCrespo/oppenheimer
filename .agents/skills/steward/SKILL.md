@@ -21,16 +21,22 @@ other skills point here.
    not for the pull request. Fix what it finds and run it again.
 3. **Deslop:** the `deslop` skill over the branch diff.
 4. **Commit**, staging files by path.
-5. **Screens**, when the change shows on screen: the `local-stack` skill's
+5. **Autoreview**, before the pull request is opened: the `autoreview`
+   skill, a fresh agent reviewing the committed branch. Its fixes go back
+   to step 2. A pull request that changes no code (a research note) skips
+   it.
+6. **Screens**, when the change shows on screen: the `local-stack` skill's
    "Show a visual change" (stack up `--web`, `pnpm screens <route>...`).
    An edit after them that only touches comments or layout keeps them;
    any other edit to a visual file means taking them again.
-6. **`pnpm ci:local`** on that commit. A stack already up with `--web` stays
+7. **`pnpm ci:local`** on that commit. A stack already up with `--web` stays
    up; the run swaps in the API it built.
-7. **Push** on green, with the report and the screenshots in the
-   description.
+8. **Push** on green, with the report, the autoreview and the screenshots
+   in the description.
 
-A fix after step 6 goes back to step 2 for that fix, and through 4–7 again.
+A fix after step 7 goes back to step 2 for that fix, and through 4–8 again;
+once the pull request is open, step 5 runs again only for a fix that
+changes behavior.
 
 ## Before every push
 
@@ -68,6 +74,43 @@ green, a visual change has its screenshots, and every review thread has an
 answer. There is nothing to wait for
 on GitHub: do not poll for checks, and do not push an empty commit to start
 one.
+
+## Merging
+
+Every pull request an agent opens carries one of three labels. The label
+is the protocol: it says what the pull request waits for, and who merges.
+
+| Label | Started by | Waits for | Merged by |
+| --- | --- | --- | --- |
+| `ship` | `/ship` (a fix) | ready, and a `PASS` from a fresh agent that did not write it | the agent, on its own |
+| `propose` | `/propose` (a change Jordi signs off: a feature, a refactor, a fix he wants to see) | the same, and Jordi accepting it: `/ship`, or swapping the label to `ship` | the agent, once accepted |
+| `research` | `/research` (a note or a proof of concept) | ready | the agent, as soon as it is green |
+
+`/cook` picks one of the three for a task and says which (when it runs: `AGENTS.md`, "Hard rules"). A pull request with none of them merges only when Jordi says so. A review
+is never an approval: the bot reviews post from Jordi's account. The
+lanes are the `ship`, `propose` and `research` skills.
+
+## Babysitting
+
+A `ship` or `propose` pull request stays mergeable until it merges or closes;
+its session owns it. On every event and every check-in, fetch it fresh and
+work, in this order:
+
+1. **Conflict.** Merge `origin/main` into the branch (never rebase or
+   force-push), resolve, regenerate lockfiles and generated files with
+   their tooling, then the steps below for the new head.
+2. **Review comments.** Verify each against the code. Fix what is real and
+   reply with the commit; answer the rest with the reason it stays. Resolve
+   every thread you answered. A comment that asks for more than the task
+   goes to Jordi.
+3. **Report.** After any push, `pnpm ci:local` on the new head and replace
+   the report. Code that changed needs its verdict again; a merge of `main`
+   alone does not.
+
+Keep one check-in armed about every four hours while it is open, so a
+conflict from another merge is caught without an event. When nothing is
+left to do, say once what it waits for, then stay quiet until something
+changes.
 
 ## After a merge from main
 

@@ -29,7 +29,7 @@ export {
 export type { AvatarColor, AvatarOption } from './components/avatar-picker';
 export { AvatarColorPicker, AvatarPicker, BotAvatar } from './components/avatar-picker';
 export { Badge, badgeVariants } from './components/badge';
-export { BotItem, BotList, SortableBotItem } from './components/bot-item';
+export { BotItem, BotItemSkeleton, BotList, SortableBotItem } from './components/bot-item';
 export type { BrandGlyphName } from './components/brand-glyph';
 /* ── MVP design system (product/versions/mvp/design) ───────────────────── */
 export { BrandGlyph } from './components/brand-glyph';
@@ -167,6 +167,7 @@ export {
 } from './components/chat-transcript';
 export type { ToolCallOutputLabels } from './components/chat-work';
 export {
+  AgentActivity,
   ReasoningRow,
   ToolCallGroup,
   ToolCallLive,
@@ -307,7 +308,11 @@ export type { EffortStop } from './components/effort-slider';
 export { EffortPicker, EffortSlider } from './components/effort-slider';
 export { EmptyState } from './components/empty-state';
 export type { FacetOption } from './components/facet-select';
-export { FacetSelect, SearchableFacetSelect } from './components/facet-select';
+export {
+  FacetSelect,
+  SearchableFacetMultiSelect,
+  SearchableFacetSelect,
+} from './components/facet-select';
 export {
   Field,
   FieldAction,
@@ -444,6 +449,7 @@ export {
   RoutineRun,
   RoutineRunList,
   RoutineRunsEmpty,
+  SortableRoutineItem,
 } from './components/routine-item';
 export { RoutineStep, RoutineStepFields, RoutineSteps } from './components/routine-steps';
 export {
@@ -527,6 +533,7 @@ export {
   sortableProjectId,
   useSidebar,
 } from './components/sidebar';
+export { SidebarFoldLabel } from './components/sidebar-fold-label';
 export { Skeleton } from './components/skeleton';
 export type { SlugStatus } from './components/slug-input';
 export { SlugInput } from './components/slug-input';

@@ -6,7 +6,6 @@ import {
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
   DropdownMenuSeparator,
-  DropdownMenuShortcut,
   DropdownMenuSub,
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
@@ -90,11 +89,8 @@ export function InboxFilterMenu({
               onValueChange={(next) => onTypeChange(next as InboxTypeFilter)}
             >
               {INBOX_TYPES.map((type) => (
-                <DropdownMenuRadioItem key={type} value={type}>
+                <DropdownMenuRadioItem key={type} value={type} count={typeCounts[type]}>
                   {t(`inbox.type.${type}`)}
-                  <DropdownMenuShortcut className="figures">
-                    {typeCounts[type]}
-                  </DropdownMenuShortcut>
                 </DropdownMenuRadioItem>
               ))}
             </DropdownMenuRadioGroup>

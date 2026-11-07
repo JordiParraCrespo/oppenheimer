@@ -28,10 +28,14 @@ const (
 
 // Follow implements app.Transcripts: it sends the conversation's chat
 // entries to emit until ctx ends — the history first, under Reset, then each
-// line as the CLI appends it. OpenCode's conversation is read through its
-// own API instead (`opencode.go`). A batch emit refuses (the link's queue is full)
+// line as the CLI appends it. Given older, the console can ask for older
+// turns: a transcript that can be cut at a turn's opening (Claude Code's)
+// then sends only its last turns as the history, with Before, and answers
+// each offset on older with the turns before it (`follow_older.go`). Without
+// it, the whole history, so nothing is ever out of the reader's reach. OpenCode's conversation is read through its own API
+// instead (`opencode.go`). A batch emit refuses (the link's queue is full)
 // is offered again on the next check, so nothing is skipped.
-func (r *Reader) Follow(ctx context.Context, session domain.Session, entryMax, batchMax int, emit func(app.ChatBatch) error) error {
+func (r *Reader) Follow(ctx context.Context, session domain.Session, entryMax, batchMax int, older <-chan int64, emit func(app.ChatBatch) error) error {
 	if session.Agent.ServesConversation() {
 		if session.Launch.Server == nil {
 			return app.ErrNoChat
@@ -49,7 +53,13 @@ func (r *Reader) Follow(ctx context.Context, session domain.Session, entryMax, b
 	}
 	f := &follower{
 		find: find, fresh: source.transcriber,
-		entryMax: entryMax, batchMax: batchMax, emit: emit, reset: true,
+		entryMax: entryMax, batchMax: batchMax, emit: emit, reset: true, history: historyComing,
+	}
+	if subs, ok := source.(subagentSource); ok {
+		f.subs = newSubagentFollower(subs, source.transcriber)
+	}
+	if cut, ok := source.(turnCutter); ok && older != nil {
+		f.opens = cut.opensTurn
 	}
 	f.t = f.fresh()
 	if r.statusDir != "" && session.Agent == domain.AgentClaude {
@@ -62,11 +72,15 @@ func (r *Reader) Follow(ctx context.Context, session domain.Session, entryMax, b
 	defer ticker.Stop()
 	for {
 		f.check()
+		f.flushOlder()
 		f.checkStatus()
 		f.checkShared()
+		f.checkSubagents()
 		select {
 		case <-ctx.Done():
 			return nil
+		case before := <-older:
+			f.askOlder(before)
 		case <-ticker.C:
 		}
 	}
@@ -95,6 +109,9 @@ type chatTranscriber interface {
 	// for since: a reply an agent writes in pieces is whole only when the
 	// pieces stop.
 	quiet(since time.Duration, max int) [][]byte
+	// holds is whether it still holds lines read for a later quiet: the
+	// history has not all been sent while it does.
+	holds() bool
 }
 
 // lineByLine is the transcriber of a file whose every line is complete and
@@ -109,6 +126,8 @@ func (l lineByLine) line(raw []byte, max int) [][]byte {
 }
 
 func (lineByLine) quiet(time.Duration, int) [][]byte { return nil }
+
+func (lineByLine) holds() bool { return false }
 
 // follower is one conversation's read position.
 type follower struct {
@@ -128,6 +147,19 @@ type follower struct {
 	pending []string
 	// reset is owed to the next batch: the history starts (again) with it.
 	reset bool
+	// history is how far the history a reset started has been sent: the
+	// console holds a first load until it is told, since a read slowed by a
+	// screenshot's preview would otherwise look like the end of it.
+	history history
+
+	// opens tells a line that opens a turn, for a transcript sent tail
+	// first; nil sends the whole history (`follow_older.go`).
+	opens func(line []byte) bool
+	// before is where the history the pending reset sends starts: 0 for
+	// the whole of it.
+	before int64
+	// older is the page of older turns asked for, still to send.
+	older olderPage
 
 	// status is the conversation's status file, and statusSeen the version of
 	// it last sent; an empty path follows none.
@@ -138,6 +170,36 @@ type follower struct {
 	// sharedSeen the entries already sent from it; an empty path follows none.
 	shared     string
 	sharedSeen map[string]bool
+
+	// subs follows the conversation's subagents, for a source whose
+	// subagents keep files of their own; nil follows none.
+	subs *subagentFollower
+}
+
+// history is how far a follower has sent the history a reset started.
+type history int
+
+const (
+	// historySent: the history is all sent; what follows is live.
+	historySent history = iota
+	// historyComing: more of the history is on its way.
+	historyComing
+	// historyRead: the last read reached the transcript's end, which the
+	// next batch sent says.
+	historyRead
+)
+
+// marker is what a batch says of the history, `last` when it carries the
+// last of the entries pending.
+func (h history) marker(last bool) string {
+	switch {
+	case h == historySent:
+		return ""
+	case h == historyRead && last:
+		return app.HistoryEnd
+	default:
+		return app.HistoryMore
+	}
 }
 
 // statusVersion tells one write of a status file from the next.
@@ -151,7 +213,7 @@ type statusVersion struct {
 // it and the console always holds the latest one. A batch the link refuses
 // is offered again on the next check.
 func (f *follower) checkStatus() {
-	if f.status == "" || f.reset || len(f.pending) > 0 {
+	if f.status == "" || f.history != historySent || len(f.pending) > 0 {
 		return
 	}
 	info, err := os.Stat(f.status)
@@ -176,7 +238,7 @@ func (f *follower) checkStatus() {
 // the conversation by its timestamp. A batch the link refuses is offered
 // again on the next check.
 func (f *follower) checkShared() {
-	if f.shared == "" || f.reset || len(f.pending) > 0 {
+	if f.shared == "" || f.history != historySent || len(f.pending) > 0 {
 		return
 	}
 	entries, names := sharedEntries(f.shared, f.sharedSeen)
@@ -203,8 +265,8 @@ func (f *follower) check() {
 	path := f.find()
 	if path == "" {
 		// Nothing written yet: say so once, so the view can wait for it.
-		if f.reset && f.path == "" && f.emit(app.ChatBatch{Reset: true}) == nil {
-			f.reset = false
+		if f.reset && f.path == "" && f.emit(app.ChatBatch{Reset: true, History: app.HistoryEnd}) == nil {
+			f.reset, f.history = false, historySent
 			f.path = "-"
 		}
 		return
@@ -217,12 +279,28 @@ func (f *follower) check() {
 		// A new file, or one that shrank: the CLI replaced it, so the
 		// history is read again from its start.
 		f.path, f.offset, f.partial, f.reset = path, 0, nil, true
+		f.history = historyComing
 		f.t = f.fresh()
+		f.older = olderPage{}
+		if f.subs != nil {
+			// The history starts over, and the subagents' with it.
+			f.subs.main = ""
+		}
+	}
+	if f.reset && f.offset == 0 && f.opens != nil && info.Size() > 0 {
+		// The history is the tail: the last turns, from the line that opens
+		// the first of them.
+		start, err := pageStart(path, info.Size(), tailTurns, f.opens)
+		if err != nil {
+			return
+		}
+		f.offset, f.before = start, start
 	}
 	if info.Size() == f.offset {
 		if !f.reset {
 			f.queue(f.t.quiet(time.Since(f.grew), f.entryMax))
 		}
+		f.readTo(true)
 		f.flush()
 		return
 	}
@@ -240,12 +318,14 @@ func (f *follower) check() {
 	}
 	f.offset += int64(len(chunk))
 	f.grew = time.Now()
+	atEnd := f.offset >= info.Size()
 	data := append(append([]byte(nil), f.partial...), chunk...)
 	end := bytes.LastIndexByte(data, '\n')
 	if end < 0 {
 		// A line still being written is left for the next check.
 		f.partial = data
-		if f.reset {
+		f.readTo(atEnd)
+		if f.reset || f.history == historyRead {
 			f.flush()
 		}
 		return
@@ -254,7 +334,17 @@ func (f *follower) check() {
 	for _, line := range bytes.Split(data[:end], []byte{'\n'}) {
 		f.queue(f.t.line(line, f.entryMax))
 	}
+	f.readTo(atEnd)
 	f.flush()
+}
+
+// readTo notes a read of the history that reached the transcript's end,
+// once the transcriber holds nothing back for a later quiet: what it holds
+// is history still to send.
+func (f *follower) readTo(atEnd bool) {
+	if atEnd && f.history != historySent && !f.t.holds() {
+		f.history = historyRead
+	}
 }
 
 // queue holds entries for the next batch, leaving out one over entryMax.
@@ -267,18 +357,28 @@ func (f *follower) queue(entries [][]byte) {
 }
 
 // flush emits the pending entries in batches, and reports whether all of
-// them left.
+// them left. While the history is coming each batch says so, and the last
+// one of a read that reached the transcript's end says that, even with no
+// entries left to carry.
 func (f *follower) flush() bool {
-	for len(f.pending) > 0 || f.reset {
+	for len(f.pending) > 0 || f.reset || f.history == historyRead {
 		n, size := 0, 0
 		for n < len(f.pending) && n < f.batchMax && (n == 0 || size+len(f.pending[n]) <= chatBatchBytes) {
 			size += len(f.pending[n])
 			n++
 		}
-		if err := f.emit(app.ChatBatch{Reset: f.reset, Entries: f.pending[:n]}); err != nil {
+		marker := f.history.marker(n == len(f.pending))
+		batch := app.ChatBatch{Reset: f.reset, History: marker, Entries: f.pending[:n]}
+		if f.reset {
+			batch.Before = f.before
+		}
+		if err := f.emit(batch); err != nil {
 			return false
 		}
-		f.pending, f.reset = f.pending[n:], false
+		f.pending, f.reset, f.before = f.pending[n:], false, 0
+		if marker == app.HistoryEnd {
+			f.history = historySent
+		}
 	}
 	f.pending = nil
 	return true

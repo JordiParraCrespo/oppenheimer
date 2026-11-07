@@ -580,6 +580,9 @@ class BrowserAttachment implements AttachmentSink {
     this.tell({
       type: 'chat',
       ...(message.reset ? { reset: true } : {}),
+      ...(message.history ? { history: message.history } : {}),
+      ...(message.before !== undefined ? { before: message.before } : {}),
+      ...(message.older ? { older: message.older } : {}),
       entries: message.entries,
     });
   }
@@ -624,7 +627,30 @@ class BrowserAttachment implements AttachmentSink {
       case 'direct.path':
         this.directPath.fromBrowser(message.data, this.attachmentId, this.attached);
         return;
+      case 'chat.older':
+        this.chatOlder(message.data.before);
+        return;
     }
+  }
+
+  /**
+   * The reader scrolled to the top of the chat and asks for the turns before
+   * `before`: passed to a runner that sends its conversation tail first,
+   * which is the only one that ever said where it starts. A browser the chat
+   * is not for asks nothing of the host.
+   */
+  private chatOlder(before: number): void {
+    if (!this.attached || this.attachmentId === null || !this.chatAsksOlder()) return;
+    this.link.send({ type: 'attachment.chat.older', attachmentId: this.attachmentId, before });
+  }
+
+  /**
+   * Whether this attachment's chat can be sent tail first: it reaches the
+   * browser, and the runner answers asks for older turns. The browser says
+   * its own half on the resize that starts the attach (`chatTail`).
+   */
+  private chatAsksOlder(): boolean {
+    return this.chatView && this.link.capabilities.includes('attachment.chat.older');
   }
 
   /**
@@ -643,7 +669,7 @@ class BrowserAttachment implements AttachmentSink {
     this.link.sendBinary(this.attachmentId, bytes);
   }
 
-  private attach(viewport: { cols: number; rows: number }): void {
+  private attach(viewport: { cols: number; rows: number; chatTail?: boolean }): void {
     if (this.attached || this.finished || this.attachmentId === null) return;
     if (this.viewportTimer) clearTimeout(this.viewportTimer);
     this.attached = true;
@@ -656,6 +682,7 @@ class BrowserAttachment implements AttachmentSink {
       cols: viewport.cols,
       rows: viewport.rows,
       ...(this.readOnly ? { readOnly: true } : {}),
+      ...(viewport.chatTail && this.chatAsksOlder() ? { chatTail: true } : {}),
     });
     if (!sent) {
       this.closed('link_lost');

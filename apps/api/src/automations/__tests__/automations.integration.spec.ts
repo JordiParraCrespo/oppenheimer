@@ -338,6 +338,20 @@ describe('automations: firing under the caps, and the runs list (integration)', 
     await run(automation, daysAgo, 'expired');
   }
 
+  // The spend guard's thresholds (`26-bot-routines.md` §6). What breaks this:
+  // a workspace's own numbers not stored, or a nonsense one the schema missed.
+  it("stores a workspace's spend-guard thresholds, and refuses ones under the floor", async () => {
+    await settings.upsert(organizationId, { unattendedReports: 5, unattendedAwaySeconds: 86_400 });
+    expect(await settings.find(organizationId)).toMatchObject({
+      unattendedReports: 5,
+      unattendedAwaySeconds: 86_400,
+    });
+    await expect(settings.upsert(organizationId, { unattendedAwaySeconds: 60 })).rejects.toThrow(
+      /CHK_automation_settings_unattended/,
+    );
+    await settings.upsert(organizationId, { unattendedReports: null, unattendedAwaySeconds: null });
+  });
+
   describe('the tick', () => {
     it('does not fire past the workspace cap: the batch counts the runs it queued', async () => {
       await settings.upsert(organizationId, { maxRunsPerWorkspaceHour: 3 });
@@ -606,7 +620,7 @@ describe('automations: firing under the caps, and the runs list (integration)', 
       expect(mine[0]).toMatchObject({ organizationId });
       expect([...mine[0].filters].sort()).toEqual(['from:billing@client.test', null].sort());
 
-      const fire = async (externalId: string, matched: string[]) => {
+      const fire = async (externalId: string, matched: string[], inbox = true) => {
         const [row]: { id: string }[] = await dataSource.query(
           `INSERT INTO "inbound_event"
              ("organizationId", "source", "externalId", "eventType", "subjectKind", "subjectRef", "occurredAt")
@@ -622,12 +636,14 @@ describe('automations: firing under the caps, and the runs list (integration)', 
             subjectRef: connectionId,
             externalId,
             actorIsOwnApp: false,
-            attributes: { query: matched },
+            attributes: { query: matched, inbox },
           }),
         );
       };
       expect(await fire(`${connectionId}:m1`, [])).toBe(1);
       expect(await fire(`${connectionId}:m2`, ['from:billing@client.test'])).toBe(2);
+      // Archived by a filter: the query's routine wakes, the one for any mail does not.
+      expect(await fire(`${connectionId}:m3`, ['from:billing@client.test'], false)).toBe(1);
     });
 
     it("records the bot turn its run became, and reads the run's status from it", async () => {

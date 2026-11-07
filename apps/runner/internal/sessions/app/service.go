@@ -38,7 +38,9 @@ type Options struct {
 	// agent to ask.
 	Trust Trust
 	// Transcripts reads a session's first message off the agent's own
-	// transcript, for a session launched with no task; nil reports none.
+	// transcript, for a session launched with no task, a teleported
+	// session's conversation and an agent's open question; nil reports
+	// none. The chat and transcript pages are Conversations'.
 	Transcripts Transcripts
 	// StatusLine is the command a Claude Code session runs for its status
 	// line (`domain.Launch.StatusLine`); empty leaves the CLI's own.
@@ -330,20 +332,6 @@ func (s *Service) sessionEnv(session domain.Session) map[string]string {
 	return merged
 }
 
-// FollowChat follows a session's conversation for the chat view, sending
-// its transcript entries to emit until ctx ends (Transcripts.Follow).
-// ErrNoChat for a session whose agent's transcript this runner cannot read.
-func (s *Service) FollowChat(ctx context.Context, id string, entryMax, batchMax int, emit func(ChatBatch) error) error {
-	if s.transcripts == nil {
-		return ErrNoChat
-	}
-	session, err := s.recorded(id)
-	if err != nil {
-		return err
-	}
-	return s.transcripts.Follow(ctx, session, entryMax, batchMax, emit)
-}
-
 // Send types into a window, which is how the browser's keystrokes arrive
 // while nothing is attached.
 func (s *Service) Send(ctx context.Context, id string, window int, keys string) error {
@@ -534,6 +522,43 @@ func (s *Service) ReportFirstPrompts() {
 	}
 }
 
+// FindTeleported is the poll loop's step for a session that continues a
+// cloud one: Claude Code names the teleported conversation itself, so the
+// newest transcript in the session's folder since the agent opened it is
+// taken as the session's conversation, and kept. From then on the chat
+// view, question detection and the status line read it by that name, as
+// they read any other session's.
+func (s *Service) FindTeleported() {
+	if s.transcripts == nil {
+		return
+	}
+	s.mu.Lock()
+	var waiting []domain.Session
+	for _, session := range s.sessions {
+		if session.State.Live() && session.Launch.Teleport != "" && session.Launch.Conversation == "" {
+			waiting = append(waiting, session.Clone())
+		}
+	}
+	s.mu.Unlock()
+	for _, session := range waiting {
+		since := session.Launch.TeleportSince
+		if since.IsZero() {
+			since = session.Created
+		}
+		conversation := s.transcripts.Teleported(session.Agent, session.Cwd(), since)
+		if conversation == "" {
+			continue
+		}
+		s.commit(session.ID, func(cur domain.Session, known bool) (domain.Session, bool) {
+			if !known || cur.Launch.Teleport == "" || cur.Launch.Conversation != "" {
+				return cur, false
+			}
+			cur.Launch.Conversation = conversation
+			return cur, true
+		})
+	}
+}
+
 // promptReported records that the control plane has a session's first
 // message, so no pass offers it again, in this process or the next.
 func (s *Service) promptReported(id string) {
@@ -577,6 +602,12 @@ func (s *Service) Restart(ctx context.Context, id string) (domain.Session, error
 	// conversation already holds it, and sending it again would ask for the
 	// same work twice.
 	session.Launch.Server = s.agentServer(session.Agent, session.Launch.Server, session.Cwd())
+	// `--continue` may reopen a teleported conversation under a name of its
+	// own, so it is looked for again from now (FindTeleported).
+	if session.Launch.Teleport != "" {
+		session.Launch.Conversation = ""
+		session.Launch.TeleportSince = s.now().UTC()
+	}
 	launch := session.Launch
 	launch.Resume = true
 	launch.StatusLine = s.statusLine

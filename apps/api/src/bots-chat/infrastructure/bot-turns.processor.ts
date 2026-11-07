@@ -5,10 +5,14 @@ import { QUEUE_NAMES } from '@oppenheimer/shared';
 import type { Job } from 'bullmq';
 import { ContinueBotGoalCommand } from '../commands/continue-bot-goal/continue-bot-goal.command';
 import { DeliverBotAnswerCommand } from '../commands/deliver-bot-answer/deliver-bot-answer.command';
+import { FinishBotLoopRunCommand } from '../commands/finish-bot-loop-run/finish-bot-loop-run.command';
+import { RunBotLoopCommand } from '../commands/run-bot-loop/run-bot-loop.command';
 import { RunBotTurnCommand } from '../commands/run-bot-turn/run-bot-turn.command';
+import { RUN_BOT_LOOP_JOB } from '../database/bot-loop.repository';
 import {
   CONTINUE_BOT_GOAL_JOB,
   DELIVER_BOT_ANSWER_JOB,
+  FINISH_BOT_LOOP_RUN_JOB,
   RUN_BOT_TURN_JOB,
 } from '../database/bot-turn.repository';
 
@@ -22,7 +26,9 @@ const TURNS_PER_PROCESS = 8;
  * retried on a failure: the turn records it, and a worker that died under one
  * leaves it running for the next pickup to fail. A turn of a bot with a goal
  * that ended owes one more, which decides whether the goal goes on
- * (`CONTINUE_BOT_GOAL_JOB`).
+ * (`CONTINUE_BOT_GOAL_JOB`), and so does a run of a loop, which decides
+ * whether the loop ends (`FINISH_BOT_LOOP_RUN_JOB`). A loop's next run is a
+ * job held until it is due (`RUN_BOT_LOOP_JOB`).
  */
 @Processor(QUEUE_NAMES.BOT_TURNS, { concurrency: TURNS_PER_PROCESS })
 export class BotTurnsProcessor extends WorkerHost {
@@ -32,8 +38,20 @@ export class BotTurnsProcessor extends WorkerHost {
     super();
   }
 
-  async process(job: Job<{ turnId?: string }>): Promise<void> {
-    const { turnId } = job.data;
+  async process(
+    job: Job<{ turnId?: string; loopId?: string; run?: number; at?: string }>,
+  ): Promise<void> {
+    const { turnId, loopId, run, at } = job.data;
+    if (loopId && Number.isInteger(run) && at && job.name === RUN_BOT_LOOP_JOB) {
+      await this.commandBus.execute(
+        new RunBotLoopCommand({ loopId, run: run as number, at: new Date(at) }),
+      );
+      return;
+    }
+    if (turnId && job.name === FINISH_BOT_LOOP_RUN_JOB) {
+      await this.commandBus.execute(new FinishBotLoopRunCommand({ turnId }));
+      return;
+    }
     if (turnId && job.name === RUN_BOT_TURN_JOB) {
       await this.commandBus.execute(new RunBotTurnCommand({ turnId }));
       return;

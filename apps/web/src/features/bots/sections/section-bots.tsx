@@ -1,4 +1,9 @@
-import { BotList, SidebarListHead, Skeleton } from '@oppenheimer/design-system-web';
+import {
+  BotItemSkeleton,
+  BotList,
+  SidebarFoldLabel,
+  SidebarListHead,
+} from '@oppenheimer/design-system-web';
 import type { BotEntity } from '@oppenheimer/frontend-consumer';
 import { useUpdateBot } from '@oppenheimer/frontend-consumer/react';
 import { ErrorAlert, QueryState } from '@oppenheimer/frontend-web';
@@ -6,6 +11,7 @@ import type { BotSection } from '@oppenheimer/shared/schemas/bot';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNewBot } from '@/features/bots/hooks/use-create-bot';
+import { useFoldedBots } from '@/features/bots/hooks/use-folded-bots';
 import { withPlacement } from '@/features/bots/lib/placement';
 import { SectionBotsList } from './section-bots-list';
 import { SectionBotsMenu } from './section-bots-menu';
@@ -19,12 +25,14 @@ import { SectionBotsMenu } from './section-bots-menu';
  * write to where a bot shows (the menu's checks, a row's Hide), so one alert
  * under the heading says when one fails. `saving` holds the placements in
  * flight, by bot, until each settles. The heading needs no read and stays in
- * every state; the rows are read under Suspense.
+ * every state; the rows are read under Suspense. The label folds the rows
+ * away (`useFoldedBots`), and a fold leaves the plus and its alerts.
  */
 export function SectionBots({ section }: { section: BotSection }) {
   const { t } = useTranslation();
   const [menuOpen, setMenuOpen] = useState(false);
   const [saving, setSaving] = useState<ReadonlyMap<string, readonly BotSection[]>>(new Map());
+  const fold = useFoldedBots(section);
   const newBot = useNewBot(section);
   const place = useUpdateBot({
     onSettled: (_saved, _error, { id }) =>
@@ -42,7 +50,13 @@ export function SectionBots({ section }: { section: BotSection }) {
 
   return (
     <section aria-label={t('bots.section.heading')} className="pb-3">
-      <SidebarListHead label={t('bots.section.heading')}>
+      <SidebarListHead
+        label={
+          <SidebarFoldLabel open={fold.open} onOpenChange={fold.setOpen}>
+            {t('bots.section.heading')}
+          </SidebarFoldLabel>
+        }
+      >
         <SectionBotsMenu
           section={section}
           open={menuOpen}
@@ -65,21 +79,23 @@ export function SectionBots({ section }: { section: BotSection }) {
         onDismiss={() => place.reset()}
         className="mx-3 mb-2"
       />
-      <QueryState>
-        <QueryState.Pending>
-          <BotList className="mx-1.5">
-            <Skeleton shape="sm" className="h-13 w-full" />
-          </BotList>
-        </QueryState.Pending>
-        <QueryState.Error fallback={t('bots.sidebar.loadFailed')} className="mx-3" />
-        <QueryState.Data>
-          <SectionBotsList
-            section={section}
-            onAdd={() => setMenuOpen(true)}
-            onHide={(bot) => placeBot(bot, false)}
-          />
-        </QueryState.Data>
-      </QueryState>
+      {fold.open ? (
+        <QueryState>
+          <QueryState.Pending>
+            <BotList className="mx-1.5">
+              <BotItemSkeleton />
+            </BotList>
+          </QueryState.Pending>
+          <QueryState.Error fallback={t('bots.sidebar.loadFailed')} className="mx-3" />
+          <QueryState.Data>
+            <SectionBotsList
+              section={section}
+              onAdd={() => setMenuOpen(true)}
+              onHide={(bot) => placeBot(bot, false)}
+            />
+          </QueryState.Data>
+        </QueryState>
+      ) : null}
     </section>
   );
 }

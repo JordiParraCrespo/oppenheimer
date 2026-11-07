@@ -192,6 +192,7 @@ describe('BotsRepository', () => {
                 sessionId: null,
                 subagents: null,
                 mailDraft: null,
+                rateLimit: null,
               },
             ],
             createdAt: '2026-10-15T09:00:01.000Z',

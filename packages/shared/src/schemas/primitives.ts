@@ -88,6 +88,12 @@ export const codexEnvironmentSchema = z
   .max(FIELD_BOUNDS.codexEnvironment.max)
   .regex(PRINTABLE_PATTERN);
 
+/**
+ * A Claude Code cloud session's id, as claude.ai/code and `claude --teleport`
+ * name it. A pattern rather than a schema, so the wire builds its own from it.
+ */
+export const CLOUD_SESSION_ID_PATTERN = /^session_[A-Za-z0-9]{8,64}$/;
+
 /** How long a prompt is, as the event log counts it: UTF-8 bytes. */
 export function promptByteLength(value: string): number {
   let bytes = 0;

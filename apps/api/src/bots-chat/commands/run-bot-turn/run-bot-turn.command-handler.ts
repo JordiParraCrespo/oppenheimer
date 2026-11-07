@@ -5,6 +5,7 @@ import { Inject, Logger } from '@nestjs/common';
 import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
 import type { BotEngine } from '@oppenheimer/backend-agents';
 import { AppError } from '@oppenheimer/backend-core';
+import { BotDreamTriggerPolicy } from '../../application/bot-dream-trigger.policy';
 import { BotSteeringFactory } from '../../application/bot-steering.factory';
 import { BotSummaryTriggerPolicy } from '../../application/bot-summary-trigger.policy';
 import { BotTurnContextResolver } from '../../application/bot-turn-context.resolver';
@@ -40,6 +41,7 @@ export class RunBotTurnCommandHandler implements ICommandHandler<RunBotTurnComma
     private readonly context: BotTurnContextResolver,
     private readonly cancelWatch: TurnCancelWatchFactory,
     private readonly summaries: BotSummaryTriggerPolicy,
+    private readonly dreams: BotDreamTriggerPolicy,
     private readonly steering: BotSteeringFactory,
     private readonly writes: TurnWriteFactory,
     private readonly failures: BotTurnFailureReportPolicy,
@@ -111,5 +113,6 @@ export class RunBotTurnCommandHandler implements ICommandHandler<RunBotTurnComma
     if (!(await this.turns.finish(turn, correlationId))) return;
     await this.stream.publish(turn.botId, { type: 'turn', turnId: turn.id, status: turn.status });
     await this.summaries.afterTurn(turn, correlationId);
+    await this.dreams.afterTurn(turn, correlationId);
   }
 }

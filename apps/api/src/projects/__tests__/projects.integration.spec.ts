@@ -232,9 +232,52 @@ describe('projects: the saved scope (integration)', () => {
     }
   });
 
+  /** Every write the console should hear of, so the sidebar shows what a bot made from chat. */
+  async function eventsOf(projectId: string): Promise<string[]> {
+    await Promise.all(drains);
+    const rows: { eventName: string }[] = await dataSource.query(
+      `SELECT "eventName" FROM "outbox_message" WHERE "aggregateId" = $1 ORDER BY "createdAt"`,
+      [projectId],
+    );
+    return rows.map((row) => row.eventName);
+  }
+
+  it('stages the creation’s change with the row, and the console hears of it', async () => {
+    const project = newProject('vega');
+
+    await repository.insert(project);
+
+    expect(await eventsOf(project.id)).toEqual(['ProjectChangedDomainEvent']);
+    expect(project.domainEvents).toHaveLength(0);
+  });
+
+  it('stages a settings change only when the write landed', async () => {
+    const project = newProject('rigel');
+    await repository.insert(project);
+    project.configure({ name: 'Rigel 2' });
+    await repository.saveSettingsIfActive(scope(), project);
+    expect(await eventsOf(project.id)).toEqual([
+      'ProjectChangedDomainEvent',
+      'ProjectChangedDomainEvent',
+    ]);
+
+    await repository.archiveIfUnused(scope(), project.id, async () => false);
+    project.configure({ name: 'Rigel 3' });
+    const refused = await repository.saveSettingsIfActive(scope(), project);
+
+    expect(refused.isNone()).toBe(true);
+    expect(await eventsOf(project.id)).toEqual([
+      'ProjectChangedDomainEvent',
+      'ProjectChangedDomainEvent',
+      'ProjectArchivedDomainEvent',
+    ]);
+  });
+
   it('stages the archive’s event once, and wakes the relay after the commit', async () => {
     const project = newProject('orion');
     await repository.insert(project);
+    await Promise.all(drains);
+    drains = [];
 
     const archived = await repository.archiveIfUnused(scope(), project.id, async () => false);
 
@@ -244,24 +287,65 @@ describe('projects: the saved scope (integration)', () => {
     expect(drains).toHaveLength(1);
     await Promise.all(drains);
     const rows: { eventName: string; status: string }[] = await dataSource.query(
-      `SELECT "eventName", "status" FROM "outbox_message" WHERE "aggregateId" = $1`,
+      `SELECT "eventName", "status" FROM "outbox_message" WHERE "aggregateId" = $1 ORDER BY "createdAt"`,
       [project.id],
     );
-    expect(rows).toEqual([{ eventName: 'ProjectArchivedDomainEvent', status: 'processed' }]);
+    expect(rows).toEqual([
+      { eventName: 'ProjectChangedDomainEvent', status: 'processed' },
+      { eventName: 'ProjectArchivedDomainEvent', status: 'processed' },
+    ]);
+  });
+
+  it('restores an archived project through the caller’s scope, staging the change once', async () => {
+    const project = newProject('deneb');
+    await repository.insert(project);
+    await repository.archiveIfUnused(scope(), project.id, async () => false);
+
+    const restored = await repository.restoreIfArchived(scope(), project.id);
+    const again = await repository.restoreIfArchived(scope(), project.id);
+
+    expect(restored.result).toBe('restored');
+    if (restored.result !== 'not-found') {
+      expect(restored.project.isArchived).toBe(false);
+      expect(restored.project.slug).toBe('deneb');
+    }
+    expect(again.result).toBe('active');
+    expect(await eventsOf(project.id)).toEqual([
+      'ProjectChangedDomainEvent',
+      'ProjectArchivedDomainEvent',
+      'ProjectChangedDomainEvent',
+    ]);
+    // The restored project takes work again: its settings can be changed.
+    project.configure({ name: 'Deneb 2' });
+    expect((await repository.saveSettingsIfActive(scope(), project)).isSome()).toBe(true);
+  });
+
+  it('answers not-found for a project of another workspace, writing nothing', async () => {
+    const project = newProject('altair');
+    await repository.insert(project);
+    await repository.archiveIfUnused(scope(), project.id, async () => false);
+    const outsider = { ...scope(), organizationId: randomUUID() };
+
+    const outcome = await repository.restoreIfArchived(outsider, project.id);
+
+    expect(outcome.result).toBe('not-found');
+    expect(await eventsOf(project.id)).toEqual([
+      'ProjectChangedDomainEvent',
+      'ProjectArchivedDomainEvent',
+    ]);
   });
 
   it('wakes nothing when the archive is refused', async () => {
     const project = newProject('lyra');
     await repository.insert(project);
+    await Promise.all(drains);
+    drains = [];
 
     const refused = await repository.archiveIfUnused(scope(), project.id, async () => true);
 
     expect(refused.result).toBe('in-use');
     expect(drains).toHaveLength(0);
-    const rows = await dataSource.query(`SELECT 1 FROM "outbox_message" WHERE "aggregateId" = $1`, [
-      project.id,
-    ]);
-    expect(rows).toHaveLength(0);
+    expect(await eventsOf(project.id)).toEqual(['ProjectChangedDomainEvent']);
   });
 
   it('refuses a project holding another workspace’s installation, by constraint', async () => {

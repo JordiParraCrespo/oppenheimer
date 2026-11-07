@@ -5,11 +5,13 @@ import { isWorkspaceEvent } from './index';
 describe('isWorkspaceEvent', () => {
   it('accepts each variant with its fields', () => {
     expect(isWorkspaceEvent({ type: 'session.changed', id: 's' })).toBe(true);
+    expect(isWorkspaceEvent({ type: 'project.changed', id: 'p' })).toBe(true);
     expect(isWorkspaceEvent({ type: 'pairing.spent', id: 't', hostId: 'h' })).toBe(true);
     expect(isWorkspaceEvent({ type: 'automationRun.changed', id: 'r', automationId: 'a' })).toBe(
       true,
     );
     expect(isWorkspaceEvent({ type: 'botApproval.changed', id: 'ap', botId: 'b' })).toBe(true);
+    expect(isWorkspaceEvent({ type: 'botNotice.changed', id: 'n', botId: 'b' })).toBe(true);
     expect(isWorkspaceEvent({ type: 'inboxMark.changed', itemKey: 'approval:ap' })).toBe(true);
   });
 
@@ -17,9 +19,11 @@ describe('isWorkspaceEvent', () => {
     expect(isWorkspaceEvent({ type: 'pairing.spent', id: 't' })).toBe(false);
     expect(isWorkspaceEvent({ type: 'automationRun.changed', id: 'r' })).toBe(false);
     expect(isWorkspaceEvent({ type: 'botApproval.changed', id: 'ap' })).toBe(false);
+    expect(isWorkspaceEvent({ type: 'botNotice.changed', id: 'n' })).toBe(false);
     expect(isWorkspaceEvent({ type: 'inboxMark.changed', id: 'x' })).toBe(false);
     expect(isWorkspaceEvent({ type: 'invoice.paid', id: 'x' })).toBe(false);
     expect(isWorkspaceEvent({ type: 'session.changed' })).toBe(false);
+    expect(isWorkspaceEvent({ type: 'project.changed' })).toBe(false);
     expect(isWorkspaceEvent(null)).toBe(false);
   });
 });

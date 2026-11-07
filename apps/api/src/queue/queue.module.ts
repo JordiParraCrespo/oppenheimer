@@ -42,6 +42,7 @@ const QUEUE_REGISTRATIONS: readonly QueueRegistration[] = [
   { name: QUEUE_NAMES.BOT_APPROVALS, defaultJobOptions: DURABLE_JOB_OPTIONS, stagedOnOutbox: true },
   // A summary write is conditional on the version it read, so a retry never moves it back.
   { name: QUEUE_NAMES.BOT_SUMMARIES, defaultJobOptions: DURABLE_JOB_OPTIONS, stagedOnOutbox: true },
+  { name: QUEUE_NAMES.BOT_DREAMS, defaultJobOptions: DURABLE_JOB_OPTIONS, stagedOnOutbox: true },
   // A stall check queues its wake under a key, so a retry tells the bot once.
   {
     name: QUEUE_NAMES.BOT_STALL_CHECKS,

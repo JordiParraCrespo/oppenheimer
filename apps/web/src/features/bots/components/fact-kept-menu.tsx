@@ -11,18 +11,21 @@ import { useTranslation } from 'react-i18next';
 
 /**
  * A fact's ellipsis: where it is kept. One item moves it between in mind and
- * looked up, the other between this bot and all the person's bots.
+ * looked up, the other between this bot (the one named `keptBy`, on the
+ * account's Settings → Memory) and all the person's bots.
  */
 export function FactKeptMenu({
   fact,
   tier,
   scope,
+  keptBy,
   disabled,
   onChange,
 }: {
   fact: string;
   tier: BotMemoryTier;
   scope: BotMemoryScope;
+  keptBy?: string;
   disabled: boolean;
   onChange: (change: { tier?: BotMemoryTier; scope?: BotMemoryScope }) => void;
 }) {
@@ -50,7 +53,11 @@ export function FactKeptMenu({
             : t('bots.settings.memory.toProfile')}
         </DropdownMenuItem>
         <DropdownMenuItem onClick={() => onChange({ scope: scope === 'bot' ? 'person' : 'bot' })}>
-          {scope === 'bot' ? t('bots.settings.memory.toPerson') : t('bots.settings.memory.toBot')}
+          {scope === 'bot'
+            ? t('bots.settings.memory.toPerson')
+            : keptBy === undefined
+              ? t('bots.settings.memory.toBot')
+              : t('bots.settings.memory.toBotNamed', { bot: keptBy })}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

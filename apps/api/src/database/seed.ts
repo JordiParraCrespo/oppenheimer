@@ -25,12 +25,16 @@ import { BotGroupOrmEntity } from '../bots/database/bot-group.orm-entity';
 import { BotMemoryFactOrmEntity } from '../bots/database/bot-memory-fact.orm-entity';
 import { BotSkillOrmEntity } from '../bots/database/bot-skill.orm-entity';
 import { ModelProviderCredentialOrmEntity } from '../bots/database/model-provider-credential.orm-entity';
+import { PersonMemoryOrmEntity } from '../bots/database/person-memory.orm-entity';
 import { BotApprovalOrmEntity } from '../bots-chat/database/bot-approval.orm-entity';
 import { BotAttachmentOrmEntity } from '../bots-chat/database/bot-attachment.orm-entity';
 import { BotConversationSummaryOrmEntity } from '../bots-chat/database/bot-conversation-summary.orm-entity';
 import { BotGoalOrmEntity } from '../bots-chat/database/bot-goal.orm-entity';
+import { BotLoopOrmEntity } from '../bots-chat/database/bot-loop.orm-entity';
+import { BotMemoryDreamOrmEntity } from '../bots-chat/database/bot-memory-dream.orm-entity';
 import { BotMessageOrmEntity } from '../bots-chat/database/bot-message.orm-entity';
 import { BotModelCallOrmEntity } from '../bots-chat/database/bot-model-call.orm-entity';
+import { BotNoticeOrmEntity } from '../bots-chat/database/bot-notice.orm-entity';
 import { BotPermissionRuleOrmEntity } from '../bots-chat/database/bot-permission-rule.orm-entity';
 import { BotQuestionOrmEntity } from '../bots-chat/database/bot-question.orm-entity';
 import { BotSubscriptionOrmEntity } from '../bots-chat/database/bot-subscription.orm-entity';
@@ -79,6 +83,8 @@ import { UserRoleRepository } from '../roles/database/user-role.repository';
 import { UserRoleVersionOrmEntity } from '../roles/database/user-role-version.orm-entity';
 import { RoleMapper } from '../roles/roles.mapper';
 import { SessionCheckoutOrmEntity } from '../sessions/database/session-checkout.orm-entity';
+import { SessionCloudLineOrmEntity } from '../sessions/database/session-cloud-line.orm-entity';
+import { SessionCloudReplyOrmEntity } from '../sessions/database/session-cloud-reply.orm-entity';
 import { SessionCloudRunOrmEntity } from '../sessions/database/session-cloud-run.orm-entity';
 import { SessionShareOrmEntity } from '../sessions/database/session-share.orm-entity';
 import { SessionTerminalWatchOrmEntity } from '../sessions/database/session-terminal-watch.orm-entity';
@@ -132,6 +138,8 @@ const dataSource = new DataSource({
     WorkSessionEventOrmEntity,
     SessionTurnOrmEntity,
     SessionShareOrmEntity,
+    SessionCloudLineOrmEntity,
+    SessionCloudReplyOrmEntity,
     SessionTerminalWatchOrmEntity,
     InboundDeliveryOrmEntity,
     InboundEventOrmEntity,
@@ -162,6 +170,7 @@ const dataSource = new DataSource({
     BotDocumentOrmEntity,
     BotDocumentRevisionOrmEntity,
     BotMemoryFactOrmEntity,
+    PersonMemoryOrmEntity,
     BotSkillOrmEntity,
     ModelProviderCredentialOrmEntity,
     BotTurnOrmEntity,
@@ -169,6 +178,8 @@ const dataSource = new DataSource({
     BotAttachmentOrmEntity,
     BotSubscriptionOrmEntity,
     BotGoalOrmEntity,
+    BotLoopOrmEntity,
+    BotNoticeOrmEntity,
     BotModelCallOrmEntity,
     InboxMarkOrmEntity,
     BotApprovalOrmEntity,
@@ -176,6 +187,7 @@ const dataSource = new DataSource({
     BotToolPermissionOrmEntity,
     BotPermissionRuleOrmEntity,
     BotConversationSummaryOrmEntity,
+    BotMemoryDreamOrmEntity,
     ReviewSessionOrmEntity,
     CiFindingOrmEntity,
     FeatureFlagOrmEntity,

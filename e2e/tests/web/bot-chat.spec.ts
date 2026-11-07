@@ -44,10 +44,9 @@ test('a GLM bot answers in its chat', async ({ page }) => {
   await expect(page.locator('[data-slot="message-trail"]')).toContainText('GLM-5.3');
   await expect(page.getByRole('button', { name: 'Copy reply' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Send' })).toBeVisible();
-  // The sidebar's row previews the last thing said.
-  await expect(
-    page.locator('[data-slot="bot-row"]').filter({ hasText: 'Fruit Bot' }),
-  ).toContainText(/pineapple/i);
+  // The sidebar's row previews the last thing said, in its tooltip.
+  await page.locator('[data-slot="bot-row"]').filter({ hasText: 'Fruit Bot' }).hover();
+  await expect(page.locator('[data-slot="tooltip-content"]')).toContainText(/pineapple/i);
 
   // Profile's chat history: the two messages, exported as Markdown, then cleared.
   await page.goto(`/bots/${bot.id}/settings/profile`);

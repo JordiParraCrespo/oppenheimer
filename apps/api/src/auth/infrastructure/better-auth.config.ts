@@ -212,6 +212,9 @@ export const auth = betterAuth({
         clientId: process.env.GOOGLE_CLIENT_ID as string,
         clientSecret: process.env.GOOGLE_CLIENT_SECRET as string,
         mapProfileToUser: (profile) => splitName(profile.name),
+        // Without it Google signs in with whichever account the browser last
+        // used, and someone with two Google accounts on a phone cannot pick.
+        prompt: 'select_account',
         // Signing in and signing up are two different intents, so a provider
         // identity nobody here has seen before is *refused* rather than
         // quietly turned into an account. Better Auth ends the round-trip at

@@ -46,6 +46,15 @@ const OrgOnly = defineResource({
   scopes: ['organization'],
 });
 
+const PersonOwned = defineResource({
+  subject: 'Machine',
+  label: 'Machines',
+  group: 'hosts',
+  actions: [{ name: 'read' }],
+  keys: { owner: 'ownerUserId', id: 'id' },
+  scopes: ['own', 'grant'],
+});
+
 function scope(overrides: Partial<AccessScope> = {}): AccessScope {
   return {
     userId: 'user-1',
@@ -150,6 +159,27 @@ describe('applyAccessScope', () => {
 
     expect(qb.calls).toHaveLength(1);
     expect(qb.calls[0].clause).toBe('1 = 0');
+  });
+
+  it("keeps a bypass scope to a person's own rows, where there is no tenant to keep it inside", () => {
+    // What breaks this: a platform admin's console listing every user's hosts
+    // (a host is someone's machine, with no organization key) in their own New
+    // session picker, and starting sessions on them.
+    const qb = fakeQueryBuilder('machine');
+    applyAccessScope(qb, PersonOwned, scope({ bypass: true }));
+    expect(qb.calls).toEqual([
+      { clause: '(machine.ownerUserId = :authzUserId)', parameters: { authzUserId: 'user-1' } },
+    ]);
+  });
+
+  it("does not let an `all` grant widen a person's own rows past the caller's", () => {
+    // What breaks this: an `all` grant over hosts reaching every host on the
+    // deployment, since nothing else bounds a resource with no tenant.
+    const qb = fakeQueryBuilder('machine');
+    applyAccessScope(qb, PersonOwned, scope({ grants: new Map([['Machine', 'all']]) }));
+    expect(qb.calls).toEqual([
+      { clause: '(machine.ownerUserId = :authzUserId)', parameters: { authzUserId: 'user-1' } },
+    ]);
   });
 });
 

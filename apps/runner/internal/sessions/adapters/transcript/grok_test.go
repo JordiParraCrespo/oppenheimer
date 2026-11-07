@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/adapters/transcript"
+	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/app"
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/domain"
 )
 
@@ -92,4 +93,22 @@ func TestAGrokSessionsUpdatesReadAsTheChatsTranscript(t *testing.T) {
 	if reply := blockOf(got[8]); reply["text"] != "Fixed: it had no initial value." {
 		t.Fatalf("last entry = %v, want the reply whole", got[8])
 	}
+
+	// The history ends with the reply, not at the end of the file, where
+	// the reply is still held for its quiet. Regression: `end` sent first,
+	// so a reconnect's replay was cut at it and the reply blinked out and
+	// back.
+	sink.mu.Lock()
+	defer sink.mu.Unlock()
+	sent := 0
+	for _, batch := range sink.got {
+		sent += len(batch.Entries)
+		if batch.History == app.HistoryEnd {
+			if sent != 9 {
+				t.Fatalf("the history ended after %d of 9 entries", sent)
+			}
+			return
+		}
+	}
+	t.Fatal("the history never said it ended")
 }

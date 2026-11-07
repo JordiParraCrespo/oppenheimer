@@ -1,8 +1,10 @@
 import { SettingsContent, SettingsMain, SettingsShell } from '@oppenheimer/design-system-web';
 import {
+  Brain,
   Cloud,
   Cpu,
   Eye,
+  Info,
   KeyRound,
   Mail,
   MessageCircle,
@@ -36,6 +38,7 @@ function SettingsLayout() {
             labelKey: 'account',
             items: [
               { to: '/settings/profile', icon: User, labelKey: 'profile' },
+              { to: '/settings/memory', icon: Brain, labelKey: 'memory' },
               { to: '/settings/repositories', icon: Eye, labelKey: 'repositories' },
               { to: '/settings/cloud-agents', icon: Cloud, labelKey: 'cloudAgents' },
               { to: '/settings/mail', icon: Mail, labelKey: 'mail' },
@@ -48,6 +51,10 @@ function SettingsLayout() {
               { to: '/settings/hosts', icon: Cpu, labelKey: 'hosts' },
               { to: '/settings/model-providers', icon: KeyRound, labelKey: 'modelProviders' },
             ],
+          },
+          {
+            labelKey: 'app',
+            items: [{ to: '/settings/about', icon: Info, labelKey: 'about' }],
           },
         ]}
         // The rows with a number: a section of their own, so the list each

@@ -46,6 +46,11 @@ export interface CursorCloudAgentsPort {
   me(apiKey: string): Promise<CursorKeyOwner>;
   launch(access: CursorAccess, launch: CursorLaunch): Promise<CursorAgentRun>;
   read(access: CursorAccess, agentId: string, runId: string): Promise<CloudAgentRunState>;
+  /**
+   * A next instruction to an agent that is not on a run: a new run
+   * (`POST /v1/agents/{id}/runs`). `CLOUD_AGENTS_012` while one runs.
+   */
+  followUp(access: CursorAccess, agentId: string, prompt: string): Promise<CloudAgentRunState>;
   /** Cached per account for an hour: the list changes with Cursor's releases. */
   models(access: CursorAccess): Promise<CursorModel[]>;
   /** Cached per account for ten minutes: Cursor allows one call a minute. */

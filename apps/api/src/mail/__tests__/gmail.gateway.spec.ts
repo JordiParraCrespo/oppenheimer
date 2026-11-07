@@ -1,6 +1,6 @@
 import type { ConfigService } from '@nestjs/config';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { GmailGateway } from '../infrastructure/gmail.gateway';
+import { GmailGateway, gmailUnitsOf } from '../infrastructure/gmail.gateway';
 import { GmailGrantRevokedError, GmailNotFoundError } from '../infrastructure/gmail-provider.port';
 
 /**
@@ -261,6 +261,49 @@ describe('GmailGateway', () => {
     await expect(gateway.listLabels(BEN)).resolves.toEqual([]);
   });
 
+  // What breaks this: a bot told nothing was archived when most of the batch
+  // was, archiving it all again later and spending the quota twice.
+  it('keeps the threads it changed when Gmail’s limit stops a batch partway, and sends no more', async () => {
+    const fetch = vi
+      .fn()
+      .mockResolvedValueOnce(TOKEN())
+      .mockResolvedValueOnce(json(200, {}))
+      .mockResolvedValueOnce(
+        json(429, { error: { errors: [{ reason: 'userRateLimitExceeded' }] } }),
+      );
+    vi.stubGlobal('fetch', fetch);
+    const gateway = new GmailGateway(config);
+
+    const outcome = await gateway.modifyThreads(ANA, ['t1', 't2', 't3'], {
+      add: [],
+      remove: ['INBOX'],
+    });
+
+    expect(outcome).toMatchObject({
+      changed: ['t1'],
+      missing: [],
+      notReached: ['t2', 't3'],
+      limited: { system: 'Gmail' },
+    });
+    expect(fetch).toHaveBeenCalledTimes(3);
+  });
+
+  it('answers the limit itself when it stops a batch before anything changed', async () => {
+    const fetch = vi
+      .fn()
+      .mockResolvedValueOnce(TOKEN())
+      .mockResolvedValueOnce(
+        json(429, { error: { errors: [{ reason: 'userRateLimitExceeded' }] } }),
+      );
+    vi.stubGlobal('fetch', fetch);
+    const gateway = new GmailGateway(config);
+
+    await expect(
+      gateway.modifyThreads(ANA, ['t1', 't2'], { add: [], remove: ['INBOX'] }),
+    ).rejects.toMatchObject({ code: 'MAIL_008' });
+    expect(fetch).toHaveBeenCalledTimes(2);
+  });
+
   it('deletes a draft, reading Gmail’s empty answer as done', async () => {
     const fetch = vi
       .fn()
@@ -291,6 +334,8 @@ describe('GmailGateway', () => {
     await expect(gateway.modifyThreads(ANA, ['t1', 'gone', 't3'], change)).resolves.toEqual({
       changed: ['t1', 't3'],
       missing: ['gone'],
+      notReached: [],
+      limited: null,
     });
     await gateway.modifyMessages(ANA, ['m1', 'm2'], change);
 
@@ -361,12 +406,48 @@ describe('GmailGateway', () => {
 
     const mail = await new GmailGateway(config).newMessages(ANA, '100', 50);
 
-    expect(mail).toEqual({ messageIds: ['m1', 'm2'], historyId: '200' });
+    expect(mail).toEqual({ messageIds: ['m1', 'm2'], inboxIds: ['m1', 'm2'], historyId: '200' });
     const first = new URL(fetch.mock.calls[1][0]);
     expect(first.pathname).toBe('/gmail/v1/users/me/history');
     expect(first.searchParams.get('startHistoryId')).toBe('100');
     expect(first.searchParams.get('historyTypes')).toBe('messageAdded');
     expect(new URL(fetch.mock.calls[2][0]).searchParams.get('pageToken')).toBe('p2');
+  });
+
+  // What breaks this: spam or a deleted chat waking a routine that watches for new mail.
+  it('leaves out spam, trash and chats, and says which new messages reached the inbox', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi
+        .fn()
+        .mockResolvedValueOnce(TOKEN())
+        .mockResolvedValueOnce(
+          json(200, {
+            history: [
+              { id: '101', messagesAdded: [{ message: { id: 'spam', labelIds: ['SPAM'] } }] },
+              { id: '102', messagesAdded: [{ message: { id: 'bin', labelIds: ['TRASH'] } }] },
+              { id: '103', messagesAdded: [{ message: { id: 'chat', labelIds: ['CHAT'] } }] },
+              {
+                id: '104',
+                messagesAdded: [{ message: { id: 'filed', labelIds: ['Label_7', 'UNREAD'] } }],
+              },
+              {
+                id: '105',
+                messagesAdded: [
+                  { message: { id: 'promo', labelIds: ['INBOX', 'CATEGORY_PROMOTIONS'] } },
+                ],
+              },
+            ],
+            historyId: '200',
+          }),
+        ),
+    );
+
+    await expect(new GmailGateway(config).newMessages(ANA, '100', 50)).resolves.toEqual({
+      messageIds: ['filed', 'promo'],
+      inboxIds: ['promo'],
+      historyId: '200',
+    });
   });
 
   it('stops at its cap where it stopped, and answers null for history Gmail no longer keeps', async () => {
@@ -389,6 +470,7 @@ describe('GmailGateway', () => {
 
     await expect(gateway.newMessages(ANA, '100', 1)).resolves.toEqual({
       messageIds: ['m1'],
+      inboxIds: ['m1'],
       historyId: '101',
     });
     await expect(gateway.newMessages(ANA, '1', 50)).resolves.toBeNull();
@@ -461,5 +543,21 @@ describe('GmailGateway', () => {
     expect(whole.body).toBe(long);
     expect(whole.bcc).toBe('audit@acme.test');
     expect(thread.messages[0].body).toContain('was cut');
+  });
+});
+
+describe('gmailUnitsOf', () => {
+  // What breaks this: the budget spending less than Gmail counts, so the bot
+  // meets Google's refusal before our own limit.
+  it('prices a call as Gmail’s quota table does, and an unknown one as the dearest ordinary call', () => {
+    expect(gmailUnitsOf('GET', 'messages/m1')).toBe(5);
+    expect(gmailUnitsOf('POST', 'messages/send')).toBe(100);
+    expect(gmailUnitsOf('POST', 'messages/batchModify')).toBe(50);
+    expect(gmailUnitsOf('POST', 'threads/t1/modify')).toBe(10);
+    expect(gmailUnitsOf('PUT', 'drafts/d1')).toBe(15);
+    expect(gmailUnitsOf('GET', 'drafts/d1')).toBe(5);
+    expect(gmailUnitsOf('POST', 'labels')).toBe(5);
+    expect(gmailUnitsOf('GET', 'messages/constructor')).toBe(5);
+    expect(gmailUnitsOf('POST', 'watch')).toBe(10);
   });
 });

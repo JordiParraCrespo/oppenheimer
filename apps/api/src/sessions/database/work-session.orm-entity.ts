@@ -201,6 +201,13 @@ export class WorkSessionOrmEntity {
   @Column({ type: 'varchar', length: 128, nullable: true })
   launchEnvironment!: string | null;
 
+  /**
+   * The Claude Code cloud session this one continues (`claude --teleport`).
+   * Null for every session that started a conversation of its own.
+   */
+  @Column({ type: 'varchar', length: 80, nullable: true })
+  launchTeleport!: string | null;
+
   @Column({ type: 'varchar', nullable: true })
   reportHash!: string | null;
 
@@ -255,6 +262,13 @@ export class WorkSessionOrmEntity {
    */
   @Column({ type: 'jsonb', default: () => "'[]'::jsonb" })
   watchedPulls!: unknown;
+
+  /**
+   * The files the agent shared (`SessionSharedFile[]`), folded from
+   * `file.shared`, the last 20; `[]` for none. Read back through the schema.
+   */
+  @Column({ type: 'jsonb', default: () => "'[]'::jsonb" })
+  sharedFiles!: unknown;
 
   /**
    * Who asked for the session: `person`, `automation` (whose run points back

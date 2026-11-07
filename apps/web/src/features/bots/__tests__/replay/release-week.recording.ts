@@ -37,6 +37,7 @@ const step = (callId: string, name: string, input: object, output: string | null
   subagents: null,
   allowedBy: null,
   mailDraft: null,
+  rateLimit: null,
   ...extra,
 });
 

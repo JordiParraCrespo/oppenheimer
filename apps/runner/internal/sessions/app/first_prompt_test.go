@@ -29,13 +29,19 @@ func (t *typedTranscripts) FirstPrompt(_ domain.Agent, conversation string) stri
 	return t.typed[conversation]
 }
 
-func (t *typedTranscripts) Follow(context.Context, domain.Session, int, int, func(app.ChatBatch) error) error {
+func (t *typedTranscripts) Follow(context.Context, domain.Session, int, int, <-chan int64, func(app.ChatBatch) error) error {
 	return app.ErrNoChat
+}
+
+func (t *typedTranscripts) ReadPage(domain.Session, app.TranscriptPageRequest) (app.TranscriptPage, error) {
+	return app.TranscriptPage{}, app.ErrNoChat
 }
 
 func (t *typedTranscripts) OpenQuestion(domain.Agent, string) (domain.Decision, bool) {
 	return domain.Decision{}, false
 }
+
+func (t *typedTranscripts) Teleported(domain.Agent, string, time.Time) string { return "" }
 
 func (t *typedTranscripts) typeInto(text string) {
 	t.mu.Lock()

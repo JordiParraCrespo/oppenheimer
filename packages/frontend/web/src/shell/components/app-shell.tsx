@@ -29,6 +29,17 @@ import { TopBar } from './top-bar';
  * The bar and the palette are the full chrome, and an app says whether it
  * wears them with `chrome` (`use-shell.ts` says why the console does not).
  */
+/**
+ * While a screen lays an image under the pane (`data-pane-backdrop`), the page
+ * bar's toggle and each control marked `data-pane-chrome` stand on a chip like
+ * New session's project chip: the pane's ground, translucent and frosted, on
+ * the 10px control radius, so a quiet icon reads over any photo.
+ */
+const PANE_BAR_CHIP =
+  'group-has-data-pane-backdrop/pane:*:rounded-sm group-has-data-pane-backdrop/pane:*:bg-canvas-recessed/60 group-has-data-pane-backdrop/pane:*:text-fg group-has-data-pane-backdrop/pane:*:backdrop-blur-md';
+const PANE_CHROME_CHIP =
+  '[&:has([data-pane-backdrop])_[data-pane-chrome]]:rounded-sm [&:has([data-pane-backdrop])_[data-pane-chrome]]:bg-canvas-recessed/60 [&:has([data-pane-backdrop])_[data-pane-chrome]]:text-fg [&:has([data-pane-backdrop])_[data-pane-chrome]]:backdrop-blur-md';
+
 export function AppShell({ children, ...config }: ShellConfig & { children: ReactNode }) {
   const chrome = config.chrome ?? true;
   const [commandOpen, setCommandOpen] = useState(false);
@@ -73,13 +84,26 @@ export function AppShell({ children, ...config }: ShellConfig & { children: Reac
               a `full` screen — whose content *is* the viewport, the session
               terminal — fills the height with `flex-1` instead of guessing at
               a viewport calculation; and a drop's outline is drawn on its
-              edge. */}
-          <main className="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-canvas-recessed">
+              edge. It is its own stacking context (`isolate`), so a screen
+              can lay an image under all of it at `-z-10` (New session's
+              backdrop) without going under the pane's grey. While one is
+              there (`data-pane-backdrop`), the bar's toggle and any control
+              a screen marks `data-pane-chrome` stand on a frosted chip, so
+              they read over any image. */}
+          <main
+            className={cn(
+              'group/pane relative isolate flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-canvas-recessed',
+              PANE_CHROME_CHIP,
+            )}
+          >
             {ownBar ? null : (
               // On the pane's own grey, not a surface: the bar reads as the
               // page's top edge rather than a strip above it. A session draws
               // its own bar, on its terminal's ground.
-              <header data-slot="page-bar" className="flex h-12 shrink-0 items-center pl-3.5">
+              <header
+                data-slot="page-bar"
+                className={cn('flex h-12 shrink-0 items-center pl-3.5', PANE_BAR_CHIP)}
+              >
                 <SidebarToggle />
               </header>
             )}

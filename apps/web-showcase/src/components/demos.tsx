@@ -70,6 +70,7 @@ import {
   type RepositoryRowValue,
 } from '@oppenheimer/design-system-web/repository-row-list';
 import { SessionItem, SessionList, SortableSessionItem } from '@oppenheimer/design-system-web/session-item';
+import { SidebarFoldLabel } from '@oppenheimer/design-system-web/sidebar-fold-label';
 import {
   SidebarEmptyRow,
   SidebarListHead,
@@ -1019,6 +1020,7 @@ export function SidebarDemo({ empty }: { empty?: boolean }) {
   const [query, setQuery] = React.useState('');
   const [filters, setFilters] = React.useState<string[]>(empty ? [] : ['Host: optimus']);
   const [closed, setClosed] = React.useState<string[]>([]);
+  const [listOpen, setListOpen] = React.useState(true);
   const [menu, setMenu] = React.useState<string | null>(null);
   const [renaming, setRenaming] = React.useState<{ id: string; draft: string } | null>(null);
   const [names, setNames] = React.useState<Record<string, string>>({});
@@ -1048,7 +1050,15 @@ export function SidebarDemo({ empty }: { empty?: boolean }) {
               New session
             </Button>
           </div>
-          <SidebarListHead label="Projects" count={projects.length} className="mt-4">
+          <SidebarListHead
+            label={
+              <SidebarFoldLabel open={listOpen} onOpenChange={setListOpen}>
+                Projects
+              </SidebarFoldLabel>
+            }
+            count={projects.length}
+            className="mt-4"
+          >
             <IconButton aria-label="New project" size="xs" variant="quiet">
               <PlusIcon />
             </IconButton>
@@ -1065,7 +1075,7 @@ export function SidebarDemo({ empty }: { empty?: boolean }) {
             </div>
           ) : null}
           <div className="min-h-0 flex-1 overflow-y-auto pb-2">
-            {empty ? (
+            {!listOpen ? null : empty ? (
               <div className="px-3">
                 <EmptyState compact>
                   <EmptyState.Header>

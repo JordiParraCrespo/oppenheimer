@@ -7,7 +7,7 @@ import {
   parseBotSlashCommand,
   type Scope,
 } from '@oppenheimer/shared';
-import { BotGoalEntity } from './bot-goal.entity';
+import { BotGoalEntity, goalKeyPrefix } from './bot-goal.entity';
 import type { BotGoalVerdict } from './bot-goal-review.policy';
 import { BotMessageEntity } from './bot-message.entity';
 import { BOT_TURN_TIME_LIMIT_MS, BotTurnEntity } from './bot-turn.entity';
@@ -27,13 +27,7 @@ export function goalSourceKey(goalId: string, step: number): string {
   return `${goalKeyPrefix(goalId)}${step}`;
 }
 
-/** What every goal continuation's key begins with. */
-export const GOAL_KEY_PREFIX = 'goal:';
-
-/** What every continuation key of a goal begins with: one queued blocks the next. */
-export function goalKeyPrefix(goalId: string): string {
-  return `${GOAL_KEY_PREFIX}${goalId}:`;
-}
+export { GOAL_KEY_PREFIX, goalKeyPrefix } from './bot-goal.entity';
 
 /** The turn that ended, as the decision reads it. */
 export interface EndedTurn {

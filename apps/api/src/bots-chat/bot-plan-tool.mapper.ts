@@ -14,9 +14,9 @@ import { cut, formatToolTime } from './domain/bot-tool-text.policy';
  */
 /** The board's columns as a person reads them. */
 export const COLUMN_NAMES: Record<TaskStatus, string> = {
-  later: 'Later',
   todo: 'To do',
   doing: 'In progress',
+  review: 'In review',
   done: 'Done',
 };
 
@@ -30,7 +30,7 @@ export const timeOfDay = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, 'expected
 
 export const statusInput = z
   .enum(TASK_STATUSES)
-  .describe('The column: later, todo (To do), doing (In progress) or done.');
+  .describe('The column: todo (To do), doing (In progress), review (In review) or done.');
 export const expectedVersionInput = z
   .number()
   .int()
@@ -68,6 +68,29 @@ export function describeProject(project: ProjectEntity, context: BotToolCallCont
   if (project.archivedAt)
     parts.push(`archived ${formatToolTime(project.archivedAt, context.timeZone)}`);
   return `${project.id} "${project.name}" [${parts.join('; ')}]`;
+}
+
+/**
+ * One project in full, as `get_project` and the project writes answer: each
+ * repository with the installation and repository ids `update_project` takes
+ * back, so a bot can keep the ones it does not mean to change.
+ */
+export function describeProjectInFull(project: ProjectEntity, context: BotToolCallContext): string {
+  const repositories = project.repositories.map(
+    (repository) =>
+      `  - ${repository.repositoryFullName} (base ${repository.baseBranch})${repository.isDefault ? ' default' : ''} [installation_id ${repository.installationId}; github_repo_id ${repository.githubRepoId}]`,
+  );
+  return [
+    `Project ${project.id} "${project.name}"${project.isUnassigned ? ' (Unassigned: where work with no project goes)' : ''}`,
+    `- slug: ${project.slug}`,
+    `- archived: ${project.archivedAt ? formatToolTime(project.archivedAt, context.timeZone) : 'no'}`,
+    `- default host: ${project.defaultHostId ?? 'none'}`,
+    `- default agent: ${project.defaultAgent ?? 'none'}`,
+    repositories.length
+      ? `- repositories (${repositories.length}):\n${repositories.join('\n')}`
+      : '- repositories: none',
+    `- created: ${formatToolTime(project.createdAt, context.timeZone)}`,
+  ].join('\n');
 }
 
 export function describeDue(task: TaskEntity): string {
