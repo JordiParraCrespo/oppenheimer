@@ -34,7 +34,7 @@ import {
 )
 @Check(
   'CHK_bot_avatar_face',
-  `"avatarFace" IS NULL OR ("avatarFace" ->> 'hat' IN ('fedora', 'porkpie', 'bowler', 'tophat', 'cap', 'beanie') AND "avatarFace" ->> 'eyes' IN ('dots', 'happy', 'wink', 'big') AND "avatarFace" ->> 'mouth' IN ('smile', 'grin', 'o'))`,
+  `"avatarFace" IS NULL OR ("avatarFace" ->> 'hat' IN ('fedora', 'porkpie', 'bowler', 'tophat', 'cap', 'beanie') AND "avatarFace" ->> 'eyes' IN ('dots', 'happy', 'wink', 'big') AND "avatarFace" ->> 'mouth' IN ('smile', 'grin', 'o')) IS TRUE`,
 )
 @Check('CHK_bot_position', `"position" >= 0`)
 @Check('CHK_bot_permission', `"permission" IN ('auto', 'full')`)

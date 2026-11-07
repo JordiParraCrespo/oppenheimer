@@ -699,6 +699,9 @@ describe('bots (integration)', () => {
       ),
     ).rejects.toMatchObject({ constraint: 'CHK_bot_avatar_face' });
     await expect(
+      dataSource.query(`UPDATE bot SET "avatarFace" = '{}' WHERE id = $1`, [bot.id]),
+    ).rejects.toMatchObject({ constraint: 'CHK_bot_avatar_face' });
+    await expect(
       dataSource.query(
         `UPDATE bot_document SET "updatedBy" = 'bot' WHERE "botId" = $1 AND name = 'soul'`,
         [bot.id],

@@ -10,7 +10,8 @@ import type { MigrationInterface, QueryRunner } from 'typeorm';
  *   keeps the face it has today.
  * - `CHK_bot_avatar_face` holds each part to the lists in
  *   `@oppenheimer/shared` (`BOT_FACE_*`), as `CHK_bot_avatar_color` holds the
- *   colour.
+ *   colour. `IS TRUE`, because a part left out reads as NULL and a NULL
+ *   would pass the check.
  *
  * No index: nothing looks a bot up by its face.
  */
@@ -20,7 +21,7 @@ export class AddBotAvatarFace1794077408785 implements MigrationInterface {
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(`ALTER TABLE bot ADD COLUMN "avatarFace" jsonb`);
     await queryRunner.query(
-      `ALTER TABLE bot ADD CONSTRAINT "CHK_bot_avatar_face" CHECK ("avatarFace" IS NULL OR ("avatarFace" ->> 'hat' IN ('fedora', 'porkpie', 'bowler', 'tophat', 'cap', 'beanie') AND "avatarFace" ->> 'eyes' IN ('dots', 'happy', 'wink', 'big') AND "avatarFace" ->> 'mouth' IN ('smile', 'grin', 'o')))`,
+      `ALTER TABLE bot ADD CONSTRAINT "CHK_bot_avatar_face" CHECK ("avatarFace" IS NULL OR ("avatarFace" ->> 'hat' IN ('fedora', 'porkpie', 'bowler', 'tophat', 'cap', 'beanie') AND "avatarFace" ->> 'eyes' IN ('dots', 'happy', 'wink', 'big') AND "avatarFace" ->> 'mouth' IN ('smile', 'grin', 'o')) IS TRUE)`,
     );
   }
 
