@@ -26,7 +26,7 @@ export function SessionCloudChatSetup({ organizationId }: { organizationId: stri
   const origin = window.location.origin;
   const apiUrl = cloudChatApiUrl(import.meta.env.VITE_API_URL, origin);
   const key = createKey.data;
-  const copy = { copyLabel: t('sessions.cloud.copy'), copiedLabel: t('sessions.cloud.copied') };
+  const copy = { copyLabel: t('common.copy'), copiedLabel: t('common.copied') };
 
   return (
     <section className="mt-10 max-w-160 border-border-subtle border-t pt-6.5">
