@@ -443,3 +443,45 @@ resume points were left out. Row 14 landed the same day in
 `next-steps/0.2-pull-requests.md` ("CI findings") as `record_ci_findings`,
 a bot's tool rather than the review session's result: a session has no
 channel back yet. Row 13, rooms, is left for group chats.
+
+## 10. Grok Bot 0.79.2: how it remembers (2026-11-06)
+
+Our bots saved almost nothing after their first chat, so this read asks
+how Grok Bot's do. Version 0.79.2 is the newest in Cursor's apt repository
+(`downloads.cursor.com/aptrepo`, suite `grok-bot`; the `.deb` has sha256
+`0039b383…502217`), newer than the 0.78.5 the AUR packages. Its
+`app.asar` was unpacked and read; nothing was run and no code is taken.
+The loop still runs on xAI's servers, so the system prompt that says
+*when* to save is not in the app. What the app does show:
+
+- **Saving is a tool call and nothing else.** `UpdateMemory` writes and
+  `RecallMemory` searches. Among the reasons the harness opens a turn of
+  its own (`GOAL_CONTINUATION`, `COMMIT_REMINDER`,
+  `BACKGROUND_TASK_COMPLETION` and the rest) none is about memory: no
+  end-of-chat reflection, no save before compaction.
+- **A profile and a log.** `GrokBotMemoryFolder` is one `profile` text and
+  a map of `logs`; a write takes `action: "write"`, a type (`profile` or
+  `journal`) and a scope (`user` reaches all of a person's bots). Every
+  fact carries `learned_at_ms`. Memory is sharded per scope and versioned.
+- **The log is the default.** The app's own import prompt says to use
+  `profile` "only for the Instructions entries and core identity (name,
+  location, current role), and tier "log" for everything else", and to
+  keep a known date in a fact when it matters.
+- **Old entries fade rather than fill.** Grok Bot's support describes the
+  newest few thousand characters riding along every turn and the rest
+  coming back through search (Supermemory's write-up, not official).
+- **A reset keeps memory**; team learnings go through a review queue
+  (`PromoteGrokBotMemoriesToTeam`, `GrokBotTeamReviewMemoryChange`).
+
+So Grok Bot saves often because saving is cheap and expected, not because
+something saves for it. Ours made it dear: every save went into the prompt
+by default, the tool asked for a `recall` first to avoid duplicates, a full
+memory refused, and nothing outside the tool's description asked for a save.
+
+**Landed (2026-11-06)** in `versions/mvp/25-bots.md` §4.1: `log` by
+default; the system prompt carries the newest profile facts and the turn
+context the newest dated log entries, by characters, so a save does not
+cost the prompt cache; "How a turn goes" asks the bot to save what it
+learned in the turn, without asking; no duplicate check; a full memory
+drops its oldest log entry. Left out: a background turn that saves for the
+bot, which Grok Bot does not have either.

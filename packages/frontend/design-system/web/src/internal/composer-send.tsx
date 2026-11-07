@@ -15,7 +15,11 @@ import { IconButton } from '../components/icon-button';
  *   while `sendBlockedReason` says why; Enter submits and Shift+Enter makes
  *   a new line, never mid-composition (an IME). While busy, submitting
  *   stops instead. With `onAltSubmit`, Alt+Enter is a second way to send
- *   (a bot's "queue it for after"), under the same rules as send.
+ *   (a bot's "queue it for after"), under the same rules as send. With
+ *   `beforeSend`, a send first waits for it, and goes ahead only when it
+ *   answers true, with the box as it is then: the caller holds a send for
+ *   something still landing in the draft (a recording being heard).
+ * - `ComposerRecorder`: the recorder in the field's place, while dictating.
  * - `ComposerSendButton`: the round primary button in the foot's corner.
  *   Blocked, it stays focusable (`aria-disabled`, not `disabled`) with the
  *   reason as its description and title, so a keyboard or screen reader
@@ -31,6 +35,7 @@ function useComposerSend({
   onSubmit,
   onStop,
   onAltSubmit,
+  beforeSend,
 }: {
   value: string;
   busy: boolean;
@@ -41,12 +46,28 @@ function useComposerSend({
   onSubmit: (value: string) => void;
   onStop?: () => void;
   onAltSubmit?: (value: string) => void;
+  /** Settles before a send; true lets it go, with the box as it is by then. */
+  beforeSend?: () => Promise<boolean>;
 }) {
   const blocked = !busy && sendBlockedReason !== undefined;
   const emptyAllowed = allowEmpty && attachmentCount === 0;
   const canSend = (emptyAllowed || value.trim().length > 0) && !disabled && !blocked;
+  // A held send goes ahead seconds later, with the box as it is then; this
+  // follows the latest render.
+  const latest = React.useRef({ value, canSend, onSubmit });
+  React.useLayoutEffect(() => {
+    latest.current = { value, canSend, onSubmit };
+  });
 
   function submit() {
+    // Before Stop: a busy agent is not stopped by a send that is still landing.
+    if (beforeSend) {
+      void beforeSend().then((go) => {
+        const now = latest.current;
+        if (go && now.canSend) now.onSubmit(now.value);
+      });
+      return;
+    }
     if (busy) return onStop?.();
     if (canSend) onSubmit(value);
   }
@@ -63,6 +84,49 @@ function useComposerSend({
   }
 
   return { blocked, canSend, submit, onKeyDown };
+}
+
+/**
+ * The recorder bar where a composer's foot (or its whole line) was, while
+ * dictating. The mic that started it unmounts as it appears, which drops
+ * focus to the page; so it takes the focus then, and Enter on it is
+ * `onEnter` (the composer's send). Enter on the bar's own buttons is theirs:
+ * Stop stops and Cancel cancels.
+ */
+function ComposerRecorder({
+  onEnter,
+  className,
+  children,
+  ...props
+}: React.ComponentProps<'div'> & { onEnter: () => void }) {
+  const ref = React.useRef<HTMLDivElement>(null);
+  // Synchronises focus with the mic it replaced: only when nothing else holds it.
+  React.useEffect(() => {
+    if (!document.activeElement || document.activeElement === document.body) {
+      ref.current?.focus();
+    }
+  }, []);
+  return (
+    <div
+      ref={ref}
+      tabIndex={-1}
+      className={cn('outline-none', className)}
+      onKeyDown={(event) => {
+        if (
+          event.key === 'Enter' &&
+          !event.shiftKey &&
+          !event.nativeEvent.isComposing &&
+          event.target === event.currentTarget
+        ) {
+          event.preventDefault();
+          onEnter();
+        }
+      }}
+      {...props}
+    >
+      {children}
+    </div>
+  );
 }
 
 function ComposerSendButton({
@@ -180,4 +244,4 @@ function ComposerFoot({
   );
 }
 
-export { ComposerFoot, ComposerFrame, ComposerSendButton, useComposerSend };
+export { ComposerFoot, ComposerFrame, ComposerRecorder, ComposerSendButton, useComposerSend };

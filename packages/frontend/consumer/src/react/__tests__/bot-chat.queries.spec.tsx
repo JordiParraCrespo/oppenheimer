@@ -22,6 +22,7 @@ import { fakeKernel } from './fake-kernel';
 const CONVERSATION = ['bots', 'detail', 'bot-1', 'conversation'];
 const APPROVALS = ['bots', 'detail', 'bot-1', 'approvals'];
 const GOAL = ['bots', 'detail', 'bot-1', 'goal'];
+const LOOP = ['bots', 'detail', 'bot-1', 'loop'];
 const at = new Date('2026-10-01T10:00:00Z');
 
 /** The conversation as a read returns it: turn `t1` in `status`, with these stored replies. */
@@ -121,6 +122,7 @@ function delegated(status: BotTurnStatus): BotConversationEntity {
     subagents: [],
     allowedBy: null,
     mailDraft: null,
+    rateLimit: null,
   };
   return new BotConversationEntity(
     [new BotMessageEntity('m0', 't1', 'activity', '', [step], at)],
@@ -139,7 +141,7 @@ describe('useBotLive', () => {
     expect(chat.stream.dispose).toHaveBeenCalled();
   });
 
-  it('reads the conversation, the goal and the card again each time the stream comes up', async () => {
+  it('reads the conversation, the goal, the loop and the card again each time the stream comes up', async () => {
     const chat = setup();
     renderHook(() => useBotLive('bot-1'), { wrapper: chat.wrapper });
     await chat.status('live');
@@ -148,9 +150,11 @@ describe('useBotLive', () => {
     expect(chat.invalidated).toEqual([
       CONVERSATION,
       GOAL,
+      LOOP,
       APPROVALS,
       CONVERSATION,
       GOAL,
+      LOOP,
       APPROVALS,
     ]);
   });
@@ -181,7 +185,7 @@ describe('useBotLive', () => {
     await chat.send(text('First.', 1, 0));
     await chat.send({ type: 'message', turnId: 't1', messageId: 'm0' });
     await chat.send(text(' Second', 2, 1));
-    expect(chat.invalidated).toEqual([CONVERSATION, GOAL]);
+    expect(chat.invalidated).toEqual([CONVERSATION, GOAL, LOOP]);
     expect(result.current.text).toEqual({ t1: 'First.\n\nSecond' });
     await chat.land(read('running', 'First.'));
     expect(result.current.text).toEqual({ t1: 'Second' });

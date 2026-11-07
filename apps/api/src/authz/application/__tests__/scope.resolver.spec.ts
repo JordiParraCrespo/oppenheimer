@@ -1,3 +1,4 @@
+import { ResourceRegistry } from '@oppenheimer/backend-authz';
 import { describe, expect, it, vi } from 'vitest';
 import { TeamOrmEntity } from '../../../organizations/database/team.orm-entity';
 import { ScopeResolver } from '../scope.resolver';
@@ -24,7 +25,24 @@ function resolverWith() {
     findActiveForPrincipals: vi.fn().mockResolvedValue([grant('Project', 'project-1')]),
   };
   const userRoles = { findRoleIdsForUser: vi.fn().mockResolvedValue(['role-1']) };
-  const resolver = new ScopeResolver(teamMembers as never, grants as never, userRoles as never);
+  const registry = new ResourceRegistry();
+  registry.register({
+    subject: 'Project',
+    keys: { organization: 'organizationId', owner: 'ownerUserId' },
+    scopes: ['own', 'grant'],
+  } as never);
+  // A person's own rows: no organization key, like a host.
+  registry.register({
+    subject: 'Host',
+    keys: { owner: 'ownerUserId' },
+    scopes: ['own', 'grant'],
+  } as never);
+  const resolver = new ScopeResolver(
+    teamMembers as never,
+    grants as never,
+    userRoles as never,
+    registry,
+  );
   return { resolver, teamMembers, teamQuery, grants, userRoles };
 }
 
@@ -95,18 +113,34 @@ describe('ScopeResolver', () => {
     expect(scope.grants.get('Project')).toBe('all');
   });
 
+  it('keeps a named grant on a person-owned type when a blanket one sits beside it', async () => {
+    // Regression: the blanket row folded the subject to 'all', which
+    // `applyAccessScope` ignores for person-owned rows, so the named host
+    // the caller was granted dropped out of every list.
+    const { resolver, grants } = resolverWith();
+    grants.findActiveForPrincipals.mockResolvedValue([
+      grant('Host', null),
+      grant('Host', 'host-1'),
+    ]);
+
+    const scope = await resolver.resolve(input);
+
+    expect(scope.grants.get('Host')).toEqual(new Set(['host-1']));
+  });
+
   it.each([
     ['a platform admin', { isPlatformAdmin: true }],
     ['a `manage all` holder', { hasFullAccess: true }],
-  ])('short-circuits for %s and reads nothing', async (_name, flags) => {
-    const { resolver, teamMembers, grants, userRoles } = resolverWith();
-
+  ])('still reads the grants of %s', async (_name, flags) => {
+    // Regression: a bypass returned no grants, and a bypass no longer
+    // reaches a person's rows on its own, so a host granted to an admin by
+    // name was out of their reach.
+    const { resolver } = resolverWith();
     const scope = await resolver.resolve({ ...input, ...flags });
 
     expect(scope.bypass).toBe(true);
-    expect(teamMembers.createQueryBuilder).not.toHaveBeenCalled();
-    expect(userRoles.findRoleIdsForUser).not.toHaveBeenCalled();
-    expect(grants.findActiveForPrincipals).not.toHaveBeenCalled();
+    expect(scope.grants.get('Project')).toEqual(new Set(['project-1']));
+    expect(scope.teamIds).toEqual(['team-1']);
   });
 
   it('reads nothing for a request that acts in no organization', async () => {

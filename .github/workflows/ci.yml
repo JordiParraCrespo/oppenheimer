@@ -75,13 +75,15 @@ jobs:
             apps/runner/go.sum
             packages/go/*/go.sum
       # ci:local expects golangci-lint on PATH, as a contributor has it.
-      - run: curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/HEAD/install.sh | sh -s -- -b "$(go env GOPATH)/bin" v2.5.0
+      - run: curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/HEAD/install.sh | sh -s -- -b "$(go env GOPATH)/bin" v2.15.0
       # oppenheimer:end runner
       - run: pnpm install --frozen-lockfile
       - id: images
         run: node scripts/ci/affected.mjs
+      # One step at a time: this VM, running every job at once, timed out
+      # unit tests' first queries and lost its runner (main-red #595).
       - name: pnpm ci:local --all
-        run: pnpm ci:local --all
+        run: pnpm ci:local --all --max-parallel 1
         # oppenheimer:begin extension
         # The runner lacks Chromium's system libraries and the sudo to install
         # them, so the extension's suite runs in Playwright's image.

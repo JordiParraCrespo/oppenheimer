@@ -387,6 +387,14 @@ export class PullRequestCommentDto {
   @ApiProperty()
   author!: string;
 
+  @ApiPropertyOptional({
+    nullable: true,
+    type: Boolean,
+    description:
+      'Whether the author is the repository’s owner, a member or a collaborator (false: anyone else); null when GitHub did not say.',
+  })
+  authorIsInsider!: boolean | null;
+
   @ApiProperty({ format: 'date-time' })
   createdAt!: string;
 }
@@ -406,6 +414,14 @@ export class PullRequestActivityItemDto {
 
   @ApiProperty({ description: 'A GitHub login; a commit’s author name.' })
   author!: string;
+
+  @ApiPropertyOptional({
+    nullable: true,
+    type: Boolean,
+    description:
+      'For a comment or a review: whether its author is the repository’s owner, a member or a collaborator (false: anyone else); null when GitHub did not say or for a commit or event.',
+  })
+  authorIsInsider!: boolean | null;
 
   @ApiProperty({ format: 'date-time' })
   at!: string;

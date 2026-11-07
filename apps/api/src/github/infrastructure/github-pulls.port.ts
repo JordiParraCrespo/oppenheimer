@@ -69,6 +69,8 @@ export interface GithubReviewComment {
   side: 'LEFT' | 'RIGHT';
   body: string;
   login: string;
+  /** Whether the author is the repository's owner, a member or a collaborator; null when GitHub did not say. */
+  insider: boolean | null;
   createdAt: string;
 }
 
@@ -87,12 +89,21 @@ export type GithubTimelineEvent =
  * pushed commit, a review, or an event. `id` is unique within the timeline.
  */
 export type GithubTimelineItem =
-  | { kind: 'comment'; id: string; login: string; body: string; at: string }
+  | {
+      kind: 'comment';
+      id: string;
+      login: string;
+      /** As on a line comment: whether the author is part of the repository. */
+      insider: boolean | null;
+      body: string;
+      at: string;
+    }
   | { kind: 'commit'; id: string; sha: string; login: string; message: string; at: string }
   | {
       kind: 'review';
       id: string;
       login: string;
+      insider: boolean | null;
       state: 'approved' | 'changes_requested' | 'commented' | 'dismissed';
       body: string;
       at: string;

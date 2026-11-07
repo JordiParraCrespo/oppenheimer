@@ -6,6 +6,7 @@
  * `wake-subscribed-bot.command-handler.spec.ts`.
  */
 import type { CommandBus } from '@nestjs/cqrs';
+import { WakeOnAgentNoticeCommand } from '../../commands/wake-on-agent-notice/wake-on-agent-notice.command';
 import { WakeSubscribedBotCommand } from '../../commands/wake-subscribed-bot/wake-subscribed-bot.command';
 import type { BotSubscriptionRepositoryPort } from '../../database/bot-subscription.repository.port';
 import { BotSessionWakeDomainEventHandler } from '../event-handlers/bot-session-wake.domain-event-handler';
@@ -23,6 +24,21 @@ function setup(ids: string[]) {
 }
 
 describe('BotSessionWakeDomainEventHandler', () => {
+  // What breaks this: an agent's notify heard by the Inbox only, so a bot
+  // that delegated the work never learns its agent asked for something.
+  it('asks each subscription to the session to hear a notice its agent sent, by its id', async () => {
+    const { commands, handler } = setup(['sub-1', 'sub-2']);
+    await handler.onNotice({ aggregateId: 'session-1', organizationId: 'org-1', noticeId: 'n-1' });
+    const woken = commands.execute.mock.calls.map(
+      ([command]) => command as WakeOnAgentNoticeCommand,
+    );
+    expect(woken.map((command) => [command.subscriptionId, command.noticeId])).toEqual([
+      ['sub-1', 'n-1'],
+      ['sub-2', 'n-1'],
+    ]);
+    expect(woken[0]).toBeInstanceOf(WakeOnAgentNoticeCommand);
+  });
+
   it('asks each subscription to the session to wake when its task needs input or ends', async () => {
     const { subscriptions, commands, handler } = setup(['sub-1', 'sub-2']);
     await handler.onTurn({ aggregateId: 'session-1', organizationId: 'org-1', to: 'completed' });

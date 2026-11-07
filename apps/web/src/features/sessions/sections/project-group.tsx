@@ -6,7 +6,7 @@ import {
   SortableGroup,
   SortableSidebarProjectGroup,
 } from '@oppenheimer/design-system-web';
-import { Plus, Settings2 } from '@oppenheimer/design-system-web/icons';
+import { Plus } from '@oppenheimer/design-system-web/icons';
 import type { ProjectEntity, SessionEntity } from '@oppenheimer/frontend-consumer';
 import { useRouterState } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
@@ -15,7 +15,9 @@ import { SessionRows } from './session-rows';
 
 /**
  * One project's group in the sidebar; `project` is null for sessions whose
- * project the list does not hold, which get a header with no actions. Its
+ * project the list does not hold, which get a header with no actions. A
+ * project's header starts a session in it; the project itself is managed
+ * from Plan's Projects view. Its
  * rows (`SessionRows`) own their ages' clock. It is a section rather than a
  * component because the header's "one of mine is open" mark subscribes to the route, a boolean per
  * group, so a navigation re-renders only the groups whose mark moved.
@@ -32,7 +34,6 @@ export function ProjectGroup({
   narrowed,
   query,
   onNewSessionHere,
-  onSettings,
   onShare,
   onDelete,
   onWrite,
@@ -50,7 +51,6 @@ export function ProjectGroup({
   /** The settled search, which an empty group repeats back. */
   query: string;
   onNewSessionHere: (project: ProjectEntity) => void;
-  onSettings: (project: ProjectEntity) => void;
   onShare: (session: SessionEntity) => void;
   onDelete: (session: SessionEntity) => void;
   onWrite: (error: Error | null) => void;
@@ -83,24 +83,14 @@ export function ProjectGroup({
         current={current}
         actions={
           project ? (
-            <>
-              <IconButton
-                size="xs"
-                variant="quiet"
-                aria-label={t('sessions.sidebar.newSessionHere', { name: label })}
-                onClick={() => onNewSessionHere(project)}
-              >
-                <Plus />
-              </IconButton>
-              <IconButton
-                size="xs"
-                variant="quiet"
-                aria-label={t('sessions.sidebar.projectSettings', { name: label })}
-                onClick={() => onSettings(project)}
-              >
-                <Settings2 />
-              </IconButton>
-            </>
+            <IconButton
+              size="xs"
+              variant="quiet"
+              aria-label={t('sessions.sidebar.newSessionHere', { name: label })}
+              onClick={() => onNewSessionHere(project)}
+            >
+              <Plus />
+            </IconButton>
           ) : undefined
         }
       />

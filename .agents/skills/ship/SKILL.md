@@ -1,77 +1,73 @@
 ---
 name: ship
-description: Finish the task in hand and merge its pull request, without stopping to ask unless a stop condition holds. Finishes the work, drives the pull request with the steward skill, then merges it pinned to the head that steward got green. Use only when the user invokes /ship or explicitly asks to finish and merge on their own.
+description: Finish a fix and merge it without asking, or merge a proposed pull request Jordi has accepted. Labels the pull request `ship`, drives it with the steward skill, has a fresh agent verify it, babysits it, and merges it. Use only when the user invokes /ship.
 disable-model-invocation: true
-argument-hint: "[pull request number or extra instructions]"
+argument-hint: "[what to fix, or a pull request number]"
 ---
 
 # Ship
 
-Invoking this skill is the user's approval to merge **this one pull request**
-without asking again, unless a stop condition below holds. It does not extend
-to other pull requests or to later sessions.
+`/ship` is Jordi's approval to merge **this one pull request**. The merge
+protocol (the three labels and what each one waits for) is
+`.agents/skills/steward/SKILL.md`, "Merging"; this skill is the `ship` lane.
 
-`ship` owns two things: finishing the work, and the merge. Everything between
-(commit, local CI, push, the pull request, its report, review threads, merging
-`main` in) is `.agents/skills/steward/SKILL.md`, unchanged.
+Two ways in:
 
-## 1. Finish the task
+- **`/ship <task>`**: a fix. Do the work, then everything below.
+- **`/ship` on a `propose` pull request** (in its session, or with its
+  number): Jordi accepted it. Swap the label `propose` for `ship` and go
+  to step 4; its verdict stands if the code has not changed since.
 
-- Re-read the request and the conversation; do what is left of it. If
-  `$ARGUMENTS` names a pull request, check out its head branch and take its
-  description as the task.
-- Keep to what was asked. Anything else you notice goes in the pull request
-  description as a follow-up, not into the diff.
-- Follow the rules and docs that govern the code you touch, as for any change.
-- Take the steps in the order `.agents/skills/steward/SKILL.md` writes
-  down ("The order"): quick check, `deslop` over the branch diff, commit,
-  screens, `pnpm ci:local`, push.
+## 1. Fix it
 
-## 2. Drive the pull request
+- Reproduce the bug first, on the surface it shows on: a failing test, a
+  command, or a screenshot of the broken state. Commit the failing test
+  before the fix when there is a cheap one.
+- Fix the root cause, nothing beyond it. Anything else you notice goes in
+  the description as a follow-up.
+- Take the steps in the order `steward` writes down ("The order").
 
-Follow `steward` until it calls the pull request ready. Answer review threads
-as you go, and keep working the pull request on every event while you do.
+A `/ship <task>` becomes a `/propose` (label `propose`, wait for Jordi),
+and you say why, when the work turns out to need:
 
-## 3. Merge
+- new behavior, an endpoint, a schema or a migration (it is a feature);
+- a change to auth, authorization, scopes or credentials, the agent rules
+  (`.claude/`, `.agents/`, the root `AGENTS.md`), `.github/` or `deploy/`.
 
-Fetch the pull request fresh and merge only when all of these hold:
+## 2. Open it
 
-- `steward` calls it ready, and the head SHA is the one its report names;
-- it has no conflict with its base branch: GitHub reports it mergeable
-  (`mergeable` true, not `dirty`). A conflict is not a stop: merge the base
-  in per `steward`, and the new head goes back through step 2;
-- it has at least one submitted review from a user account, not a bot, and
-  no review is requesting changes;
-- every review thread is resolved;
-- no stop condition holds.
+Open the pull request ready, with the `ship` label, and subscribe to its
+activity.
 
-With no review yet, the pull request waits for one: say so once.
+## 3. Verify it
 
-Merge pinned to that head SHA, so a head nobody checked fails the merge
-instead of landing, and with the repository's merge method (merge commits).
-If the merge is refused because the head or the base moved, go back to step
-2. Never merge with admin rights or bypass branch protection.
+Spawn one fresh agent that did not write the code. Brief it with the pull
+request number and head SHA, the bug and its repro, and ask it to:
 
-After the merge, stop following the pull request and tell the user: its link,
-the merge commit, what shipped, and the follow-ups left in its description.
+1. check out the head and confirm the SHA;
+2. show the repro failing on `origin/main` and passing on the head, on the
+   same surface (the `local-stack` skill for the console, the runner or the
+   relay; the real command or request otherwise);
+3. read the diff for anything it breaks;
+4. answer `PASS` or `FAIL`, with the commands, outputs and screenshots that
+   show it. A step it could not run is a `FAIL`, never a pass.
 
-## Stop conditions
+Post the verdict on the pull request as one comment naming the SHA. A
+`FAIL` is a finding: fix it, push, and verify the new head.
 
-Leave the pull request open, as far along as you got, and ask the user before
-merging when:
+## 4. Babysit and merge
 
-- the task is ambiguous, or finishing it needs a decision that is theirs (an
-  API or schema change nobody asked for, a product call, deleting data);
-- a review thread is unresolved, a reviewer asks for more than the task, or a
-  security finding is open;
-- the diff touches a security-sensitive path: auth, authorization, scopes or
-  credentials (`packages/auth`, `packages/backend/authz`,
-  `packages/shared/src/scopes`, `apps/api/src/auth*`), the agent guardrails
-  (`.claude/settings.json`, `.agents/hooks/`), workflows (`.github/`), the
-  deployment (`deploy/`) or a migration;
-- a person's approval is required by branch protection or a code owner;
-- `main-red` is open and this pull request is not its fix;
-- CI or the merge keeps failing for a reason you cannot state.
+Keep the pull request mergeable per `steward`, "Babysitting", then merge
+when all of these hold on a fresh fetch:
 
-Say exactly what blocks the merge and what you need. The pull request stays
-yours: keep working it on every event that reaches you.
+- `steward` calls it ready, and the verdict is `PASS` on this head, or on a
+  head whose only change since is a merge of `main` with a green
+  `pnpm ci:local`;
+- GitHub reports it mergeable, no review requests changes, and every review
+  thread is answered and resolved;
+- no `main-red` issue is open that this pull request does not fix.
+
+Merge pinned to the head SHA with merge commits, never with admin rights.
+Read the pull request back to confirm it merged, unsubscribe, and tell the
+user: the link, the merge commit, the verdict, what shipped, and the
+follow-ups.

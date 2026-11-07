@@ -29,7 +29,7 @@ export function BoardScreen() {
     // scroller reaches through its gutter on its own.
     <div className="flex flex-col gap-7">
       <BoardHeader onNew={openNew} />
-      <PlanFilters milestone />
+      <PlanFilters view="board" />
       <QueryState>
         <QueryState.Pending>
           <BoardSkeleton />

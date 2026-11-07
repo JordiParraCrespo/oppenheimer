@@ -6,7 +6,7 @@ Go service template. Read the root [`CLAUDE.md`](../../CLAUDE.md) first, then
 
 ## Stack
 
-- Go 1.24, standard `net/http` routing (method + path params), no framework
+- Go 1.26, standard `net/http` routing (method + path params), no framework
 - The cross-cutting toolkit is `packages/go/*` (problem+json, httpx, auth,
   ws, health, config) — one Go module each, tied together by the root
   `go.work`. Fix a shared concern there, not here; this app owns its config,

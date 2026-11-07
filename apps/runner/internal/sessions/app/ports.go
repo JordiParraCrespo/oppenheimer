@@ -7,6 +7,7 @@ import (
 	"context"
 	"errors"
 	"io"
+	"time"
 
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/domain"
 )
@@ -199,6 +200,14 @@ type Notifier interface {
 	Notified(sessionID string, notice domain.Notice)
 }
 
+// FileSharer is the part of a Publisher that tells the control plane a
+// session's agent shared a file (`runner sessions send-file`), as
+// `file.shared`. Optional, like Notifier, but a runner with none still shows
+// the file in the session's chat: the event is for bots, not the person.
+type FileSharer interface {
+	FileShared(sessionID string, file domain.SharedFile)
+}
+
 // PullWatcher is the part of a Publisher that tells the control plane which
 // pull requests a session's agent wants to be woken by, as `pull.watched`.
 // Optional, like Notifier.
@@ -247,18 +256,86 @@ type Transcripts interface {
 	// entry over entryMax bytes is left out and a batch holds at most
 	// batchMax. A batch emit refuses is offered again. ErrNoChat when this
 	// runner cannot read the agent's transcript.
-	Follow(ctx context.Context, session domain.Session, entryMax, batchMax int, emit func(ChatBatch) error) error
+	// Each offset on older asks for the turns before it, sent as batches
+	// marked Older; a source that sends its whole history answers that
+	// nothing is older. A nil older is a reader that cannot ask: the whole
+	// history is sent.
+	Follow(ctx context.Context, session domain.Session, entryMax, batchMax int, older <-chan int64, emit func(ChatBatch) error) error
+	// ReadPage is one page of the session's conversation, read off its file
+	// once, for a reader with no browser attached (`transcript.read`): the
+	// same entries Follow sends, addressed by the conversation and a byte
+	// offset into it. ErrNoChat when the agent keeps no file this runner
+	// reads.
+	ReadPage(session domain.Session, req TranscriptPageRequest) (TranscriptPage, error)
 	// OpenQuestion is the agent's latest AskUserQuestion call that has no
 	// result in the transcript yet, as the decision it asks (29-inbox,
 	// slice 4); false when there is none, or no transcript to read.
 	OpenQuestion(agent domain.Agent, conversation string) (domain.Decision, bool)
+	// Teleported is the conversation an agent opened in dir on or after
+	// since, by the name its CLI gave it: what a session that continues a
+	// cloud one reads its transcript by, since the CLI names a teleported
+	// conversation itself. "" while there is none yet, and for an agent whose
+	// transcripts this runner cannot read.
+	Teleported(agent domain.Agent, dir string, since time.Time) string
 }
 
 // ChatBatch is a run of transcript entries for the chat view, each one the
 // JSON of one compacted transcript line. Reset starts the history over.
 type ChatBatch struct {
-	Reset   bool
+	Reset bool
+	// History is where the history a Reset started stands: HistoryMore on
+	// each of its batches while more is coming, HistoryEnd on the one that
+	// reaches the transcript's end, "" on what follows live.
+	History string
+	// Before is where in the transcript what was sent starts, as a byte
+	// offset: on a Reset that sends only the last turns, and on an older
+	// page's last batch. 0 is the conversation from its first line.
+	Before int64
+	// Older marks a page of older turns asked for: HistoryMore while it is
+	// coming, HistoryEnd on its last batch.
+	Older   string
 	Entries []string
+}
+
+// The values of ChatBatch.History.
+const (
+	HistoryMore = "more"
+	HistoryEnd  = "end"
+)
+
+// TranscriptPageRequest is where a page of a conversation starts and what it
+// may hold. Without Conversation the page is the conversation's tail; with
+// the one a page was read from, the entries after After, a byte offset into
+// it. A cursor that no longer applies is read from the start, Restarted.
+type TranscriptPageRequest struct {
+	Conversation string
+	After        int64
+	// Limit is the most entries, BytesMax the most bytes they add up to and
+	// EntryMax the most one entry takes; one bigger is left out, Dropped.
+	Limit    int
+	BytesMax int
+	EntryMax int
+}
+
+// TranscriptPage is a page of a conversation: the chat view's entries, oldest
+// first, from the byte offset From to Next, which is where the page after it
+// starts. Entries is never nil: the link carries an empty page as [].
+type TranscriptPage struct {
+	// Conversation names the conversation the page was read from, a digest of
+	// where its file is; "" while the agent has written none.
+	Conversation string
+	Entries      []string
+	From, Next   int64
+	// AtEnd is a page that read all the agent has finished writing.
+	AtEnd bool
+	// Restarted is a page read from the start because the cursor asked with
+	// no longer applied.
+	Restarted bool
+	// Dropped counts entries in the page's range left out of it.
+	Dropped int
+	// Partial is a page read from the middle by a transcriber that carries
+	// state from line to line, which may not place every line in it.
+	Partial bool
 }
 
 // ErrNoChat is a session whose agent's transcript this runner cannot follow.

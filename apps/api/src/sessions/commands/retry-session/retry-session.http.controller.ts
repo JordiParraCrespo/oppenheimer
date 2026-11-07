@@ -1,0 +1,81 @@
+import {
+  Controller,
+  HttpCode,
+  HttpStatus,
+  Param,
+  ParseUUIDPipe,
+  Post,
+  UseGuards,
+  UseInterceptors,
+  Version,
+} from '@nestjs/common';
+import { CommandBus, QueryBus } from '@nestjs/cqrs';
+import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import type { AccessScope } from '@oppenheimer/backend-authz';
+import { ApiAuthProblemResponses, ApiProblemResponse } from '@oppenheimer/backend-core';
+import { CheckPolicies } from '../../../auth/decorators/check-policies.decorator';
+import { RequireScopes } from '../../../auth/decorators/require-scopes.decorator';
+import { ApiAuthGuard } from '../../../auth/guards/api-auth.guard';
+import { PoliciesGuard } from '../../../auth/guards/policies.guard';
+import { CurrentAccessScope } from '../../../authz/decorators/current-access-scope.decorator';
+import { AccessScopeInterceptor } from '../../../authz/interceptors/access-scope.interceptor';
+import type { SessionCommandResult } from '../../domain/session-command.types';
+import type { WorkSessionEntity } from '../../domain/work-session.entity';
+import { SessionResponseDto } from '../../dtos/session.response.dto';
+import { FindSessionQuery } from '../../queries/find-session/find-session.query';
+import { WorkSessionMapper } from '../../work-session.mapper';
+import { RetrySessionCommand } from './retry-session.command';
+
+@ApiTags('Sessions')
+@ApiBearerAuth()
+@ApiAuthProblemResponses()
+@UseGuards(ApiAuthGuard, PoliciesGuard)
+@UseInterceptors(AccessScopeInterceptor)
+@Controller('sessions')
+export class RetrySessionHttpController {
+  constructor(
+    private readonly commandBus: CommandBus,
+    private readonly queryBus: QueryBus,
+    private readonly mapper: WorkSessionMapper,
+  ) {}
+
+  @Post(':id/retry')
+  // 200, not Nest's default 201 for a POST: this creates nothing. It acts on a
+  // session that already exists and answers with that session.
+  @HttpCode(HttpStatus.OK)
+  @Version('1')
+  @CheckPolicies({ action: 'update', subject: 'Session' })
+  @RequireScopes('sessions:write')
+  @ApiOperation({
+    summary: 'Try a failed start again',
+    description:
+      'Sends the host the same create again, for the same session and with the same first task, after its start failed (a host not signed in to its agent, a tool missing). It records a request: the session is `starting` again, and opens or fails as the host reports.',
+  })
+  @ApiResponse({ status: 200, type: SessionResponseDto })
+  @ApiProblemResponse({ status: 404, description: 'Session not found', code: 'SESSIONS_001' })
+  @ApiProblemResponse({ status: 404, description: 'Host not found', code: 'HOSTS_001' })
+  @ApiProblemResponse({ status: 409, description: 'That session is closed', code: 'SESSIONS_005' })
+  @ApiProblemResponse({
+    status: 409,
+    description: 'That session runs at its vendor, not on a host',
+    code: 'SESSIONS_039',
+  })
+  @ApiProblemResponse({
+    status: 409,
+    description: 'Only a session whose start failed can be tried again',
+    code: 'SESSIONS_052',
+  })
+  async retry(
+    @CurrentAccessScope() scope: AccessScope,
+    @Param('id', ParseUUIDPipe) id: string,
+  ): Promise<SessionResponseDto> {
+    const { sessionId, hints } = await this.commandBus.execute<
+      RetrySessionCommand,
+      SessionCommandResult
+    >(new RetrySessionCommand({ scope, sessionId: id }));
+    const session = await this.queryBus.execute<FindSessionQuery, WorkSessionEntity>(
+      new FindSessionQuery({ scope, sessionId }),
+    );
+    return this.mapper.toResponse(session, { hints });
+  }
+}

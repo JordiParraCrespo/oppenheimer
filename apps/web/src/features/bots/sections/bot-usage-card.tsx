@@ -1,4 +1,4 @@
-import { Button, Card, ChatTranscript } from '@oppenheimer/design-system-web';
+import { Button, Card, ChatTranscript, ChatUserMessage } from '@oppenheimer/design-system-web';
 import { ErrorAlert, QueryState } from '@oppenheimer/frontend-web';
 import { useTranslation } from 'react-i18next';
 import { BotUsageSkeleton } from '@/features/bots/components/bot-usage-skeleton';
@@ -8,9 +8,10 @@ import { BotUsageSummary } from './bot-usage-summary';
 
 /**
  * `/usage` (`25-bots.md` §4.1, "Built-in commands"), in the chat below its
- * last message, as Claude Code draws it: the bot is sent nothing, and the
- * card stays until it is closed. The figures read under Suspense; this draws
- * the card, their placeholder and a first failure.
+ * last message, as Claude Code draws it: the command as you sent it, and the
+ * small card that answers it. The bot is sent nothing, and both stay until
+ * the card is closed. The figures read under Suspense; this draws the card,
+ * their placeholder and a first failure.
  */
 export function BotUsageCard({ botId }: { botId: string }) {
   const { t } = useTranslation();
@@ -19,7 +20,8 @@ export function BotUsageCard({ botId }: { botId: string }) {
   return (
     // The chat's own column, so the card lines up with its messages and the composer.
     <ChatTranscript className="mt-5">
-      <Card padded>
+      <ChatUserMessage>/usage</ChatUserMessage>
+      <Card className="w-full max-w-sm px-4 py-3">
         <QueryState>
           <QueryState.Pending>
             <BotUsageSkeleton />

@@ -19,7 +19,6 @@ import {
   place,
   resetLegStats,
 } from '../../support/netsim';
-import { showTerminal } from '../../support/session-chat';
 import { connectInstallation, createSession, mintPairingToken } from '../../support/sessions';
 import { linkLive, signInAs } from '../../support/web';
 
@@ -107,7 +106,6 @@ async function reading(page: Page): Promise<Reading | null> {
 
 /** Types `KEYS` keys, each once the last one's echo is in. */
 async function typeAndRead(page: Page): Promise<Reading> {
-  await showTerminal(page);
   await page.locator('.xterm').first().click();
   for (let i = 0; i < KEYS; i += 1) {
     const before = (await reading(page))?.n ?? 0;

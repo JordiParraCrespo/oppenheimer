@@ -12,10 +12,12 @@ import type {
   SessionGroup,
   SessionNotice,
   SessionPlace,
+  SessionSharedFile,
   SessionState,
   SessionWatchedPull,
 } from '@oppenheimer/shared';
-import { wakeRequestedPayloadSchema } from '@oppenheimer/shared';
+import { agentNotifiedPayloadSchema, wakeRequestedPayloadSchema } from '@oppenheimer/shared';
+import { SessionAgentNotifiedDomainEvent } from './events/session-agent-notified.domain-event';
 import { SessionCreatedDomainEvent } from './events/session-created.domain-event';
 import { SessionStateChangedDomainEvent } from './events/session-state-changed.domain-event';
 import { SessionTerminalMatchedDomainEvent } from './events/session-terminal-matched.domain-event';
@@ -348,6 +350,23 @@ export class WorkSessionEntity extends AggregateRoot<WorkSessionProps> {
     return this.place === 'cloud' ? this.props.agentSessionId : null;
   }
 
+  /**
+   * Where a cloud session is read and followed at its vendor: Claude Code's
+   * on claude.ai/code, Codex's task on chatgpt.com/codex, or the page a
+   * launching vendor gave (Cursor's). Null for a host session, and for a
+   * cloud session that has none yet.
+   */
+  get vendorUrl(): string | null {
+    const id = this.cloudSessionId;
+    if (id) {
+      const encoded = encodeURIComponent(id);
+      return this.agent === 'codex'
+        ? `https://chatgpt.com/codex/tasks/${encoded}`
+        : `https://claude.ai/code/${encoded}`;
+    }
+    return this.place === 'cloud' ? (this.props.cloudRun?.url ?? null) : null;
+  }
+
   /** The folder a folder session runs in; null for a worktree session. */
   get folderPath(): string | null {
     return this.props.folderPath;
@@ -431,6 +450,11 @@ export class WorkSessionEntity extends AggregateRoot<WorkSessionProps> {
     return this.props.watchedPulls;
   }
 
+  /** The files the agent shared (`file.shared`), oldest first, the last 20. */
+  get sharedFiles(): readonly SessionSharedFile[] {
+    return this.props.sharedFiles;
+  }
+
   /**
    * Why this session cannot take input right now — typed keys, a pasted
    * image — or `null` when it can. Closed is final and stopped has no window
@@ -499,6 +523,7 @@ export class WorkSessionEntity extends AggregateRoot<WorkSessionProps> {
       agentReport: this.props.agentReport,
       notice: this.props.notice,
       watchedPulls: this.props.watchedPulls,
+      sharedFiles: this.props.sharedFiles,
     };
   }
 
@@ -532,6 +557,7 @@ export class WorkSessionEntity extends AggregateRoot<WorkSessionProps> {
     this.props.agentReport = fold.agentReport;
     this.props.notice = fold.notice;
     this.props.watchedPulls = fold.watchedPulls;
+    this.props.sharedFiles = fold.sharedFiles;
   }
 
   /**
@@ -579,6 +605,23 @@ export class WorkSessionEntity extends AggregateRoot<WorkSessionProps> {
           }),
         );
       }
+    }
+
+    // A notice the fold kept from this entry (a resolved session keeps none,
+    // and a malformed one leaves the last) is news to whoever follows it.
+    if (
+      entry.kind === SESSION_EVENT_KINDS.AGENT_NOTIFIED &&
+      folded.notice &&
+      folded.notice.id === agentNotifiedPayloadSchema.safeParse(entry.payload).data?.id
+    ) {
+      this.addEvent(
+        new SessionAgentNotifiedDomainEvent({
+          aggregateId: this.id,
+          reason: `this session's agent sent a notice (${folded.notice.id})`,
+          organizationId: this.props.organizationId,
+          noticeId: folded.notice.id,
+        }),
+      );
     }
 
     if (entry.kind === SESSION_EVENT_KINDS.WAKE_REQUESTED) {

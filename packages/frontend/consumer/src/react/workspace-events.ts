@@ -9,6 +9,7 @@ import { botsKeys } from './bots.keys';
 import { useConsumerApp } from './context';
 import { hostsKeys } from './hosts.keys';
 import { inboxKeys } from './inbox.keys';
+import { projectsKeys } from './projects.keys';
 import { pullRequestsKeys } from './pull-requests.keys';
 import { sessionsKeys } from './sessions.keys';
 import { tasksKeys } from './tasks.keys';
@@ -84,6 +85,10 @@ const REFRESHES: RefreshTable = {
     { prefix: tasksKeys.milestones(), announcesEvery: true },
     { prefix: tasksKeys.lists(), announcesEvery: true },
   ],
+  // A project made, changed or archived, a bot's included: the sidebar and
+  // every picker read the one list. The Unassigned project is provisioned
+  // without it, so the list keeps its own refetches.
+  'project.changed': [{ prefix: projectsKeys.lists(), announcesEvery: false }],
   // Raising, deciding, expiring and running an approval each raise it: the
   // Inbox's list across bots, and the bot's own cards, which its chat also
   // hears on the bot's stream.
@@ -101,6 +106,9 @@ const REFRESHES: RefreshTable = {
       catchUp: false,
     },
   ],
+  // Every notice a bot sends raises it: the Inbox's list across bots. The
+  // bot's chat shows no notice, so it has nothing to refresh.
+  'botNotice.changed': [{ prefix: botsKeys.workspaceNotices(), announcesEvery: true }],
   // Every put and delete of the caller's marks.
   'inboxMark.changed': [{ prefix: inboxKeys.marks(), announcesEvery: true }],
 };

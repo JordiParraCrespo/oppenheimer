@@ -174,8 +174,8 @@ export function useBotRoomLeft(id: string): BotRoomLeft {
 }
 
 /**
- * The chat read again, and its goal (a line or a turn may have set, moved or
- * ended it); when a turn has ended, the bot too (its last activity moved),
+ * The chat read again, and its goal and loop (a line or a turn may have set,
+ * moved or ended either); when a turn has ended, the bot too (its last activity moved),
  * its Needs input card (the turn may have raised one) and its usage (an open
  * `/usage` card counts the turn).
  */
@@ -183,6 +183,7 @@ function refetchChat(queryClient: QueryClient, id: string, ended: boolean): Prom
   const reads = [
     queryClient.invalidateQueries({ queryKey: botsKeys.conversation(id) }),
     queryClient.invalidateQueries({ queryKey: botsKeys.goal(id) }),
+    queryClient.invalidateQueries({ queryKey: botsKeys.loop(id) }),
   ];
   if (ended) {
     reads.push(queryClient.invalidateQueries({ queryKey: botsKeys.lists() }));

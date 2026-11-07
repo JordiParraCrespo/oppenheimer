@@ -1,0 +1,33 @@
+{
+  "name": "@oppenheimer/http-client",
+  "version": "0.1.0",
+  "private": true,
+  "description": "The HTTP transport opp and the MCP server share: requests to the API, timeouts, and the problem documents it answers with",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "dev": "tsc -p tsconfig.json --watch",
+    "clean": "rm -rf dist",
+    "lint": "biome check src/",
+    "test": "vitest run --passWithNoTests",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@oppenheimer/shared": "workspace:*"
+  },
+  "devDependencies": {
+    "@oppenheimer/tsconfig": "workspace:^",
+    "@types/node": "^22.20.1",
+    "typescript": "^6.0.3",
+    "vitest": "^5.0.0"
+  }
+}

@@ -1,7 +1,7 @@
 import type { CommandBus, QueryBus } from '@nestjs/cqrs';
 import { emptyScope } from '@oppenheimer/backend-authz';
 import { AppError } from '@oppenheimer/backend-core';
-import { BOT_AVATAR_COLORS, type BotSection } from '@oppenheimer/shared';
+import { BOT_AVATAR_COLORS, BOT_MEMORY_FACTS_MAX, type BotSection } from '@oppenheimer/shared';
 import { CreateBotMemoryFactCommand } from '../../../bots/commands/create-bot-memory-fact/create-bot-memory-fact.command';
 import { DeleteBotMemoryFactCommand } from '../../../bots/commands/delete-bot-memory-fact/delete-bot-memory-fact.command';
 import { UpdateBotCommand } from '../../../bots/commands/update-bot/update-bot.command';
@@ -138,7 +138,7 @@ describe('BotSelfToolsFactory', () => {
     }
     expect(result.content).toContain(`You: ${BOT_ID} "Ada"`);
     expect(result.content).toContain('learn automatically: on');
-    expect(result.content).toContain('memory: 1 of 200 facts');
+    expect(result.content).toContain(`memory: 1 of ${BOT_MEMORY_FACTS_MAX} facts`);
     expect(result.content).toContain('SOUL.md (revision 3');
     expect(result.content).toContain('INSTRUCTIONS.md (revision 2, 5000 characters');
     expect(result.content).toContain('1000 more characters cut');
@@ -228,7 +228,9 @@ describe('BotSelfToolsFactory', () => {
     expect(commandBus.execute).not.toHaveBeenCalled();
   });
 
-  it('remembers a fact when it learns automatically, and confirms what was saved', async () => {
+  // What breaks this: a fact the bot saved recorded as the person's, or kept
+  // in every prompt when it named no tier, so the bot hesitates to save.
+  it('remembers a fact as its own, in the log unless it says otherwise, and confirms what was saved', async () => {
     const { commandBus, call } = setup(
       (query) => {
         if (query instanceof FindBotQuery) return bot();
@@ -244,33 +246,35 @@ describe('BotSelfToolsFactory', () => {
       scope: owner,
       botId: BOT_ID,
       content: 'Deploys go out on Fridays',
+      tier: 'log',
+      author: 'bot',
     });
     expect(result.content).toContain(
       `Remembered ${FACT_ID} (in mind): "Deploys go out on Fridays"`,
     );
   });
 
-  // What breaks this: a detail written into every prompt, or a fact about
-  // the person kept by this bot alone, so their other bots ask again.
-  it('keeps a fact to look up, or about the person for all their bots, when it says so', async () => {
+  // What breaks this: standing instructions left to fade with the log, or a
+  // fact about the person kept by this bot alone, so their other bots ask again.
+  it('keeps a fact in mind, or about the person for all their bots, when it says so', async () => {
     const { commandBus, call } = setup(
       (query) => {
         if (query instanceof FindBotQuery) return bot();
         if (query instanceof FindBotMemoryFactQuery)
-          return fact(FACT_ID, 'Ana is the release manager', { tier: 'log', scope: 'person' });
+          return fact(FACT_ID, 'Ana is the release manager', { tier: 'profile', scope: 'person' });
       },
       () => FACT_ID,
     );
     const result = await call('remember', {
       fact: 'Ana is the release manager',
-      tier: 'log',
+      tier: 'profile',
       about: 'person',
     });
     expect(commandBus.execute.mock.calls[0][0]).toMatchObject({
-      tier: 'log',
+      tier: 'profile',
       memoryScope: 'person',
     });
-    expect(result.content).toContain('(to look up, about the person)');
+    expect(result.content).toContain('(in mind, about the person)');
   });
 
   it('says which recalled facts another of the person’s bots shared', async () => {

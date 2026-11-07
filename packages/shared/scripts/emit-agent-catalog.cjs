@@ -130,8 +130,9 @@ function render() {
     '',
     "// launchCatalog is each agent's `launch` entry of the catalog, and the effort",
     '// levels its models offer: the argument vectors a structured launch becomes.',
-    '// `<model>`, `<prompt>` and `<conversation>` are substituted whole; an effort',
-    '// spelling has `<effort>` and `<model>` replaced inside each word.',
+    '// `<model>`, `<prompt>`, `<conversation>` and `<teleport>` are substituted',
+    '// whole; an effort spelling has `<effort>` and `<model>` replaced inside',
+    '// each word.',
     'var launchCatalog = map[string]launchMap{',
   ];
   for (const id of CODING_AGENT_IDS) {
@@ -165,6 +166,10 @@ function render() {
     }
     if (launch.conversation?.resumeLeads) {
       tail.push(['conversationResumeLeads', 'true']);
+    }
+    if (launch.teleport) {
+      tail.push(['teleportStart', goStrings(launch.teleport.start)]);
+      tail.push(['teleportResume', goStrings(launch.teleport.resume)]);
     }
     if (tail.length > 0) lines.push(...aligned(tail, '\t\t'));
     lines.push('\t},');

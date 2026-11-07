@@ -16,11 +16,18 @@ test('the console is a rail, a sidebar and a pane, with no chrome bar over them'
   await page.goto('/sessions');
 
   // The brand row names the product: the workspace is personal in version 1.
-  await expect(page.getByText('Oppenheimer', { exact: false }).first()).toBeVisible();
+  // It is a real link to the front door, so it opens in a new tab like any
+  // link; as plain text, a right-click on it offered nothing to open.
+  await expect(page.getByRole('link', { name: 'Oppenheimer', exact: true })).toHaveAttribute(
+    'href',
+    '/',
+  );
   await expect(page.getByRole('link', { name: 'New session', exact: true })).toBeVisible();
-  // The list is grouped by project, under a head that counts them; the
+  // The list is grouped by project, under a head named for the sessions; the
   // rail to the left of it is where the console's lists are switched.
-  await expect(page.getByText('Projects', { exact: true })).toBeVisible();
+  await expect(
+    page.locator('[data-slot="sidebar-list-head"]').getByText('Sessions', { exact: true }),
+  ).toBeVisible();
   await expect(page.getByRole('link', { name: 'Sessions', exact: true })).toBeVisible();
   // Side by side, not stacked: the sidebar's panel is fixed to the viewport,
   // and it once started under the rail, which hid its first column.

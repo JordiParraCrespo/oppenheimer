@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import type { AccessScope } from '@oppenheimer/backend-authz';
+import { OutboxMessageSchema, OutboxService } from '@oppenheimer/backend-ddd';
 import { DataSource } from 'typeorm';
 import { useTestDatabase } from '../../__tests__/integration-services';
 import { NewBotProviderResolver } from '../application/new-bot-provider.resolver';
@@ -23,6 +24,8 @@ import { BotSkillOrmEntity } from '../database/bot-skill.orm-entity';
 import { BotSkillRepository } from '../database/bot-skill.repository';
 import { ModelProviderCredentialOrmEntity } from '../database/model-provider-credential.orm-entity';
 import { ModelProviderCredentialRepository } from '../database/model-provider-credential.repository';
+import { PersonMemoryOrmEntity } from '../database/person-memory.orm-entity';
+import { PersonMemoryRepository } from '../database/person-memory.repository';
 import { BotEntity } from '../domain/bot.entity';
 import { userActor } from '../domain/bot.types';
 import { BotDocumentEntity } from '../domain/bot-document.entity';
@@ -31,6 +34,7 @@ import { BotMemoryFactEntity } from '../domain/bot-memory-fact.entity';
 import { BotSkillEntity } from '../domain/bot-skill.entity';
 import { ModelProviderCredentialEntity } from '../domain/model-provider-credential.entity';
 import { ModelProviderCredentialMapper } from '../model-provider-credential.mapper';
+import { PersonMemoryMapper } from '../person-memory.mapper';
 
 /**
  * Bots against a real Postgres (`product/versions/mvp/25-bots.md`, slice 1):
@@ -76,6 +80,8 @@ describe('bots (integration)', () => {
         BotMemoryFactOrmEntity,
         BotSkillOrmEntity,
         ModelProviderCredentialOrmEntity,
+        PersonMemoryOrmEntity,
+        OutboxMessageSchema,
       ],
       synchronize: false,
     });
@@ -83,9 +89,9 @@ describe('bots (integration)', () => {
     const documentMapper = new BotDocumentMapper();
     bots = new BotRepository(
       dataSource.getRepository(BotOrmEntity),
-      dataSource,
       new BotMapper(),
       documentMapper,
+      new OutboxService(dataSource),
     );
     groups = new BotGroupRepository(
       dataSource.getRepository(BotGroupOrmEntity),
@@ -95,7 +101,7 @@ describe('bots (integration)', () => {
     documents = new BotDocumentRepository(
       dataSource.getRepository(BotDocumentOrmEntity),
       dataSource.getRepository(BotDocumentRevisionOrmEntity),
-      dataSource,
+      new OutboxService(dataSource),
       documentMapper,
     );
     memory = new BotMemoryFactRepository(
@@ -206,6 +212,34 @@ describe('bots (integration)', () => {
     expect(history).toMatchObject([
       { revision: 1, content: 'You are Bea.', author: 'user', authorUserId: userId },
     ]);
+  });
+
+  // What breaks this: a bot given a job at its creation, or later, without the
+  // event its heartbeat is saved from; or an event left by a write that lost.
+  it('stages a first job on the outbox with the write that sets it, and nothing for a blank bot', async () => {
+    const staged = async (botId: string) =>
+      dataSource.query(`SELECT "eventName" FROM "outbox_message" WHERE "aggregateId" = $1`, [
+        botId,
+      ]) as Promise<{ eventName: string }[]>;
+
+    const blank = await create('Cleo');
+    expect(await staged(blank.id)).toEqual([]);
+
+    const instructions = await documents.findOne(scope(), blank.id, 'instructions');
+    const document = instructions.unwrap();
+    document.write({ content: 'Review PRs.', baseRevision: 1, actor: userActor(userId) });
+    expect(await documents.save(document)).toBe('saved');
+    expect(await staged(blank.id)).toEqual([{ eventName: 'BotJobSetDomainEvent' }]);
+    expect(document.domainEvents).toEqual([]);
+
+    const stale = (await documents.findOne(scope(), blank.id, 'instructions')).unwrap();
+    const rival = BotDocumentEntity.create({
+      id: stale.id,
+      props: { ...stale.getProps(), content: '', revision: 1 },
+    });
+    rival.write({ content: 'Something else.', baseRevision: 1, actor: userActor(userId) });
+    expect(await documents.save(rival)).toBe('conflict');
+    expect(await staged(blank.id)).toHaveLength(1);
   });
 
   it('moves a bot into a group at an index and closes up both lists', async () => {
@@ -356,6 +390,36 @@ describe('bots (integration)', () => {
     expect((await documents.findRevision(scope(), bot.id, 'soul', 2 ** 40)).isNone()).toBe(true);
   });
 
+  // `26-bot-routines.md` §6. What breaks this: a visit not stored, so a late
+  // pause cannot tell the owner came back; two visits out of order moving it
+  // backwards; or another workspace's bot marked through a guessed id.
+  it('records every visit of the owner to the chat, never backwards, and only for its own bot', async () => {
+    const bot = await create('Seen Bot');
+    const seenAt = async () =>
+      ((await bots.findOneById(scope(), bot.id)).unwrap().ownerSeenAt as Date).getTime();
+    const born = await seenAt();
+
+    const soon = new Date(born + 5_000);
+    expect(await bots.markSeen(scope(), bot.id, soon)).toBe(true);
+    expect(await seenAt()).toBe(soon.getTime());
+
+    expect(await bots.markSeen(scope(), bot.id, new Date(born + 1_000))).toBe(true);
+    expect(await seenAt()).toBe(soon.getTime());
+
+    expect(await bots.markSeen(scopeOf(randomUUID()), bot.id, new Date(born + 60_000))).toBe(false);
+    expect(await seenAt()).toBe(soon.getTime());
+  });
+
+  it("keeps the owner's switch for the spend guard, on until turned off", async () => {
+    const bot = await create('Night Owl');
+    const read = async () => (await bots.findOneById(scope(), bot.id)).unwrap();
+    expect((await read()).routineSpendGuard).toBe(true);
+    const stored = await read();
+    stored.edit({ routineSpendGuard: false });
+    expect(await bots.save(stored)).toBe('saved');
+    expect((await read()).routineSpendGuard).toBe(false);
+  });
+
   it('lets only one of two adders take the last memory place', async () => {
     const bot = await create('Ana');
     const fact = (content: string) =>
@@ -371,6 +435,44 @@ describe('bots (integration)', () => {
     ]);
     expect(outcomes.sort()).toEqual(['full', 'inserted']);
     expect(await memory.findAll(scope(), bot.id)).toHaveLength(1);
+  });
+
+  // What breaks this: a bot that saves as it goes refused once full, its
+  // newest entry dropped instead of its oldest, or a profile fact (a standing
+  // instruction) let go to make room.
+  it('makes room for a bot’s own save by dropping its oldest log fact, never a profile one', async () => {
+    const bot = await create('Ana');
+    const fact = (content: string, tier: 'profile' | 'log') =>
+      BotMemoryFactEntity.createNew({
+        organizationId,
+        botId: bot.id,
+        content,
+        actor: { kind: 'bot' },
+        tier,
+      });
+    await memory.insert(fact('Always squash merge.', 'profile'), 3);
+    await memory.insert(fact('Staging moved to devbox.', 'log'), 3);
+    await memory.insert(fact('Ticket 412 was the login race.', 'log'), 3);
+
+    expect(await memory.insert(fact('Shipped 0.4.', 'log'), 3)).toBe('full');
+    expect(await memory.insert(fact('Shipped 0.4.', 'log'), 3, true)).toBe('inserted');
+    expect((await memory.findAll(scope(), bot.id)).map((kept) => kept.content).sort()).toEqual([
+      'Always squash merge.',
+      'Shipped 0.4.',
+      'Ticket 412 was the login race.',
+    ]);
+
+    const profileOnly = await create('Bea');
+    const own = (content: string) =>
+      BotMemoryFactEntity.createNew({
+        organizationId,
+        botId: profileOnly.id,
+        content,
+        actor: { kind: 'bot' },
+        tier: 'profile',
+      });
+    await memory.insert(own('Always squash merge.'), 1);
+    expect(await memory.insert(own('Reviews in Spanish.'), 1, true)).toBe('full');
   });
 
   it('edits, forgets and clears memory', async () => {
@@ -443,6 +545,36 @@ describe('bots (integration)', () => {
     expect((await memory.findAll(scope(), evas.id)).map((fact) => fact.content)).toEqual([
       'Eva works in Lisbon.',
     ]);
+    // Settings → Memory: every bot of the caller's, nobody else's, about them only.
+    expect(seen(await memory.findAboutPerson(scope()))).toEqual([
+      ['Ana prefers squash merges.', 'profile', 'person', true],
+    ]);
+  });
+
+  // What breaks this: a save that writes a second row, or keeps the old text,
+  // or one person's text read for another, so a bot reads the wrong person.
+  it('keeps one text per person per workspace, written over by each save', async () => {
+    const people = new PersonMemoryRepository(
+      dataSource.getRepository(PersonMemoryOrmEntity),
+      new PersonMemoryMapper(),
+    );
+    expect(await people.find(organizationId, userId)).toEqual({
+      organizationId,
+      userId,
+      about: '',
+      updatedAt: null,
+    });
+    await people.put(organizationId, userId, 'I am Jordi.');
+    const saved = await people.put(organizationId, userId, 'I am Jordi, in Barcelona.');
+    expect(saved.about).toBe('I am Jordi, in Barcelona.');
+    expect(saved.updatedAt).toBeInstanceOf(Date);
+    expect((await people.find(organizationId, userId)).about).toBe('I am Jordi, in Barcelona.');
+
+    const other = await insertOrganization();
+    expect((await people.find(other, userId)).about).toBe('');
+    await expect(people.put(organizationId, userId, 'x'.repeat(4001))).rejects.toThrow(
+      /CHK_person_memory_about/,
+    );
   });
 
   it('reads nothing of another workspace’s bot', async () => {

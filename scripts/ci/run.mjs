@@ -1,7 +1,8 @@
 /**
  * Runs a `plan.mjs` step list: every job at once, each job's steps in order,
  * a step that names others in `after` once they have passed. A job stops at
- * its first failed step. With `failFast`, the first failure anywhere stops
+ * its first failed step. With `maxParallel`, at most that many steps run at
+ * once; a step waiting on `after` holds no slot. With `failFast`, the first failure anywhere stops
  * the run: the steps still running are killed (their whole process group)
  * and nothing else starts.
  *
@@ -33,6 +34,27 @@ function slug(text) {
     .replace(/^-|-$/g, '');
 }
 
+/**
+ * At most `limit` holders at once: `acquire` resolves when a slot is free,
+ * `release` hands it to the next waiter, first come first served.
+ */
+function slots(limit) {
+  let free = limit;
+  const waiting = [];
+  return {
+    acquire() {
+      if (free === 0) return new Promise((go) => waiting.push(go));
+      free -= 1;
+      return Promise.resolve();
+    },
+    release() {
+      const next = waiting.shift();
+      if (next) next();
+      else free += 1;
+    },
+  };
+}
+
 function deferred() {
   let resolve;
   const promise = new Promise((done) => {
@@ -51,6 +73,7 @@ export async function runSteps(
     cwd,
     logDir,
     failFast = false,
+    maxParallel = Number.POSITIVE_INFINITY,
     echo = false,
     env = process.env,
     print = console.log,
@@ -66,6 +89,7 @@ export async function runSteps(
   /** The steps this run stopped, and the end of each one's process group. */
   const killed = new Map();
   let stopping = false;
+  const { acquire, release } = slots(maxParallel);
 
   const stopAll = () => {
     if (stopping) return;
@@ -137,7 +161,14 @@ export async function runSteps(
         done.resolve('not run');
         continue;
       }
-      const status = await runOne(step);
+      await acquire();
+      if (stopping) {
+        release();
+        blocked = true;
+        done.resolve('not run');
+        continue;
+      }
+      const status = await runOne(step).finally(release);
       if (status !== 'passed') blocked = true;
       done.resolve(status);
     }

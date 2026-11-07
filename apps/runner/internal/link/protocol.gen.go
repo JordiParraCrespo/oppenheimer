@@ -76,13 +76,17 @@ const (
 	CapabilitySessionFolder         = "session.folder"
 	CapabilityFsList                = "fs.list"
 	CapabilityAttachmentChat        = "attachment.chat"
+	CapabilityAttachmentChatOlder   = "attachment.chat.older"
 	CapabilityDeviceScreen          = "device.screen"
 	CapabilityPortForward           = "port.forward"
 	CapabilitySessionCloud          = "session.cloud"
 	CapabilitySessionCloudCodex     = "session.cloud.codex"
+	CapabilitySessionTeleport       = "session.teleport"
 	CapabilityCodexEnvironments     = "codex.environments"
 	CapabilitySessionWatch          = "session.watch"
 	CapabilityWhatsapp              = "whatsapp"
+	CapabilitySharedPreview         = "shared.preview"
+	CapabilityTranscriptRead        = "transcript.read"
 )
 
 // The `type` of every message on the link.
@@ -122,6 +126,7 @@ const (
 	TypeAttachmentDirectRefused = "attachment.direct.refused"
 	TypeAttachmentPath          = "attachment.path"
 	TypeAttachmentChat          = "attachment.chat"
+	TypeAttachmentChatOlder     = "attachment.chat.older"
 	TypeDeviceAttach            = "device.attach"
 	TypeDeviceInfo              = "device.info"
 	TypeDeviceInput             = "device.input"
@@ -140,6 +145,10 @@ const (
 	TypeWhatsappAck             = "whatsapp.ack"
 	TypeWhatsappSend            = "whatsapp.send"
 	TypeWhatsappSent            = "whatsapp.sent"
+	TypeSharedPreviewGet        = "shared.preview.get"
+	TypeSharedPreview           = "shared.preview"
+	TypeTranscriptRead          = "transcript.read"
+	TypeTranscriptPage          = "transcript.page"
 )
 
 // MessageTypes is every message type on the link, in the schema's order.
@@ -179,6 +188,7 @@ var MessageTypes = []string{
 	TypeAttachmentDirectRefused,
 	TypeAttachmentPath,
 	TypeAttachmentChat,
+	TypeAttachmentChatOlder,
 	TypeDeviceAttach,
 	TypeDeviceInfo,
 	TypeDeviceInput,
@@ -197,6 +207,10 @@ var MessageTypes = []string{
 	TypeWhatsappAck,
 	TypeWhatsappSend,
 	TypeWhatsappSent,
+	TypeSharedPreviewGet,
+	TypeSharedPreview,
+	TypeTranscriptRead,
+	TypeTranscriptPage,
 }
 
 // NewMessage returns a pointer to a new struct for a message type, and false
@@ -273,6 +287,8 @@ func NewMessage(messageType string) (any, bool) {
 		return new(AttachmentPath), true
 	case TypeAttachmentChat:
 		return new(AttachmentChat), true
+	case TypeAttachmentChatOlder:
+		return new(AttachmentChatOlder), true
 	case TypeDeviceAttach:
 		return new(DeviceAttach), true
 	case TypeDeviceInfo:
@@ -309,6 +325,14 @@ func NewMessage(messageType string) (any, bool) {
 		return new(WhatsappSend), true
 	case TypeWhatsappSent:
 		return new(WhatsappSent), true
+	case TypeSharedPreviewGet:
+		return new(SharedPreviewGet), true
+	case TypeSharedPreview:
+		return new(SharedPreview), true
+	case TypeTranscriptRead:
+		return new(TranscriptRead), true
+	case TypeTranscriptPage:
+		return new(TranscriptPage), true
 	}
 	return nil, false
 }
@@ -443,6 +467,7 @@ type LaunchOptions struct {
 	Effort       string `json:"effort,omitempty"`
 	Conversation string `json:"conversation,omitempty"`
 	Resume       bool   `json:"resume,omitempty"`
+	Teleport     string `json:"teleport,omitempty"`
 }
 
 // SessionCreateImages is SessionCreate.Images.
@@ -476,6 +501,7 @@ type SessionAttach struct {
 	Cols         int    `json:"cols"`
 	Rows         int    `json:"rows"`
 	ReadOnly     bool   `json:"readOnly,omitempty"`
+	ChatTail     bool   `json:"chatTail,omitempty"`
 }
 
 // SessionInput is the `session.input` message.
@@ -681,7 +707,17 @@ type AttachmentChat struct {
 	Type         string   `json:"type"`
 	AttachmentID uint32   `json:"attachmentId"`
 	Reset        bool     `json:"reset,omitempty"`
+	History      string   `json:"history,omitempty"`
+	Before       int64    `json:"before,omitempty"`
+	Older        string   `json:"older,omitempty"`
 	Entries      []string `json:"entries"`
+}
+
+// AttachmentChatOlder is the `attachment.chat.older` message.
+type AttachmentChatOlder struct {
+	Type         string `json:"type"`
+	AttachmentID uint32 `json:"attachmentId"`
+	Before       int64  `json:"before"`
 }
 
 // DeviceAttach is the `device.attach` message.
@@ -853,6 +889,46 @@ type WhatsappSent struct {
 	CommandID string    `json:"commandId"`
 	ID        string    `json:"id"`
 	SentAt    time.Time `json:"sentAt"`
+}
+
+// SharedPreviewGet is the `shared.preview.get` message.
+type SharedPreviewGet struct {
+	Type      string `json:"type"`
+	CommandID string `json:"commandId"`
+	SessionID string `json:"sessionId"`
+	FileID    string `json:"fileId"`
+}
+
+// SharedPreview is the `shared.preview` message.
+type SharedPreview struct {
+	Type      string `json:"type"`
+	CommandID string `json:"commandId"`
+	MediaType string `json:"mediaType"`
+	Data      string `json:"data"`
+}
+
+// TranscriptRead is the `transcript.read` message.
+type TranscriptRead struct {
+	Type         string `json:"type"`
+	CommandID    string `json:"commandId"`
+	SessionID    string `json:"sessionId"`
+	Conversation string `json:"conversation,omitempty"`
+	After        int64  `json:"after,omitempty"`
+	Limit        int    `json:"limit"`
+}
+
+// TranscriptPage is the `transcript.page` message.
+type TranscriptPage struct {
+	Type         string   `json:"type"`
+	CommandID    string   `json:"commandId"`
+	Conversation string   `json:"conversation,omitempty"`
+	Entries      []string `json:"entries"`
+	From         int64    `json:"from"`
+	Next         int64    `json:"next"`
+	AtEnd        bool     `json:"atEnd"`
+	Restarted    bool     `json:"restarted,omitempty"`
+	Dropped      int      `json:"dropped,omitempty"`
+	Partial      bool     `json:"partial,omitempty"`
 }
 
 // SessionSnapshot is `#/$defs/sessionSnapshot`.

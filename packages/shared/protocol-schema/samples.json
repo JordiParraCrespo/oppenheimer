@@ -237,9 +237,16 @@
     "type": "attachment.chat",
     "attachmentId": 7,
     "reset": true,
+    "history": "end",
+    "before": 524288,
     "entries": [
       "{\"type\":\"user\",\"uuid\":\"u1\",\"message\":{\"role\":\"user\",\"content\":\"fix the failing test\"}}"
     ]
+  },
+  "attachment.chat.older": {
+    "type": "attachment.chat.older",
+    "attachmentId": 7,
+    "before": 1048576
   },
   "device.attach": {
     "type": "device.attach",
@@ -378,6 +385,37 @@
     "commandId": "b2c3d4e5-6f7a-4b8c-9d0e-1f2a3b4c5d6e",
     "id": "3EB0C7A1F3",
     "sentAt": "2026-09-19T10:00:00Z"
+  },
+  "shared.preview.get": {
+    "type": "shared.preview.get",
+    "commandId": "b2c3d4e5-6f7a-4b8c-9d0e-1f2a3b4c5d6e",
+    "sessionId": "3f0d9e2c-6a4b-4e9a-9c3d-7b1e5a2f8c40",
+    "fileId": "3f9a7c1e2b4d6a80"
+  },
+  "shared.preview": {
+    "type": "shared.preview",
+    "commandId": "b2c3d4e5-6f7a-4b8c-9d0e-1f2a3b4c5d6e",
+    "mediaType": "image/jpeg",
+    "data": "/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/wAALCAABAAEBAREA/8QAFAABAAAAAAAAAAAAAAAAAAAACf/EABQQAQAAAAAAAAAAAAAAAAAAAAD/2gAIAQEAAD8AKp//2Q=="
+  },
+  "transcript.read": {
+    "type": "transcript.read",
+    "commandId": "b2c3d4e5-6f7a-4b8c-9d0e-1f2a3b4c5d6e",
+    "sessionId": "3f0d9e2c-6a4b-4e9a-9c3d-7b1e5a2f8c40",
+    "conversation": "c4b1e09a7f2d3e65",
+    "after": 18244,
+    "limit": 50
+  },
+  "transcript.page": {
+    "type": "transcript.page",
+    "commandId": "b2c3d4e5-6f7a-4b8c-9d0e-1f2a3b4c5d6e",
+    "conversation": "c4b1e09a7f2d3e65",
+    "entries": [
+      "{\"type\":\"assistant\",\"uuid\":\"9a1f\",\"timestamp\":\"2026-11-05T10:00:00.000Z\",\"message\":{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"Tests pass.\"}]}}"
+    ],
+    "from": 18244,
+    "next": 18391,
+    "atEnd": true
   },
   "session.create": {
     "type": "session.create",

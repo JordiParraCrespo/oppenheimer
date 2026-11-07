@@ -3,6 +3,9 @@
     "title": "Iniciando tu sesión",
     "failedTitle": "La sesión no se inició",
     "failedLead": "El host no pudo iniciar esta sesión.",
+    "retry": "Reintentar",
+    "retrying": "Reintentando",
+    "retryFailed": "No se pudo volver a iniciar la sesión.",
     "working": "Trabajando…",
     "downloading": "Este host aún no tenía este repositorio, así que primero lo descarga. Esta vez tardará un poco más; las siguientes sesiones arrancan en un segundo.",
     "failed": "Error",
@@ -228,6 +231,13 @@
       "refused": "{{vendor}} no quiso iniciar esta sesión.",
       "refusedSaying": "{{vendor}} no quiso iniciar esta sesión: «{{says}}»",
       "retry": "Reintentar"
+    },
+    "background": {
+      "label": "Fondo",
+      "choose": "Elegir imagen…",
+      "remove": "Quitar imagen",
+      "unreadable": "No se ha podido usar esa imagen. Prueba con un JPEG, PNG o WebP.",
+      "unsaved": "Tu navegador no ha guardado este fondo, así que desaparecerá al recargar."
     }
   },
   "session": {
@@ -300,8 +310,7 @@
     }
   },
   "sidebar": {
-    "projects": "Proyectos",
-    "newProject": "Nuevo proyecto",
+    "sessions": "Sesiones",
     "search": "Buscar sesiones",
     "clearSearch": "Borrar búsqueda",
     "noMatches": "Ninguna sesión coincide con “{{query}}”.",
@@ -309,7 +318,6 @@
     "emptyProject": "Todavía no hay sesiones.",
     "startOne": "Empieza una",
     "newSessionHere": "Nueva sesión en {{name}}",
-    "projectSettings": "Ajustes de {{name}}",
     "unfiled": "Otras sesiones",
     "pinned": "Fijadas",
     "pin": "Fijar",
@@ -534,6 +542,10 @@
       "terminal": "Terminal",
       "chat": "Chat"
     },
+    "loading": {
+      "title": "Cargando la conversación",
+      "lead": "El historial del agente está llegando desde el host."
+    },
     "empty": {
       "title": "Todavía no se ha dicho nada",
       "description": "Lo que el agente dice y hace aparece aquí mientras trabaja."
@@ -559,8 +571,7 @@
     "thinking": "Pensando",
     "plan": "Plan",
     "latest": "Ir a lo último",
-    "earlier_one": "Mostrar {{count}} turno anterior",
-    "earlier_other": "Mostrar {{count}} turnos anteriores",
+    "earlier": "Cargando turnos anteriores",
     "truncated": "recortado en el host",
     "failedCall": "falló",
     "failed_one": "{{count}} falló",
@@ -642,6 +653,22 @@
     "exploring": "Explorando",
     "file": {
       "onHost": "Se queda en el equipo: es demasiado grande para el chat, o no es una imagen ni texto."
+    },
+    "subagents": {
+      "count_one": "{{count}} subagente",
+      "count_other": "{{count}} subagentes",
+      "running": "{{count}} en marcha",
+      "failed": "{{count}} fallidos",
+      "untitled": "Subagente",
+      "calls_one": "{{count}} llamada",
+      "calls_other": "{{count}} llamadas",
+      "tokens": "{{tokens}} tokens",
+      "state": {
+        "running": "En marcha",
+        "completed": "Terminado",
+        "failed": "Falló",
+        "stopped": "Detenido"
+      }
     }
   },
   "preview": {
@@ -683,6 +710,19 @@
     "statusSource": "Este estado llega desde la extensión de Oppenheimer en Chrome mientras tienes la sesión iniciada en claude.ai.",
     "open": "Abrir en claude.ai",
     "teleport": "Para continuarla en una terminal, ejecuta esto en una copia del repositorio:",
+    "continue": {
+      "title": "Continuar en un equipo",
+      "description": "Abre una sesión en el equipo que elijas con la rama y la conversación de esta. Claude Code en ese equipo tiene que haber iniciado sesión con la misma cuenta de claude.ai.",
+      "host": "Equipo",
+      "search": "Buscar equipos…",
+      "empty": "Ningún equipo coincide.",
+      "offline": "sin conexión",
+      "noHost": "No hay ningún equipo conectado. Inicia el runner en una de tus máquinas, o ejecuta tú el comando de abajo.",
+      "start": "Continuar en el equipo",
+      "starting": "Iniciando…",
+      "failed": "No se pudo continuar en ese equipo."
+    },
+    "teleportManual": "O ejecuta esto tú en una copia del repositorio:",
     "copy": "Copiar comando",
     "copyLink": "Copiar enlace",
     "copied": "Copiado",
@@ -702,5 +742,11 @@
       "open": "Abrir en ChatGPT",
       "teleport": "Para traer sus cambios a una terminal, ejecuta esto en una copia del repositorio:"
     }
+  },
+  "cloudChat": {
+    "title": "En directo desde la nube de Claude Code",
+    "waiting_one": "Tu respuesta espera a que el agente termine su turno.",
+    "waiting_other": "{{count}} respuestas esperan a que el agente termine su turno.",
+    "replyFailed": "La respuesta no llegó a la sesión. Vuelve a intentarlo."
   }
 }

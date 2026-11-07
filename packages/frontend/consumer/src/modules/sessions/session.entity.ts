@@ -449,6 +449,12 @@ export interface CreateWorktreeSession {
    * task in the environment linked to the repository.
    */
   codexEnvironment?: string;
+  /**
+   * A Claude Code cloud session to continue in this worktree
+   * (`claude --teleport`) instead of starting a conversation: one checkout,
+   * and no first task.
+   */
+  teleport?: string;
   folder?: never;
 }
 
@@ -460,6 +466,7 @@ export interface CreateFolderSession {
   cwdGithubRepoId?: never;
   cloud?: never;
   codexEnvironment?: never;
+  teleport?: never;
 }
 
 interface CreateSessionCommon {

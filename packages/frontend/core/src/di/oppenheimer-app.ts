@@ -12,6 +12,8 @@ import { createCoreModule } from '../modules/core/core.module';
 import type { IStorageService } from '../modules/core/storage.service';
 import type { FeatureFlagsClientContext, FeatureFlagsService } from '../modules/feature-flags';
 import { FeatureFlagsModule } from '../modules/feature-flags';
+import type { ReleaseService } from '../modules/release';
+import { ReleaseModule } from '../modules/release';
 import type { UserSettingsService } from '../modules/user-settings';
 import { UserSettingsModule } from '../modules/user-settings';
 import type { UsersService } from '../modules/users';
@@ -54,6 +56,7 @@ export class OppenheimerApp {
     container.load(AuthModule);
     container.load(CapabilitiesModule);
     container.load(FeatureFlagsModule);
+    container.load(ReleaseModule);
     container.load(UsersModule);
     container.load(UserSettingsModule);
 
@@ -84,6 +87,10 @@ export class OppenheimerApp {
 
   get capabilities(): CapabilitiesService {
     return this.container.get(TOKENS.CapabilitiesService);
+  }
+
+  get release(): ReleaseService {
+    return this.container.get(TOKENS.ReleaseService);
   }
 
   get featureFlags(): FeatureFlagsService {

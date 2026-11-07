@@ -84,6 +84,7 @@ const delegate = (output: string | null) => ({
             ],
       allowedBy: null,
       mailDraft: null,
+      rateLimit: null,
     },
   ],
   event: null,

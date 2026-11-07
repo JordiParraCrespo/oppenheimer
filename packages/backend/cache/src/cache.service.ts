@@ -68,4 +68,12 @@ export abstract class CacheService {
    * (`@oppenheimer/backend-core`'s `UpstreamPause`).
    */
   abstract setMax(key: string, value: number, ttlSeconds: number): Promise<number>;
+
+  /**
+   * Add `by` to the number at `key` and answer the sum, in one atomic
+   * command; the add that creates the key sets its TTL. Several replicas
+   * spending from one budget (`@oppenheimer/backend-core`'s `UpstreamBudget`)
+   * each see the total, never a count another replica's add overwrote.
+   */
+  abstract incrementBy(key: string, by: number, ttlSeconds: number): Promise<number>;
 }

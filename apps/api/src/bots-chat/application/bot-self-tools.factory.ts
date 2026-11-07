@@ -35,6 +35,7 @@ import {
   memoryScopeOf,
   REMEMBER_ABOUT,
   REMEMBER_ABOUT_HINT,
+  REMEMBER_DEFAULT_TIER,
   REMEMBER_DESCRIPTION,
   REMEMBER_TIER_HINT,
 } from '../domain/bot-memory.policy';
@@ -173,6 +174,7 @@ export class BotSelfToolsFactory implements BotToolArea {
               baseRevision: input.base_revision,
               note: input.note ? `${BOT_NOTE_PREFIX}: ${input.note}` : BOT_NOTE_PREFIX,
             },
+            credentialScopes: context.credentialScopes,
           }),
         );
         const saved = await this.queryBus.execute<FindBotDocumentQuery, BotDocumentEntity>(
@@ -271,8 +273,9 @@ export class BotSelfToolsFactory implements BotToolArea {
             scope: context.owner,
             botId: context.botId,
             content: input.fact,
-            tier: input.tier,
+            tier: input.tier ?? REMEMBER_DEFAULT_TIER,
             memoryScope: memoryScopeOf(input.about),
+            author: 'bot',
           }),
         );
         const saved = await this.queryBus.execute<FindBotMemoryFactQuery, BotMemoryFactEntity>(

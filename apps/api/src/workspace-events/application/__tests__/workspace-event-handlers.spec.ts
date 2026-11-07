@@ -4,8 +4,10 @@ import type { AutomationRunRepositoryPort } from '../../../automations/database/
 import type { AutomationRunEntity } from '../../../automations/domain/automation-run.entity';
 import { AutomationRunChangesDomainEventHandler } from '../event-handlers/automation-run-changes.domain-event-handler';
 import { BotApprovalChangesDomainEventHandler } from '../event-handlers/bot-approval-changes.domain-event-handler';
+import { BotNoticeChangesDomainEventHandler } from '../event-handlers/bot-notice-changes.domain-event-handler';
 import { HostChangesDomainEventHandler } from '../event-handlers/host-changes.domain-event-handler';
 import { InboxMarkChangesDomainEventHandler } from '../event-handlers/inbox-mark-changes.domain-event-handler';
+import { ProjectChangesDomainEventHandler } from '../event-handlers/project-changes.domain-event-handler';
 import { SessionChangesDomainEventHandler } from '../event-handlers/session-changes.domain-event-handler';
 
 function bus() {
@@ -121,6 +123,25 @@ describe('BotApprovalChangesDomainEventHandler', () => {
   });
 });
 
+/**
+ * A bot's notice reaches the Inbox of whoever is not in its chat: without
+ * this the Inbox learns of one only when it next reads.
+ */
+describe('BotNoticeChangesDomainEventHandler', () => {
+  it("announces the notice, and whose bot sent it, to its workspace's console", async () => {
+    const events = bus();
+    await new BotNoticeChangesDomainEventHandler(events).handle({
+      aggregateId: 'n-1',
+      organizationId: 'org-1',
+      botId: 'bot-1',
+    });
+    expect(events.publish).toHaveBeenCalledWith(
+      { organizationId: 'org-1' },
+      { type: 'botNotice.changed', id: 'n-1', botId: 'bot-1' },
+    );
+  });
+});
+
 /** A mark is a person's: announced to the workspace, it would reach everyone in it. */
 describe('InboxMarkChangesDomainEventHandler', () => {
   it('tells the person, and only them, which occurrence moved', async () => {
@@ -133,4 +154,25 @@ describe('InboxMarkChangesDomainEventHandler', () => {
       [{ userId: 'jordi' }, { type: 'inboxMark.changed', itemKey: 'approval:ap-1' }],
     ]);
   });
+});
+
+/**
+ * A project a bot made, renamed or archived from chat reaches the sidebar
+ * without a reload only through this announcement.
+ */
+describe('ProjectChangesDomainEventHandler', () => {
+  it.each(['changed', 'archived'] as const)(
+    "announces a project %s to its workspace's console",
+    async (kind) => {
+      const events = bus();
+      await new ProjectChangesDomainEventHandler(events)[kind]({
+        aggregateId: 'p-1',
+        organizationId: 'org-1',
+      });
+      expect(events.publish).toHaveBeenCalledWith(
+        { organizationId: 'org-1' },
+        { type: 'project.changed', id: 'p-1' },
+      );
+    },
+  );
 });

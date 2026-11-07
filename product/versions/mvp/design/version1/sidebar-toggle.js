@@ -21,7 +21,10 @@
       b.setAttribute('aria-pressed', collapsed ? 'false' : 'true');
       b.setAttribute('aria-label', collapsed ? 'Show sidebar' : 'Hide sidebar');
       b.title = (collapsed ? 'Show sidebar' : 'Hide sidebar') + '  ' + (mac ? '⌘B' : 'Ctrl B');
+      // Open: the toggle lives in the sidebar's own header. Collapsed: it moves to the pane's top-left so it can be reopened.
+      if (!b.hasAttribute('data-op-sbinside')) b.style.display = collapsed ? 'inline-flex' : 'none';
     });
+    Array.prototype.forEach.call(document.querySelectorAll('[data-op-pagebar]'), function (bar) { bar.style.display = collapsed ? 'flex' : 'none'; });
   }
   function toggle() { collapsed = !collapsed; try { localStorage.setItem(KEY, collapsed ? '1' : '0'); } catch (e) {} sync(true); }
   window.opToggleSidebar = toggle;
@@ -61,6 +64,14 @@
         pane.insertBefore(bar, first);
       }
       sb.__opDone = true; apply(sb, false);
+    });
+    sidebars().forEach(function (sb) {
+      if (sb.querySelector('[data-op-sbinside]')) return;
+      var head = sb.querySelector('.op-sidebar__head') || sb.firstElementChild;
+      if (!head) return;
+      if (getComputedStyle(head).display !== 'flex') { head.style.display = 'flex'; head.style.alignItems = 'center'; }
+      var b = makeBtn(); b.setAttribute('data-op-sbinside', ''); b.style.marginLeft = 'auto'; b.style.marginRight = '-4px';
+      head.appendChild(b);
     });
     sync(false);
   }

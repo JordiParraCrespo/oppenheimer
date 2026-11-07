@@ -55,7 +55,7 @@ version shipped all four at once with no flag (decided 6).
 3. **Personal events stay.** Plan stores its own events beside the
    Google layer, in one table (20 §2).
 4. **Only attaching a session moves a card.** Start and Link existing
-   move Later or To do to In progress, one rule for both (18 §4, 19 §5).
+   move To do (and Later, while it existed) to In progress, one rule for both (18 §4, 19 §5).
    Nothing else moves a card for now; a merged PR moving it to Done waits
    for 0.2's pull requests.
 5. **Queued is a console label** over `starting` + host offline, in the

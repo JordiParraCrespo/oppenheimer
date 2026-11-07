@@ -1,4 +1,8 @@
-import { SESSION_WAKE_MAX_DELAY_MS } from '@oppenheimer/shared';
+import { type PullRequestWakeEvent, SESSION_WAKE_MAX_DELAY_MS } from '@oppenheimer/shared';
+import {
+  githubRepositoryName,
+  pullEventPhrase,
+} from '../../github/domain/github-pull-event.policy';
 
 /**
  * What a GitHub event on a pull request a session watches says to its agent
@@ -9,39 +13,6 @@ import { SESSION_WAKE_MAX_DELAY_MS } from '@oppenheimer/shared';
  * them, and they would be typed into an agent on somebody's own machine. The
  * agent reads them itself, with `gh`, if it wants them.
  */
-
-/** The events a watching session is woken by. */
-export const WAKING_GITHUB_EVENTS = [
-  'check_failed',
-  'check_passed',
-  'review',
-  'comment',
-  'pr_merged',
-] as const;
-export type WakingGithubEvent = (typeof WAKING_GITHUB_EVENTS)[number];
-
-export function isWakingGithubEvent(type: string): type is WakingGithubEvent {
-  return (WAKING_GITHUB_EVENTS as readonly string[]).includes(type);
-}
-
-/** A login as GitHub allows one, or nothing: no other character reaches the agent. */
-function login(value: string | null): string | null {
-  return value && /^[A-Za-z0-9-]{1,39}(\[bot\])?$/.test(value) ? value : null;
-}
-
-/** A word from GitHub's own vocabulary (a conclusion, a review state), or nothing. */
-function word(value: unknown): string | null {
-  return typeof value === 'string' && /^[a-z_]{1,32}$/.test(value)
-    ? value.replace(/_/g, ' ')
-    : null;
-}
-
-/** A check's name, kept to plain characters and cut short. */
-function checkName(value: unknown): string | null {
-  if (typeof value !== 'string') return null;
-  const plain = value.replace(/[^A-Za-z0-9 ._()-]/g, '').trim();
-  return plain ? plain.slice(0, 60) : null;
-}
 
 /**
  * The frame every wake's line is in, the way the runner frames a child's
@@ -77,47 +48,24 @@ export function wakeAt(askedIso: string, now: number): Date | null {
   return new Date(Math.min(Math.max(asked, now), now + SESSION_WAKE_MAX_DELAY_MS));
 }
 
-/** `owner/name` as GitHub allows one, or nothing. */
-function repository(value: string | null): string | null {
-  return value && /^[A-Za-z0-9-]{1,39}\/[A-Za-z0-9._-]{1,100}$/.test(value) ? value : null;
-}
-
 /**
  * The line for one event on pull request `number` of `repo` (the watching
  * session's checkout of it, `owner/name`), framed the way the runner frames
  * a child's report, so the agent reads it as the host's and not the
- * person's. The repository is named in the frame and in the command: a
+ * person's. The words of what happened are `pullEventPhrase`, which a bot
+ * following the pull request is told too. The repository is named in the frame and in the command: a
  * session with several checkouts runs above all of them, where a bare
  * `gh pr view` would pick none, or the wrong one.
  */
 export function githubWakeText(
-  type: WakingGithubEvent,
+  type: PullRequestWakeEvent,
   number: number,
   attributes: Record<string, unknown>,
   actorLogin: string | null,
   repo: string | null = null,
 ): string {
-  const by = login(actorLogin);
-  const who = by ? ` by @${by}` : '';
-  let what: string;
-  switch (type) {
-    case 'check_failed':
-      what = `checks failed${checkName(attributes.check) ? ` (${checkName(attributes.check)})` : ''}: ${word(attributes.conclusion) ?? 'failure'}`;
-      break;
-    case 'check_passed':
-      what = `checks passed${checkName(attributes.check) ? ` (${checkName(attributes.check)})` : ''}`;
-      break;
-    case 'review':
-      what = `review submitted${who}: ${word(attributes.state) ?? 'commented'}`;
-      break;
-    case 'comment':
-      what = `new comment${who}`;
-      break;
-    case 'pr_merged':
-      what = `merged${who}`;
-      break;
-  }
-  const named = repository(repo);
+  const what = pullEventPhrase(type, attributes, actorLogin);
+  const named = githubRepositoryName(repo);
   const view = named
     ? `gh pr view ${number} --repo ${named} --comments`
     : `gh pr view ${number} --comments`;

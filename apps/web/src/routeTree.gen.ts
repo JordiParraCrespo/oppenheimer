@@ -43,14 +43,17 @@ import { Route as AuthenticatedPlanIndexRouteImport } from './routes/_authentica
 import { Route as AuthenticatedPlanCalendarRouteImport } from './routes/_authenticated/plan/calendar'
 import { Route as AuthenticatedPlanInboxRouteImport } from './routes/_authenticated/plan/inbox'
 import { Route as AuthenticatedPlanMilestonesRouteImport } from './routes/_authenticated/plan/milestones'
+import { Route as AuthenticatedPlanProjectsRouteImport } from './routes/_authenticated/plan/projects'
 import { Route as AuthenticatedPullsIndexRouteImport } from './routes/_authenticated/pulls/index'
 import { Route as AuthenticatedPullsAnalyticsRouteImport } from './routes/_authenticated/pulls/analytics'
 import { Route as AuthenticatedSessionsIndexRouteImport } from './routes/_authenticated/sessions/index'
 import { Route as AuthenticatedSessionsSessionIdRouteImport } from './routes/_authenticated/sessions/$sessionId'
 import { Route as AuthenticatedSessionsNewRouteImport } from './routes/_authenticated/sessions/new'
 import { Route as AuthenticatedSettingsIndexRouteImport } from './routes/_authenticated/settings/index'
+import { Route as AuthenticatedSettingsAboutRouteImport } from './routes/_authenticated/settings/about'
 import { Route as AuthenticatedSettingsCloudAgentsRouteImport } from './routes/_authenticated/settings/cloud-agents'
 import { Route as AuthenticatedSettingsMailRouteImport } from './routes/_authenticated/settings/mail'
+import { Route as AuthenticatedSettingsMemoryRouteImport } from './routes/_authenticated/settings/memory'
 import { Route as AuthenticatedSettingsModelProvidersRouteImport } from './routes/_authenticated/settings/model-providers'
 import { Route as AuthenticatedSettingsProfileRouteImport } from './routes/_authenticated/settings/profile'
 import { Route as AuthenticatedSettingsRepositoriesRouteImport } from './routes/_authenticated/settings/repositories'
@@ -250,6 +253,12 @@ const AuthenticatedPlanMilestonesRoute =
     path: '/milestones',
     getParentRoute: () => AuthenticatedPlanRoute,
   } as any)
+const AuthenticatedPlanProjectsRoute =
+  AuthenticatedPlanProjectsRouteImport.update({
+    id: '/projects',
+    path: '/projects',
+    getParentRoute: () => AuthenticatedPlanRoute,
+  } as any)
 const AuthenticatedPullsIndexRoute = AuthenticatedPullsIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -285,6 +294,12 @@ const AuthenticatedSettingsIndexRoute =
     path: '/',
     getParentRoute: () => AuthenticatedSettingsRoute,
   } as any)
+const AuthenticatedSettingsAboutRoute =
+  AuthenticatedSettingsAboutRouteImport.update({
+    id: '/about',
+    path: '/about',
+    getParentRoute: () => AuthenticatedSettingsRoute,
+  } as any)
 const AuthenticatedSettingsCloudAgentsRoute =
   AuthenticatedSettingsCloudAgentsRouteImport.update({
     id: '/cloud-agents',
@@ -295,6 +310,12 @@ const AuthenticatedSettingsMailRoute =
   AuthenticatedSettingsMailRouteImport.update({
     id: '/mail',
     path: '/mail',
+    getParentRoute: () => AuthenticatedSettingsRoute,
+  } as any)
+const AuthenticatedSettingsMemoryRoute =
+  AuthenticatedSettingsMemoryRouteImport.update({
+    id: '/memory',
+    path: '/memory',
     getParentRoute: () => AuthenticatedSettingsRoute,
   } as any)
 const AuthenticatedSettingsModelProvidersRoute =
@@ -470,11 +491,14 @@ export interface FileRoutesByFullPath {
   '/plan/calendar': typeof AuthenticatedPlanCalendarRoute
   '/plan/inbox': typeof AuthenticatedPlanInboxRoute
   '/plan/milestones': typeof AuthenticatedPlanMilestonesRoute
+  '/plan/projects': typeof AuthenticatedPlanProjectsRoute
   '/pulls/analytics': typeof AuthenticatedPullsAnalyticsRoute
   '/sessions/$sessionId': typeof AuthenticatedSessionsSessionIdRoute
   '/sessions/new': typeof AuthenticatedSessionsNewRoute
+  '/settings/about': typeof AuthenticatedSettingsAboutRoute
   '/settings/cloud-agents': typeof AuthenticatedSettingsCloudAgentsRoute
   '/settings/mail': typeof AuthenticatedSettingsMailRoute
+  '/settings/memory': typeof AuthenticatedSettingsMemoryRoute
   '/settings/model-providers': typeof AuthenticatedSettingsModelProvidersRoute
   '/settings/profile': typeof AuthenticatedSettingsProfileRoute
   '/settings/repositories': typeof AuthenticatedSettingsRepositoriesRoute
@@ -530,11 +554,14 @@ export interface FileRoutesByTo {
   '/plan/calendar': typeof AuthenticatedPlanCalendarRoute
   '/plan/inbox': typeof AuthenticatedPlanInboxRoute
   '/plan/milestones': typeof AuthenticatedPlanMilestonesRoute
+  '/plan/projects': typeof AuthenticatedPlanProjectsRoute
   '/pulls/analytics': typeof AuthenticatedPullsAnalyticsRoute
   '/sessions/$sessionId': typeof AuthenticatedSessionsSessionIdRoute
   '/sessions/new': typeof AuthenticatedSessionsNewRoute
+  '/settings/about': typeof AuthenticatedSettingsAboutRoute
   '/settings/cloud-agents': typeof AuthenticatedSettingsCloudAgentsRoute
   '/settings/mail': typeof AuthenticatedSettingsMailRoute
+  '/settings/memory': typeof AuthenticatedSettingsMemoryRoute
   '/settings/model-providers': typeof AuthenticatedSettingsModelProvidersRoute
   '/settings/profile': typeof AuthenticatedSettingsProfileRoute
   '/settings/repositories': typeof AuthenticatedSettingsRepositoriesRoute
@@ -598,11 +625,14 @@ export interface FileRoutesById {
   '/_authenticated/plan/calendar': typeof AuthenticatedPlanCalendarRoute
   '/_authenticated/plan/inbox': typeof AuthenticatedPlanInboxRoute
   '/_authenticated/plan/milestones': typeof AuthenticatedPlanMilestonesRoute
+  '/_authenticated/plan/projects': typeof AuthenticatedPlanProjectsRoute
   '/_authenticated/pulls/analytics': typeof AuthenticatedPullsAnalyticsRoute
   '/_authenticated/sessions/$sessionId': typeof AuthenticatedSessionsSessionIdRoute
   '/_authenticated/sessions/new': typeof AuthenticatedSessionsNewRoute
+  '/_authenticated/settings/about': typeof AuthenticatedSettingsAboutRoute
   '/_authenticated/settings/cloud-agents': typeof AuthenticatedSettingsCloudAgentsRoute
   '/_authenticated/settings/mail': typeof AuthenticatedSettingsMailRoute
+  '/_authenticated/settings/memory': typeof AuthenticatedSettingsMemoryRoute
   '/_authenticated/settings/model-providers': typeof AuthenticatedSettingsModelProvidersRoute
   '/_authenticated/settings/profile': typeof AuthenticatedSettingsProfileRoute
   '/_authenticated/settings/repositories': typeof AuthenticatedSettingsRepositoriesRoute
@@ -665,11 +695,14 @@ export interface FileRouteTypes {
     | '/plan/calendar'
     | '/plan/inbox'
     | '/plan/milestones'
+    | '/plan/projects'
     | '/pulls/analytics'
     | '/sessions/$sessionId'
     | '/sessions/new'
+    | '/settings/about'
     | '/settings/cloud-agents'
     | '/settings/mail'
+    | '/settings/memory'
     | '/settings/model-providers'
     | '/settings/profile'
     | '/settings/repositories'
@@ -725,11 +758,14 @@ export interface FileRouteTypes {
     | '/plan/calendar'
     | '/plan/inbox'
     | '/plan/milestones'
+    | '/plan/projects'
     | '/pulls/analytics'
     | '/sessions/$sessionId'
     | '/sessions/new'
+    | '/settings/about'
     | '/settings/cloud-agents'
     | '/settings/mail'
+    | '/settings/memory'
     | '/settings/model-providers'
     | '/settings/profile'
     | '/settings/repositories'
@@ -792,11 +828,14 @@ export interface FileRouteTypes {
     | '/_authenticated/plan/calendar'
     | '/_authenticated/plan/inbox'
     | '/_authenticated/plan/milestones'
+    | '/_authenticated/plan/projects'
     | '/_authenticated/pulls/analytics'
     | '/_authenticated/sessions/$sessionId'
     | '/_authenticated/sessions/new'
+    | '/_authenticated/settings/about'
     | '/_authenticated/settings/cloud-agents'
     | '/_authenticated/settings/mail'
+    | '/_authenticated/settings/memory'
     | '/_authenticated/settings/model-providers'
     | '/_authenticated/settings/profile'
     | '/_authenticated/settings/repositories'
@@ -1081,6 +1120,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedPlanMilestonesRouteImport
       parentRoute: typeof AuthenticatedPlanRoute
     }
+    '/_authenticated/plan/projects': {
+      id: '/_authenticated/plan/projects'
+      path: '/projects'
+      fullPath: '/plan/projects'
+      preLoaderRoute: typeof AuthenticatedPlanProjectsRouteImport
+      parentRoute: typeof AuthenticatedPlanRoute
+    }
     '/_authenticated/pulls/': {
       id: '/_authenticated/pulls/'
       path: '/'
@@ -1123,6 +1169,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSettingsIndexRouteImport
       parentRoute: typeof AuthenticatedSettingsRoute
     }
+    '/_authenticated/settings/about': {
+      id: '/_authenticated/settings/about'
+      path: '/about'
+      fullPath: '/settings/about'
+      preLoaderRoute: typeof AuthenticatedSettingsAboutRouteImport
+      parentRoute: typeof AuthenticatedSettingsRoute
+    }
     '/_authenticated/settings/cloud-agents': {
       id: '/_authenticated/settings/cloud-agents'
       path: '/cloud-agents'
@@ -1135,6 +1188,13 @@ declare module '@tanstack/react-router' {
       path: '/mail'
       fullPath: '/settings/mail'
       preLoaderRoute: typeof AuthenticatedSettingsMailRouteImport
+      parentRoute: typeof AuthenticatedSettingsRoute
+    }
+    '/_authenticated/settings/memory': {
+      id: '/_authenticated/settings/memory'
+      path: '/memory'
+      fullPath: '/settings/memory'
+      preLoaderRoute: typeof AuthenticatedSettingsMemoryRouteImport
       parentRoute: typeof AuthenticatedSettingsRoute
     }
     '/_authenticated/settings/model-providers': {
@@ -1381,6 +1441,7 @@ interface AuthenticatedPlanRouteChildren {
   AuthenticatedPlanCalendarRoute: typeof AuthenticatedPlanCalendarRoute
   AuthenticatedPlanInboxRoute: typeof AuthenticatedPlanInboxRoute
   AuthenticatedPlanMilestonesRoute: typeof AuthenticatedPlanMilestonesRoute
+  AuthenticatedPlanProjectsRoute: typeof AuthenticatedPlanProjectsRoute
   AuthenticatedPlanIndexRoute: typeof AuthenticatedPlanIndexRoute
   AuthenticatedPlanCalendarGoogleRoute: typeof AuthenticatedPlanCalendarGoogleRoute
 }
@@ -1389,6 +1450,7 @@ const AuthenticatedPlanRouteChildren: AuthenticatedPlanRouteChildren = {
   AuthenticatedPlanCalendarRoute: AuthenticatedPlanCalendarRoute,
   AuthenticatedPlanInboxRoute: AuthenticatedPlanInboxRoute,
   AuthenticatedPlanMilestonesRoute: AuthenticatedPlanMilestonesRoute,
+  AuthenticatedPlanProjectsRoute: AuthenticatedPlanProjectsRoute,
   AuthenticatedPlanIndexRoute: AuthenticatedPlanIndexRoute,
   AuthenticatedPlanCalendarGoogleRoute: AuthenticatedPlanCalendarGoogleRoute,
 }
@@ -1410,8 +1472,10 @@ const AuthenticatedPullsRouteWithChildren =
   AuthenticatedPullsRoute._addFileChildren(AuthenticatedPullsRouteChildren)
 
 interface AuthenticatedSettingsRouteChildren {
+  AuthenticatedSettingsAboutRoute: typeof AuthenticatedSettingsAboutRoute
   AuthenticatedSettingsCloudAgentsRoute: typeof AuthenticatedSettingsCloudAgentsRoute
   AuthenticatedSettingsMailRoute: typeof AuthenticatedSettingsMailRoute
+  AuthenticatedSettingsMemoryRoute: typeof AuthenticatedSettingsMemoryRoute
   AuthenticatedSettingsModelProvidersRoute: typeof AuthenticatedSettingsModelProvidersRoute
   AuthenticatedSettingsProfileRoute: typeof AuthenticatedSettingsProfileRoute
   AuthenticatedSettingsRepositoriesRoute: typeof AuthenticatedSettingsRepositoriesRoute
@@ -1423,8 +1487,10 @@ interface AuthenticatedSettingsRouteChildren {
 }
 
 const AuthenticatedSettingsRouteChildren: AuthenticatedSettingsRouteChildren = {
+  AuthenticatedSettingsAboutRoute: AuthenticatedSettingsAboutRoute,
   AuthenticatedSettingsCloudAgentsRoute: AuthenticatedSettingsCloudAgentsRoute,
   AuthenticatedSettingsMailRoute: AuthenticatedSettingsMailRoute,
+  AuthenticatedSettingsMemoryRoute: AuthenticatedSettingsMemoryRoute,
   AuthenticatedSettingsModelProvidersRoute:
     AuthenticatedSettingsModelProvidersRoute,
   AuthenticatedSettingsProfileRoute: AuthenticatedSettingsProfileRoute,

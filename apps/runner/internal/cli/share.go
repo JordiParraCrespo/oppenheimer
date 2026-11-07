@@ -54,6 +54,14 @@ func (a *App) shareRoutes(router *httpx.Router) {
 		if err != nil {
 			return err
 		}
+		// What the file is, for bots; a runner with no link still shows it
+		// in the chat, so this never refuses the share.
+		if _, err := a.Sessions.FileShared(session.ID, sessionsdomain.SharedFile{
+			ID: shared.ID, Name: shared.Name, MediaType: shared.MediaType, Size: shared.Size,
+			Caption: shared.Caption, HasPreview: shared.Preview != nil,
+		}); err != nil {
+			return err
+		}
 		return httpx.WriteJSON(w, http.StatusCreated, sharedView{
 			ID: shared.ID, Name: shared.Name, MediaType: shared.MediaType, Size: shared.Size,
 			Preview: shared.Preview != nil || shared.Text != nil,

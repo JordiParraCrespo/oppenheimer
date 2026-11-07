@@ -60,6 +60,9 @@ type App struct {
 	Service *svcapp.Service
 	// Sessions is the worktree-plus-tmux lifecycle.
 	Sessions *sessionsapp.Service
+	// Conversations reads a session's conversation off its agent's
+	// transcript: the chat view and `transcript.read`.
+	Conversations *sessionsapp.Conversations
 	// Children is how a session's agent starts, tells and waits on others.
 	Children *sessionsapp.Children
 	// Updates is nil on a host that is not paired: the release URL and the
@@ -182,7 +185,16 @@ func New(version string) (*App, error) {
 	app.Devices = devices
 	app.Ports = ports.New()
 	programStatus := statuspty.New(statuspty.Options{Executable: runnerExecutable(), Dir: programStatusDir(paths)})
-	trust := agenttrust.New(agenttrust.Options{ClaudeConfig: claudeConfigPath(paths)})
+	trust := agenttrust.New(agenttrust.Options{
+		ClaudeConfig: claudeConfigPath(paths), ClaudeProjects: claudeProjectsPath(paths),
+	})
+	transcripts := transcript.New(transcript.Options{
+		ClaudeProjects: claudeProjectsPath(paths),
+		StatusDir:      StatusDir(paths),
+		FilesDir:       paths.Files(),
+		CodexSessions:  agentSessionsPath(paths, "CODEX_HOME", ".codex"),
+		GrokSessions:   agentSessionsPath(paths, "GROK_HOME", ".grok"),
+	})
 	sessions, err := sessionsapp.New(sessionsapp.Options{
 		Terminals:  terminals,
 		Worktrees:  worktrees,
@@ -209,13 +221,7 @@ func New(version string) (*App, error) {
 		Trust: trust,
 		// A session launched with no task is named from the first message
 		// typed into its agent, read off the agent's own transcript.
-		Transcripts: transcript.New(transcript.Options{
-			ClaudeProjects: claudeProjectsPath(paths),
-			StatusDir:      StatusDir(paths),
-			FilesDir:       paths.Files(),
-			CodexSessions:  agentSessionsPath(paths, "CODEX_HOME", ".codex"),
-			GrokSessions:   agentSessionsPath(paths, "GROK_HOME", ".grok"),
-		}),
+		Transcripts: transcripts,
 		// Claude Code hands its status line the context and the plan's usage,
 		// which the chat shows; the runner's own takes them on the way.
 		StatusLine: statusLineCommand(),
@@ -231,13 +237,18 @@ func New(version string) (*App, error) {
 		return nil, err
 	}
 	app.Sessions = sessions
+	app.Conversations = sessionsapp.NewConversations(sessionsapp.ConversationsOptions{
+		Sessions: sessions, Transcripts: transcripts,
+	})
 	// Agents run agents: children of a session's agent, on this host.
 	app.Children = sessionsapp.NewChildren(sessionsapp.ChildrenOptions{
 		Sessions: sessions, Terminals: terminals, ProgramStatus: programStatus,
 	})
 	app.Worktrees = worktrees
 	app.Cloud = cloud.Starter{
-		Trust: func(dir string) error { return trust.Trust(sessionsdomain.AgentClaude, dir) },
+		Trust:   func(dir string) error { return trust.Trust(sessionsdomain.AgentClaude, dir) },
+		Prepare: trust.KeepCloudSettingsLocal,
+		Forget:  trust.Forget,
 	}
 	app.WorkFolder = places
 	app.Terminals = terminals

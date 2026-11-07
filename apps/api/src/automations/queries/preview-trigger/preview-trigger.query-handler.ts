@@ -41,6 +41,7 @@ export class PreviewTriggerQueryHandler
         definition.filterField && input.filter.op === 'equals'
           ? { field: definition.filterField, value: input.filter.value }
           : undefined,
+      required: input.filter.op === 'any' ? definition.anyRequires : undefined,
       sampleSize: PREVIEW_SAMPLE,
     });
     return { count: found.count, days: input.days, matches: found.sample };

@@ -157,7 +157,9 @@ host and then lives on claude.ai/code:
   button then offers Claude's models alone: the API refuses any other agent
   in this place. The row's mark is a
   cloud. The pane has no terminal: the state, *Open in claude.ai*, and
-  `claude --teleport <id>`.
+  `claude --teleport <id>`. Since 2026-11-03 the pane also offers
+  *Continue on a host*: a worktree session on the host the reader picks
+  whose agent runs that command (`next-steps/cloud-agents.md`).
 - **Deleting it.** Nothing of it is on the host, so the API records the
   close whole — the request and `session.closed` — without the host, online
   or not, and the session leaves the console at once. It stays on
@@ -250,3 +252,12 @@ place with the agent `codex`; what differs is the vendor's CLI:
   status off `codex cloud list` (§7, "Codex's cloud, the same place").
   In a host's cloud the engine button now offers Claude Code and Codex,
   which replaces the 2026-10-28 "Claude Code alone".
+- 2026-11-07: a host whose `claude` is not signed in to claude.ai refuses a
+  cloud start with its own code (`SESS_019`), which the start pane says in
+  the console's words (sign in with `claude auth login` on the host), and
+  the CLI's last words reach it as a reader sees them, no longer with the
+  renderer's escapes and without spaces. A failed start on a host, of any
+  place, has **Try again** (`POST /sessions/{id}/retry`): the same create,
+  for the same session, with the first task the log kept; the session is
+  `starting` again (`session.retry_requested`) and the pane draws the new
+  attempt's steps in place.

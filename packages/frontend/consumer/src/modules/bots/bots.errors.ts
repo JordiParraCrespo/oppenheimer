@@ -62,4 +62,16 @@ export const BotsErrors = {
   SAVE_SKILL_FAILED: { code: 'BOTS_CLIENT_042', message: 'Failed to save the skill' },
   DELETE_SKILL_FAILED: { code: 'BOTS_CLIENT_043', message: 'Failed to delete the skill' },
   FETCH_USAGE_FAILED: { code: 'BOTS_CLIENT_044', message: 'Failed to load the usage' },
+  FETCH_LOOP_FAILED: { code: 'BOTS_CLIENT_045', message: 'Failed to load the loop' },
+  CLEAR_LOOP_FAILED: { code: 'BOTS_CLIENT_046', message: 'Failed to stop the loop' },
+  FETCH_NOTICES_FAILED: { code: 'BOTS_CLIENT_047', message: "Failed to load the bots' notices" },
+  FETCH_DREAM_FAILED: { code: 'BOTS_CLIENT_048', message: "Failed to load the memory's last tidy" },
+  REQUEST_DREAM_FAILED: { code: 'BOTS_CLIENT_049', message: 'Failed to start tidying the memory' },
+  UNDO_DREAM_FAILED: { code: 'BOTS_CLIENT_050', message: 'Failed to undo the tidy' },
+  MARK_SEEN_FAILED: { code: 'BOTS_CLIENT_051', message: 'Failed to mark the chat as seen' },
+  FETCH_PERSON_MEMORY_FAILED: {
+    code: 'BOTS_CLIENT_052',
+    message: 'Failed to load what your bots know about you',
+  },
+  SAVE_PERSON_ABOUT_FAILED: { code: 'BOTS_CLIENT_053', message: 'Failed to save what you wrote' },
 } as const satisfies Record<string, ErrorDefinition>;

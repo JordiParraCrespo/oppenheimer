@@ -8,6 +8,6 @@
 [tools]
 node = "22"
 pnpm = "9.15.4"
-go = "1.24.7"
-golangci-lint = "2.5.0"
+go = "1.26.10"
+golangci-lint = "2.15.0"
 gh = "latest"

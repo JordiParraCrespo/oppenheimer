@@ -125,10 +125,13 @@ export const SAMPLES: Record<ProtocolMessageType, ProtocolMessage> = {
     type: 'attachment.chat',
     attachmentId: 7,
     reset: true,
+    history: 'end',
+    before: 524_288,
     entries: [
       '{"type":"user","uuid":"u1","message":{"role":"user","content":"fix the failing test"}}',
     ],
   },
+  'attachment.chat.older': { type: 'attachment.chat.older', attachmentId: 7, before: 1_048_576 },
   'device.attach': { type: 'device.attach', commandId, sessionId, attachmentId: 9 },
   'device.info': {
     type: 'device.info',
@@ -204,6 +207,37 @@ export const SAMPLES: Record<ProtocolMessageType, ProtocolMessage> = {
     text: 'Tuesday works.',
   },
   'whatsapp.sent': { type: 'whatsapp.sent', commandId, id: '3EB0C7A1F3', sentAt: occurredAt },
+  'shared.preview.get': {
+    type: 'shared.preview.get',
+    commandId,
+    sessionId,
+    fileId: '3f9a7c1e2b4d6a80',
+  },
+  'shared.preview': {
+    type: 'shared.preview',
+    commandId,
+    mediaType: 'image/jpeg',
+    data: '/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/wAALCAABAAEBAREA/8QAFAABAAAAAAAAAAAAAAAAAAAACf/EABQQAQAAAAAAAAAAAAAAAAAAAAD/2gAIAQEAAD8AKp//2Q==',
+  },
+  'transcript.read': {
+    type: 'transcript.read',
+    commandId,
+    sessionId,
+    conversation: 'c4b1e09a7f2d3e65',
+    after: 18_244,
+    limit: 50,
+  },
+  'transcript.page': {
+    type: 'transcript.page',
+    commandId,
+    conversation: 'c4b1e09a7f2d3e65',
+    entries: [
+      '{"type":"assistant","uuid":"9a1f","timestamp":"2026-11-05T10:00:00.000Z","message":{"role":"assistant","content":[{"type":"text","text":"Tests pass."}]}}',
+    ],
+    from: 18_244,
+    next: 18_391,
+    atEnd: true,
+  },
   'session.create': {
     type: 'session.create',
     commandId,

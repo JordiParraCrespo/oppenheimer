@@ -10,6 +10,7 @@ import type { BotMessageRepositoryPort } from '../../database/bot-message.reposi
 import {
   type RoutineActivity,
   routineActivityLine,
+  routineFailureLineId,
   routineFailureOf,
 } from '../../domain/bot-routine.policy';
 import type { BotStreamPort } from '../../infrastructure/bot-stream.port';
@@ -19,7 +20,8 @@ import type { BotStreamPort } from '../../infrastructure/bot-stream.port';
  * (`26-bot-routines.md` §4, "In the chat"): whatever changed a routine (the
  * bot's tool, its Routines tab, a pause the dispatcher made) raised an event,
  * and each becomes one line, keyed by the event so a redelivery writes
- * nothing twice. A run that failed to start is told the same way. The line
+ * nothing twice. A run that failed to start is told the same way, except
+ * that runs a rate limit refused are one line a routine an hour. The line
  * belongs to no turn: it is placed in the chat by when it happened, the
  * event's own time, however late the outbox delivers it.
  */
@@ -71,8 +73,9 @@ export class BotRoutineActivityDomainEventHandler {
       new FindBotRoutineRefQuery({ automationId: event.automationId }),
     );
     if (!routine) return;
+    const at = new Date(event.metadata.timestamp);
     await this.write({
-      id: event.id,
+      id: routineFailureLineId(event.id, event.automationId, reason, at),
       organizationId: routine.organizationId,
       botId: routine.botId,
       automationId: event.automationId,
@@ -80,7 +83,7 @@ export class BotRoutineActivityDomainEventHandler {
       name: routine.name,
       activity: 'failed',
       reason,
-      at: new Date(event.metadata.timestamp),
+      at,
     });
   }
 

@@ -149,6 +149,30 @@ describe('CursorCloudAgentsGateway', () => {
     });
   });
 
+  it('sends a follow-up as a new run of the agent and reads back that run', async () => {
+    const fetch = stubFetch(
+      json(201, { run: { id: 'run-2', agentId: 'bc-1', status: 'CREATING' } }),
+    );
+
+    const run = await gateway().followUp(ACCESS, 'bc-1', 'Now add a test');
+
+    expect(run).toMatchObject({ runId: 'run-2', status: 'starting' });
+    const [url, init] = fetch.mock.calls[0] as [string, RequestInit];
+    expect(url).toBe('https://cursor.test/v1/agents/bc-1/runs');
+    expect(init.method).toBe('POST');
+    expect(JSON.parse(String(init.body))).toEqual({ prompt: { text: 'Now add a test' } });
+  });
+
+  // The regression: Cursor's `409 agent_busy` read as the request refused,
+  // telling the caller the follow-up itself was wrong when it only has to wait.
+  it('answers an agent still on a run as CLOUD_AGENTS_012, not as a refused request', async () => {
+    stubFetch(json(409, { error: { code: 'agent_busy', message: 'The agent is still running' } }));
+    await expect(gateway().followUp(ACCESS, 'bc-1', 'Again')).rejects.toMatchObject({
+      code: 'CLOUD_AGENTS_012',
+      extensions: { upstreamCode: 'agent_busy' },
+    });
+  });
+
   it('answers an unreachable Cursor as CLOUD_AGENTS_006', async () => {
     vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('fetch failed')));
     await expect(gateway().read(ACCESS, 'bc-1', 'run-1')).rejects.toMatchObject({

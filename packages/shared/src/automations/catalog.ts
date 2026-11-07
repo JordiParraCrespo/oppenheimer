@@ -154,6 +154,12 @@ export interface ExternalEventDefinition {
   readonly filterField: TriggerFilterField | null;
   /** The filter a new trigger of this event starts with. */
   readonly defaultFilter: TriggerFilter;
+  /**
+   * The attribute an `any` filter still needs `true`: what "any" means for
+   * this event. Mail is any mail that reached the inbox, while a query is
+   * matched wherever the message landed.
+   */
+  readonly anyRequires?: string;
   readonly checkout: RunCheckoutRule;
   /**
    * Whether the event carries text written by people who may be outside the
@@ -307,6 +313,7 @@ export const EXTERNAL_EVENT_CATALOG: readonly ExternalEventDefinition[] = [
     description: 'A message arrived in a connected Gmail account',
     filterField: 'query',
     defaultFilter: { op: 'any' },
+    anyRequires: 'inbox',
     checkout: 'default_branch',
     untrustedContent: true,
   },
@@ -339,17 +346,32 @@ export function externalEventTypesOf(source: ExternalTriggerSource): readonly Ex
  * Pure and shared, so the matcher in the API and the editor's "would have run N
  * times in the last 7 days" preview agree by construction. An event with no
  * filter field matches whatever the trigger stored; a missing attribute never
- * matches `equals`, because "no base branch" is not "main".
+ * matches `equals`, because "no base branch" is not "main"; an `any` filter
+ * matches unless the event says what it needs (`anyRequires`) is not so.
  */
 export function matchesTriggerFilter(
-  definition: Pick<ExternalEventDefinition, 'filterField'>,
+  definition: Pick<ExternalEventDefinition, 'filterField' | 'anyRequires'>,
   filter: TriggerFilter,
   attributes: Readonly<Record<string, unknown>>,
 ): boolean {
-  if (definition.filterField === null || filter.op === 'any') return true;
+  if (filter.op === 'any') return satisfiesAny(definition, attributes);
+  if (definition.filterField === null) return true;
   const actual = attributes[definition.filterField];
   if (Array.isArray(actual)) return actual.includes(filter.value);
   return actual === filter.value;
+}
+
+/**
+ * What `any` means for an event: every event, unless its definition names
+ * an attribute `any` needs (`anyRequires`). The extension point for an
+ * event whose "anything" is narrower than every delivery, as mail is the
+ * mail that reached the inbox; the preview's SQL reads the same field.
+ */
+function satisfiesAny(
+  definition: Pick<ExternalEventDefinition, 'anyRequires'>,
+  attributes: Readonly<Record<string, unknown>>,
+): boolean {
+  return definition.anyRequires === undefined || attributes[definition.anyRequires] === true;
 }
 
 // ---------------------------------------------------------------------------
@@ -383,13 +405,18 @@ export const AUTOMATION_SKIP_REASONS = [
   'not_launchable',
   /** The host cannot run the agent (never probed, or no headless mode). */
   'agent_unavailable',
+  /**
+   * A bot's routine, while its owner is away: it has said what nobody read, or
+   * nobody opened its chat for days (`26-bot-routines.md` §6, the spend guard).
+   */
+  'unattended',
 ] as const;
 export type AutomationSkipReason = (typeof AUTOMATION_SKIP_REASONS)[number];
 
 export const AUTOMATION_RUN_CAUSES = ['schedule', 'event', 'manual'] as const;
 export type AutomationRunCause = (typeof AUTOMATION_RUN_CAUSES)[number];
 
-/** Why an automation is paused. `user` is the only one a person resumes without fixing anything. */
+/** Why an automation is paused. `user` and `unattended` are the ones a person resumes without fixing anything. */
 export const AUTOMATION_PAUSED_REASONS = [
   'user',
   'project_archived',
@@ -397,6 +424,8 @@ export const AUTOMATION_PAUSED_REASONS = [
   'owner_lost_access',
   'bot_provider_missing',
   'cloud_key_missing',
+  /** A bot's routines, while its owner is away; they resume when the owner is back in its chat. */
+  'unattended',
 ] as const;
 export type AutomationPausedReason = (typeof AUTOMATION_PAUSED_REASONS)[number];
 

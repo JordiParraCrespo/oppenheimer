@@ -1,15 +1,23 @@
-import { type ChatState, type ChatTurn, SessionChat } from '@oppenheimer/frontend-consumer';
+import type { ChatState, ChatTurn, SessionChat } from '@oppenheimer/frontend-consumer';
 import { shareEntities, useFeatureFlag } from '@oppenheimer/frontend-core/react';
-import { useState, useSyncExternalStore } from 'react';
+import { useEffect, useState, useSyncExternalStore } from 'react';
 import type { PaneReading } from '../lib/chat-blocks';
+import { sessionChatFor } from '../lib/session-chats';
 
 /**
  * One terminal pane's chat view (0.7): the store the pane's stream feeds
- * (`useTerminal`'s `onChat`), made once for the pane's life. The pane holds
- * it without reading it, so a batch re-renders only what subscribes below.
+ * (`useTerminal`'s `onChat`), the one this tab keeps for the session under
+ * `key` (`session-chats.ts`), so a pane mounted again draws what it held.
+ * The pane holds it without reading it, so a batch re-renders only what
+ * subscribes below.
  */
-export function useSessionChat(): SessionChat {
-  const [chat] = useState(() => new SessionChat());
+export function useSessionChat(key: string): SessionChat {
+  const [chat] = useState(() => sessionChatFor(key));
+  // Effect: the kept chat outlives this pane, so the pane hands it back on
+  // unmount (`SessionChat.detach`). React runs this cleanup just before its
+  // terminal's, in the same commit; the stream feeds the chat only from its
+  // socket's messages, so nothing reaches it between the two.
+  useEffect(() => () => chat.detach(), [chat]);
   return chat;
 }
 
@@ -39,7 +47,8 @@ function sharedRead(chat: SessionChat): () => ChatState {
         turns === shared.turns &&
         next.available === shared.available &&
         next.queued === shared.queued &&
-        next.status === shared.status
+        next.status === shared.status &&
+        next.older === shared.older
           ? shared
           : { ...next, turns };
     }
@@ -105,6 +114,18 @@ export function useChatTurnIds(chat: SessionChat): readonly string[] {
   return useSyncExternalStore(chat.subscribe, select, select);
 }
 
+/** Whether the host holds turns before the first one the chat holds, and whether a page of them is coming. */
+export function useChatOlder(chat: SessionChat): ChatState['older'] {
+  const older = () => chat.snapshot().older;
+  return useSyncExternalStore(chat.subscribe, older, older);
+}
+
+/** Whether a first load's history is still arriving, for the chat to wait for it. */
+export function useChatLoading(chat: SessionChat): boolean {
+  const loading = () => chat.snapshot().loading;
+  return useSyncExternalStore(chat.subscribe, loading, loading);
+}
+
 /** Whether the host sends this session's chat at all, for the toggle that offers it. */
 function useChatAvailable(chat: SessionChat): boolean {
   const available = () => chat.snapshot().available;
@@ -122,4 +143,10 @@ export function useChatReading(reading: PaneReading): { offered: boolean; shown:
   const flag = useFeatureFlag('session_chat_view');
   const offered = available && flag;
   return { offered, shown: offered && reading.view === 'chat' };
+}
+
+/** What the agent's spinner says this moment, for the line at the chat's foot; external store: `SessionChat`. */
+export function useChatActivity(chat: SessionChat): ChatState['activity'] {
+  const activity = () => chat.snapshot().activity;
+  return useSyncExternalStore(chat.subscribe, activity, activity);
 }

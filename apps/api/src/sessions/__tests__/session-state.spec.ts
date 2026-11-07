@@ -99,6 +99,23 @@ describe('the session fold', () => {
     expect(fold.state).toBe('starting');
   });
 
+  it('starts a failed session again on a retry request, and nothing else', () => {
+    // Regression: Try again under "The session did not start" left the row
+    // failed, so the start pane never showed the new attempt.
+    const retried = foldSessionLog([
+      entry(SESSION_EVENT_KINDS.REQUESTED),
+      entry(SESSION_EVENT_KINDS.FAILED),
+      entry(SESSION_EVENT_KINDS.RETRY_REQUESTED),
+    ]);
+    expect(retried.state).toBe('starting');
+    const open = foldSessionLog([
+      entry(SESSION_EVENT_KINDS.REQUESTED),
+      entry(SESSION_EVENT_KINDS.STARTED),
+      entry(SESSION_EVENT_KINDS.RETRY_REQUESTED),
+    ]);
+    expect(open.state).toBe('open');
+  });
+
   it('never leaves resolved, whatever arrives afterwards', () => {
     // The row is a permanent tombstone: a late or replayed `session.started` from a
     // runner that has not heard about the close cannot bring the session back.
@@ -301,6 +318,7 @@ describe('the launch the fold projects', () => {
       permission: 'auto',
       effort: 'high',
       environment: null,
+      teleport: null,
     });
     // The request is also what starts the session, and stating a launch must not
     // have cost it that.
@@ -315,6 +333,7 @@ describe('the launch the fold projects', () => {
       permission: 'ask',
       effort: null,
       environment: null,
+      teleport: null,
     });
   });
 
@@ -330,6 +349,20 @@ describe('the launch the fold projects', () => {
     );
 
     expect(fold.launch.environment).toBe('e_6845a1b2c3d4');
+  });
+
+  // The cloud session a worktree session continues is part of the launch, so a
+  // create sent again after a reconnect continues it instead of starting empty.
+  it('takes the cloud session a request continues', () => {
+    const fold = foldSessionEvent(
+      INITIAL_SESSION_FOLD,
+      entry(SESSION_EVENT_KINDS.REQUESTED, {
+        agent: 'claude-code',
+        launch: { permission: 'auto', teleport: 'session_01KpKLr7hb6j4zoBFARRi2ZM' },
+      }),
+    );
+
+    expect(fold.launch.teleport).toBe('session_01KpKLr7hb6j4zoBFARRi2ZM');
   });
 
   it('refuses a permission level outside the union rather than storing it', () => {
@@ -375,6 +408,7 @@ describe('the launch the fold projects', () => {
       permission: 'full',
       effort: 'max',
       environment: null,
+      teleport: null,
     });
   });
 });
@@ -634,5 +668,72 @@ describe('the pull requests the fold keeps watched', () => {
       foldSessionEvent(watching, entry(SESSION_EVENT_KINDS.STOPPED)).watchedPulls,
     ).toHaveLength(1);
     expect(foldSessionEvent(watching, entry(SESSION_EVENT_KINDS.CLOSED)).watchedPulls).toEqual([]);
+  });
+});
+
+describe('the files the fold keeps shared', () => {
+  const shared = (id: string, extra: Record<string, unknown> = {}) =>
+    entry(SESSION_EVENT_KINDS.FILE_SHARED, {
+      id,
+      name: `${id}.png`,
+      mediaType: 'image/png',
+      size: 1024,
+      hasPreview: true,
+      ...extra,
+    });
+  const running = foldSessionLog([
+    entry(SESSION_EVENT_KINDS.REQUESTED),
+    entry(SESSION_EVENT_KINDS.STARTED),
+  ]);
+
+  // The regression: a session that shares screenshots all day grows its row
+  // without bound, or a payload this build cannot read lands on the row.
+  it('keeps the newest twenty, each once, and only ones it can read', () => {
+    const many = foldSessionLog(
+      Array.from({ length: 22 }, (_, i) => shared(`f${i + 1}`)),
+      running,
+    );
+    expect(many.sharedFiles).toHaveLength(20);
+    expect(many.sharedFiles[0]).toMatchObject({ id: 'f3', name: 'f3.png', hasPreview: true });
+    const again = foldSessionEvent(many, shared('f3'));
+    expect(again.sharedFiles.map((file) => file.id).slice(-2)).toEqual(['f22', 'f3']);
+    expect(again.sharedFiles).toHaveLength(20);
+    expect(foldSessionEvent(running, shared('f1', { size: -1 })).sharedFiles).toEqual([]);
+    expect(foldSessionEvent(running, shared('../etc')).sharedFiles).toEqual([]);
+  });
+
+  // The regression: a bot lists files whose host copy the close already took.
+  it('keeps them through a stop and forgets them when the session closes', () => {
+    const at = new Date('2026-11-03T10:00:00.000Z');
+    const one = foldSessionEvent(
+      running,
+      entry(
+        SESSION_EVENT_KINDS.FILE_SHARED,
+        {
+          id: 'f1',
+          name: 'home.png',
+          mediaType: 'image/png',
+          size: 1,
+          caption: 'The home page',
+          hasPreview: true,
+        },
+        at,
+      ),
+    );
+    expect(one.sharedFiles).toEqual([
+      {
+        id: 'f1',
+        name: 'home.png',
+        mediaType: 'image/png',
+        size: 1,
+        caption: 'The home page',
+        hasPreview: true,
+        at: at.toISOString(),
+      },
+    ]);
+    expect(foldSessionEvent(one, entry(SESSION_EVENT_KINDS.STOPPED)).sharedFiles).toHaveLength(1);
+    const closed = foldSessionEvent(one, entry(SESSION_EVENT_KINDS.CLOSED));
+    expect(closed.sharedFiles).toEqual([]);
+    expect(foldSessionEvent(closed, shared('f2')).sharedFiles).toEqual([]);
   });
 });

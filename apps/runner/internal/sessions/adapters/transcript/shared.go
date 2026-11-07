@@ -59,7 +59,44 @@ type Shared struct {
 var (
 	ErrSharedNotFile = errors.New("not a regular file")
 	ErrSharedRead    = errors.New("cannot read the file")
+	// ErrSharedMissing is a shared file the session holds no entry for.
+	ErrSharedMissing = errors.New("no shared file by that id")
 )
+
+// ReadShared is the entry kept for the file a session's agent shared with id,
+// read back from where SaveShared kept it; ErrSharedMissing when there is none.
+// The id only ever matches a name in the session's own folder, never joins a
+// path, so no id reaches outside it.
+func ReadShared(filesDir, sessionID, id string) (Shared, error) {
+	if !conversationPattern.MatchString(sessionID) || !conversationPattern.MatchString(id) {
+		return Shared{}, ErrSharedMissing
+	}
+	dir := SharedDir(filesDir, sessionID)
+	items, err := os.ReadDir(dir)
+	if errors.Is(err, os.ErrNotExist) {
+		return Shared{}, ErrSharedMissing
+	}
+	if err != nil {
+		return Shared{}, err
+	}
+	suffix := "-" + id + ".json"
+	for _, item := range items {
+		name := item.Name()
+		if strings.HasPrefix(name, ".") || !strings.HasSuffix(name, suffix) {
+			continue
+		}
+		raw, err := os.ReadFile(filepath.Join(dir, name)) //nolint:gosec // a name in the runner's own folder
+		if err != nil {
+			return Shared{}, err
+		}
+		var shared Shared
+		if err := json.Unmarshal(raw, &shared); err != nil || shared.ID != id {
+			return Shared{}, ErrSharedMissing
+		}
+		return shared, nil
+	}
+	return Shared{}, ErrSharedMissing
+}
 
 // SaveShared keeps the entry for one file a session's agent shared, under
 // the session's folder in filesDir, written whole (a temp file, renamed) so

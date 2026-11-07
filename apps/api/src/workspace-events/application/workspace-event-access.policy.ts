@@ -12,7 +12,7 @@ import type { ScopeContext } from '../../auth/domain/scope-context.types';
  */
 const READ_BY: Record<
   WorkspaceEventType,
-  { subject: 'Session' | 'Host' | 'Automation' | 'Task' | 'Bot' | null; scope: Scope }
+  { subject: 'Session' | 'Host' | 'Automation' | 'Task' | 'Project' | 'Bot' | null; scope: Scope }
 > = {
   'session.changed': { subject: 'Session', scope: 'sessions:read' },
   'host.changed': { subject: 'Host', scope: 'hosts:read' },
@@ -20,7 +20,9 @@ const READ_BY: Record<
   'automationRun.changed': { subject: 'Automation', scope: 'automations:read' },
   'task.changed': { subject: 'Task', scope: 'tasks:read' },
   'milestone.changed': { subject: 'Task', scope: 'tasks:read' },
+  'project.changed': { subject: 'Project', scope: 'projects:read' },
   'botApproval.changed': { subject: 'Bot', scope: 'bots:read' },
+  'botNotice.changed': { subject: 'Bot', scope: 'bots:read' },
   'inboxMark.changed': { subject: null, scope: 'inbox:read' },
 };
 

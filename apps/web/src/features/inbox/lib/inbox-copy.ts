@@ -91,6 +91,17 @@ export function inboxCopy(item: InboxItem, t: TFunction): InboxCopy {
         body: notice.text,
       };
     }
+    case 'botNotice': {
+      const { notice } = item;
+      const title = t('inbox.botNotice.title', { bot: notice.botName });
+      return {
+        sender: notice.botName,
+        short: title,
+        source: t('inbox.from.botNotice'),
+        title,
+        body: notice.text,
+      };
+    }
     case 'approval': {
       const { approval } = item;
       const values = { bot: approval.botName, tool: approval.tool };

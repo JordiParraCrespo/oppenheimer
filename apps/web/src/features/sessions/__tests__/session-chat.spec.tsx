@@ -121,7 +121,7 @@ describe('SessionChat', () => {
 });
 
 describe('a settled turn', () => {
-  it('ends on the files it changed, and folds to its words once the next prompt passes it', () => {
+  it('ends on the files it changed, folded to its answer once it settles', () => {
     const chat = new Chat();
     const turn = [
       entry({ type: 'user', uuid: 'u1', message: { role: 'user', content: 'Fix it' } }),
@@ -166,18 +166,59 @@ describe('a settled turn', () => {
     ];
     chat.apply({ reset: true, entries: turn });
     render(<SessionChat chat={chat} agent="claude-code" readOnly />);
-    expect(screen.getByText('sessions.chat.changes{"count":1}')).toBeTruthy();
-    expect(screen.getByText('sessions.chat.thoughtFor{"seconds":4}')).toBeTruthy();
-
-    act(() =>
-      chat.apply({
-        entries: [entry({ type: 'user', uuid: 'u2', message: { role: 'user', content: 'Next' } })],
-      }),
-    );
-    // The older turn keeps its words and its card; its thinking folds away.
+    // The settled turn keeps its answer and its card; its thinking folds away.
     expect(screen.getByText('Done.')).toBeTruthy();
     expect(screen.getByText('sessions.chat.changes{"count":1}')).toBeTruthy();
     expect(screen.queryByText('sessions.chat.thoughtFor{"seconds":4}')).toBeNull();
+
+    fireEvent.click(screen.getByRole('button', { name: /sessions\.chat\.turn\.worked/ }));
+    expect(screen.getByText('sessions.chat.thoughtFor{"seconds":4}')).toBeTruthy();
+  });
+
+  // Regression: a folded turn kept only the last text block of its answer,
+  // dropping the explanation before a command the same message ended on.
+  it('keeps every block of its answer when it folds, and folds the words before its work', () => {
+    const chat = new Chat();
+    chat.apply({
+      reset: true,
+      entries: [
+        entry({ type: 'user', uuid: 'u1', message: { role: 'user', content: 'Count them' } }),
+        entry({
+          type: 'assistant',
+          uuid: 'a1',
+          message: {
+            role: 'assistant',
+            content: [
+              { type: 'text', text: 'Let me count.' },
+              { type: 'tool_use', id: 't', name: 'Bash', input: { command: 'ls | wc -l' } },
+            ],
+          },
+        }),
+        entry({
+          type: 'user',
+          uuid: 'r',
+          message: {
+            role: 'user',
+            content: [{ type: 'tool_result', tool_use_id: 't', content: '3' }],
+          },
+        }),
+        entry({
+          type: 'assistant',
+          uuid: 'a2',
+          message: {
+            role: 'assistant',
+            content: [
+              { type: 'text', text: 'There are three.' },
+              { type: 'text', text: 'Recount with ls.' },
+            ],
+          },
+        }),
+      ],
+    });
+    render(<SessionChat chat={chat} agent="claude-code" readOnly />);
+    expect(screen.getByText('There are three.')).toBeTruthy();
+    expect(screen.getByText('Recount with ls.')).toBeTruthy();
+    expect(screen.queryByText('Let me count.')).toBeNull();
   });
 });
 
@@ -604,7 +645,43 @@ describe('a long conversation', () => {
     }),
   ];
 
-  it('draws its latest turns and the earlier ones on asking, a page at a time', () => {
+  /**
+   * The browser's observer, which jsdom lacks: `reach` puts the elements it
+   * watches in view, as a reader scrolling to the chat's top does.
+   */
+  function observeIntersections() {
+    const watched = new Map<Element, IntersectionObserverCallback>();
+    vi.stubGlobal(
+      'IntersectionObserver',
+      class {
+        constructor(private readonly callback: IntersectionObserverCallback) {}
+        observe(element: Element) {
+          watched.set(element, this.callback);
+        }
+        disconnect() {
+          for (const [element, callback] of watched) {
+            if (callback === this.callback) watched.delete(element);
+          }
+        }
+      },
+    );
+    return {
+      reach(element: Element) {
+        const callback = watched.get(element);
+        if (!callback) throw new Error('the element is not watched');
+        act(() =>
+          callback(
+            [{ isIntersecting: true, target: element } as IntersectionObserverEntry],
+            {} as IntersectionObserver,
+          ),
+        );
+      },
+    };
+  }
+
+  it('draws its latest turns, and the earlier ones a page at a time as the reader scrolls to its top', () => {
+    vi.useFakeTimers();
+    const observer = observeIntersections();
     const chat = new Chat();
     chat.apply({ reset: true, entries: Array.from({ length: 90 }, (_, i) => turn(i + 1)).flat() });
     render(<SessionChat chat={chat} agent="claude-code" readOnly={false} />);
@@ -612,15 +689,95 @@ describe('a long conversation', () => {
     expect(screen.getByText('Prompt 51')).toBeTruthy();
     expect(screen.queryByText('Prompt 50')).toBeNull();
 
-    fireEvent.click(screen.getByRole('button', { name: /sessions.chat.earlier\{"count":40\}/ }));
+    // The top in view shows the spinner a moment, seen twice or once, and
+    // then the page above it.
+    const top = screen.getByRole('status', { name: 'sessions.chat.earlier' });
+    observer.reach(top);
+    observer.reach(top);
+    expect(screen.queryByText('Prompt 50')).toBeNull();
+    act(() => vi.runAllTimers());
     expect(screen.getByText('Prompt 11')).toBeTruthy();
     expect(screen.queryByText('Prompt 10')).toBeNull();
-    fireEvent.click(screen.getByRole('button', { name: /sessions.chat.earlier\{"count":10\}/ }));
+
+    observer.reach(screen.getByRole('status', { name: 'sessions.chat.earlier' }));
+    act(() => vi.runAllTimers());
     expect(screen.getByText('Prompt 1')).toBeTruthy();
-    expect(screen.queryByRole('button', { name: /sessions.chat.earlier/ })).toBeNull();
+    expect(screen.queryByRole('status', { name: 'sessions.chat.earlier' })).toBeNull();
+    vi.useRealTimers();
+    vi.unstubAllGlobals();
     // Ninety turns drawn and two more pages: 2.6s alone, past vitest's 5s
     // default when the whole repository's suites run side by side.
   }, 15_000);
+
+  it('asks the host for the turns before its tail at the top, and draws them when they come', () => {
+    // What breaks this: a chat that holds only the conversation's tail
+    // showing nothing above it, or the page that comes drawn after a second
+    // wait at the top, or moving what the reader is on as it lands.
+    vi.useFakeTimers();
+    const observer = observeIntersections();
+    const chat = new Chat();
+    const asked: number[] = [];
+    chat.connect(
+      () => {},
+      (before) => asked.push(before),
+    );
+    const tail = Array.from({ length: 40 }, (_, i) => turn(i + 51)).flat();
+    chat.apply({ reset: true, history: 'end', before: 4096, entries: tail });
+    render(<SessionChat chat={chat} agent="claude-code" readOnly={false} />);
+    expect(screen.getByText('Prompt 51')).toBeTruthy();
+
+    observer.reach(screen.getByRole('status', { name: 'sessions.chat.earlier' }));
+    act(() => vi.runAllTimers());
+    expect(asked).toEqual([4096]);
+    expect(screen.queryByText('Prompt 50')).toBeNull();
+
+    // The page lands: nothing moves until the spinner, still in view, is
+    // seen again, and then the page is drawn at once.
+    act(() =>
+      chat.apply({
+        older: 'end',
+        before: 0,
+        entries: Array.from({ length: 50 }, (_, i) => turn(i + 1)).flat(),
+      }),
+    );
+    expect(screen.queryByText('Prompt 50')).toBeNull();
+    observer.reach(screen.getByRole('status', { name: 'sessions.chat.earlier' }));
+    expect(screen.getByText('Prompt 11')).toBeTruthy();
+    expect(screen.queryByText('Prompt 10')).toBeNull();
+    vi.useRealTimers();
+    vi.unstubAllGlobals();
+  }, 15_000);
+
+  it('asks again at the top when a reconnect let the page it asked for go', () => {
+    // What breaks this: the spinner left as the same element once the
+    // reconnect's tail put the chat back to "more on the host", so the
+    // observer, which only reports a change, never sees it again and the
+    // reader waits at the top for a page that will never come.
+    vi.useFakeTimers();
+    const observer = observeIntersections();
+    const chat = new Chat();
+    const asked: number[] = [];
+    chat.connect(
+      () => {},
+      (before) => asked.push(before),
+    );
+    const tail = Array.from({ length: 40 }, (_, i) => turn(i + 51)).flat();
+    chat.apply({ reset: true, history: 'end', before: 4096, entries: tail });
+    render(<SessionChat chat={chat} agent="claude-code" readOnly={false} />);
+    const spinner = screen.getByRole('status', { name: 'sessions.chat.earlier' });
+    observer.reach(spinner);
+    act(() => vi.runAllTimers());
+    expect(asked).toEqual([4096]);
+
+    act(() => chat.apply({ reset: true, history: 'end', before: 4096, entries: tail }));
+    const again = screen.getByRole('status', { name: 'sessions.chat.earlier' });
+    expect(again).not.toBe(spinner);
+    observer.reach(again);
+    act(() => vi.runAllTimers());
+    expect(asked).toEqual([4096, 4096]);
+    vi.useRealTimers();
+    vi.unstubAllGlobals();
+  });
 
   it('keeps the turns a reader scrolled up to while new ones arrive, and follows again at the end', () => {
     const chat = new Chat();
@@ -636,6 +793,8 @@ describe('a long conversation', () => {
       fireEvent.scroll(box);
     };
     scrollTo(9_500);
+    // The reader turns the wheel up: a move up that is theirs.
+    fireEvent.wheel(box, { deltaY: -9_500 });
     scrollTo(0);
 
     act(() => chat.apply({ entries: turn(91) }));
@@ -696,6 +855,7 @@ describe('the work in a turn', () => {
       ],
     });
     render(<SessionChat chat={chat} agent="claude-code" readOnly={false} />);
+    fireEvent.click(screen.getByRole('button', { name: /sessions\.chat\.turn\.worked/ }));
     const explored = screen.getByRole('button', { name: /sessions\.chat\.explored\.title/ });
     expect(explored.textContent).toContain('common.chat.explored.read a.ts');
     expect(explored.textContent).toContain('common.chat.explored.search cancel');
@@ -873,5 +1033,104 @@ describe('the queue and the context', () => {
     chat.apply({ reset: true, entries: [prompt] });
     render(<SessionChat chat={chat} agent="claude-code" readOnly={false} />);
     expect(screen.queryByRole('button', { name: /common\.chat\.usage\.open/ })).toBeNull();
+  });
+});
+
+describe('subagents', () => {
+  const at = (seconds: number) => new Date(Date.UTC(2026, 10, 6, 9, 0, seconds)).toISOString();
+  const agentCall = (id: string, description: string) =>
+    entry({
+      type: 'assistant',
+      uuid: `a-${id}`,
+      timestamp: at(1),
+      message: {
+        role: 'assistant',
+        content: [
+          { type: 'tool_use', id, name: 'Agent', input: { description, subagent_type: 'Explore' } },
+        ],
+      },
+    });
+
+  // Regression: a turn that launched subagents said "Ran 2 subagents" and
+  // nothing else until they had all ended; the terminal's footer listed each
+  // with what it was doing.
+  it('lists each subagent a turn started, what it is doing, and opens to its work', () => {
+    const chat = new Chat();
+    render(<SessionChat chat={chat} agent="claude-code" readOnly />);
+    act(() =>
+      chat.apply({
+        reset: true,
+        history: 'end',
+        entries: [
+          entry({
+            type: 'user',
+            uuid: 'u1',
+            timestamp: at(0),
+            message: { role: 'user', content: 'Find the picker' },
+          }),
+          agentCall('toolu_a', 'Read the collector'),
+          agentCall('toolu_b', 'Fix the table'),
+        ],
+      }),
+    );
+    act(() =>
+      chat.apply({
+        entries: [
+          entry({
+            type: 'assistant',
+            uuid: 's1',
+            timestamp: at(2),
+            isSidechain: true,
+            agentId: 'ag-a',
+            message: {
+              role: 'assistant',
+              content: [
+                {
+                  type: 'tool_use',
+                  id: 'toolu_grep',
+                  name: 'Grep',
+                  input: { pattern: 'Collector' },
+                },
+              ],
+            },
+          }),
+          entry({
+            type: 'oppenheimer.subagent',
+            id: 'ag-a',
+            parentToolUseId: 'toolu_a',
+            agentType: 'Explore',
+            state: 'running',
+          }),
+          entry({
+            type: 'oppenheimer.subagent',
+            id: 'ag-b',
+            parentToolUseId: 'toolu_b',
+            agentType: 'Explore',
+            state: 'failed',
+          }),
+        ],
+      }),
+    );
+
+    expect(
+      screen.getByText(
+        'sessions.chat.subagents.count{"count":2} · sessions.chat.subagents.running{"count":1} · sessions.chat.subagents.failed{"count":1}',
+      ),
+    ).toBeTruthy();
+    const running = screen.getByText('Read the collector').closest('[data-slot="subagent-row"]');
+    expect(running?.getAttribute('data-state')).toBe('running');
+    // What it is doing now, on its line.
+    expect(running?.textContent).toContain('sessions.chat.verbLive.search');
+    expect(running?.textContent).toContain('Collector');
+    expect(
+      screen.getByText('Fix the table').closest('[data-slot="subagent-row"]')?.textContent,
+    ).toContain('sessions.chat.subagents.state.failed');
+
+    // Its own call, once in its row's activity; opened, once more as its work.
+    const fold = screen.getByText('Read the collector').closest('[data-slot="subagent-fold"]');
+    const mentions = () => fold?.textContent?.split('Collector').length ?? 0;
+    const closed = mentions();
+    fireEvent.click(screen.getByText('Read the collector'));
+    expect(mentions()).toBe(closed + 1);
   });
 });

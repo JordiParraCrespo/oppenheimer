@@ -20,6 +20,13 @@ export interface GmailConnectionRepositoryPort {
    * nothing. Nothing else on the row is written.
    */
   markHistory(connection: GmailConnectionEntity, historyId: string): Promise<boolean>;
+  /**
+   * Drops the history mark of every connection but these, the ones the poll
+   * reads: an account nothing watches, or one that cannot be read, starts
+   * again from now when it is next read, so mail from the gap never wakes
+   * a routine. Answers how many marks it dropped.
+   */
+  forgetHistoryExcept(polledIds: readonly string[]): Promise<number>;
   /** The active connections with these ids, whoever's: for the poll, which runs as nobody. */
   findManyForSystem(ids: readonly string[]): Promise<GmailConnectionEntity[]>;
   markRevoked(connection: GmailConnectionEntity): Promise<void>;

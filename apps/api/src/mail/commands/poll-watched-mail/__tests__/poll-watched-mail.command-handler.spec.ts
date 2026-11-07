@@ -18,8 +18,9 @@ import { PollWatchedMailCommandHandler } from '../poll-watched-mail.command-hand
  * trigger's query decides which new messages reach the hub, the mark moves
  * on, and one account failing leaves the others read. What breaks this: a
  * poll that reads every connected mailbox, delivers mail that matched no
- * trigger, replays mail from before a routine watched, or reads an account
- * from another workspace's trigger.
+ * trigger, replays mail from before a routine watched (first, or again after
+ * a pause), hands over old mail as new, takes spam or archived mail for "any
+ * mail", or reads an account from another workspace's trigger.
  */
 const account = (overrides: { historyId?: string | null; organizationId?: string } = {}) =>
   GmailConnectionEntity.connect({
@@ -33,14 +34,17 @@ const account = (overrides: { historyId?: string | null; organizationId?: string
     historyId: overrides.historyId === undefined ? '100' : overrides.historyId,
   });
 
-const summary = (id: string): GmailMessageSummary => ({
+const RECEIVED = new Date('2026-10-29T12:00:00Z');
+const NOW = new Date('2026-10-29T12:05:00Z');
+
+const summary = (id: string, date: Date | null = RECEIVED): GmailMessageSummary => ({
   id,
   threadId: `t-${id}`,
   from: 'Bo <bo@client.test>',
   to: 'ana@gmail.test',
   cc: '',
   subject: `Subject ${id}`,
-  date: new Date('2026-10-29T12:00:00Z'),
+  date,
   snippet: `Snippet ${id}`,
   labelIds: ['INBOX'],
   attachments: [],
@@ -54,13 +58,14 @@ function setup(
     currentHistoryId: vi.fn(async () => '500'),
     newMessages: vi.fn<GmailProviderPort['newMessages']>(async () => ({
       messageIds: ['m1', 'm2'],
+      inboxIds: ['m1', 'm2'],
       historyId: '200',
     })),
     matchingIds: vi.fn<GmailProviderPort['matchingIds']>(async (_grant, _query, among) =>
       among.filter((id) => id === 'm2'),
     ),
     readSummaries: vi.fn<GmailProviderPort['readSummaries']>(async (_grant, ids) =>
-      ids.map(summary),
+      ids.map((id) => summary(id)),
     ),
   };
   const gmail = {
@@ -69,11 +74,15 @@ function setup(
         run(provider, { accessToken: 'token' }),
     ),
   } as unknown as GmailCallResolver;
-  const repository: Pick<GmailConnectionRepositoryPort, 'findManyForSystem' | 'markHistory'> = {
+  const repository: Pick<
+    GmailConnectionRepositoryPort,
+    'findManyForSystem' | 'markHistory' | 'forgetHistoryExcept'
+  > = {
     findManyForSystem: vi.fn(async (ids: readonly string[]) =>
       connections.filter((connection) => ids.includes(connection.id)),
     ),
     markHistory: vi.fn(async () => true),
+    forgetHistoryExcept: vi.fn(async () => 0),
   };
   const queryBus = { execute: vi.fn(async () => watched(connections)) } as unknown as QueryBus;
   const commands = vi.fn(async () => undefined);
@@ -83,7 +92,7 @@ function setup(
     new MailWatchResolver(gmail),
     repository as GmailConnectionRepositoryPort,
   );
-  const poll = () => handler.execute(new PollWatchedMailCommand({ now: new Date() }));
+  const poll = () => handler.execute(new PollWatchedMailCommand({ now: NOW }));
   return { poll, provider, repository, commands, gmail };
 }
 
@@ -94,13 +103,31 @@ const watching =
   ];
 
 describe('PollWatchedMailCommandHandler', () => {
-  it('reads nothing when no live routine watches an account', async () => {
+  it('reads nothing when no live routine watches an account, and drops every mark', async () => {
     const { poll, provider, repository, commands } = setup([account()], () => []);
 
     expect(await poll()).toBe(0);
     expect(repository.findManyForSystem).not.toHaveBeenCalled();
     expect(provider.newMessages).not.toHaveBeenCalled();
     expect(commands).not.toHaveBeenCalled();
+    // A routine paused or deleted leaves its account's mark behind; kept, the
+    // next routine to watch it would be handed that gap's mail as new.
+    expect(repository.forgetHistoryExcept).toHaveBeenCalledWith([]);
+  });
+
+  it('keeps the marks of the accounts it reads and only those', async () => {
+    const read = account();
+    const elsewhere = account({ organizationId: 'org-2' });
+    const { poll, repository } = setup([read, elsewhere], (connections) =>
+      connections.map((connection) => ({
+        organizationId: 'org-1',
+        subjectRef: connection.id,
+        filters: [null],
+      })),
+    );
+
+    await poll();
+    expect(repository.forgetHistoryExcept).toHaveBeenCalledWith([read.id]);
   });
 
   it('starts a newly watched account from now, delivering none of its older mail', async () => {
@@ -146,6 +173,67 @@ describe('PollWatchedMailCommandHandler', () => {
     expect(await poll()).toBe(2);
     expect(provider.matchingIds).not.toHaveBeenCalled();
     expect(provider.readSummaries).toHaveBeenCalledWith(expect.anything(), ['m1', 'm2']);
+  });
+
+  it('takes only what arrived in the inbox for any mail, and what a query matched anywhere', async () => {
+    const anyMail = setup([account()], watching([null]));
+    anyMail.provider.newMessages.mockResolvedValueOnce({
+      messageIds: ['archived', 'inbox'],
+      inboxIds: ['inbox'],
+      historyId: '200',
+    });
+
+    expect(await anyMail.poll()).toBe(1);
+    expect(anyMail.provider.readSummaries).toHaveBeenCalledWith(expect.anything(), ['inbox']);
+
+    const query = setup([account()], watching(['label:invoices']));
+    query.provider.newMessages.mockResolvedValueOnce({
+      messageIds: ['archived', 'inbox'],
+      inboxIds: ['inbox'],
+      historyId: '200',
+    });
+    query.provider.matchingIds.mockResolvedValueOnce(['archived']);
+
+    expect(await query.poll()).toBe(1);
+    expect(query.provider.readSummaries).toHaveBeenCalledWith(expect.anything(), ['archived']);
+  });
+
+  // What breaks this: a query routine's archived match waking the same
+  // account's routine for any mail (`matchesTriggerFilter` reads `inbox`).
+  it('says of each message it hands over whether it reached the inbox', async () => {
+    const { poll, provider, commands } = setup([account()], watching([null, 'label:invoices']));
+    provider.newMessages.mockResolvedValueOnce({
+      messageIds: ['archived', 'inbox'],
+      inboxIds: ['inbox'],
+      historyId: '200',
+    });
+    provider.matchingIds.mockResolvedValueOnce(['archived']);
+
+    expect(await poll()).toBe(2);
+    const [delivery] = commands.mock.calls[0] as unknown as [ReceiveInboundDeliveryCommand];
+    expect(delivery.payload).toMatchObject({
+      messages: [
+        expect.objectContaining({ id: 'archived', matched: ['label:invoices'], inbox: false }),
+        expect.objectContaining({ id: 'inbox', matched: [], inbox: true }),
+      ],
+    });
+  });
+
+  // The trigger storm: a mark days behind handed a backlog over as new mail,
+  // each message a run past the hourly cap.
+  it('hands over no mail Gmail received too long ago, or gives no time for, however far behind the mark was', async () => {
+    const connection = account();
+    const { poll, provider, repository, commands } = setup([connection], watching([null]));
+    provider.readSummaries.mockImplementationOnce(async () => [
+      summary('m1', new Date('2026-10-26T12:00:00Z')),
+      summary('m2'),
+      summary('undated', null),
+    ]);
+
+    expect(await poll()).toBe(1);
+    const [delivery] = commands.mock.calls[0] as unknown as [ReceiveInboundDeliveryCommand];
+    expect(delivery.payload).toMatchObject({ messages: [expect.objectContaining({ id: 'm2' })] });
+    expect(repository.markHistory).toHaveBeenCalledWith(connection, '200');
   });
 
   it('starts again from now when Gmail no longer keeps the stored mark', async () => {

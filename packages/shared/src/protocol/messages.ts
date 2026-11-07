@@ -38,6 +38,8 @@ import {
   SESSION_CREATE_MAX_FILES,
   SESSION_FILE_MEDIA_TYPES,
 } from './session-file.js';
+import { sharedPreviewGetSchema, sharedPreviewSchema } from './shared-files.js';
+import { transcriptPageSchema, transcriptReadSchema } from './transcript.js';
 import {
   whatsappAckSchema,
   whatsappLinkSchema,
@@ -103,6 +105,14 @@ export const RUNNER_CAPABILITIES = [
    */
   'attachment.chat',
   /**
+   * Sends a Claude Code conversation tail first to an attachment whose
+   * `session.attach` says `chatTail`: its `reset` carries the last turns and
+   * `before`, the offset they start at, and `attachment.chat.older` is
+   * answered with the turns before an offset
+   * (`product/next-steps/0.7-terminal-and-chat.md`, "Tail first").
+   */
+  'attachment.chat.older',
+  /**
    * Answers `device.attach`: the session has a simulator or emulator of its
    * own on this host, whose screen streams as JPEG frames and which takes
    * `device.input` (`product/research/device-streaming.md`).
@@ -130,6 +140,12 @@ export const RUNNER_CAPABILITIES = [
    */
   'session.cloud.codex',
   /**
+   * Takes a `session.create` whose launch names a cloud session to continue
+   * (`launch.teleport`): the agent starts with `claude --teleport <id>` in the
+   * new worktree, and a restart reopens that conversation with `--continue`.
+   */
+  'session.teleport',
+  /**
    * Answers `codex.environments.list` with `codex.environments`: the Codex
    * cloud environments the host's ChatGPT account has, for the composer's
    * picker, and takes `session.create`'s `codexEnvironment`. A runner without
@@ -149,6 +165,18 @@ export const RUNNER_CAPABILITIES = [
    * `whatsapp.messages` (`product/next-steps/whatsapp.md`).
    */
   'whatsapp',
+  /**
+   * Logs `file.shared` for each file an agent shares, and answers
+   * `shared.preview.get` with `shared.preview`: the JPEG preview it kept of
+   * a shared image, for a bot to show (`product/next-steps/agent-tools.md` §7).
+   */
+  'shared.preview',
+  /**
+   * Answers `transcript.read` with `transcript.page`: a page of the session's
+   * conversation, the chat view's entries, for a reader with no browser
+   * attached (a bot, the CLI, an MCP client; `product/next-steps/agent-tools.md` §8).
+   */
+  'transcript.read',
 ] as const;
 export type RunnerCapability = (typeof RUNNER_CAPABILITIES)[number];
 
@@ -501,6 +529,14 @@ export const sessionAttachSchema = z.object({
    * the host's half of the same rule. Absent is a writer, as before.
    */
   readOnly: z.boolean().optional(),
+  /**
+   * The browser can ask for older turns and the relay will pass its asks
+   * on, so the chat may be sent tail first (`attachment.chat.older`). Set
+   * only for a runner that named that capability; absent, the whole history,
+   * as before, so a runner newer than its control plane or console never
+   * cuts a conversation nobody can scroll back through.
+   */
+  chatTail: z.boolean().optional(),
 });
 
 export type SessionAttachMessage = z.infer<typeof sessionAttachSchema>;
@@ -992,10 +1028,45 @@ export const attachmentChatSchema = z.object({
   type: z.literal('attachment.chat'),
   attachmentId: attachmentIdSchema,
   reset: z.boolean().optional(),
+  /**
+   * Where the history a `reset` started stands: `more` on each of its
+   * batches while more of it is on its way, `end` on the one that reaches
+   * the transcript's end, absent on what follows live. A runner that sends
+   * neither leaves the console to infer the end from the batches' size and
+   * pace, which a slow read (a screenshot's preview) defeats.
+   */
+  history: z.enum(['more', 'end']).optional(),
+  /**
+   * Where in the transcript what this attachment has sent starts, as a byte
+   * offset: on the batch that carries `reset`, and on the last batch of an
+   * older page. Absent, or 0, is the conversation from its first line, with
+   * nothing older to ask for (`attachment.chat.older`).
+   */
+  before: z.number().int().nonnegative().optional(),
+  /**
+   * The batch is part of a page of older turns asked for with
+   * `attachment.chat.older`, not what follows live: `more` while the page is
+   * still coming, `end` on its last batch, which carries `before`.
+   */
+  older: z.enum(['more', 'end']).optional(),
   entries: z.array(z.string().min(1).max(CHAT_ENTRY_MAX_BYTES)).max(CHAT_BATCH_MAX_ENTRIES),
 });
 
 export type AttachmentChatMessage = z.infer<typeof attachmentChatSchema>;
+
+/**
+ * Asks for the turns of an attachment's conversation before `before`, the
+ * offset the console holds it from: the reader scrolled to the top of the
+ * chat. Answered with `attachment.chat` batches marked `older`. Sent only to
+ * a runner that named `attachment.chat.older`.
+ */
+export const attachmentChatOlderSchema = z.object({
+  type: z.literal('attachment.chat.older'),
+  attachmentId: attachmentIdSchema,
+  before: z.number().int().positive(),
+});
+
+export type AttachmentChatOlderMessage = z.infer<typeof attachmentChatOlderSchema>;
 
 /* ------------------------------------------------------------------ the union */
 
@@ -1042,6 +1113,7 @@ export const protocolMessageSchema = z.discriminatedUnion('type', [
   attachmentDirectRefusedSchema,
   attachmentPathSchema,
   attachmentChatSchema,
+  attachmentChatOlderSchema,
   deviceAttachSchema,
   deviceInfoSchema,
   deviceInputSchema,
@@ -1060,6 +1132,10 @@ export const protocolMessageSchema = z.discriminatedUnion('type', [
   whatsappAckSchema,
   whatsappSendSchema,
   whatsappSentSchema,
+  sharedPreviewGetSchema,
+  sharedPreviewSchema,
+  transcriptReadSchema,
+  transcriptPageSchema,
 ]);
 
 export type ProtocolMessage = z.infer<typeof protocolMessageSchema>;

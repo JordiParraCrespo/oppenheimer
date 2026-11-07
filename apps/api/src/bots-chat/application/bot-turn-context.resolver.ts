@@ -6,15 +6,20 @@ import {
 } from '@oppenheimer/backend-agents';
 import type { AccessScope } from '@oppenheimer/backend-authz';
 import { AppError } from '@oppenheimer/backend-core';
-import { BOT_MEMORY_PROFILE_IN_PROMPT_MAX } from '@oppenheimer/shared';
+import {
+  BOT_MEMORY_LOG_IN_PROMPT_CHARS,
+  BOT_MEMORY_PROFILE_IN_PROMPT_CHARS,
+} from '@oppenheimer/shared';
 import {
   BOT_DOCUMENT_REPOSITORY,
   BOT_MEMORY_FACT_REPOSITORY,
   BOT_SKILL_REPOSITORY,
+  PERSON_MEMORY_REPOSITORY,
 } from '../../bots/bots.di-tokens';
 import type { BotDocumentRepositoryPort } from '../../bots/database/bot-document.repository.port';
 import type { BotMemoryFactRepositoryPort } from '../../bots/database/bot-memory-fact.repository.port';
 import type { BotSkillRepositoryPort } from '../../bots/database/bot-skill.repository.port';
+import type { PersonMemoryRepositoryPort } from '../../bots/database/person-memory.repository.port';
 import {
   BOT_CONVERSATION_SUMMARY_REPOSITORY,
   BOT_MESSAGE_REPOSITORY,
@@ -77,6 +82,7 @@ export class BotTurnContextResolver {
     @Inject(BOT_DOCUMENT_REPOSITORY) private readonly documents: BotDocumentRepositoryPort,
     @Inject(BOT_MEMORY_FACT_REPOSITORY) private readonly memory: BotMemoryFactRepositoryPort,
     @Inject(BOT_SKILL_REPOSITORY) private readonly skills: BotSkillRepositoryPort,
+    @Inject(PERSON_MEMORY_REPOSITORY) private readonly people: PersonMemoryRepositoryPort,
     @Inject(BOT_MESSAGE_REPOSITORY) private readonly messages: BotMessageRepositoryPort,
     @Inject(BOT_CONVERSATION_SUMMARY_REPOSITORY)
     private readonly summaries: BotConversationSummaryRepositoryPort,
@@ -102,21 +108,23 @@ export class BotTurnContextResolver {
     const owner = await this.owners.resolve(turn.organizationId, bot.createdByUserId);
     const summarized = await this.summaries.findForBot(turn.organizationId, bot.id);
     const summary = summarized.isSome() ? summarized.unwrap() : null;
-    const [documents, facts, skills, earlier, hosts, lastContext, permissions] = await Promise.all([
-      this.documents.findAllForTurn(turn.organizationId, bot.id),
-      this.memory.findAllForTurn(turn.organizationId, bot.id),
-      this.skills.findAllForTurn(turn.organizationId, bot.id),
-      this.messages.findHistory(
-        turn.organizationId,
-        bot.id,
-        turn.id,
-        summary?.coversThroughMessageId ?? null,
-        BOT_HISTORY_READ_MAX,
-      ),
-      this.hostsOf(owner, turn.id),
-      this.turns.findLastContext(turn.organizationId, bot.id),
-      this.settings.forBot(turn.organizationId, bot.id),
-    ]);
+    const [documents, facts, skills, earlier, hosts, lastContext, permissions, about] =
+      await Promise.all([
+        this.documents.findAllForTurn(turn.organizationId, bot.id),
+        this.memory.findAllForTurn(turn.organizationId, bot.id),
+        this.skills.findAllForTurn(turn.organizationId, bot.id),
+        this.messages.findHistory(
+          turn.organizationId,
+          bot.id,
+          turn.id,
+          summary?.coversThroughMessageId ?? null,
+          BOT_HISTORY_READ_MAX,
+        ),
+        this.hostsOf(owner, turn.id),
+        this.turns.findLastContext(turn.organizationId, bot.id),
+        this.settings.forBot(turn.organizationId, bot.id),
+        this.aboutOf(turn.organizationId, bot.createdByUserId),
+      ]);
     const model = {
       provider: turn.provider,
       ...credential,
@@ -138,6 +146,7 @@ export class BotTurnContextResolver {
         budget: new BotTurnBudget(),
         credentialScopes: turn.credentialScopes,
         origin: turn.origin,
+        ranCommand: command?.name ?? null,
         approvals: this.approvals,
         permissions,
         // The owner's rules are read on the turn's own model, only when there are some.
@@ -157,11 +166,16 @@ export class BotTurnContextResolver {
       });
       tools = this.toolbox.tools({ ...context, subagents }, turn.credentialScopes, held);
     }
-    const inMind = memoryInMind(facts, BOT_MEMORY_PROFILE_IN_PROMPT_MAX);
+    const inMind = memoryInMind(facts, {
+      profileChars: BOT_MEMORY_PROFILE_IN_PROMPT_CHARS,
+      logChars: BOT_MEMORY_LOG_IN_PROMPT_CHARS,
+    });
     const documentText = (name: string) =>
       documents.find((document) => document.name === name)?.content ?? '';
     const request: BotTurnContext = {
       ...model,
+      // A bot has one conversation: its id names it to the provider's prompt cache.
+      cacheKey: bot.id,
       systemPrompt: composeBotSystemPrompt({
         name: bot.name,
         description: bot.description,
@@ -169,7 +183,7 @@ export class BotTurnContextResolver {
         instructions: documentText('instructions'),
         facts: inMind.own,
         personFacts: inMind.person,
-        factsToRecall: inMind.toRecall,
+        personAbout: about,
         engineCapabilities: engineCapabilities(turn.provider),
         tools: owner
           ? this.toolbox.catalog(turn.credentialScopes, {
@@ -188,6 +202,7 @@ export class BotTurnContextResolver {
           homeHost: hosts?.find((host) => host.id === bot.homeHostId) ?? null,
           hosts,
           lastContext,
+          memory: { log: inMind.log, toRecall: inMind.toRecall },
         }),
         composeTurnMessage(command, skills, prompt),
       ),
@@ -204,6 +219,15 @@ export class BotTurnContextResolver {
    * that there are none. Anything else the read throws is a fault, and
    * fails the turn like any other.
    */
+  /**
+   * What the bot's owner wrote about themselves in Settings → Memory, or
+   * nothing: a bot with no owner has nobody to read about.
+   */
+  private async aboutOf(organizationId: string, ownerId: string | null): Promise<string> {
+    if (!ownerId) return '';
+    return (await this.people.find(organizationId, ownerId)).about;
+  }
+
   private async hostsOf(owner: AccessScope | null, turnId: string): Promise<OwnerHost[] | null> {
     if (!owner) return null;
     try {

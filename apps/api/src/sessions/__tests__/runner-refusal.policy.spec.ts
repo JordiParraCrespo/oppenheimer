@@ -69,6 +69,20 @@ describe('runnerRefusal', () => {
     expect(runnerRefusal(launch, online(['session.folder']))).toBeNull();
   });
 
+  // An older runner drops `launch.teleport` and starts an empty conversation in
+  // the worktree, which is not the cloud session the person asked to continue.
+  it('refuses to continue a cloud session on a live runner that did not name session.teleport', () => {
+    const launch = {
+      agent: 'claude-code',
+      place: 'worktree' as const,
+      launch: { teleport: 'session_01KpKLr7hb6j4zoBFARRi2ZM' },
+    };
+    expect(runnerRefusal(launch, online(['session.folder']))?.code).toBe('SESSIONS_048');
+    expect(runnerRefusal(launch, online(['session.teleport']))).toBeNull();
+    expect(runnerTakesPlace(launch, ['session.folder'])).toBe(false);
+    expect(runnerRefusal({ ...launch, launch: { teleport: null } }, online([]))).toBeNull();
+  });
+
   it('refuses a cloud session on a live runner that did not name session.cloud', () => {
     const launch = { agent: 'claude-code', place: 'cloud' as const };
     expect(runnerRefusal(launch, online(['session.folder']))?.code).toBe('SESSIONS_037');

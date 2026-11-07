@@ -70,6 +70,12 @@ export const SESSION_PERMISSIONS = ['ask', 'auto', 'full'] as const;
 export type SessionPermission = (typeof SESSION_PERMISSIONS)[number];
 
 /**
+ * The level a session starts at when nobody picked one: "Approve for me",
+ * never "Full access", so no start path bypasses the agent's own checks.
+ */
+export const DEFAULT_SESSION_PERMISSION: SessionPermission = 'auto';
+
+/**
  * Every effort level name any CLI here takes: the wire's and the columns'
  * vocabulary, and **not a scale**. Which names a launch may carry, and in what
  * order they run from faster to smarter, is each model's own list
@@ -210,6 +216,20 @@ export interface CodingAgentLaunch {
      * resume --last`.
      */
     readonly resumeLeads?: boolean;
+  };
+  /**
+   * How a session continues a conversation that ran in the agent's cloud,
+   * with `<teleport>` substituted whole by the cloud session's id: `start`
+   * pulls its branch and history into the worktree in place of a fresh
+   * conversation, and `resume` reopens what that left, on a restart. Neither
+   * names the conversation, since the cloud session already has a name of
+   * its own, and no first task rides along: the conversation holds it.
+   *
+   * Absent: this agent has no cloud session to bring to a host.
+   */
+  readonly teleport?: {
+    readonly start: readonly string[];
+    readonly resume: readonly string[];
   };
   /**
    * Absent: this agent has no notion of approvals (a plain shell). The console
@@ -553,6 +573,14 @@ export const CODING_AGENTS: Readonly<Record<CodingAgentId, CodingAgentDefinition
       conversation: Object.freeze({
         create: Object.freeze(['--session-id', '<conversation>']),
         resume: Object.freeze(['--resume', '<conversation>']),
+      }),
+      // `--teleport` checks out a claude.ai/code session's branch in a clean
+      // checkout of its repository and opens its conversation there, under an
+      // id of Claude Code's choosing; `--continue` reopens the newest one in
+      // the folder, which in a session's own worktree is that one.
+      teleport: Object.freeze({
+        start: Object.freeze(['--teleport', '<teleport>']),
+        resume: Object.freeze(['--continue']),
       }),
       permission: Object.freeze({
         // `--permission-mode` choices, read off claude 2.1.300's own `--help`.
@@ -971,6 +999,14 @@ export type HostCloudAgentId = (typeof HOST_CLOUD_AGENT_IDS)[number];
 
 export function isHostCloudAgent(value: unknown): value is HostCloudAgentId {
   return HOST_CLOUD_AGENT_IDS.some((agent) => agent === value);
+}
+
+/**
+ * Whether a host can continue a cloud session of `agent` in a worktree of its
+ * own (the catalog's `launch.teleport`): Claude Code's, `claude --teleport`.
+ */
+export function canTeleport(agent: unknown): agent is CodingAgentId {
+  return isCodingAgentId(agent) && CODING_AGENTS[agent].launch.teleport !== undefined;
 }
 
 /**

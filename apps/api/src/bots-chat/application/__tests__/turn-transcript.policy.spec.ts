@@ -3,6 +3,7 @@ import type { BotEngineEvent } from '@oppenheimer/backend-agents';
 import { AppError } from '@oppenheimer/backend-core';
 import { BotErrors } from '../../../bots/domain/bots.errors';
 import { MAIL_DRAFT_DATA_KEY } from '../../bot-mail-tool.mapper';
+import { RATE_LIMIT_DATA_KEY } from '../../domain/bot-rate-limit.policy';
 import { SHOWN_IMAGES_DATA_KEY } from '../../domain/bot-shown-image.policy';
 import { SUBAGENT_DATA_KEY } from '../../domain/bot-subagent.policy';
 import { BotTurnEntity } from '../../domain/bot-turn.entity';
@@ -62,6 +63,7 @@ describe('TurnTranscript', () => {
       cacheWriteTokens: 1,
       context: null,
       planLimits: null,
+      limited: null,
     });
   });
 
@@ -119,6 +121,7 @@ describe('TurnTranscript', () => {
         subagents: null,
         allowedBy: null,
         mailDraft: null,
+        rateLimit: null,
       },
       {
         callId: 'b',
@@ -130,6 +133,7 @@ describe('TurnTranscript', () => {
         subagents: null,
         allowedBy: null,
         mailDraft: null,
+        rateLimit: null,
       },
     ]);
   });
@@ -256,6 +260,42 @@ describe('TurnTranscript', () => {
       cacheReadTokens: 254,
       cacheWriteTokens: 20,
     });
+  });
+
+  // What breaks this: a goal's next turn queued the moment this one ends,
+  // running straight into the limit again and spending a continuation on it.
+  it('ends a turn holding the latest time a system its tools called asked it to wait until', () => {
+    const limited = (callId: string, resetAt: string) => ({
+      type: 'tool.finished' as const,
+      callId,
+      name: 'archive_mail',
+      output: 'MAIL_008: Gmail is limiting our requests',
+      isError: true,
+      data: { [RATE_LIMIT_DATA_KEY]: JSON.stringify({ system: 'Gmail', resetAt }) },
+    });
+    const transcript = new TurnTranscript(turn());
+    const writes: TranscriptWrite[] = [];
+    for (const event of [
+      { type: 'tool.started' as const, callId: 'a', name: 'archive_mail', input: {} },
+      { type: 'tool.started' as const, callId: 'b', name: 'archive_mail', input: {} },
+      limited('a', '2026-11-02T10:02:00.000Z'),
+      limited('b', '2026-11-02T10:01:00.000Z'),
+      { type: 'done' as const, reason: 'completed' as const },
+    ]) {
+      writes.push(...transcript.apply(event));
+    }
+    const steps = inserted(writes).flatMap((message) => message.steps);
+    transcript.endTurn(new Date('2026-11-02T10:00:00.000Z'), null);
+    expect(transcript.result.limited).toEqual({
+      system: 'Gmail',
+      resetAt: new Date('2026-11-02T10:02:00.000Z'),
+    });
+    // Each step keeps its own limit and is stored as no error: the chat draws it as a wait.
+    expect(steps.map((step) => step.isError)).toEqual([false, false]);
+    expect(steps.map((step) => step.rateLimit?.resetAt)).toEqual([
+      new Date('2026-11-02T10:02:00.000Z'),
+      new Date('2026-11-02T10:01:00.000Z'),
+    ]);
   });
 
   it('keeps text a failed turn streamed but never finished, and says why it failed', () => {

@@ -161,6 +161,8 @@ func (g *grokChat) quiet(since time.Duration, _ int) [][]byte {
 	return g.flush()
 }
 
+func (g *grokChat) holds() bool { return g.runText.Len() > 0 || g.runFiles > 0 }
+
 // flush sends the run of chunks held: a prompt, a reply or a thought.
 func (g *grokChat) flush() [][]byte {
 	kind, text, files, id, at := g.run, g.runText.String(), g.runFiles, g.runID, g.runAt
