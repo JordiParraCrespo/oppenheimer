@@ -583,6 +583,50 @@ of `bot_memory_fact`, with two columns more:
   under the same lock as the count; a fact added by hand is refused
   (`BOTS_009`), as is a save when every fact is `profile`. A fact the bot
   saved names the bot as its source (it named the person before).
+- **Dreaming** (2026-11-07, from Managed Agents' dreams and Anthropic's
+  "Components of agent memory"). A bot saves as it goes without checking
+  what it has, so its memory fills with repeats, contradictions and stale
+  entries. A dream is an offline pass of the bot's own model, with no tools,
+  that rewrites it: duplicates merged, what is contradicted or stale
+  dropped, each fact one clear sentence that still makes sense in a month,
+  standing instructions kept in the profile and the rest in the log, and at
+  most five new facts the conversation clearly shows will matter; a secret
+  a note holds (a password, a key, a token) is dropped. It reads
+  the conversation summary and the newest messages (24,000 tokens) as the
+  ground truth the notes are checked against: a note is a guess at what
+  will matter, written in the moment.
+  - *What it rewrites.* Only the facts the bot wrote itself. What the
+    person wrote in Settings → Memory stays word for word, and a fact
+    another bot shared is that bot's; the dream reads both so it repeats
+    neither. A merged log fact keeps the newest day of those it came from.
+  - *When.* After a turn, once the bot keeps at least 8 facts of its own,
+    has written 10 since its last dream, and last dreamed a day ago or
+    never (a dream that wrote nothing counts: the day is claimed when the
+    dream is staged, so a retry of a failed job still runs); only while *Learn automatically* is on, since a dream changes
+    memory the way `remember` does. Settings → Memory's **Tidy now** runs
+    one whatever those say; the API records the ask, so the row reads
+    "tidying" until the job ends (ten minutes at most). It runs on the `bot-dreams` queue and is
+    counted under `/usage` as `dream`.
+  - *Guards.* An answer that is not the JSON asked for, keeps none of the
+    facts, keeps fewer than a fifth of them or would overfill the memory is
+    not used. The write swaps the facts it read for the ones it wrote under
+    the bot's lock and a lock on each of its facts, and is refused if any of
+    them changed since it read them (the bot saved, the owner edited or
+    forgot one): the next dream reads them again. Clear all takes the same
+    lock.
+  - *Undo.* The facts it replaced are kept with the dream
+    (`bot_memory_dream`, one row a bot, its latest). Undo in Settings →
+    Memory puts them back with their ids and dates and deletes what the
+    dream wrote, except one the owner has edited since; what was saved since
+    stays, the bot's own oldest log facts making room past 500. Only the latest dream can be undone, once (`BOTS_041`).
+    Clear all forgets the dream too.
+  - *In the chat.* Each dream and each undo is a line outside any turn
+    ("Tidied its memory · 40 facts → 22"), which the bot reads back as a
+    note from Oppenheimer.
+  - *Not built.* A review step before the rewrite is used (Managed Agents'
+    dreams write a new store and leave adopting it to you); here it is
+    applied and undone instead, as every other memory change is a line you
+    undo. Dreaming a project's memory, and repeated passes.
 - **Not built.** Grok Bot's review queue for shared learnings: a fact
   about you comes from your own bots, so it is a line in their chat like
   any other memory change.
@@ -1544,6 +1588,14 @@ The decisions it produced:
   whose history only grows until a summary, and Codex, which sends its
   conversation's id as `prompt_cache_key`. It refines 2026-10-15's history
   budget, which kept the newest messages that fit.
+- 2026-11-07: **bots dream** (§4.1, "Dreaming"). The owner found each
+  bot's memory "a bit like slop" once bots saved as they go, and asked for
+  a process that unifies, rewrites and deduplicates it, from Managed Agents'
+  dreams and "Components of agent memory". A dream is the bot's own model,
+  no tools, over the facts it wrote and its latest conversation, after a
+  turn once it has written 10 since the last (at most daily), or when the
+  owner asks; it is applied at once and undone from Settings → Memory,
+  rather than reviewed first.
 - 2026-11-07: **every bot knows Oppenheimer from its own guide** (§4.1).
   The owner asked for bots aware of what Oppenheimer is and what they can
   do in it, the way Claude Code knows itself: a published documentation and

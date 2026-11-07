@@ -29,6 +29,6 @@ export interface BotMemoryFactRepositoryPort {
   ): Promise<'inserted' | 'full' | 'missing'>;
   save(fact: BotMemoryFactEntity): Promise<'saved' | 'missing'>;
   delete(fact: BotMemoryFactEntity): Promise<void>;
-  /** Every fact of the bot. */
+  /** Every fact of the bot, and its latest dream, which an undo would bring them back from. */
   clear(bot: { organizationId: string; id: string }): Promise<void>;
 }
