@@ -1,5 +1,6 @@
 import type * as Preset from '@docusaurus/preset-classic';
 import type { Config } from '@docusaurus/types';
+import llmsTxt from './scripts/llms-txt.mjs';
 
 const config: Config = {
   title: 'Oppenheimer',
@@ -15,6 +16,8 @@ const config: Config = {
     defaultLocale: 'en',
     locales: ['en'],
   },
+  // The guide as agents read it: /llms.txt and /guide/<id>.md.
+  plugins: [llmsTxt],
   presets: [
     [
       'classic',
