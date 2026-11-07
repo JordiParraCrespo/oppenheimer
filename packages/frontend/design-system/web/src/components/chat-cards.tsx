@@ -206,7 +206,7 @@ function ProposedPlanCard({
 
 /**
  * SubagentRunCard — where a turn launched subagents, unboxed: a 28px line
- * with the spinner while any runs, the summary ("3 subagents · 1 running ·
+ * with the spinner, in the status blue, while any runs, the summary ("3 subagents · 1 running ·
  * 1 failed · 48s") folding the rows, and Stop all on the right while any
  * runs. Open, one `SubagentRow` each, indented.
  */
@@ -231,7 +231,7 @@ function SubagentRunCard({
   return (
     <Fold data-slot="subagent-run-card" defaultOpen={defaultOpen} className={cn('flex flex-col text-[13.5px]', className)}>
       <div className="flex min-h-7 items-center gap-2">
-        {live ? <LoaderIcon aria-hidden className="size-3.5 text-success motion-safe:animate-spin" /> : null}
+        {live ? <LoaderIcon aria-hidden className="size-3.5 text-info motion-safe:animate-spin" /> : null}
         <FoldTrigger className="flex items-center gap-1.5 text-fg-muted">{summary}</FoldTrigger>
         <span className="flex-1" />
         {live && onStopAll ? (
@@ -253,9 +253,9 @@ function SubagentRunCard({
 type SubagentState = 'running' | 'completed' | 'failed';
 
 /**
- * One subagent, one 30px line, the way a terminal lists them under its
- * prompt: the run-state dot (pulsing while it runs, quiet once done, red
- * when it failed), its role in subtle ink, its name (the task), and on the
+ * One subagent, one 32px line, the way a terminal lists them under its
+ * prompt: the dot, in the status blue (pulsing while it runs, softer once
+ * done, red when it failed), its role in subtle ink, its name (the task), and on the
  * right its clock and `note` ("61K tokens") in mono. The state's word is
  * shown when it failed and read out otherwise; `model`, `activity` and
  * `outcome` say more where the row has room for them: the model after the
@@ -304,8 +304,8 @@ function SubagentRow({
         aria-hidden
         className={cn(
           'size-1.5 shrink-0 rounded-pill',
-          state === 'running' && 'bg-success motion-safe:animate-pulse',
-          state === 'completed' && 'bg-fg-subtle',
+          state === 'running' && 'bg-info motion-safe:animate-pulse',
+          state === 'completed' && 'bg-info opacity-50',
           state === 'failed' && 'bg-danger',
         )}
       />
@@ -324,7 +324,7 @@ function SubagentRow({
     </>
   );
   const rowClass = cn(
-    'group/sub flex min-h-7.5 w-full min-w-0 items-center gap-2.5 rounded-sm px-1.5 text-[13.5px] transition-colors duration-instant hover:bg-hover-surface',
+    'group/sub flex min-h-8 w-full min-w-0 items-center gap-2.5 rounded-sm px-2.5 text-[13.5px] transition-colors duration-instant hover:bg-hover-surface',
     className,
   );
   if (!children) {
@@ -344,7 +344,7 @@ function SubagentRow({
       <FoldTrigger data-slot="subagent-row" data-state={state} className={rowClass}>
         {line}
       </FoldTrigger>
-      <FoldPanel className="ml-2.25 flex flex-col gap-3 border-border-subtle border-l pt-1.5 pb-2 pl-4">{children}</FoldPanel>
+      <FoldPanel className="ml-3 flex flex-col gap-3 border-border-subtle border-l pt-1.5 pb-2 pl-4">{children}</FoldPanel>
     </Fold>
   );
 }
