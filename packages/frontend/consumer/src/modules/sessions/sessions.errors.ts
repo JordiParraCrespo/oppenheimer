@@ -94,4 +94,8 @@ export const SessionsErrors = {
     code: 'SESSIONS_CLIENT_021',
     message: "Failed to open the session's preview",
   },
+  RETRY_FAILED: {
+    code: 'SESSIONS_CLIENT_022',
+    message: 'Failed to try the session again',
+  },
 } as const satisfies Record<string, ErrorDefinition>;

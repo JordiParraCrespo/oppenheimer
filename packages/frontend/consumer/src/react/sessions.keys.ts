@@ -11,8 +11,10 @@ export const sessionsKeys = {
   list: () => [...sessionsKeys.lists()] as const,
   details: () => [...sessionsKeys.all, 'detail'] as const,
   detail: (id: string | undefined) => [...sessionsKeys.details(), id] as const,
+  /** Both reads of a session's start log, failed and not: what a retry drops. */
+  starts: (id: string | undefined) => [...sessionsKeys.detail(id), 'start'] as const,
   start: (id: string | undefined, failed: boolean) =>
-    [...sessionsKeys.detail(id), 'start', { failed }] as const,
+    [...sessionsKeys.starts(id), { failed }] as const,
   share: (id: string) => [...sessionsKeys.all, 'share', id] as const,
   shared: (slug: string | undefined) => [...sessionsKeys.all, 'shared', slug] as const,
   ports: (id: string) => [...sessionsKeys.all, 'ports', id] as const,

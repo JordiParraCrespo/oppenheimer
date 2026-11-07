@@ -10522,6 +10522,48 @@ export type RestartSessionResponses = {
 
 export type RestartSessionResponse = RestartSessionResponses[keyof RestartSessionResponses];
 
+export type RetrySessionData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/sessions/{id}/retry';
+};
+
+export type RetrySessionErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * HOSTS_001 — Host not found
+     *
+     * SESSIONS_001 — Session not found
+     */
+    404: ProblemDetailsDto;
+    /**
+     * SESSIONS_052 — Only a session whose start failed can be tried again
+     *
+     * SESSIONS_039 — That session runs at its vendor, not on a host
+     *
+     * SESSIONS_005 — That session is closed
+     */
+    409: ProblemDetailsDto;
+};
+
+export type RetrySessionError = RetrySessionErrors[keyof RetrySessionErrors];
+
+export type RetrySessionResponses = {
+    200: SessionResponseDto;
+};
+
+export type RetrySessionResponse = RetrySessionResponses[keyof RetrySessionResponses];
+
 export type AddCheckoutData = {
     body: AddCheckoutRequest;
     path: {

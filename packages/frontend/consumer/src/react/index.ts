@@ -275,6 +275,7 @@ export {
   usePutSessionShare,
   useRenameSession,
   useRestartSession,
+  useRetrySession,
   useSessionOpening,
   useSessionShare,
   useSessionStartProgress,

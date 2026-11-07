@@ -11565,6 +11565,83 @@
         ]
       }
     },
+    "/api/v1/sessions/{id}/retry": {
+      "post": {
+        "description": "Sends the host the same create again, for the same session and with the same first task, after its start failed (a host not signed in to its agent, a tool missing). It records a request: the session is `starting` again, and opens or fails as the host reports.",
+        "operationId": "retrySession",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "HOSTS_001 — Host not found\n\nSESSIONS_001 — Session not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "SESSIONS_052 — Only a session whose start failed can be tried again\n\nSESSIONS_039 — That session runs at its vendor, not on a host\n\nSESSIONS_005 — That session is closed",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Try a failed start again",
+        "tags": [
+          "Sessions"
+        ]
+      }
+    },
     "/api/v1/sessions/{id}/checkouts": {
       "post": {
         "description": "The checkout takes the session’s own branch, created from the base given here or the repository’s default, and a directory name no checkout of this session has ever used.",

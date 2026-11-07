@@ -462,6 +462,7 @@
       "SESSIONS_049": "Ese cursor de transcripción no es válido. Lee desde los últimos turnos y continúa con el cursor que te dé esa página.",
       "SESSIONS_050": "Solo quien lanzó esta sesión en la nube puede enviarle un seguimiento, porque se ejecuta con su clave.",
       "SESSIONS_051": "El proveedor del agente en la nube no confirmó el seguimiento, así que puede estar ejecutándose allí. Revisa la sesión en el proveedor antes de volver a enviarlo.",
+      "SESSIONS_052": "Solo se puede reintentar una sesión que no llegó a iniciarse.",
       "VOICE_002": "No se ha grabado nada. Vuelve a dictar.",
       "VOICE_003": "La grabación es demasiado larga. Los dictados deben durar menos de dos minutos.",
       "VOICE_004": "No se ha podido leer la grabación. Vuelve a dictar.",
@@ -495,7 +496,8 @@
     "startFailure": {
       "codes": {
         "SESS_002": "Este host crea sesiones con un solo repositorio.",
-        "SESS_010": "La CLI de Codex no tiene un entorno en la nube para este repositorio."
+        "SESS_010": "La CLI de Codex no tiene un entorno en la nube para este repositorio.",
+        "SESS_019": "Sin sesión en claude.ai. Ejecuta claude auth login en el host."
       },
       "help": {
         "SESS_010": {
@@ -681,6 +683,9 @@
       "title": "Iniciando tu sesión",
       "failedTitle": "La sesión no se inició",
       "failedLead": "El host no pudo iniciar esta sesión.",
+      "retry": "Reintentar",
+      "retrying": "Reintentando",
+      "retryFailed": "No se pudo volver a iniciar la sesión.",
       "working": "Trabajando…",
       "downloading": "Este host aún no tenía este repositorio, así que primero lo descarga. Esta vez tardará un poco más; las siguientes sesiones arrancan en un segundo.",
       "failed": "Error",
