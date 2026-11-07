@@ -93,6 +93,8 @@ func dispatch(ctx context.Context, args []string) (int, error) {
 		return agents(ctx, args)
 	case "tools":
 		return tools(ctx, args)
+	case "exec":
+		return execPolicy(ctx, args)
 	case "credential-helper":
 		// git calls this with the operation as its one argument.
 		operation := ""
@@ -321,6 +323,24 @@ func tools(ctx context.Context, args []string) (int, error) {
 	usage(os.Stderr)
 	return cli.ExitUsage, errors.New("usage: runner tools [ls] | runner tools install <" +
 		strings.Join(hostdomain.Installable(hostdomain.InstallTool), "|") + ">")
+}
+
+// execPolicy dispatches `runner exec`: what this host lets bots run. It is
+// set here, on the host, and nowhere else.
+func execPolicy(ctx context.Context, args []string) (int, error) {
+	switch {
+	case len(args) == 0 || (len(args) == 1 && args[0] == "status"):
+		return withApp(ctx, func(_ context.Context, app *cli.App) error { return app.ExecShow(os.Stdout) })
+	case len(args) == 2 && args[0] == "mode":
+		return withApp(ctx, func(_ context.Context, app *cli.App) error { return app.ExecMode(os.Stdout, args[1]) })
+	case len(args) >= 2 && args[0] == "allow":
+		return withApp(ctx, func(_ context.Context, app *cli.App) error { return app.ExecAllow(os.Stdout, args[1:]) })
+	case len(args) >= 2 && args[0] == "deny":
+		return withApp(ctx, func(_ context.Context, app *cli.App) error { return app.ExecDeny(os.Stdout, args[1:]) })
+	}
+	usage(os.Stderr)
+	return cli.ExitUsage, errors.New("usage: runner exec [status] | runner exec mode off|allowlist|full | " +
+		"runner exec allow <program|/abs/path|/abs/glob/*>... | runner exec deny <entry>...")
 }
 
 // sessions dispatches the session subcommands. They are what a person uses on
@@ -580,6 +600,12 @@ func usage(w *os.File) {
   runner tools [ls]               git, tmux, gh and the agents: versions, and how to get what is missing
   runner tools install gh         install GitHub's CLI into ~/.local/bin (git and tmux: the package
                                   manager's command is printed, the runner never uses sudo)
+  runner exec [status]            what bots may run on this host (off unless you say so)
+  runner exec mode off|allowlist|full
+                                  off runs nothing, allowlist runs the programs listed, full runs anything
+  runner exec allow <program|/abs/path|/abs/glob/*>...
+  runner exec deny <entry>...     add or remove programs on the allowlist; bots run them with argv
+                                  (no shell) in ~/oppenheimer/bots/<bot> unless they name a folder
   runner credential-helper get    git's credential protocol, answered over the socket
   runner sessions run [--agent A] [--repo R] [--outlive-parent] "task"
                                   from inside a session: start a child session with a task

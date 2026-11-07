@@ -119,7 +119,9 @@ worker runs it and streams what happens back to the chat.
   Claude Code as a library; its shell and file tools would run commands
   the model chose on the control plane. They are off. What it keeps from
   Claude Code is the loop, compaction and web search; real work on files
-  goes to a session on a host (§4.2). Its `WebFetch` and subagents are off
+  goes to a session on a host (§4.2), and a single program to `run_command`,
+  which runs on a host, never on the control plane (§4.2, "Commands on a
+  host", 2026-11-07). Its `WebFetch` and subagents are off
   too (2026-10-15): the first fetched any address it was given, the
   server's loopback and private network included, and bots used the second
   to go looking through the server's disk.
@@ -842,6 +844,7 @@ agent's, in a session, where Claude Code ships them.
 | `read_session` | A session's recent log in words: tasks and follow-ups with their sender, the agent working, blocked or done, questions, failures, stops. The log only, never the terminal or the agent's conversation (built 2026-10-27; "recent output" was the plan). `after_seq` reads only what followed an entry; `send_to_session` and `answer_session` name the entry their input followed (2026-10-29) | auto |
 | `stop_session` / `close_session` | Stop it, or close and clean up | ask |
 | `list_folders` | Browse a host's folders | auto |
+| `run_command` | Run one program on a host and read its exit code, stdout and stderr in the same turn, only what that host's own policy allows (below; built 2026-11-07) | ask |
 
 Built 2026-10-27 (issue #493), so a bot that manages sessions can see them
 as the person does and act on them. Three rules hold it:
@@ -868,6 +871,43 @@ as the person does and act on them. Three rules hold it:
   cancels the turn the prompt opened. The console does not draw the log
   yet; until it does, the bot's chat (the call's activity line and the
   approval card) and the log are where the person sees it.
+
+#### Commands on a host
+
+Added 2026-11-07, after the owner asked for bots that "can run scripts and
+more" without a VM each: renting 50 sandboxes around the clock costs
+thousands a month, while the hosts the person already paired cost nothing
+more (`10-sleep-wake-and-pricing.md` §7 prices the sandbox services).
+`run_command` is OpenClaw's `system.run` on a node, on our runner:
+
+- **One program, run directly.** argv goes to the program as given, with no
+  shell and no stdin, so the program that runs is the one the policy
+  decided on; a pipe or `;` is text unless the program is a shell the host
+  allows. It runs as the runner's account, in the runner's environment.
+- **The host decides what runs, on the host.** `runner exec mode
+  off|allowlist|full` and `runner exec allow|deny <program>` write
+  `~/.oppenheimer/exec.json`, which the runner reads on every call and
+  refuses if another account can write it. Off is the default, so pairing
+  a machine never hands its shell to a bot. An allowlist entry is a program
+  on `PATH` (`python3`) or an absolute path or glob (`/home/me/scripts/*`); a
+  bare name never matches a path, so a `./python3` the bot wrote is not
+  `python3`. The control plane never reads or writes the policy, so a
+  compromised control plane runs nothing the person did not allow.
+- **The bot's own folder.** A call starts in `<workspaces>/bots/<bot id>`,
+  made on first use and kept, unless it names an absolute `cwd`. That is
+  the bot's machine without a VM: its scripts, data and virtualenvs.
+- **Bounded to the turn.** At most 120 s a call (the protocol allows 600;
+  a turn has 4 minutes), its whole process group killed at the timeout,
+  and the last 32 KB of each stream kept. Longer work is a session.
+- **Asked, then answered in words.** It asks under Approve for me, with the
+  command line on the card; a standing yes is per program and host. A run
+  is an answer whatever its exit code; a refusal (`EXEC_001` off, `EXEC_002`
+  not allowed, `EXEC_003` folder, `EXEC_004` not started) tells the bot that
+  nothing ran and that only the person can change it, on the host. What the
+  program printed is fenced as outside text.
+
+On the wire it is `host.exec` and `host.exec.result`, gated on the
+`host.exec` capability (`01-protocol.md`).
 
 ### 4.3 Projects and the plan
 | Tool | Does | Default |
@@ -1546,3 +1586,10 @@ The decisions it produced:
   turn once it has written 10 since the last (at most daily), or when the
   owner asks; it is applied at once and undone from Settings → Memory,
   rather than reviewed first.
+- 2026-11-07: **bots run commands on a host** (§4.2, "Commands on a
+  host"). The owner wanted bots that run scripts, and found a sandbox per
+  bot too dear for 50 of them. `run_command` runs one program on a paired
+  host through its runner, which allows only what its own `runner exec`
+  policy allows, off by default. It narrows 2026-10-15's "no shell": the
+  engine still has none on the control plane, and the closed list says
+  `run_command` is the one way a bot runs anything.

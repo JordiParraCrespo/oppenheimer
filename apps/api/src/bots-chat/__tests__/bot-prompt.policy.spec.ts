@@ -119,6 +119,24 @@ describe('composeBotSystemPrompt', () => {
       expect(prompt).not.toContain('goes to a session on a host');
       expect(prompt).toContain('When a request needs something no tool here does');
     });
+
+    // A bot told both "run_command" and "you never run commands yourself"
+    // would refuse every script; one told neither would never reach for it.
+    it('tells a bot that may run commands where they run, and drops the line that says it never does', () => {
+      const prompt = composeBotSystemPrompt({
+        ...sessions,
+        tools: [
+          ...sessions.tools,
+          { name: 'run_command', description: 'Runs one program on a host.' },
+        ],
+      });
+      expect(prompt).toContain('# Commands on a host');
+      expect(prompt).not.toContain('You never run commands yourself');
+      expect(prompt).not.toContain('You have no shell, no files');
+      expect(prompt).toContain('never try another program to get around it');
+      expect(composeBotSystemPrompt(sessions)).toContain('You never run commands yourself');
+      expect(composeBotSystemPrompt(sessions)).not.toContain('# Commands on a host');
+    });
   });
 
   it('promises only what the engine and the tools give', () => {

@@ -19,6 +19,8 @@ export const SESSION_SHARED_FILES = Symbol('SESSION_SHARED_FILES');
 export const SESSION_TRANSCRIPT = Symbol('SESSION_TRANSCRIPT');
 /** The composer's listing of a host's Codex cloud environments; bound by `links/` like `HOST_FOLDERS`. */
 export const HOST_CODEX_ENVIRONMENTS = Symbol('HOST_CODEX_ENVIRONMENTS');
+/** A bot's command run on a host by its runner (`host.exec`); bound by `links/` like `HOST_FOLDERS`. */
+export const HOST_EXEC = Symbol('HOST_EXEC');
 export const RECORD_SESSION_EVENTS = Symbol('RECORD_SESSION_EVENTS');
 export const SESSION_LOOKUP = Symbol('SESSION_LOOKUP');
 export const SESSION_RECONCILIATION = Symbol('SESSION_RECONCILIATION');

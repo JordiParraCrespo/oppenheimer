@@ -67,6 +67,7 @@ import { RenameSessionCommandHandler } from './commands/rename-session/rename-se
 import { RenameSessionHttpController } from './commands/rename-session/rename-session.http.controller';
 import { RestartSessionCommandHandler } from './commands/restart-session/restart-session.command-handler';
 import { RestartSessionHttpController } from './commands/restart-session/restart-session.http.controller';
+import { RunHostCommandCommandHandler } from './commands/run-host-command/run-host-command.command-handler';
 import { SendSessionPromptCommandHandler } from './commands/send-session-prompt/send-session-prompt.command-handler';
 import { SendSessionPromptHttpController } from './commands/send-session-prompt/send-session-prompt.http.controller';
 import { SetSessionSharePeopleCommandHandler } from './commands/set-session-share-people/set-session-share-people.command-handler';
@@ -199,6 +200,7 @@ const commandHandlers: Provider[] = [
   AnswerSessionDecisionCommandHandler,
   SendSessionPromptCommandHandler,
   DeliverSessionWakeCommandHandler,
+  RunHostCommandCommandHandler,
   UploadSessionAttachmentCommandHandler,
   RecordSessionEventsCommandHandler,
 ];
