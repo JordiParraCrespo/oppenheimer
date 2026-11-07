@@ -198,8 +198,11 @@ describe('BotMemoryDreamRepository (integration)', () => {
 
   it('undoes once: the old facts come back, and what the bot saved since stays', async () => {
     const ada = await createBot();
-    const kept = await remember(ada, 'one');
+    await remember(ada, 'one');
     await remember(ada, 'two');
+    const kept = (await memory.findAllForTurn(organizationId, ada.id)).find(
+      (fact) => fact.content === 'one',
+    );
     expect(await dreams.apply(dreamOf(ada, await ownFacts(ada)), BOT_MEMORY_FACTS_MAX)).toBe(
       'applied',
     );
@@ -211,8 +214,8 @@ describe('BotMemoryDreamRepository (integration)', () => {
     const back = (await memory.findAllForTurn(organizationId, ada.id)).find(
       (fact) => fact.content === 'one',
     );
-    expect(back?.id).toBe(kept.id);
-    expect(back?.createdAt).toEqual(kept.createdAt);
+    expect(back?.id).toBe(kept?.id);
+    expect(back?.createdAt).toEqual(kept?.createdAt);
 
     expect(await dreams.undo(organizationId, ada.id, BOT_MEMORY_FACTS_MAX)).toBeNull();
     expect(await contents(ada)).toEqual(['one', 'three, after the dream', 'two']);
