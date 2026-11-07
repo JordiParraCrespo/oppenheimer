@@ -1,7 +1,6 @@
 ---
 name: cook
-description: Take a task, pick its lane (ship, propose or research) and run that skill, so Jordi does not have to choose. States the lane and why before any work, defaults to propose when unsure. Use only when the user invokes /cook.
-disable-model-invocation: true
+description: Take a task, pick its lane (ship, propose or research) and run that skill, so Jordi does not have to choose. States the lane and why before any work, defaults to propose when unsure. Use it at the start of every task that will change the repository or open a pull request, whether or not the user typed /cook; skip it only when the user named a lane themselves (/ship, /propose, /research) or only asked a question.
 argument-hint: "[the task]"
 ---
 
@@ -9,6 +8,12 @@ argument-hint: "[the task]"
 
 The router over the three lanes in `.agents/skills/steward/SKILL.md`,
 "Merging". It picks one and runs that skill; it adds no steps of its own.
+
+It is the default entry point: every task that will change the repository
+or open a pull request goes through it, typed as `/cook` or not. The only
+ways around it are the user naming a lane (`/ship`, `/propose`,
+`/research`), which skips straight to that skill, and a plain question,
+which gets an answer and no pull request.
 
 ## 1. Pick the lane
 
