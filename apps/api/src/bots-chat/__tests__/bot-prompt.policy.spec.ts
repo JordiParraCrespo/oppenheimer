@@ -139,6 +139,22 @@ describe('composeBotSystemPrompt', () => {
     expect(prompt).toContain('check what you started');
   });
 
+  // What breaks this: a bot that started a cloud session, never read the
+  // "could not start" its tool returned, and only told the person it had
+  // failed once they asked.
+  it('asks a bot to check every action worked and to say so first when it did not', () => {
+    const prompt = composeBotSystemPrompt(base);
+    expect(prompt).toMatch(
+      /# How a turn goes[\s\S]*# Check before you report\n[\s\S]*Report what that shows, not what you asked for[\s\S]*Do not wait for the person to ask/,
+    );
+
+    const sessions = composeBotSystemPrompt({
+      ...base,
+      tools: [{ name: 'start_session', description: 'Starts a coding agent on a host.' }],
+    });
+    expect(sessions).toContain('Check it did start, in this turn (see "Check before you report")');
+  });
+
   it('forbids asking for secrets and treats tool text as data', () => {
     const prompt = composeBotSystemPrompt(base);
     expect(prompt).toContain('Never ask anyone to paste a token');

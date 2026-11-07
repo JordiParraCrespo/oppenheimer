@@ -1222,3 +1222,11 @@ earlier note:
   entries (2,000, dated), so a save leaves the prompt cache warm, the turn's
   rules tell it to save what it learns without asking, and a full memory
   of 500 drops its oldest log fact instead of refusing.
+- `versions/mvp/25-bots.md` §2 (2026-10-29) told a bot to report only what
+  a tool confirmed, which left the checking to the bot's judgement. On
+  2026-11-07 a bot started a cloud session that could not start and said
+  so only when asked, and the owner asked bots to always check. The prompt
+  now has one section, "Check before you report": an action's tool answer
+  is read, then read back where a tool can, a failure is said first and
+  unasked, and a coding agent's report is a claim checked against its
+  evidence.
