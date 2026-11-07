@@ -113,7 +113,12 @@ const FACTS = {
  * wait instead, and a test that pairs is `test.slow()` at its call site.
  */
 const THROTTLE_RETRY_MS = 5_000;
-const THROTTLE_WINDOW_MS = 65_000;
+/**
+ * Two throttle windows: the suite pairs more machines than one window lets
+ * through, so a file whose turn comes last waits out a second. Every test that
+ * pairs is `test.slow()` (180s) or longer, which this fits.
+ */
+const THROTTLE_WINDOW_MS = 130_000;
 
 async function withoutTripping(call: () => Promise<APIResponse>): Promise<APIResponse> {
   const deadline = Date.now() + THROTTLE_WINDOW_MS;
