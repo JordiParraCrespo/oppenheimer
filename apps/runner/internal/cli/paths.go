@@ -218,6 +218,10 @@ func (p Paths) WhatsApp() string { return filepath.Join(p.State(), DirWhatsApp) 
 
 func (p Paths) Files() string { return filepath.Join(p.Home, DirFiles) }
 
+// ExecPolicy is what this host lets bots run (`runner exec`): a file in the
+// runner home, never under the workspaces a bot's own folder sits in.
+func (p Paths) ExecPolicy() string { return filepath.Join(p.Home, "exec.json") }
+
 // Socket is the local Unix socket: the runner's only listener.
 func (p Paths) Socket() string { return filepath.Join(p.Run(), "runner.sock") }
 

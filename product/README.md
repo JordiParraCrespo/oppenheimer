@@ -1265,3 +1265,9 @@ earlier note:
   chat in the console: two hooks in the session's repository send its
   transcript to the API and collect replies typed in the console ("The chat
   of a cloud session"; `research/cloud-chat-bridge/`).
+- `versions/mvp/25-bots.md` (2026-10-15) gave bots no shell at all: code
+  work and scripts went to a coding agent in a session. On 2026-11-07 the
+  owner asked for bots that run scripts themselves, without a sandbox per
+  bot: `run_command` runs one program on a paired host, through its runner,
+  only as that host's own `runner exec` policy allows, which is off until
+  the person on the host turns it on.

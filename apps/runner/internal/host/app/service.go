@@ -27,6 +27,10 @@ type Options struct {
 	// ClaudeAccount reads the claude.ai account `claude` is signed in as, ""
 	// when none. Nil reports none.
 	ClaudeAccount func() string
+	// ExecPolicies and Executor run bots' commands (`host.exec`). Either nil
+	// refuses Exec.
+	ExecPolicies ExecPolicies
+	Executor     Executor
 }
 
 // Service collects the host inventory.
@@ -38,6 +42,11 @@ type Service struct {
 	workspace string
 	version   string
 	account   func() string
+	policies  ExecPolicies
+	executor  Executor
+	// execSlots bounds the bots' commands running at once; one past it is
+	// refused, not queued, so the control plane's wait is the run's.
+	execSlots chan struct{}
 }
 
 // New builds the service.
@@ -45,6 +54,8 @@ func New(opts Options) *Service {
 	return &Service{
 		prober: opts.Prober, updater: opts.Updater, installer: opts.Installer, dirs: opts.Directories,
 		workspace: opts.WorkspaceRoot, version: opts.Version, account: opts.ClaudeAccount,
+		policies: opts.ExecPolicies, executor: opts.Executor,
+		execSlots: make(chan struct{}, domain.MaxConcurrentExecs),
 	}
 }
 

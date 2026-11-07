@@ -83,6 +83,9 @@ const INTEGER_TYPES = {
   'port.listing.ports[].port': 'int',
   'port.open.port': 'int',
   'session.watch.count': 'int',
+  'host.exec.timeoutSeconds': 'int',
+  'host.exec.result.exitCode': 'int',
+  'host.exec.result.durationMs': 'int64',
 };
 
 /** Inline objects the runner already had a name for; the rest are `<Parent><Field>`. */
@@ -145,6 +148,10 @@ const CONSTANT_DOCS = {
     'carries; the runner compacts each line first and drops one still bigger.',
   ],
   chatBatchMaxEntries: ['ChatBatchMaxEntries is the most entries one `attachment.chat` holds.'],
+  execOutputMaxBytes: [
+    'ExecOutputMaxBytes is how many bytes of each stream `host.exec.result`',
+    'keeps: the last ones.',
+  ],
 };
 
 /** `session.window.open` → `SessionWindowOpen`, `HELLO_EXPECTED` → `HelloExpected`. */
@@ -398,6 +405,9 @@ function render(schema = JSON.parse(readFileSync(schemaPath, 'utf8'))) {
     '',
     ...comment(CONSTANT_DOCS.chatBatchMaxEntries),
     `const ChatBatchMaxEntries = ${constants.chatBatchMaxEntries}`,
+    '',
+    ...comment(CONSTANT_DOCS.execOutputMaxBytes),
+    `const ExecOutputMaxBytes = ${constants.execOutputMaxBytes}`,
     '',
     ...comment(CONSTANT_DOCS.capabilities),
     ...constGroup(
