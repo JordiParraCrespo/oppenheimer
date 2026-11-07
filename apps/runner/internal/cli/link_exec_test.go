@@ -185,27 +185,63 @@ func TestTheProgramThatRunsIsTheOneThePolicyChecked(t *testing.T) {
 	}
 }
 
-// A symlink that points out of an allowed folder is judged by where it
-// points: the bot cannot plant a link inside the list to a file of its own.
-func TestALinkOutOfAnAllowedFolderIsJudgedByItsTarget(t *testing.T) {
+// A program in an allowed folder that is a link (a virtualenv's python, a
+// Homebrew command) runs under the name it was called by, not as its target:
+// a venv's python finds its packages from that name. A regression that ran
+// the resolved file would run the system interpreter instead.
+func TestALinkedProgramRunsUnderTheNameItWasCalledBy(t *testing.T) {
 	e := newExecHarness(t)
 	root := t.TempDir()
-	allowed := filepath.Join(root, "scripts")
-	if err := os.MkdirAll(allowed, 0o755); err != nil {
+	bin, cellar := filepath.Join(root, "venv", "bin"), filepath.Join(root, "cellar")
+	for _, dir := range []string{bin, cellar} {
+		if err := os.MkdirAll(dir, 0o755); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if err := os.WriteFile(filepath.Join(cellar, "tool"), []byte("#!/bin/sh\necho \"$0\"\n"), 0o755); err != nil {
 		t.Fatal(err)
 	}
-	own := filepath.Join(root, "own.sh")
-	if err := os.WriteFile(own, []byte("#!/bin/sh\necho bots-own\n"), 0o755); err != nil {
+	if err := os.Symlink(filepath.Join(cellar, "tool"), filepath.Join(bin, "tool")); err != nil {
 		t.Fatal(err)
 	}
-	if err := os.Symlink(own, filepath.Join(allowed, "report.sh")); err != nil {
-		t.Fatal(err)
-	}
-	e.allow(t, hostdomain.ExecPolicy{Mode: hostdomain.ExecAllowlist, Allow: []string{filepath.Join(allowed, "*")}})
-	e.run(t, []string{filepath.Join(allowed, "report.sh")}, 5)
+	e.allow(t, hostdomain.ExecPolicy{Mode: hostdomain.ExecAllowlist, Allow: []string{filepath.Join(bin, "*")}})
+	e.run(t, []string{filepath.Join(bin, "tool")}, 5)
 
+	if r := e.result(t); r.ExitCode == nil || *r.ExitCode != 0 || r.Stdout != filepath.Join(bin, "tool") {
+		t.Fatalf("result = %+v, want it run as %s", r, filepath.Join(bin, "tool"))
+	}
+}
+
+// An entry the person wrote through a link (`/bin` is `/usr/bin` on Debian)
+// still names the programs under it.
+func TestAnEntryWrittenThroughALinkStillMatches(t *testing.T) {
+	e := newExecHarness(t)
+	root := t.TempDir()
+	real := filepath.Join(root, "usr", "bin")
+	if err := os.MkdirAll(real, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(real, "hello"), []byte("#!/bin/sh\necho hi\n"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Symlink(real, filepath.Join(root, "bin")); err != nil {
+		t.Fatal(err)
+	}
+	e.allow(t, hostdomain.ExecPolicy{Mode: hostdomain.ExecAllowlist, Allow: []string{filepath.Join(root, "bin", "hello")}})
+	e.run(t, []string{filepath.Join(root, "bin", "hello")}, 5)
+
+	if r := e.result(t); r.Stdout != "hi" {
+		t.Fatalf("result = %+v", r)
+	}
+}
+
+// A host that runs nothing says nothing about its files: a path that exists
+// and one that does not get the same refusal.
+func TestAnOffHostAnswersTheSameForAnyPath(t *testing.T) {
+	e := newExecHarness(t)
+	e.run(t, []string{"/no/such/program"}, 5)
 	failed := e.sent.waitFor(t, "command.failed", isCommandFailed(execCommandID)).(link.CommandFailed)
-	if failed.Code != hostdomain.ErrExecRefused.Code {
-		t.Fatalf("code = %s, want %s", failed.Code, hostdomain.ErrExecRefused.Code)
+	if failed.Code != hostdomain.ErrExecDisabled.Code {
+		t.Fatalf("code = %s, want %s", failed.Code, hostdomain.ErrExecDisabled.Code)
 	}
 }

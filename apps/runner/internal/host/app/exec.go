@@ -63,19 +63,26 @@ func (s *Service) Exec(ctx context.Context, req domain.ExecRequest) (domain.Exec
 	}
 	dir = filepath.Clean(dir)
 
-	// A program named by a path is checked, and run, as the file it really
-	// is: the policy matches text, the kernel follows symlinks and `..`, and
-	// the two must agree on which program runs.
-	if strings.Contains(req.Argv[0], "/") {
-		path := req.Argv[0]
-		if !filepath.IsAbs(path) {
-			path = filepath.Join(dir, path)
-		}
-		real, err := filepath.EvalSymlinks(path)
+	// Off answers before anything on disk is looked at, so a host that runs
+	// nothing says nothing about which files it has.
+	if policy.Mode == domain.ExecOff {
+		return domain.ExecResult{}, domain.ErrExecDisabled.WithDetail(
+			"the person on this host can allow it with `runner exec mode allowlist` and `runner exec allow <program>`")
+	}
+
+	// Under an allowlist, a program named by a path is checked, and run, as
+	// one absolute path whose folders are their real ones: the policy matches
+	// text while the kernel follows symlinks and `..`, so the relative text
+	// is never handed to the kernel to read again from a symlinked folder.
+	// The program file itself is not followed, so a virtualenv's python or a
+	// Homebrew link still runs under the name it was called by.
+	if policy.Mode == domain.ExecAllowlist && strings.Contains(req.Argv[0], "/") {
+		path, err := realFolders(req.Argv[0], dir)
 		if err != nil {
 			return domain.ExecResult{}, domain.ErrExecStart.WithDetail("%s: %v", req.Argv[0], err).WithCause(err)
 		}
-		req.Argv = append([]string{real}, req.Argv[1:]...)
+		req.Argv = append([]string{path}, req.Argv[1:]...)
+		policy = withRealFolders(policy)
 	}
 
 	switch err := policy.Permits(req.Argv[0], dir); {
@@ -118,4 +125,39 @@ func (s *Service) Exec(ctx context.Context, req domain.ExecRequest) (domain.Exec
 	}
 	result.Dir = dir
 	return result, nil
+}
+
+// realFolders is program, made absolute against dir, with the symlinks in
+// its folders resolved and its last element left as written.
+func realFolders(program, dir string) (string, error) {
+	path := program
+	if !filepath.IsAbs(path) {
+		path = filepath.Join(dir, path)
+	}
+	folder, err := filepath.EvalSymlinks(filepath.Dir(path))
+	if err != nil {
+		return "", err
+	}
+	return filepath.Join(folder, filepath.Base(path)), nil
+}
+
+// withRealFolders is the policy with each path entry's folders resolved the
+// same way, so an entry written through a link (`/bin` on Debian, a folder
+// the person reached through one) names what a program is checked as. A
+// folder with a glob in it, or one that is not there, is kept as written.
+func withRealFolders(policy domain.ExecPolicy) domain.ExecPolicy {
+	allow := make([]string, 0, len(policy.Allow))
+	for _, entry := range policy.Allow {
+		folder := filepath.Dir(entry)
+		if !strings.Contains(entry, "/") || strings.ContainsAny(folder, `*?[\`) {
+			allow = append(allow, entry)
+			continue
+		}
+		if real, err := filepath.EvalSymlinks(folder); err == nil {
+			entry = filepath.Join(real, filepath.Base(entry))
+		}
+		allow = append(allow, entry)
+	}
+	policy.Allow = allow
+	return policy
 }

@@ -891,9 +891,11 @@ more (`10-sleep-wake-and-pricing.md` §7 prices the sandbox services).
   a machine never hands its shell to a bot. An allowlist entry is a program
   on `PATH` (`python3`) or an absolute path or glob (`/home/me/scripts/*`); a
   bare name never matches a path, so a `./python3` the bot wrote is not
-  `python3`. A path is checked and run as the file it really is, every
-  symlink resolved, so a link in the bot's folder cannot dress its own file
-  as an allowed script. The control plane never reads or writes the policy, so a
+  `python3`. A path is checked and run as one absolute path whose folders
+  are their real ones (entries are read the same way), so a symlinked
+  folder cannot dress the bot's own file as an allowed script, while a
+  virtualenv's python or a Homebrew link still runs under its own name. Off
+  refuses before anything on disk is looked at. The control plane never reads or writes the policy, so a
   compromised control plane runs nothing the person did not allow.
 - **The bot's own folder.** A call starts in `<workspaces>/bots/<bot id>`,
   made on first use and kept, unless it names an absolute `cwd`. That is
