@@ -133,7 +133,6 @@ func (d *Device) Open(ctx context.Context, listener app.Events) (app.Paired, err
 		_ = db.Close()
 		return app.Paired{}, err
 	}
-	d.refreshVersion(ctx)
 	device, err := container.GetFirstDevice(ctx)
 	if err != nil {
 		_ = db.Close()
@@ -149,9 +148,11 @@ func (d *Device) Open(ctx context.Context, listener app.Events) (app.Paired, err
 	return app.Paired{Phone: device.ID.ToNonAD().String(), Name: device.PushName}, nil
 }
 
-// refreshVersion asks WhatsApp Web which client version it serves, so a
-// runner older than WhatsApp's floor is not refused as outdated. A failure
-// keeps the version compiled in.
+// refreshVersion asks WhatsApp Web which client version it serves and makes
+// the next handshake announce it, the way OpenClaw's gateway passes Baileys'
+// fetched version to every socket it opens: WhatsApp refuses a version below
+// its floor as outdated (405, "err-client-outdated" while pairing), and the
+// floor moves every few weeks. A failure keeps the last version known.
 func (d *Device) refreshVersion(ctx context.Context) {
 	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
@@ -161,10 +162,26 @@ func (d *Device) refreshVersion(ctx context.Context) {
 	}
 	version, err := whatsmeow.GetLatestVersion(ctx, client)
 	if err != nil {
-		d.logger.Debug("whatsapp: could not read the current web version; keeping the built-in one", slog.Any("error", err))
+		d.logger.Warn("whatsapp: could not read the current web version; keeping "+store.GetWAVersion().String(), slog.Any("error", err))
 		return
 	}
-	store.SetWAVersion(*version)
+	announceVersion(*version)
+}
+
+var versionMu sync.Mutex
+
+// announceVersion sets the version whatsmeow sends. Its SetWAVersion only
+// changes the build hash: the AppVersion in the handshake is copied from the
+// compiled-in version when the package loads, so WhatsApp kept reading the
+// old one and called the client outdated. Set both.
+func announceVersion(version store.WAVersionContainer) {
+	versionMu.Lock()
+	defer versionMu.Unlock()
+	if store.GetWAVersion() == version {
+		return
+	}
+	store.SetWAVersion(version)
+	store.BaseClientPayload.UserAgent.AppVersion = version.ProtoAppVersion()
 }
 
 // useClientLocked makes the client for device, replacing any earlier one.
@@ -191,7 +208,7 @@ func (d *Device) current() (*whatsmeow.Client, app.Events) {
 }
 
 // Connect brings the stored device online; whatsmeow keeps it there.
-func (d *Device) Connect(_ context.Context) error {
+func (d *Device) Connect(ctx context.Context) error {
 	client, _ := d.current()
 	if client == nil {
 		return errors.New("whatsapp store not open")
@@ -199,6 +216,7 @@ func (d *Device) Connect(_ context.Context) error {
 	if client.Store.ID == nil {
 		return errors.New("no device is paired")
 	}
+	d.refreshVersion(ctx)
 	return client.Connect()
 }
 
@@ -212,6 +230,7 @@ func (d *Device) Pair(ctx context.Context, onCode func(code string, expires time
 	d.useClientLocked(d.container.NewDevice())
 	client := d.client
 	d.mu.Unlock()
+	d.refreshVersion(ctx)
 
 	codes, err := client.GetQRChannel(ctx)
 	if err != nil {
