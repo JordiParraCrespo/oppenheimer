@@ -16,9 +16,12 @@ import { useTranslation } from 'react-i18next';
 export function BotDreaming({ botId }: { botId: string }) {
   const { t } = useTranslation();
   const locale = useLocale();
-  const { data: dream, error } = useBotMemoryDream(botId);
   const request = useRequestBotMemoryDream();
   const undo = useUndoBotMemoryDream();
+  const { data: dream, error } = useBotMemoryDream(
+    botId,
+    request.isSuccess ? request.submittedAt : undefined,
+  );
   const latest = dream ?? null;
   const requested =
     request.isSuccess && (!latest || Date.parse(latest.createdAt) < request.submittedAt);

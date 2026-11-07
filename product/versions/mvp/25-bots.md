@@ -590,7 +590,8 @@ of `bot_memory_fact`, with two columns more:
   that rewrites it: duplicates merged, what is contradicted or stale
   dropped, each fact one clear sentence that still makes sense in a month,
   standing instructions kept in the profile and the rest in the log, and at
-  most five new facts the conversation clearly shows will matter. It reads
+  most five new facts the conversation clearly shows will matter; a secret
+  a note holds (a password, a key, a token) is dropped. It reads
   the conversation summary and the newest messages (24,000 tokens) as the
   ground truth the notes are checked against: a note is a guess at what
   will matter, written in the moment.
@@ -600,20 +601,23 @@ of `bot_memory_fact`, with two columns more:
     neither. A merged log fact keeps the newest day of those it came from.
   - *When.* After a turn, once the bot keeps at least 8 facts of its own,
     has written 10 since its last dream, and last dreamed a day ago or
-    never; only while *Learn automatically* is on, since a dream changes
+    never (a dream that wrote nothing counts: each one that reaches the
+    model is recorded first); only while *Learn automatically* is on, since a dream changes
     memory the way `remember` does. Settings → Memory's **Tidy now** runs
     one whatever those say. It runs on the `bot-dreams` queue and is
     counted under `/usage` as `dream`.
   - *Guards.* An answer that is not the JSON asked for, keeps none of the
     facts, keeps fewer than a fifth of them or would overfill the memory is
     not used. The write swaps the facts it read for the ones it wrote under
-    the bot's lock, and is refused if any of them changed since it read
-    them (the bot saved, the owner edited): the next dream reads them again.
+    the bot's lock and a lock on each of its facts, and is refused if any of
+    them changed since it read them (the bot saved, the owner edited or
+    forgot one): the next dream reads them again. Clear all takes the same
+    lock.
   - *Undo.* The facts it replaced are kept with the dream
     (`bot_memory_dream`, one row a bot, its latest). Undo in Settings →
     Memory puts them back with their ids and dates and deletes what the
-    dream wrote; what the bot saved since stays, its oldest log facts making
-    room past 500. Only the latest dream can be undone, once (`BOTS_041`).
+    dream wrote, except one the owner has edited since; what was saved since
+    stays, the bot's own oldest log facts making room past 500. Only the latest dream can be undone, once (`BOTS_041`).
     Clear all forgets the dream too.
   - *In the chat.* Each dream and each undo is a line outside any turn
     ("Tidied its memory · 40 facts → 22"), which the bot reads back as a

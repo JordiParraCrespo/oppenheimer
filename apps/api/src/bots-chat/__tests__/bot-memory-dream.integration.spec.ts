@@ -260,4 +260,44 @@ describe('BotMemoryDreamRepository (integration)', () => {
       { topic: 'bot-dreams', payload: { organizationId, botId: ada.id, force: true } },
     ]);
   });
+
+  it('refuses the swap when the owner edited a fact after the dream read it', async () => {
+    const ada = await createBot();
+    const fact = await remember(ada, 'one');
+    const read = await ownFacts(ada);
+    fact.edit({ content: 'one, as the owner put it' }, userActor(userId));
+    expect(await memory.save(fact)).toBe('saved');
+
+    expect(await dreams.apply(dreamOf(ada, read), BOT_MEMORY_FACTS_MAX)).toBe('changed');
+    expect(await contents(ada)).toEqual(['one, as the owner put it']);
+  });
+
+  it("keeps on undo a dreamed fact the owner edited since, and never trims the owner's own", async () => {
+    const ada = await createBot();
+    await remember(ada, 'one');
+    await remember(ada, 'Call me Ana', userActor(userId));
+    expect(await dreams.apply(dreamOf(ada, await ownFacts(ada)), BOT_MEMORY_FACTS_MAX)).toBe(
+      'applied',
+    );
+    const dreamed = (await memory.findAllForTurn(organizationId, ada.id)).find(
+      (fact) => fact.source === 'bot',
+    );
+    dreamed?.edit({ content: 'Ana squashes, she said so herself' }, userActor(userId));
+    if (dreamed) expect(await memory.save(dreamed)).toBe('saved');
+
+    await dreams.undo(organizationId, ada.id, 2);
+    expect(await contents(ada)).toEqual(['Ana squashes, she said so herself', 'Call me Ana']);
+  });
+
+  it('records a try that wrote nothing, so the trigger waits from it', async () => {
+    const ada = await createBot();
+    await remember(ada, 'one');
+    await dreams.markTried(organizationId, ada.id);
+
+    const weight = await dreams.weigh(organizationId, ada.id);
+    expect(weight.lastDreamAt).toBeInstanceOf(Date);
+    expect(weight.writesSince).toBe(1);
+    expect((await dreams.findLatest(organizationId, ada.id)).isNone()).toBe(true);
+    expect(await dreams.undo(organizationId, ada.id, BOT_MEMORY_FACTS_MAX)).toBeNull();
+  });
 });

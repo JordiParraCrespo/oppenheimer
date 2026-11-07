@@ -52,7 +52,8 @@ export class BotMemoryDreamRepository implements BotMemoryDreamRepositoryPort {
       `SELECT ${DREAM_COLUMNS} FROM bot_memory_dream WHERE "organizationId" = $1 AND "botId" = $2`,
       [organizationId, botId],
     );
-    return rows[0] ? Some(this.mapper.toDomain(rows[0])) : None;
+    const dream = rows[0] ? this.mapper.toDomain(rows[0]) : null;
+    return dream ? Some(dream) : None;
   }
 
   async weigh(organizationId: string, botId: string): Promise<DreamWeight> {
@@ -62,13 +63,13 @@ export class BotMemoryDreamRepository implements BotMemoryDreamRepositoryPort {
                 count(f.id) FILTER (
                   WHERE greatest(f."createdAt", f."updatedAt") > coalesce(d."createdAt", '-infinity')
                 )::int AS "writesSince",
-                d."createdAt" AS "lastDreamAt"
+                d."triedAt" AS "lastDreamAt"
            FROM (SELECT $1::uuid AS "organizationId", $2::uuid AS "botId") b
            LEFT JOIN bot_memory_dream d
              ON d."organizationId" = b."organizationId" AND d."botId" = b."botId"
            LEFT JOIN bot_memory_fact f
              ON f."organizationId" = b."organizationId" AND f."botId" = b."botId"
-          GROUP BY d."createdAt"`,
+          GROUP BY d."createdAt", d."triedAt"`,
         [organizationId, botId],
       );
     return {
@@ -78,35 +79,44 @@ export class BotMemoryDreamRepository implements BotMemoryDreamRepositoryPort {
     };
   }
 
+  async markTried(organizationId: string, botId: string): Promise<void> {
+    await this.dataSource.query(
+      `INSERT INTO bot_memory_dream ("organizationId", "botId", "triedAt")
+       SELECT "organizationId", id, now() FROM bot WHERE "organizationId" = $1 AND id = $2
+       ON CONFLICT ("organizationId", "botId") DO UPDATE SET "triedAt" = now(), "updatedAt" = now()`,
+      [organizationId, botId],
+    );
+  }
+
   async apply(dream: DreamWrite, max: number): Promise<'applied' | 'changed' | 'missing'> {
     return this.outbox.transaction(async (manager) => {
       if (!(await this.lockBot(manager, dream.organizationId, dream.botId))) {
         return 'missing' as const;
       }
-      const current: { id: string; updatedAt: Date }[] = await manager.query(
-        `SELECT id, "updatedAt" FROM bot_memory_fact
-          WHERE "organizationId" = $1 AND "botId" = $2 AND source = 'bot'`,
+      // Every fact of the bot, locked: an edit or a forget (which do not take
+      // the bot's lock) either committed before and is seen here, or waits
+      // until this write is done and then finds its fact gone.
+      const current: { id: string; updatedAt: Date; source: string }[] = await manager.query(
+        `SELECT id, "updatedAt", source FROM bot_memory_fact
+          WHERE "organizationId" = $1 AND "botId" = $2
+          FOR UPDATE`,
         [dream.organizationId, dream.botId],
       );
-      if (!sameFacts(current, dream.read)) return 'changed' as const;
-      const [{ others }]: { others: number }[] = await manager.query(
-        `SELECT count(*)::int AS others FROM bot_memory_fact
-          WHERE "organizationId" = $1 AND "botId" = $2 AND source <> 'bot'`,
-        [dream.organizationId, dream.botId],
-      );
-      if (others + dream.facts.length > max) return 'changed' as const;
+      const own = current.filter((fact) => fact.source === 'bot');
+      if (!sameFacts(own, dream.read)) return 'changed' as const;
+      if (current.length - own.length + dream.facts.length > max) return 'changed' as const;
       const readIds = dream.read.map((fact) => fact.id);
       const outputIds = dream.facts.map(() => randomUUID());
       await manager.query(
         `INSERT INTO bot_memory_dream
-           ("organizationId", "botId", id, "factsBefore", "factsAfter", note, snapshot, "outputFactIds", "createdAt", "undoneAt", "updatedAt")
-         SELECT $1, $2, $3, $4, $5, $6,
+           ("organizationId", "botId", "triedAt", id, "factsBefore", "factsAfter", note, snapshot, "outputFactIds", "createdAt", "undoneAt", "updatedAt")
+         SELECT $1, $2, now(), $3, $4, $5, $6,
                 coalesce((SELECT jsonb_agg(to_jsonb(f) ORDER BY f."createdAt", f.id)
                             FROM bot_memory_fact f
                            WHERE f."organizationId" = $1 AND f."botId" = $2 AND f.id = ANY($7::uuid[])), '[]'::jsonb),
                 $8::uuid[], now(), NULL, now()
          ON CONFLICT ("organizationId", "botId") DO UPDATE SET
-           id = EXCLUDED.id, "factsBefore" = EXCLUDED."factsBefore", "factsAfter" = EXCLUDED."factsAfter",
+           "triedAt" = now(), id = EXCLUDED.id, "factsBefore" = EXCLUDED."factsBefore", "factsAfter" = EXCLUDED."factsAfter",
            note = EXCLUDED.note, snapshot = EXCLUDED.snapshot, "outputFactIds" = EXCLUDED."outputFactIds",
            "createdAt" = EXCLUDED."createdAt", "undoneAt" = NULL, "updatedAt" = now()`,
         [
@@ -149,13 +159,14 @@ export class BotMemoryDreamRepository implements BotMemoryDreamRepositoryPort {
       if (!(await this.lockBot(manager, organizationId, botId))) return null;
       const [row]: DreamRow[] = await manager.query(
         `SELECT ${DREAM_COLUMNS}, "outputFactIds" FROM bot_memory_dream
-          WHERE "organizationId" = $1 AND "botId" = $2 AND "undoneAt" IS NULL`,
+          WHERE "organizationId" = $1 AND "botId" = $2 AND id IS NOT NULL AND "undoneAt" IS NULL`,
         [organizationId, botId],
       );
       if (!row) return null;
+      // What the dream wrote, but not a fact of it the owner has edited since: that is theirs.
       await manager.query(
         `DELETE FROM bot_memory_fact
-          WHERE "organizationId" = $1 AND "botId" = $2 AND id = ANY($3::uuid[])`,
+          WHERE "organizationId" = $1 AND "botId" = $2 AND id = ANY($3::uuid[]) AND source = 'bot'`,
         [organizationId, botId, row.outputFactIds ?? []],
       );
       await manager.query(
@@ -167,11 +178,11 @@ export class BotMemoryDreamRepository implements BotMemoryDreamRepositoryPort {
          ON CONFLICT (id) DO NOTHING`,
         [organizationId, botId],
       );
-      // Past the cap, what the bot saved since the dream made room by its oldest log facts.
+      // Past the cap, the bot's own oldest log facts make room; the person's never do.
       await manager.query(
         `DELETE FROM bot_memory_fact WHERE id IN (
            SELECT id FROM bot_memory_fact
-            WHERE "organizationId" = $1 AND "botId" = $2 AND tier = 'log'
+            WHERE "organizationId" = $1 AND "botId" = $2 AND tier = 'log' AND source = 'bot'
             ORDER BY "createdAt", id
             LIMIT greatest((SELECT count(*) FROM bot_memory_fact
                              WHERE "organizationId" = $1 AND "botId" = $2) - $3, 0))`,
@@ -183,7 +194,7 @@ export class BotMemoryDreamRepository implements BotMemoryDreamRepositoryPort {
           RETURNING ${DREAM_COLUMNS}`,
         [organizationId, botId],
       );
-      return this.mapper.toDomain(undone);
+      return undone ? this.mapper.toDomain(undone) : null;
     });
   }
 

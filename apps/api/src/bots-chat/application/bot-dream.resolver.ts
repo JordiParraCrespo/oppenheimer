@@ -33,7 +33,8 @@ import { BotModelAccessResolver } from './bot-model-access.resolver';
  * owner asked); its facts, the ones it wrote itself to rewrite and the rest to
  * leave; its conversation summary and newest messages, the ground truth the
  * notes are checked against; and one tool-less call of its own model, read by
- * `readDream`. Null when there is nothing to do, or when the answer is one
+ * `readDream`. Each one that reaches the model is recorded first
+ * (`markTried`). Null when there is nothing to do, or when the answer is one
  * nothing of should be used. A model that fails throws, and the queue retries.
  */
 @Injectable()
@@ -61,6 +62,9 @@ export class BotDreamResolver {
     }
     const target = await this.access.ownModel(organizationId, botId, now);
     if (!target) return null;
+    // Before the call: a dream that answers nothing usable, or loses to a
+    // save, still holds the next one off for a day.
+    await this.dreams.markTried(organizationId, botId);
     const facts = (await this.memory.findAllForTurn(organizationId, botId))
       .map((fact) => this.mapper.toDreamFact(fact))
       .reverse();

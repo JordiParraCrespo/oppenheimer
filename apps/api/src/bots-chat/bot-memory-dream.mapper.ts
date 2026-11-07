@@ -11,6 +11,7 @@ import {
 /** A bot's latest dream: its row, as the domain reads it, and as Settings → Memory shows it. */
 @Injectable()
 export class BotMemoryDreamMapper {
+  /** A row's dream; null for a row that only records a try. */
   toDomain(
     record: Pick<
       BotMemoryDreamOrmEntity,
@@ -23,13 +24,14 @@ export class BotMemoryDreamMapper {
       | 'createdAt'
       | 'undoneAt'
     >,
-  ): StoredDream {
+  ): StoredDream | null {
+    if (!record.id || !record.createdAt) return null;
     return {
       id: record.id,
       organizationId: record.organizationId,
       botId: record.botId,
-      factsBefore: record.factsBefore,
-      factsAfter: record.factsAfter,
+      factsBefore: record.factsBefore ?? 0,
+      factsAfter: record.factsAfter ?? 0,
       note: record.note,
       createdAt: new Date(record.createdAt),
       undoneAt: record.undoneAt ? new Date(record.undoneAt) : null,
