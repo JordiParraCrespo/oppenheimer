@@ -110,6 +110,7 @@ function toBot(dto: BotResponseDto): BotEntity {
     new Date(dto.lastActivityAt),
     dto.lastMessagePreview,
     dto.sections,
+    dto.routineSpendGuard,
   );
 }
 
@@ -569,6 +570,16 @@ export class BotsRepository {
         heyApiSdk.readBotAttachment({ path: { id, attachmentId }, parseAs: 'blob' }),
       );
       return body as unknown as Blob;
+    });
+  }
+
+  /**
+   * The owner is in the bot's chat: what its routines' spend guard counts
+   * from, and what resumes the routines it paused while they were away.
+   */
+  markSeen(id: string): Promise<void> {
+    return callApi(BotsErrors.MARK_SEEN_FAILED, async (api) => {
+      await api.body(heyApiSdk.markBotSeen({ path: { id } }));
     });
   }
 

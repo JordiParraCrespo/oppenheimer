@@ -50,6 +50,8 @@ import { DeleteBotSkillCommandHandler } from './commands/delete-bot-skill/delete
 import { DeleteBotSkillHttpController } from './commands/delete-bot-skill/delete-bot-skill.http.controller';
 import { DeleteModelProviderCredentialCommandHandler } from './commands/delete-model-provider-credential/delete-model-provider-credential.command-handler';
 import { DeleteModelProviderCredentialHttpController } from './commands/delete-model-provider-credential/delete-model-provider-credential.http.controller';
+import { MarkBotSeenCommandHandler } from './commands/mark-bot-seen/mark-bot-seen.command-handler';
+import { MarkBotSeenHttpController } from './commands/mark-bot-seen/mark-bot-seen.http.controller';
 import { PollChatgptLoginCommandHandler } from './commands/poll-chatgpt-login/poll-chatgpt-login.command-handler';
 import { PollChatgptLoginHttpController } from './commands/poll-chatgpt-login/poll-chatgpt-login.http.controller';
 import { PutModelProviderCredentialCommandHandler } from './commands/put-model-provider-credential/put-model-provider-credential.command-handler';
@@ -128,6 +130,7 @@ const httpControllers = [
   UpdatePersonAboutHttpController,
   CreateBotMemoryFactHttpController,
   ClearBotMemoryHttpController,
+  MarkBotSeenHttpController,
   UpdateBotMemoryFactHttpController,
   DeleteBotMemoryFactHttpController,
   FindBotSkillsHttpController,
@@ -159,6 +162,7 @@ const commandHandlers: Provider[] = [
   UpdateBotMemoryFactCommandHandler,
   DeleteBotMemoryFactCommandHandler,
   ClearBotMemoryCommandHandler,
+  MarkBotSeenCommandHandler,
   UpdatePersonAboutCommandHandler,
   CreateBotSkillCommandHandler,
   UpdateBotSkillCommandHandler,

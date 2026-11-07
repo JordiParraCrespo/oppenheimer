@@ -1229,6 +1229,27 @@ earlier note:
   entries (2,000, dated), so a save leaves the prompt cache warm, the turn's
   rules tell it to save what it learns without asking, and a full memory
   of 500 drops its oldest log fact instead of refusing.
+- `versions/mvp/26-bot-routines.md` §6 (2026-10-16) said a bot gets a
+  heartbeat only when asked for one in chat, through `update_routine`. On
+  2026-11-06 the owner asked for bots to be proactive by default, the way
+  OpenClaw's are: a bot is now given a **Heartbeat** routine as soon as it
+  has a job (its `INSTRUCTIONS.md` first written), hourly at a minute
+  spread by its id, saved as its owner within the scopes of the credential
+  that wrote the job, which the owner pauses or deletes like any routine.
+  A beat with nothing to say calls `nothing_to_report`, offered only on
+  turns nobody is waiting on. Bots that had a job before get none until
+  asked (26 §6, "Decided").
+- `versions/mvp/26-bot-routines.md` §6 (2026-10-18) designed the routines'
+  spend guard as a nudge card, then a pause with a card to resume, and a
+  per-bot "don't ask again". On 2026-11-07 the owner asked for it to work
+  like an agent that stops watching a pull request: it stops on its own and
+  comes back when the person does. Built that way: after 3 routine reports
+  the owner has not seen, or 72 h away from the bot's chat, every routine
+  of the bot pauses as `unattended` with one Inbox line, and the owner's
+  next visit to the chat (or message, or decided card) resumes them. No
+  cards; the thresholds are workspace automation settings, and a per-bot
+  "Pause while you're away" switch turns it off (26 §6, "Changed
+  2026-11-07").
 - `versions/mvp/25-bots.md` §4.1 (2026-10-29) left what a bot knows about
   its owner spread across their bots: each `person` fact was edited on the
   bot that learned it, read only on the others, and the owner had no place

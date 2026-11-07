@@ -1705,6 +1705,7 @@
         "agent_unavailable": "the agent could not start",
         "bot_provider_missing": "the bot’s model provider has no key or sign-in",
         "owner_lost_access": "its owner can no longer run it",
+        "unattended": "you were away; it starts again now that you are back",
         "unknown": "something went wrong"
       },
       "openSession": "Open session",
@@ -1961,6 +1962,9 @@
         "title": "Routines",
         "subtitle": "Work the bot does on a schedule or when something happens.",
         "empty": "Routines are tasks this bot runs on a schedule or when something happens. Ask it in chat to set one up.",
+        "guard": "Pause while you’re away",
+        "guardHint": "Stop its routines while you’re not reading what they say. They start again when you open this chat.",
+        "guardFailed": "Could not change whether the routines pause while you’re away.",
         "askInChat": "Ask in chat",
         "schedule": "Schedule · {{when}}",
         "github": "GitHub · {{when}}",
@@ -2068,6 +2072,9 @@
       "checkedHint": "Checked bots show in {{section}}.",
       "manageAll": "Manage in {{employees}}",
       "hide": "Hide from {{section}}"
+    },
+    "routineGuard": {
+      "notice": "I paused my routines while you were away. They start again when you open this chat."
     }
   },
   "automations": {
@@ -2121,7 +2128,8 @@
       "overlapping": "Skipped: a run was still going",
       "missed": "Skipped: the slot was missed",
       "not_launchable": "Skipped: the session could not start",
-      "agent_unavailable": "Skipped: the agent is not on the host"
+      "agent_unavailable": "Skipped: the agent is not on the host",
+      "unattended": "Skipped: its bot’s owner is away"
     },
     "pausedReason": {
       "user": "Paused. Triggers are ignored until you resume it; Run now still works.",
@@ -2129,7 +2137,8 @@
       "host_unpaired": "Paused because its host was removed. Pick another host in Edit to resume it.",
       "owner_lost_access": "Paused because its owner can no longer run it.",
       "bot_provider_missing": "Paused because its bot’s model provider has no key or sign-in. Add one, then resume it.",
-      "cloud_key_missing": "Paused because its owner has no key for its cloud provider, or the provider refused it. Connect it in Settings → Cloud agents, then resume it."
+      "cloud_key_missing": "Paused because its owner has no key for its cloud provider, or the provider refused it. Connect it in Settings → Cloud agents, then resume it.",
+      "unattended": "Paused while you were away from its bot’s chat. It starts again when you open the chat."
     },
     "frequency": {
       "once": {

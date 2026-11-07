@@ -299,6 +299,7 @@
       "agent_unavailable": "el agente no pudo arrancar",
       "bot_provider_missing": "el proveedor de modelos del bot no tiene clave ni sesión",
       "owner_lost_access": "su propietario ya no puede ejecutarla",
+      "unattended": "no estabas; vuelve a funcionar ahora que has vuelto",
       "unknown": "algo salió mal"
     },
     "openSession": "Abrir sesión",
@@ -556,6 +557,9 @@
       "title": "Rutinas",
       "subtitle": "Trabajo que el bot hace según un horario o cuando pasa algo.",
       "empty": "Las rutinas son tareas que este bot ejecuta según un horario o cuando pasa algo. Pídele en el chat que configure una.",
+      "guard": "Pausar mientras no estás",
+      "guardHint": "Detén sus rutinas mientras no lees lo que dicen. Vuelven a funcionar cuando abres este chat.",
+      "guardFailed": "No se pudo cambiar si las rutinas se pausan mientras no estás.",
       "askInChat": "Pedir en el chat",
       "schedule": "Horario · {{when}}",
       "github": "GitHub · {{when}}",
@@ -663,5 +667,8 @@
     "checkedHint": "Los bots marcados aparecen en {{section}}.",
     "manageAll": "Gestionar en {{employees}}",
     "hide": "Ocultar de {{section}}"
+  },
+  "routineGuard": {
+    "notice": "He pausado mis rutinas mientras no estabas. Vuelven a funcionar cuando abras este chat."
   }
 }

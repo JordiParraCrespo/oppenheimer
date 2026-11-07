@@ -179,14 +179,14 @@ describe('bots chat (integration)', () => {
     const documentMapper = new BotDocumentMapper();
     bots = new BotRepository(
       dataSource.getRepository(BotOrmEntity),
-      dataSource,
       new BotMapper(),
       documentMapper,
+      new OutboxService(dataSource),
     );
     documents = new BotDocumentRepository(
       dataSource.getRepository(BotDocumentOrmEntity),
       dataSource.getRepository(BotDocumentRevisionOrmEntity),
-      dataSource,
+      new OutboxService(dataSource),
       documentMapper,
     );
     memory = new BotMemoryFactRepository(
@@ -446,6 +446,60 @@ describe('bots chat (integration)', () => {
         reason: null,
       },
     });
+  });
+
+  // The spend guard's count (`26-bot-routines.md` §6). What breaks this: a
+  // quiet heartbeat counted as a report nobody read, a report from before the
+  // owner was last in the chat counted again, a report written after it from
+  // a turn queued before it missed, or another bot's counted.
+  it('counts the routine turns that said something since a time, and nothing else', async () => {
+    const bot = await create('Guarded Bot');
+    const other = await create('Other Bot');
+    const props = (botId: string) => ({
+      organizationId: bot.organizationId,
+      botId,
+      requestedByUserId: userId,
+      provider: 'glm' as const,
+      model: 'glm-5.3',
+      effort: null,
+    });
+    const queueRoutineTurn = async (botId: string, n: number, says: boolean) => {
+      const { turn, opening } = routineTurn(props(botId), {
+        automationId: `7b2d5a0f-0000-4000-8000-00000000000${n}`,
+        runId: `7b2d5a0f-0000-4000-8000-00000000010${n}`,
+        name: 'Heartbeat',
+        instructions: 'Check in.',
+      });
+      await turns.enqueueOnce(turn, opening, null, null);
+      if (says) {
+        await dataSource.query(
+          `INSERT INTO bot_message ("organizationId", "botId", "turnId", role, content, position)
+           VALUES ($1, $2, $3, 'assistant', 'Two PRs need you.', 1)`,
+          [bot.organizationId, botId, turn.id],
+        );
+      }
+      return turn;
+    };
+    const since = new Date(Date.now() - 60_000);
+    const earlier = new Date(since.getTime() - 60_000);
+    // Said before the owner's visit: seen.
+    const said = await queueRoutineTurn(bot.id, 1, true);
+    await dataSource.query(`UPDATE bot_message SET "createdAt" = $2 WHERE "turnId" = $1`, [
+      said.id,
+      earlier,
+    ]);
+    // Queued before the visit, said after it: unseen (the regression).
+    const late = await queueRoutineTurn(bot.id, 2, true);
+    await dataSource.query(`UPDATE bot_turn SET "createdAt" = $2 WHERE id = $1`, [
+      late.id,
+      earlier,
+    ]);
+    await queueRoutineTurn(bot.id, 3, false);
+    await queueRoutineTurn(bot.id, 4, true);
+    await queueRoutineTurn(other.id, 5, true);
+
+    expect(await turns.countRoutineReportsSince(bot.organizationId, bot.id, since)).toBe(2);
+    expect(await turns.countRoutineReportsSince(bot.organizationId, other.id, since)).toBe(1);
   });
 
   it('never strands a message sent while the running turn ends: it is staged by one or the other', async () => {
