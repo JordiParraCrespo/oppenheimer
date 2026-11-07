@@ -90,15 +90,17 @@ export class BotRepository extends ScopedRepositoryBase<BotOrmEntity> implements
       .select('bot.id', 'id')
       .getRawOne<{ id: string }>();
     if (!found) return false;
-    // At most once a minute: a chat opened and written to in a burst is one write.
+    // Every visit is stored: a late pause reads it to know the owner came
+    // back, so a skipped write would let it stop again what the visit resumed.
+    // Never backwards, though: two visits that land out of order keep the later.
     await this.repository
       .createQueryBuilder()
       .update(BotOrmEntity)
       .set({ ownerSeenAt: now })
-      .where('id = :botId AND "organizationId" = :organizationId AND "ownerSeenAt" < :fresh', {
+      .where('id = :botId AND "organizationId" = :organizationId AND "ownerSeenAt" < :now', {
         botId,
         organizationId: scope.organizationId,
-        fresh: new Date(now.getTime() - 60_000),
+        now,
       })
       .execute();
     return true;

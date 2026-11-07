@@ -20,7 +20,8 @@ import { BotModelAccessResolver } from '../bot-model-access.resolver';
  * is idempotent, and only the pause of the routine the command names puts
  * the line, so the owner hears it once however many routines stopped. An
  * owner back in the chat since the pause (the event arrived late, or was
- * retried) has already resumed them: nothing is paused again.
+ * retried) has already resumed them, and an owner who turned the guard off
+ * for the bot meanwhile wants them running: nothing is paused again.
  */
 @Injectable()
 export class BotUnattendedRoutinesDomainEventHandler {
@@ -45,7 +46,8 @@ export class BotUnattendedRoutinesDomainEventHandler {
     if (event.activity !== 'paused' || event.pausedReason !== 'unattended') return;
     const { organizationId, botId } = event;
     const bot = await this.bots.findBot(organizationId, botId);
-    if (!bot || ownerBackSince(bot.ownerSeenAt, new Date(event.metadata.timestamp))) return;
+    if (!bot?.routineSpendGuard) return;
+    if (ownerBackSince(bot.ownerSeenAt, new Date(event.metadata.timestamp))) return;
     const teller = await this.commands.execute<PauseUnattendedRoutinesCommand, string | null>(
       new PauseUnattendedRoutinesCommand({ organizationId, botId }),
     );

@@ -17,12 +17,15 @@ import { BotUnattendedRoutinesDomainEventHandler } from '../event-handlers/bot-u
 
 const pausedAt = new Date('2026-11-07T12:00:00Z');
 
-function setup(options: { teller?: string | null; seenAt?: Date; gone?: boolean } = {}) {
+function setup(
+  options: { teller?: string | null; seenAt?: Date; gone?: boolean; guard?: boolean } = {},
+) {
   const commands = { execute: vi.fn(async () => options.teller ?? 'routine-1') };
   const bot = {
     id: 'bot-1',
     createdByUserId: 'owner-1',
     ownerSeenAt: options.seenAt ?? new Date(pausedAt.getTime() - 4 * 86_400_000),
+    routineSpendGuard: options.guard ?? true,
   } as BotEntity;
   const bots = {
     findBot: vi.fn<BotModelAccessResolver['findBot']>(async () => (options.gone ? null : bot)),
@@ -80,6 +83,13 @@ describe('BotUnattendedRoutinesDomainEventHandler', () => {
   // every routine they had just resumed, while they sat in the chat.
   it('stops nothing more when the owner was back in the chat after the pause', async () => {
     const { commands, put, handler } = setup({ seenAt: new Date(pausedAt.getTime() + 1000) });
+    await handler.handle(paused('routine-1'));
+    expect(commands.execute).not.toHaveBeenCalled();
+    expect(put).not.toHaveBeenCalled();
+  });
+
+  it('stops nothing more for a bot whose owner turned the guard off since the pause', async () => {
+    const { commands, put, handler } = setup({ guard: false });
     await handler.handle(paused('routine-1'));
     expect(commands.execute).not.toHaveBeenCalled();
     expect(put).not.toHaveBeenCalled();

@@ -41,7 +41,7 @@ export interface BotRepositoryPort {
   namesIn(scope: AccessScope): Promise<string[]>;
   /**
    * The owner is in the bot's chat now: its `ownerSeenAt` moves to `now`,
-   * at most once a minute. False when the caller's workspace has no such bot.
+   * never backwards. False when the caller's workspace has no such bot.
    */
   markSeen(scope: AccessScope, botId: string, now: Date): Promise<boolean>;
   /**

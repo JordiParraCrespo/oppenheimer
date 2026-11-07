@@ -306,12 +306,14 @@ before this get no heartbeat until asked.
   | 3 routine reports the owner has not seen (quiet turns do not count), or 72 h since the owner was last in the bot's chat, whatever the routines said | **Pause**: the run is skipped as `unattended`, every live routine of the bot pauses with `pausedReason = 'unattended'`, and one Inbox line says "I paused my routines while you were away. They start again when you open this chat." |
   | The owner is back: opens the bot's chat (or brings its tab back into view), writes to it, or decides one of its cards | **Resume**: every routine paused as `unattended`, and only those, starts again; the chat's lines say so |
 
-  - Presence is `bot."ownerSeenAt"` (not `ownerReadAt`), written at most
-    once a minute by `POST /bots/:id/seen` and by sending a message,
-    deciding an approval, or answering or dismissing a question. The
-    console's chat sends it when it opens, when its tab comes back into
-    view, and every five minutes while it stays in view, so what a routine
-    says into an open chat counts as read. A new bot is seen at its
+  - Presence is `bot."ownerSeenAt"` (not `ownerReadAt`), written by
+    `POST /bots/:id/seen` and by sending a message, deciding an approval,
+    or answering or dismissing a question; every visit is stored, never
+    backwards, so a late pause can tell the owner came back. The console's
+    chat sends it when it opens, when its tab comes back into view, and at
+    most once a minute while the owner is active in it (a key, the pointer,
+    a scroll, focus). A tab merely left open is not a reader: a chat in
+    view with nobody at it stops like any other. A new bot is seen at its
     creation.
   - The 72 h rule stops a heartbeat that only ever stays quiet: quiet
     beats still cost a model turn each.
@@ -331,7 +333,8 @@ before this get no heartbeat until asked.
     with no ceiling: they only stop routines sooner or later.
   - **Pause while you're away**, a switch on the bot's Routines tab
     (`bot."routineSpendGuard"`, on by default), turns the guard off for a
-    bot that should run unattended.
+    bot that should run unattended; turning it off resumes what it had
+    paused, and a pause delivered after it was turned off does nothing.
 - A routine **runs as its owner** (note 16 §Q5), re-checked at dispatch,
   with the bot's permissions as they are at the run; a routine never
   widens them. A routine created **by the bot** goes through

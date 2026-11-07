@@ -1,6 +1,8 @@
 import { randomUUID } from 'node:crypto';
+import type { CommandBus } from '@nestjs/cqrs';
 import type { AccessScope } from '@oppenheimer/backend-authz';
 import { None, Some } from 'oxide.ts';
+import { ResumeUnattendedRoutinesCommand } from '../../../../automations/commands/resume-unattended-routines/resume-unattended-routines.command';
 import type { HostAccessPort } from '../../../../hosts/application/host-access.port';
 import { BotLookupResolver } from '../../../application/bot-lookup.resolver';
 import type { BotRepositoryPort } from '../../../database/bot.repository.port';
@@ -46,15 +48,17 @@ function setup() {
   const hosts = {
     assertUsable: vi.fn<HostAccessPort['assertUsable']>(async () => ({ probedTools: null })),
   } satisfies HostAccessPort;
+  const commands = { execute: vi.fn(async () => 0) };
   const handler = new UpdateBotCommandHandler(
     new BotLookupResolver(bots as unknown as BotRepositoryPort),
     bots as unknown as BotRepositoryPort,
     groups as unknown as BotGroupRepositoryPort,
     hosts,
+    commands as unknown as CommandBus,
   );
   const update = (input: UpdateBotCommand['input']) =>
     handler.execute(new UpdateBotCommand({ scope, botId: bot.id, input }));
-  return { bot, bots, groups, hosts, update };
+  return { bot, bots, groups, hosts, update, commands };
 }
 
 describe('UpdateBotCommandHandler', () => {
@@ -93,5 +97,20 @@ describe('UpdateBotCommandHandler', () => {
     const { bots, update } = setup();
     bots.save.mockResolvedValueOnce('missing');
     await expect(update({ name: 'Bea' })).rejects.toMatchObject({ code: 'BOTS_001' });
+  });
+
+  // `26-bot-routines.md` §6. What breaks this: an owner who turns the spend
+  // guard off still finding the routines it paused stopped.
+  it('resumes what the spend guard paused when the owner turns it off, and only then', async () => {
+    const { bot, commands, update } = setup();
+    await update({ routineSpendGuard: true });
+    await update({ name: 'Bea' });
+    expect(commands.execute).not.toHaveBeenCalled();
+
+    await update({ routineSpendGuard: false });
+    expect(bot.routineSpendGuard).toBe(false);
+    const [resume] = commands.execute.mock.calls[0] as unknown as [ResumeUnattendedRoutinesCommand];
+    expect(resume).toBeInstanceOf(ResumeUnattendedRoutinesCommand);
+    expect(resume).toMatchObject({ organizationId, botId: bot.id });
   });
 });

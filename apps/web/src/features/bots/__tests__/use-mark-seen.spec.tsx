@@ -4,10 +4,11 @@ import { useMarkSeen } from '../hooks/use-mark-seen';
 
 /**
  * The owner in a bot's chat, as the spend guard reads it (`26-bot-routines.md`
- * §6). The regressions this guards: a chat left open and in view whose
- * routines pause anyway, because what they said into it counted as unseen
- * (the chat only said so when it opened); and a chat in a background tab
- * counted as read.
+ * §6). The regressions this guards: routines that pause on an owner reading
+ * the chat, because what they said while the owner read counted as unseen;
+ * a tab left open overnight counted as a reader for good, so the routines
+ * never stop; a chat in a background tab counted as read; and a write per
+ * mouse move.
  */
 
 const state = vi.hoisted(() => ({ mutate: vi.fn() }));
@@ -17,6 +18,8 @@ vi.mock('@oppenheimer/frontend-consumer/react', () => ({
 }));
 
 let visibility: DocumentVisibilityState = 'visible';
+const MINUTE = 60 * 1000;
+const move = () => window.dispatchEvent(new Event('pointermove'));
 
 beforeEach(() => {
   vi.useFakeTimers();
@@ -32,19 +35,41 @@ afterEach(() => {
 });
 
 describe('useMarkSeen', () => {
-  it('says the owner is in the chat when it opens, and again every few minutes in view', () => {
+  it('says the owner is in the chat when it opens', () => {
     renderHook(() => useMarkSeen('bot-1'));
     expect(state.mutate).toHaveBeenCalledTimes(1);
     expect(state.mutate).toHaveBeenCalledWith({ id: 'bot-1' });
+  });
 
-    act(() => vi.advanceTimersByTime(5 * 60 * 1000));
+  it('says it again while the owner is active, at most once a minute', () => {
+    renderHook(() => useMarkSeen('bot-1'));
+    act(() => {
+      vi.advanceTimersByTime(30 * 1000);
+      move();
+      window.dispatchEvent(new Event('keydown'));
+    });
+    expect(state.mutate).toHaveBeenCalledTimes(1);
+
+    act(() => {
+      vi.advanceTimersByTime(31 * 1000);
+      move();
+    });
     expect(state.mutate).toHaveBeenCalledTimes(2);
   });
 
-  it('says nothing while the tab is hidden, and says it when the tab comes back', () => {
+  it('counts a tab left open with nobody at it as nobody, however long it stays in view', () => {
+    renderHook(() => useMarkSeen('bot-1'));
+    act(() => vi.advanceTimersByTime(3 * 24 * 60 * MINUTE));
+    expect(state.mutate).toHaveBeenCalledTimes(1);
+  });
+
+  it('says nothing from a hidden tab, and says it when the tab comes back', () => {
     visibility = 'hidden';
     renderHook(() => useMarkSeen('bot-1'));
-    act(() => vi.advanceTimersByTime(15 * 60 * 1000));
+    act(() => {
+      vi.advanceTimersByTime(5 * MINUTE);
+      move();
+    });
     expect(state.mutate).not.toHaveBeenCalled();
 
     visibility = 'visible';
@@ -54,10 +79,13 @@ describe('useMarkSeen', () => {
     expect(state.mutate).toHaveBeenCalledTimes(1);
   });
 
-  it('stops when the chat closes', () => {
+  it('stops listening when the chat closes', () => {
     const { unmount } = renderHook(() => useMarkSeen('bot-1'));
     unmount();
-    act(() => vi.advanceTimersByTime(15 * 60 * 1000));
+    act(() => {
+      vi.advanceTimersByTime(5 * MINUTE);
+      move();
+    });
     expect(state.mutate).toHaveBeenCalledTimes(1);
   });
 });

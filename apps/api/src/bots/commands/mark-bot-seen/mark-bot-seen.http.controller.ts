@@ -37,7 +37,7 @@ export class MarkBotSeenHttpController {
   @ApiOperation({
     summary: 'Say the owner is in a bot’s chat',
     description:
-      'The console sends it when the chat opens. It resumes the routines the spend guard paused while the owner was away, and is written at most once a minute.',
+      'The console sends it when the chat opens, when its tab comes back into view, and at most once a minute while the owner is active in it. It resumes the routines the spend guard paused while the owner was away.',
   })
   @ApiResponse({ status: 204 })
   @ApiProblemResponse({ status: 404, description: 'Bot not found', code: 'BOTS_001' })

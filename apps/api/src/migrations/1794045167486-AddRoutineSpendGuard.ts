@@ -8,10 +8,10 @@ import type { MigrationInterface, QueryRunner } from 'typeorm';
  * - `bot."ownerSeenAt"`: when the owner was last in the bot's chat (opened
  *   it, wrote to it, decided one of its cards). `NOT NULL DEFAULT now()`, so
  *   a new bot is seen at its creation and the bots already here count from
- *   this migration, never as long gone. It is written at most once a minute
- *   (the write is conditional on the old value), and only on what is
- *   already a person's action in the chat, so it adds no hot write to `bot`
- *   beyond the `lastMessageAt` a message already writes.
+ *   this migration, never as long gone. It is written on a person's action
+ *   in the chat, and by the console at most once a minute while they are
+ *   active in it, so it adds no hot write to `bot` beyond the
+ *   `lastMessageAt` a message already writes.
  * - `bot."routineSpendGuard"`: the owner can turn the guard off for one bot
  *   that should run unattended. `NOT NULL DEFAULT true`: on for every bot.
  * - `automation_settings."unattendedReports"` and `"unattendedAwaySeconds"`:
