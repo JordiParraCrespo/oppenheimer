@@ -11,6 +11,7 @@
 //
 //   node demo.mjs [--keep]     --keep leaves the server up to look at the chat
 import { spawn } from 'node:child_process';
+import { randomUUID } from 'node:crypto';
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
@@ -66,7 +67,8 @@ writeFileSync(
 console.log(`project: ${project}`);
 
 // The nested agent is its own session: it must not borrow this cloud
-// session's identity (the hooks would stream under its id).
+// session's identity (the hooks would stream under its id). It keeps the rest
+// of the environment, which is how it reaches the model from in here.
 const env = {
   ...process.env,
   OPPENHEIMER_URL: URL_BASE,
@@ -82,6 +84,7 @@ for (const name of [
   delete env[name];
 }
 
+const sessionId = randomUUID();
 const task =
   'Create a file named notes.txt containing exactly the line ALPHA. Then run `sleep 8` in the shell. Then say "first task done".';
 const agent = spawn(
@@ -90,6 +93,10 @@ const agent = spawn(
   [
     '-p',
     task,
+    // Named here, as the launch path names a cloud session, so nothing has to
+    // find it afterwards.
+    '--session-id',
+    sessionId,
     '--allowedTools',
     'Write',
     'Edit',
@@ -105,13 +112,13 @@ agent.stdout.on('data', (chunk) => (output += chunk));
 
 // The person, watching the chat: once the agent is under way, reply.
 const auth = { authorization: `Bearer ${KEY}`, 'content-type': 'application/json' };
-let sessionId;
-for (let i = 0; i < 120 && !sessionId; i++) {
+let streamed = 0;
+for (let i = 0; i < 120 && streamed === 0; i++) {
   await new Promise((resolve) => setTimeout(resolve, 1000));
   const sessions = await (await fetch(`${URL_BASE}/api/sessions`, { headers: auth })).json();
-  sessionId = sessions.find((s) => s.lines > 2)?.id;
+  streamed = sessions.find((s) => s.id === sessionId)?.lines ?? 0;
 }
-if (!sessionId) throw new Error('no transcript reached the server');
+if (streamed === 0) throw new Error('no transcript reached the server');
 console.log(`streaming: session ${sessionId}`);
 
 const reply = 'Thanks. Now append a second line, BRAVO, to notes.txt and say "second task done".';

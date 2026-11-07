@@ -106,13 +106,16 @@
     </form>
     <script>
       const params = new URLSearchParams(location.search);
-      const key = params.get('key') ?? '';
+      const key = params.get('key') ?? document.querySelector('meta[name="opp-key"]')?.content ?? '';
       const chat = document.getElementById('chat');
       const statusLine = document.getElementById('status');
       const picker = document.getElementById('session');
       let current = params.get('session');
       let source;
       const replies = new Map();
+      // EventSource reconnects on its own and the server replays the history on
+      // every connection, so a line already drawn is skipped, not drawn again.
+      const seen = new Set();
 
       const api = (path, init = {}) =>
         fetch(path, { ...init, headers: { ...(init.headers ?? {}), authorization: `Bearer ${key}`, 'content-type': 'application/json' } });
@@ -134,39 +137,42 @@
       const textOf = (content) =>
         typeof content === 'string' ? content : (content ?? []).filter((b) => b.type === 'text').map((b) => b.text).join('\n');
 
-      // One transcript line as chat items: the same JSONL the runner reads for a
-      // host session's chat view, so the console's adapter would read it as is.
-      function render(line) {
+      // One transcript line as chat items, `{ kind, who, text }`: the same JSONL
+      // the runner reads for a host session's chat view. Pure, so the console's
+      // adapter can take it as it is and the drawing below stays a straight map.
+      function lineToItems(line) {
         const message = line.message;
-        if (line.type === 'user' && message) {
-          if (line.isMeta) return;
-          if (typeof message.content === 'string') return add('user', 'You', message.content);
-          for (const block of message.content ?? []) {
-            if (block.type === 'text') add('user', 'You', block.text);
-            if (block.type === 'tool_result') {
-              const out = typeof block.content === 'string' ? block.content : textOf(block.content);
-              add('tool result', block.is_error ? 'Tool error' : 'Tool output', clip(out || '(empty)'));
-            }
-          }
-          return;
+        if (!message || line.isMeta) {
+          return line.type === 'system' && line.content
+            ? [{ kind: 'tool', who: 'System', text: clip(String(line.content), 400) }]
+            : [];
         }
-        if (line.type === 'assistant' && message) {
-          for (const block of message.content ?? []) {
-            if (block.type === 'text' && block.text.trim()) add('', 'Claude', block.text);
-            if (block.type === 'tool_use') {
-              const input = block.input ?? {};
-              const summary = input.command ?? input.file_path ?? input.pattern ?? input.description ?? JSON.stringify(input);
-              add('tool', block.name, clip(String(summary), 400));
-            }
+        const blocks = typeof message.content === 'string' ? [{ type: 'text', text: message.content }] : (message.content ?? []);
+        const mine = line.type === 'user';
+        return blocks.flatMap((block) => {
+          if (block.type === 'text' && block.text.trim()) {
+            return [{ kind: mine ? 'user' : '', who: mine ? 'You' : 'Claude', text: block.text }];
           }
-          return;
-        }
-        if (line.type === 'system' && line.content) add('tool', 'System', clip(String(line.content), 400));
+          if (block.type === 'tool_use') {
+            const input = block.input ?? {};
+            const summary = input.command ?? input.file_path ?? input.pattern ?? input.description ?? JSON.stringify(input);
+            return [{ kind: 'tool', who: block.name, text: clip(String(summary), 400) }];
+          }
+          if (block.type === 'tool_result') {
+            const out = typeof block.content === 'string' ? block.content : textOf(block.content);
+            return [{ kind: 'tool result', who: block.is_error ? 'Tool error' : 'Tool output', text: clip(out || '(empty)') }];
+          }
+          return [];
+        });
       }
+
+      const replyLabel = (reply) =>
+        reply.state === 'delivered' ? 'Your reply · delivered to the agent' : 'Your reply · waiting for the turn to end';
 
       function connect(id) {
         source?.close();
         replies.clear();
+        seen.clear();
         chat.innerHTML = '<p class="empty">Waiting for the transcript…</p>';
         current = id;
         source = new EventSource(`/api/sessions/${id}/events?key=${encodeURIComponent(key)}`);
@@ -174,12 +180,16 @@
         source.onerror = () => (statusLine.textContent = 'reconnecting…');
         source.onmessage = (event) => {
           const data = JSON.parse(event.data);
-          if (data.kind === 'line') render(data.line);
-          if (data.kind === 'reply' || data.kind === 'reply-delivered') {
-            const existing = replies.get(data.at);
-            const label = data.state === 'delivered' ? 'Your reply · delivered to the agent' : 'Your reply · waiting for the turn to end';
-            if (existing) existing.querySelector('.who').textContent = label;
-            else replies.set(data.at, add('reply', label, data.text));
+          if (data.kind === 'line') {
+            const id = data.line.uuid ?? JSON.stringify(data.line);
+            if (seen.has(id)) return;
+            seen.add(id);
+            for (const item of lineToItems(data.line)) add(item.kind, item.who, item.text);
+          }
+          if (data.kind === 'reply') {
+            const drawn = replies.get(data.reply.id);
+            if (drawn) drawn.querySelector('.who').textContent = replyLabel(data.reply);
+            else replies.set(data.reply.id, add('reply', replyLabel(data.reply), data.reply.text));
           }
         };
       }

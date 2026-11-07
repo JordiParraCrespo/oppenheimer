@@ -28,9 +28,11 @@ Read off a running cloud session (2026-11-06):
   starts a detached streamer. It follows the transcript Claude Code names on
   the hook's stdin (`transcript_path`), posts each complete line to
   `POST /api/sessions/{id}/transcript`, keeps its offset so a restart
-  resends nothing, and never drops a line the server refused. In a cloud
-  session the id is claude.ai's (`CLAUDE_CODE_REMOTE_SESSION_ID`, `cse_` read
-  as `session_`), so it matches the cloud session Oppenheimer launched.
+  resends nothing, and never drops a line the server refused. Both hooks send
+  the id Claude Code gives them, in a cloud session claude.ai's
+  (`CLAUDE_CODE_REMOTE_SESSION_ID`, `cse_…`); the server reads it as the
+  console's `session_…` in one place, so it matches the cloud session
+  Oppenheimer launched and the hooks know no prefixes.
 - **Your answer goes back in.** A `Stop` hook (`hooks/stop.mjs`) asks
   `GET /api/sessions/{id}/replies/next?wait=N` when the agent finishes a
   turn. A reply typed in the chat comes back as the hook's
@@ -47,8 +49,8 @@ without them, and never fail the session.
 ## Run it
 
 ```bash
-node poc/cloud-chat-bridge/demo.mjs          # the whole loop, with checks
-node poc/cloud-chat-bridge/demo.mjs --keep   # then leave the chat up
+node product/research/cloud-chat-bridge/demo.mjs          # the whole loop, with checks
+node product/research/cloud-chat-bridge/demo.mjs --keep   # then leave the chat up
 ```
 
 `demo.mjs` starts the server, makes a scratch project whose
@@ -66,6 +68,15 @@ PASS  reply reached the agent (BRAVO)
 | Light | Dark |
 | --- | --- |
 | ![](screenshots/chat-light.png) | ![](screenshots/chat-dark.png) |
+
+## This session, streamed
+
+On 2026-11-07 the streamer was pointed at the transcript of the very cloud
+session that built this, with the server on loopback in the same VM: its
+whole history (900-odd lines) reached the chat page, and each new step after
+that showed up within a second. Replying to it needs the Stop hook in that
+session's settings, which an agent may not write for itself: the person
+adds it.
 
 ## What it does not answer yet
 
