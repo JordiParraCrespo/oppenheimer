@@ -1,8 +1,8 @@
 import {
+  BotItemSkeleton,
   BotList,
   SidebarFoldLabel,
   SidebarListHead,
-  Skeleton,
 } from '@oppenheimer/design-system-web';
 import type { BotEntity } from '@oppenheimer/frontend-consumer';
 import { useUpdateBot } from '@oppenheimer/frontend-consumer/react';
@@ -83,7 +83,7 @@ export function SectionBots({ section }: { section: BotSection }) {
         <QueryState>
           <QueryState.Pending>
             <BotList className="mx-1.5">
-              <Skeleton shape="sm" className="h-13 w-full" />
+              <BotItemSkeleton />
             </BotList>
           </QueryState.Pending>
           <QueryState.Error fallback={t('bots.sidebar.loadFailed')} className="mx-3" />
