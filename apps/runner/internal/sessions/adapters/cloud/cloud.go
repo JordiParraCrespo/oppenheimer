@@ -22,6 +22,7 @@ import (
 	"os"
 	"os/exec"
 	"regexp"
+	"strconv"
 	"strings"
 	"sync"
 	"syscall"
@@ -66,9 +67,23 @@ type Starter struct {
 }
 
 var (
-	ansi    = regexp.MustCompile(`\x1b\[[0-9;?<>=]*[ -/]*[@-~]|\x1b\][^\x07\x1b]*(\x07|\x1b\\)|\x1b[@-_]`)
-	viewURL = regexp.MustCompile(`https://claude\.ai/code/(session_[A-Za-z0-9]+)`)
-	created = regexp.MustCompile(`Created cloud session: ([^\r\n]+)`)
+	// ansi is every escape sequence the CLI's renderer writes: CSI (colours,
+	// cursor moves), OSC (titles, links), a character-set choice (`ESC ( B`)
+	// and the two-byte ones, `ESC 7`/`ESC 8` (save and restore the cursor)
+	// among them.
+	ansi = regexp.MustCompile(`\x1b\[[0-9;?<>=]*[ -/]*[@-~]|\x1b\][^\x07\x1b]*(\x07|\x1b\\)|\x1b[ -/]+[0-~]|\x1b[0-~]`)
+	// cursorForward is CSI n C, which the renderer writes for the spaces
+	// between words: dropped like any other sequence, the words run together.
+	cursorForward = regexp.MustCompile(`\x1b\[([0-9]*)C`)
+	// controls is what is left that a terminal acts on and a reader cannot
+	// see, tabs and newlines kept.
+	controls = regexp.MustCompile(`[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]`)
+	// signedOut is the CLI saying it has no claude.ai account to start the
+	// session with: "Cloud sessions need a claude.ai sign-in. Run `claude
+	// auth login` …" (2.1.x), or older wordings of the same.
+	signedOut = regexp.MustCompile(`(?i)claude\.ai sign-in|not (signed|logged) in|claude auth login`)
+	viewURL   = regexp.MustCompile(`https://claude\.ai/code/(session_[A-Za-z0-9]+)`)
+	created   = regexp.MustCompile(`Created cloud session: ([^\r\n]+)`)
 )
 
 // blockingPrompt is a question Claude Code asks before it creates the
@@ -249,6 +264,9 @@ func failed(raw string, waitErr error) error {
 	if detail == "" && waitErr != nil {
 		detail = waitErr.Error()
 	}
+	if signedOut.MatchString(clean(raw)) {
+		return domain.ErrCloudSignIn.WithDetail("%s", detail)
+	}
 	err := domain.ErrCloudStart.WithDetail("%s", detail)
 	if waitErr != nil {
 		var exit *exec.ExitError
@@ -278,10 +296,20 @@ func lastWords(raw string) string {
 	return text
 }
 
-// clean drops the terminal's colours and its echo of the end of input.
+// clean is what a reader of the terminal would see: the cursor moves
+// between words as spaces, every other escape sequence and control character
+// gone, and without the echo of the end of input.
 func clean(raw string) string {
-	text := strings.ReplaceAll(ansi.ReplaceAllString(raw, ""), "^D", "")
-	return strings.ReplaceAll(text, "\r", "\n")
+	text := cursorForward.ReplaceAllStringFunc(raw, func(seq string) string {
+		n, err := strconv.Atoi(cursorForward.FindStringSubmatch(seq)[1])
+		if err != nil || n < 1 {
+			n = 1
+		}
+		return strings.Repeat(" ", min(n, 200))
+	})
+	text = strings.ReplaceAll(text, "\r", "\n")
+	text = controls.ReplaceAllString(ansi.ReplaceAllString(text, ""), "")
+	return strings.ReplaceAll(text, "^D", "")
 }
 
 func (s Starter) command() string {

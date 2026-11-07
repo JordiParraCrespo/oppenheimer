@@ -13,6 +13,7 @@ import { ElapsedClock } from '../components/elapsed-clock';
 import { SessionStatusHead } from '../components/session-status-head';
 import { useStartLogStalled } from '../hooks/use-start-log-stalled';
 import { PENDING_START, provisioningSteps } from '../lib/provisioning-steps';
+import { SessionRetryStart } from './session-retry-start';
 
 /**
  * A session that is not a terminal yet.
@@ -100,6 +101,8 @@ export function SessionProvisioning({ session }: { session: SessionEntity }) {
         {failed && failure?.detail ? (
           <StartFailureDetail detail={failure.detail} className="mt-4" />
         ) : null}
+        {/* A start on a host can be sent again; one at a vendor has none to send it to. */}
+        {failed && session.hostId ? <SessionRetryStart sessionId={session.id} /> : null}
       </div>
     </PageFrame>
   );

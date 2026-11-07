@@ -416,4 +416,10 @@ export const SessionErrors = {
     message: 'The cloud session’s vendor did not confirm the follow-up',
     httpStatus: 502,
   },
+  /** A retry asked of a session whose start did not fail: only a failed start is tried again. */
+  NOT_FAILED: {
+    code: 'SESSIONS_052',
+    message: 'Only a session whose start failed can be tried again',
+    httpStatus: 409,
+  },
 } as const satisfies Record<string, ErrorDefinition>;

@@ -90,6 +90,13 @@ export const SESSION_EVENT_KINDS = {
    * handlers say why. It does end a close still owed: restarting is keeping it.
    */
   RESTART_REQUESTED: 'session.restart_requested',
+  /**
+   * Somebody asked a failed start to be tried again: the same create, sent to the
+   * same host with the same first task. Unlike a restart it does move the
+   * lifecycle, back to `starting`, as `session.requested` does: the host is asked
+   * to start the session from nothing, and the log after it is the new attempt.
+   */
+  RETRY_REQUESTED: 'session.retry_requested',
   /** Window 0 was recreated in the same worktrees after a stop or a host reboot. */
   RESTARTED: 'session.restarted',
   /**
@@ -521,6 +528,11 @@ export function foldSessionEvent(fold: SessionFold, event: SessionLogEntry): Ses
       };
       next.closeRefusal = null;
       return next;
+    case SESSION_EVENT_KINDS.RETRY_REQUESTED:
+      // Only a failed start is tried again; on any other state the entry is a
+      // replay that already moved it.
+      if (next.state !== 'failed') return next;
+      return transition(next, 'starting');
     case SESSION_EVENT_KINDS.RESTART_REQUESTED:
       // Restarting is keeping the session: the person changed their mind, so a
       // close still owed is no longer wanted and a refusal no longer matters.

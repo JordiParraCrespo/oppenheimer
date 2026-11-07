@@ -67,6 +67,8 @@ import { RenameSessionCommandHandler } from './commands/rename-session/rename-se
 import { RenameSessionHttpController } from './commands/rename-session/rename-session.http.controller';
 import { RestartSessionCommandHandler } from './commands/restart-session/restart-session.command-handler';
 import { RestartSessionHttpController } from './commands/restart-session/restart-session.http.controller';
+import { RetrySessionCommandHandler } from './commands/retry-session/retry-session.command-handler';
+import { RetrySessionHttpController } from './commands/retry-session/retry-session.http.controller';
 import { SendSessionPromptCommandHandler } from './commands/send-session-prompt/send-session-prompt.command-handler';
 import { SendSessionPromptHttpController } from './commands/send-session-prompt/send-session-prompt.http.controller';
 import { SetSessionSharePeopleCommandHandler } from './commands/set-session-share-people/set-session-share-people.command-handler';
@@ -161,6 +163,7 @@ const httpControllers = [
   RecordCloudStatusHttpController,
   PrepareSessionHttpController,
   RestartSessionHttpController,
+  RetrySessionHttpController,
   AddCheckoutHttpController,
   RemoveCheckoutHttpController,
   FindSessionHttpController,
@@ -186,6 +189,7 @@ const commandHandlers: Provider[] = [
   RecordCloudStatusCommandHandler,
   PrepareSessionCommandHandler,
   RestartSessionCommandHandler,
+  RetrySessionCommandHandler,
   CloseSessionCommandHandler,
   AddCheckoutCommandHandler,
   RemoveCheckoutCommandHandler,
