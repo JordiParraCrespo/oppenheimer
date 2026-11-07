@@ -86,12 +86,25 @@ export const BOT_BUILT_IN_COMMANDS = ['goal', 'usage', 'loop', 'schedule'] as co
 export type BotBuiltInCommand = (typeof BOT_BUILT_IN_COMMANDS)[number];
 
 /**
- * `skill` is the generic entry point and each built-in is the product's, so
- * no skill may take one as its own name. A skill saved under one before it
+ * `skill` is the generic entry point and each built-in, command or skill, is
+ * the product's, so no skill may take one as its own name. A skill saved under one before it
  * was reserved keeps its row and stays the bot's to use, but its `/<name>`
  * runs the built-in.
  */
-export const BOT_SKILL_RESERVED_NAMES = ['skill', ...BOT_BUILT_IN_COMMANDS] as const;
+/**
+ * The skills Oppenheimer gives every bot (the API's `BOT_BUILT_IN_SKILLS`):
+ * `oppenheimer` reads Oppenheimer's own guide before the bot answers a
+ * question about Oppenheimer. The bot uses one unasked; the person does not
+ * run it as a command.
+ */
+export const BOT_BUILT_IN_SKILL_NAMES = ['oppenheimer'] as const;
+export type BotBuiltInSkillName = (typeof BOT_BUILT_IN_SKILL_NAMES)[number];
+
+export const BOT_SKILL_RESERVED_NAMES = [
+  'skill',
+  ...BOT_BUILT_IN_COMMANDS,
+  ...BOT_BUILT_IN_SKILL_NAMES,
+] as const;
 
 /** The words after `/goal` that clear it rather than set one (Claude Code's aliases). */
 export const BOT_GOAL_CLEAR_WORDS = ['clear', 'stop', 'off', 'reset', 'none', 'cancel'] as const;

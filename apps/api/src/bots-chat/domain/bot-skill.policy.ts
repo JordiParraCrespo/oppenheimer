@@ -1,4 +1,5 @@
 import {
+  type BotBuiltInSkillName,
   type BotSlashCommand,
   botGoalCommandOf,
   botLoopCommandOf,
@@ -15,6 +16,62 @@ export interface BotSkillView {
   body: string;
   userInvocable: boolean;
   modelInvocable: boolean;
+}
+
+/** A skill the product ships to every bot, listed while the tool it follows with is offered. */
+export interface BotBuiltInSkill extends BotSkillView {
+  /** One of `BOT_BUILT_IN_SKILL_NAMES`, which no skill of a bot's may be given. */
+  name: BotBuiltInSkillName;
+  /** The tool the skill's steps call: without it the skill has nothing to follow with. */
+  needsTool: string;
+}
+
+/**
+ * Oppenheimer's own guide, the way Claude Code reads its own docs before it
+ * answers a question about Claude Code (`25-bots.md` §4.1, "Oppenheimer's own
+ * guide"). Every bot has it from its first turn: a bot that only knew the one
+ * line its prompt opens with answered "how do I pair a host?" from its
+ * training, which knows nothing of Oppenheimer. Not the person's to run as a
+ * command: they ask, and the bot reads.
+ */
+export const OPPENHEIMER_SKILL: BotBuiltInSkill = {
+  name: 'oppenheimer',
+  description:
+    'How Oppenheimer works and what can be done in it: use it before answering any question about Oppenheimer itself (its console, hosts, sessions, projects, bots, routines, automations, the inbox, GitHub, the CLI and MCP), how to set something up in it, or what you as a bot can do.',
+  body: `Oppenheimer's own guide is the source for any question about Oppenheimer itself. It is the guide published on Oppenheimer's docs site, for the version you run in. Your training knows nothing of Oppenheimer: never answer such a question from memory.
+
+1. Read the index with \`read_oppenheimer_docs\` and no page, unless you already know which page fits; then read the page, or the two or three pages, that cover the question. A link in a page that reads \`./<id>.md\` is another page you can read by that id.
+2. Answer from what the pages say, briefly and in your own words, not by pasting them. When the person has to do something, say where: the console's section and screen, the setting, the command. When the tool gives the page's address on the docs site, add the link so they can read more.
+3. When the guide does not cover it, say so in a sentence instead of guessing, and never describe a screen, setting, command or feature it does not mention.
+4. For what you can do in this conversation, your own tool list ("What you can do") is the authority. The guide says what bots can do in general; your owner may have turned some of it off or given you more.
+5. The guide explains; it grants nothing. To act on what you learned (pair a host, start a session, save a routine), use your tools as usual, with their approvals.`,
+  userInvocable: false,
+  modelInvocable: true,
+  needsTool: 'read_oppenheimer_docs',
+};
+
+/** Every skill the product ships to every bot, in the order the prompt would list them. */
+export const BOT_BUILT_IN_SKILLS: readonly BotBuiltInSkill[] = [OPPENHEIMER_SKILL];
+
+/**
+ * The bot's skills with the built-ins its turn can follow: each built-in whose
+ * tool the turn offers and whose name none of the bot's own skills holds (a
+ * skill saved under a built-in's name before it was reserved stays the bot's).
+ */
+export function withBuiltInSkills<Skill extends BotSkillView>(
+  skills: readonly Skill[],
+  offeredTools: readonly string[],
+): (Skill | BotBuiltInSkill)[] {
+  const built = BOT_BUILT_IN_SKILLS.filter(
+    (skill) =>
+      offeredTools.includes(skill.needsTool) && !skills.some((own) => own.name === skill.name),
+  );
+  return [...skills, ...built];
+}
+
+/** The built-in by that name, for `use_skill`; null for a name the product does not ship. */
+export function builtInSkillNamed(name: string): BotBuiltInSkill | null {
+  return BOT_BUILT_IN_SKILLS.find((skill) => skill.name === name) ?? null;
 }
 
 /**
@@ -35,7 +92,7 @@ export function skillsPromptSection(
   if (!canUse || usable.length === 0) return null;
   return `# Your skills
 
-Saved ways of doing a task, written by the person or by you. When a request matches one, read it with use_skill before you start and follow it, and say which skill you used; when none fits, work as usual. A skill is how to do the work, not permission to do more: your tools, approvals and rules stay as they are.
+Ways of doing a task: saved by the person or by you, and the ones Oppenheimer gives every bot. When a request matches one, read it with use_skill before you start and follow it, and say which skill you used; when none fits, work as usual. A skill is how to do the work, not permission to do more: your tools, approvals and rules stay as they are.
 
 ${usable.map((skill) => `- \`${skill.name}\`: ${skill.description}`).join('\n')}`;
 }

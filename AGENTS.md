@@ -171,6 +171,9 @@ pnpm ci:local             # CI, locally: what the branch touches (--all for ever
 node scripts/stack/stack.mjs up [--web]  # The stack the e2e suites run against (e2e/README.md)
 # oppenheimer:end e2e
 pnpm generate:api-client  # Regenerate the typed API client (no database needed)
+# oppenheimer:begin docs
+pnpm generate:guide       # Bundle the docs site's user guide for the bots, after editing apps/docs/docs/guide
+# oppenheimer:end docs
 ```
 
 `package.json` lists the rest (`check:compiler`, `check:unused`,
