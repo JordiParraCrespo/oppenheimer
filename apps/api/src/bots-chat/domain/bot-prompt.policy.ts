@@ -3,7 +3,12 @@ import { approvalAsk } from './bot-approval.policy';
 import { eventNote, type HistoryMessage } from './bot-history.policy';
 import { peerMessagePrompt, peerReplyPrompt } from './bot-peer-message.policy';
 import { pullRequestWakePrompt } from './bot-pull-request-wake.policy';
-import { type BotSkillView, skillsPromptSection, withBuiltInSkills } from './bot-skill.policy';
+import {
+  type BotSkillView,
+  canFollowSkill,
+  skillsPromptSection,
+  withBuiltInSkills,
+} from './bot-skill.policy';
 import { sessionWakePrompt } from './bot-subscription.policy';
 import { TURN_CONTEXT_TAG } from './bot-turn-context.policy';
 
@@ -38,7 +43,8 @@ export interface BotPromptInput {
   tools: readonly BotPromptTool[];
   /**
    * Its own skills; those it may use unasked are listed when the turn offers
-   * `use_skill`, with the built-ins the turn's tools can follow (`withBuiltInSkills`).
+   * `use_skill`, with the built-ins the turn's tools can follow (`withBuiltInSkills`,
+   * `canFollowSkill`).
    */
   skills?: readonly BotSkillView[];
 }
@@ -73,12 +79,10 @@ export function composeBotSystemPrompt(input: BotPromptInput): string {
   } else {
     parts.push(gettingStarted(input.name, input.tools));
   }
+  const offered = input.tools.map((tool) => tool.name);
   const skills = skillsPromptSection(
-    withBuiltInSkills(
-      input.skills ?? [],
-      input.tools.map((tool) => tool.name),
-    ),
-    input.tools.some((tool) => tool.name === 'use_skill'),
+    withBuiltInSkills(input.skills ?? []).filter((skill) => canFollowSkill(skill, offered)),
+    offered.includes('use_skill'),
   );
   if (skills) parts.push(skills);
   if (input.personFacts?.length) {

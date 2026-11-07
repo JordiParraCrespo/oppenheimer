@@ -54,24 +54,23 @@ export const OPPENHEIMER_SKILL: BotBuiltInSkill = {
 export const BOT_BUILT_IN_SKILLS: readonly BotBuiltInSkill[] = [OPPENHEIMER_SKILL];
 
 /**
- * The bot's skills with the built-ins its turn can follow: each built-in whose
- * tool the turn offers and whose name none of the bot's own skills holds (a
- * skill saved under a built-in's name before it was reserved stays the bot's).
+ * Every skill a bot has: its own, then each built-in whose name none of its
+ * own holds (a skill saved under a built-in's name before it was reserved
+ * stays the bot's). The one place that decides which skill a name means:
+ * the prompt lists from it and `use_skill` reads from it.
  */
 export function withBuiltInSkills<Skill extends BotSkillView>(
   skills: readonly Skill[],
-  offeredTools: readonly string[],
 ): (Skill | BotBuiltInSkill)[] {
   const built = BOT_BUILT_IN_SKILLS.filter(
-    (skill) =>
-      offeredTools.includes(skill.needsTool) && !skills.some((own) => own.name === skill.name),
+    (skill) => !skills.some((own) => own.name === skill.name),
   );
   return [...skills, ...built];
 }
 
-/** The built-in by that name, for `use_skill`; null for a name the product does not ship. */
-export function builtInSkillNamed(name: string): BotBuiltInSkill | null {
-  return BOT_BUILT_IN_SKILLS.find((skill) => skill.name === name) ?? null;
+/** Whether a turn offering these tools can follow the skill: a built-in needs its tool. */
+export function canFollowSkill(skill: BotSkillView, offeredTools: readonly string[]): boolean {
+  return !('needsTool' in skill) || offeredTools.includes(skill.needsTool as string);
 }
 
 /**

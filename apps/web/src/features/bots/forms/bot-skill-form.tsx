@@ -17,6 +17,7 @@ import {
   type BotSkillDto,
   botSkillNameDraft,
   botSkillSchema,
+  editBotSkillSchema,
 } from '@oppenheimer/shared/schemas/bot-skill';
 import { Controller, useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
@@ -40,7 +41,8 @@ export function BotSkillForm({
 }) {
   const { t } = useTranslation();
   const { register, control, handleSubmit, formState } = useForm<BotSkillDto>({
-    resolver: useZodResolver(botSkillSchema),
+    // A skill that exists may keep a name reserved after it was saved.
+    resolver: useZodResolver(skill ? editBotSkillSchema : botSkillSchema),
     defaultValues: {
       name: skill?.name ?? '',
       description: skill?.description ?? '',

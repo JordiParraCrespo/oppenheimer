@@ -53,8 +53,14 @@ describe('the oppenheimer skill in the prompt', () => {
       userInvocable: true,
       modelInvocable: true,
     };
-    const skills = withBuiltInSkills([own], ['use_skill', 'read_oppenheimer_docs']);
-    expect(skills).toEqual([own]);
+    expect(withBuiltInSkills([own])).toEqual([own]);
+    const prompt = composeBotSystemPrompt({
+      ...base,
+      skills: [own],
+      tools: [tool('use_skill'), tool('read_oppenheimer_docs')],
+    });
+    expect(prompt).toContain('- `oppenheimer`: My old notes.');
+    expect(prompt).not.toContain(OPPENHEIMER_SKILL.description);
   });
 
   it('is not one the person runs as a command', () => {

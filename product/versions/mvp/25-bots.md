@@ -661,7 +661,12 @@ training, which knows nothing of it.
   asks and the bot reads (`userInvocable` off). Its name is reserved
   (`BOT_BUILT_IN_SKILL_NAMES`), so no skill takes it; a skill saved under a
   reserved name before it was reserved still loads, is still the bot's to
-  use, and is listed in the built-in's place.
+  use, is listed in the built-in's place, and is the person's to edit and
+  run. One rule owns it: a reserved name is refused when it is given, on a
+  new skill or a rename (`BotSkillEntity`); the update schema and the
+  console's edit form check a name's shape alone, since an edit may resend
+  the name the skill already has. The `/` menu hides only a skill whose
+  `/<name>` a built-in command takes.
 - **Links to the published page.** With `DOCS_URL` set to where the
   deployment publishes its docs site, each page read carries its address
   and the bot links it; without, it links nothing rather than guess one.
@@ -1546,5 +1551,6 @@ The decisions it produced:
   docs site, bundled into the API from the same files; a built-in
   `oppenheimer` skill and the `read_oppenheimer_docs` tool read it, and the
   docs build publishes `llms.txt` for agents outside. A reserved skill name
-  is now refused only when it is given, so a row saved under one before
-  still loads, as this list said on 2026-11-02.
+  is now refused only when it is given (a new skill, a rename), so a row
+  saved under one before still loads, edits and runs, as this list said on
+  2026-11-02.

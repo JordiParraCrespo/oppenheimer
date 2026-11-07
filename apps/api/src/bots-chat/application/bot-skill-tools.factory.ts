@@ -14,7 +14,7 @@ import { UpdateBotSkillCommand } from '../../bots/commands/update-bot-skill/upda
 import type { BotSkillEntity } from '../../bots/domain/bot-skill.entity';
 import { FindBotSkillQuery } from '../../bots/queries/find-bot-skill/find-bot-skill.query';
 import { FindBotSkillsQuery } from '../../bots/queries/find-bot-skills/find-bot-skills.query';
-import { builtInSkillNamed, describeSkillUse, skillBlock } from '../domain/bot-skill.policy';
+import { describeSkillUse, skillBlock, withBuiltInSkills } from '../domain/bot-skill.policy';
 import {
   type BotToolArea,
   type BotToolCallContext,
@@ -166,17 +166,17 @@ export class BotSkillToolsFactory implements BotToolArea {
   }
 
   /**
-   * The skill `use_skill` reads: the bot's own by that name, else the
-   * built-in by that name (`BOT_BUILT_IN_SKILLS`), else the own skill's
-   * not-found. The bot's own wins, as the prompt lists it.
+   * The skill `use_skill` reads: the one that name means among every skill
+   * the bot has (`withBuiltInSkills`), else the own skill's not-found.
    */
   private async skillToUse(
     context: BotToolCallContext,
     name: string,
   ): Promise<Pick<BotSkillEntity, 'name' | 'description' | 'body' | 'modelInvocable'>> {
-    const own = (await this.skills(context)).find((skill) => skill.name === name);
-    if (own) return own;
-    return builtInSkillNamed(name) ?? this.skill(context, name);
+    const found = withBuiltInSkills(await this.skills(context)).find(
+      (skill) => skill.name === name,
+    );
+    return found ?? this.skill(context, name);
   }
 
   private skill(context: BotToolCallContext, name: string): Promise<BotSkillEntity> {

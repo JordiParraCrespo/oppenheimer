@@ -230,15 +230,23 @@ export function botScheduleCommandOf(command: BotSlashCommand | null): BotSchedu
   return request ? { kind: 'set', request } : { kind: 'open' };
 }
 
-const skillNameSchema = z
+/** A name a skill can carry: what can be typed after a slash. */
+const skillNameShapeSchema = z
   .string()
   .trim()
   .min(1)
   .max(BOT_SKILL_NAME_MAX)
-  .regex(BOT_SKILL_NAME_PATTERN)
-  .refine((name) => !(BOT_SKILL_RESERVED_NAMES as readonly string[]).includes(name), {
-    params: { i18nKey: 'validation.invalid' },
-  });
+  .regex(BOT_SKILL_NAME_PATTERN);
+/**
+ * A name a skill can be given: never one Oppenheimer holds. Only a new skill
+ * is always given its name; an edit may resend the name a skill already has,
+ * reserved before or not, so the update schema checks the shape alone and the
+ * API refuses a rename onto a reserved name (`BotSkillEntity`).
+ */
+const skillNameSchema = skillNameShapeSchema.refine(
+  (name) => !(BOT_SKILL_RESERVED_NAMES as readonly string[]).includes(name),
+  { params: { i18nKey: 'validation.invalid' } },
+);
 const skillDescriptionSchema = z.string().trim().min(1).max(BOT_SKILL_DESCRIPTION_MAX);
 const skillBodySchema = z.string().trim().min(1).max(BOT_SKILL_BODY_MAX);
 
@@ -257,10 +265,17 @@ export const botSkillSchema = z.object({
 });
 export type BotSkillDto = z.infer<typeof botSkillSchema>;
 
+/**
+ * The console's skill form on a skill that exists: its name may be the one it
+ * already has, reserved after it was saved, so the name is checked for its
+ * shape alone and a rename onto a reserved name is the API's to refuse.
+ */
+export const editBotSkillSchema = botSkillSchema.extend({ name: skillNameShapeSchema });
+
 /** `PATCH /bots/:id/skills/:skillId`: any of its parts, at least one. */
 export const updateBotSkillSchema = z
   .object({
-    name: skillNameSchema.optional(),
+    name: skillNameShapeSchema.optional(),
     description: skillDescriptionSchema.optional(),
     body: skillBodySchema.optional(),
     userInvocable: z.boolean().optional(),
