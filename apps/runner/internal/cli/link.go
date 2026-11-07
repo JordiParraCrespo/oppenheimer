@@ -646,7 +646,7 @@ func (h *linkHandler) Message(_ context.Context, msg link.Message) {
 		if msg.Decode(&m) == nil {
 			// Up to its timeout, on the daemon's context like an update: a
 			// run outlives the link it was asked on and answers on the next.
-			h.lanes.run(laneExec+m.Home, func() { h.exec(h.life, m) })
+			h.lanes.run(laneExec+m.CommandID, func() { h.exec(h.life, m) })
 		}
 	case link.TypeSharedPreviewGet:
 		var m link.SharedPreviewGet

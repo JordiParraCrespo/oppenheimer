@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { Injectable } from '@nestjs/common';
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
 import {
@@ -96,9 +97,12 @@ export class BotHostCommandToolsFactory implements BotToolArea {
         const hostId = input.host_id ?? context.homeHostId;
         if (!hostId) return null;
         const program = input.argv[0] ?? '';
+        // Hashed, so a standing yes is for this program alone: a grant's key
+        // is cut to fit its column, and a cut path would match any program
+        // that shares its start.
         return {
           kind: 'host_program',
-          key: `${hostId}:${program}`,
+          key: `${hostId}:${createHash('sha256').update(program).digest('hex')}`,
           label: `${program} on ${await this.hostName(context, hostId)}`,
         };
       },

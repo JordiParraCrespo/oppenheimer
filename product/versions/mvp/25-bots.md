@@ -891,14 +891,17 @@ more (`10-sleep-wake-and-pricing.md` §7 prices the sandbox services).
   a machine never hands its shell to a bot. An allowlist entry is a program
   on `PATH` (`python3`) or an absolute path or glob (`/home/me/scripts/*`); a
   bare name never matches a path, so a `./python3` the bot wrote is not
-  `python3`. The control plane never reads or writes the policy, so a
+  `python3`. A path is checked and run as the file it really is, every
+  symlink resolved, so a link in the bot's folder cannot dress its own file
+  as an allowed script. The control plane never reads or writes the policy, so a
   compromised control plane runs nothing the person did not allow.
 - **The bot's own folder.** A call starts in `<workspaces>/bots/<bot id>`,
   made on first use and kept, unless it names an absolute `cwd`. That is
   the bot's machine without a VM: its scripts, data and virtualenvs.
 - **Bounded to the turn.** At most 120 s a call (the protocol allows 600;
   a turn has 4 minutes), its whole process group killed at the timeout,
-  and the last 32 KB of each stream kept. Longer work is a session.
+  and the last 32 KB of each stream kept; at most 8 at once on a host, a
+  ninth refused rather than queued. Longer work is a session.
 - **Asked, then answered in words.** It asks under Approve for me, with the
   command line on the card; a standing yes is per program and host. A run
   is an answer whatever its exit code; a refusal (`EXEC_001` off, `EXEC_002`

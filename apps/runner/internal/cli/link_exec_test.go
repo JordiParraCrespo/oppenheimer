@@ -149,3 +149,63 @@ func TestARunPastItsTimeoutIsKilled(t *testing.T) {
 		t.Fatalf("result = %+v, want timed out with no exit code", r)
 	}
 }
+
+// A path that reads, as text, as an allowed script but would reach the bot's
+// own file once the kernel followed a symlink in its folder. The check and the
+// run must be on the same file: what runs is the file the policy allowed,
+// never the one beside the symlink.
+func TestTheProgramThatRunsIsTheOneThePolicyChecked(t *testing.T) {
+	e := newExecHarness(t)
+	root := t.TempDir()
+	allowed := filepath.Join(root, "scripts")
+	repo := filepath.Join(root, "repo")
+	for _, dir := range []string{allowed, filepath.Join(repo, "scripts"), filepath.Join(repo, "evil", "a")} {
+		if err := os.MkdirAll(dir, 0o755); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if err := os.WriteFile(filepath.Join(allowed, "report.sh"), []byte("#!/bin/sh\necho allowed\n"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(repo, "scripts", "report.sh"), []byte("#!/bin/sh\necho bots-own\n"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	lnk := filepath.Join(repo, "lnk")
+	if err := os.Symlink(filepath.Join(repo, "evil", "a"), lnk); err != nil {
+		t.Fatal(err)
+	}
+	e.allow(t, hostdomain.ExecPolicy{Mode: hostdomain.ExecAllowlist, Allow: []string{filepath.Join(allowed, "*")}})
+
+	e.h.Message(context.Background(), message(t, "host.exec", map[string]any{
+		"commandId": execCommandID, "argv": []any{"../../scripts/report.sh"}, "cwd": lnk,
+		"home": "juno", "timeoutSeconds": 5,
+	}))
+	if r := e.result(t); r.Stdout != "allowed" {
+		t.Fatalf("stdout = %q: a file the policy did not check ran", r.Stdout)
+	}
+}
+
+// A symlink that points out of an allowed folder is judged by where it
+// points: the bot cannot plant a link inside the list to a file of its own.
+func TestALinkOutOfAnAllowedFolderIsJudgedByItsTarget(t *testing.T) {
+	e := newExecHarness(t)
+	root := t.TempDir()
+	allowed := filepath.Join(root, "scripts")
+	if err := os.MkdirAll(allowed, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	own := filepath.Join(root, "own.sh")
+	if err := os.WriteFile(own, []byte("#!/bin/sh\necho bots-own\n"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Symlink(own, filepath.Join(allowed, "report.sh")); err != nil {
+		t.Fatal(err)
+	}
+	e.allow(t, hostdomain.ExecPolicy{Mode: hostdomain.ExecAllowlist, Allow: []string{filepath.Join(allowed, "*")}})
+	e.run(t, []string{filepath.Join(allowed, "report.sh")}, 5)
+
+	failed := e.sent.waitFor(t, "command.failed", isCommandFailed(execCommandID)).(link.CommandFailed)
+	if failed.Code != hostdomain.ErrExecRefused.Code {
+		t.Fatalf("code = %s, want %s", failed.Code, hostdomain.ErrExecRefused.Code)
+	}
+}

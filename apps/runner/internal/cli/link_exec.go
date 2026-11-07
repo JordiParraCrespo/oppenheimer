@@ -12,8 +12,9 @@ import (
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/link"
 )
 
-// laneExec is one lane per bot: a bot's commands run in the order it sent
-// them, and one bot's long build never holds up another's.
+// laneExec is one lane per command: a command runs the moment it arrives,
+// never queued behind another (the host service bounds how many at once), so
+// the control plane's wait for it is the run's own timeout.
 const laneExec = "exec:"
 
 func (h *linkHandler) exec(ctx context.Context, m link.HostExec) {

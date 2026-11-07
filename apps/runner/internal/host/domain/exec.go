@@ -35,8 +35,10 @@ type ExecPolicy struct {
 	// program found on PATH (`python3`), matched against an argv[0] without
 	// a slash; an entry with one is an absolute path or a glob over paths
 	// (`/home/me/scripts/*`), matched against an argv[0] that has a slash,
-	// made absolute against the folder the command runs in. A bare name never
-	// matches a path, so `./python3` does not pass for `python3`.
+	// made absolute against the folder the command runs in with every
+	// symlink resolved (the use case resolves it, and runs what it
+	// resolved), so an entry names real paths. A bare name never matches a
+	// path, so `./python3` does not pass for `python3`.
 	Allow []string `json:"allow,omitempty"`
 }
 
@@ -142,6 +144,9 @@ type ExecResult struct {
 	Dir             string
 	Duration        time.Duration
 }
+
+// MaxConcurrentExecs is how many bots' commands one host runs at once.
+const MaxConcurrentExecs = 8
 
 // BotsDir is the folder under the workspaces that holds each bot's own.
 const BotsDir = "bots"

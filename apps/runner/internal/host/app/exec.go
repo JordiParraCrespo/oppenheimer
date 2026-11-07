@@ -6,6 +6,7 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/host/domain"
 )
@@ -62,6 +63,21 @@ func (s *Service) Exec(ctx context.Context, req domain.ExecRequest) (domain.Exec
 	}
 	dir = filepath.Clean(dir)
 
+	// A program named by a path is checked, and run, as the file it really
+	// is: the policy matches text, the kernel follows symlinks and `..`, and
+	// the two must agree on which program runs.
+	if strings.Contains(req.Argv[0], "/") {
+		path := req.Argv[0]
+		if !filepath.IsAbs(path) {
+			path = filepath.Join(dir, path)
+		}
+		real, err := filepath.EvalSymlinks(path)
+		if err != nil {
+			return domain.ExecResult{}, domain.ErrExecStart.WithDetail("%s: %v", req.Argv[0], err).WithCause(err)
+		}
+		req.Argv = append([]string{real}, req.Argv[1:]...)
+	}
+
 	switch err := policy.Permits(req.Argv[0], dir); {
 	case errors.Is(err, domain.ErrExecOff):
 		return domain.ExecResult{}, domain.ErrExecDisabled.WithDetail(
@@ -85,6 +101,14 @@ func (s *Service) Exec(ctx context.Context, req domain.ExecRequest) (domain.Exec
 		return domain.ExecResult{}, domain.ErrExecFolder.WithDetail("%s cannot be read: %v", dir, err).WithCause(err)
 	case !info.IsDir():
 		return domain.ExecResult{}, domain.ErrExecFolder.WithDetail("%s is not a directory", dir)
+	}
+
+	select {
+	case s.execSlots <- struct{}{}:
+		defer func() { <-s.execSlots }()
+	default:
+		return domain.ExecResult{}, domain.ErrExecStart.WithDetail(
+			"%d commands are already running on this host; try again when one ends", cap(s.execSlots))
 	}
 
 	req.Dir = dir

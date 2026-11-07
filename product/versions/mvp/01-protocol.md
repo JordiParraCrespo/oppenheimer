@@ -321,8 +321,9 @@ runner does with it and point back.
   allowed, `EXEC_003` the folder is not usable, `EXEC_004` the program
   could not be started, `EXEC_005` the policy file cannot be read. Sent only
   to a runner whose `hello` names `host.exec`, and waited on for the run's
-  timeout and 15 seconds more. One lane per bot on the runner, so a bot's
-  commands keep their order.
+  timeout and 15 seconds more. A command runs the moment it arrives, never
+  queued (a queued one would outlive that wait); past 8 at once on a host it
+  is refused with `EXEC_004`.
 - `attachment.credit` — the browser's consumed-byte credit, relayed to
   the runner so it resumes that attachment's PTY reads. Without it the
   window below is a one-way valve: a noisy pane stalls for good rather

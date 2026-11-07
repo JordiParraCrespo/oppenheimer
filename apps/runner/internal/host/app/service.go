@@ -44,6 +44,9 @@ type Service struct {
 	account   func() string
 	policies  ExecPolicies
 	executor  Executor
+	// execSlots bounds the bots' commands running at once; one past it is
+	// refused, not queued, so the control plane's wait is the run's.
+	execSlots chan struct{}
 }
 
 // New builds the service.
@@ -52,6 +55,7 @@ func New(opts Options) *Service {
 		prober: opts.Prober, updater: opts.Updater, installer: opts.Installer, dirs: opts.Directories,
 		workspace: opts.WorkspaceRoot, version: opts.Version, account: opts.ClaudeAccount,
 		policies: opts.ExecPolicies, executor: opts.Executor,
+		execSlots: make(chan struct{}, domain.MaxConcurrentExecs),
 	}
 }
 
