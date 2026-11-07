@@ -1067,7 +1067,8 @@
       "shown": "Show projects",
       "shownAll": "All",
       "shownSome": "{{shown}} of {{total}}",
-      "showAll": "Show all projects"
+      "showAll": "Show all projects",
+      "newProject": "New project…"
     },
     "sort": {
       "custom": "Custom order",
