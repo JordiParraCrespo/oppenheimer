@@ -228,6 +228,14 @@ export interface ChatState {
    * terminal is drawn to read it from.
    */
   activity: ChatActivity | null;
+  /**
+   * Whether what the chat is connected to can stop the agent's turn: a
+   * terminal can (Escape), a Claude Code cloud session's hooks cannot
+   * (`connect`). While it cannot, the composer offers no Stop, and a message
+   * goes at once rather than waiting in the queue for the turn to end: its
+   * source keeps it until the agent takes it.
+   */
+  interruptible: boolean;
 }
 
 export interface ChatBatch {
@@ -254,6 +262,7 @@ const EMPTY: ChatState = {
   files: [],
   older: 'none',
   activity: null,
+  interruptible: true,
 };
 
 /** The entry the runner adds for the status line's figures. */
@@ -708,7 +717,9 @@ export class SessionChat {
   post(message: string): void {
     const text = message.trim();
     if (text === '') return;
-    if (!this.busy()) {
+    // A source that cannot stop the turn keeps the message itself until the
+    // agent takes it, so nothing waits here.
+    if (!this.busy() || !this.state.interruptible) {
       this.send(message);
       return;
     }
@@ -791,14 +802,21 @@ export class SessionChat {
 
   /**
    * Lends the chat a way to type into the session's PTY, and to ask its host
-   * for older turns; the function returned takes them back.
+   * for older turns; the function returned takes them back. `interruptible:
+   * false` says the source cannot stop a turn (`ChatState.interruptible`).
    */
-  connect(type: (data: string) => void, askOlder?: (before: number) => void): () => void {
+  connect(
+    type: (data: string) => void,
+    askOlder?: (before: number) => void,
+    { interruptible = true }: { interruptible?: boolean } = {},
+  ): () => void {
     this.type = type;
     this.askOlder = askOlder ?? null;
+    if (this.state.interruptible !== interruptible) this.publish({ ...this.state, interruptible });
     return () => {
       if (this.type === type) this.type = null;
       if (askOlder && this.askOlder === askOlder) this.askOlder = null;
+      if (!this.state.interruptible) this.publish({ ...this.state, interruptible: true });
     };
   }
 

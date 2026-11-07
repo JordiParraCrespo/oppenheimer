@@ -112,7 +112,7 @@ describe('SessionChat', () => {
     expect(send).toHaveBeenCalledWith('\u001b');
   });
 
-  it('keeps sending while the agent works when the turn cannot be stopped (a cloud session)', () => {
+  it('keeps sending while the agent works when its source cannot stop the turn (a cloud session)', () => {
     vi.useFakeTimers();
     const chat = new Chat();
     const send = vi.fn();
@@ -120,8 +120,8 @@ describe('SessionChat', () => {
       reset: true,
       entries: [entry({ type: 'user', uuid: 'u', message: { role: 'user', content: 'Go' } })],
     });
-    chat.connect(send);
-    render(<SessionChat chat={chat} agent="claude-code" readOnly={false} stoppable={false} />);
+    chat.connect(send, undefined, { interruptible: false });
+    render(<SessionChat chat={chat} agent="claude-code" readOnly={false} />);
     // Breaks if Stop is offered where nothing can stop the turn: a reply
     // typed mid-turn would be sent as Escape and lost.
     expect(screen.queryByRole('button', { name: 'sessions.chat.composer.stop' })).toBeNull();

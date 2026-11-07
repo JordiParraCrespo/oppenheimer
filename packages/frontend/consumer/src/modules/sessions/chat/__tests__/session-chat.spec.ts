@@ -368,6 +368,7 @@ describe('SessionChat', () => {
       files: [],
       older: 'none',
       activity: null,
+      interruptible: true,
     });
     expect(before.turns).toHaveLength(2);
     expect(listener).toHaveBeenCalledTimes(3);

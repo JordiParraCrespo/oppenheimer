@@ -139,8 +139,7 @@ export function SessionPane({
           <SessionBar
             session={session}
             back={bar.back}
-            // A cloud session's chat is the whole pane: no terminal to switch to.
-            tabs={session.isLive && !session.isCloud ? viewToggle : null}
+            tabs={session.isLive ? viewToggle : null}
             preview={
               session.isLive && previewOffered ? (
                 <PreviewToggle open={preview.open} onToggle={() => preview.toggle(!preview.open)} />

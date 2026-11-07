@@ -1,13 +1,13 @@
 import { StatusDot } from '@oppenheimer/design-system-web';
 import type { SessionEntity } from '@oppenheimer/frontend-consumer';
-import { ErrorAlert } from '@oppenheimer/frontend-web';
+import { ErrorAlert, PageFrame } from '@oppenheimer/frontend-web';
 import { useTranslation } from 'react-i18next';
 import { useCloudSessionChat } from '../hooks/use-cloud-session-chat';
 import { useChatTurnIds } from '../hooks/use-session-chat';
 import { dotFor, stateWordFor } from '../lib/session-run-state';
 import { SessionChat } from './session-chat';
-import { SessionCloud } from './session-cloud';
 import { SessionCloudChatSetup } from './session-cloud-chat-setup';
+import { SessionCloudSummary } from './session-cloud-summary';
 
 /**
  * A Claude Code cloud session read as a chat
@@ -26,9 +26,10 @@ export function SessionCloudChat({ session }: { session: SessionEntity }) {
 
   if (turns.length === 0 && waiting.length === 0) {
     return (
-      <SessionCloud session={session}>
+      <PageFrame size="status">
+        <SessionCloudSummary session={session} />
         <SessionCloudChatSetup organizationId={session.organizationId} />
-      </SessionCloud>
+      </PageFrame>
     );
   }
 
@@ -57,7 +58,7 @@ export function SessionCloudChat({ session }: { session: SessionEntity }) {
           onDismiss={dismissFailure}
         />
       ) : null}
-      <SessionChat chat={chat} agent="claude-code" readOnly={false} stoppable={false} />
+      <SessionChat chat={chat} agent="claude-code" readOnly={false} />
     </>
   );
 }

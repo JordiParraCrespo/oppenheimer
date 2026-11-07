@@ -86,7 +86,9 @@ export class CloudChatFeed {
 
   /** Starts reading and lends the chat its typing; the function returned stops both. */
   start(): () => void {
-    const release = this.chat.connect((data) => this.type(data));
+    const release = this.chat.connect((data) => this.type(data), undefined, {
+      interruptible: false,
+    });
     void this.read(true);
     return () => {
       this.stopped = true;
