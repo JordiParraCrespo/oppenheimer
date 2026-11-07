@@ -749,7 +749,7 @@
       "title": "Turn on this session’s chat",
       "intro": "A Claude Code cloud session sends its chat here through a hook in its repository. Set it up once for each repository and cloud environment; sessions you start from Oppenheimer then show their chat here, and you can answer them.",
       "keyTitle": "1. Create a key",
-      "keyBody": "It lets cloud sessions send this workspace their chat, and nothing else. It’s shown once, so copy it now.",
+      "keyBody": "It lets cloud sessions send this workspace their chat and collect your replies. It can’t start, stop or delete a session, or open a terminal. It’s shown once, so copy it now.",
       "createKey": "Create key",
       "creatingKey": "Creating key…",
       "keyLabel": "Your key",

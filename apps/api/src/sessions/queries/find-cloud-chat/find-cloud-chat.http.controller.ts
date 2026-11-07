@@ -35,7 +35,7 @@ export class FindCloudChatHttpController {
   @Get(':id/cloud-chat')
   @Version('1')
   @CheckPolicies({ action: 'read', subject: 'Session' })
-  @RequireScopes('sessions:read')
+  @RequireScopes('cloud-chat:read')
   // The open chat reads on from where it stopped every couple of seconds.
   @Throttle({ default: { limit: 120, ttl: 60_000 } })
   @ApiOperation({

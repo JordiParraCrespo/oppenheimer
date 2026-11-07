@@ -752,7 +752,7 @@
       "title": "Activa el chat de esta sesión",
       "intro": "Una sesión de Claude Code en la nube envía su chat aquí con un hook en su repositorio. Configúralo una vez por repositorio y entorno de la nube; las sesiones que inicies desde Oppenheimer mostrarán su chat aquí y podrás responderlas.",
       "keyTitle": "1. Crea una clave",
-      "keyBody": "Permite que las sesiones en la nube envíen su chat a este espacio de trabajo, y nada más. Solo se muestra una vez: cópiala ahora.",
+      "keyBody": "Permite que las sesiones en la nube envíen su chat a este espacio de trabajo y recojan tus respuestas. No puede iniciar, detener ni borrar una sesión, ni abrir un terminal. Solo se muestra una vez: cópiala ahora.",
       "createKey": "Crear clave",
       "creatingKey": "Creando la clave…",
       "keyLabel": "Tu clave",

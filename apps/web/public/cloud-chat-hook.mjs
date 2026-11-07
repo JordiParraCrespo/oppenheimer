@@ -14,7 +14,7 @@
 // on with it.
 //
 // Reads OPPENHEIMER_URL (the API's address) and OPPENHEIMER_CLOUD_KEY (a
-// token with sessions:write, from the session's pane in the console), and
+// token with cloud-chat:write, from the session's pane in the console), and
 // OPPENHEIMER_REPLY_WAIT (seconds the Stop hook waits for a reply, default 30,
 // at most 120). Without the first two it does nothing. It never fails the
 // session: whatever happens it exits 0.
