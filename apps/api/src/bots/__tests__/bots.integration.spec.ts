@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import type { AccessScope } from '@oppenheimer/backend-authz';
+import { OutboxMessageSchema, OutboxService } from '@oppenheimer/backend-ddd';
 import { DataSource } from 'typeorm';
 import { useTestDatabase } from '../../__tests__/integration-services';
 import { NewBotProviderResolver } from '../application/new-bot-provider.resolver';
@@ -76,6 +77,7 @@ describe('bots (integration)', () => {
         BotMemoryFactOrmEntity,
         BotSkillOrmEntity,
         ModelProviderCredentialOrmEntity,
+        OutboxMessageSchema,
       ],
       synchronize: false,
     });
@@ -83,9 +85,9 @@ describe('bots (integration)', () => {
     const documentMapper = new BotDocumentMapper();
     bots = new BotRepository(
       dataSource.getRepository(BotOrmEntity),
-      dataSource,
       new BotMapper(),
       documentMapper,
+      new OutboxService(dataSource),
     );
     groups = new BotGroupRepository(
       dataSource.getRepository(BotGroupOrmEntity),
@@ -95,7 +97,7 @@ describe('bots (integration)', () => {
     documents = new BotDocumentRepository(
       dataSource.getRepository(BotDocumentOrmEntity),
       dataSource.getRepository(BotDocumentRevisionOrmEntity),
-      dataSource,
+      new OutboxService(dataSource),
       documentMapper,
     );
     memory = new BotMemoryFactRepository(
@@ -206,6 +208,34 @@ describe('bots (integration)', () => {
     expect(history).toMatchObject([
       { revision: 1, content: 'You are Bea.', author: 'user', authorUserId: userId },
     ]);
+  });
+
+  // What breaks this: a bot given a job at its creation, or later, without the
+  // event its heartbeat is saved from; or an event left by a write that lost.
+  it('stages a first job on the outbox with the write that sets it, and nothing for a blank bot', async () => {
+    const staged = async (botId: string) =>
+      dataSource.query(`SELECT "eventName" FROM "outbox_message" WHERE "aggregateId" = $1`, [
+        botId,
+      ]) as Promise<{ eventName: string }[]>;
+
+    const blank = await create('Cleo');
+    expect(await staged(blank.id)).toEqual([]);
+
+    const instructions = await documents.findOne(scope(), blank.id, 'instructions');
+    const document = instructions.unwrap();
+    document.write({ content: 'Review PRs.', baseRevision: 1, actor: userActor(userId) });
+    expect(await documents.save(document)).toBe('saved');
+    expect(await staged(blank.id)).toEqual([{ eventName: 'BotJobSetDomainEvent' }]);
+    expect(document.domainEvents).toEqual([]);
+
+    const stale = (await documents.findOne(scope(), blank.id, 'instructions')).unwrap();
+    const rival = BotDocumentEntity.create({
+      id: stale.id,
+      props: { ...stale.getProps(), content: '', revision: 1 },
+    });
+    rival.write({ content: 'Something else.', baseRevision: 1, actor: userActor(userId) });
+    expect(await documents.save(rival)).toBe('conflict');
+    expect(await staged(blank.id)).toHaveLength(1);
   });
 
   it('moves a bot into a group at an index and closes up both lists', async () => {

@@ -190,6 +190,7 @@ export class BotPeerToolsFactory implements BotToolArea {
             instructions: plan.instructions,
             creatorBotId: context.botId,
             idempotencyKey: idempotencyKeyOf(context.turnId, input, context.approvalId),
+            credentialScopes: context.credentialScopes,
           }),
         );
         const bot = await this.queryBus.execute<FindBotQuery, BotEntity>(
