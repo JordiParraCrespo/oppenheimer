@@ -37,7 +37,7 @@ const FEEDBACK = /^Stop hook feedback:\n(?:\[[^\]]*\]: )?/;
  * feedback" line; that line is the person's message, at the point the agent
  * took it, so it is read as one. Every other line is as it was written.
  */
-export function asChatLine(raw: string): string {
+function asChatLine(raw: string): string {
   if (!raw.includes(CLOUD_REPLY_PREAMBLE)) return raw;
   let line: Record<string, unknown>;
   try {
