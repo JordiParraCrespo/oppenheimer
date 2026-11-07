@@ -1,13 +1,11 @@
 import {
-  DropdownMenuItem,
-  DropdownMenuSeparator,
   DropdownMenuSub,
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
   DropdownMenuValue,
   SearchList,
 } from '@oppenheimer/design-system-web';
-import { Plus } from '@oppenheimer/design-system-web/icons';
+import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { FilterOption } from '../lib/session-filters';
 
@@ -15,9 +13,8 @@ import type { FilterOption } from '../lib/session-filters';
  * A facet of the sessions filter over a list the workspace grows (Project,
  * Repository, Host): the submenu row with the current pick, opening the
  * Bots picker's search list (`SearchList`) instead of radio rows. A pick
- * applies at once and the menu stays open, as the radio facets do. An
- * `action` is a row under the list that makes a new one (New project…); it
- * closes the menu, since what it opens is a dialog.
+ * applies at once and the menu stays open, as the radio facets do.
+ * `children` draw under the list, the caller's own foot.
  */
 export function FacetSearchSub({
   label,
@@ -26,7 +23,7 @@ export function FacetSearchSub({
   value,
   searchPlaceholder,
   onValueChange,
-  action,
+  children,
 }: {
   label: string;
   /** The picked option's label, beside the facet's name. */
@@ -35,7 +32,7 @@ export function FacetSearchSub({
   value: string;
   searchPlaceholder: string;
   onValueChange: (value: string) => void;
-  action?: { label: string; onSelect: () => void };
+  children?: ReactNode;
 }) {
   const { t } = useTranslation();
   return (
@@ -53,17 +50,7 @@ export function FacetSearchSub({
           searchPlaceholder={searchPlaceholder}
           emptyText={(query) => t('common.search.noMatch', { query })}
         />
-        {action ? (
-          <>
-            <DropdownMenuSeparator className="mx-0" />
-            <div className="p-1 pt-0">
-              <DropdownMenuItem onClick={action.onSelect}>
-                <Plus />
-                {action.label}
-              </DropdownMenuItem>
-            </div>
-          </>
-        ) : null}
+        {children}
       </DropdownMenuSubContent>
     </DropdownMenuSub>
   );

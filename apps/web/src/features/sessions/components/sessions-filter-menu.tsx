@@ -13,7 +13,7 @@ import {
   IconButton,
   SearchList,
 } from '@oppenheimer/design-system-web';
-import { SlidersVertical } from '@oppenheimer/design-system-web/icons';
+import { Plus, SlidersVertical } from '@oppenheimer/design-system-web/icons';
 import { useTranslation } from 'react-i18next';
 import {
   ALL,
@@ -23,6 +23,7 @@ import {
   type SessionSort,
 } from '../lib/session-filters';
 import { FacetSearchSub } from './facet-search-sub';
+import { SearchListFoot } from './search-list-foot';
 
 const SORTS: SessionSort[] = ['custom', 'recent', 'oldest', 'name'];
 
@@ -94,8 +95,14 @@ export function SessionsFilterMenu({
           value={filters.project}
           searchPlaceholder={t('common.search.projects')}
           onValueChange={(project) => onChange({ project })}
-          action={{ label: t('sessions.filters.newProject'), onSelect: onNewProject }}
-        />
+        >
+          <SearchListFoot>
+            <DropdownMenuItem onClick={onNewProject}>
+              <Plus />
+              {t('sessions.filters.newProject')}
+            </DropdownMenuItem>
+          </SearchListFoot>
+        </FacetSearchSub>
         <FacetSearchSub
           label={t('sessions.filters.repository')}
           current={labelFor('repository')}
@@ -158,8 +165,7 @@ export function SessionsFilterMenu({
               searchPlaceholder={t('common.search.projects')}
               emptyText={(query) => t('common.search.noMatch', { query })}
             />
-            <DropdownMenuSeparator className="mx-0" />
-            <div className="p-1 pt-0">
+            <SearchListFoot>
               <DropdownMenuItem
                 disabled={visibility.hiddenCount === 0}
                 onClick={visibility.onShowAll}
@@ -167,7 +173,7 @@ export function SessionsFilterMenu({
               >
                 {t('sessions.filters.showAll')}
               </DropdownMenuItem>
-            </div>
+            </SearchListFoot>
           </DropdownMenuSubContent>
         </DropdownMenuSub>
 
