@@ -897,6 +897,13 @@ earlier note:
   waiting or running with its clock or how it ended, the tools it has
   called so far), from frames the bot's stream sends each time one moves,
   until the stored line replaces them (`versions/mvp/25-bots.md` §4.7).
+- 2026-11-06 the owner asked to see a session's subagents the way the
+  terminal's footer lists them: Claude Code's, Codex's and OpenCode's
+  subagents now send their own work beside the transcript, and the chat
+  hangs each under the call that started it, a row with its task, kind,
+  model, clock, tokens and what it is doing, that opens to its work.
+  Grok's stay a row with no work under it (`next-steps/0.7-terminal-and-chat.md`,
+  "Subagents").
 - 2026-10-29 the owner asked for Codex cloud tasks the way Claude Code's
   cloud works, though the research note put Codex cloud last: a Codex row
   under Cloud starts the task from a host with `codex cloud exec`, and the

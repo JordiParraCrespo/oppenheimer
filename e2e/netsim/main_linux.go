@@ -61,7 +61,7 @@ var nodeName = regexp.MustCompile(`^[a-z0-9][a-z0-9-]{0,30}$`)
 // 10.77.i.2.
 var relayAddr = net.IPv4(10, 77, 0, 1)
 
-func nodeAddr(i int) net.IP { return net.IPv4(10, 77, byte(i), 2) }
+func nodeAddr(i int) net.IP { return net.IPv4(10, 77, byte(i), 2) } //nolint:gosec // i is at most 249, checked where the config loads
 
 func main() {
 	if len(os.Args) < 2 {

@@ -4199,6 +4199,23 @@ export type BotLoopEventResponseDto = {
     reason: string | null;
 };
 
+export type BotDreamEventResponseDto = {
+    kind: 'dream';
+    /**
+     * `dreamed`: the bot's memory was rewritten by a dream; `undone`: its owner put the facts back.
+     */
+    activity: 'dreamed' | 'undone';
+    dreamId: string;
+    /**
+     * The facts the dream rewrote.
+     */
+    factsBefore: number;
+    /**
+     * The facts it wrote in their place.
+     */
+    factsAfter: number;
+};
+
 export type BotSubagentRunResponseDto = {
     /**
      * The task the bot gave it.
@@ -4309,7 +4326,7 @@ export type BotMessageResponseDto = {
     /**
      * What an event says happened, by `kind`; null on every other role.
      */
-    event: BotApprovalEventResponseDto | BotQuestionEventResponseDto | BotRoutineEventResponseDto | BotPeerMessageEventResponseDto | BotPeerReplyEventResponseDto | BotSessionEventResponseDto | BotPullRequestEventResponseDto | BotGoalEventResponseDto | BotLoopEventResponseDto | null;
+    event: BotApprovalEventResponseDto | BotQuestionEventResponseDto | BotRoutineEventResponseDto | BotPeerMessageEventResponseDto | BotPeerReplyEventResponseDto | BotSessionEventResponseDto | BotPullRequestEventResponseDto | BotGoalEventResponseDto | BotLoopEventResponseDto | BotDreamEventResponseDto | null;
     /**
      * The images a message of yours carries, in the order attached; read each from `GET /bots/:id/attachments/:attachmentId/content`. Empty on every other role.
      */
@@ -4509,9 +4526,9 @@ export type BotUsageBackgroundResponseDto = {
      */
     cacheWriteTokens: number;
     /**
-     * Why the bot called its model outside a turn: a goal's review, the conversation's summary, or a review of the owner's rules.
+     * Why the bot called its model outside a turn: a goal's review, the conversation's summary, a review of the owner's rules, or a dream of its memory.
      */
-    purpose: 'goal_review' | 'summary' | 'rule_review';
+    purpose: 'goal_review' | 'summary' | 'rule_review' | 'dream';
     calls: number;
 };
 
@@ -4533,6 +4550,35 @@ export type BotUsageResponseDto = {
      */
     models: Array<BotUsageModelResponseDto>;
     background: Array<BotUsageBackgroundResponseDto>;
+};
+
+export type BotMemoryDreamResponseDto = {
+    id: string;
+    /**
+     * The facts it rewrote: those the bot wrote itself
+     */
+    factsBefore: number;
+    /**
+     * The facts it wrote in their place
+     */
+    factsAfter: number;
+    /**
+     * What it changed, in its words
+     */
+    note: string | null;
+    createdAt: string;
+    /**
+     * When the owner undid it; null while it stands
+     */
+    undoneAt: string | null;
+};
+
+export type BotMemoryDreamStateResponseDto = {
+    latest: BotMemoryDreamResponseDto | null;
+    /**
+     * Whether a dream its owner asked for (Tidy now) is under way: from the ask until its job ends, ten minutes at most.
+     */
+    pending: boolean;
 };
 
 export type BotApprovalResponseDto = {
@@ -15223,6 +15269,102 @@ export type FindBotUsageResponses = {
 };
 
 export type FindBotUsageResponse = FindBotUsageResponses[keyof FindBotUsageResponses];
+
+export type FindBotMemoryDreamData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/bots/{id}/memory/dream';
+};
+
+export type FindBotMemoryDreamErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * BOTS_001 — Bot not found
+     */
+    404: ProblemDetailsDto;
+};
+
+export type FindBotMemoryDreamError = FindBotMemoryDreamErrors[keyof FindBotMemoryDreamErrors];
+
+export type FindBotMemoryDreamResponses = {
+    200: BotMemoryDreamStateResponseDto;
+};
+
+export type FindBotMemoryDreamResponse = FindBotMemoryDreamResponses[keyof FindBotMemoryDreamResponses];
+
+export type RequestBotMemoryDreamData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/bots/{id}/memory/dream';
+};
+
+export type RequestBotMemoryDreamErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * BOTS_001 — Bot not found
+     */
+    404: ProblemDetailsDto;
+};
+
+export type RequestBotMemoryDreamError = RequestBotMemoryDreamErrors[keyof RequestBotMemoryDreamErrors];
+
+export type RequestBotMemoryDreamResponses = {
+    202: unknown;
+};
+
+export type UndoBotMemoryDreamData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/bots/{id}/memory/dream/undo';
+};
+
+export type UndoBotMemoryDreamErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * BOTS_041 — No dream to undo
+     *
+     * BOTS_001 — Bot not found
+     */
+    404: ProblemDetailsDto;
+};
+
+export type UndoBotMemoryDreamError = UndoBotMemoryDreamErrors[keyof UndoBotMemoryDreamErrors];
+
+export type UndoBotMemoryDreamResponses = {
+    204: void;
+};
+
+export type UndoBotMemoryDreamResponse = UndoBotMemoryDreamResponses[keyof UndoBotMemoryDreamResponses];
 
 export type StreamBotData = {
     body?: never;

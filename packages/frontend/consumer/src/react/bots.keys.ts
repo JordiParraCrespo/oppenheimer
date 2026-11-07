@@ -20,6 +20,7 @@ export const botsKeys = {
     [...botsKeys.documents(id), name, 'revisions'] as const,
   memory: (id: string) => [...botsKeys.detail(id), 'memory'] as const,
   memoryList: (id: string) => [...botsKeys.memory(id), 'list'] as const,
+  memoryDream: (id: string) => [...botsKeys.memory(id), 'dream'] as const,
   // What every bot of the reader's knows about them (Settings → Memory):
   // apart from any one bot's, so a write to a fact about them refreshes both.
   personMemory: () => [...botsKeys.all, 'person-memory'] as const,

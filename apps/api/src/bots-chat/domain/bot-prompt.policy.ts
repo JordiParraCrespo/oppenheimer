@@ -248,6 +248,7 @@ const EVENT_PROMPTS: EventPrompts = {
   pull_request: pullRequestWakePrompt,
   goal: (_event, content) => eventNote(content),
   loop: (_event, content) => eventNote(content),
+  dream: (_event, content) => eventNote(content),
 };
 
 /**
