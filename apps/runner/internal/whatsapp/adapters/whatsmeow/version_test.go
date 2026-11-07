@@ -14,7 +14,15 @@ func TestAnnounceVersionReachesTheHandshake(t *testing.T) {
 	t.Cleanup(func() { announceVersion(before) })
 
 	want := store.WAVersionContainer{2, 3000, before[2] + 1}
-	announceVersion(want)
+	if !announceVersion(want) {
+		t.Fatal("a new version reads as unchanged")
+	}
+	if announceVersion(want) {
+		t.Fatal("the same version reads as changed, so an outdated client would reconnect in a loop")
+	}
+	if got := store.GetWAVersion(); got != want {
+		t.Fatalf("whatsmeow's version is %s, want %s", got, want)
+	}
 
 	got := store.BaseClientPayload.UserAgent.AppVersion
 	if got.GetPrimary() != want[0] || got.GetSecondary() != want[1] || got.GetTertiary() != want[2] {
