@@ -130,10 +130,13 @@ worker runs it and streams what happens back to the chat.
     only what a tool confirmed; a reply commits to something (what it took
     on, where it stands, when the person hears next), and asking again for
     work under way is the same errand, reported rather than started again
-    (2026-10-29); every action that changes something is checked before it
-    is reported, from what the tool returned and then, where a tool can
-    read it back, from that read, and a failure is said first and
-    unprompted (2026-11-07);
+    (2026-10-29);
+  - **check before you report** (2026-11-07), the one statement every
+    other section and the session wakes point at: every action that
+    changes something is checked before it is reported, from what the
+    tool returned and then, where a tool can read it back, from that read;
+    a failure is said first and unprompted, and what another agent reports
+    is a claim checked against its evidence;
   - **a closed list of what it can do**: its tools, and that it has no
     shell, no files and no access to the machine it runs on, so a missing
     tool is a plain "I can't" and never a search of the server;
