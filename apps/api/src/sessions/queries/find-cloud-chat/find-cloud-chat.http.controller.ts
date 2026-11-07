@@ -50,7 +50,7 @@ export class FindCloudChatHttpController {
   @ApiProblemResponse({
     status: 409,
     description: 'This session has no cloud chat',
-    code: 'SESSIONS_053',
+    code: 'SESSIONS_054',
   })
   @ApiProblemResponse({ status: 429, description: 'Rate limit reached', code: 'RATE_001' })
   async read(

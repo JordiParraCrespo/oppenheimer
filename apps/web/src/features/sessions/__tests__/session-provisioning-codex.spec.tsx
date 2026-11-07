@@ -31,8 +31,10 @@ vi.mock('@oppenheimer/frontend-web', async (importOriginal) => ({
 }));
 
 let failure: { code: string | null; detail: string | null };
+const retry = vi.fn();
 vi.mock('@oppenheimer/frontend-consumer/react', () => ({
   useHosts: () => ({ data: 'mac-studio' }),
+  useRetrySession: () => ({ mutate: retry, isPending: false, error: null }),
   useSessionStartProgress: () => ({
     data: { steps: [], downloading: false, failure, settled: true },
     error: null,
@@ -65,6 +67,14 @@ describe('SessionProvisioning after a failed Codex cloud start', () => {
     expect(link.getAttribute('href')).toBe('https://chatgpt.com/settings/codex-cloud');
     // The host's own words stay, as the secondary line.
     expect(screen.getByText(/found no environment labelled/)).toBeTruthy();
+  });
+
+  it('offers Try again, which sends the same start for this session', () => {
+    failure = { code: 'SESS_019', detail: 'Cloud sessions need a claude.ai sign-in.' };
+    render(<SessionProvisioning session={SESSION} />);
+
+    screen.getByRole('button', { name: 'sessions.provisioning.retry' }).click();
+    expect(retry).toHaveBeenCalledWith('s-1');
   });
 
   it('says nothing about environments for any other refusal', () => {

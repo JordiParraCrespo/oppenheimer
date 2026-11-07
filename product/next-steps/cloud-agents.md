@@ -328,7 +328,7 @@ answer it there, the way claude.ai shows it. The research is
   so a resend stores nothing twice, in batches under the API's body limit
   (a line over 64 KB has its long strings cut short). The API keeps them in
   `session_cloud_line`, for the cloud sessions this workspace launched only
-  (`SESSIONS_052` otherwise), on a personal token with `sessions:write`.
+  (`SESSIONS_053` otherwise), on a personal token with `sessions:write`.
 - **The console draws it with the chat it already has.** A Claude Code
   cloud session's pane reads `GET /v1/sessions/{id}/cloud-chat` from where
   it stopped, every 1.5 s, into the same `SessionChat` a host session's

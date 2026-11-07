@@ -370,6 +370,17 @@ export class SessionsRepository {
   }
 
   /**
+   * Try a failed start again: the host is sent the same create, with the same
+   * first task, and the session is starting again.
+   */
+  retry(id: string): Promise<SessionEntity> {
+    return callApi(SessionsErrors.RETRY_FAILED, async (api) => {
+      const data = await api.body(heyApiSdk.retrySession({ path: { id } }));
+      return toEntity(data);
+    });
+  }
+
+  /**
    * Close: the session stops, its worktree leaves the host, and the row stays
    * resolved so its directory name and branch are never reissued. Work that is
    * not pushed refuses the close unless the caller accepts losing it.

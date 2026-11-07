@@ -416,13 +416,19 @@ export const SessionErrors = {
     message: 'The cloud session’s vendor did not confirm the follow-up',
     httpStatus: 502,
   },
+  /** A retry asked of a session whose start did not fail: only a failed start is tried again. */
+  NOT_FAILED: {
+    code: 'SESSIONS_052',
+    message: 'Only a session whose start failed can be tried again',
+    httpStatus: 409,
+  },
   /**
    * A cloud session's hook named a Claude Code cloud session this workspace
    * did not launch, or the credential is not this workspace's: its chat is
    * kept only for sessions the console knows.
    */
   CLOUD_CHAT_SESSION_NOT_FOUND: {
-    code: 'SESSIONS_052',
+    code: 'SESSIONS_053',
     message: 'No cloud session of this workspace has that id',
     httpStatus: 404,
   },
@@ -432,7 +438,7 @@ export const SessionErrors = {
    * collects replies (`product/next-steps/cloud-agents.md`).
    */
   NO_CLOUD_CHAT: {
-    code: 'SESSIONS_053',
+    code: 'SESSIONS_054',
     message: 'This session has no cloud chat',
     httpStatus: 409,
   },

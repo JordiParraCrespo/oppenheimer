@@ -71,6 +71,8 @@ import { RenameSessionCommandHandler } from './commands/rename-session/rename-se
 import { RenameSessionHttpController } from './commands/rename-session/rename-session.http.controller';
 import { RestartSessionCommandHandler } from './commands/restart-session/restart-session.command-handler';
 import { RestartSessionHttpController } from './commands/restart-session/restart-session.http.controller';
+import { RetrySessionCommandHandler } from './commands/retry-session/retry-session.command-handler';
+import { RetrySessionHttpController } from './commands/retry-session/retry-session.http.controller';
 import { SendCloudReplyCommandHandler } from './commands/send-cloud-reply/send-cloud-reply.command-handler';
 import { SendCloudReplyHttpController } from './commands/send-cloud-reply/send-cloud-reply.http.controller';
 import { SendSessionPromptCommandHandler } from './commands/send-session-prompt/send-session-prompt.command-handler';
@@ -177,6 +179,7 @@ const httpControllers = [
   FindCloudChatHttpController,
   PrepareSessionHttpController,
   RestartSessionHttpController,
+  RetrySessionHttpController,
   AddCheckoutHttpController,
   RemoveCheckoutHttpController,
   FindSessionHttpController,
@@ -205,6 +208,7 @@ const commandHandlers: Provider[] = [
   SendCloudReplyCommandHandler,
   PrepareSessionCommandHandler,
   RestartSessionCommandHandler,
+  RetrySessionCommandHandler,
   CloseSessionCommandHandler,
   AddCheckoutCommandHandler,
   RemoveCheckoutCommandHandler,

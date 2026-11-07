@@ -48,7 +48,7 @@ export class AppendCloudTranscriptHttpController {
   @ApiProblemResponse({
     status: 404,
     description: 'No cloud session of this workspace has that id',
-    code: 'SESSIONS_052',
+    code: 'SESSIONS_053',
   })
   @ApiProblemResponse({ status: 429, description: 'Rate limit reached', code: 'RATE_001' })
   async append(
