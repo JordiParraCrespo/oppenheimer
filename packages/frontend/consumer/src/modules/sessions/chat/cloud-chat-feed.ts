@@ -25,7 +25,8 @@ export interface CloudChatSource {
   reply(text: string): Promise<void>;
 }
 
-const PASTE = /\u001b\[20[01]~/g;
+/** The marks a paste is typed between, which a reply leaves out. */
+const PASTE_MARKS = ['\u001b[200~', '\u001b[201~'];
 const ESCAPE = '\u001b';
 const ENTER = '\r';
 const FEEDBACK = /^Stop hook feedback:\n(?:\[[^\]]*\]: )?/;
@@ -97,7 +98,7 @@ export class CloudChatFeed {
   private type(data: string): void {
     if (data === ESCAPE) return;
     if (data !== ENTER) {
-      this.typed += data.replace(PASTE, '');
+      this.typed += PASTE_MARKS.reduce((text, mark) => text.split(mark).join(''), data);
       return;
     }
     const text = this.typed.trim();
