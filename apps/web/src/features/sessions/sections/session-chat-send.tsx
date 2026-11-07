@@ -50,6 +50,7 @@ export function SessionChatSend({
   agent,
   files,
   upload,
+  stoppable = true,
   onSent,
 }: {
   chat: Chat;
@@ -59,6 +60,8 @@ export function SessionChatSend({
   files?: FileHandOff;
   /** Puts one file in the agent's prompt; resolves once the host has pasted its path. */
   upload?: (file: File) => Promise<void>;
+  /** Whether Send turns into Stop while the agent works (`SessionChat`'s `stoppable`). */
+  stoppable?: boolean;
   onSent: () => void;
 }) {
   const { t } = useTranslation();
@@ -70,9 +73,12 @@ export function SessionChatSend({
 
   function deliver(text: string, withFiles: boolean): ChatSendResult {
     // Words alone wait their turn while the agent works; with files, they
-    // follow the paths the host already pasted, which cannot wait.
+    // follow the paths the host already pasted, which cannot wait. A turn
+    // that cannot be stopped (a cloud session) has its own wait: the reply
+    // is kept by the API until the turn ends, so it goes now.
     if (withFiles) chat.send(text, { withFiles });
-    else chat.post(text);
+    else if (stoppable) chat.post(text);
+    else chat.send(text);
     onSent();
     return { sent: true };
   }
@@ -127,7 +133,7 @@ export function SessionChatSend({
       <div hidden={question !== null} className={question ? undefined : 'contents'}>
         <SessionChatComposer
           agent={agent}
-          busy={last?.working ?? false}
+          busy={stoppable && (last?.working ?? false)}
           todos={last ? latestTodos(last) : null}
           model={modelName(latestModel(state.turns))}
           voice={voice}

@@ -421,10 +421,10 @@ export class SessionsRepository {
     });
   }
 
-  /** A Claude Code cloud session's chat: transcript lines from `after` on, and its replies. */
-  findCloudChat(id: string, after: number): Promise<CloudChatPage> {
+  /** A Claude Code cloud session's chat: transcript lines from `from` on, and its replies. */
+  findCloudChat(id: string, from: number): Promise<CloudChatPage> {
     return callApi(SessionsErrors.CLOUD_CHAT_FAILED, async (api) => {
-      const data = await api.body(heyApiSdk.findCloudChat({ path: { id }, query: { after } }));
+      const data = await api.body(heyApiSdk.findCloudChat({ path: { id }, query: { from } }));
       return {
         lines: data.lines,
         next: data.next,

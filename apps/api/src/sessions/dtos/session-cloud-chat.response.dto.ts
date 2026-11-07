@@ -43,7 +43,7 @@ export class CloudChatResponseDto {
   @ApiProperty({
     type: [String],
     description:
-      'Transcript lines from `after` on, each as Claude Code wrote it (JSON text): the same lines a runner sends for a host session’s chat.',
+      'Transcript lines from `from` on, each as Claude Code wrote it (JSON text): the same lines a runner sends for a host session’s chat.',
   })
   lines!: string[];
 

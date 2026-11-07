@@ -49,7 +49,7 @@ export function SessionCloudChat({ session }: { session: SessionEntity }) {
           onDismiss={dismissFailure}
         />
       ) : null}
-      <SessionChat chat={chat} agent="claude-code" readOnly={false} />
+      <SessionChat chat={chat} agent="claude-code" readOnly={false} stoppable={false} />
     </>
   );
 }

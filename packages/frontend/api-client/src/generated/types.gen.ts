@@ -2102,7 +2102,7 @@ export type CloudChatReplyResponseDto = {
 
 export type CloudChatResponseDto = {
     /**
-     * Transcript lines from `after` on, each as Claude Code wrote it (JSON text): the same lines a runner sends for a host session’s chat.
+     * Transcript lines from `from` on, each as Claude Code wrote it (JSON text): the same lines a runner sends for a host session’s chat.
      */
     lines: Array<string>;
     /**
@@ -10627,9 +10627,9 @@ export type FindCloudChatData = {
          */
         limit?: number;
         /**
-         * The first line to read
+         * The number of the first line to read: a read’s `next`, or 0
          */
-        after?: number;
+        from?: number;
     };
     url: '/api/v1/sessions/{id}/cloud-chat';
 };

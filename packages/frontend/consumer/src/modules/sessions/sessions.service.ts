@@ -109,7 +109,7 @@ export class SessionsService {
     // Loaded with the first cloud chat opened, not with the console.
     const { CloudChatFeed } = await import('./chat/cloud-chat-feed');
     const source = {
-      read: (after: number) => this.repository.findCloudChat(id, after),
+      read: (from: number) => this.repository.findCloudChat(id, from),
       reply: (text: string) => this.repository.sendCloudReply(id, text),
     };
     return new CloudChatFeed(source, chat, {

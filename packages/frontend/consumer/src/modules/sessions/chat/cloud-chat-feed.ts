@@ -21,7 +21,7 @@ export interface CloudChatPage {
 
 /** Where a feed reads a cloud session's chat and sends replies: the API, through the repository. */
 export interface CloudChatSource {
-  read(after: number): Promise<CloudChatPage>;
+  read(from: number): Promise<CloudChatPage>;
   reply(text: string): Promise<void>;
 }
 

@@ -112,6 +112,28 @@ describe('SessionChat', () => {
     expect(send).toHaveBeenCalledWith('\u001b');
   });
 
+  it('keeps sending while the agent works when the turn cannot be stopped (a cloud session)', () => {
+    vi.useFakeTimers();
+    const chat = new Chat();
+    const send = vi.fn();
+    chat.apply({
+      reset: true,
+      entries: [entry({ type: 'user', uuid: 'u', message: { role: 'user', content: 'Go' } })],
+    });
+    chat.connect(send);
+    render(<SessionChat chat={chat} agent="claude-code" readOnly={false} stoppable={false} />);
+    // Breaks if Stop is offered where nothing can stop the turn: a reply
+    // typed mid-turn would be sent as Escape and lost.
+    expect(screen.queryByRole('button', { name: 'sessions.chat.composer.stop' })).toBeNull();
+    const field = screen.getByPlaceholderText(
+      'sessions.chat.composer.placeholder{"agent":"Claude Code"}',
+    );
+    fireEvent.change(field, { target: { value: 'And tag it' } });
+    fireEvent.keyDown(field, { key: 'Enter' });
+    expect(send).toHaveBeenCalledWith('And tag it');
+    vi.useRealTimers();
+  });
+
   it('offers no composer to a watcher', () => {
     render(<SessionChat chat={new Chat()} agent="claude-code" readOnly />);
     expect(

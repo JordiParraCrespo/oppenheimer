@@ -63,12 +63,19 @@ export function SessionChat({
   agent,
   readOnly,
   attach,
+  stoppable = true,
 }: {
   chat: Chat;
   /** Whose conversation it is; none where the reader is not told (a guest on a share). */
   agent: SessionAgent | null;
   readOnly: boolean;
   attach?: ChatAttach;
+  /**
+   * Whether the composer can stop the agent's turn. A cloud session's cannot
+   * (no hook interrupts a turn), so its composer keeps sending while the
+   * agent works, and the message waits for the turn to end.
+   */
+  stoppable?: boolean;
 }) {
   const { t } = useTranslation();
   // The ids alone: each turn subscribes to its own record, so a line the
@@ -182,7 +189,7 @@ export function SessionChat({
           {attach ? (
             <SessionChatAttachingSend chat={chat} agent={agent} attach={attach} onSent={toLatest} />
           ) : (
-            <SessionChatSend chat={chat} agent={agent} onSent={toLatest} />
+            <SessionChatSend chat={chat} agent={agent} stoppable={stoppable} onSent={toLatest} />
           )}
         </TerminalColumn>
       )}
