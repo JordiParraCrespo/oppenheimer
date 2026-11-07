@@ -43,6 +43,8 @@ reader: every bot in the product reads these exact pages through its
   the page's entry in the index a bot picks pages from) and
   `sidebar_position`. Plain Markdown, no MDX components; link other pages as
   `./<id>.md`.
+- A bot reads a page in one tool answer, which holds 12,000 characters
+  (`bot-guide.policy.spec.ts` fails past it): split a page that grows near it.
 - After an edit run `pnpm generate:guide`, which writes the pages into
   `packages/shared/src/guide/guide-pages.gen.ts` for the API, and commit
   both. `check:guide` (in `pnpm ci:local`) fails when they differ.

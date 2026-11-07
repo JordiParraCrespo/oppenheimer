@@ -7,13 +7,16 @@
  * a tool it does not have), or missing from one that can (it answers "how do
  * I pair a host?" from its training); a page asked for by the link a page
  * carries (`./hosts.md`) not found; a deployment's docs address dropped from
- * the answer, or one invented where none is configured. That the bundled
- * pages are the site's own is `pnpm --filter @oppenheimer/docs check:guide`.
+ * the answer, or one invented where none is configured; a page grown past
+ * what a tool answer holds, which the bot would get cut from the middle.
+ * That the bundled pages are the site's own is `pnpm --filter
+ * @oppenheimer/docs check:guide`.
  */
 import { GUIDE_PAGES } from '@oppenheimer/shared/guide';
 import { guideIndexText, guidePageText } from '../domain/bot-guide.policy';
 import { type BotPromptInput, composeBotSystemPrompt } from '../domain/bot-prompt.policy';
 import { OPPENHEIMER_SKILL, withBuiltInSkills } from '../domain/bot-skill.policy';
+import { BOT_TOOL_OUTPUT_MAX } from '../domain/bot-tool-text.policy';
 
 const tool = (name: string) => ({ name, description: `Does ${name}.` });
 
@@ -83,6 +86,14 @@ describe('read_oppenheimer_docs', () => {
     expect(guideIndexText('https://docs.example.com')).toContain(
       'It is published at https://docs.example.com/guide.',
     );
+  });
+
+  it('hands back every page and the index whole, within what one tool answer holds', () => {
+    const docsUrl = 'https://docs.example.com';
+    for (const page of GUIDE_PAGES) {
+      expect(guidePageText(page.id, docsUrl).length).toBeLessThanOrEqual(BOT_TOOL_OUTPUT_MAX);
+    }
+    expect(guideIndexText(docsUrl).length).toBeLessThanOrEqual(BOT_TOOL_OUTPUT_MAX);
   });
 
   it('answers a page it does not have with the index, so the bot can pick again', () => {
