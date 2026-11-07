@@ -1213,6 +1213,10 @@ earlier note:
   workspace's projects with New project and each one's settings, and the
   Sessions sidebar keeps only New session here on a project's header.
   New session's project chip still ends in New project….
+- The 2026-11-05 line above left the Sessions sidebar no way to make a
+  project. On 2026-11-07 the owner asked for one back, in the filter menu:
+  the Project facet's list ends in **New project…**, opening the project
+  dialog (`05-screens.md`). Editing projects stays in Plan.
 - `versions/mvp/18-plan-product.md` drew Plan's board as Later, To do, In
   progress and Done. On 2026-11-05 the owner dropped **Later** and added
   **In review** between In progress and Done, for finished work waiting to
