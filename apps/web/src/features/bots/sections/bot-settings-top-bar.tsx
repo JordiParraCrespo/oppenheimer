@@ -27,13 +27,7 @@ export function BotSettingsTopBar({ botId }: { botId: string }) {
             <ChevronLeft />
           </IconButton>
         }
-        avatar={
-          <BotAvatar
-            option={{ initials: bot.initials }}
-            size={30}
-            face={{ color: bot.avatarColor, seed: bot.id }}
-          />
-        }
+        avatar={<BotAvatar option={{ initials: bot.initials }} size={30} face={bot.face} />}
         title={bot.name}
         actions={
           <>

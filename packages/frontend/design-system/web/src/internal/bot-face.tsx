@@ -48,15 +48,21 @@ const HAT_SHAPES = {
   ],
 } satisfies Record<string, HatShape[]>;
 
-const HATS = Object.keys(HAT_SHAPES) as (keyof typeof HAT_SHAPES)[];
-const EYES = ['dots', 'happy', 'wink', 'big'] as const;
-const MOUTHS = ['smile', 'grin', 'o'] as const;
+/** The parts a face is made of, in the order a picker offers them. */
+const FACE_HATS = Object.keys(HAT_SHAPES) as (keyof typeof HAT_SHAPES)[];
+const FACE_EYES = ['dots', 'happy', 'wink', 'big'] as const;
+const FACE_MOUTHS = ['smile', 'grin', 'o'] as const;
 
-type Face = {
+/** A face, part by part: what a bot's owner picks, or what its id picks for it. */
+type BotFaceParts = {
   hat: keyof typeof HAT_SHAPES;
-  eyes: (typeof EYES)[number];
-  mouth: (typeof MOUTHS)[number];
+  eyes: (typeof FACE_EYES)[number];
+  mouth: (typeof FACE_MOUTHS)[number];
 };
+type Face = BotFaceParts;
+const HATS = FACE_HATS;
+const EYES = FACE_EYES;
+const MOUTHS = FACE_MOUTHS;
 
 /** FNV-1a: the same seed always picks the same face. */
 function hash(seed: string): number {
@@ -167,13 +173,25 @@ function Mouth({ mouth }: { mouth: Face['mouth'] }) {
 /**
  * BotFace — a bot's drawn face while it has no photo: a round face in its
  * avatar colour wearing a hat, cut out like a sticker (a white margin) on a
- * darker shade of the same colour. The hat, the eyes and the mouth come from
- * `seed`, so a bot keeps its face for as long as it keeps its seed. Flat
+ * darker shade of the same colour. The hat, the eyes and the mouth are the
+ * `parts` its owner picked, or else come from `seed`, so a bot keeps its face
+ * for as long as it keeps its seed. Flat
  * colour only; it fills its box (`size-full`, so a slot's own svg sizing
  * passes it by) and lets the avatar clip it.
  */
-function BotFace({ seed, color, className }: { seed: string; color: AvatarColor; className?: string }) {
-  const face = faceFor(seed);
+function BotFace({
+  seed,
+  color,
+  parts,
+  className,
+}: {
+  seed: string;
+  color: AvatarColor;
+  /** The face its owner picked; without it, the one `seed` picks. */
+  parts?: BotFaceParts | null;
+  className?: string;
+}) {
+  const face = parts ?? faceFor(seed);
   const fill = `var(--avatar-${color})`;
   return (
     <svg
@@ -196,4 +214,5 @@ function BotFace({ seed, color, className }: { seed: string; color: AvatarColor;
   );
 }
 
-export { BotFace, faceFor };
+export { BotFace, FACE_EYES, FACE_HATS, FACE_MOUTHS, faceFor };
+export type { BotFaceParts };

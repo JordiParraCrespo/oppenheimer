@@ -45,7 +45,7 @@ export function BotSidebarRow({
         disabled={dragDisabled}
         name={bot.name}
         initials={bot.initials}
-        face={{ color: bot.avatarColor, seed: bot.id }}
+        face={bot.face}
         preview={line ? <MarkdownLine source={line} /> : t('bots.sidebar.noMessages')}
         active={active}
         menuOpen={menuOpen}

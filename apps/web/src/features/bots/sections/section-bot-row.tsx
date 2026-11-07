@@ -44,7 +44,7 @@ export function SectionBotRow({
         id={bot.id}
         name={bot.name}
         initials={bot.initials}
-        face={{ color: bot.avatarColor, seed: bot.id }}
+        face={bot.face}
         preview={line ? <MarkdownLine source={line} /> : t('bots.sidebar.noMessages')}
         active={active}
         menuOpen={menuOpen}

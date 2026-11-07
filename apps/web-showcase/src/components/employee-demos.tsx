@@ -8,7 +8,9 @@ import {
   AvatarPicker,
   BotAvatar,
   type AvatarOption,
+  type BotFaceParts,
 } from '@oppenheimer/design-system-web/avatar-picker';
+import { BotFacePicker } from '@oppenheimer/design-system-web/bot-face-picker';
 import { Badge } from '@oppenheimer/design-system-web/badge';
 import { BotItem, BotList } from '@oppenheimer/design-system-web/bot-item';
 import { Button } from '@oppenheimer/design-system-web/button';
@@ -146,6 +148,31 @@ const COLOR_NAMES: Record<AvatarColor, string> = {
   coral: 'Coral',
   moss: 'Moss',
 };
+
+const FACE_NAMES = {
+  hat: { fedora: 'Fedora', porkpie: 'Porkpie', bowler: 'Bowler', tophat: 'Top hat', cap: 'Cap', beanie: 'Beanie' },
+  eyes: { dots: 'Dots', happy: 'Happy', wink: 'Wink', big: 'Wide' },
+  mouth: { smile: 'Smile', grin: 'Grin', o: 'Surprised' },
+};
+
+export function BotFacePickerDemo() {
+  const [face, setFace] = React.useState<BotFaceParts | null>(null);
+  return (
+    <div className="flex w-full flex-wrap items-start gap-8 rounded-lg bg-canvas-recessed p-4">
+      <BotAvatar option={{ initials: 'NB' }} size={72} face={{ color: 'tangerine', seed: 'new-bot', parts: face }} />
+      <div className="rounded-lg bg-card px-5 py-4">
+        <BotFacePicker
+          value={face}
+          onValueChange={setFace}
+          color="tangerine"
+          seed="new-bot"
+          labels={{ hat: 'Hat', eyes: 'Eyes', mouth: 'Mouth', reset: 'Use its own face' }}
+          optionNames={FACE_NAMES}
+        />
+      </div>
+    </div>
+  );
+}
 
 export function AvatarColorPickerDemo() {
   const [color, setColor] = React.useState<AvatarColor>('tangerine');
@@ -385,6 +412,16 @@ export function EmployeesSection() {
         code={`<AvatarColorPicker value={color} onValueChange={save} initials="NB" seed={bot.id} name="New Bot" colorNames={names} />`}
       >
         <AvatarColorPickerDemo />
+      </Spec>
+
+      <Spec
+        id="botfacepicker"
+        title="BotFacePicker"
+        meta="bot-face-picker.tsx"
+        desc="A bot's face, on BotSettings' Profile under its colour: Hat, Eyes and Mouth, each a row of 36px faces in the bot's colour that change only that part, the worn one ringed in ink. Until its owner picks, the rows show the face the bot's id picks; Use its own face goes back to it. BotAvatar and BotItem draw the picked face through face.parts."
+        code={`<BotFacePicker value={bot.avatarFace} onValueChange={save} color={bot.avatarColor} seed={bot.id} labels={labels} optionNames={names} />`}
+      >
+        <BotFacePickerDemo />
       </Spec>
 
       <Spec

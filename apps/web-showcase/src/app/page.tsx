@@ -224,7 +224,7 @@ export default function Page() {
         id="wordmark"
         title="Wordmark · BrandMark"
         meta="wordmark.tsx · brand-mark.tsx"
-        desc="The mark, a white fedora on an ink tile the same in both themes, then the name in SF Pro Display 600 at -0.032em. The favicons and the extension's icons are the same drawing."
+        desc="The name is the wordmark: SF Pro Display 600 at -0.032em. The mark is a white fedora on an ink tile, the same in both themes: the rail's top, beside the name on sign-in and the public pages, the favicons and the extension's icons."
         code={`<Wordmark />`}
       >
         <Swatch label="18px">

@@ -9,12 +9,7 @@ import type { BotEntity } from '@oppenheimer/frontend-consumer';
 export function BotDragOverlay({ bot }: { bot: BotEntity | undefined }) {
   return bot ? (
     <div className="w-60 rounded-md bg-sidebar">
-      <BotItem
-        name={bot.name}
-        initials={bot.initials}
-        face={{ color: bot.avatarColor, seed: bot.id }}
-        active
-      />
+      <BotItem name={bot.name} initials={bot.initials} face={bot.face} active />
     </div>
   ) : null;
 }

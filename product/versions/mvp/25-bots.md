@@ -1244,7 +1244,9 @@ round face in the bot's colour wearing a hat, cut out like a sticker on a
 darker shade of that colour. The hat, the eyes and the mouth come from the
 bot's id, so a bot keeps its face through a rename and nobody has to pick
 one; the colour is still the one picked in Profile. Still no photos of
-people.
+people. The owner can pick another face in Profile, under the colour: a
+hat, eyes and a mouth, each a row of faces (`bot."avatarFace"`, null until
+picked, and "Use its own face" goes back to the id's).
 
 ## 8. Where things live
 

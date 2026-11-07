@@ -1255,5 +1255,8 @@ earlier note:
   better avatars: each bot now has a drawn face, a hatted face in its
   colour cut out like a sticker, generated from its id. The same day the
   product's mark became a white fedora on an ink tile (favicons, the
-  extension, `BrandMark` and `Wordmark`), replacing the starter's asterisk
-  and the three-part hat favicon.
+  extension, `BrandMark`, the console rail's top as a link home, beside the
+  name on sign-in and the public pages; the console's sidebar header is the
+  name alone), replacing the starter's asterisk, the rail's "O" and the
+  three-part hat favicon. A bot's owner can also pick its face in Profile
+  (hat, eyes, mouth).
