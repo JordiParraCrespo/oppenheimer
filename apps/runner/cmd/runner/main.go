@@ -340,7 +340,7 @@ func execPolicy(ctx context.Context, args []string) (int, error) {
 	}
 	usage(os.Stderr)
 	return cli.ExitUsage, errors.New("usage: runner exec [status] | runner exec mode off|allowlist|full | " +
-		"runner exec allow <program|/abs/path|/abs/glob/*>... | runner exec deny <entry>...")
+		"runner exec allow <program|/abs/path|/abs/glob/*> [more] | runner exec deny <entry> [more]")
 }
 
 // sessions dispatches the session subcommands. They are what a person uses on
