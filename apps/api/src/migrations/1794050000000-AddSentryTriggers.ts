@@ -11,8 +11,8 @@ import type { MigrationInterface, QueryRunner } from 'typeorm';
  * The connection is deleted, not revoked: nothing refers to its row but the
  * triggers that name it, which then never fire again.
  */
-export class AddSentryTriggers1793700000000 implements MigrationInterface {
-  name = 'AddSentryTriggers1793700000000';
+export class AddSentryTriggers1794050000000 implements MigrationInterface {
+  name = 'AddSentryTriggers1794050000000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(
