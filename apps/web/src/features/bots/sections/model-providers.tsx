@@ -14,6 +14,7 @@ import { ModelProviderName } from '../components/model-provider-name';
 import { ModelProviderStatus } from '../components/model-provider-status';
 import { ChatgptLoginDialog } from '../dialogs/chatgpt-login';
 import { ModelProviderKeyDialog } from '../dialogs/model-provider-key';
+import { groupModelProviders } from '../lib/model-provider-groups';
 
 /**
  * The providers, in two cards: Connected (a key or a sign-in) above, Not
@@ -36,10 +37,7 @@ export function ModelProviders() {
   const [editing, setEditing] = useState<BotProvider | null>(null);
   const remove = useRemoveModelProviderKey();
   const makeDefault = useSetDefaultModelProvider();
-  const groups = [
-    { id: 'connected' as const, rows: providers.filter((row) => row.configured) },
-    { id: 'notConnectedGroup' as const, rows: providers.filter((row) => !row.configured) },
-  ].filter((group) => group.rows.length > 0);
+  const groups = groupModelProviders(providers);
   const unavailableReason =
     deployment !== undefined && !deployment.bot_providers
       ? t('settings.modelProviders.unavailable')
@@ -59,9 +57,13 @@ export function ModelProviders() {
         onDismiss={() => makeDefault.reset()}
       />
       {groups.map(({ id, rows }) => (
-        <section key={id} data-testid={`model-providers-${id}`} className="flex flex-col gap-2.5">
-          <SettingsHeading>
-            {t(`settings.modelProviders.${id}`)}
+        <section
+          key={id}
+          aria-labelledby={`model-providers-${id}`}
+          className="flex flex-col gap-2.5"
+        >
+          <SettingsHeading id={`model-providers-${id}`}>
+            {t(`settings.modelProviders.groups.${id}`)}
             <span className="ml-2 font-normal text-fg-subtle">{rows.length}</span>
           </SettingsHeading>
           <SettingsGroup>
@@ -75,15 +77,10 @@ export function ModelProviders() {
                   data-testid="model-provider"
                   meta={t(`settings.modelProviders.providers.${row.provider}`)}
                   kind={
-                    row.configured && row.keyHint ? (
-                      <ModelProviderStatus signIn={signIn} hint={row.keyHint} />
-                    ) : (
-                      t(
-                        signIn
-                          ? 'settings.modelProviders.notConnected'
-                          : 'settings.modelProviders.noKey',
-                      )
-                    )
+                    <ModelProviderStatus
+                      signIn={signIn}
+                      hint={row.configured ? row.keyHint : null}
+                    />
                   }
                   actions={
                     <ModelProviderActions

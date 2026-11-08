@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ModelProviders } from '../sections/model-providers';
 
@@ -120,18 +120,15 @@ describe('ModelProviders', () => {
 
   it('lists the providers with a key or a sign-in apart from those without', () => {
     render(<ModelProviders />);
-    const names = (id: string) =>
-      Array.from(
-        screen
-          .getByTestId(`model-providers-${id}`)
-          .querySelectorAll('[data-testid="model-provider"]'),
-        (row) => row.textContent,
-      );
-    expect(names('connected')).toEqual([
+    const rows = (heading: RegExp) =>
+      within(screen.getByRole('region', { name: heading }))
+        .getAllByTestId('model-provider')
+        .map((row) => row.textContent);
+    expect(rows(/groups\.connected/)).toEqual([
       expect.stringContaining('Anthropic'),
       expect.stringContaining('OpenAI'),
     ]);
-    expect(names('notConnectedGroup')).toEqual([
+    expect(rows(/groups\.notConnected/)).toEqual([
       expect.stringContaining('GLM'),
       expect.stringContaining('ChatGPT'),
     ]);
