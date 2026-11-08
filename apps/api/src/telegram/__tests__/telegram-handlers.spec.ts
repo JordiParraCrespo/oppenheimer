@@ -168,6 +168,24 @@ describe('LinkTelegramCommandHandler', () => {
     expect(accounts.rows[0]?.statusReason).toBe('Telegram refused that token');
   });
 
+  it('keeps a connected bot connected when the host refuses its replacement token', async () => {
+    const connected = fakeAccounts([account({ status: 'connected' })]);
+    let refuse: (value: { code: string } | null) => void = () => {};
+    const device = fakeDevice({
+      link: vi.fn().mockReturnValue({
+        sent: true,
+        refused: new Promise((resolve) => {
+          refuse = resolve;
+        }),
+      }),
+    });
+    await new LinkTelegramCommandHandler(hosts, device, connected.repository).execute(link());
+
+    refuse({ code: 'TG_001' });
+    await vi.waitFor(() => expect(connected.rows[0]?.status).toBe('connected'));
+    expect(connected.rows[0]?.statusReason).toContain('Telegram refused that token');
+  });
+
   it('refuses a host holding someone else’s bot, an offline host and an older runner', async () => {
     const taken = fakeAccounts([account({ userId: 'someone-else' })]);
     expect(

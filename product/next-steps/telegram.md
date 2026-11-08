@@ -56,6 +56,9 @@ of your hosts, name it ("Shop"), and paste the token @BotFather gave you.
   revoke its token in @BotFather to end it there too.
 - A token revoked in @BotFather makes Telegram answer `401`: the account
   shows *Token revoked*, and connecting again with the new token resumes.
+- A new token the host refuses for a bot it is already polling changes
+  nothing on the host: the account stays *Connected* and says the new token
+  did not take.
 - `RUNNER_TELEGRAM=off` stops a runner offering it.
 
 **`telegram_account`**: the workspace, the person, the host (unique), the

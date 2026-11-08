@@ -3,7 +3,7 @@ import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
 import type { AccessScope } from '@oppenheimer/backend-authz';
 import { AppError } from '@oppenheimer/backend-core';
 import type { AggregateID } from '@oppenheimer/backend-ddd';
-import { TELEGRAM_ACCOUNTS_MAX } from '@oppenheimer/shared';
+import { TELEGRAM_ACCOUNTS_MAX, type TelegramAccountStatus } from '@oppenheimer/shared';
 import type { HostAccessPort } from '../../../hosts/application/host-access.port';
 import { HOST_ACCESS } from '../../../hosts/hosts.di-tokens';
 import type {
@@ -49,11 +49,13 @@ export class LinkTelegramCommandHandler
     if (reach === 'offline') throw new AppError(TelegramErrors.HOST_OFFLINE);
     if (reach === 'unsupported') throw new AppError(TelegramErrors.HOST_UNSUPPORTED);
 
-    const account = await this.accountFor(scope, organizationId, hostId, label);
+    const { account, statusBefore } = await this.accountFor(scope, organizationId, hostId, label);
     const attempt = this.device.link(hostId, token);
     if (!attempt.sent) throw new AppError(TelegramErrors.HOST_OFFLINE);
     void attempt.refused
-      .then((refusal) => (refusal ? this.refused(hostId, account.id, refusal) : undefined))
+      .then((refusal) =>
+        refusal ? this.refused(hostId, account.id, refusal, statusBefore) : undefined,
+      )
       .catch((error: unknown) =>
         this.logger.warn({
           message: 'a refused Telegram token could not be recorded',
@@ -69,19 +71,19 @@ export class LinkTelegramCommandHandler
     hostId: string,
     accountId: string,
     refusal: TelegramLinkRefusal,
+    statusBefore: TelegramAccountStatus,
   ): Promise<void> {
     const found = await this.accounts.findByHostForSystem(hostId);
     if (found.isNone()) return;
     const account = found.unwrap();
     // A newer connect, or a disconnect, may have replaced the row meanwhile.
     if (account.id !== accountId || account.status !== 'connecting') return;
-    account.report({
-      state: 'revoked',
-      reason:
-        refusal.code === 'TG_001'
-          ? 'Telegram refused that token'
-          : (refusal.detail ?? `the host refused it (${refusal.code})`).slice(0, 200),
-    });
+    account.refuseToken(
+      refusal.code === 'TG_001'
+        ? 'Telegram refused that token'
+        : (refusal.detail ?? `the host refused it (${refusal.code})`),
+      statusBefore,
+    );
     await this.accounts.save(account);
   }
 
@@ -90,16 +92,17 @@ export class LinkTelegramCommandHandler
     organizationId: string,
     hostId: string,
     label: string | undefined,
-  ): Promise<TelegramAccountEntity> {
+  ): Promise<{ account: TelegramAccountEntity; statusBefore: TelegramAccountStatus }> {
     const found = await this.accounts.findByHostForSystem(hostId);
     if (found.isSome()) {
       const account = found.unwrap();
       if (account.userId !== scope.userId || account.organizationId !== organizationId) {
         throw new AppError(TelegramErrors.HOST_TAKEN);
       }
+      const statusBefore = account.status;
       account.reconnect(label);
       await this.accounts.save(account);
-      return account;
+      return { account, statusBefore };
     }
     const own = await this.accounts.findAllOwn(scope);
     if (own.length >= TELEGRAM_ACCOUNTS_MAX) {
@@ -114,6 +117,6 @@ export class LinkTelegramCommandHandler
       label: label ?? '',
     });
     await this.accounts.insert(account);
-    return account;
+    return { account, statusBefore: 'unlinked' };
   }
 }

@@ -21,6 +21,7 @@ function chat(
     chatId,
     chatKind: chatId.startsWith('-') ? 'group' : 'direct',
     chatName,
+    handle: chatId.startsWith('-') ? null : (last.senderUsername ?? null),
     messageCount: 1,
     last: { fromBot: false, senderUsername: null, ...last } as TelegramMessage,
   };

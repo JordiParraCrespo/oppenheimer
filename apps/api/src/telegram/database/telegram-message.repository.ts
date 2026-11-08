@@ -71,14 +71,23 @@ export class TelegramMessageRepository implements TelegramMessageRepositoryPort 
     // The newest row of each chat, then the chats by it: one pass over the
     // account's slice of `IDX_telegram_message_account_sent`.
     const rows: Array<
-      TelegramMessageOrmEntity & { messageCount: string; lastName: string | null }
+      TelegramMessageOrmEntity & {
+        messageCount: string;
+        lastName: string | null;
+        handle: string | null;
+      }
     > = await this.repository.query(
       `SELECT * FROM (
            SELECT DISTINCT ON ("chatId") m.*,
                   count(*) OVER (PARTITION BY "chatId") AS "messageCount",
                   (array_agg("chatName") FILTER (WHERE "chatName" IS NOT NULL)
                      OVER (PARTITION BY "chatId" ORDER BY "sentAt" DESC
-                           ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING))[1] AS "lastName"
+                           ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING))[1] AS "lastName",
+                  (array_agg("senderUsername") FILTER (WHERE "senderUsername" IS NOT NULL
+                                                         AND NOT "fromBot"
+                                                         AND "senderId" = "chatId")
+                     OVER (PARTITION BY "chatId" ORDER BY "sentAt" DESC
+                           ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING))[1] AS "handle"
              FROM telegram_message m
             WHERE "organizationId" = $1 AND "accountId" = $2
             ORDER BY "chatId", "sentAt" DESC, id DESC
@@ -92,6 +101,7 @@ export class TelegramMessageRepository implements TelegramMessageRepositoryPort 
       chatId: row.chatId,
       chatKind: row.chatKind,
       chatName: row.lastName ?? row.chatName,
+      handle: row.chatKind === 'direct' ? row.handle : null,
       messageCount: Number(row.messageCount),
       last: this.mapper.toDomain(row),
     }));

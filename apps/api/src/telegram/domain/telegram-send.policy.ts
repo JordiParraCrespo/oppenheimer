@@ -35,10 +35,7 @@ export function pickTelegramChat(
   if (lowered.startsWith('@')) {
     const handle = lowered.slice(1);
     const byHandle = chats.filter(
-      (chat) =>
-        chat.chatKind === 'direct' &&
-        !chat.last.fromBot &&
-        chat.last.senderUsername?.toLowerCase() === handle,
+      (chat) => chat.chatKind === 'direct' && chat.handle?.toLowerCase() === handle,
     );
     if (byHandle.length === 1) return byHandle[0] ?? null;
   }

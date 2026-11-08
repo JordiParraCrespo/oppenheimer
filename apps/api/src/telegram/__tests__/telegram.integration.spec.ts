@@ -196,6 +196,44 @@ describe('telegram (integration)', () => {
     expect(chats[0]?.last.text).toBe('latest from Marta');
   });
 
+  it('keeps a direct chat’s @username once the bot has answered last, and gives a group none', async () => {
+    const mine = telegramBot(ana);
+    await accounts.insert(mine);
+    const ref = { organizationId, accountId: mine.id };
+    const botId = randomUUID();
+    await dataSource.query(
+      `INSERT INTO bot ("id", "organizationId", "name") VALUES ($1, $2, 'Juno')`,
+      [botId, organizationId],
+    );
+    const now = Date.now();
+    await messages.insertMany([
+      message(mine, { sentAt: new Date(now - 3_000) }),
+      message(mine, {
+        chatId: '-1001234567890',
+        chatKind: 'group',
+        chatName: 'Shop team',
+        sentAt: new Date(now - 2_000),
+      }),
+    ]);
+    await messages.recordBotSend(
+      message(mine, {
+        externalId: '99',
+        fromBot: true,
+        senderId: '7012345678',
+        senderUsername: 'shop_helper_bot',
+        sentAt: new Date(now - 1_000),
+        sentByBotId: botId,
+      }),
+    );
+
+    const chats = await messages.findChats(ref, 10);
+
+    expect(chats.map((chat) => [chat.chatId, chat.handle, chat.last.fromBot])).toEqual([
+      ['123456789', 'martav', true],
+      ['-1001234567890', null, false],
+    ]);
+  });
+
   it('searches text ignoring case, taking % literally', async () => {
     const mine = telegramBot(ana);
     await accounts.insert(mine);

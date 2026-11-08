@@ -107,6 +107,24 @@ export class TelegramAccountEntity extends AggregateRoot<TelegramAccountProps> {
   }
 
   /**
+   * The host would not take a new token. A bot the host was already polling
+   * keeps running on its old one (the host drops nothing it holds on a
+   * refusal), so a connected account stays connected and says why the new
+   * token did not take; anything else needs a new token.
+   */
+  refuseToken(reason: string, statusBefore: TelegramAccountStatus): void {
+    if (statusBefore === 'connected') {
+      this.props.status = 'connected';
+      this.props.statusReason =
+        `The new token was not taken (${reason}); the bot keeps its old one`.slice(0, 200);
+    } else {
+      this.props.status = 'revoked';
+      this.props.statusReason = reason.slice(0, 200);
+    }
+    this.setUpdatedAt(new Date());
+  }
+
+  /**
    * The host's report replaces what was known. The bot's id, username and
    * name are kept once learned, so a report that does not repeat them does
    * not forget them.

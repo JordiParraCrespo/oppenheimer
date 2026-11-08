@@ -37,6 +37,11 @@ export interface TelegramChat {
   chatId: string;
   chatKind: 'direct' | 'group';
   chatName: string | null;
+  /**
+   * In a direct chat, the other person's newest `@username` (without the
+   * `@`), from any of their messages: the bot's own replies do not hide it.
+   */
+  handle: string | null;
   messageCount: number;
   last: TelegramMessage;
 }
