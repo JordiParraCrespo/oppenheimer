@@ -113,6 +113,26 @@ export const BOT_TURN_ERROR_MAX = 1_000;
  */
 export const BOT_TURN_TIME_LIMIT_MS = 4 * 60_000;
 
+/**
+ * Model round trips in one chat turn. Below the engine's default: a chat
+ * turn answers, and longer work belongs to a session on a host. A turn that
+ * uses them all fails with `step_limit`, as one past its time does.
+ */
+export const BOT_TURN_MAX_STEPS = 20;
+
+/**
+ * The failures that are a bound of one turn, not a fault: its time and its
+ * steps. What runs longer than a turn (a goal, a loop) goes on past them,
+ * with the turn's work kept; a new bound of a turn is a member here.
+ */
+export const TURN_LIMIT_FAILURES = ['time_limit', 'step_limit'] as const;
+export type TurnLimitFailure = (typeof TURN_LIMIT_FAILURES)[number];
+
+/** Whether a failure is a bound of one turn (`TURN_LIMIT_FAILURES`). */
+export function isTurnLimitFailure(failure: BotTurnFailure | null): failure is TurnLimitFailure {
+  return TURN_LIMIT_FAILURES.some((limit) => limit === failure);
+}
+
 /** The statuses a turn ends in. */
 export const ENDED_TURN_STATUSES: readonly BotTurnStatus[] = ['completed', 'cancelled', 'failed'];
 

@@ -244,9 +244,10 @@ worker runs it and streams what happens back to the chat.
   bot's own rows goes through the owner's scope, resolved fresh for each
   turn: the bot sees what they see now, and nothing once they leave the
   workspace.
-- **A turn is bounded.** 20 model round trips and 4 minutes; past the
-  time limit it is stopped and ends failed, saying so, with what it wrote
-  kept. Longer work is a session on a host.
+- **A turn is bounded.** 20 model round trips and 4 minutes; past either
+  it is stopped and ends failed, saying so (`step_limit`, `time_limit`),
+  with what it wrote kept. Longer work is a session on a host, or a goal,
+  whose next continuation picks up after either limit.
 - **No path of the server reaches the chat.** The engine replaces the
   turn's scratch directory in every text, tool answer and error it hands
   back.
@@ -286,7 +287,7 @@ worker runs it and streams what happens back to the chat.
   the HTTP status of an OpenAI error): `rate_limit`, `usage_limit` (a spent
   quota or credit, no longer waited out as a rate limit), `credential`,
   `refused` (this request: its content, the model), `unavailable`, or
-  `other`; the worker adds `time_limit` and `interrupted`, and a provider
+  `other`; the worker adds `time_limit`, `step_limit` and `interrupted`, and a provider
   with no key for the turn is `credential`. It is `bot_turn."failure"`,
   beside the words in `"error"`, and `BOT_TURN_FAILURES` says for each
   whether sending the message again can help.
@@ -1689,3 +1690,12 @@ The decisions it produced:
   is now refused only when it is given (a new skill, a rename), so a row
   saved under one before still loads, edits and runs, as this list said on
   2026-11-02.
+- 2026-11-08: **the goal and rule reviewers run at low effort.** They
+  passed no effort, meant as "least effort", which a model with levels
+  reads as its default. They now ask for `low` where the model offers it,
+  and none where it offers no levels (`reviewEffort`).
+- 2026-11-08: **a turn that runs out of steps fails, saying so.** One
+  that used its 20 round trips ended `completed` with nothing said, so a
+  bot could stop mid-work in silence. It now fails with `step_limit` and
+  words to act on, as the time limit does, and a goal reviews it and goes
+  on the same way.
