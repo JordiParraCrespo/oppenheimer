@@ -13,7 +13,8 @@ import type { IBufferCell, IDecoration, IDisposable, Terminal } from '@xterm/xte
  * and the tint is laid over them.
  *
  * Codex draws its user messages the same way, with `›` for the pointer and a
- * blank row of the background above and below the text. Through tmux its grey
+ * blank row of the background above and below the text; an attached image's
+ * label rows sit above the pointer's, on the same background. Through tmux its grey
  * is palette 8, which the console's ramp makes a mid grey, so left alone it is
  * a bright slab across the pane.
  */
@@ -45,7 +46,7 @@ export interface TurnGrid {
 
 /**
  * A message the reader wrote: its first line, its column, its pointer's row
- * (counted from `line`, past any blank rows Codex pads it with) and column.
+ * (counted from `line`, past the rows Codex draws above it) and column.
  */
 export interface UserTurn {
   line: number;
@@ -60,9 +61,10 @@ export interface UserTurn {
  * cell is the user background with only blanks before it, and whose first
  * glyph on that background is the pointer. It runs on through the rows that
  * keep the background at the same column (a wrapped or multi-line message)
- * and stops at the next pointer, so two messages never merge. Blank rows of
- * the background right above the pointer's (Codex's padding) open it instead,
- * unless an earlier turn already holds them.
+ * and stops at the next pointer, so two messages never merge. Rows of the
+ * background at the same column right above the pointer's (Codex's padding
+ * and image labels) open it instead, unless an earlier turn already holds
+ * them.
  */
 export function findUserTurns(grid: TurnGrid): UserTurn[] {
   const turns: UserTurn[] = [];
@@ -84,11 +86,11 @@ export function findUserTurns(grid: TurnGrid): UserTurn[] {
     return POINTERS.has(grid.char(line, pointerX)) ? { x, pointerX } : null;
   };
 
-  const padding = (line: number, x: number): boolean => {
-    for (let col = 0; col < grid.cols; col += 1) {
-      if (grid.char(line, col).trim() !== '') return false;
+  const above = (line: number, x: number): boolean => {
+    for (let col = 0; col < x; col += 1) {
+      if (grid.userBackground(line, col) || grid.char(line, col).trim() !== '') return false;
     }
-    return grid.userBackground(line, x) && (x === 0 || !grid.userBackground(line, x - 1));
+    return grid.userBackground(line, x);
   };
 
   let free = 0;
@@ -96,7 +98,7 @@ export function findUserTurns(grid: TurnGrid): UserTurn[] {
     const open = opening(line);
     if (!open) continue;
     let top = line;
-    while (top > free && padding(top - 1, open.x)) top -= 1;
+    while (top > free && above(top - 1, open.x)) top -= 1;
     let height = line - top + 1;
     while (
       top + height < grid.lines &&

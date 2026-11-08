@@ -349,7 +349,7 @@ func (c *codexChat) event(id, at string, p codexPayload) [][]byte {
 				images++
 			}
 		}
-		return c.typedBy(id, at, strings.Join(parts, "\n"), images)
+		return c.typedBy(id, at, strings.Join(parts, ""), images)
 	case "turn_aborted":
 		return encode(chatEntry{Type: "user", UUID: id, Timestamp: at, Message: chatMessage{Role: "user", Content: interruptedText}})
 	case "token_count":

@@ -67,6 +67,20 @@ describe('findUserTurns', () => {
     expect(turns).toEqual([{ line: 2, x: 0, pointerRow: 1, pointerX: 0, height: 3 }]);
   });
 
+  it('takes the image labels Codex draws above the pointer into the message', () => {
+    const turns = findUserTurns(
+      grid([
+        '• Done.',
+        '[                 ]',
+        '[  Image #1        ]',
+        '[                 ]',
+        '[› What is this?  ]',
+        '[                 ]',
+      ]),
+    );
+    expect(turns).toEqual([{ line: 1, x: 0, pointerRow: 3, pointerX: 0, height: 5 }]);
+  });
+
   it('leaves the padding under one Codex message to it, not to the next', () => {
     const turns = findUserTurns(
       grid([
