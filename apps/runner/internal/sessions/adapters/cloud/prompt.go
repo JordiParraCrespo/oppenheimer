@@ -35,14 +35,19 @@ type promptAnswer struct {
 }
 
 // Prompt queues text in the cloud session id (`session_…`). A CLI that is
-// not signed in to claude.ai is ErrCloudSignIn; any other refusal, or a CLI
-// that ran past its limit, is ErrCloudPrompt with the CLI's last words.
+// not signed in to claude.ai is ErrCloudSignIn and any other refusal
+// ErrCloudPrompt, both with the CLI's last words: it said no, so the session
+// has nothing. A CLI stopped before it answered (its limit, the runner
+// shutting down) is ErrCloudPromptUnanswered: it may have queued the message
+// already, so the caller must not send it again.
 func (p Prompter) Prompt(ctx context.Context, id, text string) error {
 	ctx, cancel := context.WithTimeout(ctx, p.timeout())
 	defer cancel()
 
+	// The text last, after `--`: a reply that starts with "-" (a list, a
+	// flag someone typed) is the message, never an option of the CLI.
 	cmd := exec.CommandContext(ctx, p.command(), //nolint:gosec // the CLI by name, each value one argument: no shell reads them
-		"-p", text, "--cloud", id, "--output-format", "json")
+		"-p", "--cloud", id, "--output-format", "json", "--", text)
 	cmd.Env = os.Environ()
 	// The home directory, not the runner's: the session lives at claude.ai,
 	// and nothing here reads the folder it runs in.
@@ -55,8 +60,8 @@ func (p Prompter) Prompt(ctx context.Context, id, text string) error {
 
 	said := strings.TrimSpace(stdout.String() + "\n" + stderr.String())
 	if ctx.Err() != nil {
-		return domain.ErrCloudPrompt.WithDetail(
-			"claude -p --cloud did not finish within %s: %s", p.timeout(), lastWords(said)).WithCause(ctx.Err())
+		return domain.ErrCloudPromptUnanswered.WithDetail(
+			"claude -p --cloud did not answer: %s", lastWords(said)).WithCause(ctx.Err())
 	}
 	var answer promptAnswer
 	parsed := json.Unmarshal(bytes.TrimSpace(stdout.Bytes()), &answer) == nil

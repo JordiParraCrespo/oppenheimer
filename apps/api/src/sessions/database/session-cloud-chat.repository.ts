@@ -113,20 +113,29 @@ export class SessionCloudChatRepository implements SessionCloudChatRepositoryPor
     return rows[0] ? asReply(rows[0]) : null;
   }
 
-  async claimReply(sessionId: string, replyId: string): Promise<boolean> {
-    const [rows]: [unknown[], number] = await this.replies.query(
+  async claimWaiting(sessionId: string): Promise<CloudChatReply[]> {
+    // IDX_session_cloud_reply_waiting; SKIP LOCKED so a hook collecting at
+    // once takes the one it locked and this takes the rest.
+    const [rows]: [ReplyRow[], number] = await this.replies.query(
       `UPDATE session_cloud_reply SET "collectedAt" = now()
-        WHERE id = $2 AND "sessionId" = $1 AND "collectedAt" IS NULL
-       RETURNING id`,
-      [sessionId, replyId],
+        WHERE id IN (
+          SELECT id FROM session_cloud_reply
+           WHERE "sessionId" = $1 AND "collectedAt" IS NULL
+           FOR UPDATE SKIP LOCKED)
+       RETURNING id, "authorId", "text", "createdAt", "collectedAt"`,
+      [sessionId],
     );
-    return rows.length === 1;
+    return rows
+      .map(asReply)
+      .sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime() || a.id.localeCompare(b.id));
   }
 
-  async releaseReply(sessionId: string, replyId: string): Promise<void> {
+  async releaseReplies(sessionId: string, replyIds: readonly string[]): Promise<void> {
+    if (replyIds.length === 0) return;
     await this.replies.query(
-      `UPDATE session_cloud_reply SET "collectedAt" = NULL WHERE id = $2 AND "sessionId" = $1`,
-      [sessionId, replyId],
+      `UPDATE session_cloud_reply SET "collectedAt" = NULL
+        WHERE "sessionId" = $1 AND id = ANY($2::uuid[])`,
+      [sessionId, replyIds],
     );
   }
 
@@ -138,14 +147,21 @@ export class SessionCloudChatRepository implements SessionCloudChatRepositoryPor
     await this.markIdleAs(organizationId, sessionId, true);
   }
 
-  async claimIdle(organizationId: string, sessionId: string): Promise<boolean> {
+  async claimIdle(
+    organizationId: string,
+    sessionId: string,
+    staleAfterSeconds: number,
+  ): Promise<boolean> {
     // PK_session_cloud_idle; the row lock makes a second claim at once see
-    // the first one's null and win nothing.
+    // the first one's mark and win nothing.
     const [rows]: [unknown[], number] = await this.replies.query(
-      `UPDATE session_cloud_idle SET "idleSince" = NULL, "updatedAt" = now()
-        WHERE "organizationId" = $1 AND "sessionId" = $2 AND "idleSince" IS NOT NULL
+      `UPDATE session_cloud_idle
+          SET "idleSince" = NULL, "wakingSince" = now(), "updatedAt" = now()
+        WHERE "organizationId" = $1 AND "sessionId" = $2
+          AND ("idleSince" IS NOT NULL
+               OR "wakingSince" < now() - make_interval(secs => $3))
        RETURNING "sessionId"`,
-      [organizationId, sessionId],
+      [organizationId, sessionId, staleAfterSeconds],
     );
     return rows.length === 1;
   }
@@ -160,7 +176,7 @@ export class SessionCloudChatRepository implements SessionCloudChatRepositoryPor
       `INSERT INTO session_cloud_idle ("organizationId", "sessionId", "idleSince")
        VALUES ($1, $2, CASE WHEN $3 THEN now() END)
        ON CONFLICT ("organizationId", "sessionId")
-       DO UPDATE SET "idleSince" = EXCLUDED."idleSince", "updatedAt" = now()`,
+       DO UPDATE SET "idleSince" = EXCLUDED."idleSince", "wakingSince" = NULL, "updatedAt" = now()`,
       [organizationId, sessionId, idle],
     );
   }

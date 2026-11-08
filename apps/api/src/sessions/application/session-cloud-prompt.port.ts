@@ -3,7 +3,8 @@
  * CLI took it, the reason nothing was asked (no link, or a runner too old to
  * send one), no answer in time (it may have reached the session), or the
  * runner's refusal with its catalog code (`SESS_019` the host is not signed in
- * to claude.ai, `SESS_020` the CLI did not take it).
+ * to claude.ai, `SESS_020` the CLI refused it). A CLI stopped before it
+ * answered (`SESS_021`) is `timed_out`: it may have the message.
  */
 export type SessionCloudPromptOutcome =
   | { kind: 'sent' }

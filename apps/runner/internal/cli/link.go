@@ -655,7 +655,7 @@ func (h *linkHandler) Message(_ context.Context, msg link.Message) {
 	case link.TypeSessionCloudPrompt:
 		var m link.SessionCloudPrompt
 		if msg.Decode(&m) == nil {
-			h.lanes.run(laneCloudPrompt, func() { h.cloudPrompt(m) })
+			h.lanes.run(laneCloudPrompt(m.SessionID), func() { h.cloudPrompt(m) })
 		}
 	case "host.update":
 		var m link.HostUpdate

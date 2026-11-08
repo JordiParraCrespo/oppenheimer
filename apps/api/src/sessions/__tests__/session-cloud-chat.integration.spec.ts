@@ -17,8 +17,9 @@ import { WorkSessionMapper } from '../work-session.mapper';
 /**
  * The cloud chat repository's own SQL for waking an idle session, against
  * the migrations: a session's idle mark set and cleared by its Stop hook, and
- * claimed once when two replies race for it; a waiting reply claimed by one
- * of a hook and a wake, never both; and a claimed reply put back. What the waker does with these answers is
+ * claimed once when two replies race for it, and again only once a wake is
+ * stale; every waiting reply claimed by a wake, oldest first, without one a
+ * hook holds; and claimed replies put back. What the waker does with these answers is
  * `cloud-reply-wake.spec.ts`.
  */
 describe('sessions: cloud chat idle and claims (integration)', () => {
@@ -116,38 +117,48 @@ describe('sessions: cloud chat idle and claims (integration)', () => {
     );
   });
 
-  it('claims an idle session once, however many replies race for it', async () => {
+  it('claims an idle session once, however many replies race for it, and a stale wake again', async () => {
     const work = await liveSession();
-    expect(await chat.claimIdle(organizationId, work.id)).toBe(false);
+    expect(await chat.claimIdle(organizationId, work.id, 300)).toBe(false);
 
     await chat.markIdle(organizationId, work.id);
     const claims = await Promise.all([
-      chat.claimIdle(organizationId, work.id),
-      chat.claimIdle(organizationId, work.id),
-      chat.claimIdle(organizationId, work.id),
+      chat.claimIdle(organizationId, work.id, 300),
+      chat.claimIdle(organizationId, work.id, 300),
+      chat.claimIdle(organizationId, work.id, 300),
     ]);
     expect(claims.filter(Boolean)).toHaveLength(1);
+    // A wake still in its window holds the session; one past it does not.
+    expect(await chat.claimIdle(organizationId, work.id, 300)).toBe(false);
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    expect(await chat.claimIdle(organizationId, work.id, 0)).toBe(true);
 
-    await chat.markIdle(organizationId, work.id);
+    // A hook that asks ends the wake: nothing is stale after it.
     await chat.markListening(organizationId, work.id);
-    expect(await chat.claimIdle(organizationId, work.id)).toBe(false);
-    expect(await chat.claimIdle(randomUUID(), work.id)).toBe(false);
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    expect(await chat.claimIdle(organizationId, work.id, 0)).toBe(false);
+    expect(await chat.claimIdle(randomUUID(), work.id, 0)).toBe(false);
   });
 
-  it('gives a waiting reply to one of a hook and a wake, and takes a claimed one back', async () => {
+  it('claims every waiting reply oldest first, leaves a hook the one it holds, and puts them back', async () => {
     const work = await liveSession();
-    const reply = await chat.addReply(organizationId, work.id, userId, 'Ship it');
+    const first = await chat.addReply(organizationId, work.id, userId, 'Ship it');
+    const second = await chat.addReply(organizationId, work.id, userId, 'Then tag it');
 
-    const [claimed, collected] = await Promise.all([
-      chat.claimReply(work.id, reply.id),
-      chat.collectReply(work.id),
-    ]);
-    expect(Number(claimed) + Number(collected !== null)).toBe(1);
-    expect(await chat.claimReply(work.id, reply.id)).toBe(false);
+    const claimed = await chat.claimWaiting(work.id);
+    expect(claimed.map((reply) => reply.text)).toEqual(['Ship it', 'Then tag it']);
+    expect(await chat.claimWaiting(work.id)).toEqual([]);
     expect(await chat.collectReply(work.id)).toBeNull();
 
-    await chat.releaseReply(work.id, reply.id);
-    expect((await chat.collectReply(work.id))?.id).toBe(reply.id);
-    expect(await chat.claimReply(randomUUID(), reply.id)).toBe(false);
+    await chat.releaseReplies(work.id, [first.id, second.id]);
+    const [held, rest] = await Promise.all([
+      chat.collectReply(work.id),
+      chat.claimWaiting(work.id),
+    ]);
+    // Each reply went to exactly one of them, whichever locked it first.
+    const taken = [...(held ? [held.id] : []), ...rest.map((reply) => reply.id)];
+    expect(taken.sort()).toEqual([first.id, second.id].sort());
+    await chat.releaseReplies(randomUUID(), [first.id]);
+    expect(await chat.collectReply(work.id)).toBeNull();
   });
 });

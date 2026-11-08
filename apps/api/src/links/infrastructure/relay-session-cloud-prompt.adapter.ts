@@ -16,6 +16,9 @@ import { LINK_REGISTRY, LINK_REPLIES } from '../links.di-tokens';
  */
 export const CLOUD_PROMPT_TIMEOUT_MS = 75_000;
 
+/** The runner's code for a CLI stopped before it answered: it may have the message. */
+const CLI_UNANSWERED = 'SESS_021';
+
 /**
  * `SessionCloudPromptPort` over the runner link: `session.cloud.prompt` with
  * a fresh `commandId`, then the `session.cloud.prompted` or `command.failed`
@@ -58,6 +61,8 @@ export class RelaySessionCloudPromptAdapter implements SessionCloudPromptPort {
     const reply = await pending.reply;
     if (!reply) return { kind: 'timed_out' };
     if (reply.type === 'command.failed') {
+      // The CLI stopped before it answered: as unknown as no answer here.
+      if (reply.code === CLI_UNANSWERED) return { kind: 'timed_out' };
       return { kind: 'failed', code: reply.code, detail: reply.detail };
     }
     // A reply is matched by command id, so another kind is a runner bug.

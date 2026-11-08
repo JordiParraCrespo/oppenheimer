@@ -346,21 +346,28 @@ answer it there, the way claude.ai shows it. The research is
   console reads as the person's message, where the agent took it.
 - **An idle session is woken from its host (2026-11-08).** When a Stop
   hook's wait ends with nothing to take, the session is marked idle
-  (`session_cloud_idle`). A reply typed after that claims the mark and the
-  reply, then the host that started the session sends it with the account's
-  own CLI, `claude -p <text> --cloud <id> --output-format json`, which queues
-  it and wakes the session (`session.cloud.prompt` on the link, offered by a
-  runner that names it in its hello). The woken message is a plain user line
-  in the transcript, so the chat shows it like any other. The order keeps a
-  reply from reaching the agent twice: two replies at once wake it once and
-  the second waits for the woken turn's hook; a hook that takes the reply
-  first wins; a host that certainly sent nothing (offline, too old, not
-  signed in, `SESS_019`, or refused, `SESS_020`) puts the reply and the mark
-  back for the next hook and the next reply; no answer in 75 s keeps the
-  claim, since the session may have it. The composer does not wait for the
-  host. Not proven against a live claude.ai account here: the CLI's answer
-  is read as the research found it (`{ok, session_id, url}`), and
-  `cloud_live_test.go` sends a real one when given a session.
+  (`session_cloud_idle`). A reply typed after that claims the mark, then
+  every reply still waiting, oldest first, and the host that started the
+  session sends them as one message with the account's own CLI,
+  `claude -p --cloud <id> --output-format json -- <text>`, which queues it
+  and wakes the session (`session.cloud.prompt` on the link, offered by a
+  runner that names it in its hello; the text after `--`, so a reply that
+  starts with "-" is not read as an option). The woken message is a plain
+  user line in the transcript, so the chat shows it like any other. The
+  order keeps a reply from reaching the agent twice or out of order: two
+  replies at once wake it once and the second waits for the woken turn's
+  hook; a hook that holds a reply keeps it; a host that certainly sent
+  nothing (offline, too old, not signed in, `SESS_019`, or refused,
+  `SESS_020`) puts the replies and the mark back, and the next reply sends
+  them first. A host that did not say (no answer in 75 s, or its CLI stopped
+  before it answered, `SESS_021`) keeps the replies, since the session may
+  have them, and puts the mark back, so a later reply can still wake it. A
+  wake that never finished (the API stopped mid-way) holds the session for
+  five minutes, then a new reply may claim it again. The composer does not
+  wait for the host, and each session has its own queue on the host. Not
+  proven against a live claude.ai account here: the CLI's answer is read as
+  the research found it (`{ok, session_id, url}`), and `cloud_live_test.go`
+  sends a real one when given a session.
 - **What it cannot do.** A reply to an idle session whose host is offline
   waits for the session's next turn, started on claude.ai; nothing retries
   it when the host comes back. Stop does nothing: no hook can interrupt a

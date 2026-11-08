@@ -20,7 +20,8 @@ export const CLOUD_PROMPT_TEXT_MAX_CHARS = 20_000;
  * Send `text` to the cloud session `cloudSessionId` (`session_…`), which this
  * host started for the console's session `sessionId`. Answered with
  * `session.cloud.prompted`, or `command.failed`: `SESS_019` the host's Claude
- * Code is not signed in to claude.ai, `SESS_020` the CLI did not take it.
+ * Code is not signed in to claude.ai, `SESS_020` the CLI refused it, `SESS_021`
+ * the CLI stopped before it answered (it may have queued it).
  */
 export const sessionCloudPromptSchema = z.object({
   type: z.literal('session.cloud.prompt'),

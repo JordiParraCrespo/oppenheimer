@@ -47,7 +47,7 @@ export class SendCloudReplyCommandHandler
       command.authorId,
       command.text,
     );
-    this.waker.wake(session, reply).catch((error: unknown) => {
+    this.waker.wake(session).catch((error: unknown) => {
       this.logger.error(
         { message: 'waking a cloud session failed', sessionId: session.id },
         error instanceof Error ? error.stack : String(error),

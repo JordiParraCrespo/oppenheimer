@@ -12,6 +12,11 @@ import type { MigrationInterface, QueryRunner } from 'typeorm';
  *   claims the session to wake it (`UPDATE … WHERE "idleSince" IS NOT NULL`,
  *   so two replies at once wake it once, and the second waits for the
  *   woken turn's Stop hook). Null is "working, or a hook is listening".
+ * - `wakingSince` is when a reply claimed the mark to wake the session.
+ *   Cleared by the next hook. A claim older than a few minutes that no hook
+ *   followed is a wake that never landed (the API restarted mid-wake, the
+ *   host never ran it), and a new reply may claim the session again, so a
+ *   lost wake cannot leave the session unwakeable for good.
  *   - Its own narrow table, not a column on `work_session`: it is rewritten
  *     twice a turn, and `work_session` is a wide, indexed, versioned row
  *     that every session read touches.
@@ -22,8 +27,8 @@ import type { MigrationInterface, QueryRunner } from 'typeorm';
  *     sessions.
  *
  * Access patterns: mark a session listening or idle (each Stop hook, an
- * upsert by the primary key) and claim an idle session (each reply, an
- * update by the primary key).
+ * upsert by the primary key) and claim an idle (or stale waking) session
+ * (each reply, an update by the primary key).
  */
 export class AddCloudSessionIdle1794137373046 implements MigrationInterface {
   name = 'AddCloudSessionIdle1794137373046';
@@ -34,6 +39,8 @@ export class AddCloudSessionIdle1794137373046 implements MigrationInterface {
         "organizationId" uuid NOT NULL,
         "sessionId" uuid NOT NULL,
         "idleSince" timestamptz,
+        "wakingSince" timestamptz,
+        "createdAt" timestamptz NOT NULL DEFAULT now(),
         "updatedAt" timestamptz NOT NULL DEFAULT now(),
         CONSTRAINT "PK_session_cloud_idle" PRIMARY KEY ("organizationId", "sessionId")
       )`,

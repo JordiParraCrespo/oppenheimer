@@ -18,8 +18,8 @@ func fakePromptCLI(t *testing.T, script string) string {
 	t.Helper()
 	path := filepath.Join(t.TempDir(), "claude")
 	body := "#!/bin/sh\n" +
-		"[ \"$1 $3 $4 $5 $6\" = \"-p --cloud session_014a8EH8DJs95X1iK8ZH9Y82 --output-format json\" ] || { echo \"unexpected args: $*\" >&2; exit 2; }\n" +
-		"[ \"$2\" = 'Yes; and $(rm -rf /)' ] || { echo \"unexpected text: $2\" >&2; exit 2; }\n" +
+		"[ \"$1 $2 $3 $4 $5 $6\" = \"-p --cloud session_014a8EH8DJs95X1iK8ZH9Y82 --output-format json --\" ] || { echo \"unexpected args: $*\" >&2; exit 2; }\n" +
+		"[ \"$7\" = '- Yes; and $(rm -rf /)' ] || { echo \"unexpected text: $7\" >&2; exit 2; }\n" +
 		script
 	if err := os.WriteFile(path, []byte(body), 0o755); err != nil {
 		t.Fatal(err)
@@ -27,7 +27,8 @@ func fakePromptCLI(t *testing.T, script string) string {
 	return path
 }
 
-const promptID, promptText = "session_014a8EH8DJs95X1iK8ZH9Y82", "Yes; and $(rm -rf /)"
+// The text starts with "-", as a list does: it must still be the message.
+const promptID, promptText = "session_014a8EH8DJs95X1iK8ZH9Y82", "- Yes; and $(rm -rf /)"
 
 func codeOf(err error) string {
 	if pe := problem.From(err); pe != nil {
@@ -37,7 +38,7 @@ func codeOf(err error) string {
 }
 
 // The regression this guards: a reply that reaches the CLI as anything but
-// one argument, a queued message reported as a failure (or a refusal as
+// one argument after `--` (one starting with "-" read as an option), a queued message reported as a failure (or a refusal as
 // queued, so the console thinks the session woke), and a CLI that is not
 // signed in reported as anything but the code the person fixes on the host.
 func TestPromptQueuesTheMessageOrSaysWhyNot(t *testing.T) {
@@ -65,13 +66,15 @@ func TestPromptQueuesTheMessageOrSaysWhyNot(t *testing.T) {
 	}
 }
 
-// The regression this guards: a CLI that never returns holding the host's
-// one prompt lane, and every reply after it, for good.
+// The regression this guards: a CLI that never returns holding the
+// session's prompt lane for good, and a CLI stopped before it answered
+// reported as a refusal, so the control plane hands the reply to the next
+// Stop hook while the session may already have it.
 func TestPromptGivesUpOnACLIThatHangs(t *testing.T) {
 	hangs := fakePromptCLI(t, "exec sleep 30")
 	start := time.Now()
 	err := Prompter{Command: hangs, Timeout: 300 * time.Millisecond}.Prompt(context.Background(), promptID, promptText)
-	if codeOf(err) != domain.ErrCloudPrompt.Code || !errors.Is(err, context.DeadlineExceeded) {
+	if codeOf(err) != domain.ErrCloudPromptUnanswered.Code || !errors.Is(err, context.DeadlineExceeded) {
 		t.Fatalf("hung: %v", err)
 	}
 	if time.Since(start) > 5*time.Second {
