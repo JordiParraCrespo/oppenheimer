@@ -3,7 +3,15 @@ import { storedList } from '@oppenheimer/frontend-web';
 import { act, renderHook } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
 import { useBotPins } from '../hooks/use-bot-pins';
-import { BOT_PINS_KEY, placedBotPins, positionInGroup, splitPinnedBots } from '../lib/bot-pins';
+import { groupIdOf, inOrder } from '../lib/bot-groups';
+import {
+  BOT_PINS_KEY,
+  botDrop,
+  PINNED_BOTS,
+  placedBotPins,
+  positionInGroup,
+  splitPinnedBots,
+} from '../lib/bot-pins';
 
 /**
  * A pinned bot comes back pinned on the next visit, on top of the ones
@@ -86,5 +94,47 @@ describe('positionInGroup', () => {
 
   it('saves a bot dropped in an empty group at its start', () => {
     expect(positionInGroup(all, 'empty', ['A'], 'A')).toBe(0);
+  });
+});
+
+describe('botDrop', () => {
+  const all = [inGroup('A', 0), inGroup('P', 1), inGroup('B', 2)];
+
+  it('only re-pins, in the order left, when a bot lands on Pinned', () => {
+    const drop = botDrop(
+      { id: 'A', from: 'g', to: PINNED_BOTS },
+      { [PINNED_BOTS]: ['P', 'A'] },
+      all,
+      groupIdOf,
+    );
+    expect(drop).toEqual({ kind: 'pins', pins: ['P', 'A'] });
+  });
+
+  it('unpins a bot dragged out of Pinned and saves it after the row it lands under', () => {
+    const drop = botDrop(
+      { id: 'P', from: PINNED_BOTS, to: 'g' },
+      { g: ['A', 'B', 'P'] },
+      all,
+      groupIdOf,
+    );
+    expect(drop).toEqual({ kind: 'move', unpin: true, groupId: 'g', position: 2 });
+  });
+
+  it('keeps the pin of a bot moved between groups, and names Ungrouped as no group', () => {
+    const drop = botDrop(
+      { id: 'A', from: 'g', to: 'ungrouped' },
+      { ungrouped: ['A'] },
+      all,
+      groupIdOf,
+    );
+    expect(drop).toEqual({ kind: 'move', unpin: false, groupId: null, position: 0 });
+  });
+});
+
+describe('inOrder with the pinned bots', () => {
+  it('draws a bot the held order took out of Pinned in the group it was dragged to, once', () => {
+    const sections = [{ id: 'g', group: null, bots: [inGroup('A', 0), inGroup('B', 2)] }];
+    const drawn = inOrder(sections, { g: ['A', 'P', 'B'], [PINNED_BOTS]: [] }, [inGroup('P', 1)]);
+    expect(idsOf(drawn[0]?.bots ?? [])).toEqual(['A', 'P', 'B']);
   });
 });

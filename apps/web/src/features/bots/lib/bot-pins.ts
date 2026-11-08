@@ -68,3 +68,30 @@ export function positionInGroup(
   if (below !== undefined && others.includes(below)) return others.indexOf(below);
   return at <= 0 ? 0 : others.length;
 }
+
+/** What a drop in the Employees sidebar changes: the pins on this device, or the bot's place on the API. */
+export type BotDrop =
+  | { kind: 'pins'; pins: readonly string[] }
+  | { kind: 'move'; unpin: boolean; groupId: string | null; position: number };
+
+/**
+ * The drop of bot `id` from group `from` to group `to`, `next` being every
+ * group's ids after it. On Pinned it only re-pins in the order it left. Into
+ * a group it is a move to the place among that group's bots, unpinning it
+ * when it came out of Pinned.
+ */
+export function botDrop(
+  { id, from, to }: { id: string; from: string; to: string },
+  next: Readonly<Record<string, readonly string[]>>,
+  bots: readonly BotEntity[],
+  groupIdOf: (key: string) => string | null,
+): BotDrop {
+  if (to === PINNED_BOTS) return { kind: 'pins', pins: next[PINNED_BOTS] ?? [] };
+  const groupId = groupIdOf(to);
+  return {
+    kind: 'move',
+    unpin: from === PINNED_BOTS,
+    groupId,
+    position: positionInGroup(bots, groupId, next[to] ?? [], id),
+  };
+}

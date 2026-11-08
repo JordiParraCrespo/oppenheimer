@@ -91,6 +91,7 @@ export function BotsSidebarList() {
                     next ? current.filter((id) => id !== key) : [...current, key],
                   )
                 }
+                pinnedHere={pinned.filter((bot) => (bot.groupId ?? null) === section.id).length}
                 searching={Boolean(term)}
               />
             );

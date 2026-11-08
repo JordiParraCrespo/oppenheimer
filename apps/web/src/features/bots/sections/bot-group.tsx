@@ -29,6 +29,7 @@ export function BotGroup({
   groups,
   open,
   onOpenChange,
+  pinnedHere,
   searching,
 }: {
   section: BotSection;
@@ -36,6 +37,8 @@ export function BotGroup({
   groups: readonly BotGroupEntity[];
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  /** How many of the group's bots are drawn under Pinned instead. */
+  pinnedHere: number;
   /** A search is narrowing the list: an empty group then says nothing, and nothing drags. */
   searching: boolean;
 }) {
@@ -44,7 +47,6 @@ export function BotGroup({
   const rename = useRenameBotGroup({ onSettled: () => setRenaming(false) });
   const remove = useDeleteBotGroup();
   const { group, bots } = section;
-  const allPinned = bots.length === 0 && (section.pinned ?? 0) > 0;
   const name = group ? group.name : t('bots.sidebar.ungrouped');
 
   return (
@@ -102,7 +104,7 @@ export function BotGroup({
         ) : null}
         {open && !bots.length && !searching ? (
           <SidebarEmptyRow>
-            {allPinned ? t('bots.sidebar.allPinned') : t('bots.sidebar.emptyGroup')}
+            {pinnedHere > 0 ? t('bots.sidebar.allPinned') : t('bots.sidebar.emptyGroup')}
           </SidebarEmptyRow>
         ) : null}
       </SortableGroup>

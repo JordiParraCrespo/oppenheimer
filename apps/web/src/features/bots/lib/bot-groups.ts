@@ -9,8 +9,6 @@ export interface BotSection {
   id: string | null;
   group: BotGroupEntity | null;
   bots: BotEntity[];
-  /** How many of its bots are pinned, and so drawn under Pinned instead. */
-  pinned?: number;
 }
 
 /**
@@ -88,13 +86,17 @@ export function sectionOrder(sections: readonly BotSection[]): Record<string, st
  * it. `order` is drawn from these same sections, so it names every bot; the
  * exceptions are the list changing under a pending write, where a bot made
  * since is drawn after the ones `order` places, in its own section, and an
- * id that is no longer a bot is skipped.
+ * id that is no longer a bot is skipped. `also` are bots `order` may name
+ * that no section draws (the pinned ones, dragged out of Pinned).
  */
 export function inOrder(
   sections: readonly BotSection[],
   order: Readonly<Record<string, readonly string[]>>,
+  also: readonly BotEntity[] = [],
 ): BotSection[] {
-  const byId = new Map(sections.flatMap((section) => section.bots.map((bot) => [bot.id, bot])));
+  const byId = new Map(
+    [...also, ...sections.flatMap((section) => section.bots)].map((bot) => [bot.id, bot]),
+  );
   const placed = new Set(Object.values(order).flat());
   return sections.map((section) => {
     const ids = order[sectionKey(section)];

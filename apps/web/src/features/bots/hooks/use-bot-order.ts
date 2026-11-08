@@ -3,7 +3,7 @@ import type { BotEntity, BotGroupEntity } from '@oppenheimer/frontend-consumer';
 import { useUpdateBot } from '@oppenheimer/frontend-consumer/react';
 import { useState } from 'react';
 import { botSections, groupIdOf, inOrder, sectionOrder } from '../lib/bot-groups';
-import { PINNED_BOTS, positionInGroup, splitPinnedBots } from '../lib/bot-pins';
+import { botDrop, PINNED_BOTS, splitPinnedBots } from '../lib/bot-pins';
 import type { BotPins } from './use-bot-pins';
 
 /**
@@ -40,27 +40,24 @@ export function useBotOrder(
   const byId = new Map(bots.map((bot) => [bot.id, bot]));
   const pinnedIds = order?.[PINNED_BOTS];
   const pinned = pinnedIds ? pinnedIds.flatMap((id) => byId.get(id) ?? []) : split.pinned;
-  const counted = sections.map((section) => ({
-    ...section,
-    pinned: split.pinned.filter((bot) => (bot.groupId ?? null) === section.id).length,
-  }));
-  const drawn = order ? inOrder(withHeld(counted, split.pinned, pinned), order) : counted;
+  const drawn = order ? inOrder(sections, order, split.pinned) : sections;
 
   const sortable = useSortableGroups(
     { [PINNED_BOTS]: pinned.map((bot) => bot.id), ...sectionOrder(drawn) },
     // A drop settles here first and `onMove` then sets its order; a cancel only settles.
     (next, { settled }) => setOrder(settled ? null : next),
-    ({ id, from, to }, next) => {
-      if (to === PINNED_BOTS) {
-        pins.placePins(next[PINNED_BOTS] ?? []);
+    (moved, next) => {
+      const drop = botDrop(moved, next, bots, groupIdOf);
+      if (drop.kind === 'pins') {
+        pins.placePins(drop.pins);
         return;
       }
-      if (from === PINNED_BOTS) pins.setPinned(id, false);
+      if (drop.unpin) pins.setPinned(moved.id, false);
       setOrder(next);
-      // The index the drag layer gives counts the drawn rows only; a pinned bot of the group is not one.
-      const groupId = groupIdOf(to);
-      const position = positionInGroup(bots, groupId, next[to] ?? [], id);
-      move.mutate({ id, input: { groupId, position } }, { onSettled: () => setOrder(null) });
+      move.mutate(
+        { id: moved.id, input: { groupId: drop.groupId, position: drop.position } },
+        { onSettled: () => setOrder(null) },
+      );
     },
   );
 
@@ -88,21 +85,4 @@ export function useBotOrder(
     error: move.error,
     reset: move.reset,
   };
-}
-
-/**
- * The sections with every bot the held order took out of Pinned added to
- * the first, so `inOrder` finds it and draws it where the order puts it
- * (the order names every bot it holds, so it is never drawn there).
- */
-function withHeld(
-  sections: ReturnType<typeof botSections>,
-  wasPinned: readonly BotEntity[],
-  stillPinned: readonly BotEntity[],
-) {
-  const kept = new Set(stillPinned.map((bot) => bot.id));
-  const freed = wasPinned.filter((bot) => !kept.has(bot.id));
-  const [first, ...rest] = sections;
-  if (!first || freed.length === 0) return sections;
-  return [{ ...first, bots: [...first.bots, ...freed] }, ...rest];
 }
