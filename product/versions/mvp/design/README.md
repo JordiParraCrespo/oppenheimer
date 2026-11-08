@@ -254,6 +254,13 @@ selected installation tab, with the agent prompt selected from its own block.
 These are reference artboards; this sync does not implement their new
 behavior in the application.
 
+Its Projects view is in the console since: `/plan/projects` draws the
+project cards (the status from the project's sessions), and a card opens
+the project's page with Milestones, Needs input and In progress
+(`ProjectCard`, `ProjectOverview`). The page has no Chat or Stats tabs:
+the frame draws a project as an agent's view, and there is no per-project
+agent or per-project statistics yet.
+
 ## Design system
 
 `_ds/oppenheimer-design-system-<id>/` is the bound design system —

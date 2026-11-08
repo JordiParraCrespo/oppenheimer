@@ -1,32 +1,32 @@
 import {
   Button,
   EmptyState,
-  IconButton,
-  SettingsGroup,
-  SettingsListRow,
+  ProjectCard,
+  ProjectCardGrid,
+  StatusDot,
 } from '@oppenheimer/design-system-web';
-import { Settings2 } from '@oppenheimer/design-system-web/icons';
-import { useSuspenseProjects } from '@oppenheimer/frontend-consumer/react';
+import { useSuspenseSessionsSidebar } from '@oppenheimer/frontend-consumer/react';
 import { ErrorAlert } from '@oppenheimer/frontend-web';
+import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
-import { projectListMeta } from '../lib/project-list';
+import { projectRepositoriesLine, projectStatusOf } from '../lib/project-list';
+
+const STATUS_KEY = {
+  'needs-input': 'projects.list.status.needsInput',
+  running: 'projects.list.status.running',
+  idle: 'projects.list.status.idle',
+} as const;
 
 /**
- * The workspace's projects, in API order (newest first): each one's name, its
- * repositories, and its settings, which open the project dialog (where it is
- * also deleted). Unassigned is listed under its translated name. It reads
- * under Suspense, in the screen's `QueryState`; a refetch that fails keeps
- * the list and says so above it.
+ * The workspace's projects as cards, in API order (newest first): each one's
+ * name, its repositories, and whether one of its sessions needs you or is at
+ * work. A card opens the project's page. Unassigned is listed under its
+ * translated name. It reads under Suspense, in the screen's `QueryState`; a
+ * refetch that fails keeps the cards and says so above them.
  */
-export function ProjectsList({
-  onEdit,
-  onNew,
-}: {
-  onEdit: (projectId: string) => void;
-  onNew: () => void;
-}) {
+export function ProjectsList({ onNew }: { onNew: () => void }) {
   const { t } = useTranslation();
-  const { data: projects, error } = useSuspenseProjects();
+  const { projects, sessions, error } = useSuspenseSessionsSidebar();
   const alert = <ErrorAlert error={error} fallback={t('projects.list.loadFailed')} />;
 
   if (projects.length === 0) {
@@ -48,30 +48,24 @@ export function ProjectsList({
   return (
     <>
       {alert}
-      <SettingsGroup>
+      <ProjectCardGrid>
         {projects.map((project) => {
-          const name = project.isUnassigned ? t('projects.unassigned') : project.name;
+          const status = projectStatusOf(project.id, sessions);
           return (
-            <SettingsListRow
+            <ProjectCard
               key={project.id}
-              align="center"
-              {...projectListMeta(project, t)}
-              actions={
-                <IconButton
-                  size="sm"
-                  variant="quiet"
-                  aria-label={t('projects.list.edit', { name })}
-                  onClick={() => onEdit(project.id)}
-                >
-                  <Settings2 />
-                </IconButton>
+              name={project.isUnassigned ? t('projects.unassigned') : project.name}
+              meta={projectRepositoriesLine(project) || t('projects.list.noRepositories')}
+              status={
+                <StatusDot density="compact" state={status}>
+                  {t(STATUS_KEY[status])}
+                </StatusDot>
               }
-            >
-              {name}
-            </SettingsListRow>
+              render={<Link to="/plan/projects/$projectId" params={{ projectId: project.id }} />}
+            />
           );
         })}
-      </SettingsGroup>
+      </ProjectCardGrid>
     </>
   );
 }

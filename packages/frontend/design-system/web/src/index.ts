@@ -420,6 +420,16 @@ export {
   PopoverTitle,
   PopoverTrigger,
 } from './components/popover';
+export { ProjectCard, ProjectCardGrid, ProjectCardSkeleton } from './components/project-card';
+export {
+  ProjectMilestoneRow,
+  ProjectOverview,
+  ProjectOverviewColumn,
+  ProjectOverviewSkeleton,
+  ProjectPanel,
+  ProjectPanelEmpty,
+  ProjectTaskRow,
+} from './components/project-overview';
 export { Prose } from './components/prose';
 export { PullRequestHeader } from './components/pull-request-header';
 export {
