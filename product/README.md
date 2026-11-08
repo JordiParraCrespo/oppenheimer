@@ -1322,3 +1322,8 @@ earlier note:
   short record from Oppenheimer, fenced as data and bounded per call and
   per turn (`activityText`), and the summary and the goal reviewer read the
   same record.
+- `versions/mvp/25-bots.md` §2 (2026-10-29) told a bot how full its context
+  was only against a known window, so a bot on the OpenAI engines, which
+  report none, was never told. On 2026-11-08 it is told its tokens, and
+  asked for narrow reads from `BOT_CONTEXT_TIGHT_TOKENS`; the note no
+  longer says every engine compacts on its own.
