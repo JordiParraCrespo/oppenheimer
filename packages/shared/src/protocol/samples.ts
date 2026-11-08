@@ -244,6 +244,23 @@ export const SAMPLES: Record<ProtocolMessageType, ProtocolMessage> = {
     cwd: '/home/jordi/oppenheimer/bots/juno-3f2a',
     durationMs: 842,
   },
+  'terminal.drive': {
+    type: 'terminal.drive',
+    commandId,
+    sessionId,
+    text: 'ssh build-02 uptime',
+    keys: ['Enter'],
+    waitFor: '\\$ $',
+    waitSeconds: 10,
+  },
+  'terminal.screen': {
+    type: 'terminal.screen',
+    commandId,
+    screen:
+      'jordi@mac:~$ ssh build-02 uptime\n 10:02:11 up 12 days,  load average: 0.10\njordi@mac:~$ ',
+    matched: true,
+    waitedMs: 1240,
+  },
   'transcript.page': {
     type: 'transcript.page',
     commandId,

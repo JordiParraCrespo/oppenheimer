@@ -144,6 +144,20 @@ describe('composeBotSystemPrompt', () => {
       expect(composeBotSystemPrompt(sessions)).toContain('You never run commands yourself');
       expect(composeBotSystemPrompt(sessions)).not.toContain('# Commands on a host');
     });
+
+    it('teaches a bot that may drive a terminal how, and never to type a secret', () => {
+      const prompt = composeBotSystemPrompt({
+        ...sessions,
+        tools: [
+          ...sessions.tools,
+          { name: 'type_in_terminal', description: 'Types into a terminal.' },
+        ],
+      });
+      expect(prompt).toContain('# Driving a terminal');
+      expect(prompt).toContain('Never type a password');
+      expect(prompt).not.toContain('you do not run a terminal');
+      expect(composeBotSystemPrompt(sessions)).not.toContain('# Driving a terminal');
+    });
   });
 
   it('promises only what the engine and the tools give', () => {

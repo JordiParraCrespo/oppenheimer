@@ -58,6 +58,7 @@ import { BotSubagentRunnerFactory } from './application/bot-subagent-runner.fact
 import { BotSubagentToolsFactory } from './application/bot-subagent-tools.factory';
 import { BotSubscriptionSubjectResolver } from './application/bot-subscription-subject.resolver';
 import { BotSummaryTriggerPolicy } from './application/bot-summary-trigger.policy';
+import { BotTerminalToolsFactory } from './application/bot-terminal-tools.factory';
 import { BotToolboxFactory } from './application/bot-toolbox.factory';
 import { BotTurnContextResolver } from './application/bot-turn-context.resolver';
 import { BotTurnOpeningResolver } from './application/bot-turn-opening.resolver';
@@ -392,6 +393,7 @@ const queryHandlers: Provider[] = [
     BotToolboxFactory,
     BotHostToolsFactory,
     BotHostCommandToolsFactory,
+    BotTerminalToolsFactory,
     BotSessionFileToolsFactory,
     BotSessionToolsFactory,
     BotSessionWatchResolver,

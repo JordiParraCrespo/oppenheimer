@@ -324,6 +324,24 @@ func (s *Server) SendKeys(ctx context.Context, target, keys string) error {
 	return err
 }
 
+// PressKeys presses named keys, without `-l`: here tmux is meant to read
+// `Enter` or `C-c` as a key, and only names, never text, are passed.
+func (s *Server) PressKeys(ctx context.Context, target string, keys []string) error {
+	if len(keys) == 0 {
+		return nil
+	}
+	_, err := s.command(ctx, append([]string{"send-keys", "-t", target}, keys...)...)
+	return err
+}
+
+// CaptureHistory returns the visible screen and up to lines lines above it.
+func (s *Server) CaptureHistory(ctx context.Context, target string, lines int) (string, error) {
+	if lines <= 0 {
+		return s.CaptureBody(ctx, target)
+	}
+	return s.command(ctx, "capture-pane", "-p", "-t", target, "-S", fmt.Sprintf("-%d", lines))
+}
+
 // Launch replaces the shell a window was made with by command, in dir.
 // `respawn-pane -k` makes the program the pane's own process, as `exec` would,
 // on a fresh screen: no line is typed for it, and neither the shell's prompt

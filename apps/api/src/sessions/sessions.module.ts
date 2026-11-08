@@ -48,6 +48,7 @@ import { CollectCloudReplyHttpController } from './commands/collect-cloud-reply/
 import { CreateSessionCommandHandler } from './commands/create-session/create-session.command-handler';
 import { CreateSessionHttpController } from './commands/create-session/create-session.http.controller';
 import { DeliverSessionWakeCommandHandler } from './commands/deliver-session-wake/deliver-session-wake.command-handler';
+import { DriveSessionTerminalCommandHandler } from './commands/drive-session-terminal/drive-session-terminal.command-handler';
 import { IssueAttachTicketCommandHandler } from './commands/issue-attach-ticket/issue-attach-ticket.command-handler';
 import { IssueAttachTicketHttpController } from './commands/issue-attach-ticket/issue-attach-ticket.http.controller';
 import { IssueSessionPreviewCommandHandler } from './commands/issue-session-preview/issue-session-preview.command-handler';
@@ -224,6 +225,7 @@ const commandHandlers: Provider[] = [
   SendSessionPromptCommandHandler,
   DeliverSessionWakeCommandHandler,
   RunHostCommandCommandHandler,
+  DriveSessionTerminalCommandHandler,
   UploadSessionAttachmentCommandHandler,
   RecordSessionEventsCommandHandler,
 ];

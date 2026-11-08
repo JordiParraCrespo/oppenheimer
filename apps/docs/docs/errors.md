@@ -1194,6 +1194,8 @@ for a 404 or 428, 6 for a 502, 503 or 504, 7 for `PAIR_009`, and 1 for anything 
 | `EXEC_003` <a id="exec_003" />         | The folder to run in is not usable           | 400  |
 | `EXEC_004` <a id="exec_004" />         | The program could not be started             | 424  |
 | `EXEC_005` <a id="exec_005" />         | The host's exec policy cannot be read        | 500  |
+| `EXEC_006` <a id="exec_006" />         | This host does not let bots drive a terminal | 403  |
+| `EXEC_007` <a id="exec_007" />         | The session is not a blank terminal          | 409  |
 | `PAIR_001` <a id="pair_001" />         | This host is not paired yet                  | 428  |
 | `PAIR_002` <a id="pair_002" />         | This host is already paired                  | 409  |
 | `PAIR_003` <a id="pair_003" />         | The registration token was rejected          | 401  |

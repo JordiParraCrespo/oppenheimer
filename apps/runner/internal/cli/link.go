@@ -316,7 +316,7 @@ func (h *linkHandler) capabilities() []string {
 		link.CapabilityAttachmentChat, link.CapabilityAttachmentChatOlder,
 		link.CapabilitySessionCloud, link.CapabilitySessionCloudCodex,
 		link.CapabilitySessionWatch, link.CapabilityCodexEnvironments, link.CapabilitySessionTeleport,
-		link.CapabilitySharedPreview, link.CapabilityTranscriptRead, link.CapabilityHostExec,
+		link.CapabilitySharedPreview, link.CapabilityTranscriptRead, link.CapabilityHostExec, link.CapabilityTerminalDrive,
 	}
 	if h.direct != nil {
 		named = append(named, link.CapabilityAttachmentDirect, link.CapabilityAttachmentDirectProof)
@@ -649,6 +649,13 @@ func (h *linkHandler) Message(_ context.Context, msg link.Message) {
 			// Up to its timeout, on the daemon's context like an update: a
 			// run outlives the link it was asked on and answers on the next.
 			h.lanes.run(laneExec+m.CommandID, func() { h.exec(h.life, m) })
+		}
+	case link.TypeTerminalDrive:
+		var m link.TerminalDrive
+		if msg.Decode(&m) == nil {
+			// One lane per session, so two drives of one terminal type in
+			// the order they were sent and never into each other.
+			h.lanes.run(laneTerminal+m.SessionID, func() { h.driveTerminal(h.life, m) })
 		}
 	case link.TypeSharedPreviewGet:
 		var m link.SharedPreviewGet

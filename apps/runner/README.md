@@ -29,7 +29,9 @@ A bot can run one program on the host over the link (`host.exec`,
 `product/versions/mvp/25-bots.md` §4.2, "Commands on a host"), but only what
 `runner exec` allows here: off by default, an allowlist of programs, or
 everything. The policy lives in `~/.oppenheimer/exec.json`, is read on every
-call, and is never written by the control plane.
+call, and is never written by the control plane. On a host set to `full` a
+bot can also drive a blank-terminal session (`terminal.drive`): type into
+it and read its screen back.
 
 `runner serve` and the `apikeys` context are the template this grew from:
 an inbound API-key surface on a TCP port, which is what the container

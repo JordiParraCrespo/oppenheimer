@@ -1298,3 +1298,9 @@ earlier note:
   bot: `run_command` runs one program on a paired host, through its runner,
   only as that host's own `runner exec` policy allows, which is off until
   the person on the host turns it on.
+- `versions/mvp/25-bots.md` §2 said a bot "delegates a complete task and
+  never runs a terminal". On 2026-11-08 the owner asked for bots that drive
+  bash and ssh themselves: `open_terminal`, `type_in_terminal` and
+  `read_terminal` type into a blank-terminal session and read its screen,
+  only on a host whose `runner exec` mode is `full`. A coding agent is still
+  given a task, never typed at.
