@@ -119,8 +119,8 @@ worker runs it and streams what happens back to the chat.
   2026-10-29 the model is told too: the turn context says how full the
   context was when the bot's last turn ended, against its window, and from
   half full asks for narrow reads. A turn whose engine reported no window
-  is told its tokens, and from 100,000 (half the smallest window a provider
-  here offers) asks for narrow reads too (2026-11-08; it was told nothing).
+  is told its tokens, and from `BOT_CONTEXT_TIGHT_TOKENS` (half the
+  smallest window a provider here offers) asks for narrow reads too (2026-11-08; it was told nothing).
 - **The Claude engine runs without a shell.** The Claude Agent SDK is
   Claude Code as a library; its shell and file tools would run commands
   the model chose on the control plane. They are off. What it keeps from
