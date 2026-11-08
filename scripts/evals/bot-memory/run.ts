@@ -59,7 +59,7 @@ interface Case {
 }
 
 interface Save {
-  /** `invalid` when the model sent a value the tool refuses: nothing would be saved. */
+  /** `invalid` when the tool would refuse the input: nothing would be saved. */
   memory: Memory | 'invalid';
   fact: string;
   tier: string;
@@ -77,6 +77,7 @@ const fromAgents = createRequire(join(HERE, '../../../packages/backend/agents/pa
 const { BOT_MEMORY_FACT_MAX, BOT_MEMORY_TIERS } = fromApi(
   '@oppenheimer/shared',
 ) as typeof import('@oppenheimer/shared');
+const { z } = fromApi('zod') as typeof import('zod');
 
 function arg(name: string): string | undefined {
   const at = process.argv.indexOf(`--${name}`);
@@ -111,19 +112,25 @@ function systemPrompt(bot: Bot, general: string[]): string {
   });
 }
 
+/**
+ * The input `remember` accepts, as `BotSelfToolsFactory.remember()` declares
+ * it: an input it refuses saves nothing, so it must not score as a save.
+ */
+const REMEMBER_INPUT = z.strictObject({
+  fact: z.string().trim().min(1).max(BOT_MEMORY_FACT_MAX),
+  tier: z.enum(BOT_MEMORY_TIERS).optional(),
+  memory: z.enum(REMEMBER_MEMORY).optional(),
+});
+
 /** What `remember` saves from its input: the bot's own memory when none is named. */
 function saveOf(input: unknown): Save {
-  const { fact, tier, memory } = (input ?? {}) as Partial<Record<keyof Save, string>>;
-  return {
-    memory:
-      memory === undefined
-        ? 'yours'
-        : (REMEMBER_MEMORY as readonly string[]).includes(memory)
-          ? (memory as Memory)
-          : 'invalid',
-    fact: fact ?? '',
-    tier: tier ?? 'log',
-  };
+  const parsed = REMEMBER_INPUT.safeParse(input ?? {});
+  if (!parsed.success) {
+    const fact = (input as { fact?: unknown } | undefined)?.fact;
+    return { memory: 'invalid', fact: typeof fact === 'string' ? fact : '', tier: '' };
+  }
+  const { fact, tier, memory } = parsed.data;
+  return { memory: memory ?? 'yours', fact, tier: tier ?? 'log' };
 }
 
 function messagesApi(apiKey: string, model: string): Ask {
@@ -184,9 +191,7 @@ function claudeCode(model: string): Ask {
       saves.push(save);
       if (save.memory === 'invalid') {
         return {
-          content: [
-            { type: 'text' as const, text: 'Invalid input: memory must be "yours" or "general".' },
-          ],
+          content: [{ type: 'text' as const, text: 'Invalid input: nothing was saved.' }],
           isError: true,
         };
       }
