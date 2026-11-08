@@ -44,8 +44,10 @@ import { FireDueSchedulesCommandHandler } from './commands/fire-due-schedules/fi
 import { FireEventTriggersCommandHandler } from './commands/fire-event-triggers/fire-event-triggers.command-handler';
 import { PauseAutomationCommandHandler } from './commands/pause-automation/pause-automation.command-handler';
 import { PauseAutomationHttpController } from './commands/pause-automation/pause-automation.http.controller';
+import { PauseUnattendedRoutinesCommandHandler } from './commands/pause-unattended-routines/pause-unattended-routines.command-handler';
 import { ResumeAutomationCommandHandler } from './commands/resume-automation/resume-automation.command-handler';
 import { ResumeAutomationHttpController } from './commands/resume-automation/resume-automation.http.controller';
+import { ResumeUnattendedRoutinesCommandHandler } from './commands/resume-unattended-routines/resume-unattended-routines.command-handler';
 import { RunAutomationCommandHandler } from './commands/run-automation/run-automation.command-handler';
 import { RunAutomationHttpController } from './commands/run-automation/run-automation.http.controller';
 import { RunBotRoutineCommandHandler } from './commands/run-bot-routine/run-bot-routine.command-handler';
@@ -120,6 +122,8 @@ const commandHandlers: Provider[] = [
   CreateAutomationCommandHandler,
   UpdateAutomationCommandHandler,
   PauseAutomationCommandHandler,
+  PauseUnattendedRoutinesCommandHandler,
+  ResumeUnattendedRoutinesCommandHandler,
   ResumeAutomationCommandHandler,
   DuplicateAutomationCommandHandler,
   DeleteAutomationCommandHandler,

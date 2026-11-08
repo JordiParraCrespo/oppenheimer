@@ -1,6 +1,7 @@
 import { ApiExtraModels, ApiProperty, getSchemaPath } from '@nestjs/swagger';
 import {
   BOT_APPROVAL_EVENT_STAGES,
+  BOT_DREAM_ACTIVITIES,
   BOT_EVENT_OUTCOMES,
   BOT_GOAL_ACTIVITIES,
   BOT_LOOP_ACTIVITIES,
@@ -11,6 +12,7 @@ import {
   BOT_SESSION_EVENT_STATES,
   BOT_SUBAGENT_STATUSES,
   type BotApprovalEventStage,
+  type BotDreamActivity,
   type BotEventOutcome,
   type BotGoalActivity,
   type BotLoopActivity,
@@ -412,6 +414,27 @@ export class BotLoopEventResponseDto {
   reason!: string | null;
 }
 
+export class BotDreamEventResponseDto {
+  @ApiProperty({ enum: ['dream'] })
+  kind!: 'dream';
+
+  @ApiProperty({
+    enum: BOT_DREAM_ACTIVITIES,
+    description:
+      "`dreamed`: the bot's memory was rewritten by a dream; `undone`: its owner put the facts back.",
+  })
+  activity!: BotDreamActivity;
+
+  @ApiProperty({ format: 'uuid' })
+  dreamId!: string;
+
+  @ApiProperty({ description: 'The facts the dream rewrote.' })
+  factsBefore!: number;
+
+  @ApiProperty({ description: 'The facts it wrote in their place.' })
+  factsAfter!: number;
+}
+
 export type BotMessageEventResponseDto =
   | BotApprovalEventResponseDto
   | BotQuestionEventResponseDto
@@ -421,7 +444,8 @@ export type BotMessageEventResponseDto =
   | BotSessionEventResponseDto
   | BotPullRequestEventResponseDto
   | BotGoalEventResponseDto
-  | BotLoopEventResponseDto;
+  | BotLoopEventResponseDto
+  | BotDreamEventResponseDto;
 
 /** One thing the chat draws: your message, the bot's text, an activity line or an event. */
 @ApiExtraModels(
@@ -434,6 +458,7 @@ export type BotMessageEventResponseDto =
   BotPullRequestEventResponseDto,
   BotGoalEventResponseDto,
   BotLoopEventResponseDto,
+  BotDreamEventResponseDto,
 )
 export class BotMessageResponseDto {
   @ApiProperty({ format: 'uuid' })
@@ -468,6 +493,7 @@ export class BotMessageResponseDto {
       { $ref: getSchemaPath(BotPullRequestEventResponseDto) },
       { $ref: getSchemaPath(BotGoalEventResponseDto) },
       { $ref: getSchemaPath(BotLoopEventResponseDto) },
+      { $ref: getSchemaPath(BotDreamEventResponseDto) },
     ],
     nullable: true,
     description: 'What an event says happened, by `kind`; null on every other role.',

@@ -21,6 +21,7 @@ import { ApiAuthGuard } from '../../../auth/guards/api-auth.guard';
 import { PoliciesGuard } from '../../../auth/guards/policies.guard';
 import { CurrentAccessScope } from '../../../authz/decorators/current-access-scope.decorator';
 import { AccessScopeInterceptor } from '../../../authz/interceptors/access-scope.interceptor';
+import { MarkBotSeenCommand } from '../../../bots/commands/mark-bot-seen/mark-bot-seen.command';
 import { BotTurnMapper } from '../../bot-turn.mapper';
 import type { BotTurnEntity } from '../../domain/bot-turn.entity';
 import { BotTurnResponseDto } from '../../dtos/bot-turn.response.dto';
@@ -93,6 +94,8 @@ export class SendBotMessageHttpController {
         credentialScopes: credential ? credential.scopes : null,
       }),
     );
+    // The owner in the chat: the spend guard counts from here, and resumes their routines.
+    await this.commandBus.execute(new MarkBotSeenCommand({ scope, botId }));
     const turn = await this.queryBus.execute<FindBotTurnQuery, BotTurnEntity>(
       // A steer the running turn already took answers as that turn.
       new FindBotTurnQuery(scope, botId, sent.turnId, sent.messageId),

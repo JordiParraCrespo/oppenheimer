@@ -7,7 +7,8 @@ import { matchingCommands, slashMenuItems, slashQuery } from '../lib/slash-menu'
 /**
  * What the `/` menu reads of the draft and how a skill's row reads. What breaks
  * this: the menu opening over a message that only starts with a slash, or
- * hiding a skill whose name contains what was typed.
+ * hiding a skill whose name contains what was typed, or one whose `/<name>`
+ * still runs it.
  */
 function skill(name: string) {
   const at = new Date();
@@ -47,6 +48,11 @@ describe('slashMenuItems', () => {
     const { builtIns, skills } = slashMenuItems([goal], [skill('goal'), skill('go-live')], 'go');
     expect(builtIns.map((found) => found.name)).toEqual(['goal']);
     expect(skills.map((found) => found.name)).toEqual(['go-live']);
+  });
+
+  it('still offers a skill saved under a built-in skill’s name, since /<name> runs that skill', () => {
+    const { skills } = slashMenuItems([goal], [skill('oppenheimer')], 'opp');
+    expect(skills.map((found) => found.name)).toEqual(['oppenheimer']);
   });
 
   it('keeps the two together within the menu’s cap', () => {
