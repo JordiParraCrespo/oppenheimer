@@ -122,7 +122,9 @@ describe('ModelProviders', () => {
     render(<ModelProviders />);
     const names = (id: string) =>
       Array.from(
-        screen.getByTestId(`model-providers-${id}`).querySelectorAll('[data-testid="model-provider"]'),
+        screen
+          .getByTestId(`model-providers-${id}`)
+          .querySelectorAll('[data-testid="model-provider"]'),
         (row) => row.textContent,
       );
     expect(names('connected')).toEqual([
