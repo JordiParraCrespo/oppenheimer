@@ -108,6 +108,15 @@ describe('botSections', () => {
     ]);
   });
 
+  it('counts the hidden bots of a group, so one with all of them hidden is not called empty', () => {
+    const sections = botSections(bots, groups, '', { hidden: ['scholar', 'quota'] });
+    expect(sections.map((section) => [section.id, section.hiddenCount])).toEqual([
+      ['engineering', 1],
+      ['research', 1],
+      [null, 0],
+    ]);
+  });
+
   it('narrows to the bots whose name matches, whatever its case, and drops empty sections', () => {
     expect(ids(botSections(bots, groups, '  RESEARCH '))).toEqual([['research', ['scholar']]]);
     expect(botSections(bots, groups, 'nobody')).toEqual([]);

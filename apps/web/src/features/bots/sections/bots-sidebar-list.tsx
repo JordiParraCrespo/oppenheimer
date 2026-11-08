@@ -42,7 +42,12 @@ export function BotsSidebarList() {
   const [closed, setClosed] = useState<string[]>([]);
   const term = query.trim();
   const { hidden, setShown, showAll } = useHiddenBots();
-  const { sections, handlers, error: moveError, reset } = useBotOrder(bots, groups, term, hidden);
+  const { sections, handlers, botError, groupError, resetBot, resetGroup } = useBotOrder(
+    bots,
+    groups,
+    term,
+    hidden,
+  );
   const dragLabels = useDragLabels();
   const drawSection = (section: BotSection) => {
     const key = sectionKey(section);
@@ -74,9 +79,15 @@ export function BotsSidebarList() {
       </div>
       <ErrorAlert error={error} fallback={t('bots.sidebar.loadFailed')} className="mx-3 mb-2" />
       <ErrorAlert
-        error={moveError}
+        error={botError}
         fallback={t('bots.sidebar.moveFailed')}
-        onDismiss={reset}
+        onDismiss={resetBot}
+        className="mx-3 mb-2"
+      />
+      <ErrorAlert
+        error={groupError}
+        fallback={t('bots.sidebar.groupFailed')}
+        onDismiss={resetGroup}
         className="mx-3 mb-2"
       />
       <div className="no-scrollbar min-h-0 flex-1 overflow-y-auto pb-5">

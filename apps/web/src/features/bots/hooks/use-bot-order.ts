@@ -87,10 +87,10 @@ export function useBotOrder(
   return {
     sections: drawn,
     handlers,
-    error: move.error ?? moveGroup.error,
-    reset: () => {
-      move.reset();
-      moveGroup.reset();
-    },
+    /** A bot's drop that failed, and a group's: each is said in its own words. */
+    botError: move.error,
+    groupError: moveGroup.error,
+    resetBot: move.reset,
+    resetGroup: moveGroup.reset,
   };
 }

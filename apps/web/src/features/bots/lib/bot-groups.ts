@@ -9,6 +9,8 @@ export interface BotSection {
   id: string | null;
   group: BotGroupEntity | null;
   bots: BotEntity[];
+  /** How many of its bots are hidden and so not among `bots`. */
+  hiddenCount: number;
 }
 
 /**
@@ -35,6 +37,16 @@ export function botSections(
   const matches = (bot: BotEntity) =>
     term ? bot.name.toLowerCase().includes(term) : !hidden.includes(bot.id);
   const known = new Set(groups.map((group) => group.id));
+  const hiddenIn = (groupId: string | null) =>
+    term
+      ? 0
+      : bots.filter(
+          (bot) =>
+            hidden.includes(bot.id) &&
+            (groupId === null
+              ? bot.groupId === null || !known.has(bot.groupId)
+              : bot.groupId === groupId),
+        ).length;
   const byPosition = (a: BotEntity, b: BotEntity) => a.position - b.position;
 
   const sections: BotSection[] = [...groups]
@@ -43,11 +55,12 @@ export function botSections(
       id: group.id,
       group,
       bots: bots.filter((bot) => bot.groupId === group.id && matches(bot)).sort(byPosition),
+      hiddenCount: hiddenIn(group.id),
     }));
   const ungrouped = bots
     .filter((bot) => (bot.groupId === null || !known.has(bot.groupId)) && matches(bot))
     .sort(byPosition);
-  sections.push({ id: null, group: null, bots: ungrouped });
+  sections.push({ id: null, group: null, bots: ungrouped, hiddenCount: hiddenIn(null) });
 
   return sections.filter((section) =>
     term || (section.group === null && !keepUngrouped) ? section.bots.length > 0 : true,

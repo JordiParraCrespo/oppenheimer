@@ -19,8 +19,8 @@ import { BotSidebarRow } from './bot-sidebar-row';
 /**
  * One section of the Employees sidebar: its eyebrow head with the count and,
  * for a group of the reader's, Rename group and Delete group; then its bots,
- * or a line saying the group is empty. Ungrouped has no menu. A rename is
- * typed in the head's place.
+ * or a line saying the group is empty, or that its bots are all hidden.
+ * Ungrouped has no menu. A rename is typed in the head's place.
  *
  * Its rows are a `SortableGroup` that takes bots, folded or empty, so a bot
  * drags into another place here or into this group from another. A group of
@@ -111,7 +111,11 @@ export function BotGroup({
         </BotList>
       ) : null}
       {open && !bots.length && !searching ? (
-        <SidebarEmptyRow>{t('bots.sidebar.emptyGroup')}</SidebarEmptyRow>
+        <SidebarEmptyRow>
+          {section.hiddenCount > 0
+            ? t('bots.sidebar.allHidden', { count: section.hiddenCount })
+            : t('bots.sidebar.emptyGroup')}
+        </SidebarEmptyRow>
       ) : null}
     </SortableGroup>
   );
