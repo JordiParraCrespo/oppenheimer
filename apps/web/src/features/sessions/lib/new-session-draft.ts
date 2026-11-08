@@ -48,7 +48,7 @@ export interface NewSessionDraft {
   /** Repository row ids and the branch each is checked out from. */
   scope: RepositoryScope[];
   /**
-   * Whether the repository chip wrote `scope` this visit. False while it holds
+   * Whether a repository or branch chip wrote `scope` this visit. False while it holds
    * what the screen opened on (the last session's, or a project's default), so
    * the first pick replaces that rather than joining it (`pickOverCarried`).
    * Kept on the draft, not the chip, so it outlives the chip's unmount while
