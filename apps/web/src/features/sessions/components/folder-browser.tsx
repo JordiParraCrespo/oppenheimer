@@ -5,7 +5,14 @@ import {
   ChipSelectList,
   IconButton,
 } from '@oppenheimer/design-system-web';
-import { ChevronLeft, Folder, History } from '@oppenheimer/design-system-web/icons';
+import {
+  ChevronLeft,
+  CircleAlert,
+  Folder,
+  History,
+  LoaderCircle,
+  RotateCw,
+} from '@oppenheimer/design-system-web/icons';
 import type { HostFolderSearch, HostFolders } from '@oppenheimer/frontend-consumer';
 import { compactAge } from '@oppenheimer/frontend-web';
 import type { KeyboardEvent } from 'react';
@@ -37,6 +44,7 @@ export function FolderBrowser({
   search,
   searching = false,
   searchFailure,
+  onRetrySearch,
   now,
   onUse,
 }: {
@@ -57,6 +65,8 @@ export function FolderBrowser({
   searching?: boolean;
   /** Why the host could not search, said where the results would be. */
   searchFailure?: string;
+  /** Ask the host to search again, after a failure. */
+  onRetrySearch?: () => void;
   now: number;
   /** An absolute path on the host. */
   onUse: (path: string) => void;
@@ -67,10 +77,12 @@ export function FolderBrowser({
   const shown = (path: string) => shortenPath(path, home);
   const listed = new Set(view.rows.map((entry) => entry.path));
   const found = failure ? [] : (search?.entries ?? []).filter((entry) => !listed.has(entry.path));
-  const foundElsewhere = found.length > 0 || (searching && !failure);
-  const searchShown = foundElsewhere || (Boolean(searchFailure) && !failure);
-  // Nothing here is worth saying only when nothing is on its way from further down either.
-  const emptyShown = view.empty !== null && !(view.empty === 'filtered' && foundElsewhere);
+  const pending = searching && !failure && found.length === 0;
+  const failed = Boolean(searchFailure) && !failure;
+  // The search covers the listed folder too: while it has something to say,
+  // the listing's own "nothing here" would be a second answer to one question.
+  const emptyShown =
+    view.empty !== null && !(view.empty === 'filtered' && (found.length > 0 || pending || failed));
 
   const emptyText =
     view.empty === 'missing'
@@ -200,7 +212,7 @@ export function FolderBrowser({
           ))
         )}
 
-        {searchShown ? (
+        {found.length > 0 ? (
           <div
             className="mt-1 flex flex-col border-t border-border-subtle pt-1"
             data-slot="folder-search"
@@ -208,30 +220,49 @@ export function FolderBrowser({
             <span className="px-2.5 pt-1.5 pb-1 text-micro font-medium text-fg-subtle uppercase">
               {t('sessions.new.folder.searchHeading')}
             </span>
-            {searchFailure ? (
-              <ChipSelectEmpty role="alert">{searchFailure}</ChipSelectEmpty>
-            ) : found.length === 0 ? (
-              <span className="px-2.5 py-1.5 text-xs text-fg-subtle">
-                {t('sessions.new.folder.searching')}
-              </span>
-            ) : (
-              found.map((entry) => (
-                <FolderRow
-                  key={entry.path}
-                  path={entry.path}
-                  branch={entry.branch}
-                  mono
-                  onOpen={() => onInputChange(folderInput(shown(entry.path)))}
-                >
-                  {shown(entry.path)}
-                </FolderRow>
-              ))
-            )}
-            {search?.truncated && found.length > 0 ? (
+            {found.map((entry) => (
+              <FolderRow
+                key={entry.path}
+                path={entry.path}
+                branch={entry.branch}
+                mono
+                onOpen={() => onInputChange(folderInput(shown(entry.path)))}
+              >
+                {shown(entry.path)}
+              </FolderRow>
+            ))}
+            {search?.truncated ? (
               <span className="px-2.5 py-1.5 text-micro text-fg-subtle">
                 {t('sessions.new.folder.searchTruncated')}
               </span>
             ) : null}
+          </div>
+        ) : failed ? (
+          <div
+            role="alert"
+            className="flex items-center gap-2 px-2.5 py-1.5 text-xs text-fg-muted"
+            data-slot="folder-search"
+          >
+            <CircleAlert className="size-3.5 shrink-0 text-fg-subtle" />
+            <span className="min-w-0 flex-1">{searchFailure}</span>
+            {onRetrySearch ? (
+              <IconButton
+                size="sm"
+                aria-label={t('common.retry')}
+                title={t('common.retry')}
+                onClick={onRetrySearch}
+              >
+                <RotateCw />
+              </IconButton>
+            ) : null}
+          </div>
+        ) : pending ? (
+          <div
+            className="flex items-center gap-2 px-2.5 py-1.5 text-xs text-fg-subtle"
+            data-slot="folder-search"
+          >
+            <LoaderCircle className="size-3.5 shrink-0 motion-safe:animate-spin" />
+            {t('sessions.new.folder.searching')}
           </div>
         ) : null}
       </ChipSelectList>

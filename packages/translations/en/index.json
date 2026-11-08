@@ -837,7 +837,7 @@
         "emptyFiltered": "No folder in {{dir}} has “{{fragment}}” in its name.",
         "emptyNone": "No subfolders. Use this one, or go back up.",
         "searchHeading": "Found under ~",
-        "searching": "Searching…",
+        "searching": "Searching under ~…",
         "searchTruncated": "Only the closest matches are shown. Type more of the name to narrow it.",
         "searchFailed": "Could not search the folders on this host.",
         "footMissing": "Pick an existing folder. Nothing is created.",

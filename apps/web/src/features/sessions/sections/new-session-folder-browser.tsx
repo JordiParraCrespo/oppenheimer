@@ -100,6 +100,7 @@ export function NewSessionFolderBrowser({
           ? resolveError(search.error, t('sessions.new.folder.searchFailed')).message
           : undefined
       }
+      onRetrySearch={() => void search.refetch()}
       now={now}
       onUse={(path) => onUse(path, home)}
     />

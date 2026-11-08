@@ -842,7 +842,7 @@
         "emptyFiltered": "Ninguna carpeta de {{dir}} tiene “{{fragment}}” en el nombre.",
         "emptyNone": "No hay subcarpetas. Usa esta o vuelve atrás.",
         "searchHeading": "Encontradas en ~",
-        "searching": "Buscando…",
+        "searching": "Buscando en ~…",
         "searchTruncated": "Solo se muestran las coincidencias más cercanas. Escribe más del nombre para acotar.",
         "searchFailed": "No se han podido buscar las carpetas de este host.",
         "footMissing": "Elige una carpeta que exista. No se crea nada.",

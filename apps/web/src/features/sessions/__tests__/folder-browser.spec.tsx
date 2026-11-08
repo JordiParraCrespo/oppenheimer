@@ -150,6 +150,22 @@ describe('FolderBrowser', () => {
     expect(screen.getByRole('alert').textContent).toBe('The host did not answer in time.');
   });
 
+  it('says one thing when nothing is listed and the search failed, and asks again on Retry', () => {
+    const onRetrySearch = vi.fn();
+    render(
+      <Harness
+        initial="~invoices"
+        searchFailure="The host did not answer in time."
+        onRetrySearch={onRetrySearch}
+      />,
+    );
+
+    expect(screen.queryByText(/emptyFiltered/)).toBeNull();
+    expect(screen.queryByText('sessions.new.folder.searchHeading')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'common.retry' }));
+    expect(onRetrySearch).toHaveBeenCalled();
+  });
+
   it('says nothing starts so when the narrowing leaves no row', () => {
     render(<Harness initial="~/zz" />);
 
