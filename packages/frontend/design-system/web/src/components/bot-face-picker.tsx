@@ -84,7 +84,7 @@ function BotFacePicker({
                 aria-label={names[part][option]}
                 title={names[part][option]}
                 className={cn(
-                  'rounded-pill outline-none transition-shadow duration-instant focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50',
+                  'rounded-sm outline-none transition-shadow duration-instant focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50',
                   'data-pressed:shadow-[0_0_0_2px_var(--card),0_0_0_4px_var(--fg)]',
                 )}
               >

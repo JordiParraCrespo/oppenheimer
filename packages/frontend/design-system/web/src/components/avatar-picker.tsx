@@ -41,6 +41,14 @@ const AVATAR_COLOR_CLASS: Record<AvatarColor, string> = {
 type BotFaceSpec = { color: AvatarColor; seed: string; parts?: BotFaceParts | null };
 
 /**
+ * A bot's avatar is a rounded square, not a pill: the corner grows with the
+ * size so the 20px sidebar row and the 72px profile picker read as one shape.
+ */
+function botAvatarRadius(size: number) {
+  return Math.round(size * 0.28);
+}
+
+/**
  * A bot's face: its photo, or until one loads its drawn `face`, a hatted
  * face in its avatar colour that its id keeps the same (every bot, until
  * there is a set of photos we may use). Without `face`, the initials in ink
@@ -61,6 +69,7 @@ function BotAvatar({
     <Avatar
       size={size}
       data-color={face?.color}
+      style={{ borderRadius: botAvatarRadius(size) }}
       className={cn(
         'font-semibold tracking-[-0.01em]',
         face
