@@ -41,11 +41,15 @@ const AVATAR_COLOR_CLASS: Record<AvatarColor, string> = {
 type BotFaceSpec = { color: AvatarColor; seed: string; parts?: BotFaceParts | null };
 
 /**
- * A bot's avatar is a rounded square, not a pill: the corner grows with the
- * size so the 20px sidebar row and the 72px profile picker read as one shape.
+ * A bot's avatar is a rounded square, not a pill, on the system's radius
+ * rungs: the corner steps up with the size so the 20px sidebar row and the
+ * 72px profile preview read as one shape.
  */
 function botAvatarRadius(size: number) {
-  return Math.round(size * 0.28);
+  if (size <= 30) return 'var(--radius-xs)';
+  if (size <= 44) return 'var(--radius-sm)';
+  if (size <= 64) return 'var(--radius-md)';
+  return 'var(--radius-lg)';
 }
 
 /**
