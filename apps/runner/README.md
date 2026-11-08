@@ -25,6 +25,12 @@ driven from the console over it, and the git credential helper answers with
 installation tokens the control plane mints on it. `runner sessions …` drives
 the same lifecycle from the host itself.
 
+A session's Simulator tab streams the iOS simulator or Android emulator its
+host gives it, through Argent (`product/research/device-streaming.md`). A
+host with Argent installed needs no setup: each new session takes one of the
+simulators and emulators running at the time, and keeps it for its life.
+`RUNNER_DEVICES` names them instead, or turns it `off` (`.env.example`).
+
 `runner serve` and the `apikeys` context are the template this grew from:
 an inbound API-key surface on a TCP port, which is what the container
 image runs and what the API talks to today. **Nothing product-shaped
