@@ -14,7 +14,7 @@ A project is a saved scope with a name, zero or more repositories (each with a b
 - A session that names no project is listed under **Unassigned**, a project every workspace has. It cannot be deleted or renamed away.
 - A project with no repositories is allowed: it holds folder sessions, terminal sessions, tasks and milestones.
 
-**Plan → Projects** is where projects are made and edited: it lists each project with its repositories, **New project** in the header, and each project's settings. New session's project chip also ends in **New project…**. The dialog has the name, the repositories (picked from what the GitHub App can reach; "Manage repository access" adds more on GitHub), and the optional defaults.
+**Plan → Projects** is where projects are made and edited: it lists each project with its repositories, **New project** in the header, and each project's settings. New session's project chip and the Project facet of the Sessions sidebar's filter menu also end in **New project…**; editing stays in Plan. The dialog has the name, the repositories (picked from what the GitHub App can reach; "Manage repository access" adds more on GitHub), and the optional defaults.
 
 **Delete project** archives it: nothing new goes in it and the automations aimed at it are paused (they stay paused if it comes back). It is refused while the project has open sessions; move or delete them first. A deleted project's sessions and history stay.
 

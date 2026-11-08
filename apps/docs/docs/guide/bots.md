@@ -8,7 +8,7 @@ A **bot** is an LLM worker you chat with. The console calls the section **Employ
 
 ## Creating a bot
 
-In **Employees**, press **New bot**. A new bot gets a first name (Juno, Milo, Wren…) and a colour. Its first chat walks it through one job: tell it what it is for in a message, and it writes its own `INSTRUCTIONS.md` and description, remembers what it learned about you, and offers a first task. One bot per job works best.
+In **Employees**, press **New bot**. A new bot gets a first name (Juno, Milo, Wren…), a colour and a drawn face: a round face in its colour wearing a hat, with eyes and a mouth taken from the bot itself, so it keeps its face through a rename. Its first chat walks it through one job: tell it what it is for in a message, and it writes its own `INSTRUCTIONS.md` and description, remembers what it learned about you, and offers a first task. One bot per job works best.
 
 The Employees sidebar holds your bots in groups (New group, Move to group) in an order you drag. A bot can also be shown in the Sessions, Automations, Plan and Pull requests sidebars: use the plus on a section's Bots heading, or **Shows in** on the bot's Profile. Its chat opens in place there; it is the same bot and the same conversation everywhere.
 
@@ -25,7 +25,7 @@ Open a bot's settings from its menu. Every page saves with **Save**.
 
 | Tab | What it holds |
 | --- | --- |
-| Profile | Name, description, colour, sidebar group, Shows in, and the chat history (Export, Clear history). |
+| Profile | Name, description, colour, face (pick a hat, eyes and a mouth, or **Use its own face**), sidebar group, Shows in, and the chat history (Export, Clear history). |
 | Instructions | Two files read before every message: **SOUL.md** (personality and tone) and **INSTRUCTIONS.md** (its job and rules). Each save is a revision; Revision history can Revert. |
 | Memory | Facts it remembers, with who added each. **Learn automatically** lets it save facts without asking. A fact can be kept in mind in every chat, looked up only when needed, or about you, which all your bots read. Up to 500 facts. What every bot knows about you is also one page of its own, **Settings → Memory** at the account: an **About you** text you write (up to 4,000 characters), in every bot's prompt and never changed by a bot, and every fact about you your bots learned, each naming the bot that keeps it. About once a day, after it has saved enough and while Learn automatically is on, the bot **tidies its memory**: its own model merges repeats, drops what is stale or contradicted and rewrites each fact it wrote as one clear sentence, leaving the facts you wrote word for word. The chat shows a line ("Tidied its memory · 40 facts → 22"); **Tidy now** runs one whenever you like, and **Undo** puts the latest tidy back. |
 | Skills | Saved recipes for a task, at most 50. |
