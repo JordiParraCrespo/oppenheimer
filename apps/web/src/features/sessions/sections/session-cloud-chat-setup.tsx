@@ -68,20 +68,21 @@ export function SessionCloudChatSetup({ organizationId }: { organizationId: stri
         </Button>
       )}
 
-      <SegmentedControl
-        className="mt-6.5"
-        size="md"
-        value={reader}
-        onValueChange={(next) => setReader(next === 'agent' ? 'agent' : 'you')}
-        aria-label={t('sessions.cloudChat.setup.readerLabel')}
-      >
-        <SegmentedControlItem value="you">
-          {t('sessions.cloudChat.setup.readerYou')}
-        </SegmentedControlItem>
-        <SegmentedControlItem value="agent">
-          {t('sessions.cloudChat.setup.readerAgent')}
-        </SegmentedControlItem>
-      </SegmentedControl>
+      <div className="mt-6.5">
+        <SegmentedControl
+          size="md"
+          value={reader}
+          onValueChange={(next) => setReader(next === 'agent' ? 'agent' : 'you')}
+          aria-label={t('sessions.cloudChat.setup.readerLabel')}
+        >
+          <SegmentedControlItem value="you">
+            {t('sessions.cloudChat.setup.readerYou')}
+          </SegmentedControlItem>
+          <SegmentedControlItem value="agent">
+            {t('sessions.cloudChat.setup.readerAgent')}
+          </SegmentedControlItem>
+        </SegmentedControl>
+      </div>
       {reader === 'agent' ? (
         <CloudChatAgentPrompt hookUrl={hookUrl} apiUrl={apiUrl} />
       ) : (

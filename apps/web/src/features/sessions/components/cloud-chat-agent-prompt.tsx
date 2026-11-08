@@ -17,6 +17,8 @@ export function CloudChatAgentPrompt({ hookUrl, apiUrl }: { hookUrl: string; api
         className="mt-3"
         title={t('sessions.cloudChat.setup.agentLabel')}
         code={cloudChatAgentPrompt(hookUrl, apiUrl)}
+        // Long, and copied whole: it scrolls in its block rather than the page.
+        maxLines={16}
         copyLabel={t('common.copy')}
         copiedLabel={t('common.copied')}
       />
