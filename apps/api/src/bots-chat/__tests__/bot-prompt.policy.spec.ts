@@ -36,7 +36,7 @@ describe('composeBotSystemPrompt', () => {
   it('adds what it knows about the person under its own heading', () => {
     const prompt = composeBotSystemPrompt({ ...base, personFacts: ['Prefers squash merges.'] });
     expect(prompt).toContain(
-      '# What you know about the person (shared by all their bots)\n\n- Prefers squash merges.',
+      '# General memory (about the person, read by every bot of theirs)\n\n- Prefers squash merges.',
     );
     expect(composeBotSystemPrompt(base)).not.toMatch(/about the person/);
   });

@@ -167,7 +167,7 @@ describe('composeTurnContext: the bot’s log', () => {
       },
     });
     expect(block).toMatch(
-      /Your log, newest last: .*\n- 2026-11-02: Staging moved to devbox\n- 2026-11-04 \(about the person\): Prefers releases on Thursdays/,
+      /Your log, newest last: .*\n- 2026-11-02: Staging moved to devbox\n- 2026-11-04 \(general memory\): Prefers releases on Thursdays/,
     );
     expect(block).toContain('You also keep 3 older facts not shown');
   });

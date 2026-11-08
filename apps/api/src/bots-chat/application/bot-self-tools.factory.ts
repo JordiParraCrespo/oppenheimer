@@ -33,10 +33,10 @@ import {
 import {
   describeKept,
   memoryScopeOf,
-  REMEMBER_ABOUT,
-  REMEMBER_ABOUT_HINT,
   REMEMBER_DEFAULT_TIER,
   REMEMBER_DESCRIPTION,
+  REMEMBER_MEMORY,
+  REMEMBER_MEMORY_HINT,
   REMEMBER_TIER_HINT,
 } from '../domain/bot-memory.policy';
 import type { BotMessageEntity } from '../domain/bot-message.entity';
@@ -261,7 +261,7 @@ export class BotSelfToolsFactory implements BotToolArea {
           .max(BOT_MEMORY_FACT_MAX)
           .describe('The fact, as one self-contained sentence.'),
         tier: z.enum(BOT_MEMORY_TIERS).optional().describe(REMEMBER_TIER_HINT),
-        about: z.enum(REMEMBER_ABOUT).optional().describe(REMEMBER_ABOUT_HINT),
+        memory: z.enum(REMEMBER_MEMORY).optional().describe(REMEMBER_MEMORY_HINT),
       }),
       run: async (input, context) => {
         const bot = await this.bot(context);
@@ -274,7 +274,7 @@ export class BotSelfToolsFactory implements BotToolArea {
             botId: context.botId,
             content: input.fact,
             tier: input.tier ?? REMEMBER_DEFAULT_TIER,
-            memoryScope: memoryScopeOf(input.about),
+            memoryScope: memoryScopeOf(input.memory),
             author: 'bot',
           }),
         );
@@ -318,7 +318,7 @@ export class BotSelfToolsFactory implements BotToolArea {
       name: 'recall',
       readOnly: true,
       scope: 'bots:read',
-      description: `Searches your memory for facts containing any of the words in \`query\`, best matches first; with no query, lists your newest facts. It reads every fact you keep: those in mind each turn, those kept only to look up, and what the person's other bots know about the person. At most ${RECALL_LIMIT_MAX} per call. No match means you have no fact with those words, not that the thing is false.`,
+      description: `Searches your memory for facts containing any of the words in \`query\`, best matches first; with no query, lists your newest facts. It reads every fact you keep: those in mind each turn, those kept only to look up, and and the general memory, which the person's other bots also write to. At most ${RECALL_LIMIT_MAX} per call. No match means you have no fact with those words, not that the thing is false.`,
       input: z.strictObject({
         query: z
           .string()

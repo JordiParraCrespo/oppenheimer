@@ -1292,3 +1292,11 @@ earlier note:
   is never overridden, a watched session or a task that fails on its own
   merits is still reported, not retried, and a person's "no" is never
   routed around.
+- `versions/mvp/25-bots.md` §4.1 (2026-10-29) let a bot file a fact as
+  "about the person (their name, their role, their preferences)", read by
+  all their bots. Bots filed their job there: Facturas read another bot's
+  XRP Mobile project and pull request notification setting. On 2026-11-08
+  the owner asked for two memories made plain, a general one and one per
+  bot: `remember` takes `memory: 'yours' | 'general'`, the prompt names
+  *Your memory* and *General memory*, and general takes only what a bot
+  with a completely different job would need (`scripts/evals/bot-memory`).
