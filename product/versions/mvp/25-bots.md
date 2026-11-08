@@ -302,6 +302,15 @@ worker runs it and streams what happens back to the chat.
   with no key for the turn is `credential`. It is `bot_turn."failure"`,
   beside the words in `"error"`, and `BOT_TURN_FAILURES` says for each
   whether sending the message again can help.
+- **A turn whose record cannot be saved fails as `storage`, and one call
+  whose result cannot be saved fails alone** (2026-11-08, issue #728). Text
+  a tool brings in from outside (a PDF's text layer, a page, a session's
+  output) can hold a NUL or a lone surrogate half, which Postgres refuses in
+  `text` and `jsonb`; the chat's messages drop the first and replace the
+  second (`storableText`) before they are written. If a call's end is still
+  refused, that call is stored as failed and the turn goes on; any other
+  refused write ends the turn as `storage`, whose card says the fault is
+  ours, not the provider's.
 
 ## 3. The chat
 
@@ -938,7 +947,8 @@ agent's, in a session, where Claude Code ships them.
 ### 4.2 Sessions: its hands on hosts
 | Tool | Does | Default |
 |------|------|---------|
-| `list_hosts` | Hosts, online or not, and the agents they can run | auto |
+| `list_hosts` | Hosts, online or not, their runner version, and the agents they can run | auto |
+| `update_host_runner` | Ask a connected host's runner to install the newest release now, through the console's own Update runner (`UpdateHostRunnerCommand`, `POST /hosts/{id}/update`); scope `hosts:write`. The tools that hit a runner too old (a transcript, a shared file's preview, a terminal watch) name it, so a bot offers the update rather than asking the person to do it (added 2026-11-08) | ask |
 | `list_sessions` / `get_session` | Sessions and their state, each with its project and the group the console's dot shows; filtered by project, host, state or group; `get_session` also shows a pending question or permission dialog with its id and options (built 2026-10-27, issue #493) | auto |
 | `start_session` | Start an agent on a host, in a new worktree or a folder, with a task; the session's origin is `bot` and it always launches at `auto` (decided 2026-10-18: nobody sits at a bot's terminal, so `ask` would wait forever) | ask |
 | `start_cloud_session` | Start a session in a vendor's cloud on a project's repository; `agent` picks the cloud. `claude-code` (default, claude.ai/code) and `codex` (chatgpt.com/codex, with an optional `codex_environment`) go through the sessions' own create with `cloud`, so a host's runner runs `claude --cloud` or `codex cloud exec` in a scratch checkout, exactly as the console's cloud place and a `claude-cloud` automation do; host chosen as `start_session`'s. It waits (at most 120 s, the runner's own limit) for the host to report the session's id and answers with its URL. `cursor` goes through `StartCloudSessionCommand` (`POST /sessions/cloud`'s), on the owner's own Cursor key with no host and an optional `model`; the card says it runs on that key, and a missing key is the call's error (`CLOUD_AGENTS_004`). Scope `sessions:write`, origin `bot`; `get_session` shows the URL after. Watched as `start_session`'s unless `watch` is false (2026-11-07; it was not watched, as followed at its vendor, until a start that failed went unreported); an answer with no link is not a start (added 2026-10-30; Codex and Cursor 2026-11-02) | ask |
