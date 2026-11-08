@@ -10,6 +10,7 @@ import type * as React from 'react';
 import { META_GIVES_WAY, ROW_BUTTON_WITH_ACTION, SidebarRow } from '../internal/sidebar-row';
 import { cn } from '../lib/utils';
 import { Skeleton } from './skeleton';
+import { variedWidth } from '../internal/varied-width';
 
 /**
  * The Inbox (`product/versions/mvp/design/version1/Inbox.dc.html`), laid out
@@ -169,7 +170,6 @@ const SKELETON_PREVIEWS = ['w-2/3', 'w-5/6', 'w-1/2', 'w-3/4'] as const;
  * so a list of them does not read as stripes.
  */
 function InboxItemSkeleton({ index = 0, className }: { index?: number; className?: string }) {
-  const pick = <T,>(widths: readonly T[]) => widths[index % widths.length];
   return (
     <div
       data-slot="inbox-item-skeleton"
@@ -177,16 +177,16 @@ function InboxItemSkeleton({ index = 0, className }: { index?: number; className
       className={cn(ITEM_FRAME, 'items-center', className)}
     >
       <span className="col-start-2 row-start-1 flex h-5 items-center">
-        <Skeleton shape="sm" className={cn('h-3 max-w-full', pick(SKELETON_SENDERS))} />
+        <Skeleton shape="sm" className={cn('h-3 max-w-full', variedWidth(index, SKELETON_SENDERS))} />
       </span>
       <span className="col-start-3 row-start-1 flex h-5 items-center">
         <Skeleton shape="sm" className="h-2.5 w-5" />
       </span>
       <span className="col-span-2 col-start-2 row-start-2 flex h-5 items-center">
-        <Skeleton shape="sm" className={cn('h-3', pick(SKELETON_TITLES))} />
+        <Skeleton shape="sm" className={cn('h-3', variedWidth(index, SKELETON_TITLES))} />
       </span>
       <span className="col-span-2 col-start-2 row-start-3 flex h-4.5 items-center">
-        <Skeleton shape="sm" className={cn('h-2.5', pick(SKELETON_PREVIEWS))} />
+        <Skeleton shape="sm" className={cn('h-2.5', variedWidth(index, SKELETON_PREVIEWS))} />
       </span>
     </div>
   );

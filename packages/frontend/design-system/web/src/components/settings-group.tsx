@@ -3,6 +3,7 @@ import type * as React from 'react';
 import { cn } from '../lib/utils';
 import { Button } from './button';
 import { Skeleton } from './skeleton';
+import { variedWidth } from '../internal/varied-width';
 
 const groupClass = 'flex flex-col overflow-hidden rounded-lg border border-border-subtle bg-card';
 
@@ -190,7 +191,7 @@ function SettingsListRowSkeleton({
       meta={
         meta ? (
           <span className="flex h-4.5 items-center">
-            <Skeleton shape="sm" className={cn('h-2.5 max-w-full', SKELETON_METAS[index % SKELETON_METAS.length])} />
+            <Skeleton shape="sm" className={cn('h-2.5 max-w-full', variedWidth(index, SKELETON_METAS))} />
           </span>
         ) : undefined
       }
@@ -198,7 +199,7 @@ function SettingsListRowSkeleton({
       {...props}
     >
       <span className="flex h-5 items-center">
-        <Skeleton shape="sm" className={cn('h-3 max-w-full', SKELETON_TITLES[index % SKELETON_TITLES.length])} />
+        <Skeleton shape="sm" className={cn('h-3 max-w-full', variedWidth(index, SKELETON_TITLES))} />
       </span>
     </SettingsListRow>
   );

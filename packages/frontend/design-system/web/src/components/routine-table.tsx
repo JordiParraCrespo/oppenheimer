@@ -3,6 +3,7 @@ import type * as React from 'react';
 import { cn } from '../lib/utils';
 import { Skeleton } from './skeleton';
 import { StatusDot, type StatusState } from './status-dot';
+import { variedWidth } from '../internal/varied-width';
 
 const GRID = 'grid grid-cols-[minmax(0,1.5fr)_minmax(0,1.3fr)_minmax(0,1fr)_96px_32px] items-center gap-3.5 px-3';
 
@@ -138,7 +139,6 @@ const SKELETON_TRIGGERS = ['w-28', 'w-36', 'w-24', 'w-32'] as const;
  * widths.
  */
 function RoutineTableRowSkeleton({ index = 0, className, ...props }: React.ComponentProps<'div'> & { index?: number }) {
-  const at = <T,>(widths: readonly T[]) => widths[index % widths.length];
   return (
     <div
       aria-hidden
@@ -150,15 +150,15 @@ function RoutineTableRowSkeleton({ index = 0, className, ...props }: React.Compo
         <Skeleton shape="pill" className="size-[30px] shrink-0" />
         <span className="flex min-w-0 flex-col gap-px">
           <span className="flex h-5 items-center">
-            <Skeleton shape="sm" className={cn('h-3 max-w-full', at(SKELETON_NAMES))} />
+            <Skeleton shape="sm" className={cn('h-3 max-w-full', variedWidth(index, SKELETON_NAMES))} />
           </span>
           <span className="flex h-4.5 items-center">
-            <Skeleton shape="sm" className={cn('h-2.5 max-w-full', at(SKELETON_SUBS))} />
+            <Skeleton shape="sm" className={cn('h-2.5 max-w-full', variedWidth(index, SKELETON_SUBS))} />
           </span>
         </span>
       </div>
       <span className="flex h-5 min-w-0 items-center">
-        <Skeleton shape="sm" className={cn('h-2.5 max-w-full', at(SKELETON_TRIGGERS))} />
+        <Skeleton shape="sm" className={cn('h-2.5 max-w-full', variedWidth(index, SKELETON_TRIGGERS))} />
       </span>
       <span className="flex flex-col gap-px">
         <span className="flex h-5 items-center">

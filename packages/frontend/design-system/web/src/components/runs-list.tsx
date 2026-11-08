@@ -4,6 +4,7 @@ import type * as React from 'react';
 import { cn } from '../lib/utils';
 import { IconButton } from './icon-button';
 import { Skeleton } from './skeleton';
+import { variedWidth } from '../internal/varied-width';
 
 type RunState = 'completed' | 'failed' | 'running';
 
@@ -143,12 +144,12 @@ function RunRowSkeleton({ index = 0, className, ...props }: React.ComponentProps
           <Skeleton shape="pill" className="size-4" />
         </span>
         <span className="flex h-5 min-w-0 flex-1 items-center">
-          <Skeleton shape="sm" className={cn('h-3 max-w-full', SKELETON_TITLES[index % SKELETON_TITLES.length])} />
+          <Skeleton shape="sm" className={cn('h-3 max-w-full', variedWidth(index, SKELETON_TITLES))} />
         </span>
       </span>
       <span className={cn(ROUTINE_CELL, 'h-5 min-w-0 items-center gap-[7px]')}>
         <Skeleton shape="sm" className="size-3.5 shrink-0" />
-        <Skeleton shape="sm" className={cn('h-2.5 max-w-full', SKELETON_ROUTINES[index % SKELETON_ROUTINES.length])} />
+        <Skeleton shape="sm" className={cn('h-2.5 max-w-full', variedWidth(index, SKELETON_ROUTINES))} />
       </span>
       <span className="flex h-5 items-center gap-2">
         <Skeleton shape="sm" className="h-2.5 w-12" />

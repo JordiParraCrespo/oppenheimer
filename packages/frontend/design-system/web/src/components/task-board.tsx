@@ -10,6 +10,7 @@ import { Kbd } from './kbd';
 import { IconButton } from './icon-button';
 import { Skeleton } from './skeleton';
 import { StatusDot, type StatusState } from './status-dot';
+import { variedWidth } from '../internal/varied-width';
 
 /**
  * The task board — Plan's tasks by status, one column each, built on the
@@ -270,10 +271,10 @@ function TaskCardSkeleton({ index = 0, className, ...props }: React.ComponentPro
       <Skeleton shape="pill" className="mt-px size-4.5 shrink-0" />
       <div className="flex min-w-0 flex-1 flex-col gap-1.5">
         <span className="flex h-5 items-center">
-          <Skeleton shape="sm" className={cn('h-3 max-w-full', SKELETON_TITLES[index % SKELETON_TITLES.length])} />
+          <Skeleton shape="sm" className={cn('h-3 max-w-full', variedWidth(index, SKELETON_TITLES))} />
         </span>
         <span className="flex h-4.5 items-center justify-between gap-2.5">
-          <Skeleton shape="sm" className={cn('h-2.5', SKELETON_META[index % SKELETON_META.length])} />
+          <Skeleton shape="sm" className={cn('h-2.5', variedWidth(index, SKELETON_META))} />
           <Skeleton shape="sm" className="h-2.5 w-10" />
         </span>
       </div>

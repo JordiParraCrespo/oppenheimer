@@ -9,6 +9,7 @@ import { cn } from '../lib/utils';
 import { useSortableControl } from './drag';
 import { Skeleton } from './skeleton';
 import type { StatusState } from './status-dot';
+import { variedWidth } from '../internal/varied-width';
 
 function SessionList({ className, ...props }: React.ComponentProps<'div'>) {
   return (
@@ -264,7 +265,7 @@ function SessionItemSkeleton({ index = 0, className, ...props }: React.Component
       {...props}
     >
       <Skeleton shape="sm" className="size-3.5 shrink-0 rounded-xs" />
-      <Skeleton shape="sm" className={cn('h-3 max-w-full', SKELETON_NAMES[index % SKELETON_NAMES.length])} />
+      <Skeleton shape="sm" className={cn('h-3 max-w-full', variedWidth(index, SKELETON_NAMES))} />
     </div>
   );
 }
