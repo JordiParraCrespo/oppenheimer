@@ -76,8 +76,20 @@ jobs:
           file: ${{ matrix.file }}
           platforms: linux/amd64
           push: true
+          # The console's Sentry settings (apps/web/Dockerfile); every other
+          # image ignores them. Repository variables, all optional: unset, the
+          # console reports nothing. The upload token is a secret, mounted for
+          # the build step only and never in an image layer.
           build-args: |
             VERSION=${{ github.sha }}
+            VITE_SENTRY_DSN=${{ vars.VITE_SENTRY_DSN }}
+            VITE_SENTRY_ENVIRONMENT=${{ vars.SENTRY_ENVIRONMENT || 'dev' }}
+            VITE_SENTRY_RELEASE=${{ github.sha }}
+            VITE_SENTRY_TRACES_SAMPLE_RATE=${{ vars.VITE_SENTRY_TRACES_SAMPLE_RATE || '0' }}
+            SENTRY_ORG=${{ vars.SENTRY_ORG }}
+            SENTRY_WEB_PROJECT=${{ vars.SENTRY_WEB_PROJECT }}
+          secrets: |
+            sentry_auth_token=${{ secrets.SENTRY_AUTH_TOKEN }}
           tags: ghcr.io/${{ env.REPO_LC }}/oppenheimer-${{ matrix.image }}:${{ github.sha }}
           cache-from: type=registry,ref=ghcr.io/${{ env.REPO_LC }}/oppenheimer-${{ matrix.image }}:buildcache-dev
           cache-to: type=registry,ref=ghcr.io/${{ env.REPO_LC }}/oppenheimer-${{ matrix.image }}:buildcache-dev,mode=max,image-manifest=true,oci-mediatypes=true

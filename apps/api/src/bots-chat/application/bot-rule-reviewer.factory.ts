@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import type { BotTurnRequest } from '@oppenheimer/backend-agents';
+import { reviewEffort } from '../domain/bot-review-effort.policy';
 import {
   BOT_RULE_REVIEWER_PROMPT,
   type BotReviewedCall,
@@ -40,8 +41,7 @@ export class BotRuleReviewerFactory {
         const answer = await this.completions.complete(
           {
             ...model,
-            // A yes or no over a few rules: the model's least effort is enough.
-            effort: null,
+            effort: reviewEffort(model),
             systemPrompt: BOT_RULE_REVIEWER_PROMPT,
             message: composeRuleReview(call, rules),
             signal: AbortSignal.timeout(REVIEW_TIME_LIMIT_MS),

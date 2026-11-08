@@ -409,8 +409,10 @@ describe('sessionWakePrompt', () => {
   });
 
   it('asks for what each state calls for', () => {
+    // A bot told it could not answer left questions its instructions
+    // settled waiting on the person, though it has answer_session.
     expect(sessionWakePrompt(event('requires_action'), '')).toContain(
-      'You cannot answer a terminal',
+      'If your instructions settle it, answer it with answer_session',
     );
     expect(sessionWakePrompt(event('cancelled'), '')).toContain(
       'Do not start it again on your own',

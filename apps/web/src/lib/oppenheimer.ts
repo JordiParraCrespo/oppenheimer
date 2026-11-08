@@ -4,7 +4,11 @@ import {
   localTerminalsModule,
 } from '@oppenheimer/frontend-consumer';
 import { OppenheimerApp } from '@oppenheimer/frontend-core';
-import { createWebAnalyticsClient, LocalStorageService } from '@oppenheimer/frontend-web';
+import {
+  createWebAnalyticsClient,
+  createWebErrorReportingClient,
+  LocalStorageService,
+} from '@oppenheimer/frontend-web';
 import { webAuthClient } from './auth-client';
 
 // Same-origin by default: the Vite dev server proxies `/api` to the API so the
@@ -21,6 +25,8 @@ export const app = OppenheimerApp.create({
   storage: new LocalStorageService(),
   authClient: webAuthClient,
   analytics: createWebAnalyticsClient(),
+  // Sentry when VITE_SENTRY_DSN is set; the release is this build's version.
+  errorReporting: createWebErrorReportingClient(__APP_VERSION__),
   // What the API can target a flag on besides the session: this is the web
   // client, at this build.
   featureFlags: { platform: 'web', appVersion: __APP_VERSION__ },

@@ -83,9 +83,10 @@ services:
     # No runtime environment: the web image is a static Vite build served by
     # nginx — VITE_* values are baked in at image build time. The one runtime
     # knob is CSP_EXTRA_ORIGINS, the origins nginx's Content-Security-Policy
-    # admits beyond 'self'. The image defaults it to the PostHog EU endpoints;
-    # add it here only to widen that (another analytics region, or a
-    # VITE_API_URL that is not this origin). Setting it replaces the default
+    # admits beyond 'self'. The image defaults it to the PostHog EU endpoints
+    # and sentry.io's ingestion hosts; add it here only to widen that (another
+    # analytics region, a self-hosted Sentry, or a VITE_API_URL that is not
+    # this origin). Setting it replaces the default
     # rather than adding to it — see apps/web/nginx.conf. CSP_FRAME_ORIGINS
     # admits the sessions' preview domain to the Browser tab's frame
     # (https://*.<PREVIEW_BASE_URL's domain>); empty, the tab cannot frame one.

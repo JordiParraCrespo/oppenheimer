@@ -44,6 +44,7 @@
   },
   "devDependencies": {
     "@oppenheimer/tsconfig": "workspace:^",
+    "@sentry/vite-plugin": "4.6.1",
     "@tailwindcss/vite": "^4.3.3",
     "@tanstack/router-plugin": "^1.168.38",
     "@testing-library/react": "^16.3.3",

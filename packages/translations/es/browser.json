@@ -507,7 +507,7 @@
           "link": "Abrir la configuración de Codex Cloud"
         }
       },
-      "details": "Detalles del host: {{detail}}"
+      "details": "Detalles del host"
     }
   },
   "auth": {
@@ -1034,7 +1034,7 @@
       "discard": "Descartar también el trabajo sin enviar",
       "keeps": "La eliminación se detiene si la sesión tiene trabajo sin enviar.",
       "descriptionFolder": "Termina el terminal. La carpeta se queda como está.",
-      "descriptionCloud": "La quita de Oppenheimer. La sesión sigue en claude.ai/code, donde puedes archivarla.",
+      "descriptionCloud": "La quita de Oppenheimer. La sesión sigue en claude.ai/code, donde puedes <archive>archivarla</archive>.",
       "refused": "Su host no la eliminó",
       "refusedUnknown": "El host se negó a eliminar la sesión."
     },
@@ -1518,6 +1518,7 @@
         "refused": "{{provider}} ha rechazado esta petición. Volver a enviarla no servirá: cambia el mensaje o el modelo.",
         "unavailable": "No se ha podido contactar con {{provider}}. Suele ser algo pasajero: vuelve a intentarlo en un momento.",
         "time_limit": "Este turno se ha quedado sin tiempo. Volver a enviarlo no servirá: pide un paso más pequeño o divide la petición.",
+        "step_limit": "Este turno ha usado todos sus pasos y se ha detenido antes de terminar. Volver a enviarlo no servirá: pide un paso más pequeño o di que continúe.",
         "interrupted": "Este turno se interrumpió antes de terminar. Al volver a enviarlo, se ejecuta."
       },
       "openProviders": "Abrir Proveedores de modelos",
