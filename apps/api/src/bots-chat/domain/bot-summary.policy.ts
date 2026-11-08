@@ -115,12 +115,15 @@ export function planSummary(uncovered: readonly SummarizableMessage[]): SummaryP
     take(cost);
   }
   if (end === 0) return null;
-  // The bot's answers to the last folded message go with it, and so does
-  // anything stored at the same instant, within the cap.
+  // The bot's answers to the last folded message go with it, its tool calls
+  // between them included, and so does anything stored at the same instant,
+  // within the cap.
   const instant = messages[end - 1].createdAt.getTime();
   while (
     end < messages.length &&
-    (messages[end].role === 'assistant' || messages[end].createdAt.getTime() === instant)
+    (messages[end].role === 'assistant' ||
+      messages[end].role === 'activity' ||
+      messages[end].createdAt.getTime() === instant)
   ) {
     const cost = costOf(messages[end]);
     if (!fits(cost)) break;
@@ -204,7 +207,15 @@ export function summaryContent(text: string): string {
   return trimmed.length > BOT_SUMMARY_MAX ? `${trimmed.slice(0, BOT_SUMMARY_MAX - 1)}…` : trimmed;
 }
 
-/** A message cannot close the tag it sits in, and so cannot pose as the next one. */
+/**
+ * A message cannot close the tag it sits in, and so cannot pose as the next
+ * one: any closing spelling of the request's tags (any case, any spacing) is
+ * neutralised. A tool call's answer comes from outside (a web page, a mail),
+ * so it is the one most likely to try.
+ */
 function escapeTags(text: string): string {
-  return text.replace(/<\/(summary_so_far|messages|person|bot|oppenheimer)>/g, '&lt;/$1>');
+  return text.replace(
+    /<(\s*\/\s*(?:summary_so_far|messages|person|bot|oppenheimer|bot_tool_calls|tool_calls)\b)/gi,
+    '&lt;$1',
+  );
 }
