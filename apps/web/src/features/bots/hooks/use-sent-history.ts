@@ -16,7 +16,8 @@ import {
  * over a recalled one, is still there when you step back to it. A recalled
  * message you have not edited steps on from any line; once edited, the arrows
  * move the caret through it and step only from its first or last line.
- * `reset` ends the walk, on a send.
+ * `reset` ends the walk, on a send. The composer is keyed by bot, so a walk
+ * never outlives its bot.
  */
 export function useSentHistory(
   botId: string,
@@ -24,10 +25,7 @@ export function useSentHistory(
   setDraft: (next: string) => void,
 ): { onKeyDownCapture: (event: KeyboardEvent<HTMLDivElement>) => void; reset: () => void } {
   const texts = useBotSentTexts(botId);
-  const [held, setHeld] = useState<(SentHistoryPlace & { botId: string; shown: string }) | null>(
-    null,
-  );
-  const place = held?.botId === botId ? held : null;
+  const [place, setPlace] = useState<SentHistoryPlace | null>(null);
 
   function onKeyDownCapture(event: KeyboardEvent<HTMLDivElement>) {
     if (event.key !== 'ArrowUp' && event.key !== 'ArrowDown') return;
@@ -37,18 +35,18 @@ export function useSentHistory(
     if (!(field instanceof HTMLTextAreaElement)) return;
     const direction = event.key === 'ArrowUp' ? 'older' : 'newer';
     // Your own draft (`-1`) is never a recalled message: its arrows keep to the caret.
-    const recalled = place !== null && place.index >= 0 && place.shown === draft;
+    const recalled = place !== null && place.index >= 0 && place.base === draft;
     if (
       !arrowStepsHistory(field.value, field.selectionStart, field.selectionEnd, direction, recalled)
     ) {
       return;
     }
-    const step = stepSentHistory(texts, place, draft, direction);
-    if (!step) return;
+    const next = stepSentHistory(texts, place, draft, direction);
+    if (!next) return;
     event.preventDefault();
-    setHeld({ ...step.place, botId, shown: step.draft });
-    setDraft(step.draft);
+    setPlace(next);
+    setDraft(next.base);
   }
 
-  return { onKeyDownCapture, reset: () => setHeld(null) };
+  return { onKeyDownCapture, reset: () => setPlace(null) };
 }

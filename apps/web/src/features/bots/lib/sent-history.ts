@@ -1,11 +1,14 @@
 /**
  * Where Up and Down have taken the composer in what you sent before:
- * `index` into the sent texts (newest first), and `edits`, what the field
- * held at each place when it stepped away from it, `-1` being the draft you
- * had before the first Up. Nothing written is lost by stepping.
+ * `index` into the sent texts (newest first, `-1` the draft you had before
+ * the first Up), `base`, the text the field was given on arriving there, and
+ * `edits`, what the field held at each place when it stepped away from it.
+ * Nothing written is lost by stepping, and the field still shows an unedited
+ * recall while it reads `base`.
  */
 export interface SentHistoryPlace {
   index: number;
+  base: string;
   edits: Readonly<Record<number, string>>;
 }
 
@@ -22,13 +25,12 @@ export function stepSentHistory(
   place: SentHistoryPlace | null,
   draft: string,
   direction: 'older' | 'newer',
-): { place: SentHistoryPlace; draft: string } | null {
+): SentHistoryPlace | null {
   const from = place?.index ?? -1;
   const to = direction === 'older' ? from + 1 : from - 1;
   if (to < -1 || to >= texts.length) return null;
   const edits = { ...place?.edits, [from]: draft };
-  const next = edits[to] ?? texts[to] ?? '';
-  return { place: { index: to, edits }, draft: next };
+  return { index: to, base: edits[to] ?? texts[to] ?? '', edits };
 }
 
 /**

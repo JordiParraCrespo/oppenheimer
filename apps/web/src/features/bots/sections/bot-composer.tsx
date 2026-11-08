@@ -24,7 +24,7 @@ import {
   botTakesImages,
 } from '@oppenheimer/shared/schemas/bot';
 import { useNavigate } from '@tanstack/react-router';
-import type { ClipboardEvent, KeyboardEvent, ReactNode } from 'react';
+import type { ClipboardEvent, ReactNode } from 'react';
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { BotComposerImage } from '@/features/bots/components/bot-composer-image';
@@ -161,12 +161,6 @@ export function BotComposer({
     send.mutate(message(steer));
   }
 
-  // The open `/` menu takes the arrows first; with it shut they recall what you sent.
-  function onKeyDownCapture(event: KeyboardEvent<HTMLDivElement>) {
-    slash.onKeyDownCapture(event);
-    if (!event.defaultPrevented) recall.onKeyDownCapture(event);
-  }
-
   function onPaste(event: ClipboardEvent<HTMLDivElement>) {
     // Nothing is prevented: text pasted with an image still lands in the field.
     const pasted = Array.from(event.clipboardData.files);
@@ -222,7 +216,8 @@ export function BotComposer({
           />
         ) : null}
         <ChatComposer
-          onKeyDownCapture={onKeyDownCapture}
+          // The field's keys belong to the `/` menu while it is open, else to the walk through what you sent.
+          onKeyDownCapture={slash.open ? slash.onKeyDownCapture : recall.onKeyDownCapture}
           value={draft}
           onValueChange={setDraft}
           inputRef={field}
