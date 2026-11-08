@@ -304,8 +304,10 @@ func (c *codexChat) line(raw []byte, _ int) [][]byte {
 	entries := c.entries(id, at, line.Type, p)
 	// A turn's start or end, or anything the chat shows bar the status, means
 	// the same words typed again are a new message.
-	if line.Type == "event_msg" && (p.Type == "task_started" || p.Type == "task_complete") ||
-		len(entries) > 0 && !(line.Type == "event_msg" && p.Type == "token_count") {
+	event := line.Type == "event_msg"
+	turn := event && (p.Type == "task_started" || p.Type == "task_complete")
+	status := event && p.Type == "token_count"
+	if turn || len(entries) > 0 && !status {
 		c.typed = ""
 	}
 	return entries
