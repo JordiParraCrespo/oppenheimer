@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto';
+import type { BotEngineEvent } from '@oppenheimer/backend-agents';
 import type { AccessScope } from '@oppenheimer/backend-authz';
 import { OutboxMessageSchema, OutboxService } from '@oppenheimer/backend-ddd';
 import { DataSource } from 'typeorm';
@@ -40,6 +41,8 @@ import type { BotSubagentRunnerFactory } from '../application/bot-subagent-runne
 import type { BotToolboxFactory } from '../application/bot-toolbox.factory';
 import { BotTurnContextResolver } from '../application/bot-turn-context.resolver';
 import { BotTurnOpeningResolver } from '../application/bot-turn-opening.resolver';
+import { TurnTranscript } from '../application/turn-transcript.policy';
+import { TurnWriteFactory } from '../application/turn-write.factory';
 import { BotApprovalMapper } from '../bot-approval.mapper';
 import { BotAttachmentMapper } from '../bot-attachment.mapper';
 import { BotConversationSummaryMapper } from '../bot-conversation-summary.mapper';
@@ -62,7 +65,7 @@ import { BotGoalRepository } from '../database/bot-goal.repository';
 import { BotLoopOrmEntity } from '../database/bot-loop.orm-entity';
 import { BotLoopRepository } from '../database/bot-loop.repository';
 import { BotMessageOrmEntity } from '../database/bot-message.orm-entity';
-import { BotMessageRepository } from '../database/bot-message.repository';
+import { BotMessageRepository, isDataException } from '../database/bot-message.repository';
 import { BotModelCallOrmEntity } from '../database/bot-model-call.orm-entity';
 import { BotQuestionOrmEntity } from '../database/bot-question.orm-entity';
 import { BotQuestionRepository } from '../database/bot-question.repository';
@@ -97,6 +100,7 @@ import {
 import { planSummary, type SummarizableMessage } from '../domain/bot-summary.policy';
 import { NO_PERMISSIONS } from '../domain/bot-tool-permission.policy';
 import { BotTurnEntity } from '../domain/bot-turn.entity';
+import type { BotStreamPort } from '../infrastructure/bot-stream.port';
 import { OutboxBotStallChecksAdapter } from '../infrastructure/outbox-bot-stall-checks.adapter';
 import type { OwnerHostsPort } from '../infrastructure/owner-hosts.port';
 import { FindBotTurnQuery } from '../queries/find-bot-turn/find-bot-turn.query';
@@ -639,6 +643,69 @@ describe('bots chat (integration)', () => {
     // Another workspace reads none of it.
     const other = await insertOrganization();
     expect(await messages.findConversation(scopeOf(other), bot.id, 10)).toEqual([]);
+  });
+
+  // Issue #728. What breaks this: a tool's words written as they came, so a
+  // PDF's NUL byte (`unsupported Unicode escape sequence`) or a lone
+  // surrogate half (`invalid input syntax for type json`) makes Postgres
+  // refuse the line's jsonb steps, or the bot's text column, and the turn dies.
+  it('stores a call whose result holds a NUL byte or a lone surrogate, and the text the bot said after it', async () => {
+    const bot = await create('Invoices');
+    const { turn, message } = sent(bot, 'Gather the October invoices');
+    await turns.enqueue(turn, message, null);
+    const transcript = new TurnTranscript(turn);
+    const stream = { write: vi.fn(), settle: vi.fn(), publish: vi.fn() };
+    const write = new TurnWriteFactory(messages, stream as unknown as BotStreamPort).writer(turn);
+    const events: BotEngineEvent[] = [
+      {
+        type: 'tool.started',
+        callId: 'c1',
+        name: 'read_mail_attachment',
+        input: { part: '\u0000' },
+      },
+      {
+        type: 'tool.finished',
+        callId: 'c1',
+        name: 'read_mail_attachment',
+        output: 'Factura\u0000 total 120€ \uD800 end',
+        isError: false,
+      },
+      { type: 'text.done', text: 'Total\u0000 120 \uDC00' },
+    ];
+    for (const event of events) {
+      for (const written of transcript.apply(event)) await write(written);
+    }
+
+    const chat = await messages.findConversation(scope(), bot.id, 10);
+    const line = chat.find((stored) => stored.role === 'activity');
+    expect(line?.steps[0]).toMatchObject({
+      input: { part: '' },
+      output: 'Factura total 120€ � end',
+      isError: false,
+    });
+    expect(chat.at(-1)?.content).toBe('Total 120 �');
+  });
+
+  // What breaks this: a refusal of the statement (a broken constraint, a
+  // lost connection) read as one of its content, which fails a call for good
+  // instead of the turn; or Postgres's content refusals not recognised.
+  it('tells Postgres refusing a value from refusing the statement', async () => {
+    const refusal = (sql: string) =>
+      dataSource.query(sql).then(
+        () => null,
+        (error: unknown) => error,
+      );
+    expect(isDataException(await refusal(`SELECT '{"a":"\\u0000"}'::jsonb`))).toBe(true);
+    expect(isDataException(await refusal(`SELECT '{"a":"\\ud800"}'::jsonb`))).toBe(true);
+    expect(isDataException(await refusal(`SELECT 'nope'::uuid`))).toBe(true);
+    const bot = await create('Twice');
+    expect(
+      isDataException(
+        await refusal(
+          `INSERT INTO bot (id, "organizationId", name, provider) SELECT id, "organizationId", name, provider FROM bot WHERE id = '${bot.id}'`,
+        ),
+      ),
+    ).toBe(false);
   });
 
   // What breaks this: another bot's or another workspace's chat matching, or
@@ -1303,6 +1370,27 @@ describe('bots chat (integration)', () => {
       [bot.id],
     );
     expect(count).toBe(1);
+  });
+
+  // Issue #728. What breaks this: an approved call's words stored as they
+  // came, so a NUL makes Postgres refuse the result, the job retries, and
+  // the guard that stops a retry (a stored result) never holds: the call
+  // runs again.
+  it('stores an approved call’s result that holds a NUL byte', async () => {
+    const bot = await create('Mailer');
+    const card = await asked(bot);
+    await approvals.insertPending(card);
+    const loaded = (await approvals.findOne(scope(), bot.id, card.id)).unwrap();
+    loaded.approve(userId, new Date(), ['bots:write']);
+    expect(await approvals.saveTransition(loaded, {}, null)).toBe(true);
+
+    const run = (await approvals.findForRun(card.id)).unwrap();
+    run.recordResult('Sent\u0000 the invoice', false);
+    expect(await approvals.saveTransition(run, {}, null)).toBe(true);
+    const [{ result }] = await dataSource.query(`SELECT result FROM bot_approval WHERE id = $1`, [
+      card.id,
+    ]);
+    expect(result).toBe('Sent the invoice');
   });
 
   it('refuses an event with nothing said about it, and a message that is not an event saying one', async () => {

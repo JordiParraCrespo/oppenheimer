@@ -300,6 +300,15 @@ worker runs it and streams what happens back to the chat.
   with no key for the turn is `credential`. It is `bot_turn."failure"`,
   beside the words in `"error"`, and `BOT_TURN_FAILURES` says for each
   whether sending the message again can help.
+- **A turn whose record cannot be saved fails as `storage`, and one call
+  whose result cannot be saved fails alone** (2026-11-08, issue #728). Text
+  a tool brings in from outside (a PDF's text layer, a page, a session's
+  output) can hold a NUL or a lone surrogate half, which Postgres refuses in
+  `text` and `jsonb`; the chat's messages drop the first and replace the
+  second (`storableText`) before they are written. If a call's end is still
+  refused, that call is stored as failed and the turn goes on; any other
+  refused write ends the turn as `storage`, whose card says the fault is
+  ours, not the provider's.
 
 ## 3. The chat
 

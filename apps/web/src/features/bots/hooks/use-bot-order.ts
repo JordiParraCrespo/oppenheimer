@@ -3,6 +3,8 @@ import type { BotEntity, BotGroupEntity } from '@oppenheimer/frontend-consumer';
 import { useUpdateBot } from '@oppenheimer/frontend-consumer/react';
 import { useState } from 'react';
 import { botSections, groupIdOf, inOrder, sectionOrder } from '../lib/bot-groups';
+import { botDrop, PINNED_BOTS, splitPinnedBots } from '../lib/bot-pins';
+import type { BotPins } from './use-bot-pins';
 
 /**
  * The Employees sidebar's sections in the order the reader drags them into,
@@ -14,29 +16,53 @@ import { botSections, groupIdOf, inOrder, sectionOrder } from '../lib/bot-groups
  * published, and Ungrouped is drawn even with no bot, so a bot can always
  * be dragged out of its group. Spread `handlers` on the sidebar's
  * `DragProvider`.
+ *
+ * Pinned is one more group (`PINNED_BOTS`), drawn above the others: a bot
+ * dropped on it is pinned where it lands, a pinned one dragged up or down it
+ * is re-pinned in that order, both on this device only, and one dragged out
+ * into a group is saved there and unpinned once the save lands (a save that
+ * fails leaves it pinned). `pinned` are the pinned bots the
+ * search keeps, in pin order; `carrying` is whether a bot is being dragged,
+ * for Pinned to show where a pin can go before there is one.
  */
 export function useBotOrder(
   bots: readonly BotEntity[],
   groups: readonly BotGroupEntity[],
   term: string,
+  pins: Pick<BotPins, 'pins' | 'setPinned' | 'placePins'>,
 ) {
   const [dragging, setDragging] = useState(false);
   // The groups the drag layer last published while a drag is held, then the
   // drop's until its write settles; `null` is the server's order.
   const [order, setOrder] = useState<SortableGroups | null>(null);
   const move = useUpdateBot();
-  const sections = botSections(bots, groups, term, { keepUngrouped: dragging });
-  const drawn = order ? inOrder(sections, order) : sections;
+  const split = splitPinnedBots(bots, pins.pins, term);
+  const sections = botSections(split.rest, groups, term, { keepUngrouped: dragging });
+  const byId = new Map(bots.map((bot) => [bot.id, bot]));
+  const pinnedIds = order?.[PINNED_BOTS];
+  const pinned = pinnedIds ? pinnedIds.flatMap((id) => byId.get(id) ?? []) : split.pinned;
+  const drawn = order ? inOrder(sections, order, split.pinned) : sections;
 
   const sortable = useSortableGroups(
-    sectionOrder(drawn),
+    { [PINNED_BOTS]: pinned.map((bot) => bot.id), ...sectionOrder(drawn) },
     // A drop settles here first and `onMove` then sets its order; a cancel only settles.
     (next, { settled }) => setOrder(settled ? null : next),
-    ({ id, to, index }, next) => {
+    (moved, next) => {
+      const drop = botDrop(moved, next, bots, groupIdOf);
+      if (drop.kind === 'pins') {
+        pins.placePins(drop.pins);
+        return;
+      }
+      // The held order draws it out of Pinned until the move lands; a move that fails keeps the pin.
       setOrder(next);
       move.mutate(
-        { id, input: { groupId: groupIdOf(to), position: index } },
-        { onSettled: () => setOrder(null) },
+        { id: moved.id, input: { groupId: drop.groupId, position: drop.position } },
+        {
+          onSuccess: () => {
+            if (drop.unpin) pins.setPinned(moved.id, false);
+          },
+          onSettled: () => setOrder(null),
+        },
       );
     },
   );
@@ -57,5 +83,12 @@ export function useBotOrder(
     },
   };
 
-  return { sections: drawn, handlers, error: move.error, reset: move.reset };
+  return {
+    pinned,
+    sections: drawn,
+    carrying: dragging,
+    handlers,
+    error: move.error,
+    reset: move.reset,
+  };
 }
