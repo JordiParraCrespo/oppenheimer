@@ -3,8 +3,8 @@ import { describe, expect, it } from 'vitest';
 import { factRowModel } from '../lib/fact-row';
 
 /**
- * How a memory row reads: a fact another bot shared is read only and says
- * so whoever wrote it; a fact about the person is tagged so before its tier;
+ * How a memory row reads: a fact another bot shared says so whoever wrote
+ * it; a fact about the person is tagged so before its tier;
  * an own fact's line says who wrote it last.
  */
 const at = new Date('2026-10-29T10:00:00Z');

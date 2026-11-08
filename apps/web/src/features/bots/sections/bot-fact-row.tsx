@@ -1,7 +1,7 @@
 import { Button, IconButton, Input, SettingsListRow } from '@oppenheimer/design-system-web';
 import { X } from '@oppenheimer/design-system-web/icons';
 import type { BotMemoryFactEntity } from '@oppenheimer/frontend-consumer';
-import { useDeleteBotFact, useUpdateBotFact } from '@oppenheimer/frontend-consumer/react';
+import { useBots, useDeleteBotFact, useUpdateBotFact } from '@oppenheimer/frontend-consumer/react';
 import { ErrorAlert, formatMediumDate, useLocale } from '@oppenheimer/frontend-web';
 import { BOT_MEMORY_FACT_MAX } from '@oppenheimer/shared/schemas/bot';
 import { useState } from 'react';
@@ -13,8 +13,9 @@ import { factRowModel } from '@/features/bots/lib/fact-row';
  * One fact the bot remembers: the sentence, who wrote it and when, a tag when
  * it is about the person or only looked up, Edit, where it is kept, and
  * forget. Edit rewords it in place (Enter saves, Escape cancels). A fact
- * another of the person's bots shared is shown muted, to read only. The row
- * owns its writes and its draft, so editing one fact re-renders that row alone.
+ * another of the person's bots shared is changed the same way, on the bot that
+ * keeps it, which its menu names. The row owns its writes and its draft, so
+ * editing one fact re-renders that row alone.
  *
  * With `keptBy` it is a row of the account's Settings → Memory: every fact
  * there is about the reader, changed on the bot that keeps it, which its line
@@ -37,6 +38,12 @@ export function BotFactRow({
   const remove = useDeleteBotFact();
   const date = formatMediumDate(fact.updatedAt, locale);
   const row = factRowModel(fact, keptBy === undefined ? { botId } : { account: true });
+  // A shared fact is the keeper's row: it is changed there, and its menu names it.
+  const { data: keeper } = useBots({
+    enabled: row.shared,
+    select: (bots) => bots.find((bot) => bot.id === fact.botId)?.name,
+  });
+  const keeperName = row.shared ? (keeper ?? t('settings.memory.aBot')) : keptBy;
   const kind = row.kind && t(`bots.settings.memory.${row.kind}`);
   const meta = t(`bots.settings.memory.${row.meta}`, { date, bot: keptBy });
 
@@ -44,7 +51,7 @@ export function BotFactRow({
     const content = draft?.trim();
     if (!content) return;
     if (content === fact.content) setDraft(null);
-    else update.mutate({ id: botId, factId: fact.id, content });
+    else update.mutate({ id: fact.botId, factId: fact.id, content });
   }
 
   if (draft !== null) {
@@ -94,14 +101,6 @@ export function BotFactRow({
     );
   }
 
-  if (row.shared) {
-    return (
-      <SettingsListRow muted meta={meta} kind={kind}>
-        {fact.content}
-      </SettingsListRow>
-    );
-  }
-
   return (
     <>
       <SettingsListRow
@@ -116,16 +115,16 @@ export function BotFactRow({
               fact={fact.content}
               tier={fact.tier}
               scope={fact.scope}
-              keptBy={keptBy}
+              keptBy={keeperName}
               disabled={update.isPending}
-              onChange={(change) => update.mutate({ id: botId, factId: fact.id, ...change })}
+              onChange={(change) => update.mutate({ id: fact.botId, factId: fact.id, ...change })}
             />
             <IconButton
               variant="quiet"
               size="sm"
               aria-label={t('bots.settings.memory.forget', { fact: fact.content })}
               disabled={remove.isPending}
-              onClick={() => remove.mutate({ id: botId, factId: fact.id })}
+              onClick={() => remove.mutate({ id: fact.botId, factId: fact.id })}
             >
               <X />
             </IconButton>

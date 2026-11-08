@@ -1292,3 +1292,7 @@ earlier note:
   is never overridden, a watched session or a task that fails on its own
   merits is still reported, not retried, and a person's "no" is never
   routed around.
+- `versions/mvp/25-bots.md` §4.1 showed a fact another bot shared muted on a
+  bot's Settings → Memory, with nothing to change. On 2026-11-08 the owner
+  asked to always be able to edit memory: a shared fact has the same Edit,
+  menu and forget as the bot's own, each written to the bot that keeps it.

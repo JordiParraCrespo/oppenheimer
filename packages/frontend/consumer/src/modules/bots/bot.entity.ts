@@ -146,7 +146,7 @@ export class BotMemoryFactEntity {
     return this.updatedAt.getTime() !== this.createdAt.getTime();
   }
 
-  /** Kept by another of the owner's bots and shared with this one: read, never changed here. */
+  /** Kept by another of the owner's bots and shared with this one: changed through the bot that keeps it. */
   isSharedWith(botId: string): boolean {
     return this.botId !== botId;
   }

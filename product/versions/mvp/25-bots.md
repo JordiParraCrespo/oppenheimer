@@ -580,14 +580,17 @@ of `bot_memory_fact`, with two columns more:
 - **Scope.** A `bot` fact is the bot's alone. A `person` fact is about its
   owner ("prefers squash merges"), and every bot that person made in the
   workspace reads it, in a section of the prompt of its own. It stays the
-  row of the bot that learned it: that bot edits and forgets it, the
+  row of the bot that learned it: it is edited and forgotten on that bot
+  (from any of the person's bots' Memory, which writes to the keeper), the
   others read it, and it goes with that bot when the bot is deleted or its
   memory cleared. Copying it to each bot would make "forget" mean nothing.
 - **Defaults.** A fact the bot saves is `log` and `bot` unless it says
   otherwise: `remember` takes `tier` and `about: 'person'`. One the owner
   adds in Settings → Memory is `profile`, and the owner moves a fact from
-  its row's menu there. A fact another bot shared is shown there muted,
-  with nothing to change.
+  its row's menu there. A fact another bot shared is listed there with the
+  same Edit, menu and forget as the bot's own, each changing it on the bot
+  that keeps it, which the menu names (2026-11-08: was shown muted, with
+  nothing to change).
 - **The bot saves as it goes** (2026-11-06, from Grok Bot 0.79.2,
   `research/lessons-from-grok-bot.md` §10). Bots saved almost nothing after
   their first chat: the only nudge was the tool's own description, which

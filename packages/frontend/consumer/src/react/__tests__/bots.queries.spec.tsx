@@ -168,6 +168,14 @@ describe('a fact about the person', () => {
     );
     expect(own.stale('bot-2')).toBe(false);
   });
+
+  // What breaks this: forgotten from a sibling's Memory page, written to the
+  // keeper whose own list was never read, the sibling went on listing it.
+  it('refreshes them when a shared fact is forgotten from a sibling’s page', async () => {
+    const { result, stale } = setupFacts(fact('person'), fact('person'));
+    await act(() => result.current.remove.mutateAsync({ id: 'bot-3', factId: 'f-1' }));
+    expect(stale('bot-2')).toBe(true);
+  });
 });
 
 /**

@@ -2,7 +2,7 @@ import type { BotMemoryFactEntity } from '@oppenheimer/frontend-consumer';
 
 /**
  * How a fact's row reads, as keys under `bots.settings.memory`: whether
- * another of the person's bots shared it (muted, read only), the tag it
+ * another of the person's bots shared it (changed on that bot), the tag it
  * carries (about the person, or only looked up; none for a fact in mind about
  * the work), and its line (who wrote it).
  *

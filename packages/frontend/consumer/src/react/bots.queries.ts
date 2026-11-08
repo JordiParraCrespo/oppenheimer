@@ -258,11 +258,20 @@ function refreshSharedMemory(queryClient: QueryClient) {
   ]);
 }
 
-/** Whether a fact this bot's list holds is about the person, so its siblings read it too. */
-function isSharedFact(queryClient: QueryClient, id: string, factId: string): boolean {
-  const rows = queryClient.getQueryData<BotMemoryFactEntity[]>(botsKeys.memoryList(id));
-  if (rows?.find((row) => row.id === factId)?.scope === 'person') return true;
-  // Forgotten from Settings → Memory, where the bot's own list may not be read.
+/**
+ * Whether a fact is about the person, so its siblings read it too. Looked up
+ * in every bot's list that was read, not only the keeper's: a fact can be
+ * forgotten from a sibling's Memory page, or from Settings → Memory, where the
+ * keeper's own list may never have been read.
+ */
+function isSharedFact(queryClient: QueryClient, factId: string): boolean {
+  const lists = queryClient.getQueriesData<BotMemoryFactEntity[]>({
+    queryKey: botsKeys.details(),
+    predicate: (query) => query.queryKey[3] === 'memory' && query.queryKey[4] === 'list',
+  });
+  for (const [, rows] of lists) {
+    if (rows?.find((row) => row.id === factId)?.scope === 'person') return true;
+  }
   const person = queryClient.getQueryData<PersonMemoryEntity>(botsKeys.personMemory());
   return person?.facts.some((row) => row.id === factId) ?? false;
 }
@@ -456,7 +465,7 @@ export interface DeleteBotFactVariables {
 export const useDeleteBotFact = mutation<void, DeleteBotFactVariables>({
   run: (app, { id, factId }) => app.bots.removeFact(id, factId),
   update: (queryClient, _data, { id, factId }) => {
-    const shared = isSharedFact(queryClient, id, factId);
+    const shared = isSharedFact(queryClient, factId);
     settleFacts(queryClient, id, without(factId));
     return shared ? refreshSharedMemory(queryClient) : undefined;
   },
