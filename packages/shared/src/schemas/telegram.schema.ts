@@ -22,7 +22,12 @@ export const TELEGRAM_RETENTION_DAYS = 90;
 export const TELEGRAM_MESSAGES_KEPT_MAX = 50_000;
 
 /** How an account stands: the runner's bot state, kept as the host last reported it. */
-export const TELEGRAM_ACCOUNT_STATUSES = ['connecting', 'connected', 'revoked', 'unlinked'] as const;
+export const TELEGRAM_ACCOUNT_STATUSES = [
+  'connecting',
+  'connected',
+  'revoked',
+  'unlinked',
+] as const;
 export type TelegramAccountStatus = (typeof TELEGRAM_ACCOUNT_STATUSES)[number];
 
 /** A BotFather token: the bot's id, a colon, and its secret. */

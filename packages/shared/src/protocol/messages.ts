@@ -39,6 +39,15 @@ import {
   SESSION_FILE_MEDIA_TYPES,
 } from './session-file.js';
 import { sharedPreviewGetSchema, sharedPreviewSchema } from './shared-files.js';
+import {
+  telegramAckSchema,
+  telegramLinkSchema,
+  telegramMessagesSchema,
+  telegramSendSchema,
+  telegramSentSchema,
+  telegramStateSchema,
+  telegramUnlinkSchema,
+} from './telegram.js';
 import { transcriptPageSchema, transcriptReadSchema } from './transcript.js';
 import {
   whatsappAckSchema,
@@ -49,15 +58,6 @@ import {
   whatsappStateSchema,
   whatsappUnlinkSchema,
 } from './whatsapp.js';
-import {
-  telegramAckSchema,
-  telegramLinkSchema,
-  telegramMessagesSchema,
-  telegramSendSchema,
-  telegramSentSchema,
-  telegramStateSchema,
-  telegramUnlinkSchema,
-} from './telegram.js';
 
 /**
  * The runner link's message vocabulary, as Zod — one source of truth, with JSON

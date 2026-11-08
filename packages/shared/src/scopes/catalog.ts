@@ -548,7 +548,8 @@ export const PERMISSION_GROUPS: readonly PermissionGroup[] = [
       write: {
         scope: 'telegram:write',
         label: 'Edit',
-        description: 'Connect and disconnect the caller’s own Telegram bots, and send through them.',
+        description:
+          'Connect and disconnect the caller’s own Telegram bots, and send through them.',
         policies: [
           { action: 'create', subject: 'Telegram' },
           { action: 'update', subject: 'Telegram' },
