@@ -156,6 +156,7 @@ export function BotComposer({
 
   // A built-in the console runs itself (`/goal clear`) sends the bot nothing.
   function submit(steer: boolean) {
+    recall.reset();
     if (builtIn.runLocally(() => setBotDraft(botId, ''))) return;
     send.mutate(message(steer));
   }
@@ -163,7 +164,7 @@ export function BotComposer({
   // The open `/` menu takes the arrows first; with it shut they recall what you sent.
   function onKeyDownCapture(event: KeyboardEvent<HTMLDivElement>) {
     slash.onKeyDownCapture(event);
-    if (!event.defaultPrevented) recall(event);
+    if (!event.defaultPrevented) recall.onKeyDownCapture(event);
   }
 
   function onPaste(event: ClipboardEvent<HTMLDivElement>) {
