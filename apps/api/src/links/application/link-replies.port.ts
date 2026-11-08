@@ -3,6 +3,7 @@ import type {
   CommandFailedMessage,
   FsFoundMessage,
   FsListingMessage,
+  HostExecResultMessage,
   PortListingMessage,
   SharedPreviewMessage,
   TelegramSentMessage,
@@ -13,7 +14,8 @@ import type {
 /**
  * A runner's answer to a command the control plane is waiting on: the reply
  * frame itself, or its refusal: `fs.listing`, `fs.found`, `port.listing`,
- * `codex.environments`, `whatsapp.sent`, `telegram.sent`, `shared.preview` or `transcript.page`.
+ * `codex.environments`, `whatsapp.sent`, `telegram.sent`, `shared.preview`,
+ * `transcript.page` or `host.exec.result`.
  */
 export type LinkReply =
   | FsListingMessage
@@ -24,6 +26,7 @@ export type LinkReply =
   | TelegramSentMessage
   | SharedPreviewMessage
   | TranscriptPageMessage
+  | HostExecResultMessage
   | CommandFailedMessage;
 
 /** One waiter: the reply, or null when none came in time. */

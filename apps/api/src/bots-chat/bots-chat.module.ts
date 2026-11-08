@@ -20,6 +20,7 @@ import { BotGoalResolver } from './application/bot-goal.resolver';
 import { BotGoalReviewResolver } from './application/bot-goal-review.resolver';
 import { BotGoalToolsFactory } from './application/bot-goal-tools.factory';
 import { BotGuideToolsFactory } from './application/bot-guide-tools.factory';
+import { BotHostCommandToolsFactory } from './application/bot-host-command-tools.factory';
 import { BotHostToolsFactory } from './application/bot-host-tools.factory';
 import { BotIssueToolsFactory } from './application/bot-issue-tools.factory';
 import { BotLoopResolver } from './application/bot-loop.resolver';
@@ -393,6 +394,7 @@ const queryHandlers: Provider[] = [
     BotOwnerPermissionsResolver,
     BotToolboxFactory,
     BotHostToolsFactory,
+    BotHostCommandToolsFactory,
     BotSessionFileToolsFactory,
     BotSessionToolsFactory,
     BotSessionWatchResolver,

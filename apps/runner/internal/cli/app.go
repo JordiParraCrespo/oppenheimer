@@ -14,6 +14,7 @@ import (
 	"time"
 
 	devapp "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/devices/app"
+	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/host/adapters/execpolicy"
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/host/adapters/folders"
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/host/adapters/system"
 	hostapp "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/host/app"
@@ -150,6 +151,8 @@ func New(version string) (*App, error) {
 		Directories:   folders.Disk{},
 		WorkspaceRoot: paths.Workspaces, Version: version,
 		ClaudeAccount: func() string { return system.ClaudeAccount(claudeConfigPath(paths)) },
+		ExecPolicies:  execpolicy.File{Path: paths.ExecPolicy()},
+		Executor:      system.Executor{},
 	})
 	pairingSvc := pairapp.New(pairapp.Options{
 		Store:        store,

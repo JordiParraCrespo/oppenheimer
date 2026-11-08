@@ -64,7 +64,9 @@ type linkSender interface {
 // the one thing that is neither a session (they outlive none) nor the link
 // (they outlive no epoch).
 type linkHandler struct {
-	app      *App
+	app *App
+	// execs answers a retried `host.exec` with the run it already made.
+	execs    execMemo
 	identity pairdomain.Identity
 	logger   *slog.Logger
 	client   linkSender
@@ -320,7 +322,7 @@ func (h *linkHandler) capabilities() []string {
 		link.CapabilityAttachmentChat, link.CapabilityAttachmentChatOlder,
 		link.CapabilitySessionCloud, link.CapabilitySessionCloudCodex,
 		link.CapabilitySessionWatch, link.CapabilityCodexEnvironments, link.CapabilitySessionTeleport,
-		link.CapabilitySharedPreview, link.CapabilityTranscriptRead,
+		link.CapabilitySharedPreview, link.CapabilityTranscriptRead, link.CapabilityHostExec,
 	}
 	if h.direct != nil {
 		named = append(named, link.CapabilityAttachmentDirect, link.CapabilityAttachmentDirectProof)
@@ -650,6 +652,13 @@ func (h *linkHandler) Message(_ context.Context, msg link.Message) {
 			// Off the read loop like any command, on a lane of its own: a
 			// slow disk delays the next listing, never a session.
 			h.lanes.run(laneFsList, func() { h.listFolders(m) })
+		}
+	case link.TypeHostExec:
+		var m link.HostExec
+		if msg.Decode(&m) == nil {
+			// Up to its timeout, on the daemon's context like an update: a
+			// run outlives the link it was asked on and answers on the next.
+			h.lanes.run(laneExec+m.CommandID, func() { h.exec(h.life, m) })
 		}
 	case link.TypeFsFind:
 		var m link.FsFind

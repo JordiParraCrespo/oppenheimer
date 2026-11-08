@@ -461,6 +461,28 @@
     "after": 18244,
     "limit": 50
   },
+  "host.exec": {
+    "type": "host.exec",
+    "commandId": "b2c3d4e5-6f7a-4b8c-9d0e-1f2a3b4c5d6e",
+    "argv": [
+      "python3",
+      "report.py",
+      "--since",
+      "7d"
+    ],
+    "home": "juno-3f2a",
+    "timeoutSeconds": 60
+  },
+  "host.exec.result": {
+    "type": "host.exec.result",
+    "commandId": "b2c3d4e5-6f7a-4b8c-9d0e-1f2a3b4c5d6e",
+    "exitCode": 0,
+    "timedOut": false,
+    "stdout": "12 rows written to report.csv",
+    "stderr": "",
+    "cwd": "/home/jordi/oppenheimer/bots/juno-3f2a",
+    "durationMs": 842
+  },
   "transcript.page": {
     "type": "transcript.page",
     "commandId": "b2c3d4e5-6f7a-4b8c-9d0e-1f2a3b4c5d6e",
