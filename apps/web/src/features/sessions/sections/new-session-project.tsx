@@ -61,7 +61,10 @@ export function NewSessionProject() {
       fields,
     );
     if (prefill.hostId !== undefined) setValue('hostId', prefill.hostId);
-    if (prefill.scope !== undefined) setValue('scope', prefill.scope);
+    if (prefill.scope !== undefined) {
+      setValue('scope', prefill.scope);
+      setValue('scopeChosen', false);
+    }
     if (prefill.agent !== undefined) setValue('agent', prefill.agent);
     if (prefill.model !== undefined) setValue('model', prefill.model);
   }

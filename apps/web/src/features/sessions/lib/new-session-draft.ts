@@ -48,6 +48,14 @@ export interface NewSessionDraft {
   /** Repository row ids and the branch each is checked out from. */
   scope: RepositoryScope[];
   /**
+   * Whether a repository or branch chip wrote `scope` this visit. False while it holds
+   * what the screen opened on (the last session's, or a project's default), so
+   * the first pick replaces that rather than joining it (`pickOverCarried`).
+   * Kept on the draft, not the chip, so it outlives the chip's unmount while
+   * the place is a folder. Never remembered.
+   */
+  scopeChosen: boolean;
+  /**
    * A folder session's folder, absolute on the host. Remembered per host
    * (`folder-memory.ts`), so switching host switches it to that host's last.
    */
@@ -86,6 +94,7 @@ const FALLBACK: NewSessionDraft = {
   projectId: null,
   hostId: null,
   scope: [],
+  scopeChosen: false,
   folder: null,
   agent: 'claude-code',
   model: defaultModelFor('claude-code'),
