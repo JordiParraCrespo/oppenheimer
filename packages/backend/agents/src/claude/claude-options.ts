@@ -3,6 +3,7 @@ import type { Options } from '@anthropic-ai/claude-agent-sdk';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import type { BotTurnRequest } from '../bot-engine';
 import { DEFAULT_MAX_STEPS } from '../bot-engine';
+import { type MessagePart, messageParts } from '../turn';
 import { qualifiedToolName, TOOL_SERVER_NAME } from './claude-tool-server';
 
 /** z.ai's Anthropic-compatible endpoint, the default for provider `glm`. */
@@ -178,10 +179,17 @@ export function renderTranscript(history: BotTurnRequest['history']): string {
   ].join('\n\n');
 }
 
-/** The turn's message as Claude Code is sent it: the transcript, when there is one, then the message. */
-export function claudeMessage(request: Pick<BotTurnRequest, 'history' | 'message'>): string {
+/**
+ * What the turn's message carries, in order: the earlier turns' transcript
+ * when there are any, then the message's own parts (`messageParts`: its
+ * images, then its words). The one place the transcript is put in front.
+ */
+export function claudeMessageParts(
+  request: Pick<BotTurnRequest, 'history' | 'message' | 'images'>,
+): MessagePart[] {
   const transcript = renderTranscript(request.history);
-  return transcript ? `${transcript}\n\n${request.message}` : request.message;
+  const opening: MessagePart[] = transcript ? [{ type: 'text', text: transcript }] : [];
+  return [...opening, ...messageParts(request)];
 }
 
 export function claudeOptions(

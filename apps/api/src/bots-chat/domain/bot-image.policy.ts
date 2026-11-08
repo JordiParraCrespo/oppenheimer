@@ -29,6 +29,15 @@ function shownNote(names: readonly string[]): string {
 }
 
 /**
+ * Room the history keeps for the notes `withEarlierImages` adds to earlier
+ * messages (15 to 50 tokens each), which the summary's fold does not count:
+ * the fold starts this much below the budget (`BOT_SUMMARY_TRIGGER_TOKENS`).
+ * A note that grows past this, or a chat with many more images in view,
+ * needs it raised.
+ */
+export const EARLIER_IMAGES_HEADROOM_TOKENS = 1_000;
+
+/**
  * The sentence that stands for images the bot was sent before and cannot see
  * now, with their ids, which a mail tool can still attach.
  */

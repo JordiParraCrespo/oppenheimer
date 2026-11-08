@@ -56,10 +56,13 @@ describe('planSummary', () => {
     const messages = Array.from({ length: 40 }, () => message(1_000));
     const plan = planSummary(messages);
     expect(plan).not.toBeNull();
-    expect(plan?.fold).toEqual(messages.slice(0, 31));
-    expect(plan?.through).toBe(messages[30]);
-    expect(plan?.rest).toEqual(messages.slice(31));
+    const folded = plan?.fold.length ?? 0;
+    expect(plan?.fold).toEqual(messages.slice(0, folded));
+    expect(plan?.through).toBe(messages[folded - 1]);
+    expect(plan?.rest).toEqual(messages.slice(folded));
+    // The fewest that leave the keep: one fewer would leave more.
     expect(tokensOf(plan?.rest ?? [])).toBeLessThanOrEqual(BOT_SUMMARY_KEEP_TOKENS);
+    expect(tokensOf(messages.slice(folded - 1))).toBeGreaterThan(BOT_SUMMARY_KEEP_TOKENS);
   });
 
   // What breaks this: the history dropping old messages before the summary
@@ -99,20 +102,22 @@ describe('planSummary', () => {
 
   it('never puts the cutoff between two messages stored at the same instant', () => {
     const messages = Array.from({ length: 40 }, () => message(1_000));
-    const twin = { ...messages[31], id: 'twin', createdAt: messages[30].createdAt };
-    messages[31] = twin;
+    const end = planSummary(messages)?.fold.length ?? 0;
+    const twin = { ...messages[end], id: 'twin', createdAt: messages[end - 1].createdAt };
+    messages[end] = twin;
     const plan = planSummary(messages);
     expect(plan?.through).toBe(twin);
-    expect(plan?.rest[0]).toBe(messages[32]);
+    expect(plan?.rest[0]).toBe(messages[end + 1]);
   });
 
   it('folds the bot’s answer with the message it answers', () => {
     const messages = Array.from({ length: 40 }, () => message(1_000));
-    // The fold would end on [30]; the bot answered it.
-    messages[31] = { ...messages[31], role: 'assistant' };
+    // The bot answered the message the fold would end on.
+    const end = planSummary(messages)?.fold.length ?? 0;
+    messages[end] = { ...messages[end], role: 'assistant' };
     const plan = planSummary(messages);
-    expect(plan?.through).toBe(messages[31]);
-    expect(plan?.rest[0]).toBe(messages[32]);
+    expect(plan?.through).toBe(messages[end]);
+    expect(plan?.rest[0]).toBe(messages[end + 1]);
   });
 
   it('lets the cap split a question from its answer, leaving the answer for the next call', () => {
@@ -144,8 +149,10 @@ describe('planSummary', () => {
     const queued = message(1_000, { turnEnded: false });
     const later = message(1_000, { role: 'assistant' });
     const plan = planSummary([...messages, queued, later]);
-    expect(plan?.fold).toEqual(messages.slice(0, 29));
-    expect(plan?.rest).toEqual(messages.slice(29));
+    const folded = plan?.fold.length ?? 0;
+    expect(plan?.fold).toEqual(messages.slice(0, folded));
+    expect(plan?.rest).toEqual(messages.slice(folded));
+    expect(plan?.rest).not.toContain(queued);
     const giant = message(BOT_SUMMARY_TRIGGER_TOKENS + 1);
     const alone = planSummary([giant, queued, later]);
     expect(alone?.fold).toEqual([giant]);
@@ -199,7 +206,7 @@ describe('the summarizer', () => {
     ]);
     expect(request).toContain('<summary_so_far>\nStaging is devbox.\n</summary_so_far>');
     expect(request).toContain(
-      '<person>\nShip it\n</person>\n<bot>\nStarted session s-1\n</bot>\n<oppenheimer>\nAna approved\n</oppenheimer>',
+      '<person>\nShip it\n</person>\n<bot>\nStarted session s-1\n</bot>\n<oppenheimer>\n[A note from Oppenheimer, not a message from the person]\nAna approved\n</oppenheimer>',
     );
     expect(composeSummaryRequest(null, [])).toContain(
       '<summary_so_far>\n(none yet)\n</summary_so_far>',

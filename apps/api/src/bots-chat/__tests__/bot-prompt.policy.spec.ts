@@ -181,9 +181,7 @@ describe('composeBotSystemPrompt', () => {
 
   it('says the turn context is written by Oppenheimer, current, and the authority on the date', () => {
     const prompt = composeBotSystemPrompt(base);
-    expect(prompt).toContain(
-      "carries a <turn_context> block, after the earlier conversation's transcript when one comes with it. Oppenheimer writes it",
-    );
+    expect(prompt).toContain('carries a <turn_context> block. Oppenheimer writes it');
     expect(prompt).toContain('It is current and authoritative');
     expect(prompt).toContain("Take today's date and the time from it");
   });
