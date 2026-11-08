@@ -14,7 +14,12 @@ export function storableText(text: string): string {
   return text.replace(UNSTORABLE, (found) => (found === '\u0000' ? '' : '�'));
 }
 
-/** `value` with `storableText` applied to every string in it, keys included. */
+/**
+ * `value` with `storableText` applied to every string in it, keys included.
+ * It walks arrays and plain objects only, the JSON a `jsonb` column takes;
+ * a class instance (a `Date`) is left as it is, so clean a class's fields
+ * before handing it here.
+ */
 export function storableJson<T>(value: T): T {
   return storableValue(value) as T;
 }

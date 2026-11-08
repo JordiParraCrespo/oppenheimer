@@ -1,6 +1,9 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { BOT_MESSAGE_REPOSITORY, BOT_STREAM } from '../bots-chat.di-tokens';
-import type { BotMessageRepositoryPort } from '../database/bot-message.repository.port';
+import {
+  type BotMessageRepositoryPort,
+  UnstorableStepsError,
+} from '../database/bot-message.repository.port';
 import type { BotTurnEntity } from '../domain/bot-turn.entity';
 import type { BotStreamPort } from '../infrastructure/bot-stream.port';
 import {
@@ -17,8 +20,9 @@ import {
  * which keeps it until its block settles; a retry wait is passed on;
  * what is stored (a new message, a line's steps, a steer placed where the
  * turn took it) is written, then announced as that message. A call's end
- * that Postgres refuses fails that call alone (`failUnstoredCall`); any
- * other refused write fails the turn as `storage` (`TurnStorageError`).
+ * whose content Postgres refuses (`UnstorableStepsError`) fails that call
+ * alone (`failUnstoredCall`); any other failed write fails the turn as
+ * `storage` (`TurnStorageError`).
  */
 @Injectable()
 export class TurnWriteFactory {
@@ -63,7 +67,8 @@ export class TurnWriteFactory {
         try {
           return await this.messages.saveSteps(write.message);
         } catch (error) {
-          if (!write.callId || !failUnstoredCall(write.message, write.callId, error)) throw error;
+          if (!(error instanceof UnstorableStepsError) || !write.callId) throw error;
+          if (!failUnstoredCall(write.message, write.callId, error)) throw error;
           return this.messages.saveSteps(write.message);
         }
     }

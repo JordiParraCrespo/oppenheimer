@@ -1,7 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { type AccessScope, ScopedRepositoryBase } from '@oppenheimer/backend-authz';
-import { storableJson } from '@oppenheimer/backend-core';
 import { DataSource, type EntityManager, In, Repository, type SelectQueryBuilder } from 'typeorm';
 import { BotResource } from '../../bots/bots.resource';
 import { BotMessageMapper } from '../bot-message.mapper';
@@ -9,7 +8,7 @@ import type { BotMessageEntity } from '../domain/bot-message.entity';
 import type { SummarizableMessage } from '../domain/bot-summary.policy';
 import { claimShownWithin } from './bot-attachment.repository';
 import { BotMessageOrmEntity } from './bot-message.orm-entity';
-import type { BotMessageRepositoryPort } from './bot-message.repository.port';
+import { type BotMessageRepositoryPort, UnstorableStepsError } from './bot-message.repository.port';
 import { BotTurnOrmEntity } from './bot-turn.orm-entity';
 
 /** How much of a message the sidebar's line keeps. */
@@ -55,16 +54,22 @@ export class BotMessageRepository
   }
 
   async saveSteps(message: BotMessageEntity): Promise<void> {
-    await this.repository
-      .createQueryBuilder()
-      .update(BotMessageOrmEntity)
-      .set({ steps: () => ':steps::jsonb' })
-      .setParameter('steps', JSON.stringify(storableJson(message.steps)))
-      .where('id = :id AND "organizationId" = :organizationId', {
-        id: message.id,
-        organizationId: message.organizationId,
-      })
-      .execute();
+    // The mapper's steps, so they are what an insert writes: cleaned for Postgres.
+    const { steps } = this.mapper.toPersistence(message);
+    try {
+      await this.repository
+        .createQueryBuilder()
+        .update(BotMessageOrmEntity)
+        .set({ steps: () => ':steps::jsonb' })
+        .setParameter('steps', JSON.stringify(steps))
+        .where('id = :id AND "organizationId" = :organizationId', {
+          id: message.id,
+          organizationId: message.organizationId,
+        })
+        .execute();
+    } catch (error) {
+      throw isDataException(error) ? new UnstorableStepsError(error) : error;
+    }
   }
 
   async placeSteer(
@@ -290,6 +295,17 @@ function after(
     `message.createdAt > (SELECT c."createdAt" FROM bot_message c WHERE c."organizationId" = :organizationId AND c.id = :afterMessageId)`,
     { afterMessageId },
   );
+}
+
+/**
+ * Postgres refused a value, not the statement: SQLSTATE class 22 (a NUL,
+ * an escape `jsonb` will not take, malformed JSON). A lost connection or a
+ * broken constraint is not one.
+ */
+export function isDataException(error: unknown): boolean {
+  const own = error as { code?: unknown };
+  const driver = (error as { driverError?: typeof own }).driverError ?? own;
+  return typeof driver.code === 'string' && driver.code.startsWith('22');
 }
 
 /** What a message is written as, by every writer of `bot_message`, in this order. */

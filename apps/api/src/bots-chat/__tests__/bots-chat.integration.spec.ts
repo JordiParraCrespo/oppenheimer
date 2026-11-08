@@ -65,7 +65,7 @@ import { BotGoalRepository } from '../database/bot-goal.repository';
 import { BotLoopOrmEntity } from '../database/bot-loop.orm-entity';
 import { BotLoopRepository } from '../database/bot-loop.repository';
 import { BotMessageOrmEntity } from '../database/bot-message.orm-entity';
-import { BotMessageRepository } from '../database/bot-message.repository';
+import { BotMessageRepository, isDataException } from '../database/bot-message.repository';
 import { BotModelCallOrmEntity } from '../database/bot-model-call.orm-entity';
 import { BotQuestionOrmEntity } from '../database/bot-question.orm-entity';
 import { BotQuestionRepository } from '../database/bot-question.repository';
@@ -684,6 +684,28 @@ describe('bots chat (integration)', () => {
       isError: false,
     });
     expect(chat.at(-1)?.content).toBe('Total 120 �');
+  });
+
+  // What breaks this: a refusal of the statement (a broken constraint, a
+  // lost connection) read as one of its content, which fails a call for good
+  // instead of the turn; or Postgres's content refusals not recognised.
+  it('tells Postgres refusing a value from refusing the statement', async () => {
+    const refusal = (sql: string) =>
+      dataSource.query(sql).then(
+        () => null,
+        (error: unknown) => error,
+      );
+    expect(isDataException(await refusal(`SELECT '{"a":"\\u0000"}'::jsonb`))).toBe(true);
+    expect(isDataException(await refusal(`SELECT '{"a":"\\ud800"}'::jsonb`))).toBe(true);
+    expect(isDataException(await refusal(`SELECT 'nope'::uuid`))).toBe(true);
+    const bot = await create('Twice');
+    expect(
+      isDataException(
+        await refusal(
+          `INSERT INTO bot (id, "organizationId", name, provider) SELECT id, "organizationId", name, provider FROM bot WHERE id = '${bot.id}'`,
+        ),
+      ),
+    ).toBe(false);
   });
 
   // What breaks this: another bot's or another workspace's chat matching, or
