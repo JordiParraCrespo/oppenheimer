@@ -8,7 +8,6 @@ import {
 } from '@oppenheimer/frontend-consumer/react';
 import { useErrorMessage } from '@oppenheimer/frontend-core/react';
 import { ErrorAlert, useManageRepositoryAccess } from '@oppenheimer/frontend-web';
-import { useRef } from 'react';
 import { useController } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { RepositoryBranchSelect } from '../components/repository-branch-select';
@@ -24,20 +23,17 @@ import { parseRepositoryKey, pickOverCarried, toRepositoryOptions } from '../lib
  *
  * What the screen opens on (the last session's repositories, or a project's
  * default) is carried, not chosen: the first repository picked over it takes
- * its place (`pickOverCarried`). Once this chip has written the selection,
- * picks add up; a project picked after resets it to carried again.
+ * its place (`pickOverCarried`). Once this chip has written the selection
+ * (`scopeChosen`), picks add up; a project picked after makes it carried again.
  */
 export function NewSessionRepositories() {
   const { t } = useTranslation();
-  const { control } = useNewSessionDraft();
+  const { control, getValues, setValue } = useNewSessionDraft();
   const { field } = useController({ control, name: 'scope' });
-  // The ids this chip last wrote; a selection holding others was set elsewhere.
-  const chosen = useRef<string | null>(null);
 
   function onValueChange(next: RepositoryScope[]) {
-    const value = chosen.current === idsOf(field.value) ? next : pickOverCarried(field.value, next);
-    chosen.current = idsOf(value);
-    field.onChange(value);
+    field.onChange(getValues('scopeChosen') ? next : pickOverCarried(field.value, next));
+    setValue('scopeChosen', true);
   }
 
   const resolveError = useErrorMessage();
@@ -82,8 +78,4 @@ export function NewSessionRepositories() {
       />
     </>
   );
-}
-
-function idsOf(scope: readonly RepositoryScope[]): string {
-  return scope.map((item) => item.id).join(' ');
 }

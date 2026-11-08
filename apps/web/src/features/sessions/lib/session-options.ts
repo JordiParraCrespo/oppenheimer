@@ -660,11 +660,9 @@ export interface NewSessionDraftShape {
 }
 
 /**
- * A pick over a selection this visit did not make (the last session's
- * repositories, or a project's default): the first repository added replaces
- * it rather than joining it, so the next session does not carry the last one's
- * repository along unasked. Unticking a carried row, or a later pick, passes
- * through as the picker made it.
+ * A pick over a carried selection (`NewSessionDraft.scopeChosen`): the
+ * repositories just added replace it. An untick or a branch change adds none,
+ * so it passes through as the picker made it.
  */
 export function pickOverCarried(
   current: readonly RepositoryScope[],
