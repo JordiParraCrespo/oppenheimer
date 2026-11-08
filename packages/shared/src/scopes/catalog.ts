@@ -22,6 +22,7 @@ export const SCOPE_RESOURCES = [
   'hosts',
   'projects',
   'sessions',
+  'cloud-chat',
   'automations',
   'bots',
   'tasks',
@@ -355,6 +356,31 @@ export const PERMISSION_GROUPS: readonly PermissionGroup[] = [
           { action: 'update', subject: 'Session' },
           { action: 'delete', subject: 'Session' },
         ],
+      },
+    },
+  },
+  {
+    resource: 'cloud-chat',
+    label: 'Cloud session chat',
+    description:
+      'The chat of the workspace’s Claude Code cloud sessions: what the hooks in a cloud session send and collect, and nothing else of a session.',
+    // A key that sits in a cloud environment's plain-text variables, so it
+    // reaches only the two hook endpoints and the chat read: it cannot create,
+    // stop or delete a session, or open a terminal, which `sessions:write`
+    // can. Granting it takes the same rule as editing a session.
+    levels: {
+      read: {
+        scope: 'cloud-chat:read',
+        label: 'Read',
+        description: 'Read a Claude Code cloud session’s chat and the replies typed to it.',
+        policies: [{ action: 'read', subject: 'Session' }],
+      },
+      write: {
+        scope: 'cloud-chat:write',
+        label: 'Edit',
+        description:
+          'Send a Claude Code cloud session’s transcript, and collect the replies typed to its agent.',
+        policies: [{ action: 'update', subject: 'Session' }],
       },
     },
   },

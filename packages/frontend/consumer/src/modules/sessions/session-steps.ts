@@ -1,5 +1,6 @@
 import {
   SESSION_FAILED_EVENT_KIND,
+  SESSION_RETRY_REQUESTED_EVENT_KIND,
   SESSION_START_STEPS,
   SESSION_STARTED_EVENT_KIND,
   SESSION_STEP_EVENT_KIND,
@@ -36,7 +37,9 @@ export type SessionStartEntry =
       download: boolean;
     }
   | { seq: number; kind: 'started' }
-  | { seq: number; kind: 'failed'; detail: string | null; code: string | null };
+  | { seq: number; kind: 'failed'; detail: string | null; code: string | null }
+  /** A failed start tried again: what came before it is the attempt that failed. */
+  | { seq: number; kind: 'retried' };
 
 /** A raw log entry as the API returns it: the kind and a payload of unknown shape. */
 export interface RawSessionLogEntry {
@@ -65,6 +68,8 @@ export function toStartEntry(entry: RawSessionLogEntry): SessionStartEntry | nul
     }
     case SESSION_STARTED_EVENT_KIND:
       return { seq: entry.seq, kind: 'started' };
+    case SESSION_RETRY_REQUESTED_EVENT_KIND:
+      return { seq: entry.seq, kind: 'retried' };
     case SESSION_FAILED_EVENT_KIND: {
       const parsed = sessionFailedPayloadSchema.safeParse(entry.payload);
       const payload = parsed.success ? parsed.data : {};
@@ -80,12 +85,13 @@ export function toStartEntry(entry: RawSessionLogEntry): SessionStartEntry | nul
   }
 }
 
-/** The entry that ends a start: the agent step landing, or the host's failure. */
+/**
+ * The entry after which the log says nothing more about the start: the agent
+ * step landing. A failure is not one: a retry may follow it, and a failed
+ * session's log is short, so it is read to its end.
+ */
 export function settlesStart(entry: SessionStartEntry): boolean {
-  return (
-    (entry.kind === 'step' && entry.step === 'agent' && entry.status === 'done') ||
-    entry.kind === 'failed'
-  );
+  return entry.kind === 'step' && entry.step === 'agent' && entry.status === 'done';
 }
 
 export type SessionStartStepState = 'pending' | 'running' | 'done' | 'failed';
@@ -137,7 +143,15 @@ export function deriveSessionStartProgress(
   let reported = false;
   let failure: SessionStartProgress['failure'] = null;
 
-  for (const entry of [...entries].sort((a, b) => a.seq - b.seq)) {
+  // The attempt on screen is what follows the last retry: what came before it
+  // is an attempt that failed.
+  const log = [...entries].sort((a, b) => a.seq - b.seq);
+  let from = 0;
+  log.forEach((entry, index) => {
+    if (entry.kind === 'retried') from = index + 1;
+  });
+
+  for (const entry of log.slice(from)) {
     if (entry.kind === 'step') {
       reported = true;
       const step = steps.get(entry.step) as SessionStartStep;
@@ -146,7 +160,7 @@ export function deriveSessionStartProgress(
       step.download ||= entry.download;
     } else if (entry.kind === 'started') {
       started = true;
-    } else {
+    } else if (entry.kind === 'failed') {
       failure = { detail: entry.detail, code: entry.code };
     }
   }

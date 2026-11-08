@@ -252,3 +252,12 @@ place with the agent `codex`; what differs is the vendor's CLI:
   status off `codex cloud list` (§7, "Codex's cloud, the same place").
   In a host's cloud the engine button now offers Claude Code and Codex,
   which replaces the 2026-10-28 "Claude Code alone".
+- 2026-11-07: a host whose `claude` is not signed in to claude.ai refuses a
+  cloud start with its own code (`SESS_019`), which the start pane says in
+  the console's words (sign in with `claude auth login` on the host), and
+  the CLI's last words reach it as a reader sees them, no longer with the
+  renderer's escapes and without spaces. A failed start on a host, of any
+  place, has **Try again** (`POST /sessions/{id}/retry`): the same create,
+  for the same session, with the first task the log kept; the session is
+  `starting` again (`session.retry_requested`) and the pane draws the new
+  attempt's steps in place.

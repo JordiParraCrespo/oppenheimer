@@ -96,7 +96,7 @@ func New(opts Options) *Reader {
 		chats[domain.AgentClaude] = claude
 	}
 	if opts.CodexSessions != "" {
-		chats[domain.AgentCodex] = codexSource{sessions: opts.CodexSessions}
+		chats[domain.AgentCodex] = codexSource{sessions: opts.CodexSessions, heads: newCodexHeads()}
 	}
 	if opts.GrokSessions != "" {
 		chats[domain.AgentGrok] = grokSource{sessions: opts.GrokSessions}

@@ -1,12 +1,14 @@
 import { SettingsGroup, SettingsListRow, Skeleton } from '@oppenheimer/design-system-web';
 import { LoadingStatus } from '@oppenheimer/frontend-web';
-import { BOT_PROVIDER_CATALOG, BOT_PROVIDERS } from '@oppenheimer/shared/schemas/bot';
+import { BOT_PROVIDERS } from '@oppenheimer/shared/schemas/bot';
 import { useTranslation } from 'react-i18next';
+import { ModelProviderName } from './model-provider-name';
 
 /**
  * Model providers before the workspace's keys answer. The API lists every
- * provider in catalog order, so the rows are known: each name and what it
- * serves written, the key's tag and the row's buttons as bars on the row's
+ * provider in catalog order, so the rows are known: each mark, name and what
+ * it serves written, in one card since only the read splits them into
+ * connected and not, the key's tag and the row's buttons as bars on the row's
  * own frame, since only the read says whether there is a key.
  */
 export function ModelProvidersSkeleton() {
@@ -22,7 +24,7 @@ export function ModelProvidersSkeleton() {
           meta={t(`settings.modelProviders.providers.${provider}`)}
           actions={<Skeleton shape="pill" className="h-7 w-18" />}
         >
-          {BOT_PROVIDER_CATALOG[provider].label}
+          <ModelProviderName provider={provider} />
         </SettingsListRow>
       ))}
       <LoadingStatus />

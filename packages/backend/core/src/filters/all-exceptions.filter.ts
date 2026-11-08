@@ -10,6 +10,7 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { ExceptionBase, RequestContextService } from '@oppenheimer/backend-ddd';
+import { ErrorReporter } from '@oppenheimer/backend-error-reporting';
 import type { Request, Response } from 'express';
 import { ZodValidationException } from 'nestjs-zod';
 import type { ZodError, ZodIssue } from 'zod';
@@ -23,6 +24,7 @@ import {
   problemTypeFor,
   titleForStatus,
 } from '../errors/problem-details';
+import { errorReportOf } from './error-report';
 
 /** What a 5xx tells the client. Anything more would leak internals. */
 const INTERNAL_ERROR_DETAIL =
@@ -42,6 +44,10 @@ const INTERNAL_ERROR_DETAIL =
  *
  * 5xx responses never carry the underlying message — the correlation id is
  * what ties the client's report back to the logged stack trace.
+ *
+ * Every 5xx is also reported (`ErrorReporter`): one we did not foresee as an
+ * error, a curated one (an `AppError`, a framework 503) as a warning grouped
+ * by its code, since its cause is usually a dependency rather than our code.
  */
 @Injectable()
 @Catch()
@@ -49,7 +55,10 @@ export class AllExceptionsFilter implements ExceptionFilter {
   private readonly logger = new Logger(AllExceptionsFilter.name);
   private readonly typeBaseUrl: string;
 
-  constructor(@Optional() configService?: ConfigService) {
+  constructor(
+    @Optional() configService?: ConfigService,
+    @Optional() private readonly reporter?: ErrorReporter,
+  ) {
     this.typeBaseUrl =
       configService?.get<string>('app.errorTypeBaseUrl') ?? DEFAULT_ERROR_TYPE_BASE_URL;
   }
@@ -71,6 +80,9 @@ export class AllExceptionsFilter implements ExceptionFilter {
         }`,
         exception instanceof Error ? exception.stack : String(exception),
       );
+      if (this.reporter?.enabled) {
+        this.reporter.capture(exception, errorReportOf(exception, problem, request));
+      }
     }
 
     const retryAfter = retryAfterOf(exception);

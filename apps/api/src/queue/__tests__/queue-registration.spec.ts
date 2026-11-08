@@ -106,6 +106,7 @@ describe('queue registration', () => {
           QUEUE_NAMES.BOT_TURNS,
           QUEUE_NAMES.BOT_APPROVALS,
           QUEUE_NAMES.BOT_SUMMARIES,
+          QUEUE_NAMES.BOT_DREAMS,
           QUEUE_NAMES.BOT_STALL_CHECKS,
           QUEUE_NAMES.SESSION_WAKES,
         ].sort(),
@@ -121,6 +122,7 @@ describe('queue registration', () => {
       [QUEUE_NAMES.BOT_TURNS, BOT_TURN_JOB_OPTIONS],
       [QUEUE_NAMES.BOT_APPROVALS, DURABLE_JOB_OPTIONS],
       [QUEUE_NAMES.BOT_SUMMARIES, DURABLE_JOB_OPTIONS],
+      [QUEUE_NAMES.BOT_DREAMS, DURABLE_JOB_OPTIONS],
       [QUEUE_NAMES.BOT_STALL_CHECKS, DURABLE_JOB_OPTIONS],
       [QUEUE_NAMES.SESSION_WAKES, DURABLE_JOB_OPTIONS],
       // Scheduler-driven queues keep the root removal policy.

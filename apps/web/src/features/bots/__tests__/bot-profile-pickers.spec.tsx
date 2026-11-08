@@ -1,9 +1,10 @@
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { useForm } from 'react-hook-form';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { BotProfileValues } from '../forms/bot-profile-form';
 import { BotAvatarColor } from '../sections/bot-avatar-color';
+import { BotAvatarFace } from '../sections/bot-avatar-face';
 import { BotGroupSelect } from '../sections/bot-group-select';
 
 /**
@@ -28,22 +29,34 @@ afterEach(cleanup);
 
 function Pickers({ pending }: { pending: boolean }) {
   const { control } = useForm<BotProfileValues>({
-    defaultValues: { name: 'Release Bot', description: '', avatarColor: 'mint', groupId: null },
+    defaultValues: {
+      name: 'Release Bot',
+      description: '',
+      avatarColor: 'mint',
+      avatarFace: null,
+      groupId: null,
+    },
   });
   return (
     <>
       <BotAvatarColor
-        bot={{ initials: 'RB', name: 'Release Bot' }}
+        bot={{ id: 'bot-1', initials: 'RB', name: 'Release Bot' }}
         control={control}
         pending={pending}
       />
+      <BotAvatarFace botId="bot-1" control={control} pending={pending} />
       <BotGroupSelect botId="bot-1" control={control} pending={pending} />
     </>
   );
 }
 
 const colours = () =>
-  screen.getAllByRole('button').filter((button) => button.hasAttribute('aria-pressed'));
+  screen
+    .getAllByRole('button')
+    .filter(
+      (button) =>
+        button.hasAttribute('aria-pressed') && !button.closest('[data-slot="bot-face-picker"]'),
+    );
 const group = () => screen.getByLabelText('bots.settings.profile.group');
 
 describe('Profile pickers', () => {
@@ -62,5 +75,46 @@ describe('Profile pickers', () => {
     expect(
       group().hasAttribute('disabled') || group().getAttribute('aria-disabled') === 'true',
     ).toBe(true);
+  });
+});
+
+/**
+ * A bot with no photo shows its drawn face, picked from its id, never its
+ * initials. What breaks this: a caller that stops passing the id as `seed`,
+ * so the face falls back to letters, or a face drawn from something that
+ * changes (the name), so a rename gives the bot a new face.
+ */
+describe('Profile colour preview', () => {
+  it("draws the bot's face, the same one for the same id", () => {
+    const { container, unmount } = render(<Pickers pending={false} />);
+    const face = container.querySelector('[data-slot="bot-face"]');
+    expect(face).not.toBeNull();
+    expect(screen.queryByText('RB')).toBeNull();
+    const hat = face?.getAttribute('data-hat');
+    unmount();
+    const again = render(<Pickers pending={false} />).container.querySelector(
+      '[data-slot="bot-face"]',
+    );
+    expect(again?.getAttribute('data-hat')).toBe(hat);
+  });
+});
+
+/**
+ * A face picked in the face row is the face the colour row's preview wears
+ * before Save, as the colour is. What breaks this: the preview drawing the
+ * saved face (or the id's) while the draft holds another, so the owner saves
+ * a face they never saw.
+ */
+describe('Profile face row', () => {
+  it("puts a picked hat on the preview's face", () => {
+    const { container } = render(<Pickers pending={false} />);
+    const preview = () =>
+      container.querySelector('[data-slot="avatar-color-picker"] [data-slot="bot-face"]');
+    const before = preview()?.getAttribute('data-hat');
+    const other = before === 'tophat' ? 'cap' : 'tophat';
+    fireEvent.click(
+      screen.getByRole('button', { name: `bots.settings.profile.faces.hat.${other}` }),
+    );
+    expect(preview()?.getAttribute('data-hat')).toBe(other);
   });
 });

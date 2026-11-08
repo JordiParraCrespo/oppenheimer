@@ -17,6 +17,7 @@ import { ChatImages } from './chat-images';
 import { ChatQuestionRecord } from './chat-question-record';
 import { ChatReplyText } from './chat-reply-text';
 import { ChatSharedFileCard } from './chat-shared-file-card';
+import { ChatSubagents } from './chat-subagents';
 import { ChatToolGroup } from './chat-tool-group';
 
 const TASK_ICONS: Record<ChatTaskStatus, ReactNode> = {
@@ -32,7 +33,8 @@ const TASK_ICONS: Record<ChatTaskStatus, ReactNode> = {
  * read as tiles that open, what a slash command printed in the terminal's
  * font, thinking as a fold that is open while it is what the agent is
  * doing, calls as a group (the ones that only looked around as an Explored
- * one), a stop, a compaction or a background task that ended as a note.
+ * one), the subagents a call started as rows that open to their own work,
+ * a stop, a compaction or a background task that ended as a note.
  * `live` and `last` say whether this is the work in flight.
  */
 export function ChatTurnBlock({
@@ -87,6 +89,9 @@ export function ChatTurnBlock({
       return <ChatToolGroup calls={block.calls} live={live && last} />;
     case 'explored':
       return <ChatToolGroup calls={block.calls} live={live && last} explored />;
+    case 'subagents':
+      // A subagent's own work is drawn by this block, one level down.
+      return <ChatSubagents calls={block.calls} Block={ChatTurnBlock} />;
     case 'notice':
       return (
         <ChatMarker icon={block.notice === 'compacted' ? <Archive /> : <CircleStop />}>

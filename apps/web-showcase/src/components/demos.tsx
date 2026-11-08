@@ -973,7 +973,7 @@ function SortableRail({ items, sessions }: { items: readonly string[]; sessions:
   // width, never the phone's bar along the bottom of the screen.
   return (
     <Rail className="relative inset-auto h-auto w-14 flex-col justify-start border-t-0 border-r px-0 py-3.5 pb-3.5">
-      <RailMark className="flex">O</RailMark>
+      <RailMark className="flex" />
       <SortableGroup id="rail" items={items} accepts={['rail-item']}>
         <div className="flex flex-col gap-1.5">
           {items.map((id) => {
