@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { findUserTurns, type TurnGrid } from '../lib/user-turns';
+import { bubblesFor, findUserTurns, type TurnGrid } from '../lib/user-turns';
 
 /**
  * `findUserTurns` decides which rows the console redraws as the reader's own
@@ -123,5 +123,36 @@ describe('findUserTurns', () => {
     expect(findUserTurns(grid(['❯ Continue this run']))).toEqual([]);
     // Codex's composer: the same `›`, no background.
     expect(findUserTurns(grid(['› Ask Codex to do anything']))).toEqual([]);
+  });
+});
+
+describe('bubblesFor', () => {
+  it('draws turns on touching rows as one bubble, not one each that overlap', () => {
+    // Codex draws each line of a multi-line send behind its own `›`, between
+    // one pair of padding rows: three turns on touching rows. A bubble each
+    // reaches past its rows by the inset, so their edges stacked into slivers.
+    const turns = findUserTurns(
+      grid([
+        '[                ]',
+        '[› Can you approve]',
+        '[› for the new    ]',
+        '[› Using computer ]',
+        '[                ]',
+        '',
+        '• On it.',
+      ]),
+    );
+    expect(turns).toHaveLength(3);
+    expect(bubblesFor(turns.map((turn) => ({ row: turn.line, turn })))).toEqual([
+      { row: 0, x: 0, height: 5 },
+    ]);
+  });
+
+  it('keeps a bubble for each turn with output between them', () => {
+    const turns = findUserTurns(grid(['[❯ first ]', '⏺ Done.', '[❯ second ]']));
+    expect(bubblesFor(turns.map((turn) => ({ row: turn.line, turn })))).toEqual([
+      { row: 0, x: 0, height: 1 },
+      { row: 2, x: 0, height: 1 },
+    ]);
   });
 });
