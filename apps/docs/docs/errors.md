@@ -1340,8 +1340,9 @@ for each (`WHATSAPP_007`, `WHATSAPP_008`, `WHATSAPP_009`).
 
 The `TG_*` codes reach the control plane the same way, in answer to
 `telegram.link` and `telegram.send` (`packages/shared/src/protocol/telegram.ts`).
-`TG_001` is a token `getMe` refused, or Telegram out of reach while checking
-it. `TG_002` is a host polling another bot: one bot per host, disconnect it
+`TG_001` is a token `getMe` refused; Telegram out of reach while checking
+it is `TG_003`, and the account then reads back `unlinked` with the reason,
+not `revoked`. `TG_002` is a host polling another bot: one bot per host, disconnect it
 first. `TG_004` is Telegram's own refusal (the person blocked the bot, the
 bot left the group, a chat that never wrote to it), a `429` (every send from
 the host then waits Telegram's `retry_after`), or a send the host's pacing

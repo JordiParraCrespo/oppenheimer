@@ -26,6 +26,18 @@ describe('telegramTokenRefusal', () => {
         'revoked',
       ),
     ).toEqual({ status: 'revoked', statusReason: '@x is connected; disconnect it first' });
+  });
+
+  it('leaves an account unlinked, not revoked, when Telegram could not be reached to check the token', () => {
+    expect(
+      telegramTokenRefusal(
+        { code: 'TG_003', detail: 'Telegram could not be reached to check the token: timeout' },
+        'connecting',
+      ),
+    ).toEqual({
+      status: 'unlinked',
+      statusReason: 'Telegram could not be reached to check the token: timeout',
+    });
     expect(telegramTokenRefusal({ code: 'TG_009' }, 'unlinked').statusReason).toBe(
       'the host refused it (TG_009)',
     );

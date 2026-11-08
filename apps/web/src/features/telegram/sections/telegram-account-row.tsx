@@ -25,7 +25,11 @@ export function TelegramAccountRow({
   const [open, setOpen] = useState<'reconnect' | 'disconnect' | null>(null);
   const hostName = hosts.find((host) => host.id === account.hostId)?.name ?? null;
   const meta = [
-    account.username ? `@${account.username}` : t('settings.telegram.notCheckedYet'),
+    account.username
+      ? `@${account.username}`
+      : account.status === 'connecting'
+        ? t('settings.telegram.notCheckedYet')
+        : null,
     account.displayName,
     t('settings.telegram.onHost', { host: hostName ?? t('settings.telegram.unknownHost') }),
     account.statusReason,

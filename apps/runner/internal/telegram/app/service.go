@@ -184,7 +184,8 @@ func (s *Service) Link(ctx context.Context, token string) error {
 		if errors.As(err, &refused) {
 			return domain.ErrTokenRefused.WithDetail("%s", domain.Fit(refused.Description, 200))
 		}
-		return domain.ErrTokenRefused.WithDetail("Telegram could not be reached: %v", err)
+		// Not a verdict on the token: Telegram did not answer.
+		return domain.ErrNotConnected.WithDetail("Telegram could not be reached to check the token: %v", err)
 	}
 	if held.State != domain.StateUnlinked && held.Bot.ID != "" && held.Bot.ID != bot.ID {
 		return domain.ErrAlreadyHeld.WithDetail("@%s is connected; disconnect it first", held.Bot.Username)
