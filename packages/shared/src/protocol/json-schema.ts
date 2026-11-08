@@ -11,6 +11,7 @@ import {
   RUNNER_LINK_REFUSALS,
 } from './link.js';
 import {
+  HOST_EXEC_OUTPUT_MAX_BYTES,
   PROTOCOL_MAX_EVENT_PAYLOAD_BYTES,
   protocolMessageSchema,
   RUNNER_CAPABILITIES,
@@ -65,6 +66,7 @@ export function toProtocolJsonSchema(): Record<string, unknown> {
       maxEventPayloadBytes: PROTOCOL_MAX_EVENT_PAYLOAD_BYTES,
       chatEntryMaxBytes: CHAT_ENTRY_MAX_BYTES,
       chatBatchMaxEntries: CHAT_BATCH_MAX_ENTRIES,
+      execOutputMaxBytes: HOST_EXEC_OUTPUT_MAX_BYTES,
     },
   };
 }

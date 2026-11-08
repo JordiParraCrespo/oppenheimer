@@ -1238,6 +1238,106 @@
       "properties": {
         "type": {
           "type": "string",
+          "const": "host.exec"
+        },
+        "commandId": {
+          "$ref": "#/$defs/commandId"
+        },
+        "argv": {
+          "minItems": 1,
+          "maxItems": 64,
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 8192
+          }
+        },
+        "cwd": {
+          "$ref": "#/$defs/hostPath"
+        },
+        "home": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64,
+          "pattern": "^[a-z0-9][a-z0-9-]*$"
+        },
+        "timeoutSeconds": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 600
+        }
+      },
+      "required": [
+        "type",
+        "commandId",
+        "argv",
+        "home",
+        "timeoutSeconds"
+      ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "host.exec.result"
+        },
+        "commandId": {
+          "$ref": "#/$defs/commandId"
+        },
+        "exitCode": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": -9007199254740991,
+              "maximum": 9007199254740991
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "timedOut": {
+          "type": "boolean"
+        },
+        "stdout": {
+          "type": "string"
+        },
+        "stderr": {
+          "type": "string"
+        },
+        "stdoutTruncated": {
+          "type": "boolean"
+        },
+        "stderrTruncated": {
+          "type": "boolean"
+        },
+        "cwd": {
+          "$ref": "#/$defs/hostPath"
+        },
+        "durationMs": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        }
+      },
+      "required": [
+        "type",
+        "commandId",
+        "exitCode",
+        "timedOut",
+        "stdout",
+        "stderr",
+        "cwd",
+        "durationMs"
+      ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
           "const": "attachment.direct.offer"
         },
         "attachmentId": {
@@ -2509,10 +2609,12 @@
       "session.watch",
       "whatsapp",
       "shared.preview",
-      "transcript.read"
+      "transcript.read",
+      "host.exec"
     ],
     "maxEventPayloadBytes": 8192,
     "chatEntryMaxBytes": 65536,
-    "chatBatchMaxEntries": 256
+    "chatBatchMaxEntries": 256,
+    "execOutputMaxBytes": 32768
   }
 }

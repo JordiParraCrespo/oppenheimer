@@ -318,6 +318,23 @@ runner does with it and point back.
   `restarted`. Sent only to a runner whose `hello` names `transcript.read`,
   and waited on like `fs.list`, for 8 seconds. Nothing is kept by the
   control plane.
+- `host.exec` and `host.exec.result` — one program run for a bot
+  (2026-11-07, `25-bots.md` §4.2, "Commands on a host"): `{ commandId,
+  argv, cwd?, home, timeoutSeconds }`, argv run directly with no shell, in
+  `cwd` or the bot's own folder `<workspaces>/bots/<home>`, at most 600
+  seconds. The runner checks its own exec policy first and answers `{
+  exitCode, timedOut, stdout, stderr, stdoutTruncated?, stderrTruncated?,
+  cwd, durationMs }`, the last 32 KB of each stream, or `command.failed`:
+  `EXEC_001` exec is off on this host, `EXEC_002` the program is not
+  allowed, `EXEC_003` the folder is not usable, `EXEC_004` the program
+  could not be started, `EXEC_005` the policy file cannot be read. Sent only
+  to a runner whose `hello` names `host.exec`, and waited on for the run's
+  timeout and 15 seconds more. A command runs the moment it arrives, never
+  queued (a queued one would outlive that wait); past 8 at once on a host it
+  is refused with `EXEC_004`. A `commandId` the runner ran recently (its
+  last 256) is answered with that run's result rather than run again: the
+  control plane reuses one, derived from the approval, when it retries an
+  approved call.
 - `attachment.credit` — the browser's consumed-byte credit, relayed to
   the runner so it resumes that attachment's PTY reads. Without it the
   window below is a one-way valve: a noisy pane stalls for good rather

@@ -64,6 +64,10 @@ const ChatEntryMaxBytes = 65536
 // ChatBatchMaxEntries is the most entries one `attachment.chat` holds.
 const ChatBatchMaxEntries = 256
 
+// ExecOutputMaxBytes is how many bytes of each stream `host.exec.result`
+// keeps: the last ones.
+const ExecOutputMaxBytes = 32768
+
 // The hello capabilities: commands a runner takes beyond its protocol
 // version's baseline.
 const (
@@ -88,6 +92,7 @@ const (
 	CapabilityWhatsapp              = "whatsapp"
 	CapabilitySharedPreview         = "shared.preview"
 	CapabilityTranscriptRead        = "transcript.read"
+	CapabilityHostExec              = "host.exec"
 )
 
 // The `type` of every message on the link.
@@ -124,6 +129,8 @@ const (
 	TypeFsListing               = "fs.listing"
 	TypeFsFind                  = "fs.find"
 	TypeFsFound                 = "fs.found"
+	TypeHostExec                = "host.exec"
+	TypeHostExecResult          = "host.exec.result"
 	TypeAttachmentDirectOffer   = "attachment.direct.offer"
 	TypeAttachmentDirectAnswer  = "attachment.direct.answer"
 	TypeAttachmentDirectRefused = "attachment.direct.refused"
@@ -188,6 +195,8 @@ var MessageTypes = []string{
 	TypeFsListing,
 	TypeFsFind,
 	TypeFsFound,
+	TypeHostExec,
+	TypeHostExecResult,
 	TypeAttachmentDirectOffer,
 	TypeAttachmentDirectAnswer,
 	TypeAttachmentDirectRefused,
@@ -286,6 +295,10 @@ func NewMessage(messageType string) (any, bool) {
 		return new(FsFind), true
 	case TypeFsFound:
 		return new(FsFound), true
+	case TypeHostExec:
+		return new(HostExec), true
+	case TypeHostExecResult:
+		return new(HostExecResult), true
 	case TypeAttachmentDirectOffer:
 		return new(AttachmentDirectOffer), true
 	case TypeAttachmentDirectAnswer:
@@ -704,6 +717,30 @@ type FsFound struct {
 type FsFoundEntries struct {
 	Path   string `json:"path"`
 	Branch string `json:"branch,omitempty"`
+}
+
+// HostExec is the `host.exec` message.
+type HostExec struct {
+	Type           string   `json:"type"`
+	CommandID      string   `json:"commandId"`
+	Argv           []string `json:"argv"`
+	Cwd            string   `json:"cwd,omitempty"`
+	Home           string   `json:"home"`
+	TimeoutSeconds int      `json:"timeoutSeconds"`
+}
+
+// HostExecResult is the `host.exec.result` message.
+type HostExecResult struct {
+	Type            string `json:"type"`
+	CommandID       string `json:"commandId"`
+	ExitCode        *int   `json:"exitCode"`
+	TimedOut        bool   `json:"timedOut"`
+	Stdout          string `json:"stdout"`
+	Stderr          string `json:"stderr"`
+	StdoutTruncated bool   `json:"stdoutTruncated,omitempty"`
+	StderrTruncated bool   `json:"stderrTruncated,omitempty"`
+	Cwd             string `json:"cwd"`
+	DurationMs      int64  `json:"durationMs"`
 }
 
 // AttachmentDirectOffer is the `attachment.direct.offer` message.

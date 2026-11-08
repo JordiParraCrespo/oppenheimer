@@ -227,6 +227,23 @@ export const SAMPLES: Record<ProtocolMessageType, ProtocolMessage> = {
     after: 18_244,
     limit: 50,
   },
+  'host.exec': {
+    type: 'host.exec',
+    commandId,
+    argv: ['python3', 'report.py', '--since', '7d'],
+    home: 'juno-3f2a',
+    timeoutSeconds: 60,
+  },
+  'host.exec.result': {
+    type: 'host.exec.result',
+    commandId,
+    exitCode: 0,
+    timedOut: false,
+    stdout: '12 rows written to report.csv',
+    stderr: '',
+    cwd: '/home/jordi/oppenheimer/bots/juno-3f2a',
+    durationMs: 842,
+  },
   'transcript.page': {
     type: 'transcript.page',
     commandId,
