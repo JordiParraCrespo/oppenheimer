@@ -1286,6 +1286,8 @@ earlier note:
   Claude Code there was not signed in reported it with three other hosts
   online. A failed step now sends the bot to the next reasonable route
   first (another online host, another source, another approach), and a
-  session that failed because of its host is started once on another host
-  that can run it; a task that fails on its own merits is still reported,
-  not retried, and a person's "no" is never routed around.
+  session it started on a host it chose, that failed because of the host,
+  is started once on another host that can run it. A host the person named
+  is never overridden, a watched session or a task that fails on its own
+  merits is still reported, not retried, and a person's "no" is never
+  routed around.

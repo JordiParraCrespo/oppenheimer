@@ -134,7 +134,8 @@ worker runs it and streams what happens back to the chat.
     works out why and tries the next reasonable route within its
     permissions (another online host, another query or source, another
     approach) before it reports a blocker, never the same thing the same
-    way twice, and never around a person's "no"; saying what it is about to
+    way twice, never a second session for work still under way (queued or
+    stalled), and never around a person's "no"; saying what it is about to
     do is not a result (2026-11-08, from OpenClaw's "Execution Bias" and
     "Promised Work" prompt sections, `openclaw/openclaw` at `3a25991e3`);
   - **a closed list of what it can do**: its tools, and that it has no
@@ -149,11 +150,14 @@ worker runs it and streams what happens back to the chat.
     bot delegates a complete
     task and never runs a terminal; it picks the named host, then the
     project's default, then its home host, and checks it is online; when
-    that host cannot run the task (offline, the agent not signed in or not
-    installed) and another online host can, it starts there and says why
-    (2026-11-08); a session that fails because of its host, not its task,
-    is started once on another host that can run it, never again on one it
-    failed on, while a task that fails on its own merits is reported, not
+    a host it chose (not one the person named, which it never overrides)
+    cannot run the task (offline, or `list_hosts` shows it cannot start the
+    agent) and another online host can, it starts there and says why
+    (2026-11-08); a session it started on a host it chose, that fails
+    because of the host and not the task, is started once on another host
+    that can run it, from the task the bot wrote and never from the wake's
+    fenced text, never again on a host it failed on; a session it only
+    watches, or a task that fails on its own merits, is reported, not
     retried, as before (the `failed` wake); it
     works only in a known project's repository or a folder it was given;
     it follows a session already on the task rather than starting a

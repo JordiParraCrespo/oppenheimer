@@ -105,10 +105,17 @@ describe('composeBotSystemPrompt', () => {
       expect(prompt).toContain('goes to a session on a host');
     });
 
-    it('starts on another online host when the chosen one cannot run the agent', () => {
+    // What breaks this: stopping at a default host that cannot run the agent
+    // while others can, or overriding a host the person named.
+    it('starts on another online host when the one it chose cannot run the agent, never instead of a named one', () => {
       const prompt = composeBotSystemPrompt(sessions);
-      expect(prompt).toContain('the agent there is not signed in or not installed');
+      expect(prompt).toContain(
+        'If a host you chose yourself (the default or your home host) cannot run it now',
+      );
       expect(prompt).toContain('start it there instead of stopping');
+      expect(prompt).toContain(
+        'If the host the person named cannot run the task now, do not pick another',
+      );
     });
 
     it('sends a question the web can answer to research, not to a session', () => {
@@ -154,6 +161,7 @@ describe('composeBotSystemPrompt', () => {
     expect(prompt).toMatch(/# How a turn goes[\s\S]*A failed step is not the end of the request/);
     expect(prompt).toContain('another online host when one host cannot do it');
     expect(prompt).toContain('Do not try the same thing the same way twice');
+    expect(prompt).toContain('Work still under way (a queued or stalled session) has not failed');
     expect(prompt).toContain('A person\'s "no" is not a failure');
     expect(prompt).toContain('Saying what you are about to do is not a result');
   });
