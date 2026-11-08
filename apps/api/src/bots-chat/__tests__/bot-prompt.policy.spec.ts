@@ -171,6 +171,40 @@ describe('composeBotSystemPrompt', () => {
         tools: [...sessions.tools, { name: 'read_terminal', description: 'Reads a terminal.' }],
       });
       expect(readsOnly).toContain('# Driving a terminal');
+    });
+
+    // The owner turns each tool off on its own, so any subset is a real bot.
+    // A regression told a bot with terminal tools it had "no shell", or to
+    // open and type with tools it lacked.
+    it('never contradicts itself or names a tool the bot lacks, whatever subset it has', () => {
+      const optional = [
+        'start_session',
+        'run_command',
+        'open_terminal',
+        'type_in_terminal',
+        'read_terminal',
+      ];
+      const terminal = new Set(['open_terminal', 'type_in_terminal', 'read_terminal']);
+      for (let mask = 0; mask < 1 << optional.length; mask++) {
+        const names = optional.filter((_, i) => mask & (1 << i));
+        if (!names.some((name) => terminal.has(name))) continue;
+        const prompt = composeBotSystemPrompt({
+          ...base,
+          tools: [
+            { name: 'list_hosts', description: 'Lists your hosts.' },
+            ...names.map((name) => ({ name, description: `Does ${name}.` })),
+          ],
+        });
+        const which = names.join(' + ');
+        expect(prompt, which).not.toContain('You have no shell, no files');
+        expect(prompt, which).not.toContain('never see the live terminal');
+        expect(prompt, which).not.toContain('you do not run a terminal');
+        for (const missing of optional.filter(
+          (name) => !names.includes(name) && name !== 'start_session',
+        )) {
+          expect(prompt, `${which} names ${missing}`).not.toContain(`\`${missing}\``);
+        }
+      }
       expect(composeBotSystemPrompt(sessions)).not.toContain('# Driving a terminal');
     });
   });
