@@ -162,6 +162,18 @@ export interface HostCodexEnvironments {
  * `product/versions/mvp/24-session-places.md` §4): folder names only, never
  * files, and nothing cached by the API.
  */
+/**
+ * The folder picker's search: the folders under the host's home whose name
+ * holds what was typed, best match first.
+ */
+export interface HostFolderSearch {
+  /** The runner's home directory, so a path under it can be shown as `~/…`. */
+  home: string;
+  entries: { path: string; branch: string | null }[];
+  /** The walk stopped at its bounds, or found more than it names. */
+  truncated: boolean;
+}
+
 export interface HostFolders {
   /** The directory listed, absolute and cleaned. */
   path: string;

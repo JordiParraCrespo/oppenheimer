@@ -235,6 +235,25 @@ surfaces.
 Codex are wired into the composer's harness button; Copilot, Gemini and Cursor
 are held in reserve), copied from the Orca repository.
 
+## 2026-11-08 export refresh
+
+Synced from `Agent orchestration platform v1(2).zip` (22:15 export).
+`Tasks` adds a daily To do view, project cards and navigation back from a
+project, and refines the task and calendar layouts. `Settings` replaces the
+host rows with resource cards and a host detail view for agents, worktrees,
+and disk cleanup, including confirmation states. The twelve portraits in
+`version1/assets/scientists/` accompany this export.
+
+The design system and the other frames are unchanged. As in previous syncs,
+`PullRequests` retains the repository's corrections: watched repositories
+live in Settings and waiting pull requests count as blocked. Settings keeps
+“These apply to every watched repository.” The exploration frame remains.
+The host-detail tabs and Add host instruction tabs use separate state so
+visiting a host does not hide the installation instructions. Copy reads the
+selected installation tab, with the agent prompt selected from its own block.
+These are reference artboards; this sync does not implement their new
+behavior in the application.
+
 ## Design system
 
 `_ds/oppenheimer-design-system-<id>/` is the bound design system —

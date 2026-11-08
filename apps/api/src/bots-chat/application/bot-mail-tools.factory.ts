@@ -261,7 +261,12 @@ export class BotMailToolsFactory implements BotToolArea {
       description: `Opens one attachment of one message. PDFs (with a text layer), Word, Excel (as CSV per sheet) and PowerPoint files, text, CSV and HTML come back as text; images are shown to the person under your reply (you do not see them, so say what they are from the message). Other files, archives and scanned PDFs are not opened. Give the message id and the attachment's part id from search_mail or read_mail_thread. At most ${MAIL_ATTACHMENTS_PER_TURN} per turn.`,
       input: z.object({
         account,
-        message_id: z.string().trim().min(1).max(100),
+        message_id: z
+          .string()
+          .trim()
+          .min(1)
+          .max(100)
+          .describe('The message (from search_mail or read_mail_thread).'),
         part_id: z.string().trim().min(1).max(50).describe("The attachment's part id."),
       }),
       run: async (input, context) => {

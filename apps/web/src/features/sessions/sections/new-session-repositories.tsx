@@ -1,3 +1,4 @@
+import type { RepositoryScope } from '@oppenheimer/design-system-web';
 import {
   useInstallationRepositoriesFor,
   useInstallations,
@@ -11,7 +12,7 @@ import { useController } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { RepositoryBranchSelect } from '../components/repository-branch-select';
 import { useNewSessionDraft } from '../hooks/use-new-session-form';
-import { parseRepositoryKey, toRepositoryOptions } from '../lib/session-options';
+import { parseRepositoryKey, pickOverCarried, toRepositoryOptions } from '../lib/session-options';
 
 /**
  * The repository chip, bound to the draft's scope. Branches are read only for
@@ -19,11 +20,21 @@ import { parseRepositoryKey, toRepositoryOptions } from '../lib/session-options'
  * row of an unopened picker spends rate limit on nothing. "Manage repository
  * access" is a mutation, not a link, because its install URL carries a state
  * minted on click (`useManageRepositoryAccess`).
+ *
+ * What the screen opens on (the last session's repositories, or a project's
+ * default) is carried, not chosen: the first repository picked over it takes
+ * its place (`pickOverCarried`). Once this chip has written the selection
+ * (`scopeChosen`), picks add up; a project picked after makes it carried again.
  */
 export function NewSessionRepositories() {
   const { t } = useTranslation();
-  const { control } = useNewSessionDraft();
+  const { control, getValues, setValue } = useNewSessionDraft();
   const { field } = useController({ control, name: 'scope' });
+
+  function onValueChange(next: RepositoryScope[]) {
+    field.onChange(getValues('scopeChosen') ? next : pickOverCarried(field.value, next));
+    setValue('scopeChosen', true);
+  }
 
   const resolveError = useErrorMessage();
   const installations = useInstallations();
@@ -45,7 +56,7 @@ export function NewSessionRepositories() {
           archived: t('sessions.new.repository.archived'),
         })}
         value={field.value}
-        onValueChange={field.onChange}
+        onValueChange={onValueChange}
         onManage={manageAccess.onManage}
         loading={installations.isPending || repositories.isPending || manageAccess.isPending}
         branchesLoading={branches.isPending}

@@ -17,6 +17,11 @@
     "renameGroup": "Rename group",
     "deleteGroup": "Delete group",
     "groupFailed": "Could not save the group.",
+    "pinned": "Pinned",
+    "pin": "Pin",
+    "unpin": "Unpin",
+    "dropToPin": "Drop a bot here to pin it.",
+    "allPinned": "Its bots are under Pinned.",
     "rowActions": "Bot options",
     "settings": "Settings",
     "move": "Move to group",
@@ -24,7 +29,15 @@
     "moveNone": "No other group yet",
     "moveFailed": "Could not move the bot.",
     "delete": "Delete bot",
-    "loadFailed": "Could not load your bots."
+    "loadFailed": "Could not load your bots.",
+    "hide": "Hide from sidebar",
+    "filters": "Filter bots",
+    "shown": "Show bots",
+    "shownAll": "All",
+    "shownSome": "{{shown}} of {{total}}",
+    "showAll": "Show all bots",
+    "allHidden_one": "Its bot is hidden. Show it from the filter menu.",
+    "allHidden_other": "Its {{count}} bots are hidden. Show them from the filter menu."
   },
   "landing": {
     "titleEmpty": "Make your first bot.",
@@ -58,7 +71,9 @@
       "refused": "{{provider}} refused this request. Sending it again won't help: change the message or the model.",
       "unavailable": "{{provider}} could not be reached. This is usually temporary: try again in a moment.",
       "time_limit": "This turn ran out of time. Sending it again won't help: ask for a smaller step, or split the request.",
-      "interrupted": "This turn was interrupted before it finished. Sending it again runs it."
+      "step_limit": "This turn used all its steps and stopped before it finished. Sending it again won't help: ask for a smaller step, or say go on to continue.",
+      "interrupted": "This turn was interrupted before it finished. Sending it again runs it.",
+      "storage": "We could not save this turn, so it stopped: the fault is ours, not {{provider}}'s. Try again in a moment."
     },
     "openProviders": "Open Model providers",
     "errorDetails": "Show details",
@@ -668,6 +683,7 @@
         "plan": "Plan",
         "mail": "Mail",
         "whatsapp": "WhatsApp",
+        "telegram": "Telegram",
         "github": "GitHub",
         "automations": "Routines and automations",
         "bots": "Other bots",

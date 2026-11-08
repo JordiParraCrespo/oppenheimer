@@ -72,6 +72,23 @@ func NewPool(devices []Device) *Pool {
 	return &Pool{devices: slices.Clone(devices), holders: map[string]string{}}
 }
 
+// Offer replaces the devices on offer with the ones the host has now. A
+// device a session holds stays offered while it is held, found or not: the
+// session keeps its device across a reboot of it, and no other session can
+// take it in the meantime.
+func (p *Pool) Offer(devices []Device) {
+	next := slices.Clone(devices)
+	for _, d := range p.devices {
+		if _, held := p.holders[d.Serial]; !held {
+			continue
+		}
+		if !slices.ContainsFunc(next, func(n Device) bool { return n.Serial == d.Serial }) {
+			next = append(next, d)
+		}
+	}
+	p.devices = next
+}
+
 // For is the session's device: the one it holds, or the first free one,
 // which it then holds.
 func (p *Pool) For(sessionID string) (Device, error) {

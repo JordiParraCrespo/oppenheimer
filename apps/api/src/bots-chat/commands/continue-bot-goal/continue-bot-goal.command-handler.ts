@@ -10,7 +10,7 @@ import {
   goalContinuationTurn,
   goalDecision,
   goalOutcome,
-  timedOut,
+  stoppedAtTurnLimit,
 } from '../../domain/bot-goal.policy';
 import type { BotStreamPort } from '../../infrastructure/bot-stream.port';
 import { ContinueBotGoalCommand } from './continue-bot-goal.command';
@@ -69,7 +69,7 @@ export class ContinueBotGoalCommandHandler
       goal,
       goal.advance(),
       outcome.reason,
-      timedOut(ended),
+      stoppedAtTurnLimit(ended),
     );
     const queued = await this.turns.enqueueContinuation(
       turn,

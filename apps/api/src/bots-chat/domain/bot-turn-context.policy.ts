@@ -19,8 +19,8 @@ export interface TurnContextInput {
   hosts: readonly BotPromptHost[] | null;
   /**
    * What the model's context held at the end of the bot's last turn; null
-   * before one reported it. Only said against a known window: tokens alone
-   * do not tell the model how much room it has.
+   * before one reported it. Said against the window when the engine knows it,
+   * in tokens alone when it does not (`describeRoom`).
    */
   lastContext: { tokens: number; window: number | null } | null;
   /**
@@ -56,10 +56,10 @@ export function composeTurnContext(input: TurnContextInput): string {
   ];
   if (input.homeHost) {
     lines.push(
-      `Your home host is ${input.homeHost.name} (${input.homeHost.online ? 'online' : 'offline'}). Unless the person names another host, work you start runs there.`,
+      `Your home host is ${input.homeHost.name} (${input.homeHost.online ? 'online' : 'offline'}). Work you start runs there when neither the person nor the project names another host.`,
     );
   } else {
-    lines.push('You have no home host. The person sets one in your settings, under Runs on.');
+    lines.push('You have no home host. The person sets one in your settings, under Home host.');
   }
   if (input.hosts === null) {
     lines.push("The person's hosts could not be read just now.");
@@ -114,15 +114,39 @@ export function withTurnContext(context: string, prompt: string): string {
  * same window, and older messages fold into the summary only between turns.
  */
 function describeRoom(context: TurnContextInput['lastContext']): string | null {
-  if (!context?.window) return null;
-  const used = Math.min(100, Math.round((context.tokens / context.window) * 100));
-  const said = `Your context was ${used}% full at the end of your last turn (${context.tokens.toLocaleString('en-GB')} of ${context.window.toLocaleString('en-GB')} tokens).`;
-  if (used < BOT_CONTEXT_TIGHT_PERCENT) return said;
-  return `${said} Keep reads narrow this turn: a filter or a smaller limit rather than everything.`;
+  if (!context) return null;
+  const tokens = context.tokens.toLocaleString('en-GB');
+  const { said, tight } = context.window
+    ? roomOf(context.tokens, context.window, tokens)
+    : {
+        said: `Your context held ${tokens} tokens at the end of your last turn.`,
+        tight: context.tokens >= BOT_CONTEXT_TIGHT_TOKENS,
+      };
+  return tight ? `${said} ${NARROW_READS}` : said;
 }
+
+function roomOf(used: number, window: number, tokens: string): { said: string; tight: boolean } {
+  const percent = Math.min(100, Math.round((used / window) * 100));
+  return {
+    said: `Your context was ${percent}% full at the end of your last turn (${tokens} of ${window.toLocaleString('en-GB')} tokens).`,
+    tight: percent >= BOT_CONTEXT_TIGHT_PERCENT,
+  };
+}
+
+const NARROW_READS =
+  'Keep reads narrow this turn: a filter or a smaller limit rather than everything.';
 
 /** From this share of the window on, the turn context asks for narrow reads. */
 export const BOT_CONTEXT_TIGHT_PERCENT = 50;
+
+/**
+ * Where the engine reports no window (the OpenAI engines: the Responses API
+ * names none), the tokens alone, and narrow reads from this many on: half
+ * the smallest window a bot's provider offers (Claude's 200,000), so a bot
+ * whose window is unknown is never told later than one whose window is
+ * known (2026-11-08; before, such a bot was never told).
+ */
+export const BOT_CONTEXT_TIGHT_TOKENS = 100_000;
 
 function describeHost(host: BotPromptHost): string {
   const sessions =

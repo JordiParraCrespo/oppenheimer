@@ -39,7 +39,7 @@ function harness(outcome: HostFoldersOutcome) {
   const hosts: HostAccessPort = {
     assertUsable: vi.fn().mockResolvedValue({ probedTools: null }),
   };
-  const folders: HostFoldersPort = { list: vi.fn().mockResolvedValue(outcome) };
+  const folders: HostFoldersPort = { list: vi.fn().mockResolvedValue(outcome), find: vi.fn() };
   const sessions: Pick<WorkSessionRepositoryPort, 'findRecentFolders'> = {
     findRecentFolders: vi.fn().mockResolvedValue(RECENT),
   };

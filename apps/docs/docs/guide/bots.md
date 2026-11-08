@@ -1,6 +1,6 @@
 ---
 title: Bots (Employees)
-description: What a bot is and how to create one, its settings (Profile, Instructions with SOUL.md and INSTRUCTIONS.md, Memory, Skills, Permissions, Routines, Home host), model providers and keys, how a bot does code work through sessions, its tools, slash commands and the built-ins /goal /usage /loop /schedule, approvals, and its limits.
+description: What a bot is and how to create one, its settings (Profile, Instructions with SOUL.md and INSTRUCTIONS.md, Memory, Skills, Permissions, Routines, Home host), model providers and keys, how a bot does code work through sessions, its tools, slash commands, the built-in skills oppenheimer and /recap, the built-ins /goal /usage /loop /schedule, approvals, and its limits.
 sidebar_position: 5
 ---
 
@@ -56,11 +56,12 @@ It can also prompt a session whose agent waits at its prompt, answer an agent's 
 ## What else it can do
 
 - **Itself**: edit SOUL.md, INSTRUCTIONS.md, name and description; remember, forget, recall; search its chat.
+- **Hosts**: list your hosts with their runner version, and update a host's runner (`update_host_runner`, the same as **Update runner** in the host's menu; it asks first under Approve for me, and only reaches an online host). When a session's conversation, a shared file or a terminal watch needs a newer runner, the bot can offer to update it.
 - **Plan**: read projects and tasks; create, edit and move tasks; create and edit projects; move sessions; archive or restore a project.
 - **GitHub**: read repositories, pull requests and issues; comment, review, merge, start review sessions, open issues, record CI findings, all in your name.
 - **Automations**: list them and their runs. It cannot create or change yours; it manages only its own routines.
 - **Other bots**: message one, ask one a task (the answer comes back as a new turn), create one. Chains stop at 3 bots deep and 10 bot-to-bot turns.
-- **Mail and WhatsApp**: with Gmail connected in **Settings → Mail**, search, read, draft, send, schedule, label, archive and trash mail. With a number linked in **Settings → WhatsApp** (held by a host; use a spare number), read chats and send messages.
+- **Mail, WhatsApp and Telegram**: with Gmail connected in **Settings → Mail**, search, read, draft, send, schedule, label, archive and trash mail. With a number linked in **Settings → WhatsApp** (held by a host; use a spare number), read chats and send messages. With a bot of yours from @BotFather connected in **Settings → Telegram** (its token stays on the host), read the chats people have with it and answer them; Telegram lets a bot write only to chats that wrote to it first.
 - **Work**: web search, fetch public pages, show images from the web, run up to four read-only subagents, ask you up to four questions on a card, `notify` your Inbox, and read this guide (`read_oppenheimer_docs`).
 
 ## Skills and slash commands
@@ -68,6 +69,8 @@ It can also prompt a session whose agent waits at its prompt, answer an agent's 
 A **skill** is a saved way of doing one task: when it applies, the steps, how to check, what to report. Ask the bot to "save that as a skill", or add one in **Settings → Skills**. Run it by typing `/` and its name in the chat; the bot can also use a skill on its own when a request fits, if you allow that on the skill.
 
 Every bot also has one built-in skill, `oppenheimer`: before it answers a question about Oppenheimer itself, how to set something up in it, or what bots can do, it reads this guide with `read_oppenheimer_docs`, answers from the pages, and says so when the guide does not cover it. You do not run it; ask your question and the bot reads. No skill of yours can take that name.
+
+A second built-in skill, `recap`, catches you up: type `/recap`, or `/recap` and a topic, or just ask "where are we?", and the bot reads your sessions, your pull requests, your plan and this chat, then answers with where things stand, what is waiting on you and the next move. It only reads. A Claude Code session does the same when you ask it to recall or catch you up; a Codex session does not yet.
 
 Built-in commands work for every bot:
 
@@ -90,4 +93,4 @@ When a tool asks, the turn ends on a **Needs input** card in the chat and in the
 
 - A turn stops after 4 minutes and 20 model round trips; longer work is a goal, a loop or a session. Older history is summarised for the model; the chat keeps every message.
 - A bot cannot pair or remove hosts, connect GitHub, Google or Gmail, share sessions, manage API tokens, or delete bots.
-- Not available: calendar tools, files other than images, group chats, bot templates, and writing to a bot from Slack, mail or WhatsApp.
+- Not available: calendar tools, files other than images, group chats, bot templates, and writing to a bot from Slack, mail, WhatsApp or Telegram.

@@ -76,6 +76,9 @@ export const KNOWN_SUBJECTS = [
   // A number a person linked as a WhatsApp device on one of their hosts
   // (`product/next-steps/whatsapp.md`): like `Mail`, every read adds its owner.
   'Whatsapp',
+  // A Telegram bot a person connected on one of their hosts
+  // (`product/next-steps/telegram.md`): like `Whatsapp`, every read adds its owner.
+  'Telegram',
   // The Pull requests area: GitHub's pull requests, read and reviewed through
   // the workspace's installations, and a person's watched repositories.
   'PullRequest',
@@ -389,6 +392,11 @@ export const SYSTEM_ROLE_PERMISSIONS: Record<string, PermissionDefinition[]> = {
     {
       action: 'manage',
       subject: 'Whatsapp',
+      conditions: { organizationId: ACTIVE_ORGANIZATION_ID },
+    },
+    {
+      action: 'manage',
+      subject: 'Telegram',
       conditions: { organizationId: ACTIVE_ORGANIZATION_ID },
     },
     {

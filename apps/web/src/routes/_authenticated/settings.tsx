@@ -8,6 +8,7 @@ import {
   KeyRound,
   Mail,
   MessageCircle,
+  Send,
   User,
 } from '@oppenheimer/design-system-web/icons';
 import { SettingsSidebar } from '@oppenheimer/frontend-web';
@@ -43,6 +44,7 @@ function SettingsLayout() {
               { to: '/settings/cloud-agents', icon: Cloud, labelKey: 'cloudAgents' },
               { to: '/settings/mail', icon: Mail, labelKey: 'mail' },
               { to: '/settings/whatsapp', icon: MessageCircle, labelKey: 'whatsapp' },
+              { to: '/settings/telegram', icon: Send, labelKey: 'telegram' },
             ],
           },
           {

@@ -47,7 +47,7 @@ export interface BotTurnPlanLimitsRecord {
 )
 @Check(
   'CHK_bot_turn_failure',
-  `"failure" IS NULL OR "failure" IN ('rate_limit', 'usage_limit', 'credential', 'refused', 'unavailable', 'time_limit', 'interrupted', 'other')`,
+  `"failure" IS NULL OR "failure" IN ('rate_limit', 'usage_limit', 'credential', 'refused', 'unavailable', 'time_limit', 'step_limit', 'interrupted', 'storage', 'other')`,
 )
 @Check('CHK_bot_turn_tokens', `"inputTokens" >= 0 AND "outputTokens" >= 0`)
 @Check('CHK_bot_turn_cache_tokens', `"cacheReadTokens" >= 0 AND "cacheWriteTokens" >= 0`)
