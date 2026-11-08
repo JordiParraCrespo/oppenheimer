@@ -117,4 +117,37 @@ describe('runnableSkills', () => {
     const own = skill('recap');
     expect(runnableSkills([recap], [own])).toEqual([own]);
   });
+
+  it('offers no /recap when the bot’s own recap is only the bot’s to use, since /recap would answer "not one of your skills"', () => {
+    const own = new BotSkillEntity(
+      'recap',
+      'recap',
+      '',
+      'x',
+      false,
+      true,
+      'user',
+      new Date(),
+      new Date(),
+    );
+    expect(runnableSkills([recap], [own])).toEqual([]);
+  });
+
+  it('leaves out a skill of the bot’s own that only the bot may use', () => {
+    const deploy = new BotSkillEntity(
+      'deploy',
+      'deploy',
+      '',
+      'x',
+      false,
+      true,
+      'user',
+      new Date(),
+      new Date(),
+    );
+    expect(runnableSkills([recap], [deploy, skill('triage')]).map((s) => s.name)).toEqual([
+      'recap',
+      'triage',
+    ]);
+  });
 });

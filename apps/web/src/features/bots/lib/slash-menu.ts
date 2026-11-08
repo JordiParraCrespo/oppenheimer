@@ -59,16 +59,20 @@ export function slashMenuItems(
 
 /**
  * The skills the menu offers: the built-in skills the person may run
- * (`/recap`) first, then the bot's own. A skill of the bot's saved under a
- * built-in skill's name before it was reserved is the one `/<name>` runs, so
- * the built-in gives way to it.
+ * (`/recap`) first, then the bot's own that they may run. A skill of the
+ * bot's saved under a built-in skill's name before it was reserved is the
+ * one `/<name>` means, so the built-in gives way to it, even when only the
+ * bot may use it and the menu offers neither.
  */
-export function runnableSkills<Skill extends Pick<SlashCommand, 'name'>>(
+export function runnableSkills<Skill extends SlashCommand>(
   builtInSkills: readonly Skill[],
-  own: readonly Skill[],
+  own: readonly (Skill & { userInvocable: boolean })[],
 ): Skill[] {
   const shadowed = new Set(own.map((skill) => skill.name));
-  return [...builtInSkills.filter((skill) => !shadowed.has(skill.name)), ...own];
+  return [
+    ...builtInSkills.filter((skill) => !shadowed.has(skill.name)),
+    ...own.filter((skill) => skill.userInvocable),
+  ];
 }
 
 /** The draft once a command is picked: the command and a space for its input. */

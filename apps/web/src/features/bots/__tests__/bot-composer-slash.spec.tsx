@@ -71,10 +71,9 @@ vi.mock('@oppenheimer/frontend-consumer/react', () => ({
     isPending: false,
   }),
   useVoiceDictation: () => ({ available: false, transcribe: async () => null }),
-  // The hook's own `select`: only what the person may run.
   useBotSlashCommands: (_id: string, enabled: boolean) => {
     state.read(enabled);
-    return { data: enabled ? state.skills.filter((s) => s.userInvocable) : undefined };
+    return { data: enabled ? state.skills : undefined };
   },
 }));
 
