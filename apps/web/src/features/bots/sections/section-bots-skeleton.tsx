@@ -1,19 +1,16 @@
-import {
-  BotItemSkeleton,
-  BotList,
-  IconButton,
-  SidebarFoldLabel,
-  SidebarListHead,
-} from '@oppenheimer/design-system-web';
+import { IconButton, SidebarFoldLabel, SidebarListHead } from '@oppenheimer/design-system-web';
 import { Plus } from '@oppenheimer/design-system-web/icons';
 import type { BotSection } from '@oppenheimer/shared/schemas/bot';
 import { useTranslation } from 'react-i18next';
+import { SectionBotsRowsSkeleton } from '@/features/bots/components/section-bots-rows-skeleton';
 import { useFoldedBots } from '@/features/bots/hooks/use-folded-bots';
+import { rememberedBotCount } from '@/features/bots/lib/section-bot-count';
 
 /**
  * `SectionBots` before its code has arrived: the Bots heading and its plus,
- * inert, over three rows, or the heading alone where the reader folded the
- * rows away. The sidebar beside it starts under its real height, so nothing
+ * inert, over the rows it listed last time on this device
+ * (`SectionBotsRowsSkeleton`), or the heading alone where the reader folded
+ * the rows away. The sidebar beside it starts under its real height, so nothing
  * below moves when the heading's own code takes over.
  */
 export function SectionBotsSkeleton({ section }: { section: BotSection }) {
@@ -33,13 +30,7 @@ export function SectionBotsSkeleton({ section }: { section: BotSection }) {
           <Plus />
         </IconButton>
       </SidebarListHead>
-      {fold.open ? (
-        <BotList className="mx-1.5">
-          <BotItemSkeleton index={0} />
-          <BotItemSkeleton index={1} />
-          <BotItemSkeleton index={2} />
-        </BotList>
-      ) : null}
+      {fold.open ? <SectionBotsRowsSkeleton count={rememberedBotCount(section)} /> : null}
     </section>
   );
 }

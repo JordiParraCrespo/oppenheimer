@@ -1,18 +1,15 @@
-import {
-  BotItemSkeleton,
-  BotList,
-  SidebarFoldLabel,
-  SidebarListHead,
-} from '@oppenheimer/design-system-web';
+import { SidebarFoldLabel, SidebarListHead } from '@oppenheimer/design-system-web';
 import type { BotEntity } from '@oppenheimer/frontend-consumer';
 import { useUpdateBot } from '@oppenheimer/frontend-consumer/react';
 import { ErrorAlert, QueryState } from '@oppenheimer/frontend-web';
 import type { BotSection } from '@oppenheimer/shared/schemas/bot';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { SectionBotsRowsSkeleton } from '@/features/bots/components/section-bots-rows-skeleton';
 import { useNewBot } from '@/features/bots/hooks/use-create-bot';
 import { useFoldedBots } from '@/features/bots/hooks/use-folded-bots';
 import { withPlacement } from '@/features/bots/lib/placement';
+import { rememberedBotCount } from '@/features/bots/lib/section-bot-count';
 import { SectionBotsList } from './section-bots-list';
 import { SectionBotsMenu } from './section-bots-menu';
 
@@ -82,11 +79,7 @@ export function SectionBots({ section }: { section: BotSection }) {
       {fold.open ? (
         <QueryState>
           <QueryState.Pending>
-            <BotList aria-busy className="mx-1.5">
-              <BotItemSkeleton index={0} />
-              <BotItemSkeleton index={1} />
-              <BotItemSkeleton index={2} />
-            </BotList>
+            <SectionBotsRowsSkeleton count={rememberedBotCount(section)} />
           </QueryState.Pending>
           <QueryState.Error fallback={t('bots.sidebar.loadFailed')} className="mx-3" />
           <QueryState.Data>
