@@ -41,6 +41,7 @@ export function FolderBrowser({
   failure,
   search,
   searching = false,
+  searchFailure,
   now,
   onUse,
 }: {
@@ -59,6 +60,8 @@ export function FolderBrowser({
   search?: HostFolderSearch;
   /** A search for what is typed is on its way. */
   searching?: boolean;
+  /** Why the host could not search, said where the results would be. */
+  searchFailure?: string;
   now: number;
   /** An absolute path on the host. */
   onUse: (path: string) => void;
@@ -70,6 +73,7 @@ export function FolderBrowser({
   const listed = new Set(view.rows.map((entry) => entry.path));
   const found = failure ? [] : (search?.entries ?? []).filter((entry) => !listed.has(entry.path));
   const foundElsewhere = found.length > 0 || (searching && !failure);
+  const searchShown = foundElsewhere || (Boolean(searchFailure) && !failure);
 
   const emptyText =
     view.empty === 'missing'
@@ -210,7 +214,7 @@ export function FolderBrowser({
           ))
         )}
 
-        {foundElsewhere ? (
+        {searchShown ? (
           <div
             className="mt-1 flex flex-col border-t border-border-subtle pt-1"
             data-slot="folder-search"
@@ -218,7 +222,9 @@ export function FolderBrowser({
             <span className="px-2.5 pt-1.5 pb-1 text-micro font-medium text-fg-subtle uppercase">
               {t('sessions.new.folder.searchHeading')}
             </span>
-            {found.length === 0 ? (
+            {searchFailure ? (
+              <ChipSelectEmpty role="alert">{searchFailure}</ChipSelectEmpty>
+            ) : found.length === 0 ? (
               <span className="px-2.5 py-1.5 text-xs text-fg-subtle">
                 {t('sessions.new.folder.searching')}
               </span>

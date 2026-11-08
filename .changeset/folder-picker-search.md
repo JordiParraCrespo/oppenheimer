@@ -24,6 +24,8 @@ New session's folder picker searches the host by name
 - `@oppenheimer/web`: typing narrows the listed folder to names that hold
   what is typed, those that start with it first; `~billing` is read as
   `~/billing`; a bare name is searched for under home after typing pauses,
-  and what is found shows under the listing.
+  and what is found shows under the listing; a search the host could not
+  make says why there, except on a runner too old to search.
 - `@oppenheimer/translations`: `sessions.new.folder` gains `searchHeading`,
-  `searching` and `searchTruncated`; `emptyFiltered` says "in its name".
+  `searching`, `searchTruncated` and `searchFailed`; `emptyFiltered` says
+  "in its name".

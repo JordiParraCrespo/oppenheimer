@@ -839,6 +839,7 @@
         "searchHeading": "Found under ~",
         "searching": "Searching…",
         "searchTruncated": "Only the closest matches are shown. Type more of the name to narrow it.",
+        "searchFailed": "Could not search the folders on this host.",
         "footMissing": "Pick an existing folder. Nothing is created.",
         "footRepository": "Git repository on {{branch}}. Opened as it is, no new branch.",
         "footFolder": "Opened as it is. Nothing is cloned.",

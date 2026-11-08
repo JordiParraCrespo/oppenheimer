@@ -23,6 +23,9 @@ import {
 /** The host's answers that mean "there is no folder there", not "the host could not say". */
 const MISSING = ['SESSIONS_028', 'SESSIONS_029'];
 
+/** The host's answer when its runner predates the search. */
+const UNSUPPORTED = 'SESSIONS_026';
+
 /** How long typing pauses before the host is asked to search: each search walks its disk. */
 const SEARCH_PAUSE_MS = 250;
 
@@ -35,7 +38,8 @@ const SEARCH_PAUSE_MS = 250;
  * it says what `~` is, and every answer carries the recent folders. A folder
  * typed under `~` waits for it. A bare name typed is also searched for under
  * home once typing pauses; a search the host cannot make (an older runner)
- * leaves the listing as it is.
+ * leaves the listing as it is, and any other failure is said where the
+ * results would be.
  */
 export function NewSessionFolderBrowser({
   hostId,
@@ -69,7 +73,10 @@ export function NewSessionFolderBrowser({
   const term = folderSearchTerm(input);
   const asked = useDebouncedValue(term, SEARCH_PAUSE_MS);
   const search = useHostFolderSearch(hostId, asked);
-  const current = term !== null && asked === term && !search.error;
+  const settled = term !== null && asked === term;
+  // An older runner cannot search: the listing alone is the answer, said nowhere.
+  const unsupported = search.error instanceof AppError && search.error.code === UNSUPPORTED;
+  const current = settled && !search.error;
 
   const error = waiting ? start.error : listing.error;
   const missing = error instanceof AppError && MISSING.includes(error.code);
@@ -88,6 +95,11 @@ export function NewSessionFolderBrowser({
       }
       search={current ? search.data : undefined}
       searching={term !== null && !search.error && (asked !== term || search.isFetching)}
+      searchFailure={
+        settled && search.error && !unsupported
+          ? resolveError(search.error, t('sessions.new.folder.searchFailed')).message
+          : undefined
+      }
       now={now}
       onUse={(path) => onUse(path, home)}
     />

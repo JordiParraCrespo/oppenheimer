@@ -844,6 +844,7 @@
         "searchHeading": "Encontradas en ~",
         "searching": "Buscando…",
         "searchTruncated": "Solo se muestran las coincidencias más cercanas. Escribe más del nombre para acotar.",
+        "searchFailed": "No se han podido buscar las carpetas de este host.",
         "footMissing": "Elige una carpeta que exista. No se crea nada.",
         "footRepository": "Repositorio git en {{branch}}. Se abre tal como está, sin rama nueva.",
         "footFolder": "Se abre tal como está. No se clona nada.",

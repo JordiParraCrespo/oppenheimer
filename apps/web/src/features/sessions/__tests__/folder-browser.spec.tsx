@@ -143,6 +143,13 @@ describe('FolderBrowser', () => {
     expect(screen.queryByText(/emptyFiltered/)).toBeNull();
   });
 
+  it('says why the host could not search, beside the listing it still shows', () => {
+    render(<Harness initial="~/no" searchFailure="The host did not answer in time." />);
+
+    expect(screen.getByText('notes')).toBeDefined();
+    expect(screen.getByRole('alert').textContent).toBe('The host did not answer in time.');
+  });
+
   it('says nothing starts so when the narrowing leaves no row', () => {
     render(<Harness initial="~/zz" />);
 
