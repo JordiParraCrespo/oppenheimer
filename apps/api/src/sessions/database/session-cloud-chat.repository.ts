@@ -54,13 +54,13 @@ export class SessionCloudChatRepository implements SessionCloudChatRepositoryPor
     return inserted.length;
   }
 
-  async findLines(sessionId: string, after: number, limit: number): Promise<CloudChatLine[]> {
+  async findLines(sessionId: string, from: number, limit: number): Promise<CloudChatLine[]> {
     // PK_session_cloud_line: a range of one session's numbers, in order.
     const rows: CloudChatLine[] = await this.lines.query(
       `SELECT "seq", "line" FROM session_cloud_line
         WHERE "sessionId" = $1 AND "seq" >= $2
         ORDER BY "seq" LIMIT $3`,
-      [sessionId, after, limit],
+      [sessionId, from, limit],
     );
     return rows;
   }
@@ -95,12 +95,12 @@ export class SessionCloudChatRepository implements SessionCloudChatRepositoryPor
     return rows.map(asReply);
   }
 
-  async collectReply(sessionId: string, at: Date): Promise<CloudChatReply | null> {
+  async collectReply(sessionId: string): Promise<CloudChatReply | null> {
     // The claim through IDX_session_cloud_reply_waiting; SKIP LOCKED so a
     // second hook asking at once takes the next one or none, never the same.
     // An UPDATE comes back as `[rows, affected]`.
     const [rows]: [ReplyRow[], number] = await this.replies.query(
-      `UPDATE session_cloud_reply SET "collectedAt" = $2
+      `UPDATE session_cloud_reply SET "collectedAt" = now()
         WHERE id = (
           SELECT id FROM session_cloud_reply
            WHERE "sessionId" = $1 AND "collectedAt" IS NULL
@@ -108,7 +108,7 @@ export class SessionCloudChatRepository implements SessionCloudChatRepositoryPor
            LIMIT 1
            FOR UPDATE SKIP LOCKED)
        RETURNING id, "authorId", "text", "createdAt", "collectedAt"`,
-      [sessionId, at],
+      [sessionId],
     );
     return rows[0] ? asReply(rows[0]) : null;
   }

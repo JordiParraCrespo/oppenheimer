@@ -21,7 +21,7 @@ export interface CloudChatPage {
 
 /** Where a feed reads a cloud session's chat and sends replies: the API, through the repository. */
 export interface CloudChatSource {
-  read(after: number): Promise<CloudChatPage>;
+  read(from: number): Promise<CloudChatPage>;
   reply(text: string): Promise<void>;
 }
 
@@ -86,7 +86,9 @@ export class CloudChatFeed {
 
   /** Starts reading and lends the chat its typing; the function returned stops both. */
   start(): () => void {
-    const release = this.chat.connect((data) => this.type(data));
+    const release = this.chat.connect((data) => this.type(data), undefined, {
+      interruptible: false,
+    });
     void this.read(true);
     return () => {
       this.stopped = true;

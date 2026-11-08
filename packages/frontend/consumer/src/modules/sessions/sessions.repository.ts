@@ -421,10 +421,10 @@ export class SessionsRepository {
     });
   }
 
-  /** A Claude Code cloud session's chat: transcript lines from `after` on, and its replies. */
-  findCloudChat(id: string, after: number): Promise<CloudChatPage> {
+  /** A Claude Code cloud session's chat: transcript lines from `from` on, and its replies. */
+  findCloudChat(id: string, from: number): Promise<CloudChatPage> {
     return callApi(SessionsErrors.CLOUD_CHAT_FAILED, async (api) => {
-      const data = await api.body(heyApiSdk.findCloudChat({ path: { id }, query: { after } }));
+      const data = await api.body(heyApiSdk.findCloudChat({ path: { id }, query: { from } }));
       return {
         lines: data.lines,
         next: data.next,
@@ -442,6 +442,28 @@ export class SessionsRepository {
   sendCloudReply(id: string, text: string): Promise<void> {
     return callApi(SessionsErrors.CLOUD_REPLY_FAILED, async (api) => {
       await api.body(heyApiSdk.sendCloudReply({ path: { id }, body: { text } }));
+    });
+  }
+
+  /**
+   * A key for a workspace's Claude Code cloud sessions to send their chat
+   * with: a personal token with `cloud-chat:write` alone (the hook's two
+   * endpoints, nothing else of a session), pinned to the workspace, for 90
+   * days. The secret is answered once, here.
+   */
+  createCloudChatKey(organizationId: string): Promise<string> {
+    return callApi(SessionsErrors.CLOUD_KEY_FAILED, async (api) => {
+      const data = await api.body(
+        heyApiSdk.createApiToken({
+          body: {
+            name: 'Claude Code cloud chat',
+            scopes: ['cloud-chat:write'],
+            organizationIds: [organizationId],
+            expiresInDays: 90,
+          },
+        }),
+      );
+      return data.token;
     });
   }
 
