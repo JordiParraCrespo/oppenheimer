@@ -20,15 +20,23 @@ export function ProjectDialog({
   projectId,
   onClose,
   onSaved,
+  onDeleted,
 }: {
   projectId?: string;
   onClose: () => void;
   onSaved: (project: ProjectEntity) => void;
+  onDeleted: () => void;
 }) {
   const { t } = useTranslation();
   if (!projectId)
     return (
-      <ProjectEditorDialog key="new" project={undefined} onClose={onClose} onSaved={onSaved} />
+      <ProjectEditorDialog
+        key="new"
+        project={undefined}
+        onClose={onClose}
+        onSaved={onSaved}
+        onDeleted={onDeleted}
+      />
     );
 
   return (
@@ -62,6 +70,7 @@ export function ProjectDialog({
                 project={project}
                 onClose={onClose}
                 onSaved={onSaved}
+                onDeleted={onDeleted}
               />
             ) : (
               <ProjectDialogShell onClose={onClose}>

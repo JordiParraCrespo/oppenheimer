@@ -9,7 +9,7 @@ import {
 import { Settings2 } from '@oppenheimer/design-system-web/icons';
 import { useProjects } from '@oppenheimer/frontend-consumer/react';
 import { LoadingStatus, QueryState } from '@oppenheimer/frontend-web';
-import { Link } from '@tanstack/react-router';
+import { Link, useNavigate } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { useConsoleDialog } from '@/lib/console';
 import { ProjectOverviewSection } from '../sections/project-overview';
@@ -23,6 +23,7 @@ import { ProjectOverviewSection } from '../sections/project-overview';
 export function ProjectScreen({ projectId }: { projectId: string }) {
   const { t } = useTranslation();
   const dialogs = useConsoleDialog();
+  const navigate = useNavigate();
   const { data: name } = useProjects({
     select: (rows) => {
       const project = rows.find((row) => row.id === projectId);
@@ -46,7 +47,13 @@ export function ProjectScreen({ projectId }: { projectId: string }) {
             name ? (
               <Button
                 variant="secondary"
-                onClick={() => dialogs.open({ kind: 'project', projectId })}
+                onClick={() =>
+                  dialogs.open({
+                    kind: 'project',
+                    projectId,
+                    onDeleted: () => navigate({ to: '/plan/projects' }),
+                  })
+                }
               >
                 <Settings2 />
                 {t('projects.detail.settings')}
