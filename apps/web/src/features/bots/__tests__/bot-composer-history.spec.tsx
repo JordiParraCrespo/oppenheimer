@@ -9,7 +9,8 @@ import { BotComposer } from '../sections/bot-composer';
  * stopping after one; Down not giving back the draft you had; the arrows
  * stealing the caret from a message of several lines you are writing, or
  * from a recalled one you started editing; the draft you had lost once a
- * recalled message is edited; a send leaving the walk where it was.
+ * recalled message is edited, or a message written over a recalled one lost
+ * on the next step; a send leaving the walk where it was.
  */
 
 vi.mock('react-i18next', () => ({
@@ -118,6 +119,22 @@ describe('BotComposer’s sent history', () => {
     type(field, '');
     up(field);
     expect(botDraft('b1')).toBe('run the tests');
+  });
+
+  it('keeps what was written over a recalled message, and an edit, while stepping past them', () => {
+    const field = composer();
+    type(field, 'A');
+    up(field);
+    type(field, 'B');
+    up(field);
+    expect(botDraft('b1')).toBe('fix the build\nthen push');
+    down(field);
+    expect(botDraft('b1')).toBe('B');
+    type(field, 'B!');
+    down(field);
+    expect(botDraft('b1')).toBe('A');
+    up(field);
+    expect(botDraft('b1')).toBe('B!');
   });
 
   it('does nothing on Down with nothing recalled', () => {
