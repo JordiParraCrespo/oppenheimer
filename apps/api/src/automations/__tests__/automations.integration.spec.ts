@@ -338,6 +338,20 @@ describe('automations: firing under the caps, and the runs list (integration)', 
     await run(automation, daysAgo, 'expired');
   }
 
+  // The spend guard's thresholds (`26-bot-routines.md` §6). What breaks this:
+  // a workspace's own numbers not stored, or a nonsense one the schema missed.
+  it("stores a workspace's spend-guard thresholds, and refuses ones under the floor", async () => {
+    await settings.upsert(organizationId, { unattendedReports: 5, unattendedAwaySeconds: 86_400 });
+    expect(await settings.find(organizationId)).toMatchObject({
+      unattendedReports: 5,
+      unattendedAwaySeconds: 86_400,
+    });
+    await expect(settings.upsert(organizationId, { unattendedAwaySeconds: 60 })).rejects.toThrow(
+      /CHK_automation_settings_unattended/,
+    );
+    await settings.upsert(organizationId, { unattendedReports: null, unattendedAwaySeconds: null });
+  });
+
   describe('the tick', () => {
     it('does not fire past the workspace cap: the batch counts the runs it queued', async () => {
       await settings.upsert(organizationId, { maxRunsPerWorkspaceHour: 3 });

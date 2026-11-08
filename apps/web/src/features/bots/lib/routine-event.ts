@@ -11,6 +11,7 @@ const ROUTINE_REASONS = [
   'agent_unavailable',
   'bot_provider_missing',
   'owner_lost_access',
+  'unattended',
 ] as const;
 
 /** Why, in words: a code the API sent that this build does not know reads as "something went wrong". */

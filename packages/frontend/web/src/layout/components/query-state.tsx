@@ -1,4 +1,5 @@
 import { Button } from '@oppenheimer/design-system-web';
+import { useCaptureError } from '@oppenheimer/frontend-core/react';
 import { QueryErrorResetBoundary } from '@tanstack/react-query';
 import { createContext, type ReactNode, Suspense, use } from 'react';
 import { ErrorBoundary } from 'react-error-boundary';
@@ -59,13 +60,18 @@ const DATA: Rung = { rung: 'data' };
  *
  * `pnpm check:structure` holds every use to a `Pending`, an `Error` and a
  * `Data`, and every Suspense read to an `ErrorAlert` for the later failure.
+ *
+ * What the boundary catches is offered to error reporting, which keeps a
+ * render throw in the section and drops a request the server answered.
  */
 function QueryStateRoot({ children }: { children: ReactNode }) {
+  const captureError = useCaptureError();
   return (
     <QueryErrorResetBoundary>
       {({ reset }) => (
         <ErrorBoundary
           onReset={reset}
+          onError={(error) => captureError(error, { tags: { boundary: 'query-state' } })}
           fallbackRender={({ error, resetErrorBoundary }) => (
             <RungContext value={{ rung: 'failed', error, retry: resetErrorBoundary }}>
               {children}

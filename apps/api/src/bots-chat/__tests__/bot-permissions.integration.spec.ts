@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import type { AccessScope } from '@oppenheimer/backend-authz';
+import { OutboxMessageSchema, OutboxService } from '@oppenheimer/backend-ddd';
 import { DataSource } from 'typeorm';
 import { useTestDatabase } from '../../__tests__/integration-services';
 import { BotMapper } from '../../bots/bot.mapper';
@@ -57,15 +58,16 @@ describe('bot permissions (integration)', () => {
         BotDocumentRevisionOrmEntity,
         BotToolPermissionOrmEntity,
         BotPermissionRuleOrmEntity,
+        OutboxMessageSchema,
       ],
       synchronize: false,
     });
     await dataSource.initialize();
     bots = new BotRepository(
       dataSource.getRepository(BotOrmEntity),
-      dataSource,
       new BotMapper(),
       new BotDocumentMapper(),
+      new OutboxService(dataSource),
     );
     settings = new BotToolPermissionRepository(
       dataSource.getRepository(BotToolPermissionOrmEntity),

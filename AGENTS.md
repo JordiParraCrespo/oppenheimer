@@ -51,7 +51,7 @@ packages/    shared (Zod schemas, types, CASL, scope + flag catalogs, the link p
              auth (Better Auth config) · env (root .env loader) · tsconfig
              http-client (the transport cli and mcp call the API through)
              translations (i18n JSON)
-             backend/  agents authz cache core ddd email i18n llm queue storage
+             backend/  agents authz cache core ddd email error-reporting i18n llm queue storage
              frontend/ core (kernel) · consumer (the console's domain) · web (platform kit)
                        api-client (generated) · design-system/web (shadcn/ui + Base UI + Tailwind v4)
              go/       core config httpx auth health ws postgres selfupdate execx
@@ -99,8 +99,10 @@ When you add a file that mentions an optional app (CI, compose,
   Driving a pull request, and the order of its steps, is the `/steward` skill.
   Every agent pull request is `/ship` (a fix, merged on its own once a fresh
   agent verifies it), `/propose` (merged once Jordi accepts) or
-  `/research` (merged once green), and carries that label; `/cook` picks one
-  for you. The protocol is `/steward`, "Merging".
+  `/research` (merged once green), and carries that label. **Every task that
+  changes the repository starts with `/cook`**, typed or not: it picks the
+  lane, says why, and runs it. Only a lane the user names themselves, or a
+  plain question, skips it. The protocol is `/steward`, "Merging".
 - **Stage files by path.** `.claude/settings.json` and the hooks in
   `.agents/hooks/` refuse `git add -A`/`.`, pushes to `main`, force pushes,
   `git reset --hard` and the like; read them for the exact policy and for
@@ -171,6 +173,9 @@ pnpm ci:local             # CI, locally: what the branch touches (--all for ever
 node scripts/stack/stack.mjs up [--web]  # The stack the e2e suites run against (e2e/README.md)
 # oppenheimer:end e2e
 pnpm generate:api-client  # Regenerate the typed API client (no database needed)
+# oppenheimer:begin docs
+pnpm generate:guide       # Bundle the docs site's user guide for the bots, after editing apps/docs/docs/guide
+# oppenheimer:end docs
 ```
 
 `package.json` lists the rest (`check:compiler`, `check:unused`,

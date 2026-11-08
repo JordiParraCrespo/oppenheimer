@@ -49,7 +49,7 @@ done
 # The Node floor is package.json's `engines`, read rather than copied.
 NODE_MIN="$(sed -n 's/.*"node": *">=\([0-9.]*\)".*/\1/p' "$ROOT/package.json" | head -n1)"
 NODE_MIN="${NODE_MIN:-22}"
-GO_MINOR=24 # go 1.24 or newer
+GO_MINOR=26 # go 1.26 or newer (whatsmeow needs it)
 GOLANGCI_MAJOR=2
 
 OK=()

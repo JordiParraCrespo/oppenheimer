@@ -5,6 +5,7 @@ import {
   DropdownMenuValue,
   SearchList,
 } from '@oppenheimer/design-system-web';
+import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { FilterOption } from '../lib/session-filters';
 
@@ -13,6 +14,7 @@ import type { FilterOption } from '../lib/session-filters';
  * Repository, Host): the submenu row with the current pick, opening the
  * Bots picker's search list (`SearchList`) instead of radio rows. A pick
  * applies at once and the menu stays open, as the radio facets do.
+ * `children` draw under the list, the caller's own foot.
  */
 export function FacetSearchSub({
   label,
@@ -21,6 +23,7 @@ export function FacetSearchSub({
   value,
   searchPlaceholder,
   onValueChange,
+  children,
 }: {
   label: string;
   /** The picked option's label, beside the facet's name. */
@@ -29,6 +32,7 @@ export function FacetSearchSub({
   value: string;
   searchPlaceholder: string;
   onValueChange: (value: string) => void;
+  children?: ReactNode;
 }) {
   const { t } = useTranslation();
   return (
@@ -46,6 +50,7 @@ export function FacetSearchSub({
           searchPlaceholder={searchPlaceholder}
           emptyText={(query) => t('common.search.noMatch', { query })}
         />
+        {children}
       </DropdownMenuSubContent>
     </DropdownMenuSub>
   );

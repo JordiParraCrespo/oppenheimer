@@ -289,10 +289,12 @@
     --file-icon-zig: var(--file-icon-orange);
     --file-icon-zip: var(--file-icon-orange);
 
-    /* A bot's avatar: its initials on one of the export's eight colours
-       (`AV_COLORS`), an identity like a file's mark, never a state. The same
-       in both themes so a bot keeps its face; the initials are dark ink on
-       every one of them, which all sit at or above 0.70 lightness. */
+    /* A bot's avatar: its drawn face (or its initials) on one of the
+       export's eight colours (`AV_COLORS`), an identity like a file's mark,
+       never a state. The same in both themes so a bot keeps its face; the
+       ink is dark on every one of them, which all sit at or above 0.70
+       lightness. The face's darker ground is the same colour mixed toward
+       black, in `internal/bot-face.tsx`. */
     --avatar-mint: oklch(0.74 0.13 175);
     --avatar-tangerine: oklch(0.72 0.18 50);
     --avatar-snow: oklch(0.96 0 0);
@@ -302,6 +304,11 @@
     --avatar-coral: oklch(0.72 0.15 20);
     --avatar-moss: oklch(0.7 0.12 135);
     --avatar-ink: oklch(0.21 0 0);
+
+    /* The product's mark: a white fedora on an ink tile, the same in both
+       themes like an app icon (`BrandMark`, the favicons, the extension). */
+    --brand-tile: oklch(0.18 0.01 280);
+    --brand-hat: oklch(0.97 0 0);
 
     /* ---- Elevation ----------------------------------------------------
        Surfaces never cast shadows; depth is tonal. Only three transient
@@ -397,7 +404,7 @@
     --radius-md: 14px; /* popovers, menus, nested panels */
     --radius-lg: 18px; /* cards */
     --radius-xl: 28px; /* modals, hero surfaces, large media */
-    --radius-pill: 980px; /* every button, chip, badge, avatar, tab */
+    --radius-pill: 980px; /* every button, chip, badge, person avatar, tab (a bot avatar is a rounded square) */
     /* The navigation column (every sidebar, the settings nav): its rows, heads,
        search and row actions, whatever their height, so it reads as one list. */
     --radius-nav: var(--radius-xs);
@@ -1262,6 +1269,32 @@
   background: color-mix(in srgb, var(--sidebar) 72%, transparent);
   backdrop-filter: var(--rail-blur);
   -webkit-backdrop-filter: var(--rail-blur);
+}
+
+/* The fade from a photograph into the pane's ground, opaque at the foot: the
+   New session backdrop. An eased ramp, not a straight one with a midpoint,
+   which drew a visible band where its slope changed (a hard white edge in
+   light). A scrim like the carousel's, the system's one sanctioned gradient. */
+@utility scrim-fade {
+  background-image: linear-gradient(
+    to top,
+    color-mix(in srgb, var(--canvas-recessed) 100%, transparent) 0%,
+    color-mix(in srgb, var(--canvas-recessed) 98.7%, transparent) 8%,
+    color-mix(in srgb, var(--canvas-recessed) 95.1%, transparent) 15%,
+    color-mix(in srgb, var(--canvas-recessed) 89.6%, transparent) 22%,
+    color-mix(in srgb, var(--canvas-recessed) 82.5%, transparent) 29%,
+    color-mix(in srgb, var(--canvas-recessed) 74.1%, transparent) 36%,
+    color-mix(in srgb, var(--canvas-recessed) 64.8%, transparent) 43%,
+    color-mix(in srgb, var(--canvas-recessed) 55%, transparent) 50%,
+    color-mix(in srgb, var(--canvas-recessed) 45%, transparent) 57%,
+    color-mix(in srgb, var(--canvas-recessed) 35.2%, transparent) 64%,
+    color-mix(in srgb, var(--canvas-recessed) 25.9%, transparent) 71%,
+    color-mix(in srgb, var(--canvas-recessed) 17.5%, transparent) 78%,
+    color-mix(in srgb, var(--canvas-recessed) 10.4%, transparent) 85%,
+    color-mix(in srgb, var(--canvas-recessed) 4.9%, transparent) 91%,
+    color-mix(in srgb, var(--canvas-recessed) 1.3%, transparent) 96%,
+    color-mix(in srgb, var(--canvas-recessed) 0%, transparent) 100%
+  );
 }
 
 /* Kept for the assistant rail of the previous system; no new use. */

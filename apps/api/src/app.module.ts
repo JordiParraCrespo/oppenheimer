@@ -15,6 +15,7 @@ import {
   RequestContextMiddleware,
 } from '@oppenheimer/backend-core';
 import { EmailModule } from '@oppenheimer/backend-email';
+import { ErrorReportingModule } from '@oppenheimer/backend-error-reporting';
 import { I18nModule } from '@oppenheimer/backend-i18n';
 import { LlmModule } from '@oppenheimer/backend-llm';
 import { StorageModule } from '@oppenheimer/backend-storage';
@@ -120,6 +121,8 @@ import { WorkspaceEventsModule } from './workspace-events/workspace-events.modul
         voiceConfig,
       ],
     }),
+    // Sentry when `config/instrument.ts` started it, a no-op otherwise.
+    ErrorReportingModule.forRoot(),
     LoggingModule.forRootAsync({
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => ({

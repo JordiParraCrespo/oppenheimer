@@ -4,8 +4,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ConsoleRail } from '../sections/console-rail';
 
 /**
- * The rail a reader can drag: it draws the lists in the order they left
- * them, and a list's count is still read out beside the drag instructions
+ * The rail a reader can drag: under the mark, a link home, it draws the
+ * lists in the order they left them, and a list's count is still read out beside the drag instructions
  * (the sortable control's own description once replaced the count).
  */
 
@@ -51,16 +51,18 @@ const description = (element: HTMLElement) =>
     .map((id) => document.getElementById(id)?.textContent ?? '');
 
 describe('ConsoleRail', () => {
-  it('draws the lists in the order the reader left them', () => {
+  it('draws the lists in the order the reader left them, under the mark that leads home', () => {
     window.localStorage.setItem('oppenheimer.rail.order', JSON.stringify(['plan', 'pulls']));
     render(<ConsoleRail />);
     expect(screen.getAllByRole('link').map((link) => link.getAttribute('aria-label'))).toEqual([
+      'nav.home',
       'nav.plan',
       'nav.pullRequests',
       'nav.employees',
       'nav.sessions',
       'nav.automations',
     ]);
+    expect(screen.getByRole('link', { name: 'nav.home' }).getAttribute('href')).toBe('/');
   });
 
   it('reads a list’s count beside the drag instructions', () => {
