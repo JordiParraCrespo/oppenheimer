@@ -10,6 +10,7 @@ import {
 } from '@oppenheimer/shared';
 import type { EndedTurn } from './bot-goal.policy';
 import { BotLoopEntity } from './bot-loop.entity';
+import { isTurnLimitFailure } from './bot-turn.entity';
 
 /**
  * A loop runs a prompt again and again (`25-bots.md` §4.1, `/loop`; from
@@ -199,8 +200,5 @@ export function loopRunEnd(loop: BotLoopEntity, ended: EndedTurn): LoopRunEnd {
 
 /** A failure the next run would not meet again: a limit of one turn, or one sending again can get past. */
 function passing(failure: BotTurnFailure | null): boolean {
-  return (
-    failure !== null &&
-    (failure === 'time_limit' || failure === 'step_limit' || BOT_TURN_FAILURE_RETRIES[failure])
-  );
+  return failure !== null && (isTurnLimitFailure(failure) || BOT_TURN_FAILURE_RETRIES[failure]);
 }
