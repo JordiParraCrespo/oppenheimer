@@ -106,15 +106,21 @@ worker runs it and streams what happens back to the chat.
   each resets. Each turn keeps what its engine reported
   (`bot_turn."contextTokens"`, `"contextWindow"`, `"planLimits"`) and the
   meter reads the newest. The Claude engine reports the model's window;
-  the OpenAI engine reports none, so an OpenAI, GLM or ChatGPT bot shows
-  its context in tokens alone, never against a guessed window. The plan
+  the OpenAI engine reports none, so an OpenAI, ChatGPT or Grok bot shows
+  its context in tokens alone, never against a guessed window (GLM runs on
+  the Claude engine and has its window). The plan
   windows are what the ChatGPT backend answers each call with (the
   `x-codex-primary-*` and `x-codex-secondary-*` headers the Codex CLI
-  reads); a bot on an API key has none to show. There is no Compact: the
-  engines compact on their own. Since 2026-10-29 the model is told too:
-  the turn context says how full the context was when the bot's last turn
-  ended, against its window, and from half full asks for narrow reads; a
-  turn whose engine reported no window is told nothing.
+  reads); a bot on an API key has none to show. There is no Compact button.
+  Inside a turn, Claude Code compacts on its own (left at its default; a
+  20-step turn rarely reaches it); the OpenAI engines do not compact, and a
+  turn is kept small by the 12,000-character cut of each tool answer and the
+  step limit. Between turns the summary folds old messages (above). Since
+  2026-10-29 the model is told too: the turn context says how full the
+  context was when the bot's last turn ended, against its window, and from
+  half full asks for narrow reads. A turn whose engine reported no window
+  is told its tokens, and from `BOT_CONTEXT_TIGHT_TOKENS` (half the
+  smallest window a provider here offers) asks for narrow reads too (2026-11-08; it was told nothing).
 - **The Claude engine runs without a shell.** The Claude Agent SDK is
   Claude Code as a library; its shell and file tools would run commands
   the model chose on the control plane. They are off. What it keeps from
@@ -140,9 +146,18 @@ worker runs it and streams what happens back to the chat.
     stalled), and never around a person's "no"; saying what it is about to
     do is not a result (2026-11-08, from OpenClaw's "Execution Bias" and
     "Promised Work" prompt sections, `openclaw/openclaw` at `3a25991e3`);
+  - **check before you report** (2026-11-07), the one statement every
+    other section and the session wakes point at: every action that
+    changes something is checked before it is reported, from what the
+    tool returned and then, where a tool can read it back, from that read;
+    a failure is said first and unprompted, and what another agent reports
+    is a claim checked against its evidence;
   - **a closed list of what it can do**: its tools, and that it has no
     shell, no files and no access to the machine it runs on, so a missing
-    tool is a plain "I can't" and never a search of the server;
+    tool is a plain "I can't" and never a search of the server. The list
+    names the tools area by area, as Settings → Permissions groups them,
+    and leaves what each does to its definition (2026-11-07; it quoted each
+    tool's first sentence before, which made it 62% of the prompt);
   - when the turn may start a session (its catalog has `start_session`),
     **working on code through sessions**: a shell or a checkout is what
     a session is for, so running scripts, tests or builds, diagnosing a
@@ -166,8 +181,10 @@ worker runs it and streams what happens back to the chat.
     `failed` wake); it
     works only in a known project's repository or a folder it was given;
     it follows a session already on the task rather than starting a
-    second; it says "started", not "done", and reports what `get_session`
-    shows. Approvals and permissions do not change. Without
+    second; it says "started", not "done", checks in the same turn that the
+    session did start, and reports what `get_session` shows, reading the
+    agent's own report as a claim to check against its evidence (the
+    checks it ran, the pull request) before calling the work done. Approvals and permissions do not change. Without
     `start_session` the section is left out and the closed list keeps its
     plain refusal (2026-10-21);
   - the rules no instruction overrides: never ask for a secret, never
@@ -215,9 +232,12 @@ worker runs it and streams what happens back to the chat.
   so a turn's history starts where the last one's did until a whole block
   no longer fits (2026-11-03): each turn's request is the last one's with
   the new messages after it, and the provider's prompt cache holds it. When a turn ends and the messages the summary does
-  not cover pass one and a half times that budget, a job on the
-  `bot-summaries` queue folds the oldest of them into the summary until
-  about half the budget is left (at most 32,000 tokens a call; a longer
+  not cover pass the budget less the room the longest summary and the
+  notes on earlier images take in it (`BOT_SUMMARY_TRIGGER_TOKENS`,
+  derived in the code, so nothing the history drops is missing from the
+  summary; it was one and a half times the budget until 2026-11-08), a job
+  on the `bot-summaries` queue folds the oldest of them into the summary
+  until `BOT_SUMMARY_KEEP_TOKENS` (three eighths of the budget) are left (at most 32,000 tokens a call; a longer
   backlog takes several), with the bot's own provider, model and key and
   no tools (`BotEngine.complete`). Only messages of turns that have ended
   are folded, up to the first that has not: a queued message is never in
@@ -235,9 +255,10 @@ worker runs it and streams what happens back to the chat.
   bot's own rows goes through the owner's scope, resolved fresh for each
   turn: the bot sees what they see now, and nothing once they leave the
   workspace.
-- **A turn is bounded.** 20 model round trips and 4 minutes; past the
-  time limit it is stopped and ends failed, saying so, with what it wrote
-  kept. Longer work is a session on a host.
+- **A turn is bounded.** 20 model round trips and 4 minutes; past either
+  it is stopped and ends failed, saying so (`step_limit`, `time_limit`),
+  with what it wrote kept. Longer work is a session on a host, or a goal,
+  whose next continuation picks up after either limit.
 - **No path of the server reaches the chat.** The engine replaces the
   turn's scratch directory in every text, tool answer and error it hands
   back.
@@ -277,7 +298,7 @@ worker runs it and streams what happens back to the chat.
   the HTTP status of an OpenAI error): `rate_limit`, `usage_limit` (a spent
   quota or credit, no longer waited out as a rate limit), `credential`,
   `refused` (this request: its content, the model), `unavailable`, or
-  `other`; the worker adds `time_limit` and `interrupted`, and a provider
+  `other`; the worker adds `time_limit`, `step_limit` and `interrupted`, and a provider
   with no key for the turn is `credential`. It is `bot_turn."failure"`,
   beside the words in `"error"`, and `BOT_TURN_FAILURES` says for each
   whether sending the message again can help.
@@ -920,7 +941,7 @@ agent's, in a session, where Claude Code ships them.
 | `list_hosts` | Hosts, online or not, and the agents they can run | auto |
 | `list_sessions` / `get_session` | Sessions and their state, each with its project and the group the console's dot shows; filtered by project, host, state or group; `get_session` also shows a pending question or permission dialog with its id and options (built 2026-10-27, issue #493) | auto |
 | `start_session` | Start an agent on a host, in a new worktree or a folder, with a task; the session's origin is `bot` and it always launches at `auto` (decided 2026-10-18: nobody sits at a bot's terminal, so `ask` would wait forever) | ask |
-| `start_cloud_session` | Start a session in a vendor's cloud on a project's repository; `agent` picks the cloud. `claude-code` (default, claude.ai/code) and `codex` (chatgpt.com/codex, with an optional `codex_environment`) go through the sessions' own create with `cloud`, so a host's runner runs `claude --cloud` or `codex cloud exec` in a scratch checkout, exactly as the console's cloud place and a `claude-cloud` automation do; host chosen as `start_session`'s. It waits (at most 120 s, the runner's own limit) for the host to report the session's id and answers with its URL. `cursor` goes through `StartCloudSessionCommand` (`POST /sessions/cloud`'s), on the owner's own Cursor key with no host and an optional `model`; the card says it runs on that key, and a missing key is the call's error (`CLOUD_AGENTS_004`). Scope `sessions:write`, origin `bot`; `get_session` shows the URL after. No watch, since a cloud session is followed at its vendor (added 2026-10-30; Codex and Cursor 2026-11-02) | ask |
+| `start_cloud_session` | Start a session in a vendor's cloud on a project's repository; `agent` picks the cloud. `claude-code` (default, claude.ai/code) and `codex` (chatgpt.com/codex, with an optional `codex_environment`) go through the sessions' own create with `cloud`, so a host's runner runs `claude --cloud` or `codex cloud exec` in a scratch checkout, exactly as the console's cloud place and a `claude-cloud` automation do; host chosen as `start_session`'s. It waits (at most 120 s, the runner's own limit) for the host to report the session's id and answers with its URL. `cursor` goes through `StartCloudSessionCommand` (`POST /sessions/cloud`'s), on the owner's own Cursor key with no host and an optional `model`; the card says it runs on that key, and a missing key is the call's error (`CLOUD_AGENTS_004`). Scope `sessions:write`, origin `bot`; `get_session` shows the URL after. Watched as `start_session`'s unless `watch` is false (2026-11-07; it was not watched, as followed at its vendor, until a start that failed went unreported); an answer with no link is not a start (added 2026-10-30; Codex and Cursor 2026-11-02) | ask |
 | `watch_session` / `unwatch_session` / `list_watches` | Follow a session, so its task needing input or ending wakes the bot (`start_session` follows its own session); built 2026-10-22, note 27. A `pattern` wakes it when the terminal prints a matching line, matched on the host (2026-10-29) | auto |
 | `watch_pull_request` / `unwatch_pull_request` | Follow an open pull request of a repository the owner can read, so a check failing or passing, a review, a comment or the merge wakes the bot with the event's metadata, never anyone's words; a merge ends it; built 2026-11-03, note 27 §7.1. `list_watches` lists them too | auto |
 | `wait_for_session` | Wait up to 120 s inside the turn for a session's task to need input or end, at most 3 times a turn (2026-10-29) | auto |
@@ -1712,6 +1733,29 @@ The decisions it produced:
   whose history only grows until a summary, and Codex, which sends its
   conversation's id as `prompt_cache_key`. It refines 2026-10-15's history
   budget, which kept the newest messages that fit.
+- 2026-11-07: **a bot checks that what it did worked.** The owner saw a bot
+  start a cloud session that could not start (its host's Claude Code was not
+  signed in to claude.ai) and say so only once asked whether it had failed.
+  "How a turn goes" now asks every action that changes something to be
+  checked before it is reported: the tool's own answer first ("could not
+  start", "failed", "queued" are not success), then one read back where a
+  tool can do it, or "unchecked" and how to check where none can. A failure
+  is said first, without retrying blindly or working around it. Starting a
+  session is checked in the same turn, and a finished session's report is
+  the agent's claim until its transcript shows the evidence.
+- 2026-11-07: **a review of every prompt, fixed together.** Rendered from
+  the code and read end to end, the prompts disagreed with the tools in
+  places. Cloud and review sessions are now watched as `start_session`'s
+  (unless `watch` is false), and "Working on code" says how a cloud
+  session starts, fails and is read. The needs-input wake lets the bot
+  answer with `answer_session` when its instructions settle the question
+  (it said the bot could not). The turn context names the same host order
+  as the prompt (the person's, the project's, then home). `send_to_session`
+  points at `read_session` with `after_seq`, and tells the bot to end its
+  turn while the agent works. "How a turn goes" says 4 minutes, and an
+  approved call's result is checked before it is reported. The tool list
+  names tools by area. Tool texts say what a queued, scheduled or held
+  result looks like; their first sentences say what they do.
 - 2026-11-07: **the person has a memory page of their own**: Settings →
   Memory at the account, an *About you* text in every bot's prompt that
   only the person writes, and every `person` fact their bots keep, changed
@@ -1734,6 +1778,41 @@ The decisions it produced:
   is now refused only when it is given (a new skill, a rename), so a row
   saved under one before still loads, edits and runs, as this list said on
   2026-11-02.
+- 2026-11-08: **the goal and rule reviewers run at low effort.** They
+  passed no effort, meant as "least effort", which a model with levels
+  reads as its default. They now ask for `low` where the model offers it,
+  and none where it offers no levels (`reviewEffort`).
+- 2026-11-08: **a turn that runs out of steps fails, saying so.** One
+  that used its 20 round trips ended `completed` with nothing said, so a
+  bot could stop mid-work in silence. It now fails with `step_limit` and
+  words to act on, as the time limit does, and a goal reviews it and goes
+  on the same way.
+- 2026-11-08: **the summary folds before the history drops.** It folded
+  past 36,000 tokens while the history dropped old messages past about
+  21,000, so up to 12,000 tokens of conversation were in neither, reachable
+  only through `search_chat`. It now folds past the budget less the longest
+  summary and the notes on images (19,950) down to 9,000: a summary call about twice as often, each
+  about half the size.
+- 2026-11-08: **history reads back what the tools did.** A turn's activity
+  line (its tool calls) was left out of the history, so a later turn knew a
+  session id it started, or that a start failed, only if it had said so.
+  It now comes back as Oppenheimer's short record on the person's side,
+  fenced as data: each call's name, its input (200 characters), how it
+  ended and the start of its answer (300), at most 2,000 characters a line
+  (`activityText`). The summary counts and folds it the same way.
+- 2026-11-08: **on Claude, the conversation opens the message.** Claude
+  Code takes only user prompts, so the history was written into the system
+  prompt as a transcript, which changed it on every turn and left the
+  provider's prompt cache nothing to hit. The transcript now opens the
+  turn's message instead (`claudeMessage`), so the system prompt is the
+  same bytes from turn to turn on every engine, as §2 says. The prompt
+  says only that the latest message carries the turn context, on every
+  engine; where it sits in the message is the engine's.
+- 2026-11-08: **a bot with no known window is told when its context
+  fills.** The OpenAI engines report no window, so their bots were never
+  told; they now get their token count and, from 100,000 tokens, the ask for
+  narrow reads. The note no longer says every engine compacts on its own:
+  only Claude Code does.
 - 2026-11-07: **bots run commands on a host** (§4.2, "Commands on a
   host"). The owner wanted bots that run scripts, and found a sandbox per
   bot too dear for 50 of them. `run_command` runs one program on a paired

@@ -10,6 +10,9 @@ import type { CapabilitiesService } from '../modules/capabilities';
 import { CapabilitiesModule } from '../modules/capabilities';
 import { createCoreModule } from '../modules/core/core.module';
 import type { IStorageService } from '../modules/core/storage.service';
+import type { ErrorReportingService } from '../modules/error-reporting';
+import { ErrorReportingModule } from '../modules/error-reporting';
+import type { IErrorReportingClient } from '../modules/error-reporting/error-reporting.client';
 import type { FeatureFlagsClientContext, FeatureFlagsService } from '../modules/feature-flags';
 import { FeatureFlagsModule } from '../modules/feature-flags';
 import type { ReleaseService } from '../modules/release';
@@ -30,6 +33,11 @@ export interface OppenheimerAppConfig {
    * no-op client — events are dropped.
    */
   analytics?: IAnalyticsClient;
+  /**
+   * Platform-specific error reporting adapter. Omit it and errors are only
+   * shown, never sent.
+   */
+  errorReporting?: IErrorReportingClient;
   /**
    * What this app reports about itself when it asks for its feature flags —
    * `{ platform: 'web', appVersion: '2.1.0' }`.
@@ -53,6 +61,7 @@ export class OppenheimerApp {
     container.load(createCoreModule(config));
 
     container.load(AnalyticsModule);
+    container.load(ErrorReportingModule);
     container.load(AuthModule);
     container.load(CapabilitiesModule);
     container.load(FeatureFlagsModule);
@@ -83,6 +92,10 @@ export class OppenheimerApp {
 
   get analytics(): AnalyticsService {
     return this.container.get(TOKENS.AnalyticsService);
+  }
+
+  get errors(): ErrorReportingService {
+    return this.container.get(TOKENS.ErrorReportingService);
   }
 
   get capabilities(): CapabilitiesService {

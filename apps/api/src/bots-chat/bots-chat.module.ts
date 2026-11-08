@@ -61,6 +61,7 @@ import { BotSummaryTriggerPolicy } from './application/bot-summary-trigger.polic
 import { BotTerminalToolsFactory } from './application/bot-terminal-tools.factory';
 import { BotToolboxFactory } from './application/bot-toolbox.factory';
 import { BotTurnContextResolver } from './application/bot-turn-context.resolver';
+import { BotTurnFailureReportPolicy } from './application/bot-turn-failure-report.policy';
 import { BotTurnOpeningResolver } from './application/bot-turn-opening.resolver';
 import { BotWaitingCardResolver } from './application/bot-waiting-card.resolver';
 import { BotWatchToolsFactory } from './application/bot-watch-tools.factory';
@@ -378,6 +379,7 @@ const queryHandlers: Provider[] = [
     BotMessageAttachmentsResolver,
     BotSteeringFactory,
     TurnWriteFactory,
+    BotTurnFailureReportPolicy,
     BotSummaryTriggerPolicy,
     BotDreamTriggerPolicy,
     BotDreamResolver,

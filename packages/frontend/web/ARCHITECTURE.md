@@ -19,6 +19,7 @@ importing it configures i18next; everything else is pure and may be dropped.
 | `theme` | `ThemeProvider`, `useTheme`, `ThemeToggle` | leaf |
 | `i18n` | the i18next instance and `i18nReady`, `useLocale`, `useApplyUserSettings`, `LanguageSwitcher`, `RelativeTime`, the date and duration formatters, `useStartFailure` (why a session did not start, for its page and the Inbox) | leaf |
 | `analytics` | `createWebAnalyticsClient` (PostHog), `PageViewTracker` | leaf |
+| `error-reporting` | `createWebErrorReportingClient` (Sentry, loaded on demand) | leaf |
 | `forms` | `ErrorAlert`, `useZodResolver`, `SidebarSearchField` (a sidebar search box that keeps the half-typed word and hands its caller the settled one), `useServerFieldErrors`, `notifySuccess` (what a write says when it lands) | leaf |
 | `markdown` | `Markdown`: markdown someone else wrote (a pull request's description, a bot's reply) as elements, never raw HTML; fenced code coloured with a copy button, links to a new tab. The caller sets it in `Prose` or `ChatReply`; `MarkdownLine` is the start of such a text on one line (a bot's sidebar preview), its marks read and its blocks flattened | leaf |
 | `dictation` | `useDictation` (one field's recording, transcription and last problem), `dictationSlots` (it, as the design system's `DictationSlot` every host takes), `DictationField` (the two around a plain `Textarea`), `dictateInto` / `dictateIntoField` (what is heard, onto the end of a state draft or a form field). It takes a `VoiceInput` (`useVoiceDictation` in the product package) and knows nothing of the API | leaf |
@@ -153,7 +154,7 @@ page. An app with only the sign-in half would call `redirectSignedIn` from its
 ## What `pnpm arch` enforces
 
 - `no-circular` — no import cycles, counting value imports only.
-- `leaves-stay-leaves` — `platform`, `theme`, `i18n`, `analytics`, `forms`,
+- `leaves-stay-leaves` — `platform`, `theme`, `i18n`, `analytics`, `error-reporting`, `forms`,
   `markdown`, `dictation`, `chat` never import a middle or top concern.
 - `middle-below-top` — `layout`, `pairing` never import `shell` or
   `auth`.

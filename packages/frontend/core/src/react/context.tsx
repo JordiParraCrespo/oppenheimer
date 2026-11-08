@@ -3,7 +3,7 @@ import type { ReactNode } from 'react';
 import { createContext, useContext } from 'react';
 import type { OppenheimerApp } from '../di/oppenheimer-app';
 
-const OppenheimerContext = createContext<OppenheimerApp | null>(null);
+export const OppenheimerContext = createContext<OppenheimerApp | null>(null);
 
 export function OppenheimerProvider({
   app,

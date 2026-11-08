@@ -7,6 +7,7 @@ import {
   type QueryClientConfig,
 } from '@tanstack/query-core';
 import { CORE_CONFIG } from '../config';
+import type { ErrorReportContext } from '../modules/error-reporting/error-reporting.client';
 import { defaultQueryClientOptions } from './persistence';
 import { authKeys } from './query-keys';
 
@@ -24,6 +25,12 @@ import { authKeys } from './query-keys';
 /** What the expiry needs from the app: the one call that ends the session. */
 export interface SessionExpiryTarget {
   auth: { expireSession(): boolean };
+  /**
+   * Where a query or mutation that failed for a reason of ours is reported
+   * (`ErrorReportingService`, which drops a request failure: the API
+   * reports its own 5xx, and a 4xx is a refusal, not a bug).
+   */
+  errors?: { capture(error: unknown, context?: ErrorReportContext): unknown };
 }
 
 function statusOf(error: unknown): number | undefined {
@@ -64,19 +71,21 @@ export function expireSession(app: SessionExpiryTarget, queryClient: QueryClient
 
 /**
  * The client, with {@link defaultQueryClientOptions}, the retry policy, and a
- * cache that expires the session on the first 401 any query or mutation sees.
+ * cache that expires the session on the first 401 any query or mutation sees
+ * and reports any failure that is a bug of ours.
  */
 export function createQueryClient(
   app: SessionExpiryTarget,
   staleTime: number = CORE_CONFIG.query.staleTimeMs,
 ): QueryClient {
-  const onError = (error: unknown) => {
+  const onError = (error: unknown, kind: 'query' | 'mutation') => {
     if (isUnauthorized(error)) expireSession(app, queryClient);
+    else app.errors?.capture(error, { tags: { 'query.kind': kind } });
   };
   const defaults = defaultQueryClientOptions(staleTime);
   const config: QueryClientConfig = {
-    queryCache: new QueryCache({ onError }),
-    mutationCache: new MutationCache({ onError }),
+    queryCache: new QueryCache({ onError: (error) => onError(error, 'query') }),
+    mutationCache: new MutationCache({ onError: (error) => onError(error, 'mutation') }),
     defaultOptions: {
       ...defaults,
       queries: { ...defaults.queries, retry: shouldRetryQuery },

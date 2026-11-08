@@ -211,7 +211,6 @@ export class BotMessageRepository
         botId,
       })
       .andWhere('(message.turnId IS NULL OR message.turnId <> :turnId)', { turnId })
-      .andWhere(`message.role <> 'activity'`)
       .andWhere(
         `message.createdAt < (SELECT t."createdAt" FROM bot_turn t WHERE t."organizationId" = :organizationId AND t.id = :turnId)`,
       );
@@ -263,8 +262,7 @@ export class BotMessageRepository
       .where('message.organizationId = :organizationId AND message.botId = :botId', {
         organizationId,
         botId,
-      })
-      .andWhere(`message.role <> 'activity'`);
+      });
     const { entities, raw } = await after(query, afterMessageId)
       .orderBy('message.createdAt', 'ASC')
       .addOrderBy('message.position', 'ASC')

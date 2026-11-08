@@ -510,6 +510,7 @@ export type BotTurnStatus = (typeof BOT_TURN_STATUSES)[number];
  *   the same request fails the same way.
  * - `unavailable`: the provider was down, overloaded or unreachable; it passes.
  * - `time_limit`: the turn ran past its time; a smaller step fits.
+ * - `step_limit`: the turn used all its model round trips; a smaller step fits.
  * - `interrupted`: the worker running it stopped; sending it again runs it.
  * - `other`: none of these, or not known.
  */
@@ -520,6 +521,7 @@ export const BOT_TURN_FAILURES = [
   'refused',
   'unavailable',
   'time_limit',
+  'step_limit',
   'interrupted',
   'other',
 ] as const;
@@ -533,6 +535,7 @@ export const BOT_TURN_FAILURE_RETRIES: Readonly<Record<BotTurnFailure, boolean>>
   refused: false,
   unavailable: true,
   time_limit: false,
+  step_limit: false,
   interrupted: true,
   other: true,
 };

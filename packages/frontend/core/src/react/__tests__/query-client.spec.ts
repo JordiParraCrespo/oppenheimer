@@ -13,7 +13,11 @@ const SOMEONE_ELSES = ['organizations', 'list'] as const;
 function setup(isAuthenticated: boolean) {
   const store = createAuthStore();
   store.setState({ isAuthenticated });
+  const reported: { error: unknown; context?: unknown }[] = [];
   const app = {
+    errors: {
+      capture: (error: unknown, context?: unknown) => reported.push({ error, context }),
+    },
     auth: {
       expireSession: () => {
         if (!store.getState().isAuthenticated) return false;
@@ -25,7 +29,7 @@ function setup(isAuthenticated: boolean) {
   const client = createQueryClient(app, 0);
   client.setQueryData(SOMEONE_ELSES, ['someone else']);
   client.setQueryData(authKeys.session(), 'user-1');
-  return { store, client };
+  return { store, client, reported };
 }
 
 const refuse = (status: number) => () => Promise.reject(new AppError(FAILED, { status }));
@@ -97,5 +101,30 @@ describe('shouldRetryQuery', () => {
     expect(shouldRetryQuery(0, new AppError(FAILED))).toBe(true);
     expect(shouldRetryQuery(0, new TypeError('Failed to fetch'))).toBe(true);
     expect(shouldRetryQuery(1, new AppError(FAILED))).toBe(false);
+  });
+
+  // Regression: a response that no longer parses, or a hook that throws in a
+  // query, showing the reader an error that nobody hears about.
+  it('hands every failure but a 401 to error reporting, saying whether a query or a mutation saw it', async () => {
+    const { client, reported } = setup(true);
+    const drift = new TypeError("Cannot read properties of undefined (reading 'id')");
+
+    await client
+      .fetchQuery({ queryKey: usersKeys.me(), queryFn: () => Promise.reject(drift) })
+      .catch(() => {});
+    await client
+      .getMutationCache()
+      .build(client, { mutationFn: refuse(500) })
+      .execute(undefined)
+      .catch(() => {});
+    await client.fetchQuery({ queryKey: usersKeys.me(), queryFn: refuse(401) }).catch(() => {});
+
+    expect(reported).toEqual([
+      { error: drift, context: { tags: { 'query.kind': 'query' } } },
+      {
+        error: expect.objectContaining({ status: 500 }),
+        context: { tags: { 'query.kind': 'mutation' } },
+      },
+    ]);
   });
 });

@@ -11,6 +11,12 @@ import type { IBufferCell, IDecoration, IDisposable, Terminal } from '@xterm/xte
  * Claude's theme, not ours: its dark theme's grey on a light console is a dark
  * bar with white text, so the cells are repainted in the terminal's own ramp
  * and the tint is laid over them.
+ *
+ * Codex draws its user messages the same way, with `›` for the pointer and a
+ * blank row of the background above and below the text; an attached image's
+ * label rows sit above the pointer's, on the same background. Through tmux its grey
+ * is palette 8, which the console's ramp makes a mid grey, so left alone it is
+ * a bright slab across the pane.
  */
 
 /**
@@ -23,7 +29,7 @@ import type { IBufferCell, IDecoration, IDisposable, Terminal } from '@xterm/xte
  */
 const PALETTE_BACKGROUNDS = new Set([237, 253, 255, 7, 8]);
 const RGB_BACKGROUNDS = new Set([0x373737, 0xf0f0f0, 0xdcdcdc]);
-const POINTERS = new Set(['❯', '>']);
+const POINTERS = new Set(['❯', '>', '›']);
 
 /** The artboard's bubble (`op-term__you`): padding 8px 10px, radius 10px. */
 const BUBBLE_INSET_X = 10;
@@ -38,10 +44,14 @@ export interface TurnGrid {
   userBackground(line: number, x: number): boolean;
 }
 
-/** A message the reader wrote: its first line, its column and its pointer's. */
+/**
+ * A message the reader wrote: its first line, its column, its pointer's row
+ * (counted from `line`, past the rows Codex draws above it) and column.
+ */
 export interface UserTurn {
   line: number;
   x: number;
+  pointerRow: number;
   pointerX: number;
   height: number;
 }
@@ -51,7 +61,10 @@ export interface UserTurn {
  * cell is the user background with only blanks before it, and whose first
  * glyph on that background is the pointer. It runs on through the rows that
  * keep the background at the same column (a wrapped or multi-line message)
- * and stops at the next pointer, so two messages never merge.
+ * and stops at the next pointer, so two messages never merge. Rows of the
+ * background at the same column right above the pointer's (Codex's padding
+ * and image labels) open it instead, unless an earlier turn already holds
+ * them.
  */
 export function findUserTurns(grid: TurnGrid): UserTurn[] {
   const turns: UserTurn[] = [];
@@ -73,19 +86,30 @@ export function findUserTurns(grid: TurnGrid): UserTurn[] {
     return POINTERS.has(grid.char(line, pointerX)) ? { x, pointerX } : null;
   };
 
+  const above = (line: number, x: number): boolean => {
+    for (let col = 0; col < x; col += 1) {
+      if (grid.userBackground(line, col) || grid.char(line, col).trim() !== '') return false;
+    }
+    return grid.userBackground(line, x);
+  };
+
+  let free = 0;
   for (let line = 0; line < grid.lines; line += 1) {
     const open = opening(line);
     if (!open) continue;
-    let height = 1;
+    let top = line;
+    while (top > free && above(top - 1, open.x)) top -= 1;
+    let height = line - top + 1;
     while (
-      line + height < grid.lines &&
-      grid.userBackground(line + height, open.x) &&
-      !opening(line + height)
+      top + height < grid.lines &&
+      grid.userBackground(top + height, open.x) &&
+      !opening(top + height)
     ) {
       height += 1;
     }
-    turns.push({ line, x: open.x, pointerX: open.pointerX, height });
-    line += height - 1;
+    turns.push({ line: top, x: open.x, pointerRow: line - top, pointerX: open.pointerX, height });
+    line = top + height - 1;
+    free = line + 1;
   }
   return turns;
 }
@@ -110,7 +134,7 @@ interface Drawn {
 }
 
 const shapeOf = (turn: UserTurn, cols: number) =>
-  `${turn.x}:${turn.pointerX}:${turn.height}:${cols}`;
+  `${turn.x}:${turn.pointerRow}:${turn.pointerX}:${turn.height}:${cols}`;
 
 /**
  * Finds the reader's messages on `term` and draws them as the artboard does,
@@ -178,7 +202,7 @@ export function bindUserTurns(
         foregroundColor: colors.foreground,
       });
       if (repaint) decorations.push(repaint);
-      if (row === 0) {
+      if (row === turn.pointerRow) {
         // Registered after the row's, so its foreground is the one that wins.
         const pointer = term.registerDecoration({
           marker,
