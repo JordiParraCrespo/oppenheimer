@@ -17,11 +17,14 @@ export function PinnedBots({
   bots,
   groups,
   searching,
+  onHide,
 }: {
   bots: readonly BotEntity[];
   /** Every group, for the rows' Move pane. */
   groups: readonly BotGroupEntity[];
   searching: boolean;
+  /** Hides a bot from the sidebar, from its row's menu. */
+  onHide: (id: string) => void;
 }) {
   const { t } = useTranslation();
 
@@ -35,7 +38,13 @@ export function PinnedBots({
     >
       <BotList>
         {bots.map((bot) => (
-          <BotSidebarRow key={bot.id} bot={bot} groups={groups} dragDisabled={searching} />
+          <BotSidebarRow
+            key={bot.id}
+            bot={bot}
+            groups={groups}
+            dragDisabled={searching}
+            onHide={onHide}
+          />
         ))}
       </BotList>
     </SidebarPinnedGroup>

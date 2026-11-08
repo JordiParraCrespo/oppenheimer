@@ -573,6 +573,23 @@
       }
     ]
   },
+  "fs.find": {
+    "type": "fs.find",
+    "commandId": "b2c3d4e5-6f7a-4b8c-9d0e-1f2a3b4c5d6e",
+    "query": "billing"
+  },
+  "fs.found": {
+    "type": "fs.found",
+    "commandId": "b2c3d4e5-6f7a-4b8c-9d0e-1f2a3b4c5d6e",
+    "path": "/home/jordi",
+    "home": "/home/jordi",
+    "entries": [
+      {
+        "path": "/home/jordi/code/acme/billing",
+        "branch": "main"
+      }
+    ]
+  },
   "host.update": {
     "type": "host.update",
     "commandId": "b2c3d4e5-6f7a-4b8c-9d0e-1f2a3b4c5d6e",

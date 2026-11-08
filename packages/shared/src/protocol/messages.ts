@@ -97,6 +97,8 @@ export const RUNNER_CAPABILITIES = [
   'session.folder',
   /** Answers `fs.list` with `fs.listing`: the folder picker's directories. */
   'fs.list',
+  /** Answers `fs.find` with `fs.found`: the folder picker's search by name. */
+  'fs.find',
   /**
    * Sends `attachment.chat` beside a coding agent session's PTY frames
    * (Claude Code, Codex, OpenCode, Grok): the agent's own transcript,
@@ -782,6 +784,12 @@ export type FsListMessage = z.infer<typeof fsListSchema>;
 /** How many directories one `fs.listing` names at most. */
 export const FS_LISTING_MAX_ENTRIES = 500;
 
+/** The shortest name `fs.find` searches for: one letter matches nearly everything. */
+export const FS_FIND_MIN_QUERY = 2;
+
+/** How many levels under its `path` `fs.find` walks. */
+export const FS_FIND_MAX_DEPTH = 4;
+
 /**
  * A directory's sub-directories: names only, never files and never contents.
  * Hidden ones are left out. A sub-directory that is a git repository carries
@@ -883,6 +891,53 @@ export const hostExecResultSchema = z.object({
 });
 
 export type HostExecResultMessage = z.infer<typeof hostExecResultSchema>;
+
+/**
+ * Find folders under one directory by name, for the folder picker's search
+ * (24 §4): a bounded walk, at most `FS_FIND_MAX_DEPTH` levels down, that skips
+ * hidden directories and dependency trees and never descends into a git
+ * repository, so a repository is found and its insides are not. Absent `path`
+ * is the home directory. Sent only to a runner whose `hello` named `fs.find`;
+ * answered by `fs.found` with the same `commandId`, or by `command.failed`
+ * with the `fs.list` codes for `path`.
+ */
+export const fsFindSchema = z.object({
+  type: z.literal('fs.find'),
+  commandId: commandIdSchema,
+  /** Matched against each directory's name, without regard to case. */
+  query: z.string().min(FS_FIND_MIN_QUERY).max(255),
+  path: hostPathSchema.optional(),
+});
+
+export type FsFindMessage = z.infer<typeof fsFindSchema>;
+
+/** How many folders one `fs.found` names at most. */
+export const FS_FIND_MAX_RESULTS = 50;
+
+/**
+ * The folders whose name holds the query, best first: a name that is the
+ * query, then one that starts with it, then the rest, each shallower first.
+ * `truncated` says the walk stopped at its budget, so a folder further away
+ * may exist.
+ */
+export const fsFoundSchema = z.object({
+  type: z.literal('fs.found'),
+  commandId: commandIdSchema,
+  /** The directory searched under, absolute and cleaned. */
+  path: hostPathSchema,
+  home: hostPathSchema,
+  entries: z
+    .array(
+      z.object({
+        path: hostPathSchema,
+        branch: z.string().min(1).max(255).optional(),
+      }),
+    )
+    .max(FS_FIND_MAX_RESULTS),
+  truncated: z.boolean().optional(),
+});
+
+export type FsFoundMessage = z.infer<typeof fsFoundSchema>;
 
 /**
  * Install a release. The runner still fetches and verifies the signed manifest
@@ -1186,6 +1241,8 @@ export const protocolMessageSchema = z.discriminatedUnion('type', [
   repositoryPrepareSchema,
   fsListSchema,
   fsListingSchema,
+  fsFindSchema,
+  fsFoundSchema,
   hostExecSchema,
   hostExecResultSchema,
   attachmentDirectOfferSchema,

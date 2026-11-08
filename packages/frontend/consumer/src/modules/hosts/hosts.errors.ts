@@ -33,4 +33,8 @@ export const HostsErrors = {
     code: 'HOSTS_CLIENT_007',
     message: 'Failed to list the Codex environments on the host',
   },
+  SEARCH_FOLDERS_FAILED: {
+    code: 'HOSTS_CLIENT_008',
+    message: 'Failed to search the folders on the host',
+  },
 } as const satisfies Record<string, ErrorDefinition>;
