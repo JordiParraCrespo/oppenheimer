@@ -365,7 +365,7 @@ describe('BotTurnContextResolver', () => {
       });
       const { message } = await resolve();
       expect(message).toContain(
-        'The message starts with /relase-notes, which is not one of your skills. The skills they can run are /release-notes.',
+        'The message starts with /relase-notes, which is not one of your skills. The skills they can run are /recap, /release-notes.',
       );
       expect(message).not.toContain('<skill');
     });
@@ -377,7 +377,30 @@ describe('BotTurnContextResolver', () => {
       });
       const { message } = await resolve();
       expect(message).not.toContain('<skill');
-      expect(message).toContain('You have no skills they can run.');
+      expect(message).toContain('The skills they can run are /recap.');
+    });
+
+    it('runs the built-in /recap for a bot with no skills of its own, the person’s topic as its input', async () => {
+      const { resolve } = setup(async () => [], { opening: '/recap the billing work' });
+      const { message } = await resolve();
+      expect(message).toContain(
+        'The person ran your skill /recap. Follow it for this request. What they wrote after the command is its input.\n\n<skill name="recap">',
+      );
+      expect(message).toContain('/recap the billing work');
+      expect(message).not.toContain('not one of your skills');
+    });
+
+    it('runs a skill of the bot’s own saved as recap before the name was reserved, not the built-in', async () => {
+      const saved = skill('notes', { modelInvocable: false });
+      const reserved = BotSkillEntity.create({
+        id: saved.id,
+        createdAt: saved.createdAt,
+        updatedAt: saved.updatedAt,
+        props: { ...saved.getProps(), name: 'recap', body: 'Steps for recap.' },
+      });
+      const { resolve } = setup(async () => [], { opening: '/recap', skills: [reserved] });
+      const { message } = await resolve();
+      expect(message).toContain('<skill name="recap">\nSteps for recap.\n</skill>');
     });
   });
 });

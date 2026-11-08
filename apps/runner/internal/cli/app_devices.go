@@ -60,7 +60,7 @@ func writeSessionNote(session sessionsdomain.Session, previews bool, device *dev
 	if session.Place == sessionsdomain.PlaceFolder || session.Dir == "" {
 		return
 	}
-	note := "# This session\n" + helpersNote
+	note := "# This session\n" + helpersNote + recallNote
 	if previews {
 		note += previewNote
 	}
@@ -79,6 +79,31 @@ const helpersNote = `
 
 You can start other agents as sessions of your own, give them work and wait
 for them. Run ` + "`runner --skill`" + ` once for how, before you do.
+`
+
+// recallNote is the catch-up a person asks for when they come back to a
+// session, adapted from pstack's `recall`: the session's own record (its
+// branch, its pull request, its helpers) rebuilt into one short brief. It is
+// in the note rather than `runner --skill` because the person asks for it,
+// not the agent.
+const recallNote = `
+## When the person asks you to recall
+
+When the person asks you to recall, recap or catch them up ("where are we",
+"what were you doing"), rebuild where this session stands before you answer,
+and change nothing on the way:
+
+- your conversation so far, and what you were last asked;
+- the checkout: the branch, ` + "`git status`" + `, and ` + "`git log`" + ` since it
+  left its base;
+- its pull request, if it has one: its state, its checks, and the review
+  comments still open;
+- your helpers: ` + "`runner sessions children`" + `.
+
+Then answer in this order, in plain words: where things stand (at most five
+bullets); each thread in one line, opening with its state (done, open, in
+progress, blocked, not started); what waits on the person, with your pick;
+and the one next move. Say "unknown" for what you could not find.
 `
 
 // previewNote is how a dev server reaches the console's Browser tab

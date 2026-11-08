@@ -33,7 +33,7 @@ import { BOT_HISTORY_READ_MAX, botHistory } from '../domain/bot-history.policy';
 import { withEarlierImages } from '../domain/bot-image.policy';
 import { memoryInMind } from '../domain/bot-memory.policy';
 import { composeBotSystemPrompt } from '../domain/bot-prompt.policy';
-import { composeTurnMessage } from '../domain/bot-skill.policy';
+import { composeTurnMessage, withBuiltInSkills } from '../domain/bot-skill.policy';
 import { BOT_TURN_MAX_STEPS, type BotTurnEntity } from '../domain/bot-turn.entity';
 import { BotTurnBudget } from '../domain/bot-turn-budget.policy';
 import { composeTurnContext, withTurnContext } from '../domain/bot-turn-context.policy';
@@ -198,7 +198,7 @@ export class BotTurnContextResolver {
           lastContext,
           memory: { log: inMind.log, toRecall: inMind.toRecall },
         }),
-        composeTurnMessage(command, skills, prompt),
+        composeTurnMessage(command, withBuiltInSkills(skills), prompt),
       ),
       images,
       tools,
