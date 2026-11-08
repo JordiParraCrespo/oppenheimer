@@ -7,11 +7,14 @@ export class DriveSessionTerminalCommand extends CommandBase {
   readonly scope: AccessScope;
   readonly sessionId: string;
   readonly request: TerminalDriveRequest;
+  /** Names the drive across retries of one approved call; absent, each dispatch is new. */
+  readonly commandId?: string;
 
   constructor(props: CommandProps<DriveSessionTerminalCommand>) {
     super(props);
     this.scope = props.scope;
     this.sessionId = props.sessionId;
     this.request = props.request;
+    this.commandId = props.commandId;
   }
 }

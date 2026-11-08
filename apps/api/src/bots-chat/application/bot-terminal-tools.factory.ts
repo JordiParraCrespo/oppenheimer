@@ -15,6 +15,12 @@ import { CreateSessionCommand } from '../../sessions/commands/create-session/cre
 import { DriveSessionTerminalCommand } from '../../sessions/commands/drive-session-terminal/drive-session-terminal.command';
 import type { SessionCommandResult } from '../../sessions/domain/session-command.types';
 import { BOT_SESSION_PERMISSION, invalidBodyRefusal } from '../bot-session-tool.mapper';
+import {
+  DEFAULT_TERMINAL_WAIT_SECONDS,
+  type TerminalToolInput,
+  terminalCommandIdOf,
+  toTerminalDriveRequest,
+} from '../bot-terminal-tool.mapper';
 import { idempotencyKeyOf } from '../domain/bot-tool-idempotency.policy';
 import { describeTerminal, terminalTypeSummary } from './bot-terminal.policy';
 import {
@@ -24,9 +30,6 @@ import {
   BotToolRefusal,
   defineBotTool,
 } from './bot-tool.factory';
-
-/** How long a drive waits when the call names no wait, in seconds. */
-const DEFAULT_WAIT_SECONDS = 2;
 
 const sessionId = z.uuid().describe('The terminal session (from open_terminal or list_sessions).');
 
@@ -46,7 +49,7 @@ const waitFields = {
     .max(TERMINAL_WAIT_MAX_SECONDS)
     .optional()
     .describe(
-      `How long to wait, at most, before reading the screen; ${DEFAULT_WAIT_SECONDS} when omitted, at most ${TERMINAL_WAIT_MAX_SECONDS}.`,
+      `How long to wait, at most, before reading the screen; ${DEFAULT_TERMINAL_WAIT_SECONDS} when omitted, at most ${TERMINAL_WAIT_MAX_SECONDS}.`,
     ),
   history: z
     .number()
@@ -187,27 +190,15 @@ export class BotTerminalToolsFactory implements BotToolArea {
   }
 
   private drive(
-    context: BotToolCallContext,
-    input: {
-      session_id: string;
-      text?: string;
-      keys?: (typeof TERMINAL_KEYS)[number][];
-      wait_for?: string;
-      wait_seconds?: number;
-      history?: number;
-    },
+    context: BotToolCallContext & { approvalId?: string },
+    input: TerminalToolInput & { session_id: string },
   ): Promise<SessionTerminalOutcome> {
     return this.commandBus.execute<DriveSessionTerminalCommand, SessionTerminalOutcome>(
       new DriveSessionTerminalCommand({
         scope: context.owner,
         sessionId: input.session_id,
-        request: {
-          ...(input.text ? { text: input.text } : {}),
-          ...(input.keys?.length ? { keys: input.keys } : {}),
-          ...(input.wait_for ? { waitFor: input.wait_for } : {}),
-          waitSeconds: input.wait_seconds ?? DEFAULT_WAIT_SECONDS,
-          ...(input.history ? { history: input.history } : {}),
-        },
+        request: toTerminalDriveRequest(input),
+        ...(context.approvalId ? { commandId: terminalCommandIdOf(context.approvalId) } : {}),
       }),
     );
   }

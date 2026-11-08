@@ -56,10 +56,12 @@ describe('DriveSessionTerminalCommandHandler', () => {
     const terminal = session('shell');
     const { terminals, drive } = harness(terminal);
     await expect(drive(terminal.id)).resolves.toMatchObject({ kind: 'screen' });
-    expect(terminals.drive).toHaveBeenCalledWith('host-1', terminal.id, {
-      text: 'ls',
-      waitSeconds: 1,
-    });
+    expect(terminals.drive).toHaveBeenCalledWith(
+      'host-1',
+      terminal.id,
+      { text: 'ls', waitSeconds: 1 },
+      undefined,
+    );
   });
 
   // A bot types commands into a shell it opened, never into a coding agent's

@@ -31,6 +31,7 @@ export class RelaySessionTerminalAdapter implements SessionTerminalPort {
     hostId: string,
     sessionId: string,
     request: TerminalDriveRequest,
+    commandId?: string,
   ): Promise<SessionTerminalOutcome> {
     const link = this.links.find(hostId);
     if (!link) return { kind: 'host_offline' };
@@ -38,7 +39,7 @@ export class RelaySessionTerminalAdapter implements SessionTerminalPort {
 
     const message: TerminalDriveMessage = {
       type: 'terminal.drive',
-      commandId: randomUUID(),
+      commandId: commandId ?? randomUUID(),
       sessionId,
       ...request,
     };

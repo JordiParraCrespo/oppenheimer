@@ -35,6 +35,6 @@ export class DriveSessionTerminalCommandHandler
         detail: `session ${session.id} runs ${session.agent}, not a blank terminal`,
       };
     }
-    return this.terminals.drive(session.hostId, session.id, command.request);
+    return this.terminals.drive(session.hostId, session.id, command.request, command.commandId);
   }
 }

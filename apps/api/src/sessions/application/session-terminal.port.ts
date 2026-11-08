@@ -27,9 +27,15 @@ export type SessionTerminalOutcome =
  * as the drive's own wait; the screen is never stored.
  */
 export interface SessionTerminalPort {
+  /**
+   * Drive the terminal. `commandId`, when given, names the drive across
+   * retries of one approved call: a runner that already drove it answers with
+   * the screen it left instead of typing again. Absent, every call is new.
+   */
   drive(
     hostId: string,
     sessionId: string,
     request: TerminalDriveRequest,
+    commandId?: string,
   ): Promise<SessionTerminalOutcome>;
 }
