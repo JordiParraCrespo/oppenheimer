@@ -9,9 +9,9 @@ import {
 import { SessionsSelectionBar } from '../sections/sessions-selection-bar';
 
 /**
- * The selection bar's Move lists the projects the way a row's own menu does:
- * when every picked row is in one project, that project is ticked as current
- * and not a target, rather than a pick that quietly moves nothing.
+ * The selection bar's Move searches the projects the way a row's own menu
+ * does: when every picked row is in one project, that project is found, ticked
+ * as current and not a target, rather than a pick that quietly moves nothing.
  */
 
 vi.mock('react-i18next', () => ({
@@ -69,15 +69,21 @@ describe('SessionsSelectionBar move', () => {
       { id: 'b', projectId: 'p1' },
     ]);
 
-    const current = screen.getByRole('menuitemradio', { name: /Superseo/ });
-    expect(current.getAttribute('aria-checked')).toBe('true');
+    fireEvent.change(screen.getByRole('combobox', { name: 'common.search.projects' }), {
+      target: { value: 'super' },
+    });
+    const current = screen.getByRole('option', { name: /Superseo/ });
+    expect(current.getAttribute('aria-selected')).toBe('true');
     expect(current.getAttribute('aria-disabled')).toBe('true');
     expect(current.textContent).toContain('sessions.sidebar.moveCurrent');
 
     fireEvent.click(current);
     expect(mutateAsync).not.toHaveBeenCalled();
 
-    fireEvent.click(screen.getByRole('menuitemradio', { name: 'XRP Mobile' }));
+    fireEvent.change(screen.getByRole('combobox', { name: 'common.search.projects' }), {
+      target: { value: '' },
+    });
+    fireEvent.click(screen.getByRole('option', { name: 'XRP Mobile' }));
     expect(mutateAsync).toHaveBeenCalledTimes(2);
     expect(mutateAsync).toHaveBeenCalledWith({ id: 'a', projectId: 'p2' });
   });
@@ -88,8 +94,8 @@ describe('SessionsSelectionBar move', () => {
       { id: 'b', projectId: 'u' },
     ]);
 
-    for (const row of screen.getAllByRole('menuitemradio')) {
-      expect(row.getAttribute('aria-checked')).toBe('false');
+    for (const row of screen.getAllByRole('option')) {
+      expect(row.getAttribute('aria-selected')).toBe('false');
       expect(row.getAttribute('aria-disabled')).toBeNull();
     }
   });
