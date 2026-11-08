@@ -19,8 +19,8 @@ import { BotSidebarRow } from './bot-sidebar-row';
 /**
  * One section of the Employees sidebar: its eyebrow head with the count and,
  * for a group of the reader's, Rename group and Delete group; then its bots,
- * or a line saying the group is empty, or that its bots are all hidden.
- * Ungrouped has no menu. A rename is typed in the head's place.
+ * or a line saying the group is empty, or that its bots are all pinned or
+ * all hidden. Ungrouped has no menu. A rename is typed in the head's place.
  *
  * Its rows are a `SortableGroup` that takes bots, folded or empty, so a bot
  * drags into another place here or into this group from another. A group of
@@ -32,6 +32,7 @@ export function BotGroup({
   groups,
   open,
   onOpenChange,
+  pinnedHere,
   searching,
   onHide,
 }: {
@@ -40,6 +41,8 @@ export function BotGroup({
   groups: readonly BotGroupEntity[];
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  /** How many of the group's bots are drawn under Pinned instead. */
+  pinnedHere: number;
   /** A search is narrowing the list: an empty group then says nothing, and nothing drags. */
   searching: boolean;
   /** Hides a bot from the sidebar, from its row's menu. */
@@ -51,7 +54,7 @@ export function BotGroup({
   const remove = useDeleteBotGroup();
   const { group, bots } = section;
   const name = group ? group.name : t('bots.sidebar.ungrouped');
-  const line = emptyGroupLine(section);
+  const line = emptyGroupLine(section, pinnedHere);
 
   const rows = (
     <SortableGroup

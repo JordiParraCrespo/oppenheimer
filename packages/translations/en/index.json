@@ -505,7 +505,7 @@
           "link": "Open Codex Cloud settings"
         }
       },
-      "details": "Details from the host: {{detail}}"
+      "details": "Details from the host"
     }
   },
   "auth": {
@@ -1029,7 +1029,7 @@
       "discard": "Also discard work that is not pushed",
       "keeps": "Deleting stops if the session has work that is not pushed.",
       "descriptionFolder": "Ends the terminal. The folder stays as it is.",
-      "descriptionCloud": "Removes it from Oppenheimer. The session stays on claude.ai/code, where you can archive it.",
+      "descriptionCloud": "Removes it from Oppenheimer. The session stays on claude.ai/code, where you can <archive>archive it</archive>.",
       "refused": "Its host did not delete it",
       "refusedUnknown": "The host refused to remove the session."
     },
@@ -1469,6 +1469,11 @@
       "renameGroup": "Rename group",
       "deleteGroup": "Delete group",
       "groupFailed": "Could not save the group.",
+      "pinned": "Pinned",
+      "pin": "Pin",
+      "unpin": "Unpin",
+      "dropToPin": "Drop a bot here to pin it.",
+      "allPinned": "Its bots are under Pinned.",
       "rowActions": "Bot options",
       "settings": "Settings",
       "move": "Move to group",
@@ -1518,7 +1523,9 @@
         "refused": "{{provider}} refused this request. Sending it again won't help: change the message or the model.",
         "unavailable": "{{provider}} could not be reached. This is usually temporary: try again in a moment.",
         "time_limit": "This turn ran out of time. Sending it again won't help: ask for a smaller step, or split the request.",
-        "interrupted": "This turn was interrupted before it finished. Sending it again runs it."
+        "step_limit": "This turn used all its steps and stopped before it finished. Sending it again won't help: ask for a smaller step, or say go on to continue.",
+        "interrupted": "This turn was interrupted before it finished. Sending it again runs it.",
+        "storage": "We could not save this turn, so it stopped: the fault is ours, not {{provider}}'s. Try again in a moment."
       },
       "openProviders": "Open Model providers",
       "errorDetails": "Show details",

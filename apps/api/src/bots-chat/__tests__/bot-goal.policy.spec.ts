@@ -83,8 +83,11 @@ describe('goalDecision', () => {
 
   // What breaks this: a long goal ending the moment one of its turns runs
   // past the turn's time limit, when the next continuation would carry on.
-  it('reviews a turn of the goal stopped at the time limit, so the goal goes on', () => {
+  it('reviews a turn of the goal stopped at the time or step limit, so the goal goes on', () => {
     expect(goalDecision(goal(1), { ...own('failed'), failure: 'time_limit' })).toEqual({
+      kind: 'review',
+    });
+    expect(goalDecision(goal(1), { ...own('failed'), failure: 'step_limit' })).toEqual({
       kind: 'review',
     });
     expect(
@@ -234,7 +237,7 @@ describe('a continuation', () => {
       null,
       true,
     );
-    expect(opening.content).toContain('4-minute limit');
+    expect(opening.content).toContain('a limit for one turn (4 minutes or 20 steps)');
     expect(opening.content).toContain('smaller step');
   });
 });

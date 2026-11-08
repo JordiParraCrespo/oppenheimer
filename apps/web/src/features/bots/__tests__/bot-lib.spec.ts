@@ -19,7 +19,6 @@ import {
   groupOrder,
   inGroupOrder,
   inOrder,
-  positionAmong,
   sectionOrder,
 } from '../lib/bot-groups';
 import { composerTopOf } from '../lib/composer-top';
@@ -217,28 +216,22 @@ describe('keyedProviderFor', () => {
   });
 });
 
-describe('positionAmong', () => {
-  it('places a drop next to the drawn bot it landed by, past the hidden ones between', () => {
-    // a, [h hidden], b: dropping x between a and b puts it before b, after h.
-    expect(positionAmong(['a', 'h', 'b'], ['a', 'x', 'b'], 'x')).toBe(2);
-    // Dropped after every drawn bot: last, past the hidden ones too.
-    expect(positionAmong(['a', 'b', 'h'], ['a', 'b', 'x'], 'x')).toBe(3);
-    // Moved within its own group, it is not counted among the others.
-    expect(positionAmong(['x', 'a', 'h', 'b'], ['a', 'b', 'x'], 'x')).toBe(3);
-    expect(positionAmong([], ['x'], 'x')).toBe(0);
-  });
-});
-
 describe('firstBot', () => {
   it('is the bot the sidebar draws first: the first group by position, then Ungrouped', () => {
     const groups = [group('later', 1), group('first', 0)];
     const bots = [bot('loose', null, 0), bot('b', 'first', 1), bot('a', 'first', 0)];
-    expect(firstBot(bots, groups)?.id).toBe('a');
-    expect(firstBot([bot('loose', null, 0)], groups)?.id).toBe('loose');
+    expect(firstBot(bots, groups, [])?.id).toBe('a');
+    expect(firstBot([bot('loose', null, 0)], groups, [])?.id).toBe('loose');
+  });
+
+  it('is the top pinned bot when one is pinned, since Pinned is drawn above the groups', () => {
+    const groups = [group('first', 0)];
+    const bots = [bot('a', 'first', 0), bot('b', 'first', 1)];
+    expect(firstBot(bots, groups, ['gone', 'b'])?.id).toBe('b');
   });
 
   it('is undefined for a workspace with no bots, which keeps the greeting', () => {
-    expect(firstBot([], [group('g', 0)])).toBeUndefined();
+    expect(firstBot([], [group('g', 0)], [])).toBeUndefined();
   });
 });
 

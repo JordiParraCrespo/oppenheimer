@@ -155,3 +155,57 @@ func TestACodexRolloutReadsAsTheChatsTranscript(t *testing.T) {
 		t.Fatalf("last entry = %v, want the interrupted note", stop)
 	}
 }
+
+// Codex 0.167 stopped writing `user_message` to the rollout: what the person
+// typed is the `UserMessage` an `item_completed` finishes, the same words as
+// the `response_item` beside it but without the context Codex injects there.
+// Each message shows once, a version writing it both ways included, and the
+// same words typed again in a later turn show again. Regression: the Chat tab
+// of a Codex session opened on its reply, the person's message missing.
+func TestACodexMessageReadsFromTheItemCodexCompleted(t *testing.T) {
+	sessions, worktree := t.TempDir(), t.TempDir()
+	typed := func(text string) []string {
+		return []string{
+			rolloutLine("event_msg", map[string]any{"type": "task_started", "turn_id": "t"}),
+			rolloutLine("response_item", map[string]any{"type": "message", "role": "user", "content": []any{
+				map[string]any{"type": "input_text", "text": "<environment_context>injected</environment_context>"},
+			}}),
+			rolloutLine("response_item", map[string]any{"type": "message", "role": "user", "content": []any{
+				map[string]any{"type": "input_text", "text": text},
+			}}),
+			rolloutLine("event_msg", map[string]any{"type": "item_completed", "turn_id": "t", "item": map[string]any{
+				"type": "UserMessage", "id": "u", "content": []any{
+					map[string]any{"type": "text", "text": text, "text_elements": []any{}},
+					map[string]any{"type": "local_image", "path": "/tmp/shot.png"},
+				},
+			}}),
+		}
+	}
+	lines := []string{rolloutLine("session_meta", map[string]any{"id": "01a1", "cwd": worktree, "source": "cli"})}
+	lines = append(lines, typed("Hello world")...)
+	lines = append(lines,
+		rolloutLine("event_msg", map[string]any{"type": "user_message", "message": "Hello world", "images": []any{"x"}}),
+		rolloutLine("event_msg", map[string]any{"type": "task_complete", "turn_id": "t"}),
+	)
+	lines = append(lines, typed("Hello world")...)
+	writeRollout(t, sessions, "mine", time.Now(), lines...)
+	sink := &batches{}
+	followSession(t, transcript.Options{CodexSessions: sessions},
+		domain.Session{Agent: domain.AgentCodex, Worktree: worktree, Created: time.Now().Add(-time.Minute)}, sink)
+
+	eventually(t, "both messages", func() bool { return len(sink.entries()) == 2 })
+	time.Sleep(100 * time.Millisecond)
+	got := sink.entries()
+	if len(got) != 2 {
+		t.Fatalf("entries = %v, want the two turns' messages once each", got)
+	}
+	for _, entry := range got {
+		message, _ := entry["message"].(map[string]any)
+		blocks, _ := message["content"].([]any)
+		text, _ := blocks[0].(map[string]any)
+		image, _ := blocks[len(blocks)-1].(map[string]any)
+		if entry["type"] != "user" || len(blocks) != 2 || text["text"] != "Hello world" || image["type"] != "image" {
+			t.Fatalf("entry = %v, want the person's words and their image", entry)
+		}
+	}
+}

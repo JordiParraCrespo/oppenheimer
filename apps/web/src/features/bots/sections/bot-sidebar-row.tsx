@@ -7,6 +7,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { BotRowMenu } from '@/features/bots/components/bot-row-menu';
 import { DeleteBotDialog } from '@/features/bots/dialogs/delete-bot';
+import { useBotPin } from '@/features/bots/hooks/use-bot-pins';
 
 /**
  * One bot in the Employees sidebar, on one line: its face on its colour
@@ -14,7 +15,9 @@ import { DeleteBotDialog } from '@/features/bots/dialogs/delete-bot';
  * the row's tooltip, its markdown read rather than shown. A section because it
  * subscribes to the route (lit on its chat and on its settings), owns the
  * move, and keeps the delete dialog open past the menu that asked for it.
- * `groups` are the Move pane's targets; `onHide` takes it out of the sidebar. The row drags by
+ * `groups` are the Move pane's targets; its pin is the sidebar's
+ * (`BotPinsContext`), which draws a pinned row under Pinned; `onHide`
+ * takes it out of the sidebar. The row drags by
  * itself (a click still opens the chat) unless `dragDisabled`.
  */
 export function BotSidebarRow({
@@ -38,6 +41,7 @@ export function BotSidebarRow({
   const [menuOpen, setMenuOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const move = useUpdateBot();
+  const pin = useBotPin(bot.id);
   const line = bot.lastMessagePreview || bot.description;
 
   return (
@@ -58,6 +62,8 @@ export function BotSidebarRow({
             onOpenChange={setMenuOpen}
             groups={groups}
             groupId={bot.groupId}
+            pinned={pin.pinned}
+            onPinChange={pin.setPinned}
             onSettings={() =>
               navigate({ to: '/bots/$botId/settings/profile', params: { botId: bot.id } })
             }

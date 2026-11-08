@@ -3,7 +3,9 @@ import {
   type HistoryEntry,
   type HistoryMessage,
   historyEntry,
+  isReadBack,
 } from './bot-history.policy';
+import { neutraliseTags } from './bot-tool-text.policy';
 
 /**
  * Whether a goal's condition holds, asked after each turn of it
@@ -46,15 +48,15 @@ export const BOT_GOAL_REVIEWER_PROMPT = [
 
 /**
  * What the reviewer reads of the conversation: the messages before the
- * ended turn as a turn reads them back (activity lines, the bot's own
- * working, left out), then what that turn wrote, as the bot's.
+ * ended turn as a turn reads them back (activity lines as Oppenheimer's
+ * record of the tool calls), then what that turn wrote, as the bot's.
  */
 export function goalReviewTranscript(
   before: readonly HistoryMessage[],
   turnTexts: readonly string[],
 ): HistoryEntry[] {
   return [
-    ...before.filter((message) => message.role !== 'activity').map(historyEntry),
+    ...before.filter(isReadBack).map(historyEntry),
     ...turnTexts.map((text) => ({ role: 'assistant' as const, text })),
   ];
 }
@@ -70,7 +72,7 @@ export function composeGoalReview(objective: string, transcript: readonly Histor
   for (let index = transcript.length - 1; index >= 0; index -= 1) {
     const entry = transcript[index];
     if (!entry?.text.trim()) continue;
-    const text = `[${entry.role === 'assistant' ? 'assistant' : 'person or Oppenheimer'}]\n${entry.text.trim()}`;
+    const text = `[${entry.role === 'assistant' ? 'assistant' : 'person or Oppenheimer'}]\n${escapeReviewTags(entry.text.trim())}`;
     const cost = estimateTokens(text);
     if (cost > left) break;
     left -= cost;
@@ -85,6 +87,15 @@ export function composeGoalReview(objective: string, transcript: readonly Histor
     kept.length ? kept.join('\n\n') : '(the assistant has written nothing yet)',
     '</transcript>',
   ].join('\n');
+}
+
+/**
+ * The conversation cannot close the tags it sits in: a tool's answer read
+ * back from outside (a web page, a mail) could otherwise end the transcript
+ * and write its own verdict for the reviewer.
+ */
+function escapeReviewTags(text: string): string {
+  return neutraliseTags(text, ['transcript', 'goal']);
 }
 
 /**

@@ -45,7 +45,7 @@ export class BotSessionFileToolsFactory implements BotToolArea {
       defineBotTool({
         name: 'show_session_file',
         scope: 'sessions:read',
-        description: `Shows the person an image a session's agent shared (runner sessions send-file), under your reply, as a picture they can open: a screenshot of what it built, a chart it drew. get_session lists the files a session's agent shared, with their ids; only an image the host kept a preview of can be shown (a JPEG of at most 1600 px), and the session's host must be online. Counts against the ${SHOWN_IMAGES_PER_TURN} images a turn may show. You do not see the image; say in your reply what it is.`,
+        description: `Shows the person an image a session's agent shared, under your reply, as a picture they can open: a screenshot of what it built, a chart it drew. get_session lists the files a session's agent shared, with their ids; only an image the host kept a preview of can be shown (a JPEG of at most 1600 px), and the session's host must be online. Counts against the ${SHOWN_IMAGES_PER_TURN} images a turn may show. You do not see the image; say in your reply what it is.`,
         input: z.object({
           session_id: z.uuid().describe('The session (from list_sessions).'),
           file_id: z.string().min(1).max(64).describe("The file's id, from get_session."),
