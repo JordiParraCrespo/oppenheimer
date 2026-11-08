@@ -310,8 +310,7 @@ func (c *Client) makeStore(ctx context.Context, repo domain.Repository, remote, 
 	if ref != "" {
 		args = append(args, "+refs/heads/"+ref+":refs/remotes/origin/"+ref)
 	}
-	_, err := c.run(ctx, command{timeout: fetchTimeout, dir: dir, repo: repo.FullName}, args...)
-	return err
+	return c.fetchRef(ctx, repo.FullName, dir, ref, args)
 }
 
 // deepen fetches, in the background, the history a shallow store was made
@@ -424,8 +423,84 @@ func (c *Client) fetch(ctx context.Context, repo, store, ref string) error {
 	} else {
 		args = append(args, "+refs/heads/"+ref+":refs/remotes/origin/"+ref)
 	}
-	_, err := c.run(ctx, command{timeout: fetchTimeout, dir: store, repo: repo}, args...)
-	return err
+	return c.fetchRef(ctx, repo, store, ref, args)
+}
+
+// fetchRef runs a fetch of ref (args) into store. A repository with nothing
+// in it yet, as GitHub makes one with no README, has no branch to cut a
+// worktree from; it gets its first commit on ref (seed), and the fetch runs
+// again. A repository with branches that are not ref keeps git's error: the
+// base was mistyped, and inventing it there would hide that.
+func (c *Client) fetchRef(ctx context.Context, repo, store, ref string, args []string) error {
+	how := command{timeout: fetchTimeout, dir: store, repo: repo}
+	out, err := c.run(ctx, how, args...)
+	if err == nil || ref == "" || !strings.Contains(out, "couldn't find remote ref") || !c.remoteEmpty(ctx, repo, store) {
+		return err
+	}
+	seedErr := c.seed(ctx, repo, store, ref)
+	if _, err := c.run(ctx, how, args...); err != nil {
+		// Another host seeding the same repository at the same moment wins
+		// the push and this fetch finds its commit; only when the fetch
+		// still finds nothing is the seed's own failure the reason.
+		if seedErr != nil {
+			return seedErr
+		}
+		return err
+	}
+	return nil
+}
+
+// remoteEmpty reports a remote with no refs at all: no branch, no tag.
+func (c *Client) remoteEmpty(ctx context.Context, repo, store string) bool {
+	out, err := c.run(ctx, command{timeout: quickTimeout, dir: store, repo: repo}, "ls-remote", "origin")
+	return err == nil && strings.TrimSpace(out) == ""
+}
+
+// seedAuthor signs the first commit when the host's git names nobody:
+// commit-tree refuses to make a commit with no identity.
+var seedAuthor = []string{"-c", "user.name=Oppenheimer", "-c", "user.email=runner@oppenheimer.invalid"}
+
+// seed pushes an empty first commit to branch on an empty repository, the
+// commit GitHub's "Initialize this repository" would have made, so the branch
+// a session is cut from exists and its pull request has a base to target.
+// It is the first push, so it also makes branch the repository's default.
+func (c *Client) seed(ctx context.Context, repo, store, branch string) error {
+	quick := command{timeout: quickTimeout, dir: store}
+	tree, err := c.run(ctx, quick, "hash-object", "-w", "-t", "tree", os.DevNull)
+	if err != nil {
+		return err
+	}
+	args := []string{"commit-tree", strings.TrimSpace(tree), "-m", "Initial commit"}
+	if !c.hasIdentity(ctx, store) {
+		args = append(append([]string{}, seedAuthor...), args...)
+	}
+	commit, err := c.run(ctx, quick, args...)
+	if err != nil {
+		return err
+	}
+	out, err := c.run(ctx, command{timeout: fetchTimeout, dir: store, repo: repo},
+		"push", "origin", strings.TrimSpace(commit)+":refs/heads/"+branch)
+	if err != nil {
+		if p := problem.From(err); p == nil || p.Code != domain.ErrGitCommand.Code {
+			return err
+		}
+		return domain.ErrPushRejected.WithDetail(
+			"%s is empty and its first commit could not be pushed to %s: %s",
+			repo, branch, lastLine(out, err)).WithCause(err)
+	}
+	return nil
+}
+
+// hasIdentity reports a git configured with the name and email a commit is
+// signed with.
+func (c *Client) hasIdentity(ctx context.Context, store string) bool {
+	for _, key := range []string{"user.name", "user.email"} {
+		out, err := c.run(ctx, command{timeout: quickTimeout, dir: store}, "config", "--get", key)
+		if err != nil || strings.TrimSpace(out) == "" {
+			return false
+		}
+	}
+	return true
 }
 
 // sweepPartials removes stores in the making that nothing is still writing:

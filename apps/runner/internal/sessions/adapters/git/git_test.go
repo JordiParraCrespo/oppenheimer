@@ -578,3 +578,65 @@ func asProblem(err error, target **problem.Error) bool {
 	}
 	return false
 }
+
+// emptyOrigin is a repository as GitHub makes one with no README: no branch,
+// no commit.
+func emptyOrigin(t *testing.T) string {
+	t.Helper()
+	if _, err := exec.LookPath("git"); err != nil {
+		t.Skip("git is not installed")
+	}
+	bare := filepath.Join(t.TempDir(), "origin.git")
+	git(t, "", "init", "--bare", "-b", "main", bare)
+	return bare
+}
+
+// A project on a repository with nothing in it yet failed its first session
+// with "couldn't find remote ref refs/heads/main": there was no base to cut
+// the worktree from. The runner pushes an empty first commit to the base and
+// the session is cut from it, as from any other repository.
+func TestAnEmptyRepositoryGetsAFirstCommitOnTheBase(t *testing.T) {
+	remote := emptyOrigin(t)
+	c, layout := client(t)
+	ctx := context.Background()
+
+	if err := c.Ensure(ctx, repo, remote, "main"); err != nil {
+		t.Fatalf("ensure: %v", err)
+	}
+	worktree := checkout(layout, "session-abc")
+	if err := c.Add(ctx, repo, worktree, "oppenheimer/abc", "main", true); err != nil {
+		t.Fatalf("add: %v", err)
+	}
+
+	seeded := strings.TrimSpace(git(t, remote, "rev-parse", "refs/heads/main"))
+	if head := strings.TrimSpace(git(t, worktree, "rev-parse", "HEAD")); head != seeded {
+		t.Fatalf("the session starts at %s, not at the base's first commit %s", head, seeded)
+	}
+	if files := strings.TrimSpace(git(t, remote, "ls-tree", "-r", "--name-only", "main")); files != "" {
+		t.Fatalf("the first commit carries files: %q", files)
+	}
+}
+
+// A second host, or a second session, finds the base the first one seeded
+// and takes it as it is rather than pushing a commit of its own.
+func TestASeededRepositoryIsNotSeededAgain(t *testing.T) {
+	remote := emptyOrigin(t)
+	first, _ := client(t)
+	ctx := context.Background()
+	if err := first.Ensure(ctx, repo, remote, "main"); err != nil {
+		t.Fatal(err)
+	}
+	seeded := strings.TrimSpace(git(t, remote, "rev-parse", "refs/heads/main"))
+
+	second, layout := client(t)
+	if err := second.Ensure(ctx, repo, remote, "main"); err != nil {
+		t.Fatal(err)
+	}
+
+	if now := strings.TrimSpace(git(t, remote, "rev-parse", "refs/heads/main")); now != seeded {
+		t.Fatalf("main moved from %s to %s", seeded, now)
+	}
+	if got := remoteRef(t, layout.Store(repo), "main"); got != seeded {
+		t.Fatalf("the second store has main at %q, want %s", got, seeded)
+	}
+}
