@@ -670,6 +670,7 @@ export function pickOverCarried(
   current: readonly RepositoryScope[],
   next: RepositoryScope[],
 ): RepositoryScope[] {
-  if (next.length <= current.length) return next;
-  return next.filter((scope) => !current.some((carried) => carried.id === scope.id));
+  // Read by id, not by length: past the cap a pick also drops the oldest row.
+  const added = next.filter((scope) => !current.some((carried) => carried.id === scope.id));
+  return added.length > 0 ? added : next;
 }

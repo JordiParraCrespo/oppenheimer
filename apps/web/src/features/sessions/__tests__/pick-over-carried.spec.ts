@@ -15,6 +15,12 @@ describe('pickOverCarried', () => {
     expect(pickOverCarried([carried], [carried, picked])).toEqual([picked]);
   });
 
+  it('replaces a full carried selection, whose oldest row the cap already dropped', () => {
+    const full = [1, 2, 3, 4, 5].map((n) => ({ id: `i:${n}`, branch: 'main' }));
+    const capped = [...full.slice(1), { id: 'i:9', branch: 'main' }];
+    expect(pickOverCarried(full, capped)).toEqual([{ id: 'i:9', branch: 'main' }]);
+  });
+
   it('lets a carried repository be unticked', () => {
     expect(pickOverCarried([carried], [])).toEqual([]);
   });
