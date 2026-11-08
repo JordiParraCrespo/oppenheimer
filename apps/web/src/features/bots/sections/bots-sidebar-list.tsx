@@ -68,7 +68,7 @@ export function BotsSidebarList() {
           onChange={setQuery}
           label={t('bots.sidebar.search')}
           clearLabel={t('bots.sidebar.clearSearch')}
-          className="mr-0 mb-0 flex-1"
+          className="mr-0 mb-0 min-w-0 flex-1"
         />
         <BotsFilterMenu bots={bots} hidden={hidden} onShownChange={setShown} onShowAll={showAll} />
       </div>
