@@ -78,12 +78,7 @@ export class LinkTelegramCommandHandler
     const account = found.unwrap();
     // A newer connect, or a disconnect, may have replaced the row meanwhile.
     if (account.id !== accountId || account.status !== 'connecting') return;
-    account.refuseToken(
-      refusal.code === 'TG_001'
-        ? 'Telegram refused that token'
-        : (refusal.detail ?? `the host refused it (${refusal.code})`),
-      statusBefore,
-    );
+    account.refuseToken(refusal, statusBefore);
     await this.accounts.save(account);
   }
 

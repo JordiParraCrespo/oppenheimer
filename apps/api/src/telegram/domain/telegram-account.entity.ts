@@ -112,7 +112,14 @@ export class TelegramAccountEntity extends AggregateRoot<TelegramAccountProps> {
    * refusal), so a connected account stays connected and says why the new
    * token did not take; anything else needs a new token.
    */
-  refuseToken(reason: string, statusBefore: TelegramAccountStatus): void {
+  refuseToken(
+    refusal: { code: string; detail?: string },
+    statusBefore: TelegramAccountStatus,
+  ): void {
+    const reason =
+      refusal.code === 'TG_001'
+        ? 'Telegram refused that token'
+        : (refusal.detail ?? `the host refused it (${refusal.code})`);
     if (statusBefore === 'connected') {
       this.props.status = 'connected';
       this.props.statusReason =
