@@ -23,7 +23,13 @@ function setup(permission: BotToolContext['permission']) {
     budget: new BotTurnBudget(),
     approvals: { request },
   };
-  const queryBus = { execute: vi.fn().mockResolvedValue({ host: { name: 'build-02' } }) };
+  // Only HOST is the owner's: any other id is not found, as FindHostQuery answers it.
+  const queryBus = {
+    execute: vi.fn(async (query: { hostId?: string }) => {
+      if (query.hostId !== HOST) throw new Error('not found');
+      return { host: { name: 'build-02' } };
+    }),
+  };
   const commandBus = {
     execute: vi.fn().mockResolvedValue({
       kind: 'ran',
@@ -78,5 +84,19 @@ describe('run_command', () => {
       hostId: HOST,
       request: { argv: ['ls'], home: 'bot-1', timeoutSeconds: 60 },
     });
+  });
+
+  // A real model filled host_id with an all-zero UUID; the card it raised was
+  // approved only to fail on "Host not found". No card for a host that is not
+  // the owner's: the model is told, and can correct it in the same turn.
+  it('raises no card for a host that is not the owner’s, and says how to pick one', async () => {
+    const { call, request, commandBus } = setup('auto');
+    const result = await call({
+      argv: ['python3', '--version'],
+      host_id: '00000000-0000-0000-0000-000000000000',
+    });
+    expect(request).not.toHaveBeenCalled();
+    expect(commandBus.execute).not.toHaveBeenCalled();
+    expect(JSON.stringify(result)).toContain('is not one of the person');
   });
 });

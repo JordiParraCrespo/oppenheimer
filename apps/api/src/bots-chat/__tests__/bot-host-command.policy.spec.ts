@@ -45,6 +45,9 @@ describe('describeHostCommand', () => {
     expect(text).toContain('EXEC_001');
     expect(text).toContain('Nothing ran');
     expect(text).toContain('on the host itself');
+    // A real model read EXEC_001 as "not on the list" and sent the person to
+    // the wrong fix; the answer says what the code means.
+    expect(text).toContain('switched off on this host');
   });
 
   it('does not claim a run nobody answered for', () => {

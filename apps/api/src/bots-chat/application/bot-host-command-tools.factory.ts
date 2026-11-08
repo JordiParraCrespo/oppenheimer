@@ -88,7 +88,22 @@ export class BotHostCommandToolsFactory implements BotToolArea {
             `How long it may run before it is stopped; ${HOST_EXEC_DEFAULT_TIMEOUT_SECONDS} when omitted.`,
           ),
       }),
-      normalize: (input, context) => ({ ...input, host_id: hostOf(input, context) }),
+      // The host is checked before any card is raised: a made-up or someone
+      // else's host id is refused in words the model can correct, instead
+      // of a card the owner approves only to learn the host is not theirs.
+      normalize: async (input, context) => {
+        const hostId = hostOf(input, context);
+        const found = await this.queryBus
+          .execute(new FindHostQuery({ scope: context.owner, hostId }))
+          .then(() => true)
+          .catch(() => false);
+        if (!found) {
+          throw new BotToolRefusal(
+            `${hostId} is not one of the person's hosts. Leave host_id out to use your home host, or take a host id from list_hosts or the turn context; never make one up.`,
+          );
+        }
+        return { ...input, host_id: hostId };
+      },
       subject: async (input, context) => {
         const hostId = hostOf(input, context);
         const program = input.argv[0] ?? '';
