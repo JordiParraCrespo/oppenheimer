@@ -5,6 +5,7 @@ import {
   type CreateEntityProps,
 } from '@oppenheimer/backend-ddd';
 import { TELEGRAM_LABEL_MAX, type TelegramAccountStatus } from '@oppenheimer/shared';
+import { type TelegramTokenRefusal, telegramTokenRefusal } from './telegram-token.policy';
 
 export interface TelegramAccountProps {
   organizationId: string;
@@ -106,28 +107,11 @@ export class TelegramAccountEntity extends AggregateRoot<TelegramAccountProps> {
     this.setUpdatedAt(new Date());
   }
 
-  /**
-   * The host would not take a new token. A bot the host was already polling
-   * keeps running on its old one (the host drops nothing it holds on a
-   * refusal), so a connected account stays connected and says why the new
-   * token did not take; anything else needs a new token.
-   */
-  refuseToken(
-    refusal: { code: string; detail?: string },
-    statusBefore: TelegramAccountStatus,
-  ): void {
-    const reason =
-      refusal.code === 'TG_001'
-        ? 'Telegram refused that token'
-        : (refusal.detail ?? `the host refused it (${refusal.code})`);
-    if (statusBefore === 'connected') {
-      this.props.status = 'connected';
-      this.props.statusReason =
-        `The new token was not taken (${reason}); the bot keeps its old one`.slice(0, 200);
-    } else {
-      this.props.status = 'revoked';
-      this.props.statusReason = reason.slice(0, 200);
-    }
+  /** The host would not take a new token: how the account stands is `telegramTokenRefusal`'s. */
+  refuseToken(refusal: TelegramTokenRefusal, statusBefore: TelegramAccountStatus): void {
+    const outcome = telegramTokenRefusal(refusal, statusBefore);
+    this.props.status = outcome.status;
+    this.props.statusReason = outcome.statusReason;
     this.setUpdatedAt(new Date());
   }
 

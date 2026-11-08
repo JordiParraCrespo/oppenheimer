@@ -247,7 +247,7 @@ func (s *Service) Send(ctx context.Context, chatID, text, replyToID string) (str
 		case errors.As(err, &retry):
 			s.pacer.PauseUntil(s.now().Add(retry.After))
 		case errors.Is(err, domain.ErrUnauthorized):
-			s.revoked()
+			s.on(domain.TokenRefused)
 		}
 		return "", time.Time{}, domain.ErrSendRefused.WithDetail("%s", domain.Fit(err.Error(), 300))
 	}
@@ -320,10 +320,14 @@ func (s *Service) startPoll(fresh bool) {
 	done := make(chan struct{})
 	s.mu.Lock()
 	s.stopPoll, s.polling = cancel, done
+	p := &poller{
+		api: s.api, store: s.store, logger: s.logger, now: s.now, sleep: s.sleep,
+		wait: s.pollWait, token: s.token, report: s.on, kept: s.Flush,
+	}
 	s.mu.Unlock()
 	go func() {
 		defer close(done)
-		s.poll(ctx, fresh)
+		p.run(ctx, fresh)
 	}()
 }
 
@@ -339,100 +343,16 @@ func (s *Service) stopPolling() {
 	}
 }
 
-func (s *Service) poll(ctx context.Context, fresh bool) {
-	backoff := BackoffMin
-	for ctx.Err() == nil {
-		s.mu.Lock()
-		token := s.token
-		s.mu.Unlock()
-		held, err := s.store.Load(ctx)
-		if err != nil {
-			s.logger.Warn("telegram: the offset could not be read", slog.Any("error", err))
-			s.sleep(ctx, backoff)
-			backoff = min(backoff*2, BackoffMax)
-			continue
-		}
-		updates, err := s.api.GetUpdates(ctx, token, held.Offset, s.pollWait)
-		if ctx.Err() != nil {
-			return
-		}
-		if err != nil {
-			if errors.Is(err, domain.ErrUnauthorized) {
-				s.revoked()
-				return
-			}
-			var retry *domain.RetryAfter
-			wait := backoff
-			if errors.As(err, &retry) && retry.After > wait {
-				wait = retry.After
-			}
-			s.logger.Warn("telegram: polling failed; trying again", slog.Any("error", err), slog.Duration("in", wait))
-			s.disconnected()
-			s.sleep(ctx, wait)
-			backoff = min(backoff*2, BackoffMax)
-			continue
-		}
-		backoff = BackoffMin
-		s.connected()
-		if len(updates) == 0 {
-			fresh = false
-			continue
-		}
-		now := s.now()
-		offset := held.Offset
-		var kept []domain.Inbound
-		for _, u := range updates {
-			if u.UpdateID+1 > offset {
-				offset = u.UpdateID + 1
-			}
-			if m, ok := domain.Admit(u, now, fresh); ok {
-				kept = append(kept, m)
-			}
-		}
-		fresh = false
-		if err := s.store.Advance(ctx, offset, kept); err != nil {
-			// The offset did not move: the same updates come again.
-			s.logger.Error("telegram: messages could not be kept; asking again", slog.Any("error", err))
-			s.sleep(ctx, backoff)
-			continue
-		}
-		if len(kept) > 0 {
-			s.Flush(ctx)
-		}
-	}
-}
-
-func (s *Service) connected() {
+// on folds what the poller learned into the bot's status, and reports it
+// when it changed (domain.Status.On).
+func (s *Service) on(e domain.Event) {
 	s.mu.Lock()
-	current := s.status
+	next, changed := s.status.On(e)
+	s.status = next
 	s.mu.Unlock()
-	if current.State == domain.StateConnected || current.State == domain.StateUnlinked {
-		return
+	if changed {
+		s.publish()
 	}
-	current.State, current.Reason = domain.StateConnected, ""
-	s.set(current)
-}
-
-func (s *Service) disconnected() {
-	s.mu.Lock()
-	current := s.status
-	s.mu.Unlock()
-	if current.State != domain.StateConnected {
-		return
-	}
-	current.State = domain.StateConnecting
-	s.set(current)
-}
-
-// revoked is Telegram refusing the token: polling stops until a new one.
-func (s *Service) revoked() {
-	s.mu.Lock()
-	current := s.status
-	s.mu.Unlock()
-	if current.State == domain.StateUnlinked {
-		return
-	}
-	s.set(domain.Status{State: domain.StateRevoked, Bot: current.Bot, Reason: "Telegram refused the token: it was revoked in @BotFather"})
 }
 
 func (s *Service) set(status domain.Status) {

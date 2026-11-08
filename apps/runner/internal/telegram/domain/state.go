@@ -27,3 +27,43 @@ type Status struct {
 	Bot    Bot
 	Reason string
 }
+
+// Event is what the poller learns about the bot while it holds a token.
+type Event int
+
+const (
+	// Polled is a poll Telegram answered.
+	Polled Event = iota
+	// PollFailed is a poll that did not get through (network, a 5xx, a 429).
+	PollFailed
+	// TokenRefused is Telegram answering 401: the token was revoked.
+	TokenRefused
+)
+
+// RevokedReason is what a revoked bot says.
+const RevokedReason = "Telegram refused the token: it was revoked in @BotFather"
+
+// On is how the bot stands after e, and whether that changed anything worth
+// reporting. A bot disconnected from Oppenheimer stays unlinked whatever a
+// poller still running says; a failed poll only matters to a connected bot.
+func (s Status) On(e Event) (Status, bool) {
+	if s.State == StateUnlinked {
+		return s, false
+	}
+	switch e {
+	case Polled:
+		if s.State == StateConnected {
+			return s, false
+		}
+		return Status{State: StateConnected, Bot: s.Bot}, true
+	case PollFailed:
+		if s.State != StateConnected {
+			return s, false
+		}
+		return Status{State: StateConnecting, Bot: s.Bot}, true
+	case TokenRefused:
+		next := Status{State: StateRevoked, Bot: s.Bot, Reason: RevokedReason}
+		return next, next != s
+	}
+	return s, false
+}
