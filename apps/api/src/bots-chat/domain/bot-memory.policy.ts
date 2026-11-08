@@ -121,6 +121,11 @@ export const REMEMBER_MEMORY = ['yours', 'general'] as const;
 export const REMEMBER_MEMORY_HINT =
   '"yours" (default): your own memory, read by you alone; anything about your job and the work you do. "general": about the person, read by every bot of theirs; only facts a bot with a different job would also need.';
 
+/** The memory a fact is in, by the name `remember` and the dream use for it. */
+export function memoryNameOf(scope: BotMemoryScope): (typeof REMEMBER_MEMORY)[number] {
+  return scope === 'person' ? 'general' : 'yours';
+}
+
 /** The scope a fact is kept in, from the memory `remember` was told to write to. */
 export function memoryScopeOf(
   memory: (typeof REMEMBER_MEMORY)[number] | undefined,

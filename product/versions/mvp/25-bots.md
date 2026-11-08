@@ -581,8 +581,10 @@ of `bot_memory_fact`, with two columns more:
   it alone. A `person` fact is in the general memory, about its owner ("call
   me Jordi", "write to me in Spanish"), and every bot that person made in
   the workspace reads it, in a section of the prompt of its own. The prompt
-  names them *Your memory* and *General memory*, and one rule, the same in
-  `remember`, the prompt and the dream, picks between them: general only
+  names them *Your memory* and *General memory*, and one rule picks
+  between them, written once (`MEMORY_CHOICE_RULE`): `remember` carries it,
+  the prompt points to it, and the dream reads the same text and the same
+  `memory: yours | general` names: general only
   when a bot with a completely different job would need the fact; a fact
   that names a project, repository, folder, host, account or tool stays
   the bot's, even a preference (2026-11-08: was "about the person (their

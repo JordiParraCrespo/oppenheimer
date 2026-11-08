@@ -52,7 +52,9 @@ the tool served the way the Claude bot engine serves it
 (`packages/backend/agents/src/claude/claude-tool-server.ts`).
 
 It prints a line per case (`G` general, `Y` yours, `?` a value the tool
-refuses, `-` saved nothing, one mark per run), then how many runs leaked a job fact into the general memory,
+refuses, `-` saved nothing, one mark per run), then how many runs leaked a job fact into the general memory and how many
+kept a general fact in both memories (right, but worth watching if it
+grows),
 and writes every save to `reports/` (ignored by git).
 
 ## Results

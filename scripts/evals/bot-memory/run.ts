@@ -304,9 +304,19 @@ async function main(): Promise<void> {
       0,
     );
   const unsaved = results.reduce((sum, r) => sum + r.saves.filter((s) => s.length === 0).length, 0);
+  const doubled = results
+    .filter((r) => r.expect === 'general')
+    .reduce(
+      (sum, r) =>
+        sum +
+        r.saves.filter(
+          (s) => s.some((x) => x.memory === 'general') && s.some((x) => x.memory === 'yours'),
+        ).length,
+      0,
+    );
   const failed = results.filter((r) => !r.passed).length;
   console.log(
-    `\n${model} (${engine}): ${right}/${total} runs right, ${leaked} leaked a job fact to the general memory, ${unsaved} saved nothing; ${failed} of ${results.length} cases failed.`,
+    `\n${model} (${engine}): ${right}/${total} runs right, ${leaked} leaked a job fact to the general memory, ${unsaved} saved nothing, ${doubled} kept a general fact in both memories; ${failed} of ${results.length} cases failed.`,
   );
 
   mkdirSync(join(HERE, 'reports'), { recursive: true });

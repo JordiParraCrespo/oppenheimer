@@ -142,7 +142,7 @@ function howATurnGoes(remembers: boolean): string {
 }
 
 const SAVE_AS_YOU_GO =
-  '- Before you reply, ask what you learned that will matter in a later conversation: a preference, a correction, a decision, a name, a fact about their work. Save each with `remember` in this turn, without asking. A correction from the person is the one to save above all. It goes to your own memory unless a bot with a completely different job would need it too.';
+  '- Before you reply, ask what you learned that will matter in a later conversation: a preference, a correction, a decision, a name, a fact about their work. Save each with `remember` in this turn, without asking. A correction from the person is the one to save above all. Choose its memory by the rule in `remember`.';
 
 const HOW_A_TURN_GOES = `# How a turn goes
 
