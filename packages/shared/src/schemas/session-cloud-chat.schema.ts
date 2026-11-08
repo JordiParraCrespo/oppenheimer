@@ -64,9 +64,9 @@ export const sendCloudReplySchema = z.object({
 
 export type SendCloudReplyDto = z.infer<typeof sendCloudReplySchema>;
 
-/** `GET /sessions/{id}/cloud-chat`: the lines after `after`, at most `limit`. */
+/** `GET /sessions/{id}/cloud-chat`: the lines numbered `from` on, at most `limit`. */
 export const findCloudChatSchema = z.object({
-  after: z.coerce.number().int().min(0).default(0),
+  from: z.coerce.number().int().min(0).default(0),
   limit: z.coerce.number().int().min(1).max(1000).default(500),
 });
 

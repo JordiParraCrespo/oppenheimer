@@ -111,6 +111,7 @@ function toBot(dto: BotResponseDto): BotEntity {
     dto.lastMessagePreview,
     dto.sections,
     dto.routineSpendGuard,
+    dto.avatarFace,
   );
 }
 

@@ -45,6 +45,7 @@ export class UpdateBotCommandHandler implements ICommandHandler<UpdateBotCommand
         name: input.name,
         description: input.description,
         avatarColor: input.avatarColor,
+        avatarFace: input.avatarFace,
         homeHostId: input.homeHostId,
         provider: input.provider,
         model: input.model,

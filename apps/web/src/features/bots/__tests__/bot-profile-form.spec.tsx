@@ -5,7 +5,7 @@ import { type BotProfileControl, BotProfileForm } from '../forms/bot-profile-for
 
 /**
  * The Profile card as one draft: the save row appears only once something
- * changed, the colour and the group included (they used to save on the
+ * changed, the colour, the face and the group included (they used to save on the
  * click, the only fields of the bot's settings that did), a blank name is
  * refused on the field rather than sent, what is sent is trimmed the way the
  * API's schema would trim it, and only what changed is sent, so an untouched
@@ -33,16 +33,40 @@ function CoralButton({ control }: { control: BotProfileControl }) {
   );
 }
 
+/** Stands in for the face row: binds the field the way `BotAvatarFace` does. */
+function TophatButton({ control }: { control: BotProfileControl }) {
+  const { field } = useController({ control, name: 'avatarFace' });
+  return (
+    <button
+      type="button"
+      onClick={() => field.onChange({ hat: 'tophat', eyes: 'dots', mouth: 'smile' })}
+    >
+      Top hat
+    </button>
+  );
+}
+
 function renderForm(onSubmit = vi.fn(), saved = false) {
   render(
     <BotProfileForm
-      values={{ name: 'New Bot', description: '', avatarColor: 'mint', groupId: null }}
+      values={{
+        name: 'New Bot',
+        description: '',
+        avatarColor: 'mint',
+        avatarFace: null,
+        groupId: null,
+      }}
       pending={false}
       saved={saved}
       onSubmit={onSubmit}
       onDiscard={vi.fn()}
     >
-      {(control) => <CoralButton control={control} />}
+      {(control) => (
+        <>
+          <CoralButton control={control} />
+          <TophatButton control={control} />
+        </>
+      )}
     </BotProfileForm>,
   );
   return onSubmit;
@@ -94,6 +118,19 @@ describe('BotProfileForm', () => {
     expect(onSubmit).not.toHaveBeenCalled();
     fireEvent.click(save() as HTMLElement);
     await waitFor(() => expect(onSubmit).toHaveBeenCalledWith({ avatarColor: 'coral' }));
+  });
+
+  it('keeps a face pick as a draft until Save, then sends it alone', async () => {
+    const onSubmit = renderForm();
+    fireEvent.click(screen.getByRole('button', { name: 'Top hat' }));
+
+    expect(onSubmit).not.toHaveBeenCalled();
+    fireEvent.click(save() as HTMLElement);
+    await waitFor(() =>
+      expect(onSubmit).toHaveBeenCalledWith({
+        avatarFace: { hat: 'tophat', eyes: 'dots', mouth: 'smile' },
+      }),
+    );
   });
 
   it('puts the colour back on Discard', () => {

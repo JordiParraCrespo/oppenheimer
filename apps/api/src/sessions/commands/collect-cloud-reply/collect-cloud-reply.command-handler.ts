@@ -43,9 +43,11 @@ export class CollectCloudReplyCommandHandler
     }
     const until = Date.now() + command.waitSeconds * 1000;
     for (;;) {
-      const reply = await this.chat.collectReply(session.id, new Date());
-      if (reply || Date.now() + POLL_MS > until) return reply;
-      await new Promise((resolve) => setTimeout(resolve, POLL_MS));
+      const reply = await this.chat.collectReply(session.id);
+      const left = until - Date.now();
+      if (reply || left <= 0) return reply;
+      // The last look falls on the deadline, so a hook asking N seconds waits N.
+      await new Promise((resolve) => setTimeout(resolve, Math.min(POLL_MS, left)));
     }
   }
 }

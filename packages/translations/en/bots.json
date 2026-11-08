@@ -394,6 +394,32 @@
         "coral": "Coral",
         "moss": "Moss"
       },
+      "face": "Face",
+      "faceHat": "Hat",
+      "faceEyes": "Eyes",
+      "faceMouth": "Mouth",
+      "faceReset": "Use its own face",
+      "faces": {
+        "hat": {
+          "fedora": "Fedora",
+          "porkpie": "Porkpie",
+          "bowler": "Bowler",
+          "tophat": "Top hat",
+          "cap": "Cap",
+          "beanie": "Beanie"
+        },
+        "eyes": {
+          "dots": "Dots",
+          "happy": "Happy",
+          "wink": "Wink",
+          "big": "Wide"
+        },
+        "mouth": {
+          "smile": "Smile",
+          "grin": "Grin",
+          "o": "Surprised"
+        }
+      },
       "group": "Sidebar group",
       "groupHint": "Where it appears in the Employees sidebar",
       "newGroup": "New group in the sidebar",
@@ -599,6 +625,31 @@
       "loadFailed": "Could not load the bot’s permissions.",
       "saveFailed": "Could not change the permission.",
       "tools": "Tools",
+      "search": "Search tools",
+      "noMatch": "No tools match.",
+      "filters": {
+        "decision": "Decision",
+        "group": "Group",
+        "allGroups": "All groups",
+        "clear": "Clear"
+      },
+      "views": {
+        "all": "All",
+        "allow": "Allow",
+        "ask": "Ask",
+        "off": "Off",
+        "changed": "Set by you"
+      },
+      "summary": {
+        "tools_one": "{{count}} tool",
+        "tools_other": "{{count}} tools",
+        "ask_one": "{{count}} ask",
+        "ask_other": "{{count}} ask",
+        "off_one": "{{count}} off",
+        "off_other": "{{count}} off",
+        "changed_one": "{{count}} set by you",
+        "changed_other": "{{count}} set by you"
+      },
       "preset": {
         "auto": "Tools you leave on their default follow Approve for me: anything that reaches outside Oppenheimer asks first.",
         "full": "Tools you leave on their default follow Full access: they run without asking."

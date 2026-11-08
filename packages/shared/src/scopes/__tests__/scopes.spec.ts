@@ -82,22 +82,33 @@ describe('the control plane’s scopes', () => {
   });
 
   it.each([
-    ['hosts', 'Host'],
-    ['projects', 'Project'],
-    ['sessions', 'Session'],
-    ['repositories', 'Installation'],
+    ['hosts', 'Host', []],
+    ['projects', 'Project', []],
+    // A cloud session's chat is read on the same rule as the session.
+    ['sessions', 'Session', ['cloud-chat:read']],
+    ['repositories', 'Installation', []],
   ] as const)(
     'lets a %s reader grant the read level and never the write level',
-    (resource, subject) => {
+    (resource, subject, alsoRead) => {
       const ability = defineAbilitiesFromPermissions([{ action: 'read', subject }]);
       expect(grantableScopes(ability)).toEqual([
         'profile:read',
         'profile:write',
         `${resource}:read`,
+        ...alsoRead,
         ...INBOX,
       ]);
     },
   );
+
+  it('grants the cloud chat key only what its hooks need, on the rule that edits a session', () => {
+    const ability = defineAbilitiesFromPermissions([{ action: 'update', subject: 'Session' }]);
+    const grantable = grantableScopes(ability);
+    expect(grantable).toContain('cloud-chat:write');
+    // Breaks if the key a cloud environment holds in plain text could be
+    // minted by someone who may not edit sessions.
+    expect(grantableScopes(defineAbilitiesFromPermissions([]))).not.toContain('cloud-chat:write');
+  });
 
   it('opens a terminal with `update Session`, so that rule alone grants sessions:write', () => {
     const ability = defineAbilitiesFromPermissions([{ action: 'update', subject: 'Session' }]);
