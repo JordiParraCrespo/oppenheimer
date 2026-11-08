@@ -106,15 +106,21 @@ worker runs it and streams what happens back to the chat.
   each resets. Each turn keeps what its engine reported
   (`bot_turn."contextTokens"`, `"contextWindow"`, `"planLimits"`) and the
   meter reads the newest. The Claude engine reports the model's window;
-  the OpenAI engine reports none, so an OpenAI, GLM or ChatGPT bot shows
-  its context in tokens alone, never against a guessed window. The plan
+  the OpenAI engine reports none, so an OpenAI, ChatGPT or Grok bot shows
+  its context in tokens alone, never against a guessed window (GLM runs on
+  the Claude engine and has its window). The plan
   windows are what the ChatGPT backend answers each call with (the
   `x-codex-primary-*` and `x-codex-secondary-*` headers the Codex CLI
-  reads); a bot on an API key has none to show. There is no Compact: the
-  engines compact on their own. Since 2026-10-29 the model is told too:
-  the turn context says how full the context was when the bot's last turn
-  ended, against its window, and from half full asks for narrow reads; a
-  turn whose engine reported no window is told nothing.
+  reads); a bot on an API key has none to show. There is no Compact button.
+  Inside a turn, Claude Code compacts on its own (left at its default; a
+  20-step turn rarely reaches it); the OpenAI engines do not compact, and a
+  turn is kept small by the 12,000-character cut of each tool answer and the
+  step limit. Between turns the summary folds old messages (above). Since
+  2026-10-29 the model is told too: the turn context says how full the
+  context was when the bot's last turn ended, against its window, and from
+  half full asks for narrow reads. A turn whose engine reported no window
+  is told its tokens, and from 100,000 (half the smallest window a provider
+  here offers) asks for narrow reads too (2026-11-08; it was told nothing).
 - **The Claude engine runs without a shell.** The Claude Agent SDK is
   Claude Code as a library; its shell and file tools would run commands
   the model chose on the control plane. They are off. What it keeps from
@@ -1560,3 +1566,8 @@ The decisions it produced:
   turn's message instead (`claudeMessage`), so the system prompt is the
   same bytes from turn to turn on every engine, as §2 says. The prompt
   says the turn context comes after the transcript when there is one.
+- 2026-11-08: **a bot with no known window is told when its context
+  fills.** The OpenAI engines report no window, so their bots were never
+  told; they now get their token count and, from 100,000 tokens, the ask for
+  narrow reads. The note no longer says every engine compacts on its own:
+  only Claude Code does.

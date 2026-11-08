@@ -114,7 +114,8 @@ export function withTurnContext(context: string, prompt: string): string {
  * same window, and older messages fold into the summary only between turns.
  */
 function describeRoom(context: TurnContextInput['lastContext']): string | null {
-  if (!context?.window) return null;
+  if (!context) return null;
+  if (!context.window) return describeTokens(context.tokens);
   const used = Math.min(100, Math.round((context.tokens / context.window) * 100));
   const said = `Your context was ${used}% full at the end of your last turn (${context.tokens.toLocaleString('en-GB')} of ${context.window.toLocaleString('en-GB')} tokens).`;
   if (used < BOT_CONTEXT_TIGHT_PERCENT) return said;
@@ -123,6 +124,21 @@ function describeRoom(context: TurnContextInput['lastContext']): string | null {
 
 /** From this share of the window on, the turn context asks for narrow reads. */
 export const BOT_CONTEXT_TIGHT_PERCENT = 50;
+
+/**
+ * Where the engine reports no window (the OpenAI engines: the Responses API
+ * names none), the tokens alone, and narrow reads from this many on: half
+ * the smallest window a bot's provider offers (Claude's 200,000), so a bot
+ * whose window is unknown is never told later than one whose window is
+ * known (2026-11-08; before, such a bot was never told).
+ */
+export const BOT_CONTEXT_TIGHT_TOKENS = 100_000;
+
+function describeTokens(tokens: number): string {
+  const said = `Your context held ${tokens.toLocaleString('en-GB')} tokens at the end of your last turn.`;
+  if (tokens < BOT_CONTEXT_TIGHT_TOKENS) return said;
+  return `${said} Keep reads narrow this turn: a filter or a smaller limit rather than everything.`;
+}
 
 function describeHost(host: BotPromptHost): string {
   const sessions =
