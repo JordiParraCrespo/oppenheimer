@@ -1490,7 +1490,16 @@
       "moveNone": "Aún no hay otro grupo",
       "moveFailed": "No se ha podido mover el bot.",
       "delete": "Eliminar bot",
-      "loadFailed": "No se han podido cargar tus bots."
+      "loadFailed": "No se han podido cargar tus bots.",
+      "hide": "Ocultar de la barra lateral",
+      "filters": "Filtrar bots",
+      "shown": "Mostrar bots",
+      "shownAll": "Todos",
+      "shownSome": "{{shown}} de {{total}}",
+      "showAll": "Mostrar todos los bots",
+      "allHidden_one": "Su bot está oculto. Muéstralo desde el menú de filtros.",
+      "allHidden_other": "Sus {{count}} bots están ocultos. Muéstralos desde el menú de filtros.",
+      "allHidden_many": "Sus {{count}} de bots están ocultos. Muéstralos desde el menú de filtros."
     },
     "landing": {
       "titleEmpty": "Crea tu primer bot.",
