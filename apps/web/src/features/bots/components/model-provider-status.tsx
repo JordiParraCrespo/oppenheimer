@@ -1,4 +1,4 @@
-import { CheckIcon } from 'lucide-react';
+import { Check } from '@oppenheimer/design-system-web/icons';
 import { useTranslation } from 'react-i18next';
 
 /**
@@ -10,7 +10,7 @@ export function ModelProviderStatus({ signIn, hint }: { signIn: boolean; hint: s
   const { t } = useTranslation();
   return (
     <span className="inline-flex items-center gap-1">
-      <CheckIcon className="size-3 text-success" strokeWidth={2.5} aria-hidden />
+      <Check className="size-3 text-success" strokeWidth={2.5} aria-hidden />
       {t(signIn ? 'settings.modelProviders.signedIn' : 'settings.modelProviders.keyEnding', {
         hint,
       })}
