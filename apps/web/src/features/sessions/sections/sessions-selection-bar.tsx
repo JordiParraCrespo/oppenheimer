@@ -2,8 +2,9 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuGroup,
-  DropdownMenuItem,
   DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
   DropdownMenuTrigger,
   IconButton,
   SidebarListHead,
@@ -16,6 +17,7 @@ import { useContext } from 'react';
 import { useTranslation } from 'react-i18next';
 import { SessionPinsContext } from '../hooks/use-session-pins';
 import { useSelectedSessionIds, useSessionSelectionActions } from '../hooks/use-session-selection';
+import { currentProjectOf } from '../lib/session-groups';
 import { settleEach } from '../lib/session-selection';
 
 /**
@@ -25,7 +27,8 @@ import { settleEach } from '../lib/session-selection';
  * search hides stays picked but is neither counted nor acted on: the bar does
  * only what the reader can see it doing.
  *
- * Pin and Move land at once, so the selection clears with them; a move that
+ * Move lists every project; when the picked rows share one, it is ticked and
+ * not choosable, as in a row's own menu. Pin and Move land at once, so the selection clears with them; a move that
  * fails for some rows keeps those picked and says so above the list. Delete
  * asks first, in its dialog, which the sidebar holds.
  */
@@ -48,6 +51,7 @@ export function SessionsSelectionBar({
   const move = useMoveSession();
   const picked = sessions.filter((session) => ids.includes(session.id));
   const allPinned = picked.length > 0 && picked.every((session) => pins.pins.includes(session.id));
+  const current = currentProjectOf(picked);
 
   function togglePins() {
     // A pin goes on top, so the last one pinned leads: pin from the bottom up
@@ -101,11 +105,22 @@ export function SessionsSelectionBar({
         <DropdownMenuContent align="end" className="min-w-47.5">
           <DropdownMenuGroup>
             <DropdownMenuLabel>{t('sessions.sidebar.moveTitle')}</DropdownMenuLabel>
-            {projects.map((project) => (
-              <DropdownMenuItem key={project.id} onClick={() => void moveTo(project)}>
-                {project.isUnassigned ? t('projects.unassigned') : project.name}
-              </DropdownMenuItem>
-            ))}
+            <DropdownMenuRadioGroup value={current}>
+              {projects.map((project) => (
+                <DropdownMenuRadioItem
+                  key={project.id}
+                  value={project.id}
+                  closeOnClick
+                  disabled={project.id === current}
+                  description={
+                    project.id === current ? t('sessions.sidebar.moveCurrent') : undefined
+                  }
+                  onClick={() => void moveTo(project)}
+                >
+                  {project.isUnassigned ? t('projects.unassigned') : project.name}
+                </DropdownMenuRadioItem>
+              ))}
+            </DropdownMenuRadioGroup>
           </DropdownMenuGroup>
         </DropdownMenuContent>
       </DropdownMenu>

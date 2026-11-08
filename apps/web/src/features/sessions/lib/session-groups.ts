@@ -92,15 +92,17 @@ export function emptyListMessage(
 }
 
 /**
- * Where a session may move: every other project. A project is metadata — a
- * session's directory and branch never name it — so there is no rule about
- * which repositories it holds (`product/versions/mvp/10-api-modules-and-data-model.md`).
+ * The project a move would leave the sessions in, or null when they are not
+ * all in one. A move lists every project, this one too: ticked and not
+ * choosable, so the reader sees where the sessions are (a pinned row is drawn
+ * above the projects, not under its own). A project is metadata — a session's
+ * directory and branch never name it — so any other project can take them
+ * (`product/versions/mvp/10-api-modules-and-data-model.md`).
  */
-export function projectsForMove(
-  projects: readonly ProjectEntity[],
-  session: SessionEntity,
-): ProjectEntity[] {
-  return projects.filter((project) => project.id !== session.projectId);
+export function currentProjectOf(sessions: readonly SessionEntity[]): string | null {
+  const first = sessions[0]?.projectId;
+  if (!first) return null;
+  return sessions.every((session) => session.projectId === first) ? first : null;
 }
 
 /** A live search over the row's name: what the sidebar's search box narrows. */

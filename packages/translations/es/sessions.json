@@ -328,6 +328,7 @@
     "renameLabel": "Nombre de la sesión",
     "move": "Mover a un proyecto…",
     "moveTitle": "Mover a un proyecto",
+    "moveCurrent": "Actual",
     "moveNone": "Ningún otro proyecto contiene el repositorio de esta sesión.",
     "delete": "Eliminar",
     "writeFailed": "Ese cambio no se aplicó. Inténtalo de nuevo.",
