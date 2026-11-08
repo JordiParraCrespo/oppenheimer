@@ -3,9 +3,12 @@ import {
   BOT_HISTORY_TOKEN_BUDGET,
   estimateTokens,
   type HistoryMessage,
+  historyEntry,
+  isReadBack,
   SUMMARY_NOTE_PREFIX,
 } from './bot-history.policy';
 import { EARLIER_IMAGES_HEADROOM_TOKENS } from './bot-image.policy';
+import { neutraliseTags } from './bot-tool-text.policy';
 
 /** The longest summary kept (`bot_conversation_summary.content`); a longer one is cut. */
 const BOT_SUMMARY_MAX_CHARS = 12_000;
@@ -83,15 +86,14 @@ export interface SummaryPlan {
  * of it: when the cap is what stops the fold, the rest waits for the next
  * call, even if that splits an answer from its question or an instant. A
  * single message larger than the cap is folded alone, so a fold always moves
- * forward. Activity lines are not history, and are neither counted nor folded.
+ * forward. An activity line counts and folds as the record the history
+ * reads back (`activityText`).
  */
 export function planSummary(uncovered: readonly SummarizableMessage[]): SummaryPlan | null {
-  const history = uncovered.filter(
-    (message) => message.role !== 'activity' && message.content.trim(),
-  );
+  const history = uncovered.filter(isReadBack);
   const open = history.findIndex((message) => !message.turnEnded);
   const messages = open === -1 ? history : history.slice(0, open);
-  const total = messages.reduce((sum, message) => sum + estimateTokens(message.content), 0);
+  const total = messages.reduce((sum, message) => sum + costOf(message), 0);
   const full = uncovered.length >= BOT_SUMMARY_READ_MAX && open === -1;
   if (messages.length === 0 || (total <= BOT_SUMMARY_TRIGGER_TOKENS && !full)) return null;
   let left = total;
@@ -104,19 +106,15 @@ export function planSummary(uncovered: readonly SummarizableMessage[]): SummaryP
     end += 1;
   };
   while (end < messages.length && left > BOT_SUMMARY_KEEP_TOKENS) {
-    const cost = estimateTokens(messages[end].content);
+    const cost = costOf(messages[end]);
     if (!fits(cost)) break;
     take(cost);
   }
   if (end === 0) return null;
-  // The bot's answers to the last folded message go with it, and so does
-  // anything stored at the same instant, within the cap.
-  const instant = messages[end - 1].createdAt.getTime();
-  while (
-    end < messages.length &&
-    (messages[end].role === 'assistant' || messages[end].createdAt.getTime() === instant)
-  ) {
-    const cost = estimateTokens(messages[end].content);
+  // What answered the last folded message goes with it, within the cap.
+  const last = messages[end - 1];
+  while (end < messages.length && staysWithFold(last, messages[end])) {
+    const cost = costOf(messages[end]);
     if (!fits(cost)) break;
     take(cost);
   }
@@ -142,7 +140,13 @@ const SPEAKERS: Partial<Record<BotMessageRole, string>> = {
   user: 'person',
   assistant: 'bot',
   event: 'oppenheimer',
+  activity: 'bot_tool_calls',
 };
+
+/** What a message costs the history it is sent in: what `historyEntry` makes of it. */
+function costOf(message: HistoryMessage): number {
+  return estimateTokens(historyEntry(message).text);
+}
 
 /**
  * The summarizer's system prompt: what to keep, what to drop, and that the
@@ -174,7 +178,7 @@ export function composeSummaryRequest(
   const messages = fold
     .map((message) => {
       const speaker = SPEAKERS[message.role] ?? 'bot';
-      return `<${speaker}>\n${escapeTags(message.content)}\n</${speaker}>`;
+      return `<${speaker}>\n${escapeTags(historyEntry(message).text)}\n</${speaker}>`;
     })
     .join('\n');
   return [
@@ -190,7 +194,31 @@ export function summaryContent(text: string): string {
   return trimmed.length > BOT_SUMMARY_MAX ? `${trimmed.slice(0, BOT_SUMMARY_MAX - 1)}…` : trimmed;
 }
 
-/** A message cannot close the tag it sits in, and so cannot pose as the next one. */
+/**
+ * A message cannot close the tag it sits in, and so cannot pose as the next
+ * one: any closing spelling of the request's tags (any case, any spacing) is
+ * neutralised. A tool call's answer comes from outside (a web page, a mail),
+ * so it is the one most likely to try.
+ */
 function escapeTags(text: string): string {
-  return text.replace(/<\/(summary_so_far|messages|person|bot|oppenheimer)>/g, '&lt;/$1>');
+  return neutraliseTags(text, [
+    'summary_so_far',
+    'messages',
+    ...Object.values(SPEAKERS),
+    'tool_calls',
+  ]);
+}
+
+/**
+ * Whether `next` goes into the fold with `last`, the message the fold would
+ * end on: the turn that answered it (the bot's words and the tool calls
+ * between them), and anything stored at the same instant. A fold never ends
+ * between a question and its answer.
+ */
+function staysWithFold(last: SummarizableMessage, next: SummarizableMessage): boolean {
+  return (
+    next.role === 'assistant' ||
+    next.role === 'activity' ||
+    next.createdAt.getTime() === last.createdAt.getTime()
+  );
 }
