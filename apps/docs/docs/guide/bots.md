@@ -1,6 +1,6 @@
 ---
 title: Bots (Employees)
-description: What a bot is and how to create one, its settings (Profile, Instructions with SOUL.md and INSTRUCTIONS.md, Memory, Skills, Permissions, Routines, Home host), model providers and keys, how a bot does code work through sessions, its tools, slash commands and the built-ins /goal /usage /loop /schedule, approvals, and its limits.
+description: What a bot is and how to create one, its settings (Profile, Instructions with SOUL.md and INSTRUCTIONS.md, Memory, Skills, Permissions, Routines, Home host), model providers and keys, how a bot does code work through sessions, its tools, slash commands, the built-in skills oppenheimer and /recap, the built-ins /goal /usage /loop /schedule, approvals, and its limits.
 sidebar_position: 5
 ---
 
@@ -68,6 +68,8 @@ It can also prompt a session whose agent waits at its prompt, answer an agent's 
 A **skill** is a saved way of doing one task: when it applies, the steps, how to check, what to report. Ask the bot to "save that as a skill", or add one in **Settings → Skills**. Run it by typing `/` and its name in the chat; the bot can also use a skill on its own when a request fits, if you allow that on the skill.
 
 Every bot also has one built-in skill, `oppenheimer`: before it answers a question about Oppenheimer itself, how to set something up in it, or what bots can do, it reads this guide with `read_oppenheimer_docs`, answers from the pages, and says so when the guide does not cover it. You do not run it; ask your question and the bot reads. No skill of yours can take that name.
+
+A second built-in skill, `recap`, catches you up: type `/recap`, or `/recap` and a topic, or just ask "where are we?", and the bot reads your sessions, your pull requests, your plan and this chat, then answers with where things stand, what is waiting on you and the next move. It only reads. A coding agent in a session does the same when you ask it to recall or catch you up.
 
 Built-in commands work for every bot:
 

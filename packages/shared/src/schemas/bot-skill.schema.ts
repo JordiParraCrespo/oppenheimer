@@ -94,10 +94,11 @@ export type BotBuiltInCommand = (typeof BOT_BUILT_IN_COMMANDS)[number];
 /**
  * The skills Oppenheimer gives every bot (the API's `BOT_BUILT_IN_SKILLS`):
  * `oppenheimer` reads Oppenheimer's own guide before the bot answers a
- * question about Oppenheimer. The bot uses one unasked; the person does not
- * run it as a command.
+ * question about Oppenheimer, which the bot uses unasked and the person does
+ * not run; `recap` catches the person up on their sessions, pull requests and
+ * plan, which they run with `/recap` and the bot uses when asked.
  */
-export const BOT_BUILT_IN_SKILL_NAMES = ['oppenheimer'] as const;
+export const BOT_BUILT_IN_SKILL_NAMES = ['oppenheimer', 'recap'] as const;
 export type BotBuiltInSkillName = (typeof BOT_BUILT_IN_SKILL_NAMES)[number];
 
 export const BOT_SKILL_RESERVED_NAMES = [
