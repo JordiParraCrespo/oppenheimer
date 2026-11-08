@@ -4,10 +4,7 @@ import type { AccessScope } from '@oppenheimer/backend-authz';
 import { TELEGRAM_TEXT_MAX_CHARS } from '@oppenheimer/shared/protocol';
 import { z } from 'zod/v4';
 import { SendTelegramMessageCommand } from '../../telegram/commands/send-telegram-message/send-telegram-message.command';
-import type {
-  TelegramChat,
-  TelegramMessage,
-} from '../../telegram/domain/telegram-message.types';
+import type { TelegramChat, TelegramMessage } from '../../telegram/domain/telegram-message.types';
 import {
   FindTelegramAccountsQuery,
   type TelegramAccountView,
