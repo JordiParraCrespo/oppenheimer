@@ -12,6 +12,11 @@ import {
 const BOT_SUMMARY_MAX_CHARS = 12_000;
 /** Room for the line the history puts before the summary (`summaryNote`). */
 const SUMMARY_NOTE_CHARS = 200;
+/**
+ * Room for what the history adds that the fold does not count: a line per
+ * earlier message with images (`withEarlierImages`), each 15 to 50 tokens.
+ */
+const HISTORY_NOTES_TOKENS = 1_000;
 export const BOT_SUMMARY_MAX = BOT_SUMMARY_MAX_CHARS;
 
 /** A stored message the summary may fold: what it says, where it sits, and whether its turn is over. */
@@ -35,7 +40,9 @@ export interface SummarizableMessage extends HistoryMessage {
  * (2026-11-08).
  */
 export const BOT_SUMMARY_TRIGGER_TOKENS =
-  BOT_HISTORY_TOKEN_BUDGET - Math.ceil((BOT_SUMMARY_MAX_CHARS + SUMMARY_NOTE_CHARS) / 4);
+  BOT_HISTORY_TOKEN_BUDGET -
+  Math.ceil((BOT_SUMMARY_MAX_CHARS + SUMMARY_NOTE_CHARS) / 4) -
+  HISTORY_NOTES_TOKENS;
 
 /**
  * A fold stops once this many tokens of messages are left uncovered: enough

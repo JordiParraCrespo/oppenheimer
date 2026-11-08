@@ -206,7 +206,7 @@ worker runs it and streams what happens back to the chat.
   no longer fits (2026-11-03): each turn's request is the last one's with
   the new messages after it, and the provider's prompt cache holds it. When a turn ends and the messages the summary does
   not cover pass the budget less the room the longest summary takes in it
-  (20,950 tokens, so nothing the history drops is missing from the summary;
+  (19,950 tokens, with room for the summary and the notes on images, so nothing the history drops is missing from the summary;
   it was one and a half times the budget until 2026-11-08), a job on the
   `bot-summaries` queue folds the oldest of them into the summary until
   9,000 tokens are left (at most 32,000 tokens a call; a longer
@@ -1544,7 +1544,7 @@ The decisions it produced:
   past 36,000 tokens while the history dropped old messages past about
   21,000, so up to 12,000 tokens of conversation were in neither, reachable
   only through `search_chat`. It now folds past the budget less the longest
-  summary (20,950) down to 9,000: a summary call about twice as often, each
+  summary and the notes on images (19,950) down to 9,000: a summary call about twice as often, each
   about half the size.
 - 2026-11-08: **history reads back what the tools did.** A turn's activity
   line (its tool calls) was left out of the history, so a later turn knew a
