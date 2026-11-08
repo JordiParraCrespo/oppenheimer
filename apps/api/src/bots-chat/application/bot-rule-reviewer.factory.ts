@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import type { BotTurnRequest } from '@oppenheimer/backend-agents';
-import { reviewEffort } from '../domain/bot-goal-review.policy';
+import { reviewEffort } from '../domain/bot-review-effort.policy';
 import {
   BOT_RULE_REVIEWER_PROMPT,
   type BotReviewedCall,
@@ -41,8 +41,6 @@ export class BotRuleReviewerFactory {
         const answer = await this.completions.complete(
           {
             ...model,
-            // A verdict needs little reasoning: the lowest effort the model offers,
-            // or none where it offers no levels (null would be its default, not its least).
             effort: reviewEffort(model),
             systemPrompt: BOT_RULE_REVIEWER_PROMPT,
             message: composeRuleReview(call, rules),

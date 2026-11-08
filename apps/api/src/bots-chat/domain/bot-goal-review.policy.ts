@@ -1,4 +1,3 @@
-import { type BotProvider, botEffortLevelFor } from '@oppenheimer/shared';
 import {
   estimateTokens,
   type HistoryEntry,
@@ -158,16 +157,4 @@ function parseObject(text: string): { verdict?: unknown; reason?: unknown } | nu
   } catch {
     return null;
   }
-}
-
-/**
- * The effort a reviewer call (a goal's verdict, a rule check) runs at: the
- * lowest the model offers, or none when it offers no levels. Passing none
- * to a model that has levels gives its default, which for most is not low.
- */
-export function reviewEffort(target: {
-  provider: BotProvider;
-  model: string | null;
-}): 'low' | null {
-  return botEffortLevelFor(target.provider, target.model, 'low') === 'low' ? 'low' : null;
 }
