@@ -23,7 +23,7 @@ cmd/runner/main.go            signals, flags, subcommand dispatch — no wiring
 internal/
   cli/                        composition root of the host agent's subcommands
   server/                     composition root of `runner serve`
-  host/ pairing/ service/ sessions/ updates/ whatsapp/   the host-agent contexts
+  host/ pairing/ service/ sessions/ telegram/ updates/ whatsapp/   the host-agent contexts
   config/                     the variables this service reads → Config
   scopes/                     this service's scope catalog on auth/scope
   apikeys/                    bounded context: credentials
@@ -46,6 +46,7 @@ and `09-runner-install-and-update.md`. Six of them exist:
 | `service` | the launchd agent and the systemd user unit, rendered and controlled |
 | `updates` | the policy: channel, safe window, staging, health gate, rollback — on `packages/go/selfupdate`, which holds the mechanics |
 | `whatsapp` | the host's one WhatsApp linked device, on whatsmeow (`adapters/whatsmeow`, the only package that may import it or the SQLite driver): pairing by QR, the reconnects, the messages that arrive kept in an on-disk outbox until the control plane acks them, sends inside the host's own budget (`product/next-steps/whatsapp.md`) |
+| `telegram` | the host's one Telegram bot on the Bot API (`adapters/botapi`, four HTTPS calls on `net/http`, no library): its token checked and kept in the state directory, `getUpdates` long-polled with backoff, the messages that arrive kept in an on-disk outbox until the control plane acks them, sends paced to Telegram's own limits (`product/next-steps/telegram.md`) |
 | `sessions` | the lifecycle: the work folder (bare stores, session folders and their markers, 24 §2), worktree or folder sessions, the tmux session and its windows, the screen classifier, adoption after a restart, close |
 
 `sessions/adapters/manifest` is the one adapter whose behaviour is **data**:
