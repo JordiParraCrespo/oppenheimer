@@ -61,6 +61,7 @@ import {
   throttlingConfig,
   voiceConfig,
 } from './config';
+import { resolveLogFile } from './config/app.config';
 import { bootDataSourceFactory } from './config/boot-migrations';
 import { type DatabaseConfig, poolOptions } from './config/database.config';
 import { DEFAULT_JOB_OPTIONS } from './config/queue-options.config';
@@ -242,8 +243,10 @@ import { WorkspaceEventsModule } from './workspace-events/workspace-events.modul
       auth,
       disableGlobalAuthGuard: true,
       bodyParser: { rawBody: true },
+      // Its lines go to LOG_FILE too, so sign-ins reach Loki with the rest.
       middleware: createAuthRouteLoggingMiddleware({
         pretty: process.env.NODE_ENV !== 'production',
+        file: resolveLogFile(process.env.LOG_FILE),
       }),
     }),
     OutboxModule,
