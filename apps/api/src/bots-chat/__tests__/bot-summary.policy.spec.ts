@@ -1,3 +1,4 @@
+import { botHistory } from '../domain/bot-history.policy';
 import {
   BOT_SUMMARIZER_PROMPT,
   BOT_SUMMARY_FOLD_MAX_TOKENS,
@@ -51,14 +52,27 @@ describe('planSummary', () => {
     ).toBeNull();
   });
 
-  it('past the trigger, folds the oldest until about half the budget is left', () => {
+  it('past the trigger, folds the oldest until the keep is left', () => {
     const messages = Array.from({ length: 40 }, () => message(1_000));
     const plan = planSummary(messages);
     expect(plan).not.toBeNull();
-    expect(plan?.fold).toEqual(messages.slice(0, 28));
-    expect(plan?.through).toBe(messages[27]);
-    expect(plan?.rest).toEqual(messages.slice(28));
+    expect(plan?.fold).toEqual(messages.slice(0, 31));
+    expect(plan?.through).toBe(messages[30]);
+    expect(plan?.rest).toEqual(messages.slice(31));
     expect(tokensOf(plan?.rest ?? [])).toBeLessThanOrEqual(BOT_SUMMARY_KEEP_TOKENS);
+  });
+
+  // What breaks this: the history dropping old messages before the summary
+  // took them in; a trigger at 1.5 times the budget left up to 12,000
+  // tokens of conversation in neither.
+  it('folds before the history has to drop anything, even beside the longest summary', () => {
+    const below = Array.from({ length: Math.floor(BOT_SUMMARY_TRIGGER_TOKENS / 1_000) }, () =>
+      message(1_000),
+    );
+    expect(planSummary(below)).toBeNull();
+    const sent = botHistory(below, 's'.repeat(BOT_SUMMARY_MAX));
+    expect(sent).toHaveLength(below.length + 1);
+    expect(planSummary([...below, message(1_000)])).not.toBeNull();
   });
 
   it('neither counts nor folds activity lines', () => {
@@ -85,20 +99,20 @@ describe('planSummary', () => {
 
   it('never puts the cutoff between two messages stored at the same instant', () => {
     const messages = Array.from({ length: 40 }, () => message(1_000));
-    const twin = { ...messages[28], id: 'twin', createdAt: messages[27].createdAt };
-    messages[28] = twin;
+    const twin = { ...messages[31], id: 'twin', createdAt: messages[30].createdAt };
+    messages[31] = twin;
     const plan = planSummary(messages);
     expect(plan?.through).toBe(twin);
-    expect(plan?.rest[0]).toBe(messages[29]);
+    expect(plan?.rest[0]).toBe(messages[32]);
   });
 
   it('folds the bot’s answer with the message it answers', () => {
     const messages = Array.from({ length: 40 }, () => message(1_000));
-    // The fold would end on [27]; the bot answered it.
-    messages[28] = { ...messages[28], role: 'assistant' };
+    // The fold would end on [30]; the bot answered it.
+    messages[31] = { ...messages[31], role: 'assistant' };
     const plan = planSummary(messages);
-    expect(plan?.through).toBe(messages[28]);
-    expect(plan?.rest[0]).toBe(messages[29]);
+    expect(plan?.through).toBe(messages[31]);
+    expect(plan?.rest[0]).toBe(messages[32]);
   });
 
   it('lets the cap split a question from its answer, leaving the answer for the next call', () => {
@@ -130,8 +144,8 @@ describe('planSummary', () => {
     const queued = message(1_000, { turnEnded: false });
     const later = message(1_000, { role: 'assistant' });
     const plan = planSummary([...messages, queued, later]);
-    expect(plan?.fold).toEqual(messages.slice(0, 26));
-    expect(plan?.rest).toEqual(messages.slice(26));
+    expect(plan?.fold).toEqual(messages.slice(0, 29));
+    expect(plan?.rest).toEqual(messages.slice(29));
     const giant = message(BOT_SUMMARY_TRIGGER_TOKENS + 1);
     const alone = planSummary([giant, queued, later]);
     expect(alone?.fold).toEqual([giant]);

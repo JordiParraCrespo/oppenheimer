@@ -5,6 +5,12 @@ import {
   type HistoryMessage,
 } from './bot-history.policy';
 
+/** The longest summary kept (`bot_conversation_summary.content`); a longer one is cut. */
+const BOT_SUMMARY_MAX_CHARS = 12_000;
+/** Room for the line the history puts before the summary (`summaryNote`). */
+const SUMMARY_NOTE_CHARS = 200;
+export const BOT_SUMMARY_MAX = BOT_SUMMARY_MAX_CHARS;
+
 /** A stored message the summary may fold: what it says, where it sits, and whether its turn is over. */
 export interface SummarizableMessage extends HistoryMessage {
   id: string;
@@ -19,13 +25,21 @@ export interface SummarizableMessage extends HistoryMessage {
 
 /**
  * When the messages the summary does not cover pass this many tokens, the
- * oldest of them are folded into it. Headroom over the budget, so a summary
- * is written every so many turns rather than on each one.
+ * oldest of them are folded into it: the history budget less the room the
+ * longest summary takes in it, so what the history drops (`botHistory`) has
+ * already been folded. It was 1.5 times the budget, which left up to 12,000
+ * tokens of conversation in neither the history nor the summary
+ * (2026-11-08).
  */
-export const BOT_SUMMARY_TRIGGER_TOKENS = BOT_HISTORY_TOKEN_BUDGET * 1.5;
+export const BOT_SUMMARY_TRIGGER_TOKENS =
+  BOT_HISTORY_TOKEN_BUDGET - Math.ceil((BOT_SUMMARY_MAX_CHARS + SUMMARY_NOTE_CHARS) / 4);
 
-/** A fold stops once this many tokens of messages are left uncovered. */
-export const BOT_SUMMARY_KEEP_TOKENS = BOT_HISTORY_TOKEN_BUDGET / 2;
+/**
+ * A fold stops once this many tokens of messages are left uncovered: enough
+ * of the newest to read word for word, and a fold of about 12,000 tokens, so
+ * a summary is written every so many turns rather than on each one.
+ */
+export const BOT_SUMMARY_KEEP_TOKENS = (BOT_HISTORY_TOKEN_BUDGET * 3) / 8;
 
 /**
  * The most one summarizing call folds. A conversation far past the trigger
@@ -36,9 +50,6 @@ export const BOT_SUMMARY_FOLD_MAX_TOKENS = 32_000;
 
 /** The most uncovered messages one decision reads; a full read counts as past the trigger. */
 export const BOT_SUMMARY_READ_MAX = 2_000;
-
-/** The longest summary kept (`bot_conversation_summary.content`); a longer one is cut. */
-export const BOT_SUMMARY_MAX = 12_000;
 
 /** What one summarizing call folds, and what stays uncovered after it. */
 export interface SummaryPlan {

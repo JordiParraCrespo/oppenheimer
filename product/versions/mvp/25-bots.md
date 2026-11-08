@@ -205,9 +205,11 @@ worker runs it and streams what happens back to the chat.
   so a turn's history starts where the last one's did until a whole block
   no longer fits (2026-11-03): each turn's request is the last one's with
   the new messages after it, and the provider's prompt cache holds it. When a turn ends and the messages the summary does
-  not cover pass one and a half times that budget, a job on the
+  not cover pass the budget less the room the longest summary takes in it
+  (20,950 tokens, so nothing the history drops is missing from the summary;
+  it was one and a half times the budget until 2026-11-08), a job on the
   `bot-summaries` queue folds the oldest of them into the summary until
-  about half the budget is left (at most 32,000 tokens a call; a longer
+  9,000 tokens are left (at most 32,000 tokens a call; a longer
   backlog takes several), with the bot's own provider, model and key and
   no tools (`BotEngine.complete`). Only messages of turns that have ended
   are folded, up to the first that has not: a queued message is never in
@@ -1538,3 +1540,9 @@ The decisions it produced:
   bot could stop mid-work in silence. It now fails with `step_limit` and
   words to act on, as the time limit does, and a goal reviews it and goes
   on the same way.
+- 2026-11-08: **the summary folds before the history drops.** It folded
+  past 36,000 tokens while the history dropped old messages past about
+  21,000, so up to 12,000 tokens of conversation were in neither, reachable
+  only through `search_chat`. It now folds past the budget less the longest
+  summary (20,950) down to 9,000: a summary call about twice as often, each
+  about half the size.

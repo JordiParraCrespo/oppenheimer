@@ -110,7 +110,7 @@ describe('SummarizeBotConversationCommandHandler', () => {
     const [written] = summaries.save.mock.calls[0];
     expect(written).toMatchObject({
       content: 'The person ships on Fridays.',
-      coversThroughMessageId: uncovered[27].id,
+      coversThroughMessageId: uncovered[31].id,
     });
     expect(summaries.stageSummarize).not.toHaveBeenCalled();
   });
@@ -142,7 +142,7 @@ describe('SummarizeBotConversationCommandHandler', () => {
     expect(summaries.save).toHaveBeenCalledWith(summary);
     expect(summary).toMatchObject({
       versionAtLoad: 4,
-      coversThroughMessageId: uncovered[27].id,
+      coversThroughMessageId: uncovered[31].id,
     });
   });
 
