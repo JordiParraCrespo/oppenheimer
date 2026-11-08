@@ -1689,3 +1689,7 @@ The decisions it produced:
   is now refused only when it is given (a new skill, a rename), so a row
   saved under one before still loads, edits and runs, as this list said on
   2026-11-02.
+- 2026-11-08: **the goal and rule reviewers run at low effort.** They
+  passed no effort, meant as "least effort", which a model with levels
+  reads as its default. They now ask for `low` where the model offers it,
+  and none where it offers no levels (`reviewEffort`).
