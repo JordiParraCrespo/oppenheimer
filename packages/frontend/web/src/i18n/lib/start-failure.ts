@@ -60,31 +60,39 @@ export function failureReason(
  * Everything in a terminal's output that it acts on rather than shows: a CSI
  * sequence (colours, cursor moves; group 1 its parameters and final byte), an
  * OSC (titles, links), a character-set choice (`ESC ( B`), a two-byte escape
- * (`ESC 7`/`ESC 8`) and the control characters but tab, newline and return.
- * The runner's own `clean` (apps/runner/internal/sessions/adapters/cloud) reads
- * the same; this one is for the details a runner sent before it did, which
- * stay in a session's start log.
+ * (`ESC 7`/`ESC 8`) and the control characters but tab and newline. It is the
+ * runner's `terminal` (apps/runner/internal/sessions/adapters/cloud/cloud.go),
+ * and `readableDetail` its `clean` and `lastWords`: they must stay in lockstep,
+ * because this one reads the details a runner sent before it cleaned them
+ * itself, which stay in a session's start log.
  */
 const TERMINAL =
   // biome-ignore lint/suspicious/noControlCharactersInRegex: matching control characters is the point
-  /\x1b\[([0-9;?<>=]*[ -/]*[@-~])|\x1b\][^\x07\x1b]*(?:\x07|\x1b\\)|\x1b[ -/]+[0-~]|\x1b[0-~]|[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]/g;
+  /\x1b\[([0-9;?<>=]*[ -/]*[@-~])|\x1b\][^\x07\x1b]*(?:\x07|\x1b\\)|\x1b[ -/]+[0-~]|\x1b[0-~]|[\x00-\x08\x0b-\x1f\x7f]/g;
 /** A CSI's parameters and final byte when it moves the cursor right: the spaces between words. */
 const CURSOR_FORWARD = /^(\d*)C$/;
+/** What `lastWords` puts between the CLI's last lines. */
+const LINE_JOIN = ' · ';
 
 /**
- * The host's detail as a reader of its terminal would see it: a cursor move
- * right as the spaces it stands for, every other escape gone, and one line per
- * line, the runner's ` · ` between its last lines included. Null when no line
- * has anything left on it.
+ * The host's detail as a reader of its terminal would see it, as the runner's
+ * `clean` reads it: a return as a new line, a cursor move right as the spaces
+ * it stands for, every other escape gone and the echoed end of input (`^D`)
+ * dropped. Then one line per line, `lastWords`' joins split back apart. Null
+ * when no line has anything left on it.
  */
 function readableDetail(detail: string): string | null {
-  const text = detail.replace(TERMINAL, (_sequence, csi: string | undefined) => {
-    const move = csi ? CURSOR_FORWARD.exec(csi) : null;
-    if (!move) return '';
-    return ' '.repeat(Math.min(Math.max(Number(move[1]) || 1, 1), 200));
-  });
+  const text = detail
+    .replace(TERMINAL, (sequence, csi: string | undefined) => {
+      if (sequence === '\r') return '\n';
+      const move = csi ? CURSOR_FORWARD.exec(csi) : null;
+      if (!move) return '';
+      return ' '.repeat(Math.min(Math.max(Number(move[1]) || 1, 1), 200));
+    })
+    .replaceAll('^D', '');
   const lines = text
-    .split(/\r\n|\r|\n| · /)
+    .split('\n')
+    .flatMap((line) => line.split(LINE_JOIN))
     .map((line) => line.trim())
     .filter((line) => line !== '');
   return lines.length > 0 ? lines.join('\n') : null;

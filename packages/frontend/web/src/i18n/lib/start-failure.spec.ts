@@ -70,4 +70,14 @@ describe('failureReason’s detail', () => {
     expect(readableDetail('clone refused')).toBe('clone refused');
     expect(readableDetail('\x1b(B\x1b7\x1b8\r\n')).toBeNull();
   });
+
+  it('reads a raw transcript and the runner’s cleaned lastWords of it alike', () => {
+    // A return, cursor moves, a title and the echoed end of input; the second
+    // string is what cloud.go's lastWords gives for the first. Old runners sent
+    // the raw kind, current ones the cleaned: a drift from clean() breaks this.
+    const raw = '^D\x1b[2Cstarting\rfailed:\x1b[3Cexit 1\r\n\x1b]0;claude\x07done';
+    const cleaned = 'starting · failed:   exit 1 · done';
+    expect(readableDetail(raw)).toBe('starting\nfailed:   exit 1\ndone');
+    expect(readableDetail(cleaned)).toBe(readableDetail(raw));
+  });
 });
