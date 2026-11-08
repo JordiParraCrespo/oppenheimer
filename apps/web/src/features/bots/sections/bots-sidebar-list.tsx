@@ -5,10 +5,12 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { BotDragOverlay } from '@/features/bots/components/bot-drag-overlay';
 import { useBotOrder } from '@/features/bots/hooks/use-bot-order';
+import { BotPinsContext, useBotPins } from '@/features/bots/hooks/use-bot-pins';
 import { sectionKey } from '@/features/bots/lib/bot-groups';
 import { BotGroup } from './bot-group';
 import { BotsEmptyCard } from './bots-empty-card';
 import { NewGroup } from './new-group';
+import { PinnedBots } from './pinned-bots';
 
 /**
  * The Employees sidebar under its brand row (`design/version1/Bots.dc.html`):
@@ -23,6 +25,10 @@ import { NewGroup } from './new-group';
  * The bots drag into another place in their group or into another group
  * (`useBotOrder`), on the sidebar's own `DragProvider`; not while a search
  * narrows the list, since a drop would lose the places of the bots it hides.
+ *
+ * The bots the reader pinned (`useBotPins`), from a row's menu or by
+ * dropping one on Pinned, are drawn above the groups instead of in them,
+ * still narrowed by the search.
  */
 export function BotsSidebarList() {
   const { t } = useTranslation();
@@ -30,11 +36,19 @@ export function BotsSidebarList() {
   const [query, setQuery] = useState('');
   const [closed, setClosed] = useState<string[]>([]);
   const term = query.trim();
-  const { sections, handlers, error: moveError, reset } = useBotOrder(bots, groups, term);
+  const pins = useBotPins();
+  const {
+    pinned,
+    sections,
+    carrying,
+    handlers,
+    error: moveError,
+    reset,
+  } = useBotOrder(bots, groups, term, pins);
   const dragLabels = useDragLabels();
 
   return (
-    <>
+    <BotPinsContext value={pins}>
       <SidebarSearchField
         onChange={setQuery}
         label={t('bots.sidebar.search')}
@@ -49,7 +63,7 @@ export function BotsSidebarList() {
       />
       <div className="no-scrollbar min-h-0 flex-1 overflow-y-auto pb-5">
         {bots.length === 0 ? <BotsEmptyCard /> : null}
-        {term && sections.length === 0 && bots.length > 0 ? (
+        {term && sections.length === 0 && pinned.length === 0 && bots.length > 0 ? (
           <SidebarEmptyRow className="mt-2 ml-3.5">
             {t('bots.sidebar.noMatch', { query: term })}
           </SidebarEmptyRow>
@@ -61,6 +75,9 @@ export function BotsSidebarList() {
             <BotDragOverlay bot={bots.find((candidate) => candidate.id === active.id)} />
           )}
         >
+          {pinned.length > 0 || carrying ? (
+            <PinnedBots bots={pinned} groups={groups} searching={Boolean(term)} />
+          ) : null}
           {sections.map((section) => {
             const key = sectionKey(section);
             return (
@@ -74,6 +91,7 @@ export function BotsSidebarList() {
                     next ? current.filter((id) => id !== key) : [...current, key],
                   )
                 }
+                pinnedHere={pinned.filter((bot) => (bot.groupId ?? null) === section.id).length}
                 searching={Boolean(term)}
               />
             );
@@ -81,6 +99,6 @@ export function BotsSidebarList() {
         </DragProvider>
         <NewGroup />
       </div>
-    </>
+    </BotPinsContext>
   );
 }
