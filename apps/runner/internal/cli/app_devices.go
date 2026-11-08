@@ -17,7 +17,12 @@ import (
 // host offers, or nil when it offers none. RUNNER_DEVICES names them; unset,
 // the host offers whichever are running when a session asks, so a host with
 // Argent installed needs no setup. `off` offers none.
-func hostDevices() (*devapp.Service, error) {
+//
+// Only the daemon looks (discover): it holds the one pool that knows which
+// session has which device. A host-side `runner sessions create` builds its
+// own App, and a pool of its own there would hand out a device the daemon
+// already gave another session.
+func hostDevices(discover bool) (*devapp.Service, error) {
 	spec := strings.TrimSpace(os.Getenv(EnvDevices))
 	if strings.EqualFold(spec, "off") {
 		return nil, nil
@@ -36,7 +41,7 @@ func hostDevices() (*devapp.Service, error) {
 	}
 	return devices.New(devices.Options{
 		Devices:         offered,
-		Discover:        spec == "",
+		Discover:        discover && spec == "",
 		SimulatorServer: simulatorServer,
 		ToolsURL:        os.Getenv(EnvArgentToolsURL),
 		ToolsToken:      os.Getenv(EnvArgentToken),
