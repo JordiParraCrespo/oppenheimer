@@ -6,7 +6,7 @@ import type * as React from 'react';
 
 import { BotFace, type BotFaceParts } from '../internal/bot-face';
 import { cn } from '../lib/utils';
-import { Avatar, AvatarFallback, AvatarImage } from './avatar';
+import { Avatar, AvatarFallback, AvatarImage, type AvatarRadius } from './avatar';
 
 type AvatarOption = {
   id: string;
@@ -45,11 +45,11 @@ type BotFaceSpec = { color: AvatarColor; seed: string; parts?: BotFaceParts | nu
  * rungs: the corner steps up with the size so the 20px sidebar row and the
  * 72px profile preview read as one shape.
  */
-function botAvatarRadius(size: number) {
-  if (size <= 30) return 'var(--radius-xs)';
-  if (size <= 44) return 'var(--radius-sm)';
-  if (size <= 64) return 'var(--radius-md)';
-  return 'var(--radius-lg)';
+function botAvatarRadius(size: number): AvatarRadius {
+  if (size <= 30) return 'xs';
+  if (size <= 44) return 'sm';
+  if (size <= 64) return 'md';
+  return 'lg';
 }
 
 /**
@@ -73,7 +73,7 @@ function BotAvatar({
     <Avatar
       size={size}
       data-color={face?.color}
-      style={{ borderRadius: botAvatarRadius(size) }}
+      radius={botAvatarRadius(size)}
       className={cn(
         'font-semibold tracking-[-0.01em]',
         face
