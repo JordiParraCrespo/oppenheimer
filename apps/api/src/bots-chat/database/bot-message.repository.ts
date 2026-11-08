@@ -222,6 +222,26 @@ export class BotMessageRepository
     return records.reverse().map((record) => this.mapper.toDomain(record));
   }
 
+  async findRecent(
+    organizationId: string,
+    botId: string,
+    limit: number,
+  ): Promise<BotMessageEntity[]> {
+    // IDX_bot_message_bot, scanned backwards.
+    const records = await this.repository
+      .createQueryBuilder('message')
+      .where('message.organizationId = :organizationId AND message.botId = :botId', {
+        organizationId,
+        botId,
+      })
+      .andWhere(`message.role <> 'activity'`)
+      .orderBy('message.createdAt', 'DESC')
+      .addOrderBy('message.position', 'DESC')
+      .take(limit)
+      .getMany();
+    return records.reverse().map((record) => this.mapper.toDomain(record));
+  }
+
   async findUncovered(
     organizationId: string,
     botId: string,

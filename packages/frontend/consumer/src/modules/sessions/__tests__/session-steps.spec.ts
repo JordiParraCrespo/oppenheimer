@@ -175,6 +175,33 @@ describe('deriveSessionStartProgress', () => {
     );
   });
 
+  it('starts the steps over from a retry, forgetting the attempt that failed', () => {
+    // Regression: Try again kept drawing the old failure under the new attempt.
+    const entries = [
+      step('host', 'done', 5),
+      step('agent', 'running'),
+      failedEntry('not signed in'),
+      { seq: ++seq, kind: 'retried' } as SessionStartEntry,
+      step('host', 'running'),
+    ];
+    const progress = deriveSessionStartProgress(entries, { failed: false });
+    expect(progress.failure).toBeNull();
+    expect(progress.settled).toBe(false);
+    expect(states(entries)).toEqual([
+      'host:running',
+      'clone:pending',
+      'worktree:pending',
+      'agent:pending',
+    ]);
+  });
+
+  it('reads a retry off the log the control plane writes', () => {
+    expect(toStartEntry({ seq: 9, kind: 'session.retry_requested', payload: {} })).toEqual({
+      seq: 9,
+      kind: 'retried',
+    });
+  });
+
   it('reads the log in sequence order, not arrival order', () => {
     const running = step('clone', 'running');
     const done = step('clone', 'done', 10);
@@ -225,7 +252,7 @@ describe('toStartEntry', () => {
     expect(toStartEntry({ seq: 2, kind: 'agent.observed', payload: {} })).toBeNull();
   });
 
-  it('knows which entries settle a start: the agent running, or a failure', () => {
+  it('knows which entry settles a start: the agent running, not a failure a retry may follow', () => {
     expect(
       settlesStart({
         seq: 1,
@@ -236,7 +263,7 @@ describe('toStartEntry', () => {
         download: false,
       }),
     ).toBe(true);
-    expect(settlesStart({ seq: 1, kind: 'failed', detail: null, code: null })).toBe(true);
+    expect(settlesStart({ seq: 1, kind: 'failed', detail: null, code: null })).toBe(false);
     expect(settlesStart({ seq: 1, kind: 'started' })).toBe(false);
     expect(
       settlesStart({

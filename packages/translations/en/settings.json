@@ -4,6 +4,7 @@
     "account": "Account",
     "workspace": "Workspace",
     "profile": "Profile",
+    "memory": "Memory",
     "hosts": "Hosts",
     "repositories": "Watched repositories",
     "modelProviders": "Model providers",
@@ -84,6 +85,27 @@
     "delete": "Delete account",
     "deleteHint": "Stops every session and removes your automations and host registrations. This cannot be undone."
   },
+  "memory": {
+    "title": "Memory",
+    "description": "What your bots know about you. Every bot you make reads it, in every chat.",
+    "aboutTitle": "About you",
+    "aboutHint": "In your own words: who you are, how you work, what your bots should always keep in mind. Your bots read it and never change it.",
+    "aboutLabel": "About you",
+    "aboutPlaceholder": "e.g. I’m Jordi, I build Oppenheimer from Barcelona. Answer in short sentences, and ask before you merge.",
+    "unsaved": "Unsaved changes",
+    "saved": "Saved {{date}}",
+    "neverSaved": "Not written yet",
+    "save": "Save",
+    "saving": "Saving…",
+    "discard": "Discard",
+    "saveFailed": "Couldn’t save what you wrote.",
+    "learnedTitle_one": "What your bots learned · {{count}}",
+    "learnedTitle_other": "What your bots learned · {{count}}",
+    "learnedHint": "Facts about you a bot saved in a chat. Each stays with the bot that learned it: change or forget it here, and every bot reads the change.",
+    "learnedEmpty": "Your bots haven’t learned anything about you yet.",
+    "loadFailed": "Couldn’t load what your bots know about you.",
+    "aBot": "a bot"
+  },
   "deleteAccount": {
     "title": "Delete your account?",
     "description": "Every session stops, your hosts are unpaired and your workspace, projects and sign-ins are removed. This cannot be undone.",
@@ -121,6 +143,10 @@
     "makeDefault": "Make default",
     "makeDefaultLabel": "Start new bots on {{provider}}",
     "makeDefaultFailed": "Couldn’t change the default provider.",
+    "groups": {
+      "connected": "Connected",
+      "notConnected": "Not connected"
+    },
     "providers": {
       "anthropic": "Claude models, through Anthropic’s API.",
       "glm": "GLM models, through z.ai.",

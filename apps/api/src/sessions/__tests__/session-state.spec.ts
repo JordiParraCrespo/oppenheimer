@@ -99,6 +99,23 @@ describe('the session fold', () => {
     expect(fold.state).toBe('starting');
   });
 
+  it('starts a failed session again on a retry request, and nothing else', () => {
+    // Regression: Try again under "The session did not start" left the row
+    // failed, so the start pane never showed the new attempt.
+    const retried = foldSessionLog([
+      entry(SESSION_EVENT_KINDS.REQUESTED),
+      entry(SESSION_EVENT_KINDS.FAILED),
+      entry(SESSION_EVENT_KINDS.RETRY_REQUESTED),
+    ]);
+    expect(retried.state).toBe('starting');
+    const open = foldSessionLog([
+      entry(SESSION_EVENT_KINDS.REQUESTED),
+      entry(SESSION_EVENT_KINDS.STARTED),
+      entry(SESSION_EVENT_KINDS.RETRY_REQUESTED),
+    ]);
+    expect(open.state).toBe('open');
+  });
+
   it('never leaves resolved, whatever arrives afterwards', () => {
     // The row is a permanent tombstone: a late or replayed `session.started` from a
     // runner that has not heard about the close cannot bring the session back.

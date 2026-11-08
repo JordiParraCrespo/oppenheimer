@@ -18,11 +18,12 @@ import { type Control, Controller, useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
 
-/** The Profile card's four fields as the card edits them: the shared schema's own constraints. */
+/** The Profile card's five fields as the card edits them: the shared schema's own constraints. */
 const botProfileSchema = z.object({
   name: updateBotSchema.shape.name.unwrap(),
   description: updateBotSchema.shape.description.unwrap(),
   avatarColor: updateBotSchema.shape.avatarColor.unwrap(),
+  avatarFace: updateBotSchema.shape.avatarFace.unwrap(),
   groupId: updateBotSchema.shape.groupId.unwrap(),
 });
 
@@ -36,6 +37,9 @@ function changesFrom(saved: BotProfileValues, edited: z.output<typeof botProfile
   if (edited.name !== saved.name) changes.name = edited.name;
   if (edited.description !== saved.description) changes.description = edited.description;
   if (edited.avatarColor !== saved.avatarColor) changes.avatarColor = edited.avatarColor;
+  if (JSON.stringify(edited.avatarFace) !== JSON.stringify(saved.avatarFace)) {
+    changes.avatarFace = edited.avatarFace;
+  }
   if (edited.groupId !== saved.groupId) changes.groupId = edited.groupId;
   return changes;
 }
@@ -43,7 +47,7 @@ function changesFrom(saved: BotProfileValues, edited: z.output<typeof botProfile
 /**
  * The Profile card as one form (`design/version1/BotSettings.dc.html`): Name
  * and Description stacked, then the card's other rows (`children`, handed the
- * form's `control`: the colour and the sidebar group, each binding its own
+ * form's `control`: the colour, the face and the sidebar group, each binding its own
  * field), then the save row that appears only when something changed and
  * reads Saved after a save until the next edit. Nothing saves before Save.
  * `values` is the saved bot: the form follows it, so a save or a refetch

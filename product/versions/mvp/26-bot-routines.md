@@ -1,8 +1,10 @@
 # 26 — Bot routines: how a bot wakes on its own
 
 **Decided 2026-10-16, in review; built in the slices of §8. Built so
-far: slices A, B and the tab of C**: the run-target port, bot routines in
-the API (a bot saves and runs its routines from chat), and the Routines tab. Note 25
+far: slices A, B, the tab of C and part of D**: the run-target port, bot routines in
+the API (a bot saves and runs its routines from chat), the Routines tab, a
+heartbeat a bot is given once it has a job, quiet turns, and the spend
+guard. Note 25
 builds a bot that only works when you write to it. This note is how it
 works when you do not: on a schedule (its heartbeat), on an event, or
 when a session ends. The 2026-10-13 export already draws it:
@@ -230,9 +232,35 @@ quiet. The bot creates one with `update_routine` (it asks, §4) when asked in
 chat. `INSTRUCTIONS.md` already holds the bot's
 job, so there is no separate heartbeat file.
 
+**Changed 2026-11-06:** a bot is **given its heartbeat once it has a
+job**, as OpenClaw's agents always have one. When its `INSTRUCTIONS.md`
+goes from empty to written (at its creation, from Settings, or by the bot
+setting itself up in its first chat), the document raises
+`BotJobSetDomainEvent` on the outbox with the write, and a listener in
+bots-chat saves a routine named **Heartbeat**: hourly, at a minute past the
+hour spread by the bot's id (`heartbeatMinute`, so a workspace's bots do
+not all wake at :00), on, as the bot's owner and within the scopes of the
+credential that wrote the job. Its prompt (`bot-heartbeat.policy.ts`) is
+the check-in above: reread the instructions and the plan, look at the
+sessions, pull requests and mail the bot looks after, act on what needs it,
+`notify` what the person must know, and otherwise call `nothing_to_report`.
+A bot with no job gets none: it would only wake to its Getting started
+prompt and greet nobody, at a model turn an hour. A redelivered event finds
+the routine by its name and saves no second one; a bot or owner that is
+gone gets none; a revert gives none, and a later edit of the job adds none.
+It is an ordinary routine: the owner pauses, edits or deletes it on the
+Routines tab or in chat. Event wakes (a watched pull request, new mail, a
+followed session) are unchanged and still wake the bot at once; the
+heartbeat is what makes it act between them. Bots that already had a job
+before this get no heartbeat until asked.
+
 - **Quiet turns.** A routine turn with nothing to say calls
   `nothing_to_report` instead of writing a message; the chat draws one
-  collapsed activity line. OpenClaw does this with a `HEARTBEAT_OK`
+  collapsed activity line. **Built 2026-11-06**: the tool is offered on
+  every turn nobody is waiting on (a routine, a wake, a goal, a loop) and
+  never on a message, an approval or a question, and a routine's opening
+  tells the bot to use it. A quiet turn writes no assistant message, which
+  is how the spend guard below tells it from a report. OpenClaw does this with a `HEARTBEAT_OK`
   reply; a tool is explicit and cannot be confused with prose. Bots only:
   a person's session automation has a run page, not a chat.
 - **Spread, not on the minute.** A schedule trigger's config gains an
@@ -266,6 +294,50 @@ job, so there is no separate heartbeat file.
   (bots-chat), raised by a listener on that skip and idempotent, so two
   runs skipping at once pause the set once and no routine's run owns the
   others.
+
+  **Changed 2026-11-07, built** (asked by the owner: "the same way that
+  Claude, when it starts watching, stops after some time"). The guard
+  behaves like an agent watching a pull request for someone who stopped
+  looking: it stops on its own, says so once, and comes back as soon as the
+  person is back. So there is no nudge and no card:
+
+  | When | What happens |
+  |---|---|
+  | 3 routine reports the owner has not seen (quiet turns do not count), or 72 h since the owner was last in the bot's chat, whatever the routines said | **Pause**: the run is skipped as `unattended`, every live routine of the bot pauses with `pausedReason = 'unattended'`, and one Inbox line says "I paused my routines while you were away. They start again when you open this chat." |
+  | The owner is back: opens the bot's chat (or brings its tab back into view), writes to it, or decides one of its cards | **Resume**: every routine paused as `unattended`, and only those, starts again; the chat's lines say so |
+
+  - Presence is `bot."ownerSeenAt"` (not `ownerReadAt`), written by
+    `POST /bots/:id/seen` and by sending a message, deciding an approval,
+    or answering or dismissing a question; every visit is stored, never
+    backwards, so a late pause can tell the owner came back. The console's
+    chat sends it when it opens, when its tab comes back into view, and at
+    most once a minute while the owner is active in it (a key, the pointer,
+    a scroll, focus). A tab merely left open is not a reader: a chat in
+    view with nobody at it stops like any other. A new bot is seen at its
+    creation.
+  - The 72 h rule stops a heartbeat that only ever stays quiet: quiet
+    beats still cost a model turn each.
+  - The owner's own Run now passes the guard.
+  - A routine the owner paused, or one paused for a missing key, keeps its
+    reason: coming back does not resume it.
+  - The pause of the rest is `PauseUnattendedRoutines` in automations,
+    raised by a bots-chat listener on the first routine's pause. It answers
+    the oldest routine paused as `unattended`, and only that routine's
+    pause puts the Inbox line, so the owner hears it once however many
+    routines stopped. The line is in the owner's saved language
+    (`bots.routineGuard.notice`). A pause delivered after the owner was
+    back in the chat stops nothing more (`ownerBackSince`).
+  - The numbers are the workspace's automation settings
+    (`unattendedReports`, `unattendedAwaySeconds` on
+    `PATCH /automation-settings`), the platform's 3 and 72 h by default,
+    with no ceiling: they only stop routines sooner or later.
+  - **Pause while you're away**, a switch on the bot's Routines tab
+    (`bot."routineSpendGuard"`, on by default), turns the guard off for a
+    bot that should run unattended; turning it off resumes what it had
+    paused, and a pause delivered after it was turned off stops nothing
+    more. A run the guard was already skipping as the switch flipped may
+    leave its own routine paused; the owner's next visit to the chat
+    resumes it.
 - A routine **runs as its owner** (note 16 §Q5), re-checked at dispatch,
   with the bot's permissions as they are at the run; a routine never
   widens them. A routine created **by the bot** goes through
@@ -321,7 +393,11 @@ Each is a stacked pull request, green on `pnpm ci:local`.
   pause (until then a routine whose bot has no usable provider is skipped,
   not paused).
 - **D. Heartbeat comfort.** `nothing_to_report`, `spread`, and the spend
-  guard with its two cards.
+  guard with its two cards. **Built 2026-11-06:** `nothing_to_report` and a
+  heartbeat by default once a bot has a job, spread by the bot's id rather than by a
+  trigger's `spread` setting. **Built 2026-11-07:** the spend guard,
+  without its cards (§6, "Changed 2026-11-07"). The general `spread` is
+  still to build.
 - **E. More triggers.** "When a session ends" (§5), then a webhook with a
   key per routine (`POST /automations/webhook/{id}`, `Authorization:
   Bearer`), as Grok Bot offers.
@@ -367,3 +443,15 @@ Each is a stacked pull request, green on `pnpm ci:local`.
 - 2026-10-16, in review of slice A: **the run records a `RunDispatchRef`**,
   a union over targets, and the dispatcher hands the handler a launch
   bound to its target, so a new target does not touch the handler.
+- 2026-11-06, asked by the owner: **a heartbeat by default.** A bot gets
+  an hourly Heartbeat routine as soon as it has a job (§6), so it is
+  proactive without being asked, as OpenClaw's are; its spread is a minute
+  derived from the bot's id. Not at its birth: a bot with empty
+  instructions would wake to its Getting started prompt every hour. Until the spend guard is built, what bounds
+  its cost is the run budget, the overlap guard and quiet turns.
+- 2026-11-07, asked by the owner: **the spend guard stops and comes back on
+  its own**, like an agent that stops watching a pull request when nobody
+  writes, says so once, and resumes when written to. No nudge and no cards:
+  a pause after 3 unseen reports or 72 h away (the workspace's settings),
+  one Inbox line, a resume as soon as the owner is back in the chat, and a
+  per-bot switch to turn it off (§6).

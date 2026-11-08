@@ -367,6 +367,27 @@ export class BotTurnRepository
     return record ? Some(this.mapper.toDomain(record)) : None;
   }
 
+  async countRoutineReportsSince(
+    organizationId: string,
+    botId: string,
+    since: Date,
+  ): Promise<number> {
+    // By when it was said, not when its turn was queued: a turn queued before
+    // the owner's visit that reports after they left is unseen too.
+    // IDX_bot_message_bot for the bot's messages since then, the turn's
+    // primary key for its origin. A routine turn opens with its event line,
+    // so only an assistant message counts as something it said.
+    const rows: { count: string }[] = await this.repository.manager.query(
+      `SELECT count(DISTINCT message."turnId") AS count FROM bot_message message
+         JOIN bot_turn turn ON turn.id = message."turnId"
+        WHERE message."organizationId" = $1 AND message."botId" = $2
+          AND message."createdAt" > $3 AND message.role = 'assistant'
+          AND turn.origin = 'routine'`,
+      [organizationId, botId, since],
+    );
+    return Number(rows[0]?.count ?? 0);
+  }
+
   async findQueuedBySourcePrefix(
     organizationId: string,
     botId: string,

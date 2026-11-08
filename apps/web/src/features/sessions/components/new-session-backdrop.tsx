@@ -13,7 +13,7 @@ export function NewSessionBackdrop({ image }: { image: string }) {
   return (
     <div data-pane-backdrop aria-hidden className="pointer-events-none absolute inset-0 -z-10">
       <img src={image} alt="" className="size-full object-cover" />
-      <div className="absolute inset-x-0 bottom-0 h-2/3 bg-linear-to-t from-canvas-recessed via-canvas-recessed/70 to-transparent" />
+      <div className="scrim-fade absolute inset-x-0 bottom-0 h-3/4" />
     </div>
   );
 }

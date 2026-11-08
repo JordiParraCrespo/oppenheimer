@@ -12,8 +12,10 @@ import {
   type BotAuthor,
   type BotDocumentName,
   botSoulFor,
+  type Scope,
 } from '@oppenheimer/shared';
 import { authorOf, type BotActor, type BotDocumentRevision } from './bot.types';
+import { BotJobSetDomainEvent } from './events/bot-job-set.domain-event';
 
 export interface BotDocumentProps {
   organizationId: string;
@@ -33,6 +35,8 @@ export interface BotDocumentWrite {
   baseRevision: number;
   actor: BotActor;
   note?: string;
+  /** The scopes of the credential writing it; null or absent for a browser session. */
+  credentialScopes?: readonly Scope[] | null;
 }
 
 /**
@@ -69,6 +73,7 @@ export class BotDocumentEntity extends AggregateRoot<BotDocumentProps> {
     name: BotDocumentName;
     content: string;
     actor: BotActor;
+    credentialScopes?: readonly Scope[] | null;
   }): BotDocumentEntity {
     const { author, authorUserId } = authorOf(props.actor);
     const document = new BotDocumentEntity({
@@ -85,6 +90,7 @@ export class BotDocumentEntity extends AggregateRoot<BotDocumentProps> {
     });
     document.validate();
     document.pending = document.revisionRecord('', null);
+    document.announceJob('', props.credentialScopes ?? null);
     return document;
   }
 
@@ -95,7 +101,11 @@ export class BotDocumentEntity extends AggregateRoot<BotDocumentProps> {
   static firstOf(
     bot: { organizationId: string; id: string; name: string },
     actor: BotActor,
-    given: { soul?: string; instructions?: string },
+    given: {
+      soul?: string;
+      instructions?: string;
+      credentialScopes?: readonly Scope[] | null;
+    },
   ): BotDocumentEntity[] {
     const contents = {
       soul: given.soul ?? botSoulFor(bot.name),
@@ -108,6 +118,7 @@ export class BotDocumentEntity extends AggregateRoot<BotDocumentProps> {
         name,
         content: contents[name],
         actor,
+        credentialScopes: given.credentialScopes,
       }),
     );
   }
@@ -145,7 +156,9 @@ export class BotDocumentEntity extends AggregateRoot<BotDocumentProps> {
   write(change: BotDocumentWrite): BotDocumentWriteOutcome {
     if (change.baseRevision !== this.props.revision) return 'stale';
     if (change.content === this.props.content) return 'unchanged';
+    const before = this.props.content;
     this.apply(change.content, change.actor, change.note?.trim() ?? '', null);
+    this.announceJob(before, change.credentialScopes ?? null);
     return 'written';
   }
 
@@ -174,6 +187,24 @@ export class BotDocumentEntity extends AggregateRoot<BotDocumentProps> {
     this.setUpdatedAt(new Date());
     this.validate();
     this.pending = this.revisionRecord(note, revertedFrom);
+  }
+
+  /**
+   * The bot has a job now: its instructions went from empty to written. Only
+   * a write or a creation says so; a revert restores, and gives no heartbeat.
+   */
+  private announceJob(before: string, credentialScopes: readonly Scope[] | null): void {
+    if (this.props.name !== 'instructions') return;
+    if (before.trim() || !this.props.content.trim()) return;
+    this.addEvent(
+      new BotJobSetDomainEvent({
+        aggregateId: this.props.botId,
+        reason: "a bot's instructions were first written, and it is owed its heartbeat",
+        organizationId: this.props.organizationId,
+        botId: this.props.botId,
+        credentialScopes,
+      }),
+    );
   }
 
   private revisionRecord(note: string, revertedFrom: number | null): BotDocumentRevision {

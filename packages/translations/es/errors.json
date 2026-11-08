@@ -293,6 +293,9 @@
     "SESSIONS_049": "Ese cursor de transcripción no es válido. Lee desde los últimos turnos y continúa con el cursor que te dé esa página.",
     "SESSIONS_050": "Solo quien lanzó esta sesión en la nube puede enviarle un seguimiento, porque se ejecuta con su clave.",
     "SESSIONS_051": "El proveedor del agente en la nube no confirmó el seguimiento, así que puede estar ejecutándose allí. Revisa la sesión en el proveedor antes de volver a enviarlo.",
+    "SESSIONS_052": "Solo se puede reintentar una sesión que no llegó a iniciarse.",
+    "SESSIONS_053": "Ninguna sesión en la nube de este espacio de trabajo tiene ese id. Solo las sesiones iniciadas desde la consola envían su chat aquí.",
+    "SESSIONS_054": "El chat de esta sesión no se muestra aquí.",
     "VOICE_002": "No se ha grabado nada. Vuelve a dictar.",
     "VOICE_003": "La grabación es demasiado larga. Los dictados deben durar menos de dos minutos.",
     "VOICE_004": "No se ha podido leer la grabación. Vuelve a dictar.",
@@ -310,7 +313,8 @@
     "BOTS_037": "Esas preguntas ya tenían respuesta.",
     "BOTS_038": "No se ha encontrado esa habilidad.",
     "BOTS_039": "Este bot ya tiene una habilidad con ese nombre. Elige otro.",
-    "BOTS_040": "Este bot ya tiene tantas habilidades como puede guardar. Borra una primero."
+    "BOTS_040": "Este bot ya tiene tantas habilidades como puede guardar. Borra una primero.",
+    "BOTS_041": "Este bot no tiene ninguna ordenación de su memoria que deshacer."
   },
   "notFound": {
     "title": "Esta página no existe",
@@ -325,7 +329,8 @@
   "startFailure": {
     "codes": {
       "SESS_002": "Este host crea sesiones con un solo repositorio.",
-      "SESS_010": "La CLI de Codex no tiene un entorno en la nube para este repositorio."
+      "SESS_010": "La CLI de Codex no tiene un entorno en la nube para este repositorio.",
+      "SESS_019": "Sin sesión en claude.ai. Ejecuta claude auth login en el host."
     },
     "help": {
       "SESS_010": {

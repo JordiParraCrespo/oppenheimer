@@ -1,4 +1,4 @@
-import { Wordmark } from '@oppenheimer/design-system-web';
+import { BrandMark, Wordmark } from '@oppenheimer/design-system-web';
 import { useMatches } from '@tanstack/react-router';
 import type { ParseKeys } from 'i18next';
 import type { ReactNode } from 'react';
@@ -85,7 +85,10 @@ export function AuthLayout({ panel, children }: AuthLayoutProps) {
       }
     >
       <div className="relative flex w-full flex-col px-6 py-8 min-[900px]:px-11 min-[900px]:py-10">
-        <Wordmark />
+        <span className="flex items-center gap-2">
+          <BrandMark size={22} aria-hidden="true" />
+          <Wordmark />
+        </span>
 
         <div
           className={`mx-auto flex w-full ${WIDTHS[width]} flex-1 flex-col justify-center py-10`}

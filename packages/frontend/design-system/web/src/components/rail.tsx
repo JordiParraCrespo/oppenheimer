@@ -4,11 +4,12 @@ import { useRender } from '@base-ui/react/use-render';
 import * as React from 'react';
 
 import { cn } from '../lib/utils';
+import { BrandMark } from './brand-mark';
 import { useSortableControl } from './drag';
 
 /**
  * Rail — the 56px strip left of the sidebar that switches the console between
- * its areas: sessions, automations and Plan (tasks and the calendar). A round wordmark on top, then one
+ * its areas: sessions, automations and Plan (tasks and the calendar). The product's mark on top, then one
  * 40px round link per list — the app hands each item the router's link
  * through `render` — muted at rest, the hover wash on hover, and the same
  * wash held while it is the current one. Hovering or focusing a button shows
@@ -44,20 +45,28 @@ function Rail({ className, ...props }: React.ComponentProps<'nav'>) {
   return <nav data-slot="rail" className={cn(RAIL.surface, RAIL.bar, RAIL.column, className)} {...props} />;
 }
 
-/** The 32px round mark at the top: the product's initial in display weight. */
-function RailMark({ className, children, ...props }: React.ComponentProps<'div'>) {
-  return (
-    <div
-      data-slot="rail-mark"
-      className={cn(
-        'mb-2.5 hidden size-8 items-center justify-center rounded-pill md:flex bg-fg font-display text-[16px] font-semibold tracking-[-0.02em] text-sidebar',
+/**
+ * The mark at the top: the product's hat on its tile, 32px. The app makes it
+ * the way home by handing the router's link through `render`, with a `label`
+ * for its accessible name; on its own it is decoration.
+ */
+function RailMark({ className, label, render, ref, ...props }: useRender.ComponentProps<'div'> & { label?: string }) {
+  return useRender({
+    defaultTagName: 'div',
+    render,
+    ref,
+    props: {
+      'data-slot': 'rail-mark',
+      'aria-label': label,
+      'aria-hidden': label ? undefined : true,
+      className: cn(
+        'mb-2.5 hidden size-8 items-center justify-center rounded-md outline-none md:flex focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2',
         className,
-      )}
-      {...props}
-    >
-      {children}
-    </div>
-  );
+      ),
+      ...props,
+      children: <BrandMark size={32} aria-hidden="true" />,
+    },
+  });
 }
 
 function RailItem({

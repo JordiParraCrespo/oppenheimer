@@ -1,3 +1,5 @@
+import type { OppenheimerApp } from '@oppenheimer/frontend-core';
+import { OppenheimerProvider } from '@oppenheimer/frontend-core/react';
 import { QueryClient, QueryClientProvider, useSuspenseQuery } from '@tanstack/react-query';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -106,5 +108,31 @@ describe('QueryState', () => {
     expect(() => render(<QueryState.Pending>loading</QueryState.Pending>)).toThrow(
       '<QueryState.Pending> is drawn outside a <QueryState>',
     );
+  });
+
+  // Regression: a section that throws while rendering shows its failure and
+  // nobody hears about it.
+  it('offers what its boundary caught to error reporting', async () => {
+    const capture = vi.fn();
+    const app = { errors: { capture } } as unknown as OppenheimerApp;
+    const broken = new TypeError("Cannot read properties of undefined (reading 'name')");
+    function Throws(): never {
+      throw broken;
+    }
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    render(
+      <OppenheimerProvider app={app}>
+        <QueryState>
+          <QueryState.Pending>loading</QueryState.Pending>
+          <QueryState.Error fallback="Could not load the hosts" />
+          <QueryState.Data>
+            <Throws />
+          </QueryState.Data>
+        </QueryState>
+      </OppenheimerProvider>,
+    );
+
+    expect(await screen.findByRole('alert')).toBeTruthy();
+    expect(capture).toHaveBeenCalledWith(broken, { tags: { boundary: 'query-state' } });
   });
 });
