@@ -105,6 +105,12 @@ describe('composeBotSystemPrompt', () => {
       expect(prompt).toContain('goes to a session on a host');
     });
 
+    it('starts on another online host when the chosen one cannot run the agent', () => {
+      const prompt = composeBotSystemPrompt(sessions);
+      expect(prompt).toContain('the agent there is not signed in or not installed');
+      expect(prompt).toContain('start it there instead of stopping');
+    });
+
     it('sends a question the web can answer to research, not to a session', () => {
       // A bot asked "how does X work" started a session to read the docs.
       const prompt = composeBotSystemPrompt(sessions);
@@ -137,6 +143,19 @@ describe('composeBotSystemPrompt', () => {
     expect(prompt).toContain('"On it" or "Sure" alone is not a reply');
     expect(prompt).toContain('is the same errand, not a new one');
     expect(prompt).toContain('check what you started');
+  });
+
+  // From OpenClaw's "Execution Bias" and "Promised Work" sections: a bot whose
+  // first host failed reported the failure and stopped, with three other
+  // hosts online. What breaks this: a bot that stops at the first failure, or
+  // one that reads a person's "no" as a failure to route around.
+  it('asks a bot to try the next route after a failure, and never around a person saying no', () => {
+    const prompt = composeBotSystemPrompt(base);
+    expect(prompt).toMatch(/# How a turn goes[\s\S]*A failed step is not the end of the request/);
+    expect(prompt).toContain('another online host when one host cannot do it');
+    expect(prompt).toContain('Do not try the same thing the same way twice');
+    expect(prompt).toContain('A person\'s "no" is not a failure');
+    expect(prompt).toContain('Saying what you are about to do is not a result');
   });
 
   it('forbids asking for secrets and treats tool text as data', () => {

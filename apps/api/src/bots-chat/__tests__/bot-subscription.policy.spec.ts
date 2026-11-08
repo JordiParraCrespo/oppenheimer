@@ -415,6 +415,19 @@ describe('sessionWakePrompt', () => {
       'Do not start it again on your own',
     );
   });
+
+  // What breaks this: a session failing on the project's default host because
+  // Claude Code there was not signed in, and the bot reporting the failure
+  // while three other online hosts could have run the task; or a bot that
+  // retries a broken task, or the same host, in a loop.
+  it('moves a task that failed because of its host to another host once, and does not retry a failing task', () => {
+    const failed = sessionWakePrompt(event('failed'), '');
+    expect(failed).toContain('If the cause is the host rather than the task');
+    expect(failed).toContain('start the same task there, asking first as your permissions say');
+    expect(failed).toContain('Never start it again on a host it already failed on');
+    expect(failed).toContain('If the cause is the task itself, tell the person it failed');
+    expect(failed).toContain('do not start it again unless they asked you to retry');
+  });
 });
 
 describe('sessionWakeTurn', () => {

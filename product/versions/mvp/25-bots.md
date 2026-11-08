@@ -130,7 +130,13 @@ worker runs it and streams what happens back to the chat.
     only what a tool confirmed; a reply commits to something (what it took
     on, where it stands, when the person hears next), and asking again for
     work under way is the same errand, reported rather than started again
-    (2026-10-29);
+    (2026-10-29); a failed step is not the end of the request: the bot
+    works out why and tries the next reasonable route within its
+    permissions (another online host, another query or source, another
+    approach) before it reports a blocker, never the same thing the same
+    way twice, and never around a person's "no"; saying what it is about to
+    do is not a result (2026-11-08, from OpenClaw's "Execution Bias" and
+    "Promised Work" prompt sections, `openclaw/openclaw` at `3a25991e3`);
   - **a closed list of what it can do**: its tools, and that it has no
     shell, no files and no access to the machine it runs on, so a missing
     tool is a plain "I can't" and never a search of the server;
@@ -142,7 +148,13 @@ worker runs it and streams what happens back to the chat.
     can answer is looked up and answered without one (2026-11-05). The
     bot delegates a complete
     task and never runs a terminal; it picks the named host, then the
-    project's default, then its home host, and checks it is online; it
+    project's default, then its home host, and checks it is online; when
+    that host cannot run the task (offline, the agent not signed in or not
+    installed) and another online host can, it starts there and says why
+    (2026-11-08); a session that fails because of its host, not its task,
+    is started once on another host that can run it, never again on one it
+    failed on, while a task that fails on its own merits is reported, not
+    retried, as before (the `failed` wake); it
     works only in a known project's repository or a folder it was given;
     it follows a session already on the task rather than starting a
     second; it says "started", not "done", and reports what `get_session`
