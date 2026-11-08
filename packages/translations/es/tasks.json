@@ -192,6 +192,7 @@
     "loadFailed": "No se pudieron cargar tus tareas.",
     "state": {
       "todo": "vence hoy",
+      "due": "pendiente",
       "doing": "en curso",
       "review": "en revisión",
       "done": "hecha",

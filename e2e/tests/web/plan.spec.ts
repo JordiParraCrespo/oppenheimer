@@ -318,8 +318,8 @@ test('To do: a task added to today, ticked done, and the overdue switch', async 
   await expect(add).toHaveValue('');
 
   // Ticking does not open the task; the title does, on the board.
-  await row.getByRole('checkbox', { name: 'Mark done' }).click();
-  await expect(row.getByRole('checkbox', { name: 'Mark not done' })).toBeChecked();
+  await row.getByRole('checkbox', { name: 'Mark as done' }).click();
+  await expect(row.getByRole('checkbox', { name: 'Mark as not done' })).toBeChecked();
   await expect(page).toHaveURL(/\/plan\/todo/);
 
   // The next day holds nothing, and Include overdue is a switch in the address.

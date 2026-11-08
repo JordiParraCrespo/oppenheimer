@@ -35,7 +35,7 @@ export function TodoHeader() {
   const navigate = todo.useNavigate();
   const { data: counts } = useTasks({
     select: (rows) =>
-      todoCounts(todoEntries(rows, day, { overdue: overdue !== 'off', projectIds })),
+      todoCounts(todoEntries(rows, day, { today, overdue: overdue !== 'off', projectIds })),
   });
   const go = (next: string) =>
     navigate({

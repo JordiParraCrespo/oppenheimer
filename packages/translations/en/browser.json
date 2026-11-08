@@ -3028,6 +3028,7 @@
       "loadFailed": "Couldn’t load your tasks.",
       "state": {
         "todo": "due today",
+        "due": "due",
         "doing": "in progress",
         "review": "in review",
         "done": "done",

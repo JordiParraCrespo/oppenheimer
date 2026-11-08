@@ -20,7 +20,7 @@ const todo = getRouteApi('/_authenticated/plan/todo');
 export function TodoList() {
   const { t } = useTranslation();
   const locale = useLocale();
-  const { day } = useTodoDay();
+  const { day, today } = useTodoDay();
   const { overdue } = todo.useSearch();
   const { projectIds } = useScopeProject();
   const go = useNavigate();
@@ -28,7 +28,7 @@ export function TodoList() {
   const move = useMoveTask();
   const projects = new Map(read.projects.map((row) => [row.id, row]));
   const milestones = new Map(read.milestones.map((row) => [row.id, row.name]));
-  const all = todoEntries(read.tasks, day, { overdue: overdue !== 'off' });
+  const all = todoEntries(read.tasks, day, { today, overdue: overdue !== 'off' });
   const entries = projectIds
     ? all.filter((entry) => projectIds.includes(entry.task.projectId))
     : all;
@@ -54,7 +54,9 @@ export function TodoList() {
               ? t('tasks.todo.state.overdue', {
                   date: formatCalendarDay(task.dueDate ?? day, locale),
                 })
-              : t(`tasks.todo.state.${state}`);
+              : state === 'todo' && day !== today
+                ? t('tasks.todo.state.due')
+                : t(`tasks.todo.state.${state}`);
           return (
             <TodoRow
               key={task.id}

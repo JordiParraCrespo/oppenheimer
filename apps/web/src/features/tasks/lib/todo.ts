@@ -28,15 +28,17 @@ export interface TodoEntry {
 }
 
 /**
- * The day's list: every task due that day, then — when `overdue` is on — the
- * open ones due before it, oldest first. Due that day, those with a time come
- * first in time order and the rest keep the board's order. `projectIds`
- * narrows it as the board's Project filter does (`undefined` is every project).
+ * The day's list: every task due that day, then — when `overdue` is on and
+ * the day is today or later — the open ones due before today, oldest first.
+ * A task due between today and a later day shown is not overdue, and a past
+ * day lists only its own. Due that day, those with a time come first in time
+ * order and the rest keep the board's order. `projectIds` narrows it as the
+ * board's Project filter does (`undefined` is every project).
  */
 export function todoEntries(
   tasks: readonly TaskEntity[],
   day: string,
-  options: { overdue: boolean; projectIds?: readonly string[] },
+  options: { today: string; overdue: boolean; projectIds?: readonly string[] },
 ): TodoEntry[] {
   const inScope = (task: TaskEntity) =>
     !options.projectIds || options.projectIds.includes(task.projectId);
@@ -48,12 +50,15 @@ export function todoEntries(
       return compareRank(a, b);
     })
     .map((task) => ({ task, state: task.status }));
-  const overdue = options.overdue
-    ? tasks
-        .filter((task) => !task.isDone && task.dueDate && task.dueDate < day && inScope(task))
-        .sort((a, b) => (a.dueDate ?? '').localeCompare(b.dueDate ?? '') || compareRank(a, b))
-        .map((task) => ({ task, state: 'overdue' as const }))
-    : [];
+  const overdue =
+    options.overdue && day >= options.today
+      ? tasks
+          .filter(
+            (task) => !task.isDone && task.dueDate && task.dueDate < options.today && inScope(task),
+          )
+          .sort((a, b) => (a.dueDate ?? '').localeCompare(b.dueDate ?? '') || compareRank(a, b))
+          .map((task) => ({ task, state: 'overdue' as const }))
+      : [];
   return [...due, ...overdue];
 }
 

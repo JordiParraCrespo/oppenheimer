@@ -13,7 +13,8 @@ import { CalendarEntry, type CalendarEntryData } from './month-calendar';
  * filled), an All day row, then the hours from 07:00 to 22:00 ruled every
  * hour. A timed entry is a block from its `time` to its `end` (half an hour
  * when it names none); entries that overlap share the column side by side.
- * Busy events sit on the control wash, a task on the card with a border and
+ * One that starts before 07:00 or from 22:00 sits in All day with its time,
+ * so nothing on the day goes undrawn. Busy events sit on the control wash, a task on the card with a border and
  * its check, an automation run and a free event on the card, muted. Today's
  * column carries a line at `now`.
  *
@@ -62,10 +63,17 @@ interface Placed {
   lanes: number;
 }
 
+/** A timed entry that starts on the hours drawn; one before 07:00 or from 22:00 sits in All day with its time. */
+function onTheHours(entry: AgendaEntryData): boolean {
+  if (entry.allDay || !entry.time) return false;
+  const start = minutesOf(entry.time);
+  return start >= START_HOUR * 60 && start < END_HOUR * 60;
+}
+
 /** Timed entries in lanes: each takes the first lane free at its start, and as many share as overlap. */
 function place(entries: readonly AgendaEntryData[]): Placed[] {
   const timed = entries
-    .filter((entry) => entry.time && !entry.allDay)
+    .filter(onTheHours)
     .map((entry) => {
       const start = minutesOf(entry.time as string);
       const end = entry.end ? minutesOf(entry.end) : start + SLOT_MINUTES;
@@ -178,7 +186,7 @@ function AllDayEntry({ entry, onOpen }: { entry: AgendaEntryData; onOpen?: (id: 
   return (
     <CalendarEntry
       ref={ref}
-      entry={{ ...entry, time: undefined }}
+      entry={entry.allDay ? { ...entry, time: undefined } : entry}
       data-dragging={isDragging || undefined}
       className="touch-none data-dragging:opacity-40"
       {...(movable ? handleProps : {})}
@@ -294,8 +302,7 @@ function AgendaCalendar({
     list.push(entry);
     byDay.set(entry.date, list);
   }
-  const allDay = (date: IsoDate) =>
-    (byDay.get(date) ?? []).filter((entry) => entry.allDay || !entry.time);
+  const allDay = (date: IsoDate) => (byDay.get(date) ?? []).filter((entry) => !onTheHours(entry));
 
   return (
     <section

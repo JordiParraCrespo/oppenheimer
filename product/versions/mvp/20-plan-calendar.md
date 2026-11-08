@@ -190,7 +190,8 @@ the API is unchanged.
   day row (`AgendaCalendar` in the design system). A timed event runs
   from its start to its end; a task due at a time stands an hour there,
   and an automation run half an hour; whatever overlaps shares the
-  column. Today carries a line at the current minute. A day's head, and
+  column. Anything that starts before 07:00 or from 22:00 sits in All
+  day with its time, so nothing on the day goes undrawn. Today carries a line at the current minute. A day's head, and
   a day's number on the month, opens that day.
 - **Moving**: a personal event dropped on a half hour starts there and
   keeps its length (an all-day one becomes an hour), and dropped in All
@@ -201,9 +202,9 @@ the API is unchanged.
 
 **To do**, Plan's new sidebar view (`/plan/todo`, after Tasks, with the
 open tasks due by today as its count), lists one day's tasks as cards:
-those due that day (the timed ones first, by time), then the open ones
-overdue, oldest first, which **Include overdue** leaves out
-(`?overdue=off`). It narrows by project like the board (and remembers
+those due that day (the timed ones first, by time), then, on today or a
+later day, the open ones due before today, oldest first, which **Include
+overdue** leaves out (`?overdue=off`); a past day lists only its own. It narrows by project like the board (and remembers
 it the same way), ticks a task Done or back, opens it on the board, and
 adds a task due that day from the dashed row under the list.
 

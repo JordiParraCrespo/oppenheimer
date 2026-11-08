@@ -43,7 +43,7 @@ const TASKS = [
 
 describe("To do's day", () => {
   it('lists the day by time, then the rest in board order, then what is overdue, oldest first', () => {
-    const rows = todoEntries(TASKS, DAY, { overdue: true });
+    const rows = todoEntries(TASKS, DAY, { today: DAY, overdue: true });
     expect(rows.map((row) => [row.task.id, row.state])).toEqual([
       ['a', 'done'],
       ['b', 'todo'],
@@ -54,20 +54,33 @@ describe("To do's day", () => {
   });
 
   it('leaves out overdue work when it is off, and a done task is never overdue', () => {
-    expect(todoEntries(TASKS, DAY, { overdue: false }).map((row) => row.task.id)).toEqual([
-      'a',
-      'b',
-      'c',
-    ]);
+    expect(
+      todoEntries(TASKS, DAY, { today: DAY, overdue: false }).map((row) => row.task.id),
+    ).toEqual(['a', 'b', 'c']);
   });
 
   it('narrows to the projects the filter names', () => {
-    const rows = todoEntries(TASKS, DAY, { overdue: true, projectIds: ['p-2'] });
+    const rows = todoEntries(TASKS, DAY, { today: DAY, overdue: true, projectIds: ['p-2'] });
     expect(rows.map((row) => row.task.id)).toEqual(['older']);
   });
 
+  it('marks only what was due before today overdue, on a later day, and none on a past one', () => {
+    // A task due tomorrow is not overdue on the day after it is shown; it is that day's own.
+    const ahead = todoEntries(TASKS, '2026-11-10', { today: DAY, overdue: true });
+    expect(ahead.map((row) => [row.task.id, row.state])).toEqual([
+      ['older', 'overdue'],
+      ['old', 'overdue'],
+    ]);
+    expect(
+      todoEntries(TASKS, '2026-11-02', { today: DAY, overdue: true }).map((row) => row.task.id),
+    ).toEqual(['old']);
+  });
+
   it('counts what is left and done, and the sidebar counts open work due by today', () => {
-    expect(todoCounts(todoEntries(TASKS, DAY, { overdue: true }))).toEqual({ left: 4, done: 1 });
+    expect(todoCounts(todoEntries(TASKS, DAY, { today: DAY, overdue: true }))).toEqual({
+      left: 4,
+      done: 1,
+    });
     expect(todayOpenCount(TASKS, DAY)).toBe(4);
   });
 });
