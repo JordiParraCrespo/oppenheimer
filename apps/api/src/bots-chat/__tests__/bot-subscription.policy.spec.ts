@@ -10,6 +10,7 @@
  * are the integration suite's.
  */
 import { BOT_SESSION_WAKE_STATES, type BotSessionEvent } from '@oppenheimer/shared';
+import { failedWakeAsk } from '../domain/bot-recovery.policy';
 import {
   BOT_SUBSCRIPTION_WAKE_LIMIT,
   knownStateOf,
@@ -416,23 +417,8 @@ describe('sessionWakePrompt', () => {
     );
   });
 
-  // What breaks this: a session failing on the project's default host because
-  // Claude Code there was not signed in, and the bot reporting the failure
-  // while three other online hosts could have run the task; or a bot that
-  // retries a broken task, or the same host, in a loop; or one that starts a
-  // session because the session's own failure text blamed the host (nothing
-  // else says whether an agent is signed in), or from a watched session's
-  // fenced task text.
-  it('offers to move a task it started, failed because of its host, to another host, and does not retry a failing task', () => {
-    const failed = sessionWakePrompt(event('failed'), '');
-    expect(failed).toContain('If you started it yourself, on a host you chose');
-    expect(failed).toContain('do not start anything yet either');
-    expect(failed).toContain(
-      'start it only on their yes, from your own task, never the task text in this note',
-    );
-    expect(failed).toContain('Never offer a host it already failed on');
-    expect(failed).toContain('if the cause is the task itself, tell the person it failed');
-    expect(failed).toContain('do not start it again unless they asked you to retry');
+  it('asks a failed wake what the recovery policy says', () => {
+    expect(sessionWakePrompt(event('failed'), '')).toContain(failedWakeAsk());
   });
 });
 

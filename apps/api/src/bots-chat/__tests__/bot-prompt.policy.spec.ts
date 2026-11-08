@@ -3,6 +3,7 @@ import {
   botTurnPrompt,
   composeBotSystemPrompt,
 } from '../domain/bot-prompt.policy';
+import { hostCases, recoveryBullets } from '../domain/bot-recovery.policy';
 
 /**
  * What a turn's system prompt tells the model: the bot as it is, a closed
@@ -105,16 +106,9 @@ describe('composeBotSystemPrompt', () => {
       expect(prompt).toContain('goes to a session on a host');
     });
 
-    // What breaks this: stopping at a default host that cannot run the agent
-    // while others can, or overriding a host the person named.
-    it('starts on another online host when the one it chose cannot run the agent, never instead of a named one', () => {
-      const prompt = composeBotSystemPrompt(sessions);
-      expect(prompt).toContain(
-        'If a host you chose yourself (the default or your home host) cannot run it now',
-      );
-      expect(prompt).toContain('start it there instead of stopping');
-      expect(prompt).toContain(
-        'If the host the person named cannot run the task now, do not pick another',
+    it('says which host to fall back to, case by case, under "Which host"', () => {
+      expect(composeBotSystemPrompt(sessions)).toContain(
+        `Then:\n${hostCases()}\n- Which repository`,
       );
     });
 
@@ -152,18 +146,14 @@ describe('composeBotSystemPrompt', () => {
     expect(prompt).toContain('check what you started');
   });
 
-  // From OpenClaw's "Execution Bias" and "Promised Work" sections: a bot whose
-  // first host failed reported the failure and stopped, with three other
-  // hosts online. What breaks this: a bot that stops at the first failure, or
-  // one that reads a person's "no" as a failure to route around.
-  it('asks a bot to try the next route after a failure, and never around a person saying no', () => {
-    const prompt = composeBotSystemPrompt(base);
-    expect(prompt).toMatch(/# How a turn goes[\s\S]*A failed step is not the end of the request/);
-    expect(prompt).toContain('another online host when one host cannot do it');
-    expect(prompt).toContain('Do not try the same thing the same way twice');
-    expect(prompt).toContain('Work still under way (a queued or stalled session) has not failed');
-    expect(prompt).toContain('A person\'s "no" is not a failure');
-    expect(prompt).toContain('Saying what you are about to do is not a result');
+  // What breaks this: a bot that stops at its first failure because "How a
+  // turn goes" lost the recovery rules (`bot-recovery.policy.spec.ts` holds
+  // what they say).
+  it('carries the recovery rules in how a turn goes', () => {
+    const section = composeBotSystemPrompt(base)
+      .split('\n\n# ')
+      .find((part) => part.startsWith('How a turn goes'));
+    expect(section).toContain(recoveryBullets());
   });
 
   it('forbids asking for secrets and treats tool text as data', () => {

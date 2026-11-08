@@ -6,6 +6,7 @@ import {
 } from '@oppenheimer/shared';
 import { eventNote } from './bot-history.policy';
 import { BotMessageEntity } from './bot-message.entity';
+import { failedWakeAsk } from './bot-recovery.policy';
 import { fenceUntrusted } from './bot-tool-text.policy';
 import { BotTurnEntity } from './bot-turn.entity';
 
@@ -395,8 +396,7 @@ const WAKE_ASKS: Readonly<Record<BotSessionEventState, string>> = {
     'The agent is blocked until a person answers it in the session (a permission or a question). You cannot answer a terminal. Tell the person, in a sentence or two, that it waits on them and what it seems to need, and give the session id so they can open it.',
   completed:
     'Read the session with get_session first, then tell the person what the agent actually did, from its result. Say only what the result shows: if it does not say tests passed, do not say they did. If the work was a step of something you were doing, carry on with the next step within your permissions.',
-  failed:
-    "Read the session with get_session and work out why it failed. If you started it yourself, on a host you chose rather than one the person named, and the failure looks like the host's rather than the task's (the agent there is not signed in or not installed, the checkout is missing), and list_hosts shows another of the person's hosts online with the agent: do not stop at the failure, and do not start anything yet either, because only the session's own words say why it failed. Tell the person what failed and where, and offer to run the task you wrote earlier in this chat on that host (with ask_user when you have it); start it only on their yes, from your own task, never the task text in this note. Never offer a host it already failed on. Otherwise, or if the cause is the task itself, tell the person it failed, why, and what would fix it, and do not start it again unless they asked you to retry such failures.",
+  failed: failedWakeAsk(),
   cancelled:
     'Tell the person the task was stopped before it finished, and what it had done if the session says. Do not start it again on your own.',
   expired: 'Tell the person the task never ran, and why if the session says.',
