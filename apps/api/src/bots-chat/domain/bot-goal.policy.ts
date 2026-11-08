@@ -10,7 +10,12 @@ import {
 import { BotGoalEntity, goalKeyPrefix } from './bot-goal.entity';
 import type { BotGoalVerdict } from './bot-goal-review.policy';
 import { BotMessageEntity } from './bot-message.entity';
-import { BOT_TURN_MAX_STEPS, BOT_TURN_TIME_LIMIT_MS, BotTurnEntity } from './bot-turn.entity';
+import {
+  BOT_TURN_MAX_STEPS,
+  BOT_TURN_TIME_LIMIT_MS,
+  BotTurnEntity,
+  isTurnLimitFailure,
+} from './bot-turn.entity';
 
 /**
  * A goal keeps a bot going (`25-bots.md` §4.1; from Grok Bot's goals,
@@ -114,7 +119,7 @@ export function isGoalTurn(
  */
 export function goalDecision(goal: BotGoalEntity, ended: EndedTurn): GoalDecision {
   if (!isGoalTurn(goal, ended)) return { kind: 'skip' };
-  if (timedOut(ended)) return { kind: 'review' };
+  if (stoppedAtTurnLimit(ended)) return { kind: 'review' };
   if (ended.status === 'failed' || ended.status === 'cancelled') {
     return { kind: 'end', activity: 'stopped', reason: ended.status };
   }
@@ -122,11 +127,9 @@ export function goalDecision(goal: BotGoalEntity, ended: EndedTurn): GoalDecisio
   return { kind: 'review' };
 }
 
-/** Whether the turn was stopped by a limit of one turn (its time or its steps) rather than failing. */
-export function timedOut(ended: Pick<EndedTurn, 'status' | 'failure'>): boolean {
-  return (
-    ended.status === 'failed' && (ended.failure === 'time_limit' || ended.failure === 'step_limit')
-  );
+/** Whether the turn was stopped by a bound of one turn (`isTurnLimitFailure`) rather than failing. */
+export function stoppedAtTurnLimit(ended: Pick<EndedTurn, 'status' | 'failure'>): boolean {
+  return ended.status === 'failed' && isTurnLimitFailure(ended.failure);
 }
 
 /**
@@ -174,11 +177,11 @@ export function goalContinuationText(
   goal: BotGoalEntity,
   step: number,
   reason: string | null,
-  lastTimedOut = false,
+  lastStoppedAtLimit = false,
 ): string {
   return [
     `Continue toward your goal (continuation ${step} of ${goal.limit}): ${goal.objective}`,
-    lastTimedOut
+    lastStoppedAtLimit
       ? `Your last turn was stopped at a limit for one turn (${BOT_TURN_TIME_LIMIT_MS / 60_000} minutes or ${BOT_TURN_MAX_STEPS} steps); what it did is kept. Take a smaller step this turn and report before the limit.`
       : null,
     reason
@@ -201,7 +204,7 @@ export function goalContinuationTurn(
   goal: BotGoalEntity,
   step: number,
   reason: string | null,
-  lastTimedOut = false,
+  lastStoppedAtLimit = false,
 ): { turn: BotTurnEntity; opening: BotMessageEntity } {
   const turn = BotTurnEntity.queue({
     ...props,
@@ -214,7 +217,7 @@ export function goalContinuationTurn(
     botId: props.botId,
     turnId: turn.id,
     role: 'event',
-    content: goalContinuationText(goal, step, reason, lastTimedOut),
+    content: goalContinuationText(goal, step, reason, lastStoppedAtLimit),
     event: {
       kind: 'goal',
       activity: 'continued',
