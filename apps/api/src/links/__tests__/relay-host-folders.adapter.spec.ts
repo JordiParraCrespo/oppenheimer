@@ -1,5 +1,5 @@
 import 'reflect-metadata';
-import { fsListSchema, type RunnerCapability } from '@oppenheimer/shared/protocol';
+import { fsFindSchema, fsListSchema, type RunnerCapability } from '@oppenheimer/shared/protocol';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { LinkRegistryPort, RunnerLink } from '../application/link-registry.port';
 import { InProcessLinkReplies } from '../infrastructure/in-process-link-replies.adapter';
@@ -144,5 +144,38 @@ describe('RelayHostFoldersAdapter', () => {
     vi.mocked(link.send).mockReturnValue(false);
 
     await expect(adapter.list(HOST)).resolves.toEqual({ kind: 'host_offline' });
+  });
+
+  it('sends an fs.find to a runner that searches and answers with what it found', async () => {
+    const { adapter, link, replies } = harness(true, ['fs.list', 'fs.find']);
+
+    const pending = adapter.find(HOST, 'billing');
+    const sent = fsFindSchema.strict().parse(vi.mocked(link.send).mock.calls[0]?.[0]);
+    expect(sent.query).toBe('billing');
+    replies.settle(HOST, {
+      type: 'fs.found',
+      commandId: sent.commandId,
+      path: '/home/jordi',
+      home: '/home/jordi',
+      entries: [{ path: '/home/jordi/code/billing', branch: 'main' }],
+      truncated: true,
+    });
+
+    await expect(pending).resolves.toEqual({
+      kind: 'listed',
+      listing: {
+        path: '/home/jordi',
+        home: '/home/jordi',
+        entries: [{ path: '/home/jordi/code/billing', branch: 'main' }],
+        truncated: true,
+      },
+    });
+  });
+
+  it('sends no fs.find to a runner that only lists, which would never answer it', async () => {
+    const { adapter, link } = harness(true, ['fs.list']);
+
+    await expect(adapter.find(HOST, 'billing')).resolves.toEqual({ kind: 'not_supported' });
+    expect(link.send).not.toHaveBeenCalled();
   });
 });

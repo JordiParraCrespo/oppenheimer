@@ -1,10 +1,16 @@
 'use client';
 
 import { useQuery, useSuspenseQuery } from '@oppenheimer/frontend-core/react';
-import { type UseQueryOptions, useMutation, useQueryClient } from '@tanstack/react-query';
+import {
+  skipToken,
+  type UseQueryOptions,
+  useMutation,
+  useQueryClient,
+} from '@tanstack/react-query';
 import type {
   HostCodexEnvironments,
   HostEntity,
+  HostFolderSearch,
   HostFolders,
   HostPairing,
   HostPairingToken,
@@ -138,6 +144,29 @@ export function useHostFolders<TData = HostFolders>(
   return useQuery<HostFolders, Error, TData>({
     queryKey: hostsKeys.folders(hostId, path),
     queryFn: () => app.hosts.findFolders(hostId, path ?? undefined),
+    staleTime: 0,
+    retry: false,
+    refetchOnWindowFocus: false,
+    ...options,
+  });
+}
+
+/**
+ * The folders under a host's home whose name holds `text`, found by its
+ * runner now: New session's folder picker, while a name with no `/` is typed.
+ * Null asks nothing. Like a listing, a refusal is the answer and is not
+ * retried, and what was found a minute ago is not trusted.
+ */
+export function useHostFolderSearch<TData = HostFolderSearch>(
+  hostId: string,
+  text: string | null,
+  options?: Omit<UseQueryOptions<HostFolderSearch, Error, TData>, 'queryKey' | 'queryFn'>,
+) {
+  const app = useConsumerApp();
+
+  return useQuery<HostFolderSearch, Error, TData>({
+    queryKey: hostsKeys.folderSearch(hostId, text),
+    queryFn: text !== null ? () => app.hosts.searchFolders(hostId, text) : skipToken,
     staleTime: 0,
     retry: false,
     refetchOnWindowFocus: false,
