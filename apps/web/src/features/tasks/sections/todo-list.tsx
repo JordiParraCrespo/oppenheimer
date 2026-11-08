@@ -5,7 +5,7 @@ import { getRouteApi, useNavigate } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { useScopeProject } from '../hooks/use-scope-project';
 import { useTodoDay } from '../hooks/use-todo-day';
-import { todoEntries } from '../lib/todo';
+import { todoDay, todoStateLabel } from '../lib/todo';
 
 const todo = getRouteApi('/_authenticated/plan/todo');
 
@@ -28,10 +28,11 @@ export function TodoList() {
   const move = useMoveTask();
   const projects = new Map(read.projects.map((row) => [row.id, row]));
   const milestones = new Map(read.milestones.map((row) => [row.id, row.name]));
-  const all = todoEntries(read.tasks, day, { today, overdue: overdue !== 'off' });
-  const entries = projectIds
-    ? all.filter((entry) => projectIds.includes(entry.task.projectId))
-    : all;
+  const { entries, dayHasAny } = todoDay(read.tasks, day, {
+    today,
+    overdue: overdue !== 'off',
+    projectIds,
+  });
 
   return (
     <>
@@ -41,22 +42,20 @@ export function TodoList() {
         <EmptyState className="rounded-lg bg-card">
           <EmptyState.Header>
             <EmptyState.Description>
-              {all.length ? t('tasks.todo.noMatch') : t('tasks.todo.empty')}
+              {dayHasAny ? t('tasks.todo.noMatch') : t('tasks.todo.empty')}
             </EmptyState.Description>
           </EmptyState.Header>
         </EmptyState>
       ) : (
-        entries.map(({ task, state }) => {
+        entries.map((entry) => {
+          const { task } = entry;
           const project = projects.get(task.projectId);
           const milestone = task.milestoneId ? milestones.get(task.milestoneId) : undefined;
+          const label = todoStateLabel(entry, day, today);
           const where =
-            state === 'overdue'
-              ? t('tasks.todo.state.overdue', {
-                  date: formatCalendarDay(task.dueDate ?? day, locale),
-                })
-              : state === 'todo' && day !== today
-                ? t('tasks.todo.state.due')
-                : t(`tasks.todo.state.${state}`);
+            'date' in label
+              ? t(label.key, { date: formatCalendarDay(label.date, locale) })
+              : t(label.key);
           return (
             <TodoRow
               key={task.id}

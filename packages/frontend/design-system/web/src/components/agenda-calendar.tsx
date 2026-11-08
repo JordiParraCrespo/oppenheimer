@@ -1,6 +1,7 @@
 'use client';
 
 import { CircleCheckIcon, ZapIcon } from 'lucide-react';
+import type * as React from 'react';
 
 import { dateFormat, dateOf, type IsoDate } from '../internal/month';
 import { cn } from '../lib/utils';
@@ -97,6 +98,61 @@ function place(entries: readonly AgendaEntryData[]): Placed[] {
   return timed;
 }
 
+/**
+ * An entry as a drag source that opens on a click: the props both renderers
+ * spread, so a block and an All day entry pick up, fade and open alike.
+ */
+function useEntryDrag(entry: AgendaEntryData, onOpen?: (id: string) => void) {
+  const movable = entry.draggable !== false;
+  const { ref, handleProps, isDragging } = useDraggable({
+    id: entry.id,
+    data: { type: 'calendar-entry', label: entry.title },
+    disabled: !movable,
+  });
+  return {
+    ref,
+    ...(movable ? handleProps : {}),
+    'data-dragging': isDragging || undefined,
+    onClick: (event: React.MouseEvent) => {
+      event.stopPropagation();
+      onOpen?.(entry.id);
+    },
+  };
+}
+
+/**
+ * Where a placed block sits and how it reads: its box on the hours, short
+ * (a row) under 52px, the surface and ink its kind takes, and whether its
+ * time fits (a short block in a week's narrow column drops it).
+ */
+function blockLook(placed: Placed, hourHeight: number, compact: boolean) {
+  const { entry, start, end, lane, lanes } = placed;
+  const y = (minutes: number) =>
+    ((Math.max(START_HOUR * 60, Math.min(END_HOUR * 60, minutes)) - START_HOUR * 60) / 60) * hourHeight;
+  const top = y(start);
+  const height = Math.max(20, y(end) - top - 2);
+  const short = height < 52;
+  const task = entry.kind === 'task';
+  const automation = entry.kind === 'automation';
+  const free = entry.kind === 'event' && !entry.busy;
+  return {
+    box: {
+      top: top + 1,
+      height,
+      left: `calc(${(lane / lanes) * 100}% + 3px)`,
+      width: `calc(${100 / lanes}% - 6px)`,
+    },
+    className: cn(
+      short ? 'flex-row items-center gap-1.5 px-2' : 'flex-col items-start gap-0.5 px-2 py-1.5',
+      task ? 'z-2 border-border bg-card' : automation ? 'z-1 border-border-subtle bg-card' : free ? 'border-border-subtle bg-card' : 'z-2 border-transparent bg-control',
+      automation || free || entry.done ? 'text-fg-muted' : 'text-fg',
+      entry.done && 'opacity-60',
+    ),
+    titleClassName: cn(automation || entry.done ? 'font-normal' : 'font-medium', entry.done && 'line-through'),
+    time: short && compact ? null : automation ? (entry.time ?? null) : `${entry.time}–${timeOf(end)}`,
+  };
+}
+
 function AgendaBlock({
   placed,
   hourHeight,
@@ -108,92 +164,43 @@ function AgendaBlock({
   compact: boolean;
   onOpen?: (id: string) => void;
 }) {
-  const { entry, start, end, lane, lanes } = placed;
-  const movable = entry.draggable !== false;
-  const { ref, handleProps, isDragging } = useDraggable({
-    id: entry.id,
-    data: { type: 'calendar-entry', label: entry.title },
-    disabled: !movable,
-  });
-  const y = (minutes: number) =>
-    ((Math.max(START_HOUR * 60, Math.min(END_HOUR * 60, minutes)) - START_HOUR * 60) / 60) * hourHeight;
-  const top = y(start);
-  const height = Math.max(20, y(end) - top - 2);
-  const short = height < 52;
-  const task = entry.kind === 'task';
-  const automation = entry.kind === 'automation';
-  const free = entry.kind === 'event' && !entry.busy;
-  const quiet = automation || free || entry.done;
+  const { entry } = placed;
+  const drag = useEntryDrag(entry, onOpen);
+  const look = blockLook(placed, hourHeight, compact);
   return (
     <button
-      ref={ref}
+      {...drag}
       type="button"
       data-slot="agenda-block"
       data-kind={entry.kind}
-      data-dragging={isDragging || undefined}
       title={entry.tip ?? entry.title}
-      {...(movable ? handleProps : {})}
-      onClick={(event) => {
-        event.stopPropagation();
-        onOpen?.(entry.id);
-      }}
-      style={{
-        top: top + 1,
-        height,
-        left: `calc(${(lane / lanes) * 100}% + 3px)`,
-        width: `calc(${100 / lanes}% - 6px)`,
-      }}
+      style={look.box}
       className={cn(
         'absolute flex touch-none overflow-hidden rounded-xs border text-left outline-none transition-colors duration-instant ease-standard hover:bg-control-hover focus-visible:outline-2 focus-visible:outline-ring data-dragging:opacity-40',
-        short ? 'flex-row items-center gap-1.5 px-2' : 'flex-col items-start gap-0.5 px-2 py-1.5',
-        task ? 'z-2 border-border bg-card' : automation || free ? 'border-border-subtle bg-card' : 'z-2 border-transparent bg-control',
-        automation ? 'z-1' : null,
-        quiet ? 'text-fg-muted' : 'text-fg',
-        entry.done && 'opacity-60',
+        look.className,
       )}
     >
       <span className="flex min-w-0 max-w-full flex-auto items-center gap-[5px]">
-        {task ? (
+        {entry.kind === 'task' ? (
           <CircleCheckIcon aria-hidden className={cn('size-3 shrink-0', entry.done ? 'text-success' : 'text-fg-subtle')} />
         ) : null}
-        {automation ? <ZapIcon aria-hidden className="size-[11px] shrink-0 text-fg-subtle" /> : null}
-        <span
-          className={cn(
-            'min-w-0 truncate text-xs',
-            automation || entry.done ? 'font-normal' : 'font-medium',
-            entry.done && 'line-through',
-          )}
-        >
-          {entry.title}
-        </span>
+        {entry.kind === 'automation' ? <ZapIcon aria-hidden className="size-[11px] shrink-0 text-fg-subtle" /> : null}
+        <span className={cn('min-w-0 truncate text-xs', look.titleClassName)}>{entry.title}</span>
       </span>
-      {short && compact ? null : (
-        <span className="figures min-w-0 shrink overflow-hidden whitespace-nowrap text-micro text-fg-muted">
-          {automation ? entry.time : `${entry.time}–${timeOf(end)}`}
-        </span>
-      )}
+      {look.time ? (
+        <span className="figures min-w-0 shrink overflow-hidden whitespace-nowrap text-micro text-fg-muted">{look.time}</span>
+      ) : null}
     </button>
   );
 }
 
 function AllDayEntry({ entry, onOpen }: { entry: AgendaEntryData; onOpen?: (id: string) => void }) {
-  const movable = entry.draggable !== false;
-  const { ref, handleProps, isDragging } = useDraggable({
-    id: entry.id,
-    data: { type: 'calendar-entry', label: entry.title },
-    disabled: !movable,
-  });
+  const drag = useEntryDrag(entry, onOpen);
   return (
     <CalendarEntry
-      ref={ref}
+      {...drag}
       entry={entry.allDay ? { ...entry, time: undefined } : entry}
-      data-dragging={isDragging || undefined}
       className="touch-none data-dragging:opacity-40"
-      {...(movable ? handleProps : {})}
-      onClick={(event) => {
-        event.stopPropagation();
-        onOpen?.(entry.id);
-      }}
     />
   );
 }

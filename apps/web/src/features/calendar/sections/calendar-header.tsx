@@ -10,28 +10,16 @@ import {
   SegmentedControlItem,
 } from '@oppenheimer/design-system-web';
 import { ChevronLeft, ChevronRight, Plus } from '@oppenheimer/design-system-web/icons';
-import {
-  addDays,
-  dateFormatter,
-  formatCalendarMonth,
-  isoWeek,
-  monthOf,
-  shiftMonth,
-  useLocale,
-} from '@oppenheimer/frontend-web';
+import { monthOf, useLocale } from '@oppenheimer/frontend-web';
 import { getRouteApi } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { useCalendarView } from '../hooks/use-calendar-view';
 import { useViewCounts } from '../hooks/use-view-counts';
+import { headerEyebrow, headerTitle } from '../lib/calendar-header';
 import { NEW_EVENT } from '../lib/calendar-search';
-import { CALENDAR_VIEWS, type CalendarView, shiftAnchor } from '../lib/calendar-view';
+import { CALENDAR_VIEWS, type CalendarView, step } from '../lib/calendar-view';
 
 const calendar = getRouteApi('/_authenticated/plan/calendar');
-
-/** "octubre de 2026" reads "Octubre de 2026" as a title. */
-const capitalized = (text: string) => text.charAt(0).toLocaleUpperCase() + text.slice(1);
-
-const utc = (iso: string) => new Date(`${iso}T00:00:00Z`);
 
 /**
  * The calendar's header (the 2026-11-08 `Tasks` frame): an eyebrow with the
@@ -46,7 +34,7 @@ export function CalendarHeader() {
   const { view, anchor, month, today, range } = useCalendarView();
   const counts = useViewCounts();
   const navigate = calendar.useNavigate();
-  const sameYear = anchor.slice(0, 4) === today.slice(0, 4);
+  const shown = { view, anchor, month, range, today };
 
   const at = (next: { view: CalendarView; date?: string; month?: string }) =>
     navigate({
@@ -58,41 +46,11 @@ export function CalendarHeader() {
       }),
       replace: true,
     });
-
-  const title =
-    view === 'month'
-      ? capitalized(formatCalendarMonth(month, locale))
-      : view === 'day'
-        ? capitalized(
-            dateFormatter(locale, {
-              weekday: 'long',
-              month: 'long',
-              day: 'numeric',
-              ...(sameYear ? {} : { year: 'numeric' }),
-              timeZone: 'UTC',
-            }).format(utc(anchor)),
-          )
-        : capitalized(
-            dateFormatter(locale, {
-              month: range.from.slice(5, 7) === range.to.slice(5, 7) ? 'long' : 'short',
-              day: 'numeric',
-              ...(sameYear ? {} : { year: 'numeric' }),
-              timeZone: 'UTC',
-            }).formatRange(utc(range.from), utc(range.to)),
-          );
-  const eyebrow =
-    view === 'month'
-      ? t('calendar.header.weeks', {
-          from: isoWeek(`${month}-01`),
-          to: isoWeek(addDays(`${shiftMonth(month, 1)}-01`, -1)),
-        })
-      : view === 'day' && anchor === today
-        ? t('calendar.header.todayWeek', { week: isoWeek(anchor) })
-        : t('calendar.header.weekNumber', { week: isoWeek(anchor) });
+  const eyebrow = headerEyebrow(shown);
 
   return (
     <PageHeader>
-      <span className="eyebrow">{eyebrow}</span>
+      <span className="eyebrow">{t(eyebrow.key, eyebrow.values)}</span>
       <PageHeaderRow
         size="display"
         meta={
@@ -108,7 +66,7 @@ export function CalendarHeader() {
             </PageHeaderMeta>
           ) : null
         }
-        title={title}
+        title={headerTitle(shown, locale)}
         actions={
           <div className="flex items-center gap-1.5">
             <SegmentedControl
@@ -137,20 +95,14 @@ export function CalendarHeader() {
             <IconButton
               size="sm"
               aria-label={t('calendar.header.previous')}
-              onClick={() => {
-                if (view === 'month') at({ view, month: shiftMonth(month, -1) });
-                else at({ view, date: shiftAnchor(view, anchor, -1) });
-              }}
+              onClick={() => at({ view, ...step(view, { anchor, month }, -1) })}
             >
               <ChevronLeft />
             </IconButton>
             <IconButton
               size="sm"
               aria-label={t('calendar.header.next')}
-              onClick={() => {
-                if (view === 'month') at({ view, month: shiftMonth(month, 1) });
-                else at({ view, date: shiftAnchor(view, anchor, 1) });
-              }}
+              onClick={() => at({ view, ...step(view, { anchor, month }, 1) })}
             >
               <ChevronRight />
             </IconButton>

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
+import { headerEyebrow, headerTitle } from '../lib/calendar-header';
 import { calendarSearchSchema } from '../lib/calendar-search';
-import { agendaMove, viewDays } from '../lib/calendar-view';
+import { agendaMove, monthMove, step, viewDays } from '../lib/calendar-view';
 
 describe('the days each view draws', () => {
   it('draws the Monday-to-Sunday week holding the anchor, across a month end', () => {
@@ -82,5 +83,50 @@ describe('a drop on Day or Week', () => {
       agendaMove({ ...event, layer: 'automations' }, { date: '2026-11-10', time: '09:00' }),
     ).toBeNull();
     expect(agendaMove(event, { date: '2026-11-09', time: '10:00' })).toBeNull();
+  });
+});
+
+describe('the month and the header', () => {
+  it('moves an event or a task to another day on the month, and nothing else', () => {
+    const event = { layer: 'events' as const, day: '2026-11-09', time: '10:00', end: '11:00' };
+    expect(monthMove(event, '2026-11-12')).toEqual({
+      layer: 'events',
+      input: { date: '2026-11-12' },
+    });
+    expect(monthMove({ ...event, layer: 'tasks' }, '2026-11-12')).toEqual({
+      layer: 'tasks',
+      input: { dueDate: '2026-11-12' },
+    });
+    expect(monthMove(event, '2026-11-09')).toBeNull();
+    expect(monthMove({ ...event, layer: 'google' }, '2026-11-12')).toBeNull();
+  });
+
+  it('steps a month on Month and a day or a week on the hours', () => {
+    const at = { anchor: '2026-11-08', month: '2026-11' };
+    expect(step('month', at, -1)).toEqual({ month: '2026-10' });
+    expect(step('week', at, 1)).toEqual({ date: '2026-11-15' });
+    expect(step('day', at, -1)).toEqual({ date: '2026-11-07' });
+  });
+
+  it('titles a week across two months short, and says Today only on today', () => {
+    const week = {
+      view: 'week' as const,
+      anchor: '2026-11-01',
+      month: '2026-11',
+      range: { from: '2026-10-26', to: '2026-11-01' },
+      today: '2026-11-08',
+    };
+    expect(headerTitle(week, 'en')).toMatch(/^Oct 26\s–\sNov 1$/);
+    expect(headerEyebrow(week)).toEqual({
+      key: 'calendar.header.weekNumber',
+      values: { week: 44 },
+    });
+    const day = { ...week, view: 'day' as const, anchor: '2026-11-08' };
+    expect(headerTitle(day, 'en')).toBe('Sunday, November 8');
+    expect(headerEyebrow(day)).toEqual({ key: 'calendar.header.todayWeek', values: { week: 45 } });
+    expect(headerEyebrow({ ...week, view: 'month' })).toEqual({
+      key: 'calendar.header.weeks',
+      values: { from: 44, to: 49 },
+    });
   });
 });

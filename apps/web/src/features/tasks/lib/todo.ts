@@ -62,6 +62,41 @@ export function todoEntries(
   return [...due, ...overdue];
 }
 
+/**
+ * The day as To do draws it: the entries the project filter keeps, and
+ * whether the day held any before it narrowed (so an empty list can say
+ * "no match" rather than "nothing yet").
+ */
+export function todoDay(
+  tasks: readonly TaskEntity[],
+  day: string,
+  options: { today: string; overdue: boolean; projectIds?: readonly string[] },
+): { entries: TodoEntry[]; dayHasAny: boolean } {
+  const entries = todoEntries(tasks, day, options);
+  const dayHasAny = options.projectIds
+    ? entries.length > 0 ||
+      todoEntries(tasks, day, { ...options, projectIds: undefined }).length > 0
+    : entries.length > 0;
+  return { entries, dayHasAny };
+}
+
+/**
+ * The second line's "where it stands", as a translation key: overdue since
+ * its day, its column, and "due today" only on today ("due" on another day).
+ */
+export function todoStateLabel(
+  entry: TodoEntry,
+  day: string,
+  today: string,
+):
+  | { key: 'tasks.todo.state.overdue'; date: string }
+  | { key: `tasks.todo.state.${Exclude<TodoState, 'overdue'> | 'due'}` } {
+  if (entry.state === 'overdue')
+    return { key: 'tasks.todo.state.overdue', date: entry.task.dueDate ?? day };
+  if (entry.state === 'todo' && day !== today) return { key: 'tasks.todo.state.due' };
+  return { key: `tasks.todo.state.${entry.state}` };
+}
+
 /** The header's count: how many on the list are left and how many are done. */
 export function todoCounts(entries: readonly TodoEntry[]): { left: number; done: number } {
   const done = entries.filter((entry) => entry.task.isDone).length;

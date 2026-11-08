@@ -1,4 +1,4 @@
-import { addDays, monthGridDays, weekdayOf } from '@oppenheimer/frontend-web';
+import { addDays, monthGridDays, shiftMonth, weekdayOf } from '@oppenheimer/frontend-web';
 
 /** How the calendar reads (the 2026-11-08 `Tasks` frame): a day on the hours, a week, or the month. */
 export const CALENDAR_VIEWS = ['day', 'week', 'month'] as const;
@@ -19,9 +19,17 @@ export function viewDays(view: CalendarView, anchor: string, month: string): str
   return Array.from({ length: 7 }, (_, i) => addDays(monday, i));
 }
 
-/** The day a step back or forward lands on in Day or Week. */
-export function shiftAnchor(view: 'day' | 'week', anchor: string, by: -1 | 1): string {
-  return addDays(anchor, view === 'week' ? 7 * by : by);
+/**
+ * Where previous (`-1`) or next (`1`) goes: the month before or after on
+ * Month, the day or week before or after on Day and Week.
+ */
+export function step(
+  view: CalendarView,
+  at: { anchor: string; month: string },
+  by: -1 | 1,
+): { date?: string; month?: string } {
+  if (view === 'month') return { month: shiftMonth(at.month, by) };
+  return { date: addDays(at.anchor, view === 'week' ? 7 * by : by) };
 }
 
 /** "10:00" plus minutes, held inside the day (23:59 at most). */
@@ -38,6 +46,15 @@ function minutesOf(time: string): number {
 
 /** The last minute a moved block may start at so it still ends inside the day. */
 const DAY_END = 23 * 60 + 59;
+
+/** The write a drop makes, or null when it makes none. */
+export type CalendarMove =
+  | {
+      layer: 'events';
+      input: { date: string; allDay?: boolean; startTime?: string; endTime?: string };
+    }
+  | { layer: 'tasks'; input: { dueDate: string; dueTime?: string | null } }
+  | null;
 
 interface Moved {
   layer: 'events' | 'google' | 'tasks' | 'automations';
@@ -58,13 +75,7 @@ interface Moved {
 export function agendaMove(
   item: Moved,
   target: { date: string; time: string | null },
-):
-  | {
-      layer: 'events';
-      input: { date: string; allDay?: boolean; startTime?: string; endTime?: string };
-    }
-  | { layer: 'tasks'; input: { dueDate: string; dueTime: string | null } }
-  | null {
+): CalendarMove {
   if (item.layer === 'tasks') {
     if (target.date === item.day && target.time === item.time) return null;
     return { layer: 'tasks', input: { dueDate: target.date, dueTime: target.time } };
@@ -87,4 +98,16 @@ export function agendaMove(
       endTime: addMinutes('00:00', start + length),
     },
   };
+}
+
+/**
+ * The write a drop on the month makes: a personal event or a task changes
+ * day and keeps its time; Google's events and automation runs never move,
+ * and a drop on its own day writes nothing.
+ */
+export function monthMove(item: Moved, date: string): CalendarMove {
+  if (date === item.day) return null;
+  if (item.layer === 'events') return { layer: 'events', input: { date } };
+  if (item.layer === 'tasks') return { layer: 'tasks', input: { dueDate: date } };
+  return null;
 }

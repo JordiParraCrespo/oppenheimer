@@ -1,7 +1,7 @@
 import { TaskEntity } from '@oppenheimer/frontend-consumer';
 import type { TaskStatus } from '@oppenheimer/shared/schemas/task';
 import { describe, expect, it } from 'vitest';
-import { todayOpenCount, todoCounts, todoEntries } from '../lib/todo';
+import { todayOpenCount, todoCounts, todoDay, todoEntries, todoStateLabel } from '../lib/todo';
 
 function task(
   id: string,
@@ -82,5 +82,22 @@ describe("To do's day", () => {
       done: 1,
     });
     expect(todayOpenCount(TASKS, DAY)).toBe(4);
+  });
+
+  it('tells a narrowed empty day from an empty one', () => {
+    const narrowed = todoDay(TASKS, DAY, { today: DAY, overdue: false, projectIds: ['p-9'] });
+    expect(narrowed).toEqual({ entries: [], dayHasAny: true });
+    expect(todoDay(TASKS, '2026-12-01', { today: DAY, overdue: false }).dayHasAny).toBe(false);
+  });
+
+  it('says due today only on today', () => {
+    const [, open] = todoEntries(TASKS, DAY, { today: DAY, overdue: false });
+    expect(todoStateLabel(open, DAY, DAY)).toEqual({ key: 'tasks.todo.state.todo' });
+    expect(todoStateLabel(open, DAY, '2026-11-07')).toEqual({ key: 'tasks.todo.state.due' });
+    const overdue = { task: TASKS[3], state: 'overdue' as const };
+    expect(todoStateLabel(overdue, DAY, DAY)).toEqual({
+      key: 'tasks.todo.state.overdue',
+      date: '2026-11-02',
+    });
   });
 });
