@@ -112,7 +112,7 @@ const type = (field: HTMLElement, value: string) => fireEvent.change(field, { ta
 const options = () => screen.queryAllByRole('option').map((option) => option.textContent);
 
 describe('BotComposer’s / menu', () => {
-  it('opens on a /, listing the built-ins then the skills the person may run, and reads none before', () => {
+  it('opens on a /, listing the built-ins then the skills the person may run, /recap first, and reads none before', () => {
     const field = composer();
     expect(state.read).toHaveBeenLastCalledWith(false);
     type(field, '/');
@@ -123,6 +123,7 @@ describe('BotComposer’s / menu', () => {
       '/usagebots.chat.slash.builtIn.usage',
       '/loopbots.chat.slash.builtIn.loop',
       '/schedulebots.chat.slash.builtIn.schedule',
+      '/recapbots.chat.slash.builtInSkill.recap',
       '/release-notesDoes release-notes.',
       '/reviewDoes review.',
       '/triageDoes triage.',
@@ -132,7 +133,7 @@ describe('BotComposer’s / menu', () => {
   it('narrows as the name is typed, and closes once the command has its input or is a plain message', () => {
     const field = composer();
     type(field, '/re');
-    expect(options()).toHaveLength(2);
+    expect(options()).toHaveLength(3);
     type(field, '/tri');
     expect(options()).toEqual(['/triageDoes triage.']);
     type(field, '/triage the build');
@@ -152,7 +153,7 @@ describe('BotComposer’s / menu', () => {
     expect(screen.getAllByRole('option')[1]?.getAttribute('aria-selected')).toBe('true');
     fireEvent.keyDown(field, { key: 'Enter' });
     expect(state.send).not.toHaveBeenCalled();
-    expect(botDraft('b1')).toBe('/review ');
+    expect(botDraft('b1')).toBe('/release-notes ');
   });
 
   it('picks on Tab and on a click, and wraps the highlight from the top', () => {

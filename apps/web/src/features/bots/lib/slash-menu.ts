@@ -57,6 +57,20 @@ export function slashMenuItems(
   return { builtIns: ownBuiltIns, skills: ownSkills };
 }
 
+/**
+ * The skills the menu offers: the built-in skills the person may run
+ * (`/recap`) first, then the bot's own. A skill of the bot's saved under a
+ * built-in skill's name before it was reserved is the one `/<name>` runs, so
+ * the built-in gives way to it.
+ */
+export function runnableSkills<Skill extends Pick<SlashCommand, 'name'>>(
+  builtInSkills: readonly Skill[],
+  own: readonly Skill[],
+): Skill[] {
+  const shadowed = new Set(own.map((skill) => skill.name));
+  return [...builtInSkills.filter((skill) => !shadowed.has(skill.name)), ...own];
+}
+
 /** The draft once a command is picked: the command and a space for its input. */
 export function pickedDraft(command: Pick<SlashCommand, 'name'>): string {
   return `/${command.name} `;

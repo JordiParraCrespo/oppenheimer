@@ -2,7 +2,7 @@ import { BotSkillEntity } from '@oppenheimer/frontend-consumer';
 import { describe, expect, it } from 'vitest';
 import { builtInCommandActionOf } from '../lib/built-in-command';
 import { skillRowModel } from '../lib/skill-row';
-import { matchingCommands, slashMenuItems, slashQuery } from '../lib/slash-menu';
+import { matchingCommands, runnableSkills, slashMenuItems, slashQuery } from '../lib/slash-menu';
 
 /**
  * What the `/` menu reads of the draft and how a skill's row reads. What breaks
@@ -101,5 +101,20 @@ describe('skillRowModel', () => {
     expect(skillRowModel({ source: 'user', userInvocable: false, modelInvocable: true }).kind).toBe(
       'onlyBot',
     );
+  });
+});
+
+describe('runnableSkills', () => {
+  const recap = { id: 'built-in-skill:recap', name: 'recap', command: '/recap', description: '' };
+
+  it('offers /recap before the bot’s own skills, so a long list never pushes it out', () => {
+    const own = Array.from({ length: 12 }, (_, i) => skill(`s${i}`));
+    const { skills } = slashMenuItems([], runnableSkills([recap], own), '');
+    expect(skills[0]?.name).toBe('recap');
+  });
+
+  it('gives way to a skill of the bot’s own saved as recap, since /recap runs that one', () => {
+    const own = skill('recap');
+    expect(runnableSkills([recap], [own])).toEqual([own]);
   });
 });

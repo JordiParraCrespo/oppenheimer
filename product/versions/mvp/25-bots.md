@@ -812,9 +812,13 @@ learn fast what is going on.
   up": its conversation, its branch, its pull request and its helpers, in the
   same shape. It is in the note, not `runner --skill`, since the person asks
   for it, not the agent.
-- **Not built.** `/recap` in the composer's `/` menu, which lists the
-  built-in commands and the bot's own skills only; and the catch-up in a
-  Codex session, since the note is `CLAUDE.md` and Codex reads `AGENTS.md`.
+- **In the `/` menu** (2026-11-08). The composer lists `/recap` under
+  Skills, ahead of the bot's own, so a long list never pushes it out; a
+  bot's own `recap` takes its place. The names come from
+  `BOT_RUNNABLE_BUILT_IN_SKILL_NAMES`, which a spec holds to the built-ins
+  that are `userInvocable`.
+- **Not built.** The catch-up in a Codex session, since the note is
+  `CLAUDE.md` and Codex reads `AGENTS.md`.
 
 **Built-in commands** (2026-11-02, from Claude Code's commands,
 `code.claude.com/docs/en/commands`). A built-in is a `/<name>` Oppenheimer

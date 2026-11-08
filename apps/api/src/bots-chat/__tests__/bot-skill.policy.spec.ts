@@ -6,8 +6,8 @@
  * that never tells the bot to save the routine, or saves one for a request
  * that is a loop.
  */
-import { parseBotSlashCommand } from '@oppenheimer/shared';
-import { composeTurnMessage } from '../domain/bot-skill.policy';
+import { BOT_RUNNABLE_BUILT_IN_SKILL_NAMES, parseBotSlashCommand } from '@oppenheimer/shared';
+import { BOT_BUILT_IN_SKILLS, composeTurnMessage } from '../domain/bot-skill.policy';
 
 const skill = {
   name: 'goal',
@@ -44,5 +44,14 @@ describe('composeTurnMessage', () => {
       message,
     );
     expect(turn).toContain('Write the notes.');
+  });
+});
+
+describe('the built-in skills the console offers in its / menu', () => {
+  it('are exactly the built-ins a person may run, so the menu never offers one that answers "not one of your skills"', () => {
+    const runnable = BOT_BUILT_IN_SKILLS.filter((skill) => skill.userInvocable).map(
+      (skill) => skill.name,
+    );
+    expect([...BOT_RUNNABLE_BUILT_IN_SKILL_NAMES].sort()).toEqual(runnable.sort());
   });
 });
