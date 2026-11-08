@@ -1511,7 +1511,8 @@
         "unavailable": "{{provider}} could not be reached. This is usually temporary: try again in a moment.",
         "time_limit": "This turn ran out of time. Sending it again won't help: ask for a smaller step, or split the request.",
         "step_limit": "This turn used all its steps and stopped before it finished. Sending it again won't help: ask for a smaller step, or say go on to continue.",
-        "interrupted": "This turn was interrupted before it finished. Sending it again runs it."
+        "interrupted": "This turn was interrupted before it finished. Sending it again runs it.",
+        "storage": "We could not save this turn, so it stopped: the fault is ours, not {{provider}}'s. Try again in a moment."
       },
       "openProviders": "Open Model providers",
       "errorDetails": "Show details",
