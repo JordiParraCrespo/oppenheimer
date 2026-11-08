@@ -414,6 +414,7 @@ export type {
   BotDocumentResponseDto,
   BotDocumentRevisionResponseDto,
   BotDreamEventResponseDto,
+  BotFaceDto,
   BotGoalEventResponseDto,
   BotGoalResponseDto,
   BotGoalStateResponseDto,

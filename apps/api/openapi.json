@@ -35449,6 +35449,44 @@
           "hints"
         ]
       },
+      "BotFaceDto": {
+        "type": "object",
+        "properties": {
+          "hat": {
+            "type": "string",
+            "enum": [
+              "fedora",
+              "porkpie",
+              "bowler",
+              "tophat",
+              "cap",
+              "beanie"
+            ]
+          },
+          "eyes": {
+            "type": "string",
+            "enum": [
+              "dots",
+              "happy",
+              "wink",
+              "big"
+            ]
+          },
+          "mouth": {
+            "type": "string",
+            "enum": [
+              "smile",
+              "grin",
+              "o"
+            ]
+          }
+        },
+        "required": [
+          "hat",
+          "eyes",
+          "mouth"
+        ]
+      },
       "BotResponseDto": {
         "type": "object",
         "properties": {
@@ -35476,7 +35514,17 @@
               "coral",
               "moss"
             ],
-            "description": "The colour its initials are drawn on."
+            "description": "The colour its face is drawn in."
+          },
+          "avatarFace": {
+            "nullable": true,
+            "description": "The face its owner picked; null wears the one its id picks.",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/BotFaceDto"
+              }
+            ]
           },
           "groupId": {
             "type": "string",
@@ -35585,6 +35633,7 @@
           "name",
           "description",
           "avatarColor",
+          "avatarFace",
           "groupId",
           "position",
           "homeHostId",
@@ -35686,6 +35735,45 @@
               "coral",
               "moss"
             ]
+          },
+          "avatarFace": {
+            "type": "object",
+            "properties": {
+              "hat": {
+                "type": "string",
+                "enum": [
+                  "fedora",
+                  "porkpie",
+                  "bowler",
+                  "tophat",
+                  "cap",
+                  "beanie"
+                ]
+              },
+              "eyes": {
+                "type": "string",
+                "enum": [
+                  "dots",
+                  "happy",
+                  "wink",
+                  "big"
+                ]
+              },
+              "mouth": {
+                "type": "string",
+                "enum": [
+                  "smile",
+                  "grin",
+                  "o"
+                ]
+              }
+            },
+            "required": [
+              "hat",
+              "eyes",
+              "mouth"
+            ],
+            "nullable": true
           },
           "groupId": {
             "type": "string",

@@ -181,6 +181,7 @@ export function SessionsSidebarBody() {
             setFilters((current) => ({ ...DEFAULT_FILTERS, sort: current.sort }))
           }
           onFacetClear={(key) => setFilters((current) => ({ ...current, [key]: ALL }))}
+          onNewProject={() => dialogs.open({ kind: 'project' })}
           query={query}
           onQueryChange={setQuery}
           open={list.open}

@@ -3759,14 +3759,24 @@ export type ReviewSessionStartedResponseDto = {
     hints: Array<string>;
 };
 
+export type BotFaceDto = {
+    hat: 'fedora' | 'porkpie' | 'bowler' | 'tophat' | 'cap' | 'beanie';
+    eyes: 'dots' | 'happy' | 'wink' | 'big';
+    mouth: 'smile' | 'grin' | 'o';
+};
+
 export type BotResponseDto = {
     id: string;
     name: string;
     description: string;
     /**
-     * The colour its initials are drawn on.
+     * The colour its face is drawn in.
      */
     avatarColor: 'mint' | 'tangerine' | 'snow' | 'sky' | 'lilac' | 'lemon' | 'coral' | 'moss';
+    /**
+     * The face its owner picked; null wears the one its id picks.
+     */
+    avatarFace: BotFaceDto | null;
     /**
      * Its sidebar group; null is ungrouped.
      */
@@ -3837,6 +3847,11 @@ export type UpdateBotRequest = {
     name?: string;
     description?: string;
     avatarColor?: 'mint' | 'tangerine' | 'snow' | 'sky' | 'lilac' | 'lemon' | 'coral' | 'moss';
+    avatarFace?: {
+        hat: 'fedora' | 'porkpie' | 'bowler' | 'tophat' | 'cap' | 'beanie';
+        eyes: 'dots' | 'happy' | 'wink' | 'big';
+        mouth: 'smile' | 'grin' | 'o';
+    } | null;
     groupId?: string | null;
     position?: number;
     homeHostId?: string | null;

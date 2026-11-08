@@ -1075,7 +1075,8 @@
       "shown": "Mostrar proyectos",
       "shownAll": "Todos",
       "shownSome": "{{shown}} de {{total}}",
-      "showAll": "Mostrar todos los proyectos"
+      "showAll": "Mostrar todos los proyectos",
+      "newProject": "Nuevo proyecto…"
     },
     "sort": {
       "custom": "Orden personalizado",
@@ -1834,6 +1835,32 @@
           "lemon": "Limón",
           "coral": "Coral",
           "moss": "Musgo"
+        },
+        "face": "Cara",
+        "faceHat": "Sombrero",
+        "faceEyes": "Ojos",
+        "faceMouth": "Boca",
+        "faceReset": "Usar su propia cara",
+        "faces": {
+          "hat": {
+            "fedora": "Fedora",
+            "porkpie": "Porkpie",
+            "bowler": "Bombín",
+            "tophat": "Chistera",
+            "cap": "Gorra",
+            "beanie": "Gorro"
+          },
+          "eyes": {
+            "dots": "Puntos",
+            "happy": "Contentos",
+            "wink": "Guiño",
+            "big": "Grandes"
+          },
+          "mouth": {
+            "smile": "Sonrisa",
+            "grin": "Risa",
+            "o": "Sorpresa"
+          }
         },
         "group": "Grupo de la barra lateral",
         "groupHint": "Dónde aparece en la barra lateral de Empleados",
@@ -3378,6 +3405,10 @@
       "makeDefault": "Hacer predeterminado",
       "makeDefaultLabel": "Empezar los bots nuevos con {{provider}}",
       "makeDefaultFailed": "No se pudo cambiar el proveedor predeterminado.",
+      "groups": {
+        "connected": "Conectados",
+        "notConnected": "Sin conectar"
+      },
       "providers": {
         "anthropic": "Modelos Claude, a través de la API de Anthropic.",
         "glm": "Modelos GLM, a través de z.ai.",
@@ -3544,6 +3575,7 @@
     "commandPlaceholder": "Busca páginas y acciones…",
     "goTo": "Ir a",
     "primaryNavigation": "Navegación principal",
+    "home": "Inicio de Oppenheimer",
     "profile": "Perfil",
     "search": "Buscar",
     "team": "Equipo",

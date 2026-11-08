@@ -1213,6 +1213,10 @@ earlier note:
   workspace's projects with New project and each one's settings, and the
   Sessions sidebar keeps only New session here on a project's header.
   New session's project chip still ends in New project….
+- The 2026-11-05 line above left the Sessions sidebar no way to make a
+  project. On 2026-11-07 the owner asked for one back, in the filter menu:
+  the Project facet's list ends in **New project…**, opening the project
+  dialog (`05-screens.md`). Editing projects stays in Plan.
 - `versions/mvp/18-plan-product.md` drew Plan's board as Later, To do, In
   progress and Done. On 2026-11-05 the owner dropped **Later** and added
   **In review** between In progress and Done, for finished work waiting to
@@ -1265,3 +1269,13 @@ earlier note:
   chat in the console: two hooks in the session's repository send its
   transcript to the API and collect replies typed in the console ("The chat
   of a cloud session"; `research/cloud-chat-bridge/`).
+- `versions/mvp/25-bots.md` §7 (2026-10-14) made a bot's avatar its
+  initials on one of eight colours. On 2026-11-07 the owner asked for
+  better avatars: each bot now has a drawn face, a hatted face in its
+  colour cut out like a sticker, generated from its id. The same day the
+  product's mark became a white fedora on an ink tile (favicons, the
+  extension, `BrandMark`, the console rail's top as a link home, beside the
+  name on sign-in and the public pages; the console's sidebar header is the
+  name alone), replacing the starter's asterisk, the rail's "O" and the
+  three-part hat favicon. A bot's owner can also pick its face in Profile
+  (hat, eyes, mouth).

@@ -1067,7 +1067,8 @@
       "shown": "Show projects",
       "shownAll": "All",
       "shownSome": "{{shown}} of {{total}}",
-      "showAll": "Show all projects"
+      "showAll": "Show all projects",
+      "newProject": "New project…"
     },
     "sort": {
       "custom": "Custom order",
@@ -1819,6 +1820,32 @@
           "lemon": "Lemon",
           "coral": "Coral",
           "moss": "Moss"
+        },
+        "face": "Face",
+        "faceHat": "Hat",
+        "faceEyes": "Eyes",
+        "faceMouth": "Mouth",
+        "faceReset": "Use its own face",
+        "faces": {
+          "hat": {
+            "fedora": "Fedora",
+            "porkpie": "Porkpie",
+            "bowler": "Bowler",
+            "tophat": "Top hat",
+            "cap": "Cap",
+            "beanie": "Beanie"
+          },
+          "eyes": {
+            "dots": "Dots",
+            "happy": "Happy",
+            "wink": "Wink",
+            "big": "Wide"
+          },
+          "mouth": {
+            "smile": "Smile",
+            "grin": "Grin",
+            "o": "Surprised"
+          }
         },
         "group": "Sidebar group",
         "groupHint": "Where it appears in the Employees sidebar",
@@ -3358,6 +3385,10 @@
       "makeDefault": "Make default",
       "makeDefaultLabel": "Start new bots on {{provider}}",
       "makeDefaultFailed": "Couldn’t change the default provider.",
+      "groups": {
+        "connected": "Connected",
+        "notConnected": "Not connected"
+      },
       "providers": {
         "anthropic": "Claude models, through Anthropic’s API.",
         "glm": "GLM models, through z.ai.",
@@ -3524,6 +3555,7 @@
     "commandPlaceholder": "Search pages and actions…",
     "goTo": "Go to",
     "primaryNavigation": "Main navigation",
+    "home": "Oppenheimer home",
     "profile": "Profile",
     "search": "Search",
     "team": "Team",

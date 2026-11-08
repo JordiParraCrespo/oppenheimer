@@ -8,11 +8,15 @@ import {
 import {
   BOT_AVATAR_COLORS,
   BOT_DESCRIPTION_MAX,
+  BOT_FACE_EYES,
+  BOT_FACE_HATS,
+  BOT_FACE_MOUTHS,
   BOT_NAME_MAX,
   BOT_PERMISSIONS,
   BOT_PROVIDERS,
   BOT_SECTIONS,
   type BotAvatarColor,
+  type BotFace,
   type BotPermission,
   type BotProvider,
   type BotSection,
@@ -34,6 +38,8 @@ export interface BotProps {
   name: string;
   description: string;
   avatarColor: BotAvatarColor;
+  /** The face its owner picked; null (or absent) wears the one its id picks. */
+  avatarFace?: BotFace | null;
   /** The sidebar group it sits in; null is ungrouped. */
   groupId: string | null;
   /** Its order inside its group, from 0. */
@@ -85,6 +91,7 @@ export interface BotEdit {
   name?: string;
   description?: string;
   avatarColor?: BotAvatarColor;
+  avatarFace?: BotFace | null;
   homeHostId?: string | null;
   provider?: BotProvider;
   model?: string | null;
@@ -100,6 +107,7 @@ export type BotEditedField =
   | 'name'
   | 'description'
   | 'avatarColor'
+  | 'avatarFace'
   | 'groupId'
   | 'homeHostId'
   | 'provider'
@@ -185,6 +193,9 @@ export class BotEntity extends AggregateRoot<BotProps> {
   get avatarColor(): BotAvatarColor {
     return this.props.avatarColor;
   }
+  get avatarFace(): BotFace | null {
+    return this.props.avatarFace ?? null;
+  }
   get groupId(): string | null {
     return this.props.groupId;
   }
@@ -246,6 +257,10 @@ export class BotEntity extends AggregateRoot<BotProps> {
     if (changes.avatarColor !== undefined) {
       props.avatarColor = changes.avatarColor;
       edited.add('avatarColor');
+    }
+    if (changes.avatarFace !== undefined) {
+      props.avatarFace = changes.avatarFace;
+      edited.add('avatarFace');
     }
     if (changes.homeHostId !== undefined) {
       props.homeHostId = changes.homeHostId;
@@ -319,6 +334,17 @@ export class BotEntity extends AggregateRoot<BotProps> {
     }
     if (!BOT_AVATAR_COLORS.includes(props.avatarColor)) {
       throw new ArgumentInvalidException(`${props.avatarColor} is not an avatar colour`);
+    }
+    const face = props.avatarFace;
+    if (
+      face &&
+      !(
+        BOT_FACE_HATS.includes(face.hat) &&
+        BOT_FACE_EYES.includes(face.eyes) &&
+        BOT_FACE_MOUTHS.includes(face.mouth)
+      )
+    ) {
+      throw new ArgumentInvalidException(`${JSON.stringify(face)} is not a bot's face`);
     }
     if (!BOT_PERMISSIONS.includes(props.permission)) {
       throw new ArgumentInvalidException(`${props.permission} is not a bot's approval level`);

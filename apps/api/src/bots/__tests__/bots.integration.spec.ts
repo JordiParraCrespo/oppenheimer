@@ -282,6 +282,20 @@ describe('bots (integration)', () => {
     });
   });
 
+  it("keeps a picked face, and drops it again so the bot wears its id's face", async () => {
+    const ana = await create('Ana');
+    const face = { hat: 'tophat', eyes: 'wink', mouth: 'grin' } as const;
+    const picked = (await bots.findOneById(scope(), ana.id)).unwrap();
+    picked.edit({ avatarFace: face });
+    expect(await bots.save(picked)).toBe('saved');
+    expect((await bots.findOneById(scope(), ana.id)).unwrap().avatarFace).toEqual(face);
+
+    const dropped = (await bots.findOneById(scope(), ana.id)).unwrap();
+    dropped.edit({ avatarFace: null });
+    expect(await bots.save(dropped)).toBe('saved');
+    expect((await bots.findOneById(scope(), ana.id)).unwrap().avatarFace).toBeNull();
+  });
+
   it('answers group-missing for a move into a group deleted under it, and writes nothing', async () => {
     const group = await addGroup('Gone');
     const ana = await create('Ana');
@@ -707,11 +721,20 @@ describe('bots (integration)', () => {
     expect((await bots.findOneById(scope(), bot.id)).unwrap().homeHostId).toBeNull();
   });
 
-  it('refuses rows the checks forbid: a colour off the palette, a bot revision with a person', async () => {
+  it('refuses rows the checks forbid: a colour off the palette, a hat off the list, a bot revision with a person', async () => {
     const bot = await create('Ana');
     await expect(
       dataSource.query(`UPDATE bot SET "avatarColor" = 'teal' WHERE id = $1`, [bot.id]),
     ).rejects.toMatchObject({ constraint: 'CHK_bot_avatar_color' });
+    await expect(
+      dataSource.query(
+        `UPDATE bot SET "avatarFace" = '{"hat":"crown","eyes":"dots","mouth":"o"}' WHERE id = $1`,
+        [bot.id],
+      ),
+    ).rejects.toMatchObject({ constraint: 'CHK_bot_avatar_face' });
+    await expect(
+      dataSource.query(`UPDATE bot SET "avatarFace" = '{}' WHERE id = $1`, [bot.id]),
+    ).rejects.toMatchObject({ constraint: 'CHK_bot_avatar_face' });
     await expect(
       dataSource.query(
         `UPDATE bot_document SET "updatedBy" = 'bot' WHERE "botId" = $1 AND name = 'soul'`,
