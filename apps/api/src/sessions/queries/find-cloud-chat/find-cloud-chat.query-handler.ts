@@ -15,7 +15,7 @@ const MAX_REPLIES = 500;
 
 /**
  * A Claude Code cloud session's chat as its hooks keep it: the transcript
- * lines from `after` on, and every reply typed here with whether its Stop
+ * lines from `from` on, and every reply typed here with whether its Stop
  * hook has collected it. The session is read in the caller's scope first,
  * which is the authorization.
  */
@@ -37,9 +37,9 @@ export class FindCloudChatQueryHandler
       });
     }
     const [lines, replies] = await Promise.all([
-      this.chat.findLines(session.id, query.after, query.limit),
+      this.chat.findLines(session.id, query.from, query.limit),
       this.chat.findReplies(session.organizationId, session.id, MAX_REPLIES),
     ]);
-    return SessionCloudChatMapper.toChat(query.after, lines, replies);
+    return SessionCloudChatMapper.toChat(query.from, lines, replies);
   }
 }

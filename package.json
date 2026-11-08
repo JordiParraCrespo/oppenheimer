@@ -48,6 +48,7 @@
     "generate:openapi": "pnpm --filter @oppenheimer/api generate:openapi",
     "migration:new": "pnpm --filter @oppenheimer/api migration:new",
     "generate:api-client": "pnpm generate:openapi && pnpm --filter @oppenheimer/api-client generate",
+    "generate:guide": "pnpm --filter @oppenheimer/docs generate:guide",
     "changeset": "changeset",
     "version-packages": "changeset version",
     "release": "changeset publish"

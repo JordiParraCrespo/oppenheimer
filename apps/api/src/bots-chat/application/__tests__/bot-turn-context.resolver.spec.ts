@@ -327,7 +327,7 @@ describe('BotTurnContextResolver', () => {
         ],
       });
       const { systemPrompt } = await resolve();
-      expect(systemPrompt).toContain('# Your skills\n\nSaved ways of doing a task');
+      expect(systemPrompt).toContain('# Your skills\n\nWays of doing a task');
       expect(systemPrompt).toContain(
         '- `release-notes`: Does release-notes.\n- `triage`: Does triage.',
       );

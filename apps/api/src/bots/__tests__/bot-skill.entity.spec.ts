@@ -39,6 +39,26 @@ describe('BotSkillEntity', () => {
     }
   });
 
+  it('refuses a name Oppenheimer holds, given new or by a rename, but still loads a row saved under one before it was reserved', () => {
+    for (const name of ['goal', 'oppenheimer']) {
+      expect(() => skill({ name })).toThrow(/Oppenheimer uses that name/);
+    }
+    const renamed = skill();
+    expect(() => renamed.edit({ name: 'oppenheimer' }, owner)).toThrow(
+      /Oppenheimer uses that name/,
+    );
+    const saved = skill();
+    const loaded = BotSkillEntity.create({
+      id: saved.id,
+      createdAt: saved.createdAt,
+      updatedAt: saved.updatedAt,
+      props: { ...saved.getProps(), name: 'oppenheimer' },
+    });
+    expect(loaded.name).toBe('oppenheimer');
+    loaded.edit({ body: 'Still mine.' }, owner);
+    expect(loaded).toMatchObject({ name: 'oppenheimer', body: 'Still mine.' });
+  });
+
   it('refuses a skill nobody may run', () => {
     expect(() => skill({ userInvocable: false, modelInvocable: false })).toThrow(
       /turn one of them on/,

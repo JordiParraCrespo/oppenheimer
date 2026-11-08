@@ -10,6 +10,7 @@
  * are the integration suite's.
  */
 import { BOT_SESSION_WAKE_STATES, type BotSessionEvent } from '@oppenheimer/shared';
+import { failedWakeAsk } from '../domain/bot-recovery.policy';
 import {
   BOT_SUBSCRIPTION_WAKE_LIMIT,
   knownStateOf,
@@ -414,6 +415,10 @@ describe('sessionWakePrompt', () => {
     expect(sessionWakePrompt(event('cancelled'), '')).toContain(
       'Do not start it again on your own',
     );
+  });
+
+  it('asks a failed wake what the recovery policy says', () => {
+    expect(sessionWakePrompt(event('failed'), '')).toContain(failedWakeAsk());
   });
 });
 

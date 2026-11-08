@@ -5,6 +5,7 @@ import type {
   BotAuthor,
   BotAvatarColor,
   BotDocumentName,
+  BotFace,
   BotMemoryScope,
   BotMemoryTier,
   BotPermission,
@@ -48,7 +49,14 @@ export class BotEntity {
     public readonly sections: BotSection[] = [],
     /** Whether its routines pause while its owner is away, and start again when they are back. */
     public readonly routineSpendGuard: boolean = true,
+    /** The face its owner picked; `null` wears the one its id picks. */
+    public readonly avatarFace: BotFace | null = null,
   ) {}
+
+  /** What its avatar draws: its colour, its id (which picks a face) and the face it was given. */
+  get face(): { color: BotAvatarColor; seed: string; parts: BotFace | null } {
+    return { color: this.avatarColor, seed: this.id, parts: this.avatarFace };
+  }
 
   /**
    * The letters its avatar draws: the first of the first two words ("New Bot"
@@ -217,6 +225,8 @@ export interface UpdateBotInput {
   name?: string;
   description?: string;
   avatarColor?: BotAvatarColor;
+  /** `null` goes back to the face its id picks. */
+  avatarFace?: BotFace | null;
   groupId?: string | null;
   position?: number;
   homeHostId?: string | null;

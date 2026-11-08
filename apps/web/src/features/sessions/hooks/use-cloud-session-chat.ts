@@ -17,7 +17,10 @@ export function useCloudSessionChat(sessionId: string): {
   failure: unknown;
   dismissFailure: () => void;
 } {
-  const chat = useSessionChat(sessionId);
+  // Its own key: the session's pane keeps one under the session's id for a
+  // terminal to feed, and a cloud session has none, so that one stays empty
+  // and the bar offers no Terminal/Chat switch.
+  const chat = useSessionChat(`cloud:${sessionId}`);
   const open = useCloudChatFeed(sessionId);
   const [waiting, setWaiting] = useState<readonly CloudChatReply[]>([]);
   const [failure, setFailure] = useState<unknown>(null);
