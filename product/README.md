@@ -1348,3 +1348,9 @@ earlier note:
   `read_terminal` type into a blank-terminal session and read its screen,
   only on a host whose `runner exec` mode is `full`. A coding agent is still
   given a task, never typed at.
+- `versions/mvp/02-runner.md` §5 said a base that is not a branch on the
+  remote fails the create. On 2026-11-08 a project on an empty GitHub
+  repository could not start its first session for that reason, so an
+  empty repository (no ref at all) is the exception: the create pushes an
+  empty `Initial commit` to the base and cuts the session from it. A
+  prepare leaves it empty; a repository with other branches still fails.

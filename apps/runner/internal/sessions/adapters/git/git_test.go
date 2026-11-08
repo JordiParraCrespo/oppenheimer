@@ -640,3 +640,19 @@ func TestASeededRepositoryIsNotSeededAgain(t *testing.T) {
 		t.Fatalf("the second store has main at %q, want %s", got, seeded)
 	}
 }
+
+// A prepare runs while the person is still filling in the new-session form.
+// Seeding there would leave a commit, and a default branch, on a repository
+// whose session they may cancel; only the create writes to it.
+func TestPreparingAnEmptyRepositoryPushesNothing(t *testing.T) {
+	remote := emptyOrigin(t)
+	c, _ := client(t)
+
+	if err := c.PrepareRepository(context.Background(), repo, remote, "main"); err == nil {
+		t.Fatal("a prepare of an empty repository reported a base it does not have")
+	}
+
+	if refs := strings.TrimSpace(git(t, remote, "for-each-ref")); refs != "" {
+		t.Fatalf("the prepare wrote to the repository: %s", refs)
+	}
+}
