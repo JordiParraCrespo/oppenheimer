@@ -658,3 +658,17 @@ export interface NewSessionDraftShape {
   agent: CodingAgentId;
   model: string | null;
 }
+
+/**
+ * A pick over a carried selection (`NewSessionDraft.scopeChosen`): the
+ * repositories just added replace it. An untick or a branch change adds none,
+ * so it passes through as the picker made it.
+ */
+export function pickOverCarried(
+  current: readonly RepositoryScope[],
+  next: RepositoryScope[],
+): RepositoryScope[] {
+  // Read by id, not by length: past the cap a pick also drops the oldest row.
+  const added = next.filter((scope) => !current.some((carried) => carried.id === scope.id));
+  return added.length > 0 ? added : next;
+}

@@ -897,6 +897,13 @@ earlier note:
   waiting or running with its clock or how it ended, the tools it has
   called so far), from frames the bot's stream sends each time one moves,
   until the stored line replaces them (`versions/mvp/25-bots.md` §4.7).
+- 2026-11-06 the owner asked to see a session's subagents the way the
+  terminal's footer lists them: Claude Code's, Codex's and OpenCode's
+  subagents now send their own work beside the transcript, and the chat
+  hangs each under the call that started it, a row with its task, kind,
+  model, clock, tokens and what it is doing, that opens to its work.
+  Grok's stay a row with no work under it (`next-steps/0.7-terminal-and-chat.md`,
+  "Subagents").
 - 2026-10-29 the owner asked for Codex cloud tasks the way Claude Code's
   cloud works, though the research note put Codex cloud last: a Codex row
   under Cloud starts the task from a host with `codex cloud exec`, and the
@@ -1206,6 +1213,10 @@ earlier note:
   workspace's projects with New project and each one's settings, and the
   Sessions sidebar keeps only New session here on a project's header.
   New session's project chip still ends in New project….
+- The 2026-11-05 line above left the Sessions sidebar no way to make a
+  project. On 2026-11-07 the owner asked for one back, in the filter menu:
+  the Project facet's list ends in **New project…**, opening the project
+  dialog (`05-screens.md`). Editing projects stays in Plan.
 - `versions/mvp/18-plan-product.md` drew Plan's board as Later, To do, In
   progress and Done. On 2026-11-05 the owner dropped **Later** and added
   **In review** between In progress and Done, for finished work waiting to
@@ -1222,6 +1233,100 @@ earlier note:
   entries (2,000, dated), so a save leaves the prompt cache warm, the turn's
   rules tell it to save what it learns without asking, and a full memory
   of 500 drops its oldest log fact instead of refusing.
+- `versions/mvp/26-bot-routines.md` §6 (2026-10-16) said a bot gets a
+  heartbeat only when asked for one in chat, through `update_routine`. On
+  2026-11-06 the owner asked for bots to be proactive by default, the way
+  OpenClaw's are: a bot is now given a **Heartbeat** routine as soon as it
+  has a job (its `INSTRUCTIONS.md` first written), hourly at a minute
+  spread by its id, saved as its owner within the scopes of the credential
+  that wrote the job, which the owner pauses or deletes like any routine.
+  A beat with nothing to say calls `nothing_to_report`, offered only on
+  turns nobody is waiting on. Bots that had a job before get none until
+  asked (26 §6, "Decided").
+- `versions/mvp/26-bot-routines.md` §6 (2026-10-18) designed the routines'
+  spend guard as a nudge card, then a pause with a card to resume, and a
+  per-bot "don't ask again". On 2026-11-07 the owner asked for it to work
+  like an agent that stops watching a pull request: it stops on its own and
+  comes back when the person does. Built that way: after 3 routine reports
+  the owner has not seen, or 72 h away from the bot's chat, every routine
+  of the bot pauses as `unattended` with one Inbox line, and the owner's
+  next visit to the chat (or message, or decided card) resumes them. No
+  cards; the thresholds are workspace automation settings, and a per-bot
+  "Pause while you're away" switch turns it off (26 §6, "Changed
+  2026-11-07").
+- `versions/mvp/25-bots.md` §4.1 (2026-10-29) left what a bot knows about
+  its owner spread across their bots: each `person` fact was edited on the
+  bot that learned it, read only on the others, and the owner had no place
+  of their own. On 2026-11-07 the owner asked for one page, the way
+  Claude's memory works: Settings → Memory, at the account, holds an
+  *About you* text the owner writes (table `person_memory`, migration
+  `AddPersonMemory`), in every bot's system prompt and never written by a
+  bot, and lists every `person` fact their bots learned, each still the row
+  of the bot that keeps it and changed there.
+- `next-steps/cloud-agents.md` ("Follow-ups to a cloud agent") said a
+  Claude Code cloud session's conversation is not ours to read, so the
+  console only linked to claude.ai. On 2026-11-07 the owner asked for its
+  chat in the console: two hooks in the session's repository send its
+  transcript to the API and collect replies typed in the console ("The chat
+  of a cloud session"; `research/cloud-chat-bridge/`).
+- `versions/mvp/25-bots.md` §7 (2026-10-14) made a bot's avatar its
+  initials on one of eight colours. On 2026-11-07 the owner asked for
+  better avatars: each bot now has a drawn face, a hatted face in its
+  colour cut out like a sticker, generated from its id. The same day the
+  product's mark became a white fedora on an ink tile (favicons, the
+  extension, `BrandMark`, the console rail's top as a link home, beside the
+  name on sign-in and the public pages; the console's sidebar header is the
+  name alone), replacing the starter's asterisk, the rail's "O" and the
+  three-part hat favicon. A bot's owner can also pick its face in Profile
+  (hat, eyes, mouth).
+- `versions/mvp/25-bots.md` §1 had a bot report a failed session and stop
+  ("do not start it again unless the person asked you to retry such
+  failures"). On 2026-11-08 the owner asked for bots as proactive as
+  OpenClaw's: a bot whose session failed on the default host because
+  Claude Code there was not signed in reported it with three other hosts
+  online. A failed step now sends the bot to the next reasonable route
+  first (another online host, another source, another approach), and when
+  a session it started on a host it chose fails in a way that looks like
+  the host's, it offers to run its task on another online host and starts
+  it on the person's yes. A host the person named
+  is never overridden, a watched session or a task that fails on its own
+  merits is still reported, not retried, and a person's "no" is never
+  routed around.
+- `versions/mvp/25-bots.md` §2 (2026-10-29) told a bot to report only what
+  a tool confirmed, which left the checking to the bot's judgement. On
+  2026-11-07 a bot started a cloud session that could not start and said
+  so only when asked, and the owner asked bots to always check. The prompt
+  now has one section, "Check before you report": an action's tool answer
+  is read, then read back where a tool can, a failure is said first and
+  unasked, and a coding agent's report is a claim checked against its
+  evidence.
+- `versions/mvp/25-bots.md` §4.2 (2026-10-30) left `start_cloud_session`
+  unwatched, since a cloud session is followed at its vendor, and §2's
+  closed list quoted each tool's first sentence. On 2026-11-07, after a
+  review of every prompt, a cloud or review session is watched like any
+  other (a failed cloud start had gone unreported), and the list names the
+  tools by area: quoting them made it 62% of the system prompt.
+- `versions/mvp/25-bots.md` §2 (2026-10-15) bounded a turn by 20 round trips
+  and 4 minutes but failed it only past the time; one that used its steps
+  ended completed, with nothing said. On 2026-11-08 it fails with
+  `step_limit`, saying so, and goals and loops go on past it as past the
+  time limit (`TURN_LIMIT_FAILURES`).
+- `versions/mvp/25-bots.md` §2 (2026-10-15) folded a bot's chat into its
+  summary past 1.5 times the history budget, while the history dropped old
+  messages at the budget, so up to about 12,000 tokens were in neither. On
+  2026-11-08 the fold starts below the budget, with room for the longest
+  summary and the notes on earlier images (`BOT_SUMMARY_TRIGGER_TOKENS`).
+- `versions/mvp/25-bots.md` §2 (2026-10-15) left a turn's tool calls out of
+  the history, as the bot's own working, so a later turn knew what its
+  tools did only from what it had said. On 2026-11-08 they come back as a
+  short record from Oppenheimer, fenced as data and bounded per call and
+  per turn (`activityText`), and the summary and the goal reviewer read the
+  same record.
+- `versions/mvp/25-bots.md` §2 (2026-10-29) told a bot how full its context
+  was only against a known window, so a bot on the OpenAI engines, which
+  report none, was never told. On 2026-11-08 it is told its tokens, and
+  asked for narrow reads from `BOT_CONTEXT_TIGHT_TOKENS`; the note no
+  longer says every engine compacts on its own.
 - The Simulator (2026-10-26) offered a session a device only when the host
   named them in `RUNNER_DEVICES` and pointed the runner at Argent's
   binary and tool-server, so a host installed the ordinary way offered

@@ -8,6 +8,11 @@ export interface BotMemoryFactRepositoryPort {
    * first; a shared fact names the bot that keeps it (`botId`).
    */
   findAll(scope: AccessScope, botId: string): Promise<BotMemoryFactEntity[]>;
+  /**
+   * Every `person` fact the caller's own bots keep about them, newest first:
+   * Settings → Memory, where each is changed on the bot that keeps it.
+   */
+  findAboutPerson(scope: AccessScope): Promise<BotMemoryFactEntity[]>;
   /** The same, for a turn the worker runs in the bot's workspace. */
   findAllForTurn(organizationId: string, botId: string): Promise<BotMemoryFactEntity[]>;
   /** One of the bot's own facts; a fact shared by another bot is that bot's to change. */
@@ -29,6 +34,6 @@ export interface BotMemoryFactRepositoryPort {
   ): Promise<'inserted' | 'full' | 'missing'>;
   save(fact: BotMemoryFactEntity): Promise<'saved' | 'missing'>;
   delete(fact: BotMemoryFactEntity): Promise<void>;
-  /** Every fact of the bot. */
+  /** Every fact of the bot, and its latest dream, which an undo would bring them back from. */
   clear(bot: { organizationId: string; id: string }): Promise<void>;
 }

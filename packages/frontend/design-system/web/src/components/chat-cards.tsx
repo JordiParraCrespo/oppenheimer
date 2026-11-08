@@ -206,7 +206,7 @@ function ProposedPlanCard({
 
 /**
  * SubagentRunCard — where a turn launched subagents, unboxed: a 28px line
- * with the spinner while any runs, the summary ("3 subagents · 1 running ·
+ * with the spinner, in the status blue, while any runs, the summary ("3 subagents · 1 running ·
  * 1 failed · 48s") folding the rows, and Stop all on the right while any
  * runs. Open, one `SubagentRow` each, indented.
  */
@@ -231,7 +231,7 @@ function SubagentRunCard({
   return (
     <Fold data-slot="subagent-run-card" defaultOpen={defaultOpen} className={cn('flex flex-col text-[13.5px]', className)}>
       <div className="flex min-h-7 items-center gap-2">
-        {live ? <LoaderIcon aria-hidden className="size-3.5 text-success motion-safe:animate-spin" /> : null}
+        {live ? <LoaderIcon aria-hidden className="size-3.5 text-info motion-safe:animate-spin" /> : null}
         <FoldTrigger className="flex items-center gap-1.5 text-fg-muted">{summary}</FoldTrigger>
         <span className="flex-1" />
         {live && onStopAll ? (
@@ -253,11 +253,16 @@ function SubagentRunCard({
 type SubagentState = 'running' | 'completed' | 'failed';
 
 /**
- * One subagent, 30px: its name, role and model in subtle ink, then its
- * state (a spinner and Running, a check and Completed, Failed in red), the
- * elapsed time in mono, and what it is doing now (`activity`, mono) or how
- * it ended (`outcome`, "→ 38 tests pass"). `note` trails in subtle ink
- * ("launched 2 subagents"); `actions` (Stop, Message) show on hover.
+ * One subagent, one 32px line, the way a terminal lists them under its
+ * prompt: the dot, in the status blue (pulsing while it runs, softer once
+ * done, red when it failed), its role in subtle ink, its name (the task), and on the
+ * right its clock and `note` ("61K tokens") in mono. The state's word is
+ * shown when it failed and read out otherwise; `model`, `activity` and
+ * `outcome` say more where the row has room for them: the model after the
+ * role, what it is doing now or how it ended after the name, in subtle ink.
+ * `actions` (Stop, Message) show on hover. With `children` (what it did,
+ * its own steps) the whole line folds them, its chevron at the end, and the
+ * steps hang under it on a hairline.
  */
 function SubagentRow({
   name,
@@ -270,7 +275,9 @@ function SubagentRow({
   outcome,
   note,
   actions,
+  defaultOpen = false,
   className,
+  children,
 }: {
   name: React.ReactNode;
   role?: React.ReactNode;
@@ -283,39 +290,62 @@ function SubagentRow({
   outcome?: React.ReactNode;
   note?: React.ReactNode;
   actions?: React.ReactNode;
+  /** Whether the steps start open. */
+  defaultOpen?: boolean;
   className?: string;
+  /** What it did, folded under the row. */
+  children?: React.ReactNode;
 }) {
   const word = stateLabel ?? { running: 'Running', completed: 'Completed', failed: 'Failed' }[state];
-  return (
-    <div
-      data-slot="subagent-row"
-      data-state={state}
-      className={cn('group/sub flex min-h-7.5 items-center gap-2 rounded-sm px-1.5 transition-colors duration-instant hover:bg-hover-surface', className)}
-    >
-      <span className="font-medium text-fg">{name}</span>
-      {role ? <span className="text-[12.5px] text-fg-subtle">{role}</span> : null}
-      {model ? <span className="text-[12.5px] text-fg-subtle">{model}</span> : null}
-      {state === 'running' ? <LoaderIcon aria-hidden className="size-3.25 text-success motion-safe:animate-spin" /> : null}
-      {state === 'completed' ? <CheckIcon aria-hidden className="size-3.25 text-fg-muted" /> : null}
-      <span className={cn('text-[12.5px]', state === 'failed' ? 'text-danger' : 'text-fg-muted')}>{word}</span>
-      {state === 'running' ? (
-        <>
-          {activity ? <span className="min-w-0 flex-1 truncate font-mono text-[12px] text-fg-muted">{activity}</span> : <span className="flex-1" />}
-          {elapsed ? <span className="figures font-mono text-[11.5px] text-fg-subtle">{elapsed}</span> : null}
-        </>
-      ) : (
-        <>
-          {elapsed ? <span className="figures font-mono text-[11.5px] text-fg-subtle">{elapsed}</span> : null}
-          {outcome ? <span className="min-w-0 flex-1 truncate text-[12.5px] text-fg-muted">→ {outcome}</span> : <span className="flex-1" />}
-        </>
-      )}
-      {note ? <span className="shrink-0 text-[12px] text-fg-subtle">{note}</span> : null}
-      {actions ? (
-        <span className="flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity duration-fast group-hover/sub:opacity-100 group-focus-within/sub:opacity-100">
-          {actions}
+  const detail = state === 'running' ? activity : outcome;
+  const line = (
+    <>
+      <span
+        aria-hidden
+        className={cn(
+          'size-1.5 shrink-0 rounded-pill',
+          state === 'running' && 'bg-info motion-safe:animate-pulse',
+          state === 'completed' && 'bg-info opacity-50',
+          state === 'failed' && 'bg-danger',
+        )}
+      />
+      {role ? <span className="shrink-0 text-[12.5px] text-fg-subtle">{role}</span> : null}
+      {model ? <span className="shrink-0 text-[12.5px] text-fg-subtle">{model}</span> : null}
+      <span className={cn('min-w-0 truncate', detail ? 'shrink' : 'flex-1', state === 'running' ? 'text-fg' : 'text-fg-muted')}>{name}</span>
+      {detail ? <span className="min-w-0 flex-1 truncate text-[12.5px] text-fg-subtle">{detail}</span> : null}
+      {state === 'failed' ? <span className="shrink-0 text-[12.5px] text-danger">{word}</span> : <span className="sr-only">{word}</span>}
+      {elapsed || note ? (
+        <span className="figures shrink-0 whitespace-nowrap font-mono text-[11.5px] text-fg-subtle">
+          {elapsed}
+          {elapsed && note ? ' · ' : null}
+          {note}
         </span>
       ) : null}
-    </div>
+    </>
+  );
+  const rowClass = cn(
+    'group/sub flex min-h-8 w-full min-w-0 items-center gap-2.5 rounded-sm px-2.5 text-[13.5px] transition-colors duration-instant hover:bg-hover-surface',
+    className,
+  );
+  if (!children) {
+    return (
+      <div data-slot="subagent-row" data-state={state} className={rowClass}>
+        {line}
+        {actions ? (
+          <span className="flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity duration-fast group-hover/sub:opacity-100 group-focus-within/sub:opacity-100">
+            {actions}
+          </span>
+        ) : null}
+      </div>
+    );
+  }
+  return (
+    <Fold data-slot="subagent-fold" defaultOpen={defaultOpen} className="flex flex-col">
+      <FoldTrigger data-slot="subagent-row" data-state={state} className={rowClass}>
+        {line}
+      </FoldTrigger>
+      <FoldPanel className="ml-3 flex flex-col gap-3 border-border-subtle border-l pt-1.5 pb-2 pl-4">{children}</FoldPanel>
+    </Fold>
   );
 }
 

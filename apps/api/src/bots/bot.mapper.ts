@@ -1,6 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import type { Mapper } from '@oppenheimer/backend-ddd';
-import type { BotAvatarColor, BotPermission, BotProvider, BotSection } from '@oppenheimer/shared';
+import type {
+  BotAvatarColor,
+  BotFace,
+  BotPermission,
+  BotProvider,
+  BotSection,
+} from '@oppenheimer/shared';
 import type { SessionEffort } from '@oppenheimer/shared/agents';
 import { BotOrmEntity } from './database/bot.orm-entity';
 import { BotEntity } from './domain/bot.entity';
@@ -19,6 +25,7 @@ export class BotMapper implements Mapper<BotEntity, BotOrmEntity, BotResponseDto
     record.name = entity.name;
     record.description = entity.description;
     record.avatarColor = entity.avatarColor;
+    record.avatarFace = entity.avatarFace;
     record.groupId = entity.groupId;
     record.position = entity.position;
     record.homeHostId = entity.homeHostId;
@@ -27,6 +34,7 @@ export class BotMapper implements Mapper<BotEntity, BotOrmEntity, BotResponseDto
     record.effort = entity.effort;
     record.permission = entity.permission;
     record.learnAutomatically = entity.learnAutomatically;
+    record.routineSpendGuard = entity.routineSpendGuard;
     record.sections = [...entity.sections];
     return record;
   }
@@ -44,6 +52,7 @@ export class BotMapper implements Mapper<BotEntity, BotOrmEntity, BotResponseDto
         name: record.name,
         description: record.description,
         avatarColor: record.avatarColor as BotAvatarColor,
+        avatarFace: (record.avatarFace ?? null) as BotFace | null,
         groupId: record.groupId ?? null,
         position: record.position,
         homeHostId: record.homeHostId ?? null,
@@ -52,9 +61,11 @@ export class BotMapper implements Mapper<BotEntity, BotOrmEntity, BotResponseDto
         effort: (record.effort ?? null) as SessionEffort | null,
         permission: record.permission as BotPermission,
         learnAutomatically: record.learnAutomatically,
+        routineSpendGuard: record.routineSpendGuard ?? true,
         sections: (record.sections ?? []) as BotSection[],
         lastMessageAt: record.lastMessageAt ?? null,
         lastMessagePreview: record.lastMessagePreview ?? null,
+        ownerSeenAt: record.ownerSeenAt ?? null,
       },
     });
   }
@@ -65,6 +76,7 @@ export class BotMapper implements Mapper<BotEntity, BotOrmEntity, BotResponseDto
     dto.name = entity.name;
     dto.description = entity.description;
     dto.avatarColor = entity.avatarColor;
+    dto.avatarFace = entity.avatarFace ? { ...entity.avatarFace } : null;
     dto.groupId = entity.groupId;
     dto.position = entity.position;
     dto.homeHostId = entity.homeHostId;
@@ -74,6 +86,7 @@ export class BotMapper implements Mapper<BotEntity, BotOrmEntity, BotResponseDto
     dto.permission = entity.permission;
     dto.createdByBotId = entity.createdByBotId;
     dto.learnAutomatically = entity.learnAutomatically;
+    dto.routineSpendGuard = entity.routineSpendGuard;
     dto.sections = [...entity.sections];
     dto.createdAt = entity.createdAt.toISOString();
     dto.updatedAt = entity.updatedAt.toISOString();

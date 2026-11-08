@@ -28,6 +28,7 @@ describe('initialDraft', () => {
       projectId: null,
       hostId: null,
       scope: [],
+      scopeChosen: false,
       folder: null,
       agent: 'claude-code',
       model: defaultModelFor('claude-code'),

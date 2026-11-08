@@ -8,7 +8,7 @@ import type { BotMessageEntity } from '../domain/bot-message.entity';
 import type { SummarizableMessage } from '../domain/bot-summary.policy';
 import { claimShownWithin } from './bot-attachment.repository';
 import { BotMessageOrmEntity } from './bot-message.orm-entity';
-import type { BotMessageRepositoryPort } from './bot-message.repository.port';
+import { type BotMessageRepositoryPort, UnstorableStepsError } from './bot-message.repository.port';
 import { BotTurnOrmEntity } from './bot-turn.orm-entity';
 
 /** How much of a message the sidebar's line keeps. */
@@ -54,16 +54,22 @@ export class BotMessageRepository
   }
 
   async saveSteps(message: BotMessageEntity): Promise<void> {
-    await this.repository
-      .createQueryBuilder()
-      .update(BotMessageOrmEntity)
-      .set({ steps: () => ':steps::jsonb' })
-      .setParameter('steps', JSON.stringify(message.steps))
-      .where('id = :id AND "organizationId" = :organizationId', {
-        id: message.id,
-        organizationId: message.organizationId,
-      })
-      .execute();
+    // The mapper's steps, so they are what an insert writes: cleaned for Postgres.
+    const { steps } = this.mapper.toPersistence(message);
+    try {
+      await this.repository
+        .createQueryBuilder()
+        .update(BotMessageOrmEntity)
+        .set({ steps: () => ':steps::jsonb' })
+        .setParameter('steps', JSON.stringify(steps))
+        .where('id = :id AND "organizationId" = :organizationId', {
+          id: message.id,
+          organizationId: message.organizationId,
+        })
+        .execute();
+    } catch (error) {
+      throw isDataException(error) ? new UnstorableStepsError(error) : error;
+    }
   }
 
   async placeSteer(
@@ -211,11 +217,30 @@ export class BotMessageRepository
         botId,
       })
       .andWhere('(message.turnId IS NULL OR message.turnId <> :turnId)', { turnId })
-      .andWhere(`message.role <> 'activity'`)
       .andWhere(
         `message.createdAt < (SELECT t."createdAt" FROM bot_turn t WHERE t."organizationId" = :organizationId AND t.id = :turnId)`,
       );
     const records = await after(query, afterMessageId)
+      .orderBy('message.createdAt', 'DESC')
+      .addOrderBy('message.position', 'DESC')
+      .take(limit)
+      .getMany();
+    return records.reverse().map((record) => this.mapper.toDomain(record));
+  }
+
+  async findRecent(
+    organizationId: string,
+    botId: string,
+    limit: number,
+  ): Promise<BotMessageEntity[]> {
+    // IDX_bot_message_bot, scanned backwards.
+    const records = await this.repository
+      .createQueryBuilder('message')
+      .where('message.organizationId = :organizationId AND message.botId = :botId', {
+        organizationId,
+        botId,
+      })
+      .andWhere(`message.role <> 'activity'`)
       .orderBy('message.createdAt', 'DESC')
       .addOrderBy('message.position', 'DESC')
       .take(limit)
@@ -243,8 +268,7 @@ export class BotMessageRepository
       .where('message.organizationId = :organizationId AND message.botId = :botId', {
         organizationId,
         botId,
-      })
-      .andWhere(`message.role <> 'activity'`);
+      });
     const { entities, raw } = await after(query, afterMessageId)
       .orderBy('message.createdAt', 'ASC')
       .addOrderBy('message.position', 'ASC')
@@ -271,6 +295,17 @@ function after(
     `message.createdAt > (SELECT c."createdAt" FROM bot_message c WHERE c."organizationId" = :organizationId AND c.id = :afterMessageId)`,
     { afterMessageId },
   );
+}
+
+/**
+ * Postgres refused a value, not the statement: SQLSTATE class 22 (a NUL,
+ * an escape `jsonb` will not take, malformed JSON). A lost connection or a
+ * broken constraint is not one.
+ */
+export function isDataException(error: unknown): boolean {
+  const own = error as { code?: unknown };
+  const driver = (error as { driverError?: typeof own }).driverError ?? own;
+  return typeof driver.code === 'string' && driver.code.startsWith('22');
 }
 
 /** What a message is written as, by every writer of `bot_message`, in this order. */
@@ -301,9 +336,10 @@ export async function insertMessageWithin(
   mapper: BotMessageMapper,
   message: BotMessageEntity,
 ): Promise<void> {
+  const record = mapper.toPersistence(message);
   await manager.query(
     `INSERT INTO bot_message (${MESSAGE_COLUMNS}) VALUES (${MESSAGE_VALUES})`,
-    messageParameters(mapper.toPersistence(message)),
+    messageParameters(record),
   );
   // The sidebar's line is a conversation's words: an activity line, an event
   // or the images a bot showed are none, and leave the bot's last words there.
@@ -312,6 +348,6 @@ export async function insertMessageWithin(
   await manager.query(
     `UPDATE bot SET "lastMessageAt" = now(), "lastMessagePreview" = left($3, ${PREVIEW_MAX})
       WHERE "organizationId" = $1 AND id = $2`,
-    [message.organizationId, message.botId, message.content.replace(/\s+/g, ' ').trim()],
+    [message.organizationId, message.botId, record.content.replace(/\s+/g, ' ').trim()],
   );
 }

@@ -106,15 +106,21 @@ worker runs it and streams what happens back to the chat.
   each resets. Each turn keeps what its engine reported
   (`bot_turn."contextTokens"`, `"contextWindow"`, `"planLimits"`) and the
   meter reads the newest. The Claude engine reports the model's window;
-  the OpenAI engine reports none, so an OpenAI, GLM or ChatGPT bot shows
-  its context in tokens alone, never against a guessed window. The plan
+  the OpenAI engine reports none, so an OpenAI, ChatGPT or Grok bot shows
+  its context in tokens alone, never against a guessed window (GLM runs on
+  the Claude engine and has its window). The plan
   windows are what the ChatGPT backend answers each call with (the
   `x-codex-primary-*` and `x-codex-secondary-*` headers the Codex CLI
-  reads); a bot on an API key has none to show. There is no Compact: the
-  engines compact on their own. Since 2026-10-29 the model is told too:
-  the turn context says how full the context was when the bot's last turn
-  ended, against its window, and from half full asks for narrow reads; a
-  turn whose engine reported no window is told nothing.
+  reads); a bot on an API key has none to show. There is no Compact button.
+  Inside a turn, Claude Code compacts on its own (left at its default; a
+  20-step turn rarely reaches it); the OpenAI engines do not compact, and a
+  turn is kept small by the 12,000-character cut of each tool answer and the
+  step limit. Between turns the summary folds old messages (above). Since
+  2026-10-29 the model is told too: the turn context says how full the
+  context was when the bot's last turn ended, against its window, and from
+  half full asks for narrow reads. A turn whose engine reported no window
+  is told its tokens, and from `BOT_CONTEXT_TIGHT_TOKENS` (half the
+  smallest window a provider here offers) asks for narrow reads too (2026-11-08; it was told nothing).
 - **The Claude engine runs without a shell.** The Claude Agent SDK is
   Claude Code as a library; its shell and file tools would run commands
   the model chose on the control plane. They are off. What it keeps from
@@ -130,10 +136,26 @@ worker runs it and streams what happens back to the chat.
     only what a tool confirmed; a reply commits to something (what it took
     on, where it stands, when the person hears next), and asking again for
     work under way is the same errand, reported rather than started again
-    (2026-10-29);
+    (2026-10-29); a failed step is not the end of the request: the bot
+    works out why and tries the next reasonable route within its
+    permissions (another online host, another query or source, another
+    approach) before it reports a blocker, never the same thing the same
+    way twice, never a second session for work still under way (queued or
+    stalled), and never around a person's "no"; saying what it is about to
+    do is not a result (2026-11-08, from OpenClaw's "Execution Bias" and
+    "Promised Work" prompt sections, `openclaw/openclaw` at `3a25991e3`);
+  - **check before you report** (2026-11-07), the one statement every
+    other section and the session wakes point at: every action that
+    changes something is checked before it is reported, from what the
+    tool returned and then, where a tool can read it back, from that read;
+    a failure is said first and unprompted, and what another agent reports
+    is a claim checked against its evidence;
   - **a closed list of what it can do**: its tools, and that it has no
     shell, no files and no access to the machine it runs on, so a missing
-    tool is a plain "I can't" and never a search of the server;
+    tool is a plain "I can't" and never a search of the server. The list
+    names the tools area by area, as Settings → Permissions groups them,
+    and leaves what each does to its definition (2026-11-07; it quoted each
+    tool's first sentence before, which made it 62% of the prompt);
   - when the turn may start a session (its catalog has `start_session`),
     **working on code through sessions**: a shell or a checkout is what
     a session is for, so running scripts, tests or builds, diagnosing a
@@ -142,11 +164,25 @@ worker runs it and streams what happens back to the chat.
     can answer is looked up and answered without one (2026-11-05). The
     bot delegates a complete
     task and never runs a terminal; it picks the named host, then the
-    project's default, then its home host, and checks it is online; it
+    project's default, then its home host, and checks it is online; when
+    a host it chose (not one the person named, which it never overrides)
+    cannot run the task (offline, or `list_hosts` shows it cannot start the
+    agent) and another online host can, it starts there and says why
+    (2026-11-08); when a session it started on a host it chose fails and
+    the failure looks like the host's (the agent not signed in or not
+    installed, the checkout missing), it offers to run the task it wrote on
+    another online host that has the agent and starts it only on the
+    person's yes: nothing but the session's own words says why it failed,
+    and `list_hosts` cannot see whether an agent is signed in. It never
+    offers a host the task failed on; a session it only watches, or a task
+    that fails on its own merits, is reported, not retried, as before (the
+    `failed` wake); it
     works only in a known project's repository or a folder it was given;
     it follows a session already on the task rather than starting a
-    second; it says "started", not "done", and reports what `get_session`
-    shows. Approvals and permissions do not change. Without
+    second; it says "started", not "done", checks in the same turn that the
+    session did start, and reports what `get_session` shows, reading the
+    agent's own report as a claim to check against its evidence (the
+    checks it ran, the pull request) before calling the work done. Approvals and permissions do not change. Without
     `start_session` the section is left out and the closed list keeps its
     plain refusal (2026-10-21);
   - the rules no instruction overrides: never ask for a secret, never
@@ -194,9 +230,12 @@ worker runs it and streams what happens back to the chat.
   so a turn's history starts where the last one's did until a whole block
   no longer fits (2026-11-03): each turn's request is the last one's with
   the new messages after it, and the provider's prompt cache holds it. When a turn ends and the messages the summary does
-  not cover pass one and a half times that budget, a job on the
-  `bot-summaries` queue folds the oldest of them into the summary until
-  about half the budget is left (at most 32,000 tokens a call; a longer
+  not cover pass the budget less the room the longest summary and the
+  notes on earlier images take in it (`BOT_SUMMARY_TRIGGER_TOKENS`,
+  derived in the code, so nothing the history drops is missing from the
+  summary; it was one and a half times the budget until 2026-11-08), a job
+  on the `bot-summaries` queue folds the oldest of them into the summary
+  until `BOT_SUMMARY_KEEP_TOKENS` (three eighths of the budget) are left (at most 32,000 tokens a call; a longer
   backlog takes several), with the bot's own provider, model and key and
   no tools (`BotEngine.complete`). Only messages of turns that have ended
   are folded, up to the first that has not: a queued message is never in
@@ -214,9 +253,10 @@ worker runs it and streams what happens back to the chat.
   bot's own rows goes through the owner's scope, resolved fresh for each
   turn: the bot sees what they see now, and nothing once they leave the
   workspace.
-- **A turn is bounded.** 20 model round trips and 4 minutes; past the
-  time limit it is stopped and ends failed, saying so, with what it wrote
-  kept. Longer work is a session on a host.
+- **A turn is bounded.** 20 model round trips and 4 minutes; past either
+  it is stopped and ends failed, saying so (`step_limit`, `time_limit`),
+  with what it wrote kept. Longer work is a session on a host, or a goal,
+  whose next continuation picks up after either limit.
 - **No path of the server reaches the chat.** The engine replaces the
   turn's scratch directory in every text, tool answer and error it hands
   back.
@@ -256,10 +296,19 @@ worker runs it and streams what happens back to the chat.
   the HTTP status of an OpenAI error): `rate_limit`, `usage_limit` (a spent
   quota or credit, no longer waited out as a rate limit), `credential`,
   `refused` (this request: its content, the model), `unavailable`, or
-  `other`; the worker adds `time_limit` and `interrupted`, and a provider
+  `other`; the worker adds `time_limit`, `step_limit` and `interrupted`, and a provider
   with no key for the turn is `credential`. It is `bot_turn."failure"`,
   beside the words in `"error"`, and `BOT_TURN_FAILURES` says for each
   whether sending the message again can help.
+- **A turn whose record cannot be saved fails as `storage`, and one call
+  whose result cannot be saved fails alone** (2026-11-08, issue #728). Text
+  a tool brings in from outside (a PDF's text layer, a page, a session's
+  output) can hold a NUL or a lone surrogate half, which Postgres refuses in
+  `text` and `jsonb`; the chat's messages drop the first and replace the
+  second (`storableText`) before they are written. If a call's end is still
+  refused, that call is stored as failed and the turn goes on; any other
+  refused write ends the turn as `storage`, whose card says the fault is
+  ours, not the provider's.
 
 ## 3. The chat
 
@@ -583,6 +632,66 @@ of `bot_memory_fact`, with two columns more:
   under the same lock as the count; a fact added by hand is refused
   (`BOTS_009`), as is a save when every fact is `profile`. A fact the bot
   saved names the bot as its source (it named the person before).
+- **Settings → Memory at the account** (2026-11-07, asked by the owner,
+  the way Claude's memory works). One page, beside Profile, for what all
+  the person's bots know about them:
+  - *About you*: a text the person writes about themselves, up to 4,000
+    characters, one per person per workspace (`person_memory`). It is in
+    the system prompt of every bot they made there, in a section of its
+    own ahead of the shared facts, and no tool writes it: a bot that
+    learns something about the person saves a `person` fact instead. It
+    changes only when the person saves it, so the prompt cache holds.
+  - *What your bots learned*: every `person` fact any of their bots keeps,
+    newest first, each naming that bot. Edit, move and forget act on the
+    bot that keeps it, as on that bot's own page; nothing is added here,
+    since what the person wants every bot to know goes in About you.
+  - `GET /v1/bot-memory/person` reads both; `PUT
+    /v1/bot-memory/person/about` writes the text. A fact is changed through
+    the bot's own memory routes.
+- **Dreaming** (2026-11-07, from Managed Agents' dreams and Anthropic's
+  "Components of agent memory"). A bot saves as it goes without checking
+  what it has, so its memory fills with repeats, contradictions and stale
+  entries. A dream is an offline pass of the bot's own model, with no tools,
+  that rewrites it: duplicates merged, what is contradicted or stale
+  dropped, each fact one clear sentence that still makes sense in a month,
+  standing instructions kept in the profile and the rest in the log, and at
+  most five new facts the conversation clearly shows will matter; a secret
+  a note holds (a password, a key, a token) is dropped. It reads
+  the conversation summary and the newest messages (24,000 tokens) as the
+  ground truth the notes are checked against: a note is a guess at what
+  will matter, written in the moment.
+  - *What it rewrites.* Only the facts the bot wrote itself. What the
+    person wrote in Settings → Memory stays word for word, and a fact
+    another bot shared is that bot's; the dream reads both so it repeats
+    neither. A merged log fact keeps the newest day of those it came from.
+  - *When.* After a turn, once the bot keeps at least 8 facts of its own,
+    has written 10 since its last dream, and last dreamed a day ago or
+    never (a dream that wrote nothing counts: the day is claimed when the
+    dream is staged, so a retry of a failed job still runs); only while *Learn automatically* is on, since a dream changes
+    memory the way `remember` does. Settings → Memory's **Tidy now** runs
+    one whatever those say; the API records the ask, so the row reads
+    "tidying" until the job ends (ten minutes at most). It runs on the `bot-dreams` queue and is
+    counted under `/usage` as `dream`.
+  - *Guards.* An answer that is not the JSON asked for, keeps none of the
+    facts, keeps fewer than a fifth of them or would overfill the memory is
+    not used. The write swaps the facts it read for the ones it wrote under
+    the bot's lock and a lock on each of its facts, and is refused if any of
+    them changed since it read them (the bot saved, the owner edited or
+    forgot one): the next dream reads them again. Clear all takes the same
+    lock.
+  - *Undo.* The facts it replaced are kept with the dream
+    (`bot_memory_dream`, one row a bot, its latest). Undo in Settings →
+    Memory puts them back with their ids and dates and deletes what the
+    dream wrote, except one the owner has edited since; what was saved since
+    stays, the bot's own oldest log facts making room past 500. Only the latest dream can be undone, once (`BOTS_041`).
+    Clear all forgets the dream too.
+  - *In the chat.* Each dream and each undo is a line outside any turn
+    ("Tidied its memory · 40 facts → 22"), which the bot reads back as a
+    note from Oppenheimer.
+  - *Not built.* A review step before the rewrite is used (Managed Agents'
+    dreams write a new store and leave adopting it to you); here it is
+    applied and undone instead, as every other memory change is a line you
+    undo. Dreaming a project's memory, and repeated passes.
 - **Not built.** Grok Bot's review queue for shared learnings: a fact
   about you comes from your own bots, so it is a line in their chat like
   any other memory change.
@@ -628,6 +737,56 @@ one row of `bot_skill`, the bot's own, at most 50 a bot.
 - **Not built.** Grok Bot's library shared by all of a person's bots, a
   registry like OpenClaw's ClawHub, and skills that dispatch straight to a
   tool.
+
+**Oppenheimer's own guide** (2026-11-07, from how Claude Code knows Claude
+Code: its docs are published, with an `llms.txt`, and it reads them before
+it answers a question about itself). The owner asked for bots that know
+what Oppenheimer is and what they can do in it, from a published
+documentation, with a skill every bot has by default. Until then a bot had
+one sentence about Oppenheimer and answered "how do I pair a host?" from its
+training, which knows nothing of it.
+
+| Tool | Does | Default |
+|------|------|---------|
+| `read_oppenheimer_docs` | With no page, the guide's index (each page's id, title and what it covers); with a page id, that page whole | auto |
+
+- **One copy of the guide, published and bundled.** "Using Oppenheimer" is
+  `apps/docs/docs/guide/*.md`, a section of the docs site: what Oppenheimer
+  is, hosts, sessions, projects and tasks, bots, routines and watches,
+  automations, the inbox, GitHub, the CLI and MCP. `pnpm generate:guide`
+  writes the same pages into `@oppenheimer/shared/guide`, which the API
+  ships, so a bot reads the guide of the version it runs in, on a deployment
+  with no docs site or no outbound network as well (CI's `check:guide`
+  fails when the two differ). The tool reads no workspace data: it is under
+  Itself in Settings → Permissions.
+- **A built-in skill, `oppenheimer`.** Every bot has it from its first turn,
+  listed under "Your skills" whenever the turn offers `use_skill` and
+  `read_oppenheimer_docs`, and read with `use_skill` like any other: read
+  the index, then the pages a question needs; answer from them, saying
+  where in the console; say so when the guide does not cover it instead of
+  guessing; its own tool list, not the guide, is what it can do in this
+  conversation; the guide grants nothing. It is product code, not a
+  `bot_skill` row (`BOT_BUILT_IN_SKILLS`), and not a command: the person
+  asks and the bot reads (`userInvocable` off). Its name is reserved
+  (`BOT_BUILT_IN_SKILL_NAMES`), so no skill takes it; a skill saved under a
+  reserved name before it was reserved still loads, is still the bot's to
+  use, is listed in the built-in's place, and is the person's to edit and
+  run. One rule owns it: a reserved name is refused when it is given, on a
+  new skill or a rename (`BotSkillEntity`); the update schema and the
+  console's edit form check a name's shape alone, since an edit may resend
+  the name the skill already has. The `/` menu hides only a skill whose
+  `/<name>` a built-in command takes.
+- **Links to the published page.** With `DOCS_URL` set to where the
+  deployment publishes its docs site, each page read carries its address
+  and the bot links it; without, it links nothing rather than guess one.
+- **For agents outside Oppenheimer too.** The docs build writes `/llms.txt`
+  (each page with what it covers) and every page as plain Markdown at
+  `/guide/<id>.md`, so an agent on another host, an MCP client or someone's
+  own Claude Code reads the pages a bot reads.
+- **Not built.** The guide for coding agents inside sessions (`runner
+  --skill` covers the runner's own commands, not the product), the MCP
+  server's tools or resources over the guide, and the guide in languages
+  other than English.
 
 **Built-in commands** (2026-11-02, from Claude Code's commands,
 `code.claude.com/docs/en/commands`). A built-in is a `/<name>` Oppenheimer
@@ -786,10 +945,11 @@ agent's, in a session, where Claude Code ships them.
 ### 4.2 Sessions: its hands on hosts
 | Tool | Does | Default |
 |------|------|---------|
-| `list_hosts` | Hosts, online or not, and the agents they can run | auto |
+| `list_hosts` | Hosts, online or not, their runner version, and the agents they can run | auto |
+| `update_host_runner` | Ask a connected host's runner to install the newest release now, through the console's own Update runner (`UpdateHostRunnerCommand`, `POST /hosts/{id}/update`); scope `hosts:write`. The tools that hit a runner too old (a transcript, a shared file's preview, a terminal watch) name it, so a bot offers the update rather than asking the person to do it (added 2026-11-08) | ask |
 | `list_sessions` / `get_session` | Sessions and their state, each with its project and the group the console's dot shows; filtered by project, host, state or group; `get_session` also shows a pending question or permission dialog with its id and options (built 2026-10-27, issue #493) | auto |
 | `start_session` | Start an agent on a host, in a new worktree or a folder, with a task; the session's origin is `bot` and it always launches at `auto` (decided 2026-10-18: nobody sits at a bot's terminal, so `ask` would wait forever) | ask |
-| `start_cloud_session` | Start a session in a vendor's cloud on a project's repository; `agent` picks the cloud. `claude-code` (default, claude.ai/code) and `codex` (chatgpt.com/codex, with an optional `codex_environment`) go through the sessions' own create with `cloud`, so a host's runner runs `claude --cloud` or `codex cloud exec` in a scratch checkout, exactly as the console's cloud place and a `claude-cloud` automation do; host chosen as `start_session`'s. It waits (at most 120 s, the runner's own limit) for the host to report the session's id and answers with its URL. `cursor` goes through `StartCloudSessionCommand` (`POST /sessions/cloud`'s), on the owner's own Cursor key with no host and an optional `model`; the card says it runs on that key, and a missing key is the call's error (`CLOUD_AGENTS_004`). Scope `sessions:write`, origin `bot`; `get_session` shows the URL after. No watch, since a cloud session is followed at its vendor (added 2026-10-30; Codex and Cursor 2026-11-02) | ask |
+| `start_cloud_session` | Start a session in a vendor's cloud on a project's repository; `agent` picks the cloud. `claude-code` (default, claude.ai/code) and `codex` (chatgpt.com/codex, with an optional `codex_environment`) go through the sessions' own create with `cloud`, so a host's runner runs `claude --cloud` or `codex cloud exec` in a scratch checkout, exactly as the console's cloud place and a `claude-cloud` automation do; host chosen as `start_session`'s. It waits (at most 120 s, the runner's own limit) for the host to report the session's id and answers with its URL. `cursor` goes through `StartCloudSessionCommand` (`POST /sessions/cloud`'s), on the owner's own Cursor key with no host and an optional `model`; the card says it runs on that key, and a missing key is the call's error (`CLOUD_AGENTS_004`). Scope `sessions:write`, origin `bot`; `get_session` shows the URL after. Watched as `start_session`'s unless `watch` is false (2026-11-07; it was not watched, as followed at its vendor, until a start that failed went unreported); an answer with no link is not a start (added 2026-10-30; Codex and Cursor 2026-11-02) | ask |
 | `watch_session` / `unwatch_session` / `list_watches` | Follow a session, so its task needing input or ending wakes the bot (`start_session` follows its own session); built 2026-10-22, note 27. A `pattern` wakes it when the terminal prints a matching line, matched on the host (2026-10-29) | auto |
 | `watch_pull_request` / `unwatch_pull_request` | Follow an open pull request of a repository the owner can read, so a check failing or passing, a review, a comment or the merge wakes the bot with the event's metadata, never anyone's words; a merge ends it; built 2026-11-03, note 27 §7.1. `list_watches` lists them too | auto |
 | `wait_for_session` | Wait up to 120 s inside the turn for a session's task to need input or end, at most 3 times a turn (2026-10-29) | auto |
@@ -1195,6 +1355,15 @@ The design's avatar photos are photographs of people; until there is a
 set we may use, an avatar is the bot's initials on one of the design's
 eight colours (`AV_COLORS`).
 
+Changed 2026-11-07: the avatar is a drawn face instead of the initials, a
+round face in the bot's colour wearing a hat, cut out like a sticker on a
+darker shade of that colour. The hat, the eyes and the mouth come from the
+bot's id, so a bot keeps its face through a rename and nobody has to pick
+one; the colour is still the one picked in Profile. Still no photos of
+people. The owner can pick another face in Profile, under the colour: a
+hat, eyes and a mouth, each a row of faces (`bot."avatarFace"`, null until
+picked, and "Use its own face" goes back to the id's).
+
 ## 8. Where things live
 
 - **API:** the `bots` module. `bot`, `bot_group`, `bot_document`,
@@ -1248,6 +1417,7 @@ The decisions it produced:
   **Employees**.
 - 2026-10-11: bots' documents and memory live in Postgres.
 - 2026-10-14: no photos of people as avatars; initials on a colour.
+  Changed 2026-11-07 to a face drawn from the bot's id, on its colour (§7).
 - 2026-10-15: **the loop runs in Oppenheimer**, not on a host. It
   replaces 2026-10-14's "a headless turn on the home host"; the home host
   becomes where the bot's sessions run.
@@ -1494,3 +1664,83 @@ The decisions it produced:
   whose history only grows until a summary, and Codex, which sends its
   conversation's id as `prompt_cache_key`. It refines 2026-10-15's history
   budget, which kept the newest messages that fit.
+- 2026-11-07: **a bot checks that what it did worked.** The owner saw a bot
+  start a cloud session that could not start (its host's Claude Code was not
+  signed in to claude.ai) and say so only once asked whether it had failed.
+  "How a turn goes" now asks every action that changes something to be
+  checked before it is reported: the tool's own answer first ("could not
+  start", "failed", "queued" are not success), then one read back where a
+  tool can do it, or "unchecked" and how to check where none can. A failure
+  is said first, without retrying blindly or working around it. Starting a
+  session is checked in the same turn, and a finished session's report is
+  the agent's claim until its transcript shows the evidence.
+- 2026-11-07: **a review of every prompt, fixed together.** Rendered from
+  the code and read end to end, the prompts disagreed with the tools in
+  places. Cloud and review sessions are now watched as `start_session`'s
+  (unless `watch` is false), and "Working on code" says how a cloud
+  session starts, fails and is read. The needs-input wake lets the bot
+  answer with `answer_session` when its instructions settle the question
+  (it said the bot could not). The turn context names the same host order
+  as the prompt (the person's, the project's, then home). `send_to_session`
+  points at `read_session` with `after_seq`, and tells the bot to end its
+  turn while the agent works. "How a turn goes" says 4 minutes, and an
+  approved call's result is checked before it is reported. The tool list
+  names tools by area. Tool texts say what a queued, scheduled or held
+  result looks like; their first sentences say what they do.
+- 2026-11-07: **the person has a memory page of their own**: Settings →
+  Memory at the account, an *About you* text in every bot's prompt that
+  only the person writes, and every `person` fact their bots keep, changed
+  on the bot that keeps it (§4.1). Asked by the owner, after Claude's.
+- 2026-11-07: **bots dream** (§4.1, "Dreaming"). The owner found each
+  bot's memory "a bit like slop" once bots saved as they go, and asked for
+  a process that unifies, rewrites and deduplicates it, from Managed Agents'
+  dreams and "Components of agent memory". A dream is the bot's own model,
+  no tools, over the facts it wrote and its latest conversation, after a
+  turn once it has written 10 since the last (at most daily), or when the
+  owner asks; it is applied at once and undone from Settings → Memory,
+  rather than reviewed first.
+- 2026-11-07: **every bot knows Oppenheimer from its own guide** (§4.1).
+  The owner asked for bots aware of what Oppenheimer is and what they can
+  do in it, the way Claude Code knows itself: a published documentation and
+  a skill each bot has by default. "Using Oppenheimer" is a section of the
+  docs site, bundled into the API from the same files; a built-in
+  `oppenheimer` skill and the `read_oppenheimer_docs` tool read it, and the
+  docs build publishes `llms.txt` for agents outside. A reserved skill name
+  is now refused only when it is given (a new skill, a rename), so a row
+  saved under one before still loads, edits and runs, as this list said on
+  2026-11-02.
+- 2026-11-08: **the goal and rule reviewers run at low effort.** They
+  passed no effort, meant as "least effort", which a model with levels
+  reads as its default. They now ask for `low` where the model offers it,
+  and none where it offers no levels (`reviewEffort`).
+- 2026-11-08: **a turn that runs out of steps fails, saying so.** One
+  that used its 20 round trips ended `completed` with nothing said, so a
+  bot could stop mid-work in silence. It now fails with `step_limit` and
+  words to act on, as the time limit does, and a goal reviews it and goes
+  on the same way.
+- 2026-11-08: **the summary folds before the history drops.** It folded
+  past 36,000 tokens while the history dropped old messages past about
+  21,000, so up to 12,000 tokens of conversation were in neither, reachable
+  only through `search_chat`. It now folds past the budget less the longest
+  summary and the notes on images (19,950) down to 9,000: a summary call about twice as often, each
+  about half the size.
+- 2026-11-08: **history reads back what the tools did.** A turn's activity
+  line (its tool calls) was left out of the history, so a later turn knew a
+  session id it started, or that a start failed, only if it had said so.
+  It now comes back as Oppenheimer's short record on the person's side,
+  fenced as data: each call's name, its input (200 characters), how it
+  ended and the start of its answer (300), at most 2,000 characters a line
+  (`activityText`). The summary counts and folds it the same way.
+- 2026-11-08: **on Claude, the conversation opens the message.** Claude
+  Code takes only user prompts, so the history was written into the system
+  prompt as a transcript, which changed it on every turn and left the
+  provider's prompt cache nothing to hit. The transcript now opens the
+  turn's message instead (`claudeMessage`), so the system prompt is the
+  same bytes from turn to turn on every engine, as §2 says. The prompt
+  says only that the latest message carries the turn context, on every
+  engine; where it sits in the message is the engine's.
+- 2026-11-08: **a bot with no known window is told when its context
+  fills.** The OpenAI engines report no window, so their bots were never
+  told; they now get their token count and, from 100,000 tokens, the ask for
+  narrow reads. The note no longer says every engine compacts on its own:
+  only Claude Code does.

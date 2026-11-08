@@ -24,8 +24,10 @@ import (
 // included.
 //
 // Each line is a `{timestamp, type, payload}`. What the chat reads:
-// `event_msg` `user_message` (what the person typed; the `response_item`
-// user messages also carry the context Codex injects), `response_item`
+// what the person typed, as `event_msg` `user_message` or, from Codex 0.167,
+// as the `UserMessage` of an `event_msg` `item_completed` (the
+// `response_item` user messages also carry the context Codex injects),
+// `response_item`
 // assistant messages, reasoning summaries, tool calls and their outputs,
 // web searches, `turn_aborted` (a stopped turn), `compacted`, and
 // `token_count`, whose context and plan windows become the chat's status.
@@ -45,6 +47,9 @@ const (
 // codexSource is Codex's rollouts, under its `sessions/` folder.
 type codexSource struct {
 	sessions string
+	// heads are the first lines of the rollouts read for subagents, kept
+	// once read.
+	heads *codexHeads
 }
 
 func (c codexSource) finder(session domain.Session) (func() string, bool) {
@@ -52,7 +57,7 @@ func (c codexSource) finder(session domain.Session) (func() string, bool) {
 	if cwd == "" {
 		return nil, false
 	}
-	scan := &codexScan{root: c.sessions, dirs: sameDirectory(cwd), since: session.Created, cwds: map[string]string{}}
+	scan := &codexScan{root: c.sessions, dirs: sameDirectory(cwd), since: session.Created, heads: map[string]codexHead{}}
 	return scan.find, true
 }
 
@@ -76,7 +81,7 @@ type codexScan struct {
 	root  string
 	dirs  map[string]bool
 	since time.Time
-	cwds  map[string]string
+	heads map[string]codexHead
 	at    time.Time
 	found string
 }
@@ -111,13 +116,15 @@ func (s *codexScan) find() string {
 				continue
 			}
 			path := filepath.Join(folder, name)
-			cwd, ok := s.cwds[path]
+			head, ok := s.heads[path]
 			if !ok {
-				if cwd = codexDirectory(path); cwd != "" {
-					s.cwds[path] = cwd
+				if head, ok = codexHeadOf(path); ok {
+					s.heads[path] = head
 				}
 			}
-			if !s.dirs[filepath.Clean(cwd)] {
+			// A subagent's rollout runs in the same directory, and is the
+			// conversation's own, under it (`codex_subagents.go`).
+			if !ok || head.child() || !s.dirs[filepath.Clean(head.Cwd)] {
 				continue
 			}
 			if best == "" || info.ModTime().After(bestAt) {
@@ -134,29 +141,73 @@ func midnight(t time.Time) time.Time {
 	return time.Date(year, month, day, 0, 0, 0, 0, t.Location())
 }
 
-// codexDirectory is where a rollout's conversation ran, off its first line;
-// "" when that line is not a `session_meta` (yet).
-func codexDirectory(path string) string {
+// codexHead is a rollout's first line, its `session_meta`: where the
+// conversation ran, its thread, and for a subagent's, the thread that
+// started it and what it was named.
+type codexHead struct {
+	Cwd            string `json:"cwd"`
+	ID             string `json:"id"`
+	ParentThreadID string `json:"parent_thread_id"`
+	// Source is a string for a conversation of its own (`"cli"`, `"exec"`)
+	// and an object for a subagent's (`{"subagent": {"thread_spawn": …}}`),
+	// so it is read apart (spawn), and a string never fails the line.
+	Source json.RawMessage `json:"source"`
+}
+
+// codexSpawn is what a subagent's `source` says of the thread that started it.
+type codexSpawn struct {
+	ParentThreadID string `json:"parent_thread_id"`
+	AgentPath      string `json:"agent_path"`
+	AgentNickname  string `json:"agent_nickname"`
+	AgentRole      string `json:"agent_role"`
+}
+
+// spawn is the thread that started this one and what it named it; nil for
+// a conversation of its own.
+func (h codexHead) spawn() *codexSpawn {
+	var source struct {
+		Subagent struct {
+			ThreadSpawn *codexSpawn `json:"thread_spawn"`
+		} `json:"subagent"`
+	}
+	if len(h.Source) == 0 || h.Source[0] != '{' || json.Unmarshal(h.Source, &source) != nil {
+		return nil
+	}
+	return source.Subagent.ThreadSpawn
+}
+
+// parent is the thread that started this one; "" for a conversation of its own.
+func (h codexHead) parent() string {
+	if spawn := h.spawn(); spawn != nil && spawn.ParentThreadID != "" {
+		return spawn.ParentThreadID
+	}
+	return h.ParentThreadID
+}
+
+// child is whether another thread started this one.
+func (h codexHead) child() bool { return h.parent() != "" }
+
+// codexHeadOf is a rollout's `session_meta`, off its first line; false when
+// that line is not one (yet).
+func codexHeadOf(path string) (codexHead, bool) {
 	file, err := os.Open(path) //nolint:gosec // a rollout under Codex's own sessions folder
 	if err != nil {
-		return ""
+		return codexHead{}, false
 	}
 	defer func() { _ = file.Close() }()
 	scanner := bufio.NewScanner(io.LimitReader(file, codexHeadMax))
 	scanner.Buffer(make([]byte, 64<<10), codexHeadMax)
 	if !scanner.Scan() {
-		return ""
+		return codexHead{}, false
 	}
-	var head struct {
-		Type    string `json:"type"`
-		Payload struct {
-			Cwd string `json:"cwd"`
-		} `json:"payload"`
+	var line struct {
+		Type    string    `json:"type"`
+		Payload codexHead `json:"payload"`
 	}
-	if json.Unmarshal(scanner.Bytes(), &head) != nil || head.Type != "session_meta" {
-		return ""
+	if json.Unmarshal(scanner.Bytes(), &line) != nil || line.Type != "session_meta" {
+		return codexHead{}, false
 	}
-	return head.Payload.Cwd
+	return line.Payload, true
 }
 
 // codexLine is one line of a rollout, its payload read loosely: each type
@@ -191,8 +242,13 @@ type codexPayload struct {
 	} `json:"action"`
 	Message string   `json:"message"`
 	Images  []string `json:"images"`
-	Model   string   `json:"model"`
-	Info    *struct {
+	// Item is what an `item_completed` finished.
+	Item *struct {
+		Type    string      `json:"type"`
+		Content []codexText `json:"content"`
+	} `json:"item"`
+	Model string `json:"model"`
+	Info  *struct {
 		LastTokenUsage *struct {
 			InputTokens  int64 `json:"input_tokens"`
 			OutputTokens int64 `json:"output_tokens"`
@@ -220,6 +276,10 @@ type codexChat struct {
 	model string
 	lines int
 	calls map[string][]string
+	// typed is the last thing the person typed, while nothing has followed
+	// it in its turn, so a version that writes the message both ways shows it
+	// once.
+	typed string
 }
 
 func (c *codexChat) quiet(time.Duration, int) [][]byte { return nil }
@@ -238,7 +298,23 @@ func (c *codexChat) line(raw []byte, _ int) [][]byte {
 	}
 	id := "codex-" + strconv.Itoa(c.lines)
 	at := line.Timestamp
-	switch line.Type {
+	if line.Type == "event_msg" && (p.Type == "user_message" || p.Type == "item_completed") {
+		return c.event(id, at, p)
+	}
+	entries := c.entries(id, at, line.Type, p)
+	// A turn's start or end, or anything the chat shows bar the status, means
+	// the same words typed again are a new message.
+	event := line.Type == "event_msg"
+	turn := event && (p.Type == "task_started" || p.Type == "task_complete")
+	status := event && p.Type == "token_count"
+	if turn || len(entries) > 0 && !status {
+		c.typed = ""
+	}
+	return entries
+}
+
+func (c *codexChat) entries(id, at, kind string, p codexPayload) [][]byte {
+	switch kind {
 	case "turn_context":
 		if p.Model != "" {
 			c.model = p.Model
@@ -260,18 +336,22 @@ func (c *codexChat) line(raw []byte, _ int) [][]byte {
 func (c *codexChat) event(id, at string, p codexPayload) [][]byte {
 	switch p.Type {
 	case "user_message":
-		if strings.TrimSpace(p.Message) == "" && len(p.Images) == 0 {
+		return c.typedBy(id, at, p.Message, len(p.Images))
+	case "item_completed":
+		if p.Item == nil || p.Item.Type != "UserMessage" {
 			return nil
 		}
-		blocks := []chatBlock{}
-		if p.Message != "" {
-			text, cut := truncate(p.Message, chatTextMax)
-			blocks = append(blocks, chatBlock{Type: "text", Text: text, Truncated: cut})
+		var parts []string
+		images := 0
+		for _, part := range p.Item.Content {
+			switch part.Type {
+			case "text":
+				parts = append(parts, part.Text)
+			case "image", "local_image":
+				images++
+			}
 		}
-		for range p.Images {
-			blocks = append(blocks, chatBlock{Type: "image"})
-		}
-		return userEntry(id, at, blocks)
+		return c.typedBy(id, at, strings.Join(parts, ""), images)
 	case "turn_aborted":
 		return encode(chatEntry{Type: "user", UUID: id, Timestamp: at, Message: chatMessage{Role: "user", Content: interruptedText}})
 	case "token_count":
@@ -340,6 +420,28 @@ func (c *codexChat) item(id, at string, p codexPayload) [][]byte {
 		return append(entries, c.result(at, callID, "", false)...)
 	}
 	return nil
+}
+
+// typedBy is a message the person typed, with the images they attached; ""
+// for the one just shown.
+func (c *codexChat) typedBy(id, at, message string, images int) [][]byte {
+	if strings.TrimSpace(message) == "" && images == 0 {
+		return nil
+	}
+	key := message + "\x00" + strconv.Itoa(images)
+	if key == c.typed {
+		return nil
+	}
+	c.typed = key
+	blocks := []chatBlock{}
+	if message != "" {
+		text, cut := truncate(message, chatTextMax)
+		blocks = append(blocks, chatBlock{Type: "text", Text: text, Truncated: cut})
+	}
+	for range images {
+		blocks = append(blocks, chatBlock{Type: "image"})
+	}
+	return userEntry(id, at, blocks)
 }
 
 // say is one assistant entry.

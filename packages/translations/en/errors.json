@@ -293,6 +293,9 @@
     "SESSIONS_049": "That transcript cursor isn’t valid. Read from the latest turns and continue from the cursor that page gives.",
     "SESSIONS_050": "Only the person who launched this cloud session can send it a follow-up, since it runs on their key.",
     "SESSIONS_051": "The cloud agent’s vendor didn’t confirm the follow-up, so it may be running there. Check the session at its vendor before sending it again.",
+    "SESSIONS_052": "Only a session that failed to start can be tried again.",
+    "SESSIONS_053": "No cloud session in this workspace has that id. Only sessions started from the console send their chat here.",
+    "SESSIONS_054": "This session’s chat isn’t shown here.",
     "VOICE_002": "Nothing was recorded. Try dictating again.",
     "VOICE_003": "That recording is too long. Keep dictations under two minutes.",
     "VOICE_004": "That recording couldn’t be read. Try dictating again.",
@@ -310,7 +313,8 @@
     "BOTS_037": "Those questions were already answered.",
     "BOTS_038": "That skill could not be found.",
     "BOTS_039": "This bot already has a skill with that name. Pick another.",
-    "BOTS_040": "This bot has as many skills as it can keep. Delete one first."
+    "BOTS_040": "This bot has as many skills as it can keep. Delete one first.",
+    "BOTS_041": "This bot has no tidy of its memory to undo."
   },
   "notFound": {
     "title": "That page does not exist",
@@ -325,7 +329,8 @@
   "startFailure": {
     "codes": {
       "SESS_002": "This host makes sessions with one repository.",
-      "SESS_010": "Codex's CLI has no cloud environment for this repository."
+      "SESS_010": "Codex's CLI has no cloud environment for this repository.",
+      "SESS_019": "Not signed in to claude.ai. Run claude auth login on the host."
     },
     "help": {
       "SESS_010": {
@@ -333,6 +338,6 @@
         "link": "Open Codex Cloud settings"
       }
     },
-    "details": "Details from the host: {{detail}}"
+    "details": "Details from the host"
   }
 }

@@ -1,6 +1,7 @@
 package transcript
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"net/http"
@@ -131,6 +132,14 @@ type (
 			Output string          `json:"output"`
 			Error  string          `json:"error"`
 			Time   *openCodeTime   `json:"time"`
+			// Metadata is what a tool says of itself: the `task` tool,
+			// the conversation its subagent runs in.
+			Metadata *struct {
+				SessionID string `json:"sessionId"`
+				Model     *struct {
+					ModelID string `json:"modelID"`
+				} `json:"model"`
+			} `json:"metadata"`
 		} `json:"state"`
 		Mime string `json:"mime"`
 	}
@@ -165,13 +174,40 @@ type openCodeFollower struct {
 	// windowed is off once a window read did not reach the newest message
 	// already read: an OpenCode that pages from the oldest, read whole.
 	windowed bool
+
+	// agent is the subagent this follower reads for its parent, whose
+	// entries it marks as the subagent's (SubagentEntryType); "" for the
+	// session's own conversation.
+	agent string
+	// children are the subagents the conversation's `task` calls started,
+	// by their conversation, and order the order they were met in.
+	children map[string]*openCodeChild
+	order    []string
 }
+
+// openCodeChild is one subagent a `task` call started: what its entry says,
+// what was last sent of it, and its conversation's own read.
+type openCodeChild struct {
+	meta subagentMeta
+	sent []byte
+	read *openCodeFollower
+	// done is a subagent that has ended and been read since, or whose
+	// conversation OpenCode would not serve openCodeChildTries times.
+	done bool
+	// failed is how many reads of its conversation have failed in a row.
+	failed int
+}
+
+// openCodeChildTries is how many times a subagent's conversation is asked
+// for and refused before it is left: a conversation OpenCode deleted never
+// comes back.
+const openCodeChildTries = 5
 
 func newOpenCodeFollower(api openCodeAPI, since int64, directory string, entryMax, batchMax int, emit func(app.ChatBatch) error) *openCodeFollower {
 	return &openCodeFollower{
 		api: api, since: since, directory: directory, entryMax: entryMax,
 		out:  &follower{entryMax: entryMax, batchMax: batchMax, emit: emit, reset: true},
-		sent: map[string]int{}, windowed: true,
+		sent: map[string]int{}, windowed: true, children: map[string]*openCodeChild{},
 	}
 }
 
@@ -223,6 +259,7 @@ func (f *openCodeFollower) check(ctx context.Context) error {
 		// Another conversation (the first, or `/new`): its history from the top.
 		f.session, f.sent, f.newest, f.full = session, map[string]int{}, "", true
 		f.out.pending, f.out.reset = nil, true
+		f.children, f.order = map[string]*openCodeChild{}, nil
 	}
 	if session == "" {
 		// Nothing said yet: say so once, so the view can wait for it.
@@ -236,8 +273,94 @@ func (f *openCodeFollower) check(ctx context.Context) error {
 	for _, message := range messages {
 		f.read(message)
 	}
+	if err := f.readChildren(ctx); err != nil {
+		return err
+	}
 	f.out.flush()
 	return nil
+}
+
+// readChildren reads each subagent's conversation while it runs, and once
+// more after it has ended, sending its entry whenever what it says changed.
+// The newest subagentsMax are followed.
+func (f *openCodeFollower) readChildren(ctx context.Context) error {
+	order := f.order
+	if len(order) > subagentsMax {
+		order = order[len(order)-subagentsMax:]
+	}
+	for _, id := range order {
+		child := f.children[id]
+		meta := child.meta
+		meta.Type = SubagentEntryType
+		if encoded, err := json.Marshal(meta); err == nil && !bytes.Equal(encoded, child.sent) && len(encoded) <= f.entryMax {
+			f.out.pending = append(f.out.pending, string(encoded))
+			child.sent = encoded
+		}
+		if child.done {
+			continue
+		}
+		if child.read == nil {
+			child.read = &openCodeFollower{
+				api: f.api, entryMax: f.entryMax, out: f.out, session: id, agent: id,
+				sent: map[string]int{}, full: true, windowed: true,
+			}
+		}
+		messages, err := child.read.messages(ctx)
+		if err != nil {
+			if ctx.Err() != nil {
+				return err
+			}
+			// One subagent OpenCode will not serve never holds up the
+			// session's own conversation.
+			child.failed++
+			child.done = child.failed >= openCodeChildTries
+			continue
+		}
+		child.failed = 0
+		for _, message := range messages {
+			child.read.read(message)
+		}
+		child.done = meta.State != subagentRunning
+	}
+	return nil
+}
+
+// noteChild takes in what a `task` call says of the subagent it started.
+func (f *openCodeFollower) noteChild(part openCodePart, input any) {
+	state := part.State
+	if part.Tool != "task" || state.Metadata == nil || !openCodeIDPattern.MatchString(state.Metadata.SessionID) {
+		return
+	}
+	id := state.Metadata.SessionID
+	child, ok := f.children[id]
+	if !ok {
+		child = &openCodeChild{}
+		f.children[id] = child
+		f.order = append(f.order, id)
+	}
+	fields, _ := input.(map[string]any)
+	stringOf := func(key string) string {
+		value, _ := fields[key].(string)
+		return value
+	}
+	child.meta = subagentMeta{
+		ID: id, ParentToolUseID: part.CallID,
+		AgentType: stringOf("subagent_type"), Description: stringOf("description"),
+		State: subagentRunning,
+	}
+	if model := state.Metadata.Model; model != nil {
+		child.meta.Model = model.ModelID
+	}
+	switch state.Status {
+	case "completed":
+		child.meta.State = subagentCompleted
+	case "error":
+		child.meta.State = subagentFailed
+	}
+	if child.meta.State == subagentRunning {
+		// Running again (a `task_id` resumed it): read it again.
+		child.done = false
+	}
 }
 
 // conversation is the session's conversation: the newest root one in its
@@ -421,6 +544,11 @@ func (f *openCodeFollower) readTool(part openCodePart, say func(id string, at in
 	if state.Time != nil {
 		start, end = state.Time.Start, state.Time.End
 	}
+	if f.agent == "" {
+		var raw any
+		_ = json.Unmarshal(state.Input, &raw)
+		f.noteChild(part, raw)
+	}
 	if f.sent[part.ID] < sentCall {
 		var input any
 		_ = json.Unmarshal(state.Input, &input)
@@ -448,6 +576,9 @@ func (f *openCodeFollower) readTool(part openCodePart, say func(id string, at in
 
 // add queues one entry, leaving out one that does not fit in a frame.
 func (f *openCodeFollower) add(entry chatEntry) {
+	if f.agent != "" {
+		entry.IsSidechain, entry.AgentID = true, f.agent
+	}
 	encoded, err := json.Marshal(entry)
 	if err != nil || len(encoded) > f.entryMax {
 		return

@@ -1,6 +1,7 @@
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { NewSessionComposer } from '../components/new-session-composer';
+import { setNewSessionTask } from '../lib/new-session-task';
 
 /**
  * The composer's render budget: what New session *costs*, not what it shows.
@@ -73,6 +74,7 @@ const VOICE = { available: true, transcribe: vi.fn() };
 
 afterEach(() => {
   cleanup();
+  setNewSessionTask('');
   dictation.phase = null;
   dictation.problem = null;
   dictation.finish = () => Promise.resolve(true);
@@ -141,6 +143,18 @@ describe('NewSessionComposer', () => {
     // `jest-dom` matchers are not loaded in the render-budget project, which
     // runs without the app's test setup on purpose.
     expect((textarea as HTMLTextAreaElement).value).toBe('Fix the wallet list');
+  });
+
+  it('keeps a half-written task across leaving New session and reloading', () => {
+    // Opening a session from the sidebar unmounts New session; the task
+    // typed there was lost with it.
+    const first = render(<NewSessionComposer voice={VOICE} onSubmit={vi.fn()} />);
+    fireEvent.change(screen.getByRole('textbox'), { target: { value: 'Fix the wallet' } });
+    expect(localStorage.getItem('oppenheimer.new-session.task')).toBe('Fix the wallet');
+    first.unmount();
+
+    render(<NewSessionComposer voice={VOICE} onSubmit={vi.fn()} />);
+    expect((screen.getByRole('textbox') as HTMLTextAreaElement).value).toBe('Fix the wallet');
   });
 
   /** A recording `finish` the test settles: what `useDictation` answers once the text is in. */

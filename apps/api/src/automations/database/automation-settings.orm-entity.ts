@@ -28,6 +28,13 @@ export class AutomationSettingsOrmEntity {
   @Column({ type: 'integer', nullable: true })
   maxRunSeconds!: number | null;
 
+  /** The spend guard's thresholds (`1794045167486-AddRoutineSpendGuard`); null is the platform's. */
+  @Column({ type: 'integer', nullable: true })
+  unattendedReports!: number | null;
+
+  @Column({ type: 'integer', nullable: true })
+  unattendedAwaySeconds!: number | null;
+
   @CreateDateColumn({ type: TIMESTAMP_COLUMN_TYPE })
   createdAt!: Date;
 

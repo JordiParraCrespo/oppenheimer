@@ -3,6 +3,9 @@
     "title": "Starting your session",
     "failedTitle": "The session did not start",
     "failedLead": "The host could not start this session.",
+    "retry": "Try again",
+    "retrying": "Trying again",
+    "retryFailed": "The session could not be started again.",
     "working": "Working…",
     "downloading": "This host has not had this repository before, so it is downloading it first. This one takes a bit longer; later sessions on it start in about a second.",
     "failed": "Failed",
@@ -349,7 +352,7 @@
     "discard": "Also discard work that is not pushed",
     "keeps": "Deleting stops if the session has work that is not pushed.",
     "descriptionFolder": "Ends the terminal. The folder stays as it is.",
-    "descriptionCloud": "Removes it from Oppenheimer. The session stays on claude.ai/code, where you can archive it.",
+    "descriptionCloud": "Removes it from Oppenheimer. The session stays on claude.ai/code, where you can <archive>archive it</archive>.",
     "refused": "Its host did not delete it",
     "refusedUnknown": "The host refused to remove the session."
   },
@@ -387,7 +390,8 @@
     "shown": "Show projects",
     "shownAll": "All",
     "shownSome": "{{shown}} of {{total}}",
-    "showAll": "Show all projects"
+    "showAll": "Show all projects",
+    "newProject": "New project…"
   },
   "sort": {
     "custom": "Custom order",
@@ -647,6 +651,22 @@
     "exploring": "Exploring",
     "file": {
       "onHost": "It stays on the host: too large for the chat, or not an image or text."
+    },
+    "subagents": {
+      "count_one": "{{count}} subagent",
+      "count_other": "{{count}} subagents",
+      "running": "{{count}} running",
+      "failed": "{{count}} failed",
+      "untitled": "Subagent",
+      "calls_one": "{{count}} call",
+      "calls_other": "{{count}} calls",
+      "tokens": "{{tokens}} tokens",
+      "state": {
+        "running": "Running",
+        "completed": "Completed",
+        "failed": "Failed",
+        "stopped": "Stopped"
+      }
     }
   },
   "preview": {
@@ -719,6 +739,37 @@
       "statusSource": "This status comes from the host that started it, which asks Codex about its tasks once a minute while it’s online.",
       "open": "Open in ChatGPT",
       "teleport": "To bring its changes into a terminal, run this in a checkout of the repository:"
+    }
+  },
+  "cloudChat": {
+    "title": "Live from Claude Code cloud",
+    "waiting_one": "Your reply is waiting for the agent to finish its turn.",
+    "waiting_other": "{{count}} replies are waiting for the agent to finish its turn.",
+    "replyFailed": "The reply didn’t reach the session. Try again.",
+    "setup": {
+      "title": "Turn on this session’s chat",
+      "intro": "A Claude Code cloud session sends its chat here through a hook in its repository. Set it up once for each repository and cloud environment; sessions you start from Oppenheimer then show their chat here, and you can answer them.",
+      "keyTitle": "1. Create a key",
+      "keyBody": "It lets cloud sessions send this workspace their chat and collect your replies. It can’t start, stop or delete a session, or open a terminal. It’s shown once, so copy it now.",
+      "createKey": "Create key",
+      "creatingKey": "Creating key…",
+      "keyLabel": "Your key",
+      "hookTitle": "2. Add the hook to the repository",
+      "hookBody": "Save this file in the repository as .claude/hooks/oppenheimer-cloud-chat.mjs, then add these lines to .claude/settings.json.",
+      "downloadHook": "Download the hook",
+      "settingsLabel": ".claude/settings.json",
+      "envTitle": "3. Set up the cloud environment",
+      "envBody": "In claude.ai, open the cloud environment’s settings. Add these environment variables, and allow this host in its network access.",
+      "envLabel": "Environment variables",
+      "hostLabel": "Allowed host",
+      "keyPlaceholder": "<your key>",
+      "keyFailed": "The key couldn’t be created. Try again.",
+      "readerLabel": "How to set it up",
+      "readerYou": "Do it yourself",
+      "readerAgent": "Ask an agent",
+      "agentTitle": "2. Ask a coding agent",
+      "agentBody": "Paste this into Claude Code, or another coding agent, in a checkout of the repository. It adds the hook and its settings, then tells you what to set in claude.ai. Your key isn’t in the prompt: you paste it into claude.ai yourself.",
+      "agentLabel": "Prompt for your agent"
     }
   }
 }

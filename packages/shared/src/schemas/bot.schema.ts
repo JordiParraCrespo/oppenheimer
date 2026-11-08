@@ -19,7 +19,7 @@ import { isValidTimeZone } from '../automations/schedule.js';
 
 /**
  * The eight colours an avatar is drawn on (the design's `AV_COLORS`), by key:
- * an avatar is the bot's initials on one of them, never a photograph.
+ * an avatar is the bot's drawn face on one of them, never a photograph.
  */
 export const BOT_AVATAR_COLORS = [
   'mint',
@@ -32,6 +32,20 @@ export const BOT_AVATAR_COLORS = [
   'moss',
 ] as const;
 export type BotAvatarColor = (typeof BOT_AVATAR_COLORS)[number];
+
+/**
+ * A bot's drawn face, part by part: the hat it wears, its eyes and its mouth
+ * (the design system's `BotFace` draws each). A bot with no face of its own
+ * picked takes the one its id draws.
+ */
+export const BOT_FACE_HATS = ['fedora', 'porkpie', 'bowler', 'tophat', 'cap', 'beanie'] as const;
+export const BOT_FACE_EYES = ['dots', 'happy', 'wink', 'big'] as const;
+export const BOT_FACE_MOUTHS = ['smile', 'grin', 'o'] as const;
+export interface BotFace {
+  hat: (typeof BOT_FACE_HATS)[number];
+  eyes: (typeof BOT_FACE_EYES)[number];
+  mouth: (typeof BOT_FACE_MOUTHS)[number];
+}
 
 /** What a bot is (`SOUL.md`) and what its job is (`INSTRUCTIONS.md`). */
 export const BOT_DOCUMENT_NAMES = ['soul', 'instructions'] as const;
@@ -93,6 +107,54 @@ export type BotMemoryScope = (typeof BOT_MEMORY_SCOPES)[number];
 export const BOT_MEMORY_PROFILE_IN_PROMPT_CHARS = 4_000;
 /** The characters of the newest `log` facts one turn is given, each with its date. */
 export const BOT_MEMORY_LOG_IN_PROMPT_CHARS = 2_000;
+/**
+ * A bot's dream (`25-bots.md` §4.1, "Dreaming"; from Managed Agents' dreams):
+ * an offline pass of its own model over the memory it wrote and its recent
+ * conversation that merges duplicates, rewrites each fact as one clear
+ * sentence, drops what is stale or contradicted, and keeps what the
+ * conversation shows will matter. It replaces the bot's own facts in one
+ * write; the facts as they were are kept, so the owner can undo the latest.
+ *
+ * It runs after a turn once the bot has written `BOT_DREAM_WRITES_MIN` facts
+ * since its last dream (or since it began) and keeps at least
+ * `BOT_DREAM_FACTS_MIN`, at most once every `BOT_DREAM_INTERVAL_MS`; and
+ * when the owner asks, from Settings → Memory.
+ */
+export const BOT_DREAM_FACTS_MIN = 8;
+export const BOT_DREAM_WRITES_MIN = 10;
+export const BOT_DREAM_INTERVAL_MS = 24 * 60 * 60 * 1000;
+/** The longest note a dream leaves on what it changed. */
+export const BOT_DREAM_NOTE_MAX = 300;
+
+/** What a dream did: `dreamed`, it rewrote the memory; `undone`, the owner put the old one back. */
+export const BOT_DREAM_ACTIVITIES = ['dreamed', 'undone'] as const;
+export type BotDreamActivity = (typeof BOT_DREAM_ACTIVITIES)[number];
+
+/** A bot's latest dream, as Settings → Memory reads it. */
+export interface BotMemoryDream {
+  id: string;
+  /** The bot's own facts before and after it. */
+  factsBefore: number;
+  factsAfter: number;
+  /** What it changed, in its own words; null when it said nothing. */
+  note: string | null;
+  createdAt: string;
+  /** When the owner undid it; null while it stands. */
+  undoneAt: string | null;
+}
+
+/** `GET /bots/:id/memory/dream`: the latest dream, and whether one its owner asked for is under way. */
+export interface BotMemoryDreamState {
+  latest: BotMemoryDream | null;
+  pending: boolean;
+}
+
+/**
+ * What a person writes about themselves in Settings → Memory, in characters:
+ * in the system prompt of every bot they made in the workspace, beside the
+ * facts their bots learned about them.
+ */
+export const PERSON_ABOUT_MAX = 4_000;
 /** The most revisions one read returns, newest first. */
 export const BOT_REVISIONS_PAGE_MAX = 100;
 export const BOT_REVISIONS_PAGE_DEFAULT = 50;
@@ -297,6 +359,11 @@ export const CHATGPT_LOGIN_STATUSES = ['pending', 'connected'] as const;
 export type ChatgptLoginStatus = (typeof CHATGPT_LOGIN_STATUSES)[number];
 
 export const botAvatarColorSchema = z.enum(BOT_AVATAR_COLORS);
+export const botFaceSchema = z.object({
+  hat: z.enum(BOT_FACE_HATS),
+  eyes: z.enum(BOT_FACE_EYES),
+  mouth: z.enum(BOT_FACE_MOUTHS),
+});
 export const botDocumentNameSchema = z.enum(BOT_DOCUMENT_NAMES);
 export const botPermissionSchema = z.enum(BOT_PERMISSIONS);
 export const botSectionSchema = z.enum(BOT_SECTIONS);
@@ -344,6 +411,8 @@ export const updateBotSchema = z.object({
   name: botNameSchema.optional(),
   description: botDescriptionSchema.optional(),
   avatarColor: botAvatarColorSchema.optional(),
+  /** The face it wears; `null` goes back to the one its id draws. */
+  avatarFace: botFaceSchema.nullable().optional(),
   groupId: z.string().uuid().nullable().optional(),
   position: positionSchema.optional(),
   homeHostId: z.string().uuid().nullable().optional(),
@@ -355,6 +424,8 @@ export const updateBotSchema = z.object({
   effort: z.enum(SESSION_EFFORTS).nullable().optional(),
   permission: botPermissionSchema.optional(),
   learnAutomatically: z.boolean().optional(),
+  /** Whether its routines pause while its owner is away (`26-bot-routines.md` §6). */
+  routineSpendGuard: z.boolean().optional(),
   /** The whole set of sections it shows in; `[]` shows it in Employees only. */
   sections: botSectionsSchema.optional(),
 });
@@ -439,7 +510,10 @@ export type BotTurnStatus = (typeof BOT_TURN_STATUSES)[number];
  *   the same request fails the same way.
  * - `unavailable`: the provider was down, overloaded or unreachable; it passes.
  * - `time_limit`: the turn ran past its time; a smaller step fits.
+ * - `step_limit`: the turn used all its model round trips; a smaller step fits.
  * - `interrupted`: the worker running it stopped; sending it again runs it.
+ * - `storage`: we could not save what the turn did (a write Postgres
+ *   refused); ours, not the provider's, and sending it again may pass.
  * - `other`: none of these, or not known.
  */
 export const BOT_TURN_FAILURES = [
@@ -449,7 +523,9 @@ export const BOT_TURN_FAILURES = [
   'refused',
   'unavailable',
   'time_limit',
+  'step_limit',
   'interrupted',
+  'storage',
   'other',
 ] as const;
 export type BotTurnFailure = (typeof BOT_TURN_FAILURES)[number];
@@ -462,7 +538,9 @@ export const BOT_TURN_FAILURE_RETRIES: Readonly<Record<BotTurnFailure, boolean>>
   refused: false,
   unavailable: true,
   time_limit: false,
+  step_limit: false,
   interrupted: true,
+  storage: true,
   other: true,
 };
 
@@ -763,7 +841,7 @@ export interface BotLoop {
  * the chat's as it stands: clearing the conversation starts them again.
  * Cache reads and writes are part of the input, never on top of it.
  */
-export const BOT_MODEL_CALL_PURPOSES = ['goal_review', 'summary', 'rule_review'] as const;
+export const BOT_MODEL_CALL_PURPOSES = ['goal_review', 'summary', 'rule_review', 'dream'] as const;
 export type BotModelCallPurpose = (typeof BOT_MODEL_CALL_PURPOSES)[number];
 
 export interface BotTokenCounts {
@@ -929,6 +1007,15 @@ export interface BotPeerReplyEvent {
   outcome: BotReplyOutcome;
 }
 
+/** A dream rewrote the bot's memory, or the owner undid it (`25-bots.md` §4.1, "Dreaming"). */
+export interface BotDreamEvent {
+  kind: 'dream';
+  activity: BotDreamActivity;
+  dreamId: string;
+  factsBefore: number;
+  factsAfter: number;
+}
+
 export type BotMessageEvent =
   | BotApprovalEvent
   | BotQuestionEvent
@@ -938,7 +1025,8 @@ export type BotMessageEvent =
   | BotSessionEvent
   | BotPullRequestEvent
   | BotGoalEvent
-  | BotLoopEvent;
+  | BotLoopEvent
+  | BotDreamEvent;
 
 /** The kinds of event, for a reader that checks one before trusting its fields. */
 export const BOT_MESSAGE_EVENT_KINDS = [
@@ -951,6 +1039,7 @@ export const BOT_MESSAGE_EVENT_KINDS = [
   'pull_request',
   'goal',
   'loop',
+  'dream',
 ] as const;
 export type BotMessageEventKind = (typeof BOT_MESSAGE_EVENT_KINDS)[number];
 
@@ -1371,3 +1460,12 @@ export type BotStreamSnapshot = Extract<BotStreamEvent, { type: 'snapshot' }>;
 /** The SSE event names on a bot's stream. */
 export const BOT_STREAM_READY = 'ready';
 export const BOT_STREAM_EVENT = 'bot';
+
+/**
+ * `PUT /bot-memory/person/about`: what the person writes about themselves,
+ * in every bot's system prompt. Empty clears it.
+ */
+export const updatePersonAboutSchema = z.object({
+  about: z.string().trim().max(PERSON_ABOUT_MAX),
+});
+export type UpdatePersonAboutDto = z.infer<typeof updatePersonAboutSchema>;

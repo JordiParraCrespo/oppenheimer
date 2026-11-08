@@ -48,12 +48,17 @@ export function botSections(
   );
 }
 
-/** The bot the sidebar draws first, in its groups' order then Ungrouped; undefined with none. */
+/**
+ * The bot the sidebar draws first: the top pinned one (`pins`, in pin order),
+ * else in its groups' order then Ungrouped; undefined with none.
+ */
 export function firstBot(
   bots: readonly BotEntity[],
   groups: readonly BotGroupEntity[],
+  pins: readonly string[],
 ): BotEntity | undefined {
-  return botSections(bots, groups, '').flatMap((section) => section.bots)[0];
+  const pinned = pins.flatMap((id) => bots.find((bot) => bot.id === id) ?? [])[0];
+  return pinned ?? botSections(bots, groups, '').flatMap((section) => section.bots)[0];
 }
 
 /** The key a section is dragged and folded by; Ungrouped has no id of its own. */
@@ -81,13 +86,17 @@ export function sectionOrder(sections: readonly BotSection[]): Record<string, st
  * it. `order` is drawn from these same sections, so it names every bot; the
  * exceptions are the list changing under a pending write, where a bot made
  * since is drawn after the ones `order` places, in its own section, and an
- * id that is no longer a bot is skipped.
+ * id that is no longer a bot is skipped. `also` are bots `order` may name
+ * that no section draws (the pinned ones, dragged out of Pinned).
  */
 export function inOrder(
   sections: readonly BotSection[],
   order: Readonly<Record<string, readonly string[]>>,
+  also: readonly BotEntity[] = [],
 ): BotSection[] {
-  const byId = new Map(sections.flatMap((section) => section.bots.map((bot) => [bot.id, bot])));
+  const byId = new Map(
+    [...also, ...sections.flatMap((section) => section.bots)].map((bot) => [bot.id, bot]),
+  );
   const placed = new Set(Object.values(order).flat());
   return sections.map((section) => {
     const ids = order[sectionKey(section)];
