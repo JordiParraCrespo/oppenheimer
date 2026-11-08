@@ -13,7 +13,8 @@ import { type ProjectVisibility, SessionsFilterMenu } from './sessions-filter-me
  * the count and the filter menu's options are always the answered ones. The
  * count is the sessions the list below draws, pinned ones included.
  * While rows are picked, `selectionBar` takes the Sessions line's place.
- * Projects are not made or edited from here: that is Plan's Projects view.
+ * Projects are edited in Plan's Projects view; the filter menu only starts a
+ * new one (`onNewProject`), the dialog being the section's.
  * The Sessions label folds the list away (`open`), and the search and the
  * chips with it, since they narrow nothing while it is folded. The settled
  * query comes back down as the field's `value`, so the box a fold remounts
@@ -29,6 +30,7 @@ export function SessionsSidebarHead({
   onFiltersChange,
   onFiltersClear,
   onFacetClear,
+  onNewProject,
   query,
   onQueryChange,
   selectionBar,
@@ -44,6 +46,7 @@ export function SessionsSidebarHead({
   onFiltersChange: (patch: Partial<SessionFilters>) => void;
   onFiltersClear: () => void;
   onFacetClear: (key: SessionFacet) => void;
+  onNewProject: () => void;
   query: string;
   onQueryChange: (query: string) => void;
   selectionBar?: ReactNode;
@@ -70,6 +73,7 @@ export function SessionsSidebarHead({
             visibility={visibility}
             onChange={onFiltersChange}
             onClear={onFiltersClear}
+            onNewProject={onNewProject}
           />
         </SidebarListHead>
       )}

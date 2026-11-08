@@ -13,6 +13,7 @@ import { ElapsedClock } from '../components/elapsed-clock';
 import { SessionStatusHead } from '../components/session-status-head';
 import { useStartLogStalled } from '../hooks/use-start-log-stalled';
 import { PENDING_START, provisioningSteps } from '../lib/provisioning-steps';
+import { SessionRetryStart } from './session-retry-start';
 
 /**
  * A session that is not a terminal yet.
@@ -99,6 +100,11 @@ export function SessionProvisioning({ session }: { session: SessionEntity }) {
             secondary line under the translated reason, never the reason. */}
         {failed && failure?.detail ? (
           <StartFailureDetail detail={failure.detail} className="mt-4" />
+        ) : null}
+        {/* A start on a host can be sent again: not one at a vendor, which has no
+            host, nor a cloud task its vendor took and later failed. */}
+        {failed && session.hostId && !session.cloudSessionId ? (
+          <SessionRetryStart sessionId={session.id} />
         ) : null}
       </div>
     </PageFrame>

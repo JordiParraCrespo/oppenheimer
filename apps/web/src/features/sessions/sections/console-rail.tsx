@@ -46,7 +46,7 @@ export function ConsoleRail() {
 
   return (
     <Rail aria-label={t('nav.primaryNavigation')}>
-      <RailMark aria-hidden>O</RailMark>
+      <RailMark label={t('nav.home')} render={<Link to="/" />} />
       <DragProvider
         {...handlers}
         labels={dragLabels}

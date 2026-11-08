@@ -36,7 +36,7 @@ export class BotUsageBackgroundResponseDto extends BotTokenCountsResponseDto {
   @ApiProperty({
     enum: BOT_MODEL_CALL_PURPOSES,
     description:
-      "Why the bot called its model outside a turn: a goal's review, the conversation's summary, or a review of the owner's rules.",
+      "Why the bot called its model outside a turn: a goal's review, the conversation's summary, a review of the owner's rules, or a dream of its memory.",
   })
   purpose!: BotModelCallPurpose;
 

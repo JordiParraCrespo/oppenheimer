@@ -86,7 +86,7 @@ is the protocol: it says what the pull request waits for, and who merges.
 | `propose` | `/propose` (a change Jordi signs off: a feature, a refactor, a fix he wants to see) | the same, and Jordi accepting it: `/ship`, or swapping the label to `ship` | the agent, once accepted |
 | `research` | `/research` (a note or a proof of concept) | ready | the agent, as soon as it is green |
 
-`/cook` picks one of the three for a task and says which. A pull request with none of them merges only when Jordi says so. A review
+`/cook` picks one of the three for a task and says which (when it runs: `AGENTS.md`, "Hard rules"). A pull request with none of them merges only when Jordi says so. A review
 is never an approval: the bot reviews post from Jordi's account. The
 lanes are the `ship`, `propose` and `research` skills.
 

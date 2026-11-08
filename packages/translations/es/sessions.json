@@ -3,6 +3,9 @@
     "title": "Iniciando tu sesión",
     "failedTitle": "La sesión no se inició",
     "failedLead": "El host no pudo iniciar esta sesión.",
+    "retry": "Reintentar",
+    "retrying": "Reintentando",
+    "retryFailed": "No se pudo volver a iniciar la sesión.",
     "working": "Trabajando…",
     "downloading": "Este host aún no tenía este repositorio, así que primero lo descarga. Esta vez tardará un poco más; las siguientes sesiones arrancan en un segundo.",
     "failed": "Error",
@@ -390,7 +393,8 @@
     "shown": "Mostrar proyectos",
     "shownAll": "Todos",
     "shownSome": "{{shown}} de {{total}}",
-    "showAll": "Mostrar todos los proyectos"
+    "showAll": "Mostrar todos los proyectos",
+    "newProject": "Nuevo proyecto…"
   },
   "sort": {
     "custom": "Orden personalizado",
@@ -650,6 +654,22 @@
     "exploring": "Explorando",
     "file": {
       "onHost": "Se queda en el equipo: es demasiado grande para el chat, o no es una imagen ni texto."
+    },
+    "subagents": {
+      "count_one": "{{count}} subagente",
+      "count_other": "{{count}} subagentes",
+      "running": "{{count}} en marcha",
+      "failed": "{{count}} fallidos",
+      "untitled": "Subagente",
+      "calls_one": "{{count}} llamada",
+      "calls_other": "{{count}} llamadas",
+      "tokens": "{{tokens}} tokens",
+      "state": {
+        "running": "En marcha",
+        "completed": "Terminado",
+        "failed": "Falló",
+        "stopped": "Detenido"
+      }
     }
   },
   "preview": {
@@ -722,6 +742,37 @@
       "statusSource": "Este estado llega del host que la inició, que pregunta a Codex por sus tareas cada minuto mientras está en línea.",
       "open": "Abrir en ChatGPT",
       "teleport": "Para traer sus cambios a una terminal, ejecuta esto en una copia del repositorio:"
+    }
+  },
+  "cloudChat": {
+    "title": "En directo desde la nube de Claude Code",
+    "waiting_one": "Tu respuesta espera a que el agente termine su turno.",
+    "waiting_other": "{{count}} respuestas esperan a que el agente termine su turno.",
+    "replyFailed": "La respuesta no llegó a la sesión. Vuelve a intentarlo.",
+    "setup": {
+      "title": "Activa el chat de esta sesión",
+      "intro": "Una sesión de Claude Code en la nube envía su chat aquí con un hook en su repositorio. Configúralo una vez por repositorio y entorno de la nube; las sesiones que inicies desde Oppenheimer mostrarán su chat aquí y podrás responderlas.",
+      "keyTitle": "1. Crea una clave",
+      "keyBody": "Permite que las sesiones en la nube envíen su chat a este espacio de trabajo y recojan tus respuestas. No puede iniciar, detener ni borrar una sesión, ni abrir un terminal. Solo se muestra una vez: cópiala ahora.",
+      "createKey": "Crear clave",
+      "creatingKey": "Creando la clave…",
+      "keyLabel": "Tu clave",
+      "hookTitle": "2. Añade el hook al repositorio",
+      "hookBody": "Guarda este archivo en el repositorio como .claude/hooks/oppenheimer-cloud-chat.mjs y añade estas líneas a .claude/settings.json.",
+      "downloadHook": "Descargar el hook",
+      "settingsLabel": ".claude/settings.json",
+      "envTitle": "3. Configura el entorno de la nube",
+      "envBody": "En claude.ai, abre la configuración del entorno de la nube. Añade estas variables de entorno y permite este host en su acceso a la red.",
+      "envLabel": "Variables de entorno",
+      "hostLabel": "Host permitido",
+      "keyPlaceholder": "<tu clave>",
+      "keyFailed": "No se pudo crear la clave. Vuelve a intentarlo.",
+      "readerLabel": "Cómo configurarlo",
+      "readerYou": "Hazlo tú",
+      "readerAgent": "Pídeselo a un agente",
+      "agentTitle": "2. Pídeselo a un agente de código",
+      "agentBody": "Pega esto en Claude Code, u otro agente de código, en una copia del repositorio. Añade el hook y su configuración, y luego te dice qué configurar en claude.ai. Tu clave no va en el prompt: la pegas tú en claude.ai.",
+      "agentLabel": "Prompt para tu agente"
     }
   }
 }

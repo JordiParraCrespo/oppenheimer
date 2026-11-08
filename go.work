@@ -1,7 +1,7 @@
 // Go workspace: every Go module in the monorepo, so `go build ./...` and
 // the editor resolve sibling packages from source. Each module also carries
 // relative `replace` directives so it stays tidy-able and buildable alone.
-go 1.24.0
+go 1.26.0
 
 use (
 	./apps/runner

@@ -120,15 +120,38 @@ func TestStartFailsAtOnceWhenTheCheckoutCannotBeTrusted(t *testing.T) {
 }
 
 func TestStartReportsTheCLIsRefusal(t *testing.T) {
-	claude := fakeClaude(t, `echo 'Error: You are not signed in to claude.ai. Run /login.'
+	claude := fakeClaude(t, `echo 'Error: The Claude GitHub App has no access to acme/oppenheimer.'
 exit 1
 `)
 	_, err := Starter{Command: claude}.Start(context.Background(), t.TempDir(), "task")
 	if !isCloudStart(err) {
 		t.Fatalf("err = %v, want ErrCloudStart", err)
 	}
-	if got := err.Error(); !strings.Contains(got, "not signed in to claude.ai") || strings.Contains(got, "^D") {
+	if got := err.Error(); !strings.Contains(got, "no access to acme/oppenheimer") || strings.Contains(got, "^D") {
 		t.Fatalf("err = %q, want the CLI's own words", got)
+	}
+}
+
+// Claude Code 2.1.x refuses a host with no claude.ai account in its renderer's
+// own bytes: the cursor saved and restored around the line, a character set
+// chosen after it, and a cursor move for every space. Read as the console
+// showed it, that was "\x1b7\x1b8Error:Cloudsessionsneedaclaude.aisign-in…":
+// the escapes as boxes and the words run together. It is its own code, the
+// one refusal a person fixes on the host and then tries again.
+func TestStartReportsAMissingSignInInTheCLIsWordsWithoutItsEscapes(t *testing.T) {
+	claude := fakeClaude(t, `printf '\0337\0338Error:\033[1CCloud\033[1Csessions\033[1Cneed\033[1Ca\033[1Cclaude.ai\033[1Csign-in.\r\n'
+printf 'Run\033[1C`+"`"+`claude\033[1Cauth\033[1Clogin`+"`"+`\033[1C(or\033[1Clog\033[1Cin\033[1Cin\033[1Ca\033[1Clocal\033[1Csession),\033[1Cthen\033[1Ctry\033[1Cagain.\r\n'
+printf '\033(B\0337\0338\033(B\0337\0338\r\n'
+exit 1
+`)
+	_, err := Starter{Command: claude}.Start(context.Background(), t.TempDir(), "task")
+	var prob *problem.Error
+	if !errors.As(err, &prob) || prob.Code != domain.ErrCloudSignIn.Code {
+		t.Fatalf("err = %v, want ErrCloudSignIn", err)
+	}
+	want := "Error: Cloud sessions need a claude.ai sign-in. · Run `claude auth login` (or log in in a local session), then try again."
+	if prob.Detail != want {
+		t.Fatalf("detail = %q, want %q", prob.Detail, want)
 	}
 }
 

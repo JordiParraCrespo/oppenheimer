@@ -23,6 +23,11 @@ const BOT_PROVIDER_MARKS: Readonly<Record<BotProvider, AgentId>> = {
   xai: 'grok',
 };
 
+/** The mark `provider` is drawn with, as in the model button. */
+export function botProviderMark(provider: BotProvider): AgentId {
+  return BOT_PROVIDER_MARKS[provider];
+}
+
 /** The table read the other way: a mark back to its provider. */
 const PROVIDER_OF_MARK: ReadonlyMap<AgentId, BotProvider> = new Map(
   BOT_PROVIDERS.map((provider) => [BOT_PROVIDER_MARKS[provider], provider]),

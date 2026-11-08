@@ -74,6 +74,12 @@ function body(message: BotMessageEntity, words: Omit<ChatExportWords, 'botName'>
     return t(`bots.chat.event.${approvalLineKey(event)}`, { summary: event.summary });
   }
   if (message.role === 'event' && event?.kind === 'question') return questionEventText(event, t);
+  if (message.role === 'event' && event?.kind === 'dream') {
+    return t(`bots.chat.event.dream.${event.activity}`, {
+      before: event.factsBefore,
+      after: event.factsAfter,
+    });
+  }
   return message.content.trim();
 }
 

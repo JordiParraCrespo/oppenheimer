@@ -13,7 +13,7 @@ wired into the API.
 | --------------------------------------------------------- | ----------------------------------------------------------------------- |
 | `AppError`, `ErrorDefinition`                             | Catalog error: code, stable title, per-occurrence detail                |
 | `requireFound`                                            | The value in an `Option` lookup, or the catalog error when it is empty  |
-| `AllExceptionsFilter`                                     | Global filter rendering every exception as an RFC 7807 problem document |
+| `AllExceptionsFilter`                                     | Global filter rendering every exception as an RFC 7807 problem document, and reporting every 5xx (`@oppenheimer/backend-error-reporting`) |
 | `ProblemDetails`, `InvalidParam`                          | The problem-document contract the filter renders                        |
 | `ProblemDetailsDto`, `ApiProblemResponse`                 | Swagger model + decorator for documenting failures                      |
 | `SanitizePipe`                                            | Input sanitization pipe                                                 |

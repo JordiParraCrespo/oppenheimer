@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import type { BotSteer } from '@oppenheimer/backend-agents';
 import type { Mapper } from '@oppenheimer/backend-ddd';
 import {
+  BOT_DREAM_ACTIVITIES,
   BOT_EVENT_OUTCOMES,
   BOT_GOAL_ACTIVITIES,
   BOT_IMAGE_MIME_TYPES,
@@ -31,6 +32,7 @@ import { ENDED_TURN_STATUSES } from './domain/bot-turn.entity';
 import { BotAttachmentResponseDto } from './dtos/bot-attachment.response.dto';
 import {
   BotApprovalEventResponseDto,
+  BotDreamEventResponseDto,
   BotGoalEventResponseDto,
   BotLoopEventResponseDto,
   type BotMessageEventResponseDto,
@@ -301,6 +303,8 @@ function toEventResponse(event: BotMessageEvent): BotMessageEventResponseDto {
       return Object.assign(new BotGoalEventResponseDto(), event);
     case 'loop':
       return Object.assign(new BotLoopEventResponseDto(), event);
+    case 'dream':
+      return Object.assign(new BotDreamEventResponseDto(), event);
   }
 }
 
@@ -408,6 +412,17 @@ function toEvent(raw: Record<string, unknown> | null): BotMessageEvent | null {
       intervalMinutes: typeof raw.intervalMinutes === 'number' ? raw.intervalMinutes : null,
       run: typeof raw.run === 'number' ? raw.run : 0,
       reason: typeof raw.reason === 'string' ? raw.reason : null,
+    };
+  }
+  if (raw.kind === 'dream') {
+    const activity = BOT_DREAM_ACTIVITIES.find((known) => known === raw.activity);
+    if (!activity || typeof raw.dreamId !== 'string') return null;
+    return {
+      kind: 'dream',
+      activity,
+      dreamId: raw.dreamId,
+      factsBefore: typeof raw.factsBefore === 'number' ? raw.factsBefore : 0,
+      factsAfter: typeof raw.factsAfter === 'number' ? raw.factsAfter : 0,
     };
   }
   return null;

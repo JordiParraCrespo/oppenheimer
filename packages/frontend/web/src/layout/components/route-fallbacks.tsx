@@ -1,6 +1,7 @@
 import { Button, EmptyState } from '@oppenheimer/design-system-web';
 import { Compass } from '@oppenheimer/design-system-web/icons';
-import { useErrorMessage } from '@oppenheimer/frontend-core/react';
+import { isRequestFailure } from '@oppenheimer/frontend-core';
+import { useErrorMessage, useReportError } from '@oppenheimer/frontend-core/react';
 import { useRouter } from '@tanstack/react-router';
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -46,12 +47,17 @@ export function RouteNotFound({ children }: { children?: ReactNode }) {
  * code and correlation id are shown for a bug report. A plain render throw
  * carries neither and gets the fallback sentence, since the resolver would
  * read its missing status as the connection's fault.
+ *
+ * Every error drawn here is offered to error reporting (`useReportError`):
+ * every route boundary and a Suspense read's `QueryState.Error` render this,
+ * so it is the one place a render throw is caught and shown.
  */
 export function RouteError({ error, onRetry }: { error: unknown; onRetry?: () => void }) {
   const { t } = useTranslation();
   const router = useRouter();
   const resolveError = useErrorMessage();
   const resolved = isRequestFailure(error) ? resolveError(error) : undefined;
+  useReportError(error, 'route');
 
   return (
     <ScreenFailure
@@ -81,12 +87,6 @@ export function RouteError({ error, onRetry }: { error: unknown; onRetry?: () =>
       </p>
     </ScreenFailure>
   );
-}
-
-function isRequestFailure(error: unknown): boolean {
-  if (typeof error !== 'object' || error === null) return false;
-  const { status, code } = error as { status?: unknown; code?: unknown };
-  return typeof status === 'number' || (typeof code === 'string' && code !== '');
 }
 
 /** The throw as text for a bug report: a message, or the object itself — never `[object Object]`. */

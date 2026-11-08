@@ -244,6 +244,7 @@ export const TOC: TocGroup[] = [
       { id: 'botitem', label: 'BotItem', icon: BotIcon, components: ['bot-item'] },
       { id: 'avatarpicker', label: 'AvatarPicker', icon: CircleUserRoundIcon, components: ['avatar-picker'] },
       { id: 'avatarcolorpicker', label: 'AvatarColorPicker', icon: CircleUserRoundIcon, components: [] },
+      { id: 'botfacepicker', label: 'BotFacePicker', icon: CircleUserRoundIcon, components: ['bot-face-picker'] },
       { id: 'routinecard', label: 'RoutineCard', icon: ZapIcon, components: ['routine-card'] },
       { id: 'settingslist', label: 'SettingsListRow · SettingsAddRow', icon: RowsIcon, components: [] },
       { id: 'settingstopbar', label: 'SettingsTopBar', icon: PanelTopIcon, components: [] },

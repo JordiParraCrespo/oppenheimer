@@ -70,6 +70,16 @@ describe('the turn fold (interactive)', () => {
     expect(turn).toMatchObject({ state: 'failed', failureDetail: 'clone refused' });
   });
 
+  it('queues the first task again as the next turn when a failed start is retried', () => {
+    const turn = replay([
+      prompt,
+      entry(SESSION_EVENT_KINDS.FAILED, { detail: 'not signed in', code: 'SESS_019' }),
+      entry(SESSION_EVENT_KINDS.RETRY_REQUESTED),
+    ]);
+    expect(turn).toMatchObject({ seq: 2, state: 'queued', failureDetail: null });
+    expect(turn?.prompt).toBe(replay([prompt])?.prompt);
+  });
+
   it('is cancelled when the session is stopped under it, and a finished turn is left alone', () => {
     expect(replay([prompt, started, entry(SESSION_EVENT_KINDS.STOPPED)])?.state).toBe('cancelled');
     const done = replay([prompt, started, observed('done'), entry(SESSION_EVENT_KINDS.STOPPED)]);
