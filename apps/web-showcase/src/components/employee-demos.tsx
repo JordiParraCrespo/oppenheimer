@@ -398,7 +398,7 @@ export function EmployeesSection() {
         id="avatarpicker"
         title="AvatarPicker"
         meta="avatar-picker.tsx"
-        desc="A bot's photo picked from a set: the current one beside the bot's name, then a grid of round photos over optional captions, the picked one on the selected wash; arrow keys move through it. compact is the 300px popover off the chat header (four columns, 36px photos, Surprise me under the grid); wide is BotSettings' Profile (76px columns, 40px photos, a 72px preview). BotAvatar is the photo alone, initials in ink until the image loads."
+        desc="A bot's photo picked from a set: the current one beside the bot's name, then a grid of rounded-square photos over optional captions, the picked one on the selected wash; arrow keys move through it. compact is the 300px popover off the chat header (four columns, 36px photos, Surprise me under the grid); wide is BotSettings' Profile (76px columns, 40px photos, a 72px preview). BotAvatar is the photo alone, initials in ink until the image loads."
         code={`<AvatarPicker options={photos} value={photo} onValueChange={setPhoto} name="Release Bot" onShuffle={shuffle} />`}
       >
         <AvatarPickerDemo />
