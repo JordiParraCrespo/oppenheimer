@@ -1272,6 +1272,7 @@ export const BOT_TOOL_GROUPS = [
   'plan',
   'mail',
   'whatsapp',
+  'telegram',
   'github',
   'automations',
   'bots',

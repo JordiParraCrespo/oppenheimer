@@ -49,6 +49,15 @@ import {
   whatsappStateSchema,
   whatsappUnlinkSchema,
 } from './whatsapp.js';
+import {
+  telegramAckSchema,
+  telegramLinkSchema,
+  telegramMessagesSchema,
+  telegramSendSchema,
+  telegramSentSchema,
+  telegramStateSchema,
+  telegramUnlinkSchema,
+} from './telegram.js';
 
 /**
  * The runner link's message vocabulary, as Zod — one source of truth, with JSON
@@ -165,6 +174,12 @@ export const RUNNER_CAPABILITIES = [
    * `whatsapp.messages` (`product/next-steps/whatsapp.md`).
    */
   'whatsapp',
+  /**
+   * Holds a Telegram bot for the owner, long-polling the Bot API on its token:
+   * answers `telegram.link`, `telegram.unlink` and `telegram.send`, and sends
+   * `telegram.state` and `telegram.messages` (`product/next-steps/telegram.md`).
+   */
+  'telegram',
   /**
    * Logs `file.shared` for each file an agent shares, and answers
    * `shared.preview.get` with `shared.preview`: the JPEG preview it kept of
@@ -1132,6 +1147,13 @@ export const protocolMessageSchema = z.discriminatedUnion('type', [
   whatsappAckSchema,
   whatsappSendSchema,
   whatsappSentSchema,
+  telegramLinkSchema,
+  telegramUnlinkSchema,
+  telegramStateSchema,
+  telegramMessagesSchema,
+  telegramAckSchema,
+  telegramSendSchema,
+  telegramSentSchema,
   sharedPreviewGetSchema,
   sharedPreviewSchema,
   transcriptReadSchema,

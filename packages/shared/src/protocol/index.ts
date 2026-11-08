@@ -23,3 +23,4 @@ export * from './transcript.js';
 export * from './turn-event.js';
 export * from './version.js';
 export * from './whatsapp.js';
+export * from './telegram.js';

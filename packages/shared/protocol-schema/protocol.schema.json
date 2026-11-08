@@ -1936,6 +1936,268 @@
       "properties": {
         "type": {
           "type": "string",
+          "const": "telegram.link"
+        },
+        "commandId": {
+          "$ref": "#/$defs/commandId"
+        },
+        "token": {
+          "type": "string",
+          "maxLength": 160,
+          "pattern": "^\\d{1,20}:[A-Za-z0-9_-]{20,128}$"
+        }
+      },
+      "required": [
+        "type",
+        "commandId",
+        "token"
+      ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "telegram.unlink"
+        },
+        "commandId": {
+          "$ref": "#/$defs/commandId"
+        }
+      },
+      "required": [
+        "type",
+        "commandId"
+      ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "telegram.state"
+        },
+        "state": {
+          "type": "string",
+          "enum": [
+            "unlinked",
+            "connecting",
+            "connected",
+            "revoked"
+          ]
+        },
+        "botId": {
+          "type": "string",
+          "maxLength": 21,
+          "pattern": "^-?\\d{1,20}$"
+        },
+        "username": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "reason": {
+          "type": "string",
+          "maxLength": 200
+        }
+      },
+      "required": [
+        "type",
+        "state"
+      ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "telegram.messages"
+        },
+        "messages": {
+          "minItems": 1,
+          "maxItems": 50,
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "key": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 256
+              },
+              "id": {
+                "type": "string",
+                "pattern": "^\\d{1,20}$"
+              },
+              "chatId": {
+                "type": "string",
+                "maxLength": 21,
+                "pattern": "^-?\\d{1,20}$"
+              },
+              "chatKind": {
+                "type": "string",
+                "enum": [
+                  "direct",
+                  "group"
+                ]
+              },
+              "chatName": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 200
+              },
+              "senderId": {
+                "type": "string",
+                "maxLength": 21,
+                "pattern": "^-?\\d{1,20}$"
+              },
+              "senderName": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 200
+              },
+              "senderUsername": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 64
+              },
+              "text": {
+                "type": "string",
+                "maxLength": 4096
+              },
+              "media": {
+                "type": "string",
+                "enum": [
+                  "photo",
+                  "video",
+                  "audio",
+                  "voice",
+                  "document",
+                  "sticker",
+                  "animation",
+                  "contact",
+                  "location",
+                  "poll"
+                ]
+              },
+              "replyToId": {
+                "type": "string",
+                "pattern": "^\\d{1,20}$"
+              },
+              "sentAt": {
+                "type": "string",
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+              }
+            },
+            "required": [
+              "key",
+              "id",
+              "chatId",
+              "chatKind",
+              "senderId",
+              "text",
+              "sentAt"
+            ]
+          }
+        }
+      },
+      "required": [
+        "type",
+        "messages"
+      ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "telegram.ack"
+        },
+        "keys": {
+          "minItems": 1,
+          "maxItems": 50,
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          }
+        }
+      },
+      "required": [
+        "type",
+        "keys"
+      ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "telegram.send"
+        },
+        "commandId": {
+          "$ref": "#/$defs/commandId"
+        },
+        "chatId": {
+          "type": "string",
+          "maxLength": 21,
+          "pattern": "^-?\\d{1,20}$"
+        },
+        "text": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 4096
+        },
+        "replyToId": {
+          "type": "string",
+          "pattern": "^\\d{1,20}$"
+        }
+      },
+      "required": [
+        "type",
+        "commandId",
+        "chatId",
+        "text"
+      ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "telegram.sent"
+        },
+        "commandId": {
+          "$ref": "#/$defs/commandId"
+        },
+        "id": {
+          "type": "string",
+          "pattern": "^\\d{1,20}$"
+        },
+        "sentAt": {
+          "type": "string",
+          "format": "date-time",
+          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+        }
+      },
+      "required": [
+        "type",
+        "commandId",
+        "id",
+        "sentAt"
+      ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
           "const": "shared.preview.get"
         },
         "commandId": {
@@ -2434,6 +2696,7 @@
       "codex.environments",
       "session.watch",
       "whatsapp",
+      "telegram",
       "shared.preview",
       "transcript.read"
     ],
