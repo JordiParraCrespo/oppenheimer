@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { type AccessScope, ScopedRepositoryBase } from '@oppenheimer/backend-authz';
+import { storableJson } from '@oppenheimer/backend-core';
 import { DataSource, type EntityManager, In, Repository, type SelectQueryBuilder } from 'typeorm';
 import { BotResource } from '../../bots/bots.resource';
 import { BotMessageMapper } from '../bot-message.mapper';
@@ -58,7 +59,7 @@ export class BotMessageRepository
       .createQueryBuilder()
       .update(BotMessageOrmEntity)
       .set({ steps: () => ':steps::jsonb' })
-      .setParameter('steps', JSON.stringify(message.steps))
+      .setParameter('steps', JSON.stringify(storableJson(message.steps)))
       .where('id = :id AND "organizationId" = :organizationId', {
         id: message.id,
         organizationId: message.organizationId,
@@ -319,9 +320,10 @@ export async function insertMessageWithin(
   mapper: BotMessageMapper,
   message: BotMessageEntity,
 ): Promise<void> {
+  const record = mapper.toPersistence(message);
   await manager.query(
     `INSERT INTO bot_message (${MESSAGE_COLUMNS}) VALUES (${MESSAGE_VALUES})`,
-    messageParameters(mapper.toPersistence(message)),
+    messageParameters(record),
   );
   // The sidebar's line is a conversation's words: an activity line, an event
   // or the images a bot showed are none, and leave the bot's last words there.
@@ -330,6 +332,6 @@ export async function insertMessageWithin(
   await manager.query(
     `UPDATE bot SET "lastMessageAt" = now(), "lastMessagePreview" = left($3, ${PREVIEW_MAX})
       WHERE "organizationId" = $1 AND id = $2`,
-    [message.organizationId, message.botId, message.content.replace(/\s+/g, ' ').trim()],
+    [message.organizationId, message.botId, record.content.replace(/\s+/g, ' ').trim()],
   );
 }
