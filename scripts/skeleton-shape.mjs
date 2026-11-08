@@ -20,7 +20,8 @@
 /** Tall enough to be a block rather than a line or a row: 16 spacing units, 64px. */
 const SLAB_UNITS = 16;
 const PENDING = /<QueryState\.Pending>([\s\S]*?)<\/QueryState\.Pending>/g;
-const SKELETON = /<Skeleton\b[^>]*>/g;
+/** A `Skeleton` tag, its `{…}` attributes read whole, so a `>` inside one does not end it. */
+const SKELETON = /<Skeleton\b(?:[^>{}]|\{(?:[^{}]|\{(?:[^{}]|\{[^{}]*\})*\})*\})*>/g;
 const EXCUSED = /A block stands in here: \S/;
 
 /** Comments blanked rather than cut, so a reported line is the file's line. */
@@ -29,33 +30,55 @@ const blankComments = (source) =>
     comment.replace(/[^\n]/g, ' '),
   );
 
-/** A tag's classes: its `className` string, or the strings a `cn(…)` joins. */
+/**
+ * A tag's classes: its `className` string, or the static strings of the
+ * expression it is given (a `cn(…)`'s arguments, a template literal's text).
+ * `dynamic` says part of the list is only known at run time (a `${…}`), so a
+ * height may be in it.
+ */
 function classesOf(tag) {
-  const attribute = /className=(?:"([^"]*)"|\{([^}]*)\})/.exec(tag);
-  if (!attribute) return [];
-  const literal =
-    attribute[1] ??
-    [...attribute[2].matchAll(/'([^']*)'|"([^"]*)"/g)].map((m) => m[1] ?? m[2]).join(' ');
-  return literal.split(/\s+/).filter(Boolean);
+  const quoted = /className="([^"]*)"/.exec(tag);
+  if (quoted) return { classes: quoted[1].split(/\s+/).filter(Boolean), dynamic: false };
+  const start = tag.indexOf('className={');
+  if (start === -1) return { classes: [], dynamic: false };
+  let depth = 0;
+  let end = start + 'className='.length;
+  for (; end < tag.length; end += 1) {
+    if (tag[end] === '{') depth += 1;
+    if (tag[end] === '}' && --depth === 0) break;
+  }
+  const expression = tag.slice(start + 'className={'.length, end);
+  const templates = [...expression.matchAll(/`([^`]*)`/g)].map((m) => m[1]);
+  const dynamic = templates.some((text) => text.includes('${'));
+  const literal = [
+    ...templates.map((text) => text.replace(/\$\{(?:[^{}]|\{[^{}]*\})*\}/g, ' ')),
+    ...[...expression.replace(/`[^`]*`/g, ' ').matchAll(/'([^']*)'|"([^"]*)"/g)].map(
+      (m) => m[1] ?? m[2],
+    ),
+  ].join(' ');
+  return { classes: literal.split(/\s+/).filter(Boolean), dynamic };
 }
 
 /** The height a class sets, in spacing units, or null when it sets none. */
 function unitsOf(name) {
-  const units = /^(?:h|size)-(\d+(?:\.\d+)?)$/.exec(name);
+  const units = /^(?:min-h|h|size)-(\d+(?:\.\d+)?)$/.exec(name);
   if (units) return Number(units[1]);
-  const pixels = /^(?:h|size)-\[(\d+)px\]$/.exec(name);
+  const pixels = /^(?:min-h|h|size)-\[(\d+)px\]$/.exec(name);
   return pixels ? Number(pixels[1]) / 4 : null;
 }
 
 /**
  * Whether a `Skeleton` tag's classes make it a block rather than a bar: a
- * height of 64px or more, or a frame it fills with no height of its own
- * (`flex-1` beside an `h-4` is a bar filling its row, not a block).
+ * height (or floor) of 64px or more, or a frame it fills with no height of
+ * its own (`flex-1` beside an `h-4` is a bar filling its row, not a block).
+ * A list with a run-time part is judged only on the heights it states.
  */
 function isSlab(tag) {
-  const classes = classesOf(tag).map((name) => name.replace(/^[a-z0-9-]+:/, ''));
+  const { classes: names, dynamic } = classesOf(tag);
+  const classes = names.map((name) => name.replace(/^[a-z0-9-]+:/, ''));
   const heights = classes.map(unitsOf).filter((units) => units !== null);
-  if (heights.length > 0) return heights.some((units) => units >= SLAB_UNITS);
+  if (heights.some((units) => units >= SLAB_UNITS)) return true;
+  if (dynamic || heights.some((units) => units > 0)) return false;
   return classes.some(
     (name) => name === 'flex-1' || name === 'h-full' || name.startsWith('min-h-'),
   );
@@ -90,7 +113,7 @@ export function skeletonSlabProblems(source) {
     if (EXCUSED.test(above)) continue;
     problems.push({
       line,
-      message: `Skeleton is a slab (${classesOf(match[0]).join(' ')}) — draw the placeholder in the real container, its labels written and a bar per line, so the page does not jump when the data lands; a block that really stands in for one says so above it ({/* A block stands in here: <why> */})`,
+      message: `Skeleton is a slab (${classesOf(match[0]).classes.join(' ')}) — draw the placeholder in the real container, its labels written and a bar per line, so the page does not jump when the data lands; a block that really stands in for one says so above it ({/* A block stands in here: <why> */})`,
     });
   }
   return problems;

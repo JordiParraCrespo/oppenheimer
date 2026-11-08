@@ -87,6 +87,19 @@ test('classes joined by cn are read', () => {
   assert.deepEqual(lines("<Skeleton className={cn('h-40', wide && 'w-full')} />\n"), [1]);
 });
 
+test('a template literal is read: its stated height counts, a run-time part is not guessed', () => {
+  assert.deepEqual(lines('<Skeleton className={`h-64 ${width}`} />\n'), [1]);
+  assert.deepEqual(lines('<Skeleton className={`min-w-0 flex-1 ${height}`} />\n'), []);
+});
+
+test('a `>` inside an attribute does not end the tag', () => {
+  assert.deepEqual(lines("<Skeleton className={cn(a > b && 'h-64')} />\n"), [1]);
+});
+
+test('a floor of 64px or more is a slab, whatever height sits beside it', () => {
+  assert.deepEqual(lines('<Skeleton className="h-4 min-h-96" />\n'), [1]);
+});
+
 test('a slab that says why it stands in passes, in its slot or just above it', () => {
   assert.deepEqual(
     lines(

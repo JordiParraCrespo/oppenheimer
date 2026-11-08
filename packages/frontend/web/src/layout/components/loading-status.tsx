@@ -13,7 +13,10 @@ import {
  * is mounted: a page drawing five placeholders at once announces once, and a
  * nested one has nothing to opt out of. The region is mounted before any
  * placeholder, so a reader hears its text change rather than missing a region
- * that appeared with its text already in it.
+ * that appeared with its text already in it. `aria-live` is written out, not
+ * left to the role: a modal dialog hides everything outside it from assistive
+ * technology except `[aria-live]` regions, and a placeholder inside a dialog
+ * counts into this one.
  */
 export function LoadingAnnouncer({ children }: { children: ReactNode }) {
   const { t } = useTranslation();
@@ -26,7 +29,7 @@ export function LoadingAnnouncer({ children }: { children: ReactNode }) {
   return (
     <LoadingAnnouncerContext value={register}>
       {children}
-      <span role="status" className="sr-only">
+      <span role="status" aria-live="polite" className="sr-only">
         {count > 0 ? t('common.loading') : ''}
       </span>
     </LoadingAnnouncerContext>
@@ -46,7 +49,7 @@ export function LoadingStatus() {
   const { t } = useTranslation();
   if (useLoadingAnnouncement()) return null;
   return (
-    <span role="status" className="sr-only">
+    <span role="status" aria-live="polite" className="sr-only">
       {t('common.loading')}
     </span>
   );

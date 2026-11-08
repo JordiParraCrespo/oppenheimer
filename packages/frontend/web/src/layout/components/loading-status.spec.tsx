@@ -22,6 +22,17 @@ describe('LoadingAnnouncer', () => {
     expect(screen.getByRole('status').textContent).toBe('common.loading');
   });
 
+  it('stays a live region a modal dialog leaves heard', () => {
+    // A modal hides everything outside it but `[aria-live]` from assistive
+    // technology; with only the implicit role, a placeholder in a dialog went silent.
+    render(
+      <LoadingAnnouncer>
+        <LoadingStatus />
+      </LoadingAnnouncer>,
+    );
+    expect(screen.getByRole('status').getAttribute('aria-live')).toBe('polite');
+  });
+
   it('goes quiet when the last placeholder leaves', () => {
     const { rerender } = render(
       <LoadingAnnouncer>
