@@ -16,7 +16,7 @@ export {
   AlertDescription,
   AlertTitle,
 } from './components/alert';
-export type { AvatarGradient } from './components/avatar';
+export type { AvatarGradient, AvatarRadius } from './components/avatar';
 export {
   AVATAR_GRADIENTS,
   Avatar,
