@@ -1236,3 +1236,19 @@ earlier note:
   review of every prompt, a cloud or review session is watched like any
   other (a failed cloud start had gone unreported), and the list names the
   tools by area: quoting them made it 62% of the system prompt.
+- `versions/mvp/25-bots.md` §2 (2026-10-15) bounded a turn by 20 round trips
+  and 4 minutes but failed it only past the time; one that used its steps
+  ended completed, with nothing said. On 2026-11-08 it fails with
+  `step_limit`, saying so, and goals and loops go on past it as past the
+  time limit (`TURN_LIMIT_FAILURES`).
+- `versions/mvp/25-bots.md` §2 (2026-10-15) folded a bot's chat into its
+  summary past 1.5 times the history budget, while the history dropped old
+  messages at the budget, so up to about 12,000 tokens were in neither. On
+  2026-11-08 the fold starts below the budget, with room for the longest
+  summary and the notes on earlier images (`BOT_SUMMARY_TRIGGER_TOKENS`).
+- `versions/mvp/25-bots.md` §2 (2026-10-15) left a turn's tool calls out of
+  the history, as the bot's own working, so a later turn knew what its
+  tools did only from what it had said. On 2026-11-08 they come back as a
+  short record from Oppenheimer, fenced as data and bounded per call and
+  per turn (`activityText`), and the summary and the goal reviewer read the
+  same record.

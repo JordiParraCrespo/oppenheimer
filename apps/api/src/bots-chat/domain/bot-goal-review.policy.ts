@@ -1,4 +1,3 @@
-import { type BotProvider, botEffortLevelFor } from '@oppenheimer/shared';
 import {
   estimateTokens,
   type HistoryEntry,
@@ -6,6 +5,7 @@ import {
   historyEntry,
   isReadBack,
 } from './bot-history.policy';
+import { neutraliseTags } from './bot-tool-text.policy';
 
 /**
  * Whether a goal's condition holds, asked after each turn of it
@@ -95,7 +95,7 @@ export function composeGoalReview(objective: string, transcript: readonly Histor
  * and write its own verdict for the reviewer.
  */
 function escapeReviewTags(text: string): string {
-  return text.replace(/<(\s*\/\s*(?:transcript|goal)\b)/gi, '&lt;$1');
+  return neutraliseTags(text, ['transcript', 'goal']);
 }
 
 /**
@@ -158,16 +158,4 @@ function parseObject(text: string): { verdict?: unknown; reason?: unknown } | nu
   } catch {
     return null;
   }
-}
-
-/**
- * The effort a reviewer call (a goal's verdict, a rule check) runs at: the
- * lowest the model offers, or none when it offers no levels. Passing none
- * to a model that has levels gives its default, which for most is not low.
- */
-export function reviewEffort(target: {
-  provider: BotProvider;
-  model: string | null;
-}): 'low' | null {
-  return botEffortLevelFor(target.provider, target.model, 'low') === 'low' ? 'low' : null;
 }
