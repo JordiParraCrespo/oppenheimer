@@ -136,7 +136,7 @@ export class BotTerminalToolsFactory implements BotToolArea {
           ? ' The host is offline: it opens when the host comes back.'
           : '';
         return {
-          content: `Opened terminal ${result.sessionId} on host ${hostId} in ${input.folder}.${offline} Read it with read_terminal (wait_for your prompt) before you type.`,
+          content: `Opened terminal ${result.sessionId} on host ${hostId} in ${input.folder}.${offline} Wait for its prompt (wait_for) before you rely on it.`,
           sessionId: result.sessionId,
         };
       },

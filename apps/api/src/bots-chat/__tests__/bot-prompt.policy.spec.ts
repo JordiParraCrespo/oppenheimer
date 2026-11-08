@@ -199,6 +199,11 @@ describe('composeBotSystemPrompt', () => {
         expect(prompt, which).not.toContain('You have no shell, no files');
         expect(prompt, which).not.toContain('never see the live terminal');
         expect(prompt, which).not.toContain('you do not run a terminal');
+        if (!names.includes('read_terminal')) {
+          expect(prompt, `${which} tells it to read`).not.toMatch(
+            /read it waiting|can read a terminal/,
+          );
+        }
         for (const missing of optional.filter(
           (name) => !names.includes(name) && name !== 'start_session',
         )) {

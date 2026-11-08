@@ -58,18 +58,18 @@ func (s *Service) Drive(ctx context.Context, id string, req DriveRequest) (Drive
 	}
 
 	target := session.Target(req.Window)
-	// A drive that types waits for a match the typing caused: lines that
-	// already matched before it, and the echo of what it typed, do not count.
-	// One that only reads takes what is on the screen.
+	// A drive that types waits for a match its typing caused, so it keeps
+	// the screen as it was before (see fresh). One that only reads takes what
+	// is on the screen.
 	echo := strings.TrimSpace(req.Text)
 	typing := req.Text != "" || len(req.Keys) > 0
-	before := 0
+	var before []string
 	if pattern != nil && typing {
 		body, err := s.terminals.CaptureBody(ctx, target)
 		if err != nil {
 			return DriveResult{}, err
 		}
-		before = matches(body, pattern, echo)
+		before = strings.Split(body, "\n")
 	}
 	if req.Text != "" {
 		if err := s.terminals.SendKeys(ctx, target, req.Text); err != nil {
@@ -91,7 +91,7 @@ func (s *Service) Drive(ctx context.Context, id string, req DriveRequest) (Drive
 			}
 		}
 	} else {
-		matched, err = s.waitFor(ctx, target, pattern, echo, before, req.Wait)
+		matched, err = s.waitFor(ctx, target, pattern, echo, typing, before, req.Wait)
 		if err != nil {
 			return DriveResult{}, err
 		}
@@ -103,19 +103,24 @@ func (s *Service) Drive(ctx context.Context, id string, req DriveRequest) (Drive
 	return DriveResult{Screen: strings.TrimRight(screen, "\n"), Matched: matched, Waited: time.Since(started)}, nil
 }
 
-// waitFor reads the screen until more of its lines match pattern than the
-// before lines that matched before the drive typed, or wait runs out, and
-// reports whether they did. A line holding echo, the text the drive typed,
-// never counts: a command line that matches its own pattern is not output.
-func (s *Service) waitFor(ctx context.Context, target string, pattern *regexp.Regexp, echo string, before int, wait time.Duration) (bool, error) {
+// waitFor reads the screen until pattern matches a line of it that counts,
+// or wait runs out, and reports whether one did. For a drive that only reads
+// every line counts; for one that typed, only the lines fresh says are new.
+func (s *Service) waitFor(ctx context.Context, target string, pattern *regexp.Regexp, echo string, typing bool, before []string, wait time.Duration) (bool, error) {
 	deadline := time.Now().Add(wait)
 	for {
 		body, err := s.terminals.CaptureBody(ctx, target)
 		if err != nil {
 			return false, err
 		}
-		if matches(body, pattern, echo) > before {
-			return true, nil
+		lines := strings.Split(body, "\n")
+		if typing {
+			lines = fresh(lines, before, echo)
+		}
+		for _, line := range lines {
+			if pattern.MatchString(line) {
+				return true, nil
+			}
 		}
 		if !time.Now().Before(deadline) {
 			return false, nil
@@ -128,19 +133,27 @@ func (s *Service) waitFor(ctx context.Context, target string, pattern *regexp.Re
 	}
 }
 
-// matches counts the lines of body that match pattern, leaving out any that
-// holds echo.
-func matches(body string, pattern *regexp.Regexp, echo string) int {
-	count := 0
-	for line := range strings.SplitSeq(body, "\n") {
-		if echo != "" && strings.Contains(line, echo) {
-			continue
-		}
-		if pattern.MatchString(line) {
-			count++
+// fresh is the part of the screen a drive's typing produced: the lines after
+// the last one that shows what it typed (the command line, then its output
+// and the prompt that follows), or, when no line shows it (keys only, input a
+// program does not echo, a command line scrolled away), the lines from the
+// first one that differs from the screen before it typed. Either way a match
+// that was already there, or the echoed command line itself, is not the
+// answer to what was typed.
+func fresh(lines, before []string, echo string) []string {
+	if echo != "" {
+		for i := len(lines) - 1; i >= 0; i-- {
+			if strings.Contains(lines[i], echo) {
+				return lines[i+1:]
+			}
 		}
 	}
-	return count
+	for i, line := range lines {
+		if i >= len(before) || line != before[i] {
+			return lines[i:]
+		}
+	}
+	return nil
 }
 
 // Waits a drive makes for a session that is not ready for it yet: one still

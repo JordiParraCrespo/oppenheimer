@@ -356,6 +356,7 @@ function drivingATerminal(commands: boolean, tools: ReadonlySet<string>): string
     commands,
     opens: tools.has('open_terminal'),
     types: tools.has('type_in_terminal'),
+    reads: tools.has('read_terminal'),
   };
   const lines = TERMINAL_LINES.filter((line) => line.when(has)).map((line) => `- ${line.text}`);
   return `# Driving a terminal
@@ -370,6 +371,7 @@ interface TerminalTools {
   commands: boolean;
   opens: boolean;
   types: boolean;
+  reads: boolean;
 }
 
 /** One line of the terminal section, and when the tools make it true. */
@@ -385,8 +387,12 @@ const TERMINAL_LINES: readonly TerminalLine[] = [
     text: 'Prefer `run_command` for one command whose output you need; a terminal is for what has to stay open or answer back.',
   },
   {
-    when: (has) => has.opens,
+    when: (has) => has.opens && has.reads,
     text: 'Open a terminal, then read it waiting for the prompt before you do anything else in it.',
+  },
+  {
+    when: (has) => has.opens && !has.reads && has.types,
+    text: 'Open a terminal, then wait for its prompt (`wait_for` on your first `type_in_terminal`) before you rely on it.',
   },
   {
     when: (has) => !has.opens,
@@ -397,7 +403,7 @@ const TERMINAL_LINES: readonly TerminalLine[] = [
     text: 'Type a command as text with keys ["Enter"], and wait for what shows it finished (`wait_for` the prompt, or the program\'s question), not a fixed time.',
   },
   {
-    when: (has) => !has.types,
+    when: (has) => !has.types && has.reads,
     text: 'You can read a terminal but not type into it: say what you see, and what the person could type.',
   },
   {
