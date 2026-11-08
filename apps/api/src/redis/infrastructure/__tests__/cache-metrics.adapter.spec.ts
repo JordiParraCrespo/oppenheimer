@@ -8,8 +8,11 @@ import { CacheReadMetricsAdapter } from '../cache-metrics.adapter';
  */
 function adapter() {
   const counted: Record<string, string>[] = [];
-  const metrics = new CacheReadMetricsAdapter({ inc: (labels) => counted.push(labels) });
-  return { counted, observe: metrics.observe };
+  const zeroed: Record<string, string>[] = [];
+  const metrics = new CacheReadMetricsAdapter({
+    inc: (labels, value = 1) => (value === 0 ? zeroed : counted).push(labels),
+  });
+  return { counted, zeroed, observe: metrics.observe };
 }
 
 describe('CacheReadMetricsAdapter', () => {
@@ -29,5 +32,17 @@ describe('CacheReadMetricsAdapter', () => {
     expect(counted[0]?.namespace).toBe('other');
     expect(labels.size).toBe(21);
     expect(counted.at(-1)?.namespace).toBe('other');
+  });
+
+  // A namespace that only ever misses must read as 0%, not as no data.
+  it('creates every result of a namespace at zero when it first gets a label', () => {
+    const { zeroed, observe } = adapter();
+    observe({ operation: 'get', namespace: 'repos', result: 'miss' });
+    observe({ operation: 'get', namespace: 'repos', result: 'miss' });
+
+    const repos = zeroed.filter((labels) => labels.namespace === 'repos');
+    expect(repos).toContainEqual({ namespace: 'repos', operation: 'get', result: 'hit' });
+    expect(repos).toHaveLength(16);
+    expect(zeroed.some((labels) => labels.namespace === 'other')).toBe(true);
   });
 });

@@ -4,6 +4,7 @@ import {
   BotEngine,
   type BotEngineEvent,
   type BotTurnRequest,
+  isCompletionRequest,
 } from '@oppenheimer/backend-agents';
 import { InjectMetric, type ModuleMetrics } from '@oppenheimer/backend-core';
 import { BOT_PROVIDERS } from '@oppenheimer/shared';
@@ -87,11 +88,8 @@ interface HistogramLike {
   zero(labels: Record<string, string>): void;
 }
 
-/** What `BotEngine.completeWithUsage` sends: one step, none of our tools and none of the engine's. */
 function kindOf(request: BotTurnRequest): RunKind {
-  return request.maxSteps === 1 && request.tools.length === 0 && request.engineTools === false
-    ? 'completion'
-    : 'turn';
+  return isCompletionRequest(request) ? 'completion' : 'turn';
 }
 
 /**

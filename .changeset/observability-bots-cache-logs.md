@@ -1,6 +1,7 @@
 ---
 "@oppenheimer/api": minor
 "@oppenheimer/backend-cache": minor
+"@oppenheimer/backend-agents": minor
 "@oppenheimer/backend-core": minor
 ---
 

@@ -114,7 +114,11 @@ Every series also carries `app="api"`.
   joined a load already running. The hit rate is `hit / (hit + miss +
   error)`. `namespace` is a key's first segment (`github`, `attach`,
   `upstream`); past twenty of them, or for one that is not a short
-  identifier, it is `other`.
+  identifier, it is `other`. The twenty are the first a process reads, so
+  with more than twenty in use which ones get a label can change from one
+  restart to the next; today there are about five. Each namespace's results
+  start at zero when it first gets a label, so one that only ever misses
+  reads 0%, not no data.
 
 ## Logs
 
