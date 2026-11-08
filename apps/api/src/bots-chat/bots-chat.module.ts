@@ -19,6 +19,7 @@ import { BotGithubToolsFactory } from './application/bot-github-tools.factory';
 import { BotGoalResolver } from './application/bot-goal.resolver';
 import { BotGoalReviewResolver } from './application/bot-goal-review.resolver';
 import { BotGoalToolsFactory } from './application/bot-goal-tools.factory';
+import { BotGuideToolsFactory } from './application/bot-guide-tools.factory';
 import { BotHostToolsFactory } from './application/bot-host-tools.factory';
 import { BotIssueToolsFactory } from './application/bot-issue-tools.factory';
 import { BotLoopResolver } from './application/bot-loop.resolver';
@@ -408,6 +409,7 @@ const queryHandlers: Provider[] = [
     BotCompletionResolver,
     BotSelfToolsFactory,
     BotSkillToolsFactory,
+    BotGuideToolsFactory,
     BotPlanToolsFactory,
     BotProjectToolsFactory,
     BotGithubToolsFactory,

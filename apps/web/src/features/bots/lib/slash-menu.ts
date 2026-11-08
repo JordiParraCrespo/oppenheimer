@@ -1,4 +1,4 @@
-import { BOT_SKILL_RESERVED_NAMES } from '@oppenheimer/shared/schemas/bot-skill';
+import { BOT_BUILT_IN_COMMANDS } from '@oppenheimer/shared/schemas/bot-skill';
 
 /** The most commands the `/` menu lists at once. */
 const SLASH_MENU_MAX = 8;
@@ -46,7 +46,9 @@ export function slashMenuItems(
   skills: readonly SlashCommand[],
   query: string,
 ): { builtIns: SlashCommand[]; skills: SlashCommand[] } {
-  const reserved: readonly string[] = BOT_SKILL_RESERVED_NAMES;
+  // Only a command's name runs something else; a skill under a built-in
+  // skill's name (`oppenheimer`) is still the bot's and still runs.
+  const reserved: readonly string[] = ['skill', ...BOT_BUILT_IN_COMMANDS];
   const ownBuiltIns = matchingCommands(builtIns, query);
   const ownSkills = matchingCommands(
     skills.filter((skill) => !reserved.includes(skill.name)),

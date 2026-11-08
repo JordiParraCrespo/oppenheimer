@@ -6,7 +6,7 @@ import type * as React from 'react';
 
 import { BotFace, type BotFaceParts } from '../internal/bot-face';
 import { cn } from '../lib/utils';
-import { Avatar, AvatarFallback, AvatarImage } from './avatar';
+import { Avatar, AvatarFallback, AvatarImage, type AvatarRadius } from './avatar';
 
 type AvatarOption = {
   id: string;
@@ -41,6 +41,18 @@ const AVATAR_COLOR_CLASS: Record<AvatarColor, string> = {
 type BotFaceSpec = { color: AvatarColor; seed: string; parts?: BotFaceParts | null };
 
 /**
+ * A bot's avatar is a rounded square, not a pill, on the system's radius
+ * rungs: the corner steps up with the size so the 20px sidebar row and the
+ * 72px profile preview read as one shape.
+ */
+function botAvatarRadius(size: number): AvatarRadius {
+  if (size <= 30) return 'xs';
+  if (size <= 44) return 'sm';
+  if (size <= 64) return 'md';
+  return 'lg';
+}
+
+/**
  * A bot's face: its photo, or until one loads its drawn `face`, a hatted
  * face in its avatar colour that its id keeps the same (every bot, until
  * there is a set of photos we may use). Without `face`, the initials in ink
@@ -61,6 +73,7 @@ function BotAvatar({
     <Avatar
       size={size}
       data-color={face?.color}
+      radius={botAvatarRadius(size)}
       className={cn(
         'font-semibold tracking-[-0.01em]',
         face

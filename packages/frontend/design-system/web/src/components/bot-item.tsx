@@ -85,7 +85,7 @@ function BotItem({
       {...props}
     >
       <span className="relative flex shrink-0">
-        <BotAvatar option={{ image, initials }} size={20} face={face} className="rounded-xs" />
+        <BotAvatar option={{ image, initials }} size={20} face={face} />
         {live ? (
           <span
             aria-hidden
