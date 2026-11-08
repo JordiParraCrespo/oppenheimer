@@ -854,7 +854,7 @@ class Component extends DCLogic {
       showPrompt: () => this.setState({ installTab: 'prompt' }),
       didCopy: s.copied ? 'true' : undefined,
       notCopied: s.copied ? undefined : 'true',
-      copyBlock: () => this.copy(s.hostTab),
+      copyBlock: () => this.copy(s.installTab),
     };
   }
 }
