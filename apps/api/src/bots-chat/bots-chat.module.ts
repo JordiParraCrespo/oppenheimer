@@ -21,6 +21,7 @@ import { BotGoalReviewResolver } from './application/bot-goal-review.resolver';
 import { BotGoalToolsFactory } from './application/bot-goal-tools.factory';
 import { BotGuideToolsFactory } from './application/bot-guide-tools.factory';
 import { BotHostCommandToolsFactory } from './application/bot-host-command-tools.factory';
+import { BotHostTargetResolver } from './application/bot-host-target.resolver';
 import { BotHostToolsFactory } from './application/bot-host-tools.factory';
 import { BotIssueToolsFactory } from './application/bot-issue-tools.factory';
 import { BotLoopResolver } from './application/bot-loop.resolver';
@@ -58,6 +59,8 @@ import { BotSubagentRunnerFactory } from './application/bot-subagent-runner.fact
 import { BotSubagentToolsFactory } from './application/bot-subagent-tools.factory';
 import { BotSubscriptionSubjectResolver } from './application/bot-subscription-subject.resolver';
 import { BotSummaryTriggerPolicy } from './application/bot-summary-trigger.policy';
+import { BotTelegramToolsFactory } from './application/bot-telegram-tools.factory';
+import { BotTerminalToolsFactory } from './application/bot-terminal-tools.factory';
 import { BotToolboxFactory } from './application/bot-toolbox.factory';
 import { BotTurnContextResolver } from './application/bot-turn-context.resolver';
 import { BotTurnFailureReportPolicy } from './application/bot-turn-failure-report.policy';
@@ -394,6 +397,8 @@ const queryHandlers: Provider[] = [
     BotToolboxFactory,
     BotHostToolsFactory,
     BotHostCommandToolsFactory,
+    BotHostTargetResolver,
+    BotTerminalToolsFactory,
     BotSessionFileToolsFactory,
     BotSessionToolsFactory,
     BotSessionWatchResolver,
@@ -426,6 +431,7 @@ const queryHandlers: Provider[] = [
     BotWebToolsFactory,
     BotMailToolsFactory,
     BotWhatsappToolsFactory,
+    BotTelegramToolsFactory,
     BotMailWriteToolsFactory,
     BotMailOrganizeToolsFactory,
     BotMailAccountsResolver,

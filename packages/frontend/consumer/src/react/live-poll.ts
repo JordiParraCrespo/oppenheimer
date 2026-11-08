@@ -44,6 +44,9 @@ import { useStreamCovers } from './workspace-stream-status';
  *   one is told so at once, so two seconds keeps the code drawn current. It
  *   keeps going in the background, where the reader has their phone out. The
  *   workspace stream carries no device state.
+ * - `telegramConnecting`: Settings → Telegram while an online host checks a
+ *   bot's token with Telegram, which takes a second or two, or reconnects.
+ *   Not in the background: nothing waits on the reader there.
  * - `sessionPorts`: the ports a session listens on, while its Browser tab is
  *   open: a dev server the agent just started shows within a few seconds.
  *   Not in the background, and the workspace stream carries no such fact.
@@ -70,6 +73,7 @@ export const LIVE_POLL = {
   liveRun: { interval: 5000, inBackground: true },
   chatgptLogin: { interval: 5000, inBackground: true },
   whatsappPairing: { interval: 2000, inBackground: true },
+  telegramConnecting: { interval: 2000, inBackground: false },
   hostPresence: { interval: 15_000, inBackground: false },
   cloudSession: { interval: 5000, inBackground: true },
   sessionPorts: { interval: 3000, inBackground: false },

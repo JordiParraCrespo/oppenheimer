@@ -1338,3 +1338,18 @@ earlier note:
   bot: `run_command` runs one program on a paired host, through its runner,
   only as that host's own `runner exec` policy allows, which is off until
   the person on the host turns it on.
+- The Simulator (2026-10-26) offered a session a device only when the host
+  named them in `RUNNER_DEVICES` and pointed the runner at Argent's
+  binary and tool-server, so a host installed the ordinary way offered
+  none and every session's Simulator tab said "No device". On 2026-11-08
+  an unset `RUNNER_DEVICES` offers the simulators and emulators running
+  when a session asks (simctl's booted ones, adb's emulators), and the
+  runner finds Argent's `simulator-server` beside the `argent` on its
+  PATH and the tool-server Argent has running in `~/.argent`. Naming
+  devices still works; `off` offers none.
+- `versions/mvp/25-bots.md` §2 said a bot "delegates a complete task and
+  never runs a terminal". On 2026-11-08 the owner asked for bots that drive
+  bash and ssh themselves: `open_terminal`, `type_in_terminal` and
+  `read_terminal` type into a blank-terminal session and read its screen,
+  only on a host whose `runner exec` mode is `full`. A coding agent is still
+  given a task, never typed at.

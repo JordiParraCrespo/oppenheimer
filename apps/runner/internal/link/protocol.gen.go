@@ -68,6 +68,10 @@ const ChatBatchMaxEntries = 256
 // keeps: the last ones.
 const ExecOutputMaxBytes = 32768
 
+// TerminalScreenMaxBytes is how much of a captured screen `terminal.screen`
+// carries: the last bytes.
+const TerminalScreenMaxBytes = 32768
+
 // The hello capabilities: commands a runner takes beyond its protocol
 // version's baseline.
 const (
@@ -90,9 +94,11 @@ const (
 	CapabilityCodexEnvironments     = "codex.environments"
 	CapabilitySessionWatch          = "session.watch"
 	CapabilityWhatsapp              = "whatsapp"
+	CapabilityTelegram              = "telegram"
 	CapabilitySharedPreview         = "shared.preview"
 	CapabilityTranscriptRead        = "transcript.read"
 	CapabilityHostExec              = "host.exec"
+	CapabilityTerminalDrive         = "terminal.drive"
 )
 
 // The `type` of every message on the link.
@@ -131,6 +137,8 @@ const (
 	TypeFsFound                 = "fs.found"
 	TypeHostExec                = "host.exec"
 	TypeHostExecResult          = "host.exec.result"
+	TypeTerminalDrive           = "terminal.drive"
+	TypeTerminalScreen          = "terminal.screen"
 	TypeAttachmentDirectOffer   = "attachment.direct.offer"
 	TypeAttachmentDirectAnswer  = "attachment.direct.answer"
 	TypeAttachmentDirectRefused = "attachment.direct.refused"
@@ -155,6 +163,13 @@ const (
 	TypeWhatsappAck             = "whatsapp.ack"
 	TypeWhatsappSend            = "whatsapp.send"
 	TypeWhatsappSent            = "whatsapp.sent"
+	TypeTelegramLink            = "telegram.link"
+	TypeTelegramUnlink          = "telegram.unlink"
+	TypeTelegramState           = "telegram.state"
+	TypeTelegramMessages        = "telegram.messages"
+	TypeTelegramAck             = "telegram.ack"
+	TypeTelegramSend            = "telegram.send"
+	TypeTelegramSent            = "telegram.sent"
 	TypeSharedPreviewGet        = "shared.preview.get"
 	TypeSharedPreview           = "shared.preview"
 	TypeTranscriptRead          = "transcript.read"
@@ -197,6 +212,8 @@ var MessageTypes = []string{
 	TypeFsFound,
 	TypeHostExec,
 	TypeHostExecResult,
+	TypeTerminalDrive,
+	TypeTerminalScreen,
 	TypeAttachmentDirectOffer,
 	TypeAttachmentDirectAnswer,
 	TypeAttachmentDirectRefused,
@@ -221,6 +238,13 @@ var MessageTypes = []string{
 	TypeWhatsappAck,
 	TypeWhatsappSend,
 	TypeWhatsappSent,
+	TypeTelegramLink,
+	TypeTelegramUnlink,
+	TypeTelegramState,
+	TypeTelegramMessages,
+	TypeTelegramAck,
+	TypeTelegramSend,
+	TypeTelegramSent,
 	TypeSharedPreviewGet,
 	TypeSharedPreview,
 	TypeTranscriptRead,
@@ -299,6 +323,10 @@ func NewMessage(messageType string) (any, bool) {
 		return new(HostExec), true
 	case TypeHostExecResult:
 		return new(HostExecResult), true
+	case TypeTerminalDrive:
+		return new(TerminalDrive), true
+	case TypeTerminalScreen:
+		return new(TerminalScreen), true
 	case TypeAttachmentDirectOffer:
 		return new(AttachmentDirectOffer), true
 	case TypeAttachmentDirectAnswer:
@@ -347,6 +375,20 @@ func NewMessage(messageType string) (any, bool) {
 		return new(WhatsappSend), true
 	case TypeWhatsappSent:
 		return new(WhatsappSent), true
+	case TypeTelegramLink:
+		return new(TelegramLink), true
+	case TypeTelegramUnlink:
+		return new(TelegramUnlink), true
+	case TypeTelegramState:
+		return new(TelegramState), true
+	case TypeTelegramMessages:
+		return new(TelegramMessages), true
+	case TypeTelegramAck:
+		return new(TelegramAck), true
+	case TypeTelegramSend:
+		return new(TelegramSend), true
+	case TypeTelegramSent:
+		return new(TelegramSent), true
 	case TypeSharedPreviewGet:
 		return new(SharedPreviewGet), true
 	case TypeSharedPreview:
@@ -743,6 +785,28 @@ type HostExecResult struct {
 	DurationMs      int64  `json:"durationMs"`
 }
 
+// TerminalDrive is the `terminal.drive` message.
+type TerminalDrive struct {
+	Type        string   `json:"type"`
+	CommandID   string   `json:"commandId"`
+	SessionID   string   `json:"sessionId"`
+	Window      int      `json:"window,omitempty"`
+	Text        string   `json:"text,omitempty"`
+	Keys        []string `json:"keys,omitempty"`
+	WaitFor     string   `json:"waitFor,omitempty"`
+	WaitSeconds int      `json:"waitSeconds"`
+	History     int      `json:"history,omitempty"`
+}
+
+// TerminalScreen is the `terminal.screen` message.
+type TerminalScreen struct {
+	Type      string `json:"type"`
+	CommandID string `json:"commandId"`
+	Screen    string `json:"screen"`
+	Matched   bool   `json:"matched"`
+	WaitedMs  int64  `json:"waitedMs"`
+}
+
 // AttachmentDirectOffer is the `attachment.direct.offer` message.
 type AttachmentDirectOffer struct {
 	Type         string   `json:"type"`
@@ -955,6 +1019,74 @@ type WhatsappSend struct {
 
 // WhatsappSent is the `whatsapp.sent` message.
 type WhatsappSent struct {
+	Type      string    `json:"type"`
+	CommandID string    `json:"commandId"`
+	ID        string    `json:"id"`
+	SentAt    time.Time `json:"sentAt"`
+}
+
+// TelegramLink is the `telegram.link` message.
+type TelegramLink struct {
+	Type      string `json:"type"`
+	CommandID string `json:"commandId"`
+	Token     string `json:"token"`
+}
+
+// TelegramUnlink is the `telegram.unlink` message.
+type TelegramUnlink struct {
+	Type      string `json:"type"`
+	CommandID string `json:"commandId"`
+}
+
+// TelegramState is the `telegram.state` message.
+type TelegramState struct {
+	Type     string `json:"type"`
+	State    string `json:"state"`
+	BotID    string `json:"botId,omitempty"`
+	Username string `json:"username,omitempty"`
+	Name     string `json:"name,omitempty"`
+	Reason   string `json:"reason,omitempty"`
+}
+
+// TelegramMessages is the `telegram.messages` message.
+type TelegramMessages struct {
+	Type     string                     `json:"type"`
+	Messages []TelegramMessagesMessages `json:"messages"`
+}
+
+// TelegramMessagesMessages is TelegramMessages.Messages.
+type TelegramMessagesMessages struct {
+	Key            string    `json:"key"`
+	ID             string    `json:"id"`
+	ChatID         string    `json:"chatId"`
+	ChatKind       string    `json:"chatKind"`
+	ChatName       string    `json:"chatName,omitempty"`
+	SenderID       string    `json:"senderId"`
+	SenderName     string    `json:"senderName,omitempty"`
+	SenderUsername string    `json:"senderUsername,omitempty"`
+	Text           string    `json:"text"`
+	Media          string    `json:"media,omitempty"`
+	ReplyToID      string    `json:"replyToId,omitempty"`
+	SentAt         time.Time `json:"sentAt"`
+}
+
+// TelegramAck is the `telegram.ack` message.
+type TelegramAck struct {
+	Type string   `json:"type"`
+	Keys []string `json:"keys"`
+}
+
+// TelegramSend is the `telegram.send` message.
+type TelegramSend struct {
+	Type      string `json:"type"`
+	CommandID string `json:"commandId"`
+	ChatID    string `json:"chatId"`
+	Text      string `json:"text"`
+	ReplyToID string `json:"replyToId,omitempty"`
+}
+
+// TelegramSent is the `telegram.sent` message.
+type TelegramSent struct {
 	Type      string    `json:"type"`
 	CommandID string    `json:"commandId"`
 	ID        string    `json:"id"`

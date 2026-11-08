@@ -29,3 +29,9 @@ type Controls interface {
 type Waker interface {
 	Wake(ctx context.Context, device domain.Device) error
 }
+
+// Finder lists the devices the host has running now, for a host that names
+// none of its own (RUNNER_DEVICES unset).
+type Finder interface {
+	Find(ctx context.Context) ([]domain.Device, error)
+}

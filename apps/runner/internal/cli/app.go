@@ -43,6 +43,7 @@ import (
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/adapters/workfolder"
 	sessionsapp "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/app"
 	sessionsdomain "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/domain"
+	tgapp "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/telegram/app"
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/updates/adapters/binaries"
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/updates/adapters/release"
 	updstate "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/updates/adapters/state"
@@ -103,6 +104,10 @@ type App struct {
 	// built by the daemon's link; nil is a host that offers none
 	// (RUNNER_WHATSAPP=off), or a subcommand that holds no link.
 	WhatsApp *waapp.Service
+	// Telegram is the host's Telegram bot (link_telegram.go), built by the
+	// daemon's link; nil is a host that offers none (RUNNER_TELEGRAM=off), or
+	// a subcommand that holds no link.
+	Telegram *tgapp.Service
 
 	// downloads keeps the runner's own update check and a round of agent
 	// updates from running at once: two downloads on one link, and a
@@ -181,7 +186,7 @@ func New(version string) (*App, error) {
 		// the next one behind (02-runner §5).
 		Spares: true,
 	})
-	devices, err := hostDevices()
+	devices, err := hostDevices(false)
 	if err != nil {
 		return nil, err
 	}
@@ -210,7 +215,7 @@ func New(version string) (*App, error) {
 		Layout:   layout,
 		Env: func(session sessionsdomain.Session) map[string]string {
 			env := sessionEnv(paths, session)
-			pinned, device := pinDevice(devices, session)
+			pinned, device := pinDevice(app.Devices, session)
 			for key, value := range pinned {
 				env[key] = value
 			}
@@ -353,6 +358,9 @@ func unit(paths Paths) svcdomain.Unit {
 	}
 	if whatsApp := os.Getenv(EnvWhatsApp); whatsApp != "" {
 		env[EnvWhatsApp] = whatsApp
+	}
+	if telegram := os.Getenv(EnvTelegram); telegram != "" {
+		env[EnvTelegram] = telegram
 	}
 	// The devices and the Argent the installer was told about.
 	for _, key := range []string{EnvDevices, EnvArgentSimulatorServer, EnvArgentToolsURL, EnvArgentToken, "ANDROID_HOME"} {

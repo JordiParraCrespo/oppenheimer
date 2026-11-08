@@ -29,7 +29,15 @@ A bot can run one program on the host over the link (`host.exec`,
 `product/versions/mvp/25-bots.md` §4.2, "Commands on a host"), but only what
 `runner exec` allows here: off by default, an allowlist of programs, or
 everything. The policy lives in `~/.oppenheimer/exec.json`, is read on every
-call, and is never written by the control plane.
+call, and is never written by the control plane. On a host set to `full` a
+bot can also drive a blank-terminal session (`terminal.drive`): type into
+it and read its screen back.
+
+A session's Simulator tab streams the iOS simulator or Android emulator its
+host gives it, through Argent (`product/research/device-streaming.md`). A
+host with Argent installed needs no setup: each new session takes one of the
+simulators and emulators running at the time, and keeps it for its life.
+`RUNNER_DEVICES` names them instead, or turns it `off` (`.env.example`).
 
 `runner serve` and the `apikeys` context are the template this grew from:
 an inbound API-key surface on a TCP port, which is what the container
@@ -81,6 +89,7 @@ host: remove it under Settings → Hosts).
   state/program-status/ each wrapped agent's OSC 7501 report, while its `runner pty` runs
   bin/path/runner     a link to this binary, on every session's PATH
   state/whatsapp/ 0700  whatsapp.db (0600): the WhatsApp linked device's keys and its outbox
+  state/telegram/ 0700  bot.json (0600): the Telegram bot's token; state.json (0600): its poll offset and outbox
   manifests/          agent detection rules newer than the bundled ones
   log/ run/           logs, the Unix socket, the single-instance lock
   images/             files pasted into sessions, one directory per session

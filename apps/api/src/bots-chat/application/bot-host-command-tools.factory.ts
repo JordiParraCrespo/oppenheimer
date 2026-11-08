@@ -1,13 +1,12 @@
 import { createHash } from 'node:crypto';
 import { Injectable } from '@nestjs/common';
-import { CommandBus, QueryBus } from '@nestjs/cqrs';
+import { CommandBus } from '@nestjs/cqrs';
 import {
   HOST_EXEC_DEFAULT_TIMEOUT_SECONDS,
   HOST_EXEC_MAX_ARG_LENGTH,
   HOST_EXEC_MAX_ARGS,
 } from '@oppenheimer/shared/protocol';
 import { z } from 'zod/v4';
-import { FindHostQuery } from '../../hosts/queries/find-host/find-host.query';
 import type { HostExecOutcome } from '../../sessions/application/host-exec.port';
 import { RunHostCommandCommand } from '../../sessions/commands/run-host-command/run-host-command.command';
 import {
@@ -15,13 +14,8 @@ import {
   hostCommandIdOf,
   hostCommandSummary,
 } from './bot-host-command.policy';
-import {
-  type BotToolArea,
-  type BotToolCallContext,
-  type BotToolDefinition,
-  BotToolRefusal,
-  defineBotTool,
-} from './bot-tool.factory';
+import { BotHostTargetResolver } from './bot-host-target.resolver';
+import { type BotToolArea, type BotToolDefinition, defineBotTool } from './bot-tool.factory';
 
 /**
  * The longest one `run_command` may take, in seconds: well inside a turn's
@@ -44,8 +38,8 @@ export class BotHostCommandToolsFactory implements BotToolArea {
   readonly group = 'sessions' as const;
 
   constructor(
-    private readonly queryBus: QueryBus,
     private readonly commandBus: CommandBus,
+    private readonly hosts: BotHostTargetResolver,
   ) {}
 
   definitions(): readonly BotToolDefinition[] {
@@ -88,24 +82,12 @@ export class BotHostCommandToolsFactory implements BotToolArea {
             `How long it may run before it is stopped; ${HOST_EXEC_DEFAULT_TIMEOUT_SECONDS} when omitted.`,
           ),
       }),
-      // The host is checked before any card is raised: a made-up or someone
-      // else's host id is refused in words the model can correct, instead
-      // of a card the owner approves only to learn the host is not theirs.
-      normalize: async (input, context) => {
-        const hostId = hostOf(input, context);
-        const found = await this.queryBus
-          .execute(new FindHostQuery({ scope: context.owner, hostId }))
-          .then(() => true)
-          .catch(() => false);
-        if (!found) {
-          throw new BotToolRefusal(
-            `${hostId} is not one of the person's hosts. Leave host_id out to use your home host, or take a host id from list_hosts or the turn context; never make one up.`,
-          );
-        }
-        return { ...input, host_id: hostId };
-      },
+      normalize: async (input, context) => ({
+        ...input,
+        host_id: await this.hosts.usable(input, context),
+      }),
       subject: async (input, context) => {
-        const hostId = hostOf(input, context);
+        const hostId = this.hosts.idOf(input, context);
         const program = input.argv[0] ?? '';
         // Hashed, so a standing yes is for this program alone: a grant's key
         // is cut to fit its column, and a cut path would match any program
@@ -113,15 +95,15 @@ export class BotHostCommandToolsFactory implements BotToolArea {
         return {
           kind: 'host_program',
           key: `${hostId}:${createHash('sha256').update(program).digest('hex')}`,
-          label: `${program} on ${await this.hostName(context, hostId)}`,
+          label: `${program} on ${await this.hosts.name(context, hostId)}`,
         };
       },
       summarize: async (input, context) => {
-        const host = await this.hostName(context, hostOf(input, context));
+        const host = await this.hosts.name(context, this.hosts.idOf(input, context));
         return hostCommandSummary(input.argv, host, input.cwd);
       },
       run: async (input, context) => {
-        const hostId = hostOf(input, context);
+        const hostId = this.hosts.idOf(input, context);
         const outcome = await this.commandBus.execute<RunHostCommandCommand, HostExecOutcome>(
           new RunHostCommandCommand({
             scope: context.owner,
@@ -135,31 +117,8 @@ export class BotHostCommandToolsFactory implements BotToolArea {
             },
           }),
         );
-        return describeHostCommand(outcome, await this.hostName(context, hostId));
+        return describeHostCommand(outcome, await this.hosts.name(context, hostId));
       },
     });
   }
-
-  private async hostName(context: BotToolCallContext, hostId: string): Promise<string> {
-    const overview = await this.queryBus
-      .execute<FindHostQuery, { host: { name: string } }>(
-        new FindHostQuery({ scope: context.owner, hostId }),
-      )
-      .catch(() => null);
-    return overview?.host.name ?? `host ${hostId}`;
-  }
-}
-
-/**
- * The host a call runs on: the one it names, else the bot's home host. One
- * decision for every hook of the call, refused in words when there is none.
- */
-function hostOf(input: { host_id?: string }, context: BotToolCallContext): string {
-  const hostId = input.host_id ?? context.homeHostId;
-  if (!hostId) {
-    throw new BotToolRefusal(
-      'No host named and you have no home host: ask which host to use, and say they can set one in Settings → Home host.',
-    );
-  }
-  return hostId;
 }
