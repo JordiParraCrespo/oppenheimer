@@ -1292,3 +1292,17 @@ earlier note:
   is never overridden, a watched session or a task that fails on its own
   merits is still reported, not retried, and a person's "no" is never
   routed around.
+- `versions/mvp/25-bots.md` §2 (2026-10-29) told a bot to report only what
+  a tool confirmed, which left the checking to the bot's judgement. On
+  2026-11-07 a bot started a cloud session that could not start and said
+  so only when asked, and the owner asked bots to always check. The prompt
+  now has one section, "Check before you report": an action's tool answer
+  is read, then read back where a tool can, a failure is said first and
+  unasked, and a coding agent's report is a claim checked against its
+  evidence.
+- `versions/mvp/25-bots.md` §4.2 (2026-10-30) left `start_cloud_session`
+  unwatched, since a cloud session is followed at its vendor, and §2's
+  closed list quoted each tool's first sentence. On 2026-11-07, after a
+  review of every prompt, a cloud or review session is watched like any
+  other (a failed cloud start had gone unreported), and the list names the
+  tools by area: quoting them made it 62% of the system prompt.

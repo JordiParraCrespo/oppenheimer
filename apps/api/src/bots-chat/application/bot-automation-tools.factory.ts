@@ -140,7 +140,7 @@ export class BotAutomationToolsFactory implements BotToolArea {
           .uuid()
           .optional()
           .describe('Only runs of this automation (an id from list_automations).'),
-        project_id: z.uuid().optional().describe('Only runs of this project’s automations.'),
+        project_id: z.uuid().optional().describe("Only runs of this project's automations."),
         status: z
           .array(z.enum(AUTOMATION_RUN_STATUSES))
           .min(1)

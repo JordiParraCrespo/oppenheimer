@@ -56,10 +56,10 @@ export function composeTurnContext(input: TurnContextInput): string {
   ];
   if (input.homeHost) {
     lines.push(
-      `Your home host is ${input.homeHost.name} (${input.homeHost.online ? 'online' : 'offline'}). Unless the person names another host, work you start runs there.`,
+      `Your home host is ${input.homeHost.name} (${input.homeHost.online ? 'online' : 'offline'}). Work you start runs there when neither the person nor the project names another host.`,
     );
   } else {
-    lines.push('You have no home host. The person sets one in your settings, under Runs on.');
+    lines.push('You have no home host. The person sets one in your settings, under Home host.');
   }
   if (input.hosts === null) {
     lines.push("The person's hosts could not be read just now.");
