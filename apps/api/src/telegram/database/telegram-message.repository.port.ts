@@ -1,3 +1,4 @@
+import type { Option } from 'oxide.ts';
 import type {
   TelegramChat,
   TelegramMessage,
@@ -29,6 +30,8 @@ export interface TelegramMessageRepositoryPort {
   pruneBeyond(account: TelegramAccountRef, keep: number, limit: number): Promise<number>;
   /** The account's chats, the most recently active first. */
   findChats(account: TelegramAccountRef, limit: number): Promise<TelegramChat[]>;
+  /** One chat by its exact id, however long ago it was active. */
+  findChat(account: TelegramAccountRef, chatId: string): Promise<Option<TelegramChat>>;
   /** One chat's messages before `before` (or the newest), newest first. */
   findInChat(
     account: TelegramAccountRef,

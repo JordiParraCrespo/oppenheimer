@@ -5,9 +5,10 @@ import type { TelegramAccountRepositoryPort } from '../database/telegram-account
 import type { TelegramMessageRepositoryPort } from '../database/telegram-message.repository.port';
 import { TelegramErrors } from '../domain/telegram.errors';
 import type { TelegramAccountEntity } from '../domain/telegram-account.entity';
-import type { TelegramChat, TelegramChatTarget } from '../domain/telegram-message.types';
+import type { TelegramChatTarget } from '../domain/telegram-message.types';
 import { pickTelegramChat } from '../domain/telegram-send.policy';
 import { TELEGRAM_ACCOUNT_REPOSITORY, TELEGRAM_MESSAGE_REPOSITORY } from '../telegram.di-tokens';
+import { TelegramMessageMapper } from '../telegram-message.mapper';
 
 /** Chats a name is looked for among: the Telegram bot's most recently active. */
 export const TELEGRAM_CHATS_SCANNED = 500;
@@ -25,6 +26,7 @@ export class TelegramChatResolver {
     private readonly accounts: TelegramAccountRepositoryPort,
     @Inject(TELEGRAM_MESSAGE_REPOSITORY)
     private readonly messages: TelegramMessageRepositoryPort,
+    private readonly mapper: TelegramMessageMapper,
   ) {}
 
   async account(scope: AccessScope, accountId: string): Promise<TelegramAccountEntity> {
@@ -34,23 +36,21 @@ export class TelegramChatResolver {
   }
 
   async chat(account: TelegramAccountEntity, wanted: string): Promise<TelegramChatTarget> {
-    const chats = await this.messages.findChats(
-      { organizationId: account.organizationId, accountId: account.id },
-      TELEGRAM_CHATS_SCANNED,
-    );
+    const ref = { organizationId: account.organizationId, accountId: account.id };
+    // An id is looked up whole, so a chat a search found is reachable however
+    // long ago it was active; a name is looked for among the recent chats.
+    const exact = await this.messages.findChat(ref, wanted.trim());
+    if (exact.isSome()) return this.mapper.toChatTarget(exact.unwrap());
+    const chats = await this.messages.findChats(ref, TELEGRAM_CHATS_SCANNED);
     const picked = pickTelegramChat(chats, wanted);
     if (picked === 'ambiguous') {
       throw new AppError(TelegramErrors.CHAT_NOT_FOUND, {
         detail: `More than one chat is called "${wanted}": use the chat's id.`,
       });
     }
-    if (picked) return targetOf(picked);
+    if (picked) return this.mapper.toChatTarget(picked);
     throw new AppError(TelegramErrors.CHAT_NOT_FOUND, {
       detail: `No chat of ${account.label} matches "${wanted}". A Telegram bot can only write to someone who wrote to it first.`,
     });
   }
-}
-
-function targetOf(chat: TelegramChat): TelegramChatTarget {
-  return { chatId: chat.chatId, chatKind: chat.chatKind, chatName: chat.chatName };
 }

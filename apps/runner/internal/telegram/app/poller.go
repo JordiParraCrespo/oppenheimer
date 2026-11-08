@@ -29,9 +29,12 @@ type poller struct {
 	kept   func(ctx context.Context)
 }
 
-// run polls until ctx ends or the token is refused. fresh drops a backlog
-// older than domain.MaxAge on the first poll that returns updates: a bot new
-// to this host.
+// run polls until ctx ends or the token is refused. fresh drops updates
+// older than domain.MaxAge until the backlog is drained, which the first poll
+// that comes back empty says: a bot new to this host can bring a day of
+// updates, more than one page of them. Live messages are never that old, so
+// the filter costs nothing while it lasts, and a batch that could not be
+// kept is asked for again under the same rule.
 func (p *poller) run(ctx context.Context, fresh bool) {
 	backoff := BackoffMin
 	for ctx.Err() == nil {
@@ -69,7 +72,6 @@ func (p *poller) run(ctx context.Context, fresh bool) {
 			continue
 		}
 		offset, kept := admit(updates, held.Offset, p.now(), fresh)
-		fresh = false
 		if err := p.store.Advance(ctx, offset, kept); err != nil {
 			// The offset did not move: the same updates come again.
 			p.logger.Error("telegram: messages could not be kept; asking again", slog.Any("error", err))

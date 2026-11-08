@@ -86,6 +86,7 @@ function fakeMessages(
     pruneBefore: vi.fn(async () => 0),
     pruneBeyond: vi.fn(async () => 0),
     findChats: vi.fn(async () => []),
+    findChat: vi.fn(async () => None),
     findInChat: vi.fn(async () => []),
     search: vi.fn(async () => []),
     countBotSendsSince: vi.fn(async () => 0),

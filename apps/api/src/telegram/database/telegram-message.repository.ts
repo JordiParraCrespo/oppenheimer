@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { None, type Option, Some } from 'oxide.ts';
 import { Repository } from 'typeorm';
 import type {
   TelegramChat,
@@ -67,9 +68,23 @@ export class TelegramMessageRepository implements TelegramMessageRepositoryPort 
     return affected;
   }
 
-  async findChats(account: TelegramAccountRef, limit: number): Promise<TelegramChat[]> {
-    // The newest row of each chat, then the chats by it: one pass over the
-    // account's slice of `IDX_telegram_message_account_sent`.
+  findChats(account: TelegramAccountRef, limit: number): Promise<TelegramChat[]> {
+    return this.chats(account, limit, null);
+  }
+
+  async findChat(account: TelegramAccountRef, chatId: string): Promise<Option<TelegramChat>> {
+    const [chat] = await this.chats(account, 1, chatId);
+    return chat ? Some(chat) : None;
+  }
+
+  /** The newest row of each chat (or of one), then the chats by it. */
+  private async chats(
+    account: TelegramAccountRef,
+    limit: number,
+    chatId: string | null,
+  ): Promise<TelegramChat[]> {
+    // One pass over the account's slice of `IDX_telegram_message_account_sent`,
+    // or of one chat's rows within it.
     const rows: Array<
       TelegramMessageOrmEntity & {
         messageCount: string;
@@ -90,11 +105,12 @@ export class TelegramMessageRepository implements TelegramMessageRepositoryPort 
                            ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING))[1] AS "handle"
              FROM telegram_message m
             WHERE "organizationId" = $1 AND "accountId" = $2
+              AND ($4::varchar IS NULL OR "chatId" = $4)
             ORDER BY "chatId", "sentAt" DESC, id DESC
          ) chats
          ORDER BY "sentAt" DESC
          LIMIT $3`,
-      [account.organizationId, account.accountId, limit],
+      [account.organizationId, account.accountId, limit, chatId],
     );
     return rows.map((row) => ({
       accountId: row.accountId,

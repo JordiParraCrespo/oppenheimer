@@ -71,3 +71,26 @@ export function describeTelegramTarget(chat: TelegramChatTarget): string {
   const name = chat.chatName ?? chat.chatId;
   return chat.chatKind === 'group' ? `the group "${name}"` : name;
 }
+
+/**
+ * The send a card stores and a call runs: which Telegram bot, and which of
+ * its chats, as the server resolved them. Never what was said in the chat.
+ */
+export function plannedTelegramSend(
+  account: Pick<TelegramAccountEntity, 'id' | 'label'>,
+  chat: TelegramChatTarget,
+): {
+  accountId: string;
+  accountLabel: string;
+  chatId: string;
+  chatKind: 'direct' | 'group';
+  chatName: string | null;
+} {
+  return {
+    accountId: account.id,
+    accountLabel: account.label,
+    chatId: chat.chatId,
+    chatKind: chat.chatKind,
+    chatName: chat.chatName,
+  };
+}

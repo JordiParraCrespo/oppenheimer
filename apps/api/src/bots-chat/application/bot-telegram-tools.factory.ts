@@ -6,7 +6,6 @@ import { z } from 'zod/v4';
 import { SendTelegramMessageCommand } from '../../telegram/commands/send-telegram-message/send-telegram-message.command';
 import type {
   TelegramChat,
-  TelegramChatTarget,
   TelegramMessage,
 } from '../../telegram/domain/telegram-message.types';
 import {
@@ -26,6 +25,7 @@ import {
   describeTelegramTarget,
   fenceTelegram,
   NO_TELEGRAM,
+  plannedTelegramSend,
   TELEGRAM_UNTRUSTED_NOTE,
 } from '../bot-telegram-tool.mapper';
 import { formatToolList } from '../domain/bot-tool-text.policy';
@@ -295,11 +295,7 @@ export class BotTelegramToolsFactory implements BotToolArea {
         targetOnly: true,
       }),
     );
-    return {
-      accountId: chosen.account.id,
-      accountLabel: chosen.account.label,
-      ...targetOf(read.chat),
-    };
+    return plannedTelegramSend(chosen.account, read.chat);
   }
 
   private accounts(owner: AccessScope): Promise<TelegramAccountView[]> {
@@ -331,10 +327,6 @@ export class BotTelegramToolsFactory implements BotToolArea {
       );
     return found;
   }
-}
-
-function targetOf(chat: TelegramChatTarget): Omit<PlannedSend, 'accountId' | 'accountLabel'> {
-  return { chatId: chat.chatId, chatKind: chat.chatKind, chatName: chat.chatName };
 }
 
 /** The send the card stored, which a call carrying out its approval runs. */

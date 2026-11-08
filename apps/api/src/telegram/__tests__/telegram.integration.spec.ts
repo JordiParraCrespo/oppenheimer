@@ -234,6 +234,28 @@ describe('telegram (integration)', () => {
     ]);
   });
 
+  it('finds a chat by its exact id, whichever chats were active since, and no other account’s', async () => {
+    const mine = telegramBot(ana);
+    await accounts.insert(mine);
+    const ref = { organizationId, accountId: mine.id };
+    const now = Date.now();
+    await messages.insertMany([
+      message(mine, { chatId: '111', chatName: 'Old', sentAt: new Date(now - 60_000) }),
+      message(mine, { chatId: '222', chatName: 'New', sentAt: new Date(now - 1_000) }),
+    ]);
+
+    expect((await messages.findChats(ref, 1)).map((chat) => chat.chatId)).toEqual(['222']);
+    expect((await messages.findChat(ref, '111')).unwrap()).toMatchObject({
+      chatId: '111',
+      chatName: 'Old',
+      messageCount: 1,
+    });
+    expect((await messages.findChat(ref, '333')).isNone()).toBe(true);
+    expect(
+      (await messages.findChat({ organizationId, accountId: randomUUID() }, '111')).isNone(),
+    ).toBe(true);
+  });
+
   it('searches text ignoring case, taking % literally', async () => {
     const mine = telegramBot(ana);
     await accounts.insert(mine);

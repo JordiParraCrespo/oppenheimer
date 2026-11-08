@@ -2,11 +2,21 @@ import { Injectable } from '@nestjs/common';
 import type { TelegramInbound } from '@oppenheimer/shared/protocol';
 import { TelegramMessageOrmEntity } from './database/telegram-message.orm-entity';
 import type { TelegramAccountEntity } from './domain/telegram-account.entity';
-import type { TelegramMessage, TelegramMessageDraft } from './domain/telegram-message.types';
+import type {
+  TelegramChat,
+  TelegramChatTarget,
+  TelegramMessage,
+  TelegramMessageDraft,
+} from './domain/telegram-message.types';
 
 /** A Telegram bot's messages between the wire, the table and the bots' reads. */
 @Injectable()
 export class TelegramMessageMapper {
+  /** Where a message to a chat goes: the chat, without what was said in it. */
+  toChatTarget(chat: TelegramChat): TelegramChatTarget {
+    return { chatId: chat.chatId, chatKind: chat.chatKind, chatName: chat.chatName };
+  }
+
   /** One message off `telegram.messages`, for the account on the host that sent it. */
   fromInbound(account: TelegramAccountEntity, inbound: TelegramInbound): TelegramMessageDraft {
     return {
