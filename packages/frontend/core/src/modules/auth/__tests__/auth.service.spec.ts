@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ANALYTICS_EVENTS } from '../../analytics/analytics.events';
 import type { AnalyticsService } from '../../analytics/analytics.service';
 import type { IStorageService } from '../../core/storage.service';
+import type { ErrorReportingService } from '../../error-reporting/error-reporting.service';
 import type { AuthSession } from '../auth.client';
 import type { AuthRepository } from '../auth.repository';
 import { AuthService } from '../auth.service';
@@ -51,9 +52,16 @@ function setup(session: AuthSession | null = SESSION) {
     logout: vi.fn().mockResolvedValue(undefined),
   } as unknown as AuthRepository;
 
-  const service = new AuthService(repository, createAuthStore(), analytics, storage);
+  const errors = { setUser: vi.fn() };
+  const service = new AuthService(
+    repository,
+    createAuthStore(),
+    analytics,
+    storage,
+    errors as unknown as ErrorReportingService,
+  );
 
-  return { service, analytics, repository, storage };
+  return { service, analytics, repository, storage, errors };
 }
 
 /** Lets the not-awaited identify/capture chain in `login()` settle. */
@@ -195,5 +203,17 @@ describe('AuthService analytics', () => {
     expect(service.store.getState().isAuthenticated).toBe(false);
     expect(service.expireSession()).toBe(false);
     expect(analytics.reset).not.toHaveBeenCalled();
+  });
+
+  // Regression: an error report carrying the previous account on a shared
+  // device, or the person's email reaching the error tracker.
+  it('tells error reporting who is signed in, by id only, and forgets them on logout', async () => {
+    const { service, errors } = setup();
+
+    await service.restoreSession();
+    expect(errors.setUser).toHaveBeenLastCalledWith('user-1');
+
+    await service.logout();
+    expect(errors.setUser).toHaveBeenLastCalledWith(null);
   });
 });

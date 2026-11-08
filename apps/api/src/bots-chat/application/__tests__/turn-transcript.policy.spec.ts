@@ -9,6 +9,7 @@ import { SUBAGENT_DATA_KEY } from '../../domain/bot-subagent.policy';
 import { BotTurnEntity } from '../../domain/bot-turn.entity';
 import {
   failureKindOf,
+  STEP_LIMIT_ERROR,
   TIME_LIMIT_ERROR,
   type TranscriptWrite,
   TurnTranscript,
@@ -417,6 +418,23 @@ describe('TurnTranscript', () => {
     expect(subject.status).toBe('failed');
     expect(subject.error).toBe(TIME_LIMIT_ERROR);
     expect(subject.failure).toBe('time_limit');
+  });
+
+  // What breaks this: a turn that used all its steps ending as completed,
+  // so the bot stopped mid-work and the chat said nothing.
+  it('fails a turn that ran out of steps, saying so, and keeps what it wrote', () => {
+    const subject = turn();
+    subject.start(new Date());
+    const transcript = new TurnTranscript(subject);
+    const writes = [
+      { type: 'text.delta', text: 'Checking the hosts' },
+      { type: 'done', reason: 'max_steps' },
+    ].flatMap((event) => transcript.apply(event as BotEngineEvent));
+    transcript.endTurn(new Date(), null);
+    expect(inserted(writes).map((message) => message.content)).toEqual(['Checking the hosts']);
+    expect(subject.status).toBe('failed');
+    expect(subject.error).toBe(STEP_LIMIT_ERROR);
+    expect(subject.failure).toBe('step_limit');
   });
 
   // What breaks this: the meter reading the first answer's context, not the

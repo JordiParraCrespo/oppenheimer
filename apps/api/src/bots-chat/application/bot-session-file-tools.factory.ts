@@ -11,7 +11,7 @@ import type { BotAttachmentRepositoryPort } from '../database/bot-attachment.rep
 import { BotAttachmentEntity } from '../domain/bot-attachment.entity';
 import { isShowableSharedFile } from '../domain/bot-shared-file.policy';
 import { SHOWN_IMAGES_PER_TURN } from '../domain/bot-shown-image.policy';
-import { cut } from '../domain/bot-tool-text.policy';
+import { cut, RUNNER_TOO_OLD_ADVICE } from '../domain/bot-tool-text.policy';
 import type { BotAttachmentFilesPort } from '../infrastructure/bot-attachment-files.port';
 import {
   type BotToolArea,
@@ -45,7 +45,7 @@ export class BotSessionFileToolsFactory implements BotToolArea {
       defineBotTool({
         name: 'show_session_file',
         scope: 'sessions:read',
-        description: `Shows the person an image a session's agent shared (runner sessions send-file), under your reply, as a picture they can open: a screenshot of what it built, a chart it drew. get_session lists the files a session's agent shared, with their ids; only an image the host kept a preview of can be shown (a JPEG of at most 1600 px), and the session's host must be online. Counts against the ${SHOWN_IMAGES_PER_TURN} images a turn may show. You do not see the image; say in your reply what it is.`,
+        description: `Shows the person an image a session's agent shared, under your reply, as a picture they can open: a screenshot of what it built, a chart it drew. get_session lists the files a session's agent shared, with their ids; only an image the host kept a preview of can be shown (a JPEG of at most 1600 px), and the session's host must be online. Counts against the ${SHOWN_IMAGES_PER_TURN} images a turn may show. You do not see the image; say in your reply what it is.`,
         input: z.object({
           session_id: z.uuid().describe('The session (from list_sessions).'),
           file_id: z.string().min(1).max(64).describe("The file's id, from get_session."),
@@ -115,7 +115,7 @@ function refusalOf(read: Exclude<SessionSharedPreviewRead, { kind: 'preview' }>,
     case 'host_offline':
       return `Not shown: the session's host is offline, and ${read.file.name} is only on it. Try again when it is back.`;
     case 'not_supported':
-      return `Not shown: the session's host runs a runner too old to send a shared file's preview. Ask the person to update it.`;
+      return `Not shown: the session's host runs a runner too old to send a shared file's preview: ${RUNNER_TOO_OLD_ADVICE}.`;
     case 'timed_out':
       return `Not shown: the session's host did not send ${read.file.name} in time. Try again.`;
     case 'gone':

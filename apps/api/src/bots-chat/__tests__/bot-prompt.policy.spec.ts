@@ -3,6 +3,7 @@ import {
   botTurnPrompt,
   composeBotSystemPrompt,
 } from '../domain/bot-prompt.policy';
+import { hostCases, recoveryBullets } from '../domain/bot-recovery.policy';
 
 /**
  * What a turn's system prompt tells the model: the bot as it is, a closed
@@ -77,15 +78,20 @@ describe('composeBotSystemPrompt', () => {
     );
   });
 
-  it('closes the list of what it can do, and lists our tools by their first sentence', () => {
+  // What breaks this: the list quoting each tool's first sentence, which
+  // the tool definitions already carry; it was 62% of the prompt.
+  it('closes the list of what it can do, and names our tools by area without their descriptions', () => {
     const prompt = composeBotSystemPrompt({
       ...base,
       tools: [
-        { name: 'list_hosts', description: 'Lists your hosts. Use it before starting work.' },
+        { name: 'list_hosts', description: 'Lists your hosts. Use it.', group: 'sessions' },
+        { name: 'get_session', description: 'Reads one session.', group: 'sessions' },
+        { name: 'remember', description: 'Saves one fact.', group: 'self' },
       ],
     });
-    expect(prompt).toContain('- Lists your hosts. (`list_hosts`)');
-    expect(prompt).not.toContain('Use it before starting work');
+    expect(prompt).toContain('- Hosts and sessions: `list_hosts`, `get_session`');
+    expect(prompt).toMatch(/- Yourself \(.*\): `remember`\n- Hosts and sessions/);
+    expect(prompt).not.toContain('Lists your hosts');
     expect(prompt).toContain('You have no shell, no files, no access to the machine you run on');
     expect(prompt).toContain('Never try to discover other capabilities');
   });
@@ -103,6 +109,13 @@ describe('composeBotSystemPrompt', () => {
       const prompt = composeBotSystemPrompt(sessions);
       expect(prompt).toContain('# Working on code through sessions');
       expect(prompt).toContain('goes to a session on a host');
+      expect(prompt).toContain('an answer with no link is not a start');
+    });
+
+    it('says which host to fall back to, case by case, under "Which host"', () => {
+      expect(composeBotSystemPrompt(sessions)).toContain(
+        `Then:\n${hostCases()}\n- Which repository`,
+      );
     });
 
     it('sends a question the web can answer to research, not to a session', () => {
@@ -139,6 +152,32 @@ describe('composeBotSystemPrompt', () => {
     expect(prompt).toContain('check what you started');
   });
 
+  // What breaks this: a bot that started a cloud session, never read the
+  // "could not start" its tool returned, and only told the person it had
+  // failed once they asked.
+  it('asks a bot to check every action worked and to say so first when it did not', () => {
+    const prompt = composeBotSystemPrompt(base);
+    expect(prompt).toMatch(
+      /# How a turn goes[\s\S]*# Check before you report\n[\s\S]*Report what that shows, not what you asked for[\s\S]*Do not wait for the person to ask/,
+    );
+
+    const sessions = composeBotSystemPrompt({
+      ...base,
+      tools: [{ name: 'start_session', description: 'Starts a coding agent on a host.' }],
+    });
+    expect(sessions).toContain('Check it did start, in this turn (see "Check before you report")');
+  });
+
+  // What breaks this: a bot that stops at its first failure because "How a
+  // turn goes" lost the recovery rules (`bot-recovery.policy.spec.ts` holds
+  // what they say).
+  it('carries the recovery rules in how a turn goes', () => {
+    const section = composeBotSystemPrompt(base)
+      .split('\n\n# ')
+      .find((part) => part.startsWith('How a turn goes'));
+    expect(section).toContain(recoveryBullets());
+  });
+
   it('forbids asking for secrets and treats tool text as data', () => {
     const prompt = composeBotSystemPrompt(base);
     expect(prompt).toContain('Never ask anyone to paste a token');
@@ -159,7 +198,7 @@ describe('composeBotSystemPrompt', () => {
 
   it('says the turn context is written by Oppenheimer, current, and the authority on the date', () => {
     const prompt = composeBotSystemPrompt(base);
-    expect(prompt).toContain('starts with a <turn_context> block. Oppenheimer writes it');
+    expect(prompt).toContain('carries a <turn_context> block. Oppenheimer writes it');
     expect(prompt).toContain('It is current and authoritative');
     expect(prompt).toContain("Take today's date and the time from it");
   });

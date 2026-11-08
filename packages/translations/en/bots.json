@@ -17,6 +17,11 @@
     "renameGroup": "Rename group",
     "deleteGroup": "Delete group",
     "groupFailed": "Could not save the group.",
+    "pinned": "Pinned",
+    "pin": "Pin",
+    "unpin": "Unpin",
+    "dropToPin": "Drop a bot here to pin it.",
+    "allPinned": "Its bots are under Pinned.",
     "rowActions": "Bot options",
     "settings": "Settings",
     "move": "Move to group",
@@ -58,7 +63,9 @@
       "refused": "{{provider}} refused this request. Sending it again won't help: change the message or the model.",
       "unavailable": "{{provider}} could not be reached. This is usually temporary: try again in a moment.",
       "time_limit": "This turn ran out of time. Sending it again won't help: ask for a smaller step, or split the request.",
-      "interrupted": "This turn was interrupted before it finished. Sending it again runs it."
+      "step_limit": "This turn used all its steps and stopped before it finished. Sending it again won't help: ask for a smaller step, or say go on to continue.",
+      "interrupted": "This turn was interrupted before it finished. Sending it again runs it.",
+      "storage": "We could not save this turn, so it stopped: the fault is ours, not {{provider}}'s. Try again in a moment."
     },
     "openProviders": "Open Model providers",
     "errorDetails": "Show details",
@@ -625,6 +632,31 @@
       "loadFailed": "Could not load the bot’s permissions.",
       "saveFailed": "Could not change the permission.",
       "tools": "Tools",
+      "search": "Search tools",
+      "noMatch": "No tools match.",
+      "filters": {
+        "decision": "Decision",
+        "group": "Group",
+        "allGroups": "All groups",
+        "clear": "Clear"
+      },
+      "views": {
+        "all": "All",
+        "allow": "Allow",
+        "ask": "Ask",
+        "off": "Off",
+        "changed": "Set by you"
+      },
+      "summary": {
+        "tools_one": "{{count}} tool",
+        "tools_other": "{{count}} tools",
+        "ask_one": "{{count}} ask",
+        "ask_other": "{{count}} ask",
+        "off_one": "{{count}} off",
+        "off_other": "{{count}} off",
+        "changed_one": "{{count}} set by you",
+        "changed_other": "{{count}} set by you"
+      },
       "preset": {
         "auto": "Tools you leave on their default follow Approve for me: anything that reaches outside Oppenheimer asks first.",
         "full": "Tools you leave on their default follow Full access: they run without asking."

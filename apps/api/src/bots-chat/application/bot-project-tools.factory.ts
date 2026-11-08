@@ -232,7 +232,7 @@ export class BotProjectToolsFactory implements BotToolArea {
       name: 'move_session',
       scope: 'sessions:write',
       description:
-        "Lists an existing session under another project, or under Unassigned when project_id is null. Only the project it is filed under changes: the session keeps its id, history, state, worktree and branch, and a running agent is not interrupted. The move is recorded in the session's log. A closed session cannot be moved, nor one moved into an archived project. When the person names the session or the project loosely, find it with list_sessions or list_projects, and ask if more than one fits.",
+        "Moves a session to another project, or to Unassigned when project_id is null. Only the project it is filed under changes: the session keeps its id, history, state, worktree and branch, and a running agent is not interrupted. The move is recorded in the session's log. A closed session cannot be moved, nor one moved into an archived project. When the person names the session or the project loosely, find it with list_sessions or list_projects, and ask if more than one fits.",
       input: z.object({
         session_id: z.uuid().describe('The session to move (from list_sessions).'),
         project_id: z

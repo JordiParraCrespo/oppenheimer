@@ -1,12 +1,13 @@
 import { StatusDot } from '@oppenheimer/design-system-web';
 import type { SessionEntity } from '@oppenheimer/frontend-consumer';
-import { ErrorAlert } from '@oppenheimer/frontend-web';
+import { ErrorAlert, PageFrame } from '@oppenheimer/frontend-web';
 import { useTranslation } from 'react-i18next';
 import { useCloudSessionChat } from '../hooks/use-cloud-session-chat';
 import { useChatTurnIds } from '../hooks/use-session-chat';
 import { dotFor, stateWordFor } from '../lib/session-run-state';
 import { SessionChat } from './session-chat';
-import { SessionCloud } from './session-cloud';
+import { SessionCloudChatSetup } from './session-cloud-chat-setup';
+import { SessionCloudSummary } from './session-cloud-summary';
 
 /**
  * A Claude Code cloud session read as a chat
@@ -15,14 +16,22 @@ import { SessionCloud } from './session-cloud';
  * session uses, and a composer whose message waits for the session's Stop
  * hook, which hands it to the agent when its turn ends. Until a line has
  * come (no hooks in the repository, or nothing said yet) it is the cloud
- * session's own pane, which says where to follow it instead.
+ * session's own pane, which says where to follow it instead, with how to
+ * turn the chat on under it.
  */
 export function SessionCloudChat({ session }: { session: SessionEntity }) {
   const { t } = useTranslation();
   const { chat, waiting, failure, dismissFailure } = useCloudSessionChat(session.id);
   const turns = useChatTurnIds(chat);
 
-  if (turns.length === 0 && waiting.length === 0) return <SessionCloud session={session} />;
+  if (turns.length === 0 && waiting.length === 0) {
+    return (
+      <PageFrame size="status">
+        <SessionCloudSummary session={session} />
+        <SessionCloudChatSetup organizationId={session.organizationId} />
+      </PageFrame>
+    );
+  }
 
   return (
     <>

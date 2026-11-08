@@ -3,12 +3,13 @@ import { useBotGroups, useBots } from '@oppenheimer/frontend-consumer/react';
 import { ErrorAlert } from '@oppenheimer/frontend-web';
 import { Navigate } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
+import { useBotPins } from '@/features/bots/hooks/use-bot-pins';
 import { useNewBot } from '@/features/bots/hooks/use-create-bot';
 import { firstBot } from '@/features/bots/lib/bot-groups';
 
 /**
  * `/bots` with no bot open. A workspace with bots goes straight to the chat
- * of the one the sidebar draws first, replacing `/bots` in history so Back
+ * of the one the sidebar draws first (a pinned one before the groups), replacing `/bots` in history so Back
  * does not bounce here; the sidebar's New bot makes another. Before the
  * first bot it is the design's new-chat greeting, "Make your first bot.",
  * over New bot. It says nothing until both reads land, and nothing false
@@ -19,11 +20,12 @@ export function BotsLanding() {
   const bots = useBots();
   const groups = useBotGroups();
   const newBot = useNewBot();
+  const { pins } = useBotPins();
   if (bots.isPending || groups.isPending) return null;
   // A failed read is not "no bots": the sidebar beside this says what failed.
   const error = bots.error ?? groups.error;
   if (error) return <ErrorAlert error={error} fallback={t('bots.sidebar.loadFailed')} />;
-  const first = firstBot(bots.data ?? [], groups.data ?? []);
+  const first = firstBot(bots.data ?? [], groups.data ?? [], pins);
   if (first) return <Navigate to="/bots/$botId" params={{ botId: first.id }} replace />;
 
   return (

@@ -5,12 +5,14 @@ import {
   type FakeScriptEvent,
 } from '@oppenheimer/backend-agents';
 import { AppError } from '@oppenheimer/backend-core';
+import { type ErrorReportContext, ErrorReporter } from '@oppenheimer/backend-error-reporting';
 import { None, Some } from 'oxide.ts';
 import { BotErrors } from '../../../../bots/domain/bots.errors';
 import type { BotDreamTriggerPolicy } from '../../../application/bot-dream-trigger.policy';
 import { BotSteeringFactory } from '../../../application/bot-steering.factory';
 import type { BotSummaryTriggerPolicy } from '../../../application/bot-summary-trigger.policy';
 import type { BotTurnContextResolver } from '../../../application/bot-turn-context.resolver';
+import { BotTurnFailureReportPolicy } from '../../../application/bot-turn-failure-report.policy';
 import { TurnCancelWatchFactory } from '../../../application/turn-cancel-watch.factory';
 import { TurnWriteFactory } from '../../../application/turn-write.factory';
 import { BotMessageMapper } from '../../../bot-message.mapper';
@@ -34,6 +36,18 @@ import { RunBotTurnCommandHandler } from '../run-bot-turn.command-handler';
  * the line of the call that carried it, unless what was read says the turn
  * takes none. A turn with nothing left to say ends without running the engine.
  */
+class RecordingReporter extends ErrorReporter {
+  readonly enabled = true;
+  readonly reports: { error: unknown; context?: ErrorReportContext }[] = [];
+  capture(error: unknown, context?: ErrorReportContext): string {
+    this.reports.push({ error, context });
+    return 'id';
+  }
+  async flush(): Promise<boolean> {
+    return true;
+  }
+}
+
 function queued(status: 'queued' | 'running' = 'queued') {
   const turn = BotTurnEntity.queue({
     organizationId: randomUUID(),
@@ -124,6 +138,7 @@ function setup(
     BotSummaryTriggerPolicy,
     'afterTurn'
   >;
+  const reporter = new RecordingReporter();
   const handler = new RunBotTurnCommandHandler(
     turns as unknown as BotTurnRepositoryPort,
     stream,
@@ -134,8 +149,9 @@ function setup(
     { afterTurn: vi.fn(async () => false) } as unknown as BotDreamTriggerPolicy,
     new BotSteeringFactory(turns as unknown as BotTurnRepositoryPort, new BotMessageMapper()),
     new TurnWriteFactory(messages as unknown as BotMessageRepositoryPort, stream),
+    new BotTurnFailureReportPolicy(reporter),
   );
-  return { handler, turns, messages, stream, summaries, heard, context };
+  return { handler, turns, messages, stream, summaries, heard, context, reporter };
 }
 
 const run = (handler: RunBotTurnCommandHandler, turnId: string) =>
@@ -301,22 +317,55 @@ describe('RunBotTurnCommandHandler', () => {
     expect(turn).toMatchObject({ status: 'failed', error: 'bad key' });
   });
 
+  // Regression: a bot failing for a reason nobody foresaw, with only the chat
+  // to say so; or a provider's rate limit paging someone.
+  it('reports a failure the engine could not name, as a warning grouped by provider', async () => {
+    const turn = queued();
+    const { handler, reporter } = setup(turn, () => [
+      { type: 'done', reason: 'failed', error: 'stream ended early' },
+    ]);
+    await run(handler, turn.id);
+    expect(reporter.reports).toHaveLength(1);
+    expect(reporter.reports[0]?.error).toMatchObject({ message: 'stream ended early' });
+    expect(reporter.reports[0]?.context).toMatchObject({
+      level: 'warning',
+      tags: { 'bot.turn_id': turn.id, 'bot.provider': turn.provider, 'bot.failure': 'other' },
+      fingerprint: ['bot-turn-failed', turn.provider, 'other', 'warning'],
+      workspaceId: turn.organizationId,
+    });
+  });
+
+  it('does not report a failure with a kind, which is the provider’s or the person’s', async () => {
+    const turn = queued();
+    const { handler, reporter } = setup(turn, () => [
+      { type: 'done', reason: 'failed', error: 'slow down', failure: 'rate_limit' },
+    ]);
+    await run(handler, turn.id);
+    expect(turn).toMatchObject({ status: 'failed', failure: 'rate_limit' });
+    expect(reporter.reports).toEqual([]);
+  });
+
   it('fails with the catalog’s words when the provider key is gone', async () => {
     const turn = queued();
-    const { handler, messages } = setup(turn, () => [], {
+    const { handler, messages, reporter } = setup(turn, () => [], {
       resolve: new AppError(BotErrors.PROVIDER_KEY_MISSING),
     });
     await run(handler, turn.id);
     expect(turn).toMatchObject({ status: 'failed', error: "The bot's model provider has no key" });
     expect(messages.insert).not.toHaveBeenCalled();
+    expect(reporter.reports).toEqual([]);
   });
 
   it('fails the turn, rather than leaving it running, when its message cannot be read', async () => {
     const turn = queued();
-    const { handler, turns } = setup(turn, () => [], { resolve: new Error('connection reset') });
+    const reset = new Error('connection reset');
+    const { handler, turns, reporter } = setup(turn, () => [], { resolve: reset });
     await run(handler, turn.id);
     expect(turn).toMatchObject({ status: 'failed', error: 'connection reset' });
     expect(turns.finish).toHaveBeenCalledWith(turn, expect.any(String));
+    expect(reporter.reports).toEqual([
+      { error: reset, context: expect.objectContaining({ level: 'error' }) },
+    ]);
   });
 
   it('aborts the engine when Stop is pressed, and ends cancelled', async () => {

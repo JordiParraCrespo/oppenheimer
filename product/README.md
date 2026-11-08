@@ -1279,3 +1279,51 @@ earlier note:
   name alone), replacing the starter's asterisk, the rail's "O" and the
   three-part hat favicon. A bot's owner can also pick its face in Profile
   (hat, eyes, mouth).
+- `versions/mvp/25-bots.md` §1 had a bot report a failed session and stop
+  ("do not start it again unless the person asked you to retry such
+  failures"). On 2026-11-08 the owner asked for bots as proactive as
+  OpenClaw's: a bot whose session failed on the default host because
+  Claude Code there was not signed in reported it with three other hosts
+  online. A failed step now sends the bot to the next reasonable route
+  first (another online host, another source, another approach), and when
+  a session it started on a host it chose fails in a way that looks like
+  the host's, it offers to run its task on another online host and starts
+  it on the person's yes. A host the person named
+  is never overridden, a watched session or a task that fails on its own
+  merits is still reported, not retried, and a person's "no" is never
+  routed around.
+- `versions/mvp/25-bots.md` §2 (2026-10-29) told a bot to report only what
+  a tool confirmed, which left the checking to the bot's judgement. On
+  2026-11-07 a bot started a cloud session that could not start and said
+  so only when asked, and the owner asked bots to always check. The prompt
+  now has one section, "Check before you report": an action's tool answer
+  is read, then read back where a tool can, a failure is said first and
+  unasked, and a coding agent's report is a claim checked against its
+  evidence.
+- `versions/mvp/25-bots.md` §4.2 (2026-10-30) left `start_cloud_session`
+  unwatched, since a cloud session is followed at its vendor, and §2's
+  closed list quoted each tool's first sentence. On 2026-11-07, after a
+  review of every prompt, a cloud or review session is watched like any
+  other (a failed cloud start had gone unreported), and the list names the
+  tools by area: quoting them made it 62% of the system prompt.
+- `versions/mvp/25-bots.md` §2 (2026-10-15) bounded a turn by 20 round trips
+  and 4 minutes but failed it only past the time; one that used its steps
+  ended completed, with nothing said. On 2026-11-08 it fails with
+  `step_limit`, saying so, and goals and loops go on past it as past the
+  time limit (`TURN_LIMIT_FAILURES`).
+- `versions/mvp/25-bots.md` §2 (2026-10-15) folded a bot's chat into its
+  summary past 1.5 times the history budget, while the history dropped old
+  messages at the budget, so up to about 12,000 tokens were in neither. On
+  2026-11-08 the fold starts below the budget, with room for the longest
+  summary and the notes on earlier images (`BOT_SUMMARY_TRIGGER_TOKENS`).
+- `versions/mvp/25-bots.md` §2 (2026-10-15) left a turn's tool calls out of
+  the history, as the bot's own working, so a later turn knew what its
+  tools did only from what it had said. On 2026-11-08 they come back as a
+  short record from Oppenheimer, fenced as data and bounded per call and
+  per turn (`activityText`), and the summary and the goal reviewer read the
+  same record.
+- `versions/mvp/25-bots.md` §2 (2026-10-29) told a bot how full its context
+  was only against a known window, so a bot on the OpenAI engines, which
+  report none, was never told. On 2026-11-08 it is told its tokens, and
+  asked for narrow reads from `BOT_CONTEXT_TIGHT_TOKENS`; the note no
+  longer says every engine compacts on its own.

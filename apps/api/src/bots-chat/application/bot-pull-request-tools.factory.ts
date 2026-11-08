@@ -31,6 +31,7 @@ import { describeTarget, type PullRequestDetailView } from '../bot-github-tool.m
 import { idempotencyKeyOf } from '../domain/bot-tool-idempotency.policy';
 import type { BotToolSubject } from '../domain/bot-tool-permission.entity';
 import { cut } from '../domain/bot-tool-text.policy';
+import { BotSessionWatchResolver } from './bot-session-watch.resolver';
 import {
   type BotToolArea,
   type BotToolCallContext,
@@ -132,6 +133,7 @@ export class BotPullRequestToolsFactory implements BotToolArea {
   constructor(
     private readonly queryBus: QueryBus,
     private readonly commandBus: CommandBus,
+    private readonly watches: BotSessionWatchResolver,
   ) {}
 
   definitions(): readonly BotToolDefinition[] {
@@ -253,7 +255,9 @@ export class BotPullRequestToolsFactory implements BotToolArea {
       input: z
         .object({
           ...address,
-          verdict: z.enum(['approve', 'request_changes', 'comment']),
+          verdict: z
+            .enum(['approve', 'request_changes', 'comment'])
+            .describe('approve, request_changes, or comment (neither).'),
           body: z.string().trim().max(REVIEW_COMMENT_MAX).optional().describe('The summary.'),
           comments: z.array(lineComment).max(50).default([]),
         })
@@ -296,10 +300,13 @@ export class BotPullRequestToolsFactory implements BotToolArea {
       // Every merge is its own decision: no Allow, no standing grant.
       perCallOnly: true,
       description:
-        "Merges an open pull request in the person's name, squash by default, at the head commit get_pull_request showed: if anything was pushed since, nothing merges and you should read it again. GitHub's branch rules decide; when they hold it (checks, a required review, a conflict), the answer says so and nothing is forced.",
+        "Merges an open pull request in the person's name, squash by default, at the head commit get_pull_request showed: if anything was pushed since, nothing merges and you should read it again. GitHub's branch rules decide; when they hold it (checks, a required review, a conflict), the answer says so and nothing is forced. Only an answer that says it merged is a merge; get_pull_request confirms its state.",
       input: z.object({
         ...address,
-        method: z.enum(MERGE_METHODS).default('squash'),
+        method: z
+          .enum(MERGE_METHODS)
+          .default('squash')
+          .describe('How to merge; squash unless the repository or the person wants another.'),
         head_sha: z
           .string()
           .regex(/^[0-9a-f]{40}$/)
@@ -347,10 +354,14 @@ export class BotPullRequestToolsFactory implements BotToolArea {
       scope: 'sessions:write',
       asks: true,
       description:
-        "Starts a review session for a pull request: a worktree of its head branch on a host, with Claude Code reviewing it. It returns at once with the session's id; read it later with get_session. The host defaults to your home host. A pull request from a fork cannot be reviewed this way.",
+        "Starts a review session for a pull request: a worktree of its head branch on a host, with Claude Code reviewing it. It returns at once with the session's id; if the host is offline the answer says it is queued. You are subscribed to it unless watch is false, so end your turn rather than check on it. The host defaults to your home host (not the project's default: a pull request names no project). A pull request from a fork cannot be reviewed this way.",
       input: z.object({
         ...address,
         host_id: z.uuid().optional().describe('The host to run on (from list_hosts).'),
+        watch: z
+          .boolean()
+          .optional()
+          .describe('Be woken when the review needs input, ends or fails (default true).'),
       }),
       normalize: (input, context) => {
         const hostId = input.host_id ?? context.homeHostId;
@@ -387,8 +398,12 @@ export class BotPullRequestToolsFactory implements BotToolArea {
         const offline = result.hints.includes('host_offline')
           ? ' The host is offline: the session is queued and starts when it comes back.'
           : '';
+        const watched =
+          input.watch === false
+            ? 'You are not watching it; read it later with get_session.'
+            : await this.watches.follow(context, result.sessionId, 'first_task');
         return {
-          content: `Started review session ${result.sessionId} for pull request #${input.number} on host ${hostId}.${offline} Read it later with get_session.`,
+          content: `Started review session ${result.sessionId} for pull request #${input.number} on host ${hostId}.${offline} ${watched}`,
           sessionId: result.sessionId,
         };
       },
