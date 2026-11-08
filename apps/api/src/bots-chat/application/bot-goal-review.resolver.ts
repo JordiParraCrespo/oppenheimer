@@ -8,6 +8,7 @@ import {
   composeGoalReview,
   goalReviewTranscript,
   goalVerdict,
+  reviewEffort,
 } from '../domain/bot-goal-review.policy';
 import type { HistoryEntry } from '../domain/bot-history.policy';
 import { BotCompletionResolver } from './bot-completion.resolver';
@@ -45,8 +46,9 @@ export class BotGoalReviewResolver {
       const answer = await this.completions.complete(
         {
           ...target,
-          // A verdict on a transcript: the model's least effort is enough.
-          effort: null,
+          // A verdict needs little reasoning: the lowest effort the model offers,
+          // or none where it offers no levels (null would be its default, not its least).
+          effort: reviewEffort(target),
           systemPrompt: BOT_GOAL_REVIEWER_PROMPT,
           message: composeGoalReview(goal.objective, transcript),
           signal: AbortSignal.timeout(REVIEW_TIME_LIMIT_MS),

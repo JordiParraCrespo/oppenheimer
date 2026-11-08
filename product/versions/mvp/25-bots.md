@@ -1528,3 +1528,7 @@ The decisions it produced:
   approved call's result is checked before it is reported. The tool list
   names tools by area. Tool texts say what a queued, scheduled or held
   result looks like; their first sentences say what they do.
+- 2026-11-08: **the goal and rule reviewers run at low effort.** They
+  passed no effort, meant as "least effort", which a model with levels
+  reads as its default. They now ask for `low` where the model offers it,
+  and none where it offers no levels (`reviewEffort`).

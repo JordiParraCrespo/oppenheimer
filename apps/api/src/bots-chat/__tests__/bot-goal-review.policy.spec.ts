@@ -11,6 +11,7 @@ import {
   composeGoalReview,
   goalReviewTranscript,
   goalVerdict,
+  reviewEffort,
 } from '../domain/bot-goal-review.policy';
 
 describe('goalVerdict', () => {
@@ -89,5 +90,15 @@ describe('goalReviewTranscript', () => {
       { role: 'assistant', text: 'On it' },
       { role: 'assistant', text: 'pnpm test exited 0' },
     ]);
+  });
+});
+
+// What breaks this: a reviewer sent no effort, which a model with levels reads
+// as its default (often high), so every verdict cost a full reasoning pass.
+describe('reviewEffort', () => {
+  it('asks a model that offers levels for low, and one that offers none for nothing', () => {
+    expect(reviewEffort({ provider: 'glm', model: 'glm-5.3' })).toBe('low');
+    expect(reviewEffort({ provider: 'xai', model: 'grok-4.7' })).toBe('low');
+    expect(reviewEffort({ provider: 'xai', model: 'grok-build-0.1' })).toBeNull();
   });
 });
