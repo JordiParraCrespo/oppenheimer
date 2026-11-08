@@ -51,7 +51,7 @@ const state = vi.hoisted(() => ({
   send: vi.fn(),
   clearGoal: vi.fn(),
   read: vi.fn(),
-  skills: [] as BotSkillEntity[],
+  skills: [] as BotSkillEntity[] | undefined,
 }));
 
 vi.mock('@oppenheimer/frontend-consumer/react', () => ({
@@ -126,6 +126,20 @@ describe('BotComposer’s / menu', () => {
       '/release-notesDoes release-notes.',
       '/reviewDoes review.',
       '/triageDoes triage.',
+    ]);
+  });
+
+  it('offers no /recap until the bot’s skills are read, since one of its own may take the name', () => {
+    state.skills = undefined;
+    const field = composer();
+    type(field, '/re');
+    expect(screen.queryByRole('listbox')).toBeNull();
+    type(field, '/');
+    expect(options()).toEqual([
+      '/goalbots.chat.slash.builtIn.goal',
+      '/usagebots.chat.slash.builtIn.usage',
+      '/loopbots.chat.slash.builtIn.loop',
+      '/schedulebots.chat.slash.builtIn.schedule',
     ]);
   });
 

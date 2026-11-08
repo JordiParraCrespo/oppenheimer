@@ -29,7 +29,8 @@ const BUILT_IN_SKILL_DESCRIPTIONS = {
  * The composer's `/` menu (`25-bots.md` §4.1, OpenClaw's skill commands and
  * Claude Code's built-ins): while the draft is a command being typed, the
  * built-in commands and the skills the person may run whose names match
- * (the built-in skills, then the bot's own),
+ * (the built-in skills, then the bot's own, once the bot's skills are read,
+ * since one of its own may take a built-in skill's name),
  * the skills read only while it is open. Up and Down move through them, Tab
  * or Enter picks one (the draft becomes `/<name> `), Escape closes the menu
  * for that draft. The highlight belongs to what was typed, so a new letter
@@ -56,7 +57,7 @@ export function useSlashMenu(botId: string, draft: string, setDraft: (next: stri
   }));
   const groups =
     wanted && query !== null
-      ? slashMenuItems(builtIns, runnableSkills(builtInSkills, skills ?? []), query)
+      ? slashMenuItems(builtIns, skills ? runnableSkills(builtInSkills, skills) : [], query)
       : { builtIns: [], skills: [] };
   const items = [...groups.builtIns, ...groups.skills];
   const open = items.length > 0;
