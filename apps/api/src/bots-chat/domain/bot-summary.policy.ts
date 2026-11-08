@@ -1,6 +1,5 @@
 import type { BotMessageRole } from '@oppenheimer/shared';
 import {
-  activityText,
   BOT_HISTORY_TOKEN_BUDGET,
   estimateTokens,
   type HistoryMessage,
@@ -9,6 +8,7 @@ import {
   SUMMARY_NOTE_PREFIX,
 } from './bot-history.policy';
 import { EARLIER_IMAGES_HEADROOM_TOKENS } from './bot-image.policy';
+import { neutraliseTags } from './bot-tool-text.policy';
 
 /** The longest summary kept (`bot_conversation_summary.content`); a longer one is cut. */
 const BOT_SUMMARY_MAX_CHARS = 12_000;
@@ -111,16 +111,9 @@ export function planSummary(uncovered: readonly SummarizableMessage[]): SummaryP
     take(cost);
   }
   if (end === 0) return null;
-  // The bot's answers to the last folded message go with it, its tool calls
-  // between them included, and so does anything stored at the same instant,
-  // within the cap.
-  const instant = messages[end - 1].createdAt.getTime();
-  while (
-    end < messages.length &&
-    (messages[end].role === 'assistant' ||
-      messages[end].role === 'activity' ||
-      messages[end].createdAt.getTime() === instant)
-  ) {
+  // What answered the last folded message goes with it, within the cap.
+  const last = messages[end - 1];
+  while (end < messages.length && staysWithFold(last, messages[end])) {
     const cost = costOf(messages[end]);
     if (!fits(cost)) break;
     take(cost);
@@ -185,9 +178,7 @@ export function composeSummaryRequest(
   const messages = fold
     .map((message) => {
       const speaker = SPEAKERS[message.role] ?? 'bot';
-      const text =
-        message.role === 'activity' ? activityText(message.steps ?? []) : message.content;
-      return `<${speaker}>\n${escapeTags(text)}\n</${speaker}>`;
+      return `<${speaker}>\n${escapeTags(historyEntry(message).text)}\n</${speaker}>`;
     })
     .join('\n');
   return [
@@ -210,8 +201,24 @@ export function summaryContent(text: string): string {
  * so it is the one most likely to try.
  */
 function escapeTags(text: string): string {
-  return text.replace(
-    /<(\s*\/\s*(?:summary_so_far|messages|person|bot|oppenheimer|bot_tool_calls|tool_calls)\b)/gi,
-    '&lt;$1',
+  return neutraliseTags(text, [
+    'summary_so_far',
+    'messages',
+    ...Object.values(SPEAKERS),
+    'tool_calls',
+  ]);
+}
+
+/**
+ * Whether `next` goes into the fold with `last`, the message the fold would
+ * end on: the turn that answered it (the bot's words and the tool calls
+ * between them), and anything stored at the same instant. A fold never ends
+ * between a question and its answer.
+ */
+function staysWithFold(last: SummarizableMessage, next: SummarizableMessage): boolean {
+  return (
+    next.role === 'assistant' ||
+    next.role === 'activity' ||
+    next.createdAt.getTime() === last.createdAt.getTime()
   );
 }

@@ -5,6 +5,7 @@ import {
   historyEntry,
   isReadBack,
 } from './bot-history.policy';
+import { neutraliseTags } from './bot-tool-text.policy';
 
 /**
  * Whether a goal's condition holds, asked after each turn of it
@@ -94,7 +95,7 @@ export function composeGoalReview(objective: string, transcript: readonly Histor
  * and write its own verdict for the reviewer.
  */
 function escapeReviewTags(text: string): string {
-  return text.replace(/<(\s*\/\s*(?:transcript|goal)\b)/gi, '&lt;$1');
+  return neutraliseTags(text, ['transcript', 'goal']);
 }
 
 /**

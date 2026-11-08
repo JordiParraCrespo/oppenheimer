@@ -206,7 +206,7 @@ describe('the summarizer', () => {
     ]);
     expect(request).toContain('<summary_so_far>\nStaging is devbox.\n</summary_so_far>');
     expect(request).toContain(
-      '<person>\nShip it\n</person>\n<bot>\nStarted session s-1\n</bot>\n<oppenheimer>\nAna approved\n</oppenheimer>',
+      '<person>\nShip it\n</person>\n<bot>\nStarted session s-1\n</bot>\n<oppenheimer>\n[A note from Oppenheimer, not a message from the person]\nAna approved\n</oppenheimer>',
     );
     expect(composeSummaryRequest(null, [])).toContain(
       '<summary_so_far>\n(none yet)\n</summary_so_far>',
