@@ -20,8 +20,9 @@ this eval is for.
 
 ## The cases
 
-`cases.json` holds three bots (Facturas, a PR reviewer, an XRP Mobile
-helper) and 20 messages, each holding one fact and the memory it belongs in,
+`cases.json` holds a fact already in the general memory, three bots
+(Facturas, a PR reviewer, an XRP Mobile helper) each with a fact of its own,
+so the prompt carries both memories' sections, and 20 messages, each holding one fact and the memory it belongs in,
 with why. Among them are the three facts that leaked into Facturas' prompt
 from other bots on 2026-11-08 (`pr-notifications`, `xrp-project`,
 `cloud-sessions`, the last one rightly general). Add a case whenever a bot
@@ -37,8 +38,10 @@ pnpm eval:bot-memory --runs 5
 ```
 
 Each run builds the bot's real system prompt (`composeBotSystemPrompt`),
-offers the real `remember` tool and sends the message. A run is right when
-the bot saved at least once and every save went to the expected memory; a
+offers the real `remember` tool and sends the message. A run of a general
+fact is right when it reached the general memory (a note of the bot's own on
+what it means for its job may sit beside it); a run of the bot's own fact is
+right when it was saved and nothing reached the general memory. A
 case passes when it is right on most of its runs, and the eval exits 1 when
 any case fails.
 
@@ -48,13 +51,15 @@ turn through the Claude Agent SDK on the machine's Claude Code login, with
 the tool served the way the Claude bot engine serves it
 (`packages/backend/agents/src/claude/claude-tool-server.ts`).
 
-It prints a line per case (`G` general, `Y` yours, `-` saved nothing, one
-mark per run), then how many runs leaked a job fact into the general memory,
+It prints a line per case (`G` general, `Y` yours, `?` a value the tool
+refuses, `-` saved nothing, one mark per run), then how many runs leaked a job fact into the general memory,
 and writes every save to `reports/` (ignored by git).
 
 ## Results
 
 | Date | Wording | Model | Right | Job facts leaked to general |
 | --- | --- | --- | --- | --- |
-| 2026-11-08 | before (`about: "person"`) | claude-sonnet-5-5 | 29/60 | 31 |
-| 2026-11-08 | `MEMORY_CHOICE_RULE` | claude-sonnet-5-5 | 59/60 | 0 |
+| 2026-11-08 | before (`about: "person"`) | claude-sonnet-5-5 | 75/100 (5 cases fail) | 25 |
+| 2026-11-08 | `MEMORY_CHOICE_RULE` | claude-sonnet-5-5 | 100/100 | 0 |
+
+Five runs a case, through the Claude Code login.

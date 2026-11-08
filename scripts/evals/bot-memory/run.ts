@@ -13,8 +13,8 @@
 // (`composeBotSystemPrompt`), offers the real `remember` tool (its
 // description and input hints from `bot-memory.policy.ts`), lets the model
 // answer the message, and checks the `memory` of every `remember` call it
-// made against `expect`. A run is right when the bot saved at least once and
-// every save went to the expected memory.
+// made against `expect` (`rightRun`): a general fact must reach the general
+// memory, and a fact for the bot's own must not.
 //
 //   pnpm eval:bot-memory                     every case, 3 runs each
 //   pnpm eval:bot-memory --case squash       one case
@@ -46,6 +46,8 @@ interface Bot {
   name: string;
   description: string;
   instructions: string;
+  /** What it already keeps in its own memory, so the prompt has a *Your memory* section. */
+  memory: string[];
 }
 
 interface Case {
@@ -57,12 +59,13 @@ interface Case {
 }
 
 interface Save {
-  memory: Memory;
+  /** `invalid` when the model sent a value the tool refuses: nothing would be saved. */
+  memory: Memory | 'invalid';
   fact: string;
   tier: string;
 }
 
-type Ask = (bot: Bot, message: string) => Promise<Save[]>;
+type Ask = (bot: Bot, general: string[], message: string) => Promise<Save[]>;
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const MAX_PARALLEL = 6;
@@ -95,24 +98,29 @@ const REMEMBER_SCHEMA = {
   },
 };
 
-function systemPrompt(bot: Bot): string {
+function systemPrompt(bot: Bot, general: string[]): string {
   return composeBotSystemPrompt({
     name: bot.name,
     description: bot.description,
     soul: '',
     instructions: bot.instructions,
-    facts: [],
-    personFacts: [],
+    facts: bot.memory,
+    personFacts: general,
     engineCapabilities: [],
     tools: [{ name: 'remember', description: REMEMBER_DESCRIPTION }],
   });
 }
 
-/** What `remember` saves from its input: the bot's own memory unless told otherwise. */
+/** What `remember` saves from its input: the bot's own memory when none is named. */
 function saveOf(input: unknown): Save {
   const { fact, tier, memory } = (input ?? {}) as Partial<Record<keyof Save, string>>;
   return {
-    memory: memory === 'general' ? 'general' : 'yours',
+    memory:
+      memory === undefined
+        ? 'yours'
+        : (REMEMBER_MEMORY as readonly string[]).includes(memory)
+          ? (memory as Memory)
+          : 'invalid',
     fact: fact ?? '',
     tier: tier ?? 'log',
   };
@@ -122,11 +130,11 @@ function messagesApi(apiKey: string, model: string): Ask {
   const AnthropicClient = (fromAgents('@anthropic-ai/sdk') as typeof import('@anthropic-ai/sdk'))
     .default;
   const client = new AnthropicClient({ apiKey });
-  return async (bot, message) => {
+  return async (bot, general, message) => {
     const response = await client.messages.create({
       model,
       max_tokens: 2048,
-      system: systemPrompt(bot),
+      system: systemPrompt(bot, general),
       tools: [
         {
           name: 'remember',
@@ -153,7 +161,7 @@ function claudeCode(model: string): Ask {
     '@modelcontextprotocol/sdk/types.js',
   ) as typeof import('@modelcontextprotocol/sdk/types.js');
 
-  return async (bot, message) => {
+  return async (bot, general, message) => {
     const saves: Save[] = [];
     // The tool server the Claude engine builds (`claude-tool-server.ts`):
     // our tools as `mcp__oppenheimer__<name>`, schemas served as they are.
@@ -174,6 +182,14 @@ function claudeCode(model: string): Ask {
     mcp.server.setRequestHandler(CallToolRequestSchema, async (request) => {
       const save = saveOf(request.params.arguments);
       saves.push(save);
+      if (save.memory === 'invalid') {
+        return {
+          content: [
+            { type: 'text' as const, text: 'Invalid input: memory must be "yours" or "general".' },
+          ],
+          isError: true,
+        };
+      }
       const where = save.memory === 'general' ? 'general memory' : 'your memory';
       return {
         content: [{ type: 'text' as const, text: `Remembered (${where}): "${save.fact}".` }],
@@ -185,7 +201,7 @@ function claudeCode(model: string): Ask {
         prompt: message,
         options: {
           model,
-          systemPrompt: systemPrompt(bot),
+          systemPrompt: systemPrompt(bot, general),
           cwd,
           tools: [],
           allowedTools: ['mcp__oppenheimer__remember'],
@@ -204,6 +220,18 @@ function claudeCode(model: string): Ask {
     }
     return saves;
   };
+}
+
+/**
+ * A general fact is right once it reaches the general memory, even beside a
+ * note of the bot's own about what it means for its job; a fact for the
+ * bot's own memory is right when it is saved and nothing reaches the general
+ * one. A value the tool refuses is never right.
+ */
+function rightRun(saves: Save[], expect: Memory): boolean {
+  if (saves.some((save) => save.memory === 'invalid')) return false;
+  if (expect === 'general') return saves.some((save) => save.memory === 'general');
+  return saves.length > 0 && saves.every((save) => save.memory === 'yours');
 }
 
 /** Runs `work` over `items`, at most `limit` at a time, in order. */
@@ -229,7 +257,8 @@ async function main(): Promise<void> {
   const ask = apiKey ? messagesApi(apiKey, model) : claudeCode(model);
   const runs = Number(arg('runs') ?? 3);
   const only = arg('case');
-  const { bots, cases } = JSON.parse(readFileSync(join(HERE, 'cases.json'), 'utf8')) as {
+  const { general, bots, cases } = JSON.parse(readFileSync(join(HERE, 'cases.json'), 'utf8')) as {
+    general: string[];
     bots: Record<string, Bot>;
     cases: Case[];
   };
@@ -240,17 +269,19 @@ async function main(): Promise<void> {
   const answers = await pool(jobs, MAX_PARALLEL, (c) => {
     const bot = bots[c.bot];
     if (!bot) throw new Error(`Case ${c.id} names no bot "${c.bot}".`);
-    return ask(bot, c.message);
+    return ask(bot, general, c.message);
   });
   const results = chosen.map((c, i) => {
     const saves = answers.slice(i * runs, (i + 1) * runs);
-    const right = saves.filter((s) => s.length > 0 && s.every((x) => x.memory === c.expect)).length;
+    const right = saves.filter((s) => rightRun(s, c.expect)).length;
     return { ...c, saves, right, passed: right * 2 > runs };
   });
 
   const width = Math.max(...results.map((r) => r.id.length));
   const mark = (s: Save[]) =>
-    s.length === 0 ? '-' : s.map((x) => (x.memory === 'general' ? 'G' : 'Y')).join('');
+    s.length === 0
+      ? '-'
+      : s.map((x) => ({ general: 'G', yours: 'Y', invalid: '?' })[x.memory]).join('');
   for (const r of results) {
     console.log(
       `${r.passed ? 'pass' : 'FAIL'}  ${r.id.padEnd(width)}  want ${r.expect.padEnd(7)}  got ${r.saves.map(mark).join(' ')}  ${r.right}/${runs}`,

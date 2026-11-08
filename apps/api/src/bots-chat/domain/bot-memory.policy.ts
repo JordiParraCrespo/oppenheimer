@@ -90,8 +90,9 @@ function newestWithin(facts: readonly RememberedFact[], chars: number): Remember
 export const MEMORY_CHOICE_RULE = [
   'You write to one of two memories.',
   'Your memory (memory "yours", the default) is read by you alone: everything about your job and the work you do for the person, such as their projects, repositories, folders, hosts, accounts, schedules, how they want this kind of work done, and settings or tools that only your work touches.',
-  'The general memory (memory "general") is read by every bot the person has, whatever its job: only who the person is and how they want to be treated by any bot, such as their name, role, language, time zone, how to address them, and working preferences they state for all their work.',
-  'Test before choosing "general": would a bot with a completely different job need this fact? If not, or if you are unsure, use "yours". A fact that names one of the person\'s projects, repositories, folders, hosts, accounts or tools is "yours", even when it is a preference of theirs.',
+  'The general memory (memory "general") is read by every bot the person has, whatever its job: only who the person is and how they want to be treated by any bot, such as their name, what they do for a living and for whom, language, time zone, how to address them, and working preferences they state for all their work.',
+  'Choose "general" when the person says it is for all their bots or all their work ("any bot", "everything", "always"), or when it is who they are; save it in their words, without what it means for your own job.',
+  'Otherwise ask: would a bot with a completely different job need this fact? If not, or if you are unsure, use "yours". A fact that names one of the person\'s projects, repositories, folders, hosts, accounts or tools is "yours", even when it is a preference of theirs.',
 ].join(' ');
 
 /**

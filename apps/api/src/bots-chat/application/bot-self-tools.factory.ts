@@ -318,7 +318,7 @@ export class BotSelfToolsFactory implements BotToolArea {
       name: 'recall',
       readOnly: true,
       scope: 'bots:read',
-      description: `Searches your memory for facts containing any of the words in \`query\`, best matches first; with no query, lists your newest facts. It reads every fact you keep: those in mind each turn, those kept only to look up, and and the general memory, which the person's other bots also write to. At most ${RECALL_LIMIT_MAX} per call. No match means you have no fact with those words, not that the thing is false.`,
+      description: `Searches your memory for facts containing any of the words in \`query\`, best matches first; with no query, lists your newest facts. It reads every fact you keep: those in mind each turn, those kept only to look up, and the general memory, which the person's other bots also write to. At most ${RECALL_LIMIT_MAX} per call. No match means you have no fact with those words, not that the thing is false.`,
       input: z.strictObject({
         query: z
           .string()

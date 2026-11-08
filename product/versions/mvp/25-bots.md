@@ -1650,8 +1650,8 @@ The decisions it produced:
   takes `memory: 'yours' | 'general'` instead of `about`, the prompt calls
   them *Your memory* and *General memory*, and general is only for what a
   bot with another job would need. `scripts/evals/bot-memory` holds it: on
-  the old wording 31 of 60 runs put a job fact in the general memory, on
-  the new one none did.
+  the old wording 25 of 100 runs put a job fact in the general memory and
+  5 of 20 cases failed; on the new one all 100 were right.
 - 2026-11-07: **bots dream** (§4.1, "Dreaming"). The owner found each
   bot's memory "a bit like slop" once bots saved as they go, and asked for
   a process that unifies, rewrites and deduplicates it, from Managed Agents'

@@ -1,19 +1,23 @@
 {
+  "general": ["Jordi is a freelance software engineer and writes in English or Spanish."],
   "bots": {
     "facturas": {
       "name": "Facturas",
       "description": "Collects the person's invoices and keeps the billing folder in order.",
-      "instructions": "Your job: collect Jordi's invoices from his mail and his billing folder on his host Pop-os, check they are complete, and file each month's invoices for his accountant. Only collect when Jordi asks."
+      "instructions": "Your job: collect Jordi's invoices from his mail and his billing folder on his host Pop-os, check they are complete, and file each month's invoices for his accountant. Only collect when Jordi asks.",
+      "memory": ["Facturas sends the accountant one folder per month."]
     },
     "reviewer": {
       "name": "Reviewer",
       "description": "Reviews and merges pull requests on Jordi's repositories.",
-      "instructions": "Your job: review open pull requests on Jordi's repositories, start a session to fix what fails, and tell Jordi which ones are ready. Never merge without his OK."
+      "instructions": "Your job: review open pull requests on Jordi's repositories, start a session to fix what fails, and tell Jordi which ones are ready. Never merge without his OK.",
+      "memory": ["Jordi's repositories are under the JordiParraCrespo account on GitHub."]
     },
     "xrp": {
       "name": "Milo",
       "description": "Helps build XRP Mobile.",
-      "instructions": "Your job: help Jordi build XRP Mobile. Plan the work, start coding sessions on his hosts, and follow them until they finish."
+      "instructions": "Your job: help Jordi build XRP Mobile. Plan the work, start coding sessions on his hosts, and follow them until they finish.",
+      "memory": ["XRP Mobile sessions start from the main branch."]
     }
   },
   "cases": [
