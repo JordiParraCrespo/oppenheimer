@@ -11,7 +11,7 @@ import { provisionedUser, signInAs } from '../../support/web';
 
 const BOTS = ['Ada', 'Bea', 'Cy'];
 
-/** The bots a section's Bots heading draws, top to bottom, by name (a row leads with initials). */
+/** The bots a section's Bots heading draws, top to bottom, by name (a row leads with its face). */
 const names = (page: Page) =>
   page
     .getByRole('region', { name: 'Bots' })

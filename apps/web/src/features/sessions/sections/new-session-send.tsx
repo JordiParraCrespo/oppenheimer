@@ -21,6 +21,7 @@ import { useAutoStart } from '../hooks/use-auto-start';
 import { useNewSessionDraft } from '../hooks/use-new-session-form';
 import { cloudLaunchFailure } from '../lib/cloud-launch-failure';
 import { dictationVocabulary } from '../lib/dictation-vocabulary';
+import { forgetSentTask } from '../lib/new-session-task';
 import { hasPlace, toCreateInput, toStartCloudInput } from '../lib/session-options';
 
 /**
@@ -95,12 +96,17 @@ export function NewSessionSend({
   const attempt = useRef<{ key: string; body: string } | null>(null);
   const upload = useUploadSessionAttachment();
   const create = useCreateSession({
-    onSuccess: (session) => {
+    onSuccess: (session, { input }) => {
       attempt.current = null;
+      forgetSentTask(input.prompt);
       navigate({ to: '/sessions/$sessionId', params: { sessionId: session.id } });
     },
   });
-  const startCloud = useStartCloudSession();
+  // Forgotten here, not in the launch's own callback, which does not run once
+  // the screen is left while the launch is in flight.
+  const startCloud = useStartCloudSession({
+    onSuccess: (_session, { input }) => forgetSentTask(input.prompt),
+  });
   const lastCloudLaunch = useRef<StartCloudSessionInput | null>(null);
   // Files ride a host session's first task; a vendor's agent takes none, and
   // a file is never dropped without a word.

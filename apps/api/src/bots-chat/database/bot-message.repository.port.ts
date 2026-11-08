@@ -76,6 +76,11 @@ export interface BotMessageRepositoryPort {
     limit: number,
   ): Promise<BotMessageEntity[]>;
   /**
+   * What a dream checks the memory against: the bot's newest `limit`
+   * messages, oldest first, activity lines left out.
+   */
+  findRecent(organizationId: string, botId: string, limit: number): Promise<BotMessageEntity[]>;
+  /**
    * What the summary does not cover yet: the bot's oldest `limit` messages
    * after `afterMessageId` (null for all of them), oldest first, activity
    * lines left out, each with whether its turn has ended.

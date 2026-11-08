@@ -196,6 +196,24 @@ deployment branches, allow `main` only. Then add:
 Run **Deploy dev** from the Actions tab (workflow_dispatch). After that,
 every push to `main` deploys.
 
+**Error reporting (Sentry), optional.** Nothing below is needed to deploy;
+unset, nothing is reported. The API reads `SENTRY_DSN` from `api.env` (and
+`SENTRY_ENVIRONMENT`, `dev` in the example) and reports under the release's
+commit, which `compose.yml` sets. The console's values are baked in when its
+image is built, so they are repository settings, read by **Deploy dev**:
+
+| Kind | Name | Value |
+|---|---|---|
+| repo variable | `VITE_SENTRY_DSN` | The console project's DSN (public; it ends up in the bundle) |
+| repo variable | `SENTRY_ENVIRONMENT` | Optional; `dev` when unset |
+| repo variable | `VITE_SENTRY_TRACES_SAMPLE_RATE` | Optional; `0` (errors only) when unset |
+| repo variable | `SENTRY_ORG`, `SENTRY_WEB_PROJECT` | Where the build uploads its source maps |
+| env secret | `SENTRY_AUTH_TOKEN` | A Sentry auth token with `project:releases`; mounted for the build only |
+
+With the three upload settings, the build makes hidden source maps, uploads
+them under the commit and deletes them, so none is served. A change to any of
+these needs a deploy, not a reload.
+
 The first account you register is an ordinary user. To make it an admin, put
 its id in `BETTER_AUTH_ADMIN_USER_IDS` in `api.env`, then run
 `sudo -u deploy oppctl reload` (see [Changing the

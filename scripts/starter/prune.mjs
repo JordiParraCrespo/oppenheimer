@@ -66,6 +66,9 @@ const CHECK_SKIP = [
   /\.test\.ts$/,
   // The design exports are a design record, not code the starter prunes.
   /^product\/versions\/[^/]+\/design\//,
+  // The user guide's pages (`apps/docs/docs/guide/*.md`, prose) as a string
+  // for the bots; /starter-init rewrites the pages and regenerates it.
+  /^packages\/shared\/src\/guide\/guide-pages\.gen\.ts$/,
 ];
 const COMMENT_LINE_RE = /^\s*(?:#|\/\/|\/\*|\*|<!--|--|;)/;
 

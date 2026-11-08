@@ -286,6 +286,10 @@
         "expired": "El bucle «{{prompt}}» terminó tras 3 días",
         "stopped": "El bucle «{{prompt}}» se detuvo: una ejecución falló o se detuvo",
         "ended": "El bucle «{{prompt}}» terminó: el bot no dijo cuándo volver a ejecutarlo"
+      },
+      "dream": {
+        "dreamed": "Ordenó su memoria · {{before}} datos → {{after}}",
+        "undone": "Deshiciste el orden · vuelven {{before}} datos"
       }
     },
     "routineReason": {
@@ -296,6 +300,7 @@
       "agent_unavailable": "el agente no pudo arrancar",
       "bot_provider_missing": "el proveedor de modelos del bot no tiene clave ni sesión",
       "owner_lost_access": "su propietario ya no puede ejecutarla",
+      "unattended": "no estabas; vuelve a funcionar ahora que has vuelto",
       "unknown": "algo salió mal"
     },
     "openSession": "Abrir sesión",
@@ -358,7 +363,9 @@
         "summary_one": "{{count}} resumen",
         "summary_other": "{{count}} resúmenes",
         "ruleReview_one": "{{count}} revisión de reglas",
-        "ruleReview_other": "{{count}} revisiones de reglas"
+        "ruleReview_other": "{{count}} revisiones de reglas",
+        "dream_one": "{{count}} orden de memoria",
+        "dream_other": "{{count}} órdenes de memoria"
       },
       "empty": "Este chat aún no ha gastado nada.",
       "loadFailed": "No se pudo cargar el uso. Inténtalo de nuevo."
@@ -394,6 +401,32 @@
         "lemon": "Limón",
         "coral": "Coral",
         "moss": "Musgo"
+      },
+      "face": "Cara",
+      "faceHat": "Sombrero",
+      "faceEyes": "Ojos",
+      "faceMouth": "Boca",
+      "faceReset": "Usar su propia cara",
+      "faces": {
+        "hat": {
+          "fedora": "Fedora",
+          "porkpie": "Porkpie",
+          "bowler": "Bombín",
+          "tophat": "Chistera",
+          "cap": "Gorra",
+          "beanie": "Gorro"
+        },
+        "eyes": {
+          "dots": "Puntos",
+          "happy": "Contentos",
+          "wink": "Guiño",
+          "big": "Grandes"
+        },
+        "mouth": {
+          "smile": "Sonrisa",
+          "grin": "Risa",
+          "o": "Sorpresa"
+        }
       },
       "group": "Grupo de la barra lateral",
       "groupHint": "Dónde aparece en la barra lateral de Empleados",
@@ -492,7 +525,23 @@
       "toLog": "Consultarlo solo cuando haga falta",
       "toProfile": "Tenerlo presente en cada chat",
       "toPerson": "Compartirlo con todos tus bots",
-      "toBot": "Guardarlo solo para este bot"
+      "toBot": "Guardarlo solo para este bot",
+      "learnedBy": "Aprendido por {{bot}} · {{date}}",
+      "editedByYouOn": "Editado por ti, lo guarda {{bot}} · {{date}}",
+      "addedByYouOn": "Añadido por ti, lo guarda {{bot}} · {{date}}",
+      "toBotNamed": "Que solo lo sepa {{bot}}",
+      "dream": {
+        "title": "Ordenar la memoria",
+        "never": "Une los repetidos, reescribe cada dato con claridad y quita lo que ya no vale, contrastado con el chat. Se hace más o menos una vez al día cuando el bot ha aprendido bastante.",
+        "last": "Ordenada el {{date}} · {{before}} datos → {{after}}",
+        "lastUndone": "El último orden, del {{date}}, se deshizo",
+        "queued": "Ordenando en segundo plano. El chat avisará cuando termine.",
+        "tidyNow": "Ordenar ahora",
+        "undo": "Deshacer",
+        "loadFailed": "No se pudo cargar el último orden de la memoria.",
+        "requestFailed": "No se pudo empezar a ordenar la memoria.",
+        "undoFailed": "No se pudo deshacer el orden."
+      }
     },
     "skills": {
       "title": "Habilidades",
@@ -535,6 +584,9 @@
       "title": "Rutinas",
       "subtitle": "Trabajo que el bot hace según un horario o cuando pasa algo.",
       "empty": "Las rutinas son tareas que este bot ejecuta según un horario o cuando pasa algo. Pídele en el chat que configure una.",
+      "guard": "Pausar mientras no estás",
+      "guardHint": "Detén sus rutinas mientras no lees lo que dicen. Vuelven a funcionar cuando abres este chat.",
+      "guardFailed": "No se pudo cambiar si las rutinas se pausan mientras no estás.",
       "askInChat": "Pedir en el chat",
       "schedule": "Horario · {{when}}",
       "github": "GitHub · {{when}}",
@@ -582,6 +634,35 @@
       "loadFailed": "No se pudieron cargar los permisos del bot.",
       "saveFailed": "No se pudo cambiar el permiso.",
       "tools": "Herramientas",
+      "search": "Buscar herramientas",
+      "noMatch": "Ninguna herramienta coincide.",
+      "filters": {
+        "decision": "Decisión",
+        "group": "Grupo",
+        "allGroups": "Todos los grupos",
+        "clear": "Borrar"
+      },
+      "views": {
+        "all": "Todas",
+        "allow": "Permitir",
+        "ask": "Preguntar",
+        "off": "Desactivadas",
+        "changed": "Cambiadas por ti"
+      },
+      "summary": {
+        "tools_one": "{{count}} herramienta",
+        "tools_other": "{{count}} herramientas",
+        "tools_many": "{{count}} herramientas",
+        "ask_one": "{{count}} pregunta",
+        "ask_other": "{{count}} preguntan",
+        "ask_many": "{{count}} preguntan",
+        "off_one": "{{count}} desactivada",
+        "off_other": "{{count}} desactivadas",
+        "off_many": "{{count}} desactivadas",
+        "changed_one": "{{count}} cambiada por ti",
+        "changed_other": "{{count}} cambiadas por ti",
+        "changed_many": "{{count}} cambiadas por ti"
+      },
       "preset": {
         "auto": "Las herramientas que dejas en su valor por defecto siguen Aprobar por mí: todo lo que sale de Oppenheimer pregunta antes.",
         "full": "Las herramientas que dejas en su valor por defecto siguen Acceso total: se ejecutan sin preguntar."
@@ -642,5 +723,8 @@
     "checkedHint": "Los bots marcados aparecen en {{section}}.",
     "manageAll": "Gestionar en {{employees}}",
     "hide": "Ocultar de {{section}}"
+  },
+  "routineGuard": {
+    "notice": "He pausado mis rutinas mientras no estabas. Vuelven a funcionar cuando abras este chat."
   }
 }

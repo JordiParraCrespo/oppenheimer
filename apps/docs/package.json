@@ -7,7 +7,9 @@
     "build": "docusaurus build",
     "serve": "docusaurus serve",
     "clean": "docusaurus clear",
-    "lint": "biome check src/ docs/"
+    "lint": "biome check src/ docs/",
+    "generate:guide": "node scripts/emit-guide.mjs",
+    "check:guide": "node scripts/emit-guide.mjs --check"
   },
   "dependencies": {
     "@docusaurus/core": "^3.10.2",

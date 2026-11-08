@@ -59,6 +59,7 @@ export const ENDPOINT_POLICIES = {
   'POST /sessions/:id/stop': [{ action: 'update', subject: 'Session' }],
   'POST /sessions/:id/move': [{ action: 'update', subject: 'Session' }],
   'POST /sessions/:id/restart': [{ action: 'update', subject: 'Session' }],
+  'POST /sessions/:id/retry': [{ action: 'update', subject: 'Session' }],
   'POST /sessions/:id/checkouts': [{ action: 'update', subject: 'Session' }],
   'DELETE /sessions/:id/checkouts/:checkoutId': [{ action: 'update', subject: 'Session' }],
   'POST /sessions/:id/attach-ticket': [{ action: 'update', subject: 'Session' }],
