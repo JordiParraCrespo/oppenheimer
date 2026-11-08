@@ -120,6 +120,32 @@ function isUserBackground(cell: IBufferCell): boolean {
   return false;
 }
 
+/** A bubble on the pane: its first row in view, its column and its rows. */
+export interface Bubble {
+  row: number;
+  x: number;
+  height: number;
+}
+
+/**
+ * The bubbles that cover `turns` (each at its row in view). A bubble reaches
+ * past its rows by the inset, so turns on touching rows share one: Codex
+ * draws each line of a multi-line send behind its own pointer, and a bubble
+ * each stacked their edges into slivers across the message.
+ */
+export function bubblesFor(turns: readonly { row: number; turn: UserTurn }[]): Bubble[] {
+  const bubbles: Bubble[] = [];
+  for (const { row, turn } of turns) {
+    const last = bubbles.at(-1);
+    if (last && last.x === turn.x && last.row + last.height === row) {
+      last.height += turn.height;
+    } else {
+      bubbles.push({ row, x: turn.x, height: turn.height });
+    }
+  }
+  return bubbles;
+}
+
 /** The colours a turn is repainted in, as `#rrggbb` (all a decoration takes). */
 export interface TurnColors {
   background: string;
@@ -216,25 +242,25 @@ export function bindUserTurns(
     return decorations;
   };
 
-  const drawBubbles = (turns: { row: number; turn: UserTurn }[]) => {
+  const drawBubbles = (bubbles: Bubble[]) => {
     const cellWidth = (screen?.clientWidth ?? 0) / term.cols;
     // The artboard's bubble spans the pane's text column, not the grid: the
     // grid stops at its last whole cell, up to a column short of the pane.
     const width = term.element?.clientWidth ?? 0;
     const cellHeight = (screen?.clientHeight ?? 0) / term.rows;
-    while (overlay.childElementCount > turns.length) overlay.lastElementChild?.remove();
-    while (overlay.childElementCount < turns.length) {
+    while (overlay.childElementCount > bubbles.length) overlay.lastElementChild?.remove();
+    while (overlay.childElementCount < bubbles.length) {
       const bubble = document.createElement('div');
       bubble.style.cssText = `position:absolute;border-radius:${BUBBLE_RADIUS}px;background:var(--hover-surface);`;
       overlay.appendChild(bubble);
     }
-    turns.forEach(({ row, turn }, index) => {
+    bubbles.forEach(({ row, x, height }, index) => {
       const bubble = overlay.children[index] as HTMLElement;
-      const left = turn.x * cellWidth - BUBBLE_INSET_X;
+      const left = x * cellWidth - BUBBLE_INSET_X;
       bubble.style.left = `${left}px`;
       bubble.style.width = `${width + BUBBLE_INSET_X - left}px`;
       bubble.style.top = `${row * cellHeight - BUBBLE_INSET_Y}px`;
-      bubble.style.height = `${turn.height * cellHeight + 2 * BUBBLE_INSET_Y}px`;
+      bubble.style.height = `${height * cellHeight + 2 * BUBBLE_INSET_Y}px`;
     });
   };
 
@@ -264,9 +290,11 @@ export function bindUserTurns(
     }
     drawn = kept;
     drawBubbles(
-      found
-        .map((f) => ({ row: f.line - buffer.viewportY, turn: f.turn }))
-        .filter(({ row, turn }) => row + turn.height > 0 && row < term.rows),
+      bubblesFor(
+        found
+          .map((f) => ({ row: f.line - buffer.viewportY, turn: f.turn }))
+          .filter(({ row, turn }) => row + turn.height > 0 && row < term.rows),
+      ),
     );
   };
 
