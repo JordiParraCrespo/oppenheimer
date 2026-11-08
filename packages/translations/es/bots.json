@@ -32,7 +32,8 @@
     "shownSome": "{{shown}} de {{total}}",
     "showAll": "Mostrar todos los bots",
     "allHidden_one": "Su bot está oculto. Muéstralo desde el menú de filtros.",
-    "allHidden_other": "Sus {{count}} bots están ocultos. Muéstralos desde el menú de filtros."
+    "allHidden_other": "Sus {{count}} bots están ocultos. Muéstralos desde el menú de filtros.",
+    "allHidden_many": "Sus {{count}} de bots están ocultos. Muéstralos desde el menú de filtros."
   },
   "landing": {
     "titleEmpty": "Crea tu primer bot.",
