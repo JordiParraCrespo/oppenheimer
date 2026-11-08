@@ -3405,6 +3405,10 @@
       "makeDefault": "Hacer predeterminado",
       "makeDefaultLabel": "Empezar los bots nuevos con {{provider}}",
       "makeDefaultFailed": "No se pudo cambiar el proveedor predeterminado.",
+      "groups": {
+        "connected": "Conectados",
+        "notConnected": "Sin conectar"
+      },
       "providers": {
         "anthropic": "Modelos Claude, a través de la API de Anthropic.",
         "glm": "Modelos GLM, a través de z.ai.",
