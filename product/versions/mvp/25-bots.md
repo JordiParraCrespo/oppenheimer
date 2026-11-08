@@ -802,7 +802,8 @@ learn fast what is going on.
   same shape. It is in the note, not `runner --skill`, since the person asks
   for it, not the agent.
 - **Not built.** `/recap` in the composer's `/` menu, which lists the
-  built-in commands and the bot's own skills only.
+  built-in commands and the bot's own skills only; and the catch-up in a
+  Codex session, since the note is `CLAUDE.md` and Codex reads `AGENTS.md`.
 
 **Built-in commands** (2026-11-02, from Claude Code's commands,
 `code.claude.com/docs/en/commands`). A built-in is a `/<name>` Oppenheimer
