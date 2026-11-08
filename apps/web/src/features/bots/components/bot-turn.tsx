@@ -42,8 +42,8 @@ import { runningStep } from '@/features/bots/lib/tool-activity';
  * message you steered in while it worked sits in the answer where the bot
  * took it (`BotSteerMessage`). Work the turn started that still runs after
  * it is the caller's to draw (`working`), in place of the live line; a turn
- * queued behind the one the bot is on draws no live line (`current`), so
- * the chat shows one at a time; a turn that never reached its model has no
+ * queued behind the one the bot is on draws neither (`current`), so the
+ * chat shows one live line at a time; a turn that never reached its model has no
  * trail.
  */
 export function BotTurn({
@@ -90,6 +90,8 @@ export function BotTurn({
   const active = turn?.isActive ?? false;
   const text = replyText(block);
   const step = active ? runningStep(block.answer) : undefined;
+  // Queued behind the turn the bot is on: the chat draws one live line, that turn's.
+  const behind = active && !current;
   // A turn that ended without a word or a token never reached its model: nothing to trail.
   const tokens = turn ? turn.inputTokens + turn.outputTokens : 0;
   const silent = phase === 'completed' && block.answer.length === 0 && tokens === 0;
@@ -146,18 +148,20 @@ export function BotTurn({
           ),
         )}
         {live ? <BotReply content={live} streaming /> : null}
-        {working ??
-          (turn && active && current ? (
-            <BotTurnLive
-              queued={turn.status === 'queued'}
-              step={step}
-              subagents={step ? subagents[step.callId] : undefined}
-              writing={Boolean(live)}
-              waitingOn={waitingOn}
-              provider={BOT_PROVIDER_CATALOG[turn.provider].label}
-              since={turn.startedAt}
-            />
-          ) : null)}
+        {behind
+          ? null
+          : (working ??
+            (turn && active ? (
+              <BotTurnLive
+                queued={turn.status === 'queued'}
+                step={step}
+                subagents={step ? subagents[step.callId] : undefined}
+                writing={Boolean(live)}
+                waitingOn={waitingOn}
+                provider={BOT_PROVIDER_CATALOG[turn.provider].label}
+                since={turn.startedAt}
+              />
+            ) : null))}
         {turn && phase === 'failed' ? (
           <BotTurnFailure
             turn={turn}

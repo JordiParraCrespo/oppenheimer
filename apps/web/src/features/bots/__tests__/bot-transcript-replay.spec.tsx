@@ -249,6 +249,8 @@ describe('a turn recorded while it ran, replayed', () => {
       event: {
         kind: 'approval',
         outcome: 'approved',
+        stage: 'started',
+        approvalId: 'a1',
         tool: 'start_session',
         summary: 'Run the release checklist',
       },
