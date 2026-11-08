@@ -13,7 +13,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { GroupMenu } from '@/features/bots/components/group-menu';
 import { GroupNameInput } from '@/features/bots/components/group-name-input';
-import { type BotSection, sectionKey } from '@/features/bots/lib/bot-groups';
+import { type BotSection, emptyGroupLine, sectionKey } from '@/features/bots/lib/bot-groups';
 import { BotSidebarRow } from './bot-sidebar-row';
 
 /**
@@ -51,6 +51,7 @@ export function BotGroup({
   const remove = useDeleteBotGroup();
   const { group, bots } = section;
   const name = group ? group.name : t('bots.sidebar.ungrouped');
+  const line = emptyGroupLine(section);
 
   const rows = (
     <SortableGroup
@@ -111,11 +112,7 @@ export function BotGroup({
         </BotList>
       ) : null}
       {open && !bots.length && !searching ? (
-        <SidebarEmptyRow>
-          {section.hiddenCount > 0
-            ? t('bots.sidebar.allHidden', { count: section.hiddenCount })
-            : t('bots.sidebar.emptyGroup')}
-        </SidebarEmptyRow>
+        <SidebarEmptyRow>{t(line.key, line)}</SidebarEmptyRow>
       ) : null}
     </SortableGroup>
   );

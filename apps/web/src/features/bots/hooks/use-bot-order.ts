@@ -10,6 +10,7 @@ import {
   botSections,
   groupIdOf,
   groupOrder,
+  inGroupOrder,
   inOrder,
   positionAmong,
   sectionOrder,
@@ -48,7 +49,21 @@ export function useBotOrder(
   const byItemId = new Map(groups.map((group) => [sortableProjectId(group.id), group.id]));
   const groupIdsOf = (value: SortableGroups) =>
     (value[GROUPS] ?? []).flatMap((itemId) => byItemId.get(itemId) ?? []);
-  const drawn = order ? inOrder(sections, order, groupIdsOf(order)) : sections;
+  const drawn = order ? inGroupOrder(inOrder(sections, order), groupIdsOf(order)) : sections;
+
+  const onSettled = () => setOrder(null);
+  /** A group dropped among the others: `index` is its place among every group. */
+  const dropGroup = (itemId: string, index: number) => {
+    const id = byItemId.get(itemId);
+    if (id) moveGroup.mutate({ id, position: index }, { onSettled });
+    else onSettled();
+  };
+  /** A bot dropped in `to`: its place among every bot there, hidden ones included. */
+  const dropBot = (id: string, to: string, next: SortableGroups) => {
+    const full = sectionOrder(botSections(bots, groups, '', { keepUngrouped: true }));
+    const position = positionAmong(full[to] ?? [], next[to] ?? [], id);
+    move.mutate({ id, input: { groupId: groupIdOf(to), position } }, { onSettled });
+  };
 
   const sortable = useSortableGroups(
     { ...sectionOrder(drawn), [GROUPS]: groupOrder(drawn).map(sortableProjectId) },
@@ -56,15 +71,8 @@ export function useBotOrder(
     (next, { settled }) => setOrder(settled ? null : next),
     ({ id, from, to, index }, next) => {
       setOrder(next);
-      const onSettled = () => setOrder(null);
-      const groupId = byItemId.get(id);
-      if (from === GROUPS && groupId) {
-        moveGroup.mutate({ id: groupId, position: index }, { onSettled });
-        return;
-      }
-      const every = sectionOrder(botSections(bots, groups, '', { keepUngrouped: true }));
-      const position = positionAmong(every[to] ?? [], next[to] ?? [], id);
-      move.mutate({ id, input: { groupId: groupIdOf(to), position } }, { onSettled });
+      if (from === GROUPS) dropGroup(id, index);
+      else dropBot(id, to, next);
     },
   );
 

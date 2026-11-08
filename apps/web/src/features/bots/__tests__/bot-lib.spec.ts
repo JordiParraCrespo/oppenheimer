@@ -17,6 +17,7 @@ import {
   botSections,
   firstBot,
   groupOrder,
+  inGroupOrder,
   inOrder,
   positionAmong,
   sectionOrder,
@@ -93,7 +94,7 @@ describe('botSections', () => {
   it('draws the groups in the order a group drag put them, Ungrouped still last', () => {
     const sections = botSections(bots, groups, '');
     expect(groupOrder(sections)).toEqual(['engineering', 'research']);
-    const dropped = inOrder(sections, sectionOrder(sections), ['research', 'engineering']);
+    const dropped = inGroupOrder(sections, ['research', 'engineering']);
     expect(dropped.map((section) => section.id)).toEqual(['research', 'engineering', null]);
   });
 
@@ -220,8 +221,8 @@ describe('positionAmong', () => {
   it('places a drop next to the drawn bot it landed by, past the hidden ones between', () => {
     // a, [h hidden], b: dropping x between a and b puts it before b, after h.
     expect(positionAmong(['a', 'h', 'b'], ['a', 'x', 'b'], 'x')).toBe(2);
-    // Dropped last, after b, with a hidden bot after b: right after b.
-    expect(positionAmong(['a', 'b', 'h'], ['a', 'b', 'x'], 'x')).toBe(2);
+    // Dropped after every drawn bot: last, past the hidden ones too.
+    expect(positionAmong(['a', 'b', 'h'], ['a', 'b', 'x'], 'x')).toBe(3);
     // Moved within its own group, it is not counted among the others.
     expect(positionAmong(['x', 'a', 'h', 'b'], ['a', 'b', 'x'], 'x')).toBe(3);
     expect(positionAmong([], ['x'], 'x')).toBe(0);
