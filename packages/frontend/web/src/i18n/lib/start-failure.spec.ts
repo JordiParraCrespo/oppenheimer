@@ -49,3 +49,25 @@ describe('failureReason', () => {
     ).toBeNull();
   });
 });
+
+describe('failureReason’s detail', () => {
+  const readableDetail = (detail: string) =>
+    failureReason({ code: null, detail }, () => undefined, 'f')?.detail;
+
+  it('reads a CLI refusal as its words, one line per line, without the terminal’s escapes', () => {
+    // What a runner before the fix sent for a host signed out of claude.ai:
+    // cursor saves, a character-set choice and the runner's ` · ` between lines.
+    expect(
+      readableDetail(
+        '\x1b7\x1b8Error:\x1b[1CCloud\x1b[1Csessions\x1b[1Cneed\x1b[1Ca\x1b[1Cclaude.ai\x1b[1Csign-in. · Run `claude auth login`, then try again. · \x1b(B\x1b7\x1b8\x1b(B\x1b7\x1b8',
+      ),
+    ).toBe(
+      'Error: Cloud sessions need a claude.ai sign-in.\nRun `claude auth login`, then try again.',
+    );
+  });
+
+  it('keeps a plain detail as it is, and has nothing to show for escapes alone', () => {
+    expect(readableDetail('clone refused')).toBe('clone refused');
+    expect(readableDetail('\x1b(B\x1b7\x1b8\r\n')).toBeNull();
+  });
+});
