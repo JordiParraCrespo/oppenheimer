@@ -1236,3 +1236,8 @@ earlier note:
   review of every prompt, a cloud or review session is watched like any
   other (a failed cloud start had gone unreported), and the list names the
   tools by area: quoting them made it 62% of the system prompt.
+- `versions/mvp/25-bots.md` §2 (2026-10-15) bounded a turn by 20 round trips
+  and 4 minutes but failed it only past the time; one that used its steps
+  ended completed, with nothing said. On 2026-11-08 it fails with
+  `step_limit`, saying so, and goals and loops go on past it as past the
+  time limit (`TURN_LIMIT_FAILURES`).
