@@ -20,6 +20,7 @@ import { SHOWN_IMAGES_DATA_KEY } from '../domain/bot-shown-image.policy';
 import { SUBAGENT_DATA_KEY } from '../domain/bot-subagent.policy';
 import { startOf } from '../domain/bot-tool-text.policy';
 import {
+  BOT_TURN_MAX_STEPS,
   BOT_TURN_TIME_LIMIT_MS,
   type BotTurnContext,
   type BotTurnEntity,
@@ -148,8 +149,9 @@ export class TurnTranscript {
   /**
    * Ends the turn. What interrupted it from outside decides first: Stop
    * cancels it, the time limit fails it with a message saying so (what it
-   * wrote is kept). Otherwise it ends as the engine said; running out of
-   * steps still completes it.
+   * wrote is kept). Otherwise it ends as the engine said, and running out of
+   * steps fails it the way the time limit does: it used to complete, and the
+   * bot stopped mid-work with nothing said (2026-11-08).
    */
   endTurn(now: Date, interruption: TurnInterruption | null): void {
     const { reason, error, failure, ...usage } = this.outcome;
@@ -157,9 +159,10 @@ export class TurnTranscript {
       this.turn.end('failed', now, { error: TIME_LIMIT_ERROR, failure: 'time_limit', ...usage });
     } else if (interruption === 'stop') {
       this.turn.end('cancelled', now, usage);
+    } else if (reason === 'max_steps') {
+      this.turn.end('failed', now, { error: STEP_LIMIT_ERROR, failure: 'step_limit', ...usage });
     } else {
-      const status = reason === 'completed' || reason === 'max_steps' ? 'completed' : reason;
-      this.turn.end(status, now, { error, failure, ...usage });
+      this.turn.end(reason, now, { error, failure, ...usage });
     }
   }
 
@@ -265,6 +268,9 @@ export function storedMessageId(
 ): string {
   return write.kind === 'steer' ? write.messageId : write.message.id;
 }
+
+/** Why a turn that used all its steps failed, in words a person can act on. */
+export const STEP_LIMIT_ERROR = `Stopped after ${BOT_TURN_MAX_STEPS} steps, the limit for one turn. Ask for a smaller step, or say go on to continue.`;
 
 /** Why a turn the time limit stopped failed, in words a person can act on. */
 export const TIME_LIMIT_ERROR = `Stopped after ${BOT_TURN_TIME_LIMIT_MS / 60_000} minutes, the limit for one turn. Ask for a smaller step, or split the request.`;

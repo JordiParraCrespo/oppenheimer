@@ -10,7 +10,7 @@ import {
 import { BotGoalEntity, goalKeyPrefix } from './bot-goal.entity';
 import type { BotGoalVerdict } from './bot-goal-review.policy';
 import { BotMessageEntity } from './bot-message.entity';
-import { BOT_TURN_TIME_LIMIT_MS, BotTurnEntity } from './bot-turn.entity';
+import { BOT_TURN_MAX_STEPS, BOT_TURN_TIME_LIMIT_MS, BotTurnEntity } from './bot-turn.entity';
 
 /**
  * A goal keeps a bot going (`25-bots.md` §4.1; from Grok Bot's goals,
@@ -122,9 +122,11 @@ export function goalDecision(goal: BotGoalEntity, ended: EndedTurn): GoalDecisio
   return { kind: 'review' };
 }
 
-/** Whether the turn was stopped by the turn's time limit rather than failing. */
+/** Whether the turn was stopped by a limit of one turn (its time or its steps) rather than failing. */
 export function timedOut(ended: Pick<EndedTurn, 'status' | 'failure'>): boolean {
-  return ended.status === 'failed' && ended.failure === 'time_limit';
+  return (
+    ended.status === 'failed' && (ended.failure === 'time_limit' || ended.failure === 'step_limit')
+  );
 }
 
 /**
@@ -177,7 +179,7 @@ export function goalContinuationText(
   return [
     `Continue toward your goal (continuation ${step} of ${goal.limit}): ${goal.objective}`,
     lastTimedOut
-      ? `Your last turn was stopped at the ${BOT_TURN_TIME_LIMIT_MS / 60_000}-minute limit for one turn; what it did is kept. Take a smaller step this turn and report before the limit.`
+      ? `Your last turn was stopped at a limit for one turn (${BOT_TURN_TIME_LIMIT_MS / 60_000} minutes or ${BOT_TURN_MAX_STEPS} steps); what it did is kept. Take a smaller step this turn and report before the limit.`
       : null,
     reason
       ? `A reviewer read your last turn and says it is not met yet: ${reason}`

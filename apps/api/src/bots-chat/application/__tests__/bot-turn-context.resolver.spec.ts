@@ -16,7 +16,11 @@ import type { BotApprovalEntity } from '../../domain/bot-approval.entity';
 import { BotConversationSummaryEntity } from '../../domain/bot-conversation-summary.entity';
 import { BotMessageEntity } from '../../domain/bot-message.entity';
 import { NO_PERMISSIONS } from '../../domain/bot-tool-permission.policy';
-import { type BotTurnContext, BotTurnEntity } from '../../domain/bot-turn.entity';
+import {
+  BOT_TURN_MAX_STEPS,
+  type BotTurnContext,
+  BotTurnEntity,
+} from '../../domain/bot-turn.entity';
 import type { OwnerHostsPort } from '../../infrastructure/owner-hosts.port';
 import type { BotApprovalRequestFactory } from '../bot-approval-request.factory';
 import { BotApprovalStartedPolicy } from '../bot-approval-started.policy';
@@ -27,7 +31,7 @@ import type { BotPermissionsResolver } from '../bot-permissions.resolver';
 import type { BotRuleReviewerFactory } from '../bot-rule-reviewer.factory';
 import type { BotSubagentRunnerFactory } from '../bot-subagent-runner.factory';
 import type { BotToolboxFactory } from '../bot-toolbox.factory';
-import { BOT_TURN_MAX_STEPS, BotTurnContextResolver } from '../bot-turn-context.resolver';
+import { BotTurnContextResolver } from '../bot-turn-context.resolver';
 import type { BotTurnOpeningResolver } from '../bot-turn-opening.resolver';
 
 /**

@@ -36130,6 +36130,7 @@
               "refused",
               "unavailable",
               "time_limit",
+              "step_limit",
               "interrupted",
               "other",
               null
