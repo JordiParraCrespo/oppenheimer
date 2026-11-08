@@ -46,3 +46,30 @@ export function cloudChatEnvironment(apiUrl: string, key: string): string {
 export function cloudChatHost(apiUrl: string): string {
   return new URL(apiUrl).host;
 }
+
+/**
+ * The same setup as a prompt for a coding agent in a checkout of the
+ * repository, the way Add host offers one beside its command: it adds the
+ * hook and its settings, then tells the person the two things only they can
+ * do on claude.ai. Written for the agent, so in English, like the pairing
+ * prompt the API hands out. The key is never in it: a prompt lands in the
+ * agent's transcript, and the key is the person's to paste into claude.ai.
+ */
+export function cloudChatAgentPrompt(hookUrl: string, apiUrl: string): string {
+  return [
+    "Turn on Oppenheimer's chat for this repository's Claude Code cloud sessions.",
+    '',
+    `1. Download ${hookUrl} and save it as ${CLOUD_CHAT_HOOK_PATH}.`,
+    '2. Add these hooks to .claude/settings.json, keeping every setting and hook already there:',
+    '',
+    cloudChatSettings(),
+    '',
+    '3. Commit both files on a new branch and open a pull request.',
+    '',
+    "Then tell me to do this in claude.ai, which you can't: open the cloud environment's settings, add these environment variables, with the key Oppenheimer showed me in place of <key>:",
+    '',
+    cloudChatEnvironment(apiUrl, '<key>'),
+    '',
+    `and allow ${cloudChatHost(apiUrl)} in its network access.`,
+  ].join('\n');
+}

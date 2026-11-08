@@ -1,32 +1,37 @@
-import { Button, CodeBlock } from '@oppenheimer/design-system-web';
-import { Download } from '@oppenheimer/design-system-web/icons';
+import {
+  Button,
+  CodeBlock,
+  SegmentedControl,
+  SegmentedControlItem,
+} from '@oppenheimer/design-system-web';
 import { useCreateCloudChatKey } from '@oppenheimer/frontend-consumer/react';
 import { ErrorAlert } from '@oppenheimer/frontend-web';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import {
-  CLOUD_CHAT_HOOK_PATH,
-  cloudChatApiUrl,
-  cloudChatEnvironment,
-  cloudChatHookUrl,
-  cloudChatHost,
-  cloudChatSettings,
-} from '../lib/cloud-chat-setup';
+import { CloudChatAgentPrompt } from '../components/cloud-chat-agent-prompt';
+import { CloudChatSteps } from '../components/cloud-chat-steps';
+import { cloudChatApiUrl, cloudChatHookUrl } from '../lib/cloud-chat-setup';
+
+/** Who follows the setup: the person, step by step, or a coding agent they hand it to. */
+type SetupReader = 'you' | 'agent';
 
 /**
- * How to turn on a Claude Code cloud session's chat: a key for the
- * workspace, the hook and its settings for the repository, and the cloud
- * environment's variables and host (`product/next-steps/cloud-agents.md`,
- * "The chat of a cloud session"). Shown on a cloud session that has sent no
- * line yet. The key's secret is in the mutation's result alone, so it is
- * gone once the pane is.
+ * How to turn on a Claude Code cloud session's chat
+ * (`product/next-steps/cloud-agents.md`, "The chat of a cloud session"): a
+ * key for the workspace, then the rest either as steps to follow or as a
+ * prompt for a coding agent, the two ways Add host offers its install. Shown
+ * on a cloud session that has sent no line yet. The key's secret is in the
+ * mutation's result alone, so it is gone once the pane is.
  */
 export function SessionCloudChatSetup({ organizationId }: { organizationId: string }) {
   const { t } = useTranslation();
   const createKey = useCreateCloudChatKey();
+  // Which way the rest is read; the lowest component that reads it.
+  const [reader, setReader] = useState<SetupReader>('you');
   const origin = window.location.origin;
   const apiUrl = cloudChatApiUrl(import.meta.env.VITE_API_URL, origin);
+  const hookUrl = cloudChatHookUrl(origin);
   const key = createKey.data;
-  const copy = { copyLabel: t('common.copy'), copiedLabel: t('common.copied') };
 
   return (
     <section className="mt-10 max-w-160 border-border-subtle border-t pt-6.5">
@@ -49,7 +54,8 @@ export function SessionCloudChatSetup({ organizationId }: { organizationId: stri
           className="mt-3"
           title={t('sessions.cloudChat.setup.keyLabel')}
           code={key}
-          {...copy}
+          copyLabel={t('common.copy')}
+          copiedLabel={t('common.copied')}
         />
       ) : (
         <Button
@@ -62,39 +68,25 @@ export function SessionCloudChatSetup({ organizationId }: { organizationId: stri
         </Button>
       )}
 
-      <h3 className="mt-6.5 font-semibold text-fg">{t('sessions.cloudChat.setup.hookTitle')}</h3>
-      <p className="mt-1 text-sm text-fg-muted">{t('sessions.cloudChat.setup.hookBody')}</p>
-      <Button
-        className="mt-3"
-        variant="secondary"
-        render={
-          <a href={cloudChatHookUrl(origin)} download={CLOUD_CHAT_HOOK_PATH.split('/').pop()} />
-        }
+      <SegmentedControl
+        className="mt-6.5"
+        size="md"
+        value={reader}
+        onValueChange={(next) => setReader(next === 'agent' ? 'agent' : 'you')}
+        aria-label={t('sessions.cloudChat.setup.readerLabel')}
       >
-        <Download />
-        {t('sessions.cloudChat.setup.downloadHook')}
-      </Button>
-      <CodeBlock
-        className="mt-3"
-        title={t('sessions.cloudChat.setup.settingsLabel')}
-        code={cloudChatSettings()}
-        {...copy}
-      />
-
-      <h3 className="mt-6.5 font-semibold text-fg">{t('sessions.cloudChat.setup.envTitle')}</h3>
-      <p className="mt-1 text-sm text-fg-muted">{t('sessions.cloudChat.setup.envBody')}</p>
-      <CodeBlock
-        className="mt-3"
-        title={t('sessions.cloudChat.setup.envLabel')}
-        code={cloudChatEnvironment(apiUrl, key ?? t('sessions.cloudChat.setup.keyPlaceholder'))}
-        {...copy}
-      />
-      <CodeBlock
-        className="mt-3"
-        title={t('sessions.cloudChat.setup.hostLabel')}
-        code={cloudChatHost(apiUrl)}
-        {...copy}
-      />
+        <SegmentedControlItem value="you">
+          {t('sessions.cloudChat.setup.readerYou')}
+        </SegmentedControlItem>
+        <SegmentedControlItem value="agent">
+          {t('sessions.cloudChat.setup.readerAgent')}
+        </SegmentedControlItem>
+      </SegmentedControl>
+      {reader === 'agent' ? (
+        <CloudChatAgentPrompt hookUrl={hookUrl} apiUrl={apiUrl} />
+      ) : (
+        <CloudChatSteps hookUrl={hookUrl} apiUrl={apiUrl} cloudKey={key} />
+      )}
     </section>
   );
 }

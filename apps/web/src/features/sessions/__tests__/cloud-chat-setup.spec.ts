@@ -4,6 +4,7 @@ import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
   CLOUD_CHAT_HOOK_PATH,
+  cloudChatAgentPrompt,
   cloudChatApiUrl,
   cloudChatEnvironment,
   cloudChatHost,
@@ -35,5 +36,20 @@ describe('the cloud chat setup the panel hands out', () => {
     );
     expect(cloudChatHost(api)).toBe('app.example.com');
     expect(cloudChatEnvironment(api, 'opp_key')).toContain('OPPENHEIMER_CLOUD_KEY=opp_key');
+  });
+
+  it('hands an agent the whole setup but never the key', () => {
+    const prompt = cloudChatAgentPrompt(
+      'https://app.example.com/cloud-chat-hook.mjs',
+      'https://app.example.com',
+    );
+    expect(prompt).toContain(`save it as ${CLOUD_CHAT_HOOK_PATH}`);
+    expect(prompt).toContain('https://app.example.com/cloud-chat-hook.mjs');
+    expect(prompt).toContain(`node ${CLOUD_CHAT_HOOK_PATH} stop`);
+    expect(prompt).toContain('allow app.example.com');
+    // Breaks if the 90-day key is put in the prompt, where it would land in
+    // the agent's transcript: the person pastes it into claude.ai themselves.
+    expect(prompt).toContain('OPPENHEIMER_CLOUD_KEY=<key>');
+    expect(prompt).not.toMatch(/oppenheimer_pat_/);
   });
 });

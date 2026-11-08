@@ -762,7 +762,13 @@
       "envLabel": "Environment variables",
       "hostLabel": "Allowed host",
       "keyPlaceholder": "<your key>",
-      "keyFailed": "The key couldn’t be created. Try again."
+      "keyFailed": "The key couldn’t be created. Try again.",
+      "readerLabel": "How to set it up",
+      "readerYou": "Do it yourself",
+      "readerAgent": "Ask an agent",
+      "agentTitle": "2. Ask a coding agent",
+      "agentBody": "Paste this into Claude Code, or another coding agent, in a checkout of the repository. It adds the hook and its settings, then tells you what to set in claude.ai. Your key isn’t in the prompt: you paste it into claude.ai yourself.",
+      "agentLabel": "Prompt for your agent"
     }
   }
 }

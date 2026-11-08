@@ -1447,7 +1447,13 @@
         "envLabel": "Variables de entorno",
         "hostLabel": "Host permitido",
         "keyPlaceholder": "<tu clave>",
-        "keyFailed": "No se pudo crear la clave. Vuelve a intentarlo."
+        "keyFailed": "No se pudo crear la clave. Vuelve a intentarlo.",
+        "readerLabel": "Cómo configurarlo",
+        "readerYou": "Hazlo tú",
+        "readerAgent": "Pídeselo a un agente",
+        "agentTitle": "2. Pídeselo a un agente de código",
+        "agentBody": "Pega esto en Claude Code, u otro agente de código, en una copia del repositorio. Añade el hook y su configuración, y luego te dice qué configurar en claude.ai. Tu clave no va en el prompt: la pegas tú en claude.ai.",
+        "agentLabel": "Prompt para tu agente"
       }
     }
   },
