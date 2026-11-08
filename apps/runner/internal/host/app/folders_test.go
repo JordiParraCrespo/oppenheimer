@@ -140,3 +140,67 @@ func TestListFoldersFailsWithTheProtocolsCodes(t *testing.T) {
 		})
 	}
 }
+
+// The picker's search finds a folder by any part of its name, a few levels
+// down, best match first; it finds a repository but never what is inside it,
+// and it neither names nor walks hidden directories or dependency trees.
+func TestFindFoldersFindsByNameAndStopsAtRepositories(t *testing.T) {
+	home := t.TempDir()
+	mkdir(t, filepath.Join(home, "code", "acme", "my-billing-ui"))
+	write(t, filepath.Join(home, "code", "acme", "billing", ".git", "HEAD"), "ref: refs/heads/main\n")
+	mkdir(t, filepath.Join(home, "code", "acme", "billing", "packages", "billing-core"))
+	mkdir(t, filepath.Join(home, "Billing"))
+	mkdir(t, filepath.Join(home, ".cache", "billing"))
+	mkdir(t, filepath.Join(home, "app", "node_modules", "billing"))
+	mkdir(t, filepath.Join(home, "a", "b", "c", "d", "billing"))
+	mkdir(t, filepath.Join(home, "notes"))
+
+	search, err := lister(home, folders.Disk{}).FindFolders("", "  BILL ")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	var got []string
+	for _, entry := range search.Entries {
+		rel, _ := filepath.Rel(home, entry.Path)
+		got = append(got, rel+"@"+entry.Branch)
+	}
+	want := "Billing@ code/acme/billing@main code/acme/my-billing-ui@"
+	if strings.Join(got, " ") != want {
+		t.Fatalf("found %v, want %s", got, want)
+	}
+	if search.Path != home || search.Home != home || search.Truncated {
+		t.Fatalf("search = path %q home %q truncated %v", search.Path, search.Home, search.Truncated)
+	}
+}
+
+// More matches than an answer carries are cut to the best, and the answer
+// says so, so the picker can ask for a longer name.
+func TestFindFoldersCapsTheResultsAndSaysSo(t *testing.T) {
+	home := t.TempDir()
+	for i := 0; i < domain.MaxFoundFolder+5; i++ {
+		mkdir(t, filepath.Join(home, fmt.Sprintf("app%03d", i)))
+	}
+
+	search, err := lister(home, folders.Disk{}).FindFolders("", "app")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(search.Entries) != domain.MaxFoundFolder || !search.Truncated {
+		t.Fatalf("%d entries, truncated %v", len(search.Entries), search.Truncated)
+	}
+}
+
+// Where a search starts fails the way a listing does; below it, a folder that
+// cannot be read is passed over rather than failing the search.
+func TestFindFoldersFailsOnlyOnItsStart(t *testing.T) {
+	dir := t.TempDir()
+	_, err := lister(dir, folders.Disk{}).FindFolders(filepath.Join(dir, "missing"), "x")
+	var prob *problem.Error
+	if !errors.As(err, &prob) || prob.Code != domain.ErrFolderNotFound.Code {
+		t.Fatalf("err = %v, want FS_001", err)
+	}
+	if _, err := lister(dir, unreadable{}).FindFolders(dir, "x"); !errors.As(err, &prob) || prob.Code != domain.ErrFolderUnreadable.Code {
+		t.Fatalf("err = %v, want FS_003", err)
+	}
+}

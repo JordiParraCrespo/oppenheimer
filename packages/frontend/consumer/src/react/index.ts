@@ -154,6 +154,7 @@ export {
 export { type HostPairingFlow, useHostPairing } from './hosts.pairing';
 export {
   useHostCodexEnvironments,
+  useHostFolderSearch,
   useHostFolders,
   useHostPresence,
   useHosts,
