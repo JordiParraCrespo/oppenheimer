@@ -8,7 +8,8 @@ import { ModelProviders } from '../sections/model-providers';
  * can only answer BOTS_011; a failed Remove said only in a toast that
  * fades, rather than inline until dismissed; Make default offered on a
  * provider with no key, which the API refuses with BOTS_023; or ChatGPT's
- * row offering a key (which the API refuses, BOTS_017) instead of its sign-in.
+ * row offering a key (which the API refuses, BOTS_017) instead of its sign-in;
+ * or a provider with no key listed among the connected ones.
  */
 
 vi.mock('react-i18next', () => ({
@@ -106,7 +107,7 @@ describe('ModelProviders', () => {
 
   it('says Default on the provider new bots start on and offers Make default only on another with a key', () => {
     render(<ModelProviders />);
-    const [anthropic, glm, openai] = screen.getAllByTestId('model-provider');
+    const [anthropic, openai, glm] = screen.getAllByTestId('model-provider');
     expect(anthropic.textContent).toContain('settings.modelProviders.default');
     expect(glm.textContent).not.toContain('settings.modelProviders.makeDefault');
     const makeDefault = screen.getByRole('button', {
@@ -115,6 +116,23 @@ describe('ModelProviders', () => {
     expect(openai.contains(makeDefault)).toBe(true);
     fireEvent.click(makeDefault);
     expect(state.makeDefault).toHaveBeenCalledWith('openai');
+  });
+
+  it('lists the providers with a key or a sign-in apart from those without', () => {
+    render(<ModelProviders />);
+    const names = (id: string) =>
+      Array.from(
+        screen.getByTestId(`model-providers-${id}`).querySelectorAll('[data-testid="model-provider"]'),
+        (row) => row.textContent,
+      );
+    expect(names('connected')).toEqual([
+      expect.stringContaining('Anthropic'),
+      expect.stringContaining('OpenAI'),
+    ]);
+    expect(names('notConnectedGroup')).toEqual([
+      expect.stringContaining('GLM'),
+      expect.stringContaining('ChatGPT'),
+    ]);
   });
 
   it('disables them, the warning as their reason, when the server cannot seal keys', () => {

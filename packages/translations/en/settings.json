@@ -143,6 +143,8 @@
     "makeDefault": "Make default",
     "makeDefaultLabel": "Start new bots on {{provider}}",
     "makeDefaultFailed": "Couldn’t change the default provider.",
+    "connected": "Connected",
+    "notConnectedGroup": "Not connected",
     "providers": {
       "anthropic": "Claude models, through Anthropic’s API.",
       "glm": "GLM models, through z.ai.",

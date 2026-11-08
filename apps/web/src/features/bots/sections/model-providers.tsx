@@ -1,4 +1,4 @@
-import { SettingsGroup, SettingsListRow } from '@oppenheimer/design-system-web';
+import { SettingsGroup, SettingsHeading, SettingsListRow } from '@oppenheimer/design-system-web';
 import {
   useRemoveModelProviderKey,
   useSetDefaultModelProvider,
@@ -10,13 +10,18 @@ import { BOT_PROVIDER_CATALOG, type BotProvider } from '@oppenheimer/shared/sche
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ModelProviderActions } from '../components/model-provider-actions';
+import { ModelProviderName } from '../components/model-provider-name';
+import { ModelProviderStatus } from '../components/model-provider-status';
 import { ChatgptLoginDialog } from '../dialogs/chatgpt-login';
 import { ModelProviderKeyDialog } from '../dialogs/model-provider-key';
 
 /**
- * The providers, one row each: what it serves, whether the workspace has a
- * key (its last four characters), and Add key or Replace and Remove. The one
- * new bots start on says Default; another with a key offers Make default. The
+ * The providers, in two cards: Connected (a key or a sign-in) above, Not
+ * connected below, each headed by how many it holds and in catalog order
+ * within; a card with none is left out. One row each: the provider's mark and
+ * name, what it serves, the key's last four characters behind a green check,
+ * and Add key or Replace and Remove. The one new bots start on carries a
+ * Default badge; another with a key offers Make default. The
  * key is typed in a dialog and never comes back. ChatGPT takes no key: its row
  * signs in to a ChatGPT subscription (Connect ChatGPT, Sign in again,
  * Disconnect), and says which account by its last characters. Read under
@@ -31,6 +36,10 @@ export function ModelProviders() {
   const [editing, setEditing] = useState<BotProvider | null>(null);
   const remove = useRemoveModelProviderKey();
   const makeDefault = useSetDefaultModelProvider();
+  const groups = [
+    { id: 'connected', rows: providers.filter((row) => row.configured) },
+    { id: 'notConnectedGroup', rows: providers.filter((row) => !row.configured) },
+  ].filter((group) => group.rows.length > 0);
   const unavailableReason =
     deployment !== undefined && !deployment.bot_providers
       ? t('settings.modelProviders.unavailable')
@@ -49,51 +58,58 @@ export function ModelProviders() {
         fallback={t('settings.modelProviders.makeDefaultFailed')}
         onDismiss={() => makeDefault.reset()}
       />
-      <SettingsGroup>
-        {providers.map((row) => {
-          const { label, auth } = BOT_PROVIDER_CATALOG[row.provider];
-          const signIn = auth === 'sign_in';
-          return (
-            <SettingsListRow
-              key={row.provider}
-              align="center"
-              data-testid="model-provider"
-              meta={t(`settings.modelProviders.providers.${row.provider}`)}
-              kind={
-                row.configured && row.keyHint
-                  ? t(
-                      signIn
-                        ? 'settings.modelProviders.signedIn'
-                        : 'settings.modelProviders.keyEnding',
-                      { hint: row.keyHint },
+      {groups.map(({ id, rows }) => (
+        <section key={id} data-testid={`model-providers-${id}`} className="flex flex-col gap-2.5">
+          <SettingsHeading>
+            {t(`settings.modelProviders.${id}`)}
+            <span className="ml-2 font-normal text-fg-subtle">{rows.length}</span>
+          </SettingsHeading>
+          <SettingsGroup>
+            {rows.map((row) => {
+              const { label, auth } = BOT_PROVIDER_CATALOG[row.provider];
+              const signIn = auth === 'sign_in';
+              return (
+                <SettingsListRow
+                  key={row.provider}
+                  align="center"
+                  data-testid="model-provider"
+                  meta={t(`settings.modelProviders.providers.${row.provider}`)}
+                  kind={
+                    row.configured && row.keyHint ? (
+                      <ModelProviderStatus signIn={signIn} hint={row.keyHint} />
+                    ) : (
+                      t(
+                        signIn
+                          ? 'settings.modelProviders.notConnected'
+                          : 'settings.modelProviders.noKey',
+                      )
                     )
-                  : t(
-                      signIn
-                        ? 'settings.modelProviders.notConnected'
-                        : 'settings.modelProviders.noKey',
-                    )
-              }
-              actions={
-                <ModelProviderActions
-                  label={label}
-                  signIn={signIn}
-                  configured={row.configured}
-                  isDefault={row.isDefault}
-                  unavailableReason={unavailableReason}
-                  makingDefault={makeDefault.isPending && makeDefault.variables === row.provider}
-                  defaultBusy={makeDefault.isPending}
-                  removing={remove.isPending && remove.variables === row.provider}
-                  onMakeDefault={() => makeDefault.mutate(row.provider)}
-                  onRemove={() => remove.mutate(row.provider)}
-                  onEdit={() => setEditing(row.provider)}
-                />
-              }
-            >
-              {label}
-            </SettingsListRow>
-          );
-        })}
-      </SettingsGroup>
+                  }
+                  actions={
+                    <ModelProviderActions
+                      label={label}
+                      signIn={signIn}
+                      configured={row.configured}
+                      isDefault={row.isDefault}
+                      unavailableReason={unavailableReason}
+                      makingDefault={
+                        makeDefault.isPending && makeDefault.variables === row.provider
+                      }
+                      defaultBusy={makeDefault.isPending}
+                      removing={remove.isPending && remove.variables === row.provider}
+                      onMakeDefault={() => makeDefault.mutate(row.provider)}
+                      onRemove={() => remove.mutate(row.provider)}
+                      onEdit={() => setEditing(row.provider)}
+                    />
+                  }
+                >
+                  <ModelProviderName provider={row.provider} isDefault={row.isDefault} />
+                </SettingsListRow>
+              );
+            })}
+          </SettingsGroup>
+        </section>
+      ))}
       {editing === 'chatgpt' ? (
         <ChatgptLoginDialog onClose={() => setEditing(null)} />
       ) : editing ? (
