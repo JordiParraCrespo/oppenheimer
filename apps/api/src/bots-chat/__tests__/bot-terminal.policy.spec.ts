@@ -26,6 +26,17 @@ describe('describeTerminal', () => {
   });
 });
 
+// A failure after typing (the shell exited on `exit`, so the capture
+// failed) must not tell the bot nothing went in, or it types it again.
+it('does not claim nothing was typed when the failure came after typing', () => {
+  const text = describeTerminal(
+    { kind: 'failed', code: 'TMUX_001', detail: "can't find pane" },
+    's-1',
+  );
+  expect(text).not.toContain('Nothing was typed');
+  expect(text).toContain('read the terminal before typing again');
+});
+
 describe('terminalTypeSummary', () => {
   it('shows what will be typed and pressed', () => {
     expect(terminalTypeSummary('s-1', 'ssh build-02', ['Enter'])).toBe(

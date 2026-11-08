@@ -156,6 +156,15 @@ describe('composeBotSystemPrompt', () => {
       expect(prompt).toContain('# Driving a terminal');
       expect(prompt).toContain('Never type a password');
       expect(prompt).not.toContain('you do not run a terminal');
+      // A terminal bot is never told it does not see one, nor sent to a
+      // run_command it does not have (tools are turned off one by one).
+      expect(prompt).not.toContain('never see the live terminal');
+      expect(prompt).not.toContain('Prefer `run_command`');
+      const readsOnly = composeBotSystemPrompt({
+        ...sessions,
+        tools: [...sessions.tools, { name: 'read_terminal', description: 'Reads a terminal.' }],
+      });
+      expect(readsOnly).toContain('# Driving a terminal');
       expect(composeBotSystemPrompt(sessions)).not.toContain('# Driving a terminal');
     });
   });

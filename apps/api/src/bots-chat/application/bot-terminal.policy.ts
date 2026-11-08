@@ -10,6 +10,12 @@ const REFUSALS: Readonly<Record<string, string>> = {
   INVALID_PATTERN: 'wait_for is not a valid regular expression',
 };
 
+/**
+ * The refusals the runner makes before it types anything; any other failure
+ * may come after the text went in (the shell exited, the capture failed).
+ */
+const BEFORE_TYPING = new Set(Object.keys(REFUSALS));
+
 /** The Needs input card's line: "Type `ssh build-02` then Enter in terminal …". */
 export function terminalTypeSummary(
   sessionId: string,
@@ -44,7 +50,10 @@ export function describeTerminal(outcome: SessionTerminalOutcome, sessionId: str
       return 'The host did not answer in time; whether the keys were typed is unknown. Read the terminal before typing again.';
     case 'failed': {
       const meaning = REFUSALS[outcome.code];
-      return `Refused (${outcome.code}${meaning ? `: ${meaning}` : ''}): ${outcome.detail ?? 'no reason given'}. Nothing was typed.${outcome.code === 'EXEC_006' ? ' Tell the person; only they can change it, on the host, with `runner exec mode full`.' : ''}`;
+      const typed = BEFORE_TYPING.has(outcome.code)
+        ? ' Nothing was typed.'
+        : ' What you gave may already have been typed: read the terminal before typing again.';
+      return `Refused (${outcome.code}${meaning ? `: ${meaning}` : ''}): ${outcome.detail ?? 'no reason given'}.${typed}${outcome.code === 'EXEC_006' ? ' Tell the person; only they can change it, on the host, with `runner exec mode full`.' : ''}`;
     }
   }
 }

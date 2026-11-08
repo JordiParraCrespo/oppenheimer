@@ -318,9 +318,11 @@ func (s *Server) Windows(ctx context.Context, name string) ([]domain.Window, err
 }
 
 // SendKeys types into a window. `-l` sends the text literally, so a task
-// description containing tmux key names is not interpreted as key names.
+// description containing tmux key names is not interpreted as key names, and
+// `--` ends the flags, so text that starts with a dash (`-y`, `--force`) is
+// typed rather than read as one.
 func (s *Server) SendKeys(ctx context.Context, target, keys string) error {
-	_, err := s.command(ctx, "send-keys", "-t", target, "-l", keys)
+	_, err := s.command(ctx, "send-keys", "-t", target, "-l", "--", keys)
 	return err
 }
 
