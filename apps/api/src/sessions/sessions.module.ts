@@ -132,6 +132,8 @@ import { FindSessionsHttpController } from './queries/find-sessions/find-session
 import { FindSessionsQueryHandler } from './queries/find-sessions/find-sessions.query-handler';
 import { FindSharedSessionHttpController } from './queries/find-shared-session/find-shared-session.http.controller';
 import { FindSharedSessionQueryHandler } from './queries/find-shared-session/find-shared-session.query-handler';
+import { SearchHostFoldersHttpController } from './queries/search-host-folders/search-host-folders.http.controller';
+import { SearchHostFoldersQueryHandler } from './queries/search-host-folders/search-host-folders.query-handler';
 import { SessionShareMapper } from './session-share.mapper';
 import { SessionTerminalWatchMapper } from './session-terminal-watch.mapper';
 import {
@@ -190,6 +192,7 @@ const httpControllers = [
   CloseSessionHttpController,
   // `hosts/:id/folders`: the folder picker, here because its recent folders are sessions.
   FindHostFoldersHttpController,
+  SearchHostFoldersHttpController,
   FindHostCodexEnvironmentsHttpController,
   FindSessionPortsHttpController,
   // `cloud-files/:token`: what a cloud session's agent downloads, with no credential.
@@ -238,6 +241,7 @@ const queryHandlers: Provider[] = [
   FindSessionShareQueryHandler,
   FindSharedSessionQueryHandler,
   FindHostFoldersQueryHandler,
+  SearchHostFoldersQueryHandler,
   FindHostCodexEnvironmentsQueryHandler,
   FindSessionPortsQueryHandler,
   FindSessionSharedPreviewQueryHandler,

@@ -45,6 +45,7 @@ const (
 	laneHostPreflight = "host:preflight"
 	laneRepoPrepare   = "repo:"
 	laneFsList        = "fs:list"
+	laneFsFind        = "fs:find"
 	lanePortList      = "port:list:"
 	laneCodexEnvs     = "codex:environments"
 )
@@ -315,7 +316,7 @@ func (h *linkHandler) Hello(ctx context.Context) (link.Hello, error) {
 func (h *linkHandler) capabilities() []string {
 	named := []string{
 		link.CapabilitySessionImage, link.CapabilitySessionCreateImages, link.CapabilitySessionFiles,
-		link.CapabilityRepositoryPrepare, link.CapabilitySessionFolder, link.CapabilityFsList,
+		link.CapabilityRepositoryPrepare, link.CapabilitySessionFolder, link.CapabilityFsList, link.CapabilityFsFind,
 		link.CapabilityAttachmentChat, link.CapabilityAttachmentChatOlder,
 		link.CapabilitySessionCloud, link.CapabilitySessionCloudCodex,
 		link.CapabilitySessionWatch, link.CapabilityCodexEnvironments, link.CapabilitySessionTeleport,
@@ -659,6 +660,13 @@ func (h *linkHandler) Message(_ context.Context, msg link.Message) {
 			// One lane per session, so two drives of one terminal type in
 			// the order they were sent and never into each other.
 			h.lanes.run(laneTerminal+m.SessionID, func() { h.driveTerminal(h.life, m) })
+		}
+	case link.TypeFsFind:
+		var m link.FsFind
+		if msg.Decode(&m) == nil {
+			// Its own lane, apart from listings: a search walks for up to a
+			// moment, and stepping through folders must not wait on it.
+			h.lanes.run(laneFsFind, func() { h.findFolders(m) })
 		}
 	case link.TypeSharedPreviewGet:
 		var m link.SharedPreviewGet

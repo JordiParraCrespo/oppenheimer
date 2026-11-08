@@ -284,6 +284,14 @@ runner does with it and point back.
   file is, never its path on the host nor its bytes. The control plane
   keeps the last 20 on the session for bots (`next-steps/agent-tools.md`
   §7).
+- `fs.find` and `fs.found` — the folder picker's search by name
+  (2026-11-08, `24-session-places.md` §4): the control plane sends a
+  `query` of two characters or more, and the runner walks under home and
+  answers with at most 50 absolute paths, each with its branch when it is
+  a repository, best first, and `truncated` when it stopped at its bounds
+  or found more; or `command.failed` with `fs.list`'s codes for where it
+  started. Sent only to a runner whose `hello` names `fs.find`, and waited
+  on like `fs.list`, for 5 seconds.
 - `shared.preview.get` and `shared.preview` — a bot showing a file a
   session's agent shared (2026-11-03): the control plane asks for the file
   by the session and the runner's id for it, and the runner answers with

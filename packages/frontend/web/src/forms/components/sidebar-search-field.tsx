@@ -16,6 +16,7 @@ export function SidebarSearchField({
   onChange,
   label,
   clearLabel,
+  className,
 }: {
   /** The settled search, when something outside the field owns it (a URL param). */
   value?: string;
@@ -24,6 +25,7 @@ export function SidebarSearchField({
   /** The placeholder and the accessible name. */
   label: string;
   clearLabel: string;
+  className?: string;
 }) {
   const { draft, type } = useSearchDraft({ value, onChange });
 
@@ -37,6 +39,7 @@ export function SidebarSearchField({
       placeholder={label}
       aria-label={label}
       clearLabel={clearLabel}
+      className={className}
     />
   );
 }

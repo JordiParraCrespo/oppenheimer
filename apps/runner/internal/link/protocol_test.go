@@ -366,7 +366,7 @@ func TestConstantsMatchTheSchema(t *testing.T) {
 	if !slices.Equal(constants.Capabilities, []string{
 		link.CapabilitySessionImage, link.CapabilitySessionCreateImages, link.CapabilitySessionFiles,
 		link.CapabilityRepositoryPrepare, link.CapabilityAttachmentDirect, link.CapabilityAttachmentDirectProof,
-		link.CapabilitySessionFolder, link.CapabilityFsList, link.CapabilityAttachmentChat,
+		link.CapabilitySessionFolder, link.CapabilityFsList, link.CapabilityFsFind, link.CapabilityAttachmentChat,
 		link.CapabilityAttachmentChatOlder,
 		link.CapabilityDeviceScreen,
 		link.CapabilityPortForward,
