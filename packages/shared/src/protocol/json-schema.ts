@@ -15,6 +15,7 @@ import {
   PROTOCOL_MAX_EVENT_PAYLOAD_BYTES,
   protocolMessageSchema,
   RUNNER_CAPABILITIES,
+  TERMINAL_SCREEN_MAX_BYTES,
 } from './messages.js';
 import { PROTOCOL_VERSION } from './version.js';
 
@@ -67,6 +68,7 @@ export function toProtocolJsonSchema(): Record<string, unknown> {
       chatEntryMaxBytes: CHAT_ENTRY_MAX_BYTES,
       chatBatchMaxEntries: CHAT_BATCH_MAX_ENTRIES,
       execOutputMaxBytes: HOST_EXEC_OUTPUT_MAX_BYTES,
+      terminalScreenMaxBytes: TERMINAL_SCREEN_MAX_BYTES,
     },
   };
 }
