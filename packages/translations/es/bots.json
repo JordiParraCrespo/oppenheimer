@@ -633,6 +633,26 @@
       "loadFailed": "No se pudieron cargar los permisos del bot.",
       "saveFailed": "No se pudo cambiar el permiso.",
       "tools": "Herramientas",
+      "search": "Buscar herramientas",
+      "noMatch": "Ninguna herramienta coincide.",
+      "views": {
+        "label": "Mostrar",
+        "all": "Todas",
+        "allow": "Permitir",
+        "ask": "Preguntar",
+        "off": "Desactivadas",
+        "changed": "Cambiadas por ti"
+      },
+      "summary": {
+        "tools_one": "{{count}} herramienta",
+        "tools_other": "{{count}} herramientas",
+        "ask_one": "{{count}} pregunta",
+        "ask_other": "{{count}} preguntan",
+        "off_one": "{{count}} desactivada",
+        "off_other": "{{count}} desactivadas",
+        "changed_one": "{{count}} cambiada por ti",
+        "changed_other": "{{count}} cambiadas por ti"
+      },
       "preset": {
         "auto": "Las herramientas que dejas en su valor por defecto siguen Aprobar por mí: todo lo que sale de Oppenheimer pregunta antes.",
         "full": "Las herramientas que dejas en su valor por defecto siguen Acceso total: se ejecutan sin preguntar."

@@ -1,7 +1,9 @@
 import { createFileRoute } from '@tanstack/react-router';
+import { botPermissionsSearchSchema } from '@/features/bots/lib/tool-filter';
 import { BotPermissionsScreen } from '@/features/bots/screens/bot-permissions';
 
 export const Route = createFileRoute('/_authenticated/bots_/$botId/settings/permissions')({
+  validateSearch: botPermissionsSearchSchema,
   component: BotPermissionsRoute,
 });
 
