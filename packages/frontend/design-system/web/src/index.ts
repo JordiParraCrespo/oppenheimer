@@ -1,4 +1,6 @@
 export { AccessList, AccessRow } from './components/access-list';
+export type { AgendaEntryData } from './components/agenda-calendar';
+export { AgendaCalendar, agendaSlot, agendaSlotId } from './components/agenda-calendar';
 export type { AgentId } from './components/agent-mark';
 export { AgentMark } from './components/agent-mark';
 export type {
@@ -584,6 +586,7 @@ export {
 export { Textarea } from './components/textarea';
 export type { TimeGridCell, TimeGridGroup } from './components/time-grid';
 export { TimeGrid } from './components/time-grid';
+export { TodoRow, TodoRowAdd, TodoRowSkeleton } from './components/todo-row';
 export {
   Tooltip,
   TooltipContent,

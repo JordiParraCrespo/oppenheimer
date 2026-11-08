@@ -174,11 +174,61 @@ new `provider` value. Stored events, sync tokens and a sync job come
 back only if something needs Google's events when nobody is looking: a
 reminder, a conflict check before an automation runs, or write-back.
 
+## 6. Day, Week and To do (2026-11-08)
+
+The 2026-11-08 `Tasks` frame adds Day and Week beside the month, and
+Day is where the calendar opens. Built on 2026-11-08 in the console only;
+the API is unchanged.
+
+- **The address**: `?view=day|week|month` (Day when absent), `?date=`
+  the day Day and Week are on (today when absent), `?month=` the month
+  as before. Day / Week / Month sit in the header as a segmented
+  control; previous and next step a day, a week or a month. The header
+  gains an eyebrow (Today · Week 45, Week 45, Weeks 44–49 over a month)
+  and counts only the view's days.
+- **The hours**: each day is a column from 07:00 to 22:00 under an All
+  day row (`AgendaCalendar` in the design system). A timed event runs
+  from its start to its end; a task due at a time stands an hour there,
+  and an automation run half an hour; whatever overlaps shares the
+  column. Today carries a line at the current minute. A day's head, and
+  a day's number on the month, opens that day.
+- **Moving**: a personal event dropped on a half hour starts there and
+  keeps its length (an all-day one becomes an hour), and dropped in All
+  day changes day only; a task dropped on a half hour is due then, and
+  in All day keeps its day with no time. Google's events and automation
+  runs still do not move. Clicking an empty half hour opens New event
+  there, half an hour long (`?at=`).
+
+**To do**, Plan's new sidebar view (`/plan/todo`, after Tasks, with the
+open tasks due by today as its count), lists one day's tasks as cards:
+those due that day (the timed ones first, by time), then the open ones
+overdue, oldest first, which **Include overdue** leaves out
+(`?overdue=off`). It narrows by project like the board (and remembers
+it the same way), ticks a task Done or back, opens it on the board, and
+adds a task due that day from the dashed row under the list.
+
+Two departures from the frame, both because the API has no field for
+them: a task gets no planned slot and length of its own (the frame
+keeps one per task in the browser) — its due time is its slot, and an
+hour its length; and To do's rows do not reorder by dragging (the
+frame keeps that order in the browser too). Both are open questions 4
+and 5.
+
 ## Open questions
 
 1. Which calendars: primary only (as written), or a picker in Settings
    (which adds `calendar.calendarlist.readonly`)?
 2. Should a task with a due **time** take a time slot on the calendar,
    or always sit in the day's top band as the frames draw it?
+   > Answered on 2026-11-08 (§6): on Day and Week it takes the slot at
+   > its due time, an hour long; the month keeps it in the day's list.
 3. Does a week view come before or after Google write-back? The frames'
    "n more" overflow on busy days (the 8-item Tuesday) argues for it.
+   > Answered on 2026-11-08 (§6): before. Day and Week are built; Google
+   > stays read-only.
+4. Should a task carry a planned slot and length apart from its due
+   date and time, as the 2026-11-08 frame plans one? That is a column
+   on `task` and a field on its schema; until then the due time is the
+   slot.
+5. Should To do's order be the reader's (dragged, per day), and kept
+   where: per device, as Plan's sidebar order is, or on the task?

@@ -1,5 +1,6 @@
 'use client';
 
+import { AgendaCalendar, type AgendaEntryData, agendaSlot } from '@oppenheimer/design-system-web/agenda-calendar';
 import { Button } from '@oppenheimer/design-system-web/button';
 import { CalendarLayerItem } from '@oppenheimer/design-system-web/calendar-source';
 import { DatePicker } from '@oppenheimer/design-system-web/date-picker';
@@ -17,6 +18,7 @@ import {
   PageHeaderSep,
   PageHeaderStat,
 } from '@oppenheimer/design-system-web/page-header';
+import { TodoRow, TodoRowAdd, TodoRowSkeleton } from '@oppenheimer/design-system-web/todo-row';
 import * as React from 'react';
 
 import { TODAY } from './plan-fixtures';
@@ -118,6 +120,110 @@ export function MonthCalendarDemo() {
           <MonthCalendar year={2026} month={9} today={TODAY} entries={shown} />
         </DragProvider>
       </div>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ day and week */
+
+const WEEK = ['2026-10-05', '2026-10-06', '2026-10-07', '2026-10-08', '2026-10-09', '2026-10-10', '2026-10-11'];
+
+const AGENDA: AgendaEntryData[] = [
+  { id: 'a1', date: '2026-10-07', kind: 'event', title: 'Inbox and planning', time: '08:45', end: '09:30', busy: true },
+  { id: 'a2', date: '2026-10-07', kind: 'automation', title: 'Dependency audit', time: '09:00', end: '09:30', draggable: false },
+  { id: 'a3', date: '2026-10-07', kind: 'task', title: 'Address review comments on PR #121', time: '10:00', end: '11:00' },
+  { id: 'a4', date: '2026-10-07', kind: 'event', title: 'Hiring sync', time: '10:00', end: '10:45', busy: true },
+  { id: 'a5', date: '2026-10-07', kind: 'event', title: 'Lunch with Pau', time: '12:30', end: '13:30' },
+  { id: 'a6', date: '2026-10-07', kind: 'task', title: 'Rotate flama-ai API keys', time: '15:00', end: '16:00', done: true },
+  { id: 'a7', date: '2026-10-07', kind: 'task', title: 'Draft the beta waitlist email' },
+  { id: 'a8', date: '2026-10-05', kind: 'event', title: 'Design review', time: '15:00', end: '16:00', busy: true },
+  { id: 'a9', date: '2026-10-06', kind: 'event', title: '1:1 with Adri', time: '12:00', end: '12:30', busy: true },
+  { id: 'a10', date: '2026-10-09', kind: 'automation', title: 'Release notes draft', time: '16:00', end: '16:30', draggable: false },
+  { id: 'a11', date: '2026-10-08', kind: 'event', title: 'Flight to Lisbon', allDay: true, busy: true },
+];
+
+/**
+ * Plan's Day and Week: drag an event or a task onto another hour or into All
+ * day; the drop's id is `<date>T<HH:MM>` or the bare date, read back with
+ * `agendaSlot`. A day's head opens that day.
+ */
+export function AgendaCalendarDemo() {
+  const [entries, setEntries] = React.useState(AGENDA);
+  const [day, setDay] = React.useState<string | null>(null);
+  const byId = new Map(entries.map((e) => [e.id, e]));
+  const move = (id: string, target: string) => {
+    const { date, time } = agendaSlot(target);
+    setEntries((current) =>
+      current.map((e) => {
+        if (e.id !== id) return e;
+        if (!time) return { ...e, date, time: undefined, end: undefined, allDay: e.kind === 'event' };
+        const [h, m] = time.split(':').map(Number);
+        const end = `${String((h ?? 0) + 1).padStart(2, '0')}:${String(m ?? 0).padStart(2, '0')}`;
+        return { ...e, date, time, end, allDay: false };
+      }),
+    );
+  };
+  return (
+    <div className="flex w-full flex-col gap-4 rounded-xl bg-canvas p-6">
+      <div className="flex items-center gap-2">
+        <Button variant="secondary" size="sm" onClick={() => setDay(null)}>
+          Week
+        </Button>
+        <span className="text-sm text-fg-muted">{day ? `Day · ${day}` : 'Week of Oct 5'}</span>
+      </div>
+      <DragProvider
+        overlay={(active) => {
+          const entry = byId.get(active.id);
+          return entry ? <CalendarEntry entry={entry} lifted tabIndex={-1} /> : null;
+        }}
+        onDragEnd={({ active, over }) => {
+          if (over) move(active.id, over.id);
+        }}
+      >
+        <AgendaCalendar days={day ? [day] : WEEK} entries={entries} today={TODAY} now="11:20" onOpenDay={setDay} />
+      </DragProvider>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ to do */
+
+const TODOS = [
+  { id: 'd1', title: 'Address review comments on PR #121', detail: 'Wallet 2.0 · in progress', time: '10:00', tag: 'XRP Mobile', done: false },
+  { id: 'd2', title: 'Rotate flama-ai API keys', detail: 'overdue since Oct 3', tag: 'Client sites', done: false },
+  { id: 'd3', title: 'Draft the beta waitlist email', detail: 'Atlas public beta · due today', tag: 'Atlas', done: true },
+];
+
+/** Plan's To do: tick a task (the title opens it), add one under the list on Enter. */
+export function TodoListDemo() {
+  const [rows, setRows] = React.useState(TODOS);
+  const [draft, setDraft] = React.useState('');
+  return (
+    <div className="flex w-full max-w-2xl flex-col gap-2 rounded-xl bg-canvas p-6">
+      {rows.map((row) => (
+        <TodoRow
+          key={row.id}
+          title={row.title}
+          detail={row.detail}
+          time={row.time}
+          tag={row.tag}
+          done={row.done}
+          toggleLabel={row.done ? 'Mark not done' : 'Mark done'}
+          onToggle={() => setRows((current) => current.map((r) => (r.id === row.id ? { ...r, done: !r.done } : r)))}
+        />
+      ))}
+      <TodoRowAdd
+        aria-label="Add a task for this day"
+        placeholder="Add a task"
+        value={draft}
+        onChange={(event) => setDraft(event.target.value)}
+        onKeyDown={(event) => {
+          if (event.key !== 'Enter' || !draft.trim()) return;
+          setRows((current) => [...current, { id: `d${Date.now()}`, title: draft.trim(), detail: 'due today', tag: 'Atlas', done: false }]);
+          setDraft('');
+        }}
+      />
+      <TodoRowSkeleton />
     </div>
   );
 }

@@ -190,6 +190,8 @@ export const TOC: TocGroup[] = [
       { id: 'drag', label: 'Drag layer', icon: MoveIcon, components: ['drag'] },
       { id: 'taskboard', label: 'TaskBoard · MilestoneCard', icon: KanbanIcon, components: ['task-board', 'milestone-card'] },
       { id: 'calendar', label: 'MonthCalendar', icon: CalendarDaysIcon, components: ['month-calendar', 'calendar-source'] },
+      { id: 'agenda', label: 'AgendaCalendar', icon: CalendarDaysIcon, components: ['agenda-calendar'] },
+      { id: 'todo', label: 'TodoRow', icon: CircleCheckIcon, components: ['todo-row'] },
       { id: 'calendaraccounts', label: 'CalendarAccountList', icon: CalendarDaysIcon, components: [] },
       { id: 'milestones', label: 'MilestoneTimeline', icon: MilestoneIcon, components: ['milestone-timeline'] },
       { id: 'facetselect', label: 'FacetSelect', icon: ListFilterIcon, components: ['facet-select', 'search-list'] },

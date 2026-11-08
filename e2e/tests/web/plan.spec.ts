@@ -301,3 +301,60 @@ test('the calendar: a Google meeting joins from its dialog, an event without one
   await expect(focus.getByRole('link', { name: 'Join meeting' })).toHaveCount(0);
   await owner.api.dispose();
 });
+
+test('To do: a task added to today, ticked done, and the overdue switch', async ({ page }) => {
+  const owner = await provisionedUser('plantodo');
+  await signInAs(page, owner.user);
+  await page.goto('/plan');
+  await planNav(page, 'To do').click();
+  await expect(page).toHaveURL(/\/plan\/todo/);
+  await expect(page.getByText('Nothing for this day yet. Add one below.')).toBeVisible();
+
+  const add = page.getByRole('textbox', { name: 'Add a task for this day' });
+  await add.fill('Pay the hosting invoice');
+  await add.press('Enter');
+  const row = page.locator('[data-slot="todo-row"]', { hasText: 'Pay the hosting invoice' });
+  await expect(row).toContainText('due today');
+  await expect(add).toHaveValue('');
+
+  // Ticking does not open the task; the title does, on the board.
+  await row.getByRole('checkbox', { name: 'Mark done' }).click();
+  await expect(row.getByRole('checkbox', { name: 'Mark not done' })).toBeChecked();
+  await expect(page).toHaveURL(/\/plan\/todo/);
+
+  // The next day holds nothing, and Include overdue is a switch in the address.
+  await page.getByRole('button', { name: 'Next day' }).click();
+  await expect(page).toHaveURL(/date=/);
+  await expect(row).toHaveCount(0);
+  await page.getByRole('button', { name: 'Include overdue' }).click();
+  await expect(page).toHaveURL(/overdue=off/);
+  await page.getByRole('button', { name: 'Today', exact: true }).click();
+  await expect(row).toBeVisible();
+  await row.getByRole('button', { name: /Pay the hosting invoice/ }).click();
+  await expect(page.getByRole('dialog', { name: 'Edit task' })).toBeVisible();
+  await owner.api.dispose();
+});
+
+test('the calendar opens on today, and switches to the week and the month', async ({ page }) => {
+  const owner = await provisionedUser('planviews');
+  await signInAs(page, owner.user);
+  await page.goto('/plan/calendar');
+  const views = page.getByRole('group', { name: 'Calendar view' });
+  await expect(views.getByRole('button', { name: 'Day' })).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.getByText(/^Today · Week \d+$/)).toBeVisible();
+  await expect(page.getByText('All day', { exact: true })).toBeVisible();
+
+  await views.getByRole('button', { name: 'Week' }).click();
+  await expect(page).toHaveURL(/view=week/);
+  await expect(page.locator('[data-slot="agenda-day"]')).toHaveCount(7);
+
+  await views.getByRole('button', { name: 'Month' }).click();
+  await expect(page).toHaveURL(/view=month/);
+  await expect(page.locator('[data-slot="month-calendar"]')).toBeVisible();
+
+  // A day's number opens that day on the hours.
+  await page.locator('[data-slot="calendar-day"][data-today] button[title]').first().click();
+  await expect(page).not.toHaveURL(/view=/);
+  await expect(page.locator('[data-slot="agenda-day"]')).toHaveCount(1);
+  await owner.api.dispose();
+});

@@ -55,7 +55,7 @@ import {
   DropZoneTerminalDemo,
   TerminalHostLinkDemo,
 } from '../components/host-link-demos';
-import { DatePickerDemo, MonthCalendarDemo } from '../components/calendar-demos';
+import { AgendaCalendarDemo, DatePickerDemo, MonthCalendarDemo, TodoListDemo } from '../components/calendar-demos';
 import { DiffDemo } from '../components/diff-demos';
 import { ChatSection } from '../components/chat-demos';
 import { EmployeesSection } from '../components/employee-demos';
@@ -1350,6 +1350,31 @@ const drag = useDraggable({ id, data: { type: 'task' } });    // drag.handleProp
         bare
       >
         <MonthCalendarDemo />
+      </Spec>
+
+      <Spec
+        id="agenda"
+        title="AgendaCalendar"
+        meta="agenda-calendar.tsx"
+        desc="Plan's Day and Week: a column per day headed by its weekday and number (today filled, the head opens that day), an All day row, then 07:00 to 22:00 ruled every hour. A timed entry is a block from its time to its end; entries that overlap share the column side by side. A busy event sits on the control wash, a task on the card with a border and its check, an automation run and a free event on the card, muted; a done task fades and is struck. Today's column carries a line at now. Drag an event or a task onto another half hour or into All day: each half hour is a target whose id is <date>T<HH:MM>, the All day cell the bare date, and agendaSlot reads one back. Clicking an empty half hour is onAddSlot."
+        code={`<DragProvider overlay={(a) => <CalendarEntry entry={byId(a.id)} lifted />} onDragEnd={({ active, over }) => over && move(active.id, agendaSlot(over.id))}>
+  <AgendaCalendar days={week} entries={entries} today={today} now="11:20" onOpenEntry={open} onOpenDay={openDay} onAddSlot={add} />
+</DragProvider>`}
+        bare
+      >
+        <AgendaCalendarDemo />
+      </Spec>
+
+      <Spec
+        id="todo"
+        title="TodoRow · TodoRowAdd"
+        meta="todo-row.tsx"
+        desc="Plan's To do, the day's list: each task a card of its own with a round done toggle (the success fill and a check once done), the title at 16px semibold over a muted line with its milestone and where it stands, then the time it is due at in mono and its project as a quiet pill. Done strikes the title and mutes the row. The toggle and the title are separate buttons, so ticking a task never opens it. TodoRowAdd is the dashed row under the list that adds a task to the day on Enter; TodoRowSkeleton stands in for a row while the day loads."
+        code={`<TodoRow title="Rotate API keys" detail="overdue since Oct 3" time="10:00" tag="Client sites" toggleLabel="Mark done" onToggle={tick} onOpen={open} />
+<TodoRowAdd aria-label="Add a task for this day" placeholder="Add a task" value={draft} onChange={…} onKeyDown={…} />`}
+        bare
+      >
+        <TodoListDemo />
       </Spec>
 
       <Spec
