@@ -7,6 +7,7 @@ import {
   SESSION_SHARED_FILES,
   SESSION_TRANSCRIPT,
 } from '../sessions/sessions.di-tokens';
+import { TELEGRAM_DEVICE } from '../telegram/telegram.di-tokens';
 import { WHATSAPP_DEVICE } from '../whatsapp/whatsapp.di-tokens';
 import { CacheParkedFileAdapter } from './infrastructure/cache-parked-file.adapter';
 import { InProcessLinkReplies } from './infrastructure/in-process-link-replies.adapter';
@@ -17,6 +18,7 @@ import { RelayHostFoldersAdapter } from './infrastructure/relay-host-folders.ada
 import { RelaySessionPortsAdapter } from './infrastructure/relay-session-ports.adapter';
 import { RelaySessionSharedFilesAdapter } from './infrastructure/relay-session-shared-files.adapter';
 import { RelaySessionTranscriptAdapter } from './infrastructure/relay-session-transcript.adapter';
+import { RelayTelegramDeviceAdapter } from './infrastructure/relay-telegram-device.adapter';
 import { RelayWhatsappDeviceAdapter } from './infrastructure/relay-whatsapp-device.adapter';
 import { LINK_REGISTRY, LINK_REPLIES, PARKED_FILES, STAGED_FILE_READER } from './links.di-tokens';
 
@@ -43,6 +45,7 @@ import { LINK_REGISTRY, LINK_REPLIES, PARKED_FILES, STAGED_FILE_READER } from '.
     { provide: SESSION_TRANSCRIPT, useClass: RelaySessionTranscriptAdapter },
     { provide: HOST_CODEX_ENVIRONMENTS, useClass: RelayHostCodexEnvironmentsAdapter },
     { provide: WHATSAPP_DEVICE, useClass: RelayWhatsappDeviceAdapter },
+    { provide: TELEGRAM_DEVICE, useClass: RelayTelegramDeviceAdapter },
   ],
   exports: [
     LINK_REGISTRY,
@@ -56,6 +59,7 @@ import { LINK_REGISTRY, LINK_REPLIES, PARKED_FILES, STAGED_FILE_READER } from '.
     SESSION_TRANSCRIPT,
     HOST_CODEX_ENVIRONMENTS,
     WHATSAPP_DEVICE,
+    TELEGRAM_DEVICE,
   ],
 })
 export class LinksModule {}

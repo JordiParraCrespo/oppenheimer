@@ -4,6 +4,7 @@ import type {
   FsListingMessage,
   PortListingMessage,
   SharedPreviewMessage,
+  TelegramSentMessage,
   TranscriptPageMessage,
   WhatsappSentMessage,
 } from '@oppenheimer/shared/protocol';
@@ -11,13 +12,14 @@ import type {
 /**
  * A runner's answer to a command the control plane is waiting on: the reply
  * frame itself, or its refusal: `fs.listing`, `port.listing`,
- * `codex.environments`, `whatsapp.sent`, `shared.preview` or `transcript.page`.
+ * `codex.environments`, `whatsapp.sent`, `telegram.sent`, `shared.preview` or `transcript.page`.
  */
 export type LinkReply =
   | FsListingMessage
   | PortListingMessage
   | CodexEnvironmentsMessage
   | WhatsappSentMessage
+  | TelegramSentMessage
   | SharedPreviewMessage
   | TranscriptPageMessage
   | CommandFailedMessage;

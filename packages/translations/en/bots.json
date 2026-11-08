@@ -669,6 +669,7 @@
         "plan": "Plan",
         "mail": "Mail",
         "whatsapp": "WhatsApp",
+        "telegram": "Telegram",
         "github": "GitHub",
         "automations": "Routines and automations",
         "bots": "Other bots",

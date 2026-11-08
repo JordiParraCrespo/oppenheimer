@@ -33,6 +33,7 @@ import { BotSessionFileToolsFactory } from './bot-session-file-tools.factory';
 import { BotSessionToolsFactory } from './bot-session-tools.factory';
 import { BotSkillToolsFactory } from './bot-skill-tools.factory';
 import { BotSubagentToolsFactory } from './bot-subagent-tools.factory';
+import { BotTelegramToolsFactory } from './bot-telegram-tools.factory';
 import type {
   ApprovedCallContext,
   BotToolArea,
@@ -73,6 +74,7 @@ export class BotToolboxFactory {
     mailWrites: BotMailWriteToolsFactory,
     mailOrganizing: BotMailOrganizeToolsFactory,
     whatsapp: BotWhatsappToolsFactory,
+    telegram: BotTelegramToolsFactory,
     peers: BotPeerToolsFactory,
     web: BotWebToolsFactory,
     subagents: BotSubagentToolsFactory,
@@ -105,6 +107,7 @@ export class BotToolboxFactory {
       mailWrites,
       mailOrganizing,
       whatsapp,
+      telegram,
       peers,
       web,
       subagents,

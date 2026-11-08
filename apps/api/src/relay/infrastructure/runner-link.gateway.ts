@@ -26,6 +26,7 @@ import { decodeFrame } from './frame.util';
 import { type AppendQueueLimits, type AppendRun, LinkAppendQueue } from './link-append-queue.util';
 import { RelayEventsProcessor } from './relay-events.processor';
 import { SocketRunnerLink } from './socket-runner-link.adapter';
+import { TelegramLinkProcessor } from './telegram-link.processor';
 import { refuseUpgrade } from './upgrade.util';
 import { WhatsappLinkProcessor } from './whatsapp-link.processor';
 
@@ -119,6 +120,7 @@ export class RunnerLinkGateway {
     @Inject(LINK_REPLIES)
     private readonly replies: LinkRepliesPort,
     private readonly whatsapp: WhatsappLinkProcessor,
+    private readonly telegram: TelegramLinkProcessor,
   ) {}
 
   async handleUpgrade(request: IncomingMessage, socket: Duplex, head: Buffer): Promise<void> {
@@ -411,6 +413,7 @@ export class RunnerLinkGateway {
       case 'port.listing':
       case 'codex.environments':
       case 'whatsapp.sent':
+      case 'telegram.sent':
       case 'shared.preview':
       case 'transcript.page':
         // Only ever an answer to a request this process is waiting on; a late
@@ -466,6 +469,10 @@ export class RunnerLinkGateway {
         return this.whatsapp.onState(link, message);
       case 'whatsapp.messages':
         return this.whatsapp.onMessages(link, message);
+      case 'telegram.state':
+        return this.telegram.onState(link, message);
+      case 'telegram.messages':
+        return this.telegram.onMessages(link, message);
       case 'hello':
         // A second hello on an open link is a runner bug, not a reconnect.
         link.close(RUNNER_LINK_CLOSE_CODES.HELLO_EXPECTED, 'hello already received');
