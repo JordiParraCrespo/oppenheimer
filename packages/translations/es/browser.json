@@ -507,7 +507,7 @@
           "link": "Abrir la configuración de Codex Cloud"
         }
       },
-      "details": "Detalles del host: {{detail}}"
+      "details": "Detalles del host"
     }
   },
   "auth": {
