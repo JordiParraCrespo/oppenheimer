@@ -239,6 +239,45 @@ describe('a turn recorded while it ran, replayed', () => {
     ]);
   });
 
+  it('draws one live line while a turn your yes opened waits behind the running one', async () => {
+    const yes = {
+      id: 'm9',
+      turnId: 't10',
+      role: 'event',
+      content: 'You approved: Run the release checklist',
+      steps: [],
+      event: {
+        kind: 'approval',
+        outcome: 'approved',
+        tool: 'start_session',
+        summary: 'Run the release checklist',
+      },
+      attachments: [],
+      createdAt: '2026-10-30T09:00:08.000Z',
+    };
+    const [opened] = incidentLive.frames;
+    if (opened?.type !== 'read') throw new Error('the recording opens on a read');
+    const running = opened.conversation as { turns: object[]; messages: object[] };
+    const queued = { ...running.turns[0], id: 't10', status: 'queued', startedAt: null };
+    const chat = await replayBotChat({
+      ...incidentLive,
+      frames: [
+        {
+          type: 'read',
+          conversation: {
+            messageCount: 2,
+            turns: [...running.turns, queued],
+            messages: [...running.messages, yes],
+          },
+        },
+        { type: 'ready' },
+      ],
+    });
+    await chat.playAll();
+
+    expect(screen.getAllByRole('status').map(words)).toEqual(['bots.chat.turn.thinking{} 00:12']);
+  });
+
   it('ends on the stored answer, with no live text, no live line and its trail', async () => {
     const chat = await replayBotChat(incidentLive);
     await chat.playAll();

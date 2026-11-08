@@ -42,11 +42,14 @@ import { runningStep } from '@/features/bots/lib/tool-activity';
  * message you steered in while it worked sits in the answer where the bot
  * took it (`BotSteerMessage`). Work the turn started that still runs after
  * it is the caller's to draw (`working`), in place of the live line; a turn
- * that never reached its model has no trail.
+ * queued behind the one the bot is on draws no live line (`current`), so
+ * the chat shows one at a time; a turn that never reached its model has no
+ * trail.
  */
 export function BotTurn({
   block,
   live,
+  current,
   working,
   waitingOn,
   subagents,
@@ -57,6 +60,11 @@ export function BotTurn({
 }: {
   block: ChatTurnBlock;
   live: string | undefined;
+  /**
+   * Whether this is the turn the bot is on (the running one, else the oldest
+   * queued): only that one draws its live line.
+   */
+  current: boolean;
   /**
    * What still runs for this turn after it, drawn in place of its own live
    * line: an approved call the turn said it is on (`ApprovedCallLive`).
@@ -139,7 +147,7 @@ export function BotTurn({
         )}
         {live ? <BotReply content={live} streaming /> : null}
         {working ??
-          (turn && active ? (
+          (turn && active && current ? (
             <BotTurnLive
               queued={turn.status === 'queued'}
               step={step}
