@@ -1,4 +1,4 @@
-import { Button, Wordmark } from '@oppenheimer/design-system-web';
+import { BrandMark, Button, Wordmark } from '@oppenheimer/design-system-web';
 import { LanguageSwitcher, ThemeToggle } from '@oppenheimer/frontend-web';
 import { Link } from '@tanstack/react-router';
 import type { ReactNode } from 'react';
@@ -15,7 +15,12 @@ export function PublicSiteLayout({ children }: { children: ReactNode }) {
     <div className="min-h-svh bg-canvas text-ink-900">
       <header className="border-b border-border-default">
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-6 py-5 lg:px-8">
-          <Link to="/about" aria-label={t('public.navigation.home')}>
+          <Link
+            to="/about"
+            aria-label={t('public.navigation.home')}
+            className="flex items-center gap-2"
+          >
+            <BrandMark size={22} aria-hidden="true" />
             <Wordmark />
           </Link>
           <div className="flex items-center gap-2">

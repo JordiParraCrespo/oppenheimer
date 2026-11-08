@@ -289,10 +289,12 @@
     --file-icon-zig: var(--file-icon-orange);
     --file-icon-zip: var(--file-icon-orange);
 
-    /* A bot's avatar: its initials on one of the export's eight colours
-       (`AV_COLORS`), an identity like a file's mark, never a state. The same
-       in both themes so a bot keeps its face; the initials are dark ink on
-       every one of them, which all sit at or above 0.70 lightness. */
+    /* A bot's avatar: its drawn face (or its initials) on one of the
+       export's eight colours (`AV_COLORS`), an identity like a file's mark,
+       never a state. The same in both themes so a bot keeps its face; the
+       ink is dark on every one of them, which all sit at or above 0.70
+       lightness. The face's darker ground is the same colour mixed toward
+       black, in `internal/bot-face.tsx`. */
     --avatar-mint: oklch(0.74 0.13 175);
     --avatar-tangerine: oklch(0.72 0.18 50);
     --avatar-snow: oklch(0.96 0 0);
@@ -302,6 +304,11 @@
     --avatar-coral: oklch(0.72 0.15 20);
     --avatar-moss: oklch(0.7 0.12 135);
     --avatar-ink: oklch(0.21 0 0);
+
+    /* The product's mark: a white fedora on an ink tile, the same in both
+       themes like an app icon (`BrandMark`, the favicons, the extension). */
+    --brand-tile: oklch(0.18 0.01 280);
+    --brand-hat: oklch(0.97 0 0);
 
     /* ---- Elevation ----------------------------------------------------
        Surfaces never cast shadows; depth is tonal. Only three transient

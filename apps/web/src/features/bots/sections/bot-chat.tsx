@@ -46,9 +46,7 @@ export function BotChat({ botId }: { botId: string }) {
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       <PageBar
-        leading={
-          <BotAvatar option={{ initials: bot.initials }} size={26} color={bot.avatarColor} />
-        }
+        leading={<BotAvatar option={{ initials: bot.initials }} size={26} face={bot.face} />}
         title={bot.name}
         actions={
           <BotActionsMenu

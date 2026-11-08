@@ -394,6 +394,32 @@
         "coral": "Coral",
         "moss": "Moss"
       },
+      "face": "Face",
+      "faceHat": "Hat",
+      "faceEyes": "Eyes",
+      "faceMouth": "Mouth",
+      "faceReset": "Use its own face",
+      "faces": {
+        "hat": {
+          "fedora": "Fedora",
+          "porkpie": "Porkpie",
+          "bowler": "Bowler",
+          "tophat": "Top hat",
+          "cap": "Cap",
+          "beanie": "Beanie"
+        },
+        "eyes": {
+          "dots": "Dots",
+          "happy": "Happy",
+          "wink": "Wink",
+          "big": "Wide"
+        },
+        "mouth": {
+          "smile": "Smile",
+          "grin": "Grin",
+          "o": "Surprised"
+        }
+      },
       "group": "Sidebar group",
       "groupHint": "Where it appears in the Employees sidebar",
       "newGroup": "New group in the sidebar",

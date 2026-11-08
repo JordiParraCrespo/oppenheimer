@@ -16,6 +16,7 @@ interface Bot {
   id: string;
   name: string;
   avatarColor: string;
+  avatarFace: { hat: string; eyes: string; mouth: string } | null;
   groupId: string | null;
   position: number;
   homeHostId: string | null;
@@ -58,6 +59,18 @@ test.describe('Bots', () => {
     const second = await ok<Bot>(await api.post('/api/v1/bots', { data: {} }), 201);
     expect(second).toMatchObject({ name: 'Milo', position: 1 });
     expect(second.avatarColor).not.toBe(first.avatarColor);
+
+    // No face until one is picked; a picked face comes back, and null drops it.
+    expect(first).toMatchObject({ avatarFace: null });
+    const face = { hat: 'bowler', eyes: 'happy', mouth: 'o' };
+    const faced = await ok<Bot>(
+      await api.patch(`/api/v1/bots/${first.id}`, { data: { avatarFace: face } }),
+    );
+    expect(faced.avatarFace).toEqual(face);
+    const unfaced = await ok<Bot>(
+      await api.patch(`/api/v1/bots/${first.id}`, { data: { avatarFace: null } }),
+    );
+    expect(unfaced.avatarFace).toBeNull();
 
     // Its documents: a soul that says its name, empty instructions, both revision 1.
     const documents = await ok<BotDocument[]>(await api.get(`/api/v1/bots/${first.id}/documents`));

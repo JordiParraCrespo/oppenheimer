@@ -12,7 +12,7 @@ import { SECTION_NAMES } from '@/features/bots/lib/section-names';
 
 /**
  * One bot under a section's Bots heading, drawn as in Employees: its
- * initials on its colour and the name on one line, its last message in the
+ * face on its colour and the name on one line, its last message in the
  * row's tooltip, opening its chat where the section opens one
  * (`botChatDestination`). Its ellipsis opens
  * Settings, hides it from this section (`onHide`, the heading's write) or
@@ -44,7 +44,7 @@ export function SectionBotRow({
         id={bot.id}
         name={bot.name}
         initials={bot.initials}
-        color={bot.avatarColor}
+        face={bot.face}
         preview={line ? <MarkdownLine source={line} /> : t('bots.sidebar.noMessages')}
         active={active}
         menuOpen={menuOpen}

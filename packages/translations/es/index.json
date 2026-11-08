@@ -1836,6 +1836,32 @@
           "coral": "Coral",
           "moss": "Musgo"
         },
+        "face": "Cara",
+        "faceHat": "Sombrero",
+        "faceEyes": "Ojos",
+        "faceMouth": "Boca",
+        "faceReset": "Usar su propia cara",
+        "faces": {
+          "hat": {
+            "fedora": "Fedora",
+            "porkpie": "Porkpie",
+            "bowler": "Bombín",
+            "tophat": "Chistera",
+            "cap": "Gorra",
+            "beanie": "Gorro"
+          },
+          "eyes": {
+            "dots": "Puntos",
+            "happy": "Contentos",
+            "wink": "Guiño",
+            "big": "Grandes"
+          },
+          "mouth": {
+            "smile": "Sonrisa",
+            "grin": "Risa",
+            "o": "Sorpresa"
+          }
+        },
         "group": "Grupo de la barra lateral",
         "groupHint": "Dónde aparece en la barra lateral de Empleados",
         "newGroup": "Nuevo grupo en la barra lateral",
@@ -3545,6 +3571,7 @@
     "commandPlaceholder": "Busca páginas y acciones…",
     "goTo": "Ir a",
     "primaryNavigation": "Navegación principal",
+    "home": "Inicio de Oppenheimer",
     "profile": "Perfil",
     "search": "Buscar",
     "team": "Equipo",
