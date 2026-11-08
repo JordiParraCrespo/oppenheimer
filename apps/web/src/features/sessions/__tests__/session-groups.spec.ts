@@ -3,18 +3,18 @@ import { sessionCheckout, sessionEntity } from '@oppenheimer/frontend-consumer/t
 import type { TFunction } from 'i18next';
 import { describe, expect, it } from 'vitest';
 import {
+  currentProjectOf,
   emptyMessage,
   groupByProject,
   matchesQuery,
-  projectsForMove,
   shownGroups,
 } from '../lib/session-groups';
 
 /**
  * The sidebar's groups and the move pane's targets
  * (`product/versions/mvp/05-screens.md`): only a project with sessions is
- * drawn, a session whose project is gone still shows, and a session may move
- * to any other project.
+ * drawn, a session whose project is gone still shows, and a move knows which
+ * project the sessions are already in.
  */
 const project = (id: string, repos: string[]) =>
   new ProjectEntity(
@@ -60,13 +60,15 @@ describe('groupByProject', () => {
   });
 });
 
-describe('projectsForMove', () => {
-  it('offers every other project, whatever repositories it holds', () => {
-    const projects = [project('here', ['1']), project('yes', ['1', '2']), project('no', ['2'])];
-    expect(projectsForMove(projects, session('s', 'here', ['1'])).map((p) => p.id)).toEqual([
-      'yes',
-      'no',
-    ]);
+describe('currentProjectOf', () => {
+  it('names the project the sessions share, so a move can tick it rather than hide it', () => {
+    expect(currentProjectOf([session('a', 'here', []), session('b', 'here', [])])).toBe('here');
+    expect(currentProjectOf([session('a', 'unassigned', [])])).toBe('unassigned');
+  });
+
+  it('names none when the sessions are spread over projects, or there are none', () => {
+    expect(currentProjectOf([session('a', 'here', []), session('b', 'there', [])])).toBeNull();
+    expect(currentProjectOf([])).toBeNull();
   });
 });
 
