@@ -322,6 +322,11 @@ export {
   useUpdateTask,
 } from './tasks.queries';
 export {
+  useLinkTelegram,
+  useSuspenseTelegramSettings,
+  useUnlinkTelegram,
+} from './telegram.queries';
+export {
   useVoiceDictation,
   type VoiceDictation,
 } from './voice.queries';
