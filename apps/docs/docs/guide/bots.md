@@ -56,6 +56,7 @@ It can also prompt a session whose agent waits at its prompt, answer an agent's 
 ## What else it can do
 
 - **Itself**: edit SOUL.md, INSTRUCTIONS.md, name and description; remember, forget, recall; search its chat.
+- **Hosts**: list your hosts with their runner version, and update a host's runner (`update_host_runner`, the same as **Update runner** in the host's menu; it asks first under Approve for me, and only reaches an online host). When a session's conversation, a shared file or a terminal watch needs a newer runner, the bot can offer to update it.
 - **Plan**: read projects and tasks; create, edit and move tasks; create and edit projects; move sessions; archive or restore a project.
 - **GitHub**: read repositories, pull requests and issues; comment, review, merge, start review sessions, open issues, record CI findings, all in your name.
 - **Automations**: list them and their runs. It cannot create or change yours; it manages only its own routines.

@@ -10,11 +10,11 @@ import type { HostFolderListing, HostFoldersOutcome } from './host-folders.port'
  * refusal reads as not readable, with the runner's own code kept as
  * `upstreamCode`, so a code a later runner adds is still a documented problem.
  */
-export function listedOrThrow(
-  outcome: HostFoldersOutcome,
+export function listedOrThrow<T = HostFolderListing>(
+  outcome: HostFoldersOutcome<T>,
   hostId: string,
   path: string | undefined,
-): HostFolderListing {
+): T {
   const where = path ?? 'the home directory';
   switch (outcome.kind) {
     case 'listed':

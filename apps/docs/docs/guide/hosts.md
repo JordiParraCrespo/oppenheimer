@@ -70,7 +70,7 @@ From the host you can install more later: `oppenheimer-runner agents install cla
 
 The runner keeps itself on the current signed release. It checks at boot and every six hours, then waits for a quiet moment (no agent working, no terminal attached) for up to 24 hours before updating; urgent updates apply within 15 minutes. A new version that will not stay up is rolled back automatically. Sessions keep running through an update; open terminals reconnect in a few seconds.
 
-To update now, use **Update runner** in the host's menu (only while the host is online), or `oppenheimer-runner update` on the host. `oppenheimer-runner update --pin VERSION` freezes a host on a version; a pinned host refuses Update runner until `--unpin`.
+To update now, use **Update runner** in the host's menu (only while the host is online), or `oppenheimer-runner update` on the host. `oppenheimer-runner update --pin VERSION` freezes a host on a version; a pinned host refuses Update runner until `--unpin`. A bot can ask for the same update with its `update_host_runner` tool, after your approval.
 
 ## What offline means
 

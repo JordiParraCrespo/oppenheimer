@@ -2,6 +2,18 @@ import type { AccessScope } from '@oppenheimer/backend-authz';
 import type { BotMessageEntity } from '../domain/bot-message.entity';
 import type { SummarizableMessage } from '../domain/bot-summary.policy';
 
+/**
+ * Postgres refused what a line's steps hold (an SQLSTATE class 22 data
+ * exception), not the write itself: what `saveSteps` throws then, so the
+ * turn can fail that call alone (#728).
+ */
+export class UnstorableStepsError extends Error {
+  constructor(cause: unknown) {
+    super(cause instanceof Error ? cause.message : String(cause), { cause });
+    this.name = 'UnstorableStepsError';
+  }
+}
+
 export interface BotMessageRepositoryPort {
   /**
    * Stores a message of a running turn; a user or assistant message also
@@ -14,7 +26,10 @@ export interface BotMessageRepositoryPort {
    * bot exists; whether this call stored it.
    */
   insertOnce(message: BotMessageEntity): Promise<boolean>;
-  /** An activity line's steps, as they grow. */
+  /**
+   * An activity line's steps, as they grow. Throws `UnstorableStepsError`
+   * when Postgres refuses what they hold; any other failure as it came.
+   */
   saveSteps(message: BotMessageEntity): Promise<void>;
   /**
    * A steer the running turn took (`BotTurnRepositoryPort.takeSteers`), put

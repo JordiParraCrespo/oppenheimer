@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import type { BotSteer } from '@oppenheimer/backend-agents';
+import { storableJson, storableText } from '@oppenheimer/backend-core';
 import type { Mapper } from '@oppenheimer/backend-ddd';
 import {
   BOT_DREAM_ACTIVITIES,
@@ -56,8 +57,9 @@ export class BotMessageMapper
     record.botId = entity.botId;
     record.turnId = entity.turnId;
     record.role = entity.role;
-    record.content = entity.content;
-    record.steps = entity.steps.map((step) => ({
+    // Postgres refuses a NUL or a lone surrogate in either column (#728).
+    record.content = storableText(entity.content);
+    record.steps = storableJson(entity.steps).map((step) => ({
       callId: step.callId,
       name: step.name,
       input: step.input,

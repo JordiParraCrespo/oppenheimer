@@ -2199,6 +2199,33 @@ export type HostFoldersResponseDto = {
     recent: Array<HostRecentFolderResponseDto>;
 };
 
+export type HostFoundFolderResponseDto = {
+    /**
+     * Its absolute path on the host.
+     */
+    path: string;
+    /**
+     * The branch its checkout is on, when it is a git repository.
+     */
+    branch?: string | null;
+};
+
+export type HostFolderSearchResponseDto = {
+    /**
+     * The directory searched under.
+     */
+    path: string;
+    /**
+     * The home directory of the user the runner runs as, so a client can show `~`.
+     */
+    home: string;
+    entries: Array<HostFoundFolderResponseDto>;
+    /**
+     * The search stopped at its bounds or found more than `entries` carries: a longer name narrows it.
+     */
+    truncated: boolean;
+};
+
 export type HostCodexEnvironmentResponseDto = {
     /**
      * Its id, what `codex cloud exec --env` is given.
@@ -4464,7 +4491,7 @@ export type BotTurnResponseDto = {
     /**
      * What kind of failure it was, so a client can say whether sending it again can help; null unless it failed.
      */
-    failure: 'rate_limit' | 'usage_limit' | 'credential' | 'refused' | 'unavailable' | 'time_limit' | 'step_limit' | 'interrupted' | 'other' | null;
+    failure: 'rate_limit' | 'usage_limit' | 'credential' | 'refused' | 'unavailable' | 'time_limit' | 'step_limit' | 'interrupted' | 'storage' | 'other' | null;
     inputTokens: number;
     outputTokens: number;
     /**
@@ -11076,6 +11103,55 @@ export type FindHostFoldersResponses = {
 };
 
 export type FindHostFoldersResponse = FindHostFoldersResponses[keyof FindHostFoldersResponses];
+
+export type SearchHostFoldersData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query: {
+        /**
+         * Part of a folder’s name.
+         */
+        q: string;
+    };
+    url: '/api/v1/hosts/{id}/folders/search';
+};
+
+export type SearchHostFoldersErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * SESSIONS_030 — Not readable
+     */
+    403: ProblemDetailsDto;
+    /**
+     * HOSTS_001 / SESSIONS_028 — Host or home not found
+     */
+    404: ProblemDetailsDto;
+    /**
+     * SESSIONS_026 — Runner cannot search
+     */
+    409: ProblemDetailsDto;
+    /**
+     * SESSIONS_027 — The host is offline
+     */
+    503: ProblemDetailsDto;
+    /**
+     * SESSIONS_031 — No answer in time
+     */
+    504: ProblemDetailsDto;
+};
+
+export type SearchHostFoldersError = SearchHostFoldersErrors[keyof SearchHostFoldersErrors];
+
+export type SearchHostFoldersResponses = {
+    200: HostFolderSearchResponseDto;
+};
+
+export type SearchHostFoldersResponse = SearchHostFoldersResponses[keyof SearchHostFoldersResponses];
 
 export type FindHostCodexEnvironmentsData = {
     body?: never;

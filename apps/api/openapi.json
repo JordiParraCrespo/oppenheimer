@@ -12601,6 +12601,112 @@
         ]
       }
     },
+    "/api/v1/hosts/{id}/folders/search": {
+      "get": {
+        "description": "The folders under the host’s home whose name holds `q`, found by its runner now: a walk a few levels deep that skips hidden folders and dependency trees and does not look inside git repositories. Best match first, at most fifty; `truncated` says there may be more (`product/versions/mvp/24-session-places.md`).",
+        "operationId": "searchHostFolders",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "q",
+            "required": true,
+            "in": "query",
+            "description": "Part of a folder’s name.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HostFolderSearchResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "SESSIONS_030 — Not readable",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "HOSTS_001 / SESSIONS_028 — Host or home not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "SESSIONS_026 — Runner cannot search",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "SESSIONS_027 — The host is offline",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "SESSIONS_031 — No answer in time",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Search the folders on a host",
+        "tags": [
+          "Hosts"
+        ]
+      }
+    },
     "/api/v1/hosts/{id}/codex-environments": {
       "get": {
         "description": "The Codex cloud environments of the ChatGPT account the host’s `codex` is signed in to, read by its runner now, with those linked to `repository` marked and the one a session with none picked starts in. Nothing is cached (`product/next-steps/cloud-agents.md`).",
@@ -30681,6 +30787,56 @@
           "recent"
         ]
       },
+      "HostFoundFolderResponseDto": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string",
+            "description": "Its absolute path on the host.",
+            "example": "/home/jordi/code/acme/billing"
+          },
+          "branch": {
+            "type": "string",
+            "description": "The branch its checkout is on, when it is a git repository.",
+            "nullable": true,
+            "example": "main"
+          }
+        },
+        "required": [
+          "path"
+        ]
+      },
+      "HostFolderSearchResponseDto": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string",
+            "description": "The directory searched under.",
+            "example": "/home/jordi"
+          },
+          "home": {
+            "type": "string",
+            "description": "The home directory of the user the runner runs as, so a client can show `~`.",
+            "example": "/home/jordi"
+          },
+          "entries": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/HostFoundFolderResponseDto"
+            }
+          },
+          "truncated": {
+            "type": "boolean",
+            "description": "The search stopped at its bounds or found more than `entries` carries: a longer name narrows it."
+          }
+        },
+        "required": [
+          "path",
+          "home",
+          "entries",
+          "truncated"
+        ]
+      },
       "HostCodexEnvironmentResponseDto": {
         "type": "object",
         "properties": {
@@ -37311,6 +37467,7 @@
               "time_limit",
               "step_limit",
               "interrupted",
+              "storage",
               "other",
               null
             ],

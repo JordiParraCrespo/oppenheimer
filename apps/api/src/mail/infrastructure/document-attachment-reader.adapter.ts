@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { storableText } from '@oppenheimer/backend-core';
 import { strFromU8, unzipSync } from 'fflate';
 import {
   ATTACHMENT_TEXT_MAX,
@@ -105,12 +106,17 @@ export class DocumentAttachmentReaderAdapter implements AttachmentReaderPort {
   }
 }
 
+/**
+ * `text` cut to what a bot reads, without what Postgres cannot store: a PDF's
+ * font can map a glyph to NUL, the cut can split a surrogate pair, and the
+ * result is stored with the bot's turn.
+ */
 function fitted(format: string, text: string): AttachmentReading {
   const clean = text.replace(/\r\n/g, '\n').trim();
   return {
     kind: 'text',
     format,
-    text: clean.slice(0, ATTACHMENT_TEXT_MAX),
+    text: storableText(clean.slice(0, ATTACHMENT_TEXT_MAX)),
     truncated: clean.length > ATTACHMENT_TEXT_MAX,
   };
 }

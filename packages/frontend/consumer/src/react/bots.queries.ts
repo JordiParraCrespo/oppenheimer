@@ -382,6 +382,20 @@ export const useRenameBotGroup = mutation<BotGroupEntity, RenameBotGroupVariable
   update: (queryClient, saved) => settleGroups(queryClient, replaced(saved)),
 });
 
+export interface MoveBotGroupVariables {
+  id: string;
+  position: number;
+}
+
+/** A group dragged to another place: the others close up around it, so the groups are read again. */
+export const useMoveBotGroup = mutation<BotGroupEntity, MoveBotGroupVariables>({
+  run: (app, { id, position }) => app.bots.moveGroup(id, position),
+  update: async (queryClient, saved) => {
+    settleGroups(queryClient, replaced(saved));
+    await queryClient.invalidateQueries({ queryKey: botsKeys.groupList() });
+  },
+});
+
 /** Its bots stay, ungrouped after the bots already there, so the bots are read again. */
 export const useDeleteBotGroup = mutation<void, string>({
   run: (app, id) => app.bots.removeGroup(id),
