@@ -5,19 +5,14 @@ import {
   ChipSelectList,
   IconButton,
 } from '@oppenheimer/design-system-web';
-import {
-  ChevronLeft,
-  ChevronRight,
-  Folder,
-  GitBranch,
-  History,
-} from '@oppenheimer/design-system-web/icons';
+import { ChevronLeft, Folder, History } from '@oppenheimer/design-system-web/icons';
 import type { HostFolderSearch, HostFolders } from '@oppenheimer/frontend-consumer';
 import { compactAge } from '@oppenheimer/frontend-web';
 import type { KeyboardEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { folderView } from '../lib/folder-browse';
 import { folderInput, leafOf, shortenPath } from '../lib/folder-path';
+import { FolderRow } from './folder-row';
 
 /**
  * The body of the folder chip's popup (`product/versions/mvp/24-session-places.md`
@@ -74,6 +69,8 @@ export function FolderBrowser({
   const found = failure ? [] : (search?.entries ?? []).filter((entry) => !listed.has(entry.path));
   const foundElsewhere = found.length > 0 || (searching && !failure);
   const searchShown = foundElsewhere || (Boolean(searchFailure) && !failure);
+  // Nothing here is worth saying only when nothing is on its way from further down either.
+  const emptyShown = view.empty !== null && !(view.empty === 'filtered' && foundElsewhere);
 
   const emptyText =
     view.empty === 'missing'
@@ -188,29 +185,18 @@ export function FolderBrowser({
 
         {failure ? (
           <ChipSelectEmpty role="alert">{failure}</ChipSelectEmpty>
-        ) : view.empty && !(view.empty === 'filtered' && foundElsewhere) ? (
+        ) : emptyShown ? (
           <ChipSelectEmpty>{emptyText}</ChipSelectEmpty>
         ) : (
           view.rows.map((entry) => (
-            <ChipSelectItem
+            <FolderRow
               key={entry.path}
-              leading={<Folder />}
-              title={entry.path}
-              onClick={() => onInputChange(folderInput(shown(entry.path)))}
-              trailing={
-                <span className="flex shrink-0 items-center gap-1.5 text-fg-subtle">
-                  {entry.branch ? (
-                    <span className="flex items-center gap-1 font-mono text-micro">
-                      <GitBranch className="size-3" />
-                      {entry.branch}
-                    </span>
-                  ) : null}
-                  <ChevronRight className="size-3.5" />
-                </span>
-              }
+              path={entry.path}
+              branch={entry.branch}
+              onOpen={() => onInputChange(folderInput(shown(entry.path)))}
             >
               {entry.name}
-            </ChipSelectItem>
+            </FolderRow>
           ))
         )}
 
@@ -230,26 +216,15 @@ export function FolderBrowser({
               </span>
             ) : (
               found.map((entry) => (
-                <ChipSelectItem
+                <FolderRow
                   key={entry.path}
-                  leading={<Folder />}
-                  title={entry.path}
+                  path={entry.path}
+                  branch={entry.branch}
                   mono
-                  onClick={() => onInputChange(folderInput(shown(entry.path)))}
-                  trailing={
-                    <span className="flex shrink-0 items-center gap-1.5 text-fg-subtle">
-                      {entry.branch ? (
-                        <span className="flex items-center gap-1 font-mono text-micro">
-                          <GitBranch className="size-3" />
-                          {entry.branch}
-                        </span>
-                      ) : null}
-                      <ChevronRight className="size-3.5" />
-                    </span>
-                  }
+                  onOpen={() => onInputChange(folderInput(shown(entry.path)))}
                 >
                   {shown(entry.path)}
-                </ChipSelectItem>
+                </FolderRow>
               ))
             )}
             {search?.truncated && found.length > 0 ? (
