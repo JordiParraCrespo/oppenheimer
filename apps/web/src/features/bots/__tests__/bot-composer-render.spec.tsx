@@ -26,6 +26,7 @@ const idle = vi.hoisted(() => () => ({
 vi.mock('@oppenheimer/frontend-consumer/react', () => ({
   useBotActiveTurn: () => null,
   useBotWaitingMessages: () => [],
+  useBotSentTexts: () => [],
   useBotGoal: () => ({ data: null }),
   useBotLoop: () => ({ data: null }),
   useModelProviders: () => ({ data: true }),

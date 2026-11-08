@@ -24,7 +24,7 @@ import {
   botTakesImages,
 } from '@oppenheimer/shared/schemas/bot';
 import { useNavigate } from '@tanstack/react-router';
-import type { ClipboardEvent, ReactNode } from 'react';
+import type { ClipboardEvent, KeyboardEvent, ReactNode } from 'react';
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { BotComposerImage } from '@/features/bots/components/bot-composer-image';
@@ -33,6 +33,7 @@ import { useBotDraft } from '@/features/bots/hooks/use-bot-draft';
 import { useBotImages } from '@/features/bots/hooks/use-bot-images';
 import { useBuiltInCommand } from '@/features/bots/hooks/use-built-in-command';
 import { useComposerFocus } from '@/features/bots/hooks/use-composer-focus';
+import { useSentHistory } from '@/features/bots/hooks/use-sent-history';
 import { useSlashMenu } from '@/features/bots/hooks/use-slash-menu';
 import { botDraft, fillBotDraft, setBotDraft } from '@/features/bots/lib/bot-drafts';
 import { BOT_IMAGE_ACCEPT, heldImagesBlock } from '@/features/bots/lib/bot-images';
@@ -59,7 +60,9 @@ import { BotComposerTop } from '@/features/bots/sections/bot-composer-top';
  * into the draft (`useDictation`), added to its end, to be read before it is
  * sent. A draft that is a `/` command being typed opens the menu of the
  * skills it can run over the box (`useSlashMenu`); picking one writes
- * `/<name> ` for its input to follow.
+ * `/<name> ` for its input to follow. With the menu shut, Up on the field's
+ * first line brings back what you sent before and Down walks back to your
+ * draft (`useSentHistory`).
  *
  * Images ride the message (`25-bots.md` §3.1): the paperclip, a paste, or a
  * drop anywhere on the chat's pane (`usePaneDrop`) holds them as tiles over
@@ -93,6 +96,7 @@ export function BotComposer({
   const [draft, setDraft] = useBotDraft(botId);
   const field = useComposerFocus(botId);
   const slash = useSlashMenu(botId, draft, (next) => fillBotDraft(botId, next));
+  const recall = useSentHistory(botId, draft, setDraft);
   const active = useBotActiveTurn(botId);
   // How many wait decides whether the queue takes the top edge; `BotComposerTop` draws them.
   const waiting = useBotWaitingMessages(botId).length;
@@ -156,6 +160,12 @@ export function BotComposer({
     send.mutate(message(steer));
   }
 
+  // The open `/` menu takes the arrows first; with it shut they recall what you sent.
+  function onKeyDownCapture(event: KeyboardEvent<HTMLDivElement>) {
+    slash.onKeyDownCapture(event);
+    if (!event.defaultPrevented) recall(event);
+  }
+
   function onPaste(event: ClipboardEvent<HTMLDivElement>) {
     // Nothing is prevented: text pasted with an image still lands in the field.
     const pasted = Array.from(event.clipboardData.files);
@@ -211,7 +221,7 @@ export function BotComposer({
           />
         ) : null}
         <ChatComposer
-          onKeyDownCapture={slash.onKeyDownCapture}
+          onKeyDownCapture={onKeyDownCapture}
           value={draft}
           onValueChange={setDraft}
           inputRef={field}

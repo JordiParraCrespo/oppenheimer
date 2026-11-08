@@ -35,6 +35,7 @@ export {
   useBotImages,
   useBotLive,
   useBotRoomLeft,
+  useBotSentTexts,
   useBotWaitingMessages,
   useCancelBotTurn,
   useClearBotConversation,

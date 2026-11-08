@@ -41,6 +41,7 @@ vi.mock('@oppenheimer/frontend-consumer/react', () => ({
     { turnId: 'q2', text: '', images: 2, steer: false },
     { turnId: 's1', text: 'Skip the docs', images: 0, steer: true },
   ],
+  useBotSentTexts: () => [],
   useModelProviders: () => ({ data: true }),
   useSendBotMessage: () => ({ mutate: state.send, reset: vi.fn(), error: null, isPending: false }),
   useUploadBotImage: () => ({ mutateAsync: vi.fn() }),
