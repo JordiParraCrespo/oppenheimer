@@ -1546,3 +1546,10 @@ The decisions it produced:
   only through `search_chat`. It now folds past the budget less the longest
   summary (20,950) down to 9,000: a summary call about twice as often, each
   about half the size.
+- 2026-11-08: **history reads back what the tools did.** A turn's activity
+  line (its tool calls) was left out of the history, so a later turn knew a
+  session id it started, or that a start failed, only if it had said so.
+  It now comes back as Oppenheimer's short record on the person's side,
+  fenced as data: each call's name, its input (200 characters), how it
+  ended and the start of its answer (300), at most 2,000 characters a line
+  (`activityText`). The summary counts and folds it the same way.

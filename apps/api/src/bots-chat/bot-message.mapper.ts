@@ -128,6 +128,7 @@ export class BotMessageMapper
       id: message.id,
       role: message.role,
       content: message.content,
+      steps: message.steps,
       createdAt: message.createdAt,
       turnEnded:
         message.turnId === null || ENDED_TURN_STATUSES.some((status) => status === turnStatus),

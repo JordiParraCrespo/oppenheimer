@@ -10,15 +10,15 @@ import type { HistoryMessage } from './bot-history.policy';
 export function withEarlierImages(
   message: HistoryMessage & { attachments: readonly { id?: string; name: string }[] },
 ): HistoryMessage {
-  const { role, content, event, attachments } = message;
-  if (attachments.length === 0) return { role, content, event };
+  const { role, content, event, steps, attachments } = message;
+  if (attachments.length === 0) return { role, content, event, steps };
   const note =
     role === 'user'
       ? imagesNote(attachments)
       : role === 'assistant'
         ? shownNote(attachments.map((attachment) => attachment.name))
         : null;
-  if (!note) return { role, content, event };
+  if (!note) return { role, content, event, steps };
   return { role, content: [content.trim(), note].filter(Boolean).join('\n\n'), event };
 }
 

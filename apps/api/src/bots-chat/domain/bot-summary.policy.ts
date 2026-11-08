@@ -1,8 +1,11 @@
 import type { BotMessageRole } from '@oppenheimer/shared';
 import {
+  activityText,
   BOT_HISTORY_TOKEN_BUDGET,
   estimateTokens,
   type HistoryMessage,
+  historyEntry,
+  isReadBack,
 } from './bot-history.policy';
 
 /** The longest summary kept (`bot_conversation_summary.content`); a longer one is cut. */
@@ -80,15 +83,14 @@ export interface SummaryPlan {
  * of it: when the cap is what stops the fold, the rest waits for the next
  * call, even if that splits an answer from its question or an instant. A
  * single message larger than the cap is folded alone, so a fold always moves
- * forward. Activity lines are not history, and are neither counted nor folded.
+ * forward. An activity line counts and folds as the record the history
+ * reads back (`activityText`).
  */
 export function planSummary(uncovered: readonly SummarizableMessage[]): SummaryPlan | null {
-  const history = uncovered.filter(
-    (message) => message.role !== 'activity' && message.content.trim(),
-  );
+  const history = uncovered.filter(isReadBack);
   const open = history.findIndex((message) => !message.turnEnded);
   const messages = open === -1 ? history : history.slice(0, open);
-  const total = messages.reduce((sum, message) => sum + estimateTokens(message.content), 0);
+  const total = messages.reduce((sum, message) => sum + costOf(message), 0);
   const full = uncovered.length >= BOT_SUMMARY_READ_MAX && open === -1;
   if (messages.length === 0 || (total <= BOT_SUMMARY_TRIGGER_TOKENS && !full)) return null;
   let left = total;
@@ -101,7 +103,7 @@ export function planSummary(uncovered: readonly SummarizableMessage[]): SummaryP
     end += 1;
   };
   while (end < messages.length && left > BOT_SUMMARY_KEEP_TOKENS) {
-    const cost = estimateTokens(messages[end].content);
+    const cost = costOf(messages[end]);
     if (!fits(cost)) break;
     take(cost);
   }
@@ -113,7 +115,7 @@ export function planSummary(uncovered: readonly SummarizableMessage[]): SummaryP
     end < messages.length &&
     (messages[end].role === 'assistant' || messages[end].createdAt.getTime() === instant)
   ) {
-    const cost = estimateTokens(messages[end].content);
+    const cost = costOf(messages[end]);
     if (!fits(cost)) break;
     take(cost);
   }
@@ -139,7 +141,13 @@ const SPEAKERS: Partial<Record<BotMessageRole, string>> = {
   user: 'person',
   assistant: 'bot',
   event: 'oppenheimer',
+  activity: 'bot_tool_calls',
 };
+
+/** What a message costs the history it is sent in: what `historyEntry` makes of it. */
+function costOf(message: HistoryMessage): number {
+  return estimateTokens(historyEntry(message).text);
+}
 
 /**
  * The summarizer's system prompt: what to keep, what to drop, and that the
@@ -171,7 +179,9 @@ export function composeSummaryRequest(
   const messages = fold
     .map((message) => {
       const speaker = SPEAKERS[message.role] ?? 'bot';
-      return `<${speaker}>\n${escapeTags(message.content)}\n</${speaker}>`;
+      const text =
+        message.role === 'activity' ? activityText(message.steps ?? []) : message.content;
+      return `<${speaker}>\n${escapeTags(text)}\n</${speaker}>`;
     })
     .join('\n');
   return [

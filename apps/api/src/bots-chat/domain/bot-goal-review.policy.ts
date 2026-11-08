@@ -4,6 +4,7 @@ import {
   type HistoryEntry,
   type HistoryMessage,
   historyEntry,
+  isReadBack,
 } from './bot-history.policy';
 
 /**
@@ -55,7 +56,7 @@ export function goalReviewTranscript(
   turnTexts: readonly string[],
 ): HistoryEntry[] {
   return [
-    ...before.filter((message) => message.role !== 'activity').map(historyEntry),
+    ...before.filter(isReadBack).map(historyEntry),
     ...turnTexts.map((text) => ({ role: 'assistant' as const, text })),
   ];
 }
