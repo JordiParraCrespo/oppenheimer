@@ -13,7 +13,14 @@ import {
   keyedProviderFor,
   providerOfMark,
 } from '../lib/bot-engine';
-import { botSections, firstBot, inOrder, sectionOrder } from '../lib/bot-groups';
+import {
+  botSections,
+  firstBot,
+  groupOrder,
+  inOrder,
+  positionAmong,
+  sectionOrder,
+} from '../lib/bot-groups';
 import { composerTopOf } from '../lib/composer-top';
 import { revisionNote } from '../lib/revision-note';
 
@@ -80,6 +87,24 @@ describe('botSections', () => {
       ['engineering', ['release']],
       ['research', ['quota', 'scholar']],
       [null, ['fresh']],
+    ]);
+  });
+
+  it('draws the groups in the order a group drag put them, Ungrouped still last', () => {
+    const sections = botSections(bots, groups, '');
+    expect(groupOrder(sections)).toEqual(['engineering', 'research']);
+    const dropped = inOrder(sections, sectionOrder(sections), ['research', 'engineering']);
+    expect(dropped.map((section) => section.id)).toEqual(['research', 'engineering', null]);
+  });
+
+  it('leaves a hidden bot out of its group, but a search still finds it', () => {
+    expect(ids(botSections(bots, groups, '', { hidden: ['quota'] }))).toEqual([
+      ['engineering', ['release']],
+      ['research', ['scholar']],
+      [null, ['fresh']],
+    ]);
+    expect(ids(botSections(bots, groups, 'quota', { hidden: ['quota'] }))).toEqual([
+      ['engineering', ['quota']],
     ]);
   });
 
@@ -179,6 +204,18 @@ describe('keyedProviderFor', () => {
   it('leaves a bot whose provider has a key, or when no provider has one', () => {
     expect(keyedProviderFor(['anthropic', 'openai'], 'anthropic')).toBeUndefined();
     expect(keyedProviderFor([], 'anthropic')).toBeUndefined();
+  });
+});
+
+describe('positionAmong', () => {
+  it('places a drop next to the drawn bot it landed by, past the hidden ones between', () => {
+    // a, [h hidden], b: dropping x between a and b puts it before b, after h.
+    expect(positionAmong(['a', 'h', 'b'], ['a', 'x', 'b'], 'x')).toBe(2);
+    // Dropped last, after b, with a hidden bot after b: right after b.
+    expect(positionAmong(['a', 'b', 'h'], ['a', 'b', 'x'], 'x')).toBe(2);
+    // Moved within its own group, it is not counted among the others.
+    expect(positionAmong(['x', 'a', 'h', 'b'], ['a', 'b', 'x'], 'x')).toBe(3);
+    expect(positionAmong([], ['x'], 'x')).toBe(0);
   });
 });
 

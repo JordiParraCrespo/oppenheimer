@@ -1476,7 +1476,13 @@
       "moveNone": "No other group yet",
       "moveFailed": "Could not move the bot.",
       "delete": "Delete bot",
-      "loadFailed": "Could not load your bots."
+      "loadFailed": "Could not load your bots.",
+      "hide": "Hide from sidebar",
+      "filters": "Filter bots",
+      "shown": "Show bots",
+      "shownAll": "All",
+      "shownSome": "{{shown}} of {{total}}",
+      "showAll": "Show all bots"
     },
     "landing": {
       "titleEmpty": "Make your first bot.",

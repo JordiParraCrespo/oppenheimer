@@ -18,16 +18,22 @@ export interface BotSection {
  * (an empty group is still somewhere to move a bot), and Ungrouped is drawn
  * only when it holds a bot, or with `keepUngrouped` (a drag held, for which
  * it is somewhere to drop one). A bot's group the groups read does not have
- * yet (a refetch in flight) counts as Ungrouped rather than vanishing.
+ * yet (a refetch in flight) counts as Ungrouped rather than vanishing. A bot
+ * in `hidden` is left out, unless a search names it: a search is how a
+ * hidden bot is found again.
  */
 export function botSections(
   bots: readonly BotEntity[],
   groups: readonly BotGroupEntity[],
   query: string,
-  { keepUngrouped = false }: { keepUngrouped?: boolean } = {},
+  {
+    keepUngrouped = false,
+    hidden = [],
+  }: { keepUngrouped?: boolean; hidden?: readonly string[] } = {},
 ): BotSection[] {
   const term = query.trim().toLowerCase();
-  const matches = (bot: BotEntity) => !term || bot.name.toLowerCase().includes(term);
+  const matches = (bot: BotEntity) =>
+    term ? bot.name.toLowerCase().includes(term) : !hidden.includes(bot.id);
   const known = new Set(groups.map((group) => group.id));
   const byPosition = (a: BotEntity, b: BotEntity) => a.position - b.position;
 
@@ -75,24 +81,61 @@ export function sectionOrder(sections: readonly BotSection[]): Record<string, st
   );
 }
 
+/** The groups' ids in the order the sections draw them; Ungrouped is not one. */
+export function groupOrder(sections: readonly BotSection[]): string[] {
+  return sections.flatMap((section) => (section.id === null ? [] : [section.id]));
+}
+
 /**
- * The sections with their bots in `order` (a drag held, or a drop whose
- * write is in flight): a bot is drawn in the section and place `order` puts
- * it. `order` is drawn from these same sections, so it names every bot; the
- * exceptions are the list changing under a pending write, where a bot made
- * since is drawn after the ones `order` places, in its own section, and an
- * id that is no longer a bot is skipped.
+ * The sections with their bots in `order` and, with `groups`, the groups in
+ * that order (a drag held, or a drop whose write is in flight): a bot is
+ * drawn in the section and place `order` puts it, a group where `groups`
+ * puts it, and Ungrouped stays last. `order` is drawn from these same
+ * sections, so it names every bot; the exceptions are the list changing
+ * under a pending write, where a bot made since is drawn after the ones
+ * `order` places, in its own section, a group made since after the ones
+ * `groups` places, and an id that is no longer a bot or a group is skipped.
  */
 export function inOrder(
   sections: readonly BotSection[],
   order: Readonly<Record<string, readonly string[]>>,
+  groups?: readonly string[],
 ): BotSection[] {
   const byId = new Map(sections.flatMap((section) => section.bots.map((bot) => [bot.id, bot])));
   const placed = new Set(Object.values(order).flat());
-  return sections.map((section) => {
+  const filled = sections.map((section) => {
     const ids = order[sectionKey(section)];
     const kept = section.bots.filter((bot) => !placed.has(bot.id));
     const moved = (ids ?? []).flatMap((id) => byId.get(id) ?? []);
     return { ...section, bots: [...moved, ...kept] };
   });
+  if (!groups) return filled;
+  const rank = new Map(groups.map((id, index) => [id, index]));
+  const at = (section: BotSection) =>
+    section.id === null ? Number.POSITIVE_INFINITY : (rank.get(section.id) ?? groups.length);
+  return filled
+    .map((section, index) => ({ section, index }))
+    .sort((a, b) => at(a.section) - at(b.section) || a.index - b.index)
+    .map(({ section }) => section);
+}
+
+/**
+ * The position a dropped bot takes among every bot of its section, hidden
+ * ones included, from `drawn`, the section's drawn ids with the bot in its
+ * new place: just before the drawn bot that follows it, or just after the
+ * one before it when it went last. `all` is the section's ids by position
+ * before the drop, the dropped bot among them when it was already there.
+ */
+export function positionAmong(
+  all: readonly string[],
+  drawn: readonly string[],
+  id: string,
+): number {
+  const rest = all.filter((other) => other !== id);
+  const at = drawn.indexOf(id);
+  const next = drawn[at + 1];
+  if (next !== undefined && rest.includes(next)) return rest.indexOf(next);
+  const previous = drawn[at - 1];
+  if (previous !== undefined && rest.includes(previous)) return rest.indexOf(previous) + 1;
+  return at === 0 ? 0 : rest.length;
 }
