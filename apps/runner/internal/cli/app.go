@@ -14,6 +14,7 @@ import (
 	"time"
 
 	devapp "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/devices/app"
+	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/host/adapters/execpolicy"
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/host/adapters/folders"
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/host/adapters/system"
 	hostapp "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/host/app"
@@ -145,6 +146,8 @@ func New(version string) (*App, error) {
 		Directories:   folders.Disk{},
 		WorkspaceRoot: paths.Workspaces, Version: version,
 		ClaudeAccount: func() string { return system.ClaudeAccount(claudeConfigPath(paths)) },
+		ExecPolicies:  execpolicy.File{Path: paths.ExecPolicy()},
+		Executor:      system.Executor{},
 	})
 	pairingSvc := pairapp.New(pairapp.Options{
 		Store:        store,
@@ -178,7 +181,7 @@ func New(version string) (*App, error) {
 		// the next one behind (02-runner §5).
 		Spares: true,
 	})
-	devices, err := hostDevices()
+	devices, err := hostDevices(false)
 	if err != nil {
 		return nil, err
 	}
@@ -207,7 +210,7 @@ func New(version string) (*App, error) {
 		Layout:   layout,
 		Env: func(session sessionsdomain.Session) map[string]string {
 			env := sessionEnv(paths, session)
-			pinned, device := pinDevice(devices, session)
+			pinned, device := pinDevice(app.Devices, session)
 			for key, value := range pinned {
 				env[key] = value
 			}

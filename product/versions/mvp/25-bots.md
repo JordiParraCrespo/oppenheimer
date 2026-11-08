@@ -125,7 +125,9 @@ worker runs it and streams what happens back to the chat.
   Claude Code as a library; its shell and file tools would run commands
   the model chose on the control plane. They are off. What it keeps from
   Claude Code is the loop, compaction and web search; real work on files
-  goes to a session on a host (§4.2). Its `WebFetch` and subagents are off
+  goes to a session on a host (§4.2), and a single program to `run_command`,
+  which runs on a host, never on the control plane (§4.2, "Commands on a
+  host", 2026-11-07). Its `WebFetch` and subagents are off
   too (2026-10-15): the first fetched any address it was given, the
   server's loopback and private network included, and bots used the second
   to go looking through the server's disk.
@@ -788,6 +790,32 @@ training, which knows nothing of it.
   server's tools or resources over the guide, and the guide in languages
   other than English.
 
+**A built-in catch-up** (2026-11-08, from poteto's `recall` in pstack,
+`cursor/plugins`). The owner asked to come back to a bot, or a session, and
+learn fast what is going on.
+
+- **`recap`, a second built-in skill.** Every bot has it, listed under "Your
+  skills" when the turn offers `use_skill` and `list_sessions`. It reads this
+  chat (`search_chat`), the sessions (`list_sessions`, `read_session`), the
+  person's pull requests (`list_pull_requests`, queue "mine") and the plan
+  (`plan_summary`), skipping what the bot cannot use, and answers with where
+  things stand, a line per thread, what waits on the person and the one next
+  move. It only reads. Unlike `oppenheimer`, the person runs it:
+  `/recap [topic]`, so a turn's slash command now resolves against the
+  built-ins as well as the bot's own skills (`withBuiltInSkills`), and a
+  bot's own skill of that name, saved before it was reserved, still wins.
+- **Named `recap`, not `recall`.** `recall` is already the bot's tool for
+  searching its memory, and one name for two things would have the model
+  calling the wrong one.
+- **In sessions too.** The note the runner writes beside a session's
+  checkout (`CLAUDE.md`) tells its agent how to answer "recall" or "catch me
+  up": its conversation, its branch, its pull request and its helpers, in the
+  same shape. It is in the note, not `runner --skill`, since the person asks
+  for it, not the agent.
+- **Not built.** `/recap` in the composer's `/` menu, which lists the
+  built-in commands and the bot's own skills only; and the catch-up in a
+  Codex session, since the note is `CLAUDE.md` and Codex reads `AGENTS.md`.
+
 **Built-in commands** (2026-11-02, from Claude Code's commands,
 `code.claude.com/docs/en/commands`). A built-in is a `/<name>` Oppenheimer
 runs itself, for every bot, whatever skills it has. A skill only puts
@@ -958,6 +986,8 @@ agent's, in a session, where Claude Code ships them.
 | `read_session` | A session's recent log in words: tasks and follow-ups with their sender, the agent working, blocked or done, questions, failures, stops. The log only, never the terminal or the agent's conversation (built 2026-10-27; "recent output" was the plan). `after_seq` reads only what followed an entry; `send_to_session` and `answer_session` name the entry their input followed (2026-10-29) | auto |
 | `stop_session` / `close_session` | Stop it, or close and clean up | ask |
 | `list_folders` | Browse a host's folders | auto |
+| `run_command` | Run one program on a host and read its exit code, stdout and stderr in the same turn, only what that host's own policy allows (below; built 2026-11-07) | ask |
+| `open_terminal` / `type_in_terminal` / `read_terminal` | Open a blank terminal (agent `shell`) on a host, type into it (text, then named keys such as Enter or C-c) and read its screen back after waiting for a pattern; only on a host whose `runner exec` mode is `full` (below; built 2026-11-08) | ask / ask / auto |
 
 Built 2026-10-27 (issue #493), so a bot that manages sessions can see them
 as the person does and act on them. Three rules hold it:
@@ -984,6 +1014,81 @@ as the person does and act on them. Three rules hold it:
   cancels the turn the prompt opened. The console does not draw the log
   yet; until it does, the bot's chat (the call's activity line and the
   approval card) and the log are where the person sees it.
+
+#### Commands on a host
+
+Added 2026-11-07, after the owner asked for bots that "can run scripts and
+more" without a VM each: renting 50 sandboxes around the clock costs
+thousands a month, while the hosts the person already paired cost nothing
+more (`10-sleep-wake-and-pricing.md` §7 prices the sandbox services).
+`run_command` is OpenClaw's `system.run` on a node, on our runner:
+
+- **One program, run directly.** argv goes to the program as given, with no
+  shell and no stdin, so the program that runs is the one the policy
+  decided on; a pipe or `;` is text unless the program is a shell the host
+  allows. It runs as the runner's account, in the runner's environment.
+- **The host decides what runs, on the host.** `runner exec mode
+  off|allowlist|full` and `runner exec allow|deny <program>` write
+  `~/.oppenheimer/exec.json`, which the runner reads on every call and
+  refuses if another account can write it. Off is the default, so pairing
+  a machine never hands its shell to a bot. An allowlist entry is a program
+  on `PATH` (`python3`) or an absolute path or glob (`/home/me/scripts/*`); a
+  bare name never matches a path, so a `./python3` the bot wrote is not
+  `python3`. A path is checked and run as one absolute path whose folders
+  are their real ones (entries are read the same way), so a symlinked
+  folder cannot dress the bot's own file as an allowed script, while a
+  virtualenv's python or a Homebrew link still runs under its own name. Off
+  refuses before anything on disk is looked at. The control plane never reads or writes the policy, so a
+  compromised control plane runs nothing the person did not allow.
+- **The bot's own folder.** A call starts in `<workspaces>/bots/<bot id>`,
+  made on first use and kept, unless it names an absolute `cwd`. That is
+  the bot's machine without a VM: its scripts, data and virtualenvs.
+- **Bounded to the turn.** At most 120 s a call (the protocol allows 600;
+  a turn has 4 minutes), its whole process group killed at the timeout,
+  and whatever it left running in its group killed when it exits; the last
+  32 KB of each stream kept; at most 8 at once on a host, a ninth refused
+  rather than queued. Longer work is a session.
+- **Once per approval.** An approved call's `host.exec` carries a command
+  id derived from the approval, and the runner answers an id it ran
+  recently (its last 256) with that run's result, so a worker that crashed
+  after the host ran the program does not run it a second time.
+- **Asked, then answered in words.** It asks under Approve for me, with the
+  command line on the card; a standing yes is per program and host. A run
+  is an answer whatever its exit code; a refusal (`EXEC_001` off, `EXEC_002`
+  not allowed, `EXEC_003` folder, `EXEC_004` not started) tells the bot that
+  nothing ran and that only the person can change it, on the host. What the
+  program printed is fenced as outside text.
+
+On the wire it is `host.exec` and `host.exec.result`, gated on the
+`host.exec` capability (`01-protocol.md`).
+
+#### Driving a terminal
+
+Added 2026-11-08, the next step the owner asked for after `run_command`:
+bots that run bash or ssh interactively, as a person at a keyboard does.
+
+- **A terminal is a session.** `open_terminal` starts one whose window 0 is
+  a plain shell (agent `shell`, the console's Blank terminal) in a folder on
+  the host. It is an ordinary session: the person sees it in the console,
+  watches it live and can take over.
+- **Type, then wait, then read.** `type_in_terminal` types its text
+  literally and then presses named keys (`Enter`, `C-c`, `Tab`, arrows: the
+  list is `TERMINAL_KEYS`); the runner then waits until an RE2 pattern shows
+  on a line of the screen (the prompt coming back, a program's question) or
+  for a number of seconds, at most 60, and returns the screen, its last
+  32 KB, with up to 500 lines of scrollback when asked. `read_terminal` is
+  the same without typing, and runs without asking.
+- **Only a blank terminal, only on a full host.** A bot never types into a
+  coding agent's window (`EXEC_007`), and a host whose exec mode is not
+  `full` refuses (`EXEC_006`): a shell runs anything, so an allowlist
+  cannot hold it.
+- **No secrets through the bot.** Its prompt says never to type a password
+  or read one off the screen; a program that asks for one is the person's to
+  answer, in that terminal in the console. What the screen shows is fenced
+  as outside text.
+
+On the wire it is `terminal.drive` and `terminal.screen`, gated on the
+`terminal.drive` capability (`01-protocol.md`).
 
 ### 4.3 Projects and the plan
 | Tool | Does | Default |
@@ -1744,3 +1849,16 @@ The decisions it produced:
   told; they now get their token count and, from 100,000 tokens, the ask for
   narrow reads. The note no longer says every engine compacts on its own:
   only Claude Code does.
+- 2026-11-07: **bots run commands on a host** (§4.2, "Commands on a
+  host"). The owner wanted bots that run scripts, and found a sandbox per
+  bot too dear for 50 of them. `run_command` runs one program on a paired
+  host through its runner, which allows only what its own `runner exec`
+  policy allows, off by default. It narrows 2026-10-15's "no shell": the
+  engine still has none on the control plane, and the closed list says
+  `run_command` is the one way a bot runs anything.
+- 2026-11-08: **bots drive a terminal** (§4.2, "Driving a terminal"). The
+  owner asked for bash and ssh as a person uses them, not one command at a
+  time. A bot opens a blank-terminal session, types into it and reads its
+  screen, on a host whose exec mode is `full`. It changes §2's "the bot
+  delegates a complete task and never runs a terminal" for blank terminals
+  only: a coding agent is still given a task, never typed at.

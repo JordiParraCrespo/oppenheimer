@@ -53,7 +53,8 @@ describe('the oppenheimer skill in the prompt', () => {
       userInvocable: true,
       modelInvocable: true,
     };
-    expect(withBuiltInSkills([own])).toEqual([own]);
+    expect(withBuiltInSkills([own])).toContain(own);
+    expect(withBuiltInSkills([own])).not.toContain(OPPENHEIMER_SKILL);
     const prompt = composeBotSystemPrompt({
       ...base,
       skills: [own],

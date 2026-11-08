@@ -406,6 +406,46 @@
     "after": 18244,
     "limit": 50
   },
+  "host.exec": {
+    "type": "host.exec",
+    "commandId": "b2c3d4e5-6f7a-4b8c-9d0e-1f2a3b4c5d6e",
+    "argv": [
+      "python3",
+      "report.py",
+      "--since",
+      "7d"
+    ],
+    "home": "juno-3f2a",
+    "timeoutSeconds": 60
+  },
+  "host.exec.result": {
+    "type": "host.exec.result",
+    "commandId": "b2c3d4e5-6f7a-4b8c-9d0e-1f2a3b4c5d6e",
+    "exitCode": 0,
+    "timedOut": false,
+    "stdout": "12 rows written to report.csv",
+    "stderr": "",
+    "cwd": "/home/jordi/oppenheimer/bots/juno-3f2a",
+    "durationMs": 842
+  },
+  "terminal.drive": {
+    "type": "terminal.drive",
+    "commandId": "b2c3d4e5-6f7a-4b8c-9d0e-1f2a3b4c5d6e",
+    "sessionId": "3f0d9e2c-6a4b-4e9a-9c3d-7b1e5a2f8c40",
+    "text": "ssh build-02 uptime",
+    "keys": [
+      "Enter"
+    ],
+    "waitFor": "\\$ $",
+    "waitSeconds": 10
+  },
+  "terminal.screen": {
+    "type": "terminal.screen",
+    "commandId": "b2c3d4e5-6f7a-4b8c-9d0e-1f2a3b4c5d6e",
+    "screen": "jordi@mac:~$ ssh build-02 uptime\n 10:02:11 up 12 days,  load average: 0.10\njordi@mac:~$ ",
+    "matched": true,
+    "waitedMs": 1240
+  },
   "transcript.page": {
     "type": "transcript.page",
     "commandId": "b2c3d4e5-6f7a-4b8c-9d0e-1f2a3b4c5d6e",

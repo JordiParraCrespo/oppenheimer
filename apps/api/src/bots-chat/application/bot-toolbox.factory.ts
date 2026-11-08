@@ -15,6 +15,7 @@ import { BotPeerToolsFactory } from './bot-bots-tools.factory';
 import { BotGithubToolsFactory } from './bot-github-tools.factory';
 import { BotGoalToolsFactory } from './bot-goal-tools.factory';
 import { BotGuideToolsFactory } from './bot-guide-tools.factory';
+import { BotHostCommandToolsFactory } from './bot-host-command-tools.factory';
 import { BotHostToolsFactory } from './bot-host-tools.factory';
 import { BotIssueToolsFactory } from './bot-issue-tools.factory';
 import { BotLoopToolsFactory } from './bot-loop-tools.factory';
@@ -33,6 +34,7 @@ import { BotSessionFileToolsFactory } from './bot-session-file-tools.factory';
 import { BotSessionToolsFactory } from './bot-session-tools.factory';
 import { BotSkillToolsFactory } from './bot-skill-tools.factory';
 import { BotSubagentToolsFactory } from './bot-subagent-tools.factory';
+import { BotTerminalToolsFactory } from './bot-terminal-tools.factory';
 import type {
   ApprovedCallContext,
   BotToolArea,
@@ -59,6 +61,8 @@ export class BotToolboxFactory {
     guide: BotGuideToolsFactory,
     hosts: BotHostToolsFactory,
     sessions: BotSessionToolsFactory,
+    hostCommands: BotHostCommandToolsFactory,
+    terminals: BotTerminalToolsFactory,
     sessionFiles: BotSessionFileToolsFactory,
     watches: BotWatchToolsFactory,
     plan: BotPlanToolsFactory,
@@ -91,6 +95,8 @@ export class BotToolboxFactory {
       notices,
       hosts,
       sessions,
+      hostCommands,
+      terminals,
       sessionFiles,
       watches,
       plan,

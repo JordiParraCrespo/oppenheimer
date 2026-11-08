@@ -40,7 +40,7 @@ describe('BotSkillEntity', () => {
   });
 
   it('refuses a name Oppenheimer holds, given new or by a rename, but still loads a row saved under one before it was reserved', () => {
-    for (const name of ['goal', 'oppenheimer']) {
+    for (const name of ['goal', 'oppenheimer', 'recap']) {
       expect(() => skill({ name })).toThrow(/Oppenheimer uses that name/);
     }
     const renamed = skill();

@@ -63,13 +63,17 @@ const (
 	EnvWhatsApp = "RUNNER_WHATSAPP"
 	// EnvDevices is the simulators and emulators this host offers its
 	// sessions, comma-separated serials (`emulator-5554`, or
-	// `emulator-5554=Pixel 4` to name one). Unset offers none.
+	// `emulator-5554=Pixel 4` to name one). Unset offers the ones running
+	// when a session asks (booted simulators, adb's emulators); `off`
+	// offers none.
 	EnvDevices = "RUNNER_DEVICES"
 	// EnvArgentSimulatorServer is Argent's simulator-server binary, which
-	// streams a device's screen.
+	// streams a device's screen. Unset, it is found beside the `argent` on
+	// PATH.
 	EnvArgentSimulatorServer = "RUNNER_ARGENT_SIMULATOR_SERVER"
 	// EnvArgentToolsURL and EnvArgentToken reach Argent's tool-server, the
-	// one the host's agents use, which applies the reader's input.
+	// one the host's agents use, which applies the reader's input. Unset,
+	// the one Argent has running is read from ~/.argent.
 	EnvArgentToolsURL = "RUNNER_ARGENT_TOOLS_URL"
 	EnvArgentToken    = "RUNNER_ARGENT_TOKEN"
 )
@@ -217,6 +221,10 @@ func (p Paths) Manifests() string { return filepath.Join(p.Home, DirManifests) }
 func (p Paths) WhatsApp() string { return filepath.Join(p.State(), DirWhatsApp) }
 
 func (p Paths) Files() string { return filepath.Join(p.Home, DirFiles) }
+
+// ExecPolicy is what this host lets bots run (`runner exec`): a file in the
+// runner home, never under the workspaces a bot's own folder sits in.
+func (p Paths) ExecPolicy() string { return filepath.Join(p.Home, "exec.json") }
 
 // Socket is the local Unix socket: the runner's only listener.
 func (p Paths) Socket() string { return filepath.Join(p.Run(), "runner.sock") }

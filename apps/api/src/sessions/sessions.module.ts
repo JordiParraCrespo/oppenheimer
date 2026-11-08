@@ -48,6 +48,7 @@ import { CollectCloudReplyHttpController } from './commands/collect-cloud-reply/
 import { CreateSessionCommandHandler } from './commands/create-session/create-session.command-handler';
 import { CreateSessionHttpController } from './commands/create-session/create-session.http.controller';
 import { DeliverSessionWakeCommandHandler } from './commands/deliver-session-wake/deliver-session-wake.command-handler';
+import { DriveSessionTerminalCommandHandler } from './commands/drive-session-terminal/drive-session-terminal.command-handler';
 import { IssueAttachTicketCommandHandler } from './commands/issue-attach-ticket/issue-attach-ticket.command-handler';
 import { IssueAttachTicketHttpController } from './commands/issue-attach-ticket/issue-attach-ticket.http.controller';
 import { IssueSessionPreviewCommandHandler } from './commands/issue-session-preview/issue-session-preview.command-handler';
@@ -73,6 +74,7 @@ import { RestartSessionCommandHandler } from './commands/restart-session/restart
 import { RestartSessionHttpController } from './commands/restart-session/restart-session.http.controller';
 import { RetrySessionCommandHandler } from './commands/retry-session/retry-session.command-handler';
 import { RetrySessionHttpController } from './commands/retry-session/retry-session.http.controller';
+import { RunHostCommandCommandHandler } from './commands/run-host-command/run-host-command.command-handler';
 import { SendCloudReplyCommandHandler } from './commands/send-cloud-reply/send-cloud-reply.command-handler';
 import { SendCloudReplyHttpController } from './commands/send-cloud-reply/send-cloud-reply.http.controller';
 import { SendSessionPromptCommandHandler } from './commands/send-session-prompt/send-session-prompt.command-handler';
@@ -225,6 +227,8 @@ const commandHandlers: Provider[] = [
   AnswerSessionDecisionCommandHandler,
   SendSessionPromptCommandHandler,
   DeliverSessionWakeCommandHandler,
+  RunHostCommandCommandHandler,
+  DriveSessionTerminalCommandHandler,
   UploadSessionAttachmentCommandHandler,
   RecordSessionEventsCommandHandler,
 ];

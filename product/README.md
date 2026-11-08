@@ -1327,6 +1327,27 @@ earlier note:
   report none, was never told. On 2026-11-08 it is told its tokens, and
   asked for narrow reads from `BOT_CONTEXT_TIGHT_TOKENS`; the note no
   longer says every engine compacts on its own.
+- `versions/mvp/25-bots.md` (2026-10-15) gave bots no shell at all: code
+  work and scripts went to a coding agent in a session. On 2026-11-07 the
+  owner asked for bots that run scripts themselves, without a sandbox per
+  bot: `run_command` runs one program on a paired host, through its runner,
+  only as that host's own `runner exec` policy allows, which is off until
+  the person on the host turns it on.
+- The Simulator (2026-10-26) offered a session a device only when the host
+  named them in `RUNNER_DEVICES` and pointed the runner at Argent's
+  binary and tool-server, so a host installed the ordinary way offered
+  none and every session's Simulator tab said "No device". On 2026-11-08
+  an unset `RUNNER_DEVICES` offers the simulators and emulators running
+  when a session asks (simctl's booted ones, adb's emulators), and the
+  runner finds Argent's `simulator-server` beside the `argent` on its
+  PATH and the tool-server Argent has running in `~/.argent`. Naming
+  devices still works; `off` offers none.
+- `versions/mvp/25-bots.md` §2 said a bot "delegates a complete task and
+  never runs a terminal". On 2026-11-08 the owner asked for bots that drive
+  bash and ssh themselves: `open_terminal`, `type_in_terminal` and
+  `read_terminal` type into a blank-terminal session and read its screen,
+  only on a host whose `runner exec` mode is `full`. A coding agent is still
+  given a task, never typed at.
 - `versions/mvp/18-plan-product.md` §1 (2026-11-05) listed Plan's Projects
   as a row per project with its settings. On 2026-11-08, following that
   day's `Tasks` artboards, each project is a card (its repositories, and

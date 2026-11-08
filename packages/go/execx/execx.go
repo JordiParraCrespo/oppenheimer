@@ -29,6 +29,9 @@ const (
 	// Stdout keeps stdout only, as exec.Cmd.Output does. stderr is still
 	// collected, for Error's FirstLine and LastLine.
 	Stdout
+	// Separate keeps both, apart: stdout in Result.Out, stderr in
+	// Result.Stderr, for a caller that hands each on as it is.
+	Separate
 )
 
 // Spec is one command.
@@ -48,12 +51,20 @@ type Spec struct {
 	// it started go too. It is a no-op where there are no process groups.
 	// Leave it off for a command that starts a daemon meant to outlive it.
 	KillGroup bool
+	// ReapGroup, with KillGroup, also kills whatever is left in the group
+	// once the command exits on its own: a background child it started does
+	// not outlive the call. Leave it off when the leftovers are wanted.
+	ReapGroup bool
 	// WaitDelay bounds how long output is waited on once the command has
 	// exited or been killed: a child that inherited the output and outlived
 	// it would otherwise hold the call open. Zero is DefaultWaitDelay.
 	WaitDelay time.Duration
 	// Output is which streams Result.Out holds.
 	Output Output
+	// Limit, when positive, keeps only the last Limit bytes of each stream
+	// and marks the cut in Result: a command whose output nobody bounded
+	// cannot hold the caller's memory. Zero keeps everything.
+	Limit int
 }
 
 // Result is what a command printed.
@@ -62,6 +73,11 @@ type Result struct {
 	// nothing else touched. It is set on failure too: a failed command's
 	// output is usually the reason.
 	Out string
+	// Stderr is stderr, trimmed the same way, in Separate mode only.
+	Stderr string
+	// OutTruncated and StderrTruncated say Limit cut the stream's start.
+	OutTruncated    bool
+	StderrTruncated bool
 }
 
 // Error is what Run returns when the command did not succeed. It wraps the
@@ -122,27 +138,34 @@ func Run(ctx context.Context, spec Spec) (Result, error) {
 		cmd.WaitDelay = DefaultWaitDelay
 	}
 
-	var out, stderr bytes.Buffer
-	cmd.Stdout = &out
-	if spec.Output == Stdout {
-		cmd.Stderr = &stderr
+	out, stderr := &tail{limit: spec.Limit}, &tail{limit: spec.Limit}
+	cmd.Stdout = out
+	if spec.Output == Stdout || spec.Output == Separate {
+		cmd.Stderr = stderr
 	} else {
 		// The same writer for both, which is what makes os/exec share one
 		// pipe and keep the two streams in the order they were written.
-		cmd.Stderr = &out
+		cmd.Stderr = out
 	}
 
 	err := cmd.Run()
-	text := strings.TrimRight(out.String(), "\n")
-	if err == nil {
-		return Result{Out: text}, nil
+	if spec.KillGroup && spec.ReapGroup && cmd.Process != nil {
+		killGroup(cmd.Process.Pid)
 	}
-	said := text
-	if spec.Output == Stdout {
+	result := Result{Out: strings.TrimRight(out.String(), "\n"), OutTruncated: out.cut}
+	if spec.Output == Separate {
+		result.Stderr = strings.TrimRight(stderr.String(), "\n")
+		result.StderrTruncated = stderr.cut
+	}
+	if err == nil {
+		return result, nil
+	}
+	said := result.Out
+	if spec.Output != Combined {
 		said = stderr.String()
 	}
 	first, last := lines(said)
-	return Result{Out: text}, &Error{
+	return result, &Error{
 		Name:      spec.Name,
 		Err:       err,
 		TimedOut:  errors.Is(runCtx.Err(), context.DeadlineExceeded),
@@ -151,6 +174,35 @@ func Run(ctx context.Context, spec Spec) (Result, error) {
 		LastLine:  last,
 	}
 }
+
+// tail is a writer that keeps everything, or with a positive limit only the
+// last limit bytes, noting that it dropped some.
+type tail struct {
+	buf   bytes.Buffer
+	limit int
+	cut   bool
+}
+
+func (t *tail) Write(p []byte) (int, error) {
+	n := len(p)
+	if t.limit <= 0 {
+		return t.buf.Write(p)
+	}
+	if len(p) >= t.limit {
+		t.cut = t.cut || len(p) > t.limit || t.buf.Len() > 0
+		t.buf.Reset()
+		t.buf.Write(p[len(p)-t.limit:])
+		return n, nil
+	}
+	if over := t.buf.Len() + len(p) - t.limit; over > 0 {
+		t.buf.Next(over)
+		t.cut = true
+	}
+	t.buf.Write(p)
+	return n, nil
+}
+
+func (t *tail) String() string { return t.buf.String() }
 
 // lines returns the first and last non-empty lines of s, trimmed.
 func lines(s string) (first, last string) {
