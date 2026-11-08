@@ -342,7 +342,7 @@
       "pick": "Use /{{name}}",
       "builtInLabel": "Commands",
       "builtInSkill": {
-        "recap": "Catch up: where your sessions, pull requests and plan stand, what waits on you, the next move. Add a topic to narrow it."
+        "recap": "Catch up on your sessions, pull requests and plan. Add a topic to narrow it."
       },
       "builtIn": {
         "goal": "Keep working until a condition holds, checked after every turn. /goal clear stops it.",

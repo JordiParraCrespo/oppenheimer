@@ -350,7 +350,7 @@
       "pick": "Usar /{{name}}",
       "builtInLabel": "Comandos",
       "builtInSkill": {
-        "recap": "Ponte al día: cómo van tus sesiones, pull requests y plan, qué espera de ti y el siguiente paso. Añade un tema para acotarlo."
+        "recap": "Ponte al día con tus sesiones, pull requests y plan. Añade un tema para acotarlo."
       },
       "builtIn": {
         "goal": "Sigue trabajando hasta que se cumpla una condición, revisada tras cada turno. /goal clear lo detiene.",
