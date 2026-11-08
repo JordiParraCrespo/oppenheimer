@@ -6,6 +6,7 @@ import {
 } from '@oppenheimer/shared';
 import { eventNote } from './bot-history.policy';
 import { BotMessageEntity } from './bot-message.entity';
+import { failedWakeAsk } from './bot-recovery.policy';
 import { fenceUntrusted } from './bot-tool-text.policy';
 import { BotTurnEntity } from './bot-turn.entity';
 
@@ -395,8 +396,7 @@ const WAKE_ASKS: Readonly<Record<BotSessionEventState, string>> = {
     'The agent is blocked until a person answers it in the session (a permission or a question). You cannot answer a terminal. Tell the person, in a sentence or two, that it waits on them and what it seems to need, and give the session id so they can open it.',
   completed:
     'Read the session with get_session first, then tell the person what the agent actually did, from its result. Say only what the result shows: if it does not say tests passed, do not say they did. If the work was a step of something you were doing, carry on with the next step within your permissions.',
-  failed:
-    'Read the session with get_session, then tell the person it failed, why, and what would fix it. Do not start it again unless the person asked you to retry such failures.',
+  failed: failedWakeAsk(),
   cancelled:
     'Tell the person the task was stopped before it finished, and what it had done if the session says. Do not start it again on your own.',
   expired: 'Tell the person the task never ran, and why if the session says.',

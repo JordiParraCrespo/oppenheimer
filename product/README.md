@@ -1279,3 +1279,16 @@ earlier note:
   name alone), replacing the starter's asterisk, the rail's "O" and the
   three-part hat favicon. A bot's owner can also pick its face in Profile
   (hat, eyes, mouth).
+- `versions/mvp/25-bots.md` §1 had a bot report a failed session and stop
+  ("do not start it again unless the person asked you to retry such
+  failures"). On 2026-11-08 the owner asked for bots as proactive as
+  OpenClaw's: a bot whose session failed on the default host because
+  Claude Code there was not signed in reported it with three other hosts
+  online. A failed step now sends the bot to the next reasonable route
+  first (another online host, another source, another approach), and when
+  a session it started on a host it chose fails in a way that looks like
+  the host's, it offers to run its task on another online host and starts
+  it on the person's yes. A host the person named
+  is never overridden, a watched session or a task that fails on its own
+  merits is still reported, not retried, and a person's "no" is never
+  routed around.
