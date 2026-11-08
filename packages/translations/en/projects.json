@@ -61,6 +61,7 @@
     "needsInput": "Needs input",
     "inProgress": "In progress",
     "noMilestones": "No milestones yet.",
+    "nothingNeedsInput": "Nothing waits on you.",
     "nothingInProgress": "Nothing in progress.",
     "gone": "That project is no longer here.",
     "loadFailed": "Could not load this project."

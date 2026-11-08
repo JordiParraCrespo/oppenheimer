@@ -25,18 +25,13 @@ export function ProjectDialog({
   projectId?: string;
   onClose: () => void;
   onSaved: (project: ProjectEntity) => void;
-  onDeleted: () => void;
+  /** After the project is deleted; the dialog closes without it. */
+  onDeleted?: () => void;
 }) {
   const { t } = useTranslation();
   if (!projectId)
     return (
-      <ProjectEditorDialog
-        key="new"
-        project={undefined}
-        onClose={onClose}
-        onSaved={onSaved}
-        onDeleted={onDeleted}
-      />
+      <ProjectEditorDialog key="new" project={undefined} onClose={onClose} onSaved={onSaved} />
     );
 
   return (

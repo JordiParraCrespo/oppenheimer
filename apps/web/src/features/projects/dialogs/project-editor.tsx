@@ -57,7 +57,8 @@ export function ProjectEditorDialog({
   project: ProjectEntity | undefined;
   onClose: () => void;
   onSaved: (project: ProjectEntity) => void;
-  onDeleted: () => void;
+  /** After the project is deleted; the dialog closes without it. */
+  onDeleted?: () => void;
 }) {
   const { t } = useTranslation();
   const resolveError = useErrorMessage();
@@ -112,7 +113,7 @@ export function ProjectEditorDialog({
       <DeleteProjectDialog
         project={project}
         onClose={() => setDeleting(false)}
-        onDeleted={onDeleted}
+        onDeleted={onDeleted ?? onClose}
       />
     );
   }

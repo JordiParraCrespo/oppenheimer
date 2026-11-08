@@ -140,6 +140,13 @@ function ProjectTaskRow({
     reason?: React.ReactNode;
   }) {
   const dot = <span className={dotVariants({ state })} aria-hidden />;
+  const line = (
+    <span className="flex items-center gap-2.5">
+      {reason ? null : dot}
+      <span className="min-w-0 flex-1 text-operate text-pretty">{title}</span>
+      {due ? <span className="figures shrink-0 font-mono text-micro text-fg-subtle">{due}</span> : null}
+    </span>
+  );
   return useRender({
     defaultTagName: 'div',
     render,
@@ -149,23 +156,16 @@ function ProjectTaskRow({
           '-mx-2 flex min-h-8 flex-col justify-center gap-1 rounded-sm px-2 py-1.5 text-fg no-underline outline-none transition-colors duration-fast ease-standard hover:no-underline focus-visible:outline-2 focus-visible:outline-ring [a&]:hover:bg-hover-surface',
           className,
         ),
-        children: reason ? (
+        children: (
           <>
-            <span className="flex items-start gap-1.5 text-sm text-fg-muted">
-              <span className="flex h-[1.4em] shrink-0 items-center">{dot}</span>
-              {reason}
-            </span>
-            <span className="flex items-baseline gap-2.5">
-              <span className="min-w-0 flex-1 text-operate text-pretty">{title}</span>
-              {due ? <span className="figures shrink-0 font-mono text-micro text-fg-subtle">{due}</span> : null}
-            </span>
+            {reason ? (
+              <span className="flex items-start gap-1.5 text-sm text-fg-muted">
+                <span className="flex h-[1.4em] shrink-0 items-center">{dot}</span>
+                {reason}
+              </span>
+            ) : null}
+            {line}
           </>
-        ) : (
-          <span className="flex items-center gap-2.5">
-            {dot}
-            <span className="min-w-0 flex-1 text-operate text-pretty">{title}</span>
-            {due ? <span className="figures shrink-0 font-mono text-micro text-fg-subtle">{due}</span> : null}
-          </span>
         ),
       },
       props,

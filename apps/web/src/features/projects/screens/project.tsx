@@ -67,7 +67,7 @@ export function ProjectScreen({ projectId }: { projectId: string }) {
           <section aria-busy>
             <LoadingStatus />
             <ProjectOverviewSkeleton
-              labels={[t('projects.detail.milestones'), t('projects.detail.inProgress')]}
+              labels={[t('projects.detail.milestones'), t('projects.detail.needsInput')]}
             />
           </section>
         </QueryState.Pending>

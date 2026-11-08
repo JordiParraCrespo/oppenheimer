@@ -9,10 +9,10 @@ import {
   ProjectTaskRow,
 } from '@oppenheimer/design-system-web';
 import { useSuspensePlan } from '@oppenheimer/frontend-consumer/react';
-import { dateFormatter, ErrorAlert, useLocale } from '@oppenheimer/frontend-web';
+import { ErrorAlert, formatCalendarDay, useLocale } from '@oppenheimer/frontend-web';
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
-import { dayOf, planProjectParam } from '../lib/project-links';
+import { planProjectParam } from '../lib/project-links';
 import { projectTaskGroups } from '../lib/project-list';
 
 /**
@@ -45,8 +45,7 @@ export function ProjectOverviewSection({ projectId }: { projectId: string }) {
 
   const own = milestones.filter((milestone) => milestone.projectId === projectId);
   const { blocked, doing } = projectTaskGroups(projectId, tasks);
-  const due = dateFormatter(locale, { month: 'short', day: 'numeric' });
-  const dueOf = (iso: string | null) => (iso ? due.format(dayOf(iso)) : undefined);
+  const dueOf = (iso: string | null) => (iso ? formatCalendarDay(iso, locale) : undefined);
   const scope = { project: planProjectParam(project) };
 
   return (
@@ -71,9 +70,11 @@ export function ProjectOverviewSection({ projectId }: { projectId: string }) {
           </ProjectPanel>
         </ProjectOverviewColumn>
         <ProjectOverviewColumn>
-          {blocked.length > 0 ? (
-            <ProjectPanel label={t('projects.detail.needsInput')}>
-              {blocked.map((task) => (
+          <ProjectPanel label={t('projects.detail.needsInput')}>
+            {blocked.length === 0 ? (
+              <ProjectPanelEmpty>{t('projects.detail.nothingNeedsInput')}</ProjectPanelEmpty>
+            ) : (
+              blocked.map((task) => (
                 <ProjectTaskRow
                   key={task.id}
                   state="needs-input"
@@ -82,9 +83,9 @@ export function ProjectOverviewSection({ projectId }: { projectId: string }) {
                   due={dueOf(task.dueDate)}
                   render={<Link to="/plan" search={{ ...scope, task: task.id }} />}
                 />
-              ))}
-            </ProjectPanel>
-          ) : null}
+              ))
+            )}
+          </ProjectPanel>
           <ProjectPanel label={t('projects.detail.inProgress')}>
             {doing.length === 0 ? (
               <ProjectPanelEmpty>{t('projects.detail.nothingInProgress')}</ProjectPanelEmpty>

@@ -79,14 +79,7 @@ function rendered(): Record<string, number> {
 }
 
 beforeEach(() => {
-  render(
-    <ProjectEditorDialog
-      project={undefined}
-      onClose={vi.fn()}
-      onSaved={vi.fn()}
-      onDeleted={vi.fn()}
-    />,
-  );
+  render(<ProjectEditorDialog project={undefined} onClose={vi.fn()} onSaved={vi.fn()} />);
   // The Defaults fold is open, so its pickers are mounted and would count.
   fireEvent.click(screen.getByText('projects.dialog.defaults'));
   rendered();

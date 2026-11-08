@@ -686,6 +686,7 @@
       "needsInput": "Necesita tu respuesta",
       "inProgress": "En curso",
       "noMilestones": "Aún no hay hitos.",
+      "nothingNeedsInput": "Nada espera tu respuesta.",
       "nothingInProgress": "Nada en curso.",
       "gone": "Ese proyecto ya no está aquí.",
       "loadFailed": "No se pudo cargar este proyecto."
