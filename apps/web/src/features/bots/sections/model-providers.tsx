@@ -37,8 +37,8 @@ export function ModelProviders() {
   const remove = useRemoveModelProviderKey();
   const makeDefault = useSetDefaultModelProvider();
   const groups = [
-    { id: 'connected', rows: providers.filter((row) => row.configured) },
-    { id: 'notConnectedGroup', rows: providers.filter((row) => !row.configured) },
+    { id: 'connected' as const, rows: providers.filter((row) => row.configured) },
+    { id: 'notConnectedGroup' as const, rows: providers.filter((row) => !row.configured) },
   ].filter((group) => group.rows.length > 0);
   const unavailableReason =
     deployment !== undefined && !deployment.bot_providers
