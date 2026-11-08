@@ -1,4 +1,6 @@
+import { isAbsolute, resolve } from 'node:path';
 import { registerAs } from '@nestjs/config';
+import { findWorkspaceRoot } from '@oppenheimer/env';
 import { z } from 'zod';
 import { parseEnv } from './env';
 
@@ -28,6 +30,19 @@ const schema = z.object({
   // be public.
   bullBoardUsername: z.string().optional(),
   bullBoardPassword: z.string().optional(),
+  // **Optional** — a file the API also writes its log lines to, as JSON, for a
+  // shipper to tail (`pnpm monitoring:up` runs Grafana Alloy over `.logs/`,
+  // into Loki). Unset, logs go to stdout only. A relative path is taken from
+  // the repository root, so `.logs/api.log` is the same file wherever the
+  // API is started from.
+  logFile: z
+    .string()
+    .optional()
+    .transform((value) =>
+      value && !isAbsolute(value)
+        ? resolve(findWorkspaceRoot() ?? process.cwd(), value)
+        : value || undefined,
+    ),
 });
 
 export const appConfig = registerAs('app', () =>
@@ -41,5 +56,6 @@ export const appConfig = registerAs('app', () =>
     trustProxy: 'TRUST_PROXY',
     bullBoardUsername: 'BULL_BOARD_USERNAME',
     bullBoardPassword: 'BULL_BOARD_PASSWORD',
+    logFile: 'LOG_FILE',
   }),
 );
