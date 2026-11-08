@@ -20,9 +20,8 @@ import {
   filterToolGroups,
   isFiltering,
   summarizeToolGroup,
-  TOOL_VIEWS,
-  type ToolView,
 } from '@/features/bots/lib/tool-filter';
+import { TOOL_VIEWS, type ToolView } from '@/features/bots/lib/tool-search';
 
 /**
  * Every tool the bot has, under its group: what each does on its own. A tool

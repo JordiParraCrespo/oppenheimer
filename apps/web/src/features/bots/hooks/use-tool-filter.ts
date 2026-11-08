@@ -1,5 +1,5 @@
 import { getRouteApi } from '@tanstack/react-router';
-import type { BotPermissionsSearch, ToolView } from '../lib/tool-filter';
+import type { BotPermissionsSearch, ToolView } from '../lib/tool-search';
 
 const permissions = getRouteApi('/_authenticated/bots_/$botId/settings/permissions');
 

@@ -9,7 +9,7 @@ import {
 } from '@oppenheimer/design-system-web';
 import { LoadingStatus } from '@oppenheimer/frontend-web';
 import { useTranslation } from 'react-i18next';
-import { TOOL_VIEWS } from '@/features/bots/lib/tool-filter';
+import { TOOL_VIEWS } from '@/features/bots/lib/tool-search';
 
 /** The folded groups, at the widths their names run to. */
 const GROUPS = ['w-20', 'w-36', 'w-12', 'w-16', 'w-28'];
