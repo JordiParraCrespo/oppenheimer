@@ -76,7 +76,7 @@ a{color:var(--link);text-decoration:none}a:hover{text-decoration:underline}
   | sh -s -- --token opk_7f3a9c</pre>
 </sc-if>
 <sc-if value="{{ showingPrompt }}">
-<pre style="margin:0;padding:12px;height:152px;overflow-y:auto;overscroll-behavior:contain;box-sizing:border-box;font-family:var(--font-mono);font-size:11.5px;line-height:1.7;color:var(--fg);white-space:pre-wrap;word-break:break-word">You are setting up this machine as an Oppenheimer host.
+<pre data-install-prompt="true" style="margin:0;padding:12px;height:152px;overflow-y:auto;overscroll-behavior:contain;box-sizing:border-box;font-family:var(--font-mono);font-size:11.5px;line-height:1.7;color:var(--fg);white-space:pre-wrap;word-break:break-word">You are setting up this machine as an Oppenheimer host.
 
 1. Check the OS and architecture with uname -sm. Supported: Linux x86_64/arm64, macOS arm64.
 2. Confirm git (2.40+) and tmux (3.2+) are installed. If either is missing, install it with the system package manager and report what you installed.
@@ -558,7 +558,7 @@ class Component extends DCLogic {
 
   copy(which) {
     const cmd = 'curl -fsSL https://app.oppenheimer.dev/install.sh | sh -s -- --token opk_7f3a9c';
-    const pre = document.querySelector('[aria-labelledby="addhost-title"] pre');
+    const pre = document.querySelector('[data-install-prompt]');
     const text = which === 'cmd' ? cmd : (pre ? pre.textContent : cmd);
     if (navigator.clipboard) navigator.clipboard.writeText(text).catch(() => {});
     this.setState({ copied: which });

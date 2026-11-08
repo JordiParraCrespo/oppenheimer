@@ -249,7 +249,8 @@ The design system and the other frames are unchanged. As in previous syncs,
 live in Settings and waiting pull requests count as blocked. Settings keeps
 “These apply to every watched repository.” The exploration frame remains.
 The host-detail tabs and Add host instruction tabs use separate state so
-visiting a host does not hide the installation instructions.
+visiting a host does not hide the installation instructions. Copy reads the
+selected installation tab, with the agent prompt selected from its own block.
 These are reference artboards; this sync does not implement their new
 behavior in the application.
 
