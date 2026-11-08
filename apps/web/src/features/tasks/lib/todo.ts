@@ -1,5 +1,6 @@
 import { compareRank, type TaskEntity } from '@oppenheimer/frontend-consumer';
 import { searchText } from '@oppenheimer/frontend-web';
+import { calendarDateSchema } from '@oppenheimer/shared/schemas/task';
 import { z } from 'zod';
 
 /**
@@ -10,11 +11,7 @@ import { z } from 'zod';
  */
 export const todoSearchSchema = z.object({
   project: searchText,
-  date: z
-    .string()
-    .regex(/^\d{4}-\d{2}-\d{2}$/)
-    .optional()
-    .catch(undefined),
+  date: calendarDateSchema.optional().catch(undefined),
   overdue: z.literal('off').optional().catch(undefined),
 });
 export type TodoSearch = z.infer<typeof todoSearchSchema>;

@@ -1,7 +1,14 @@
 import { TaskEntity } from '@oppenheimer/frontend-consumer';
 import type { TaskStatus } from '@oppenheimer/shared/schemas/task';
 import { describe, expect, it } from 'vitest';
-import { todayOpenCount, todoCounts, todoDay, todoEntries, todoStateLabel } from '../lib/todo';
+import {
+  todayOpenCount,
+  todoCounts,
+  todoDay,
+  todoEntries,
+  todoSearchSchema,
+  todoStateLabel,
+} from '../lib/todo';
 
 function task(
   id: string,
@@ -82,6 +89,10 @@ describe("To do's day", () => {
       done: 1,
     });
     expect(todayOpenCount(TASKS, DAY)).toBe(4);
+  });
+
+  it('drops a day that is not on the calendar from the address', () => {
+    expect(todoSearchSchema.parse({ date: '2026-99-99' }).date).toBeUndefined();
   });
 
   it('tells a narrowed empty day from an empty one', () => {

@@ -23,6 +23,12 @@ describe('the days each view draws', () => {
     expect([month[0], month.at(-1), month.length]).toEqual(['2026-10-26', '2026-12-06', 42]);
   });
 
+  it('drops a day that is not on the calendar, which would break the header', () => {
+    expect(calendarSearchSchema.parse({ date: '2026-99-99' }).date).toBeUndefined();
+    expect(calendarSearchSchema.parse({ date: '2026-02-30' }).date).toBeUndefined();
+    expect(calendarSearchSchema.parse({ date: '2026-02-28' }).date).toBe('2026-02-28');
+  });
+
   it('drops a view, a day or a time the address cannot hold, rather than failing the route', () => {
     expect(calendarSearchSchema.parse({ view: 'year', date: 'soon', at: '25:00' })).toEqual({
       view: undefined,

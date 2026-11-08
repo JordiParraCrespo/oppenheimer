@@ -71,7 +71,7 @@ function onTheHours(entry: AgendaEntryData): boolean {
   return start >= START_HOUR * 60 && start < END_HOUR * 60;
 }
 
-/** Timed entries in lanes: each takes the first lane free at its start, and as many share as overlap. */
+/** Timed entries in lanes: each takes the first lane free at its start, and its overlap group shares one width. */
 function place(entries: readonly AgendaEntryData[]): Placed[] {
   const timed = entries
     .filter(onTheHours)
@@ -81,8 +81,18 @@ function place(entries: readonly AgendaEntryData[]): Placed[] {
       return { entry, start, end: Math.max(end, start + 15), lane: 0, lanes: 1 };
     })
     .sort((a, b) => a.start - b.start || b.end - a.end);
-  const ends: number[] = [];
+  // Lanes are counted per group of entries chained by overlaps, so every
+  // block in a group takes the same width and none covers another.
+  let ends: number[] = [];
+  let group: Placed[] = [];
+  let groupEnd = -1;
+  const close = () => {
+    for (const item of group) item.lanes = ends.length;
+    ends = [];
+    group = [];
+  };
   for (const item of timed) {
+    if (item.start >= groupEnd) close();
     let lane = ends.findIndex((end) => end <= item.start);
     if (lane === -1) {
       lane = ends.length;
@@ -90,11 +100,10 @@ function place(entries: readonly AgendaEntryData[]): Placed[] {
     }
     ends[lane] = item.end;
     item.lane = lane;
+    group.push(item);
+    groupEnd = Math.max(groupEnd, item.end);
   }
-  for (const item of timed) {
-    const overlapping = timed.filter((other) => other.start < item.end && other.end > item.start);
-    item.lanes = 1 + Math.max(...overlapping.map((other) => other.lane));
-  }
+  close();
   return timed;
 }
 

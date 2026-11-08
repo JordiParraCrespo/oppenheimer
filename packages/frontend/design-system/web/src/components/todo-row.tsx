@@ -1,15 +1,16 @@
 'use client';
 
-import { CheckIcon, PlusIcon } from 'lucide-react';
+import { PlusIcon } from 'lucide-react';
 import type * as React from 'react';
 
 import { cn } from '../lib/utils';
+import { Checkbox } from './checkbox';
 import { Skeleton } from './skeleton';
 
 /**
  * TodoRow — one task on Plan's To do, the day's list (the 2026-11-08 `Tasks`
- * frame): a card of its own, 72px tall, with a round done toggle (the
- * success fill and a check once done), the title at 16px semibold over a
+ * frame): a card of its own, 72px tall, with a round `Checkbox` as the done
+ * toggle (the success fill once done), the title at 16px semibold over a
  * muted line (its milestone and where it stands), then the time it is due
  * at in mono and its project as a quiet pill. Done strikes the title and
  * mutes the row. The toggle and the title are separate buttons, so ticking a
@@ -53,19 +54,12 @@ function TodoRow({
       )}
       {...props}
     >
-      <button
-        type="button"
-        role="checkbox"
-        aria-checked={done}
+      <Checkbox
+        checked={done}
+        onCheckedChange={() => onToggle?.()}
         aria-label={toggleLabel}
-        onClick={onToggle}
-        className={cn(
-          'flex size-5.5 shrink-0 items-center justify-center rounded-pill border-[1.5px] text-background outline-none transition-colors duration-instant ease-standard focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring',
-          done ? 'border-success bg-success' : 'border-border-strong bg-transparent hover:bg-hover-surface',
-        )}
-      >
-        {done ? <CheckIcon aria-hidden className="size-3.25 stroke-3" /> : null}
-      </button>
+        className="size-5.5 rounded-pill data-checked:border-success data-checked:bg-success"
+      />
       <button
         type="button"
         onClick={onOpen}

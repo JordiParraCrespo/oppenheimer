@@ -1,4 +1,5 @@
 import { searchText } from '@oppenheimer/frontend-web';
+import { calendarDateSchema } from '@oppenheimer/shared/schemas/task';
 import { z } from 'zod';
 import { CALENDAR_VIEWS } from './calendar-view';
 
@@ -6,11 +7,8 @@ import { CALENDAR_VIEWS } from './calendar-view';
 export const CALENDAR_LAYERS = ['google', 'events', 'tasks', 'automations'] as const;
 export type CalendarLayer = (typeof CALENDAR_LAYERS)[number];
 
-const isoDay = z
-  .string()
-  .regex(/^\d{4}-\d{2}-\d{2}$/)
-  .optional()
-  .catch(undefined);
+/** A real calendar day, or nothing: `2026-99-99` is dropped rather than drawn. */
+const isoDay = calendarDateSchema.optional().catch(undefined);
 
 /**
  * The calendar's address: the view (`day`, `week` or `month`; Day when
