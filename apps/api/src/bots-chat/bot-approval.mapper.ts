@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { storableJson, storableText } from '@oppenheimer/backend-core';
 import type { Mapper } from '@oppenheimer/backend-ddd';
 import {
   BOT_APPROVAL_REACHES,
@@ -23,10 +24,10 @@ export class BotApprovalMapper
     record.botId = entity.botId;
     record.turnId = entity.turnId;
     record.tool = entity.tool;
-    record.input = entity.input;
+    record.input = storableJson(entity.input);
     record.summary = entity.summary;
     record.status = entity.status;
-    record.result = entity.result;
+    record.result = entity.result === null ? null : storableText(entity.result);
     record.sessionId = entity.sessionId;
     record.note = entity.note;
     record.subjectKind = entity.subject?.kind ?? null;

@@ -126,11 +126,18 @@ describe('composeTurnContext: the room left', () => {
     expect(block).toContain('Keep reads narrow this turn');
   });
 
-  it('says nothing without a window, or before any turn reported one', () => {
+  it('says nothing before any turn reported its context', () => {
     expect(composeTurnContext(base)).not.toContain('Your context');
-    expect(
-      composeTurnContext({ ...base, lastContext: { tokens: 20_000, window: null } }),
-    ).not.toContain('Your context');
+  });
+
+  // What breaks this: a bot on an OpenAI engine, which reports no window,
+  // never told its context was filling, however full it got.
+  it('without a window, says the tokens and asks for narrow reads past half the smallest window', () => {
+    const light = composeTurnContext({ ...base, lastContext: { tokens: 20_000, window: null } });
+    expect(light).toContain('Your context held 20,000 tokens at the end of your last turn.');
+    expect(light).not.toContain('Keep reads narrow');
+    const heavy = composeTurnContext({ ...base, lastContext: { tokens: 120_000, window: null } });
+    expect(heavy).toContain('Keep reads narrow this turn');
   });
 });
 

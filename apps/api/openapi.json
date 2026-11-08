@@ -37465,7 +37465,9 @@
               "refused",
               "unavailable",
               "time_limit",
+              "step_limit",
               "interrupted",
+              "storage",
               "other",
               null
             ],

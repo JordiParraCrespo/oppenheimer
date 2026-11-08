@@ -338,6 +338,6 @@
         "link": "Open Codex Cloud settings"
       }
     },
-    "details": "Details from the host: {{detail}}"
+    "details": "Details from the host"
   }
 }

@@ -332,6 +332,7 @@
     "renameLabel": "Session name",
     "move": "Move to project…",
     "moveTitle": "Move to project",
+    "moveCurrent": "Current",
     "moveNone": "No other project holds this session's repository.",
     "delete": "Delete",
     "writeFailed": "That change did not land. Try again.",
@@ -356,7 +357,7 @@
     "discard": "Also discard work that is not pushed",
     "keeps": "Deleting stops if the session has work that is not pushed.",
     "descriptionFolder": "Ends the terminal. The folder stays as it is.",
-    "descriptionCloud": "Removes it from Oppenheimer. The session stays on claude.ai/code, where you can archive it.",
+    "descriptionCloud": "Removes it from Oppenheimer. The session stays on claude.ai/code, where you can <archive>archive it</archive>.",
     "refused": "Its host did not delete it",
     "refusedUnknown": "The host refused to remove the session."
   },

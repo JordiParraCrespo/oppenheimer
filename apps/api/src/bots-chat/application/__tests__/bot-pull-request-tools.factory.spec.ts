@@ -10,6 +10,7 @@ import { NO_PERMISSIONS } from '../../domain/bot-tool-permission.policy';
 import { BotTurnBudget } from '../../domain/bot-turn-budget.policy';
 import type { BotApprovalRequesterPort } from '../bot-approval-requester.port';
 import { BotPullRequestToolsFactory } from '../bot-pull-request-tools.factory';
+import type { BotSessionWatchResolver } from '../bot-session-watch.resolver';
 import type { BotToolContext } from '../bot-tool.factory';
 
 /**
@@ -69,9 +70,13 @@ function setup(
     approvals,
     budget: new BotTurnBudget(),
   };
+  const watches = {
+    follow: vi.fn<BotSessionWatchResolver['follow']>(async () => 'You are subscribed to it.'),
+  };
   const factory = new BotPullRequestToolsFactory(
     queryBus as unknown as QueryBus,
     commandBus as unknown as CommandBus,
+    watches as unknown as BotSessionWatchResolver,
   );
   const definition = (name: string) => {
     const found = factory.definitions().find((candidate) => candidate.name === name);
@@ -81,7 +86,7 @@ function setup(
   const call = (name: string, input: unknown) =>
     definition(name).bind(context).run(input, { signal: new AbortController().signal });
   const dispatched = () => commandBus.execute.mock.calls.map(([command]) => command);
-  return { call, definition, context, approvals, dispatched };
+  return { call, definition, context, approvals, dispatched, watches };
 }
 
 describe('BotPullRequestToolsFactory under Approve for me', () => {
@@ -171,8 +176,10 @@ describe('BotPullRequestToolsFactory carrying out an approved call', () => {
     expect(result.isError).toBe(false);
   });
 
-  it('starts one review session per approval on the stored host, and links the chat to it', async () => {
-    const { definition, context, dispatched } = setup('auto');
+  // What breaks this: a review session the bot started but was never woken
+  // by, so it either polled or never reported back.
+  it('starts one review session per approval on the stored host, links the chat to it and follows it', async () => {
+    const { definition, context, dispatched, watches } = setup('auto');
 
     const result = await definition('start_review_session').runApproved(
       { ...PR, host_id: HOME },
@@ -184,6 +191,8 @@ describe('BotPullRequestToolsFactory carrying out an approved call', () => {
     expect(start).toBeInstanceOf(StartReviewSessionCommand);
     expect(start).toMatchObject({ hostId: HOME, idempotencyKey: 'bot:approval:approval-1' });
     expect(result.sessionId).toBe('session-1');
+    expect(watches.follow).toHaveBeenCalledWith(expect.anything(), 'session-1', 'first_task');
+    expect(result.content).toContain('You are subscribed to it.');
   });
 });
 
