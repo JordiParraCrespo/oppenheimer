@@ -1,20 +1,27 @@
 import type { SessionTerminalOutcome } from '../../sessions/application/session-terminal.port';
 import { cut, fenceUntrusted } from '../domain/bot-tool-text.policy';
 
-/** What a refusal from the host means, said plainly. */
-const REFUSALS: Readonly<Record<string, string>> = {
-  EXEC_006: 'this host does not let bots drive a terminal: its exec mode is not full',
-  EXEC_007: 'that session is not a blank terminal; use open_terminal for one',
-  SESS_001: 'that session is not on the host',
-  SESS_003: 'the terminal is not running',
-  INVALID_PATTERN: 'wait_for is not a valid regular expression',
+/**
+ * Each refusal the runner makes before it types anything: what it means, said
+ * plainly, and what to tell the person when only they can change it.
+ */
+const REFUSALS: Readonly<Record<string, { meaning: string; advice?: string }>> = {
+  EXEC_006: {
+    meaning: 'this host does not let bots drive a terminal: its exec mode is not full',
+    advice: 'Tell the person; only they can change it, on the host, with `runner exec mode full`.',
+  },
+  EXEC_007: { meaning: 'that session is not a blank terminal; use open_terminal for one' },
+  SESS_001: { meaning: 'that session is not on the host' },
+  SESS_003: { meaning: 'the terminal is not running' },
+  INVALID_PATTERN: { meaning: 'wait_for is not a valid regular expression' },
 };
 
 /**
- * The refusals the runner makes before it types anything; any other failure
- * may come after the text went in (the shell exited, the capture failed).
+ * Any other failure may come after the text went in (the shell exited, the
+ * capture failed), so it is never told as nothing typed.
  */
-const BEFORE_TYPING = new Set(Object.keys(REFUSALS));
+const MAYBE_TYPED =
+  'What you gave may already have been typed: read the terminal before typing again.';
 
 /** The Needs input card's line: "Type `ssh build-02` then Enter in terminal …". */
 export function terminalTypeSummary(
@@ -49,11 +56,15 @@ export function describeTerminal(outcome: SessionTerminalOutcome, sessionId: str
     case 'timed_out':
       return 'The host did not answer in time; whether the keys were typed is unknown. Read the terminal before typing again.';
     case 'failed': {
-      const meaning = REFUSALS[outcome.code];
-      const typed = BEFORE_TYPING.has(outcome.code)
-        ? ' Nothing was typed.'
-        : ' What you gave may already have been typed: read the terminal before typing again.';
-      return `Refused (${outcome.code}${meaning ? `: ${meaning}` : ''}): ${outcome.detail ?? 'no reason given'}.${typed}${outcome.code === 'EXEC_006' ? ' Tell the person; only they can change it, on the host, with `runner exec mode full`.' : ''}`;
+      const known = REFUSALS[outcome.code];
+      const code = known ? `${outcome.code}: ${known.meaning}` : outcome.code;
+      return [
+        `Refused (${code}): ${outcome.detail ?? 'no reason given'}.`,
+        known ? 'Nothing was typed.' : MAYBE_TYPED,
+        known?.advice,
+      ]
+        .filter(Boolean)
+        .join(' ');
     }
   }
 }

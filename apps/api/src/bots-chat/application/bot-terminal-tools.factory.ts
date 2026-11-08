@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { CommandBus, QueryBus } from '@nestjs/cqrs';
+import { CommandBus } from '@nestjs/cqrs';
 import { createSessionSchema } from '@oppenheimer/shared';
 import {
   TERMINAL_HISTORY_MAX_LINES,
@@ -9,7 +9,6 @@ import {
   TERMINAL_WATCH_PATTERN_MAX,
 } from '@oppenheimer/shared/protocol';
 import { z } from 'zod/v4';
-import { FindHostQuery } from '../../hosts/queries/find-host/find-host.query';
 import type { SessionTerminalOutcome } from '../../sessions/application/session-terminal.port';
 import { CreateSessionCommand } from '../../sessions/commands/create-session/create-session.command';
 import { DriveSessionTerminalCommand } from '../../sessions/commands/drive-session-terminal/drive-session-terminal.command';
@@ -22,6 +21,7 @@ import {
   toTerminalDriveRequest,
 } from '../bot-terminal-tool.mapper';
 import { idempotencyKeyOf } from '../domain/bot-tool-idempotency.policy';
+import { BotHostTargetResolver } from './bot-host-target.resolver';
 import { describeTerminal, terminalTypeSummary } from './bot-terminal.policy';
 import {
   type BotToolArea,
@@ -74,8 +74,8 @@ export class BotTerminalToolsFactory implements BotToolArea {
   readonly group = 'sessions' as const;
 
   constructor(
-    private readonly queryBus: QueryBus,
     private readonly commandBus: CommandBus,
+    private readonly hosts: BotHostTargetResolver,
   ) {}
 
   definitions(): readonly BotToolDefinition[] {
@@ -105,12 +105,12 @@ export class BotTerminalToolsFactory implements BotToolArea {
       }),
       normalize: async (input, context) => ({
         ...input,
-        host_id: await this.hostOf(input, context),
+        host_id: await this.hosts.usable(input, context),
       }),
       summarize: async (input, context) =>
-        `Open a terminal on ${await this.hostName(context, input.host_id ?? '')} in ${input.folder}`,
+        `Open a terminal on ${await this.hosts.name(context, input.host_id ?? '')} in ${input.folder}`,
       run: async (input, context) => {
-        const hostId = await this.hostOf(input, context);
+        const hostId = await this.hosts.usable(input, context);
         const parsed = createSessionSchema.safeParse({
           hostId,
           agent: 'shell',
@@ -201,34 +201,5 @@ export class BotTerminalToolsFactory implements BotToolArea {
         ...(context.approvalId ? { commandId: terminalCommandIdOf(context.approvalId) } : {}),
       }),
     );
-  }
-
-  /** The named host or the home host, refused in words when it is neither the owner's nor set. */
-  private async hostOf(input: { host_id?: string }, context: BotToolCallContext): Promise<string> {
-    const hostId = input.host_id ?? context.homeHostId;
-    if (!hostId) {
-      throw new BotToolRefusal(
-        'No host named and you have no home host: ask which host to use, and say they can set one in Settings → Home host.',
-      );
-    }
-    const found = await this.queryBus
-      .execute(new FindHostQuery({ scope: context.owner, hostId }))
-      .then(() => true)
-      .catch(() => false);
-    if (!found) {
-      throw new BotToolRefusal(
-        `${hostId} is not one of the person's hosts. Leave host_id out to use your home host, or take one from list_hosts; never make one up.`,
-      );
-    }
-    return hostId;
-  }
-
-  private async hostName(context: BotToolCallContext, hostId: string): Promise<string> {
-    const overview = await this.queryBus
-      .execute<FindHostQuery, { host: { name: string } }>(
-        new FindHostQuery({ scope: context.owner, hostId }),
-      )
-      .catch(() => null);
-    return overview?.host.name ?? `host ${hostId}`;
   }
 }

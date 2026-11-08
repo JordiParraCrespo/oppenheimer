@@ -4,6 +4,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { DriveSessionTerminalCommand } from '../../../sessions/commands/drive-session-terminal/drive-session-terminal.command';
 import { NO_PERMISSIONS } from '../../domain/bot-tool-permission.policy';
 import { BotTurnBudget } from '../../domain/bot-turn-budget.policy';
+import { BotHostTargetResolver } from '../bot-host-target.resolver';
 import { BotTerminalToolsFactory } from '../bot-terminal-tools.factory';
 import type { BotToolContext } from '../bot-tool.factory';
 
@@ -37,8 +38,8 @@ function setup() {
     }),
   };
   const factory = new BotTerminalToolsFactory(
-    queryBus as unknown as QueryBus,
     commandBus as unknown as CommandBus,
+    new BotHostTargetResolver(queryBus as unknown as QueryBus),
   );
   const call = (name: string, input: unknown) => {
     const tool = factory.definitions().find((definition) => definition.name === name);
