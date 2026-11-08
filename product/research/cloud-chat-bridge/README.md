@@ -93,6 +93,9 @@ adds it.
 - **An idle session.** The Stop hook can only answer at the end of a turn,
   and waits N seconds for a reply. Once the session is idle, only
   `claude -p "…" --cloud <id>` from a signed-in host wakes it.
+  *Built 2026-11-08:* the console sends such a reply from the session's
+  host (`product/next-steps/cloud-agents.md`, "The chat of a cloud
+  session").
 - **How it reads on claude.ai.** A reply arrives there as hook feedback, not
   as a message from you, and claude.ai shows the session as working while
   the Stop hook waits.

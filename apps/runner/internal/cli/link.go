@@ -315,6 +315,7 @@ func (h *linkHandler) capabilities() []string {
 		link.CapabilitySessionCloud, link.CapabilitySessionCloudCodex,
 		link.CapabilitySessionWatch, link.CapabilityCodexEnvironments, link.CapabilitySessionTeleport,
 		link.CapabilitySharedPreview, link.CapabilityTranscriptRead,
+		link.CapabilitySessionCloudPrompt,
 	}
 	if h.direct != nil {
 		named = append(named, link.CapabilityAttachmentDirect, link.CapabilityAttachmentDirectProof)
@@ -650,6 +651,11 @@ func (h *linkHandler) Message(_ context.Context, msg link.Message) {
 		var m link.TranscriptRead
 		if msg.Decode(&m) == nil {
 			h.lanes.run(laneTranscriptRead, func() { h.transcriptRead(m) })
+		}
+	case link.TypeSessionCloudPrompt:
+		var m link.SessionCloudPrompt
+		if msg.Decode(&m) == nil {
+			h.lanes.run(laneCloudPrompt, func() { h.cloudPrompt(m) })
 		}
 	case "host.update":
 		var m link.HostUpdate

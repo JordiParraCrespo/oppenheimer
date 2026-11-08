@@ -33,6 +33,12 @@ type CloudStarter interface {
 	Start(ctx context.Context, dir, prompt string) (cloud.Started, error)
 }
 
+// CloudPrompter sends a message to a Claude Code cloud session that exists
+// (sessions/adapters/cloud).
+type CloudPrompter interface {
+	Prompt(ctx context.Context, id, text string) error
+}
+
 // CodexCloud starts tasks in Codex cloud and reads their status
 // (sessions/adapters/cloud).
 type CodexCloud interface {

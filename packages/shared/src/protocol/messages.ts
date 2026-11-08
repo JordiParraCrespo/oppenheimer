@@ -1,5 +1,6 @@
 import { z } from 'zod/v4';
 import { type HostCloudAgentId, isHostCloudAgent } from '../agents/catalog.js';
+import { sessionCloudPromptedSchema, sessionCloudPromptSchema } from './cloud-prompt.js';
 import { codexEnvironmentsListSchema, codexEnvironmentsSchema } from './codex-environments.js';
 import {
   deviceAttachSchema,
@@ -177,6 +178,13 @@ export const RUNNER_CAPABILITIES = [
    * attached (a bot, the CLI, an MCP client; `product/next-steps/agent-tools.md` §8).
    */
   'transcript.read',
+  /**
+   * Answers `session.cloud.prompt` with `session.cloud.prompted`: it sends a
+   * reply to an idle Claude Code cloud session this host started, with
+   * `claude -p <text> --cloud <id>`, which wakes it
+   * (`product/next-steps/cloud-agents.md`, "The chat of a cloud session").
+   */
+  'session.cloud.prompt',
 ] as const;
 export type RunnerCapability = (typeof RUNNER_CAPABILITIES)[number];
 
@@ -1136,6 +1144,8 @@ export const protocolMessageSchema = z.discriminatedUnion('type', [
   sharedPreviewSchema,
   transcriptReadSchema,
   transcriptPageSchema,
+  sessionCloudPromptSchema,
+  sessionCloudPromptedSchema,
 ]);
 
 export type ProtocolMessage = z.infer<typeof protocolMessageSchema>;

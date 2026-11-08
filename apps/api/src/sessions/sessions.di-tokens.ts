@@ -17,6 +17,8 @@ export const SESSION_PORTS = Symbol('SESSION_PORTS');
 export const SESSION_SHARED_FILES = Symbol('SESSION_SHARED_FILES');
 /** A page of a session's conversation, asked of the session's host; bound by `links/` like `SESSION_SHARED_FILES`. */
 export const SESSION_TRANSCRIPT = Symbol('SESSION_TRANSCRIPT');
+/** A reply sent to an idle cloud session through the host that started it; bound by `links/` like `SESSION_TRANSCRIPT`. */
+export const SESSION_CLOUD_PROMPT = Symbol('SESSION_CLOUD_PROMPT');
 /** The composer's listing of a host's Codex cloud environments; bound by `links/` like `HOST_FOLDERS`. */
 export const HOST_CODEX_ENVIRONMENTS = Symbol('HOST_CODEX_ENVIRONMENTS');
 export const RECORD_SESSION_EVENTS = Symbol('RECORD_SESSION_EVENTS');

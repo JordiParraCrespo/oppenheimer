@@ -1241,6 +1241,7 @@ for a 404 or 428, 6 for a 502, 503 or 504, 7 for `PAIR_009`, and 1 for anything 
 | `SESS_017` <a id="sess_017" />         | The shared file has no preview               | 409  |
 | `SESS_018` <a id="sess_018" />         | The session's agent keeps no transcript this host can read | 409 |
 | `SESS_019` <a id="sess_019" />         | Claude Code on this host is not signed in to claude.ai | 502 |
+| `SESS_020` <a id="sess_020" />         | Claude Code could not send the message to the cloud session | 502 |
 | `TMUX_001` <a id="tmux_001" />         | tmux is not available on this host           | 424  |
 | `TMUX_002` <a id="tmux_002" />         | The tmux server refused the command          | 500  |
 | `GIT_001` <a id="git_001" />           | The worktree could not be prepared           | 500  |
@@ -1283,6 +1284,13 @@ runner runs as (`claude auth login`, or `/login` in an interactive `claude`),
 then press **Try again** on the session: it sends the host the same start, with
 the same task (`POST /v1/sessions/{id}/retry`). Every other refusal of
 `claude --cloud` stays `SESS_008`, in the CLI's own words.
+
+`SESS_020` is `claude -p … --cloud <id>` not taking a reply for a cloud
+session the host started, when the console sends one to wake an idle session
+(`session.cloud.prompt`): the session archived or the host signed in to
+another claude.ai account. The reply goes back to waiting for the session's
+Stop hook. A host that is not signed in at all is `SESS_019`, the same as for
+a start.
 
 `HOST_009` is `runner agents update` reporting that at least one agent CLI's
 updater failed; the service only logs it and retries. What to do about it is

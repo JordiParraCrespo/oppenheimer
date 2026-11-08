@@ -2082,6 +2082,53 @@
         "next",
         "atEnd"
       ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "session.cloud.prompt"
+        },
+        "commandId": {
+          "$ref": "#/$defs/commandId"
+        },
+        "sessionId": {
+          "$ref": "#/$defs/sessionId"
+        },
+        "cloudSessionId": {
+          "type": "string",
+          "pattern": "^session_[A-Za-z0-9]{8,64}$"
+        },
+        "text": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 20000
+        }
+      },
+      "required": [
+        "type",
+        "commandId",
+        "sessionId",
+        "cloudSessionId",
+        "text"
+      ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "session.cloud.prompted"
+        },
+        "commandId": {
+          "$ref": "#/$defs/commandId"
+        }
+      },
+      "required": [
+        "type",
+        "commandId"
+      ]
     }
   ],
   "$defs": {
@@ -2435,7 +2482,8 @@
       "session.watch",
       "whatsapp",
       "shared.preview",
-      "transcript.read"
+      "transcript.read",
+      "session.cloud.prompt"
     ],
     "maxEventPayloadBytes": 8192,
     "chatEntryMaxBytes": 65536,

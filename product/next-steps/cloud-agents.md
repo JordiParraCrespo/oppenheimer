@@ -344,22 +344,39 @@ answer it there, the way claude.ai shows it. The research is
   decision, Claude Code's documented way for a hook to keep an agent going.
   Claude Code keeps that as a hidden "Stop hook feedback" line, which the
   console reads as the person's message, where the agent took it.
-- **What it cannot do.** An idle session is only woken by a message, so a
-  reply typed after the Stop hook gave up waits for the next turn; waking it
-  from a host (`claude -p … --cloud <id>`) is the next step. Stop does
-  nothing: no hook can interrupt a turn. A session started on claude.ai,
+- **An idle session is woken from its host (2026-11-08).** When a Stop
+  hook's wait ends with nothing to take, the session is marked idle
+  (`session_cloud_idle`). A reply typed after that claims the mark and the
+  reply, then the host that started the session sends it with the account's
+  own CLI, `claude -p <text> --cloud <id> --output-format json`, which queues
+  it and wakes the session (`session.cloud.prompt` on the link, offered by a
+  runner that names it in its hello). The woken message is a plain user line
+  in the transcript, so the chat shows it like any other. The order keeps a
+  reply from reaching the agent twice: two replies at once wake it once and
+  the second waits for the woken turn's hook; a hook that takes the reply
+  first wins; a host that certainly sent nothing (offline, too old, not
+  signed in, `SESS_019`, or refused, `SESS_020`) puts the reply and the mark
+  back for the next hook and the next reply; no answer in 75 s keeps the
+  claim, since the session may have it. The composer does not wait for the
+  host. Not proven against a live claude.ai account here: the CLI's answer
+  is read as the research found it (`{ok, session_id, url}`), and
+  `cloud_live_test.go` sends a real one when given a session.
+- **What it cannot do.** A reply to an idle session whose host is offline
+  waits for the session's next turn, started on claude.ai; nothing retries
+  it when the host comes back. Stop does nothing: no hook can interrupt a
+  turn. A session started on claude.ai,
   not from the console, is refused until there is a way to adopt one.
 - **Decided with the owner (2026-11-07).**
   1. A session started on claude.ai, not from the console, keeps no chat
      here: only sessions the console launched (`SESSIONS_053`). Not adopted.
   2. A reply to an idle session is sent from one of the person's hosts,
      signed in to the same claude.ai account (`claude -p … --cloud <id>`),
-     so it wakes the session. The next pull request.
+     so it wakes the session. Built 2026-11-08 (above).
   3. The console gets a "turn on chat" panel on a cloud session: the key,
      the hooks to add to the repository, and the host to allow in the cloud
-     environment. The next pull request.
+     environment. Built 2026-11-07.
   4. Stop and the Terminal/Chat switch are hidden on a cloud session's chat,
-     where neither can do anything. The next pull request.
+     where neither can do anything. Built 2026-11-07.
 
 ## Follow-ups to a cloud agent (2026-11-05)
 

@@ -238,6 +238,14 @@ export const SAMPLES: Record<ProtocolMessageType, ProtocolMessage> = {
     next: 18_391,
     atEnd: true,
   },
+  'session.cloud.prompt': {
+    type: 'session.cloud.prompt',
+    commandId,
+    sessionId,
+    cloudSessionId: 'session_01KpKLr5TvWXxcHh1keN5vvQ',
+    text: 'Yes, and add a test for the empty list.',
+  },
+  'session.cloud.prompted': { type: 'session.cloud.prompted', commandId },
   'session.create': {
     type: 'session.create',
     commandId,

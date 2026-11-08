@@ -13,6 +13,7 @@ import { UsersModule } from '../users/user.module';
 import { AttachTicketFactory } from './application/attach-ticket.factory';
 import { CloudAttachmentsResolver } from './application/cloud-attachments.resolver';
 import { CloudFollowUpResolver } from './application/cloud-follow-up.resolver';
+import { CloudReplyWakeResolver } from './application/cloud-reply-wake.resolver';
 import { CloudSessionSyncResolver } from './application/cloud-session-sync.resolver';
 import { CloudTaskFactory } from './application/cloud-task.factory';
 import { GithubPullWakesDomainEventHandler } from './application/event-handlers/github-pull-wakes.domain-event-handler';
@@ -91,6 +92,7 @@ import { UploadSessionAttachmentHttpController } from './commands/upload-session
 import { WatchSessionTerminalCommandHandler } from './commands/watch-session-terminal/watch-session-terminal.command-handler';
 import { SessionCheckoutOrmEntity } from './database/session-checkout.orm-entity';
 import { SessionCloudChatRepository } from './database/session-cloud-chat.repository';
+import { SessionCloudIdleOrmEntity } from './database/session-cloud-idle.orm-entity';
 import { SessionCloudLineOrmEntity } from './database/session-cloud-line.orm-entity';
 import { SessionCloudReplyOrmEntity } from './database/session-cloud-reply.orm-entity';
 import { SessionCloudRunOrmEntity } from './database/session-cloud-run.orm-entity';
@@ -261,6 +263,7 @@ const adapters: Provider[] = [
       SessionTurnOrmEntity,
       SessionShareOrmEntity,
       SessionCloudRunOrmEntity,
+      SessionCloudIdleOrmEntity,
       SessionCloudLineOrmEntity,
       SessionCloudReplyOrmEntity,
       SessionTerminalWatchOrmEntity,
@@ -298,6 +301,7 @@ const adapters: Provider[] = [
     AttachTicketFactory,
     CloudSessionSyncResolver,
     CloudFollowUpResolver,
+    CloudReplyWakeResolver,
     SessionShareAccessResolver,
     SessionPlanFactory,
     SessionLaunchSpecFactory,

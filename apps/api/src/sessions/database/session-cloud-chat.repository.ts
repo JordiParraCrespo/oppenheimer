@@ -112,4 +112,56 @@ export class SessionCloudChatRepository implements SessionCloudChatRepositoryPor
     );
     return rows[0] ? asReply(rows[0]) : null;
   }
+
+  async claimReply(sessionId: string, replyId: string): Promise<boolean> {
+    const [rows]: [unknown[], number] = await this.replies.query(
+      `UPDATE session_cloud_reply SET "collectedAt" = now()
+        WHERE id = $2 AND "sessionId" = $1 AND "collectedAt" IS NULL
+       RETURNING id`,
+      [sessionId, replyId],
+    );
+    return rows.length === 1;
+  }
+
+  async releaseReply(sessionId: string, replyId: string): Promise<void> {
+    await this.replies.query(
+      `UPDATE session_cloud_reply SET "collectedAt" = NULL WHERE id = $2 AND "sessionId" = $1`,
+      [sessionId, replyId],
+    );
+  }
+
+  async markListening(organizationId: string, sessionId: string): Promise<void> {
+    await this.markIdleAs(organizationId, sessionId, false);
+  }
+
+  async markIdle(organizationId: string, sessionId: string): Promise<void> {
+    await this.markIdleAs(organizationId, sessionId, true);
+  }
+
+  async claimIdle(organizationId: string, sessionId: string): Promise<boolean> {
+    // PK_session_cloud_idle; the row lock makes a second claim at once see
+    // the first one's null and win nothing.
+    const [rows]: [unknown[], number] = await this.replies.query(
+      `UPDATE session_cloud_idle SET "idleSince" = NULL, "updatedAt" = now()
+        WHERE "organizationId" = $1 AND "sessionId" = $2 AND "idleSince" IS NOT NULL
+       RETURNING "sessionId"`,
+      [organizationId, sessionId],
+    );
+    return rows.length === 1;
+  }
+
+  /** One upsert by PK_session_cloud_idle, at the database's time. */
+  private async markIdleAs(
+    organizationId: string,
+    sessionId: string,
+    idle: boolean,
+  ): Promise<void> {
+    await this.replies.query(
+      `INSERT INTO session_cloud_idle ("organizationId", "sessionId", "idleSince")
+       VALUES ($1, $2, CASE WHEN $3 THEN now() END)
+       ON CONFLICT ("organizationId", "sessionId")
+       DO UPDATE SET "idleSince" = EXCLUDED."idleSince", "updatedAt" = now()`,
+      [organizationId, sessionId, idle],
+    );
+  }
 }

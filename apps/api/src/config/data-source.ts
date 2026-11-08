@@ -74,6 +74,7 @@ import { RoleCatalogVersionOrmEntity } from '../roles/database/role-catalog-vers
 import { UserRoleOrmEntity } from '../roles/database/user-role.orm-entity';
 import { UserRoleVersionOrmEntity } from '../roles/database/user-role-version.orm-entity';
 import { SessionCheckoutOrmEntity } from '../sessions/database/session-checkout.orm-entity';
+import { SessionCloudIdleOrmEntity } from '../sessions/database/session-cloud-idle.orm-entity';
 import { SessionCloudLineOrmEntity } from '../sessions/database/session-cloud-line.orm-entity';
 import { SessionCloudReplyOrmEntity } from '../sessions/database/session-cloud-reply.orm-entity';
 import { SessionCloudRunOrmEntity } from '../sessions/database/session-cloud-run.orm-entity';
@@ -130,6 +131,7 @@ export default new DataSource({
     WorkSessionEventOrmEntity,
     SessionTurnOrmEntity,
     SessionShareOrmEntity,
+    SessionCloudIdleOrmEntity,
     SessionCloudLineOrmEntity,
     SessionCloudReplyOrmEntity,
     SessionTerminalWatchOrmEntity,

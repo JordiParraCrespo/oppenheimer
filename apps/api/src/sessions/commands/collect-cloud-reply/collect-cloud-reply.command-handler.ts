@@ -20,6 +20,12 @@ const POLL_MS = 1000;
  * waiting it looks again each second for up to the wait the hook asked for:
  * a reply typed just after the turn ended still reaches the agent. The claim
  * is the repository's, so two hooks asking at once never take one reply.
+ *
+ * It also keeps the session's idle mark, which says whether a reply has to
+ * wake the session from its host (`CloudReplyWakeResolver`): a hook asking is
+ * listening, and one whose wait ends empty leaves the session idle. The mark
+ * is set before the last look, and a reply checks it after it is stored, so a
+ * reply landing as the wait ends is either taken here or wakes the session.
  */
 @CommandHandler(CollectCloudReplyCommand)
 export class CollectCloudReplyCommandHandler
@@ -41,13 +47,28 @@ export class CollectCloudReplyCommandHandler
         detail: `No Claude Code cloud session ${command.cloudSessionId} in this workspace`,
       });
     }
+    await this.chat.markListening(session.organizationId, session.id);
     const until = Date.now() + command.waitSeconds * 1000;
     for (;;) {
       const reply = await this.chat.collectReply(session.id);
+      if (reply) return reply;
       const left = until - Date.now();
-      if (reply || left <= 0) return reply;
+      if (left <= 0) return this.giveUp(session);
       // The last look falls on the deadline, so a hook asking N seconds waits N.
       await new Promise((resolve) => setTimeout(resolve, Math.min(POLL_MS, left)));
     }
+  }
+
+  /** The wait is over: the session is idle, then one last look. */
+  private async giveUp(session: {
+    id: string;
+    organizationId: string;
+  }): Promise<CloudChatReply | null> {
+    await this.chat.markIdle(session.organizationId, session.id);
+    const reply = await this.chat.collectReply(session.id);
+    // Taken after all: the agent carries on, so the session is not idle. A
+    // reply that claimed the mark first is on its way from the host instead.
+    if (reply) await this.chat.markListening(session.organizationId, session.id);
+    return reply;
   }
 }

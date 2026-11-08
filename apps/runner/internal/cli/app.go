@@ -82,6 +82,9 @@ type App struct {
 	// Cloud starts a task in Claude Code's cloud with the host's own
 	// `claude` (link_cloud.go); nil is the real CLI.
 	Cloud CloudStarter
+	// CloudPrompt sends a reply to a Claude Code cloud session with the
+	// host's own `claude` (link_cloud_prompt.go); nil is the real CLI.
+	CloudPrompt CloudPrompter
 	// CodexCloud starts tasks in Codex cloud with the host's own `codex` and
 	// reads their status (link_cloud_codex.go); nil is the real CLI.
 	CodexCloud CodexCloud

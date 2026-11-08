@@ -87,6 +87,7 @@ const (
 	CapabilityWhatsapp              = "whatsapp"
 	CapabilitySharedPreview         = "shared.preview"
 	CapabilityTranscriptRead        = "transcript.read"
+	CapabilitySessionCloudPrompt    = "session.cloud.prompt"
 )
 
 // The `type` of every message on the link.
@@ -149,6 +150,8 @@ const (
 	TypeSharedPreview           = "shared.preview"
 	TypeTranscriptRead          = "transcript.read"
 	TypeTranscriptPage          = "transcript.page"
+	TypeSessionCloudPrompt      = "session.cloud.prompt"
+	TypeSessionCloudPrompted    = "session.cloud.prompted"
 )
 
 // MessageTypes is every message type on the link, in the schema's order.
@@ -211,6 +214,8 @@ var MessageTypes = []string{
 	TypeSharedPreview,
 	TypeTranscriptRead,
 	TypeTranscriptPage,
+	TypeSessionCloudPrompt,
+	TypeSessionCloudPrompted,
 }
 
 // NewMessage returns a pointer to a new struct for a message type, and false
@@ -333,6 +338,10 @@ func NewMessage(messageType string) (any, bool) {
 		return new(TranscriptRead), true
 	case TypeTranscriptPage:
 		return new(TranscriptPage), true
+	case TypeSessionCloudPrompt:
+		return new(SessionCloudPrompt), true
+	case TypeSessionCloudPrompted:
+		return new(SessionCloudPrompted), true
 	}
 	return nil, false
 }
@@ -929,6 +938,21 @@ type TranscriptPage struct {
 	Restarted    bool     `json:"restarted,omitempty"`
 	Dropped      int      `json:"dropped,omitempty"`
 	Partial      bool     `json:"partial,omitempty"`
+}
+
+// SessionCloudPrompt is the `session.cloud.prompt` message.
+type SessionCloudPrompt struct {
+	Type           string `json:"type"`
+	CommandID      string `json:"commandId"`
+	SessionID      string `json:"sessionId"`
+	CloudSessionID string `json:"cloudSessionId"`
+	Text           string `json:"text"`
+}
+
+// SessionCloudPrompted is the `session.cloud.prompted` message.
+type SessionCloudPrompted struct {
+	Type      string `json:"type"`
+	CommandID string `json:"commandId"`
 }
 
 // SessionSnapshot is `#/$defs/sessionSnapshot`.

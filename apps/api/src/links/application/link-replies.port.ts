@@ -3,6 +3,7 @@ import type {
   CommandFailedMessage,
   FsListingMessage,
   PortListingMessage,
+  SessionCloudPromptedMessage,
   SharedPreviewMessage,
   TranscriptPageMessage,
   WhatsappSentMessage,
@@ -11,7 +12,8 @@ import type {
 /**
  * A runner's answer to a command the control plane is waiting on: the reply
  * frame itself, or its refusal: `fs.listing`, `port.listing`,
- * `codex.environments`, `whatsapp.sent`, `shared.preview` or `transcript.page`.
+ * `codex.environments`, `whatsapp.sent`, `shared.preview`, `transcript.page` or
+ * `session.cloud.prompted`.
  */
 export type LinkReply =
   | FsListingMessage
@@ -20,6 +22,7 @@ export type LinkReply =
   | WhatsappSentMessage
   | SharedPreviewMessage
   | TranscriptPageMessage
+  | SessionCloudPromptedMessage
   | CommandFailedMessage;
 
 /** One waiter: the reply, or null when none came in time. */

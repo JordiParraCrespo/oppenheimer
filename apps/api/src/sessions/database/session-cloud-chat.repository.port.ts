@@ -45,4 +45,21 @@ export interface SessionCloudChatRepositoryPort {
    * take one.
    */
   collectReply(sessionId: string): Promise<CloudChatReply | null>;
+  /**
+   * Takes one waiting reply to hand it to the agent another way (its host):
+   * true if it was still waiting and is now collected, false if a hook took
+   * it first.
+   */
+  claimReply(sessionId: string, replyId: string): Promise<boolean>;
+  /** Puts a claimed reply back to waiting, for the next Stop hook. */
+  releaseReply(sessionId: string, replyId: string): Promise<void>;
+  /** A Stop hook is waiting for a reply: the session is not idle. */
+  markListening(organizationId: string, sessionId: string): Promise<void>;
+  /** A Stop hook's wait ended with nothing to take: the session is idle. */
+  markIdle(organizationId: string, sessionId: string): Promise<void>;
+  /**
+   * Takes the session's idle mark to wake it: true if it was idle and no
+   * longer is, false if it was not. Two callers at once never both win.
+   */
+  claimIdle(organizationId: string, sessionId: string): Promise<boolean>;
 }

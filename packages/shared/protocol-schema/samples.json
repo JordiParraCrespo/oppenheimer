@@ -417,6 +417,17 @@
     "next": 18391,
     "atEnd": true
   },
+  "session.cloud.prompt": {
+    "type": "session.cloud.prompt",
+    "commandId": "b2c3d4e5-6f7a-4b8c-9d0e-1f2a3b4c5d6e",
+    "sessionId": "3f0d9e2c-6a4b-4e9a-9c3d-7b1e5a2f8c40",
+    "cloudSessionId": "session_01KpKLr5TvWXxcHh1keN5vvQ",
+    "text": "Yes, and add a test for the empty list."
+  },
+  "session.cloud.prompted": {
+    "type": "session.cloud.prompted",
+    "commandId": "b2c3d4e5-6f7a-4b8c-9d0e-1f2a3b4c5d6e"
+  },
   "session.create": {
     "type": "session.create",
     "commandId": "b2c3d4e5-6f7a-4b8c-9d0e-1f2a3b4c5d6e",
