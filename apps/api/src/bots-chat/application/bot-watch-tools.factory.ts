@@ -122,6 +122,7 @@ export class BotWatchToolsFactory implements BotToolArea {
     return defineBotTool({
       name: 'list_watches',
       scope: 'sessions:read',
+      readOnly: true,
       description:
         'Lists the sessions and pull requests you follow: each one, why, until when, and how many times it woke you. Read a session itself with get_session, a pull request with get_pull_request.',
       input: z.object({}),
@@ -143,7 +144,7 @@ export class BotWatchToolsFactory implements BotToolArea {
     return defineBotTool({
       name: 'wait_for_session',
       scope: 'sessions:read',
-      description: `Waits inside this turn, up to seconds (at most ${BOT_SESSION_WAIT_MAX_SECONDS}), until a session's current task needs input, finishes, fails or is stopped, or the session is closed; answers at once if it already has. Use it for a short task you want to report on in this reply; for anything longer, watch_session wakes you when it ends. At most ${BOT_SESSION_WAITS_PER_TURN} waits a turn.`,
+      description: `Waits inside this turn, up to ${BOT_SESSION_WAIT_MAX_SECONDS} seconds, until a session's current task needs input, finishes, fails or is stopped, or the session is closed; answers at once if it already has. Use it for a short task you want to report on in this reply; for anything longer, watch_session wakes you when it ends. At most ${BOT_SESSION_WAITS_PER_TURN} waits a turn, and the turn's own 4-minute limit counts: never wait on work you cannot report before it.`,
       input: z.object({
         session_id: z.uuid().describe('The session to wait on (from list_sessions).'),
         seconds: z

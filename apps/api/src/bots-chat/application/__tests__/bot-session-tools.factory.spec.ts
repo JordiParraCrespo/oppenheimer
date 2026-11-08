@@ -372,6 +372,20 @@ describe('BotSessionToolsFactory', () => {
       expect(result.data).toEqual({ sessionId: 'session-1' });
     });
 
+    // What breaks this: a bot that started a cloud session that failed to
+    // start, was never woken, and told the person only once they asked.
+    it('follows the cloud session it started, unless told not to watch', async () => {
+      const { queryBus, watches, call } = setup('full');
+      readsBack(queryBus, cloudSession(CLOUD_ID));
+      const followed = await call('start_cloud_session', { task: 'x', project_id: PROJECT });
+      expect(watches.follow).toHaveBeenCalledWith(expect.anything(), 'session-1', 'first_task');
+      expect(followed.content).toContain('You are subscribed to it.');
+
+      watches.follow.mockClear();
+      await call('start_cloud_session', { task: 'x', project_id: PROJECT, watch: false });
+      expect(watches.follow).not.toHaveBeenCalled();
+    });
+
     it('answers without a URL when the host has not named the session within the wait', async () => {
       const { queryBus, call } = setup('full');
       readsBack(queryBus, cloudSession(null));

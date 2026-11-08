@@ -144,9 +144,11 @@ describe('loopRunEnd', () => {
     ).toMatchObject({ kind: 'end', activity: 'stopped' });
   });
 
-  it('keeps it through the time limit and passing failures: the next run starts afresh', () => {
+  // What breaks this: a run that used its 20 steps, now a failure, ending
+  // the whole loop as though its key were refused.
+  it('keeps it through the time or step limit and passing failures: the next run starts afresh', () => {
     const fixed = loop(5);
-    for (const failure of ['time_limit', 'rate_limit', 'unavailable'] as const) {
+    for (const failure of ['time_limit', 'step_limit', 'rate_limit', 'unavailable'] as const) {
       expect(loopRunEnd(fixed, ended({ id: 'turn-0', status: 'failed', failure }))).toEqual({
         kind: 'keep',
       });

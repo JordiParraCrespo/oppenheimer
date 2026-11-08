@@ -143,7 +143,8 @@ export class BotApprovalRepository
         .update(BotApprovalOrmEntity)
         .set({
           status: approval.status,
-          result: approval.result,
+          // The mapper's, so a tool's words are cleaned for Postgres the way an insert's are (#728).
+          result: this.mapper.toPersistence(approval).result,
           sessionId: approval.sessionId,
           note: approval.note,
           decidedByUserId: approval.decidedByUserId,

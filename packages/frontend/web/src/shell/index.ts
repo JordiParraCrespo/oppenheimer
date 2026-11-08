@@ -8,6 +8,7 @@ export { PageBar, SidebarToggle } from './components/page-bar';
 export { PageFrame } from './components/page-frame';
 export { PaneBar } from './components/pane-bar';
 export { SettingsSidebar } from './components/settings-sidebar';
+export { SidebarPinnedGroup } from './components/sidebar-pinned-group';
 export { usePaneDrop } from './hooks/use-pane';
 export type {
   NavItem,

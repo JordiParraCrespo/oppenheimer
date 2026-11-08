@@ -16,15 +16,21 @@ function office(files: Record<string, string>): Buffer {
   );
 }
 
-/** A one-page PDF whose text layer says `line`, with a correct cross-reference table. */
-function pdfSaying(line: string): Buffer {
+/**
+ * A one-page PDF whose text layer says `line`, with a correct cross-reference
+ * table; with `toUnicode`, its font maps codes to text through that CMap.
+ */
+function pdfSaying(line: string, toUnicode?: string): Buffer {
   const content = `BT /F1 12 Tf 72 720 Td (${line}) Tj ET`;
   const objects = [
     '<< /Type /Catalog /Pages 2 0 R >>',
     '<< /Type /Pages /Kids [3 0 R] /Count 1 >>',
     '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 4 0 R /Resources << /Font << /F1 5 0 R >> >> >>',
     `<< /Length ${content.length} >>\nstream\n${content}\nendstream`,
-    '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>',
+    toUnicode
+      ? '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /ToUnicode 6 0 R >>'
+      : '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>',
+    ...(toUnicode ? [`<< /Length ${toUnicode.length} >>\nstream\n${toUnicode}\nendstream`] : []),
   ];
   let body = '%PDF-1.4\n';
   const offsets: number[] = [];
@@ -48,6 +54,23 @@ describe('DocumentAttachmentReaderAdapter', () => {
     });
     expect(reading).toMatchObject({ kind: 'text', format: 'PDF, 1 page(s)', truncated: false });
     expect(reading.kind === 'text' && reading.text).toContain('Total due: 1,250.00 EUR');
+  });
+
+  // Issue #728: invoice PDFs map glyphs to U+0000 in their fonts' ToUnicode,
+  // and text that keeps those NULs cannot be stored as the bot's tool result.
+  it('reads a PDF whose font maps a glyph to NUL without the NUL', async () => {
+    const toUnicode = [
+      '/CIDInit /ProcSet findresource begin 12 dict begin begincmap',
+      '1 begincodespacerange <00> <FF> endcodespacerange',
+      '2 beginbfchar <41> <0041> <7E> <0000> endbfchar',
+      'endcmap CMapName currentdict /CMap defineresource pop end end',
+    ].join('\n');
+    const reading = await reader.read({
+      filename: 'factura.pdf',
+      mimeType: 'application/pdf',
+      bytes: pdfSaying('A~A', toUnicode),
+    });
+    expect(reading).toMatchObject({ kind: 'text', text: '--- Page 1 ---\nAA' });
   });
 
   it('reads a Word document’s paragraphs as lines', async () => {

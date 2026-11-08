@@ -93,7 +93,7 @@ export class BotSessionToolsFactory implements BotToolArea {
         };
       },
       description:
-        "Starts a coding agent (Claude Code by default) on a host with a task: in a new worktree of one of a project's repositories, or in a folder already on the host. Use it for work that needs a shell or a checkout, as \"Working on code through sessions\" says; it returns at once with the session's id, and the agent works on its own. You are subscribed to it unless watch is false. The host defaults to the project's default host, then your home host.",
+        "Starts a coding agent (Claude Code by default) on a host with a task: in a new worktree of one of a project's repositories, or in a folder already on the host. Use it for work that needs a shell or a checkout, as \"Working on code through sessions\" says; it returns at once with the session's id, and the agent works on its own. If the host is offline the answer says the session is queued: report it as queued, not running. You are subscribed to it unless watch is false. The host defaults to the project's default host, then your home host.",
       input: z.object({
         // The session's first prompt, held to the same rule here so a task
         // too long is the tool's own error, before any card is raised. Only
@@ -197,7 +197,7 @@ export class BotSessionToolsFactory implements BotToolArea {
         };
       },
       description:
-        "Starts a coding agent in a vendor's cloud with a task on one of a project's repositories, so it runs on the vendor's machines, not on a host. agent picks the cloud: claude-code (default; claude.ai/code) or codex (chatgpt.com/codex) are started by a host whose claude or codex CLI is signed in, and that account runs it; cursor is launched at Cursor on the owner's own Cursor key (Settings → Cloud agents), bills their Cursor plan and takes no host. Use it when the person asks for a cloud session, or for work that should not hold a host. It returns the session's URL at the vendor once it exists. A cursor session takes follow-ups with send_to_session once its run ends; a claude-code or codex one takes follow-ups and answers at its vendor, not with send_to_session or answer_session. A host defaults to the project's default host, then your home host.",
+        "Starts a coding agent in a vendor's cloud with a task on one of a project's repositories, so it runs on the vendor's machines, not on a host. agent picks the cloud: claude-code (default; claude.ai/code) or codex (chatgpt.com/codex) are started by a host whose claude or codex CLI is signed in, and that account runs it; cursor is launched at Cursor on the person's own Cursor key (Settings → Cloud agents), bills their Cursor plan and takes no host. Use it when the person asks for a cloud session, or for work that should not hold a host. It returns the session's URL at the vendor once it exists: an answer with no link is not a start (still starting, queued on an offline host, or failed, most often because the host's CLI is not signed in; read_session says why). A cloud session's conversation stays at its vendor, so read_session_transcript cannot read it; follow it at its link and with get_session. You are subscribed to it unless watch is false. A cursor session takes follow-ups with send_to_session once its run ends; a claude-code or codex one takes follow-ups and answers at its vendor, not with send_to_session or answer_session. A host defaults to the project's default host, then your home host.",
       input: z.object({
         task: z
           .string()
@@ -247,6 +247,10 @@ export class BotSessionToolsFactory implements BotToolArea {
           .optional()
           .describe("cursor only: one of Cursor's models; Cursor's own pick when omitted."),
         name: z.string().min(1).max(80).optional().describe('A short name for the session.'),
+        watch: z
+          .boolean()
+          .optional()
+          .describe('Be woken when its task needs input, ends or fails (default true).'),
         wait_seconds: z
           .number()
           .int()
@@ -279,7 +283,11 @@ export class BotSessionToolsFactory implements BotToolArea {
         const session = result.hints.includes('host_offline')
           ? null
           : await this.waits.cloudStart(context, sessionId, input.wait_seconds, signal);
-        return { content: cloudStartAnswer(plan, sessionId, session), sessionId };
+        const watched =
+          input.watch === false
+            ? 'You are not watching it; read it later with get_session.'
+            : await this.watches.follow(context, sessionId, 'first_task');
+        return { content: `${cloudStartAnswer(plan, sessionId, session)} ${watched}`, sessionId };
       },
     });
   }
@@ -291,7 +299,7 @@ export class BotSessionToolsFactory implements BotToolArea {
       asks: true,
       subject: (input, context) => this.sessionSubject(context, input.session_id),
       description:
-        "Types a follow-up prompt into a running session's agent, as a person would at its prompt: more instructions, a correction, the next step. Only while the agent waits at its prompt (get_session's group idle or ready-for-review); while it works, wait for it; when it asks a question or a permission, use answer_session. Nothing is queued: a refused prompt is not sent later. A Cursor cloud session takes it as a new run once its last run ended; a Claude Code or Codex cloud session takes none (it is answered at its vendor). The session's log records the prompt as yours; read_session_transcript with its cursor reads what the agent answers. You are subscribed to the task it starts unless watch is false.",
+        "Types a follow-up prompt into a running session's agent, as a person would at its prompt: more instructions, a correction, the next step. Only while the agent waits at its prompt (get_session's group idle or ready-for-review); while it works the prompt is refused, so end your turn and let your watch wake you when it is back at its prompt; when it asks a question or a permission, use answer_session. Nothing is queued: a refused prompt is not sent later. A Cursor cloud session takes it as a new run once its last run ended; a Claude Code or Codex cloud session takes none (it is answered at its vendor). The session's log records the prompt as yours, and the answer gives the entry it was sent at: read_session with that after_seq shows what followed, and read_session_transcript shows the agent's own words. You are subscribed to the task it starts unless watch is false.",
       input: z.object({
         session_id: z.uuid().describe('The session to prompt (from list_sessions).'),
         text: z
@@ -337,7 +345,7 @@ export class BotSessionToolsFactory implements BotToolArea {
       asks: true,
       subject: (input, context) => this.sessionSubject(context, input.session_id),
       description:
-        "Answers what a session's agent is waiting on: a question it asked (answers, one per question, picks by index and/or words of your own) or a permission dialog (option, by index). get_session shows the decision, its id and its options. Answer only what the person's instructions settle; otherwise tell them.",
+        "Answers what a session's agent is waiting on: a question it asked (answers, one per question, picks by index and/or words of your own) or a permission dialog (option, by index). get_session shows the decision, its id and its options. Answer only what the person's instructions settle; otherwise tell them. Afterwards get_session shows whether the decision cleared.",
       input: z.object({
         session_id: z.uuid().describe('The session (from list_sessions).'),
         decision_id: z.string().min(1).max(128).describe("The decision's id, from get_session."),
@@ -401,7 +409,7 @@ export class BotSessionToolsFactory implements BotToolArea {
       asks: true,
       subject: (input, context) => this.sessionSubject(context, input.session_id),
       description:
-        "Stops a running session's agent. The worktree and its changes are kept. Use it when the person asks to stop one, or for a session you started that went wrong.",
+        "Stops a running session's agent. The worktree and its changes are kept. Use it when the person asks to stop one, or for a session you started that went wrong. It stops once its host hears it: get_session shows when it has.",
       input: z.object({
         session_id: z.uuid().describe('The session to stop (from list_sessions).'),
       }),

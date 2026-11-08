@@ -97,6 +97,10 @@ test('New session starts a session in Claude Code cloud, and the console follows
   await page.getByRole('button', { name: 'Delete', exact: true }).click();
   const dialog = page.getByRole('alertdialog');
   await expect(dialog).toContainText('stays on claude.ai/code');
+  await expect(dialog.getByRole('link', { name: 'archive it' })).toHaveAttribute(
+    'href',
+    `https://claude.ai/code/${detail.cloudSessionId}`,
+  );
   await expect(dialog.getByRole('checkbox')).toHaveCount(0);
   await shot('cloud-4-delete');
   await dialog.getByRole('button', { name: 'Delete session' }).click();
