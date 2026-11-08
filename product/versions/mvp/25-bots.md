@@ -1553,3 +1553,10 @@ The decisions it produced:
   fenced as data: each call's name, its input (200 characters), how it
   ended and the start of its answer (300), at most 2,000 characters a line
   (`activityText`). The summary counts and folds it the same way.
+- 2026-11-08: **on Claude, the conversation opens the message.** Claude
+  Code takes only user prompts, so the history was written into the system
+  prompt as a transcript, which changed it on every turn and left the
+  provider's prompt cache nothing to hit. The transcript now opens the
+  turn's message instead (`claudeMessage`), so the system prompt is the
+  same bytes from turn to turn on every engine, as §2 says. The prompt
+  says the turn context comes after the transcript when there is one.
