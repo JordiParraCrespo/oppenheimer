@@ -5,6 +5,8 @@ import (
 	"errors"
 	"io/fs"
 	"path/filepath"
+	"strings"
+	"time"
 
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/host/domain"
 )
@@ -255,15 +257,9 @@ func (s *Service) ListFolders(path string) (domain.FolderListing, error) {
 		return domain.FolderListing{}, domain.ErrFolderNotFound.WithDetail("%q is not an absolute path", path)
 	}
 	path = filepath.Clean(path)
-	names, err := s.dirs.Subdirectories(path)
-	switch {
-	case err == nil:
-	case errors.Is(err, fs.ErrNotExist):
-		return domain.FolderListing{}, domain.ErrFolderNotFound.WithDetail("%s does not exist", path).WithCause(err)
-	case errors.Is(err, domain.ErrNotADirectory):
-		return domain.FolderListing{}, domain.ErrFolderNotDir.WithDetail("%s is not a directory", path).WithCause(err)
-	default:
-		return domain.FolderListing{}, domain.ErrFolderUnreadable.WithDetail("%s cannot be read: %v", path, err).WithCause(err)
+	names, err := s.subdirectories(path)
+	if err != nil {
+		return domain.FolderListing{}, err
 	}
 	kept, truncated := domain.Listable(names)
 	listing := domain.FolderListing{
@@ -277,6 +273,99 @@ func (s *Service) ListFolders(path string) (domain.FolderListing, error) {
 		listing.Entries = append(listing.Entries, domain.FolderEntry{Name: name, Branch: s.dirs.Branch(filepath.Join(path, name))})
 	}
 	return listing, nil
+}
+
+// findBudget is how long a search walks before it answers with what it has:
+// the picker asks again on the next keystroke, so a quick partial answer is
+// worth more than a complete late one.
+const findBudget = 400 * time.Millisecond
+
+// FindFolders searches the directories under path, or the runner account's
+// home when it is empty, for the ones whose name holds query (`fs.find`, 24
+// §4). The walk is breadth first and bounded: domain.MaxFindDepth levels,
+// domain.MaxFindReads directories read, findBudget of time, hidden
+// directories and dependency trees skipped, and a git checkout is found but
+// never walked into. A directory under path that cannot be read is passed
+// over; only path itself answers with an error.
+func (s *Service) FindFolders(path, query string) (domain.FolderSearch, error) {
+	if s.dirs == nil {
+		return domain.FolderSearch{}, domain.ErrFolderUnreadable.WithDetail("this runner searches no folders")
+	}
+	_, home, _, _ := s.prober.Identity()
+	if path == "" {
+		path = home
+	}
+	if !filepath.IsAbs(path) {
+		return domain.FolderSearch{}, domain.ErrFolderNotFound.WithDetail("%q is not an absolute path", path)
+	}
+	path = filepath.Clean(path)
+	names, err := s.subdirectories(path)
+	if err != nil {
+		return domain.FolderSearch{}, err
+	}
+	query = strings.ToLower(strings.TrimSpace(query))
+
+	type level struct {
+		dir   string
+		depth int
+		names []string
+	}
+	started := time.Now()
+	queue := []level{{dir: path, depth: 1, names: names}}
+	var found []domain.FoundFolder
+	reads, stopped := 1, false
+	for len(queue) > 0 && !stopped {
+		next := queue[0]
+		queue = queue[1:]
+		for _, name := range next.names {
+			if !domain.Searchable(name) {
+				continue
+			}
+			// Every name costs a stat for its branch, the deepest level's
+			// included, so the clock is read before each one, not only
+			// before a directory is read.
+			if time.Since(started) > findBudget {
+				stopped = true
+				break
+			}
+			dir := filepath.Join(next.dir, name)
+			branch := s.dirs.Branch(dir)
+			if rank, ok := domain.MatchFolder(name, query); ok {
+				found = append(found, domain.Found(dir, branch, next.depth, rank))
+			}
+			if branch != "" || next.depth >= domain.MaxFindDepth {
+				continue
+			}
+			if reads >= domain.MaxFindReads {
+				stopped = true
+				break
+			}
+			reads++
+			children, err := s.dirs.Subdirectories(dir)
+			if err != nil || len(children) == 0 {
+				continue
+			}
+			queue = append(queue, level{dir: dir, depth: next.depth + 1, names: children})
+		}
+	}
+	kept, cut := domain.BestFound(found)
+	return domain.FolderSearch{Path: path, Home: home, Entries: kept, Truncated: stopped || cut}, nil
+}
+
+// subdirectories reads dir's sub-directories, refusing with the FS_* problem
+// a person can act on.
+func (s *Service) subdirectories(dir string) ([]string, error) {
+	names, err := s.dirs.Subdirectories(dir)
+	switch {
+	case err == nil:
+		return names, nil
+	case errors.Is(err, fs.ErrNotExist):
+		return nil, domain.ErrFolderNotFound.WithDetail("%s does not exist", dir).WithCause(err)
+	case errors.Is(err, domain.ErrNotADirectory):
+		return nil, domain.ErrFolderNotDir.WithDetail("%s is not a directory", dir).WithCause(err)
+	default:
+		return nil, domain.ErrFolderUnreadable.WithDetail("%s cannot be read: %v", dir, err).WithCause(err)
+	}
 }
 
 func required(name string) bool {

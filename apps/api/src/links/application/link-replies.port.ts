@@ -1,6 +1,7 @@
 import type {
   CodexEnvironmentsMessage,
   CommandFailedMessage,
+  FsFoundMessage,
   FsListingMessage,
   PortListingMessage,
   SharedPreviewMessage,
@@ -11,11 +12,12 @@ import type {
 
 /**
  * A runner's answer to a command the control plane is waiting on: the reply
- * frame itself, or its refusal: `fs.listing`, `port.listing`,
+ * frame itself, or its refusal: `fs.listing`, `fs.found`, `port.listing`,
  * `codex.environments`, `whatsapp.sent`, `telegram.sent`, `shared.preview` or `transcript.page`.
  */
 export type LinkReply =
   | FsListingMessage
+  | FsFoundMessage
   | PortListingMessage
   | CodexEnvironmentsMessage
   | WhatsappSentMessage

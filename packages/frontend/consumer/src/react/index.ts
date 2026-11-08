@@ -93,6 +93,7 @@ export { type ChatgptLoginFlow, useChatgptLogin } from './bots.chatgpt-login';
 export {
   type AddBotFactVariables,
   type DeleteBotFactVariables,
+  type MoveBotGroupVariables,
   type RenameBotGroupVariables,
   type RevertBotDocumentVariables,
   type SaveBotDocumentVariables,
@@ -109,6 +110,7 @@ export {
   useDeleteBot,
   useDeleteBotFact,
   useDeleteBotGroup,
+  useMoveBotGroup,
   useReloadBotDocuments,
   useRenameBotGroup,
   useRevertBotDocument,
@@ -154,6 +156,7 @@ export {
 export { type HostPairingFlow, useHostPairing } from './hosts.pairing';
 export {
   useHostCodexEnvironments,
+  useHostFolderSearch,
   useHostFolders,
   useHostPresence,
   useHosts,

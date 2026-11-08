@@ -16,17 +16,20 @@ import { useBotPin } from '@/features/bots/hooks/use-bot-pins';
  * subscribes to the route (lit on its chat and on its settings), owns the
  * move, and keeps the delete dialog open past the menu that asked for it.
  * `groups` are the Move pane's targets; its pin is the sidebar's
- * (`BotPinsContext`), which draws a pinned row under Pinned. The row drags by
+ * (`BotPinsContext`), which draws a pinned row under Pinned; `onHide`
+ * takes it out of the sidebar. The row drags by
  * itself (a click still opens the chat) unless `dragDisabled`.
  */
 export function BotSidebarRow({
   bot,
   groups,
   dragDisabled,
+  onHide,
 }: {
   bot: BotEntity;
   groups: readonly BotGroupEntity[];
   dragDisabled: boolean;
+  onHide: (id: string) => void;
 }) {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -65,6 +68,7 @@ export function BotSidebarRow({
               navigate({ to: '/bots/$botId/settings/profile', params: { botId: bot.id } })
             }
             onMove={(groupId) => move.mutate({ id: bot.id, input: { groupId } })}
+            onHide={() => onHide(bot.id)}
             onDelete={() => setDeleting(true)}
           />
         }

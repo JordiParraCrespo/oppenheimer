@@ -75,6 +75,7 @@ const (
 	CapabilityAttachmentDirectProof = "attachment.direct.proof"
 	CapabilitySessionFolder         = "session.folder"
 	CapabilityFsList                = "fs.list"
+	CapabilityFsFind                = "fs.find"
 	CapabilityAttachmentChat        = "attachment.chat"
 	CapabilityAttachmentChatOlder   = "attachment.chat.older"
 	CapabilityDeviceScreen          = "device.screen"
@@ -122,6 +123,8 @@ const (
 	TypeRepositoryPrepare       = "repository.prepare"
 	TypeFsList                  = "fs.list"
 	TypeFsListing               = "fs.listing"
+	TypeFsFind                  = "fs.find"
+	TypeFsFound                 = "fs.found"
 	TypeAttachmentDirectOffer   = "attachment.direct.offer"
 	TypeAttachmentDirectAnswer  = "attachment.direct.answer"
 	TypeAttachmentDirectRefused = "attachment.direct.refused"
@@ -191,6 +194,8 @@ var MessageTypes = []string{
 	TypeRepositoryPrepare,
 	TypeFsList,
 	TypeFsListing,
+	TypeFsFind,
+	TypeFsFound,
 	TypeAttachmentDirectOffer,
 	TypeAttachmentDirectAnswer,
 	TypeAttachmentDirectRefused,
@@ -292,6 +297,10 @@ func NewMessage(messageType string) (any, bool) {
 		return new(FsList), true
 	case TypeFsListing:
 		return new(FsListing), true
+	case TypeFsFind:
+		return new(FsFind), true
+	case TypeFsFound:
+		return new(FsFound), true
 	case TypeAttachmentDirectOffer:
 		return new(AttachmentDirectOffer), true
 	case TypeAttachmentDirectAnswer:
@@ -699,6 +708,30 @@ type FsListing struct {
 // FsListingEntries is FsListing.Entries.
 type FsListingEntries struct {
 	Name   string `json:"name"`
+	Branch string `json:"branch,omitempty"`
+}
+
+// FsFind is the `fs.find` message.
+type FsFind struct {
+	Type      string `json:"type"`
+	CommandID string `json:"commandId"`
+	Query     string `json:"query"`
+	Path      string `json:"path,omitempty"`
+}
+
+// FsFound is the `fs.found` message.
+type FsFound struct {
+	Type      string           `json:"type"`
+	CommandID string           `json:"commandId"`
+	Path      string           `json:"path"`
+	Home      string           `json:"home"`
+	Entries   []FsFoundEntries `json:"entries"`
+	Truncated bool             `json:"truncated,omitempty"`
+}
+
+// FsFoundEntries is FsFound.Entries.
+type FsFoundEntries struct {
+	Path   string `json:"path"`
 	Branch string `json:"branch,omitempty"`
 }
 

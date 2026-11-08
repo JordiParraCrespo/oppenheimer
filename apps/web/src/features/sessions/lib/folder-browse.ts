@@ -4,19 +4,19 @@ import { crumbsOf, HOME, parentOf, parseFolderInput, shortenPath } from './folde
 /**
  * What New session's folder picker shows for what has been typed and what the
  * host answered (`product/versions/mvp/24-session-places.md` §4): the folder
- * listed, the rows the typed start of a name leaves, why there are none, and
+ * listed, the rows whose name holds what is typed, why there are none, and
  * the one folder **Use** would open — only a folder the host said exists.
  */
 export interface FolderView {
   /** The folder listed, as shown (`~/code`). */
   dir: string;
-  /** The start of a name typed after it. */
+  /** Part of a name typed after it. */
   fragment: string;
   crumbs: { name: string; dir: string }[];
   /** Where the up row goes; null at the root. */
   up: string | null;
   rows: HostFolderEntry[];
-  /** Why there are no rows: no such folder, nothing starts so, or none at all. */
+  /** Why there are no rows: no such folder, no name holds what is typed, or none at all. */
   empty: 'missing' | 'filtered' | 'none' | null;
   /** The folder Use opens, absolute, and its branch when it is a repository; null while none exists. */
   target: { path: string; branch: string | null } | null;
@@ -38,10 +38,13 @@ export function folderView({
   missing: boolean;
 }): FolderView {
   const { dir, fragment } = parseFolderInput(input);
-  const prefix = fragment.toLowerCase();
-  const rows = missing
-    ? []
-    : (listing?.entries ?? []).filter((entry) => entry.name.toLowerCase().startsWith(prefix));
+  const part = fragment.toLowerCase();
+  const named = (missing ? [] : (listing?.entries ?? [])).filter((entry) =>
+    entry.name.toLowerCase().includes(part),
+  );
+  // The names that start with what is typed first, each group in the host's order.
+  const starts = (entry: HostFolderEntry) => entry.name.toLowerCase().startsWith(part);
+  const rows = [...named.filter(starts), ...named.filter((entry) => !starts(entry))];
   const exact = fragment ? listing?.entries.find((entry) => entry.name === fragment) : undefined;
   const target = missing
     ? null
