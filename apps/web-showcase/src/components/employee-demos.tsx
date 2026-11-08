@@ -223,7 +223,7 @@ export function RoutineCardsDemo() {
         name="Triage new issues"
         icon={<WebhookIcon />}
         trigger="Webhook · issue opened in acme/web"
-        prompt="Label the issue, find the owning team, and ask for a reproduction when it has none."
+        prompt="Label the issue, find the owning team, and ask for a reproduction when it has none. When the issue names a version, check it against the latest release and say whether it is still current. When it duplicates an open issue, link the older one and close this one with a short note. When it reports a security problem, do not discuss it in public: move it to a private advisory and tell the reporter where it went. Leave anything you are unsure of for a person, with a line saying why."
         last="2d ago"
         next="—"
         active={on.triage}

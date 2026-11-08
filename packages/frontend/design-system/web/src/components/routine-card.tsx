@@ -1,7 +1,7 @@
 'use client';
 
 import { PencilIcon, PlayIcon, XIcon } from 'lucide-react';
-import type * as React from 'react';
+import * as React from 'react';
 
 import { cn } from '../lib/utils';
 import { IconButton } from './icon-button';
@@ -17,6 +17,8 @@ type RoutineCardLabels = {
   delete: string;
   last: string;
   next: string;
+  more: string;
+  less: string;
 };
 
 const DEFAULT_LABELS: RoutineCardLabels = {
@@ -29,6 +31,8 @@ const DEFAULT_LABELS: RoutineCardLabels = {
   delete: 'Delete routine',
   last: 'Last',
   next: 'Next',
+  more: 'Show more',
+  less: 'Show less',
 };
 
 /**
@@ -40,7 +44,8 @@ const DEFAULT_LABELS: RoutineCardLabels = {
  * Read: the name at 14.5px, the `Switch` (Pause / Resume as its title) and
  * the run, edit and delete buttons on the right (run is held while
  * `running`, its label saying so); the trigger as a 12px glyph and
- * "Schedule · Weekdays at 09:00"; what it is told to do in muted ink; when
+ * "Schedule · Weekdays at 09:00"; what it is told to do in muted ink,
+ * clamped to three lines with Show more when it runs longer; when
  * it last and next ran in mono. A paused card fades to 60%.
  *
  * Edit: pass the form as `children` and the card holds it instead of the
@@ -137,7 +142,7 @@ function RoutineCard({
             {icon}
             {trigger}
           </span>
-          {prompt ? <span className="text-[13.5px] leading-normal text-pretty text-fg-muted">{prompt}</span> : null}
+          {prompt ? <RoutinePrompt more={label.more} less={label.less}>{prompt}</RoutinePrompt> : null}
           {last || next ? (
             <span className="figures flex gap-4 font-mono text-[11.5px] text-fg-subtle">
               {last ? (
@@ -154,6 +159,47 @@ function RoutineCard({
           ) : null}
         </div>
       )}
+    </div>
+  );
+}
+
+/**
+ * The prompt, three lines until opened. Show more appears only when the text
+ * runs past them, measured on the clamped box so a short prompt has no toggle.
+ */
+function RoutinePrompt({ more, less, children }: { more: string; less: string; children: React.ReactNode }) {
+  const [open, setOpen] = React.useState(false);
+  const [overflows, setOverflows] = React.useState(false);
+  const ref = React.useRef<HTMLSpanElement>(null);
+
+  React.useEffect(() => {
+    const box = ref.current;
+    if (!box || open || typeof ResizeObserver === 'undefined') return;
+    const measure = () => setOverflows(box.scrollHeight > box.clientHeight + 1);
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(box);
+    return () => observer.disconnect();
+  }, [open]);
+
+  return (
+    <div className="flex flex-col items-start gap-1">
+      <span
+        ref={ref}
+        className={cn('text-[13.5px] leading-normal text-pretty text-fg-muted', !open && 'line-clamp-3')}
+      >
+        {children}
+      </span>
+      {overflows ? (
+        <button
+          type="button"
+          aria-expanded={open}
+          onClick={() => setOpen(!open)}
+          className="rounded-sm text-[12.5px] font-medium text-fg-subtle outline-none transition-colors duration-fast hover:text-fg focus-visible:ring-2 focus-visible:ring-ring"
+        >
+          {open ? less : more}
+        </button>
+      ) : null}
     </div>
   );
 }

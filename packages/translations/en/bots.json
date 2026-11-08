@@ -585,6 +585,8 @@
       "gmail": "Gmail · {{when}}",
       "last": "Last",
       "next": "Next",
+      "more": "Show more",
+      "less": "Show less",
       "never": "Never",
       "switch": "Run “{{name}}” on its own",
       "pause": "Pause",
