@@ -20,7 +20,8 @@ import type { BotPins } from './use-bot-pins';
  * Pinned is one more group (`PINNED_BOTS`), drawn above the others: a bot
  * dropped on it is pinned where it lands, a pinned one dragged up or down it
  * is re-pinned in that order, both on this device only, and one dragged out
- * into a group is unpinned and saved there. `pinned` are the pinned bots the
+ * into a group is saved there and unpinned once the save lands (a save that
+ * fails leaves it pinned). `pinned` are the pinned bots the
  * search keeps, in pin order; `carrying` is whether a bot is being dragged,
  * for Pinned to show where a pin can go before there is one.
  */
@@ -52,11 +53,16 @@ export function useBotOrder(
         pins.placePins(drop.pins);
         return;
       }
-      if (drop.unpin) pins.setPinned(moved.id, false);
+      // The held order draws it out of Pinned until the move lands; a move that fails keeps the pin.
       setOrder(next);
       move.mutate(
         { id: moved.id, input: { groupId: drop.groupId, position: drop.position } },
-        { onSettled: () => setOrder(null) },
+        {
+          onSuccess: () => {
+            if (drop.unpin) pins.setPinned(moved.id, false);
+          },
+          onSettled: () => setOrder(null),
+        },
       );
     },
   );
