@@ -1,6 +1,7 @@
 'use client';
 
 import type { BotDocumentName } from '@oppenheimer/shared/schemas/bot';
+import type { QueryKey } from '@tanstack/react-query';
 
 /**
  * Query key factory for the `bots` feature. A bot's documents and memory hang
@@ -61,3 +62,24 @@ export const botsKeys = {
   chatgptLoginStatus: (flowId: string | undefined) =>
     [...botsKeys.chatgptLogins(), 'status', flowId] as const,
 };
+
+/**
+ * Whether a key is some bot's memory (`memory(id)` or a leaf under it), or
+ * exactly its fact list (`memoryList(id)`). Matched against the factory itself,
+ * the bot's id read where `detail(id)` puts it, so a change to the keys cannot
+ * leave a scan over every bot's memory matching nothing.
+ */
+export function isBotMemoryKey(key: QueryKey): boolean {
+  const id = key[botsKeys.details().length];
+  return typeof id === 'string' && startsWith(key, botsKeys.memory(id));
+}
+
+export function isBotMemoryListKey(key: QueryKey): boolean {
+  const id = key[botsKeys.details().length];
+  const list = typeof id === 'string' ? botsKeys.memoryList(id) : null;
+  return list !== null && key.length === list.length && startsWith(key, list);
+}
+
+function startsWith(key: QueryKey, prefix: readonly unknown[]): boolean {
+  return prefix.every((part, index) => key[index] === part);
+}

@@ -4,7 +4,7 @@ import {
   SettingsGroup,
   SettingsListRow,
 } from '@oppenheimer/design-system-web';
-import { useAddBotFact, useSuspenseBotMemory } from '@oppenheimer/frontend-consumer/react';
+import { useAddBotFact, useBots, useSuspenseBotMemory } from '@oppenheimer/frontend-consumer/react';
 import { ErrorAlert } from '@oppenheimer/frontend-web';
 import { BOT_MEMORY_FACT_MAX } from '@oppenheimer/shared/schemas/bot';
 import { useState } from 'react';
@@ -16,7 +16,8 @@ import { BotFactRow } from './bot-fact-row';
  * The bot's facts, with those another of the person's bots shared about them:
  * the count and Clear all (its own facts only) over a card of them, newest first,
  * then the row where one is added. Each fact is a row that owns its edit and
- * its delete; this owns the add, whose draft is the add row's.
+ * its delete; this owns the add, whose draft is the add row's, and names the
+ * bot that keeps each shared fact, from the bots list the console has read.
  */
 export function BotMemory({ botId }: { botId: string }) {
   const { t } = useTranslation();
@@ -26,6 +27,10 @@ export function BotMemory({ botId }: { botId: string }) {
   const add = useAddBotFact({ onSuccess: () => setDraft('') });
   const content = draft.trim();
   const own = facts.filter((fact) => !fact.isSharedWith(botId)).length;
+  const { data: names } = useBots({
+    enabled: own < facts.length,
+    select: (bots) => Object.fromEntries(bots.map((bot) => [bot.id, bot.name])),
+  });
 
   return (
     <section className="flex flex-col gap-2.5">
@@ -47,7 +52,14 @@ export function BotMemory({ botId }: { botId: string }) {
         {facts.length === 0 ? (
           <SettingsListRow muted>{t('bots.settings.memory.empty')}</SettingsListRow>
         ) : (
-          facts.map((fact) => <BotFactRow key={fact.id} botId={botId} fact={fact} />)
+          facts.map((fact) => (
+            <BotFactRow
+              key={fact.id}
+              botId={botId}
+              fact={fact}
+              sharedBy={names?.[fact.botId] ?? t('settings.memory.aBot')}
+            />
+          ))
         )}
         <SettingsAddRow
           value={draft}

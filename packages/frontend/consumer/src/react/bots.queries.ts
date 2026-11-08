@@ -26,7 +26,7 @@ import {
   type UpdateBotFactInput,
   type UpdateBotInput,
 } from '../modules/bots/bot.entity';
-import { botsKeys } from './bots.keys';
+import { botsKeys, isBotMemoryKey, isBotMemoryListKey } from './bots.keys';
 import { useConsumerApp } from './context';
 import { useHostListQuery, useHostPresencePoll } from './hosts.queries';
 import { mutation } from './mutation';
@@ -252,7 +252,7 @@ function refreshSharedMemory(queryClient: QueryClient) {
   return Promise.all([
     queryClient.invalidateQueries({
       queryKey: botsKeys.details(),
-      predicate: (query) => query.queryKey[3] === 'memory',
+      predicate: (query) => isBotMemoryKey(query.queryKey),
     }),
     queryClient.invalidateQueries({ queryKey: botsKeys.personMemory() }),
   ]);
@@ -267,7 +267,7 @@ function refreshSharedMemory(queryClient: QueryClient) {
 function isSharedFact(queryClient: QueryClient, factId: string): boolean {
   const lists = queryClient.getQueriesData<BotMemoryFactEntity[]>({
     queryKey: botsKeys.details(),
-    predicate: (query) => query.queryKey[3] === 'memory' && query.queryKey[4] === 'list',
+    predicate: (query) => isBotMemoryListKey(query.queryKey),
   });
   for (const [, rows] of lists) {
     if (rows?.find((row) => row.id === factId)?.scope === 'person') return true;

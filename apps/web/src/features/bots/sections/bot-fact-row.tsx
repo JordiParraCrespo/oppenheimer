@@ -1,7 +1,7 @@
 import { Button, IconButton, Input, SettingsListRow } from '@oppenheimer/design-system-web';
 import { X } from '@oppenheimer/design-system-web/icons';
 import type { BotMemoryFactEntity } from '@oppenheimer/frontend-consumer';
-import { useBots, useDeleteBotFact, useUpdateBotFact } from '@oppenheimer/frontend-consumer/react';
+import { useDeleteBotFact, useUpdateBotFact } from '@oppenheimer/frontend-consumer/react';
 import { ErrorAlert, formatMediumDate, useLocale } from '@oppenheimer/frontend-web';
 import { BOT_MEMORY_FACT_MAX } from '@oppenheimer/shared/schemas/bot';
 import { useState } from 'react';
@@ -25,11 +25,14 @@ export function BotFactRow({
   botId,
   fact,
   keptBy,
+  sharedBy,
 }: {
   botId: string;
   fact: BotMemoryFactEntity;
   /** The name of the bot that keeps it, on the account's Settings → Memory. */
   keptBy?: string;
+  /** On a bot's page, the name of the bot that keeps a fact it was shared. */
+  sharedBy?: string;
 }) {
   const { t } = useTranslation();
   const locale = useLocale();
@@ -38,12 +41,6 @@ export function BotFactRow({
   const remove = useDeleteBotFact();
   const date = formatMediumDate(fact.updatedAt, locale);
   const row = factRowModel(fact, keptBy === undefined ? { botId } : { account: true });
-  // A shared fact is the keeper's row: it is changed there, and its menu names it.
-  const { data: keeper } = useBots({
-    enabled: row.shared,
-    select: (bots) => bots.find((bot) => bot.id === fact.botId)?.name,
-  });
-  const keeperName = row.shared ? (keeper ?? t('settings.memory.aBot')) : keptBy;
   const kind = row.kind && t(`bots.settings.memory.${row.kind}`);
   const meta = t(`bots.settings.memory.${row.meta}`, { date, bot: keptBy });
 
@@ -115,7 +112,7 @@ export function BotFactRow({
               fact={fact.content}
               tier={fact.tier}
               scope={fact.scope}
-              keptBy={keeperName}
+              keptBy={keptBy ?? (row.shared ? sharedBy : undefined)}
               disabled={update.isPending}
               onChange={(change) => update.mutate({ id: fact.botId, factId: fact.id, ...change })}
             />
