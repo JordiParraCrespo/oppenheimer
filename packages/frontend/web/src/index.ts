@@ -3,7 +3,7 @@
  *
  * Organised by concern, each with the same kind directories a feature has
  * (`components/`, `dialogs/`, `hooks/`, `lib/`). Leaves first: `platform`,
- * `theme`, `i18n`, `analytics`, `forms`, `markdown`, `dictation`, `chat` import the design system, the kernel
+ * `theme`, `i18n`, `analytics`, `error-reporting`, `forms`, `markdown`, `dictation`, `chat` import the design system, the kernel
  * and each other, never a concern above them; `layout` and `pairing` build on
  * those; `shell` and `auth` on anything below. Nothing here imports a product
  * package.
@@ -12,6 +12,7 @@ export * from './analytics';
 export * from './auth';
 export * from './chat';
 export * from './dictation';
+export * from './error-reporting';
 export * from './forms';
 export * from './i18n';
 export * from './layout';

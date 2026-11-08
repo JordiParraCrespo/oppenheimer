@@ -29,6 +29,7 @@ const SETTLED_KINDS = new Set<ChatBlock['kind']>([
   'changes',
   'images',
   'file',
+  'subagents',
 ]);
 
 /**

@@ -8,6 +8,7 @@ import {
   botSkillNameDraft,
   botSkillNameOf,
   botSkillSchema,
+  editBotSkillSchema,
   isBotConsoleCommand,
   parseBotSlashCommand,
   updateBotSkillSchema,
@@ -202,6 +203,7 @@ describe('botSkillSchema', () => {
       'usage',
       'loop',
       'schedule',
+      'oppenheimer',
       '',
     ]) {
       expect(botSkillSchema.safeParse({ ...skill, name }).success).toBe(false);
@@ -211,6 +213,14 @@ describe('botSkillSchema', () => {
   it('needs a description and a body', () => {
     expect(botSkillSchema.safeParse({ ...skill, description: ' ' }).success).toBe(false);
     expect(botSkillSchema.safeParse({ ...skill, body: '' }).success).toBe(false);
+  });
+
+  it('lets an edit resend a reserved name a skill already has, leaving a rename onto one to the API', () => {
+    expect(updateBotSkillSchema.safeParse({ name: 'oppenheimer', body: 'Mine.' }).success).toBe(
+      true,
+    );
+    expect(editBotSkillSchema.safeParse({ ...skill, name: 'goal' }).success).toBe(true);
+    expect(editBotSkillSchema.safeParse({ ...skill, name: 'Not A Name' }).success).toBe(false);
   });
 
   it('takes a change of any one part, and refuses an empty change', () => {

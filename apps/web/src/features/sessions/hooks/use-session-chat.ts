@@ -48,7 +48,8 @@ function sharedRead(chat: SessionChat): () => ChatState {
         next.available === shared.available &&
         next.queued === shared.queued &&
         next.status === shared.status &&
-        next.older === shared.older
+        next.older === shared.older &&
+        next.interruptible === shared.interruptible
           ? shared
           : { ...next, turns };
     }

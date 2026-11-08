@@ -232,4 +232,10 @@ export const BotErrors = {
     message: 'The bot has as many skills as it can keep',
     httpStatus: 422,
   },
+  /** A bot whose memory was never dreamed, or whose latest dream was undone already. */
+  DREAM_NOT_FOUND: {
+    code: 'BOTS_041',
+    message: 'The bot has no dream to undo',
+    httpStatus: 404,
+  },
 } as const satisfies Record<string, ErrorDefinition>;

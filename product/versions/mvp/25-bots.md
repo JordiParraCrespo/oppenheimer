@@ -136,7 +136,14 @@ worker runs it and streams what happens back to the chat.
     only what a tool confirmed; a reply commits to something (what it took
     on, where it stands, when the person hears next), and asking again for
     work under way is the same errand, reported rather than started again
-    (2026-10-29);
+    (2026-10-29); a failed step is not the end of the request: the bot
+    works out why and tries the next reasonable route within its
+    permissions (another online host, another query or source, another
+    approach) before it reports a blocker, never the same thing the same
+    way twice, never a second session for work still under way (queued or
+    stalled), and never around a person's "no"; saying what it is about to
+    do is not a result (2026-11-08, from OpenClaw's "Execution Bias" and
+    "Promised Work" prompt sections, `openclaw/openclaw` at `3a25991e3`);
   - **check before you report** (2026-11-07), the one statement every
     other section and the session wakes point at: every action that
     changes something is checked before it is reported, from what the
@@ -157,7 +164,19 @@ worker runs it and streams what happens back to the chat.
     can answer is looked up and answered without one (2026-11-05). The
     bot delegates a complete
     task and never runs a terminal; it picks the named host, then the
-    project's default, then its home host, and checks it is online; it
+    project's default, then its home host, and checks it is online; when
+    a host it chose (not one the person named, which it never overrides)
+    cannot run the task (offline, or `list_hosts` shows it cannot start the
+    agent) and another online host can, it starts there and says why
+    (2026-11-08); when a session it started on a host it chose fails and
+    the failure looks like the host's (the agent not signed in or not
+    installed, the checkout missing), it offers to run the task it wrote on
+    another online host that has the agent and starts it only on the
+    person's yes: nothing but the session's own words says why it failed,
+    and `list_hosts` cannot see whether an agent is signed in. It never
+    offers a host the task failed on; a session it only watches, or a task
+    that fails on its own merits, is reported, not retried, as before (the
+    `failed` wake); it
     works only in a known project's repository or a folder it was given;
     it follows a session already on the task rather than starting a
     second; it says "started", not "done", checks in the same turn that the
@@ -604,6 +623,66 @@ of `bot_memory_fact`, with two columns more:
   under the same lock as the count; a fact added by hand is refused
   (`BOTS_009`), as is a save when every fact is `profile`. A fact the bot
   saved names the bot as its source (it named the person before).
+- **Settings → Memory at the account** (2026-11-07, asked by the owner,
+  the way Claude's memory works). One page, beside Profile, for what all
+  the person's bots know about them:
+  - *About you*: a text the person writes about themselves, up to 4,000
+    characters, one per person per workspace (`person_memory`). It is in
+    the system prompt of every bot they made there, in a section of its
+    own ahead of the shared facts, and no tool writes it: a bot that
+    learns something about the person saves a `person` fact instead. It
+    changes only when the person saves it, so the prompt cache holds.
+  - *What your bots learned*: every `person` fact any of their bots keeps,
+    newest first, each naming that bot. Edit, move and forget act on the
+    bot that keeps it, as on that bot's own page; nothing is added here,
+    since what the person wants every bot to know goes in About you.
+  - `GET /v1/bot-memory/person` reads both; `PUT
+    /v1/bot-memory/person/about` writes the text. A fact is changed through
+    the bot's own memory routes.
+- **Dreaming** (2026-11-07, from Managed Agents' dreams and Anthropic's
+  "Components of agent memory"). A bot saves as it goes without checking
+  what it has, so its memory fills with repeats, contradictions and stale
+  entries. A dream is an offline pass of the bot's own model, with no tools,
+  that rewrites it: duplicates merged, what is contradicted or stale
+  dropped, each fact one clear sentence that still makes sense in a month,
+  standing instructions kept in the profile and the rest in the log, and at
+  most five new facts the conversation clearly shows will matter; a secret
+  a note holds (a password, a key, a token) is dropped. It reads
+  the conversation summary and the newest messages (24,000 tokens) as the
+  ground truth the notes are checked against: a note is a guess at what
+  will matter, written in the moment.
+  - *What it rewrites.* Only the facts the bot wrote itself. What the
+    person wrote in Settings → Memory stays word for word, and a fact
+    another bot shared is that bot's; the dream reads both so it repeats
+    neither. A merged log fact keeps the newest day of those it came from.
+  - *When.* After a turn, once the bot keeps at least 8 facts of its own,
+    has written 10 since its last dream, and last dreamed a day ago or
+    never (a dream that wrote nothing counts: the day is claimed when the
+    dream is staged, so a retry of a failed job still runs); only while *Learn automatically* is on, since a dream changes
+    memory the way `remember` does. Settings → Memory's **Tidy now** runs
+    one whatever those say; the API records the ask, so the row reads
+    "tidying" until the job ends (ten minutes at most). It runs on the `bot-dreams` queue and is
+    counted under `/usage` as `dream`.
+  - *Guards.* An answer that is not the JSON asked for, keeps none of the
+    facts, keeps fewer than a fifth of them or would overfill the memory is
+    not used. The write swaps the facts it read for the ones it wrote under
+    the bot's lock and a lock on each of its facts, and is refused if any of
+    them changed since it read them (the bot saved, the owner edited or
+    forgot one): the next dream reads them again. Clear all takes the same
+    lock.
+  - *Undo.* The facts it replaced are kept with the dream
+    (`bot_memory_dream`, one row a bot, its latest). Undo in Settings →
+    Memory puts them back with their ids and dates and deletes what the
+    dream wrote, except one the owner has edited since; what was saved since
+    stays, the bot's own oldest log facts making room past 500. Only the latest dream can be undone, once (`BOTS_041`).
+    Clear all forgets the dream too.
+  - *In the chat.* Each dream and each undo is a line outside any turn
+    ("Tidied its memory · 40 facts → 22"), which the bot reads back as a
+    note from Oppenheimer.
+  - *Not built.* A review step before the rewrite is used (Managed Agents'
+    dreams write a new store and leave adopting it to you); here it is
+    applied and undone instead, as every other memory change is a line you
+    undo. Dreaming a project's memory, and repeated passes.
 - **Not built.** Grok Bot's review queue for shared learnings: a fact
   about you comes from your own bots, so it is a line in their chat like
   any other memory change.
@@ -649,6 +728,56 @@ one row of `bot_skill`, the bot's own, at most 50 a bot.
 - **Not built.** Grok Bot's library shared by all of a person's bots, a
   registry like OpenClaw's ClawHub, and skills that dispatch straight to a
   tool.
+
+**Oppenheimer's own guide** (2026-11-07, from how Claude Code knows Claude
+Code: its docs are published, with an `llms.txt`, and it reads them before
+it answers a question about itself). The owner asked for bots that know
+what Oppenheimer is and what they can do in it, from a published
+documentation, with a skill every bot has by default. Until then a bot had
+one sentence about Oppenheimer and answered "how do I pair a host?" from its
+training, which knows nothing of it.
+
+| Tool | Does | Default |
+|------|------|---------|
+| `read_oppenheimer_docs` | With no page, the guide's index (each page's id, title and what it covers); with a page id, that page whole | auto |
+
+- **One copy of the guide, published and bundled.** "Using Oppenheimer" is
+  `apps/docs/docs/guide/*.md`, a section of the docs site: what Oppenheimer
+  is, hosts, sessions, projects and tasks, bots, routines and watches,
+  automations, the inbox, GitHub, the CLI and MCP. `pnpm generate:guide`
+  writes the same pages into `@oppenheimer/shared/guide`, which the API
+  ships, so a bot reads the guide of the version it runs in, on a deployment
+  with no docs site or no outbound network as well (CI's `check:guide`
+  fails when the two differ). The tool reads no workspace data: it is under
+  Itself in Settings → Permissions.
+- **A built-in skill, `oppenheimer`.** Every bot has it from its first turn,
+  listed under "Your skills" whenever the turn offers `use_skill` and
+  `read_oppenheimer_docs`, and read with `use_skill` like any other: read
+  the index, then the pages a question needs; answer from them, saying
+  where in the console; say so when the guide does not cover it instead of
+  guessing; its own tool list, not the guide, is what it can do in this
+  conversation; the guide grants nothing. It is product code, not a
+  `bot_skill` row (`BOT_BUILT_IN_SKILLS`), and not a command: the person
+  asks and the bot reads (`userInvocable` off). Its name is reserved
+  (`BOT_BUILT_IN_SKILL_NAMES`), so no skill takes it; a skill saved under a
+  reserved name before it was reserved still loads, is still the bot's to
+  use, is listed in the built-in's place, and is the person's to edit and
+  run. One rule owns it: a reserved name is refused when it is given, on a
+  new skill or a rename (`BotSkillEntity`); the update schema and the
+  console's edit form check a name's shape alone, since an edit may resend
+  the name the skill already has. The `/` menu hides only a skill whose
+  `/<name>` a built-in command takes.
+- **Links to the published page.** With `DOCS_URL` set to where the
+  deployment publishes its docs site, each page read carries its address
+  and the bot links it; without, it links nothing rather than guess one.
+- **For agents outside Oppenheimer too.** The docs build writes `/llms.txt`
+  (each page with what it covers) and every page as plain Markdown at
+  `/guide/<id>.md`, so an agent on another host, an MCP client or someone's
+  own Claude Code reads the pages a bot reads.
+- **Not built.** The guide for coding agents inside sessions (`runner
+  --skill` covers the runner's own commands, not the product), the MCP
+  server's tools or resources over the guide, and the guide in languages
+  other than English.
 
 **Built-in commands** (2026-11-02, from Claude Code's commands,
 `code.claude.com/docs/en/commands`). A built-in is a `/<name>` Oppenheimer
@@ -1216,6 +1345,15 @@ The design's avatar photos are photographs of people; until there is a
 set we may use, an avatar is the bot's initials on one of the design's
 eight colours (`AV_COLORS`).
 
+Changed 2026-11-07: the avatar is a drawn face instead of the initials, a
+round face in the bot's colour wearing a hat, cut out like a sticker on a
+darker shade of that colour. The hat, the eyes and the mouth come from the
+bot's id, so a bot keeps its face through a rename and nobody has to pick
+one; the colour is still the one picked in Profile. Still no photos of
+people. The owner can pick another face in Profile, under the colour: a
+hat, eyes and a mouth, each a row of faces (`bot."avatarFace"`, null until
+picked, and "Use its own face" goes back to the id's).
+
 ## 8. Where things live
 
 - **API:** the `bots` module. `bot`, `bot_group`, `bot_document`,
@@ -1269,6 +1407,7 @@ The decisions it produced:
   **Employees**.
 - 2026-10-11: bots' documents and memory live in Postgres.
 - 2026-10-14: no photos of people as avatars; initials on a colour.
+  Changed 2026-11-07 to a face drawn from the bot's id, on its colour (§7).
 - 2026-10-15: **the loop runs in Oppenheimer**, not on a host. It
   replaces 2026-10-14's "a headless turn on the home host"; the home host
   becomes where the bot's sessions run.
@@ -1538,6 +1677,28 @@ The decisions it produced:
   approved call's result is checked before it is reported. The tool list
   names tools by area. Tool texts say what a queued, scheduled or held
   result looks like; their first sentences say what they do.
+- 2026-11-07: **the person has a memory page of their own**: Settings →
+  Memory at the account, an *About you* text in every bot's prompt that
+  only the person writes, and every `person` fact their bots keep, changed
+  on the bot that keeps it (§4.1). Asked by the owner, after Claude's.
+- 2026-11-07: **bots dream** (§4.1, "Dreaming"). The owner found each
+  bot's memory "a bit like slop" once bots saved as they go, and asked for
+  a process that unifies, rewrites and deduplicates it, from Managed Agents'
+  dreams and "Components of agent memory". A dream is the bot's own model,
+  no tools, over the facts it wrote and its latest conversation, after a
+  turn once it has written 10 since the last (at most daily), or when the
+  owner asks; it is applied at once and undone from Settings → Memory,
+  rather than reviewed first.
+- 2026-11-07: **every bot knows Oppenheimer from its own guide** (§4.1).
+  The owner asked for bots aware of what Oppenheimer is and what they can
+  do in it, the way Claude Code knows itself: a published documentation and
+  a skill each bot has by default. "Using Oppenheimer" is a section of the
+  docs site, bundled into the API from the same files; a built-in
+  `oppenheimer` skill and the `read_oppenheimer_docs` tool read it, and the
+  docs build publishes `llms.txt` for agents outside. A reserved skill name
+  is now refused only when it is given (a new skill, a rename), so a row
+  saved under one before still loads, edits and runs, as this list said on
+  2026-11-02.
 - 2026-11-08: **the goal and rule reviewers run at low effort.** They
   passed no effort, meant as "least effort", which a model with levels
   reads as its default. They now ask for `low` where the model offers it,

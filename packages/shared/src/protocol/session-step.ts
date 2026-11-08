@@ -17,6 +17,12 @@ export const SESSION_STEP_EVENT_KIND = 'session.step';
 /** The kind a failed start is logged as; its payload is {@link sessionFailedPayloadSchema}. */
 export const SESSION_FAILED_EVENT_KIND = 'session.failed';
 
+/**
+ * The kind the control plane logs when a failed start is tried again: the
+ * start log after it is the new attempt's.
+ */
+export const SESSION_RETRY_REQUESTED_EVENT_KIND = 'session.retry_requested';
+
 /** The kind that says every step landed and window 0 is up. */
 export const SESSION_STARTED_EVENT_KIND = 'session.started';
 

@@ -68,7 +68,7 @@ export class BotSkillEntity extends AggregateRoot<BotSkillProps> {
         source: authorOf(props.actor).author,
       },
     });
-    skill.validate();
+    skill.refuseReservedName();
     return skill;
   }
 
@@ -99,6 +99,7 @@ export class BotSkillEntity extends AggregateRoot<BotSkillProps> {
 
   /** Changes any of its parts; whoever changed its words becomes its source. */
   edit(change: BotSkillChange, actor: BotActor): void {
+    const renamed = change.name !== undefined && change.name.trim() !== this.props.name;
     if (change.name !== undefined) this.props.name = change.name.trim();
     if (change.description !== undefined) this.props.description = change.description.trim();
     if (change.body !== undefined) this.props.body = change.body.trim();
@@ -113,18 +114,30 @@ export class BotSkillEntity extends AggregateRoot<BotSkillProps> {
     }
     this.setUpdatedAt(new Date());
     this.validate();
+    if (renamed) this.refuseReservedName();
+  }
+
+  /**
+   * A name the product holds (`BOT_SKILL_RESERVED_NAMES`) is refused when it
+   * is given, never when a row is read: a skill saved under a name before the
+   * product reserved it keeps its row and stays the bot's (`25-bots.md` §4.1),
+   * so loading it must not throw.
+   */
+  private refuseReservedName(): void {
+    if ((BOT_SKILL_RESERVED_NAMES as readonly string[]).includes(this.props.name)) {
+      throw new ArgumentInvalidException(
+        `A skill cannot be named "${this.props.name}": Oppenheimer uses that name`,
+      );
+    }
   }
 
   public validate(): void {
     if (!this.props.organizationId || !this.props.botId) {
       throw new ArgumentNotProvidedException('A skill belongs to a bot');
     }
-    if (
-      !BOT_SKILL_NAME_PATTERN.test(this.props.name) ||
-      (BOT_SKILL_RESERVED_NAMES as readonly string[]).includes(this.props.name)
-    ) {
+    if (!BOT_SKILL_NAME_PATTERN.test(this.props.name)) {
       throw new ArgumentInvalidException(
-        'A skill is named in lowercase letters, digits and hyphens, at most 32, and not "skill"',
+        'A skill is named in lowercase letters, digits and hyphens, at most 32',
       );
     }
     if (!this.props.description || this.props.description.length > BOT_SKILL_DESCRIPTION_MAX) {

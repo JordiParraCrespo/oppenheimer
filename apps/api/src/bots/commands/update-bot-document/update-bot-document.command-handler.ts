@@ -25,7 +25,8 @@ export class UpdateBotDocumentCommandHandler
     private readonly documents: BotDocumentRepositoryPort,
   ) {}
 
-  async execute({ scope, botId, name, input }: UpdateBotDocumentCommand): Promise<AggregateID> {
+  async execute(command: UpdateBotDocumentCommand): Promise<AggregateID> {
+    const { scope, botId, name, input } = command;
     const documentName = this.lookup.documentName(name);
     const bot = await this.lookup.bot(scope, botId);
     const document = requireFound(
@@ -37,6 +38,7 @@ export class UpdateBotDocumentCommandHandler
       baseRevision: input.baseRevision,
       actor: userActor(scope.userId),
       note: input.note,
+      credentialScopes: command.credentialScopes,
     });
     if (outcome === 'stale') {
       throw new AppError(BotErrors.DOCUMENT_CONFLICT, {

@@ -30,3 +30,5 @@ export const CLOUD_FILES = Symbol('CLOUD_FILES');
 export const SESSION_TERMINAL_WATCH_REPOSITORY = Symbol('SESSION_TERMINAL_WATCH_REPOSITORY');
 /** Where a wake for a session's own agent waits for its time (`SessionWakesPort`). */
 export const SESSION_WAKES = Symbol('SESSION_WAKES');
+/** A Claude Code cloud session's transcript lines and waiting replies (`session_cloud_line`, `session_cloud_reply`). */
+export const SESSION_CLOUD_CHAT_REPOSITORY = Symbol('SESSION_CLOUD_CHAT_REPOSITORY');

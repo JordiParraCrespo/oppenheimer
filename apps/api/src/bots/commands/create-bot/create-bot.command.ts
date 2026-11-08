@@ -1,6 +1,6 @@
 import type { AccessScope } from '@oppenheimer/backend-authz';
 import { CommandBase, type CommandProps } from '@oppenheimer/backend-ddd';
-import type { BotPermission, CreateBotDto } from '@oppenheimer/shared';
+import type { BotPermission, CreateBotDto, Scope } from '@oppenheimer/shared';
 import type { SessionEffort } from '@oppenheimer/shared/agents';
 
 /**
@@ -26,6 +26,8 @@ export class CreateBotCommand extends CommandBase {
   readonly creatorBotId?: string;
   /** A creation with a key another one already used answers the bot that one made. */
   readonly idempotencyKey?: string;
+  /** The scopes of the credential creating it; null or unset for a browser session. Its heartbeat keeps them. */
+  readonly credentialScopes?: readonly Scope[] | null;
 
   constructor(props: CommandProps<CreateBotCommand>) {
     super(props);
@@ -38,5 +40,19 @@ export class CreateBotCommand extends CommandBase {
     this.instructions = props.instructions;
     this.creatorBotId = props.creatorBotId;
     this.idempotencyKey = props.idempotencyKey;
+    this.credentialScopes = props.credentialScopes;
   }
+}
+
+/** What a new bot's first documents are written from: their text, and the writing credential's scopes. */
+export function firstDocumentsOf(command: CreateBotCommand): {
+  soul?: string;
+  instructions?: string;
+  credentialScopes?: readonly Scope[] | null;
+} {
+  return {
+    soul: command.soul,
+    instructions: command.instructions,
+    credentialScopes: command.credentialScopes,
+  };
 }
