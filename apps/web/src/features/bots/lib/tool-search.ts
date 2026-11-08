@@ -5,6 +5,11 @@ import { z } from 'zod';
 export const TOOL_VIEWS = ['all', 'allow', 'ask', 'off', 'changed'] as const;
 export type ToolView = (typeof TOOL_VIEWS)[number];
 
+/** A value read back from a menu, as a view; anything else is every tool. */
+export function toToolView(value: string): ToolView {
+  return TOOL_VIEWS.find((view) => view === value) ?? 'all';
+}
+
 /**
  * Settings → Permissions' search: the words, the decision and the group the
  * tools are narrowed to, so a narrowed list is a link. Each default is

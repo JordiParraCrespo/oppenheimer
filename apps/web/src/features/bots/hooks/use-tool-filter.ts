@@ -1,6 +1,8 @@
 import { getRouteApi } from '@tanstack/react-router';
 import type { BotPermissionsSearch, ToolView } from '../lib/tool-search';
 
+const ALL: ToolView = 'all';
+
 const permissions = getRouteApi('/_authenticated/bots_/$botId/settings/permissions');
 
 /**
@@ -17,7 +19,7 @@ export function useToolFilter() {
   return {
     filter: {
       query: search.q ?? '',
-      view: search.decision ?? ('all' as ToolView),
+      view: search.decision ?? ALL,
       group: search.group ?? 'all',
     },
     setQuery: (query: string) => write({ q: query.trim() ? query : undefined }),

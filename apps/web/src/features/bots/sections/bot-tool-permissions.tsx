@@ -14,15 +14,8 @@ import { BotToolGroup } from '@/features/bots/components/bot-tool-group';
 import { BotToolRow } from '@/features/bots/components/bot-tool-row';
 import { ToolSearchField } from '@/features/bots/components/tool-search-field';
 import { useToolFilter } from '@/features/bots/hooks/use-tool-filter';
-import {
-  countToolGroups,
-  countToolViews,
-  filterToolGroups,
-  isFiltering,
-  pickedGroup,
-  summarizeToolGroup,
-} from '@/features/bots/lib/tool-filter';
-import { TOOL_VIEWS, type ToolView } from '@/features/bots/lib/tool-search';
+import { deriveToolList, summarizeToolGroup } from '@/features/bots/lib/tool-filter';
+import { TOOL_VIEWS, toToolView } from '@/features/bots/lib/tool-search';
 
 /**
  * Every tool the bot has, under its group: what each does on its own. A tool
@@ -41,11 +34,7 @@ export function BotToolPermissions({ botId }: { botId: string }) {
   const decide = useSetBotToolDecision();
   const { filter, setQuery, setView, setGroup, clear } = useToolFilter();
 
-  const all = permissions.groups;
-  const filtering = isFiltering(all, filter);
-  const views = countToolViews(all, filter);
-  const groupCounts = countToolGroups(all, filter);
-  const groups = filterToolGroups(all, filter);
+  const list = deriveToolList(permissions.groups, filter);
 
   const summaryOf = (tools: Parameters<typeof summarizeToolGroup>[0]) => {
     const summary = summarizeToolGroup(tools);
@@ -82,32 +71,32 @@ export function BotToolPermissions({ botId }: { botId: string }) {
         <FacetSelect
           label={t('bots.settings.permissions.filters.decision')}
           value={filter.view}
-          onValueChange={(next) => setView(next as ToolView)}
+          onValueChange={(next) => setView(toToolView(next))}
           options={TOOL_VIEWS.map((view) => ({
             value: view,
             label: t(`bots.settings.permissions.views.${view}`),
-            count: views[view],
+            count: list.views[view],
           }))}
         />
         <FacetSelect
           label={t('bots.settings.permissions.filters.group')}
-          value={pickedGroup(all, filter.group)}
+          value={list.group}
           onValueChange={setGroup}
           menuWidth={260}
           options={[
             {
               value: 'all',
               label: t('bots.settings.permissions.filters.allGroups'),
-              count: groupCounts.all,
+              count: list.groupCounts.all,
             },
-            ...all.map(({ group }) => ({
+            ...permissions.groups.map(({ group }) => ({
               value: group,
               label: t(`bots.settings.permissions.groups.${group}`),
-              count: groupCounts[group],
+              count: list.groupCounts[group],
             })),
           ]}
         />
-        {filtering ? (
+        {list.filtering ? (
           <button
             type="button"
             onClick={clear}
@@ -117,18 +106,18 @@ export function BotToolPermissions({ botId }: { botId: string }) {
           </button>
         ) : null}
       </div>
-      {groups.length === 0 ? (
+      {list.groups.length === 0 ? (
         <SettingsGroup>
           <SettingsListRow muted>{t('bots.settings.permissions.noMatch')}</SettingsListRow>
         </SettingsGroup>
       ) : (
         <div className="flex flex-col gap-1">
-          {groups.map(({ group, tools }) => (
+          {list.groups.map(({ group, tools }) => (
             <BotToolGroup
-              key={`${group}:${filtering}`}
+              key={group}
               label={t(`bots.settings.permissions.groups.${group}`)}
               summary={summaryOf(tools)}
-              defaultOpen={filtering}
+              filtering={list.filtering}
             >
               <SettingsGroup>
                 {tools.map((tool) => (

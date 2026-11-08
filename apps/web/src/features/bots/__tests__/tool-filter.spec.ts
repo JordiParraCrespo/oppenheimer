@@ -1,19 +1,16 @@
 // @vitest-environment node
 import type { BotToolSetting } from '@oppenheimer/frontend-consumer';
 import { describe, expect, it } from 'vitest';
-import {
-  countToolGroups,
-  countToolViews,
-  filterToolGroups,
-  summarizeToolGroup,
-} from '../lib/tool-filter';
+import { deriveToolList, summarizeToolGroup } from '../lib/tool-filter';
+import { toToolView } from '../lib/tool-search';
 
 /**
  * The permissions list's filter: a search over a tool's name, spelled with or
  * without its underscores, and its sentence; a view per decision, or the tools
  * the owner set; one group alone, where a group the catalog lacks keeps them
- * all; groups the filter empties drop out. Breaks if a search stops reading
- * the description, or `changed` starts reading the preset's decision.
+ * all; groups the filter empties drop out; each dropdown option counts the
+ * list it would draw. Breaks if a search stops reading the description, or
+ * `changed` starts reading the preset's decision.
  */
 function tool(over: Partial<BotToolSetting> & { name: string }): BotToolSetting {
   return {
@@ -47,50 +44,60 @@ const groups = [
   { group: 'github' as const, tools: [mergePr] },
 ];
 
-describe('filterToolGroups', () => {
+const none = { query: '', view: 'all' as const, group: 'all' };
+
+describe('deriveToolList', () => {
   it('matches a name typed with spaces, and the sentence', () => {
-    expect(filterToolGroups(groups, { query: 'edit soul', view: 'all', group: 'all' })).toEqual([
+    expect(deriveToolList(groups, { ...none, query: 'edit soul' }).groups).toEqual([
       { group: 'self', tools: [editSoul] },
     ]);
-    expect(filterToolGroups(groups, { query: 'EMAIL', view: 'all', group: 'all' })).toEqual([
+    expect(deriveToolList(groups, { ...none, query: 'EMAIL' }).groups).toEqual([
       { group: 'mail', tools: [sendMail] },
     ]);
   });
 
   it('keeps one decision, or what the owner set, and drops emptied groups', () => {
-    expect(filterToolGroups(groups, { query: '', view: 'ask', group: 'all' })).toEqual([
+    expect(deriveToolList(groups, { ...none, view: 'ask' }).groups).toEqual([
       { group: 'mail', tools: [sendMail] },
     ]);
-    expect(filterToolGroups(groups, { query: '', view: 'changed', group: 'all' })).toEqual([
+    expect(deriveToolList(groups, { ...none, view: 'changed' }).groups).toEqual([
       { group: 'github', tools: [mergePr] },
     ]);
   });
 
   it('keeps one group, and every group for a name the catalog lacks', () => {
-    expect(filterToolGroups(groups, { query: '', view: 'all', group: 'mail' })).toEqual([
-      { group: 'mail', tools: [sendMail] },
-    ]);
-    expect(filterToolGroups(groups, { query: '', view: 'all', group: 'nope' })).toHaveLength(3);
+    const mail = deriveToolList(groups, { ...none, group: 'mail' });
+    expect(mail.groups).toEqual([{ group: 'mail', tools: [sendMail] }]);
+    expect(mail.group).toBe('mail');
+    const unknown = deriveToolList(groups, { ...none, group: 'nope' });
+    expect(unknown.groups).toHaveLength(3);
+    expect(unknown).toMatchObject({ group: 'all', filtering: false });
   });
-});
 
-describe('the dropdowns’ counts', () => {
-  it('count each decision under the search and group, each group under the decision', () => {
-    const none = { query: '', view: 'all' as const, group: 'all' };
-    expect(countToolViews(groups, none)).toEqual({ all: 3, allow: 1, ask: 1, off: 1, changed: 1 });
-    expect(countToolViews(groups, { ...none, query: 'pull' })).toEqual({
+  it('counts each decision under the search and group, each group under the decision', () => {
+    expect(deriveToolList(groups, none)).toMatchObject({
+      views: { all: 3, allow: 1, ask: 1, off: 1, changed: 1 },
+      filtering: false,
+    });
+    expect(deriveToolList(groups, { ...none, query: 'pull' }).views).toEqual({
       all: 1,
       allow: 0,
       ask: 0,
       off: 1,
       changed: 1,
     });
-    expect(countToolGroups(groups, { ...none, view: 'ask', group: 'self' })).toEqual({
-      all: 1,
-      self: 0,
-      mail: 1,
-      github: 0,
+    expect(deriveToolList(groups, { ...none, view: 'ask', group: 'self' })).toMatchObject({
+      groupCounts: { all: 1, self: 0, mail: 1, github: 0 },
+      groups: [],
+      filtering: true,
     });
+  });
+});
+
+describe('toToolView', () => {
+  it('reads a menu value back as a view, and anything else as every tool', () => {
+    expect(toToolView('changed')).toBe('changed');
+    expect(toToolView('nope')).toBe('all');
   });
 });
 

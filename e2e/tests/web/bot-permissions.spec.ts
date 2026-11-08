@@ -4,12 +4,12 @@ import { provisionedUser, signInAs } from '../../support/web';
 /**
  * A bot's Settings → Permissions in a browser, against the real control
  * plane (`product/versions/mvp/25-bots.md` §5): the tools folded under their
- * groups and found by a search kept in the address, each standing where the
- * preset puts it; one set Off, found under the Decision dropdown's Set by
- * you and handed back to the preset, then shown alone under the Group
- * dropdown's GitHub; merging never offered Allow; and a rule of each kind
- * written and removed. What a yes with a reach leaves standing is the API's
- * integration suite: no bot runs a turn here.
+ * groups, a group opened and folded by hand, a tool found by a search kept in
+ * the address, each standing where the preset puts it; one set Off, found
+ * under the Decision dropdown's Set by you and handed back to the preset,
+ * then shown alone under the Group dropdown's GitHub; merging never offered
+ * Allow; and a rule of each kind written and removed. What a yes with a reach
+ * leaves standing is the API's integration suite: no bot runs a turn here.
  */
 test('a bot’s tools set and reset, and its rules written and removed', async ({ page }) => {
   const owner = await provisionedUser('bot-permissions');
@@ -27,6 +27,11 @@ test('a bot’s tools set and reset, and its rules written and removed', async (
 
   // The tools open folded; a search opens the group that holds a match.
   const comment = page.getByRole('group', { name: 'What comment_on_pull_request does' });
+  await expect(comment).toBeHidden();
+  const github = page.getByRole('button', { name: /^GitHub/ });
+  await github.click();
+  await expect(comment).toBeVisible();
+  await github.click();
   await expect(comment).toBeHidden();
   const search = page.getByRole('searchbox', { name: 'Search tools' });
   await search.fill('comment on pull');
