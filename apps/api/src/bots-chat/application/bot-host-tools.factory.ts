@@ -150,7 +150,8 @@ export class BotHostToolsFactory implements BotToolArea {
         await this.commandBus.execute(
           new UpdateHostRunnerCommand({ scope: context.owner, hostId: input.host_id }),
         );
-        return `Asked the runner on host ${input.host_id} to update. It restarts on the new release and reconnects, usually within a minute; check with list_hosts that its runner version changed before retrying what needed it.`;
+        const name = await this.hostName(context, input.host_id);
+        return `Asked the runner on ${name} (${input.host_id}) to update. It restarts on the new release and reconnects, usually within a minute; check with list_hosts that its runner version changed before retrying what needed it.`;
       },
     });
   }

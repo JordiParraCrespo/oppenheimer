@@ -18,7 +18,7 @@ import {
   type WatchedTask,
   watchedTurnFor,
 } from './domain/bot-subscription.policy';
-import { formatToolTime } from './domain/bot-tool-text.policy';
+import { formatToolTime, RUNNER_TOO_OLD_ADVICE } from './domain/bot-tool-text.policy';
 
 /**
  * A bot's subscription between its row and the aggregate, and as its watch
@@ -253,7 +253,7 @@ export class BotSubscriptionMapper {
   toPatternAnswer(pattern: string, hints: readonly string[]): string {
     const watching = `You are also woken when its terminal prints a new line matching “${pattern}”: you are told it matched, not the line.`;
     if (hints.includes('not_supported')) {
-      return `${watching} Its host runs a runner too old to watch a terminal, so that will not happen until it is updated (update_host_runner).`;
+      return `${watching} Its host runs a runner too old to watch a terminal, so that will not happen until it is updated: ${RUNNER_TOO_OLD_ADVICE}.`;
     }
     if (hints.includes('host_offline')) {
       return `${watching} Its host is offline; the watch starts when it reconnects.`;
