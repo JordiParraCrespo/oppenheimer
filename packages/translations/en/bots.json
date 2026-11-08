@@ -638,7 +638,7 @@
       "summary": {
         "tools_one": "{{count}} tool",
         "tools_other": "{{count}} tools",
-        "ask_one": "{{count}} asks",
+        "ask_one": "{{count}} ask",
         "ask_other": "{{count}} ask",
         "off_one": "{{count}} off",
         "off_other": "{{count}} off",
