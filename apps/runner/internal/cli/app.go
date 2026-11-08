@@ -186,7 +186,7 @@ func New(version string) (*App, error) {
 		// the next one behind (02-runner §5).
 		Spares: true,
 	})
-	devices, err := hostDevices()
+	devices, err := hostDevices(false)
 	if err != nil {
 		return nil, err
 	}
@@ -215,7 +215,7 @@ func New(version string) (*App, error) {
 		Layout:   layout,
 		Env: func(session sessionsdomain.Session) map[string]string {
 			env := sessionEnv(paths, session)
-			pinned, device := pinDevice(devices, session)
+			pinned, device := pinDevice(app.Devices, session)
 			for key, value := range pinned {
 				env[key] = value
 			}

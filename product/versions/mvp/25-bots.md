@@ -790,6 +790,32 @@ training, which knows nothing of it.
   server's tools or resources over the guide, and the guide in languages
   other than English.
 
+**A built-in catch-up** (2026-11-08, from poteto's `recall` in pstack,
+`cursor/plugins`). The owner asked to come back to a bot, or a session, and
+learn fast what is going on.
+
+- **`recap`, a second built-in skill.** Every bot has it, listed under "Your
+  skills" when the turn offers `use_skill` and `list_sessions`. It reads this
+  chat (`search_chat`), the sessions (`list_sessions`, `read_session`), the
+  person's pull requests (`list_pull_requests`, queue "mine") and the plan
+  (`plan_summary`), skipping what the bot cannot use, and answers with where
+  things stand, a line per thread, what waits on the person and the one next
+  move. It only reads. Unlike `oppenheimer`, the person runs it:
+  `/recap [topic]`, so a turn's slash command now resolves against the
+  built-ins as well as the bot's own skills (`withBuiltInSkills`), and a
+  bot's own skill of that name, saved before it was reserved, still wins.
+- **Named `recap`, not `recall`.** `recall` is already the bot's tool for
+  searching its memory, and one name for two things would have the model
+  calling the wrong one.
+- **In sessions too.** The note the runner writes beside a session's
+  checkout (`CLAUDE.md`) tells its agent how to answer "recall" or "catch me
+  up": its conversation, its branch, its pull request and its helpers, in the
+  same shape. It is in the note, not `runner --skill`, since the person asks
+  for it, not the agent.
+- **Not built.** `/recap` in the composer's `/` menu, which lists the
+  built-in commands and the bot's own skills only; and the catch-up in a
+  Codex session, since the note is `CLAUDE.md` and Codex reads `AGENTS.md`.
+
 **Built-in commands** (2026-11-02, from Claude Code's commands,
 `code.claude.com/docs/en/commands`). A built-in is a `/<name>` Oppenheimer
 runs itself, for every bot, whatever skills it has. A skill only puts

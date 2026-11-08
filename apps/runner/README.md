@@ -31,6 +31,12 @@ A bot can run one program on the host over the link (`host.exec`,
 everything. The policy lives in `~/.oppenheimer/exec.json`, is read on every
 call, and is never written by the control plane.
 
+A session's Simulator tab streams the iOS simulator or Android emulator its
+host gives it, through Argent (`product/research/device-streaming.md`). A
+host with Argent installed needs no setup: each new session takes one of the
+simulators and emulators running at the time, and keeps it for its life.
+`RUNNER_DEVICES` names them instead, or turns it `off` (`.env.example`).
+
 `runner serve` and the `apikeys` context are the template this grew from:
 an inbound API-key surface on a TCP port, which is what the container
 image runs and what the API talks to today. **Nothing product-shaped
