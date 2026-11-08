@@ -73,3 +73,6 @@ third external source, after GitHub and Gmail.
 
 - 2026-11-02: written; slices 1 to 3 built as stacked pull requests. The
   runner stays out until its opt-in is designed.
+- 2026-11-02: slice 2 built: the console reports render throws its route
+  and `QueryState` boundaries catch, and query or mutation failures that are
+  not a request the server answered; source maps upload at build time.
