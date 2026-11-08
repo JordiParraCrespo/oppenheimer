@@ -35,7 +35,7 @@ describe('findUserTurns', () => {
     const turns = findUserTurns(
       grid(['', '[❯ Review the diff against CONTRIBUTING.md ]', '', '⏺ Read(CONTRIBUTING.md)']),
     );
-    expect(turns).toEqual([{ line: 1, x: 0, pointerX: 0, height: 1 }]);
+    expect(turns).toEqual([{ line: 1, x: 0, pointerRow: 0, pointerX: 0, height: 1 }]);
   });
 
   it('keeps a wrapped or multi-line message as one turn', () => {
@@ -47,7 +47,41 @@ describe('findUserTurns', () => {
         '⏺ On it.',
       ]),
     );
-    expect(turns).toEqual([{ line: 0, x: 0, pointerX: 0, height: 3 }]);
+    expect(turns).toEqual([{ line: 0, x: 0, pointerRow: 0, pointerX: 0, height: 3 }]);
+  });
+
+  it('finds a message Codex drew, its padding rows and all', () => {
+    // Codex pads the message with a blank row of the background either side;
+    // a padding row left out stays its grey slab above or below the bubble.
+    const turns = findUserTurns(
+      grid([
+        '>_ OpenAI Codex',
+        '',
+        '[               ]',
+        '[› Hello world  ]',
+        '[               ]',
+        '',
+        '• Working',
+      ]),
+    );
+    expect(turns).toEqual([{ line: 2, x: 0, pointerRow: 1, pointerX: 0, height: 3 }]);
+  });
+
+  it('leaves the padding under one Codex message to it, not to the next', () => {
+    const turns = findUserTurns(
+      grid([
+        '[         ]',
+        '[› first ]',
+        '[         ]',
+        '[         ]',
+        '[› second]',
+        '[         ]',
+      ]),
+    );
+    expect(turns.map(({ line, pointerRow, height }) => ({ line, pointerRow, height }))).toEqual([
+      { line: 0, pointerRow: 1, height: 4 },
+      { line: 4, pointerRow: 0, height: 2 },
+    ]);
   });
 
   it('keeps two messages on consecutive rows apart', () => {
@@ -57,7 +91,7 @@ describe('findUserTurns', () => {
 
   it('finds a message drawn in from the margin', () => {
     const turns = findUserTurns(grid(['  [ ❯ indented ]']));
-    expect(turns).toEqual([{ line: 0, x: 2, pointerX: 3, height: 1 }]);
+    expect(turns).toEqual([{ line: 0, x: 2, pointerRow: 0, pointerX: 3, height: 1 }]);
   });
 
   it('ignores grey that does not open on the pointer', () => {
@@ -73,5 +107,7 @@ describe('findUserTurns', () => {
   it('ignores the prompt the agent is still taking input in', () => {
     // Claude's own input row carries the pointer without the background.
     expect(findUserTurns(grid(['❯ Continue this run']))).toEqual([]);
+    // Codex's composer: the same `›`, no background.
+    expect(findUserTurns(grid(['› Ask Codex to do anything']))).toEqual([]);
   });
 });
