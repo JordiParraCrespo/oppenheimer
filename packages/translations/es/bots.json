@@ -646,12 +646,16 @@
       "summary": {
         "tools_one": "{{count}} herramienta",
         "tools_other": "{{count}} herramientas",
+        "tools_many": "{{count}} herramientas",
         "ask_one": "{{count}} pregunta",
         "ask_other": "{{count}} preguntan",
+        "ask_many": "{{count}} preguntan",
         "off_one": "{{count}} desactivada",
         "off_other": "{{count}} desactivadas",
+        "off_many": "{{count}} desactivadas",
         "changed_one": "{{count}} cambiada por ti",
-        "changed_other": "{{count}} cambiadas por ti"
+        "changed_other": "{{count}} cambiadas por ti",
+        "changed_many": "{{count}} cambiadas por ti"
       },
       "preset": {
         "auto": "Las herramientas que dejas en su valor por defecto siguen Aprobar por mí: todo lo que sale de Oppenheimer pregunta antes.",

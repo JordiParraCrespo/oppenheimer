@@ -1,4 +1,5 @@
 import type { BotToolSetting } from '@oppenheimer/frontend-consumer';
+import { searchText } from '@oppenheimer/frontend-web';
 import type { BotToolGroup } from '@oppenheimer/shared/schemas/bot';
 import { z } from 'zod';
 
@@ -7,10 +8,12 @@ export const TOOL_VIEWS = ['all', 'allow', 'ask', 'off', 'changed'] as const;
 export type ToolView = (typeof TOOL_VIEWS)[number];
 
 /**
- * Settings → Permissions' search: which view of the tools is on, so a
- * narrowed list is a link. `all` is the default and is written as no key.
+ * Settings → Permissions' search: what the tools are searched for and which
+ * view is on, so a narrowed list is a link. No search and `all` are the
+ * defaults, written as no key.
  */
 export const botPermissionsSearchSchema = z.object({
+  q: searchText,
   tools: z.enum(TOOL_VIEWS).optional().catch(undefined),
 });
 export type BotPermissionsSearch = z.infer<typeof botPermissionsSearchSchema>;

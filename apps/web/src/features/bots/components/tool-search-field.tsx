@@ -8,13 +8,16 @@ import { useSearchDraft } from '@oppenheimer/frontend-web';
  * field and not the rows. Escape clears it.
  */
 export function ToolSearchField({
+  value,
   onChange,
   label,
 }: {
+  /** The settled search, as the address keeps it. */
+  value: string;
   onChange: (query: string) => void;
   label: string;
 }) {
-  const { draft, type } = useSearchDraft({ onChange });
+  const { draft, type } = useSearchDraft({ value, onChange });
 
   return (
     <Input

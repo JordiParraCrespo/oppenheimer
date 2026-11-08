@@ -5,7 +5,7 @@ import { provisionedUser, signInAs } from '../../support/web';
  * A bot's Settings → Permissions in a browser, against the real control
  * plane (`product/versions/mvp/25-bots.md` §5): the tools folded under their
  * groups and found by a search, each standing where the preset puts it, one
- * set Off, found again under Set by you and handed back to the preset,
+ * set Off (the search kept in the address), found again under Set by you and handed back to the preset,
  * merging never offered Allow, and a rule of each kind written and removed. What a yes with a reach leaves standing is the API's integration
  * suite: no bot runs a turn here.
  */
@@ -28,6 +28,7 @@ test('a bot’s tools set and reset, and its rules written and removed', async (
   await expect(comment).toBeHidden();
   const search = page.getByRole('searchbox', { name: 'Search tools' });
   await search.fill('comment on pull');
+  await expect(page).toHaveURL(/q=comment/);
 
   // An outside tool asks under Approve for me; Off takes it away, Default gives it back.
   await expect(comment.getByRole('button', { name: 'Ask' })).toHaveAttribute(

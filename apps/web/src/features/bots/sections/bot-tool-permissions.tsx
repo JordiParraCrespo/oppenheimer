@@ -10,12 +10,11 @@ import {
   useSuspenseBotPermissions,
 } from '@oppenheimer/frontend-consumer/react';
 import { ErrorAlert } from '@oppenheimer/frontend-web';
-import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { BotToolGroup } from '@/features/bots/components/bot-tool-group';
 import { BotToolRow } from '@/features/bots/components/bot-tool-row';
 import { ToolSearchField } from '@/features/bots/components/tool-search-field';
-import { useToolView } from '@/features/bots/hooks/use-tool-view';
+import { useToolFilter } from '@/features/bots/hooks/use-tool-filter';
 import {
   countToolViews,
   filterToolGroups,
@@ -39,8 +38,7 @@ export function BotToolPermissions({ botId }: { botId: string }) {
   const { t } = useTranslation();
   const { data: permissions, error } = useSuspenseBotPermissions(botId);
   const decide = useSetBotToolDecision();
-  const [query, setQuery] = useState('');
-  const { view, setView } = useToolView();
+  const { query, view, setQuery, setView } = useToolFilter();
 
   const filter = { query, view };
   const filtering = isFiltering(filter);
@@ -74,7 +72,11 @@ export function BotToolPermissions({ botId }: { botId: string }) {
         onDismiss={() => decide.reset()}
       />
       <div className="flex flex-wrap items-center gap-2 px-1">
-        <ToolSearchField label={t('bots.settings.permissions.search')} onChange={setQuery} />
+        <ToolSearchField
+          label={t('bots.settings.permissions.search')}
+          value={query}
+          onChange={setQuery}
+        />
         <PillTabs
           size="sm"
           value={view}
