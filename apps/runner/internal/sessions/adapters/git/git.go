@@ -203,16 +203,41 @@ func (c *Client) Has(repo domain.Repository) bool {
 // later ones fetch. The store is bare and blobless (02-runner §5, 24 §2): a
 // file's contents arrive when a checkout or a command first reads them,
 // through the same credential helper. A first fetch is shallow at ref and the
-// history follows in the background (deepen). An empty repository gets its
-// first commit on ref (seed): Ensure runs for a create, which is a person
-// asking for a session on that repository.
+// history follows in the background (deepen).
+//
+// Ensure runs for a create, a person asking for a session on the repository,
+// so an empty one (GitHub's "no README": no ref at all) gets its first
+// commit on ref (seed) and is fetched again. A repository with branches that
+// are not ref keeps git's error: the base was mistyped, and making it there
+// would hide that.
 func (c *Client) Ensure(ctx context.Context, repo domain.Repository, remote, ref string) error {
-	return c.ensure(ctx, repo, remote, ref, true)
+	err := c.ensure(ctx, repo, remote, ref)
+	if err == nil || ref == "" || !strings.Contains(err.Error(), "couldn't find remote ref") {
+		return err
+	}
+	url := remote
+	if url == "" {
+		url = c.originOf(c.storeOf(repo))
+	}
+	if url == "" || !c.remoteEmpty(ctx, repo.FullName, url) {
+		return err
+	}
+	seedErr := c.seed(ctx, repo.FullName, url, ref)
+	// Another host seeding the same repository at the same moment wins the
+	// push and this fetch finds its commit; only when the fetch still finds
+	// nothing is the seed's own failure the reason.
+	if err := c.ensure(ctx, repo, remote, ref); err != nil {
+		if seedErr != nil {
+			return seedErr
+		}
+		return err
+	}
+	return nil
 }
 
-// ensure is Ensure; seedEmpty says whether an empty repository may be given
-// its first commit.
-func (c *Client) ensure(ctx context.Context, repo domain.Repository, remote, ref string, seedEmpty bool) error {
+// ensure makes the store and fetches ref, as Ensure describes, for every
+// caller: a prepare as well as a create.
+func (c *Client) ensure(ctx context.Context, repo domain.Repository, remote, ref string) error {
 	if err := repo.Validate(); err != nil {
 		return domain.ErrWorktree.WithDetail("%v", err).WithCause(err)
 	}
@@ -250,7 +275,7 @@ func (c *Client) ensure(ctx context.Context, repo domain.Repository, remote, ref
 				return err
 			}
 		}
-		if err := c.fetch(ctx, repo.FullName, store, ref, seedEmpty); err != nil {
+		if err := c.fetch(ctx, repo.FullName, store, ref); err != nil {
 			return err
 		}
 		// A shallow store whose deepen was cut short (a runner restart)
@@ -278,7 +303,7 @@ func (c *Client) ensure(ctx context.Context, repo domain.Repository, remote, ref
 	if err != nil {
 		return domain.ErrWorktree.WithDetail("create a directory to fetch into: %v", err).WithCause(err)
 	}
-	if err := c.makeStore(ctx, repo, remote, ref, partial, seedEmpty); err != nil {
+	if err := c.makeStore(ctx, repo, remote, ref, partial); err != nil {
 		_ = os.RemoveAll(partial)
 		return err
 	}
@@ -299,7 +324,7 @@ func (c *Client) ensure(ctx context.Context, repo domain.Repository, remote, ref
 // needs, and on a large repository it is a third of the time a blobless clone
 // of the whole history takes (14). The history follows in the background
 // (deepen), leaving the store blobless as it always was.
-func (c *Client) makeStore(ctx context.Context, repo domain.Repository, remote, ref, dir string, seedEmpty bool) error {
+func (c *Client) makeStore(ctx context.Context, repo domain.Repository, remote, ref, dir string) error {
 	quick := command{timeout: quickTimeout, dir: dir}
 	if _, err := c.run(ctx, command{timeout: quickTimeout}, "init", "--bare", "--quiet", dir); err != nil {
 		return err
@@ -318,7 +343,8 @@ func (c *Client) makeStore(ctx context.Context, repo domain.Repository, remote, 
 	if ref != "" {
 		args = append(args, "+refs/heads/"+ref+":refs/remotes/origin/"+ref)
 	}
-	return c.fetchRef(ctx, repo.FullName, dir, ref, args, seedEmpty)
+	_, err := c.run(ctx, command{timeout: fetchTimeout, dir: dir, repo: repo.FullName}, args...)
+	return err
 }
 
 // deepen fetches, in the background, the history a shallow store was made
@@ -404,7 +430,7 @@ func (c *Client) hasRemoteBranch(ctx context.Context, store, branch string) bool
 // choosing, and a commit pushed to their repository for a session they then
 // cancel is one they never asked for. The create that follows seeds it.
 func (c *Client) PrepareRepository(ctx context.Context, repo domain.Repository, remote, base string) error {
-	if err := c.ensure(ctx, repo, remote, base, false); err != nil {
+	if err := c.ensure(ctx, repo, remote, base); err != nil {
 		return err
 	}
 	store := c.storeOf(repo)
@@ -428,44 +454,20 @@ var noMaintenance = []string{"-c", "maintenance.auto=false", "-c", "gc.auto=0"}
 
 // fetch is the one fetch a create waits on: the ref its worktree is made from,
 // or every branch when it names none.
-func (c *Client) fetch(ctx context.Context, repo, store, ref string, seedEmpty bool) error {
+func (c *Client) fetch(ctx context.Context, repo, store, ref string) error {
 	args := append(append([]string{}, noMaintenance...), "fetch", "--no-tags", "origin")
 	if ref == "" {
 		args = append(args, "--prune")
 	} else {
 		args = append(args, "+refs/heads/"+ref+":refs/remotes/origin/"+ref)
 	}
-	return c.fetchRef(ctx, repo, store, ref, args, seedEmpty)
-}
-
-// fetchRef runs a fetch of ref (args) into store. A repository with nothing
-// in it yet, as GitHub makes one with no README, has no branch to cut a
-// worktree from; it gets its first commit on ref (seed), and the fetch runs
-// again, when seedEmpty allows it. A repository with branches that are not
-// ref keeps git's error: the base was mistyped, and inventing it there would
-// hide that.
-func (c *Client) fetchRef(ctx context.Context, repo, store, ref string, args []string, seedEmpty bool) error {
-	how := command{timeout: fetchTimeout, dir: store, repo: repo}
-	out, err := c.run(ctx, how, args...)
-	if err == nil || !seedEmpty || ref == "" || !strings.Contains(out, "couldn't find remote ref") || !c.remoteEmpty(ctx, repo, store) {
-		return err
-	}
-	seedErr := c.seed(ctx, repo, store, ref)
-	if _, err := c.run(ctx, how, args...); err != nil {
-		// Another host seeding the same repository at the same moment wins
-		// the push and this fetch finds its commit; only when the fetch
-		// still finds nothing is the seed's own failure the reason.
-		if seedErr != nil {
-			return seedErr
-		}
-		return err
-	}
-	return nil
+	_, err := c.run(ctx, command{timeout: fetchTimeout, dir: store, repo: repo}, args...)
+	return err
 }
 
 // remoteEmpty reports a remote with no refs at all: no branch, no tag.
-func (c *Client) remoteEmpty(ctx context.Context, repo, store string) bool {
-	out, err := c.run(ctx, command{timeout: quickTimeout, dir: store, repo: repo}, "ls-remote", "origin")
+func (c *Client) remoteEmpty(ctx context.Context, repo, url string) bool {
+	out, err := c.run(ctx, command{timeout: quickTimeout, repo: repo}, "ls-remote", url)
 	return err == nil && strings.TrimSpace(out) == ""
 }
 
@@ -473,28 +475,38 @@ func (c *Client) remoteEmpty(ctx context.Context, repo, store string) bool {
 // commit-tree refuses to make a commit with no identity.
 var seedAuthor = []string{"-c", "user.name=Oppenheimer", "-c", "user.email=runner@oppenheimer.invalid"}
 
-// seed pushes an empty first commit to branch on an empty repository, the
-// commit GitHub's "Initialize this repository" would have made, so the branch
-// a session is cut from exists and its pull request has a base to target.
-// It is the first push, so it also makes branch the repository's default.
-func (c *Client) seed(ctx context.Context, repo, store, branch string) error {
-	quick := command{timeout: quickTimeout, dir: store}
+// seed pushes an empty first commit to branch at url, so the branch a session
+// is cut from exists and its pull request has a base to target; as the first
+// push it also makes branch the repository's default. Empty on purpose, where
+// GitHub's "Initialize this repository" adds a README: the session's own
+// first commit is the repository's first content. It is made in a scratch
+// repository of its own, since a store is only kept once a fetch has landed.
+func (c *Client) seed(ctx context.Context, repo, url, branch string) error {
+	dir, err := os.MkdirTemp("", "oppenheimer-seed-")
+	if err != nil {
+		return domain.ErrWorktree.WithDetail("create a directory to seed %s in: %v", repo, err).WithCause(err)
+	}
+	defer func() { _ = os.RemoveAll(dir) }()
+	quick := command{timeout: quickTimeout, dir: dir}
+	if _, err := c.run(ctx, command{timeout: quickTimeout}, "init", "--bare", "--quiet", dir); err != nil {
+		return err
+	}
 	tree, err := c.run(ctx, quick, "hash-object", "-w", "-t", "tree", os.DevNull)
 	if err != nil {
 		return err
 	}
 	args := []string{"commit-tree", strings.TrimSpace(tree), "-m", "Initial commit"}
-	if !c.hasIdentity(ctx, store) {
+	if !c.hasIdentity(ctx, dir) {
 		args = append(append([]string{}, seedAuthor...), args...)
 	}
 	commit, err := c.run(ctx, quick, args...)
 	if err != nil {
 		return err
 	}
-	out, err := c.run(ctx, command{timeout: fetchTimeout, dir: store, repo: repo},
-		"push", "origin", strings.TrimSpace(commit)+":refs/heads/"+branch)
+	out, err := c.run(ctx, command{timeout: fetchTimeout, dir: dir, repo: repo},
+		"push", url, strings.TrimSpace(commit)+":refs/heads/"+branch)
 	if err != nil {
-		if p := problem.From(err); p == nil || p.Code != domain.ErrGitCommand.Code {
+		if p := problem.From(err); p.Code != domain.ErrGitCommand.Code {
 			return err
 		}
 		return domain.ErrPushRejected.WithDetail(
