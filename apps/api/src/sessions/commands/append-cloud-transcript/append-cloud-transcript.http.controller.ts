@@ -36,7 +36,7 @@ export class AppendCloudTranscriptHttpController {
   @HttpCode(HttpStatus.OK)
   @Version('1')
   @CheckPolicies({ action: 'update', subject: 'Session' })
-  @RequireScopes('sessions:write')
+  @RequireScopes('cloud-chat:write')
   // A hook posts as the agent writes, in batches, a few times a second at most.
   @Throttle({ default: { limit: 600, ttl: 60_000 } })
   @ApiOperation({

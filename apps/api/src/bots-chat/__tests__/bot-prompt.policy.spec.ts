@@ -3,6 +3,7 @@ import {
   botTurnPrompt,
   composeBotSystemPrompt,
 } from '../domain/bot-prompt.policy';
+import { hostCases, recoveryBullets } from '../domain/bot-recovery.policy';
 
 /**
  * What a turn's system prompt tells the model: the bot as it is, a closed
@@ -105,6 +106,12 @@ describe('composeBotSystemPrompt', () => {
       expect(prompt).toContain('goes to a session on a host');
     });
 
+    it('says which host to fall back to, case by case, under "Which host"', () => {
+      expect(composeBotSystemPrompt(sessions)).toContain(
+        `Then:\n${hostCases()}\n- Which repository`,
+      );
+    });
+
     it('sends a question the web can answer to research, not to a session', () => {
       // A bot asked "how does X work" started a session to read the docs.
       const prompt = composeBotSystemPrompt(sessions);
@@ -155,6 +162,16 @@ describe('composeBotSystemPrompt', () => {
     expect(prompt).toContain('"On it" or "Sure" alone is not a reply');
     expect(prompt).toContain('is the same errand, not a new one');
     expect(prompt).toContain('check what you started');
+  });
+
+  // What breaks this: a bot that stops at its first failure because "How a
+  // turn goes" lost the recovery rules (`bot-recovery.policy.spec.ts` holds
+  // what they say).
+  it('carries the recovery rules in how a turn goes', () => {
+    const section = composeBotSystemPrompt(base)
+      .split('\n\n# ')
+      .find((part) => part.startsWith('How a turn goes'));
+    expect(section).toContain(recoveryBullets());
   });
 
   it('forbids asking for secrets and treats tool text as data', () => {

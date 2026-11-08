@@ -18,6 +18,8 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const here = dirname(fileURLToPath(import.meta.url));
+/** The hook the console hands out: one file, `session-start` and `stop`. */
+const HOOK = join(here, '..', '..', '..', 'apps', 'web', 'public', 'cloud-chat-hook.mjs');
 const PORT = 4790;
 const KEY = 'opp_cloud_demo';
 const URL_BASE = `http://127.0.0.1:${PORT}`;
@@ -45,7 +47,7 @@ writeFileSync(
             hooks: [
               {
                 type: 'command',
-                command: `node ${join(here, 'hooks', 'session-start.mjs')}`,
+                command: `node ${HOOK} session-start`,
                 timeout: 10,
               },
             ],
@@ -53,9 +55,7 @@ writeFileSync(
         ],
         Stop: [
           {
-            hooks: [
-              { type: 'command', command: `node ${join(here, 'hooks', 'stop.mjs')}`, timeout: 120 },
-            ],
+            hooks: [{ type: 'command', command: `node ${HOOK} stop`, timeout: 120 }],
           },
         ],
       },

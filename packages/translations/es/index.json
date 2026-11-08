@@ -1075,7 +1075,8 @@
       "shown": "Mostrar proyectos",
       "shownAll": "Todos",
       "shownSome": "{{shown}} de {{total}}",
-      "showAll": "Mostrar todos los proyectos"
+      "showAll": "Mostrar todos los proyectos",
+      "newProject": "Nuevo proyecto…"
     },
     "sort": {
       "custom": "Orden personalizado",
@@ -1429,7 +1430,32 @@
       "title": "En directo desde la nube de Claude Code",
       "waiting_one": "Tu respuesta espera a que el agente termine su turno.",
       "waiting_other": "{{count}} respuestas esperan a que el agente termine su turno.",
-      "replyFailed": "La respuesta no llegó a la sesión. Vuelve a intentarlo."
+      "replyFailed": "La respuesta no llegó a la sesión. Vuelve a intentarlo.",
+      "setup": {
+        "title": "Activa el chat de esta sesión",
+        "intro": "Una sesión de Claude Code en la nube envía su chat aquí con un hook en su repositorio. Configúralo una vez por repositorio y entorno de la nube; las sesiones que inicies desde Oppenheimer mostrarán su chat aquí y podrás responderlas.",
+        "keyTitle": "1. Crea una clave",
+        "keyBody": "Permite que las sesiones en la nube envíen su chat a este espacio de trabajo y recojan tus respuestas. No puede iniciar, detener ni borrar una sesión, ni abrir un terminal. Solo se muestra una vez: cópiala ahora.",
+        "createKey": "Crear clave",
+        "creatingKey": "Creando la clave…",
+        "keyLabel": "Tu clave",
+        "hookTitle": "2. Añade el hook al repositorio",
+        "hookBody": "Guarda este archivo en el repositorio como .claude/hooks/oppenheimer-cloud-chat.mjs y añade estas líneas a .claude/settings.json.",
+        "downloadHook": "Descargar el hook",
+        "settingsLabel": ".claude/settings.json",
+        "envTitle": "3. Configura el entorno de la nube",
+        "envBody": "En claude.ai, abre la configuración del entorno de la nube. Añade estas variables de entorno y permite este host en su acceso a la red.",
+        "envLabel": "Variables de entorno",
+        "hostLabel": "Host permitido",
+        "keyPlaceholder": "<tu clave>",
+        "keyFailed": "No se pudo crear la clave. Vuelve a intentarlo.",
+        "readerLabel": "Cómo configurarlo",
+        "readerYou": "Hazlo tú",
+        "readerAgent": "Pídeselo a un agente",
+        "agentTitle": "2. Pídeselo a un agente de código",
+        "agentBody": "Pega esto en Claude Code, u otro agente de código, en una copia del repositorio. Añade el hook y su configuración, y luego te dice qué configurar en claude.ai. Tu clave no va en el prompt: la pegas tú en claude.ai.",
+        "agentLabel": "Prompt para tu agente"
+      }
     }
   },
   "bots": {
@@ -1835,6 +1861,32 @@
           "coral": "Coral",
           "moss": "Musgo"
         },
+        "face": "Cara",
+        "faceHat": "Sombrero",
+        "faceEyes": "Ojos",
+        "faceMouth": "Boca",
+        "faceReset": "Usar su propia cara",
+        "faces": {
+          "hat": {
+            "fedora": "Fedora",
+            "porkpie": "Porkpie",
+            "bowler": "Bombín",
+            "tophat": "Chistera",
+            "cap": "Gorra",
+            "beanie": "Gorro"
+          },
+          "eyes": {
+            "dots": "Puntos",
+            "happy": "Contentos",
+            "wink": "Guiño",
+            "big": "Grandes"
+          },
+          "mouth": {
+            "smile": "Sonrisa",
+            "grin": "Risa",
+            "o": "Sorpresa"
+          }
+        },
         "group": "Grupo de la barra lateral",
         "groupHint": "Dónde aparece en la barra lateral de Empleados",
         "newGroup": "Nuevo grupo en la barra lateral",
@@ -2041,6 +2093,35 @@
         "loadFailed": "No se pudieron cargar los permisos del bot.",
         "saveFailed": "No se pudo cambiar el permiso.",
         "tools": "Herramientas",
+        "search": "Buscar herramientas",
+        "noMatch": "Ninguna herramienta coincide.",
+        "filters": {
+          "decision": "Decisión",
+          "group": "Grupo",
+          "allGroups": "Todos los grupos",
+          "clear": "Borrar"
+        },
+        "views": {
+          "all": "Todas",
+          "allow": "Permitir",
+          "ask": "Preguntar",
+          "off": "Desactivadas",
+          "changed": "Cambiadas por ti"
+        },
+        "summary": {
+          "tools_one": "{{count}} herramienta",
+          "tools_other": "{{count}} herramientas",
+          "tools_many": "{{count}} herramientas",
+          "ask_one": "{{count}} pregunta",
+          "ask_other": "{{count}} preguntan",
+          "ask_many": "{{count}} preguntan",
+          "off_one": "{{count}} desactivada",
+          "off_other": "{{count}} desactivadas",
+          "off_many": "{{count}} desactivadas",
+          "changed_one": "{{count}} cambiada por ti",
+          "changed_other": "{{count}} cambiadas por ti",
+          "changed_many": "{{count}} cambiadas por ti"
+        },
         "preset": {
           "auto": "Las herramientas que dejas en su valor por defecto siguen Aprobar por mí: todo lo que sale de Oppenheimer pregunta antes.",
           "full": "Las herramientas que dejas en su valor por defecto siguen Acceso total: se ejecutan sin preguntar."
@@ -3378,6 +3459,10 @@
       "makeDefault": "Hacer predeterminado",
       "makeDefaultLabel": "Empezar los bots nuevos con {{provider}}",
       "makeDefaultFailed": "No se pudo cambiar el proveedor predeterminado.",
+      "groups": {
+        "connected": "Conectados",
+        "notConnected": "Sin conectar"
+      },
       "providers": {
         "anthropic": "Modelos Claude, a través de la API de Anthropic.",
         "glm": "Modelos GLM, a través de z.ai.",
@@ -3544,6 +3629,7 @@
     "commandPlaceholder": "Busca páginas y acciones…",
     "goTo": "Ir a",
     "primaryNavigation": "Navegación principal",
+    "home": "Inicio de Oppenheimer",
     "profile": "Perfil",
     "search": "Buscar",
     "team": "Equipo",

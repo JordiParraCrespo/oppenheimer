@@ -111,6 +111,10 @@ for anything only that app used (`@better-auth/expo`, `EXPO_PUBLIC_`,
 - `README.md`: the "what's included" table, the services table, the scripts.
 - `AUTHORIZATION.md`: the design document names every app in its diagrams
   and phase plans.
+- `apps/docs/docs/guide/*.md`, the user guide every bot reads, when `docs` is
+  kept: drop what a removed app did (hosts and sessions for `runner`, `opp`
+  for `cli`, the MCP server for `mcp`), then `pnpm generate:guide`. Without
+  `docs`, rewrite the same prose in `packages/shared/src/guide/guide-pages.gen.ts`.
 - `apps/docs/docs/**` when `docs` is kept: `intro.md`,
   `getting-started/*.md` (the Google sign-in page has a whole mobile
   section), every `architecture/*.md`, `deployment/tier-1-cheap.md`, and

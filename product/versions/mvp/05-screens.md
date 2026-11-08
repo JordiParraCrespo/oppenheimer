@@ -55,7 +55,8 @@
   Projects view (`/plan/projects`, 18 §1), each row's settings the
   project dialog editing (Delete project on its footer is the archive
   behind a confirm, and is disabled while the project has unresolved
-  sessions). A
+  sessions). Since 2026-11-07 the filter menu's Project facet ends in
+  New project…, which opens the same dialog; editing stays in Plan. A
   project with no session is not listed (until 2026-10-28 it showed an
   empty row with a link to start one); with projects but no session at
   all, the list says so in one line. A row's

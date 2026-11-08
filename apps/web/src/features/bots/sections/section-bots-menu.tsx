@@ -137,7 +137,7 @@ export function SectionBotsMenu({
               density="menu"
               selected={shows(bot)}
               highlighted={index === active}
-              leading={<BotAvatar option={bot} size={20} color={bot.avatarColor} />}
+              leading={<BotAvatar option={{ initials: bot.initials }} size={20} face={bot.face} />}
               leadingSize="avatar"
               data-disabled={saving.has(bot.id) || undefined}
               aria-disabled={saving.has(bot.id) || undefined}
