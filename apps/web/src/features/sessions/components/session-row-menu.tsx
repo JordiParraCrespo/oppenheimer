@@ -12,12 +12,14 @@ import {
 import { Ellipsis } from '@oppenheimer/design-system-web/icons';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { moveProjectOptions } from '../lib/session-groups';
 
 /**
  * A session row's ellipsis menu. Move slides the menu to a pane rather than a
  * submenu, like the account menu's Appearance
  * (`packages/frontend/design-system/AGENTS.md`); the section computes which
- * projects can take the session, since it holds both lists. No key hints: the
+ * project the session is in, since it holds both lists; that one stays listed,
+ * ticked and not choosable, so the pane says where the session is. No key hints: the
  * export draws R, M and D, but nothing listens for them yet, and a painted key
  * that does nothing is a claim. Select starts picking rows to act on
  * together with this one, the way a touch screen with no ⌘-click gets there.
@@ -33,6 +35,7 @@ export function SessionRowMenu({
   onShare,
   onDelete,
   projects,
+  currentProjectId,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -45,6 +48,8 @@ export function SessionRowMenu({
   onShare?: () => void;
   onDelete: () => void;
   projects: { id: string; name: string; isUnassigned?: boolean }[];
+  /** The project the session is in: shown ticked, and not a target. */
+  currentProjectId: string | null;
 }) {
   const { t } = useTranslation();
   const [pane, setPane] = useState<'root' | 'move'>('root');
@@ -93,11 +98,8 @@ export function SessionRowMenu({
               <SearchList
                 className="-mx-1 -mb-1"
                 aria-label={t('sessions.sidebar.moveTitle')}
-                options={projects.map((project) => ({
-                  value: project.id,
-                  label: project.isUnassigned ? t('projects.unassigned') : project.name,
-                }))}
-                value={null}
+                options={moveProjectOptions(t, projects, currentProjectId)}
+                value={currentProjectId}
                 onPick={(option) => {
                   onMove(option.value);
                   onOpenChange(false);

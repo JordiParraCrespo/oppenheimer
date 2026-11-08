@@ -25,6 +25,12 @@ driven from the console over it, and the git credential helper answers with
 installation tokens the control plane mints on it. `runner sessions …` drives
 the same lifecycle from the host itself.
 
+A bot can run one program on the host over the link (`host.exec`,
+`product/versions/mvp/25-bots.md` §4.2, "Commands on a host"), but only what
+`runner exec` allows here: off by default, an allowlist of programs, or
+everything. The policy lives in `~/.oppenheimer/exec.json`, is read on every
+call, and is never written by the control plane.
+
 A session's Simulator tab streams the iOS simulator or Android emulator its
 host gives it, through Argent (`product/research/device-streaming.md`). A
 host with Argent installed needs no setup: each new session takes one of the
@@ -43,6 +49,7 @@ the way this host proves who it is, and they go when the link lands.
 | ------- | ------------ |
 | `runner run` | the host agent: single-instance lock, local 0600 Unix socket, update loop. What the service unit starts |
 | `runner register --url … [--token-file F\|-] [--workspaces DIR] [--keep-existing] [--allow-container]` | redeems a one-hour registration token (from `--token-file`, `OPPENHEIMER_REGISTRATION_TOKEN` or `--token`): generates the host keypair, sends the public half with the host's facts, pins the control plane's fingerprint. Refuses a machine that looks temporary unless `--allow-container`; `--keep-existing` makes a re-run a repair |
+| `runner exec [status]` / `mode off\|allowlist\|full` / `allow <program\|/abs/path\|/abs/glob/*>...` / `deny <entry>...` | what bots may run on this host over `host.exec`: argv with no shell, in `<workspaces>/bots/<bot>` unless they name a folder. Off until set here |
 | `runner workspaces [--set DIR]` | the work folder (where stores and sessions' checkouts live) and why; `--set` moves it for new sessions, refused while any session's folder is still on disk under the old one |
 | `runner install [--print]` | writes and starts the launchd agent (macOS) or systemd user unit (Debian, Ubuntu); `--print` shows the unit instead |
 | `runner uninstall [--keep-identity] [--force]` | stops the service, revokes the host, erases the identity. Refuses while the runner's sessions run unless `--force`, which ends them (checkouts stay). When the control plane could not unpair the host it says why and how to finish, and exits 7. Never touches the workspaces directory |

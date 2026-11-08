@@ -1,7 +1,9 @@
 import type {
   CodexEnvironmentsMessage,
   CommandFailedMessage,
+  FsFoundMessage,
   FsListingMessage,
+  HostExecResultMessage,
   PortListingMessage,
   SharedPreviewMessage,
   TranscriptPageMessage,
@@ -10,16 +12,19 @@ import type {
 
 /**
  * A runner's answer to a command the control plane is waiting on: the reply
- * frame itself, or its refusal: `fs.listing`, `port.listing`,
- * `codex.environments`, `whatsapp.sent`, `shared.preview` or `transcript.page`.
+ * frame itself, or its refusal: `fs.listing`, `fs.found`, `port.listing`,
+ * `codex.environments`, `whatsapp.sent`, `shared.preview`, `transcript.page`
+ * or `host.exec.result`.
  */
 export type LinkReply =
   | FsListingMessage
+  | FsFoundMessage
   | PortListingMessage
   | CodexEnvironmentsMessage
   | WhatsappSentMessage
   | SharedPreviewMessage
   | TranscriptPageMessage
+  | HostExecResultMessage
   | CommandFailedMessage;
 
 /** One waiter: the reply, or null when none came in time. */
