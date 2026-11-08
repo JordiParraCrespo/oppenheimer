@@ -1350,6 +1350,27 @@ describe('bots chat (integration)', () => {
     expect(count).toBe(1);
   });
 
+  // Issue #728. What breaks this: an approved call's words stored as they
+  // came, so a NUL makes Postgres refuse the result, the job retries, and
+  // the guard that stops a retry (a stored result) never holds: the call
+  // runs again.
+  it('stores an approved call’s result that holds a NUL byte', async () => {
+    const bot = await create('Mailer');
+    const card = await asked(bot);
+    await approvals.insertPending(card);
+    const loaded = (await approvals.findOne(scope(), bot.id, card.id)).unwrap();
+    loaded.approve(userId, new Date(), ['bots:write']);
+    expect(await approvals.saveTransition(loaded, {}, null)).toBe(true);
+
+    const run = (await approvals.findForRun(card.id)).unwrap();
+    run.recordResult('Sent\u0000 the invoice', false);
+    expect(await approvals.saveTransition(run, {}, null)).toBe(true);
+    const [{ result }] = await dataSource.query(`SELECT result FROM bot_approval WHERE id = $1`, [
+      card.id,
+    ]);
+    expect(result).toBe('Sent the invoice');
+  });
+
   it('refuses an event with nothing said about it, and a message that is not an event saying one', async () => {
     const bot = await create('Strict');
     const { turn, message } = sent(bot, 'Hi');

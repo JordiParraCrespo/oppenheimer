@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { type AccessScope, ScopedRepositoryBase } from '@oppenheimer/backend-authz';
-import { AppError } from '@oppenheimer/backend-core';
+import { AppError, storableText } from '@oppenheimer/backend-core';
 import { OutboxService } from '@oppenheimer/backend-ddd';
 import { type BotApprovalStatus, QUEUE_NAMES } from '@oppenheimer/shared';
 import { None, type Option, Some } from 'oxide.ts';
@@ -143,7 +143,8 @@ export class BotApprovalRepository
         .update(BotApprovalOrmEntity)
         .set({
           status: approval.status,
-          result: approval.result,
+          // A tool's words: Postgres refuses a NUL in them (#728).
+          result: approval.result === null ? null : storableText(approval.result),
           sessionId: approval.sessionId,
           note: approval.note,
           decidedByUserId: approval.decidedByUserId,
