@@ -43,7 +43,7 @@ const VIEWS = {
   projects: {
     labelKey: 'tasks.nav.projects',
     icon: <Folder />,
-    route: { to: '/plan/projects', fuzzy: false },
+    route: { to: '/plan/projects', fuzzy: true },
   },
 } as const satisfies Record<
   PlanNavId,

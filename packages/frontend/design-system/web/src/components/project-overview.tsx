@@ -151,8 +151,8 @@ function ProjectTaskRow({
         ),
         children: reason ? (
           <>
-            <span className="flex items-center gap-1.5 text-sm text-fg-muted">
-              {dot}
+            <span className="flex items-start gap-1.5 text-sm text-fg-muted">
+              <span className="flex h-[1.4em] shrink-0 items-center">{dot}</span>
               {reason}
             </span>
             <span className="flex items-baseline gap-2.5">
