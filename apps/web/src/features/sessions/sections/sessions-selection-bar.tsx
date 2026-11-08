@@ -17,7 +17,7 @@ import { useContext, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { SessionPinsContext } from '../hooks/use-session-pins';
 import { useSelectedSessionIds, useSessionSelectionActions } from '../hooks/use-session-selection';
-import { currentProjectOf } from '../lib/session-groups';
+import { currentProjectOf, moveProjectOptions } from '../lib/session-groups';
 import { settleEach } from '../lib/session-selection';
 
 /**
@@ -111,13 +111,7 @@ export function SessionsSelectionBar({
           <SearchList
             className="-mx-1 -mb-1"
             aria-label={t('sessions.sidebar.moveTitle')}
-            options={projects.map((project) => ({
-              value: project.id,
-              label: project.isUnassigned ? t('projects.unassigned') : project.name,
-              ...(project.id === current
-                ? { description: t('sessions.sidebar.moveCurrent'), disabled: true }
-                : {}),
-            }))}
+            options={moveProjectOptions(t, projects, current)}
             value={current}
             onPick={(option) => {
               const project = projects.find((each) => each.id === option.value);

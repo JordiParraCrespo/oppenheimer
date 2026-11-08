@@ -12,6 +12,7 @@ import {
 import { Ellipsis } from '@oppenheimer/design-system-web/icons';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { moveProjectOptions } from '../lib/session-groups';
 
 /**
  * A session row's ellipsis menu. Move slides the menu to a pane rather than a
@@ -97,13 +98,7 @@ export function SessionRowMenu({
               <SearchList
                 className="-mx-1 -mb-1"
                 aria-label={t('sessions.sidebar.moveTitle')}
-                options={projects.map((project) => ({
-                  value: project.id,
-                  label: project.isUnassigned ? t('projects.unassigned') : project.name,
-                  ...(project.id === currentProjectId
-                    ? { description: t('sessions.sidebar.moveCurrent'), disabled: true }
-                    : {}),
-                }))}
+                options={moveProjectOptions(t, projects, currentProjectId)}
                 value={currentProjectId}
                 onPick={(option) => {
                   onMove(option.value);

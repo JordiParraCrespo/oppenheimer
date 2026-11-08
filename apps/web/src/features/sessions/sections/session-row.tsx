@@ -14,7 +14,6 @@ import { SessionRowMenu } from '../components/session-row-menu';
 import { useSessionPin } from '../hooks/use-session-pins';
 import { useSessionSelected } from '../hooks/use-session-selection';
 import { type SessionGlyph, sessionGlyph } from '../lib/session-glyph';
-import { currentProjectOf } from '../lib/session-groups';
 import { dotFor, isWorking } from '../lib/session-run-state';
 import { clickPick } from '../lib/session-selection';
 
@@ -197,7 +196,7 @@ export function SessionRow({
               name: target.name,
               isUnassigned: target.isUnassigned,
             }))}
-            currentProjectId={currentProjectOf([session])}
+            currentProjectId={session.projectId}
           />
         ) : undefined
       }

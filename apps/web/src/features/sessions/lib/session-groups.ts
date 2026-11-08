@@ -105,6 +105,25 @@ export function currentProjectOf(sessions: readonly SessionEntity[]): string | n
   return sessions.every((session) => session.projectId === first) ? first : null;
 }
 
+/**
+ * A move's rows, for both the row's menu and the selection bar: every
+ * project, the one the sessions are in (`current`) noted, ticked by the
+ * caller's `value`, and not choosable.
+ */
+export function moveProjectOptions(
+  t: TFunction,
+  projects: readonly { id: string; name: string; isUnassigned?: boolean }[],
+  current: string | null,
+): { value: string; label: string; description?: string; disabled?: boolean }[] {
+  return projects.map((project) => ({
+    value: project.id,
+    label: project.isUnassigned ? t('projects.unassigned') : project.name,
+    ...(project.id === current
+      ? { description: t('sessions.sidebar.moveCurrent'), disabled: true }
+      : {}),
+  }));
+}
+
 /** A live search over the row's name: what the sidebar's search box narrows. */
 export function matchesQuery(session: SessionEntity, query: string): boolean {
   const term = query.trim().toLowerCase();
