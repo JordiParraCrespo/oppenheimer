@@ -68,6 +68,10 @@ const ChatBatchMaxEntries = 256
 // keeps: the last ones.
 const ExecOutputMaxBytes = 32768
 
+// TerminalScreenMaxBytes is how much of a captured screen `terminal.screen`
+// carries: the last bytes.
+const TerminalScreenMaxBytes = 32768
+
 // The hello capabilities: commands a runner takes beyond its protocol
 // version's baseline.
 const (
@@ -94,6 +98,7 @@ const (
 	CapabilitySharedPreview         = "shared.preview"
 	CapabilityTranscriptRead        = "transcript.read"
 	CapabilityHostExec              = "host.exec"
+	CapabilityTerminalDrive         = "terminal.drive"
 )
 
 // The `type` of every message on the link.
@@ -132,6 +137,8 @@ const (
 	TypeFsFound                 = "fs.found"
 	TypeHostExec                = "host.exec"
 	TypeHostExecResult          = "host.exec.result"
+	TypeTerminalDrive           = "terminal.drive"
+	TypeTerminalScreen          = "terminal.screen"
 	TypeAttachmentDirectOffer   = "attachment.direct.offer"
 	TypeAttachmentDirectAnswer  = "attachment.direct.answer"
 	TypeAttachmentDirectRefused = "attachment.direct.refused"
@@ -205,6 +212,8 @@ var MessageTypes = []string{
 	TypeFsFound,
 	TypeHostExec,
 	TypeHostExecResult,
+	TypeTerminalDrive,
+	TypeTerminalScreen,
 	TypeAttachmentDirectOffer,
 	TypeAttachmentDirectAnswer,
 	TypeAttachmentDirectRefused,
@@ -314,6 +323,10 @@ func NewMessage(messageType string) (any, bool) {
 		return new(HostExec), true
 	case TypeHostExecResult:
 		return new(HostExecResult), true
+	case TypeTerminalDrive:
+		return new(TerminalDrive), true
+	case TypeTerminalScreen:
+		return new(TerminalScreen), true
 	case TypeAttachmentDirectOffer:
 		return new(AttachmentDirectOffer), true
 	case TypeAttachmentDirectAnswer:
@@ -770,6 +783,28 @@ type HostExecResult struct {
 	StderrTruncated bool   `json:"stderrTruncated,omitempty"`
 	Cwd             string `json:"cwd"`
 	DurationMs      int64  `json:"durationMs"`
+}
+
+// TerminalDrive is the `terminal.drive` message.
+type TerminalDrive struct {
+	Type        string   `json:"type"`
+	CommandID   string   `json:"commandId"`
+	SessionID   string   `json:"sessionId"`
+	Window      int      `json:"window,omitempty"`
+	Text        string   `json:"text,omitempty"`
+	Keys        []string `json:"keys,omitempty"`
+	WaitFor     string   `json:"waitFor,omitempty"`
+	WaitSeconds int      `json:"waitSeconds"`
+	History     int      `json:"history,omitempty"`
+}
+
+// TerminalScreen is the `terminal.screen` message.
+type TerminalScreen struct {
+	Type      string `json:"type"`
+	CommandID string `json:"commandId"`
+	Screen    string `json:"screen"`
+	Matched   bool   `json:"matched"`
+	WaitedMs  int64  `json:"waitedMs"`
 }
 
 // AttachmentDirectOffer is the `attachment.direct.offer` message.

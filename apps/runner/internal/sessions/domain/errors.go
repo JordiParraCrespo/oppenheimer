@@ -85,6 +85,10 @@ var (
 	// long or not an RE2 expression. The code is the protocol's
 	// (`session.watch`), not a SESS_ number: the control plane names it.
 	ErrInvalidPattern = problem.New("INVALID_PATTERN", http.StatusBadRequest, "The watch pattern is not a valid expression")
+	// ErrNotTerminal refuses `terminal.drive` on a session whose window 0 runs
+	// an agent rather than a blank terminal: a bot types into a shell it
+	// drives, never into an agent's prompt. The code is the protocol's.
+	ErrNotTerminal = problem.New("EXEC_007", http.StatusConflict, "The session is not a blank terminal")
 )
 
 // Sentinels a Places adapter answers with; the use case maps them onto the

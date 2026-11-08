@@ -335,6 +335,18 @@ runner does with it and point back.
   last 256) is answered with that run's result rather than run again: the
   control plane reuses one, derived from the approval, when it retries an
   approved call.
+- `terminal.drive` and `terminal.screen` — a bot driving a blank-terminal
+  session (2026-11-08, `25-bots.md` §4.2, "Driving a terminal"): `{
+  commandId, sessionId, window?, text?, keys?, waitFor?, waitSeconds,
+  history? }`. The runner types `text` literally, presses each of `keys` by
+  tmux name (the `TERMINAL_KEYS` list), waits until `waitFor` (RE2) matches a
+  line of the screen or for `waitSeconds` (at most 60), and answers `{
+  screen, matched, waitedMs }`, the last 32 KB of the visible screen plus up
+  to 500 lines above it, or `command.failed`: `EXEC_006` the host's exec mode
+  is not `full`, `EXEC_007` the session is not a blank terminal, `SESS_001`,
+  `SESS_003`, `INVALID_PATTERN`. One lane per session, so drives of one
+  terminal keep their order. Sent only to a runner whose `hello` names
+  `terminal.drive`, and waited on for the drive's wait and 10 seconds more.
 - `attachment.credit` — the browser's consumed-byte credit, relayed to
   the runner so it resumes that attachment's PTY reads. Without it the
   window below is a one-way valve: a noisy pane stalls for good rather

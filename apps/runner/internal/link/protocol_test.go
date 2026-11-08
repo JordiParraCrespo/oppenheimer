@@ -323,6 +323,7 @@ func TestConstantsMatchTheSchema(t *testing.T) {
 		ChatEntryMaxBytes    int               `json:"chatEntryMaxBytes"`
 		ChatBatchMaxEntries  int               `json:"chatBatchMaxEntries"`
 		ExecOutputMaxBytes   int               `json:"execOutputMaxBytes"`
+		TerminalScreenMax    int               `json:"terminalScreenMaxBytes"`
 	}
 	var schema struct {
 		Constants json.RawMessage `json:"x-constants"`
@@ -352,6 +353,7 @@ func TestConstantsMatchTheSchema(t *testing.T) {
 		"chatEntryMaxBytes":    {constants.ChatEntryMaxBytes, link.ChatEntryMaxBytes},
 		"chatBatchMaxEntries":  {constants.ChatBatchMaxEntries, link.ChatBatchMaxEntries},
 		"execOutputMaxBytes":   {constants.ExecOutputMaxBytes, link.ExecOutputMaxBytes},
+		"terminalScreenMax":    {constants.TerminalScreenMax, link.TerminalScreenMaxBytes},
 	} {
 		if pair[0] != pair[1] {
 			t.Errorf("%s: the schema says %v, protocol.gen.go %v", name, pair[0], pair[1])
@@ -376,6 +378,7 @@ func TestConstantsMatchTheSchema(t *testing.T) {
 		link.CapabilitySharedPreview,
 		link.CapabilityTranscriptRead,
 		link.CapabilityHostExec,
+		link.CapabilityTerminalDrive,
 	}) {
 		t.Errorf("capabilities: the schema says %v", constants.Capabilities)
 	}

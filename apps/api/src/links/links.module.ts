@@ -6,6 +6,7 @@ import {
   SESSION_DISPATCH,
   SESSION_PORTS,
   SESSION_SHARED_FILES,
+  SESSION_TERMINAL,
   SESSION_TRANSCRIPT,
 } from '../sessions/sessions.di-tokens';
 import { TELEGRAM_DEVICE } from '../telegram/telegram.di-tokens';
@@ -19,6 +20,7 @@ import { RelayHostExecAdapter } from './infrastructure/relay-host-exec.adapter';
 import { RelayHostFoldersAdapter } from './infrastructure/relay-host-folders.adapter';
 import { RelaySessionPortsAdapter } from './infrastructure/relay-session-ports.adapter';
 import { RelaySessionSharedFilesAdapter } from './infrastructure/relay-session-shared-files.adapter';
+import { RelaySessionTerminalAdapter } from './infrastructure/relay-session-terminal.adapter';
 import { RelaySessionTranscriptAdapter } from './infrastructure/relay-session-transcript.adapter';
 import { RelayTelegramDeviceAdapter } from './infrastructure/relay-telegram-device.adapter';
 import { RelayWhatsappDeviceAdapter } from './infrastructure/relay-whatsapp-device.adapter';
@@ -46,6 +48,7 @@ import { LINK_REGISTRY, LINK_REPLIES, PARKED_FILES, STAGED_FILE_READER } from '.
     { provide: SESSION_PORTS, useClass: RelaySessionPortsAdapter },
     { provide: SESSION_SHARED_FILES, useClass: RelaySessionSharedFilesAdapter },
     { provide: SESSION_TRANSCRIPT, useClass: RelaySessionTranscriptAdapter },
+    { provide: SESSION_TERMINAL, useClass: RelaySessionTerminalAdapter },
     { provide: HOST_CODEX_ENVIRONMENTS, useClass: RelayHostCodexEnvironmentsAdapter },
     { provide: WHATSAPP_DEVICE, useClass: RelayWhatsappDeviceAdapter },
     { provide: TELEGRAM_DEVICE, useClass: RelayTelegramDeviceAdapter },
@@ -61,6 +64,7 @@ import { LINK_REGISTRY, LINK_REPLIES, PARKED_FILES, STAGED_FILE_READER } from '.
     SESSION_PORTS,
     SESSION_SHARED_FILES,
     SESSION_TRANSCRIPT,
+    SESSION_TERMINAL,
     HOST_CODEX_ENVIRONMENTS,
     WHATSAPP_DEVICE,
     TELEGRAM_DEVICE,

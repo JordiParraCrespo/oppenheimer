@@ -200,6 +200,13 @@ export const RUNNER_CAPABILITIES = [
    * (`product/versions/mvp/25-bots.md` §4.2, "Commands on a host").
    */
   'host.exec',
+  /**
+   * Answers `terminal.drive` with `terminal.screen`: a bot types into a
+   * blank-terminal session's window and reads its screen back, when this
+   * host's exec policy is `full` (`product/versions/mvp/25-bots.md` §4.2,
+   * "Driving a terminal").
+   */
+  'terminal.drive',
 ] as const;
 export type RunnerCapability = (typeof RUNNER_CAPABILITIES)[number];
 
@@ -908,6 +915,93 @@ export const hostExecResultSchema = z.object({
 export type HostExecResultMessage = z.infer<typeof hostExecResultSchema>;
 
 /**
+ * The keys `terminal.drive` may press after its text, by tmux's own names:
+ * the ones a person needs to run and leave programs in a shell.
+ */
+export const TERMINAL_KEYS = [
+  'Enter',
+  'Tab',
+  'Escape',
+  'BSpace',
+  'Space',
+  'Up',
+  'Down',
+  'Left',
+  'Right',
+  'Home',
+  'End',
+  'PageUp',
+  'PageDown',
+  'C-c',
+  'C-d',
+  'C-z',
+  'C-l',
+  'C-a',
+  'C-e',
+  'C-r',
+  'C-u',
+  'C-w',
+] as const;
+
+/** The most text one `terminal.drive` types. */
+export const TERMINAL_TEXT_MAX = 8_192;
+
+/** The longest `terminal.drive` waits for its pattern or for quiet, in seconds. */
+export const TERMINAL_WAIT_MAX_SECONDS = 60;
+
+/** How many lines above the visible screen `terminal.drive` may read back. */
+export const TERMINAL_HISTORY_MAX_LINES = 500;
+
+/**
+ * Type into a blank-terminal session (agent `shell`) and read its screen
+ * back, for a bot (`product/versions/mvp/25-bots.md` §4.2, "Driving a
+ * terminal"). In order: `text` is typed literally (never read as key names),
+ * then each of `keys` is pressed, then the runner waits: until `waitFor` (an
+ * RE2 pattern) matches a line of the screen, or for `waitSeconds` when no
+ * pattern is given, at most `TERMINAL_WAIT_MAX_SECONDS`; then it captures the
+ * visible screen and `history` lines above it. A drive with no text and no
+ * keys only reads.
+ *
+ * The host decides: only a host whose exec policy is `full` takes it, since
+ * a shell runs anything. Sent only to a runner whose `hello` named
+ * `terminal.drive`; answered by `terminal.screen` with the same `commandId`,
+ * or by `command.failed` (`EXEC_006` the host's policy is not `full`,
+ * `EXEC_007` the session is not a blank terminal, `SESS_001` not on this
+ * host, `INVALID_PATTERN`).
+ */
+export const terminalDriveSchema = z.object({
+  type: z.literal('terminal.drive'),
+  commandId: commandIdSchema,
+  sessionId: sessionIdSchema,
+  window: windowIndexSchema.optional(),
+  text: z.string().max(TERMINAL_TEXT_MAX).optional(),
+  keys: z.array(z.enum(TERMINAL_KEYS)).max(32).optional(),
+  waitFor: z.string().min(1).max(TERMINAL_WATCH_PATTERN_MAX).optional(),
+  waitSeconds: z.number().int().min(0).max(TERMINAL_WAIT_MAX_SECONDS),
+  history: z.number().int().min(0).max(TERMINAL_HISTORY_MAX_LINES).optional(),
+});
+
+export type TerminalDriveMessage = z.infer<typeof terminalDriveSchema>;
+
+/**
+ * What a `terminal.drive` left on the screen. `matched` says whether its
+ * `waitFor` matched before the wait ran out (false when it gave none).
+ * `screen` is the captured text, its last `TERMINAL_SCREEN_MAX_BYTES` kept.
+ */
+export const terminalScreenSchema = z.object({
+  type: z.literal('terminal.screen'),
+  commandId: commandIdSchema,
+  screen: z.string(),
+  matched: z.boolean(),
+  waitedMs: z.number().int().min(0),
+});
+
+export type TerminalScreenMessage = z.infer<typeof terminalScreenSchema>;
+
+/** How much of a captured screen `terminal.screen` carries: the last bytes. */
+export const TERMINAL_SCREEN_MAX_BYTES = 32_768;
+
+/**
  * Find folders under one directory by name, for the folder picker's search
  * (24 §4): a bounded walk, at most `FS_FIND_MAX_DEPTH` levels down, that skips
  * hidden directories and dependency trees and never descends into a git
@@ -1260,6 +1354,8 @@ export const protocolMessageSchema = z.discriminatedUnion('type', [
   fsFoundSchema,
   hostExecSchema,
   hostExecResultSchema,
+  terminalDriveSchema,
+  terminalScreenSchema,
   attachmentDirectOfferSchema,
   attachmentDirectAnswerSchema,
   attachmentDirectRefusedSchema,

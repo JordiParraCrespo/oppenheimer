@@ -1338,6 +1338,110 @@
       "properties": {
         "type": {
           "type": "string",
+          "const": "terminal.drive"
+        },
+        "commandId": {
+          "$ref": "#/$defs/commandId"
+        },
+        "sessionId": {
+          "$ref": "#/$defs/sessionId"
+        },
+        "window": {
+          "$ref": "#/$defs/windowIndex"
+        },
+        "text": {
+          "type": "string",
+          "maxLength": 8192
+        },
+        "keys": {
+          "maxItems": 32,
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "Enter",
+              "Tab",
+              "Escape",
+              "BSpace",
+              "Space",
+              "Up",
+              "Down",
+              "Left",
+              "Right",
+              "Home",
+              "End",
+              "PageUp",
+              "PageDown",
+              "C-c",
+              "C-d",
+              "C-z",
+              "C-l",
+              "C-a",
+              "C-e",
+              "C-r",
+              "C-u",
+              "C-w"
+            ]
+          }
+        },
+        "waitFor": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "waitSeconds": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 60
+        },
+        "history": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 500
+        }
+      },
+      "required": [
+        "type",
+        "commandId",
+        "sessionId",
+        "waitSeconds"
+      ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "terminal.screen"
+        },
+        "commandId": {
+          "$ref": "#/$defs/commandId"
+        },
+        "screen": {
+          "type": "string"
+        },
+        "matched": {
+          "type": "boolean"
+        },
+        "waitedMs": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        }
+      },
+      "required": [
+        "type",
+        "commandId",
+        "screen",
+        "matched",
+        "waitedMs"
+      ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
           "const": "attachment.direct.offer"
         },
         "attachmentId": {
@@ -2873,11 +2977,13 @@
       "telegram",
       "shared.preview",
       "transcript.read",
-      "host.exec"
+      "host.exec",
+      "terminal.drive"
     ],
     "maxEventPayloadBytes": 8192,
     "chatEntryMaxBytes": 65536,
     "chatBatchMaxEntries": 256,
-    "execOutputMaxBytes": 32768
+    "execOutputMaxBytes": 32768,
+    "terminalScreenMaxBytes": 32768
   }
 }
