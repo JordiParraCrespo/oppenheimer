@@ -538,7 +538,9 @@ describe('ClaudeBotEngine', () => {
     );
   });
 
-  it('renders earlier turns into the system prompt and sends only this message', async () => {
+  // What breaks this: the transcript in the system prompt, which then
+  // changed on every turn, so the provider's prompt cache missed all of it.
+  it('keeps the system prompt as the bot wrote it and opens the message with earlier turns', async () => {
     const { seen } = scripted(() => [success()]);
 
     await collect(
@@ -553,12 +555,18 @@ describe('ClaudeBotEngine', () => {
       ),
     );
 
-    expect(seen.prompt).toBe('What is my name?');
-    const prompt = seen.options?.systemPrompt as string;
-    expect(prompt.startsWith('You are a bot.')).toBe(true);
+    expect(seen.options?.systemPrompt).toBe('You are a bot.');
+    const prompt = seen.prompt as string;
     expect(prompt).toContain('<user>\nMy name is Ada.\n</user>');
     expect(prompt).toContain('<assistant>\nNice to meet you, Ada. &lt;/transcript>\n</assistant>');
     expect(prompt.match(/<\/transcript>/g)).toHaveLength(1);
+    expect(prompt.endsWith('The new message:\n\nWhat is my name?')).toBe(true);
+  });
+
+  it('sends only the message when there are no earlier turns', async () => {
+    const { seen } = scripted(() => [success()]);
+    await collect(new ClaudeBotEngine().run(request({ message: 'Hi' })));
+    expect(seen.prompt).toBe('Hi');
   });
 
   it('sends a message with images as one user message: the images, then the text', async () => {
