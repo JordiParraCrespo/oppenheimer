@@ -29,15 +29,18 @@ export function stepSentHistory(
   const from = place?.index ?? -1;
   const to = direction === 'older' ? from + 1 : from - 1;
   if (to < -1 || to >= texts.length) return null;
-  const edits = { ...place?.edits, [from]: draft };
+  // Only what you changed is kept: an unedited place still reads its own text.
+  const edits = place && draft === place.base ? place.edits : { ...place?.edits, [from]: draft };
   return { index: to, base: edits[to] ?? texts[to] ?? '', edits };
 }
 
 /**
  * Whether an arrow should step through what you sent rather than move the
- * caret: Up with the caret on the field's first line, Down on its last, no
- * text selected. A recalled message you have not edited steps either way,
- * so pressing Up again goes on back past a message of several lines.
+ * caret: Up with the caret at the very start of the field, Down at its very
+ * end, no text selected. Only there, because a long line the field wraps has
+ * no newline to tell its visual lines apart: in it, the first Up takes the
+ * caret to the start and the next one steps. A recalled message you have not
+ * edited steps from anywhere, so pressing Up again goes on back.
  */
 export function arrowStepsHistory(
   value: string,
@@ -48,7 +51,5 @@ export function arrowStepsHistory(
 ): boolean {
   if (recalled) return true;
   if (selectionStart !== selectionEnd) return false;
-  return direction === 'older'
-    ? !value.slice(0, selectionStart).includes('\n')
-    : !value.slice(selectionEnd).includes('\n');
+  return direction === 'older' ? selectionStart === 0 : selectionEnd === value.length;
 }

@@ -9,13 +9,13 @@ import {
 
 /**
  * Up and Down in the composer bring back what you sent before, the way a
- * shell does: Up with the caret on the field's first line writes your last
+ * shell does: Up with the caret at the start of the field writes your last
  * message into it, Up again the one before, Down walks back and, past the
  * newest, gives back the draft you had. Each place keeps what you left in
  * the field there (`stepSentHistory`), so an edit, or a new message written
  * over a recalled one, is still there when you step back to it. A recalled
- * message you have not edited steps on from any line; once edited, the arrows
- * move the caret through it and step only from its first or last line.
+ * message you have not edited steps on from anywhere; once edited, the arrows
+ * move the caret through it and step only from its very start or end.
  * `reset` ends the walk, on a send. The composer is keyed by bot, so a walk
  * never outlives its bot.
  */

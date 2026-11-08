@@ -60,8 +60,8 @@ import { BotComposerTop } from '@/features/bots/sections/bot-composer-top';
  * into the draft (`useDictation`), added to its end, to be read before it is
  * sent. A draft that is a `/` command being typed opens the menu of the
  * skills it can run over the box (`useSlashMenu`); picking one writes
- * `/<name> ` for its input to follow. With the menu shut, Up on the field's
- * first line brings back what you sent before and Down walks back to your
+ * `/<name> ` for its input to follow. With the menu shut, Up at the start of
+ * the field brings back what you sent before and Down walks back to your
  * draft (`useSentHistory`).
  *
  * Images ride the message (`25-bots.md` §3.1): the paperclip, a paste, or a

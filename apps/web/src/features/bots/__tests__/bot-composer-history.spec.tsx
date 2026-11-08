@@ -7,8 +7,8 @@ import { BotComposer } from '../sections/bot-composer';
  * Up and Down bring back what you sent, as a shell does. What breaks this:
  * Up doing nothing on an empty field; Up skipping past the last message, or
  * stopping after one; Down not giving back the draft you had; the arrows
- * stealing the caret from a message of several lines you are writing, or
- * from a recalled one you started editing; the draft you had lost once a
+ * stealing the caret from a draft of several lines, from one long line the
+ * field wraps, or from a recalled message you started editing; the draft you had lost once a
  * recalled message is edited, or a message written over a recalled one lost
  * on the next step; a send leaving the walk where it was.
  */
@@ -110,6 +110,7 @@ describe('BotComposer’s sent history', () => {
   it('keeps the draft you had past the newest after a recalled message is edited, and starts over after a send', () => {
     const field = composer();
     type(field, 'please refactor the parser');
+    caret(field, 0);
     up(field);
     type(field, 'run the tests!');
     down(field);
@@ -124,8 +125,10 @@ describe('BotComposer’s sent history', () => {
   it('keeps what was written over a recalled message, and an edit, while stepping past them', () => {
     const field = composer();
     type(field, 'A');
+    caret(field, 0);
     up(field);
     type(field, 'B');
+    caret(field, 0);
     up(field);
     expect(botDraft('b1')).toBe('fix the build\nthen push');
     down(field);
@@ -133,8 +136,20 @@ describe('BotComposer’s sent history', () => {
     type(field, 'B!');
     down(field);
     expect(botDraft('b1')).toBe('A');
+    caret(field, 0);
     up(field);
     expect(botDraft('b1')).toBe('B!');
+  });
+
+  it('steps only from the very start or end of a draft, so a line the field wraps keeps its arrows', () => {
+    const field = composer();
+    type(field, 'a paragraph long enough to wrap across several visual lines');
+    caret(field, 20);
+    up(field);
+    expect(botDraft('b1')).toBe('a paragraph long enough to wrap across several visual lines');
+    caret(field, 0);
+    up(field);
+    expect(botDraft('b1')).toBe('run the tests');
   });
 
   it('does nothing on Down with nothing recalled', () => {
