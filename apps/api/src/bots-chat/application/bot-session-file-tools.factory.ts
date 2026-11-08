@@ -115,7 +115,7 @@ function refusalOf(read: Exclude<SessionSharedPreviewRead, { kind: 'preview' }>,
     case 'host_offline':
       return `Not shown: the session's host is offline, and ${read.file.name} is only on it. Try again when it is back.`;
     case 'not_supported':
-      return `Not shown: the session's host runs a runner too old to send a shared file's preview. Ask the person to update it.`;
+      return `Not shown: the session's host runs a runner too old to send a shared file's preview. update_host_runner updates it; then try again.`;
     case 'timed_out':
       return `Not shown: the session's host did not send ${read.file.name} in time. Try again.`;
     case 'gone':

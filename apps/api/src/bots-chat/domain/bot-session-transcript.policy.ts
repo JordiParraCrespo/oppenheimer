@@ -16,7 +16,8 @@ const REASON_PHRASES = {
   cloud_vendor:
     "it runs in its vendor's cloud, and its conversation is kept there; no supported API reads it from here",
   agent_keeps_none: 'its agent keeps no transcript Oppenheimer can read',
-  runner_too_old: "its host's runner is too old to read it; updating the runner adds it",
+  runner_too_old:
+    "its host's runner is too old to read it; update_host_runner updates it, then read again",
   host_offline: 'its host is offline',
   timed_out: 'its host did not answer in time',
   host_refused: 'its host refused the read (the session may no longer be on it)',

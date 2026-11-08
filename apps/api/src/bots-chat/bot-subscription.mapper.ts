@@ -253,7 +253,7 @@ export class BotSubscriptionMapper {
   toPatternAnswer(pattern: string, hints: readonly string[]): string {
     const watching = `You are also woken when its terminal prints a new line matching “${pattern}”: you are told it matched, not the line.`;
     if (hints.includes('not_supported')) {
-      return `${watching} Its host runs a runner too old to watch a terminal, so that will not happen until it is updated.`;
+      return `${watching} Its host runs a runner too old to watch a terminal, so that will not happen until it is updated (update_host_runner).`;
     }
     if (hints.includes('host_offline')) {
       return `${watching} Its host is offline; the watch starts when it reconnects.`;
