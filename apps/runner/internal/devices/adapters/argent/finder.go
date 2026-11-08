@@ -26,12 +26,14 @@ type Finder struct {
 
 var _ app.Finder = Finder{}
 
-// Find asks simctl and adb; a tool that is missing offers nothing, and only
-// both failing is an error.
+// Find asks simctl (on macOS) and adb; a tool that is missing offers nothing,
+// and only every tool it asked failing is an error.
 func (f Finder) Find(ctx context.Context) ([]domain.Device, error) {
 	var devices []domain.Device
 	var failed []error
+	tried := 0
 	if runtime.GOOS == "darwin" {
+		tried++
 		out, err := run(ctx, true, "xcrun", "simctl", "list", "devices", "booted", "-j")
 		if err == nil {
 			found, perr := parseSimctl(out)
@@ -46,6 +48,7 @@ func (f Finder) Find(ctx context.Context) ([]domain.Device, error) {
 	if adb == "" {
 		adb = "adb"
 	}
+	tried++
 	// Not killed as a group: `adb devices` may start adb's server, which is
 	// meant to outlive it.
 	out, err := run(ctx, false, adb, "devices")
@@ -56,7 +59,7 @@ func (f Finder) Find(ctx context.Context) ([]domain.Device, error) {
 	} else {
 		failed = append(failed, err)
 	}
-	if len(devices) == 0 && len(failed) > 0 && (runtime.GOOS != "darwin" || len(failed) == 2) {
+	if len(devices) == 0 && len(failed) == tried {
 		return nil, errors.Join(failed...)
 	}
 	return devices, nil

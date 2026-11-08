@@ -59,3 +59,41 @@ func TestDiscoveredDevicesAreOfferedAsTheyAppear(t *testing.T) {
 		t.Fatalf("a failed look took the device away: %+v %v", got, err)
 	}
 }
+
+type blockingFinder struct {
+	started chan struct{}
+	proceed chan struct{}
+	devices []domain.Device
+}
+
+func (f *blockingFinder) Find(context.Context) ([]domain.Device, error) {
+	close(f.started)
+	<-f.proceed
+	return f.devices, nil
+}
+
+// A session that closes while its device is being looked for is not handed
+// one when the look returns: it would hold that device until the runner
+// restarts, and no other session could take it.
+func TestASessionThatClosesMidLookIsNotHandedADevice(t *testing.T) {
+	sim := domain.Device{Serial: "UDID-1", Name: "iPhone 17", Platform: domain.IOS}
+	found := &blockingFinder{started: make(chan struct{}), proceed: make(chan struct{}), devices: []domain.Device{sim}}
+	service := app.New(app.Options{Finder: found})
+
+	done := make(chan error, 1)
+	go func() {
+		_, err := service.ForSession("s1")
+		done <- err
+	}()
+	<-found.started
+	service.Release("s1")
+	close(found.proceed)
+	if err := <-done; !noDevice(err) {
+		t.Fatalf("a closed session was handed a device: %v", err)
+	}
+
+	service = app.New(app.Options{Devices: []domain.Device{sim}})
+	if got, err := service.ForSession("s2"); err != nil || got != sim {
+		t.Fatalf("the device was not free for the next session: %+v %v", got, err)
+	}
+}

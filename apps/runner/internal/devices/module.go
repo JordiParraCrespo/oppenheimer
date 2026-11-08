@@ -20,7 +20,8 @@ type Options struct {
 	// AndroidHome is the Android SDK, when it is not on the runner's PATH.
 	AndroidHome string
 	// Discover offers the simulators and emulators running on the host,
-	// found whenever a session asks for one, in place of a fixed Devices.
+	// found whenever a session asks for one. It is the one switch for
+	// looking: Devices, when named, are offered as well.
 	Discover bool
 	// ArgentHome is Argent's own directory (~/.argent), where the
 	// tool-server is found when ToolsURL is empty.
@@ -38,7 +39,7 @@ func New(opts Options) *app.Service {
 		adb = filepath.Join(opts.AndroidHome, "platform-tools", "adb")
 	}
 	var finder app.Finder
-	if len(opts.Devices) == 0 {
+	if opts.Discover {
 		finder = argent.Finder{ADB: adb}
 	}
 	return app.New(app.Options{
