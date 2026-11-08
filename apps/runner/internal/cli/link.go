@@ -64,7 +64,10 @@ type linkSender interface {
 type linkHandler struct {
 	app *App
 	// execs answers a retried `host.exec` with the run it already made.
-	execs    execMemo
+	execs replays[link.HostExecResult]
+	// drives answers a retried `terminal.drive` with the screen it already
+	// left, instead of typing its text a second time.
+	drives   replays[link.TerminalScreen]
 	identity pairdomain.Identity
 	logger   *slog.Logger
 	client   linkSender

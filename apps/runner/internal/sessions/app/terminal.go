@@ -40,7 +40,7 @@ type DriveResult struct {
 // prompt, which has its own verbs. Whether the host lets a bot drive a shell
 // at all is the host's exec policy, checked by the caller.
 func (s *Service) Drive(ctx context.Context, id string, req DriveRequest) (DriveResult, error) {
-	session, err := s.recorded(id)
+	session, err := s.created(ctx, id)
 	if err != nil {
 		return DriveResult{}, err
 	}
@@ -58,6 +58,19 @@ func (s *Service) Drive(ctx context.Context, id string, req DriveRequest) (Drive
 	}
 
 	target := session.Target(req.Window)
+	// A drive that types waits for a match the typing caused: lines that
+	// already matched before it, and the echo of what it typed, do not count.
+	// One that only reads takes what is on the screen.
+	echo := strings.TrimSpace(req.Text)
+	typing := req.Text != "" || len(req.Keys) > 0
+	before := 0
+	if pattern != nil && typing {
+		body, err := s.terminals.CaptureBody(ctx, target)
+		if err != nil {
+			return DriveResult{}, err
+		}
+		before = matches(body, pattern, echo)
+	}
 	if req.Text != "" {
 		if err := s.terminals.SendKeys(ctx, target, req.Text); err != nil {
 			return DriveResult{}, err
@@ -78,7 +91,7 @@ func (s *Service) Drive(ctx context.Context, id string, req DriveRequest) (Drive
 			}
 		}
 	} else {
-		matched, err = s.waitFor(ctx, target, pattern, req.Wait)
+		matched, err = s.waitFor(ctx, target, pattern, echo, before, req.Wait)
 		if err != nil {
 			return DriveResult{}, err
 		}
@@ -90,19 +103,19 @@ func (s *Service) Drive(ctx context.Context, id string, req DriveRequest) (Drive
 	return DriveResult{Screen: strings.TrimRight(screen, "\n"), Matched: matched, Waited: time.Since(started)}, nil
 }
 
-// waitFor reads the screen until a line of it matches pattern or wait runs
-// out, and reports whether it matched.
-func (s *Service) waitFor(ctx context.Context, target string, pattern *regexp.Regexp, wait time.Duration) (bool, error) {
+// waitFor reads the screen until more of its lines match pattern than the
+// before lines that matched before the drive typed, or wait runs out, and
+// reports whether they did. A line holding echo, the text the drive typed,
+// never counts: a command line that matches its own pattern is not output.
+func (s *Service) waitFor(ctx context.Context, target string, pattern *regexp.Regexp, echo string, before int, wait time.Duration) (bool, error) {
 	deadline := time.Now().Add(wait)
 	for {
 		body, err := s.terminals.CaptureBody(ctx, target)
 		if err != nil {
 			return false, err
 		}
-		for line := range strings.SplitSeq(body, "\n") {
-			if pattern.MatchString(line) {
-				return true, nil
-			}
+		if matches(body, pattern, echo) > before {
+			return true, nil
 		}
 		if !time.Now().Before(deadline) {
 			return false, nil
@@ -110,6 +123,57 @@ func (s *Service) waitFor(ctx context.Context, target string, pattern *regexp.Re
 		select {
 		case <-ctx.Done():
 			return false, ctx.Err()
+		case <-time.After(drivePoll):
+		}
+	}
+}
+
+// matches counts the lines of body that match pattern, leaving out any that
+// holds echo.
+func matches(body string, pattern *regexp.Regexp, echo string) int {
+	count := 0
+	for line := range strings.SplitSeq(body, "\n") {
+		if echo != "" && strings.Contains(line, echo) {
+			continue
+		}
+		if pattern.MatchString(line) {
+			count++
+		}
+	}
+	return count
+}
+
+// Waits a drive makes for a session that is not ready for it yet: one still
+// being created (`open_terminal` answers once the create is sent, not done),
+// and one this runner has not heard of yet (the create may still be on its
+// way).
+const (
+	driveCreateWait  = 30 * time.Second
+	driveUnknownWait = 5 * time.Second
+)
+
+// created is the session once its create has landed, waiting for one still
+// being created or not yet arrived, within the waits above.
+func (s *Service) created(ctx context.Context, id string) (domain.Session, error) {
+	started := time.Now()
+	for {
+		session, err := s.recorded(id)
+		if err == nil {
+			return session, nil
+		}
+		s.mu.Lock()
+		_, creating := s.creating[id]
+		s.mu.Unlock()
+		limit := driveUnknownWait
+		if creating {
+			limit = driveCreateWait
+		}
+		if time.Since(started) >= limit {
+			return domain.Session{}, err
+		}
+		select {
+		case <-ctx.Done():
+			return domain.Session{}, ctx.Err()
 		case <-time.After(drivePoll):
 		}
 	}

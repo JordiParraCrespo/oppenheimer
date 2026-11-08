@@ -14,10 +14,15 @@ import (
 	sessionsapp "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/app"
 )
 
-// laneTerminal is one lane per session: drives of one terminal in order.
+// laneTerminal is one lane per session: drives of one terminal in order, and
+// a retried drive (the same command id) behind the one it repeats.
 const laneTerminal = "terminal:"
 
 func (h *linkHandler) driveTerminal(ctx context.Context, m link.TerminalDrive) {
+	if left, ok := h.drives.get(m.CommandID); ok {
+		_ = h.client.Send(left)
+		return
+	}
 	policy, err := h.app.Host.ExecPolicy()
 	if err != nil {
 		h.fail(m.CommandID, err)
@@ -40,8 +45,10 @@ func (h *linkHandler) driveTerminal(ctx context.Context, m link.TerminalDrive) {
 	if len(screen) > link.TerminalScreenMaxBytes {
 		screen = screen[len(screen)-link.TerminalScreenMaxBytes:]
 	}
-	_ = h.client.Send(link.TerminalScreen{
+	left := link.TerminalScreen{
 		Type: link.TypeTerminalScreen, CommandID: m.CommandID,
 		Screen: screen, Matched: result.Matched, WaitedMs: result.Waited.Milliseconds(),
-	})
+	}
+	h.drives.put(m.CommandID, left)
+	_ = h.client.Send(left)
 }

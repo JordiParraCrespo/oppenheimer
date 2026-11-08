@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/host/adapters/execpolicy"
 	hostfake "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/host/adapters/fake"
@@ -45,20 +46,90 @@ func (p *placesHarness) drive(t *testing.T, body map[string]any) {
 	p.h.Message(context.Background(), message(t, "terminal.drive", body))
 }
 
-// A bot drives a blank terminal: its text is typed, its keys pressed, and it
-// gets back the screen once its pattern shows. A regression that typed the
-// keys as text would leave a shell that never ran the command.
-func TestABotTypesIntoATerminalAndReadsItBack(t *testing.T) {
-	p := terminalHarness(t, "shell", hostdomain.ExecFull)
-	p.drive(t, map[string]any{"text": "ssh build-02 uptime", "keys": []any{"Enter"}, "waitFor": "uptime<Enter>", "waitSeconds": 2})
+// target is the session's window 0, where the fake keeps its screen.
+func (p *placesHarness) target(t *testing.T) string {
+	t.Helper()
+	session, err := p.svc.Get(sessionUnderTest)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return session.Target(0)
+}
 
-	screen := p.sent.waitFor(t, "terminal.screen", func(m any) bool {
+func (p *placesHarness) screen(t *testing.T) link.TerminalScreen {
+	t.Helper()
+	return p.sent.waitFor(t, "terminal.screen", func(m any) bool {
 		s, ok := m.(link.TerminalScreen)
 		return ok && s.CommandID == driveCommandID
 	}).(link.TerminalScreen)
-	if !screen.Matched || !strings.Contains(screen.Screen, "ssh build-02 uptime<Enter>") {
+}
+
+// A bot drives a blank terminal: its text is typed and its keys pressed, and
+// it gets the screen back once its pattern shows. A regression that typed the
+// keys as text would leave a shell that never ran the command.
+func TestABotTypesIntoATerminalAndReadsItBack(t *testing.T) {
+	p := terminalHarness(t, "shell", hostdomain.ExecFull)
+	p.drive(t, map[string]any{"text": "uptime", "keys": []any{"Enter"}, "waitSeconds": 0})
+
+	screen := p.screen(t)
+	if !strings.Contains(screen.Screen, "uptime<Enter>") {
 		t.Fatalf("screen = %+v", screen)
 	}
+}
+
+// A pattern already on the screen, or in the line just typed, is not the
+// answer to what was typed: a password prompt left from a failed try must not
+// read as the next one, or the bot answers before the program asks.
+func TestAMatchAlreadyOnTheScreenIsNotTheAnswer(t *testing.T) {
+	p := terminalHarness(t, "shell", hostdomain.ExecFull)
+	p.terminals.Screens[p.target(t)] = "password: \n"
+	p.drive(t, map[string]any{"text": "password: retry", "keys": []any{"Enter"}, "waitFor": "password:", "waitSeconds": 1})
+
+	if screen := p.screen(t); screen.Matched {
+		t.Fatalf("matched a prompt that was there before typing: %+v", screen)
+	}
+}
+
+// A drive that only reads takes what is on the screen now.
+func TestAReadMatchesWhatIsAlreadyThere(t *testing.T) {
+	p := terminalHarness(t, "shell", hostdomain.ExecFull)
+	p.terminals.Screens[p.target(t)] = "jordi@build-02:~$ "
+	p.drive(t, map[string]any{"waitFor": "\\$ $", "waitSeconds": 1})
+
+	if screen := p.screen(t); !screen.Matched {
+		t.Fatalf("a read missed the prompt on screen: %+v", screen)
+	}
+}
+
+// A retried approved drive arrives with the command id of its first try: it
+// is answered from that try, and its text is not typed a second time.
+func TestARetriedDriveIsNotTypedTwice(t *testing.T) {
+	p := terminalHarness(t, "shell", hostdomain.ExecFull)
+	p.drive(t, map[string]any{"text": "rm build", "keys": []any{"Enter"}, "waitSeconds": 0})
+	p.screen(t)
+	p.drive(t, map[string]any{"text": "rm build", "keys": []any{"Enter"}, "waitSeconds": 0})
+	deadline := time.Now().Add(2 * time.Second)
+	for p.screens() < 2 {
+		if time.Now().After(deadline) {
+			t.Fatal("the retry was not answered")
+		}
+		time.Sleep(time.Millisecond)
+	}
+	if got := strings.Count(p.terminals.Screens[p.target(t)], "rm build"); got != 1 {
+		t.Fatalf("typed %d times", got)
+	}
+}
+
+func (p *placesHarness) screens() int {
+	p.sent.mu.Lock()
+	defer p.sent.mu.Unlock()
+	count := 0
+	for _, sent := range p.sent.sent {
+		if s, ok := sent.(link.TerminalScreen); ok && s.CommandID == driveCommandID {
+			count++
+		}
+	}
+	return count
 }
 
 // A shell runs anything, so a host that only allows listed programs does not
