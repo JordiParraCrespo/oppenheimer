@@ -3,39 +3,37 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import type { Query, SDKUserMessage } from '@anthropic-ai/claude-agent-sdk';
 import { BotEngine, type BotEngineEvent, type BotTurnRequest } from '../bot-engine';
-import { describeError, failed, guardTurn, messageParts, ToolCallData } from '../turn';
+import { describeError, failed, guardTurn, ToolCallData } from '../turn';
 import { ClaudeEventTranslator } from './claude-events';
-import { claudeMessage, claudeOptions, renderTranscript, scratchDirs } from './claude-options';
+import { claudeMessageParts, claudeOptions, scratchDirs } from './claude-options';
 import { createToolServer } from './claude-tool-server';
 
 const STDERR_TAIL = 2_000;
 
 /**
- * The turn's message as Claude Code takes it, after the earlier turns'
- * transcript (`claudeMessage`): the text alone, or, with images, one user
- * message of the transcript and its parts (`messageParts`) as content blocks.
- * The stream ends after it; the SDK keeps the subprocess's input open until
- * the turn's result, for our tool server.
+ * The turn's message as Claude Code takes it (`claudeMessageParts`): its
+ * text alone when it has no images, else one user message of its parts as
+ * content blocks. The stream ends after it; the SDK keeps the subprocess's
+ * input open until the turn's result, for our tool server.
  */
 function claudePrompt(request: BotTurnRequest): string | AsyncIterable<SDKUserMessage> {
-  if (!request.images?.length) return claudeMessage(request);
-  const transcript = renderTranscript(request.history);
+  const parts = claudeMessageParts(request);
+  if (!request.images?.length) {
+    return parts.map((part) => (part.type === 'text' ? part.text : '')).join('\n\n');
+  }
   const message: SDKUserMessage = {
     type: 'user',
     parent_tool_use_id: null,
     message: {
       role: 'user',
-      content: [
-        ...(transcript ? [{ type: 'text' as const, text: transcript }] : []),
-        ...messageParts(request).map((part) =>
-          part.type === 'image'
-            ? {
-                type: 'image' as const,
-                source: { type: 'base64' as const, media_type: part.mimeType, data: part.data },
-              }
-            : { type: 'text' as const, text: part.text },
-        ),
-      ],
+      content: parts.map((part) =>
+        part.type === 'image'
+          ? {
+              type: 'image' as const,
+              source: { type: 'base64' as const, media_type: part.mimeType, data: part.data },
+            }
+          : { type: 'text' as const, text: part.text },
+      ),
     },
   };
   return (async function* () {

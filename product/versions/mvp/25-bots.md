@@ -1560,4 +1560,5 @@ The decisions it produced:
   provider's prompt cache nothing to hit. The transcript now opens the
   turn's message instead (`claudeMessage`), so the system prompt is the
   same bytes from turn to turn on every engine, as §2 says. The prompt
-  says the turn context comes after the transcript when there is one.
+  says only that the latest message carries the turn context, on every
+  engine; where it sits in the message is the engine's.
