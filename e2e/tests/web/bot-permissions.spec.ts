@@ -58,8 +58,13 @@ test('a bot’s tools set and reset, and its rules written and removed', async (
   const row = page.locator('[data-slot="settings-row"]').filter({ has: comment });
   await row.getByRole('button', { name: 'Default' }).click();
   await expect(page.getByText('No tools match.')).toBeVisible();
+  // Clear also drops a word still waiting on the search's debounce.
+  await search.pressSequentially('zz');
   await page.getByRole('button', { name: 'Clear' }).click();
   await expect(page).not.toHaveURL(/decision=/);
+  await page.waitForTimeout(600);
+  await expect(search).toHaveValue('');
+  await expect(page).not.toHaveURL(/q=/);
 
   // The GitHub group alone, with the comment tool back on Ask.
   await page.getByRole('button', { name: /^Group/ }).click();

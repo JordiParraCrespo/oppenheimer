@@ -9,6 +9,7 @@ import {
   useSuspenseBotPermissions,
 } from '@oppenheimer/frontend-consumer/react';
 import { ErrorAlert } from '@oppenheimer/frontend-web';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { BotToolGroup } from '@/features/bots/components/bot-tool-group';
 import { BotToolRow } from '@/features/bots/components/bot-tool-row';
@@ -35,6 +36,9 @@ export function BotToolPermissions({ botId }: { botId: string }) {
   const { filter, setQuery, setView, setGroup, clear } = useToolFilter();
 
   const list = deriveToolList(permissions.groups, filter);
+  // Clear empties the field too: a new key drops its half-typed word and the
+  // search still waiting on its debounce, which would otherwise land after.
+  const [cleared, setCleared] = useState(0);
 
   const summaryOf = (tools: Parameters<typeof summarizeToolGroup>[0]) => {
     const summary = summarizeToolGroup(tools);
@@ -64,6 +68,7 @@ export function BotToolPermissions({ botId }: { botId: string }) {
       />
       <div className="flex flex-wrap items-center gap-2 px-1">
         <ToolSearchField
+          key={cleared}
           label={t('bots.settings.permissions.search')}
           value={filter.query}
           onChange={setQuery}
@@ -99,7 +104,10 @@ export function BotToolPermissions({ botId }: { botId: string }) {
         {list.filtering ? (
           <button
             type="button"
-            onClick={clear}
+            onClick={() => {
+              clear();
+              setCleared((count) => count + 1);
+            }}
             className="ml-1 text-sm text-fg-muted transition-colors duration-fast hover:text-fg"
           >
             {t('bots.settings.permissions.filters.clear')}
