@@ -2,20 +2,22 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuGroup,
-  DropdownMenuItem,
   DropdownMenuLabel,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
   IconButton,
+  SearchList,
   SidebarListHead,
 } from '@oppenheimer/design-system-web';
 import { FolderInput, Pin, PinOff, Trash2, X } from '@oppenheimer/design-system-web/icons';
 import type { ProjectEntity, SessionEntity } from '@oppenheimer/frontend-consumer';
 import { useMoveSession } from '@oppenheimer/frontend-consumer/react';
 import { notifySuccess } from '@oppenheimer/frontend-web';
-import { useContext } from 'react';
+import { useContext, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { SessionPinsContext } from '../hooks/use-session-pins';
 import { useSelectedSessionIds, useSessionSelectionActions } from '../hooks/use-session-selection';
+import { currentProjectOf, moveProjectOptions } from '../lib/session-groups';
 import { settleEach } from '../lib/session-selection';
 
 /**
@@ -25,7 +27,8 @@ import { settleEach } from '../lib/session-selection';
  * search hides stays picked but is neither counted nor acted on: the bar does
  * only what the reader can see it doing.
  *
- * Pin and Move land at once, so the selection clears with them; a move that
+ * Move searches every project, as a row's own menu does; when the picked rows
+ * share one, it is ticked and not choosable. Pin and Move land at once, so the selection clears with them; a move that
  * fails for some rows keeps those picked and says so above the list. Delete
  * asks first, in its dialog, which the sidebar holds.
  */
@@ -48,6 +51,8 @@ export function SessionsSelectionBar({
   const move = useMoveSession();
   const picked = sessions.filter((session) => ids.includes(session.id));
   const allPinned = picked.length > 0 && picked.every((session) => pins.pins.includes(session.id));
+  const current = currentProjectOf(picked);
+  const [moveOpen, setMoveOpen] = useState(false);
 
   function togglePins() {
     // A pin goes on top, so the last one pinned leads: pin from the bottom up
@@ -85,7 +90,7 @@ export function SessionsSelectionBar({
       >
         {allPinned ? <PinOff /> : <Pin />}
       </IconButton>
-      <DropdownMenu>
+      <DropdownMenu open={moveOpen} onOpenChange={setMoveOpen}>
         <DropdownMenuTrigger
           render={
             <IconButton
@@ -98,15 +103,24 @@ export function SessionsSelectionBar({
         >
           <FolderInput />
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="min-w-47.5">
+        <DropdownMenuContent align="end" className="w-68">
           <DropdownMenuGroup>
             <DropdownMenuLabel>{t('sessions.sidebar.moveTitle')}</DropdownMenuLabel>
-            {projects.map((project) => (
-              <DropdownMenuItem key={project.id} onClick={() => void moveTo(project)}>
-                {project.isUnassigned ? t('projects.unassigned') : project.name}
-              </DropdownMenuItem>
-            ))}
           </DropdownMenuGroup>
+          <DropdownMenuSeparator />
+          <SearchList
+            className="-mx-1 -mb-1"
+            aria-label={t('sessions.sidebar.moveTitle')}
+            options={moveProjectOptions(t, projects, current)}
+            value={current}
+            onPick={(option) => {
+              const project = projects.find((each) => each.id === option.value);
+              setMoveOpen(false);
+              if (project) void moveTo(project);
+            }}
+            searchPlaceholder={t('common.search.projects')}
+            emptyText={(query) => t('common.search.noMatch', { query })}
+          />
         </DropdownMenuContent>
       </DropdownMenu>
       <IconButton

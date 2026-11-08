@@ -779,6 +779,14 @@ export class BotsRepository {
     });
   }
 
+  /** Places the group at `position` among the groups; the API closes the others up around it. */
+  moveGroup(id: string, position: number): Promise<BotGroupEntity> {
+    return callApi(BotsErrors.SAVE_GROUP_FAILED, async (api) => {
+      const data = await api.body(heyApiSdk.updateBotGroup({ path: { id }, body: { position } }));
+      return toGroup(data);
+    });
+  }
+
   /** Its bots stay, ungrouped. */
   removeGroup(id: string): Promise<void> {
     return callApi(BotsErrors.DELETE_GROUP_FAILED, async (api) => {
