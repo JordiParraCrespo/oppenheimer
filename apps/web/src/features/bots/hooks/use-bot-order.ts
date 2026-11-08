@@ -3,7 +3,7 @@ import type { BotEntity, BotGroupEntity } from '@oppenheimer/frontend-consumer';
 import { useUpdateBot } from '@oppenheimer/frontend-consumer/react';
 import { useState } from 'react';
 import { botSections, groupIdOf, inOrder, sectionOrder } from '../lib/bot-groups';
-import { PINNED_BOTS, splitPinnedBots } from '../lib/bot-pins';
+import { PINNED_BOTS, positionInGroup, splitPinnedBots } from '../lib/bot-pins';
 import type { BotPins } from './use-bot-pins';
 
 /**
@@ -40,23 +40,27 @@ export function useBotOrder(
   const byId = new Map(bots.map((bot) => [bot.id, bot]));
   const pinnedIds = order?.[PINNED_BOTS];
   const pinned = pinnedIds ? pinnedIds.flatMap((id) => byId.get(id) ?? []) : split.pinned;
-  const drawn = order ? inOrder(withHeld(sections, split.pinned, pinned), order) : sections;
+  const counted = sections.map((section) => ({
+    ...section,
+    pinned: split.pinned.filter((bot) => (bot.groupId ?? null) === section.id).length,
+  }));
+  const drawn = order ? inOrder(withHeld(counted, split.pinned, pinned), order) : counted;
 
   const sortable = useSortableGroups(
     { [PINNED_BOTS]: pinned.map((bot) => bot.id), ...sectionOrder(drawn) },
     // A drop settles here first and `onMove` then sets its order; a cancel only settles.
     (next, { settled }) => setOrder(settled ? null : next),
-    ({ id, from, to, index }, next) => {
+    ({ id, from, to }, next) => {
       if (to === PINNED_BOTS) {
         pins.placePins(next[PINNED_BOTS] ?? []);
         return;
       }
       if (from === PINNED_BOTS) pins.setPinned(id, false);
       setOrder(next);
-      move.mutate(
-        { id, input: { groupId: groupIdOf(to), position: index } },
-        { onSettled: () => setOrder(null) },
-      );
+      // The index the drag layer gives counts the drawn rows only; a pinned bot of the group is not one.
+      const groupId = groupIdOf(to);
+      const position = positionInGroup(bots, groupId, next[to] ?? [], id);
+      move.mutate({ id, input: { groupId, position } }, { onSettled: () => setOrder(null) });
     },
   );
 

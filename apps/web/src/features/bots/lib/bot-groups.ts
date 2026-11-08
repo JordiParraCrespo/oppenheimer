@@ -9,6 +9,8 @@ export interface BotSection {
   id: string | null;
   group: BotGroupEntity | null;
   bots: BotEntity[];
+  /** How many of its bots are pinned, and so drawn under Pinned instead. */
+  pinned?: number;
 }
 
 /**
@@ -48,12 +50,17 @@ export function botSections(
   );
 }
 
-/** The bot the sidebar draws first, in its groups' order then Ungrouped; undefined with none. */
+/**
+ * The bot the sidebar draws first: the top pinned one (`pins`, in pin order),
+ * else in its groups' order then Ungrouped; undefined with none.
+ */
 export function firstBot(
   bots: readonly BotEntity[],
   groups: readonly BotGroupEntity[],
+  pins: readonly string[],
 ): BotEntity | undefined {
-  return botSections(bots, groups, '').flatMap((section) => section.bots)[0];
+  const pinned = pins.flatMap((id) => bots.find((bot) => bot.id === id) ?? [])[0];
+  return pinned ?? botSections(bots, groups, '').flatMap((section) => section.bots)[0];
 }
 
 /** The key a section is dragged and folded by; Ungrouped has no id of its own. */

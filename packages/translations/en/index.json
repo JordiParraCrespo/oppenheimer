@@ -1473,6 +1473,7 @@
       "pin": "Pin",
       "unpin": "Unpin",
       "dropToPin": "Drop a bot here to pin it.",
+      "allPinned": "Its bots are under Pinned.",
       "rowActions": "Bot options",
       "settings": "Settings",
       "move": "Move to group",

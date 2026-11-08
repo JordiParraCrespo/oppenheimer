@@ -1481,6 +1481,7 @@
       "pin": "Fijar",
       "unpin": "Desfijar",
       "dropToPin": "Suelta un bot aquí para fijarlo.",
+      "allPinned": "Sus bots están en Fijados.",
       "rowActions": "Opciones del bot",
       "settings": "Configuración",
       "move": "Mover a un grupo",

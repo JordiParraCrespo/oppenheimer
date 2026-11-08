@@ -43,3 +43,28 @@ export function splitPinnedBots(
   const set = new Set(pins);
   return { pinned, rest: bots.filter((bot) => !set.has(bot.id)) };
 }
+
+/**
+ * Where a bot dropped in a group goes among every bot of that group, the
+ * pinned ones it does not draw included, as the API's `position` counts
+ * them. `drawn` is the group's rows after the drop. The bot goes right
+ * after the row now above it, or right before the one below at the top, so
+ * a pinned bot hidden between them keeps its place.
+ */
+export function positionInGroup(
+  all: readonly BotEntity[],
+  groupId: string | null,
+  drawn: readonly string[],
+  moved: string,
+): number {
+  const others = all
+    .filter((bot) => (bot.groupId ?? null) === groupId && bot.id !== moved)
+    .sort((a, b) => a.position - b.position)
+    .map((bot) => bot.id);
+  const at = drawn.indexOf(moved);
+  const above = drawn[at - 1];
+  if (above !== undefined && others.includes(above)) return others.indexOf(above) + 1;
+  const below = drawn[at + 1];
+  if (below !== undefined && others.includes(below)) return others.indexOf(below);
+  return at <= 0 ? 0 : others.length;
+}

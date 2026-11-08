@@ -3,7 +3,7 @@ import { storedList } from '@oppenheimer/frontend-web';
 import { act, renderHook } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
 import { useBotPins } from '../hooks/use-bot-pins';
-import { BOT_PINS_KEY, placedBotPins, splitPinnedBots } from '../lib/bot-pins';
+import { BOT_PINS_KEY, placedBotPins, positionInGroup, splitPinnedBots } from '../lib/bot-pins';
 
 /**
  * A pinned bot comes back pinned on the next visit, on top of the ones
@@ -11,6 +11,8 @@ import { BOT_PINS_KEY, placedBotPins, splitPinnedBots } from '../lib/bot-pins';
  */
 
 const bot = (id: string, name = id) => ({ id, name }) as BotEntity;
+const inGroup = (id: string, position: number, groupId: string | null = 'g') =>
+  ({ id, name: id, groupId, position }) as BotEntity;
 const idsOf = (rows: { id: string }[]) => rows.map((row) => row.id);
 
 afterEach(() => window.localStorage.clear());
@@ -62,5 +64,27 @@ describe('splitPinnedBots', () => {
     );
     expect(idsOf(pinned)).toEqual(['a']);
     expect(idsOf(rest)).toEqual(['c']);
+  });
+});
+
+describe('positionInGroup', () => {
+  // Group g holds A, P (pinned, so not drawn there) and B.
+  const all = [inGroup('A', 0), inGroup('P', 1), inGroup('B', 2)];
+
+  it('saves a bot dragged below its neighbour after it, past the pinned bot it does not draw', () => {
+    // Drawn [A, B], A dragged below B: the API must hear [P, B, A], not [P, A, B].
+    expect(positionInGroup(all, 'g', ['B', 'A'], 'A')).toBe(2);
+  });
+
+  it('saves a bot dropped at the end of a group after its last drawn row', () => {
+    expect(positionInGroup([...all, inGroup('C', 0, null)], 'g', ['A', 'B', 'C'], 'C')).toBe(3);
+  });
+
+  it('saves a bot dropped at the top before the first drawn row', () => {
+    expect(positionInGroup(all, 'g', ['B', 'A'], 'B')).toBe(0);
+  });
+
+  it('saves a bot dropped in an empty group at its start', () => {
+    expect(positionInGroup(all, 'empty', ['A'], 'A')).toBe(0);
   });
 });
