@@ -142,7 +142,11 @@ function RoutineCard({
             {icon}
             {trigger}
           </span>
-          {prompt ? <RoutinePrompt more={label.more} less={label.less}>{prompt}</RoutinePrompt> : null}
+          {prompt ? (
+            <RoutinePrompt key={typeof prompt === 'string' ? prompt : undefined} more={label.more} less={label.less}>
+              {prompt}
+            </RoutinePrompt>
+          ) : null}
           {last || next ? (
             <span className="figures flex gap-4 font-mono text-[11.5px] text-fg-subtle">
               {last ? (
@@ -166,6 +170,8 @@ function RoutineCard({
 /**
  * The prompt, three lines until opened. Show more appears only when the text
  * runs past them, measured on the clamped box so a short prompt has no toggle.
+ * The card keys it on the text, so a prompt that changes in place is measured
+ * again even when the clamped box keeps its size.
  */
 function RoutinePrompt({ more, less, children }: { more: string; less: string; children: React.ReactNode }) {
   const [open, setOpen] = React.useState(false);
