@@ -76,7 +76,7 @@ a{color:var(--link);text-decoration:none}a:hover{text-decoration:underline}
   | sh -s -- --token opk_7f3a9c</pre>
 </sc-if>
 <sc-if value="{{ showingPrompt }}">
-<pre style="margin:0;padding:12px;height:152px;overflow-y:auto;overscroll-behavior:contain;box-sizing:border-box;font-family:var(--font-mono);font-size:11.5px;line-height:1.7;color:var(--fg);white-space:pre-wrap;word-break:break-word">You are setting up this machine as an Oppenheimer host.
+<pre data-install-prompt="true" style="margin:0;padding:12px;height:152px;overflow-y:auto;overscroll-behavior:contain;box-sizing:border-box;font-family:var(--font-mono);font-size:11.5px;line-height:1.7;color:var(--fg);white-space:pre-wrap;word-break:break-word">You are setting up this machine as an Oppenheimer host.
 
 1. Check the OS and architecture with uname -sm. Supported: Linux x86_64/arm64, macOS arm64.
 2. Confirm git (2.40+) and tmux (3.2+) are installed. If either is missing, install it with the system package manager and report what you installed.
@@ -218,11 +218,11 @@ Listening for this host…
 </div>
 </sc-if>
 
-<sc-if value="{{ isHosts }}">
+<sc-if value="{{ isHostList }}">
 <div style="display:flex;align-items:flex-end;gap:16px">
 <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:6px">
 <h1 style="margin:0;font-family:var(--font-display);font-size:28px;font-weight:600;letter-spacing:-0.02em">Hosts</h1>
-<p style="margin:0;font-size:14px;color:var(--fg-muted);text-wrap:pretty">Servers your sessions run on. Nothing on a host is exposed to the internet.</p>
+<p style="margin:0;font-size:14px;color:var(--fg-muted);text-wrap:pretty">Servers your agents run on. Open one to see its agents and worktrees, and to free disk.</p>
 </div>
 <button class="op-btn op-btn--primary op-btn--md" type="button" onClick="{{ openAdd }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="plus" size="15" hint-size="15px,15px"></x-import>Add host</button>
 </div>
@@ -230,49 +230,82 @@ Listening for this host…
 <sc-if value="{{ noHosts }}">
 <div style="display:flex;flex-direction:column;align-items:flex-start;gap:6px;padding:28px 24px;background:var(--card);border:1px solid var(--border-subtle);border-radius:18px">
 <span style="font-weight:500">No hosts yet</span>
-<span style="font-size:13px;color:var(--fg-muted)">Hosts you connect appear here with their live session count. Sessions cannot start until one is online.</span>
+<span style="font-size:13px;color:var(--fg-muted)">Hosts you connect appear here with their agents and disk use. Sessions cannot start until one is online.</span>
 </div>
 </sc-if>
 
 <sc-if value="{{ hasHosts }}">
-<div style="display:flex;flex-direction:column;gap:10px">
+<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px">
 <sc-for list="{{ hosts }}" as="h" hint-placeholder-count="3">
-<div style="display:flex;flex-direction:column;background:var(--card);border:1px solid var(--border-subtle);border-radius:18px">
-<div style="display:flex;align-items:center;gap:14px;padding:12px 12px 12px 18px">
+<button type="button" onClick="{{ h.open }}" aria-label="Open {{ h.name }}" style="display:flex;flex-direction:column;min-width:0;padding:0;box-sizing:border-box;overflow:hidden;background:var(--card);border:1px solid var(--border-subtle);border-radius:18px;color:var(--fg);font:inherit;text-align:left;cursor:pointer;transition:border-color 80ms cubic-bezier(.4,0,.2,1)" style-hover="border-color:var(--border)">
+<div style="display:flex;flex-direction:column;gap:3px;width:100%;box-sizing:border-box;padding:18px 18px 0">
+<div style="display:flex;align-items:center;gap:10px;min-width:0">
 <span style="width:7px;height:7px;flex:none;border-radius:980px;background:{{ h.dot }};box-shadow:{{ h.ring }}"></span>
-<div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px">
-<sc-if value="{{ h.renaming }}">
-<div style="display:flex;gap:6px;align-items:center" onClick="{{ stop }}">
-<div class="op-input op-input--md" style="width:220px"><input class="op-input__el" type="text" aria-label="Host name" value="{{ renameVal }}" onChange="{{ setRenameVal }}" onKeyDown="{{ renameKey }}" autoFocus="{{ true }}" style="font-family:var(--font-mono);font-size:13px"></div>
+<span style="flex:1;min-width:0;font-size:15px;font-weight:500;letter-spacing:-0.011em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ h.name }}</span>
+<span style="flex:none;font-size:12.5px;color:var(--fg-muted)">{{ h.stateWord }}</span>
+</div>
+<span style="padding-left:17px;font-size:12.5px;color:var(--fg-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ h.meta }}</span>
+</div>
+<div style="display:flex;flex-direction:column;gap:8px;width:100%;box-sizing:border-box;padding:20px 18px 0">
+<span style="display:flex;align-items:baseline;justify-content:space-between;gap:8px"><span style="font-size:12px;color:var(--fg-muted)">CPU</span><span style="font-family:var(--font-mono);font-size:12.5px;font-variant-numeric:tabular-nums">{{ h.cpuNow }}</span></span>
+<sc-if value="{{ h.live }}" hint-placeholder-val="{{ true }}"><div style="height:52px">{{ h.cpuChart }}</div></sc-if>
+<sc-if value="{{ h.offline }}"><div style="height:52px;display:flex;align-items:center;justify-content:center;border-radius:10px;background:var(--hover-surface);font-size:12px;color:var(--fg-subtle)">No live data · last seen {{ h.seen }}</div></sc-if>
+</div>
+<div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;width:100%;box-sizing:border-box;padding:18px 18px 18px">
+<div style="display:flex;flex-direction:column;gap:7px;min-width:0">
+<span style="display:flex;align-items:baseline;justify-content:space-between;gap:8px"><span style="font-size:12px;color:var(--fg-muted)">Memory</span><span style="font-family:var(--font-mono);font-size:12.5px;font-variant-numeric:tabular-nums;color:{{ h.memFg }}">{{ h.memPct }}</span></span>
+<span style="display:block;height:4px;border-radius:980px;background:var(--hover-surface);overflow:hidden"><span style="display:block;height:100%;width:{{ h.memW }};border-radius:980px;background:{{ h.memBar }};transition:width 400ms cubic-bezier(.4,0,.2,1)"></span></span>
+<span style="font-family:var(--font-mono);font-size:11.5px;font-variant-numeric:tabular-nums;color:var(--fg-subtle);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ h.memSub }}</span>
+</div>
+<div style="display:flex;flex-direction:column;gap:7px;min-width:0">
+<span style="display:flex;align-items:baseline;justify-content:space-between;gap:8px"><span style="font-size:12px;color:var(--fg-muted)">Disk</span><span style="font-family:var(--font-mono);font-size:12.5px;font-variant-numeric:tabular-nums;color:{{ h.diskFg }}">{{ h.diskPct }}</span></span>
+<span style="display:block;height:4px;border-radius:980px;background:var(--hover-surface);overflow:hidden"><span style="display:block;height:100%;width:{{ h.diskW }};border-radius:980px;background:{{ h.diskBar }};transition:width 400ms cubic-bezier(.4,0,.2,1)"></span></span>
+<span style="font-family:var(--font-mono);font-size:11.5px;font-variant-numeric:tabular-nums;color:var(--fg-subtle);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ h.diskSub }}</span>
+</div>
+</div>
+<div style="display:flex;align-items:center;gap:8px;width:100%;box-sizing:border-box;padding:12px 18px;border-top:1px solid var(--border-subtle);font-size:12.5px;color:var(--fg-muted)">
+<span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ h.foot }}</span>
+<sc-if value="{{ h.hasReclaim }}"><span style="flex:none;font-family:var(--font-mono);font-variant-numeric:tabular-nums">{{ h.reclaim }}</span></sc-if>
+</div>
+</button>
+</sc-for>
+</div>
+</sc-if>
+</sc-if>
+
+<sc-if value="{{ isHostDetail }}">
+<button class="op-rpage__back" type="button" onClick="{{ closeHost }}" style="margin-bottom:-22px"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="chevron-left" size="15" hint-size="15px,15px"></x-import>Hosts</button>
+<header class="op-ph" style="margin-bottom:-8px">
+<div class="op-ph__row">
+<span class="op-ph__icon"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="cpu" size="16" hint-size="16px,16px"></x-import></span>
+<sc-if value="{{ d.renaming }}">
+<div style="flex:1;min-width:0;display:flex;gap:6px;align-items:center" onClick="{{ stop }}">
+<div class="op-input op-input--md" style="width:260px"><input class="op-input__el" type="text" aria-label="Host name" value="{{ renameVal }}" onChange="{{ setRenameVal }}" onKeyDown="{{ renameKey }}" autoFocus="{{ true }}" style="font-family:var(--font-mono);font-size:13px"></div>
 <button class="op-btn op-btn--secondary op-btn--sm" type="button" onClick="{{ commitRename }}">Save</button>
 <button class="op-btn op-btn--ghost op-btn--sm" type="button" onClick="{{ cancelRename }}">Cancel</button>
 </div>
 </sc-if>
-<sc-if value="{{ h.showName }}" hint-placeholder-val="{{ true }}"><span style="font-family:var(--font-mono);font-size:14px">{{ h.name }}</span></sc-if>
-<span style="display:flex;align-items:center;flex-wrap:wrap;row-gap:2px;column-gap:12px"><span style="font-size:12.5px;color:var(--fg-muted)">{{ h.meta }}</span>
-<sc-if value="{{ h.hasDisk }}"><span title="{{ h.diskTip }}" style="display:flex;align-items:center;flex-wrap:wrap;row-gap:2px;column-gap:8px;font-size:12px;color:var(--fg-muted)"><span style="width:72px;height:4px;flex:none;border-radius:980px;background:var(--hover-surface);overflow:hidden"><span style="display:block;height:100%;width:{{ h.diskPct }};border-radius:980px;background:{{ h.diskBar }}"></span></span><span style="font-family:var(--font-mono);font-variant-numeric:tabular-nums;white-space:nowrap;color:{{ h.diskFg }}">{{ h.diskUsed }}</span><span style="white-space:nowrap">{{ h.diskNote }}</span></span></sc-if></span>
-</div>
-<div style="display:flex;flex-direction:column;align-items:flex-end;gap:2px;min-width:120px">
-<span style="font-size:13px">{{ h.state }}</span>
-<span style="font-family:var(--font-mono);font-size:11.5px;color:var(--fg-subtle);font-variant-numeric:tabular-nums">{{ h.seen }}</span>
-</div>
-<div style="position:relative">
-<button class="op-iconbtn op-iconbtn--sm" type="button" aria-label="{{ h.name }} actions" onClick="{{ h.toggleMenu }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="ellipsis" size="16" hint-size="16px,16px"></x-import></button>
-<sc-if value="{{ h.menuOpen }}">
+<sc-if value="{{ d.showName }}" hint-placeholder-val="{{ true }}"><h1 class="op-ph__title" style="font-family:var(--font-mono);font-size:22px;letter-spacing:-0.01em">{{ d.name }}</h1></sc-if>
+<div class="op-ph__actions" style="position:relative">
+<button class="op-iconbtn op-iconbtn--md" type="button" aria-label="Host actions" onClick="{{ d.toggleMenu }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="ellipsis" size="16" hint-size="16px,16px"></x-import></button>
+<sc-if value="{{ d.menuOpen }}">
 <div class="op-menu" data-side="bottom-end" role="menu" onClick="{{ stop }}">
-<button class="op-menu__item" type="button" onClick="{{ h.rename }}"><span class="op-menu__label-text">Rename</span></button>
-<button class="op-menu__item" type="button" onClick="{{ h.copyId }}"><span class="op-menu__label-text">Copy host ID</span><span class="op-menu__shortcut" style="font-family:var(--font-mono)">{{ h.id }}</span></button>
+<button class="op-menu__item" type="button" onClick="{{ d.rename }}"><span class="op-menu__label-text">Rename</span></button>
+<button class="op-menu__item" type="button" onClick="{{ d.copyId }}"><span class="op-menu__label-text">Copy host ID</span><span class="op-menu__shortcut" style="font-family:var(--font-mono)">{{ d.id }}</span></button>
 <div class="op-menu__sep"></div>
-<button class="op-menu__item" type="button" data-variant="danger" onClick="{{ h.remove }}"><span class="op-menu__label-text">Remove host</span></button>
+<button class="op-menu__item" type="button" data-variant="danger" onClick="{{ d.remove }}"><span class="op-menu__label-text">Remove host</span></button>
 </div>
 </sc-if>
 </div>
 </div>
-<sc-if value="{{ h.offline }}">
-<div style="display:flex;flex-direction:column;gap:14px;margin:0 16px 0 41px;padding:18px 0 20px;border-top:1px solid var(--border-subtle)">
-<p style="margin:0;max-width:62ch;font-size:13px;line-height:1.5;color:var(--fg-muted);text-wrap:pretty">{{ h.offText }}</p>
+<div class="op-ph__meta"><span style="display:flex;align-items:center;gap:6px;color:var(--fg)"><span style="width:7px;height:7px;flex:none;border-radius:980px;background:{{ d.dot }};box-shadow:{{ d.ring }}"></span>{{ d.stateWord }}</span><span class="op-ph__sep">·</span><span>{{ d.meta }}</span></div>
+</header>
+
+<sc-if value="{{ d.offline }}">
+<div style="display:flex;flex-direction:column;gap:14px;padding:18px 20px 20px;background:var(--card);border:1px solid var(--border-subtle);border-radius:18px">
+<p style="margin:0;max-width:62ch;font-size:13px;line-height:1.5;color:var(--fg-muted);text-wrap:pretty">{{ d.offText }}</p>
 <div style="display:flex;flex-direction:column;gap:10px;max-width:520px">
-<sc-for list="{{ h.cmds }}" as="c" hint-placeholder-count="2">
+<sc-for list="{{ d.cmds }}" as="c" hint-placeholder-count="2">
 <div style="display:flex;flex-direction:column;gap:6px">
 <span style="font-size:12.5px;color:var(--fg-muted)">{{ c.lead }}</span>
 <div style="display:flex;align-items:center;gap:8px;height:34px;padding:0 4px 0 12px;border-radius:10px;background:var(--hover-surface);font-family:var(--font-mono);font-size:12.5px">
@@ -284,32 +317,134 @@ Listening for this host…
 </sc-for>
 </div>
 <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
-<button class="op-btn op-btn--secondary op-btn--sm" type="button" disabled="{{ h.checking }}" onClick="{{ h.check }}">{{ h.checkLabel }}</button>
-<span style="font-family:var(--font-mono);font-size:11.5px;font-variant-numeric:tabular-nums;color:var(--fg-subtle)">{{ h.checkedNote }}</span>
+<button class="op-btn op-btn--secondary op-btn--sm" type="button" disabled="{{ d.checking }}" onClick="{{ d.check }}">{{ d.checkLabel }}</button>
+<span style="font-family:var(--font-mono);font-size:11.5px;font-variant-numeric:tabular-nums;color:var(--fg-subtle)">{{ d.checkedNote }}</span>
 </div>
 </div>
 </sc-if>
+
+
+<div class="op-tabs op-tabs--line" role="tablist" style="gap:24px;margin-bottom:-12px">
+<sc-for list="{{ d.tabs }}" as="t" hint-placeholder-count="3"><button class="op-tab" type="button" role="tab" aria-selected="{{ t.sel }}" data-active="{{ t.on }}" onClick="{{ t.pick }}" style="gap:7px;font-size:14px">{{ t.label }}<span style="font-family:var(--font-mono);font-size:12px;font-variant-numeric:tabular-nums;color:var(--fg-subtle)">{{ t.n }}</span></button></sc-for>
+</div>
+<sc-if value="{{ d.tabActivity }}" hint-placeholder-val="{{ true }}">
+<section style="display:flex;flex-direction:column;gap:12px">
+<div style="display:flex;align-items:center;justify-content:flex-end;gap:10px;padding:0 4px;margin-top:-4px">
+<sc-if value="{{ d.live }}" hint-placeholder-val="{{ true }}"><span style="display:flex;align-items:center;gap:7px;font-size:12px;color:var(--fg-muted)"><span style="width:6px;height:6px;flex:none;border-radius:980px;background:var(--success);animation:op-pulse-dot 1.4s ease-in-out infinite"></span>Live · every 2s</span></sc-if>
+</div>
+<sc-if value="{{ d.offline }}"><div style="padding:18px 20px;background:var(--card);border:1px solid var(--border-subtle);border-radius:18px;font-size:13px;color:var(--fg-muted)">Live CPU, memory, disk and network resume when the runner reconnects.</div></sc-if>
+<sc-if value="{{ d.live }}" hint-placeholder-val="{{ true }}">
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:12px">
+<sc-for list="{{ d.tiles }}" as="t" hint-placeholder-count="4">
+<div style="display:flex;flex-direction:column;gap:14px;min-width:0;padding:18px 20px 16px;background:var(--card);border:1px solid var(--border-subtle);border-radius:18px">
+<div style="display:flex;flex-direction:column;gap:2px">
+<span style="display:flex;align-items:baseline;gap:8px"><span style="flex:1;font-size:13px;color:var(--fg-muted)">{{ t.label }}</span><span style="font-size:12px;color:var(--fg-subtle)">{{ t.note }}</span></span>
+<span style="font-family:var(--font-mono);font-size:28px;font-variant-numeric:tabular-nums;letter-spacing:-0.02em">{{ t.v }}<span style="margin-left:4px;font-size:0.55em;letter-spacing:0;color:var(--fg-muted)">{{ t.u }}</span></span>
+</div>
+<div style="height:84px">{{ t.chart }}</div>
+<div style="display:flex;flex-wrap:wrap;gap:6px 18px">
+<sc-for list="{{ t.legend }}" as="l" hint-placeholder-count="2"><span style="display:flex;align-items:center;gap:7px;font-size:12.5px;color:var(--fg-muted)"><span style="width:7px;height:7px;flex:none;border-radius:980px;background:{{ l.color }}"></span>{{ l.label }}<span style="font-family:var(--font-mono);font-size:12px;font-variant-numeric:tabular-nums;color:var(--fg)">{{ l.v }}</span></span></sc-for>
+</div>
 </div>
 </sc-for>
 </div>
+<div style="display:flex;flex-direction:column;padding:6px;background:var(--card);border:1px solid var(--border-subtle);border-radius:18px">
+<div style="display:flex;align-items:center;gap:12px;height:34px;padding:0 12px;font-size:12px;color:var(--fg-subtle)">
+<span style="flex:1;min-width:0">Process</span><span style="flex:1.3;min-width:0">Agent</span><span style="width:64px;text-align:right">CPU</span><span style="width:80px;text-align:right">Memory</span>
+</div>
+<sc-for list="{{ d.procs }}" as="p" hint-placeholder-count="5">
+<div style="display:flex;align-items:center;gap:12px;min-height:42px;padding:0 12px;border-radius:10px;transition:background 80ms cubic-bezier(.4,0,.2,1)" style-hover="background:var(--hover-surface)">
+<span style="flex:1;min-width:0;font-family:var(--font-mono);font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ p.name }}</span>
+<span style="flex:1.3;min-width:0;font-size:13px;color:{{ p.agentFg }};overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ p.agent }}</span>
+<span style="width:64px;text-align:right;font-family:var(--font-mono);font-size:12.5px;font-variant-numeric:tabular-nums">{{ p.cpu }}</span>
+<span style="width:80px;text-align:right;font-family:var(--font-mono);font-size:12.5px;font-variant-numeric:tabular-nums;color:var(--fg-muted)">{{ p.mem }}</span>
+</div>
+</sc-for>
+</div>
+</sc-if>
+</section>
+</sc-if>
+<sc-if value="{{ d.tabWorktrees }}">
+<section style="display:flex;flex-direction:column;gap:12px">
+<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:0 4px">
+<div class="op-runs__filters" style="padding:0;margin:0;gap:2px">
+<sc-for list="{{ d.filters }}" as="t" hint-placeholder-count="4"><button class="op-rp__tab" type="button" data-on="{{ t.on }}" onClick="{{ t.pick }}">{{ t.label }}<span class="op-runs__n">{{ t.n }}</span></button></sc-for>
+</div>
+</div>
+<div style="display:flex;flex-direction:column;padding:6px;background:var(--card);border:1px solid var(--border-subtle);border-radius:18px">
+<sc-for list="{{ d.wts }}" as="w" hint-placeholder-count="4">
+<div style="display:flex;align-items:center;gap:12px;min-height:50px;padding:0 6px 0 12px;border-radius:10px;transition:background 80ms cubic-bezier(.4,0,.2,1)" style-hover="background:var(--hover-surface)">
+<sc-if value="{{ w.selectable }}"><button type="button" role="checkbox" aria-checked="{{ w.on }}" aria-label="Select {{ w.branch }}" onClick="{{ w.toggle }}" style="display:flex;flex:none;padding:0;border:0;background:none;cursor:pointer"><span class="op-cbox" data-on="{{ w.on }}"></span></button></sc-if>
+<sc-if value="{{ w.locked }}"><span title="{{ w.lockTip }}" style="width:16px;flex:none;display:flex;justify-content:center;color:var(--fg-subtle)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="lock" size="13" hint-size="13px,13px"></x-import></span></sc-if>
+<span style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px"><span style="font-family:var(--font-mono);font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ w.branch }}</span><span style="font-size:12px;color:var(--fg-subtle);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ w.sub }}</span></span>
+<span style="flex:none;font-size:12.5px;color:{{ w.stFg }}">{{ w.stLabel }}</span>
+<span style="flex:none;width:64px;text-align:right;font-family:var(--font-mono);font-size:12.5px;font-variant-numeric:tabular-nums">{{ w.size }}</span>
+<sc-if value="{{ w.selectable }}"><button class="op-iconbtn op-iconbtn--sm" type="button" aria-label="Remove {{ w.branch }}" title="Remove worktree" onClick="{{ w.remove }}" style="flex:none;color:var(--fg-subtle)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="x" size="14" hint-size="14px,14px"></x-import></button></sc-if>
+<sc-if value="{{ w.locked }}"><span style="width:28px;flex:none"></span></sc-if>
+</div>
+</sc-for>
+<sc-if value="{{ d.wtNone }}"><div style="padding:14px 12px;font-size:13px;color:var(--fg-muted)">{{ d.wtNoneText }}</div></sc-if>
+<sc-if value="{{ d.hasSel }}">
+<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:6px;padding:10px 6px 4px 12px;border-top:1px solid var(--border-subtle)">
+<span style="flex:1;min-width:0;font-size:13px;color:var(--fg-muted)">{{ d.selText }}</span>
+<button class="op-btn op-btn--ghost op-btn--sm" type="button" onClick="{{ d.clearSel }}">Clear</button>
+<button class="op-btn op-btn--danger op-btn--sm" type="button" onClick="{{ d.removeSel }}">{{ d.removeSelLabel }}</button>
+</div>
+</sc-if>
+</div>
+</section>
+</sc-if>
+<sc-if value="{{ d.tabStorage }}">
+<section style="display:flex;flex-direction:column;gap:12px">
+<div style="display:flex;align-items:baseline;gap:8px;padding:0 4px"><span style="font-family:var(--font-mono);font-size:12px;font-variant-numeric:tabular-nums;color:{{ d.diskFg }}">{{ d.diskLine }}</span></div>
+<div style="display:flex;flex-direction:column;gap:18px;padding:20px 20px 16px;background:var(--card);border:1px solid var(--border-subtle);border-radius:18px">
+<div style="display:flex;flex-direction:column;gap:12px">
+<div style="display:flex;gap:2px;height:8px;border-radius:980px;overflow:hidden;background:var(--hover-surface)">
+<sc-for list="{{ d.segs }}" as="g" hint-placeholder-count="4"><span style="flex:none;width:{{ g.pct }};min-width:3px;height:100%;background:{{ g.color }};transition:width 400ms cubic-bezier(.4,0,.2,1)"></span></sc-for>
+</div>
+<div style="display:flex;flex-wrap:wrap;gap:6px 18px">
+<sc-for list="{{ d.segs }}" as="g" hint-placeholder-count="4"><span style="display:flex;align-items:center;gap:7px;font-size:12.5px;color:var(--fg-muted)"><span style="width:7px;height:7px;flex:none;border-radius:980px;background:{{ g.color }}"></span>{{ g.label }}<span style="font-family:var(--font-mono);font-size:12px;font-variant-numeric:tabular-nums;color:var(--fg)">{{ g.size }}</span></span></sc-for>
+</div>
+</div>
+<div style="display:flex;flex-direction:column;gap:2px;margin:0 -10px">
+<span style="padding:0 10px 6px;font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:0.02em;color:var(--fg-subtle)">Clean up</span>
+<sc-for list="{{ d.items }}" as="i" hint-placeholder-count="4">
+<button type="button" role="checkbox" aria-checked="{{ i.on }}" disabled="{{ i.disabled }}" onClick="{{ i.toggle }}" style="display:flex;align-items:center;gap:12px;width:100%;min-height:52px;padding:6px 10px;box-sizing:border-box;border:0;border-radius:10px;background:none;color:var(--fg);font:inherit;text-align:left;cursor:pointer;opacity:{{ i.op }};transition:background 80ms cubic-bezier(.4,0,.2,1)" style-hover="background:var(--hover-surface)">
+<span class="op-cbox" data-on="{{ i.on }}"></span>
+<span style="flex:1;min-width:0;display:flex;flex-direction:column;gap:1px"><span style="font-size:14px">{{ i.label }}</span><span style="font-size:12.5px;color:var(--fg-muted)">{{ i.desc }}</span></span>
+<span style="flex:none;font-size:12.5px;color:var(--fg-subtle)">{{ i.count }}</span>
+<span style="flex:none;width:72px;text-align:right;font-family:var(--font-mono);font-size:13px;font-variant-numeric:tabular-nums">{{ i.size }}</span>
+</button>
+</sc-for>
+</div>
+<div style="display:flex;align-items:center;gap:12px;padding-top:14px;border-top:1px solid var(--border-subtle)">
+<span style="flex:1;min-width:0;display:flex;align-items:center;gap:8px;font-size:13px;color:var(--fg-muted);text-wrap:pretty">
+<sc-if value="{{ d.cleaning }}"><span style="width:7px;height:7px;flex:none;border-radius:980px;background:var(--fg-subtle);animation:op-pulse-dot 1.4s ease-in-out infinite"></span></sc-if>
+<sc-if value="{{ d.freedNow }}"><span style="display:flex;color:var(--success)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="check" size="14" hint-size="14px,14px"></x-import></span></sc-if>
+{{ d.cleanNote }}</span>
+<button class="op-btn op-btn--primary op-btn--sm" type="button" disabled="{{ d.cleanOff }}" onClick="{{ d.clean }}">{{ d.cleanLabel }}</button>
+</div>
+</div>
+</section>
 </sc-if>
 </sc-if>
 
 </div>
 </main>
 
-<sc-if value="{{ removeOpen }}">
-<div class="op-scrim" onClick="{{ closeRemove }}">
+<sc-if value="{{ dlgOpen }}">
+<div class="op-scrim" onClick="{{ closeDlg }}">
 <div class="op-dialog" role="dialog" aria-modal="true" onClick="{{ stop }}">
-<div class="op-dialog__head"><div class="op-dialog__title">Remove {{ removeName }}?</div></div>
-<div class="op-dialog__desc" style="text-wrap:pretty">{{ removeCost }}</div>
+<div class="op-dialog__head"><div class="op-dialog__title">{{ dlgTitle }}</div></div>
+<div class="op-dialog__desc" style="text-wrap:pretty">{{ dlgDesc }}</div>
 <div class="op-dialog__foot">
-<button class="op-btn op-btn--ghost op-btn--md" type="button" onClick="{{ closeRemove }}">Cancel</button>
-<button class="op-btn op-btn--danger op-btn--md" type="button" onClick="{{ confirmRemove }}">Remove host</button>
+<button class="op-btn op-btn--ghost op-btn--md" type="button" onClick="{{ closeDlg }}">Cancel</button>
+<button class="{{ dlgBtnClass }}" type="button" onClick="{{ dlgConfirm }}">{{ dlgBtn }}</button>
 </div>
 </div>
 </div>
 </sc-if>
+
 
 
 
@@ -317,10 +452,79 @@ Listening for this host…
 </x-dc>
 <script type="text/x-dc" data-dc-script data-props="{&quot;section&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;profile&quot;,&quot;watching&quot;,&quot;hosts&quot;],&quot;default&quot;:&quot;profile&quot;,&quot;tsType&quot;:&quot;'profile' | 'hosts'&quot;,&quot;section&quot;:&quot;State&quot;},&quot;hostsEmpty&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;State&quot;}}">
 const SEED_HOSTS = [
-  { id: 'h_7f3a', name: 'jordis-mac-studio', meta: 'macOS 15 · local · runner 0.14.2', disk: [612, 1000], status: 'running', sessions: 2, seen: 'now' },
-  { id: 'h_2c91', name: 'optimus', meta: 'Ubuntu 24.04 · 32 vCPU · eu-west · runner 0.14.2', disk: [184, 500], status: 'idle', sessions: 0, seen: 'now' },
-  { id: 'h_b40e', name: 'fable', meta: 'Debian 12 · 16 vCPU · us-east · runner 0.13.8', disk: [231, 256], status: 'offline', sessions: 0, seen: '2 days ago', waiting: 3, queued: 1, outdated: true },
+  { id: 'h_7f3a', name: 'jordis-mac-studio', os: 'macOS 15', spec: '12 cores · local', cores: 12, ram: 64, runner: '0.14.2', disk: 1000, other: 585.5, caches: 8.4, logs: [2.1, 1.3], status: 'online', seen: 'now',
+    agents: [
+      { id: 's1', name: 'Fix flaky retry test', repo: 'runner', branch: 'fix/retry-flake', cli: 'claude', state: 'running', age: '14m' },
+      { id: 's2', name: 'Migrate auth to tokens v2', repo: 'oppenheimer', branch: 'feat/tokens-v2', cli: 'codex', state: 'input', age: '1h 08m' },
+    ],
+    worktrees: [
+      { id: 'w1', branch: 'fix/retry-flake', repo: 'runner', size: 1.2, used: 'now', agent: 's1' },
+      { id: 'w2', branch: 'feat/tokens-v2', repo: 'oppenheimer', size: 3.4, used: 'now', agent: 's2' },
+      { id: 'w7', branch: 'fix/sidebar-scroll', repo: 'console-web', size: 2.2, used: '3 days ago', days: 3, merged: true },
+      { id: 'w3', branch: 'chore/bump-deps', repo: 'oppenheimer', size: 2.9, used: '9 days ago', days: 9, merged: true },
+      { id: 'w4', branch: 'docs/quickstart', repo: 'docs', size: 0.4, used: '12 days ago', days: 12, merged: true },
+      { id: 'w5', branch: 'spike/streaming-ui', repo: 'console-web', size: 4.1, used: '23 days ago', days: 23, dirty: true },
+      { id: 'w6', branch: 'feat/host-metrics', repo: 'runner', size: 1.8, used: '31 days ago', days: 31 },
+    ] },
+  { id: 'h_2c91', name: 'optimus', os: 'Ubuntu 24.04', spec: '32 vCPU · eu-west', cores: 32, ram: 128, runner: '0.14.2', disk: 500, other: 172.2, caches: 3.1, logs: [0.8, 0.6], status: 'online', seen: 'now',
+    agents: [],
+    worktrees: [
+      { id: 'w8', branch: 'feat/pipeline-retries', repo: 'oppenheimer', size: 2.6, used: '6 days ago', days: 6, merged: true },
+      { id: 'w9', branch: 'fix/token-refresh', repo: 'runner', size: 1.1, used: '8 days ago', days: 8, merged: true },
+      { id: 'w10', branch: 'exp/rust-runner', repo: 'runner', size: 3.3, used: '40 days ago', days: 40 },
+      { id: 'w11', branch: 'docs/api-v3', repo: 'docs', size: 0.9, used: '18 days ago', days: 18 },
+    ] },
+  { id: 'h_b40e', name: 'fable', os: 'Debian 12', spec: '16 vCPU · us-east', cores: 16, ram: 64, runner: '0.13.8', disk: 256, other: 180, caches: 12.7, logs: [4.3, 3.1], status: 'offline', seen: '2 days ago', queued: 1, outdated: true,
+    agents: [
+      { id: 's3', name: 'Backfill run history', repo: 'oppenheimer', branch: 'feat/history-backfill', cli: 'claude', state: 'queued', age: '2d' },
+      { id: 's4', name: 'Index protocol spec', repo: 'protocol-spec', branch: 'chore/index', cli: 'opencode', state: 'queued', age: '2d' },
+      { id: 's5', name: 'Mobile login regression', repo: 'xrp-mobile', branch: 'fix/login-loop', cli: 'claude', state: 'queued', age: '3d' },
+    ],
+    worktrees: [
+      { id: 'w12', branch: 'feat/history-backfill', repo: 'oppenheimer', size: 5.2, used: '2 days ago', agent: 's3' },
+      { id: 'w13', branch: 'chore/index', repo: 'protocol-spec', size: 2.0, used: '2 days ago', agent: 's4' },
+      { id: 'w14', branch: 'fix/login-loop', repo: 'xrp-mobile', size: 1.4, used: '3 days ago', agent: 's5' },
+      { id: 'w15', branch: 'feat/offline-sync', repo: 'xrp-mobile', size: 6.1, used: '11 days ago', days: 11, merged: true },
+      { id: 'w16', branch: 'fix/ledger-parse', repo: 'xrpl-js', size: 3.8, used: '15 days ago', days: 15, merged: true },
+      { id: 'w17', branch: 'chore/ci-cache', repo: 'oppenheimer', size: 2.5, used: '21 days ago', days: 21, merged: true },
+      { id: 'w18', branch: 'spike/wasm-signer', repo: 'xrpl-js', size: 8.4, used: '19 days ago', days: 19, dirty: true },
+      { id: 'w19', branch: 'exp/android-14', repo: 'xrp-mobile', size: 4.6, used: '52 days ago', days: 52 },
+    ] },
 ];
+const gb = n => n >= 1000 ? (n / 1000).toFixed(n % 1000 ? 1 : 0) + ' TB' : n >= 100 ? Math.round(n) + ' GB' : (Math.round(n * 10) / 10).toFixed(1).replace(/\.0$/, '') + ' GB';
+const sz = a => a.reduce((t, w) => t + w.size, 0);
+const DEF_SEL = { merged: true, stale: true, caches: true, logs: true };
+const NPTS = 60;
+const PROFILES = {
+  h_7f3a: { u: 26, s: 9, mem: 38, rd: 38, wr: 21, nin: 3.4, nout: 1.2, procs: [['claude', 's1', 13, 1.4], ['node', 's1', 9, 2.1], ['codex', 's2', 6, 0.9], ['kernel_task', null, 4.2, 3.6], ['oppenheimer-runner', null, 1.1, 0.2], ['git', 's2', 0.6, 0.1]] },
+  h_2c91: { u: 3, s: 2, mem: 14, rd: 1.2, wr: 0.8, nin: 0.3, nout: 0.1, procs: [['dockerd', null, 1.4, 1.1], ['postgres', null, 0.9, 2.4], ['oppenheimer-runner', null, 0.6, 0.2], ['sshd', null, 0.1, 0.02]] },
+  h_e5d2: { u: 1.5, s: 1, mem: 3.1, rd: 0.3, wr: 0.2, nin: 0.05, nout: 0.03, procs: [['oppenheimer-runner', null, 0.4, 0.2], ['sshd', null, 0.1, 0.02]] },
+};
+const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+const step = (v, base, vol, lo, hi) => clamp(v + (Math.random() - 0.5) * vol + (base - v) * 0.12 + (vol > base * 0.1 && Math.random() < 0.05 ? base * 1.4 : 0), lo, hi);
+const series = (base, vol, lo, hi) => { let v = base; return Array.from({ length: NPTS }, () => (v = step(v, base, vol, lo, hi))); };
+const initMetrics = () => Object.fromEntries(Object.entries(PROFILES).map(([id, p]) => [id, {
+  u: series(p.u, p.u * 0.5, 0.2, 90), s: series(p.s, p.s * 0.4, 0.1, 40), mem: series(p.mem, p.mem * 0.03, 1, 1000),
+  rd: series(p.rd, p.rd * 0.8, 0, 2000), wr: series(p.wr, p.wr * 0.8, 0, 2000), nin: series(p.nin, p.nin * 0.6, 0, 1000), nout: series(p.nout, p.nout * 0.6, 0, 1000),
+  procs: p.procs.map(([name, agent, cpu, mem]) => ({ name, agent, base: cpu, cpu, mem })),
+}]));
+const tickMetrics = m => { Object.entries(m).forEach(([id, x]) => { const p = PROFILES[id];
+  [['u', p.u * 0.5, 0.2, 90], ['s', p.s * 0.4, 0.1, 40], ['mem', p.mem * 0.03, 1, 1000], ['rd', p.rd * 0.8, 0, 2000], ['wr', p.wr * 0.8, 0, 2000], ['nin', p.nin * 0.6, 0, 1000], ['nout', p.nout * 0.6, 0, 1000]]
+    .forEach(([k, vol, lo, hi]) => { x[k] = x[k].slice(1).concat(step(x[k][x[k].length - 1], p[k], vol, lo, hi)); });
+  x.procs.forEach(q => { q.cpu = clamp(q.cpu + (Math.random() - 0.5) * q.base * 0.5 + (q.base - q.cpu) * 0.2, 0, 100); });
+}); };
+const last = a => a[a.length - 1];
+const rate = v => v < 1 ? [Math.round(v * 1000) + '', 'KB/s'] : [v < 10 ? v.toFixed(1) : Math.round(v) + '', 'MB/s'];
+const memGb = v => v < 1 ? Math.round(v * 1000) + ' MB' : v.toFixed(1) + ' GB';
+const chart = (sers, max, h) => React.createElement('svg', { viewBox: '0 0 100 ' + h, preserveAspectRatio: 'none', width: '100%', height: h, style: { display: 'block', overflow: 'visible' }, 'aria-hidden': 'true' },
+  [0.25, 0.5, 0.75].map(k => React.createElement('line', { key: k, x1: 0, x2: 100, y1: h * k, y2: h * k, stroke: 'var(--chart-grid)', strokeWidth: 1, vectorEffect: 'non-scaling-stroke' })),
+  sers.map((s, si) => { const n = s.data.length;
+    const pts = s.data.map((v, i) => (i / (n - 1) * 100).toFixed(2) + ',' + (h - 1 - clamp(v / max, 0, 1) * (h - 3)).toFixed(2)).join(' ');
+    return React.createElement('g', { key: si },
+      React.createElement('polygon', { points: '0,' + h + ' ' + pts + ' 100,' + h, fill: s.color, opacity: sers.length > 1 ? 0.1 : 0.14 }),
+      React.createElement('polyline', { points: pts, fill: 'none', stroke: s.color, strokeWidth: 1.75, strokeLinejoin: 'round', strokeLinecap: 'round', vectorEffect: 'non-scaling-stroke' }));
+  }));
+const niceMax = v => { const c = [0.5, 1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, 2000]; return c.find(x => x >= v * 1.15) || v * 1.2; };
 const WATCH_REPOS = [
   { value: 'oppenheimer', label: 'oppenheimer-ai/oppenheimer', desc: 'Maintainer · 214 commits by you' },
   { value: 'runner', label: 'oppenheimer-ai/runner', desc: 'Write · 88 commits by you' },
@@ -335,23 +539,26 @@ const loadW = () => { try { const v = JSON.parse(localStorage.getItem(WKEY)); if
 const PROFILE = { name: 'Jordi Parra Crespo', username: 'jordiparra99' };
 
 class Component extends DCLogic {
+  m = initMetrics();
   state = {
+    mtick: 0,
     section: null, profile: { ...PROFILE }, draft: { ...PROFILE }, saved: false,
     hosts: SEED_HOSTS, menu: null, renameId: null, renameVal: '',
-    removeId: null, checkingId: null, checkedAt: {}, addOpen: false, addDone: false, secs: 3581, copied: null, hostTab: 'cmd',
+    hostId: null, hostTab: 'activity', wtFilter: 'all', wtSel: {}, cleanSel: {}, cleaning: null, freed: {}, dlg: null, checkingId: null, checkedAt: {}, addOpen: false, addDone: false, secs: 3581, copied: null, installTab: 'cmd',
   };
 
   componentDidMount() {
     const q = new URLSearchParams(window.location.search).get('section');
     if (q === 'hosts' || q === 'profile' || q === 'watching') this.setState({ section: q });
     this.setState({ watch: loadW() });
+    this._mt = setInterval(() => { tickMetrics(this.m); this.setState(s => ({ mtick: s.mtick + 1 })); }, 2000);
     this._tick = setInterval(() => { if (this.state.addOpen) this.setState(s => ({ secs: Math.max(0, s.secs - 1) })); }, 1000);
   }
-  componentWillUnmount() { clearInterval(this._tick); clearTimeout(this._chk); clearTimeout(this._reg); clearTimeout(this._copy); clearTimeout(this._saved); }
+  componentWillUnmount() { clearInterval(this._tick); clearInterval(this._mt); clearTimeout(this._chk); clearTimeout(this._reg); clearTimeout(this._copy); clearTimeout(this._saved); clearTimeout(this._cl); }
 
   copy(which) {
     const cmd = 'curl -fsSL https://app.oppenheimer.dev/install.sh | sh -s -- --token opk_7f3a9c';
-    const pre = document.querySelector('[aria-labelledby="addhost-title"] pre');
+    const pre = document.querySelector('[data-install-prompt]');
     const text = which === 'cmd' ? cmd : (pre ? pre.textContent : cmd);
     if (navigator.clipboard) navigator.clipboard.writeText(text).catch(() => {});
     this.setState({ copied: which });
@@ -365,25 +572,57 @@ class Component extends DCLogic {
     this.setState(s => ({ renameId: null, hosts: v ? s.hosts.map(h => h.id === s.renameId ? { ...h, name: v } : h) : s.hosts }));
   }
 
+  derive(h) {
+    const wts = h.worktrees, wtSize = sz(wts);
+    const merged = wts.filter(w => !w.agent && w.merged && !w.dirty);
+    const stale = wts.filter(w => !w.agent && !w.merged && !w.dirty && (w.days || 0) >= 14);
+    const used = h.other + wtSize + h.caches + h.logs[0];
+    const sel = this.state.cleanSel[h.id] || DEF_SEL;
+    const items = [
+      { k: 'merged', label: 'Merged worktrees', desc: 'Branches already merged upstream', n: merged.length, size: sz(merged), ids: merged.map(w => w.id) },
+      { k: 'stale', label: 'Idle worktrees, 14+ days', desc: 'No agent attached and nothing uncommitted', n: stale.length, size: sz(stale), ids: stale.map(w => w.id) },
+      { k: 'caches', label: 'Package and build caches', desc: 'Rebuilt on the next install', size: h.caches },
+      { k: 'logs', label: 'Session logs older than 30 days', desc: 'Transcripts stay available in the console', size: h.logs[1] },
+    ];
+    const picked = items.filter(i => sel[i.k] && i.size > 0.05);
+    const p = used / h.disk, low = p >= 0.85;
+    return { wtSize, used, items, sel, picked, low, p, reclaim: items.reduce((t, i) => t + i.size, 0), free: picked.reduce((t, i) => t + i.size, 0) };
+  }
+
+  runClean(h) {
+    const d = this.derive(h), ks = d.picked.map(i => i.k);
+    const ids = new Set(d.picked.flatMap(i => i.ids || []));
+    this.setState({ cleaning: h.id, dlg: null });
+    clearTimeout(this._cl);
+    this._cl = setTimeout(() => this.setState(st => ({
+      cleaning: null, freed: { ...st.freed, [h.id]: d.free },
+      wtSel: {},
+      hosts: st.hosts.map(x => x.id !== h.id ? x : { ...x,
+        worktrees: x.worktrees.filter(w => !ids.has(w.id)),
+        caches: ks.includes('caches') ? 0 : x.caches,
+        logs: ks.includes('logs') ? [x.logs[0] - x.logs[1], 0] : x.logs }),
+    })), 1800);
+  }
+
   renderVals() {
     const s = this.state;
     const section = s.section || this.props.section || 'profile';
     const hosts = this.props.hostsEmpty ? [] : s.hosts;
     const dirty = s.draft.name !== s.profile.name || s.draft.username !== s.profile.username;
-    const rm = s.hosts.find(h => h.id === s.removeId);
-    const m = Math.floor(s.secs / 60), sec = s.secs % 60;
+        const m = Math.floor(s.secs / 60), sec = s.secs % 60;
     const stop = e => e.stopPropagation();
     const initials = (s.profile.name.split(/\s+/).filter(Boolean).slice(0, 2).map(w => w[0]).join('') || '?').toUpperCase();
     return {
       stop,
       closeMenus: () => { if (s.menu) this.setState({ menu: null }); },
       isProfile: section === 'profile' && !s.addOpen ? 'true' : undefined,
-      isHosts: section === 'hosts' && !s.addOpen ? 'true' : undefined,
+      isHostList: section === 'hosts' && !s.addOpen && !s.hostId ? 'true' : undefined,
+      isHostDetail: section === 'hosts' && !s.addOpen && s.hostId && s.hosts.some(h => h.id === s.hostId) ? 'true' : undefined,
       addDoneS: s.addDone ? 'true' : 'false',
       addS1Sum: s.addDone ? 'Installed' : '',
       addS2Sum: s.addDone ? 'build-02 · Ubuntu 24.04' : '',
       goProfile: () => this.setState({ section: 'profile' }),
-      goHosts: () => this.setState({ section: 'hosts' }),
+      goHosts: () => this.setState({ section: 'hosts', hostId: null }),
       goWatching: () => this.setState({ section: 'watching' }),
       ...(() => {
         const w = s.watch || loadW();
@@ -426,56 +665,171 @@ class Component extends DCLogic {
       },
       noHosts: hosts.length ? undefined : 'true',
       hasHosts: hosts.length ? 'true' : undefined,
-      hosts: hosts.map((h, i) => ({
-        ...h,
-        divider: i ? '1px solid var(--border-subtle)' : '0',
-        ...(() => { if (!h.disk) return { hasDisk: false }; const [u, t] = h.disk, p = u / t, f = n => n >= 1000 ? (n / 1000).toFixed(n % 1000 ? 1 : 0) + ' TB' : n + ' GB';
-          const low = p >= 0.85;
-          return { hasDisk: true, diskPct: Math.round(p * 100) + '%', diskUsed: f(u) + ' / ' + f(t),
-            diskBar: low ? 'var(--warning)' : 'var(--fg-muted)', diskFg: low ? 'var(--warning)' : 'var(--fg)',
-            diskNote: f(t - u) + ' free' + (low ? ' · low' : ''),
-            diskTip: 'Disk used on ' + h.name + (h.status === 'offline' ? ' · last reported ' + h.seen : ''),
- }; })(),
-        dot: h.status === 'running' ? 'var(--success)' : h.status === 'idle' ? 'var(--fg-subtle)' : 'transparent',
-        ring: h.status === 'offline' ? 'inset 0 0 0 1.5px var(--fg-subtle)' : 'none',
-        state: h.status === 'running' ? `Running · ${h.sessions} session${h.sessions === 1 ? '' : 's'}` : h.status === 'idle' ? 'Idle' : 'Offline',
-        seen: h.status === 'offline' ? 'last seen ' + h.seen : 'connected',
-        // The runner dials out, so the console can't reconnect it — only look
-        // again. The fix itself is a command run on the machine.
-        offline: h.status === 'offline' ? 'true' : undefined,
-        offText: [
-          (h.waiting ? `${h.waiting} sessions reconnect on their own` : 'Sessions on it reconnect on their own') + ' when its runner is back' + (h.queued ? `, and ${h.queued} automation run waits as Queued.` : '.'),
-          h.outdated ? 'Its runner (' + (h.meta.match(/runner ([\d.]+)/) || [])[1] + ') is out of date; installing updates it to 0.14.2.' : '',
-        ].filter(Boolean).join(' '),
-        cmds: [['install', 'If it stays offline, reinstall and start the runner on ' + h.name + ':', 'oppenheimer-runner install'], ['status', 'To see what went wrong:', 'oppenheimer-runner status']].map(([k, lead, cmd]) => {
-          const key = h.id + ':' + k;
-          return { lead, cmd, aria: s.copied === key ? 'Copied' : 'Copy command', icon: s.copied === key ? 'check' : 'copy',
-            copy: e => { e.stopPropagation(); if (navigator.clipboard) navigator.clipboard.writeText(cmd).catch(() => {}); this.setState({ copied: key }); clearTimeout(this._copy); this._copy = setTimeout(() => this.setState({ copied: null }), 1600); } };
-        }),
-        checking: s.checkingId === h.id,
-        checkLabel: s.checkingId === h.id ? 'Checking…' : 'Check again',
-        checkedNote: s.checkingId === h.id ? '' : s.checkedAt[h.id] ? 'still offline · checked just now' : '',
-        check: e => { e.stopPropagation(); this.setState({ checkingId: h.id }); clearTimeout(this._chk); this._chk = setTimeout(() => this.setState(st => ({ checkingId: null, checkedAt: { ...st.checkedAt, [h.id]: Date.now() } })), 1500); },
-        renaming: s.renameId === h.id ? 'true' : undefined,
-        showName: s.renameId === h.id ? undefined : 'true',
-        menuOpen: s.menu === h.id ? 'true' : undefined,
-        toggleMenu: e => { e.stopPropagation(); this.setState({ menu: s.menu === h.id ? null : h.id }); },
-        rename: () => this.setState({ menu: null, renameId: h.id, renameVal: h.name }),
-        copyId: () => { if (navigator.clipboard) navigator.clipboard.writeText(h.id).catch(() => {}); this.setState({ menu: null }); },
-        remove: () => this.setState({ menu: null, removeId: h.id }),
-      })),
+      hosts: hosts.map(h => {
+        const d = this.derive(h), on = h.status !== 'offline', busy = h.agents.some(a => a.state !== 'queued');
+        const m = on && this.m[h.id], cpu = m ? last(m.u) + last(m.s) : 0, memU = m ? last(m.mem) : 0, memP = memU / h.ram;
+        const tone = p => p >= 0.85 ? 'var(--warning)' : 'var(--fg)';
+        return { name: h.name, meta: h.os + ' · ' + h.spec, seen: h.seen,
+          live: m ? 'true' : undefined, offline: m ? undefined : 'true',
+          cpuNow: m ? Math.round(cpu) + '%' : '—',
+          cpuChart: m ? chart([{ data: m.u.map((v, i) => v + m.s[i]), color: 'var(--chart-1)' }], 100, 52) : null,
+          memPct: m ? Math.round(memP * 100) + '%' : '—', memW: Math.round(memP * 100) + '%', memBar: memP >= 0.85 ? 'var(--warning)' : 'var(--chart-1)', memFg: tone(memP),
+          memSub: m ? memU.toFixed(1) + ' of ' + h.ram + ' GB' : h.ram + ' GB',
+          diskPct: Math.round(d.p * 100) + '%', diskW: Math.round(d.p * 100) + '%', diskBar: d.low ? 'var(--warning)' : 'var(--chart-1)', diskFg: tone(d.p),
+          diskSub: gb(h.disk - d.used) + ' free',
+          foot: [h.agents.length ? h.agents.length + (h.agents.length === 1 ? ' agent' : ' agents') : 'No agents', h.worktrees.length + (h.worktrees.length === 1 ? ' worktree' : ' worktrees')].join(' · '),
+          hasReclaim: d.reclaim > 0.05 ? 'true' : undefined, reclaim: gb(d.reclaim) + ' to free',
+          dot: !on ? 'transparent' : busy ? 'var(--success)' : 'var(--fg-subtle)', ring: on ? 'none' : 'inset 0 0 0 1.5px var(--fg-subtle)',
+          stateWord: !on ? 'Offline · ' + h.seen : busy ? 'Running' : 'Idle',
+          open: () => this.setState({ hostId: h.id, hostTab: 'activity', wtFilter: 'all', wtSel: {}, menu: null, renameId: null }) };
+      }),
+      closeHost: () => this.setState({ hostId: null, menu: null, renameId: null, wtSel: {} }),
+      d: (() => {
+        const h = s.hosts.find(x => x.id === s.hostId);
+        if (!h) return {};
+        const dv = this.derive(h), on = h.status !== 'offline', busy = h.agents.some(a => a.state !== 'queued');
+        const agentName = id => (h.agents.find(a => a.id === id) || {}).name || 'an agent';
+        const kind = w => w.agent ? 'inuse' : w.merged ? 'merged' : 'idle';
+        const counts = { all: h.worktrees.length, inuse: 0, merged: 0, idle: 0 };
+        h.worktrees.forEach(w => counts[kind(w)]++);
+        const list = h.worktrees.filter(w => s.wtFilter === 'all' || kind(w) === s.wtFilter);
+        const selIds = Object.keys(s.wtSel).filter(id => s.wtSel[id] && h.worktrees.some(w => w.id === id && !w.agent));
+        const selWts = h.worktrees.filter(w => selIds.includes(w.id));
+        const cleaning = s.cleaning === h.id, freed = s.freed[h.id];
+        const copyCmd = (key, cmd) => e => { e.stopPropagation(); if (navigator.clipboard) navigator.clipboard.writeText(cmd).catch(() => {}); this.setState({ copied: key }); clearTimeout(this._copy); this._copy = setTimeout(() => this.setState({ copied: null }), 1600); };
+        return {
+          id: h.id, name: h.name,
+          renaming: s.renameId === h.id ? 'true' : undefined, showName: s.renameId === h.id ? undefined : 'true',
+          menuOpen: s.menu === h.id ? 'true' : undefined,
+          toggleMenu: e => { e.stopPropagation(); this.setState({ menu: s.menu === h.id ? null : h.id }); },
+          rename: () => this.setState({ menu: null, renameId: h.id, renameVal: h.name }),
+          copyId: () => { if (navigator.clipboard) navigator.clipboard.writeText(h.id).catch(() => {}); this.setState({ menu: null }); },
+          remove: () => this.setState({ menu: null, dlg: { kind: 'host', id: h.id } }),
+          dot: !on ? 'transparent' : busy ? 'var(--success)' : 'var(--fg-subtle)', ring: on ? 'none' : 'inset 0 0 0 1.5px var(--fg-subtle)',
+          stateWord: !on ? 'Offline · last seen ' + h.seen : busy ? 'Running' : 'Idle',
+          meta: h.os + ' · ' + h.spec + ' · runner ' + h.runner,
+          offline: on ? undefined : 'true',
+          offText: [
+            (h.agents.length ? h.agents.length + ' agents reconnect on their own' : 'Agents on it reconnect on their own') + ' when its runner is back' + (h.queued ? ', and ' + h.queued + ' automation run waits as Queued.' : '.'),
+            h.outdated ? 'Its runner (' + h.runner + ') is out of date; installing updates it to 0.14.2.' : '',
+          ].filter(Boolean).join(' '),
+          cmds: [['install', 'If it stays offline, reinstall and start the runner on ' + h.name + ':', 'oppenheimer-runner install'], ['status', 'To see what went wrong:', 'oppenheimer-runner status']].map(([k, lead, cmd]) => {
+            const key = h.id + ':' + k;
+            return { lead, cmd, aria: s.copied === key ? 'Copied' : 'Copy command', icon: s.copied === key ? 'check' : 'copy', copy: copyCmd(key, cmd) };
+          }),
+          checking: s.checkingId === h.id,
+          checkLabel: s.checkingId === h.id ? 'Checking…' : 'Check again',
+          checkedNote: s.checkingId === h.id ? '' : s.checkedAt[h.id] ? 'still offline · checked just now' : '',
+          check: e => { e.stopPropagation(); this.setState({ checkingId: h.id }); clearTimeout(this._chk); this._chk = setTimeout(() => this.setState(st => ({ checkingId: null, checkedAt: { ...st.checkedAt, [h.id]: Date.now() } })), 1500); },
+          nAgents: h.agents.length,
+          hasAgents: h.agents.length ? 'true' : undefined, noAgents: h.agents.length ? undefined : 'true',
+          agents: h.agents.map(a => ({ ...a, where: a.repo + ' · ' + a.branch,
+            dot: a.state === 'running' ? 'var(--success)' : a.state === 'input' ? 'var(--warning)' : 'var(--fg-subtle)',
+            stateLabel: a.state === 'running' ? 'Running' : a.state === 'input' ? 'Needs input' : 'Queued' })),
+          live: on && this.m[h.id] ? 'true' : undefined,
+          tabs: [['activity', 'Activity', ''], ['worktrees', 'Worktrees', h.worktrees.length], ['storage', 'Storage', dv.reclaim > 0.05 ? gb(dv.reclaim) + ' to free' : '']].map(([k, label, n]) => ({ label, n, on: s.hostTab === k ? 'true' : 'false', sel: s.hostTab === k, pick: () => this.setState({ hostTab: k }) })),
+          tabActivity: s.hostTab === 'activity' ? 'true' : undefined, tabWorktrees: s.hostTab === 'worktrees' ? 'true' : undefined, tabStorage: s.hostTab === 'storage' ? 'true' : undefined,
+          ...(() => { const m = on && this.m[h.id]; if (!m) return { tiles: [], procs: [] };
+            const u = last(m.u), sy = last(m.s), memU = last(m.mem), avg = (a, n) => a.slice(-n).reduce((t, v) => t + v, 0) / n;
+            const load = n => ((avg(m.u, n) + avg(m.s, n)) / 100 * h.cores).toFixed(2);
+            const memP = memU / h.ram, ioMax = niceMax(Math.max(...m.rd, ...m.wr)), netMax = niceMax(Math.max(...m.nin, ...m.nout));
+            const [rv, ru] = rate(last(m.rd)), [wv, wu] = rate(last(m.wr)), [iv, iu] = rate(last(m.nin)), [ov, ou] = rate(last(m.nout));
+            const C1 = 'var(--chart-1)', C2 = 'var(--chart-2)', C3 = 'var(--chart-3)';
+            const agentName = id => (h.agents.find(a => a.id === id) || {}).name;
+            return {
+              tiles: [
+                { label: 'CPU', note: h.cores + ' cores · load ' + load(3) + ' ' + load(15) + ' ' + load(30), v: Math.round(u + sy), u: '%',
+                  chart: chart([{ data: m.u, color: C1 }, { data: m.s, color: C2 }], 100, 84),
+                  legend: [{ label: 'User', v: u.toFixed(1) + '%', color: C1 }, { label: 'System', v: sy.toFixed(1) + '%', color: C2 }, { label: 'Idle', v: (100 - u - sy).toFixed(1) + '%', color: 'var(--border)' }] },
+                { label: 'Memory', note: 'Pressure ' + (memP >= 0.85 ? 'high' : memP >= 0.7 ? 'elevated' : 'normal'), v: memU.toFixed(1), u: 'of ' + h.ram + ' GB',
+                  chart: chart([{ data: m.mem, color: C1 }], h.ram, 84),
+                  legend: [{ label: 'App', v: memGb(memU * 0.62), color: C1 }, { label: 'Wired', v: memGb(memU * 0.24), color: C2 }, { label: 'Compressed', v: memGb(memU * 0.14), color: C3 }] },
+                { label: 'Disk activity', note: 'SSD · ' + gb(h.disk), v: rv, u: ru + ' read',
+                  chart: chart([{ data: m.rd, color: C1 }, { data: m.wr, color: C2 }], ioMax, 84),
+                  legend: [{ label: 'Read', v: rv + ' ' + ru, color: C1 }, { label: 'Write', v: wv + ' ' + wu, color: C2 }] },
+                { label: 'Network', note: 'eth0', v: iv, u: iu + ' in',
+                  chart: chart([{ data: m.nin, color: C1 }, { data: m.nout, color: C2 }], netMax, 84),
+                  legend: [{ label: 'In', v: iv + ' ' + iu, color: C1 }, { label: 'Out', v: ov + ' ' + ou, color: C2 }] },
+              ],
+              procs: [...m.procs].sort((x, y) => y.cpu - x.cpu).map(q => ({ name: q.name, agent: (q.agent && agentName(q.agent)) || 'System', agentFg: q.agent ? 'var(--fg)' : 'var(--fg-subtle)', cpu: q.cpu.toFixed(1) + '%', mem: memGb(q.mem) })),
+            }; })(),
+          nWt: h.worktrees.length,
+          filters: [['all', 'All'], ['inuse', 'In use'], ['merged', 'Merged'], ['idle', 'Idle']].map(([k, label]) => ({ label, n: counts[k], on: s.wtFilter === k ? 'true' : 'false', pick: () => this.setState({ wtFilter: k }) })),
+          wts: list.map(w => {
+            const can = on && !w.agent && !cleaning, sel = !!s.wtSel[w.id];
+            return { branch: w.branch, size: gb(w.size),
+              sub: w.repo + ' · ' + (w.agent ? agentName(w.agent) : 'last used ' + w.used),
+              stLabel: w.agent ? 'In use' : w.dirty ? 'Uncommitted changes' : w.merged ? 'Merged' : 'Idle',
+              stFg: w.dirty ? 'var(--warning)' : w.agent ? 'var(--fg)' : 'var(--fg-muted)',
+              selectable: can ? 'true' : undefined, locked: can ? undefined : 'true',
+              lockTip: w.agent ? 'In use by ' + agentName(w.agent) + '. Stop the agent to remove it.' : 'Available once the host is online',
+              on: sel ? 'true' : 'false',
+              toggle: () => this.setState(st => ({ wtSel: { ...st.wtSel, [w.id]: !st.wtSel[w.id] } })),
+              remove: () => this.setState({ dlg: { kind: 'wt', ids: [w.id] } }) };
+          }),
+          wtNone: list.length ? undefined : 'true',
+          wtNoneText: h.worktrees.length ? 'No worktrees match this filter.' : 'No worktrees on this host.',
+          hasSel: selIds.length ? 'true' : undefined,
+          selText: selIds.length + ' selected · ' + gb(sz(selWts)),
+          clearSel: () => this.setState({ wtSel: {} }),
+          removeSel: () => this.setState({ dlg: { kind: 'wt', ids: selIds } }),
+          removeSelLabel: selIds.length === 1 ? 'Remove worktree' : 'Remove ' + selIds.length + ' worktrees',
+          diskLine: gb(dv.used) + ' of ' + gb(h.disk) + ' · ' + gb(h.disk - dv.used) + ' free' + (on ? '' : ' · last reported ' + h.seen),
+          diskFg: dv.low ? 'var(--warning)' : 'var(--fg-subtle)',
+          segs: [['Worktrees', dv.wtSize, 'var(--chart-1)'], ['Caches', h.caches, 'var(--chart-2)'], ['Session logs', h.logs[0], 'var(--chart-3)'], ['System and other', h.other, 'var(--fg-subtle)']]
+            .map(([label, v, color]) => ({ label, color, size: gb(v), pct: (v / h.disk * 100).toFixed(2) + '%' })),
+          items: dv.items.map(i => {
+            const empty = i.size <= 0.05, dis = !on || cleaning || empty;
+            return { label: i.label, desc: i.desc, count: i.n != null ? i.n + (i.n === 1 ? ' worktree' : ' worktrees') : '',
+              size: empty ? '—' : gb(i.size), on: dv.sel[i.k] && !empty ? 'true' : 'false', disabled: dis ? true : undefined, op: dis ? 0.5 : 1,
+              toggle: () => this.setState(st => ({ cleanSel: { ...st.cleanSel, [h.id]: { ...(st.cleanSel[h.id] || DEF_SEL), [i.k]: !dv.sel[i.k] } } })) };
+          }),
+          cleaning: cleaning ? 'true' : undefined,
+          freedNow: !cleaning && freed != null && on ? 'true' : undefined,
+          cleanNote: !on ? 'Cleanup runs on the host. It is available once the runner reconnects.'
+            : cleaning ? 'Cleaning ' + gb(dv.free) + '… running agents are not touched.'
+            : freed != null ? 'Freed ' + gb(freed) + ' just now.' + (dv.free > 0.05 ? ' ' + gb(dv.free) + ' more selected.' : '')
+            : dv.free > 0.05 ? 'Frees ' + gb(dv.free) + '. Running agents and uncommitted work are not touched.' : 'Nothing selected to clean.',
+          cleanOff: !on || cleaning || dv.free <= 0.05 ? true : undefined,
+          cleanLabel: cleaning ? 'Cleaning…' : 'Clean up',
+          clean: () => this.setState({ dlg: { kind: 'clean', id: h.id } }),
+        };
+      })(),
       renameVal: s.renameVal,
       setRenameVal: e => this.setState({ renameVal: e.target.value.replace(/\s+/g, '-') }),
       renameKey: e => { if (e.key === 'Enter') this.commitRename(); if (e.key === 'Escape') this.setState({ renameId: null }); },
       commitRename: () => this.commitRename(),
       cancelRename: () => this.setState({ renameId: null }),
-      removeOpen: rm ? 'true' : undefined,
-      removeName: rm ? rm.name : '',
-      removeCost: !rm ? '' : rm.sessions
-        ? `${rm.sessions} session${rm.sessions === 1 ? ' is' : 's are'} running on ${rm.name}. They are stopped and their terminals closed; logs are kept. The runner's token is revoked.`
-        : `No sessions are running on ${rm.name}. The runner's token is revoked and automations targeting it are paused.`,
-      closeRemove: () => this.setState({ removeId: null }),
-      confirmRemove: () => this.setState(st => ({ hosts: st.hosts.filter(h => h.id !== st.removeId), removeId: null })),
+      ...(() => {
+        const g = s.dlg; if (!g) return { dlgOpen: undefined };
+        const h = s.hosts.find(x => x.id === (g.id || s.hostId)); if (!h) return { dlgOpen: undefined };
+        const close = () => this.setState({ dlg: null });
+        const base = { dlgOpen: 'true', closeDlg: close };
+        if (g.kind === 'host') {
+          const live = h.agents.filter(a => a.state !== 'queued').length;
+          return { ...base, dlgTitle: 'Remove ' + h.name + '?', dlgBtn: 'Remove host', dlgBtnClass: 'op-btn op-btn--danger op-btn--md',
+            dlgDesc: live ? live + ' agent' + (live === 1 ? ' is' : 's are') + ' running on ' + h.name + '. They are stopped and their terminals closed; logs are kept. The runner\'s token is revoked.'
+              : 'No agents are running on ' + h.name + '. The runner\'s token is revoked and automations targeting it are paused.',
+            dlgConfirm: () => this.setState(st => ({ hosts: st.hosts.filter(x => x.id !== h.id), dlg: null, hostId: null })) };
+        }
+        if (g.kind === 'wt') {
+          const ws = h.worktrees.filter(w => g.ids.includes(w.id)), dirty = ws.filter(w => w.dirty), n = ws.length;
+          return { ...base, dlgTitle: n === 1 ? 'Remove ' + ws[0].branch + '?' : 'Remove ' + n + ' worktrees?',
+            dlgBtn: n === 1 ? 'Remove worktree' : 'Remove ' + n + ' worktrees', dlgBtnClass: 'op-btn op-btn--danger op-btn--md',
+            dlgDesc: (n === 1 ? 'Deletes its checkout folder on ' : 'Deletes ' + n + ' checkout folders on ') + h.name + ', freeing ' + gb(sz(ws)) + '. Branches stay on the remote.'
+              + (dirty.length ? ' ' + dirty.map(w => w.branch).join(', ') + (dirty.length === 1 ? ' has' : ' have') + ' uncommitted changes, which are lost.' : ''),
+            dlgConfirm: () => this.setState(st => ({ dlg: null, wtSel: {}, hosts: st.hosts.map(x => x.id !== h.id ? x : { ...x, worktrees: x.worktrees.filter(w => !g.ids.includes(w.id)) }) })) };
+        }
+        const dv = this.derive(h), wtN = dv.picked.reduce((t, i) => t + (i.n || 0), 0);
+        const parts = [];
+        if (wtN) parts.push('removes ' + wtN + ' worktree' + (wtN === 1 ? '' : 's'));
+        if (dv.picked.some(i => i.k === 'caches')) parts.push('clears ' + gb(h.caches) + ' of caches');
+        if (dv.picked.some(i => i.k === 'logs')) parts.push('deletes ' + gb(h.logs[1]) + ' of old session logs');
+        const txt = parts.join(', ').replace(/, ([^,]*)$/, ' and $1');
+        return { ...base, dlgTitle: 'Clean up ' + h.name + '?', dlgBtn: 'Free ' + gb(dv.free), dlgBtnClass: 'op-btn op-btn--primary op-btn--md',
+          dlgDesc: txt.charAt(0).toUpperCase() + txt.slice(1) + '. Running agents, worktrees in use and uncommitted changes are not touched.',
+          dlgConfirm: () => this.runClean(h) };
+      })(),
       addOpen: s.addOpen ? 'true' : undefined,
       addWaiting: s.addDone ? undefined : 'true',
       addDone: s.addDone ? 'true' : undefined,
@@ -484,23 +838,23 @@ class Component extends DCLogic {
         clearTimeout(this._reg);
         this._reg = setTimeout(() => this.setState(st => st.addOpen ? {
           addDone: true,
-          hosts: st.hosts.some(h => h.id === 'h_e5d2') ? st.hosts : [...st.hosts, { id: 'h_e5d2', name: 'build-02', meta: 'Ubuntu 24.04 · 8 vCPU · eu-west · runner 0.14.2', disk: [22, 160], status: 'idle', sessions: 0, seen: 'now' }],
+          hosts: st.hosts.some(h => h.id === 'h_e5d2') ? st.hosts : [...st.hosts, { id: 'h_e5d2', name: 'build-02', os: 'Ubuntu 24.04', spec: '8 vCPU · eu-west', cores: 8, ram: 32, runner: '0.14.2', disk: 160, other: 21.8, caches: 0.2, logs: [0, 0], status: 'online', seen: 'now', agents: [], worktrees: [] }],
         } : null), 5000);
       },
       closeAdd: () => { clearTimeout(this._reg); this.setState({ addOpen: false }); },
       countdown: m + ':' + String(sec).padStart(2, '0'),
       regenerate: e => { e.preventDefault(); this.setState({ secs: 3600 }); },
-      showingCmd: s.hostTab === 'cmd' ? 'true' : undefined,
-      showingPrompt: s.hostTab === 'prompt' ? 'true' : undefined,
-      cmdTabBg: s.hostTab === 'cmd' ? 'var(--card)' : 'transparent',
-      cmdTabFg: s.hostTab === 'cmd' ? 'var(--fg)' : 'var(--fg-muted)',
-      promptTabBg: s.hostTab === 'prompt' ? 'var(--card)' : 'transparent',
-      promptTabFg: s.hostTab === 'prompt' ? 'var(--fg)' : 'var(--fg-muted)',
-      showCmd: () => this.setState({ hostTab: 'cmd' }),
-      showPrompt: () => this.setState({ hostTab: 'prompt' }),
+      showingCmd: s.installTab === 'cmd' ? 'true' : undefined,
+      showingPrompt: s.installTab === 'prompt' ? 'true' : undefined,
+      cmdTabBg: s.installTab === 'cmd' ? 'var(--card)' : 'transparent',
+      cmdTabFg: s.installTab === 'cmd' ? 'var(--fg)' : 'var(--fg-muted)',
+      promptTabBg: s.installTab === 'prompt' ? 'var(--card)' : 'transparent',
+      promptTabFg: s.installTab === 'prompt' ? 'var(--fg)' : 'var(--fg-muted)',
+      showCmd: () => this.setState({ installTab: 'cmd' }),
+      showPrompt: () => this.setState({ installTab: 'prompt' }),
       didCopy: s.copied ? 'true' : undefined,
       notCopied: s.copied ? undefined : 'true',
-      copyBlock: () => this.copy(s.hostTab),
+      copyBlock: () => this.copy(s.installTab),
     };
   }
 }
