@@ -33,7 +33,8 @@ import type { TurnInterruption } from './turn-cancel-watch.factory';
 /** What one engine event asks the runner to do. */
 export type TranscriptWrite =
   | { kind: 'insert'; message: BotMessageEntity }
-  | { kind: 'steps'; message: BotMessageEntity }
+  /** A line's steps; `callId` when the write is that call's end, which alone can fail it. */
+  | { kind: 'steps'; message: BotMessageEntity; callId?: string }
   /** A delta of the turn's `block`th block of text, passed on and kept until the block is stored. */
   | { kind: 'text'; block: number; text: string }
   /** The block being written ended (stored, or only whitespace): what was kept of it goes. */
@@ -216,7 +217,7 @@ export class TurnTranscript {
       this.outcome.cacheReadTokens += run.cacheReadTokens ?? 0;
       this.outcome.cacheWriteTokens += run.cacheWriteTokens ?? 0;
     }
-    const writes: TranscriptWrite[] = [{ kind: 'steps', message: line }];
+    const writes: TranscriptWrite[] = [{ kind: 'steps', message: line, callId }];
     const images = isError ? [] : toShownImages(data?.[SHOWN_IMAGES_DATA_KEY]);
     if (images.length > 0) {
       this.activity = null;
@@ -300,6 +301,35 @@ function limitEnding(limit: TurnLimitFailure): TurnEnding {
   return { status: 'failed', error: TURN_LIMIT_ERRORS[limit], failure: limit };
 }
 
+/**
+ * A write of the turn's transcript that Postgres refused: the turn fails as
+ * `storage`, so the chat says it was ours, not the model provider's (#728).
+ */
+export class TurnStorageError extends Error {
+  constructor(cause: unknown) {
+    super(`The turn could not be saved: ${failureReasonOf(cause)}`, { cause });
+    this.name = 'TurnStorageError';
+  }
+}
+
+/**
+ * Call `callId`'s step on `line`, failed in place of a result that could not
+ * be stored: the call is the one that fails, with words the model reads in
+ * the history, and the rest of the turn goes on. False when the line has no
+ * such step.
+ */
+export function failUnstoredCall(line: BotMessageEntity, callId: string, cause: unknown): boolean {
+  const step = line.steps.find((candidate) => candidate.callId === callId);
+  if (!step) return false;
+  step.output = `The tool's result could not be saved (${startOf(failureReasonOf(cause), 200)}), so it is not kept. Call it again, or carry on without it.`;
+  step.isError = true;
+  step.sessionId = null;
+  step.subagents = null;
+  step.mailDraft = null;
+  step.rateLimit = null;
+  return true;
+}
+
 /** A turn's failure in words a person can act on: the catalog's for ours, the engine's otherwise. */
 export function failureReasonOf(error: unknown): string {
   if (error instanceof AppError) return error.message;
@@ -313,11 +343,13 @@ export function thrownFailure(error: unknown): { error: string; failure: BotTurn
 
 /**
  * The kind of failure a turn that threw before or around its engine is. A
- * provider with no key or sign-in for the turn is fixed in Settings, so it
- * is a credential failure; ChatGPT refreshing its sign-in passes, so it is
+ * transcript Postgres refused to store is ours, `storage`. A provider with
+ * no key or sign-in for the turn is fixed in Settings, so it is a credential
+ * failure; ChatGPT refreshing its sign-in passes, so it is
  * the provider being unavailable for a moment. Anything else is not known.
  */
 export function failureKindOf(error: unknown): BotTurnFailure {
+  if (error instanceof TurnStorageError) return 'storage';
   if (!(error instanceof AppError)) return 'other';
   if (error.code === BotErrors.PROVIDER_KEY_MISSING.code) return 'credential';
   if (error.code === BotErrors.CHATGPT_REFRESHING.code) return 'unavailable';

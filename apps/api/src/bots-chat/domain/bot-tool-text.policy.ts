@@ -7,6 +7,12 @@
 /** The longest answer one tool call hands the model. */
 export const BOT_TOOL_OUTPUT_MAX = 12_000;
 
+/**
+ * What every answer that met a runner too old for it tells the bot to do,
+ * so the tool's name and the retry live in one sentence.
+ */
+export const RUNNER_TOO_OLD_ADVICE = 'update_host_runner updates it; then try again';
+
 /** Room kept for the line that says what was cut, so the fitted answer stays within the limit. */
 const CUT_LINE_MAX = 160;
 
