@@ -29,6 +29,8 @@ import type { SessionsService } from '../modules/sessions';
 import { SessionsModule } from '../modules/sessions';
 import type { TasksRepository } from '../modules/tasks';
 import { TasksModule } from '../modules/tasks';
+import type { TelegramRepository } from '../modules/telegram';
+import { TelegramModule } from '../modules/telegram';
 import type { VoiceRepository } from '../modules/voice';
 import { VoiceModule } from '../modules/voice';
 import type { WhatsappRepository } from '../modules/whatsapp';
@@ -50,6 +52,7 @@ export const consumerModules = [
   CloudAgentsModule,
   MailModule,
   WhatsappModule,
+  TelegramModule,
   HostsModule,
   InboxModule,
   InstallationsModule,
@@ -142,6 +145,11 @@ export class ConsumerApp {
   /** The reader's WhatsApp numbers, linked as devices on their hosts for their bots. */
   get whatsapp(): WhatsappRepository {
     return this.kernel.container.get(TOKENS.WhatsappRepository);
+  }
+
+  /** The reader's Telegram bots, made with @BotFather and polled by their hosts for their bots. */
+  get telegram(): TelegramRepository {
+    return this.kernel.container.get(TOKENS.TelegramRepository);
   }
 
   /** Dictation: a recording in, the text it says out. */

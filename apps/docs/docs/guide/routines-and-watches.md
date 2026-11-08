@@ -78,4 +78,4 @@ Turns run one at a time per bot: your messages first, then other bots', then bac
 
 ## Not available yet
 
-Spreading the run times of routines other than the heartbeat, routines triggered by a session ending or by a webhook, and WhatsApp messages as a trigger.
+Spreading the run times of routines other than the heartbeat, routines triggered by a session ending or by a webhook, and WhatsApp or Telegram messages as a trigger.

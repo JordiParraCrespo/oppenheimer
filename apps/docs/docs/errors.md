@@ -1101,6 +1101,36 @@ already holding someone else's number: a runner holds one device. A
 have sent the message. `WHATSAPP_009` is a bot's share of a day (100 messages
 from one number), or the host's own budget (`WA_004`).
 
+## Telegram
+
+A bot a person made with @BotFather, long-polled on the Bot API by the runner
+on one of their hosts, and the messages it receives, kept for their bots. See
+`product/next-steps/telegram.md`.
+
+| Code                                   | Title                                                             | HTTP |
+| -------------------------------------- | ----------------------------------------------------------------- | ---- |
+| `TELEGRAM_001` <a id="telegram_001" /> | That Telegram bot is not connected                                | 404  |
+| `TELEGRAM_002` <a id="telegram_002" /> | Telegram belongs to an organization                               | 400  |
+| `TELEGRAM_003` <a id="telegram_003" /> | That is as many Telegram bots as one person connects              | 409  |
+| `TELEGRAM_004` <a id="telegram_004" /> | The host holding that Telegram bot is offline                     | 409  |
+| `TELEGRAM_005` <a id="telegram_005" /> | That host’s runner does not hold Telegram bots                    | 409  |
+| `TELEGRAM_006` <a id="telegram_006" /> | That host already holds another Telegram bot                      | 409  |
+| `TELEGRAM_007` <a id="telegram_007" /> | That Telegram bot is not connected                                | 409  |
+| `TELEGRAM_008` <a id="telegram_008" /> | Telegram did not take the message                                 | 502  |
+| `TELEGRAM_009` <a id="telegram_009" /> | That Telegram bot has sent as many bot messages as it may for now | 429  |
+| `TELEGRAM_010` <a id="telegram_010" /> | No such Telegram chat                                             | 404  |
+
+`TELEGRAM_005` is a runner that predates Telegram, or one started with
+`RUNNER_TELEGRAM=off`: update it, or turn it back on. `TELEGRAM_006` is a host
+already holding someone else's Telegram bot: a runner polls one. A token
+Telegram refuses is not an error of the connect call: the host answers it
+(`TG_001`), and the account reads back `revoked` with the reason. A
+`TELEGRAM_008` carries the host's code in `upstreamCode` (`TG_004`: Telegram
+refused it, often because the person blocked the bot or the bot left the
+group); one whose detail says the host did not answer in time may still have
+sent the message. `TELEGRAM_009` is a bot's share of a day (200 messages
+through one Telegram bot).
+
 ## Cloud agents
 
 A vendor's cloud (Cursor's Cloud Agents), where a cloud session runs on each
@@ -1228,6 +1258,10 @@ for a 404 or 428, 6 for a 502, 503 or 504, 7 for `PAIR_009`, and 1 for anything 
 | `WA_002` <a id="wa_002" />           | No WhatsApp device is connected on this host | 503  |
 | `WA_003` <a id="wa_003" />           | WhatsApp refused the message                 | 502  |
 | `WA_004` <a id="wa_004" />           | This host's WhatsApp send budget is spent    | 429  |
+| `TG_001` <a id="tg_001" />           | Telegram refused the bot's token             | 400  |
+| `TG_002` <a id="tg_002" />           | This host already holds another Telegram bot | 409  |
+| `TG_003` <a id="tg_003" />           | No Telegram bot is connected on this host    | 503  |
+| `TG_004` <a id="tg_004" />           | Telegram refused the message                 | 502  |
 | `SESS_001` <a id="sess_001" />         | Session not found                            | 404  |
 | `SESS_002` <a id="sess_002" />         | The session cannot be created with those values | 400 |
 | `SESS_003` <a id="sess_003" />         | The session is not running                   | 409  |
@@ -1310,6 +1344,17 @@ for a linked device, and going over one costs the number. `WA_003`
 after WhatsApp's own `rate-overlimit` also stops every send from the host for
 ten minutes. The control plane answers a bot with its own `WHATSAPP_*` code
 for each (`WHATSAPP_007`, `WHATSAPP_008`, `WHATSAPP_009`).
+
+The `TG_*` codes reach the control plane the same way, in answer to
+`telegram.link` and `telegram.send` (`packages/shared/src/protocol/telegram.ts`).
+`TG_001` is a token `getMe` refused; Telegram out of reach while checking
+it is `TG_003`, and the account then reads back `unlinked` with the reason,
+not `revoked`. `TG_002` is a host polling another bot: one bot per host, disconnect it
+first. `TG_004` is Telegram's own refusal (the person blocked the bot, the
+bot left the group, a chat that never wrote to it), a `429` (every send from
+the host then waits Telegram's `retry_after`), or a send the host's pacing
+would hold more than five seconds (one a second to a chat, twenty a minute
+to a group); the detail says which.
 
 <!-- oppenheimer:end runner -->
 ## Domain invariants

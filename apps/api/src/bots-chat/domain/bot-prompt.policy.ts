@@ -189,6 +189,7 @@ const TOOL_GROUP_LABELS: Readonly<Record<BotToolGroup, string>> = {
   automations: 'Automations and routines',
   mail: 'Gmail',
   whatsapp: 'WhatsApp',
+  telegram: 'Telegram',
   bots: 'Other bots',
   web: 'The web and subagents',
 };

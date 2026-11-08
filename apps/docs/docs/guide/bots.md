@@ -61,7 +61,7 @@ It can also prompt a session whose agent waits at its prompt, answer an agent's 
 - **GitHub**: read repositories, pull requests and issues; comment, review, merge, start review sessions, open issues, record CI findings, all in your name.
 - **Automations**: list them and their runs. It cannot create or change yours; it manages only its own routines.
 - **Other bots**: message one, ask one a task (the answer comes back as a new turn), create one. Chains stop at 3 bots deep and 10 bot-to-bot turns.
-- **Mail and WhatsApp**: with Gmail connected in **Settings → Mail**, search, read, draft, send, schedule, label, archive and trash mail. With a number linked in **Settings → WhatsApp** (held by a host; use a spare number), read chats and send messages.
+- **Mail, WhatsApp and Telegram**: with Gmail connected in **Settings → Mail**, search, read, draft, send, schedule, label, archive and trash mail. With a number linked in **Settings → WhatsApp** (held by a host; use a spare number), read chats and send messages. With a bot of yours from @BotFather connected in **Settings → Telegram** (its token stays on the host), read the chats people have with it and answer them; Telegram lets a bot write only to chats that wrote to it first.
 - **Work**: web search, fetch public pages, show images from the web, run up to four read-only subagents, ask you up to four questions on a card, `notify` your Inbox, and read this guide (`read_oppenheimer_docs`).
 
 ## Skills and slash commands
@@ -93,4 +93,4 @@ When a tool asks, the turn ends on a **Needs input** card in the chat and in the
 
 - A turn stops after 4 minutes and 20 model round trips; longer work is a goal, a loop or a session. Older history is summarised for the model; the chat keeps every message.
 - A bot cannot pair or remove hosts, connect GitHub, Google or Gmail, share sessions, manage API tokens, or delete bots.
-- Not available: calendar tools, files other than images, group chats, bot templates, and writing to a bot from Slack, mail or WhatsApp.
+- Not available: calendar tools, files other than images, group chats, bot templates, and writing to a bot from Slack, mail, WhatsApp or Telegram.

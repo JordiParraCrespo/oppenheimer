@@ -29,6 +29,7 @@ export const SCOPE_RESOURCES = [
   'calendar',
   'mail',
   'whatsapp',
+  'telegram',
   'cloud-agents',
   'pulls',
   'repositories',
@@ -528,6 +529,31 @@ export const PERMISSION_GROUPS: readonly PermissionGroup[] = [
           { action: 'create', subject: 'Whatsapp' },
           { action: 'update', subject: 'Whatsapp' },
           { action: 'delete', subject: 'Whatsapp' },
+        ],
+      },
+    },
+  },
+  {
+    resource: 'telegram',
+    label: 'Telegram',
+    description:
+      'The Telegram bots the caller connected on their hosts, as their Oppenheimer bots read and write in them.',
+    levels: {
+      read: {
+        scope: 'telegram:read',
+        label: 'Read',
+        description: 'List the caller’s own connected Telegram bots and read their chats.',
+        policies: [{ action: 'read', subject: 'Telegram' }],
+      },
+      write: {
+        scope: 'telegram:write',
+        label: 'Edit',
+        description:
+          'Connect and disconnect the caller’s own Telegram bots, and send through them.',
+        policies: [
+          { action: 'create', subject: 'Telegram' },
+          { action: 'update', subject: 'Telegram' },
+          { action: 'delete', subject: 'Telegram' },
         ],
       },
     },
