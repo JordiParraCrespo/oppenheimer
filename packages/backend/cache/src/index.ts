@@ -4,7 +4,6 @@ export {
   type CacheReadObserver,
   type CacheReadOperation,
   type CacheReadResult,
-  cacheNamespace,
   type RedisCacheOptions,
   RedisCacheService,
 } from './redis-cache.service';

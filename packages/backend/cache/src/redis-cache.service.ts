@@ -216,7 +216,7 @@ export class RedisCacheService extends CacheService {
 }
 
 /** A key's first `:`-separated segment: `github` for `github:repos:42`, the key itself when it has none. */
-export function cacheNamespace(key: string): string {
+function cacheNamespace(key: string): string {
   const end = key.indexOf(':');
   return end === -1 ? key : key.slice(0, end);
 }
