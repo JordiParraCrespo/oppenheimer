@@ -153,12 +153,15 @@ worker runs it and streams what happens back to the chat.
     a host it chose (not one the person named, which it never overrides)
     cannot run the task (offline, or `list_hosts` shows it cannot start the
     agent) and another online host can, it starts there and says why
-    (2026-11-08); a session it started on a host it chose, that fails
-    because of the host and not the task, is started once on another host
-    that can run it, from the task the bot wrote and never from the wake's
-    fenced text, never again on a host it failed on; a session it only
-    watches, or a task that fails on its own merits, is reported, not
-    retried, as before (the `failed` wake); it
+    (2026-11-08); when a session it started on a host it chose fails and
+    the failure looks like the host's (the agent not signed in or not
+    installed, the checkout missing), it offers to run the task it wrote on
+    another online host that has the agent and starts it only on the
+    person's yes: nothing but the session's own words says why it failed,
+    and `list_hosts` cannot see whether an agent is signed in. It never
+    offers a host the task failed on; a session it only watches, or a task
+    that fails on its own merits, is reported, not retried, as before (the
+    `failed` wake); it
     works only in a known project's repository or a folder it was given;
     it follows a session already on the task rather than starting a
     second; it says "started", not "done", and reports what `get_session`

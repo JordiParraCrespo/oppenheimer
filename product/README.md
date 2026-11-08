@@ -1285,9 +1285,10 @@ earlier note:
   OpenClaw's: a bot whose session failed on the default host because
   Claude Code there was not signed in reported it with three other hosts
   online. A failed step now sends the bot to the next reasonable route
-  first (another online host, another source, another approach), and a
-  session it started on a host it chose, that failed because of the host,
-  is started once on another host that can run it. A host the person named
+  first (another online host, another source, another approach), and when
+  a session it started on a host it chose fails in a way that looks like
+  the host's, it offers to run its task on another online host and starts
+  it on the person's yes. A host the person named
   is never overridden, a watched session or a task that fails on its own
   merits is still reported, not retried, and a person's "no" is never
   routed around.
