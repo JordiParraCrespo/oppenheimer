@@ -1,37 +1,19 @@
 import { useBotSlashCommands } from '@oppenheimer/frontend-consumer/react';
-import {
-  BOT_BUILT_IN_COMMANDS,
-  BOT_RUNNABLE_BUILT_IN_SKILL_NAMES,
-} from '@oppenheimer/shared/schemas/bot-skill';
 import type { KeyboardEvent } from 'react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   pickedDraft,
-  runnableSkills,
   type SlashCommand,
-  slashMenuItems,
+  slashMenuRows,
   slashQuery,
 } from '@/features/bots/lib/slash-menu';
-
-const BUILT_IN_DESCRIPTIONS = {
-  goal: 'bots.chat.slash.builtIn.goal',
-  usage: 'bots.chat.slash.builtIn.usage',
-  loop: 'bots.chat.slash.builtIn.loop',
-  schedule: 'bots.chat.slash.builtIn.schedule',
-} as const satisfies Record<(typeof BOT_BUILT_IN_COMMANDS)[number], string>;
-
-const BUILT_IN_SKILL_DESCRIPTIONS = {
-  recap: 'bots.chat.slash.builtInSkill.recap',
-} as const satisfies Record<(typeof BOT_RUNNABLE_BUILT_IN_SKILL_NAMES)[number], string>;
 
 /**
  * The composer's `/` menu (`25-bots.md` §4.1, OpenClaw's skill commands and
  * Claude Code's built-ins): while the draft is a command being typed, the
- * built-in commands and the skills the person may run whose names match
- * (the built-in skills, then the bot's own, once the bot's skills are read,
- * since one of its own may take a built-in skill's name),
- * the skills read only while it is open. Up and Down move through them, Tab
+ * rows `slashMenuRows` decides for what is typed, the bot's skills read only
+ * while it is open. Up and Down move through them, Tab
  * or Enter picks one (the draft becomes `/<name> `), Escape closes the menu
  * for that draft. The highlight belongs to what was typed, so a new letter
  * starts it at the top again with no effect to reset it.
@@ -43,21 +25,9 @@ export function useSlashMenu(botId: string, draft: string, setDraft: (next: stri
   const [highlight, setHighlight] = useState<{ query: string; index: number } | null>(null);
   const wanted = query !== null && dismissed !== draft;
   const { data: skills } = useBotSlashCommands(botId, wanted);
-  const builtIns: SlashCommand[] = BOT_BUILT_IN_COMMANDS.map((name) => ({
-    id: `built-in:${name}`,
-    name,
-    command: `/${name}`,
-    description: t(BUILT_IN_DESCRIPTIONS[name]),
-  }));
-  const builtInSkills: SlashCommand[] = BOT_RUNNABLE_BUILT_IN_SKILL_NAMES.map((name) => ({
-    id: `built-in-skill:${name}`,
-    name,
-    command: `/${name}`,
-    description: t(BUILT_IN_SKILL_DESCRIPTIONS[name]),
-  }));
   const groups =
     wanted && query !== null
-      ? slashMenuItems(builtIns, skills ? runnableSkills(builtInSkills, skills) : [], query)
+      ? slashMenuRows(query, skills, (key) => t(key))
       : { builtIns: [], skills: [] };
   const items = [...groups.builtIns, ...groups.skills];
   const open = items.length > 0;
