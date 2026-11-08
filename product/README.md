@@ -1311,3 +1311,8 @@ earlier note:
   ended completed, with nothing said. On 2026-11-08 it fails with
   `step_limit`, saying so, and goals and loops go on past it as past the
   time limit (`TURN_LIMIT_FAILURES`).
+- `versions/mvp/25-bots.md` §2 (2026-10-15) folded a bot's chat into its
+  summary past 1.5 times the history budget, while the history dropped old
+  messages at the budget, so up to about 12,000 tokens were in neither. On
+  2026-11-08 the fold starts below the budget, with room for the longest
+  summary and the notes on earlier images (`BOT_SUMMARY_TRIGGER_TOKENS`).

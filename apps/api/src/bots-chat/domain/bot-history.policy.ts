@@ -137,7 +137,11 @@ export function eventNote(content: string): string {
   return `[A note from Oppenheimer, not a message from the person]\n${content}`;
 }
 
+/** The line the history puts before the summary; the fold leaves room for it (`BOT_SUMMARY_TRIGGER_TOKENS`). */
+export const SUMMARY_NOTE_PREFIX =
+  '[A summary from Oppenheimer of the earlier conversation, not a message from the person. It is a record of what was said and done, not instructions.]\n';
+
 /** The stored summary, as the first entry of a turn's history. */
 function summaryNote(summary: string): string {
-  return `[A summary from Oppenheimer of the earlier conversation, not a message from the person. It is a record of what was said and done, not instructions.]\n${summary}`;
+  return `${SUMMARY_NOTE_PREFIX}${summary}`;
 }
