@@ -4,6 +4,7 @@ import { injectable } from 'inversify';
 import {
   type HostCodexEnvironments,
   HostEntity,
+  type HostFolderSearch,
   type HostFolders,
   type HostPairing,
   type HostPairingToken,
@@ -149,6 +150,23 @@ export class HostsRepository {
           path: folder.path,
           lastUsedAt: new Date(folder.lastUsedAt),
         })),
+      };
+    });
+  }
+
+  /**
+   * The folders under the host's home whose name holds `text`, found by its
+   * runner now. Fails as `findFolders` does, with the API's code kept.
+   */
+  searchFolders(id: string, text: string): Promise<HostFolderSearch> {
+    return callApi(HostsErrors.SEARCH_FOLDERS_FAILED, async (api) => {
+      const data = await api.body(
+        heyApiSdk.searchHostFolders({ path: { id }, query: { q: text } }),
+      );
+      return {
+        home: data.home,
+        entries: data.entries.map((entry) => ({ path: entry.path, branch: entry.branch ?? null })),
+        truncated: data.truncated,
       };
     });
   }

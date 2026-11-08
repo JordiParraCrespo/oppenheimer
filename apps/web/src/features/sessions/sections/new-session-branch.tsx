@@ -15,7 +15,7 @@ import { parseRepositoryKey, toBranchOptions } from '../lib/session-options';
  */
 export function NewSessionBranch() {
   const { t } = useTranslation();
-  const { control } = useNewSessionDraft();
+  const { control, setValue } = useNewSessionDraft();
   const { field } = useController({ control, name: 'scope' });
 
   const only = field.value.length === 1 ? field.value[0] : undefined;
@@ -30,7 +30,11 @@ export function NewSessionBranch() {
         default: t('sessions.new.branch.default'),
       })}
       value={only.branch}
-      onValueChange={(branch) => field.onChange([{ id: only.id, branch }])}
+      onValueChange={(branch) => {
+        field.onChange([{ id: only.id, branch }]);
+        // A branch chosen for the carried repository chooses the repository too.
+        setValue('scopeChosen', true);
+      }}
       loading={branches.isPending}
       variant="tab"
     />

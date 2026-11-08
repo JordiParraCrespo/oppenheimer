@@ -13,7 +13,14 @@ import {
   keyedProviderFor,
   providerOfMark,
 } from '../lib/bot-engine';
-import { botSections, firstBot, inOrder, sectionOrder } from '../lib/bot-groups';
+import {
+  botSections,
+  firstBot,
+  groupOrder,
+  inGroupOrder,
+  inOrder,
+  sectionOrder,
+} from '../lib/bot-groups';
 import { composerTopOf } from '../lib/composer-top';
 import { revisionNote } from '../lib/revision-note';
 
@@ -80,6 +87,33 @@ describe('botSections', () => {
       ['engineering', ['release']],
       ['research', ['quota', 'scholar']],
       [null, ['fresh']],
+    ]);
+  });
+
+  it('draws the groups in the order a group drag put them, Ungrouped still last', () => {
+    const sections = botSections(bots, groups, '');
+    expect(groupOrder(sections)).toEqual(['engineering', 'research']);
+    const dropped = inGroupOrder(sections, ['research', 'engineering']);
+    expect(dropped.map((section) => section.id)).toEqual(['research', 'engineering', null]);
+  });
+
+  it('leaves a hidden bot out of its group, but a search still finds it', () => {
+    expect(ids(botSections(bots, groups, '', { hidden: ['quota'] }))).toEqual([
+      ['engineering', ['release']],
+      ['research', ['scholar']],
+      [null, ['fresh']],
+    ]);
+    expect(ids(botSections(bots, groups, 'quota', { hidden: ['quota'] }))).toEqual([
+      ['engineering', ['quota']],
+    ]);
+  });
+
+  it('counts the hidden bots of a group, so one with all of them hidden is not called empty', () => {
+    const sections = botSections(bots, groups, '', { hidden: ['scholar', 'quota'] });
+    expect(sections.map((section) => [section.id, section.hiddenCount])).toEqual([
+      ['engineering', 1],
+      ['research', 1],
+      [null, 0],
     ]);
   });
 

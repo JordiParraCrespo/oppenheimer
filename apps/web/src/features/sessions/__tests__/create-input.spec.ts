@@ -15,6 +15,7 @@ const draft: NewSessionDraft = {
   projectId: null,
   hostId: 'host-1',
   scope: [{ id: 'installation-1:42', branch: 'main' }],
+  scopeChosen: true,
   folder: '/home/jordi/notes',
   agent: 'claude-code',
   model: null,

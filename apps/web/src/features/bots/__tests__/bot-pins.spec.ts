@@ -133,7 +133,9 @@ describe('botDrop', () => {
 
 describe('inOrder with the pinned bots', () => {
   it('draws a bot the held order took out of Pinned in the group it was dragged to, once', () => {
-    const sections = [{ id: 'g', group: null, bots: [inGroup('A', 0), inGroup('B', 2)] }];
+    const sections = [
+      { id: 'g', group: null, bots: [inGroup('A', 0), inGroup('B', 2)], hiddenCount: 0 },
+    ];
     const drawn = inOrder(sections, { g: ['A', 'P', 'B'], [PINNED_BOTS]: [] }, [inGroup('P', 1)]);
     expect(idsOf(drawn[0]?.bots ?? [])).toEqual(['A', 'P', 'B']);
   });

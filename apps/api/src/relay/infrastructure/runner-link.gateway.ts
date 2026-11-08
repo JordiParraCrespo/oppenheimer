@@ -408,6 +408,7 @@ export class RunnerLinkGateway {
         // Queued in `onControl`; never dispatched one by one.
         return;
       case 'fs.listing':
+      case 'fs.found':
       case 'port.listing':
       case 'codex.environments':
       case 'whatsapp.sent':
