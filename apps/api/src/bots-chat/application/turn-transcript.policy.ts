@@ -25,6 +25,7 @@ import {
   type BotTurnContext,
   type BotTurnEntity,
   type BotTurnPlanLimits,
+  type TurnLimitFailure,
 } from '../domain/bot-turn.entity';
 import type { BotStreamNudge } from '../infrastructure/bot-stream.port';
 import type { TurnInterruption } from './turn-cancel-watch.factory';
@@ -147,23 +148,12 @@ export class TurnTranscript {
   }
 
   /**
-   * Ends the turn. What interrupted it from outside decides first: Stop
-   * cancels it, the time limit fails it with a message saying so (what it
-   * wrote is kept). Otherwise it ends as the engine said, and running out of
-   * steps fails it the way the time limit does: it used to complete, and the
-   * bot stopped mid-work with nothing said (2026-11-08).
+   * Ends the turn as `turnEnding` says, with what it cost.
    */
   endTurn(now: Date, interruption: TurnInterruption | null): void {
     const { reason, error, failure, ...usage } = this.outcome;
-    if (interruption === 'time_limit') {
-      this.turn.end('failed', now, { error: TIME_LIMIT_ERROR, failure: 'time_limit', ...usage });
-    } else if (interruption === 'stop') {
-      this.turn.end('cancelled', now, usage);
-    } else if (reason === 'max_steps') {
-      this.turn.end('failed', now, { error: STEP_LIMIT_ERROR, failure: 'step_limit', ...usage });
-    } else {
-      this.turn.end(reason, now, { error, failure, ...usage });
-    }
+    const ending = turnEnding(interruption, { reason, error, failure });
+    this.turn.end(ending.status, now, { ...ending, ...usage });
   }
 
   private say(text: string): TranscriptWrite[] {
@@ -274,6 +264,41 @@ export const STEP_LIMIT_ERROR = `Stopped after ${BOT_TURN_MAX_STEPS} steps, the 
 
 /** Why a turn the time limit stopped failed, in words a person can act on. */
 export const TIME_LIMIT_ERROR = `Stopped after ${BOT_TURN_TIME_LIMIT_MS / 60_000} minutes, the limit for one turn. Ask for a smaller step, or split the request.`;
+
+/** Each bound of one turn's words to the person (`TURN_LIMIT_FAILURES`). */
+const TURN_LIMIT_ERRORS: Readonly<Record<TurnLimitFailure, string>> = {
+  time_limit: TIME_LIMIT_ERROR,
+  step_limit: STEP_LIMIT_ERROR,
+};
+
+/** How a turn ends: its status, and for a failure its words and kind. */
+export interface TurnEnding {
+  status: 'completed' | 'cancelled' | 'failed';
+  error: string | null;
+  failure: BotTurnFailure | null;
+}
+
+/**
+ * How a turn ends, from what stopped it outside (Stop, its clock) and how its
+ * engine said it ended. Stop cancels it. A bound of one turn fails it with its
+ * words, whether the clock stopped it from outside or the engine ran out of
+ * steps (which completed it, in silence, until 2026-11-08); what it wrote is
+ * kept either way. Otherwise it ends as the engine said. A new bound is a
+ * member of `TURN_LIMIT_FAILURES` with its words above, not a branch here.
+ */
+export function turnEnding(
+  interruption: TurnInterruption | null,
+  engine: Pick<TranscriptOutcome, 'reason' | 'error' | 'failure'>,
+): TurnEnding {
+  if (interruption === 'stop') return { status: 'cancelled', error: null, failure: null };
+  if (interruption === 'time_limit') return limitEnding('time_limit');
+  if (engine.reason === 'max_steps') return limitEnding('step_limit');
+  return { status: engine.reason, error: engine.error, failure: engine.failure };
+}
+
+function limitEnding(limit: TurnLimitFailure): TurnEnding {
+  return { status: 'failed', error: TURN_LIMIT_ERRORS[limit], failure: limit };
+}
 
 /** A turn's failure in words a person can act on: the catalog's for ours, the engine's otherwise. */
 export function failureReasonOf(error: unknown): string {
