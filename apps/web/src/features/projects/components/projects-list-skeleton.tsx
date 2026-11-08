@@ -10,7 +10,8 @@ const ROWS = [
 
 /**
  * The projects before they answer: the list's card with three rows on the
- * row's own frame (the name, the repositories line, settings as bars).
+ * row's own frame (the name, the repository count's tag, the repositories
+ * line, and settings at the 28px icon button's size, as bars).
  */
 export function ProjectsListSkeleton() {
   return (
@@ -21,12 +22,13 @@ export function ProjectsListSkeleton() {
           <SettingsListRow
             key={name}
             align="center"
+            kind={<Skeleton shape="sm" className="h-2 w-16" />}
             meta={
               <span className="flex h-4.5 items-center">
                 <Skeleton shape="sm" className={`h-2.5 ${meta}`} />
               </span>
             }
-            actions={<Skeleton shape="pill" className="size-8" />}
+            actions={<Skeleton shape="sm" className="size-(--control-h-sm)" />}
           >
             <span className="flex h-5 items-center">
               <Skeleton shape="sm" className={`h-3 ${name}`} />

@@ -1,13 +1,15 @@
-import { CalendarAccountList, Skeleton } from '@oppenheimer/design-system-web';
+import { CalendarAccountAdd, CalendarAccountList, Skeleton } from '@oppenheimer/design-system-web';
 import { LoadingStatus } from '@oppenheimer/frontend-web';
+import { useTranslation } from 'react-i18next';
 
 /**
  * The Google accounts before they answer: the account list with one row as
  * `CalendarAccountRow` draws it (the mark, the address over its status, the
- * ×) and the add row at its 40px, so the sidebar does not move when the
- * accounts land.
+ * ×) and the real Add account row, disabled, so the sidebar does not move
+ * when the accounts land.
  */
 export function GoogleAccountsSkeleton() {
+  const { t } = useTranslation();
   return (
     <CalendarAccountList aria-busy>
       <LoadingStatus />
@@ -25,10 +27,7 @@ export function GoogleAccountsSkeleton() {
           <Skeleton shape="sm" className="size-3.25" />
         </span>
       </div>
-      <div aria-hidden className="flex h-10 items-center gap-2.5 px-3">
-        <Skeleton shape="sm" className="size-3.25" />
-        <Skeleton shape="sm" className="h-3 w-24" />
-      </div>
+      <CalendarAccountAdd disabled>{t('calendar.google.add')}</CalendarAccountAdd>
     </CalendarAccountList>
   );
 }

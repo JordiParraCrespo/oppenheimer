@@ -25,6 +25,9 @@ import type { PairingCommands } from './pairing-install';
 /** The 11px mono label the export puts over a pairing part ("Connection"). */
 const EYEBROW = 'font-mono text-[11px] tracking-[0.02em] text-fg-subtle uppercase';
 
+/** The prompt's lines while its token is minted, at the panel's mono line. */
+const PROMPT_LINES = ['w-11/12', 'w-full', 'w-4/5', 'w-full', 'w-1/2'];
+
 const STATE_DOT: Record<ConnectionRowState, string> = {
   done: 'bg-success',
   current: 'animate-pulse-dot bg-fg-subtle',
@@ -84,7 +87,16 @@ export function PairingPrompt({
             {pairing.agentPrompt}
           </pre>
         ) : (
-          <Skeleton className="h-32 w-full rounded-none" />
+          <div
+            aria-busy
+            className="px-3.5 py-3 group-data-[layout=step]/pairing:px-4 group-data-[layout=step]/pairing:py-3.5"
+          >
+            {PROMPT_LINES.map((width) => (
+              <span key={width} className="flex h-5 items-center">
+                <Skeleton shape="sm" className={`h-2.5 ${width}`} />
+              </span>
+            ))}
+          </div>
         )}
       </DisclosurePanel>
     </Disclosure>
@@ -128,7 +140,17 @@ export function PairingManualInstall({
             </Button>
           </div>
         ) : (
-          <Skeleton className="h-10 w-full" />
+          <div
+            aria-busy
+            className="flex items-center gap-2 rounded-sm border border-border-subtle bg-card py-1.5 pr-1.5 pl-3.5"
+          >
+            <span className="flex h-4 min-w-0 flex-1 items-center">
+              <Skeleton shape="sm" className="h-2.5 w-4/5" />
+            </span>
+            <Button type="button" variant="ghost" size="sm" className="flex-none" disabled>
+              {t('common.copy')}
+            </Button>
+          </div>
         )}
         {pairing?.installScriptSha256 ? (
           <span className="font-mono text-[11.5px] break-all text-fg-subtle">

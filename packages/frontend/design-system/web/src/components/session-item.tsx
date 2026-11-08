@@ -7,6 +7,7 @@ import type * as React from 'react';
 import { META_GIVES_WAY, ROW_BUTTON_WITH_ACTION, SidebarRow } from '../internal/sidebar-row';
 import { cn } from '../lib/utils';
 import { useSortableControl } from './drag';
+import { Skeleton } from './skeleton';
 import type { StatusState } from './status-dot';
 
 function SessionList({ className, ...props }: React.ComponentProps<'div'>) {
@@ -246,5 +247,27 @@ function SortableSessionItem({
   );
 }
 
-export { SessionItem, SessionList, SortableSessionItem };
+const SKELETON_NAMES = ['w-40', 'w-28', 'w-48', 'w-32', 'w-36'] as const;
+
+/**
+ * SessionItemSkeleton — a `SessionItem` while the list loads: the row's 30px
+ * line, the 14px glyph as a square and the name as a bar at the name's
+ * height, with no wash, so a loading list reads as rows of text to come
+ * rather than a column of selected rows. `index` varies the name's width.
+ */
+function SessionItemSkeleton({ index = 0, className, ...props }: React.ComponentProps<'div'> & { index?: number }) {
+  return (
+    <div
+      aria-hidden
+      data-slot="session-item-skeleton"
+      className={cn('flex h-[30px] items-center gap-[9px] px-2.5', className)}
+      {...props}
+    >
+      <Skeleton shape="sm" className="size-3.5 shrink-0 rounded-xs" />
+      <Skeleton shape="sm" className={cn('h-3 max-w-full', SKELETON_NAMES[index % SKELETON_NAMES.length])} />
+    </div>
+  );
+}
+
+export { SessionItem, SessionItemSkeleton, SessionList, SortableSessionItem };
 export type { SessionRename };

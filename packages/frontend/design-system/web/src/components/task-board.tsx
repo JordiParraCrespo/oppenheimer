@@ -8,6 +8,7 @@ import { Checkbox } from './checkbox';
 import { dragIgnore, SortableGroup } from './drag';
 import { Kbd } from './kbd';
 import { IconButton } from './icon-button';
+import { Skeleton } from './skeleton';
 import { StatusDot, type StatusState } from './status-dot';
 
 /**
@@ -31,6 +32,8 @@ import { StatusDot, type StatusState } from './status-dot';
  *   done, the title then struck and muted), the title, two lines of notes,
  *   the project and milestone, the due date in mono (red when overdue, full ink
  *   when due within a day), the linked session, and Start session on hover.
+ * - `TaskCardSkeleton`: a card's place before the tasks answer, on the
+ *   card's own frame.
  */
 
 type TaskStatus = 'todo' | 'doing' | 'review' | 'done';
@@ -78,7 +81,8 @@ function TaskColumn({
   id: string;
   status: TaskStatus;
   label: React.ReactNode;
-  count?: number;
+  /** The count in mono; a placeholder's bar while the tasks load. */
+  count?: React.ReactNode;
   /** The card ids in this column, in order. */
   items: readonly string[];
   onAdd?: () => void;
@@ -247,6 +251,36 @@ function TaskCard({
   );
 }
 
+const SKELETON_TITLES = ['w-4/5', 'w-3/5', 'w-[70%]', 'w-1/2'] as const;
+const SKELETON_META = ['w-20', 'w-16', 'w-24', 'w-14'] as const;
+
+/**
+ * TaskCardSkeleton — a `TaskCard` before the tasks answer: the same bordered
+ * card and padding, the round check's place, the title and the meta line as
+ * bars at their lines' heights. `index` varies the widths.
+ */
+function TaskCardSkeleton({ index = 0, className, ...props }: React.ComponentProps<'div'> & { index?: number }) {
+  return (
+    <div
+      aria-hidden
+      data-slot="task-card-skeleton"
+      className={cn('flex gap-2.5 rounded-md border border-border-subtle bg-card py-3 pr-3 pl-2.5', className)}
+      {...props}
+    >
+      <Skeleton shape="pill" className="mt-px size-4.5 shrink-0" />
+      <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+        <span className="flex h-5 items-center">
+          <Skeleton shape="sm" className={cn('h-3 max-w-full', SKELETON_TITLES[index % SKELETON_TITLES.length])} />
+        </span>
+        <span className="flex h-4.5 items-center justify-between gap-2.5">
+          <Skeleton shape="sm" className={cn('h-2.5', SKELETON_META[index % SKELETON_META.length])} />
+          <Skeleton shape="sm" className="h-2.5 w-10" />
+        </span>
+      </div>
+    </div>
+  );
+}
+
 /**
  * A task's session, in its card: the run state's dot and word, the session
  * in mono, how many more are linked, and the terminal glyph. The whole row
@@ -355,5 +389,5 @@ function TaskComposer({
   );
 }
 
-export { TASK_STATUS_STATE, TaskBoard, TaskCard, TaskColumn, TaskColumnAdd, TaskComposer, TaskSessionChip };
+export { TASK_STATUS_STATE, TaskBoard, TaskCard, TaskCardSkeleton, TaskColumn, TaskColumnAdd, TaskComposer, TaskSessionChip };
 export type { TaskDueTone, TaskStatus };

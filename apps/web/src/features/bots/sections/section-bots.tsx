@@ -82,8 +82,10 @@ export function SectionBots({ section }: { section: BotSection }) {
       {fold.open ? (
         <QueryState>
           <QueryState.Pending>
-            <BotList className="mx-1.5">
-              <BotItemSkeleton />
+            <BotList aria-busy className="mx-1.5">
+              <BotItemSkeleton index={0} />
+              <BotItemSkeleton index={1} />
+              <BotItemSkeleton index={2} />
             </BotList>
           </QueryState.Pending>
           <QueryState.Error fallback={t('bots.sidebar.loadFailed')} className="mx-3" />

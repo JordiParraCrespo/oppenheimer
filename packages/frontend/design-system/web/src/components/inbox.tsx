@@ -56,6 +56,10 @@ function InboxListHead({
   );
 }
 
+/** The row's box, shared by `InboxItem` and its skeleton so the two cannot drift. */
+const ITEM_FRAME =
+  'grid w-full grid-cols-[8px_minmax(0,1fr)_auto] gap-x-2.5 gap-y-[3px] border-b border-border-subtle py-3 pr-3.5 pl-2.5';
+
 /**
  * InboxItem — one thing that needs you, as a mail row: an unread dot, who it
  * is from with its mono age (or "Low") on the right, the subject under it and
@@ -106,7 +110,8 @@ function InboxItem({
       render={render}
       nativeButton={nativeButton ?? render === undefined}
       className={cn(
-        'group/inbox grid w-full grid-cols-[8px_minmax(0,1fr)_auto] items-baseline gap-x-2.5 gap-y-[3px] border-b border-border-subtle py-3 pr-3.5 pl-2.5 text-left text-fg outline-none transition-colors duration-fast ease-standard hover:bg-hover-surface focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring data-active:bg-selected-surface data-done:opacity-50',
+        ITEM_FRAME,
+        'group/inbox items-baseline text-left text-fg outline-none transition-colors duration-fast ease-standard hover:bg-hover-surface focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring data-active:bg-selected-surface data-done:opacity-50',
         withAction && ROW_BUTTON_WITH_ACTION,
         className,
       )}
@@ -153,21 +158,36 @@ function InboxItem({
   );
 }
 
-/** An `InboxItem` while the Inbox loads: the same box, a bar per line. */
-function InboxItemSkeleton({ className }: { className?: string }) {
+const SKELETON_SENDERS = ['w-28', 'w-36', 'w-24', 'w-32'] as const;
+const SKELETON_TITLES = ['w-3/4', 'w-2/3', 'w-4/5', 'w-1/2'] as const;
+const SKELETON_PREVIEWS = ['w-2/3', 'w-5/6', 'w-1/2', 'w-3/4'] as const;
+
+/**
+ * An `InboxItem` while the Inbox loads: the same frame, the sender, its age,
+ * the subject and the preview each a bar in a box of its line's height
+ * (13.5px and 12.5px type at the body's leading). `index` varies the widths
+ * so a list of them does not read as stripes.
+ */
+function InboxItemSkeleton({ index = 0, className }: { index?: number; className?: string }) {
+  const pick = <T,>(widths: readonly T[]) => widths[index % widths.length];
   return (
     <div
       data-slot="inbox-item-skeleton"
       aria-hidden
-      className={cn(
-        'grid w-full grid-cols-[8px_minmax(0,1fr)_auto] items-center gap-x-2.5 gap-y-2 border-b border-border-subtle py-3.5 pr-3.5 pl-2.5',
-        className,
-      )}
+      className={cn(ITEM_FRAME, 'items-center', className)}
     >
-      <Skeleton className="col-start-2 h-3.5 w-1/3" />
-      <Skeleton className="col-start-3 h-3 w-5" />
-      <Skeleton className="col-span-2 col-start-2 h-3.5 w-3/4" />
-      <Skeleton className="col-span-2 col-start-2 h-3 w-2/3" />
+      <span className="col-start-2 row-start-1 flex h-5 items-center">
+        <Skeleton shape="sm" className={cn('h-3 max-w-full', pick(SKELETON_SENDERS))} />
+      </span>
+      <span className="col-start-3 row-start-1 flex h-5 items-center">
+        <Skeleton shape="sm" className="h-2.5 w-5" />
+      </span>
+      <span className="col-span-2 col-start-2 row-start-2 flex h-5 items-center">
+        <Skeleton shape="sm" className={cn('h-3', pick(SKELETON_TITLES))} />
+      </span>
+      <span className="col-span-2 col-start-2 row-start-3 flex h-4.5 items-center">
+        <Skeleton shape="sm" className={cn('h-2.5', pick(SKELETON_PREVIEWS))} />
+      </span>
     </div>
   );
 }

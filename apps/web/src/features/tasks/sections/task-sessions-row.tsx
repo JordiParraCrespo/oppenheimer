@@ -1,4 +1,4 @@
-import { Button, IconButton, StatusDot } from '@oppenheimer/design-system-web';
+import { Button, IconButton, Skeleton, StatusDot } from '@oppenheimer/design-system-web';
 import { Play, X } from '@oppenheimer/design-system-web/icons';
 import type { TaskEntity } from '@oppenheimer/frontend-consumer';
 import { useHosts, useSessions, useUnlinkTaskSession } from '@oppenheimer/frontend-consumer/react';
@@ -72,6 +72,21 @@ export function TaskSessionsRow({ task }: { task: TaskEntity }) {
             </div>
           );
         })}
+        {sessions === undefined
+          ? // The sessions have not answered: a row's place per linked session, so they do not pop in.
+            task.sessions.map((entry) => (
+              <div
+                key={entry.sessionId}
+                aria-hidden
+                className="flex h-9 min-w-0 items-center gap-2 rounded-sm bg-hover-surface pr-1 pl-2"
+              >
+                <Skeleton shape="sm" className="h-2.5 w-40" />
+                <span className="flex-1" />
+                <Skeleton shape="sm" className="h-2.5 w-16" />
+                <Skeleton shape="sm" className="h-2.5 w-8" />
+              </div>
+            ))
+          : null}
         <ErrorAlert
           error={unlink.error}
           fallback={t('tasks.dialog.unlinkFailed')}

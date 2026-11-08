@@ -22,28 +22,32 @@ const pending = (inside) => `export function ThingList() {
 `;
 const lines = (source) => skeletonSlabProblems(source).map(({ line }) => line);
 
-test('a lone block the height of a guess is a slab, reported on the slot line', () => {
-  assert.deepEqual(lines(pending('<Skeleton className="h-80 w-full" />')), [4]);
+test('a lone block the height of a guess is a slab, reported on its own line', () => {
+  assert.deepEqual(lines(pending('<Skeleton className="h-80 w-full" />')), [5]);
 });
 
 test('a block that fills its frame is a slab', () => {
   for (const classes of ['min-h-0 w-full flex-1', 'h-full w-full', 'min-h-40 w-full']) {
-    assert.deepEqual(lines(pending(`<Skeleton className="${classes}" />`)), [4], classes);
+    assert.deepEqual(lines(pending(`<Skeleton className="${classes}" />`)), [5], classes);
   }
 });
 
+test('a bar that fills its row is not a block', () => {
+  assert.deepEqual(lines(pending('<Skeleton className="h-4 flex-1" />')), []);
+});
+
 test('pixel and size heights count from 64px', () => {
-  assert.deepEqual(lines(pending('<Skeleton className="h-[64px] w-full" />')), [4]);
-  assert.deepEqual(lines(pending('<Skeleton className="size-16" />')), [4]);
+  assert.deepEqual(lines(pending('<Skeleton className="h-[64px] w-full" />')), [5]);
+  assert.deepEqual(lines(pending('<Skeleton className="size-16" />')), [5]);
   assert.deepEqual(lines(pending('<Skeleton className="h-[48px] w-full" />')), []);
 });
 
-test('several skeletons with one slab among them are a slab', () => {
+test('each slab among several skeletons is reported', () => {
   assert.deepEqual(
     lines(
       pending('<Skeleton className="h-6 w-40" />\n<Skeleton shape="lg" className="h-60 w-full" />'),
     ),
-    [4],
+    [6],
   );
 });
 
@@ -55,20 +59,46 @@ test('bars at the height of a line or a row pass', () => {
   assert.deepEqual(lines(pending('<Skeleton shape="sm" className="h-13.5 w-full" />')), []);
 });
 
-test('a named placeholder, or skeletons inside the real container, pass', () => {
+test('a named placeholder passes', () => {
   assert.deepEqual(lines(pending('<ThingListSkeleton />')), []);
+});
+
+test('a slab inside the real container is still a slab', () => {
   assert.deepEqual(
     lines(pending('<SettingsGroup>\n<Skeleton className="h-60 w-full" />\n</SettingsGroup>')),
-    [],
+    [6],
   );
 });
 
-test('a slab that says why it stands in passes', () => {
+test('a slab outside QueryState is a slab: a named placeholder, a pending branch', () => {
+  assert.deepEqual(
+    lines(
+      'export function ThingSkeleton() {\n  return <Skeleton shape="lg" className="h-47.5 w-full" />;\n}\n',
+    ),
+    [2],
+  );
+  assert.deepEqual(
+    lines('if (state === \'checking\') return <Skeleton className="h-40 w-full" />;\n'),
+    [1],
+  );
+});
+
+test('classes joined by cn are read', () => {
+  assert.deepEqual(lines("<Skeleton className={cn('h-40', wide && 'w-full')} />\n"), [1]);
+});
+
+test('a slab that says why it stands in passes, in its slot or just above it', () => {
   assert.deepEqual(
     lines(
       pending(
         '{/* A block stands in here: the terminal draws its first frame in place */}\n<Skeleton shape="none" className="min-h-0 w-full flex-1" />',
       ),
+    ),
+    [],
+  );
+  assert.deepEqual(
+    lines(
+      '<div>\n  {/* A block stands in here: the description field, at its own height */}\n  <Skeleton className="h-22 w-full" />\n</div>\n',
     ),
     [],
   );

@@ -24,7 +24,7 @@ export function BotUsageCard({ botId }: { botId: string }) {
       <Card className="w-full max-w-sm px-4 py-3">
         <QueryState>
           <QueryState.Pending>
-            <BotUsageSkeleton />
+            <BotUsageSkeleton onClose={() => closeUsageCard(botId)} />
           </QueryState.Pending>
           <QueryState.Error>
             {(error, retry) => (
