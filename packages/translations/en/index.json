@@ -2054,8 +2054,13 @@
         "tools": "Tools",
         "search": "Search tools",
         "noMatch": "No tools match.",
+        "filters": {
+          "decision": "Decision",
+          "group": "Group",
+          "allGroups": "All groups",
+          "clear": "Clear"
+        },
         "views": {
-          "label": "Show",
           "all": "All",
           "allow": "Allow",
           "ask": "Ask",

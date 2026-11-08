@@ -1,6 +1,4 @@
 import {
-  PillTab,
-  PillTabs,
   SettingsAddRow,
   SettingsGroup,
   SettingsHeading,
@@ -9,7 +7,9 @@ import {
 } from '@oppenheimer/design-system-web';
 import { LoadingStatus } from '@oppenheimer/frontend-web';
 import { useTranslation } from 'react-i18next';
-import { TOOL_VIEWS } from '@/features/bots/lib/tool-search';
+
+/** The two dropdowns beside the search. */
+const FACETS = ['decision', 'group'] as const;
 
 /** The folded groups, at the widths their names run to. */
 const GROUPS = ['w-20', 'w-36', 'w-12', 'w-16', 'w-28'];
@@ -17,7 +17,7 @@ const GROUPS = ['w-20', 'w-36', 'w-12', 'w-16', 'w-28'];
 /**
  * Permissions before they answer: both rule lists with their static titles,
  * an empty row and the add row, which need no data; the grants card with one
- * line; then the tools' search and views, and the groups folded to a line
+ * line; then the tools' search and its two dropdowns, and the groups folded to a line
  * each, their names and summaries as bars.
  */
 export function BotPermissionsSkeleton() {
@@ -70,13 +70,15 @@ export function BotPermissionsSkeleton() {
         </span>
         <div className="flex flex-wrap items-center gap-2 px-1">
           <Skeleton shape="pill" className="h-7 w-60 max-w-full" />
-          <PillTabs size="sm" value="all" onValueChange={() => {}} disabled>
-            {TOOL_VIEWS.map((view) => (
-              <PillTab key={view} value={view}>
-                {t(`bots.settings.permissions.views.${view}`)}
-              </PillTab>
-            ))}
-          </PillTabs>
+          {FACETS.map((key) => (
+            <span
+              key={key}
+              className="inline-flex h-(--control-h-md) items-center gap-1.5 rounded-pill bg-hover-surface px-3 text-[13px] text-fg-muted"
+            >
+              {t(`bots.settings.permissions.filters.${key}`)}
+              <Skeleton shape="sm" className="h-2.5 w-10" />
+            </span>
+          ))}
         </div>
         <div className="flex flex-col gap-1">
           {GROUPS.map((width) => (

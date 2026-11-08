@@ -1,17 +1,19 @@
 import { searchText } from '@oppenheimer/frontend-web';
 import { z } from 'zod';
 
-/** The views over a bot's tools: every tool, one decision, or the ones the owner set. */
+/** The decisions a bot's tools are narrowed to: every tool, one decision, or the ones the owner set. */
 export const TOOL_VIEWS = ['all', 'allow', 'ask', 'off', 'changed'] as const;
 export type ToolView = (typeof TOOL_VIEWS)[number];
 
 /**
- * Settings → Permissions' search: what the tools are searched for and which
- * view is on, so a narrowed list is a link. No search and `all` are the
- * defaults, written as no key.
+ * Settings → Permissions' search: the words, the decision and the group the
+ * tools are narrowed to, so a narrowed list is a link. Each default is
+ * written as no key. The group is read as text and matched against the
+ * catalog by the filter, which keeps the tool catalog out of the first load.
  */
 export const botPermissionsSearchSchema = z.object({
   q: searchText,
-  tools: z.enum(TOOL_VIEWS).optional().catch(undefined),
+  decision: z.enum(TOOL_VIEWS).optional().catch(undefined),
+  group: searchText,
 });
 export type BotPermissionsSearch = z.infer<typeof botPermissionsSearchSchema>;

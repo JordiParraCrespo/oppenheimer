@@ -635,8 +635,13 @@
       "tools": "Herramientas",
       "search": "Buscar herramientas",
       "noMatch": "Ninguna herramienta coincide.",
+      "filters": {
+        "decision": "Decisión",
+        "group": "Grupo",
+        "allGroups": "Todos los grupos",
+        "clear": "Borrar"
+      },
       "views": {
-        "label": "Mostrar",
         "all": "Todas",
         "allow": "Permitir",
         "ask": "Preguntar",

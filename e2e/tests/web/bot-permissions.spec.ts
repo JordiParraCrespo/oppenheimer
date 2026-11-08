@@ -4,10 +4,12 @@ import { provisionedUser, signInAs } from '../../support/web';
 /**
  * A bot's Settings → Permissions in a browser, against the real control
  * plane (`product/versions/mvp/25-bots.md` §5): the tools folded under their
- * groups and found by a search, each standing where the preset puts it, one
- * set Off (the search kept in the address), found again under Set by you and handed back to the preset,
- * merging never offered Allow, and a rule of each kind written and removed. What a yes with a reach leaves standing is the API's integration
- * suite: no bot runs a turn here.
+ * groups and found by a search kept in the address, each standing where the
+ * preset puts it; one set Off, found under the Decision dropdown's Set by
+ * you and handed back to the preset, then shown alone under the Group
+ * dropdown's GitHub; merging never offered Allow; and a rule of each kind
+ * written and removed. What a yes with a reach leaves standing is the API's
+ * integration suite: no bot runs a turn here.
  */
 test('a bot’s tools set and reset, and its rules written and removed', async ({ page }) => {
   const owner = await provisionedUser('bot-permissions');
@@ -43,15 +45,21 @@ test('a bot’s tools set and reset, and its rules written and removed', async (
 
   // Set by you lists that one tool, and keeps it in the address.
   await search.fill('');
-  const views = page.getByRole('group', { name: 'Show' });
-  await views.getByRole('button', { name: /^Set by you/ }).click();
-  await expect(page).toHaveURL(/tools=changed/);
+  const decision = page.getByRole('button', { name: /^Decision/ });
+  await decision.click();
+  await page.getByRole('menuitemradio', { name: /^Set by you/ }).click();
+  await expect(page).toHaveURL(/decision=changed/);
   await expect(page.getByRole('group', { name: /^What .* does$/ })).toHaveCount(1);
   const row = page.locator('[data-slot="settings-row"]').filter({ has: comment });
   await row.getByRole('button', { name: 'Default' }).click();
   await expect(page.getByText('No tools match.')).toBeVisible();
-  await views.getByRole('button', { name: /^All(?!ow)/ }).click();
-  await search.fill('comment on pull');
+  await page.getByRole('button', { name: 'Clear' }).click();
+  await expect(page).not.toHaveURL(/decision=/);
+
+  // The GitHub group alone, with the comment tool back on Ask.
+  await page.getByRole('button', { name: /^Group/ }).click();
+  await page.getByRole('menuitemradio', { name: /^GitHub/ }).click();
+  await expect(page).toHaveURL(/group=github/);
   await expect(comment.getByRole('button', { name: 'Ask' })).toHaveAttribute(
     'aria-pressed',
     'true',

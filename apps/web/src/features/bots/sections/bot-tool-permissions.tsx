@@ -1,6 +1,5 @@
 import {
-  PillTab,
-  PillTabs,
+  FacetSelect,
   SettingsGroup,
   SettingsHeading,
   SettingsListRow,
@@ -16,9 +15,11 @@ import { BotToolRow } from '@/features/bots/components/bot-tool-row';
 import { ToolSearchField } from '@/features/bots/components/tool-search-field';
 import { useToolFilter } from '@/features/bots/hooks/use-tool-filter';
 import {
+  countToolGroups,
   countToolViews,
   filterToolGroups,
   isFiltering,
+  pickedGroup,
   summarizeToolGroup,
 } from '@/features/bots/lib/tool-filter';
 import { TOOL_VIEWS, type ToolView } from '@/features/bots/lib/tool-search';
@@ -29,20 +30,22 @@ import { TOOL_VIEWS, type ToolView } from '@/features/bots/lib/tool-search';
  * reaches outside Oppenheimer; Full access runs it).
  *
  * The list is long, so it opens folded: one line per group saying how its
- * tools stand. A search over names and sentences, and a view per decision (or
- * the tools you set), narrow it; a narrowed list opens every group that still
- * has a tool. The whole catalog arrives in one read, so the filter runs here.
+ * tools stand. A search over names and sentences, and two dropdowns, the
+ * decision (or the tools you set) and the group, narrow it, each option with
+ * the count it would leave; a narrowed list opens every group that still has
+ * a tool. The whole catalog arrives in one read, so the filter runs here.
  */
 export function BotToolPermissions({ botId }: { botId: string }) {
   const { t } = useTranslation();
   const { data: permissions, error } = useSuspenseBotPermissions(botId);
   const decide = useSetBotToolDecision();
-  const { query, view, setQuery, setView } = useToolFilter();
+  const { filter, setQuery, setView, setGroup, clear } = useToolFilter();
 
-  const filter = { query, view };
-  const filtering = isFiltering(filter);
-  const counts = countToolViews(permissions.tools, query);
-  const groups = filterToolGroups(permissions.groups, filter);
+  const all = permissions.groups;
+  const filtering = isFiltering(all, filter);
+  const views = countToolViews(all, filter);
+  const groupCounts = countToolGroups(all, filter);
+  const groups = filterToolGroups(all, filter);
 
   const summaryOf = (tools: Parameters<typeof summarizeToolGroup>[0]) => {
     const summary = summarizeToolGroup(tools);
@@ -73,21 +76,46 @@ export function BotToolPermissions({ botId }: { botId: string }) {
       <div className="flex flex-wrap items-center gap-2 px-1">
         <ToolSearchField
           label={t('bots.settings.permissions.search')}
-          value={query}
+          value={filter.query}
           onChange={setQuery}
         />
-        <PillTabs
-          size="sm"
-          value={view}
+        <FacetSelect
+          label={t('bots.settings.permissions.filters.decision')}
+          value={filter.view}
           onValueChange={(next) => setView(next as ToolView)}
-          aria-label={t('bots.settings.permissions.views.label')}
-        >
-          {TOOL_VIEWS.map((option) => (
-            <PillTab key={option} value={option} count={counts[option]}>
-              {t(`bots.settings.permissions.views.${option}`)}
-            </PillTab>
-          ))}
-        </PillTabs>
+          options={TOOL_VIEWS.map((view) => ({
+            value: view,
+            label: t(`bots.settings.permissions.views.${view}`),
+            count: views[view],
+          }))}
+        />
+        <FacetSelect
+          label={t('bots.settings.permissions.filters.group')}
+          value={pickedGroup(all, filter.group)}
+          onValueChange={setGroup}
+          menuWidth={260}
+          options={[
+            {
+              value: 'all',
+              label: t('bots.settings.permissions.filters.allGroups'),
+              count: groupCounts.all,
+            },
+            ...all.map(({ group }) => ({
+              value: group,
+              label: t(`bots.settings.permissions.groups.${group}`),
+              count: groupCounts[group],
+            })),
+          ]}
+        />
+        {filtering ? (
+          <button
+            type="button"
+            onClick={clear}
+            className="ml-1 text-sm text-fg-muted transition-colors duration-fast hover:text-fg"
+          >
+            {t('bots.settings.permissions.filters.clear')}
+          </button>
+        ) : null}
       </div>
       {groups.length === 0 ? (
         <SettingsGroup>
