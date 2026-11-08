@@ -16,7 +16,8 @@ import (
 
 // SimulatorServer finds Argent's simulator-server through the `argent` on
 // PATH: the npm package it belongs to ships the binary at
-// bin/<os>/simulator-server. Empty when Argent is not installed.
+// bin/<platform>/simulator-server. Empty when Argent is not installed, or
+// ships no binary for this machine.
 func SimulatorServer() string {
 	cli, err := exec.LookPath("argent")
 	if err != nil {
@@ -26,7 +27,7 @@ func SimulatorServer() string {
 		cli = resolved
 	}
 	for dir := filepath.Dir(cli); ; dir = filepath.Dir(dir) {
-		candidate := filepath.Join(dir, "bin", runtime.GOOS, "simulator-server")
+		candidate := filepath.Join(dir, "bin", argentPlatform(runtime.GOOS, runtime.GOARCH), "simulator-server")
 		if info, err := os.Stat(candidate); err == nil && !info.IsDir() {
 			return candidate
 		}
@@ -34,6 +35,15 @@ func SimulatorServer() string {
 			return ""
 		}
 	}
+}
+
+// argentPlatform is the folder of Argent's bin/ built for this machine:
+// darwin's binary is universal, Linux has one per architecture.
+func argentPlatform(goos, goarch string) string {
+	if goos == "linux" && goarch == "arm64" {
+		return "linux-arm64"
+	}
+	return goos
 }
 
 // toolServerFile is what Argent writes for each tool-server it starts

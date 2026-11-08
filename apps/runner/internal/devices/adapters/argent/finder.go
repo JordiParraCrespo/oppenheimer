@@ -5,13 +5,14 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"os/exec"
 	"runtime"
 	"slices"
 	"strings"
+	"time"
 
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/devices/app"
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/devices/domain"
+	"github.com/jordiparracrespo/oppenheimer/packages/go/execx"
 )
 
 // Finder lists the simulators and emulators running on this host: the iOS
@@ -31,8 +32,7 @@ func (f Finder) Find(ctx context.Context) ([]domain.Device, error) {
 	var devices []domain.Device
 	var failed []error
 	if runtime.GOOS == "darwin" {
-		//nolint:gosec // fixed arguments
-		out, err := exec.CommandContext(ctx, "xcrun", "simctl", "list", "devices", "booted", "-j").Output()
+		out, err := run(ctx, true, "xcrun", "simctl", "list", "devices", "booted", "-j")
 		if err == nil {
 			found, perr := parseSimctl(out)
 			devices = append(devices, found...)
@@ -46,8 +46,9 @@ func (f Finder) Find(ctx context.Context) ([]domain.Device, error) {
 	if adb == "" {
 		adb = "adb"
 	}
-	//nolint:gosec // the host's adb, fixed arguments
-	out, err := exec.CommandContext(ctx, adb, "devices").Output()
+	// Not killed as a group: `adb devices` may start adb's server, which is
+	// meant to outlive it.
+	out, err := run(ctx, false, adb, "devices")
 	if err == nil {
 		for _, serial := range parseADB(out) {
 			devices = append(devices, domain.Device{Serial: serial, Name: avdName(ctx, adb, serial), Platform: domain.Android})
@@ -59,6 +60,15 @@ func (f Finder) Find(ctx context.Context) ([]domain.Device, error) {
 		return nil, errors.Join(failed...)
 	}
 	return devices, nil
+}
+
+// run is one look at the host's devices: stdout only, and bounded even when a
+// helper the tool started keeps its output open.
+func run(ctx context.Context, killGroup bool, name string, args ...string) ([]byte, error) {
+	res, err := execx.Run(ctx, execx.Spec{
+		Name: name, Args: args, Output: execx.Stdout, KillGroup: killGroup, WaitDelay: time.Second,
+	})
+	return []byte(res.Out), err
 }
 
 // parseSimctl reads `simctl list devices booted -j`: every booted simulator,
@@ -109,8 +119,7 @@ func parseADB(out []byte) []string {
 
 // avdName is the emulator's AVD, Pixel_7_API_35 read as "Pixel 7 API 35".
 func avdName(ctx context.Context, adb, serial string) string {
-	//nolint:gosec // the host's adb, a serial adb itself listed, fixed arguments
-	out, err := exec.CommandContext(ctx, adb, "-s", serial, "emu", "avd", "name").Output()
+	out, err := run(ctx, true, adb, "-s", serial, "emu", "avd", "name")
 	if err != nil {
 		return "Android emulator"
 	}

@@ -64,3 +64,17 @@ func TestToolServerIsTheRunningOne(t *testing.T) {
 		t.Fatalf("got %s %s, want the live server", url, token)
 	}
 }
+
+// Argent's bin/linux is x86-64; an arm64 Linux host that ran it would offer
+// a device whose screen can never open.
+func TestSimulatorServerIsBuiltForThisMachine(t *testing.T) {
+	for _, tc := range []struct{ goos, goarch, want string }{
+		{"darwin", "arm64", "darwin"},
+		{"linux", "amd64", "linux"},
+		{"linux", "arm64", "linux-arm64"},
+	} {
+		if got := argentPlatform(tc.goos, tc.goarch); got != tc.want {
+			t.Errorf("%s/%s: got %s, want %s", tc.goos, tc.goarch, got, tc.want)
+		}
+	}
+}
