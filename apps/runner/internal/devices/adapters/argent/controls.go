@@ -17,7 +17,12 @@ import (
 // ControlsOptions locate Argent's tool-server: the one the host's agents use.
 type ControlsOptions struct {
 	// URL is the tool-server's base URL (`argent server start` prints it).
+	// Empty finds the one running in Home each time input arrives: Argent
+	// starts it with the first agent that uses it and stops it when idle,
+	// so its port and token change.
 	URL string
+	// Home is Argent's own directory (~/.argent), read only when URL is empty.
+	Home string
 	// Token is its bearer token; empty for a server started with --no-auth.
 	Token string
 	HTTP  *http.Client
@@ -41,19 +46,26 @@ func NewControls(opts ControlsOptions) *Controls {
 
 // Apply calls the tool that does what the input asks.
 func (c *Controls) Apply(ctx context.Context, device domain.Device, in domain.Input) error {
+	base, token := c.opts.URL, c.opts.Token
+	if base == "" {
+		var err error
+		if base, token, err = readToolServer(c.opts.Home); err != nil {
+			return err
+		}
+	}
 	tool, args := toolFor(device, in)
 	body, err := json.Marshal(args)
 	if err != nil {
 		return err
 	}
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost,
-		strings.TrimRight(c.opts.URL, "/")+"/tools/"+tool, bytes.NewReader(body))
+		strings.TrimRight(base, "/")+"/tools/"+tool, bytes.NewReader(body))
 	if err != nil {
 		return err
 	}
 	req.Header.Set("Content-Type", "application/json")
-	if c.opts.Token != "" {
-		req.Header.Set("Authorization", "Bearer "+c.opts.Token)
+	if token != "" {
+		req.Header.Set("Authorization", "Bearer "+token)
 	}
 	res, err := c.opts.HTTP.Do(req)
 	if err != nil {

@@ -4,25 +4,48 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/devices"
+	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/devices/adapters/argent"
 	devapp "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/devices/app"
 	devdomain "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/devices/domain"
 	sessionsdomain "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/domain"
 )
 
 // hostDevices is the device context for the simulators and emulators this
-// host offers (EnvDevices), or nil when it offers none.
-func hostDevices() (*devapp.Service, error) {
-	offered, err := devdomain.ParseDevices(os.Getenv(EnvDevices))
+// host offers, or nil when it offers none. RUNNER_DEVICES names them; unset,
+// the host offers whichever are running when a session asks, so a host with
+// Argent installed needs no setup. `off` offers none.
+//
+// Only the daemon looks (discover): it holds the one pool that knows which
+// session has which device. A host-side `runner sessions create` builds its
+// own App, and a pool of its own there would hand out a device the daemon
+// already gave another session.
+func hostDevices(discover bool) (*devapp.Service, error) {
+	spec := strings.TrimSpace(os.Getenv(EnvDevices))
+	if strings.EqualFold(spec, "off") {
+		return nil, nil
+	}
+	offered, err := devdomain.ParseDevices(spec)
 	if err != nil {
 		return nil, fmt.Errorf("%s: %w", EnvDevices, err)
 	}
+	simulatorServer := os.Getenv(EnvArgentSimulatorServer)
+	if simulatorServer == "" {
+		simulatorServer = argent.SimulatorServer()
+	}
+	argentHome := ""
+	if home, err := os.UserHomeDir(); err == nil {
+		argentHome = filepath.Join(home, ".argent")
+	}
 	return devices.New(devices.Options{
 		Devices:         offered,
-		SimulatorServer: os.Getenv(EnvArgentSimulatorServer),
+		Discover:        discover && spec == "",
+		SimulatorServer: simulatorServer,
 		ToolsURL:        os.Getenv(EnvArgentToolsURL),
 		ToolsToken:      os.Getenv(EnvArgentToken),
+		ArgentHome:      argentHome,
 		AndroidHome:     os.Getenv("ANDROID_HOME"),
 	}), nil
 }
