@@ -814,7 +814,10 @@ export class SessionChat {
     this.askOlder = askOlder ?? null;
     if (this.state.interruptible !== interruptible) this.publish({ ...this.state, interruptible });
     return () => {
-      if (this.type === type) this.type = null;
+      // Only the connection still lent the chat gives it back; a later one
+      // keeps what it said.
+      if (this.type !== type) return;
+      this.type = null;
       if (askOlder && this.askOlder === askOlder) this.askOlder = null;
       if (!this.state.interruptible) this.publish({ ...this.state, interruptible: true });
     };
