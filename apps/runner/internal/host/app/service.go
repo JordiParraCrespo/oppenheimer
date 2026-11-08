@@ -321,6 +321,13 @@ func (s *Service) FindFolders(path, query string) (domain.FolderSearch, error) {
 			if !domain.Searchable(name) {
 				continue
 			}
+			// Every name costs a stat for its branch, the deepest level's
+			// included, so the clock is read before each one, not only
+			// before a directory is read.
+			if time.Since(started) > findBudget {
+				stopped = true
+				break
+			}
 			dir := filepath.Join(next.dir, name)
 			branch := s.dirs.Branch(dir)
 			if rank, ok := domain.MatchFolder(name, query); ok {
@@ -329,7 +336,7 @@ func (s *Service) FindFolders(path, query string) (domain.FolderSearch, error) {
 			if branch != "" || next.depth >= domain.MaxFindDepth {
 				continue
 			}
-			if reads >= domain.MaxFindReads || time.Since(started) > findBudget {
+			if reads >= domain.MaxFindReads {
 				stopped = true
 				break
 			}

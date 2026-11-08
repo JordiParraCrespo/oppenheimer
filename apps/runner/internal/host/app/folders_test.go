@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/host/adapters/fake"
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/host/adapters/folders"
@@ -202,5 +203,45 @@ func TestFindFoldersFailsOnlyOnItsStart(t *testing.T) {
 	}
 	if _, err := lister(dir, unreadable{}).FindFolders(dir, "x"); !errors.As(err, &prob) || prob.Code != domain.ErrFolderUnreadable.Code {
 		t.Fatalf("err = %v, want FS_003", err)
+	}
+}
+
+// slowBranches is a home whose deepest level the search looks at, four
+// folders down, holds a thousand directories whose branch takes a millisecond
+// each to read: more than the search's time budget allows.
+type slowBranches struct{}
+
+func (slowBranches) Subdirectories(dir string) ([]string, error) {
+	switch dir {
+	case "/home/slow":
+		return []string{"a"}, nil
+	case "/home/slow/a":
+		return []string{"b"}, nil
+	case "/home/slow/a/b":
+		return []string{"c"}, nil
+	case "/home/slow/a/b/c":
+		names := make([]string, 1000)
+		for i := range names {
+			names[i] = fmt.Sprintf("app%04d", i)
+		}
+		return names, nil
+	}
+	return nil, nil
+}
+func (slowBranches) Branch(string) string { time.Sleep(time.Millisecond); return "" }
+
+// The time budget holds for every directory looked at, the deepest level's,
+// never read into, included, and an answer cut by it says so.
+func TestFindFoldersStopsAtItsTimeBudgetAndSaysSo(t *testing.T) {
+	started := time.Now()
+	search, err := lister("/home/slow", slowBranches{}).FindFolders("", "app0001")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !search.Truncated || len(search.Entries) != 1 {
+		t.Fatalf("%d entries, truncated %v", len(search.Entries), search.Truncated)
+	}
+	if took := time.Since(started); took > 700*time.Millisecond {
+		t.Fatalf("the search took %v", took)
 	}
 }
