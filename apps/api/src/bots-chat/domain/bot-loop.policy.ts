@@ -178,7 +178,7 @@ export type LoopRunEnd = ({ kind: 'end' } & LoopEnding) | { kind: 'retry' } | { 
  * What the end of one of the loop's runs means for it. A run the person
  * stopped stops it, and so does one that failed in a way the next run would
  * meet again (a refused key, a spent plan, a refusal); one stopped by the
- * turn's time limit or a passing failure (a rate limit, an outage) keeps
+ * turn's time or step limit or a passing failure (a rate limit, an outage) keeps
  * it: its work is kept and the next run starts afresh. A self-paced run
  * that did not say when to run next ends it, unless it failed in passing,
  * when it is tried again a minute later. Only the loop's latest run decides:
@@ -197,7 +197,10 @@ export function loopRunEnd(loop: BotLoopEntity, ended: EndedTurn): LoopRunEnd {
   return failed ? { kind: 'retry' } : { kind: 'end', activity: 'ended', reason: null };
 }
 
-/** A failure the next run would not meet again: the time limit, or one sending again can get past. */
+/** A failure the next run would not meet again: a limit of one turn, or one sending again can get past. */
 function passing(failure: BotTurnFailure | null): boolean {
-  return failure !== null && (failure === 'time_limit' || BOT_TURN_FAILURE_RETRIES[failure]);
+  return (
+    failure !== null &&
+    (failure === 'time_limit' || failure === 'step_limit' || BOT_TURN_FAILURE_RETRIES[failure])
+  );
 }
