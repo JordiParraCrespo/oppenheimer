@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto';
+import type { BotEngineEvent } from '@oppenheimer/backend-agents';
 import type { AccessScope } from '@oppenheimer/backend-authz';
 import { OutboxMessageSchema, OutboxService } from '@oppenheimer/backend-ddd';
 import { DataSource } from 'typeorm';
@@ -40,6 +41,8 @@ import type { BotSubagentRunnerFactory } from '../application/bot-subagent-runne
 import type { BotToolboxFactory } from '../application/bot-toolbox.factory';
 import { BotTurnContextResolver } from '../application/bot-turn-context.resolver';
 import { BotTurnOpeningResolver } from '../application/bot-turn-opening.resolver';
+import { TurnTranscript } from '../application/turn-transcript.policy';
+import { TurnWriteFactory } from '../application/turn-write.factory';
 import { BotApprovalMapper } from '../bot-approval.mapper';
 import { BotAttachmentMapper } from '../bot-attachment.mapper';
 import { BotConversationSummaryMapper } from '../bot-conversation-summary.mapper';
@@ -97,6 +100,7 @@ import {
 import { planSummary, type SummarizableMessage } from '../domain/bot-summary.policy';
 import { NO_PERMISSIONS } from '../domain/bot-tool-permission.policy';
 import { BotTurnEntity } from '../domain/bot-turn.entity';
+import type { BotStreamPort } from '../infrastructure/bot-stream.port';
 import { OutboxBotStallChecksAdapter } from '../infrastructure/outbox-bot-stall-checks.adapter';
 import type { OwnerHostsPort } from '../infrastructure/owner-hosts.port';
 import { FindBotTurnQuery } from '../queries/find-bot-turn/find-bot-turn.query';
@@ -639,6 +643,47 @@ describe('bots chat (integration)', () => {
     // Another workspace reads none of it.
     const other = await insertOrganization();
     expect(await messages.findConversation(scopeOf(other), bot.id, 10)).toEqual([]);
+  });
+
+  // Issue #728. What breaks this: a tool's words written as they came, so a
+  // PDF's NUL byte (`unsupported Unicode escape sequence`) or a lone
+  // surrogate half (`invalid input syntax for type json`) makes Postgres
+  // refuse the line's jsonb steps, or the bot's text column, and the turn dies.
+  it('stores a call whose result holds a NUL byte or a lone surrogate, and the text the bot said after it', async () => {
+    const bot = await create('Invoices');
+    const { turn, message } = sent(bot, 'Gather the October invoices');
+    await turns.enqueue(turn, message, null);
+    const transcript = new TurnTranscript(turn);
+    const stream = { write: vi.fn(), settle: vi.fn(), publish: vi.fn() };
+    const write = new TurnWriteFactory(messages, stream as unknown as BotStreamPort).writer(turn);
+    const events: BotEngineEvent[] = [
+      {
+        type: 'tool.started',
+        callId: 'c1',
+        name: 'read_mail_attachment',
+        input: { part: '\u0000' },
+      },
+      {
+        type: 'tool.finished',
+        callId: 'c1',
+        name: 'read_mail_attachment',
+        output: 'Factura\u0000 total 120€ \uD800 end',
+        isError: false,
+      },
+      { type: 'text.done', text: 'Total\u0000 120 \uDC00' },
+    ];
+    for (const event of events) {
+      for (const written of transcript.apply(event)) await write(written);
+    }
+
+    const chat = await messages.findConversation(scope(), bot.id, 10);
+    const line = chat.find((stored) => stored.role === 'activity');
+    expect(line?.steps[0]).toMatchObject({
+      input: { part: '' },
+      output: 'Factura total 120€ � end',
+      isError: false,
+    });
+    expect(chat.at(-1)?.content).toBe('Total 120 �');
   });
 
   // What breaks this: another bot's or another workspace's chat matching, or
