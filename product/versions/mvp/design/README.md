@@ -252,7 +252,9 @@ The host-detail tabs and Add host instruction tabs use separate state so
 visiting a host does not hide the installation instructions. Copy reads the
 selected installation tab, with the agent prompt selected from its own block.
 These are reference artboards; this sync does not implement their new
-behavior in the application.
+behavior in the application. The calendar's Day and Week and the To do view
+were built on 2026-11-08 (`../20-plan-calendar.md` §6); the project cards
+are not yet.
 
 ## Design system
 

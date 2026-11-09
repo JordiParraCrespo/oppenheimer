@@ -2881,7 +2881,8 @@
       "tasks": "Tareas",
       "calendar": "Calendario",
       "milestones": "Hitos",
-      "projects": "Proyectos"
+      "projects": "Proyectos",
+      "todo": "Para hoy"
     },
     "sidebar": {
       "unassigned": "Sin asignar"
@@ -3047,6 +3048,32 @@
       "noProject": "Sin proyecto",
       "allMilestones": "Todos los hitos",
       "clear": "Limpiar"
+    },
+    "todo": {
+      "left": "pendientes",
+      "done": "hechas",
+      "today": "Hoy",
+      "previous": "Día anterior",
+      "next": "Día siguiente",
+      "todayWeek": "Hoy · Semana {{week}}",
+      "weekNumber": "Semana {{week}}",
+      "includeOverdue": "Incluir vencidas",
+      "empty": "Aún no hay nada para este día. Añade una tarea abajo.",
+      "noMatch": "Ninguna tarea coincide con estos filtros.",
+      "add": "Añadir una tarea",
+      "addLabel": "Añadir una tarea para este día",
+      "addFailed": "No se pudo añadir la tarea.",
+      "toggleFailed": "No se pudo actualizar la tarea.",
+      "loadFailed": "No se pudieron cargar tus tareas.",
+      "state": {
+        "todo": "vence hoy",
+        "due": "pendiente",
+        "doing": "en curso",
+        "review": "en revisión",
+        "done": "hecha",
+        "overdue": "vencida desde el {{date}}"
+      },
+      "reorder": "Reordenar {{title}}"
     }
   },
   "calendar": {
@@ -3060,20 +3087,28 @@
       "automations": "Automatizaciones"
     },
     "header": {
-      "previous": "Mes anterior",
-      "next": "Mes siguiente",
+      "previous": "Anterior",
+      "next": "Siguiente",
       "today": "Hoy",
       "newEvent": "Nuevo evento",
       "meetings": "reuniones",
       "tasksDue": "tareas para entregar",
-      "runs": "ejecuciones de automatizaciones"
+      "runs": "ejecuciones de automatizaciones",
+      "views": "Vista del calendario",
+      "day": "Día",
+      "week": "Semana",
+      "month": "Mes",
+      "todayWeek": "Hoy · Semana {{week}}",
+      "weekNumber": "Semana {{week}}",
+      "weeks": "Semanas {{from}}–{{to}}"
     },
     "grid": {
       "more_one": "{{count}} más",
       "more_other": "{{count}} más",
       "eventsFailed": "No se han podido cargar tus eventos.",
       "googleFailed": "No se ha podido leer Google Calendar.",
-      "moveFailed": "No se ha podido mover a otro día."
+      "moveFailed": "No se ha podido mover a otro día.",
+      "allDay": "Todo el día"
     },
     "event": {
       "newTitle": "Nuevo evento",

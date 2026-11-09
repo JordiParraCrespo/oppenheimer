@@ -2858,7 +2858,8 @@
       "tasks": "Tasks",
       "calendar": "Calendar",
       "milestones": "Milestones",
-      "projects": "Projects"
+      "projects": "Projects",
+      "todo": "To do"
     },
     "sidebar": {
       "unassigned": "Unassigned"
@@ -3024,6 +3025,32 @@
       "noProject": "No project",
       "allMilestones": "All milestones",
       "clear": "Clear"
+    },
+    "todo": {
+      "left": "left",
+      "done": "done",
+      "today": "Today",
+      "previous": "Previous day",
+      "next": "Next day",
+      "todayWeek": "Today · Week {{week}}",
+      "weekNumber": "Week {{week}}",
+      "includeOverdue": "Include overdue",
+      "empty": "Nothing for this day yet. Add one below.",
+      "noMatch": "No tasks match these filters.",
+      "add": "Add a task",
+      "addLabel": "Add a task for this day",
+      "addFailed": "Couldn’t add that task.",
+      "toggleFailed": "Couldn’t update that task.",
+      "loadFailed": "Couldn’t load your tasks.",
+      "state": {
+        "todo": "due today",
+        "due": "due",
+        "doing": "in progress",
+        "review": "in review",
+        "done": "done",
+        "overdue": "overdue since {{date}}"
+      },
+      "reorder": "Reorder {{title}}"
     }
   },
   "calendar": {
@@ -3037,20 +3064,28 @@
       "automations": "Automations"
     },
     "header": {
-      "previous": "Previous month",
-      "next": "Next month",
+      "previous": "Previous",
+      "next": "Next",
       "today": "Today",
       "newEvent": "New event",
       "meetings": "meetings",
       "tasksDue": "tasks due",
-      "runs": "automation runs"
+      "runs": "automation runs",
+      "views": "Calendar view",
+      "day": "Day",
+      "week": "Week",
+      "month": "Month",
+      "todayWeek": "Today · Week {{week}}",
+      "weekNumber": "Week {{week}}",
+      "weeks": "Weeks {{from}}–{{to}}"
     },
     "grid": {
       "more_one": "{{count}} more",
       "more_other": "{{count}} more",
       "eventsFailed": "Couldn’t load your events.",
       "googleFailed": "Couldn’t read Google Calendar.",
-      "moveFailed": "Couldn’t move that to another day."
+      "moveFailed": "Couldn’t move that to another day.",
+      "allDay": "All day"
     },
     "event": {
       "newTitle": "New event",

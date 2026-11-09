@@ -1316,6 +1316,11 @@ earlier note:
   messages at the budget, so up to about 12,000 tokens were in neither. On
   2026-11-08 the fold starts below the budget, with room for the longest
   summary and the notes on earlier images (`BOT_SUMMARY_TRIGGER_TOKENS`).
+- `versions/mvp/20-plan-calendar.md` (2026-10-13) drew the calendar as a
+  month only and asked whether a week view came before Google
+  write-back. On 2026-11-08, after that day's `Tasks` frame, it opens on
+  Day, with Week and Month beside it, a task due at a time standing on
+  the hours at that time, and Plan gains To do, one day's tasks (§6).
 - `versions/mvp/25-bots.md` §2 (2026-10-15) left a turn's tool calls out of
   the history, as the bot's own working, so a later turn knew what its
   tools did only from what it had said. On 2026-11-08 they come back as a

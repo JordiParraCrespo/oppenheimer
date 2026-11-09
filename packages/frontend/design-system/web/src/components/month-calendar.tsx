@@ -26,7 +26,8 @@ import { Popover, PopoverContent, PopoverTrigger } from './popover';
  * the lifted copy with `<CalendarEntry entry={…} lifted />`. An entry is
  * draggable unless `draggable` is false (an automation run, which follows
  * its schedule). The "N more" popover lists the day to read and open, not
- * to drag. Clicking a day's empty space is `onAddDay`.
+ * to drag. Clicking a day's empty space is `onAddDay`; with `onOpenDay` a
+ * day's number is a button that opens that day (Plan's Day view).
  */
 
 type CalendarEntryKind = 'event' | 'task' | 'automation';
@@ -168,6 +169,7 @@ function CalendarDay({
   closeLabel,
   onOpenEntry,
   onAddDay,
+  onOpenDay,
 }: {
   day: MonthDay;
   entries: CalendarEntryData[];
@@ -179,6 +181,7 @@ function CalendarDay({
   closeLabel: string;
   onOpenEntry?: (id: string) => void;
   onAddDay?: (date: IsoDate) => void;
+  onOpenDay?: (date: IsoDate) => void;
 }) {
   const { ref, isOver } = useDroppable({ id: day.iso, data: { label: dayLabel, date: day.iso }, accepts: ['calendar-entry'] });
   const shown = entries.length > 4 ? entries.slice(0, 3) : entries;
@@ -202,9 +205,25 @@ function CalendarDay({
       )}
     >
       <div className="flex h-[26px] items-center px-0.5 pb-0.5">
-        <DayNumber day={day} face="calendar" today={today}>
-          {day.day === 1 ? monthDayLabel : day.day}
-        </DayNumber>
+        {onOpenDay ? (
+          <button
+            type="button"
+            title={dayLabel}
+            onClick={(event) => {
+              event.stopPropagation();
+              onOpenDay(day.iso);
+            }}
+            className="rounded-pill outline-none transition-colors duration-instant ease-standard hover:bg-hover-surface focus-visible:outline-2 focus-visible:outline-ring"
+          >
+            <DayNumber day={day} face="calendar" today={today}>
+              {day.day === 1 ? monthDayLabel : day.day}
+            </DayNumber>
+          </button>
+        ) : (
+          <DayNumber day={day} face="calendar" today={today}>
+            {day.day === 1 ? monthDayLabel : day.day}
+          </DayNumber>
+        )}
       </div>
       <div className={cn('flex flex-col gap-0.5', !day.inMonth && 'opacity-55')}>
         {shown.map((entry) => (
@@ -264,6 +283,7 @@ function MonthCalendar({
   locale = 'en',
   onOpenEntry,
   onAddDay,
+  onOpenDay,
   moreLabel = moreInEnglish,
   closeLabel = 'Close',
   className,
@@ -278,6 +298,7 @@ function MonthCalendar({
   locale?: string;
   onOpenEntry?: (id: string) => void;
   onAddDay?: (date: IsoDate) => void;
+  onOpenDay?: (date: IsoDate) => void;
   moreLabel?: (n: number) => string;
   closeLabel?: string;
   className?: string;
@@ -307,6 +328,7 @@ function MonthCalendar({
             closeLabel={closeLabel}
             onOpenEntry={onOpenEntry}
             onAddDay={onAddDay}
+            onOpenDay={onOpenDay}
           />
         )}
       </MonthGrid>
