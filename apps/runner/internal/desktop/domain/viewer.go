@@ -147,11 +147,12 @@ func clientMessageSize(p []byte) (int, error) {
 		if !need(8) {
 			return 0, nil
 		}
-		length := int32(binary.BigEndian.Uint32(p[4:8])) //nolint:gosec // a signed length by definition
+		// Widened before the sign is dropped: -MinInt32 is MinInt32 in 32 bits.
+		length := int64(int32(binary.BigEndian.Uint32(p[4:8]))) //nolint:gosec // a signed length by definition
 		if length < 0 {
 			length = -length
 		}
-		if int(length) > maxClientMessage {
+		if length > maxClientMessage {
 			return 0, fmt.Errorf("%w: a clipboard of %d bytes", ErrBrowser, length)
 		}
 		return 8 + int(length), nil

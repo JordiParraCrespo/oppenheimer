@@ -67,10 +67,10 @@ export class AttachDesktopConnection {
   binaryType = 'arraybuffer';
   readonly protocol = '';
   onopen: ((event: Event) => void) | null = null;
-  onmessage: ((event: { data: ArrayBuffer }) => void) | null = null;
   onclose: ((event: DesktopCloseEvent) => void) | null = null;
   onerror: ((event: Event) => void) | null = null;
 
+  private messageHandler: ((event: { data: ArrayBuffer }) => void) | null = null;
   private socket: WebSocket | null = null;
   private opened = false;
   private closed = false;
@@ -83,6 +83,21 @@ export class AttachDesktopConnection {
   constructor(private readonly options: DesktopConnectionOptions) {
     this.socketFactory = options.socketFactory ?? webSocketFactory;
     void this.dial();
+  }
+
+  /**
+   * Where RFB goes. A viewer may attach after the host signed in (the dial
+   * started before the viewer finished loading): what arrived before it is
+   * handed over the moment it attaches, so its handshake still begins at the
+   * server's first byte.
+   */
+  get onmessage(): ((event: { data: ArrayBuffer }) => void) | null {
+    return this.messageHandler;
+  }
+
+  set onmessage(handler: ((event: { data: ArrayBuffer }) => void) | null) {
+    this.messageHandler = handler;
+    if (handler && this.opened) this.flushEarly();
   }
 
   get readyState(): 'connecting' | 'open' | 'closing' | 'closed' {
@@ -129,7 +144,7 @@ export class AttachDesktopConnection {
     socket.onmessage = (event) => {
       if (this.socket !== socket) return;
       if (typeof event.data === 'string') this.onControl(event.data);
-      else if (this.opened) this.onmessage?.({ data: event.data as ArrayBuffer });
+      else if (this.opened && this.messageHandler) this.messageHandler({ data: event.data });
       else this.early.push(event.data as ArrayBuffer);
     };
     socket.onclose = (event) => {
@@ -152,7 +167,7 @@ export class AttachDesktopConnection {
         if (!this.opened) {
           this.opened = true;
           this.onopen?.(new Event('open'));
-          for (const data of this.early.splice(0)) this.onmessage?.({ data });
+          this.flushEarly();
         }
         return;
       case 'refused':
@@ -166,6 +181,12 @@ export class AttachDesktopConnection {
       default:
         return;
     }
+  }
+
+  private flushEarly(): void {
+    const handler = this.messageHandler;
+    if (!handler) return;
+    for (const data of this.early.splice(0)) handler({ data });
   }
 
   private finish(event: DesktopCloseEvent): void {

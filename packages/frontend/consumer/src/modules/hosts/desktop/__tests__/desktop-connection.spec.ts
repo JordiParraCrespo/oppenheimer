@@ -86,6 +86,17 @@ describe('AttachDesktopConnection', () => {
     expect(states.at(-1)).toEqual({ status: 'live', control: false, refusal: null });
   });
 
+  it('hands a viewer that attaches after the host signed in everything the server already said', async () => {
+    const { connection, socket } = await connect();
+    connection.onmessage = null;
+    socket.text({ type: 'desktop', control: false });
+    socket.bytes('RFB 003.008\n');
+    const late: string[] = [];
+    connection.onmessage = (event) => late.push(new TextDecoder().decode(event.data));
+    expect(connection.readyState).toBe('open');
+    expect(late).toEqual(['RFB 003.008\n']);
+  });
+
   it('asks the host for control and reports it only once the host says so', async () => {
     const { connection, socket, states } = await connect();
     socket.text({ type: 'desktop', control: false });

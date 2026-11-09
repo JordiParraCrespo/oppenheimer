@@ -68,7 +68,7 @@ You can watch and drive a host's own screen from the console: from **Settings �
 
 The host's owner decides whether its screen is shared, on the host itself:
 
-- `runner desktop on` shares it; `runner desktop off` stops; `runner desktop` says how it stands. Nothing in the console turns it on.
+- `runner desktop on` shares it; `runner desktop off` stops, and closes a desktop already open in the console within a couple of seconds; `runner desktop` says how it stands. Nothing in the console turns it on.
 - The runner does not start a screen: it uses the screen-sharing server the machine already runs on its loopback, `127.0.0.1:5900` unless `--port` names another. On a Mac that is **Screen Sharing** (System Settings → General → Sharing); on Linux a VNC server such as TigerVNC or x11vnc listening on `127.0.0.1`.
 - If the server asks for a password, give the runner a file holding it, readable by that account only: `runner desktop on --password-file <file>`. macOS Screen Sharing signs in a macOS account: add `--username <account>`. The password stays on the host; the browser is never asked for one.
 

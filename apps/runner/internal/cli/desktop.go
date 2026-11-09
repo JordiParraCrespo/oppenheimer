@@ -70,7 +70,8 @@ func (a *App) DesktopOn(out io.Writer, opts DesktopOptions) error {
 }
 
 // DesktopOff stops sharing this host's screen (`runner desktop off`). A
-// stream already open ends at its next open; the settings stay for `on`.
+// desktop open in a browser now closes within a couple of seconds, when the
+// daemon reads the choice again (link_desktop.go); the settings stay for `on`.
 func (a *App) DesktopOff(out io.Writer) error {
 	settings, err := a.Desktop.Settings()
 	if err != nil {

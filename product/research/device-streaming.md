@@ -98,7 +98,8 @@ Linux it can also start a TigerVNC and XFCE desktop of its own.
 - **The host's owner shares it, on the host.** `runner desktop on` writes
   `~/.oppenheimer/desktop.json` (port, account, password file); nothing on
   the link writes it, the way `runner exec` is decided. Off, `desktop.open`
-  is `DESKTOP_001`, and the console says what to run.
+  is `DESKTOP_001`, and the console says what to run; a desktop already open
+  reads the choice again every two seconds and closes once it is off.
 - **The runner signs in, so no password crosses the link.** It dials the
   server on the loopback, speaks RFB 3.3, 3.7, 3.8 and Apple's 3.889, and
   completes None, VNC authentication (DES) or Apple Remote Desktop

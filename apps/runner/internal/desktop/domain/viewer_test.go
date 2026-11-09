@@ -100,3 +100,13 @@ func TestAnUnknownMessageEndsTheStream(t *testing.T) {
 		t.Fatalf("err = %v, want ErrBrowser", err)
 	}
 }
+
+func TestAClipboardLengthThatCannotBeNegatedEndsTheStreamInsteadOfPanicking(t *testing.T) {
+	// MinInt32 negated in 32 bits is still negative: a size the slicing below
+	// would panic on, taking the runner down for anyone watching.
+	v := domain.NewViewer(false)
+	handshake(t, v)
+	if _, _, err := v.Feed([]byte{6, 0, 0, 0, 0x80, 0, 0, 0}); !errors.Is(err, domain.ErrBrowser) {
+		t.Fatalf("err = %v, want ErrBrowser", err)
+	}
+}

@@ -11,10 +11,22 @@ package cli
 import (
 	"context"
 	"log/slog"
+	"sync/atomic"
+	"time"
 
 	desktopdomain "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/desktop/domain"
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/link"
 )
+
+// desktopRecheck is how often, in nanoseconds, an open desktop reads the
+// host owner's choice again, so `runner desktop off` (another process) cuts
+// off a desktop already streaming within it. A var so a test need not wait
+// for it, atomic because desktops from earlier tests may still be reading it.
+var desktopRecheck = func() *atomic.Int64 {
+	every := &atomic.Int64{}
+	every.Store(int64(2 * time.Second))
+	return every
+}()
 
 // desktopOpen signs in to the host's screen-sharing server for the relay,
 // and pumps it.
@@ -48,6 +60,26 @@ func (h *linkHandler) desktopOpen(m link.DesktopOpen, epoch uint64) {
 	}
 	go h.tunnelUp(ctx, t)
 	go h.tunnelDown(ctx, t)
+	go h.desktopWatch(ctx, t)
+}
+
+// desktopWatch ends a desktop once the host's owner stops sharing it. A
+// settings file that cannot be read ends it too: sharing is what has to be
+// shown, never assumed.
+func (h *linkHandler) desktopWatch(ctx context.Context, t *tunnel) {
+	ticker := time.NewTicker(time.Duration(desktopRecheck.Load()))
+	defer ticker.Stop()
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+			if settings, err := h.desktop.Settings(); err != nil || !settings.Enabled {
+				h.endTunnel(t, "the host stopped sharing its desktop")
+				return
+			}
+		}
+	}
 }
 
 // desktopControl lets the browser click and type, or takes that away.

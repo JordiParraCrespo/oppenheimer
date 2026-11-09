@@ -42,10 +42,13 @@ export function useDesktop(connect: () => Promise<DesktopChannel>) {
     const dial = async () => {
       latest = { ...latest, status: 'connecting' };
       setState(latest);
+      // noVNC first, the dial after it: a dial is under way from `connect`
+      // on, and noVNC must be ready to take its first byte.
       let RFB: Awaited<ReturnType<typeof loadRfb>>;
       let channel: DesktopChannel;
       try {
-        [RFB, channel] = await Promise.all([loadRfb(), connect()]);
+        RFB = await loadRfb();
+        channel = await connect();
       } catch {
         latest = { ...latest, status: 'dropped' };
         setState(latest);
@@ -57,29 +60,47 @@ export function useDesktop(connect: () => Promise<DesktopChannel>) {
         channel.close();
         return;
       }
-      channelRef.current = channel;
-      const rfb = new RFB(target, channel, { shared: true });
-      rfb.scaleViewport = true;
-      rfb.resizeSession = false;
-      rfb.viewOnly = true;
-      rfb.background = 'transparent';
+      let rfb: InstanceType<typeof RFB> | null = null;
       const off = channel.onState((next) => {
         latest = next;
         setState(next);
-        rfb.viewOnly = !next.control;
+        if (rfb) rfb.viewOnly = !next.control;
         if (next.status === 'live') attempt = 0;
       });
+      // A dial that already ended (refused, no ticket, the host away) is
+      // answered by its state; noVNC refuses a closed channel.
+      if (channel.readyState === 'closed') {
+        off();
+        again();
+        return;
+      }
+      try {
+        rfb = new RFB(target, channel, { shared: true });
+      } catch {
+        off();
+        channel.close();
+        latest = { ...latest, status: 'dropped' };
+        setState(latest);
+        again();
+        return;
+      }
+      channelRef.current = channel;
+      rfb.scaleViewport = true;
+      rfb.resizeSession = false;
+      rfb.viewOnly = !latest.control;
+      rfb.background = 'transparent';
+      const live = rfb;
       const onDisconnect = () => {
         off();
         teardown = null;
         if (channelRef.current === channel) channelRef.current = null;
         again();
       };
-      rfb.addEventListener('disconnect', onDisconnect);
+      live.addEventListener('disconnect', onDisconnect);
       teardown = () => {
-        rfb.removeEventListener('disconnect', onDisconnect);
+        live.removeEventListener('disconnect', onDisconnect);
         off();
-        rfb.disconnect();
+        live.disconnect();
         channel.close();
       };
     };

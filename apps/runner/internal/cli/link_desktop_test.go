@@ -14,11 +14,25 @@ import (
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/link"
 )
 
-// savedDesktop is the host owner's `runner desktop` choice, in memory.
-type savedDesktop struct{ settings desktopdomain.Settings }
+// savedDesktop is the host owner's `runner desktop` choice, in memory, read
+// by the daemon while the test, standing in for the CLI, changes it.
+type savedDesktop struct {
+	mu       sync.Mutex
+	settings desktopdomain.Settings
+}
 
-func (s *savedDesktop) Load() (desktopdomain.Settings, error) { return s.settings, nil }
-func (s *savedDesktop) Save(v desktopdomain.Settings) error   { s.settings = v; return nil }
+func (s *savedDesktop) Load() (desktopdomain.Settings, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.settings, nil
+}
+
+func (s *savedDesktop) Save(v desktopdomain.Settings) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.settings = v
+	return nil
+}
 
 // rfbServer is a screen-sharing server that asks for no password and keeps
 // every byte a client sends after the handshake.
@@ -157,5 +171,33 @@ func TestADesktopTheHostDoesNotShareIsRefused(t *testing.T) {
 	}
 	if h.tunnelByID(14) != nil {
 		t.Fatal("a desktop opened on a host that does not share it")
+	}
+}
+
+// `runner desktop off` is another process: the daemon cuts off a desktop
+// already streaming, in control or not, the next time it reads the choice.
+func TestADesktopAlreadyOpenClosesWhenTheHostStopsSharingIt(t *testing.T) {
+	was := desktopRecheck.Swap(int64(10 * time.Millisecond))
+	t.Cleanup(func() { desktopRecheck.Store(was) })
+	server := newRFBServer(t)
+	saved := &savedDesktop{settings: desktopdomain.Settings{Enabled: true, Port: server.port}}
+	h, sent := portsHandler(t, nil)
+	h.desktop = desktopapp.New(desktopapp.Options{Settings: saved})
+
+	h.Message(context.Background(), message(t, link.TypeDesktopOpen, map[string]any{
+		"commandId": "b2c3d4e5-6f7a-4b8c-9d0e-1f2a3b4c5d6e", "attachmentId": 15, "control": true,
+	}))
+	sent.waitFor(t, "desktop.opened", func(m any) bool {
+		_, ok := m.(link.DesktopOpened)
+		return ok
+	})
+
+	_ = saved.Save(desktopdomain.Settings{Enabled: false, Port: server.port})
+	sent.waitFor(t, "attachment.closed", func(m any) bool {
+		closed, ok := m.(link.AttachmentClosed)
+		return ok && closed.AttachmentID == 15
+	})
+	if h.tunnelByID(15) != nil {
+		t.Fatal("the desktop stayed open after the host stopped sharing it")
 	}
 }
