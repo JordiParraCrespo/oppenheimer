@@ -128,7 +128,10 @@ worker runs it and streams what happens back to the chat.
   summary, the turn's message and the newest 20,000 tokens word for word,
   cut where no call is parted from its result. A summary that fails sends
   the call as it was, and the next one tries again
-  (`research/lessons-from-long-running-agents.md`). Between turns the
+  (`research/lessons-from-long-running-agents.md`). Where a turn folded,
+  the chat shows a line between its messages, with the tokens before and
+  after (a `compaction` event, built 2026-11-09), so a long turn says why
+  the bot seems to have forgotten a detail; the model reads it as a note. Between turns the
   summary folds old messages (above). Since
   2026-10-29 the model is told too: the turn context says how full the
   context was when the bot's last turn ended, against its window, and from
@@ -599,7 +602,12 @@ branch"), up to 2,000 characters.
     `no_progress`);
   - its turns spent its token budget, input and output (`budget`);
   - its provider refused for a rate limit, a quota or a sign-in
-    (`usage_limit`), to resume once that passes;
+    (`usage_limit`), to resume once that passes. When the provider said
+    when its limit ends (a rate limit's reset, or the reset of a plan
+    window it reported spent), the goal does not pause: it waits until
+    then, as it waits out a tool's rate limit, and goes on by itself, the
+    continuation told its last turn stopped early (2026-11-09; until then
+    every such goal waited for Resume). Without a time, it pauses;
   - the person pressed Stop on a turn of it (`stopped`), or a turn of it
     failed otherwise (`failed`; the loop guard's `loop` is `blocked`).
   A turn of it that stopped without fault (its model went `stalled`, its
@@ -615,7 +623,10 @@ branch"), up to 2,000 characters.
   set it, and its continuations. A person's message, a routine or a wake
   ending in between changes nothing. The continuation is keyed by the goal
   and its number, so an end delivered twice queues one, and its count is
-  claimed in the same transaction that queues it. A Stop that won the race
+  claimed in the same transaction that queues it. The job that decides a
+  turn's end can run twice (a worker that died mid-job): a turn whose
+  number is behind the goal's count was decided already, and the second
+  run counts nothing and queues nothing (2026-11-09). A Stop that won the race
   leaves nothing to queue, and a goal ended or replaced while the reviewer
   answered is left as it is: the goal is read again after the review.
 - **How it ends.** The reviewer finds the bot's claim met; the owner
@@ -1543,9 +1554,13 @@ picked, and "Use its own face" goes back to the id's).
   `bot_message` of kind activity in the chat, carrying who changed what,
   from what to what, and it is undone by hand.
 - **Worker:** a BullMQ queue `bot-turns`, processed in the API process for
-  now (beside it `bot-approvals`, an approved call, and `bot-summaries`, a
-  conversation's summary); the same image can run it alone when turns need their own
-  container. The daily `bot-attachment-retention` job sweeps images no
+  now, for the turns someone waits on (a person's message, another bot's),
+  and `bot-background-turns` for the rest (a goal's continuation, a loop's
+  run, a routine's turn, a subscription's or a pull request's wake), each with 8 at a time per process. A turn has no
+  time limit, so a goal's may hold its slot for hours; apart, it never holds
+  one a message waits on (2026-11-09). Beside them are `bot-approvals`
+  (an approved call) and `bot-summaries` (a conversation's summary); the
+  same image can run them alone when turns need their own container. The daily `bot-attachment-retention` job sweeps images no
   message carries (§3.1). It owns `BotChainPolicy` and `BotQueueLanes` (§4.6).
 - **Console:** the rail's Employees entry opens `/bots`, and leads the
   rail by default, so the console opens there (05); a bot's chat is
@@ -1940,3 +1955,11 @@ The decisions it produced:
   the next turn always comes, the reviewer checks the bot's `end_goal` claim
   only, and a goal pauses (blocked, a provider limit, 3 turns with no tool,
   a spent budget, a failed or stopped turn) where the owner resumes it.
+- 2026-11-09: **a goal waits out a provider limit whose end it knows, and
+  goes on by itself** (§4.1). The owner had asked that a usage limit pause
+  for them to resume, as Codex does; where the provider says when the limit
+  ends, nothing is left for them to decide, so the goal waits for that time
+  and continues. Without a time it still pauses. The same day the turns
+  nobody waits on moved to a queue of their own (`bot-background-turns`,
+  §8), a turn's end is decided once however often its job runs, and the
+  chat shows where a turn compacted.
