@@ -53,7 +53,9 @@ changes behavior.
    step's output is in `.ci-local/logs/`.
 2. Push only on a green run. A red step is yours to fix. Never skip a job
    with `--skip` to get green; `--skip` exists for re-running a job you have
-   just fixed.
+   just fixed. Raising a budget in `apps/web/bundle-budget.json` is Jordi's
+   call: its own commit, the new number against `main`'s, and a question in
+   the description.
 3. Put `.ci-local/report.md` in the pull request's description, under a
    `## Local CI` heading. Replace it after each push, so the report always
    names the head commit.

@@ -8,7 +8,6 @@ argument-hint: "[the task]"
 
 The router over the three lanes in `.agents/skills/steward/SKILL.md`,
 "Merging". It picks one and runs that skill; it adds no steps of its own.
-Every lane runs in the style `jordi-mode` sets.
 
 ## 1. Pick the lane
 
