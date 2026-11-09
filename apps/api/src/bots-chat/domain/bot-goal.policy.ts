@@ -175,9 +175,11 @@ export function goalDecision(goal: BotGoalEntity, ended: EndedTurn): GoalDecisio
   if (ended.status === 'cancelled') return { kind: 'pause', reason: 'stopped', note: null };
   if (ended.status === 'failed' && !stoppedAtTurnLimit(ended)) {
     const reason = pauseReasonOf(ended.failure);
-    // Held until the provider's limit passed (`BotGoalEntity.hold`): it has.
-    if (reason === 'usage_limit' && goal.waiting) return { kind: 'continue' };
-    return { kind: 'pause', reason, note: ended.error };
+    // Held until the provider's limit passed (`BotGoalEntity.hold`): it has,
+    // so the goal's own bounds below decide, as after any other turn.
+    if (reason !== 'usage_limit' || !goal.waiting) {
+      return { kind: 'pause', reason, note: ended.error };
+    }
   }
   if (ended.status !== 'completed' && ended.status !== 'failed') return { kind: 'skip' };
   if (goal.claim) return { kind: 'review' };

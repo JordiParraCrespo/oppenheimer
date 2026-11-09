@@ -132,6 +132,26 @@ describe('goalDecision', () => {
     });
   });
 
+  // What breaks this: a goal going on past its spent budget, or a goal set
+  // before 2026-11-09 at its last continuation throwing instead of ending,
+  // because the provider's limit it waited out skipped its own bounds.
+  it('still keeps to its budget and its old limit after waiting out a provider limit', () => {
+    const resetAt = new Date('2026-11-09T12:00:00Z');
+    const spent = goal({ tokenBudget: 60_000, tokensUsed: 60_000 });
+    spent.hold({ system: 'Anthropic', resetAt });
+    expect(goalDecision(spent, own('failed', 'rate_limit'))).toEqual({
+      kind: 'pause',
+      reason: 'budget',
+      note: null,
+    });
+    const last = goal({ limit: 3, continuations: 3 });
+    last.hold({ system: 'Anthropic', resetAt });
+    expect(goalDecision(last, own('failed', 'rate_limit'))).toMatchObject({
+      kind: 'end',
+      activity: 'exhausted',
+    });
+  });
+
   // What breaks this: a long goal pausing every time a deploy restarts the
   // worker or the model goes quiet, when the next continuation would carry on.
   it('goes on after a turn stopped without fault: a silent model, a restarted worker', () => {
