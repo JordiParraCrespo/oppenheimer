@@ -22,7 +22,7 @@ there.
 | — | [Mail](mail.md) | Bots work your own Gmail accounts, several per person: search, attachments, drafts, sends (always approved), labels and archive, new mail as a routine trigger; the first version, ahead of channels; version not set |
 | — | [WhatsApp](whatsapp.md) | Bots read your own WhatsApp number's chats and write in them, OpenClaw's linked device held by the runner on your host; built 2026-10-30, version not set |
 | — | [Telegram](telegram.md) | Bots read and answer the chats of a Telegram bot you made with @BotFather, OpenClaw's Bot API route long-polled by the runner on your host, the token kept there; built 2026-11-08, version not set |
-| — | [Answering on Telegram and WhatsApp](answering-on-telegram-and-whatsapp.md) | Your bots answer there: a Telegram bot per Oppenheimer bot, a default bot and routes on a WhatsApp number, the owner recorded by a `start` link or "Message yourself", strangers held, a contact's turn narrowed; proposed 2026-11-09, version not set |
+| — | [Answering on Telegram and WhatsApp](answering-on-telegram-and-whatsapp.md) | Your bots answer there: a Telegram bot per Oppenheimer bot, a default bot and routes on a WhatsApp number, the owner recorded by a `start` link or their personal number, strangers held, a contact's or group's turn narrowed; proposed 2026-11-09, version not set |
 | — | [Channels](channels.md) | Bots on email, WhatsApp and Slack: one interface per channel, email first as an address of the bot's own; version not set |
 | — | [Customers and routes](customers-and-routes.md) | Bots that talk to customers: routes pick the bot per channel, account, customer and conversation, a bot of a customer's own, hand-off to a person; after channels, version not set |
 | — | [Voice](voice.md) | Wispr-Flow-style dictation in the console, and setting up a session by speaking it; version not set |
@@ -132,5 +132,6 @@ where these land is the first open question below.
   its token kept there, its chats read and answered by the owner's bots
   with WhatsApp's tools and per-chat send grant; slice 1 built the same day.
 - 2026-11-09: Answering on Telegram and WhatsApp added
-  (`answering-on-telegram-and-whatsapp.md`), Telegram slices 2–3 and
-  WhatsApp slice 4 in one design, from OpenClaw and Hermes Agent.
+  (`answering-on-telegram-and-whatsapp.md`), Telegram slice 3 and
+  WhatsApp slice 4 in one design, ahead of their routine triggers, from
+  OpenClaw and Hermes Agent.

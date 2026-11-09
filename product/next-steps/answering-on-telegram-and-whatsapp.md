@@ -12,9 +12,11 @@ one. Then: "We should have a default bot for this that can not be deleted
 I guess no? I want to make safe how can talk to the bot as well no? We
 need safety measures on this chats", "each bot might have different" and
 "which bot gets the messages?". This note is the design for both: it is
-[Telegram](telegram.md) slices 2 and 3 and [WhatsApp](whatsapp.md) slice 4,
-on the core of [Channels](channels.md) and the routes of
-[Customers and routes](customers-and-routes.md). The research is
+[Telegram](telegram.md) slice 3 and [WhatsApp](whatsapp.md) slice 4, on
+the core of [Channels](channels.md) and the routes of
+[Customers and routes](customers-and-routes.md). It is built before either
+note's routine trigger (slice 2 of each), which stays as it is. The
+research is
 [`../research/lessons-from-channel-gateways.md`](../research/lessons-from-channel-gateways.md)
 §2 (OpenClaw) and §10 (Hermes Agent, read for this note).
 
@@ -38,28 +40,35 @@ Juno. Nothing routes; the binding is the answer.
 - **Changing the home host** asks for the token again: the token never
   rests on the control plane (telegram.md §2), so the new host cannot be
   handed it. The old host forgets it.
-- **Telegram's own profile follows the bot's:** on connect and on a rename,
-  the runner calls `setMyName`, `setMyDescription` and `setMyCommands`. The
-  photo is the owner's to set in @BotFather; the Bot API has no call for it.
+- **Telegram's own profile follows the bot's:** on connect and on a
+  change, the runner calls `setMyName`, `setMyDescription`,
+  `setMyCommands` and `setMyProfilePhoto` (the bot's avatar, drawn as an
+  image).
 
 ### WhatsApp: one number, several bots behind it
 
-WhatsApp is your own number (whatsapp.md §1): one identity, so something
-has to choose.
+A WhatsApp number is a spare one of yours (whatsapp.md §1): one identity,
+so something has to choose.
 
 - **A default bot per number**, chosen when the number starts answering.
   It is an account route (customers-and-routes.md §3, row 3), so a message
   always has a bot.
-- **Routes per contact or group** pick another bot, as
-  customers-and-routes.md has them: "the family group → Juno", "Acme's
-  people → Shop". A conversation keeps its bot once it opens.
-- **Your own line is "Message yourself".** A linked device of your number
-  sees what you write to yourself, marked as yours by the device, which no
-  one else can fake. That chat is how you talk to your bots on WhatsApp,
-  as Hermes's self-chat mode does. It goes to the default bot, and a
-  message starting with a bot's name and a colon ("Shop: what sold
-  today?") moves that chat to that bot until you name another. Only your
-  own line switches by name; a contact gets the bot their route says.
+- **Routes pick another bot** for a person or a group, as
+  customers-and-routes.md has them: a person or group is routed by being a
+  customer's identity (its §2 and §3, rows 1 and 2), so "the family group
+  → Juno" makes the family group a customer. A conversation keeps its bot
+  once it opens. What a routed person's turn may do is §3's, the same as
+  any contact's.
+- **Your line is your personal number** writing to the spare one, as
+  channels.md §5 has it. You name your personal number when the spare one
+  starts answering, and the spare number sends it a code you send back,
+  so the number is yours and not a typo. A WhatsApp sender's number is
+  WhatsApp's, not something a sender can set, so no one else can write as
+  it. Your chat goes to the default bot, and a message starting with a
+  bot's name and a colon ("Shop: what sold today?") moves that chat to
+  that bot until you name another. Only your line switches by name; a
+  contact gets the bot their route says. Hermes's dedicated-number mode is
+  the same arrangement.
 
 ### A bound bot is not deleted
 
@@ -80,7 +89,8 @@ apart, as OpenClaw and Hermes do.
   minutes); opening it sends `/start <code>`, and the sender's Telegram
   user id becomes the owner's for that bot. Hermes's **Create with QR**
   does the same. A plain `/start` from anyone is a stranger's.
-- **The owner on WhatsApp** is the "Message yourself" chat (§1).
+- **The owner on WhatsApp** is their personal number, confirmed by a
+  code (§1).
 - **Allowed contacts** are a list per Telegram bot and per number, empty
   by default.
 - **Anyone else is held.** Nothing reaches a bot; the console shows "@ana
@@ -109,8 +119,14 @@ apart, as OpenClaw and Hermes do.
 
 ## 3. What a contact's turn can do
 
-- **The owner on a channel is the owner**: the bot's tools, its
-  permissions and its memory, as in the console.
+- **The owner in their own direct chat with the bot is the owner**: the
+  bot's tools, its permissions and its memory, as in the console. Only
+  there.
+- **A turn in a group is a contact's turn, whoever mentions the bot,** the
+  owner included. Other people's lines are in its context and its reply is
+  read by everyone in the group, so it gets the narrow tools and memory
+  below. To have the bot act as you on something said in a group, ask it
+  in your own chat.
 - **A contact's turn has the customer turn's fixed tool set**
   (customers-and-routes.md §6): answer, read the bot's documents, remember
   for this conversation, `hand_off`. Mail, calendar, sessions, GitHub,
@@ -120,10 +136,12 @@ apart, as OpenClaw and Hermes do.
   §5, where a contact acted inside the owner's permissions.
 - **A contact's turn reads no memory of yours**: not the general memory,
   and not the bot's own facts, which were learned from you. It reads its
-  conversation's facts (customers-and-routes.md §5). A customer's turn
-  keeps that note's §5 as it is: the customer's facts and the bot's own,
-  since a bot serving customers was set up for them. The bot's documents
-  are shared, since they are what you wrote.
+  conversation's facts, or its customer's when the sender is one
+  (customers-and-routes.md §5). This changes that note's §5, where a
+  customer's turn also read the bot's own facts: a routed contact is a
+  customer there, and the bot's own facts hold what you told it. What a
+  bot should know for everyone it serves goes in its documents, which are
+  shared because you wrote them.
 - **What people wrote stays untrusted**, inside `<telegram>` or
   `<whatsapp>`, quotes and forwards included.
 - **Approvals happen in the console, and only you answer them.** A
@@ -145,9 +163,12 @@ apart, as OpenClaw and Hermes do.
 - **While it works:** Telegram's typing action, kept alive while the turn
   runs; after fifteen seconds, one line saying it is on it. WhatsApp shows
   nothing (whatsapp.md §2).
-- **Replies** are split at Telegram's 4,096 characters (WhatsApp's 8,000),
-  the bot's markdown turned into Telegram's HTML, escaped so nothing in it
-  is read as markup; WhatsApp gets its `*bold*` and `_italic_`. The pacing
+- **Replies** are split at Telegram's 4,096 characters and at our own
+  8,000 on WhatsApp (whatsapp.md §4). On Telegram the bot's markdown is
+  turned into Telegram's HTML by us, and everything else in it escaped, so
+  only the formatting we produce is read as markup; this changes
+  telegram.md §3, which sent plain text with no parse mode. WhatsApp gets
+  its `*bold*` and `_italic_`. The pacing
   of telegram.md §3 and the send budget of whatsapp.md §2 still apply.
 - **The host is offline:** the bot is silent, and its page and Settings
   say "Juno's host is offline". Telegram keeps a bot's updates for about a
@@ -189,7 +210,7 @@ per-chat "Always allow" for sends are unchanged.
 2. **Contacts on Telegram.** Allowed contacts, Allow and Ignore, the
    contact's turn (§3), groups, the limits and the spend guard, Pause and
    Take over.
-3. **WhatsApp.** The "Message yourself" line, the default bot and switching
+3. **WhatsApp.** The owner's personal number confirmed, the default bot and switching
    by name, contacts and groups through routes.
 4. **Voice notes**, transcribed through voice's providers, on both.
 
@@ -202,16 +223,18 @@ per-chat "Always allow" for sends are unchanged.
    belongs to a bot?
 3. Telegram strangers: one fixed line (the default here) or silence?
 4. A bot made only for contacts (a shop's front desk) may want its own
-   facts in a contact's turn. Should a bot be markable as contact-facing,
-   or do its documents suffice?
+   facts in a contact's turn. This note says its documents suffice; should
+   a bot be markable as contact-facing instead?
 
 ## Decided
 
 - 2026-11-09: a Telegram bot belongs to one Oppenheimer bot, polled by
   that bot's home host; a WhatsApp number has a default bot and routes,
-  and your own "Message yourself" chat is your line there. A bound bot
-  cannot be deleted. Strangers are held: one fixed line on Telegram,
+  and your personal number, confirmed by a code, is your line there. A
+  bound bot cannot be deleted. Strangers are held: one fixed line on Telegram,
   nothing on WhatsApp; Allow and Ignore in the console, no codes in chat.
-  A contact's turn gets the customer turn's tools and none of your memory.
+  A contact's turn, and any turn in a group, gets the customer turn's
+  tools and none of your memory; a customer's turn no longer reads the
+  bot's own facts.
   Approvals are answered in the console only. From OpenClaw and Hermes
   Agent.

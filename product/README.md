@@ -1390,5 +1390,9 @@ earlier note:
   the chats stay safe (`next-steps/answering-on-telegram-and-whatsapp.md`):
   a Telegram bot belongs to one Oppenheimer bot and is polled by its home
   host; a WhatsApp number has a default bot and routes; a bot that answers
-  something cannot be deleted; a contact's turn has the customer turn's
-  tools and none of the owner's memory.
+  something cannot be deleted; a contact's turn, and any turn in a group,
+  has the customer turn's tools and none of the owner's memory, and a
+  customer's turn no longer reads the bot's own facts
+  (`customers-and-routes.md` §5); approvals get no native buttons on any
+  channel (`channels.md` §6); and Telegram replies use our own conversion
+  to its HTML where `telegram.md` §3 sent plain text.

@@ -82,7 +82,9 @@ revoked.
   dropped. Text first; media is named, as WhatsApp's is.
 - **Sends** are plain text, one message of at most 4,096 characters (the
   Bot API's limit), with no parse mode, so nothing a bot writes is read as
-  markup. Telegram's own limits are kept on the host: one message a second
+  markup. *Changed 2026-11-09 for replies: our own conversion of the bot's
+  markdown to Telegram's HTML, everything else escaped
+  ([answering-on-telegram-and-whatsapp.md](answering-on-telegram-and-whatsapp.md) §4).* Telegram's own limits are kept on the host: one message a second
   to a chat, twenty a minute to a group, and a `429`'s `retry_after`
   pauses every send for that long. Telegram allows thirty a second across
   chats; there is no number to lose, so there is no daily host budget.
@@ -155,8 +157,8 @@ A group of its own in Settings → Permissions, **Telegram**:
    cards, as OpenClaw's `execApprovals`, belong there. *Designed
    2026-11-09 in
    [answering-on-telegram-and-whatsapp.md](answering-on-telegram-and-whatsapp.md),
-   which comes before slice 2 and builds no inline approval buttons:
-   approvals are answered in the console only.*
+   built before slice 2, which stays as it is, and with no inline approval
+   buttons: approvals are answered in the console only.*
 4. **Media**: images to the bot, voice notes transcribed.
 
 ## Open questions
