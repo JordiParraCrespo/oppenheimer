@@ -1,24 +1,27 @@
-import { Button, IconButton, StatusDot } from '@oppenheimer/design-system-web';
+import { Button, IconButton, Skeleton, StatusDot } from '@oppenheimer/design-system-web';
 import { Play, X } from '@oppenheimer/design-system-web/icons';
 import type { TaskEntity } from '@oppenheimer/frontend-consumer';
 import { useHosts, useSessions, useUnlinkTaskSession } from '@oppenheimer/frontend-consumer/react';
 import { ErrorAlert, RelativeTime } from '@oppenheimer/frontend-web';
-import { getRouteApi, Link } from '@tanstack/react-router';
+import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { SESSION_STATUS, sessionStateOf } from '../lib/session-state';
 import { LinkSessionPicker } from './link-session-picker';
-
-const board = getRouteApi('/_authenticated/plan/');
 
 /**
  * The task dialog's Sessions row (`18-plan-product.md` §4): each linked
  * session with its state and age, opening it, × to unlink; then Start session
  * and Link existing. Both of those attach, and attaching is what moves a task
- * out of Later or To do.
+ * out of To do.
  */
-export function TaskSessionsRow({ task }: { task: TaskEntity }) {
+export function TaskSessionsRow({
+  task,
+  onStartSession,
+}: {
+  task: TaskEntity;
+  onStartSession: (taskId: string) => void;
+}) {
   const { t } = useTranslation();
-  const navigate = board.useNavigate();
   const { data: sessions } = useSessions({
     select: (rows) => new Map(rows.map((row) => [row.id, row])),
   });
@@ -72,6 +75,21 @@ export function TaskSessionsRow({ task }: { task: TaskEntity }) {
             </div>
           );
         })}
+        {sessions === undefined
+          ? // The sessions have not answered: a row's place per linked session, so they do not pop in.
+            task.sessions.map((entry) => (
+              <div
+                key={entry.sessionId}
+                aria-hidden
+                className="flex h-9 min-w-0 items-center gap-2 rounded-sm bg-hover-surface pr-1 pl-2"
+              >
+                <Skeleton shape="sm" className="h-2.5 w-40" />
+                <span className="flex-1" />
+                <Skeleton shape="sm" className="h-2.5 w-16" />
+                <Skeleton shape="sm" className="h-2.5 w-8" />
+              </div>
+            ))
+          : null}
         <ErrorAlert
           error={unlink.error}
           fallback={t('tasks.dialog.unlinkFailed')}
@@ -83,9 +101,7 @@ export function TaskSessionsRow({ task }: { task: TaskEntity }) {
             variant="secondary"
             size="sm"
             disabled={task.isDone}
-            onClick={() =>
-              navigate({ search: (previous) => ({ ...previous, task: undefined, start: task.id }) })
-            }
+            onClick={() => onStartSession(task.id)}
           >
             <Play />
             {t('tasks.dialog.startSession')}

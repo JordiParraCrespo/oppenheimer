@@ -1,6 +1,9 @@
 import type { CodingAgentId } from '@oppenheimer/shared/agents';
 import type { PermissionGroup, Scope } from '@oppenheimer/shared/scopes';
 
+/** `GET /sessions/{id}/transcript`: the shared schema's type, which the API answers verbatim. */
+export type { SessionTranscriptPage } from '@oppenheimer/shared/schemas/session-transcript';
+
 /**
  * Response shapes the CLI consumes, narrowed to the fields it reads. They
  * mirror the API's DTOs (`apps/api/openapi.json`); the CLI is written against
@@ -187,7 +190,9 @@ export interface BotConversation {
   turns: BotTurn[];
 }
 
-export type TaskStatus = 'later' | 'todo' | 'doing' | 'done';
+export type { TaskStatus } from '@oppenheimer/shared/schemas/task';
+
+import type { TaskStatus } from '@oppenheimer/shared/schemas/task';
 
 export interface Task {
   id: string;

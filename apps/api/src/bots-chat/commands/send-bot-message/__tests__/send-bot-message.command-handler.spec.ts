@@ -319,7 +319,7 @@ describe('SendBotMessageCommandHandler', () => {
       botId: 'bot-1',
       originTurnId: 'turn-0',
       objective: 'Triage the bugs',
-      limit: 5,
+      tokenBudget: null,
       credentialScopes: null,
       timeZone: null,
     });

@@ -64,6 +64,14 @@ const ChatEntryMaxBytes = 65536
 // ChatBatchMaxEntries is the most entries one `attachment.chat` holds.
 const ChatBatchMaxEntries = 256
 
+// ExecOutputMaxBytes is how many bytes of each stream `host.exec.result`
+// keeps: the last ones.
+const ExecOutputMaxBytes = 32768
+
+// TerminalScreenMaxBytes is how much of a captured screen `terminal.screen`
+// carries: the last bytes.
+const TerminalScreenMaxBytes = 32768
+
 // The hello capabilities: commands a runner takes beyond its protocol
 // version's baseline.
 const (
@@ -75,6 +83,7 @@ const (
 	CapabilityAttachmentDirectProof = "attachment.direct.proof"
 	CapabilitySessionFolder         = "session.folder"
 	CapabilityFsList                = "fs.list"
+	CapabilityFsFind                = "fs.find"
 	CapabilityAttachmentChat        = "attachment.chat"
 	CapabilityAttachmentChatOlder   = "attachment.chat.older"
 	CapabilityDeviceScreen          = "device.screen"
@@ -85,7 +94,11 @@ const (
 	CapabilityCodexEnvironments     = "codex.environments"
 	CapabilitySessionWatch          = "session.watch"
 	CapabilityWhatsapp              = "whatsapp"
+	CapabilityTelegram              = "telegram"
 	CapabilitySharedPreview         = "shared.preview"
+	CapabilityTranscriptRead        = "transcript.read"
+	CapabilityHostExec              = "host.exec"
+	CapabilityTerminalDrive         = "terminal.drive"
 )
 
 // The `type` of every message on the link.
@@ -120,6 +133,12 @@ const (
 	TypeRepositoryPrepare       = "repository.prepare"
 	TypeFsList                  = "fs.list"
 	TypeFsListing               = "fs.listing"
+	TypeFsFind                  = "fs.find"
+	TypeFsFound                 = "fs.found"
+	TypeHostExec                = "host.exec"
+	TypeHostExecResult          = "host.exec.result"
+	TypeTerminalDrive           = "terminal.drive"
+	TypeTerminalScreen          = "terminal.screen"
 	TypeAttachmentDirectOffer   = "attachment.direct.offer"
 	TypeAttachmentDirectAnswer  = "attachment.direct.answer"
 	TypeAttachmentDirectRefused = "attachment.direct.refused"
@@ -144,8 +163,17 @@ const (
 	TypeWhatsappAck             = "whatsapp.ack"
 	TypeWhatsappSend            = "whatsapp.send"
 	TypeWhatsappSent            = "whatsapp.sent"
+	TypeTelegramLink            = "telegram.link"
+	TypeTelegramUnlink          = "telegram.unlink"
+	TypeTelegramState           = "telegram.state"
+	TypeTelegramMessages        = "telegram.messages"
+	TypeTelegramAck             = "telegram.ack"
+	TypeTelegramSend            = "telegram.send"
+	TypeTelegramSent            = "telegram.sent"
 	TypeSharedPreviewGet        = "shared.preview.get"
 	TypeSharedPreview           = "shared.preview"
+	TypeTranscriptRead          = "transcript.read"
+	TypeTranscriptPage          = "transcript.page"
 )
 
 // MessageTypes is every message type on the link, in the schema's order.
@@ -180,6 +208,12 @@ var MessageTypes = []string{
 	TypeRepositoryPrepare,
 	TypeFsList,
 	TypeFsListing,
+	TypeFsFind,
+	TypeFsFound,
+	TypeHostExec,
+	TypeHostExecResult,
+	TypeTerminalDrive,
+	TypeTerminalScreen,
 	TypeAttachmentDirectOffer,
 	TypeAttachmentDirectAnswer,
 	TypeAttachmentDirectRefused,
@@ -204,8 +238,17 @@ var MessageTypes = []string{
 	TypeWhatsappAck,
 	TypeWhatsappSend,
 	TypeWhatsappSent,
+	TypeTelegramLink,
+	TypeTelegramUnlink,
+	TypeTelegramState,
+	TypeTelegramMessages,
+	TypeTelegramAck,
+	TypeTelegramSend,
+	TypeTelegramSent,
 	TypeSharedPreviewGet,
 	TypeSharedPreview,
+	TypeTranscriptRead,
+	TypeTranscriptPage,
 }
 
 // NewMessage returns a pointer to a new struct for a message type, and false
@@ -272,6 +315,18 @@ func NewMessage(messageType string) (any, bool) {
 		return new(FsList), true
 	case TypeFsListing:
 		return new(FsListing), true
+	case TypeFsFind:
+		return new(FsFind), true
+	case TypeFsFound:
+		return new(FsFound), true
+	case TypeHostExec:
+		return new(HostExec), true
+	case TypeHostExecResult:
+		return new(HostExecResult), true
+	case TypeTerminalDrive:
+		return new(TerminalDrive), true
+	case TypeTerminalScreen:
+		return new(TerminalScreen), true
 	case TypeAttachmentDirectOffer:
 		return new(AttachmentDirectOffer), true
 	case TypeAttachmentDirectAnswer:
@@ -320,10 +375,28 @@ func NewMessage(messageType string) (any, bool) {
 		return new(WhatsappSend), true
 	case TypeWhatsappSent:
 		return new(WhatsappSent), true
+	case TypeTelegramLink:
+		return new(TelegramLink), true
+	case TypeTelegramUnlink:
+		return new(TelegramUnlink), true
+	case TypeTelegramState:
+		return new(TelegramState), true
+	case TypeTelegramMessages:
+		return new(TelegramMessages), true
+	case TypeTelegramAck:
+		return new(TelegramAck), true
+	case TypeTelegramSend:
+		return new(TelegramSend), true
+	case TypeTelegramSent:
+		return new(TelegramSent), true
 	case TypeSharedPreviewGet:
 		return new(SharedPreviewGet), true
 	case TypeSharedPreview:
 		return new(SharedPreview), true
+	case TypeTranscriptRead:
+		return new(TranscriptRead), true
+	case TypeTranscriptPage:
+		return new(TranscriptPage), true
 	}
 	return nil, false
 }
@@ -664,6 +737,76 @@ type FsListingEntries struct {
 	Branch string `json:"branch,omitempty"`
 }
 
+// FsFind is the `fs.find` message.
+type FsFind struct {
+	Type      string `json:"type"`
+	CommandID string `json:"commandId"`
+	Query     string `json:"query"`
+	Path      string `json:"path,omitempty"`
+}
+
+// FsFound is the `fs.found` message.
+type FsFound struct {
+	Type      string           `json:"type"`
+	CommandID string           `json:"commandId"`
+	Path      string           `json:"path"`
+	Home      string           `json:"home"`
+	Entries   []FsFoundEntries `json:"entries"`
+	Truncated bool             `json:"truncated,omitempty"`
+}
+
+// FsFoundEntries is FsFound.Entries.
+type FsFoundEntries struct {
+	Path   string `json:"path"`
+	Branch string `json:"branch,omitempty"`
+}
+
+// HostExec is the `host.exec` message.
+type HostExec struct {
+	Type           string   `json:"type"`
+	CommandID      string   `json:"commandId"`
+	Argv           []string `json:"argv"`
+	Cwd            string   `json:"cwd,omitempty"`
+	Home           string   `json:"home"`
+	TimeoutSeconds int      `json:"timeoutSeconds"`
+}
+
+// HostExecResult is the `host.exec.result` message.
+type HostExecResult struct {
+	Type            string `json:"type"`
+	CommandID       string `json:"commandId"`
+	ExitCode        *int   `json:"exitCode"`
+	TimedOut        bool   `json:"timedOut"`
+	Stdout          string `json:"stdout"`
+	Stderr          string `json:"stderr"`
+	StdoutTruncated bool   `json:"stdoutTruncated,omitempty"`
+	StderrTruncated bool   `json:"stderrTruncated,omitempty"`
+	Cwd             string `json:"cwd"`
+	DurationMs      int64  `json:"durationMs"`
+}
+
+// TerminalDrive is the `terminal.drive` message.
+type TerminalDrive struct {
+	Type        string   `json:"type"`
+	CommandID   string   `json:"commandId"`
+	SessionID   string   `json:"sessionId"`
+	Window      int      `json:"window,omitempty"`
+	Text        string   `json:"text,omitempty"`
+	Keys        []string `json:"keys,omitempty"`
+	WaitFor     string   `json:"waitFor,omitempty"`
+	WaitSeconds int      `json:"waitSeconds"`
+	History     int      `json:"history,omitempty"`
+}
+
+// TerminalScreen is the `terminal.screen` message.
+type TerminalScreen struct {
+	Type      string `json:"type"`
+	CommandID string `json:"commandId"`
+	Screen    string `json:"screen"`
+	Matched   bool   `json:"matched"`
+	WaitedMs  int64  `json:"waitedMs"`
+}
+
 // AttachmentDirectOffer is the `attachment.direct.offer` message.
 type AttachmentDirectOffer struct {
 	Type         string   `json:"type"`
@@ -882,6 +1025,74 @@ type WhatsappSent struct {
 	SentAt    time.Time `json:"sentAt"`
 }
 
+// TelegramLink is the `telegram.link` message.
+type TelegramLink struct {
+	Type      string `json:"type"`
+	CommandID string `json:"commandId"`
+	Token     string `json:"token"`
+}
+
+// TelegramUnlink is the `telegram.unlink` message.
+type TelegramUnlink struct {
+	Type      string `json:"type"`
+	CommandID string `json:"commandId"`
+}
+
+// TelegramState is the `telegram.state` message.
+type TelegramState struct {
+	Type     string `json:"type"`
+	State    string `json:"state"`
+	BotID    string `json:"botId,omitempty"`
+	Username string `json:"username,omitempty"`
+	Name     string `json:"name,omitempty"`
+	Reason   string `json:"reason,omitempty"`
+}
+
+// TelegramMessages is the `telegram.messages` message.
+type TelegramMessages struct {
+	Type     string                     `json:"type"`
+	Messages []TelegramMessagesMessages `json:"messages"`
+}
+
+// TelegramMessagesMessages is TelegramMessages.Messages.
+type TelegramMessagesMessages struct {
+	Key            string    `json:"key"`
+	ID             string    `json:"id"`
+	ChatID         string    `json:"chatId"`
+	ChatKind       string    `json:"chatKind"`
+	ChatName       string    `json:"chatName,omitempty"`
+	SenderID       string    `json:"senderId"`
+	SenderName     string    `json:"senderName,omitempty"`
+	SenderUsername string    `json:"senderUsername,omitempty"`
+	Text           string    `json:"text"`
+	Media          string    `json:"media,omitempty"`
+	ReplyToID      string    `json:"replyToId,omitempty"`
+	SentAt         time.Time `json:"sentAt"`
+}
+
+// TelegramAck is the `telegram.ack` message.
+type TelegramAck struct {
+	Type string   `json:"type"`
+	Keys []string `json:"keys"`
+}
+
+// TelegramSend is the `telegram.send` message.
+type TelegramSend struct {
+	Type      string `json:"type"`
+	CommandID string `json:"commandId"`
+	ChatID    string `json:"chatId"`
+	Text      string `json:"text"`
+	ReplyToID string `json:"replyToId,omitempty"`
+}
+
+// TelegramSent is the `telegram.sent` message.
+type TelegramSent struct {
+	Type      string    `json:"type"`
+	CommandID string    `json:"commandId"`
+	ID        string    `json:"id"`
+	SentAt    time.Time `json:"sentAt"`
+}
+
 // SharedPreviewGet is the `shared.preview.get` message.
 type SharedPreviewGet struct {
 	Type      string `json:"type"`
@@ -896,6 +1107,30 @@ type SharedPreview struct {
 	CommandID string `json:"commandId"`
 	MediaType string `json:"mediaType"`
 	Data      string `json:"data"`
+}
+
+// TranscriptRead is the `transcript.read` message.
+type TranscriptRead struct {
+	Type         string `json:"type"`
+	CommandID    string `json:"commandId"`
+	SessionID    string `json:"sessionId"`
+	Conversation string `json:"conversation,omitempty"`
+	After        int64  `json:"after,omitempty"`
+	Limit        int    `json:"limit"`
+}
+
+// TranscriptPage is the `transcript.page` message.
+type TranscriptPage struct {
+	Type         string   `json:"type"`
+	CommandID    string   `json:"commandId"`
+	Conversation string   `json:"conversation,omitempty"`
+	Entries      []string `json:"entries"`
+	From         int64    `json:"from"`
+	Next         int64    `json:"next"`
+	AtEnd        bool     `json:"atEnd"`
+	Restarted    bool     `json:"restarted,omitempty"`
+	Dropped      int      `json:"dropped,omitempty"`
+	Partial      bool     `json:"partial,omitempty"`
 }
 
 // SessionSnapshot is `#/$defs/sessionSnapshot`.

@@ -8,7 +8,7 @@ import { BotsSidebar } from '../sections/bots-sidebar';
 /**
  * The Employees sidebar's render budget, one assertion per clock: the bots
  * query (a refetch on focus and after every write), the route (which bot is
- * open), the minute its ages move by, and the search box, whose keystrokes
+ * open) and the search box, whose keystrokes
  * must reach no row until the search settles.
  *
  * The rows are counted at `SortableBotItem`, the design system's row.
@@ -25,7 +25,7 @@ const renders = vi.hoisted(() => new Map<string, number>());
 
 const world = vi.hoisted(() => {
   const listeners = new Set<() => void>();
-  let state = { bots: [] as unknown[], pathname: '/bots', now: 0 };
+  let state = { bots: [] as unknown[], pathname: '/bots' };
   return {
     get: () => state,
     set(patch: Partial<typeof state>) {
@@ -41,15 +41,10 @@ const world = vi.hoisted(() => {
 
 vi.mock('@oppenheimer/design-system-web', async (original) => ({
   ...(await original<typeof import('@oppenheimer/design-system-web')>()),
-  SortableBotItem: ({ name, age, active }: { name: string; age?: string; active?: boolean }) => {
+  SortableBotItem: ({ name, active }: { name: string; active?: boolean }) => {
     renders.set(name, (renders.get(name) ?? 0) + 1);
-    return (
-      <div data-active={active ? '' : undefined}>
-        {name} {age}
-      </div>
-    );
+    return <div data-active={active ? '' : undefined}>{name}</div>;
   },
-  useNow: () => useSyncExternalStore(world.subscribe, () => world.get().now),
 }));
 
 const GROUPS = vi.hoisted(
@@ -68,6 +63,7 @@ vi.mock('@oppenheimer/frontend-consumer/react', () => ({
     return { bots, groups: GROUPS, error: null };
   },
   useUpdateBot: idle,
+  useMoveBotGroup: idle,
   useRenameBotGroup: idle,
   useDeleteBotGroup: idle,
   useCreateBotGroup: idle,
@@ -125,7 +121,7 @@ beforeEach(() => {
     addEventListener: () => {},
     removeEventListener: () => {},
   }));
-  world.set({ bots: ROWS, pathname: '/bots/alpha', now: START });
+  world.set({ bots: ROWS, pathname: '/bots/alpha' });
   render(<BotsSidebar />);
   rendered();
 });
@@ -147,13 +143,6 @@ describe('BotsSidebar', () => {
   it('renders no row going from a bot’s chat to its settings', () => {
     act(() => world.set({ pathname: '/bots/alpha/settings/profile' }));
     expect(rendered()).toEqual([]);
-  });
-
-  it('moves every age when the minute ticks', () => {
-    const before = document.body.textContent;
-    act(() => world.set({ now: START + MINUTE }));
-    expect(rendered()).toEqual(['alpha', 'bravo', 'charlie', 'delta']);
-    expect(document.body.textContent).not.toBe(before);
   });
 
   it('renders no row while typing, and the matching row once when typing settles', () => {

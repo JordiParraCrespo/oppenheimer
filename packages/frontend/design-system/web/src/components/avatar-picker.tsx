@@ -4,8 +4,9 @@ import { Toggle as TogglePrimitive } from '@base-ui/react/toggle';
 import { ToggleGroup as ToggleGroupPrimitive } from '@base-ui/react/toggle-group';
 import type * as React from 'react';
 
+import { BotFace, type BotFaceParts } from '../internal/bot-face';
 import { cn } from '../lib/utils';
-import { Avatar, AvatarFallback, AvatarImage } from './avatar';
+import { Avatar, AvatarFallback, AvatarImage, type AvatarRadius } from './avatar';
 
 type AvatarOption = {
   id: string;
@@ -34,33 +35,57 @@ const AVATAR_COLOR_CLASS: Record<AvatarColor, string> = {
 };
 
 /**
- * A bot's face: its photo, or its initials until one loads. With `color` the
- * initials sit in dark ink on that avatar colour (a bot with no photo, which
- * is every bot until there is a set we may use); without it, in ink on the
- * control fill, never a tint.
+ * A bot's drawn face: its avatar colour, its id (which picks the hat, eyes
+ * and mouth) and, when its owner picked one, the face it wears instead.
+ */
+type BotFaceSpec = { color: AvatarColor; seed: string; parts?: BotFaceParts | null };
+
+/**
+ * A bot's avatar is a rounded square, not a pill, on the system's radius
+ * rungs: the corner steps up with the size so the 20px sidebar row and the
+ * 72px profile preview read as one shape.
+ */
+function botAvatarRadius(size: number): AvatarRadius {
+  if (size <= 30) return 'xs';
+  if (size <= 44) return 'sm';
+  if (size <= 64) return 'md';
+  return 'lg';
+}
+
+/**
+ * A bot's face: its photo, or until one loads its drawn `face`, a hatted
+ * face in its avatar colour that its id keeps the same (every bot, until
+ * there is a set of photos we may use). Without `face`, the initials in ink
+ * on the control fill: an avatar with no bot behind it yet.
  */
 function BotAvatar({
   option,
   size,
-  color,
+  face,
+  className,
 }: {
   option: Pick<AvatarOption, 'image' | 'initials'>;
   size: number;
-  color?: AvatarColor;
+  face?: BotFaceSpec;
+  className?: string;
 }) {
   return (
     <Avatar
       size={size}
-      data-color={color}
+      data-color={face?.color}
+      radius={botAvatarRadius(size)}
       className={cn(
         'font-semibold tracking-[-0.01em]',
-        color
-          ? cn(AVATAR_COLOR_CLASS[color], 'text-avatar-ink shadow-[inset_0_0_0_1px_var(--border-subtle)]')
+        face
+          ? cn(AVATAR_COLOR_CLASS[face.color], 'text-avatar-ink shadow-[inset_0_0_0_1px_var(--border-subtle)]')
           : 'bg-control text-fg',
+        className,
       )}
     >
       {option.image ? <AvatarImage src={option.image} alt="" /> : null}
-      <AvatarFallback>{option.initials}</AvatarFallback>
+      <AvatarFallback>
+        {face ? <BotFace seed={face.seed} color={face.color} parts={face.parts} /> : option.initials}
+      </AvatarFallback>
     </Avatar>
   );
 }
@@ -76,6 +101,8 @@ function AvatarColorPicker({
   value,
   onValueChange,
   initials,
+  seed,
+  parts,
   name,
   colorNames,
   label = 'Colour',
@@ -85,6 +112,10 @@ function AvatarColorPicker({
   value: AvatarColor;
   onValueChange: (value: AvatarColor) => void;
   initials: string;
+  /** The bot's id, which picks the preview's face. */
+  seed: string;
+  /** The face it wears, when its owner picked one. */
+  parts?: BotFaceParts | null;
   /** The bot's name, under the preview. */
   name?: React.ReactNode;
   /** Each colour's accessible name ("Mint"); the caller's language. */
@@ -96,7 +127,7 @@ function AvatarColorPicker({
   return (
     <div data-slot="avatar-color-picker" className={cn('flex items-center gap-10', className)}>
       <div className="flex shrink-0 flex-col items-center gap-2">
-        <BotAvatar option={{ initials }} size={72} color={value} />
+        <BotAvatar option={{ initials }} size={72} face={{ color: value, seed, parts }} />
         {name ? <span className="max-w-30 truncate text-[14px]">{name}</span> : null}
       </div>
       <div className="flex min-w-0 flex-1 flex-col gap-3">
@@ -238,4 +269,4 @@ function AvatarPicker({
 }
 
 export { AvatarColorPicker, AvatarPicker, BotAvatar };
-export type { AvatarColor, AvatarOption };
+export type { AvatarColor, AvatarOption, BotFaceParts, BotFaceSpec };

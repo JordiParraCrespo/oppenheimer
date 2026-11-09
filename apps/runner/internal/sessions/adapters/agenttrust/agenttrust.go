@@ -5,7 +5,6 @@ package agenttrust
 
 import (
 	"encoding/json"
-	"errors"
 	"io/fs"
 	"log/slog"
 	"os"
@@ -16,19 +15,31 @@ import (
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/domain"
 )
 
-// Store is app.Trust over Claude Code's own state file. Other agents have no
-// such question this runner answers yet, and are left alone.
+// Store is app.Trust over Claude Code's state file and Codex's config file.
+// Other agents have no such question this runner answers yet, and are left
+// alone.
 type Store struct {
 	// claudeConfig is Claude Code's global state, `~/.claude.json`, or
 	// `$CLAUDE_CONFIG_DIR/.claude.json` when that is set.
 	claudeConfig string
-	logger       *slog.Logger
-	mu           sync.Mutex
+	// claudeProjects is where Claude Code keeps each folder's conversations,
+	// `~/.claude/projects` or `$CLAUDE_CONFIG_DIR/projects`.
+	claudeProjects string
+	// codexConfig is Codex's config, `~/.codex/config.toml`, or
+	// `$CODEX_HOME/config.toml` when that is set.
+	codexConfig string
+	logger      *slog.Logger
+	mu          sync.Mutex
 }
 
 // Options names the files the store edits.
 type Options struct {
 	ClaudeConfig string
+	// ClaudeProjects is Claude Code's `projects` folder, which Forget clears a
+	// removed folder's conversations from; empty leaves it alone.
+	ClaudeProjects string
+	// CodexConfig is Codex's `config.toml`; empty leaves Codex to ask.
+	CodexConfig string
 	// Logger reports a mark that failed, which the session service drops
 	// (app.Trust is best-effort); nil is the process's default logger.
 	Logger *slog.Logger
@@ -40,10 +51,14 @@ func New(opts Options) *Store {
 	if logger == nil {
 		logger = slog.Default()
 	}
-	return &Store{claudeConfig: opts.ClaudeConfig, logger: logger}
+	return &Store{
+		claudeConfig: opts.ClaudeConfig, claudeProjects: opts.ClaudeProjects,
+		codexConfig: opts.CodexConfig, logger: logger,
+	}
 }
 
-// Trust records dir as accepted. Claude Code keeps the answer per folder, as
+// Trust records dir as accepted for agent, in the agent's own file
+// (configFile says how that file is read and written). Claude Code keeps the answer per folder, as
 // `projects[<dir>].hasTrustDialogAccepted`; every other key in the file, and
 // in that folder's entry, is Claude Code's and is written back untouched.
 //
@@ -53,39 +68,39 @@ func New(opts Options) *Store {
 // pre-approve tools, and without it asks again, in a trusted folder, whether
 // to "continue without these permissions".
 //
-// The write is a temporary file renamed over the old one, so a CLI starting at
-// the same moment reads the old file or the new one, never half of either.
-//
 // The file is written back as Claude Code writes it, two-space JSON; Go
 // orders its keys, which Claude Code neither reads nor keeps, since it
 // rewrites the whole file itself on every save.
 func (s *Store) Trust(agent domain.Agent, dir string) error {
-	if agent != domain.AgentClaude || s.claudeConfig == "" {
+	var err error
+	switch {
+	case agent == domain.AgentClaude && s.claudeConfig != "":
+		err = s.trustClaude(dir)
+	case agent == domain.AgentCodex && s.codexConfig != "":
+		err = s.trustCodex(dir)
+	default:
 		return nil
 	}
-	if err := s.trustClaude(dir); err != nil {
-		s.logger.Warn("could not mark the session folder trusted; Claude Code will ask",
-			slog.String("dir", dir), slog.Any("error", err))
-		return err
+	if err != nil {
+		s.logger.Warn("could not mark the session folder trusted; the agent will ask",
+			slog.String("agent", string(agent)), slog.String("dir", dir), slog.Any("error", err))
 	}
-	return nil
+	return err
 }
 
-func (s *Store) trustClaude(dir string) error {
+// folders is dir, symlinks resolved, and the repository it is a linked
+// worktree of, when it is one.
+func folders(dir string) []string {
 	dirs := []string{realPath(dir)}
 	if root := repositoryRoot(dirs[0]); root != "" && root != dirs[0] {
 		dirs = append(dirs, root)
 	}
-	return s.edit(func(root map[string]json.RawMessage) (bool, error) {
-		projects := map[string]map[string]json.RawMessage{}
-		if existing, ok := root["projects"]; ok {
-			if err := json.Unmarshal(existing, &projects); err != nil {
-				return false, err
-			}
-		}
-		if projects == nil {
-			projects = map[string]map[string]json.RawMessage{}
-		}
+	return dirs
+}
+
+func (s *Store) trustClaude(dir string) error {
+	dirs := folders(dir)
+	return s.editProjects(func(projects map[string]map[string]json.RawMessage) bool {
 		changed := false
 		for _, dir := range dirs {
 			project := projects[dir]
@@ -100,7 +115,25 @@ func (s *Store) trustClaude(dir string) error {
 			projects[dir] = project
 			changed = true
 		}
-		if !changed {
+		return changed
+	})
+}
+
+// editProjects lets change edit Claude Code's per-folder entries,
+// `projects` in the state file, and writes them back when it reports a
+// change. Trust and Forget are each one change to that map.
+func (s *Store) editProjects(change func(projects map[string]map[string]json.RawMessage) bool) error {
+	return s.edit(func(root map[string]json.RawMessage) (bool, error) {
+		projects := map[string]map[string]json.RawMessage{}
+		if existing, ok := root["projects"]; ok {
+			if err := json.Unmarshal(existing, &projects); err != nil {
+				return false, err
+			}
+		}
+		if projects == nil {
+			projects = map[string]map[string]json.RawMessage{}
+		}
+		if !change(projects) {
 			return false, nil
 		}
 		encoded, err := json.Marshal(projects)
@@ -110,6 +143,48 @@ func (s *Store) trustClaude(dir string) error {
 		root["projects"] = encoded
 		return true, nil
 	})
+}
+
+// Forget drops what Claude Code keeps about dir, a folder about to be removed
+// that nothing will open again (a cloud start's scratch checkout): its entry
+// in the state file, which Trust wrote, and the folder of conversations
+// Claude Code may have kept for it under `projects/`. Without it every cloud
+// start leaves one more of each behind. The repository's own entry, which
+// Trust may also have written, is shared with the sessions that live there
+// and is kept. Best-effort: a failure is logged, and leaves only litter.
+func (s *Store) Forget(dir string) {
+	dir = realPath(dir)
+	if s.claudeConfig != "" {
+		err := s.editProjects(func(projects map[string]map[string]json.RawMessage) bool {
+			if _, ok := projects[dir]; !ok {
+				return false
+			}
+			delete(projects, dir)
+			return true
+		})
+		if err != nil {
+			s.logger.Warn("could not forget a removed folder in Claude Code's state",
+				slog.String("dir", dir), slog.Any("error", err))
+		}
+	}
+	if s.claudeProjects != "" {
+		folder := filepath.Join(s.claudeProjects, claudeProjectFolder(dir))
+		if err := os.RemoveAll(folder); err != nil {
+			s.logger.Warn("could not remove Claude Code's conversations for a removed folder",
+				slog.String("folder", folder), slog.Any("error", err))
+		}
+	}
+}
+
+// claudeProjectFolder is dir as Claude Code names its folder under
+// `projects/`: every character but a letter or a digit is a dash.
+func claudeProjectFolder(dir string) string {
+	return strings.Map(func(r rune) rune {
+		if r >= 'a' && r <= 'z' || r >= 'A' && r <= 'Z' || r >= '0' && r <= '9' {
+			return r
+		}
+		return '-'
+	}, dir)
 }
 
 // cloudSettingsKey is where Claude Code (2.1.31x) keeps this machine's answer
@@ -149,18 +224,13 @@ func (s *Store) edit(change func(root map[string]json.RawMessage) (bool, error))
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	root := map[string]json.RawMessage{}
-	mode := fs.FileMode(0o600)
-	raw, err := os.ReadFile(s.claudeConfig)
-	switch {
-	case errors.Is(err, fs.ErrNotExist):
-	case err != nil:
+	file, err := readConfig(s.claudeConfig)
+	if err != nil {
 		return err
-	default:
-		if info, statErr := os.Stat(s.claudeConfig); statErr == nil {
-			mode = info.Mode().Perm()
-		}
-		if err := json.Unmarshal(raw, &root); err != nil {
+	}
+	root := map[string]json.RawMessage{}
+	if file.raw != nil {
+		if err := json.Unmarshal(file.raw, &root); err != nil {
 			return err
 		}
 	}
@@ -176,7 +246,7 @@ func (s *Store) edit(change func(root map[string]json.RawMessage) (bool, error))
 	if err != nil {
 		return err
 	}
-	return writeAtomic(s.claudeConfig, out, mode)
+	return file.write(out)
 }
 
 func realPath(dir string) string {

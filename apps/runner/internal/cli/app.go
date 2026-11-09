@@ -14,6 +14,7 @@ import (
 	"time"
 
 	devapp "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/devices/app"
+	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/host/adapters/execpolicy"
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/host/adapters/folders"
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/host/adapters/system"
 	hostapp "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/host/app"
@@ -42,6 +43,7 @@ import (
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/adapters/workfolder"
 	sessionsapp "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/app"
 	sessionsdomain "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/domain"
+	tgapp "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/telegram/app"
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/updates/adapters/binaries"
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/updates/adapters/release"
 	updstate "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/updates/adapters/state"
@@ -60,6 +62,9 @@ type App struct {
 	Service *svcapp.Service
 	// Sessions is the worktree-plus-tmux lifecycle.
 	Sessions *sessionsapp.Service
+	// Conversations reads a session's conversation off its agent's
+	// transcript: the chat view and `transcript.read`.
+	Conversations *sessionsapp.Conversations
 	// Children is how a session's agent starts, tells and waits on others.
 	Children *sessionsapp.Children
 	// Updates is nil on a host that is not paired: the release URL and the
@@ -99,6 +104,10 @@ type App struct {
 	// built by the daemon's link; nil is a host that offers none
 	// (RUNNER_WHATSAPP=off), or a subcommand that holds no link.
 	WhatsApp *waapp.Service
+	// Telegram is the host's Telegram bot (link_telegram.go), built by the
+	// daemon's link; nil is a host that offers none (RUNNER_TELEGRAM=off), or
+	// a subcommand that holds no link.
+	Telegram *tgapp.Service
 
 	// downloads keeps the runner's own update check and a round of agent
 	// updates from running at once: two downloads on one link, and a
@@ -142,6 +151,8 @@ func New(version string) (*App, error) {
 		Directories:   folders.Disk{},
 		WorkspaceRoot: paths.Workspaces, Version: version,
 		ClaudeAccount: func() string { return system.ClaudeAccount(claudeConfigPath(paths)) },
+		ExecPolicies:  execpolicy.File{Path: paths.ExecPolicy()},
+		Executor:      system.Executor{},
 	})
 	pairingSvc := pairapp.New(pairapp.Options{
 		Store:        store,
@@ -175,14 +186,24 @@ func New(version string) (*App, error) {
 		// the next one behind (02-runner §5).
 		Spares: true,
 	})
-	devices, err := hostDevices()
+	devices, err := hostDevices(false)
 	if err != nil {
 		return nil, err
 	}
 	app.Devices = devices
 	app.Ports = ports.New()
 	programStatus := statuspty.New(statuspty.Options{Executable: runnerExecutable(), Dir: programStatusDir(paths)})
-	trust := agenttrust.New(agenttrust.Options{ClaudeConfig: claudeConfigPath(paths)})
+	trust := agenttrust.New(agenttrust.Options{
+		ClaudeConfig: claudeConfigPath(paths), ClaudeProjects: claudeProjectsPath(paths),
+		CodexConfig: agentHomeFile(paths, "CODEX_HOME", ".codex", "config.toml"),
+	})
+	transcripts := transcript.New(transcript.Options{
+		ClaudeProjects: claudeProjectsPath(paths),
+		StatusDir:      StatusDir(paths),
+		FilesDir:       paths.Files(),
+		CodexSessions:  agentSessionsPath(paths, "CODEX_HOME", ".codex"),
+		GrokSessions:   agentSessionsPath(paths, "GROK_HOME", ".grok"),
+	})
 	sessions, err := sessionsapp.New(sessionsapp.Options{
 		Terminals:  terminals,
 		Worktrees:  worktrees,
@@ -195,7 +216,7 @@ func New(version string) (*App, error) {
 		Layout:   layout,
 		Env: func(session sessionsdomain.Session) map[string]string {
 			env := sessionEnv(paths, session)
-			pinned, device := pinDevice(devices, session)
+			pinned, device := pinDevice(app.Devices, session)
 			for key, value := range pinned {
 				env[key] = value
 			}
@@ -209,13 +230,7 @@ func New(version string) (*App, error) {
 		Trust: trust,
 		// A session launched with no task is named from the first message
 		// typed into its agent, read off the agent's own transcript.
-		Transcripts: transcript.New(transcript.Options{
-			ClaudeProjects: claudeProjectsPath(paths),
-			StatusDir:      StatusDir(paths),
-			FilesDir:       paths.Files(),
-			CodexSessions:  agentSessionsPath(paths, "CODEX_HOME", ".codex"),
-			GrokSessions:   agentSessionsPath(paths, "GROK_HOME", ".grok"),
-		}),
+		Transcripts: transcripts,
 		// Claude Code hands its status line the context and the plan's usage,
 		// which the chat shows; the runner's own takes them on the way.
 		StatusLine: statusLineCommand(),
@@ -231,6 +246,9 @@ func New(version string) (*App, error) {
 		return nil, err
 	}
 	app.Sessions = sessions
+	app.Conversations = sessionsapp.NewConversations(sessionsapp.ConversationsOptions{
+		Sessions: sessions, Transcripts: transcripts,
+	})
 	// Agents run agents: children of a session's agent, on this host.
 	app.Children = sessionsapp.NewChildren(sessionsapp.ChildrenOptions{
 		Sessions: sessions, Terminals: terminals, ProgramStatus: programStatus,
@@ -239,6 +257,7 @@ func New(version string) (*App, error) {
 	app.Cloud = cloud.Starter{
 		Trust:   func(dir string) error { return trust.Trust(sessionsdomain.AgentClaude, dir) },
 		Prepare: trust.KeepCloudSettingsLocal,
+		Forget:  trust.Forget,
 	}
 	app.WorkFolder = places
 	app.Terminals = terminals
@@ -344,6 +363,9 @@ func unit(paths Paths) svcdomain.Unit {
 	}
 	if whatsApp := os.Getenv(EnvWhatsApp); whatsApp != "" {
 		env[EnvWhatsApp] = whatsApp
+	}
+	if telegram := os.Getenv(EnvTelegram); telegram != "" {
+		env[EnvTelegram] = telegram
 	}
 	// The devices and the Argent the installer was told about.
 	for _, key := range []string{EnvDevices, EnvArgentSimulatorServer, EnvArgentToolsURL, EnvArgentToken, "ANDROID_HOME"} {
@@ -539,13 +561,19 @@ func claudeProjectsPath(paths Paths) string {
 // variable names (`CODEX_HOME`, `GROK_HOME`), else under its folder in the
 // user's home. "" when there is no home to look in.
 func agentSessionsPath(paths Paths, homeEnv, folder string) string {
+	return agentHomeFile(paths, homeEnv, folder, "sessions")
+}
+
+// agentHomeFile is name inside an agent CLI's home: `$<homeEnv>` when that is
+// set, `~/<folder>` otherwise; "" when there is no home to look in.
+func agentHomeFile(paths Paths, homeEnv, folder, name string) string {
 	if dir := os.Getenv(homeEnv); dir != "" {
-		return filepath.Join(dir, "sessions")
+		return filepath.Join(dir, name)
 	}
 	if paths.UserHome == "" {
 		return ""
 	}
-	return filepath.Join(paths.UserHome, folder, "sessions")
+	return filepath.Join(paths.UserHome, folder, name)
 }
 
 // freeLoopbackPort is a port on 127.0.0.1 nothing listens on now, which the

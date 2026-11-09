@@ -175,8 +175,8 @@ describe('tasks: the board (integration)', () => {
   it('places both of two concurrent drops into the same gap, one after the other', async () => {
     const a = await add('a');
     await add('b');
-    const x = await add('x', 'later');
-    const y = await add('y', 'later');
+    const x = await add('x', 'review');
+    const y = await add('y', 'review');
     // Both read the same neighbours; the one that loses on UQ_task_rank reads again.
     const results = await Promise.all([
       tasks.move(x, { status: 'todo', after: { kind: 'task', taskId: a.id } }),
@@ -243,12 +243,12 @@ describe('tasks: the board (integration)', () => {
     expect(started.sessions.map((s) => s.sessionId)).toEqual([sessionId]);
     expect(await column('doing')).toEqual(['t', 'already doing']);
 
-    // Dragged to Later after the click: the link lands, the drag wins.
+    // Dragged to In review after the click: the link lands, the drag wins.
     const dragged = await add('dragged');
     const clicked = await reload(dragged.id);
-    await tasks.move(await reload(dragged.id), { status: 'later', after: { kind: 'first' } });
+    await tasks.move(await reload(dragged.id), { status: 'review', after: { kind: 'first' } });
     await tasks.attach(clicked, { ...link, sessionId: await insertSession() }, 'todo');
-    expect((await tasks.findOneById(scope(), dragged.id)).unwrap().status).toBe('later');
+    expect((await tasks.findOneById(scope(), dragged.id)).unwrap().status).toBe('review');
 
     // Linking the same session twice links it once.
     await tasks.attach(started.actingAs(userActor(userId)), link, 'doing');

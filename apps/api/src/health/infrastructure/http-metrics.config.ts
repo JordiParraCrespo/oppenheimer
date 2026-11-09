@@ -19,6 +19,9 @@ export const apiHttpMetricsOptions: HttpMetricsOptions = {
   excludedTemplates: ['/v1/health', '/v1/ready', '/v1/metrics'],
   routes: [
     { templatePrefix: '/v1/health/capabilities', group: 'capabilities' },
+    // The rest of /health a client reads (the API version, Settings → About):
+    // the same kind of rare, static read as the capabilities.
+    { templatePrefix: '/v1/health', group: 'capabilities' },
     { templatePrefix: '/v1/events', group: 'events' },
     { templatePrefix: '/v1/github/webhook', group: 'webhooks' },
     { templatePrefix: '/v1/sessions', group: 'sessions' },
@@ -33,6 +36,7 @@ export const apiHttpMetricsOptions: HttpMetricsOptions = {
     { templatePrefix: '/v1/bot-groups', group: 'bots' },
     { templatePrefix: '/v1/bot-approvals', group: 'bots' },
     { templatePrefix: '/v1/bot-notices', group: 'bots' },
+    { templatePrefix: '/v1/bot-memory', group: 'bots' },
     { templatePrefix: '/v1/model-providers', group: 'bots' },
     { templatePrefix: '/v1/voice', group: 'voice' },
     { templatePrefix: '/v1/inbox', group: 'inbox' },
@@ -41,7 +45,14 @@ export const apiHttpMetricsOptions: HttpMetricsOptions = {
     { templatePrefix: '/v1/plan', group: 'tasks' },
     { templatePrefix: '/v1/calendar', group: 'calendar' },
     { templatePrefix: '/v1/mail', group: 'mail' },
-    { templatePrefix: '/v1/whatsapp', group: 'whatsapp' },
+    // The messengers the bots work (WhatsApp, Telegram): one area, the same
+    // handful of account routes each, in the budget's last free group. This
+    // renamed WhatsApp's own `whatsapp` group (2026-11-08), safe only because
+    // no dashboard or alert in deploy/ or docker/ named it. Debt: a third
+    // messenger joins this group too, and anything needing a group of its own
+    // means raising the budget or merging two other groups first.
+    { templatePrefix: '/v1/whatsapp', group: 'messaging' },
+    { templatePrefix: '/v1/telegram', group: 'messaging' },
     { templatePrefix: '/v1/cloud-agents', group: 'cloud_agents' },
     { templatePrefix: '/v1/pulls', group: 'github' },
     { templatePrefix: '/v1/installations', group: 'github' },

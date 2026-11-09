@@ -21,7 +21,7 @@ import {
   composeSummaryRequest,
   planSummary,
 } from '../../domain/bot-summary.policy';
-import { BOT_TURN_TIME_LIMIT_MS } from '../../domain/bot-turn.entity';
+import { BOT_COMPLETION_TIME_LIMIT_MS } from '../../domain/bot-turn.entity';
 import { SummarizeBotConversationCommand } from './summarize-bot-conversation.command';
 
 /**
@@ -96,7 +96,7 @@ export class SummarizeBotConversationCommandHandler
         ...target,
         systemPrompt: BOT_SUMMARIZER_PROMPT,
         message,
-        signal: AbortSignal.timeout(BOT_TURN_TIME_LIMIT_MS),
+        signal: AbortSignal.timeout(BOT_COMPLETION_TIME_LIMIT_MS),
       },
       call,
     );

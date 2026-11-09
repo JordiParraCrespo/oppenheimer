@@ -9,7 +9,11 @@ import { BotEntity } from '../../../domain/bot.entity';
 import { CreateBotMemoryFactCommand } from '../create-bot-memory-fact.command';
 import { CreateBotMemoryFactCommandHandler } from '../create-bot-memory-fact.command-handler';
 
-/** A fact by hand, under the per-bot cap; the counted-under-lock insert is the integration spec's. */
+/**
+ * A fact by hand, under the per-bot cap, or saved by the bot, which makes
+ * room in a full memory; the counted-under-lock insert and the oldest log
+ * fact it drops are the integration spec's.
+ */
 const userId = randomUUID();
 const scope: AccessScope = {
   userId,
@@ -40,8 +44,8 @@ function setup() {
     new BotLookupResolver(bots as unknown as BotRepositoryPort),
     memory as unknown as BotMemoryFactRepositoryPort,
   );
-  const add = (content: string) =>
-    handler.execute(new CreateBotMemoryFactCommand({ scope, botId: bot.id, content }));
+  const add = (content: string, author?: 'bot') =>
+    handler.execute(new CreateBotMemoryFactCommand({ scope, botId: bot.id, content, author }));
   return { bot, memory, add };
 }
 
@@ -49,13 +53,24 @@ describe('CreateBotMemoryFactCommandHandler', () => {
   it('adds the fact as the caller’s, under the per-bot cap', async () => {
     const { bot, memory, add } = setup();
     await add('  Releases go out on Thursdays. ');
-    const [fact, max] = memory.insert.mock.calls[0];
+    const [fact, max, makeRoom] = memory.insert.mock.calls[0];
     expect(fact).toMatchObject({
       botId: bot.id,
       content: 'Releases go out on Thursdays.',
       source: 'user',
     });
     expect(max).toBe(BOT_MEMORY_FACTS_MAX);
+    expect(makeRoom).toBe(false);
+  });
+
+  // What breaks this: what the bot learned recorded as the person's words,
+  // or a bot that saves as it goes refused once its memory is full.
+  it('keeps a fact the bot saved as the bot’s, making room when its memory is full', async () => {
+    const { memory, add } = setup();
+    await add('Staging is devbox.', 'bot');
+    const [fact, , makeRoom] = memory.insert.mock.calls[0];
+    expect(fact).toMatchObject({ source: 'bot' });
+    expect(makeRoom).toBe(true);
   });
 
   it('answers BOTS_009 when the bot keeps as many facts as it may', async () => {

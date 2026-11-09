@@ -9,8 +9,9 @@ import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 
 /**
- * Project settings' frame while there is no project to edit yet: still
- * loading, failed, or gone. The editor draws its own dialog once there is.
+ * Project settings' frame while there is no project to edit: the read
+ * failed, or the project is gone. Loading is `ProjectEditorSkeleton`'s; the
+ * editor draws its own dialog once there is a project.
  */
 export function ProjectDialogShell({
   onClose,

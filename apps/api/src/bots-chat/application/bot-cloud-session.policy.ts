@@ -233,7 +233,11 @@ export function cloudStartAnswer(
   }
   const link = cloudLinkOf(session);
   if (link) {
-    return `Started ${rule.label} cloud session ${sessionId}${from}: ${link} It runs at ${rule.site} on its own; give the person that link, and follow it there or with get_session.`;
+    const followUps =
+      rule.start === 'host'
+        ? `Follow-ups and answers happen at ${rule.site}, not with send_to_session.`
+        : 'send_to_session gives it a next instruction once its run ends.';
+    return `Started ${rule.label} cloud session ${sessionId}${from}: ${link} It runs at ${rule.site} on its own; give the person that link, and follow it there or with get_session. ${followUps}`;
   }
   if (session.state === 'failed' || session.isResolved) {
     const hint =
@@ -252,13 +256,7 @@ export function cloudStartAnswer(
  * Null for a host session, and for a cloud session that has none yet.
  */
 export function cloudLinkOf(session: WorkSessionEntity): string | null {
-  if (session.cloudSessionId) {
-    const id = encodeURIComponent(session.cloudSessionId);
-    return session.agent === 'codex'
-      ? `https://chatgpt.com/codex/tasks/${id}`
-      : `https://claude.ai/code/${id}`;
-  }
-  return session.cloudRun?.url ?? null;
+  return session.vendorUrl;
 }
 
 /** `get_session`'s line for a session's cloud half; null for a session that runs on its host. */

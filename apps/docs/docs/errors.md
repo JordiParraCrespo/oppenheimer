@@ -578,6 +578,12 @@ are never reissued.
 | `SESSIONS_046` <a id="sessions_046" /> | Codex on the host could not list its environments | 502 |
 | `SESSIONS_047` <a id="sessions_047" /> | ChatGPT is limiting how often the host may list Codex environments | 429 |
 | `SESSIONS_048` <a id="sessions_048" /> | This host's runner cannot continue a cloud session | 409 |
+| `SESSIONS_049` <a id="sessions_049" /> | That transcript cursor is not valid | 400 |
+| `SESSIONS_050` <a id="sessions_050" /> | Only the person who launched a cloud session can send it a follow-up | 403 |
+| `SESSIONS_051` <a id="sessions_051" /> | The cloud session’s vendor did not confirm the follow-up | 502 |
+| `SESSIONS_052` <a id="sessions_052" /> | Only a session whose start failed can be tried again | 409 |
+| `SESSIONS_053` <a id="sessions_053" /> | No cloud session of this workspace has that id | 404 |
+| `SESSIONS_054` <a id="sessions_054" /> | This session has no cloud chat | 409 |
 
 `SESSIONS_001` is also returned for a session that exists in another workspace: the
 scoped read cannot see it, and distinguishing the two would confirm the id.
@@ -794,6 +800,7 @@ See `product/versions/mvp/25-bots.md`.
 | `BOTS_038` <a id="bots_038" />       | Skill not found | 404  |
 | `BOTS_039` <a id="bots_039" />       | The bot already has a skill with that name | 409  |
 | `BOTS_040` <a id="bots_040" />       | The bot has as many skills as it can keep | 422  |
+| `BOTS_041` <a id="bots_041" />       | The bot has no dream to undo | 404  |
 
 `BOTS_001`, `BOTS_003` and `BOTS_008` are also returned for a bot, group or fact in
 another workspace.
@@ -809,8 +816,9 @@ loaded, and a save over a newer one is refused rather than silently winning. Whe
 the save was stale, the problem's `revision` extension is the revision that is
 current now. Reload and save again.
 
-`BOTS_009` is a bot that already keeps 200 facts: it reads every one before each
-turn. Forget one first.
+`BOTS_009` is a fact added by hand to a bot that already keeps 500, both tiers
+together. Forget one first. A bot saving through `remember` is not refused: its
+oldest log fact makes room, and only a memory of profile facts alone is full.
 
 `BOTS_010` is a model id the bot's provider does not offer
 (`BOT_PROVIDER_CATALOG`); leave `model` null for the provider's default.
@@ -887,6 +895,9 @@ own `save_skill`). `BOTS_038` is a skill that is not this bot's or not in the
 caller's workspace. `BOTS_039` is a name another of the bot's skills has: a
 skill's name is its slash command, so rename one of them. `BOTS_040` is a
 skill past the bot's fifty: delete one first.
+
+`BOTS_041` is an undo of a bot's dream (Settings → Memory) when its memory was
+never dreamed, or its latest dream was undone already: only the latest can be.
 
 A home host the caller may not use answers `HOSTS_001`, as a session's does.
 
@@ -1090,6 +1101,36 @@ already holding someone else's number: a runner holds one device. A
 have sent the message. `WHATSAPP_009` is a bot's share of a day (100 messages
 from one number), or the host's own budget (`WA_004`).
 
+## Telegram
+
+A bot a person made with @BotFather, long-polled on the Bot API by the runner
+on one of their hosts, and the messages it receives, kept for their bots. See
+`product/next-steps/telegram.md`.
+
+| Code                                   | Title                                                             | HTTP |
+| -------------------------------------- | ----------------------------------------------------------------- | ---- |
+| `TELEGRAM_001` <a id="telegram_001" /> | That Telegram bot is not connected                                | 404  |
+| `TELEGRAM_002` <a id="telegram_002" /> | Telegram belongs to an organization                               | 400  |
+| `TELEGRAM_003` <a id="telegram_003" /> | That is as many Telegram bots as one person connects              | 409  |
+| `TELEGRAM_004` <a id="telegram_004" /> | The host holding that Telegram bot is offline                     | 409  |
+| `TELEGRAM_005` <a id="telegram_005" /> | That host’s runner does not hold Telegram bots                    | 409  |
+| `TELEGRAM_006` <a id="telegram_006" /> | That host already holds another Telegram bot                      | 409  |
+| `TELEGRAM_007` <a id="telegram_007" /> | That Telegram bot is not connected                                | 409  |
+| `TELEGRAM_008` <a id="telegram_008" /> | Telegram did not take the message                                 | 502  |
+| `TELEGRAM_009` <a id="telegram_009" /> | That Telegram bot has sent as many bot messages as it may for now | 429  |
+| `TELEGRAM_010` <a id="telegram_010" /> | No such Telegram chat                                             | 404  |
+
+`TELEGRAM_005` is a runner that predates Telegram, or one started with
+`RUNNER_TELEGRAM=off`: update it, or turn it back on. `TELEGRAM_006` is a host
+already holding someone else's Telegram bot: a runner polls one. A token
+Telegram refuses is not an error of the connect call: the host answers it
+(`TG_001`), and the account reads back `revoked` with the reason. A
+`TELEGRAM_008` carries the host's code in `upstreamCode` (`TG_004`: Telegram
+refused it, often because the person blocked the bot or the bot left the
+group); one whose detail says the host did not answer in time may still have
+sent the message. `TELEGRAM_009` is a bot's share of a day (200 messages
+through one Telegram bot).
+
 ## Cloud agents
 
 A vendor's cloud (Cursor's Cloud Agents), where a cloud session runs on each
@@ -1106,6 +1147,7 @@ refusals of a launch (`POST /sessions/cloud`). See
 | `CLOUD_AGENTS_007` <a id="cloud_agents_007" /> | The cloud agent provider’s rate limit was reached | 429 |
 | `CLOUD_AGENTS_010` <a id="cloud_agents_010" /> | The cloud agent provider refused the request    | 422  |
 | `CLOUD_AGENTS_011` <a id="cloud_agents_011" /> | No such cloud agent provider                    | 404  |
+| `CLOUD_AGENTS_012` <a id="cloud_agents_012" /> | The cloud agent is still working on its last instruction | 409 |
 
 `CLOUD_AGENTS_001`, `008` and `009` are retired: an agent not found, still
 working, or already stopped belonged to the agent's own page, which a cloud
@@ -1177,6 +1219,13 @@ for a 404 or 428, 6 for a 502, 503 or 504, 7 for `PAIR_009`, and 1 for anything 
 | `FS_001` <a id="fs_001" />             | The folder does not exist                    | 404  |
 | `FS_002` <a id="fs_002" />             | The path is not a directory                  | 400  |
 | `FS_003` <a id="fs_003" />             | The folder cannot be read                    | 403  |
+| `EXEC_001` <a id="exec_001" />         | Running commands is off on this host         | 403  |
+| `EXEC_002` <a id="exec_002" />         | This host does not allow that program        | 403  |
+| `EXEC_003` <a id="exec_003" />         | The folder to run in is not usable           | 400  |
+| `EXEC_004` <a id="exec_004" />         | The program could not be started             | 424  |
+| `EXEC_005` <a id="exec_005" />         | The host's exec policy cannot be read        | 500  |
+| `EXEC_006` <a id="exec_006" />         | This host does not let bots drive a terminal | 403  |
+| `EXEC_007` <a id="exec_007" />         | The session is not a blank terminal          | 409  |
 | `PAIR_001` <a id="pair_001" />         | This host is not paired yet                  | 428  |
 | `PAIR_002` <a id="pair_002" />         | This host is already paired                  | 409  |
 | `PAIR_003` <a id="pair_003" />         | The registration token was rejected          | 401  |
@@ -1209,6 +1258,10 @@ for a 404 or 428, 6 for a 502, 503 or 504, 7 for `PAIR_009`, and 1 for anything 
 | `WA_002` <a id="wa_002" />           | No WhatsApp device is connected on this host | 503  |
 | `WA_003` <a id="wa_003" />           | WhatsApp refused the message                 | 502  |
 | `WA_004` <a id="wa_004" />           | This host's WhatsApp send budget is spent    | 429  |
+| `TG_001` <a id="tg_001" />           | Telegram refused the bot's token             | 400  |
+| `TG_002` <a id="tg_002" />           | This host already holds another Telegram bot | 409  |
+| `TG_003` <a id="tg_003" />           | No Telegram bot is connected on this host    | 503  |
+| `TG_004` <a id="tg_004" />           | Telegram refused the message                 | 502  |
 | `SESS_001` <a id="sess_001" />         | Session not found                            | 404  |
 | `SESS_002` <a id="sess_002" />         | The session cannot be created with those values | 400 |
 | `SESS_003` <a id="sess_003" />         | The session is not running                   | 409  |
@@ -1227,6 +1280,8 @@ for a 404 or 428, 6 for a 502, 503 or 504, 7 for `PAIR_009`, and 1 for anything 
 | `SESS_015` <a id="sess_015" />         | This host has no link to the control plane   | 503  |
 | `SESS_016` <a id="sess_016" />         | The session has no shared file by that id    | 404  |
 | `SESS_017` <a id="sess_017" />         | The shared file has no preview               | 409  |
+| `SESS_018` <a id="sess_018" />         | The session's agent keeps no transcript this host can read | 409 |
+| `SESS_019` <a id="sess_019" />         | Claude Code on this host is not signed in to claude.ai | 502 |
 | `TMUX_001` <a id="tmux_001" />         | tmux is not available on this host           | 424  |
 | `TMUX_002` <a id="tmux_002" />         | The tmux server refused the command          | 500  |
 | `GIT_001` <a id="git_001" />           | The worktree could not be prepared           | 500  |
@@ -1263,6 +1318,13 @@ outside its interactive TUI, so that list is partial, and the full one is
 `codex cloud` on the host. `SESS_009` stays every other refusal, in the CLI's
 words.
 
+`SESS_019` is `claude --cloud` saying the host's Claude Code has no claude.ai
+account to start the session with. Sign in on the host as the account the
+runner runs as (`claude auth login`, or `/login` in an interactive `claude`),
+then press **Try again** on the session: it sends the host the same start, with
+the same task (`POST /v1/sessions/{id}/retry`). Every other refusal of
+`claude --cloud` stays `SESS_008`, in the CLI's own words.
+
 `HOST_009` is `runner agents update` reporting that at least one agent CLI's
 updater failed; the service only logs it and retries. What to do about it is
 open question 4 of `product/versions/mvp/09-runner-install-and-update.md`.
@@ -1282,6 +1344,17 @@ for a linked device, and going over one costs the number. `WA_003`
 after WhatsApp's own `rate-overlimit` also stops every send from the host for
 ten minutes. The control plane answers a bot with its own `WHATSAPP_*` code
 for each (`WHATSAPP_007`, `WHATSAPP_008`, `WHATSAPP_009`).
+
+The `TG_*` codes reach the control plane the same way, in answer to
+`telegram.link` and `telegram.send` (`packages/shared/src/protocol/telegram.ts`).
+`TG_001` is a token `getMe` refused; Telegram out of reach while checking
+it is `TG_003`, and the account then reads back `unlinked` with the reason,
+not `revoked`. `TG_002` is a host polling another bot: one bot per host, disconnect it
+first. `TG_004` is Telegram's own refusal (the person blocked the bot, the
+bot left the group, a chat that never wrote to it), a `429` (every send from
+the host then waits Telegram's `retry_after`), or a send the host's pacing
+would hold more than five seconds (one a second to a chat, twenty a minute
+to a group); the detail says which.
 
 <!-- oppenheimer:end runner -->
 ## Domain invariants

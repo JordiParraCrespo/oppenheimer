@@ -311,6 +311,22 @@ function DragProvider({
   const reduced = usePrefersReducedMotion();
   const controlInstructions = React.useId();
   const [active, setActive] = React.useState<DragItem | null>(null);
+  // The carried item's data as it was picked up. It is kept past the drop,
+  // whose announcement comes after `onDragEnd`; the next pick-up replaces it.
+  const carried = React.useRef<DragData | null>(null);
+  /**
+   * The active entry as the drag layer reads it. dnd-kit swaps its data for
+   * an empty object once the item's own node unmounts mid-drag (a row
+   * carried into a folded group, which draws none). Without its `type`, no
+   * target's `accepts` would take it and the drop would land nowhere, so an
+   * entry with no `type` takes the data it was picked up with.
+   */
+  const resolveActive = <T extends DndEntry>(entry: T): T =>
+    carried.current && entry.data.current?.type === undefined
+      ? { ...entry, data: { ...entry.data, current: carried.current } }
+      : entry;
+  const detect = live ? slotCollisions : acceptingCollisions;
+  const collisionDetection: CollisionDetection = (args) => detect({ ...args, active: resolveActive(args.active) });
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: ACTIVATION_PX } }),
     useSensor(KeyboardSensor, { coordinateGetter: live ? slotKeyboardCoordinates : sortableKeyboardCoordinates }),
@@ -318,9 +334,9 @@ function DragProvider({
 
   const announcements: Announcements = {
     onDragStart: ({ active: a }) => labels.pickedUp(nameOf(a)),
-    onDragOver: ({ active: a, over }) => labels.over(nameOf(a), over ? nameOf(over) : null),
-    onDragEnd: ({ active: a, over }) => labels.dropped(nameOf(a), over ? nameOf(over) : null),
-    onDragCancel: ({ active: a }) => labels.cancelled(nameOf(a)),
+    onDragOver: ({ active: a, over }) => labels.over(nameOf(resolveActive(a)), over ? nameOf(over) : null),
+    onDragEnd: ({ active: a, over }) => labels.dropped(nameOf(resolveActive(a)), over ? nameOf(over) : null),
+    onDragCancel: ({ active: a }) => labels.cancelled(nameOf(resolveActive(a))),
   };
 
   return (
@@ -329,25 +345,26 @@ function DragProvider({
         <ControlInstructions.Provider value={controlInstructions}>
           <DndContext
             sensors={sensors}
-            collisionDetection={live ? slotCollisions : acceptingCollisions}
+            collisionDetection={collisionDetection}
             autoScroll={AUTO_SCROLL}
             measuring={{ droppable: { strategy: MeasuringStrategy.Always } }}
             accessibility={{ announcements, screenReaderInstructions: { draggable: labels.instructions } }}
             onDragStart={(event: DndDragStartEvent) => {
               const item = itemOf(event.active);
+              carried.current = item.data;
               setActive(item);
               onDragStart?.(item);
             }}
             onDragOver={(event: DndDragOverEvent) => {
-              onDragOver?.({ active: itemOf(event.active), over: overOf(event.over) });
+              onDragOver?.({ active: itemOf(resolveActive(event.active)), over: overOf(event.over) });
             }}
             onDragEnd={(event: DndDragEndEvent) => {
               setActive(null);
-              onDragEnd?.({ active: itemOf(event.active), over: overOf(event.over) });
+              onDragEnd?.({ active: itemOf(resolveActive(event.active)), over: overOf(event.over) });
             }}
             onDragCancel={(event) => {
               setActive(null);
-              onDragCancel?.(itemOf(event.active));
+              onDragCancel?.(itemOf(resolveActive(event.active)));
             }}
           >
             {children}
@@ -490,7 +507,10 @@ function slideOnReorder(live: boolean) {
 
 /**
  * One item of a `SortableGroup`. Returns the ref, the handle's props, and
- * the style that slides it while its neighbours move.
+ * the style that slides it while its neighbours move. `listeners` are the
+ * activators on their own, for a surface that splits them: the pointer's on
+ * a bigger box than the handle (the whole card), the keyboard's on the
+ * handle, so Space or Enter on a control inside the box never lifts it.
  */
 function useSortableItem({ id, data, disabled }: { id: string; data?: DragData; disabled?: boolean }) {
   const reduced = React.useContext(ReducedMotion);
@@ -505,6 +525,7 @@ function useSortableItem({ id, data, disabled }: { id: string; data?: DragData; 
   return {
     ref: setNodeRef,
     handleProps: { ...attributes, ...listeners },
+    listeners,
     style: { transform: CSS.Translate.toString(transform), transition } as React.CSSProperties,
     isDragging,
   };

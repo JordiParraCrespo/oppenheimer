@@ -70,9 +70,10 @@
     },
     "docs": {
       "title": "Documentation site",
-      "summary": "apps/docs — Docusaurus site (architecture, deployment, error catalog)",
+      "summary": "apps/docs — Docusaurus site (the user guide every bot reads, architecture, deployment, error catalog)",
       "identifiers": ["apps/docs", "@oppenheimer/docs", "oppenheimer-docs"],
-      "paths": ["apps/docs", "apps/api/src/__tests__/error-catalog-coverage.spec.ts"]
+      "paths": ["apps/docs", "apps/api/src/__tests__/error-catalog-coverage.spec.ts"],
+      "scripts": ["generate:guide"]
     },
     "runner": {
       "title": "Go runner service",

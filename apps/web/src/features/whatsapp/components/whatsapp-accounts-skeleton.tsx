@@ -1,23 +1,32 @@
-import { SettingsGroup, SettingsListRow, Skeleton } from '@oppenheimer/design-system-web';
+import { Button, SettingsGroup, SettingsListRowSkeleton } from '@oppenheimer/design-system-web';
 import { LoadingStatus } from '@oppenheimer/frontend-web';
+import { useTranslation } from 'react-i18next';
 
 /**
  * The linked numbers before they answer: one row on `SettingsListRow`'s own
- * frame, the name over the number and its host, the state, and the row's buttons.
+ * frame, the name over the state and the number on its host, with Unlink
+ * written and disabled, and Link another under the card, disabled too.
  */
 export function WhatsappAccountsSkeleton() {
+  const { t } = useTranslation();
   return (
-    <SettingsGroup aria-busy>
-      <SettingsListRow
-        align="center"
-        aria-hidden
-        meta={<Skeleton shape="sm" className="h-2.5 w-48" />}
-        kind={<Skeleton shape="sm" className="h-2 w-20" />}
-        actions={<Skeleton shape="pill" className="h-7 w-32" />}
-      >
-        <Skeleton shape="sm" className="h-3 w-24" />
-      </SettingsListRow>
+    <div aria-busy>
       <LoadingStatus />
-    </SettingsGroup>
+      <SettingsGroup>
+        <SettingsListRowSkeleton
+          className="items-center"
+          actions={
+            <Button size="sm" variant="ghost" disabled>
+              {t('settings.whatsapp.unlink')}
+            </Button>
+          }
+        />
+      </SettingsGroup>
+      <div className="mt-4 flex justify-end">
+        <Button variant="secondary" size="sm" disabled>
+          {t('settings.whatsapp.linkAnother')}
+        </Button>
+      </div>
+    </div>
   );
 }

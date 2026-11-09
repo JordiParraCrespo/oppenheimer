@@ -6,9 +6,19 @@ import type * as React from 'react';
 
 import { cn } from '../lib/utils';
 
+const AVATAR_RADIUS_CLASS = {
+  pill: 'rounded-pill',
+  xs: 'rounded-xs',
+  sm: 'rounded-sm',
+  md: 'rounded-md',
+  lg: 'rounded-lg',
+} as const;
+type AvatarRadius = keyof typeof AVATAR_RADIUS_CLASS;
+
 /**
- * Avatar — a pill with initials or an image. Three sizes from the system's
- * ramp: sm 22px (sidebar footer, session rows), md 28px, lg 38px. Neutral by
+ * Avatar — a pill with initials or an image; `radius` takes another rung
+ * of the system's radii (a bot's avatar is a rounded square). Three sizes
+ * from the system's ramp: sm 22px (sidebar footer, session rows), md 28px, lg 38px. Neutral by
  * default; `accent` is the blue tint used for the signed-in account. No
  * gradients: the system forbids them, and `AVATAR_GRADIENTS` below is a legacy
  * export no screen uses — every entry resolves to the accent tint.
@@ -17,11 +27,13 @@ function Avatar({
   className,
   size = 'md',
   variant = 'neutral',
+  radius = 'pill',
   style,
   ...props
 }: AvatarPrimitive.Root.Props & {
   size?: 'sm' | 'md' | 'lg' | 'default' | number;
   variant?: 'neutral' | 'accent';
+  radius?: AvatarRadius;
 }) {
   const numeric = typeof size === 'number';
   const named = size === 'default' ? 'md' : size;
@@ -31,7 +43,8 @@ function Avatar({
       data-size={numeric ? undefined : named}
       data-variant={variant}
       className={cn(
-        'group/avatar relative flex shrink-0 items-center justify-center overflow-hidden rounded-pill font-medium tracking-normal uppercase select-none',
+        'group/avatar relative flex shrink-0 items-center justify-center overflow-hidden font-medium tracking-normal uppercase select-none',
+        AVATAR_RADIUS_CLASS[radius],
         variant === 'accent' ? 'bg-info-surface text-info' : 'bg-control text-fg-muted',
         !numeric &&
           'data-[size=sm]:size-[22px] data-[size=sm]:text-[10px] data-[size=md]:size-7 data-[size=md]:text-[11px] data-[size=lg]:size-[38px] data-[size=lg]:text-sm',
@@ -127,4 +140,4 @@ export {
   AvatarGroupCount,
   AvatarImage,
 };
-export type { AvatarGradient };
+export type { AvatarGradient, AvatarRadius };

@@ -99,6 +99,9 @@ export interface AutomationRepositoryPort {
     projectId: string,
   ): Promise<AutomationEntity[]>;
 
+  /** A bot's live routines, unscoped: the bot's own spend guard is asking. */
+  findRoutinesOfBotForSystem(organizationId: string, botId: string): Promise<AutomationEntity[]>;
+
   /** Write a system change (pause) without a caller's version. */
   saveForSystem(entity: AutomationEntity): Promise<void>;
 

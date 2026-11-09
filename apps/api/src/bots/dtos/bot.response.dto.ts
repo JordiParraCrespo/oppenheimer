@@ -2,15 +2,31 @@ import { ApiProperty } from '@nestjs/swagger';
 import { nullableEnum } from '@oppenheimer/backend-core';
 import {
   BOT_AVATAR_COLORS,
+  BOT_FACE_EYES,
+  BOT_FACE_HATS,
+  BOT_FACE_MOUTHS,
   BOT_PERMISSIONS,
   BOT_PROVIDERS,
   BOT_SECTIONS,
   type BotAvatarColor,
+  type BotFace,
   type BotPermission,
   type BotProvider,
   type BotSection,
 } from '@oppenheimer/shared';
 import { SESSION_EFFORTS, type SessionEffort } from '@oppenheimer/shared/agents';
+
+/** The face a bot's owner picked: its hat, eyes and mouth. */
+export class BotFaceDto {
+  @ApiProperty({ enum: BOT_FACE_HATS })
+  hat!: BotFace['hat'];
+
+  @ApiProperty({ enum: BOT_FACE_EYES })
+  eyes!: BotFace['eyes'];
+
+  @ApiProperty({ enum: BOT_FACE_MOUTHS })
+  mouth!: BotFace['mouth'];
+}
 
 export class BotResponseDto {
   @ApiProperty({ format: 'uuid' })
@@ -24,9 +40,16 @@ export class BotResponseDto {
 
   @ApiProperty({
     enum: BOT_AVATAR_COLORS,
-    description: 'The colour its initials are drawn on.',
+    description: 'The colour its face is drawn in.',
   })
   avatarColor!: BotAvatarColor;
+
+  @ApiProperty({
+    type: BotFaceDto,
+    nullable: true,
+    description: 'The face its owner picked; null wears the one its id picks.',
+  })
+  avatarFace!: BotFaceDto | null;
 
   @ApiProperty({
     format: 'uuid',
@@ -77,6 +100,12 @@ export class BotResponseDto {
 
   @ApiProperty({ description: 'Whether what it decides to remember is saved without asking.' })
   learnAutomatically!: boolean;
+
+  @ApiProperty({
+    description:
+      'Whether its routines pause while its owner is away from its chat, and start again when they are back.',
+  })
+  routineSpendGuard!: boolean;
 
   @ApiProperty({
     enum: BOT_SECTIONS,

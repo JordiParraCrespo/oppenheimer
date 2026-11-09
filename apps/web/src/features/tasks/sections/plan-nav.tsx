@@ -5,41 +5,65 @@ import {
   SortableGroup,
   SortableRoutineItem,
 } from '@oppenheimer/design-system-web';
-import { Bell, CalendarDays, CircleCheck } from '@oppenheimer/design-system-web/icons';
-import { useMilestones, useTasks } from '@oppenheimer/frontend-consumer/react';
+import { Bell, CalendarDays, CircleCheck, Folder, Sun } from '@oppenheimer/design-system-web/icons';
+import { useMilestones, useProjects, useTasks } from '@oppenheimer/frontend-consumer/react';
 import { useFeatureFlag } from '@oppenheimer/frontend-core/react';
 import { useDragLabels } from '@oppenheimer/frontend-web';
 import { Link, useMatchRoute } from '@tanstack/react-router';
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { PLAN_NAV_GROUP, usePlanNavOrder } from '../hooks/use-plan-nav-order';
+import { useToday } from '../hooks/use-today';
 import { useTodayEventCount } from '../hooks/use-today-event-count';
 import { isPlanNavId, type PlanNavId } from '../lib/plan-nav-order';
+import { todayOpenCount } from '../lib/todo';
 import { PlanInboxItem } from './plan-inbox-item';
 
-/** Each view's name and glyph, for its row and the copy a drag lifts. */
-const LOOK = {
-  inbox: { labelKey: 'tasks.nav.inbox', icon: <Bell /> },
-  tasks: { labelKey: 'tasks.nav.tasks', icon: <CircleCheck /> },
-  milestones: { labelKey: 'tasks.nav.milestones', icon: <MilestoneGlyph /> },
-  calendar: { labelKey: 'tasks.nav.calendar', icon: <CalendarDays /> },
-} as const satisfies Record<PlanNavId, { labelKey: string; icon: ReactNode }>;
-
 /**
- * Where each view but the Inbox goes, and whether a route under it keeps it
+ * Each view's name and glyph, for its row and the copy a drag lifts, and
+ * where each view but the Inbox goes, with whether a route under it keeps it
  * lit. The Inbox is its own row (`PlanInboxItem`), which owns its minute tick.
+ * A new view is a row here and its count below.
  */
-const ROUTE = {
-  tasks: { to: '/plan', fuzzy: false },
-  milestones: { to: '/plan/milestones', fuzzy: true },
-  calendar: { to: '/plan/calendar', fuzzy: true },
-} as const satisfies Record<Exclude<PlanNavId, 'inbox'>, { to: string; fuzzy: boolean }>;
+const VIEWS = {
+  inbox: { labelKey: 'tasks.nav.inbox', icon: <Bell /> },
+  tasks: {
+    labelKey: 'tasks.nav.tasks',
+    icon: <CircleCheck />,
+    route: { to: '/plan', fuzzy: false },
+  },
+  todo: {
+    labelKey: 'tasks.nav.todo',
+    icon: <Sun />,
+    route: { to: '/plan/todo', fuzzy: false },
+  },
+  milestones: {
+    labelKey: 'tasks.nav.milestones',
+    icon: <MilestoneGlyph />,
+    route: { to: '/plan/milestones', fuzzy: true },
+  },
+  calendar: {
+    labelKey: 'tasks.nav.calendar',
+    icon: <CalendarDays />,
+    route: { to: '/plan/calendar', fuzzy: true },
+  },
+  projects: {
+    labelKey: 'tasks.nav.projects',
+    icon: <Folder />,
+    route: { to: '/plan/projects', fuzzy: true },
+  },
+} as const satisfies Record<
+  PlanNavId,
+  { labelKey: string; icon: ReactNode; route?: { to: string; fuzzy: boolean } }
+>;
 
 /**
  * The head of Plan's sidebar (the `Tasks` frame): the Inbox with what needs
- * you (while the `inbox` flag is on), Tasks with the open count, Milestones
- * with how many there are, and Calendar with today's events. The calendar
- * puts its layers and accounts under it.
+ * you (while the `inbox` flag is on), Tasks with the open count, To do with
+ * the open tasks due today or before, Milestones
+ * with how many there are, Calendar with today's events, and Projects with
+ * how many the workspace holds. The calendar puts its layers and accounts
+ * under it.
  *
  * The reader drags the views into their own order, as the rail's items do;
  * a press still opens the view, and the order is kept on this device
@@ -48,16 +72,21 @@ const ROUTE = {
 export function PlanNav() {
   const { t } = useTranslation();
   const { data: open } = useTasks({ select: (rows) => rows.filter((row) => !row.isDone).length });
+  const today = useToday();
+  const { data: dueNow } = useTasks({ select: (rows) => todayOpenCount(rows, today) });
   const { data: milestones } = useMilestones({ select: (rows) => rows.length });
-  const today = useTodayEventCount();
+  const todayEvents = useTodayEventCount();
+  const { data: projects } = useProjects({ select: (rows) => rows.length });
   const inbox = useFeatureFlag('inbox');
   const matchRoute = useMatchRoute();
   const dragLabels = useDragLabels();
   const { order, handlers } = usePlanNavOrder((id) => id !== 'inbox' || inbox);
-  const counts: Record<keyof typeof ROUTE, number | undefined> = {
+  const counts: Record<Exclude<PlanNavId, 'inbox'>, number | undefined> = {
     tasks: open,
+    todo: dueNow,
     milestones,
-    calendar: today,
+    calendar: todayEvents,
+    projects,
   };
 
   return (
@@ -67,7 +96,7 @@ export function PlanNav() {
         labels={dragLabels}
         overlay={(active) =>
           isPlanNavId(active.id) ? (
-            <RoutineItem name={t(LOOK[active.id].labelKey)} icon={LOOK[active.id].icon} active />
+            <RoutineItem name={t(VIEWS[active.id].labelKey)} icon={VIEWS[active.id].icon} active />
           ) : null
         }
       >
@@ -79,18 +108,18 @@ export function PlanNav() {
         >
           {order.map((id) => {
             if (id === 'inbox') return <PlanInboxItem key={id} id={id} />;
-            const { to, fuzzy } = ROUTE[id];
+            const { labelKey, icon, route } = VIEWS[id];
             const count = counts[id];
             return (
               <SortableRoutineItem
                 key={id}
                 id={id}
-                name={t(LOOK[id].labelKey)}
-                icon={LOOK[id].icon}
+                name={t(labelKey)}
+                icon={icon}
                 meta={count === undefined ? undefined : String(count)}
-                active={Boolean(matchRoute({ to, fuzzy }))}
+                active={Boolean(matchRoute(route))}
                 nativeButton={false}
-                render={<Link to={to} />}
+                render={<Link to={route.to} />}
               />
             );
           })}

@@ -38,7 +38,9 @@ type Options struct {
 	// agent to ask.
 	Trust Trust
 	// Transcripts reads a session's first message off the agent's own
-	// transcript, for a session launched with no task; nil reports none.
+	// transcript, for a session launched with no task, a teleported
+	// session's conversation and an agent's open question; nil reports
+	// none. The chat and transcript pages are Conversations'.
 	Transcripts Transcripts
 	// StatusLine is the command a Claude Code session runs for its status
 	// line (`domain.Launch.StatusLine`); empty leaves the CLI's own.
@@ -328,20 +330,6 @@ func (s *Service) sessionEnv(session domain.Session) map[string]string {
 		merged[name] = value
 	}
 	return merged
-}
-
-// FollowChat follows a session's conversation for the chat view, sending
-// its transcript entries to emit until ctx ends (Transcripts.Follow).
-// ErrNoChat for a session whose agent's transcript this runner cannot read.
-func (s *Service) FollowChat(ctx context.Context, id string, entryMax, batchMax int, older <-chan int64, emit func(ChatBatch) error) error {
-	if s.transcripts == nil {
-		return ErrNoChat
-	}
-	session, err := s.recorded(id)
-	if err != nil {
-		return err
-	}
-	return s.transcripts.Follow(ctx, session, entryMax, batchMax, older, emit)
 }
 
 // Send types into a window, which is how the browser's keystrokes arrive

@@ -105,7 +105,7 @@ func TestAnUnpairedHostKeepsTryingToStopASessionItCouldNot(t *testing.T) {
 	}
 
 	h := &linkHandler{
-		app: &App{Sessions: svc}, logger: slog.New(slog.NewTextHandler(io.Discard, nil)),
+		app: &App{Sessions: svc, Conversations: conversationsOf(svc, nil)}, logger: slog.New(slog.NewTextHandler(io.Discard, nil)),
 		attachments: map[uint32]*attachment{}, decided: map[string]bool{}, life: ctx, lanes: newLanes(),
 	}
 	h.unpaired(ctx, false)
@@ -140,7 +140,7 @@ func TestAnUnpairedHostAskedToWipeRemovesEveryWorktree(t *testing.T) {
 		worktrees.DirtyPaths[session.Worktree] = true
 
 		h := &linkHandler{
-			app: &App{Sessions: svc}, logger: slog.New(slog.NewTextHandler(io.Discard, nil)),
+			app: &App{Sessions: svc, Conversations: conversationsOf(svc, nil)}, logger: slog.New(slog.NewTextHandler(io.Discard, nil)),
 			attachments: map[uint32]*attachment{}, decided: map[string]bool{}, life: ctx, lanes: newLanes(),
 		}
 		h.unpaired(ctx, wipe)

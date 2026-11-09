@@ -3,6 +3,7 @@ import type * as React from 'react';
 import { cn } from '../lib/utils';
 import { CommandRow, CommandRowList } from './command-row';
 import { Skeleton } from './skeleton';
+import { variedWidth } from '../internal/varied-width';
 
 type HostCardStatus = 'running' | 'idle' | 'offline';
 
@@ -130,10 +131,10 @@ function HostCardSkeleton({ index = 0, className, ...props }: React.ComponentPro
       <div className="flex items-center gap-3.5 py-4.5">
         <div className="flex min-w-0 flex-1 flex-col gap-0.75">
           <span className="flex h-5 items-center">
-            <Skeleton shape="sm" className={cn('h-3', SKELETON_NAMES[index % SKELETON_NAMES.length])} />
+            <Skeleton shape="sm" className={cn('h-3', variedWidth(index, SKELETON_NAMES))} />
           </span>
           <span className="flex h-4.5 items-center">
-            <Skeleton shape="sm" className={cn('h-2.5 max-w-full', SKELETON_METAS[index % SKELETON_METAS.length])} />
+            <Skeleton shape="sm" className={cn('h-2.5 max-w-full', variedWidth(index, SKELETON_METAS))} />
           </span>
         </div>
         <div className="flex min-w-30 shrink-0 flex-col items-end gap-0.75">

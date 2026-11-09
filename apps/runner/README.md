@@ -25,6 +25,20 @@ driven from the console over it, and the git credential helper answers with
 installation tokens the control plane mints on it. `runner sessions …` drives
 the same lifecycle from the host itself.
 
+A bot can run one program on the host over the link (`host.exec`,
+`product/versions/mvp/25-bots.md` §4.2, "Commands on a host"), but only what
+`runner exec` allows here: off by default, an allowlist of programs, or
+everything. The policy lives in `~/.oppenheimer/exec.json`, is read on every
+call, and is never written by the control plane. On a host set to `full` a
+bot can also drive a blank-terminal session (`terminal.drive`): type into
+it and read its screen back.
+
+A session's Simulator tab streams the iOS simulator or Android emulator its
+host gives it, through Argent (`product/research/device-streaming.md`). A
+host with Argent installed needs no setup: each new session takes one of the
+simulators and emulators running at the time, and keeps it for its life.
+`RUNNER_DEVICES` names them instead, or turns it `off` (`.env.example`).
+
 `runner serve` and the `apikeys` context are the template this grew from:
 an inbound API-key surface on a TCP port, which is what the container
 image runs and what the API talks to today. **Nothing product-shaped
@@ -37,12 +51,13 @@ the way this host proves who it is, and they go when the link lands.
 | ------- | ------------ |
 | `runner run` | the host agent: single-instance lock, local 0600 Unix socket, update loop. What the service unit starts |
 | `runner register --url … [--token-file F\|-] [--workspaces DIR] [--keep-existing] [--allow-container]` | redeems a one-hour registration token (from `--token-file`, `OPPENHEIMER_REGISTRATION_TOKEN` or `--token`): generates the host keypair, sends the public half with the host's facts, pins the control plane's fingerprint. Refuses a machine that looks temporary unless `--allow-container`; `--keep-existing` makes a re-run a repair |
+| `runner exec [status]` / `mode off\|allowlist\|full` / `allow <program\|/abs/path\|/abs/glob/*>...` / `deny <entry>...` | what bots may run on this host over `host.exec`: argv with no shell, in `<workspaces>/bots/<bot>` unless they name a folder. Off until set here |
 | `runner workspaces [--set DIR]` | the work folder (where stores and sessions' checkouts live) and why; `--set` moves it for new sessions, refused while any session's folder is still on disk under the old one |
 | `runner install [--print]` | writes and starts the launchd agent (macOS) or systemd user unit (Debian, Ubuntu); `--print` shows the unit instead |
 | `runner uninstall [--keep-identity] [--force]` | stops the service, revokes the host, erases the identity. Refuses while the runner's sessions run unless `--force`, which ends them (checkouts stay). When the control plane could not unpair the host it says why and how to finish, and exits 7. Never touches the workspaces directory |
 | `runner sessions ls\|create\|attach\|window\|restart\|close` | the worktree-plus-tmux lifecycle, from the host itself; a session made here lives under the work folder's `local/local/` |
 | `runner sessions run\|send\|wait\|report\|children\|keep` | from inside a session, through the running daemon's socket: start a child session with a task (`--repo`, `--outlive-parent`, `--quiet`, `--keep`), type a message into an agent, wait for children to settle, report to the parent, list children, keep a session across reboots. `SESS_012` is an agent not up after 30 s, `HOST_012` no daemon on the socket |
-| `runner sessions send-file <path> [--caption "line"]` | from inside a session: shows the person a file in the session's chat, an image as a JPEG preview and a text file of 32 KB or less as its text; the file stays on the host (`product/next-steps/agent-tools.md` §1). With a link it also logs `file.shared` (name, type, size, caption; never the path), and answers a bot's `shared.preview.get` with the image's preview (§7). `SESS_013` is a path that is not a readable regular file |
+| `runner sessions send-file <path> [--caption "line"]` | from inside a session: shows the person a file in the session's chat, an image as a JPEG preview and a text file of 32 KB or less as its text; the file stays on the host (`product/next-steps/agent-tools.md` §1). With a link it also logs `file.shared` (name, type, size, caption; never the path), and answers a bot's `shared.preview.get` with the image's preview (§7). It answers `transcript.read` too, a page of a session's conversation read off the agent's transcript, as the chat view's entries (§8; `SESS_018` for an agent with no transcript file, OpenCode's). `SESS_013` is a path that is not a readable regular file |
 | `runner sessions notify "line"` | from inside a session: tells the person a line, at most 500 bytes, which the console's Inbox lists until it is marked done (`product/next-steps/agent-tools.md` §2). `SESS_014` is a runner with no link to the control plane |
 | `runner sessions watch-pr <n> [--repo owner/name] [--off]` | from inside a session: be woken when the pull request's checks finish, it is reviewed or commented on, or it merges; a line is typed in once the agent is at its prompt (`product/next-steps/agent-tools.md` §3). `SESS_015` is a runner with no link to the control plane |
 | `runner sessions wake-in <30m\|2h\|1d> "note"` | from inside a session: be woken then with the note, a minute to seven days away, once the agent is at its prompt; the control plane holds the wake (`product/next-steps/agent-tools.md` §4). `SESS_015` is a runner with no link to the control plane |
@@ -76,6 +91,7 @@ host: remove it under Settings → Hosts).
   state/program-status/ each wrapped agent's OSC 7501 report, while its `runner pty` runs
   bin/path/runner     a link to this binary, on every session's PATH
   state/whatsapp/ 0700  whatsapp.db (0600): the WhatsApp linked device's keys and its outbox
+  state/telegram/ 0700  bot.json (0600): the Telegram bot's token; state.json (0600): its poll offset and outbox
   manifests/          agent detection rules newer than the bundled ones
   log/ run/           logs, the Unix socket, the single-instance lock
   images/             files pasted into sessions, one directory per session

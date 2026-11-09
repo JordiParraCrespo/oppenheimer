@@ -13,7 +13,19 @@ this note says what the real thing does instead.
   (today's event count). Under Tasks: **Projects**: All projects, each
   project with its open count, and Unassigned, plus "+" for New project.
   Under Calendar: the layer toggles (20 §1) and the Google Calendar connection
-  card.
+  card. Since 2026-11-05 the sidebar's views also hold **Projects**
+  (`/plan/projects`, with the workspace's project count): the one place
+  projects are made and edited, a row per project with its repositories
+  and its settings (the project dialog), and New project in the header.
+  The Sessions sidebar no longer makes or edits projects. Since 2026-11-08
+  (the `Tasks` artboards of that day) each project is a card instead of a
+  row: its repositories and whether one of its sessions needs you or is at
+  work. A card opens the project's page, `/plan/projects/<id>`, with a way
+  back to the cards, Settings (the project dialog), its milestones with how
+  far each is, the tasks that wait on a person and the ones in progress.
+  Since 2026-11-09 the page also has Stats (`?view=stats`, `23` §4 for one
+  project): tasks completed and created per week, and tokens and cost once
+  sessions report them, over a period against the one before.
 - **Routes.** `/plan` (the board, `?project=<slug>&goal=<id>`),
   `/plan/calendar` (`?month=2026-10`), and `?task=<id>` on either to open
   a task's dialog, which is the deep link the session header uses. The
@@ -32,8 +44,11 @@ this note says what the real thing does instead.
   *total* tasks" with its percentage, green at 100%. Clicking a goal
   filters the board to it (and back); "…" opens Edit goal. **New goal**
   on the strip's header.
-- **Columns**, in this order: **Later** (hollow dot), **To do**, **In
-  progress** (amber), **Done** (green), each with a count and "+".
+- **Columns**, in this order: **To do**, **In progress** (amber), **In
+  review** (hollow dot), **Done** (green), each with a count and "+".
+  (Changed 2026-11-05: the board first had **Later** before To do; Jordi
+  dropped it for **In review**, where finished work waits to be looked at
+  before Done. Tasks in Later moved to the end of To do.)
 - **A card** shows: a done checkbox, the title, notes (two lines, hidden
   when done), the project (only under All projects), the goal (unless
   filtered to it), the due date as Today / Tomorrow / Yesterday / *Oct 7*
@@ -46,6 +61,15 @@ this note says what the real thing does instead.
   is an inline one-line composer (Enter adds, Esc cancels) that files the
   task under the current project and goal filter; clicking a card opens
   its dialog. Escape cancels a drag.
+- **Done keeps the past week** (decided 2026-11-09, answering open
+  question 2). The column shows the tasks finished since local midnight
+  seven days ago; the older ones fold under **Show *n* older** at its
+  foot, which opens them in board order (`?older=1`, so the open column
+  is a link) and turns into **Hide older**. Nothing is archived or
+  deleted: the header still counts every done task, and an older one is
+  one click away. It is Linear's "completed issues: past week" display
+  option, not its auto-archive: archiving (out of search, restorable) is
+  a later step once Done's history needs leaving the board entirely.
 
 ## 3. The dialogs
 
@@ -86,7 +110,7 @@ for, and a session is where it gets done.
   host (Claude Code only), or Cursor's cloud with no host and on a task
   (`../../next-steps/cloud-agents.md`, "Tasks and automations").
 - **One status rule for attaching a session.** Start and Link existing
-  both link the session, and both move a task that is in Later or To do
+  both link the session, and both move a task that is in To do (Later, before 2026-11-05)
   to **In progress**; In progress and Done stay as they are. So a card
   never shows a live session line while it sits in To do. The move is
   conditional on the status the person saw when they clicked: if the
@@ -139,6 +163,13 @@ for, and a session is where it gets done.
   New goal. The frames have no empty state drawn; it needs one in the
   next export.
 - **Strings.** All copy goes into `packages/translations`.
+- **Filters stick, like a Notion view's** (owner's ask, 2026-11-05). The
+  board's Project and Milestone filter and Milestones' Project filter are
+  still the address, but each view remembers the one it was left with on
+  this device (`localStorage`), and a visit with no filter in its address
+  takes it back. A link that names a filter wins and becomes the
+  remembered one; Clear is remembered too, so it sticks. Per device, not
+  per account: a filter is a reader's view, and nothing here is shared.
 
 ## Open questions
 
@@ -147,6 +178,7 @@ for, and a session is where it gets done.
    (`apps/api/src/profile/application/locale.resolver.ts`). Fine while
    nothing fires on a due time. A reminder email or a Slack nudge (0.4)
    would need a stored timezone first.
-2. Should Done tasks age off the board (e.g. after 14 days, behind
-   "Show older")? Done grows without bound otherwise.
+2. ~~Should Done tasks age off the board (e.g. after 14 days, behind
+   "Show older")?~~ Answered 2026-11-09: after 7 days, behind "Show
+   *n* older" (§2).
 3. Does a goal ever close (achieved / missed), or is 100% enough?

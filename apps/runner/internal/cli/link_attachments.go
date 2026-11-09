@@ -65,7 +65,7 @@ func (h *linkHandler) attach(ctx context.Context, m link.SessionAttach, epoch ui
 // control queue, so a full one holds the batch for the next check rather
 // than dropping it. An agent with no transcript to follow sends nothing.
 func (h *linkHandler) chat(ctx context.Context, att *attachment) {
-	err := h.app.Sessions.FollowChat(ctx, att.sessionID, link.ChatEntryMaxBytes, link.ChatBatchMaxEntries, att.chatOlder, func(batch sessionsapp.ChatBatch) error {
+	err := h.app.Conversations.FollowChat(ctx, att.sessionID, link.ChatEntryMaxBytes, link.ChatBatchMaxEntries, att.chatOlder, func(batch sessionsapp.ChatBatch) error {
 		return h.client.Send(attachmentChat(att.id, batch))
 	})
 	if err != nil && !errors.Is(err, sessionsapp.ErrNoChat) {

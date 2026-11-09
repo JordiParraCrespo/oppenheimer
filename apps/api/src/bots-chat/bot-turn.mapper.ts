@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import type { Mapper } from '@oppenheimer/backend-ddd';
+import type { ErrorReportContext, ErrorReportLevel } from '@oppenheimer/backend-error-reporting';
 import {
   BOT_TURN_ORIGINS,
   type BotProvider,
@@ -18,6 +19,28 @@ import { type BotTurnPlanLimitsDto, BotTurnResponseDto } from './dtos/bot-turn.r
 
 @Injectable()
 export class BotTurnMapper implements Mapper<BotTurnEntity, BotTurnOrmEntity, BotTurnResponseDto> {
+  /**
+   * What a failed turn is reported with: who and which model, never what was
+   * said. Grouped by provider and failure, so one provider's bad hour is one
+   * issue rather than one per turn.
+   */
+  static toErrorReport(turn: BotTurnEntity, level: ErrorReportLevel): ErrorReportContext {
+    return {
+      level,
+      tags: {
+        'bot.id': turn.botId,
+        'bot.turn_id': turn.id,
+        'bot.provider': turn.provider,
+        'bot.model': turn.model,
+        'bot.origin': turn.origin,
+        'bot.failure': turn.failure,
+      },
+      fingerprint: ['bot-turn-failed', turn.provider, turn.failure ?? 'thrown', String(level)],
+      userId: turn.requestedByUserId,
+      workspaceId: turn.organizationId,
+    };
+  }
+
   toPersistence(entity: BotTurnEntity): BotTurnOrmEntity {
     const record = new BotTurnOrmEntity();
     record.id = entity.id;

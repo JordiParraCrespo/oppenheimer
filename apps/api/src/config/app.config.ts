@@ -1,6 +1,19 @@
+import { isAbsolute, resolve } from 'node:path';
 import { registerAs } from '@nestjs/config';
+import { findWorkspaceRoot } from '@oppenheimer/env';
 import { z } from 'zod';
 import { parseEnv } from './env';
+
+/**
+ * `LOG_FILE` as the path the loggers write to: a relative one is taken from
+ * the repository root, blank is none. Shared by the request logger (through
+ * this config) and the Better Auth route logger, which is built before
+ * config is.
+ */
+export function resolveLogFile(value: string | undefined): string | undefined {
+  if (!value?.trim()) return undefined;
+  return isAbsolute(value) ? value : resolve(findWorkspaceRoot() ?? process.cwd(), value);
+}
 
 const schema = z.object({
   port: z.coerce.number().default(3001),
@@ -28,6 +41,12 @@ const schema = z.object({
   // be public.
   bullBoardUsername: z.string().optional(),
   bullBoardPassword: z.string().optional(),
+  // **Optional** — a file the API also writes its log lines to, as JSON, for a
+  // shipper to tail (`pnpm monitoring:up` runs Grafana Alloy over `.logs/`,
+  // into Loki). Unset, logs go to stdout only. A relative path is taken from
+  // the repository root, so `.logs/api.log` is the same file wherever the
+  // API is started from.
+  logFile: z.string().optional().transform(resolveLogFile),
 });
 
 export const appConfig = registerAs('app', () =>
@@ -41,5 +60,6 @@ export const appConfig = registerAs('app', () =>
     trustProxy: 'TRUST_PROXY',
     bullBoardUsername: 'BULL_BOARD_USERNAME',
     bullBoardPassword: 'BULL_BOARD_PASSWORD',
+    logFile: 'LOG_FILE',
   }),
 );

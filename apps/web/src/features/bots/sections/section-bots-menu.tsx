@@ -8,15 +8,20 @@ import {
   Link,
   Popover,
   PopoverTrigger,
+  Skeleton,
 } from '@oppenheimer/design-system-web';
 import { Plus } from '@oppenheimer/design-system-web/icons';
 import type { BotEntity } from '@oppenheimer/frontend-consumer';
 import { useBots } from '@oppenheimer/frontend-consumer/react';
+import { LoadingStatus } from '@oppenheimer/frontend-web';
 import type { BotSection } from '@oppenheimer/shared/schemas/bot';
 import { Link as RouterLink } from '@tanstack/react-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { SECTION_NAMES } from '@/features/bots/lib/section-names';
+
+/** The rows drawn while the bots load, by the width of each name: a short list's worth, so the popup opens at about its height. */
+const LOADING_ROWS = ['w-28', 'w-36', 'w-24'];
 
 /**
  * The plus on a section's Bots heading (`28-bots-in-sections.md`, slice D):
@@ -113,16 +118,16 @@ export function SectionBotsMenu({
           }}
           onKeyDown={onKeyDown}
         />
+        {bots.isPending ? <LoadingStatus /> : null}
         <ChipSelectList
           density="menu"
           role="listbox"
           aria-multiselectable
           aria-label={t('bots.section.manage', { section: where })}
           rows={8}
-          total={bots.data?.length ?? 0}
-          loading={bots.isPending}
-          loadingText={t('common.loading')}
-          empty={bots.isError || visible.length === 0}
+          total={bots.data?.length ?? LOADING_ROWS.length}
+          aria-busy={bots.isPending || undefined}
+          empty={!bots.isPending && (bots.isError || visible.length === 0)}
           emptyText={
             bots.isError
               ? t('bots.sidebar.loadFailed')
@@ -131,13 +136,30 @@ export function SectionBotsMenu({
                 : t('bots.sidebar.emptyTitle')
           }
         >
+          {bots.isPending
+            ? LOADING_ROWS.map((width) => (
+                <ChipSelectItem
+                  key={width}
+                  density="menu"
+                  aria-hidden
+                  disabled
+                  tabIndex={-1}
+                  leading={<Skeleton shape="pill" className="size-5" />}
+                  leadingSize="avatar"
+                >
+                  <span className="flex h-5 items-center">
+                    <Skeleton shape="sm" className={`h-3 ${width}`} />
+                  </span>
+                </ChipSelectItem>
+              ))
+            : null}
           {visible.map((bot, index) => (
             <ChipSelectItem
               key={bot.id}
               density="menu"
               selected={shows(bot)}
               highlighted={index === active}
-              leading={<BotAvatar option={bot} size={20} color={bot.avatarColor} />}
+              leading={<BotAvatar option={{ initials: bot.initials }} size={20} face={bot.face} />}
               leadingSize="avatar"
               data-disabled={saving.has(bot.id) || undefined}
               aria-disabled={saving.has(bot.id) || undefined}

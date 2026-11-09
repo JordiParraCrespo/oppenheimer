@@ -4,6 +4,8 @@ import { TOKENS } from '../../di/tokens';
 import type { IAnalyticsClient } from '../analytics/analytics.client';
 import { NoopAnalyticsClient } from '../analytics/noop-analytics.client';
 import type { IAuthClient } from '../auth/auth.client';
+import type { IErrorReportingClient } from '../error-reporting/error-reporting.client';
+import { NoopErrorReportingClient } from '../error-reporting/noop-error-reporting.client';
 import type { FeatureFlagsClientContext } from '../feature-flags/feature-flags.client';
 import type { IStorageService } from './storage.service';
 
@@ -12,6 +14,7 @@ export interface CoreModuleConfig {
   storage: IStorageService;
   authClient: IAuthClient;
   analytics?: IAnalyticsClient;
+  errorReporting?: IErrorReportingClient;
   featureFlags?: FeatureFlagsClientContext;
 }
 
@@ -28,6 +31,9 @@ export function createCoreModule(config: CoreModuleConfig): ContainerModule {
     bind<IAuthClient>(TOKENS.AuthClient).toConstantValue(config.authClient);
     bind<IAnalyticsClient>(TOKENS.AnalyticsClient).toConstantValue(
       config.analytics ?? new NoopAnalyticsClient(),
+    );
+    bind<IErrorReportingClient>(TOKENS.ErrorReportingClient).toConstantValue(
+      config.errorReporting ?? new NoopErrorReportingClient(),
     );
     bind<FeatureFlagsClientContext>(TOKENS.FeatureFlagsClientContext).toConstantValue(
       config.featureFlags ?? {},

@@ -19,6 +19,7 @@ export {
 export { useDeploymentCapabilities } from './capabilities.queries';
 export { OppenheimerProvider, useOppenheimerApp } from './context';
 export { type ResolvedErrorMessage, useErrorMessage } from './error-message';
+export { useCaptureError, useReportError } from './error-reporting.hooks';
 export {
   type FeatureFlagReadOptions,
   /** @public The flags rule's client read (`.agents/rules/feature-flags.md`). */
@@ -48,6 +49,7 @@ export {
   createQueryClient,
   type SessionExpiryTarget,
 } from './query-client';
+export { useSuspenseApiVersion } from './release.queries';
 export { shareEntities } from './share-entities';
 export { useUserSettings } from './user-settings.queries';
 export {

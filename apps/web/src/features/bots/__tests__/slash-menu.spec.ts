@@ -2,12 +2,13 @@ import { BotSkillEntity } from '@oppenheimer/frontend-consumer';
 import { describe, expect, it } from 'vitest';
 import { builtInCommandActionOf } from '../lib/built-in-command';
 import { skillRowModel } from '../lib/skill-row';
-import { matchingCommands, slashMenuItems, slashQuery } from '../lib/slash-menu';
+import { matchingCommands, slashMenuItems, slashMenuRows, slashQuery } from '../lib/slash-menu';
 
 /**
  * What the `/` menu reads of the draft and how a skill's row reads. What breaks
  * this: the menu opening over a message that only starts with a slash, or
- * hiding a skill whose name contains what was typed.
+ * hiding a skill whose name contains what was typed, or one whose `/<name>`
+ * still runs it.
  */
 function skill(name: string) {
   const at = new Date();
@@ -47,6 +48,11 @@ describe('slashMenuItems', () => {
     const { builtIns, skills } = slashMenuItems([goal], [skill('goal'), skill('go-live')], 'go');
     expect(builtIns.map((found) => found.name)).toEqual(['goal']);
     expect(skills.map((found) => found.name)).toEqual(['go-live']);
+  });
+
+  it('still offers a skill saved under a built-in skill’s name, since /<name> runs that skill', () => {
+    const { skills } = slashMenuItems([goal], [skill('oppenheimer')], 'opp');
+    expect(skills.map((found) => found.name)).toEqual(['oppenheimer']);
   });
 
   it('keeps the two together within the menu’s cap', () => {
@@ -95,5 +101,54 @@ describe('skillRowModel', () => {
     expect(skillRowModel({ source: 'user', userInvocable: false, modelInvocable: true }).kind).toBe(
       'onlyBot',
     );
+  });
+});
+
+describe('slashMenuRows', () => {
+  const key = (k: string) => k;
+  const names = (rows: { name: string }[]) => rows.map((row) => row.name);
+  const own = (name: string, userInvocable = true) =>
+    new BotSkillEntity(
+      name,
+      name,
+      `Own ${name}`,
+      'x',
+      userInvocable,
+      true,
+      'user',
+      new Date(),
+      new Date(),
+    );
+
+  it('offers /recap before the bot’s own skills, so a long list never pushes it out', () => {
+    const many = Array.from({ length: 12 }, (_, i) => own(`s${i}`));
+    const { builtIns, skills } = slashMenuRows('', many, key);
+    expect(names(builtIns)).toEqual(['goal', 'usage', 'loop', 'schedule']);
+    expect(skills[0]).toMatchObject({
+      name: 'recap',
+      description: 'bots.chat.slash.builtInSkill.recap',
+    });
+  });
+
+  it('gives way to a skill of the bot’s own saved as recap, since /recap runs that one', () => {
+    const { skills } = slashMenuRows('rec', [own('recap')], key);
+    expect(skills).toEqual([expect.objectContaining({ name: 'recap', description: 'Own recap' })]);
+  });
+
+  it('offers no /recap when the bot’s own recap is only the bot’s to use, since /recap would answer "not one of your skills"', () => {
+    expect(slashMenuRows('rec', [own('recap', false)], key).skills).toEqual([]);
+  });
+
+  it('leaves out a skill of the bot’s own that only the bot may use', () => {
+    expect(names(slashMenuRows('', [own('deploy', false), own('triage')], key).skills)).toEqual([
+      'recap',
+      'triage',
+    ]);
+  });
+
+  it('offers the commands alone until the bot’s skills are read, since one of its own may take a built-in skill’s name', () => {
+    const { builtIns, skills } = slashMenuRows('', undefined, key);
+    expect(names(builtIns)).toEqual(['goal', 'usage', 'loop', 'schedule']);
+    expect(skills).toEqual([]);
   });
 });

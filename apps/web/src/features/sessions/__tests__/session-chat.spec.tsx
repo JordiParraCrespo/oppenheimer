@@ -112,6 +112,28 @@ describe('SessionChat', () => {
     expect(send).toHaveBeenCalledWith('\u001b');
   });
 
+  it('keeps sending while the agent works when its source cannot stop the turn (a cloud session)', () => {
+    vi.useFakeTimers();
+    const chat = new Chat();
+    const send = vi.fn();
+    chat.apply({
+      reset: true,
+      entries: [entry({ type: 'user', uuid: 'u', message: { role: 'user', content: 'Go' } })],
+    });
+    chat.connect(send, undefined, { interruptible: false });
+    render(<SessionChat chat={chat} agent="claude-code" readOnly={false} />);
+    // Breaks if Stop is offered where nothing can stop the turn: a reply
+    // typed mid-turn would be sent as Escape and lost.
+    expect(screen.queryByRole('button', { name: 'sessions.chat.composer.stop' })).toBeNull();
+    const field = screen.getByPlaceholderText(
+      'sessions.chat.composer.placeholder{"agent":"Claude Code"}',
+    );
+    fireEvent.change(field, { target: { value: 'And tag it' } });
+    fireEvent.keyDown(field, { key: 'Enter' });
+    expect(send).toHaveBeenCalledWith('And tag it');
+    vi.useRealTimers();
+  });
+
   it('offers no composer to a watcher', () => {
     render(<SessionChat chat={new Chat()} agent="claude-code" readOnly />);
     expect(
@@ -121,7 +143,7 @@ describe('SessionChat', () => {
 });
 
 describe('a settled turn', () => {
-  it('ends on the files it changed, and folds to its words once the next prompt passes it', () => {
+  it('ends on the files it changed, folded to its answer once it settles', () => {
     const chat = new Chat();
     const turn = [
       entry({ type: 'user', uuid: 'u1', message: { role: 'user', content: 'Fix it' } }),
@@ -166,18 +188,59 @@ describe('a settled turn', () => {
     ];
     chat.apply({ reset: true, entries: turn });
     render(<SessionChat chat={chat} agent="claude-code" readOnly />);
-    expect(screen.getByText('sessions.chat.changes{"count":1}')).toBeTruthy();
-    expect(screen.getByText('sessions.chat.thoughtFor{"seconds":4}')).toBeTruthy();
-
-    act(() =>
-      chat.apply({
-        entries: [entry({ type: 'user', uuid: 'u2', message: { role: 'user', content: 'Next' } })],
-      }),
-    );
-    // The older turn keeps its words and its card; its thinking folds away.
+    // The settled turn keeps its answer and its card; its thinking folds away.
     expect(screen.getByText('Done.')).toBeTruthy();
     expect(screen.getByText('sessions.chat.changes{"count":1}')).toBeTruthy();
     expect(screen.queryByText('sessions.chat.thoughtFor{"seconds":4}')).toBeNull();
+
+    fireEvent.click(screen.getByRole('button', { name: /sessions\.chat\.turn\.worked/ }));
+    expect(screen.getByText('sessions.chat.thoughtFor{"seconds":4}')).toBeTruthy();
+  });
+
+  // Regression: a folded turn kept only the last text block of its answer,
+  // dropping the explanation before a command the same message ended on.
+  it('keeps every block of its answer when it folds, and folds the words before its work', () => {
+    const chat = new Chat();
+    chat.apply({
+      reset: true,
+      entries: [
+        entry({ type: 'user', uuid: 'u1', message: { role: 'user', content: 'Count them' } }),
+        entry({
+          type: 'assistant',
+          uuid: 'a1',
+          message: {
+            role: 'assistant',
+            content: [
+              { type: 'text', text: 'Let me count.' },
+              { type: 'tool_use', id: 't', name: 'Bash', input: { command: 'ls | wc -l' } },
+            ],
+          },
+        }),
+        entry({
+          type: 'user',
+          uuid: 'r',
+          message: {
+            role: 'user',
+            content: [{ type: 'tool_result', tool_use_id: 't', content: '3' }],
+          },
+        }),
+        entry({
+          type: 'assistant',
+          uuid: 'a2',
+          message: {
+            role: 'assistant',
+            content: [
+              { type: 'text', text: 'There are three.' },
+              { type: 'text', text: 'Recount with ls.' },
+            ],
+          },
+        }),
+      ],
+    });
+    render(<SessionChat chat={chat} agent="claude-code" readOnly />);
+    expect(screen.getByText('There are three.')).toBeTruthy();
+    expect(screen.getByText('Recount with ls.')).toBeTruthy();
+    expect(screen.queryByText('Let me count.')).toBeNull();
   });
 });
 
@@ -814,6 +877,7 @@ describe('the work in a turn', () => {
       ],
     });
     render(<SessionChat chat={chat} agent="claude-code" readOnly={false} />);
+    fireEvent.click(screen.getByRole('button', { name: /sessions\.chat\.turn\.worked/ }));
     const explored = screen.getByRole('button', { name: /sessions\.chat\.explored\.title/ });
     expect(explored.textContent).toContain('common.chat.explored.read a.ts');
     expect(explored.textContent).toContain('common.chat.explored.search cancel');
@@ -991,5 +1055,104 @@ describe('the queue and the context', () => {
     chat.apply({ reset: true, entries: [prompt] });
     render(<SessionChat chat={chat} agent="claude-code" readOnly={false} />);
     expect(screen.queryByRole('button', { name: /common\.chat\.usage\.open/ })).toBeNull();
+  });
+});
+
+describe('subagents', () => {
+  const at = (seconds: number) => new Date(Date.UTC(2026, 10, 6, 9, 0, seconds)).toISOString();
+  const agentCall = (id: string, description: string) =>
+    entry({
+      type: 'assistant',
+      uuid: `a-${id}`,
+      timestamp: at(1),
+      message: {
+        role: 'assistant',
+        content: [
+          { type: 'tool_use', id, name: 'Agent', input: { description, subagent_type: 'Explore' } },
+        ],
+      },
+    });
+
+  // Regression: a turn that launched subagents said "Ran 2 subagents" and
+  // nothing else until they had all ended; the terminal's footer listed each
+  // with what it was doing.
+  it('lists each subagent a turn started, what it is doing, and opens to its work', () => {
+    const chat = new Chat();
+    render(<SessionChat chat={chat} agent="claude-code" readOnly />);
+    act(() =>
+      chat.apply({
+        reset: true,
+        history: 'end',
+        entries: [
+          entry({
+            type: 'user',
+            uuid: 'u1',
+            timestamp: at(0),
+            message: { role: 'user', content: 'Find the picker' },
+          }),
+          agentCall('toolu_a', 'Read the collector'),
+          agentCall('toolu_b', 'Fix the table'),
+        ],
+      }),
+    );
+    act(() =>
+      chat.apply({
+        entries: [
+          entry({
+            type: 'assistant',
+            uuid: 's1',
+            timestamp: at(2),
+            isSidechain: true,
+            agentId: 'ag-a',
+            message: {
+              role: 'assistant',
+              content: [
+                {
+                  type: 'tool_use',
+                  id: 'toolu_grep',
+                  name: 'Grep',
+                  input: { pattern: 'Collector' },
+                },
+              ],
+            },
+          }),
+          entry({
+            type: 'oppenheimer.subagent',
+            id: 'ag-a',
+            parentToolUseId: 'toolu_a',
+            agentType: 'Explore',
+            state: 'running',
+          }),
+          entry({
+            type: 'oppenheimer.subagent',
+            id: 'ag-b',
+            parentToolUseId: 'toolu_b',
+            agentType: 'Explore',
+            state: 'failed',
+          }),
+        ],
+      }),
+    );
+
+    expect(
+      screen.getByText(
+        'sessions.chat.subagents.count{"count":2} · sessions.chat.subagents.running{"count":1} · sessions.chat.subagents.failed{"count":1}',
+      ),
+    ).toBeTruthy();
+    const running = screen.getByText('Read the collector').closest('[data-slot="subagent-row"]');
+    expect(running?.getAttribute('data-state')).toBe('running');
+    // What it is doing now, on its line.
+    expect(running?.textContent).toContain('sessions.chat.verbLive.search');
+    expect(running?.textContent).toContain('Collector');
+    expect(
+      screen.getByText('Fix the table').closest('[data-slot="subagent-row"]')?.textContent,
+    ).toContain('sessions.chat.subagents.state.failed');
+
+    // Its own call, once in its row's activity; opened, once more as its work.
+    const fold = screen.getByText('Read the collector').closest('[data-slot="subagent-fold"]');
+    const mentions = () => fold?.textContent?.split('Collector').length ?? 0;
+    const closed = mentions();
+    fireEvent.click(screen.getByText('Read the collector'));
+    expect(mentions()).toBe(closed + 1);
   });
 });

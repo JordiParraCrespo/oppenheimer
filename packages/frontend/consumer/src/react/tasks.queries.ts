@@ -1,6 +1,11 @@
 'use client';
 
-import { useQuery, useSuspenseQueries, withCacheOnSuccess } from '@oppenheimer/frontend-core/react';
+import {
+  useQuery,
+  useSuspenseQueries,
+  useSuspenseQuery,
+  withCacheOnSuccess,
+} from '@oppenheimer/frontend-core/react';
 import {
   type QueryClient,
   type UseMutationOptions,
@@ -8,6 +13,7 @@ import {
   useMutation,
   useQueryClient,
 } from '@tanstack/react-query';
+import type { PlanStats, PlanStatsQuery } from '../modules/tasks/plan-stats';
 import {
   type MilestoneEntity,
   type MilestoneInput,
@@ -122,6 +128,19 @@ export function useSuspenseTaskBoard() {
   };
 }
 
+/**
+ * Plan's statistics for a range under a Suspense `QueryState`: a project's
+ * when the query names one. Each range is its own read, so a range picked
+ * twice is answered from the cache.
+ */
+export function useSuspensePlanStats(query: PlanStatsQuery) {
+  const app = useConsumerApp();
+  return useSuspenseQuery<PlanStats>({
+    queryKey: tasksKeys.statsOf(query),
+    queryFn: () => app.tasks.findStats(query),
+  });
+}
+
 /** The milestones read, for every hook over it: the key and the fetch, once. */
 function useMilestoneListQuery() {
   const app = useConsumerApp();
@@ -151,6 +170,7 @@ async function settleTask(
   if (!boardKnown || movesMilestoneProgress(previous, task)) {
     void queryClient.invalidateQueries({ queryKey: tasksKeys.milestones() });
   }
+  void queryClient.invalidateQueries({ queryKey: tasksKeys.stats() });
 }
 
 /** A task joined or left a milestone, or one on a milestone turned Done or back. */

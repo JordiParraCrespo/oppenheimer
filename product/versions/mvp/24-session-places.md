@@ -100,19 +100,34 @@ A path that does not exist, or is not a directory, cannot be used: the
 picker's Use is off, and the runner refuses the create if the folder went
 away in between.
 
+Typing narrows the folder listed to the names that hold what is typed,
+those that start with it first. A bare name typed under home (`billing`,
+or `~billing`, read as `~/billing`) is also searched for further down
+(2026-11-08): the runner walks under home, breadth first, at most four
+levels, at most 20,000 directories read and 400 ms, skipping hidden
+directories and dependency trees (`node_modules`, `vendor`, `target`,
+`Library`, …), and never walks into a git repository, which is found but
+not looked inside. It names the 50 best (the name itself, then a name
+that starts so, then one that holds it; shallower first) and says when it
+stopped short. The picker asks after typing pauses for 250 ms and shows
+what was found under the listing; a runner that cannot search leaves the
+listing as it was. The browser's own folder picker was ruled out: it
+opens the browser's machine, not the host's.
+
 ## 5. What carries it
 
 - **Protocol.** `session.create` carries the place: checkouts for a
   worktree session, an absolute `folder` path for a folder session (never
   both), and the workspace id; the account is not on the frame, it is
   the pairing's (§2). `repository.prepare` carries the workspace the
-  same way. `fs.list` lists a directory. A runner says it understands both
-  in its `hello` capabilities; the API sends neither to a runner that does
-  not.
+  same way. `fs.list` lists a directory, `fs.find` searches under one by
+  name (§4). A runner says it understands each in its `hello`
+  capabilities; the API sends none to a runner that does not.
 - **API.** `work_session` records the place (`worktree` | `folder`) and,
   for a folder session, the path. A folder session's create carries no
   checkouts. `GET /hosts/{id}/folders?path=` lists a directory through
-  the host's link, and the recent folders come back with it.
+  the host's link, and the recent folders come back with it;
+  `GET /hosts/{id}/folders/search?q=` is the search.
 - **Console.** New session's first chip is **Where**: New worktree
   (Project, Host, Repository, Branch) or Folder on host (Host, Folder,
   Project, optional, Unassigned by default). The agent picker's **Blank
@@ -252,3 +267,16 @@ place with the agent `codex`; what differs is the vendor's CLI:
   status off `codex cloud list` (§7, "Codex's cloud, the same place").
   In a host's cloud the engine button now offers Claude Code and Codex,
   which replaces the 2026-10-28 "Claude Code alone".
+- 2026-11-07: a host whose `claude` is not signed in to claude.ai refuses a
+  cloud start with its own code (`SESS_019`), which the start pane says in
+  the console's words (sign in with `claude auth login` on the host), and
+  the CLI's last words reach it as a reader sees them, no longer with the
+  renderer's escapes and without spaces. A failed start on a host, of any
+  place, has **Try again** (`POST /sessions/{id}/retry`): the same create,
+  for the same session, with the first task the log kept; the session is
+  `starting` again (`session.retry_requested`) and the pane draws the new
+  attempt's steps in place.
+- 2026-11-08: the folder picker searches the host by name (`fs.find`, §4),
+  a walk the runner bounds by depth, directories read and time, rather
+  than an index it keeps; a bare name only, so a typed path is still
+  browsed.

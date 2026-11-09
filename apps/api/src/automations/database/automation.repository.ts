@@ -348,6 +348,21 @@ export class AutomationRepository
     return this.assemble(this.dataSource.manager, records);
   }
 
+  async findRoutinesOfBotForSystem(
+    organizationId: string,
+    botId: string,
+  ): Promise<AutomationEntity[]> {
+    // IDX_automation_bot.
+    const records = await this.repository
+      .createQueryBuilder('automation')
+      .where('automation.organizationId = :organizationId', { organizationId })
+      .andWhere('automation.botId = :botId', { botId })
+      .andWhere('automation.deletedAt IS NULL')
+      .orderBy('automation.createdAt', 'ASC')
+      .getMany();
+    return this.assemble(this.dataSource.manager, records);
+  }
+
   async eraseWorkspace(organizationId: string): Promise<void> {
     // Runs, revisions and triggers cascade with their automation.
     await this.repository.delete({ organizationId });

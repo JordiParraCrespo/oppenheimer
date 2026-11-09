@@ -1,12 +1,18 @@
 import { randomUUID } from 'node:crypto';
 import { CODING_AGENT_IDS } from '@oppenheimer/shared/agents';
 import { Command, Option } from 'commander';
-import type { Host, SentPrompt, Session, SessionPage } from '../lib/api-types';
+import type {
+  Host,
+  SentPrompt,
+  Session,
+  SessionPage,
+  SessionTranscriptPage,
+} from '../lib/api-types';
 import type { ApiClient } from '../lib/client';
 import { contextFor } from '../lib/context';
 import { CliError, ExitCode } from '../lib/errors';
 import { type LaunchOptions, planLaunch } from '../lib/launch';
-import { formatDate, render, style, table } from '../lib/output';
+import { describeTranscript, formatDate, render, style, table } from '../lib/output';
 import { confirm } from '../lib/prompt';
 import { pickByNameOrId, resolveProject } from '../lib/resolve';
 import { parseDuration, waitForSessions } from '../lib/wait';
@@ -20,6 +26,7 @@ export function sessionsCommand(): Command {
 
   sessions.addCommand(listCommand());
   sessions.addCommand(getCommand());
+  sessions.addCommand(transcriptCommand());
   sessions.addCommand(runCommand());
   sessions.addCommand(sendCommand());
   sessions.addCommand(waitCommand());
@@ -93,6 +100,22 @@ function getCommand(): Command {
       const context = contextFor(this);
       const session = await context.client.get<Session>(`/sessions/${id}`);
       render(context.json, session, () => describe(session));
+    });
+}
+
+function transcriptCommand(): Command {
+  return new Command('transcript')
+    .description('Read what a session’s agent said and did, a page at a time, off its host')
+    .argument('<id>', 'Session id')
+    .option('--cursor <cursor>', 'Read on from where a page ended (the cursor it printed)')
+    .option('--limit <n>', 'Entries per page, max 200', (value) => Number(value), 50)
+    .action(async function (this: Command, id: string) {
+      const context = contextFor(this);
+      const { cursor, limit } = this.opts<{ cursor?: string; limit: number }>();
+      const page = await context.client.get<SessionTranscriptPage>(`/sessions/${id}/transcript`, {
+        query: { cursor, limit },
+      });
+      render(context.json, page, () => describeTranscript(id, page));
     });
 }
 

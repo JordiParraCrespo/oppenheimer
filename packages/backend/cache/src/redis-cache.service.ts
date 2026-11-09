@@ -1,6 +1,28 @@
 import type Redis from 'ioredis';
 import { CacheService } from './cache.service';
 
+/**
+ * How one cached read went: the value was there (`hit`), was not (`miss`),
+ * Redis failed (`error`), or a `getOrSet` joined a load already running for
+ * the key (`coalesced`), which is a miss that cost no extra load.
+ */
+export type CacheReadResult = 'hit' | 'miss' | 'error' | 'coalesced';
+
+/** The cache operations that read, the ones a hit rate is taken over. */
+export type CacheReadOperation = 'get' | 'mget' | 'getOrSet' | 'take';
+
+/**
+ * Told about every key a read touches, so the app can count hits and misses
+ * (`mget` reports once per key). `namespace` is the key's first segment, as
+ * the caller wrote it (`github` for `github:repos:42`), never the whole key:
+ * keys carry ids and tickets. It must not throw; a throw is swallowed.
+ */
+export type CacheReadObserver = (read: {
+  operation: CacheReadOperation;
+  namespace: string;
+  result: CacheReadResult;
+}) => void;
+
 export interface RedisCacheOptions {
   /**
    * Prepended to every key, so the cache has a namespace of its own in a Redis
@@ -8,6 +30,8 @@ export interface RedisCacheOptions {
    * (`throttle:*`). Default `cache:`.
    */
   keyPrefix?: string;
+  /** Told how each read went; absent, reads are not observed. */
+  onRead?: CacheReadObserver;
 }
 
 const DEFAULT_CACHE_KEY_PREFIX = 'cache:';
@@ -48,6 +72,7 @@ return total
 export class RedisCacheService extends CacheService {
   private readonly prefix: string;
   private readonly inFlight = new Map<string, Promise<unknown>>();
+  private readonly onRead: CacheReadObserver | undefined;
 
   constructor(
     private readonly redis: Redis,
@@ -55,17 +80,28 @@ export class RedisCacheService extends CacheService {
   ) {
     super();
     this.prefix = options.keyPrefix ?? DEFAULT_CACHE_KEY_PREFIX;
+    this.onRead = options.onRead;
   }
 
   async get<T>(key: string): Promise<T | undefined> {
-    return parse<T>(await this.redis.get(this.key(key)));
+    return this.observed('get', key, async () => parse<T>(await this.redis.get(this.key(key))));
   }
 
   /** One `MGET`; an empty list answers without a round trip. */
   async mget<T>(keys: string[]): Promise<(T | undefined)[]> {
     if (keys.length === 0) return [];
-    const values = await this.redis.mget(keys.map((key) => this.key(key)));
-    return values.map((value) => parse<T>(value));
+    let values: (string | null)[];
+    try {
+      values = await this.redis.mget(keys.map((key) => this.key(key)));
+    } catch (error) {
+      for (const key of keys) this.report('mget', key, 'error');
+      throw error;
+    }
+    return values.map((value, index) => {
+      const parsed = parse<T>(value);
+      this.report('mget', keys[index] as string, parsed === undefined ? 'miss' : 'hit');
+      return parsed;
+    });
   }
 
   async set<T>(key: string, value: T, ttl?: number): Promise<void> {
@@ -84,10 +120,15 @@ export class RedisCacheService extends CacheService {
    */
   async getOrSet<T>(key: string, ttlSeconds: number, load: () => Promise<T>): Promise<T> {
     const running = this.inFlight.get(key);
-    if (running) return running as Promise<T>;
+    if (running) {
+      this.report('getOrSet', key, 'coalesced');
+      return running as Promise<T>;
+    }
 
     const promise = (async () => {
-      const cached = await this.get<T>(key).catch(() => undefined);
+      const cached = await this.observed('getOrSet', key, async () =>
+        parse<T>(await this.redis.get(this.key(key))),
+      ).catch(() => undefined);
       if (cached !== undefined) return cached;
       const value = await load();
       await this.set(key, value, ttlSeconds).catch(() => {});
@@ -112,7 +153,7 @@ export class RedisCacheService extends CacheService {
 
   /** `GETDEL` — one round trip, so two redeemers cannot both read the value. */
   async take<T>(key: string): Promise<T | undefined> {
-    return parse<T>(await this.redis.getdel(this.key(key)));
+    return this.observed('take', key, async () => parse<T>(await this.redis.getdel(this.key(key))));
   }
 
   /** One `EVAL`, so the compare and the write cannot interleave with another replica's. */
@@ -146,6 +187,38 @@ export class RedisCacheService extends CacheService {
   private key(key: string): string {
     return this.prefix + key;
   }
+
+  /** Runs one read of `key` and reports whether it found a value, or failed. */
+  private async observed<T>(
+    operation: CacheReadOperation,
+    key: string,
+    read: () => Promise<T | undefined>,
+  ): Promise<T | undefined> {
+    let value: T | undefined;
+    try {
+      value = await read();
+    } catch (error) {
+      this.report(operation, key, 'error');
+      throw error;
+    }
+    this.report(operation, key, value === undefined ? 'miss' : 'hit');
+    return value;
+  }
+
+  private report(operation: CacheReadOperation, key: string, result: CacheReadResult): void {
+    if (!this.onRead) return;
+    try {
+      this.onRead({ operation, namespace: cacheNamespace(key), result });
+    } catch {
+      // Observing a read never fails it.
+    }
+  }
+}
+
+/** A key's first `:`-separated segment: `github` for `github:repos:42`, the key itself when it has none. */
+function cacheNamespace(key: string): string {
+  const end = key.indexOf(':');
+  return end === -1 ? key : key.slice(0, end);
 }
 
 /** Redis answers `null` for a missing key; `JSON.stringify` never yields `''`. */

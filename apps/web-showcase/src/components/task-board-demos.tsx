@@ -19,6 +19,7 @@ import {
   TaskCard,
   TaskColumn,
   TaskColumnAdd,
+  TaskColumnMore,
   TaskComposer,
   TaskSessionChip,
   type TaskStatus,
@@ -66,14 +67,15 @@ const MILESTONES = [
 export function TaskBoardDemo() {
   const [tasks, setTasks] = React.useState(TASKS);
   const [groups, setGroups] = React.useState<SortableGroups>({
-    later: ['t1', 't2'],
-    todo: ['t3', 't4', 't5'],
-    doing: ['t6', 't7'],
+    todo: ['t1', 't2', 't3'],
+    doing: ['t4', 't5', 't6'],
+    review: ['t7'],
     done: ['t8', 't9'],
   });
   const [milestone, setMilestone] = React.useState<string | null>(null);
   const [composing, setComposing] = React.useState<TaskStatus | null>(null);
   const [draft, setDraft] = React.useState('');
+  const [olderShown, setOlderShown] = React.useState(false);
 
   const visible = (ids: readonly string[]) => (milestone ? ids.filter((id) => tasks[id]?.milestone === milestone) : ids);
   const shown: SortableGroups = Object.fromEntries(Object.entries(groups).map(([k, ids]) => [k, visible(ids)]));
@@ -206,7 +208,15 @@ export function TaskBoardDemo() {
                     }}
                   />
                 ) : (
-                  <TaskColumnAdd onClick={() => setComposing(column.id)}>Add task</TaskColumnAdd>
+                  <>
+                    <TaskColumnAdd onClick={() => setComposing(column.id)}>Add task</TaskColumnAdd>
+                    {/* Done folds the tasks finished more than a week ago away. */}
+                    {column.id === 'done' ? (
+                      <TaskColumnMore expanded={olderShown} onClick={() => setOlderShown((open) => !open)}>
+                        {olderShown ? 'Hide older' : 'Show 52 older'}
+                      </TaskColumnMore>
+                    ) : null}
+                  </>
                 )
               }
             >

@@ -2,7 +2,12 @@ import { expect, type Locator, type Page, test } from '@playwright/test';
 import { connectInstallation, createProject, pairHost } from '../../support/sessions';
 import { provisionedUser, signInAs } from '../../support/web';
 
-const STATUS = { Later: 'later', 'To do': 'todo', 'In progress': 'doing', Done: 'done' } as const;
+const STATUS = {
+  'To do': 'todo',
+  'In progress': 'doing',
+  'In review': 'review',
+  Done: 'done',
+} as const;
 /** A board column, by its heading. */
 const column = (page: Page, name: keyof typeof STATUS) =>
   page.locator(`[data-slot="task-column"][data-status="${STATUS[name]}"]`);
@@ -44,7 +49,7 @@ test('a task from the dialog to deletion, across the board', async ({ page }) =>
 
   await page.getByRole('link', { name: 'Plan', exact: true }).click();
   await expect(page).toHaveURL(/\/plan$/);
-  for (const name of ['Later', 'To do', 'In progress', 'Done'] as const) {
+  for (const name of ['To do', 'In progress', 'In review', 'Done'] as const) {
     await expect(column(page, name)).toBeVisible();
   }
 
@@ -58,11 +63,11 @@ test('a task from the dialog to deletion, across the board', async ({ page }) =>
   await expect(page.getByText('1 open')).toBeVisible();
 
   // Inline: Enter adds and stays open for the next.
-  await column(page, 'Later').getByRole('button', { name: 'Add task', exact: true }).click();
-  const quick = column(page, 'Later').getByRole('textbox', { name: 'Task title' });
+  await column(page, 'In review').getByRole('button', { name: 'Add task', exact: true }).click();
+  const quick = column(page, 'In review').getByRole('textbox', { name: 'Task title' });
   await quick.fill('Write the release notes');
   await quick.press('Enter');
-  await expect(column(page, 'Later').getByText('Write the release notes')).toBeVisible();
+  await expect(column(page, 'In review').getByText('Write the release notes')).toBeVisible();
   await quick.press('Escape');
 
   // Drag a card into In progress; it stays there after a reload.
@@ -294,5 +299,88 @@ test('the calendar: a Google meeting joins from its dialog, an event without one
   const focus = page.getByRole('dialog', { name: 'Focus time' });
   await expect(focus.getByRole('link', { name: 'Open in Google Calendar' })).toBeVisible();
   await expect(focus.getByRole('link', { name: 'Join meeting' })).toHaveCount(0);
+  await owner.api.dispose();
+});
+
+test('To do: a task added to today, ticked done, and the overdue switch', async ({ page }) => {
+  const owner = await provisionedUser('plantodo');
+  await signInAs(page, owner.user);
+  await page.goto('/plan');
+  await planNav(page, 'TODO').click();
+  await expect(page).toHaveURL(/\/plan\/todo/);
+  await expect(page.getByText('Nothing for this day yet. Add one below.')).toBeVisible();
+
+  const add = page.getByRole('textbox', { name: 'Add a task for this day' });
+  await add.fill('Pay the hosting invoice');
+  await add.press('Enter');
+  const row = page.locator('[data-slot="todo-row"]', { hasText: 'Pay the hosting invoice' });
+  await expect(row).toContainText('due today');
+  await expect(add).toHaveValue('');
+
+  // Ticking does not open the task; the title does (below).
+  await row.getByRole('checkbox', { name: 'Mark as done' }).click();
+  await expect(row.getByRole('checkbox', { name: 'Mark as not done' })).toBeChecked();
+  await expect(page).toHaveURL(/\/plan\/todo/);
+
+  // A second task, dragged by its title (the whole card picks it up, not only
+  // the grip) above the first; the order survives a reload.
+  await add.fill('Book the venue');
+  await add.press('Enter');
+  const second = page.locator('[data-slot="todo-row"]', { hasText: 'Book the venue' });
+  await expect(second).toBeVisible();
+  const target = await row.boundingBox();
+  const from = await second.getByText('Book the venue', { exact: true }).boundingBox();
+  if (!target || !from) throw new Error('rows not laid out');
+  await page.mouse.move(from.x + from.width / 2, from.y + from.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(from.x + from.width / 2, target.y + 4, { steps: 12 });
+  await page.mouse.up();
+  const titles = page.locator('[data-slot="todo-row"] button:not([aria-label]) span:first-child');
+  await expect(titles).toHaveText(['Book the venue', 'Pay the hosting invoice']);
+  await page.reload();
+  await expect(titles).toHaveText(['Book the venue', 'Pay the hosting invoice']);
+
+  // The next day holds nothing, and Include overdue is a switch in the address.
+  await page.getByRole('button', { name: 'Next day' }).click();
+  await expect(page).toHaveURL(/date=/);
+  await expect(row).toHaveCount(0);
+  await page.getByRole('button', { name: 'Include overdue' }).click();
+  await expect(page).toHaveURL(/overdue=off/);
+  await page.getByRole('button', { name: 'Today', exact: true }).click();
+  await expect(row).toBeVisible();
+  // The title opens the task on To do itself, and saving it stays on the day.
+  await row.getByRole('button', { name: /^Pay the hosting invoice/ }).click();
+  const dialog = page.getByRole('dialog', { name: 'Edit task' });
+  await expect(dialog).toBeVisible();
+  await expect(page).toHaveURL(/\/plan\/todo\?.*task=/);
+  await dialog.getByRole('button', { name: 'Save' }).click();
+  await expect(dialog).toBeHidden();
+  await expect(page).toHaveURL(/\/plan\/todo/);
+  await expect(page).not.toHaveURL(/task=/);
+  await expect(row).toBeVisible();
+  await owner.api.dispose();
+});
+
+test('the calendar opens on today, and switches to the week and the month', async ({ page }) => {
+  const owner = await provisionedUser('planviews');
+  await signInAs(page, owner.user);
+  await page.goto('/plan/calendar');
+  const views = page.getByRole('group', { name: 'Calendar view' });
+  await expect(views.getByRole('button', { name: 'Day' })).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.getByText(/^Today · Week \d+$/)).toBeVisible();
+  await expect(page.getByText('All day', { exact: true })).toBeVisible();
+
+  await views.getByRole('button', { name: 'Week' }).click();
+  await expect(page).toHaveURL(/view=week/);
+  await expect(page.locator('[data-slot="agenda-day"]')).toHaveCount(7);
+
+  await views.getByRole('button', { name: 'Month' }).click();
+  await expect(page).toHaveURL(/view=month/);
+  await expect(page.locator('[data-slot="month-calendar"]')).toBeVisible();
+
+  // A day's number opens that day on the hours.
+  await page.locator('[data-slot="calendar-day"][data-today] button[title]').first().click();
+  await expect(page).not.toHaveURL(/view=/);
+  await expect(page.locator('[data-slot="agenda-day"]')).toHaveCount(1);
   await owner.api.dispose();
 });

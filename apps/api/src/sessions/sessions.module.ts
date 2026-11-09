@@ -12,6 +12,7 @@ import { QueueModule } from '../queue/queue.module';
 import { UsersModule } from '../users/user.module';
 import { AttachTicketFactory } from './application/attach-ticket.factory';
 import { CloudAttachmentsResolver } from './application/cloud-attachments.resolver';
+import { CloudFollowUpResolver } from './application/cloud-follow-up.resolver';
 import { CloudSessionSyncResolver } from './application/cloud-session-sync.resolver';
 import { CloudTaskFactory } from './application/cloud-task.factory';
 import { GithubPullWakesDomainEventHandler } from './application/event-handlers/github-pull-wakes.domain-event-handler';
@@ -38,11 +39,16 @@ import { AddCheckoutCommandHandler } from './commands/add-checkout/add-checkout.
 import { AddCheckoutHttpController } from './commands/add-checkout/add-checkout.http.controller';
 import { AnswerSessionDecisionCommandHandler } from './commands/answer-session-decision/answer-session-decision.command-handler';
 import { AnswerSessionDecisionHttpController } from './commands/answer-session-decision/answer-session-decision.http.controller';
+import { AppendCloudTranscriptCommandHandler } from './commands/append-cloud-transcript/append-cloud-transcript.command-handler';
+import { AppendCloudTranscriptHttpController } from './commands/append-cloud-transcript/append-cloud-transcript.http.controller';
 import { CloseSessionCommandHandler } from './commands/close-session/close-session.command-handler';
 import { CloseSessionHttpController } from './commands/close-session/close-session.http.controller';
+import { CollectCloudReplyCommandHandler } from './commands/collect-cloud-reply/collect-cloud-reply.command-handler';
+import { CollectCloudReplyHttpController } from './commands/collect-cloud-reply/collect-cloud-reply.http.controller';
 import { CreateSessionCommandHandler } from './commands/create-session/create-session.command-handler';
 import { CreateSessionHttpController } from './commands/create-session/create-session.http.controller';
 import { DeliverSessionWakeCommandHandler } from './commands/deliver-session-wake/deliver-session-wake.command-handler';
+import { DriveSessionTerminalCommandHandler } from './commands/drive-session-terminal/drive-session-terminal.command-handler';
 import { IssueAttachTicketCommandHandler } from './commands/issue-attach-ticket/issue-attach-ticket.command-handler';
 import { IssueAttachTicketHttpController } from './commands/issue-attach-ticket/issue-attach-ticket.http.controller';
 import { IssueSessionPreviewCommandHandler } from './commands/issue-session-preview/issue-session-preview.command-handler';
@@ -66,6 +72,11 @@ import { RenameSessionCommandHandler } from './commands/rename-session/rename-se
 import { RenameSessionHttpController } from './commands/rename-session/rename-session.http.controller';
 import { RestartSessionCommandHandler } from './commands/restart-session/restart-session.command-handler';
 import { RestartSessionHttpController } from './commands/restart-session/restart-session.http.controller';
+import { RetrySessionCommandHandler } from './commands/retry-session/retry-session.command-handler';
+import { RetrySessionHttpController } from './commands/retry-session/retry-session.http.controller';
+import { RunHostCommandCommandHandler } from './commands/run-host-command/run-host-command.command-handler';
+import { SendCloudReplyCommandHandler } from './commands/send-cloud-reply/send-cloud-reply.command-handler';
+import { SendCloudReplyHttpController } from './commands/send-cloud-reply/send-cloud-reply.http.controller';
 import { SendSessionPromptCommandHandler } from './commands/send-session-prompt/send-session-prompt.command-handler';
 import { SendSessionPromptHttpController } from './commands/send-session-prompt/send-session-prompt.http.controller';
 import { SetSessionSharePeopleCommandHandler } from './commands/set-session-share-people/set-session-share-people.command-handler';
@@ -81,6 +92,9 @@ import { UploadSessionAttachmentCommandHandler } from './commands/upload-session
 import { UploadSessionAttachmentHttpController } from './commands/upload-session-attachment/upload-session-attachment.http.controller';
 import { WatchSessionTerminalCommandHandler } from './commands/watch-session-terminal/watch-session-terminal.command-handler';
 import { SessionCheckoutOrmEntity } from './database/session-checkout.orm-entity';
+import { SessionCloudChatRepository } from './database/session-cloud-chat.repository';
+import { SessionCloudLineOrmEntity } from './database/session-cloud-line.orm-entity';
+import { SessionCloudReplyOrmEntity } from './database/session-cloud-reply.orm-entity';
 import { SessionCloudRunOrmEntity } from './database/session-cloud-run.orm-entity';
 import { SessionShareOrmEntity } from './database/session-share.orm-entity';
 import { SessionShareRepository } from './database/session-share.repository';
@@ -94,6 +108,8 @@ import { WorkSessionEventOrmEntity } from './database/work-session-event.orm-ent
 import { OutboxSessionWakesAdapter } from './infrastructure/outbox-session-wakes.adapter';
 import { SessionWakesProcessor } from './infrastructure/session-wakes.processor';
 import { StorageCloudFilesAdapter } from './infrastructure/storage-cloud-files.adapter';
+import { FindCloudChatHttpController } from './queries/find-cloud-chat/find-cloud-chat.http.controller';
+import { FindCloudChatQueryHandler } from './queries/find-cloud-chat/find-cloud-chat.query-handler';
 import { FindCloudFileHttpController } from './queries/find-cloud-file/find-cloud-file.http.controller';
 import { FindCloudFileQueryHandler } from './queries/find-cloud-file/find-cloud-file.query-handler';
 import { FindHostCodexEnvironmentsHttpController } from './queries/find-host-codex-environments/find-host-codex-environments.http.controller';
@@ -110,15 +126,20 @@ import { FindSessionPortsQueryHandler } from './queries/find-session-ports/find-
 import { FindSessionShareHttpController } from './queries/find-session-share/find-session-share.http.controller';
 import { FindSessionShareQueryHandler } from './queries/find-session-share/find-session-share.query-handler';
 import { FindSessionSharedPreviewQueryHandler } from './queries/find-session-shared-preview/find-session-shared-preview.query-handler';
+import { FindSessionTranscriptHttpController } from './queries/find-session-transcript/find-session-transcript.http.controller';
+import { FindSessionTranscriptQueryHandler } from './queries/find-session-transcript/find-session-transcript.query-handler';
 import { FindSessionsHttpController } from './queries/find-sessions/find-sessions.http.controller';
 import { FindSessionsQueryHandler } from './queries/find-sessions/find-sessions.query-handler';
 import { FindSharedSessionHttpController } from './queries/find-shared-session/find-shared-session.http.controller';
 import { FindSharedSessionQueryHandler } from './queries/find-shared-session/find-shared-session.query-handler';
+import { SearchHostFoldersHttpController } from './queries/search-host-folders/search-host-folders.http.controller';
+import { SearchHostFoldersQueryHandler } from './queries/search-host-folders/search-host-folders.query-handler';
 import { SessionShareMapper } from './session-share.mapper';
 import { SessionTerminalWatchMapper } from './session-terminal-watch.mapper';
 import {
   CLOUD_FILES,
   RECORD_SESSION_EVENTS,
+  SESSION_CLOUD_CHAT_REPOSITORY,
   SESSION_LOOKUP,
   SESSION_RECONCILIATION,
   SESSION_SHARE_REPOSITORY,
@@ -144,6 +165,7 @@ const httpControllers = [
   StartCloudSessionHttpController,
   UploadSessionAttachmentHttpController,
   FindSessionEventsHttpController,
+  FindSessionTranscriptHttpController,
   IssueAttachTicketHttpController,
   IssueSessionPreviewHttpController,
   SetSessionSharePeopleHttpController,
@@ -155,8 +177,13 @@ const httpControllers = [
   SendSessionPromptHttpController,
   StopSessionHttpController,
   RecordCloudStatusHttpController,
+  AppendCloudTranscriptHttpController,
+  CollectCloudReplyHttpController,
+  SendCloudReplyHttpController,
+  FindCloudChatHttpController,
   PrepareSessionHttpController,
   RestartSessionHttpController,
+  RetrySessionHttpController,
   AddCheckoutHttpController,
   RemoveCheckoutHttpController,
   FindSessionHttpController,
@@ -165,6 +192,7 @@ const httpControllers = [
   CloseSessionHttpController,
   // `hosts/:id/folders`: the folder picker, here because its recent folders are sessions.
   FindHostFoldersHttpController,
+  SearchHostFoldersHttpController,
   FindHostCodexEnvironmentsHttpController,
   FindSessionPortsHttpController,
   // `cloud-files/:token`: what a cloud session's agent downloads, with no credential.
@@ -180,8 +208,12 @@ const commandHandlers: Provider[] = [
   WatchSessionTerminalCommandHandler,
   UnwatchSessionTerminalCommandHandler,
   RecordCloudStatusCommandHandler,
+  AppendCloudTranscriptCommandHandler,
+  CollectCloudReplyCommandHandler,
+  SendCloudReplyCommandHandler,
   PrepareSessionCommandHandler,
   RestartSessionCommandHandler,
+  RetrySessionCommandHandler,
   CloseSessionCommandHandler,
   AddCheckoutCommandHandler,
   RemoveCheckoutCommandHandler,
@@ -195,6 +227,8 @@ const commandHandlers: Provider[] = [
   AnswerSessionDecisionCommandHandler,
   SendSessionPromptCommandHandler,
   DeliverSessionWakeCommandHandler,
+  RunHostCommandCommandHandler,
+  DriveSessionTerminalCommandHandler,
   UploadSessionAttachmentCommandHandler,
   RecordSessionEventsCommandHandler,
 ];
@@ -207,10 +241,13 @@ const queryHandlers: Provider[] = [
   FindSessionShareQueryHandler,
   FindSharedSessionQueryHandler,
   FindHostFoldersQueryHandler,
+  SearchHostFoldersQueryHandler,
   FindHostCodexEnvironmentsQueryHandler,
   FindSessionPortsQueryHandler,
   FindSessionSharedPreviewQueryHandler,
+  FindSessionTranscriptQueryHandler,
   FindCloudFileQueryHandler,
+  FindCloudChatQueryHandler,
 ];
 
 const adapters: Provider[] = [
@@ -232,6 +269,8 @@ const adapters: Provider[] = [
       SessionTurnOrmEntity,
       SessionShareOrmEntity,
       SessionCloudRunOrmEntity,
+      SessionCloudLineOrmEntity,
+      SessionCloudReplyOrmEntity,
       SessionTerminalWatchOrmEntity,
     ]),
     AuthzKernelModule.forFeature([SessionResource]),
@@ -266,6 +305,7 @@ const adapters: Provider[] = [
     SessionTerminalWatchMapper,
     AttachTicketFactory,
     CloudSessionSyncResolver,
+    CloudFollowUpResolver,
     SessionShareAccessResolver,
     SessionPlanFactory,
     SessionLaunchSpecFactory,
@@ -294,6 +334,7 @@ const adapters: Provider[] = [
     { provide: WORK_SESSION_REPOSITORY, useClass: WorkSessionRepository },
     { provide: SESSION_SHARE_REPOSITORY, useClass: SessionShareRepository },
     { provide: SESSION_TERMINAL_WATCH_REPOSITORY, useClass: SessionTerminalWatchRepository },
+    { provide: SESSION_CLOUD_CHAT_REPOSITORY, useClass: SessionCloudChatRepository },
   ],
   // The three application ports and the usage read, and nothing else. The
   // repository is this module's persistence adapter: publishing it would let the

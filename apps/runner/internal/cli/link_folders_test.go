@@ -38,10 +38,23 @@ type placesHarness struct {
 
 func newPlacesHarness(t *testing.T, home, account string) *placesHarness {
 	t.Helper()
+	return newPlacesHarnessReading(t, home, account, nil)
+}
+
+// conversationsOf reads svc's sessions' conversations through transcripts,
+// as the composition root wires it; nil reads none.
+func conversationsOf(svc *sessionsapp.Service, transcripts sessionsapp.Transcripts) *sessionsapp.Conversations {
+	return sessionsapp.NewConversations(sessionsapp.ConversationsOptions{Sessions: svc, Transcripts: transcripts})
+}
+
+// newPlacesHarnessReading is newPlacesHarness whose sessions' transcripts are
+// read by transcripts; nil reads none.
+func newPlacesHarnessReading(t *testing.T, home, account string, transcripts sessionsapp.Transcripts) *placesHarness {
+	t.Helper()
 	terminals, worktrees, places := fake.NewTerminals(), fake.NewWorktrees(), fake.NewPlaces()
 	svc, err := sessionsapp.New(sessionsapp.Options{
 		Terminals: terminals, Worktrees: worktrees, Places: places, Classifier: manifest.New(manifest.Options{}),
-		Layout: sessionsdomain.Layout{Root: "/home/jordi/oppenheimer"},
+		Layout: sessionsdomain.Layout{Root: "/home/jordi/oppenheimer"}, Transcripts: transcripts,
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -52,8 +65,9 @@ func newPlacesHarness(t *testing.T, home, account string) *placesHarness {
 	sent := &capturedLink{}
 	h := &linkHandler{
 		app: &App{
-			Sessions: svc,
-			Host:     hostapp.New(hostapp.Options{Prober: prober, Directories: folders.Disk{}}),
+			Sessions:      svc,
+			Conversations: conversationsOf(svc, transcripts),
+			Host:          hostapp.New(hostapp.Options{Prober: prober, Directories: folders.Disk{}}),
 		},
 		identity: pairdomain.Identity{HostID: "host-1", AccountID: account},
 		logger:   logger, client: sent, reporter: link.NewReporter("run-test", sent, logger),
@@ -278,12 +292,36 @@ func TestFsListOfAMissingFolderFailsWithFS001(t *testing.T) {
 	}
 }
 
-// The hello says this runner takes folder sessions and lists folders, so the
-// control plane sends it both (24 §5).
+// `fs.find` is answered with `fs.found` for the command that asked: the
+// folders under home whose name holds the query, each by its absolute path.
+func TestFsFindIsAnsweredWithTheFoldersFound(t *testing.T) {
+	home := t.TempDir()
+	if err := os.MkdirAll(filepath.Join(home, "code", "billing"), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	p := newPlacesHarness(t, home, "acct")
+	const commandID = "66666666-6666-4666-8666-666666666666"
+
+	p.h.Message(context.Background(), message(t, link.TypeFsFind, map[string]any{"commandId": commandID, "query": "bill"}))
+
+	found := p.sent.waitFor(t, "fs.found", func(m any) bool {
+		f, ok := m.(link.FsFound)
+		return ok && f.CommandID == commandID
+	}).(link.FsFound)
+	if found.Type != link.TypeFsFound || found.Path != home || found.Home != home {
+		t.Fatalf("found = %+v", found)
+	}
+	if len(found.Entries) != 1 || found.Entries[0] != (link.FsFoundEntries{Path: filepath.Join(home, "code", "billing")}) {
+		t.Fatalf("entries = %+v", found.Entries)
+	}
+}
+
+// The hello says this runner takes folder sessions, lists folders and
+// searches them, so the control plane sends it all three (24 §5).
 func TestTheHelloOffersFolderSessionsAndFolderListing(t *testing.T) {
 	h := &linkHandler{}
 	got := h.capabilities()
-	for _, want := range []string{link.CapabilitySessionFolder, link.CapabilityFsList} {
+	for _, want := range []string{link.CapabilitySessionFolder, link.CapabilityFsList, link.CapabilityFsFind} {
 		if !slices.Contains(got, want) {
 			t.Fatalf("capabilities = %v, missing %s", got, want)
 		}

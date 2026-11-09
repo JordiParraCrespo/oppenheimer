@@ -48,7 +48,8 @@ function sharedRead(chat: SessionChat): () => ChatState {
         next.available === shared.available &&
         next.queued === shared.queued &&
         next.status === shared.status &&
-        next.older === shared.older
+        next.older === shared.older &&
+        next.interruptible === shared.interruptible
           ? shared
           : { ...next, turns };
     }
@@ -143,4 +144,10 @@ export function useChatReading(reading: PaneReading): { offered: boolean; shown:
   const flag = useFeatureFlag('session_chat_view');
   const offered = available && flag;
   return { offered, shown: offered && reading.view === 'chat' };
+}
+
+/** What the agent's spinner says this moment, for the line at the chat's foot; external store: `SessionChat`. */
+export function useChatActivity(chat: SessionChat): ChatState['activity'] {
+  const activity = () => chat.snapshot().activity;
+  return useSyncExternalStore(chat.subscribe, activity, activity);
 }

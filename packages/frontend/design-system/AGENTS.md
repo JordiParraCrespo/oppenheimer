@@ -81,7 +81,9 @@ the `version1/` artboards for what the screens actually do. Its one sentence:
   of 13.5px, beside a boxed search. That row never
   wraps: the place chips truncate and the engine keeps its width. `Composer`'s
   `scope` band, the tabbed form it replaced, has no caller in the console.
-- **The console's chrome is a rail and a grouped sidebar.** `Rail` (56px)
+- **The console's chrome is a rail and a grouped sidebar.** The rail's top
+  is the product's mark (`RailMark`, `BrandMark` at 32px, the app's link
+  home); the sidebar's head is the name alone (`Wordmark`). `Rail` (56px)
   switches between the sessions and routines lists (under 768px it is a
   tab bar along the bottom of the screen, and the page beside it keeps
   clear with `RAIL_BAR_CLEARANCE`); the sidebar groups rows
@@ -235,9 +237,10 @@ the `version1/` artboards for what the screens actually do. Its one sentence:
   volume over time is an `AreaChart` (monotone, so it never overshoots),
   rates without volume a `LineChart`. Several Google accounts are a
   `CalendarAccountList`.
-- **An employee reads like a conversation.** `BotItem` is a photo, the
-  name, the age and the last message, unread in full ink with the blue
-  dot, waiting on the reader (`needsInput`) the same with the amber one.
+- **An employee is one line.** `BotItem` is a 20px square photo and the
+  name, 32px tall, its last message in the row's tooltip; unread sets the
+  name at 600 with the blue dot, waiting on the reader (`needsInput`) the
+  same with the amber one.
   Its groups head with `SidebarProjectHeader tone="eyebrow"`, the Built-in
   group with a lock `marker`; before the first bot the list is a
   `SidebarEmptyCard`, and the chat a centred `ChatEmptyState` over
@@ -245,9 +248,14 @@ the `version1/` artboards for what the screens actually do. Its one sentence:
   instructions it proposes for itself a `ProposedFile`. Its photo is
   picked with `AvatarPicker`. The photos are the product's own: the
   export's portraits are of real people and never ship. Until there is a
-  set we may use, a bot's face is its initials in dark ink on one of the
-  export's eight colours (`--avatar-*`, the same in both themes): `BotAvatar`
-  and `BotItem` take `color`, and Profile picks it with `AvatarColorPicker`.
+  set we may use, a bot's face is drawn: a hatted face in one of the
+  export's eight colours (`--avatar-*`, the same in both themes), cut out
+  like a sticker on a darker shade of it, the hat, eyes and mouth picked
+  from the bot's id (`internal/bot-face.tsx`). `BotAvatar` and `BotItem`
+  take `face` (the colour, the id and any `parts` its owner picked);
+  without it, the initials. Profile picks the colour with
+  `AvatarColorPicker` and the face with `BotFacePicker` (a row each for
+  hat, eyes and mouth).
   A bot's routine is a `RoutineCard`, read and edited in place
   (`RoutineItem` is the workspace's, in the sidebar); records in a settings
   card are `SettingsListRow`s over a `SettingsAddRow`; `SettingsTopBar`

@@ -199,6 +199,14 @@
        frame draws its chat on the same card as its terminal). The chat's
        cards (the composer, the code) keep their hairlines to stand on it. */
     --chat-ground: var(--term-bg);
+    /* The agent's word for what it is doing, under a session's chat while it
+       works ("✻ Mustering…"): Claude's clay, the hue its own terminal draws
+       the spinner in. The glyph is decoration and wears the mark's orange;
+       the word is text, so light mode takes a deeper clay that holds 4.5:1
+       on paper, and the glint is the lighter band that sweeps across it. */
+    --chat-spinner: #d97757;
+    --chat-verb: #b0502c;
+    --chat-verb-glint: #e9967a;
     --term-success: var(--op-green-700);
     --term-warning: var(--op-amber-700);
     --term-danger: var(--op-red-700);
@@ -281,10 +289,12 @@
     --file-icon-zig: var(--file-icon-orange);
     --file-icon-zip: var(--file-icon-orange);
 
-    /* A bot's avatar: its initials on one of the export's eight colours
-       (`AV_COLORS`), an identity like a file's mark, never a state. The same
-       in both themes so a bot keeps its face; the initials are dark ink on
-       every one of them, which all sit at or above 0.70 lightness. */
+    /* A bot's avatar: its drawn face (or its initials) on one of the
+       export's eight colours (`AV_COLORS`), an identity like a file's mark,
+       never a state. The same in both themes so a bot keeps its face; the
+       ink is dark on every one of them, which all sit at or above 0.70
+       lightness. The face's darker ground is the same colour mixed toward
+       black, in `internal/bot-face.tsx`. */
     --avatar-mint: oklch(0.74 0.13 175);
     --avatar-tangerine: oklch(0.72 0.18 50);
     --avatar-snow: oklch(0.96 0 0);
@@ -294,6 +304,11 @@
     --avatar-coral: oklch(0.72 0.15 20);
     --avatar-moss: oklch(0.7 0.12 135);
     --avatar-ink: oklch(0.21 0 0);
+
+    /* The product's mark: a white fedora on an ink tile, the same in both
+       themes like an app icon (`BrandMark`, the favicons, the extension). */
+    --brand-tile: oklch(0.18 0.01 280);
+    --brand-hat: oklch(0.97 0 0);
 
     /* ---- Elevation ----------------------------------------------------
        Surfaces never cast shadows; depth is tonal. Only three transient
@@ -389,7 +404,7 @@
     --radius-md: 14px; /* popovers, menus, nested panels */
     --radius-lg: 18px; /* cards */
     --radius-xl: 28px; /* modals, hero surfaces, large media */
-    --radius-pill: 980px; /* every button, chip, badge, avatar, tab */
+    --radius-pill: 980px; /* every button, chip, badge, person avatar, tab (a bot avatar is a rounded square) */
     /* The navigation column (every sidebar, the settings nav): its rows, heads,
        search and row actions, whatever their height, so it reads as one list. */
     --radius-nav: var(--radius-xs);
@@ -594,6 +609,9 @@
     --term-border: #262629;
     --term-accent: var(--op-blue-400);
     --chat-ground: var(--term-bg);
+    --chat-spinner: #d97757;
+    --chat-verb: #e3896a;
+    --chat-verb-glint: #ffd6c4;
     --term-success: var(--op-green-400);
     --term-warning: var(--op-amber-400);
     --term-danger: var(--op-red-400);
@@ -781,6 +799,10 @@
      the write head of a streaming reply blinks. Both sit behind
      `motion-safe:`, since reduced motion zeroes durations, not animations. */
   --animate-shimmer: op-chat-shimmer 2s linear infinite;
+  /* The agent's spinner: its glyph turns through Claude Code's own frames,
+     and a glint sweeps its word in the verb's clay. */
+  --animate-agent-glyph: op-agent-glyph 1.2s linear infinite;
+  --animate-verb-shimmer: op-verb-shimmer 2.4s linear infinite;
   --animate-caret: op-caret 1s steps(2) infinite;
   --ease-out: var(--ease-out);
   --ease-in: var(--ease-in);
@@ -834,6 +856,8 @@
   --color-term-accent: var(--term-accent);
   --color-device-bezel: var(--device-bezel);
   --color-chat-ground: var(--chat-ground);
+  --color-chat-spinner: var(--chat-spinner);
+  --color-chat-verb: var(--chat-verb);
   --color-term-success: var(--term-success);
   --color-term-warning: var(--term-warning);
   --color-term-danger: var(--term-danger);
@@ -1075,6 +1099,53 @@
   }
 }
 
+/* `content` animates in discrete steps, one frame per stop. */
+@keyframes op-agent-glyph {
+  0%,
+  100% {
+    content: "·";
+  }
+  17% {
+    content: "✢";
+  }
+  33% {
+    content: "✳";
+  }
+  50% {
+    content: "✶";
+  }
+  67% {
+    content: "✻";
+  }
+  83% {
+    content: "✽";
+  }
+}
+
+@keyframes op-verb-shimmer {
+  0%,
+  100% {
+    background-image: linear-gradient(
+      90deg,
+      var(--chat-verb) 0%,
+      var(--chat-verb) 40%,
+      var(--chat-verb-glint) 50%,
+      var(--chat-verb) 60%,
+      var(--chat-verb) 100%
+    );
+    background-size: 250% 100%;
+    background-clip: text;
+    -webkit-background-clip: text;
+    color: transparent;
+  }
+  0% {
+    background-position: 100% 0;
+  }
+  100% {
+    background-position: 0% 0;
+  }
+}
+
 @keyframes op-caret {
   0%,
   100% {
@@ -1198,6 +1269,32 @@
   background: color-mix(in srgb, var(--sidebar) 72%, transparent);
   backdrop-filter: var(--rail-blur);
   -webkit-backdrop-filter: var(--rail-blur);
+}
+
+/* The fade from a photograph into the pane's ground, opaque at the foot: the
+   New session backdrop. An eased ramp, not a straight one with a midpoint,
+   which drew a visible band where its slope changed (a hard white edge in
+   light). A scrim like the carousel's, the system's one sanctioned gradient. */
+@utility scrim-fade {
+  background-image: linear-gradient(
+    to top,
+    color-mix(in srgb, var(--canvas-recessed) 100%, transparent) 0%,
+    color-mix(in srgb, var(--canvas-recessed) 98.7%, transparent) 8%,
+    color-mix(in srgb, var(--canvas-recessed) 95.1%, transparent) 15%,
+    color-mix(in srgb, var(--canvas-recessed) 89.6%, transparent) 22%,
+    color-mix(in srgb, var(--canvas-recessed) 82.5%, transparent) 29%,
+    color-mix(in srgb, var(--canvas-recessed) 74.1%, transparent) 36%,
+    color-mix(in srgb, var(--canvas-recessed) 64.8%, transparent) 43%,
+    color-mix(in srgb, var(--canvas-recessed) 55%, transparent) 50%,
+    color-mix(in srgb, var(--canvas-recessed) 45%, transparent) 57%,
+    color-mix(in srgb, var(--canvas-recessed) 35.2%, transparent) 64%,
+    color-mix(in srgb, var(--canvas-recessed) 25.9%, transparent) 71%,
+    color-mix(in srgb, var(--canvas-recessed) 17.5%, transparent) 78%,
+    color-mix(in srgb, var(--canvas-recessed) 10.4%, transparent) 85%,
+    color-mix(in srgb, var(--canvas-recessed) 4.9%, transparent) 91%,
+    color-mix(in srgb, var(--canvas-recessed) 1.3%, transparent) 96%,
+    color-mix(in srgb, var(--canvas-recessed) 0%, transparent) 100%
+  );
 }
 
 /* Kept for the assistant rail of the previous system; no new use. */

@@ -194,6 +194,21 @@ export class BotConversationEntity {
   }
 
   /**
+   * What you wrote to the bot, newest first, for the composer's Up to recall:
+   * your messages with text in this window, a message sent twice in a row
+   * once.
+   */
+  get sentTexts(): readonly string[] {
+    const texts: string[] = [];
+    for (let i = this.messages.length - 1; i >= 0; i -= 1) {
+      const message = this.messages[i];
+      if (message?.role !== 'user' || message.content.trim() === '') continue;
+      if (texts.at(-1) !== message.content) texts.push(message.content);
+    }
+    return texts;
+  }
+
+  /**
    * The room left as of the newest turn that reported each: its context, and
    * the plan's windows (a turn on an API key reports none, so an older
    * subscription turn's stand).

@@ -278,11 +278,11 @@ export type CurrentCredentialResponseDto = {
     /**
      * Scopes the credential carries. Null for a browser session, which is not scope-restricted.
      */
-    grantedScopes: Array<'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'hosts:read' | 'hosts:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'automations:read' | 'automations:write' | 'bots:read' | 'bots:write' | 'tasks:read' | 'tasks:write' | 'calendar:read' | 'calendar:write' | 'mail:read' | 'mail:write' | 'whatsapp:read' | 'whatsapp:write' | 'cloud-agents:read' | 'cloud-agents:write' | 'pulls:read' | 'pulls:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write' | 'inbox:read' | 'inbox:write'> | null;
+    grantedScopes: Array<'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'hosts:read' | 'hosts:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'cloud-chat:read' | 'cloud-chat:write' | 'automations:read' | 'automations:write' | 'bots:read' | 'bots:write' | 'tasks:read' | 'tasks:write' | 'calendar:read' | 'calendar:write' | 'mail:read' | 'mail:write' | 'whatsapp:read' | 'whatsapp:write' | 'telegram:read' | 'telegram:write' | 'cloud-agents:read' | 'cloud-agents:write' | 'pulls:read' | 'pulls:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write' | 'inbox:read' | 'inbox:write'> | null;
     /**
      * What the credential can actually do: its scopes intersected with the owner’s current roles.
      */
-    effectiveScopes: Array<'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'hosts:read' | 'hosts:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'automations:read' | 'automations:write' | 'bots:read' | 'bots:write' | 'tasks:read' | 'tasks:write' | 'calendar:read' | 'calendar:write' | 'mail:read' | 'mail:write' | 'whatsapp:read' | 'whatsapp:write' | 'cloud-agents:read' | 'cloud-agents:write' | 'pulls:read' | 'pulls:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write' | 'inbox:read' | 'inbox:write'>;
+    effectiveScopes: Array<'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'hosts:read' | 'hosts:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'cloud-chat:read' | 'cloud-chat:write' | 'automations:read' | 'automations:write' | 'bots:read' | 'bots:write' | 'tasks:read' | 'tasks:write' | 'calendar:read' | 'calendar:write' | 'mail:read' | 'mail:write' | 'whatsapp:read' | 'whatsapp:write' | 'telegram:read' | 'telegram:write' | 'cloud-agents:read' | 'cloud-agents:write' | 'pulls:read' | 'pulls:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write' | 'inbox:read' | 'inbox:write'>;
     /**
      * Organizations the credential is restricted to, or null when unrestricted.
      */
@@ -300,7 +300,7 @@ export type ApiTokenResponseDto = {
     /**
      * Granted permissions.
      */
-    scopes: Array<'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'hosts:read' | 'hosts:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'automations:read' | 'automations:write' | 'bots:read' | 'bots:write' | 'tasks:read' | 'tasks:write' | 'calendar:read' | 'calendar:write' | 'mail:read' | 'mail:write' | 'whatsapp:read' | 'whatsapp:write' | 'cloud-agents:read' | 'cloud-agents:write' | 'pulls:read' | 'pulls:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write' | 'inbox:read' | 'inbox:write'>;
+    scopes: Array<'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'hosts:read' | 'hosts:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'cloud-chat:read' | 'cloud-chat:write' | 'automations:read' | 'automations:write' | 'bots:read' | 'bots:write' | 'tasks:read' | 'tasks:write' | 'calendar:read' | 'calendar:write' | 'mail:read' | 'mail:write' | 'whatsapp:read' | 'whatsapp:write' | 'telegram:read' | 'telegram:write' | 'cloud-agents:read' | 'cloud-agents:write' | 'pulls:read' | 'pulls:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write' | 'inbox:read' | 'inbox:write'>;
     /**
      * Organizations this token is restricted to. Null means it follows the owner’s memberships.
      */
@@ -321,7 +321,7 @@ export type ScopePolicyDto = {
 };
 
 export type ScopeLevelDto = {
-    scope: 'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'hosts:read' | 'hosts:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'automations:read' | 'automations:write' | 'bots:read' | 'bots:write' | 'tasks:read' | 'tasks:write' | 'calendar:read' | 'calendar:write' | 'mail:read' | 'mail:write' | 'whatsapp:read' | 'whatsapp:write' | 'cloud-agents:read' | 'cloud-agents:write' | 'pulls:read' | 'pulls:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write' | 'inbox:read' | 'inbox:write';
+    scope: 'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'hosts:read' | 'hosts:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'cloud-chat:read' | 'cloud-chat:write' | 'automations:read' | 'automations:write' | 'bots:read' | 'bots:write' | 'tasks:read' | 'tasks:write' | 'calendar:read' | 'calendar:write' | 'mail:read' | 'mail:write' | 'whatsapp:read' | 'whatsapp:write' | 'telegram:read' | 'telegram:write' | 'cloud-agents:read' | 'cloud-agents:write' | 'pulls:read' | 'pulls:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write' | 'inbox:read' | 'inbox:write';
     label: string;
     description: string;
     /**
@@ -336,7 +336,7 @@ export type ScopeLevelsDto = {
 };
 
 export type PermissionGroupDto = {
-    resource: 'profile' | 'users' | 'admin' | 'roles' | 'organizations' | 'members' | 'invitations' | 'workspaces' | 'tokens' | 'hosts' | 'projects' | 'sessions' | 'automations' | 'bots' | 'tasks' | 'calendar' | 'mail' | 'whatsapp' | 'cloud-agents' | 'pulls' | 'repositories' | 'flags' | 'inbox';
+    resource: 'profile' | 'users' | 'admin' | 'roles' | 'organizations' | 'members' | 'invitations' | 'workspaces' | 'tokens' | 'hosts' | 'projects' | 'sessions' | 'cloud-chat' | 'automations' | 'bots' | 'tasks' | 'calendar' | 'mail' | 'whatsapp' | 'telegram' | 'cloud-agents' | 'pulls' | 'repositories' | 'flags' | 'inbox';
     label: string;
     description: string;
     /**
@@ -354,12 +354,12 @@ export type PermissionCatalogResponseDto = {
     /**
      * Scopes the caller may put on a token. Anything outside this list is refused at creation.
      */
-    grantable: Array<'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'hosts:read' | 'hosts:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'automations:read' | 'automations:write' | 'bots:read' | 'bots:write' | 'tasks:read' | 'tasks:write' | 'calendar:read' | 'calendar:write' | 'mail:read' | 'mail:write' | 'whatsapp:read' | 'whatsapp:write' | 'cloud-agents:read' | 'cloud-agents:write' | 'pulls:read' | 'pulls:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write' | 'inbox:read' | 'inbox:write'>;
+    grantable: Array<'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'hosts:read' | 'hosts:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'cloud-chat:read' | 'cloud-chat:write' | 'automations:read' | 'automations:write' | 'bots:read' | 'bots:write' | 'tasks:read' | 'tasks:write' | 'calendar:read' | 'calendar:write' | 'mail:read' | 'mail:write' | 'whatsapp:read' | 'whatsapp:write' | 'telegram:read' | 'telegram:write' | 'cloud-agents:read' | 'cloud-agents:write' | 'pulls:read' | 'pulls:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write' | 'inbox:read' | 'inbox:write'>;
 };
 
 export type CreateApiTokenRequest = {
     name: string;
-    scopes: Array<'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'hosts:read' | 'hosts:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'automations:read' | 'automations:write' | 'bots:read' | 'bots:write' | 'tasks:read' | 'tasks:write' | 'calendar:read' | 'calendar:write' | 'mail:read' | 'mail:write' | 'whatsapp:read' | 'whatsapp:write' | 'cloud-agents:read' | 'cloud-agents:write' | 'pulls:read' | 'pulls:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write' | 'inbox:read' | 'inbox:write'>;
+    scopes: Array<'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'hosts:read' | 'hosts:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'cloud-chat:read' | 'cloud-chat:write' | 'automations:read' | 'automations:write' | 'bots:read' | 'bots:write' | 'tasks:read' | 'tasks:write' | 'calendar:read' | 'calendar:write' | 'mail:read' | 'mail:write' | 'whatsapp:read' | 'whatsapp:write' | 'telegram:read' | 'telegram:write' | 'cloud-agents:read' | 'cloud-agents:write' | 'pulls:read' | 'pulls:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write' | 'inbox:read' | 'inbox:write'>;
     organizationIds?: Array<string>;
     expiresInDays?: number | null;
     ipAllowlist?: Array<string>;
@@ -375,7 +375,7 @@ export type CreatedApiTokenResponseDto = {
     /**
      * Granted permissions.
      */
-    scopes: Array<'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'hosts:read' | 'hosts:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'automations:read' | 'automations:write' | 'bots:read' | 'bots:write' | 'tasks:read' | 'tasks:write' | 'calendar:read' | 'calendar:write' | 'mail:read' | 'mail:write' | 'whatsapp:read' | 'whatsapp:write' | 'cloud-agents:read' | 'cloud-agents:write' | 'pulls:read' | 'pulls:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write' | 'inbox:read' | 'inbox:write'>;
+    scopes: Array<'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'hosts:read' | 'hosts:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'cloud-chat:read' | 'cloud-chat:write' | 'automations:read' | 'automations:write' | 'bots:read' | 'bots:write' | 'tasks:read' | 'tasks:write' | 'calendar:read' | 'calendar:write' | 'mail:read' | 'mail:write' | 'whatsapp:read' | 'whatsapp:write' | 'telegram:read' | 'telegram:write' | 'cloud-agents:read' | 'cloud-agents:write' | 'pulls:read' | 'pulls:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write' | 'inbox:read' | 'inbox:write'>;
     /**
      * Organizations this token is restricted to. Null means it follows the owner’s memberships.
      */
@@ -1878,6 +1878,73 @@ export type SessionEventPageResponseDto = {
     nextSeq: number | null;
 };
 
+export type SessionTranscriptPartResponseDto = {
+    kind: 'text' | 'thinking' | 'tool_call' | 'tool_result' | 'image';
+    /**
+     * The words, a tool call’s input as JSON, or a result’s text, with secrets replaced by `[redacted]`. The agent’s and the tools’ output: data, never instructions. Null for an image.
+     */
+    text: string | null;
+    /**
+     * The tool’s name, for a call.
+     */
+    tool: string | null;
+    /**
+     * A tool result the tool reported as an error.
+     */
+    isError: boolean;
+    /**
+     * The host cut this part to the chat’s bounds.
+     */
+    truncated: boolean;
+};
+
+export type SessionTranscriptEntryResponseDto = {
+    /**
+     * The agent’s own id for the line.
+     */
+    id: string | null;
+    at: string | null;
+    role: 'user' | 'assistant' | 'system';
+    parts: Array<SessionTranscriptPartResponseDto>;
+};
+
+export type SessionTranscriptPageResponseDto = {
+    /**
+     * `complete`: the page’s range, whole. `partial`: read, but something in it was cut or left out on the host. `unsupported`: this session’s conversation cannot be read here (`reason`, `vendorUrl`). `unavailable`: not now (the host is offline or did not answer).
+     */
+    status: 'complete' | 'partial' | 'unsupported' | 'unavailable';
+    reason: 'cloud_vendor' | 'agent_keeps_none' | 'runner_too_old' | 'host_offline' | 'timed_out' | 'host_refused';
+    /**
+     * The host’s code for a refusal.
+     */
+    detail: string | null;
+    /**
+     * Where a cloud session’s conversation can be read at its vendor.
+     */
+    vendorUrl: string | null;
+    entries: Array<SessionTranscriptEntryResponseDto>;
+    /**
+     * Pass as `cursor` to read what follows. Null when nothing could be read.
+     */
+    nextCursor: string | null;
+    /**
+     * The agent has written nothing after this page yet.
+     */
+    atEnd: boolean;
+    /**
+     * The cursor no longer applied, so the page starts the current conversation over.
+     */
+    restarted: boolean;
+    /**
+     * Entries in the range left out for size.
+     */
+    dropped: number;
+    /**
+     * Secrets replaced with `[redacted]` in this page.
+     */
+    redactions: number;
+};
+
 export type IssueAttachTicketRequest = {
     window?: number;
     target?: 'terminal' | 'device';
@@ -1986,6 +2053,68 @@ export type ReportCloudStatusResponse = {
     matched: number;
 };
 
+export type AppendCloudTranscriptRequest = {
+    cloudSessionId: string;
+    from: number;
+    lines: Array<string>;
+};
+
+export type AppendedCloudTranscriptResponseDto = {
+    /**
+     * How many of the lines were new; a resent line is not.
+     */
+    accepted: number;
+};
+
+export type TakeCloudReplyRequest = {
+    cloudSessionId: string;
+    wait?: number;
+};
+
+export type CollectedCloudReplyResponseDto = {
+    /**
+     * The reply for the agent; null when none came within the wait.
+     */
+    text?: string | null;
+};
+
+export type SendCloudReplyRequest = {
+    text: string;
+};
+
+export type SentCloudReplyResponseDto = {
+    /**
+     * The reply, as the chat lists it.
+     */
+    id: string;
+};
+
+export type CloudChatReplyResponseDto = {
+    id: string;
+    text: string;
+    authorId?: string | null;
+    createdAt: string;
+    /**
+     * When the session’s Stop hook took it to the agent; null while it waits.
+     */
+    collectedAt?: string | null;
+};
+
+export type CloudChatResponseDto = {
+    /**
+     * Transcript lines from `from` on, each as Claude Code wrote it (JSON text): the same lines a runner sends for a host session’s chat.
+     */
+    lines: Array<string>;
+    /**
+     * The number to ask from next.
+     */
+    next: number;
+    /**
+     * The replies typed here, oldest first.
+     */
+    replies: Array<CloudChatReplyResponseDto>;
+};
+
 export type PrepareSessionRequest = {
     hostId: string;
     checkouts: Array<{
@@ -2068,6 +2197,33 @@ export type HostFoldersResponseDto = {
      * The folders of the caller’s own folder sessions on this host, newest first, at most eight.
      */
     recent: Array<HostRecentFolderResponseDto>;
+};
+
+export type HostFoundFolderResponseDto = {
+    /**
+     * Its absolute path on the host.
+     */
+    path: string;
+    /**
+     * The branch its checkout is on, when it is a git repository.
+     */
+    branch?: string | null;
+};
+
+export type HostFolderSearchResponseDto = {
+    /**
+     * The directory searched under.
+     */
+    path: string;
+    /**
+     * The home directory of the user the runner runs as, so a client can show `~`.
+     */
+    home: string;
+    entries: Array<HostFoundFolderResponseDto>;
+    /**
+     * The search stopped at its bounds or found more than `entries` carries: a longer name narrows it.
+     */
+    truncated: boolean;
 };
 
 export type HostCodexEnvironmentResponseDto = {
@@ -2304,7 +2460,7 @@ export type AutomationResponseDto = {
      */
     status: 'active' | 'paused' | 'running';
     pausedAt?: string | null;
-    pausedReason?: 'user' | 'project_archived' | 'host_unpaired' | 'owner_lost_access' | 'bot_provider_missing' | 'cloud_key_missing' | null;
+    pausedReason?: 'user' | 'project_archived' | 'host_unpaired' | 'owner_lost_access' | 'bot_provider_missing' | 'cloud_key_missing' | 'unattended' | null;
     /**
      * The earliest next slot of its schedule triggers. Null when paused or event-only.
      */
@@ -2344,7 +2500,7 @@ export type BotRoutineResponseDto = {
      * `running` while a run is queued or its turn runs, else `active` or `paused`.
      */
     status: 'active' | 'paused' | 'running';
-    pausedReason?: 'user' | 'project_archived' | 'host_unpaired' | 'owner_lost_access' | 'bot_provider_missing' | 'cloud_key_missing' | null;
+    pausedReason?: 'user' | 'project_archived' | 'host_unpaired' | 'owner_lost_access' | 'bot_provider_missing' | 'cloud_key_missing' | 'unattended' | null;
     /**
      * The earliest next slot of its schedules. Null when paused or event-only.
      */
@@ -2535,7 +2691,7 @@ export type AutomationRunResponseDto = {
      * What became of the firing before a session.
      */
     outcome: 'pending' | 'skipped' | 'expired' | 'dispatched';
-    skipReason?: 'paused' | 'deleted' | 'own_event' | 'automation_rate_limited' | 'workspace_rate_limited' | 'overlapping' | 'missed' | 'not_launchable' | 'agent_unavailable' | null;
+    skipReason?: 'paused' | 'deleted' | 'own_event' | 'automation_rate_limited' | 'workspace_rate_limited' | 'overlapping' | 'missed' | 'not_launchable' | 'agent_unavailable' | 'unattended' | null;
     cause: 'schedule' | 'event' | 'manual';
     causeSummary: RunCauseResponseDto;
     title: string;
@@ -2618,6 +2774,14 @@ export type AutomationSettingsResponseDto = {
     staleTtlSeconds: number;
     missedGraceSeconds: number;
     maxRunSeconds: number;
+    /**
+     * Routine reports a bot’s owner has not seen before its routines pause.
+     */
+    unattendedReports: number;
+    /**
+     * How long a bot’s owner may be away from its chat before its routines pause.
+     */
+    unattendedAwaySeconds: number;
 };
 
 export type UpdateAutomationSettingsRequest = {
@@ -2628,6 +2792,8 @@ export type UpdateAutomationSettingsRequest = {
     staleTtlSeconds?: number | null;
     missedGraceSeconds?: number | null;
     maxRunSeconds?: number | null;
+    unattendedReports?: number | null;
+    unattendedAwaySeconds?: number | null;
 };
 
 export type UpdateBotRoutineRequest = {
@@ -2650,7 +2816,7 @@ export type TaskResponseDto = {
      */
     projectId: string;
     milestoneId?: string | null;
-    status: 'later' | 'todo' | 'doing' | 'done';
+    status: 'todo' | 'doing' | 'review' | 'done';
     /**
      * Its place in the column. Compare byte by byte (not with a locale): the board is ordered by it.
      */
@@ -2686,7 +2852,7 @@ export type TaskResponseDto = {
 export type CreateTaskRequest = {
     title: string;
     notes?: string;
-    status?: 'later' | 'todo' | 'doing' | 'done';
+    status?: 'todo' | 'doing' | 'review' | 'done';
     projectId?: string;
     milestoneId?: string | null;
     dueDate?: string | null;
@@ -2705,7 +2871,7 @@ export type UpdateTaskRequest = {
 };
 
 export type MoveTaskRequest = {
-    status: 'later' | 'todo' | 'doing' | 'done';
+    status: 'todo' | 'doing' | 'review' | 'done';
     afterTaskId: string | null;
     expectedVersion?: number;
 };
@@ -2734,7 +2900,7 @@ export type StartTaskSessionRequest = {
         prompt?: string;
         attachmentIds?: Array<string>;
     };
-    seenStatus: 'later' | 'todo' | 'doing' | 'done';
+    seenStatus: 'todo' | 'doing' | 'review' | 'done';
 };
 
 export type StartTaskSessionResponseDto = {
@@ -2758,11 +2924,11 @@ export type StartTaskCloudSessionRequest = {
         prompt: string;
         model?: string;
     };
-    seenStatus: 'later' | 'todo' | 'doing' | 'done';
+    seenStatus: 'todo' | 'doing' | 'review' | 'done';
 };
 
 export type LinkTaskSessionRequest = {
-    seenStatus: 'later' | 'todo' | 'doing' | 'done';
+    seenStatus: 'todo' | 'doing' | 'review' | 'done';
 };
 
 export type MilestoneResponseDto = {
@@ -3121,6 +3287,52 @@ export type WhatsappAccountResponseDto = {
 
 export type LinkWhatsappRequest = {
     hostId: string;
+    label?: string;
+};
+
+export type TelegramAccountResponseDto = {
+    id: string;
+    /**
+     * The host whose runner holds the token and polls.
+     */
+    hostId: string;
+    /**
+     * What the person and their bots call it.
+     */
+    label: string;
+    /**
+     * The bot as its host last reported it: `connecting` while the host checks the token or reconnects, `connected` is polling, `revoked` and `unlinked` offer Connect again with a token.
+     */
+    status: 'connecting' | 'connected' | 'revoked' | 'unlinked';
+    /**
+     * Whether the host’s runner is connected now; nothing moves while it is not.
+     */
+    hostOnline: boolean;
+    /**
+     * The Telegram bot’s own user id, once its token was checked.
+     */
+    botId: string | null;
+    /**
+     * The Telegram bot’s `@username`, without the `@`.
+     */
+    username: string | null;
+    /**
+     * The Telegram bot’s name, as @BotFather has it.
+     */
+    displayName: string | null;
+    /**
+     * Why the bot is revoked or unlinked, in the host’s words.
+     */
+    statusReason: string | null;
+    /**
+     * When it was first connected.
+     */
+    linkedAt: string;
+};
+
+export type LinkTelegramRequest = {
+    hostId: string;
+    token: string;
     label?: string;
 };
 
@@ -3620,14 +3832,24 @@ export type ReviewSessionStartedResponseDto = {
     hints: Array<string>;
 };
 
+export type BotFaceDto = {
+    hat: 'fedora' | 'porkpie' | 'bowler' | 'tophat' | 'cap' | 'beanie';
+    eyes: 'dots' | 'happy' | 'wink' | 'big';
+    mouth: 'smile' | 'grin' | 'o';
+};
+
 export type BotResponseDto = {
     id: string;
     name: string;
     description: string;
     /**
-     * The colour its initials are drawn on.
+     * The colour its face is drawn in.
      */
     avatarColor: 'mint' | 'tangerine' | 'snow' | 'sky' | 'lilac' | 'lemon' | 'coral' | 'moss';
+    /**
+     * The face its owner picked; null wears the one its id picks.
+     */
+    avatarFace: BotFaceDto | null;
     /**
      * Its sidebar group; null is ungrouped.
      */
@@ -3665,6 +3887,10 @@ export type BotResponseDto = {
      */
     learnAutomatically: boolean;
     /**
+     * Whether its routines pause while its owner is away from its chat, and start again when they are back.
+     */
+    routineSpendGuard: boolean;
+    /**
      * The console sections whose sidebar lists it beside Employees, in catalog order; empty shows it in Employees only.
      */
     sections: Array<'sessions' | 'automations' | 'plan' | 'pulls'>;
@@ -3694,6 +3920,11 @@ export type UpdateBotRequest = {
     name?: string;
     description?: string;
     avatarColor?: 'mint' | 'tangerine' | 'snow' | 'sky' | 'lilac' | 'lemon' | 'coral' | 'moss';
+    avatarFace?: {
+        hat: 'fedora' | 'porkpie' | 'bowler' | 'tophat' | 'cap' | 'beanie';
+        eyes: 'dots' | 'happy' | 'wink' | 'big';
+        mouth: 'smile' | 'grin' | 'o';
+    } | null;
     groupId?: string | null;
     position?: number;
     homeHostId?: string | null;
@@ -3702,6 +3933,7 @@ export type UpdateBotRequest = {
     effort?: 'none' | 'minimal' | 'low' | 'medium' | 'high' | 'xhigh' | 'max' | 'ultra' | null;
     permission?: 'auto' | 'full';
     learnAutomatically?: boolean;
+    routineSpendGuard?: boolean;
     sections?: Array<'sessions' | 'automations' | 'plan' | 'pulls'>;
 };
 
@@ -3768,6 +4000,32 @@ export type BotMemoryFactResponseDto = {
     botId: string;
     createdAt: string;
     updatedAt: string;
+};
+
+export type PersonAboutResponseDto = {
+    /**
+     * What the person wrote about themselves; empty when nothing was written.
+     */
+    about: string;
+    /**
+     * When it was last saved; null when it never was.
+     */
+    updatedAt: string | null;
+};
+
+export type PersonMemoryResponseDto = {
+    /**
+     * In every one of the person's bots' system prompt; the bots never change it.
+     */
+    about: PersonAboutResponseDto;
+    /**
+     * Every fact about the person (`scope: person`) that any of their bots keeps, newest first. Each is changed on the bot that keeps it (`botId`).
+     */
+    facts: Array<BotMemoryFactResponseDto>;
+};
+
+export type UpdatePersonAboutRequest = {
+    about: string;
 };
 
 export type CreateBotMemoryFactRequest = {
@@ -4025,7 +4283,7 @@ export type BotSessionEventResponseDto = {
     /**
      * What became of the task, `matched` when its terminal printed a line matching the pattern the bot watches for, or `stalled` when its stall check found it stuck.
      */
-    state: 'requires_action' | 'completed' | 'failed' | 'cancelled' | 'expired' | 'matched' | 'stalled';
+    state: 'requires_action' | 'completed' | 'failed' | 'cancelled' | 'expired' | 'matched' | 'stalled' | 'notice';
     /**
      * For `matched`: the pattern and how many lines matched so far; never the text.
      */
@@ -4061,7 +4319,7 @@ export type BotGoalEventResponseDto = {
     /**
      * `continued` opens a continuation turn; the others say how the goal ended outside any turn: the reviewer found it met (`met`) or out of reach without the person (`impossible`), stopped by its owner (`cleared`), out of continuations (`exhausted`), or a turn of it failed or was stopped (`stopped`).
      */
-    activity: 'continued' | 'met' | 'impossible' | 'cleared' | 'exhausted' | 'stopped';
+    activity: 'continued' | 'met' | 'impossible' | 'cleared' | 'exhausted' | 'stopped' | 'paused' | 'resumed';
     goalId: string;
     /**
      * The goal's objective at the time.
@@ -4072,9 +4330,9 @@ export type BotGoalEventResponseDto = {
      */
     step: number;
     /**
-     * The continuations the goal may take.
+     * The continuations the goal may take; null for a goal with no limit (every goal since 2026-11-09).
      */
-    limit: number;
+    limit: number | null;
     /**
      * For `continued`, `met`, `impossible` and `exhausted`: the reviewer's reason in its words, null when it gave none. For `stopped`: the status of the turn that ended it, or `access_lost`.
      */
@@ -4104,6 +4362,35 @@ export type BotLoopEventResponseDto = {
      * For `stopped`: the status of the run that ended it, or `access_lost`; otherwise null.
      */
     reason: string | null;
+};
+
+export type BotDreamEventResponseDto = {
+    kind: 'dream';
+    /**
+     * `dreamed`: the bot's memory was rewritten by a dream; `undone`: its owner put the facts back.
+     */
+    activity: 'dreamed' | 'undone';
+    dreamId: string;
+    /**
+     * The facts the dream rewrote.
+     */
+    factsBefore: number;
+    /**
+     * The facts it wrote in their place.
+     */
+    factsAfter: number;
+};
+
+export type BotCompactionEventResponseDto = {
+    kind: 'compaction';
+    /**
+     * The tokens the next call would have been sent before the fold, estimated.
+     */
+    tokensBefore: number;
+    /**
+     * The tokens it is sent after it, estimated.
+     */
+    tokensAfter: number;
 };
 
 export type BotSubagentRunResponseDto = {
@@ -4216,7 +4503,7 @@ export type BotMessageResponseDto = {
     /**
      * What an event says happened, by `kind`; null on every other role.
      */
-    event: BotApprovalEventResponseDto | BotQuestionEventResponseDto | BotRoutineEventResponseDto | BotPeerMessageEventResponseDto | BotPeerReplyEventResponseDto | BotSessionEventResponseDto | BotPullRequestEventResponseDto | BotGoalEventResponseDto | BotLoopEventResponseDto | null;
+    event: BotApprovalEventResponseDto | BotQuestionEventResponseDto | BotRoutineEventResponseDto | BotPeerMessageEventResponseDto | BotPeerReplyEventResponseDto | BotSessionEventResponseDto | BotPullRequestEventResponseDto | BotGoalEventResponseDto | BotLoopEventResponseDto | BotDreamEventResponseDto | BotCompactionEventResponseDto | null;
     /**
      * The images a message of yours carries, in the order attached; read each from `GET /bots/:id/attachments/:attachmentId/content`. Empty on every other role.
      */
@@ -4262,7 +4549,7 @@ export type BotTurnResponseDto = {
     /**
      * What kind of failure it was, so a client can say whether sending it again can help; null unless it failed.
      */
-    failure: 'rate_limit' | 'usage_limit' | 'credential' | 'refused' | 'unavailable' | 'time_limit' | 'interrupted' | 'other' | null;
+    failure: 'rate_limit' | 'usage_limit' | 'credential' | 'refused' | 'unavailable' | 'time_limit' | 'step_limit' | 'stalled' | 'loop' | 'interrupted' | 'storage' | 'other' | null;
     inputTokens: number;
     outputTokens: number;
     /**
@@ -4314,6 +4601,17 @@ export type SendBotMessageRequest = {
     steer?: boolean;
 };
 
+export type BotGoalPauseReason = 'blocked' | 'usage_limit' | 'no_progress' | 'budget' | 'stopped' | 'failed';
+
+export type BotGoalPausedResponseDto = {
+    reason: BotGoalPauseReason;
+    /**
+     * Why, in the bot’s or the reviewer’s words; null when only the reason says it.
+     */
+    note: string | null;
+    at: string;
+};
+
 export type BotGoalWaitingResponseDto = {
     /**
      * The system limiting our requests ("Gmail", "GitHub").
@@ -4336,9 +4634,21 @@ export type BotGoalResponseDto = {
      */
     continuations: number;
     /**
-     * The continuation turns it may queue.
+     * The continuation turns it may queue; null when it has no limit (every goal since 2026-11-09).
      */
-    limit: number;
+    limit: number | null;
+    /**
+     * The tokens its turns have spent, input and output.
+     */
+    tokensUsed: number;
+    /**
+     * The tokens it may spend before it pauses; null when it has no budget.
+     */
+    tokenBudget: number | null;
+    /**
+     * Why it is paused; null while it runs. The owner resumes it.
+     */
+    paused: BotGoalPausedResponseDto | null;
     createdAt: string;
     /**
      * A turn of the goal ended on a system’s rate limit, and its next decision waits until then; null when nothing holds it.
@@ -4416,9 +4726,9 @@ export type BotUsageBackgroundResponseDto = {
      */
     cacheWriteTokens: number;
     /**
-     * Why the bot called its model outside a turn: a goal's review, the conversation's summary, or a review of the owner's rules.
+     * Why the bot called its model outside a turn: a goal's review, the conversation's summary, a review of the owner's rules, or a dream of its memory.
      */
-    purpose: 'goal_review' | 'summary' | 'rule_review';
+    purpose: 'goal_review' | 'summary' | 'rule_review' | 'dream';
     calls: number;
 };
 
@@ -4440,6 +4750,35 @@ export type BotUsageResponseDto = {
      */
     models: Array<BotUsageModelResponseDto>;
     background: Array<BotUsageBackgroundResponseDto>;
+};
+
+export type BotMemoryDreamResponseDto = {
+    id: string;
+    /**
+     * The facts it rewrote: those the bot wrote itself
+     */
+    factsBefore: number;
+    /**
+     * The facts it wrote in their place
+     */
+    factsAfter: number;
+    /**
+     * What it changed, in its words
+     */
+    note: string | null;
+    createdAt: string;
+    /**
+     * When the owner undid it; null while it stands
+     */
+    undoneAt: string | null;
+};
+
+export type BotMemoryDreamStateResponseDto = {
+    latest: BotMemoryDreamResponseDto | null;
+    /**
+     * Whether a dream its owner asked for (Tidy now) is under way: from the ask until its job ends, ten minutes at most.
+     */
+    pending: boolean;
 };
 
 export type BotApprovalResponseDto = {
@@ -4680,7 +5019,7 @@ export type BotToolPermissionDto = {
     /**
      * The group it is listed under.
      */
-    group: 'self' | 'sessions' | 'plan' | 'mail' | 'whatsapp' | 'github' | 'automations' | 'bots' | 'web';
+    group: 'self' | 'sessions' | 'plan' | 'mail' | 'whatsapp' | 'telegram' | 'github' | 'automations' | 'bots' | 'web';
     /**
      * What it does, in a sentence.
      */
@@ -4874,6 +5213,13 @@ export type ReadinessResponseDto = {
      */
     status: 'ok' | 'error';
     checks: ReadinessChecksDto;
+};
+
+export type VersionResponseDto = {
+    /**
+     * The release this API runs, as in its package.json.
+     */
+    version: string;
 };
 
 export type GetUserSettingsData = {
@@ -9759,6 +10105,55 @@ export type FindSessionEventsResponses = {
 
 export type FindSessionEventsResponse = FindSessionEventsResponses[keyof FindSessionEventsResponses];
 
+export type FindSessionTranscriptData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: {
+        /**
+         * Entries per page
+         */
+        limit?: number;
+        /**
+         * A page’s `nextCursor`. Omit for the latest turns.
+         */
+        cursor?: string;
+    };
+    url: '/api/v1/sessions/{id}/transcript';
+};
+
+export type FindSessionTranscriptErrors = {
+    /**
+     * SESSIONS_049 — Invalid cursor
+     */
+    400: ProblemDetailsDto;
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * SESSIONS_001 — Session not found
+     */
+    404: ProblemDetailsDto;
+    /**
+     * RATE_001 — Rate limit reached
+     */
+    429: ProblemDetailsDto;
+};
+
+export type FindSessionTranscriptError = FindSessionTranscriptErrors[keyof FindSessionTranscriptErrors];
+
+export type FindSessionTranscriptResponses = {
+    200: SessionTranscriptPageResponseDto;
+};
+
+export type FindSessionTranscriptResponse = FindSessionTranscriptResponses[keyof FindSessionTranscriptResponses];
+
 export type IssueAttachTicketData = {
     body: IssueAttachTicketRequest;
     path: {
@@ -10125,7 +10520,7 @@ export type SendSessionPromptErrors = {
      */
     401: ProblemDetailsDto;
     /**
-     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     * SESSIONS_050 — Only the person who launched a cloud session can follow it up
      */
     403: ProblemDetailsDto;
     /**
@@ -10133,6 +10528,10 @@ export type SendSessionPromptErrors = {
      */
     404: ProblemDetailsDto;
     /**
+     * SESSIONS_038 — A Claude Code or Codex cloud session takes input at its vendor
+     *
+     * CLOUD_AGENTS_012 / CLOUD_AGENTS_004 — The cloud agent is still on its last run, or its launcher has no key stored
+     *
      * SESSIONS_036 — The agent is not waiting for a prompt
      *
      * SESSIONS_014 — That session is stopped
@@ -10141,9 +10540,19 @@ export type SendSessionPromptErrors = {
      */
     409: ProblemDetailsDto;
     /**
+     * CLOUD_AGENTS_005 / CLOUD_AGENTS_010 — The vendor refused the key, or the follow-up as asked
+     */
+    422: ProblemDetailsDto;
+    /**
      * RATE_001 — Rate limit reached
+     *
+     * CLOUD_AGENTS_007 — The vendor's rate limit was reached; try again after Retry-After
      */
     429: ProblemDetailsDto;
+    /**
+     * SESSIONS_051 — The vendor did not confirm the follow-up: it may be running there; check before sending again
+     */
+    502: ProblemDetailsDto;
     /**
      * SESSIONS_016 — The host is offline
      */
@@ -10219,6 +10628,165 @@ export type RecordCloudStatusResponses = {
 };
 
 export type RecordCloudStatusResponse = RecordCloudStatusResponses[keyof RecordCloudStatusResponses];
+
+export type AppendCloudTranscriptData = {
+    body: AppendCloudTranscriptRequest;
+    path?: never;
+    query?: never;
+    url: '/api/v1/sessions/cloud-transcript';
+};
+
+export type AppendCloudTranscriptErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * SESSIONS_053 — No cloud session of this workspace has that id
+     */
+    404: ProblemDetailsDto;
+    /**
+     * RATE_001 — Rate limit reached
+     */
+    429: ProblemDetailsDto;
+};
+
+export type AppendCloudTranscriptError = AppendCloudTranscriptErrors[keyof AppendCloudTranscriptErrors];
+
+export type AppendCloudTranscriptResponses = {
+    200: AppendedCloudTranscriptResponseDto;
+};
+
+export type AppendCloudTranscriptResponse = AppendCloudTranscriptResponses[keyof AppendCloudTranscriptResponses];
+
+export type CollectCloudReplyData = {
+    body: TakeCloudReplyRequest;
+    path?: never;
+    query?: never;
+    url: '/api/v1/sessions/cloud-replies/take';
+};
+
+export type CollectCloudReplyErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * SESSIONS_053 — No cloud session of this workspace has that id
+     */
+    404: ProblemDetailsDto;
+    /**
+     * RATE_001 — Rate limit reached
+     */
+    429: ProblemDetailsDto;
+};
+
+export type CollectCloudReplyError = CollectCloudReplyErrors[keyof CollectCloudReplyErrors];
+
+export type CollectCloudReplyResponses = {
+    200: CollectedCloudReplyResponseDto;
+};
+
+export type CollectCloudReplyResponse = CollectCloudReplyResponses[keyof CollectCloudReplyResponses];
+
+export type SendCloudReplyData = {
+    body: SendCloudReplyRequest;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/sessions/{id}/cloud-replies';
+};
+
+export type SendCloudReplyErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * SESSIONS_001 — Session not found
+     */
+    404: ProblemDetailsDto;
+    /**
+     * SESSIONS_054 — This session has no cloud chat
+     *
+     * SESSIONS_005 — That session is closed
+     */
+    409: ProblemDetailsDto;
+    /**
+     * RATE_001 — Rate limit reached
+     */
+    429: ProblemDetailsDto;
+};
+
+export type SendCloudReplyError = SendCloudReplyErrors[keyof SendCloudReplyErrors];
+
+export type SendCloudReplyResponses = {
+    201: SentCloudReplyResponseDto;
+};
+
+export type SendCloudReplyResponse = SendCloudReplyResponses[keyof SendCloudReplyResponses];
+
+export type FindCloudChatData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: {
+        /**
+         * Lines at most
+         */
+        limit?: number;
+        /**
+         * The number of the first line to read: a read’s `next`, or 0
+         */
+        from?: number;
+    };
+    url: '/api/v1/sessions/{id}/cloud-chat';
+};
+
+export type FindCloudChatErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * SESSIONS_001 — Session not found
+     */
+    404: ProblemDetailsDto;
+    /**
+     * SESSIONS_054 — This session has no cloud chat
+     */
+    409: ProblemDetailsDto;
+    /**
+     * RATE_001 — Rate limit reached
+     */
+    429: ProblemDetailsDto;
+};
+
+export type FindCloudChatError = FindCloudChatErrors[keyof FindCloudChatErrors];
+
+export type FindCloudChatResponses = {
+    200: CloudChatResponseDto;
+};
+
+export type FindCloudChatResponse = FindCloudChatResponses[keyof FindCloudChatResponses];
 
 export type PrepareSessionData = {
     body: PrepareSessionRequest;
@@ -10297,6 +10865,48 @@ export type RestartSessionResponses = {
 };
 
 export type RestartSessionResponse = RestartSessionResponses[keyof RestartSessionResponses];
+
+export type RetrySessionData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/sessions/{id}/retry';
+};
+
+export type RetrySessionErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * HOSTS_001 — Host not found
+     *
+     * SESSIONS_001 — Session not found
+     */
+    404: ProblemDetailsDto;
+    /**
+     * SESSIONS_052 — Only a session whose start failed can be tried again
+     *
+     * SESSIONS_039 — That session runs at its vendor, not on a host
+     *
+     * SESSIONS_005 — That session is closed
+     */
+    409: ProblemDetailsDto;
+};
+
+export type RetrySessionError = RetrySessionErrors[keyof RetrySessionErrors];
+
+export type RetrySessionResponses = {
+    200: SessionResponseDto;
+};
+
+export type RetrySessionResponse = RetrySessionResponses[keyof RetrySessionResponses];
 
 export type AddCheckoutData = {
     body: AddCheckoutRequest;
@@ -10574,6 +11184,55 @@ export type FindHostFoldersResponses = {
 };
 
 export type FindHostFoldersResponse = FindHostFoldersResponses[keyof FindHostFoldersResponses];
+
+export type SearchHostFoldersData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query: {
+        /**
+         * Part of a folder’s name.
+         */
+        q: string;
+    };
+    url: '/api/v1/hosts/{id}/folders/search';
+};
+
+export type SearchHostFoldersErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * SESSIONS_030 — Not readable
+     */
+    403: ProblemDetailsDto;
+    /**
+     * HOSTS_001 / SESSIONS_028 — Host or home not found
+     */
+    404: ProblemDetailsDto;
+    /**
+     * SESSIONS_026 — Runner cannot search
+     */
+    409: ProblemDetailsDto;
+    /**
+     * SESSIONS_027 — The host is offline
+     */
+    503: ProblemDetailsDto;
+    /**
+     * SESSIONS_031 — No answer in time
+     */
+    504: ProblemDetailsDto;
+};
+
+export type SearchHostFoldersError = SearchHostFoldersErrors[keyof SearchHostFoldersErrors];
+
+export type SearchHostFoldersResponses = {
+    200: HostFolderSearchResponseDto;
+};
+
+export type SearchHostFoldersResponse = SearchHostFoldersResponses[keyof SearchHostFoldersResponses];
 
 export type FindHostCodexEnvironmentsData = {
     body?: never;
@@ -12838,6 +13497,103 @@ export type RemoveWhatsappAccountResponses = {
 
 export type RemoveWhatsappAccountResponse = RemoveWhatsappAccountResponses[keyof RemoveWhatsappAccountResponses];
 
+export type FindTelegramAccountsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/telegram/accounts';
+};
+
+export type FindTelegramAccountsErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+};
+
+export type FindTelegramAccountsError = FindTelegramAccountsErrors[keyof FindTelegramAccountsErrors];
+
+export type FindTelegramAccountsResponses = {
+    200: Array<TelegramAccountResponseDto>;
+};
+
+export type FindTelegramAccountsResponse = FindTelegramAccountsResponses[keyof FindTelegramAccountsResponses];
+
+export type LinkTelegramData = {
+    body: LinkTelegramRequest;
+    path?: never;
+    query?: never;
+    url: '/api/v1/telegram/accounts';
+};
+
+export type LinkTelegramErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * HOSTS_001 — No such host of the caller’s
+     */
+    404: ProblemDetailsDto;
+    /**
+     * TELEGRAM_003 — As many Telegram bots as one person connects
+     *
+     * TELEGRAM_006 — Another person’s Telegram bot is on that host
+     *
+     * TELEGRAM_005 — The host’s runner holds no Telegram bots
+     *
+     * TELEGRAM_004 — The host is offline
+     */
+    409: ProblemDetailsDto;
+};
+
+export type LinkTelegramError = LinkTelegramErrors[keyof LinkTelegramErrors];
+
+export type LinkTelegramResponses = {
+    201: TelegramAccountResponseDto;
+};
+
+export type LinkTelegramResponse = LinkTelegramResponses[keyof LinkTelegramResponses];
+
+export type RemoveTelegramAccountData = {
+    body?: never;
+    path: {
+        /**
+         * The connected Telegram bot.
+         */
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/telegram/accounts/{id}';
+};
+
+export type RemoveTelegramAccountErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+};
+
+export type RemoveTelegramAccountError = RemoveTelegramAccountErrors[keyof RemoveTelegramAccountErrors];
+
+export type RemoveTelegramAccountResponses = {
+    204: void;
+};
+
+export type RemoveTelegramAccountResponse = RemoveTelegramAccountResponses[keyof RemoveTelegramAccountResponses];
+
 export type FindPullRequestsData = {
     body?: never;
     path?: never;
@@ -14009,6 +14765,90 @@ export type CreateBotMemoryFactResponses = {
 
 export type CreateBotMemoryFactResponse = CreateBotMemoryFactResponses[keyof CreateBotMemoryFactResponses];
 
+export type FindPersonMemoryData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/bot-memory/person';
+};
+
+export type FindPersonMemoryErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+};
+
+export type FindPersonMemoryError = FindPersonMemoryErrors[keyof FindPersonMemoryErrors];
+
+export type FindPersonMemoryResponses = {
+    200: PersonMemoryResponseDto;
+};
+
+export type FindPersonMemoryResponse = FindPersonMemoryResponses[keyof FindPersonMemoryResponses];
+
+export type UpdatePersonAboutData = {
+    body: UpdatePersonAboutRequest;
+    path?: never;
+    query?: never;
+    url: '/api/v1/bot-memory/person/about';
+};
+
+export type UpdatePersonAboutErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+};
+
+export type UpdatePersonAboutError = UpdatePersonAboutErrors[keyof UpdatePersonAboutErrors];
+
+export type UpdatePersonAboutResponses = {
+    200: PersonAboutResponseDto;
+};
+
+export type UpdatePersonAboutResponse = UpdatePersonAboutResponses[keyof UpdatePersonAboutResponses];
+
+export type MarkBotSeenData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/bots/{id}/seen';
+};
+
+export type MarkBotSeenErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * BOTS_001 — Bot not found
+     */
+    404: ProblemDetailsDto;
+};
+
+export type MarkBotSeenError = MarkBotSeenErrors[keyof MarkBotSeenErrors];
+
+export type MarkBotSeenResponses = {
+    204: void;
+};
+
+export type MarkBotSeenResponse = MarkBotSeenResponses[keyof MarkBotSeenResponses];
+
 export type DeleteBotMemoryFactData = {
     body?: never;
     path: {
@@ -14910,6 +15750,41 @@ export type FindBotGoalResponses = {
 
 export type FindBotGoalResponse = FindBotGoalResponses[keyof FindBotGoalResponses];
 
+export type ResumeBotGoalData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/bots/{id}/goal/resume';
+};
+
+export type ResumeBotGoalErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * BOTS_001 — Bot not found
+     */
+    404: ProblemDetailsDto;
+};
+
+export type ResumeBotGoalError = ResumeBotGoalErrors[keyof ResumeBotGoalErrors];
+
+export type ResumeBotGoalResponses = {
+    /**
+     * The goal runs, or there was no paused goal.
+     */
+    204: void;
+};
+
+export type ResumeBotGoalResponse = ResumeBotGoalResponses[keyof ResumeBotGoalResponses];
+
 export type ClearBotLoopData = {
     body?: never;
     path: {
@@ -15008,6 +15883,102 @@ export type FindBotUsageResponses = {
 };
 
 export type FindBotUsageResponse = FindBotUsageResponses[keyof FindBotUsageResponses];
+
+export type FindBotMemoryDreamData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/bots/{id}/memory/dream';
+};
+
+export type FindBotMemoryDreamErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * BOTS_001 — Bot not found
+     */
+    404: ProblemDetailsDto;
+};
+
+export type FindBotMemoryDreamError = FindBotMemoryDreamErrors[keyof FindBotMemoryDreamErrors];
+
+export type FindBotMemoryDreamResponses = {
+    200: BotMemoryDreamStateResponseDto;
+};
+
+export type FindBotMemoryDreamResponse = FindBotMemoryDreamResponses[keyof FindBotMemoryDreamResponses];
+
+export type RequestBotMemoryDreamData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/bots/{id}/memory/dream';
+};
+
+export type RequestBotMemoryDreamErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * BOTS_001 — Bot not found
+     */
+    404: ProblemDetailsDto;
+};
+
+export type RequestBotMemoryDreamError = RequestBotMemoryDreamErrors[keyof RequestBotMemoryDreamErrors];
+
+export type RequestBotMemoryDreamResponses = {
+    202: unknown;
+};
+
+export type UndoBotMemoryDreamData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/bots/{id}/memory/dream/undo';
+};
+
+export type UndoBotMemoryDreamErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * BOTS_041 — No dream to undo
+     *
+     * BOTS_001 — Bot not found
+     */
+    404: ProblemDetailsDto;
+};
+
+export type UndoBotMemoryDreamError = UndoBotMemoryDreamErrors[keyof UndoBotMemoryDreamErrors];
+
+export type UndoBotMemoryDreamResponses = {
+    204: void;
+};
+
+export type UndoBotMemoryDreamResponse = UndoBotMemoryDreamResponses[keyof UndoBotMemoryDreamResponses];
 
 export type StreamBotData = {
     body?: never;
@@ -15723,3 +16694,32 @@ export type ReadinessResponses = {
 };
 
 export type ReadinessResponse = ReadinessResponses[keyof ReadinessResponses];
+
+export type FindApiVersionData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/health/version';
+};
+
+export type FindApiVersionErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+};
+
+export type FindApiVersionError = FindApiVersionErrors[keyof FindApiVersionErrors];
+
+export type FindApiVersionResponses = {
+    /**
+     * The API version
+     */
+    200: VersionResponseDto;
+};
+
+export type FindApiVersionResponse = FindApiVersionResponses[keyof FindApiVersionResponses];

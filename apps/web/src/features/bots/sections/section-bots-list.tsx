@@ -3,21 +3,19 @@ import {
   DragProvider,
   SidebarEmptyRow,
   SortableGroup,
-  useNow,
 } from '@oppenheimer/design-system-web';
 import type { BotEntity } from '@oppenheimer/frontend-consumer';
 import { useSuspenseSectionBots } from '@oppenheimer/frontend-consumer/react';
-import { CORE_CONFIG } from '@oppenheimer/frontend-core/config';
 import { ErrorAlert, useDragLabels } from '@oppenheimer/frontend-web';
 import type { BotSection } from '@oppenheimer/shared/schemas/bot';
 import { useTranslation } from 'react-i18next';
 import { BotDragOverlay } from '@/features/bots/components/bot-drag-overlay';
+import { useRememberSectionBotCount } from '@/features/bots/hooks/use-remember-section-bot-count';
 import { useSectionBotOrder } from '@/features/bots/hooks/use-section-bot-order';
 import { SectionBotRow } from './section-bot-row';
 
 /**
- * The bots placed in `section`, in the Employees order, with one minute
- * clock for their ages. Before the first, a line says so and offers the
+ * The bots placed in `section`, in the Employees order. Before the first, a line says so and offers the
  * heading's menu (`onAdd`), where a bot is made or placed here. A row's Hide
  * is the heading's write (`onHide`), like the menu's checks. A refetch that
  * fails keeps the rows and says so above them.
@@ -39,8 +37,8 @@ export function SectionBotsList({
   const { t } = useTranslation();
   const { data: listed, error } = useSuspenseSectionBots(section);
   const { bots, group, handlers, error: moveError, reset } = useSectionBotOrder(section, listed);
-  const now = useNow(CORE_CONFIG.clock.everyMinuteMs);
   const dragLabels = useDragLabels();
+  useRememberSectionBotCount(section, bots.length);
 
   return (
     <>
@@ -78,7 +76,6 @@ export function SectionBotsList({
                   key={bot.id}
                   bot={bot}
                   section={section}
-                  now={now}
                   onHide={() => onHide(bot)}
                 />
               ))}

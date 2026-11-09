@@ -35,6 +35,7 @@ export {
   useBotImages,
   useBotLive,
   useBotRoomLeft,
+  useBotSentTexts,
   useBotWaitingMessages,
   useCancelBotTurn,
   useClearBotConversation,
@@ -44,7 +45,12 @@ export {
   useSuspenseBotHistory,
   useUploadBotImage,
 } from './bot-chat.queries';
-export { useBotGoal, useClearBotGoal } from './bot-goal.queries';
+export {
+  useBotMemoryDream,
+  useRequestBotMemoryDream,
+  useUndoBotMemoryDream,
+} from './bot-dream.queries';
+export { useBotGoal, useClearBotGoal, useResumeBotGoal } from './bot-goal.queries';
 export { useBotLoop, useClearBotLoop } from './bot-loop.queries';
 export {
   type AddBotPermissionRuleVariables,
@@ -67,6 +73,7 @@ export {
   type RunBotRoutineVariables,
   type SetBotRoutineEnabledVariables,
   useDeleteBotRoutine,
+  useMarkBotSeen,
   useRunBotRoutine,
   useSetBotRoutineEnabled,
   useSuspenseAllBotRoutines,
@@ -87,6 +94,7 @@ export { type ChatgptLoginFlow, useChatgptLogin } from './bots.chatgpt-login';
 export {
   type AddBotFactVariables,
   type DeleteBotFactVariables,
+  type MoveBotGroupVariables,
   type RenameBotGroupVariables,
   type RevertBotDocumentVariables,
   type SaveBotDocumentVariables,
@@ -103,16 +111,19 @@ export {
   useDeleteBot,
   useDeleteBotFact,
   useDeleteBotGroup,
+  useMoveBotGroup,
   useReloadBotDocuments,
   useRenameBotGroup,
   useRevertBotDocument,
   useSaveBotDocument,
+  useSavePersonAbout,
   useSuspenseBot,
   useSuspenseBotAndHosts,
   useSuspenseBotDocuments,
   useSuspenseBotMemory,
   useSuspenseBotRevisions,
   useSuspenseBotsAndGroups,
+  useSuspensePersonMemory,
   useSuspenseSectionBots,
   useUpdateBot,
   useUpdateBotFact,
@@ -146,6 +157,7 @@ export {
 export { type HostPairingFlow, useHostPairing } from './hosts.pairing';
 export {
   useHostCodexEnvironments,
+  useHostFolderSearch,
   useHostFolders,
   useHostPresence,
   useHosts,
@@ -258,6 +270,7 @@ export {
   type StopSessionShareVariables,
   useAnswerSessionDecision,
   useCloseSession,
+  useCreateCloudChatKey,
   useCreateSession,
   useInvalidateSession,
   useMoveSession,
@@ -267,6 +280,7 @@ export {
   usePutSessionShare,
   useRenameSession,
   useRestartSession,
+  useRetrySession,
   useSessionOpening,
   useSessionShare,
   useSessionStartProgress,
@@ -283,6 +297,7 @@ export {
   useUploadSessionAttachment,
 } from './sessions.queries';
 export {
+  useCloudChatFeed,
   useSessionDeviceStream,
   useSessionStream,
   useSharedSessionStream,
@@ -303,6 +318,7 @@ export {
   useSessionTasks,
   useStartTaskSession,
   useSuspensePlan,
+  useSuspensePlanStats,
   useSuspenseStartSession,
   useSuspenseTaskBoard,
   useTasks,
@@ -310,6 +326,11 @@ export {
   useUpdateMilestone,
   useUpdateTask,
 } from './tasks.queries';
+export {
+  useLinkTelegram,
+  useSuspenseTelegramSettings,
+  useUnlinkTelegram,
+} from './telegram.queries';
 export {
   useVoiceDictation,
   type VoiceDictation,

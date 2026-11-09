@@ -17,7 +17,9 @@ const repository = z
       .describe('owner/name'),
     z.number().int().positive().describe('The repository id from list_repositories.'),
   ])
-  .describe('The repository: "owner/name", or its id from list_repositories.');
+  .describe(
+    'The repository: "owner/name", or its github_repo_id (from list_pull_requests or list_repositories).',
+  );
 
 /**
  * Following a pull request (`27-bot-subscriptions.md` §7): watch one, or
@@ -41,7 +43,7 @@ export class BotPullRequestWatchToolsFactory implements BotToolArea {
     return defineBotTool({
       name: 'watch_pull_request',
       scope: 'pulls:read',
-      description: `Subscribes you to an open pull request, so you are woken with a turn of your own when a check fails or passes, a review is submitted, someone comments, or it is merged: no need to poll it. You are told what happened and by whom, never what anyone wrote: read it with get_pull_request. It ends when the pull request is merged, after ${BOT_SUBSCRIPTION_WAKE_LIMIT} wakes, or with unwatch_pull_request. Only a repository the workspace's GitHub installations let your owner read; at most ${BOT_SUBSCRIPTIONS_PER_BOT} sessions and pull requests followed at once.`,
+      description: `Subscribes you to an open pull request, so you are woken with a turn of your own when a check fails or passes, a review is submitted, someone comments, or it is merged: no need to poll it. You are told what happened and by whom, never what anyone wrote: read it with get_pull_request. It ends when the pull request is merged, after ${BOT_SUBSCRIPTION_WAKE_LIMIT} wakes, or with unwatch_pull_request. Only a repository the workspace's GitHub installations let the person read; at most ${BOT_SUBSCRIPTIONS_PER_BOT} sessions and pull requests followed at once.`,
       input: z.object({
         repository,
         number: z.number().int().positive().describe('The pull request number.'),

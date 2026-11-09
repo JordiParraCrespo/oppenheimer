@@ -5,9 +5,10 @@ import {
   applyAccessScope,
   ScopedRepositoryBase,
 } from '@oppenheimer/backend-authz';
+import { OutboxService } from '@oppenheimer/backend-ddd';
 import type { BotDocumentName } from '@oppenheimer/shared';
 import { None, type Option, Some } from 'oxide.ts';
-import { DataSource, type EntityManager, Repository, type SelectQueryBuilder } from 'typeorm';
+import type { EntityManager, Repository, SelectQueryBuilder } from 'typeorm';
 import { BotDocumentMapper } from '../bot-document.mapper';
 import { BotResource } from '../bots.resource';
 import type { BotDocumentRevision } from '../domain/bot.types';
@@ -36,7 +37,7 @@ export class BotDocumentRepository
     protected readonly repository: Repository<BotDocumentOrmEntity>,
     @InjectRepository(BotDocumentRevisionOrmEntity)
     private readonly revisions: Repository<BotDocumentRevisionOrmEntity>,
-    private readonly dataSource: DataSource,
+    private readonly outbox: OutboxService,
     private readonly mapper: BotDocumentMapper,
   ) {
     super();
@@ -83,16 +84,22 @@ export class BotDocumentRepository
     if (!revision) return 'saved';
     let outcome: BotDocumentWriteOutcome;
     try {
-      outcome = await this.dataSource.transaction((manager) =>
-        this.writeOverExpected(manager, document, revision),
-      );
+      // The events (a first job) are staged only when the write won.
+      outcome = await this.outbox.transaction(async (manager) => {
+        const won = await this.writeOverExpected(manager, document, revision);
+        if (won === 'saved') await this.outbox.stageEvents(manager, document.domainEvents);
+        return won;
+      });
     } catch (error) {
       // A writer that slipped past the conditional update loses on
       // UQ_bot_document_revision, and the throw rolls its update back.
       if (violated(error, UNIQUE_VIOLATION, 'UQ_bot_document_revision')) return 'conflict';
       throw error;
     }
-    if (outcome === 'saved') document.written();
+    if (outcome === 'saved') {
+      document.written();
+      document.clearEvents();
+    }
     return outcome;
   }
 

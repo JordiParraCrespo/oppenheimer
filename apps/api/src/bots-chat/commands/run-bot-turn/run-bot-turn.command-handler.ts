@@ -5,9 +5,11 @@ import { Inject, Logger } from '@nestjs/common';
 import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
 import type { BotEngine } from '@oppenheimer/backend-agents';
 import { AppError } from '@oppenheimer/backend-core';
+import { BotDreamTriggerPolicy } from '../../application/bot-dream-trigger.policy';
 import { BotSteeringFactory } from '../../application/bot-steering.factory';
 import { BotSummaryTriggerPolicy } from '../../application/bot-summary-trigger.policy';
 import { BotTurnContextResolver } from '../../application/bot-turn-context.resolver';
+import { BotTurnFailureReportPolicy } from '../../application/bot-turn-failure-report.policy';
 import { TurnCancelWatchFactory } from '../../application/turn-cancel-watch.factory';
 import { TurnTranscript, thrownFailure } from '../../application/turn-transcript.policy';
 import { TurnWriteFactory } from '../../application/turn-write.factory';
@@ -26,6 +28,7 @@ import { RunBotTurnCommand } from './run-bot-turn.command';
  * makes the bot's next queued turn due and asks whether the conversation needs
  * summarizing. A turn found running was a worker that died under it, and fails
  * rather than running twice.
+ * A failure that is ours to fix is reported (`BotTurnFailureReportPolicy`).
  */
 @CommandHandler(RunBotTurnCommand)
 export class RunBotTurnCommandHandler implements ICommandHandler<RunBotTurnCommand, void> {
@@ -38,8 +41,10 @@ export class RunBotTurnCommandHandler implements ICommandHandler<RunBotTurnComma
     private readonly context: BotTurnContextResolver,
     private readonly cancelWatch: TurnCancelWatchFactory,
     private readonly summaries: BotSummaryTriggerPolicy,
+    private readonly dreams: BotDreamTriggerPolicy,
     private readonly steering: BotSteeringFactory,
     private readonly writes: TurnWriteFactory,
+    private readonly failures: BotTurnFailureReportPolicy,
   ) {}
 
   async execute({ turnId, metadata }: RunBotTurnCommand): Promise<void> {
@@ -85,11 +90,14 @@ export class RunBotTurnCommandHandler implements ICommandHandler<RunBotTurnComma
       const write = this.writes.writer(turn);
       const request = { ...shape.request, signal, scratchDir, steering };
       for await (const event of this.engine.run(request)) {
+        watch.saw(event);
         for (const written of transcript.apply(event)) await write(written);
       }
       transcript.endTurn(new Date(), watch.interruption);
+      this.failures.ended(turn);
     } catch (error) {
       turn.end('failed', new Date(), thrownFailure(error));
+      this.failures.thrown(turn, error);
       if (!(error instanceof AppError)) {
         const stack = error instanceof Error ? error.stack : String(error);
         this.logger.error({ message: 'A bot turn failed', turnId: turn.id }, stack);
@@ -106,5 +114,6 @@ export class RunBotTurnCommandHandler implements ICommandHandler<RunBotTurnComma
     if (!(await this.turns.finish(turn, correlationId))) return;
     await this.stream.publish(turn.botId, { type: 'turn', turnId: turn.id, status: turn.status });
     await this.summaries.afterTurn(turn, correlationId);
+    await this.dreams.afterTurn(turn, correlationId);
   }
 }

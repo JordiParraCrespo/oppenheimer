@@ -22,6 +22,7 @@ const PURPOSE_KEYS = {
   goal_review: 'bots.chat.usage.purpose.goalReview',
   summary: 'bots.chat.usage.purpose.summary',
   rule_review: 'bots.chat.usage.purpose.ruleReview',
+  dream: 'bots.chat.usage.purpose.dream',
 } as const;
 
 /**
@@ -65,10 +66,10 @@ export function BotUsageReport({
   const figures = [
     { label: t('bots.chat.usage.active'), value: formatTimeAway(usage.activeMs, locale) },
     { label: t('bots.chat.usage.turns'), value: String(usage.turns) },
-    {
-      label: t('bots.chat.usage.cacheHit'),
-      value: totals.cacheHitPercent === null ? '—' : `${totals.cacheHitPercent}%`,
-    },
+    // No rate to give (nothing was read as input yet): the cell is left out, not a dash.
+    ...(totals.cacheHitPercent === null
+      ? []
+      : [{ label: t('bots.chat.usage.cacheHit'), value: `${totals.cacheHitPercent}%` }]),
     { label: t('bots.chat.usage.tokens'), value: tokens(totals.tokens) },
     ...modelShares(usage).map((share, index) => ({
       label: usage.models[index] ? label(usage.models[index]) : share.model,

@@ -36,6 +36,8 @@ Under `version1/`, each one a standalone `.dc.html` page at 1440×900.
 | [`Emails`](version1/Emails.dc.html) | Index of the transactional emails, each framed live from `version1/emails/` with when it is sent and its link lifetime |
 | [`Inbox`](version1/Inbox.dc.html) | The Inbox as Plan embeds it: what needs you, snoozed and done, with no rail or sidebar of its own |
 | [`Components`](version1/Components.dc.html) | Inventory — every component the screens are built from |
+| [`Mobile`](version1/Mobile.dc.html) | The product as an iOS or Android app (2026-11-06) — sign-in, sessions and a session, employees, pull requests and automations, on translucent surfaces; a frame of `../../../next-steps/0.5-mobile.md` |
+| [`Mobile (solid)`](version1/Mobile%20(solid).dc.html) | The mobile sessions flow on solid surfaces (2026-11-06) |
 
 States inside the onboarding screens are live: the workspace address checks
 availability as you type, GitHub flips to connected, the host registers after a
@@ -210,9 +212,58 @@ the project list. The Inbox's rail item leaves every console frame, and
 sign-in, Ready, `Flow`, `Components` and the global search now land on
 Plan's Inbox. `rail-order.js` stops putting Inbox first in a saved order.
 
+The 2026-11-06 export makes a bot a one-line row wherever a sidebar lists
+one (`Bots`, and the Bots heading in `SessionsConsole`, `Tasks` and
+`PullRequests`): 32px tall, a 20px square avatar, the last message moved
+into the row's tooltip, the needs-input and unread dots kept. The
+sidebar toggle (`sidebar-toggle.js`) moves into the sidebar's own header
+while it is open and back to the page bar only once it folds. `Bots`
+gains its chat's event lines (a session finished or failed, a routine
+run, a stopped goal), a notice for a routine the owner must fix, and the
+goal bar fused onto the composer's top; the canvas drew these after the
+console's own components, and `Components` adds them as its Bot chat and
+Bots groups. `SessionsConsole`'s preview pane gains a Shell tab: a tmux
+shell on the session's host that boots in three steps, fails with Retry
+when the host is offline, and then takes input. `Mobile` and
+`Mobile (solid)` are new: the product as an iOS or Android app (sign-in,
+sessions and a session, and with translucent surfaces also employees,
+pull requests and automations), drawn in `ios-frame.jsx` and
+`android-frame.jsx`; `Mobile (solid)` is the sessions flow on solid
+surfaces.
+
 `version1/assets/agents/` holds the coding-agent marks (Claude Code, OpenCode and
 Codex are wired into the composer's harness button; Copilot, Gemini and Cursor
 are held in reserve), copied from the Orca repository.
+
+## 2026-11-08 export refresh
+
+Synced from `Agent orchestration platform v1(2).zip` (22:15 export).
+`Tasks` adds a daily To do view, project cards and navigation back from a
+project, and refines the task and calendar layouts. `Settings` replaces the
+host rows with resource cards and a host detail view for agents, worktrees,
+and disk cleanup, including confirmation states. The twelve portraits in
+`version1/assets/scientists/` accompany this export.
+
+The design system and the other frames are unchanged. As in previous syncs,
+`PullRequests` retains the repository's corrections: watched repositories
+live in Settings and waiting pull requests count as blocked. Settings keeps
+“These apply to every watched repository.” The exploration frame remains.
+The host-detail tabs and Add host instruction tabs use separate state so
+visiting a host does not hide the installation instructions. Copy reads the
+selected installation tab, with the agent prompt selected from its own block.
+These are reference artboards; this sync does not implement their new
+behavior in the application. The calendar's Day and Week and the To do view
+were built on 2026-11-08 (`../20-plan-calendar.md` §6); the project cards
+are not yet.
+
+Its Projects view is in the console since: `/plan/projects` draws the
+project cards (the status from the project's sessions), and a card opens
+the project's page with Milestones, Needs input and In progress
+(`ProjectCard`, `ProjectOverview`). The page has no Chat tab: the frame draws a project as an agent's view,
+and there is no per-project agent. Since 2026-11-09 its Stats is a view of
+the page (`?view=stats`): tasks completed and created, and tokens and cost
+once sessions report them, over a period, from `GET /plan/stats`; the
+frame's pull-request panels wait for that endpoint to carry them.
 
 ## Design system
 
@@ -308,7 +359,9 @@ artboards at `../_ds/<folder>`; the layout here already matches it.
   three, and were merged the same way. The 2026-10-26 export leaves
   `PullRequests` and `Settings` as they were, so both stay as they are. The
   2026-10-29 export only drops the Inbox rail item from `PullRequests`,
-  which is applied over the kept edits.
+  which is applied over the kept edits. The 2026-11-06 export again lacks
+  all three; of its `PullRequests` only the one-line bot rows are applied
+  over the kept edits, and `Settings` stays as it was.
 - Folder sessions in `SessionsConsole (where)`, and projects without
   repositories, are in no note: every session in the notes is a git
   worktree, the blank terminal included (`../00-scope.md`).
@@ -376,6 +429,16 @@ artboards at `../_ds/<folder>`; the layout here already matches it.
   `TemplateTiles`. The chat's rows were written for the system, not ported
   from Synara, so its licence does not bear on them.
 - Left out of the 2026-10-25 export, as before: `uploads/`, `github.md`,
-  `assets/prod/` and `version1/assets/scientists/`.
+  `assets/prod/` and `version1/assets/scientists/`. The 2026-11-06 export
+  was merged the same way.
+- The 2026-11-06 export is synced here; its one-line bot row is ported. By
+  the owner's call of 2026-11-06 it replaced `BotItem`'s two-line form
+  rather than sitting beside it as a density, so the sidebar no longer
+  shows a bot's age. The sidebar toggle's move into the header is not
+  ported yet. The chat's
+  event lines, notice and goal bar are already in the console (the canvas
+  drew them from it). The Shell tab is in no note and needs the runner to
+  open a shell on its own. `Mobile` is `../../../next-steps/0.5-mobile.md`,
+  and nothing in the repo builds it.
 - `uploads/` from the export (the raw pasted screenshots) was left out; the
   photography those became lives in `version1/assets/imagery/`.

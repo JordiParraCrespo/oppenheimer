@@ -162,7 +162,7 @@ export class BotRoutineToolsFactory implements BotToolArea {
     return {
       name: 'update_routine',
       scope: 'automations:write' as const,
-      description: `Your routines: tasks you run on your own, on a schedule (your heartbeat: "every weekday at 9, check open PRs"), when a GitHub event happens, or when new mail reaches one of the person's Gmail accounts (checked about once a minute). list them; create one (a name, a prompt written to yourself, and one or more triggers); update, pause, resume or delete one; or run_now to run one at once. Everything but list and pause asks the person first. When a routine runs, you get a turn opened by it, with nobody writing to you. Use it when the person asks you to do something regularly or when something happens; a one-off task is not a routine.`,
+      description: `Lists, creates, changes, pauses, resumes, deletes or runs your routines: tasks you run on your own, on a schedule (your heartbeat: "every weekday at 9, check open PRs"), when a GitHub event happens, or when new mail reaches one of the person's Gmail accounts (checked about once a minute). list them; create one (a name, a prompt written to yourself, and one or more triggers); update, pause, resume or delete one; or run_now to run one at once. Everything but list and pause asks the person first. When a routine runs, you get a turn opened by it, with nobody writing to you. Use it when the person asks you to do something regularly or when something happens; a one-off task is not a routine.`,
       input,
       normalize: (call: RoutineCall, context: BotToolCallContext) => this.checked(call, context),
       summarize: async (call: RoutineCall, context: BotToolCallContext) => {

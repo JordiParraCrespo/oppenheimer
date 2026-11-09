@@ -18,3 +18,9 @@ func killGroupOnCancel(cmd *exec.Cmd) {
 		return syscall.Kill(-cmd.Process.Pid, syscall.SIGKILL)
 	}
 }
+
+// killGroup kills every process left in the group led by pid. A group with
+// nobody left in it is not an error.
+func killGroup(pid int) {
+	_ = syscall.Kill(-pid, syscall.SIGKILL)
+}

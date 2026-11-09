@@ -32,4 +32,14 @@ export class CloudRunsResolver implements CloudRunsPort {
     const call = await this.resolver.callForOwner(owner, provider);
     return call.provider.read(call.grant, externalId, runId);
   }
+
+  async followUp(
+    owner: CloudRunOwner,
+    provider: CloudAgentProviderId,
+    externalId: string,
+    prompt: string,
+  ): Promise<CloudAgentRunState> {
+    const call = await this.resolver.callForOwner(owner, provider);
+    return call.provider.followUp(call.grant, externalId, prompt);
+  }
 }

@@ -9,20 +9,28 @@
     "automations": "Automatizaciones"
   },
   "header": {
-    "previous": "Mes anterior",
-    "next": "Mes siguiente",
+    "previous": "Anterior",
+    "next": "Siguiente",
     "today": "Hoy",
     "newEvent": "Nuevo evento",
     "meetings": "reuniones",
     "tasksDue": "tareas para entregar",
-    "runs": "ejecuciones de automatizaciones"
+    "runs": "ejecuciones de automatizaciones",
+    "views": "Vista del calendario",
+    "day": "Día",
+    "week": "Semana",
+    "month": "Mes",
+    "todayWeek": "Hoy · Semana {{week}}",
+    "weekNumber": "Semana {{week}}",
+    "weeks": "Semanas {{from}}–{{to}}"
   },
   "grid": {
     "more_one": "{{count}} más",
     "more_other": "{{count}} más",
     "eventsFailed": "No se han podido cargar tus eventos.",
     "googleFailed": "No se ha podido leer Google Calendar.",
-    "moveFailed": "No se ha podido mover a otro día."
+    "moveFailed": "No se ha podido mover a otro día.",
+    "allDay": "Todo el día"
   },
   "event": {
     "newTitle": "Nuevo evento",

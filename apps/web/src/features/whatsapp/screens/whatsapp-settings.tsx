@@ -1,4 +1,4 @@
-import { SettingsTitle } from '@oppenheimer/design-system-web';
+import { Callout, SettingsTitle } from '@oppenheimer/design-system-web';
 import { QueryState } from '@oppenheimer/frontend-web';
 import { useTranslation } from 'react-i18next';
 import { WhatsappAccountsSkeleton } from '@/features/whatsapp/components/whatsapp-accounts-skeleton';
@@ -17,6 +17,9 @@ export function WhatsappSettingsScreen() {
         title={t('settings.whatsapp.title')}
         description={t('settings.whatsapp.description')}
       />
+      {/* Always drawn, so it sits outside the read and never pushes the list
+          down when it lands. */}
+      <Callout className="mb-4">{t('settings.whatsapp.risk')}</Callout>
       <QueryState>
         <QueryState.Pending>
           <WhatsappAccountsSkeleton />

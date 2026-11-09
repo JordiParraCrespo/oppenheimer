@@ -1,7 +1,10 @@
-import type { FsListingMessage } from '@oppenheimer/shared/protocol';
+import type { FsFoundMessage, FsListingMessage } from '@oppenheimer/shared/protocol';
 
 /** One directory on a host as its runner listed it (`fs.listing` without its envelope). */
 export type HostFolderListing = Omit<FsListingMessage, 'type' | 'commandId'>;
+
+/** The folders a host's runner found by name (`fs.found` without its envelope). */
+export type HostFolderSearch = Omit<FsFoundMessage, 'type' | 'commandId'>;
 
 /**
  * What asking a host for a directory came back with: the listing, the reason
@@ -9,8 +12,8 @@ export type HostFolderListing = Omit<FsListingMessage, 'type' | 'commandId'>;
  * time, or the runner's refusal with its catalog code (`FS_001` not found,
  * `FS_002` not a directory, `FS_003` not readable).
  */
-export type HostFoldersOutcome =
-  | { kind: 'listed'; listing: HostFolderListing }
+export type HostFoldersOutcome<T = HostFolderListing> =
+  | { kind: 'listed'; listing: T }
   | { kind: 'host_offline' }
   | { kind: 'not_supported' }
   | { kind: 'timed_out' }
@@ -25,4 +28,9 @@ export type HostFoldersOutcome =
 export interface HostFoldersPort {
   /** List `path` on the host, or its home directory when absent. */
   list(hostId: string, path?: string): Promise<HostFoldersOutcome>;
+  /**
+   * Find the folders under the host's home whose name holds `query`: the
+   * runner's bounded walk, refused as a listing of home would be.
+   */
+  find(hostId: string, query: string): Promise<HostFoldersOutcome<HostFolderSearch>>;
 }

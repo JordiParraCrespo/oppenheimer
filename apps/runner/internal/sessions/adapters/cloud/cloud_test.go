@@ -5,7 +5,9 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
+	"syscall"
 	"testing"
 	"time"
 
@@ -118,15 +120,38 @@ func TestStartFailsAtOnceWhenTheCheckoutCannotBeTrusted(t *testing.T) {
 }
 
 func TestStartReportsTheCLIsRefusal(t *testing.T) {
-	claude := fakeClaude(t, `echo 'Error: You are not signed in to claude.ai. Run /login.'
+	claude := fakeClaude(t, `echo 'Error: The Claude GitHub App has no access to acme/oppenheimer.'
 exit 1
 `)
 	_, err := Starter{Command: claude}.Start(context.Background(), t.TempDir(), "task")
 	if !isCloudStart(err) {
 		t.Fatalf("err = %v, want ErrCloudStart", err)
 	}
-	if got := err.Error(); !strings.Contains(got, "not signed in to claude.ai") || strings.Contains(got, "^D") {
+	if got := err.Error(); !strings.Contains(got, "no access to acme/oppenheimer") || strings.Contains(got, "^D") {
 		t.Fatalf("err = %q, want the CLI's own words", got)
+	}
+}
+
+// Claude Code 2.1.x refuses a host with no claude.ai account in its renderer's
+// own bytes: the cursor saved and restored around the line, a character set
+// chosen after it, and a cursor move for every space. Read as the console
+// showed it, that was "\x1b7\x1b8Error:Cloudsessionsneedaclaude.aisign-in…":
+// the escapes as boxes and the words run together. It is its own code, the
+// one refusal a person fixes on the host and then tries again.
+func TestStartReportsAMissingSignInInTheCLIsWordsWithoutItsEscapes(t *testing.T) {
+	claude := fakeClaude(t, `printf '\0337\0338Error:\033[1CCloud\033[1Csessions\033[1Cneed\033[1Ca\033[1Cclaude.ai\033[1Csign-in.\r\n'
+printf 'Run\033[1C`+"`"+`claude\033[1Cauth\033[1Clogin`+"`"+`\033[1C(or\033[1Clog\033[1Cin\033[1Cin\033[1Ca\033[1Clocal\033[1Csession),\033[1Cthen\033[1Ctry\033[1Cagain.\r\n'
+printf '\033(B\0337\0338\033(B\0337\0338\r\n'
+exit 1
+`)
+	_, err := Starter{Command: claude}.Start(context.Background(), t.TempDir(), "task")
+	var prob *problem.Error
+	if !errors.As(err, &prob) || prob.Code != domain.ErrCloudSignIn.Code {
+		t.Fatalf("err = %v, want ErrCloudSignIn", err)
+	}
+	want := "Error: Cloud sessions need a claude.ai sign-in. · Run `claude auth login` (or log in in a local session), then try again."
+	if prob.Detail != want {
+		t.Fatalf("detail = %q, want %q", prob.Detail, want)
 	}
 }
 
@@ -187,4 +212,80 @@ func mustReal(t *testing.T, dir string) string {
 		t.Fatal(err)
 	}
 	return real
+}
+
+// The CLI may start helpers of its own (a hook, an MCP server) that outlive
+// it. A start that left them running would leave a claude on the host for
+// every cloud session, holding its scratch checkout open; stopping only the
+// CLI's own process is the regression this guards.
+func TestStartLeavesNothingTheCLIStartedRunning(t *testing.T) {
+	pidFile := filepath.Join(t.TempDir(), "helper.pid")
+	// The helper ignores the hangup the terminal's close sends, as a
+	// daemonising helper does, so only an explicit stop ends it.
+	claude := fakeClaude(t, `(trap '' HUP; exec sleep 300) &
+echo $! > '`+pidFile+`'
+echo 'View: https://claude.ai/code/session_01abcdefgh'
+sleep 300
+`)
+	if _, err := (Starter{Command: claude}).Start(context.Background(), t.TempDir(), "task"); err != nil {
+		t.Fatalf("Start: %v", err)
+	}
+	raw, err := os.ReadFile(pidFile)
+	if err != nil {
+		t.Fatal(err)
+	}
+	pid, err := strconv.Atoi(strings.TrimSpace(string(raw)))
+	if err != nil {
+		t.Fatal(err)
+	}
+	deadline := time.Now().Add(2 * time.Second)
+	for running(pid) {
+		if time.Now().After(deadline) {
+			_ = syscall.Kill(pid, syscall.SIGKILL)
+			t.Fatalf("the CLI's helper %d is still running after Start returned", pid)
+		}
+		time.Sleep(20 * time.Millisecond)
+	}
+}
+
+// The checkout's trust is undone once the CLI is gone, not while it runs.
+func TestStartForgetsTheCheckoutAfterTheCLIIsGone(t *testing.T) {
+	dir := t.TempDir()
+	alive := filepath.Join(t.TempDir(), "alive")
+	claude := fakeClaude(t, `touch '`+alive+`'
+echo 'View: https://claude.ai/code/session_01abcdefgh'
+sleep 300
+`)
+	var forgot string
+	starter := Starter{Command: claude, Forget: func(d string) {
+		forgot = d
+		if err := os.Remove(alive); err != nil {
+			t.Errorf("forgot before the CLI ran: %v", err)
+		}
+	}}
+	if _, err := starter.Start(context.Background(), dir, "task"); err != nil {
+		t.Fatalf("Start: %v", err)
+	}
+	if forgot != dir {
+		t.Fatalf("forgot %q, want %q", forgot, dir)
+	}
+}
+
+// running reports a process that has not stopped. A zombie has: killed and
+// orphaned, it waits only for an init to reap it, and a container whose init
+// reaps nothing keeps it, so `kill(pid, 0)`, which still succeeds on one,
+// says nothing. Linux names the state in /proc; elsewhere the signal is the
+// only answer, and launchd reaps.
+func running(pid int) bool {
+	if syscall.Kill(pid, 0) != nil {
+		return false
+	}
+	stat, err := os.ReadFile(filepath.Join("/proc", strconv.Itoa(pid), "stat"))
+	if err != nil {
+		return true
+	}
+	// After "pid (comm) ": comm may hold spaces and parentheses, so the
+	// state is the field after the last ")".
+	fields := strings.Fields(string(stat[strings.LastIndexByte(string(stat), ')')+1:]))
+	return len(fields) == 0 || fields[0] != "Z"
 }

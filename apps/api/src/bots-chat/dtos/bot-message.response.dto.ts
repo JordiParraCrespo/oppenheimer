@@ -1,6 +1,7 @@
 import { ApiExtraModels, ApiProperty, getSchemaPath } from '@nestjs/swagger';
 import {
   BOT_APPROVAL_EVENT_STAGES,
+  BOT_DREAM_ACTIVITIES,
   BOT_EVENT_OUTCOMES,
   BOT_GOAL_ACTIVITIES,
   BOT_LOOP_ACTIVITIES,
@@ -11,6 +12,7 @@ import {
   BOT_SESSION_EVENT_STATES,
   BOT_SUBAGENT_STATUSES,
   type BotApprovalEventStage,
+  type BotDreamActivity,
   type BotEventOutcome,
   type BotGoalActivity,
   type BotLoopActivity,
@@ -361,8 +363,13 @@ export class BotGoalEventResponseDto {
   })
   step!: number;
 
-  @ApiProperty({ description: 'The continuations the goal may take.' })
-  limit!: number;
+  @ApiProperty({
+    type: Number,
+    nullable: true,
+    description:
+      'The continuations the goal may take; null for a goal with no limit (every goal since 2026-11-09).',
+  })
+  limit!: number | null;
 
   @ApiProperty({
     nullable: true,
@@ -412,6 +419,41 @@ export class BotLoopEventResponseDto {
   reason!: string | null;
 }
 
+/** A turn folded what it had read into a summary (`25-bots.md` §2, "Compaction"). */
+export class BotCompactionEventResponseDto {
+  @ApiProperty({ enum: ['compaction'] })
+  kind!: 'compaction';
+
+  @ApiProperty({
+    description: 'The tokens the next call would have been sent before the fold, estimated.',
+  })
+  tokensBefore!: number;
+
+  @ApiProperty({ description: 'The tokens it is sent after it, estimated.' })
+  tokensAfter!: number;
+}
+
+export class BotDreamEventResponseDto {
+  @ApiProperty({ enum: ['dream'] })
+  kind!: 'dream';
+
+  @ApiProperty({
+    enum: BOT_DREAM_ACTIVITIES,
+    description:
+      "`dreamed`: the bot's memory was rewritten by a dream; `undone`: its owner put the facts back.",
+  })
+  activity!: BotDreamActivity;
+
+  @ApiProperty({ format: 'uuid' })
+  dreamId!: string;
+
+  @ApiProperty({ description: 'The facts the dream rewrote.' })
+  factsBefore!: number;
+
+  @ApiProperty({ description: 'The facts it wrote in their place.' })
+  factsAfter!: number;
+}
+
 export type BotMessageEventResponseDto =
   | BotApprovalEventResponseDto
   | BotQuestionEventResponseDto
@@ -421,7 +463,9 @@ export type BotMessageEventResponseDto =
   | BotSessionEventResponseDto
   | BotPullRequestEventResponseDto
   | BotGoalEventResponseDto
-  | BotLoopEventResponseDto;
+  | BotLoopEventResponseDto
+  | BotDreamEventResponseDto
+  | BotCompactionEventResponseDto;
 
 /** One thing the chat draws: your message, the bot's text, an activity line or an event. */
 @ApiExtraModels(
@@ -434,6 +478,8 @@ export type BotMessageEventResponseDto =
   BotPullRequestEventResponseDto,
   BotGoalEventResponseDto,
   BotLoopEventResponseDto,
+  BotDreamEventResponseDto,
+  BotCompactionEventResponseDto,
 )
 export class BotMessageResponseDto {
   @ApiProperty({ format: 'uuid' })
@@ -468,6 +514,8 @@ export class BotMessageResponseDto {
       { $ref: getSchemaPath(BotPullRequestEventResponseDto) },
       { $ref: getSchemaPath(BotGoalEventResponseDto) },
       { $ref: getSchemaPath(BotLoopEventResponseDto) },
+      { $ref: getSchemaPath(BotDreamEventResponseDto) },
+      { $ref: getSchemaPath(BotCompactionEventResponseDto) },
     ],
     nullable: true,
     description: 'What an event says happened, by `kind`; null on every other role.',

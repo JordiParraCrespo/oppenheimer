@@ -15,6 +15,7 @@ import { TerminalColumn } from '../components/terminal-column';
 import { useEarlierOnReach } from '../hooks/use-earlier-on-reach';
 import { useChatLoading, useChatOlder, useChatTurnIds } from '../hooks/use-session-chat';
 import type { ChatAttach } from '../lib/chat-blocks';
+import { SessionChatActivity } from './session-chat-activity';
 import { SessionChatAttachingSend } from './session-chat-attaching-send';
 import { SessionChatSend } from './session-chat-send';
 import { SessionChatTurn } from './session-chat-turn';
@@ -53,7 +54,9 @@ function keepingPlace(box: HTMLElement | null, grow: () => void): void {
  * the reader is up in it, new turns add below and never take one off the top.
  * It scrolls the whole pane, its scrollbar at the pane's edge, and its turns
  * and composer stand in the terminal grid's `TerminalColumn`, so Terminal /
- * Chat moves neither edge of the text.
+ * Chat moves neither edge of the text. While the agent works, its own word
+ * for the moment, off the terminal's spinner, closes the column
+ * (`SessionChatActivity`).
  */
 export function SessionChat({
   chat,
@@ -93,7 +96,6 @@ export function SessionChat({
       ? heldAt
       : Math.max(0, ids.length - held.fromEnd)
     : Math.min(following, ids.length);
-  const last = ids.at(-1);
   const shown = first > 0 ? ids.slice(first) : ids;
 
   // A page asked of the host is drawn as soon as it is there: the reader
@@ -159,8 +161,9 @@ export function SessionChat({
                   </div>
                 ) : null}
                 {shown.map((id) => (
-                  <SessionChatTurn key={id} chat={chat} id={id} latest={id === last} />
+                  <SessionChatTurn key={id} chat={chat} id={id} />
                 ))}
+                <SessionChatActivity chat={chat} />
               </ChatTranscript>
             )}
           </TerminalColumn>

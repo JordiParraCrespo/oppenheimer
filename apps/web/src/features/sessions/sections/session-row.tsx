@@ -14,7 +14,6 @@ import { SessionRowMenu } from '../components/session-row-menu';
 import { useSessionPin } from '../hooks/use-session-pins';
 import { useSessionSelected } from '../hooks/use-session-selection';
 import { type SessionGlyph, sessionGlyph } from '../lib/session-glyph';
-import { projectsForMove } from '../lib/session-groups';
 import { dotFor, isWorking } from '../lib/session-run-state';
 import { clickPick } from '../lib/session-selection';
 
@@ -49,6 +48,7 @@ const GLYPHS: Record<Exclude<SessionGlyph, 'vendor'>, ReactNode> = {
  * ⌘, Ctrl or Shift picks the row instead of opening it, and so does any click
  * while something is picked. While the list is selecting, the row draws its
  * box, does not drag and hides its menu, since what it acts on is the bar's.
+ * Otherwise a right-click opens the row's menu at its ellipsis.
  */
 export function SessionRow({
   session,
@@ -80,7 +80,6 @@ export function SessionRow({
   // renders the row), and a closed row then pays nothing when a project
   // changes. The sidebar's own subscription keeps the list in the cache.
   const projectsSnapshot = useProjectsSnapshot();
-  const moveTargets = () => projectsForMove(projectsSnapshot() ?? [], session);
   // The toasts are the hooks' own, not `mutate`'s: a moved row lands in
   // another group, and the row that asked unmounts before the write settles.
   // A renamed or moved row can land anywhere in a long, grouped list, so both
@@ -110,6 +109,9 @@ export function SessionRow({
       ? t('sessions.sidebar.deleting')
       : undefined;
   const cloudUrl = session.cloud?.url ?? null;
+  // The row has a menu unless the list is selecting (the bar acts) or its name
+  // is being typed; every way of opening the menu reads this.
+  const hasMenu = !selection.selecting && draft === null;
   const statusHint = session.closeRefusal
     ? t('sessions.sidebar.notDeletedHint')
     : session.isClosing
@@ -164,12 +166,21 @@ export function SessionRow({
         event.preventDefault();
         selection.pick(how);
       }}
+      // A right-click opens the row's own menu, not the browser's.
+      onContextMenu={
+        hasMenu
+          ? (event) => {
+              event.preventDefault();
+              setMenuOpen(true);
+            }
+          : undefined
+      }
       selected={selection.selecting ? selection.selected : undefined}
       selectedLabel={t('sessions.sidebar.selected')}
       menuOpen={menuOpen}
       rename={renameField}
       action={
-        selection.selecting ? undefined : (
+        hasMenu ? (
           <SessionRowMenu
             open={menuOpen}
             onOpenChange={setMenuOpen}
@@ -180,13 +191,14 @@ export function SessionRow({
             onMove={(projectId) => move.mutate({ id: session.id, projectId })}
             onShare={session.isCloud ? undefined : () => onShare(session)}
             onDelete={() => onDelete(session)}
-            projects={(menuOpen ? moveTargets() : []).map((target) => ({
+            projects={(menuOpen ? (projectsSnapshot() ?? []) : []).map((target) => ({
               id: target.id,
               name: target.name,
               isUnassigned: target.isUnassigned,
             }))}
+            currentProjectId={session.projectId}
           />
-        )
+        ) : undefined
       }
     />
   );

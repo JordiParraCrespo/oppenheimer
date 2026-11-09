@@ -70,6 +70,11 @@ const INTEGER_TYPES = {
   // A byte offset into a transcript file, as Go's `os` reads one.
   'attachment.chat.before': 'int64',
   'attachment.chat.older.before': 'int64',
+  'transcript.read.after': 'int64',
+  'transcript.read.limit': 'int',
+  'transcript.page.from': 'int64',
+  'transcript.page.next': 'int64',
+  'transcript.page.dropped': 'int',
   'session.attach.cols': 'int',
   'session.attach.rows': 'int',
   'session.resize.cols': 'int',
@@ -78,6 +83,13 @@ const INTEGER_TYPES = {
   'port.listing.ports[].port': 'int',
   'port.open.port': 'int',
   'session.watch.count': 'int',
+  'host.exec.timeoutSeconds': 'int',
+  'host.exec.result.exitCode': 'int',
+  'host.exec.result.durationMs': 'int64',
+  'terminal.drive.window': 'int',
+  'terminal.drive.waitSeconds': 'int',
+  'terminal.drive.history': 'int',
+  'terminal.screen.waitedMs': 'int64',
 };
 
 /** Inline objects the runner already had a name for; the rest are `<Parent><Field>`. */
@@ -140,6 +152,14 @@ const CONSTANT_DOCS = {
     'carries; the runner compacts each line first and drops one still bigger.',
   ],
   chatBatchMaxEntries: ['ChatBatchMaxEntries is the most entries one `attachment.chat` holds.'],
+  execOutputMaxBytes: [
+    'ExecOutputMaxBytes is how many bytes of each stream `host.exec.result`',
+    'keeps: the last ones.',
+  ],
+  terminalScreenMaxBytes: [
+    'TerminalScreenMaxBytes is how much of a captured screen `terminal.screen`',
+    'carries: the last bytes.',
+  ],
 };
 
 /** `session.window.open` → `SessionWindowOpen`, `HELLO_EXPECTED` → `HelloExpected`. */
@@ -393,6 +413,12 @@ function render(schema = JSON.parse(readFileSync(schemaPath, 'utf8'))) {
     '',
     ...comment(CONSTANT_DOCS.chatBatchMaxEntries),
     `const ChatBatchMaxEntries = ${constants.chatBatchMaxEntries}`,
+    '',
+    ...comment(CONSTANT_DOCS.execOutputMaxBytes),
+    `const ExecOutputMaxBytes = ${constants.execOutputMaxBytes}`,
+    '',
+    ...comment(CONSTANT_DOCS.terminalScreenMaxBytes),
+    `const TerminalScreenMaxBytes = ${constants.terminalScreenMaxBytes}`,
     '',
     ...comment(CONSTANT_DOCS.capabilities),
     ...constGroup(

@@ -18,6 +18,7 @@ opp hosts list
 opp sessions run --host mac-studio --repo acme/app "Run the iOS tests; report what fails"
 opp sessions wait <id>         # until the agent is through, or needs you
 opp sessions send <id> "Fix the first failure and push"
+opp sessions transcript <id>   # what its agent said and did; --cursor reads on
 opp bots chat juno "What failed overnight?"
 ```
 

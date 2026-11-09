@@ -12,9 +12,13 @@ import {
   useInstallations,
   useOrganizations,
 } from '@oppenheimer/frontend-consumer/react';
+import { LoadingStatus } from '@oppenheimer/frontend-web';
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { workspaceAddress } from '@/features/organizations/lib/workspace-address';
+
+/** Where the workspace's name goes in the lead while it loads. */
+const NAME_SLOT = '\u0000';
 
 /**
  * The landing after onboarding. Each row finds what its step produced by the
@@ -62,13 +66,40 @@ export function OnboardingReadyScreen({
     installation && !installation.coversEveryRepository ? installation.id : undefined,
   );
 
+  const loading =
+    loadingWorkspace ||
+    (installationId !== undefined && loadingGithub) ||
+    (hostId !== undefined && loadingHosts);
+  const [beforeName, afterName] = t('onboarding.flow.ready.description', {
+    workspace: NAME_SLOT,
+  }).split(NAME_SLOT);
+
   return (
-    <div className="flex flex-col gap-6">
+    <div aria-busy={loading || undefined} className="flex flex-col gap-6">
+      {loading && <LoadingStatus />}
       <div className="flex flex-col gap-3.5">
         <SuccessMark label={t('onboarding.flow.ready.doneLabel')} />
-        <StepHeader title={t('onboarding.flow.ready.title')}>
-          {t('onboarding.flow.ready.description', { workspace: workspace?.name ?? '' })}
-        </StepHeader>
+        {/* The lead names the workspace, so it waits for it: a bar in the
+            name's place while it loads, and no lead when there is none to
+            name (the Workspace row says why). */}
+        {workspace ? (
+          <StepHeader title={t('onboarding.flow.ready.title')}>
+            {t('onboarding.flow.ready.description', { workspace: workspace.name })}
+          </StepHeader>
+        ) : (
+          <div>
+            <StepHeader title={t('onboarding.flow.ready.title')} />
+            {loadingWorkspace && (
+              <div className="mt-2.5 text-body leading-normal text-pretty text-fg-muted">
+                {beforeName}
+                <span className="inline-flex h-5.5 items-center align-bottom">
+                  <Skeleton shape="sm" className="h-3.5 w-28" />
+                </span>
+                {afterName}
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       <SummaryCard>
@@ -78,7 +109,9 @@ export function OnboardingReadyScreen({
           {workspaceFailed ? (
             t('onboarding.flow.ready.failed')
           ) : loadingWorkspace ? (
-            <Skeleton className="h-3 w-40" />
+            <span className="inline-flex h-5 items-center align-bottom">
+              <Skeleton shape="sm" className="h-3 w-40" />
+            </span>
           ) : workspace ? (
             workspaceAddress(workspace.slug)
           ) : (
@@ -89,7 +122,9 @@ export function OnboardingReadyScreen({
           {installationId && githubFailed ? (
             t('onboarding.flow.ready.failed')
           ) : installationId && loadingGithub ? (
-            <Skeleton className="h-3 w-32" />
+            <span className="inline-flex h-5 items-center align-bottom">
+              <Skeleton shape="sm" className="h-3 w-32" />
+            </span>
           ) : !installation ? (
             t('onboarding.flow.ready.noGithub')
           ) : installation.coversEveryRepository ? (
@@ -114,7 +149,9 @@ export function OnboardingReadyScreen({
           {hostId && hostsFailed ? (
             t('onboarding.flow.ready.failed')
           ) : hostId && loadingHosts ? (
-            <Skeleton className="h-3 w-36" />
+            <span className="inline-flex h-5 items-center align-bottom">
+              <Skeleton shape="sm" className="h-3 w-36" />
+            </span>
           ) : host ? (
             host.summary
           ) : (

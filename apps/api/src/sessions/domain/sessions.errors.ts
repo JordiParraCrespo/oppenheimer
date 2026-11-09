@@ -387,4 +387,59 @@ export const SessionErrors = {
     message: "This host's runner cannot continue a cloud session",
     httpStatus: 409,
   },
+  /**
+   * A transcript cursor this API did not mint, or one mangled on the way:
+   * read from the start (no cursor) instead.
+   */
+  TRANSCRIPT_CURSOR_INVALID: {
+    code: 'SESSIONS_049',
+    message: 'That transcript cursor is not valid',
+    httpStatus: 400,
+  },
+  /**
+   * A follow-up to a cloud session at its vendor goes out on the key of the
+   * person who launched it, and bills them: nobody else may send one.
+   */
+  CLOUD_FOLLOW_UP_NOT_LAUNCHER: {
+    code: 'SESSIONS_050',
+    message: 'Only the person who launched a cloud session can send it a follow-up',
+    httpStatus: 403,
+  },
+  /**
+   * A follow-up to a cloud session whose vendor call failed in a way that
+   * may still have reached the vendor (a timeout, a dropped connection, a
+   * 5xx): it may be running there. Check the session at its vendor before
+   * sending it again; another follow-up is refused for a while meanwhile.
+   */
+  CLOUD_FOLLOW_UP_UNCONFIRMED: {
+    code: 'SESSIONS_051',
+    message: 'The cloud session’s vendor did not confirm the follow-up',
+    httpStatus: 502,
+  },
+  /** A retry asked of a session whose start did not fail: only a failed start is tried again. */
+  NOT_FAILED: {
+    code: 'SESSIONS_052',
+    message: 'Only a session whose start failed can be tried again',
+    httpStatus: 409,
+  },
+  /**
+   * A cloud session's hook named a Claude Code cloud session this workspace
+   * did not launch, or the credential is not this workspace's: its chat is
+   * kept only for sessions the console knows.
+   */
+  CLOUD_CHAT_SESSION_NOT_FOUND: {
+    code: 'SESSIONS_053',
+    message: 'No cloud session of this workspace has that id',
+    httpStatus: 404,
+  },
+  /**
+   * A reply, or a read of the chat, for a session whose conversation does
+   * not come here: only a Claude Code cloud session sends its transcript and
+   * collects replies (`product/next-steps/cloud-agents.md`).
+   */
+  NO_CLOUD_CHAT: {
+    code: 'SESSIONS_054',
+    message: 'This session has no cloud chat',
+    httpStatus: 409,
+  },
 } as const satisfies Record<string, ErrorDefinition>;

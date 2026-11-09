@@ -11,7 +11,9 @@ import {
 import { useTranslation } from 'react-i18next';
 import { ElapsedClock } from '../components/elapsed-clock';
 import { SessionStatusHead } from '../components/session-status-head';
+import { useStartLogStalled } from '../hooks/use-start-log-stalled';
 import { PENDING_START, provisioningSteps } from '../lib/provisioning-steps';
+import { SessionRetryStart } from './session-retry-start';
 
 /**
  * A session that is not a terminal yet.
@@ -29,6 +31,9 @@ export function SessionProvisioning({ session }: { session: SessionEntity }) {
   // Mounted while the start is in hand, which outlasts the row's `starting`:
   // the row opens with the pane, and this pane stays until the agent runs.
   const progress = useSessionStartProgress(session.id, { starting: !failed, failed });
+  // A read that fails once is a blip the next poll clears; only reads that
+  // keep failing are worth an alert over steps that may still be advancing.
+  const stalled = useStartLogStalled(progress);
   // The list is the one place a host's name lives; its presence is the row's.
   // Only that one name is subscribed to, so a refetch of the host list
   // re-renders this pane when the name changes and not otherwise.
@@ -73,7 +78,7 @@ export function SessionProvisioning({ session }: { session: SessionEntity }) {
         ) : null}
 
         <ErrorAlert
-          error={progress.error}
+          error={stalled ? progress.error : null}
           fallback={t('sessions.provisioning.progressFailed')}
           className="mt-6.5"
         />
@@ -95,6 +100,11 @@ export function SessionProvisioning({ session }: { session: SessionEntity }) {
             secondary line under the translated reason, never the reason. */}
         {failed && failure?.detail ? (
           <StartFailureDetail detail={failure.detail} className="mt-4" />
+        ) : null}
+        {/* A start on a host can be sent again: not one at a vendor, which has no
+            host, nor a cloud task its vendor took and later failed. */}
+        {failed && session.hostId && !session.cloudSessionId ? (
+          <SessionRetryStart sessionId={session.id} />
         ) : null}
       </div>
     </PageFrame>

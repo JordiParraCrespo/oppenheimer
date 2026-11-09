@@ -36,13 +36,15 @@ export function expandPath(path: string, home: string | null | undefined): strin
 }
 
 /**
- * What a typed path asks for: the folder to list, and the start of a name to
+ * What a typed path asks for: the folder to list, and part of a name to
  * narrow it to. A path that ends in `/` (or is `~` or `/`) is a folder; any
- * other is its parent plus the start of a name, so typing filters as it goes.
- * A bare word is read under home.
+ * other is its parent plus part of a name, so typing filters as it goes.
+ * A bare word is read under home, and so is `~word`: a shell would read
+ * another account's home there, but here it is a slash left out.
  */
 export function parseFolderInput(text: string): { dir: string; fragment: string } {
-  const typed = text.trim();
+  let typed = text.trim();
+  if (typed.startsWith(HOME) && typed.length > 1 && typed[1] !== '/') typed = typed.slice(1);
   if (typed === '' || typed === HOME) return { dir: HOME, fragment: '' };
   if (typed === '/') return { dir: '/', fragment: '' };
   if (typed.endsWith('/')) return { dir: typed.replace(/\/+$/, '') || '/', fragment: '' };
@@ -81,4 +83,15 @@ export function parentOf(dir: string, home: string | null | undefined): string |
 export function leafOf(path: string): string {
   if (path === HOME || path === '/') return path;
   return path.replace(/\/+$/, '').split('/').pop() || path;
+}
+
+/**
+ * What the picker searches the host for: a bare name typed under home, two
+ * characters or more. Null for a path, which is browsed instead.
+ */
+export function folderSearchTerm(text: string): string | null {
+  const typed = text.trim();
+  const bare = typed.startsWith(HOME) ? typed.slice(1) : typed;
+  if (bare.includes('/') || bare.length < 2) return null;
+  return bare;
 }

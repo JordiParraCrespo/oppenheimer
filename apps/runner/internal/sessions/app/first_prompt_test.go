@@ -33,6 +33,10 @@ func (t *typedTranscripts) Follow(context.Context, domain.Session, int, int, <-c
 	return app.ErrNoChat
 }
 
+func (t *typedTranscripts) ReadPage(domain.Session, app.TranscriptPageRequest) (app.TranscriptPage, error) {
+	return app.TranscriptPage{}, app.ErrNoChat
+}
+
 func (t *typedTranscripts) OpenQuestion(domain.Agent, string) (domain.Decision, bool) {
 	return domain.Decision{}, false
 }

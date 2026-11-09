@@ -3,6 +3,8 @@ import type * as React from 'react';
 
 import { cn } from '../lib/utils';
 import { IconButton } from './icon-button';
+import { Skeleton } from './skeleton';
+import { variedWidth } from '../internal/varied-width';
 
 type RunState = 'completed' | 'failed' | 'running';
 
@@ -14,6 +16,9 @@ type RunState = 'completed' | 'failed' | 'running';
  * glyphs (check circle, alert circle) are allowed here because each row is
  * a finished run, not a live state; a run still going shows the pulsing
  * dot instead.
+ *
+ * `RunRowSkeleton` is a row's place before the runs answer, on the row's own
+ * grid and height, so the rows land where it stood.
  */
 function RunsList({ className, ...props }: React.ComponentProps<'div'>) {
   return (
@@ -122,6 +127,38 @@ function RunRow({
   );
 }
 
+const SKELETON_TITLES = ['w-2/5', 'w-3/5', 'w-1/2', 'w-[45%]'] as const;
+const SKELETON_ROUTINES = ['w-28', 'w-20', 'w-32', 'w-24'] as const;
+
+/**
+ * RunRowSkeleton — a `RunRow` before the runs answer: the 44px row on the
+ * same grid, the state glyph as a round mark, the title, the routine with
+ * its glyph's slot and the date and time as bars at their lines' heights.
+ * `index` varies the widths.
+ */
+function RunRowSkeleton({ index = 0, className, ...props }: React.ComponentProps<'div'> & { index?: number }) {
+  return (
+    <div aria-hidden data-slot="run-row-skeleton" className={cn(GRID, 'h-11', className)} {...props}>
+      <span className="flex min-w-0 items-center gap-3">
+        <span className="flex w-4 shrink-0 items-center justify-center">
+          <Skeleton shape="pill" className="size-4" />
+        </span>
+        <span className="flex h-5 min-w-0 flex-1 items-center">
+          <Skeleton shape="sm" className={cn('h-3 max-w-full', variedWidth(index, SKELETON_TITLES))} />
+        </span>
+      </span>
+      <span className={cn(ROUTINE_CELL, 'h-5 min-w-0 items-center gap-[7px]')}>
+        <Skeleton shape="sm" className="size-3.5 shrink-0" />
+        <Skeleton shape="sm" className={cn('h-2.5 max-w-full', variedWidth(index, SKELETON_ROUTINES))} />
+      </span>
+      <span className="flex h-5 items-center gap-2">
+        <Skeleton shape="sm" className="h-2.5 w-12" />
+        <Skeleton shape="sm" className="h-2.5 w-9" />
+      </span>
+    </div>
+  );
+}
+
 function RunsListFoot({
   range,
   onPrevious,
@@ -166,5 +203,5 @@ function RunsListEmpty({ className, ...props }: React.ComponentProps<'p'>) {
   );
 }
 
-export { RunRow, RunsList, RunsListEmpty, RunsListFilters, RunsListFoot, RunsListHead };
+export { RunRow, RunRowSkeleton, RunsList, RunsListEmpty, RunsListFilters, RunsListFoot, RunsListHead };
 export type { RunState };

@@ -81,7 +81,9 @@ The line lands in the person's Inbox in the console, wherever they are,
 until they mark it done. Use it when you finish something they asked to
 hear about, or when you need them and they may not be watching ("I need the
 staging API key to go on"). One line, at most 500 bytes; a newer notice
-from you replaces the last one.
+from you replaces the last one. A bot that started or follows your session
+hears the line too and may answer it with a prompt once you wait at yours,
+so say plainly what you need.
 
 ## Be woken by your pull request
 

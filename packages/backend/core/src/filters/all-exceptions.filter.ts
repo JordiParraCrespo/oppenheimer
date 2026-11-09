@@ -10,6 +10,7 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { ExceptionBase, RequestContextService } from '@oppenheimer/backend-ddd';
+import { ErrorReporter } from '@oppenheimer/backend-error-reporting';
 import type { Request, Response } from 'express';
 import { ZodValidationException } from 'nestjs-zod';
 import type { ZodError, ZodIssue } from 'zod';
@@ -23,6 +24,7 @@ import {
   problemTypeFor,
   titleForStatus,
 } from '../errors/problem-details';
+import { errorReportOf } from './error-report';
 
 /** What a 5xx tells the client. Anything more would leak internals. */
 const INTERNAL_ERROR_DETAIL =
@@ -42,6 +44,10 @@ const INTERNAL_ERROR_DETAIL =
  *
  * 5xx responses never carry the underlying message — the correlation id is
  * what ties the client's report back to the logged stack trace.
+ *
+ * Every 5xx is also reported (`ErrorReporter`): one we did not foresee as an
+ * error, a curated one (an `AppError`, a framework 503) as a warning grouped
+ * by its code, since its cause is usually a dependency rather than our code.
  */
 @Injectable()
 @Catch()
@@ -49,7 +55,10 @@ export class AllExceptionsFilter implements ExceptionFilter {
   private readonly logger = new Logger(AllExceptionsFilter.name);
   private readonly typeBaseUrl: string;
 
-  constructor(@Optional() configService?: ConfigService) {
+  constructor(
+    @Optional() configService?: ConfigService,
+    @Optional() private readonly reporter?: ErrorReporter,
+  ) {
     this.typeBaseUrl =
       configService?.get<string>('app.errorTypeBaseUrl') ?? DEFAULT_ERROR_TYPE_BASE_URL;
   }
@@ -71,6 +80,9 @@ export class AllExceptionsFilter implements ExceptionFilter {
         }`,
         exception instanceof Error ? exception.stack : String(exception),
       );
+      if (this.reporter?.enabled) {
+        this.reporter.capture(exception, errorReportOf(exception, problem, request));
+      }
     }
 
     const retryAfter = retryAfterOf(exception);
@@ -140,6 +152,18 @@ export class AllExceptionsFilter implements ExceptionFilter {
       );
     }
 
+    const clientError = exposedClientErrorOf(exception);
+    if (clientError) {
+      return buildProblemDetails(
+        {
+          status: clientError.status,
+          title: titleForStatus(clientError.status),
+          detail: clientError.detail,
+        },
+        context,
+      );
+    }
+
     return this.internalProblem(context);
   }
 
@@ -168,6 +192,35 @@ function retryAfterOf(exception: unknown): number | null {
   return seconds !== undefined && Number.isFinite(seconds) && seconds > 0
     ? Math.ceil(seconds)
     : null;
+}
+
+/** What `http-errors` builds, by the test its own `isHttpError` applies to an error from another copy. */
+interface HttpError extends Error {
+  status: number;
+  statusCode: number;
+  expose: boolean;
+}
+
+function isHttpError(exception: unknown): exception is HttpError {
+  if (!(exception instanceof Error)) return false;
+  const { status, statusCode, expose } = exception as Partial<HttpError>;
+  return typeof expose === 'boolean' && typeof statusCode === 'number' && status === statusCode;
+}
+
+/**
+ * A 4xx raised by Node's HTTP middleware before any controller ran, through
+ * `http-errors`: body-parser's 413 for a body past its limit, its 415 for a
+ * charset or encoding it will not read, its 400 for an aborted or truncated
+ * body. Nest maps only body-parser's `SyntaxError`, so without this every
+ * other one became a 500 and an error report for what was the client's
+ * request. `http-errors` sets `expose` only below 500, where its message is
+ * written to be shown.
+ */
+function exposedClientErrorOf(exception: unknown): { status: number; detail: string } | null {
+  if (!isHttpError(exception) || !exception.expose) return null;
+  const { status } = exception;
+  if (status < HttpStatus.BAD_REQUEST || status >= HttpStatus.INTERNAL_SERVER_ERROR) return null;
+  return { status, detail: exception.message };
 }
 
 /** Flattens Zod issues into RFC 7807's `invalid-params` shape. */

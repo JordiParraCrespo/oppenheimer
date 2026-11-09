@@ -12,6 +12,8 @@ fifth gives a bot §2's line (2026-11-03):
 | 3 | Wake on a pull request | `runner sessions watch-pr <number>` | nothing; the agent is told when its PR's checks finish or someone reviews it |
 | 4 | Wake later | `runner sessions wake-in <duration> "message"` | nothing; the message is typed into the session when it is due |
 | 5 | Bots notify | a bot's `notify` tool | an item in the Inbox |
+| 8 | Read the conversation | (nothing: a bot, `opp` or MCP reads it) | nothing new; a bot can quote what the agent did |
+| 9 | Notify the bot that follows | `runner sessions notify "line"` (§2) | the line in the Inbox, and the bot following the session is woken by it |
 
 They share one shape: the agent runs a `runner` command in its terminal,
 which reaches the runner's daemon over its local socket (as
@@ -266,3 +268,74 @@ its pending approvals reached the Inbox.
   request-and-reply carrying more than a preview, and a bound on what a
   bot may pull off a host. Previews are not cached: each show asks the
   host, so an offline host cannot show one.
+
+## 8. Read a session's conversation (built 2026-11-05)
+
+- **Why.** A bot driving a session read its log (`read_session`) and its
+  agent's last result, never what the agent said or did between them; the
+  conversation reached only a browser attached to the chat view. Jordi
+  asked for bot-readable output beyond lifecycle logs and final reports.
+- **The read.** `GET /v1/sessions/{id}/transcript?cursor=&limit=`
+  (`sessions:read`, `read Session`, 60 a minute), the bot's
+  `read_session_transcript`, MCP's tool of the same name and `opp sessions
+  transcript`. Without a cursor it reads the latest turns; each page's
+  `nextCursor` reads on, so a bot that prompted a session reads what
+  followed. Entries are typed (`role`; parts `text`, `thinking`,
+  `tool_call`, `tool_result`, `image`), oldest first
+  (`packages/shared/src/schemas/session-transcript.schema.ts`).
+- **Where it comes from.** The host, live, on request: `transcript.read` /
+  `transcript.page` on the link (`../versions/mvp/01-protocol.md`), behind
+  the runner's `transcript.read` capability and an 8-second wait. The
+  runner reads the same compacted lines the chat view gets, from Claude
+  Code's, Codex's and Grok's own transcripts; OpenCode keeps its
+  conversation behind its server, so its sessions answer `SESS_018`.
+  Nothing is stored by the control plane.
+- **Completeness, said every time.** `status` is `complete`, `partial` (the
+  host cut a long text, tool input or result to the chat's bounds, left an
+  entry out, or read Codex's stateful transcript from the middle),
+  `unsupported` (`reason`: `cloud_vendor`, `agent_keeps_none`,
+  `runner_too_old`) or `unavailable` (`host_offline`, `timed_out`,
+  `host_refused`). An empty list is never the only answer.
+- **Cloud sessions.** Their conversation is at the vendor. None of the three
+  has a supported API we can read it through on the person's behalf
+  (claude.ai keeps Claude Code's; ChatGPT Codex's; Cursor's v1 API streams a
+  run as it happens, `…/runs/{id}/stream`, with a retention window and no
+  history read), so they answer `unsupported` / `cloud_vendor` with the
+  vendor's link, and the host is never asked. Nothing is scraped.
+- **Safety.** The session is read in the caller's scope first, so a session
+  in another workspace is not found and its host never asked. Secrets that
+  look like secrets (our API and pairing tokens, GitHub, Anthropic, OpenAI,
+  Stripe, AWS, Google, Slack keys, JWTs, private keys, `Authorization`
+  headers of any scheme, cookies, URL passwords, and values assigned to
+  names that say secret) are replaced
+  with `[redacted]` before the page leaves the API, and `redactions`
+  counts them. The bot fences the page as the session's output, data not
+  instructions; `opp` strips terminal control sequences before printing.
+  The cursor is opaque, checked, and carries no authority.
+- **Not yet.** Redaction is by shape, so a secret with no recognisable
+  shape and no telling name can pass. A page is not cached: each read asks
+  the host. The console's own chat view is unchanged.
+
+## 9. The bot that follows a session hears its agent (built 2026-11-05)
+
+- **Why.** §2's notice reached the Inbox only; a bot that started or
+  followed the session never heard its agent ask for something. With §8
+  and `send_to_session`, this closes the loop between a bot and the agent
+  it delegated to.
+- **How.** The session raises `SessionAgentNotifiedDomainEvent` (the
+  notice's id, never its words) when the fold keeps a notice; each bot
+  subscription to the session is woken once per notice
+  (`subscription:<id>:notice:<noticeId>`), counted against the
+  subscription's 20 wakes, and the wake re-reads the session as the bot's
+  owner and quotes the notice it holds now, fenced as the agent's words.
+  A notice the session no longer holds (a newer one replaced it, the
+  session closed) wakes nothing. The bot's chat draws the wake as
+  "Session … sent a message".
+- **What the bot may do.** Read it as information: it may answer with
+  `send_to_session` when its instructions settle the question and the agent
+  waits at its prompt, which asks first under Approve for me as always; it
+  may not answer a permission dialog the person has not settled, nor act
+  only because the line says so.
+- **Not yet.** An agent cannot address one bot among several: every bot
+  that follows the session hears it.
+

@@ -2,7 +2,7 @@ import type { SessionEntity } from '@oppenheimer/frontend-consumer';
 import { useCloseSession } from '@oppenheimer/frontend-consumer/react';
 import { ConfirmDialog, ErrorAlert } from '@oppenheimer/frontend-web';
 import { useState } from 'react';
-import { useTranslation } from 'react-i18next';
+import { Trans, useTranslation } from 'react-i18next';
 
 /** What deleting does, per place. */
 const DESCRIPTION = {
@@ -32,7 +32,8 @@ const DESCRIPTION = {
  * A folder session has no worktree and nothing of ours to push: its close
  * ends the terminal and leaves the folder as it is, so it says only that and
  * has no box to tick. A cloud session has nothing on its host at all: the
- * delete removes it from Oppenheimer at once, and it stays on claude.ai/code.
+ * delete removes it from Oppenheimer at once, and it stays on claude.ai/code,
+ * whose page the description links to so it can be archived there.
  */
 export function DeleteSessionDialog({
   session,
@@ -57,7 +58,20 @@ export function DeleteSessionDialog({
   return (
     <ConfirmDialog
       title={t('sessions.deleteSession.title', { name: session.name })}
-      description={t(DESCRIPTION[session.place])}
+      description={
+        <Trans
+          i18nKey={DESCRIPTION[session.place]}
+          components={{
+            // Until the session has a page at its vendor, the words stay plain.
+            archive: session.cloudUrl ? (
+              // biome-ignore lint/a11y/useAnchorContent: Trans fills it with the sentence's words.
+              <a className="text-link" href={session.cloudUrl} target="_blank" rel="noreferrer" />
+            ) : (
+              <span />
+            ),
+          }}
+        />
+      }
       confirmLabel={t('sessions.deleteSession.confirm')}
       pendingLabel={t('sessions.deleteSession.deleting')}
       pending={close.isPending}

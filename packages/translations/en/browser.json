@@ -405,6 +405,16 @@
       "WHATSAPP_008": "WhatsApp didn't take the message. Try again in a moment.",
       "WHATSAPP_009": "That number has sent as many bot messages as it may for now. Try again later.",
       "WHATSAPP_010": "There's no such WhatsApp chat on that number.",
+      "TELEGRAM_001": "That Telegram bot isn't connected any more.",
+      "TELEGRAM_002": "Telegram belongs to a workspace. Open one and try again.",
+      "TELEGRAM_003": "You've connected three Telegram bots, the most one person connects. Disconnect one to add another.",
+      "TELEGRAM_004": "That host is offline. Start its runner, then try again.",
+      "TELEGRAM_005": "That host's runner can't hold Telegram bots yet. Update the runner, then try again.",
+      "TELEGRAM_006": "That host already holds someone else's Telegram bot.",
+      "TELEGRAM_007": "That Telegram bot isn't connected. Connect it again in Settings → Telegram.",
+      "TELEGRAM_008": "Telegram didn't take the message. Try again in a moment.",
+      "TELEGRAM_009": "That Telegram bot has sent as many bot messages as it may for now. Try again later.",
+      "TELEGRAM_010": "There's no such Telegram chat on that bot.",
       "CLOUD_AGENTS_003": "This server can't keep a cloud agent key. Ask whoever runs it to set CLOUD_AGENTS_KEY.",
       "CLOUD_AGENTS_004": "Connect the provider with your API key first.",
       "CLOUD_AGENTS_005": "The provider refused that API key. Check it's a user API key and hasn't been revoked.",
@@ -412,6 +422,7 @@
       "CLOUD_AGENTS_007": "The provider's rate limit was reached. Try again shortly.",
       "CLOUD_AGENTS_010": "The provider refused the request.",
       "CLOUD_AGENTS_011": "That cloud agent provider isn't offered here.",
+      "CLOUD_AGENTS_012": "The cloud agent is still working on its last instruction. Wait for it to finish, then send this again.",
       "INBOUND_001": "That event source isn't known.",
       "INBOUND_002": "The delivery carries no delivery id.",
       "SESS_001": "The host has no record of that session.",
@@ -456,6 +467,12 @@
       "SESSIONS_046": "Codex on the host couldn’t list its environments. Check that codex is installed and signed in with ChatGPT.",
       "SESSIONS_047": "ChatGPT is limiting how often its Codex environments can be listed. Wait a minute and try again, or start the session and let the host pick.",
       "SESSIONS_048": "This host’s runner is too old to continue a cloud session. Update the runner, or pick another host.",
+      "SESSIONS_049": "That transcript cursor isn’t valid. Read from the latest turns and continue from the cursor that page gives.",
+      "SESSIONS_050": "Only the person who launched this cloud session can send it a follow-up, since it runs on their key.",
+      "SESSIONS_051": "The cloud agent’s vendor didn’t confirm the follow-up, so it may be running there. Check the session at its vendor before sending it again.",
+      "SESSIONS_052": "Only a session that failed to start can be tried again.",
+      "SESSIONS_053": "No cloud session in this workspace has that id. Only sessions started from the console send their chat here.",
+      "SESSIONS_054": "This session’s chat isn’t shown here.",
       "VOICE_002": "Nothing was recorded. Try dictating again.",
       "VOICE_003": "That recording is too long. Keep dictations under two minutes.",
       "VOICE_004": "That recording couldn’t be read. Try dictating again.",
@@ -473,7 +490,8 @@
       "BOTS_037": "Those questions were already answered.",
       "BOTS_038": "That skill could not be found.",
       "BOTS_039": "This bot already has a skill with that name. Pick another.",
-      "BOTS_040": "This bot has as many skills as it can keep. Delete one first."
+      "BOTS_040": "This bot has as many skills as it can keep. Delete one first.",
+      "BOTS_041": "This bot has no tidy of its memory to undo."
     },
     "notFound": {
       "title": "That page does not exist",
@@ -488,7 +506,8 @@
     "startFailure": {
       "codes": {
         "SESS_002": "This host makes sessions with one repository.",
-        "SESS_010": "Codex's CLI has no cloud environment for this repository."
+        "SESS_010": "Codex's CLI has no cloud environment for this repository.",
+        "SESS_019": "Not signed in to claude.ai. Run claude auth login on the host."
       },
       "help": {
         "SESS_010": {
@@ -496,7 +515,7 @@
           "link": "Open Codex Cloud settings"
         }
       },
-      "details": "Details from the host: {{detail}}"
+      "details": "Details from the host"
     }
   },
   "auth": {
@@ -654,6 +673,62 @@
       "deleting": "Deleting…",
       "failed": "The project could not be deleted."
     },
+    "list": {
+      "title": "Projects",
+      "new": "New project",
+      "noRepositories": "No repositories",
+      "empty": "No projects yet. A project groups your sessions and starts new ones with its repositories, host and agent.",
+      "loadFailed": "Could not load your projects.",
+      "status": {
+        "needsInput": "Needs input",
+        "running": "Running",
+        "idle": "Idle"
+      }
+    },
+    "detail": {
+      "back": "Projects",
+      "settings": "Settings",
+      "milestones": "Milestones",
+      "needsInput": "Needs input",
+      "inProgress": "In progress",
+      "noMilestones": "No milestones yet.",
+      "nothingNeedsInput": "Nothing waits on you.",
+      "nothingInProgress": "Nothing in progress.",
+      "gone": "That project is no longer here.",
+      "loadFailed": "Could not load this project.",
+      "views": "Project views",
+      "overview": "Overview",
+      "stats": "Stats"
+    },
+    "stats": {
+      "tasksCompleted": "Tasks completed",
+      "tasksCreated": "Tasks created",
+      "tokens": "Tokens burned",
+      "cost": "Agent cost",
+      "vsPrevious": "vs previous period",
+      "noPrevious": "Nothing to compare with yet",
+      "completed": "Completed",
+      "created": "Created",
+      "tasksTitle": "Tasks completed and created, per week",
+      "tokensTitle": "Tokens burned per week, by model",
+      "costTitle": "Agent cost per week",
+      "unknownModel": "Unknown model",
+      "loadFailed": "Could not load this project's statistics.",
+      "range": {
+        "lastWeeks_one": "Last week",
+        "lastWeeks_other": "Last {{count}} weeks",
+        "custom": "Custom",
+        "done": "Done",
+        "previousMonth": "Previous month",
+        "nextMonth": "Next month",
+        "choose": "Date range",
+        "days_one": "{{count}} day",
+        "days_other": "{{count}} days"
+      },
+      "otherModels": "Other models",
+      "headlessOnly": "headless turns",
+      "measuredHeadless": "Measured on headless turns"
+    },
     "unassigned": "Unassigned"
   },
   "sessions": {
@@ -661,6 +736,9 @@
       "title": "Starting your session",
       "failedTitle": "The session did not start",
       "failedLead": "The host could not start this session.",
+      "retry": "Try again",
+      "retrying": "Trying again",
+      "retryFailed": "The session could not be started again.",
       "working": "Working…",
       "downloading": "This host has not had this repository before, so it is downloading it first. This one takes a bit longer; later sessions on it start in about a second.",
       "failed": "Failed",
@@ -812,8 +890,12 @@
         "up": "Parent folder",
         "crumbs": "Path",
         "emptyMissing": "No folder at {{dir}} on {{host}}.",
-        "emptyFiltered": "No folder in {{dir}} starts with “{{fragment}}”.",
+        "emptyFiltered": "No folder in {{dir}} has “{{fragment}}” in its name.",
         "emptyNone": "No subfolders. Use this one, or go back up.",
+        "searchHeading": "Found under ~",
+        "searching": "Searching under ~…",
+        "searchTruncated": "Only the closest matches are shown. Type more of the name to narrow it.",
+        "searchFailed": "Could not search the folders on this host.",
         "footMissing": "Pick an existing folder. Nothing is created.",
         "footRepository": "Git repository on {{branch}}. Opened as it is, no new branch.",
         "footFolder": "Opened as it is. Nothing is cloned.",
@@ -886,6 +968,13 @@
         "refused": "{{vendor}} wouldn't start this session.",
         "refusedSaying": "{{vendor}} wouldn't start this session: “{{says}}”",
         "retry": "Try again"
+      },
+      "background": {
+        "label": "Background",
+        "choose": "Choose image…",
+        "remove": "Remove image",
+        "unreadable": "That image could not be used. Try a JPEG, PNG or WebP.",
+        "unsaved": "Your browser would not keep this background, so it will be gone after a reload."
       }
     },
     "session": {
@@ -959,7 +1048,6 @@
     },
     "sidebar": {
       "sessions": "Sessions",
-      "newProject": "New project",
       "search": "Search sessions",
       "clearSearch": "Clear search",
       "noMatches": "No sessions match “{{query}}”.",
@@ -967,7 +1055,6 @@
       "emptyProject": "No sessions yet.",
       "startOne": "Start one",
       "newSessionHere": "New session in {{name}}",
-      "projectSettings": "{{name}} settings",
       "unfiled": "Other sessions",
       "pinned": "Pinned",
       "pin": "Pin",
@@ -978,6 +1065,7 @@
       "renameLabel": "Session name",
       "move": "Move to project…",
       "moveTitle": "Move to project",
+      "moveCurrent": "Current",
       "moveNone": "No other project holds this session's repository.",
       "delete": "Delete",
       "writeFailed": "That change did not land. Try again.",
@@ -1002,7 +1090,7 @@
       "discard": "Also discard work that is not pushed",
       "keeps": "Deleting stops if the session has work that is not pushed.",
       "descriptionFolder": "Ends the terminal. The folder stays as it is.",
-      "descriptionCloud": "Removes it from Oppenheimer. The session stays on claude.ai/code, where you can archive it.",
+      "descriptionCloud": "Removes it from Oppenheimer. The session stays on claude.ai/code, where you can <archive>archive it</archive>.",
       "refused": "Its host did not delete it",
       "refusedUnknown": "The host refused to remove the session."
     },
@@ -1040,7 +1128,8 @@
       "shown": "Show projects",
       "shownAll": "All",
       "shownSome": "{{shown}} of {{total}}",
-      "showAll": "Show all projects"
+      "showAll": "Show all projects",
+      "newProject": "New project…"
     },
     "sort": {
       "custom": "Custom order",
@@ -1300,6 +1389,22 @@
       "exploring": "Exploring",
       "file": {
         "onHost": "It stays on the host: too large for the chat, or not an image or text."
+      },
+      "subagents": {
+        "count_one": "{{count}} subagent",
+        "count_other": "{{count}} subagents",
+        "running": "{{count}} running",
+        "failed": "{{count}} failed",
+        "untitled": "Subagent",
+        "calls_one": "{{count}} call",
+        "calls_other": "{{count}} calls",
+        "tokens": "{{tokens}} tokens",
+        "state": {
+          "running": "Running",
+          "completed": "Completed",
+          "failed": "Failed",
+          "stopped": "Stopped"
+        }
       }
     },
     "preview": {
@@ -1373,6 +1478,37 @@
         "open": "Open in ChatGPT",
         "teleport": "To bring its changes into a terminal, run this in a checkout of the repository:"
       }
+    },
+    "cloudChat": {
+      "title": "Live from Claude Code cloud",
+      "waiting_one": "Your reply is waiting for the agent to finish its turn.",
+      "waiting_other": "{{count}} replies are waiting for the agent to finish its turn.",
+      "replyFailed": "The reply didn’t reach the session. Try again.",
+      "setup": {
+        "title": "Turn on this session’s chat",
+        "intro": "A Claude Code cloud session sends its chat here through a hook in its repository. Set it up once for each repository and cloud environment; sessions you start from Oppenheimer then show their chat here, and you can answer them.",
+        "keyTitle": "1. Create a key",
+        "keyBody": "It lets cloud sessions send this workspace their chat and collect your replies. It can’t start, stop or delete a session, or open a terminal. It’s shown once, so copy it now.",
+        "createKey": "Create key",
+        "creatingKey": "Creating key…",
+        "keyLabel": "Your key",
+        "hookTitle": "2. Add the hook to the repository",
+        "hookBody": "Save this file in the repository as .claude/hooks/oppenheimer-cloud-chat.mjs, then add these lines to .claude/settings.json.",
+        "downloadHook": "Download the hook",
+        "settingsLabel": ".claude/settings.json",
+        "envTitle": "3. Set up the cloud environment",
+        "envBody": "In claude.ai, open the cloud environment’s settings. Add these environment variables, and allow this host in its network access.",
+        "envLabel": "Environment variables",
+        "hostLabel": "Allowed host",
+        "keyPlaceholder": "<your key>",
+        "keyFailed": "The key couldn’t be created. Try again.",
+        "readerLabel": "How to set it up",
+        "readerYou": "Do it yourself",
+        "readerAgent": "Ask an agent",
+        "agentTitle": "2. Ask a coding agent",
+        "agentBody": "Paste this into Claude Code, or another coding agent, in a checkout of the repository. It adds the hook and its settings, then tells you what to set in claude.ai. Your key isn’t in the prompt: you paste it into claude.ai yourself.",
+        "agentLabel": "Prompt for your agent"
+      }
     }
   },
   "bots": {
@@ -1394,6 +1530,11 @@
       "renameGroup": "Rename group",
       "deleteGroup": "Delete group",
       "groupFailed": "Could not save the group.",
+      "pinned": "Pinned",
+      "pin": "Pin",
+      "unpin": "Unpin",
+      "dropToPin": "Drop a bot here to pin it.",
+      "allPinned": "Its bots are under Pinned.",
       "rowActions": "Bot options",
       "settings": "Settings",
       "move": "Move to group",
@@ -1401,7 +1542,15 @@
       "moveNone": "No other group yet",
       "moveFailed": "Could not move the bot.",
       "delete": "Delete bot",
-      "loadFailed": "Could not load your bots."
+      "loadFailed": "Could not load your bots.",
+      "hide": "Hide from sidebar",
+      "filters": "Filter bots",
+      "shown": "Show bots",
+      "shownAll": "All",
+      "shownSome": "{{shown}} of {{total}}",
+      "showAll": "Show all bots",
+      "allHidden_one": "Its bot is hidden. Show it from the filter menu.",
+      "allHidden_other": "Its {{count}} bots are hidden. Show them from the filter menu."
     },
     "landing": {
       "titleEmpty": "Make your first bot.",
@@ -1416,6 +1565,7 @@
       "startFrom": "Try asking",
       "hello": "{{name}} is ready. What should we work on?",
       "placeholder": "Message {{name}}",
+      "history": "History {{position}}/{{total}}",
       "placeholderRunning": "Steer {{name}}: Enter steers the turn under way, Alt+Enter queues for after",
       "steered": "Steered in while it worked",
       "send": "Send",
@@ -1435,7 +1585,11 @@
         "refused": "{{provider}} refused this request. Sending it again won't help: change the message or the model.",
         "unavailable": "{{provider}} could not be reached. This is usually temporary: try again in a moment.",
         "time_limit": "This turn ran out of time. Sending it again won't help: ask for a smaller step, or split the request.",
-        "interrupted": "This turn was interrupted before it finished. Sending it again runs it."
+        "step_limit": "This turn used all its steps and stopped before it finished. Sending it again won't help: ask for a smaller step, or say go on to continue.",
+        "stalled": "{{provider}} sent nothing for 5 minutes, so this turn stopped. This is usually temporary: try again in a moment.",
+        "loop": "This turn kept repeating calls that changed nothing, so it stopped. Sending it again won't help: say what to do differently.",
+        "interrupted": "This turn was interrupted before it finished. Sending it again runs it.",
+        "storage": "We could not save this turn, so it stopped: the fault is ours, not {{provider}}'s. Try again in a moment."
       },
       "openProviders": "Open Model providers",
       "errorDetails": "Show details",
@@ -1630,6 +1784,7 @@
           "cancelled": "Session “{{name}}” was stopped",
           "expired": "Session “{{name}}” expired before it ran",
           "stalled": "Session “{{name}}” looks stuck",
+          "notice": "Session “{{name}}” sent a message",
           "matched_one": "Session “{{name}}” printed a line matching “{{pattern}}”",
           "matched_other": "Session “{{name}}” printed {{count}} lines matching “{{pattern}}”"
         },
@@ -1642,6 +1797,9 @@
         },
         "goal": {
           "continued": "Goal · continuation {{step}} of {{limit}}",
+          "continuedOpen": "Goal · continuation {{step}}",
+          "paused": "Goal “{{objective}}” {{why}}",
+          "resumed": "You resumed the goal “{{objective}}”",
           "met": "Goal met: “{{objective}}”",
           "impossible": "Goal “{{objective}}” cannot be met without you",
           "cleared": "You stopped the goal “{{objective}}”",
@@ -1654,6 +1812,13 @@
           "expired": "Loop “{{prompt}}” ended after 3 days",
           "stopped": "Loop “{{prompt}}” stopped: a run of it failed or was stopped",
           "ended": "Loop “{{prompt}}” ended: the bot did not say when to run next"
+        },
+        "compaction": "Summarized earlier work to keep its context small · {{before}} → {{after}} tokens",
+        "compactionLine": "Summarized earlier work",
+        "compactionTokens": "{{before}} → {{after}} tokens",
+        "dream": {
+          "dreamed": "Tidied its memory · {{before}} facts → {{after}}",
+          "undone": "You undid the tidy · {{before}} facts are back"
         }
       },
       "routineReason": {
@@ -1664,12 +1829,26 @@
         "agent_unavailable": "the agent could not start",
         "bot_provider_missing": "the bot’s model provider has no key or sign-in",
         "owner_lost_access": "its owner can no longer run it",
+        "unattended": "you were away; it starts again now that you are back",
         "unknown": "something went wrong"
       },
       "openSession": "Open session",
       "goal": {
         "title": "Goal: {{objective}}",
         "progress": "{{step}} of {{limit}} continuations",
+        "continuations_one": "{{count}} continuation",
+        "continuations_other": "{{count}} continuations",
+        "budget": "{{progress}} · {{used}} of {{budget}} tokens",
+        "resume": "Resume",
+        "resumeFailed": "Could not resume the goal. Try again.",
+        "paused": {
+          "blocked": "paused, it needs you",
+          "usage_limit": "paused, the model provider hit a limit",
+          "no_progress": "paused, its last turns did nothing",
+          "budget": "paused, its budget is spent",
+          "stopped": "paused, you stopped a turn of it",
+          "failed": "paused, a turn of it failed"
+        },
         "waiting": "waiting for {{system}} until {{time}}",
         "stop": "Stop goal",
         "stopFailed": "Could not stop the goal. Try again.",
@@ -1697,6 +1876,9 @@
         "menu": "Commands and skills you can run",
         "pick": "Use /{{name}}",
         "builtInLabel": "Commands",
+        "builtInSkill": {
+          "recap": "Catch up on your sessions, pull requests and plan. Add a topic to narrow it."
+        },
         "builtIn": {
           "goal": "Keep working until a condition holds, checked after every turn. /goal clear stops it.",
           "usage": "Show what this chat has spent: tokens by model, cache hits, plan windows.",
@@ -1726,7 +1908,9 @@
           "summary_one": "{{count}} summary",
           "summary_other": "{{count}} summaries",
           "ruleReview_one": "{{count}} rule review",
-          "ruleReview_other": "{{count}} rule reviews"
+          "ruleReview_other": "{{count}} rule reviews",
+          "dream_one": "{{count}} memory tidy",
+          "dream_other": "{{count}} memory tidies"
         },
         "empty": "Nothing spent in this chat yet.",
         "loadFailed": "Could not load the usage. Try again."
@@ -1762,6 +1946,32 @@
           "lemon": "Lemon",
           "coral": "Coral",
           "moss": "Moss"
+        },
+        "face": "Face",
+        "faceHat": "Hat",
+        "faceEyes": "Eyes",
+        "faceMouth": "Mouth",
+        "faceReset": "Use its own face",
+        "faces": {
+          "hat": {
+            "fedora": "Fedora",
+            "porkpie": "Porkpie",
+            "bowler": "Bowler",
+            "tophat": "Top hat",
+            "cap": "Cap",
+            "beanie": "Beanie"
+          },
+          "eyes": {
+            "dots": "Dots",
+            "happy": "Happy",
+            "wink": "Wink",
+            "big": "Wide"
+          },
+          "mouth": {
+            "smile": "Smile",
+            "grin": "Grin",
+            "o": "Surprised"
+          }
         },
         "group": "Sidebar group",
         "groupHint": "Where it appears in the Employees sidebar",
@@ -1859,7 +2069,23 @@
         "toLog": "Look it up only when needed",
         "toProfile": "Keep it in mind in every chat",
         "toPerson": "Share it with all your bots",
-        "toBot": "Keep it to this bot"
+        "toBot": "Keep it to this bot",
+        "learnedBy": "Learned by {{bot}} · {{date}}",
+        "editedByYouOn": "Edited by you, kept by {{bot}} · {{date}}",
+        "addedByYouOn": "Added by you, kept by {{bot}} · {{date}}",
+        "toBotNamed": "Keep it to {{bot}} only",
+        "dream": {
+          "title": "Tidy memory",
+          "never": "Merges repeats, rewrites each fact clearly and drops what’s stale, checked against the chat. Runs about once a day once the bot has learned enough.",
+          "last": "Last tidied {{date}} · {{before}} facts → {{after}}",
+          "lastUndone": "Last tidy, {{date}}, was undone",
+          "queued": "Tidying in the background. The chat says when it’s done.",
+          "tidyNow": "Tidy now",
+          "undo": "Undo",
+          "loadFailed": "Could not load the memory’s last tidy.",
+          "requestFailed": "Could not start tidying the memory.",
+          "undoFailed": "Could not undo the tidy."
+        }
       },
       "skills": {
         "title": "Skills",
@@ -1902,12 +2128,17 @@
         "title": "Routines",
         "subtitle": "Work the bot does on a schedule or when something happens.",
         "empty": "Routines are tasks this bot runs on a schedule or when something happens. Ask it in chat to set one up.",
+        "guard": "Pause while you’re away",
+        "guardHint": "Stop its routines while you’re not reading what they say. They start again when you open this chat.",
+        "guardFailed": "Could not change whether the routines pause while you’re away.",
         "askInChat": "Ask in chat",
         "schedule": "Schedule · {{when}}",
         "github": "GitHub · {{when}}",
         "gmail": "Gmail · {{when}}",
         "last": "Last",
         "next": "Next",
+        "more": "Show more",
+        "less": "Show less",
         "never": "Never",
         "switch": "Run “{{name}}” on its own",
         "pause": "Pause",
@@ -1949,6 +2180,31 @@
         "loadFailed": "Could not load the bot’s permissions.",
         "saveFailed": "Could not change the permission.",
         "tools": "Tools",
+        "search": "Search tools",
+        "noMatch": "No tools match.",
+        "filters": {
+          "decision": "Decision",
+          "group": "Group",
+          "allGroups": "All groups",
+          "clear": "Clear"
+        },
+        "views": {
+          "all": "All",
+          "allow": "Allow",
+          "ask": "Ask",
+          "off": "Off",
+          "changed": "Set by you"
+        },
+        "summary": {
+          "tools_one": "{{count}} tool",
+          "tools_other": "{{count}} tools",
+          "ask_one": "{{count}} ask",
+          "ask_other": "{{count}} ask",
+          "off_one": "{{count}} off",
+          "off_other": "{{count}} off",
+          "changed_one": "{{count}} set by you",
+          "changed_other": "{{count}} set by you"
+        },
         "preset": {
           "auto": "Tools you leave on their default follow Approve for me: anything that reaches outside Oppenheimer asks first.",
           "full": "Tools you leave on their default follow Full access: they run without asking."
@@ -1967,6 +2223,7 @@
           "plan": "Plan",
           "mail": "Mail",
           "whatsapp": "WhatsApp",
+          "telegram": "Telegram",
           "github": "GitHub",
           "automations": "Routines and automations",
           "bots": "Other bots",
@@ -2009,6 +2266,9 @@
       "checkedHint": "Checked bots show in {{section}}.",
       "manageAll": "Manage in {{employees}}",
       "hide": "Hide from {{section}}"
+    },
+    "routineGuard": {
+      "notice": "I paused my routines while you were away. They start again when you open this chat."
     }
   },
   "automations": {
@@ -2062,7 +2322,8 @@
       "overlapping": "Skipped: a run was still going",
       "missed": "Skipped: the slot was missed",
       "not_launchable": "Skipped: the session could not start",
-      "agent_unavailable": "Skipped: the agent is not on the host"
+      "agent_unavailable": "Skipped: the agent is not on the host",
+      "unattended": "Skipped: its bot’s owner is away"
     },
     "pausedReason": {
       "user": "Paused. Triggers are ignored until you resume it; Run now still works.",
@@ -2070,7 +2331,8 @@
       "host_unpaired": "Paused because its host was removed. Pick another host in Edit to resume it.",
       "owner_lost_access": "Paused because its owner can no longer run it.",
       "bot_provider_missing": "Paused because its bot’s model provider has no key or sign-in. Add one, then resume it.",
-      "cloud_key_missing": "Paused because its owner has no key for its cloud provider, or the provider refused it. Connect it in Settings → Cloud agents, then resume it."
+      "cloud_key_missing": "Paused because its owner has no key for its cloud provider, or the provider refused it. Connect it in Settings → Cloud agents, then resume it.",
+      "unattended": "Paused while you were away from its bot’s chat. It starts again when you open the chat."
     },
     "frequency": {
       "once": {
@@ -2663,7 +2925,9 @@
       "inbox": "Inbox",
       "tasks": "Tasks",
       "calendar": "Calendar",
-      "milestones": "Milestones"
+      "milestones": "Milestones",
+      "projects": "Projects",
+      "todo": "TODO"
     },
     "sidebar": {
       "unassigned": "Unassigned"
@@ -2672,6 +2936,9 @@
       "title": "Tasks",
       "newTask": "New task",
       "addTask": "Add task",
+      "showOlder_one": "Show {{count}} older",
+      "showOlder_other": "Show {{count}} older",
+      "hideOlder": "Hide older",
       "addTo": "Add a task to {{column}}",
       "quickPlaceholder": "Task title",
       "filedUnder": "In {{name}}",
@@ -2689,9 +2956,9 @@
       "keyCancel": "cancel"
     },
     "columns": {
-      "later": "Later",
       "todo": "To do",
       "doing": "In progress",
+      "review": "In review",
       "done": "Done"
     },
     "card": {
@@ -2829,6 +3096,41 @@
       "noProject": "No project",
       "allMilestones": "All milestones",
       "clear": "Clear"
+    },
+    "todo": {
+      "left": "left",
+      "done": "done",
+      "today": "Today",
+      "previous": "Previous day",
+      "next": "Next day",
+      "todayWeek": "Today · Week {{week}}",
+      "weekNumber": "Week {{week}}",
+      "includeOverdue": "Include overdue",
+      "empty": "Nothing for this day yet. Add one below.",
+      "noMatch": "No tasks match these filters.",
+      "add": "Add a task",
+      "addLabel": "Add a task for this day",
+      "addFailed": "Couldn’t add that task.",
+      "startSession": "Start a session for {{title}}",
+      "toggleFailed": "Couldn’t update that task.",
+      "loadFailed": "Couldn’t load your tasks.",
+      "state": {
+        "todo": "due today",
+        "due": "due",
+        "overdue": "overdue since {{date}}"
+      },
+      "schedule": {
+        "button": "Add undated tasks",
+        "title": "Add undated tasks",
+        "for": "Pick the tasks with no due date to put on {{date}}.",
+        "search": "Search tasks",
+        "noMatch": "No task matches “{{query}}”.",
+        "none": "Every open task already has a due date.",
+        "submit": "Add to {{date}}",
+        "failed": "Couldn’t add some of those tasks.",
+        "loadFailed": "Couldn’t load your tasks."
+      },
+      "reorder": "Reorder {{title}}"
     }
   },
   "calendar": {
@@ -2842,20 +3144,28 @@
       "automations": "Automations"
     },
     "header": {
-      "previous": "Previous month",
-      "next": "Next month",
+      "previous": "Previous",
+      "next": "Next",
       "today": "Today",
       "newEvent": "New event",
       "meetings": "meetings",
       "tasksDue": "tasks due",
-      "runs": "automation runs"
+      "runs": "automation runs",
+      "views": "Calendar view",
+      "day": "Day",
+      "week": "Week",
+      "month": "Month",
+      "todayWeek": "Today · Week {{week}}",
+      "weekNumber": "Week {{week}}",
+      "weeks": "Weeks {{from}}–{{to}}"
     },
     "grid": {
       "more_one": "{{count}} more",
       "more_other": "{{count}} more",
       "eventsFailed": "Couldn’t load your events.",
       "googleFailed": "Couldn’t read Google Calendar.",
-      "moveFailed": "Couldn’t move that to another day."
+      "moveFailed": "Couldn’t move that to another day.",
+      "allDay": "All day"
     },
     "event": {
       "newTitle": "New event",
@@ -3137,12 +3447,16 @@
       "account": "Account",
       "workspace": "Workspace",
       "profile": "Profile",
+      "memory": "Memory",
       "hosts": "Hosts",
       "repositories": "Watched repositories",
       "modelProviders": "Model providers",
       "cloudAgents": "Cloud agents",
       "mail": "Mail",
-      "whatsapp": "WhatsApp"
+      "whatsapp": "WhatsApp",
+      "telegram": "Telegram",
+      "app": "Oppenheimer",
+      "about": "About"
     },
     "profile": {
       "title": "Profile",
@@ -3215,6 +3529,27 @@
       "delete": "Delete account",
       "deleteHint": "Stops every session and removes your automations and host registrations. This cannot be undone."
     },
+    "memory": {
+      "title": "Memory",
+      "description": "What your bots know about you. Every bot you make reads it, in every chat.",
+      "aboutTitle": "About you",
+      "aboutHint": "In your own words: who you are, how you work, what your bots should always keep in mind. Your bots read it and never change it.",
+      "aboutLabel": "About you",
+      "aboutPlaceholder": "e.g. I’m Jordi, I build Oppenheimer from Barcelona. Answer in short sentences, and ask before you merge.",
+      "unsaved": "Unsaved changes",
+      "saved": "Saved {{date}}",
+      "neverSaved": "Not written yet",
+      "save": "Save",
+      "saving": "Saving…",
+      "discard": "Discard",
+      "saveFailed": "Couldn’t save what you wrote.",
+      "learnedTitle_one": "What your bots learned · {{count}}",
+      "learnedTitle_other": "What your bots learned · {{count}}",
+      "learnedHint": "Facts about you a bot saved in a chat. Each stays with the bot that learned it: change or forget it here, and every bot reads the change.",
+      "learnedEmpty": "Your bots haven’t learned anything about you yet.",
+      "loadFailed": "Couldn’t load what your bots know about you.",
+      "aBot": "a bot"
+    },
     "deleteAccount": {
       "title": "Delete your account?",
       "description": "Every session stops, your hosts are unpaired and your workspace, projects and sign-ins are removed. This cannot be undone.",
@@ -3252,6 +3587,10 @@
       "makeDefault": "Make default",
       "makeDefaultLabel": "Start new bots on {{provider}}",
       "makeDefaultFailed": "Couldn’t change the default provider.",
+      "groups": {
+        "connected": "Connected",
+        "notConnected": "Not connected"
+      },
       "providers": {
         "anthropic": "Claude models, through Anthropic’s API.",
         "glm": "GLM models, through z.ai.",
@@ -3400,6 +3739,66 @@
       "qrStep2": "Go to Settings → Linked devices → Link a device.",
       "qrStep3": "Point the phone at this code. It changes every few seconds.",
       "qrWaiting": "Waiting for the host to issue a code…"
+    },
+    "telegram": {
+      "title": "Telegram",
+      "description": "Connect a Telegram bot you made with @BotFather, held by the runner on one of your hosts. Your bots can then read the chats people have with it and answer them, asking you first. The bot’s token stays on your host.",
+      "privacy": "In groups, Telegram shows a bot only commands, mentions and replies to it. To let your bots read whole groups, send /setprivacy to @BotFather and turn privacy mode off for that bot.",
+      "loadFailed": "Couldn’t load your Telegram bots.",
+      "emptyTitle": "No Telegram bot connected",
+      "emptyDescription": "Connect one and ask any bot things like “anything new on the shop bot?” or “tell the team group the build is green”.",
+      "connect": "Connect a bot",
+      "connectAnother": "Connect another bot",
+      "connectAgain": "Connect again",
+      "connectSubmit": "Connect",
+      "atLimit": "You can connect up to {{count}} bots.",
+      "noHosts": "Pair a host first: the bot is polled by a host’s runner.",
+      "connectTitle": "Connect a Telegram bot",
+      "reconnectTitle": "Give {{label}} a new token",
+      "connectDescription": "Pick the host that will poll the bot. It answers while that host is on.",
+      "reconnectDescription": "Paste the bot’s new token. Its host and the chats kept for your bots stay as they are.",
+      "step1": "In Telegram, open @BotFather and send /newbot (or /token for a bot you have).",
+      "step2": "Copy the token it gives you, which looks like 123456789:AA….",
+      "step3": "Paste it below. It goes to your host and is never shown here again.",
+      "hostField": "Host",
+      "hostPlaceholder": "Choose a host",
+      "searchHosts": "Search hosts",
+      "noHost": "No host matches “{{query}}”",
+      "hostOfflineOption": "{{name}} · offline",
+      "tokenField": "Bot token",
+      "tokenHint": "Kept on the host only. Anyone with it can act as the bot, so don’t share it.",
+      "showToken": "Show token",
+      "hideToken": "Hide token",
+      "labelField": "Name",
+      "labelPlaceholder": "Shop",
+      "connecting": "Connecting…",
+      "connectFailed": "Couldn’t connect the bot.",
+      "status": {
+        "connecting": "Connecting",
+        "connected": "Connected",
+        "revoked": "Token revoked",
+        "unlinked": "Disconnected"
+      },
+      "hostOffline": "Host offline",
+      "onHost": "On {{host}}",
+      "unknownHost": "a removed host",
+      "notCheckedYet": "Checking the token",
+      "open": "Open in Telegram",
+      "disconnect": "Disconnect",
+      "disconnectLabel": "Disconnect {{label}}",
+      "disconnecting": "Disconnecting…",
+      "disconnectTitle": "Disconnect {{label}}?",
+      "disconnectDescription": "Your host stops polling the bot and forgets its token. Your bots lose the chats kept for them. The bot stays yours on Telegram; revoke its token in @BotFather to stop it there too.",
+      "disconnectFailed": "Couldn’t disconnect the bot."
+    },
+    "about": {
+      "title": "About",
+      "versionsHeading": "Versions",
+      "console": "Console",
+      "consoleHint": "The web app running in this tab.",
+      "api": "API",
+      "apiHint": "The control plane this console talks to.",
+      "failed": "Could not read the API version."
     }
   },
   "nav": {
@@ -3409,6 +3808,7 @@
     "commandPlaceholder": "Search pages and actions…",
     "goTo": "Go to",
     "primaryNavigation": "Main navigation",
+    "home": "Oppenheimer home",
     "profile": "Profile",
     "search": "Search",
     "team": "Team",
@@ -3447,7 +3847,8 @@
     "backToSessions": "Back to sessions",
     "sensitiveScope": "Sensitive",
     "unknownClient": "An application",
-    "failed": "That did not go through. Try again."
+    "failed": "That did not go through. Try again.",
+    "catalogFailed": "The permissions this application asked for could not be loaded, so it cannot be approved yet. Reload the page to try again."
   },
   "onboarding": {
     "flow": {

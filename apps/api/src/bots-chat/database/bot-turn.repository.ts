@@ -2,7 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { type AccessScope, ScopedRepositoryBase } from '@oppenheimer/backend-authz';
 import { OutboxService } from '@oppenheimer/backend-ddd';
-import { BOT_ACTIVE_TURN_STATUSES, QUEUE_NAMES } from '@oppenheimer/shared';
+import { BOT_ACTIVE_TURN_STATUSES, type BotTurnLane, QUEUE_NAMES } from '@oppenheimer/shared';
 import { None, type Option, Some } from 'oxide.ts';
 import { type EntityManager, Repository } from 'typeorm';
 import { BotResource } from '../../bots/bots.resource';
@@ -223,6 +223,8 @@ export class BotTurnRepository
     message: BotMessageEntity,
     correlationId: string | null,
     goal: BotGoalEntity,
+    /** The owner's resume line, written with the claim; it claims a paused goal instead of a running one. */
+    resumed?: BotMessageEntity | null,
   ): Promise<'staged' | 'waiting' | 'existing' | 'lost' | 'missing'> {
     return this.outbox.transaction(async (manager) => {
       if (!(await lockBot(manager, turn))) return 'missing';
@@ -233,7 +235,10 @@ export class BotTurnRepository
       );
       if (existing) return 'existing';
       // The goal's count and its turn commit together, or neither does.
-      if (!(await claimContinuationWithin(manager, this.goals, goal))) return 'lost';
+      if (!(await claimContinuationWithin(manager, this.goals, goal, Boolean(resumed)))) {
+        return 'lost';
+      }
+      if (resumed) await insertMessageWithin(manager, this.messages, resumed);
       return enqueueLocked(
         manager,
         this.outbox,
@@ -365,6 +370,27 @@ export class BotTurnRepository
   async findForRun(turnId: string): Promise<Option<BotTurnEntity>> {
     const record = await this.repository.findOne({ where: { id: turnId } });
     return record ? Some(this.mapper.toDomain(record)) : None;
+  }
+
+  async countRoutineReportsSince(
+    organizationId: string,
+    botId: string,
+    since: Date,
+  ): Promise<number> {
+    // By when it was said, not when its turn was queued: a turn queued before
+    // the owner's visit that reports after they left is unseen too.
+    // IDX_bot_message_bot for the bot's messages since then, the turn's
+    // primary key for its origin. A routine turn opens with its event line,
+    // so only an assistant message counts as something it said.
+    const rows: { count: string }[] = await this.repository.manager.query(
+      `SELECT count(DISTINCT message."turnId") AS count FROM bot_message message
+         JOIN bot_turn turn ON turn.id = message."turnId"
+        WHERE message."organizationId" = $1 AND message."botId" = $2
+          AND message."createdAt" > $3 AND message.role = 'assistant'
+          AND turn.origin = 'routine'`,
+      [organizationId, botId, since],
+    );
+    return Number(rows[0]?.count ?? 0);
   }
 
   async findQueuedBySourcePrefix(
@@ -636,7 +662,7 @@ export async function enqueueLocked(
   await manager.getRepository(BotTurnOrmEntity).insert(turns.toPersistence(turn));
   await insertMessageWithin(manager, messages, message);
   if (active > 0) return 'waiting';
-  await stageRun(outbox, manager, turn.botId, turn.id, correlationId);
+  await stageRun(outbox, manager, turn.botId, turn.id, turn.lane, correlationId);
   return 'staged';
 }
 
@@ -714,16 +740,21 @@ export async function waitingCardWithin(
   return rows[0]?.summary ?? null;
 }
 
-/** Stages the job that runs `turnId`, in the transaction that made it due. */
+/**
+ * Stages the job that runs `turnId`, in the transaction that made it due: a
+ * turn nobody waits on (`background`) on a queue of its own, so one that runs
+ * for hours never holds a slot a message from a person or a bot waits on.
+ */
 async function stageRun(
   outbox: OutboxService,
   manager: EntityManager,
   botId: string,
   turnId: string,
+  lane: BotTurnLane,
   correlationId: string | null,
 ): Promise<void> {
   await outbox.stageJob(manager, {
-    queue: QUEUE_NAMES.BOT_TURNS,
+    queue: lane === 'background' ? QUEUE_NAMES.BOT_BACKGROUND_TURNS : QUEUE_NAMES.BOT_TURNS,
     jobName: RUN_BOT_TURN_JOB,
     payload: { turnId },
     reason: `bot ${botId}: turn ${turnId} is next`,
@@ -745,8 +776,8 @@ async function stageNext(
   correlationId: string | null,
 ): Promise<void> {
   // IDX_bot_turn_active.
-  const next: { id: string }[] = await manager.query(
-    `SELECT id FROM bot_turn
+  const next: { id: string; lane: BotTurnLane }[] = await manager.query(
+    `SELECT id, lane FROM bot_turn
       WHERE "organizationId" = $1 AND "botId" = $2 AND "status" = 'queued'
         AND NOT EXISTS (
           SELECT 1 FROM bot_turn r
@@ -755,7 +786,9 @@ async function stageNext(
       ORDER BY ${LANE_ORDER}, "createdAt", id LIMIT 1`,
     [turn.organizationId, turn.botId],
   );
-  if (next[0]) await stageRun(outbox, manager, turn.botId, next[0].id, correlationId);
+  if (next[0]) {
+    await stageRun(outbox, manager, turn.botId, next[0].id, next[0].lane, correlationId);
+  }
 }
 
 /**

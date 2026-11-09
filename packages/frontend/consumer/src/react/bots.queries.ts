@@ -21,6 +21,7 @@ import {
   BotEntity,
   type BotGroupEntity,
   type BotMemoryFactEntity,
+  type PersonMemoryEntity,
   type SaveBotDocumentInput,
   type UpdateBotFactInput,
   type UpdateBotInput,
@@ -166,6 +167,18 @@ export function useSuspenseBotMemory(id: string) {
   });
 }
 
+/**
+ * What every bot of the reader's knows about them, under a Suspense
+ * `QueryState`: what they wrote, and the facts their bots learned.
+ */
+export function useSuspensePersonMemory() {
+  const app = useConsumerApp();
+  return useSuspenseQuery<PersonMemoryEntity, Error>({
+    queryKey: botsKeys.personMemory(),
+    queryFn: () => app.bots.findPersonMemory(),
+  });
+}
+
 /** A row's place in a list, written over by the row the server answered with. */
 function replaced<TRow extends { id: string }>(saved: TRow) {
   return (rows: TRow[]) => rows.map((row) => (row.id === saved.id ? saved : row));
@@ -236,16 +249,22 @@ function settleFacts(
  * every bot's memory that was read, not only the bot that keeps it.
  */
 function refreshSharedMemory(queryClient: QueryClient) {
-  return queryClient.invalidateQueries({
-    queryKey: botsKeys.details(),
-    predicate: (query) => query.queryKey[3] === 'memory',
-  });
+  return Promise.all([
+    queryClient.invalidateQueries({
+      queryKey: botsKeys.details(),
+      predicate: (query) => query.queryKey[3] === 'memory',
+    }),
+    queryClient.invalidateQueries({ queryKey: botsKeys.personMemory() }),
+  ]);
 }
 
 /** Whether a fact this bot's list holds is about the person, so its siblings read it too. */
 function isSharedFact(queryClient: QueryClient, id: string, factId: string): boolean {
   const rows = queryClient.getQueryData<BotMemoryFactEntity[]>(botsKeys.memoryList(id));
-  return rows?.find((row) => row.id === factId)?.scope === 'person';
+  if (rows?.find((row) => row.id === factId)?.scope === 'person') return true;
+  // Forgotten from Settings → Memory, where the bot's own list may not be read.
+  const person = queryClient.getQueryData<PersonMemoryEntity>(botsKeys.personMemory());
+  return person?.facts.some((row) => row.id === factId) ?? false;
 }
 
 /** A blank bot (a first name such as "Juno"), ungrouped. Open its chat with the answer. */
@@ -265,10 +284,22 @@ function reorders(input: UpdateBotInput): boolean {
   return 'groupId' in input || 'position' in input;
 }
 
-/** Profile, the sidebar group, the home host, and the composer's model, effort and approval. */
+/**
+ * Profile, the sidebar group, the home host, the composer's model, effort and
+ * approval, and the spend guard's switch. Turning the guard off resumes the
+ * routines it paused (`26-bot-routines.md` §6), so their lists read again.
+ */
 export const useUpdateBot = mutation<BotEntity, UpdateBotVariables>({
   run: (app, { id, input }) => app.bots.update(id, input),
-  update: (queryClient, saved, { input }) => settleBot(queryClient, saved, reorders(input)),
+  update: async (queryClient, saved, { input }) => {
+    await settleBot(queryClient, saved, reorders(input));
+    if (input.routineSpendGuard === false) {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: botsKeys.routines(saved.id) }),
+        queryClient.invalidateQueries({ queryKey: botsKeys.allRoutines() }),
+      ]);
+    }
+  },
 });
 
 /** `bot` with the fields `input` sets; a field it leaves out keeps the bot's. */
@@ -351,6 +382,20 @@ export const useRenameBotGroup = mutation<BotGroupEntity, RenameBotGroupVariable
   update: (queryClient, saved) => settleGroups(queryClient, replaced(saved)),
 });
 
+export interface MoveBotGroupVariables {
+  id: string;
+  position: number;
+}
+
+/** A group dragged to another place: the others close up around it, so the groups are read again. */
+export const useMoveBotGroup = mutation<BotGroupEntity, MoveBotGroupVariables>({
+  run: (app, { id, position }) => app.bots.moveGroup(id, position),
+  update: async (queryClient, saved) => {
+    settleGroups(queryClient, replaced(saved));
+    await queryClient.invalidateQueries({ queryKey: botsKeys.groupList() });
+  },
+});
+
 /** Its bots stay, ungrouped after the bots already there, so the bots are read again. */
 export const useDeleteBotGroup = mutation<void, string>({
   run: (app, id) => app.bots.removeGroup(id),
@@ -428,6 +473,16 @@ export const useDeleteBotFact = mutation<void, DeleteBotFactVariables>({
     const shared = isSharedFact(queryClient, id, factId);
     settleFacts(queryClient, id, without(factId));
     return shared ? refreshSharedMemory(queryClient) : undefined;
+  },
+});
+
+/** Write what the reader says about themselves; every bot of theirs reads it from its next turn. */
+export const useSavePersonAbout = mutation<{ about: string; updatedAt: Date | null }, string>({
+  run: (app, about) => app.bots.saveAbout(about),
+  update: (queryClient, saved) => {
+    queryClient.setQueryData<PersonMemoryEntity>(botsKeys.personMemory(), (memory) =>
+      memory?.withAbout(saved.about, saved.updatedAt),
+    );
   },
 });
 

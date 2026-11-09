@@ -1,32 +1,35 @@
 import { SortableBotItem } from '@oppenheimer/design-system-web';
 import type { BotEntity, BotGroupEntity } from '@oppenheimer/frontend-consumer';
 import { useUpdateBot } from '@oppenheimer/frontend-consumer/react';
-import { ErrorAlert, formatAge, MarkdownLine } from '@oppenheimer/frontend-web';
+import { ErrorAlert, MarkdownLine } from '@oppenheimer/frontend-web';
 import { Link, useNavigate, useRouterState } from '@tanstack/react-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { BotRowMenu } from '@/features/bots/components/bot-row-menu';
 import { DeleteBotDialog } from '@/features/bots/dialogs/delete-bot';
+import { useBotPin } from '@/features/bots/hooks/use-bot-pins';
 
 /**
- * One bot in the Employees sidebar: its initials on its colour, the name, how
- * long since it last changed, and its last message as the preview line (its
- * description before the first), its markdown read rather than shown. A section because it subscribes to the
- * route (lit on its chat and on its settings), owns the move, and keeps the
- * delete dialog open past the menu that asked for it. `now` is its group's
- * minute clock; `groups` are the Move pane's targets. The row drags by
+ * One bot in the Employees sidebar, on one line: its face on its colour
+ * and the name, with its last message (its description before the first) in
+ * the row's tooltip, its markdown read rather than shown. A section because it
+ * subscribes to the route (lit on its chat and on its settings), owns the
+ * move, and keeps the delete dialog open past the menu that asked for it.
+ * `groups` are the Move pane's targets; its pin is the sidebar's
+ * (`BotPinsContext`), which draws a pinned row under Pinned; `onHide`
+ * takes it out of the sidebar. The row drags by
  * itself (a click still opens the chat) unless `dragDisabled`.
  */
 export function BotSidebarRow({
   bot,
   groups,
-  now,
   dragDisabled,
+  onHide,
 }: {
   bot: BotEntity;
   groups: readonly BotGroupEntity[];
-  now: number;
   dragDisabled: boolean;
+  onHide: (id: string) => void;
 }) {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -38,6 +41,7 @@ export function BotSidebarRow({
   const [menuOpen, setMenuOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const move = useUpdateBot();
+  const pin = useBotPin(bot.id);
   const line = bot.lastMessagePreview || bot.description;
 
   return (
@@ -47,8 +51,7 @@ export function BotSidebarRow({
         disabled={dragDisabled}
         name={bot.name}
         initials={bot.initials}
-        color={bot.avatarColor}
-        age={formatAge(bot.lastActivityAt, now, t)}
+        face={bot.face}
         preview={line ? <MarkdownLine source={line} /> : t('bots.sidebar.noMessages')}
         active={active}
         menuOpen={menuOpen}
@@ -59,10 +62,13 @@ export function BotSidebarRow({
             onOpenChange={setMenuOpen}
             groups={groups}
             groupId={bot.groupId}
+            pinned={pin.pinned}
+            onPinChange={pin.setPinned}
             onSettings={() =>
               navigate({ to: '/bots/$botId/settings/profile', params: { botId: bot.id } })
             }
             onMove={(groupId) => move.mutate({ id: bot.id, input: { groupId } })}
+            onHide={() => onHide(bot.id)}
             onDelete={() => setDeleting(true)}
           />
         }
