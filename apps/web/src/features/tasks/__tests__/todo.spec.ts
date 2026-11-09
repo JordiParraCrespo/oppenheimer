@@ -180,6 +180,9 @@ describe("To do's day", () => {
       { key: 'tasks.todo.state.since', date: '2026-11-05' },
       { key: 'tasks.todo.state.dueOn', date: '2026-11-12' },
     ]);
+    // On a past day, a task due that day reads as due, not as overdue since that day.
+    const [pastDue] = todoEntries(TASKS, '2026-11-02', { today: DAY, overdue: true });
+    expect(todoLabels(pastDue, '2026-11-02', DAY)).toEqual([{ key: 'tasks.todo.state.due' }]);
     // Planned for the day with no due date: nothing more to say.
     expect(todoLabels({ task: task('y', { focusDate: DAY }), reason: 'day' }, DAY, DAY)).toEqual(
       [],

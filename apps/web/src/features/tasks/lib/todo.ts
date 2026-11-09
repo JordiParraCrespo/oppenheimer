@@ -154,10 +154,11 @@ export function todoLabels(entry: TodoEntry, day: string, today: string): TodoLa
   const labels: TodoLabel[] = [];
   if (entry.reason === 'carried' && task.focusDate)
     labels.push({ key: 'tasks.todo.state.since', date: task.focusDate });
-  if (task.isOverdue(today) && task.dueDate)
-    labels.push({ key: 'tasks.todo.state.overdue', date: task.dueDate });
-  else if (task.dueDate === day)
+  // Due on the day shown is that day's own, even on a past day it is now overdue for.
+  if (task.dueDate === day)
     labels.push({ key: day === today ? 'tasks.todo.state.todo' : 'tasks.todo.state.due' });
+  else if (task.isOverdue(today) && task.dueDate)
+    labels.push({ key: 'tasks.todo.state.overdue', date: task.dueDate });
   else if (task.dueDate) labels.push({ key: 'tasks.todo.state.dueOn', date: task.dueDate });
   return labels;
 }
