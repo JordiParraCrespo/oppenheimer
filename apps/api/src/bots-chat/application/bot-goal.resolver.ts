@@ -120,6 +120,19 @@ export class BotGoalResolver {
     return true;
   }
 
+  /**
+   * Resumes a goal whose pausing turn has not ended yet (the bot said blocked
+   * and the owner resumed before the turn was over) in place: that turn's
+   * end then counts it and goes on. False when its turn was counted already.
+   */
+  async resumeBeforeItsTurnEnds(goal: BotGoalEntity): Promise<boolean> {
+    const line = goalPauseLine(goal, 'resumed');
+    if (!(await this.goals.resumeOwed(goal, line))) return false;
+    goal.resume();
+    await this.stream.publish(goal.botId, { type: 'message', turnId: null, messageId: line.id });
+    return true;
+  }
+
   /** Cancels the goal's continuations still waiting: they exist only for it. */
   async cancelWaiting(goal: BotGoalEntity, correlationId: string | null): Promise<void> {
     const waiting = await this.turns.findQueuedBySourcePrefix(

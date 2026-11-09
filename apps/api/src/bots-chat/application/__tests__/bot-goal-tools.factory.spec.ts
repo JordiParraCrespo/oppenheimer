@@ -131,4 +131,24 @@ describe('BotGoalToolsFactory', () => {
     expect(goals.pause.mock.calls[0][2]).toBe('owed');
     expect(goalsOf.cancelWaiting).toHaveBeenCalledWith(goal, null);
   });
+
+  // What breaks this: a blocked pause from a turn that is not the goal's own
+  // marked as owing its spend, which no turn's end will ever count, so Resume
+  // lifts it in place and waits for an end that never comes.
+  it('owes no spend for a blocked pause from a turn that is not the goal’s own', async () => {
+    const { goals, call } = setup(open(), 'message');
+    await call('end_goal', { outcome: 'blocked', reason: 'I need the deploy key' });
+    expect(goals.pause.mock.calls[0][2]).toBe('counted');
+  });
+
+  // What breaks this: the bot saying met after it said blocked in one turn,
+  // the claim written on the paused goal.
+  it('takes no claim on a paused goal', async () => {
+    const goal = open();
+    goal.pause('blocked', 'I need the deploy key', new Date());
+    const { goals, call } = setup(goal, 'goal');
+    const result = await call('end_goal', { outcome: 'met', reason: 'pnpm test exits 0' });
+    expect(goals.claim).not.toHaveBeenCalled();
+    expect(JSON.stringify(result)).toContain('paused');
+  });
 });

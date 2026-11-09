@@ -597,7 +597,9 @@ branch"), up to 2,000 characters.
   count and its spend, queues nothing, and shows above the composer with
   why, **Resume** and Stop; `/goal resume` (or `continue`, `unpause`) does
   what Resume does (`POST /bots/:id/goal/resume`), queuing the next
-  continuation with a line saying the owner resumed it. It pauses when:
+  continuation with a line saying the owner resumed it; resumed before the
+  turn that paused it has ended, it is resumed in place, and that turn's end
+  counts it and goes on (2026-11-09). It pauses when:
   - the bot says it is `blocked`, or the reviewer finds it impossible;
   - a turn of it stopped calling tools: 3 in a row (Codex's empty turns,
     `no_progress`);

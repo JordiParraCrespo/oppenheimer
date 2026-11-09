@@ -2950,6 +2950,55 @@ describe('bots chat (integration)', () => {
       expect((await goals.findForBot(bot.organizationId, bot.id))?.tokensUsed).toBe(5_000);
     });
 
+    // What breaks this: the bot saying blocked, then met, in one turn, the
+    // claim moving the paused goal past its pause so the turn's spend is refused.
+    it('takes no claim on a paused goal, so its turn’s owed spend still lands', async () => {
+      const bot = await create('Changed mind');
+      const turn = await runningTurn(bot);
+      await goals.set(goalFor(bot, turn.id));
+      const pausing = (await goals.findForBot(bot.organizationId, bot.id)) as BotGoalEntity;
+      pausing.pause('blocked', 'I need the key', new Date());
+      expect(await goals.pause(pausing, goalPauseLine(pausing, 'paused'), 'owed')).toBe(true);
+      const claiming = (await goals.findForBot(bot.organizationId, bot.id)) as BotGoalEntity;
+      claiming.claimMet('Found a workaround');
+      expect(await goals.claim(claiming)).toBe(false);
+
+      const ended = (await goals.findForBot(bot.organizationId, bot.id)) as BotGoalEntity;
+      expect(ended.claim).toBeNull();
+      ended.account({ tokens: 5_000, calledTools: true });
+      expect(await goals.recordSpend(ended)).toBe(true);
+      expect((await goals.findForBot(bot.organizationId, bot.id))?.tokensUsed).toBe(5_000);
+    });
+
+    // What breaks this: the owner resuming before the turn that paused the
+    // goal ended, the goal moved on past that turn, so its end reads as
+    // decided and never counts what it spent; or a pause whose turn was
+    // counted resumed in place, with no turn left to go on from.
+    it('resumes in place only a pause whose turn has not been counted yet', async () => {
+      const bot = await create('Resumed early');
+      const turn = await runningTurn(bot);
+      await goals.set(goalFor(bot, turn.id));
+      const pausing = (await goals.findForBot(bot.organizationId, bot.id)) as BotGoalEntity;
+      pausing.pause('blocked', 'I need the key', new Date());
+      expect(await goals.pause(pausing, goalPauseLine(pausing, 'paused'), 'owed')).toBe(true);
+
+      const owed = (await goals.findForBot(bot.organizationId, bot.id)) as BotGoalEntity;
+      expect(await goals.resumeOwed(owed, goalPauseLine(owed, 'resumed'))).toBe(true);
+      const resumed = (await goals.findForBot(bot.organizationId, bot.id)) as BotGoalEntity;
+      expect(resumed.paused).toBeNull();
+      expect(resumed.continuations).toBe(0);
+
+      // Paused again and counted at its turn's end: nothing is owed, so no resume in place.
+      resumed.pause('blocked', 'Still stuck', new Date());
+      expect(await goals.pause(resumed, goalPauseLine(resumed, 'paused'), 'owed')).toBe(true);
+      const counted = (await goals.findForBot(bot.organizationId, bot.id)) as BotGoalEntity;
+      counted.account({ tokens: 5_000, calledTools: true });
+      expect(await goals.recordSpend(counted)).toBe(true);
+      const after = (await goals.findForBot(bot.organizationId, bot.id)) as BotGoalEntity;
+      expect(await goals.resumeOwed(after, goalPauseLine(after, 'resumed'))).toBe(false);
+      expect((await goals.findForBot(bot.organizationId, bot.id))?.paused).not.toBeNull();
+    });
+
     // What breaks this: a goal replaced while the old one's continuation ran,
     // marked as waiting by that continuation's limit, though nothing holds it.
     it('marks only the ended turn’s own goal as waiting, never one set in its place', async () => {

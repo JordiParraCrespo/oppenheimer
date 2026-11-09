@@ -98,11 +98,38 @@ export class BotGoalRepository
   }
 
   async claim(goal: BotGoalEntity): Promise<boolean> {
-    const result = await this.repository.update(
-      { id: goal.id, organizationId: goal.organizationId },
-      { claim: goal.claim },
-    );
+    // Only a running goal takes a claim: a paused one's `updatedAt` marks the
+    // spend its pause still owes, which this write would move past.
+    const result = await this.repository
+      .createQueryBuilder()
+      .update(BotGoalOrmEntity)
+      .set({ claim: goal.claim })
+      .where('id = :id AND "organizationId" = :organizationId AND "pausedAt" IS NULL', {
+        id: goal.id,
+        organizationId: goal.organizationId,
+      })
+      .execute();
     return result.affected === 1;
+  }
+
+  resumeOwed(goal: BotGoalEntity, line: BotMessageEntity): Promise<boolean> {
+    const pausedAt = goal.paused?.at;
+    if (!pausedAt) return Promise.resolve(false);
+    return this.dataSource.transaction(async (manager) => {
+      // What `BotGoalEntity.resume` clears, written without the goal's spend.
+      const result = await manager
+        .createQueryBuilder()
+        .update(BotGoalOrmEntity)
+        .set({ pausedAt: null, pauseReason: null, pauseNote: null, idleTurns: 0, claim: null })
+        .where(
+          'id = :id AND continuations = :at AND "pausedAt" = :pausedAt AND "updatedAt" = "pausedAt"',
+          { id: goal.id, at: goal.continuationsAtLoad, pausedAt },
+        )
+        .execute();
+      if (result.affected !== 1) return false;
+      await insertMessageWithin(manager, this.messages, line);
+      return true;
+    });
   }
 
   end(goal: BotGoalEntity, line: BotMessageEntity | null): Promise<boolean> {

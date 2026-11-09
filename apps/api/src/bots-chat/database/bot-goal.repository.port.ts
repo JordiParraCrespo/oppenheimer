@@ -23,6 +23,14 @@ export interface BotGoalRepositoryPort {
    */
   pause(goal: BotGoalEntity, line: BotMessageEntity, spend: 'owed' | 'counted'): Promise<boolean>;
   /**
+   * Lifts a pause whose turn has not been counted yet (`owed`, its end still
+   * to come) in place, with the owner's line: the count stays, so that turn's
+   * end counts it and decides as for a running goal. False, and no line, when
+   * the pause is not that one any more (its turn's end counted it, or another
+   * writer moved the goal): the caller resumes it as usual.
+   */
+  resumeOwed(goal: BotGoalEntity, line: BotMessageEntity): Promise<boolean>;
+  /**
    * Writes what the turn that paused a goal spent, once: only while the goal
    * is still paused as it was and its pause still owes it (a pause whose
    * spend is `owed` leaves `updatedAt` at the pause's time; this write, or a

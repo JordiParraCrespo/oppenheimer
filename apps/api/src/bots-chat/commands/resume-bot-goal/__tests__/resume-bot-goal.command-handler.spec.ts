@@ -46,7 +46,7 @@ function goal(props: Partial<BotGoalProps> = {}): BotGoalEntity {
   });
 }
 
-function setup(stored: BotGoalEntity | null, owned = true) {
+function setup(stored: BotGoalEntity | null, owned = true, owed = false) {
   const lookup = {
     bot: vi.fn<BotLookupPort['bot']>(
       async () => ({ id: 'bot-1', organizationId: 'org-1' }) as unknown as BotEntity,
@@ -61,6 +61,7 @@ function setup(stored: BotGoalEntity | null, owned = true) {
       owned ? PROPS : null,
     ),
     queueContinuation: vi.fn<BotGoalResolver['queueContinuation']>(async () => true),
+    resumeBeforeItsTurnEnds: vi.fn<BotGoalResolver['resumeBeforeItsTurnEnds']>(async () => owed),
   };
   const handler = new ResumeBotGoalCommandHandler(
     lookup as unknown as BotLookupPort,
@@ -88,6 +89,18 @@ describe('ResumeBotGoalCommandHandler', () => {
       expect.anything(),
       true,
     );
+  });
+
+  // What breaks this: the owner resuming before the turn that paused the
+  // goal ended, a continuation queued beside that turn, and its end, read as
+  // decided already, never counting what it spent.
+  it('resumes in place, queuing nothing, while the turn that paused the goal has not ended', async () => {
+    const paused = goal();
+    const { goalsOf, run } = setup(paused, true, true);
+    await run();
+    expect(goalsOf.resumeBeforeItsTurnEnds).toHaveBeenCalledWith(paused);
+    expect(goalsOf.queueContinuation).not.toHaveBeenCalled();
+    expect(goalsOf.end).not.toHaveBeenCalled();
   });
 
   it('changes nothing for a goal that runs, or a bot with none', async () => {
