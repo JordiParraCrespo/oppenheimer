@@ -1,10 +1,11 @@
 import { createHash } from 'node:crypto';
+import type { ComputerAction } from '@oppenheimer/shared/protocol';
 import type { HostComputerOutcome } from '../../sessions/application/host-computer.port';
 import { cut } from '../domain/bot-tool-text.policy';
 
 /** A `use_computer` call as its words are drawn from: the action and what it carries. */
 export interface ComputerCall {
-  action: string;
+  action: ComputerAction;
   x?: number;
   y?: number;
   to_x?: number;
@@ -45,66 +46,89 @@ const REFUSALS: Readonly<Record<string, { meaning: string; advice?: string }>> =
 const MAYBE_DONE =
   'The action may already have happened: take a screenshot before you do it again.';
 
-/** What the action is missing, in words the model can fix it from; null when it is whole. */
-export function computerCallProblem(call: ComputerCall): string | null {
-  const at = call.x !== undefined && call.y !== undefined;
-  switch (call.action) {
-    case 'move':
-    case 'click':
-    case 'double_click':
-    case 'right_click':
-    case 'middle_click':
-      return at ? null : `${call.action} needs x and y.`;
-    case 'drag':
-      return at && call.to_x !== undefined && call.to_y !== undefined
-        ? null
-        : 'drag needs x, y, to_x and to_y.';
-    case 'scroll':
-      if (!at) return 'scroll needs x and y: where the pointer is while the wheel turns.';
-      return call.scroll_x || call.scroll_y ? null : 'scroll needs scroll_y or scroll_x.';
-    case 'type':
-      return call.text ? null : 'type needs text.';
-    case 'key':
-      return call.keys?.length ? null : 'key needs keys.';
-    default:
-      return null;
-  }
+type Field = keyof Omit<ComputerCall, 'action'>;
+
+/** One action of `use_computer`: what a call of it must carry, and how a card says it. */
+interface ComputerActionSpec {
+  /** The fields the action needs, each of them. */
+  needs: readonly Field[];
+  /** Fields of which it needs at least one that is set and not zero. */
+  needsOneOf?: readonly Field[];
+  /** The fields it carries to the host when given, beyond the ones it needs. */
+  carries?: readonly Field[];
+  /** What to tell the model when a part is missing. */
+  missing: string;
+  /** The card's words, up to the screen they act on: "Click at (640, 412) on". */
+  says: (call: ComputerCall) => string;
 }
 
-/** What the call does, as a card or a sentence says it: "click at (640, 412)". */
-function described(call: ComputerCall): string {
-  const at = `(${call.x}, ${call.y})`;
-  switch (call.action) {
-    case 'screenshot':
-      return 'Look at';
-    case 'wait':
-      return `Wait ${call.seconds ?? 0} s, then look at`;
-    case 'move':
-      return `Move the pointer to ${at} on`;
-    case 'click':
-      return `Click at ${at} on`;
-    case 'double_click':
-      return `Double-click at ${at} on`;
-    case 'right_click':
-      return `Right-click at ${at} on`;
-    case 'middle_click':
-      return `Middle-click at ${at} on`;
-    case 'drag':
-      return `Drag from ${at} to (${call.to_x}, ${call.to_y}) on`;
-    case 'scroll':
-      return `Scroll at ${at} on`;
-    case 'type':
-      return `Type \`${cut(call.text ?? '', 200)}\` on`;
-    case 'key':
-      return `Press ${(call.keys ?? []).join(', ')} on`;
-    default:
-      return `${call.action} on`;
-  }
+const at = (call: ComputerCall) => `(${call.x}, ${call.y})`;
+const pointed = (verb: string): Omit<ComputerActionSpec, 'missing'> => ({
+  needs: ['x', 'y'],
+  says: (call) => `${verb} ${at(call)} on`,
+});
+
+/**
+ * The actions, once: the tool's checks, its card and the request it sends
+ * are all read from this table, so a new action is a row here (and its two
+ * platform cases on the runner, which the link's schema names).
+ */
+export const COMPUTER_ACTION_SPECS: Readonly<Record<ComputerAction, ComputerActionSpec>> = {
+  screenshot: { needs: [], missing: '', says: () => 'Look at' },
+  wait: {
+    needs: [],
+    carries: ['seconds'],
+    missing: '',
+    says: (call) => `Wait ${call.seconds ?? 0} s, then look at`,
+  },
+  move: { ...pointed('Move the pointer to'), missing: 'move needs x and y.' },
+  click: { ...pointed('Click at'), missing: 'click needs x and y.' },
+  double_click: { ...pointed('Double-click at'), missing: 'double_click needs x and y.' },
+  right_click: { ...pointed('Right-click at'), missing: 'right_click needs x and y.' },
+  middle_click: { ...pointed('Middle-click at'), missing: 'middle_click needs x and y.' },
+  drag: {
+    needs: ['x', 'y', 'to_x', 'to_y'],
+    missing: 'drag needs x, y, to_x and to_y.',
+    says: (call) => `Drag from ${at(call)} to (${call.to_x}, ${call.to_y}) on`,
+  },
+  scroll: {
+    needs: ['x', 'y'],
+    needsOneOf: ['scroll_y', 'scroll_x'],
+    missing:
+      'scroll needs x and y (where the pointer is while the wheel turns) and scroll_y or scroll_x.',
+    says: (call) => `Scroll at ${at(call)} on`,
+  },
+  type: {
+    needs: ['text'],
+    missing: 'type needs text.',
+    says: (call) => `Type \`${cut(call.text ?? '', 200)}\` on`,
+  },
+  key: {
+    needs: ['keys'],
+    missing: 'key needs keys.',
+    says: (call) => `Press ${(call.keys ?? []).join(', ')} on`,
+  },
+};
+
+/** What the action is missing, in words the model can fix it from; null when it is whole. */
+export function computerCallProblem(call: ComputerCall): string | null {
+  const spec = COMPUTER_ACTION_SPECS[call.action];
+  // A coordinate of 0 is a place; a scroll of 0 is no scroll.
+  const whole =
+    spec.needs.every((field) => call[field] !== undefined) &&
+    (!spec.needsOneOf || spec.needsOneOf.some((field) => Boolean(call[field])));
+  return whole ? null : spec.missing;
+}
+
+/** The fields a call of its action sends to the host: what it needs, and what it may carry. */
+export function computerCallFields(call: ComputerCall): readonly Field[] {
+  const spec = COMPUTER_ACTION_SPECS[call.action];
+  return [...spec.needs, ...(spec.needsOneOf ?? []), ...(spec.carries ?? [])];
 }
 
 /** The Needs input card's line: "Click at (640, 412) on the screen of build-02". */
 export function computerSummary(call: ComputerCall, host: string): string {
-  return `${described(call)} the screen of ${host}`;
+  return `${COMPUTER_ACTION_SPECS[call.action].says(call)} the screen of ${host}`;
 }
 
 /**

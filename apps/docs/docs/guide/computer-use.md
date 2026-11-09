@@ -13,7 +13,7 @@ On the host itself, in a terminal:
 - `runner computer on` lets your bots use this host's screen. `runner computer off` stops them at once; nothing restarts.
 - `runner computer` shows whether it is on and which screen a bot would get, or why there is none.
 
-Nothing in the console and no bot can change this setting. It lives in a file on the host (`~/.oppenheimer/computer.json`).
+The setting lives in a file on the host (`~/.oppenheimer/computer.json`). Nothing in the console changes it, and Oppenheimer gives a bot no tool for it. One caveat: a host where you let bots run any program (`runner exec mode full`, or `runner` on its allowlist) lets a bot run this command too, so keep those two decisions together.
 
 ## What the host needs
 
@@ -23,7 +23,7 @@ Nothing in the console and no bot can change this setting. It lives in a file on
 
 ## How a bot uses it
 
-The bot has one tool, `use_computer`. Each call does one thing (look, click, double-click, right-click, drag, scroll, type text, press keys such as `cmd+s`, or wait a few seconds) and comes back with a picture of the screen after it, which the bot reads before its next step. The picture is at most 1,280 pixels on its long side; a larger screen is scaled down.
+The bot has one tool, `use_computer`. Each call does one thing (look, move the pointer, click, double-click, right-click, middle-click, drag, scroll, type text, press keys such as `cmd+s`, or wait a few seconds) and comes back with a picture of the screen after it, which the bot reads before its next step. The picture is at most 1,280 pixels on its long side; a larger screen is scaled down.
 
 Ask in the chat: "Open the simulator on my Mac and check the sign-up screen", naming the host if it is not the bot's home host.
 
@@ -40,5 +40,5 @@ Its instructions tell it to never type a password, a sign-in code or a card numb
 - One screen per host: a Mac's main display, or one X display. Two bots on one host take turns.
 - Screenshots are sent to the bot's model provider, with whatever is on the screen at that moment. Close what you would not share before you turn it on.
 - Typing accented or non-Latin text on a Mac can lose characters.
-- A refusal names its reason: `COMPUTER_001` it is off on the host, `COMPUTER_002` the host has no screen the runner can use (the reason says what is missing), `COMPUTER_004` the screen could not be read or used (on a Mac, usually a missing permission).
+- A refusal names its reason: `COMPUTER_001` it is off on the host, `COMPUTER_002` the host has no screen the runner can use (the reason says what is missing), `COMPUTER_003` the action does not fit (a point outside the picture, a key that is not one), `COMPUTER_004` the screen could not be read or used (on a Mac, usually a missing permission).
 - An older runner cannot do this; update it from the host's menu (**Update runner**).

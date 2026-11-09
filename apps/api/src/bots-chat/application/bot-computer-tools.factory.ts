@@ -12,6 +12,7 @@ import {
 import { z } from 'zod/v4';
 import type { HostComputerOutcome } from '../../sessions/application/host-computer.port';
 import { UseHostComputerCommand } from '../../sessions/commands/use-host-computer/use-host-computer.command';
+import { toHostComputerRequest } from '../bot-computer-tool.mapper';
 import {
   computerCallProblem,
   computerCommandIdOf,
@@ -135,18 +136,7 @@ export class BotComputerToolsFactory implements BotToolArea {
             scope: context.owner,
             hostId,
             ...(context.approvalId ? { commandId: computerCommandIdOf(context.approvalId) } : {}),
-            request: {
-              action: input.action,
-              ...(input.x !== undefined && { x: input.x }),
-              ...(input.y !== undefined && { y: input.y }),
-              ...(input.to_x !== undefined && { toX: input.to_x }),
-              ...(input.to_y !== undefined && { toY: input.to_y }),
-              ...(input.scroll_x !== undefined && { scrollX: input.scroll_x }),
-              ...(input.scroll_y !== undefined && { scrollY: input.scroll_y }),
-              ...(input.text !== undefined && { text: input.text }),
-              ...(input.keys !== undefined && { keys: input.keys }),
-              ...(input.seconds !== undefined && { seconds: input.seconds }),
-            },
+            request: toHostComputerRequest(input),
           }),
         );
         const shown = outcome.kind === 'screen' && !approved;

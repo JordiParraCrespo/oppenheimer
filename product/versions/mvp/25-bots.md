@@ -1188,7 +1188,10 @@ on a host: its real desktop, on a Mac and on Linux.
   (`cmd+shift+4`, `ctrl+c`, `enter`), the same on both systems.
 - **The host decides, with a switch of its own.** `runner computer on`, off
   by default, in `~/.oppenheimer/computer.json`, which the control plane
-  never writes (`COMPUTER_001` when off). It is not the exec policy: a host
+  never writes (`COMPUTER_001` when off). No tool of ours changes it, but
+  a host that lets bots run any program (`runner exec mode full`, or
+  `runner` on its allowlist) lets a bot run `runner computer on` too: the
+  two are the host owner's to decide together. It is not the exec policy: a host
   may run programs for bots and still not show them its screen, and a
   screenshot carries whatever is open to the model provider.
 - **Which screen.** A Mac: its main display, through `screencapture` and
