@@ -15,7 +15,6 @@ import type { AccessScope } from '@oppenheimer/backend-authz';
 import { ApiAuthProblemResponses, ApiProblemResponse } from '@oppenheimer/backend-core';
 import type { AggregateID } from '@oppenheimer/backend-ddd';
 import { CheckPolicies } from '../../../auth/decorators/check-policies.decorator';
-import { RequireScopes } from '../../../auth/decorators/require-scopes.decorator';
 import { ApiAuthGuard } from '../../../auth/guards/api-auth.guard';
 import { PoliciesGuard } from '../../../auth/guards/policies.guard';
 import { CurrentAccessScope } from '../../../authz/decorators/current-access-scope.decorator';
@@ -46,7 +45,8 @@ export class ConfirmWhatsappOwnerHttpController {
   @Version('1')
   @HttpCode(200)
   @CheckPolicies({ action: 'update', subject: 'Whatsapp' })
-  @RequireScopes('whatsapp:write')
+  // Session-only: the owner's line starts turns with the bot's full tools and
+  // memory, so no API token or OAuth grant may name it, whatever its scopes.
   @ApiOperation({
     summary: 'Confirm your own number with the code it received',
     description:

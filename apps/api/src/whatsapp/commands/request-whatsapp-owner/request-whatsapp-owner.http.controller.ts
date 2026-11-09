@@ -16,7 +16,6 @@ import type { AccessScope } from '@oppenheimer/backend-authz';
 import { ApiAuthProblemResponses, ApiProblemResponse } from '@oppenheimer/backend-core';
 import type { AggregateID } from '@oppenheimer/backend-ddd';
 import { CheckPolicies } from '../../../auth/decorators/check-policies.decorator';
-import { RequireScopes } from '../../../auth/decorators/require-scopes.decorator';
 import { ApiAuthGuard } from '../../../auth/guards/api-auth.guard';
 import { PoliciesGuard } from '../../../auth/guards/policies.guard';
 import { CurrentAccessScope } from '../../../authz/decorators/current-access-scope.decorator';
@@ -49,7 +48,8 @@ export class RequestWhatsappOwnerHttpController {
   // Each code is a message from the number, out of its host's send budget.
   @Throttle({ default: { limit: 5, ttl: 600_000 } })
   @CheckPolicies({ action: 'update', subject: 'Whatsapp' })
-  @RequireScopes('whatsapp:write')
+  // Session-only: the owner's line starts turns with the bot's full tools and
+  // memory, so no API token or OAuth grant may name it, whatever its scopes.
   @ApiOperation({
     summary: 'Name your own number, and get a code on it',
     description:
