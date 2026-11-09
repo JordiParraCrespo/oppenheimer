@@ -84,6 +84,34 @@ export interface HostSessionRow {
   images?: SessionLaunchFile[];
 }
 
+/** What a search across the caller's sessions looks for (`search_sessions`). */
+export interface SessionSearchCriteria {
+  /** Web-search syntax: `"exact phrase"`, `-excluded`, `OR`. */
+  query: string;
+  hostId?: string;
+  projectId?: string;
+  /** Only entries that happened at or after this; a name, the session's last activity. */
+  since?: Date;
+  /** The most sessions answered. */
+  limit: number;
+}
+
+/** One matching entry: a log entry's words, or the session's name. */
+export interface SessionSearchHit {
+  /** The log entry's kind, or `SESSION_NAME_HIT`. */
+  kind: string;
+  /** When the entry happened (the writer's clock); for a name, the session's last activity. */
+  at: Date;
+  /** The words the search matched in, as `sessionSearchText` reads them. */
+  text: string;
+}
+
+/** A session that matched, with its best few hits, best first. */
+export interface SessionSearchMatch {
+  session: WorkSessionEntity;
+  hits: SessionSearchHit[];
+}
+
 /** A folder a person ran sessions in on a host, and when they last started one there. */
 export interface RecentFolder {
   path: string;
@@ -248,6 +276,13 @@ export interface WorkSessionRepositoryPort {
    * otherwise: by page with a count, or by `cursor` without one.
    */
   findAllPaginated(scope: AccessScope, filters: SessionFilters): Promise<SessionListPage>;
+
+  /**
+   * The caller's sessions whose name or log matches the words, closed ones
+   * included: sessions by their best hit, best first and the latest on a
+   * tie, each with at most `SESSION_SEARCH_HITS_PER_SESSION` hits.
+   */
+  search(scope: AccessScope, criteria: SessionSearchCriteria): Promise<SessionSearchMatch[]>;
 
   /** `None` both for a missing session and for one outside the caller's scope. */
   findOneById(scope: AccessScope, id: string): Promise<Option<WorkSessionEntity>>;

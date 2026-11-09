@@ -7,6 +7,12 @@ import { DataSource, type EntityManager, Repository, type SelectQueryBuilder } f
 import type { SessionCheckoutEntity } from '../domain/session-checkout.entity';
 import type { SessionCloudRunEntity } from '../domain/session-cloud-run.entity';
 import { SESSION_EVENT_KINDS, type SessionFold } from '../domain/session-state.policy';
+import {
+  groupSessionHits,
+  SESSION_NAME_HIT,
+  SESSION_SEARCH_HITS_PER_SESSION,
+  SESSION_SEARCH_KINDS,
+} from '../domain/session-search.policy';
 import type { SessionTurnFold } from '../domain/session-turn.policy';
 import type { WorkSessionEntity } from '../domain/work-session.entity';
 import {
@@ -16,6 +22,7 @@ import {
 } from '../domain/work-session-event.entity';
 import { SessionResource } from '../sessions.resource';
 import { WorkSessionMapper } from '../work-session.mapper';
+import { WorkSessionEventMapper } from '../work-session-event.mapper';
 import { SessionCheckoutRepository } from './session-checkout.repository';
 import { SessionCloudRunRepository } from './session-cloud-run.repository';
 import { SessionTurnRepository } from './session-turn.repository';
@@ -30,6 +37,8 @@ import type {
   SessionFilters,
   SessionListCursor,
   SessionListPage,
+  SessionSearchCriteria,
+  SessionSearchMatch,
   WorkSessionRepositoryPort,
 } from './work-session.repository.port';
 import { WorkSessionEventRepository } from './work-session-event.repository';
@@ -338,6 +347,96 @@ export class WorkSessionRepository
       page: filters.page,
       nextCursor: filters.page * filters.limit < total ? cursorAfter(sort, rows) : null,
     };
+  }
+
+  async search(scope: AccessScope, criteria: SessionSearchCriteria): Promise<SessionSearchMatch[]> {
+    // The scope's own predicate, as a sub-query over the sessions it admits
+    // (with the filters on the session row): the log has no tenant column,
+    // and rewriting the scope by hand is how a read ends up scoped apart
+    // from the reads beside it.
+    const reachable = this.scopedQuery(scope).select('session.id');
+    if (criteria.projectId) {
+      reachable.andWhere('session.projectId = :projectId', { projectId: criteria.projectId });
+    }
+    if (criteria.hostId)
+      reachable.andWhere('session.hostId = :hostId', { hostId: criteria.hostId });
+    const [sessions, parameters] = reachable.getQueryAndParameters();
+    const at = parameters.length;
+    const values: unknown[] = [
+      ...parameters,
+      criteria.query,
+      criteria.limit,
+      SESSION_SEARCH_HITS_PER_SESSION,
+    ];
+    let eventSince = '';
+    let nameSince = '';
+    if (criteria.since) {
+      values.push(criteria.since);
+      eventSince = `AND e."occurredAt" >= $${values.length}`;
+      nameSince = `AND COALESCE(s."lastEventAt", s."createdAt") >= $${values.length}`;
+    }
+    // Literals, not parameters: the planner proves the partial index's
+    // predicate from them. They are the policy's own constants.
+    const kinds = SESSION_SEARCH_KINDS.map((kind) => `'${kind.replace(/'/g, "''")}'`).join(', ');
+    const words = `websearch_to_tsquery('simple', $${at + 1})`;
+    const eventWords = `work_session_event_search_vector(e."kind", e."payload")`;
+
+    // Q1 through IDX_work_session_event_search, Q2 through
+    // IDX_work_session_name_search (`AddSessionSearch`); each repeats its
+    // index's expression and predicate exactly. Every hit is ranked within its
+    // session, each session is kept for its best hit, and only the best
+    // few of a kept session come back.
+    const rows: unknown[] = await this.repository.manager.query(
+      `WITH hits AS (
+         SELECT e."sessionId", e."kind", e."payload", NULL::varchar AS "name",
+                e."occurredAt" AS "at", e."seq", ts_rank(${eventWords}, ${words}) AS "rank"
+           FROM "work_session_event" e
+          WHERE e."kind" IN (${kinds})
+            AND ${eventWords} @@ ${words}
+            AND e."sessionId" IN (${sessions})
+            ${eventSince}
+         UNION ALL
+         SELECT s."id", '${SESSION_NAME_HIT}', NULL::jsonb, s."name",
+                COALESCE(s."lastEventAt", s."createdAt"), NULL::integer,
+                ts_rank(to_tsvector('simple', s."name"), ${words})
+           FROM "work_session" s
+          WHERE to_tsvector('simple', s."name") @@ ${words}
+            AND s."id" IN (${sessions})
+            ${nameSince}
+       ),
+       ranked AS (
+         SELECT h.*, row_number() OVER (
+                  PARTITION BY h."sessionId"
+                  ORDER BY h."rank" DESC, h."at" DESC, h."seq" DESC NULLS LAST
+                ) AS "place"
+           FROM hits h
+       ),
+       best AS (
+         SELECT r."sessionId", r."rank", r."at" FROM ranked r
+          WHERE r."place" = 1
+          ORDER BY r."rank" DESC, r."at" DESC, r."sessionId"
+          LIMIT $${at + 2}
+       )
+       SELECT r."sessionId", r."kind", r."payload", r."name", r."at"
+         FROM ranked r JOIN best b ON b."sessionId" = r."sessionId"
+        WHERE r."place" <= $${at + 3}
+        ORDER BY b."rank" DESC, b."at" DESC, b."sessionId", r."place"`,
+      values,
+    );
+    const groups = groupSessionHits(rows.map((row) => WorkSessionEventMapper.searchRowOf(row)));
+    if (groups.length === 0) return [];
+
+    const ids = groups.map((group) => group.sessionId);
+    const records = await this.scopedQuery(scope)
+      .andWhere('session.id IN (:...ids)', { ids })
+      .getMany();
+    const loaded = new Map(
+      (await this.withCheckoutsAll(records)).map((session) => [session.id, session]),
+    );
+    return groups.flatMap((group) => {
+      const session = loaded.get(group.sessionId);
+      return session ? [{ session, hits: group.hits }] : [];
+    });
   }
 
   async findOneById(scope: AccessScope, id: string): Promise<Option<WorkSessionEntity>> {
