@@ -20,25 +20,33 @@ export function deckKey(pull: Pick<PullRequestEntity, 'githubRepoId' | 'number'>
 }
 
 export interface DeckPosition<T> {
-  /** The card on screen; null once the deck is done, or when it is empty. */
+  /** The card on screen; null once the deck is done, when it is empty, or when {@link gone}. */
   current: T | null;
   /** The card after it, which a pass or an action moves to. */
   next: T | null;
   /** How many cards came before the one on screen. */
   index: number;
+  /**
+   * The address names a card that is not in the deck: it merged, here a
+   * moment ago or on GitHub. The deck shows no card rather than another one
+   * under the same action bar, where a key meant for the card that left
+   * would land on a pull request the reader was not looking at.
+   */
+  gone: boolean;
 }
 
-/**
- * Where the deck stands. An address that names no card of the deck (none yet,
- * or one that merged and left the queue) starts at the first: the deck never
- * shows an empty frame for a pull request that is gone.
- */
+/** Where the deck stands; no address is the first card. */
 export function deckPosition<T extends Pick<PullRequestEntity, 'githubRepoId' | 'number'>>(
   rows: readonly T[],
   at: string | undefined,
 ): DeckPosition<T> {
-  if (at === DECK_END) return { current: null, next: null, index: rows.length };
-  const found = rows.findIndex((row) => deckKey(row) === at);
-  const index = found < 0 ? 0 : found;
-  return { current: rows[index] ?? null, next: rows[index + 1] ?? null, index };
+  if (at === DECK_END) return { current: null, next: null, index: rows.length, gone: false };
+  const found = at === undefined ? 0 : rows.findIndex((row) => deckKey(row) === at);
+  if (found < 0) return { current: null, next: null, index: 0, gone: true };
+  return {
+    current: rows[found] ?? null,
+    next: rows[found + 1] ?? null,
+    index: found,
+    gone: false,
+  };
 }

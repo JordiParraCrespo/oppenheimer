@@ -2,7 +2,6 @@ import { Button, Kbd, Textarea, toast } from '@oppenheimer/design-system-web';
 import {
   ArrowLeft,
   ArrowRight,
-  Eye,
   GitMerge,
   MessageSquare,
 } from '@oppenheimer/design-system-web/icons';
@@ -98,7 +97,7 @@ export function ReviewActions({
   useReviewDeckKeys({
     onYes: mine ? mergeNow : approve,
     onPass: busy ? undefined : onPass,
-    onOpen,
+    onOpen: busy ? undefined : onOpen,
     onComment: () => setComposing(true),
     onMerge: mergeNow,
     onRelease: () => {
@@ -150,11 +149,6 @@ export function ReviewActions({
           <MessageSquare />
           {commentLabel}
           <Kbd className="ml-1">C</Kbd>
-        </Button>
-        <Button variant="ghost" onClick={onOpen}>
-          <Eye />
-          {t('pullRequests.deck.open')}
-          <Kbd className="ml-1">⏎</Kbd>
         </Button>
         {mine ? null : (
           <Button

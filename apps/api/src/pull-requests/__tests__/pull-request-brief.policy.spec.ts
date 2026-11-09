@@ -79,4 +79,22 @@ describe('the pull request brief', () => {
     expect(content).toContain('…and 20 more files');
     expect(content).not.toContain('What did you change?');
   });
+
+  it('reads a description built to make its patterns backtrack without stalling the process', () => {
+    const hostile = [
+      '![]('.repeat(16_000),
+      '<'.repeat(64_000),
+      '['.repeat(64_000),
+      `- ${' '.repeat(64_000)}a\rb`,
+      '<img'.repeat(16_000),
+    ];
+    const started = performance.now();
+    for (const body of hostile) {
+      imagesOf(body);
+      briefFromDescription('A title', body);
+      briefRequest({ title: 'A title', body, files: [] });
+    }
+    // Unbounded, these took seconds each; a slow machine still has a wide margin.
+    expect(performance.now() - started).toBeLessThan(1_500);
+  });
 });

@@ -16,7 +16,9 @@ export function useReviewDeckKeys(keys: {
 }) {
   useEffect(() => {
     const listener = (event: KeyboardEvent) => {
-      if (event.metaKey || event.ctrlKey || event.altKey) return;
+      // A held key repeats: without this, holding → would arm a merge and then make it,
+      // card after card.
+      if (event.repeat || event.metaKey || event.ctrlKey || event.altKey) return;
       const target = event.target as HTMLElement | null;
       if (target?.closest('input, textarea, select, [contenteditable="true"], [role="dialog"]'))
         return;

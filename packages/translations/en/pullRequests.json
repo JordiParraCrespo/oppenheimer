@@ -317,7 +317,7 @@
     "briefFailed": "Could not load the brief.",
     "waiting": "waiting",
     "pass": "Pass",
-    "open": "Open changes",
+    "open": "Review in depth",
     "comment": "Comment",
     "requestChanges": "Request changes",
     "commentPlaceholder": "Leave a comment on your pull request",
@@ -331,6 +331,9 @@
     "doneHint_other": "You went through all {{count}} pull requests in this view.",
     "doneHint_many": "You went through all {{count}} pull requests in this view.",
     "again": "Go through them again",
+    "goneTitle": "This one has left the queue",
+    "goneHint": "It was merged or closed since the deck showed it.",
+    "fromTop": "Carry on from the top",
     "toQueue": "Back to the queue"
   }
 }

@@ -18,11 +18,14 @@ import { ReviewCard } from './review-card';
  * order (the deepest lane first, then the longest wait). Each card is acted
  * on or passed and the next one takes its place, until there is none left.
  *
- * The queue is read here because the card, its actions and the count all
- * stand on the same row. The next card's brief is asked for while this one
+ * A card is the high level only, at the pane's width: what the pull request
+ * is and what holds it. The diff is one link away (Review in depth), never
+ * on the card. The queue is read here because the card, its actions and the
+ * count all stand on the same row. The next card's brief is asked for while this one
  * is read, so moving on does not wait for a model. Opening a card's changes
  * leaves the deck with its address in the history, and the pull request's
- * Back returns to this card.
+ * Back returns to this card. A card that has left the queue (it merged) is
+ * never replaced by another under the same actions: the deck says it left.
  */
 export function ReviewDeck() {
   const { t } = useTranslation();
@@ -30,7 +33,7 @@ export function ReviewDeck() {
   const { scope, filters, at, setAt } = useReviewSearch();
   const { data, error } = useSuspensePullRequestQueue(scope);
   const rows = filterQueue(data.items, filters);
-  const { current, next, index } = deckPosition(rows, at);
+  const { current, next, index, gone } = deckPosition(rows, at);
 
   const queueSearch = { ...filters, scope: scope === 'all' ? undefined : scope };
   if (!rows.length) {
@@ -43,22 +46,26 @@ export function ReviewDeck() {
   }
   if (!current) {
     return (
-      <div className="mx-auto w-full max-w-4xl rounded-xl bg-card py-10">
+      <div className="w-full rounded-xl bg-card py-10">
         <EmptyState>
           <EmptyState.Header>
             <EmptyState.Media variant="icon">
               <CircleCheck />
             </EmptyState.Media>
-            <EmptyState.Title>{t('pullRequests.deck.doneTitle')}</EmptyState.Title>
+            <EmptyState.Title>
+              {t(gone ? 'pullRequests.deck.goneTitle' : 'pullRequests.deck.doneTitle')}
+            </EmptyState.Title>
             <EmptyState.Description>
-              {t('pullRequests.deck.doneHint', { count: rows.length })}
+              {gone
+                ? t('pullRequests.deck.goneHint')
+                : t('pullRequests.deck.doneHint', { count: rows.length })}
             </EmptyState.Description>
           </EmptyState.Header>
           <EmptyState.Content>
             <div className="flex flex-wrap justify-center gap-2">
               <Button variant="secondary" onClick={() => setAt(undefined)}>
                 <RotateCcw />
-                {t('pullRequests.deck.again')}
+                {t(gone ? 'pullRequests.deck.fromTop' : 'pullRequests.deck.again')}
               </Button>
               <Button
                 variant="secondary"
@@ -76,8 +83,15 @@ export function ReviewDeck() {
   }
 
   const moveOn = () => setAt(next ? deckKey(next) : DECK_END);
+  // The way from a card to its diff: the address of the card rides in the
+  // history, so the pull request's Back returns to it.
+  const depth = {
+    ...pullRequestLink(current.address, 'changes'),
+    state: { pullsDeck: { ...queueSearch, at: deckKey(current) } },
+  };
+  const openDepth = () => navigate(depth);
   return (
-    <div className="mx-auto flex w-full max-w-4xl flex-col gap-4">
+    <div className="flex w-full flex-col gap-4">
       <ErrorAlert error={error} fallback={t('pullRequests.queue.loadFailed')} />
       <div className="flex items-center gap-3 text-sm text-fg-muted">
         <span className="figures">
@@ -99,18 +113,8 @@ export function ReviewDeck() {
       </div>
       {next ? <BriefAhead key={deckKey(next)} address={next.address} /> : null}
       <div key={deckKey(current)} className="flex animate-appear flex-col gap-4">
-        <ReviewCard pull={current} />
-        <ReviewActions
-          pull={current}
-          onActed={moveOn}
-          onPass={moveOn}
-          onOpen={() =>
-            navigate({
-              ...pullRequestLink(current.address, 'changes'),
-              state: { pullsDeck: { ...queueSearch, at: deckKey(current) } },
-            })
-          }
-        />
+        <ReviewCard pull={current} depth={depth} />
+        <ReviewActions pull={current} onActed={moveOn} onPass={moveOn} onOpen={openDepth} />
       </div>
     </div>
   );

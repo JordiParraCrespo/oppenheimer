@@ -41,6 +41,14 @@ export const BRIEF_MAX_IMAGES = 6;
 const HEADLINE_MAX_CHARS = 200;
 const POINT_MAX_CHARS = 160;
 const BODY_MAX_CHARS = 4_000;
+/**
+ * How much of a description is read at all. A description is written by
+ * whoever opened the pull request and GitHub takes 65,536 characters of it;
+ * the patterns below are cheap on prose and slow on text built to make them
+ * backtrack, so nothing past this is given to them. A brief's sentence, list
+ * and pictures are at the top of a description, not past its 8,000th character.
+ */
+const BODY_READ_CHARS = 8_000;
 /** What one request spends on diffs, shared by the files in the order GitHub lists them. */
 const PATCH_BUDGET_CHARS = 12_000;
 const PATCH_MAX_CHARS_PER_FILE = 2_500;
@@ -52,10 +60,11 @@ const HTML_IMAGE = /<img\b[^>]*>/gi;
 /** The pictures in a description, in the order written, each once. Only `https`. */
 export function imagesOf(body: string): PullRequestBriefImage[] {
   const found: (PullRequestBriefImage & { at: number })[] = [];
-  for (const match of body.matchAll(MARKDOWN_IMAGE)) {
+  const read = body.slice(0, BODY_READ_CHARS);
+  for (const match of read.matchAll(MARKDOWN_IMAGE)) {
     found.push({ url: match[2] ?? '', alt: (match[1] ?? '').trim(), at: match.index });
   }
-  for (const match of body.matchAll(HTML_IMAGE)) {
+  for (const match of read.matchAll(HTML_IMAGE)) {
     const tag = match[0];
     const src = /\bsrc\s*=\s*["']([^"']+)["']/i.exec(tag)?.[1] ?? '';
     const alt = /\balt\s*=\s*["']([^"']*)["']/i.exec(tag)?.[1] ?? '';
@@ -75,6 +84,7 @@ export function imagesOf(body: string): PullRequestBriefImage[] {
 /** The description as prose: no template comments, pictures, tags or code blocks. */
 function proseOf(body: string): string {
   return body
+    .slice(0, BODY_READ_CHARS)
     .replace(/<!--[\s\S]*?(?:-->|$)/g, ' ')
     .replace(/```[\s\S]*?(?:```|$)/g, ' ')
     .replace(MARKDOWN_IMAGE, ' ')

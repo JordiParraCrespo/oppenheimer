@@ -317,7 +317,7 @@
     "briefFailed": "No se pudo cargar el resumen.",
     "waiting": "esperando",
     "pass": "Pasar",
-    "open": "Abrir cambios",
+    "open": "Revisar a fondo",
     "comment": "Comentar",
     "requestChanges": "Pedir cambios",
     "commentPlaceholder": "Deja un comentario en tu pull request",
@@ -331,6 +331,9 @@
     "doneHint_other": "Has pasado por los {{count}} pull requests de esta vista.",
     "doneHint_many": "Has pasado por los {{count}} pull requests de esta vista.",
     "again": "Repasarlos otra vez",
+    "goneTitle": "Este ya no está en la cola",
+    "goneHint": "Se fusionó o se cerró desde que el mazo lo mostró.",
+    "fromTop": "Seguir desde el principio",
     "toQueue": "Volver a la cola"
   }
 }
