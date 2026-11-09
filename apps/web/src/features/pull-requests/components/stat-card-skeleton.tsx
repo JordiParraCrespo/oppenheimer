@@ -1,4 +1,5 @@
 import { Skeleton, StatCard } from '@oppenheimer/design-system-web';
+import type { ReactNode } from 'react';
 
 /** A figure's line under it, what it was the period before, not answered yet. */
 export const DELTA_PLACEHOLDER = (
@@ -8,7 +9,7 @@ export const DELTA_PLACEHOLDER = (
 );
 
 /** A stat card with its own label, its figure and delta to come. */
-export function StatCardSkeleton({ label }: { label: string }) {
+export function StatCardSkeleton({ label }: { label: ReactNode }) {
   return (
     <StatCard
       label={label}

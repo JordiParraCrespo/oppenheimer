@@ -250,13 +250,13 @@ describe('BotSelfToolsFactory', () => {
       author: 'bot',
     });
     expect(result.content).toContain(
-      `Remembered ${FACT_ID} (in mind): "Deploys go out on Fridays"`,
+      `Remembered ${FACT_ID} (your memory, in mind): "Deploys go out on Fridays"`,
     );
   });
 
   // What breaks this: standing instructions left to fade with the log, or a
-  // fact about the person kept by this bot alone, so their other bots ask again.
-  it('keeps a fact in mind, or about the person for all their bots, when it says so', async () => {
+  // fact for the general memory kept by this bot alone, so their other bots ask again.
+  it('keeps a fact in mind, or in the general memory for all their bots, when it says so', async () => {
     const { commandBus, call } = setup(
       (query) => {
         if (query instanceof FindBotQuery) return bot();
@@ -268,13 +268,13 @@ describe('BotSelfToolsFactory', () => {
     const result = await call('remember', {
       fact: 'Ana is the release manager',
       tier: 'profile',
-      about: 'person',
+      memory: 'general',
     });
     expect(commandBus.execute.mock.calls[0][0]).toMatchObject({
       tier: 'profile',
       memoryScope: 'person',
     });
-    expect(result.content).toContain('(in mind, about the person)');
+    expect(result.content).toContain('(general memory, in mind)');
   });
 
   it('says which recalled facts another of the person’s bots shared', async () => {
@@ -289,7 +289,7 @@ describe('BotSelfToolsFactory', () => {
       }
     });
     const result = await call('recall', { query: 'squash' });
-    expect(result.content).toContain('in mind, about the person, shared by another of their bots');
+    expect(result.content).toContain('general memory, in mind, saved by another of their bots');
   });
 
   it('does not remember when learning is off: nothing is saved and it is told to ask first', async () => {

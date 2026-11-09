@@ -1,7 +1,6 @@
 ---
 "@oppenheimer/api": minor
 "@oppenheimer/shared": minor
-"@oppenheimer/docs": minor
 ---
 
 Every bot knows Oppenheimer from its own guide, the way Claude Code reads its own docs.

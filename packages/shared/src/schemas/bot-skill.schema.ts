@@ -101,6 +101,15 @@ export type BotBuiltInCommand = (typeof BOT_BUILT_IN_COMMANDS)[number];
 export const BOT_BUILT_IN_SKILL_NAMES = ['oppenheimer', 'recap'] as const;
 export type BotBuiltInSkillName = (typeof BOT_BUILT_IN_SKILL_NAMES)[number];
 
+/**
+ * The built-in skills the person runs with `/<name>`, so the composer's `/`
+ * menu offers them beside the bot's own: the API's `BOT_BUILT_IN_SKILLS`
+ * that are `userInvocable`.
+ */
+export const BOT_RUNNABLE_BUILT_IN_SKILL_NAMES = [
+  'recap',
+] as const satisfies readonly BotBuiltInSkillName[];
+
 export const BOT_SKILL_RESERVED_NAMES = [
   'skill',
   ...BOT_BUILT_IN_COMMANDS,

@@ -1,4 +1,5 @@
 import { lazy, Suspense } from 'react';
+import { SectionBotsSkeleton } from '@/features/bots/sections/section-bots-skeleton';
 import { SessionsSidebar } from '@/features/sessions/sections/sessions-sidebar';
 import type { ConsoleList } from '@/lib/console';
 
@@ -48,7 +49,9 @@ const SectionBots = lazy(() =>
  * Every section but Employees carries the bots placed in it
  * (`product/versions/mvp/28-bots-in-sections.md`): the bots feature draws
  * them, and each sidebar takes them as its `bots` slot and places them where
- * the design does.
+ * the design does. On sessions, the first page most visits open, the bots'
+ * code arriving after the shell's holds its place (`SectionBotsSkeleton`) so
+ * the list under it does not drop when it lands.
  * Two features that never import each other.
  */
 export function ConsoleSidebar({ list }: { list: ConsoleList }) {
@@ -56,7 +59,7 @@ export function ConsoleSidebar({ list }: { list: ConsoleList }) {
     return (
       <SessionsSidebar
         bots={
-          <Suspense fallback={null}>
+          <Suspense fallback={<SectionBotsSkeleton section="sessions" />}>
             <SectionBots section="sessions" />
           </Suspense>
         }

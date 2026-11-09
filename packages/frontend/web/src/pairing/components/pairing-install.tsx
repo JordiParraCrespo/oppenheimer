@@ -1,4 +1,5 @@
-import { CodeBlock, Skeleton } from '@oppenheimer/design-system-web';
+import { Button, CodeBlock, Skeleton } from '@oppenheimer/design-system-web';
+import { Copy } from '@oppenheimer/design-system-web/icons';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -58,6 +59,61 @@ export function PairingInstruction({ pairing }: { pairing: PairingCommands | nul
       copiedLabel={t('common.copied')}
     />
   ) : (
-    <Skeleton className="h-48 w-full" />
+    <PairingInstructionSkeleton />
+  );
+}
+
+/** The bars in the command's place, at the panel's 11.5px × 1.7 mono line. */
+const COMMAND_LINES = ['w-full', 'w-3/5'];
+
+/**
+ * The instruction before its token is minted: `CodeBlock`'s panel drawn by
+ * hand, because the block has no state without code. The band's tabs carry
+ * their labels and Copy is there, disabled; the code area keeps its fixed
+ * height, with mono line bars where the command will wrap.
+ */
+function PairingInstructionSkeleton() {
+  const { t } = useTranslation();
+  return (
+    <div
+      aria-busy
+      data-slot="code-block"
+      data-layout="panel"
+      className="min-w-0 overflow-hidden rounded-sm bg-hover-surface text-left"
+    >
+      <div className="flex items-center justify-between gap-2.5 border-b border-border-subtle p-1.5">
+        <div aria-hidden className="flex gap-0.5">
+          {FORMATS.map((option) => (
+            <span
+              key={option}
+              className={
+                option === 'command'
+                  ? 'rounded-pill bg-card px-2.5 py-1 text-xs leading-tight text-fg'
+                  : 'rounded-pill px-2.5 py-1 text-xs leading-tight text-fg-muted'
+              }
+            >
+              {t(`hosts.pairing.${option}` as const)}
+            </span>
+          ))}
+        </div>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          disabled
+          className="w-21.5 shrink-0 justify-center gap-1.5"
+        >
+          <Copy />
+          {t('common.copy')}
+        </Button>
+      </div>
+      <div className="h-38 p-3">
+        {COMMAND_LINES.map((width) => (
+          <span key={width} className="flex h-5 items-center">
+            <Skeleton shape="sm" className={`h-2.5 ${width}`} />
+          </span>
+        ))}
+      </div>
+    </div>
   );
 }

@@ -11,7 +11,7 @@ import {
   useInstallations,
 } from '@oppenheimer/frontend-consumer/react';
 import { useDeploymentCapabilities } from '@oppenheimer/frontend-core/react';
-import { ErrorAlert } from '@oppenheimer/frontend-web';
+import { ErrorAlert, LoadingStatus } from '@oppenheimer/frontend-web';
 import type { ReactElement } from 'react';
 import { useTranslation } from 'react-i18next';
 import { InstallationCard } from '@/features/installations/components/installation-card';
@@ -121,12 +121,19 @@ export function OnboardingGithubScreen({
       <ErrorAlert message={unstarted ? t('onboarding.flow.github.unstarted') : null} />
 
       {isPending || isExchanging ? (
-        <Card>
+        // `InstallationCard`'s frame: the tick's pill, then the login and what
+        // it covers, each a bar in a box of its line's height.
+        <Card aria-busy>
+          <LoadingStatus />
           <div className="flex items-center gap-3 px-4.5 py-4">
             <Skeleton shape="pill" className="size-7 shrink-0" />
-            <span className="flex min-w-0 flex-1 flex-col gap-1.5">
-              <Skeleton className="h-3 w-32" />
-              <Skeleton className="h-2.5 w-20" />
+            <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+              <span className="flex h-4.5 items-center">
+                <Skeleton shape="sm" className="h-3 w-32" />
+              </span>
+              <span className="flex h-4 items-center">
+                <Skeleton shape="sm" className="h-2.5 w-24" />
+              </span>
             </span>
           </div>
         </Card>

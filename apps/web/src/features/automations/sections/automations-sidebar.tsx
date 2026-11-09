@@ -1,9 +1,9 @@
-import { Button, RoutineItem, Skeleton } from '@oppenheimer/design-system-web';
-import { Zap } from '@oppenheimer/design-system-web/icons';
+import { Button } from '@oppenheimer/design-system-web';
 import { QueryState } from '@oppenheimer/frontend-web';
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useConsoleDialog } from '@/lib/console';
+import { AutomationsSidebarSkeleton } from '../components/automations-sidebar-skeleton';
 import { AutomationsSidebarList } from './automations-sidebar-list';
 
 /**
@@ -26,11 +26,7 @@ export function AutomationsSidebar({ bots }: { bots?: ReactNode }) {
       {bots}
       <QueryState>
         <QueryState.Pending>
-          <div className="flex flex-col gap-2 px-3 pt-2">
-            <RoutineItem name={t('automations.sidebar.all')} icon={<Zap />} />
-            <Skeleton className="h-7.5 w-full" />
-            <Skeleton className="h-7.5 w-full" />
-          </div>
+          <AutomationsSidebarSkeleton />
         </QueryState.Pending>
         <QueryState.Error fallback={t('automations.sidebar.loadFailed')} className="mx-3 mt-2" />
         <QueryState.Data>

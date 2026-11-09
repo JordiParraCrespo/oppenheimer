@@ -609,14 +609,23 @@ of `bot_memory_fact`, with two columns more:
   save, and in the system prompt each save would miss the prompt cache for
   the whole history. A long memory costs the turn the same as a short one.
   (2026-11-06: was the newest 60 profile facts and no log at all.)
-- **Scope.** A `bot` fact is the bot's alone. A `person` fact is about its
-  owner ("prefers squash merges"), and every bot that person made in the
-  workspace reads it, in a section of the prompt of its own. It stays the
+- **Scope: two memories.** A `bot` fact is in the bot's own memory, read by
+  it alone. A `person` fact is in the general memory, about its owner ("call
+  me Jordi", "write to me in Spanish"), and every bot that person made in
+  the workspace reads it, in a section of the prompt of its own. The prompt
+  names them *Your memory* and *General memory*, and one rule picks
+  between them, written once (`MEMORY_CHOICE_RULE`): `remember` carries it,
+  the prompt points to it, and the dream reads the same text and the same
+  `memory: yours | general` names: general only
+  when a bot with a completely different job would need the fact; a fact
+  that names a project, repository, folder, host, account or tool stays
+  the bot's, even a preference (2026-11-08: was "about the person (their
+  name, role, preferences)", and bots filed job facts there). It stays the
   row of the bot that learned it: that bot edits and forgets it, the
   others read it, and it goes with that bot when the bot is deleted or its
   memory cleared. Copying it to each bot would make "forget" mean nothing.
 - **Defaults.** A fact the bot saves is `log` and `bot` unless it says
-  otherwise: `remember` takes `tier` and `about: 'person'`. One the owner
+  otherwise: `remember` takes `tier` and `memory: 'general'`. One the owner
   adds in Settings → Memory is `profile`, and the owner moves a fact from
   its row's menu there. A fact another bot shared is shown there muted,
   with nothing to change.
@@ -812,9 +821,13 @@ learn fast what is going on.
   up": its conversation, its branch, its pull request and its helpers, in the
   same shape. It is in the note, not `runner --skill`, since the person asks
   for it, not the agent.
-- **Not built.** `/recap` in the composer's `/` menu, which lists the
-  built-in commands and the bot's own skills only; and the catch-up in a
-  Codex session, since the note is `CLAUDE.md` and Codex reads `AGENTS.md`.
+- **In the `/` menu** (2026-11-08). The composer lists `/recap` under
+  Skills, ahead of the bot's own, so a long list never pushes it out; a
+  bot's own `recap` takes its place. The names come from
+  `BOT_RUNNABLE_BUILT_IN_SKILL_NAMES`, which a spec holds to the built-ins
+  that are `userInvocable`.
+- **Not built.** The catch-up in a Codex session, since the note is
+  `CLAUDE.md` and Codex reads `AGENTS.md`.
 
 **Built-in commands** (2026-11-02, from Claude Code's commands,
 `code.claude.com/docs/en/commands`). A built-in is a `/<name>` Oppenheimer
@@ -984,7 +997,7 @@ agent's, in a session, where Claude Code ships them.
 | `send_to_session` | Type a follow-up prompt into a running session whose agent waits at its prompt; logged as `prompt.sent` with the bot as sender, and it opens a `follow_up` turn the bot then watches (built 2026-10-27) | ask |
 | `answer_session` | Answer the question or permission dialog a session's agent waits on, through the Inbox's own command (built 2026-10-27) | ask |
 | `read_session` | A session's recent log in words: tasks and follow-ups with their sender, the agent working, blocked or done, questions, failures, stops. The log only, never the terminal or the agent's conversation (built 2026-10-27; "recent output" was the plan). `after_seq` reads only what followed an entry; `send_to_session` and `answer_session` name the entry their input followed (2026-10-29) | auto |
-| `stop_session` / `close_session` | Stop it, or close and clean up | ask |
+| `stop_session` / `close_session` | Stop it, or close and clean up. `close_session` is the sessions' own close (`CloseSessionCommand`: push each branch, remove the worktree; unpushed work kept unless `accept_unpushed_work`) and only for a session whose origin is `bot`; any other is refused before a card, the person's to close. The `failed` wake offers it once the person is told, so a failed start does not stay in the sidebar (built 2026-11-09) | ask |
 | `list_folders` | Browse a host's folders | auto |
 | `run_command` | Run one program on a host and read its exit code, stdout and stderr in the same turn, only what that host's own policy allows (below; built 2026-11-07) | ask |
 | `open_terminal` / `type_in_terminal` / `read_terminal` | Open a blank terminal (agent `shell`) on a host, type into it (text, then named keys such as Enter or C-c) and read its screen back after waiting for a pattern; only on a host whose `runner exec` mode is `full` (below; built 2026-11-08) | ask / ask / auto |
@@ -1796,6 +1809,14 @@ The decisions it produced:
   Memory at the account, an *About you* text in every bot's prompt that
   only the person writes, and every `person` fact their bots keep, changed
   on the bot that keeps it (§4.1). Asked by the owner, after Claude's.
+- 2026-11-08: **two memories, named and chosen by one rule** (§4.1). The
+  owner found Facturas reading facts about XRP Mobile and pull request
+  notifications that other bots had filed as about him. `remember` now
+  takes `memory: 'yours' | 'general'` instead of `about`, the prompt calls
+  them *Your memory* and *General memory*, and general is only for what a
+  bot with another job would need. `scripts/evals/bot-memory` holds it: on
+  the old wording 25 of 100 runs put a job fact in the general memory and
+  5 of 20 cases failed; on the new one all 100 were right.
 - 2026-11-07: **bots dream** (§4.1, "Dreaming"). The owner found each
   bot's memory "a bit like slop" once bots saved as they go, and asked for
   a process that unifies, rewrites and deduplicates it, from Managed Agents'

@@ -36,6 +36,7 @@
     "@oppenheimer/tsconfig": "workspace:^",
     "@types/express": "^5.0.6",
     "@types/node": "^22.20.1",
+    "pino": "^10.3.1",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.2",
     "typescript": "^6.0.3",

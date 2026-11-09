@@ -56,7 +56,23 @@ export function ChatgptLoginDialog({ onClose }: { onClose: () => void }) {
                 </StatusDot>
               </>
             ) : isStarting ? (
-              <Skeleton className="h-24 w-full" />
+              // The code panel as it opens: the step and the block's title and
+              // note written, the code still to come, Copy out of reach.
+              <div aria-busy className="flex flex-col gap-4">
+                <p className="text-sm text-fg-muted">{t('settings.modelProviders.chatgpt.step')}</p>
+                <div inert aria-hidden>
+                  <CodeBlock
+                    title={t('settings.modelProviders.chatgpt.codeTitle')}
+                    code=""
+                    note={t('settings.modelProviders.chatgpt.expires')}
+                    copyLabel={t('common.copy')}
+                    copiedLabel={t('common.copied')}
+                  />
+                </div>
+                <span aria-hidden className="flex h-5 items-center">
+                  <Skeleton shape="sm" className="h-3 w-48" />
+                </span>
+              </div>
             ) : null}
           </div>
         </DialogBody>

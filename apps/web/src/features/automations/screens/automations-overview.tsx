@@ -1,4 +1,8 @@
-import { RoutineTable, Skeleton } from '@oppenheimer/design-system-web';
+import {
+  RoutineTable,
+  RoutineTableHead,
+  RoutineTableRowSkeleton,
+} from '@oppenheimer/design-system-web';
 import { QueryState } from '@oppenheimer/frontend-web';
 import { useNavigate } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
@@ -21,7 +25,7 @@ export function AutomationsOverviewScreen() {
       <OverviewTop />
       <QueryState>
         <QueryState.Pending>
-          <RunHistorySkeleton />
+          <RunHistorySkeleton link />
         </QueryState.Pending>
         <QueryState.Error fallback={t('automations.history.loadFailed')} />
         <QueryState.Data>
@@ -30,11 +34,18 @@ export function AutomationsOverviewScreen() {
       </QueryState>
       <QueryState>
         <QueryState.Pending>
-          <RoutineTable>
-            <div className="flex flex-col gap-1.5 p-1.5">
-              <Skeleton className="h-13.5 w-full" />
-              <Skeleton className="h-13.5 w-full" />
-            </div>
+          <RoutineTable aria-busy>
+            <RoutineTableHead
+              aria-hidden
+              columns={[
+                t('automations.table.automation'),
+                t('automations.table.trigger'),
+                t('automations.table.next'),
+                t('automations.table.status'),
+              ]}
+            />
+            <RoutineTableRowSkeleton index={0} />
+            <RoutineTableRowSkeleton index={1} />
           </RoutineTable>
         </QueryState.Pending>
         <QueryState.Error fallback={t('automations.page.loadFailed')} />

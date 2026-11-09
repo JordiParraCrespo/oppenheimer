@@ -69,18 +69,20 @@ describe('memoryInMind', () => {
 });
 
 describe('describeKept', () => {
-  it('says how a fact is kept, and which another of the person’s bots keeps', () => {
-    expect(describeKept({ tier: 'log', scope: 'bot', botId: 'b1' }, 'b1')).toBe('in the log');
+  it('says which memory keeps a fact, and when another of the person’s bots saved it', () => {
+    expect(describeKept({ tier: 'log', scope: 'bot', botId: 'b1' }, 'b1')).toBe(
+      'your memory, in the log',
+    );
     expect(describeKept({ tier: 'profile', scope: 'person', botId: 'b1' }, 'b1')).toBe(
-      'in mind, about the person',
+      'general memory, in mind',
     );
     expect(describeKept({ tier: 'profile', scope: 'person', botId: 'b2' }, 'b1')).toBe(
-      'in mind, about the person, shared by another of their bots',
+      'general memory, in mind, saved by another of their bots',
     );
   });
 
-  it('keeps a fact the bot’s own unless it was told it is about the person', () => {
-    expect([memoryScopeOf(undefined), memoryScopeOf('you'), memoryScopeOf('person')]).toEqual([
+  it('keeps a fact in the bot’s own memory unless it was told to use the general one', () => {
+    expect([memoryScopeOf(undefined), memoryScopeOf('yours'), memoryScopeOf('general')]).toEqual([
       'bot',
       'bot',
       'person',

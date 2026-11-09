@@ -1,4 +1,11 @@
-import { Badge, SettingsGroup, SettingsRow, Skeleton } from '@oppenheimer/design-system-web';
+import {
+  Badge,
+  Button,
+  SettingsGroup,
+  SettingsRow,
+  SettingsSaveRow,
+  Skeleton,
+} from '@oppenheimer/design-system-web';
 import { LoadingStatus } from '@oppenheimer/frontend-web';
 import { useTranslation } from 'react-i18next';
 
@@ -6,7 +13,8 @@ import { useTranslation } from 'react-i18next';
  * The devices before they answer: the settings card with this device first,
  * marked as it will be (the signed-in browser is always in the list), and one
  * other under it with its Sign out, a bar for each device's name and last
- * activity at the rows' line heights.
+ * activity at the rows' line heights, and the save row's Sign out of all
+ * other devices that one other device brings, disabled.
  */
 export function DevicesSkeleton() {
   const { t } = useTranslation();
@@ -41,10 +49,15 @@ export function DevicesSkeleton() {
           </span>
         }
       >
-        <span className="flex h-(--control-h-sm) items-center px-(--control-pad-sm)">
-          <Skeleton shape="sm" className="h-2.5 w-14" />
-        </span>
+        <Button type="button" variant="ghost" size="sm" disabled>
+          {t('settings.devices.signOut')}
+        </Button>
       </SettingsRow>
+      <SettingsSaveRow>
+        <Button type="button" variant="secondary" size="sm" disabled>
+          {t('settings.devices.signOutOthers')}
+        </Button>
+      </SettingsSaveRow>
     </SettingsGroup>
   );
 }

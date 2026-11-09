@@ -20,6 +20,7 @@ import (
 	portsapp "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/ports/app"
 	sessionsapp "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/app"
 	sessionsdomain "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/domain"
+	tgapp "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/telegram/app"
 	waapp "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/whatsapp/app"
 	"github.com/jordiparracrespo/oppenheimer/packages/go/core/problem"
 )
@@ -105,6 +106,9 @@ type linkHandler struct {
 	// whatsapp is the host's WhatsApp linked device (link_whatsapp.go); nil
 	// is a host that offers none, and its hello does not name the capability.
 	whatsapp *waapp.Service
+	// telegram is the host's Telegram bot (link_telegram.go); nil is a host
+	// that offers none, and its hello does not name the capability.
+	telegram *tgapp.Service
 	// cloudStarts holds the sessions whose cloud start (`claude --cloud`,
 	// `codex cloud exec`) is running or done (link_cloud.go), so a create sent
 	// again does not start a second.
@@ -229,6 +233,7 @@ func (a *App) linkLoop(ctx context.Context, logger *slog.Logger, identity pairdo
 	a.Sessions.SetPublisher(handler)
 	a.Link = client
 	handler.startWhatsApp(logger)
+	handler.startTelegram(logger)
 	go handler.retryEvents(life)
 	go handler.watchCodexCloud(life)
 	// Run returns only when ctx ends or the host was unpaired. A lost or
@@ -334,6 +339,9 @@ func (h *linkHandler) capabilities() []string {
 	if h.whatsapp != nil {
 		named = append(named, link.CapabilityWhatsapp)
 	}
+	if h.telegram != nil {
+		named = append(named, link.CapabilityTelegram)
+	}
 	return named
 }
 
@@ -377,6 +385,7 @@ func (h *linkHandler) Connected(_ context.Context, epoch uint64) {
 	// resend free on the other side.
 	h.reporter.Resend()
 	h.whatsAppLinkUp()
+	h.telegramLinkUp()
 }
 
 func (h *linkHandler) Disconnected(uint64) {
@@ -689,6 +698,8 @@ func (h *linkHandler) Message(_ context.Context, msg link.Message) {
 		}
 	case link.TypeWhatsappLink, link.TypeWhatsappUnlink, link.TypeWhatsappSend, link.TypeWhatsappAck:
 		h.whatsAppMessage(msg)
+	case link.TypeTelegramLink, link.TypeTelegramUnlink, link.TypeTelegramSend, link.TypeTelegramAck:
+		h.telegramMessage(msg)
 	default:
 		h.logger.Warn("unknown message from the control plane", slog.String("type", msg.Type))
 	}

@@ -6,7 +6,8 @@
     "tasks": "Tasks",
     "calendar": "Calendar",
     "milestones": "Milestones",
-    "projects": "Projects"
+    "projects": "Projects",
+    "todo": "To do"
   },
   "sidebar": {
     "unassigned": "Unassigned"
@@ -172,5 +173,31 @@
     "noProject": "No project",
     "allMilestones": "All milestones",
     "clear": "Clear"
+  },
+  "todo": {
+    "left": "left",
+    "done": "done",
+    "today": "Today",
+    "previous": "Previous day",
+    "next": "Next day",
+    "todayWeek": "Today · Week {{week}}",
+    "weekNumber": "Week {{week}}",
+    "includeOverdue": "Include overdue",
+    "empty": "Nothing for this day yet. Add one below.",
+    "noMatch": "No tasks match these filters.",
+    "add": "Add a task",
+    "addLabel": "Add a task for this day",
+    "addFailed": "Couldn’t add that task.",
+    "toggleFailed": "Couldn’t update that task.",
+    "loadFailed": "Couldn’t load your tasks.",
+    "state": {
+      "todo": "due today",
+      "due": "due",
+      "doing": "in progress",
+      "review": "in review",
+      "done": "done",
+      "overdue": "overdue since {{date}}"
+    },
+    "reorder": "Reorder {{title}}"
   }
 }

@@ -14,5 +14,6 @@ export * from './projects';
 export * from './pull-requests';
 export * from './sessions';
 export * from './tasks';
+export * from './telegram';
 export * from './voice';
 export * from './whatsapp';

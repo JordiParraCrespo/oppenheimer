@@ -592,9 +592,15 @@ for (const file of queryStateFiles) {
 }
 
 // A placeholder has the shape of what replaces it; `skeleton-shape.mjs`
-// fails a `QueryState.Pending` that is only a slab. `skeleton-slab-debt.mjs`
+// fails a `Skeleton` that is a slab. `skeleton-slab-debt.mjs`
 // holds the files that held slabs when the check landed, each to its count.
-for (const file of queryStateFiles) {
+// The design system's records own their placeholders, so its components are read too.
+const designSystem = join(root, 'packages/frontend/design-system/web/src');
+const skeletonFiles = [
+  ...queryStateFiles,
+  ...(existsSync(designSystem) ? sources(designSystem) : []),
+];
+for (const file of skeletonFiles) {
   const name = relative(root, file);
   const slabs = skeletonSlabProblems(readFileSync(file, 'utf8'));
   const owed = SLAB_DEBT.get(name) ?? 0;

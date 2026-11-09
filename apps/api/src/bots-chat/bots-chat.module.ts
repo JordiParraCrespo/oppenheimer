@@ -2,6 +2,7 @@ import { Module, type Provider } from '@nestjs/common';
 import { CqrsModule } from '@nestjs/cqrs';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { createBotEngine } from '@oppenheimer/backend-agents';
+import { createMetricsProvider } from '@oppenheimer/backend-core';
 import { AutomationsModule } from '../automations/automations.module';
 import { BotsModule } from '../bots/bots.module';
 import { OrganizationsModule } from '../organizations/organizations.module';
@@ -59,6 +60,7 @@ import { BotSubagentRunnerFactory } from './application/bot-subagent-runner.fact
 import { BotSubagentToolsFactory } from './application/bot-subagent-tools.factory';
 import { BotSubscriptionSubjectResolver } from './application/bot-subscription-subject.resolver';
 import { BotSummaryTriggerPolicy } from './application/bot-summary-trigger.policy';
+import { BotTelegramToolsFactory } from './application/bot-telegram-tools.factory';
 import { BotTerminalToolsFactory } from './application/bot-terminal-tools.factory';
 import { BotToolboxFactory } from './application/bot-toolbox.factory';
 import { BotTurnContextResolver } from './application/bot-turn-context.resolver';
@@ -193,6 +195,11 @@ import { BotStallChecksProcessor } from './infrastructure/bot-stall-checks.proce
 import { BotSummariesProcessor } from './infrastructure/bot-summaries.processor';
 import { BotTurnsProcessor } from './infrastructure/bot-turns.processor';
 import { GuardedWebPageAdapter } from './infrastructure/guarded-web-page.adapter';
+import {
+  BotEngineMetrics,
+  INNER_BOT_ENGINE,
+  MeteredBotEngine,
+} from './infrastructure/metered-bot-engine.adapter';
 import { OutboxBotStallChecksAdapter } from './infrastructure/outbox-bot-stall-checks.adapter';
 import { QueryBusOwnerHostsAdapter } from './infrastructure/query-bus-owner-hosts.adapter';
 import { RedisBotStreamAdapter } from './infrastructure/redis-bot-stream.adapter';
@@ -430,6 +437,7 @@ const queryHandlers: Provider[] = [
     BotWebToolsFactory,
     BotMailToolsFactory,
     BotWhatsappToolsFactory,
+    BotTelegramToolsFactory,
     BotMailWriteToolsFactory,
     BotMailOrganizeToolsFactory,
     BotMailAccountsResolver,
@@ -470,7 +478,11 @@ const queryHandlers: Provider[] = [
     { provide: BOT_ATTACHMENT_FILES, useClass: StorageBotAttachmentFilesAdapter },
     { provide: OWNER_HOSTS, useClass: QueryBusOwnerHostsAdapter },
     // The engines load their SDKs on a turn's first use, so binding them starts nothing.
-    { provide: BOT_ENGINE, useFactory: () => createBotEngine() },
+    // Every run goes through the meter (`bot_engine_*` metrics), the inner
+    // engine being the one the deployment's providers build.
+    { provide: INNER_BOT_ENGINE, useFactory: () => createBotEngine() },
+    ...createMetricsProvider(BotEngineMetrics),
+    { provide: BOT_ENGINE, useClass: MeteredBotEngine },
   ],
 })
 export class BotsChatModule {}

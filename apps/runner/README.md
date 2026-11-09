@@ -89,6 +89,7 @@ host: remove it under Settings → Hosts).
   state/program-status/ each wrapped agent's OSC 7501 report, while its `runner pty` runs
   bin/path/runner     a link to this binary, on every session's PATH
   state/whatsapp/ 0700  whatsapp.db (0600): the WhatsApp linked device's keys and its outbox
+  state/telegram/ 0700  bot.json (0600): the Telegram bot's token; state.json (0600): its poll offset and outbox
   manifests/          agent detection rules newer than the bundled ones
   log/ run/           logs, the Unix socket, the single-instance lock
   images/             files pasted into sessions, one directory per session
