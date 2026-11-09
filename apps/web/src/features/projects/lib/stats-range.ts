@@ -1,4 +1,5 @@
 import { addDays } from '@oppenheimer/frontend-web';
+import { PLAN_STATS_MAX_DAYS, planStatsDays } from '@oppenheimer/shared/schemas/plan-stats';
 import type { ProjectPageSearch } from './project-page-search';
 
 /** The ranges Stats offers by name, in weeks ending today. */
@@ -21,13 +22,18 @@ export function lastWeeks(weeks: number, today: string): StatsRange {
   return { from: addDays(today, -(weeks * 7 - 1)), to: today };
 }
 
-/** The range the address names, or the last eight weeks when it names none (or a backwards one). */
+/**
+ * The range the address names, or the last eight weeks when it names none,
+ * a backwards one, or one longer than the API reports on (a custom pick or a
+ * hand-edited link), so the read never asks for a period it would refuse.
+ */
 export function statsRangeOf(
   search: Pick<ProjectPageSearch, 'from' | 'to'>,
   today: string,
 ): StatsRange {
-  if (search.from && search.to && search.from <= search.to)
-    return { from: search.from, to: search.to };
+  const { from, to } = search;
+  if (from && to && from <= to && planStatsDays(from, to) <= PLAN_STATS_MAX_DAYS)
+    return { from, to };
   return lastWeeks(DEFAULT_WEEKS, today);
 }
 

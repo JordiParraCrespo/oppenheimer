@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { projectPageSearchSchema } from '../lib/project-page-search';
 import { changeOf, lastWeeks, niceTicks, statsRangeOf, statsRangeSearch } from '../lib/stats-range';
 
 /**
@@ -20,6 +21,24 @@ describe('stats range', () => {
       from: '2026-10-01',
       to: '2026-10-31',
     });
+  });
+
+  it('falls back to the default rather than ask for a period longer than the API reports on', () => {
+    expect(statsRangeOf({ from: '2024-01-01', to: today }, today)).toEqual(lastWeeks(8, today));
+    expect(statsRangeOf({ from: '2025-11-03', to: today }, today)).toEqual({
+      from: '2025-11-03',
+      to: today,
+    });
+  });
+
+  it('drops a day that does not exist from the address', () => {
+    expect(projectPageSearchSchema.parse({ view: 'stats', from: '2026-02-31', to: today })).toEqual(
+      {
+        view: 'stats',
+        from: undefined,
+        to: today,
+      },
+    );
   });
 
   it('writes nothing to the address for the default range', () => {

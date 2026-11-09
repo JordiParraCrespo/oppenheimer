@@ -1,10 +1,8 @@
+import { calendarDateSchema } from '@oppenheimer/shared/schemas/task';
 import { z } from 'zod';
 
-const isoDay = z
-  .string()
-  .regex(/^\d{4}-\d{2}-\d{2}$/)
-  .optional()
-  .catch(undefined);
+/** A day the API would take: a day that exists, or no key. */
+const isoDay = calendarDateSchema.optional().catch(undefined);
 
 /**
  * A project page's address: `?view=stats` for its statistics (the overview
