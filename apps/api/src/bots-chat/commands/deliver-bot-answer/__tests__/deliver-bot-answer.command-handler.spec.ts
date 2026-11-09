@@ -6,6 +6,7 @@ import { BotErrors } from '../../../../bots/domain/bots.errors';
 import type { BotModelAccessResolver } from '../../../application/bot-model-access.resolver';
 import type { BotMessageRepositoryPort } from '../../../database/bot-message.repository.port';
 import type { BotTurnRepositoryPort } from '../../../database/bot-turn.repository.port';
+import { telegramTurn } from '../../../domain/bot-telegram-turn.policy';
 import { BotTurnEntity } from '../../../domain/bot-turn.entity';
 import type { BotStreamPort } from '../../../infrastructure/bot-stream.port';
 import { DeliverBotAnswerCommand } from '../deliver-bot-answer.command';
@@ -21,6 +22,7 @@ import { DeliverBotAnswerCommandHandler } from '../deliver-bot-answer.command-ha
  */
 const organizationId = randomUUID();
 const userId = randomUUID();
+const telegramConversationId = randomUUID();
 
 function bot(name: string): BotEntity {
   return BotEntity.createNew({
@@ -41,18 +43,25 @@ function setup(
     end?: 'completed' | 'failed' | null;
     askerGone?: boolean;
     queued?: Awaited<ReturnType<BotTurnRepositoryPort['enqueueAnswer']>>;
+    /** The asking turn, a Telegram one, in place of a console one. */
+    askedOnTelegram?: boolean;
   } = {},
 ) {
   const ada = bot('Ada');
   const grace = bot('Grace');
-  const yours = BotTurnEntity.queue({
-    organizationId,
-    botId: ada.id,
-    requestedByUserId: userId,
-    provider: 'glm',
-    model: 'glm-5.3',
-    effort: null,
-  });
+  const engine = { provider: 'glm' as const, model: 'glm-5.3', effort: null };
+  const yours = options.askedOnTelegram
+    ? telegramTurn(
+        { organizationId, botId: ada.id, requestedByUserId: userId, ...engine },
+        {
+          conversationId: telegramConversationId,
+          telegramAccountId: randomUUID(),
+          chatId: '123456789',
+          messageId: '42',
+          text: 'Ask Grace which PR is task 7.',
+        },
+      ).turn
+    : BotTurnEntity.queue({ organizationId, botId: ada.id, requestedByUserId: userId, ...engine });
   yours.start(new Date());
   const asked = BotTurnEntity.queueFromBot(yours, {
     botId: grace.id,
@@ -66,7 +75,9 @@ function setup(
   if (end) asked.end(end, new Date(), end === 'failed' ? { error: 'The key was refused.' } : {});
 
   const turns = {
-    findForRun: vi.fn(async (id: string) => (id === asked.id ? Some(asked) : None)),
+    findForRun: vi.fn(async (id: string) =>
+      id === asked.id ? Some(asked) : id === yours.id ? Some(yours) : None,
+    ),
     enqueueAnswer: vi.fn(async () => options.queued ?? ('staged' as const)),
   } satisfies Partial<BotTurnRepositoryPort>;
   const messages = {
@@ -86,7 +97,7 @@ function setup(
     access as unknown as BotModelAccessResolver,
   );
   const deliver = () => handler.execute(new DeliverBotAnswerCommand({ turnId: asked.id }));
-  return { ada, grace, asked, turns, stream, deliver };
+  return { ada, grace, yours, asked, turns, stream, deliver };
 }
 
 describe('DeliverBotAnswerCommandHandler', () => {
@@ -130,5 +141,21 @@ describe('DeliverBotAnswerCommandHandler', () => {
     const { stream, deliver } = setup({ queued: 'duplicate' });
     await deliver();
     expect(stream.publish).not.toHaveBeenCalled();
+  });
+
+  // Breaks if the handler stops reading the asking turn, which the entity's
+  // own test cannot see: the answer to a question asked on Telegram then
+  // lands only in the console chat and never reaches the owner's phone.
+  it('queues the answer to an ask made on Telegram in that Telegram conversation, as a Telegram turn', async () => {
+    const { ada, yours, turns, deliver } = setup({ askedOnTelegram: true });
+    await deliver();
+    expect(turns.findForRun).toHaveBeenCalledWith(yours.id);
+    const [turn, message] = turns.enqueueAnswer.mock.calls[0];
+    expect(turn).toMatchObject({
+      botId: ada.id,
+      conversationId: telegramConversationId,
+      origin: 'telegram',
+    });
+    expect(message.conversationId).toBe(telegramConversationId);
   });
 });

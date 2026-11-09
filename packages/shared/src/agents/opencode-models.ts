@@ -52,8 +52,8 @@ export const OPENCODE_MODELS: readonly CodingAgentModel[] = Object.freeze([
     effort: levels(CLAUDE_LEVELS, 'high'),
   }),
   Object.freeze({
-    id: 'anthropic/claude-fable-5-1',
-    label: 'Fable 5.1',
+    id: 'anthropic/claude-fable-5-2',
+    label: 'Fable 5.2',
     effort: levels(CLAUDE_LEVELS, 'high'),
   }),
   Object.freeze({
@@ -171,6 +171,14 @@ export const OPENCODE_MODELS: readonly CodingAgentModel[] = Object.freeze([
   Object.freeze({
     id: 'minimax/MiniMax-M3.1-Flash',
     label: 'MiniMax M3.1 Flash',
+    effort: levels(CLAUDE_LEVELS, 'high'),
+  }),
+  // Behind "More models": sessions and automations saved on it keep their
+  // effort, which a model missing from this list would lose.
+  Object.freeze({
+    id: 'anthropic/claude-fable-5-1',
+    label: 'Fable 5.1',
+    legacy: true as const,
     effort: levels(CLAUDE_LEVELS, 'high'),
   }),
 ]);

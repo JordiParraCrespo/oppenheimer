@@ -329,7 +329,8 @@
     "BOTS_038": "No se ha encontrado esa habilidad.",
     "BOTS_039": "Este bot ya tiene una habilidad con ese nombre. Elige otro.",
     "BOTS_040": "Este bot ya tiene tantas habilidades como puede guardar. Borra una primero.",
-    "BOTS_041": "Este bot no tiene ninguna ordenación de su memoria que deshacer."
+    "BOTS_041": "Este bot no tiene ninguna ordenación de su memoria que deshacer.",
+    "BOTS_042": "Este bot responde en un bot de Telegram. Elige otro bot, o ninguno, en Ajustes → Telegram antes de eliminarlo."
   },
   "notFound": {
     "title": "Esta página no existe",

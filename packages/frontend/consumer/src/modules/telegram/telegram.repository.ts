@@ -16,6 +16,8 @@ function toAccount(data: TelegramAccountResponseDto): TelegramAccountEntity {
     data.displayName ?? null,
     data.statusReason ?? null,
     data.linkedAt,
+    data.answeringBotId ?? null,
+    data.ownerLinked,
   );
 }
 
@@ -42,6 +44,26 @@ export class TelegramRepository {
       );
       return toAccount(data);
     });
+  }
+
+  /** Which of the reader's bots answers them on this Telegram bot; null for none. */
+  answerAs(id: string, answeringBotId: string | null): Promise<TelegramAccountEntity> {
+    return callApi(TelegramErrors.UPDATE_FAILED, async (api) => {
+      const data = await api.body(
+        heyApiSdk.updateTelegramAccount({ path: { id }, body: { answeringBotId } }),
+      );
+      return toAccount(data);
+    });
+  }
+
+  /**
+   * A one-time `t.me` link that records whoever opens it in Telegram, within
+   * ten minutes, as the bot's owner. Only this answer carries its code.
+   */
+  openOwnerLink(id: string): Promise<{ url: string; expiresAt: string }> {
+    return callApi(TelegramErrors.OWNER_LINK_FAILED, async (api) =>
+      api.body(heyApiSdk.openTelegramOwnerLink({ path: { id } })),
+    );
   }
 
   unlink(id: string): Promise<void> {

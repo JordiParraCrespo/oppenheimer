@@ -54,14 +54,14 @@ export class AppError extends Error {
 }
 
 /**
- * {@link unwrap} hands a generated SDK call's failure over as
- * `{ status, body }`; when the body is a problem document, the server's
- * explanation wins over the caller's fallback.
+ * Whatever a call threw, as an {@link AppError} built on `fallback`. A
+ * problem document in its `body` (or `error`, or `response.data`) wins over the
+ * fallback: the server's explanation.
  *
- * Better Auth's client rejects through `@oppenheimer/auth`'s `AuthRequestError`
- * instead, with a `status` and `code` but no problem document, so both are read
- * off the error directly. `status` distinguishes a failure the server answered
- * from one that never reached it.
+ * Better Auth's client rejects through `@oppenheimer/auth`'s `AuthRequestError`,
+ * with a `status` and `code` but no problem document, so both are read off the
+ * error directly. `status` distinguishes a failure the server answered from one
+ * that never reached it.
  */
 export function toAppError(error: unknown, fallback: ErrorDefinition): AppError {
   if (error instanceof AppError) return error;
@@ -79,28 +79,43 @@ export function toAppError(error: unknown, fallback: ErrorDefinition): AppError 
     candidate?.response?.data ??
     (typeof candidate?.error === 'object' ? candidate.error : undefined);
 
+  return appErrorOf(fallback, {
+    status: candidate?.status,
+    code: candidate?.code,
+    body,
+    cause: error,
+  });
+}
+
+function appErrorOf(
+  fallback: ErrorDefinition,
+  failure: { status?: number; code?: unknown; body: unknown; cause: unknown },
+): AppError {
+  const { status, body, cause } = failure;
   if (isProblemDetails(body)) {
-    return new AppError(fallback, {
-      problem: body as ProblemDetails,
-      status: candidate?.status,
-      cause: error,
-    });
+    return new AppError(fallback, { problem: body as ProblemDetails, status, cause });
   }
 
   // Better Auth answers with `{ code, message }` rather than a problem
   // document; its code is still the one thing the resolver can translate.
   const bodyCode = (body as { code?: unknown } | undefined)?.code;
   const code =
-    typeof candidate?.code === 'string'
-      ? candidate.code
+    typeof failure.code === 'string'
+      ? failure.code
       : typeof bodyCode === 'string'
         ? bodyCode
         : undefined;
 
-  return new AppError(code ? { ...fallback, code } : fallback, {
-    status: candidate?.status,
-    cause: error,
-  });
+  return new AppError(code ? { ...fallback, code } : fallback, { status, cause });
+}
+
+/**
+ * A generated SDK call's failure as an {@link AppError}. Its cause is what
+ * the call failed with, so a dropped connection's `TypeError` is there for
+ * error reporting to recognize and leave alone.
+ */
+function sdkFailure(error: unknown, response: Response | undefined, fallback: ErrorDefinition) {
+  return appErrorOf(fallback, { status: response?.status, body: error, cause: error });
 }
 
 /** What a generated hey-api SDK call resolves to: it never throws. */
@@ -126,7 +141,7 @@ export async function unwrap<T>(
   fallback: ErrorDefinition,
 ): Promise<T> {
   const { data, error, response } = await call;
-  if (error !== undefined) throw toAppError({ status: response?.status, body: error }, fallback);
+  if (error !== undefined) throw sdkFailure(error, response, fallback);
   return data as T;
 }
 
@@ -146,7 +161,7 @@ export async function unwrapBody<T>(
   isComplete: (body: NonNullable<T>) => boolean = () => true,
 ): Promise<NonNullable<T>> {
   const { data, error, response } = await call;
-  if (error !== undefined) throw toAppError({ status: response?.status, body: error }, fallback);
+  if (error !== undefined) throw sdkFailure(error, response, fallback);
   if (data === undefined || data === null || !isComplete(data as NonNullable<T>)) {
     throw new AppError(fallback, { status: response?.status });
   }

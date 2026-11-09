@@ -1418,3 +1418,8 @@ earlier note:
   (`inbox_report`, up to four pictures), sent by anything holding a token
   with `inbox-reports:write`, answered from its card, and read back by the
   agent that sent it (29, "Reports").
+- `versions/mvp/05-screens.md` listed Fable 5.1 among Claude Code's four
+  current models. On 2026-11-09 the owner asked for Fable 5.2 in new
+  sessions and in bots: it takes Fable 5.1's place, and Fable 5.1 heads
+  "More models", since Claude still serves it. OpenCode's `anthropic/` row
+  moves to Fable 5.2 as well, with Fable 5.1 behind its "More models".

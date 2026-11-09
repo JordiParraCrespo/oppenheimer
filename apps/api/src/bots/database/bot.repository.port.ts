@@ -56,6 +56,10 @@ export interface BotRepositoryPort {
     creator?: BotCreatorCheck,
   ): Promise<BotWriteOutcome>;
   save(bot: BotEntity): Promise<BotWriteOutcome>;
-  /** The bot, its documents, their history and its memory. */
-  delete(bot: BotEntity): Promise<void>;
+  /**
+   * The bot, its documents, their history and its memory; `answering` and
+   * nothing deleted while it answers on a Telegram bot
+   * (`FK_telegram_account_answering_bot`).
+   */
+  delete(bot: BotEntity): Promise<'deleted' | 'answering'>;
 }

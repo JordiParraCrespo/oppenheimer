@@ -25,6 +25,7 @@ import { ModelProviderCredentialOrmEntity } from '../bots/database/model-provide
 import { PersonMemoryOrmEntity } from '../bots/database/person-memory.orm-entity';
 import { BotApprovalOrmEntity } from '../bots-chat/database/bot-approval.orm-entity';
 import { BotAttachmentOrmEntity } from '../bots-chat/database/bot-attachment.orm-entity';
+import { BotConversationOrmEntity } from '../bots-chat/database/bot-conversation.orm-entity';
 import { BotConversationSummaryOrmEntity } from '../bots-chat/database/bot-conversation-summary.orm-entity';
 import { BotGoalOrmEntity } from '../bots-chat/database/bot-goal.orm-entity';
 import { BotLoopOrmEntity } from '../bots-chat/database/bot-loop.orm-entity';
@@ -172,6 +173,7 @@ export default new DataSource({
     ModelProviderCredentialOrmEntity,
     BotTurnOrmEntity,
     BotMessageOrmEntity,
+    BotConversationOrmEntity,
     BotAttachmentOrmEntity,
     BotSubscriptionOrmEntity,
     BotGoalOrmEntity,
