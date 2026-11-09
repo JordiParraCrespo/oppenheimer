@@ -94,9 +94,9 @@ function ChatComposer({
   engine?: React.ReactNode;
   /** A notice or an approval, fused to the field's top edge. */
   above?: React.ReactNode;
-  /** The files the message carries (`ChatImage`s, `ComposerFile`s), in a row over the text. */
   /** A quiet line inside the box over the field: where its text came from. */
   caption?: React.ReactNode;
+  /** The files the message carries (`ChatImage`s, `ComposerFile`s), in a row over the text. */
   attachments?: React.ReactNode;
   /** Present: shows the paperclip, first in the foot row (`stacked`) or the row (`inline`). */
   onAttach?: () => void;
@@ -184,15 +184,20 @@ function ChatComposer({
       <PaperclipIcon className="size-3.75" />
     </IconButton>
   ) : null;
-  const captioned = caption ? (
-    <div
-      data-slot="chat-composer-caption"
-      aria-live="polite"
-      className={cn('text-xs text-fg-muted', inline ? 'px-3 pt-2.5' : 'px-5 pt-3.5 -mb-2')}
-    >
-      {caption}
+  // The live region stays mounted, empty without a caption: a screen reader
+  // reads a change inside a region it already knows, not one that arrives with its text.
+  const captioned = (
+    <div aria-live="polite">
+      {caption ? (
+        <div
+          data-slot="chat-composer-caption"
+          className={cn('text-xs text-fg-muted', inline ? 'px-3 pt-2.5' : '-mb-2 px-5 pt-3.5')}
+        >
+          {caption}
+        </div>
+      ) : null}
     </div>
-  ) : null;
+  );
   const attached = attachments ? (
     <div
       data-slot="chat-composer-attachments"
