@@ -1,4 +1,3 @@
-/// <reference path="../lib/novnc.d.ts" />
 import { useEffect, useRef, useState } from 'react';
 import {
   type DesktopChannel,
@@ -6,6 +5,7 @@ import {
   desktopRetryDelay,
   isFinalDesktopStatus,
 } from '../lib/desktop-channel';
+import { loadRfb } from '../lib/load-novnc';
 
 const CONNECTING: DesktopViewState = { status: 'connecting', control: false, refusal: null };
 
@@ -42,10 +42,10 @@ export function useDesktop(connect: () => Promise<DesktopChannel>) {
     const dial = async () => {
       latest = { ...latest, status: 'connecting' };
       setState(latest);
-      let RFB: typeof import('@novnc/novnc').default;
+      let RFB: Awaited<ReturnType<typeof loadRfb>>;
       let channel: DesktopChannel;
       try {
-        [{ default: RFB }, channel] = await Promise.all([import('@novnc/novnc'), connect()]);
+        [RFB, channel] = await Promise.all([loadRfb(), connect()]);
       } catch {
         latest = { ...latest, status: 'dropped' };
         setState(latest);

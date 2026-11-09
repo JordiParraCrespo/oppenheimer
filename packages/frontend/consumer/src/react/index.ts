@@ -154,6 +154,7 @@ export {
   useDisconnectCloudAgentProvider,
   useSuspenseCloudAgentStatus,
 } from './cloud-agents.queries';
+export { useHostDesktop } from './hosts.desktop';
 export { type HostPairingFlow, useHostPairing } from './hosts.pairing';
 export {
   useHostCodexEnvironments,
@@ -296,7 +297,6 @@ export {
   useSuspenseSharedSession,
   useUploadSessionAttachment,
 } from './sessions.queries';
-export { useHostDesktop } from './hosts.desktop';
 export {
   useCloudChatFeed,
   useSessionDeviceStream,

@@ -37,8 +37,8 @@ import type {
 import type { SessionReconciliationPort } from '../../sessions/application/session-reconciliation.port';
 import { HostUnpairedDomainEventHandler } from '../application/event-handlers/host-unpaired.domain-event-handler';
 import { BrowserAttachGateway } from '../infrastructure/browser-attach.gateway';
-import { DesktopAttachGateway } from '../infrastructure/desktop-attach.gateway';
 import { CredentialsProcessor } from '../infrastructure/credentials.processor';
+import { DesktopAttachGateway } from '../infrastructure/desktop-attach.gateway';
 import { RelayEventsProcessor } from '../infrastructure/relay-events.processor';
 import { RelayUpgradeGateway } from '../infrastructure/relay-upgrade.gateway';
 import { RunnerLinkGateway } from '../infrastructure/runner-link.gateway';

@@ -43,7 +43,7 @@ export class IssueDesktopTicketHttpController {
   @ApiOperation({
     summary: "Mint a ticket for this host's desktop",
     description:
-      "Single use, 60 seconds. Present it as a WebSocket subprotocol on the returned path, never in the query string; binary frames on that socket are RFB (VNC) both ways. The host shares its desktop only if its owner turned it on there (`runner desktop on`); a host that does not is refused on the socket with `DESKTOP_001`. The relay re-checks at consume, and every minute after, that the caller may still use the host.",
+      'Single use, 60 seconds. Present it as a WebSocket subprotocol on the returned path, never in the query string; binary frames on that socket are RFB (VNC) both ways. The host shares its desktop only if its owner turned it on there (`runner desktop on`); a host that does not is refused on the socket with `DESKTOP_001`. The relay re-checks at consume, and every minute after, that the caller may still use the host.',
   })
   @ApiResponse({ status: 201, type: DesktopTicketResponseDto })
   @ApiProblemResponse({ status: 404, description: 'Host not found', code: 'HOSTS_001' })

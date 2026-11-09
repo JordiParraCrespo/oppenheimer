@@ -2,17 +2,17 @@ import { z } from 'zod/v4';
 import { type HostCloudAgentId, isHostCloudAgent } from '../agents/catalog.js';
 import { codexEnvironmentsListSchema, codexEnvironmentsSchema } from './codex-environments.js';
 import {
-  deviceAttachSchema,
-  deviceDetachSchema,
-  deviceInfoSchema,
-  deviceInputSchema,
-} from './devices.js';
-import {
   desktopCloseSchema,
   desktopControlSchema,
   desktopOpenedSchema,
   desktopOpenSchema,
 } from './desktop.js';
+import {
+  deviceAttachSchema,
+  deviceDetachSchema,
+  deviceInfoSchema,
+  deviceInputSchema,
+} from './devices.js';
 import { hintSchema } from './hint.js';
 import { CHAT_BATCH_MAX_ENTRIES, CHAT_ENTRY_MAX_BYTES } from './link.js';
 import {

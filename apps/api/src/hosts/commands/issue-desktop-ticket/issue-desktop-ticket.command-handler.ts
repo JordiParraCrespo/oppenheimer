@@ -37,6 +37,10 @@ export class IssueDesktopTicketCommandHandler
     // with none has nowhere to be a member of.
     if (!scope.organizationId) throw new AppError(HostErrors.NOT_FOUND);
     await this.hosts.assertUsable(scope, hostId);
-    return this.tickets.issue({ hostId, organizationId: scope.organizationId, userId: scope.userId });
+    return this.tickets.issue({
+      hostId,
+      organizationId: scope.organizationId,
+      userId: scope.userId,
+    });
   }
 }

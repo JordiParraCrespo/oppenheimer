@@ -32,15 +32,20 @@ export function DesktopView({
 }) {
   const { t } = useTranslation();
   const { screenRef, state, setControl, retry } = useDesktop(connect);
-  const fullscreen = useFullscreen<HTMLDivElement>();
+  const {
+    ref: frameRef,
+    active: fullscreen,
+    pinned,
+    toggle: toggleFullscreen,
+  } = useFullscreen<HTMLDivElement>();
   const live = state.status === 'live';
 
   return (
     <div
-      ref={fullscreen.ref}
+      ref={frameRef}
       className={cn(
         'flex min-h-0 flex-1 flex-col bg-card',
-        fullscreen.pinned && 'fixed inset-0 z-50',
+        pinned && 'fixed inset-0 z-50',
         className,
       )}
     >
@@ -70,12 +75,12 @@ export function DesktopView({
         <IconButton
           size="sm"
           aria-label={
-            fullscreen.active ? t('hosts.desktop.exitFullscreen') : t('hosts.desktop.fullscreen')
+            fullscreen ? t('hosts.desktop.exitFullscreen') : t('hosts.desktop.fullscreen')
           }
-          aria-pressed={fullscreen.active}
-          onClick={fullscreen.toggle}
+          aria-pressed={fullscreen}
+          onClick={toggleFullscreen}
         >
-          {fullscreen.active ? <MinimizeIcon /> : <MaximizeIcon />}
+          {fullscreen ? <MinimizeIcon /> : <MaximizeIcon />}
         </IconButton>
       </div>
       <div className="relative flex min-h-0 flex-1 bg-surface-sunken">
