@@ -106,7 +106,7 @@ function SortableTodoRow({
   /** The grip's name for a screen reader ("Reorder Rotate the API keys"). */
   gripLabel: string;
 }) {
-  const { ref, handleProps, pointerProps, style: slide, isDragging } = useSortableItem({
+  const { ref, handleProps, listeners, style: slide, isDragging } = useSortableItem({
     id,
     data: { type: 'todo-row', label: props.title },
   });
@@ -114,7 +114,7 @@ function SortableTodoRow({
     <TodoRow
       {...props}
       ref={ref}
-      {...pointerProps}
+      onPointerDown={(event) => listeners?.onPointerDown?.(event)}
       data-dragging={isDragging || undefined}
       style={{ ...style, ...slide }}
       className={cn('pr-2 data-dragging:opacity-45', className)}
