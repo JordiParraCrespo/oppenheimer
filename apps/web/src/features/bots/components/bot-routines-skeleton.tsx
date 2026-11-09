@@ -1,5 +1,14 @@
-import { RoutineCard, Skeleton } from '@oppenheimer/design-system-web';
+import {
+  RoutineCard,
+  SettingsGroup,
+  SettingsRow,
+  Skeleton,
+  Switch,
+} from '@oppenheimer/design-system-web';
+import { LoadingStatus } from '@oppenheimer/frontend-web';
 import { useTranslation } from 'react-i18next';
+
+function noop() {}
 
 const ROWS = [
   { name: 'w-40', trigger: 'w-48', prompt: 'w-3/4' },
@@ -7,27 +16,54 @@ const ROWS = [
 ];
 
 /**
- * The Routines tab while its list loads: routine cards with a bar for each
- * line the card draws (its name, its when, its prompt, its last and next
- * run), so nothing moves when the routines land.
+ * The Routines tab while the bot and its routines load, laid out as the page
+ * draws them: Pause while you're away with its label and hint written and
+ * its switch off, then routine cards with their switch, Run now, Edit and
+ * Delete drawn and out of reach, and a bar for each line the card draws (its
+ * name, its when, its prompt, its last run), so nothing moves when the
+ * routines land.
  */
 export function BotRoutinesSkeleton() {
   const { t } = useTranslation();
   return (
-    <section aria-busy className="flex flex-col gap-3">
-      <span role="status" className="sr-only">
-        {t('common.loading')}
-      </span>
-      {ROWS.map((row) => (
-        <RoutineCard
-          key={row.name}
-          active
-          name={<Skeleton shape="sm" className={`my-1 h-3.5 ${row.name}`} />}
-          trigger={<Skeleton shape="sm" className={`h-3 ${row.trigger}`} />}
-          prompt={<Skeleton shape="sm" className={`my-1 h-3 ${row.prompt}`} />}
-          last={<Skeleton shape="sm" className="inline-block h-2.5 w-24 align-middle" />}
-        />
-      ))}
-    </section>
+    <div aria-busy className="flex flex-col gap-6">
+      <LoadingStatus />
+      <SettingsGroup>
+        <SettingsRow
+          label={t('bots.settings.routines.guard')}
+          hint={t('bots.settings.routines.guardHint')}
+        >
+          <Switch disabled tabIndex={-1} aria-label={t('bots.settings.routines.guard')} />
+        </SettingsRow>
+      </SettingsGroup>
+      <section inert aria-hidden className="flex flex-col gap-3">
+        {ROWS.map((row) => (
+          <RoutineCard
+            key={row.name}
+            active
+            name={<Skeleton shape="sm" className={`my-1 h-3.5 ${row.name}`} />}
+            icon={<Skeleton shape="pill" className="size-3" />}
+            trigger={<Skeleton shape="sm" className={`h-3 ${row.trigger}`} />}
+            prompt={<Skeleton shape="sm" className={`my-1 h-3 ${row.prompt}`} />}
+            last={<Skeleton shape="sm" className="inline-block h-2.5 w-24 align-middle" />}
+            onActiveChange={noop}
+            onRun={noop}
+            onEdit={noop}
+            onDelete={noop}
+            labels={{
+              active: t('bots.settings.routines.guard'),
+              pause: t('bots.settings.routines.pause'),
+              resume: t('bots.settings.routines.resume'),
+              run: t('bots.settings.routines.run'),
+              running: t('bots.settings.routines.running'),
+              edit: t('bots.settings.routines.edit'),
+              delete: t('bots.settings.routines.delete'),
+              last: t('bots.settings.routines.last'),
+              next: t('bots.settings.routines.next'),
+            }}
+          />
+        ))}
+      </section>
+    </div>
   );
 }

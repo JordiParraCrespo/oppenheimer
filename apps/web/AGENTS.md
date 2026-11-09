@@ -48,10 +48,12 @@
   never a `0` for a count not given. The pull-request feature is the
   reference; the rule is `.agents/rules/frontend-ui.md`, "A placeholder has
   the shape of what replaces it".
-- `pnpm check:structure` fails a `Pending` that is only a slab (`<Skeleton
-  className="h-80 w-full" />`), with no exception: the debt list it
-  started with (`scripts/skeleton-slab-debt.mjs`) is paid off and empty.
-  `/frontend-audit` reports the rest as `U7`.
+- `pnpm check:structure` fails a slab (a `Skeleton` 64px tall or more, or
+  one that fills its frame) wherever it is drawn, unless a
+  `{/* A block stands in here: <why> */}` above it says it really is one
+  block. `/frontend-audit` reports the rest as `U7`.
+- A placeholder is heard once, app-wide: `QueryState.Pending` and the kit's
+  `<LoadingStatus />` count themselves into `LoadingAnnouncer` (`app.tsx`).
 - A change to a placeholder is a visual change: photograph it held beside
   its loaded page (`/local-stack`).
 

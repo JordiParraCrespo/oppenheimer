@@ -609,14 +609,23 @@ of `bot_memory_fact`, with two columns more:
   save, and in the system prompt each save would miss the prompt cache for
   the whole history. A long memory costs the turn the same as a short one.
   (2026-11-06: was the newest 60 profile facts and no log at all.)
-- **Scope.** A `bot` fact is the bot's alone. A `person` fact is about its
-  owner ("prefers squash merges"), and every bot that person made in the
-  workspace reads it, in a section of the prompt of its own. It stays the
+- **Scope: two memories.** A `bot` fact is in the bot's own memory, read by
+  it alone. A `person` fact is in the general memory, about its owner ("call
+  me Jordi", "write to me in Spanish"), and every bot that person made in
+  the workspace reads it, in a section of the prompt of its own. The prompt
+  names them *Your memory* and *General memory*, and one rule picks
+  between them, written once (`MEMORY_CHOICE_RULE`): `remember` carries it,
+  the prompt points to it, and the dream reads the same text and the same
+  `memory: yours | general` names: general only
+  when a bot with a completely different job would need the fact; a fact
+  that names a project, repository, folder, host, account or tool stays
+  the bot's, even a preference (2026-11-08: was "about the person (their
+  name, role, preferences)", and bots filed job facts there). It stays the
   row of the bot that learned it: that bot edits and forgets it, the
   others read it, and it goes with that bot when the bot is deleted or its
   memory cleared. Copying it to each bot would make "forget" mean nothing.
 - **Defaults.** A fact the bot saves is `log` and `bot` unless it says
-  otherwise: `remember` takes `tier` and `about: 'person'`. One the owner
+  otherwise: `remember` takes `tier` and `memory: 'general'`. One the owner
   adds in Settings → Memory is `profile`, and the owner moves a fact from
   its row's menu there. A fact another bot shared is shown there muted,
   with nothing to change.
@@ -812,9 +821,13 @@ learn fast what is going on.
   up": its conversation, its branch, its pull request and its helpers, in the
   same shape. It is in the note, not `runner --skill`, since the person asks
   for it, not the agent.
-- **Not built.** `/recap` in the composer's `/` menu, which lists the
-  built-in commands and the bot's own skills only; and the catch-up in a
-  Codex session, since the note is `CLAUDE.md` and Codex reads `AGENTS.md`.
+- **In the `/` menu** (2026-11-08). The composer lists `/recap` under
+  Skills, ahead of the bot's own, so a long list never pushes it out; a
+  bot's own `recap` takes its place. The names come from
+  `BOT_RUNNABLE_BUILT_IN_SKILL_NAMES`, which a spec holds to the built-ins
+  that are `userInvocable`.
+- **Not built.** The catch-up in a Codex session, since the note is
+  `CLAUDE.md` and Codex reads `AGENTS.md`.
 
 **Built-in commands** (2026-11-02, from Claude Code's commands,
 `code.claude.com/docs/en/commands`). A built-in is a `/<name>` Oppenheimer
@@ -987,6 +1000,7 @@ agent's, in a session, where Claude Code ships them.
 | `stop_session` / `close_session` | Stop it, or close and clean up. `close_session` is the sessions' own close (`CloseSessionCommand`: push each branch, remove the worktree; unpushed work kept unless `accept_unpushed_work`) and only for a session whose origin is `bot`; any other is refused before a card, the person's to close. The `failed` wake offers it once the person is told, so a failed start does not stay in the sidebar (built 2026-11-09) | ask |
 | `list_folders` | Browse a host's folders | auto |
 | `run_command` | Run one program on a host and read its exit code, stdout and stderr in the same turn, only what that host's own policy allows (below; built 2026-11-07) | ask |
+| `open_terminal` / `type_in_terminal` / `read_terminal` | Open a blank terminal (agent `shell`) on a host, type into it (text, then named keys such as Enter or C-c) and read its screen back after waiting for a pattern; only on a host whose `runner exec` mode is `full` (below; built 2026-11-08) | ask / ask / auto |
 
 Built 2026-10-27 (issue #493), so a bot that manages sessions can see them
 as the person does and act on them. Three rules hold it:
@@ -1060,6 +1074,34 @@ more (`10-sleep-wake-and-pricing.md` §7 prices the sandbox services).
 
 On the wire it is `host.exec` and `host.exec.result`, gated on the
 `host.exec` capability (`01-protocol.md`).
+
+#### Driving a terminal
+
+Added 2026-11-08, the next step the owner asked for after `run_command`:
+bots that run bash or ssh interactively, as a person at a keyboard does.
+
+- **A terminal is a session.** `open_terminal` starts one whose window 0 is
+  a plain shell (agent `shell`, the console's Blank terminal) in a folder on
+  the host. It is an ordinary session: the person sees it in the console,
+  watches it live and can take over.
+- **Type, then wait, then read.** `type_in_terminal` types its text
+  literally and then presses named keys (`Enter`, `C-c`, `Tab`, arrows: the
+  list is `TERMINAL_KEYS`); the runner then waits until an RE2 pattern shows
+  on a line of the screen (the prompt coming back, a program's question) or
+  for a number of seconds, at most 60, and returns the screen, its last
+  32 KB, with up to 500 lines of scrollback when asked. `read_terminal` is
+  the same without typing, and runs without asking.
+- **Only a blank terminal, only on a full host.** A bot never types into a
+  coding agent's window (`EXEC_007`), and a host whose exec mode is not
+  `full` refuses (`EXEC_006`): a shell runs anything, so an allowlist
+  cannot hold it.
+- **No secrets through the bot.** Its prompt says never to type a password
+  or read one off the screen; a program that asks for one is the person's to
+  answer, in that terminal in the console. What the screen shows is fenced
+  as outside text.
+
+On the wire it is `terminal.drive` and `terminal.screen`, gated on the
+`terminal.drive` capability (`01-protocol.md`).
 
 ### 4.3 Projects and the plan
 | Tool | Does | Default |
@@ -1767,6 +1809,14 @@ The decisions it produced:
   Memory at the account, an *About you* text in every bot's prompt that
   only the person writes, and every `person` fact their bots keep, changed
   on the bot that keeps it (§4.1). Asked by the owner, after Claude's.
+- 2026-11-08: **two memories, named and chosen by one rule** (§4.1). The
+  owner found Facturas reading facts about XRP Mobile and pull request
+  notifications that other bots had filed as about him. `remember` now
+  takes `memory: 'yours' | 'general'` instead of `about`, the prompt calls
+  them *Your memory* and *General memory*, and general is only for what a
+  bot with another job would need. `scripts/evals/bot-memory` holds it: on
+  the old wording 25 of 100 runs put a job fact in the general memory and
+  5 of 20 cases failed; on the new one all 100 were right.
 - 2026-11-07: **bots dream** (§4.1, "Dreaming"). The owner found each
   bot's memory "a bit like slop" once bots saved as they go, and asked for
   a process that unifies, rewrites and deduplicates it, from Managed Agents'
@@ -1827,3 +1877,9 @@ The decisions it produced:
   policy allows, off by default. It narrows 2026-10-15's "no shell": the
   engine still has none on the control plane, and the closed list says
   `run_command` is the one way a bot runs anything.
+- 2026-11-08: **bots drive a terminal** (§4.2, "Driving a terminal"). The
+  owner asked for bash and ssh as a person uses them, not one command at a
+  time. A bot opens a blank-terminal session, types into it and reads its
+  screen, on a host whose exec mode is `full`. It changes §2's "the bot
+  delegates a complete task and never runs a terminal" for blank terminals
+  only: a coding agent is still given a task, never typed at.

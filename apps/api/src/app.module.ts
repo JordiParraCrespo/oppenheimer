@@ -86,6 +86,7 @@ import { RelayModule } from './relay/relay.module';
 import { RolesModule } from './roles/roles.module';
 import { SessionsModule } from './sessions/sessions.module';
 import { TasksModule } from './tasks/tasks.module';
+import { TelegramModule } from './telegram/telegram.module';
 import { CredentialThrottlerGuard } from './throttling/guards/credential-throttler.guard';
 import { RedisThrottlerStorage } from './throttling/infrastructure/redis-throttler.adapter';
 import { ThrottlingModule } from './throttling/throttling.module';
@@ -274,6 +275,7 @@ import { WorkspaceEventsModule } from './workspace-events/workspace-events.modul
     CalendarModule,
     MailModule,
     WhatsappModule,
+    TelegramModule,
     CloudAgentsModule,
     PullRequestsModule,
     BotsModule,

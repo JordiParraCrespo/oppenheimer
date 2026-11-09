@@ -1,8 +1,9 @@
-import { Button, FieldDescription, Skeleton } from '@oppenheimer/design-system-web';
+import { Button, FieldDescription } from '@oppenheimer/design-system-web';
 import type { ProjectEntity } from '@oppenheimer/frontend-consumer';
 import { ErrorAlert, QueryState } from '@oppenheimer/frontend-web';
 import { useTranslation } from 'react-i18next';
 import { ProjectDialogShell } from '../components/project-dialog-shell';
+import { ProjectEditorSkeleton } from '../components/project-editor-skeleton';
 import { SavedProject } from '../sections/saved-project';
 import { ProjectEditorDialog } from './project-editor';
 
@@ -13,8 +14,8 @@ import { ProjectEditorDialog } from './project-editor';
  *
  * Without `projectId` it creates. With one, the project is read under
  * Suspense, because neither opener (the sidebar, the composer) holds the
- * rows; until it answers, the frame holds its place, and a failed read is not
- * a deleted project.
+ * rows; until it answers, the editor's own shape holds its place
+ * (`ProjectEditorSkeleton`), and a failed read is not a deleted project.
  */
 export function ProjectDialog({
   projectId,
@@ -34,9 +35,7 @@ export function ProjectDialog({
   return (
     <QueryState>
       <QueryState.Pending>
-        <ProjectDialogShell onClose={onClose}>
-          <Skeleton className="h-30 w-full" />
-        </ProjectDialogShell>
+        <ProjectEditorSkeleton onClose={onClose} />
       </QueryState.Pending>
       <QueryState.Error>
         {(error, retry) => (

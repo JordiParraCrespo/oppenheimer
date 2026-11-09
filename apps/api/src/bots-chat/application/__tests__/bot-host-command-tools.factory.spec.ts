@@ -5,6 +5,7 @@ import { RunHostCommandCommand } from '../../../sessions/commands/run-host-comma
 import { NO_PERMISSIONS } from '../../domain/bot-tool-permission.policy';
 import { BotTurnBudget } from '../../domain/bot-turn-budget.policy';
 import { BotHostCommandToolsFactory } from '../bot-host-command-tools.factory';
+import { BotHostTargetResolver } from '../bot-host-target.resolver';
 import type { BotToolContext } from '../bot-tool.factory';
 
 const HOST = 'd0c6e4f2-3041-4c5d-8e6f-70819203b4c5';
@@ -44,8 +45,8 @@ function setup(permission: BotToolContext['permission']) {
     }),
   };
   const factory = new BotHostCommandToolsFactory(
-    queryBus as unknown as QueryBus,
     commandBus as unknown as CommandBus,
+    new BotHostTargetResolver(queryBus as unknown as QueryBus),
   );
   const tool = factory.definitions()[0];
   if (!tool) throw new Error('no run_command');

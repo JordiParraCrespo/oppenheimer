@@ -10,7 +10,7 @@ import {
   useRefreshInstallations,
   useStartInstallation,
 } from '@oppenheimer/frontend-consumer/react';
-import { ErrorAlert, useManageRepositoryAccess } from '@oppenheimer/frontend-web';
+import { ErrorAlert, LoadingStatus, useManageRepositoryAccess } from '@oppenheimer/frontend-web';
 import { type Control, useController } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { useProjectRepositoryOptions } from '../hooks/use-project-repository-options';
@@ -53,7 +53,34 @@ export function ProjectRepositoriesField({ control }: { control: Control<Project
     <Field>
       <FieldLabel>{t('projects.dialog.repositories')}</FieldLabel>
       {loading ? (
-        <Skeleton className="h-(--control-h-md) w-full" />
+        // The add field and a row's place for each repository the project
+        // already has: the rows are known, only their names are still coming.
+        <div aria-busy className="flex flex-col gap-2.5">
+          <LoadingStatus />
+          <Skeleton shape="sm" className="h-(--control-h-md) w-full" />
+          {rows.length ? (
+            <ul
+              aria-hidden
+              className="m-0 flex list-none flex-col rounded-md border border-border-subtle p-0"
+            >
+              {rows.map((row, index) => (
+                <li
+                  key={row.id}
+                  className="flex min-h-10 items-center gap-2.5 border-t border-border-subtle pr-1.5 pl-3 first:border-t-0"
+                >
+                  <Skeleton shape="sm" className="size-[15px] shrink-0" />
+                  <span className="flex h-5 min-w-0 flex-1 items-center">
+                    <Skeleton
+                      shape="sm"
+                      className={`h-2.5 ${['w-36', 'w-28', 'w-44'][index % 3]}`}
+                    />
+                  </span>
+                  <span className="size-(--control-h-sm) shrink-0" />
+                </li>
+              ))}
+            </ul>
+          ) : null}
+        </div>
       ) : (
         <RepositoryAddField
           repositories={options}

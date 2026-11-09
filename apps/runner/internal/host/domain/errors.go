@@ -34,4 +34,7 @@ var (
 	ErrExecFolder     = problem.New("EXEC_003", http.StatusBadRequest, "The folder to run in is not usable")
 	ErrExecStart      = problem.New("EXEC_004", http.StatusFailedDependency, "The program could not be started")
 	ErrExecPolicyFile = problem.New("EXEC_005", http.StatusInternalServerError, "The host's exec policy cannot be read")
+	// A bot driving a terminal session (`terminal.drive`): a shell runs
+	// anything, so only a host whose exec policy is full takes it.
+	ErrTerminalNeedsFull = problem.New("EXEC_006", http.StatusForbidden, "This host does not let bots drive a terminal")
 )

@@ -1,5 +1,5 @@
-import { EmptyState, Skeleton } from '@oppenheimer/design-system-web';
-import { SquareTerminal } from '@oppenheimer/design-system-web/icons';
+import { Button, ChipSelect, EmptyState, Skeleton } from '@oppenheimer/design-system-web';
+import { Cpu, SquareTerminal } from '@oppenheimer/design-system-web/icons';
 import type { PullRequestAddress } from '@oppenheimer/frontend-consumer';
 import { useReviewSessions } from '@oppenheimer/frontend-consumer/react';
 import { LoadingStatus } from '@oppenheimer/frontend-web';
@@ -10,7 +10,7 @@ import { latestReview } from '../lib/review-session';
  * The Chat tab before it answers, in the shape it will take: the review
  * session's terminal under its bar when the review sessions already read (the
  * sidebar's For review) hold one for this pull request, else the panel that
- * starts one, its title written. Guessing the terminal for a pull request
+ * starts one, its title written and its host chip and Start drawn, disabled. Guessing the terminal for a pull request
  * with no session would flash a pane that is not coming.
  */
 export function PullRequestChatSkeleton({ address }: { address: PullRequestAddress }) {
@@ -30,6 +30,7 @@ export function PullRequestChatSkeleton({ address }: { address: PullRequestAddre
           <Skeleton shape="sm" className="h-2.5 w-48 opacity-60" />
         </div>
         <div className="flex min-h-0 flex-1 flex-col p-3.5">
+          {/* A block stands in here: the terminal's grid fills the pane, one block until it paints. */}
           <Skeleton shape="none" className="min-h-0 w-full flex-1 opacity-40" />
         </div>
       </div>
@@ -49,7 +50,18 @@ export function PullRequestChatSkeleton({ address }: { address: PullRequestAddre
           </EmptyState.Description>
         </EmptyState.Header>
         <EmptyState.Content className="flex-row justify-center">
-          <Skeleton shape="pill" className="h-8 w-36" />
+          <ChipSelect
+            value={null}
+            onValueChange={() => {}}
+            options={[]}
+            icon={<Cpu />}
+            loading
+            loadingText={t('common.loading')}
+            disabled
+            aria-label={t('pullRequests.reviewSession.host')}
+            placeholder={t('pullRequests.reviewSession.host')}
+          />
+          <Button disabled>{t('pullRequests.reviewSession.start')}</Button>
         </EmptyState.Content>
       </EmptyState>
     </div>
