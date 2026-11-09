@@ -3,21 +3,17 @@ import {
   ChartLegend,
   type ChartSeries,
   Panel,
-  PanelGrid,
-  ProjectPanelEmpty,
   StatCard,
-  StatDelta,
 } from '@oppenheimer/design-system-web';
 import { useSuspensePlanStats } from '@oppenheimer/frontend-consumer/react';
 import { ErrorAlert, formatCalendarDay, formatTokens, useLocale } from '@oppenheimer/frontend-web';
 import { useDeferredValue } from 'react';
 import { useTranslation } from 'react-i18next';
+import { ProjectUsagePanels } from '../components/project-usage-panels';
+import { StatsChange } from '../components/stats-change';
 import { useStatsQuery } from '../hooks/use-stats-query';
 import { formatUsd } from '../lib/format-usd';
-import { modelSeriesOf } from '../lib/model-series';
-import { changeOf, niceTicks } from '../lib/stats-range';
-
-const MODEL_TONES = ['chart-1', 'chart-2', 'chart-3', 'muted'] as const;
+import { niceTicks, peakOf, weeklyPoints } from '../lib/stats-chart';
 
 /**
  * A project's Stats (the 2026-11-08 `Tasks` frame's project Stats, and
@@ -36,48 +32,14 @@ export function ProjectStatsSection({ projectId }: { projectId: string }) {
   const query = useDeferredValue(useStatsQuery(projectId));
   const { data, error } = useSuspensePlanStats(query);
   const { current, previous } = data;
-  const week = (index: number) => formatCalendarDay(data.weeks[index] ?? '', locale);
-  const measured =
-    data.tokensMeasured !== 'none' &&
-    current.tokensByModel !== null &&
-    current.tokensByModel.length > 0;
-
-  const delta = (
-    now: number | null,
-    before: number | null | undefined,
-    higherIsBetter: boolean | null,
-  ) => {
-    const change = changeOf(now, before, higherIsBetter);
-    return change ? (
-      <StatDelta value={change.value} tone={change.tone}>
-        {t('projects.stats.vsPrevious')}
-      </StatDelta>
-    ) : (
-      t('projects.stats.noPrevious')
-    );
-  };
-
+  const weekLabels = data.weeks.map((week) => formatCalendarDay(week, locale));
+  const measured = data.tokensMeasured !== 'none' && (current.tokensByModel?.length ?? 0) > 0;
+  const headless = t('projects.stats.headlessOnly');
   const taskSeries: ChartSeries[] = [
     { key: 'completed', label: t('projects.stats.completed'), tone: 'chart-1' },
     { key: 'created', label: t('projects.stats.created'), tone: 'chart-2' },
   ];
-  const taskMax = Math.max(0, ...current.completedByWeek, ...current.createdByWeek);
-
-  const models = modelSeriesOf(current.tokensByModel ?? [], MODEL_TONES.length - 1);
-  const modelSeries: ChartSeries[] = models.map((row, index) => ({
-    key: String(index),
-    label:
-      row.model === 'other'
-        ? t('projects.stats.otherModels')
-        : (row.model ?? t('projects.stats.unknownModel')),
-    tone: MODEL_TONES[index] ?? 'muted',
-  }));
-  const headless = t('projects.stats.headlessOnly');
-  const tokenMax = Math.max(
-    0,
-    ...data.weeks.map((_, i) => Math.max(0, ...models.map((m) => m.byWeek[i] ?? 0))),
-  );
-  const costByWeek = current.costByWeek ?? [];
+  const tasks = { completed: current.completedByWeek, created: current.createdByWeek };
 
   return (
     <>
@@ -86,19 +48,33 @@ export function ProjectStatsSection({ projectId }: { projectId: string }) {
         <StatCard
           label={t('projects.stats.tasksCompleted')}
           value={current.tasksCompleted}
-          detail={delta(current.tasksCompleted, previous?.tasksCompleted, true)}
+          detail={
+            <StatsChange
+              now={current.tasksCompleted}
+              before={previous?.tasksCompleted}
+              higherIsBetter
+            />
+          }
         />
         <StatCard
           label={t('projects.stats.tasksCreated')}
           value={current.tasksCreated}
-          detail={delta(current.tasksCreated, previous?.tasksCreated, null)}
+          detail={
+            <StatsChange
+              now={current.tasksCreated}
+              before={previous?.tasksCreated}
+              higherIsBetter={null}
+            />
+          }
         />
         {measured && current.tokens !== null ? (
           <StatCard
             label={t('projects.stats.tokens')}
             value={formatTokens(current.tokens, locale)}
             unit={headless}
-            detail={delta(current.tokens, previous?.tokens, null)}
+            detail={
+              <StatsChange now={current.tokens} before={previous?.tokens} higherIsBetter={null} />
+            }
           />
         ) : null}
         {measured && current.costUsd !== null ? (
@@ -106,62 +82,30 @@ export function ProjectStatsSection({ projectId }: { projectId: string }) {
             label={t('projects.stats.cost')}
             value={formatUsd(current.costUsd, locale)}
             unit={headless}
-            detail={delta(current.costUsd, previous?.costUsd, false)}
+            detail={
+              <StatsChange
+                now={current.costUsd}
+                before={previous?.costUsd}
+                higherIsBetter={false}
+              />
+            }
           />
         ) : null}
       </div>
       <Panel title={t('projects.stats.tasksTitle')} meta={<ChartLegend series={taskSeries} />}>
         <AreaChart
           series={taskSeries}
-          points={data.weeks.map((_, i) => ({
-            label: week(i),
-            values: {
-              completed: current.completedByWeek[i] ?? 0,
-              created: current.createdByWeek[i] ?? 0,
-            },
-          }))}
-          ticks={niceTicks(taskMax)}
+          points={weeklyPoints(weekLabels, tasks)}
+          ticks={niceTicks(peakOf(tasks))}
           aria-label={t('projects.stats.tasksTitle')}
         />
       </Panel>
-      {measured ? (
-        <PanelGrid>
-          <Panel
-            title={t('projects.stats.tokensTitle')}
-            meta={<ChartLegend series={modelSeries} />}
-          >
-            <span className="text-xs text-fg-muted">{t('projects.stats.measuredHeadless')}</span>
-            <AreaChart
-              series={modelSeries}
-              points={data.weeks.map((_, i) => ({
-                label: week(i),
-                values: Object.fromEntries(
-                  models.map((m, index) => [String(index), m.byWeek[i] ?? 0]),
-                ),
-              }))}
-              ticks={niceTicks(tokenMax)}
-              format={(value) => formatTokens(value, locale)}
-              aria-label={t('projects.stats.tokensTitle')}
-            />
-          </Panel>
-          <Panel title={t('projects.stats.costTitle')} meta={t('projects.stats.measuredHeadless')}>
-            <AreaChart
-              series={[{ key: 'cost', label: t('projects.stats.cost'), tone: 'chart-3' }]}
-              points={data.weeks.map((_, i) => ({
-                label: week(i),
-                values: { cost: costByWeek[i] ?? 0 },
-              }))}
-              ticks={niceTicks(Math.max(0, ...costByWeek))}
-              format={(value) => formatUsd(value, locale)}
-              aria-label={t('projects.stats.costTitle')}
-            />
-          </Panel>
-        </PanelGrid>
-      ) : (
-        <Panel title={t('projects.stats.usageTitle')}>
-          <ProjectPanelEmpty>{t('projects.stats.notMeasured')}</ProjectPanelEmpty>
-        </Panel>
-      )}
+      <ProjectUsagePanels
+        current={current}
+        measured={measured}
+        weekLabels={weekLabels}
+        locale={locale}
+      />
     </>
   );
 }

@@ -6,8 +6,9 @@ export type ProjectView = 'overview' | 'stats';
 export function useProjectView() {
   const { view } = useSearch({ from: '/_authenticated/plan/projects_/$projectId' });
   const navigate = useNavigate({ from: '/plan/projects/$projectId' });
+  const current: ProjectView = view === 'stats' ? 'stats' : 'overview';
   return {
-    view: (view ?? 'overview') as ProjectView,
+    view: current,
     setView: (next: ProjectView) =>
       navigate({ search: (prev) => ({ ...prev, view: next === 'stats' ? 'stats' : undefined }) }),
   };

@@ -4,28 +4,24 @@ import {
   PageHeaderCrumbs,
   PageHeaderHere,
   PageHeaderRow,
-  ProjectOverviewSkeleton,
   SegmentedControl,
   SegmentedControlItem,
 } from '@oppenheimer/design-system-web';
 import { Settings2 } from '@oppenheimer/design-system-web/icons';
 import { useProjects } from '@oppenheimer/frontend-consumer/react';
-import { LoadingStatus, QueryState } from '@oppenheimer/frontend-web';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { useConsoleDialog } from '@/lib/console';
-import { ProjectStatsSkeleton } from '../components/project-stats-skeleton';
-import { type ProjectView, useProjectView } from '../hooks/use-project-view';
-import { ProjectOverviewSection } from '../sections/project-overview';
-import { ProjectStatsSection } from '../sections/project-stats';
+import { useProjectView } from '../hooks/use-project-view';
 import { ProjectStatsRange } from '../sections/project-stats-range';
+import { ProjectViewBody } from '../sections/project-view-body';
 
 /**
  * A project's page, opened from its card on Plan's Projects: the way back to
  * the cards, the name, its settings (the console's project dialog), and its
- * Overview or its Stats (`?view=stats`, with the period beside the switch),
- * each under Suspense with a key of its own. The name in the head is a plain
- * read, so it never blinks while a view loads.
+ * Overview or its Stats (`?view=stats`, with the period beside the switch)
+ * in `ProjectViewBody`. The name in the head is a plain read, so it never
+ * blinks while a view loads.
  */
 export function ProjectScreen({ projectId }: { projectId: string }) {
   const { t } = useTranslation();
@@ -73,7 +69,7 @@ export function ProjectScreen({ projectId }: { projectId: string }) {
       <div className="flex flex-wrap items-center gap-3">
         <SegmentedControl
           value={view}
-          onValueChange={(next) => setView(next as ProjectView)}
+          onValueChange={(next) => setView(next === 'stats' ? 'stats' : 'overview')}
           aria-label={t('projects.detail.views')}
         >
           <SegmentedControlItem value="overview">
@@ -87,32 +83,7 @@ export function ProjectScreen({ projectId }: { projectId: string }) {
           </span>
         ) : null}
       </div>
-      {view === 'stats' ? (
-        <QueryState key="stats">
-          <QueryState.Pending>
-            <ProjectStatsSkeleton />
-          </QueryState.Pending>
-          <QueryState.Error fallback={t('projects.stats.loadFailed')} />
-          <QueryState.Data>
-            <ProjectStatsSection projectId={projectId} />
-          </QueryState.Data>
-        </QueryState>
-      ) : (
-        <QueryState key="overview">
-          <QueryState.Pending>
-            <section aria-busy>
-              <LoadingStatus />
-              <ProjectOverviewSkeleton
-                labels={[t('projects.detail.milestones'), t('projects.detail.needsInput')]}
-              />
-            </section>
-          </QueryState.Pending>
-          <QueryState.Error fallback={t('projects.detail.loadFailed')} />
-          <QueryState.Data>
-            <ProjectOverviewSection projectId={projectId} />
-          </QueryState.Data>
-        </QueryState>
-      )}
+      <ProjectViewBody projectId={projectId} view={view} />
     </div>
   );
 }

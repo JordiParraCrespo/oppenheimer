@@ -2,6 +2,7 @@ import {
   heyApiSdk,
   type MilestoneResponseDto,
   type PlanStatsResponseDto,
+  type PlanStatsTotalsDto,
   type TaskResponseDto,
 } from '@oppenheimer/api-client';
 import { callApi } from '@oppenheimer/frontend-core';
@@ -12,7 +13,7 @@ import {
   toCreateSessionRequest,
   toStartCloudSessionRequest,
 } from '../sessions/sessions.repository';
-import type { PlanStats, PlanStatsQuery } from './plan-stats';
+import type { PlanStats, PlanStatsQuery, PlanStatsTotals } from './plan-stats';
 import {
   MilestoneEntity,
   type MilestoneInput,
@@ -24,33 +25,25 @@ import {
 } from './task.entity';
 import { TasksErrors } from './tasks.errors';
 
+/** A period's totals, with what was not measured as `null` whether the API left it out or sent it. */
+function toTotals(data: PlanStatsTotalsDto): PlanStatsTotals {
+  const { tasksCompleted, tasksCreated, tokens, costUsd } = data;
+  return { tasksCompleted, tasksCreated, tokens: tokens ?? null, costUsd: costUsd ?? null };
+}
+
 function toPlanStats(data: PlanStatsResponseDto): PlanStats {
   const { current, previous } = data;
   return {
     weeks: data.weeks,
     current: {
-      tasksCompleted: current.tasksCompleted,
-      tasksCreated: current.tasksCreated,
-      tokens: current.tokens ?? null,
-      costUsd: current.costUsd ?? null,
+      ...toTotals(current),
       completedByWeek: current.completedByWeek,
       createdByWeek: current.createdByWeek,
       tokensByModel:
-        current.tokensByModel?.map((row) => ({
-          model: row.model ?? null,
-          total: row.total,
-          byWeek: row.byWeek,
-        })) ?? null,
+        current.tokensByModel?.map((row) => ({ ...row, model: row.model ?? null })) ?? null,
       costByWeek: current.costByWeek ?? null,
     },
-    previous: previous
-      ? {
-          tasksCompleted: previous.tasksCompleted,
-          tasksCreated: previous.tasksCreated,
-          tokens: previous.tokens ?? null,
-          costUsd: previous.costUsd ?? null,
-        }
-      : null,
+    previous: previous ? toTotals(previous) : null,
     tokensMeasured: data.tokensMeasured,
   };
 }
