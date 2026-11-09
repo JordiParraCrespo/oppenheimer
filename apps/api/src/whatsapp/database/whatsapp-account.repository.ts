@@ -92,9 +92,14 @@ export class WhatsappAccountRepository
     );
   }
 
-  async saveOwnerCode(account: WhatsappAccountEntity): Promise<void> {
+  async saveOwnerCode(account: WhatsappAccountEntity, whileCodeHash?: string): Promise<void> {
     await this.repository.update(
-      { id: account.id, organizationId: account.organizationId, userId: account.userId },
+      {
+        id: account.id,
+        organizationId: account.organizationId,
+        userId: account.userId,
+        ...(whileCodeHash === undefined ? {} : { ownerCodeHash: whileCodeHash }),
+      },
       {
         ownerPendingPhone: account.ownerPendingPhone,
         ownerCodeHash: account.ownerCodeHash,

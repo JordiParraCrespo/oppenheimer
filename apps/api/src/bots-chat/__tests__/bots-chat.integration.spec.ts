@@ -48,6 +48,7 @@ import { TurnTranscript } from '../application/turn-transcript.policy';
 import { TurnWriteFactory } from '../application/turn-write.factory';
 import { BotApprovalMapper } from '../bot-approval.mapper';
 import { BotAttachmentMapper } from '../bot-attachment.mapper';
+import { BotConversationMapper } from '../bot-conversation.mapper';
 import { BotConversationSummaryMapper } from '../bot-conversation-summary.mapper';
 import { BotGoalMapper } from '../bot-goal.mapper';
 import { BotLoopMapper } from '../bot-loop.mapper';
@@ -221,7 +222,7 @@ describe('bots chat (integration)', () => {
       new OutboxService(dataSource),
       new BotTurnMapper(),
       new BotMessageMapper(),
-      new BotConversationRepository(dataSource),
+      new BotConversationRepository(dataSource, new BotConversationMapper()),
       new BotGoalMapper(),
       new BotLoopMapper(),
     );
@@ -632,7 +633,7 @@ describe('bots chat (integration)', () => {
   // channel's conversation behind.
   it('keeps a Telegram chat’s conversations apart from the console chat, split by /new in message order', async () => {
     const bot = await create('Telegram Bot');
-    const conversations = new BotConversationRepository(dataSource);
+    const conversations = new BotConversationRepository(dataSource, new BotConversationMapper());
     const chat = {
       kind: 'telegram' as const,
       organizationId,
@@ -752,7 +753,11 @@ describe('bots chat (integration)', () => {
       // The real bot lookup; a wake never reads a credential.
       const access = new BotModelAccessResolver(bots, {} as TurnCredentialsPort);
       wakeOn = new WakeOnTelegramCommandHandler(
-        new BotChannelWakeResolver(new BotConversationRepository(dataSource), turns, access),
+        new BotChannelWakeResolver(
+          new BotConversationRepository(dataSource, new BotConversationMapper()),
+          turns,
+          access,
+        ),
       );
     });
 
@@ -880,7 +885,7 @@ describe('bots chat (integration)', () => {
       await wake('60');
       const [queued] = await telegramTurns();
       const conversationId = queued?.conversationId ?? '';
-      const conversations = new BotConversationRepository(dataSource);
+      const conversations = new BotConversationRepository(dataSource, new BotConversationMapper());
       const channel = new BotTurnChannelPolicy(conversations);
       const onTelegram = (await turns.findForRun(queued?.id ?? '')).unwrap();
       expect(await channel.answerable(onTelegram)).toBe(true);
@@ -968,7 +973,7 @@ describe('bots chat (integration)', () => {
     beforeEach(async () => {
       bot = await create('Shop');
       whatsappAccountId = await insertWhatsappAccount();
-      conversations = new BotConversationRepository(dataSource);
+      conversations = new BotConversationRepository(dataSource, new BotConversationMapper());
     });
 
     /** The turn the owner's message queues there (wave 2's `whatsappTurn`). */
@@ -1405,7 +1410,9 @@ describe('bots chat (integration)', () => {
       owners,
       hosts,
       turns,
-      new BotTurnChannelPolicy(new BotConversationRepository(dataSource)),
+      new BotTurnChannelPolicy(
+        new BotConversationRepository(dataSource, new BotConversationMapper()),
+      ),
       { tools: () => [], catalog: () => [] } as unknown as BotToolboxFactory,
       {} as BotApprovalRequestFactory,
       { heldScopes: async () => new Set() } as unknown as BotOwnerPermissionsResolver,

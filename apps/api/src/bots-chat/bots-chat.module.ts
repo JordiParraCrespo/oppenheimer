@@ -83,6 +83,7 @@ import { TurnCancelWatchFactory } from './application/turn-cancel-watch.factory'
 import { TurnWriteFactory } from './application/turn-write.factory';
 import { BotApprovalMapper } from './bot-approval.mapper';
 import { BotAttachmentMapper } from './bot-attachment.mapper';
+import { BotConversationMapper } from './bot-conversation.mapper';
 import { BotConversationSummaryMapper } from './bot-conversation-summary.mapper';
 import { BotGoalMapper } from './bot-goal.mapper';
 import { BotLoopMapper } from './bot-loop.mapper';
@@ -391,6 +392,7 @@ const queryHandlers: Provider[] = [
     BotNoticeMapper,
     BotToolPermissionMapper,
     BotPermissionRuleMapper,
+    BotConversationMapper,
     BotConversationSummaryMapper,
     BotMemoryDreamMapper,
     BotAttachmentMapper,

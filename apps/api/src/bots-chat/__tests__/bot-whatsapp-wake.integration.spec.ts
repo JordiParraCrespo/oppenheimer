@@ -16,6 +16,7 @@ import { BotDocumentEntity } from '../../bots/domain/bot-document.entity';
 import { BotChannelWakeResolver } from '../application/bot-channel-wake.resolver';
 import { BotModelAccessResolver } from '../application/bot-model-access.resolver';
 import { BotWhatsappWakeDomainEventHandler } from '../application/event-handlers/bot-whatsapp-wake.domain-event-handler';
+import { BotConversationMapper } from '../bot-conversation.mapper';
 import { BotGoalMapper } from '../bot-goal.mapper';
 import { BotLoopMapper } from '../bot-loop.mapper';
 import { BotMessageMapper } from '../bot-message.mapper';
@@ -81,14 +82,14 @@ describe('waking a bot on WhatsApp (integration)', () => {
       new OutboxService(dataSource),
       new BotTurnMapper(),
       new BotMessageMapper(),
-      new BotConversationRepository(dataSource),
+      new BotConversationRepository(dataSource, new BotConversationMapper()),
       new BotGoalMapper(),
       new BotLoopMapper(),
     );
     // The real bot lookup; a wake never reads a credential.
     const wakeOn = new WakeOnWhatsappCommandHandler(
       new BotChannelWakeResolver(
-        new BotConversationRepository(dataSource),
+        new BotConversationRepository(dataSource, new BotConversationMapper()),
         turns,
         new BotModelAccessResolver(bots, {} as TurnCredentialsPort),
       ),

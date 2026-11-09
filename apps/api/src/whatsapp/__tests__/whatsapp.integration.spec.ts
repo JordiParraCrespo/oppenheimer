@@ -278,7 +278,6 @@ describe('whatsapp (integration)', () => {
 
     /** What intake owes the owner's messages: an event for each, carrying its place. */
     const owed: () => WhatsappMessagesOwed = () => ({
-      ownerPhone: OWNER,
       answeringBotId: defaultBot,
       isOwners: (draft) => !draft.fromMe && draft.senderId === OWNER,
       eventFor: (stored, place) =>
@@ -334,8 +333,12 @@ describe('whatsapp (integration)', () => {
         ],
         owed(),
       );
+      const stranger = '34600333444@s.whatsapp.net';
       await messages.insertMany(
-        [message(mine, { chatId: OWNER, senderId: '34600333444@s.whatsapp.net', text: '/new' })],
+        [
+          message(mine, { chatId: stranger, senderId: stranger, text: '/new' }),
+          fromOwner('/new', { fromMe: true }),
+        ],
         owed(),
       );
       const [later] = await messages.insertMany([fromOwner('anything else?')], owed());
@@ -349,6 +352,25 @@ describe('whatsapp (integration)', () => {
       expect(await messages.findSwitchedBot({ organizationId, accountId: mine.id }, OWNER)).toBe(
         shop,
       );
+    });
+
+    // What breaks this: an owner in Brazil confirmed with the ninth digit while WhatsApp
+    // writes their number without it, whose /new is answered but starts nothing.
+    it('starts a conversation at the owner’s /new whichever form WhatsApp writes their number in', async () => {
+      const written = '551187654321@s.whatsapp.net';
+      const fromBrazil = (text: string) =>
+        message(mine, { chatId: written, senderId: written, chatName: 'Me', text });
+      const brazil = (): WhatsappMessagesOwed => ({
+        ...owed(),
+        isOwners: (draft) => !draft.fromMe && draft.chatId === written,
+      });
+      await messages.insertMany([fromBrazil('hello')], brazil());
+      const [renewed, after] = await messages.insertMany(
+        [fromBrazil('/new'), fromBrazil('fresh start')],
+        brazil(),
+      );
+
+      expect(after?.place.startsAt).toBe(renewed?.seq);
     });
 
     // What breaks this: a "Name: …" for the bot already answering counted as a switch, so an
@@ -455,6 +477,27 @@ describe('whatsapp (integration)', () => {
       const locked = (await accounts.findOwnById(scopeOf(ana), mine.id)).unwrap();
       expect(locked.ownerCodeAttempts).toBe(5);
       expect(locked.ownerCodeHash).not.toBe(hashWhatsappOwnerCode('not-it'));
+    });
+
+    // What breaks this: two code requests overlap, the first one's send fails after the
+    // second's was sent, and forgetting the first drops the code the owner just received.
+    it('forgets a failed code only while it is still the one waiting', async () => {
+      mine.nameOwner(OWNER, new Date());
+      await accounts.saveOwnerCode(mine);
+      const failed = mine.ownerCodeHash ?? '';
+      const newer = (await accounts.findOwnById(scopeOf(ana), mine.id)).unwrap();
+      newer.nameOwner(OWNER, new Date());
+      await accounts.saveOwnerCode(newer);
+      const sent = newer.ownerCodeHash ?? '';
+
+      mine.forgetOwnerCode();
+      await accounts.saveOwnerCode(mine, failed);
+      expect((await accounts.findOwnById(scopeOf(ana), mine.id)).unwrap().ownerCodeHash).toBe(sent);
+
+      // Its own failure does forget it.
+      newer.forgetOwnerCode();
+      await accounts.saveOwnerCode(newer, sent);
+      expect((await accounts.findOwnById(scopeOf(ana), mine.id)).unwrap().ownerCodeHash).toBeNull();
     });
 
     it('confirms the owner with the waiting code, clearing it', async () => {

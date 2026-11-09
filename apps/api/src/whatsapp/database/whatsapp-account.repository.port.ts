@@ -26,8 +26,12 @@ export interface WhatsappAccountRepositoryPort {
   save(account: WhatsappAccountEntity): Promise<void>;
   /** Writes which Oppenheimer bot answers here by default, and nothing else. */
   saveAnswering(account: WhatsappAccountEntity): Promise<void>;
-  /** Writes the waiting code (`nameOwner`, or its forgetting), and nothing else. */
-  saveOwnerCode(account: WhatsappAccountEntity): Promise<void>;
+  /**
+   * Writes the waiting code (`nameOwner`, or its forgetting), and nothing
+   * else; with `whileCodeHash`, only while that code is still the one waiting,
+   * so forgetting a code whose send failed never drops a newer one.
+   */
+  saveOwnerCode(account: WhatsappAccountEntity, whileCodeHash?: string): Promise<void>;
   /**
    * Writes what entering a code came to (`confirmOwner`: the owner, or one
    * more wrong try), only while the code it was checked against is still the

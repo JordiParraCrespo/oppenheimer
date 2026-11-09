@@ -19,8 +19,6 @@ export interface WhatsappAccountRef {
  * event built from its place, staged in the transaction that stored it.
  */
 export interface WhatsappMessagesOwed {
-  /** The confirmed owner's own number: only their `/new`s start a conversation. */
-  ownerPhone: string;
   /** The number's default bot, for a chat with no switch at or before a message. */
   answeringBotId: string | null;
   /** Whether a new message is the owner's, to be placed. */

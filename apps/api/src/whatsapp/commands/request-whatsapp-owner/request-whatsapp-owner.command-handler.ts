@@ -60,13 +60,15 @@ export class RequestWhatsappOwnerCommandHandler
       });
     }
     await this.accounts.saveOwnerCode(account);
+    const issued = account.ownerCodeHash ?? '';
     const text = whatsappOwnerCodeLine(named.code);
     let sent: { id: string; sentAt: Date };
     try {
       sent = whatsappSentOrThrow(await this.device.send(account.hostId, chatId, text));
     } catch (error) {
+      // Only this request's code: a newer one, already sent, stays.
       account.forgetOwnerCode();
-      await this.accounts.saveOwnerCode(account);
+      await this.accounts.saveOwnerCode(account, issued);
       throw error;
     }
     await this.messages.recordBotSend(

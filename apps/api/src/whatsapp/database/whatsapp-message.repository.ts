@@ -228,21 +228,23 @@ async function placesWithin(
   // IDX_whatsapp_message_switch and IDX_whatsapp_message_new, once per
   // message: the last switch (sw), the last one before it to another bot
   // (other), the first of the run between them (took), and the last /new.
+  // Only the owner's direct chat is placed, and every message there that is
+  // not the number's own is the owner's, whichever form WhatsApp wrote their
+  // number in (Brazil, Mexico), so the /new is found by its chat alone.
   const rows: { id: string; switchBotId: string | null; startsAt: string }[] = await manager.query(
     `SELECT m.id,
               sw."switchesToBotId" AS "switchBotId",
               GREATEST(CASE
                 WHEN sw.seq IS NULL THEN 0
-                WHEN other.seq IS NULL AND sw."switchesToBotId" = $7::uuid THEN 0
+                WHEN other.seq IS NULL AND sw."switchesToBotId" = $6::uuid THEN 0
                 ELSE took.seq
               END, COALESCE((
                 SELECT n.seq FROM whatsapp_message n
                  WHERE n."organizationId" = $1 AND n."accountId" = $2 AND n."chatId" = m.chat
-                   AND ${WHATSAPP_NEW_COMMAND_SQL}
-                   AND n."senderId" = $3 AND n.seq <= m.seq
+                   AND ${WHATSAPP_NEW_COMMAND_SQL} AND n.seq <= m.seq
                  ORDER BY n.seq DESC LIMIT 1
               ), 0))::text AS "startsAt"
-         FROM unnest($4::uuid[], $5::text[], $6::bigint[]) AS m(id, chat, seq)
+         FROM unnest($3::uuid[], $4::text[], $5::bigint[]) AS m(id, chat, seq)
          LEFT JOIN LATERAL (
            SELECT s.seq, s."switchesToBotId" FROM whatsapp_message s
             WHERE s."organizationId" = $1 AND s."accountId" = $2 AND s."chatId" = m.chat
@@ -266,7 +268,6 @@ async function placesWithin(
     [
       first.organizationId,
       first.accountId,
-      owed.ownerPhone,
       owners.map((owner) => owner.id),
       owners.map((owner) => owner.chatId),
       owners.map((owner) => owner.seq),

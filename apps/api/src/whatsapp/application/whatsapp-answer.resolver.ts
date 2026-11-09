@@ -103,10 +103,8 @@ export class WhatsappAnswerResolver {
     account: WhatsappAccountEntity,
     batch: WhatsappDecidedBatch,
   ): WhatsappMessagesOwed | undefined {
-    const ownerPhone = account.ownerPhone;
-    if (!ownerPhone) return undefined;
+    if (!account.ownerPhone) return undefined;
     return {
-      ownerPhone,
       answeringBotId: account.answeringBotId,
       isOwners: (draft) => batch.actionOf(draft).kind === 'owner',
       eventFor: (message, place) => {

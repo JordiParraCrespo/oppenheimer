@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { DataSource, type EntityManager } from 'typeorm';
+import { type BotConversationChatRecord, BotConversationMapper } from '../bot-conversation.mapper';
 import {
   type ChannelConversationStart,
   channelConversationFor,
@@ -18,19 +19,12 @@ const ACCOUNT_COLUMN = {
   whatsapp: '"whatsappAccountId"',
 } as const satisfies Record<BotChannelChat['kind'], string>;
 
-/** The row a channel conversation is read back as. */
-interface ChannelChatRow {
-  organizationId: string;
-  botId: string;
-  kind: 'console' | BotChannelChat['kind'];
-  telegramAccountId: string | null;
-  whatsappAccountId: string | null;
-  chatId: string | null;
-}
-
 @Injectable()
 export class BotConversationRepository implements BotConversationRepositoryPort {
-  constructor(private readonly dataSource: DataSource) {}
+  constructor(
+    private readonly dataSource: DataSource,
+    private readonly mapper: BotConversationMapper,
+  ) {}
 
   async conversationAt(chat: BotChannelChat, startsAt: string, messageId: string): Promise<string> {
     const account = ACCOUNT_COLUMN[chat.kind];
@@ -67,13 +61,13 @@ export class BotConversationRepository implements BotConversationRepositoryPort 
     conversationId: string,
   ): Promise<BotChannelChat | null> {
     // PK_bot_conversation.
-    const [row]: ChannelChatRow[] = await this.dataSource.query(
+    const [row]: BotConversationChatRecord[] = await this.dataSource.query(
       `SELECT "organizationId", "botId", kind, "telegramAccountId", "whatsappAccountId", "chatId"
          FROM bot_conversation
         WHERE "organizationId" = $1 AND id = $2 AND kind <> 'console'`,
       [organizationId, conversationId],
     );
-    return row ? channelChatOf(row) : null;
+    return row ? this.mapper.toChannelChat(row) : null;
   }
 
   async deleteWithin(manager: EntityManager, organizationId: string, botId: string): Promise<void> {
@@ -118,29 +112,4 @@ export class BotConversationRepository implements BotConversationRepositoryPort 
 
 function accountIdOf(chat: BotChannelChat): string {
   return chat.kind === 'telegram' ? chat.telegramAccountId : chat.whatsappAccountId;
-}
-
-/** A channel conversation's row as its chat; null once its account was disconnected. */
-function channelChatOf(row: ChannelChatRow): BotChannelChat | null {
-  const { organizationId, botId, chatId } = row;
-  if (chatId === null) return null;
-  if (row.kind === 'telegram' && row.telegramAccountId) {
-    return {
-      kind: 'telegram',
-      organizationId,
-      botId,
-      chatId,
-      telegramAccountId: row.telegramAccountId,
-    };
-  }
-  if (row.kind === 'whatsapp' && row.whatsappAccountId) {
-    return {
-      kind: 'whatsapp',
-      organizationId,
-      botId,
-      chatId,
-      whatsappAccountId: row.whatsappAccountId,
-    };
-  }
-  return null;
 }
