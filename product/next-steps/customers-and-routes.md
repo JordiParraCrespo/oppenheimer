@@ -168,9 +168,9 @@ from Acme. Note 25 has one memory per bot, shared by every conversation
   the owner carries neither, and only those are the bot's own.
 - **A turn reads** the bot's own facts, plus that customer's, or that
   conversation's when the sender is no customer. Never another
-  customer's or another stranger's. *Changed 2026-11-09: a customer's or
-  contact's turn no longer reads the bot's own facts
-  ([answering-on-telegram-and-whatsapp.md](answering-on-telegram-and-whatsapp.md) §3).*
+  customer's or another stranger's. *Changed 2026-11-09: which facts a
+  customer's turn reads is now
+  [answering-on-telegram-and-whatsapp.md](answering-on-telegram-and-whatsapp.md) §3.*
 - **Making a customer** from a conversation moves its facts to the
   customer (`conversationId` cleared, `customerId` set), in the same
   transaction that adds the identity.
@@ -297,10 +297,6 @@ These come after channels.md slice 1 (the core and email to one bot).
   comes from Slack do this, from WhatsApp the other thing"), with some
   WhatsApp customers each on a bot of their own. Routes replace the
   account's single bot; one priority list of five match kinds, the first match wins.
-- 2026-11-09: a Telegram bot is a bot's own identity, so it stays bound to
-  one bot and routes do not apply to it; a WhatsApp number gets a default
-  bot as an account route. A contact's turn (not only a customer's) has §6's
-  tools. Neither reads the bot's own facts any more (§5 changed): they hold
-  what the owner told the bot, and a WhatsApp contact routed to a bot is a
-  customer here; what a bot should know for everyone goes in its documents
-  ([answering-on-telegram-and-whatsapp.md](answering-on-telegram-and-whatsapp.md) §3).
+- 2026-11-09: Telegram bots stay bound to one bot, outside routes, and
+  §5's memory read changed; the decision is
+  [answering-on-telegram-and-whatsapp.md](answering-on-telegram-and-whatsapp.md).

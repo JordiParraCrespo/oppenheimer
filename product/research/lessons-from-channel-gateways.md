@@ -331,11 +331,5 @@ design it fed is
   to the agent. Each profile can pair its own session.
 - **Per-chat overrides** set a room's model, provider and prompt.
 
-What we take: deny by default; the owner recorded when the bot is
-connected; silence for strangers on a WhatsApp number of one's own and one
-fixed, rate-limited line on Telegram; three waiting at most; groups off
-until allowed by id; the loop guard; the dedicated-number mode on WhatsApp,
-the owner writing in from their personal number. What we change: no pairing codes typed in a chat (the owner
-allows a held sender in the console, so there is nothing to guess and no
-lockout to keep); approvals answered by the owner in the console only; and
-an admitted contact gets a narrower tool set, not only fewer commands.
+What we took from it, and what we changed, is
+[`next-steps/answering-on-telegram-and-whatsapp.md`](../next-steps/answering-on-telegram-and-whatsapp.md).
