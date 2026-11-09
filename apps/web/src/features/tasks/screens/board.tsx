@@ -4,8 +4,9 @@ import { useTranslation } from 'react-i18next';
 import { BoardSkeleton } from '../components/board-skeleton';
 import { StartSessionDialog } from '../dialogs/start-session';
 import { TaskDialog } from '../dialogs/task';
+import { useBoardFilter } from '../hooks/use-board-filter';
 import { useNewTaskShortcut } from '../hooks/use-new-task-shortcut';
-import { NEW_TASK } from '../lib/board-search';
+import { closingTask, NEW_TASK, startingSession } from '../lib/board-search';
 import { BoardColumns } from '../sections/board-columns';
 import { BoardHeader } from '../sections/board-header';
 import { PlanFilters } from '../sections/plan-filters';
@@ -21,7 +22,8 @@ const board = getRouteApi('/_authenticated/plan/');
 export function BoardScreen() {
   const { t } = useTranslation();
   const navigate = board.useNavigate();
-  const { start } = board.useSearch();
+  const { task, start } = board.useSearch();
+  const filter = useBoardFilter();
   const openNew = () => navigate({ search: (previous) => ({ ...previous, task: NEW_TASK }) });
   useNewTaskShortcut(openNew);
 
@@ -40,7 +42,12 @@ export function BoardScreen() {
           <BoardColumns />
         </QueryState.Data>
       </QueryState>
-      <TaskDialog />
+      <TaskDialog
+        open={task}
+        filter={filter}
+        onClose={() => navigate({ search: closingTask })}
+        onStartSession={(id) => navigate({ search: startingSession(id) })}
+      />
       <StartSessionDialog
         taskId={start}
         onClose={() => navigate({ search: (previous) => ({ ...previous, start: undefined }) })}

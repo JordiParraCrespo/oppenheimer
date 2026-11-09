@@ -3,12 +3,10 @@ import { Play, X } from '@oppenheimer/design-system-web/icons';
 import type { TaskEntity } from '@oppenheimer/frontend-consumer';
 import { useHosts, useSessions, useUnlinkTaskSession } from '@oppenheimer/frontend-consumer/react';
 import { ErrorAlert, RelativeTime } from '@oppenheimer/frontend-web';
-import { getRouteApi, Link } from '@tanstack/react-router';
+import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { SESSION_STATUS, sessionStateOf } from '../lib/session-state';
 import { LinkSessionPicker } from './link-session-picker';
-
-const board = getRouteApi('/_authenticated/plan/');
 
 /**
  * The task dialog's Sessions row (`18-plan-product.md` §4): each linked
@@ -16,9 +14,14 @@ const board = getRouteApi('/_authenticated/plan/');
  * and Link existing. Both of those attach, and attaching is what moves a task
  * out of To do.
  */
-export function TaskSessionsRow({ task }: { task: TaskEntity }) {
+export function TaskSessionsRow({
+  task,
+  onStartSession,
+}: {
+  task: TaskEntity;
+  onStartSession: (taskId: string) => void;
+}) {
   const { t } = useTranslation();
-  const navigate = board.useNavigate();
   const { data: sessions } = useSessions({
     select: (rows) => new Map(rows.map((row) => [row.id, row])),
   });
@@ -98,9 +101,7 @@ export function TaskSessionsRow({ task }: { task: TaskEntity }) {
             variant="secondary"
             size="sm"
             disabled={task.isDone}
-            onClick={() =>
-              navigate({ search: (previous) => ({ ...previous, task: undefined, start: task.id }) })
-            }
+            onClick={() => onStartSession(task.id)}
           >
             <Play />
             {t('tasks.dialog.startSession')}

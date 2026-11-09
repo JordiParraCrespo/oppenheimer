@@ -11,7 +11,7 @@ import {
 import { Play } from '@oppenheimer/design-system-web/icons';
 import { useMoveTask, useSuspensePlan } from '@oppenheimer/frontend-consumer/react';
 import { ErrorAlert, formatCalendarDay, useDragLabels, useLocale } from '@oppenheimer/frontend-web';
-import { getRouteApi, useNavigate } from '@tanstack/react-router';
+import { getRouteApi } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { useScopeProject } from '../hooks/use-scope-project';
 import { useTodoDay } from '../hooks/use-todo-day';
@@ -24,7 +24,7 @@ const todo = getRouteApi('/_authenticated/plan/todo');
  * The day's tasks (the 2026-11-08 `Tasks` frame), each a `TodoRow`: its
  * milestone and when it is due under the title, its status (the board's
  * dot and column), the time it is due at, its project. Ticking one moves it to Done (or back to To do) as the board's
- * tick does; its title opens it on the board; its play button opens Start
+ * tick does; its title opens it here, in the task dialog; its play button opens Start
  * session for it on this screen (`?start=`), on any task not done; its grip
  * drags it into the reader's own order for the day, kept on this device
  * (`useTodoOrder`). It reads under Suspense, in the screen's `QueryState`; a
@@ -36,7 +36,6 @@ export function TodoList() {
   const { day, today } = useTodoDay();
   const { overdue } = todo.useSearch();
   const { projectIds } = useScopeProject();
-  const go = useNavigate();
   const navigate = todo.useNavigate();
   const read = useSuspensePlan();
   const move = useMoveTask();
@@ -127,7 +126,9 @@ export function TodoList() {
                       afterTaskId: null,
                     })
                   }
-                  onOpen={() => go({ to: '/plan', search: { task: task.id } })}
+                  onOpen={() =>
+                    navigate({ search: (previous) => ({ ...previous, task: task.id }) })
+                  }
                   action={
                     task.isDone ? undefined : (
                       <IconButton

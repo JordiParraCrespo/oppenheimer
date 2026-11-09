@@ -317,7 +317,7 @@ test('To do: a task added to today, ticked done, and the overdue switch', async 
   await expect(row).toContainText('due today');
   await expect(add).toHaveValue('');
 
-  // Ticking does not open the task; the title does, on the board.
+  // Ticking does not open the task; the title does (below).
   await row.getByRole('checkbox', { name: 'Mark as done' }).click();
   await expect(row.getByRole('checkbox', { name: 'Mark as not done' })).toBeChecked();
   await expect(page).toHaveURL(/\/plan\/todo/);
@@ -348,8 +348,16 @@ test('To do: a task added to today, ticked done, and the overdue switch', async 
   await expect(page).toHaveURL(/overdue=off/);
   await page.getByRole('button', { name: 'Today', exact: true }).click();
   await expect(row).toBeVisible();
+  // The title opens the task on To do itself, and saving it stays on the day.
   await row.getByRole('button', { name: /^Pay the hosting invoice/ }).click();
-  await expect(page.getByRole('dialog', { name: 'Edit task' })).toBeVisible();
+  const dialog = page.getByRole('dialog', { name: 'Edit task' });
+  await expect(dialog).toBeVisible();
+  await expect(page).toHaveURL(/\/plan\/todo\?.*task=/);
+  await dialog.getByRole('button', { name: 'Save' }).click();
+  await expect(dialog).toBeHidden();
+  await expect(page).toHaveURL(/\/plan\/todo/);
+  await expect(page).not.toHaveURL(/task=/);
+  await expect(row).toBeVisible();
   await owner.api.dispose();
 });
 
