@@ -1222,3 +1222,9 @@ earlier note:
   entries (2,000, dated), so a save leaves the prompt cache warm, the turn's
   rules tell it to save what it learns without asking, and a full memory
   of 500 drops its oldest log fact instead of refusing.
+- `versions/mvp/25-bots.md` §4.1 (2026-10-31) had a bot save a skill only
+  when the person asked. On 2026-11-09, from Hermes Agent's learning loop,
+  a bot may save one on its own after hard work likely to come again (at
+  most one a turn, never anything private), a turn of 8 tool calls with no
+  skill used or saved reminds it once, and `patch_skill` fixes one passage
+  of a skill: the bot's own unasked, the person's only when they ask.

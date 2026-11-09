@@ -597,6 +597,7 @@ one row of `bot_skill`, the bot's own, at most 50 a bot.
 |------|------|---------|
 | `use_skill` | Read one of its skills in full, to follow it | auto |
 | `save_skill` | Save a skill, or replace the one of that name, as the bot's | auto |
+| `patch_skill` | Replace one exact passage of a skill's body, as the bot's (below) | auto |
 | `delete_skill` | Delete a skill and its command | auto |
 
 - **Its name is its command.** Lowercase letters, digits and hyphens, at
@@ -625,9 +626,31 @@ one row of `bot_skill`, the bot's own, at most 50 a bot.
   adds, edits and deletes. The composer's `/` menu offers the ones the
   person may run as the command is typed: arrows move, Tab or Enter picks,
   Escape closes it.
+- **The bot learns on its own** (2026-11-09, from Hermes Agent's learning
+  loop). A turn offered `save_skill` is told, in the same words every turn,
+  that it may save a skill unasked after a task that took real work (many
+  tool calls, a dead end worked around) and is likely to come again: never
+  for a one-off, anything a few steps long, or anything holding a secret or
+  the person's private data; at most one new skill a turn, named in its
+  answer. A turn that has run 8 of its own tool calls
+  (`BOT_SKILL_NUDGE_AFTER_STEPS`) with no skill used, saved or fixed, and
+  that did not open with one, is reminded once: a line after that call's
+  result, which the chat's stored step does not keep. A call that raised a
+  card does not carry it, and a `delegate` child or a turn not offered
+  `save_skill` never gets it. `use_skill` ends by telling the bot to fix a
+  step it found wrong or stale with `patch_skill` once the task is done, and
+  say so. `patch_skill` replaces one exact, unique passage (none, or more
+  than one, changes nothing and says why), and the result stays within the
+  body's limit. A skill the bot wrote last it fixes unasked; one the person
+  wrote last only when they asked in this conversation, otherwise it
+  proposes the change in its answer. A built-in is never a skill to fix.
+  Each save, fix or delete is a line in the chat's activity like any other
+  call ("Save skill", "Patch skill" and the name), the skill in Settings →
+  Skills marked as the bot's.
 - **Not built.** Grok Bot's library shared by all of a person's bots, a
   registry like OpenClaw's ClawHub, and skills that dispatch straight to a
-  tool.
+  tool; Hermes Agent's review pass after a turn, with a model call of its
+  own, and a skill's history to undo a fix.
 
 **Built-in commands** (2026-11-02, from Claude Code's commands,
 `code.claude.com/docs/en/commands`). A built-in is a `/<name>` Oppenheimer
@@ -1494,3 +1517,9 @@ The decisions it produced:
   whose history only grows until a summary, and Codex, which sends its
   conversation's id as `prompt_cache_key`. It refines 2026-10-15's history
   budget, which kept the newest messages that fit.
+- 2026-11-09: **a bot saves and fixes its own skills** (§4.1, Skills), from
+  Hermes Agent's learning loop. It may save one unasked after hard work
+  likely to come again, is reminded once a turn after 8 tool calls with no
+  skill, and fixes a stale step with `patch_skill`: its own skills unasked,
+  the person's only when asked. It refines 2026-10-31's skills, which the
+  bot saved only when asked.
