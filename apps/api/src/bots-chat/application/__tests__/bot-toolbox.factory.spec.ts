@@ -1,6 +1,10 @@
 import { emptyScope } from '@oppenheimer/backend-authz';
 import type { BotTurnOrigin, Scope } from '@oppenheimer/shared';
 import { z } from 'zod/v4';
+import {
+  BOT_SKILL_NUDGE_AFTER_STEPS,
+  withoutSkillNudge,
+} from '../../domain/bot-skill-learning.policy';
 import { NO_PERMISSIONS } from '../../domain/bot-tool-permission.policy';
 
 const STANDING = { preset: 'full' as const, permissions: NO_PERMISSIONS };
@@ -189,6 +193,75 @@ describe('BotToolboxFactory', () => {
 
     expect(result.isError).toBe(true);
     expect(result.content).toContain('(sessions:write)');
+  });
+
+  describe('the reminder to save a skill', () => {
+    const signal = new AbortController().signal;
+    const reads = (name: string) =>
+      defineBotTool({
+        name,
+        scope: 'bots:read',
+        readOnly: true,
+        description: `${name}.`,
+        input: z.object({}),
+        run: async () => 'ok',
+      });
+    const saveSkill = defineBotTool({
+      name: 'save_skill',
+      scope: 'bots:write',
+      description: 'Saves a skill.',
+      input: z.object({}),
+      run: async () => 'saved',
+    });
+    const learning = toolboxOf({
+      group: 'self',
+      definitions: () => [reads('get_self'), saveSkill],
+    });
+    const BOTS = holding('bots:read', 'bots:write');
+
+    /** Runs `get_self` `count` times; what each call answered. */
+    async function calls(tools: ReturnType<BotToolboxFactory['tools']>, count: number) {
+      const getSelf = tools.find((bound) => bound.name === 'get_self');
+      const answers: string[] = [];
+      for (let i = 0; i < count; i += 1) {
+        answers.push((await getSelf?.run({}, { signal }))?.content ?? '');
+      }
+      return answers;
+    }
+
+    it('rides the result of the call that reaches the threshold, once a turn', async () => {
+      const answers = await calls(learning.tools(context, null, BOTS), 12);
+      const reminded = answers.flatMap((answer, i) =>
+        answer.includes('save_skill') ? [i + 1] : [],
+      );
+      expect(reminded).toEqual([BOT_SKILL_NUDGE_AFTER_STEPS]);
+      expect(withoutSkillNudge(answers[BOT_SKILL_NUDGE_AFTER_STEPS - 1] ?? '')).toBe('ok');
+    });
+
+    it('counts each turn on its own', async () => {
+      await calls(learning.tools(context, null, BOTS), BOT_SKILL_NUDGE_AFTER_STEPS - 1);
+      const next = await calls(learning.tools(context, null, BOTS), 1);
+      expect(next).toEqual(['ok']);
+    });
+
+    it('never reaches a turn not offered save_skill', async () => {
+      const answers = await calls(learning.tools(context, ['bots:read'], BOTS), 12);
+      expect(answers.every((answer) => answer === 'ok')).toBe(true);
+    });
+
+    it('never reaches a delegate child', async () => {
+      const [child] = learning.readOnlyTools(context, null, BOTS);
+      const answers: string[] = [];
+      for (let i = 0; i < 12; i += 1)
+        answers.push((await child?.run({}, { signal }))?.content ?? '');
+      expect(answers.every((answer) => answer === 'ok')).toBe(true);
+    });
+
+    it('stays away from a turn opened by a skill the person ran', async () => {
+      const ran = { ...context, ranCommand: 'release-notes' };
+      const answers = await calls(learning.tools(ran, null, BOTS), 12);
+      expect(answers.every((answer) => answer === 'ok')).toBe(true);
+    });
   });
 
   describe('what a delegate child is offered', () => {

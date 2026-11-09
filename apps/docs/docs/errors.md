@@ -887,7 +887,7 @@ a card already answered or dismissed, or retired because a message reached
 the bot first.
 
 `BOTS_038` to `BOTS_040` are a bot's skills (Settings → Skills, and the bot's
-own `save_skill`). `BOTS_038` is a skill that is not this bot's or not in the
+own `save_skill` and `patch_skill`). `BOTS_038` is a skill that is not this bot's or not in the
 caller's workspace. `BOTS_039` is a name another of the bot's skills has: a
 skill's name is its slash command, so rename one of them. `BOTS_040` is a
 skill past the bot's fifty: delete one first.

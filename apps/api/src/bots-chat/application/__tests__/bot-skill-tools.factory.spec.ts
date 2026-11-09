@@ -22,8 +22,10 @@ import type { BotToolContext } from '../bot-tool.factory';
  * The bot's skill tools: each reads or writes through the bots module's own
  * query and commands as the owner, on the turn's bot. `use_skill` hands back
  * the body only of a skill the bot may use unasked; `save_skill` creates one
- * or replaces the one of that name, as the bot's. The commands are the bots
- * module's specs.
+ * or replaces the one of that name, as the bot's; `patch_skill` replaces one
+ * passage of a skill the bot wrote, or of the person's only when they asked.
+ * The commands are the bots module's specs; the patch rule's whole table is
+ * `bot-skill-learning.policy.spec.ts`.
  */
 const owner = emptyScope('owner-1', 'org-1');
 const BOT_ID = '11111111-1111-4111-8111-111111111111';
@@ -44,6 +46,7 @@ const context: BotToolContext = {
 function skill(
   name: string,
   invocable: { userInvocable?: boolean; modelInvocable?: boolean } = {},
+  writtenBy: 'user' | 'bot' = 'user',
 ) {
   return BotSkillEntity.createNew({
     organizationId: 'org-1',
@@ -52,7 +55,7 @@ function skill(
     description: `Does ${name}.`,
     body: `Steps for ${name}.`,
     ...invocable,
-    actor: { kind: 'user', userId: 'owner-1' },
+    actor: writtenBy === 'bot' ? { kind: 'bot' } : { kind: 'user', userId: 'owner-1' },
   });
 }
 
@@ -100,7 +103,7 @@ describe('BotSkillToolsFactory', () => {
     const result = await call('use_skill', { name: 'triage' });
     expect(result).toMatchObject({ isError: false });
     expect(result.content).toBe(
-      'Skill "triage": Does triage. Follow it for this request.\n\n<skill name="triage">\nSteps for triage.\n</skill>',
+      'Skill "triage": Does triage. Follow it for this request.\n\n<skill name="triage">\nSteps for triage.\n</skill>\n\nIf a step turns out wrong or out of date while you follow it, fix it with patch_skill once the task is done, and say so in your answer.',
     );
   });
 
@@ -172,6 +175,72 @@ describe('BotSkillToolsFactory', () => {
     const result = await call('save_skill', { name: 'Release Notes', description: 'x', body: 'y' });
     expect(result).toMatchObject({ isError: true });
     expect(commandBus.execute).not.toHaveBeenCalled();
+  });
+
+  describe('patch_skill', () => {
+    it('fixes one passage of a skill the bot wrote, unasked, as the bot', async () => {
+      const own = skill('triage', {}, 'bot');
+      const { call, commandBus } = setup([own]);
+      const result = await call('patch_skill', {
+        name: 'triage',
+        old_text: 'Steps',
+        new_text: 'Three steps',
+      });
+      expect(result).toMatchObject({ isError: false });
+      expect(result.content).toMatch(/^Fixed skill "triage"/);
+      const [command] = commandBus.execute.mock.calls[0];
+      expect(command).toBeInstanceOf(UpdateBotSkillCommand);
+      expect(command).toMatchObject({
+        skillId: own.id,
+        author: 'bot',
+        change: { body: 'Three steps for triage.' },
+      });
+    });
+
+    it('refuses to change a skill the person wrote unless they asked, and changes nothing', async () => {
+      const { call, commandBus } = setup([skill('triage')]);
+      const result = await call('patch_skill', {
+        name: 'triage',
+        old_text: 'Steps',
+        new_text: 'Three steps',
+      });
+      expect(result).toMatchObject({ isError: true });
+      expect(result.content).toContain('Propose the change in your answer instead');
+      expect(commandBus.execute).not.toHaveBeenCalled();
+
+      const asked = await call('patch_skill', {
+        name: 'triage',
+        old_text: 'Steps',
+        new_text: 'Three steps',
+        asked_by_person: true,
+      });
+      expect(asked).toMatchObject({ isError: false });
+      expect(commandBus.execute).toHaveBeenCalledTimes(1);
+    });
+
+    it('says why a passage that is not there changes nothing', async () => {
+      const { call, commandBus } = setup([skill('triage', {}, 'bot')]);
+      const result = await call('patch_skill', {
+        name: 'triage',
+        old_text: 'pnpm release',
+        new_text: 'x',
+      });
+      expect(result).toMatchObject({ isError: true });
+      expect(result.content).toContain('old_text is not in skill "triage"');
+      expect(commandBus.execute).not.toHaveBeenCalled();
+    });
+
+    it('refuses a fix that would take the skill past its limit', async () => {
+      const { call, commandBus } = setup([skill('triage', {}, 'bot')]);
+      const result = await call('patch_skill', {
+        name: 'triage',
+        old_text: 'Steps',
+        new_text: 'x'.repeat(BOT_SKILL_BODY_MAX),
+      });
+      expect(result).toMatchObject({ isError: true });
+      expect(result.content).toContain(`over ${BOT_SKILL_BODY_MAX} characters`);
+      expect(commandBus.execute).not.toHaveBeenCalled();
+    });
   });
 
   it('deletes a skill by name, and says how many are left', async () => {

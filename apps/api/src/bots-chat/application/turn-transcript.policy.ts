@@ -17,6 +17,7 @@ import {
   rateLimitOfData,
 } from '../domain/bot-rate-limit.policy';
 import { SHOWN_IMAGES_DATA_KEY } from '../domain/bot-shown-image.policy';
+import { withoutSkillNudge } from '../domain/bot-skill-learning.policy';
 import { SUBAGENT_DATA_KEY } from '../domain/bot-subagent.policy';
 import { startOf } from '../domain/bot-tool-text.policy';
 import {
@@ -194,13 +195,15 @@ export class TurnTranscript {
   }
 
   /**
-   * A call's end: its words, cut, and what the tool said it made: the
+   * A call's end: its words, cut and without the skill reminder, and what the tool said it made: the
    * session it started, the children it ran, whose tokens are the turn's
    * cost too, the draft it saved, or the images it showed, which follow the
    * line as a message.
    */
   private finished(event: Extract<BotEngineEvent, { type: 'tool.finished' }>): TranscriptWrite[] {
-    const { callId, output, isError, data } = event;
+    const { callId, isError, data } = event;
+    // The skill reminder is for the model; the person's chat keeps the tool's own words.
+    const output = withoutSkillNudge(event.output);
     const line = this.running.get(callId);
     const step = line?.steps.find((candidate) => candidate.callId === callId);
     if (!line || !step) return [];

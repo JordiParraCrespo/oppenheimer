@@ -5,6 +5,7 @@ import { BotErrors } from '../../../bots/domain/bots.errors';
 import { MAIL_DRAFT_DATA_KEY } from '../../bot-mail-tool.mapper';
 import { RATE_LIMIT_DATA_KEY } from '../../domain/bot-rate-limit.policy';
 import { SHOWN_IMAGES_DATA_KEY } from '../../domain/bot-shown-image.policy';
+import { withSkillNudge } from '../../domain/bot-skill-learning.policy';
 import { SUBAGENT_DATA_KEY } from '../../domain/bot-subagent.policy';
 import { BotTurnEntity } from '../../domain/bot-turn.entity';
 import {
@@ -92,6 +93,21 @@ describe('TurnTranscript', () => {
     expect(writes.findIndex((write) => write.kind === 'settled')).toBeGreaterThan(
       writes.findIndex((write) => write.kind === 'insert'),
     );
+  });
+
+  it('stores a call’s own words without the skill reminder that rode its result to the model', () => {
+    const { writes } = run([
+      { type: 'tool.started', callId: 'a', name: 'get_session', input: {} },
+      {
+        type: 'tool.finished',
+        callId: 'a',
+        name: 'get_session',
+        output: withSkillNudge('running'),
+        isError: false,
+      },
+      { type: 'done', reason: 'completed' },
+    ]);
+    expect(inserted(writes)[0]?.steps[0]?.output).toBe('running');
   });
 
   it('gathers a run of tool calls into one activity line and fills in what each answered', () => {

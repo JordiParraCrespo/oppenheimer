@@ -36,7 +36,10 @@ export interface BotPromptInput {
   engineCapabilities: readonly string[];
   /** Our tools offered this turn. */
   tools: readonly BotPromptTool[];
-  /** Its skills; those it may use unasked are listed when the turn offers `use_skill`. */
+  /**
+   * Its skills; those it may use unasked are listed when the turn offers
+   * `use_skill`, and when to save one unasked when it offers `save_skill`.
+   */
   skills?: readonly BotSkillView[];
 }
 
@@ -70,10 +73,10 @@ export function composeBotSystemPrompt(input: BotPromptInput): string {
   } else {
     parts.push(gettingStarted(input.name, input.tools));
   }
-  const skills = skillsPromptSection(
-    input.skills ?? [],
-    input.tools.some((tool) => tool.name === 'use_skill'),
-  );
+  const skills = skillsPromptSection(input.skills ?? [], {
+    use: input.tools.some((tool) => tool.name === 'use_skill'),
+    save: input.tools.some((tool) => tool.name === 'save_skill'),
+  });
   if (skills) parts.push(skills);
   if (input.personFacts?.length) {
     parts.push(

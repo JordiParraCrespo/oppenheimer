@@ -16,9 +16,16 @@ import { FindBotSkillQuery } from '../../bots/queries/find-bot-skill/find-bot-sk
 import { FindBotSkillsQuery } from '../../bots/queries/find-bot-skills/find-bot-skills.query';
 import { describeSkillUse, skillBlock } from '../domain/bot-skill.policy';
 import {
+  patchSkillBody,
+  SKILL_FIX_NOTE,
+  skillPatchAllowed,
+  skillPatchRefusal,
+} from '../domain/bot-skill-learning.policy';
+import {
   type BotToolArea,
   type BotToolCallContext,
   type BotToolDefinition,
+  BotToolRefusal,
   defineBotTool,
 } from './bot-tool.factory';
 
@@ -31,8 +38,9 @@ const skillName = z
 
 /**
  * Its skills (`25-bots.md` §4.1, from OpenClaw's skills and Grok Bot's saved
- * skills): the bot reads one when a request fits it, and saves the way it did
- * a task as one when the person asks. Every tool acts on the turn's bot, its
+ * skills): the bot reads one when a request fits it, saves the way it did a
+ * task as one when the person asks or the work was hard and will come again,
+ * and fixes one that turned out wrong (Hermes Agent's learning loop). Every tool acts on the turn's bot, its
  * id the context's and never an input. Listed under Itself in Settings →
  * Permissions, beside its documents and memory.
  */
@@ -46,7 +54,7 @@ export class BotSkillToolsFactory implements BotToolArea {
   ) {}
 
   definitions(): readonly BotToolDefinition[] {
-    return [this.useSkill(), this.saveSkill(), this.deleteSkill()];
+    return [this.useSkill(), this.saveSkill(), this.patchSkill(), this.deleteSkill()];
   }
 
   private useSkill(): BotToolDefinition {
@@ -62,7 +70,7 @@ export class BotSkillToolsFactory implements BotToolArea {
         if (!skill.modelInvocable) {
           return `Not read: "${skill.name}" is a skill only the person runs, by typing /${skill.name}. Tell them it fits, if it does.`;
         }
-        return `${describeSkillUse(skill)}\n\n${skillBlock(skill)}`;
+        return `${describeSkillUse(skill)}\n\n${skillBlock(skill)}\n\n${SKILL_FIX_NOTE}`;
       },
     });
   }
@@ -71,7 +79,7 @@ export class BotSkillToolsFactory implements BotToolArea {
     return defineBotTool({
       name: 'save_skill',
       scope: 'bots:write',
-      description: `Saves a skill: a reusable way of doing one task, under a short name the person can run as /<name>. Use it when the person asks you to save how you did something ("save that as a skill called…"), or to change one of yours. A skill with that name is replaced. The body says when it applies, what it needs, the steps, how to check the result and what to report, and what needs the person's OK. Name 1 to ${BOT_SKILL_NAME_MAX} of a-z, 0-9 and -; description at most ${BOT_SKILL_DESCRIPTION_MAX}; body at most ${BOT_SKILL_BODY_MAX}; at most ${BOT_SKILLS_MAX} skills. The person sees and edits it in Settings → Skills.`,
+      description: `Saves a skill: a reusable way of doing one task, under a short name the person can run as /<name>. Use it when the person asks you to save how you did something ("save that as a skill called…"), or on your own after a task that took real work (many tool calls, or a dead end you worked around) and is likely to come up again: never for a one-off, anything a few steps long, or anything holding a secret or the person's private data; at most one new skill a turn, and say in your answer that you saved it, by name. A skill with that name is replaced: replace one the person wrote only when they ask, and fix one step with patch_skill rather than resending the whole body. The body says when it applies, what it needs, the steps, how to check the result and what to report, and what needs the person's OK. Name 1 to ${BOT_SKILL_NAME_MAX} of a-z, 0-9 and -; description at most ${BOT_SKILL_DESCRIPTION_MAX}; body at most ${BOT_SKILL_BODY_MAX}; at most ${BOT_SKILLS_MAX} skills. The person sees and edits it in Settings → Skills.`,
       input: z.strictObject({
         name: skillName,
         description: z
@@ -132,6 +140,62 @@ export class BotSkillToolsFactory implements BotToolArea {
           saved.modelInvocable ? 'you use it when a request fits' : null,
         ].filter(Boolean);
         return `${existing ? 'Updated' : 'Saved'} skill "${saved.name}" (${runs.join('; ')}). The person can see and edit it in Settings → Skills.`;
+      },
+    });
+  }
+
+  private patchSkill(): BotToolDefinition {
+    return defineBotTool({
+      name: 'patch_skill',
+      scope: 'bots:write',
+      description: `Fixes part of one of your skills: replaces one exact passage of its body with new text, so a step that turned out wrong or out of date is fixed without resending the whole skill. Use it once the task is done, when a skill you followed was wrong or stale, and say in your answer what you fixed. old_text must occur exactly once in the body, copied as use_skill showed it; the result is at most ${BOT_SKILL_BODY_MAX} characters. A skill you saved last you may fix unasked; one the person wrote last only when they asked for the change in this conversation (set asked_by_person), otherwise propose the change in your answer.`,
+      input: z.strictObject({
+        name: skillName,
+        old_text: z
+          .string()
+          .min(1)
+          .max(BOT_SKILL_BODY_MAX)
+          .describe('The passage to replace, exactly as it is in the skill, enough to be unique.'),
+        new_text: z
+          .string()
+          .max(BOT_SKILL_BODY_MAX)
+          .describe('What replaces it; empty removes the passage.'),
+        asked_by_person: z
+          .boolean()
+          .optional()
+          .describe(
+            'True only when the person asked for this change in this conversation. Needed to change a skill they wrote.',
+          ),
+      }),
+      run: async (input, context) => {
+        const skill = await this.skill(context, input.name);
+        const allowed = skillPatchAllowed({
+          name: skill.name,
+          source: skill.source,
+          askedByPerson: input.asked_by_person === true,
+        });
+        if (allowed === 'built_in') {
+          throw new BotToolRefusal(
+            `Not changed: /${skill.name} is a built-in command, not a skill you can change.`,
+          );
+        }
+        if (allowed === 'theirs') {
+          throw new BotToolRefusal(
+            `Not changed: the person wrote skill "${skill.name}" last, and did not ask you to change it. Propose the change in your answer instead; they can make it in Settings → Skills or ask you to.`,
+          );
+        }
+        const patch = patchSkillBody(skill.body, input.old_text, input.new_text);
+        if (!patch.ok) throw new BotToolRefusal(skillPatchRefusal(skill.name, patch.reason));
+        await this.commandBus.execute(
+          new UpdateBotSkillCommand({
+            scope: context.owner,
+            botId: context.botId,
+            skillId: skill.id,
+            change: { body: patch.body },
+            author: 'bot',
+          }),
+        );
+        return `Fixed skill "${skill.name}". Say in your answer what you changed. The person can see and edit it in Settings → Skills.`;
       },
     });
   }

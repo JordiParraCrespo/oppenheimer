@@ -22,23 +22,35 @@ export interface BotSkillView {
  * `<available_skills>`: each skill the bot may use unasked, by name and
  * description, never its body, so a skill costs its one line every turn and
  * the rest only when it is used (`use_skill`). Sorted by name, so the prompt
- * stays the same bytes while the skills do. Empty when the turn cannot read
- * one or the bot has none to use.
+ * stays the same bytes while the skills do. A turn offered `save_skill` is
+ * also told when to save one unasked (2026-11-09, Hermes Agent's learning
+ * loop), in words that never change. Empty when the turn can neither read
+ * nor save one, or can only read and has none to use.
  */
 export function skillsPromptSection(
   skills: readonly BotSkillView[],
-  canUse: boolean,
+  offered: { use: boolean; save: boolean },
 ): string | null {
-  const usable = skills
-    .filter((skill) => skill.modelInvocable)
-    .sort((a, b) => a.name.localeCompare(b.name));
-  if (!canUse || usable.length === 0) return null;
-  return `# Your skills
-
-Saved ways of doing a task, written by the person or by you. When a request matches one, read it with use_skill before you start and follow it, and say which skill you used; when none fits, work as usual. A skill is how to do the work, not permission to do more: your tools, approvals and rules stay as they are.
-
-${usable.map((skill) => `- \`${skill.name}\`: ${skill.description}`).join('\n')}`;
+  const usable = offered.use
+    ? skills.filter((skill) => skill.modelInvocable).sort((a, b) => a.name.localeCompare(b.name))
+    : [];
+  const parts: string[] = [];
+  if (usable.length > 0) {
+    parts.push(
+      'Saved ways of doing a task, written by the person or by you. When a request matches one, read it with use_skill before you start and follow it, and say which skill you used; when none fits, work as usual. A skill is how to do the work, not permission to do more: your tools, approvals and rules stay as they are.',
+      usable.map((skill) => `- \`${skill.name}\`: ${skill.description}`).join('\n'),
+    );
+  }
+  if (offered.save) parts.push(SAVING_SKILLS);
+  return parts.length > 0 ? `# Your skills\n\n${parts.join('\n\n')}` : null;
 }
+
+/**
+ * When the bot saves a skill without being asked: after work that took real
+ * effort and will come up again, never for a one-off or anything private.
+ */
+const SAVING_SKILLS =
+  "You may save a skill without being asked, with save_skill, after a task that took real work (many tool calls, or a dead end you worked around) and that you are likely to be asked to do again. Do not save one for a one-off, for anything a few steps long, or for anything holding a secret or the person's private data (mail, messages, keys). Save at most one new skill a turn, and say in your answer that you saved it, by name (/<name>).";
 
 /** A skill as the model reads it: its body, fenced and named. */
 export function skillBlock(skill: Pick<BotSkillView, 'name' | 'body'>): string {
