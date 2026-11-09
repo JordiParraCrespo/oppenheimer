@@ -1,6 +1,6 @@
 import { type APIRequestContext, expect, request, test } from '@playwright/test';
 import { API_URL } from '../../playwright.config';
-import { signedUpContext } from '../../support/auth';
+import { getSession, signedUpContext } from '../../support/auth';
 
 /** A 1×1 PNG: the smallest file the API's sniffing still calls an image. */
 const PNG = Buffer.from(
@@ -8,8 +8,18 @@ const PNG = Buffer.from(
   'base64',
 );
 
+/**
+ * A token as an unattended agent holds it: pinned to the owner's workspace,
+ * since a token acts inside a workspace only when it names exactly one.
+ */
 async function tokenContext(api: APIRequestContext, scopes: string[]): Promise<APIRequestContext> {
-  const minted = await api.post('/api/v1/tokens', { data: { name: 'routine', scopes } });
+  const { session } = (await (await getSession(api)).json()) as {
+    session: { activeOrganizationId: string };
+  };
+  const minted = await api.post('/api/v1/tokens', {
+    data: { name: 'routine', scopes, organizationIds: [session.activeOrganizationId] },
+  });
+  expect(minted.status(), await minted.text()).toBe(201);
   const { token } = (await minted.json()) as { token: string };
   return request.newContext({
     baseURL: API_URL,
@@ -68,6 +78,7 @@ test.describe('Inbox reports', () => {
     const { api: owner } = await signedUpContext('reports-self');
     const agent = await tokenContext(owner, ['inbox-reports:read', 'inbox-reports:write']);
     const posted = await agent.post('/api/v1/inbox/reports', { multipart: { title: 'May I?' } });
+    expect(posted.status(), await posted.text()).toBe(201);
     const { id } = (await posted.json()) as { id: string };
 
     const answered = await agent.post(`/api/v1/inbox/reports/${id}/answer`, {

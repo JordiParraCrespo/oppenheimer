@@ -55,7 +55,7 @@ When nothing needs you, the pane says so and counts the sessions still running.
 
 ## Reports: a problem with pictures, and your answer
 
-A report has a title, an optional body, the sender's name for itself, an optional link to where the problem can be seen, and up to four pictures (PNG, JPEG, GIF or WebP, 5 MB each). The agent needs an [API token](./cli-and-mcp.md) with the **Inbox reports** permissions (`inbox-reports:write` to send, `inbox-reports:read` to read the answer):
+A report has a title, an optional body, the sender's name for itself, an optional link to where the problem can be seen, and up to four pictures (PNG, JPEG, GIF or WebP, 5 MB each). The agent needs an [API token](./cli-and-mcp.md) with the **Inbox reports** permissions (`inbox-reports:write` to send, `inbox-reports:read` to read the answer), pinned to your workspace as `opp tokens create` pins it; a token pinned to no workspace is refused with `TENANT_001`:
 
 ```bash
 curl -sS -X POST "$OPPENHEIMER_API_URL/v1/inbox/reports" \

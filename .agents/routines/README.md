@@ -36,7 +36,8 @@ with the pictures that show it, and reads the answer at the start of its
 next run (`product/versions/mvp/29-inbox.md`, "Reports"; the commands are in
 `apps/docs/docs/guide/inbox.md`). It needs two things in its cloud
 environment, set by the owner: the deployment's host in the allowed domains,
-and an API token with `inbox-reports:read` and `inbox-reports:write` saved
+and an API token with `inbox-reports:read` and `inbox-reports:write`, pinned
+to the workspace (`opp tokens create` does), saved
 as a network secret for that host, never written into a prompt or this
 repository. A routine without them keeps writing to its GitHub issue.
 
