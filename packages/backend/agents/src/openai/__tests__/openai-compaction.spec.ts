@@ -56,6 +56,21 @@ describe('compactionCut', () => {
     expect(compactionCut(items, 0, 50)).toBe(3);
   });
 
+  // What breaks this: a fold that keeps a model's message and call but drops
+  // the reasoning item before them, which a reasoning model's API refuses.
+  it('never parts a call from the reasoning of its response', () => {
+    const items = [
+      message('user', 'start'),
+      call('a'),
+      result('a', big('first')),
+      { type: 'reasoning', id: 'r2' },
+      message('assistant', 'Checking the next one'),
+      call('b'),
+      result('b'),
+    ];
+    expect(compactionCut(items, 0, 5)).toBe(3);
+  });
+
   it('does not start after a reasoning item, away from what it produced', () => {
     const items = [
       message('user', big('old')),
@@ -68,6 +83,26 @@ describe('compactionCut', () => {
 });
 
 describe('TurnCompactor', () => {
+  // What breaks this: long tool answers counted short, so an OpenAI turn
+  // reaches its provider's context limit before it ever compacts.
+  it('counts a long tool answer in full against the threshold', async () => {
+    let asked = 0;
+    const compactor = new TurnCompactor<CompactableItem>(5_000, 0, async () => {
+      asked += 1;
+      return { text: 'summary', usage: null };
+    });
+    const answer = 'x'.repeat(12_000);
+    const items = [
+      message('user', 'the ask'),
+      call('a'),
+      result('a', answer),
+      call('b'),
+      result('b', answer),
+    ];
+    await compactor.filter({ input: items });
+    expect(asked).toBe(1);
+  });
+
   const completion = (text: string): BotCompletion => ({
     text,
     usage: { inputTokens: 100, outputTokens: 10, cacheReadTokens: 0, cacheWriteTokens: 0 },

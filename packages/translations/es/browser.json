@@ -1767,7 +1767,7 @@
         "goal": {
           "continued": "Objetivo · continuación {{step}} de {{limit}}",
           "continuedOpen": "Objetivo · continuación {{step}}",
-          "paused": "Objetivo «{{objective}}» en pausa: {{why}}",
+          "paused": "Objetivo «{{objective}}» {{why}}",
           "resumed": "Has reanudado el objetivo «{{objective}}»",
           "met": "Objetivo cumplido: «{{objective}}»",
           "impossible": "El objetivo «{{objective}}» no se puede cumplir sin ti",

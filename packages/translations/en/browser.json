@@ -1751,7 +1751,7 @@
         "goal": {
           "continued": "Goal · continuation {{step}} of {{limit}}",
           "continuedOpen": "Goal · continuation {{step}}",
-          "paused": "Goal “{{objective}}” paused: {{why}}",
+          "paused": "Goal “{{objective}}” {{why}}",
           "resumed": "You resumed the goal “{{objective}}”",
           "met": "Goal met: “{{objective}}”",
           "impossible": "Goal “{{objective}}” cannot be met without you",

@@ -17,8 +17,8 @@ export interface ModelInput<Item> {
 /** Asks the turn's own model for the summary; rejects when it cannot. */
 export type Summarize = (prompt: string) => Promise<BotCompletion>;
 
-/** A string longer than this inside an item (an image's data, encrypted reasoning) counts as this many characters. */
-const OPAQUE_STRING = 4_000;
+/** What an image in an item counts as, in characters: about what a model charges for one. */
+const IMAGE_CHARS = 6_000;
 
 /** The most of one item a summary reads; the rest of a long tool answer is cut. */
 const ITEM_CHARS = 4_000;
@@ -55,12 +55,18 @@ export function estimateTokens(chars: number): number {
   return Math.ceil(chars / 4);
 }
 
-/** An item's size in characters as the model would read it, with opaque strings counted short. */
+/**
+ * An item's size in characters as the model would read it. Text counts in
+ * full, a tool's long answer included; an image's data counts as
+ * `IMAGE_CHARS`, and a reasoning item's encrypted content, which the model
+ * reads back as the reasoning it stands for, as its length.
+ */
 function itemChars(item: unknown): number {
   let chars = 0;
   const visit = (value: unknown): void => {
-    if (typeof value === 'string') chars += Math.min(value.length, OPAQUE_STRING);
-    else if (Array.isArray(value)) value.forEach(visit);
+    if (typeof value === 'string') {
+      chars += value.startsWith('data:') ? IMAGE_CHARS : value.length;
+    } else if (Array.isArray(value)) value.forEach(visit);
     else if (value && typeof value === 'object') {
       for (const [key, inner] of Object.entries(value)) {
         chars += key.length;
@@ -105,17 +111,26 @@ function callIdOf(item: CompactableItem | undefined): unknown {
 }
 
 /**
- * Whether a call can be sent `items` from `index` on: not a call's result,
- * not after the reasoning item its output goes with, and with every result
- * after it following its own call.
+ * Whether a call can be sent `items` from `index` on: only from the start of
+ * an input (a person's message) or of a model's response (the item after a
+ * call's result, or after a person's message), so no item is parted from
+ * the reasoning that produced it; and with every result after it following
+ * its own call.
  */
 function canStartAt(items: readonly CompactableItem[], index: number): boolean {
-  const type = items[index]?.type ?? 'message';
-  if (type === 'function_call_result' || items[index - 1]?.type === 'reasoning') return false;
+  const item = items[index];
+  const previous = items[index - 1];
+  const startsInput = item?.type === 'message' && item.role === 'user';
+  const startsResponse =
+    previous?.type === 'function_call_result' ||
+    (previous?.type === 'message' && previous.role === 'user');
+  if (!item || item.type === 'function_call_result' || !(startsInput || startsResponse)) {
+    return false;
+  }
   const calls = new Set<unknown>();
-  for (const item of items.slice(index)) {
-    if (item.type === 'function_call') calls.add(callIdOf(item));
-    if (item.type === 'function_call_result' && !calls.has(callIdOf(item))) return false;
+  for (const later of items.slice(index)) {
+    if (later.type === 'function_call') calls.add(callIdOf(later));
+    if (later.type === 'function_call_result' && !calls.has(callIdOf(later))) return false;
   }
   return true;
 }
@@ -123,7 +138,8 @@ function canStartAt(items: readonly CompactableItem[], index: number): boolean {
 /**
  * Where the newest `keepTokens` of `items` begin, moved to a point a model
  * call can start from (`canStartAt`): never a call's result without its
- * call, nor an item without the reasoning that produced it. -1 when no such point lies after `from`.
+ * call, nor an item without the reasoning that produced it. -1 when no such
+ * point lies after `from`.
  */
 export function compactionCut(
   items: readonly CompactableItem[],

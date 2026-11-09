@@ -13,7 +13,8 @@ import { ResumeBotGoalCommand } from './resume-bot-goal.command';
  * next continuation is queued with a line saying the owner resumed it. A
  * goal that is not paused, or none, changes nothing; one whose budget is
  * spent pauses again after the turn, so the budget still holds. A goal whose
- * owner can no longer act stops, as it would have on its next turn.
+ * owner can no longer act stops, as it would have on its next turn, and one
+ * set with a limit that has none left ends.
  */
 @CommandHandler(ResumeBotGoalCommand)
 export class ResumeBotGoalCommandHandler implements ICommandHandler<ResumeBotGoalCommand, void> {
@@ -27,6 +28,12 @@ export class ResumeBotGoalCommandHandler implements ICommandHandler<ResumeBotGoa
     const bot = await this.lookup.bot(scope, botId);
     const goal = await this.goals.findForBot(bot.organizationId, bot.id);
     if (!goal?.paused) return;
+    // A goal set with a limit before 2026-11-09 that paused on its last
+    // continuation has none left to queue: it ends, as it would have.
+    if (goal.exhausted) {
+      await this.goalsOf.end(goal, { activity: 'exhausted', reason: null }, metadata.correlationId);
+      return;
+    }
     const props = await this.goalsOf.continuationProps(goal);
     if (!props) {
       await this.goalsOf.end(

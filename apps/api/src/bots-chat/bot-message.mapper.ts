@@ -399,7 +399,7 @@ function toEvent(raw: Record<string, unknown> | null): BotMessageEvent | null {
       goalId: raw.goalId,
       objective: String(raw.objective ?? ''),
       step: typeof raw.step === 'number' ? raw.step : 0,
-      limit: typeof raw.limit === 'number' ? raw.limit : 0,
+      limit: typeof raw.limit === 'number' ? raw.limit : null,
       reason: typeof raw.reason === 'string' ? raw.reason : null,
     };
   }
