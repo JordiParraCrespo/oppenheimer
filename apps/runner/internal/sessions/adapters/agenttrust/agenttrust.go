@@ -5,16 +5,12 @@ package agenttrust
 
 import (
 	"encoding/json"
-	"errors"
-	"fmt"
 	"io/fs"
 	"log/slog"
 	"os"
 	"path/filepath"
 	"strings"
 	"sync"
-
-	"github.com/pelletier/go-toml/v2"
 
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/domain"
 )
@@ -61,7 +57,8 @@ func New(opts Options) *Store {
 	}
 }
 
-// Trust records dir as accepted. Claude Code keeps the answer per folder, as
+// Trust records dir as accepted for agent, in the agent's own file
+// (configFile says how that file is read and written). Claude Code keeps the answer per folder, as
 // `projects[<dir>].hasTrustDialogAccepted`; every other key in the file, and
 // in that folder's entry, is Claude Code's and is written back untouched.
 //
@@ -70,9 +67,6 @@ func New(opts Options) *Store {
 // repository's entry before it lets the repository's `.claude/settings.json`
 // pre-approve tools, and without it asks again, in a trusted folder, whether
 // to "continue without these permissions".
-//
-// The write is a temporary file renamed over the old one, so a CLI starting at
-// the same moment reads the old file or the new one, never half of either.
 //
 // The file is written back as Claude Code writes it, two-space JSON; Go
 // orders its keys, which Claude Code neither reads nor keeps, since it
@@ -102,71 +96,6 @@ func folders(dir string) []string {
 		dirs = append(dirs, root)
 	}
 	return dirs
-}
-
-// trustCodex records dir as trusted in Codex's config. Codex keeps the answer
-// per folder, as `[projects."<dir>"] trust_level = "trusted"`, and asks for a
-// folder in a git repository under the repository's main checkout, which is
-// why a linked worktree's repository is marked too.
-//
-// The file is the person's, often hand-edited, so it is never re-encoded:
-// the new tables are appended to its text, written through a symlink to
-// where it points, and a folder Codex already has
-// an entry for, "trusted" or "untrusted", is an answer already given and is
-// left as it is. The result is parsed before it is written; a file this would
-// break (one with `projects` as an inline table, say) is not touched.
-func (s *Store) trustCodex(dir string) error {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
-	// A config kept in a dotfiles repository is a symlink to it; the write
-	// goes to the file it names, so the link stays a link.
-	path := linkTarget(s.codexConfig)
-	mode := fs.FileMode(0o600)
-	raw, err := os.ReadFile(path) //nolint:gosec // Codex's config, where the runner was told it is
-	switch {
-	case errors.Is(err, fs.ErrNotExist):
-	case err != nil:
-		return err
-	default:
-		if info, statErr := os.Stat(path); statErr == nil {
-			mode = info.Mode().Perm()
-		}
-	}
-	var config struct {
-		Projects map[string]any `toml:"projects"`
-	}
-	if err := toml.Unmarshal(raw, &config); err != nil {
-		return err
-	}
-	var add strings.Builder
-	for _, dir := range folders(dir) {
-		if _, answered := config.Projects[dir]; answered {
-			continue
-		}
-		// A JSON string is a TOML basic string: the same quote, the same
-		// escapes.
-		key, err := json.Marshal(dir)
-		if err != nil {
-			return err
-		}
-		fmt.Fprintf(&add, "\n[projects.%s]\ntrust_level = \"trusted\"\n", key)
-	}
-	if add.Len() == 0 {
-		return nil
-	}
-	out := raw
-	if len(out) > 0 && out[len(out)-1] != '\n' {
-		out = append(out, '\n')
-	}
-	out = append(out, add.String()...)
-	if err := toml.Unmarshal(out, &config); err != nil {
-		return fmt.Errorf("adding the folder would leave %s unreadable: %w", path, err)
-	}
-	if err := os.MkdirAll(filepath.Dir(path), 0o700); err != nil {
-		return err
-	}
-	return writeAtomic(path, out, mode)
 }
 
 func (s *Store) trustClaude(dir string) error {
@@ -295,18 +224,13 @@ func (s *Store) edit(change func(root map[string]json.RawMessage) (bool, error))
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	root := map[string]json.RawMessage{}
-	mode := fs.FileMode(0o600)
-	raw, err := os.ReadFile(s.claudeConfig)
-	switch {
-	case errors.Is(err, fs.ErrNotExist):
-	case err != nil:
+	file, err := readConfig(s.claudeConfig)
+	if err != nil {
 		return err
-	default:
-		if info, statErr := os.Stat(s.claudeConfig); statErr == nil {
-			mode = info.Mode().Perm()
-		}
-		if err := json.Unmarshal(raw, &root); err != nil {
+	}
+	root := map[string]json.RawMessage{}
+	if file.raw != nil {
+		if err := json.Unmarshal(file.raw, &root); err != nil {
 			return err
 		}
 	}
@@ -322,24 +246,7 @@ func (s *Store) edit(change func(root map[string]json.RawMessage) (bool, error))
 	if err != nil {
 		return err
 	}
-	return writeAtomic(s.claudeConfig, out, mode)
-}
-
-// linkTarget is the file path names once every symlink on it is followed,
-// whether or not that file exists yet: a link into a dotfiles repository
-// that has no config in it yet is still a link to keep.
-func linkTarget(path string) string {
-	for range 40 {
-		target, err := os.Readlink(path)
-		if err != nil {
-			return path
-		}
-		if !filepath.IsAbs(target) {
-			target = filepath.Join(filepath.Dir(path), target)
-		}
-		path = target
-	}
-	return path
+	return file.write(out)
 }
 
 func realPath(dir string) string {

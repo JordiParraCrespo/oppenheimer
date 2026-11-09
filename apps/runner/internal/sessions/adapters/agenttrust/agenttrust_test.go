@@ -278,3 +278,29 @@ func worktreeOf(t *testing.T, bare bool) (work, repo string) {
 	git("-C", repo, "worktree", "add", "--quiet", "--detach", work, commit)
 	return work, repo
 }
+
+// A `~/.claude.json` kept in a dotfiles repository is a symlink into it;
+// replacing the link with a copy would cut the dotfiles off from Claude Code.
+func TestTrustKeepsASymlinkedClaudeConfigALink(t *testing.T) {
+	dotfiles := filepath.Join(t.TempDir(), "claude.json")
+	if err := os.WriteFile(dotfiles, []byte(`{"oauthAccount":{"email":"a@b.c"}}`), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	config := filepath.Join(t.TempDir(), ".claude.json")
+	if err := os.Symlink(dotfiles, config); err != nil {
+		t.Fatal(err)
+	}
+	work := workDir(t)
+
+	if err := agenttrust.New(agenttrust.Options{ClaudeConfig: config}).Trust(domain.AgentClaude, work); err != nil {
+		t.Fatal(err)
+	}
+
+	if info, err := os.Lstat(config); err != nil || info.Mode()&os.ModeSymlink == 0 {
+		t.Fatalf(".claude.json is no longer a symlink: %v", err)
+	}
+	entry, _ := read(t, dotfiles)["projects"].(map[string]any)[work].(map[string]any)
+	if entry["hasTrustDialogAccepted"] != true {
+		t.Fatal("the folder was not trusted in the file the link names")
+	}
+}
