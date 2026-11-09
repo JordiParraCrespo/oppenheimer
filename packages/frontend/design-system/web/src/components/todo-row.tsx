@@ -5,7 +5,7 @@ import type * as React from 'react';
 
 import { cn } from '../lib/utils';
 import { Checkbox } from './checkbox';
-import { useSortableItem } from './drag';
+import { dragIgnore, useSortableItem } from './drag';
 import { Skeleton } from './skeleton';
 
 /**
@@ -15,12 +15,17 @@ import { Skeleton } from './skeleton';
  * muted line (its milestone and where it stands), then the time it is due
  * at in mono and its project as a quiet pill. Done strikes the title and
  * mutes the row. The toggle and the title are separate buttons, so ticking a
- * task never opens it. `children` go last on the row: `SortableTodoRow`
- * puts its grip there.
+ * task never opens it. `status` sits before the time (Plan's task status,
+ * a `StatusDot` on `TASK_STATUS_STATE`). `action` sits after the project, for what the screen
+ * does from a row (To do's Start session). `children` go last on the row:
+ * `SortableTodoRow` puts its grip there.
  *
- * `SortableTodoRow` is the row in a `SortableGroup`, reordered by the grip
- * at its right end (six dots), the only part that picks it up; Space on the
- * grip lifts it from the keyboard. While it is dragged its place fades.
+ * `SortableTodoRow` is the row in a `SortableGroup`. The pointer picks it up
+ * anywhere on the card but the done toggle, which never lifts it; a press
+ * on the title that moves under 5px is still a click that opens the task.
+ * The grip at its right end (six dots) is the keyboard's handle, Space on
+ * it lifts the row, and on a touch screen the one part that drags instead
+ * of scrolling the page. While it is dragged its place fades.
  *
  * `TodoRowAdd` is the dashed row under the list that adds a task to the day
  * on Enter; `TodoRowSkeleton` stands in for a row while the day loads.
@@ -34,6 +39,8 @@ function TodoRow({
   toggleLabel,
   onToggle,
   onOpen,
+  status,
+  action,
   className,
   children,
   ...props
@@ -50,6 +57,10 @@ function TodoRow({
   toggleLabel: string;
   onToggle?: () => void;
   onOpen?: () => void;
+  /** Where the task stands, before the time: a `StatusDot` and its column's name. */
+  status?: React.ReactNode;
+  /** A control after the project: an `IconButton` the screen acts on the task with. */
+  action?: React.ReactNode;
 }) {
   return (
     <div
@@ -62,6 +73,7 @@ function TodoRow({
       {...props}
     >
       <Checkbox
+        {...dragIgnore}
         checked={done}
         onCheckedChange={() => onToggle?.()}
         aria-label={toggleLabel}
@@ -80,12 +92,14 @@ function TodoRow({
         </span>
         {detail ? <span className="truncate text-sm text-fg-muted">{detail}</span> : null}
       </button>
+      {status}
       {time ? <span className="figures shrink-0 text-sm font-medium text-fg-muted">{time}</span> : null}
       {tag ? (
         <span className="inline-flex h-7 max-w-40 shrink-0 items-center truncate rounded-pill bg-hover-surface px-3 text-sm font-medium text-fg-muted">
           {tag}
         </span>
       ) : null}
+      {action}
       {children}
     </div>
   );
@@ -102,7 +116,7 @@ function SortableTodoRow({
   /** The grip's name for a screen reader ("Reorder Rotate the API keys"). */
   gripLabel: string;
 }) {
-  const { ref, handleProps, style: slide, isDragging } = useSortableItem({
+  const { ref, handleProps, listeners, style: slide, isDragging } = useSortableItem({
     id,
     data: { type: 'todo-row', label: props.title },
   });
@@ -110,6 +124,7 @@ function SortableTodoRow({
     <TodoRow
       {...props}
       ref={ref}
+      onPointerDown={(event) => listeners?.onPointerDown?.(event)}
       data-dragging={isDragging || undefined}
       style={{ ...style, ...slide }}
       className={cn('pr-2 data-dragging:opacity-45', className)}

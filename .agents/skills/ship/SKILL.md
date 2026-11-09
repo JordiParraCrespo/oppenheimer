@@ -1,6 +1,6 @@
 ---
 name: ship
-description: Finish a fix and merge it without asking, or merge a proposed pull request Jordi has accepted. Labels the pull request `ship`, drives it with the steward skill, has a fresh agent verify it, babysits it, and merges it. Use only when the user invokes /ship.
+description: Finish a fix and merge it without asking, or merge a pull request Jordi has accepted. When it conflicts, merges its target in, resolves, reruns local CI and babysits it until it merges. Labels the pull request `ship`, drives it with the steward skill, has a fresh agent verify it, babysits it, and merges it. Use only when the user invokes /ship.
 disable-model-invocation: true
 argument-hint: "[what to fix, or a pull request number]"
 ---
@@ -17,6 +17,8 @@ Two ways in:
 - **`/ship` on a `propose` pull request** (in its session, or with its
   number): Jordi accepted it. Swap the label `propose` for `ship` and go
   to step 4; its verdict stands if the code has not changed since.
+- **`/ship` on any other open pull request**: Jordi wants it merged. Go to
+  step 4 with it as it is; one with no `PASS` gets step 3 first.
 
 ## 1. Fix it
 
@@ -57,17 +59,24 @@ Post the verdict on the pull request as one comment naming the SHA. A
 
 ## 4. Babysit and merge
 
-Keep the pull request mergeable per `steward`, "Babysitting", then merge
-when all of these hold on a fresh fetch:
+On every event and check-in, fetch it fresh (`mergeable` can read unknown
+while GitHub computes it; read it again, it is not a conflict) and:
 
-- `steward` calls it ready, and the verdict is `PASS` on this head, or on a
-  head whose only change since is a merge of `main` with a green
-  `pnpm ci:local`;
-- GitHub reports it mergeable, no review requests changes, and every review
-  thread is answered and resolved;
-- no `main-red` issue is open that this pull request does not fix.
+1. **Merge it if it is clean**, when all of these hold:
+   - `steward` calls it ready, and the verdict is `PASS` on this head, or
+     on a head whose only change since is a merge of the base with a
+     green `pnpm ci:local`;
+   - GitHub reports it mergeable, no review requests changes, and every
+     review thread is answered and resolved;
+   - no `main-red` issue is open that it does not fix.
 
-Merge pinned to the head SHA with merge commits, never with admin rights.
-Read the pull request back to confirm it merged, unsubscribe, and tell the
-user: the link, the merge commit, the verdict, what shipped, and the
-follow-ups.
+   Merge with a merge commit pinned to the head SHA, never with admin
+   rights, squash or rebase. A merge refused because the head moved is
+   not a failure: fetch again. Read it back to confirm it merged,
+   unsubscribe, drop the check-in, and tell the user: the link, the merge
+   commit, the verdict, what shipped, and the follow-ups.
+2. **Otherwise babysit it** per `steward`, "Babysitting" (a conflict is
+   its step 1), then back to 1. Tell Jordi what only he can clear: a
+   change request, a product call, a `main-red` that is not yours.
+
+Stop when it merges or closes, or when Jordi says to.

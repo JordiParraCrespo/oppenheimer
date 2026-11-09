@@ -1380,3 +1380,10 @@ earlier note:
   for the owner to resume. On 2026-11-09, where the provider says when the
   limit ends, the goal waits for that time and goes on by itself; it pauses
   only when no time is known.
+- `versions/mvp/11-api-implementation-plan.md` (GitHub slice) had the
+  webhook read `request.rawBody`, the copy Better Auth's app-wide JSON
+  parser kept, so it needed no bootstrap change. That parser's 100 kB
+  default refused ordinary `push` and `pull_request` deliveries with a 500
+  (Sentry OPPENHEIMER-API-2, 2026-11-09). The webhook now reads its own body
+  raw, up to GitHub's documented 25 MB cap, ahead of the app-wide parsers;
+  a larger body is a 413, and the `rawBody` copy is gone.
