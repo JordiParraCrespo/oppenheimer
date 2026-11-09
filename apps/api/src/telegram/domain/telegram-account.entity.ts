@@ -61,6 +61,9 @@ export interface TelegramBotReport {
  * is called, and how the host last said it stands.
  */
 export class TelegramAccountEntity extends AggregateRoot<TelegramAccountProps> {
+  /** A report of another Telegram bot forgot the owner: the next save writes that. */
+  private forgotOwner = false;
+
   static create(create: CreateEntityProps<TelegramAccountProps>): TelegramAccountEntity {
     return new TelegramAccountEntity(create);
   }
@@ -133,6 +136,11 @@ export class TelegramAccountEntity extends AggregateRoot<TelegramAccountProps> {
     return this.props.ownerLinkExpiresAt;
   }
 
+  /** Whether a report forgot the owner since it was loaded (`report`). */
+  get ownerForgotten(): boolean {
+    return this.forgotOwner;
+  }
+
   /** Whether a Telegram user is the owner this account recorded. */
   isOwner(telegramUserId: string): boolean {
     return this.props.ownerTelegramId !== null && this.props.ownerTelegramId === telegramUserId;
@@ -202,6 +210,7 @@ export class TelegramAccountEntity extends AggregateRoot<TelegramAccountProps> {
     // has never met the owner: they open a `start` link again.
     if (report.botId && this.props.botId && report.botId !== this.props.botId) {
       this.props.ownerTelegramId = null;
+      this.forgotOwner = true;
     }
     if (report.botId) this.props.botId = report.botId;
     if (report.username) this.props.username = report.username;

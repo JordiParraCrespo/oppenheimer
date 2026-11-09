@@ -17,7 +17,12 @@ import type { MigrationInterface, QueryRunner } from 'typeorm';
  *   id is the bot's own id, so every turn and line that existed is in it;
  *   a Telegram chat with the bot is another, opened by the first message and
  *   closed (`archivedAt`) by `/new`, which opens the next. At most one open
- *   per Telegram chat (`UQ_bot_conversation_telegram_chat`).
+ *   per Telegram chat (`UQ_bot_conversation_telegram_chat`). Disconnecting
+ *   the Telegram bot keeps the conversation and its turns, a running one
+ *   included, and only forgets the account (`SET NULL`); the history goes
+ *   with the bot or with Clear history.
+ * - Lines a deleted bot left behind (written outside any turn, so with no
+ *   key to the bot) are deleted first: they would point at no conversation.
  * - `bot_turn."conversationId"` and `bot_message."conversationId"`: the
  *   conversation each belongs to, backfilled with the bot's console chat. A
  *   turn's history is its conversation's messages.
@@ -52,7 +57,9 @@ export class AnswerOnTelegram1794241820830 implements MigrationInterface {
         CONSTRAINT "CHK_bot_conversation_console"
           CHECK ((kind = 'console') = (id = "botId")),
         CONSTRAINT "CHK_bot_conversation_telegram"
-          CHECK ((kind = 'telegram') = ("telegramAccountId" IS NOT NULL AND "chatId" IS NOT NULL))
+          CHECK ((kind = 'telegram') = ("chatId" IS NOT NULL)),
+        CONSTRAINT "CHK_bot_conversation_console_account"
+          CHECK (kind = 'telegram' OR "telegramAccountId" IS NULL)
       )`,
     );
     await queryRunner.query(
@@ -72,6 +79,14 @@ export class AnswerOnTelegram1794241820830 implements MigrationInterface {
        SELECT id, "organizationId", id, 'console' FROM bot`,
     );
 
+    // A line written outside any turn (a routine's, a dream's) had no key to
+    // its bot, so a bot deleted before now left its lines behind; they belong
+    // to no conversation and are read by nothing.
+    await queryRunner.query(
+      `DELETE FROM bot_message m
+        WHERE NOT EXISTS (
+          SELECT 1 FROM bot b WHERE b."organizationId" = m."organizationId" AND b.id = m."botId")`,
+    );
     for (const table of ['bot_turn', 'bot_message']) {
       await queryRunner.query(`ALTER TABLE ${table} ADD "conversationId" uuid`);
       await queryRunner.query(`UPDATE ${table} SET "conversationId" = "botId"`);
@@ -147,7 +162,7 @@ export class AnswerOnTelegram1794241820830 implements MigrationInterface {
 
 const FOREIGN_KEYS = [
   `ALTER TABLE bot_conversation ADD CONSTRAINT "FK_bot_conversation_bot" FOREIGN KEY ("organizationId", "botId") REFERENCES bot("organizationId", id) ON DELETE CASCADE`,
-  `ALTER TABLE bot_conversation ADD CONSTRAINT "FK_bot_conversation_telegram_account" FOREIGN KEY ("organizationId", "telegramAccountId") REFERENCES telegram_account("organizationId", id) ON DELETE CASCADE`,
+  `ALTER TABLE bot_conversation ADD CONSTRAINT "FK_bot_conversation_telegram_account" FOREIGN KEY ("organizationId", "telegramAccountId") REFERENCES telegram_account("organizationId", id) ON DELETE SET NULL ("telegramAccountId")`,
   `ALTER TABLE bot_turn ADD CONSTRAINT "FK_bot_turn_conversation" FOREIGN KEY ("organizationId", "conversationId") REFERENCES bot_conversation("organizationId", id) ON DELETE CASCADE`,
   `ALTER TABLE bot_message ADD CONSTRAINT "FK_bot_message_conversation" FOREIGN KEY ("organizationId", "conversationId") REFERENCES bot_conversation("organizationId", id) ON DELETE CASCADE`,
   `ALTER TABLE telegram_account ADD CONSTRAINT "FK_telegram_account_answering_bot" FOREIGN KEY ("organizationId", "answeringBotId") REFERENCES bot("organizationId", id) ON DELETE NO ACTION`,

@@ -61,7 +61,8 @@ export function telegramInboundAction(
   const command = COMMAND.exec(message.text.trim());
   const name = command?.[1]?.toLowerCase();
   const isOwner = account.ownerTelegramId !== null && message.senderId === account.ownerTelegramId;
-  if (name === 'start' && command?.[2]) return { kind: 'link', code: command[2] };
+  // The owner opening a link again (a second tap) is not a stranger.
+  if (name === 'start' && command?.[2] && !isOwner) return { kind: 'link', code: command[2] };
   if (!isOwner) return { kind: 'stranger' };
   if (name === 'help' || name === 'start') return { kind: 'reply', text: TELEGRAM_HELP_LINE };
   if (!account.answeringBotId) return { kind: 'reply', text: TELEGRAM_NO_BOT_LINE };

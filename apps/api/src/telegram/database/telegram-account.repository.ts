@@ -74,9 +74,33 @@ export class TelegramAccountRepository
       organizationId,
       userId,
       hostId: _hostId,
+      answeringBotId: _answeringBotId,
+      ownerTelegramId: _ownerTelegramId,
+      ownerLinkCodeHash: _ownerLinkCodeHash,
+      ownerLinkExpiresAt: _ownerLinkExpiresAt,
       ...changes
     } = this.mapper.toPersistence(account);
-    await this.repository.update({ id, organizationId, userId }, changes);
+    await this.repository.update(
+      { id, organizationId, userId },
+      account.ownerForgotten ? { ...changes, ownerTelegramId: null } : changes,
+    );
+  }
+
+  async saveAnswering(account: TelegramAccountEntity): Promise<void> {
+    await this.repository.update(
+      { id: account.id, organizationId: account.organizationId, userId: account.userId },
+      { answeringBotId: account.answeringBotId },
+    );
+  }
+
+  async saveOwnerLink(account: TelegramAccountEntity): Promise<void> {
+    await this.repository.update(
+      { id: account.id, organizationId: account.organizationId, userId: account.userId },
+      {
+        ownerLinkCodeHash: account.ownerLinkCodeHash,
+        ownerLinkExpiresAt: account.ownerLinkExpiresAt,
+      },
+    );
   }
 
   async delete(account: TelegramAccountEntity): Promise<void> {

@@ -432,9 +432,10 @@ export class BotTurnRepository
     botId: string,
     turnIds: string[],
   ): Promise<BotTurnEntity[]> {
-    // IDX_bot_turn_bot, and IDX_bot_turn_active for the second half.
+    // IDX_bot_turn_bot, and IDX_bot_turn_active for the second half: the
+    // console chat's turns, whose conversation is the bot's id.
     const records = await this.scopedQuery(scope)
-      .andWhere('turn.botId = :botId', { botId })
+      .andWhere('turn.botId = :botId AND turn.conversationId = :botId', { botId })
       .andWhere('(turn.id = ANY(:turnIds) OR turn.status IN (:...active))', {
         turnIds,
         active: BOT_ACTIVE_TURN_STATUSES,

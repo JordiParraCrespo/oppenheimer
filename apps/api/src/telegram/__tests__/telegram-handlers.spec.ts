@@ -64,6 +64,8 @@ function fakeAccounts(rows: TelegramAccountEntity[] = []) {
       return row ? Some(row) : None;
     },
     saveOwner: vi.fn(async () => true),
+    saveAnswering: vi.fn(async () => {}),
+    saveOwnerLink: vi.fn(async () => {}),
     insert: vi.fn(async (account) => {
       rows.push(account);
     }),

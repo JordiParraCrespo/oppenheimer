@@ -43,19 +43,20 @@ export class BotConversationRepository implements BotConversationRepositoryPort 
     // PK_bot_conversation.
     const [row]: BotTelegramChat[] = await this.dataSource.query(
       `SELECT "organizationId", "botId", "telegramAccountId", "chatId" FROM bot_conversation
-        WHERE "organizationId" = $1 AND id = $2 AND kind = 'telegram'`,
+        WHERE "organizationId" = $1 AND id = $2 AND kind = 'telegram'
+          AND "telegramAccountId" IS NOT NULL`,
       [organizationId, conversationId],
     );
     return row ?? null;
   }
 
-  async closeTelegram(chat: BotTelegramChat): Promise<void> {
+  async closeTelegram(chat: BotTelegramChat, sentAt: Date): Promise<void> {
     // UQ_bot_conversation_telegram_chat.
     await this.dataSource.query(
       `UPDATE bot_conversation SET "archivedAt" = now(), "updatedAt" = now()
         WHERE "telegramAccountId" = $2 AND "chatId" = $3 AND "archivedAt" IS NULL
-          AND "organizationId" = $1`,
-      [chat.organizationId, chat.telegramAccountId, chat.chatId],
+          AND "organizationId" = $1 AND "createdAt" < $4`,
+      [chat.organizationId, chat.telegramAccountId, chat.chatId, sentAt],
     );
   }
 

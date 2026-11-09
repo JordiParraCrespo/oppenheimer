@@ -28,8 +28,15 @@ export interface BotConversationRepositoryPort {
    * that bot before) is closed first.
    */
   openTelegram(chat: BotTelegramChat): Promise<string>;
-  /** Closes the chat's open conversation, so its next message opens another (`/new`). */
-  closeTelegram(chat: BotTelegramChat): Promise<void>;
-  /** The Telegram chat a conversation is, open or closed; null for any other conversation. */
+  /**
+   * Closes the chat's open conversation if it was opened before `sentAt`,
+   * so the chat's next message opens another (`/new`); one opened after is
+   * left, so a `/new` delivered again closes nothing newer.
+   */
+  closeTelegram(chat: BotTelegramChat, sentAt: Date): Promise<void>;
+  /**
+   * The Telegram chat a conversation is, open or closed; null for any other
+   * conversation, and once its Telegram bot was disconnected.
+   */
   findTelegram(organizationId: string, conversationId: string): Promise<BotTelegramChat | null>;
 }

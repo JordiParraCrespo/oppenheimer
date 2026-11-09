@@ -17,8 +17,17 @@ export interface TelegramAccountRepositoryPort {
   /** A Telegram bot by its id, whoever's: for a reply its owner's bot owes them. */
   findByIdForSystem(organizationId: string, id: string): Promise<Option<TelegramAccountEntity>>;
   insert(account: TelegramAccountEntity): Promise<void>;
-  /** Writes the label and the bot's state. */
+  /**
+   * Writes the label and the bot's state, and the owner's forgetting when a
+   * report of another Telegram bot forgot them. Never the answering bot, the
+   * owner or the open link, which each have their own write, so a copy
+   * loaded before one of them changed does not put it back.
+   */
   save(account: TelegramAccountEntity): Promise<void>;
+  /** Writes which Oppenheimer bot answers here, and nothing else. */
+  saveAnswering(account: TelegramAccountEntity): Promise<void>;
+  /** Writes the open `start` link (`openOwnerLink`), and nothing else. */
+  saveOwnerLink(account: TelegramAccountEntity): Promise<void>;
   delete(account: TelegramAccountEntity): Promise<void>;
   /**
    * Writes the owner the `start` link recorded (`claimOwner`), only while

@@ -68,7 +68,10 @@ export class RunBotTurnCommandHandler implements ICommandHandler<RunBotTurnComma
     turn.start(new Date());
     // Busy: another turn of the bot runs, and stages this one when it ends.
     if ((await this.turns.claim(turn)) !== 'claimed') return null;
-    await this.stream.publish(turn.botId, { type: 'turn', turnId, status: 'running' });
+    // The bot's stream is its console chat's; a channel's turn is not on it.
+    if (turn.inConsole) {
+      await this.stream.publish(turn.botId, { type: 'turn', turnId, status: 'running' });
+    }
     return turn;
   }
 
@@ -112,7 +115,9 @@ export class RunBotTurnCommandHandler implements ICommandHandler<RunBotTurnComma
     // Before it reads as ended: a chat that connects after never gets a snapshot of it.
     await this.stream.forget(turn.botId, turn.id);
     if (!(await this.turns.finish(turn, correlationId))) return;
-    await this.stream.publish(turn.botId, { type: 'turn', turnId: turn.id, status: turn.status });
+    if (turn.inConsole) {
+      await this.stream.publish(turn.botId, { type: 'turn', turnId: turn.id, status: turn.status });
+    }
     await this.summaries.afterTurn(turn, correlationId);
     await this.dreams.afterTurn(turn, correlationId);
   }

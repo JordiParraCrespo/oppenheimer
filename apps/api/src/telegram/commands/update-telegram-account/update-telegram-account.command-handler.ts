@@ -37,7 +37,7 @@ export class UpdateTelegramAccountCommandHandler
     if (answeringBotId)
       await this.queryBus.execute(new FindBotQuery({ scope, botId: answeringBotId }));
     account.answerAs(answeringBotId);
-    await this.accounts.save(account);
+    await this.accounts.saveAnswering(account);
     return account.id;
   }
 }

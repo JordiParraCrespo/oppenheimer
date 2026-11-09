@@ -16,6 +16,8 @@ export class WakeOnTelegramCommand extends CommandBase {
   readonly messageId: string;
   readonly command: 'message' | 'new' | 'stop';
   readonly text: string;
+  /** When Telegram says it was sent. */
+  readonly sentAt: Date;
 
   constructor(props: CommandProps<WakeOnTelegramCommand>) {
     super(props);
@@ -27,5 +29,6 @@ export class WakeOnTelegramCommand extends CommandBase {
     this.messageId = props.messageId;
     this.command = props.command;
     this.text = props.text;
+    this.sentAt = props.sentAt;
   }
 }

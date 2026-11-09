@@ -13,7 +13,8 @@ import {
 /**
  * One of a bot's conversations (`1794241820830-AnswerOnTelegram`): its
  * console chat, whose id is the bot's own, or a Telegram chat with the bot,
- * open until `/new` closes it.
+ * open until `/new` closes it. A Telegram chat's account is null once that
+ * Telegram bot was disconnected; its history stays the bot's.
  */
 @Entity('bot_conversation')
 @Unique('UQ_bot_conversation_organization_id', ['organizationId', 'id'])
@@ -27,10 +28,8 @@ import {
 })
 @Check('CHK_bot_conversation_kind', `kind IN ('console', 'telegram')`)
 @Check('CHK_bot_conversation_console', `(kind = 'console') = (id = "botId")`)
-@Check(
-  'CHK_bot_conversation_telegram',
-  `(kind = 'telegram') = ("telegramAccountId" IS NOT NULL AND "chatId" IS NOT NULL)`,
-)
+@Check('CHK_bot_conversation_telegram', `(kind = 'telegram') = ("chatId" IS NOT NULL)`)
+@Check('CHK_bot_conversation_console_account', `kind = 'telegram' OR "telegramAccountId" IS NULL`)
 export class BotConversationOrmEntity {
   @PrimaryGeneratedColumn('uuid', { primaryKeyConstraintName: 'PK_bot_conversation' })
   id!: string;

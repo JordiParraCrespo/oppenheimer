@@ -12,6 +12,7 @@ import {
  */
 
 const CONVERSATION = '0b3e2a1c-5555-4c5d-8e6f-70819203b4c5';
+const ACCOUNT = '0b3e2a1c-6666-4c5d-8e6f-70819203b4c5';
 const props = {
   organizationId: 'org',
   botId: 'bot',
@@ -23,20 +24,22 @@ const props = {
 
 describe('telegramTurn', () => {
   // What breaks this: a Telegram message landing in the console chat, or
-  // twice in a row as two turns.
-  it('queues the message in the chat’s conversation, keyed by the message', () => {
-    const { turn, opening } = telegramTurn(props, {
+  // twice as two turns (a delivery again after /new opened another conversation).
+  it('queues the message in the chat’s conversation, keyed by the message alone', () => {
+    const message = {
       conversationId: CONVERSATION,
+      telegramAccountId: ACCOUNT,
+      chatId: '123456789',
       messageId: '42',
       text: 'Is the build green?',
-    });
+    };
+    const { turn, opening } = telegramTurn(props, message);
     expect(turn.conversationId).toBe(CONVERSATION);
     expect(turn.inConsole).toBe(false);
     expect(turn.origin).toBe('telegram');
     expect(turn.lane).toBe('owner');
-    expect(turn.sourceKey).toBe(
-      telegramSourceKey({ conversationId: CONVERSATION, messageId: '42' }),
-    );
+    expect(turn.sourceKey).toBe(telegramSourceKey(message));
+    expect(turn.sourceKey).not.toContain(CONVERSATION);
     expect(opening.conversationId).toBe(CONVERSATION);
     expect(opening.role).toBe('user');
     expect(opening.content).toBe('Is the build green?');

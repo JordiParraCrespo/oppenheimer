@@ -41,7 +41,7 @@ export class OpenTelegramOwnerLinkCommandHandler
       });
     }
     const { code, expiresAt } = account.openOwnerLink(new Date());
-    await this.accounts.save(account);
+    await this.accounts.saveOwnerLink(account);
     return { url: `https://t.me/${account.username}?start=${code}`, expiresAt };
   }
 }

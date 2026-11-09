@@ -645,13 +645,21 @@ describe('bots chat (integration)', () => {
       model: 'glm-5.3',
       effort: null,
     };
-    const first = telegramTurn(props, { conversationId, messageId: '1', text: 'On Telegram' });
+    const said = (conversation: string, messageId: string, text: string) =>
+      telegramTurn(props, {
+        conversationId: conversation,
+        telegramAccountId: chat.telegramAccountId,
+        chatId: chat.chatId,
+        messageId,
+        text,
+      });
+    const first = said(conversationId, '1', 'On Telegram');
     await turns.enqueueOnce(first.turn, first.opening, null, null);
-    const twice = telegramTurn(props, { conversationId, messageId: '1', text: 'On Telegram' });
+    const twice = said(conversationId, '1', 'On Telegram');
     expect((await turns.enqueueOnce(twice.turn, twice.opening, null, null)).outcome).toBe(
       'existing',
     );
-    const second = telegramTurn(props, { conversationId, messageId: '2', text: 'Again' });
+    const second = said(conversationId, '2', 'Again');
     await turns.enqueueOnce(second.turn, second.opening, null, null);
 
     const history = await messages.findHistory(
@@ -666,9 +674,17 @@ describe('bots chat (integration)', () => {
     expect(inConsole.map((message) => message.content)).toEqual(['In the console']);
     expect((await turns.findForRun(second.turn.id)).unwrap().conversationId).toBe(conversationId);
 
-    await conversations.closeTelegram(chat);
+    await conversations.closeTelegram(chat, new Date());
     const next = await conversations.openTelegram(chat);
     expect(next).not.toBe(conversationId);
+    // A message delivered again after /new is still the one turn it was.
+    const again = said(next, '1', 'On Telegram');
+    expect((await turns.enqueueOnce(again.turn, again.opening, null, null)).outcome).toBe(
+      'existing',
+    );
+    // A /new delivered again closes nothing opened after it was sent.
+    await conversations.closeTelegram(chat, new Date(Date.now() - 60_000));
+    expect(await conversations.openTelegram(chat)).toBe(next);
     expect(await conversations.findTelegram(organizationId, conversationId)).toMatchObject(chat);
 
     await dataSource.query(`UPDATE bot_turn SET status = 'completed' WHERE "botId" = $1`, [bot.id]);

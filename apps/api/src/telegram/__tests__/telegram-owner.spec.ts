@@ -99,6 +99,11 @@ describe('telegramInboundAction', () => {
       code: 'abc_DEF-1',
     });
     expect(telegramInboundAction(owned, direct('222', '/new'))).toEqual({ kind: 'stranger' });
+    // The owner tapping a link again is answered as the owner, never as a stranger.
+    expect(telegramInboundAction(owned, direct(OWNER, '/start abc_DEF-1'))).toEqual({
+      kind: 'reply',
+      text: TELEGRAM_HELP_LINE,
+    });
     expect(telegramInboundAction(owned, direct(OWNER, '/new@shop_bot'))).toMatchObject({
       kind: 'owner',
       command: 'new',

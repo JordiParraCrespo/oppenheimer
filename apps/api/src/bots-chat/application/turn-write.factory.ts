@@ -37,6 +37,15 @@ export class TurnWriteFactory {
   }
 
   private async apply(turn: BotTurnEntity, write: TranscriptWrite): Promise<void> {
+    // The bot's stream is its console chat's; a channel's turn is stored only.
+    if (!turn.inConsole) {
+      if (write.kind === 'text' || write.kind === 'settled' || write.kind === 'retrying') return;
+      try {
+        return await this.store(turn, write);
+      } catch (error) {
+        throw new TurnStorageError(error);
+      }
+    }
     switch (write.kind) {
       case 'text':
         return this.stream.write(turn.botId, turn.id, write.block, write.text);
