@@ -1348,6 +1348,14 @@ earlier note:
   `read_terminal` type into a blank-terminal session and read its screen,
   only on a host whose `runner exec` mode is `full`. A coding agent is still
   given a task, never typed at.
+- `versions/mvp/25-bots.md` §4.1 (2026-10-29) let a bot file a fact as
+  "about the person (their name, their role, their preferences)", read by
+  all their bots. Bots filed their job there: Facturas read another bot's
+  XRP Mobile project and pull request notification setting. On 2026-11-08
+  the owner asked for two memories made plain, a general one and one per
+  bot: `remember` takes `memory: 'yours' | 'general'`, the prompt names
+  *Your memory* and *General memory*, and general takes only what a bot
+  with a completely different job would need (`scripts/evals/bot-memory`).
 - `versions/mvp/02-runner.md` §5 said a base that is not a branch on the
   remote fails the create. On 2026-11-08 a project on an empty GitHub
   repository could not start its first session for that reason, so an
