@@ -28,4 +28,16 @@ describe('useTodoOrder', () => {
     expect(result.current.order).toEqual(['early', 'a', 'b', 'c']);
     expect(storedTodoOrder('2026-11-09')).toEqual([]);
   });
+
+  it('keeps a run of rows ticked from the bottom up in place', () => {
+    const { result, rerender } = renderHook(
+      ({ ids }) => useTodoOrder('2026-11-09', '2026-11-09', ids),
+      { initialProps: { ids: ['a', 'b', 'c'] } },
+    );
+    act(() => result.current.hold('c'));
+    rerender({ ids: ['c', 'a', 'b'] });
+    act(() => result.current.hold('b'));
+    rerender({ ids: ['b', 'c', 'a'] });
+    expect(result.current.order).toEqual(['a', 'b', 'c']);
+  });
 });

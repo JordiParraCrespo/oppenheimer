@@ -47,11 +47,25 @@ export function useTodoOrder(day: string, today: string, ids: readonly string[])
 }
 
 function anchored(order: readonly string[], held: readonly Anchor[]): string[] {
-  let out = [...order];
-  for (const { id, after } of held) {
-    if (!out.includes(id) || (after !== null && !out.includes(after))) continue;
-    out = out.filter((other) => other !== id);
-    out.splice(after === null ? 0 : out.indexOf(after) + 1, 0, id);
+  const placeable = held.filter(
+    ({ id, after }) => order.includes(id) && (after === null || order.includes(after)),
+  );
+  const moving = new Set(placeable.map(({ id }) => id));
+  const out = order.filter((id) => !moving.has(id));
+  // A held task goes in once the row it sits under is placed, so ticking up a run of rows keeps each.
+  let pending = placeable;
+  while (pending.length > 0) {
+    const waiting: Anchor[] = [];
+    for (const anchor of pending) {
+      if (anchor.after === null) out.unshift(anchor.id);
+      else if (out.includes(anchor.after)) out.splice(out.indexOf(anchor.after) + 1, 0, anchor.id);
+      else waiting.push(anchor);
+    }
+    if (waiting.length === pending.length) {
+      out.push(...waiting.map(({ id }) => id));
+      break;
+    }
+    pending = waiting;
   }
   return out;
 }
