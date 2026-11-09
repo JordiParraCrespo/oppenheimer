@@ -22,10 +22,13 @@ import {
   planSession,
   promptSummary,
   readAfterHint,
+  type SessionActionOutcome,
   sentTurnOf,
+  sessionActionAnswer,
   sessionHostId,
   sessionSummary,
 } from '../bot-session-tool.mapper';
+import { botSessionRefusal } from '../domain/bot-session-ownership.policy';
 import { idempotencyKeyOf } from '../domain/bot-tool-idempotency.policy';
 import {
   CLOUD_SESSION_AGENTS,
@@ -406,44 +409,30 @@ export class BotSessionToolsFactory implements BotToolArea {
   }
 
   private stopSession(): BotToolDefinition {
-    return defineBotTool({
+    return this.sessionAction({
       name: 'stop_session',
-      scope: 'sessions:write',
-      asks: true,
-      subject: (input, context) => this.sessionSubject(context, input.session_id),
+      verb: 'stop',
       description:
         "Stops a running session's agent. The worktree and its changes are kept. Use it when the person asks to stop one, or for a session you started that went wrong. It stops once its host hears it: get_session shows when it has.",
       input: z.object({
         session_id: z.uuid().describe('The session to stop (from list_sessions).'),
       }),
-      summarize: async (input, context) => {
-        const session = await this.queryBus.execute<FindSessionQuery, WorkSessionEntity>(
-          new FindSessionQuery({ scope: context.owner, sessionId: input.session_id }),
-        );
-        return `Stop the session "${session.name}" (${session.id})`;
-      },
-      run: async (input, context) => {
-        await this.commandBus.execute<StopSessionCommand, SessionCommandResult>(
-          new StopSessionCommand({ scope: context.owner, sessionId: input.session_id }),
-        );
-        return `Asked session ${input.session_id} to stop. It stops once its host hears it; get_session shows when it has.`;
-      },
+      summary: (session) => `Stop the session "${session.name}" (${session.id})`,
+      command: (input, context) =>
+        new StopSessionCommand({ scope: context.owner, sessionId: input.session_id }),
     });
   }
 
   /**
    * Closes a session a bot started, most often one that failed, so it does not
    * stay in the owner's sidebar: the sessions' own close, which pushes each
-   * branch and removes the worktrees. Only a bot's session (origin `bot`): one
-   * the person, an automation or a review started is theirs to close, and the
-   * refusal says so before any card is raised.
+   * branch and removes the worktrees. Whose sessions a bot may close is
+   * `botSessionRefusal`'s.
    */
   private closeSession(): BotToolDefinition {
-    return defineBotTool({
+    return this.sessionAction({
       name: 'close_session',
-      scope: 'sessions:write',
-      asks: true,
-      subject: (input, context) => this.sessionSubject(context, input.session_id),
+      verb: 'close',
       description:
         "Closes a session you started (a bot's session), most often one that failed or that you no longer need, so it leaves the person's sidebar: its agent ends, each branch is pushed and the worktree is removed. A session the person, an automation or a review started is refused: tell the person instead. Work never pushed is kept, and the close refused by the host, unless accept_unpushed_work is true; only set it when the person said the work can go. A failed session that never started has nothing to lose. It closes once its host hears it: get_session shows when it has.",
       input: z.object({
@@ -453,39 +442,65 @@ export class BotSessionToolsFactory implements BotToolArea {
           .optional()
           .describe('Remove the worktree even with work never pushed (default false).'),
       }),
-      summarize: async (input, context) => {
-        const session = await this.botSession(context, input.session_id);
-        return closeSummary(session, input.accept_unpushed_work === true);
-      },
-      run: async (input, context) => {
-        await this.botSession(context, input.session_id);
-        const result = await this.commandBus.execute<CloseSessionCommand, SessionCommandResult>(
-          new CloseSessionCommand({
-            scope: context.owner,
-            sessionId: input.session_id,
-            acceptUnpushedWork: input.accept_unpushed_work === true,
-          }),
-        );
-        const offline = result.hints.includes('host_offline')
-          ? ' Its host is offline: the close is sent when it comes back.'
-          : '';
-        return `Asked session ${input.session_id} to close.${offline} It closes once its host hears it; get_session shows when it has, or why the host refused.`;
-      },
+      refusal: botSessionRefusal,
+      summary: (session, input) => closeSummary(session, input.accept_unpushed_work === true),
+      command: (input, context) =>
+        new CloseSessionCommand({
+          scope: context.owner,
+          sessionId: input.session_id,
+          acceptUnpushedWork: input.accept_unpushed_work === true,
+        }),
     });
   }
 
-  /** A session a bot started, or the refusal that says whose it is. */
-  private async botSession(
-    context: BotToolCallContext,
-    sessionId: string,
-  ): Promise<WorkSessionEntity> {
-    const session = await this.session(context, sessionId);
-    if (session.origin !== 'bot') {
-      throw new BotToolRefusal(
-        `Session ${sessionId} was not started by a bot (it is a ${session.origin} session), so you cannot close it. Tell the person; they can close it from the console.`,
-      );
-    }
-    return session;
+  /**
+   * A tool that ends something about one session (stop, close): it asks
+   * first, the card names the session, `refusal` turns a session it may not
+   * touch away before any card and again when an approved call runs, the
+   * sessions' own command does the work, and the answer says whether it is
+   * done or waits on the host.
+   */
+  private sessionAction<Input extends z.ZodObject<{ session_id: z.ZodUUID }>>(spec: {
+    name: string;
+    verb: SessionActionOutcome['verb'];
+    description: string;
+    input: Input;
+    refusal?: (session: WorkSessionEntity) => string | null;
+    summary: (session: WorkSessionEntity, input: z.output<Input>) => string;
+    command: (
+      input: z.output<Input>,
+      context: BotToolCallContext,
+    ) => StopSessionCommand | CloseSessionCommand;
+  }): BotToolDefinition {
+    const allowed = async (context: BotToolCallContext, sessionId: string) => {
+      const session = await this.session(context, sessionId);
+      const refusal = spec.refusal?.(session);
+      if (refusal) throw new BotToolRefusal(refusal);
+      return session;
+    };
+    return defineBotTool({
+      name: spec.name,
+      scope: 'sessions:write',
+      asks: true,
+      subject: (input, context) => this.sessionSubject(context, input.session_id),
+      description: spec.description,
+      input: spec.input,
+      summarize: async (input, context) =>
+        spec.summary(await allowed(context, input.session_id), input),
+      run: async (input, context) => {
+        const session = await allowed(context, input.session_id);
+        const result = await this.commandBus.execute<
+          StopSessionCommand | CloseSessionCommand,
+          SessionCommandResult
+        >(spec.command(input, context));
+        return sessionActionAnswer({
+          verb: spec.verb,
+          sessionId: input.session_id,
+          hints: result.hints,
+          doneHere: spec.verb === 'close' && session.closesWithoutItsHost,
+        });
+      },
+    });
   }
 
   /** The session a call acts on, as a card offers to always allow the tool on it. */

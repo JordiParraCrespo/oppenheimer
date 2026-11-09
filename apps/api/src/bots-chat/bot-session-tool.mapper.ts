@@ -246,6 +246,29 @@ export function closeSummary(
   return `Close the session "${session.name}" (${session.id}) and remove its worktree${loss}`;
 }
 
+/** What a stop or a close asked, and whether it is already done or waits on the host. */
+export interface SessionActionOutcome {
+  verb: 'stop' | 'close';
+  sessionId: string;
+  hints: readonly string[];
+  /** A cloud session closes here, with no host to wait for. */
+  doneHere: boolean;
+}
+
+/**
+ * `stop_session`'s and `close_session`'s answer: done, owed to an offline
+ * host, or sent and waiting on the host to confirm.
+ */
+export function sessionActionAnswer(outcome: SessionActionOutcome): string {
+  const { verb, sessionId } = outcome;
+  const past = verb === 'stop' ? 'stopped' : 'closed';
+  if (outcome.doneHere) return `Session ${sessionId} is ${past}.`;
+  const offline = outcome.hints.includes('host_offline')
+    ? ` Its host is offline: the ${verb} is sent when it comes back.`
+    : '';
+  return `Asked session ${sessionId} to ${verb}.${offline} It ${verb}s once its host hears it; get_session shows when it has, or why the host refused.`;
+}
+
 /** An `answer_session` call, as its input names it. */
 export interface DecisionAnswerInput {
   decision_id: string;
