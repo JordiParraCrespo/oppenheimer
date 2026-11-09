@@ -97,6 +97,7 @@ export function StartSessionDraft({ taskId, onClose }: { taskId: string; onClose
         places={placeOptions(t, (provider) =>
           Boolean(cloudStatus?.providers.some((row) => row.id === provider && row.connected)),
         )}
+        online={(hostId) => Boolean(found.hosts.find((row) => row.id === hostId)?.online)}
         offline={(hostId) => {
           const host = found.hosts.find((row) => row.id === hostId);
           if (!host || host.online) return null;
@@ -119,7 +120,7 @@ export function StartSessionDraft({ taskId, onClose }: { taskId: string; onClose
         }}
         homeOffline={(hostId) => {
           const host = found.hosts.find((row) => row.id === hostId);
-          if (!host || host.online) return null;
+          if (!host) return null;
           return (
             <Callout tone="warning">{t('tasks.start.homeOffline', { host: host.name })}</Callout>
           );

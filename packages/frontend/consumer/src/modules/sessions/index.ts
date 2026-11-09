@@ -26,7 +26,6 @@ export {
   type CreateSessionCheckout,
   type CreateSessionInput,
   cloudProviderLabel,
-  HOST_HOME_FOLDER,
   type PrepareSessionInput,
   type SessionAgent,
   type SessionAttachment,

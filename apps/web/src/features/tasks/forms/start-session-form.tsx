@@ -27,14 +27,15 @@ import {
   asPlace,
   NO_REPOSITORY,
   type StartSessionValues,
+  startReadiness,
 } from '../lib/start-session';
 
 /**
  * The launch dialog's form (`18-plan-product.md` §4): the prompt, prefilled
  * from the task, and the repository, where it runs, the host, agent and model,
  * defaulted from the project. On a host the repository may be none: the
- * session opens in the host's home, which an offline host cannot name, so
- * `homeOffline` says so and holds the start. Where is a host, Claude Code's cloud started
+ * session opens in the host's home. What holds the start or queues it is
+ * `startReadiness`'s; this draws its answer. Where is a host, Claude Code's cloud started
  * from a host (Claude Code only), or Cursor's cloud with no host (Cursor's
  * own agent and pick of model, offered once the reader has a key); a cloud
  * session needs a task; in Claude Code's cloud each host names the claude.ai
@@ -50,6 +51,7 @@ export function StartSessionForm({
   hosts,
   cloudHosts,
   places,
+  online,
   offline,
   homeOffline,
   account,
@@ -66,7 +68,9 @@ export function StartSessionForm({
   cloudHosts: ChipSelectOption[];
   /** Where it can run: a host, Claude Code's cloud, Cursor's; one that cannot now is disabled. */
   places: ChipSelectOption[];
-  /** The note under the pickers when the picked host is offline. */
+  /** Whether the host is online; an offline one queues the session, or holds one with no repository. */
+  online: (hostId: string) => boolean;
+  /** The note under the pickers when the session is queued for its offline host. */
   offline: (hostId: string) => ReactNode;
   /** In its place, with no repository picked: why the start waits for the host. */
   homeOffline: (hostId: string) => ReactNode;
@@ -85,24 +89,21 @@ export function StartSessionForm({
   const hostId = useWatch({ control, name: 'hostId' });
   const place = useWatch({ control, name: 'place' });
   const promptEmpty = useWatch({ control, name: 'prompt', compute: (prompt) => !prompt.trim() });
-  const noRepository = useWatch({
-    control,
-    name: 'repositoryId',
-    compute: (id) => id === NO_REPOSITORY,
-  });
+  const noRepository = useWatch({ control, name: 'repositoryId', compute: (id) => id === null });
   const rule = AUTOMATION_PLACE_RULES[place];
-  // A cloud session starts on a task from a repository; a host session may start on neither.
-  const inCloud = rule.host !== 'runs';
-  const needsTask = inCloud && promptEmpty;
-  const needsRepository = inCloud && noRepository;
-  const waitsForHome = hostId && !inCloud && noRepository ? homeOffline(hostId) : null;
-  const note = waitsForHome ?? (hostId && rule.host ? offline(hostId) : null);
+  const { hold, queues } = startReadiness({
+    place,
+    promptEmpty,
+    noRepository,
+    hasHosts: hosts.length > 0,
+    hostOnline: hostId && rule.host !== null ? online(hostId) : null,
+  });
   const repositoryOptions: ChipSelectOption[] = [
     {
       value: NO_REPOSITORY,
       label: t('tasks.start.noRepository'),
       description: t('tasks.start.noRepositoryDesc'),
-      disabled: inCloud,
+      disabled: rule.host !== 'runs',
     },
     ...repositories,
   ];
@@ -132,8 +133,8 @@ export function StartSessionForm({
           name="repositoryId"
           render={({ field }) => (
             <ChipSelect
-              value={field.value}
-              onValueChange={field.onChange}
+              value={field.value ?? NO_REPOSITORY}
+              onValueChange={(value) => field.onChange(value === NO_REPOSITORY ? null : value)}
               options={repositoryOptions}
               icon={<GitBranch />}
               aria-label={t('tasks.start.repository')}
@@ -223,25 +224,17 @@ export function StartSessionForm({
         )}
       </div>
       {hostId && rule.host === 'starts' ? account(hostId) : null}
-      {needsTask ? <Callout>{t('tasks.start.cloudNeedsTask')}</Callout> : null}
-      {needsRepository ? <Callout>{t('tasks.start.cloudNeedsRepository')}</Callout> : null}
-      {note}
+      {hold === 'task' ? <Callout>{t('tasks.start.cloudNeedsTask')}</Callout> : null}
+      {hold === 'repository' ? <Callout>{t('tasks.start.cloudNeedsRepository')}</Callout> : null}
+      {hold === 'home' ? homeOffline(hostId) : null}
+      {queues ? offline(hostId) : null}
       <ErrorAlert message={error?.message} correlationId={error?.correlationId} />
       <div className="flex items-center justify-end gap-2">
         <Button type="button" variant="ghost" onClick={onCancel}>
           {t('common.cancel')}
         </Button>
-        <Button
-          type="submit"
-          pending={pending}
-          disabled={
-            (rule.host !== null && !hosts.length) ||
-            needsTask ||
-            needsRepository ||
-            Boolean(waitsForHome)
-          }
-        >
-          {note && !waitsForHome ? t('tasks.start.queue') : t('tasks.start.start')}
+        <Button type="submit" pending={pending} disabled={hold !== null}>
+          {queues ? t('tasks.start.queue') : t('tasks.start.start')}
         </Button>
       </div>
     </form>

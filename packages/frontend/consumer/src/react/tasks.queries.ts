@@ -13,7 +13,6 @@ import {
   useMutation,
   useQueryClient,
 } from '@tanstack/react-query';
-import { HOST_HOME_FOLDER } from '../modules/sessions/session.entity';
 import type { PlanStats, PlanStatsQuery } from '../modules/tasks/plan-stats';
 import {
   type MilestoneEntity,
@@ -270,7 +269,30 @@ export const useDeleteTask = mutation<void, string>({
   update: (queryClient, _data, id) => settleTask(queryClient, id, null),
 });
 
-export type StartTaskSessionVariables = StartTaskSessionInput & { id: string };
+/**
+ * A start's folder that is the host's home: only the host can say its path,
+ * so the start asks it before posting. A marker, never a path, so it cannot
+ * reach the API as one.
+ */
+export const HOST_HOME = Symbol('host home');
+
+type HostSession = Extract<StartTaskSessionInput, { session: unknown }>['session'];
+
+/** New session's folder session, in the host's home before the host has named it. */
+export type HostHomeSessionInput = Omit<Extract<HostSession, { folder: string }>, 'folder'> & {
+  folder: typeof HOST_HOME;
+};
+
+type HostHomeStart = Omit<StartTaskSessionInput, 'session' | 'cloud'> & {
+  session: HostHomeSessionInput;
+  cloud?: never;
+};
+
+export type StartTaskSessionVariables = { id: string } & (StartTaskSessionInput | HostHomeStart);
+
+function inHostHome(input: StartTaskSessionInput | HostHomeStart): input is HostHomeStart {
+  return input.session?.folder === HOST_HOME;
+}
 
 /**
  * The home each start resolved, by its idempotency key: a retry of the same
@@ -280,20 +302,16 @@ const resolvedHomes = new Map<string, string>();
 
 /**
  * Start a session for a task; the session list learns of it on its next read.
- * A folder of `HOST_HOME_FOLDER` is the host's home, asked of the host first.
+ * A folder of `HOST_HOME` is the host's home, asked of the host first.
  */
 export const useStartTaskSession = mutation<StartedTaskSession, StartTaskSessionVariables>({
-  run: async (app, variables) => {
-    const { id, session, seenStatus, idempotencyKey } = variables;
-    if (session?.folder !== HOST_HOME_FOLDER) return app.tasks.startSession(id, variables);
+  run: async (app, { id, ...input }) => {
+    if (!inHostHome(input)) return app.tasks.startSession(id, input);
+    const { session, idempotencyKey } = input;
     const home =
       resolvedHomes.get(idempotencyKey) ?? (await app.hosts.findFolders(session.hostId)).home;
     resolvedHomes.set(idempotencyKey, home);
-    return app.tasks.startSession(id, {
-      session: { ...session, folder: home },
-      seenStatus,
-      idempotencyKey,
-    });
+    return app.tasks.startSession(id, { ...input, session: { ...session, folder: home } });
   },
   update: (queryClient, started) => {
     void queryClient.invalidateQueries({ queryKey: sessionsKeys.lists() });

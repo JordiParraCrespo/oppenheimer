@@ -5,11 +5,12 @@ import type { ReactNode } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { TOKENS } from '../../di/tokens';
 import type { HostsRepository } from '../../modules/hosts/hosts.repository';
-import { HOST_HOME_FOLDER } from '../../modules/sessions/session.entity';
 import { TaskEntity } from '../../modules/tasks/task.entity';
 import type { TasksRepository } from '../../modules/tasks/tasks.repository';
 import { tasksKeys } from '../tasks.keys';
 import {
+  HOST_HOME,
+  type StartTaskSessionVariables,
   useCreateTask,
   useDeleteTask,
   useMilestones,
@@ -351,7 +352,7 @@ describe('milestone progress', () => {
 });
 
 describe('useStartTaskSession', () => {
-  it("opens a session with no repository in the folder the host names as its home, not in '~'", async () => {
+  it('opens a session with no repository in the folder the host names as its home', async () => {
     const findFolders = vi.fn().mockResolvedValue({ home: '/home/ada' });
     const startSession = vi
       .fn()
@@ -362,7 +363,7 @@ describe('useStartTaskSession', () => {
     await act(() =>
       result.current.mutateAsync({
         id: 't-1',
-        session: { hostId: 'h-1', agent: 'shell', folder: HOST_HOME_FOLDER },
+        session: { hostId: 'h-1', agent: 'shell', folder: HOST_HOME },
         seenStatus: 'todo',
         idempotencyKey: 'k-1',
       }),
@@ -387,10 +388,10 @@ describe('useStartTaskSession', () => {
       .mockResolvedValue({ task: task('t-1', { status: 'doing' }), sessionId: 's-1', hints: [] });
     const { wrapper } = setup({ startSession }, { findFolders });
     const { result } = renderHook(() => useStartTaskSession(), { wrapper });
-    const start = {
+    const start: StartTaskSessionVariables = {
       id: 't-1',
-      session: { hostId: 'h-1', agent: 'shell' as const, folder: HOST_HOME_FOLDER },
-      seenStatus: 'todo' as const,
+      session: { hostId: 'h-1', agent: 'shell', folder: HOST_HOME },
+      seenStatus: 'todo',
       idempotencyKey: 'k-retry',
     };
 

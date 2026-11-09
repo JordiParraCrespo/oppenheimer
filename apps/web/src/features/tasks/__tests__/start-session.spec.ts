@@ -1,7 +1,8 @@
-import { HOST_HOME_FOLDER, ProjectEntity } from '@oppenheimer/frontend-consumer';
+import { ProjectEntity } from '@oppenheimer/frontend-consumer';
+import { HOST_HOME } from '@oppenheimer/frontend-consumer/react';
 import { DEFAULT_SESSION_PERMISSION } from '@oppenheimer/shared/agents';
 import { describe, expect, it } from 'vitest';
-import { NO_REPOSITORY, type StartSessionValues, toStartSession } from '../lib/start-session';
+import { type StartSessionValues, startReadiness, toStartSession } from '../lib/start-session';
 
 /**
  * What Start session sends for each place: New session's body on a host, the
@@ -79,17 +80,45 @@ describe('the body Start session sends', () => {
   });
 
   it('opens a session with no repository in the host’s home, never in the cloud', () => {
-    const none = values({ repositoryId: NO_REPOSITORY });
+    const none = values({ repositoryId: null });
     expect(toStartSession(none, project)).toEqual({
       session: {
         hostId: 'h-1',
         agent: 'codex',
-        folder: HOST_HOME_FOLDER,
+        folder: HOST_HOME,
         launch: { model: null, permission: DEFAULT_SESSION_PERMISSION },
         prompt: 'Fix the login',
       },
     });
     expect(toStartSession({ ...none, place: 'claude-cloud' }, project)).toBeNull();
     expect(toStartSession({ ...none, place: 'cursor' }, project)).toBeNull();
+  });
+});
+
+describe('whether Start session can start', () => {
+  const ready = {
+    place: 'host' as const,
+    promptEmpty: false,
+    noRepository: false,
+    hasHosts: true,
+    hostOnline: true,
+  };
+
+  it('queues a session for an offline host, but holds one with no repository, whose home only the host can say', () => {
+    expect(startReadiness({ ...ready, hostOnline: false })).toEqual({ hold: null, queues: true });
+    expect(startReadiness({ ...ready, hostOnline: false, noRepository: true })).toEqual({
+      hold: 'home',
+      queues: false,
+    });
+    expect(startReadiness({ ...ready, noRepository: true })).toEqual({ hold: null, queues: false });
+  });
+
+  it('holds a cloud start without a task or a repository, and any start with no host to run it', () => {
+    expect(startReadiness({ ...ready, place: 'cursor', promptEmpty: true }).hold).toBe('task');
+    expect(startReadiness({ ...ready, place: 'claude-cloud', noRepository: true }).hold).toBe(
+      'repository',
+    );
+    expect(startReadiness({ ...ready, hasHosts: false }).hold).toBe('host');
+    expect(startReadiness({ ...ready, place: 'cursor', hasHosts: false }).hold).toBeNull();
   });
 });
