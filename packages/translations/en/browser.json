@@ -1622,7 +1622,20 @@
           "rate_limit": "{{provider}} is limiting requests, retrying…",
           "unavailable": "{{provider}} is busy, retrying…"
         },
-        "thinking": "Thinking",
+        "musing": {
+          "pondering": "Pondering",
+          "mulling": "Mulling",
+          "musing": "Musing",
+          "noodling": "Noodling",
+          "ruminating": "Ruminating",
+          "cogitating": "Cogitating",
+          "brewing": "Brewing",
+          "percolating": "Percolating",
+          "scheming": "Scheming",
+          "puzzling": "Puzzling",
+          "tinkering": "Tinkering",
+          "conjuring": "Conjuring"
+        },
         "writing": "Writing",
         "stopped": "Stopped"
       },
