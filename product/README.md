@@ -1416,3 +1416,6 @@ earlier note:
   sessions and in bots: it takes Fable 5.1's place, and Fable 5.1 heads
   "More models", since Claude still serves it. OpenCode's `anthropic/` row
   moves to Fable 5.2 as well, with Fable 5.1 behind its "More models".
+  Its effort starts at `high` in a session, what Claude runs it at unasked,
+  and at `medium` in a bot, which sends that level when the bot names none
+  (`BOT_EFFORT_DEFAULTS` in `packages/shared`).

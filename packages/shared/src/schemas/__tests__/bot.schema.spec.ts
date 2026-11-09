@@ -1,7 +1,10 @@
 import { describe, expect, it } from 'vitest';
+import { effortFor } from '../../agents/catalog.js';
 import {
   BOT_PROVIDER_PREFERENCE,
   BOT_PROVIDERS,
+  botEffortSent,
+  botModelOf,
   decideBotApprovalSchema,
   namedBotApprovalDecision,
   preferredKeyedProvider,
@@ -16,6 +19,24 @@ describe('bot provider preference', () => {
   it('picks the first keyed provider in preference order, not catalog order', () => {
     expect(preferredKeyedProvider(['glm', 'chatgpt'])).toBe('chatgpt');
     expect(preferredKeyedProvider([])).toBeUndefined();
+  });
+});
+
+describe('a bot’s effort on Fable 5.2', () => {
+  // What breaks this: the bot's slider reads Medium while its turns send no
+  // effort and Claude runs them at high, or a session's Fable 5.2 drops to
+  // medium with the bot's.
+  it('defaults to medium for a bot and sends it, where a session keeps high', () => {
+    expect(botModelOf('anthropic', 'claude-fable-5-2')?.effort?.default).toBe('medium');
+    expect(botEffortSent('anthropic', 'claude-fable-5-2', null)).toBe('medium');
+    expect(botEffortSent('anthropic', 'claude-fable-5-2', 'max')).toBe('max');
+    expect(effortFor('claude-code', 'claude-fable-5-2')?.default).toBe('high');
+  });
+
+  it('sends nothing for a model a bot runs at the provider’s own default', () => {
+    expect(botEffortSent('anthropic', null, null)).toBeNull();
+    expect(botEffortSent('anthropic', 'claude-sonnet-5-5', null)).toBeNull();
+    expect(botEffortSent('xai', 'grok-4.7', null)).toBeNull();
   });
 });
 
