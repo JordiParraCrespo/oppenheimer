@@ -186,6 +186,9 @@ email thread:
 - **Allowed contacts** are a list per account. The default list is the
   owner alone. A contact's message starts a turn; what they ask is theirs,
   but the bot still acts as its owner, inside the owner's permissions.
+  *Changed 2026-11-09: a contact's turn has the customer turn's fixed tool
+  set and reads none of the owner's memory
+  ([answering-on-telegram-and-whatsapp.md](answering-on-telegram-and-whatsapp.md) §3).*
 - **Anyone else** is held: no reply, nothing reaches the bot, and the
   console shows "+34 6… wants to talk to Juno" with Allow and Ignore. A
   reply to a stranger from your own number is the riskiest thing a linked
@@ -408,3 +411,8 @@ Reading your own mailboxes ([Mail](mail.md)) comes before all of these.
   (`whatsapp_message`, 90 days) so bots can read chats, where §3 had only
   intake rows; and the linked device answers no one by itself. WhatsApp as
   a channel (§7.1 in full) is that note's slice 4, on the same device.
+- 2026-11-09: Telegram and WhatsApp answering as channels
+  ([answering-on-telegram-and-whatsapp.md](answering-on-telegram-and-whatsapp.md)).
+  An allowed contact no longer acts inside the owner's permissions (§5):
+  their turn has the customer turn's tools and none of the owner's memory.
+  A bot bound to an account or a route cannot be deleted.

@@ -50,7 +50,10 @@ of your hosts, name it ("Shop"), and paste the token @BotFather gave you.
   `packages/shared/src/protocol/telegram.ts`.
 - **One bot per host**, up to three per person, as WhatsApp. A bot polled
   from two places loses updates to whichever asked first, so moving one is
-  disconnect and connect again.
+  disconnect and connect again. *Changed 2026-11-09: a Telegram bot belongs
+  to one Oppenheimer bot and is polled by that bot's home host, so a host
+  polls one token per bot whose home it is
+  ([answering-on-telegram-and-whatsapp.md](answering-on-telegram-and-whatsapp.md) §1).*
 - **Disconnecting** asks the host to forget the token and its outbox, and
   forgets the bot and its messages. The bot itself stays yours on Telegram;
   revoke its token in @BotFather to end it there too.
@@ -149,7 +152,11 @@ A group of its own in Settings → Permissions, **Telegram**:
    own identity, so it is the most natural channel of all: people write to
    it, and the Oppenheimer bot it is bound to answers, with the owner-only
    rule and held strangers of `channels.md` §5. Inline buttons for approval
-   cards, as OpenClaw's `execApprovals`, belong there.
+   cards, as OpenClaw's `execApprovals`, belong there. *Designed
+   2026-11-09 in
+   [answering-on-telegram-and-whatsapp.md](answering-on-telegram-and-whatsapp.md),
+   which comes before slice 2 and builds no inline approval buttons:
+   approvals are answered in the console only.*
 4. **Media**: images to the bot, voice notes transcribed.
 
 ## Open questions
@@ -160,7 +167,8 @@ A group of its own in Settings → Permissions, **Telegram**:
    no host to keep up. This note keeps the WhatsApp gateway because the
    owner pointed at it and it works on a local stack with no public URL.
 2. Several bots per host? A runner can poll more than one token; one per
-   host keeps the account ↔ host rule WhatsApp has.
+   host keeps the account ↔ host rule WhatsApp has. *Answered 2026-11-09:
+   yes, one per Oppenheimer bot whose home is that host.*
 
 ## Decided
 
@@ -169,3 +177,9 @@ A group of its own in Settings → Permissions, **Telegram**:
   the token kept there; worked by the owner's bots with WhatsApp's tools and
   per-chat send grant. No Telegram library in the runner: the Bot API is
   four HTTPS calls.
+- 2026-11-09: the owner's `/start` got no answer, and they asked who
+  answers and how the chats are kept safe. A Telegram bot belongs to one
+  Oppenheimer bot, polled by its home host; the owner is recorded by a
+  one-time `start` link; strangers are held with one fixed line; a
+  contact's turn has the customer turn's tools and none of the owner's
+  memory ([answering-on-telegram-and-whatsapp.md](answering-on-telegram-and-whatsapp.md)).

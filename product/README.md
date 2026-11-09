@@ -1383,3 +1383,12 @@ earlier note:
   (Sentry OPPENHEIMER-API-2, 2026-11-09). The webhook now reads its own body
   raw, up to GitHub's documented 25 MB cap, ahead of the app-wide parsers;
   a larger body is a 413, and the `rawBody` copy is gone.
+- `next-steps/channels.md` §5 (2026-10-22) had an allowed contact's turn
+  act inside the owner's permissions, and `next-steps/telegram.md` §2
+  (2026-11-08) held one Telegram bot per host. On 2026-11-09 the owner's
+  `/start` to their bot went unanswered and they asked who answers and how
+  the chats stay safe (`next-steps/answering-on-telegram-and-whatsapp.md`):
+  a Telegram bot belongs to one Oppenheimer bot and is polled by its home
+  host; a WhatsApp number has a default bot and routes; a bot that answers
+  something cannot be deleted; a contact's turn has the customer turn's
+  tools and none of the owner's memory.

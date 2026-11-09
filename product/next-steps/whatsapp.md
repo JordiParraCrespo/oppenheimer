@@ -152,7 +152,10 @@ A group of its own in Settings → Permissions, **WhatsApp**:
    voice's providers (`channels.md` §7.1).
 4. **WhatsApp as a channel** (`channels.md` §7.1): people write *to* a bot,
    with the owner-only rule and held strangers of `channels.md` §5, on the
-   same device.
+   same device. *Designed 2026-11-09 in
+   [answering-on-telegram-and-whatsapp.md](answering-on-telegram-and-whatsapp.md):
+   a default bot per number and routes per contact or group, the owner's
+   "Message yourself" chat as their line, strangers held in silence.*
 
 ## Open questions
 
@@ -173,3 +176,7 @@ A group of its own in Settings → Permissions, **WhatsApp**:
   device has no history API. A send asks by default and can be allowed per
   chat. whatsmeow is pinned to its last Go 1.24 build rather than moving
   the repo's toolchain.
+- 2026-11-09: when the number answers as a channel, it has a default bot
+  and routes; the owner talks to their bots in "Message yourself" and
+  switches bot by name there; strangers get nothing and wait for Allow or
+  Ignore ([answering-on-telegram-and-whatsapp.md](answering-on-telegram-and-whatsapp.md)).

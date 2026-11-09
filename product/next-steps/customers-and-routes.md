@@ -295,3 +295,9 @@ These come after channels.md slice 1 (the core and email to one bot).
   comes from Slack do this, from WhatsApp the other thing"), with some
   WhatsApp customers each on a bot of their own. Routes replace the
   account's single bot; one priority list of five match kinds, the first match wins.
+- 2026-11-09: a Telegram bot is a bot's own identity, so it stays bound to
+  one bot and routes do not apply to it; a WhatsApp number gets a default
+  bot as an account route. A contact's turn (not only a customer's) has §6's
+  tools, and reads its conversation's facts but not the bot's own, which
+  were learned from the owner; §5 still applies to customer turns
+  ([answering-on-telegram-and-whatsapp.md](answering-on-telegram-and-whatsapp.md)).
