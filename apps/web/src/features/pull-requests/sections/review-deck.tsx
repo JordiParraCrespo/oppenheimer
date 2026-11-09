@@ -56,9 +56,7 @@ export function ReviewDeck() {
               {t(gone ? 'pullRequests.deck.goneTitle' : 'pullRequests.deck.doneTitle')}
             </EmptyState.Title>
             <EmptyState.Description>
-              {gone
-                ? t('pullRequests.deck.goneHint')
-                : t('pullRequests.deck.doneHint', { count: rows.length })}
+              {gone ? null : t('pullRequests.deck.doneHint')}
             </EmptyState.Description>
           </EmptyState.Header>
           <EmptyState.Content>

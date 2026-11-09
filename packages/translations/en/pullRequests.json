@@ -319,12 +319,9 @@
     "confirmMerge": "Press again to merge",
     "held": "Cannot merge yet: {{reason}}.",
     "doneTitle": "That was the last one",
-    "doneHint_one": "You went through the one pull request here.",
-    "doneHint_other": "You went through all {{count}} here.",
-    "doneHint_many": "You went through all {{count}} here.",
+    "doneHint": "You went through every pull request in this view.",
     "again": "Go through them again",
     "goneTitle": "This one left the queue",
-    "goneHint": "It was merged or closed.",
     "fromTop": "Start from the top"
   }
 }

@@ -2958,12 +2958,9 @@
       "confirmMerge": "Pulsa otra vez para fusionar",
       "held": "Aún no se puede fusionar: {{reason}}.",
       "doneTitle": "Ese era el último",
-      "doneHint_one": "Has pasado por el {{count}} pull request de esta vista.",
-      "doneHint_other": "Has pasado por los {{count}} pull requests de esta vista.",
-      "doneHint_many": "Has pasado por los {{count}} pull requests de esta vista.",
+      "doneHint": "Has pasado por todos los pull requests de esta vista.",
       "again": "Repasarlos otra vez",
       "goneTitle": "Este ya no está en la cola",
-      "goneHint": "Se fusionó o se cerró desde que el mazo lo mostró.",
       "fromTop": "Seguir desde el principio"
     }
   },
