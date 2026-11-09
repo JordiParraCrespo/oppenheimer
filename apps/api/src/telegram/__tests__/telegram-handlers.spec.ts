@@ -4,6 +4,7 @@ import { AppError } from '@oppenheimer/backend-core';
 import { None, Some } from 'oxide.ts';
 import { describe, expect, it, vi } from 'vitest';
 import type { HostAccessPort } from '../../hosts/application/host-access.port';
+import type { TelegramAnswerResolver } from '../application/telegram-answer.resolver';
 import type { TelegramDevicePort } from '../application/telegram-device.port';
 import { LinkTelegramCommand } from '../commands/link-telegram/link-telegram.command';
 import { LinkTelegramCommandHandler } from '../commands/link-telegram/link-telegram.command-handler';
@@ -15,7 +16,9 @@ import { SendTelegramMessageCommand } from '../commands/send-telegram-message/se
 import { SendTelegramMessageCommandHandler } from '../commands/send-telegram-message/send-telegram-message.command-handler';
 import type { TelegramAccountRepositoryPort } from '../database/telegram-account.repository.port';
 import type { TelegramMessageRepositoryPort } from '../database/telegram-message.repository.port';
+import { TelegramOwnerWroteDomainEvent } from '../domain/events/telegram-owner-wrote.domain-event';
 import { TelegramAccountEntity } from '../domain/telegram-account.entity';
+import type { TelegramMessageDraft } from '../domain/telegram-message.types';
 import { TelegramAccountMapper } from '../telegram-account.mapper';
 import { TelegramMessageMapper } from '../telegram-message.mapper';
 
@@ -56,6 +59,11 @@ function fakeAccounts(rows: TelegramAccountEntity[] = []) {
       const row = rows.find((item) => item.hostId === hostId);
       return row ? Some(row) : None;
     },
+    findByIdForSystem: async (_organizationId, id) => {
+      const row = rows.find((item) => item.id === id);
+      return row ? Some(row) : None;
+    },
+    saveOwner: vi.fn(async () => true),
     insert: vi.fn(async (account) => {
       rows.push(account);
     }),
@@ -81,7 +89,7 @@ function fakeMessages(
   overrides: Partial<TelegramMessageRepositoryPort> = {},
 ): TelegramMessageRepositoryPort {
   return {
-    insertMany: vi.fn(async () => {}),
+    insertMany: vi.fn(async (drafts: readonly TelegramMessageDraft[]) => [...drafts]),
     recordBotSend: vi.fn(async () => {}),
     pruneBefore: vi.fn(async () => 0),
     pruneBeyond: vi.fn(async () => 0),
@@ -90,8 +98,13 @@ function fakeMessages(
     findInChat: vi.fn(async () => []),
     search: vi.fn(async () => []),
     countBotSendsSince: vi.fn(async () => 0),
+    wroteInChatSince: vi.fn(async () => false),
     ...overrides,
   };
+}
+
+function fakeAnswers(): TelegramAnswerResolver {
+  return { answer: vi.fn(async () => {}) } as unknown as TelegramAnswerResolver;
 }
 
 const hosts: HostAccessPort = { assertUsable: vi.fn(async () => ({ probedTools: null })) };
@@ -277,6 +290,7 @@ describe('ReceiveTelegramMessagesCommandHandler', () => {
       fakeAccounts([linked]).repository,
       messages,
       new TelegramMessageMapper(),
+      fakeAnswers(),
     );
 
     const keys = await handler.execute(
@@ -305,12 +319,48 @@ describe('ReceiveTelegramMessagesCommandHandler', () => {
     );
   });
 
+  // What breaks this: a stranger's message waking the bot, or the owner's not
+  // reaching it; the wake is owed only by the message that was stored.
+  it('owes a wake for the owner’s message to the bot that answers, and none for a stranger’s', async () => {
+    const messages = fakeMessages();
+    const linked = account({ status: 'connected' });
+    linked.answerAs('0b3e2a1c-4444-4c5d-8e6f-70819203b4c5');
+    const { code } = linked.openOwnerLink(new Date());
+    linked.claimOwner(code, '123456789', new Date());
+    const stranger = { ...inbound, key: '555/43', id: '43', chatId: '555', senderId: '555' };
+    const handler = new ReceiveTelegramMessagesCommandHandler(
+      fakeAccounts([linked]).repository,
+      messages,
+      new TelegramMessageMapper(),
+      fakeAnswers(),
+    );
+
+    await handler.execute(
+      new ReceiveTelegramMessagesCommand({ hostId: HOST, messages: [inbound, stranger] }),
+    );
+
+    const [drafts, owed] = vi.mocked(messages.insertMany).mock.calls[0] ?? [];
+    const events = (drafts ?? []).map((draft) => owed?.(draft) ?? null);
+    expect(events[0]).toBeInstanceOf(TelegramOwnerWroteDomainEvent);
+    expect(events[0]).toMatchObject({
+      aggregateId: linked.id,
+      userId: USER,
+      answeringBotId: '0b3e2a1c-4444-4c5d-8e6f-70819203b4c5',
+      chatId: '123456789',
+      messageId: '42',
+      command: 'message',
+      text: 'Is the build green?',
+    });
+    expect(events[1]).toBeNull();
+  });
+
   it('acks and drops messages for a host with no connected Telegram bot', async () => {
     const messages = fakeMessages();
     const handler = new ReceiveTelegramMessagesCommandHandler(
       fakeAccounts().repository,
       messages,
       new TelegramMessageMapper(),
+      fakeAnswers(),
     );
     await expect(
       handler.execute(new ReceiveTelegramMessagesCommand({ hostId: HOST, messages: [inbound] })),

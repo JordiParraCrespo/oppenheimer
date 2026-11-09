@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { type DomainEvent, OutboxService } from '@oppenheimer/backend-ddd';
 import { None, type Option, Some } from 'oxide.ts';
 import { Repository } from 'typeorm';
 import type {
@@ -20,17 +21,57 @@ export class TelegramMessageRepository implements TelegramMessageRepositoryPort 
     @InjectRepository(TelegramMessageOrmEntity)
     private readonly repository: Repository<TelegramMessageOrmEntity>,
     private readonly mapper: TelegramMessageMapper,
+    private readonly outbox: OutboxService,
   ) {}
 
-  async insertMany(messages: readonly TelegramMessageDraft[]): Promise<void> {
-    if (messages.length === 0) return;
-    await this.repository
-      .createQueryBuilder()
-      .insert()
-      .into(TelegramMessageOrmEntity)
-      .values(messages.map((message) => this.mapper.toPersistence(message)))
-      .orIgnore()
-      .execute();
+  async insertMany(
+    messages: readonly TelegramMessageDraft[],
+    owed?: (message: TelegramMessageDraft) => DomainEvent | null,
+  ): Promise<TelegramMessageDraft[]> {
+    if (messages.length === 0) return [];
+    return this.outbox.transaction(async (manager) => {
+      // UQ_telegram_message_external: what is already kept is skipped.
+      const result = await manager
+        .createQueryBuilder()
+        .insert()
+        .into(TelegramMessageOrmEntity)
+        .values(messages.map((message) => this.mapper.toPersistence(message)))
+        .orIgnore()
+        .returning(['chatId', 'externalId'])
+        .execute();
+      const stored = new Set(
+        (result.raw as { chatId: string; externalId: string }[]).map(
+          (row) => `${row.chatId}/${row.externalId}`,
+        ),
+      );
+      const inserted = messages.filter((message) =>
+        stored.has(`${message.chatId}/${message.externalId}`),
+      );
+      const events = owed
+        ? inserted.flatMap((message) => {
+            const event = owed(message);
+            return event ? [event] : [];
+          })
+        : [];
+      if (events.length > 0) await this.outbox.stageEvents(manager, events);
+      return inserted;
+    });
+  }
+
+  async wroteInChatSince(
+    account: TelegramAccountRef,
+    chatId: string,
+    since: Date,
+  ): Promise<boolean> {
+    // IDX_telegram_message_chat.
+    const rows: unknown[] = await this.repository.query(
+      `SELECT 1 FROM telegram_message
+        WHERE "organizationId" = $1 AND "accountId" = $2 AND "chatId" = $3
+          AND "fromBot" AND "sentAt" >= $4
+        LIMIT 1`,
+      [account.organizationId, account.accountId, chatId, since],
+    );
+    return rows.length > 0;
   }
 
   async recordBotSend(message: TelegramMessageDraft): Promise<void> {

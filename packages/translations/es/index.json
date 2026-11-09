@@ -493,7 +493,8 @@
       "BOTS_038": "No se ha encontrado esa habilidad.",
       "BOTS_039": "Este bot ya tiene una habilidad con ese nombre. Elige otro.",
       "BOTS_040": "Este bot ya tiene tantas habilidades como puede guardar. Borra una primero.",
-      "BOTS_041": "Este bot no tiene ninguna ordenación de su memoria que deshacer."
+      "BOTS_041": "Este bot no tiene ninguna ordenación de su memoria que deshacer.",
+      "BOTS_042": "Este bot responde en un bot de Telegram. Elige otro bot, o ninguno, en Ajustes → Telegram antes de eliminarlo."
     },
     "notFound": {
       "title": "Esta página no existe",
@@ -3816,7 +3817,22 @@
       "disconnecting": "Desconectando…",
       "disconnectTitle": "¿Desconectar {{label}}?",
       "disconnectDescription": "Tu host deja de consultar el bot y olvida su token. Tus bots pierden los chats guardados para ellos. El bot sigue siendo tuyo en Telegram; revoca su token en @BotFather para pararlo también allí.",
-      "disconnectFailed": "No se ha podido desconectar el bot."
+      "disconnectFailed": "No se ha podido desconectar el bot.",
+      "answering": {
+        "title": "Te responde",
+        "botLabel": "El bot que te responde en {{label}}",
+        "noBot": "Ningún bot",
+        "search": "Busca un bot",
+        "noMatch": "Ningún bot coincide",
+        "link": "Vincula tu Telegram",
+        "linkAgain": "Vincular de nuevo",
+        "openLink": "Abrir en Telegram",
+        "linked": "Tu Telegram está vinculado: aquí solo te responde a ti.",
+        "notLinked": "Vincula tu Telegram para que el bot sepa que eres tú. Hasta entonces no responde a nadie.",
+        "linkReady": "Abre el enlace en Telegram en los próximos diez minutos y pulsa Iniciar.",
+        "failed": "No se ha guardado. Inténtalo de nuevo.",
+        "making": "Creando el enlace…"
+      }
     },
     "about": {
       "title": "Acerca de",

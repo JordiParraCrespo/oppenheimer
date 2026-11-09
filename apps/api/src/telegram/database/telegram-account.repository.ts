@@ -43,6 +43,27 @@ export class TelegramAccountRepository
     return record ? Some(this.mapper.toDomain(record)) : None;
   }
 
+  async findByIdForSystem(
+    organizationId: string,
+    id: string,
+  ): Promise<Option<TelegramAccountEntity>> {
+    const record = await this.repository.findOneBy({ organizationId, id });
+    return record ? Some(this.mapper.toDomain(record)) : None;
+  }
+
+  async saveOwner(account: TelegramAccountEntity, usedCodeHash: string): Promise<boolean> {
+    // PK_telegram_account, conditional on the link it used.
+    const result = await this.repository.update(
+      { id: account.id, organizationId: account.organizationId, ownerLinkCodeHash: usedCodeHash },
+      {
+        ownerTelegramId: account.ownerTelegramId,
+        ownerLinkCodeHash: null,
+        ownerLinkExpiresAt: null,
+      },
+    );
+    return result.affected === 1;
+  }
+
   async insert(account: TelegramAccountEntity): Promise<void> {
     await this.repository.insert(this.mapper.toPersistence(account));
   }

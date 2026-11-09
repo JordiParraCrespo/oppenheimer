@@ -54,6 +54,19 @@ export class TelegramAccountResponseDto {
   })
   statusReason!: string | null;
 
+  @ApiProperty({
+    type: String,
+    format: 'uuid',
+    nullable: true,
+    description: 'The Oppenheimer bot that answers the owner here; null while none does.',
+  })
+  answeringBotId!: string | null;
+
+  @ApiProperty({
+    description: 'Whether the owner’s Telegram account is recorded, by the one-time `start` link.',
+  })
+  ownerLinked!: boolean;
+
   @ApiProperty({ type: String, format: 'date-time', description: 'When it was first connected.' })
   linkedAt!: string;
 }

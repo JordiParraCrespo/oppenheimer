@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import type { AccessScope } from '@oppenheimer/backend-authz';
+import { OutboxService } from '@oppenheimer/backend-ddd';
 import { DataSource } from 'typeorm';
 import { useTestDatabase } from '../../__tests__/integration-services';
 import { TelegramAccountOrmEntity } from '../database/telegram-account.orm-entity';
@@ -53,6 +54,7 @@ describe('telegram (integration)', () => {
     messages = new TelegramMessageRepository(
       dataSource.getRepository(TelegramMessageOrmEntity),
       new TelegramMessageMapper(),
+      new OutboxService(dataSource),
     );
   }, 180000);
 

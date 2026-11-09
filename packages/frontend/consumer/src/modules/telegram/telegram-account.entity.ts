@@ -22,6 +22,14 @@ export class TelegramAccountEntity {
     public readonly displayName: string | null,
     public readonly statusReason: string | null,
     public readonly linkedAt: string,
+    /**
+     * The reader's Oppenheimer bot that answers them here
+     * (`product/next-steps/answering-on-telegram-and-whatsapp.md` §1); null
+     * while none does.
+     */
+    public readonly answeringBotId: string | null = null,
+    /** Whether the reader's own Telegram account is recorded, by the one-time `start` link. */
+    public readonly ownerLinked: boolean = false,
   ) {}
 
   /** The bot's address on Telegram (`https://t.me/shop_helper_bot`), or null before it is known. */
@@ -32,6 +40,11 @@ export class TelegramAccountEntity {
   /** The host is checking the token or reconnecting: the page keeps asking how it stands. */
   get isConnecting(): boolean {
     return this.status === 'connecting' && this.hostOnline;
+  }
+
+  /** Writing to the bot reaches a bot of theirs: an owner is recorded and a bot answers. */
+  get answers(): boolean {
+    return this.ownerLinked && this.answeringBotId !== null;
   }
 
   /** The token is gone (revoked in @BotFather, or disconnected) and the reader pastes a new one. */

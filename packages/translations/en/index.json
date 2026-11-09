@@ -491,7 +491,8 @@
       "BOTS_038": "That skill could not be found.",
       "BOTS_039": "This bot already has a skill with that name. Pick another.",
       "BOTS_040": "This bot has as many skills as it can keep. Delete one first.",
-      "BOTS_041": "This bot has no tidy of its memory to undo."
+      "BOTS_041": "This bot has no tidy of its memory to undo.",
+      "BOTS_042": "This bot answers on a Telegram bot. Choose another bot, or none, under Settings → Telegram before you delete it."
     },
     "notFound": {
       "title": "That page does not exist",
@@ -3789,7 +3790,22 @@
       "disconnecting": "Disconnecting…",
       "disconnectTitle": "Disconnect {{label}}?",
       "disconnectDescription": "Your host stops polling the bot and forgets its token. Your bots lose the chats kept for them. The bot stays yours on Telegram; revoke its token in @BotFather to stop it there too.",
-      "disconnectFailed": "Couldn’t disconnect the bot."
+      "disconnectFailed": "Couldn’t disconnect the bot.",
+      "answering": {
+        "title": "Answers you",
+        "botLabel": "The bot that answers you on {{label}}",
+        "noBot": "No bot",
+        "search": "Find a bot",
+        "noMatch": "No bot matches",
+        "link": "Link your Telegram",
+        "linkAgain": "Link again",
+        "openLink": "Open in Telegram",
+        "linked": "Your Telegram is linked: only you are answered here.",
+        "notLinked": "Link your Telegram so the bot knows it is you. Until then it answers nobody.",
+        "linkReady": "Open the link in Telegram within ten minutes and press Start.",
+        "failed": "That did not save. Try again.",
+        "making": "Making the link…"
+      }
     },
     "about": {
       "title": "About",
