@@ -1,4 +1,5 @@
 import { Skeleton } from '@oppenheimer/design-system-web';
+import { Search } from '@oppenheimer/design-system-web/icons';
 import { LoadingStatus } from '@oppenheimer/frontend-web';
 import { useTranslation } from 'react-i18next';
 
@@ -20,7 +21,7 @@ const TREE = [
 /**
  * Changes before the files answer, edge to edge on the card as the diff is:
  * a file's sticky header and its lines, three times, and the file tree at its
- * width beside them with its label written, so the diff and the tree land in
+ * width beside them with its label and its filter's placeholder written, so the diff and the tree land in
  * their columns.
  */
 export function ChangesSkeleton() {
@@ -57,13 +58,19 @@ export function ChangesSkeleton() {
           <span className="eyebrow">{t('pullRequests.changes.files')}</span>
           <Skeleton shape="sm" className="h-2 w-10" />
         </div>
-        <div
-          aria-hidden
-          className="flex h-8.5 items-center gap-2 rounded-sm border border-border-subtle px-3"
+        <label
+          inert
+          className="flex h-8.5 items-center gap-2 rounded-sm border border-border-subtle bg-card px-3 text-fg-subtle"
         >
-          <Skeleton shape="sm" className="size-3.5" />
-          <Skeleton shape="sm" className="h-2.5 w-16 opacity-60" />
-        </div>
+          <Search className="size-3.5 shrink-0" aria-hidden />
+          <input
+            type="search"
+            disabled
+            placeholder={t('pullRequests.changes.filter')}
+            aria-label={t('pullRequests.changes.filter')}
+            className="min-w-0 flex-1 border-0 bg-transparent p-0 text-sm text-fg outline-none placeholder:text-fg-subtle"
+          />
+        </label>
         <div aria-hidden className="flex flex-col pt-1">
           {TREE.map((row, index) => (
             <div

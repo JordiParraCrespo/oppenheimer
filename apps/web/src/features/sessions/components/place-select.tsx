@@ -14,6 +14,7 @@ import {
   dotVariants,
   Popover,
   PopoverTrigger,
+  Skeleton,
 } from '@oppenheimer/design-system-web';
 import { ChevronRight } from '@oppenheimer/design-system-web/icons';
 import type { CodingAgentId, HostCloudAgentId } from '@oppenheimer/shared/agents';
@@ -215,6 +216,16 @@ export function PlaceSelect({
                 loading: false,
               };
   const rows = list.rows;
+  // While the hosts load, a bar holds the name's place: the word "Host" would
+  // read as no host picked, and the chips after it would move when the name
+  // lands.
+  const hostName =
+    host?.label ??
+    (loading ? (
+      <Skeleton shape="sm" className="inline-block h-2.5 w-16 align-middle" />
+    ) : (
+      t('sessions.new.host.placeholder')
+    ));
 
   function show(next: { pane?: Pane; query?: string }) {
     if (next.pane) setPane(next.pane);
@@ -460,11 +471,17 @@ export function PlaceSelect({
             variant="tab"
             aria-label={t('sessions.new.host.label')}
           >
-            {pickedCloud
-              ? `${pickedCloud.label} · ${t('sessions.new.where.atVendor')}`
-              : place === 'cloud' && cloudAgent === 'codex' && environment
-                ? `${environment} · ${host?.label ?? t('sessions.new.host.placeholder')}`
-                : `${host?.label ?? t('sessions.new.host.placeholder')} · ${t(placeLabelKey(place, cloudAgent))}`}
+            {pickedCloud ? (
+              `${pickedCloud.label} · ${t('sessions.new.where.atVendor')}`
+            ) : place === 'cloud' && cloudAgent === 'codex' && environment ? (
+              <>
+                {environment} · {hostName}
+              </>
+            ) : (
+              <>
+                {hostName} · {t(placeLabelKey(place, cloudAgent))}
+              </>
+            )}
           </ChipSelectTrigger>
         }
       />

@@ -9,6 +9,7 @@ import { BotAvatar, type BotFaceSpec } from './avatar-picker';
 import { useSortableControl } from './drag';
 import { Skeleton } from './skeleton';
 import { Tooltip, TooltipContent, TooltipTrigger } from './tooltip';
+import { variedWidth } from '../internal/varied-width';
 
 function BotList({ className, ...props }: React.ComponentProps<'div'>) {
   return <div data-slot="bot-list" role="list" className={cn('flex flex-col gap-px', className)} {...props} />;
@@ -124,11 +125,13 @@ function BotItem({
   );
 }
 
+const SKELETON_NAMES = ['w-28', 'w-20', 'w-32', 'w-24'] as const;
+
 /**
  * BotItemSkeleton — a `BotItem` while the list loads: the 20px square and a
- * name's bar on the row's 32px line.
+ * name's bar on the row's 32px line. `index` varies the name's width.
  */
-function BotItemSkeleton({ className, ...props }: React.ComponentProps<'div'>) {
+function BotItemSkeleton({ index = 0, className, ...props }: React.ComponentProps<'div'> & { index?: number }) {
   return (
     <div
       aria-hidden
@@ -137,7 +140,7 @@ function BotItemSkeleton({ className, ...props }: React.ComponentProps<'div'>) {
       {...props}
     >
       <Skeleton shape="sm" className="size-5 shrink-0 rounded-xs" />
-      <Skeleton shape="sm" className="h-3.5 w-28" />
+      <Skeleton shape="sm" className={cn('h-3.5', variedWidth(index, SKELETON_NAMES))} />
     </div>
   );
 }

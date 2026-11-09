@@ -55,7 +55,7 @@ export function AddHostScreen() {
               <Button type="button" variant="secondary" size="sm" render={<Link {...back} />}>
                 {t('common.cancel')}
               </Button>
-              {availability === 'available' && (
+              {availability !== 'unavailable' && (
                 <Button type="button" size="sm" disabled={!done} onClick={() => navigate(back)}>
                   {t('hosts.add.done')}
                 </Button>

@@ -465,12 +465,14 @@ export {
   RoutineTableEmpty,
   RoutineTableHead,
   RoutineTableRow,
+  RoutineTableRowSkeleton,
 } from './components/routine-table';
 export type { RunHistoryDay } from './components/run-history';
-export { RunHistory } from './components/run-history';
+export { RunHistory, RunHistorySkeleton } from './components/run-history';
 export type { RunState } from './components/runs-list';
 export {
   RunRow,
+  RunRowSkeleton,
   RunsList,
   RunsListEmpty,
   RunsListFilters,
@@ -482,7 +484,12 @@ export { SearchList } from './components/search-list';
 export { SegmentedControl, SegmentedControlItem } from './components/segmented-control';
 export { Separator } from './components/separator';
 export type { SessionRename } from './components/session-item';
-export { SessionItem, SessionList, SortableSessionItem } from './components/session-item';
+export {
+  SessionItem,
+  SessionItemSkeleton,
+  SessionList,
+  SortableSessionItem,
+} from './components/session-item';
 export { SessionPaneBack, SessionPaneHeader } from './components/session-pane-header';
 export {
   SettingsAddRow,
@@ -490,6 +497,7 @@ export {
   SettingsGroup,
   SettingsHeading,
   SettingsListRow,
+  SettingsListRowSkeleton,
   SettingsRow,
   SettingsSaveRow,
 } from './components/settings-group';
@@ -526,7 +534,6 @@ export {
   SidebarMenuBadge,
   SidebarMenuButton,
   SidebarMenuItem,
-  SidebarMenuSkeleton,
   SidebarMenuSub,
   SidebarMenuSubButton,
   SidebarMenuSubItem,
@@ -560,6 +567,7 @@ export {
   TASK_STATUS_STATE,
   TaskBoard,
   TaskCard,
+  TaskCardSkeleton,
   TaskColumn,
   TaskColumnAdd,
   TaskComposer,

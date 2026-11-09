@@ -9,28 +9,35 @@ import { GoogleAccountRows } from './google-account-rows';
  * The viewer's Google accounts (`23-plan-milestones-stats-accounts.md` §5):
  * read-only, so connecting asks Google for the read scope alone. The rows
  * read the accounts under Suspense; this draws the card around them. Nothing
- * on a deployment with no Google credentials.
+ * on a deployment with no Google credentials; the card and its placeholder
+ * while the deployment has not said.
  */
 export function GoogleAccountsCard() {
   const { t } = useTranslation();
-  const { data: available } = useDeploymentCapabilities({
+  const { data: available, isPending: asking } = useDeploymentCapabilities({
     select: (deployment) => deployment.google_calendar,
   });
-  if (!available) return null;
+  // While the deployment is still being asked, the card is drawn with its
+  // placeholder, so a yes does not pop the section in; a no takes it away.
+  if (!asking && !available) return null;
 
   return (
     <section aria-label={t('calendar.google.accounts')} className="flex flex-col">
       <SidebarListHead label={t('calendar.google.accounts')} />
       <div className="mx-3 flex flex-col gap-2">
-        <QueryState>
-          <QueryState.Pending>
-            <GoogleAccountsSkeleton />
-          </QueryState.Pending>
-          <QueryState.Error fallback={t('calendar.google.loadFailed')} />
-          <QueryState.Data>
-            <GoogleAccountRows />
-          </QueryState.Data>
-        </QueryState>
+        {asking ? (
+          <GoogleAccountsSkeleton />
+        ) : (
+          <QueryState>
+            <QueryState.Pending>
+              <GoogleAccountsSkeleton />
+            </QueryState.Pending>
+            <QueryState.Error fallback={t('calendar.google.loadFailed')} />
+            <QueryState.Data>
+              <GoogleAccountRows />
+            </QueryState.Data>
+          </QueryState>
+        )}
       </div>
     </section>
   );

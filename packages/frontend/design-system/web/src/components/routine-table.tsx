@@ -1,7 +1,9 @@
 import type * as React from 'react';
 
 import { cn } from '../lib/utils';
+import { Skeleton } from './skeleton';
 import { StatusDot, type StatusState } from './status-dot';
+import { variedWidth } from '../internal/varied-width';
 
 const GRID = 'grid grid-cols-[minmax(0,1.5fr)_minmax(0,1.3fr)_minmax(0,1fr)_96px_32px] items-center gap-3.5 px-3';
 
@@ -14,7 +16,8 @@ const GRID = 'grid grid-cols-[minmax(0,1.5fr)_minmax(0,1.3fr)_minmax(0,1fr)_96px
  * are 12.5px subtle text, not a table header.
  *
  * Composed from parts so a screen can render what it has: the head, the
- * rows, or the empty line.
+ * rows, or the empty line. `RoutineTableRowSkeleton` is a row's place before
+ * the routines answer, on the same grid.
  */
 function RoutineTable({ className, ...props }: React.ComponentProps<'div'>) {
   return (
@@ -124,6 +127,56 @@ function RoutineTableRow({
   );
 }
 
+const SKELETON_NAMES = ['w-36', 'w-28', 'w-44', 'w-32'] as const;
+const SKELETON_SUBS = ['w-48', 'w-40', 'w-52', 'w-36'] as const;
+const SKELETON_TRIGGERS = ['w-28', 'w-36', 'w-24', 'w-32'] as const;
+
+/**
+ * RoutineTableRowSkeleton — a `RoutineTableRow` before the routines answer:
+ * the 54px row on the same grid, the glyph's round slot, the name and its
+ * sub line, the trigger, the next run with its countdown and the status as
+ * bars at their lines' heights, and the ellipsis's place. `index` varies the
+ * widths.
+ */
+function RoutineTableRowSkeleton({ index = 0, className, ...props }: React.ComponentProps<'div'> & { index?: number }) {
+  return (
+    <div
+      aria-hidden
+      data-slot="routine-table-row-skeleton"
+      className={cn(GRID, 'min-h-[54px]', className)}
+      {...props}
+    >
+      <div className="flex min-w-0 items-center gap-3">
+        <Skeleton shape="pill" className="size-[30px] shrink-0" />
+        <span className="flex min-w-0 flex-col gap-px">
+          <span className="flex h-5 items-center">
+            <Skeleton shape="sm" className={cn('h-3 max-w-full', variedWidth(index, SKELETON_NAMES))} />
+          </span>
+          <span className="flex h-4.5 items-center">
+            <Skeleton shape="sm" className={cn('h-2.5 max-w-full', variedWidth(index, SKELETON_SUBS))} />
+          </span>
+        </span>
+      </div>
+      <span className="flex h-5 min-w-0 items-center">
+        <Skeleton shape="sm" className={cn('h-2.5 max-w-full', variedWidth(index, SKELETON_TRIGGERS))} />
+      </span>
+      <span className="flex flex-col gap-px">
+        <span className="flex h-5 items-center">
+          <Skeleton shape="sm" className="h-2.5 w-24" />
+        </span>
+        <span className="flex h-4 items-center">
+          <Skeleton shape="sm" className="h-2 w-16" />
+        </span>
+      </span>
+      <span className="flex h-5 items-center gap-2">
+        <Skeleton shape="pill" className="size-1.5" />
+        <Skeleton shape="sm" className="h-2.5 w-12" />
+      </span>
+      <span />
+    </div>
+  );
+}
+
 function RoutineTableEmpty({ className, ...props }: React.ComponentProps<'div'>) {
   return (
     <div
@@ -134,4 +187,4 @@ function RoutineTableEmpty({ className, ...props }: React.ComponentProps<'div'>)
   );
 }
 
-export { RoutineTable, RoutineTableEmpty, RoutineTableHead, RoutineTableRow };
+export { RoutineTable, RoutineTableEmpty, RoutineTableHead, RoutineTableRow, RoutineTableRowSkeleton };

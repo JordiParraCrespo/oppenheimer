@@ -3788,7 +3788,8 @@
     "backToSessions": "Volver a las sesiones",
     "sensitiveScope": "Sensible",
     "unknownClient": "Una aplicación",
-    "failed": "No se ha podido completar. Inténtalo de nuevo."
+    "failed": "No se ha podido completar. Inténtalo de nuevo.",
+    "catalogFailed": "No se pudieron cargar los permisos que pide esta aplicación, así que aún no se puede aprobar. Recarga la página para intentarlo de nuevo."
   },
   "onboarding": {
     "flow": {

@@ -253,7 +253,11 @@ Then, in order:
    restart is deepened by its next fetch. A create then fetches only the ref
    its worktree is made from — the base, or the existing branch it
    checks out — with no tags and git's automatic gc off, and a ref that
-   is not a branch on the remote fails the create. Both go through the
+   is not a branch on the remote fails the create. The one exception is
+   an **empty repository** (GitHub's "no README", no ref at all): the
+   runner pushes an empty `Initial commit` to the base, which makes it the
+   repository's default branch, and cuts the session from it; a prepare
+   (§5's spare, made while the form is open) leaves it empty. Both go through the
    credential helper (§8), and so does a blob the session's shell reads
    later (`git log -p`, `blame`). The store
    is found **by GitHub id**, never by name: the runner writes

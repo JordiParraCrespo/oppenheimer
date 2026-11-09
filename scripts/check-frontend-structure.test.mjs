@@ -415,17 +415,14 @@ const DEBT = {
 
 test('a slab placeholder is reported with its file and line', () => {
   const { report } = check({ 'src/features/things/sections/thing-list.tsx': slabbed(SLAB) });
-  assert.match(
-    report,
-    /sections\/thing-list\.tsx:5: QueryState\.Pending is a slab \(h-60 w-full\)/,
-  );
+  assert.match(report, /sections\/thing-list\.tsx:5: Skeleton is a slab \(h-60 w-full\)/);
 });
 
 test('a debt-listed file is held to its count: one more slab is reported, as many pass', () => {
   assert.doesNotMatch(check({ [DEBTOR]: slabbed(SLAB) }, DEBT).report, /old-list\.tsx.*slab/);
   assert.match(
     check({ [DEBTOR]: slabbed(SLAB, SLAB) }, DEBT).report,
-    /old-list\.tsx:\d+: QueryState\.Pending is a slab/,
+    /old-list\.tsx:\d+: Skeleton is a slab/,
   );
 });
 

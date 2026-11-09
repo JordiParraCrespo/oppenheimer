@@ -1361,3 +1361,9 @@ earlier note:
   bot: `remember` takes `memory: 'yours' | 'general'`, the prompt names
   *Your memory* and *General memory*, and general takes only what a bot
   with a completely different job would need (`scripts/evals/bot-memory`).
+- `versions/mvp/02-runner.md` §5 said a base that is not a branch on the
+  remote fails the create. On 2026-11-08 a project on an empty GitHub
+  repository could not start its first session for that reason, so an
+  empty repository (no ref at all) is the exception: the create pushes an
+  empty `Initial commit` to the base and cuts the session from it. A
+  prepare leaves it empty; a repository with other branches still fails.
