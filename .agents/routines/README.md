@@ -28,3 +28,18 @@ them when you change the prompt, or the rules it enforces, and after a
 refactor that moves the code the fixtures anchor on:
 `plant.mjs` fails loudly when an anchor is gone, and `--validate` when a
 fixture no longer compiles.
+
+## Sending a problem to the Inbox
+
+A routine that needs a person's call sends a report to Oppenheimer's Inbox
+with the pictures that show it, and reads the answer at the start of its
+next run (`product/versions/mvp/29-inbox.md`, "Reports"; the commands are in
+`apps/docs/docs/guide/inbox.md`). It needs two things in its cloud
+environment, set by the owner: the deployment's host in the allowed domains,
+and an API token with `inbox-reports:read` and `inbox-reports:write` saved
+as a network secret for that host, never written into a prompt or this
+repository. A routine without them keeps writing to its GitHub issue.
+
+A report is for what only a person can decide, one question each, with the
+routine's own pick in the body. What the routine can settle itself it
+settles; what it found and fixed goes in its pull request.

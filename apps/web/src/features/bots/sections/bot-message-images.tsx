@@ -1,8 +1,7 @@
 import { useBotImages } from '@oppenheimer/frontend-consumer/react';
-import { ChatImageGallery } from '@oppenheimer/frontend-web';
+import { ChatImageGallery, useObjectUrls } from '@oppenheimer/frontend-web';
 import type { BotAttachment } from '@oppenheimer/shared/schemas/bot';
 import { useTranslation } from 'react-i18next';
-import { useObjectUrls } from '@/features/bots/hooks/use-object-urls';
 
 /**
  * The images a message of yours carried, above its bubble: read through the

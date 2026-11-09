@@ -171,8 +171,10 @@ export {
 export {
   inboxAnswered,
   type PutInboxMarkVariables,
+  useAnswerInboxReport,
   useDeleteInboxMark,
   useInboxCount,
+  useInboxReportImages,
   usePutInboxMark,
   useSuspenseInbox,
 } from './inbox.queries';

@@ -59,6 +59,7 @@ import { HostPresenceOrmEntity } from '../hosts/database/host-presence.orm-entit
 import { InboundDeliveryOrmEntity } from '../inbound-events/database/inbound-delivery.orm-entity';
 import { InboundEventOrmEntity } from '../inbound-events/database/inbound-event.orm-entity';
 import { InboxMarkOrmEntity } from '../inbox/database/inbox-mark.orm-entity';
+import { InboxReportOrmEntity } from '../inbox/database/inbox-report.orm-entity';
 import { GmailConnectionOrmEntity } from '../mail/database/gmail-connection.orm-entity';
 import { MailSendOrmEntity } from '../mail/database/mail-send.orm-entity';
 import { ProvisionPersonalWorkspaceCommand } from '../organizations/commands/provision-personal-workspace/provision-personal-workspace.command';
@@ -186,6 +187,7 @@ const dataSource = new DataSource({
     BotNoticeOrmEntity,
     BotModelCallOrmEntity,
     InboxMarkOrmEntity,
+    InboxReportOrmEntity,
     BotApprovalOrmEntity,
     BotQuestionOrmEntity,
     BotToolPermissionOrmEntity,

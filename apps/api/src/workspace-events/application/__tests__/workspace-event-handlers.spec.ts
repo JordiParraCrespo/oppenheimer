@@ -7,6 +7,7 @@ import { BotApprovalChangesDomainEventHandler } from '../event-handlers/bot-appr
 import { BotNoticeChangesDomainEventHandler } from '../event-handlers/bot-notice-changes.domain-event-handler';
 import { HostChangesDomainEventHandler } from '../event-handlers/host-changes.domain-event-handler';
 import { InboxMarkChangesDomainEventHandler } from '../event-handlers/inbox-mark-changes.domain-event-handler';
+import { InboxReportChangesDomainEventHandler } from '../event-handlers/inbox-report-changes.domain-event-handler';
 import { ProjectChangesDomainEventHandler } from '../event-handlers/project-changes.domain-event-handler';
 import { SessionChangesDomainEventHandler } from '../event-handlers/session-changes.domain-event-handler';
 
@@ -152,6 +153,20 @@ describe('InboxMarkChangesDomainEventHandler', () => {
     });
     expect(events.publish.mock.calls).toEqual([
       [{ userId: 'jordi' }, { type: 'inboxMark.changed', itemKey: 'approval:ap-1' }],
+    ]);
+  });
+});
+
+/** A report is the workspace's: announced to its sender alone, the owner's Inbox would not hear of it. */
+describe('InboxReportChangesDomainEventHandler', () => {
+  it("announces the report to its workspace's console", async () => {
+    const events = bus();
+    await new InboxReportChangesDomainEventHandler(events).handle({
+      organizationId: 'org-1',
+      reportId: 'r-1',
+    });
+    expect(events.publish.mock.calls).toEqual([
+      [{ organizationId: 'org-1' }, { type: 'inboxReport.changed', id: 'r-1' }],
     ]);
   });
 });

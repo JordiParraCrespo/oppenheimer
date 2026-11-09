@@ -925,17 +925,30 @@ falls back to the deployment's server when there is one; a rate limit
 ## Inbox
 
 The marks a person leaves on Inbox items: done, low, snoozed until a time,
-or deleted. See `product/versions/mvp/29-inbox.md`.
+or deleted, and the reports an agent sends there with pictures. See
+`product/versions/mvp/29-inbox.md`.
 
 | Code                                 | Title                                                        | HTTP |
 | ------------------------------------ | ------------------------------------------------------------ | ---- |
 | `INBOX_002` <a id="inbox_002" />     | Not an Inbox item key                                        | 400  |
 | `INBOX_003` <a id="inbox_003" />     | A snooze ends in the future                                  | 422  |
 | `INBOX_004` <a id="inbox_004" />     | Inbox mark not found                                         | 404  |
+| `INBOX_005` <a id="inbox_005" />     | Inbox report not found                                       | 404  |
+| `INBOX_006` <a id="inbox_006" />     | This report is already answered                              | 409  |
+| `INBOX_007` <a id="inbox_007" />     | Too many pictures on one report                              | 422  |
+| `INBOX_008` <a id="inbox_008" />     | That picture is too large                                    | 413  |
+| `INBOX_009` <a id="inbox_009" />     | A report takes PNG, JPEG, GIF or WebP pictures               | 415  |
 
 An item key is `<kind>:<id>` in letters, digits and `:#@._-`, at most 200
 characters, URL-encoded in the path. `INBOX_003` compares `until` with the
 server's clock.
+
+A report (`POST /v1/inbox/reports`) carries at most 4 pictures of at most 5 MB
+each; `INBOX_007` and `INBOX_008` say so with `maxImages` and `maxBytes`. A
+picture is judged by its bytes, never by the type it was sent as, and
+`INBOX_009` lists what is taken in `acceptedMimeTypes`. `INBOX_005` is also
+the answer for a picture its report does not carry, and for a report of
+another workspace. A report is answered once: `INBOX_006` on a second answer.
 
 ## Tasks
 

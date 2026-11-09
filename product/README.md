@@ -1411,3 +1411,10 @@ earlier note:
   §5 and `next-steps/telegram.md` §2 and §3 changed on 2026-11-09, when the
   owner's `/start` went unanswered: the decision is
   `next-steps/answering-on-telegram-and-whatsapp.md`.
+- `versions/mvp/29-inbox.md` said, from 2026-10-25, that the Inbox stores
+  nothing but your marks and that no agent posts into it. On 2026-11-09 the
+  owner asked for the unattended agents to send him problems with images
+  and to answer them only in the Inbox: a report is now stored
+  (`inbox_report`, up to four pictures), sent by anything holding a token
+  with `inbox-reports:write`, answered from its card, and read back by the
+  agent that sent it (29, "Reports").

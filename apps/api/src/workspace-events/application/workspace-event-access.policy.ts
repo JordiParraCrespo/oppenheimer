@@ -8,7 +8,8 @@ import type { ScopeContext } from '../../auth/domain/scope-context.types';
 /**
  * What reading each kind of change takes: the subject a role reads it by, the
  * scope a credential does. A person's own Inbox is theirs whatever their
- * roles (`inbox` levels are backed by no rule), so it names no subject.
+ * roles (`inbox` and `inbox-reports` levels are backed by no rule), so it
+ * names no subject.
  */
 const READ_BY: Record<
   WorkspaceEventType,
@@ -24,6 +25,7 @@ const READ_BY: Record<
   'botApproval.changed': { subject: 'Bot', scope: 'bots:read' },
   'botNotice.changed': { subject: 'Bot', scope: 'bots:read' },
   'inboxMark.changed': { subject: null, scope: 'inbox:read' },
+  'inboxReport.changed': { subject: null, scope: 'inbox-reports:read' },
 };
 
 /** The kinds of change this caller may read: its role's ability, and a credential's scopes on top. */
