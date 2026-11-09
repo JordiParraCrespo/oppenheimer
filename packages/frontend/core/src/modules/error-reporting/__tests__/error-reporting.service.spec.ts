@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { AppError } from '../../core/errors';
+import { AppError, callApi } from '../../core/errors';
 import type { ErrorReportContext, IErrorReportingClient } from '../error-reporting.client';
 import { ErrorReportingService } from '../error-reporting.service';
 
@@ -47,6 +47,29 @@ describe('ErrorReportingService', () => {
     ).toBe(false);
     expect(service.capture(new AppError(fallback))).toBe(false);
 
+    expect(client.captured).toEqual([{ error: unreadable, context: undefined }]);
+  });
+
+  // Regression (Sentry OPPENHEIMER-WEB-2): the generated SDK hands a dropped
+  // connection back as `{ error: TypeError }`, and `unwrap` kept the
+  // `{ status, body }` it built from it as the cause, so the filter found no
+  // TypeError there and every request in flight reported "Failed to fetch".
+  it('drops a network failure that reached it through an SDK call', async () => {
+    const client = new RecordingClient();
+    const service = new ErrorReportingService(client);
+    const fallback = { code: 'BOTS_CLIENT_001', message: 'Failed to mark the bot seen' };
+    const dropped = { error: new TypeError('Failed to fetch (dev.oppenheimer.build)') };
+    const unreadable = new TypeError('data.map is not a function');
+    const answered = { data: {}, response: new Response(null, { status: 200 }) };
+
+    const offline = await callApi(fallback, (api) => api.result(dropped)).catch((e) => e);
+    const misread = await callApi(fallback, async (api) => {
+      await api.result(answered);
+      throw unreadable;
+    }).catch((e) => e);
+
+    expect(service.capture(offline)).toBe(false);
+    expect(service.capture(misread)).toBe(true);
     expect(client.captured).toEqual([{ error: unreadable, context: undefined }]);
   });
 
