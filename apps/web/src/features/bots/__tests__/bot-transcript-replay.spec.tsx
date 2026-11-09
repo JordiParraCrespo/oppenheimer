@@ -266,7 +266,7 @@ describe('a turn recorded while it ran, replayed', () => {
     expect(outline(chat.container)).toEqual([
       'you: Summarise last night’s incident',
       'bot (thinking)',
-      '  … bots.chat.turn.thinking{} 12s',
+      '  … bots.chat.turn.musing.pondering{} 12s',
     ]);
 
     await chat.playTo('writing');
@@ -353,7 +353,9 @@ describe('a turn recorded while it ran, replayed', () => {
     });
     await chat.playAll();
 
-    expect(screen.getAllByRole('status').map(words)).toEqual(['bots.chat.turn.thinking{} 12s']);
+    expect(screen.getAllByRole('status').map(words)).toEqual([
+      'bots.chat.turn.musing.pondering{} 12s',
+    ]);
   });
 
   it('ends on the stored answer, with no live text, no live line and its trail', async () => {

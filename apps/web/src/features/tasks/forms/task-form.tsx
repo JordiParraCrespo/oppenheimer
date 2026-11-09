@@ -21,12 +21,13 @@ import { useTranslation } from 'react-i18next';
 import { ChoiceRow } from '../components/choice-row';
 import type { TaskFormInput, TaskFormOutput, TaskFormValues } from '../lib/task-form';
 import { TaskDueRow } from './task-due-row';
+import { TaskFocusRow } from './task-focus-row';
 import { TaskMilestoneRow } from './task-milestone-row';
 
 /**
  * The task dialog's form (`Tasks.dc.html`): the title and notes as the design
  * system's labelled fields, then the rows — Status, Project, Milestone, the sessions (the dialog's,
- * passed in), Due — and the footer. Enter in the title saves. The notes can
+ * passed in), To do (the day it is on To do from), Due — and the footer. Enter in the title saves. The notes can
  * be dictated.
  */
 export function TaskForm({
@@ -134,6 +135,7 @@ export function TaskForm({
         />
         <TaskMilestoneRow control={control} milestones={milestones} />
         {sessions}
+        <TaskFocusRow control={control} today={today} />
         <TaskDueRow control={control} today={today} />
       </div>
       <ErrorAlert message={error?.message} correlationId={error?.correlationId} />

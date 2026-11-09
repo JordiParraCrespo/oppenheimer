@@ -8,33 +8,36 @@ import { Folder, ListChecks } from '@oppenheimer/design-system-web/icons';
 import { useSuspensePlan } from '@oppenheimer/frontend-consumer/react';
 import { useTranslation } from 'react-i18next';
 import {
+  type AddFilter,
+  addableCounts,
   isOpenStatus,
-  NO_UNDATED_FILTER,
+  NO_ADD_FILTER,
   OPEN_STATUSES,
-  type UndatedFilter,
-  undatedCounts,
 } from '../lib/todo';
 
 /** The facets' first option: nothing narrowed. */
 const ALL = 'all';
 
 /**
- * Add undated tasks' filter row: Project (only the projects with an undated
- * task, or one already picked) and Status (the open columns, each with its
+ * Add tasks' filter row: Project (only the projects with a task to offer,
+ * or one already picked) and Status (the open columns, each with its
  * dot), each option counting what it would leave under the other facet, and
  * Clear while either narrows. The filter is the picker's; this draws it.
  */
-export function UndatedFilters({
+export function AddFilters({
+  onDay,
   filter,
   onChange,
 }: {
-  filter: UndatedFilter;
-  onChange: (filter: UndatedFilter) => void;
+  /** The tasks already on the day, which the dialog does not offer. */
+  onDay: ReadonlySet<string>;
+  filter: AddFilter;
+  onChange: (filter: AddFilter) => void;
 }) {
   const { t } = useTranslation();
   // A refetch that fails is not drawn here: the list below says it, from the same read.
   const read = useSuspensePlan();
-  const counts = undatedCounts(read.tasks, filter);
+  const counts = addableCounts(read.tasks, onDay, filter);
   const narrowed = filter.projectIds.length > 0 || filter.statuses.length > 0;
 
   return (
@@ -79,7 +82,7 @@ export function UndatedFilters({
         ]}
       />
       {narrowed ? (
-        <Button variant="ghost" size="sm" onClick={() => onChange(NO_UNDATED_FILTER)}>
+        <Button variant="ghost" size="sm" onClick={() => onChange(NO_ADD_FILTER)}>
           {t('tasks.filters.clear')}
         </Button>
       ) : null}
