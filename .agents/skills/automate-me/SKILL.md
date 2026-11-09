@@ -38,9 +38,9 @@ A pattern counts once it shows up in two sessions or two pull requests.
 Sort each into one of two piles:
 
 - **Agents should do it without being told** (he corrected, repeated or
-  undid something): name the skill that owns that moment (`cook`,
-  `steward`, `ship`, `propose`, `recap`, `bro`, a rule in `.agents/rules/`).
-  If a check could catch it, it goes to `correct` instead.
+  undid something): name the one skill or rule that owns that moment. If
+  a check could catch it, it goes to `correct` instead. If the repo already
+  says it somewhere, point there or tighten that line; never write it twice.
 - **Jordi could do it differently** (time he spends that a habit, a
   setting or one earlier sentence would save): the cost, with evidence.
 

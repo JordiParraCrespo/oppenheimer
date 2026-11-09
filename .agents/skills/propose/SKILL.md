@@ -19,8 +19,8 @@ is `.agents/skills/steward/SKILL.md`, "Merging"; this skill is the
   down ("The order"). A fix reproduces the bug first, as in `ship` step 1.
 - Keep to what was asked. Decisions that are Jordi's (a product call, an
   API shape nobody specified) go in the description as questions, with
-  your default applied. A refactor nobody asked for is its own pull
-  request, not a passenger in this one.
+  your default applied.
+- A refactor nobody asked for is its own pull request.
 
 ## 2. Open it
 
