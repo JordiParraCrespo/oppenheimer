@@ -3,12 +3,12 @@ import { LoadingStatus } from '@oppenheimer/frontend-web';
 import { useTranslation } from 'react-i18next';
 
 /**
- * Add undated tasks while the plan loads: the line and the buttons as they
+ * Add tasks while the plan loads: the line and the buttons as they
  * will read (both know only the day; Cancel already works), and between
  * them the search list's frame, its field and three rows together, each a
  * bar at a menu row's height.
  */
-export function UndatedPickerSkeleton({ date, onCancel }: { date: string; onCancel: () => void }) {
+export function AddToDayPickerSkeleton({ date, onCancel }: { date: string; onCancel: () => void }) {
   const { t } = useTranslation();
   return (
     <div aria-busy className="flex flex-col gap-4">

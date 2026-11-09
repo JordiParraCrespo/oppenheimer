@@ -20,6 +20,7 @@ export class TaskMapper implements Mapper<TaskEntity, TaskOrmEntity, TaskRespons
     record.notes = entity.notes;
     record.dueDate = entity.dueDate;
     record.dueTime = entity.dueTime;
+    record.focusDate = entity.focusDate;
     record.completedAt = entity.completedAt;
     record.blockedReason = entity.blockedReason;
     record.blockedAt = entity.blockedAt;
@@ -55,6 +56,7 @@ export class TaskMapper implements Mapper<TaskEntity, TaskOrmEntity, TaskRespons
         notes: record.notes ?? '',
         dueDate: record.dueDate ?? null,
         dueTime: record.dueTime ?? null,
+        focusDate: record.focusDate ?? null,
         completedAt: record.completedAt ?? null,
         blockedReason: record.blockedReason ?? null,
         blockedAt: record.blockedAt ?? null,
@@ -84,6 +86,7 @@ export class TaskMapper implements Mapper<TaskEntity, TaskOrmEntity, TaskRespons
     dto.notes = entity.notes;
     dto.dueDate = entity.dueDate;
     dto.dueTime = entity.dueTime;
+    dto.focusDate = entity.focusDate;
     dto.completedAt = entity.completedAt?.toISOString() ?? null;
     dto.blockedReason = entity.blockedReason;
     dto.blockedAt = entity.blockedAt?.toISOString() ?? null;

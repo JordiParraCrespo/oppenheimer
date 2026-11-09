@@ -31,6 +31,7 @@ export class UpdateTaskCommandHandler implements ICommandHandler<UpdateTaskComma
       notes: changes.notes,
       dueDate: changes.dueDate,
       dueTime: changes.dueTime,
+      focusDate: changes.focusDate,
     });
     if (changes.projectId !== undefined || changes.milestoneId !== undefined) {
       const filed = await this.filing.resolve(
