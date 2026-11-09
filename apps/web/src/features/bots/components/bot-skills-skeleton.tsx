@@ -1,12 +1,11 @@
-import { Button, SettingsGroup, SettingsListRow, Skeleton } from '@oppenheimer/design-system-web';
+import {
+  Button,
+  SettingsGroup,
+  SettingsListRowSkeleton,
+  Skeleton,
+} from '@oppenheimer/design-system-web';
 import { LoadingStatus } from '@oppenheimer/frontend-web';
 import { useTranslation } from 'react-i18next';
-
-/** Two skills, a command and its description, at the widths they run to. */
-const SKILLS = [
-  { line: 'w-72', meta: 'w-36' },
-  { line: 'w-56', meta: 'w-32' },
-];
 
 /**
  * The bot's skills before they answer: the heading's line with its count a
@@ -27,25 +26,17 @@ export function BotSkillsSkeleton() {
         </Button>
       </div>
       <SettingsGroup aria-hidden>
-        {SKILLS.map(({ line, meta }) => (
-          <SettingsListRow
-            key={line}
-            meta={
-              <span className="flex h-4.5 items-center">
-                <Skeleton shape="sm" className={`h-2.5 ${meta}`} />
-              </span>
-            }
+        {[0, 1].map((index) => (
+          <SettingsListRowSkeleton
+            key={index}
+            index={index}
             actions={
               <>
                 <Skeleton shape="pill" className="size-7" />
                 <Skeleton shape="pill" className="size-7" />
               </>
             }
-          >
-            <span className="flex h-5 items-center">
-              <Skeleton shape="sm" className={`h-3 ${line}`} />
-            </span>
-          </SettingsListRow>
+          />
         ))}
       </SettingsGroup>
     </section>

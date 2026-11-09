@@ -1,4 +1,4 @@
-import { RoutineItem, SidebarListHead } from '@oppenheimer/design-system-web';
+import { RoutineItem, SidebarListHead, Skeleton } from '@oppenheimer/design-system-web';
 import { Activity, GitPullRequest } from '@oppenheimer/design-system-web/icons';
 import { usePullRequestQueue } from '@oppenheimer/frontend-consumer/react';
 import { Link, useMatchRoute } from '@tanstack/react-router';
@@ -12,13 +12,14 @@ import { ReviewSessionsList } from './review-sessions-list';
  * views, the queue and analytics, the section's bots (`bots`, composed by
  * the route), then For review, the reader's review
  * sessions. The queue's count is every open pull
- * request in it, whatever the scope. The repository is picked in the queue's
+ * request in it, whatever the scope; while it is read a bar keeps its slot.
+ * The repository is picked in the queue's
  * own toolbar, and which repositories are watched is set in Settings.
  */
 export function PullRequestsSidebar({ bots }: { bots?: ReactNode }) {
   const { t } = useTranslation();
   const matchRoute = useMatchRoute();
-  const { data: total } = usePullRequestQueue('mine', {
+  const { data: total, isPending } = usePullRequestQueue('mine', {
     select: (queue) => queue.scopes.all,
   });
 
@@ -29,7 +30,15 @@ export function PullRequestsSidebar({ bots }: { bots?: ReactNode }) {
         <RoutineItem
           name={t('pullRequests.sidebar.queue')}
           icon={<GitPullRequest />}
-          meta={total === undefined ? undefined : String(total)}
+          meta={
+            total !== undefined ? (
+              String(total)
+            ) : isPending ? (
+              <span className="inline-flex h-4 items-center">
+                <Skeleton shape="sm" className="h-2 w-3" />
+              </span>
+            ) : undefined
+          }
           active={Boolean(matchRoute({ to: '/pulls' }))}
           render={<Link to="/pulls" />}
         />

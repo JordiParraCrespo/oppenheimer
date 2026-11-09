@@ -66,10 +66,10 @@ export function BotUsageReport({
   const figures = [
     { label: t('bots.chat.usage.active'), value: formatTimeAway(usage.activeMs, locale) },
     { label: t('bots.chat.usage.turns'), value: String(usage.turns) },
-    {
-      label: t('bots.chat.usage.cacheHit'),
-      value: totals.cacheHitPercent === null ? '—' : `${totals.cacheHitPercent}%`,
-    },
+    // No rate to give (nothing was read as input yet): the cell is left out, not a dash.
+    ...(totals.cacheHitPercent === null
+      ? []
+      : [{ label: t('bots.chat.usage.cacheHit'), value: `${totals.cacheHitPercent}%` }]),
     { label: t('bots.chat.usage.tokens'), value: tokens(totals.tokens) },
     ...modelShares(usage).map((share, index) => ({
       label: usage.models[index] ? label(usage.models[index]) : share.model,

@@ -1,4 +1,5 @@
 import { Skeleton } from '@oppenheimer/design-system-web';
+import { Folder } from '@oppenheimer/design-system-web/icons';
 import { LoadingStatus } from '@oppenheimer/frontend-web';
 
 /** Where the month marks fall across the header, as a share of its width. */
@@ -12,7 +13,8 @@ const TRACKS = [
 /**
  * The milestones timeline before the plan answers, edge to edge as it is:
  * the 56px header with its month and week marks as bars, and two 112px
- * project rows, each with its name bar over the track's own bordered frame
+ * project rows, each with its folder glyph, its name bar and its progress's
+ * place over the track's own bordered frame
  * and a bar for each milestone's name under it, so the rows that replace
  * them sit where these did.
  */
@@ -37,8 +39,10 @@ export function MilestonesTimelineSkeleton() {
         {TRACKS.map((track) => (
           <div key={track.at} className="relative h-28">
             <div className={`absolute top-0 bottom-0 ${track.at}`}>
-              <span className="absolute top-4.5 left-4 flex h-5.5 items-center">
+              <span className="absolute top-4.5 left-4 flex h-5.5 items-center gap-2">
+                <Folder className="size-3.75 text-fg-muted" />
                 <Skeleton shape="sm" className={`h-3 ${track.name}`} />
+                <Skeleton shape="sm" className="h-2.5 w-7" />
               </span>
               <div className="absolute inset-x-0 top-12 h-7.5 rounded-sm border border-border-subtle bg-card" />
               {track.marks.map((mark) => (

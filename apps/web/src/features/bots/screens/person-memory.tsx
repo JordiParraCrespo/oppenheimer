@@ -1,8 +1,8 @@
 import { SettingsTitle } from '@oppenheimer/design-system-web';
 import { QueryState } from '@oppenheimer/frontend-web';
 import { useTranslation } from 'react-i18next';
-import { BotMemorySkeleton } from '@/features/bots/components/bot-memory-skeleton';
 import { PersonAboutSkeleton } from '@/features/bots/components/person-about-skeleton';
+import { PersonFactsSkeleton } from '@/features/bots/components/person-facts-skeleton';
 import { PersonAbout } from '@/features/bots/sections/person-about';
 import { PersonFacts } from '@/features/bots/sections/person-facts';
 
@@ -24,7 +24,7 @@ export function PersonMemoryScreen() {
       <QueryState>
         <QueryState.Pending>
           <PersonAboutSkeleton />
-          <BotMemorySkeleton />
+          <PersonFactsSkeleton />
         </QueryState.Pending>
         <QueryState.Error fallback={t('settings.memory.loadFailed')} />
         <QueryState.Data>

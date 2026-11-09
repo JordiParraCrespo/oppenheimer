@@ -3,6 +3,7 @@ import {
   MilestoneGlyph,
   SearchableFacetMultiSelect,
   SearchableFacetSelect,
+  Skeleton,
 } from '@oppenheimer/design-system-web';
 import { Folder } from '@oppenheimer/design-system-web/icons';
 import { useMilestones, useProjects, useTasks } from '@oppenheimer/frontend-consumer/react';
@@ -14,6 +15,10 @@ import { planCounts, projectParamOf, UNASSIGNED_SLUG } from '../lib/plan-scope';
 
 /** The facets' first option: nothing narrowed. */
 const ALL = 'all';
+
+/** A set `pill` facet's frame, for a pick whose name has not answered yet. */
+const PENDING_FACET =
+  'inline-flex h-7.5 shrink-0 items-center gap-1.75 rounded-pill bg-selected-surface px-3 text-selected-fg [&_svg]:size-3.25 [&_svg]:shrink-0';
 
 /**
  * Plan's filter row (the 2026-10-13 `Tasks` frame): Project on the board and
@@ -58,49 +63,62 @@ export function PlanFilters({ view }: { view: PlanFilterView }) {
 
   return (
     <div className="flex flex-wrap items-center gap-2">
-      <SearchableFacetMultiSelect
-        variant="pill"
-        label={t('tasks.filters.project')}
-        icon={<Folder />}
-        searchPlaceholder={t('common.search.projects')}
-        emptyText={(query) => t('common.search.noMatch', { query })}
-        values={slugs}
-        onValuesChange={(next) => {
-          const picked = new Set(
-            (projects ?? [])
-              .filter((row) => next.includes(row.isUnassigned ? UNASSIGNED_SLUG : row.slug))
-              .map((row) => row.id),
-          );
-          const keepMilestone =
-            next.length === 0 ||
-            !milestoneId ||
-            milestones?.some((row) => row.id === milestoneId && picked.has(row.projectId));
-          set({
-            project: projectParamOf(next),
-            milestone: keepMilestone ? milestoneId : undefined,
-          });
-        }}
-        options={[
-          { value: ALL, label: t('tasks.filters.allProjects'), count: counts?.all },
-          ...(projects ?? [])
-            .filter((row) => !row.isUnassigned)
-            .map((row) => ({
-              value: row.slug,
-              label: row.name,
-              count: counts ? (counts.byProject[row.id] ?? 0) : undefined,
-            })),
-          ...(unassigned
-            ? [
-                {
-                  value: UNASSIGNED_SLUG,
-                  label: t('tasks.filters.noProject'),
-                  count: counts ? (counts.byProject[unassigned.id] ?? 0) : undefined,
-                },
-              ]
-            : []),
-        ]}
-      />
-      {showsMilestone ? (
+      {/* A pick in the address before its names answer: the facet set, its value a bar, not the bare "Project". */}
+      {slugs.length && projects === undefined ? (
+        <span aria-hidden className={PENDING_FACET}>
+          <Folder />
+          <Skeleton shape="sm" className="h-2.5 w-16" />
+        </span>
+      ) : (
+        <SearchableFacetMultiSelect
+          variant="pill"
+          label={t('tasks.filters.project')}
+          icon={<Folder />}
+          searchPlaceholder={t('common.search.projects')}
+          emptyText={(query) => t('common.search.noMatch', { query })}
+          values={slugs}
+          onValuesChange={(next) => {
+            const picked = new Set(
+              (projects ?? [])
+                .filter((row) => next.includes(row.isUnassigned ? UNASSIGNED_SLUG : row.slug))
+                .map((row) => row.id),
+            );
+            const keepMilestone =
+              next.length === 0 ||
+              !milestoneId ||
+              milestones?.some((row) => row.id === milestoneId && picked.has(row.projectId));
+            set({
+              project: projectParamOf(next),
+              milestone: keepMilestone ? milestoneId : undefined,
+            });
+          }}
+          options={[
+            { value: ALL, label: t('tasks.filters.allProjects'), count: counts?.all },
+            ...(projects ?? [])
+              .filter((row) => !row.isUnassigned)
+              .map((row) => ({
+                value: row.slug,
+                label: row.name,
+                count: counts ? (counts.byProject[row.id] ?? 0) : undefined,
+              })),
+            ...(unassigned
+              ? [
+                  {
+                    value: UNASSIGNED_SLUG,
+                    label: t('tasks.filters.noProject'),
+                    count: counts ? (counts.byProject[unassigned.id] ?? 0) : undefined,
+                  },
+                ]
+              : []),
+          ]}
+        />
+      )}
+      {showsMilestone && milestoneId && milestones === undefined ? (
+        <span aria-hidden className={PENDING_FACET}>
+          <MilestoneGlyph />
+          <Skeleton shape="sm" className="h-2.5 w-20" />
+        </span>
+      ) : showsMilestone ? (
         <SearchableFacetSelect
           variant="pill"
           label={t('tasks.filters.milestone')}

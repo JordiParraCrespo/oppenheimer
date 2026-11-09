@@ -3729,7 +3729,8 @@
     "backToSessions": "Back to sessions",
     "sensitiveScope": "Sensitive",
     "unknownClient": "An application",
-    "failed": "That did not go through. Try again."
+    "failed": "That did not go through. Try again.",
+    "catalogFailed": "The permissions this application asked for could not be loaded, so it cannot be approved yet. Reload the page to try again."
   },
   "onboarding": {
     "flow": {

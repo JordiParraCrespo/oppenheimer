@@ -1,6 +1,6 @@
 'use client';
 
-import { useFeatureFlag, useQuery } from '@oppenheimer/frontend-core/react';
+import { PERSIST_META, useFeatureFlag, useQuery } from '@oppenheimer/frontend-core/react';
 import type { VoiceStatusDto } from '@oppenheimer/shared/schemas/voice';
 import { type UseMutationOptions, type UseQueryOptions, useMutation } from '@tanstack/react-query';
 import type { VoiceTranscription } from '../modules/voice';
@@ -11,7 +11,10 @@ import { voiceKeys } from './voice.keys';
  * Whether the workspace can dictate (`GET /voice/status`). A sign-in or key
  * changed in Settings changes the answer, so those mutations invalidate it
  * with the provider list (`invalidateModelProviders`); a reader that needs
- * only the yes or no narrows it with `select`.
+ * only the yes or no narrows it with `select`. It is kept across reloads
+ * (`PERSIST_META`: a yes or no and provider names, nothing of the
+ * workspace's), so the mic is in the composer on its first frame rather than
+ * appearing beside the field a moment later.
  */
 function useVoiceStatus<TData = VoiceStatusDto>(
   options?: Omit<UseQueryOptions<VoiceStatusDto, Error, TData>, 'queryKey' | 'queryFn'>,
@@ -20,6 +23,7 @@ function useVoiceStatus<TData = VoiceStatusDto>(
   return useQuery<VoiceStatusDto, Error, TData>({
     queryKey: voiceKeys.status(),
     queryFn: () => app.voice.status(),
+    meta: PERSIST_META,
     ...options,
   });
 }

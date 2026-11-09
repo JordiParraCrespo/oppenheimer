@@ -10,6 +10,7 @@ import { ErrorAlert, useDragLabels } from '@oppenheimer/frontend-web';
 import type { BotSection } from '@oppenheimer/shared/schemas/bot';
 import { useTranslation } from 'react-i18next';
 import { BotDragOverlay } from '@/features/bots/components/bot-drag-overlay';
+import { useRememberSectionBotCount } from '@/features/bots/hooks/use-remember-section-bot-count';
 import { useSectionBotOrder } from '@/features/bots/hooks/use-section-bot-order';
 import { SectionBotRow } from './section-bot-row';
 
@@ -37,6 +38,7 @@ export function SectionBotsList({
   const { data: listed, error } = useSuspenseSectionBots(section);
   const { bots, group, handlers, error: moveError, reset } = useSectionBotOrder(section, listed);
   const dragLabels = useDragLabels();
+  useRememberSectionBotCount(section, bots.length);
 
   return (
     <>
