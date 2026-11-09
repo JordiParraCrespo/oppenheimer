@@ -14,8 +14,7 @@ import {
 
 /**
  * After this many of a turn's tool calls, with no skill used or saved, the
- * bot is reminded once to save how it did the work. A turn takes at most 20
- * steps (`BOT_TURN_MAX_STEPS`); 8 is work, not a lookup.
+ * bot is reminded once to save how it did the work: 8 is work, not a lookup.
  */
 export const BOT_SKILL_NUDGE_AFTER_STEPS = 8;
 
