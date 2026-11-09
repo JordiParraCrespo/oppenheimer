@@ -1,3 +1,4 @@
+import { BOT_MESSAGE_MAX } from '@oppenheimer/shared/schemas/bot';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { setBotDraft } from '../lib/bot-drafts';
@@ -122,7 +123,7 @@ describe('BotComposer long pastes', () => {
   it('keeps send off for a message longer than a bot takes, and says why', () => {
     const field = composer();
 
-    pasteText(field, 'y'.repeat(20_000));
+    pasteText(field, 'y'.repeat(BOT_MESSAGE_MAX + 1));
 
     expect(sendButton().getAttribute('aria-disabled')).toBe('true');
     fireEvent.click(sendButton());

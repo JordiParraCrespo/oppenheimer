@@ -240,6 +240,9 @@ import { WorkspaceEventsModule } from './workspace-events/workspace-events.modul
     BetterAuthModule.forRoot({
       auth,
       disableGlobalAuthGuard: true,
+      // A bot message (`BOT_MESSAGE_MAX`, 200,000 characters) is up to about
+      // 800 KB as JSON in UTF-8; Express's 100 KB default refused a pasted log.
+      bodyParser: { json: { limit: '1mb' } },
       // Its lines go to LOG_FILE too, so sign-ins reach Loki with the rest.
       middleware: createAuthRouteLoggingMiddleware({
         pretty: process.env.NODE_ENV !== 'production',

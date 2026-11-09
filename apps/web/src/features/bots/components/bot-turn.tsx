@@ -11,6 +11,7 @@ import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { BotActivity } from '@/features/bots/components/bot-activity';
 import { BotEventLine } from '@/features/bots/components/bot-event-line';
+import { BotMessageText } from '@/features/bots/components/bot-message-text';
 import { BotReply } from '@/features/bots/components/bot-reply';
 import { BotSteerMessage } from '@/features/bots/components/bot-steer-message';
 import { BotTurnFailure } from '@/features/bots/components/bot-turn-failure';
@@ -124,7 +125,7 @@ export function BotTurn({
             }
             attachments={message.attachments.length > 0 ? images(message.attachments) : undefined}
           >
-            {message.content || null}
+            {message.content ? <BotMessageText text={message.content} /> : null}
           </ChatUserMessage>
         ),
       )}
