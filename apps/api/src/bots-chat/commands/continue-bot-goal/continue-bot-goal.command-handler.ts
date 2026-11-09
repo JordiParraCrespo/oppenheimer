@@ -24,7 +24,8 @@ import { ContinueBotGoalCommand } from './continue-bot-goal.command';
 
 /**
  * A turn of a goal ended (`25-bots.md` §4.1): load, count what the turn spent
- * and whether it called a tool, decide (`goalDecision`), ask the reviewer
+ * and whether it called a tool (also for a goal the turn itself paused, whose
+ * spend is written alone), decide (`goalDecision`), ask the reviewer
  * only when the bot claimed the goal met (`BotGoalReviewResolver`), act. The
  * goal is read again after the review, which takes a model call: one ended,
  * paused, replaced or moved on by another delivery of the same end meanwhile
@@ -50,11 +51,18 @@ export class ContinueBotGoalCommandHandler
     if (found.isNone() || !found.unwrap().endedAt) return;
     const ended = found.unwrap();
     const goal = await this.goals.findForBot(ended.organizationId, ended.botId);
-    if (!goal || !isGoalTurn(goal, ended) || goal.paused) return;
+    if (!goal || !isGoalTurn(goal, ended)) return;
     goal.account({
       tokens: ended.inputTokens + ended.outputTokens,
       calledTools: await this.messages.turnCalledTools(ended.organizationId, ended.id),
     });
+    if (goal.paused) {
+      // Paused while this turn ran (the bot said blocked): its spend still counts.
+      if (ended.startedAt && goal.paused.at >= ended.startedAt) {
+        await this.goals.recordSpend(goal);
+      }
+      return;
+    }
 
     const decision = goalDecision(goal, ended);
     if (decision.kind === 'skip') return;

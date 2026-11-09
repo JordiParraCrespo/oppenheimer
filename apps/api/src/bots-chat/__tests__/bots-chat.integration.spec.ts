@@ -2772,6 +2772,23 @@ describe('bots chat (integration)', () => {
       expect(lines.map((row) => row.activity)).toEqual(['paused', 'resumed']);
     });
 
+    // What breaks this: the turn that paused its goal never counted, or a
+    // second delivery of its end counting it twice.
+    it('writes the spend of a turn that paused its goal once, however often its end is delivered', async () => {
+      const bot = await create('Spender');
+      const turn = await runningTurn(bot);
+      await goals.set(goalFor(bot, turn.id));
+      const pausing = (await goals.findForBot(bot.organizationId, bot.id)) as BotGoalEntity;
+      pausing.pause('blocked', 'I need the key', new Date());
+      expect(await goals.pause(pausing, goalPauseLine(pausing, 'paused'))).toBe(true);
+      for (const expected of [true, false]) {
+        const loaded = (await goals.findForBot(bot.organizationId, bot.id)) as BotGoalEntity;
+        loaded.account({ tokens: 5_000, calledTools: true });
+        expect(await goals.recordSpend(loaded)).toBe(expected);
+      }
+      expect((await goals.findForBot(bot.organizationId, bot.id))?.tokensUsed).toBe(5_000);
+    });
+
     it('stores the bot’s claim that the goal is met', async () => {
       const bot = await create('Claimer');
       const turn = await runningTurn(bot);

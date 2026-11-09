@@ -60,6 +60,7 @@ function ended(
   step = 1,
 ): BotTurnEntity {
   const turn = BotTurnEntity.queue({ ...PROPS, origin: 'goal', sourceKey: `goal:goal-1:${step}` });
+  turn.start(new Date(Date.now() - 60_000));
   turn.end(status, new Date(), {
     error: failure ? 'It stopped' : null,
     failure,
@@ -76,6 +77,7 @@ function setup(
 ) {
   const goals = {
     findForBot: vi.fn<BotGoalRepositoryPort['findForBot']>(async () => stored),
+    recordSpend: vi.fn<BotGoalRepositoryPort['recordSpend']>(async () => true),
   } satisfies Partial<BotGoalRepositoryPort>;
   const reviewer = {
     review: vi.fn<BotGoalReviewResolver['review']>(async () =>
@@ -204,13 +206,29 @@ describe('ContinueBotGoalCommandHandler', () => {
     expect(goalsOf.end).not.toHaveBeenCalled();
   });
 
-  it('does nothing for a paused goal, or a bot with none', async () => {
-    const paused = goal({ paused: { reason: 'blocked', note: null, at: new Date() } });
+  // What breaks this: the turn in which the bot said blocked never counted,
+  // so after Resume the budget reads less than was spent.
+  it('counts the spend of the turn that paused the goal, and queues nothing', async () => {
+    const turn = ended('completed');
+    const pausedInTurn = goal({
+      paused: { reason: 'blocked', note: null, at: new Date(Date.now() + 1) },
+    });
+    const { goals, goalsOf, run } = setup(pausedInTurn, turn);
+    await run();
+    expect(pausedInTurn.tokensUsed).toBe(1_200);
+    expect(goals.recordSpend).toHaveBeenCalledWith(pausedInTurn);
+    expect(goalsOf.queueContinuation).not.toHaveBeenCalled();
+    expect(goalsOf.pause).not.toHaveBeenCalled();
+  });
+
+  it('does nothing for a goal paused before the turn, or a bot with none', async () => {
+    const paused = goal({ paused: { reason: 'blocked', note: null, at: new Date(0) } });
     for (const stored of [paused, null]) {
-      const { goalsOf, run } = setup(stored, ended('completed'));
+      const { goals, goalsOf, run } = setup(stored, ended('completed'));
       await run();
       expect(goalsOf.queueContinuation).not.toHaveBeenCalled();
       expect(goalsOf.pause).not.toHaveBeenCalled();
+      expect(goals.recordSpend).not.toHaveBeenCalled();
     }
   });
 

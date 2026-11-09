@@ -156,7 +156,8 @@ export function stoppedAtTurnLimit(ended: Pick<EndedTurn, 'status' | 'failure'>)
  * What the reviewer's verdict on the bot's claim does: met ends the goal;
  * out of reach without the person pauses it as `blocked`, with the reason;
  * not met yet withdraws the claim and goes on, the reason handed to the next
- * continuation. No verdict (the reviewer failed, or answered nothing
+ * continuation, unless the goal's own bounds stop it first (its budget, its
+ * idle turns, the limit of a goal set before 2026-11-09). No verdict (the reviewer failed, or answered nothing
  * readable) takes the bot at its word. A goal that would go on whose owner
  * can no longer act in the workspace (`props` null) stops, as `access_lost`.
  */
@@ -171,6 +172,9 @@ export function goalOutcome<Props>(
     return { kind: 'pause', reason: 'blocked', note: verdict.reason };
   }
   goal.rejectClaim();
+  if (goal.overBudget) return { kind: 'pause', reason: 'budget', note: verdict.reason };
+  if (goal.idle) return { kind: 'pause', reason: 'no_progress', note: verdict.reason };
+  if (goal.exhausted) return { kind: 'end', activity: 'exhausted', reason: verdict.reason };
   return continueOrStop(props, verdict.reason);
 }
 

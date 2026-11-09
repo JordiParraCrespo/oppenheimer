@@ -56,6 +56,7 @@ export class BotGoalRepository
       const result = await manager
         .createQueryBuilder()
         .update(BotGoalOrmEntity)
+        // `updatedAt` is the pause's own time: `recordSpend` writes once while they match.
         .set({
           pausedAt,
           pauseReason,
@@ -65,6 +66,7 @@ export class BotGoalRepository
           claim,
           waitingFor,
           waitingUntil,
+          ...(pausedAt ? { updatedAt: pausedAt } : {}),
         })
         .where('id = :id AND continuations = :at AND "pausedAt" IS NULL', {
           id: goal.id,
@@ -76,6 +78,20 @@ export class BotGoalRepository
       goal.markPersisted();
       return true;
     });
+  }
+
+  async recordSpend(goal: BotGoalEntity): Promise<boolean> {
+    const { tokensUsed, idleTurns, pausedAt } = this.mapper.toPersistence(goal);
+    const result = await this.repository
+      .createQueryBuilder()
+      .update(BotGoalOrmEntity)
+      .set({ tokensUsed, idleTurns, updatedAt: () => 'now()' })
+      .where('id = :id AND "pausedAt" = :pausedAt AND "updatedAt" = "pausedAt"', {
+        id: goal.id,
+        pausedAt,
+      })
+      .execute();
+    return result.affected === 1;
   }
 
   async claim(goal: BotGoalEntity): Promise<boolean> {

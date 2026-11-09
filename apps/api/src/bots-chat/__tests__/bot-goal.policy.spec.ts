@@ -196,6 +196,23 @@ describe('goalOutcome', () => {
     expect(subject.claim).toBeNull();
   });
 
+  // What breaks this: a claim made on the turn that spent the budget, or on
+  // an old goal's last continuation, sending the goal on past its bounds.
+  it('applies the goal’s bounds after turning a claim down', () => {
+    const spent = goal({ tokenBudget: 60_000, tokensUsed: 60_000 });
+    spent.claimMet('done');
+    expect(goalOutcome(spent, { verdict: 'not_met', reason: 'No' }, PROPS)).toMatchObject({
+      kind: 'pause',
+      reason: 'budget',
+    });
+    const last = goal({ limit: 3, continuations: 3 });
+    last.claimMet('done');
+    expect(goalOutcome(last, { verdict: 'not_met', reason: 'No' }, PROPS)).toMatchObject({
+      kind: 'end',
+      activity: 'exhausted',
+    });
+  });
+
   it('takes the bot at its word when the reviewer could not answer', () => {
     expect(goalOutcome(claimed(), null, PROPS)).toEqual({
       kind: 'end',
