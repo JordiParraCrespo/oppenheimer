@@ -116,7 +116,12 @@ describe("To do's day", () => {
       ['tomorrow', 'day'],
       ['carried', 'carried'],
       ['carried-due', 'carried'],
+      ['focus', 'carried'],
     ]);
+    // Two days on, tomorrow's comes along too, after the older ones.
+    expect(
+      todoEntries(rows, '2026-11-10', { today: DAY, overdue: false }).map((row) => row.task.id),
+    ).toEqual(['carried', 'carried-due', 'focus', 'tomorrow']);
     // A past day keeps its own and what was finished on it; nothing open is carried back.
     expect(ids(todoEntries(rows, '2026-11-06', { today: DAY, overdue: true }))).toEqual([
       ['carried-due', 'day'],

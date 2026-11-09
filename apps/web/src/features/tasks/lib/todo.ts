@@ -42,8 +42,9 @@ function doneOn(task: TaskEntity): string | null {
  * what the reader means to work on, so first come the tasks put on that day
  * (their focus date) and those due on it, timed ones first in time order and
  * the rest in the board's order. Then, on today or a later day, what was put
- * on an earlier day and is not done yet, oldest first: it stays until it is
- * done, which is how work that takes days stays on the list. Then, when
+ * on an earlier day than the one shown and is not done yet, oldest first: it
+ * stays until it is done, which is how work that takes days stays on the
+ * list, and today's comes along when tomorrow is planned. Then, when
  * `overdue` is on, what was due before today and is not done. A task carried
  * or overdue that is ticked done stays on the day it was done, so finishing
  * it does not make it vanish. A past day lists its own and what was finished
@@ -65,10 +66,11 @@ export function todoEntries(
       return [{ task, reason }];
     });
   const ahead = day >= options.today;
-  // Still open and from before today, or finished on this very day.
-  const stillHere = (from: string | null) => (task: TaskEntity) =>
-    from !== null &&
-    (task.isDone ? from < day && doneOn(task) === day : ahead && from < options.today);
+  // Still open on today or a later day and from before `until`, or finished on this very day.
+  // Work put on a day carries to every later one (today's comes along to tomorrow), while a
+  // due date only turns overdue once today has passed it.
+  const stillHere = (from: string | null, until: string) => (task: TaskEntity) =>
+    from !== null && (task.isDone ? from < day && doneOn(task) === day : ahead && from < until);
 
   const own = take(
     tasks
@@ -84,14 +86,14 @@ export function todoEntries(
   );
   const carried = take(
     tasks
-      .filter((task) => stillHere(task.focusDate)(task))
+      .filter((task) => stillHere(task.focusDate, day)(task))
       .sort((a, b) => (a.focusDate ?? '').localeCompare(b.focusDate ?? '') || compareRank(a, b)),
     'carried',
   );
   const overdue = options.overdue
     ? take(
         tasks
-          .filter((task) => stillHere(task.dueDate)(task))
+          .filter((task) => stillHere(task.dueDate, options.today)(task))
           .sort((a, b) => (a.dueDate ?? '').localeCompare(b.dueDate ?? '') || compareRank(a, b)),
         'overdue',
       )
