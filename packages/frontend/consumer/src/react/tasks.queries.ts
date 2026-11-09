@@ -13,6 +13,7 @@ import {
   useMutation,
   useQueryClient,
 } from '@tanstack/react-query';
+import { HOST_HOME_FOLDER } from '../modules/sessions/session.entity';
 import type { PlanStats, PlanStatsQuery } from '../modules/tasks/plan-stats';
 import {
   type MilestoneEntity,
@@ -271,9 +272,21 @@ export const useDeleteTask = mutation<void, string>({
 
 export type StartTaskSessionVariables = StartTaskSessionInput & { id: string };
 
-/** Start a session for a task; the session list learns of it on its next read. */
+/**
+ * Start a session for a task; the session list learns of it on its next read.
+ * A folder of `HOST_HOME_FOLDER` is the host's home, asked of the host first.
+ */
 export const useStartTaskSession = mutation<StartedTaskSession, StartTaskSessionVariables>({
-  run: (app, variables) => app.tasks.startSession(variables.id, variables),
+  run: async (app, variables) => {
+    const { id, session, seenStatus, idempotencyKey } = variables;
+    if (session?.folder !== HOST_HOME_FOLDER) return app.tasks.startSession(id, variables);
+    const { home } = await app.hosts.findFolders(session.hostId);
+    return app.tasks.startSession(id, {
+      session: { ...session, folder: home },
+      seenStatus,
+      idempotencyKey,
+    });
+  },
   update: (queryClient, started) => {
     void queryClient.invalidateQueries({ queryKey: sessionsKeys.lists() });
     return settleTask(queryClient, started.task.id, started.task);

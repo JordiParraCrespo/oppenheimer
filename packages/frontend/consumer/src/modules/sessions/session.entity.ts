@@ -458,9 +458,16 @@ export interface CreateWorktreeSession {
   folder?: never;
 }
 
+/**
+ * The folder a session may name instead of a path: the host's home, which only
+ * its runner can say. Start session sends it for a session with no repository,
+ * and the start asks the host for the path before it posts.
+ */
+export const HOST_HOME_FOLDER = '~';
+
 /** A folder already on the host, opened as it is: nothing is cloned or written. */
 export interface CreateFolderSession {
-  /** Absolute, on the host. */
+  /** Absolute, on the host; `HOST_HOME_FOLDER` where a start resolves it. */
   folder: string;
   checkouts?: never;
   cwdGithubRepoId?: never;

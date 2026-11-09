@@ -21,12 +21,20 @@ import type { ReactNode } from 'react';
 import { Controller, useForm, useWatch } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { defaultModelFor, toAgentOptions } from '../lib/agent-options';
-import { agentFor, asAgent, asPlace, type StartSessionValues } from '../lib/start-session';
+import {
+  agentFor,
+  asAgent,
+  asPlace,
+  NO_REPOSITORY,
+  type StartSessionValues,
+} from '../lib/start-session';
 
 /**
  * The launch dialog's form (`18-plan-product.md` §4): the prompt, prefilled
  * from the task, and the repository, where it runs, the host, agent and model,
- * defaulted from the project. Where is a host, Claude Code's cloud started
+ * defaulted from the project. On a host the repository may be none: the
+ * session opens in the host's home, which an offline host cannot name, so
+ * `homeOffline` says so and holds the start. Where is a host, Claude Code's cloud started
  * from a host (Claude Code only), or Cursor's cloud with no host (Cursor's
  * own agent and pick of model, offered once the reader has a key); a cloud
  * session needs a task; in Claude Code's cloud each host names the claude.ai
@@ -43,6 +51,7 @@ export function StartSessionForm({
   cloudHosts,
   places,
   offline,
+  homeOffline,
   account,
   voice,
   pending,
@@ -59,6 +68,8 @@ export function StartSessionForm({
   places: ChipSelectOption[];
   /** The note under the pickers when the picked host is offline. */
   offline: (hostId: string) => ReactNode;
+  /** In its place, with no repository picked: why the start waits for the host. */
+  homeOffline: (hostId: string) => ReactNode;
   /** The line naming the claude.ai account a session the picked host starts runs on. */
   account: (hostId: string) => ReactNode;
   voice: VoiceInput;
@@ -74,10 +85,27 @@ export function StartSessionForm({
   const hostId = useWatch({ control, name: 'hostId' });
   const place = useWatch({ control, name: 'place' });
   const promptEmpty = useWatch({ control, name: 'prompt', compute: (prompt) => !prompt.trim() });
+  const noRepository = useWatch({
+    control,
+    name: 'repositoryId',
+    compute: (id) => id === NO_REPOSITORY,
+  });
   const rule = AUTOMATION_PLACE_RULES[place];
-  const note = hostId && rule.host ? offline(hostId) : null;
-  // A cloud session starts on a task; a host session may start on nothing.
-  const needsTask = rule.host !== 'runs' && promptEmpty;
+  // A cloud session starts on a task from a repository; a host session may start on neither.
+  const inCloud = rule.host !== 'runs';
+  const needsTask = inCloud && promptEmpty;
+  const needsRepository = inCloud && noRepository;
+  const waitsForHome = hostId && !inCloud && noRepository ? homeOffline(hostId) : null;
+  const note = waitsForHome ?? (hostId && rule.host ? offline(hostId) : null);
+  const repositoryOptions: ChipSelectOption[] = [
+    {
+      value: NO_REPOSITORY,
+      label: t('tasks.start.noRepository'),
+      description: t('tasks.start.noRepositoryDesc'),
+      disabled: inCloud,
+    },
+    ...repositories,
+  ];
   const submit = handleSubmit(onSubmit);
 
   return (
@@ -102,12 +130,11 @@ export function StartSessionForm({
         <Controller
           control={control}
           name="repositoryId"
-          rules={{ required: true }}
           render={({ field }) => (
             <ChipSelect
               value={field.value}
               onValueChange={field.onChange}
-              options={repositories}
+              options={repositoryOptions}
               icon={<GitBranch />}
               aria-label={t('tasks.start.repository')}
               placeholder={t('tasks.start.repositoryPlaceholder')}
@@ -197,6 +224,7 @@ export function StartSessionForm({
       </div>
       {hostId && rule.host === 'starts' ? account(hostId) : null}
       {needsTask ? <Callout>{t('tasks.start.cloudNeedsTask')}</Callout> : null}
+      {needsRepository ? <Callout>{t('tasks.start.cloudNeedsRepository')}</Callout> : null}
       {note}
       <ErrorAlert message={error?.message} correlationId={error?.correlationId} />
       <div className="flex items-center justify-end gap-2">
@@ -206,9 +234,14 @@ export function StartSessionForm({
         <Button
           type="submit"
           pending={pending}
-          disabled={!repositories.length || (rule.host !== null && !hosts.length) || needsTask}
+          disabled={
+            (rule.host !== null && !hosts.length) ||
+            needsTask ||
+            needsRepository ||
+            Boolean(waitsForHome)
+          }
         >
-          {note ? t('tasks.start.queue') : t('tasks.start.start')}
+          {note && !waitsForHome ? t('tasks.start.queue') : t('tasks.start.start')}
         </Button>
       </div>
     </form>

@@ -1,7 +1,7 @@
-import { ProjectEntity } from '@oppenheimer/frontend-consumer';
+import { HOST_HOME_FOLDER, ProjectEntity } from '@oppenheimer/frontend-consumer';
 import { DEFAULT_SESSION_PERMISSION } from '@oppenheimer/shared/agents';
 import { describe, expect, it } from 'vitest';
-import { type StartSessionValues, toStartSession } from '../lib/start-session';
+import { NO_REPOSITORY, type StartSessionValues, toStartSession } from '../lib/start-session';
 
 /**
  * What Start session sends for each place: New session's body on a host, the
@@ -76,5 +76,20 @@ describe('the body Start session sends', () => {
     expect(toStartSession(values({ prompt: '' }), project)).toMatchObject({
       session: { prompt: undefined },
     });
+  });
+
+  it('opens a session with no repository in the host’s home, never in the cloud', () => {
+    const none = values({ repositoryId: NO_REPOSITORY });
+    expect(toStartSession(none, project)).toEqual({
+      session: {
+        hostId: 'h-1',
+        agent: 'codex',
+        folder: HOST_HOME_FOLDER,
+        launch: { model: null, permission: DEFAULT_SESSION_PERMISSION },
+        prompt: 'Fix the login',
+      },
+    });
+    expect(toStartSession({ ...none, place: 'claude-cloud' }, project)).toBeNull();
+    expect(toStartSession({ ...none, place: 'cursor' }, project)).toBeNull();
   });
 });

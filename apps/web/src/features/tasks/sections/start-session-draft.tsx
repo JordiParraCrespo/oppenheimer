@@ -117,6 +117,13 @@ export function StartSessionDraft({ taskId, onClose }: { taskId: string; onClose
             </Callout>
           );
         }}
+        homeOffline={(hostId) => {
+          const host = found.hosts.find((row) => row.id === hostId);
+          if (!host || host.online) return null;
+          return (
+            <Callout tone="warning">{t('tasks.start.homeOffline', { host: host.name })}</Callout>
+          );
+        }}
         pending={launch.isPending}
         error={launch.error ? resolveError(launch.error, t('tasks.start.failed')) : null}
         onCancel={onClose}

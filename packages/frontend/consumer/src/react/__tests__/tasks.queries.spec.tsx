@@ -4,6 +4,8 @@ import { act, renderHook, waitFor } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { TOKENS } from '../../di/tokens';
+import type { HostsRepository } from '../../modules/hosts/hosts.repository';
+import { HOST_HOME_FOLDER } from '../../modules/sessions/session.entity';
 import { TaskEntity } from '../../modules/tasks/task.entity';
 import type { TasksRepository } from '../../modules/tasks/tasks.repository';
 import { tasksKeys } from '../tasks.keys';
@@ -13,6 +15,7 @@ import {
   useMilestones,
   useMoveTask,
   useSessionTasks,
+  useStartTaskSession,
   useTasks,
   useUpdateTask,
 } from '../tasks.queries';
@@ -65,11 +68,14 @@ function deferred<T>() {
 
 /** The repository methods these hooks call, so a renamed one fails to compile here. */
 type TasksFake = Partial<
-  Pick<TasksRepository, 'findAll' | 'findMilestones' | 'create' | 'update' | 'move' | 'remove'>
+  Pick<
+    TasksRepository,
+    'findAll' | 'findMilestones' | 'create' | 'update' | 'move' | 'remove' | 'startSession'
+  >
 >;
 
-function setup(service: TasksFake) {
-  const app = fakeKernel({ [TOKENS.TasksRepository]: service });
+function setup(service: TasksFake, hosts: Partial<Pick<HostsRepository, 'findFolders'>> = {}) {
+  const app = fakeKernel({ [TOKENS.TasksRepository]: service, [TOKENS.HostsRepository]: hosts });
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   function wrapper({ children }: { children: ReactNode }) {
     return (
@@ -341,5 +347,32 @@ describe('milestone progress', () => {
     );
 
     expect(findMilestones).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('useStartTaskSession', () => {
+  it("opens a session with no repository in the folder the host names as its home, not in '~'", async () => {
+    const findFolders = vi.fn().mockResolvedValue({ home: '/home/ada' });
+    const startSession = vi
+      .fn()
+      .mockResolvedValue({ task: task('t-1', { status: 'doing' }), sessionId: 's-1', hints: [] });
+    const { wrapper } = setup({ startSession }, { findFolders });
+    const { result } = renderHook(() => useStartTaskSession(), { wrapper });
+
+    await act(() =>
+      result.current.mutateAsync({
+        id: 't-1',
+        session: { hostId: 'h-1', agent: 'shell', folder: HOST_HOME_FOLDER },
+        seenStatus: 'todo',
+        idempotencyKey: 'k-1',
+      }),
+    );
+
+    expect(findFolders).toHaveBeenCalledWith('h-1');
+    expect(startSession).toHaveBeenCalledWith('t-1', {
+      session: { hostId: 'h-1', agent: 'shell', folder: '/home/ada' },
+      seenStatus: 'todo',
+      idempotencyKey: 'k-1',
+    });
   });
 });

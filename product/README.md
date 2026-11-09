@@ -1421,3 +1421,7 @@ earlier note:
   of its sidebar: the rail and the console's landing go through
   `/plan/open`, which redirects there (the Inbox until another is dragged
   above it).
+- `versions/mvp/18-plan-product.md` §4 had Start session always start from
+  one of the project's repositories. On 2026-11-09 the owner asked to start
+  one with only a host: the Repository chip offers No repository, which on
+  a host opens the session in the host's home folder.
