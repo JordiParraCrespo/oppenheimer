@@ -5,7 +5,7 @@ import type * as React from 'react';
 
 import { cn } from '../lib/utils';
 import { Checkbox } from './checkbox';
-import { useSortableItem } from './drag';
+import { dragIgnore, useSortableItem } from './drag';
 import { Skeleton } from './skeleton';
 
 /**
@@ -19,11 +19,11 @@ import { Skeleton } from './skeleton';
  * puts its grip there.
  *
  * `SortableTodoRow` is the row in a `SortableGroup`. The pointer picks it up
- * anywhere on the card: a press that moves under 5px is still a click, so
- * the toggle and the title keep working. The grip at its right end (six
- * dots) is the keyboard's handle, Space on it lifts the row, and on a touch
- * screen the one part that drags instead of scrolling the page. While it is
- * dragged its place fades.
+ * anywhere on the card but the done toggle, which never lifts it; a press
+ * on the title that moves under 5px is still a click that opens the task.
+ * The grip at its right end (six dots) is the keyboard's handle, Space on
+ * it lifts the row, and on a touch screen the one part that drags instead
+ * of scrolling the page. While it is dragged its place fades.
  *
  * `TodoRowAdd` is the dashed row under the list that adds a task to the day
  * on Enter; `TodoRowSkeleton` stands in for a row while the day loads.
@@ -65,6 +65,7 @@ function TodoRow({
       {...props}
     >
       <Checkbox
+        {...dragIgnore}
         checked={done}
         onCheckedChange={() => onToggle?.()}
         aria-label={toggleLabel}

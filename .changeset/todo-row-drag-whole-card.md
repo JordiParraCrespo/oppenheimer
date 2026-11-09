@@ -4,8 +4,8 @@
 ---
 
 To do's rows are picked up by the pointer anywhere on the card, not only by
-the six-dot grip; a press that moves under 5px is still a click, so the done
-toggle and the title keep working. The grip stays the keyboard's handle and,
+the six-dot grip; the done toggle never lifts the row, and a press on the
+title that moves under 5px is still a click that opens the task. The grip stays the keyboard's handle and,
 on a touch screen, the part that drags instead of scrolling.
 
 - `@oppenheimer/design-system-web`: `useSortableItem` returns `pointerProps`,
