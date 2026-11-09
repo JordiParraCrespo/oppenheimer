@@ -345,7 +345,7 @@ describe('bots chat (integration)', () => {
 
   async function stagedTurns(): Promise<string[]> {
     const rows: { payload: { turnId: string } }[] = await dataSource.query(
-      `SELECT payload FROM outbox_message WHERE topic = 'bot-turns' ORDER BY "createdAt", id`,
+      `SELECT payload FROM outbox_message WHERE topic IN ('bot-turns', 'bot-background-turns') ORDER BY "createdAt", id`,
     );
     return rows.map((row) => row.payload.turnId);
   }
@@ -2680,6 +2680,33 @@ describe('bots chat (integration)', () => {
         null,
       );
     }
+
+    // What breaks this: goal turns, which may now run for hours, taking the
+    // worker slots a person's message waits on, so a bot stops answering
+    // anyone while other bots work through their goals.
+    it('runs a goal’s continuation on the background queue and a person’s message on the turns queue', async () => {
+      await dataSource.query(`DELETE FROM outbox_message`);
+      const bot = await create('Laned');
+      const setter = sent(bot, 'Set a goal');
+      expect(await turns.enqueue(setter.turn, setter.message, null)).toBe('staged');
+      const running = (await turns.findForRun(setter.turn.id)).unwrap();
+      running.start(new Date());
+      expect(await turns.claim(running)).toBe('claimed');
+      await goals.set(goalFor(bot, running.id));
+      running.end('completed', new Date());
+      expect(await turns.finish(running, null)).toBe(true);
+
+      const loaded = (await goals.findForBot(bot.organizationId, bot.id)) as BotGoalEntity;
+      const next = continuation(bot, loaded);
+      expect(await turns.enqueueContinuation(next.turn, next.opening, null, loaded)).toBe('staged');
+      const runs: { topic: string; payload: { turnId: string } }[] = await dataSource.query(
+        `SELECT topic, payload FROM outbox_message WHERE "eventName" = 'run-bot-turn' ORDER BY "createdAt"`,
+      );
+      expect(runs).toEqual([
+        { topic: 'bot-turns', payload: { turnId: setter.turn.id } },
+        { topic: 'bot-background-turns', payload: { turnId: next.turn.id } },
+      ]);
+    });
 
     // What breaks this: a count stored apart from its turn, so a process that
     // dies between the two leaves a goal counted with nothing queued, or two

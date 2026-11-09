@@ -104,6 +104,7 @@ describe('queue registration', () => {
           QUEUE_NAMES.INBOUND_EVENTS,
           QUEUE_NAMES.AUTOMATION_RUNS,
           QUEUE_NAMES.BOT_TURNS,
+          QUEUE_NAMES.BOT_BACKGROUND_TURNS,
           QUEUE_NAMES.BOT_APPROVALS,
           QUEUE_NAMES.BOT_SUMMARIES,
           QUEUE_NAMES.BOT_DREAMS,
