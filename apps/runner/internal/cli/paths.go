@@ -240,6 +240,10 @@ func (p Paths) Files() string { return filepath.Join(p.Home, DirFiles) }
 // runner home, never under the workspaces a bot's own folder sits in.
 func (p Paths) ExecPolicy() string { return filepath.Join(p.Home, "exec.json") }
 
+// ComputerPolicy is whether this host lets bots use its screen (`runner
+// computer`): a file in the runner home, beside the exec policy.
+func (p Paths) ComputerPolicy() string { return filepath.Join(p.Home, "computer.json") }
+
 // Socket is the local Unix socket: the runner's only listener.
 func (p Paths) Socket() string { return filepath.Join(p.Run(), "runner.sock") }
 

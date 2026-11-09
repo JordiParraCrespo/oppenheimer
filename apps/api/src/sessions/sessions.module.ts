@@ -90,6 +90,7 @@ import { StopSessionShareHttpController } from './commands/stop-session-share/st
 import { UnwatchSessionTerminalCommandHandler } from './commands/unwatch-session-terminal/unwatch-session-terminal.command-handler';
 import { UploadSessionAttachmentCommandHandler } from './commands/upload-session-attachment/upload-session-attachment.command-handler';
 import { UploadSessionAttachmentHttpController } from './commands/upload-session-attachment/upload-session-attachment.http.controller';
+import { UseHostComputerCommandHandler } from './commands/use-host-computer/use-host-computer.command-handler';
 import { WatchSessionTerminalCommandHandler } from './commands/watch-session-terminal/watch-session-terminal.command-handler';
 import { SessionCheckoutOrmEntity } from './database/session-checkout.orm-entity';
 import { SessionCloudChatRepository } from './database/session-cloud-chat.repository';
@@ -228,6 +229,7 @@ const commandHandlers: Provider[] = [
   SendSessionPromptCommandHandler,
   DeliverSessionWakeCommandHandler,
   RunHostCommandCommandHandler,
+  UseHostComputerCommandHandler,
   DriveSessionTerminalCommandHandler,
   UploadSessionAttachmentCommandHandler,
   RecordSessionEventsCommandHandler,

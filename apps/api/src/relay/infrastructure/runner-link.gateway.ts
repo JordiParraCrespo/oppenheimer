@@ -419,6 +419,7 @@ export class RunnerLinkGateway {
       case 'transcript.page':
       case 'host.exec.result':
       case 'terminal.screen':
+      case 'computer.screen':
         // Only ever an answer to a request this process is waiting on; a late
         // one (past its timeout) has nobody left to read it.
         if (!this.replies.settle(link.hostId, message)) {

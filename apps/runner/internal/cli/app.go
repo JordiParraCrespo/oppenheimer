@@ -14,6 +14,8 @@ import (
 	"time"
 
 	devapp "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/devices/app"
+	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/host/adapters/computerpolicy"
+	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/host/adapters/desktop"
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/host/adapters/execpolicy"
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/host/adapters/folders"
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/host/adapters/system"
@@ -150,9 +152,11 @@ func New(version string) (*App, error) {
 		Installer:     lockedInstaller{paths: paths, next: system.Installer{}},
 		Directories:   folders.Disk{},
 		WorkspaceRoot: paths.Workspaces, Version: version,
-		ClaudeAccount: func() string { return system.ClaudeAccount(claudeConfigPath(paths)) },
-		ExecPolicies:  execpolicy.File{Path: paths.ExecPolicy()},
-		Executor:      system.Executor{},
+		ClaudeAccount:    func() string { return system.ClaudeAccount(claudeConfigPath(paths)) },
+		ExecPolicies:     execpolicy.File{Path: paths.ExecPolicy()},
+		Executor:         system.Executor{},
+		ComputerPolicies: computerpolicy.File{Path: paths.ComputerPolicy()},
+		Desktop:          desktop.New(desktop.Options{Display: os.Getenv("DISPLAY")}),
 	})
 	pairingSvc := pairapp.New(pairapp.Options{
 		Store:        store,

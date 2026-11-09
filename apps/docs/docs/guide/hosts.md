@@ -66,6 +66,10 @@ Each agent runs from the host's own installation and its own login. You sign in 
 
 From the host you can install more later: `oppenheimer-runner agents install claude` (or `codex`, `opencode`, `grok`), and `oppenheimer-runner tools install gh`. These install in your home directory without sudo. `git` and `tmux` stay with your package manager. The runner updates installed agent CLIs on its own about hourly unless `RUNNER_AGENT_UPDATES=off` is set before install. `oppenheimer-runner tools` lists what is installed.
 
+## Letting bots use the screen
+
+A bot can look at a host's screen and use its mouse and keyboard, only after you run `runner computer on` on that host. What it needs on a Mac and on Linux, and how a bot uses it, is [Bots using a computer](./computer-use.md).
+
 ## Updates
 
 The runner keeps itself on the current signed release. It checks at boot and every six hours, then waits for a quiet moment (no agent working, no terminal attached) for up to 24 hours before updating; urgent updates apply within 15 minutes. A new version that will not stay up is rolled back automatically. Sessions keep running through an update; open terminals reconnect in a few seconds.

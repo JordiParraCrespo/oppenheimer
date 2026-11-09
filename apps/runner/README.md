@@ -33,6 +33,15 @@ call, and is never written by the control plane. On a host set to `full` a
 bot can also drive a blank-terminal session (`terminal.drive`): type into
 it and read its screen back.
 
+A bot can use the host's screen, mouse and keyboard over the link too
+(`computer.act`, `25-bots.md` §4.2, "Using a computer"), only after `runner
+computer on` here: a second switch, in `~/.oppenheimer/computer.json`, off by
+default and never written by the control plane. On a Mac it drives the main
+screen through `screencapture` and `osascript` (the runner needs Screen
+Recording and Accessibility); on Linux an X display through `xdotool` and
+ImageMagick's `import`, starting a virtual one (Xvfb) on a host that has
+none. The Mac path has not been run on a Mac yet.
+
 A session's Simulator tab streams the iOS simulator or Android emulator its
 host gives it, through Argent (`product/research/device-streaming.md`). A
 host with Argent installed needs no setup: each new session takes one of the

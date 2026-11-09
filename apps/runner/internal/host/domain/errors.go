@@ -37,4 +37,12 @@ var (
 	// A bot driving a terminal session (`terminal.drive`): a shell runs
 	// anything, so only a host whose exec policy is full takes it.
 	ErrTerminalNeedsFull = problem.New("EXEC_006", http.StatusForbidden, "This host does not let bots drive a terminal")
+	// A bot using the host's screen, mouse and keyboard (`computer.act`,
+	// 25 §4.2). The codes are the protocol's, named in packages/shared's
+	// computerActSchema.
+	ErrComputerOff        = problem.New("COMPUTER_001", http.StatusForbidden, "Using this host's screen is off")
+	ErrComputerNoScreen   = problem.New("COMPUTER_002", http.StatusFailedDependency, "This host has no screen the runner can use")
+	ErrComputerAction     = problem.New("COMPUTER_003", http.StatusBadRequest, "The action does not fit the screen")
+	ErrComputerUnusable   = problem.New("COMPUTER_004", http.StatusFailedDependency, "The screen could not be read or used")
+	ErrComputerPolicyFile = problem.New("COMPUTER_005", http.StatusInternalServerError, "The host's computer setting cannot be read")
 )

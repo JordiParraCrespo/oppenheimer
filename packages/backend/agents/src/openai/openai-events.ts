@@ -68,6 +68,13 @@ function messageText(content: unknown): string {
 
 function outputText(output: unknown): string {
   if (typeof output === 'string') return output;
+  // A tool that also shows images answers in parts: its words are the output.
+  if (Array.isArray(output)) {
+    return output
+      .filter((part) => part?.type === 'text' && typeof part.text === 'string')
+      .map((part) => part.text as string)
+      .join('');
+  }
   if (output && typeof output === 'object' && (output as { type?: string }).type === 'text') {
     return String((output as { text?: unknown }).text ?? '');
   }

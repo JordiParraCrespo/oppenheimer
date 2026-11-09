@@ -95,6 +95,8 @@ func dispatch(ctx context.Context, args []string) (int, error) {
 		return tools(ctx, args)
 	case "exec":
 		return execPolicy(ctx, args)
+	case "computer":
+		return computerPolicy(ctx, args)
 	case "credential-helper":
 		// git calls this with the operation as its one argument.
 		operation := ""
@@ -323,6 +325,21 @@ func tools(ctx context.Context, args []string) (int, error) {
 	usage(os.Stderr)
 	return cli.ExitUsage, errors.New("usage: runner tools [ls] | runner tools install <" +
 		strings.Join(hostdomain.Installable(hostdomain.InstallTool), "|") + ">")
+}
+
+// computerPolicy dispatches `runner computer`: whether bots may use this
+// host's screen. Like `runner exec`, it is set here and nowhere else.
+func computerPolicy(ctx context.Context, args []string) (int, error) {
+	switch {
+	case len(args) == 0 || (len(args) == 1 && args[0] == "status"):
+		return withApp(ctx, func(ctx context.Context, app *cli.App) error { return app.ComputerShow(ctx, os.Stdout) })
+	case len(args) == 1 && (args[0] == "on" || args[0] == "off"):
+		return withApp(ctx, func(ctx context.Context, app *cli.App) error {
+			return app.ComputerSet(ctx, os.Stdout, args[0] == "on")
+		})
+	}
+	usage(os.Stderr)
+	return cli.ExitUsage, errors.New("usage: runner computer [status] | runner computer on | runner computer off")
 }
 
 // execPolicy dispatches `runner exec`: what this host lets bots run. It is
@@ -606,6 +623,10 @@ func usage(w *os.File) {
   runner exec allow <program|/abs/path|/abs/glob/*>...
   runner exec deny <entry>...     add or remove programs on the allowlist; bots run them with argv
                                   (no shell) in ~/oppenheimer/bots/<bot> unless they name a folder
+  runner computer [status]        whether bots may see this host's screen and use its mouse and
+                                  keyboard (off unless you say so), and the screen they would use
+  runner computer on|off          turn it on or off; on a Mac, also allow the runner under Screen
+                                  Recording and Accessibility in System Settings
   runner credential-helper get    git's credential protocol, answered over the socket
   runner sessions run [--agent A] [--repo R] [--outlive-parent] "task"
                                   from inside a session: start a child session with a task

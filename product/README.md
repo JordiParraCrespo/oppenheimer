@@ -1416,3 +1416,10 @@ earlier note:
   sessions and in bots: it takes Fable 5.1's place, and Fable 5.1 heads
   "More models", since Claude still serves it. OpenCode's `anthropic/` row
   moves to Fable 5.2 as well, with Fable 5.1 behind its "More models".
+- `versions/mvp/25-bots.md` §2 said the engines' computer tools are off and
+  `research/lessons-from-grok-bot.md` left computer use out. On 2026-11-09
+  the owner asked that a bot can use a computer on a host remotely:
+  `use_computer` looks at a host's screen and uses its mouse and keyboard
+  through the runner, on a Mac's own desktop or a Linux X display (a virtual
+  one where there is none), only after `runner computer on` on that host.
+  Nothing runs on the control plane, which is what §2 was protecting.

@@ -69,7 +69,10 @@ type linkHandler struct {
 	execs replays[link.HostExecResult]
 	// drives answers a retried `terminal.drive` with the screen it already
 	// left, instead of typing its text a second time.
-	drives   replays[link.TerminalScreen]
+	drives replays[link.TerminalScreen]
+	// shots answers a retried `computer.act` with the screen it already
+	// left, instead of clicking a second time.
+	shots    replays[link.ComputerScreen]
 	identity pairdomain.Identity
 	logger   *slog.Logger
 	client   linkSender
@@ -326,6 +329,7 @@ func (h *linkHandler) capabilities() []string {
 		link.CapabilitySessionCloud, link.CapabilitySessionCloudCodex,
 		link.CapabilitySessionWatch, link.CapabilityCodexEnvironments, link.CapabilitySessionTeleport,
 		link.CapabilitySharedPreview, link.CapabilityTranscriptRead, link.CapabilityHostExec, link.CapabilityTerminalDrive,
+		link.CapabilityComputerUse,
 	}
 	if h.direct != nil {
 		named = append(named, link.CapabilityAttachmentDirect, link.CapabilityAttachmentDirectProof)
@@ -669,6 +673,13 @@ func (h *linkHandler) Message(_ context.Context, msg link.Message) {
 			// One lane per session, so two drives of one terminal type in
 			// the order they were sent and never into each other.
 			h.lanes.run(laneTerminal+m.SessionID, func() { h.driveTerminal(h.life, m) })
+		}
+	case link.TypeComputerAct:
+		var m link.ComputerAct
+		if msg.Decode(&m) == nil {
+			// One lane for the host: there is one mouse, so actions happen in
+			// the order they were sent.
+			h.lanes.run(laneComputer, func() { h.computerAct(h.life, m) })
 		}
 	case link.TypeFsFind:
 		var m link.FsFind

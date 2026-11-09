@@ -207,6 +207,13 @@ export const RUNNER_CAPABILITIES = [
    * "Driving a terminal").
    */
   'terminal.drive',
+  /**
+   * Answers `computer.act` with `computer.screen`: a bot looks at this host's
+   * screen and uses its mouse and keyboard, when the person on the host turned
+   * that on with `runner computer on` (`product/versions/mvp/25-bots.md` §4.2,
+   * "Using a computer").
+   */
+  'computer.use',
 ] as const;
 export type RunnerCapability = (typeof RUNNER_CAPABILITIES)[number];
 
@@ -1001,6 +1008,116 @@ export type TerminalScreenMessage = z.infer<typeof terminalScreenSchema>;
 /** How much of a captured screen `terminal.screen` carries: the last bytes. */
 export const TERMINAL_SCREEN_MAX_BYTES = 32_768;
 
+/** What one `computer.act` does before the screen is captured. */
+export const COMPUTER_ACTIONS = [
+  'screenshot',
+  'move',
+  'click',
+  'double_click',
+  'right_click',
+  'middle_click',
+  'drag',
+  'scroll',
+  'type',
+  'key',
+  'wait',
+] as const;
+export type ComputerAction = (typeof COMPUTER_ACTIONS)[number];
+
+/**
+ * One key press of `computer.act`: up to four modifiers, then one key, joined
+ * by `+` (`cmd+shift+4`, `ctrl+c`, `enter`). `cmd` is Command on a Mac and
+ * Super elsewhere.
+ */
+export const COMPUTER_KEY_PATTERN =
+  /^(?:(?:ctrl|alt|shift|cmd)\+){0,4}(?:[a-z0-9]|f(?:[1-9]|1[0-2])|enter|tab|escape|backspace|delete|space|up|down|left|right|home|end|pageup|pagedown)$/;
+
+/** The most text one `computer.act` types. */
+export const COMPUTER_TEXT_MAX = 4_096;
+
+/** The most key presses one `computer.act` makes. */
+export const COMPUTER_KEYS_MAX = 16;
+
+/** The longest `computer.act` waits before it captures, in seconds. */
+export const COMPUTER_WAIT_MAX_SECONDS = 30;
+
+/** The most notches one `computer.act` scrolls in a direction. */
+export const COMPUTER_SCROLL_MAX = 50;
+
+/**
+ * The long edge of the image `computer.screen` carries, in pixels. A larger
+ * screen is scaled down to it, and the coordinates of `computer.act` are in
+ * that image's pixels, so what the model points at is what it saw.
+ */
+export const COMPUTER_SCREEN_MAX_EDGE = 1_280;
+
+/** The largest image `computer.screen` carries, before base64: it fits one frame. */
+export const COMPUTER_SCREENSHOT_MAX_BYTES = 256 * 1024;
+
+// Built per field: a schema used twice is emitted once under `$defs`, where
+// the Go emitter has no field path to pick an integer width from.
+const computerCoordinate = () => z.number().int().min(0).max(COMPUTER_SCREEN_MAX_EDGE);
+const computerScroll = () => z.number().int().min(-COMPUTER_SCROLL_MAX).max(COMPUTER_SCROLL_MAX);
+
+/**
+ * Use this host's screen, mouse and keyboard, for a bot
+ * (`product/versions/mvp/25-bots.md` §4.2, "Using a computer"). The runner
+ * does `action`, lets the screen settle, and answers with what the screen
+ * shows:
+ *
+ * - `screenshot` does nothing first; `wait` waits `seconds`.
+ * - `move`, `click`, `double_click`, `right_click` and `middle_click` act at
+ *   (`x`, `y`); `drag` presses there and releases at (`toX`, `toY`).
+ * - `scroll` turns the wheel at (`x`, `y`): `scrollY` notches down (negative
+ *   is up), `scrollX` right (negative is left).
+ * - `type` types `text` literally; `key` presses each of `keys` in order.
+ *
+ * Coordinates are pixels of the last `computer.screen` image, from its top
+ * left. The host decides: it acts only when the person there ran `runner
+ * computer on`, and only where it has a screen. Sent only to a runner whose
+ * `hello` named `computer.use`; answered by `computer.screen` with the same
+ * `commandId`, or by `command.failed` (`COMPUTER_001` it is off on this
+ * host, `COMPUTER_002` the host has no screen it can use, `COMPUTER_003` the
+ * action does not fit, `COMPUTER_004` the screen could not be read or used,
+ * `COMPUTER_005` the host's setting cannot be read).
+ */
+export const computerActSchema = z.object({
+  type: z.literal('computer.act'),
+  commandId: commandIdSchema,
+  action: z.enum(COMPUTER_ACTIONS),
+  x: computerCoordinate().optional(),
+  y: computerCoordinate().optional(),
+  toX: computerCoordinate().optional(),
+  toY: computerCoordinate().optional(),
+  scrollX: computerScroll().optional(),
+  scrollY: computerScroll().optional(),
+  text: z.string().min(1).max(COMPUTER_TEXT_MAX).optional(),
+  keys: z.array(z.string().regex(COMPUTER_KEY_PATTERN)).min(1).max(COMPUTER_KEYS_MAX).optional(),
+  seconds: z.number().int().min(0).max(COMPUTER_WAIT_MAX_SECONDS).optional(),
+});
+
+export type ComputerActMessage = z.infer<typeof computerActSchema>;
+
+/**
+ * What the screen showed after a `computer.act`: a JPEG, base64-encoded, of
+ * `width` by `height` pixels, its long edge at most `COMPUTER_SCREEN_MAX_EDGE`
+ * and its bytes at most `COMPUTER_SCREENSHOT_MAX_BYTES`. `display` names the
+ * screen where the host has more than one way to say it (an X display).
+ */
+export const computerScreenSchema = z.object({
+  type: z.literal('computer.screen'),
+  commandId: commandIdSchema,
+  image: z
+    .string()
+    .min(1)
+    .max(Math.ceil(COMPUTER_SCREENSHOT_MAX_BYTES / 3) * 4),
+  width: z.number().int().min(1).max(COMPUTER_SCREEN_MAX_EDGE),
+  height: z.number().int().min(1).max(COMPUTER_SCREEN_MAX_EDGE),
+  display: z.string().max(64).optional(),
+});
+
+export type ComputerScreenMessage = z.infer<typeof computerScreenSchema>;
+
 /**
  * Find folders under one directory by name, for the folder picker's search
  * (24 §4): a bounded walk, at most `FS_FIND_MAX_DEPTH` levels down, that skips
@@ -1356,6 +1473,8 @@ export const protocolMessageSchema = z.discriminatedUnion('type', [
   hostExecResultSchema,
   terminalDriveSchema,
   terminalScreenSchema,
+  computerActSchema,
+  computerScreenSchema,
   attachmentDirectOfferSchema,
   attachmentDirectAnswerSchema,
   attachmentDirectRefusedSchema,

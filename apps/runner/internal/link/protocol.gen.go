@@ -72,6 +72,14 @@ const ExecOutputMaxBytes = 32768
 // carries: the last bytes.
 const TerminalScreenMaxBytes = 32768
 
+// ComputerScreenMaxEdge is the long edge, in pixels, of the image
+// `computer.screen` carries; `computer.act` points in that image.
+const ComputerScreenMaxEdge = 1280
+
+// ComputerScreenshotMaxBytes is the largest image `computer.screen`
+// carries, before base64.
+const ComputerScreenshotMaxBytes = 262144
+
 // The hello capabilities: commands a runner takes beyond its protocol
 // version's baseline.
 const (
@@ -99,6 +107,7 @@ const (
 	CapabilityTranscriptRead        = "transcript.read"
 	CapabilityHostExec              = "host.exec"
 	CapabilityTerminalDrive         = "terminal.drive"
+	CapabilityComputerUse           = "computer.use"
 )
 
 // The `type` of every message on the link.
@@ -139,6 +148,8 @@ const (
 	TypeHostExecResult          = "host.exec.result"
 	TypeTerminalDrive           = "terminal.drive"
 	TypeTerminalScreen          = "terminal.screen"
+	TypeComputerAct             = "computer.act"
+	TypeComputerScreen          = "computer.screen"
 	TypeAttachmentDirectOffer   = "attachment.direct.offer"
 	TypeAttachmentDirectAnswer  = "attachment.direct.answer"
 	TypeAttachmentDirectRefused = "attachment.direct.refused"
@@ -214,6 +225,8 @@ var MessageTypes = []string{
 	TypeHostExecResult,
 	TypeTerminalDrive,
 	TypeTerminalScreen,
+	TypeComputerAct,
+	TypeComputerScreen,
 	TypeAttachmentDirectOffer,
 	TypeAttachmentDirectAnswer,
 	TypeAttachmentDirectRefused,
@@ -327,6 +340,10 @@ func NewMessage(messageType string) (any, bool) {
 		return new(TerminalDrive), true
 	case TypeTerminalScreen:
 		return new(TerminalScreen), true
+	case TypeComputerAct:
+		return new(ComputerAct), true
+	case TypeComputerScreen:
+		return new(ComputerScreen), true
 	case TypeAttachmentDirectOffer:
 		return new(AttachmentDirectOffer), true
 	case TypeAttachmentDirectAnswer:
@@ -805,6 +822,32 @@ type TerminalScreen struct {
 	Screen    string `json:"screen"`
 	Matched   bool   `json:"matched"`
 	WaitedMs  int64  `json:"waitedMs"`
+}
+
+// ComputerAct is the `computer.act` message.
+type ComputerAct struct {
+	Type      string   `json:"type"`
+	CommandID string   `json:"commandId"`
+	Action    string   `json:"action"`
+	X         int      `json:"x,omitempty"`
+	Y         int      `json:"y,omitempty"`
+	ToX       int      `json:"toX,omitempty"`
+	ToY       int      `json:"toY,omitempty"`
+	ScrollX   int      `json:"scrollX,omitempty"`
+	ScrollY   int      `json:"scrollY,omitempty"`
+	Text      string   `json:"text,omitempty"`
+	Keys      []string `json:"keys,omitempty"`
+	Seconds   int      `json:"seconds,omitempty"`
+}
+
+// ComputerScreen is the `computer.screen` message.
+type ComputerScreen struct {
+	Type      string `json:"type"`
+	CommandID string `json:"commandId"`
+	Image     string `json:"image"`
+	Width     int    `json:"width"`
+	Height    int    `json:"height"`
+	Display   string `json:"display,omitempty"`
 }
 
 // AttachmentDirectOffer is the `attachment.direct.offer` message.

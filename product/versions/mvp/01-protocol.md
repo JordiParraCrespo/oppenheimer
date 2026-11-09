@@ -347,6 +347,23 @@ runner does with it and point back.
   `SESS_003`, `INVALID_PATTERN`. One lane per session, so drives of one
   terminal keep their order. Sent only to a runner whose `hello` names
   `terminal.drive`, and waited on for the drive's wait and 10 seconds more.
+- `computer.act` and `computer.screen` — a bot using a host's screen, mouse
+  and keyboard (2026-11-09, `25-bots.md` §4.2, "Using a computer"): `{
+  commandId, action, x?, y?, toX?, toY?, scrollX?, scrollY?, text?, keys?,
+  seconds? }`, where `action` is one of `screenshot`, `move`, `click`,
+  `double_click`, `right_click`, `middle_click`, `drag`, `scroll`, `type`,
+  `key`, `wait`. The runner does it, lets the screen settle, and answers `{
+  image, width, height, display? }`: a base64 JPEG of the screen, its long
+  edge at most 1,280 pixels and at most 256 KB, so it fits one frame.
+  Coordinates are pixels of that image; the runner maps them onto the
+  screen. Or `command.failed`: `COMPUTER_001` the host's `runner computer`
+  switch is off, `COMPUTER_002` no screen it can use, `COMPUTER_003` the
+  action does not fit, `COMPUTER_004` the screen could not be read or used,
+  `COMPUTER_005` its setting cannot be read. One lane for the host, so
+  actions keep their order, and a command id sent again (a retried approved
+  call) is answered with the screen it left, not done twice. Sent only to a
+  runner whose `hello` names `computer.use`, and waited on for the action's
+  own wait and 60 seconds more.
 - `attachment.credit` — the browser's consumed-byte credit, relayed to
   the runner so it resumes that attachment's PTY reads. Without it the
   window below is a one-way valve: a noisy pane stalls for good rather

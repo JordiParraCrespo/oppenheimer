@@ -501,6 +501,21 @@
     "matched": true,
     "waitedMs": 1240
   },
+  "computer.act": {
+    "type": "computer.act",
+    "commandId": "b2c3d4e5-6f7a-4b8c-9d0e-1f2a3b4c5d6e",
+    "action": "click",
+    "x": 640,
+    "y": 412
+  },
+  "computer.screen": {
+    "type": "computer.screen",
+    "commandId": "b2c3d4e5-6f7a-4b8c-9d0e-1f2a3b4c5d6e",
+    "image": "/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/wAALCAABAAEBAREA/8QAFAABAAAAAAAAAAAAAAAAAAAACf/EABQQAQAAAAAAAAAAAAAAAAAAAAD/2gAIAQEAAD8AKp//2Q==",
+    "width": 1280,
+    "height": 800,
+    "display": ":99"
+  },
   "transcript.page": {
     "type": "transcript.page",
     "commandId": "b2c3d4e5-6f7a-4b8c-9d0e-1f2a3b4c5d6e",

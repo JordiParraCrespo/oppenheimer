@@ -303,6 +303,22 @@ export const SAMPLES: Record<ProtocolMessageType, ProtocolMessage> = {
     matched: true,
     waitedMs: 1240,
   },
+  'computer.act': {
+    type: 'computer.act',
+    commandId,
+    action: 'click',
+    x: 640,
+    y: 412,
+  },
+  'computer.screen': {
+    type: 'computer.screen',
+    commandId,
+    image:
+      '/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/wAALCAABAAEBAREA/8QAFAABAAAAAAAAAAAAAAAAAAAACf/EABQQAQAAAAAAAAAAAAAAAAAAAAD/2gAIAQEAAD8AKp//2Q==',
+    width: 1280,
+    height: 800,
+    display: ':99',
+  },
   'transcript.page': {
     type: 'transcript.page',
     commandId,

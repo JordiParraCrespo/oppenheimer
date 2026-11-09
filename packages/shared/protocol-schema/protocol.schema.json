@@ -1442,6 +1442,126 @@
       "properties": {
         "type": {
           "type": "string",
+          "const": "computer.act"
+        },
+        "commandId": {
+          "$ref": "#/$defs/commandId"
+        },
+        "action": {
+          "type": "string",
+          "enum": [
+            "screenshot",
+            "move",
+            "click",
+            "double_click",
+            "right_click",
+            "middle_click",
+            "drag",
+            "scroll",
+            "type",
+            "key",
+            "wait"
+          ]
+        },
+        "x": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 1280
+        },
+        "y": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 1280
+        },
+        "toX": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 1280
+        },
+        "toY": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 1280
+        },
+        "scrollX": {
+          "type": "integer",
+          "minimum": -50,
+          "maximum": 50
+        },
+        "scrollY": {
+          "type": "integer",
+          "minimum": -50,
+          "maximum": 50
+        },
+        "text": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 4096
+        },
+        "keys": {
+          "minItems": 1,
+          "maxItems": 16,
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^(?:(?:ctrl|alt|shift|cmd)\\+){0,4}(?:[a-z0-9]|f(?:[1-9]|1[0-2])|enter|tab|escape|backspace|delete|space|up|down|left|right|home|end|pageup|pagedown)$"
+          }
+        },
+        "seconds": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 30
+        }
+      },
+      "required": [
+        "type",
+        "commandId",
+        "action"
+      ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "computer.screen"
+        },
+        "commandId": {
+          "$ref": "#/$defs/commandId"
+        },
+        "image": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 349528
+        },
+        "width": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1280
+        },
+        "height": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1280
+        },
+        "display": {
+          "type": "string",
+          "maxLength": 64
+        }
+      },
+      "required": [
+        "type",
+        "commandId",
+        "image",
+        "width",
+        "height"
+      ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
           "const": "attachment.direct.offer"
         },
         "attachmentId": {
@@ -2978,12 +3098,15 @@
       "shared.preview",
       "transcript.read",
       "host.exec",
-      "terminal.drive"
+      "terminal.drive",
+      "computer.use"
     ],
     "maxEventPayloadBytes": 8192,
     "chatEntryMaxBytes": 65536,
     "chatBatchMaxEntries": 256,
     "execOutputMaxBytes": 32768,
-    "terminalScreenMaxBytes": 32768
+    "terminalScreenMaxBytes": 32768,
+    "computerScreenMaxEdge": 1280,
+    "computerScreenshotMaxBytes": 262144
   }
 }

@@ -11,6 +11,8 @@ import {
   RUNNER_LINK_REFUSALS,
 } from './link.js';
 import {
+  COMPUTER_SCREEN_MAX_EDGE,
+  COMPUTER_SCREENSHOT_MAX_BYTES,
   HOST_EXEC_OUTPUT_MAX_BYTES,
   PROTOCOL_MAX_EVENT_PAYLOAD_BYTES,
   protocolMessageSchema,
@@ -69,6 +71,8 @@ export function toProtocolJsonSchema(): Record<string, unknown> {
       chatBatchMaxEntries: CHAT_BATCH_MAX_ENTRIES,
       execOutputMaxBytes: HOST_EXEC_OUTPUT_MAX_BYTES,
       terminalScreenMaxBytes: TERMINAL_SCREEN_MAX_BYTES,
+      computerScreenMaxEdge: COMPUTER_SCREEN_MAX_EDGE,
+      computerScreenshotMaxBytes: COMPUTER_SCREENSHOT_MAX_BYTES,
     },
   };
 }

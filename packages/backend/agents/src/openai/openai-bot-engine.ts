@@ -174,11 +174,22 @@ export class OpenAiBotEngine extends BotEngine {
             });
             if (result.isError && callId) failedCalls.add(callId);
             made.record(callId, result.data);
-            return deliverSteers(
+            const text = await deliverSteers(
               result.content,
               { steering: request.steering, signal: request.signal, callId },
               made,
             );
+            if (!result.images?.length) return text;
+            // Words first, then what the tool shows: the Responses API takes
+            // a function's output as parts. A data URL, as the turn's own
+            // images are sent, which is also what compaction counts as one.
+            return [
+              { type: 'text' as const, text },
+              ...result.images.map((image) => ({
+                type: 'image' as const,
+                image: `data:${image.mimeType};base64,${image.data}`,
+              })),
+            ];
           },
         }),
       ),

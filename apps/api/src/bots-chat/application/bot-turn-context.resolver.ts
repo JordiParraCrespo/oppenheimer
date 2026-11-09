@@ -9,6 +9,7 @@ import { AppError } from '@oppenheimer/backend-core';
 import {
   BOT_MEMORY_LOG_IN_PROMPT_CHARS,
   BOT_MEMORY_PROFILE_IN_PROMPT_CHARS,
+  botTakesImages,
 } from '@oppenheimer/shared';
 import {
   BOT_DOCUMENT_REPOSITORY,
@@ -148,6 +149,7 @@ export class BotTurnContextResolver {
         credentialScopes: turn.credentialScopes,
         origin: turn.origin,
         ranCommand: command?.name ?? null,
+        seesImages: botTakesImages(turn.provider),
         approvals: this.approvals,
         permissions,
         // The owner's rules are read on the turn's own model, only when there are some.
