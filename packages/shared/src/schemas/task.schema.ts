@@ -9,7 +9,10 @@ import { createSessionSchema, startCloudSessionSchema } from './session.schema.j
  *
  * Dates are wall-clock: a due date is a calendar day and a due time a time of
  * day, both read in the viewer's own timezone. Nothing fires on them, so no
- * timezone is stored (`product/versions/mvp/18-plan-product.md`).
+ * timezone is stored (`product/versions/mvp/18-plan-product.md`). A focus
+ * date is the day the person means to work on it, apart from when it is due:
+ * To do lists it that day and every later one until it is done
+ * (`product/versions/mvp/20-plan-calendar.md` §6).
  */
 
 /** The board's columns, in the order the board draws them. */
@@ -81,6 +84,7 @@ export const createTaskSchema = z
     milestoneId: z.string().uuid().nullable().optional(),
     dueDate: calendarDateSchema.nullable().optional(),
     dueTime: timeOfDaySchema.nullable().optional(),
+    focusDate: calendarDateSchema.nullable().optional(),
   })
   .refine(dueTimeHasDate, { path: ['dueTime'] });
 
@@ -100,6 +104,8 @@ export const updateTaskSchema = z
     milestoneId: z.string().uuid().nullable().optional(),
     dueDate: calendarDateSchema.nullable().optional(),
     dueTime: timeOfDaySchema.nullable().optional(),
+    /** The day it is on To do from; `null` takes it off. */
+    focusDate: calendarDateSchema.nullable().optional(),
     /** Marks the task blocked and says why; `null` unblocks it. Done unblocks it too. */
     blockedReason: blockedReasonSchema.nullable().optional(),
     expectedVersion: expectedVersionSchema.optional(),

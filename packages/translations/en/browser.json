@@ -1828,8 +1828,6 @@
           "ended": "Loop “{{prompt}}” ended: the bot did not say when to run next"
         },
         "compaction": "Summarized earlier work to keep its context small · {{before}} → {{after}} tokens",
-        "compactionLine": "Summarized earlier work",
-        "compactionTokens": "{{before}} → {{after}} tokens",
         "dream": {
           "dreamed": "Tidied its memory · {{before}} facts → {{after}}",
           "undone": "You undid the tidy · {{before}} facts are back"
@@ -3054,7 +3052,8 @@
       "deleteFailed": "Couldn’t delete the task.",
       "loadFailed": "Couldn’t load the board.",
       "gone": "This task no longer exists.",
-      "deleting": "Deleting…"
+      "deleting": "Deleting…",
+      "focus": "To do"
     },
     "link": {
       "search": "Search sessions",
@@ -3124,7 +3123,7 @@
       "todayWeek": "Today · Week {{week}}",
       "weekNumber": "Week {{week}}",
       "includeOverdue": "Include overdue",
-      "empty": "Nothing for this day yet. Add one below.",
+      "empty": "Nothing on this day yet. Add a task below, or pick some with Add tasks.",
       "noMatch": "No tasks match these filters.",
       "add": "Add a task",
       "addLabel": "Add a task for this day",
@@ -3135,18 +3134,22 @@
       "state": {
         "todo": "due today",
         "due": "due",
-        "overdue": "overdue since {{date}}"
+        "overdue": "overdue since {{date}}",
+        "since": "on To do since {{date}}",
+        "dueOn": "due {{date}}"
       },
       "schedule": {
-        "button": "Add undated tasks",
-        "title": "Add undated tasks",
-        "for": "Pick the tasks with no due date to put on {{date}}.",
+        "button": "Add tasks",
+        "title": "Add tasks to this day",
+        "for": "Pick the open tasks to put on {{date}}. Their due dates stay as they are.",
         "search": "Search tasks",
         "noMatch": "No task matches “{{query}}”.",
-        "none": "Every open task already has a due date.",
+        "none": "Every open task is already on this day.",
         "submit": "Add to {{date}}",
         "failed": "Couldn’t add some of those tasks.",
-        "loadFailed": "Couldn’t load your tasks."
+        "loadFailed": "Couldn’t load your tasks.",
+        "allStatuses": "All statuses",
+        "searchStatuses": "Search statuses"
       },
       "reorder": "Reorder {{title}}"
     }

@@ -261,6 +261,9 @@ function provisionallyMoved(task: TaskEntity, move: TaskMove, rows: TaskEntity[]
     task.sessions,
     task.createdAt,
     new Date(),
+    move.status === 'done' ? null : task.blockedReason,
+    task.version,
+    task.focusDate,
   );
 }
 

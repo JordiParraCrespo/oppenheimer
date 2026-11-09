@@ -33352,6 +33352,13 @@
             "nullable": true,
             "example": "09:00"
           },
+          "focusDate": {
+            "type": "string",
+            "nullable": true,
+            "format": "date",
+            "description": "The day the person means to work on it, apart from when it is due. To do lists it that day and every later one until it is done.",
+            "example": "2026-10-06"
+          },
           "completedAt": {
             "type": "string",
             "nullable": true,
@@ -33442,6 +33449,11 @@
             "type": "string",
             "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$",
             "nullable": true
+          },
+          "focusDate": {
+            "type": "string",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+            "nullable": true
           }
         },
         "required": [
@@ -33477,6 +33489,11 @@
           "dueTime": {
             "type": "string",
             "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$",
+            "nullable": true
+          },
+          "focusDate": {
+            "type": "string",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
             "nullable": true
           },
           "blockedReason": {

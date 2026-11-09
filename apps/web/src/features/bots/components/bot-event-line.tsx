@@ -3,7 +3,6 @@ import type { BotMessageEntity } from '@oppenheimer/frontend-consumer';
 import type { BotMessageEvent } from '@oppenheimer/shared/schemas/bot';
 import type { ReactNode } from 'react';
 import { ApprovalEventLine } from '@/features/bots/components/approval-event-line';
-import { CompactionEventLine } from '@/features/bots/components/compaction-event-line';
 import { DreamEventLine } from '@/features/bots/components/dream-event-line';
 import { GoalEventLine } from '@/features/bots/components/goal-event-line';
 import { LoopEventLine } from '@/features/bots/components/loop-event-line';
@@ -12,8 +11,9 @@ import { PullRequestEventLine } from '@/features/bots/components/pull-request-ev
 import { QuestionEventLine } from '@/features/bots/components/question-event-line';
 import { RoutineEventLine } from '@/features/bots/components/routine-event-line';
 import { SessionEventLine } from '@/features/bots/components/session-event-line';
+import { type DrawnEventKind, isDrawnEvent } from '@/features/bots/lib/chat-turns';
 
-interface EventLineProps<Kind extends BotMessageEvent['kind']> {
+interface EventLineProps<Kind extends DrawnEventKind> {
   event: Extract<BotMessageEvent, { kind: Kind }>;
   message: BotMessageEntity;
   action?: ReactNode;
@@ -25,7 +25,7 @@ interface EventLineProps<Kind extends BotMessageEvent['kind']> {
  * another branch.
  */
 const EVENT_LINES: {
-  [Kind in BotMessageEvent['kind']]: (props: EventLineProps<Kind>) => ReactNode;
+  [Kind in DrawnEventKind]: (props: EventLineProps<Kind>) => ReactNode;
 } = {
   approval: ({ event }) => <ApprovalEventLine event={event} />,
   question: ({ event }) => <QuestionEventLine event={event} />,
@@ -41,15 +41,14 @@ const EVENT_LINES: {
   goal: ({ event }) => <GoalEventLine event={event} />,
   loop: ({ event }) => <LoopEventLine event={event} />,
   dream: ({ event }) => <DreamEventLine event={event} />,
-  compaction: ({ event }) => <CompactionEventLine event={event} />,
 };
 
 /**
  * What Oppenheimer told the bot, in the chat, drawn by its kind
  * (`EVENT_LINES`): a decided approval or card of questions, a routine's activity, another bot's
  * message or answer, a followed session or pull request that woke it, the bot's own goal
- * going on or ending, a run of its loop or how the loop ended, a dream of its memory,
- * a turn that folded what it had read into a summary. Read from the event's
+ * going on or ending, a run of its loop or how the loop ended, a dream of its memory.
+ * Read from the event's
  * own fields, never its words, which are the bot's. Never a bubble from you:
  * you did not write it. An event this client cannot read is its first line.
  */
@@ -64,8 +63,7 @@ export function BotEventLine({
   if (!event) {
     return <TranscriptDivider>{message.content.split('\n')[0]}</TranscriptDivider>;
   }
-  const draw = EVENT_LINES[event.kind] as (
-    props: EventLineProps<BotMessageEvent['kind']>,
-  ) => ReactNode;
+  if (!isDrawnEvent(event)) return null;
+  const draw = EVENT_LINES[event.kind] as (props: EventLineProps<DrawnEventKind>) => ReactNode;
   return draw({ event, message, action });
 }
