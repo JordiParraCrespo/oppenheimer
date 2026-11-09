@@ -317,6 +317,7 @@ export {
   useSessionTasks,
   useStartTaskSession,
   useSuspensePlan,
+  useSuspensePlanStats,
   useSuspenseStartSession,
   useSuspenseTaskBoard,
   useTasks,

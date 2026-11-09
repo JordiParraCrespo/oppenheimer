@@ -256,6 +256,15 @@ behavior in the application. The calendar's Day and Week and the To do view
 were built on 2026-11-08 (`../20-plan-calendar.md` §6); the project cards
 are not yet.
 
+Its Projects view is in the console since: `/plan/projects` draws the
+project cards (the status from the project's sessions), and a card opens
+the project's page with Milestones, Needs input and In progress
+(`ProjectCard`, `ProjectOverview`). The page has no Chat tab: the frame draws a project as an agent's view,
+and there is no per-project agent. Since 2026-11-09 its Stats is a view of
+the page (`?view=stats`): tasks completed and created, and tokens and cost
+once sessions report them, over a period, from `GET /plan/stats`; the
+frame's pull-request panels wait for that endpoint to carry them.
+
 ## Design system
 
 `_ds/oppenheimer-design-system-<id>/` is the bound design system —

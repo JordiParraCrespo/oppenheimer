@@ -14,6 +14,8 @@ export type ConsoleDialogRequest =
       /** Present edits this project; absent creates one. */
       projectId?: string;
       onSaved?: (project: { id: string }) => void;
+      /** After the edited project is deleted, once the dialog has closed. */
+      onDeleted?: () => void;
     }
   | { kind: 'add-host'; onUseHost?: (hostId: string) => void }
   | {
