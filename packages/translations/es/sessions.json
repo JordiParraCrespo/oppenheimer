@@ -666,6 +666,7 @@
       "running": "{{count}} en marcha",
       "failed_one": "{{count}} fallido",
       "failed_other": "{{count}} fallidos",
+      "failed_many": "{{count}} fallidos",
       "untitled": "Subagente",
       "calls_one": "{{count}} llamada",
       "calls_other": "{{count}} llamadas",
