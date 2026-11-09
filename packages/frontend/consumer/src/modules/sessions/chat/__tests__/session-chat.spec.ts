@@ -261,6 +261,13 @@ describe('toTurns', () => {
     expect(turns[0]?.prompt?.text).toBe('Here it is:\n\nStep 1, api.env\n\nThoughts?');
   });
 
+  it('keeps a paste that starts like one of the CLI lines as the prompt', () => {
+    const turns = toTurns([
+      user('p', '<pasted_content id="x">Caveat: a sample log</pasted_content>\nExplain this.'),
+    ]);
+    expect(turns[0]?.prompt?.text).toBe('Caveat: a sample log\nExplain this.');
+  });
+
   it('marks an interrupted turn and a compaction where they happened', () => {
     const turns = toTurns([
       user('u1', 'Go'),

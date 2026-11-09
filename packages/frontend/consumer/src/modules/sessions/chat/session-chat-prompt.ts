@@ -38,12 +38,18 @@ const CLI_LINES: readonly string[] = [
   '<system-reminder>',
 ];
 
-/** The person's words as they typed them, or `null` for a line that is the CLI's own. */
+/**
+ * The person's words as they typed them, or `null` for a line that is the
+ * CLI's own. The line is told apart as written, wrappers and all, so pasted
+ * text that happens to start like one of the CLI's lines stays the person's.
+ */
 export function typedPrompt(raw: string): string | null {
-  const value = UNWRAPPED.reduce((text, tags) => text.replace(tags, ''), raw).trim();
-  if (value === '' || CLI_LINES.some((prefix) => value.startsWith(prefix))) return null;
+  const value = raw.trim();
+  if (CLI_LINES.some((prefix) => value.startsWith(prefix))) return null;
   const rewrite = REWRITES.find(({ prefix }) => value.startsWith(prefix));
-  if (!rewrite) return value;
-  const typed = rewrite.read(value);
+  const typed = UNWRAPPED.reduce(
+    (text, tags) => text.replace(tags, ''),
+    rewrite ? rewrite.read(value) : value,
+  ).trim();
   return typed === '' ? null : typed;
 }
