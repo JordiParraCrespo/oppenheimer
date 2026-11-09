@@ -676,12 +676,26 @@
     "list": {
       "title": "Projects",
       "new": "New project",
-      "edit": "{{name}} settings",
-      "repositories_one": "{{count}} repository",
-      "repositories_other": "{{count}} repositories",
       "noRepositories": "No repositories",
       "empty": "No projects yet. A project groups your sessions and starts new ones with its repositories, host and agent.",
-      "loadFailed": "Could not load your projects."
+      "loadFailed": "Could not load your projects.",
+      "status": {
+        "needsInput": "Needs input",
+        "running": "Running",
+        "idle": "Idle"
+      }
+    },
+    "detail": {
+      "back": "Projects",
+      "settings": "Settings",
+      "milestones": "Milestones",
+      "needsInput": "Needs input",
+      "inProgress": "In progress",
+      "noMilestones": "No milestones yet.",
+      "nothingNeedsInput": "Nothing waits on you.",
+      "nothingInProgress": "Nothing in progress.",
+      "gone": "That project is no longer here.",
+      "loadFailed": "Could not load this project."
     },
     "unassigned": "Unassigned"
   },

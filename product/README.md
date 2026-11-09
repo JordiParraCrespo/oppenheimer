@@ -1383,3 +1383,11 @@ earlier note:
   (Sentry OPPENHEIMER-API-2, 2026-11-09). The webhook now reads its own body
   raw, up to GitHub's documented 25 MB cap, ahead of the app-wide parsers;
   a larger body is a 413, and the `rawBody` copy is gone.
+- `versions/mvp/18-plan-product.md` §1 (2026-11-05) listed Plan's Projects
+  as a row per project with its settings. On 2026-11-08, following that
+  day's `Tasks` artboards, each project is a card (its repositories, and
+  Needs input, Running or Idle from its sessions) that opens the project's
+  page, `/plan/projects/<id>`: its milestones, the tasks waiting on a
+  person, the ones in progress, and Settings. The artboard's Chat and Stats
+  tabs on that page are not built: there is no per-project agent or
+  per-project statistics yet.

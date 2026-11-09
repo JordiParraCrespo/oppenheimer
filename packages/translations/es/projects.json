@@ -47,13 +47,26 @@
   "list": {
     "title": "Proyectos",
     "new": "Nuevo proyecto",
-    "edit": "Ajustes de {{name}}",
-    "repositories_one": "{{count}} repositorio",
-    "repositories_many": "{{count}} repositorios",
-    "repositories_other": "{{count}} repositorios",
     "noRepositories": "Sin repositorios",
     "empty": "Aún no hay proyectos. Un proyecto agrupa tus sesiones y empieza las nuevas con sus repositorios, host y agente.",
-    "loadFailed": "No se pudieron cargar tus proyectos."
+    "loadFailed": "No se pudieron cargar tus proyectos.",
+    "status": {
+      "needsInput": "Necesita tu respuesta",
+      "running": "En marcha",
+      "idle": "Inactivo"
+    }
+  },
+  "detail": {
+    "back": "Proyectos",
+    "settings": "Ajustes",
+    "milestones": "Hitos",
+    "needsInput": "Necesita tu respuesta",
+    "inProgress": "En curso",
+    "noMilestones": "Aún no hay hitos.",
+    "nothingNeedsInput": "Nada espera tu respuesta.",
+    "nothingInProgress": "Nada en curso.",
+    "gone": "Ese proyecto ya no está aquí.",
+    "loadFailed": "No se pudo cargar este proyecto."
   },
   "unassigned": "Sin asignar"
 }
