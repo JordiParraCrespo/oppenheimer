@@ -5,6 +5,17 @@
  * one the CLI adds is a line here, not a branch in the turn builder.
  */
 
+/**
+ * What the CLI puts before or after the person's words on the same line, as a
+ * text block of its own or in the same string: a system reminder. It goes,
+ * contents and all, before the line is read. Only the ends are cut, so a
+ * paste that quotes one keeps it.
+ */
+const SURROUNDING: readonly RegExp[] = [
+  /^(?:\s*<system-reminder>[\s\S]*?<\/system-reminder>)+/,
+  /(?:<system-reminder>(?:(?!<system-reminder>)[\s\S])*?<\/system-reminder>\s*)+$/,
+];
+
 /** Tags the CLI wraps around part of what was typed; the words inside stay. */
 const UNWRAPPED: readonly RegExp[] = [
   // Text pasted into the prompt.
@@ -35,6 +46,7 @@ const CLI_LINES: readonly string[] = [
   '<local-command-',
   '<bash-stdout',
   '<bash-stderr',
+  // A reminder left unclosed: the CLI's, whatever follows.
   '<system-reminder>',
 ];
 
@@ -44,7 +56,7 @@ const CLI_LINES: readonly string[] = [
  * text that happens to start like one of the CLI's lines stays the person's.
  */
 export function typedPrompt(raw: string): string | null {
-  const value = raw.trim();
+  const value = SURROUNDING.reduce((text, around) => text.replace(around, ''), raw).trim();
   if (CLI_LINES.some((prefix) => value.startsWith(prefix))) return null;
   const rewrite = REWRITES.find(({ prefix }) => value.startsWith(prefix));
   const typed = UNWRAPPED.reduce(
