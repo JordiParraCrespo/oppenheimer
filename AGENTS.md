@@ -151,6 +151,7 @@ frontmatter; this is the index.
 | building a form | `forms.md` |
 | adding or changing a route in `apps/web` | `/tanstack-routing` |
 | checking a change end to end | `/local-stack`; the e2e suites are `e2e/README.md` |
+| reading the API's logs or metrics, or adding a metric | `apps/docs/docs/deployment/monitoring.md` (`pnpm logs` is LogQL over the local Loki), `deploy/dev/monitoring/README.md` (`pnpm monitoring:up`) |
 | deploying | `deploy/dev/README.md`, `apps/docs/docs/deployment/` |
 
 ## Commands

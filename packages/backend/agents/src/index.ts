@@ -19,6 +19,7 @@ export {
   type BotTurnContext,
   type BotTurnImage,
   type BotTurnRequest,
+  isCompletionRequest,
 } from './bot-engine';
 export { createBotEngine, engineCapabilities } from './bot-engine.factory';
 export { type EngineLlmBinding, engineLlm } from './engine-llm';

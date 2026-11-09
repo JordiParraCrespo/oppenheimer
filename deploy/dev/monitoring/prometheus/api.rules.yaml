@@ -197,3 +197,56 @@ groups:
           severity: warning
         annotations:
           summary: "The {{ $labels.source }} backlog has not been sampled for 5 minutes"
+
+  # The bots (`bot_engine_*`, every turn and completion the engine runs) and
+  # the Redis cache (`cache_reads_total`). Each ratio needs some volume first,
+  # so a quiet workspace's one failed turn is not an alert.
+  - name: api.bots
+    rules:
+      - alert: BotTurnsFailing
+        expr: >-
+          (
+            sum(increase(bot_engine_runs_total{app="api", kind="turn", reason="failed"}[15m]))
+            / sum(increase(bot_engine_runs_total{app="api", kind="turn", reason!="cancelled"}[15m]))
+          ) > 0.25
+          and sum(increase(bot_engine_runs_total{app="api", kind="turn", reason!="cancelled"}[15m])) >= 5
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Over a quarter of bot turns have failed for 10 minutes"
+          description: >-
+            `bot_engine_failures_total` by `failure` says which kind (a
+            provider down, a refused key, a rate limit). The log has each one:
+            `pnpm logs '{app="api", level="error"} |= "bot turn"'`.
+
+      - alert: BotPromptCacheCold
+        expr: >-
+          (
+            sum(increase(bot_engine_tokens_total{app="api", type="cache_read"}[1h]))
+            / sum(increase(bot_engine_tokens_total{app="api", type="input"}[1h]))
+          ) < 0.2
+          and sum(increase(bot_engine_tokens_total{app="api", type="input"}[1h])) > 200000
+        for: 30m
+        labels:
+          severity: warning
+        annotations:
+          summary: "The bots' prompt cache served under 20% of their input for an hour"
+          description: >-
+            Every uncached input token is paid in full. A drop that follows a
+            deploy usually means a turn's prompt prefix (system prompt, tools,
+            history) or its cache key changed between turns.
+
+      - alert: CacheReadsFailing
+        expr: >-
+          sum(rate(cache_reads_total{app="api", result="error"}[5m]))
+          / sum(rate(cache_reads_total{app="api"}[5m])) > 0.05
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Over 5% of cache reads have failed for 10 minutes"
+          description: >-
+            Callers fall through to their load, so this is extra latency and
+            upstream calls rather than errors; Redis is the usual cause
+            (`/api/v1/ready`).

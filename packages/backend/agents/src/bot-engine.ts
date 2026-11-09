@@ -252,6 +252,27 @@ export interface BotCompletion {
   usage: BotCompletionUsage | null;
 }
 
+/** What makes a run a completion: one step, none of our tools and none of the engine's. */
+const COMPLETION_MAX_STEPS = 1;
+
+/** A fresh one each call: the request's `tools` is a mutable array. */
+function completionShape(): Pick<BotTurnRequest, 'tools' | 'engineTools' | 'maxSteps'> {
+  return { tools: [], engineTools: false, maxSteps: COMPLETION_MAX_STEPS };
+}
+
+/**
+ * Whether `request` is one `BotEngine.complete` made, rather than a turn: the
+ * one test of it, next to the shape it tests, so a wrapper that tells the two
+ * apart (the API's engine metrics) cannot drift from what `complete` sends.
+ */
+export function isCompletionRequest(request: BotTurnRequest): boolean {
+  return (
+    request.maxSteps === COMPLETION_MAX_STEPS &&
+    request.tools.length === 0 &&
+    request.engineTools === false
+  );
+}
+
 /**
  * Runs one turn of a bot. The stream never throws once iteration starts:
  * every turn ends with exactly one `done`, and nothing follows it.
@@ -279,13 +300,7 @@ export abstract class BotEngine {
   async completeWithUsage(request: BotCompletionRequest): Promise<BotCompletion> {
     const texts: string[] = [];
     let usage: BotCompletionUsage | null = null;
-    for await (const event of this.run({
-      ...request,
-      history: [],
-      tools: [],
-      engineTools: false,
-      maxSteps: 1,
-    })) {
+    for await (const event of this.run({ ...request, history: [], ...completionShape() })) {
       if (event.type === 'text.done') texts.push(event.text);
       if (event.type === 'usage') {
         usage = {
