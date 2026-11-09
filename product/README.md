@@ -1416,3 +1416,8 @@ earlier note:
   sessions and in bots: it takes Fable 5.1's place, and Fable 5.1 heads
   "More models", since Claude still serves it. OpenCode's `anthropic/` row
   moves to Fable 5.2 as well, with Fable 5.1 behind its "More models".
+- `versions/mvp/29-inbox.md`, "As built", had Plan open on its Inbox. On
+  2026-11-09 the owner asked that Plan open on the view dragged to the top
+  of its sidebar: the rail and the console's landing go through
+  `/plan/open`, which redirects there (the Inbox until another is dragged
+  above it).
