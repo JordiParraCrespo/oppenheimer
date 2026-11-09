@@ -1,0 +1,49 @@
+# Loki for local development (docker-compose.monitoring.yml): one process,
+# chunks and index on the container's volume, no auth (it listens on
+# loopback only), and the same 7 days of retention as Prometheus. Alloy
+# (../alloy/config.alloy) pushes the API's log lines here; Grafana and
+# `pnpm logs` (scripts/monitoring/logs.mjs) query it.
+auth_enabled: false
+
+server:
+  http_listen_port: 3100
+  log_level: warn
+
+common:
+  instance_addr: 127.0.0.1
+  path_prefix: /loki
+  replication_factor: 1
+  ring:
+    kvstore:
+      store: inmemory
+  storage:
+    filesystem:
+      chunks_directory: /loki/chunks
+      rules_directory: /loki/rules
+
+schema_config:
+  configs:
+    - from: 2024-01-01
+      store: tsdb
+      object_store: filesystem
+      schema: v13
+      index:
+        prefix: index_
+        period: 24h
+
+limits_config:
+  retention_period: 168h
+  # Structured metadata (the correlation id, the logger's context) is what
+  # keeps per-line ids out of the labels, where each value is a new stream.
+  allow_structured_metadata: true
+  # A dev API restarting replays nothing older, but a file Alloy first sees
+  # may hold lines from days ago: take them rather than refuse the batch.
+  reject_old_samples: false
+
+compactor:
+  working_directory: /loki/compactor
+  retention_enabled: true
+  delete_request_store: filesystem
+
+analytics:
+  reporting_enabled: false

@@ -11,6 +11,7 @@ export { useStartFailure } from './hooks/use-start-failure';
 export {
   addDays,
   daysBetween,
+  isoWeek,
   monthGridDays,
   monthOf,
   shiftMonth,

@@ -1,7 +1,7 @@
 import type Redis from 'ioredis';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { CacheService } from './cache.service';
-import { RedisCacheService } from './redis-cache.service';
+import { type RedisCacheOptions, RedisCacheService } from './redis-cache.service';
 
 /** The commands the service sends, recorded; each test sets the replies it needs. */
 function fakeRedis() {
@@ -16,7 +16,7 @@ function fakeRedis() {
 
 let redis: ReturnType<typeof fakeRedis>;
 
-function service(options?: { keyPrefix?: string }): RedisCacheService {
+function service(options?: RedisCacheOptions): RedisCacheService {
   return new RedisCacheService(redis as unknown as Redis, options);
 }
 
@@ -217,5 +217,70 @@ describe('RedisCacheService', () => {
   it('offers no way to flush the database it shares with the queues', () => {
     expect('reset' in service()).toBe(false);
     expect('reset' in CacheService.prototype).toBe(false);
+  });
+
+  // A hit rate is only as good as what is counted: a read that is not
+  // reported, or reported twice (getOrSet over get), skews it silently.
+  describe('read observer', () => {
+    function observed() {
+      const reads: { operation: string; namespace: string; result: string }[] = [];
+      return { reads, cache: service({ onRead: (read) => reads.push(read) }) };
+    }
+
+    it('reports a hit or a miss per key read, under the key’s first segment only', async () => {
+      const { reads, cache } = observed();
+      redis.get.mockResolvedValueOnce('1').mockResolvedValueOnce(null);
+      redis.mget.mockResolvedValue(['"x"', null]);
+      redis.getdel.mockResolvedValue(null);
+
+      await cache.get('github:repos:42');
+      await cache.get('github:repos:43');
+      await cache.mget(['attach:t1', 'attach:t2']);
+      await cache.take('attach:t3');
+
+      expect(reads).toEqual([
+        { operation: 'get', namespace: 'github', result: 'hit' },
+        { operation: 'get', namespace: 'github', result: 'miss' },
+        { operation: 'mget', namespace: 'attach', result: 'hit' },
+        { operation: 'mget', namespace: 'attach', result: 'miss' },
+        { operation: 'take', namespace: 'attach', result: 'miss' },
+      ]);
+    });
+
+    it('reports getOrSet once per call: a miss, then the callers that joined it as coalesced', async () => {
+      const { reads, cache } = observed();
+      redis.get.mockResolvedValue(null);
+      redis.set.mockResolvedValue('OK');
+      const load = deferred<number>();
+
+      const first = cache.getOrSet('repos:1', 60, () => load.promise);
+      const second = cache.getOrSet('repos:1', 60, () => load.promise);
+      load.resolve(7);
+      await Promise.all([first, second]);
+
+      expect(reads.map((read) => `${read.operation}:${read.result}`).sort()).toEqual([
+        'getOrSet:coalesced',
+        'getOrSet:miss',
+      ]);
+    });
+
+    it('reports a failed read as an error and still fails it', async () => {
+      const { reads, cache } = observed();
+      redis.get.mockRejectedValue(new Error('down'));
+
+      await expect(cache.get('k')).rejects.toThrow('down');
+      expect(reads).toEqual([{ operation: 'get', namespace: 'k', result: 'error' }]);
+    });
+
+    it('never fails a read because the observer threw', async () => {
+      redis.get.mockResolvedValue('1');
+      const cache = service({
+        onRead: () => {
+          throw new Error('observer broke');
+        },
+      });
+
+      await expect(cache.get('k')).resolves.toBe(1);
+    });
   });
 });

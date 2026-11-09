@@ -234,6 +234,18 @@ export function promptSummary(input: { text: string }, session: NamedSession): s
   return `Tell the session "${session.name}": ${clip(input.text)}`;
 }
 
+/**
+ * The Needs input card's line for `close_session`: "Close the session "Fix login"
+ * (id) and remove its worktree", saying so when unpushed work goes with it.
+ */
+export function closeSummary(
+  session: Pick<NamedSession, 'id' | 'name'>,
+  acceptUnpushedWork: boolean,
+): string {
+  const loss = acceptUnpushedWork ? ', even with work never pushed' : '';
+  return `Close the session "${session.name}" (${session.id}) and remove its worktree${loss}`;
+}
+
 /** An `answer_session` call, as its input names it. */
 export interface DecisionAnswerInput {
   decision_id: string;

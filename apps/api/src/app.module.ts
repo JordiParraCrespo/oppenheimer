@@ -61,6 +61,7 @@ import {
   throttlingConfig,
   voiceConfig,
 } from './config';
+import { resolveLogFile } from './config/app.config';
 import { bootDataSourceFactory } from './config/boot-migrations';
 import { type DatabaseConfig, poolOptions } from './config/database.config';
 import { DEFAULT_JOB_OPTIONS } from './config/queue-options.config';
@@ -80,6 +81,7 @@ import { ProfileModule } from './profile/profile.module';
 import { ProjectsModule } from './projects/projects.module';
 import { PullRequestsModule } from './pull-requests/pull-requests.module';
 import { QueueModule } from './queue/queue.module';
+import { CacheReadMetricsAdapter } from './redis/infrastructure/cache-metrics.adapter';
 import { REDIS_CLIENT } from './redis/redis.di-tokens';
 import { RedisModule } from './redis/redis.module';
 import { RelayModule } from './relay/relay.module';
@@ -131,6 +133,7 @@ import { WorkspaceEventsModule } from './workspace-events/workspace-events.modul
         // SQL query lines are emitted at debug; the opt-in is pointless if
         // the logger's threshold (info by default) swallows them.
         level: configService.get('database.logQueries') ? 'debug' : undefined,
+        file: configService.get('app.logFile'),
       }),
     }),
     // The registry `/api/v1/metrics` renders; every module's metrics register
@@ -214,10 +217,15 @@ import { WorkspaceEventsModule } from './workspace-events/workspace-events.modul
     EmailModule.register(),
     StorageModule.register(),
     // Over the shared client, every key under `cache:`, so the cache never
-    // mixes with BullMQ's `bull:*` or the throttler's `throttle:*`.
+    // mixes with BullMQ's `bull:*` or the throttler's `throttle:*`. Every
+    // read is counted (`cache_reads_total`), for the hit rate.
     CacheModule.registerAsync({
-      inject: [REDIS_CLIENT],
-      useFactory: (client: Redis) => ({ client, keyPrefix: 'cache:' }),
+      inject: [REDIS_CLIENT, CacheReadMetricsAdapter],
+      useFactory: (client: Redis, metrics: CacheReadMetricsAdapter) => ({
+        client,
+        keyPrefix: 'cache:',
+        onRead: metrics.observe,
+      }),
     }),
     // The deployment's LLM provider, for short best-effort calls (a session's
     // title). `none` by default; see `config/llm.config.ts`.
@@ -236,8 +244,10 @@ import { WorkspaceEventsModule } from './workspace-events/workspace-events.modul
       auth,
       disableGlobalAuthGuard: true,
       bodyParser: { rawBody: true },
+      // Its lines go to LOG_FILE too, so sign-ins reach Loki with the rest.
       middleware: createAuthRouteLoggingMiddleware({
         pretty: process.env.NODE_ENV !== 'production',
+        file: resolveLogFile(process.env.LOG_FILE),
       }),
     }),
     OutboxModule,

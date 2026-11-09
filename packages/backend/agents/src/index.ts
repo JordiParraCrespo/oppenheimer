@@ -20,6 +20,7 @@ export {
   type BotTurnImage,
   type BotTurnRequest,
   compactionThreshold,
+  isCompletionRequest,
 } from './bot-engine';
 export { createBotEngine, engineCapabilities } from './bot-engine.factory';
 export { type EngineLlmBinding, engineLlm } from './engine-llm';
