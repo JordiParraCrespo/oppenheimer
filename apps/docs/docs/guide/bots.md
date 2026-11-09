@@ -70,7 +70,7 @@ A **skill** is a saved way of doing one task: when it applies, the steps, how to
 
 Every bot also has one built-in skill, `oppenheimer`: before it answers a question about Oppenheimer itself, how to set something up in it, or what bots can do, it reads this guide with `read_oppenheimer_docs`, answers from the pages, and says so when the guide does not cover it. You do not run it; ask your question and the bot reads. No skill of yours can take that name.
 
-A second built-in skill, `recap`, catches you up: type `/recap`, or `/recap` and a topic, or just ask "where are we?", and the bot reads your sessions, your pull requests, your plan and this chat, then answers with where things stand, what is waiting on you and the next move. It only reads. A Claude Code session does the same when you ask it to recall or catch you up; a Codex session does not yet.
+A second built-in skill, `recap`, catches you up: type `/recap`, or `/recap` and a topic, or just ask "where are we?", and the bot reads your sessions, your pull requests, your plan and this chat, then answers with where things stand, what is waiting on you and the next move. It only reads. When a session the bot follows finishes, its report ends with a recap of that session, unasked. A Claude Code session does the same when you ask it to recall or catch you up, and ends each task it finishes with one; a Codex session does not yet.
 
 Built-in commands work for every bot:
 
