@@ -1441,3 +1441,10 @@ earlier note:
   session of the workspace, on any host and closed ones included, for words
   in its name and log (`search_sessions`); the agents' transcripts on the
   hosts are not searched. The `recap` skill searches its topic the same way.
+- `versions/mvp/25-bots.md` drew a turn's compaction as a quiet line among
+  its calls, the trace at the reply's 15px in muted ink, and the live
+  line's orb as `composing`. On 2026-11-09 the owner asked to stop seeing
+  compactions, for quieter tool calls and for the solving and searching
+  orbs: the chat draws no compaction (the export keeps it), the trace is
+  13px in subtle ink, and the orb solves, or searches while the running
+  call only looks around (`versions/mvp/25-bots.md` §2 and §3).
