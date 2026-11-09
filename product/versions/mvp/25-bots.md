@@ -129,10 +129,11 @@ worker runs it and streams what happens back to the chat.
   cut where no call is parted from its result. A summary that fails sends
   the call as it was, and the next one tries again
   (`research/lessons-from-long-running-agents.md`). Where a turn folded,
-  the chat shows one quiet line among its calls, drawn like them, with the
-  tokens before and after (a `compaction` event, built 2026-11-09; no rule
-  across the chat, as Claude shows none), so a long turn says why
-  the bot seems to have forgotten a detail; the model reads it as a note. Between turns the
+  the turn stores a `compaction` event with the tokens before and after,
+  which the model reads as a note and the chat's export keeps. The chat
+  drew it as a quiet line among the calls (built 2026-11-09); the same day
+  the owner asked not to see compactions, so the chat draws nothing for it:
+  it is the engine's housekeeping, not something the reader acts on. Between turns the
   summary folds old messages (above). Since
   2026-10-29 the model is told too: the turn context says how full the
   context was when the bot's last turn ended, against its window, and from
@@ -349,7 +350,9 @@ The chat shows what the bot says, not everything it does:
 
 - the bot's text, streamed;
 - one activity line per run of tool calls ("Read 2 documents, searched the
-  web"), which opens to the steps;
+  web"), which opens to the steps; the lines are smaller and quieter than
+  the reply (13px in subtle ink, since 2026-11-09) so the work never
+  competes with the answer;
 - cards for what needs you or changed something: a **Needs input** card
   (§5), "Updated INSTRUCTIONS.md" with a link to the revision, "Created
   *Researcher*" with an Open link;
@@ -358,7 +361,9 @@ The chat shows what the bot says, not everything it does:
   fact"), with the old and new value, and a link to the Settings tab
   where you change it back.
 
-While a turn runs, its live line says what it is doing: waiting its turn,
+While a turn runs, its live line says what it is doing, beside a thinking
+orb that solves while it works and searches while the running call only
+looks around (a web search, a read, a list; 2026-11-09): waiting its turn,
 thinking, the call running ("Searching the web for …"), writing, or, while
 the engine waits out a provider that refused a call, "Anthropic is limiting
 requests, retrying…" (the stream's `retrying` event, until the turn writes

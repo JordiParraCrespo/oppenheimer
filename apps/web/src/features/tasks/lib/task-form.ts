@@ -29,6 +29,7 @@ export function newTaskValues(
     milestoneId,
     dueDate: null,
     dueTime: null,
+    focusDate: null,
   };
 }
 
@@ -41,6 +42,7 @@ export function taskValues(task: TaskEntity): TaskFormValues {
     milestoneId: task.milestoneId,
     dueDate: task.dueDate,
     dueTime: task.dueTime,
+    focusDate: task.focusDate,
   };
 }
 

@@ -57,6 +57,16 @@ export class TaskResponseDto {
   @ApiPropertyOptional({ nullable: true, type: String, example: '09:00' })
   dueTime!: string | null;
 
+  @ApiPropertyOptional({
+    nullable: true,
+    type: String,
+    format: 'date',
+    description:
+      'The day the person means to work on it, apart from when it is due. To do lists it that day and every later one until it is done.',
+    example: '2026-10-06',
+  })
+  focusDate!: string | null;
+
   @ApiPropertyOptional({ nullable: true, type: String, format: 'date-time' })
   completedAt!: string | null;
 

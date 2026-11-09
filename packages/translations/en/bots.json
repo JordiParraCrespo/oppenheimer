@@ -108,7 +108,20 @@
         "rate_limit": "{{provider}} is limiting requests, retrying…",
         "unavailable": "{{provider}} is busy, retrying…"
       },
-      "thinking": "Thinking",
+      "musing": {
+        "pondering": "Pondering…",
+        "mulling": "Mulling…",
+        "musing": "Musing…",
+        "noodling": "Noodling…",
+        "ruminating": "Ruminating…",
+        "cogitating": "Cogitating…",
+        "brewing": "Brewing…",
+        "percolating": "Percolating…",
+        "scheming": "Scheming…",
+        "puzzling": "Puzzling…",
+        "tinkering": "Tinkering…",
+        "conjuring": "Conjuring…"
+      },
       "writing": "Writing",
       "stopped": "Stopped"
     },
@@ -301,8 +314,6 @@
         "ended": "Loop “{{prompt}}” ended: the bot did not say when to run next"
       },
       "compaction": "Summarized earlier work to keep its context small · {{before}} → {{after}} tokens",
-      "compactionLine": "Summarized earlier work",
-      "compactionTokens": "{{before}} → {{after}} tokens",
       "dream": {
         "dreamed": "Tidied its memory · {{before}} facts → {{after}}",
         "undone": "You undid the tidy · {{before}} facts are back"

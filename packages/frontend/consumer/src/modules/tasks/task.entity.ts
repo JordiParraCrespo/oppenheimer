@@ -33,6 +33,8 @@ export class TaskEntity {
     public readonly blockedReason: string | null = null,
     /** Goes up on every write, whoever made it. */
     public readonly version = 1,
+    /** The day it is on To do from, until it is done; apart from when it is due. */
+    public readonly focusDate: string | null = null,
   ) {}
 
   get isDone(): boolean {
@@ -91,6 +93,8 @@ export interface TaskInput {
   milestoneId?: string | null;
   dueDate?: string | null;
   dueTime?: string | null;
+  /** The day it is on To do from; `null` takes it off. */
+  focusDate?: string | null;
   /** Marks the task blocked and says why; `null` unblocks it. */
   blockedReason?: string | null;
 }

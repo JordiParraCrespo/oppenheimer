@@ -108,7 +108,7 @@ describe('BotTurnLive', () => {
     );
   });
 
-  it('says Thinking once it no longer waits', () => {
+  it('says the turn’s thinking word once it no longer waits', () => {
     render(
       <BotTurnLive
         queued={false}
@@ -119,6 +119,6 @@ describe('BotTurnLive', () => {
         since={null}
       />,
     );
-    expect(screen.getByRole('status').textContent).toContain('bots.chat.turn.thinking');
+    expect(screen.getByRole('status').textContent).toContain('bots.chat.turn.musing.');
   });
 });

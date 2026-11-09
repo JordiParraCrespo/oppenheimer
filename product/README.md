@@ -1407,6 +1407,12 @@ earlier note:
   wake for a finished session ends with a recap of it, a session's agent
   ends each task it finishes with one, and so do agents working in this
   repository (the `recap` skill).
+- `versions/mvp/20-plan-calendar.md` §6 (2026-11-08) had To do list a
+  day's tasks by their due date. On 2026-11-09 the owner asked for it to be
+  what they mean to work on: a task has a focus date apart from its due
+  date, To do lists what is put on the day and what is due on it, keeps
+  unfinished work from earlier days until it is done, and opens a task's
+  dialog on To do rather than on the board (§6, "Changed on 2026-11-09").
 - `next-steps/channels.md` §5 and §6, `next-steps/customers-and-routes.md`
   §5 and `next-steps/telegram.md` §2 and §3 changed on 2026-11-09, when the
   owner's `/start` went unanswered: the decision is
@@ -1416,6 +1422,18 @@ earlier note:
   sessions and in bots: it takes Fable 5.1's place, and Fable 5.1 heads
   "More models", since Claude still serves it. OpenCode's `anthropic/` row
   moves to Fable 5.2 as well, with Fable 5.1 behind its "More models".
+- `versions/mvp/29-inbox.md`, "As built", had Plan open on its Inbox. On
+  2026-11-09 the owner asked that Plan open on the view dragged to the top
+  of its sidebar: the rail and the console's landing go through
+  `/plan/open`, which redirects there (the Inbox until another is dragged
+  above it).
+- `versions/mvp/25-bots.md` drew a turn's compaction as a quiet line among
+  its calls, the trace at the reply's 15px in muted ink, and the live
+  line's orb as `composing`. On 2026-11-09 the owner asked to stop seeing
+  compactions, for quieter tool calls and for the solving and searching
+  orbs: the chat draws no compaction (the export keeps it), the trace is
+  13px in subtle ink, and the orb solves, or searches while the running
+  call only looks around (`versions/mvp/25-bots.md` §2 and §3).
 - `versions/mvp/25-bots.md` §2 said the engines' computer tools are off and
   `research/lessons-from-grok-bot.md` left computer use out. On 2026-11-09
   the owner asked that a bot can use a computer on a host remotely:

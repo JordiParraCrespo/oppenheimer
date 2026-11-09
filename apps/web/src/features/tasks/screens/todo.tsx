@@ -16,7 +16,7 @@ const todo = getRouteApi('/_authenticated/plan/todo');
 
 /**
  * Plan's To do (the 2026-11-08 `Tasks` frame): the day's header, the Project
- * filter with Add undated tasks and Include overdue at the end of its row,
+ * filter with Add tasks and Include overdue at the end of its row,
  * the day's tasks, each a card, and the row that adds one to the day. A row
  * opens its task here (`?task=<task>`), so saving it leaves you on the day,
  * and its play button opens Start session here (`?start=<task>`), as the
