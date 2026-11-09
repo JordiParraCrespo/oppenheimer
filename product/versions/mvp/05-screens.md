@@ -353,7 +353,12 @@
   picker as `localhost:<port>`, Reload, Open in a new tab) over the page
   framed on its preview origin, and says when there is no dev server yet,
   the host is away or its runner cannot share ports. The resize handle and
-  Expand are not built.
+  Expand are not built. The Desktop tab followed on 2026-11-09
+  (`../research/device-streaming.md`, "A host's desktop"): the session's
+  host's own screen, watching until Take control, with Full screen; the
+  same viewer is a page per host in Settings (Settings → Hosts → Desktop,
+  from the host's card). A host that does not share its desktop says so and
+  names the command to run on it (`runner desktop on`).
 - Session: terminal full-bleed, the agent's prompt on the pane's last
   rows whatever its height (a full screen, or a reader scrolled back,
   stays put), tabs (tmux windows, window 0 the

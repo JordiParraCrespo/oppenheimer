@@ -1421,3 +1421,9 @@ earlier note:
   of its sidebar: the rail and the console's landing go through
   `/plan/open`, which redirects there (the Inbox until another is dragged
   above it).
+- `research/lessons-from-grok-bot.md` §3 left "VNC inside the box for
+  computer use" for later. On 2026-11-09 the owner asked to watch and click
+  the machine an agent runs on: a host's own desktop streams to the console
+  through the screen-sharing server on its loopback, shared by its owner
+  with `runner desktop on` (`research/device-streaming.md`, "A host's
+  desktop"; the note's §11 is the read that led to it).

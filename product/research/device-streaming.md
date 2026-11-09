@@ -71,6 +71,66 @@ with 4 cores and no KVM, on an Android 10 emulator in software:
   minutes to boot and raises "isn't responding" dialogs, so a host needs
   KVM or Hypervisor.framework.
 
+## A host's desktop
+
+Asked on 2026-11-04: can the reader see and click the screen of the machine
+the agent runs on, the way Grok Bot shows its box? Built on 2026-11-09, as
+a third tab of the preview pane (Desktop) and a page per host in Settings
+(Settings → Hosts → Desktop), on one viewer with Full screen.
+
+**What others do.** Grok Bot (0.78.4, read from its Linux `.deb` on
+2026-11-04) runs an X desktop on display `:1` inside its cloud box, drives
+it with `xdotool`, and shows it with noVNC: the box serves websockify on
+`:6080`, the app rewrites that address to its gateway's VNC proxy with a
+port token, and loads noVNC into a webview of its own, whose preload hides
+noVNC's chrome, drops input until **Take control**, remaps the Mac's keys,
+syncs the clipboard and lowers the quality on a slow link
+(`lessons-from-grok-bot.md` §11). OpenClaw (2026.10.10) shows a host's
+desktop in its Control UI: a paired node splices the RFB server on its own
+loopback (`127.0.0.1:5900`: macOS Screen Sharing, TigerVNC, x11vnc) to an
+outbound binary WebSocket, the gateway completes the VNC or Apple Remote
+Desktop sign-in and hands the browser a stream that asks for none, noVNC
+draws it, and a byte filter on the gateway drops a watcher's input. On
+Linux it can also start a TigerVNC and XFCE desktop of its own.
+
+**What we built is OpenClaw's shape on our link.**
+
+- **The host's owner shares it, on the host.** `runner desktop on` writes
+  `~/.oppenheimer/desktop.json` (port, account, password file); nothing on
+  the link writes it, the way `runner exec` is decided. Off, `desktop.open`
+  is `DESKTOP_001`, and the console says what to run.
+- **The runner signs in, so no password crosses the link.** It dials the
+  server on the loopback, speaks RFB 3.3, 3.7, 3.8 and Apple's 3.889, and
+  completes None, VNC authentication (DES) or Apple Remote Desktop
+  (Diffie-Hellman, AES-128) with the credentials it keeps. To the browser
+  it plays the server: RFB 3.8, one security type, None.
+- **Watching is enforced on the host.** The runner frames each message the
+  browser sends and drops keys, pointer, clipboard, resize, XVP and QEMU
+  key messages until `desktop.control`; the browser's ClientInit is always
+  sent shared, so watching never disconnects another viewer or the agent's
+  tools. noVNC's `viewOnly` follows, but it is not what holds.
+- **On the link it is a port tunnel with a viewer.** `desktop.open`,
+  `desktop.opened`, `desktop.control`, `desktop.close`, and RFB as binary
+  frames under each direction's credit window (`desktop.stream`). The
+  relay judges a host-scoped ticket (`POST /hosts/{id}/desktop-ticket`,
+  `update Host`, `hosts:write`, the `host_desktop` flag) at redemption and
+  every minute, and carries bytes with back-pressure both ways; it reads no
+  RFB.
+- **The console draws it with noVNC** (1.7.0, MPL-2.0, loaded with the
+  first desktop shown) over a channel of a WebSocket's shape, scaled to the
+  room it has. Full screen is the browser's own, or the view pinned over the
+  window where there is none (Safari on iOS).
+
+Checked on the local stack on 2026-11-09 against TigerVNC with a VNC
+password: keys typed while watching never reached an xterm on the host,
+and after Take control the same keys ran a command there.
+
+**Not built.** A desktop the runner starts itself on a headless Linux host
+(OpenClaw's managed TigerVNC and XFCE), one per session; the clipboard both
+ways; audio; adaptive quality; the direct path (22). A Mac shares the one
+screen its agents work on, so the reader and the agent drive the same
+pointer; nothing arbitrates between them yet.
+
 ## Open questions
 
 1. Argent's `simulator-server` terms, and whether we run it or our own
