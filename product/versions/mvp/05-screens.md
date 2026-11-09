@@ -53,7 +53,8 @@
   2026-11-05 the head also had a New project plus and each header a
   Project settings glyph; projects are now made and edited in Plan's
   Projects view (`/plan/projects`, 18 §1), each row's settings the
-  project dialog editing (Delete project on its footer is the archive
+  project dialog editing (since 2026-11-08 the Settings button on the
+  project's page, which its card opens) (Delete project on its footer is the archive
   behind a confirm, and is disabled while the project has unresolved
   sessions). Since 2026-11-07 the filter menu's Project facet ends in
   New project…, which opens the same dialog; editing stays in Plan. A
@@ -168,7 +169,8 @@
   until there is a name, a repository and one cloned by default; it
   closes the dialog with the project picked in the chip, its defaults
   applied. The same dialog, editing, is Project settings behind a
-  row's settings glyph in Plan's Projects view, Delete project on its
+  row's settings glyph in Plan's Projects view (since 2026-11-08 the
+  Settings button on a project's page), Delete project on its
   footer's left (until 2026-11-05 it was behind a sidebar header's glyph,
   and the sidebar's plus made a project and landed on New session with it
   picked). Picking a

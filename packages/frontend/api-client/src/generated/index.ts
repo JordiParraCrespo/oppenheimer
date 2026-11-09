@@ -415,6 +415,7 @@ export type {
   BotApprovalEventResponseDto,
   BotApprovalResponseDto,
   BotAttachmentResponseDto,
+  BotCompactionEventResponseDto,
   BotConversationResponseDto,
   BotDocumentResponseDto,
   BotDocumentRevisionResponseDto,

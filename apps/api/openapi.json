@@ -37451,6 +37451,30 @@
           "factsAfter"
         ]
       },
+      "BotCompactionEventResponseDto": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "compaction"
+            ]
+          },
+          "tokensBefore": {
+            "type": "number",
+            "description": "The tokens the next call would have been sent before the fold, estimated."
+          },
+          "tokensAfter": {
+            "type": "number",
+            "description": "The tokens it is sent after it, estimated."
+          }
+        },
+        "required": [
+          "kind",
+          "tokensBefore",
+          "tokensAfter"
+        ]
+      },
       "BotSubagentRunResponseDto": {
         "type": "object",
         "properties": {
@@ -37692,6 +37716,9 @@
               },
               {
                 "$ref": "#/components/schemas/BotDreamEventResponseDto"
+              },
+              {
+                "$ref": "#/components/schemas/BotCompactionEventResponseDto"
               }
             ],
             "nullable": true,

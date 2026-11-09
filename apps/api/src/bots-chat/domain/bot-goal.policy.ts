@@ -1,7 +1,9 @@
 import {
   BOT_GOAL_IDLE_TURNS,
+  BOT_PROVIDER_CATALOG,
   type BotGoalActivity,
   type BotGoalPauseReason,
+  type BotProvider,
   type BotTurnFailure,
   type BotTurnStatus,
   botGoalCommandOf,
@@ -114,6 +116,31 @@ export function isGoalTurn(
 }
 
 /**
+ * Which of the goal's turns this is: 0 for the turn that set it, `n` for its
+ * nth continuation (the number its key carries).
+ */
+function goalStepOf(goal: Pick<BotGoalEntity, 'id'>, turn: Pick<EndedTurn, 'sourceKey'>): number {
+  const prefix = goalKeyPrefix(goal.id);
+  if (!turn.sourceKey?.startsWith(prefix)) return 0;
+  const step = Number(turn.sourceKey.slice(prefix.length));
+  return Number.isInteger(step) && step > 0 ? step : 0;
+}
+
+/**
+ * Whether the end of one of the goal's turns was already decided: the goal
+ * has counted a later continuation than the turn is, so the decision ran and
+ * moved it on. A job for the same end run again (a worker that died
+ * mid-job, a redelivery) then changes nothing: it would count the turn's
+ * spend twice and queue a continuation beside the one already queued.
+ */
+export function isDecidedTurn(
+  goal: Pick<BotGoalEntity, 'id' | 'continuations'>,
+  turn: Pick<EndedTurn, 'sourceKey'>,
+): boolean {
+  return goal.continuations > goalStepOf(goal, turn);
+}
+
+/**
  * Why a failed turn pauses its goal, by the turn's failure: the provider's
  * limit, quota or sign-in waits until it is sorted (`usage_limit`), the loop
  * guard's stop needs the person (`blocked`), and any other failure is
@@ -136,18 +163,30 @@ export function pauseReasonOf(failure: BotTurnFailure | null): BotGoalPauseReaso
  * counted (`BotGoalEntity.account`). Another turn's end, or a paused goal,
  * changes nothing. A turn the person stopped pauses it (`stopped`); one the
  * provider refused for a limit, quota or sign-in pauses it (`usage_limit`),
- * to resume once that passes; one the loop guard stopped, or that failed
- * otherwise, pauses it (`blocked`, `failed`). A turn stopped without fault
+ * to resume once that passes, unless the provider named when its limit ends:
+ * then the decision was held until that time (`waiting`) and the goal goes
+ * on by itself. One the loop guard stopped, or that failed otherwise, pauses
+ * it (`blocked`, `failed`). A turn stopped without fault
  * (`isTurnLimitFailure`: its model went silent, its worker restarted) goes on
  * like one that completed. Then: a claim that it is met is reviewed; a spent
  * budget or `BOT_GOAL_IDLE_TURNS` turns without a tool pause it; a goal set
  * with a limit before 2026-11-09 ends when it runs out; any other goes on.
  */
-export function goalDecision(goal: BotGoalEntity, ended: EndedTurn): GoalDecision {
+export function goalDecision(
+  goal: BotGoalEntity,
+  ended: EndedTurn & { provider: BotProvider },
+): GoalDecision {
   if (!isGoalTurn(goal, ended) || goal.paused) return { kind: 'skip' };
   if (ended.status === 'cancelled') return { kind: 'pause', reason: 'stopped', note: null };
   if (ended.status === 'failed' && !stoppedAtTurnLimit(ended)) {
-    return { kind: 'pause', reason: pauseReasonOf(ended.failure), note: ended.error };
+    const reason = pauseReasonOf(ended.failure);
+    // Held until the provider's own limit passed (`BotGoalEntity.hold`): it
+    // has, so the goal's own bounds below decide, as after any other turn.
+    // A hold for a tool's limit says nothing of when the provider answers.
+    const heldForProvider = goal.waiting?.system === BOT_PROVIDER_CATALOG[ended.provider].label;
+    if (reason !== 'usage_limit' || !heldForProvider) {
+      return { kind: 'pause', reason, note: ended.error };
+    }
   }
   if (ended.status !== 'completed' && ended.status !== 'failed') return { kind: 'skip' };
   if (goal.claim) return { kind: 'review' };
@@ -240,7 +279,7 @@ export function goalContinuationText(
   return [
     `Continue toward your goal (${continuationCountText(goal, step)}): ${goal.objective}`,
     lastStoppedAtLimit
-      ? 'Your last turn stopped before it finished (its model went silent, or the server restarted); what it did is kept. Check the state of anything it left in progress before repeating it.'
+      ? "Your last turn stopped before it finished (its model went silent, the server restarted, or the model provider's limit stopped it and has since passed); what it did is kept. Check the state of anything it left in progress before repeating it."
       : null,
     reason
       ? `You said the goal is met, and a reviewer read your turn: it is not met yet. ${reason}`

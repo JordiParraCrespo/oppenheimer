@@ -163,16 +163,6 @@ export class BotGoalEntity extends AggregateRoot<BotGoalProps> {
     return this.props.idleTurns >= BOT_GOAL_IDLE_TURNS;
   }
 
-  /**
-   * Counts one of its turns that ended: what it spent, and whether it called
-   * a tool. A turn that did is progress; `BOT_GOAL_IDLE_TURNS` in a row that
-   * did not make the goal `idle`.
-   */
-  account(turn: { tokens: number; calledTools: boolean }): void {
-    this.props.tokensUsed += Math.max(0, Math.round(turn.tokens));
-    this.props.idleTurns = turn.calledTools ? 0 : this.props.idleTurns + 1;
-  }
-
   /** The bot says the goal is met: the reviewer checks it when the turn ends. */
   claimMet(words: string): void {
     this.props.claim = words.trim().slice(0, 1_000) || 'The bot said the goal is met.';

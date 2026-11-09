@@ -350,6 +350,8 @@ function toEvent(dto: NonNullable<BotMessageResponseDto['event']>): BotMessageEv
           }
         : null;
     }
+    case 'compaction':
+      return { kind: 'compaction', tokensBefore: dto.tokensBefore, tokensAfter: dto.tokensAfter };
     case 'loop': {
       const activity = BOT_LOOP_ACTIVITIES.find((candidate) => candidate === dto.activity);
       return activity

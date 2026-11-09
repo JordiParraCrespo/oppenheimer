@@ -129,4 +129,15 @@ describe('BotGoalToolsFactory', () => {
     expect(goals.pause.mock.calls[0][1].event).toMatchObject({ activity: 'paused' });
     expect(goalsOf.cancelWaiting).toHaveBeenCalledWith(goal, null);
   });
+
+  // What breaks this: the bot saying met after it said blocked in one turn,
+  // the claim written on the paused goal.
+  it('takes no claim on a paused goal', async () => {
+    const goal = open();
+    goal.pause('blocked', 'I need the deploy key', new Date());
+    const { goals, call } = setup(goal, 'goal');
+    const result = await call('end_goal', { outcome: 'met', reason: 'pnpm test exits 0' });
+    expect(goals.claim).not.toHaveBeenCalled();
+    expect(JSON.stringify(result)).toContain('paused');
+  });
 });

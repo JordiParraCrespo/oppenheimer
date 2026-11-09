@@ -11,6 +11,8 @@ import { ResumeBotGoalCommand } from './resume-bot-goal.command';
  * Resume a bot's paused goal from its chat (`25-bots.md` §4.1): it runs again
  * from where it paused, with its count, its spend and its history, and its
  * next continuation is queued with a line saying the owner resumed it. A
+ * turn of it still running when it is resumed is counted at its end all the
+ * same (`countTurnSpend`), and decides nothing, the goal having moved on. A
  * goal that is not paused, or none, changes nothing; one whose budget is
  * spent pauses again after the turn, so the budget still holds. A goal whose
  * owner can no longer act stops, as it would have on its next turn, and one
