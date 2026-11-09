@@ -2860,6 +2860,31 @@ describe('bots chat (integration)', () => {
       expect((await goals.findForBot(bot.organizationId, bot.id))?.waiting).toBeNull();
     });
 
+    // What breaks this: a goal whose turn its model provider refused for a
+    // limit with a known end paused for the person instead of waiting it out.
+    it('holds the goal’s decision until the provider’s limit ends when the provider refused the turn', async () => {
+      await dataSource.query(`DELETE FROM outbox_message`);
+      const bot = await create('Throttled');
+      const turn = await runningTurn(bot);
+      await goals.set(goalFor(bot, turn.id));
+      const resetAt = new Date(Date.now() + 120_000);
+      turn.end('failed', new Date(), {
+        error: 'rate limited',
+        failure: 'rate_limit',
+        limited: { system: 'GLM', resetAt },
+      });
+      expect(await turns.finish(turn, null)).toBe(true);
+
+      expect((await goals.findForBot(bot.organizationId, bot.id))?.waiting).toEqual({
+        system: 'GLM',
+        resetAt,
+      });
+      const [job]: { availableAt: Date }[] = await dataSource.query(
+        `SELECT "availableAt" FROM outbox_message WHERE topic = 'bot-turns' AND "eventName" = 'continue-bot-goal'`,
+      );
+      expect(job?.availableAt).toEqual(resetAt);
+    });
+
     // What breaks this: a goal replaced while the old one's continuation ran,
     // marked as waiting by that continuation's limit, though nothing holds it.
     it('marks only the ended turn’s own goal as waiting, never one set in its place', async () => {

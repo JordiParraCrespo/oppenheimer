@@ -263,6 +263,43 @@ describe('TurnTranscript', () => {
     });
   });
 
+  // What breaks this: a goal whose turn the provider refused for a limit
+  // with a known reset pausing for the person, when it could wait the limit
+  // out and go on by itself, as it does for a tool's limit.
+  it('holds a turn the provider refused for a limit until the time the provider named', () => {
+    const transcript = new TurnTranscript(turn());
+    transcript.apply({
+      type: 'done',
+      reason: 'failed',
+      error: 'rate limited',
+      failure: 'rate_limit',
+      rateLimit: { resetAt: new Date('2026-11-09T12:00:00.000Z') },
+    });
+    expect(transcript.result.limited).toEqual({
+      system: 'GLM',
+      resetAt: new Date('2026-11-09T12:00:00.000Z'),
+    });
+  });
+
+  it('holds a turn refused for a spent plan until the spent window resets, and none without a time', () => {
+    const spent = new TurnTranscript(turn());
+    spent.apply({
+      type: 'usage',
+      inputTokens: 1,
+      outputTokens: 1,
+      limits: {
+        fiveHour: { usedPercent: 40, resetsAt: new Date('2026-11-09T11:00:00.000Z') },
+        sevenDay: { usedPercent: 100, resetsAt: new Date('2026-11-12T09:00:00.000Z') },
+      },
+    });
+    spent.apply({ type: 'done', reason: 'failed', error: 'quota', failure: 'usage_limit' });
+    expect(spent.result.limited?.resetAt).toEqual(new Date('2026-11-12T09:00:00.000Z'));
+
+    const unknown = new TurnTranscript(turn());
+    unknown.apply({ type: 'done', reason: 'failed', error: 'quota', failure: 'usage_limit' });
+    expect(unknown.result.limited).toBeNull();
+  });
+
   // What breaks this: a goal's next turn queued the moment this one ends,
   // running straight into the limit again and spending a continuation on it.
   it('ends a turn holding the latest time a system its tools called asked it to wait until', () => {

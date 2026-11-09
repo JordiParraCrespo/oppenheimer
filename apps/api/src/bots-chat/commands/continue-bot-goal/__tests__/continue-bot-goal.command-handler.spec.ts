@@ -56,7 +56,7 @@ function goal(props: Partial<BotGoalProps> = {}): BotGoalEntity {
 /** A turn of the goal (its continuation `step`) that ended with `status`. */
 function ended(
   status: 'completed' | 'failed' | 'cancelled',
-  failure: 'usage_limit' | 'stalled' | null = null,
+  failure: 'usage_limit' | 'rate_limit' | 'stalled' | null = null,
   step = 1,
 ): BotTurnEntity {
   const turn = BotTurnEntity.queue({ ...PROPS, origin: 'goal', sourceKey: `goal:goal-1:${step}` });
@@ -157,6 +157,23 @@ describe('ContinueBotGoalCommandHandler', () => {
       expect(goalsOf.end).not.toHaveBeenCalled();
       expect(goalsOf.pause).toHaveBeenCalledWith(stored, reason, turn.error);
     }
+  });
+
+  // What breaks this: a goal stopped by its provider's limit waiting for the
+  // person to resume it, when the limit's end was known and has passed.
+  it('goes on by itself after the provider limit it was held for, saying the last turn stopped early', async () => {
+    const held = goal();
+    held.hold({ system: 'Anthropic', resetAt: new Date('2026-11-09T12:00:00Z') });
+    const { goalsOf, run } = setup(held, ended('failed', 'rate_limit'));
+    await run();
+    expect(goalsOf.pause).not.toHaveBeenCalled();
+    expect(goalsOf.queueContinuation).toHaveBeenCalledWith(
+      held,
+      PROPS,
+      null,
+      true,
+      expect.anything(),
+    );
   });
 
   it('pauses a goal whose turns stopped calling tools', async () => {

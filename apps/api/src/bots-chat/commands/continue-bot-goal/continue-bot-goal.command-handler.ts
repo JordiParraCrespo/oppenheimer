@@ -18,7 +18,6 @@ import {
   goalOutcome,
   isDecidedTurn,
   isGoalTurn,
-  stoppedAtTurnLimit,
 } from '../../domain/bot-goal.policy';
 import type { BotTurnEntity } from '../../domain/bot-turn.entity';
 import { ContinueBotGoalCommand } from './continue-bot-goal.command';
@@ -106,7 +105,8 @@ export class ContinueBotGoalCommandHandler
       goal,
       outcome.props,
       outcome.reason,
-      stoppedAtTurnLimit(ended),
+      // A failed turn that goes on stopped before it finished, whatever stopped it.
+      ended.status === 'failed',
       correlationId,
     );
   }

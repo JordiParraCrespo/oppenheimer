@@ -119,6 +119,19 @@ describe('goalDecision', () => {
     expect(goalDecision(goal(), own('failed', 'refused'))).toMatchObject({ reason: 'failed' });
   });
 
+  // What breaks this: a goal held for its provider's limit pausing once the
+  // limit has passed, so the person must resume what could go on by itself.
+  it('goes on after a provider limit it was held for, and pauses for one with no known end', () => {
+    const held = goal();
+    held.hold({ system: 'Anthropic', resetAt: new Date('2026-11-09T12:00:00Z') });
+    expect(goalDecision(held, own('failed', 'rate_limit'))).toEqual({ kind: 'continue' });
+    expect(goalDecision(held, own('failed', 'usage_limit'))).toEqual({ kind: 'continue' });
+    expect(goalDecision(goal(), own('failed', 'usage_limit'))).toMatchObject({
+      kind: 'pause',
+      reason: 'usage_limit',
+    });
+  });
+
   // What breaks this: a long goal pausing every time a deploy restarts the
   // worker or the model goes quiet, when the next continuation would carry on.
   it('goes on after a turn stopped without fault: a silent model, a restarted worker', () => {

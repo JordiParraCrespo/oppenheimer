@@ -161,8 +161,10 @@ export function pauseReasonOf(failure: BotTurnFailure | null): BotGoalPauseReaso
  * counted (`BotGoalEntity.account`). Another turn's end, or a paused goal,
  * changes nothing. A turn the person stopped pauses it (`stopped`); one the
  * provider refused for a limit, quota or sign-in pauses it (`usage_limit`),
- * to resume once that passes; one the loop guard stopped, or that failed
- * otherwise, pauses it (`blocked`, `failed`). A turn stopped without fault
+ * to resume once that passes, unless the provider named when its limit ends:
+ * then the decision was held until that time (`waiting`) and the goal goes
+ * on by itself. One the loop guard stopped, or that failed otherwise, pauses
+ * it (`blocked`, `failed`). A turn stopped without fault
  * (`isTurnLimitFailure`: its model went silent, its worker restarted) goes on
  * like one that completed. Then: a claim that it is met is reviewed; a spent
  * budget or `BOT_GOAL_IDLE_TURNS` turns without a tool pause it; a goal set
@@ -172,7 +174,10 @@ export function goalDecision(goal: BotGoalEntity, ended: EndedTurn): GoalDecisio
   if (!isGoalTurn(goal, ended) || goal.paused) return { kind: 'skip' };
   if (ended.status === 'cancelled') return { kind: 'pause', reason: 'stopped', note: null };
   if (ended.status === 'failed' && !stoppedAtTurnLimit(ended)) {
-    return { kind: 'pause', reason: pauseReasonOf(ended.failure), note: ended.error };
+    const reason = pauseReasonOf(ended.failure);
+    // Held until the provider's limit passed (`BotGoalEntity.hold`): it has.
+    if (reason === 'usage_limit' && goal.waiting) return { kind: 'continue' };
+    return { kind: 'pause', reason, note: ended.error };
   }
   if (ended.status !== 'completed' && ended.status !== 'failed') return { kind: 'skip' };
   if (goal.claim) return { kind: 'review' };
@@ -265,7 +270,7 @@ export function goalContinuationText(
   return [
     `Continue toward your goal (${continuationCountText(goal, step)}): ${goal.objective}`,
     lastStoppedAtLimit
-      ? 'Your last turn stopped before it finished (its model went silent, or the server restarted); what it did is kept. Check the state of anything it left in progress before repeating it.'
+      ? "Your last turn stopped before it finished (its model went silent, the server restarted, or the model provider's limit stopped it and has since passed); what it did is kept. Check the state of anything it left in progress before repeating it."
       : null,
     reason
       ? `You said the goal is met, and a reviewer read your turn: it is not met yet. ${reason}`
