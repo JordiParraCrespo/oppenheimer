@@ -1,9 +1,9 @@
 import {
   BOT_GOAL_IDLE_TURNS,
   BOT_PROVIDER_CATALOG,
-  type BotProvider,
   type BotGoalActivity,
   type BotGoalPauseReason,
+  type BotProvider,
   type BotTurnFailure,
   type BotTurnStatus,
   botGoalCommandOf,
