@@ -209,3 +209,46 @@ func TestACodexMessageReadsFromTheItemCodexCompleted(t *testing.T) {
 		}
 	}
 }
+
+// Codex 0.167 keeps threads of its own in the session's directory beside the
+// person's conversation: an approval's guardian review, a compaction, a
+// review, a memory consolidation, a fork attached to the conversation. Each
+// is a rollout written after the conversation's last line, and none is a
+// conversation the person had, so the chat stays on theirs, as `codex resume`
+// does. Regression: the Chat tab of a Codex session moved to one of them, one
+// turn with no prompt, and showed nothing the person typed after it.
+func TestACodexSessionsChatStaysOnThePersonsConversation(t *testing.T) {
+	sessions, worktree := t.TempDir(), t.TempDir()
+	created := time.Now().Add(-time.Hour)
+	said := func(text string) string {
+		return rolloutLine("response_item", map[string]any{"type": "message", "role": "assistant", "content": []any{
+			map[string]any{"type": "output_text", "text": text},
+		}})
+	}
+	writeRollout(t, sessions, "mine", time.Now().Add(-time.Minute),
+		rolloutLine("session_meta", map[string]any{"id": "thr-main", "cwd": worktree, "source": "vscode", "thread_source": "user"}),
+		rolloutLine("event_msg", map[string]any{"type": "user_message", "message": "Port this PR"}),
+		said("Opened the PR."),
+	)
+	for name, meta := range map[string]map[string]any{
+		"guardian":      {"source": map[string]any{"internal": "guardian"}, "thread_source": "guardian_review"},
+		"memory":        {"source": map[string]any{"internal": "memory_consolidation"}, "thread_source": "memory_consolidation"},
+		"compact":       {"source": map[string]any{"subagent": "compact"}},
+		"review":        {"source": map[string]any{"subagent": "review"}, "thread_source": "subagent"},
+		"attached-fork": {"source": "vscode", "thread_source": "user", "forked_from_id": "thr-main", "attached_thread": true},
+		"feature":       {"source": "vscode", "thread_source": "side_question"},
+	} {
+		meta["id"], meta["cwd"] = "thr-"+name, worktree
+		writeRollout(t, sessions, name, time.Now(), rolloutLine("session_meta", meta), said("Not the person's: "+name))
+	}
+	sink := &batches{}
+	followSession(t, transcript.Options{CodexSessions: sessions},
+		domain.Session{Agent: domain.AgentCodex, Worktree: worktree, Created: created}, sink)
+
+	eventually(t, "the conversation", func() bool { return len(sink.entries()) >= 2 })
+	time.Sleep(200 * time.Millisecond)
+	got := sink.entries()
+	if len(got) != 2 || blockOf(got[0])["text"] != "Port this PR" || blockOf(got[1])["text"] != "Opened the PR." {
+		t.Fatalf("entries = %v, want the person's conversation alone", got)
+	}
+}

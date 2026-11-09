@@ -103,6 +103,8 @@ export interface BotTurnRepositoryPort {
     message: BotMessageEntity,
     correlationId: string | null,
     goal: BotGoalEntity,
+    /** The owner's resume line, written with the claim; it claims a paused goal instead of a running one. */
+    resumed?: BotMessageEntity | null,
   ): Promise<'staged' | 'waiting' | 'existing' | 'lost' | 'missing'>;
 
   /**

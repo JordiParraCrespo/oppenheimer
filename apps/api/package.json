@@ -52,6 +52,7 @@
     "@oppenheimer/translations": "workspace:*",
     "@thallesp/nestjs-better-auth": "^2.7.0",
     "better-auth": "^1.6.25",
+    "body-parser": "^2.3.0",
     "bullmq": "^5.81.2",
     "class-transformer": "^0.5.1",
     "fflate": "^0.8.3",

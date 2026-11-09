@@ -18,7 +18,7 @@ import {
   readDream,
   rewritableFacts,
 } from '../domain/bot-dream.policy';
-import { BOT_TURN_TIME_LIMIT_MS } from '../domain/bot-turn.entity';
+import { BOT_COMPLETION_TIME_LIMIT_MS } from '../domain/bot-turn.entity';
 import { BotCompletionResolver } from './bot-completion.resolver';
 import { BotModelAccessResolver } from './bot-model-access.resolver';
 
@@ -75,7 +75,7 @@ export class BotDreamResolver {
           summary: summary.isSome() ? summary.unwrap().content : null,
           messages,
         }),
-        signal: AbortSignal.timeout(BOT_TURN_TIME_LIMIT_MS),
+        signal: AbortSignal.timeout(BOT_COMPLETION_TIME_LIMIT_MS),
       },
       { organizationId, botId, purpose: 'dream' },
     );

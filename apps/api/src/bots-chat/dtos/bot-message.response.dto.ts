@@ -363,8 +363,13 @@ export class BotGoalEventResponseDto {
   })
   step!: number;
 
-  @ApiProperty({ description: 'The continuations the goal may take.' })
-  limit!: number;
+  @ApiProperty({
+    type: Number,
+    nullable: true,
+    description:
+      'The continuations the goal may take; null for a goal with no limit (every goal since 2026-11-09).',
+  })
+  limit!: number | null;
 
   @ApiProperty({
     nullable: true,

@@ -233,9 +233,6 @@ import { WorkspaceEventsModule } from './workspace-events/workspace-events.modul
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => llmConfigFrom(configService),
     }),
-    // `bodyParser.rawBody` attaches the raw request buffer to `req.rawBody`,
-    // which the GitHub webhook controller needs for signature verification.
-    //
     // `middleware` is what gets `/api/auth/*` into the request log: Better
     // Auth mounts its handler straight onto the HTTP adapter before Nest
     // binds consumer middleware, so the `nestjs-pino` logger never sees those
@@ -243,7 +240,6 @@ import { WorkspaceEventsModule } from './workspace-events/workspace-events.modul
     BetterAuthModule.forRoot({
       auth,
       disableGlobalAuthGuard: true,
-      bodyParser: { rawBody: true },
       // Its lines go to LOG_FILE too, so sign-ins reach Loki with the rest.
       middleware: createAuthRouteLoggingMiddleware({
         pretty: process.env.NODE_ENV !== 'production',
