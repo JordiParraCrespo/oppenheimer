@@ -29,7 +29,7 @@ import { ColumnComposer } from '../components/column-composer';
 import { useBoardDrag } from '../hooks/use-board-drag';
 import { useBoardFilter } from '../hooks/use-board-filter';
 import { useToday } from '../hooks/use-today';
-import { columnOf, doneCutoffOf, filingOf, splitDone } from '../lib/board';
+import { boardColumnsOf, doneCutoffOf, filingOf } from '../lib/board';
 import { cardView, dueDayLabel } from '../lib/card-view';
 import { sessionLineOf } from '../lib/session-line';
 import { SESSION_STATUS } from '../lib/session-state';
@@ -69,12 +69,13 @@ export function BoardColumns() {
   const [composing, setComposing] = useState<TaskStatus | null>(null);
   const rows = read.tasks;
   const byId = new Map(rows.map((row) => [row.id, row]));
-  const done = splitDone(columnOf(rows, 'done', filter), doneCutoffOf(today));
-  const shownOf = (status: TaskStatus) =>
-    status === 'done' && !showOlder ? done.recent : columnOf(rows, status, filter);
+  const { columns, folded } = boardColumnsOf(rows, filter, {
+    cutoff: doneCutoffOf(today),
+    showOlder: Boolean(showOlder),
+  });
   const drag = useBoardDrag(
     Object.fromEntries(
-      TASK_STATUSES.map((status) => [status, shownOf(status).map((row) => row.id)]),
+      TASK_STATUSES.map((status) => [status, columns[status].map((row) => row.id)]),
     ),
     (next) => move.mutate(next),
   );
@@ -207,11 +208,11 @@ export function BoardColumns() {
                       <TaskColumnAdd onClick={() => setComposing(status)}>
                         {t('tasks.board.addTask')}
                       </TaskColumnAdd>
-                      {status === 'done' && done.older.length > 0 ? (
+                      {folded[status] ? (
                         <TaskColumnMore expanded={Boolean(showOlder)} onClick={toggleOlder}>
                           {showOlder
                             ? t('tasks.board.hideOlder')
-                            : t('tasks.board.showOlder', { count: done.older.length })}
+                            : t('tasks.board.showOlder', { count: folded[status] })}
                         </TaskColumnMore>
                       ) : null}
                     </>

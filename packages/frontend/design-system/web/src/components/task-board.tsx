@@ -124,6 +124,10 @@ function TaskColumn({
   );
 }
 
+/** A quiet row at a column's foot, under its cards: Add task, and the fold. */
+const COLUMN_FOOT_ROW =
+  'flex h-[34px] items-center gap-2 rounded-sm px-2.5 text-sm text-fg-subtle outline-none transition-colors duration-fast ease-standard hover:bg-control-hover hover:text-fg-muted focus-visible:outline-2 focus-visible:outline-ring [&_svg]:size-3.5';
+
 /** The column's foot: "+ Add task", quiet until hovered. */
 function TaskColumnAdd({ className, children, ...props }: React.ComponentProps<'button'>) {
   return (
@@ -131,7 +135,7 @@ function TaskColumnAdd({ className, children, ...props }: React.ComponentProps<'
       type="button"
       data-slot="task-column-add"
       className={cn(
-        'flex h-[34px] items-center gap-2 rounded-sm px-2.5 text-sm text-fg-subtle outline-none transition-colors duration-fast ease-standard hover:bg-control-hover hover:text-fg-muted focus-visible:outline-2 focus-visible:outline-ring [&_svg]:size-3.5',
+        COLUMN_FOOT_ROW,
         className,
       )}
       {...props}
@@ -161,7 +165,7 @@ function TaskColumnMore({
       data-slot="task-column-more"
       aria-expanded={expanded}
       className={cn(
-        'flex h-[34px] items-center gap-2 rounded-sm px-2.5 text-sm text-fg-subtle outline-none transition-colors duration-fast ease-standard hover:bg-control-hover hover:text-fg-muted focus-visible:outline-2 focus-visible:outline-ring [&_svg]:size-3.5',
+        COLUMN_FOOT_ROW,
         className,
       )}
       {...props}

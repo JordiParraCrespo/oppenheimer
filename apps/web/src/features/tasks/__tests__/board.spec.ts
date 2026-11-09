@@ -3,11 +3,11 @@ import type { TaskStatus } from '@oppenheimer/shared/schemas/task';
 import { describe, expect, it } from 'vitest';
 import {
   afterTaskIdFor,
+  boardColumnsOf,
   boardCounts,
   columnOf,
   doneCutoffOf,
   filingOf,
-  splitDone,
 } from '../lib/board';
 import { boardSearchSchema } from '../lib/board-search';
 import { cardView, dueDayLabel } from '../lib/card-view';
@@ -168,23 +168,40 @@ describe("Done's older tasks", () => {
   const done = (id: string, completedAt: Date | null, rank = id) =>
     task(id, { status: 'done', rank, completedAt });
 
+  const ids = (rows: readonly TaskEntity[]) => rows.map((row) => row.id);
+
   it('folds away what was finished before local midnight a week ago, keeping board order', () => {
     const cutoff = doneCutoffOf('2026-11-09');
     expect(cutoff).toEqual(new Date(2026, 10, 2));
-    const column = [
+    const rows = [
       done('a', new Date(2026, 10, 9, 10)),
       done('b', new Date(2026, 9, 20)),
       done('c', new Date(2026, 10, 2, 0, 0)),
       done('d', new Date(2026, 10, 1, 23, 59)),
+      task('t'),
     ];
-    const { recent, older } = splitDone(column, cutoff);
-    expect(recent.map((row) => row.id)).toEqual(['a', 'c']);
-    expect(older.map((row) => row.id)).toEqual(['b', 'd']);
+    const folded = boardColumnsOf(rows, {}, { cutoff, showOlder: false });
+    expect(ids(folded.columns.done)).toEqual(['a', 'c']);
+    expect(folded.folded).toEqual({ done: 2 });
+    expect(ids(folded.columns.todo)).toEqual(['t']);
+
+    // Opened, Done is the whole column in board order, and still says how many it folds.
+    const open = boardColumnsOf(rows, {}, { cutoff, showOlder: true });
+    expect(ids(open.columns.done)).toEqual(['a', 'b', 'c', 'd']);
+    expect(open.folded).toEqual({ done: 2 });
   });
 
   it('keeps a done task with no completion time in view rather than hiding it', () => {
-    const { recent } = splitDone([done('x', null)], doneCutoffOf('2026-11-09'));
-    expect(recent.map((row) => row.id)).toEqual(['x']);
+    const { columns, folded } = boardColumnsOf(
+      [done('x', null)],
+      {},
+      {
+        cutoff: doneCutoffOf('2026-11-09'),
+        showOlder: false,
+      },
+    );
+    expect(ids(columns.done)).toEqual(['x']);
+    expect(folded).toEqual({});
   });
 
   it('crosses a month boundary', () => {

@@ -1,5 +1,5 @@
 import { compareRank, type MilestoneEntity, type TaskEntity } from '@oppenheimer/frontend-consumer';
-import type { TaskStatus } from '@oppenheimer/shared/schemas/task';
+import { TASK_STATUSES, type TaskStatus } from '@oppenheimer/shared/schemas/task';
 
 /**
  * What the board is narrowed to: a set of projects (their ids; absent is All
@@ -67,18 +67,37 @@ export function doneCutoffOf(today: string): Date {
 }
 
 /**
- * Done's cards, split by when they were finished: those since `cutoff`, and
- * the older ones the column folds away. A done task with no `completedAt`
- * counts as recent, so nothing is hidden for want of a date. Each half keeps
- * the column's order.
+ * Whether a done task folds away: finished before `cutoff`. One with no
+ * `completedAt` is never older, so nothing is hidden for want of a date.
  */
-export function splitDone(column: readonly TaskEntity[], cutoff: Date) {
-  const recent: TaskEntity[] = [];
-  const older: TaskEntity[] = [];
-  for (const task of column) {
-    (task.completedAt && task.completedAt < cutoff ? older : recent).push(task);
+function isOlder(task: TaskEntity, cutoff: Date): boolean {
+  return task.completedAt !== null && task.completedAt < cutoff;
+}
+
+/**
+ * The columns as the board draws them, in board order, and how many cards
+ * each one folds away under "Show older": Done keeps what was finished since
+ * `cutoff` unless `showOlder`, and counts the rest. A column that folds
+ * nothing has no entry in `folded`.
+ */
+export function boardColumnsOf(
+  tasks: readonly TaskEntity[],
+  filter: BoardFilter,
+  { cutoff, showOlder }: { cutoff: Date; showOlder: boolean },
+) {
+  const columns = {} as Record<TaskStatus, TaskEntity[]>;
+  const folded: Partial<Record<TaskStatus, number>> = {};
+  for (const status of TASK_STATUSES) {
+    const column = columnOf(tasks, status, filter);
+    if (status !== 'done') {
+      columns[status] = column;
+      continue;
+    }
+    const older = column.filter((task) => isOlder(task, cutoff)).length;
+    if (older > 0) folded[status] = older;
+    columns[status] = showOlder ? column : column.filter((task) => !isOlder(task, cutoff));
   }
-  return { recent, older };
+  return { columns, folded };
 }
 
 /** The header's counts: open, in progress, done and overdue, on what the filter shows. */
