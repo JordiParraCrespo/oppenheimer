@@ -5,6 +5,7 @@ import {
   TaskCard,
   TaskColumn,
   TaskColumnAdd,
+  TaskColumnMore,
   TaskSessionChip,
 } from '@oppenheimer/design-system-web';
 import type { TaskEntity } from '@oppenheimer/frontend-consumer';
@@ -28,7 +29,7 @@ import { ColumnComposer } from '../components/column-composer';
 import { useBoardDrag } from '../hooks/use-board-drag';
 import { useBoardFilter } from '../hooks/use-board-filter';
 import { useToday } from '../hooks/use-today';
-import { columnOf, filingOf } from '../lib/board';
+import { columnOf, doneCutoffOf, filingOf, splitDone } from '../lib/board';
 import { cardView, dueDayLabel } from '../lib/card-view';
 import { sessionLineOf } from '../lib/session-line';
 import { SESSION_STATUS } from '../lib/session-state';
@@ -40,7 +41,9 @@ const board = getRouteApi('/_authenticated/plan/');
  * cards in board order, dragged within and across columns on the drag
  * layer, ticked to Done and back, added at a column's foot. A drop moves the
  * card at once and the server's answer settles it; a refused move puts it
- * back and says why above the columns. It reads under Suspense, in the
+ * back and says why above the columns. Done shows the past week's tasks and
+ * folds the older ones under "Show older" (`?older=1` opens it), so the
+ * column does not grow without end. It reads under Suspense, in the
  * screen's `QueryState`; a refetch that fails keeps the columns and says so
  * above them.
  */
@@ -51,6 +54,7 @@ export function BoardColumns() {
   const today = useToday();
   const filter = useBoardFilter();
   const navigate = board.useNavigate();
+  const { older: showOlder } = board.useSearch();
   const go = useNavigate();
   const read = useSuspenseTaskBoard();
   const projectNames = new Map(
@@ -65,12 +69,17 @@ export function BoardColumns() {
   const [composing, setComposing] = useState<TaskStatus | null>(null);
   const rows = read.tasks;
   const byId = new Map(rows.map((row) => [row.id, row]));
+  const done = splitDone(columnOf(rows, 'done', filter), doneCutoffOf(today));
+  const shownOf = (status: TaskStatus) =>
+    status === 'done' && !showOlder ? done.recent : columnOf(rows, status, filter);
   const drag = useBoardDrag(
     Object.fromEntries(
-      TASK_STATUSES.map((status) => [status, columnOf(rows, status, filter).map((row) => row.id)]),
+      TASK_STATUSES.map((status) => [status, shownOf(status).map((row) => row.id)]),
     ),
     (next) => move.mutate(next),
   );
+  const toggleOlder = () =>
+    navigate({ search: (previous) => ({ ...previous, older: showOlder ? undefined : true }) });
 
   const words = {
     today: t('tasks.dates.today'),
@@ -194,9 +203,18 @@ export function BoardColumns() {
                       }
                     />
                   ) : (
-                    <TaskColumnAdd onClick={() => setComposing(status)}>
-                      {t('tasks.board.addTask')}
-                    </TaskColumnAdd>
+                    <>
+                      <TaskColumnAdd onClick={() => setComposing(status)}>
+                        {t('tasks.board.addTask')}
+                      </TaskColumnAdd>
+                      {status === 'done' && done.older.length > 0 ? (
+                        <TaskColumnMore expanded={Boolean(showOlder)} onClick={toggleOlder}>
+                          {showOlder
+                            ? t('tasks.board.hideOlder')
+                            : t('tasks.board.showOlder', { count: done.older.length })}
+                        </TaskColumnMore>
+                      ) : null}
+                    </>
                   )
                 }
               >

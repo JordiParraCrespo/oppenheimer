@@ -53,6 +53,15 @@ this note says what the real thing does instead.
   is an inline one-line composer (Enter adds, Esc cancels) that files the
   task under the current project and goal filter; clicking a card opens
   its dialog. Escape cancels a drag.
+- **Done keeps the past week** (decided 2026-11-09, answering open
+  question 2). The column shows the tasks finished since local midnight
+  seven days ago; the older ones fold under **Show *n* older** at its
+  foot, which opens them in board order (`?older=1`, so the open column
+  is a link) and turns into **Hide older**. Nothing is archived or
+  deleted: the header still counts every done task, and an older one is
+  one click away. It is Linear's "completed issues: past week" display
+  option, not its auto-archive: archiving (out of search, restorable) is
+  a later step once Done's history needs leaving the board entirely.
 
 ## 3. The dialogs
 
@@ -161,6 +170,7 @@ for, and a session is where it gets done.
    (`apps/api/src/profile/application/locale.resolver.ts`). Fine while
    nothing fires on a due time. A reminder email or a Slack nudge (0.4)
    would need a stored timezone first.
-2. Should Done tasks age off the board (e.g. after 14 days, behind
-   "Show older")? Done grows without bound otherwise.
+2. ~~Should Done tasks age off the board (e.g. after 14 days, behind
+   "Show older")?~~ Answered 2026-11-09: after 7 days, behind "Show
+   *n* older" (§2).
 3. Does a goal ever close (achieved / missed), or is 100% enough?

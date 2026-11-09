@@ -50,6 +50,37 @@ export function columnOf(tasks: readonly TaskEntity[], status: TaskStatus, filte
   return tasks.filter((task) => task.status === status && passes(task, filter)).sort(compareRank);
 }
 
+/**
+ * How many days a finished task stays in Done before the column folds it
+ * under "Show older" (`18-plan-product.md` §2): Linear's "past week".
+ */
+const DONE_RECENT_DAYS = 7;
+
+/**
+ * The moment before which a task finished is older: local midnight
+ * `DONE_RECENT_DAYS` days before `today`, so a card folds away at the turn of
+ * a day, not at the minute it was ticked a week ago.
+ */
+export function doneCutoffOf(today: string): Date {
+  const [year, month, day] = today.split('-').map(Number);
+  return new Date(year ?? 0, (month ?? 1) - 1, (day ?? 1) - DONE_RECENT_DAYS);
+}
+
+/**
+ * Done's cards, split by when they were finished: those since `cutoff`, and
+ * the older ones the column folds away. A done task with no `completedAt`
+ * counts as recent, so nothing is hidden for want of a date. Each half keeps
+ * the column's order.
+ */
+export function splitDone(column: readonly TaskEntity[], cutoff: Date) {
+  const recent: TaskEntity[] = [];
+  const older: TaskEntity[] = [];
+  for (const task of column) {
+    (task.completedAt && task.completedAt < cutoff ? older : recent).push(task);
+  }
+  return { recent, older };
+}
+
 /** The header's counts: open, in progress, done and overdue, on what the filter shows. */
 export function boardCounts(tasks: readonly TaskEntity[], filter: BoardFilter, today: string) {
   const shown = tasks.filter((task) => passes(task, filter));
