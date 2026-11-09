@@ -3,6 +3,7 @@ import { CircleCheck, ListChecks, RotateCcw } from '@oppenheimer/design-system-w
 import { useSuspensePullRequestQueue } from '@oppenheimer/frontend-consumer/react';
 import { ErrorAlert } from '@oppenheimer/frontend-web';
 import { Link, useNavigate } from '@tanstack/react-router';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useReviewSearch } from '../hooks/use-review-search';
 import { pullRequestLink } from '../lib/pull-request-search';
@@ -33,7 +34,11 @@ export function ReviewDeck() {
   const { scope, filters, at, setAt } = useReviewSearch();
   const { data, error } = useSuspensePullRequestQueue(scope);
   const rows = filterQueue(data.items, filters);
-  const { current, next, index, gone } = deckPosition(rows, at);
+  // Opened with no card named (the sidebar's link), the deck stands on the
+  // first card it drew, by name: a refetch that puts another pull request
+  // first must not slide it under the same actions.
+  const [first] = useState(() => (rows[0] ? deckKey(rows[0]) : undefined));
+  const { current, next, index, gone } = deckPosition(rows, at ?? first);
 
   const queueSearch = { ...filters, scope: scope === 'all' ? undefined : scope };
   if (!rows.length) {
@@ -61,7 +66,10 @@ export function ReviewDeck() {
           </EmptyState.Header>
           <EmptyState.Content>
             <div className="flex flex-wrap justify-center gap-2">
-              <Button variant="secondary" onClick={() => setAt(undefined)}>
+              <Button
+                variant="secondary"
+                onClick={() => setAt(rows[0] ? deckKey(rows[0]) : undefined)}
+              >
                 <RotateCcw />
                 {t(gone ? 'pullRequests.deck.fromTop' : 'pullRequests.deck.again')}
               </Button>
