@@ -54,11 +54,14 @@ changes behavior.
 2. Push only on a green run. A red step is yours to fix. Never skip a job
    with `--skip` to get green; `--skip` exists for re-running a job you have
    just fixed.
-3. Put `.ci-local/report.md` in the pull request's description, under a
+3. A step that fails on `apps/web/bundle-budget.json` is not fixed by
+   raising the number: a raise is Jordi's call. It goes in its own commit,
+   with the new number against `main`'s and a question in the description.
+4. Put `.ci-local/report.md` in the pull request's description, under a
    `## Local CI` heading. Replace it after each push, so the report always
    names the head commit.
 
-4. If the branch changes what the console shows (as
+5. If the branch changes what the console shows (as
    `.agents/hooks/visual-change.mjs` defines it), take its screenshots with the `local-stack`
    skill ("Show a visual change") before you push: light and dark, every
    route the change shows on. Look at each one, send them to the user, and

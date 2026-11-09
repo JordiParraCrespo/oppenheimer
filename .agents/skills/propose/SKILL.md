@@ -20,6 +20,7 @@ is `.agents/skills/steward/SKILL.md`, "Merging"; this skill is the
 - Keep to what was asked. Decisions that are Jordi's (a product call, an
   API shape nobody specified) go in the description as questions, with
   your default applied.
+- A refactor nobody asked for is its own pull request.
 
 ## 2. Open it
 

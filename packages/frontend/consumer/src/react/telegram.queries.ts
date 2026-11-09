@@ -3,6 +3,7 @@
 import { useSuspenseQueries, withCacheOnSuccess } from '@oppenheimer/frontend-core/react';
 import { type UseMutationOptions, useMutation, useQueryClient } from '@tanstack/react-query';
 import type { TelegramAccountEntity } from '../modules/telegram';
+import { useBotListQuery } from './bots.queries';
 import { useConsumerApp } from './context';
 import { useHostListQuery } from './hosts.queries';
 import { usePollWhile } from './live-poll';
@@ -13,9 +14,10 @@ const telegramKeys = {
 };
 
 /**
- * The reader's own Telegram bots, oldest first, and the hosts that can hold
- * one, fetched side by side under a Suspense `QueryState`: Settings → Telegram
- * names each bot's host and offers the hosts to connect on. While a bot is
+ * The reader's own Telegram bots, oldest first, the hosts that can hold one,
+ * and their Oppenheimer bots, fetched side by side under a Suspense
+ * `QueryState`: Settings → Telegram names each bot's host, offers the hosts
+ * to connect on, and the bots that can answer there. While a bot is
  * connecting the bots are asked again on `LIVE_POLL.telegramConnecting`, so
  * the row turns connected (or revoked, with Telegram's reason) once the host
  * has checked the token. `error` is the first refetch that failed over data
@@ -28,7 +30,7 @@ export function useSuspenseTelegramSettings() {
     telegramKeys.accounts(),
     (rows) => rows?.some((row) => row.isConnecting) ?? false,
   );
-  const [accounts, hosts] = useSuspenseQueries({
+  const [accounts, hosts, bots] = useSuspenseQueries({
     queries: [
       {
         queryKey: telegramKeys.accounts(),
@@ -36,9 +38,15 @@ export function useSuspenseTelegramSettings() {
         ...poll,
       },
       useHostListQuery(),
+      useBotListQuery(),
     ],
   });
-  return { accounts: accounts.data, hosts: hosts.data, error: accounts.error ?? hosts.error };
+  return {
+    accounts: accounts.data,
+    hosts: hosts.data,
+    bots: bots.data,
+    error: accounts.error ?? hosts.error ?? bots.error,
+  };
 }
 
 type LinkTelegramVariables = { hostId: string; token: string; label?: string };
@@ -75,5 +83,39 @@ export function useUnlinkTelegram(options?: UseMutationOptions<void, Error, stri
     ...withCacheOnSuccess(options, () =>
       queryClient.invalidateQueries({ queryKey: telegramKeys.accounts() }),
     ),
+  });
+}
+
+type AnswerTelegramAsVariables = { id: string; answeringBotId: string | null };
+
+/** Chooses which of the reader's bots answers them on a Telegram bot, or none; the row is written in. */
+export function useAnswerTelegramAs(
+  options?: UseMutationOptions<TelegramAccountEntity, Error, AnswerTelegramAsVariables>,
+) {
+  const app = useConsumerApp();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, answeringBotId }: AnswerTelegramAsVariables) =>
+      app.telegram.answerAs(id, answeringBotId),
+    ...withCacheOnSuccess(options, (updated) => {
+      queryClient.setQueryData<TelegramAccountEntity[]>(telegramKeys.accounts(), (rows) =>
+        rows?.map((row) => (row.id === updated.id ? updated : row)),
+      );
+    }),
+  });
+}
+
+/**
+ * Makes the one-time link that records the reader as a Telegram bot's owner.
+ * The link is the answer, never cached; the row reads `ownerLinked` once they
+ * open it, which the list picks up when the reader comes back to the page.
+ */
+export function useOpenTelegramOwnerLink(
+  options?: UseMutationOptions<{ url: string; expiresAt: string }, Error, string>,
+) {
+  const app = useConsumerApp();
+  return useMutation({
+    mutationFn: (id: string) => app.telegram.openOwnerLink(id),
+    ...options,
   });
 }
