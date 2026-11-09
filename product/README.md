@@ -1407,3 +1407,7 @@ earlier note:
   wake for a finished session ends with a recap of it, a session's agent
   ends each task it finishes with one, and so do agents working in this
   repository (the `recap` skill).
+- `next-steps/channels.md` §5 and §6, `next-steps/customers-and-routes.md`
+  §5 and `next-steps/telegram.md` §2 and §3 changed on 2026-11-09, when the
+  owner's `/start` went unanswered: the decision is
+  `next-steps/answering-on-telegram-and-whatsapp.md`.
