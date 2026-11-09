@@ -212,7 +212,9 @@ export async function holdGoalWithin(
   });
   if (!record) return;
   const goal = mapper.toDomain(record);
-  if (!goal.isHeldBy(turn)) return;
+  // A paused goal waits on nothing; marking it would also move `updatedAt`
+  // past its pause, and the spend the pause still owes would be refused.
+  if (!goal.isHeldBy(turn) || goal.paused) return;
   goal.hold(limit);
   const { waitingFor, waitingUntil } = mapper.toPersistence(goal);
   await manager.update(BotGoalOrmEntity, { id: goal.id }, { waitingFor, waitingUntil });

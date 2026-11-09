@@ -2928,6 +2928,28 @@ describe('bots chat (integration)', () => {
       expect(job?.availableAt).toEqual(resetAt);
     });
 
+    // What breaks this: a goal the bot paused as blocked mid-turn, whose turn
+    // then ended on a limit with a known end, marked as waiting by that end,
+    // which moved it past its pause so the turn's owed spend was refused.
+    it('leaves a goal paused mid-turn unheld, and its turn’s spend owed', async () => {
+      const bot = await create('Blocked');
+      const turn = await runningTurn(bot);
+      await goals.set(goalFor(bot, turn.id));
+      const pausing = (await goals.findForBot(bot.organizationId, bot.id)) as BotGoalEntity;
+      pausing.pause('blocked', 'I need the key', new Date());
+      expect(await goals.pause(pausing, goalPauseLine(pausing, 'paused'), 'owed')).toBe(true);
+      turn.end('completed', new Date(), {
+        limited: { system: 'Gmail', resetAt: new Date(Date.now() + 60_000) },
+      });
+      expect(await turns.finish(turn, null)).toBe(true);
+
+      const ended = (await goals.findForBot(bot.organizationId, bot.id)) as BotGoalEntity;
+      expect(ended.waiting).toBeNull();
+      ended.account({ tokens: 5_000, calledTools: true });
+      expect(await goals.recordSpend(ended)).toBe(true);
+      expect((await goals.findForBot(bot.organizationId, bot.id))?.tokensUsed).toBe(5_000);
+    });
+
     // What breaks this: a goal replaced while the old one's continuation ran,
     // marked as waiting by that continuation's limit, though nothing holds it.
     it('marks only the ended turn’s own goal as waiting, never one set in its place', async () => {
