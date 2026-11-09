@@ -5,6 +5,7 @@
 '@oppenheimer/frontend-consumer': minor
 '@oppenheimer/web': minor
 '@oppenheimer/translations': minor
+'@oppenheimer/design-system-web': minor
 ---
 
 Follow-ups to unbounded bot turns and goals:
@@ -17,5 +18,8 @@ Follow-ups to unbounded bot turns and goals:
 - Turns nobody waits on (a goal's, a loop's, a routine's, a wake's) run on a
   new `bot-background-turns` queue with its own worker, so a long one never
   holds a slot a person's message waits on.
-- A turn that compacted mid-turn shows a line in the chat with the tokens
-  before and after (a new `compaction` message event).
+- A turn that compacted mid-turn shows one quiet trace line among its calls,
+  with the tokens before and after (a new `compaction` message event).
+- The live line of a turn at work (`TraceLive`) draws the agent glyph in the
+  spinner colour instead of a grey loader, and a bot's clock reads "6s",
+  "1m 5s" instead of "00:06".

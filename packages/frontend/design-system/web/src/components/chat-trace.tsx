@@ -1,6 +1,5 @@
 'use client';
 
-import { LoaderIcon } from 'lucide-react';
 import * as React from 'react';
 
 import { clipLine, linesOf } from '../internal/clip-output';
@@ -312,7 +311,10 @@ function TraceLive({
       role="status"
       className={cn('flex min-h-8.5 items-center gap-2.5 text-[15px] tracking-[-0.011em] text-fg-muted', className)}
     >
-      <LoaderIcon aria-hidden className="size-4 shrink-0 motion-safe:animate-spin" />
+      <span
+        aria-hidden
+        className="flex size-4 shrink-0 items-center justify-center font-mono text-lg leading-none text-chat-spinner before:content-['✻'] motion-safe:before:animate-agent-glyph"
+      />
       <TraceWords meta={elapsed} metaClassName="text-fg-subtle">
         <span className="motion-safe:animate-shimmer">{children}</span>
       </TraceWords>
