@@ -9,6 +9,8 @@ export const TODO_GROUP = 'todo';
  * A day's To do in the reader's order. The drag layer hands back the new
  * order on the drop (and the old one on a cancel); it is drawn and kept on
  * this device, per day. Spread `handlers` on the list's `DragProvider`.
+ * `hold` keeps the list as drawn now: ticking a task moves it to the top of
+ * Done (or To do) on the board, and its new rank would reorder the day.
  */
 export function useTodoOrder(day: string, today: string, ids: readonly string[]) {
   const [stored, setStored] = useState<{ day: string; ids: readonly string[] }>(() => ({
@@ -22,5 +24,9 @@ export function useTodoOrder(day: string, today: string, ids: readonly string[])
     setStored({ day, ids: moved });
     if (settled) rememberTodoOrder(day, moved, today);
   });
-  return { order, handlers };
+  const hold = () => {
+    setStored({ day, ids: order });
+    rememberTodoOrder(day, order, today);
+  };
+  return { order, handlers, hold };
 }
