@@ -7,6 +7,7 @@ import {
 } from '@oppenheimer/frontend-consumer/react';
 import { ErrorAlert } from '@oppenheimer/frontend-web';
 import { useTranslation } from 'react-i18next';
+import { answeringRowState } from '@/features/telegram/lib/answering-row';
 
 /** The picker's value for "no bot answers here". */
 const NO_BOT = '';
@@ -31,17 +32,16 @@ export function TelegramAnsweringRow({
   const answer = useAnswerTelegramAs();
   const ownerLink = useOpenTelegramOwnerLink();
   const failed = answer.error ?? ownerLink.error;
-  const meta = ownerLink.data
-    ? t('settings.telegram.answering.linkReady')
-    : account.ownerLinked
-      ? t('settings.telegram.answering.linked')
-      : t('settings.telegram.answering.notLinked');
+  const state = answeringRowState({
+    ownerLinked: account.ownerLinked,
+    linkMade: ownerLink.data !== undefined,
+  });
 
   return (
     <SettingsListRow
       align="center"
       data-testid="telegram-answering"
-      meta={meta}
+      meta={t(state.meta)}
       actions={
         <>
           <FieldSelect
@@ -74,19 +74,13 @@ export function TelegramAnsweringRow({
           {account.username && !account.needsToken ? (
             <Button
               size="sm"
-              variant={account.ownerLinked || ownerLink.data ? 'ghost' : 'secondary'}
+              variant={state.linkVariant}
               pending={ownerLink.isPending}
               pendingLabel={t('settings.telegram.answering.making')}
               onClick={() => ownerLink.mutate(account.id)}
             >
               {ownerLink.data ? null : <ExternalLink />}
-              {t(
-                ownerLink.data
-                  ? 'settings.telegram.answering.newLink'
-                  : account.ownerLinked
-                    ? 'settings.telegram.answering.linkAgain'
-                    : 'settings.telegram.answering.link',
-              )}
+              {t(state.linkLabel)}
             </Button>
           ) : null}
         </>

@@ -34,6 +34,7 @@ import type { BotPermissionsResolver } from '../bot-permissions.resolver';
 import type { BotRuleReviewerFactory } from '../bot-rule-reviewer.factory';
 import type { BotSubagentRunnerFactory } from '../bot-subagent-runner.factory';
 import type { BotToolboxFactory } from '../bot-toolbox.factory';
+import { BotTurnChannelPolicy } from '../bot-turn-channel.policy';
 import { BotTurnContextResolver } from '../bot-turn-context.resolver';
 import type { BotTurnOpeningResolver } from '../bot-turn-opening.resolver';
 
@@ -125,9 +126,9 @@ function setup(
     {
       findLastContext: async () => conversation.lastContext ?? null,
     } satisfies Pick<BotTurnRepositoryPort, 'findLastContext'> as unknown as BotTurnRepositoryPort,
-    {
+    new BotTurnChannelPolicy({
       findTelegram: async () => null,
-    } as unknown as BotConversationRepositoryPort,
+    } as unknown as BotConversationRepositoryPort),
     {
       tools: () => [
         {

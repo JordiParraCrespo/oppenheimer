@@ -63,6 +63,7 @@ import { BotSummaryTriggerPolicy } from './application/bot-summary-trigger.polic
 import { BotTelegramToolsFactory } from './application/bot-telegram-tools.factory';
 import { BotTerminalToolsFactory } from './application/bot-terminal-tools.factory';
 import { BotToolboxFactory } from './application/bot-toolbox.factory';
+import { BotTurnChannelPolicy } from './application/bot-turn-channel.policy';
 import { BotTurnContextResolver } from './application/bot-turn-context.resolver';
 import { BotTurnFailureReportPolicy } from './application/bot-turn-failure-report.policy';
 import { BotTurnOpeningResolver } from './application/bot-turn-opening.resolver';
@@ -404,6 +405,7 @@ const queryHandlers: Provider[] = [
     BotDreamTriggerPolicy,
     BotDreamResolver,
     BotModelAccessResolver,
+    BotTurnChannelPolicy,
     BotApprovalRequestFactory,
     BotQuestionDecisionResolver,
     BotWaitingCardResolver,

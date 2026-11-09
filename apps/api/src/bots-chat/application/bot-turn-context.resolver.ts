@@ -21,13 +21,11 @@ import type { BotMemoryFactRepositoryPort } from '../../bots/database/bot-memory
 import type { BotSkillRepositoryPort } from '../../bots/database/bot-skill.repository.port';
 import type { PersonMemoryRepositoryPort } from '../../bots/database/person-memory.repository.port';
 import {
-  BOT_CONVERSATION_REPOSITORY,
   BOT_CONVERSATION_SUMMARY_REPOSITORY,
   BOT_MESSAGE_REPOSITORY,
   BOT_TURN_REPOSITORY,
   OWNER_HOSTS,
 } from '../bots-chat.di-tokens';
-import type { BotConversationRepositoryPort } from '../database/bot-conversation.repository.port';
 import type { BotConversationSummaryRepositoryPort } from '../database/bot-conversation-summary.repository.port';
 import type { BotMessageRepositoryPort } from '../database/bot-message.repository.port';
 import type { BotTurnRepositoryPort } from '../database/bot-turn.repository.port';
@@ -50,6 +48,7 @@ import { BotRuleReviewerFactory } from './bot-rule-reviewer.factory';
 import { BotSubagentRunnerFactory } from './bot-subagent-runner.factory';
 import type { BotToolContext } from './bot-tool.factory';
 import { BotToolboxFactory } from './bot-toolbox.factory';
+import { BotTurnChannelPolicy } from './bot-turn-channel.policy';
 import { BotTurnOpeningResolver } from './bot-turn-opening.resolver';
 
 const ENGINE_EFFORTS: readonly string[] = ['low', 'medium', 'high', 'xhigh', 'max'];
@@ -85,8 +84,7 @@ export class BotTurnContextResolver {
     private readonly owners: BotOwnerScopeResolver,
     @Inject(OWNER_HOSTS) private readonly hosts: OwnerHostsPort,
     @Inject(BOT_TURN_REPOSITORY) private readonly turns: BotTurnRepositoryPort,
-    @Inject(BOT_CONVERSATION_REPOSITORY)
-    private readonly conversations: BotConversationRepositoryPort,
+    private readonly channels: BotTurnChannelPolicy,
     private readonly toolbox: BotToolboxFactory,
     private readonly approvals: BotApprovalRequestFactory,
     private readonly permissions: BotOwnerPermissionsResolver,
@@ -100,14 +98,7 @@ export class BotTurnContextResolver {
   private readonly logger = new Logger(BotTurnContextResolver.name);
 
   async resolve(turn: BotTurnEntity, now: Date): Promise<BotTurnShape<BotTurnContext> | null> {
-    // A Telegram chat whose Telegram bot was disconnected since: nobody is
-    // there to answer, so the turn ends without running.
-    if (
-      turn.origin === 'telegram' &&
-      !(await this.conversations.findTelegram(turn.organizationId, turn.conversationId))
-    ) {
-      return null;
-    }
+    if (!(await this.channels.answerable(turn))) return null;
     const { prompt, images, command, message } = await this.opening.resolve(turn);
     const bot = await this.access.bot(turn.organizationId, turn.botId);
     const credential = await this.access.credential(turn.organizationId, turn.provider, now);

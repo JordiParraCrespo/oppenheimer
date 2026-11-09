@@ -39,6 +39,7 @@ import type { BotPermissionsResolver } from '../application/bot-permissions.reso
 import type { BotRuleReviewerFactory } from '../application/bot-rule-reviewer.factory';
 import type { BotSubagentRunnerFactory } from '../application/bot-subagent-runner.factory';
 import type { BotToolboxFactory } from '../application/bot-toolbox.factory';
+import { BotTurnChannelPolicy } from '../application/bot-turn-channel.policy';
 import { BotTurnContextResolver } from '../application/bot-turn-context.resolver';
 import { BotTurnOpeningResolver } from '../application/bot-turn-opening.resolver';
 import { TurnTranscript } from '../application/turn-transcript.policy';
@@ -1023,7 +1024,7 @@ describe('bots chat (integration)', () => {
       owners,
       hosts,
       turns,
-      new BotConversationRepository(dataSource),
+      new BotTurnChannelPolicy(new BotConversationRepository(dataSource)),
       { tools: () => [], catalog: () => [] } as unknown as BotToolboxFactory,
       {} as BotApprovalRequestFactory,
       { heldScopes: async () => new Set() } as unknown as BotOwnerPermissionsResolver,

@@ -49,6 +49,17 @@ export const TELEGRAM_NEW_LINE = 'Started a new conversation.';
 /** Sent when `/stop` asked the running turn to stop. */
 export const TELEGRAM_STOP_LINE = 'Stopping.';
 
+/**
+ * The commands the owner sends, by name: a fixed line, or what the bot that
+ * answers here does. A new command is a row; anything else is a message.
+ */
+const OWNER_COMMANDS: Readonly<Record<string, TelegramInboundAction>> = {
+  start: { kind: 'reply', text: TELEGRAM_HELP_LINE },
+  help: { kind: 'reply', text: TELEGRAM_HELP_LINE },
+  new: { kind: 'owner', command: 'new', text: '' },
+  stop: { kind: 'owner', command: 'stop', text: '' },
+};
+
 /** A bot command at the start of a message, optionally addressed (`/new@shop_helper_bot`). */
 const COMMAND = /^\/([a-z]+)(?:@\w+)?(?:\s+(\S+))?\s*$/i;
 
@@ -64,10 +75,10 @@ export function telegramInboundAction(
   // The owner opening a link again (a second tap) is not a stranger.
   if (name === 'start' && command?.[2] && !isOwner) return { kind: 'link', code: command[2] };
   if (!isOwner) return { kind: 'stranger' };
-  if (name === 'help' || name === 'start') return { kind: 'reply', text: TELEGRAM_HELP_LINE };
+  const owned = name && Object.hasOwn(OWNER_COMMANDS, name) ? OWNER_COMMANDS[name] : undefined;
+  if (owned?.kind === 'reply') return owned;
   if (!account.answeringBotId) return { kind: 'reply', text: TELEGRAM_NO_BOT_LINE };
-  if (name === 'new') return { kind: 'owner', command: 'new', text: '' };
-  if (name === 'stop') return { kind: 'owner', command: 'stop', text: '' };
+  if (owned) return owned;
   const text = message.text.trim() || (message.media ? `[${message.media}]` : '');
   if (!text) return { kind: 'ignore' };
   return { kind: 'owner', command: 'message', text };

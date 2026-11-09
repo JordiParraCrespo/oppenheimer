@@ -264,22 +264,22 @@ export class BotTurnEntity extends AggregateRoot<BotTurnProps> {
       provider: BotProvider;
       model: string;
       effort: SessionEffort | null;
-      /**
-       * The asking turn's conversation, where the answer is picked up: a
-       * Telegram chat's answer goes on there, as a Telegram turn whose last
-       * words are sent back to it. The asker's console chat when left out.
-       */
-      asker?: { conversationId: string; onTelegram: boolean };
     },
+    /**
+     * The turn that asked, when it is still there: the answer is picked up in
+     * its conversation, and one asked on Telegram goes on as a Telegram turn,
+     * whose last words are sent back to that chat. The asker's console chat
+     * when it is gone.
+     */
+    asking: BotTurnEntity | null = null,
   ): BotTurnEntity {
     if (!answered.replyRequested || !answered.ended) {
       throw new ArgumentInvalidException('Only an ended ask is answered');
     }
-    const { asker, ...engine } = props;
     return BotTurnEntity.queue({
-      ...engine,
-      ...(asker && { conversationId: asker.conversationId }),
-      ...(asker?.onTelegram && { origin: 'telegram' as const }),
+      ...props,
+      ...(asking && { conversationId: asking.conversationId }),
+      ...(asking?.origin === 'telegram' && { origin: 'telegram' as const }),
       organizationId: answered.organizationId,
       requestedByUserId: answered.requireRequester(),
       timeZone: answered.timeZone,

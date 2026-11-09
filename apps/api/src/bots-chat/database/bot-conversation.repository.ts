@@ -1,5 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { DataSource, type EntityManager } from 'typeorm';
+import {
+  type TelegramConversationStart,
+  telegramConversationFor,
+} from '../domain/bot-telegram-turn.policy';
 import type {
   BotConversationRepositoryPort,
   BotTelegramChat,
@@ -16,16 +20,16 @@ export class BotConversationRepository implements BotConversationRepositoryPort 
   ): Promise<string> {
     const params = [chat.organizationId, chat.telegramAccountId, chat.chatId];
     // UQ_bot_conversation_telegram_chat's leading columns: a chat's starts are a handful.
-    const [latest]: { id: string; botId: string; startsAt: string }[] = await this.dataSource.query(
+    const [latest]: TelegramConversationStart[] = await this.dataSource.query(
       `SELECT id, "botId", "startsAtMessageId"::text AS "startsAt" FROM bot_conversation
         WHERE "telegramAccountId" = $2 AND "chatId" = $3 AND "organizationId" = $1
           AND "startsAtMessageId" <= $4::bigint
         ORDER BY "startsAtMessageId" DESC, ("botId" = $5) DESC LIMIT 1`,
       [...params, messageId, chat.botId],
     );
-    const current = latest && BigInt(latest.startsAt) >= BigInt(startsAt) ? latest : null;
-    if (current?.botId === chat.botId) return current.id;
-    const start = current ? messageId : startsAt;
+    const decided = telegramConversationFor(latest ?? null, startsAt, messageId, chat.botId);
+    if ('use' in decided) return decided.use;
+    const { start } = decided;
     await this.dataSource.query(
       `INSERT INTO bot_conversation ("organizationId", "botId", kind, "telegramAccountId", "chatId", "startsAtMessageId")
        VALUES ($1, $4, 'telegram', $2, $3, $5)

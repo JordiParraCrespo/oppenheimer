@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  telegramConversationFor,
   telegramMessageIdOf,
   telegramReplyOf,
   telegramSourceKey,
@@ -87,15 +88,31 @@ describe('an ask made on Telegram', () => {
     });
     asked.end('completed', new Date());
 
-    const answer = BotTurnEntity.queueAnswer(asked, {
-      botId: 'bot',
-      provider: 'anthropic',
-      model: 'claude',
-      effort: null,
-      asker: { conversationId: asking.conversationId, onTelegram: true },
-    });
+    const answer = BotTurnEntity.queueAnswer(
+      asked,
+      { botId: 'bot', provider: 'anthropic', model: 'claude', effort: null },
+      asking,
+    );
 
     expect(answer.conversationId).toBe(CONVERSATION);
     expect(answer.origin).toBe('telegram');
+  });
+});
+
+describe('telegramConversationFor', () => {
+  const start = (botId: string, startsAt: string) => ({
+    id: `${botId}@${startsAt}`,
+    botId,
+    startsAt,
+  });
+
+  // What breaks this: a message after /new read with the old history, or a
+  // bot bound back resuming where it left off.
+  it('keeps the bot’s current conversation, starts at a later /new, and afresh after another bot', () => {
+    expect(telegramConversationFor(start('a', '0'), '0', '9', 'a')).toEqual({ use: 'a@0' });
+    expect(telegramConversationFor(start('a', '0'), '8', '9', 'a')).toEqual({ start: '8' });
+    expect(telegramConversationFor(null, '0', '1', 'a')).toEqual({ start: '0' });
+    expect(telegramConversationFor(start('b', '20'), '0', '40', 'a')).toEqual({ start: '40' });
+    expect(telegramConversationFor(start('a', '40'), '0', '41', 'a')).toEqual({ use: 'a@40' });
   });
 });
