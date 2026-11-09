@@ -83,8 +83,6 @@
     "tasksTitle": "Tareas completadas y creadas, por semana",
     "tokensTitle": "Tokens consumidos por semana, por modelo",
     "costTitle": "Coste de los agentes por semana",
-    "usageTitle": "Tokens y coste",
-    "notMeasured": "Aún no se ha registrado consumo. Los tokens y el coste cuentan cuando las sesiones de este proyecto informan de lo que gastaron.",
     "unknownModel": "Modelo desconocido",
     "loadFailed": "No se pudieron cargar las estadísticas de este proyecto.",
     "range": {

@@ -712,8 +712,6 @@
       "tasksTitle": "Tasks completed and created, per week",
       "tokensTitle": "Tokens burned per week, by model",
       "costTitle": "Agent cost per week",
-      "usageTitle": "Tokens and cost",
-      "notMeasured": "No usage reported yet. Tokens and cost count once this project's sessions report what they spent.",
       "unknownModel": "Unknown model",
       "loadFailed": "Could not load this project's statistics.",
       "range": {

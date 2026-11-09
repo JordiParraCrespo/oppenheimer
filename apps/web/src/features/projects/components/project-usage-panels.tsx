@@ -4,7 +4,6 @@ import {
   type ChartSeries,
   Panel,
   PanelGrid,
-  ProjectPanelEmpty,
 } from '@oppenheimer/design-system-web';
 import type { PlanStats } from '@oppenheimer/frontend-consumer';
 import { formatTokens } from '@oppenheimer/frontend-web';
@@ -16,29 +15,20 @@ import { niceTicks, peakOf, weeklyPoints } from '../lib/stats-chart';
 const MODEL_TONES = ['chart-1', 'chart-2', 'chart-3', 'muted'] as const;
 
 /**
- * A project's Stats for tokens and cost: tokens per model and cost per week,
- * each said to be measured on headless turns, or one panel saying no session
- * has reported usage yet.
+ * A project's Stats for tokens and cost, once a session has reported usage:
+ * tokens per model and cost per week, each said to be measured on headless
+ * turns.
  */
 export function ProjectUsagePanels({
   current,
-  measured,
   weekLabels,
   locale,
 }: {
   current: PlanStats['current'];
-  measured: boolean;
   weekLabels: readonly string[];
   locale: string;
 }) {
   const { t } = useTranslation();
-  if (!measured) {
-    return (
-      <Panel title={t('projects.stats.usageTitle')}>
-        <ProjectPanelEmpty>{t('projects.stats.notMeasured')}</ProjectPanelEmpty>
-      </Panel>
-    );
-  }
 
   const models = modelSeriesOf(current.tokensByModel ?? [], MODEL_TONES.length - 1);
   const modelSeries: ChartSeries[] = models.map((row, index) => ({

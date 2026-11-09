@@ -18,8 +18,8 @@ import { niceTicks, peakOf, weeklyPoints } from '../lib/stats-chart';
 /**
  * A project's Stats (the 2026-11-08 `Tasks` frame's project Stats, and
  * `23-plan-milestones-stats-accounts.md` §4): tasks completed and created,
- * and tokens and agent cost while any session reports them, each against
- * the period of the same length before. Pull requests are not in the API's
+ * and tokens and agent cost once any session reports them (nothing is drawn
+ * for them before), each against the period of the same length before. Pull requests are not in the API's
  * stats yet, so they are not drawn.
  *
  * Read under Suspense, in the screen's `QueryState`, with the range deferred:
@@ -100,12 +100,9 @@ export function ProjectStatsSection({ projectId }: { projectId: string }) {
           aria-label={t('projects.stats.tasksTitle')}
         />
       </Panel>
-      <ProjectUsagePanels
-        current={current}
-        measured={measured}
-        weekLabels={weekLabels}
-        locale={locale}
-      />
+      {measured ? (
+        <ProjectUsagePanels current={current} weekLabels={weekLabels} locale={locale} />
+      ) : null}
     </>
   );
 }
