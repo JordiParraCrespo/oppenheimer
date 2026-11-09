@@ -81,6 +81,8 @@ describe('coding agent catalog', () => {
       'max',
     ]);
     expect(effortFor('opencode', 'anthropic/claude-haiku-5-5')?.default).toBe('none');
+    // A model that left the current list keeps its levels for what was saved on it.
+    expect(effortLevelFor('opencode', 'anthropic/claude-fable-5-1', 'xhigh')).toBe('xhigh');
     // Each provider's variants, not one list for every model OpenCode reaches.
     expect(levelsOf('opencode', 'xai/grok-4.7')).toEqual(['low', 'medium', 'high', 'xhigh']);
     // Grok's CLI only takes the levels on the model's own menu, so `minimal`

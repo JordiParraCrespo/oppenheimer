@@ -1415,4 +1415,4 @@ earlier note:
   current models. On 2026-11-09 the owner asked for Fable 5.2 in new
   sessions and in bots: it takes Fable 5.1's place, and Fable 5.1 heads
   "More models", since Claude still serves it. OpenCode's `anthropic/` row
-  moves to Fable 5.2 as well.
+  moves to Fable 5.2 as well, with Fable 5.1 behind its "More models".

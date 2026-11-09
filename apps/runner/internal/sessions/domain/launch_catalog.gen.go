@@ -101,6 +101,7 @@ var launchCatalog = map[string]launchMap{
 			"alibaba/qwen3.8-max":               {"low", "medium", "xhigh"},
 			"alibaba/qwen3.8-flash":             {"low", "medium", "xhigh"},
 			"minimax/MiniMax-M3.1-Flash":        {"low", "medium", "high", "xhigh", "max"},
+			"anthropic/claude-fable-5-1":        {"low", "medium", "high", "xhigh", "max"},
 		},
 		prompt:             []string{"--prompt", "<prompt>"},
 		conversationResume: []string{"--continue"},

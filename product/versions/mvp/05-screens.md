@@ -206,7 +206,7 @@
   |---|---|---|---|
   | Claude Code | **Opus 5.5**, Fable 5.2, Sonnet 5.5, Haiku 5.5 (`claude-opus-5-5` and siblings), then under "More models" Fable 5.1, Haiku 4.5, Sonnet 5, Opus 5, Fable 5, Opus 4.8, 4.7, 4.6 and Sonnet 4.6 (changed 2026-11-02; it was the newest four with Haiku 4.5. Changed 2026-11-09: Fable 5.2 took Fable 5.1's place, which moved under "More models") | yes | the model's levels: low to max, to max without extra high on the 4.6 pair; none for Haiku 4.5 |
   | Codex | **GPT-6.1 Sol**, GPT-6.1 Terra, GPT-6 Astra, GPT-6 Sol, GPT-6 Luna, then GPT-5.6 Sol, Terra, Luna | yes | the model's levels |
-  | OpenCode | Opus 5.5, Fable 5.2, Sonnet 5.5, Haiku 5.5 under `anthropic/` (**`anthropic/claude-opus-5-5`**), Codex's eight under `openai/`, Grok 4.7 and 4.6 under `xai/`, Gemini 4 Argon and 3.8 Flash under `google/` | yes | the model's levels, OpenCode's variants per provider |
+  | OpenCode | Opus 5.5, Fable 5.2, Sonnet 5.5, Haiku 5.5 under `anthropic/` (**`anthropic/claude-opus-5-5`**), Codex's eight under `openai/`, Grok 4.7 and 4.6 under `xai/`, Gemini 4 Argon and 3.8 Flash under `google/`, then Fable 5.1 under "More models" (since 2026-11-09) | yes | the model's levels, OpenCode's variants per provider |
   | Grok | Grok 4.7, **Grok 4.6** (the CLI's own default), Grok 4.5 | yes | the model's levels: low to extra high, to high on 4.5 |
   | Blank terminal | none, picked outright | no | no |
 
