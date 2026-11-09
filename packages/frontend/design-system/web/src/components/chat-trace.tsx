@@ -71,20 +71,17 @@ function TraceGlyph({ children }: { children: React.ReactNode }) {
 function TraceWords({
   meta,
   metaClassName,
-  size = 'line',
   children,
 }: {
   meta?: React.ReactNode;
   metaClassName?: string;
-  /** `line`: a step's 13px words; `live`: the live line's 15px. */
-  size?: 'line' | 'live';
   children: React.ReactNode;
 }) {
   return (
-    <span className={cn('flex min-w-0 items-baseline', size === 'live' ? 'gap-2.5' : 'gap-2')}>
+    <span className="flex min-w-0 items-baseline gap-2">
       <span className="min-w-0 truncate">{children}</span>
       {meta ? (
-        <span className={cn('figures shrink-0 font-mono', size === 'live' ? 'text-[14px]' : 'text-xs', metaClassName)}>
+        <span className={cn('figures shrink-0 font-mono text-xs', metaClassName)}>
           {meta}
         </span>
       ) : null}
@@ -327,9 +324,10 @@ function TraceLive({
           className="flex size-4 shrink-0 items-center justify-center font-mono text-lg leading-none text-chat-spinner before:content-['✻'] motion-safe:before:animate-agent-glyph"
         />
       )}
-      <TraceWords meta={elapsed} metaClassName="text-fg-subtle" size="live">
-        <span className="motion-safe:animate-shimmer">{children}</span>
-      </TraceWords>
+      <span className="flex min-w-0 items-baseline gap-2.5">
+        <span className="min-w-0 truncate motion-safe:animate-shimmer">{children}</span>
+        {elapsed ? <span className="figures shrink-0 font-mono text-[14px] text-fg-subtle">{elapsed}</span> : null}
+      </span>
     </div>
   );
 }

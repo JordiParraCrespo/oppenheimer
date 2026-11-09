@@ -11,8 +11,9 @@ import { PullRequestEventLine } from '@/features/bots/components/pull-request-ev
 import { QuestionEventLine } from '@/features/bots/components/question-event-line';
 import { RoutineEventLine } from '@/features/bots/components/routine-event-line';
 import { SessionEventLine } from '@/features/bots/components/session-event-line';
+import { type DrawnEventKind, isDrawnEvent } from '@/features/bots/lib/chat-turns';
 
-interface EventLineProps<Kind extends BotMessageEvent['kind']> {
+interface EventLineProps<Kind extends DrawnEventKind> {
   event: Extract<BotMessageEvent, { kind: Kind }>;
   message: BotMessageEntity;
   action?: ReactNode;
@@ -24,7 +25,7 @@ interface EventLineProps<Kind extends BotMessageEvent['kind']> {
  * another branch.
  */
 const EVENT_LINES: {
-  [Kind in BotMessageEvent['kind']]: (props: EventLineProps<Kind>) => ReactNode;
+  [Kind in DrawnEventKind]: (props: EventLineProps<Kind>) => ReactNode;
 } = {
   approval: ({ event }) => <ApprovalEventLine event={event} />,
   question: ({ event }) => <QuestionEventLine event={event} />,
@@ -40,8 +41,6 @@ const EVENT_LINES: {
   goal: ({ event }) => <GoalEventLine event={event} />,
   loop: ({ event }) => <LoopEventLine event={event} />,
   dream: ({ event }) => <DreamEventLine event={event} />,
-  // Never reaches here: `chatTurns` leaves a compaction out of the chat.
-  compaction: () => null,
 };
 
 /**
@@ -64,8 +63,7 @@ export function BotEventLine({
   if (!event) {
     return <TranscriptDivider>{message.content.split('\n')[0]}</TranscriptDivider>;
   }
-  const draw = EVENT_LINES[event.kind] as (
-    props: EventLineProps<BotMessageEvent['kind']>,
-  ) => ReactNode;
+  if (!isDrawnEvent(event)) return null;
+  const draw = EVENT_LINES[event.kind] as (props: EventLineProps<DrawnEventKind>) => ReactNode;
   return draw({ event, message, action });
 }

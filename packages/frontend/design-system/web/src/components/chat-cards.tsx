@@ -92,6 +92,8 @@ function ChangedFileRow({
   const cut = path.lastIndexOf('/');
   const name = cut === -1 ? path : path.slice(cut + 1);
   const folder = cut === -1 ? '' : path.slice(0, cut);
+  // A row that opens its diff is a button; one that does not is the same line, inert.
+  const Line = onOpen ? 'button' : 'span';
   const line = (
     <>
       <span aria-hidden className="flex text-fg-muted [&_svg]:size-4">
@@ -113,17 +115,15 @@ function ChangedFileRow({
         className,
       )}
     >
-      {onOpen ? (
-        <button
-          type="button"
-          onClick={onOpen}
-          className="flex min-w-0 flex-1 items-center gap-3 self-stretch pr-2 text-left outline-none focus-visible:ring-2 focus-visible:ring-ring"
-        >
-          {line}
-        </button>
-      ) : (
-        <span className="flex min-w-0 flex-1 items-center gap-3 pr-2">{line}</span>
-      )}
+      <Line
+        {...(onOpen ? { type: 'button' as const, onClick: onOpen } : {})}
+        className={cn(
+          'flex min-w-0 flex-1 items-center gap-3 self-stretch pr-2 text-left',
+          onOpen && 'outline-none focus-visible:ring-2 focus-visible:ring-ring',
+        )}
+      >
+        {line}
+      </Line>
       {onOpenInEditor ? (
         <IconButton size="sm" aria-label={openInEditorLabel} onClick={onOpenInEditor}>
           <ExternalLinkIcon />
