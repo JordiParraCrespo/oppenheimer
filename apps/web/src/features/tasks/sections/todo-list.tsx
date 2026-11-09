@@ -24,7 +24,7 @@ const todo = getRouteApi('/_authenticated/plan/todo');
  * The day's tasks (the 2026-11-08 `Tasks` frame), each a `TodoRow`: its
  * milestone and when it is due under the title, its status (the board's
  * dot and column), the time it is due at, its project. Ticking one moves it to Done (or back to To do) as the board's
- * tick does; its title opens it here, in the task dialog; its play button opens Start
+ * tick does, in its place on the list; its title opens it here, in the task dialog; its play button opens Start
  * session for it on this screen (`?start=`), on any task not done; its grip
  * drags it into the reader's own order for the day, kept on this device
  * (`useTodoOrder`). It reads under Suspense, in the screen's `QueryState`; a
@@ -48,7 +48,7 @@ export function TodoList() {
     projectIds,
   });
   const byId = new Map(entries.map((entry) => [entry.task.id, entry]));
-  const { order, handlers } = useTodoOrder(
+  const { order, handlers, hold } = useTodoOrder(
     day,
     today,
     entries.map((entry) => entry.task.id),
@@ -119,13 +119,14 @@ export function TodoList() {
                   id={id}
                   {...rowOf(entry)}
                   gripLabel={t('tasks.todo.reorder', { title: task.title })}
-                  onToggle={() =>
+                  onToggle={() => {
+                    hold(task.id);
                     move.mutate({
                       id: task.id,
                       status: task.isDone ? 'todo' : 'done',
                       afterTaskId: null,
-                    })
-                  }
+                    });
+                  }}
                   onOpen={() =>
                     navigate({ search: (previous) => ({ ...previous, task: task.id }) })
                   }
