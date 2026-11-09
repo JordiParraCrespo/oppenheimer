@@ -1,8 +1,14 @@
-import { calendarDateSchema } from '@oppenheimer/shared/schemas/task';
 import { z } from 'zod';
 
-/** A day the API would take: a day that exists, or no key. */
-const isoDay = calendarDateSchema.optional().catch(undefined);
+/**
+ * A day's shape, or no key. Whether the day exists is `statsRangeOf`'s to
+ * check, with the API's own schema, so the route's chunk does not carry it.
+ */
+const isoDay = z
+  .string()
+  .regex(/^\d{4}-\d{2}-\d{2}$/)
+  .optional()
+  .catch(undefined);
 
 /**
  * A project page's address: `?view=stats` for its statistics (the overview

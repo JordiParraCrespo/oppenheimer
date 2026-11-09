@@ -31,14 +31,13 @@ describe('stats range', () => {
     });
   });
 
-  it('drops a day that does not exist from the address', () => {
-    expect(projectPageSearchSchema.parse({ view: 'stats', from: '2026-02-31', to: today })).toEqual(
-      {
-        view: 'stats',
-        from: undefined,
-        to: today,
-      },
-    );
+  it('falls back to the default for a day that does not exist, and drops a malformed one', () => {
+    expect(statsRangeOf({ from: '2026-02-31', to: today }, today)).toEqual(lastWeeks(8, today));
+    expect(projectPageSearchSchema.parse({ view: 'stats', from: 'soon', to: today })).toEqual({
+      view: 'stats',
+      from: undefined,
+      to: today,
+    });
   });
 
   it('writes nothing to the address for the default range', () => {
