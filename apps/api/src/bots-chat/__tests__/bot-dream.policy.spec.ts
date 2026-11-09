@@ -87,8 +87,8 @@ describe('composeDreamRequest', () => {
       summary: 'They work on oppenheimer.',
       messages: [{ role: 'user', content: 'ship it', createdAt: now }],
     });
-    expect(message).toContain('[n1] (profile, about you, 2026-11-01) Likes squash merges');
-    expect(message).toContain('<notes_to_leave>\n- (log, about you) Call me Jordi');
+    expect(message).toContain('[n1] (profile, yours, 2026-11-01) Likes squash merges');
+    expect(message).toContain('<notes_to_leave>\n- (log, yours) Call me Jordi');
     expect(message).toContain('They work on oppenheimer.');
     expect(message).toContain('person (2026-11-07): ship it');
   });
@@ -121,10 +121,10 @@ describe('readDream', () => {
         {
           content: ' Prefers   squash merges. ',
           tier: 'profile',
-          about: 'person',
+          memory: 'general',
           from: ['n1', '[n2]'],
         },
-        { content: 'Deploys go through dev.', tier: 'log', about: 'you', from: ['n3', 'n9'] },
+        { content: 'Deploys go through dev.', tier: 'log', memory: 'yours', from: ['n3', 'n9'] },
       ])}\n\`\`\``,
       refs,
       0,
@@ -152,12 +152,12 @@ describe('readDream', () => {
   it('leaves out bad notes and exact repeats, and dates a new note now', () => {
     const plan = readDream(
       answer([
-        { content: 'Kept.', tier: 'log', about: 'you', from: ['n1'] },
-        { content: 'kept.', tier: 'log', about: 'you', from: ['n2'] },
-        { content: '', tier: 'log', about: 'you', from: [] },
-        { content: 'x'.repeat(501), tier: 'log', about: 'you', from: [] },
-        { content: 'Wrong tier.', tier: 'core', about: 'you', from: [] },
-        { content: 'New.', tier: 'log', about: 'you', from: [] },
+        { content: 'Kept.', tier: 'log', memory: 'yours', from: ['n1'] },
+        { content: 'kept.', tier: 'log', memory: 'yours', from: ['n2'] },
+        { content: '', tier: 'log', memory: 'yours', from: [] },
+        { content: 'x'.repeat(501), tier: 'log', memory: 'yours', from: [] },
+        { content: 'Wrong tier.', tier: 'core', memory: 'yours', from: [] },
+        { content: 'New.', tier: 'log', memory: 'yours', from: [] },
       ]),
       refs,
       0,
@@ -173,14 +173,14 @@ describe('readDream', () => {
     const many = Array.from({ length: BOT_DREAM_NEW_MAX + 3 }, (_, index) => ({
       content: `New ${index}.`,
       tier: 'log',
-      about: 'you',
+      memory: 'yours',
       from: [],
     }));
     expect(readDream(answer(many), refs, 0, now)?.facts).toHaveLength(BOT_DREAM_NEW_MAX);
   });
 
   it('refuses an answer that is not JSON, keeps nothing, keeps too little, or overfills', () => {
-    const one = { content: 'One.', tier: 'log', about: 'you', from: ['n1'] };
+    const one = { content: 'One.', tier: 'log', memory: 'yours', from: ['n1'] };
     const manyRefs = factRefs(Array.from({ length: 20 }, (_, index) => fact(`f${index}`)));
     expect(readDream('I tidied it.', refs, 0, now)).toBeNull();
     expect(readDream(answer([]), refs, 0, now)).toBeNull();

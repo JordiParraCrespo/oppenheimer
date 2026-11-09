@@ -609,14 +609,23 @@ of `bot_memory_fact`, with two columns more:
   save, and in the system prompt each save would miss the prompt cache for
   the whole history. A long memory costs the turn the same as a short one.
   (2026-11-06: was the newest 60 profile facts and no log at all.)
-- **Scope.** A `bot` fact is the bot's alone. A `person` fact is about its
-  owner ("prefers squash merges"), and every bot that person made in the
-  workspace reads it, in a section of the prompt of its own. It stays the
+- **Scope: two memories.** A `bot` fact is in the bot's own memory, read by
+  it alone. A `person` fact is in the general memory, about its owner ("call
+  me Jordi", "write to me in Spanish"), and every bot that person made in
+  the workspace reads it, in a section of the prompt of its own. The prompt
+  names them *Your memory* and *General memory*, and one rule picks
+  between them, written once (`MEMORY_CHOICE_RULE`): `remember` carries it,
+  the prompt points to it, and the dream reads the same text and the same
+  `memory: yours | general` names: general only
+  when a bot with a completely different job would need the fact; a fact
+  that names a project, repository, folder, host, account or tool stays
+  the bot's, even a preference (2026-11-08: was "about the person (their
+  name, role, preferences)", and bots filed job facts there). It stays the
   row of the bot that learned it: that bot edits and forgets it, the
   others read it, and it goes with that bot when the bot is deleted or its
   memory cleared. Copying it to each bot would make "forget" mean nothing.
 - **Defaults.** A fact the bot saves is `log` and `bot` unless it says
-  otherwise: `remember` takes `tier` and `about: 'person'`. One the owner
+  otherwise: `remember` takes `tier` and `memory: 'general'`. One the owner
   adds in Settings → Memory is `profile`, and the owner moves a fact from
   its row's menu there. A fact another bot shared is shown there muted,
   with nothing to change.
@@ -1796,6 +1805,14 @@ The decisions it produced:
   Memory at the account, an *About you* text in every bot's prompt that
   only the person writes, and every `person` fact their bots keep, changed
   on the bot that keeps it (§4.1). Asked by the owner, after Claude's.
+- 2026-11-08: **two memories, named and chosen by one rule** (§4.1). The
+  owner found Facturas reading facts about XRP Mobile and pull request
+  notifications that other bots had filed as about him. `remember` now
+  takes `memory: 'yours' | 'general'` instead of `about`, the prompt calls
+  them *Your memory* and *General memory*, and general is only for what a
+  bot with another job would need. `scripts/evals/bot-memory` holds it: on
+  the old wording 25 of 100 runs put a job fact in the general memory and
+  5 of 20 cases failed; on the new one all 100 were right.
 - 2026-11-07: **bots dream** (§4.1, "Dreaming"). The owner found each
   bot's memory "a bit like slop" once bots saved as they go, and asked for
   a process that unifies, rewrites and deduplicates it, from Managed Agents'
