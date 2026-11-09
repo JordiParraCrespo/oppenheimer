@@ -22,7 +22,7 @@ func (noDevice) Pair(context.Context, func(string, time.Time)) (waapp.Paired, er
 	return waapp.Paired{}, context.Canceled
 }
 func (noDevice) Logout(context.Context) error { return nil }
-func (noDevice) Send(context.Context, string, string) (string, time.Time, error) {
+func (noDevice) Send(context.Context, string, string, *wadomain.Quote) (string, time.Time, error) {
 	return "", time.Time{}, nil
 }
 func (noDevice) Close() {}

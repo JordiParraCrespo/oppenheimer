@@ -199,8 +199,10 @@ func (s *Service) Unlink(ctx context.Context) error {
 	return nil
 }
 
-// Send sends a text message as the paired number, inside the host's budget.
-func (s *Service) Send(ctx context.Context, chatID, text string) (string, time.Time, error) {
+// Send sends a text message as the paired number, inside the host's budget,
+// quoting the message it replies to when there is one. A quoted reply spends
+// the budget exactly as a plain message does.
+func (s *Service) Send(ctx context.Context, chatID, text string, quote *domain.Quote) (string, time.Time, error) {
 	if s.Status().State != domain.StateConnected {
 		return "", time.Time{}, domain.ErrNotConnected
 	}
@@ -209,7 +211,7 @@ func (s *Service) Send(ctx context.Context, chatID, text string) (string, time.T
 		return "", time.Time{}, domain.ErrBudgetExceeded.WithDetail(
 			"at most %d a minute and %d a day", domain.SendsPerMinute, domain.SendsPerDay)
 	}
-	id, sentAt, err := s.device.Send(ctx, chatID, text)
+	id, sentAt, err := s.device.Send(ctx, chatID, text, quote)
 	if err != nil {
 		s.budget.Refund(at)
 		if errors.Is(err, domain.ErrRateLimited) {
