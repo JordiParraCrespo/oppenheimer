@@ -210,10 +210,8 @@
       "submit": "Añadir al {{date}}",
       "failed": "No se pudieron añadir algunas de esas tareas.",
       "loadFailed": "No se pudieron cargar tus tareas.",
-      "state": "Estado",
-      "allStates": "Todos los estados",
-      "searchStates": "Buscar estados",
-      "noFilterMatch": "Ninguna tarea sin fecha coincide con estos filtros."
+      "allStatuses": "Todos los estados",
+      "searchStatuses": "Buscar estados"
     },
     "reorder": "Reordenar {{title}}"
   }

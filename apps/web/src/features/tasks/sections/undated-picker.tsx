@@ -27,7 +27,7 @@ const OPEN_STATUSES: readonly TaskEntity['status'][] = ['todo', 'doing', 'review
  * Add undated tasks' list, in `ScheduleUndatedDialog`'s `QueryState.Data`:
  * the open tasks with no due date, each with its column's dot, checked into
  * a set. Above it, Project (starting at the projects To do is narrowed to)
- * and State narrow the list, each option counting what it would show under
+ * and Status narrow the list, each option counting what it would show under
  * the other facet; they live in the dialog, not the address. Add gives every
  * checked task the filters still show the day as its due date, side by side. Those that fail stay
  * checked and the dialog stays open saying so; when none fails it closes,
@@ -81,7 +81,7 @@ export function UndatedPicker({ onClose }: { onClose: () => void }) {
       })),
   ];
   const stateOptions = [
-    { value: ALL, label: t('tasks.todo.schedule.allStates') },
+    { value: ALL, label: t('tasks.todo.schedule.allStatuses') },
     ...OPEN_STATUSES.map((status) => ({
       value: status,
       label: t(`tasks.columns.${status}`),
@@ -123,9 +123,9 @@ export function UndatedPicker({ onClose }: { onClose: () => void }) {
           />
           <SearchableFacetMultiSelect
             variant="pill"
-            label={t('tasks.todo.schedule.state')}
+            label={t('tasks.dialog.status')}
             icon={<ListChecks />}
-            searchPlaceholder={t('tasks.todo.schedule.searchStates')}
+            searchPlaceholder={t('tasks.todo.schedule.searchStatuses')}
             emptyText={(query) => t('common.search.noMatch', { query })}
             values={statuses}
             onValuesChange={(next) => setStatuses(next as TaskEntity['status'][])}
@@ -149,7 +149,7 @@ export function UndatedPicker({ onClose }: { onClose: () => void }) {
         <EmptyState className="rounded-lg bg-card">
           <EmptyState.Header>
             <EmptyState.Description>
-              {anyUndated ? t('tasks.todo.schedule.noFilterMatch') : t('tasks.todo.schedule.none')}
+              {anyUndated ? t('tasks.todo.noMatch') : t('tasks.todo.schedule.none')}
             </EmptyState.Description>
           </EmptyState.Header>
         </EmptyState>
