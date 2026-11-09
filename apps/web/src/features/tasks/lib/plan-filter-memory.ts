@@ -5,7 +5,7 @@ import { z } from 'zod';
 /**
  * Plan's filters as each view last had them, kept on this device so a view
  * comes back filtered the way the reader left it, as a Notion view does. The
- * board keeps its project and milestone, Milestones its project; each view
+ * board keeps its project and milestone, Milestones and To do their project; each view
  * its own.
  *
  * The address stays the source of truth: a view visited with no filter in
@@ -19,10 +19,11 @@ export const PLAN_FILTERS_KEY = 'oppenheimer.plan.filters';
 const SCHEMAS = {
   board: z.object({ project: searchText, milestone: searchText }),
   milestones: z.object({ project: searchText }),
+  todo: z.object({ project: searchText }),
 };
 
 /** Where each view lives, for the redirect that restores its filter. */
-const PATHS = { board: '/plan', milestones: '/plan/milestones' } as const;
+const PATHS = { board: '/plan', milestones: '/plan/milestones', todo: '/plan/todo' } as const;
 
 export type PlanFilterView = keyof typeof SCHEMAS;
 type PlanFilters = { project?: string; milestone?: string };

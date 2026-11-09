@@ -1,4 +1,4 @@
-import { Button, Callout, EmptyState, SettingsGroup } from '@oppenheimer/design-system-web';
+import { Button, EmptyState, SettingsGroup } from '@oppenheimer/design-system-web';
 import { MessageCircle } from '@oppenheimer/design-system-web/icons';
 import { useSuspenseWhatsappSettings } from '@oppenheimer/frontend-consumer/react';
 import { ErrorAlert } from '@oppenheimer/frontend-web';
@@ -11,7 +11,7 @@ import { WhatsappAccountRow } from '@/features/whatsapp/sections/whatsapp-accoun
 
 /**
  * The reader's linked numbers, one row each, and Link a number up to three,
- * over a callout that says to use a spare one. With none yet, the card that
+ * under the screen's callout that says to use a spare one. With none yet, the card that
  * says what linking gives the bots; with no host paired, Link is off with
  * that as its reason. Read under Suspense, in the screen's `QueryState`; a
  * refetch that fails keeps the rows and says so above them.
@@ -45,7 +45,6 @@ export function WhatsappAccounts() {
 
   return (
     <>
-      <Callout className="mb-4">{t('settings.whatsapp.risk')}</Callout>
       <ErrorAlert error={error} fallback={t('settings.whatsapp.loadFailed')} />
       {accounts.length === 0 ? (
         <EmptyState>

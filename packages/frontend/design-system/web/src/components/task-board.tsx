@@ -1,6 +1,6 @@
 'use client';
 
-import { FolderIcon, LayersIcon, PlayIcon, PlusIcon, TerminalIcon } from 'lucide-react';
+import { ChevronDownIcon, ChevronUpIcon, FolderIcon, LayersIcon, PlayIcon, PlusIcon, TerminalIcon } from 'lucide-react';
 import type * as React from 'react';
 
 import { cn } from '../lib/utils';
@@ -8,7 +8,9 @@ import { Checkbox } from './checkbox';
 import { dragIgnore, SortableGroup } from './drag';
 import { Kbd } from './kbd';
 import { IconButton } from './icon-button';
+import { Skeleton } from './skeleton';
 import { StatusDot, type StatusState } from './status-dot';
+import { variedWidth } from '../internal/varied-width';
 
 /**
  * The task board — Plan's tasks by status, one column each, built on the
@@ -26,11 +28,14 @@ import { StatusDot, type StatusState } from './status-dot';
  *   + to add)
  *   over a tray on the hover wash, 18px round, that tints toward the
  *   selected wash while a card would land in it. Its `foot` is the
- *   `TaskColumnAdd` button or a `TaskComposer`.
+ *   `TaskColumnAdd` button or a `TaskComposer`, and under it, in a column
+ *   that folds some of its cards away (Done's older ones), `TaskColumnMore`.
  * - `TaskCard`: the card in the tray — a round `Checkbox` (green when
  *   done, the title then struck and muted), the title, two lines of notes,
  *   the project and milestone, the due date in mono (red when overdue, full ink
  *   when due within a day), the linked session, and Start session on hover.
+ * - `TaskCardSkeleton`: a card's place before the tasks answer, on the
+ *   card's own frame.
  */
 
 type TaskStatus = 'todo' | 'doing' | 'review' | 'done';
@@ -78,7 +83,8 @@ function TaskColumn({
   id: string;
   status: TaskStatus;
   label: React.ReactNode;
-  count?: number;
+  /** The count in mono; a placeholder's bar while the tasks load. */
+  count?: React.ReactNode;
   /** The card ids in this column, in order. */
   items: readonly string[];
   onAdd?: () => void;
@@ -118,6 +124,10 @@ function TaskColumn({
   );
 }
 
+/** A quiet row at a column's foot, under its cards: Add task, and the fold. */
+const COLUMN_FOOT_ROW =
+  'flex h-[34px] items-center gap-2 rounded-sm px-2.5 text-sm text-fg-subtle outline-none transition-colors duration-fast ease-standard hover:bg-control-hover hover:text-fg-muted focus-visible:outline-2 focus-visible:outline-ring [&_svg]:size-3.5';
+
 /** The column's foot: "+ Add task", quiet until hovered. */
 function TaskColumnAdd({ className, children, ...props }: React.ComponentProps<'button'>) {
   return (
@@ -125,12 +135,42 @@ function TaskColumnAdd({ className, children, ...props }: React.ComponentProps<'
       type="button"
       data-slot="task-column-add"
       className={cn(
-        'flex h-[34px] items-center gap-2 rounded-sm px-2.5 text-sm text-fg-subtle outline-none transition-colors duration-fast ease-standard hover:bg-control-hover hover:text-fg-muted focus-visible:outline-2 focus-visible:outline-ring [&_svg]:size-3.5',
+        COLUMN_FOOT_ROW,
         className,
       )}
       {...props}
     >
       <PlusIcon aria-hidden />
+      {children}
+    </button>
+  );
+}
+
+/**
+ * The column's fold: "Show 52 older" while cards are folded away, "Hide
+ * older" once they show, in the same quiet ink as "Add task" with a chevron
+ * that points where the cards go. `expanded` says which, to the eye and to
+ * assistive technology.
+ */
+function TaskColumnMore({
+  expanded = false,
+  className,
+  children,
+  ...props
+}: React.ComponentProps<'button'> & { expanded?: boolean }) {
+  const Icon = expanded ? ChevronUpIcon : ChevronDownIcon;
+  return (
+    <button
+      type="button"
+      data-slot="task-column-more"
+      aria-expanded={expanded}
+      className={cn(
+        COLUMN_FOOT_ROW,
+        className,
+      )}
+      {...props}
+    >
+      <Icon aria-hidden />
       {children}
     </button>
   );
@@ -247,6 +287,36 @@ function TaskCard({
   );
 }
 
+const SKELETON_TITLES = ['w-4/5', 'w-3/5', 'w-[70%]', 'w-1/2'] as const;
+const SKELETON_META = ['w-20', 'w-16', 'w-24', 'w-14'] as const;
+
+/**
+ * TaskCardSkeleton — a `TaskCard` before the tasks answer: the same bordered
+ * card and padding, the round check's place, the title and the meta line as
+ * bars at their lines' heights. `index` varies the widths.
+ */
+function TaskCardSkeleton({ index = 0, className, ...props }: React.ComponentProps<'div'> & { index?: number }) {
+  return (
+    <div
+      aria-hidden
+      data-slot="task-card-skeleton"
+      className={cn('flex gap-2.5 rounded-md border border-border-subtle bg-card py-3 pr-3 pl-2.5', className)}
+      {...props}
+    >
+      <Skeleton shape="pill" className="mt-px size-4.5 shrink-0" />
+      <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+        <span className="flex h-5 items-center">
+          <Skeleton shape="sm" className={cn('h-3 max-w-full', variedWidth(index, SKELETON_TITLES))} />
+        </span>
+        <span className="flex h-4.5 items-center justify-between gap-2.5">
+          <Skeleton shape="sm" className={cn('h-2.5', variedWidth(index, SKELETON_META))} />
+          <Skeleton shape="sm" className="h-2.5 w-10" />
+        </span>
+      </div>
+    </div>
+  );
+}
+
 /**
  * A task's session, in its card: the run state's dot and word, the session
  * in mono, how many more are linked, and the terminal glyph. The whole row
@@ -355,5 +425,5 @@ function TaskComposer({
   );
 }
 
-export { TASK_STATUS_STATE, TaskBoard, TaskCard, TaskColumn, TaskColumnAdd, TaskComposer, TaskSessionChip };
+export { TASK_STATUS_STATE, TaskBoard, TaskCard, TaskCardSkeleton, TaskColumn, TaskColumnAdd, TaskColumnMore, TaskComposer, TaskSessionChip };
 export type { TaskDueTone, TaskStatus };

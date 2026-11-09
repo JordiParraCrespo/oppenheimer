@@ -12,6 +12,7 @@ import (
 	"regexp"
 	"strings"
 	"time"
+	"unicode"
 
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/domain"
 )
@@ -193,19 +194,53 @@ func contentText(raw json.RawMessage) (string, bool) {
 var (
 	commandName = regexp.MustCompile(`<command-name>([^<]*)</command-name>`)
 	commandArgs = regexp.MustCompile(`(?s)<command-args>(.*?)</command-args>`)
+	// A system reminder the CLI puts before the person's words on the same
+	// line, as a text block of its own or in the same string.
+	leadingReminders = regexp.MustCompile(`^(?s:\s*<system-reminder>.*?</system-reminder>)+`)
+	// The tags Claude Code wraps around text pasted into the prompt; the
+	// words inside are the person's.
+	pastedContent = regexp.MustCompile(`</?pasted_content(?:\s[^>]*)?>`)
 )
+
+// systemReminderClose ends a system reminder.
+const systemReminderClose = "</system-reminder>"
 
 // typedText is a message as the person typed it. Claude Code writes a slash
 // command as tags around its name and arguments, which reads as
 // `/name arguments`; a command typed with none, a shell escape and the
 // CLI's own notes (a background task's end among them) say nothing about the task, and are skipped.
+// System reminders before or after the words go, and pasted text reads
+// without its tags. The line is told apart before the tags come off, so a
+// paste that starts like one of the CLI's lines stays the person's.
 func typedText(text string) string {
+	text = strings.TrimSpace(withoutTrailingReminders(leadingReminders.ReplaceAllString(text, "")))
+	return strings.TrimSpace(pastedContent.ReplaceAllString(classifiedText(text), ""))
+}
+
+// withoutTrailingReminders cuts the system reminders that end the text, one
+// at a time from the end, so a reminder quoted inside a paste stays.
+func withoutTrailingReminders(text string) string {
+	for {
+		trimmed := strings.TrimRightFunc(text, unicode.IsSpace)
+		if !strings.HasSuffix(trimmed, systemReminderClose) {
+			return text
+		}
+		open := strings.LastIndex(trimmed, "<system-reminder>")
+		if open < 0 {
+			return text
+		}
+		text = trimmed[:open]
+	}
+}
+
+func classifiedText(text string) string {
 	switch {
 	case text == "",
 		strings.HasPrefix(text, "Caveat:"),
 		strings.HasPrefix(text, "[Request interrupted"),
 		strings.HasPrefix(text, "<local-command-"),
 		strings.HasPrefix(text, "<task-notification>"),
+		strings.HasPrefix(text, "<system-reminder>"),
 		strings.HasPrefix(text, "<bash-"):
 		return ""
 	case strings.HasPrefix(text, "<command-"):

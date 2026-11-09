@@ -47,6 +47,8 @@ export class BotApprovedCallResolver {
         owner,
         organizationId: bot.organizationId,
         botId: bot.id,
+        // Decided in the console, where its result is reported.
+        conversationId: bot.id,
         turnId: approval.turnId,
         homeHostId: bot.homeHostId,
         timeZone: timeZone ?? 'UTC',

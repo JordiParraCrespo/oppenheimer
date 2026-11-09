@@ -161,6 +161,24 @@ func TestCaptureReadsWhatTheAgentPrinted(t *testing.T) {
 	}
 }
 
+// Text that starts with a dash is typed, not read as a tmux flag: without
+// `--`, "-R" reset the terminal and "--force" failed with nothing typed.
+func TestTextStartingWithADashIsTyped(t *testing.T) {
+	s := server(t)
+	ctx := context.Background()
+	if err := s.Create(ctx, "opp-dash", t.TempDir(), "", nil); err != nil {
+		t.Fatal(err)
+	}
+	for _, text := range []string{"-R", "--force", "--"} {
+		if err := s.SendKeys(ctx, "opp-dash:0", text); err != nil {
+			t.Fatalf("%q: %v", text, err)
+		}
+	}
+	if screen := waitFor(t, s, "opp-dash:0", "-R--force--"); !strings.Contains(screen, "-R--force--") {
+		t.Fatalf("capture:\n%s", screen)
+	}
+}
+
 func TestAttachStreamsAndDetachingLeavesTheSessionRunning(t *testing.T) {
 	s := server(t)
 	ctx := context.Background()

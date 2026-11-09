@@ -1,5 +1,6 @@
 import { BullModule, getQueueToken, type RegisterQueueOptions } from '@nestjs/bullmq';
 import { Module } from '@nestjs/common';
+import { DiscoveryModule } from '@nestjs/core';
 import { QUEUE_NAMES } from '@oppenheimer/shared';
 import type { Queue } from 'bullmq';
 import {
@@ -10,6 +11,7 @@ import {
 import { ProfileModule } from '../profile/profile.module';
 import { EmailJobMapper } from './email-job.mapper';
 import { EmailProcessor } from './infrastructure/email.processor';
+import { JobFailureReportingAdapter } from './infrastructure/job-failure-reporting.adapter';
 import { OUTBOX_QUEUES } from './queue.di-tokens';
 
 interface QueueRegistration extends RegisterQueueOptions {
@@ -36,10 +38,16 @@ const QUEUE_REGISTRATIONS: readonly QueueRegistration[] = [
     stagedOnOutbox: true,
   },
   { name: QUEUE_NAMES.BOT_TURNS, defaultJobOptions: BOT_TURN_JOB_OPTIONS, stagedOnOutbox: true },
+  {
+    name: QUEUE_NAMES.BOT_BACKGROUND_TURNS,
+    defaultJobOptions: BOT_TURN_JOB_OPTIONS,
+    stagedOnOutbox: true,
+  },
   // An approved call is keyed by its approval, so a retry runs it once.
   { name: QUEUE_NAMES.BOT_APPROVALS, defaultJobOptions: DURABLE_JOB_OPTIONS, stagedOnOutbox: true },
   // A summary write is conditional on the version it read, so a retry never moves it back.
   { name: QUEUE_NAMES.BOT_SUMMARIES, defaultJobOptions: DURABLE_JOB_OPTIONS, stagedOnOutbox: true },
+  { name: QUEUE_NAMES.BOT_DREAMS, defaultJobOptions: DURABLE_JOB_OPTIONS, stagedOnOutbox: true },
   // A stall check queues its wake under a key, so a retry tells the bot once.
   {
     name: QUEUE_NAMES.BOT_STALL_CHECKS,
@@ -75,6 +83,9 @@ const OUTBOX_QUEUE_NAMES = QUEUE_REGISTRATIONS.filter((queue) => queue.stagedOnO
  * module imported, so a second registration silently drops retries and
  * retention. Exporting `BullModule` re-exports every queue token below.
  *
+ * It also reports every job that fails for good (`JobFailureReportingAdapter`),
+ * whichever module's processor ran it.
+ *
  * It also hands the outbox relay its queues (`OUTBOX_QUEUES`): a queue whose
  * jobs are staged on the outbox says so in its registration, and the relay
  * needs no edit for it.
@@ -83,11 +94,14 @@ const OUTBOX_QUEUE_NAMES = QUEUE_REGISTRATIONS.filter((queue) => queue.stagedOnO
   imports: [
     // `LocaleResolver`: the email worker writes in the recipient's saved language.
     ProfileModule,
+    // `JobFailureReportingAdapter` finds every processor's worker through it.
+    DiscoveryModule,
     BullModule.registerQueue(...QUEUE_REGISTRATIONS.map(({ stagedOnOutbox, ...queue }) => queue)),
   ],
   providers: [
     EmailProcessor,
     EmailJobMapper,
+    JobFailureReportingAdapter,
     {
       provide: OUTBOX_QUEUES,
       useFactory: (...queues: Queue[]): ReadonlyMap<string, Queue> =>

@@ -151,11 +151,13 @@
       "expect": [
         {
           "rule": "U7",
+          "accept": ["M-structure"],
           "file": "apps/web/src/features/hosts/components/host-inventory-skeleton.tsx",
           "alsoFile": ["apps/web/src/features/hosts/screens/host-inventory.tsx"]
         }
       ],
-      "why": "The placeholder is one 256px block in a file of its own, while the inventory lands as a SettingsGroup of rows: the card, its borders and its row height are guessed, and the page jumps by the difference. check:structure's slab tripwire reads only what sits in the Pending slot, a named component, so only judgment catches it."
+      "mechanical": ["M-structure"],
+      "why": "The placeholder is one 256px block in a file of its own, while the inventory lands as a SettingsGroup of rows: the card, its borders and its row height are guessed, and the page jumps by the difference. Since check:structure reads every file for slabs (3c109ace), its tripwire fails here too, so the audit reports the check's failure (or U7 for the guessed shape) rather than missing it."
     },
     {
       "id": "skeleton-zero-count",

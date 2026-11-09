@@ -1,6 +1,11 @@
 import type { BotEngineEvent, BotEngineFailure } from '@oppenheimer/backend-agents';
 import { AppError } from '@oppenheimer/backend-core';
-import type { BotAttachment, BotTurnFailure } from '@oppenheimer/shared';
+import {
+  BOT_PROVIDER_CATALOG,
+  BOT_TURN_IDLE_LIMIT_MS,
+  type BotAttachment,
+  type BotTurnFailure,
+} from '@oppenheimer/shared';
 import { BotErrors } from '../../bots/domain/bots.errors';
 import { MAIL_DRAFT_DATA_KEY } from '../bot-mail-tool.mapper';
 import { toMailDraft, toShownImages, toSubagentRuns } from '../bot-message.mapper';
@@ -20,7 +25,7 @@ import { SHOWN_IMAGES_DATA_KEY } from '../domain/bot-shown-image.policy';
 import { SUBAGENT_DATA_KEY } from '../domain/bot-subagent.policy';
 import { startOf } from '../domain/bot-tool-text.policy';
 import {
-  BOT_TURN_TIME_LIMIT_MS,
+  BOT_TURN_LOOP_REFUSALS,
   type BotTurnContext,
   type BotTurnEntity,
   type BotTurnPlanLimits,
@@ -31,7 +36,8 @@ import type { TurnInterruption } from './turn-cancel-watch.factory';
 /** What one engine event asks the runner to do. */
 export type TranscriptWrite =
   | { kind: 'insert'; message: BotMessageEntity }
-  | { kind: 'steps'; message: BotMessageEntity }
+  /** A line's steps; `callId` when the write is that call's end, which alone can fail it. */
+  | { kind: 'steps'; message: BotMessageEntity; callId?: string }
   /** A delta of the turn's `block`th block of text, passed on and kept until the block is stored. */
   | { kind: 'text'; block: number; text: string }
   /** The block being written ended (stored, or only whitespace): what was kept of it goes. */
@@ -55,8 +61,32 @@ export interface TranscriptOutcome {
   context: BotTurnContext | null;
   /** A subscription's windows as its last answer said them. */
   planLimits: BotTurnPlanLimits | null;
-  /** The latest moment a system its tools called asked us to wait until; null when none did. */
+  /**
+   * The latest moment a system asked us to wait until: one its tools called,
+   * or the model provider that refused the turn for a limit
+   * (`providerLimitOf`); null when none did.
+   */
   limited: BotRateLimit | null;
+}
+
+/**
+ * When the model provider that refused a turn for a limit may be called
+ * again: the time it named with its refusal, or, for a spent plan, when the
+ * spent window (at 100%) resets; null when it said neither, which only the
+ * person can wait out.
+ */
+export function providerResetOf(
+  done: Extract<BotEngineEvent, { type: 'done' }>,
+  planLimits: BotTurnPlanLimits | null,
+): Date | null {
+  if (done.reason !== 'failed') return null;
+  if (done.rateLimit?.resetAt) return done.rateLimit.resetAt;
+  if (done.failure !== 'usage_limit' && done.failure !== 'rate_limit') return null;
+  const spent = [planLimits?.fiveHour, planLimits?.sevenDay].filter(
+    (window) => window && window.usedPercent >= 100 && window.resetsAt,
+  );
+  const resets = spent.map((window) => window?.resetsAt?.getTime() ?? 0);
+  return resets.length > 0 ? new Date(Math.max(...resets)) : null;
 }
 
 /**
@@ -115,6 +145,8 @@ export class TurnTranscript {
         return this.finished(event);
       case 'retrying':
         return [{ kind: 'retrying', reason: event.reason }];
+      case 'compacted':
+        return [{ kind: 'insert', message: this.compaction(event) }];
       case 'steered':
         this.activity = null;
         return event.steers.map((steer) => ({
@@ -131,6 +163,11 @@ export class TurnTranscript {
         this.outcome.planLimits = event.limits ?? this.outcome.planLimits;
         return [];
       case 'done': {
+        const reset = providerResetOf(event, this.outcome.planLimits);
+        if (reset) {
+          const system = BOT_PROVIDER_CATALOG[this.turn.provider].label;
+          this.outcome.limited = laterLimit(this.outcome.limited, { system, resetAt: reset });
+        }
         this.outcome.reason = event.reason;
         this.outcome.error = event.reason === 'failed' ? (event.error ?? null) : null;
         this.outcome.failure = event.reason === 'failed' ? (event.failure ?? 'other') : null;
@@ -146,21 +183,12 @@ export class TurnTranscript {
   }
 
   /**
-   * Ends the turn. What interrupted it from outside decides first: Stop
-   * cancels it, the time limit fails it with a message saying so (what it
-   * wrote is kept). Otherwise it ends as the engine said; running out of
-   * steps still completes it.
+   * Ends the turn as `turnEnding` says, with what it cost.
    */
   endTurn(now: Date, interruption: TurnInterruption | null): void {
     const { reason, error, failure, ...usage } = this.outcome;
-    if (interruption === 'time_limit') {
-      this.turn.end('failed', now, { error: TIME_LIMIT_ERROR, failure: 'time_limit', ...usage });
-    } else if (interruption === 'stop') {
-      this.turn.end('cancelled', now, usage);
-    } else {
-      const status = reason === 'completed' || reason === 'max_steps' ? 'completed' : reason;
-      this.turn.end(status, now, { error, failure, ...usage });
-    }
+    const ending = turnEnding(interruption, { reason, error, failure });
+    this.turn.end(ending.status, now, { ...ending, ...usage });
   }
 
   private say(text: string): TranscriptWrite[] {
@@ -223,13 +251,36 @@ export class TurnTranscript {
       this.outcome.cacheReadTokens += run.cacheReadTokens ?? 0;
       this.outcome.cacheWriteTokens += run.cacheWriteTokens ?? 0;
     }
-    const writes: TranscriptWrite[] = [{ kind: 'steps', message: line }];
+    const writes: TranscriptWrite[] = [{ kind: 'steps', message: line, callId }];
     const images = isError ? [] : toShownImages(data?.[SHOWN_IMAGES_DATA_KEY]);
     if (images.length > 0) {
       this.activity = null;
       writes.push({ kind: 'insert', message: this.message('assistant', '', [], images) });
     }
     return writes;
+  }
+
+  /**
+   * The line where the turn folded what it had read: the steps after it go on
+   * a new activity line, so each line's calls read in order around it.
+   */
+  private compaction(event: Extract<BotEngineEvent, { type: 'compacted' }>): BotMessageEntity {
+    this.activity = null;
+    return BotMessageEntity.createNew({
+      organizationId: this.turn.organizationId,
+      botId: this.turn.botId,
+      conversationId: this.turn.conversationId,
+      turnId: this.turn.id,
+      role: 'event',
+      content: `Earlier in this turn, what you had read was summarized to keep your context small (about ${Math.round(event.tokensBefore / 1000)}k tokens down to ${Math.round(event.tokensAfter / 1000)}k).`,
+      event: {
+        kind: 'compaction',
+        tokensBefore: Math.max(0, Math.round(event.tokensBefore)),
+        tokensAfter: Math.max(0, Math.round(event.tokensAfter)),
+      },
+      steps: [],
+      position: this.position++,
+    });
   }
 
   private message(
@@ -241,6 +292,7 @@ export class TurnTranscript {
     return BotMessageEntity.createNew({
       organizationId: this.turn.organizationId,
       botId: this.turn.botId,
+      conversationId: this.turn.conversationId,
       turnId: this.turn.id,
       role,
       content,
@@ -266,8 +318,80 @@ export function storedMessageId(
   return write.kind === 'steer' ? write.messageId : write.message.id;
 }
 
-/** Why a turn the time limit stopped failed, in words a person can act on. */
-export const TIME_LIMIT_ERROR = `Stopped after ${BOT_TURN_TIME_LIMIT_MS / 60_000} minutes, the limit for one turn. Ask for a smaller step, or split the request.`;
+/** Why a turn whose model went silent failed, in words a person can act on. */
+export const STALLED_ERROR = `Stopped: the model sent nothing for ${BOT_TURN_IDLE_LIMIT_MS / 60_000} minutes while no tool ran. This is usually temporary; send it again, or say go on.`;
+
+/** Why a turn the loop guard stopped failed, in words a person can act on. */
+export const LOOP_ERROR = `Stopped: the turn kept repeating calls that changed nothing, and ${BOT_TURN_LOOP_REFUSALS} of them were refused. Say what to do differently.`;
+
+/** The words of each way a turn is stopped from outside the engine, other than Stop. */
+const INTERRUPTION_ERRORS: Readonly<Record<Exclude<TurnInterruption, 'stop'>, string>> = {
+  stalled: STALLED_ERROR,
+  loop: LOOP_ERROR,
+};
+
+/** How a turn ends: its status, and for a failure its words and kind. */
+export interface TurnEnding {
+  status: 'completed' | 'cancelled' | 'failed';
+  error: string | null;
+  failure: BotTurnFailure | null;
+}
+
+/**
+ * How a turn ends, from what stopped it outside (Stop, a silent model, the
+ * loop guard) and how its engine said it ended. Stop cancels it; a stall or
+ * a loop fails it with its words, and what it wrote is kept. A turn has no
+ * step limit since 2026-11-09; an engine that still ends `max_steps` (a run
+ * that asked for one) fails as `step_limit`. Otherwise it ends as the engine
+ * said. A new way to stop a turn is a member of `TurnInterruption` with its
+ * words above, not a branch here.
+ */
+export function turnEnding(
+  interruption: TurnInterruption | null,
+  engine: Pick<TranscriptOutcome, 'reason' | 'error' | 'failure'>,
+): TurnEnding {
+  if (interruption === 'stop') return { status: 'cancelled', error: null, failure: null };
+  if (interruption) {
+    return { status: 'failed', error: INTERRUPTION_ERRORS[interruption], failure: interruption };
+  }
+  if (engine.reason === 'max_steps') {
+    return {
+      status: 'failed',
+      error: 'Stopped at the step limit this run was given.',
+      failure: 'step_limit',
+    };
+  }
+  return { status: engine.reason, error: engine.error, failure: engine.failure };
+}
+
+/**
+ * A write of the turn's transcript that Postgres refused: the turn fails as
+ * `storage`, so the chat says it was ours, not the model provider's (#728).
+ */
+export class TurnStorageError extends Error {
+  constructor(cause: unknown) {
+    super(`The turn could not be saved: ${failureReasonOf(cause)}`, { cause });
+    this.name = 'TurnStorageError';
+  }
+}
+
+/**
+ * Call `callId`'s step on `line`, failed in place of a result that could not
+ * be stored: the call is the one that fails, with words the model reads in
+ * the history, and the rest of the turn goes on. False when the line has no
+ * such step.
+ */
+export function failUnstoredCall(line: BotMessageEntity, callId: string, cause: unknown): boolean {
+  const step = line.steps.find((candidate) => candidate.callId === callId);
+  if (!step) return false;
+  step.output = `The tool's result could not be saved (${startOf(failureReasonOf(cause), 200)}), so it is not kept. Call it again, or carry on without it.`;
+  step.isError = true;
+  step.sessionId = null;
+  step.subagents = null;
+  step.mailDraft = null;
+  step.rateLimit = null;
+  return true;
+}
 
 /** A turn's failure in words a person can act on: the catalog's for ours, the engine's otherwise. */
 export function failureReasonOf(error: unknown): string {
@@ -282,11 +406,13 @@ export function thrownFailure(error: unknown): { error: string; failure: BotTurn
 
 /**
  * The kind of failure a turn that threw before or around its engine is. A
- * provider with no key or sign-in for the turn is fixed in Settings, so it
- * is a credential failure; ChatGPT refreshing its sign-in passes, so it is
+ * transcript Postgres refused to store is ours, `storage`. A provider with
+ * no key or sign-in for the turn is fixed in Settings, so it is a credential
+ * failure; ChatGPT refreshing its sign-in passes, so it is
  * the provider being unavailable for a moment. Anything else is not known.
  */
 export function failureKindOf(error: unknown): BotTurnFailure {
+  if (error instanceof TurnStorageError) return 'storage';
   if (!(error instanceof AppError)) return 'other';
   if (error.code === BotErrors.PROVIDER_KEY_MISSING.code) return 'credential';
   if (error.code === BotErrors.CHATGPT_REFRESHING.code) return 'unavailable';

@@ -1,6 +1,12 @@
 import { useFeatureFlag } from '@oppenheimer/frontend-core/react';
 import { useCallback, useEffect, useRef } from 'react';
-import type { DeviceStream, SessionStream } from '../modules/sessions';
+import type {
+  CloudChatFeed,
+  CloudChatReply,
+  DeviceStream,
+  SessionChat,
+  SessionStream,
+} from '../modules/sessions';
 import { useConsumerApp } from './context';
 
 /**
@@ -42,4 +48,22 @@ export function useSessionDeviceStream(sessionId: string): () => Promise<DeviceS
 export function useSharedSessionStream(slug: string): () => SessionStream {
   const app = useConsumerApp();
   return useCallback(() => app.sessions.openSharedStream(slug), [app, slug]);
+}
+
+/**
+ * A stable factory for a Claude Code cloud session's chat feed, built and
+ * stopped by the effect that shows the chat, as a terminal's stream is.
+ */
+export function useCloudChatFeed(sessionId: string): (
+  chat: SessionChat,
+  callbacks: {
+    onWaiting: (waiting: readonly CloudChatReply[]) => void;
+    onReplyFailed: (error: unknown) => void;
+  },
+) => Promise<CloudChatFeed> {
+  const app = useConsumerApp();
+  return useCallback(
+    (chat, callbacks) => app.sessions.openCloudChat(sessionId, chat, callbacks),
+    [app, sessionId],
+  );
 }

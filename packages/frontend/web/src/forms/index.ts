@@ -4,6 +4,7 @@ export type { ResolvedErrorMessage } from '@oppenheimer/frontend-core/react';
 export { ErrorAlert } from './components/error-alert';
 export { SettingsFormSaveRow } from './components/settings-form-save-row';
 export { SidebarSearchField } from './components/sidebar-search-field';
+export { useSearchDraft } from './hooks/use-search-draft';
 export {
   type ServerFieldErrorSource,
   type ServerFieldErrors,

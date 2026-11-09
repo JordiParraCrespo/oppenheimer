@@ -1,10 +1,17 @@
 /**
  * Plan's sidebar views by id, in the order a reader who never dragged one
- * sees them (the 2026-10-29 `Tasks` frame, then Projects, which moved here
+ * sees them (the 2026-11-08 `Tasks` frame, then Projects, which moved here
  * from the Sessions sidebar), and the reader's own order as
  * this device keeps it.
  */
-export const PLAN_NAV_IDS = ['inbox', 'tasks', 'milestones', 'calendar', 'projects'] as const;
+export const PLAN_NAV_IDS = [
+  'inbox',
+  'tasks',
+  'todo',
+  'milestones',
+  'calendar',
+  'projects',
+] as const;
 
 export type PlanNavId = (typeof PLAN_NAV_IDS)[number];
 
@@ -44,6 +51,36 @@ export function mergeShownOrder(
 ): PlanNavId[] {
   const next = moved[Symbol.iterator]();
   return order.map((id) => (shown(id) ? (next.next().value ?? id) : id));
+}
+
+/** Where each view lives. */
+export const PLAN_VIEW_PATHS = {
+  inbox: '/plan/inbox',
+  tasks: '/plan',
+  todo: '/plan/todo',
+  milestones: '/plan/milestones',
+  calendar: '/plan/calendar',
+  projects: '/plan/projects',
+} as const satisfies Record<PlanNavId, string>;
+
+/**
+ * Which views Plan's sidebar shows: all of them, but the Inbox only while its
+ * flag is on. The sidebar and Plan's landing read the same answer, so "the
+ * top of the sidebar" means one thing.
+ */
+export function planViewShown(inboxOn: boolean): (id: PlanNavId) => boolean {
+  return (id) => id !== 'inbox' || inboxOn;
+}
+
+/**
+ * Where Plan opens: the first view the sidebar shows in the reader's order,
+ * so a reader who dragged Calendar first lands on the calendar; the Inbox for
+ * a reader who never dragged one. Tasks is never hidden, so it is the floor.
+ */
+export function planLanding(
+  shown: (id: PlanNavId) => boolean,
+): (typeof PLAN_VIEW_PATHS)[PlanNavId] {
+  return PLAN_VIEW_PATHS[storedPlanNavOrder().find(shown) ?? 'tasks'];
 }
 
 export function rememberPlanNavOrder(order: readonly PlanNavId[]) {

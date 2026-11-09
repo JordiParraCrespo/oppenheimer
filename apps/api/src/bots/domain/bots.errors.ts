@@ -232,4 +232,19 @@ export const BotErrors = {
     message: 'The bot has as many skills as it can keep',
     httpStatus: 422,
   },
+  /** A bot whose memory was never dreamed, or whose latest dream was undone already. */
+  DREAM_NOT_FOUND: {
+    code: 'BOTS_041',
+    message: 'The bot has no dream to undo',
+    httpStatus: 404,
+  },
+  /**
+   * A bot that answers on a Telegram bot is not deleted until another bot
+   * answers there, or none (`product/next-steps/answering-on-telegram-and-whatsapp.md` §1).
+   */
+  ANSWERS_ON_TELEGRAM: {
+    code: 'BOTS_042',
+    message: 'The bot answers on a Telegram bot',
+    httpStatus: 409,
+  },
 } as const satisfies Record<string, ErrorDefinition>;

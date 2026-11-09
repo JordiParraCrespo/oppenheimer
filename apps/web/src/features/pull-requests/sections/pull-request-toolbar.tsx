@@ -4,6 +4,8 @@ import {
   IconButton,
   SegmentedControl,
   SegmentedControlItem,
+  Skeleton,
+  SubmitReviewButton,
 } from '@oppenheimer/design-system-web';
 import { ChevronLeft, SquareArrowOutUpRight } from '@oppenheimer/design-system-web/icons';
 import type { PullRequestAddress } from '@oppenheimer/frontend-consumer';
@@ -20,6 +22,8 @@ import { PULL_REQUEST_VIEWS, type PullRequestView } from '../lib/pull-request-se
  * and Submit review. The views stay the same on every view; Changes adds
  * the diff's layout beside them. Submit review is the screen's, which holds the
  * pending comments it posts; the bar only places it while the pull is open.
+ * While the pull is read, the diff stat is a bar at its width and GitHub and
+ * Submit review hold their places, disabled, so the bar does not widen.
  */
 export function PullRequestToolbar({
   address,
@@ -38,7 +42,7 @@ export function PullRequestToolbar({
   review: ReactNode;
 }) {
   const { t } = useTranslation();
-  const { data: pull } = usePullRequest(address);
+  const { data: pull, isPending } = usePullRequest(address);
   const queue = useLocation({ select: (location) => location.state.pullsQueue });
 
   return (
@@ -62,6 +66,10 @@ export function PullRequestToolbar({
             {t(`pullRequests.detail.views.${value}`)}
             {value === 'changes' && pull ? (
               <DiffStat additions={pull.additions} deletions={pull.deletions} />
+            ) : value === 'changes' && isPending ? (
+              <span aria-hidden className="inline-flex h-4 items-center">
+                <Skeleton shape="sm" className="h-2.5 w-12" />
+              </span>
             ) : null}
           </SegmentedControlItem>
         ))}
@@ -89,8 +97,16 @@ export function PullRequestToolbar({
         >
           <SquareArrowOutUpRight />
         </IconButton>
+      ) : isPending ? (
+        <IconButton aria-label={t('pullRequests.detail.openOnGithub')} disabled>
+          <SquareArrowOutUpRight />
+        </IconButton>
       ) : null}
-      {pull?.isOpen ? review : null}
+      {pull?.isOpen ? (
+        review
+      ) : isPending ? (
+        <SubmitReviewButton disabled>{t('pullRequests.review.submit')}</SubmitReviewButton>
+      ) : null}
     </div>
   );
 }

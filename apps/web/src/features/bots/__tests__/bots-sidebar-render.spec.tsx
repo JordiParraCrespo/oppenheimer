@@ -63,6 +63,7 @@ vi.mock('@oppenheimer/frontend-consumer/react', () => ({
     return { bots, groups: GROUPS, error: null };
   },
   useUpdateBot: idle,
+  useMoveBotGroup: idle,
   useRenameBotGroup: idle,
   useDeleteBotGroup: idle,
   useCreateBotGroup: idle,

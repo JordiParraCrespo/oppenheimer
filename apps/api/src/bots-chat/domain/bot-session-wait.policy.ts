@@ -7,10 +7,11 @@ import { wakeStateOf } from './bot-subscription.policy';
  * it waits until the session's current task stops for something a watch
  * would wake it for (input needed, finished, failed, stopped, expired), or
  * the session is resolved, or its deadline passes, whichever comes first.
- * It never outlives the turn: the deadline is capped well inside it.
+ * It is bounded so a turn does not idle on one session: a longer wait is a
+ * watch, which wakes the bot in a turn of its own.
  */
 
-/** The longest one wait may take. A turn stops after 4 minutes. */
+/** The longest one wait may take. */
 export const BOT_SESSION_WAIT_MAX_SECONDS = 120;
 
 /** How often a waiting call reads the session again. */

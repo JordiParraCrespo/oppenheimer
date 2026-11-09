@@ -19,6 +19,10 @@ export const SESSION_SHARED_FILES = Symbol('SESSION_SHARED_FILES');
 export const SESSION_TRANSCRIPT = Symbol('SESSION_TRANSCRIPT');
 /** The composer's listing of a host's Codex cloud environments; bound by `links/` like `HOST_FOLDERS`. */
 export const HOST_CODEX_ENVIRONMENTS = Symbol('HOST_CODEX_ENVIRONMENTS');
+/** A bot's command run on a host by its runner (`host.exec`); bound by `links/` like `HOST_FOLDERS`. */
+export const HOST_EXEC = Symbol('HOST_EXEC');
+/** A bot typing into a blank terminal and reading it back (`terminal.drive`); bound by `links/`. */
+export const SESSION_TERMINAL = Symbol('SESSION_TERMINAL');
 export const RECORD_SESSION_EVENTS = Symbol('RECORD_SESSION_EVENTS');
 export const SESSION_LOOKUP = Symbol('SESSION_LOOKUP');
 export const SESSION_RECONCILIATION = Symbol('SESSION_RECONCILIATION');
@@ -30,3 +34,5 @@ export const CLOUD_FILES = Symbol('CLOUD_FILES');
 export const SESSION_TERMINAL_WATCH_REPOSITORY = Symbol('SESSION_TERMINAL_WATCH_REPOSITORY');
 /** Where a wake for a session's own agent waits for its time (`SessionWakesPort`). */
 export const SESSION_WAKES = Symbol('SESSION_WAKES');
+/** A Claude Code cloud session's transcript lines and waiting replies (`session_cloud_line`, `session_cloud_reply`). */
+export const SESSION_CLOUD_CHAT_REPOSITORY = Symbol('SESSION_CLOUD_CHAT_REPOSITORY');

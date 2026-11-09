@@ -8,7 +8,9 @@ import {
   AvatarPicker,
   BotAvatar,
   type AvatarOption,
+  type BotFaceParts,
 } from '@oppenheimer/design-system-web/avatar-picker';
+import { BotFacePicker } from '@oppenheimer/design-system-web/bot-face-picker';
 import { Badge } from '@oppenheimer/design-system-web/badge';
 import { BotItem, BotList } from '@oppenheimer/design-system-web/bot-item';
 import { Button } from '@oppenheimer/design-system-web/button';
@@ -32,9 +34,9 @@ import { GroupHead, Spec } from './page-shell';
 /* ── BotItem ─────────────────────────────────────────────────────────────── */
 
 const BUILT_IN = [
-  { id: 'plan', name: 'Plan Bot', initials: 'PB', preview: 'Friday’s milestone has two tasks left.' },
-  { id: 'github', name: 'GitHub Bot', initials: 'GB', preview: '3 pull requests wait on review.' },
-];
+  { id: 'plan', name: 'Plan Bot', initials: 'PB', color: 'lilac', preview: 'Friday’s milestone has two tasks left.' },
+  { id: 'github', name: 'GitHub Bot', initials: 'GB', color: 'moss', preview: '3 pull requests wait on review.' },
+] as const;
 
 function BuiltInGroup({ active, onPick }: { active: string; onPick: (id: string) => void }) {
   const [open, setOpen] = React.useState(true);
@@ -50,8 +52,8 @@ function BuiltInGroup({ active, onPick }: { active: string; onPick: (id: string)
       />
       {open ? (
         <BotList>
-          {BUILT_IN.map((bot) => (
-            <BotItem key={bot.id} {...bot} active={bot.id === active} onClick={() => onPick(bot.id)} />
+          {BUILT_IN.map(({ color, ...bot }) => (
+            <BotItem key={bot.id} {...bot} face={{ color, seed: bot.id }} active={bot.id === active} onClick={() => onPick(bot.id)} />
           ))}
         </BotList>
       ) : null}
@@ -63,11 +65,11 @@ export function BotItemsDemo() {
   const [active, setActive] = React.useState('release');
   const [open, setOpen] = React.useState(true);
   const bots = [
-    { id: 'release', name: 'Release Bot', initials: 'RB', preview: 'The stop path now reaches the tool layer.', live: true },
-    { id: 'deploy', name: 'Deploy Bot', initials: 'DB', preview: 'Needs input · Tag v0.9.0 and push it?', needsInput: true },
-    { id: 'quota', name: 'Quota Bot', initials: 'QB', preview: 'You: Added a banner to the workspace page' },
-    { id: 'new', name: 'New Bot', initials: 'NB', preview: 'What would you most like help with?', unread: true },
-  ];
+    { id: 'release', name: 'Release Bot', initials: 'RB', color: 'coral', preview: 'The stop path now reaches the tool layer.', live: true },
+    { id: 'deploy', name: 'Deploy Bot', initials: 'DB', color: 'sky', preview: 'Needs input · Tag v0.9.0 and push it?', needsInput: true },
+    { id: 'quota', name: 'Quota Bot', initials: 'QB', color: 'lemon', preview: 'You: Added a banner to the workspace page' },
+    { id: 'new', name: 'New Bot', initials: 'NB', color: 'mint', preview: 'What would you most like help with?', unread: true },
+  ] as const;
   return (
     <div className="flex flex-wrap items-start gap-6">
       <div className="flex w-72 flex-col gap-1 rounded-lg bg-sidebar py-1.5">
@@ -75,8 +77,8 @@ export function BotItemsDemo() {
           <SidebarProjectHeader tone="eyebrow" name="Engineering" count={bots.length} open={open} onOpenChange={setOpen} />
           {open ? (
             <BotList>
-              {bots.map((bot) => (
-                <BotItem key={bot.id} {...bot} active={bot.id === active} onClick={() => setActive(bot.id)} />
+              {bots.map(({ color, ...bot }) => (
+                <BotItem key={bot.id} {...bot} face={{ color, seed: bot.id }} active={bot.id === active} onClick={() => setActive(bot.id)} />
               ))}
             </BotList>
           ) : null}
@@ -147,13 +149,38 @@ const COLOR_NAMES: Record<AvatarColor, string> = {
   moss: 'Moss',
 };
 
+const FACE_NAMES = {
+  hat: { fedora: 'Fedora', porkpie: 'Porkpie', bowler: 'Bowler', tophat: 'Top hat', cap: 'Cap', beanie: 'Beanie' },
+  eyes: { dots: 'Dots', happy: 'Happy', wink: 'Wink', big: 'Wide' },
+  mouth: { smile: 'Smile', grin: 'Grin', o: 'Surprised' },
+};
+
+export function BotFacePickerDemo() {
+  const [face, setFace] = React.useState<BotFaceParts | null>(null);
+  return (
+    <div className="flex w-full flex-wrap items-start gap-8 rounded-lg bg-canvas-recessed p-4">
+      <BotAvatar option={{ initials: 'NB' }} size={72} face={{ color: 'tangerine', seed: 'new-bot', parts: face }} />
+      <div className="rounded-lg bg-card px-5 py-4">
+        <BotFacePicker
+          value={face}
+          onValueChange={setFace}
+          color="tangerine"
+          seed="new-bot"
+          labels={{ hat: 'Hat', eyes: 'Eyes', mouth: 'Mouth', reset: 'Use its own face' }}
+          optionNames={FACE_NAMES}
+        />
+      </div>
+    </div>
+  );
+}
+
 export function AvatarColorPickerDemo() {
   const [color, setColor] = React.useState<AvatarColor>('tangerine');
   return (
     <div className="flex w-full flex-col gap-6">
       <div className="flex items-center gap-3">
         {(Object.keys(COLOR_NAMES) as AvatarColor[]).map((key) => (
-          <BotAvatar key={key} option={{ initials: 'NB' }} size={36} color={key} />
+          <BotAvatar key={key} option={{ initials: 'NB' }} size={36} face={{ color: key, seed: 'new-bot' }} />
         ))}
       </div>
       <div className="w-full max-w-180 rounded-lg bg-canvas-recessed p-4">
@@ -162,6 +189,7 @@ export function AvatarColorPickerDemo() {
             value={color}
             onValueChange={setColor}
             initials="NB"
+            seed="new-bot"
             name="New Bot"
             colorNames={COLOR_NAMES}
           />
@@ -195,7 +223,7 @@ export function RoutineCardsDemo() {
         name="Triage new issues"
         icon={<WebhookIcon />}
         trigger="Webhook · issue opened in acme/web"
-        prompt="Label the issue, find the owning team, and ask for a reproduction when it has none."
+        prompt="Label the issue, find the owning team, and ask for a reproduction when it has none. When the issue names a version, check it against the latest release and say whether it is still current. When it duplicates an open issue, link the older one and close this one with a short note. When it reports a security problem, do not discuss it in public: move it to a private advisory and tell the reporter where it went. Leave anything you are unsure of for a person, with a line saying why."
         last="2d ago"
         next="—"
         active={on.triage}
@@ -360,7 +388,7 @@ export function EmployeesSection() {
         id="botitem"
         title="BotItem"
         meta="bot-item.tsx"
-        desc="An employee in the sidebar, on one line: a 20px square photo (initials in ink until it loads) with a green dot on its corner while the bot works, then the name. The last message is the row's tooltip, beside it on hover. Unread sets the name at 600 with a blue dot at the end; a bot that needs input reads the same with an amber dot. Groups head with SidebarProjectHeader's eyebrow tone, the Built-in one with a lock marker; before the first bot, SidebarEmptyCard says what will appear and offers New bot; the open chat rests on the selected wash. 32px, the nav radius, rows 1px apart in a BotList. SortableBotItem moves one to another group on the shell's drag layer."
+        desc="An employee in the sidebar, on one line: a 20px square photo (its drawn face until one loads) with a green dot on its corner while the bot works, then the name. The last message is the row's tooltip, beside it on hover. Unread sets the name at 600 with a blue dot at the end; a bot that needs input reads the same with an amber dot. Groups head with SidebarProjectHeader's eyebrow tone, the Built-in one with a lock marker; before the first bot, SidebarEmptyCard says what will appear and offers New bot; the open chat rests on the selected wash. 32px, the nav radius, rows 1px apart in a BotList. SortableBotItem moves one to another group on the shell's drag layer."
         code={`<BotList><SortableBotItem id={bot.id} name="Release Bot" initials="RB" image={photo} preview={last} live active /></BotList>`}
       >
         <BotItemsDemo />
@@ -370,7 +398,7 @@ export function EmployeesSection() {
         id="avatarpicker"
         title="AvatarPicker"
         meta="avatar-picker.tsx"
-        desc="A bot's photo picked from a set: the current one beside the bot's name, then a grid of round photos over optional captions, the picked one on the selected wash; arrow keys move through it. compact is the 300px popover off the chat header (four columns, 36px photos, Surprise me under the grid); wide is BotSettings' Profile (76px columns, 40px photos, a 72px preview). BotAvatar is the photo alone, initials in ink until the image loads."
+        desc="A bot's photo picked from a set: the current one beside the bot's name, then a grid of rounded-square photos over optional captions, the picked one on the selected wash; arrow keys move through it. compact is the 300px popover off the chat header (four columns, 36px photos, Surprise me under the grid); wide is BotSettings' Profile (76px columns, 40px photos, a 72px preview). BotAvatar is the photo alone, initials in ink until the image loads."
         code={`<AvatarPicker options={photos} value={photo} onValueChange={setPhoto} name="Release Bot" onShuffle={shuffle} />`}
       >
         <AvatarPickerDemo />
@@ -380,10 +408,20 @@ export function EmployeesSection() {
         id="avatarcolorpicker"
         title="AvatarColorPicker"
         meta="avatar-picker.tsx"
-        desc="A bot's colour, while avatars are initials rather than photos: the 72px initials on the current colour over the bot's name, then the eight colours as 32px swatches, the picked one ringed in ink with the card's gap inside the ring. The colours are the --avatar-* tokens, the same in both themes, with the initials in dark ink on each. BotAvatar and BotItem take color to draw the initials on it."
-        code={`<AvatarColorPicker value={color} onValueChange={save} initials="NB" name="New Bot" colorNames={names} />`}
+        desc="A bot's colour, while avatars are drawn rather than photos: the 72px face on the current colour over the bot's name, then the eight colours as 32px swatches, the picked one ringed in ink with the card's gap inside the ring. The colours are the --avatar-* tokens, the same in both themes. BotAvatar and BotItem take face (the colour and the bot's id) to draw it (a hat, eyes and a mouth picked from the id, cut out like a sticker on a darker shade); without one they draw the initials."
+        code={`<AvatarColorPicker value={color} onValueChange={save} initials="NB" seed={bot.id} name="New Bot" colorNames={names} />`}
       >
         <AvatarColorPickerDemo />
+      </Spec>
+
+      <Spec
+        id="botfacepicker"
+        title="BotFacePicker"
+        meta="bot-face-picker.tsx"
+        desc="A bot's face, on BotSettings' Profile under its colour: Hat, Eyes and Mouth, each a row of 36px faces in the bot's colour that change only that part, the worn one ringed in ink. Until its owner picks, the rows show the face the bot's id picks; Use its own face goes back to it. BotAvatar and BotItem draw the picked face through face.parts."
+        code={`<BotFacePicker value={bot.avatarFace} onValueChange={save} color={bot.avatarColor} seed={bot.id} labels={labels} optionNames={names} />`}
+      >
+        <BotFacePickerDemo />
       </Spec>
 
       <Spec

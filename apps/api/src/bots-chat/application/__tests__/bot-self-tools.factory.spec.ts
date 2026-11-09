@@ -32,10 +32,13 @@ const owner = emptyScope('owner-1', 'org-1');
 const BOT_ID = '11111111-1111-4111-8111-111111111111';
 const OTHER_BOT_ID = '22222222-2222-4222-8222-222222222222';
 const FACT_ID = '33333333-3333-4333-8333-333333333333';
+/** A Telegram chat's conversation, so a search shows it reads the turn's own. */
+const CONVERSATION_ID = '44444444-4444-4444-8444-444444444444';
 const context: BotToolContext = {
   owner,
   organizationId: 'org-1',
   botId: BOT_ID,
+  conversationId: CONVERSATION_ID,
   turnId: 'turn-1',
   homeHostId: null,
   timeZone: 'Europe/Madrid',
@@ -250,13 +253,13 @@ describe('BotSelfToolsFactory', () => {
       author: 'bot',
     });
     expect(result.content).toContain(
-      `Remembered ${FACT_ID} (in mind): "Deploys go out on Fridays"`,
+      `Remembered ${FACT_ID} (your memory, in mind): "Deploys go out on Fridays"`,
     );
   });
 
   // What breaks this: standing instructions left to fade with the log, or a
-  // fact about the person kept by this bot alone, so their other bots ask again.
-  it('keeps a fact in mind, or about the person for all their bots, when it says so', async () => {
+  // fact for the general memory kept by this bot alone, so their other bots ask again.
+  it('keeps a fact in mind, or in the general memory for all their bots, when it says so', async () => {
     const { commandBus, call } = setup(
       (query) => {
         if (query instanceof FindBotQuery) return bot();
@@ -268,13 +271,13 @@ describe('BotSelfToolsFactory', () => {
     const result = await call('remember', {
       fact: 'Ana is the release manager',
       tier: 'profile',
-      about: 'person',
+      memory: 'general',
     });
     expect(commandBus.execute.mock.calls[0][0]).toMatchObject({
       tier: 'profile',
       memoryScope: 'person',
     });
-    expect(result.content).toContain('(in mind, about the person)');
+    expect(result.content).toContain('(general memory, in mind)');
   });
 
   it('says which recalled facts another of the person’s bots shared', async () => {
@@ -289,7 +292,7 @@ describe('BotSelfToolsFactory', () => {
       }
     });
     const result = await call('recall', { query: 'squash' });
-    expect(result.content).toContain('in mind, about the person, shared by another of their bots');
+    expect(result.content).toContain('general memory, in mind, saved by another of their bots');
   });
 
   it('does not remember when learning is off: nothing is saved and it is told to ask first', async () => {
@@ -327,9 +330,10 @@ describe('BotSelfToolsFactory', () => {
     );
   });
 
-  // What breaks this: a search reaching another bot's chat or another
-  // person's scope, or a hit shown as instructions rather than fenced data.
-  it('searches its own chat in the owner’s scope and fences what it found as data', async () => {
+  // What breaks this: a search reaching another conversation (the console
+  // chat from a Telegram turn) or another person's scope, or a hit shown as
+  // instructions rather than fenced data.
+  it('searches its turn’s own conversation in the owner’s scope and fences what it found as data', async () => {
     const said = (role: 'user' | 'assistant', content: string) =>
       BotMessageEntity.createNew({
         organizationId: 'org-1',
@@ -352,7 +356,12 @@ describe('BotSelfToolsFactory', () => {
     const found = (await call('search_chat', { query: 'staging host' })).content;
 
     const [query] = queryBus.execute.mock.calls[0] ?? [];
-    expect(query).toMatchObject({ scope: owner, botId: BOT_ID, query: 'staging host', limit: 10 });
+    expect(query).toMatchObject({
+      scope: owner,
+      conversationId: CONVERSATION_ID,
+      query: 'staging host',
+      limit: 10,
+    });
     expect(found).toContain('Messages matching "staging host" (2');
     expect(found).toMatch(/<chat_search>\n- .+ the person: The staging host is build-02/);
     expect(found).toContain('you: Noted: staging is build-02');

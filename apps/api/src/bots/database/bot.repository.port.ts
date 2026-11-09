@@ -40,6 +40,11 @@ export interface BotRepositoryPort {
   /** Every bot name in the workspace, to number a new one. */
   namesIn(scope: AccessScope): Promise<string[]>;
   /**
+   * The owner is in the bot's chat now: its `ownerSeenAt` moves to `now`,
+   * never backwards. False when the caller's workspace has no such bot.
+   */
+  markSeen(scope: AccessScope, botId: string, now: Date): Promise<boolean>;
+  /**
    * The bot, last in its group, with its first documents and their first
    * revisions; `taken`, writing nothing, when its idempotency key already made one.
    * With `creator`, the creating bot's row is locked for the write and must
@@ -51,6 +56,10 @@ export interface BotRepositoryPort {
     creator?: BotCreatorCheck,
   ): Promise<BotWriteOutcome>;
   save(bot: BotEntity): Promise<BotWriteOutcome>;
-  /** The bot, its documents, their history and its memory. */
-  delete(bot: BotEntity): Promise<void>;
+  /**
+   * The bot, its documents, their history and its memory; `answering` and
+   * nothing deleted while it answers on a Telegram bot
+   * (`FK_telegram_account_answering_bot`).
+   */
+  delete(bot: BotEntity): Promise<'deleted' | 'answering'>;
 }

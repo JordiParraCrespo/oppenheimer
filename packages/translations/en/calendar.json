@@ -9,20 +9,28 @@
     "automations": "Automations"
   },
   "header": {
-    "previous": "Previous month",
-    "next": "Next month",
+    "previous": "Previous",
+    "next": "Next",
     "today": "Today",
     "newEvent": "New event",
     "meetings": "meetings",
     "tasksDue": "tasks due",
-    "runs": "automation runs"
+    "runs": "automation runs",
+    "views": "Calendar view",
+    "day": "Day",
+    "week": "Week",
+    "month": "Month",
+    "todayWeek": "Today · Week {{week}}",
+    "weekNumber": "Week {{week}}",
+    "weeks": "Weeks {{from}}–{{to}}"
   },
   "grid": {
     "more_one": "{{count}} more",
     "more_other": "{{count}} more",
     "eventsFailed": "Couldn’t load your events.",
     "googleFailed": "Couldn’t read Google Calendar.",
-    "moveFailed": "Couldn’t move that to another day."
+    "moveFailed": "Couldn’t move that to another day.",
+    "allDay": "All day"
   },
   "event": {
     "newTitle": "New event",

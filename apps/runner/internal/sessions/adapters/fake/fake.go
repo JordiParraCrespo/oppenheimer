@@ -248,6 +248,21 @@ func (t *Terminals) SendKeys(_ context.Context, target, keys string) error {
 	return nil
 }
 
+// PressKeys implements app.Terminals by appending each key as `<name>`.
+func (t *Terminals) PressKeys(_ context.Context, target string, keys []string) error {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	for _, key := range keys {
+		t.Screens[target] += "<" + key + ">"
+	}
+	return nil
+}
+
+// CaptureHistory implements app.Terminals: the fake keeps no scrollback.
+func (t *Terminals) CaptureHistory(ctx context.Context, target string, _ int) (string, error) {
+	return t.CaptureBody(ctx, target)
+}
+
 // Launched is what a window was last launched with.
 type Launched struct {
 	Dir     string

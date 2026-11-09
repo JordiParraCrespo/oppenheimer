@@ -1,4 +1,3 @@
-import { Skeleton } from '@oppenheimer/design-system-web';
 import { useTranslation } from 'react-i18next';
 import { WhatsappQrCode } from '@/features/whatsapp/components/whatsapp-qr-code';
 
@@ -14,11 +13,7 @@ export function WhatsappQrCard({ modules }: { modules: readonly (readonly boolea
       className="flex flex-col items-start gap-5 px-5 pt-1 pb-5 sm:flex-row"
       data-testid="whatsapp-qr"
     >
-      {modules ? (
-        <WhatsappQrCode modules={modules} label={t('settings.whatsapp.qrAlt')} />
-      ) : (
-        <Skeleton shape="sm" className="size-56 shrink-0" />
-      )}
+      <WhatsappQrCode modules={modules} label={t('settings.whatsapp.qrAlt')} />
       <div className="flex flex-col gap-3">
         <p className="text-sm font-medium text-fg">{t('settings.whatsapp.qrTitle')}</p>
         <ol className="flex list-decimal flex-col gap-2 pl-5 text-sm text-fg-muted">

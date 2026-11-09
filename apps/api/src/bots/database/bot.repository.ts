@@ -1,8 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { type AccessScope, ScopedRepositoryBase } from '@oppenheimer/backend-authz';
+import { OutboxService } from '@oppenheimer/backend-ddd';
 import { None, type Option, Some } from 'oxide.ts';
-import { DataSource, type EntityManager, Repository } from 'typeorm';
+import type { EntityManager, Repository } from 'typeorm';
 import { BotMapper } from '../bot.mapper';
 import { BotDocumentMapper } from '../bot-document.mapper';
 import { BotResource } from '../bots.resource';
@@ -27,9 +28,9 @@ export class BotRepository extends ScopedRepositoryBase<BotOrmEntity> implements
   constructor(
     @InjectRepository(BotOrmEntity)
     protected readonly repository: Repository<BotOrmEntity>,
-    private readonly dataSource: DataSource,
     private readonly mapper: BotMapper,
     private readonly documents: BotDocumentMapper,
+    private readonly outbox: OutboxService,
   ) {
     super();
   }
@@ -83,12 +84,34 @@ export class BotRepository extends ScopedRepositoryBase<BotOrmEntity> implements
     return rows.map((row) => row.name);
   }
 
+  async markSeen(scope: AccessScope, botId: string, now: Date): Promise<boolean> {
+    const found = await this.scopedQuery(scope)
+      .andWhere('bot.id = :botId', { botId })
+      .select('bot.id', 'id')
+      .getRawOne<{ id: string }>();
+    if (!found) return false;
+    // Every visit is stored: a late pause reads it to know the owner came
+    // back, so a skipped write would let it stop again what the visit resumed.
+    // Never backwards, though: two visits that land out of order keep the later.
+    await this.repository
+      .createQueryBuilder()
+      .update(BotOrmEntity)
+      .set({ ownerSeenAt: now })
+      .where('id = :botId AND "organizationId" = :organizationId AND "ownerSeenAt" < :now', {
+        botId,
+        organizationId: scope.organizationId,
+        now,
+      })
+      .execute();
+    return true;
+  }
+
   async insert(
     bot: BotEntity,
     documents: readonly BotDocumentEntity[],
     creator?: BotCreatorCheck,
   ): Promise<BotWriteOutcome> {
-    return this.writing(async (manager) => {
+    const outcome = await this.writing(async (manager) => {
       await manager.getRepository(BotOrmEntity).insert(this.mapper.toPersistence(bot));
       for (const document of documents) {
         await manager
@@ -118,9 +141,15 @@ export class BotRepository extends ScopedRepositoryBase<BotOrmEntity> implements
           throw new CreatorChanged();
         }
       }
+      await this.outbox.stageEvents(
+        manager,
+        documents.flatMap((document) => document.domainEvents),
+      );
       for (const document of documents) document.written();
       return 'saved';
     });
+    if (outcome === 'saved') for (const document of documents) document.clearEvents();
+    return outcome;
   }
 
   async save(bot: BotEntity): Promise<BotWriteOutcome> {
@@ -146,9 +175,16 @@ export class BotRepository extends ScopedRepositoryBase<BotOrmEntity> implements
     });
   }
 
-  async delete(bot: BotEntity): Promise<void> {
-    // Documents, revisions and memory cascade with the bot (their composite keys).
-    await this.repository.delete({ id: bot.id, organizationId: bot.organizationId });
+  async delete(bot: BotEntity): Promise<'deleted' | 'answering'> {
+    // Documents, revisions and memory cascade with the bot (their composite
+    // keys); a Telegram bot it answers on holds it (`NO ACTION`).
+    try {
+      await this.repository.delete({ id: bot.id, organizationId: bot.organizationId });
+      return 'deleted';
+    } catch (error) {
+      if (constraintOf(error) === 'FK_telegram_account_answering_bot') return 'answering';
+      throw error;
+    }
   }
 
   /**
@@ -161,7 +197,8 @@ export class BotRepository extends ScopedRepositoryBase<BotOrmEntity> implements
     work: (manager: EntityManager) => Promise<BotWriteOutcome>,
   ): Promise<BotWriteOutcome> {
     try {
-      return await this.dataSource.transaction(work);
+      // The outbox's transaction, so what an insert stages wakes the relay once it commits.
+      return await this.outbox.transaction(work);
     } catch (error) {
       if (violated(error, FOREIGN_KEY_VIOLATION, 'FK_bot_group')) return 'group-missing';
       if (violated(error, UNIQUE_VIOLATION, 'UQ_bot_organization_idempotency')) return 'taken';
@@ -225,4 +262,11 @@ export function violated(error: unknown, code: string, constraint: string): bool
   return (
     (driver?.code ?? own.code) === code && (driver?.constraint ?? own.constraint) === constraint
   );
+}
+
+/** The constraint a refused write broke, as Postgres names it; null for anything else. */
+function constraintOf(error: unknown): string | null {
+  const own = error as { constraint?: unknown; driverError?: { constraint?: unknown } };
+  const name = own.driverError?.constraint ?? own.constraint;
+  return typeof name === 'string' ? name : null;
 }

@@ -17,6 +17,11 @@
     "renameGroup": "Rename group",
     "deleteGroup": "Delete group",
     "groupFailed": "Could not save the group.",
+    "pinned": "Pinned",
+    "pin": "Pin",
+    "unpin": "Unpin",
+    "dropToPin": "Drop a bot here to pin it.",
+    "allPinned": "Its bots are under Pinned.",
     "rowActions": "Bot options",
     "settings": "Settings",
     "move": "Move to group",
@@ -24,7 +29,15 @@
     "moveNone": "No other group yet",
     "moveFailed": "Could not move the bot.",
     "delete": "Delete bot",
-    "loadFailed": "Could not load your bots."
+    "loadFailed": "Could not load your bots.",
+    "hide": "Hide from sidebar",
+    "filters": "Filter bots",
+    "shown": "Show bots",
+    "shownAll": "All",
+    "shownSome": "{{shown}} of {{total}}",
+    "showAll": "Show all bots",
+    "allHidden_one": "Its bot is hidden. Show it from the filter menu.",
+    "allHidden_other": "Its {{count}} bots are hidden. Show them from the filter menu."
   },
   "landing": {
     "titleEmpty": "Make your first bot.",
@@ -39,6 +52,7 @@
     "startFrom": "Try asking",
     "hello": "{{name}} is ready. What should we work on?",
     "placeholder": "Message {{name}}",
+    "history": "History {{position}}/{{total}}",
     "placeholderRunning": "Steer {{name}}: Enter steers the turn under way, Alt+Enter queues for after",
     "steered": "Steered in while it worked",
     "send": "Send",
@@ -58,7 +72,11 @@
       "refused": "{{provider}} refused this request. Sending it again won't help: change the message or the model.",
       "unavailable": "{{provider}} could not be reached. This is usually temporary: try again in a moment.",
       "time_limit": "This turn ran out of time. Sending it again won't help: ask for a smaller step, or split the request.",
-      "interrupted": "This turn was interrupted before it finished. Sending it again runs it."
+      "step_limit": "This turn used all its steps and stopped before it finished. Sending it again won't help: ask for a smaller step, or say go on to continue.",
+      "stalled": "{{provider}} sent nothing for 5 minutes, so this turn stopped. This is usually temporary: try again in a moment.",
+      "loop": "This turn kept repeating calls that changed nothing, so it stopped. Sending it again won't help: say what to do differently.",
+      "interrupted": "This turn was interrupted before it finished. Sending it again runs it.",
+      "storage": "We could not save this turn, so it stopped: the fault is ours, not {{provider}}'s. Try again in a moment."
     },
     "openProviders": "Open Model providers",
     "errorDetails": "Show details",
@@ -90,7 +108,20 @@
         "rate_limit": "{{provider}} is limiting requests, retrying…",
         "unavailable": "{{provider}} is busy, retrying…"
       },
-      "thinking": "Thinking",
+      "musing": {
+        "pondering": "Pondering…",
+        "mulling": "Mulling…",
+        "musing": "Musing…",
+        "noodling": "Noodling…",
+        "ruminating": "Ruminating…",
+        "cogitating": "Cogitating…",
+        "brewing": "Brewing…",
+        "percolating": "Percolating…",
+        "scheming": "Scheming…",
+        "puzzling": "Puzzling…",
+        "tinkering": "Tinkering…",
+        "conjuring": "Conjuring…"
+      },
       "writing": "Writing",
       "stopped": "Stopped"
     },
@@ -266,6 +297,9 @@
       },
       "goal": {
         "continued": "Goal · continuation {{step}} of {{limit}}",
+        "continuedOpen": "Goal · continuation {{step}}",
+        "paused": "Goal “{{objective}}” {{why}}",
+        "resumed": "You resumed the goal “{{objective}}”",
         "met": "Goal met: “{{objective}}”",
         "impossible": "Goal “{{objective}}” cannot be met without you",
         "cleared": "You stopped the goal “{{objective}}”",
@@ -278,6 +312,13 @@
         "expired": "Loop “{{prompt}}” ended after 3 days",
         "stopped": "Loop “{{prompt}}” stopped: a run of it failed or was stopped",
         "ended": "Loop “{{prompt}}” ended: the bot did not say when to run next"
+      },
+      "compaction": "Summarized earlier work to keep its context small · {{before}} → {{after}} tokens",
+      "compactionLine": "Summarized earlier work",
+      "compactionTokens": "{{before}} → {{after}} tokens",
+      "dream": {
+        "dreamed": "Tidied its memory · {{before}} facts → {{after}}",
+        "undone": "You undid the tidy · {{before}} facts are back"
       }
     },
     "routineReason": {
@@ -288,12 +329,26 @@
       "agent_unavailable": "the agent could not start",
       "bot_provider_missing": "the bot’s model provider has no key or sign-in",
       "owner_lost_access": "its owner can no longer run it",
+      "unattended": "you were away; it starts again now that you are back",
       "unknown": "something went wrong"
     },
     "openSession": "Open session",
     "goal": {
       "title": "Goal: {{objective}}",
       "progress": "{{step}} of {{limit}} continuations",
+      "continuations_one": "{{count}} continuation",
+      "continuations_other": "{{count}} continuations",
+      "budget": "{{progress}} · {{used}} of {{budget}} tokens",
+      "resume": "Resume",
+      "resumeFailed": "Could not resume the goal. Try again.",
+      "paused": {
+        "blocked": "paused, it needs you",
+        "usage_limit": "paused, the model provider hit a limit",
+        "no_progress": "paused, its last turns did nothing",
+        "budget": "paused, its budget is spent",
+        "stopped": "paused, you stopped a turn of it",
+        "failed": "paused, a turn of it failed"
+      },
       "waiting": "waiting for {{system}} until {{time}}",
       "stop": "Stop goal",
       "stopFailed": "Could not stop the goal. Try again.",
@@ -321,6 +376,9 @@
       "menu": "Commands and skills you can run",
       "pick": "Use /{{name}}",
       "builtInLabel": "Commands",
+      "builtInSkill": {
+        "recap": "Catch up on your sessions, pull requests and plan. Add a topic to narrow it."
+      },
       "builtIn": {
         "goal": "Keep working until a condition holds, checked after every turn. /goal clear stops it.",
         "usage": "Show what this chat has spent: tokens by model, cache hits, plan windows.",
@@ -350,7 +408,9 @@
         "summary_one": "{{count}} summary",
         "summary_other": "{{count}} summaries",
         "ruleReview_one": "{{count}} rule review",
-        "ruleReview_other": "{{count}} rule reviews"
+        "ruleReview_other": "{{count}} rule reviews",
+        "dream_one": "{{count}} memory tidy",
+        "dream_other": "{{count}} memory tidies"
       },
       "empty": "Nothing spent in this chat yet.",
       "loadFailed": "Could not load the usage. Try again."
@@ -386,6 +446,32 @@
         "lemon": "Lemon",
         "coral": "Coral",
         "moss": "Moss"
+      },
+      "face": "Face",
+      "faceHat": "Hat",
+      "faceEyes": "Eyes",
+      "faceMouth": "Mouth",
+      "faceReset": "Use its own face",
+      "faces": {
+        "hat": {
+          "fedora": "Fedora",
+          "porkpie": "Porkpie",
+          "bowler": "Bowler",
+          "tophat": "Top hat",
+          "cap": "Cap",
+          "beanie": "Beanie"
+        },
+        "eyes": {
+          "dots": "Dots",
+          "happy": "Happy",
+          "wink": "Wink",
+          "big": "Wide"
+        },
+        "mouth": {
+          "smile": "Smile",
+          "grin": "Grin",
+          "o": "Surprised"
+        }
       },
       "group": "Sidebar group",
       "groupHint": "Where it appears in the Employees sidebar",
@@ -483,7 +569,23 @@
       "toLog": "Look it up only when needed",
       "toProfile": "Keep it in mind in every chat",
       "toPerson": "Share it with all your bots",
-      "toBot": "Keep it to this bot"
+      "toBot": "Keep it to this bot",
+      "learnedBy": "Learned by {{bot}} · {{date}}",
+      "editedByYouOn": "Edited by you, kept by {{bot}} · {{date}}",
+      "addedByYouOn": "Added by you, kept by {{bot}} · {{date}}",
+      "toBotNamed": "Keep it to {{bot}} only",
+      "dream": {
+        "title": "Tidy memory",
+        "never": "Merges repeats, rewrites each fact clearly and drops what’s stale, checked against the chat. Runs about once a day once the bot has learned enough.",
+        "last": "Last tidied {{date}} · {{before}} facts → {{after}}",
+        "lastUndone": "Last tidy, {{date}}, was undone",
+        "queued": "Tidying in the background. The chat says when it’s done.",
+        "tidyNow": "Tidy now",
+        "undo": "Undo",
+        "loadFailed": "Could not load the memory’s last tidy.",
+        "requestFailed": "Could not start tidying the memory.",
+        "undoFailed": "Could not undo the tidy."
+      }
     },
     "skills": {
       "title": "Skills",
@@ -526,12 +628,17 @@
       "title": "Routines",
       "subtitle": "Work the bot does on a schedule or when something happens.",
       "empty": "Routines are tasks this bot runs on a schedule or when something happens. Ask it in chat to set one up.",
+      "guard": "Pause while you’re away",
+      "guardHint": "Stop its routines while you’re not reading what they say. They start again when you open this chat.",
+      "guardFailed": "Could not change whether the routines pause while you’re away.",
       "askInChat": "Ask in chat",
       "schedule": "Schedule · {{when}}",
       "github": "GitHub · {{when}}",
       "gmail": "Gmail · {{when}}",
       "last": "Last",
       "next": "Next",
+      "more": "Show more",
+      "less": "Show less",
       "never": "Never",
       "switch": "Run “{{name}}” on its own",
       "pause": "Pause",
@@ -573,6 +680,31 @@
       "loadFailed": "Could not load the bot’s permissions.",
       "saveFailed": "Could not change the permission.",
       "tools": "Tools",
+      "search": "Search tools",
+      "noMatch": "No tools match.",
+      "filters": {
+        "decision": "Decision",
+        "group": "Group",
+        "allGroups": "All groups",
+        "clear": "Clear"
+      },
+      "views": {
+        "all": "All",
+        "allow": "Allow",
+        "ask": "Ask",
+        "off": "Off",
+        "changed": "Set by you"
+      },
+      "summary": {
+        "tools_one": "{{count}} tool",
+        "tools_other": "{{count}} tools",
+        "ask_one": "{{count}} ask",
+        "ask_other": "{{count}} ask",
+        "off_one": "{{count}} off",
+        "off_other": "{{count}} off",
+        "changed_one": "{{count}} set by you",
+        "changed_other": "{{count}} set by you"
+      },
       "preset": {
         "auto": "Tools you leave on their default follow Approve for me: anything that reaches outside Oppenheimer asks first.",
         "full": "Tools you leave on their default follow Full access: they run without asking."
@@ -591,6 +723,7 @@
         "plan": "Plan",
         "mail": "Mail",
         "whatsapp": "WhatsApp",
+        "telegram": "Telegram",
         "github": "GitHub",
         "automations": "Routines and automations",
         "bots": "Other bots",
@@ -633,5 +766,8 @@
     "checkedHint": "Checked bots show in {{section}}.",
     "manageAll": "Manage in {{employees}}",
     "hide": "Hide from {{section}}"
+  },
+  "routineGuard": {
+    "notice": "I paused my routines while you were away. They start again when you open this chat."
   }
 }

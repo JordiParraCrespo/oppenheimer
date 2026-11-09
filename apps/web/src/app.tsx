@@ -1,6 +1,12 @@
 import { Toaster } from '@oppenheimer/design-system-web';
 import { useAuthState, useSessionRestore } from '@oppenheimer/frontend-core/react';
-import { AppPending, RouteError, SessionRestoreError, useTheme } from '@oppenheimer/frontend-web';
+import {
+  AppPending,
+  LoadingAnnouncer,
+  RouteError,
+  SessionRestoreError,
+  useTheme,
+} from '@oppenheimer/frontend-web';
 import { createRouter, RouterProvider } from '@tanstack/react-router';
 import { app } from '@/lib/oppenheimer';
 import { routeTree } from './routeTree.gen';
@@ -52,8 +58,9 @@ app.auth.store.subscribe((state, previous) => {
 });
 
 /**
- * The app's root: the router, once the session is known, and the single
- * `Toaster`. Sonner renders every `toast()` into *every* mounted `<Toaster>`,
+ * The app's root: the router, once the session is known, the single
+ * `Toaster`, and the one "Loading…" every placeholder counts itself into
+ * (`LoadingAnnouncer`). Sonner renders every `toast()` into *every* mounted `<Toaster>`,
  * so a second one anywhere in the tree shows each toast twice — mount it here
  * and nowhere else.
  */
@@ -71,7 +78,7 @@ export function App() {
   const { isPending, isError, isFetching, refetch } = useSessionRestore();
 
   return (
-    <>
+    <LoadingAnnouncer>
       {isPending ? (
         <AppPending />
       ) : isError ? (
@@ -81,6 +88,6 @@ export function App() {
         <RouterProvider router={router} context={{ auth: { isAuthenticated } }} />
       )}
       <Toaster theme={resolvedTheme} position="bottom-right" />
-    </>
+    </LoadingAnnouncer>
   );
 }

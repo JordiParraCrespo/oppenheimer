@@ -8,11 +8,15 @@ import {
 import {
   BOT_AVATAR_COLORS,
   BOT_DESCRIPTION_MAX,
+  BOT_FACE_EYES,
+  BOT_FACE_HATS,
+  BOT_FACE_MOUTHS,
   BOT_NAME_MAX,
   BOT_PERMISSIONS,
   BOT_PROVIDERS,
   BOT_SECTIONS,
   type BotAvatarColor,
+  type BotFace,
   type BotPermission,
   type BotProvider,
   type BotSection,
@@ -34,6 +38,8 @@ export interface BotProps {
   name: string;
   description: string;
   avatarColor: BotAvatarColor;
+  /** The face its owner picked; null (or absent) wears the one its id picks. */
+  avatarFace?: BotFace | null;
   /** The sidebar group it sits in; null is ungrouped. */
   groupId: string | null;
   /** Its order inside its group, from 0. */
@@ -48,11 +54,15 @@ export interface BotProps {
   permission: BotPermission;
   /** Whether what it decides to remember is saved without asking (slice 3). */
   learnAutomatically: boolean;
+  /** Whether its routines pause while its owner is away (the spend guard); on unless turned off. */
+  routineSpendGuard?: boolean;
   /** The console sections it shows in beside Employees, each once; none when absent. */
   sections?: readonly BotSection[];
   /** When its chat last had a message, and the start of it; written by the chat, never an edit. */
   lastMessageAt?: Date | null;
   lastMessagePreview?: string | null;
+  /** When its owner was last in its chat; written by the chat, never an edit. Null before it is stored. */
+  ownerSeenAt?: Date | null;
 }
 
 export interface CreateBotProps {
@@ -81,12 +91,14 @@ export interface BotEdit {
   name?: string;
   description?: string;
   avatarColor?: BotAvatarColor;
+  avatarFace?: BotFace | null;
   homeHostId?: string | null;
   provider?: BotProvider;
   model?: string | null;
   effort?: SessionEffort | null;
   permission?: BotPermission;
   learnAutomatically?: boolean;
+  routineSpendGuard?: boolean;
   sections?: readonly BotSection[];
 }
 
@@ -95,6 +107,7 @@ export type BotEditedField =
   | 'name'
   | 'description'
   | 'avatarColor'
+  | 'avatarFace'
   | 'groupId'
   | 'homeHostId'
   | 'provider'
@@ -102,6 +115,7 @@ export type BotEditedField =
   | 'effort'
   | 'permission'
   | 'learnAutomatically'
+  | 'routineSpendGuard'
   | 'sections';
 
 /**
@@ -179,6 +193,9 @@ export class BotEntity extends AggregateRoot<BotProps> {
   get avatarColor(): BotAvatarColor {
     return this.props.avatarColor;
   }
+  get avatarFace(): BotFace | null {
+    return this.props.avatarFace ?? null;
+  }
   get groupId(): string | null {
     return this.props.groupId;
   }
@@ -204,6 +221,9 @@ export class BotEntity extends AggregateRoot<BotProps> {
   get learnAutomatically(): boolean {
     return this.props.learnAutomatically;
   }
+  get routineSpendGuard(): boolean {
+    return this.props.routineSpendGuard ?? true;
+  }
   get sections(): readonly BotSection[] {
     return this.props.sections ?? [];
   }
@@ -214,6 +234,9 @@ export class BotEntity extends AggregateRoot<BotProps> {
 
   get lastMessagePreview(): string | null {
     return this.props.lastMessagePreview ?? null;
+  }
+  get ownerSeenAt(): Date | null {
+    return this.props.ownerSeenAt ?? null;
   }
 
   /** Where the next write puts it among its group's bots, when it moved; null when it did not. */
@@ -235,6 +258,10 @@ export class BotEntity extends AggregateRoot<BotProps> {
       props.avatarColor = changes.avatarColor;
       edited.add('avatarColor');
     }
+    if (changes.avatarFace !== undefined) {
+      props.avatarFace = changes.avatarFace;
+      edited.add('avatarFace');
+    }
     if (changes.homeHostId !== undefined) {
       props.homeHostId = changes.homeHostId;
       edited.add('homeHostId');
@@ -246,6 +273,10 @@ export class BotEntity extends AggregateRoot<BotProps> {
     if (changes.learnAutomatically !== undefined) {
       props.learnAutomatically = changes.learnAutomatically;
       edited.add('learnAutomatically');
+    }
+    if (changes.routineSpendGuard !== undefined) {
+      props.routineSpendGuard = changes.routineSpendGuard;
+      edited.add('routineSpendGuard');
     }
     if (changes.sections !== undefined) {
       props.sections = inSectionOrder(changes.sections);
@@ -303,6 +334,17 @@ export class BotEntity extends AggregateRoot<BotProps> {
     }
     if (!BOT_AVATAR_COLORS.includes(props.avatarColor)) {
       throw new ArgumentInvalidException(`${props.avatarColor} is not an avatar colour`);
+    }
+    const face = props.avatarFace;
+    if (
+      face &&
+      !(
+        BOT_FACE_HATS.includes(face.hat) &&
+        BOT_FACE_EYES.includes(face.eyes) &&
+        BOT_FACE_MOUTHS.includes(face.mouth)
+      )
+    ) {
+      throw new ArgumentInvalidException(`${JSON.stringify(face)} is not a bot's face`);
     }
     if (!BOT_PERMISSIONS.includes(props.permission)) {
       throw new ArgumentInvalidException(`${props.permission} is not a bot's approval level`);

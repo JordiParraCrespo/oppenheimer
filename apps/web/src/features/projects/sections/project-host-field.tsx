@@ -19,7 +19,10 @@ export function ProjectHostField({ control }: { control: Control<ProjectFormValu
       <div className="flex flex-wrap gap-1.5">
         <QueryState>
           <QueryState.Pending>
-            <Skeleton className="h-(--control-h-md) w-24" />
+            <span aria-busy className="flex flex-wrap gap-1.5">
+              <Skeleton shape="pill" className="h-(--control-h-md) w-24" />
+              <Skeleton shape="pill" className="h-(--control-h-md) w-20" />
+            </span>
           </QueryState.Pending>
           <QueryState.Error fallback={t('sessions.new.host.failed')} />
           <QueryState.Data>

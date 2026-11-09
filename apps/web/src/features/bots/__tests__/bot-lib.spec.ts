@@ -13,7 +13,14 @@ import {
   keyedProviderFor,
   providerOfMark,
 } from '../lib/bot-engine';
-import { botSections, firstBot, inOrder, sectionOrder } from '../lib/bot-groups';
+import {
+  botSections,
+  firstBot,
+  groupOrder,
+  inGroupOrder,
+  inOrder,
+  sectionOrder,
+} from '../lib/bot-groups';
 import { composerTopOf } from '../lib/composer-top';
 import { revisionNote } from '../lib/revision-note';
 
@@ -80,6 +87,33 @@ describe('botSections', () => {
       ['engineering', ['release']],
       ['research', ['quota', 'scholar']],
       [null, ['fresh']],
+    ]);
+  });
+
+  it('draws the groups in the order a group drag put them, Ungrouped still last', () => {
+    const sections = botSections(bots, groups, '');
+    expect(groupOrder(sections)).toEqual(['engineering', 'research']);
+    const dropped = inGroupOrder(sections, ['research', 'engineering']);
+    expect(dropped.map((section) => section.id)).toEqual(['research', 'engineering', null]);
+  });
+
+  it('leaves a hidden bot out of its group, but a search still finds it', () => {
+    expect(ids(botSections(bots, groups, '', { hidden: ['quota'] }))).toEqual([
+      ['engineering', ['release']],
+      ['research', ['scholar']],
+      [null, ['fresh']],
+    ]);
+    expect(ids(botSections(bots, groups, 'quota', { hidden: ['quota'] }))).toEqual([
+      ['engineering', ['quota']],
+    ]);
+  });
+
+  it('counts the hidden bots of a group, so one with all of them hidden is not called empty', () => {
+    const sections = botSections(bots, groups, '', { hidden: ['scholar', 'quota'] });
+    expect(sections.map((section) => [section.id, section.hiddenCount])).toEqual([
+      ['engineering', 1],
+      ['research', 1],
+      [null, 0],
     ]);
   });
 
@@ -186,12 +220,18 @@ describe('firstBot', () => {
   it('is the bot the sidebar draws first: the first group by position, then Ungrouped', () => {
     const groups = [group('later', 1), group('first', 0)];
     const bots = [bot('loose', null, 0), bot('b', 'first', 1), bot('a', 'first', 0)];
-    expect(firstBot(bots, groups)?.id).toBe('a');
-    expect(firstBot([bot('loose', null, 0)], groups)?.id).toBe('loose');
+    expect(firstBot(bots, groups, [])?.id).toBe('a');
+    expect(firstBot([bot('loose', null, 0)], groups, [])?.id).toBe('loose');
+  });
+
+  it('is the top pinned bot when one is pinned, since Pinned is drawn above the groups', () => {
+    const groups = [group('first', 0)];
+    const bots = [bot('a', 'first', 0), bot('b', 'first', 1)];
+    expect(firstBot(bots, groups, ['gone', 'b'])?.id).toBe('b');
   });
 
   it('is undefined for a workspace with no bots, which keeps the greeting', () => {
-    expect(firstBot([], [group('g', 0)])).toBeUndefined();
+    expect(firstBot([], [group('g', 0)], [])).toBeUndefined();
   });
 });
 

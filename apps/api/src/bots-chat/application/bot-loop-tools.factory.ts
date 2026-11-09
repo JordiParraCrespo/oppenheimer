@@ -49,7 +49,7 @@ export class BotLoopToolsFactory implements BotToolArea {
     return defineBotTool({
       name: 'schedule_loop',
       scope: 'bots:write',
-      description: `Says when your self-paced loop (set with /loop and no interval) runs next: 1 to ${BOT_LOOP_SELF_PACED_MAX_MINUTES} minutes from now. Sooner while what you watch is changing, later when it is quiet. Call it once per run; if a run does not call it, the loop ends. A loop on a fixed interval keeps its own time.`,
+      description: `Sets when your self-paced loop (set with /loop and no interval) runs next: 1 to ${BOT_LOOP_SELF_PACED_MAX_MINUTES} minutes from now. Sooner while what you watch is changing, later when it is quiet. Call it once per run; if a run does not call it, the loop ends. A loop on a fixed interval keeps its own time.`,
       input: z.object({
         minutes: z
           .number()

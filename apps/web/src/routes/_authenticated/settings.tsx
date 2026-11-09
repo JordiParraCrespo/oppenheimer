@@ -1,5 +1,6 @@
 import { SettingsContent, SettingsMain, SettingsShell } from '@oppenheimer/design-system-web';
 import {
+  Brain,
   Cloud,
   Cpu,
   Eye,
@@ -7,6 +8,7 @@ import {
   KeyRound,
   Mail,
   MessageCircle,
+  Send,
   User,
 } from '@oppenheimer/design-system-web/icons';
 import { SettingsSidebar } from '@oppenheimer/frontend-web';
@@ -37,10 +39,12 @@ function SettingsLayout() {
             labelKey: 'account',
             items: [
               { to: '/settings/profile', icon: User, labelKey: 'profile' },
+              { to: '/settings/memory', icon: Brain, labelKey: 'memory' },
               { to: '/settings/repositories', icon: Eye, labelKey: 'repositories' },
               { to: '/settings/cloud-agents', icon: Cloud, labelKey: 'cloudAgents' },
               { to: '/settings/mail', icon: Mail, labelKey: 'mail' },
               { to: '/settings/whatsapp', icon: MessageCircle, labelKey: 'whatsapp' },
+              { to: '/settings/telegram', icon: Send, labelKey: 'telegram' },
             ],
           },
           {

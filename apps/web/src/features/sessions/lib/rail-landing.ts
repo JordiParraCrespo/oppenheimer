@@ -2,28 +2,29 @@
  * The rail's items by id and route, in the order a reader who never dragged
  * one sees it, and the reader's own order as this device keeps it. Apart from
  * the names and glyphs (`rail-order.ts`) because `/` reads it to pick where
- * the console opens, and that route is on the first load. Plan opens on its
- * Inbox, its first section since the 2026-10-29 frame.
+ * the console opens, and that route is on the first load. Plan opens on the
+ * view at the top of its own sidebar (`/plan/open` picks it), the Inbox
+ * until the reader drags another there.
  */
 export const RAIL_ROUTES = [
   { id: 'bots', to: '/bots' },
   { id: 'sessions', to: '/sessions/new' },
   { id: 'pulls', to: '/pulls' },
   { id: 'automations', to: '/automations' },
-  { id: 'plan', to: '/plan/inbox' },
+  { id: 'plan', to: '/plan/open' },
 ] as const;
 
 export type RailItemId = (typeof RAIL_ROUTES)[number]['id'];
 
 export const RAIL_ORDER_KEY = 'oppenheimer.rail.order';
 
-/** Where the console lands unless the reader put another item first: Plan's Inbox. */
-const INBOX_LANDING = '/plan/inbox';
+/** Where the console lands unless the reader put another item first: Plan, on its top view. */
+const PLAN_LANDING = '/plan/open';
 
 /**
  * The rail item the Inbox was before it moved into Plan. An order stored
  * then still names it; it is no item now, and an order that led with it
- * still lands on the Inbox.
+ * still lands on Plan.
  */
 const FORMER_INBOX = 'inbox';
 
@@ -66,13 +67,14 @@ export function rememberRailOrder(order: readonly RailItemId[]) {
 
 /**
  * Where the console opens (`product/versions/mvp/29-inbox.md`, Decided 1):
- * Plan's Inbox for a reader who never dragged the rail, or whose stored
- * order led with the Inbox when it was a rail item; otherwise the first item
+ * Plan, on the view at the top of its sidebar, for a reader who never
+ * dragged the rail, or whose stored order led with the Inbox when it was a
+ * rail item; otherwise the first item
  * of the reader's order, so a reader who dragged Employees to the top lands
  * there.
  */
 export function railLanding(): (typeof RAIL_ROUTES)[number]['to'] {
   const first = storedIds().find((id) => id === FORMER_INBOX || isRailItemId(id));
-  if (first === undefined || first === FORMER_INBOX) return INBOX_LANDING;
-  return RAIL_ROUTES.find((item) => item.id === first)?.to ?? INBOX_LANDING;
+  if (first === undefined || first === FORMER_INBOX) return PLAN_LANDING;
+  return RAIL_ROUTES.find((item) => item.id === first)?.to ?? PLAN_LANDING;
 }

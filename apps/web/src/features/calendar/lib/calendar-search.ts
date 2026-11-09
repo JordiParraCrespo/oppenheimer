@@ -1,17 +1,27 @@
 import { searchText } from '@oppenheimer/frontend-web';
+import { calendarDateSchema } from '@oppenheimer/shared/schemas/task';
 import { z } from 'zod';
+import { CALENDAR_VIEWS } from './calendar-view';
 
 /** What the month draws, each one a toggle in the sidebar (`20-plan-calendar.md` §1). */
 export const CALENDAR_LAYERS = ['google', 'events', 'tasks', 'automations'] as const;
 export type CalendarLayer = (typeof CALENDAR_LAYERS)[number];
 
+/** A real calendar day, or nothing: `2026-99-99` is dropped rather than drawn. */
+const isoDay = calendarDateSchema.optional().catch(undefined);
+
 /**
- * The calendar's address: the month (`YYYY-MM`, this month when absent), the
+ * The calendar's address: the view (`day`, `week` or `month`; Day when
+ * absent), the day Day and Week are on (`YYYY-MM-DD`, today when absent),
+ * the month the Month view shows (`YYYY-MM`, this month when absent), the
  * layers switched off (comma-separated, so the default — all on — is a bare
- * URL), the event whose dialog is open (`new` for New event), the day a
- * New event starts on, and the Google event whose read-only view is open.
+ * URL), the event whose dialog is open (`new` for New event), the day and
+ * time (`HH:MM`) a New event starts on, and the Google event whose read-only
+ * view is open.
  */
 export const calendarSearchSchema = z.object({
+  view: z.enum(CALENDAR_VIEWS).optional().catch(undefined),
+  date: isoDay,
   month: z
     .string()
     .regex(/^\d{4}-(0[1-9]|1[0-2])$/)
@@ -20,9 +30,10 @@ export const calendarSearchSchema = z.object({
   off: searchText,
   event: searchText,
   google: searchText,
-  day: z
+  day: isoDay,
+  at: z
     .string()
-    .regex(/^\d{4}-\d{2}-\d{2}$/)
+    .regex(/^([01]\d|2[0-3]):[0-5]\d$/)
     .optional()
     .catch(undefined),
 });

@@ -10,6 +10,7 @@
  * are the integration suite's.
  */
 import { BOT_SESSION_WAKE_STATES, type BotSessionEvent } from '@oppenheimer/shared';
+import { failedWakeAsk } from '../domain/bot-recovery.policy';
 import {
   BOT_SUBSCRIPTION_WAKE_LIMIT,
   knownStateOf,
@@ -407,13 +408,26 @@ describe('sessionWakePrompt', () => {
     expect(prompt).toContain('Say only what the result shows');
   });
 
+  it('ends a finished session with a recap of it', () => {
+    // The owner wants every session that finishes recapped, not only
+    // reported: without this the bot said what the agent did and stopped.
+    const prompt = sessionWakePrompt(event('completed'), '');
+    expect(prompt).toContain("end with a recap of this session: the recap skill's brief");
+  });
+
   it('asks for what each state calls for', () => {
+    // A bot told it could not answer left questions its instructions
+    // settled waiting on the person, though it has answer_session.
     expect(sessionWakePrompt(event('requires_action'), '')).toContain(
-      'You cannot answer a terminal',
+      'If your instructions settle it, answer it with answer_session',
     );
     expect(sessionWakePrompt(event('cancelled'), '')).toContain(
       'Do not start it again on your own',
     );
+  });
+
+  it('asks a failed wake what the recovery policy says', () => {
+    expect(sessionWakePrompt(event('failed'), '')).toContain(failedWakeAsk());
   });
 });
 

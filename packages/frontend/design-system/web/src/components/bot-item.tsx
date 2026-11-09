@@ -5,10 +5,11 @@ import type * as React from 'react';
 
 import { META_GIVES_WAY, ROW_BUTTON_WITH_ACTION, SidebarRow } from '../internal/sidebar-row';
 import { cn } from '../lib/utils';
-import { type AvatarColor, BotAvatar } from './avatar-picker';
+import { BotAvatar, type BotFaceSpec } from './avatar-picker';
 import { useSortableControl } from './drag';
 import { Skeleton } from './skeleton';
 import { Tooltip, TooltipContent, TooltipTrigger } from './tooltip';
+import { variedWidth } from '../internal/varied-width';
 
 function BotList({ className, ...props }: React.ComponentProps<'div'>) {
   return <div data-slot="bot-list" role="list" className={cn('flex flex-col gap-px', className)} {...props} />;
@@ -31,7 +32,7 @@ function BotItem({
   name,
   initials,
   image,
-  color,
+  face,
   preview,
   live = false,
   unread = false,
@@ -48,8 +49,8 @@ function BotItem({
   name: string;
   initials: string;
   image?: string;
-  /** The avatar colour the initials sit on, for a bot with no photo. */
-  color?: AvatarColor;
+  /** The bot's colour and id: with no photo, its drawn face; without, its initials. */
+  face?: BotFaceSpec;
   /** The last message, shown in the row's tooltip. */
   preview?: React.ReactNode;
   /** The bot is working: the green dot on the photo. */
@@ -85,7 +86,7 @@ function BotItem({
       {...props}
     >
       <span className="relative flex shrink-0">
-        <BotAvatar option={{ image, initials }} size={20} color={color} className="rounded-xs" />
+        <BotAvatar option={{ image, initials }} size={20} face={face} />
         {live ? (
           <span
             aria-hidden
@@ -124,11 +125,13 @@ function BotItem({
   );
 }
 
+const SKELETON_NAMES = ['w-28', 'w-20', 'w-32', 'w-24'] as const;
+
 /**
  * BotItemSkeleton — a `BotItem` while the list loads: the 20px square and a
- * name's bar on the row's 32px line.
+ * name's bar on the row's 32px line. `index` varies the name's width.
  */
-function BotItemSkeleton({ className, ...props }: React.ComponentProps<'div'>) {
+function BotItemSkeleton({ index = 0, className, ...props }: React.ComponentProps<'div'> & { index?: number }) {
   return (
     <div
       aria-hidden
@@ -137,7 +140,7 @@ function BotItemSkeleton({ className, ...props }: React.ComponentProps<'div'>) {
       {...props}
     >
       <Skeleton shape="sm" className="size-5 shrink-0 rounded-xs" />
-      <Skeleton shape="sm" className="h-3.5 w-28" />
+      <Skeleton shape="sm" className={cn('h-3.5', variedWidth(index, SKELETON_NAMES))} />
     </div>
   );
 }

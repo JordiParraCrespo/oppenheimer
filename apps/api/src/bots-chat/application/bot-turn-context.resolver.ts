@@ -14,10 +14,12 @@ import {
   BOT_DOCUMENT_REPOSITORY,
   BOT_MEMORY_FACT_REPOSITORY,
   BOT_SKILL_REPOSITORY,
+  PERSON_MEMORY_REPOSITORY,
 } from '../../bots/bots.di-tokens';
 import type { BotDocumentRepositoryPort } from '../../bots/database/bot-document.repository.port';
 import type { BotMemoryFactRepositoryPort } from '../../bots/database/bot-memory-fact.repository.port';
 import type { BotSkillRepositoryPort } from '../../bots/database/bot-skill.repository.port';
+import type { PersonMemoryRepositoryPort } from '../../bots/database/person-memory.repository.port';
 import {
   BOT_CONVERSATION_SUMMARY_REPOSITORY,
   BOT_MESSAGE_REPOSITORY,
@@ -31,7 +33,7 @@ import { BOT_HISTORY_READ_MAX, botHistory } from '../domain/bot-history.policy';
 import { withEarlierImages } from '../domain/bot-image.policy';
 import { memoryInMind } from '../domain/bot-memory.policy';
 import { composeBotSystemPrompt } from '../domain/bot-prompt.policy';
-import { composeTurnMessage } from '../domain/bot-skill.policy';
+import { composeTurnMessage, withBuiltInSkills } from '../domain/bot-skill.policy';
 import type { BotTurnEntity } from '../domain/bot-turn.entity';
 import { BotTurnBudget } from '../domain/bot-turn-budget.policy';
 import { composeTurnContext, withTurnContext } from '../domain/bot-turn-context.policy';
@@ -46,18 +48,13 @@ import { BotRuleReviewerFactory } from './bot-rule-reviewer.factory';
 import { BotSubagentRunnerFactory } from './bot-subagent-runner.factory';
 import type { BotToolContext } from './bot-tool.factory';
 import { BotToolboxFactory } from './bot-toolbox.factory';
+import { BotTurnChannelPolicy } from './bot-turn-channel.policy';
 import { BotTurnOpeningResolver } from './bot-turn-opening.resolver';
 
 const ENGINE_EFFORTS: readonly string[] = ['low', 'medium', 'high', 'xhigh', 'max'];
 
 /** What a turn is run with, but the abort signal, the scratch directory and the steering its runner owns. */
 export type BotTurnContext = Omit<BotTurnRequest, 'signal' | 'scratchDir' | 'steering'>;
-
-/**
- * Model round trips in one chat turn. Below the engine's default: a chat
- * turn answers, and longer work belongs to a session on a host.
- */
-export const BOT_TURN_MAX_STEPS = 20;
 
 /**
  * Everything a turn needs, read when it starts: the bot as it is now (its
@@ -80,12 +77,14 @@ export class BotTurnContextResolver {
     @Inject(BOT_DOCUMENT_REPOSITORY) private readonly documents: BotDocumentRepositoryPort,
     @Inject(BOT_MEMORY_FACT_REPOSITORY) private readonly memory: BotMemoryFactRepositoryPort,
     @Inject(BOT_SKILL_REPOSITORY) private readonly skills: BotSkillRepositoryPort,
+    @Inject(PERSON_MEMORY_REPOSITORY) private readonly people: PersonMemoryRepositoryPort,
     @Inject(BOT_MESSAGE_REPOSITORY) private readonly messages: BotMessageRepositoryPort,
     @Inject(BOT_CONVERSATION_SUMMARY_REPOSITORY)
     private readonly summaries: BotConversationSummaryRepositoryPort,
     private readonly owners: BotOwnerScopeResolver,
     @Inject(OWNER_HOSTS) private readonly hosts: OwnerHostsPort,
     @Inject(BOT_TURN_REPOSITORY) private readonly turns: BotTurnRepositoryPort,
+    private readonly channels: BotTurnChannelPolicy,
     private readonly toolbox: BotToolboxFactory,
     private readonly approvals: BotApprovalRequestFactory,
     private readonly permissions: BotOwnerPermissionsResolver,
@@ -99,27 +98,33 @@ export class BotTurnContextResolver {
   private readonly logger = new Logger(BotTurnContextResolver.name);
 
   async resolve(turn: BotTurnEntity, now: Date): Promise<BotTurnShape<BotTurnContext> | null> {
+    if (!(await this.channels.answerable(turn))) return null;
     const { prompt, images, command, message } = await this.opening.resolve(turn);
     const bot = await this.access.bot(turn.organizationId, turn.botId);
     const credential = await this.access.credential(turn.organizationId, turn.provider, now);
     const owner = await this.owners.resolve(turn.organizationId, bot.createdByUserId);
-    const summarized = await this.summaries.findForBot(turn.organizationId, bot.id);
-    const summary = summarized.isSome() ? summarized.unwrap() : null;
-    const [documents, facts, skills, earlier, hosts, lastContext, permissions] = await Promise.all([
-      this.documents.findAllForTurn(turn.organizationId, bot.id),
-      this.memory.findAllForTurn(turn.organizationId, bot.id),
-      this.skills.findAllForTurn(turn.organizationId, bot.id),
-      this.messages.findHistory(
-        turn.organizationId,
-        bot.id,
-        turn.id,
-        summary?.coversThroughMessageId ?? null,
-        BOT_HISTORY_READ_MAX,
-      ),
-      this.hostsOf(owner, turn.id),
-      this.turns.findLastContext(turn.organizationId, bot.id),
-      this.settings.forBot(turn.organizationId, bot.id),
-    ]);
+    // The summary covers the console chat; a channel's conversation is read without one.
+    const summarized = turn.inConsole
+      ? await this.summaries.findForBot(turn.organizationId, bot.id)
+      : null;
+    const summary = summarized?.isSome() ? summarized.unwrap() : null;
+    const [documents, facts, skills, earlier, hosts, lastContext, permissions, about] =
+      await Promise.all([
+        this.documents.findAllForTurn(turn.organizationId, bot.id),
+        this.memory.findAllForTurn(turn.organizationId, bot.id),
+        this.skills.findAllForTurn(turn.organizationId, bot.id),
+        this.messages.findHistory(
+          turn.organizationId,
+          turn.conversationId,
+          turn.id,
+          summary?.coversThroughMessageId ?? null,
+          BOT_HISTORY_READ_MAX,
+        ),
+        this.hostsOf(owner, turn.id),
+        this.turns.findLastContext(turn.organizationId, bot.id),
+        this.settings.forBot(turn.organizationId, bot.id),
+        this.aboutOf(turn.organizationId, bot.createdByUserId),
+      ]);
     const model = {
       provider: turn.provider,
       ...credential,
@@ -134,6 +139,7 @@ export class BotTurnContextResolver {
         owner,
         organizationId: turn.organizationId,
         botId: bot.id,
+        conversationId: turn.conversationId,
         turnId: turn.id,
         homeHostId: bot.homeHostId,
         timeZone: turn.timeZone ?? 'UTC',
@@ -169,8 +175,9 @@ export class BotTurnContextResolver {
       documents.find((document) => document.name === name)?.content ?? '';
     const request: BotTurnContext = {
       ...model,
-      // A bot has one conversation: its id names it to the provider's prompt cache.
-      cacheKey: bot.id,
+      // Each conversation names itself to the provider's prompt cache; the
+      // console chat's id is the bot's.
+      cacheKey: turn.conversationId,
       systemPrompt: composeBotSystemPrompt({
         name: bot.name,
         description: bot.description,
@@ -178,6 +185,7 @@ export class BotTurnContextResolver {
         instructions: documentText('instructions'),
         facts: inMind.own,
         personFacts: inMind.person,
+        personAbout: about,
         engineCapabilities: engineCapabilities(turn.provider),
         tools: owner
           ? this.toolbox.catalog(turn.credentialScopes, {
@@ -197,12 +205,15 @@ export class BotTurnContextResolver {
           hosts,
           lastContext,
           memory: { log: inMind.log, toRecall: inMind.toRecall },
+          channel: turn.origin === 'telegram' ? 'telegram' : null,
         }),
-        composeTurnMessage(command, skills, prompt),
+        composeTurnMessage(command, withBuiltInSkills(skills), prompt),
       ),
       images,
       tools,
-      maxSteps: BOT_TURN_MAX_STEPS,
+      // No step limit: the turn runs until the model answers, compacting
+      // against the window its last turn reported.
+      contextWindow: lastContext?.window ?? null,
     };
     return this.approvalStarted.shape(message, request);
   }
@@ -213,6 +224,15 @@ export class BotTurnContextResolver {
    * that there are none. Anything else the read throws is a fault, and
    * fails the turn like any other.
    */
+  /**
+   * What the bot's owner wrote about themselves in Settings → Memory, or
+   * nothing: a bot with no owner has nobody to read about.
+   */
+  private async aboutOf(organizationId: string, ownerId: string | null): Promise<string> {
+    if (!ownerId) return '';
+    return (await this.people.find(organizationId, ownerId)).about;
+  }
+
   private async hostsOf(owner: AccessScope | null, turnId: string): Promise<OwnerHost[] | null> {
     if (!owner) return null;
     try {

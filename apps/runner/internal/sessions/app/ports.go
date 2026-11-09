@@ -44,6 +44,12 @@ type Terminals interface {
 	Windows(ctx context.Context, name string) ([]domain.Window, error)
 	// SendKeys types into a window.
 	SendKeys(ctx context.Context, target, keys string) error
+	// PressKeys presses named keys in a window, in order, by tmux's own names
+	// (`Enter`, `C-c`): what a person presses that is not text.
+	PressKeys(ctx context.Context, target string, keys []string) error
+	// CaptureHistory is CaptureBody with up to lines lines of scrollback
+	// above the visible screen.
+	CaptureHistory(ctx context.Context, target string, lines int) (string, error)
 	// Launch replaces the program in a window with command, run in dir: the
 	// program becomes the pane's own process on a fresh screen, and nothing
 	// is typed to start it. An empty command is a plain shell.

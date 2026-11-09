@@ -18,7 +18,7 @@ import { formatCalendarDay, useLocale } from '@oppenheimer/frontend-web';
 import { getRouteApi } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { GoogleAccountSwatch } from '../components/google-account-swatch';
-import { useMonth } from '../hooks/use-month';
+import { useCalendarView } from '../hooks/use-calendar-view';
 import { accentOf } from '../lib/google-accounts';
 
 const calendar = getRouteApi('/_authenticated/plan/calendar');
@@ -34,7 +34,7 @@ export function GoogleEventDialog() {
   const locale = useLocale();
   const { google: open } = calendar.useSearch();
   const navigate = calendar.useNavigate();
-  const { range } = useMonth();
+  const { range } = useCalendarView();
   const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
   const { data: event } = useGoogleCalendarEvents(range, timeZone, false, {
     select: (read) => read.events.find((row) => row.id === open) ?? null,

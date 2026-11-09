@@ -23,6 +23,7 @@ import { LatencyReadout } from './latency-readout';
 import { SessionBar } from './session-bar';
 import { SessionChat } from './session-chat';
 import { SessionCloud } from './session-cloud';
+import { SessionCloudChat } from './session-cloud-chat';
 import { SessionProvisioning } from './session-provisioning';
 import { SessionShareButton } from './session-share-button';
 
@@ -194,7 +195,11 @@ export function SessionPane({
     return (
       <>
         {alert}
-        <SessionCloud session={session} />
+        {session.agent === 'claude-code' ? (
+          <SessionCloudChat session={session} />
+        ) : (
+          <SessionCloud session={session} />
+        )}
       </>
     );
   }

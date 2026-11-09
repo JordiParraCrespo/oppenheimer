@@ -5,6 +5,7 @@ import { QUEUE_NAMES } from '@oppenheimer/shared';
 import type { Job } from 'bullmq';
 import { ContinueBotGoalCommand } from '../commands/continue-bot-goal/continue-bot-goal.command';
 import { DeliverBotAnswerCommand } from '../commands/deliver-bot-answer/deliver-bot-answer.command';
+import { DeliverTelegramReplyCommand } from '../commands/deliver-telegram-reply/deliver-telegram-reply.command';
 import { FinishBotLoopRunCommand } from '../commands/finish-bot-loop-run/finish-bot-loop-run.command';
 import { RunBotLoopCommand } from '../commands/run-bot-loop/run-bot-loop.command';
 import { RunBotTurnCommand } from '../commands/run-bot-turn/run-bot-turn.command';
@@ -12,6 +13,7 @@ import { RUN_BOT_LOOP_JOB } from '../database/bot-loop.repository';
 import {
   CONTINUE_BOT_GOAL_JOB,
   DELIVER_BOT_ANSWER_JOB,
+  DELIVER_TELEGRAM_REPLY_JOB,
   FINISH_BOT_LOOP_RUN_JOB,
   RUN_BOT_TURN_JOB,
 } from '../database/bot-turn.repository';
@@ -22,7 +24,8 @@ const TURNS_PER_PROCESS = 8;
 /**
  * The `bot-turns` worker: one job per turn, staged on the outbox when the turn
  * becomes due, and one per ask that ended, which queues its answer on the
- * bot that asked (`DELIVER_BOT_ANSWER_JOB`). A turn runs for as long as the model works, so the job is not
+ * bot that asked (`DELIVER_BOT_ANSWER_JOB`), and one per Telegram turn that
+ * ended, which sends its answer to the chat (`DELIVER_TELEGRAM_REPLY_JOB`). A turn runs for as long as the model works, so the job is not
  * retried on a failure: the turn records it, and a worker that died under one
  * leaves it running for the next pickup to fail. A turn of a bot with a goal
  * that ended owes one more, which decides whether the goal goes on
@@ -58,6 +61,10 @@ export class BotTurnsProcessor extends WorkerHost {
     }
     if (turnId && job.name === DELIVER_BOT_ANSWER_JOB) {
       await this.commandBus.execute(new DeliverBotAnswerCommand({ turnId }));
+      return;
+    }
+    if (turnId && job.name === DELIVER_TELEGRAM_REPLY_JOB) {
+      await this.commandBus.execute(new DeliverTelegramReplyCommand({ turnId }));
       return;
     }
     if (turnId && job.name === CONTINUE_BOT_GOAL_JOB) {

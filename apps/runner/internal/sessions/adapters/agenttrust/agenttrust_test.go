@@ -141,32 +141,8 @@ func TestTrustSurvivesNullWhereAMapBelongs(t *testing.T) {
 // repository itself is trusted, and otherwise asks again in the worktree,
 // which holds `claude --cloud` until it times out; so both are marked.
 func TestTrustMarksTheRepositoryOfAWorktree(t *testing.T) {
-	if _, err := exec.LookPath("git"); err != nil {
-		t.Skip("no git")
-	}
 	for _, bare := range []bool{true, false} {
-		root := workDir(t)
-		repo := filepath.Join(root, "repo.git")
-		git := func(args ...string) string {
-			t.Helper()
-			cmd := exec.Command("git", args...)
-			cmd.Env = append(os.Environ(), "GIT_AUTHOR_NAME=t", "GIT_AUTHOR_EMAIL=t@t", "GIT_COMMITTER_NAME=t", "GIT_COMMITTER_EMAIL=t@t")
-			out, err := cmd.Output()
-			if err != nil {
-				t.Fatalf("git %v: %v", args, err)
-			}
-			return strings.TrimSpace(string(out))
-		}
-		if bare {
-			git("init", "--quiet", "--bare", repo)
-		} else {
-			repo = filepath.Join(root, "main")
-			git("init", "--quiet", repo)
-		}
-		tree := git("-C", repo, "hash-object", "-t", "tree", "-w", "--stdin")
-		commit := git("-C", repo, "commit-tree", "-m", "x", tree)
-		work := filepath.Join(root, "work")
-		git("-C", repo, "worktree", "add", "--quiet", "--detach", work, commit)
+		work, repo := worktreeOf(t, bare)
 		config := filepath.Join(t.TempDir(), ".claude.json")
 
 		if err := agenttrust.New(agenttrust.Options{ClaudeConfig: config}).Trust(domain.AgentClaude, work); err != nil {
@@ -261,5 +237,70 @@ func TestForgetDropsTheFolderAndKeepsEverythingElse(t *testing.T) {
 	}
 	if _, err := os.Stat(other); err != nil {
 		t.Fatalf("removed another folder's conversations: %v", err)
+	}
+}
+
+// linkedWorktree is a worktree linked to a regular repository, and that
+// repository's main checkout.
+func linkedWorktree(t *testing.T) (work, repo string) {
+	t.Helper()
+	return worktreeOf(t, false)
+}
+
+// worktreeOf is a worktree linked to a new repository, bare or not, and the
+// folder the agents key that repository by.
+func worktreeOf(t *testing.T, bare bool) (work, repo string) {
+	t.Helper()
+	if _, err := exec.LookPath("git"); err != nil {
+		t.Skip("no git")
+	}
+	root := workDir(t)
+	repo = filepath.Join(root, "repo.git")
+	git := func(args ...string) string {
+		t.Helper()
+		cmd := exec.Command("git", args...)
+		cmd.Env = append(os.Environ(), "GIT_AUTHOR_NAME=t", "GIT_AUTHOR_EMAIL=t@t", "GIT_COMMITTER_NAME=t", "GIT_COMMITTER_EMAIL=t@t")
+		out, err := cmd.Output()
+		if err != nil {
+			t.Fatalf("git %v: %v", args, err)
+		}
+		return strings.TrimSpace(string(out))
+	}
+	if bare {
+		git("init", "--quiet", "--bare", repo)
+	} else {
+		repo = filepath.Join(root, "main")
+		git("init", "--quiet", repo)
+	}
+	tree := git("-C", repo, "hash-object", "-t", "tree", "-w", "--stdin")
+	commit := git("-C", repo, "commit-tree", "-m", "x", tree)
+	work = filepath.Join(root, "work")
+	git("-C", repo, "worktree", "add", "--quiet", "--detach", work, commit)
+	return work, repo
+}
+
+// A `~/.claude.json` kept in a dotfiles repository is a symlink into it;
+// replacing the link with a copy would cut the dotfiles off from Claude Code.
+func TestTrustKeepsASymlinkedClaudeConfigALink(t *testing.T) {
+	dotfiles := filepath.Join(t.TempDir(), "claude.json")
+	if err := os.WriteFile(dotfiles, []byte(`{"oauthAccount":{"email":"a@b.c"}}`), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	config := filepath.Join(t.TempDir(), ".claude.json")
+	if err := os.Symlink(dotfiles, config); err != nil {
+		t.Fatal(err)
+	}
+	work := workDir(t)
+
+	if err := agenttrust.New(agenttrust.Options{ClaudeConfig: config}).Trust(domain.AgentClaude, work); err != nil {
+		t.Fatal(err)
+	}
+
+	if info, err := os.Lstat(config); err != nil || info.Mode()&os.ModeSymlink == 0 {
+		t.Fatalf(".claude.json is no longer a symlink: %v", err)
+	}
+	entry, _ := read(t, dotfiles)["projects"].(map[string]any)[work].(map[string]any)
+	if entry["hasTrustDialogAccepted"] != true {
+		t.Fatal("the folder was not trusted in the file the link names")
 	}
 }

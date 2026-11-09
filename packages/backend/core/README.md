@@ -13,12 +13,12 @@ wired into the API.
 | --------------------------------------------------------- | ----------------------------------------------------------------------- |
 | `AppError`, `ErrorDefinition`                             | Catalog error: code, stable title, per-occurrence detail                |
 | `requireFound`                                            | The value in an `Option` lookup, or the catalog error when it is empty  |
-| `AllExceptionsFilter`                                     | Global filter rendering every exception as an RFC 7807 problem document |
+| `AllExceptionsFilter`                                     | Global filter rendering every exception as an RFC 7807 problem document, and reporting every 5xx (`@oppenheimer/backend-error-reporting`) |
 | `ProblemDetails`, `InvalidParam`                          | The problem-document contract the filter renders                        |
 | `ProblemDetailsDto`, `ApiProblemResponse`                 | Swagger model + decorator for documenting failures                      |
 | `SanitizePipe`                                            | Input sanitization pipe                                                 |
 | `RequestContextMiddleware`                                | Opens the per-request correlation id before guards run (backend-ddd's `RequestContextService`) |
-| `LoggingModule`                                           | Hardened request logging (`nestjs-pino`): no headers/query/bodies, `userId` + credential scopes on every line |
+| `LoggingModule`                                           | Hardened request logging (`nestjs-pino`): no headers/query/bodies, `userId` + credential scopes on every line; with `file`, also JSON lines to that file for a log shipper |
 | `createAuthRouteLoggingMiddleware`                        | Request logging for Better Auth routes (its `middleware` option)        |
 | `toPageMeta`, `PageMeta`                                  | A paginated response's `meta` from a repository's `Paginated` result    |
 | `PaginatedResponseDto(Item, Meta)`                        | Base class for a paginated response DTO's `data` / `meta`               |

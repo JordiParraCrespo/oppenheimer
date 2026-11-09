@@ -56,9 +56,9 @@ describe('bot notices (integration)', () => {
     await dataSource.initialize();
     bots = new BotRepository(
       dataSource.getRepository(BotOrmEntity),
-      dataSource,
       new BotMapper(),
       new BotDocumentMapper(),
+      new OutboxService(dataSource),
     );
     notices = new BotNoticeRepository(
       dataSource.getRepository(BotNoticeOrmEntity),

@@ -183,6 +183,82 @@ describe('a settled week, replayed', () => {
   });
 });
 
+// What breaks this: a turn that compacted drawing its line above the bot's
+// work as if it opened the turn, or not at all, instead of where it folded.
+it('draws a compaction inside the turn, between the calls before and after it', async () => {
+  const at = '2026-10-30T09:00:00.000Z';
+  const step = (callId: string, title: string) => ({
+    callId,
+    name: 'start_session',
+    input: { title },
+    output: 'ok',
+    isError: false,
+    sessionId: null,
+    subagents: null,
+    allowedBy: null,
+    mailDraft: null,
+    rateLimit: null,
+  });
+  const message = (id: string, role: string, content: string, extra: object = {}) => ({
+    id,
+    turnId: 't1',
+    role,
+    content,
+    steps: [],
+    event: null,
+    attachments: [],
+    createdAt: at,
+    ...extra,
+  });
+  const chat = await replayBotChat({
+    botId: 'bot-compaction',
+    frames: [
+      {
+        type: 'read',
+        conversation: {
+          messageCount: 4,
+          turns: [
+            {
+              id: 't1',
+              status: 'completed',
+              provider: 'anthropic',
+              model: 'claude-sonnet-5-5',
+              error: null,
+              failure: null,
+              inputTokens: 1,
+              outputTokens: 1,
+              contextTokens: null,
+              contextWindow: null,
+              planLimits: null,
+              cancelRequested: false,
+              createdAt: at,
+              startedAt: at,
+              endedAt: at,
+            },
+          ],
+          messages: [
+            message('m1', 'user', 'Tag the invoices'),
+            message('m2', 'activity', '', { steps: [step('c1', 'One')] }),
+            message('m3', 'event', 'Earlier in this turn, what you had read was summarized.', {
+              event: { kind: 'compaction', tokensBefore: 92_000, tokensAfter: 21_000 },
+            }),
+            message('m4', 'activity', '', { steps: [step('c2', 'Two')] }),
+          ],
+        },
+      },
+      { type: 'ready' },
+    ],
+  } as never);
+  await chat.playAll?.();
+  const lines = outline(chat.container);
+  expect(lines.filter((line) => line.startsWith('you:'))).toEqual(['you: Tag the invoices']);
+  const turn = chat.container.querySelector('[data-slot="bot-turn"]');
+  const text = turn?.textContent ?? '';
+  const order = ['One', 'bots.chat.event.compactionLine', 'Two'].map((part) => text.indexOf(part));
+  expect(order.every((index) => index >= 0)).toBe(true);
+  expect([...order].sort((a, b) => a - b)).toEqual(order);
+});
+
 describe('a turn recorded while it ran, replayed', () => {
   it('thinks, then writes the streamed words with the write head after them', async () => {
     const chat = await replayBotChat(incidentLive);
@@ -190,7 +266,7 @@ describe('a turn recorded while it ran, replayed', () => {
     expect(outline(chat.container)).toEqual([
       'you: Summarise last night’s incident',
       'bot (thinking)',
-      '  … bots.chat.turn.thinking{} 00:12',
+      '  … bots.chat.turn.musing.pondering{} 12s',
     ]);
 
     await chat.playTo('writing');
@@ -198,7 +274,7 @@ describe('a turn recorded while it ran, replayed', () => {
       'you: Summarise last night’s incident',
       'bot (working)',
       '  “The deploy at 02:10 failed its health check.▍”',
-      '  … bots.chat.turn.writing{} 00:12',
+      '  … bots.chat.turn.writing{} 12s',
     ]);
   });
 
@@ -235,7 +311,50 @@ describe('a turn recorded while it ran, replayed', () => {
       '  “The deploy at 02:10 failed its health check.”',
       '  bots.chat.activity.delegated{"count":2}',
       '  “It ran out of memory,▍”',
-      '  … bots.chat.turn.writing{} 00:12',
+      '  … bots.chat.turn.writing{} 12s',
+    ]);
+  });
+
+  it('draws one live line while a turn your yes opened waits behind the running one', async () => {
+    const yes = {
+      id: 'm9',
+      turnId: 't10',
+      role: 'event',
+      content: 'You approved: Run the release checklist',
+      steps: [],
+      event: {
+        kind: 'approval',
+        outcome: 'approved',
+        stage: 'started',
+        approvalId: 'a1',
+        tool: 'start_session',
+        summary: 'Run the release checklist',
+      },
+      attachments: [],
+      createdAt: '2026-10-30T09:00:08.000Z',
+    };
+    const [opened] = incidentLive.frames;
+    if (opened?.type !== 'read') throw new Error('the recording opens on a read');
+    const running = opened.conversation as { turns: object[]; messages: object[] };
+    const queued = { ...running.turns[0], id: 't10', status: 'queued', startedAt: null };
+    const chat = await replayBotChat({
+      ...incidentLive,
+      frames: [
+        {
+          type: 'read',
+          conversation: {
+            messageCount: 2,
+            turns: [...running.turns, queued],
+            messages: [...running.messages, yes],
+          },
+        },
+        { type: 'ready' },
+      ],
+    });
+    await chat.playAll();
+
+    expect(screen.getAllByRole('status').map(words)).toEqual([
+      'bots.chat.turn.musing.pondering{} 12s',
     ]);
   });
 

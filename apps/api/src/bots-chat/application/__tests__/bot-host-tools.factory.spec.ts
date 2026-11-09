@@ -1,6 +1,8 @@
-import type { QueryBus } from '@nestjs/cqrs';
+import type { CommandBus, QueryBus } from '@nestjs/cqrs';
 import { emptyScope } from '@oppenheimer/backend-authz';
 import { AppError } from '@oppenheimer/backend-core';
+import { UpdateHostRunnerCommand } from '../../../hosts/commands/update-host-runner/update-host-runner.command';
+import { FindHostQuery } from '../../../hosts/queries/find-host/find-host.query';
 import { FindHostsQuery } from '../../../hosts/queries/find-hosts/find-hosts.query';
 import { FindProjectsQuery } from '../../../projects/queries/find-projects/find-projects.query';
 import { SESSION_EVENT_KINDS } from '../../../sessions/domain/session-state.policy';
@@ -41,21 +43,29 @@ const context: BotToolContext = {
 const PROJECT_ID = '44444444-4444-4444-8444-444444444444';
 
 /** The owner's projects, unless a test answers the projects query itself. */
-function setup(answer: (query: unknown) => unknown) {
+function setup(
+  answer: (query: unknown) => unknown,
+  permission: BotToolContext['permission'] = 'auto',
+) {
   const queryBus = {
     execute: vi.fn(async (query: unknown) =>
       query instanceof FindProjectsQuery ? [{ id: PROJECT_ID, name: 'Website' }] : answer(query),
     ),
   };
-  const factory = new BotHostToolsFactory(queryBus as unknown as QueryBus);
+  const commandBus = { execute: vi.fn(async () => undefined) };
+  const approvals = { request: vi.fn(async () => ({ status: 'requested', approvalId: 'a-1' })) };
+  const factory = new BotHostToolsFactory(
+    queryBus as unknown as QueryBus,
+    commandBus as unknown as CommandBus,
+  );
   const tool = (name: string) => {
     const found = factory.definitions().find((definition) => definition.name === name);
     if (!found) throw new Error(`no tool ${name}`);
-    return found.bind(context);
+    return found.bind({ ...context, permission, approvals } as BotToolContext);
   };
   const call = (name: string, input: unknown) =>
     tool(name).run(input, { signal: new AbortController().signal });
-  return { queryBus, call };
+  return { queryBus, commandBus, approvals, call };
 }
 
 const host = (id: string, name: string, online: boolean) => ({
@@ -128,6 +138,50 @@ describe('BotHostToolsFactory', () => {
     expect(result.content).toContain('"build-01" (your home host) [online; 2 running');
     expect(result.content).toContain('agents: Claude Code]');
     expect(result.content).toContain('"old-laptop" [offline, last seen 15 Oct 2026, 10:00');
+  });
+
+  it('names each host’s runner version, so a bot can tell an old runner from a current one', async () => {
+    const view = host('11111111-1111-4111-8111-111111111111', 'pop-os', true);
+    const { call } = setup(() => [{ ...view, host: { ...view.host, runnerVersion: '0.4.2' } }]);
+    expect((await call('list_hosts', {})).content).toContain('runner 0.4.2;');
+  });
+
+  describe('update_host_runner', () => {
+    const POP_OS = '22222222-2222-4222-8222-222222222222';
+    const named = (query: unknown) =>
+      query instanceof FindHostQuery ? { host: { name: 'pop-os' }, online: true } : [];
+
+    it('asks first under Approve for me, the card naming the host, and sends nothing', async () => {
+      const { commandBus, approvals, call } = setup(named);
+      await call('update_host_runner', { host_id: POP_OS });
+      expect(approvals.request.mock.calls[0][0]).toMatchObject({
+        tool: 'update_host_runner',
+        summary: 'Update the runner on "pop-os" to the newest release',
+      });
+      expect(commandBus.execute).not.toHaveBeenCalled();
+    });
+
+    it('sends the console’s own Update runner command, in the owner’s scope', async () => {
+      const { commandBus, call } = setup(named, 'full');
+      const result = await call('update_host_runner', { host_id: POP_OS });
+      expect(commandBus.execute).toHaveBeenCalledWith(expect.any(UpdateHostRunnerCommand));
+      expect(commandBus.execute.mock.calls[0][0]).toMatchObject({ scope: owner, hostId: POP_OS });
+      expect(result.isError).toBeFalsy();
+      expect(result.content).toContain('list_hosts');
+    });
+
+    it('reads an offline host back as the command’s error, so the bot can tell the person', async () => {
+      const { commandBus, call } = setup(named, 'full');
+      commandBus.execute.mockRejectedValueOnce(
+        new AppError(
+          { code: 'HOSTS_008', message: 'The host is not connected', httpStatus: 409 },
+          { detail: 'The host is not connected; its runner updates itself the next time it is.' },
+        ),
+      );
+      const result = await call('update_host_runner', { host_id: POP_OS });
+      expect(result.isError).toBe(true);
+      expect(result.content).toContain('HOSTS_008');
+    });
   });
 
   it('says in words that there are no hosts, rather than an empty list', async () => {

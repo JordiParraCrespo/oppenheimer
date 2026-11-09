@@ -1,4 +1,4 @@
-import { SettingsGroup, SettingsListRow, Skeleton } from '@oppenheimer/design-system-web';
+import { Button, SettingsGroup, SettingsListRow, Skeleton } from '@oppenheimer/design-system-web';
 import { LoadingStatus } from '@oppenheimer/frontend-web';
 import { useTranslation } from 'react-i18next';
 
@@ -13,14 +13,13 @@ const ROWS = [
  * A document's revision history before it answers: the heading written, then
  * the card with three rows on the row's own frame, a bar for who wrote it in
  * the lead's pill, one for what it did and one for its meta line. The newest
- * says Current, as it will; the others hold a bar where Revert goes. Inside a
- * placeholder that already announces itself, `announce={false}` keeps it to one.
+ * says Current, as it will; the others draw Revert, off.
  */
-export function BotRevisionsSkeleton({ announce = true }: { announce?: boolean }) {
+export function BotRevisionsSkeleton() {
   const { t } = useTranslation();
   return (
     <section aria-busy className="flex flex-col gap-2.5">
-      {announce ? <LoadingStatus /> : null}
+      <LoadingStatus />
       <h2 className="eyebrow m-0 px-1">{t('bots.settings.instructions.history')}</h2>
       <SettingsGroup aria-hidden>
         {ROWS.map(({ note, meta, current }) => (
@@ -37,7 +36,9 @@ export function BotRevisionsSkeleton({ announce = true }: { announce?: boolean }
               current ? (
                 t('bots.settings.instructions.current')
               ) : (
-                <Skeleton shape="pill" className="h-7 w-17" />
+                <Button variant="secondary" size="sm" disabled tabIndex={-1}>
+                  {t('bots.settings.instructions.revert')}
+                </Button>
               )
             }
           >

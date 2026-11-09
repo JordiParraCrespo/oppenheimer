@@ -8,6 +8,7 @@ import type { BotMessageRepositoryPort } from '../../../database/bot-message.rep
 import { BotConversationSummaryEntity } from '../../../domain/bot-conversation-summary.entity';
 import {
   BOT_SUMMARIZER_PROMPT,
+  planSummary,
   type SummarizableMessage,
 } from '../../../domain/bot-summary.policy';
 import { SummarizeBotConversationCommand } from '../summarize-bot-conversation.command';
@@ -110,7 +111,7 @@ describe('SummarizeBotConversationCommandHandler', () => {
     const [written] = summaries.save.mock.calls[0];
     expect(written).toMatchObject({
       content: 'The person ships on Fridays.',
-      coversThroughMessageId: uncovered[27].id,
+      coversThroughMessageId: planSummary(uncovered)?.through.id,
     });
     expect(summaries.stageSummarize).not.toHaveBeenCalled();
   });
@@ -142,7 +143,7 @@ describe('SummarizeBotConversationCommandHandler', () => {
     expect(summaries.save).toHaveBeenCalledWith(summary);
     expect(summary).toMatchObject({
       versionAtLoad: 4,
-      coversThroughMessageId: uncovered[27].id,
+      coversThroughMessageId: planSummary(uncovered)?.through.id,
     });
   });
 

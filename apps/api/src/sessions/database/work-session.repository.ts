@@ -467,6 +467,14 @@ export class WorkSessionRepository
     return this.withCheckouts(record);
   }
 
+  async findFirstPrompt(session: WorkSessionEntity): Promise<Omit<HostSessionRow, 'session'>> {
+    const first = (await this.log.findFirstPrompts([session.id])).get(session.id);
+    return {
+      ...(first ? { prompt: first.prompt } : {}),
+      ...(first?.images.length ? { images: first.images } : {}),
+    };
+  }
+
   async findOneByIdForMachine(id: string): Promise<Option<WorkSessionEntity>> {
     const record = await this.unscopedQuery(
       'a runner reports about a session on the host it proved it is; there is no person on the request to scope by, and the caller checks the session belongs to that host',

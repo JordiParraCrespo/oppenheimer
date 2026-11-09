@@ -19,7 +19,7 @@ import { isValidTimeZone } from '../automations/schedule.js';
 
 /**
  * The eight colours an avatar is drawn on (the design's `AV_COLORS`), by key:
- * an avatar is the bot's initials on one of them, never a photograph.
+ * an avatar is the bot's drawn face on one of them, never a photograph.
  */
 export const BOT_AVATAR_COLORS = [
   'mint',
@@ -32,6 +32,20 @@ export const BOT_AVATAR_COLORS = [
   'moss',
 ] as const;
 export type BotAvatarColor = (typeof BOT_AVATAR_COLORS)[number];
+
+/**
+ * A bot's drawn face, part by part: the hat it wears, its eyes and its mouth
+ * (the design system's `BotFace` draws each). A bot with no face of its own
+ * picked takes the one its id draws.
+ */
+export const BOT_FACE_HATS = ['fedora', 'porkpie', 'bowler', 'tophat', 'cap', 'beanie'] as const;
+export const BOT_FACE_EYES = ['dots', 'happy', 'wink', 'big'] as const;
+export const BOT_FACE_MOUTHS = ['smile', 'grin', 'o'] as const;
+export interface BotFace {
+  hat: (typeof BOT_FACE_HATS)[number];
+  eyes: (typeof BOT_FACE_EYES)[number];
+  mouth: (typeof BOT_FACE_MOUTHS)[number];
+}
 
 /** What a bot is (`SOUL.md`) and what its job is (`INSTRUCTIONS.md`). */
 export const BOT_DOCUMENT_NAMES = ['soul', 'instructions'] as const;
@@ -93,6 +107,54 @@ export type BotMemoryScope = (typeof BOT_MEMORY_SCOPES)[number];
 export const BOT_MEMORY_PROFILE_IN_PROMPT_CHARS = 4_000;
 /** The characters of the newest `log` facts one turn is given, each with its date. */
 export const BOT_MEMORY_LOG_IN_PROMPT_CHARS = 2_000;
+/**
+ * A bot's dream (`25-bots.md` §4.1, "Dreaming"; from Managed Agents' dreams):
+ * an offline pass of its own model over the memory it wrote and its recent
+ * conversation that merges duplicates, rewrites each fact as one clear
+ * sentence, drops what is stale or contradicted, and keeps what the
+ * conversation shows will matter. It replaces the bot's own facts in one
+ * write; the facts as they were are kept, so the owner can undo the latest.
+ *
+ * It runs after a turn once the bot has written `BOT_DREAM_WRITES_MIN` facts
+ * since its last dream (or since it began) and keeps at least
+ * `BOT_DREAM_FACTS_MIN`, at most once every `BOT_DREAM_INTERVAL_MS`; and
+ * when the owner asks, from Settings → Memory.
+ */
+export const BOT_DREAM_FACTS_MIN = 8;
+export const BOT_DREAM_WRITES_MIN = 10;
+export const BOT_DREAM_INTERVAL_MS = 24 * 60 * 60 * 1000;
+/** The longest note a dream leaves on what it changed. */
+export const BOT_DREAM_NOTE_MAX = 300;
+
+/** What a dream did: `dreamed`, it rewrote the memory; `undone`, the owner put the old one back. */
+export const BOT_DREAM_ACTIVITIES = ['dreamed', 'undone'] as const;
+export type BotDreamActivity = (typeof BOT_DREAM_ACTIVITIES)[number];
+
+/** A bot's latest dream, as Settings → Memory reads it. */
+export interface BotMemoryDream {
+  id: string;
+  /** The bot's own facts before and after it. */
+  factsBefore: number;
+  factsAfter: number;
+  /** What it changed, in its own words; null when it said nothing. */
+  note: string | null;
+  createdAt: string;
+  /** When the owner undid it; null while it stands. */
+  undoneAt: string | null;
+}
+
+/** `GET /bots/:id/memory/dream`: the latest dream, and whether one its owner asked for is under way. */
+export interface BotMemoryDreamState {
+  latest: BotMemoryDream | null;
+  pending: boolean;
+}
+
+/**
+ * What a person writes about themselves in Settings → Memory, in characters:
+ * in the system prompt of every bot they made in the workspace, beside the
+ * facts their bots learned about them.
+ */
+export const PERSON_ABOUT_MAX = 4_000;
 /** The most revisions one read returns, newest first. */
 export const BOT_REVISIONS_PAGE_MAX = 100;
 export const BOT_REVISIONS_PAGE_DEFAULT = 50;
@@ -297,6 +359,11 @@ export const CHATGPT_LOGIN_STATUSES = ['pending', 'connected'] as const;
 export type ChatgptLoginStatus = (typeof CHATGPT_LOGIN_STATUSES)[number];
 
 export const botAvatarColorSchema = z.enum(BOT_AVATAR_COLORS);
+export const botFaceSchema = z.object({
+  hat: z.enum(BOT_FACE_HATS),
+  eyes: z.enum(BOT_FACE_EYES),
+  mouth: z.enum(BOT_FACE_MOUTHS),
+});
 export const botDocumentNameSchema = z.enum(BOT_DOCUMENT_NAMES);
 export const botPermissionSchema = z.enum(BOT_PERMISSIONS);
 export const botSectionSchema = z.enum(BOT_SECTIONS);
@@ -344,6 +411,8 @@ export const updateBotSchema = z.object({
   name: botNameSchema.optional(),
   description: botDescriptionSchema.optional(),
   avatarColor: botAvatarColorSchema.optional(),
+  /** The face it wears; `null` goes back to the one its id draws. */
+  avatarFace: botFaceSchema.nullable().optional(),
   groupId: z.string().uuid().nullable().optional(),
   position: positionSchema.optional(),
   homeHostId: z.string().uuid().nullable().optional(),
@@ -355,6 +424,8 @@ export const updateBotSchema = z.object({
   effort: z.enum(SESSION_EFFORTS).nullable().optional(),
   permission: botPermissionSchema.optional(),
   learnAutomatically: z.boolean().optional(),
+  /** Whether its routines pause while its owner is away (`26-bot-routines.md` §6). */
+  routineSpendGuard: z.boolean().optional(),
   /** The whole set of sections it shows in; `[]` shows it in Employees only. */
   sections: botSectionsSchema.optional(),
 });
@@ -438,10 +509,21 @@ export type BotTurnStatus = (typeof BOT_TURN_STATUSES)[number];
  * - `refused`: the provider refused this request (its content, the model);
  *   the same request fails the same way.
  * - `unavailable`: the provider was down, overloaded or unreachable; it passes.
- * - `time_limit`: the turn ran past its time; a smaller step fits.
+ * - `time_limit`, `step_limit`: the turn ran past its time or its model
+ *   round trips. Turns have had neither bound since 2026-11-09; older turns
+ *   still carry them.
+ * - `stalled`: the model sent nothing for `BOT_TURN_IDLE_LIMIT_MS` while no
+ *   tool ran; it usually passes.
+ * - `loop`: the turn kept making calls that changed nothing, past what its
+ *   loop guard lets through; the same request goes round the same way.
  * - `interrupted`: the worker running it stopped; sending it again runs it.
+ * - `storage`: we could not save what the turn did (a write Postgres
+ *   refused); ours, not the provider's, and sending it again may pass.
  * - `other`: none of these, or not known.
  */
+/** How long a turn's model may send nothing, while none of its tools runs, before the turn fails `stalled`. */
+export const BOT_TURN_IDLE_LIMIT_MS = 5 * 60_000;
+
 export const BOT_TURN_FAILURES = [
   'rate_limit',
   'usage_limit',
@@ -449,7 +531,11 @@ export const BOT_TURN_FAILURES = [
   'refused',
   'unavailable',
   'time_limit',
+  'step_limit',
+  'stalled',
+  'loop',
   'interrupted',
+  'storage',
   'other',
 ] as const;
 export type BotTurnFailure = (typeof BOT_TURN_FAILURES)[number];
@@ -462,7 +548,11 @@ export const BOT_TURN_FAILURE_RETRIES: Readonly<Record<BotTurnFailure, boolean>>
   refused: false,
   unavailable: true,
   time_limit: false,
+  step_limit: false,
+  stalled: true,
+  loop: false,
   interrupted: true,
+  storage: true,
   other: true,
 };
 
@@ -662,32 +752,50 @@ export interface BotPullRequestEvent {
 }
 
 /**
- * A goal keeps a bot going (`25-bots.md` §4.1; from Grok Bot's goals,
- * `research/lessons-from-grok-bot.md` §9 row 10, and Claude Code's `/goal`):
- * the person sets one with `/goal <condition>`, or the bot with `set_goal`.
- * After each turn of it a reviewer, the bot's own model with no tools, reads
- * what the turn showed and says whether the condition holds; while it does
- * not, a continuation turn is queued, up to the goal's limit. One goal per
- * bot at a time; an ended goal is deleted. This is the longest condition.
+ * A goal keeps a bot going (`25-bots.md` §4.1; from Codex's and Grok Bot's
+ * goals, `research/lessons-from-long-running-agents.md`): the person sets one
+ * with `/goal <condition>`, or the bot with `set_goal`. It has no limit of
+ * continuations since 2026-11-09: after each turn of it the next is queued,
+ * until the bot calls `end_goal` and a reviewer, the bot's own model with no
+ * tools, finds the condition met. It pauses, keeping its place, when a turn
+ * of it fails, is stopped, goes `BOT_GOAL_IDLE_TURNS` turns without calling a
+ * tool, spends its token budget, or the bot says it is blocked; the owner
+ * resumes it. One goal per bot at a time; an ended goal is deleted. This is
+ * the longest condition.
  */
 export const BOT_GOAL_OBJECTIVE_MAX = 2_000;
-/** The continuations a goal may queue: never more than this, whoever set it. */
-export const BOT_GOAL_CONTINUATIONS_MAX = 20;
-/** What a goal the bot sets takes unless it asks for fewer or more. */
-export const BOT_GOAL_CONTINUATIONS_DEFAULT = 5;
+
+/** Turns of a goal in a row that call no tool before it pauses as `no_progress` (Codex's empty turns). */
+export const BOT_GOAL_IDLE_TURNS = 3;
+
+/** The smallest token budget a goal takes; a smaller one could not fit one turn. */
+export const BOT_GOAL_TOKEN_BUDGET_MIN = 50_000;
+
 /**
- * What a goal the person sets with `/goal` takes: the reviewer ends it once
- * the condition holds, so the limit is only the bound on the spend.
+ * Why a goal is paused: the bot said it cannot go on without the person
+ * (`blocked`); its provider refused for a limit, quota or sign-in
+ * (`usage_limit`); its turns stopped calling tools (`no_progress`); it spent
+ * its token budget (`budget`); the person pressed Stop on a turn of it
+ * (`stopped`); or a turn of it failed otherwise (`failed`).
  */
-export const BOT_GOAL_CONTINUATIONS_PERSON = BOT_GOAL_CONTINUATIONS_MAX;
+export const BOT_GOAL_PAUSE_REASONS = [
+  'blocked',
+  'usage_limit',
+  'no_progress',
+  'budget',
+  'stopped',
+  'failed',
+] as const;
+export type BotGoalPauseReason = (typeof BOT_GOAL_PAUSE_REASONS)[number];
 
 /**
  * What a goal line says: a continuation opens a turn (`continued`, with the
- * reviewer's reason for going on); the others say, outside any turn, how the
- * goal ended when the bot did not end it itself (its `end_goal` call is the
- * record of that): the reviewer found the condition met (`met`) or out of
- * reach (`impossible`), the owner stopped it (`cleared`), its continuations
- * ran out (`exhausted`), or a turn of it failed or was stopped (`stopped`).
+ * reviewer's reason when it found the bot's claim not met yet); the others
+ * say, outside any turn: the reviewer found the condition met (`met`) or out
+ * of reach (`impossible`), the owner stopped it (`cleared`), a goal set
+ * before 2026-11-09 ran out of continuations (`exhausted`), it stopped
+ * (`stopped`, a code), it paused (`paused`, the pause reason) or the owner
+ * resumed it (`resumed`).
  */
 export const BOT_GOAL_ACTIVITIES = [
   'continued',
@@ -696,6 +804,8 @@ export const BOT_GOAL_ACTIVITIES = [
   'cleared',
   'exhausted',
   'stopped',
+  'paused',
+  'resumed',
 ] as const;
 export type BotGoalActivity = (typeof BOT_GOAL_ACTIVITIES)[number];
 
@@ -707,12 +817,12 @@ export interface BotGoalEvent {
   objective: string;
   /** For `continued`, which continuation this is; otherwise how many ran. */
   step: number;
-  /** The goal's limit of continuations. */
-  limit: number;
+  /** The goal's limit of continuations; null for a goal with none (every goal since 2026-11-09). */
+  limit: number | null;
   /**
    * Why: for `continued`, `met` and `impossible` the reviewer's reason in its
    * words (null when it could not say); for `stopped` a code, the status of
-   * the turn that ended it.
+   * the turn that ended it; for `paused` its `BotGoalPauseReason`.
    */
   reason: string | null;
 }
@@ -763,7 +873,7 @@ export interface BotLoop {
  * the chat's as it stands: clearing the conversation starts them again.
  * Cache reads and writes are part of the input, never on top of it.
  */
-export const BOT_MODEL_CALL_PURPOSES = ['goal_review', 'summary', 'rule_review'] as const;
+export const BOT_MODEL_CALL_PURPOSES = ['goal_review', 'summary', 'rule_review', 'dream'] as const;
 export type BotModelCallPurpose = (typeof BOT_MODEL_CALL_PURPOSES)[number];
 
 export interface BotTokenCounts {
@@ -803,7 +913,13 @@ export interface BotGoal {
   id: string;
   objective: string;
   continuations: number;
-  limit: number;
+  /** Its limit of continuations; null when it has none (every goal since 2026-11-09). */
+  limit: number | null;
+  /** The tokens its turns have spent, and its budget; null when it has none. */
+  tokensUsed: number;
+  tokenBudget: number | null;
+  /** Why it is paused, in the bot's or the reviewer's words where there are some; null while it runs. */
+  paused: { reason: BotGoalPauseReason; note: string | null; at: string } | null;
   createdAt: string;
   /** A turn ended on a system's rate limit, and the goal goes on at `until`; null when nothing holds it. */
   waiting: { system: string; until: string } | null;
@@ -812,7 +928,9 @@ export interface BotGoal {
 /**
  * Why a bot turn exists: a message (yours or another bot's), an approval's
  * decision, a card of questions answered or dismissed, a routine's run, a
- * session the bot is subscribed to, a goal it set itself, or a loop's run.
+ * session the bot is subscribed to, a goal it set itself, a loop's run, or a
+ * message of yours to the bot's Telegram bot
+ * (`product/next-steps/answering-on-telegram-and-whatsapp.md`).
  */
 export const BOT_TURN_ORIGINS = [
   'message',
@@ -822,19 +940,21 @@ export const BOT_TURN_ORIGINS = [
   'subscription',
   'goal',
   'loop',
+  'telegram',
 ] as const;
 export type BotTurnOrigin = (typeof BOT_TURN_ORIGINS)[number];
 
 /**
- * The turns a person is waiting on: one they started by writing, or by
- * deciding a card. A routine's run, a wake and a goal's continuation run
- * with nobody there, so a tool that needs someone to answer is not offered
- * on them.
+ * The turns a person is waiting on: one they started by writing (in the
+ * console or on Telegram), or by deciding a card. A routine's run, a wake
+ * and a goal's continuation run with nobody there, so a tool that needs
+ * someone to answer is not offered on them.
  */
 export const BOT_ATTENDED_ORIGINS = [
   'message',
   'approval',
   'question',
+  'telegram',
 ] as const satisfies readonly BotTurnOrigin[];
 
 /**
@@ -929,6 +1049,26 @@ export interface BotPeerReplyEvent {
   outcome: BotReplyOutcome;
 }
 
+/** A dream rewrote the bot's memory, or the owner undid it (`25-bots.md` §4.1, "Dreaming"). */
+export interface BotDreamEvent {
+  kind: 'dream';
+  activity: BotDreamActivity;
+  dreamId: string;
+  factsBefore: number;
+  factsAfter: number;
+}
+
+/**
+ * A turn folded what it had read into a summary to stay inside its window
+ * (`25-bots.md` §2, "Compaction"): the tokens the next call would have been
+ * sent, before and after, as the engine estimated them.
+ */
+export interface BotCompactionEvent {
+  kind: 'compaction';
+  tokensBefore: number;
+  tokensAfter: number;
+}
+
 export type BotMessageEvent =
   | BotApprovalEvent
   | BotQuestionEvent
@@ -938,7 +1078,9 @@ export type BotMessageEvent =
   | BotSessionEvent
   | BotPullRequestEvent
   | BotGoalEvent
-  | BotLoopEvent;
+  | BotLoopEvent
+  | BotDreamEvent
+  | BotCompactionEvent;
 
 /** The kinds of event, for a reader that checks one before trusting its fields. */
 export const BOT_MESSAGE_EVENT_KINDS = [
@@ -951,6 +1093,8 @@ export const BOT_MESSAGE_EVENT_KINDS = [
   'pull_request',
   'goal',
   'loop',
+  'dream',
+  'compaction',
 ] as const;
 export type BotMessageEventKind = (typeof BOT_MESSAGE_EVENT_KINDS)[number];
 
@@ -1187,6 +1331,7 @@ export const BOT_TOOL_GROUPS = [
   'plan',
   'mail',
   'whatsapp',
+  'telegram',
   'github',
   'automations',
   'bots',
@@ -1371,3 +1516,12 @@ export type BotStreamSnapshot = Extract<BotStreamEvent, { type: 'snapshot' }>;
 /** The SSE event names on a bot's stream. */
 export const BOT_STREAM_READY = 'ready';
 export const BOT_STREAM_EVENT = 'bot';
+
+/**
+ * `PUT /bot-memory/person/about`: what the person writes about themselves,
+ * in every bot's system prompt. Empty clears it.
+ */
+export const updatePersonAboutSchema = z.object({
+  about: z.string().trim().max(PERSON_ABOUT_MAX),
+});
+export type UpdatePersonAboutDto = z.infer<typeof updatePersonAboutSchema>;

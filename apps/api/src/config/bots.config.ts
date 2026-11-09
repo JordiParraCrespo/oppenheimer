@@ -10,13 +10,19 @@ import { parseEnv } from './env';
  * it the `bot_providers` capability is on; without it the provider routes
  * answer `BOTS_011` and a bot cannot answer, while everything else about bots
  * works.
+ *
+ * `docsUrl` is optional too: where this deployment publishes its docs site
+ * (`apps/docs`). With it, a bot reading Oppenheimer's guide links the person
+ * to the page it read; without it the bot still reads the same pages, which
+ * ship with the API (`@oppenheimer/shared/guide`), and links nothing.
  */
 const schema = z.object({
   providerKey: z.string().optional(),
+  docsUrl: z.string().url().optional(),
 });
 
 export const botsConfig = registerAs('bots', () =>
-  parseEnv('bots', schema, { providerKey: 'BOTS_PROVIDER_KEY' }),
+  parseEnv('bots', schema, { providerKey: 'BOTS_PROVIDER_KEY', docsUrl: 'DOCS_URL' }),
 );
 
 /** A key `BOTS_PROVIDER_KEY` can hold: 32 bytes, base64; null otherwise. */
