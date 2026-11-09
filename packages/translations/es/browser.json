@@ -2083,6 +2083,8 @@
         "gmail": "Gmail · {{when}}",
         "last": "Última",
         "next": "Próxima",
+        "more": "Mostrar más",
+        "less": "Mostrar menos",
         "never": "Nunca",
         "switch": "Ejecutar «{{name}}» por su cuenta",
         "pause": "Pausar",

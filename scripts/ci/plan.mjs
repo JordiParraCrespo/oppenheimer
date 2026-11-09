@@ -96,6 +96,9 @@ export function plan(
   add('lint', 'Dev bootstrap', 'pnpm', ['check:bootstrap']);
   // This pipeline's own selection and runner.
   add('lint', 'CI selection and runner', 'pnpm', ['check:ci']);
+  // The pending changesets assemble into the plan the Release workflow builds
+  // on main; a changeset mixing an ignored package with versioned ones fails here.
+  add('lint', 'Changesets', 'pnpm', ['check:changesets']);
   // oppenheimer:begin runner
   // The runner release path's refusals: no keys, unsigned, tampered.
   add('lint', 'Runner release publishing', 'pnpm', ['check:runner-release']);
