@@ -1,6 +1,5 @@
 ---
 '@oppenheimer/api': minor
-'@oppenheimer/docs': patch
 ---
 
 A bot can update a host's runner. The new `update_host_runner` tool sends

@@ -95,6 +95,8 @@ import { MilestoneOrmEntity } from '../tasks/database/milestone.orm-entity';
 import { PlanEventOrmEntity } from '../tasks/database/plan-event.orm-entity';
 import { TaskOrmEntity } from '../tasks/database/task.orm-entity';
 import { TaskSessionOrmEntity } from '../tasks/database/task-session.orm-entity';
+import { TelegramAccountOrmEntity } from '../telegram/database/telegram-account.orm-entity';
+import { TelegramMessageOrmEntity } from '../telegram/database/telegram-message.orm-entity';
 import { UserOrmEntity } from '../users/database/user.orm-entity';
 import { WhatsappAccountOrmEntity } from '../whatsapp/database/whatsapp-account.orm-entity';
 import { WhatsappMessageOrmEntity } from '../whatsapp/database/whatsapp-message.orm-entity';
@@ -159,6 +161,8 @@ const dataSource = new DataSource({
     MailSendOrmEntity,
     WhatsappAccountOrmEntity,
     WhatsappMessageOrmEntity,
+    TelegramAccountOrmEntity,
+    TelegramMessageOrmEntity,
     SessionCloudRunOrmEntity,
     CloudAgentCredentialOrmEntity,
     GithubUserGrantOrmEntity,

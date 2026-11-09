@@ -36,7 +36,7 @@ describe('composeBotSystemPrompt', () => {
   it('adds what it knows about the person under its own heading', () => {
     const prompt = composeBotSystemPrompt({ ...base, personFacts: ['Prefers squash merges.'] });
     expect(prompt).toContain(
-      '# What you know about the person (shared by all their bots)\n\n- Prefers squash merges.',
+      '# General memory (about the person, read by every bot of theirs)\n\n- Prefers squash merges.',
     );
     expect(composeBotSystemPrompt(base)).not.toMatch(/about the person/);
   });
@@ -131,6 +131,86 @@ describe('composeBotSystemPrompt', () => {
       expect(prompt).not.toContain('# Working on code through sessions');
       expect(prompt).not.toContain('goes to a session on a host');
       expect(prompt).toContain('When a request needs something no tool here does');
+    });
+
+    // A bot told both "run_command" and "you never run commands yourself"
+    // would refuse every script; one told neither would never reach for it.
+    it('tells a bot that may run commands where they run, and drops the line that says it never does', () => {
+      const prompt = composeBotSystemPrompt({
+        ...sessions,
+        tools: [
+          ...sessions.tools,
+          { name: 'run_command', description: 'Runs one program on a host.' },
+        ],
+      });
+      expect(prompt).toContain('# Commands on a host');
+      expect(prompt).not.toContain('You never run commands yourself');
+      expect(prompt).not.toContain('You have no shell, no files');
+      expect(prompt).toContain('never try another program to get around it');
+      expect(composeBotSystemPrompt(sessions)).toContain('You never run commands yourself');
+      expect(composeBotSystemPrompt(sessions)).not.toContain('# Commands on a host');
+    });
+
+    it('teaches a bot that may drive a terminal how, and never to type a secret', () => {
+      const prompt = composeBotSystemPrompt({
+        ...sessions,
+        tools: [
+          ...sessions.tools,
+          { name: 'type_in_terminal', description: 'Types into a terminal.' },
+        ],
+      });
+      expect(prompt).toContain('# Driving a terminal');
+      expect(prompt).toContain('Never type a password');
+      expect(prompt).not.toContain('you do not run a terminal');
+      // A terminal bot is never told it does not see one, nor sent to a
+      // run_command it does not have (tools are turned off one by one).
+      expect(prompt).not.toContain('never see the live terminal');
+      expect(prompt).not.toContain('Prefer `run_command`');
+      const readsOnly = composeBotSystemPrompt({
+        ...sessions,
+        tools: [...sessions.tools, { name: 'read_terminal', description: 'Reads a terminal.' }],
+      });
+      expect(readsOnly).toContain('# Driving a terminal');
+    });
+
+    // The owner turns each tool off on its own, so any subset is a real bot.
+    // A regression told a bot with terminal tools it had "no shell", or to
+    // open and type with tools it lacked.
+    it('never contradicts itself or names a tool the bot lacks, whatever subset it has', () => {
+      const optional = [
+        'start_session',
+        'run_command',
+        'open_terminal',
+        'type_in_terminal',
+        'read_terminal',
+      ];
+      const terminal = new Set(['open_terminal', 'type_in_terminal', 'read_terminal']);
+      for (let mask = 0; mask < 1 << optional.length; mask++) {
+        const names = optional.filter((_, i) => mask & (1 << i));
+        if (!names.some((name) => terminal.has(name))) continue;
+        const prompt = composeBotSystemPrompt({
+          ...base,
+          tools: [
+            { name: 'list_hosts', description: 'Lists your hosts.' },
+            ...names.map((name) => ({ name, description: `Does ${name}.` })),
+          ],
+        });
+        const which = names.join(' + ');
+        expect(prompt, which).not.toContain('You have no shell, no files');
+        expect(prompt, which).not.toContain('never see the live terminal');
+        expect(prompt, which).not.toContain('you do not run a terminal');
+        if (!names.includes('read_terminal')) {
+          expect(prompt, `${which} tells it to read`).not.toMatch(
+            /read it waiting|can read a terminal/,
+          );
+        }
+        for (const missing of optional.filter(
+          (name) => !names.includes(name) && name !== 'start_session',
+        )) {
+          expect(prompt, `${which} names ${missing}`).not.toContain(`\`${missing}\``);
+        }
+      }
+      expect(composeBotSystemPrompt(sessions)).not.toContain('# Driving a terminal');
     });
   });
 
