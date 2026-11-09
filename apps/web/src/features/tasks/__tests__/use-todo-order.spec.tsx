@@ -5,8 +5,9 @@ import { storedTodoOrder } from '../lib/todo-order';
 
 /**
  * Ticking a task on To do leaves it where it was. The tick moves it to the
- * top of Done on the board, so the day's own order (by rank) puts it
- * somewhere else; what breaks this is a tick that lets the list re-sort.
+ * top of Done on the board, so the day's own order (by rank) would put it
+ * somewhere else. What breaks this: a tick that lets the ticked row jump, or
+ * one that freezes the rest so a task added since no longer sorts in place.
  */
 afterEach(() => {
   cleanup();
@@ -14,14 +15,17 @@ afterEach(() => {
 });
 
 describe('useTodoOrder', () => {
-  it('keeps the list as drawn when a tick re-sorts the day, here and on the next visit', () => {
+  it('keeps a ticked task under the row it sat under, and lets the rest sort', () => {
     const { result, rerender } = renderHook(
       ({ ids }) => useTodoOrder('2026-11-09', '2026-11-09', ids),
       { initialProps: { ids: ['a', 'b', 'c'] } },
     );
-    act(() => result.current.hold());
-    rerender({ ids: ['c', 'a', 'b'] });
+    act(() => result.current.hold('b'));
+    rerender({ ids: ['b', 'a', 'c'] });
     expect(result.current.order).toEqual(['a', 'b', 'c']);
-    expect(storedTodoOrder('2026-11-09')).toEqual(['a', 'b', 'c']);
+
+    rerender({ ids: ['early', 'b', 'a', 'c'] });
+    expect(result.current.order).toEqual(['early', 'a', 'b', 'c']);
+    expect(storedTodoOrder('2026-11-09')).toEqual([]);
   });
 });

@@ -121,7 +121,7 @@ export function TodoList() {
                   {...rowOf(entry)}
                   gripLabel={t('tasks.todo.reorder', { title: task.title })}
                   onToggle={() => {
-                    hold();
+                    hold(task.id);
                     move.mutate({
                       id: task.id,
                       status: task.isDone ? 'todo' : 'done',
