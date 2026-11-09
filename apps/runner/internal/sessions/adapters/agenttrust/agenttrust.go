@@ -6,6 +6,7 @@ package agenttrust
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io/fs"
 	"log/slog"
 	"os"
@@ -13,11 +14,14 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/pelletier/go-toml/v2"
+
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/domain"
 )
 
-// Store is app.Trust over Claude Code's own state file. Other agents have no
-// such question this runner answers yet, and are left alone.
+// Store is app.Trust over Claude Code's state file and Codex's config file.
+// Other agents have no such question this runner answers yet, and are left
+// alone.
 type Store struct {
 	// claudeConfig is Claude Code's global state, `~/.claude.json`, or
 	// `$CLAUDE_CONFIG_DIR/.claude.json` when that is set.
@@ -25,8 +29,11 @@ type Store struct {
 	// claudeProjects is where Claude Code keeps each folder's conversations,
 	// `~/.claude/projects` or `$CLAUDE_CONFIG_DIR/projects`.
 	claudeProjects string
-	logger         *slog.Logger
-	mu             sync.Mutex
+	// codexConfig is Codex's config, `~/.codex/config.toml`, or
+	// `$CODEX_HOME/config.toml` when that is set.
+	codexConfig string
+	logger      *slog.Logger
+	mu          sync.Mutex
 }
 
 // Options names the files the store edits.
@@ -35,6 +42,8 @@ type Options struct {
 	// ClaudeProjects is Claude Code's `projects` folder, which Forget clears a
 	// removed folder's conversations from; empty leaves it alone.
 	ClaudeProjects string
+	// CodexConfig is Codex's `config.toml`; empty leaves Codex to ask.
+	CodexConfig string
 	// Logger reports a mark that failed, which the session service drops
 	// (app.Trust is best-effort); nil is the process's default logger.
 	Logger *slog.Logger
@@ -46,7 +55,10 @@ func New(opts Options) *Store {
 	if logger == nil {
 		logger = slog.Default()
 	}
-	return &Store{claudeConfig: opts.ClaudeConfig, claudeProjects: opts.ClaudeProjects, logger: logger}
+	return &Store{
+		claudeConfig: opts.ClaudeConfig, claudeProjects: opts.ClaudeProjects,
+		codexConfig: opts.CodexConfig, logger: logger,
+	}
 }
 
 // Trust records dir as accepted. Claude Code keeps the answer per folder, as
@@ -66,22 +78,95 @@ func New(opts Options) *Store {
 // orders its keys, which Claude Code neither reads nor keeps, since it
 // rewrites the whole file itself on every save.
 func (s *Store) Trust(agent domain.Agent, dir string) error {
-	if agent != domain.AgentClaude || s.claudeConfig == "" {
+	var err error
+	switch {
+	case agent == domain.AgentClaude && s.claudeConfig != "":
+		err = s.trustClaude(dir)
+	case agent == domain.AgentCodex && s.codexConfig != "":
+		err = s.trustCodex(dir)
+	default:
 		return nil
 	}
-	if err := s.trustClaude(dir); err != nil {
-		s.logger.Warn("could not mark the session folder trusted; Claude Code will ask",
-			slog.String("dir", dir), slog.Any("error", err))
-		return err
+	if err != nil {
+		s.logger.Warn("could not mark the session folder trusted; the agent will ask",
+			slog.String("agent", string(agent)), slog.String("dir", dir), slog.Any("error", err))
 	}
-	return nil
+	return err
 }
 
-func (s *Store) trustClaude(dir string) error {
+// folders is dir, symlinks resolved, and the repository it is a linked
+// worktree of, when it is one.
+func folders(dir string) []string {
 	dirs := []string{realPath(dir)}
 	if root := repositoryRoot(dirs[0]); root != "" && root != dirs[0] {
 		dirs = append(dirs, root)
 	}
+	return dirs
+}
+
+// trustCodex records dir as trusted in Codex's config. Codex keeps the answer
+// per folder, as `[projects."<dir>"] trust_level = "trusted"`, and asks for a
+// folder in a git repository under the repository's main checkout, which is
+// why a linked worktree's repository is marked too.
+//
+// The file is the person's, often hand-edited, so it is never re-encoded:
+// the new tables are appended to it as text, and a folder Codex already has
+// an entry for, "trusted" or "untrusted", is an answer already given and is
+// left as it is. The result is parsed before it is written; a file this would
+// break (one with `projects` as an inline table, say) is not touched.
+func (s *Store) trustCodex(dir string) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	mode := fs.FileMode(0o600)
+	raw, err := os.ReadFile(s.codexConfig)
+	switch {
+	case errors.Is(err, fs.ErrNotExist):
+	case err != nil:
+		return err
+	default:
+		if info, statErr := os.Stat(s.codexConfig); statErr == nil {
+			mode = info.Mode().Perm()
+		}
+	}
+	var config struct {
+		Projects map[string]any `toml:"projects"`
+	}
+	if err := toml.Unmarshal(raw, &config); err != nil {
+		return err
+	}
+	var add strings.Builder
+	for _, dir := range folders(dir) {
+		if _, answered := config.Projects[dir]; answered {
+			continue
+		}
+		// A JSON string is a TOML basic string: the same quote, the same
+		// escapes.
+		key, err := json.Marshal(dir)
+		if err != nil {
+			return err
+		}
+		fmt.Fprintf(&add, "\n[projects.%s]\ntrust_level = \"trusted\"\n", key)
+	}
+	if add.Len() == 0 {
+		return nil
+	}
+	out := raw
+	if len(out) > 0 && out[len(out)-1] != '\n' {
+		out = append(out, '\n')
+	}
+	out = append(out, add.String()...)
+	if err := toml.Unmarshal(out, &config); err != nil {
+		return fmt.Errorf("adding the folder would leave %s unreadable: %w", s.codexConfig, err)
+	}
+	if err := os.MkdirAll(filepath.Dir(s.codexConfig), 0o700); err != nil {
+		return err
+	}
+	return writeAtomic(s.codexConfig, out, mode)
+}
+
+func (s *Store) trustClaude(dir string) error {
+	dirs := folders(dir)
 	return s.editProjects(func(projects map[string]map[string]json.RawMessage) bool {
 		changed := false
 		for _, dir := range dirs {
