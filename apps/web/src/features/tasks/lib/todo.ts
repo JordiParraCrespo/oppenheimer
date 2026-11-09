@@ -97,23 +97,48 @@ export function todoStateLabel(
   return { key: day === today ? 'tasks.todo.state.todo' : 'tasks.todo.state.due' };
 }
 
+/** What Add undated tasks' own filters narrow it to; `undefined` or empty is every one. */
+export interface UndatedFilter {
+  projectIds?: readonly string[];
+  statuses?: readonly TaskEntity['status'][];
+}
+
 /**
  * What Add undated tasks offers: the open tasks with no due date, in the
- * projects To do is narrowed to (every project when `undefined`), in the
+ * projects and columns the filter picks (every one when unset), in the
  * board's order.
  */
 export function undatedTasks(
   tasks: readonly TaskEntity[],
-  projectIds?: readonly string[],
+  filter: UndatedFilter = {},
 ): TaskEntity[] {
+  const { projectIds, statuses } = filter;
   return tasks
     .filter(
       (task) =>
         !task.isDone &&
         task.dueDate === null &&
-        (!projectIds || projectIds.includes(task.projectId)),
+        (!projectIds?.length || projectIds.includes(task.projectId)) &&
+        (!statuses?.length || statuses.includes(task.status)),
     )
     .sort(compareRank);
+}
+
+/**
+ * Add undated tasks' facet counts: how many it would offer in each project
+ * under the picked columns, and in each column under the picked projects.
+ */
+export function undatedCounts(
+  tasks: readonly TaskEntity[],
+  filter: UndatedFilter,
+): { byProject: Record<string, number>; byStatus: Record<string, number> } {
+  const byProject: Record<string, number> = {};
+  const byStatus: Record<string, number> = {};
+  for (const task of undatedTasks(tasks, { statuses: filter.statuses }))
+    byProject[task.projectId] = (byProject[task.projectId] ?? 0) + 1;
+  for (const task of undatedTasks(tasks, { projectIds: filter.projectIds }))
+    byStatus[task.status] = (byStatus[task.status] ?? 0) + 1;
+  return { byProject, byStatus };
 }
 
 /** The header's count: how many on the list are left and how many are done. */

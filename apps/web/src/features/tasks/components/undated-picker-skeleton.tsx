@@ -5,8 +5,8 @@ import { useTranslation } from 'react-i18next';
 /**
  * Add undated tasks while the plan loads: the line and the buttons as they
  * will read (both know only the day; Cancel already works), and between
- * them the search list's frame, its field and three rows together, each a
- * bar at a menu row's height.
+ * them the two filter pills and the search list's frame, its field and
+ * three rows together, each a bar at a menu row's height.
  */
 export function UndatedPickerSkeleton({ date, onCancel }: { date: string; onCancel: () => void }) {
   const { t } = useTranslation();
@@ -14,6 +14,11 @@ export function UndatedPickerSkeleton({ date, onCancel }: { date: string; onCanc
     <div aria-busy className="flex flex-col gap-4">
       <LoadingStatus />
       <DialogDescription>{t('tasks.todo.schedule.for', { date })}</DialogDescription>
+      <div className="flex items-center gap-2">
+        {['w-24', 'w-20'].map((width) => (
+          <Skeleton key={width} shape="pill" className={`h-7.5 ${width}`} />
+        ))}
+      </div>
       <div className="flex flex-col">
         <div className="px-1 pt-1">
           <Skeleton shape="sm" className="h-(--control-h-md) w-full" />

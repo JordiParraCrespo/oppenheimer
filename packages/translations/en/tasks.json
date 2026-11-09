@@ -208,7 +208,11 @@
       "none": "Every open task already has a due date.",
       "submit": "Add to {{date}}",
       "failed": "Couldn’t add some of those tasks.",
-      "loadFailed": "Couldn’t load your tasks."
+      "loadFailed": "Couldn’t load your tasks.",
+      "state": "State",
+      "allStates": "All states",
+      "searchStates": "Search states",
+      "noFilterMatch": "No undated task matches these filters."
     },
     "reorder": "Reorder {{title}}"
   }

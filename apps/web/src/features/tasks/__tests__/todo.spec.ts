@@ -8,6 +8,7 @@ import {
   todoEntries,
   todoSearchSchema,
   todoStateLabel,
+  undatedCounts,
   undatedTasks,
 } from '../lib/todo';
 
@@ -115,14 +116,32 @@ describe("To do's day", () => {
     });
   });
 
-  it('offers only open tasks with no due date, in the projects in scope', () => {
+  it('offers only open tasks with no due date, in the projects and columns picked', () => {
     const rows = [
       task('a'),
       task('b', { status: 'done' }),
       task('c', { dueDate: DAY }),
       task('d', { projectId: 'p-2', status: 'doing' }),
+      task('e', { projectId: 'p-2', status: 'review' }),
     ];
-    expect(undatedTasks(rows).map((row) => row.id)).toEqual(['a', 'd']);
-    expect(undatedTasks(rows, ['p-2']).map((row) => row.id)).toEqual(['d']);
+    const ids = (filter?: Parameters<typeof undatedTasks>[1]) =>
+      undatedTasks(rows, filter).map((row) => row.id);
+    expect(ids()).toEqual(['a', 'd', 'e']);
+    expect(ids({ projectIds: [], statuses: [] })).toEqual(['a', 'd', 'e']);
+    expect(ids({ projectIds: ['p-2'] })).toEqual(['d', 'e']);
+    expect(ids({ statuses: ['todo', 'review'] })).toEqual(['a', 'e']);
+    expect(ids({ projectIds: ['p-2'], statuses: ['doing'] })).toEqual(['d']);
+  });
+
+  it('counts each facet under the other one, so a pick never zeroes its own options', () => {
+    const rows = [
+      task('a'),
+      task('d', { projectId: 'p-2', status: 'doing' }),
+      task('e', { projectId: 'p-2', status: 'review' }),
+    ];
+    expect(undatedCounts(rows, { projectIds: ['p-2'], statuses: ['doing'] })).toEqual({
+      byProject: { 'p-2': 1 },
+      byStatus: { doing: 1, review: 1 },
+    });
   });
 });
