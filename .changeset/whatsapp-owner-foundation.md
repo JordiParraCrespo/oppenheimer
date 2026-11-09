@@ -30,4 +30,4 @@ with Telegram answering exactly as before.
 - `@oppenheimer/api-client`: `deleteBot` documents `BOTS_043`.
 - `@oppenheimer/translations`: `errors.byCode.BOTS_043`.
 - `@oppenheimer/runner`: the generated link vocabulary carries
-  `whatsapp.send`'s `replyTo`; the runner does not use it yet.
+  `whatsapp.send`'s `replyTo`, which the runner quotes from.
