@@ -381,7 +381,11 @@ Then, in order:
    folder and that checkout. The file is the person's and often
    hand-edited, so it is appended to as text, never re-encoded; a folder
    Codex already has an answer for, trusted or untrusted, is left alone,
-   and a config the new table would break is not touched.
+   and a config the new table would break is not touched. Trusting a
+   folder lets Codex (and Claude Code) load the repository's own agent
+   config, whose MCP commands and hooks run before any approval; on
+   2026-11-09 the owner kept pre-trusting every session anyway, for every
+   repository, since the repositories are ones the person added themselves.
 
    **The first task is the last argument, not something typed at a
    running process.** Every CLI here takes it on its command line and
