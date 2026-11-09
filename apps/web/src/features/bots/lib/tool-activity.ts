@@ -5,6 +5,7 @@ import {
   toolLine,
 } from '@oppenheimer/frontend-consumer';
 import type { BotSubagentProgress } from '@oppenheimer/shared/schemas/bot';
+import { stepExplore } from '@/features/bots/lib/explored-steps';
 
 /**
  * How the chat words a bot's tool calls (`25-bots.md` §3, the Bots frame's
@@ -145,4 +146,40 @@ export function readableOutput(output: string): string {
   } catch {
     return output;
   }
+}
+
+/** The thinking orb's animation for what a turn is doing now, as `liveLabel` reads it. */
+export type LiveOrbState =
+  | 'breathing'
+  | 'working'
+  | 'searching'
+  | 'composing'
+  | 'connecting'
+  | 'solving';
+
+/**
+ * Which orb a live line shows: breathing while it waits (queued, or on its
+ * provider), searching while it looks things up, connecting while its
+ * subagents work, solving while another tool runs, composing while its
+ * words stream, working while it thinks.
+ */
+export function liveOrbState({
+  queued,
+  waiting,
+  step,
+  writing,
+}: {
+  queued: boolean;
+  waiting: boolean;
+  step: BotToolStep | undefined;
+  writing: boolean;
+}): LiveOrbState {
+  if (queued || waiting) return 'breathing';
+  if (step) {
+    const action = toolAction(step);
+    if (action.kind === 'search' || stepExplore(step)) return 'searching';
+    if (action.kind === 'delegate') return 'connecting';
+    return 'solving';
+  }
+  return writing ? 'composing' : 'working';
 }

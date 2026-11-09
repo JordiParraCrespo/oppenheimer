@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   groupSummary,
   liveLabel,
+  liveOrbState,
   liveWords,
   readableOutput,
   runningStep,
@@ -144,5 +145,35 @@ describe('sharedKind', () => {
     const search = { kind: 'search', query: 'x' } as const;
     expect(sharedKind([search, search])).toBe('search');
     expect(sharedKind([search, { kind: 'plan' }])).toBeUndefined();
+  });
+});
+
+describe('liveOrbState', () => {
+  const step = (name: string, input: Record<string, unknown> = {}) => ({
+    callId: 'c1',
+    name,
+    input,
+    output: null,
+    isError: false,
+    sessionId: null,
+    subagents: null,
+    allowedBy: null,
+    mailDraft: null,
+    rateLimit: null,
+  });
+  const idle = { queued: false, waiting: false, step: undefined, writing: false };
+
+  // What breaks this: the orb saying the bot works while it only waits its
+  // turn or on its provider, or one animation for everything it does.
+  it('breathes while it waits, and moves by what it is doing otherwise', () => {
+    expect(liveOrbState({ ...idle, queued: true })).toBe('breathing');
+    expect(liveOrbState({ ...idle, waiting: true, step: step('start_session') })).toBe('breathing');
+    expect(liveOrbState(idle)).toBe('working');
+    expect(liveOrbState({ ...idle, writing: true })).toBe('composing');
+    expect(liveOrbState({ ...idle, step: step('get_pull_request', { number: 1 }) })).toBe(
+      'searching',
+    );
+    expect(liveOrbState({ ...idle, step: step('delegate', { tasks: [] }) })).toBe('connecting');
+    expect(liveOrbState({ ...idle, step: step('start_session') })).toBe('solving');
   });
 });

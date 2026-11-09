@@ -295,10 +295,13 @@ function TraceNote({ className, ...props }: React.ComponentProps<'div'>) {
 }
 
 function TraceLive({
+  glyph,
   elapsed,
   className,
   children,
 }: {
+  /** What moves beside the words (a thinking orb); the agent glyph when none is given. */
+  glyph?: React.ReactNode;
   /** "12s", "00:12", in mono. */
   elapsed?: React.ReactNode;
   className?: string;
@@ -311,10 +314,12 @@ function TraceLive({
       role="status"
       className={cn('flex min-h-8.5 items-center gap-2.5 text-[15px] tracking-[-0.011em] text-fg-muted', className)}
     >
-      <span
-        aria-hidden
-        className="flex size-4 shrink-0 items-center justify-center font-mono text-lg leading-none text-chat-spinner before:content-['✻'] motion-safe:before:animate-agent-glyph"
-      />
+      {glyph ?? (
+        <span
+          aria-hidden
+          className="flex size-4 shrink-0 items-center justify-center font-mono text-lg leading-none text-chat-spinner before:content-['✻'] motion-safe:before:animate-agent-glyph"
+        />
+      )}
       <TraceWords meta={elapsed} metaClassName="text-fg-subtle">
         <span className="motion-safe:animate-shimmer">{children}</span>
       </TraceWords>

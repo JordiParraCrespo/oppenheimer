@@ -2,9 +2,10 @@ import { TraceLive } from '@oppenheimer/design-system-web';
 import type { BotToolStep } from '@oppenheimer/frontend-consumer';
 import type { BotSubagentProgress } from '@oppenheimer/shared/schemas/bot';
 import { useTranslation } from 'react-i18next';
+import { ThinkingOrb } from 'thinking-orbs';
 import { BotSubagentsLive } from '@/features/bots/components/bot-subagents-live';
 import { BotTurnClock } from '@/features/bots/components/bot-turn-clock';
-import { liveLabel } from '@/features/bots/lib/tool-activity';
+import { liveLabel, liveOrbState } from '@/features/bots/lib/tool-activity';
 
 /**
  * The turn in flight, after what it has done so far (the Bots frame's live
@@ -46,7 +47,17 @@ export function BotTurnLive({
       : t(label.key, label.values);
   return (
     <>
-      <TraceLive elapsed={since && !queued ? <BotTurnClock since={since} /> : undefined}>
+      <TraceLive
+        glyph={
+          <ThinkingOrb
+            aria-hidden
+            className="shrink-0"
+            size={20}
+            state={liveOrbState({ queued, waiting: Boolean(waitingOn), step, writing })}
+          />
+        }
+        elapsed={since && !queued ? <BotTurnClock since={since} /> : undefined}
+      >
         {text}
       </TraceLive>
       {subagents?.length ? <BotSubagentsLive runs={subagents} /> : null}
