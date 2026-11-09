@@ -52,6 +52,7 @@ You can drag the rail items into another order; the order is kept on that device
 | Cloud agents | Connect a Cursor API key to run sessions in Cursor's cloud. |
 | Mail | Connect Gmail accounts your bots may read and, with your approval, send from. |
 | WhatsApp | Link a spare WhatsApp number on a host so bots can read and send messages. |
+| Telegram | Connect a Telegram bot you made with @BotFather on a host so your bots can read and answer its chats. |
 | About | The versions of the console and the API. |
 
 A command palette ("Search pages and actions…") jumps to pages and actions. Prose fields (the new-session box, a bot's composer, review comments) have a microphone button for dictation when the deployment has a speech provider set up.

@@ -65,3 +65,19 @@ type Directories interface {
 	// wrote and never runs git: a listing asks it once per directory shown.
 	Branch(dir string) string
 }
+
+// ExecPolicies is where the host keeps what it lets bots run: a file only
+// the person on the host writes (`runner exec`). Load answers the default,
+// off, when nothing was ever saved.
+type ExecPolicies interface {
+	Load() (domain.ExecPolicy, error)
+	Save(domain.ExecPolicy) error
+}
+
+// Executor runs one program to completion for a bot: argv directly, no
+// shell, stdin empty, its whole process group killed at the timeout, each
+// stream cut to its last limit bytes. A program that could not be started
+// is an error; one that ran and failed is a result with its exit code.
+type Executor interface {
+	Run(ctx context.Context, req domain.ExecRequest) (domain.ExecResult, error)
+}

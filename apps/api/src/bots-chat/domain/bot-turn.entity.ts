@@ -108,10 +108,35 @@ export interface BotTurnPlanLimits {
 export const BOT_TURN_ERROR_MAX = 1_000;
 
 /**
- * How long one turn may run before it is stopped (`25-bots.md` §2). A chat
- * turn answers; work that takes longer belongs to a session on a host.
+ * How long a completion a bot's work makes outside a turn may run (a
+ * conversation's summary, a dream). A turn itself has no time limit and no
+ * step limit since 2026-11-09 (`25-bots.md` §2): it runs until the model
+ * answers, held by the compaction and the guards instead
+ * (`BOT_TURN_IDLE_LIMIT_MS`, the engine's loop guard, `BOT_TURN_LOOP_REFUSALS`).
  */
-export const BOT_TURN_TIME_LIMIT_MS = 4 * 60_000;
+export const BOT_COMPLETION_TIME_LIMIT_MS = 4 * 60_000;
+
+/**
+ * How many calls the engine's loop guard may refuse in one turn before the
+ * turn stops as `loop`: a model that keeps asking for what it was told it
+ * cannot have is going round in circles.
+ */
+export const BOT_TURN_LOOP_REFUSALS = 5;
+
+/**
+ * The failures that end a turn without being a fault of the work: it was
+ * stopped by a bound (`time_limit`, `step_limit`, on turns before
+ * 2026-11-09), its model went silent (`stalled`), or its worker stopped
+ * (`interrupted`). What runs longer than a turn (a goal, a loop) goes on
+ * past them, with the turn's work kept.
+ */
+export const TURN_LIMIT_FAILURES = ['time_limit', 'step_limit', 'stalled', 'interrupted'] as const;
+export type TurnLimitFailure = (typeof TURN_LIMIT_FAILURES)[number];
+
+/** Whether a failure is a bound of one turn (`TURN_LIMIT_FAILURES`). */
+export function isTurnLimitFailure(failure: BotTurnFailure | null): failure is TurnLimitFailure {
+  return TURN_LIMIT_FAILURES.some((limit) => limit === failure);
+}
 
 /** The statuses a turn ends in. */
 export const ENDED_TURN_STATUSES: readonly BotTurnStatus[] = ['completed', 'cancelled', 'failed'];

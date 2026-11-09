@@ -1,0 +1,72 @@
+// Grafana Alloy for local development (docker-compose.monitoring.yml): tails
+// every *.log in the repository's .logs/ (mounted at /logs), each one an app's
+// pino JSON lines (the API writes .logs/api.log when LOG_FILE says so), and
+// pushes them to the Loki beside it.
+//
+// Labels are the few values a query selects streams by: `app` (the file's
+// name) and `level`. Everything per line (the correlation id, the logger's
+// context) is structured metadata, filterable without making a stream per
+// value: `{app="api"} | req_id="…"`.
+
+local.file_match "logs" {
+  path_targets = [{"__path__" = "/logs/*.log"}]
+  sync_period  = "5s"
+}
+
+discovery.relabel "logs" {
+  targets = local.file_match.logs.targets
+
+  rule {
+    source_labels = ["__path__"]
+    regex         = "/logs/([^/]+)\\.log"
+    target_label  = "app"
+  }
+}
+
+loki.source.file "logs" {
+  targets    = discovery.relabel.logs.output
+  forward_to = [loki.process.pino.receiver]
+}
+
+loki.process "pino" {
+  forward_to = [loki.write.local.receiver]
+
+  stage.json {
+    expressions = {
+      level   = "level",
+      time    = "time",
+      context = "context",
+      req_id  = "req.id",
+    }
+  }
+
+  // pino writes its level as a number.
+  stage.template {
+    source   = "level"
+    template = `{{ if eq .Value "10" }}trace{{ else if eq .Value "20" }}debug{{ else if eq .Value "30" }}info{{ else if eq .Value "40" }}warn{{ else if eq .Value "50" }}error{{ else if eq .Value "60" }}fatal{{ else }}unknown{{ end }}`
+  }
+
+  stage.labels {
+    values = { level = "" }
+  }
+
+  stage.structured_metadata {
+    values = { context = "", req_id = "" }
+  }
+
+  stage.timestamp {
+    source = "time"
+    format = "UnixMs"
+  }
+
+  // `app` already names the file.
+  stage.label_drop {
+    values = ["filename"]
+  }
+}
+
+loki.write "local" {
+  endpoint {
+    url = "http://loki:3100/loki/api/v1/push"
+  }
+}

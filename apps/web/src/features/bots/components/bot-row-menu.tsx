@@ -14,8 +14,8 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 /**
- * A bot row's ellipsis in the Employees sidebar: Settings, Move to group and
- * Delete bot. Move slides the menu to a pane of the groups it can go to,
+ * A bot row's ellipsis in the Employees sidebar: Settings, Pin or Unpin,
+ * Move to group, Hide from sidebar and Delete bot. Move slides the menu to a pane of the groups it can go to,
  * Ungrouped among them, the way a session's Move to project does. Props in,
  * choice out: the row owns the move and the delete.
  */
@@ -24,8 +24,11 @@ export function BotRowMenu({
   onOpenChange,
   groups,
   groupId,
+  pinned,
+  onPinChange,
   onSettings,
   onMove,
+  onHide,
   onDelete,
 }: {
   open: boolean;
@@ -33,8 +36,12 @@ export function BotRowMenu({
   groups: readonly { id: string; name: string }[];
   /** The group the bot is in now; `null` is Ungrouped. */
   groupId: string | null;
+  pinned: boolean;
+  onPinChange: (pinned: boolean) => void;
   onSettings: () => void;
   onMove: (groupId: string | null) => void;
+  /** Takes the bot out of the sidebar on this device; the filter menu shows it again. */
+  onHide: () => void;
   onDelete: () => void;
 }) {
   const { t } = useTranslation();
@@ -61,9 +68,13 @@ export function BotRowMenu({
         {pane === 'root' ? (
           <>
             <DropdownMenuItem onClick={onSettings}>{t('bots.sidebar.settings')}</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => onPinChange(!pinned)}>
+              {pinned ? t('bots.sidebar.unpin') : t('bots.sidebar.pin')}
+            </DropdownMenuItem>
             <DropdownMenuPaneItem onClick={() => setPane('move')}>
               {t('bots.sidebar.move')}
             </DropdownMenuPaneItem>
+            <DropdownMenuItem onClick={onHide}>{t('bots.sidebar.hide')}</DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem variant="destructive" onClick={onDelete}>
               {t('bots.sidebar.delete')}

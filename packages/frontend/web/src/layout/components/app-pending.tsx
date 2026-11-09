@@ -14,7 +14,7 @@ export function AppPending() {
       <div
         role="status"
         aria-label={t('common.loading')}
-        className="size-8 animate-spin rounded-full border-2 border-border-subtle border-t-surface-inverse"
+        className="size-8 motion-safe:animate-spin rounded-full border-2 border-border-subtle border-t-surface-inverse"
       />
     </div>
   );

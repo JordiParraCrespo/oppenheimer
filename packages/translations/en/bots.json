@@ -17,6 +17,11 @@
     "renameGroup": "Rename group",
     "deleteGroup": "Delete group",
     "groupFailed": "Could not save the group.",
+    "pinned": "Pinned",
+    "pin": "Pin",
+    "unpin": "Unpin",
+    "dropToPin": "Drop a bot here to pin it.",
+    "allPinned": "Its bots are under Pinned.",
     "rowActions": "Bot options",
     "settings": "Settings",
     "move": "Move to group",
@@ -24,7 +29,15 @@
     "moveNone": "No other group yet",
     "moveFailed": "Could not move the bot.",
     "delete": "Delete bot",
-    "loadFailed": "Could not load your bots."
+    "loadFailed": "Could not load your bots.",
+    "hide": "Hide from sidebar",
+    "filters": "Filter bots",
+    "shown": "Show bots",
+    "shownAll": "All",
+    "shownSome": "{{shown}} of {{total}}",
+    "showAll": "Show all bots",
+    "allHidden_one": "Its bot is hidden. Show it from the filter menu.",
+    "allHidden_other": "Its {{count}} bots are hidden. Show them from the filter menu."
   },
   "landing": {
     "titleEmpty": "Make your first bot.",
@@ -39,6 +52,7 @@
     "startFrom": "Try asking",
     "hello": "{{name}} is ready. What should we work on?",
     "placeholder": "Message {{name}}",
+    "history": "History {{position}}/{{total}}",
     "placeholderRunning": "Steer {{name}}: Enter steers the turn under way, Alt+Enter queues for after",
     "steered": "Steered in while it worked",
     "send": "Send",
@@ -58,7 +72,11 @@
       "refused": "{{provider}} refused this request. Sending it again won't help: change the message or the model.",
       "unavailable": "{{provider}} could not be reached. This is usually temporary: try again in a moment.",
       "time_limit": "This turn ran out of time. Sending it again won't help: ask for a smaller step, or split the request.",
-      "interrupted": "This turn was interrupted before it finished. Sending it again runs it."
+      "step_limit": "This turn used all its steps and stopped before it finished. Sending it again won't help: ask for a smaller step, or say go on to continue.",
+      "stalled": "{{provider}} sent nothing for 5 minutes, so this turn stopped. This is usually temporary: try again in a moment.",
+      "loop": "This turn kept repeating calls that changed nothing, so it stopped. Sending it again won't help: say what to do differently.",
+      "interrupted": "This turn was interrupted before it finished. Sending it again runs it.",
+      "storage": "We could not save this turn, so it stopped: the fault is ours, not {{provider}}'s. Try again in a moment."
     },
     "openProviders": "Open Model providers",
     "errorDetails": "Show details",
@@ -266,6 +284,9 @@
       },
       "goal": {
         "continued": "Goal · continuation {{step}} of {{limit}}",
+        "continuedOpen": "Goal · continuation {{step}}",
+        "paused": "Goal “{{objective}}” {{why}}",
+        "resumed": "You resumed the goal “{{objective}}”",
         "met": "Goal met: “{{objective}}”",
         "impossible": "Goal “{{objective}}” cannot be met without you",
         "cleared": "You stopped the goal “{{objective}}”",
@@ -279,6 +300,9 @@
         "stopped": "Loop “{{prompt}}” stopped: a run of it failed or was stopped",
         "ended": "Loop “{{prompt}}” ended: the bot did not say when to run next"
       },
+      "compaction": "Summarized earlier work to keep its context small · {{before}} → {{after}} tokens",
+      "compactionLine": "Summarized earlier work",
+      "compactionTokens": "{{before}} → {{after}} tokens",
       "dream": {
         "dreamed": "Tidied its memory · {{before}} facts → {{after}}",
         "undone": "You undid the tidy · {{before}} facts are back"
@@ -299,6 +323,19 @@
     "goal": {
       "title": "Goal: {{objective}}",
       "progress": "{{step}} of {{limit}} continuations",
+      "continuations_one": "{{count}} continuation",
+      "continuations_other": "{{count}} continuations",
+      "budget": "{{progress}} · {{used}} of {{budget}} tokens",
+      "resume": "Resume",
+      "resumeFailed": "Could not resume the goal. Try again.",
+      "paused": {
+        "blocked": "paused, it needs you",
+        "usage_limit": "paused, the model provider hit a limit",
+        "no_progress": "paused, its last turns did nothing",
+        "budget": "paused, its budget is spent",
+        "stopped": "paused, you stopped a turn of it",
+        "failed": "paused, a turn of it failed"
+      },
       "waiting": "waiting for {{system}} until {{time}}",
       "stop": "Stop goal",
       "stopFailed": "Could not stop the goal. Try again.",
@@ -326,6 +363,9 @@
       "menu": "Commands and skills you can run",
       "pick": "Use /{{name}}",
       "builtInLabel": "Commands",
+      "builtInSkill": {
+        "recap": "Catch up on your sessions, pull requests and plan. Add a topic to narrow it."
+      },
       "builtIn": {
         "goal": "Keep working until a condition holds, checked after every turn. /goal clear stops it.",
         "usage": "Show what this chat has spent: tokens by model, cache hits, plan windows.",
@@ -584,6 +624,8 @@
       "gmail": "Gmail · {{when}}",
       "last": "Last",
       "next": "Next",
+      "more": "Show more",
+      "less": "Show less",
       "never": "Never",
       "switch": "Run “{{name}}” on its own",
       "pause": "Pause",
@@ -668,6 +710,7 @@
         "plan": "Plan",
         "mail": "Mail",
         "whatsapp": "WhatsApp",
+        "telegram": "Telegram",
         "github": "GitHub",
         "automations": "Routines and automations",
         "bots": "Other bots",

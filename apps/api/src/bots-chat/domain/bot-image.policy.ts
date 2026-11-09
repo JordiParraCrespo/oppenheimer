@@ -10,15 +10,15 @@ import type { HistoryMessage } from './bot-history.policy';
 export function withEarlierImages(
   message: HistoryMessage & { attachments: readonly { id?: string; name: string }[] },
 ): HistoryMessage {
-  const { role, content, event, attachments } = message;
-  if (attachments.length === 0) return { role, content, event };
+  const { role, content, event, steps, attachments } = message;
+  if (attachments.length === 0) return { role, content, event, steps };
   const note =
     role === 'user'
       ? imagesNote(attachments)
       : role === 'assistant'
         ? shownNote(attachments.map((attachment) => attachment.name))
         : null;
-  if (!note) return { role, content, event };
+  if (!note) return { role, content, event, steps };
   return { role, content: [content.trim(), note].filter(Boolean).join('\n\n'), event };
 }
 
@@ -27,6 +27,15 @@ function shownNote(names: readonly string[]): string {
   const listed = names.map((name) => `"${name}"`).join(', ');
   return `[Oppenheimer: here you showed the person ${names.length === 1 ? 'an image' : `${names.length} images`} with show_image: ${listed}.]`;
 }
+
+/**
+ * Room the history keeps for the notes `withEarlierImages` adds to earlier
+ * messages (15 to 50 tokens each), which the summary's fold does not count:
+ * the fold starts this much below the budget (`BOT_SUMMARY_TRIGGER_TOKENS`).
+ * A note that grows past this, or a chat with many more images in view,
+ * needs it raised.
+ */
+export const EARLIER_IMAGES_HEADROOM_TOKENS = 1_000;
 
 /**
  * The sentence that stands for images the bot was sent before and cannot see

@@ -350,6 +350,8 @@ function toEvent(dto: NonNullable<BotMessageResponseDto['event']>): BotMessageEv
           }
         : null;
     }
+    case 'compaction':
+      return { kind: 'compaction', tokensBefore: dto.tokensBefore, tokensAfter: dto.tokensAfter };
     case 'loop': {
       const activity = BOT_LOOP_ACTIVITIES.find((candidate) => candidate === dto.activity);
       return activity
@@ -647,6 +649,13 @@ export class BotsRepository {
     });
   }
 
+  /** Resumes the bot's paused goal: its next continuation is queued. */
+  resumeGoal(id: string): Promise<void> {
+    return callApi(BotsErrors.RESUME_GOAL_FAILED, async (api) => {
+      await api.result(heyApiSdk.resumeBotGoal({ path: { id } }));
+    });
+  }
+
   /** The card the bot waits on, if any: at most one is pending. */
   findPendingApproval(id: string): Promise<BotApprovalEntity | null> {
     return callApi(BotsErrors.FETCH_APPROVALS_FAILED, async (api) => {
@@ -775,6 +784,14 @@ export class BotsRepository {
   renameGroup(id: string, name: string): Promise<BotGroupEntity> {
     return callApi(BotsErrors.SAVE_GROUP_FAILED, async (api) => {
       const data = await api.body(heyApiSdk.updateBotGroup({ path: { id }, body: { name } }));
+      return toGroup(data);
+    });
+  }
+
+  /** Places the group at `position` among the groups; the API closes the others up around it. */
+  moveGroup(id: string, position: number): Promise<BotGroupEntity> {
+    return callApi(BotsErrors.SAVE_GROUP_FAILED, async (api) => {
+      const data = await api.body(heyApiSdk.updateBotGroup({ path: { id }, body: { position } }));
       return toGroup(data);
     });
   }

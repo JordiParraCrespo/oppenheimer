@@ -1,15 +1,17 @@
 import {
+  FacetSelect,
+  Input,
   SettingsAddRow,
   SettingsGroup,
   SettingsHeading,
-  SettingsListRow,
+  SettingsListRowSkeleton,
   Skeleton,
 } from '@oppenheimer/design-system-web';
+import { Search } from '@oppenheimer/design-system-web/icons';
 import { LoadingStatus } from '@oppenheimer/frontend-web';
 import { useTranslation } from 'react-i18next';
 
-/** The two dropdowns beside the search. */
-const FACETS = ['decision', 'group'] as const;
+function noop() {}
 
 /** The folded groups, at the widths their names run to. */
 const GROUPS = ['w-20', 'w-36', 'w-12', 'w-16', 'w-28'];
@@ -17,8 +19,9 @@ const GROUPS = ['w-20', 'w-36', 'w-12', 'w-16', 'w-28'];
 /**
  * Permissions before they answer: both rule lists with their static titles,
  * an empty row and the add row, which need no data; the grants card with one
- * line; then the tools' search and its two dropdowns, and the groups folded to a line
- * each, their names and summaries as bars.
+ * line; then the tools' search and its two dropdowns, drawn as they open (unset,
+ * out of reach), and the groups folded to a line each, their names and
+ * summaries as bars.
  */
 export function BotPermissionsSkeleton() {
   const { t } = useTranslation();
@@ -34,11 +37,7 @@ export function BotPermissionsSkeleton() {
             </p>
           </div>
           <SettingsGroup>
-            <SettingsListRow>
-              <span className="flex h-5 items-center">
-                <Skeleton shape="sm" className="h-3 w-56" />
-              </span>
-            </SettingsListRow>
+            <SettingsListRowSkeleton index={0} meta={false} />
             <div inert>
               <SettingsAddRow
                 value=""
@@ -56,11 +55,7 @@ export function BotPermissionsSkeleton() {
       <section aria-hidden className="flex flex-col gap-2.5">
         <h2 className="eyebrow m-0 px-1">{t('bots.settings.permissions.grants')}</h2>
         <SettingsGroup>
-          <SettingsListRow>
-            <span className="flex h-5 items-center">
-              <Skeleton shape="sm" className="h-3 w-44" />
-            </span>
-          </SettingsListRow>
+          <SettingsListRowSkeleton index={1} meta={false} />
         </SettingsGroup>
       </section>
       <section aria-hidden className="flex flex-col gap-2.5">
@@ -68,17 +63,28 @@ export function BotPermissionsSkeleton() {
         <span className="flex h-5 items-center px-1">
           <Skeleton shape="sm" className="h-3 w-96 max-w-full" />
         </span>
-        <div className="flex flex-wrap items-center gap-2 px-1">
-          <Skeleton shape="pill" className="h-7 w-60 max-w-full" />
-          {FACETS.map((key) => (
-            <span
-              key={key}
-              className="inline-flex h-(--control-h-md) items-center gap-1.5 rounded-pill bg-hover-surface px-3 text-[13px] text-fg-muted"
-            >
-              {t(`bots.settings.permissions.filters.${key}`)}
-              <Skeleton shape="sm" className="h-2.5 w-10" />
-            </span>
-          ))}
+        <div inert className="flex flex-wrap items-center gap-2 px-1">
+          <Input
+            type="search"
+            size="sm"
+            pill
+            className="w-60 max-w-full"
+            leading={<Search className="size-3.5" aria-hidden />}
+            placeholder={t('bots.settings.permissions.search')}
+            aria-label={t('bots.settings.permissions.search')}
+          />
+          <FacetSelect
+            label={t('bots.settings.permissions.filters.decision')}
+            value="all"
+            onValueChange={noop}
+            options={[{ value: 'all', label: t('bots.settings.permissions.views.all') }]}
+          />
+          <FacetSelect
+            label={t('bots.settings.permissions.filters.group')}
+            value="all"
+            onValueChange={noop}
+            options={[{ value: 'all', label: t('bots.settings.permissions.filters.allGroups') }]}
+          />
         </div>
         <div className="flex flex-col gap-1">
           {GROUPS.map((width) => (

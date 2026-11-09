@@ -21,11 +21,13 @@ there.
 | — | [Multi-account](multi-account.md) | Several agent accounts per person (note 06); on the list, version not set |
 | — | [Mail](mail.md) | Bots work your own Gmail accounts, several per person: search, attachments, drafts, sends (always approved), labels and archive, new mail as a routine trigger; the first version, ahead of channels; version not set |
 | — | [WhatsApp](whatsapp.md) | Bots read your own WhatsApp number's chats and write in them, OpenClaw's linked device held by the runner on your host; built 2026-10-30, version not set |
+| — | [Telegram](telegram.md) | Bots read and answer the chats of a Telegram bot you made with @BotFather, OpenClaw's Bot API route long-polled by the runner on your host, the token kept there; built 2026-11-08, version not set |
 | — | [Channels](channels.md) | Bots on email, WhatsApp and Slack: one interface per channel, email first as an address of the bot's own; version not set |
 | — | [Customers and routes](customers-and-routes.md) | Bots that talk to customers: routes pick the bot per channel, account, customer and conversation, a bot of a customer's own, hand-off to a person; after channels, version not set |
 | — | [Voice](voice.md) | Wispr-Flow-style dictation in the console, and setting up a session by speaking it; version not set |
 | — | [Agent tools](agent-tools.md) | An agent in a session reaches the person: sends a file to the chat, notifies the Inbox, is woken by its pull request or at a time it set; started 2026-11-02, version not set |
 | — | [Cloud agents](cloud-agents.md) | Sessions in the vendors' clouds (Claude `--cloud`, Codex cloud, Cursor Cloud Agents) beside sessions on hosts, and brought back onto a host; version not set |
+| — | [Sentry](sentry.md) | Errors from the API, workers, bots and console reported to Sentry; a Sentry issue as an automation trigger that starts a fix; built from 2026-11-02, version not set |
 
 ## What this list does not place yet
 
@@ -122,3 +124,9 @@ where these land is the first open question below.
 - 2026-11-02: agent tools added (`agent-tools.md`), from the tools Claude
   Code has in its own cloud sessions: send a file, notify, wake on a pull
   request, wake later. Send a file built the same day.
+- 2026-11-02: Sentry added: error reporting, and Sentry issues as a trigger
+  source (`sentry.md`); version not set.
+- 2026-11-08: Telegram added (`telegram.md`), OpenClaw's Bot API route on
+  WhatsApp's gateway: a BotFather bot long-polled by the runner on a host,
+  its token kept there, its chats read and answered by the owner's bots
+  with WhatsApp's tools and per-chat send grant; slice 1 built the same day.

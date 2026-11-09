@@ -405,6 +405,16 @@
       "WHATSAPP_008": "WhatsApp didn't take the message. Try again in a moment.",
       "WHATSAPP_009": "That number has sent as many bot messages as it may for now. Try again later.",
       "WHATSAPP_010": "There's no such WhatsApp chat on that number.",
+      "TELEGRAM_001": "That Telegram bot isn't connected any more.",
+      "TELEGRAM_002": "Telegram belongs to a workspace. Open one and try again.",
+      "TELEGRAM_003": "You've connected three Telegram bots, the most one person connects. Disconnect one to add another.",
+      "TELEGRAM_004": "That host is offline. Start its runner, then try again.",
+      "TELEGRAM_005": "That host's runner can't hold Telegram bots yet. Update the runner, then try again.",
+      "TELEGRAM_006": "That host already holds someone else's Telegram bot.",
+      "TELEGRAM_007": "That Telegram bot isn't connected. Connect it again in Settings → Telegram.",
+      "TELEGRAM_008": "Telegram didn't take the message. Try again in a moment.",
+      "TELEGRAM_009": "That Telegram bot has sent as many bot messages as it may for now. Try again later.",
+      "TELEGRAM_010": "There's no such Telegram chat on that bot.",
       "CLOUD_AGENTS_003": "This server can't keep a cloud agent key. Ask whoever runs it to set CLOUD_AGENTS_KEY.",
       "CLOUD_AGENTS_004": "Connect the provider with your API key first.",
       "CLOUD_AGENTS_005": "The provider refused that API key. Check it's a user API key and hasn't been revoked.",
@@ -505,7 +515,7 @@
           "link": "Open Codex Cloud settings"
         }
       },
-      "details": "Details from the host: {{detail}}"
+      "details": "Details from the host"
     }
   },
   "auth": {
@@ -666,12 +676,58 @@
     "list": {
       "title": "Projects",
       "new": "New project",
-      "edit": "{{name}} settings",
-      "repositories_one": "{{count}} repository",
-      "repositories_other": "{{count}} repositories",
       "noRepositories": "No repositories",
       "empty": "No projects yet. A project groups your sessions and starts new ones with its repositories, host and agent.",
-      "loadFailed": "Could not load your projects."
+      "loadFailed": "Could not load your projects.",
+      "status": {
+        "needsInput": "Needs input",
+        "running": "Running",
+        "idle": "Idle"
+      }
+    },
+    "detail": {
+      "back": "Projects",
+      "settings": "Settings",
+      "milestones": "Milestones",
+      "needsInput": "Needs input",
+      "inProgress": "In progress",
+      "noMilestones": "No milestones yet.",
+      "nothingNeedsInput": "Nothing waits on you.",
+      "nothingInProgress": "Nothing in progress.",
+      "gone": "That project is no longer here.",
+      "loadFailed": "Could not load this project.",
+      "views": "Project views",
+      "overview": "Overview",
+      "stats": "Stats"
+    },
+    "stats": {
+      "tasksCompleted": "Tasks completed",
+      "tasksCreated": "Tasks created",
+      "tokens": "Tokens burned",
+      "cost": "Agent cost",
+      "vsPrevious": "vs previous period",
+      "noPrevious": "Nothing to compare with yet",
+      "completed": "Completed",
+      "created": "Created",
+      "tasksTitle": "Tasks completed and created, per week",
+      "tokensTitle": "Tokens burned per week, by model",
+      "costTitle": "Agent cost per week",
+      "unknownModel": "Unknown model",
+      "loadFailed": "Could not load this project's statistics.",
+      "range": {
+        "lastWeeks_one": "Last week",
+        "lastWeeks_other": "Last {{count}} weeks",
+        "custom": "Custom",
+        "done": "Done",
+        "previousMonth": "Previous month",
+        "nextMonth": "Next month",
+        "choose": "Date range",
+        "days_one": "{{count}} day",
+        "days_other": "{{count}} days"
+      },
+      "otherModels": "Other models",
+      "headlessOnly": "headless turns",
+      "measuredHeadless": "Measured on headless turns"
     },
     "unassigned": "Unassigned"
   },
@@ -834,8 +890,12 @@
         "up": "Parent folder",
         "crumbs": "Path",
         "emptyMissing": "No folder at {{dir}} on {{host}}.",
-        "emptyFiltered": "No folder in {{dir}} starts with “{{fragment}}”.",
+        "emptyFiltered": "No folder in {{dir}} has “{{fragment}}” in its name.",
         "emptyNone": "No subfolders. Use this one, or go back up.",
+        "searchHeading": "Found under ~",
+        "searching": "Searching under ~…",
+        "searchTruncated": "Only the closest matches are shown. Type more of the name to narrow it.",
+        "searchFailed": "Could not search the folders on this host.",
         "footMissing": "Pick an existing folder. Nothing is created.",
         "footRepository": "Git repository on {{branch}}. Opened as it is, no new branch.",
         "footFolder": "Opened as it is. Nothing is cloned.",
@@ -1005,6 +1065,7 @@
       "renameLabel": "Session name",
       "move": "Move to project…",
       "moveTitle": "Move to project",
+      "moveCurrent": "Current",
       "moveNone": "No other project holds this session's repository.",
       "delete": "Delete",
       "writeFailed": "That change did not land. Try again.",
@@ -1029,7 +1090,7 @@
       "discard": "Also discard work that is not pushed",
       "keeps": "Deleting stops if the session has work that is not pushed.",
       "descriptionFolder": "Ends the terminal. The folder stays as it is.",
-      "descriptionCloud": "Removes it from Oppenheimer. The session stays on claude.ai/code, where you can archive it.",
+      "descriptionCloud": "Removes it from Oppenheimer. The session stays on claude.ai/code, where you can <archive>archive it</archive>.",
       "refused": "Its host did not delete it",
       "refusedUnknown": "The host refused to remove the session."
     },
@@ -1469,6 +1530,11 @@
       "renameGroup": "Rename group",
       "deleteGroup": "Delete group",
       "groupFailed": "Could not save the group.",
+      "pinned": "Pinned",
+      "pin": "Pin",
+      "unpin": "Unpin",
+      "dropToPin": "Drop a bot here to pin it.",
+      "allPinned": "Its bots are under Pinned.",
       "rowActions": "Bot options",
       "settings": "Settings",
       "move": "Move to group",
@@ -1476,7 +1542,15 @@
       "moveNone": "No other group yet",
       "moveFailed": "Could not move the bot.",
       "delete": "Delete bot",
-      "loadFailed": "Could not load your bots."
+      "loadFailed": "Could not load your bots.",
+      "hide": "Hide from sidebar",
+      "filters": "Filter bots",
+      "shown": "Show bots",
+      "shownAll": "All",
+      "shownSome": "{{shown}} of {{total}}",
+      "showAll": "Show all bots",
+      "allHidden_one": "Its bot is hidden. Show it from the filter menu.",
+      "allHidden_other": "Its {{count}} bots are hidden. Show them from the filter menu."
     },
     "landing": {
       "titleEmpty": "Make your first bot.",
@@ -1491,6 +1565,7 @@
       "startFrom": "Try asking",
       "hello": "{{name}} is ready. What should we work on?",
       "placeholder": "Message {{name}}",
+      "history": "History {{position}}/{{total}}",
       "placeholderRunning": "Steer {{name}}: Enter steers the turn under way, Alt+Enter queues for after",
       "steered": "Steered in while it worked",
       "send": "Send",
@@ -1510,7 +1585,11 @@
         "refused": "{{provider}} refused this request. Sending it again won't help: change the message or the model.",
         "unavailable": "{{provider}} could not be reached. This is usually temporary: try again in a moment.",
         "time_limit": "This turn ran out of time. Sending it again won't help: ask for a smaller step, or split the request.",
-        "interrupted": "This turn was interrupted before it finished. Sending it again runs it."
+        "step_limit": "This turn used all its steps and stopped before it finished. Sending it again won't help: ask for a smaller step, or say go on to continue.",
+        "stalled": "{{provider}} sent nothing for 5 minutes, so this turn stopped. This is usually temporary: try again in a moment.",
+        "loop": "This turn kept repeating calls that changed nothing, so it stopped. Sending it again won't help: say what to do differently.",
+        "interrupted": "This turn was interrupted before it finished. Sending it again runs it.",
+        "storage": "We could not save this turn, so it stopped: the fault is ours, not {{provider}}'s. Try again in a moment."
       },
       "openProviders": "Open Model providers",
       "errorDetails": "Show details",
@@ -1718,6 +1797,9 @@
         },
         "goal": {
           "continued": "Goal · continuation {{step}} of {{limit}}",
+          "continuedOpen": "Goal · continuation {{step}}",
+          "paused": "Goal “{{objective}}” {{why}}",
+          "resumed": "You resumed the goal “{{objective}}”",
           "met": "Goal met: “{{objective}}”",
           "impossible": "Goal “{{objective}}” cannot be met without you",
           "cleared": "You stopped the goal “{{objective}}”",
@@ -1731,6 +1813,9 @@
           "stopped": "Loop “{{prompt}}” stopped: a run of it failed or was stopped",
           "ended": "Loop “{{prompt}}” ended: the bot did not say when to run next"
         },
+        "compaction": "Summarized earlier work to keep its context small · {{before}} → {{after}} tokens",
+        "compactionLine": "Summarized earlier work",
+        "compactionTokens": "{{before}} → {{after}} tokens",
         "dream": {
           "dreamed": "Tidied its memory · {{before}} facts → {{after}}",
           "undone": "You undid the tidy · {{before}} facts are back"
@@ -1751,6 +1836,19 @@
       "goal": {
         "title": "Goal: {{objective}}",
         "progress": "{{step}} of {{limit}} continuations",
+        "continuations_one": "{{count}} continuation",
+        "continuations_other": "{{count}} continuations",
+        "budget": "{{progress}} · {{used}} of {{budget}} tokens",
+        "resume": "Resume",
+        "resumeFailed": "Could not resume the goal. Try again.",
+        "paused": {
+          "blocked": "paused, it needs you",
+          "usage_limit": "paused, the model provider hit a limit",
+          "no_progress": "paused, its last turns did nothing",
+          "budget": "paused, its budget is spent",
+          "stopped": "paused, you stopped a turn of it",
+          "failed": "paused, a turn of it failed"
+        },
         "waiting": "waiting for {{system}} until {{time}}",
         "stop": "Stop goal",
         "stopFailed": "Could not stop the goal. Try again.",
@@ -1778,6 +1876,9 @@
         "menu": "Commands and skills you can run",
         "pick": "Use /{{name}}",
         "builtInLabel": "Commands",
+        "builtInSkill": {
+          "recap": "Catch up on your sessions, pull requests and plan. Add a topic to narrow it."
+        },
         "builtIn": {
           "goal": "Keep working until a condition holds, checked after every turn. /goal clear stops it.",
           "usage": "Show what this chat has spent: tokens by model, cache hits, plan windows.",
@@ -2036,6 +2137,8 @@
         "gmail": "Gmail · {{when}}",
         "last": "Last",
         "next": "Next",
+        "more": "Show more",
+        "less": "Show less",
         "never": "Never",
         "switch": "Run “{{name}}” on its own",
         "pause": "Pause",
@@ -2120,6 +2223,7 @@
           "plan": "Plan",
           "mail": "Mail",
           "whatsapp": "WhatsApp",
+          "telegram": "Telegram",
           "github": "GitHub",
           "automations": "Routines and automations",
           "bots": "Other bots",
@@ -2822,7 +2926,8 @@
       "tasks": "Tasks",
       "calendar": "Calendar",
       "milestones": "Milestones",
-      "projects": "Projects"
+      "projects": "Projects",
+      "todo": "TODO"
     },
     "sidebar": {
       "unassigned": "Unassigned"
@@ -2988,6 +3093,41 @@
       "noProject": "No project",
       "allMilestones": "All milestones",
       "clear": "Clear"
+    },
+    "todo": {
+      "left": "left",
+      "done": "done",
+      "today": "Today",
+      "previous": "Previous day",
+      "next": "Next day",
+      "todayWeek": "Today · Week {{week}}",
+      "weekNumber": "Week {{week}}",
+      "includeOverdue": "Include overdue",
+      "empty": "Nothing for this day yet. Add one below.",
+      "noMatch": "No tasks match these filters.",
+      "add": "Add a task",
+      "addLabel": "Add a task for this day",
+      "addFailed": "Couldn’t add that task.",
+      "startSession": "Start a session for {{title}}",
+      "toggleFailed": "Couldn’t update that task.",
+      "loadFailed": "Couldn’t load your tasks.",
+      "state": {
+        "todo": "due today",
+        "due": "due",
+        "overdue": "overdue since {{date}}"
+      },
+      "schedule": {
+        "button": "Add undated tasks",
+        "title": "Add undated tasks",
+        "for": "Pick the tasks with no due date to put on {{date}}.",
+        "search": "Search tasks",
+        "noMatch": "No task matches “{{query}}”.",
+        "none": "Every open task already has a due date.",
+        "submit": "Add to {{date}}",
+        "failed": "Couldn’t add some of those tasks.",
+        "loadFailed": "Couldn’t load your tasks."
+      },
+      "reorder": "Reorder {{title}}"
     }
   },
   "calendar": {
@@ -3001,20 +3141,28 @@
       "automations": "Automations"
     },
     "header": {
-      "previous": "Previous month",
-      "next": "Next month",
+      "previous": "Previous",
+      "next": "Next",
       "today": "Today",
       "newEvent": "New event",
       "meetings": "meetings",
       "tasksDue": "tasks due",
-      "runs": "automation runs"
+      "runs": "automation runs",
+      "views": "Calendar view",
+      "day": "Day",
+      "week": "Week",
+      "month": "Month",
+      "todayWeek": "Today · Week {{week}}",
+      "weekNumber": "Week {{week}}",
+      "weeks": "Weeks {{from}}–{{to}}"
     },
     "grid": {
       "more_one": "{{count}} more",
       "more_other": "{{count}} more",
       "eventsFailed": "Couldn’t load your events.",
       "googleFailed": "Couldn’t read Google Calendar.",
-      "moveFailed": "Couldn’t move that to another day."
+      "moveFailed": "Couldn’t move that to another day.",
+      "allDay": "All day"
     },
     "event": {
       "newTitle": "New event",
@@ -3303,6 +3451,7 @@
       "cloudAgents": "Cloud agents",
       "mail": "Mail",
       "whatsapp": "WhatsApp",
+      "telegram": "Telegram",
       "app": "Oppenheimer",
       "about": "About"
     },
@@ -3588,6 +3737,57 @@
       "qrStep3": "Point the phone at this code. It changes every few seconds.",
       "qrWaiting": "Waiting for the host to issue a code…"
     },
+    "telegram": {
+      "title": "Telegram",
+      "description": "Connect a Telegram bot you made with @BotFather, held by the runner on one of your hosts. Your bots can then read the chats people have with it and answer them, asking you first. The bot’s token stays on your host.",
+      "privacy": "In groups, Telegram shows a bot only commands, mentions and replies to it. To let your bots read whole groups, send /setprivacy to @BotFather and turn privacy mode off for that bot.",
+      "loadFailed": "Couldn’t load your Telegram bots.",
+      "emptyTitle": "No Telegram bot connected",
+      "emptyDescription": "Connect one and ask any bot things like “anything new on the shop bot?” or “tell the team group the build is green”.",
+      "connect": "Connect a bot",
+      "connectAnother": "Connect another bot",
+      "connectAgain": "Connect again",
+      "connectSubmit": "Connect",
+      "atLimit": "You can connect up to {{count}} bots.",
+      "noHosts": "Pair a host first: the bot is polled by a host’s runner.",
+      "connectTitle": "Connect a Telegram bot",
+      "reconnectTitle": "Give {{label}} a new token",
+      "connectDescription": "Pick the host that will poll the bot. It answers while that host is on.",
+      "reconnectDescription": "Paste the bot’s new token. Its host and the chats kept for your bots stay as they are.",
+      "step1": "In Telegram, open @BotFather and send /newbot (or /token for a bot you have).",
+      "step2": "Copy the token it gives you, which looks like 123456789:AA….",
+      "step3": "Paste it below. It goes to your host and is never shown here again.",
+      "hostField": "Host",
+      "hostPlaceholder": "Choose a host",
+      "searchHosts": "Search hosts",
+      "noHost": "No host matches “{{query}}”",
+      "hostOfflineOption": "{{name}} · offline",
+      "tokenField": "Bot token",
+      "tokenHint": "Kept on the host only. Anyone with it can act as the bot, so don’t share it.",
+      "showToken": "Show token",
+      "hideToken": "Hide token",
+      "labelField": "Name",
+      "labelPlaceholder": "Shop",
+      "connecting": "Connecting…",
+      "connectFailed": "Couldn’t connect the bot.",
+      "status": {
+        "connecting": "Connecting",
+        "connected": "Connected",
+        "revoked": "Token revoked",
+        "unlinked": "Disconnected"
+      },
+      "hostOffline": "Host offline",
+      "onHost": "On {{host}}",
+      "unknownHost": "a removed host",
+      "notCheckedYet": "Checking the token",
+      "open": "Open in Telegram",
+      "disconnect": "Disconnect",
+      "disconnectLabel": "Disconnect {{label}}",
+      "disconnecting": "Disconnecting…",
+      "disconnectTitle": "Disconnect {{label}}?",
+      "disconnectDescription": "Your host stops polling the bot and forgets its token. Your bots lose the chats kept for them. The bot stays yours on Telegram; revoke its token in @BotFather to stop it there too.",
+      "disconnectFailed": "Couldn’t disconnect the bot."
+    },
     "about": {
       "title": "About",
       "versionsHeading": "Versions",
@@ -3644,7 +3844,8 @@
     "backToSessions": "Back to sessions",
     "sensitiveScope": "Sensitive",
     "unknownClient": "An application",
-    "failed": "That did not go through. Try again."
+    "failed": "That did not go through. Try again.",
+    "catalogFailed": "The permissions this application asked for could not be loaded, so it cannot be approved yet. Reload the page to try again."
   },
   "onboarding": {
     "flow": {

@@ -1,4 +1,7 @@
-import { BOT_BUILT_IN_COMMANDS } from '@oppenheimer/shared/schemas/bot-skill';
+import {
+  BOT_BUILT_IN_COMMANDS,
+  BOT_RUNNABLE_BUILT_IN_SKILL_NAMES,
+} from '@oppenheimer/shared/schemas/bot-skill';
 
 /** The most commands the `/` menu lists at once. */
 const SLASH_MENU_MAX = 8;
@@ -55,6 +58,57 @@ export function slashMenuItems(
     query,
   ).slice(0, SLASH_MENU_MAX - ownBuiltIns.length);
   return { builtIns: ownBuiltIns, skills: ownSkills };
+}
+
+/** What each built-in says in the menu, by its translation key. */
+const BUILT_IN_DESCRIPTIONS = {
+  goal: 'bots.chat.slash.builtIn.goal',
+  usage: 'bots.chat.slash.builtIn.usage',
+  loop: 'bots.chat.slash.builtIn.loop',
+  schedule: 'bots.chat.slash.builtIn.schedule',
+  recap: 'bots.chat.slash.builtInSkill.recap',
+} as const satisfies Record<
+  (typeof BOT_BUILT_IN_COMMANDS)[number] | (typeof BOT_RUNNABLE_BUILT_IN_SKILL_NAMES)[number],
+  string
+>;
+
+/** A translation key a built-in's row reads its description from. */
+type SlashDescriptionKey = (typeof BUILT_IN_DESCRIPTIONS)[keyof typeof BUILT_IN_DESCRIPTIONS];
+
+/** A skill of the bot's own, as the menu reads it. */
+type OwnSkill = SlashCommand & { userInvocable: boolean };
+
+/**
+ * The `/` menu's rows for a bot, the one place that decides them: the
+ * built-in commands, always; then the built-in skills the person may run
+ * (`/recap`), then the bot's own that they may run. A skill of the bot's
+ * saved under a built-in skill's name before it was reserved is the one
+ * `/<name>` means, so the built-in gives way to it, even when only the bot
+ * may use it and the menu offers neither; and until the bot's skills are read
+ * (`undefined`: loading, or the read failed) that cannot be told, so no
+ * skill is offered yet.
+ */
+export function slashMenuRows(
+  query: string,
+  own: readonly OwnSkill[] | undefined,
+  describe: (key: SlashDescriptionKey) => string,
+): { builtIns: SlashCommand[]; skills: SlashCommand[] } {
+  const row = (kind: string, name: keyof typeof BUILT_IN_DESCRIPTIONS): SlashCommand => ({
+    id: `${kind}:${name}`,
+    name,
+    command: `/${name}`,
+    description: describe(BUILT_IN_DESCRIPTIONS[name]),
+  });
+  const builtIns = BOT_BUILT_IN_COMMANDS.map((name) => row('built-in', name));
+  if (!own) return slashMenuItems(builtIns, [], query);
+  const shadowed = new Set(own.map((skill) => skill.name));
+  const skills = [
+    ...BOT_RUNNABLE_BUILT_IN_SKILL_NAMES.filter((name) => !shadowed.has(name)).map((name) =>
+      row('built-in-skill', name),
+    ),
+    ...own.filter((skill) => skill.userInvocable),
+  ];
+  return slashMenuItems(builtIns, skills, query);
 }
 
 /** The draft once a command is picked: the command and a space for its input. */

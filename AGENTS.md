@@ -51,7 +51,7 @@ packages/    shared (Zod schemas, types, CASL, scope + flag catalogs, the link p
              auth (Better Auth config) · env (root .env loader) · tsconfig
              http-client (the transport cli and mcp call the API through)
              translations (i18n JSON)
-             backend/  agents authz cache core ddd email i18n llm queue storage
+             backend/  agents authz cache core ddd email error-reporting i18n llm queue storage
              frontend/ core (kernel) · consumer (the console's domain) · web (platform kit)
                        api-client (generated) · design-system/web (shadcn/ui + Base UI + Tailwind v4)
              go/       core config httpx auth health ws postgres selfupdate execx
@@ -151,6 +151,7 @@ frontmatter; this is the index.
 | building a form | `forms.md` |
 | adding or changing a route in `apps/web` | `/tanstack-routing` |
 | checking a change end to end | `/local-stack`; the e2e suites are `e2e/README.md` |
+| reading the API's logs or metrics, or adding a metric | `apps/docs/docs/deployment/monitoring.md` (`pnpm logs` is LogQL over the local Loki), `deploy/dev/monitoring/README.md` (`pnpm monitoring:up`) |
 | deploying | `deploy/dev/README.md`, `apps/docs/docs/deployment/` |
 
 ## Commands

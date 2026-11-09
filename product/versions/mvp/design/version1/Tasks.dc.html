@@ -45,6 +45,7 @@ textarea::placeholder{color:var(--fg-subtle)}
 <div class="op-sessionlist">
 <button class="op-session" type="button" data-active="{{ navInbox }}" onClick="{{ goInbox }}"><span class="op-session__glyph" style="display:flex"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="bell" size="14" hint-size="14px,14px"></x-import></span><span class="op-session__name">Inbox</span><span class="op-session__age" style="opacity:1">5</span></button>
 <button class="op-session" type="button" data-active="{{ navTasks }}" onClick="{{ goTasks }}"><span class="op-session__glyph" style="display:flex"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="check-circle" size="14" hint-size="14px,14px"></x-import></span><span class="op-session__name">Tasks</span><span class="op-session__age" style="opacity:1">{{ openN }}</span></button>
+<button class="op-session" type="button" data-active="{{ navTodo }}" onClick="{{ goTodo }}"><span class="op-session__glyph" style="display:flex"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="sun" size="14" hint-size="14px,14px"></x-import></span><span class="op-session__name">To do</span><span class="op-session__age" style="opacity:1">{{ todoNavN }}</span></button>
 <button class="op-session" type="button" data-active="{{ navMs }}" onClick="{{ goMs }}"><span class="op-session__glyph" style="display:flex;align-items:center;justify-content:center;width:14px"><span style="width:8px;height:8px;box-sizing:border-box;transform:rotate(45deg);border:1.5px solid currentColor"></span></span><span class="op-session__name">Milestones</span><span class="op-session__age" style="opacity:1">{{ goalsN }}</span></button>
 <button class="op-session" type="button" data-active="{{ navCal }}" onClick="{{ goCal }}"><span class="op-session__glyph" style="display:flex"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="calendar" size="14" hint-size="14px,14px"></x-import></span><span class="op-session__name">Calendar</span><span class="op-session__age" style="opacity:1">{{ todayN }}</span></button>
 <button class="op-session" type="button" data-active="{{ navProj }}" onClick="{{ goProj }}"><span class="op-session__glyph" style="display:flex"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="folder" size="14" hint-size="14px,14px"></x-import></span><span class="op-session__name">Projects</span><span class="op-session__age" style="opacity:1">{{ agProjN }}</span></button>
@@ -88,7 +89,7 @@ textarea::placeholder{color:var(--fg-subtle)}
 </div>
 </nav>
 
-<main style="flex:1;min-width:0;overflow-x:hidden;overflow-y:auto;background:var(--canvas)">
+<main style="flex:1;min-width:0;overflow-x:hidden;overflow-y:auto;scrollbar-gutter:stable;background:var(--canvas)">
 <sc-if value="{{ isInbox }}" hint-placeholder-val="{{ true }}">
 <div style="position:relative;height:100%;min-height:0;overflow:hidden;background:var(--background)"><dc-import name="Inbox" hint-size="100%,100%" style="display:block;flex:1;min-height:0"></dc-import></div>
 </sc-if>
@@ -97,14 +98,14 @@ textarea::placeholder{color:var(--fg-subtle)}
 <header style="height:48px;flex:none;display:flex;align-items:center;gap:10px;padding:0 12px 0 16px;border-bottom:1px solid var(--border-subtle)">
 <span style="flex:none;width:26px;height:26px;border-radius:980px;background:var(--hover-surface);display:flex;align-items:center;justify-content:center"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="{{ agHeadIcon }}" size="14" hint-size="14px,14px"></x-import></span>
 <sc-if value="{{ agIsPm }}"><a href="./BotSettings.dc.html?bot=op" title="Oppenheimer settings" style="display:inline-flex;align-items:center;gap:6px;height:28px;margin-left:-6px;padding:0 6px;border-radius:10px;color:var(--fg);font-size:14px;font-weight:500;letter-spacing:-0.009em;white-space:nowrap;text-decoration:none" style-hover="background:var(--hover-surface);text-decoration:none">{{ agHeadTitle }}<span style="display:flex;color:var(--fg-subtle)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="settings" size="13" hint-size="13px,13px"></x-import></span></a></sc-if>
-<sc-if value="{{ agIsProject }}"><span style="font-size:14px;font-weight:500;letter-spacing:-0.009em;white-space:nowrap">{{ agHeadTitle }}</span></sc-if>
+<sc-if value="{{ agIsProject }}"><button type="button" onClick="{{ agBackToCards }}" style="display:inline-flex;align-items:center;gap:4px;height:28px;margin-left:-6px;padding:0 8px 0 4px;border:0;border-radius:10px;background:none;color:var(--fg-muted);font:inherit;font-size:14px;cursor:pointer" style-hover="background:var(--hover-surface)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="chevron-left" size="14" hint-size="14px,14px"></x-import>Projects</button><span style="color:var(--fg-subtle)">/</span><span style="font-size:14px;font-weight:500;letter-spacing:-0.009em;white-space:nowrap">{{ agHeadTitle }}</span></sc-if>
 <span style="flex:1"></span>
 <sc-if value="{{ agRunning }}"><span style="display:inline-flex;align-items:center;gap:6px;font-size:12.5px;color:var(--fg-muted)"><span style="width:6px;height:6px;border-radius:980px;background:var(--success);animation:op-chat-pulse 1.2s cubic-bezier(.4,0,.2,1) infinite"></span>Running</span></sc-if>
-<div role="tablist" style="display:flex;gap:2px;padding:2px;border-radius:980px;background:var(--hover-surface)">
+<sc-if value="{{ agIsPm }}"><div role="tablist" style="display:flex;gap:2px;padding:2px;border-radius:980px;background:var(--hover-surface)">
 <button type="button" role="tab" aria-selected="{{ agChatOn }}" onClick="{{ agGoChat }}" style="display:inline-flex;align-items:center;gap:6px;height:26px;padding:0 12px;border:0;border-radius:980px;background:{{ agChatBg }};color:{{ agChatFg }};font:inherit;font-size:13px;cursor:pointer"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="bot" size="13" hint-size="13px,13px"></x-import>Chat</button>
 <button type="button" role="tab" aria-selected="{{ agViewOn }}" onClick="{{ agGoView }}" style="display:inline-flex;align-items:center;gap:6px;height:26px;padding:0 12px;border:0;border-radius:980px;background:{{ agViewBg }};color:{{ agViewFg }};font:inherit;font-size:13px;cursor:pointer"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="layers" size="13" hint-size="13px,13px"></x-import>View</button>
 <button type="button" role="tab" aria-selected="{{ agStatsOn }}" onClick="{{ agGoStats }}" style="display:inline-flex;align-items:center;gap:6px;height:26px;padding:0 12px;border:0;border-radius:980px;background:{{ agStatsBg }};color:{{ agStatsFg }};font:inherit;font-size:13px;cursor:pointer"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="activity" size="13" hint-size="13px,13px"></x-import>Stats</button>
-</div>
+</div></sc-if>
 </header>
 <div style="flex:1;min-height:0;display:flex">
 <sc-if value="{{ agChatOn }}" hint-placeholder-val="{{ true }}">
@@ -254,15 +255,6 @@ textarea::placeholder{color:var(--fg-subtle)}
 <sc-if value="{{ agViewOn }}">
 <div data-chatscroll="true" style="flex:1;min-width:0;overflow-y:auto;background:var(--canvas)">
 <div style="max-width:1080px;margin:0 auto;padding:32px 32px 64px;display:flex;flex-direction:column;gap:28px">
-<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px">
-<sc-for list="{{ agTiles }}" as="st" hint-placeholder-count="4">
-<div style="display:flex;flex-direction:column;gap:10px;padding:18px;border-radius:18px;background:var(--card)">
-<span style="font-size:13px;color:var(--fg-muted)">{{ st.label }}</span>
-<span style="display:flex;align-items:baseline;gap:4px"><span style="font-family:var(--font-mono);font-size:34px;font-weight:500;letter-spacing:-0.03em;font-variant-numeric:tabular-nums;line-height:1">{{ st.value }}</span><span style="font-family:var(--font-mono);font-size:17px;color:var(--fg-muted);font-variant-numeric:tabular-nums">{{ st.unit }}</span></span>
-<span style="font-size:12.5px;color:var(--fg-subtle)">{{ st.note }}</span>
-</div>
-</sc-for>
-</div>
 
 <sc-if value="{{ agIsProject }}" hint-placeholder-val="{{ true }}">
 <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:12px;align-items:start">
@@ -301,17 +293,22 @@ textarea::placeholder{color:var(--fg-subtle)}
 </sc-if>
 
 <sc-if value="{{ agIsPm }}">
-<div style="display:flex;flex-direction:column;padding:6px 18px;border-radius:18px;background:var(--card)">
-<div style="display:grid;grid-template-columns:minmax(0,1.4fr) 120px minmax(0,1fr) 72px 72px;gap:16px;align-items:center;height:40px;font-size:12px;color:var(--fg-subtle)"><span>Project</span><span>Status</span><span>Progress</span><span style="text-align:right">Done</span><span style="text-align:right">Next due</span></div>
+<div style="display:flex;flex-direction:column;gap:12px">
+<div style="display:flex;align-items:baseline;gap:8px"><span style="font-size:11px;font-weight:500;letter-spacing:0.02em;text-transform:uppercase;color:var(--fg-subtle)">Projects</span><span style="font-family:var(--font-mono);font-size:12px;font-variant-numeric:tabular-nums;color:var(--fg-subtle)">{{ agProjN }}</span></div>
+<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,300px),1fr));gap:12px">
 <sc-for list="{{ agRows }}" as="p" hint-placeholder-count="3">
-<button type="button" onClick="{{ p.openChat }}" style="display:grid;grid-template-columns:minmax(0,1.4fr) 120px minmax(0,1fr) 72px 72px;gap:16px;align-items:center;min-height:48px;margin:0 -10px;padding:0 10px;border:0;border-top:1px solid var(--border-subtle);border-radius:0;background:none;color:var(--fg);font:inherit;text-align:left;cursor:pointer" style-hover="background:var(--hover-surface)">
-<span style="font-size:14px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ p.name }}</span>
-<span style="display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--fg-muted)"><span style="width:6px;height:6px;border-radius:980px;background:{{ p.dot }}"></span>{{ p.status }}</span>
-<span style="display:flex;align-items:center;gap:10px"><span style="flex:1;height:4px;border-radius:980px;background:var(--hover-surface);overflow:hidden"><span style="display:block;height:100%;width:{{ p.pctLabel }};background:var(--fg-muted);border-radius:980px"></span></span><span style="width:34px;text-align:right;font-family:var(--font-mono);font-size:12px;font-variant-numeric:tabular-nums;color:var(--fg-muted)">{{ p.pctLabel }}</span></span>
-<span style="text-align:right;font-family:var(--font-mono);font-size:12px;font-variant-numeric:tabular-nums">{{ p.count }}</span>
-<span style="text-align:right;font-family:var(--font-mono);font-size:12px;font-variant-numeric:tabular-nums;color:var(--fg-muted)">{{ p.next }}</span>
+<button type="button" onClick="{{ p.openChat }}" style="display:flex;flex-direction:column;gap:18px;min-width:0;padding:18px 18px 20px;border:0;border-radius:18px;background:var(--card);color:var(--fg);font:inherit;text-align:left;cursor:pointer;transition:background 80ms cubic-bezier(.4,0,.2,1)" style-hover="background:var(--control)">
+<div style="display:flex;align-items:flex-start;gap:12px;width:100%">
+<span style="flex:none;width:32px;height:32px;border-radius:10px;background:var(--hover-surface);display:flex;align-items:center;justify-content:center;color:var(--fg-muted)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="folder" size="15" hint-size="15px,15px"></x-import></span>
+<div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:3px">
+<span style="font-size:17px;font-weight:600;letter-spacing:-0.015em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ p.name }}</span>
+<span style="font-family:var(--font-mono);font-size:11.5px;color:var(--fg-subtle);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ p.repos }}</span>
+</div>
+<span style="flex:none;display:inline-flex;align-items:center;gap:6px;font-size:12.5px;color:var(--fg-muted)"><span style="width:6px;height:6px;border-radius:980px;background:{{ p.dot }}"></span>{{ p.status }}</span>
+</div>
 </button>
 </sc-for>
+</div>
 </div>
 </sc-if>
 </div>
@@ -406,7 +403,7 @@ textarea::placeholder{color:var(--fg-subtle)}
 </div>
 </sc-if>
 <sc-if value="{{ notProj }}" hint-placeholder-val="{{ true }}">
-<div style="max-width:1400px;margin:0 auto;padding:44px 32px 80px;display:flex;flex-direction:column;gap:36px">
+<div style="flex:1 1 auto;min-width:0;width:100%;box-sizing:border-box;max-width:{{ pageMaxW }};margin:0 auto;padding:44px 32px 80px;display:flex;flex-direction:column;gap:36px">
 <sc-if value="{{ isTasks }}" hint-placeholder-val="{{ true }}">
 <header style="display:flex;align-items:flex-end;gap:20px;flex-wrap:wrap">
 <div style="flex:1;min-width:240px;display:flex;flex-direction:column;gap:8px">
@@ -564,9 +561,62 @@ Milestones split a project into stages with a target date. Progress is the share
 </sc-if>
 </sc-if>
 
+<sc-if value="{{ isTodo }}">
+<header style="display:flex;align-items:flex-end;gap:20px;flex-wrap:wrap">
+<div style="flex:1;min-width:240px;display:flex;flex-direction:column;gap:8px">
+<span style="display:block;height:14px;line-height:14px;font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:0.02em;color:var(--fg-subtle);white-space:nowrap">{{ calEyebrow }}</span>
+<h1 style="margin:0;font-family:var(--font-display);font-size:34px;font-weight:600;letter-spacing:-0.022em;line-height:1.1">{{ calTitle }}</h1>
+<div style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--fg-muted)">
+<span><span style="font-family:var(--font-mono);font-variant-numeric:tabular-nums;color:var(--fg)">{{ agTodoLeft }}</span> left</span><span style="color:var(--fg-subtle)">·</span>
+<span><span style="font-family:var(--font-mono);font-variant-numeric:tabular-nums;color:var(--fg)">{{ agTodoDone }}</span> done</span>
+</div>
+</div>
+<div style="display:flex;align-items:center;gap:4px">
+<button class="op-btn op-btn--secondary op-btn--sm" type="button" onClick="{{ calToday }}" style="margin-right:6px">Today</button>
+<button class="op-iconbtn op-iconbtn--sm" type="button" aria-label="Previous day" onClick="{{ calPrev }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="chevron-left" size="16" hint-size="16px,16px"></x-import></button>
+<button class="op-iconbtn op-iconbtn--sm" type="button" aria-label="Next day" onClick="{{ calNext }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="chevron-right" size="16" hint-size="16px,16px"></x-import></button>
+</div>
+</header>
+<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:-16px">
+<div style="position:relative" onClick="{{ stop }}">
+<button class="op-pill" type="button" data-on="{{ tdProjOn }}" onClick="{{ tdProjToggle }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="folder" size="13" hint-size="13px,13px"></x-import>{{ tdProjLabel }}<x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="chevron-down" size="12" hint-size="12px,12px"></x-import></button>
+<sc-if value="{{ tdProjOpen }}">
+<div role="menu" style="position:absolute;left:0;top:calc(100% + 6px);z-index:30;min-width:240px;max-height:320px;overflow-y:auto;padding:4px;border-radius:14px;background:var(--card);border:1px solid var(--border-subtle);box-shadow:var(--shadow-popover);animation:op-rise 140ms cubic-bezier(.16,1,.3,1)">
+<sc-for list="{{ tdProjOpts }}" as="o" hint-placeholder-count="4">
+<button type="button" role="menuitemradio" aria-checked="{{ o.on }}" onClick="{{ o.pick }}" style="display:flex;align-items:center;gap:10px;width:100%;height:32px;padding:0 10px;border:0;border-radius:10px;background:none;color:var(--fg);font:inherit;font-size:13.5px;text-align:left;cursor:pointer;white-space:nowrap" style-hover="background:var(--hover-surface)"><span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis">{{ o.name }}</span><span style="display:flex;width:14px;color:var(--primary)"><sc-if value="{{ o.onV }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="check" size="14" hint-size="14px,14px"></x-import></sc-if></span></button>
+</sc-for>
+</div>
+</sc-if>
+</div>
+<span style="flex:1"></span>
+<button class="op-pill" type="button" data-on="{{ tdOverOn }}" onClick="{{ tdOverToggle }}">Include overdue</button>
+</div>
+<div style="display:flex;flex-direction:column;gap:8px">
+<sc-if value="{{ agTodoNone }}"><p style="margin:0;padding:20px 22px;border-radius:18px;background:var(--card);font-size:14px;color:var(--fg-muted)">{{ agTodoNoneText }}</p></sc-if>
+<sc-for list="{{ agTodo }}" as="r" hint-placeholder-count="4">
+<div draggable="true" onDragStart="{{ r.tdStart }}" onDragOver="{{ r.tdOver }}" onDrop="{{ r.tdDrop }}" onDragEnd="{{ tdEnd }}" style="position:relative;display:flex;align-items:center;gap:16px;min-height:72px;padding:14px 16px 14px 20px;box-sizing:border-box;border-radius:18px;background:var(--card);border:1px solid var(--border-subtle);opacity:{{ r.tdOp }};transform:{{ r.tdScale }};transition:opacity 140ms cubic-bezier(.4,0,.2,1),transform 140ms cubic-bezier(.4,0,.2,1)">
+<sc-if value="{{ r.tdLineOn }}"><span style="position:absolute;left:12px;right:12px;top:{{ r.tdLineTop }};height:2px;border-radius:980px;background:var(--primary)"></span></sc-if>
+<button type="button" aria-label="Toggle done" onClick="{{ r.toggle }}" style="flex:none;width:22px;height:22px;padding:0;box-sizing:border-box;display:flex;align-items:center;justify-content:center;border-radius:980px;border:1.5px solid {{ r.ringC }};background:{{ r.ringBg }};color:var(--background);cursor:pointer;transition:background 80ms cubic-bezier(.4,0,.2,1)"><sc-if value="{{ r.done }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="check" size="13" hint-size="13px,13px"></x-import></sc-if></button>
+<button type="button" onClick="{{ r.open }}" style="flex:1;min-width:0;display:flex;flex-direction:column;gap:3px;padding:0;border:0;background:none;font:inherit;color:{{ r.fg }};text-align:left;cursor:pointer">
+<span style="font-size:16px;font-weight:600;letter-spacing:-0.011em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-decoration:{{ r.strike }}">{{ r.title }}</span>
+<span style="font-size:13px;color:var(--fg-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ r.sub }}</span>
+</button>
+<sc-if value="{{ r.hour }}"><span style="flex:none;font-family:var(--font-mono);font-size:13px;font-weight:500;font-variant-numeric:tabular-nums;color:var(--fg-muted);white-space:nowrap">{{ r.hour }}</span></sc-if>
+<sc-if value="{{ r.tag }}"><span style="flex:none;display:inline-flex;align-items:center;height:28px;padding:0 12px;border-radius:980px;background:var(--hover-surface);font-size:13px;font-weight:500;color:var(--fg-muted);white-space:nowrap">{{ r.tag }}</span></sc-if>
+<span title="Drag to reorder" style="flex:none;display:flex;align-items:center;justify-content:center;width:24px;height:44px;margin-right:-4px;color:var(--fg-subtle);cursor:grab" style-hover="color:var(--fg-muted)"><span aria-hidden="true" style="display:grid;grid-template-columns:repeat(2,3px);gap:3px"><span style="width:3px;height:3px;border-radius:980px;background:currentColor"></span><span style="width:3px;height:3px;border-radius:980px;background:currentColor"></span><span style="width:3px;height:3px;border-radius:980px;background:currentColor"></span><span style="width:3px;height:3px;border-radius:980px;background:currentColor"></span><span style="width:3px;height:3px;border-radius:980px;background:currentColor"></span><span style="width:3px;height:3px;border-radius:980px;background:currentColor"></span></span></span>
+</div>
+</sc-for>
+<div style="display:flex;align-items:center;gap:16px;min-height:60px;padding:8px 16px 8px 20px;box-sizing:border-box;border-radius:18px;border:1px dashed var(--border)">
+<span style="flex:none;display:flex;width:22px;justify-content:center;color:var(--fg-subtle)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="plus" size="16" hint-size="16px,16px"></x-import></span>
+<input type="text" aria-label="Add a task for this day" placeholder="Add a task" value="{{ agTodoDraft }}" onChange="{{ agTodoSet }}" onKeyDown="{{ agTodoKey }}" style="flex:1;min-width:0;height:36px;border:0;outline:0;background:none;color:var(--fg);font:inherit;font-size:15px">
+</div>
+</div>
+</sc-if>
+
 <sc-if value="{{ isCal }}">
 <header style="display:flex;align-items:flex-end;gap:20px;flex-wrap:wrap">
 <div style="flex:1;min-width:240px;display:flex;flex-direction:column;gap:8px">
+<span style="display:block;height:14px;line-height:14px;font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:0.02em;color:var(--fg-subtle);white-space:nowrap">{{ calEyebrow }}</span>
 <h1 style="margin:0;font-family:var(--font-display);font-size:34px;font-weight:600;letter-spacing:-0.022em;line-height:1.1">{{ calTitle }}</h1>
 <div style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--fg-muted)">
 <span><span style="font-family:var(--font-mono);font-variant-numeric:tabular-nums;color:var(--fg)">{{ calMeetN }}</span> meetings</span><span style="color:var(--fg-subtle)">·</span>
@@ -575,13 +625,15 @@ Milestones split a project into stages with a target date. Progress is the share
 </div>
 </div>
 <div style="display:flex;align-items:center;gap:4px">
+<div role="tablist" aria-label="Agenda view" style="display:flex;gap:2px;padding:2px;margin-right:10px;border-radius:980px;background:var(--hover-surface)"><sc-for list="{{ calModes }}" as="v" hint-placeholder-count="3"><button type="button" role="tab" aria-selected="{{ v.on }}" onClick="{{ v.pick }}" style="height:26px;padding:0 12px;border:0;border-radius:980px;background:{{ v.bg }};color:{{ v.fg }};font:inherit;font-size:13px;cursor:pointer;transition:background 80ms cubic-bezier(.4,0,.2,1)">{{ v.label }}</button></sc-for></div>
 <button class="op-btn op-btn--secondary op-btn--sm" type="button" onClick="{{ calToday }}" style="margin-right:6px">Today</button>
-<button class="op-iconbtn op-iconbtn--sm" type="button" aria-label="Previous month" onClick="{{ calPrev }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="chevron-left" size="16" hint-size="16px,16px"></x-import></button>
-<button class="op-iconbtn op-iconbtn--sm" type="button" aria-label="Next month" onClick="{{ calNext }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="chevron-right" size="16" hint-size="16px,16px"></x-import></button>
+<button class="op-iconbtn op-iconbtn--sm" type="button" aria-label="Previous" onClick="{{ calPrev }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="chevron-left" size="16" hint-size="16px,16px"></x-import></button>
+<button class="op-iconbtn op-iconbtn--sm" type="button" aria-label="Next" onClick="{{ calNext }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="chevron-right" size="16" hint-size="16px,16px"></x-import></button>
 </div>
 <button class="op-btn op-btn--primary op-btn--md" type="button" onClick="{{ newEvent }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="plus" size="15" hint-size="15px,15px"></x-import>New event</button>
 </header>
 
+<sc-if value="{{ calIsMonth }}">
 <section ref="{{ calRef }}" style="background:var(--card);border:1px solid var(--border-subtle);border-radius:18px">
 <div style="display:grid;grid-template-columns:repeat(7,minmax(0,1fr));border-bottom:1px solid var(--border-subtle)">
 <sc-for list="{{ calDow }}" as="w" hint-placeholder-count="7"><span style="padding:10px 12px;font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:0.02em;color:var(--fg-subtle)">{{ w }}</span></sc-for>
@@ -590,7 +642,7 @@ Milestones split a project into stages with a target date. Progress is the share
 <sc-for list="{{ calDays }}" as="d" hint-placeholder-count="35">
 <div onClick="{{ d.add }}" onDragOver="{{ d.dragOver }}" onDrop="{{ d.drop }}" style="position:relative;min-width:0;min-height:150px;padding:6px 6px 8px;box-sizing:border-box;display:flex;flex-direction:column;gap:2px;border-left:{{ d.bl }};border-top:{{ d.bt }};border-radius:{{ d.radius }};background:{{ d.bg }};cursor:default;transition:background 80ms cubic-bezier(.4,0,.2,1)">
 <div style="display:flex;align-items:center;gap:6px;height:26px;padding:0 2px 2px">
-<span style="min-width:24px;height:24px;padding:0 6px;box-sizing:border-box;display:inline-flex;align-items:center;justify-content:center;border-radius:980px;background:{{ d.numBg }};color:{{ d.numFg }};font-family:var(--font-mono);font-size:12px;font-variant-numeric:tabular-nums;font-weight:{{ d.numW }}">{{ d.label }}</span>
+<button type="button" onClick="{{ d.goDay }}" title="Open day" style="min-width:24px;height:24px;padding:0 6px;box-sizing:border-box;display:inline-flex;align-items:center;justify-content:center;border:0;border-radius:980px;background:{{ d.numBg }};color:{{ d.numFg }};font-family:var(--font-mono);font-size:12px;font-variant-numeric:tabular-nums;font-weight:{{ d.numW }};cursor:pointer">{{ d.label }}</button>
 </div>
 <sc-for list="{{ d.items }}" as="e" hint-placeholder-count="1">
 <button type="button" draggable="{{ e.drag }}" onDragStart="{{ e.dragStart }}" onDragEnd="{{ dragEnd }}" onClick="{{ e.open }}" title="{{ e.tip }}" style="display:flex;align-items:center;gap:6px;width:100%;min-width:0;height:24px;padding:0 6px;box-sizing:border-box;border:0;border-radius:6px;background:{{ e.bg }};color:{{ e.fg }};font:inherit;font-size:12.5px;text-align:left;cursor:pointer;opacity:{{ e.op }};transition:background 80ms cubic-bezier(.4,0,.2,1)" style-hover="background:var(--control-hover)">
@@ -622,6 +674,51 @@ Milestones split a project into stages with a target date. Progress is the share
 </sc-for>
 </div>
 </section>
+</sc-if>
+
+<sc-if value="{{ calGrid }}" hint-placeholder-val="{{ true }}">
+<div style="display:flex;flex-direction:column;gap:16px;width:100%">
+<sc-if value="{{ agShowGrid }}" hint-placeholder-val="{{ true }}">
+<section style="display:block;width:100%;box-sizing:border-box;min-width:0;background:var(--card);border:1px solid var(--border-subtle);border-radius:18px;overflow:hidden">
+<sc-if value="{{ agShowHead }}">
+<div style="display:grid;grid-template-columns:{{ agTpl }};border-bottom:1px solid var(--border-subtle)">
+<span></span>
+<sc-for list="{{ agCols }}" as="c" hint-placeholder-count="7">
+<button type="button" onClick="{{ c.goDay }}" title="Open day" style="min-width:0;display:flex;align-items:center;gap:6px;padding:8px 10px;border:0;border-left:1px solid var(--border-subtle);background:transparent;font:inherit;color:inherit;cursor:pointer;text-align:left" style-hover="background:var(--hover-surface)"><span style="font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:0.02em;color:var(--fg-subtle)">{{ c.dow }}</span><span style="min-width:24px;height:24px;padding:0 6px;box-sizing:border-box;display:inline-flex;align-items:center;justify-content:center;border-radius:980px;background:{{ c.numBg }};color:{{ c.numFg }};font-family:var(--font-mono);font-size:12px;font-variant-numeric:tabular-nums">{{ c.num }}</span></button>
+</sc-for>
+</div>
+</sc-if>
+<div style="display:grid;grid-template-columns:{{ agTpl }};border-bottom:1px solid var(--border-subtle)">
+<span style="padding:11px 8px 0 12px;font-size:11px;color:var(--fg-subtle)">All day</span>
+<sc-for list="{{ agCols }}" as="c" hint-placeholder-count="1">
+<div onDragOver="{{ c.dragOver }}" onDrop="{{ c.dropDay }}" style="min-width:0;min-height:38px;padding:6px;box-sizing:border-box;display:flex;flex-direction:column;gap:2px;border-left:1px solid var(--border-subtle);background:{{ c.bg }}">
+<sc-for list="{{ c.allDay }}" as="e" hint-placeholder-count="1">
+<button type="button" draggable="true" onDragStart="{{ e.dragStart }}" onDragEnd="{{ dragEnd }}" onClick="{{ e.open }}" title="{{ e.tip }}" style="display:flex;align-items:center;gap:6px;width:100%;min-width:0;height:24px;padding:0 6px;box-sizing:border-box;border:0;border-radius:6px;background:{{ e.bg }};color:{{ e.fg }};font:inherit;font-size:12.5px;text-align:left;cursor:pointer;opacity:{{ e.op }}" style-hover="background:var(--control-hover)"><sc-if value="{{ e.isTask }}"><span style="display:flex;flex:none;color:{{ e.iconC }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="check-circle" size="12" hint-size="12px,12px"></x-import></span></sc-if><span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-decoration:{{ e.strike }}">{{ e.title }}</span></button>
+</sc-for>
+</div>
+</sc-for>
+</div>
+<div style="display:grid;grid-template-columns:{{ agTpl }};height:{{ agH }}">
+<div style="position:relative">
+<sc-for list="{{ agHours }}" as="h" hint-placeholder-count="14"><span style="position:absolute;top:{{ h.top }};right:8px;transform:translateY(-50%);font-family:var(--font-mono);font-size:11px;font-variant-numeric:tabular-nums;color:var(--fg-subtle)">{{ h.label }}</span></sc-for>
+</div>
+<sc-for list="{{ agCols }}" as="c" hint-placeholder-count="1">
+<div onClick="{{ c.slotClick }}" onDragOver="{{ c.dragOver }}" onDrop="{{ c.dropAt }}" style="position:relative;min-width:0;border-left:1px solid var(--border-subtle);background:{{ c.bg }};cursor:default">
+<sc-for list="{{ c.hours }}" as="h" hint-placeholder-count="14"><span style="position:absolute;left:0;right:0;top:{{ h.top }};border-top:1px solid var(--border-subtle);pointer-events:none"></span></sc-for>
+<sc-for list="{{ c.blocks }}" as="b" hint-placeholder-count="2">
+<button type="button" draggable="{{ b.drag }}" onDragStart="{{ b.dragStart }}" onDragEnd="{{ dragEnd }}" onClick="{{ b.open }}" title="{{ b.tip }}" style="position:absolute;top:{{ b.top }};height:{{ b.h }};left:{{ b.left }};width:{{ b.w }};z-index:{{ b.z }};box-sizing:border-box;display:flex;flex-direction:{{ b.dir }};align-items:{{ b.align }};gap:{{ b.gap }};padding:{{ b.pad }};overflow:hidden;border:{{ b.border }};border-radius:6px;background:{{ b.bg }};color:{{ b.fg }};font:inherit;text-align:left;cursor:pointer;opacity:{{ b.op }};transition:background 80ms cubic-bezier(.4,0,.2,1)" style-hover="background:var(--control-hover)">
+<span style="flex:1 1 auto;display:flex;align-items:center;gap:5px;min-width:0;max-width:100%"><sc-if value="{{ b.isTask }}"><span style="display:flex;flex:none;color:{{ b.iconC }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="check-circle" size="12" hint-size="12px,12px"></x-import></span></sc-if><sc-if value="{{ b.isAuto }}"><span style="display:flex;flex:none;color:var(--fg-subtle)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="zap" size="11" hint-size="11px,11px"></x-import></span></sc-if><span style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12.5px;font-weight:{{ b.fw }};text-decoration:{{ b.strike }}">{{ b.title }}</span></span>
+<sc-if value="{{ b.showTime }}"><span style="flex:0 1 auto;min-width:0;overflow:hidden;font-family:var(--font-mono);font-size:11px;font-variant-numeric:tabular-nums;color:var(--fg-muted);white-space:nowrap">{{ b.time }}</span></sc-if>
+</button>
+</sc-for>
+<sc-if value="{{ c.isNow }}"><span style="position:absolute;left:0;right:0;top:{{ c.nowTop }};border-top:1.5px solid var(--fg);pointer-events:none;z-index:3"><span style="position:absolute;left:-4px;top:-4.5px;width:7px;height:7px;border-radius:980px;background:var(--fg)"></span></span></sc-if>
+</div>
+</sc-for>
+</div>
+</section>
+</sc-if>
+
+</div>
 </sc-if>
 
 </div>
@@ -854,9 +951,9 @@ let PROJECTS = [
   { id: 'web', name: 'Client sites' },
 ];
 const COLS = [
-  { id: 'later', name: 'Later', dot: 'transparent', ring: 'inset 0 0 0 1.5px var(--fg-subtle)' },
   { id: 'todo', name: 'To do', dot: 'var(--fg-subtle)', ring: 'none' },
   { id: 'doing', name: 'In progress', dot: 'var(--warning)', ring: 'none' },
+  { id: 'review', name: 'In review', dot: 'transparent', ring: 'inset 0 0 0 1.5px var(--warning)' },
   { id: 'done', name: 'Done', dot: 'var(--success)', ring: 'none' },
 ];
 const KEY = 'op-tasks-v1';
@@ -868,9 +965,9 @@ const SEED_GOALS = [
 ];
 const T = (id, status, title, project, goal, due, notes) => ({ id, status, title, project, goal, due: due == null ? '' : day(due), notes: notes || '' });
 const SEED_TASKS = [
-  T('t1', 'later', 'Write a migration guide for legacy wallet users', 'mobile', 'g1'),
-  T('t2', 'later', 'Evaluate Codex for nightly refactors', null, null, null, 'Compare against Claude Code on the atlas test suite before switching the default agent.'),
-  T('t3', 'later', 'Dark mode for adri-rodriguez.com', 'web', 'g3'),
+  T('t1', 'todo', 'Write a migration guide for legacy wallet users', 'mobile', 'g1'),
+  T('t2', 'todo', 'Evaluate Codex for nightly refactors', null, null, null, 'Compare against Claude Code on the atlas test suite before switching the default agent.'),
+  T('t3', 'review', 'Dark mode for adri-rodriguez.com', 'web', 'g3'),
   T('t4', 'todo', 'Address review comments on PR #121', 'mobile', 'g1', 2),
   T('t5', 'todo', 'Draft the beta waitlist email', 'atlas', 'g2', 5),
   T('t6', 'todo', 'Rotate flama-ai API keys', 'web', null, -1),
@@ -992,6 +1089,8 @@ const SEED_SESSIONS = [
   { id: 's9', name: 'tool router', state: 'idle', age: '3w', repo: 'xrp-mobile', agent: 'Codex' },
 ];
 const SEED_LINKS = { t4: ['s1'], t8: ['s10', 's4'], t9: ['s11'], t12: ['s6'], t13: ['s12'] };
+const PLAN_KEY = 'op-agenda-v1';
+const loadPlan = () => { try { const p = JSON.parse(localStorage.getItem(PLAN_KEY)); if (p) return p; } catch (e) {} return { t8: { date: day(0), at: '10:00', dur: 90 }, t6: { date: day(0), at: '11:45', dur: 30 }, t4: { date: day(0), at: '13:30', dur: 60 }, t9: { date: day(3), at: '10:00', dur: 90 }, t5: { date: day(4), at: '11:00', dur: 60 } }; };
 const AUTOS = [
   { id: 'a1', name: 'Dependency audit', time: '09:00', on: d => d.getDay() === 1 },
   { id: 'a2', name: 'Release notes draft', time: '16:00', on: d => d.getDay() === 5 },
@@ -1014,9 +1113,9 @@ class Component extends DCLogic {
     let saved = null;
     try { saved = JSON.parse(localStorage.getItem(KEY)); } catch (e) {}
     const now = new Date();
-    return { tasks: ((saved && saved.tasks) || SEED_TASKS).filter(t => !/^zz\d/.test(t.id)).map(t => (saved && saved.links ? t : { ...t, sessions: SEED_LINKS[t.id] || t.sessions || [] })),
+    return { tasks: ((saved && saved.tasks) || SEED_TASKS).filter(t => !/^zz\d/.test(t.id)).map(t => (t.status === 'later' ? { ...t, status: 'todo' } : t)).map(t => (saved && saved.links ? t : { ...t, sessions: SEED_LINKS[t.id] || t.sessions || [] })),
       sessions: (saved && saved.sessions) || SEED_SESSIONS, hov: null, linkOpen: false, launch: null, goals: (saved && saved.goals) || SEED_GOALS, projects: (saved && saved.projects) || PROJECTS, events: (() => { let ev = (saved && saved.events) || buildEvents(); if (!(saved && saved.busyDay)) ev = ev.filter(e => !/^bd\d/.test(e.id)).concat(BUSY_DAY()); return ev; })(), busyDay: true, project: 'all', goal: null, drag: null, compose: null, composeText: '', dlg: null,
-      section: null, cal: { y: now.getFullYear(), m: now.getMonth() }, layers: { google: true, manual: true, tasks: true, autos: true }, dp: null, tp: null, more: null, dropDay: null, project: 'all' };
+      section: null, cal: { y: now.getFullYear(), m: now.getMonth() }, layers: { google: true, manual: true, tasks: true, autos: true }, dp: null, tp: null, more: null, dropDay: null, project: 'all', plan: loadPlan(), calMode: 'day', calDate: null, todoOrder: (() => { try { return JSON.parse(localStorage.getItem('op-todo-order-v1')) || {}; } catch (e) { return {}; } })() };
   })();
   ghostRef = React.createRef(); tlRef = React.createRef();
   calRef = React.createRef();
@@ -1224,15 +1323,37 @@ class Component extends DCLogic {
   }
   openProject() { this.setState({ dlg: { kind: 'project', draft: { id: null, name: '' } }, dp: null, tp: null, more: null, compose: null }); }
   sec() { return this.state.section || this.props.section || 'inbox'; }
-  openEvent(id, iso) {
+  setPlan(fn) {
+    this.setState(s => { const plan = fn(s.plan || {}); try { localStorage.setItem(PLAN_KEY, JSON.stringify(plan)); } catch (e) {} return { plan, dropDay: null }; });
+  }
+  planNext(id, iso) {
+    const s = this.state, plan = s.plan || {}, dur = 60;
+    const busy = s.events.filter(e => e.date === iso && !e.allDay && e.busy).map(e => [minsOf(e.start), minsOf(e.end)])
+      .concat(Object.keys(plan).filter(k => k !== id && plan[k].date === iso).map(k => [minsOf(plan[k].at), minsOf(plan[k].at) + (plan[k].dur || 60)]));
+    const now = new Date(); let m = 540;
+    if (iso === day(0)) m = Math.max(m, Math.ceil((now.getHours() * 60 + now.getMinutes()) / 15) * 15);
+    while (m + dur <= 1260 && busy.some(([a, b]) => m < b && m + dur > a)) m += 15;
+    m = Math.min(m, 1320 - dur);
+    this.setPlan(p => ({ ...p, [id]: { date: iso, at: hm(m), dur } }));
+  }
+  dropAt(iso, m) {
+    const g = this._calDrag; this._calDrag = null;
+    if (!g) { this.setState({ dropDay: null }); return; }
+    if (g.kind === 'task') { this.setPlan(p => { const dur = (p[g.id] && p[g.id].dur) || 60; const at = Math.max(420, Math.min(1320 - dur, m)); return { ...p, [g.id]: { date: iso, at: hm(at), dur } }; }); return; }
+    this.setState(s => ({ dropDay: null, events: s.events.map(e => { if (e.id !== g.id) return e; const dur = e.allDay ? 60 : minsOf(e.end) - minsOf(e.start); const at = Math.max(420, Math.min(1320 - dur, m)); return { ...e, date: iso, allDay: false, start: hm(at), end: hm(at + dur) }; }) }));
+  }
+  openEvent(id, iso, start) {
     const ev = id && this.state.events.find(x => x.id === id);
-    const draft = ev ? { ...ev } : { id: null, title: '', date: iso || day(0), start: '10:00', end: '10:30', allDay: false, busy: true, notes: '', source: 'manual' };
+    const draft = ev ? { ...ev } : { id: null, title: '', date: iso || day(0), start: start || '10:00', end: start ? hm(minsOf(start) + 30) : '10:30', allDay: false, busy: true, notes: '', source: 'manual' };
     this.setState({ dlg: { kind: 'event', draft }, dp: null, tp: null, more: null });
   }
   dropOn(iso) {
     const g = this._calDrag; this._calDrag = null;
     if (!g) { this.setState({ dropDay: null }); return; }
-    if (g.kind === 'task') this.setState(s => ({ dropDay: null, tasks: s.tasks.map(t => (t.id === g.id ? { ...t, due: iso } : t)) }));
+    if (g.kind === 'task') {
+      this.setState(s => ({ dropDay: null, tasks: s.tasks.map(t => (t.id === g.id ? { ...t, due: iso } : t)) }));
+      if ((this.state.plan || {})[g.id]) this.setPlan(p => { const q = { ...p }; delete q[g.id]; return q; });
+    }
     else this.setState(s => ({ dropDay: null, events: s.events.map(e => (e.id === g.id ? { ...e, date: iso } : e)) }));
   }
   patch(p) { this.setState(s => ({ dlg: { ...s.dlg, draft: { ...s.dlg.draft, ...p } } })); }
@@ -1571,10 +1692,144 @@ class Component extends DCLogic {
         moreOpen: s.more === iso ? 'true' : undefined, popL: col >= 5 ? 'auto' : '2px', popR: col >= 5 ? '2px' : 'auto',
         popT: i >= ccount - 14 ? 'auto' : '2px', popB: i >= ccount - 14 ? '2px' : 'auto',
         openMore: ev => { ev.stopPropagation(); this.setState({ more: iso }); },
+        goDay: ev => { ev.stopPropagation(); this.setState({ calMode: 'day', calDate: iso, more: null }); },
         add: ev => { ev.stopPropagation(); if (s.more) { this.setState({ more: null }); return; } this.openEvent(null, iso); },
         dragOver: ev => { ev.preventDefault(); if (this.state.dropDay !== iso) this.setState({ dropDay: iso }); },
         drop: ev => { ev.preventDefault(); this.dropOn(iso); },
       });
+    }
+    const mode = this.sec() === 'todo' ? 'todo' : (s.calMode === 'todo' ? 'day' : s.calMode || 'day'), anchorIso = s.calDate || todayIso, plan = s.plan || {};
+    const DOWL = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    const isoWeek = d => { const t = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate())); t.setUTCDate(t.getUTCDate() - ((t.getUTCDay() + 6) % 7) + 3); const f = new Date(Date.UTC(t.getUTCFullYear(), 0, 4)); return 1 + Math.round(((t - f) / 864e5 - 3 + ((f.getUTCDay() + 6) % 7)) / 7); };
+    const agv = {
+      calIsMonth: mode === 'month' ? 'true' : undefined, calGrid: mode !== 'month' ? 'true' : undefined, calIsDay: mode === 'todo' ? 'true' : undefined, agShowGrid: mode === 'todo' ? undefined : 'true',
+      calModes: [['day', 'Day'], ['week', 'Week'], ['month', 'Month']].map(([id, label]) => ({ label, on: mode === id ? 'true' : 'false', bg: mode === id ? 'var(--card)' : 'transparent', fg: mode === id ? 'var(--fg)' : 'var(--fg-muted)',
+        pick: e => { e.stopPropagation(); this.setState(st => {
+          if (id === 'month') { const a = parseIso(st.calDate || todayIso); return { calMode: id, cal: { y: a.getFullYear(), m: a.getMonth() }, more: null }; }
+          if ((st.calMode || 'day') === 'month') { const t = new Date(), cd = st.calDate && parseIso(st.calDate); const keep = cd && cd.getMonth() === st.cal.m && cd.getFullYear() === st.cal.y; const cur = st.cal.y === t.getFullYear() && st.cal.m === t.getMonth();
+            return { calMode: id, calDate: keep ? st.calDate : cur ? null : isoOf(new Date(st.cal.y, st.cal.m, 1)), more: null }; }
+          return { calMode: id }; }); } })),
+    };
+    if (mode !== 'month') {
+      const H0 = 7, H1 = 22, HPX = mode === 'week' ? 48 : 56, n = mode === 'week' ? 7 : 1;
+      const a = parseIso(anchorIso);
+      const st0 = mode !== 'week' ? a : new Date(a.getFullYear(), a.getMonth(), a.getDate() - ((a.getDay() + 6) % 7));
+      const yOf = m => (Math.max(H0 * 60, Math.min(H1 * 60, m)) - H0 * 60) / 60 * HPX;
+      const now = new Date(), nowM = now.getHours() * 60 + now.getMinutes();
+      const hours = Array.from({ length: H1 - H0 - 1 }, (_, i) => ({ top: (i + 1) * HPX + 'px', label: pad(H0 + i + 1) + ':00' }));
+      const minAt = (ev, g) => { const r = ev.currentTarget.getBoundingClientRect(); const y = ev.clientY - r.top - ((g && g.off) || 0); return Math.round((H0 * 60 + y / HPX * 60) / 15) * 15; };
+      const drag = x => ev => { const r = ev.currentTarget.getBoundingClientRect(); this._calDrag = { kind: x.kind === 'task' ? 'task' : 'meet', id: x.key, off: ev.clientY - r.top }; ev.dataTransfer.effectAllowed = 'move'; try { ev.dataTransfer.setData('text/plain', x.key); } catch (er) {} };
+      let meetN = 0, dueN = 0, runN = 0, meetMin = 0, planMin = 0;
+      const cols = [];
+      for (let i = 0; i < n; i++) {
+        const dt = new Date(st0.getFullYear(), st0.getMonth(), st0.getDate() + i), iso = isoOf(dt), isToday = iso === todayIso;
+        const timed = [], allDay = [];
+        s.events.filter(e => e.date === iso && L[e.source]).forEach(e => {
+          meetN++;
+          if (e.allDay) allDay.push({ kind: 'meet', key: e.id, title: e.title, busy: e.busy, tip: e.title + ' · all day', open: () => this.openEvent(e.id) });
+          else { const a0 = minsOf(e.start), a1 = minsOf(e.end); if (e.busy) meetMin += a1 - a0; timed.push({ kind: 'meet', key: e.id, title: e.title, s: a0, e: a1, busy: e.busy, tip: e.title + ' · ' + e.start + '–' + e.end + (e.busy ? '' : ' · free'), open: () => this.openEvent(e.id) }); }
+        });
+        if (L.tasks) s.tasks.forEach(t => {
+          const p = plan[t.id], done = t.status === 'done';
+          if (p && p.date === iso) { const a0 = minsOf(p.at), d = p.dur || 60; dueN++; planMin += d; timed.push({ kind: 'task', key: t.id, title: t.title, s: a0, e: a0 + d, done, tip: 'Task · ' + t.title, open: () => this.openTask(t.id) }); }
+          else if (!p && t.due === iso) { dueN++; allDay.push({ kind: 'task', key: t.id, title: t.title, done, tip: 'Due · ' + t.title, open: () => this.openTask(t.id) }); }
+        });
+        if (L.autos) AUTOS.filter(x => x.on(dt)).forEach(x => { runN++; const a0 = minsOf(x.time); timed.push({ kind: 'auto', key: x.id + iso, title: x.name, s: a0, e: a0 + 30, tip: 'Automation · ' + x.name + ' · ' + x.time, open: () => { window.location.href = 'Routines.dc.html'; } }); });
+        timed.sort((p, q) => p.s - q.s || q.e - p.e);
+        const ends = [];
+        timed.forEach(x => { let l = ends.findIndex(en => en <= x.s); if (l === -1) { l = ends.length; ends.push(0); } ends[l] = x.e; x.lane = l; });
+        timed.forEach(x => { x.cols = 1 + Math.max(...timed.filter(y => y.s < x.e && y.e > x.s).map(y => y.lane)); });
+        const blocks = timed.map(x => {
+          const top = yOf(x.s), h = Math.max(20, yOf(x.e) - top - 2), short = h < 52, isTask = x.kind === 'task', isAuto = x.kind === 'auto', free = x.kind === 'meet' && !x.busy;
+          return { key: x.key, title: x.title, tip: x.tip, time: hm(x.s) + (isAuto ? '' : '–' + hm(x.e)),
+            top: top + 1 + 'px', h: h + 'px', left: 'calc(' + (x.lane / x.cols * 100) + '% + 3px)', w: 'calc(' + (100 / x.cols) + '% - 6px)', z: isAuto ? '1' : '2',
+            showTime: !short || mode !== 'week' ? 'true' : undefined, dir: short ? 'row' : 'column', align: short ? 'center' : 'flex-start', gap: short ? '6px' : '2px', pad: short ? '0 8px' : '6px 8px',
+            bg: isTask || isAuto || free ? 'var(--card)' : 'var(--control)',
+            border: isTask ? '1px solid var(--border)' : isAuto || free ? '1px solid var(--border-subtle)' : '1px solid transparent',
+            fg: isAuto || free || x.done ? 'var(--fg-muted)' : 'var(--fg)', fw: isAuto || x.done ? '400' : '500',
+            strike: x.done ? 'line-through' : 'none', op: x.done ? '0.6' : '1', iconC: x.done ? 'var(--success)' : 'var(--fg-subtle)',
+            isTask: isTask ? 'true' : undefined, isAuto: isAuto ? 'true' : undefined,
+            drag: isAuto ? 'false' : 'true', dragStart: isAuto ? undefined : drag(x),
+            open: ev => { ev.stopPropagation(); x.open(); } };
+        });
+        cols.push({ iso, dow: DOW3[dt.getDay()], num: dt.getDate(), hours, blocks,
+          numBg: isToday ? 'var(--fg)' : 'transparent', numFg: isToday ? 'var(--background)' : 'var(--fg)',
+          bg: s.dropDay === iso ? 'var(--selected-surface)' : 'transparent',
+          allDay: allDay.map(x => ({ ...x, isTask: x.kind === 'task' ? 'true' : undefined, bg: x.kind === 'meet' ? 'var(--control)' : 'transparent',
+            fg: x.done || (x.kind === 'meet' && !x.busy) ? 'var(--fg-muted)' : 'var(--fg)', strike: x.done ? 'line-through' : 'none', op: x.done ? '0.6' : '1',
+            iconC: x.done ? 'var(--success)' : 'var(--fg-subtle)', dragStart: drag(x), open: ev => { ev.stopPropagation(); x.open(); } })),
+          isNow: isToday && nowM >= H0 * 60 && nowM <= H1 * 60 ? 'true' : undefined, nowTop: yOf(nowM) + 'px',
+          goDay: e => { e.stopPropagation(); this.setState({ calMode: 'day', calDate: iso }); },
+          dragOver: ev => { ev.preventDefault(); if (this.state.dropDay !== iso) this.setState({ dropDay: iso }); },
+          dropDay: ev => { ev.preventDefault(); ev.stopPropagation(); this.dropOn(iso); },
+          dropAt: ev => { ev.preventDefault(); ev.stopPropagation(); this.dropAt(iso, minAt(ev, this._calDrag)); },
+          slotClick: ev => { ev.stopPropagation(); if (ev.target !== ev.currentTarget) return; const m = Math.floor(minAt(ev) / 30) * 30; this.openEvent(null, iso, hm(Math.max(H0 * 60, Math.min(H1 * 60 - 30, m)))); },
+        });
+      }
+      const last = new Date(st0.getFullYear(), st0.getMonth(), st0.getDate() + n - 1), yr = last.getFullYear() !== now.getFullYear() ? ', ' + last.getFullYear() : '';
+      const shift = k => () => this.setState(st => { const b = parseIso(st.calDate || todayIso); return { calDate: isoOf(new Date(b.getFullYear(), b.getMonth(), b.getDate() + k)) }; });
+      Object.assign(agv, {
+        agCols: cols, agHours: hours, agTpl: '56px repeat(' + n + ', minmax(0,1fr))', agH: (H1 - H0) * HPX + 'px', agShowHead: 'true',
+        calTitle: mode !== 'week' ? DOWL[a.getDay()] + ', ' + LONGMON[a.getMonth()] + ' ' + a.getDate() + yr
+          : st0.getMonth() === last.getMonth() ? LONGMON[st0.getMonth()] + ' ' + st0.getDate() + ' – ' + last.getDate() + yr : MON[st0.getMonth()] + ' ' + st0.getDate() + ' – ' + MON[last.getMonth()] + ' ' + last.getDate() + yr,
+        calEyebrow: (mode !== 'week' && anchorIso === todayIso ? 'Today · ' : '') + 'Week ' + isoWeek(st0),
+        calMeetN: meetN, calDueN: dueN, calRunN: runN, calPrev: shift(-n), calNext: shift(n),
+      });
+      if (mode !== 'week') {
+        const iso = anchorIso;
+        const planned = s.tasks.filter(t => plan[t.id] && plan[t.id].date === iso).sort((p, q) => minsOf(plan[p.id].at) - minsOf(plan[q.id].at));
+        const rank = t => (t.due && t.due <= iso ? 0 : t.status === 'doing' ? 1 : 2);
+        const unplanned = s.tasks.filter(t => !plan[t.id] && t.status !== 'done' && true).sort((p, q) => rank(p) - rank(q) || (p.due || '9').localeCompare(q.due || '9'));
+        const rowDrag = t => ev => { this._calDrag = { kind: 'task', id: t.id, off: 0 }; ev.dataTransfer.effectAllowed = 'move'; try { ev.dataTransfer.setData('text/plain', t.id); } catch (er) {} };
+        const row = (t, meta) => { const done = t.status === 'done'; return { key: t.id, title: t.title, meta, done: done ? 'true' : undefined,
+          ringC: done ? 'var(--success)' : 'var(--border-strong)', ringBg: done ? 'var(--success)' : 'transparent', strike: done ? 'line-through' : 'none', fg: done ? 'var(--fg-muted)' : 'var(--fg)',
+          toggle: e => { e.stopPropagation(); this.toggleDone(t); }, open: e => { e.stopPropagation(); this.openTask(t.id); }, dragStart: rowDrag(t), plan: e => { e.stopPropagation(); this.planNext(t.id, iso); } }; };
+        const dueMeta = t => { const fd = t.due ? fmtDate(t.due) : '', dl = /^(Today|Tomorrow|Yesterday)$/.test(fd) ? fd.toLowerCase() : fd;
+          return [projName(t.project), t.due ? (t.due < todayIso ? 'Overdue · ' + fd : 'Due ' + dl) : '', t.status === 'doing' ? 'In progress' : ''].filter(Boolean).join(' · ') || 'No project'; };
+        const free = Math.max(0, 540 - meetMin - planMin);
+        const tdProj = s.tdProj || 'all', tdStatus = 'all', tdOver = s.tdOverdue !== false;
+        const todoAll = planned.concat(s.tasks.filter(t => !plan[t.id] && t.due && (t.due === iso || (tdOver && t.due < iso && t.status !== 'done'))));
+        const todo = todoAll.filter(t => (tdProj === 'all' || (tdProj === 'none' ? !t.project : t.project === tdProj)) && (tdStatus === 'all' || (tdStatus === 'done' ? t.status === 'done' : t.status !== 'done')));
+        const todoN = todoAll.filter(t => t.status !== 'done').length;
+        agv.agTodoLeft = todoN; agv.agTodoDone = todoAll.length - todoN;
+        agv.agTodoNone = todo.length ? undefined : 'true';
+        agv.agTodoNoneText = todoAll.length ? 'No tasks match these filters.' : 'Nothing for this day yet. Add one below.';
+        const seg = (cur, list, key) => list.map(([id, label]) => ({ label, on: cur === id ? 'true' : 'false', bg: cur === id ? 'var(--card)' : 'transparent', fg: cur === id ? 'var(--fg)' : 'var(--fg-muted)', pick: () => this.setState({ [key]: id }) }));
+        const tdPList = [{ id: 'all', name: 'All projects' }].concat(s.projects, [{ id: 'none', name: 'No project' }]);
+        agv.tdProjOpts = tdPList.map(p => ({ name: p.name, on: tdProj === p.id ? 'true' : 'false', onV: tdProj === p.id ? 'true' : undefined, pick: () => this.setState({ tdProj: p.id, tdMenu: false }) }));
+        agv.tdProjLabel = tdProj === 'all' ? 'Project' : (tdPList.find(p => p.id === tdProj) || {}).name || 'Project';
+        agv.tdProjOn = tdProj === 'all' ? 'false' : 'true'; agv.tdProjOpen = s.tdMenu ? 'true' : undefined;
+        agv.tdProjToggle = () => this.setState(st => ({ tdMenu: !st.tdMenu }));
+        agv.tdOverOn = tdOver ? 'true' : 'false'; agv.tdOverToggle = () => this.setState({ tdOverdue: !tdOver });
+        const ord = (s.todoOrder || {})[iso] || [];
+        const pos = t => { const i = ord.indexOf(t.id); return i === -1 ? 1e3 + todo.indexOf(t) : i; };
+        todo.sort((p, q) => pos(p) - pos(q));
+        const ids = todo.map(t => t.id), tdd = s.tdDrag, tdo = s.tdOver;
+        agv.agTodo = todo.map((t, i) => { const p = plan[t.id]; return { ...row(t, p ? p.at : t.due < iso ? 'Overdue' : ''),
+          tdOp: tdd === t.id ? '0.45' : '1', tdScale: tdd === t.id ? 'scale(.985)' : 'none',
+          tdLineOn: tdo && tdo.id === t.id && tdd !== t.id ? 'true' : undefined, tdLineTop: tdo && tdo.after ? 'calc(100% + 3px)' : '-6px',
+          tag: t.project ? projName(t.project) : undefined,
+          hour: p && p.at ? p.at : undefined,
+          sub: [t.goal ? ((s.goals || []).find(g => g.id === t.goal) || {}).name : null, p ? (t.status === 'done' ? 'done' : t.status === 'doing' ? 'in progress' : t.status === 'review' ? 'in review' : 'planned') : t.due < iso ? 'overdue since ' + fmtDate(t.due) : t.status === 'done' ? 'done' : t.status === 'doing' ? 'in progress' : t.status === 'review' ? 'in review' : 'due today'].filter(Boolean).join(' · '),
+          tdStart: ev => { ev.dataTransfer.effectAllowed = 'move'; try { ev.dataTransfer.setData('text/plain', t.id); } catch (er) {} this.setState({ tdDrag: t.id }); },
+          tdOver: ev => { ev.preventDefault(); const rc = ev.currentTarget.getBoundingClientRect(), after = ev.clientY > rc.top + rc.height / 2; const o = this.state.tdOver; if (!o || o.id !== t.id || o.after !== after) this.setState({ tdOver: { id: t.id, after } }); },
+          tdDrop: ev => { ev.preventDefault(); const from = this.state.tdDrag, o = this.state.tdOver; if (!from || !o || from === t.id) { this.setState({ tdDrag: null, tdOver: null }); return; }
+            const next = ids.filter(x => x !== from); let at = next.indexOf(t.id) + (o.after ? 1 : 0); next.splice(at, 0, from);
+            this.setState(st => { const todoOrder = { ...(st.todoOrder || {}), [iso]: next }; try { localStorage.setItem('op-todo-order-v1', JSON.stringify(todoOrder)); } catch (er) {} return { todoOrder, tdDrag: null, tdOver: null }; }); } }; });
+        agv.tdEnd = () => this.setState({ tdDrag: null, tdOver: null });
+
+        agv.agTodoDraft = s.todoDraft || '';
+        agv.agTodoSet = e => this.setState({ todoDraft: e.target.value });
+        agv.agTodoKey = e => { if (e.key !== 'Enter') return; const title = (this.state.todoDraft || '').trim(); if (!title) return; this.snap(); this.setState(st => ({ todoDraft: '', tasks: st.tasks.concat({ id: 't' + Date.now(), status: 'todo', title, project: tdProj !== 'all' && tdProj !== 'none' ? tdProj : null, goal: null, due: iso, notes: '', sessions: [] }) })); };
+        Object.assign(agv, {
+          agPlanned: planned.map(t => { const p = plan[t.id], d = p.dur || 60; return row(t, p.at + '–' + hm(minsOf(p.at) + d) + ' · ' + fmtDur(d)); }),
+          agPlannedN: planned.length, agPlannedNone: planned.length ? undefined : 'true',
+          agUnplanned: unplanned.map(t => row(t, dueMeta(t))), agUnplannedN: unplanned.length, agUnplannedNone: unplanned.length ? undefined : 'true',
+          agMeetDur: fmtDur(meetMin) || '0 min', agPlanDur: fmtDur(planMin) || '0 min', agFreeDur: fmtDur(free) || '0 min',
+          agUnplanOver: ev => { ev.preventDefault(); },
+          agUnplanDrop: ev => { ev.preventDefault(); const g = this._calDrag; this._calDrag = null; if (g && g.kind === 'task') this.setPlan(p => { const q = { ...p }; delete q[g.id]; return q; }); else this.setState({ dropDay: null }); },
+        });
+      }
     }
     const shiftCal = n => () => this.setState(st => { const x = new Date(st.cal.y, st.cal.m + n, 1); return { cal: { y: x.getFullYear(), m: x.getMonth() }, more: null }; });
     const Lc = s.launch;
@@ -1600,7 +1855,8 @@ class Component extends DCLogic {
     };
     const calVals = {
       ...launchVals,
-      isTasks: sec === 'tasks' ? 'true' : undefined, isInbox: sec === 'inbox' ? 'true' : undefined, navInbox: sec === 'inbox' ? 'true' : 'false', goInbox: () => this.setState({ section: 'inbox', more: null, compose: null }), isCal: sec === 'calendar' ? 'true' : undefined,
+      isTasks: sec === 'tasks' ? 'true' : undefined, isInbox: sec === 'inbox' ? 'true' : undefined, navInbox: sec === 'inbox' ? 'true' : 'false', goInbox: () => this.setState({ section: 'inbox', more: null, compose: null }), isCal: sec === 'calendar' ? 'true' : undefined, isTodo: sec === 'todo' ? 'true' : undefined, navTodo: sec === 'todo' ? 'true' : 'false', goTodo: () => this.setState({ section: 'todo', compose: null, more: null }),
+      todoNavN: (() => { const t0 = day(0), pl = s.plan || {}; return s.tasks.filter(t => t.status !== 'done' && ((pl[t.id] && pl[t.id].date === t0) || (!pl[t.id] && t.due && t.due <= t0))).length; })(),
       navTasks: sec === 'tasks' && s.tab !== 'goals' ? 'true' : 'false', navMs: sec === 'tasks' && s.tab === 'goals' ? 'true' : 'false', navCal: sec === 'calendar' ? 'true' : 'false',
       goTasks: () => this.setState({ section: 'tasks', tab: 'board', more: null }), goMs: () => this.setState({ section: 'tasks', tab: 'goals', more: null, compose: null }), goCal: () => this.setState({ section: 'calendar', compose: null }),
       todayN: s.events.filter(e => e.date === todayIso).length,
@@ -1613,20 +1869,21 @@ class Component extends DCLogic {
         remove: () => this.setState(st => ({ gAccts: (st.gAccts || SEED_GACCTS).filter(x => x.id !== a.id) })) })),
       addSep: (s.gAccts || SEED_GACCTS).length ? '1px solid var(--border-subtle)' : '0',
       addGAcct: () => this.setState(st => { const cur = st.gAccts || SEED_GACCTS; const next = EXTRA_GACCTS.find(e => !cur.some(c => c.email === e)) || ('account' + (cur.length + 1) + '@gmail.com'); return { gAccts: cur.concat([{ id: 'g' + Date.now(), email: next, ok: true, ago: 'just now' }]) }; }),
-      calTitle: LONGMON[cm] + ' ' + cy, calMeetN, calDueN, calRunN,
-      calPrev: shiftCal(-1), calNext: shiftCal(1),
-      calToday: () => { const x = new Date(); this.setState({ cal: { y: x.getFullYear(), m: x.getMonth() }, more: null }); },
+      calTitle: LONGMON[cm] + ' ' + cy, calMeetN, calDueN, calRunN, calEyebrow: 'Weeks ' + isoWeek(new Date(cy, cm, 1)) + '–' + isoWeek(new Date(cy, cm + 1, 0)),
+      calPrev: shiftCal(-1), calNext: shiftCal(1), pageMaxW: 'none',
+      ...agv,
+      calToday: () => { const x = new Date(); this.setState({ cal: { y: x.getFullYear(), m: x.getMonth() }, calDate: null, more: null }); },
       calRef: this.calRef,
       calDow: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'], calDays,
       closeMore: e => { e.stopPropagation(); this.setState({ more: null }); },
       dragEnd: () => { this._calDrag = null; if (this.state.dropDay) this.setState({ dropDay: null }); },
-      newEvent: e => { if (e) e.stopPropagation(); const n0 = new Date(); this.openEvent(null, cy === n0.getFullYear() && cm === n0.getMonth() ? todayIso : isoOf(new Date(cy, cm, 1))); },
+      newEvent: e => { if (e) e.stopPropagation(); if (mode !== 'month') { this.openEvent(null, anchorIso); return; } const n0 = new Date(); this.openEvent(null, cy === n0.getFullYear() && cm === n0.getMonth() ? todayIso : isoOf(new Date(cy, cm, 1))); },
       dlgClick: e => { e.stopPropagation(); if (s.dp || s.tp || s.linkOpen) this.setState({ dp: null, tp: null, linkOpen: false }); },
     };
 
     return {
       stop,
-      closeMenus: () => { if (s.more || s.fOpen || s.agDpOpen || s.agModeOpen || s.mdOpen) this.setState({ more: null, fOpen: null, agDpOpen: false, agDpA: null, agDpHov: null, agModeOpen: false, mdOpen: false }); },
+      closeMenus: () => { if (s.tdMenu) this.setState({ tdMenu: false }); if (s.more || s.fOpen || s.agDpOpen || s.agModeOpen || s.mdOpen) this.setState({ more: null, fOpen: null, agDpOpen: false, agDpA: null, agDpHov: null, agModeOpen: false, mdOpen: false }); },
       goSessions: () => { window.location.href = 'SessionsConsole.dc.html'; },
       goRoutines: () => { window.location.href = 'Routines.dc.html'; },
       openN: open.length, doingN: s.tasks.filter(t => t.status === 'doing').length, doneN: s.tasks.filter(t => t.status === 'done').length,
@@ -1786,7 +2043,7 @@ class Component extends DCLogic {
       return { k: 'sess.delete', icon: 'terminal', title: 'Delete session', target: t.name + ' · ' + t.agent + ' · idle ' + t.age, approveLabel: 'Delete session', ref: t.id, say: 'The oldest idle session is **' + t.name + '**. Deleting it removes its trace; nothing in it is linked to open work.' };
     }
     if (/\b(delete|remove)\b/.test(q)) {
-      const t = match(pTasks) || pTasks.filter(x => x.status === 'later').pop(); if (!t) return null;
+      const t = match(pTasks) || pTasks.filter(x => x.status === 'todo').pop(); if (!t) return null;
       return { k: 'task.delete', icon: 'x', title: 'Delete task', target: t.title, approveLabel: 'Delete task', ref: t.id, say: 'That would remove **' + t.title + '** from the board.' };
     }
     if (/\b(add|create|new task)\b/.test(q)) {
@@ -1858,7 +2115,7 @@ class Component extends DCLogic {
     if (isProj && this._agLast !== (s.agRev || 0) + ':' + (s.agActive || 'pm') + ':' + !!s.agRun) { this._agLast = (s.agRev || 0) + ':' + (s.agActive || 'pm') + ':' + !!s.agRun; setTimeout(() => { const el = this.agScrollRef.current; if (el) el.scrollTop = el.scrollHeight; }, 0); }
     const active = s.agActive || 'pm', isPm = active === 'pm';
     const stats = s.projects.map(p => this.agStats(p));
-    const agRows = stats.map(x => ({ name: x.p.name, status: x.status, dot: this.agDot(x.status), pctLabel: x.pct + '%', count: x.done + '/' + x.total, next: x.next ? fmtDate(x.next.due) : '—', openChat: () => { this.agOpen(x.p.id); this.setState({ agView: 'chat' }); },
+    const agRows = stats.map(x => ({ repos: ((PDEF[x.p.id] || {}).repos || []).join(' · ') || 'No repositories', msName: x.nextMs ? x.nextMs.name : 'No upcoming milestone', msDue: x.nextMs ? fmtDate(x.nextMs.due) : '', nextTitle: x.next ? x.next.title : 'No dated tasks', doingN: x.doing.length, blockN: x.blockers.length, name: x.p.name, status: x.status, dot: this.agDot(x.status), pctLabel: x.pct + '%', count: x.done + '/' + x.total, next: x.next ? fmtDate(x.next.due) : '—', openChat: () => { this.agOpen(x.p.id); this.setState({ agView: 'stats' }); },
       on: active === x.p.id ? 'true' : 'false', anim: s.agRun && active === x.p.id ? 'op-chat-pulse 1.2s cubic-bezier(.4,0,.2,1) infinite' : 'none',
       open: () => this.agOpen(x.p.id) }));
     const cur = isPm ? null : stats.find(x => x.p.id === active);
@@ -1878,14 +2135,14 @@ class Component extends DCLogic {
     const steps = this.agSteps(active), ls = steps[Math.min(s.agStep || 0, steps.length - 1)] || { icon: 'activity', label: 'Working' };
     const name = isPm ? 'Oppenheimer' : cur ? cur.p.name : '';
     const sugg = isPm ? ['What slipped this week?', 'Which project is most at risk?', 'Clean up idle sessions'] : ['Where does this stand?', 'Mark the in-progress task as done', 'Delete the oldest idle session'];
-    const draft = s.agDraft || '', view = s.agView || 'chat';
+    const draft = s.agDraft || '', view = isPm ? (s.agView || 'chat') : 'stats';
     const allMsDone = s.goals.filter(g => { const gt = s.tasks.filter(t => t.goal === g.id); return gt.length && gt.every(t => t.status === 'done'); }).length;
     const all = stats.reduce((a, x) => ({ d: a.d + x.done, t: a.t + x.total, b: a.b + x.blockers.length, r: a.r + x.doing.length }), { d: 0, t: 0, b: 0, r: 0 });
     return {
       isProj: isProj ? 'true' : undefined, notProj: isProj || sec === 'inbox' ? undefined : 'true', navProj: isProj ? 'true' : 'false',
-      goProj: () => this.setState({ section: 'projects', more: null, compose: null }),
+      goProj: () => this.setState({ section: 'projects', agActive: 'pm', agView: 'view', more: null, compose: null }),
       agProjN: s.projects.length, agRows, agPmOn: isPm ? 'true' : 'false', agPmBg: isPm ? 'var(--selected-surface)' : 'transparent', agPmLive: s.agRun && isPm, agOpenPm: () => this.agOpen('pm'),
-      agIsPm: isPm, agIsProject: !isPm,
+      agIsPm: isPm, agIsProject: !isPm, agBackToCards: () => { this.agOpen('pm'); this.setState({ agView: 'view' }); },
       agHeadIcon: isPm ? 'bot' : 'folder', agHeadTitle: isPm ? 'Oppenheimer' : name + ' agent',
       agHeadRole: isPm ? 'General bot · tracks every project, opens issues, merges what is done' : 'Tracks tasks, milestones and blockers for ' + name,
       agScope: isPm ? 'All projects' : name,

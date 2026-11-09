@@ -7,6 +7,12 @@
 /** The longest answer one tool call hands the model. */
 export const BOT_TOOL_OUTPUT_MAX = 12_000;
 
+/**
+ * What every answer that met a runner too old for it tells the bot to do,
+ * so the tool's name and the retry live in one sentence.
+ */
+export const RUNNER_TOO_OLD_ADVICE = 'update_host_runner updates it; then try again';
+
 /** Room kept for the line that says what was cut, so the fitted answer stays within the limit. */
 const CUT_LINE_MAX = 160;
 
@@ -92,6 +98,17 @@ export function cut(text: string, max: number): string {
  * the fence early and write outside it.
  */
 export function fenceUntrusted(tag: string, text: string): string {
-  const spelling = new RegExp(`<(\\s*/?\\s*${tag})`, 'gi');
-  return `<${tag}>\n${text.replace(spelling, '&lt;$1')}\n</${tag}>`;
+  return `<${tag}>\n${neutraliseTags(text, [tag])}\n</${tag}>`;
+}
+
+/**
+ * `text` with every opening or closing spelling of `tags` (any case, any
+ * spacing, `</tag >`, `< /tag>`) neutralised, so it cannot open or close one
+ * of them in the prompt it is put in. The one guard for every request that
+ * wraps outside text in tags: the fence above, the summarizer's, the goal
+ * reviewer's.
+ */
+export function neutraliseTags(text: string, tags: readonly string[]): string {
+  const names = tags.map((tag) => tag.replace(/[^A-Za-z0-9_]/g, '')).join('|');
+  return text.replace(new RegExp(`<(\\s*/?\\s*(?:${names})\\b)`, 'gi'), '&lt;$1');
 }

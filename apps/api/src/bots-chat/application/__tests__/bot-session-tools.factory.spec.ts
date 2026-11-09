@@ -3,6 +3,7 @@ import { emptyScope } from '@oppenheimer/backend-authz';
 import { FIELD_BOUNDS } from '@oppenheimer/shared';
 import { FindHostQuery } from '../../../hosts/queries/find-host/find-host.query';
 import { AnswerSessionDecisionCommand } from '../../../sessions/commands/answer-session-decision/answer-session-decision.command';
+import { CloseSessionCommand } from '../../../sessions/commands/close-session/close-session.command';
 import { CreateSessionCommand } from '../../../sessions/commands/create-session/create-session.command';
 import { SendSessionPromptCommand } from '../../../sessions/commands/send-session-prompt/send-session-prompt.command';
 import { StartCloudSessionCommand } from '../../../sessions/commands/start-cloud-session/start-cloud-session.command';
@@ -94,6 +95,27 @@ function blockedSession(): WorkSessionEntity {
       occurredAt: at,
     },
   ]);
+  return session;
+}
+
+/** A session a bot started whose host could not start it. */
+function failedBotSession(): WorkSessionEntity {
+  const session = WorkSessionEntity.request({
+    organizationId: 'org-1',
+    projectId: PROJECT,
+    createdByUserId: 'owner-1',
+    hostId: HOME,
+    slug: 'grey-finch-4m2p8x',
+    agent: 'claude-code',
+    name: 'Bump deps',
+    origin: 'bot',
+  });
+  session.recordEvent({
+    seq: 1,
+    kind: SESSION_EVENT_KINDS.FAILED,
+    payload: { reason: 'worktree_failed' },
+    occurredAt: new Date(),
+  });
   return session;
 }
 
@@ -372,6 +394,20 @@ describe('BotSessionToolsFactory', () => {
       expect(result.data).toEqual({ sessionId: 'session-1' });
     });
 
+    // What breaks this: a bot that started a cloud session that failed to
+    // start, was never woken, and told the person only once they asked.
+    it('follows the cloud session it started, unless told not to watch', async () => {
+      const { queryBus, watches, call } = setup('full');
+      readsBack(queryBus, cloudSession(CLOUD_ID));
+      const followed = await call('start_cloud_session', { task: 'x', project_id: PROJECT });
+      expect(watches.follow).toHaveBeenCalledWith(expect.anything(), 'session-1', 'first_task');
+      expect(followed.content).toContain('You are subscribed to it.');
+
+      watches.follow.mockClear();
+      await call('start_cloud_session', { task: 'x', project_id: PROJECT, watch: false });
+      expect(watches.follow).not.toHaveBeenCalled();
+    });
+
     it('answers without a URL when the host has not named the session within the wait', async () => {
       const { queryBus, call } = setup('full');
       readsBack(queryBus, cloudSession(null));
@@ -599,6 +635,47 @@ describe('BotSessionToolsFactory', () => {
       scope: owner,
       sessionId: session.id,
       answer: { id: 'perm-1', option: 0 },
+    });
+  });
+  describe('close_session', () => {
+    it('asks first, the card naming the session and that its worktree goes, nothing closed', async () => {
+      const { queryBus, commandBus, approvals, call } = setup('auto');
+      const failed = failedBotSession();
+      queryBus.execute.mockResolvedValue(failed);
+      await call('close_session', { session_id: failed.id });
+      expect(approvals.request.mock.calls[0][0]).toMatchObject({
+        tool: 'close_session',
+        summary: `Close the session "Bump deps" (${failed.id}) and remove its worktree`,
+        subject: { kind: 'session', key: failed.id, label: 'Bump deps' },
+      });
+      expect(commandBus.execute).not.toHaveBeenCalled();
+    });
+
+    it('closes a failed session a bot started through the sessions’ own close, keeping unpushed work', async () => {
+      const { queryBus, commandBus, call } = setup('full');
+      const failed = failedBotSession();
+      queryBus.execute.mockResolvedValue(failed);
+      const result = await call('close_session', { session_id: failed.id });
+      const command = commandBus.execute.mock.calls[0][0] as CloseSessionCommand;
+      expect(command).toBeInstanceOf(CloseSessionCommand);
+      expect(command).toMatchObject({
+        scope: owner,
+        sessionId: failed.id,
+        acceptUnpushedWork: false,
+      });
+      expect(result.isError).toBeFalsy();
+      expect(result.content).toContain(`Asked session ${failed.id} to close.`);
+    });
+
+    it('refuses a session the person started, under either permission, closing nothing', async () => {
+      for (const permission of ['auto', 'full'] as const) {
+        const { commandBus, approvals, call, session } = setup(permission);
+        const result = await call('close_session', { session_id: session.id });
+        expect(result.isError).toBe(true);
+        expect(result.content).toContain('was not started by a bot (it is a person session)');
+        expect(approvals.request).not.toHaveBeenCalled();
+        expect(commandBus.execute).not.toHaveBeenCalled();
+      }
     });
   });
 });

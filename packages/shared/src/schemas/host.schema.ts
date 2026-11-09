@@ -107,6 +107,16 @@ export const hostFoldersQuerySchema = z.object({
 export type HostFoldersQuery = z.infer<typeof hostFoldersQuerySchema>;
 
 /**
+ * `GET /hosts/{id}/folders/search`: the folders under the host's home whose
+ * name holds `q`, found by its runner's bounded walk (`fs.find`, 24 §4).
+ */
+export const hostFolderSearchQuerySchema = z.object({
+  q: z.string().trim().min(2).max(255),
+});
+
+export type HostFolderSearchQuery = z.infer<typeof hostFolderSearchQuerySchema>;
+
+/**
  * `GET /hosts/{id}/codex-environments`: the Codex cloud environments the
  * host's ChatGPT account has, those linked to `repository` (`owner/name`)
  * marked, for the composer's picker (`product/next-steps/cloud-agents.md`).

@@ -1,0 +1,14 @@
+# The Loki in docker-compose.monitoring.yml: the API's log lines as Alloy
+# shipped them (labels `app`, `level`; `req_id` and `context` as structured
+# metadata). Explore → Loki, or the logs panels of the dashboards.
+apiVersion: 1
+
+datasources:
+  - name: Loki
+    uid: loki
+    type: loki
+    access: proxy
+    url: http://loki:3100
+    editable: false
+    jsonData:
+      maxLines: 1000

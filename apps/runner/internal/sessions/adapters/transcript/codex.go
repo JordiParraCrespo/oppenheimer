@@ -24,8 +24,10 @@ import (
 // included.
 //
 // Each line is a `{timestamp, type, payload}`. What the chat reads:
-// `event_msg` `user_message` (what the person typed; the `response_item`
-// user messages also carry the context Codex injects), `response_item`
+// what the person typed, as `event_msg` `user_message` or, from Codex 0.167,
+// as the `UserMessage` of an `event_msg` `item_completed` (the
+// `response_item` user messages also carry the context Codex injects),
+// `response_item`
 // assistant messages, reasoning summaries, tool calls and their outputs,
 // web searches, `turn_aborted` (a stopped turn), `compacted`, and
 // `token_count`, whose context and plan windows become the chat's status.
@@ -121,8 +123,9 @@ func (s *codexScan) find() string {
 				}
 			}
 			// A subagent's rollout runs in the same directory, and is the
-			// conversation's own, under it (`codex_subagents.go`).
-			if !ok || head.child() || !s.dirs[filepath.Clean(head.Cwd)] {
+			// conversation's own, under it (`codex_subagents.go`); Codex's
+			// threads of its own run there too (`codexHead.persons`).
+			if !ok || !head.persons() || !s.dirs[filepath.Clean(head.Cwd)] {
 				continue
 			}
 			if best == "" || info.ModTime().After(bestAt) {
@@ -150,6 +153,12 @@ type codexHead struct {
 	// and an object for a subagent's (`{"subagent": {"thread_spawn": …}}`),
 	// so it is read apart (spawn), and a string never fails the line.
 	Source json.RawMessage `json:"source"`
+	// ThreadSource is who the thread is for (`user`, `subagent`,
+	// `guardian_review`, a feature's name), from Codex 0.167; "" before it.
+	ThreadSource string `json:"thread_source"`
+	// AttachedThread marks a fork Codex keeps under the conversation it was
+	// forked from, never listed as one of its own.
+	AttachedThread bool `json:"attached_thread"`
 }
 
 // codexSpawn is what a subagent's `source` says of the thread that started it.
@@ -168,7 +177,7 @@ func (h codexHead) spawn() *codexSpawn {
 			ThreadSpawn *codexSpawn `json:"thread_spawn"`
 		} `json:"subagent"`
 	}
-	if len(h.Source) == 0 || h.Source[0] != '{' || json.Unmarshal(h.Source, &source) != nil {
+	if h.sourceIsClientName() || json.Unmarshal(h.Source, &source) != nil {
 		return nil
 	}
 	return source.Subagent.ThreadSpawn
@@ -184,6 +193,28 @@ func (h codexHead) parent() string {
 
 // child is whether another thread started this one.
 func (h codexHead) child() bool { return h.parent() != "" }
+
+// sourceIsClientName is whether the thread's source is a client's name
+// (`"cli"`, `"vscode"`, or none) rather than an object: a subagent's
+// (`{"subagent": …}`), Codex's own (`{"internal": "guardian"}`) or a
+// desktop app's (`{"custom": "atlas"}`).
+func (h codexHead) sourceIsClientName() bool {
+	return len(h.Source) == 0 || h.Source[0] != '{'
+}
+
+// persons is whether the thread is a conversation the person had in a
+// terminal, as `codex resume` lists them: a client's source, for the user
+// when it says, and not a fork kept under another thread. Unlike `codex
+// resume`, it leaves out the desktop apps' threads, which no session runs.
+// Codex writes threads of its own (an approval's review, a compaction, a
+// memory consolidation) beside the person's, in the same directory and
+// later, so without this the newest is one of them.
+func (h codexHead) persons() bool {
+	if h.child() || h.AttachedThread || (h.ThreadSource != "" && h.ThreadSource != "user") {
+		return false
+	}
+	return h.sourceIsClientName()
+}
 
 // codexHeadOf is a rollout's `session_meta`, off its first line; false when
 // that line is not one (yet).
@@ -240,8 +271,13 @@ type codexPayload struct {
 	} `json:"action"`
 	Message string   `json:"message"`
 	Images  []string `json:"images"`
-	Model   string   `json:"model"`
-	Info    *struct {
+	// Item is what an `item_completed` finished.
+	Item *struct {
+		Type    string      `json:"type"`
+		Content []codexText `json:"content"`
+	} `json:"item"`
+	Model string `json:"model"`
+	Info  *struct {
 		LastTokenUsage *struct {
 			InputTokens  int64 `json:"input_tokens"`
 			OutputTokens int64 `json:"output_tokens"`
@@ -269,6 +305,10 @@ type codexChat struct {
 	model string
 	lines int
 	calls map[string][]string
+	// typed is the last thing the person typed, while nothing has followed
+	// it in its turn, so a version that writes the message both ways shows it
+	// once.
+	typed string
 }
 
 func (c *codexChat) quiet(time.Duration, int) [][]byte { return nil }
@@ -287,7 +327,23 @@ func (c *codexChat) line(raw []byte, _ int) [][]byte {
 	}
 	id := "codex-" + strconv.Itoa(c.lines)
 	at := line.Timestamp
-	switch line.Type {
+	if line.Type == "event_msg" && (p.Type == "user_message" || p.Type == "item_completed") {
+		return c.event(id, at, p)
+	}
+	entries := c.entries(id, at, line.Type, p)
+	// A turn's start or end, or anything the chat shows bar the status, means
+	// the same words typed again are a new message.
+	event := line.Type == "event_msg"
+	turn := event && (p.Type == "task_started" || p.Type == "task_complete")
+	status := event && p.Type == "token_count"
+	if turn || len(entries) > 0 && !status {
+		c.typed = ""
+	}
+	return entries
+}
+
+func (c *codexChat) entries(id, at, kind string, p codexPayload) [][]byte {
+	switch kind {
 	case "turn_context":
 		if p.Model != "" {
 			c.model = p.Model
@@ -309,18 +365,22 @@ func (c *codexChat) line(raw []byte, _ int) [][]byte {
 func (c *codexChat) event(id, at string, p codexPayload) [][]byte {
 	switch p.Type {
 	case "user_message":
-		if strings.TrimSpace(p.Message) == "" && len(p.Images) == 0 {
+		return c.typedBy(id, at, p.Message, len(p.Images))
+	case "item_completed":
+		if p.Item == nil || p.Item.Type != "UserMessage" {
 			return nil
 		}
-		blocks := []chatBlock{}
-		if p.Message != "" {
-			text, cut := truncate(p.Message, chatTextMax)
-			blocks = append(blocks, chatBlock{Type: "text", Text: text, Truncated: cut})
+		var parts []string
+		images := 0
+		for _, part := range p.Item.Content {
+			switch part.Type {
+			case "text":
+				parts = append(parts, part.Text)
+			case "image", "local_image":
+				images++
+			}
 		}
-		for range p.Images {
-			blocks = append(blocks, chatBlock{Type: "image"})
-		}
-		return userEntry(id, at, blocks)
+		return c.typedBy(id, at, strings.Join(parts, ""), images)
 	case "turn_aborted":
 		return encode(chatEntry{Type: "user", UUID: id, Timestamp: at, Message: chatMessage{Role: "user", Content: interruptedText}})
 	case "token_count":
@@ -389,6 +449,28 @@ func (c *codexChat) item(id, at string, p codexPayload) [][]byte {
 		return append(entries, c.result(at, callID, "", false)...)
 	}
 	return nil
+}
+
+// typedBy is a message the person typed, with the images they attached; ""
+// for the one just shown.
+func (c *codexChat) typedBy(id, at, message string, images int) [][]byte {
+	if strings.TrimSpace(message) == "" && images == 0 {
+		return nil
+	}
+	key := message + "\x00" + strconv.Itoa(images)
+	if key == c.typed {
+		return nil
+	}
+	c.typed = key
+	blocks := []chatBlock{}
+	if message != "" {
+		text, cut := truncate(message, chatTextMax)
+		blocks = append(blocks, chatBlock{Type: "text", Text: text, Truncated: cut})
+	}
+	for range images {
+		blocks = append(blocks, chatBlock{Type: "image"})
+	}
+	return userEntry(id, at, blocks)
 }
 
 // say is one assistant entry.

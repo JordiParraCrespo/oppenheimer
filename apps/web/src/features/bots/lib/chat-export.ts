@@ -80,6 +80,12 @@ function body(message: BotMessageEntity, words: Omit<ChatExportWords, 'botName'>
       after: event.factsAfter,
     });
   }
+  if (message.role === 'event' && event?.kind === 'compaction') {
+    return t('bots.chat.event.compaction', {
+      before: event.tokensBefore,
+      after: event.tokensAfter,
+    });
+  }
   return message.content.trim();
 }
 

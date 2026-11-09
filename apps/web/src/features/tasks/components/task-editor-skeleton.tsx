@@ -1,4 +1,5 @@
-import { Field, FieldLabel, Skeleton } from '@oppenheimer/design-system-web';
+import { Button, Field, FieldLabel, Skeleton } from '@oppenheimer/design-system-web';
+import { Paperclip, Play } from '@oppenheimer/design-system-web/icons';
 import { LoadingStatus } from '@oppenheimer/frontend-web';
 import { TASK_STATUSES } from '@oppenheimer/shared/schemas/task';
 import { useTranslation } from 'react-i18next';
@@ -10,7 +11,8 @@ import { ChoiceRowSkeleton } from './choice-row-skeleton';
  * their heights, the rows (Status, Project, Milestone, Sessions for a task
  * that exists, Due) with their labels written, the choices that need no data
  * (the four statuses, None) as unpicked pills and a bar for each other one,
- * and the footer's buttons, Delete among them for a task that exists.
+ * the Sessions row's Start session and Link existing, and the footer's
+ * buttons (Delete among them for a task that exists), all drawn disabled.
  */
 export function TaskEditorSkeleton({ existing }: { existing: boolean }) {
   const { t } = useTranslation();
@@ -23,6 +25,7 @@ export function TaskEditorSkeleton({ existing }: { existing: boolean }) {
       </Field>
       <Field>
         <FieldLabel>{t('tasks.dialog.notesLabel')}</FieldLabel>
+        {/* A block stands in here: the notes' textarea, at its least height. */}
         <Skeleton shape="sm" className="h-22 w-full" />
       </Field>
       <div className="flex flex-col gap-3 border-t border-border-subtle pt-5">
@@ -37,21 +40,38 @@ export function TaskEditorSkeleton({ existing }: { existing: boolean }) {
           widths={['w-26']}
         />
         {existing ? (
-          <ChoiceRowSkeleton label={t('tasks.dialog.sessions')}>
-            <Skeleton shape="pill" className="h-(--control-h-sm) w-30" />
-            <Skeleton shape="pill" className="h-(--control-h-sm) w-28" />
-          </ChoiceRowSkeleton>
+          <div className="grid grid-cols-[96px_1fr] items-start gap-3">
+            <span className="pt-1 text-sm text-fg-muted">{t('tasks.dialog.sessions')}</span>
+            <div className="flex flex-wrap gap-1.5">
+              <Button type="button" variant="secondary" size="sm" disabled>
+                <Play />
+                {t('tasks.dialog.startSession')}
+              </Button>
+              <Button type="button" variant="ghost" size="sm" disabled>
+                <Paperclip />
+                {t('tasks.dialog.linkExisting')}
+              </Button>
+            </div>
+          </div>
         ) : null}
         <ChoiceRowSkeleton label={t('tasks.dialog.due')} align="center">
           <Skeleton shape="sm" className="h-(--control-h-md) w-40" />
           <Skeleton shape="sm" className="h-(--control-h-md) w-24" />
         </ChoiceRowSkeleton>
       </div>
-      <div aria-hidden className="flex items-center gap-2">
-        {existing ? <Skeleton shape="pill" className="h-(--control-h-md) w-20" /> : null}
+      <div className="flex items-center gap-2">
+        {existing ? (
+          <Button type="button" variant="destructive-ghost" disabled>
+            {t('tasks.dialog.delete')}
+          </Button>
+        ) : null}
         <span className="flex-1" />
-        <Skeleton shape="pill" className="h-(--control-h-md) w-20" />
-        <Skeleton shape="pill" className="h-(--control-h-md) w-24" />
+        <Button type="button" variant="ghost" disabled>
+          {t('common.cancel')}
+        </Button>
+        <Button type="button" disabled>
+          {t(existing ? 'tasks.dialog.save' : 'tasks.dialog.add')}
+        </Button>
       </div>
     </div>
   );

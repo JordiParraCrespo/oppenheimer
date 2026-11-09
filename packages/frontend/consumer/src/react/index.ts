@@ -35,6 +35,7 @@ export {
   useBotImages,
   useBotLive,
   useBotRoomLeft,
+  useBotSentTexts,
   useBotWaitingMessages,
   useCancelBotTurn,
   useClearBotConversation,
@@ -49,7 +50,7 @@ export {
   useRequestBotMemoryDream,
   useUndoBotMemoryDream,
 } from './bot-dream.queries';
-export { useBotGoal, useClearBotGoal } from './bot-goal.queries';
+export { useBotGoal, useClearBotGoal, useResumeBotGoal } from './bot-goal.queries';
 export { useBotLoop, useClearBotLoop } from './bot-loop.queries';
 export {
   type AddBotPermissionRuleVariables,
@@ -93,6 +94,7 @@ export { type ChatgptLoginFlow, useChatgptLogin } from './bots.chatgpt-login';
 export {
   type AddBotFactVariables,
   type DeleteBotFactVariables,
+  type MoveBotGroupVariables,
   type RenameBotGroupVariables,
   type RevertBotDocumentVariables,
   type SaveBotDocumentVariables,
@@ -109,6 +111,7 @@ export {
   useDeleteBot,
   useDeleteBotFact,
   useDeleteBotGroup,
+  useMoveBotGroup,
   useReloadBotDocuments,
   useRenameBotGroup,
   useRevertBotDocument,
@@ -154,6 +157,7 @@ export {
 export { type HostPairingFlow, useHostPairing } from './hosts.pairing';
 export {
   useHostCodexEnvironments,
+  useHostFolderSearch,
   useHostFolders,
   useHostPresence,
   useHosts,
@@ -314,6 +318,7 @@ export {
   useSessionTasks,
   useStartTaskSession,
   useSuspensePlan,
+  useSuspensePlanStats,
   useSuspenseStartSession,
   useSuspenseTaskBoard,
   useTasks,
@@ -321,6 +326,11 @@ export {
   useUpdateMilestone,
   useUpdateTask,
 } from './tasks.queries';
+export {
+  useLinkTelegram,
+  useSuspenseTelegramSettings,
+  useUnlinkTelegram,
+} from './telegram.queries';
 export {
   useVoiceDictation,
   type VoiceDictation,

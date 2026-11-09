@@ -6,7 +6,8 @@
     "tasks": "Tasks",
     "calendar": "Calendar",
     "milestones": "Milestones",
-    "projects": "Projects"
+    "projects": "Projects",
+    "todo": "TODO"
   },
   "sidebar": {
     "unassigned": "Unassigned"
@@ -172,5 +173,40 @@
     "noProject": "No project",
     "allMilestones": "All milestones",
     "clear": "Clear"
+  },
+  "todo": {
+    "left": "left",
+    "done": "done",
+    "today": "Today",
+    "previous": "Previous day",
+    "next": "Next day",
+    "todayWeek": "Today · Week {{week}}",
+    "weekNumber": "Week {{week}}",
+    "includeOverdue": "Include overdue",
+    "empty": "Nothing for this day yet. Add one below.",
+    "noMatch": "No tasks match these filters.",
+    "add": "Add a task",
+    "addLabel": "Add a task for this day",
+    "addFailed": "Couldn’t add that task.",
+    "startSession": "Start a session for {{title}}",
+    "toggleFailed": "Couldn’t update that task.",
+    "loadFailed": "Couldn’t load your tasks.",
+    "state": {
+      "todo": "due today",
+      "due": "due",
+      "overdue": "overdue since {{date}}"
+    },
+    "schedule": {
+      "button": "Add undated tasks",
+      "title": "Add undated tasks",
+      "for": "Pick the tasks with no due date to put on {{date}}.",
+      "search": "Search tasks",
+      "noMatch": "No task matches “{{query}}”.",
+      "none": "Every open task already has a due date.",
+      "submit": "Add to {{date}}",
+      "failed": "Couldn’t add some of those tasks.",
+      "loadFailed": "Couldn’t load your tasks."
+    },
+    "reorder": "Reorder {{title}}"
   }
 }

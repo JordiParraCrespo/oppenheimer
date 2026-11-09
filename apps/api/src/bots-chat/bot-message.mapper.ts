@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import type { BotSteer } from '@oppenheimer/backend-agents';
+import { storableJson, storableText } from '@oppenheimer/backend-core';
 import type { Mapper } from '@oppenheimer/backend-ddd';
 import {
   BOT_DREAM_ACTIVITIES,
@@ -32,6 +33,7 @@ import { ENDED_TURN_STATUSES } from './domain/bot-turn.entity';
 import { BotAttachmentResponseDto } from './dtos/bot-attachment.response.dto';
 import {
   BotApprovalEventResponseDto,
+  BotCompactionEventResponseDto,
   BotDreamEventResponseDto,
   BotGoalEventResponseDto,
   BotLoopEventResponseDto,
@@ -56,8 +58,9 @@ export class BotMessageMapper
     record.botId = entity.botId;
     record.turnId = entity.turnId;
     record.role = entity.role;
-    record.content = entity.content;
-    record.steps = entity.steps.map((step) => ({
+    // Postgres refuses a NUL or a lone surrogate in either column (#728).
+    record.content = storableText(entity.content);
+    record.steps = storableJson(entity.steps).map((step) => ({
       callId: step.callId,
       name: step.name,
       input: step.input,
@@ -130,6 +133,7 @@ export class BotMessageMapper
       id: message.id,
       role: message.role,
       content: message.content,
+      steps: message.steps,
       createdAt: message.createdAt,
       turnEnded:
         message.turnId === null || ENDED_TURN_STATUSES.some((status) => status === turnStatus),
@@ -304,6 +308,8 @@ function toEventResponse(event: BotMessageEvent): BotMessageEventResponseDto {
       return Object.assign(new BotLoopEventResponseDto(), event);
     case 'dream':
       return Object.assign(new BotDreamEventResponseDto(), event);
+    case 'compaction':
+      return Object.assign(new BotCompactionEventResponseDto(), event);
   }
 }
 
@@ -396,7 +402,7 @@ function toEvent(raw: Record<string, unknown> | null): BotMessageEvent | null {
       goalId: raw.goalId,
       objective: String(raw.objective ?? ''),
       step: typeof raw.step === 'number' ? raw.step : 0,
-      limit: typeof raw.limit === 'number' ? raw.limit : 0,
+      limit: typeof raw.limit === 'number' ? raw.limit : null,
       reason: typeof raw.reason === 'string' ? raw.reason : null,
     };
   }
@@ -422,6 +428,13 @@ function toEvent(raw: Record<string, unknown> | null): BotMessageEvent | null {
       dreamId: raw.dreamId,
       factsBefore: typeof raw.factsBefore === 'number' ? raw.factsBefore : 0,
       factsAfter: typeof raw.factsAfter === 'number' ? raw.factsAfter : 0,
+    };
+  }
+  if (raw.kind === 'compaction') {
+    return {
+      kind: 'compaction',
+      tokensBefore: typeof raw.tokensBefore === 'number' ? raw.tokensBefore : 0,
+      tokensAfter: typeof raw.tokensAfter === 'number' ? raw.tokensAfter : 0,
     };
   }
   return null;
