@@ -15,7 +15,8 @@ import { Skeleton } from './skeleton';
  * muted line (its milestone and where it stands), then the time it is due
  * at in mono and its project as a quiet pill. Done strikes the title and
  * mutes the row. The toggle and the title are separate buttons, so ticking a
- * task never opens it. `action` sits after the project, for what the screen
+ * task never opens it. `status` sits before the time (Plan's task status,
+ * a `StatusDot` on `TASK_STATUS_STATE`). `action` sits after the project, for what the screen
  * does from a row (To do's Start session). `children` go last on the row:
  * `SortableTodoRow` puts its grip there.
  *
@@ -35,6 +36,7 @@ function TodoRow({
   toggleLabel,
   onToggle,
   onOpen,
+  status,
   action,
   className,
   children,
@@ -52,6 +54,8 @@ function TodoRow({
   toggleLabel: string;
   onToggle?: () => void;
   onOpen?: () => void;
+  /** Where the task stands, before the time: a `StatusDot` and its column's name. */
+  status?: React.ReactNode;
   /** A control after the project: an `IconButton` the screen acts on the task with. */
   action?: React.ReactNode;
 }) {
@@ -84,6 +88,7 @@ function TodoRow({
         </span>
         {detail ? <span className="truncate text-sm text-fg-muted">{detail}</span> : null}
       </button>
+      {status}
       {time ? <span className="figures shrink-0 text-sm font-medium text-fg-muted">{time}</span> : null}
       {tag ? (
         <span className="inline-flex h-7 max-w-40 shrink-0 items-center truncate rounded-pill bg-hover-surface px-3 text-sm font-medium text-fg-muted">

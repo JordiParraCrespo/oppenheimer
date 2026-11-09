@@ -4,6 +4,8 @@ import {
   IconButton,
   SortableGroup,
   SortableTodoRow,
+  StatusDot,
+  TASK_STATUS_STATE,
   TodoRow,
 } from '@oppenheimer/design-system-web';
 import { Play } from '@oppenheimer/design-system-web/icons';
@@ -20,8 +22,8 @@ const todo = getRouteApi('/_authenticated/plan/todo');
 
 /**
  * The day's tasks (the 2026-11-08 `Tasks` frame), each a `TodoRow`: its
- * milestone and where it stands under the title, the time it is due at, its
- * project. Ticking one moves it to Done (or back to To do) as the board's
+ * milestone and when it is due under the title, its status (the board's
+ * dot and column), the time it is due at, its project. Ticking one moves it to Done (or back to To do) as the board's
  * tick does; its title opens it on the board; its play button opens Start
  * session for it on this screen (`?start=`), on any task not done; its grip
  * drags it into the reader's own order for the day, kept on this device
@@ -68,6 +70,15 @@ export function TodoList() {
       time: task.dueTime ?? undefined,
       tag: project && !project.isUnassigned ? project.name : undefined,
       done: task.isDone,
+      status: (
+        <StatusDot
+          state={TASK_STATUS_STATE[task.status]}
+          density="compact"
+          className="shrink-0 text-sm text-fg-muted"
+        >
+          {t(`tasks.columns.${task.status}`)}
+        </StatusDot>
+      ),
       toggleLabel: t(task.isDone ? 'tasks.card.markNotDone' : 'tasks.card.markDone'),
     };
   };

@@ -8,14 +8,16 @@ import { TodoAdd } from '../sections/todo-add';
 import { TodoHeader } from '../sections/todo-header';
 import { TodoList } from '../sections/todo-list';
 import { TodoOverdueToggle } from '../sections/todo-overdue-toggle';
+import { TodoSchedule } from '../sections/todo-schedule';
 
 const todo = getRouteApi('/_authenticated/plan/todo');
 
 /**
  * Plan's To do (the 2026-11-08 `Tasks` frame): the day's header, the Project
- * filter with Include overdue at the end of its row, the day's tasks, each a
- * card, and the row that adds one to the day. A row's play button opens Start
- * session here (`?start=<task>`), as the board's task dialog does.
+ * filter with Add undated tasks and Include overdue at the end of its row,
+ * the day's tasks, each a card, and the row that adds one to the day. A row's
+ * play button opens Start session here (`?start=<task>`), as the board's
+ * task dialog does.
  */
 export function TodoScreen() {
   const { t } = useTranslation();
@@ -27,6 +29,7 @@ export function TodoScreen() {
       <div className="-mt-3 flex flex-wrap items-center gap-2">
         <PlanFilters view="todo" />
         <span className="flex-1" />
+        <TodoSchedule />
         <TodoOverdueToggle />
       </div>
       <div className="flex flex-col gap-2">
