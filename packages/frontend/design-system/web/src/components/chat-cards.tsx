@@ -98,8 +98,8 @@ function ChangedFileRow({
         {icon ?? <FileIcon path={name} />}
       </span>
       <span className="flex min-w-0 flex-1 items-baseline gap-2" title={path}>
-        <span className="shrink-0 truncate text-[14px] text-fg">{name}</span>
-        {folder ? <span className="min-w-0 truncate text-[13px] text-fg-subtle">{folder}</span> : null}
+        <span className="min-w-0 truncate text-[14px] text-fg">{name}</span>
+        {folder ? <span className="min-w-0 flex-1 truncate text-[13px] text-fg-subtle">{folder}</span> : null}
       </span>
       <DiffStat additions={additions} deletions={deletions} className="text-[13px]" />
     </>
