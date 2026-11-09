@@ -8,11 +8,11 @@ argument-hint: "[the task]"
 
 The router over the three lanes in `.agents/skills/steward/SKILL.md`,
 "Merging". It picks one and runs that skill; it adds no steps of its own.
+Every lane runs in the style `jordi-mode` sets.
 
 ## 1. Pick the lane
 
-Read `jordi-mode` first: how Jordi wants the work done in every lane. Then
-read the task, the conversation and, when it names one, the code or pull
+Read the task, the conversation and, when it names one, the code or pull
 request it points at. Then:
 
 | The task is | Lane |

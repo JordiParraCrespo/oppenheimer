@@ -41,13 +41,14 @@ correction that a check could catch goes to `correct` instead.
 
 One question-tool round, at most two questions, 4-6 options each with
 `multiSelect`: which new patterns are right, and which sections feel stale.
-Then one free-text question for anything missed. If he is away, apply your
-reading and list the questions in the pull request.
+Then one free-text question for anything missed. When Jordi is not in the
+session, the questions go in the pull request description instead, and
+step 4 applies your reading as the default.
 
 ## 4. Edit
 
 Edit `jordi-mode` in place. Keep sections he has not contradicted, revise
 those with new evidence, add a section only for a rule that is new and not
 the default. Short imperative lines; "Jordi" or "him", never a metaphor.
-Then open the pull request (`propose`) with the evidence table in the
-description.
+Then open the pull request (`propose`) with the evidence table and any
+unanswered questions in the description.
