@@ -1401,3 +1401,9 @@ earlier note:
   2026-11-09 the owner asked for it: the page switches between Overview and
   Stats, which reads that endpoint over a period. Pull requests stay off it
   until the endpoint carries them (23, decided 4).
+- `versions/mvp/25-bots.md` (2026-11-08) made `recap` something the person
+  asks for: `/recap` in a bot's chat, "recall" in a session. On 2026-11-09
+  the owner asked for it at the end of every finished task as well: a bot's
+  wake for a finished session ends with a recap of it, a session's agent
+  ends each task it finishes with one, and so do agents working in this
+  repository (the `recap` skill).

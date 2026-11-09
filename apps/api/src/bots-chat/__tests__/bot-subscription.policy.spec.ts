@@ -408,6 +408,14 @@ describe('sessionWakePrompt', () => {
     expect(prompt).toContain('Say only what the result shows');
   });
 
+  it('ends a finished session with a recap of it', () => {
+    // The owner wants every session that finishes recapped, not only
+    // reported: without this the bot said what the agent did and stopped.
+    const prompt = sessionWakePrompt(event('completed'), '');
+    expect(prompt).toContain('end with a recap of this session');
+    expect(prompt).toContain('the one next move');
+  });
+
   it('asks for what each state calls for', () => {
     // A bot told it could not answer left questions its instructions
     // settled waiting on the person, though it has answer_session.
