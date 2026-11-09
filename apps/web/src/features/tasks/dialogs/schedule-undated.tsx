@@ -5,9 +5,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@oppenheimer/design-system-web';
-import { QueryState } from '@oppenheimer/frontend-web';
+import { formatCalendarDay, QueryState, useLocale } from '@oppenheimer/frontend-web';
 import { useTranslation } from 'react-i18next';
 import { UndatedPickerSkeleton } from '../components/undated-picker-skeleton';
+import { useTodoDay } from '../hooks/use-todo-day';
 import { UndatedPicker } from '../sections/undated-picker';
 
 /**
@@ -17,6 +18,8 @@ import { UndatedPicker } from '../sections/undated-picker';
  */
 export function ScheduleUndatedDialog({ onClose }: { onClose: () => void }) {
   const { t } = useTranslation();
+  const locale = useLocale();
+  const { day } = useTodoDay();
   return (
     <Dialog open onOpenChange={(next) => !next && onClose()}>
       <DialogContent size="form" closeLabel={t('common.close')}>
@@ -27,7 +30,7 @@ export function ScheduleUndatedDialog({ onClose }: { onClose: () => void }) {
           <div className="pb-6">
             <QueryState>
               <QueryState.Pending>
-                <UndatedPickerSkeleton />
+                <UndatedPickerSkeleton date={formatCalendarDay(day, locale)} onCancel={onClose} />
               </QueryState.Pending>
               <QueryState.Error fallback={t('tasks.todo.schedule.loadFailed')} />
               <QueryState.Data>

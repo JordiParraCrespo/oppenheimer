@@ -20,7 +20,7 @@ import { undatedTasks } from '../lib/todo';
  * with its column's dot, checked into a set; Add gives every checked
  * one the day shown as its due date, side by side. Those that fail stay
  * checked and the dialog stays open saying so; when none fails it closes,
- * and the tasks land on the list behind it.
+ * and the tasks land on the list behind it. While Add runs the checks hold.
  */
 export function UndatedPicker({ onClose }: { onClose: () => void }) {
   const { t } = useTranslation();
@@ -78,11 +78,13 @@ export function UndatedPicker({ onClose }: { onClose: () => void }) {
           aria-label={t('tasks.todo.schedule.title')}
           options={options}
           value={picked}
-          onPick={(option, selected) =>
+          onPick={(option, selected) => {
+            // The batch in flight is what is checked: a pick now would be dropped.
+            if (pending) return;
             setPicked((previous) =>
               selected ? [...previous, option.value] : previous.filter((id) => id !== option.value),
-            )
-          }
+            );
+          }}
           searchPlaceholder={t('tasks.todo.schedule.search')}
           emptyText={(query) => t('tasks.todo.schedule.noMatch', { query })}
         />
