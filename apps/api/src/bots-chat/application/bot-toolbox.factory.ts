@@ -37,12 +37,13 @@ import { BotSkillToolsFactory } from './bot-skill-tools.factory';
 import { BotSubagentToolsFactory } from './bot-subagent-tools.factory';
 import { BotTelegramToolsFactory } from './bot-telegram-tools.factory';
 import { BotTerminalToolsFactory } from './bot-terminal-tools.factory';
-import type {
-  ApprovedCallContext,
-  BotToolArea,
-  BotToolContext,
-  BotToolDefinition,
-  BotToolResult,
+import {
+  type ApprovedCallContext,
+  type BotToolArea,
+  type BotToolContext,
+  type BotToolDefinition,
+  type BotToolResult,
+  raisedCard,
 } from './bot-tool.factory';
 import { BotWatchToolsFactory } from './bot-watch-tools.factory';
 import { BotWebToolsFactory } from './bot-web-tools.factory';
@@ -160,7 +161,7 @@ export class BotToolboxFactory {
       openedWithSkill: opensWithSkill(context.ranCommand),
       attended: standing.origin === undefined || isAttended(standing.origin),
     });
-    return nudging(offered, tools, standing, nudge);
+    return nudging(tools, nudge);
   }
 
   /**
@@ -271,27 +272,16 @@ export class BotToolboxFactory {
  * count for the turn's own tools only: a `delegate` child's are bound apart
  * (`readOnlyTools`) and never reminded.
  */
-function nudging(
-  definitions: readonly BotToolDefinition[],
-  tools: readonly BotEngineTool[],
-  standing: BotStanding,
-  nudge: BotSkillNudge,
-): BotEngineTool[] {
-  return tools.map((tool, index) => {
-    const definition = definitions[index];
-    const asked =
-      definition !== undefined &&
-      toolDecision(standing.permissions, definition.traits, standing.preset) === 'ask';
-    return {
-      ...tool,
-      run: async (input, options) => {
-        const result = await tool.run(input, options);
-        return nudge.finished(tool.name, { asked })
-          ? { ...result, content: withSkillNudge(result.content) }
-          : result;
-      },
-    };
-  });
+function nudging(tools: readonly BotEngineTool[], nudge: BotSkillNudge): BotEngineTool[] {
+  return tools.map((tool) => ({
+    ...tool,
+    run: async (input, options) => {
+      const result = await tool.run(input, options);
+      return nudge.finished(tool.name, { asked: raisedCard(result) })
+        ? { ...result, content: withSkillNudge(result.content) }
+        : result;
+    },
+  }));
 }
 
 /** Where a bot's tools stand: its preset and what its owner set (`25-bots.md` §5). */

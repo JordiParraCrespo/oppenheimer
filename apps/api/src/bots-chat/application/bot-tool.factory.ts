@@ -1,4 +1,4 @@
-import type { BotEngineTool } from '@oppenheimer/backend-agents';
+import type { BotEngineTool, BotEngineToolResult } from '@oppenheimer/backend-agents';
 import type { AccessScope } from '@oppenheimer/backend-authz';
 import { AppError, upstreamRateLimitOf } from '@oppenheimer/backend-core';
 import { ExceptionBase } from '@oppenheimer/backend-ddd';
@@ -414,7 +414,7 @@ function askingFirst<Input extends z.ZodType>(
           }
           reviewNote = verdict.note;
         }
-        return { content: await askOwner(spec, context, call, subject, reviewNote) };
+        return carded(await askOwner(spec, context, call, subject, reviewNote));
       } catch (error) {
         return toEngineResult(failureOf(error));
       }
@@ -443,7 +443,7 @@ function reviewedFirst<Input extends z.ZodType>(
         const verdict = await reviewOf(context.reviewer, spec, context, call, rules);
         if (verdict.effect !== 'ask') return tool.run(input, options);
         const subject = await subjectOf(spec, call, context);
-        return { content: await askOwner(spec, context, call, subject, verdict.note) };
+        return carded(await askOwner(spec, context, call, subject, verdict.note));
       } catch (error) {
         return toEngineResult(failureOf(error));
       }
@@ -498,6 +498,24 @@ async function subjectOf<Input extends z.ZodType>(
   } catch {
     return null;
   }
+}
+
+/** The results that put their call on a card instead of running it. */
+const CARDED = new WeakSet<BotEngineToolResult>();
+
+function carded(content: string): BotEngineToolResult {
+  const result = { content };
+  CARDED.add(result);
+  return result;
+}
+
+/**
+ * Whether a bound tool's result put the call on a card, by either route (the
+ * tool asks, or a rule made an allowed call ask): nothing ran, and the bot
+ * was told to end its turn.
+ */
+export function raisedCard(result: BotEngineToolResult): boolean {
+  return CARDED.has(result);
 }
 
 /** The call becomes a card, its input stored as normalized, and the model is told what that means. */

@@ -265,6 +265,45 @@ describe('BotToolboxFactory', () => {
       },
     );
 
+    it('waits for the next call when a rule turned the one it is due on into an approval card', async () => {
+      const posts = defineBotTool({
+        name: 'post_out',
+        scope: 'bots:write',
+        description: 'Posts.',
+        input: z.object({}),
+        asks: true,
+        summarize: () => 'post it',
+        run: async () => 'posted',
+      });
+      const asking = toolboxOf({
+        group: 'self',
+        definitions: () => [reads('get_self'), saveSkill, posts],
+      });
+      const approvals = {
+        request: vi.fn(async () => ({ status: 'requested' as const, approvalId: 'approval-1' })),
+      };
+      // Full access would run it; the owner's ask rule, read by the reviewer, stops it.
+      const rule = { id: 'rule-1', text: 'Ask me before posting.', effect: 'ask' as const };
+      const tools = asking.tools(
+        {
+          ...context,
+          permissions: { ...NO_PERMISSIONS, rules: [rule] },
+          reviewer: { review: async () => ({ effect: 'ask' as const, rule }) },
+          approvals,
+        },
+        null,
+        BOTS,
+      );
+      await calls(tools, BOT_SKILL_NUDGE_AFTER_STEPS - 1);
+
+      const card = await tools.find((bound) => bound.name === 'post_out')?.run({}, { signal });
+      expect(approvals.request).toHaveBeenCalledOnce();
+      expect(card?.content).not.toContain('save_skill');
+
+      const [next] = await calls(tools, 1);
+      expect(next).toContain('save_skill');
+    });
+
     it('stays away from a turn opened by a skill the person ran', async () => {
       const ran = { ...context, ranCommand: 'release-notes' };
       const answers = await calls(learning.tools(ran, null, BOTS), 12);
