@@ -2,12 +2,14 @@ import { TaskEntity } from '@oppenheimer/frontend-consumer';
 import type { TaskStatus } from '@oppenheimer/shared/schemas/task';
 import { describe, expect, it } from 'vitest';
 import {
+  picksInView,
   todayOpenCount,
   todoCounts,
   todoDay,
   todoEntries,
   todoSearchSchema,
   todoStateLabel,
+  type UndatedFilter,
   undatedCounts,
   undatedTasks,
 } from '../lib/todo';
@@ -124,10 +126,9 @@ describe("To do's day", () => {
       task('d', { projectId: 'p-2', status: 'doing' }),
       task('e', { projectId: 'p-2', status: 'review' }),
     ];
-    const ids = (filter?: Parameters<typeof undatedTasks>[1]) =>
-      undatedTasks(rows, filter).map((row) => row.id);
+    const ids = (filter?: Partial<UndatedFilter>) =>
+      undatedTasks(rows, { projectIds: [], statuses: [], ...filter }).map((row) => row.id);
     expect(ids()).toEqual(['a', 'd', 'e']);
-    expect(ids({ projectIds: [], statuses: [] })).toEqual(['a', 'd', 'e']);
     expect(ids({ projectIds: ['p-2'] })).toEqual(['d', 'e']);
     expect(ids({ statuses: ['todo', 'review'] })).toEqual(['a', 'e']);
     expect(ids({ projectIds: ['p-2'], statuses: ['doing'] })).toEqual(['d']);
@@ -143,5 +144,9 @@ describe("To do's day", () => {
       byProject: { 'p-2': 1 },
       byStatus: { doing: 1, review: 1 },
     });
+  });
+
+  it('adds only the picks the filtered list still shows', () => {
+    expect(picksInView(['a', 'd', 'x'], [task('d'), task('a')])).toEqual(['a', 'd']);
   });
 });

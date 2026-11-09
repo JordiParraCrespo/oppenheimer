@@ -97,11 +97,26 @@ export function todoStateLabel(
   return { key: day === today ? 'tasks.todo.state.todo' : 'tasks.todo.state.due' };
 }
 
-/** What Add undated tasks' own filters narrow it to; `undefined` or empty is every one. */
-export interface UndatedFilter {
-  projectIds?: readonly string[];
-  statuses?: readonly TaskEntity['status'][];
+/** The columns Add undated tasks offers from: every open one. */
+export const OPEN_STATUSES = [
+  'todo',
+  'doing',
+  'review',
+] as const satisfies readonly TaskEntity['status'][];
+export type OpenStatus = (typeof OPEN_STATUSES)[number];
+
+/** Whether a facet's value is one of `OPEN_STATUSES`, so a string pick reads back typed. */
+export function isOpenStatus(value: string): value is OpenStatus {
+  return (OPEN_STATUSES as readonly string[]).includes(value);
 }
+
+/** What Add undated tasks' own filters narrow it to; empty is every one. */
+export interface UndatedFilter {
+  projectIds: readonly string[];
+  statuses: readonly OpenStatus[];
+}
+
+export const NO_UNDATED_FILTER: UndatedFilter = { projectIds: [], statuses: [] };
 
 /**
  * What Add undated tasks offers: the open tasks with no due date, in the
@@ -110,23 +125,28 @@ export interface UndatedFilter {
  */
 export function undatedTasks(
   tasks: readonly TaskEntity[],
-  filter: UndatedFilter = {},
+  filter: UndatedFilter = NO_UNDATED_FILTER,
 ): TaskEntity[] {
-  const { projectIds, statuses } = filter;
   return tasks
     .filter(
       (task) =>
         !task.isDone &&
         task.dueDate === null &&
-        (!projectIds?.length || projectIds.includes(task.projectId)) &&
-        (!statuses?.length || statuses.includes(task.status)),
+        inProjects(task, filter) &&
+        inStatuses(task, filter),
     )
     .sort(compareRank);
 }
 
+const inProjects = (task: TaskEntity, filter: UndatedFilter) =>
+  !filter.projectIds.length || filter.projectIds.includes(task.projectId);
+const inStatuses = (task: TaskEntity, filter: UndatedFilter) =>
+  !filter.statuses.length || (filter.statuses as readonly string[]).includes(task.status);
+
 /**
- * Add undated tasks' facet counts: how many it would offer in each project
- * under the picked columns, and in each column under the picked projects.
+ * Add undated tasks' facet counts: each undated task counts toward its
+ * project when the picked columns keep it, and toward its column when the
+ * picked projects keep it, so a facet's own pick never zeroes its options.
  */
 export function undatedCounts(
   tasks: readonly TaskEntity[],
@@ -134,11 +154,17 @@ export function undatedCounts(
 ): { byProject: Record<string, number>; byStatus: Record<string, number> } {
   const byProject: Record<string, number> = {};
   const byStatus: Record<string, number> = {};
-  for (const task of undatedTasks(tasks, { statuses: filter.statuses }))
-    byProject[task.projectId] = (byProject[task.projectId] ?? 0) + 1;
-  for (const task of undatedTasks(tasks, { projectIds: filter.projectIds }))
-    byStatus[task.status] = (byStatus[task.status] ?? 0) + 1;
+  for (const task of undatedTasks(tasks)) {
+    if (inStatuses(task, filter)) byProject[task.projectId] = (byProject[task.projectId] ?? 0) + 1;
+    if (inProjects(task, filter)) byStatus[task.status] = (byStatus[task.status] ?? 0) + 1;
+  }
   return { byProject, byStatus };
+}
+
+/** The picks Add schedules: those the filtered list still shows, so a hidden pick waits. */
+export function picksInView(picked: readonly string[], shown: readonly TaskEntity[]): string[] {
+  const ids = new Set(shown.map((task) => task.id));
+  return picked.filter((id) => ids.has(id));
 }
 
 /** The header's count: how many on the list are left and how many are done. */

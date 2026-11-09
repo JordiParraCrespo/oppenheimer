@@ -1,12 +1,20 @@
-import { Button, DialogDescription, Skeleton } from '@oppenheimer/design-system-web';
+import {
+  Button,
+  DialogDescription,
+  SearchableFacetMultiSelect,
+  Skeleton,
+} from '@oppenheimer/design-system-web';
+import { ListChecks } from '@oppenheimer/design-system-web/icons';
 import { LoadingStatus } from '@oppenheimer/frontend-web';
 import { useTranslation } from 'react-i18next';
 
 /**
  * Add undated tasks while the plan loads: the line and the buttons as they
  * will read (both know only the day; Cancel already works), and between
- * them the two filter pills and the search list's frame, its field and
- * three rows together, each a bar at a menu row's height.
+ * them the filter row and the search list's frame, its field and three rows
+ * together, each a bar at a menu row's height. In the row, Project is a bar
+ * (a narrowed page names its project there) and Status the facet itself,
+ * unset as it always opens, with nothing to pick yet.
  */
 export function UndatedPickerSkeleton({ date, onCancel }: { date: string; onCancel: () => void }) {
   const { t } = useTranslation();
@@ -15,9 +23,17 @@ export function UndatedPickerSkeleton({ date, onCancel }: { date: string; onCanc
       <LoadingStatus />
       <DialogDescription>{t('tasks.todo.schedule.for', { date })}</DialogDescription>
       <div className="flex items-center gap-2">
-        {['w-24', 'w-20'].map((width) => (
-          <Skeleton key={width} shape="pill" className={`h-7.5 ${width}`} />
-        ))}
+        <Skeleton shape="pill" className="h-7.5 w-24" />
+        <SearchableFacetMultiSelect
+          variant="pill"
+          label={t('tasks.dialog.status')}
+          icon={<ListChecks />}
+          searchPlaceholder={t('tasks.todo.schedule.searchStatuses')}
+          emptyText={(query) => t('common.search.noMatch', { query })}
+          values={[]}
+          onValuesChange={() => {}}
+          options={[{ value: 'all', label: t('tasks.todo.schedule.allStatuses') }]}
+        />
       </div>
       <div className="flex flex-col">
         <div className="px-1 pt-1">
