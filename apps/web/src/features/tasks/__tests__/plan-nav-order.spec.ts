@@ -1,12 +1,19 @@
 import { act, renderHook } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
 import { usePlanNavOrder } from '../hooks/use-plan-nav-order';
-import { PLAN_NAV_IDS, PLAN_NAV_ORDER_KEY, storedPlanNavOrder } from '../lib/plan-nav-order';
+import {
+  PLAN_NAV_IDS,
+  PLAN_NAV_ORDER_KEY,
+  planLanding,
+  planViewShown,
+  storedPlanNavOrder,
+} from '../lib/plan-nav-order';
 
 /**
  * The order a reader dragged Plan's views into comes back on the next
  * visit; anything else in storage never drops or duplicates a view, and one
- * this build added since takes its default place. A view that is off (the
+ * this build added since takes its default place, and Plan opens on the view
+ * at the top. A view that is off (the
  * Inbox without its flag) keeps its place while the others move around it.
  */
 
@@ -36,6 +43,29 @@ describe('storedPlanNavOrder', () => {
   it.each(['{not json', '{}', '"tasks"'])('falls back to the default order on %s', (raw) => {
     store(raw);
     expect(storedPlanNavOrder()).toEqual(DEFAULT);
+  });
+});
+
+describe('planLanding', () => {
+  const all = planViewShown(true);
+
+  it('opens on the Inbox for a reader who never dragged', () => {
+    expect(planLanding(all)).toBe('/plan/inbox');
+  });
+
+  it('opens on the view the reader dragged to the top', () => {
+    store(JSON.stringify(['calendar', 'inbox', 'tasks', 'todo', 'milestones', 'projects']));
+    expect(planLanding(all)).toBe('/plan/calendar');
+  });
+
+  it('opens on the board when Tasks is on top', () => {
+    store(JSON.stringify(['tasks', 'inbox']));
+    expect(planLanding(all)).toBe('/plan');
+  });
+
+  it('skips a top view the sidebar hides, as the sidebar does', () => {
+    store(JSON.stringify(['inbox', 'calendar', 'tasks']));
+    expect(planLanding(planViewShown(false))).toBe('/plan/calendar');
   });
 });
 

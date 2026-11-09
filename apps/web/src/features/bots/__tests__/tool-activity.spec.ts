@@ -5,6 +5,8 @@ import {
   liveLabel,
   liveOrb,
   liveWords,
+  MUSINGS,
+  musing,
   readableOutput,
   runningStep,
   sharedKind,
@@ -113,17 +115,30 @@ describe('liveLabel', () => {
         step: delegate,
         subagents: [run('completed'), run('failed'), run('running')],
         writing: false,
+        seed: 0,
       }),
     ).toEqual({ key: 'bots.chat.activity.delegatingDone', values: { count: 3, done: 2 } });
   });
 
   it('says what the call is doing while none has ended, and Waiting before anything while queued', () => {
-    const live = { step: delegate, subagents: [run('running')], writing: false };
+    const live = { step: delegate, subagents: [run('running')], writing: false, seed: 0 };
     expect(liveLabel({ queued: false, ...live }).key).toBe('bots.chat.activity.delegating');
     expect(liveLabel({ queued: true, ...live }).key).toBe('bots.chat.turn.queued');
     expect(
-      liveLabel({ queued: false, step: undefined, subagents: undefined, writing: true }).key,
+      liveLabel({ queued: false, step: undefined, subagents: undefined, writing: true, seed: 0 })
+        .key,
     ).toBe('bots.chat.turn.writing');
+  });
+
+  /** What breaks this: the word changing under the person mid-turn, or every turn saying the same one. */
+  it('thinks in one word for the whole turn, picked from when it started', () => {
+    const idle = { queued: false, step: undefined, subagents: undefined, writing: false };
+    const started = Date.parse('2026-10-30T09:00:00.000Z');
+    const word = liveLabel({ ...idle, seed: started }).key;
+    expect(word).toMatch(/^bots\.chat\.turn\.musing\./);
+    expect(liveLabel({ ...idle, seed: started }).key).toBe(word);
+    const words = new Set(MUSINGS.map((_, offset) => musing(started + offset)));
+    expect(words.size).toBe(MUSINGS.length);
   });
 });
 

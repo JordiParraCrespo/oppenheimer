@@ -16,14 +16,15 @@ import { useTranslation } from 'react-i18next';
 import { useScopeProject } from '../hooks/use-scope-project';
 import { useTodoDay } from '../hooks/use-todo-day';
 import { TODO_GROUP, useTodoOrder } from '../hooks/use-todo-order';
-import { todoDay, todoStateLabel } from '../lib/todo';
+import { todoDay, todoLabels } from '../lib/todo';
 
 const todo = getRouteApi('/_authenticated/plan/todo');
 
 /**
  * The day's tasks (the 2026-11-08 `Tasks` frame), each a `TodoRow`: its
- * milestone and when it is due under the title, its status (the board's
- * dot and column), the time it is due at, its project. Ticking one moves it to Done (or back to To do) as the board's
+ * milestone, since when it has been carried and when it is due under the
+ * title, its status (the board's dot and column), the time it is due at
+ * when that is the day shown, its project. Ticking one moves it to Done (or back to To do) as the board's
  * tick does, in its place on the list; its title opens it here, in the task dialog; its play button opens Start
  * session for it on this screen (`?start=`), on any task not done; its grip
  * drags it into the reader's own order for the day, kept on this device
@@ -58,15 +59,15 @@ export function TodoList() {
     const { task } = entry;
     const project = projects.get(task.projectId);
     const milestone = task.milestoneId ? milestones.get(task.milestoneId) : undefined;
-    const label = todoStateLabel(entry, day, today);
-    const where =
+    const when = todoLabels(entry, day, today).map((label) =>
       'date' in label
         ? t(label.key, { date: formatCalendarDay(label.date, locale) })
-        : t(label.key);
+        : t(label.key),
+    );
     return {
       title: task.title,
-      detail: [milestone, where].filter(Boolean).join(' · '),
-      time: task.dueTime ?? undefined,
+      detail: [milestone, ...when].filter(Boolean).join(' · '),
+      time: (task.dueDate === day && task.dueTime) || undefined,
       tag: project && !project.isUnassigned ? project.name : undefined,
       done: task.isDone,
       status: (
