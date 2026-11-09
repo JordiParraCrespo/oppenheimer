@@ -8,6 +8,15 @@ import { BOT_COMPACTION_KEEP_TOKENS } from '../bot-engine';
  */
 export type CompactableItem = { type?: string; role?: string } & Record<string, unknown>;
 
+/**
+ * An SDK's items as the plain structure compaction reads. Every Responses API
+ * input item is an object with these optional fields, so this is the one
+ * place a caller's item type is read as `CompactableItem`.
+ */
+function compactable<Item>(items: readonly Item[]): readonly CompactableItem[] {
+  return items as unknown as readonly CompactableItem[];
+}
+
 /** What a model call is sent, as the SDK's `callModelInputFilter` hands it over. */
 export interface ModelInput<Item> {
   instructions?: string;
@@ -176,7 +185,7 @@ export function compactionCut(
  * what came after the last one. A summary that fails sends the call as it
  * was: the turn goes on, and the next call tries again.
  */
-export class TurnCompactor<Item extends CompactableItem> {
+export class TurnCompactor<Item> {
   private summary: string | null = null;
   /** How many of the leading items the summary stands for. */
   private folded = 0;
@@ -196,7 +205,7 @@ export class TurnCompactor<Item extends CompactableItem> {
     const before = this.tokens(sent, data.instructions);
     if (before < this.threshold) return { ...data, input: sent };
     const keep = Math.min(BOT_COMPACTION_KEEP_TOKENS, Math.floor(this.threshold / 4));
-    const cut = compactionCut(items, this.folded, keep);
+    const cut = compactionCut(compactable(items), this.folded, keep);
     if (cut < 0) return { ...data, input: sent };
     let completion: BotCompletion;
     try {
@@ -240,17 +249,21 @@ export class TurnCompactor<Item extends CompactableItem> {
       role: 'user',
       content: `<context-summary>\nWhat you did earlier in this conversation and turn, summarized to keep your context small. Carry on from it.\n${this.summary}\n</context-summary>`,
     } as unknown as Item;
-    const message = this.messageIndex < this.folded ? [items[this.messageIndex] as Item] : [];
+    const turnMessage = items[this.messageIndex];
+    const message = this.messageIndex < this.folded && turnMessage ? [turnMessage] : [];
     return [opening, ...message, ...items.slice(this.folded)];
   }
 
   private tokens(items: readonly Item[], instructions: string | undefined): number {
-    const chars = items.reduce((sum, item) => sum + itemChars(item), instructions?.length ?? 0);
+    const chars = compactable(items).reduce(
+      (sum, item) => sum + itemChars(item),
+      instructions?.length ?? 0,
+    );
     return estimateTokens(chars);
   }
 
   private prompt(items: readonly Item[]): string {
-    let body = items.map(itemText).filter(Boolean).join('\n\n');
+    let body = compactable(items).map(itemText).filter(Boolean).join('\n\n');
     if (body.length > SUMMARY_INPUT_CHARS)
       body = `[older part cut]\n${body.slice(-SUMMARY_INPUT_CHARS)}`;
     return [

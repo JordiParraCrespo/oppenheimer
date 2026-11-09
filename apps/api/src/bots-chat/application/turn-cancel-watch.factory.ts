@@ -1,9 +1,9 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
-import { type BotEngineEvent, LOOP_GUARD_DATA_KEY } from '@oppenheimer/backend-agents';
+import type { BotEngineEvent } from '@oppenheimer/backend-agents';
 import { BOT_TURN_IDLE_LIMIT_MS } from '@oppenheimer/shared';
 import { BOT_TURN_REPOSITORY } from '../bots-chat.di-tokens';
 import type { BotTurnRepositoryPort } from '../database/bot-turn.repository.port';
-import { BOT_TURN_LOOP_REFUSALS } from '../domain/bot-turn.entity';
+import { TurnActivity } from './turn-activity.policy';
 
 /** How long a running turn waits between two looks for Stop. */
 export const CANCEL_POLL_MS = 750;
@@ -50,29 +50,24 @@ export class TurnCancelWatchFactory {
     let interruption: TurnInterruption | null = null;
     let timer: NodeJS.Timeout | undefined;
     let idle: NodeJS.Timeout | undefined;
-    let toolsRunning = 0;
-    let refusals = 0;
+    const activity = new TurnActivity();
     const interrupt = (cause: TurnInterruption): void => {
       if (stopped || interruption) return;
       interruption = cause;
       abort.abort();
     };
-    const awake = (extraMs = 0): void => {
+    const awake = (graceMs: number | null): void => {
       clearTimeout(idle);
-      if (stopped || toolsRunning > 0) return;
-      idle = setTimeout(() => interrupt('stalled'), idleLimitMs + extraMs);
+      if (stopped || graceMs === null) return;
+      idle = setTimeout(() => interrupt('stalled'), idleLimitMs + graceMs);
       idle.unref();
     };
     const saw = (event: BotEngineEvent): void => {
-      if (event.type === 'tool.started') toolsRunning += 1;
-      if (event.type === 'tool.finished') {
-        toolsRunning = Math.max(0, toolsRunning - 1);
-        if (event.data?.[LOOP_GUARD_DATA_KEY] === 'refused') refusals += 1;
-        if (refusals >= BOT_TURN_LOOP_REFUSALS) interrupt('loop');
-      }
-      awake(event.type === 'retrying' ? (event.delayMs ?? 0) : 0);
+      const reading = activity.saw(event);
+      if (reading.looping) interrupt('loop');
+      awake(reading.graceMs);
     };
-    awake();
+    awake(0);
 
     const look = async (): Promise<void> => {
       try {

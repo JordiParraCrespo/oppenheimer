@@ -7,7 +7,7 @@ import {
 } from '../bot-engine';
 import { deliverSteers, failed, guardTurn, messageParts, runTool, ToolCallData } from '../turn';
 import { CodexLimitsRecorder } from './codex-limits';
-import { type CompactableItem, TurnCompactor } from './openai-compaction';
+import { TurnCompactor } from './openai-compaction';
 import { OpenAiEventTranslator, type OpenAiStreamEvent } from './openai-events';
 
 /**
@@ -190,7 +190,7 @@ export class OpenAiBotEngine extends BotEngine {
     const compactor =
       request.compaction === false
         ? null
-        : new TurnCompactor<CompactableItem>(
+        : new TurnCompactor<AgentInputItem>(
             compactionThreshold(request.contextWindow),
             request.history.length,
             (message) =>
@@ -213,13 +213,7 @@ export class OpenAiBotEngine extends BotEngine {
       maxTurns: request.maxSteps ?? null,
       ...(compactor
         ? {
-            callModelInputFilter: async ({ modelData }) => {
-              const filtered = await compactor.filter({
-                instructions: modelData.instructions,
-                input: modelData.input as unknown as CompactableItem[],
-              });
-              return { ...modelData, input: filtered.input as unknown as AgentInputItem[] };
-            },
+            callModelInputFilter: ({ modelData }) => compactor.filter(modelData),
           }
         : {}),
     });

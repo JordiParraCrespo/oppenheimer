@@ -113,8 +113,23 @@ export function isGoalTurn(
   );
 }
 
-/** The provider failures that pause a goal until the limit, quota or sign-in is sorted. */
-const USAGE_FAILURES: readonly BotTurnFailure[] = ['rate_limit', 'usage_limit', 'credential'];
+/**
+ * Why a failed turn pauses its goal, by the turn's failure: the provider's
+ * limit, quota or sign-in waits until it is sorted (`usage_limit`), the loop
+ * guard's stop needs the person (`blocked`), and any other failure is
+ * `failed`. A new failure that pauses differently is a row here.
+ */
+const FAILURE_PAUSES: Partial<Record<BotTurnFailure, BotGoalPauseReason>> = {
+  rate_limit: 'usage_limit',
+  usage_limit: 'usage_limit',
+  credential: 'usage_limit',
+  loop: 'blocked',
+};
+
+/** The pause a failed turn of a goal causes (`FAILURE_PAUSES`). */
+export function pauseReasonOf(failure: BotTurnFailure | null): BotGoalPauseReason {
+  return (failure && FAILURE_PAUSES[failure]) || 'failed';
+}
 
 /**
  * What the end of one of the goal's turns means for it, once the turn is
@@ -132,12 +147,7 @@ export function goalDecision(goal: BotGoalEntity, ended: EndedTurn): GoalDecisio
   if (!isGoalTurn(goal, ended) || goal.paused) return { kind: 'skip' };
   if (ended.status === 'cancelled') return { kind: 'pause', reason: 'stopped', note: null };
   if (ended.status === 'failed' && !stoppedAtTurnLimit(ended)) {
-    const note = ended.error;
-    if (ended.failure && USAGE_FAILURES.includes(ended.failure)) {
-      return { kind: 'pause', reason: 'usage_limit', note };
-    }
-    if (ended.failure === 'loop') return { kind: 'pause', reason: 'blocked', note };
-    return { kind: 'pause', reason: 'failed', note };
+    return { kind: 'pause', reason: pauseReasonOf(ended.failure), note: ended.error };
   }
   if (ended.status !== 'completed' && ended.status !== 'failed') return { kind: 'skip' };
   if (goal.claim) return { kind: 'review' };
@@ -202,6 +212,20 @@ export function goalSetPrompt(condition: string): string {
 }
 
 /**
+ * A goal's count in words, the one place a text says it: "continuation 3"
+ * (or "3 continuations"), with "of 20" for a goal set with a limit before
+ * 2026-11-09.
+ */
+export function continuationCountText(
+  goal: Pick<BotGoalEntity, 'limit'>,
+  step: number,
+  noun: 'continuation' | 'continuations' = 'continuation',
+): string {
+  const of = goal.limit === null ? '' : ` of ${goal.limit}`;
+  return noun === 'continuations' ? `${step}${of} continuations` : `continuation ${step}${of}`;
+}
+
+/**
  * What a continuation tells the bot: the goal, which continuation it is, the
  * reviewer's reason when it found a claim not met yet, its budget, how to
  * end it, and, when its last turn stopped without fault, that its work is
@@ -213,10 +237,8 @@ export function goalContinuationText(
   reason: string | null,
   lastStoppedAtLimit = false,
 ): string {
-  const count =
-    goal.limit === null ? `continuation ${step}` : `continuation ${step} of ${goal.limit}`;
   return [
-    `Continue toward your goal (${count}): ${goal.objective}`,
+    `Continue toward your goal (${continuationCountText(goal, step)}): ${goal.objective}`,
     lastStoppedAtLimit
       ? 'Your last turn stopped before it finished (its model went silent, or the server restarted); what it did is kept. Check the state of anything it left in progress before repeating it.'
       : null,
@@ -342,7 +364,7 @@ export function goalEndLine(
     turnId: null,
     role: 'event',
     content: [
-      `${END_WORDS[activity]} (${goal.continuations} ${goal.limit === null ? '' : `of ${goal.limit} `}continuations): ${goal.objective}`,
+      `${END_WORDS[activity]} (${continuationCountText(goal, goal.continuations, 'continuations')}): ${goal.objective}`,
       activity === 'stopped' || !reason ? null : `Reason: ${reason}`,
     ]
       .filter(Boolean)
