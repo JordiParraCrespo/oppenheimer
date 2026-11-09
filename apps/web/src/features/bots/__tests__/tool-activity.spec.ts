@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   groupSummary,
   liveLabel,
+  liveOrb,
   liveWords,
   readableOutput,
   runningStep,
@@ -67,6 +68,20 @@ describe('liveWords', () => {
       key: 'bots.chat.activity.using',
       values: { name: 'Get session' },
     });
+  });
+});
+
+describe('liveOrb', () => {
+  const step = (name: string, input: Record<string, unknown> = {}) =>
+    ({ callId: 'c1', name, input, output: null }) as never;
+
+  // What breaks this: a read or a search showing the solving orb, or a call
+  // that changes something showing the searching globe.
+  it('searches while the running call only looks around, and solves otherwise', () => {
+    expect(liveOrb(step('get_session'))).toBe('searching');
+    expect(liveOrb(step('mcp__github__list_issues'))).toBe('searching');
+    expect(liveOrb(step('start_session'))).toBe('solving');
+    expect(liveOrb(undefined)).toBe('solving');
   });
 });
 

@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { ThinkingOrb } from 'thinking-orbs';
 import { BotSubagentsLive } from '@/features/bots/components/bot-subagents-live';
 import { BotTurnClock } from '@/features/bots/components/bot-turn-clock';
-import { liveLabel } from '@/features/bots/lib/tool-activity';
+import { liveLabel, liveOrb } from '@/features/bots/lib/tool-activity';
 
 /**
  * The turn in flight, after what it has done so far (the Bots frame's live
@@ -15,7 +15,8 @@ import { liveLabel } from '@/features/bots/lib/tool-activity';
  * ("Searching the web for …"), Writing while its words stream; its clock
  * beside it once it has started. When the running call is a `delegate`, its
  * children hang under the line as they work, and the line counts the ones
- * done.
+ * done. The orb solves while the turn works, and searches while the running
+ * call only looks around (`liveOrb`).
  */
 export function BotTurnLive({
   queued,
@@ -48,7 +49,14 @@ export function BotTurnLive({
   return (
     <>
       <TraceLive
-        glyph={<ThinkingOrb aria-hidden className="shrink-0" size={20} state="composing" />}
+        glyph={
+          <ThinkingOrb
+            aria-hidden
+            className="shrink-0"
+            size={20}
+            state={queued ? 'solving' : liveOrb(step)}
+          />
+        }
         elapsed={since && !queued ? <BotTurnClock since={since} /> : undefined}
       >
         {text}

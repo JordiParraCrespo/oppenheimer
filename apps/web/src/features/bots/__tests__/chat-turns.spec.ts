@@ -33,9 +33,9 @@ const conversation = (
   }) as unknown as BotConversationEntity;
 
 describe('chatTurns', () => {
-  // What breaks this: a turn that compacted drawing the line above the bot's
-  // work as if it opened the turn, and Retry resending its note as yours.
-  it('keeps a compaction where the turn folded, in the bot’s work, and Retry on your message', () => {
+  // What breaks this: a turn that compacted drawing a line for it, above the
+  // bot's work as if it opened the turn, and Retry resending its note as yours.
+  it('leaves a compaction out of the chat, and Retry on your message', () => {
     const folded = {
       id: 'm3',
       turnId: 't1',
@@ -59,7 +59,7 @@ describe('chatTurns', () => {
     );
     expect(
       blocks.map((block) => [block.asked.map((row) => row.id), block.answer.map((row) => row.id)]),
-    ).toEqual([[['m1'], ['m2', 'm3', 'm4']]]);
+    ).toEqual([[['m1'], ['m2', 'm4']]]);
     expect(retryContent(blocks)).toBe('Tag the invoices');
   });
 

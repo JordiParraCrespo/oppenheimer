@@ -1416,3 +1416,10 @@ earlier note:
   sessions and in bots: it takes Fable 5.1's place, and Fable 5.1 heads
   "More models", since Claude still serves it. OpenCode's `anthropic/` row
   moves to Fable 5.2 as well, with Fable 5.1 behind its "More models".
+- `versions/mvp/25-bots.md` drew a turn's compaction as a quiet line among
+  its calls, the trace at the reply's 15px in muted ink, and the live
+  line's orb as `composing`. On 2026-11-09 the owner asked to stop seeing
+  compactions, for quieter tool calls and for the solving and searching
+  orbs: the chat draws no compaction (the export keeps it), the trace is
+  13px in subtle ink, and the orb solves, or searches while the running
+  call only looks around (`versions/mvp/25-bots.md` §2 and §3).

@@ -5,6 +5,7 @@ import {
   toolLine,
 } from '@oppenheimer/frontend-consumer';
 import type { BotSubagentProgress } from '@oppenheimer/shared/schemas/bot';
+import { stepExplore } from '@/features/bots/lib/explored-steps';
 
 /**
  * How the chat words a bot's tool calls (`25-bots.md` §3, the Bots frame's
@@ -128,6 +129,15 @@ export function liveLabel({
   return writing
     ? ({ key: 'bots.chat.turn.writing', values: {} } as const)
     : ({ key: 'bots.chat.turn.thinking', values: {} } as const);
+}
+
+/**
+ * Which animation the live line's orb plays: the searching globe while the
+ * running call only looks around (a web search, a read, a list, a search of
+ * ours), the solving one otherwise, waiting and writing included.
+ */
+export function liveOrb(step: BotToolStep | undefined): 'searching' | 'solving' {
+  return step && stepExplore(step) !== null ? 'searching' : 'solving';
 }
 
 /** The call still running in a turn's work, if one is: the last with no output yet. */
