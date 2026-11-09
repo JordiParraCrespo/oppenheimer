@@ -110,7 +110,20 @@
         "rate_limit": "{{provider}} está limitando las peticiones, reintentando…",
         "unavailable": "{{provider}} está saturado, reintentando…"
       },
-      "thinking": "Pensando",
+      "musing": {
+        "pondering": "Cavilando…",
+        "mulling": "Rumiando…",
+        "musing": "Meditando…",
+        "noodling": "Divagando…",
+        "ruminating": "Barruntando…",
+        "cogitating": "Elucubrando…",
+        "brewing": "Cocinando…",
+        "percolating": "Destilando…",
+        "scheming": "Tramando…",
+        "puzzling": "Descifrando…",
+        "tinkering": "Trasteando…",
+        "conjuring": "Urdiendo…"
+      },
       "writing": "Escribiendo",
       "stopped": "Detenido"
     },
