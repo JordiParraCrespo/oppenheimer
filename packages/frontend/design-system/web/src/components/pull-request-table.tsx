@@ -11,6 +11,7 @@ import { IconButton } from './icon-button';
 import { Skeleton } from './skeleton';
 import { StatusDot, type StatusState } from './status-dot';
 import { Tooltip, TooltipContent, TooltipTrigger } from './tooltip';
+import { variedWidth } from '../internal/varied-width';
 
 /**
  * The pull request queue: what is waiting on the reader, one row each, on
@@ -239,7 +240,7 @@ function PullRequestRowSkeleton({ index = 0, className, ...props }: React.Compon
       <Skeleton shape="pill" className="h-5.5 w-12" />
       <div className="flex min-w-0 flex-col gap-1">
         <span className="flex h-5 items-center">
-          <Skeleton shape="sm" className={cn('h-3.5', SKELETON_TITLES[index % SKELETON_TITLES.length])} />
+          <Skeleton shape="sm" className={cn('h-3.5', variedWidth(index, SKELETON_TITLES))} />
         </span>
         <span className="flex h-4 items-center">
           <Skeleton shape="sm" className="h-2.5 w-44" />

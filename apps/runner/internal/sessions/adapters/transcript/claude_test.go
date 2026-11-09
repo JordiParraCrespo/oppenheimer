@@ -71,6 +71,40 @@ func TestASlashCommandWithArgumentsReadsAsTyped(t *testing.T) {
 	}
 }
 
+// Text pasted into the prompt is the person's; the tags Claude Code wraps it
+// in are not, and a paste that starts like one of the CLI's own lines is
+// still the first message.
+func TestAPastedPromptReadsWithoutItsTags(t *testing.T) {
+	for _, tc := range []struct{ content, want string }{
+		{`Read this:\n<pasted_content id=\"0ef4\">\nStep 1, api.env\n</pasted_content>`, "Read this:\n\nStep 1, api.env"},
+		{`<pasted_content id=\"x\">Caveat: a sample log</pasted_content>\nExplain it`, "Caveat: a sample log\nExplain it"},
+	} {
+		projects := write(t, `{"type":"user","message":{"role":"user","content":"`+tc.content+`"}}`)
+		if got := firstPrompt(projects); got != tc.want {
+			t.Fatalf("first prompt = %q, want %q", got, tc.want)
+		}
+	}
+}
+
+// A system reminder Claude Code puts on the person's line, before or after
+// their words, is the CLI's: the words alone are the first message, and a
+// line of reminders only is none.
+func TestSystemRemindersAroundThePromptAreLeftOut(t *testing.T) {
+	reminder := `<system-reminder>\nThe date changed.\n</system-reminder>`
+	for _, tc := range []struct{ name, line, want string }{
+		{"before, in blocks", `{"type":"user","message":{"role":"user","content":[{"type":"text","text":"` + reminder + `"},{"type":"text","text":"Fix the picker"}]}}`, "Fix the picker"},
+		{"after, in blocks", `{"type":"user","message":{"role":"user","content":[{"type":"text","text":"Fix the picker"},{"type":"text","text":"` + reminder + `"}]}}`, "Fix the picker"},
+		{"after, in the string", `{"type":"user","message":{"role":"user","content":"Fix the picker\n\n` + reminder + `"}}`, "Fix the picker"},
+		{"alone", `{"type":"user","message":{"role":"user","content":"` + reminder + `"}}`, ""},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			if got := firstPrompt(write(t, tc.line)); got != tc.want {
+				t.Fatalf("first prompt = %q, want %q", got, tc.want)
+			}
+		})
+	}
+}
+
 // What is not the person's first message never names the session: a tool's
 // result, a subagent's conversation, a compaction summary, a background
 // task's end.

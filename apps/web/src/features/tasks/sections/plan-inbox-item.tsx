@@ -3,6 +3,7 @@ import { Bell } from '@oppenheimer/design-system-web/icons';
 import { useInboxCount } from '@oppenheimer/frontend-consumer/react';
 import { Link, useMatchRoute } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
+import { PLAN_VIEW_PATHS } from '../lib/plan-nav-order';
 
 /**
  * The Inbox, first in Plan's sidebar (the 2026-10-29 `Tasks` frame), with
@@ -22,9 +23,9 @@ export function PlanInboxItem({ id }: { id: string }) {
       name={t('tasks.nav.inbox')}
       icon={<Bell />}
       meta={needs === undefined ? undefined : String(needs)}
-      active={Boolean(matchRoute({ to: '/plan/inbox' }))}
+      active={Boolean(matchRoute({ to: PLAN_VIEW_PATHS.inbox }))}
       nativeButton={false}
-      render={<Link to="/plan/inbox" />}
+      render={<Link to={PLAN_VIEW_PATHS.inbox} />}
     />
   );
 }

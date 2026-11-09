@@ -16,6 +16,7 @@ import type {
 import type { PutSessionShareDto } from '@oppenheimer/shared/schemas/session-share';
 import { injectable } from 'inversify';
 import { CONSUMER_CONFIG } from '../../config';
+import type { CloudChatPage } from './chat/cloud-chat-feed';
 import {
   type AttachTicket,
   type CreateSessionInput,
@@ -369,6 +370,17 @@ export class SessionsRepository {
   }
 
   /**
+   * Try a failed start again: the host is sent the same create, with the same
+   * first task, and the session is starting again.
+   */
+  retry(id: string): Promise<SessionEntity> {
+    return callApi(SessionsErrors.RETRY_FAILED, async (api) => {
+      const data = await api.body(heyApiSdk.retrySession({ path: { id } }));
+      return toEntity(data);
+    });
+  }
+
+  /**
    * Close: the session stops, its worktree leaves the host, and the row stays
    * resolved so its directory name and branch are never reissued. Work that is
    * not pushed refuses the close unless the caller accepts losing it.
@@ -406,6 +418,52 @@ export class SessionsRepository {
         }),
       );
       return toTicket(data);
+    });
+  }
+
+  /** A Claude Code cloud session's chat: transcript lines from `from` on, and its replies. */
+  findCloudChat(id: string, from: number): Promise<CloudChatPage> {
+    return callApi(SessionsErrors.CLOUD_CHAT_FAILED, async (api) => {
+      const data = await api.body(heyApiSdk.findCloudChat({ path: { id }, query: { from } }));
+      return {
+        lines: data.lines,
+        next: data.next,
+        replies: data.replies.map((reply) => ({
+          id: reply.id,
+          text: reply.text,
+          createdAt: new Date(reply.createdAt),
+          collectedAt: reply.collectedAt ? new Date(reply.collectedAt) : null,
+        })),
+      };
+    });
+  }
+
+  /** A reply for a cloud session's agent, collected by its Stop hook when its turn ends. */
+  sendCloudReply(id: string, text: string): Promise<void> {
+    return callApi(SessionsErrors.CLOUD_REPLY_FAILED, async (api) => {
+      await api.body(heyApiSdk.sendCloudReply({ path: { id }, body: { text } }));
+    });
+  }
+
+  /**
+   * A key for a workspace's Claude Code cloud sessions to send their chat
+   * with: a personal token with `cloud-chat:write` alone (the hook's two
+   * endpoints, nothing else of a session), pinned to the workspace, for 90
+   * days. The secret is answered once, here.
+   */
+  createCloudChatKey(organizationId: string): Promise<string> {
+    return callApi(SessionsErrors.CLOUD_KEY_FAILED, async (api) => {
+      const data = await api.body(
+        heyApiSdk.createApiToken({
+          body: {
+            name: 'Claude Code cloud chat',
+            scopes: ['cloud-chat:write'],
+            organizationIds: [organizationId],
+            expiresInDays: 90,
+          },
+        }),
+      );
+      return data.token;
     });
   }
 

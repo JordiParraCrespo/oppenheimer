@@ -55,6 +55,9 @@ func (r *Reader) Follow(ctx context.Context, session domain.Session, entryMax, b
 		find: find, fresh: source.transcriber,
 		entryMax: entryMax, batchMax: batchMax, emit: emit, reset: true, history: historyComing,
 	}
+	if subs, ok := source.(subagentSource); ok {
+		f.subs = newSubagentFollower(subs, source.transcriber)
+	}
 	if cut, ok := source.(turnCutter); ok && older != nil {
 		f.opens = cut.opensTurn
 	}
@@ -72,6 +75,7 @@ func (r *Reader) Follow(ctx context.Context, session domain.Session, entryMax, b
 		f.flushOlder()
 		f.checkStatus()
 		f.checkShared()
+		f.checkSubagents()
 		select {
 		case <-ctx.Done():
 			return nil
@@ -166,6 +170,10 @@ type follower struct {
 	// sharedSeen the entries already sent from it; an empty path follows none.
 	shared     string
 	sharedSeen map[string]bool
+
+	// subs follows the conversation's subagents, for a source whose
+	// subagents keep files of their own; nil follows none.
+	subs *subagentFollower
 }
 
 // history is how far a follower has sent the history a reset started.
@@ -274,6 +282,10 @@ func (f *follower) check() {
 		f.history = historyComing
 		f.t = f.fresh()
 		f.older = olderPage{}
+		if f.subs != nil {
+			// The history starts over, and the subagents' with it.
+			f.subs.main = ""
+		}
 	}
 	if f.reset && f.offset == 0 && f.opens != nil && info.Size() > 0 {
 		// The history is the tail: the last turns, from the line that opens

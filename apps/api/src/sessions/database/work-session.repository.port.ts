@@ -272,6 +272,13 @@ export interface WorkSessionRepositoryPort {
    */
   findOneByIdForMachine(id: string): Promise<Option<WorkSessionEntity>>;
 
+  /**
+   * The session's first task, with the images it names, off its `prompt.first`
+   * entry: what a retried start sends again. Empty when it has none. The
+   * session is the authorization.
+   */
+  findFirstPrompt(session: WorkSessionEntity): Promise<Omit<HostSessionRow, 'session'>>;
+
   /** A page of the log, by `seq`. The session is the authorization. */
   findEvents(
     session: WorkSessionEntity,

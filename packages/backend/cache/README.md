@@ -35,6 +35,12 @@ This follows the project's **pluggable service** pattern: depend on the abstract
   ignored, and a loader error is never cached.
 - **`mget`** reads many keys in one `MGET`, answering `undefined` for each
   missing one.
+- **Reads can be observed.** `onRead` is told how each key read went (`hit`,
+  `miss`, `error`, or `coalesced` for a `getOrSet` that joined a running
+  load), with the operation and the key's first segment as its `namespace`,
+  never the key. The package has no metrics dependency; `apps/api` counts
+  them as `cache_reads_total` (`CacheReadMetricsAdapter`). An observer that
+  throws never fails the read.
 
 ## Usage
 

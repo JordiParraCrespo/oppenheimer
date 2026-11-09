@@ -4,6 +4,7 @@ export {
   type HostDetails,
   HostEntity,
   type HostFolderEntry,
+  type HostFolderSearch,
   type HostFolders,
   type HostPairing,
   type HostPairingToken,

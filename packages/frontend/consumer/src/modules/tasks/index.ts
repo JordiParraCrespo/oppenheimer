@@ -1,3 +1,9 @@
+export type {
+  PlanStats,
+  PlanStatsModelTokens,
+  PlanStatsQuery,
+  PlanStatsTotals,
+} from './plan-stats';
 export {
   compareRank,
   type MilestoneEntity,

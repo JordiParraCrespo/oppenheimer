@@ -127,7 +127,9 @@ export function SessionChatSend({
       <div hidden={question !== null} className={question ? undefined : 'contents'}>
         <SessionChatComposer
           agent={agent}
-          busy={last?.working ?? false}
+          // Stop only where the chat's source can stop a turn (a cloud
+          // session's cannot: its message waits with the source instead).
+          busy={state.interruptible && (last?.working ?? false)}
           todos={last ? latestTodos(last) : null}
           model={modelName(latestModel(state.turns))}
           voice={voice}

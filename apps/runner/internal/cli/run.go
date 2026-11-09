@@ -37,6 +37,14 @@ func (a *App) Run(ctx context.Context, logger *slog.Logger, opts RunOptions) err
 	}
 	defer release()
 
+	// The daemon is the one process that looks for the host's running
+	// devices: New offered only those RUNNER_DEVICES names (hostDevices).
+	if a.Devices == nil {
+		if a.Devices, err = hostDevices(true); err != nil {
+			return err
+		}
+	}
+
 	identity, err := a.Pairing.Identity()
 	if err != nil {
 		return err

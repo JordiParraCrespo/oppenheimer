@@ -1,7 +1,14 @@
 import { TaskEntity } from '@oppenheimer/frontend-consumer';
 import type { TaskStatus } from '@oppenheimer/shared/schemas/task';
 import { describe, expect, it } from 'vitest';
-import { afterTaskIdFor, boardCounts, columnOf, filingOf } from '../lib/board';
+import {
+  afterTaskIdFor,
+  boardColumnsOf,
+  boardCounts,
+  columnOf,
+  doneCutoffOf,
+  filingOf,
+} from '../lib/board';
 import { boardSearchSchema } from '../lib/board-search';
 import { cardView, dueDayLabel } from '../lib/card-view';
 import { projectIdsOfSlugs, projectParamOf, projectSlugsOf } from '../lib/plan-scope';
@@ -15,6 +22,7 @@ function task(
     milestoneId: string | null;
     dueDate: string | null;
     dueTime: string | null;
+    completedAt: Date | null;
   }> = {},
 ) {
   return new TaskEntity(
@@ -27,7 +35,11 @@ function task(
     '',
     overrides.dueDate ?? null,
     overrides.dueTime ?? null,
-    overrides.status === 'done' ? new Date('2026-10-01T00:00:00Z') : null,
+    overrides.completedAt !== undefined
+      ? overrides.completedAt
+      : overrides.status === 'done'
+        ? new Date('2026-10-01T00:00:00Z')
+        : null,
     [],
     new Date('2026-10-01T00:00:00Z'),
     new Date('2026-10-01T00:00:00Z'),
@@ -143,7 +155,57 @@ describe('boardSearchSchema', () => {
       milestone: undefined,
       task: 'new',
       start: undefined,
+      older: undefined,
     });
+  });
+});
+
+/**
+ * Done shows the past week and folds the rest under "Show older", so a
+ * workspace's finished work stops burying the column (the board had 67).
+ */
+describe("Done's older tasks", () => {
+  const done = (id: string, completedAt: Date | null, rank = id) =>
+    task(id, { status: 'done', rank, completedAt });
+
+  const ids = (rows: readonly TaskEntity[]) => rows.map((row) => row.id);
+
+  it('folds away what was finished before local midnight a week ago, keeping board order', () => {
+    const cutoff = doneCutoffOf('2026-11-09');
+    expect(cutoff).toEqual(new Date(2026, 10, 2));
+    const rows = [
+      done('a', new Date(2026, 10, 9, 10)),
+      done('b', new Date(2026, 9, 20)),
+      done('c', new Date(2026, 10, 2, 0, 0)),
+      done('d', new Date(2026, 10, 1, 23, 59)),
+      task('t'),
+    ];
+    const folded = boardColumnsOf(rows, {}, { cutoff, showOlder: false });
+    expect(ids(folded.columns.done)).toEqual(['a', 'c']);
+    expect(folded.folded).toEqual({ done: 2 });
+    expect(ids(folded.columns.todo)).toEqual(['t']);
+
+    // Opened, Done is the whole column in board order, and still says how many it folds.
+    const open = boardColumnsOf(rows, {}, { cutoff, showOlder: true });
+    expect(ids(open.columns.done)).toEqual(['a', 'b', 'c', 'd']);
+    expect(open.folded).toEqual({ done: 2 });
+  });
+
+  it('keeps a done task with no completion time in view rather than hiding it', () => {
+    const { columns, folded } = boardColumnsOf(
+      [done('x', null)],
+      {},
+      {
+        cutoff: doneCutoffOf('2026-11-09'),
+        showOlder: false,
+      },
+    );
+    expect(ids(columns.done)).toEqual(['x']);
+    expect(folded).toEqual({});
+  });
+
+  it('crosses a month boundary', () => {
+    expect(doneCutoffOf('2026-03-03')).toEqual(new Date(2026, 1, 24));
   });
 });
 

@@ -33,6 +33,7 @@ import { PasteSessionImageHttpController } from '../../sessions/commands/paste-s
 import { PrepareSessionHttpController } from '../../sessions/commands/prepare-session/prepare-session.http.controller';
 import { RemoveCheckoutHttpController } from '../../sessions/commands/remove-checkout/remove-checkout.http.controller';
 import { RestartSessionHttpController } from '../../sessions/commands/restart-session/restart-session.http.controller';
+import { RetrySessionHttpController } from '../../sessions/commands/retry-session/retry-session.http.controller';
 import { StopSessionHttpController } from '../../sessions/commands/stop-session/stop-session.http.controller';
 import { FindSessionHttpController } from '../../sessions/queries/find-session/find-session.http.controller';
 import { FindSessionEventsHttpController } from '../../sessions/queries/find-session-events/find-session-events.http.controller';
@@ -72,6 +73,7 @@ const HANDLERS: Record<GuardedEndpoint, { controller: object; handler: string }>
   'POST /sessions/:id/stop': { controller: StopSessionHttpController, handler: 'stop' },
   'POST /sessions/:id/move': { controller: MoveSessionHttpController, handler: 'move' },
   'POST /sessions/:id/restart': { controller: RestartSessionHttpController, handler: 'restart' },
+  'POST /sessions/:id/retry': { controller: RetrySessionHttpController, handler: 'retry' },
   'POST /sessions/:id/checkouts': { controller: AddCheckoutHttpController, handler: 'add' },
   'DELETE /sessions/:id/checkouts/:checkoutId': {
     controller: RemoveCheckoutHttpController,

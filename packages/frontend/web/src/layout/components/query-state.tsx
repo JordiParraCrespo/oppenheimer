@@ -1,9 +1,11 @@
 import { Button } from '@oppenheimer/design-system-web';
+import { useCaptureError } from '@oppenheimer/frontend-core/react';
 import { QueryErrorResetBoundary } from '@tanstack/react-query';
 import { createContext, type ReactNode, Suspense, use } from 'react';
 import { ErrorBoundary } from 'react-error-boundary';
 import { useTranslation } from 'react-i18next';
 import { ErrorAlert } from '../../forms';
+import { useLoadingAnnouncement } from '../hooks/use-loading-announcement';
 
 /**
  * The rung a read is on, decided by the root and read by every slot: still
@@ -59,13 +61,18 @@ const DATA: Rung = { rung: 'data' };
  *
  * `pnpm check:structure` holds every use to a `Pending`, an `Error` and a
  * `Data`, and every Suspense read to an `ErrorAlert` for the later failure.
+ *
+ * What the boundary catches is offered to error reporting, which keeps a
+ * render throw in the section and drops a request the server answered.
  */
 function QueryStateRoot({ children }: { children: ReactNode }) {
+  const captureError = useCaptureError();
   return (
     <QueryErrorResetBoundary>
       {({ reset }) => (
         <ErrorBoundary
           onReset={reset}
+          onError={(error) => captureError(error, { tags: { boundary: 'query-state' } })}
           fallbackRender={({ error, resetErrorBoundary }) => (
             <RungContext value={{ rung: 'failed', error, retry: resetErrorBoundary }}>
               {children}
@@ -81,9 +88,15 @@ function QueryStateRoot({ children }: { children: ReactNode }) {
   );
 }
 
-/** What holds the place until the first answer: skeletons, usually. */
+/**
+ * What holds the place until the first answer: skeletons, usually. While it
+ * draws, it counts itself into the app's one "Loading…" (`LoadingAnnouncer`),
+ * so a placeholder is heard whether or not it carries a `LoadingStatus`.
+ */
 function QueryStatePending({ children }: { children: ReactNode }) {
-  return useRung('Pending').rung === 'pending' ? children : null;
+  const pending = useRung('Pending').rung === 'pending';
+  useLoadingAnnouncement(pending);
+  return pending ? children : null;
 }
 
 /**

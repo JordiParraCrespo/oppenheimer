@@ -9,13 +9,19 @@
  *
  *   pnpm monitoring:up     # → docker compose … up -d
  *   pnpm monitoring:down   # → docker compose … down
+ *
+ * Creates the repository's `.logs/` first: Alloy mounts it, and a directory
+ * Docker creates for a mount belongs to root, where the API (LOG_FILE) could
+ * not write.
  */
 import { spawnSync } from 'node:child_process';
+import { mkdirSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const file = join(ROOT, 'docker', 'docker-compose.monitoring.yml');
+mkdirSync(join(ROOT, '.logs'), { recursive: true });
 const result = spawnSync('docker', ['compose', '-f', file, ...process.argv.slice(2)], {
   stdio: 'inherit',
 });

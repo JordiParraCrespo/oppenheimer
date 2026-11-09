@@ -128,6 +128,7 @@ func TestOutputIsReturnedOnFailure(t *testing.T) {
 	}{
 		{"combined", execx.Combined, "out\nerr\nerr2", "out", "err2"},
 		{"stdout", execx.Stdout, "out", "err", "err2"},
+		{"separate", execx.Separate, "out", "err", "err2"},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			spec := sh(script)
@@ -154,6 +155,42 @@ func TestOutputIsReturnedOnFailure(t *testing.T) {
 				t.Fatalf("Error() = %q", got)
 			}
 		})
+	}
+}
+
+// Separate hands each stream on whole and apart; a regression that shared
+// one pipe again would mix stderr into Out.
+func TestSeparateKeepsTheStreamsApart(t *testing.T) {
+	spec := sh("echo one; echo two >&2; echo three")
+	spec.Output = execx.Separate
+	res, err := execx.Run(context.Background(), spec)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if res.Out != "one\nthree" || res.Stderr != "two" {
+		t.Fatalf("Out=%q Stderr=%q", res.Out, res.Stderr)
+	}
+	if res.OutTruncated || res.StderrTruncated {
+		t.Fatal("nothing was cut")
+	}
+}
+
+// Limit keeps the end of a stream, where a failure explains itself, and says
+// it cut; without it a command printing without end would hold the caller's
+// memory.
+func TestLimitKeepsTheLastBytesOfEachStream(t *testing.T) {
+	spec := sh("seq 1 5000; echo tail; seq 1 3 >&2")
+	spec.Output = execx.Separate
+	spec.Limit = 16
+	res, err := execx.Run(context.Background(), spec)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.HasSuffix(res.Out, "4999\n5000\ntail") || len(res.Out) > 16 || !res.OutTruncated {
+		t.Fatalf("Out=%q truncated=%v", res.Out, res.OutTruncated)
+	}
+	if res.Stderr != "1\n2\n3" || res.StderrTruncated {
+		t.Fatalf("Stderr=%q truncated=%v", res.Stderr, res.StderrTruncated)
 	}
 }
 
@@ -233,4 +270,32 @@ func running(pid int) bool {
 		return s[i+2] != 'Z'
 	}
 	return true
+}
+
+// ReapGroup ends what a command left running in its group once it exits on
+// its own; without it a background child outlives the call and any limit
+// the caller set on it.
+func TestReapGroupEndsWhatTheCommandLeftBehind(t *testing.T) {
+	pidFile := filepath.Join(t.TempDir(), "pid")
+	spec := sh("sleep 30 >/dev/null 2>&1 & echo $! > " + pidFile)
+	spec.KillGroup, spec.ReapGroup = true, true
+	if _, err := execx.Run(context.Background(), spec); err != nil {
+		t.Fatal(err)
+	}
+	raw, err := os.ReadFile(pidFile)
+	if err != nil {
+		t.Fatal(err)
+	}
+	pid, err := strconv.Atoi(strings.TrimSpace(string(raw)))
+	if err != nil {
+		t.Fatal(err)
+	}
+	deadline := time.Now().Add(2 * time.Second)
+	for syscall.Kill(pid, 0) == nil {
+		if time.Now().After(deadline) {
+			_ = syscall.Kill(pid, syscall.SIGKILL)
+			t.Fatal("the background child outlived the call")
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
 }

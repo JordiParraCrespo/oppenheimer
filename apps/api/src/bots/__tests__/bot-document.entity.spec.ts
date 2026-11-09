@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 import type { BotDocumentRevision } from '../domain/bot.types';
 import { userActor } from '../domain/bot.types';
 import { BotDocumentEntity } from '../domain/bot-document.entity';
+import { BotJobSetDomainEvent } from '../domain/events/bot-job-set.domain-event';
 
 /**
  * A document's revision rules (`product/versions/mvp/25-bots.md` §1): a save
@@ -132,5 +133,52 @@ describe('BotDocumentEntity', () => {
     document.written();
     expect(document.expectedRevision).toBe(3);
     expect(document.pendingRevision).toBeNull();
+  });
+
+  // What breaks this: a bot given a job but no heartbeat, a heartbeat for a bot
+  // with no job (it would wake hourly to greet nobody), a second one on every
+  // edit, or one saved wider than the token that wrote the job.
+  describe('a first job', () => {
+    const jobEvents = (document: BotDocumentEntity) =>
+      document.domainEvents.filter((event) => event instanceof BotJobSetDomainEvent);
+    const firstOf = (given: Parameters<typeof BotDocumentEntity.firstOf>[2]) =>
+      BotDocumentEntity.firstOf(
+        { organizationId: 'org-1', id: 'bot-1', name: 'Juno' },
+        userActor(author),
+        given,
+      );
+
+    it('is announced when a bot is created with instructions, with the credential scopes', () => {
+      const [, instructions] = firstOf({
+        instructions: 'Review PRs.',
+        credentialScopes: ['bots:write'],
+      });
+      expect(jobEvents(instructions)).toEqual([
+        expect.objectContaining({
+          aggregateId: 'bot-1',
+          organizationId: 'org-1',
+          botId: 'bot-1',
+          credentialScopes: ['bots:write'],
+        }),
+      ]);
+    });
+
+    it('is not announced for a blank bot, nor for its soul', () => {
+      expect(firstOf({}).flatMap(jobEvents)).toEqual([]);
+      expect(firstOf({ soul: 'You are Juno.' }).flatMap(jobEvents)).toEqual([]);
+    });
+
+    it('is announced when empty instructions are first written, and not by a later edit', () => {
+      const blank = stored('', 1);
+      blank.write({ content: '   ', baseRevision: 1, actor: userActor(author) });
+      expect(jobEvents(blank)).toEqual([]);
+      blank.write({ content: 'Review PRs.', baseRevision: 2, actor: userActor(author) });
+      expect(jobEvents(blank)).toHaveLength(1);
+      expect(jobEvents(blank)[0]).toMatchObject({ credentialScopes: null });
+
+      const edited = stored('Review PRs.', 3);
+      edited.write({ content: 'Review and merge PRs.', baseRevision: 3, actor: userActor(author) });
+      expect(jobEvents(edited)).toEqual([]);
+    });
   });
 });

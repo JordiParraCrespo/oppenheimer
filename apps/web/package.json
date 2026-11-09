@@ -39,11 +39,13 @@
     "react-dom": "19.2.3",
     "react-hook-form": "^7.88.0",
     "react-i18next": "^17.0.14",
+    "thinking-orbs": "0.3.2",
     "uqr": "0.1.3",
     "zod": "^3.25.76"
   },
   "devDependencies": {
     "@oppenheimer/tsconfig": "workspace:^",
+    "@sentry/vite-plugin": "4.6.1",
     "@tailwindcss/vite": "^4.3.3",
     "@tanstack/router-plugin": "^1.168.38",
     "@testing-library/react": "^16.3.3",

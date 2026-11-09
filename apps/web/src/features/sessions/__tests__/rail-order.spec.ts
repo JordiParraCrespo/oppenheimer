@@ -45,13 +45,13 @@ describe('storedRailOrder', () => {
 });
 
 describe('railLanding', () => {
-  it("opens on Plan's Inbox for a reader who never dragged", () => {
-    expect(railLanding()).toBe('/plan/inbox');
+  it('opens on Plan for a reader who never dragged', () => {
+    expect(railLanding()).toBe('/plan/open');
   });
 
-  it('still opens on the Inbox for an order that led with its former rail item', () => {
+  it('still opens on Plan for an order that led with its former rail item', () => {
     store(JSON.stringify(['inbox', 'bots', 'sessions', 'pulls', 'automations', 'plan']));
-    expect(railLanding()).toBe('/plan/inbox');
+    expect(railLanding()).toBe('/plan/open');
   });
 
   it('opens on the item the reader dragged to the top', () => {

@@ -2,6 +2,8 @@ import type * as React from 'react';
 
 import { cn } from '../lib/utils';
 import { Button } from './button';
+import { Skeleton } from './skeleton';
+import { variedWidth } from '../internal/varied-width';
 
 const groupClass = 'flex flex-col overflow-hidden rounded-lg border border-border-subtle bg-card';
 
@@ -159,6 +161,50 @@ function SettingsListRow({
   );
 }
 
+const SKELETON_TITLES = ['w-36', 'w-28', 'w-44'] as const;
+const SKELETON_METAS = ['w-52', 'w-40', 'w-60'] as const;
+
+/**
+ * SettingsListRowSkeleton — a `SettingsListRow` while its list loads: the
+ * same row, its title and meta lines as bars in boxes of their lines' height
+ * (20px and 18px), so the card is as tall as the one that replaces it.
+ * `index` varies the widths; `meta={false}` drops the second line for a list
+ * whose records have none; `actions` is what the loaded row draws on the
+ * right that needs no data (a disabled button with its label), or bars.
+ */
+function SettingsListRowSkeleton({
+  index = 0,
+  meta = true,
+  actions,
+  className,
+  ...props
+}: Omit<React.ComponentProps<'div'>, 'children'> & {
+  index?: number;
+  meta?: boolean;
+  actions?: React.ReactNode;
+}) {
+  return (
+    <SettingsListRow
+      aria-hidden
+      data-slot="settings-list-row-skeleton"
+      actions={actions}
+      meta={
+        meta ? (
+          <span className="flex h-4.5 items-center">
+            <Skeleton shape="sm" className={cn('h-2.5 max-w-full', variedWidth(index, SKELETON_METAS))} />
+          </span>
+        ) : undefined
+      }
+      className={className}
+      {...props}
+    >
+      <span className="flex h-5 items-center">
+        <Skeleton shape="sm" className={cn('h-3 max-w-full', variedWidth(index, SKELETON_TITLES))} />
+      </span>
+    </SettingsListRow>
+  );
+}
+
 /**
  * SettingsAddRow — the last row of a list card, where a record is added:
  * a borderless 32px field at 14px (mono for a URL) and Add, off until
@@ -221,6 +267,7 @@ export {
   SettingsGroup,
   SettingsHeading,
   SettingsListRow,
+  SettingsListRowSkeleton,
   SettingsRow,
   SettingsSaveRow,
 };

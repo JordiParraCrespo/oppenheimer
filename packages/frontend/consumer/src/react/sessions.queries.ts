@@ -308,6 +308,12 @@ export function useInvalidateSession(id: string): () => void {
  * moment the log says how the start ended. A failed row keeps reading until the
  * log carries the host's reason, which can land a read after the row turned
  * `failed`. A live or finished session never reads it at all.
+ *
+ * Whether to read is a condition on when, so it is `enabled`, never a
+ * `skipToken`: the session screen and its start pane observe the one query,
+ * which keeps the options of whichever observer set them last, and a refresh
+ * of the session's prefix fetches with those. A `skipToken` left there by the
+ * idle observer rejected that fetch with "Missing queryFn" while the pane read.
  */
 export function useSessionStartProgress(
   id: string | undefined,
@@ -315,12 +321,12 @@ export function useSessionStartProgress(
   options?: Omit<UseQueryOptions<SessionStartProgress, Error>, 'queryKey' | 'queryFn' | PollKeys>,
 ) {
   const app = useConsumerApp();
+  const when = { ...options, enabled: starting || failed ? (options?.enabled ?? true) : false };
 
   return useQuery({
     queryKey: sessionsKeys.start(id, failed),
-    queryFn:
-      id && (starting || failed) ? () => app.sessions.startProgress(id, { failed }) : skipToken,
-    ...options,
+    queryFn: id ? () => app.sessions.startProgress(id, { failed }) : skipToken,
+    ...when,
     ...usePollWhile<SessionStartProgress>(
       'sessionOpening',
       sessionsKeys.start(id, failed),
@@ -542,6 +548,22 @@ export const useRestartSession = mutation<SessionEntity, string>({
 });
 
 /**
+ * Try a failed start again. The answer is the row, `starting` again: the
+ * session polls while it is provisioning, and its start pane reads the log
+ * afresh, from the retry on, so the steps run again in place.
+ */
+export const useRetrySession = mutation<SessionEntity, string>({
+  run: (app, id) => app.sessions.retry(id),
+  update: (queryClient, session) => {
+    queryClient.setQueryData(sessionsKeys.detail(session.id), session);
+    // Both reads: the failed one would otherwise come back, settled and fresh,
+    // if this attempt fails too, and show the last attempt's reason.
+    queryClient.removeQueries({ queryKey: sessionsKeys.starts(session.id) });
+    return queryClient.invalidateQueries({ queryKey: sessionsKeys.lists() });
+  },
+});
+
+/**
  * Delete a session. The row leaves the lists on the click: the close is the
  * host's to carry out and can take seconds, and a reader who pressed Delete
  * is done with it. The watch ({@link closesOf}) is the one owner of that — the
@@ -743,4 +765,12 @@ export const useOpenSessionPreviewTab = mutation<
 >({
   run: (app, { sessionId, port, path }) =>
     app.sessions.openPreview(sessionId, { port, path, embed: false }),
+});
+
+/**
+ * Creates the key a workspace's Claude Code cloud sessions send their chat
+ * with (the setup panel on a cloud session). Its secret is only in the result.
+ */
+export const useCreateCloudChatKey = mutation<string, string>({
+  run: ({ sessions }, organizationId) => sessions.createCloudChatKey(organizationId),
 });

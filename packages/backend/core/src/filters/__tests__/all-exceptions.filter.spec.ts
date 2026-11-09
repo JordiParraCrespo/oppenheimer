@@ -1,6 +1,7 @@
 import type { ArgumentsHost } from '@nestjs/common';
 import { BadRequestException, ForbiddenException, HttpException, HttpStatus } from '@nestjs/common';
 import { ConflictException, NotFoundException } from '@oppenheimer/backend-ddd';
+import { ErrorReporter } from '@oppenheimer/backend-error-reporting';
 import { ZodValidationException } from 'nestjs-zod';
 import { describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
@@ -177,6 +178,35 @@ describe('AllExceptionsFilter', () => {
     expect(JSON.stringify(problem)).not.toContain('hunter2');
   });
 
+  // body-parser's errors, as `http-errors` builds them: a request refused before
+  // any controller ran. Nest maps only its `SyntaxError`; the rest arrive here.
+  const bodyParserError = (status: number, message: string) =>
+    Object.assign(new Error(message), { status, statusCode: status, expose: status < 500 });
+
+  it('keeps the status of a client error body-parser raised, rather than a 500', () => {
+    // Regression: a webhook past the JSON limit answered 500 and was reported.
+    const problem = handle(bodyParserError(413, 'request entity too large')).problem();
+
+    expect(problem.status).toBe(413);
+    expect(problem.title).toBe('Payload Too Large');
+    expect(problem.detail).toBe('request entity too large');
+  });
+
+  it('trusts no status on an error that is not an http-errors error marked safe to show', () => {
+    const notExposed = bodyParserError(404, 'postgres://user:hunter2@db');
+    notExposed.expose = false;
+    const unshaped = Object.assign(new Error('postgres://user:hunter2@db'), {
+      status: 404,
+      expose: true,
+    });
+
+    for (const exception of [notExposed, unshaped]) {
+      const problem = handle(exception).problem();
+      expect(problem.status).toBe(HttpStatus.INTERNAL_SERVER_ERROR);
+      expect(JSON.stringify(problem)).not.toContain('hunter2');
+    }
+  });
+
   it('gives a bare HttpException no code — a code requires a catalog entry', () => {
     // Only curated catalog codes are part of the public contract, so the filter
     // never lifts one off an arbitrary exception body.
@@ -230,5 +260,83 @@ describe('AllExceptionsFilter', () => {
     );
 
     expect(recorder.problem().type).toBe('https://errors.acme.test/catalog#user_001');
+  });
+
+  // Regression: a 5xx nobody hears about, or every 4xx paging someone.
+  describe('reporting', () => {
+    class RecordingReporter extends ErrorReporter {
+      readonly enabled = true;
+      readonly reports: { error: unknown; context: unknown }[] = [];
+      capture(error: unknown, context?: unknown): string {
+        this.reports.push({ error, context });
+        return 'event-id';
+      }
+      async flush(): Promise<boolean> {
+        return true;
+      }
+    }
+
+    function report(exception: unknown) {
+      const reporter = new RecordingReporter();
+      const json = vi.fn();
+      const host = {
+        switchToHttp: () => ({
+          getResponse: () => ({
+            status: () => ({ contentType: () => ({ json }) }),
+            setHeader: vi.fn(),
+          }),
+          getRequest: () => ({
+            originalUrl: '/api/v1/bots/b1/messages',
+            method: 'POST',
+            route: { path: '/api/v1/bots/:id/messages' },
+            user: { id: 'u1' },
+            session: { activeOrganizationId: 'w1' },
+          }),
+        }),
+      } as unknown as ArgumentsHost;
+      new AllExceptionsFilter(undefined, reporter).catch(exception, host);
+      return reporter.reports;
+    }
+
+    it('reports an unforeseen error as an error, with the route and who it happened to', () => {
+      const boom = new Error('boom');
+      expect(report(boom)).toEqual([
+        {
+          error: boom,
+          context: {
+            level: 'error',
+            tags: {
+              'http.method': 'POST',
+              'http.route': '/api/v1/bots/:id/messages',
+              'http.status_code': 500,
+              'error.code': undefined,
+            },
+            fingerprint: undefined,
+            userId: 'u1',
+            workspaceId: 'w1',
+          },
+        },
+      ]);
+    });
+
+    it('reports a curated 5xx as a warning grouped by its code', () => {
+      const down: ErrorDefinition = {
+        code: 'GITHUB_020',
+        message: 'GitHub is down',
+        httpStatus: 503,
+      };
+      const [only] = report(new AppError(down));
+      expect(only?.context).toMatchObject({
+        level: 'warning',
+        fingerprint: ['app-error', 'GITHUB_020'],
+        tags: { 'error.code': 'GITHUB_020', 'http.status_code': 503 },
+      });
+    });
+
+    it('reports nothing below 500', () => {
+      expect(report(new AppError(USER_NOT_FOUND))).toEqual([]);
+      expect(report(new BadRequestException('nope'))).toEqual([]);
+      expect(report(bodyParserError(413, 'request entity too large'))).toEqual([]);
+    });
   });
 });

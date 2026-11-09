@@ -1,7 +1,6 @@
 ---
 name: cook
-description: Take a task, pick its lane (ship, propose or research) and run that skill, so Jordi does not have to choose. States the lane and why before any work, defaults to propose when unsure. Use only when the user invokes /cook.
-disable-model-invocation: true
+description: Take a task, pick its lane (ship, propose or research) and run that skill, so Jordi does not have to choose. States the lane and why before any work, defaults to propose when unsure. Use it at the start of every task that will change the repository or open a pull request, whether or not the user typed /cook; skip it only when the user named a lane themselves (/ship, /propose, /research) or only asked a question.
 argument-hint: "[the task]"
 ---
 
@@ -41,3 +40,9 @@ with this task. A step you skip stays in the list with its reason.
 
 A lane can still change on the way: `ship` turns into `propose` on its own
 terms, and `research` stops when its proof of concept needs product code.
+
+## 4. Recap
+
+When the task ends (the lane's last step is done, or the work stops),
+the last message is the `recap` skill, in place of the lane's own "tell
+Jordi" message.

@@ -47,6 +47,7 @@ vi.mock('@oppenheimer/frontend-web', () => ({
   PairingToken: () => null,
   PairingStatus: () => null,
   ErrorAlert: () => null,
+  LoadingStatus: () => null,
 }));
 
 vi.mock('@tanstack/react-router', () => ({
@@ -99,7 +100,9 @@ describe.each(Object.entries(surfaces))('%s', (_, surface) => {
     render(surface());
 
     expect(minted()).toBe(mints);
-    expect(screen.queryAllByTestId('pairing').length > 0).toBe(mints);
+    // The pairing UI is drawn unminted while the answer is pending, so its
+    // placeholders hold the steps' shape; only a "no" replaces it.
+    expect(screen.queryAllByTestId('pairing').length > 0).toBe(data !== false || !fetched);
     expect(screen.queryByText('hosts.pairing.unavailable') !== null).toBe(data === false);
   });
 });

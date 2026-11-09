@@ -1,4 +1,4 @@
-import '@oppenheimer/env/load';
+import './config/instrument';
 import type { ServerResponse } from 'node:http';
 import { resolve } from 'node:path';
 import { VersioningType } from '@nestjs/common';

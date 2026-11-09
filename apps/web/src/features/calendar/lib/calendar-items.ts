@@ -1,4 +1,4 @@
-import type { CalendarAccent, CalendarEntryData } from '@oppenheimer/design-system-web';
+import type { AgendaEntryData, CalendarAccent } from '@oppenheimer/design-system-web';
 import type {
   AutomationEntity,
   CalendarEventEntity,
@@ -8,6 +8,7 @@ import type {
 import { todayIn } from '@oppenheimer/frontend-web';
 import { nextScheduleOccurrence } from '@oppenheimer/shared/automations';
 import type { CalendarLayer } from './calendar-search';
+import { addMinutes } from './calendar-view';
 import { accentOf } from './google-accounts';
 
 /**
@@ -22,6 +23,8 @@ export interface CalendarItem {
   id: string;
   day: string;
   time: string | null;
+  /** Where a timed item ends on Day and Week; null for an all-day one. */
+  end: string | null;
   title: string;
   /** A Google event's page; nothing else links out. */
   url: string | null;
@@ -39,6 +42,13 @@ export interface CalendarItem {
 /** The most runs one automation puts on a month: an hourly rule would bury the grid. */
 const MAX_RUNS = 62;
 
+/**
+ * How long a task due at a time stands on the hours: a task has no length,
+ * so the frame's hour. An automation run stands half an hour.
+ */
+const TASK_MINUTES = 60;
+const RUN_MINUTES = 30;
+
 export function eventItems(
   events: readonly CalendarEventEntity[],
   layer: 'events' | 'google',
@@ -49,6 +59,7 @@ export function eventItems(
     id: event.id,
     day: event.date,
     time: event.allDay ? null : event.startTime,
+    end: event.allDay ? null : event.endTime,
     title: event.title,
     url: event.url,
     allDay: event.allDay,
@@ -85,6 +96,7 @@ export function taskItems(tasks: readonly TaskEntity[], from: string, to: string
             id: task.id,
             day: task.dueDate,
             time: task.dueTime,
+            end: task.dueTime ? addMinutes(task.dueTime, TASK_MINUTES) : null,
             title: task.title,
             url: null,
             done: task.isDone,
@@ -116,12 +128,14 @@ export function automationItems(
       for (let count = 0; count < MAX_RUNS; count += 1) {
         const next = nextScheduleOccurrence(trigger, after);
         if (!next || next > end) break;
+        const time = `${pad(next.getHours())}:${pad(next.getMinutes())}`;
         items.push({
           key: `automations:${automation.id}:${next.getTime()}`,
           layer: 'automations',
           id: automation.id,
           day: todayIn(next.getTime()),
-          time: `${pad(next.getHours())}:${pad(next.getMinutes())}`,
+          time,
+          end: addMinutes(time, RUN_MINUTES),
           title: automation.name,
           url: null,
         });
@@ -140,17 +154,18 @@ const KIND = {
 } as const;
 
 /**
- * An item as the design system's month draws it. Personal events and tasks
- * move to another day by dragging; Google's are read-only here and an
+ * An item as the design system's month, day and week draw it. Personal
+ * events and tasks move by dragging; Google's are read-only here and an
  * automation run follows its schedule.
  */
-export function toEntry(item: CalendarItem): CalendarEntryData {
+export function toEntry(item: CalendarItem): AgendaEntryData {
   return {
     id: item.key,
     date: item.day,
     kind: KIND[item.layer],
     title: item.title,
     time: item.time ?? undefined,
+    end: item.end ?? undefined,
     allDay: item.allDay,
     busy: item.busy,
     done: item.done,

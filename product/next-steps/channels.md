@@ -186,6 +186,8 @@ email thread:
 - **Allowed contacts** are a list per account. The default list is the
   owner alone. A contact's message starts a turn; what they ask is theirs,
   but the bot still acts as its owner, inside the owner's permissions.
+  *Changed 2026-11-09: what a contact's turn may do is now
+  [answering-on-telegram-and-whatsapp.md](answering-on-telegram-and-whatsapp.md) §3.*
 - **Anyone else** is held: no reply, nothing reaches the bot, and the
   console shows "+34 6… wants to talk to Juno" with Allow and Ignore. A
   reply to a stranger from your own number is the riskiest thing a linked
@@ -207,7 +209,8 @@ email thread:
   draft never grants a send.
 - **A Needs input card** stays in the console. The channel gets one line to
   the owner only: "Waiting for your approval: <link>". Native buttons
-  (Slack's blocks) come later.
+  (Slack's blocks) come later. *Changed 2026-11-09: see
+  [answering-on-telegram-and-whatsapp.md](answering-on-telegram-and-whatsapp.md) §3.*
 - **Limits.** Each send goes through `UpstreamLimiter.exchange`
   (`.agents/rules/integrations.md`): Slack's per-method tiers; for
   WhatsApp a budget of our own, since a linked device has no published
@@ -408,3 +411,6 @@ Reading your own mailboxes ([Mail](mail.md)) comes before all of these.
   (`whatsapp_message`, 90 days) so bots can read chats, where §3 had only
   intake rows; and the linked device answers no one by itself. WhatsApp as
   a channel (§7.1 in full) is that note's slice 4, on the same device.
+- 2026-11-09: Telegram and WhatsApp answering as channels changed §5's
+  contacts and §6's approval buttons; the decision is
+  [answering-on-telegram-and-whatsapp.md](answering-on-telegram-and-whatsapp.md).

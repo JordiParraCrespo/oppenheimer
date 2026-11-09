@@ -129,6 +129,14 @@ describe('BotSkillToolsFactory', () => {
     expect(result.content).not.toContain('Steps for deploy');
   });
 
+  it('reads the built-in oppenheimer skill every bot has, with no row of its own', async () => {
+    const { call } = setup([]);
+    const result = await call('use_skill', { name: 'oppenheimer' });
+    expect(result).toMatchObject({ isError: false });
+    expect(result.content).toContain('<skill name="oppenheimer">');
+    expect(result.content).toContain('read_oppenheimer_docs');
+  });
+
   it('answers a skill it does not have with BOTS_038', async () => {
     const { call } = setup([]);
     const result = await call('use_skill', { name: 'nope' });

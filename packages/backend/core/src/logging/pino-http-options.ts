@@ -10,6 +10,29 @@ export interface LoggingOptions {
    * debug-level opt-in (like SQL query logging) must actually reach the sink.
    */
   level?: string;
+  /**
+   * An absolute path to also write every line to, as JSON whatever `pretty`
+   * says: what a log shipper (Grafana Alloy, into Loki) tails. Its directory
+   * is created when missing; the file is appended to, never rotated here.
+   */
+  file?: string;
+}
+
+/**
+ * Where lines go: stdout (pretty or JSON) and, with `file`, that file as JSON
+ * too. Undefined is pino's default, JSON on stdout, in this thread.
+ */
+function transportOf(options: LoggingOptions): Options['transport'] {
+  if (!options.file) return options.pretty ? { target: 'pino-pretty' } : undefined;
+  const level = options.level ?? 'info';
+  return {
+    targets: [
+      options.pretty
+        ? { target: 'pino-pretty', level, options: {} }
+        : { target: 'pino/file', level, options: { destination: 1 } },
+      { target: 'pino/file', level, options: { destination: options.file, mkdir: true } },
+    ],
+  };
 }
 
 /**
@@ -64,7 +87,7 @@ export function buildPinoHttpOptions(options: LoggingOptions = {}): Options {
         return { statusCode: res.statusCode };
       },
     },
-    transport: options.pretty ? { target: 'pino-pretty' } : undefined,
+    transport: transportOf(options),
     ...(options.level ? { level: options.level } : {}),
   };
 }

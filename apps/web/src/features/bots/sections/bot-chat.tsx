@@ -1,5 +1,9 @@
-import { BotAvatar, ChatTranscript, Skeleton } from '@oppenheimer/design-system-web';
-import { useSuspenseBot, useUpdateBotOptimistically } from '@oppenheimer/frontend-consumer/react';
+import { BotAvatar } from '@oppenheimer/design-system-web';
+import {
+  useBotDocuments,
+  useSuspenseBot,
+  useUpdateBotOptimistically,
+} from '@oppenheimer/frontend-consumer/react';
 import { ErrorAlert, PageBar, QueryState } from '@oppenheimer/frontend-web';
 import { useNavigate } from '@tanstack/react-router';
 import { useState } from 'react';
@@ -7,8 +11,10 @@ import { useTranslation } from 'react-i18next';
 import { BotActionsMenu } from '@/features/bots/components/bot-actions-menu';
 import { BotChatScroller } from '@/features/bots/components/bot-chat-scroller';
 import { BotPermissionChip } from '@/features/bots/components/bot-permission-chip';
+import { BotTranscriptSkeleton } from '@/features/bots/components/bot-transcript-skeleton';
 import { DeleteBotDialog } from '@/features/bots/dialogs/delete-bot';
 import { useKeyedProvider } from '@/features/bots/hooks/use-keyed-provider';
+import { useMarkSeen } from '@/features/bots/hooks/use-mark-seen';
 import { BotApprovalCard } from './bot-approval-card';
 import { BotComposer } from './bot-composer';
 import { BotEngine } from './bot-engine';
@@ -40,13 +46,16 @@ export function BotChat({ botId }: { botId: string }) {
   const update = useUpdateBotOptimistically();
   const [deleting, setDeleting] = useState(false);
   useKeyedProvider(bot.provider, (next) => update.mutate({ id: bot.id, input: next }));
+  useMarkSeen(bot.id);
+  // Starts the documents' read beside the conversation's, so a chat with no
+  // messages yet greets with its hello as the transcript lands, not a round
+  // trip later. Nothing here reads the result, so it renders nothing again.
+  useBotDocuments(bot.id);
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       <PageBar
-        leading={
-          <BotAvatar option={{ initials: bot.initials }} size={26} color={bot.avatarColor} />
-        }
+        leading={<BotAvatar option={{ initials: bot.initials }} size={26} face={bot.face} />}
         title={bot.name}
         actions={
           <BotActionsMenu
@@ -61,10 +70,9 @@ export function BotChat({ botId }: { botId: string }) {
         <ErrorAlert error={error} fallback={t('bots.chat.loadFailed')} className="mb-4" />
         <QueryState>
           <QueryState.Pending>
-            <ChatTranscript>
-              <Skeleton className="h-4 w-3/5" />
-              <Skeleton className="h-4 w-2/5" />
-            </ChatTranscript>
+            <div aria-busy>
+              <BotTranscriptSkeleton />
+            </div>
           </QueryState.Pending>
           <QueryState.Error fallback={t('bots.chat.loadFailed')} />
           <QueryState.Data>

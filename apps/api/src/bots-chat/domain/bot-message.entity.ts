@@ -52,6 +52,11 @@ export interface BotMessageProps {
   organizationId: string;
   botId: string;
   /**
+   * The conversation it belongs to (`bot_conversation`): its turn's, or the
+   * bot's console chat, whose id is the bot's own, when left out.
+   */
+  conversationId?: string;
+  /**
    * The turn it belongs to; null only for an event that happened outside any
    * turn, such as a routine changed on its tab (`26-bot-routines.md` §4).
    */
@@ -89,6 +94,9 @@ export class BotMessageEntity extends AggregateRoot<BotMessageProps> {
   }
   get botId(): string {
     return this.props.botId;
+  }
+  get conversationId(): string {
+    return this.props.conversationId ?? this.props.botId;
   }
   get turnId(): string | null {
     return this.props.turnId;

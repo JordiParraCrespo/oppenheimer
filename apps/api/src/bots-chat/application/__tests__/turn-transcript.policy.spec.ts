@@ -10,7 +10,8 @@ import { SUBAGENT_DATA_KEY } from '../../domain/bot-subagent.policy';
 import { BotTurnEntity } from '../../domain/bot-turn.entity';
 import {
   failureKindOf,
-  TIME_LIMIT_ERROR,
+  LOOP_ERROR,
+  STALLED_ERROR,
   type TranscriptWrite,
   TurnTranscript,
 } from '../turn-transcript.policy';
@@ -278,6 +279,64 @@ describe('TurnTranscript', () => {
     });
   });
 
+  // What breaks this: a turn that folded what it read into a summary saying
+  // nothing about it, so the person cannot tell why the bot forgot a detail;
+  // or the calls after the fold drawn on the same line as those before it.
+  it('stores a line where the turn compacted, and starts a new activity line after it', () => {
+    const subject = turn();
+    const transcript = new TurnTranscript(subject);
+    const writes = [
+      { type: 'tool.started', callId: 'a', name: 'list_mail', input: {} },
+      { type: 'tool.finished', callId: 'a', name: 'list_mail', output: 'ok', isError: false },
+      { type: 'compacted', tokensBefore: 92_000, tokensAfter: 21_000 },
+      { type: 'tool.started', callId: 'b', name: 'list_mail', input: {} },
+    ].flatMap((event) => transcript.apply(event as BotEngineEvent));
+    const messages = inserted(writes);
+    expect(messages.map((message) => message.role)).toEqual(['activity', 'event', 'activity']);
+    expect(messages[1]).toMatchObject({
+      turnId: subject.id,
+      event: { kind: 'compaction', tokensBefore: 92_000, tokensAfter: 21_000 },
+    });
+    expect(messages.map((message) => message.position)).toEqual([1, 2, 3]);
+  });
+
+  // What breaks this: a goal whose turn the provider refused for a limit
+  // with a known reset pausing for the person, when it could wait the limit
+  // out and go on by itself, as it does for a tool's limit.
+  it('holds a turn the provider refused for a limit until the time the provider named', () => {
+    const transcript = new TurnTranscript(turn());
+    transcript.apply({
+      type: 'done',
+      reason: 'failed',
+      error: 'rate limited',
+      failure: 'rate_limit',
+      rateLimit: { resetAt: new Date('2026-11-09T12:00:00.000Z') },
+    });
+    expect(transcript.result.limited).toEqual({
+      system: 'GLM',
+      resetAt: new Date('2026-11-09T12:00:00.000Z'),
+    });
+  });
+
+  it('holds a turn refused for a spent plan until the spent window resets, and none without a time', () => {
+    const spent = new TurnTranscript(turn());
+    spent.apply({
+      type: 'usage',
+      inputTokens: 1,
+      outputTokens: 1,
+      limits: {
+        fiveHour: { usedPercent: 40, resetsAt: new Date('2026-11-09T11:00:00.000Z') },
+        sevenDay: { usedPercent: 100, resetsAt: new Date('2026-11-12T09:00:00.000Z') },
+      },
+    });
+    spent.apply({ type: 'done', reason: 'failed', error: 'quota', failure: 'usage_limit' });
+    expect(spent.result.limited?.resetAt).toEqual(new Date('2026-11-12T09:00:00.000Z'));
+
+    const unknown = new TurnTranscript(turn());
+    unknown.apply({ type: 'done', reason: 'failed', error: 'quota', failure: 'usage_limit' });
+    expect(unknown.result.limited).toBeNull();
+  });
+
   // What breaks this: a goal's next turn queued the moment this one ends,
   // running straight into the limit again and spending a continuation on it.
   it('ends a turn holding the latest time a system its tools called asked it to wait until', () => {
@@ -420,19 +479,42 @@ describe('TurnTranscript', () => {
     ]);
   });
 
-  it('fails a turn its time limit stopped, saying so, and keeps what it wrote', () => {
+  // What breaks this: a turn the watch stopped ending as cancelled, so the
+  // chat says the person stopped it and a goal reads it as their Stop.
+  it('fails a turn its model left silent, or that looped, saying so, and keeps what it wrote', () => {
+    for (const [interruption, error] of [
+      ['stalled', STALLED_ERROR],
+      ['loop', LOOP_ERROR],
+    ] as const) {
+      const subject = turn();
+      subject.start(new Date());
+      const transcript = new TurnTranscript(subject);
+      const writes = [
+        { type: 'text.delta', text: 'Working on it' },
+        { type: 'done', reason: 'cancelled' },
+      ].flatMap((event) => transcript.apply(event as BotEngineEvent));
+      transcript.endTurn(new Date(), interruption);
+      expect(inserted(writes).map((message) => message.content)).toEqual(['Working on it']);
+      expect(subject.status).toBe('failed');
+      expect(subject.error).toBe(error);
+      expect(subject.failure).toBe(interruption);
+    }
+  });
+
+  // What breaks this: a run given a step limit (a subagent) ending as
+  // completed when it ran out, so it stopped mid-work and said nothing.
+  it('fails a run that ran out of the steps it was given, and keeps what it wrote', () => {
     const subject = turn();
     subject.start(new Date());
     const transcript = new TurnTranscript(subject);
     const writes = [
-      { type: 'text.delta', text: 'Working on it' },
-      { type: 'done', reason: 'cancelled' },
+      { type: 'text.delta', text: 'Checking the hosts' },
+      { type: 'done', reason: 'max_steps' },
     ].flatMap((event) => transcript.apply(event as BotEngineEvent));
-    transcript.endTurn(new Date(), 'time_limit');
-    expect(inserted(writes).map((message) => message.content)).toEqual(['Working on it']);
+    transcript.endTurn(new Date(), null);
+    expect(inserted(writes).map((message) => message.content)).toEqual(['Checking the hosts']);
     expect(subject.status).toBe('failed');
-    expect(subject.error).toBe(TIME_LIMIT_ERROR);
-    expect(subject.failure).toBe('time_limit');
+    expect(subject.failure).toBe('step_limit');
   });
 
   // What breaks this: the meter reading the first answer's context, not the

@@ -55,8 +55,9 @@ import {
   DropZoneTerminalDemo,
   TerminalHostLinkDemo,
 } from '../components/host-link-demos';
-import { DatePickerDemo, MonthCalendarDemo } from '../components/calendar-demos';
+import { AgendaCalendarDemo, DatePickerDemo, MonthCalendarDemo, TodoListDemo } from '../components/calendar-demos';
 import { DiffDemo } from '../components/diff-demos';
+import { ProjectCardsDemo } from '../components/project-demos';
 import { ChatSection } from '../components/chat-demos';
 import { EmployeesSection } from '../components/employee-demos';
 import { InboxSpec } from '../components/inbox-demos';
@@ -224,7 +225,7 @@ export default function Page() {
         id="wordmark"
         title="Wordmark · BrandMark"
         meta="wordmark.tsx · brand-mark.tsx"
-        desc="No logotype exists, so the name is the mark: SF Pro Display 600 at -0.032em."
+        desc="The name is the wordmark: SF Pro Display 600 at -0.032em. The mark is a white fedora on an ink tile, the same in both themes: the rail's top, beside the name on sign-in and the public pages, the favicons and the extension's icons."
         code={`<Wordmark />`}
       >
         <Swatch label="18px">
@@ -238,8 +239,12 @@ export default function Page() {
             <Wordmark />
           </div>
         </Swatch>
-        <Swatch label="BrandMark, the auth chrome's glyph">
-          <BrandMark size={28} />
+        <Swatch label="BrandMark at 16, 32 and 64px">
+          <div className="flex items-end gap-3">
+            <BrandMark size={16} />
+            <BrandMark size={32} />
+            <BrandMark size={64} />
+          </div>
         </Swatch>
       </Spec>
 
@@ -1349,6 +1354,31 @@ const drag = useDraggable({ id, data: { type: 'task' } });    // drag.handleProp
       </Spec>
 
       <Spec
+        id="agenda"
+        title="AgendaCalendar"
+        meta="agenda-calendar.tsx"
+        desc="Plan's Day and Week: a column per day headed by its weekday and number (today filled, the head opens that day), an All day row, then 07:00 to 22:00 ruled every hour. A timed entry is a block from its time to its end; entries that overlap share the column side by side. A busy event sits on the control wash, a task on the card with a border and its check, an automation run and a free event on the card, muted; a done task fades and is struck. Today's column carries a line at now. Drag an event or a task onto another half hour or into All day: each half hour is a target whose id is <date>T<HH:MM>, the All day cell the bare date, and agendaSlot reads one back. Clicking an empty half hour is onAddSlot."
+        code={`<DragProvider overlay={(a) => <CalendarEntry entry={byId(a.id)} lifted />} onDragEnd={({ active, over }) => over && move(active.id, agendaSlot(over.id))}>
+  <AgendaCalendar days={week} entries={entries} today={today} now="11:20" onOpenEntry={open} onOpenDay={openDay} onAddSlot={add} />
+</DragProvider>`}
+        bare
+      >
+        <AgendaCalendarDemo />
+      </Spec>
+
+      <Spec
+        id="todo"
+        title="TodoRow · SortableTodoRow · TodoRowAdd"
+        meta="todo-row.tsx"
+        desc="Plan's To do, the day's list: each task a card of its own with a round done toggle (the success fill and a check once done), the title at 16px semibold over a muted line with its milestone and where it stands, then the time it is due at in mono and its project as a quiet pill. Done strikes the title and mutes the row. The toggle and the title are separate buttons, so ticking a task never opens it. SortableTodoRow is the row in a SortableGroup, picked up by the pointer anywhere on the card; the six-dot grip at its right end is the keyboard's handle and the touch one. TodoRowAdd is the dashed row under the list that adds a task to the day on Enter; TodoRowSkeleton stands in for a row while the day loads."
+        code={`<TodoRow title="Rotate API keys" detail="overdue since Oct 3" time="10:00" tag="Client sites" toggleLabel="Mark done" onToggle={tick} onOpen={open} />
+<TodoRowAdd aria-label="Add a task for this day" placeholder="Add a task" value={draft} onChange={…} onKeyDown={…} />`}
+        bare
+      >
+        <TodoListDemo />
+      </Spec>
+
+      <Spec
         id="calendaraccounts"
         title="CalendarAccountList"
         meta="calendar-source.tsx"
@@ -1356,6 +1386,31 @@ const drag = useDraggable({ id, data: { type: 'task' } });    // drag.handleProp
         code={`<CalendarAccountList><CalendarAccountRow mark={<BrandGlyph name="google" />} account="me@acme.dev" status="Synced 2 min ago" onDisconnect={…} /><CalendarAccountAdd onClick={connect} /></CalendarAccountList>`}
       >
         <CalendarAccountsDemo />
+      </Spec>
+
+      <Spec
+        id="projectcards"
+        title="ProjectCard · ProjectOverview"
+        meta="project-card.tsx · project-overview.tsx"
+        desc="Plan's Projects. Each project is a card on the lit surface: a folder tile, the name at 17px semibold, its repositories on a mono line, and its status as a compact StatusDot at the top right (Needs input when one of its sessions waits on you, Running while one works, Idle otherwise). The whole card opens the project; it renders a button and takes render for a link. The cards fill rows at 300px or more each, and ProjectCardSkeleton holds a card's place while they load. Opened, a project is a ProjectOverview: two columns of panels at 320px or more, each a Card headed by an uppercase eyebrow. Milestones are ProjectMilestoneRows (the diamond, done / total in mono, a 4px bar of the share done, green at 100%), and the tasks that need the reader or are moving are ProjectTaskRows on the run-state dot, with why one waits above its title and its due date in mono. A panel with no rows says so in one muted line."
+        code={`<ProjectCardGrid>
+  <ProjectCard name="XRP Mobile" meta="xrp-mobile" status={<StatusDot density="compact" state="needs-input" />} render={<Link to="/plan/projects/xrp-mobile" />} />
+</ProjectCardGrid>
+<ProjectOverview>
+  <ProjectOverviewColumn>
+    <ProjectPanel label="Milestones">
+      <ProjectMilestoneRow name="App Store release" done={1} total={4} render={<Link to="/plan/milestones" />} />
+    </ProjectPanel>
+  </ProjectOverviewColumn>
+  <ProjectOverviewColumn>
+    <ProjectPanel label="Needs input">
+      <ProjectTaskRow state="needs-input" reason="Waiting on a decision" title="Biometric unlock" due="Nov 12" />
+    </ProjectPanel>
+  </ProjectOverviewColumn>
+</ProjectOverview>`}
+        bare
+      >
+        <ProjectCardsDemo />
       </Spec>
 
       <Spec

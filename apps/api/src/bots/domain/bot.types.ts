@@ -31,3 +31,16 @@ export interface BotDocumentRevision {
   revertedFrom: number | null;
   createdAt: Date;
 }
+
+/**
+ * What a person wrote about themselves for their bots (Settings → Memory):
+ * in the system prompt of every bot they made in the workspace. Their bots
+ * read it and never write it.
+ */
+export interface PersonAbout {
+  organizationId: string;
+  userId: string;
+  about: string;
+  /** When it was last saved; `null` when nothing was ever written. */
+  updatedAt: Date | null;
+}

@@ -3,6 +3,7 @@ import {
   ChatSuggestion,
   ChatSuggestions,
   ChatTranscript,
+  Skeleton,
   TemplateTile,
   TemplateTiles,
 } from '@oppenheimer/design-system-web';
@@ -30,8 +31,9 @@ const JOBS = [
  * composer with a first message to finish and send; nothing is applied
  * until it is sent (there are no templates yet, `25-bots.md` §7). Which hello it is
  * depends on the instructions, so this reads them (narrowed to "are they
- * blank?") and draws nothing until it knows, rather than greeting one way
- * and switching. A read that fails greets the plain way: the hello is a
+ * blank?"; `BotChat` starts that read beside the conversation's, so it has
+ * usually landed by now) and until it knows draws the quiet shape both share,
+ * the centred title as a bar, rather than greeting one way and switching. A read that fails greets the plain way: the hello is a
  * courtesy, not a fact the reader acts on.
  */
 export function BotHello({ botId, name }: { botId: string; name: string }) {
@@ -39,7 +41,15 @@ export function BotHello({ botId, name }: { botId: string; name: string }) {
   const { data: blank, isPending } = useBotDocuments(botId, {
     select: (documents) => documents.find((document) => document.name === 'instructions')?.isBlank,
   });
-  if (isPending) return null;
+  if (isPending) {
+    return (
+      <ChatTranscript aria-hidden>
+        <div className="flex h-[37px] items-center justify-center">
+          <Skeleton shape="sm" className="h-6 w-80 max-w-full" />
+        </div>
+      </ChatTranscript>
+    );
+  }
 
   return (
     <ChatTranscript>

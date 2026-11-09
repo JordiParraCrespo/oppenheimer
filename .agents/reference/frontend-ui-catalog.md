@@ -50,8 +50,10 @@ This page lives outside `.agents/rules/` on purpose: a file there without a
 | A command someone runs on their own machine to fix it | `CommandRow` in a `CommandRowList` | a `CodeBlock` per command, inline `<code>` in a sentence |
 | Attaching files by dropping them on a pane | `DropZone` around a `full` pane; on a page the shell frames, the kit's `usePaneDrop` | `dragenter` listeners in a feature, an outline drawn by a screen |
 | Moving or reordering things by dragging (cards between columns, an entry to another day, a session to another project, the sidebar's and the rail's order) | the drag layer: `DragProvider` with `SortableGroup` / `SortableItem` or `useDraggable` / `useDroppable`; `SortableSessionItem`, `SortableSidebarProjectGroup` and `SortableRailItem` for the sidebar's sessions and projects and the rail, `useSortableControl` for any other item that is also a link or a button | `draggable` attributes, pointer listeners, dnd-kit imported in a feature |
-| Plan's tasks by status | `TaskBoard`, `TaskColumn`, `TaskCard`, `TaskSessionChip`, `TaskComposer`; `MilestoneCard` above | a `Card` grid, a table |
+| Plan's tasks by status | `TaskBoard`, `TaskColumn`, `TaskColumnMore` for a column's folded cards, `TaskCard`, `TaskSessionChip`, `TaskComposer`; `MilestoneCard` above | a `Card` grid, a table |
 | A month with things on its days | `MonthCalendar` (`CalendarEntry` per item) inside the page's `DragProvider` | a grid of `div`s, a calendar library |
+| A day or a week on the hours (Plan's Day and Week) | `AgendaCalendar` inside the page's `DragProvider`; `agendaSlot` reads a drop's day and time | a hand-built hour grid, a `MonthCalendar` per day |
+| A task on a day's list (Plan's To do) | `SortableTodoRow` per task in a `SortableGroup` (`TodoRow` for the lifted copy), `TodoRowAdd` under them, `TodoRowSkeleton` while the day loads | a board card, a hand-built row with its own ring |
 | Picking a day | `DatePicker` | `<input type="date">`, a `ChipSelect` of dates |
 | A page that opens on its own name with a line of counts | `PageHeaderRow size="display"` + `PageHeaderStat`s in `PageHeaderMeta indent={false}` | a hand-built `h1` and a paragraph |
 | The bar over a session's terminal | `SessionPaneHeader` (and `SessionPaneBack` from a task) | a row of spans over the `Terminal` |
@@ -73,15 +75,18 @@ This page lives outside `.agents/rules/` on purpose: a file there without a
 | Who a thing is shared with, by name or email | `PeoplePicker` (+ `PersonChip`) | a `ChipSelect` of members, an `Input` and a list of your own |
 | Who can open a shared thing, and until when | `AccessList` + `AccessRow` | a `SummaryCard`, a table |
 | One facet of a list page's filter (Plan's Project, the queue's Checks) | `FacetSelect` (`pill` or `labelled`) | a `DropdownMenu` with a hand-built trigger, `PillTabs` |
+| Plan's Projects, and a project opened from it | `ProjectCard` in a `ProjectCardGrid` (`ProjectCardSkeleton` while it loads); the opened project a `ProjectOverview` of `ProjectOverviewColumn`s of `ProjectPanel`s holding `ProjectMilestoneRow`s and `ProjectTaskRow`s, `ProjectPanelEmpty` when a panel has none, `ProjectOverviewSkeleton` while it loads | a `SettingsListRow` list, a `Card` of `div`s, a `MilestoneCard` in a panel |
 | Milestones on time | `MilestoneTimeline`; `MilestoneGlyph` for the mark elsewhere | a `MonthCalendar`, a hand-drawn diamond |
 | The period a page reports on | `DateRangePicker` | two `DatePicker`s |
 | Volume over time (tokens, cost) | `AreaChart` | `LineChart` with a fill of your own, a chart library |
 | Several connected calendar accounts | `CalendarAccountList` + `CalendarAccountRow` + `CalendarAccountAdd` | a `Card` per account |
 | An employee in the sidebar | `BotList` + `BotItem` (`SortableBotItem` to move it; `needsInput` when it waits on the reader) | a `SessionItem` with an avatar |
+| A sidebar's Pinned group above its own groups (sessions, bots) | the kit's `SidebarPinnedGroup`: the order hook's `id`, the pinned `items`, the drag kinds it `accepts`, an `emptyHint`, the rows as children | an eyebrow head, a `SortableGroup` and a drop hint put together in a feature |
 | A sidebar list head that folds its list (a section's Bots) | `SidebarFoldLabel` as the `SidebarListHead`'s `label`, the fold kept with `useStoredList` + `withFold` from the kit | a `button` and chevron of the feature's own, a fold mode on `SidebarListHead` |
 | Employees' group heads, and the list before the first bot | `SidebarProjectHeader tone="eyebrow"` (`marker` for the Built-in lock); `SidebarEmptyCard` | an uppercase `span`, a `Callout` in the sidebar |
 | A bot's photo | `AvatarPicker` (`compact` in a popover, `wide` on Profile); `BotAvatar` to draw one | a grid of `Avatar` buttons |
-| A bot's colour, while its avatar is its initials | `AvatarColorPicker`; `BotAvatar` / `BotItem` with `color` | a row of coloured `div`s, a hex from the database |
+| A bot's colour, and its drawn face | `AvatarColorPicker`; `BotAvatar` / `BotItem` with `face` (its colour, id and picked parts) | a row of coloured `div`s, a hex from the database |
+| A bot's face, picked part by part | `BotFacePicker` | a grid of hand-drawn faces, a free-text seed |
 | A file edited in place (a bot's SOUL.md, INSTRUCTIONS.md) | `Textarea variant="code"`; `SegmentedControlItem mono` to switch files | a `Textarea` restyled to mono |
 | A bot's own routine | `RoutineCard` | a `RoutineItem`, a `Card` of `div`s |
 | Records in a settings card (revisions, facts, connectors) and adding one | `SettingsListRow` + `SettingsAddRow` | a `SettingsRow` per record, an `Input` and a `Button` |

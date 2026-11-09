@@ -14,7 +14,7 @@ import { UpdateBotSkillCommand } from '../../bots/commands/update-bot-skill/upda
 import type { BotSkillEntity } from '../../bots/domain/bot-skill.entity';
 import { FindBotSkillQuery } from '../../bots/queries/find-bot-skill/find-bot-skill.query';
 import { FindBotSkillsQuery } from '../../bots/queries/find-bot-skills/find-bot-skills.query';
-import { describeSkillUse, skillBlock } from '../domain/bot-skill.policy';
+import { describeSkillUse, skillBlock, withBuiltInSkills } from '../domain/bot-skill.policy';
 import {
   patchSkillBody,
   SKILL_FIX_NOTE,
@@ -66,7 +66,7 @@ export class BotSkillToolsFactory implements BotToolArea {
         'Reads one of your skills in full, by name, so you can follow it. Use it before starting a request that one of your skills (listed under "Your skills") covers, then follow its steps. A skill only the person may run (by typing /<name>) is not yours to use unasked.',
       input: z.strictObject({ name: skillName }),
       run: async (input, context) => {
-        const skill = await this.skill(context, input.name);
+        const skill = await this.skillToUse(context, input.name);
         if (!skill.modelInvocable) {
           return `Not read: "${skill.name}" is a skill only the person runs, by typing /${skill.name}. Tell them it fits, if it does.`;
         }
@@ -227,6 +227,20 @@ export class BotSkillToolsFactory implements BotToolArea {
     return this.queryBus.execute<FindBotSkillsQuery, BotSkillEntity[]>(
       new FindBotSkillsQuery({ scope: context.owner, botId: context.botId }),
     );
+  }
+
+  /**
+   * The skill `use_skill` reads: the one that name means among every skill
+   * the bot has (`withBuiltInSkills`), else the own skill's not-found.
+   */
+  private async skillToUse(
+    context: BotToolCallContext,
+    name: string,
+  ): Promise<Pick<BotSkillEntity, 'name' | 'description' | 'body' | 'modelInvocable'>> {
+    const found = withBuiltInSkills(await this.skills(context)).find(
+      (skill) => skill.name === name,
+    );
+    return found ?? this.skill(context, name);
   }
 
   private skill(context: BotToolCallContext, name: string): Promise<BotSkillEntity> {

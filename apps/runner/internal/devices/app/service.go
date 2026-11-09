@@ -6,6 +6,7 @@ import (
 	"context"
 	"errors"
 	"sync"
+	"time"
 
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/devices/domain"
 )
@@ -17,7 +18,14 @@ type Options struct {
 	Controls Controls
 	// Waker is optional: nil leaves the device as it is.
 	Waker Waker
+	// Finder is optional: nil offers Devices and no others. With one, the
+	// offer is what it finds whenever a session asks for a device it does not
+	// hold yet, so a simulator booted after the runner started is offered.
+	Finder Finder
 }
+
+// findTimeout bounds one look at the host's devices.
+const findTimeout = 10 * time.Second
 
 // Service hands each session one device for its life and serves it.
 type Service struct {
@@ -26,6 +34,17 @@ type Service struct {
 	screens  Screens
 	controls Controls
 	waker    Waker
+	finder   Finder
+	// looks are the sessions whose device is being looked for outside the
+	// lock; Release marks them, so a session that closes mid-look is not
+	// handed a device it would hold for good.
+	looks map[string]*look
+}
+
+// look is one session's lookups in flight.
+type look struct {
+	inFlight int
+	released bool
 }
 
 // New builds the service over the host's devices.
@@ -35,13 +54,30 @@ func New(opts Options) *Service {
 		screens:  opts.Screens,
 		controls: opts.Controls,
 		waker:    opts.Waker,
+		finder:   opts.Finder,
+		looks:    map[string]*look{},
 	}
 }
 
 // ForSession is the session's device, taken from the free ones on first ask.
 func (s *Service) ForSession(sessionID string) (domain.Device, error) {
 	s.mu.Lock()
+	if device, held := s.pool.Held(sessionID); held {
+		s.mu.Unlock()
+		return device, nil
+	}
+	l := s.beginLook(sessionID)
+	s.mu.Unlock()
+	found, ok := s.find()
+	s.mu.Lock()
 	defer s.mu.Unlock()
+	s.endLook(sessionID, l)
+	if l.released {
+		return domain.Device{}, domain.ErrNoDevice.WithDetail("the session closed before its device was found")
+	}
+	if ok {
+		s.pool.Offer(found)
+	}
 	device, err := s.pool.For(sessionID)
 	if errors.Is(err, domain.ErrNoneFree) {
 		return domain.Device{}, domain.ErrNoDevice.WithDetail("%s", err.Error())
@@ -49,11 +85,46 @@ func (s *Service) ForSession(sessionID string) (domain.Device, error) {
 	return device, err
 }
 
+// find is the host's devices now, when the service looks for them. Run
+// outside the lock: listing a host's devices takes a moment. A failed look
+// reports !ok, so the last offer stands rather than every device going away.
+func (s *Service) find() ([]domain.Device, bool) {
+	if s.finder == nil {
+		return nil, false
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), findTimeout)
+	defer cancel()
+	found, err := s.finder.Find(ctx)
+	return found, err == nil
+}
+
+// beginLook and endLook bracket one lookup for the session; s.mu is held.
+func (s *Service) beginLook(sessionID string) *look {
+	l := s.looks[sessionID]
+	if l == nil {
+		l = &look{}
+		s.looks[sessionID] = l
+	}
+	l.inFlight++
+	return l
+}
+
+func (s *Service) endLook(sessionID string, l *look) {
+	l.inFlight--
+	if l.inFlight == 0 && s.looks[sessionID] == l {
+		delete(s.looks, sessionID)
+	}
+}
+
 // Release frees the session's device, once the session is gone.
 func (s *Service) Release(sessionID string) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.pool.Release(sessionID)
+	if l := s.looks[sessionID]; l != nil {
+		l.released = true
+		delete(s.looks, sessionID)
+	}
 }
 
 // Watch opens the session's device screen for one viewer.

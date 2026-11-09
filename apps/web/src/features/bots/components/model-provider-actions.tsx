@@ -2,8 +2,8 @@ import { Button } from '@oppenheimer/design-system-web';
 import { useTranslation } from 'react-i18next';
 
 /**
- * What one Model providers row offers, decided from the row alone: Default on
- * the provider new bots start on, Make default on another with a key, Remove
+ * What one Model providers row offers, decided from the row alone: Make
+ * default on a provider with a key that new bots do not start on, Remove
  * on one with a key, and Add key or Replace on every row. A sign-in provider
  * (ChatGPT) says Disconnect, and Connect ChatGPT or Sign in again, instead.
  * `unavailable` is a server that cannot seal keys: the key buttons are off,
@@ -42,7 +42,6 @@ export function ModelProviderActions({
 
   return (
     <>
-      {isDefault ? t('settings.modelProviders.default') : null}
       {configured && !isDefault ? (
         <Button
           size="sm"

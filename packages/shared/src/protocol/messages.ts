@@ -39,6 +39,15 @@ import {
   SESSION_FILE_MEDIA_TYPES,
 } from './session-file.js';
 import { sharedPreviewGetSchema, sharedPreviewSchema } from './shared-files.js';
+import {
+  telegramAckSchema,
+  telegramLinkSchema,
+  telegramMessagesSchema,
+  telegramSendSchema,
+  telegramSentSchema,
+  telegramStateSchema,
+  telegramUnlinkSchema,
+} from './telegram.js';
 import { transcriptPageSchema, transcriptReadSchema } from './transcript.js';
 import {
   whatsappAckSchema,
@@ -97,6 +106,8 @@ export const RUNNER_CAPABILITIES = [
   'session.folder',
   /** Answers `fs.list` with `fs.listing`: the folder picker's directories. */
   'fs.list',
+  /** Answers `fs.find` with `fs.found`: the folder picker's search by name. */
+  'fs.find',
   /**
    * Sends `attachment.chat` beside a coding agent session's PTY frames
    * (Claude Code, Codex, OpenCode, Grok): the agent's own transcript,
@@ -166,6 +177,12 @@ export const RUNNER_CAPABILITIES = [
    */
   'whatsapp',
   /**
+   * Holds a Telegram bot for the owner, long-polling the Bot API on its token:
+   * answers `telegram.link`, `telegram.unlink` and `telegram.send`, and sends
+   * `telegram.state` and `telegram.messages` (`product/next-steps/telegram.md`).
+   */
+  'telegram',
+  /**
    * Logs `file.shared` for each file an agent shares, and answers
    * `shared.preview.get` with `shared.preview`: the JPEG preview it kept of
    * a shared image, for a bot to show (`product/next-steps/agent-tools.md` §7).
@@ -177,6 +194,19 @@ export const RUNNER_CAPABILITIES = [
    * attached (a bot, the CLI, an MCP client; `product/next-steps/agent-tools.md` §8).
    */
   'transcript.read',
+  /**
+   * Answers `host.exec` with `host.exec.result`: one program run to completion
+   * for a bot, when this host's own exec policy lets it
+   * (`product/versions/mvp/25-bots.md` §4.2, "Commands on a host").
+   */
+  'host.exec',
+  /**
+   * Answers `terminal.drive` with `terminal.screen`: a bot types into a
+   * blank-terminal session's window and reads its screen back, when this
+   * host's exec policy is `full` (`product/versions/mvp/25-bots.md` §4.2,
+   * "Driving a terminal").
+   */
+  'terminal.drive',
 ] as const;
 export type RunnerCapability = (typeof RUNNER_CAPABILITIES)[number];
 
@@ -776,6 +806,12 @@ export type FsListMessage = z.infer<typeof fsListSchema>;
 /** How many directories one `fs.listing` names at most. */
 export const FS_LISTING_MAX_ENTRIES = 500;
 
+/** The shortest name `fs.find` searches for: one letter matches nearly everything. */
+export const FS_FIND_MIN_QUERY = 2;
+
+/** How many levels under its `path` `fs.find` walks. */
+export const FS_FIND_MAX_DEPTH = 4;
+
 /**
  * A directory's sub-directories: names only, never files and never contents.
  * Hidden ones are left out. A sub-directory that is a git repository carries
@@ -805,6 +841,212 @@ export const fsListingSchema = z.object({
 });
 
 export type FsListingMessage = z.infer<typeof fsListingSchema>;
+
+/** The most arguments one `host.exec` carries, the program included. */
+export const HOST_EXEC_MAX_ARGS = 64;
+
+/** The longest one argument may be, in characters. */
+export const HOST_EXEC_MAX_ARG_LENGTH = 8_192;
+
+/** How long a run may last when `host.exec` names no timeout, in seconds. */
+export const HOST_EXEC_DEFAULT_TIMEOUT_SECONDS = 60;
+
+/** The longest a run may last, in seconds. */
+export const HOST_EXEC_MAX_TIMEOUT_SECONDS = 600;
+
+/** How many bytes of each stream `host.exec.result` keeps: the last ones. */
+export const HOST_EXEC_OUTPUT_MAX_BYTES = 32_768;
+
+/**
+ * Run one program on the host for a bot, to completion
+ * (`product/versions/mvp/25-bots.md` §4.2, "Commands on a host").
+ *
+ * `argv` is the program and its arguments, run directly, never through a
+ * shell: a pipe or a `;` is an argument like any other, so the host's policy
+ * decides on the program that actually runs. The policy is the host's own
+ * (`runner exec`), read on every call: `off` (the default) refuses everything,
+ * `allowlist` runs only the programs it names, `full` runs anything. The
+ * control plane never sees or changes it.
+ *
+ * The run starts in `cwd` when given, otherwise in the bot's own folder under
+ * the host's workspaces (`bots/<home>`), which the runner creates and keeps.
+ * Stdin is empty. Sent only to a runner whose `hello` named `host.exec`;
+ * answered by `host.exec.result` with the same `commandId`, or by
+ * `command.failed` (`EXEC_001` exec is off on this host, `EXEC_002` the program
+ * is not allowed, `EXEC_003` the folder is not usable, `EXEC_004` the program
+ * could not be started).
+ */
+export const hostExecSchema = z.object({
+  type: z.literal('host.exec'),
+  commandId: commandIdSchema,
+  argv: z.array(z.string().min(1).max(HOST_EXEC_MAX_ARG_LENGTH)).min(1).max(HOST_EXEC_MAX_ARGS),
+  cwd: hostPathSchema.optional(),
+  /** The bot's own folder's name: lowercase letters, digits and dashes. */
+  home: z
+    .string()
+    .min(1)
+    .max(64)
+    .regex(/^[a-z0-9][a-z0-9-]*$/),
+  timeoutSeconds: z.number().int().min(1).max(HOST_EXEC_MAX_TIMEOUT_SECONDS),
+});
+
+export type HostExecMessage = z.infer<typeof hostExecSchema>;
+
+/**
+ * How a `host.exec` run ended. `exitCode` is null when the program did not
+ * exit on its own: it ran past its timeout (`timedOut`) and its whole process
+ * group was killed, or a signal ended it. Each stream keeps its last
+ * `HOST_EXEC_OUTPUT_MAX_BYTES` bytes, with `*Truncated` saying more was there.
+ */
+export const hostExecResultSchema = z.object({
+  type: z.literal('host.exec.result'),
+  commandId: commandIdSchema,
+  exitCode: z.number().int().nullable(),
+  timedOut: z.boolean(),
+  stdout: z.string(),
+  stderr: z.string(),
+  stdoutTruncated: z.boolean().optional(),
+  stderrTruncated: z.boolean().optional(),
+  /** Where it ran, absolute and cleaned. */
+  cwd: hostPathSchema,
+  durationMs: z.number().int().min(0),
+});
+
+export type HostExecResultMessage = z.infer<typeof hostExecResultSchema>;
+
+/**
+ * The keys `terminal.drive` may press after its text, by tmux's own names:
+ * the ones a person needs to run and leave programs in a shell.
+ */
+export const TERMINAL_KEYS = [
+  'Enter',
+  'Tab',
+  'Escape',
+  'BSpace',
+  'Space',
+  'Up',
+  'Down',
+  'Left',
+  'Right',
+  'Home',
+  'End',
+  'PageUp',
+  'PageDown',
+  'C-c',
+  'C-d',
+  'C-z',
+  'C-l',
+  'C-a',
+  'C-e',
+  'C-r',
+  'C-u',
+  'C-w',
+] as const;
+
+/** The most text one `terminal.drive` types. */
+export const TERMINAL_TEXT_MAX = 8_192;
+
+/** The longest `terminal.drive` waits for its pattern or for quiet, in seconds. */
+export const TERMINAL_WAIT_MAX_SECONDS = 60;
+
+/** How many lines above the visible screen `terminal.drive` may read back. */
+export const TERMINAL_HISTORY_MAX_LINES = 500;
+
+/**
+ * Type into a blank-terminal session (agent `shell`) and read its screen
+ * back, for a bot (`product/versions/mvp/25-bots.md` §4.2, "Driving a
+ * terminal"). In order: `text` is typed literally (never read as key names),
+ * then each of `keys` is pressed, then the runner waits: until `waitFor` (an
+ * RE2 pattern) matches a line of the screen, or for `waitSeconds` when no
+ * pattern is given, at most `TERMINAL_WAIT_MAX_SECONDS`; then it captures the
+ * visible screen and `history` lines above it. A drive with no text and no
+ * keys only reads.
+ *
+ * The host decides: only a host whose exec policy is `full` takes it, since
+ * a shell runs anything. Sent only to a runner whose `hello` named
+ * `terminal.drive`; answered by `terminal.screen` with the same `commandId`,
+ * or by `command.failed` (`EXEC_006` the host's policy is not `full`,
+ * `EXEC_007` the session is not a blank terminal, `SESS_001` not on this
+ * host, `INVALID_PATTERN`).
+ */
+export const terminalDriveSchema = z.object({
+  type: z.literal('terminal.drive'),
+  commandId: commandIdSchema,
+  sessionId: sessionIdSchema,
+  window: windowIndexSchema.optional(),
+  text: z.string().max(TERMINAL_TEXT_MAX).optional(),
+  keys: z.array(z.enum(TERMINAL_KEYS)).max(32).optional(),
+  waitFor: z.string().min(1).max(TERMINAL_WATCH_PATTERN_MAX).optional(),
+  waitSeconds: z.number().int().min(0).max(TERMINAL_WAIT_MAX_SECONDS),
+  history: z.number().int().min(0).max(TERMINAL_HISTORY_MAX_LINES).optional(),
+});
+
+export type TerminalDriveMessage = z.infer<typeof terminalDriveSchema>;
+
+/**
+ * What a `terminal.drive` left on the screen. `matched` says whether its
+ * `waitFor` matched before the wait ran out (false when it gave none).
+ * `screen` is the captured text, its last `TERMINAL_SCREEN_MAX_BYTES` kept.
+ */
+export const terminalScreenSchema = z.object({
+  type: z.literal('terminal.screen'),
+  commandId: commandIdSchema,
+  screen: z.string(),
+  matched: z.boolean(),
+  waitedMs: z.number().int().min(0),
+});
+
+export type TerminalScreenMessage = z.infer<typeof terminalScreenSchema>;
+
+/** How much of a captured screen `terminal.screen` carries: the last bytes. */
+export const TERMINAL_SCREEN_MAX_BYTES = 32_768;
+
+/**
+ * Find folders under one directory by name, for the folder picker's search
+ * (24 §4): a bounded walk, at most `FS_FIND_MAX_DEPTH` levels down, that skips
+ * hidden directories and dependency trees and never descends into a git
+ * repository, so a repository is found and its insides are not. Absent `path`
+ * is the home directory. Sent only to a runner whose `hello` named `fs.find`;
+ * answered by `fs.found` with the same `commandId`, or by `command.failed`
+ * with the `fs.list` codes for `path`.
+ */
+export const fsFindSchema = z.object({
+  type: z.literal('fs.find'),
+  commandId: commandIdSchema,
+  /** Matched against each directory's name, without regard to case. */
+  query: z.string().min(FS_FIND_MIN_QUERY).max(255),
+  path: hostPathSchema.optional(),
+});
+
+export type FsFindMessage = z.infer<typeof fsFindSchema>;
+
+/** How many folders one `fs.found` names at most. */
+export const FS_FIND_MAX_RESULTS = 50;
+
+/**
+ * The folders whose name holds the query, best first: a name that is the
+ * query, then one that starts with it, then the rest, each shallower first.
+ * `truncated` says the walk stopped at its budget, so a folder further away
+ * may exist.
+ */
+export const fsFoundSchema = z.object({
+  type: z.literal('fs.found'),
+  commandId: commandIdSchema,
+  /** The directory searched under, absolute and cleaned. */
+  path: hostPathSchema,
+  home: hostPathSchema,
+  entries: z
+    .array(
+      z.object({
+        path: hostPathSchema,
+        branch: z.string().min(1).max(255).optional(),
+      }),
+    )
+    .max(FS_FIND_MAX_RESULTS),
+  truncated: z.boolean().optional(),
+});
+
+export type FsFoundMessage = z.infer<typeof fsFoundSchema>;
 
 /**
  * Install a release. The runner still fetches and verifies the signed manifest
@@ -1108,6 +1350,12 @@ export const protocolMessageSchema = z.discriminatedUnion('type', [
   repositoryPrepareSchema,
   fsListSchema,
   fsListingSchema,
+  fsFindSchema,
+  fsFoundSchema,
+  hostExecSchema,
+  hostExecResultSchema,
+  terminalDriveSchema,
+  terminalScreenSchema,
   attachmentDirectOfferSchema,
   attachmentDirectAnswerSchema,
   attachmentDirectRefusedSchema,
@@ -1132,6 +1380,13 @@ export const protocolMessageSchema = z.discriminatedUnion('type', [
   whatsappAckSchema,
   whatsappSendSchema,
   whatsappSentSchema,
+  telegramLinkSchema,
+  telegramUnlinkSchema,
+  telegramStateSchema,
+  telegramMessagesSchema,
+  telegramAckSchema,
+  telegramSendSchema,
+  telegramSentSchema,
   sharedPreviewGetSchema,
   sharedPreviewSchema,
   transcriptReadSchema,

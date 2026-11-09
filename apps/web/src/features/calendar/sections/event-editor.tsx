@@ -11,7 +11,8 @@ import { getRouteApi } from '@tanstack/react-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { EventForm, type EventFormValues } from '../forms/event-form';
-import { useMonth } from '../hooks/use-month';
+import { useCalendarView } from '../hooks/use-calendar-view';
+import { addMinutes } from '../lib/calendar-view';
 
 const calendar = getRouteApi('/_authenticated/plan/calendar');
 
@@ -23,13 +24,15 @@ const calendar = getRouteApi('/_authenticated/plan/calendar');
 export function EventEditor({ event }: { event: CalendarEventEntity | null }) {
   const { t } = useTranslation();
   const resolveError = useErrorMessage();
-  const { day } = calendar.useSearch();
+  const { day, at } = calendar.useSearch();
   const navigate = calendar.useNavigate();
-  const { today } = useMonth();
+  const { today } = useCalendarView();
   const [deleting, setDeleting] = useState(false);
   const voice = useVoiceDictation();
   const close = () =>
-    navigate({ search: (previous) => ({ ...previous, event: undefined, day: undefined }) });
+    navigate({
+      search: (previous) => ({ ...previous, event: undefined, day: undefined, at: undefined }),
+    });
   const create = useCreateCalendarEvent({ onSuccess: close });
   const update = useUpdateCalendarEvent({ onSuccess: close });
   const remove = useDeleteCalendarEvent({ onSuccess: close });
@@ -48,8 +51,8 @@ export function EventEditor({ event }: { event: CalendarEventEntity | null }) {
         notes: '',
         date: day ?? today,
         allDay: false,
-        startTime: '09:00',
-        endTime: '10:00',
+        startTime: at ?? '09:00',
+        endTime: at ? addMinutes(at, 30) : '10:00',
         busy: true,
       };
   const failure = create.error ?? update.error;

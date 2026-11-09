@@ -238,6 +238,16 @@
     "WHATSAPP_008": "WhatsApp no aceptó el mensaje. Vuelve a intentarlo en un momento.",
     "WHATSAPP_009": "Ese número ya ha enviado todos los mensajes de bots que puede por ahora. Inténtalo más tarde.",
     "WHATSAPP_010": "No hay ningún chat de WhatsApp así en ese número.",
+    "TELEGRAM_001": "Ese bot de Telegram ya no está conectado.",
+    "TELEGRAM_002": "Telegram pertenece a un espacio de trabajo. Abre uno y vuelve a intentarlo.",
+    "TELEGRAM_003": "Ya has conectado tres bots de Telegram, el máximo por persona. Desconecta uno para añadir otro.",
+    "TELEGRAM_004": "Ese host está desconectado. Arranca su runner y vuelve a intentarlo.",
+    "TELEGRAM_005": "El runner de ese host aún no puede tener bots de Telegram. Actualiza el runner y vuelve a intentarlo.",
+    "TELEGRAM_006": "Ese host ya tiene el bot de Telegram de otra persona.",
+    "TELEGRAM_007": "Ese bot de Telegram no está conectado. Vuelve a conectarlo en Ajustes → Telegram.",
+    "TELEGRAM_008": "Telegram no aceptó el mensaje. Vuelve a intentarlo en un momento.",
+    "TELEGRAM_009": "Ese bot de Telegram ya ha enviado todos los mensajes de bots que puede por ahora. Inténtalo más tarde.",
+    "TELEGRAM_010": "No hay ningún chat de Telegram así en ese bot.",
     "CLOUD_AGENTS_003": "Este servidor no puede guardar claves de agentes en la nube. Pide a quien lo administra que configure CLOUD_AGENTS_KEY.",
     "CLOUD_AGENTS_004": "Conecta primero el proveedor con tu clave de API.",
     "CLOUD_AGENTS_005": "El proveedor rechazó esa clave de API. Comprueba que sea una clave de usuario y que no se haya revocado.",
@@ -293,6 +303,9 @@
     "SESSIONS_049": "Ese cursor de transcripción no es válido. Lee desde los últimos turnos y continúa con el cursor que te dé esa página.",
     "SESSIONS_050": "Solo quien lanzó esta sesión en la nube puede enviarle un seguimiento, porque se ejecuta con su clave.",
     "SESSIONS_051": "El proveedor del agente en la nube no confirmó el seguimiento, así que puede estar ejecutándose allí. Revisa la sesión en el proveedor antes de volver a enviarlo.",
+    "SESSIONS_052": "Solo se puede reintentar una sesión que no llegó a iniciarse.",
+    "SESSIONS_053": "Ninguna sesión en la nube de este espacio de trabajo tiene ese id. Solo las sesiones iniciadas desde la consola envían su chat aquí.",
+    "SESSIONS_054": "El chat de esta sesión no se muestra aquí.",
     "VOICE_002": "No se ha grabado nada. Vuelve a dictar.",
     "VOICE_003": "La grabación es demasiado larga. Los dictados deben durar menos de dos minutos.",
     "VOICE_004": "No se ha podido leer la grabación. Vuelve a dictar.",
@@ -310,7 +323,9 @@
     "BOTS_037": "Esas preguntas ya tenían respuesta.",
     "BOTS_038": "No se ha encontrado esa habilidad.",
     "BOTS_039": "Este bot ya tiene una habilidad con ese nombre. Elige otro.",
-    "BOTS_040": "Este bot ya tiene tantas habilidades como puede guardar. Borra una primero."
+    "BOTS_040": "Este bot ya tiene tantas habilidades como puede guardar. Borra una primero.",
+    "BOTS_041": "Este bot no tiene ninguna ordenación de su memoria que deshacer.",
+    "BOTS_042": "Este bot responde en un bot de Telegram. Elige otro bot, o ninguno, en Ajustes → Telegram antes de eliminarlo."
   },
   "notFound": {
     "title": "Esta página no existe",
@@ -325,7 +340,8 @@
   "startFailure": {
     "codes": {
       "SESS_002": "Este host crea sesiones con un solo repositorio.",
-      "SESS_010": "La CLI de Codex no tiene un entorno en la nube para este repositorio."
+      "SESS_010": "La CLI de Codex no tiene un entorno en la nube para este repositorio.",
+      "SESS_019": "Sin sesión en claude.ai. Ejecuta claude auth login en el host."
     },
     "help": {
       "SESS_010": {
@@ -333,6 +349,6 @@
         "link": "Abrir la configuración de Codex Cloud"
       }
     },
-    "details": "Detalles del host: {{detail}}"
+    "details": "Detalles del host"
   }
 }

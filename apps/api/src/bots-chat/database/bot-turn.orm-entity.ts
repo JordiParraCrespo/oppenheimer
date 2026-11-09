@@ -25,6 +25,7 @@ export interface BotTurnPlanLimitsRecord {
 @Entity('bot_turn')
 @Unique('UQ_bot_turn_organization_id', ['organizationId', 'id'])
 @Index('IDX_bot_turn_bot', ['organizationId', 'botId', 'createdAt', 'id'])
+@Index('IDX_bot_turn_conversation', ['organizationId', 'conversationId'])
 @Index('IDX_bot_turn_active', ['organizationId', 'botId', 'createdAt'], {
   where: `"status" IN ('queued', 'running')`,
 })
@@ -43,11 +44,11 @@ export interface BotTurnPlanLimitsRecord {
 @Check('CHK_bot_turn_provider', `"provider" IN ('anthropic', 'glm', 'openai', 'chatgpt', 'xai')`)
 @Check(
   'CHK_bot_turn_origin',
-  `"origin" IN ('message', 'approval', 'question', 'routine', 'subscription', 'goal', 'loop')`,
+  `"origin" IN ('message', 'approval', 'question', 'routine', 'subscription', 'goal', 'loop', 'telegram')`,
 )
 @Check(
   'CHK_bot_turn_failure',
-  `"failure" IS NULL OR "failure" IN ('rate_limit', 'usage_limit', 'credential', 'refused', 'unavailable', 'time_limit', 'interrupted', 'other')`,
+  `"failure" IS NULL OR "failure" IN ('rate_limit', 'usage_limit', 'credential', 'refused', 'unavailable', 'time_limit', 'step_limit', 'stalled', 'loop', 'interrupted', 'storage', 'other')`,
 )
 @Check('CHK_bot_turn_tokens', `"inputTokens" >= 0 AND "outputTokens" >= 0`)
 @Check('CHK_bot_turn_cache_tokens', `"cacheReadTokens" >= 0 AND "cacheWriteTokens" >= 0`)
@@ -77,6 +78,10 @@ export class BotTurnOrmEntity {
 
   @Column({ type: 'uuid' })
   botId!: string;
+
+  /** Its conversation (`1794241820830-AnswerOnTelegram`): the bot's id for its console chat. */
+  @Column({ type: 'uuid' })
+  conversationId!: string;
 
   @Column({ type: 'uuid', nullable: true })
   requestedByUserId!: string | null;
@@ -183,6 +188,10 @@ export class BotTurnOrmEntity {
 
   @Column({ type: TIMESTAMP_COLUMN_TYPE, nullable: true })
   endedAt!: Date | null;
+
+  /** When this turn's tokens were added to its goal; null until then, and for a turn of no goal. */
+  @Column({ type: TIMESTAMP_COLUMN_TYPE, nullable: true })
+  goalSpendCountedAt!: Date | null;
 
   @CreateDateColumn({ type: TIMESTAMP_COLUMN_TYPE })
   createdAt!: Date;
