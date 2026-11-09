@@ -5,6 +5,7 @@ import {
   type CreateEntityProps,
 } from '@oppenheimer/backend-ddd';
 import { WHATSAPP_LABEL_MAX, type WhatsappAccountStatus } from '@oppenheimer/shared';
+import { sameWhatsappNumber } from './whatsapp-number.policy';
 import {
   generateWhatsappOwnerCode,
   hashWhatsappOwnerCode,
@@ -161,7 +162,7 @@ export class WhatsappAccountEntity extends AggregateRoot<WhatsappAccountProps> {
 
   /** Whether a sender is the owner this number confirmed. */
   isOwner(senderId: string): boolean {
-    return this.props.ownerPhone !== null && this.props.ownerPhone === senderId;
+    return this.props.ownerPhone !== null && sameWhatsappNumber(this.props.ownerPhone, senderId);
   }
 
   /** The Oppenheimer bot that answers here by default from now on; null for none. */

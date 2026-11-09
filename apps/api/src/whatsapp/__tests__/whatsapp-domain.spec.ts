@@ -86,6 +86,47 @@ describe('pickWhatsappChat', () => {
 });
 
 describe('whatsappInboundAction', () => {
+  // What breaks this: an owner in Brazil or Mexico who typed their number one
+  // way, while WhatsApp writes it the other, confirmed and then never answered.
+  it('knows the owner by the form WhatsApp writes their number in, in Brazil and Mexico too', () => {
+    const message = (from: string) => ({
+      chatId: from,
+      chatKind: 'direct' as const,
+      fromMe: false,
+      senderId: from,
+      text: 'hi',
+      media: null,
+    });
+    const pairs = [
+      ['5511987654321@s.whatsapp.net', '551187654321@s.whatsapp.net'],
+      ['5215512345678@s.whatsapp.net', '525512345678@s.whatsapp.net'],
+    ];
+    for (const [typed, written] of pairs) {
+      for (const [owner, from] of [
+        [typed, written],
+        [written, typed],
+      ]) {
+        expect(
+          whatsappInboundAction({ phone: null, ownerPhone: owner ?? null }, message(from ?? ''))
+            .kind,
+        ).toBe('owner');
+      }
+    }
+    // Neither rule makes two other numbers one.
+    expect(
+      whatsappInboundAction(
+        { phone: null, ownerPhone: '5511987654321@s.whatsapp.net' },
+        message('5511987654322@s.whatsapp.net'),
+      ).kind,
+    ).toBe('ignore');
+    expect(
+      whatsappInboundAction(
+        { phone: null, ownerPhone: '34600999888@s.whatsapp.net' },
+        message('3460099988@s.whatsapp.net'),
+      ).kind,
+    ).toBe('ignore');
+  });
+
   const SPARE = '34600111222@s.whatsapp.net';
   const OWNER = '34600999888@s.whatsapp.net';
   const owned = { phone: SPARE, ownerPhone: OWNER };

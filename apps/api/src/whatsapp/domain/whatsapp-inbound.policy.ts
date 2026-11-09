@@ -1,4 +1,5 @@
 import type { WhatsappMessageDraft } from './whatsapp-message.types';
+import { sameWhatsappNumber } from './whatsapp-number.policy';
 
 /** What the owner's message asks of the chat's bot. `help` is answered with a fixed line. */
 export type WhatsappOwnerCommand = 'message' | 'new' | 'stop' | 'help';
@@ -73,7 +74,11 @@ export function whatsappInboundAction(
   if (account.phone !== null && message.chatId === account.phone) return { kind: 'ignore' };
   // The owner's own direct chat: the answer goes back where it came from.
   const owner = account.ownerPhone;
-  if (owner === null || message.senderId !== owner || message.chatId !== owner) {
+  if (
+    owner === null ||
+    !sameWhatsappNumber(message.senderId, owner) ||
+    !sameWhatsappNumber(message.chatId, owner)
+  ) {
     return { kind: 'ignore' };
   }
   const text = message.text.trim() || (message.media ? `[${message.media}]` : '');
