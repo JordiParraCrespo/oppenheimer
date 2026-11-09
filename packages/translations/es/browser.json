@@ -1633,7 +1633,20 @@
           "rate_limit": "{{provider}} está limitando las peticiones, reintentando…",
           "unavailable": "{{provider}} está saturado, reintentando…"
         },
-        "thinking": "Pensando",
+        "musing": {
+          "pondering": "Cavilando…",
+          "mulling": "Rumiando…",
+          "musing": "Meditando…",
+          "noodling": "Divagando…",
+          "ruminating": "Barruntando…",
+          "cogitating": "Elucubrando…",
+          "brewing": "Cocinando…",
+          "percolating": "Destilando…",
+          "scheming": "Tramando…",
+          "puzzling": "Descifrando…",
+          "tinkering": "Trasteando…",
+          "conjuring": "Urdiendo…"
+        },
         "writing": "Escribiendo",
         "stopped": "Detenido"
       },
@@ -1832,8 +1845,6 @@
           "ended": "El bucle «{{prompt}}» terminó: el bot no dijo cuándo volver a ejecutarlo"
         },
         "compaction": "Resumió el trabajo anterior para mantener su contexto pequeño · {{before}} → {{after}} tokens",
-        "compactionLine": "Resumió el trabajo anterior",
-        "compactionTokens": "{{before}} → {{after}} tokens",
         "dream": {
           "dreamed": "Ordenó su memoria · {{before}} datos → {{after}}",
           "undone": "Deshiciste el orden · vuelven {{before}} datos"
@@ -3088,7 +3099,8 @@
       "deleteFailed": "No se ha podido eliminar la tarea.",
       "loadFailed": "No se ha podido cargar el tablero.",
       "gone": "Esta tarea ya no existe.",
-      "deleting": "Eliminando…"
+      "deleting": "Eliminando…",
+      "focus": "Por hacer"
     },
     "link": {
       "search": "Buscar sesiones",
@@ -3154,7 +3166,7 @@
       "todayWeek": "Hoy · Semana {{week}}",
       "weekNumber": "Semana {{week}}",
       "includeOverdue": "Incluir vencidas",
-      "empty": "Aún no hay nada para este día. Añade una tarea abajo.",
+      "empty": "Aún no hay nada en este día. Añade una tarea abajo o elige algunas con Añadir tareas.",
       "noMatch": "Ninguna tarea coincide con estos filtros.",
       "add": "Añadir una tarea",
       "addLabel": "Añadir una tarea para este día",
@@ -3165,18 +3177,22 @@
       "state": {
         "todo": "vence hoy",
         "due": "pendiente",
-        "overdue": "vencida desde el {{date}}"
+        "overdue": "vencida desde el {{date}}",
+        "since": "en Por hacer desde el {{date}}",
+        "dueOn": "vence el {{date}}"
       },
       "schedule": {
-        "button": "Añadir tareas sin fecha",
-        "title": "Añadir tareas sin fecha",
-        "for": "Elige las tareas sin fecha de vencimiento que quieres poner el {{date}}.",
+        "button": "Añadir tareas",
+        "title": "Añadir tareas a este día",
+        "for": "Elige las tareas abiertas que quieres poner el {{date}}. Su fecha de vencimiento no cambia.",
         "search": "Buscar tareas",
         "noMatch": "Ninguna tarea coincide con «{{query}}».",
-        "none": "Todas las tareas abiertas ya tienen fecha de vencimiento.",
+        "none": "Todas las tareas abiertas ya están en este día.",
         "submit": "Añadir al {{date}}",
         "failed": "No se pudieron añadir algunas de esas tareas.",
-        "loadFailed": "No se pudieron cargar tus tareas."
+        "loadFailed": "No se pudieron cargar tus tareas.",
+        "allStatuses": "Todos los estados",
+        "searchStatuses": "Buscar estados"
       },
       "reorder": "Reordenar {{title}}"
     }

@@ -44,6 +44,8 @@ export interface TaskProps {
   dueDate: string | null;
   /** `HH:MM`; only with a due date. */
   dueTime: string | null;
+  /** The day it is on To do from, until it is done; apart from when it is due. */
+  focusDate: string | null;
   /** When it last moved to Done; cleared when it leaves. */
   completedAt: Date | null;
   /** Why it waits on a person, or null; Done clears it. */
@@ -67,6 +69,7 @@ export interface CreateTaskProps {
   notes?: string;
   dueDate?: string | null;
   dueTime?: string | null;
+  focusDate?: string | null;
   createdByUserId: string;
   actor: PlanActor;
   idempotencyKey?: string | null;
@@ -78,6 +81,7 @@ export interface TaskEdit {
   notes?: string;
   dueDate?: string | null;
   dueTime?: string | null;
+  focusDate?: string | null;
 }
 
 /**
@@ -111,6 +115,7 @@ export class TaskEntity extends AggregateRoot<TaskProps> {
         notes: props.notes ?? '',
         dueDate: props.dueDate ?? null,
         dueTime: props.dueDate ? (props.dueTime ?? null) : null,
+        focusDate: props.focusDate ?? null,
         completedAt: props.status === 'done' ? new Date() : null,
         blockedReason: null,
         blockedAt: null,
@@ -187,6 +192,9 @@ export class TaskEntity extends AggregateRoot<TaskProps> {
   get dueTime(): string | null {
     return this.props.dueTime;
   }
+  get focusDate(): string | null {
+    return this.props.focusDate;
+  }
   get completedAt(): Date | null {
     return this.props.completedAt;
   }
@@ -220,6 +228,7 @@ export class TaskEntity extends AggregateRoot<TaskProps> {
       if (changes.dueDate === null) this.props.dueTime = null;
     }
     if (changes.dueTime !== undefined) this.props.dueTime = changes.dueTime;
+    if (changes.focusDate !== undefined) this.props.focusDate = changes.focusDate;
     this.setUpdatedAt(new Date());
     this.validate();
     if (due.dueDate !== this.props.dueDate || due.dueTime !== this.props.dueTime) {

@@ -8,25 +8,37 @@ import {
 } from '@oppenheimer/design-system-web';
 import { useSuspensePlan, useUpdateTask } from '@oppenheimer/frontend-consumer/react';
 import { ErrorAlert, formatCalendarDay, useLocale } from '@oppenheimer/frontend-web';
+import { getRouteApi } from '@tanstack/react-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useScopeProject } from '../hooks/use-scope-project';
 import { useTodoDay } from '../hooks/use-todo-day';
-import { undatedTasks } from '../lib/todo';
+import { type AddFilter, addableTasks, NO_ADD_FILTER, picksInView, todoEntries } from '../lib/todo';
+import { AddFilters } from './add-filters';
+
+const todo = getRouteApi('/_authenticated/plan/todo');
 
 /**
- * Add undated tasks' list, in `ScheduleUndatedDialog`'s `QueryState.Data`:
- * the open tasks with no due date in the projects To do is narrowed to, each
- * with its column's dot, checked into a set; Add gives every checked
- * one the day shown as its due date, side by side. Those that fail stay
- * checked and the dialog stays open saying so; when none fails it closes,
- * and the tasks land on the list behind it. While Add runs the checks hold.
+ * Add tasks' list, in `AddToDayDialog`'s `QueryState.Data`: the open
+ * tasks not already on the day shown, each with its column's dot, checked
+ * into a set, under `AddFilters`; the filter starts at the projects To do is
+ * narrowed to and lives in the dialog, not the address. Add puts every
+ * checked task the filters still show on that day (its focus date; a due
+ * date stays as it is), side by side.
+ * Those that fail stay checked and the dialog stays open saying so; when
+ * none fails it closes, and the tasks land on the list behind it. While Add
+ * runs the checks hold.
  */
-export function UndatedPicker({ onClose }: { onClose: () => void }) {
+export function AddToDayPicker({ onClose }: { onClose: () => void }) {
   const { t } = useTranslation();
   const locale = useLocale();
-  const { day } = useTodoDay();
-  const { projectIds } = useScopeProject();
+  const { day, today } = useTodoDay();
+  const { overdue } = todo.useSearch();
+  const scope = useScopeProject();
+  const [filter, setFilter] = useState<AddFilter>(() => ({
+    ...NO_ADD_FILTER,
+    projectIds: scope.projectIds ?? [],
+  }));
   const read = useSuspensePlan();
   const update = useUpdateTask();
   const [picked, setPicked] = useState<string[]>([]);
@@ -36,7 +48,15 @@ export function UndatedPicker({ onClose }: { onClose: () => void }) {
   const date = formatCalendarDay(day, locale);
   // One line a row: the list caps its height by one-line rows. The column is
   // its dot; the project and the column's name are searched, not shown.
-  const options = undatedTasks(read.tasks, projectIds).map((task) => {
+  const onDay = new Set(
+    todoEntries(read.tasks, day, { today, overdue: overdue !== 'off' }).map(
+      (entry) => entry.task.id,
+    ),
+  );
+  const anyAddable = addableTasks(read.tasks, onDay).length > 0;
+  const shown = addableTasks(read.tasks, onDay, filter);
+  const adding = picksInView(picked, shown);
+  const options = shown.map((task) => {
     const project = projects.get(task.projectId);
     return {
       value: task.id,
@@ -52,10 +72,10 @@ export function UndatedPicker({ onClose }: { onClose: () => void }) {
     setPending(true);
     setFailure(null);
     const results = await Promise.allSettled(
-      picked.map((id) => update.mutateAsync({ id, input: { dueDate: day } })),
+      adding.map((id) => update.mutateAsync({ id, input: { focusDate: day } })),
     );
     setPending(false);
-    const failed = picked.filter((_, index) => results[index].status === 'rejected');
+    const failed = adding.filter((_, index) => results[index].status === 'rejected');
     if (failed.length === 0) return onClose();
     const first = results.find((result) => result.status === 'rejected');
     setFailure(first?.status === 'rejected' ? first.reason : null);
@@ -67,10 +87,13 @@ export function UndatedPicker({ onClose }: { onClose: () => void }) {
       <DialogDescription>{t('tasks.todo.schedule.for', { date })}</DialogDescription>
       <ErrorAlert error={read.error} fallback={t('tasks.todo.schedule.loadFailed')} />
       <ErrorAlert error={failure} fallback={t('tasks.todo.schedule.failed')} />
+      {anyAddable ? <AddFilters onDay={onDay} filter={filter} onChange={setFilter} /> : null}
       {options.length === 0 ? (
         <EmptyState className="rounded-lg bg-card">
           <EmptyState.Header>
-            <EmptyState.Description>{t('tasks.todo.schedule.none')}</EmptyState.Description>
+            <EmptyState.Description>
+              {anyAddable ? t('tasks.todo.noMatch') : t('tasks.todo.schedule.none')}
+            </EmptyState.Description>
           </EmptyState.Header>
         </EmptyState>
       ) : (
@@ -93,7 +116,7 @@ export function UndatedPicker({ onClose }: { onClose: () => void }) {
         <Button type="button" variant="ghost" onClick={onClose}>
           {t('common.cancel')}
         </Button>
-        <Button type="button" pending={pending} disabled={picked.length === 0} onClick={add}>
+        <Button type="button" pending={pending} disabled={adding.length === 0} onClick={add}>
           {t('tasks.todo.schedule.submit', { date })}
         </Button>
       </div>

@@ -75,6 +75,10 @@ export class TaskOrmEntity {
   @Column({ type: 'varchar', length: 5, nullable: true })
   dueTime!: string | null;
 
+  /** The day the person means to work on it, apart from when it is due; To do lists it from then. */
+  @Column({ type: 'date', nullable: true })
+  focusDate!: string | null;
+
   @Column({ type: TIMESTAMP_COLUMN_TYPE, nullable: true })
   completedAt!: Date | null;
 

@@ -2831,6 +2831,10 @@ export type TaskResponseDto = {
      */
     dueDate?: string | null;
     dueTime?: string | null;
+    /**
+     * The day the person means to work on it, apart from when it is due. To do lists it that day and every later one until it is done.
+     */
+    focusDate?: string | null;
     completedAt?: string | null;
     /**
      * Why the task waits on a person; null when it does not. Done clears it.
@@ -2857,6 +2861,7 @@ export type CreateTaskRequest = {
     milestoneId?: string | null;
     dueDate?: string | null;
     dueTime?: string | null;
+    focusDate?: string | null;
 };
 
 export type UpdateTaskRequest = {
@@ -2866,6 +2871,7 @@ export type UpdateTaskRequest = {
     milestoneId?: string | null;
     dueDate?: string | null;
     dueTime?: string | null;
+    focusDate?: string | null;
     blockedReason?: string | null;
     expectedVersion?: number;
 };

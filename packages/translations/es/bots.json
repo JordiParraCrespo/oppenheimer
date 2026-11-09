@@ -110,7 +110,20 @@
         "rate_limit": "{{provider}} está limitando las peticiones, reintentando…",
         "unavailable": "{{provider}} está saturado, reintentando…"
       },
-      "thinking": "Pensando",
+      "musing": {
+        "pondering": "Cavilando…",
+        "mulling": "Rumiando…",
+        "musing": "Meditando…",
+        "noodling": "Divagando…",
+        "ruminating": "Barruntando…",
+        "cogitating": "Elucubrando…",
+        "brewing": "Cocinando…",
+        "percolating": "Destilando…",
+        "scheming": "Tramando…",
+        "puzzling": "Descifrando…",
+        "tinkering": "Trasteando…",
+        "conjuring": "Urdiendo…"
+      },
       "writing": "Escribiendo",
       "stopped": "Detenido"
     },
@@ -309,8 +322,6 @@
         "ended": "El bucle «{{prompt}}» terminó: el bot no dijo cuándo volver a ejecutarlo"
       },
       "compaction": "Resumió el trabajo anterior para mantener su contexto pequeño · {{before}} → {{after}} tokens",
-      "compactionLine": "Resumió el trabajo anterior",
-      "compactionTokens": "{{before}} → {{after}} tokens",
       "dream": {
         "dreamed": "Ordenó su memoria · {{before}} datos → {{after}}",
         "undone": "Deshiciste el orden · vuelven {{before}} datos"

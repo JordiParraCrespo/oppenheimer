@@ -39,26 +39,6 @@ const event = (
   }) as unknown as BotMessageEntity;
 
 describe('BotEventLine', () => {
-  // What breaks this: a compaction line read from its words, or none drawn,
-  // so the person cannot see where the bot summarized what it had read.
-  it('draws where a turn compacted from the event’s fields, not its words', () => {
-    render(
-      <BotEventLine
-        message={
-          {
-            id: 'c1',
-            role: 'event',
-            content: 'Earlier in this turn, what you had read was summarized…',
-            event: { kind: 'compaction', tokensBefore: 92_000, tokensAfter: 21_000 },
-          } as unknown as BotMessageEntity
-        }
-      />,
-    );
-    expect(screen.getByText('bots.chat.event.compactionLine')).toBeTruthy();
-    expect(screen.getByText('bots.chat.event.compactionTokens')).toBeTruthy();
-    expect(screen.queryByText(/Earlier in this turn/)).toBeNull();
-  });
-
   it('says what was decided from the event’s fields, whatever its words say', () => {
     render(<BotEventLine message={event('denied', 'Ana approved: something else')} />);
     expect(screen.getByText('bots.chat.event.denied|Start it')).toBeTruthy();
