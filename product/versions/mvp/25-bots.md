@@ -883,8 +883,16 @@ learn fast what is going on.
   bot's own `recap` takes its place. The names come from
   `BOT_RUNNABLE_BUILT_IN_SKILL_NAMES`, which a spec holds to the built-ins
   that are `userInvocable`.
+- **A finished task ends with one** (2026-11-09). The owner asked for a
+  recap whenever a task or a session finishes, on every session that runs
+  on Oppenheimer. A bot woken because a session it follows completed
+  reports what the agent did, then ends with the recap scoped to that
+  session; the session note tells the agent to end each task it finishes
+  with the same recap, unasked; and agents working in this repository end
+  every task with the `recap` skill (`.agents/skills/recap`).
 - **Not built.** The catch-up in a Codex session, since the note is
-  `CLAUDE.md` and Codex reads `AGENTS.md`.
+  `CLAUDE.md` and Codex reads `AGENTS.md`; nor in a folder session, which
+  gets no note.
 
 **Built-in commands** (2026-11-02, from Claude Code's commands,
 `code.claude.com/docs/en/commands`). A built-in is a `/<name>` Oppenheimer

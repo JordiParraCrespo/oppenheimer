@@ -160,6 +160,19 @@ export function useBotWaitingMessages(id: string): readonly BotWaitingMessage[] 
   return data ?? NO_WAITING;
 }
 
+const NO_SENT: readonly string[] = [];
+
+/** What you wrote to the bot, newest first, for the composer to recall: nothing while the chat loads. */
+export function useBotSentTexts(id: string): readonly string[] {
+  const app = useConsumerApp();
+  const { data } = useQuery<BotConversationEntity, Error, readonly string[]>({
+    queryKey: botsKeys.conversation(id),
+    queryFn: () => app.bots.findConversation(id),
+    select: (conversation) => conversation.sentTexts,
+  });
+  return data ?? NO_SENT;
+}
+
 const NO_ROOM: BotRoomLeft = { context: null, planLimits: null };
 
 /** How much room the bot has left, as of its newest turn that said; none while the chat loads. */
