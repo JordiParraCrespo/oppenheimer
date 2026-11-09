@@ -1204,13 +1204,17 @@ function isWorking(turn: ChatTurn): boolean {
   return tail.kind !== 'reply' && tail.kind !== 'notice' && tail.kind !== 'output';
 }
 
+/** The tags Claude Code wraps around text pasted into its prompt. */
+const PASTED_CONTENT = /<\/?pasted_content(?:\s[^>]*)?>/g;
+
 /**
  * The person's words as they typed them, or `null` for a line that is the
  * CLI's own (a caveat, a command's output). A slash command is written as
- * tags; it reads as `/name arguments`.
+ * tags; it reads as `/name arguments`. Pasted text reads as pasted, without
+ * the tags the CLI wraps it in.
  */
 function typedPrompt(raw: string): string | null {
-  const value = raw.trim();
+  const value = raw.replace(PASTED_CONTENT, '').trim();
   if (value === '') return null;
   if (
     value.startsWith('Caveat:') ||

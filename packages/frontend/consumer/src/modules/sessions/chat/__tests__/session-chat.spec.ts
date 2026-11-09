@@ -251,6 +251,16 @@ describe('toTurns', () => {
     expect(turns[0]?.steps).toEqual([]);
   });
 
+  it('reads pasted text without the tags the CLI wraps it in', () => {
+    const turns = toTurns([
+      user(
+        'p',
+        'Here it is:\n<pasted_content id="0ef4">\nStep 1, api.env\n</pasted_content>\nThoughts?',
+      ),
+    ]);
+    expect(turns[0]?.prompt?.text).toBe('Here it is:\n\nStep 1, api.env\n\nThoughts?');
+  });
+
   it('marks an interrupted turn and a compaction where they happened', () => {
     const turns = toTurns([
       user('u1', 'Go'),
