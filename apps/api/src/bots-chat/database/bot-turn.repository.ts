@@ -32,7 +32,7 @@ import {
   setLoopWithin,
   stageLoopRunWithin,
 } from './bot-loop.repository';
-import { insertMessageWithin } from './bot-message.repository';
+import { ensureConsoleWithin, insertMessageWithin } from './bot-message.repository';
 import { BotTurnOrmEntity } from './bot-turn.orm-entity';
 import type {
   BotLoopRunTimes,
@@ -47,6 +47,8 @@ export const RUN_BOT_TURN_JOB = 'run-bot-turn';
 
 /** The job that queues an ask's answer on the bot that asked; its payload is `{ turnId }`, the asked turn. */
 export const DELIVER_BOT_ANSWER_JOB = 'deliver-bot-answer';
+/** Sends a Telegram turn's answer to the chat its message came from. */
+export const DELIVER_TELEGRAM_REPLY_JOB = 'deliver-telegram-reply';
 /** A turn of a bot with a goal ended: the goal decides whether to go on (`25-bots.md` §4.1). */
 export const CONTINUE_BOT_GOAL_JOB = 'continue-bot-goal';
 /** A run of a bot's loop ended: the loop decides whether it ends (`25-bots.md` §4.1, `/loop`). */
@@ -430,9 +432,10 @@ export class BotTurnRepository
     botId: string,
     turnIds: string[],
   ): Promise<BotTurnEntity[]> {
-    // IDX_bot_turn_bot, and IDX_bot_turn_active for the second half.
+    // IDX_bot_turn_bot, and IDX_bot_turn_active for the second half: the
+    // console chat's turns, whose conversation is the bot's id.
     const records = await this.scopedQuery(scope)
-      .andWhere('turn.botId = :botId', { botId })
+      .andWhere('turn.botId = :botId AND turn.conversationId = :botId', { botId })
       .andWhere('(turn.id = ANY(:turnIds) OR turn.status IN (:...active))', {
         turnIds,
         active: BOT_ACTIVE_TURN_STATUSES,
@@ -488,6 +491,16 @@ export class BotTurnRepository
       if (result.affected !== 1) return false;
       turn.markPersisted();
       await stageNext(this.outbox, manager, turn, correlationId);
+      if (turn.origin === 'telegram') {
+        await this.outbox.stageJob(manager, {
+          queue: QUEUE_NAMES.BOT_TURNS,
+          jobName: DELIVER_TELEGRAM_REPLY_JOB,
+          payload: { turnId: turn.id },
+          reason: `bot ${turn.botId}: turn ${turn.id} answers a message on Telegram`,
+          aggregateId: turn.id,
+          correlationId,
+        });
+      }
       if (turn.replyRequested && turn.askedByTurnId) {
         await this.outbox.stageJob(manager, {
           queue: QUEUE_NAMES.BOT_TURNS,
@@ -552,6 +565,19 @@ export class BotTurnRepository
     });
   }
 
+  async findRunningIn(
+    organizationId: string,
+    conversationId: string,
+  ): Promise<BotTurnEntity | null> {
+    // IDX_bot_turn_conversation.
+    const record = await this.repository.findOneBy({
+      organizationId,
+      conversationId,
+      status: 'running',
+    });
+    return record ? this.mapper.toDomain(record) : null;
+  }
+
   async requestCancel(turn: BotTurnEntity, now: Date): Promise<boolean> {
     const result = await this.repository
       .createQueryBuilder()
@@ -577,18 +603,20 @@ export class BotTurnRepository
     return this.outbox.transaction(async (manager) => {
       // The lock a send takes: no turn can be queued between the check and the deletes.
       if (!(await lockBot(manager, { organizationId, botId }))) return 'missing';
-      // IDX_bot_turn_active.
+      // IDX_bot_turn_active, the console chat's turns only (its
+      // conversation's id is the bot's): a Telegram chat is not cleared here.
       const [{ active }]: { active: number }[] = await manager.query(
         `SELECT count(*)::int AS active FROM bot_turn
-          WHERE "organizationId" = $1 AND "botId" = $2 AND "status" IN ('queued', 'running')`,
+          WHERE "organizationId" = $1 AND "botId" = $2 AND "conversationId" = $2
+            AND "status" IN ('queued', 'running')`,
         [organizationId, botId],
       );
       if (active > 0) return 'busy';
       await this.conversations.deleteWithin(manager, organizationId, botId);
-      await manager.query(`DELETE FROM bot_turn WHERE "organizationId" = $1 AND "botId" = $2`, [
-        organizationId,
-        botId,
-      ]);
+      await manager.query(
+        `DELETE FROM bot_turn WHERE "organizationId" = $1 AND "botId" = $2 AND "conversationId" = $2`,
+        [organizationId, botId],
+      );
       await clearModelCallsWithin(manager, organizationId, botId);
       return 'cleared';
     });
@@ -659,6 +687,7 @@ export async function enqueueLocked(
       WHERE "organizationId" = $1 AND "botId" = $2 AND "status" IN ('queued', 'running')`,
     [turn.organizationId, turn.botId],
   );
+  await ensureConsoleWithin(manager, turn);
   await manager.getRepository(BotTurnOrmEntity).insert(turns.toPersistence(turn));
   await insertMessageWithin(manager, messages, message);
   if (active > 0) return 'waiting';

@@ -56,7 +56,33 @@ export const telegramAccountSchema = z.object({
   username: z.string().nullable(),
   displayName: z.string().nullable(),
   statusReason: z.string().nullable(),
+  /** The Oppenheimer bot that answers the owner here; null while none does. */
+  answeringBotId: z.string().uuid().nullable(),
+  /** Whether the owner's Telegram account is recorded, by the one-time `start` link. */
+  ownerLinked: z.boolean(),
   linkedAt: z.string(),
 });
 
 export type TelegramAccount = z.infer<typeof telegramAccountSchema>;
+
+/**
+ * `PATCH /telegram/accounts/:id`: which of the caller's Oppenheimer bots
+ * answers them on this Telegram bot; null for none
+ * (`product/next-steps/answering-on-telegram-and-whatsapp.md` §1).
+ */
+export const updateTelegramAccountSchema = z.object({
+  answeringBotId: z.string().uuid().nullable(),
+});
+
+export type UpdateTelegramAccountDto = z.infer<typeof updateTelegramAccountSchema>;
+
+/**
+ * `POST /telegram/accounts/:id/owner-link`: a one-time link that records
+ * whoever opens it in Telegram as the bot's owner, for ten minutes.
+ */
+export const telegramOwnerLinkSchema = z.object({
+  url: z.string().url(),
+  expiresAt: z.string(),
+});
+
+export type TelegramOwnerLink = z.infer<typeof telegramOwnerLinkSchema>;

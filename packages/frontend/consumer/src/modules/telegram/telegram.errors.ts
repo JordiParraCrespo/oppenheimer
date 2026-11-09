@@ -13,4 +13,12 @@ export const TelegramErrors = {
     code: 'TELEGRAM_CLIENT_003',
     message: 'Failed to disconnect the Telegram bot',
   },
+  UPDATE_FAILED: {
+    code: 'TELEGRAM_CLIENT_004',
+    message: 'Failed to choose the bot that answers on Telegram',
+  },
+  OWNER_LINK_FAILED: {
+    code: 'TELEGRAM_CLIENT_005',
+    message: 'Failed to make the link that records you as the owner',
+  },
 } as const satisfies Record<string, ErrorDefinition>;

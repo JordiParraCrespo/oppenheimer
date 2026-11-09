@@ -56,6 +56,7 @@ export class BotMessageMapper
     record.id = entity.id;
     record.organizationId = entity.organizationId;
     record.botId = entity.botId;
+    record.conversationId = entity.conversationId;
     record.turnId = entity.turnId;
     record.role = entity.role;
     // Postgres refuses a NUL or a lone surrogate in either column (#728).
@@ -86,6 +87,7 @@ export class BotMessageMapper
       props: {
         organizationId: record.organizationId,
         botId: record.botId,
+        conversationId: record.conversationId,
         turnId: record.turnId,
         role: record.role as BotMessageRole,
         content: record.content,

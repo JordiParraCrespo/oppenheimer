@@ -45,7 +45,8 @@ export class TelegramMessageMapper {
     text: string;
     replyToId: string | null;
     sent: { id: string; sentAt: Date };
-    botId: string;
+    /** The Oppenheimer bot that wrote it; null for a fixed line Oppenheimer sent itself. */
+    botId: string | null;
   }): TelegramMessageDraft {
     const { account, chat, sent } = props;
     return {

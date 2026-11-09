@@ -928,7 +928,9 @@ export interface BotGoal {
 /**
  * Why a bot turn exists: a message (yours or another bot's), an approval's
  * decision, a card of questions answered or dismissed, a routine's run, a
- * session the bot is subscribed to, a goal it set itself, or a loop's run.
+ * session the bot is subscribed to, a goal it set itself, a loop's run, or a
+ * message of yours to the bot's Telegram bot
+ * (`product/next-steps/answering-on-telegram-and-whatsapp.md`).
  */
 export const BOT_TURN_ORIGINS = [
   'message',
@@ -938,19 +940,21 @@ export const BOT_TURN_ORIGINS = [
   'subscription',
   'goal',
   'loop',
+  'telegram',
 ] as const;
 export type BotTurnOrigin = (typeof BOT_TURN_ORIGINS)[number];
 
 /**
- * The turns a person is waiting on: one they started by writing, or by
- * deciding a card. A routine's run, a wake and a goal's continuation run
- * with nobody there, so a tool that needs someone to answer is not offered
- * on them.
+ * The turns a person is waiting on: one they started by writing (in the
+ * console or on Telegram), or by deciding a card. A routine's run, a wake
+ * and a goal's continuation run with nobody there, so a tool that needs
+ * someone to answer is not offered on them.
  */
 export const BOT_ATTENDED_ORIGINS = [
   'message',
   'approval',
   'question',
+  'telegram',
 ] as const satisfies readonly BotTurnOrigin[];
 
 /**

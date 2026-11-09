@@ -269,6 +269,7 @@ export class TurnTranscript {
     return BotMessageEntity.createNew({
       organizationId: this.turn.organizationId,
       botId: this.turn.botId,
+      conversationId: this.turn.conversationId,
       turnId: this.turn.id,
       role: 'event',
       content: `Earlier in this turn, what you had read was summarized to keep your context small (about ${Math.round(event.tokensBefore / 1000)}k tokens down to ${Math.round(event.tokensAfter / 1000)}k).`,
@@ -291,6 +292,7 @@ export class TurnTranscript {
     return BotMessageEntity.createNew({
       organizationId: this.turn.organizationId,
       botId: this.turn.botId,
+      conversationId: this.turn.conversationId,
       turnId: this.turn.id,
       role,
       content,
