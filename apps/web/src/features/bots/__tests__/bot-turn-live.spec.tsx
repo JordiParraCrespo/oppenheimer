@@ -17,6 +17,7 @@ vi.mock('react-i18next', async (importOriginal) => ({
   useTranslation: () => ({
     t: (key: string, values?: Record<string, unknown>) =>
       values ? `${key} ${JSON.stringify(values)}` : key,
+    i18n: { resolvedLanguage: 'en' },
   }),
 }));
 

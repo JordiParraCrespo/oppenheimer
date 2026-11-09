@@ -1,6 +1,7 @@
 import type { BotEngineEvent, BotEngineFailure } from '@oppenheimer/backend-agents';
 import { AppError } from '@oppenheimer/backend-core';
 import {
+  BOT_PROVIDER_CATALOG,
   BOT_TURN_IDLE_LIMIT_MS,
   type BotAttachment,
   type BotTurnFailure,
@@ -60,8 +61,32 @@ export interface TranscriptOutcome {
   context: BotTurnContext | null;
   /** A subscription's windows as its last answer said them. */
   planLimits: BotTurnPlanLimits | null;
-  /** The latest moment a system its tools called asked us to wait until; null when none did. */
+  /**
+   * The latest moment a system asked us to wait until: one its tools called,
+   * or the model provider that refused the turn for a limit
+   * (`providerLimitOf`); null when none did.
+   */
   limited: BotRateLimit | null;
+}
+
+/**
+ * When the model provider that refused a turn for a limit may be called
+ * again: the time it named with its refusal, or, for a spent plan, when the
+ * spent window (at 100%) resets; null when it said neither, which only the
+ * person can wait out.
+ */
+export function providerResetOf(
+  done: Extract<BotEngineEvent, { type: 'done' }>,
+  planLimits: BotTurnPlanLimits | null,
+): Date | null {
+  if (done.reason !== 'failed') return null;
+  if (done.rateLimit?.resetAt) return done.rateLimit.resetAt;
+  if (done.failure !== 'usage_limit' && done.failure !== 'rate_limit') return null;
+  const spent = [planLimits?.fiveHour, planLimits?.sevenDay].filter(
+    (window) => window && window.usedPercent >= 100 && window.resetsAt,
+  );
+  const resets = spent.map((window) => window?.resetsAt?.getTime() ?? 0);
+  return resets.length > 0 ? new Date(Math.max(...resets)) : null;
 }
 
 /**
@@ -121,7 +146,7 @@ export class TurnTranscript {
       case 'retrying':
         return [{ kind: 'retrying', reason: event.reason }];
       case 'compacted':
-        return [];
+        return [{ kind: 'insert', message: this.compaction(event) }];
       case 'steered':
         this.activity = null;
         return event.steers.map((steer) => ({
@@ -138,6 +163,11 @@ export class TurnTranscript {
         this.outcome.planLimits = event.limits ?? this.outcome.planLimits;
         return [];
       case 'done': {
+        const reset = providerResetOf(event, this.outcome.planLimits);
+        if (reset) {
+          const system = BOT_PROVIDER_CATALOG[this.turn.provider].label;
+          this.outcome.limited = laterLimit(this.outcome.limited, { system, resetAt: reset });
+        }
         this.outcome.reason = event.reason;
         this.outcome.error = event.reason === 'failed' ? (event.error ?? null) : null;
         this.outcome.failure = event.reason === 'failed' ? (event.failure ?? 'other') : null;
@@ -228,6 +258,28 @@ export class TurnTranscript {
       writes.push({ kind: 'insert', message: this.message('assistant', '', [], images) });
     }
     return writes;
+  }
+
+  /**
+   * The line where the turn folded what it had read: the steps after it go on
+   * a new activity line, so each line's calls read in order around it.
+   */
+  private compaction(event: Extract<BotEngineEvent, { type: 'compacted' }>): BotMessageEntity {
+    this.activity = null;
+    return BotMessageEntity.createNew({
+      organizationId: this.turn.organizationId,
+      botId: this.turn.botId,
+      turnId: this.turn.id,
+      role: 'event',
+      content: `Earlier in this turn, what you had read was summarized to keep your context small (about ${Math.round(event.tokensBefore / 1000)}k tokens down to ${Math.round(event.tokensAfter / 1000)}k).`,
+      event: {
+        kind: 'compaction',
+        tokensBefore: Math.max(0, Math.round(event.tokensBefore)),
+        tokensAfter: Math.max(0, Math.round(event.tokensAfter)),
+      },
+      steps: [],
+      position: this.position++,
+    });
   }
 
   private message(

@@ -1054,6 +1054,17 @@ export interface BotDreamEvent {
   factsAfter: number;
 }
 
+/**
+ * A turn folded what it had read into a summary to stay inside its window
+ * (`25-bots.md` §2, "Compaction"): the tokens the next call would have been
+ * sent, before and after, as the engine estimated them.
+ */
+export interface BotCompactionEvent {
+  kind: 'compaction';
+  tokensBefore: number;
+  tokensAfter: number;
+}
+
 export type BotMessageEvent =
   | BotApprovalEvent
   | BotQuestionEvent
@@ -1064,7 +1075,8 @@ export type BotMessageEvent =
   | BotPullRequestEvent
   | BotGoalEvent
   | BotLoopEvent
-  | BotDreamEvent;
+  | BotDreamEvent
+  | BotCompactionEvent;
 
 /** The kinds of event, for a reader that checks one before trusting its fields. */
 export const BOT_MESSAGE_EVENT_KINDS = [
@@ -1078,6 +1090,7 @@ export const BOT_MESSAGE_EVENT_KINDS = [
   'goal',
   'loop',
   'dream',
+  'compaction',
 ] as const;
 export type BotMessageEventKind = (typeof BOT_MESSAGE_EVENT_KINDS)[number];
 

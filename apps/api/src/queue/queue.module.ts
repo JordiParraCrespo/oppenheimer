@@ -38,6 +38,11 @@ const QUEUE_REGISTRATIONS: readonly QueueRegistration[] = [
     stagedOnOutbox: true,
   },
   { name: QUEUE_NAMES.BOT_TURNS, defaultJobOptions: BOT_TURN_JOB_OPTIONS, stagedOnOutbox: true },
+  {
+    name: QUEUE_NAMES.BOT_BACKGROUND_TURNS,
+    defaultJobOptions: BOT_TURN_JOB_OPTIONS,
+    stagedOnOutbox: true,
+  },
   // An approved call is keyed by its approval, so a retry runs it once.
   { name: QUEUE_NAMES.BOT_APPROVALS, defaultJobOptions: DURABLE_JOB_OPTIONS, stagedOnOutbox: true },
   // A summary write is conditional on the version it read, so a retry never moves it back.

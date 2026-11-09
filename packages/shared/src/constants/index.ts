@@ -74,6 +74,12 @@ export const QUEUE_NAMES = {
   OUTBOX_RETENTION: 'outbox-retention',
   /** Run one bot turn on its provider's engine, then start the bot's next queued one. */
   BOT_TURNS: 'bot-turns',
+  /**
+   * Run one turn nobody waits on (a goal's continuation, a loop's run, a
+   * routine's): its own queue and workers, so a turn that runs for hours
+   * never holds the slots a person's message waits on.
+   */
+  BOT_BACKGROUND_TURNS: 'bot-background-turns',
   /** Carry out a call its bot's owner approved, then queue the turn that reports it. */
   BOT_APPROVALS: 'bot-approvals',
   /** Fold a bot's oldest messages into its conversation summary, once they pass the history budget. */

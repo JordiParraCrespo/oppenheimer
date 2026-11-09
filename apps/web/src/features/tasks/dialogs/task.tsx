@@ -6,26 +6,33 @@ import {
   DialogTitle,
 } from '@oppenheimer/design-system-web';
 import { QueryState } from '@oppenheimer/frontend-web';
-import { getRouteApi } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { TaskEditorSkeleton } from '../components/task-editor-skeleton';
+import type { BoardFilter } from '../lib/board';
 import { NEW_TASK } from '../lib/board-search';
 import { TaskEditor } from '../sections/task-editor';
 
-const board = getRouteApi('/_authenticated/plan/');
-
 /**
- * New task and Edit task (`18-plan-product.md` §3), open while the address
- * says `?task=`: `new`, or a task's id, which is the link the session header's
- * "Back to task" sends. It owns the three writes; the form takes values and
+ * New task and Edit task (`18-plan-product.md` §3), open while the screen's
+ * address says `?task=`: `new`, or a task's id, which is the link the session
+ * header's "Back to task" sends. The board and To do both open it in place,
+ * so saving leaves you where you were; `filter` files a new task where the
+ * board is narrowed. It owns the three writes; the form takes values and
  * hands them back. The editor reads under Suspense; this draws its
  * placeholder and a first failure.
  */
-export function TaskDialog() {
+export function TaskDialog({
+  open,
+  filter,
+  onClose: close,
+  onStartSession,
+}: {
+  open: string | undefined;
+  filter?: BoardFilter;
+  onClose: () => void;
+  onStartSession: (taskId: string) => void;
+}) {
   const { t } = useTranslation();
-  const { task: open } = board.useSearch();
-  const navigate = board.useNavigate();
-  const close = () => navigate({ search: (previous) => ({ ...previous, task: undefined }) });
   if (!open) return null;
 
   return (
@@ -44,7 +51,12 @@ export function TaskDialog() {
               </QueryState.Pending>
               <QueryState.Error fallback={t('tasks.dialog.loadFailed')} />
               <QueryState.Data>
-                <TaskEditor taskId={open === NEW_TASK ? undefined : open} onClose={close} />
+                <TaskEditor
+                  taskId={open === NEW_TASK ? undefined : open}
+                  filter={filter}
+                  onClose={close}
+                  onStartSession={onStartSession}
+                />
               </QueryState.Data>
             </QueryState>
           </div>

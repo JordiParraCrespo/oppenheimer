@@ -17,7 +17,15 @@ this note says what the real thing does instead.
   (`/plan/projects`, with the workspace's project count): the one place
   projects are made and edited, a row per project with its repositories
   and its settings (the project dialog), and New project in the header.
-  The Sessions sidebar no longer makes or edits projects.
+  The Sessions sidebar no longer makes or edits projects. Since 2026-11-08
+  (the `Tasks` artboards of that day) each project is a card instead of a
+  row: its repositories and whether one of its sessions needs you or is at
+  work. A card opens the project's page, `/plan/projects/<id>`, with a way
+  back to the cards, Settings (the project dialog), its milestones with how
+  far each is, the tasks that wait on a person and the ones in progress.
+  Since 2026-11-09 the page also has Stats (`?view=stats`, `23` §4 for one
+  project): tasks completed and created per week, and tokens and cost once
+  sessions report them, over a period against the one before.
 - **Routes.** `/plan` (the board, `?project=<slug>&goal=<id>`),
   `/plan/calendar` (`?month=2026-10`), and `?task=<id>` on either to open
   a task's dialog, which is the deep link the session header uses. The
