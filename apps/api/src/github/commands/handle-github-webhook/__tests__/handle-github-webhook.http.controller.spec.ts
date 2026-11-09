@@ -1,24 +1,22 @@
 import 'reflect-metadata';
-import { type INestApplication, Module, type NestModule, VersioningType } from '@nestjs/common';
-import { ApplicationConfig, HttpAdapterHost } from '@nestjs/core';
+import { type INestApplication, Module, VersioningType } from '@nestjs/common';
 import { CommandBus } from '@nestjs/cqrs';
 import { Test } from '@nestjs/testing';
 import { AllExceptionsFilter } from '@oppenheimer/backend-core';
 import { AuthModule as BetterAuthModule } from '@thallesp/nestjs-better-auth';
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import {
-  GITHUB_WEBHOOK_BODY_LIMIT_BYTES,
-  mountGithubWebhookBodyParser,
-} from '../../../infrastructure/github-webhook-body.util';
+import { GithubModule } from '../../../github.module';
+import { GITHUB_WEBHOOK_BODY_LIMIT_BYTES } from '../../../infrastructure/github-webhook-body.util';
 import { HandleGithubWebhookCommand } from '../handle-github-webhook.command';
 import { HandleGithubWebhookHttpController } from '../handle-github-webhook.http.controller';
 
 /**
  * The parsers a delivery goes through before the controller: Better Auth's
  * app-wide JSON and form parsers with `AppModule`'s options, and the
- * webhook's own, mounted as `GithubModule` mounts it, so whichever would
- * read the body first in the app reads it first here. The bus is stubbed;
- * what the handler does with the bytes is its own spec's.
+ * webhook's own, mounted by `GithubModule`'s own constructor and
+ * `configure`: the test module extends it and replaces only its metadata, so
+ * dropping the mount or breaking its injection fails here. The bus is
+ * stubbed; what the handler does with the bytes is its own spec's.
  */
 
 const execute = vi.fn();
@@ -32,22 +30,9 @@ const execute = vi.fn();
   ],
   controllers: [HandleGithubWebhookHttpController],
   providers: [{ provide: CommandBus, useValue: { execute } }],
+  exports: [],
 })
-class WebhookPipelineModule implements NestModule {
-  constructor(
-    private readonly adapterHost: HttpAdapterHost,
-    private readonly appConfig: ApplicationConfig,
-  ) {}
-
-  configure(): void {
-    mountGithubWebhookBodyParser(
-      this.adapterHost,
-      this.appConfig,
-      HandleGithubWebhookHttpController,
-      'handle',
-    );
-  }
-}
+class WebhookPipelineModule extends GithubModule {}
 
 describe('POST /v1/github/webhook', () => {
   let app: INestApplication;
@@ -152,15 +137,16 @@ describe('POST /v1/github/webhook', () => {
     expect(execute).not.toHaveBeenCalled();
   });
 
-  it('leaves every other path on the app-wide limit', async () => {
+  it('leaves every other path, a path under the webhook included, on the app-wide limit', async () => {
     // The app-wide parser runs on every path, routed or not, before routing.
     const body = JSON.stringify({ pad: 'x'.repeat(200_000) });
-    const response = await fetch(`${base}/github/webhooks`, {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body,
-    });
-
-    expect(response.status).toBe(413);
+    for (const path of ['/github/webhooks', '/github/webhook/extra']) {
+      const response = await fetch(`${base}${path}`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body,
+      });
+      expect(response.status, path).toBe(413);
+    }
   });
 });
