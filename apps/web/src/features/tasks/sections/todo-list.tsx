@@ -11,7 +11,7 @@ import {
 import { Play } from '@oppenheimer/design-system-web/icons';
 import { useMoveTask, useSuspensePlan } from '@oppenheimer/frontend-consumer/react';
 import { ErrorAlert, formatCalendarDay, useDragLabels, useLocale } from '@oppenheimer/frontend-web';
-import { getRouteApi, useNavigate } from '@tanstack/react-router';
+import { getRouteApi } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { useScopeProject } from '../hooks/use-scope-project';
 import { useTodoDay } from '../hooks/use-todo-day';
@@ -36,7 +36,6 @@ export function TodoList() {
   const { day, today } = useTodoDay();
   const { overdue } = todo.useSearch();
   const { projectIds } = useScopeProject();
-  const go = useNavigate();
   const navigate = todo.useNavigate();
   const read = useSuspensePlan();
   const move = useMoveTask();
@@ -127,7 +126,9 @@ export function TodoList() {
                       afterTaskId: null,
                     })
                   }
-                  onOpen={() => go({ to: '/plan', search: { task: task.id } })}
+                  onOpen={() =>
+                    navigate({ search: (previous) => ({ ...previous, task: task.id }) })
+                  }
                   action={
                     task.isDone ? undefined : (
                       <IconButton

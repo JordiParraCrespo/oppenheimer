@@ -7,12 +7,14 @@ import { z } from 'zod';
  * To do's address (the 2026-11-08 `Tasks` frame): the projects it is
  * narrowed to (as on the board), the day it lists (`YYYY-MM-DD`, today when
  * absent) and `overdue=off` to leave out what is overdue, which it includes
- * by default. `start` opens Start session for that task, as on the board.
+ * by default. `task` opens that task's dialog and `start` Start session for
+ * it, as on the board.
  */
 export const todoSearchSchema = z.object({
   project: searchText,
   date: calendarDateSchema.optional().catch(undefined),
   overdue: z.literal('off').optional().catch(undefined),
+  task: searchText,
   start: searchText,
 });
 export type TodoSearch = z.infer<typeof todoSearchSchema>;
