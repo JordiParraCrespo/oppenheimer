@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { type DomainEvent, OutboxService } from '@oppenheimer/backend-ddd';
+import { OutboxService } from '@oppenheimer/backend-ddd';
 import { None, type Option, Some } from 'oxide.ts';
 import { type EntityManager, Repository } from 'typeorm';
 import type {
@@ -48,13 +48,19 @@ export class TelegramMessageRepository implements TelegramMessageRepositoryPort 
       const inserted = messages.filter((message) =>
         stored.has(`${message.chatId}/${message.externalId}`),
       );
-      const events: DomainEvent[] = [];
-      for (const message of inserted) {
+      const owing = inserted.flatMap((message) => {
         const event = owed?.eventFor(message);
-        if (!event) continue;
-        const built = event(await lastNewWithin(manager, message, owed?.ownerTelegramId ?? null));
-        if (built) events.push(built);
-      }
+        return event ? [{ message, event }] : [];
+      });
+      const starts = await lastNewWithin(
+        manager,
+        owing.map(({ message }) => message),
+        owed?.ownerTelegramId ?? null,
+      );
+      const events = owing.flatMap(({ message, event }) => {
+        const built = event(starts.get(`${message.chatId}/${message.externalId}`) ?? '0');
+        return built ? [built] : [];
+      });
       if (events.length > 0) await this.outbox.stageEvents(manager, events);
       return inserted;
     });
@@ -220,29 +226,44 @@ function escapeLike(value: string): string {
 }
 
 /**
- * The id of the owner's last `/new` in the message's chat at or before it,
- * the whole batch included since it is stored in this transaction; '0' for
- * none. Telegram numbers a chat's messages in order, so this is the same
- * whatever order the batch's events are later delivered in.
+ * Whether a stored message is a `/new`, as `telegramInboundAction` reads one
+ * (an optional `@bot` and one word after it): the partial index
+ * `IDX_telegram_message_new` holds only these, so the predicate is written
+ * exactly as its `WHERE`.
+ */
+const TELEGRAM_NEW_COMMAND_SQL = `text ~* '^\\s*/new(@\\w+)?(\\s+\\S+)?\\s*$'`;
+
+/**
+ * For each message, keyed `chat/id`, the id of the owner's last `/new` in
+ * its chat at or before it, the whole batch included since it is stored in
+ * this transaction; '0' for none. Telegram numbers a chat's messages in
+ * order, so this is the same whatever order the batch's events are later
+ * delivered in. One query for the batch.
  */
 async function lastNewWithin(
   manager: EntityManager,
-  message: TelegramMessageDraft,
+  messages: readonly TelegramMessageDraft[],
   ownerTelegramId: string | null,
-): Promise<string> {
-  if (!ownerTelegramId) return '0';
-  // IDX_telegram_message_chat.
-  const [{ startsAt }]: { startsAt: string }[] = await manager.query(
-    `SELECT COALESCE(MAX("externalId"::bigint), 0)::text AS "startsAt" FROM telegram_message
-      WHERE "organizationId" = $1 AND "accountId" = $2 AND "chatId" = $3 AND "senderId" = $4
-        AND text ~* '^\\s*/new(@\\w+)?\\s*$' AND "externalId"::bigint <= $5::bigint`,
+): Promise<Map<string, string>> {
+  if (!ownerTelegramId || messages.length === 0) return new Map();
+  const [first] = messages;
+  // IDX_telegram_message_new, once per message: the /new rows are a handful.
+  const rows: { key: string; startsAt: string }[] = await manager.query(
+    `SELECT m.chat || '/' || m.ext AS key,
+            COALESCE((
+              SELECT MAX(n."externalId"::bigint) FROM telegram_message n
+               WHERE n."organizationId" = $1 AND n."accountId" = $2 AND n."chatId" = m.chat
+                 AND ${TELEGRAM_NEW_COMMAND_SQL.replace('text', 'n.text')}
+                 AND n."senderId" = $3 AND n."externalId"::bigint <= m.ext::bigint
+            ), 0)::text AS "startsAt"
+       FROM unnest($4::text[], $5::text[]) AS m(chat, ext)`,
     [
-      message.organizationId,
-      message.accountId,
-      message.chatId,
+      first.organizationId,
+      first.accountId,
       ownerTelegramId,
-      message.externalId,
+      messages.map((message) => message.chatId),
+      messages.map((message) => message.externalId),
     ],
   );
-  return startsAt;
+  return new Map(rows.map((row) => [row.key, row.startsAt]));
 }

@@ -20,8 +20,8 @@ export class BotConversationRepository implements BotConversationRepositoryPort 
       `SELECT id, "botId", "startsAtMessageId"::text AS "startsAt" FROM bot_conversation
         WHERE "telegramAccountId" = $2 AND "chatId" = $3 AND "organizationId" = $1
           AND "startsAtMessageId" <= $4::bigint
-        ORDER BY "startsAtMessageId" DESC LIMIT 1`,
-      [...params, messageId],
+        ORDER BY "startsAtMessageId" DESC, ("botId" = $5) DESC LIMIT 1`,
+      [...params, messageId, chat.botId],
     );
     const current = latest && BigInt(latest.startsAt) >= BigInt(startsAt) ? latest : null;
     if (current?.botId === chat.botId) return current.id;

@@ -11,7 +11,9 @@ import type { MigrationInterface, QueryRunner } from 'typeorm';
  * and deleted with it (`IDX_bot_conversation_bot`); an account's are deleted
  * with it (`IDX_bot_conversation_telegram_account`); a bot answering a
  * Telegram bot is found before it is deleted
- * (`IDX_telegram_account_answering_bot`).
+ * (`IDX_telegram_account_answering_bot`); a message stored is told the
+ * owner's last `/new` before it in its chat, from the `/new` messages alone
+ * (`IDX_telegram_message_new`, partial on the command, by Telegram's id).
  *
  * - `bot_conversation`: a bot's conversations. Its console chat is one, whose
  *   id is the bot's own id, so every turn and line that existed is in it;
@@ -123,6 +125,9 @@ export class AnswerOnTelegram1794241820830 implements MigrationInterface {
       `ALTER TABLE telegram_account ADD CONSTRAINT "CHK_telegram_account_owner_link" CHECK (("ownerLinkCodeHash" IS NULL) = ("ownerLinkExpiresAt" IS NULL))`,
     );
     await queryRunner.query(
+      `CREATE INDEX "IDX_telegram_message_new" ON telegram_message USING btree ("organizationId", "accountId", "chatId", (("externalId")::bigint)) WHERE text ~* '^\\s*/new(@\\w+)?(\\s+\\S+)?\\s*$'`,
+    );
+    await queryRunner.query(
       `CREATE INDEX "IDX_telegram_account_answering_bot" ON telegram_account USING btree ("organizationId", "answeringBotId") WHERE "answeringBotId" IS NOT NULL`,
     );
 
@@ -140,6 +145,7 @@ export class AnswerOnTelegram1794241820830 implements MigrationInterface {
       await queryRunner.query(`ALTER TABLE ${name[0]} DROP CONSTRAINT "${name[1]}"`);
     }
     await queryRunner.query(`DROP INDEX "IDX_telegram_account_answering_bot"`);
+    await queryRunner.query(`DROP INDEX "IDX_telegram_message_new"`);
     await queryRunner.query(
       `ALTER TABLE telegram_account DROP CONSTRAINT "CHK_telegram_account_owner_link"`,
     );

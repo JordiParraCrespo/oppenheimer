@@ -173,10 +173,21 @@ describe('telegram (integration)', () => {
         message(mine, { externalId: '9', text: 'Fresh start' }),
         message(mine, { externalId: '10', text: '/new', senderId: '555' }),
         message(mine, { externalId: '11', text: 'Still fresh' }),
+        message(mine, { externalId: '12', text: '/NEW@shop_bot please' }),
+        message(mine, { externalId: '13', text: 'After a /new with a word' }),
       ],
       owed,
     );
-    expect(told).toEqual({ '5': '0', '8': '8', '9': '8', '10': '8', '11': '8' });
+    // The same /new the inbound policy reads: any case, an @bot and one word after it.
+    expect(told).toEqual({
+      '5': '0',
+      '8': '8',
+      '9': '8',
+      '10': '8',
+      '11': '8',
+      '12': '12',
+      '13': '12',
+    });
   });
 
   it('stores a message the host sends twice once, and marks a bot’s send recorded twice once', async () => {
