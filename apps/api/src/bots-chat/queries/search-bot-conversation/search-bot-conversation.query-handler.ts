@@ -6,9 +6,9 @@ import type { BotMessageEntity } from '../../domain/bot-message.entity';
 import { SearchBotConversationQuery } from './search-bot-conversation.query';
 
 /**
- * A bot's chat, searched for words (`search_chat`, `25-bots.md` §4.1): the
- * person's and the bot's messages that match, best first, read in the
- * caller's scope, so a bot finds only its own chat in its own workspace.
+ * A bot's conversation, searched for words (`search_chat`, `25-bots.md`
+ * §4.1): the person's and the bot's messages that match, best first, read in
+ * the caller's scope, so a bot finds only its own chats in its own workspace.
  */
 @QueryHandler(SearchBotConversationQuery)
 export class SearchBotConversationQueryHandler
@@ -18,7 +18,12 @@ export class SearchBotConversationQueryHandler
     @Inject(BOT_MESSAGE_REPOSITORY) private readonly messages: BotMessageRepositoryPort,
   ) {}
 
-  execute({ scope, botId, query, limit }: SearchBotConversationQuery): Promise<BotMessageEntity[]> {
-    return this.messages.search(scope, botId, query, limit);
+  execute({
+    scope,
+    conversationId,
+    query,
+    limit,
+  }: SearchBotConversationQuery): Promise<BotMessageEntity[]> {
+    return this.messages.search(scope, conversationId, query, limit);
   }
 }

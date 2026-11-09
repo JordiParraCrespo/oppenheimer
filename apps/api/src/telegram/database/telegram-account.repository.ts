@@ -43,6 +43,27 @@ export class TelegramAccountRepository
     return record ? Some(this.mapper.toDomain(record)) : None;
   }
 
+  async findByIdForSystem(
+    organizationId: string,
+    id: string,
+  ): Promise<Option<TelegramAccountEntity>> {
+    const record = await this.repository.findOneBy({ organizationId, id });
+    return record ? Some(this.mapper.toDomain(record)) : None;
+  }
+
+  async saveOwner(account: TelegramAccountEntity, usedCodeHash: string): Promise<boolean> {
+    // PK_telegram_account, conditional on the link it used.
+    const result = await this.repository.update(
+      { id: account.id, organizationId: account.organizationId, ownerLinkCodeHash: usedCodeHash },
+      {
+        ownerTelegramId: account.ownerTelegramId,
+        ownerLinkCodeHash: null,
+        ownerLinkExpiresAt: null,
+      },
+    );
+    return result.affected === 1;
+  }
+
   async insert(account: TelegramAccountEntity): Promise<void> {
     await this.repository.insert(this.mapper.toPersistence(account));
   }
@@ -53,9 +74,33 @@ export class TelegramAccountRepository
       organizationId,
       userId,
       hostId: _hostId,
+      answeringBotId: _answeringBotId,
+      ownerTelegramId: _ownerTelegramId,
+      ownerLinkCodeHash: _ownerLinkCodeHash,
+      ownerLinkExpiresAt: _ownerLinkExpiresAt,
       ...changes
     } = this.mapper.toPersistence(account);
-    await this.repository.update({ id, organizationId, userId }, changes);
+    await this.repository.update(
+      { id, organizationId, userId },
+      account.ownerForgotten ? { ...changes, ownerTelegramId: null } : changes,
+    );
+  }
+
+  async saveAnswering(account: TelegramAccountEntity): Promise<void> {
+    await this.repository.update(
+      { id: account.id, organizationId: account.organizationId, userId: account.userId },
+      { answeringBotId: account.answeringBotId },
+    );
+  }
+
+  async saveOwnerLink(account: TelegramAccountEntity): Promise<void> {
+    await this.repository.update(
+      { id: account.id, organizationId: account.organizationId, userId: account.userId },
+      {
+        ownerLinkCodeHash: account.ownerLinkCodeHash,
+        ownerLinkExpiresAt: account.ownerLinkExpiresAt,
+      },
+    );
   }
 
   async delete(account: TelegramAccountEntity): Promise<void> {

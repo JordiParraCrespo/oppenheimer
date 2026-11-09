@@ -175,9 +175,16 @@ export class BotRepository extends ScopedRepositoryBase<BotOrmEntity> implements
     });
   }
 
-  async delete(bot: BotEntity): Promise<void> {
-    // Documents, revisions and memory cascade with the bot (their composite keys).
-    await this.repository.delete({ id: bot.id, organizationId: bot.organizationId });
+  async delete(bot: BotEntity): Promise<'deleted' | 'answering'> {
+    // Documents, revisions and memory cascade with the bot (their composite
+    // keys); a Telegram bot it answers on holds it (`NO ACTION`).
+    try {
+      await this.repository.delete({ id: bot.id, organizationId: bot.organizationId });
+      return 'deleted';
+    } catch (error) {
+      if (constraintOf(error) === 'FK_telegram_account_answering_bot') return 'answering';
+      throw error;
+    }
   }
 
   /**
@@ -255,4 +262,11 @@ export function violated(error: unknown, code: string, constraint: string): bool
   return (
     (driver?.code ?? own.code) === code && (driver?.constraint ?? own.constraint) === constraint
   );
+}
+
+/** The constraint a refused write broke, as Postgres names it; null for anything else. */
+function constraintOf(error: unknown): string | null {
+  const own = error as { constraint?: unknown; driverError?: { constraint?: unknown } };
+  const name = own.driverError?.constraint ?? own.constraint;
+  return typeof name === 'string' ? name : null;
 }

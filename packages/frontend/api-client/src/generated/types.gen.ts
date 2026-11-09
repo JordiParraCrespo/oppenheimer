@@ -3325,6 +3325,14 @@ export type TelegramAccountResponseDto = {
      */
     statusReason: string | null;
     /**
+     * The Oppenheimer bot that answers the owner here; null while none does.
+     */
+    answeringBotId: string | null;
+    /**
+     * Whether the owner’s Telegram account is recorded, by the one-time `start` link.
+     */
+    ownerLinked: boolean;
+    /**
      * When it was first connected.
      */
     linkedAt: string;
@@ -3334,6 +3342,21 @@ export type LinkTelegramRequest = {
     hostId: string;
     token: string;
     label?: string;
+};
+
+export type TelegramOwnerLinkResponseDto = {
+    /**
+     * Opens the bot in Telegram and sends it `/start` with the one-time code.
+     */
+    url: string;
+    /**
+     * When the link stops working: ten minutes after it was made.
+     */
+    expiresAt: string;
+};
+
+export type UpdateTelegramAccountRequest = {
+    answeringBotId: string | null;
 };
 
 export type PullRequestLaneReasonDto = {
@@ -13598,6 +13621,45 @@ export type LinkTelegramResponses = {
 
 export type LinkTelegramResponse = LinkTelegramResponses[keyof LinkTelegramResponses];
 
+export type OpenTelegramOwnerLinkData = {
+    body?: never;
+    path: {
+        /**
+         * The connected Telegram bot.
+         */
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/telegram/accounts/{id}/owner-link';
+};
+
+export type OpenTelegramOwnerLinkErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * TELEGRAM_001 — No such Telegram bot
+     */
+    404: ProblemDetailsDto;
+    /**
+     * TELEGRAM_007 — The host has not checked the bot yet
+     */
+    409: ProblemDetailsDto;
+};
+
+export type OpenTelegramOwnerLinkError = OpenTelegramOwnerLinkErrors[keyof OpenTelegramOwnerLinkErrors];
+
+export type OpenTelegramOwnerLinkResponses = {
+    201: TelegramOwnerLinkResponseDto;
+};
+
+export type OpenTelegramOwnerLinkResponse = OpenTelegramOwnerLinkResponses[keyof OpenTelegramOwnerLinkResponses];
+
 export type RemoveTelegramAccountData = {
     body?: never;
     path: {
@@ -13628,6 +13690,43 @@ export type RemoveTelegramAccountResponses = {
 };
 
 export type RemoveTelegramAccountResponse = RemoveTelegramAccountResponses[keyof RemoveTelegramAccountResponses];
+
+export type UpdateTelegramAccountData = {
+    body: UpdateTelegramAccountRequest;
+    path: {
+        /**
+         * The connected Telegram bot.
+         */
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/telegram/accounts/{id}';
+};
+
+export type UpdateTelegramAccountErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * BOTS_001 — No such bot of the caller’s
+     *
+     * TELEGRAM_001 — No such Telegram bot
+     */
+    404: ProblemDetailsDto;
+};
+
+export type UpdateTelegramAccountError = UpdateTelegramAccountErrors[keyof UpdateTelegramAccountErrors];
+
+export type UpdateTelegramAccountResponses = {
+    200: TelegramAccountResponseDto;
+};
+
+export type UpdateTelegramAccountResponse = UpdateTelegramAccountResponses[keyof UpdateTelegramAccountResponses];
 
 export type FindPullRequestsData = {
     body?: never;
@@ -14524,6 +14623,10 @@ export type DeleteBotErrors = {
      * BOTS_001 — Bot not found
      */
     404: ProblemDetailsDto;
+    /**
+     * BOTS_042 — The bot answers on a Telegram bot
+     */
+    409: ProblemDetailsDto;
 };
 
 export type DeleteBotError = DeleteBotErrors[keyof DeleteBotErrors];

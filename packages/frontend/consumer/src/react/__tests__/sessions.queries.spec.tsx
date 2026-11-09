@@ -1,6 +1,6 @@
 import { defaultQueryClientOptions, OppenheimerProvider } from '@oppenheimer/frontend-core/react';
 import { focusManager, QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { renderHook, waitFor } from '@testing-library/react';
+import { render, renderHook, waitFor } from '@testing-library/react';
 import { type ReactNode, Suspense } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { TOKENS } from '../../di/tokens';
@@ -13,8 +13,10 @@ import {
   useRenameSession,
   useRestartSession,
   useSessionOpening,
+  useSessionStartProgress,
   useSessions,
   useSuspenseSession,
+  watchSessionStart,
 } from '../sessions.queries';
 import { fakeKernel } from './fake-kernel';
 
@@ -508,5 +510,34 @@ describe('useSessionOpening', () => {
     expect(result.current).toBe(false);
     await pause(100);
     expect(startProgress).not.toHaveBeenCalled();
+  });
+
+  /**
+   * The session screen watches the start log while its start pane reads it,
+   * both on the one query. A `session.changed` refetches the detail's prefix,
+   * the log with it; when the screen's idle watch had handed the query a
+   * `skipToken`, that refetch rejected with "Missing queryFn" (Sentry
+   * OPPENHEIMER-WEB-3) instead of reading the log.
+   */
+  it('lets a refresh of the session read the start log its pane is showing', async () => {
+    const startProgress = vi.fn().mockResolvedValue(progress(false));
+    const { wrapper, queryClient } = setup({ startProgress });
+    const startingRow = { id: 's-1', isLive: false } as SessionEntity;
+    watchSessionStart(queryClient, 's-1');
+    function StartPane() {
+      useSessionStartProgress('s-1', { starting: true, failed: false });
+      return null;
+    }
+    function SessionScreen() {
+      useSessionOpening(startingRow);
+      return <StartPane />;
+    }
+    render(<SessionScreen />, { wrapper });
+    await waitFor(() => expect(startProgress).toHaveBeenCalledTimes(1));
+
+    await queryClient.invalidateQueries({ queryKey: sessionsKeys.detail('s-1') });
+
+    expect(queryClient.getQueryState(sessionsKeys.start('s-1', false))?.error).toBeNull();
+    expect(startProgress).toHaveBeenCalledTimes(2);
   });
 });

@@ -329,7 +329,9 @@ export {
   useUpdateTask,
 } from './tasks.queries';
 export {
+  useAnswerTelegramAs,
   useLinkTelegram,
+  useOpenTelegramOwnerLink,
   useSuspenseTelegramSettings,
   useUnlinkTelegram,
 } from './telegram.queries';
