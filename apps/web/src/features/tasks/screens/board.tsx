@@ -6,7 +6,7 @@ import { StartSessionDialog } from '../dialogs/start-session';
 import { TaskDialog } from '../dialogs/task';
 import { useBoardFilter } from '../hooks/use-board-filter';
 import { useNewTaskShortcut } from '../hooks/use-new-task-shortcut';
-import { NEW_TASK } from '../lib/board-search';
+import { closingTask, NEW_TASK, startingSession } from '../lib/board-search';
 import { BoardColumns } from '../sections/board-columns';
 import { BoardHeader } from '../sections/board-header';
 import { PlanFilters } from '../sections/plan-filters';
@@ -45,10 +45,8 @@ export function BoardScreen() {
       <TaskDialog
         open={task}
         filter={filter}
-        onClose={() => navigate({ search: (previous) => ({ ...previous, task: undefined }) })}
-        onStartSession={(id) =>
-          navigate({ search: (previous) => ({ ...previous, task: undefined, start: id }) })
-        }
+        onClose={() => navigate({ search: closingTask })}
+        onStartSession={(id) => navigate({ search: startingSession(id) })}
       />
       <StartSessionDialog
         taskId={start}

@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { TodoListSkeleton } from '../components/todo-list-skeleton';
 import { StartSessionDialog } from '../dialogs/start-session';
 import { TaskDialog } from '../dialogs/task';
+import { closingTask, startingSession } from '../lib/board-search';
 import { PlanFilters } from '../sections/plan-filters';
 import { TodoAdd } from '../sections/todo-add';
 import { TodoHeader } from '../sections/todo-header';
@@ -48,10 +49,8 @@ export function TodoScreen() {
       </div>
       <TaskDialog
         open={task}
-        onClose={() => navigate({ search: (previous) => ({ ...previous, task: undefined }) })}
-        onStartSession={(id) =>
-          navigate({ search: (previous) => ({ ...previous, task: undefined, start: id }) })
-        }
+        onClose={() => navigate({ search: closingTask })}
+        onStartSession={(id) => navigate({ search: startingSession(id) })}
       />
       <StartSessionDialog
         taskId={start}
