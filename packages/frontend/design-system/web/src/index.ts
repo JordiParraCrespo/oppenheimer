@@ -580,6 +580,7 @@ export {
   TaskCardSkeleton,
   TaskColumn,
   TaskColumnAdd,
+  TaskColumnMore,
   TaskComposer,
   TaskSessionChip,
 } from './components/task-board';

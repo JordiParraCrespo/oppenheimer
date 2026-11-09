@@ -1,6 +1,6 @@
 'use client';
 
-import { FolderIcon, LayersIcon, PlayIcon, PlusIcon, TerminalIcon } from 'lucide-react';
+import { ChevronDownIcon, ChevronUpIcon, FolderIcon, LayersIcon, PlayIcon, PlusIcon, TerminalIcon } from 'lucide-react';
 import type * as React from 'react';
 
 import { cn } from '../lib/utils';
@@ -28,7 +28,8 @@ import { variedWidth } from '../internal/varied-width';
  *   + to add)
  *   over a tray on the hover wash, 18px round, that tints toward the
  *   selected wash while a card would land in it. Its `foot` is the
- *   `TaskColumnAdd` button or a `TaskComposer`.
+ *   `TaskColumnAdd` button or a `TaskComposer`, and under it, in a column
+ *   that folds some of its cards away (Done's older ones), `TaskColumnMore`.
  * - `TaskCard`: the card in the tray — a round `Checkbox` (green when
  *   done, the title then struck and muted), the title, two lines of notes,
  *   the project and milestone, the due date in mono (red when overdue, full ink
@@ -123,6 +124,10 @@ function TaskColumn({
   );
 }
 
+/** A quiet row at a column's foot, under its cards: Add task, and the fold. */
+const COLUMN_FOOT_ROW =
+  'flex h-[34px] items-center gap-2 rounded-sm px-2.5 text-sm text-fg-subtle outline-none transition-colors duration-fast ease-standard hover:bg-control-hover hover:text-fg-muted focus-visible:outline-2 focus-visible:outline-ring [&_svg]:size-3.5';
+
 /** The column's foot: "+ Add task", quiet until hovered. */
 function TaskColumnAdd({ className, children, ...props }: React.ComponentProps<'button'>) {
   return (
@@ -130,12 +135,42 @@ function TaskColumnAdd({ className, children, ...props }: React.ComponentProps<'
       type="button"
       data-slot="task-column-add"
       className={cn(
-        'flex h-[34px] items-center gap-2 rounded-sm px-2.5 text-sm text-fg-subtle outline-none transition-colors duration-fast ease-standard hover:bg-control-hover hover:text-fg-muted focus-visible:outline-2 focus-visible:outline-ring [&_svg]:size-3.5',
+        COLUMN_FOOT_ROW,
         className,
       )}
       {...props}
     >
       <PlusIcon aria-hidden />
+      {children}
+    </button>
+  );
+}
+
+/**
+ * The column's fold: "Show 52 older" while cards are folded away, "Hide
+ * older" once they show, in the same quiet ink as "Add task" with a chevron
+ * that points where the cards go. `expanded` says which, to the eye and to
+ * assistive technology.
+ */
+function TaskColumnMore({
+  expanded = false,
+  className,
+  children,
+  ...props
+}: React.ComponentProps<'button'> & { expanded?: boolean }) {
+  const Icon = expanded ? ChevronUpIcon : ChevronDownIcon;
+  return (
+    <button
+      type="button"
+      data-slot="task-column-more"
+      aria-expanded={expanded}
+      className={cn(
+        COLUMN_FOOT_ROW,
+        className,
+      )}
+      {...props}
+    >
+      <Icon aria-hidden />
       {children}
     </button>
   );
@@ -390,5 +425,5 @@ function TaskComposer({
   );
 }
 
-export { TASK_STATUS_STATE, TaskBoard, TaskCard, TaskCardSkeleton, TaskColumn, TaskColumnAdd, TaskComposer, TaskSessionChip };
+export { TASK_STATUS_STATE, TaskBoard, TaskCard, TaskCardSkeleton, TaskColumn, TaskColumnAdd, TaskColumnMore, TaskComposer, TaskSessionChip };
 export type { TaskDueTone, TaskStatus };
