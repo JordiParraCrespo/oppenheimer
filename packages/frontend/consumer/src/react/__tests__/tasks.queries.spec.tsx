@@ -375,4 +375,32 @@ describe('useStartTaskSession', () => {
       idempotencyKey: 'k-1',
     });
   });
+
+  it('retries a start with the home it already resolved, though the host has gone away', async () => {
+    const findFolders = vi
+      .fn()
+      .mockResolvedValueOnce({ home: '/home/ada' })
+      .mockRejectedValue(new Error('host offline'));
+    const startSession = vi
+      .fn()
+      .mockRejectedValueOnce(new Error('response lost'))
+      .mockResolvedValue({ task: task('t-1', { status: 'doing' }), sessionId: 's-1', hints: [] });
+    const { wrapper } = setup({ startSession }, { findFolders });
+    const { result } = renderHook(() => useStartTaskSession(), { wrapper });
+    const start = {
+      id: 't-1',
+      session: { hostId: 'h-1', agent: 'shell' as const, folder: HOST_HOME_FOLDER },
+      seenStatus: 'todo' as const,
+      idempotencyKey: 'k-retry',
+    };
+
+    await act(() => result.current.mutateAsync(start).catch(() => undefined));
+    await act(() => result.current.mutateAsync(start));
+
+    expect(startSession).toHaveBeenLastCalledWith('t-1', {
+      session: { hostId: 'h-1', agent: 'shell', folder: '/home/ada' },
+      seenStatus: 'todo',
+      idempotencyKey: 'k-retry',
+    });
+  });
 });

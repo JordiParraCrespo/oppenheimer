@@ -273,6 +273,12 @@ export const useDeleteTask = mutation<void, string>({
 export type StartTaskSessionVariables = StartTaskSessionInput & { id: string };
 
 /**
+ * The home each start resolved, by its idempotency key: a retry of the same
+ * start reaches the API's replay even when the host has gone away since.
+ */
+const resolvedHomes = new Map<string, string>();
+
+/**
  * Start a session for a task; the session list learns of it on its next read.
  * A folder of `HOST_HOME_FOLDER` is the host's home, asked of the host first.
  */
@@ -280,7 +286,9 @@ export const useStartTaskSession = mutation<StartedTaskSession, StartTaskSession
   run: async (app, variables) => {
     const { id, session, seenStatus, idempotencyKey } = variables;
     if (session?.folder !== HOST_HOME_FOLDER) return app.tasks.startSession(id, variables);
-    const { home } = await app.hosts.findFolders(session.hostId);
+    const home =
+      resolvedHomes.get(idempotencyKey) ?? (await app.hosts.findFolders(session.hostId)).home;
+    resolvedHomes.set(idempotencyKey, home);
     return app.tasks.startSession(id, {
       session: { ...session, folder: home },
       seenStatus,
