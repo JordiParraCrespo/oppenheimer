@@ -93,6 +93,9 @@ describe('AttachDesktopConnection', () => {
     socket.bytes('RFB 003.008\n');
     const late: string[] = [];
     connection.onmessage = (event) => late.push(new TextDecoder().decode(event.data));
+    // Not from inside the setter: noVNC is still attaching there.
+    expect(late).toEqual([]);
+    await Promise.resolve();
     expect(connection.readyState).toBe('open');
     expect(late).toEqual(['RFB 003.008\n']);
   });

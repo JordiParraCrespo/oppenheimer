@@ -107,6 +107,9 @@ type linkHandler struct {
 	// desktop is the host's own screen (link_desktop.go); nil is a runner
 	// built without it, whose hello does not name the capability.
 	desktop *desktopapp.Service
+	// desktopRecheck is how often an open desktop reads the host owner's
+	// choice again; zero is the default, `desktopRecheck` (link_desktop.go).
+	desktopRecheck time.Duration
 	// whatsapp is the host's WhatsApp linked device (link_whatsapp.go); nil
 	// is a host that offers none, and its hello does not name the capability.
 	whatsapp *waapp.Service

@@ -86,10 +86,10 @@ export class AttachDesktopConnection {
   }
 
   /**
-   * Where RFB goes. A viewer may attach after the host signed in (the dial
-   * started before the viewer finished loading): what arrived before it is
-   * handed over the moment it attaches, so its handshake still begins at the
-   * server's first byte.
+   * Where RFB goes. Should a viewer attach after the host signed in, what
+   * arrived before it is handed over on the next microtask: noVNC sets this
+   * inside its `attach` and only opens its handshake once `attach` returns,
+   * so bytes delivered from inside the setter would reach it too early.
    */
   get onmessage(): ((event: { data: ArrayBuffer }) => void) | null {
     return this.messageHandler;
@@ -97,7 +97,7 @@ export class AttachDesktopConnection {
 
   set onmessage(handler: ((event: { data: ArrayBuffer }) => void) | null) {
     this.messageHandler = handler;
-    if (handler && this.opened) this.flushEarly();
+    if (handler && this.opened) queueMicrotask(() => this.flushEarly());
   }
 
   get readyState(): 'connecting' | 'open' | 'closing' | 'closed' {

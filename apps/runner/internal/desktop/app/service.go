@@ -66,8 +66,9 @@ func (s *Service) SetSettings(settings domain.Settings) error {
 
 // Open connects to the host's screen-sharing server on its loopback and
 // signs in with the host's credentials. The connection it returns waits for
-// ClientInit, which is the browser's to send. Settings are read again on
-// every open, so `runner desktop off` takes effect at the next one.
+// ClientInit, which is the browser's to send. Settings are read on every
+// open; a desktop already open reads them again on its own (the link's
+// desktopWatch), so `runner desktop off` reaches it too.
 func (s *Service) Open(ctx context.Context) (net.Conn, error) {
 	settings, err := s.Settings()
 	if err != nil {

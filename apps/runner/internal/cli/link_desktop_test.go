@@ -177,12 +177,11 @@ func TestADesktopTheHostDoesNotShareIsRefused(t *testing.T) {
 // `runner desktop off` is another process: the daemon cuts off a desktop
 // already streaming, in control or not, the next time it reads the choice.
 func TestADesktopAlreadyOpenClosesWhenTheHostStopsSharingIt(t *testing.T) {
-	was := desktopRecheck.Swap(int64(10 * time.Millisecond))
-	t.Cleanup(func() { desktopRecheck.Store(was) })
 	server := newRFBServer(t)
 	saved := &savedDesktop{settings: desktopdomain.Settings{Enabled: true, Port: server.port}}
 	h, sent := portsHandler(t, nil)
 	h.desktop = desktopapp.New(desktopapp.Options{Settings: saved})
+	h.desktopRecheck = 10 * time.Millisecond
 
 	h.Message(context.Background(), message(t, link.TypeDesktopOpen, map[string]any{
 		"commandId": "b2c3d4e5-6f7a-4b8c-9d0e-1f2a3b4c5d6e", "attachmentId": 15, "control": true,
