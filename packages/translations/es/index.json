@@ -1528,6 +1528,7 @@
       "startFrom": "Prueba a pedir",
       "hello": "{{name}} está listo. ¿En qué trabajamos?",
       "placeholder": "Escribe a {{name}}",
+      "history": "Historial {{position}}/{{total}}",
       "placeholderRunning": "Reconduce a {{name}}: Intro reconduce el turno en curso, Alt+Intro lo pone en cola para después",
       "steered": "Reconducido mientras trabajaba",
       "send": "Enviar",

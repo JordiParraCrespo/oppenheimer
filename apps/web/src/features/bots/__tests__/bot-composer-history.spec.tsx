@@ -10,12 +10,14 @@ import { BotComposer } from '../sections/bot-composer';
  * stealing the caret from a draft of several lines, from one long line the
  * field wraps, or from a recalled message you started editing; the draft you had lost once a
  * recalled message is edited, or a message written over a recalled one lost
- * on the next step; a send leaving the walk where it was.
+ * on the next step; a send leaving the walk where it was; the box not
+ * saying which sent message it shows, or still saying so back on the draft.
  */
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
-    t: (key: string) => key,
+    t: (key: string, at?: { position?: number; total?: number }) =>
+      at?.position === undefined ? key : `${key}:${at.position}/${at.total}`,
     i18n: { resolvedLanguage: 'en', language: 'en' },
   }),
   initReactI18next: { type: '3rdParty', init: () => {} },
@@ -77,6 +79,7 @@ describe('BotComposer’s sent history', () => {
     caret(field, 0);
     up(field);
     expect(botDraft('b1')).toBe('run the tests');
+    expect(screen.getByText('bots.chat.history:1/3')).toBeTruthy();
     up(field);
     expect(botDraft('b1')).toBe('fix the build\nthen push');
     // A recalled message of several lines still steps on, whatever line the caret is on.
@@ -89,6 +92,7 @@ describe('BotComposer’s sent history', () => {
     expect(botDraft('b1')).toBe('run the tests');
     down(field);
     expect(botDraft('b1')).toBe('half');
+    expect(screen.queryByText(/bots\.chat\.history:/)).toBeNull();
   });
 
   it('leaves the caret its arrows while writing several lines, or once a recalled message is edited', () => {

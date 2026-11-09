@@ -16,14 +16,20 @@ import {
  * over a recalled one, is still there when you step back to it. A recalled
  * message you have not edited steps on from anywhere; once edited, the arrows
  * move the caret through it and step only from its very start or end.
- * `reset` ends the walk, on a send. The composer is keyed by bot, so a walk
+ * `at` says where the walk is, for the box to caption. `reset` ends the
+ * walk, on a send. The composer is keyed by bot, so a walk
  * never outlives its bot.
  */
 export function useSentHistory(
   botId: string,
   draft: string,
   setDraft: (next: string) => void,
-): { onKeyDownCapture: (event: KeyboardEvent<HTMLDivElement>) => void; reset: () => void } {
+): {
+  onKeyDownCapture: (event: KeyboardEvent<HTMLDivElement>) => void;
+  reset: () => void;
+  /** Which sent message the field is on, 1 the newest, of how many; null on your own draft. */
+  at: { position: number; total: number } | null;
+} {
   const texts = useBotSentTexts(botId);
   const [place, setPlace] = useState<SentHistoryPlace | null>(null);
 
@@ -48,5 +54,6 @@ export function useSentHistory(
     setDraft(next.base);
   }
 
-  return { onKeyDownCapture, reset: () => setPlace(null) };
+  const at = place && place.index >= 0 ? { position: place.index + 1, total: texts.length } : null;
+  return { onKeyDownCapture, reset: () => setPlace(null), at };
 }

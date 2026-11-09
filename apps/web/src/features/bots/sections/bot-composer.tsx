@@ -62,7 +62,8 @@ import { BotComposerTop } from '@/features/bots/sections/bot-composer-top';
  * skills it can run over the box (`useSlashMenu`); picking one writes
  * `/<name> ` for its input to follow. With the menu shut, Up at the start of
  * the field brings back what you sent before and Down walks back to your
- * draft (`useSentHistory`).
+ * draft (`useSentHistory`); while it does, the box's caption says which
+ * one ("History 1/2").
  *
  * Images ride the message (`25-bots.md` §3.1): the paperclip, a paste, or a
  * drop anywhere on the chat's pane (`usePaneDrop`) holds them as tiles over
@@ -227,6 +228,7 @@ export function BotComposer({
           busy={
             (active !== null || send.isPending) && draft.trim() === '' && images.images.length === 0
           }
+          caption={recall.at ? t('bots.chat.history', recall.at) : undefined}
           sendBlockedReason={blocked}
           allowEmpty={images.images.length > 0}
           onAttach={() => picker.current?.click()}
