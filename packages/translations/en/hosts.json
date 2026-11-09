@@ -82,10 +82,10 @@
   "desktop": {
     "label": "Desktop",
     "open": "Open desktop",
-    "title": "{{name}}'s desktop",
-    "screen": "{{name}}'s screen",
+    "title": "{{name}}’s desktop",
+    "screen": "{{name}}’s screen",
     "watching": "Watching {{name}}",
-    "inControl": "You're controlling {{name}}",
+    "inControl": "You’re controlling {{name}}",
     "takeControl": "Take control",
     "releaseControl": "Stop controlling",
     "fullscreen": "Full screen",
@@ -101,7 +101,7 @@
     "endedDetail": "The host was removed, or you can no longer use it.",
     "refused": {
       "DESKTOP_001": {
-        "title": "This host doesn't share its desktop",
+        "title": "This host doesn’t share its desktop",
         "detail": "Whether its screen can be watched and driven from here is decided on the host. To share it, run this there, then try again:"
       },
       "DESKTOP_002": {
@@ -109,11 +109,11 @@
         "detail": "Turn on Screen Sharing (on a Mac: System Settings, General, Sharing), or start a VNC server listening on 127.0.0.1:5900, then try again."
       },
       "DESKTOP_003": {
-        "title": "The screen-sharing server refused the host's sign-in",
+        "title": "The screen-sharing server refused the host’s sign-in",
         "detail": "Give the host the account and password the server expects: runner desktop on --username <account> --password-file <file>."
       },
       "DESKTOP_004": {
-        "title": "The screen-sharing server asks for a sign-in the runner can't do",
+        "title": "The screen-sharing server asks for a sign-in the runner can’t do",
         "detail": "Let the server take a VNC password, or no password on the loopback, then try again."
       },
       "other": {
@@ -122,7 +122,7 @@
       }
     },
     "pageTitle": "Desktop",
-    "pageLead": "{{name}}'s own screen, live. You watch until you take control; then your clicks and keys reach it, the same screen its agents work on.",
+    "pageLead": "{{name}}’s own screen, live. You watch until you take control; then your clicks and keys reach it, the same screen its agents work on.",
     "back": "Hosts"
   }
 }
