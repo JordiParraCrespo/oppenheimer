@@ -91,6 +91,7 @@ func (File) Password(path string) (string, error) {
 // readPrivate reads a small file no other account may write, nor, when
 // secret, read.
 func readPrivate(path string, secret bool) ([]byte, error) {
+	path = filepath.Clean(path)
 	info, err := os.Stat(path)
 	if err != nil {
 		return nil, err

@@ -262,7 +262,7 @@ func ardAuth(rw io.ReadWriter, creds Credentials, random io.Reader) error {
 	for offset := 0; offset < len(plain); offset += aes.BlockSize {
 		block.Encrypt(sealed[offset:offset+aes.BlockSize], plain[offset:offset+aes.BlockSize])
 	}
-	out := append(sealed, public.FillBytes(make([]byte, head.KeyLength))...)
+	out := slices.Concat(sealed, public.FillBytes(make([]byte, head.KeyLength)))
 	if _, err := rw.Write(out); err != nil {
 		return ErrUnreachable.WithDetail("the server hung up during sign-in: %v", err).WithCause(err)
 	}
