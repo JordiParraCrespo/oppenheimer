@@ -43,6 +43,7 @@ import { Route as AuthenticatedPlanIndexRouteImport } from './routes/_authentica
 import { Route as AuthenticatedPlanCalendarRouteImport } from './routes/_authenticated/plan/calendar'
 import { Route as AuthenticatedPlanInboxRouteImport } from './routes/_authenticated/plan/inbox'
 import { Route as AuthenticatedPlanMilestonesRouteImport } from './routes/_authenticated/plan/milestones'
+import { Route as AuthenticatedPlanOpenRouteImport } from './routes/_authenticated/plan/open'
 import { Route as AuthenticatedPlanProjectsRouteImport } from './routes/_authenticated/plan/projects'
 import { Route as AuthenticatedPlanTodoRouteImport } from './routes/_authenticated/plan/todo'
 import { Route as AuthenticatedPullsIndexRouteImport } from './routes/_authenticated/pulls/index'
@@ -256,6 +257,11 @@ const AuthenticatedPlanMilestonesRoute =
     path: '/milestones',
     getParentRoute: () => AuthenticatedPlanRoute,
   } as any)
+const AuthenticatedPlanOpenRoute = AuthenticatedPlanOpenRouteImport.update({
+  id: '/open',
+  path: '/open',
+  getParentRoute: () => AuthenticatedPlanRoute,
+} as any)
 const AuthenticatedPlanProjectsRoute =
   AuthenticatedPlanProjectsRouteImport.update({
     id: '/projects',
@@ -511,6 +517,7 @@ export interface FileRoutesByFullPath {
   '/plan/calendar': typeof AuthenticatedPlanCalendarRoute
   '/plan/inbox': typeof AuthenticatedPlanInboxRoute
   '/plan/milestones': typeof AuthenticatedPlanMilestonesRoute
+  '/plan/open': typeof AuthenticatedPlanOpenRoute
   '/plan/projects': typeof AuthenticatedPlanProjectsRoute
   '/plan/todo': typeof AuthenticatedPlanTodoRoute
   '/pulls/analytics': typeof AuthenticatedPullsAnalyticsRoute
@@ -577,6 +584,7 @@ export interface FileRoutesByTo {
   '/plan/calendar': typeof AuthenticatedPlanCalendarRoute
   '/plan/inbox': typeof AuthenticatedPlanInboxRoute
   '/plan/milestones': typeof AuthenticatedPlanMilestonesRoute
+  '/plan/open': typeof AuthenticatedPlanOpenRoute
   '/plan/projects': typeof AuthenticatedPlanProjectsRoute
   '/plan/todo': typeof AuthenticatedPlanTodoRoute
   '/pulls/analytics': typeof AuthenticatedPullsAnalyticsRoute
@@ -651,6 +659,7 @@ export interface FileRoutesById {
   '/_authenticated/plan/calendar': typeof AuthenticatedPlanCalendarRoute
   '/_authenticated/plan/inbox': typeof AuthenticatedPlanInboxRoute
   '/_authenticated/plan/milestones': typeof AuthenticatedPlanMilestonesRoute
+  '/_authenticated/plan/open': typeof AuthenticatedPlanOpenRoute
   '/_authenticated/plan/projects': typeof AuthenticatedPlanProjectsRoute
   '/_authenticated/plan/todo': typeof AuthenticatedPlanTodoRoute
   '/_authenticated/pulls/analytics': typeof AuthenticatedPullsAnalyticsRoute
@@ -724,6 +733,7 @@ export interface FileRouteTypes {
     | '/plan/calendar'
     | '/plan/inbox'
     | '/plan/milestones'
+    | '/plan/open'
     | '/plan/projects'
     | '/plan/todo'
     | '/pulls/analytics'
@@ -790,6 +800,7 @@ export interface FileRouteTypes {
     | '/plan/calendar'
     | '/plan/inbox'
     | '/plan/milestones'
+    | '/plan/open'
     | '/plan/projects'
     | '/plan/todo'
     | '/pulls/analytics'
@@ -863,6 +874,7 @@ export interface FileRouteTypes {
     | '/_authenticated/plan/calendar'
     | '/_authenticated/plan/inbox'
     | '/_authenticated/plan/milestones'
+    | '/_authenticated/plan/open'
     | '/_authenticated/plan/projects'
     | '/_authenticated/plan/todo'
     | '/_authenticated/pulls/analytics'
@@ -1156,6 +1168,13 @@ declare module '@tanstack/react-router' {
       path: '/milestones'
       fullPath: '/plan/milestones'
       preLoaderRoute: typeof AuthenticatedPlanMilestonesRouteImport
+      parentRoute: typeof AuthenticatedPlanRoute
+    }
+    '/_authenticated/plan/open': {
+      id: '/_authenticated/plan/open'
+      path: '/open'
+      fullPath: '/plan/open'
+      preLoaderRoute: typeof AuthenticatedPlanOpenRouteImport
       parentRoute: typeof AuthenticatedPlanRoute
     }
     '/_authenticated/plan/projects': {
@@ -1500,6 +1519,7 @@ interface AuthenticatedPlanRouteChildren {
   AuthenticatedPlanCalendarRoute: typeof AuthenticatedPlanCalendarRoute
   AuthenticatedPlanInboxRoute: typeof AuthenticatedPlanInboxRoute
   AuthenticatedPlanMilestonesRoute: typeof AuthenticatedPlanMilestonesRoute
+  AuthenticatedPlanOpenRoute: typeof AuthenticatedPlanOpenRoute
   AuthenticatedPlanProjectsRoute: typeof AuthenticatedPlanProjectsRoute
   AuthenticatedPlanTodoRoute: typeof AuthenticatedPlanTodoRoute
   AuthenticatedPlanIndexRoute: typeof AuthenticatedPlanIndexRoute
@@ -1511,6 +1531,7 @@ const AuthenticatedPlanRouteChildren: AuthenticatedPlanRouteChildren = {
   AuthenticatedPlanCalendarRoute: AuthenticatedPlanCalendarRoute,
   AuthenticatedPlanInboxRoute: AuthenticatedPlanInboxRoute,
   AuthenticatedPlanMilestonesRoute: AuthenticatedPlanMilestonesRoute,
+  AuthenticatedPlanOpenRoute: AuthenticatedPlanOpenRoute,
   AuthenticatedPlanProjectsRoute: AuthenticatedPlanProjectsRoute,
   AuthenticatedPlanTodoRoute: AuthenticatedPlanTodoRoute,
   AuthenticatedPlanIndexRoute: AuthenticatedPlanIndexRoute,

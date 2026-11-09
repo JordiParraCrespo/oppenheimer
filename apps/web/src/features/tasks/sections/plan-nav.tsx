@@ -15,7 +15,7 @@ import { useTranslation } from 'react-i18next';
 import { PLAN_NAV_GROUP, usePlanNavOrder } from '../hooks/use-plan-nav-order';
 import { useToday } from '../hooks/use-today';
 import { useTodayEventCount } from '../hooks/use-today-event-count';
-import { isPlanNavId, type PlanNavId } from '../lib/plan-nav-order';
+import { isPlanNavId, PLAN_VIEW_PATHS, type PlanNavId } from '../lib/plan-nav-order';
 import { todayOpenCount } from '../lib/todo';
 import { PlanInboxItem } from './plan-inbox-item';
 
@@ -30,27 +30,27 @@ const VIEWS = {
   tasks: {
     labelKey: 'tasks.nav.tasks',
     icon: <CircleCheck />,
-    route: { to: '/plan', fuzzy: false },
+    route: { to: PLAN_VIEW_PATHS.tasks, fuzzy: false },
   },
   todo: {
     labelKey: 'tasks.nav.todo',
     icon: <Sun />,
-    route: { to: '/plan/todo', fuzzy: false },
+    route: { to: PLAN_VIEW_PATHS.todo, fuzzy: false },
   },
   milestones: {
     labelKey: 'tasks.nav.milestones',
     icon: <MilestoneGlyph />,
-    route: { to: '/plan/milestones', fuzzy: true },
+    route: { to: PLAN_VIEW_PATHS.milestones, fuzzy: true },
   },
   calendar: {
     labelKey: 'tasks.nav.calendar',
     icon: <CalendarDays />,
-    route: { to: '/plan/calendar', fuzzy: true },
+    route: { to: PLAN_VIEW_PATHS.calendar, fuzzy: true },
   },
   projects: {
     labelKey: 'tasks.nav.projects',
     icon: <Folder />,
-    route: { to: '/plan/projects', fuzzy: true },
+    route: { to: PLAN_VIEW_PATHS.projects, fuzzy: true },
   },
 } as const satisfies Record<
   PlanNavId,

@@ -415,6 +415,10 @@ for it to look like a mail inbox. What changed from §5 and Decided 1:
 - **Where the console lands.** Still the Inbox: a reader who never dragged
   the rail, or whose stored order led with the former Inbox item, lands on
   `/plan/inbox`; one who dragged another item first lands there.
+  *Changed 2026-11-09:* the owner asked that Plan open on whichever view is
+  at the top of its own sidebar. The rail's Plan item, and the console's
+  landing when Plan leads the rail, go to `/plan/open`, which redirects to
+  that view; the Inbox until the reader drags another above it.
 - **The shape.** The pane is two columns, as a mail client: the list column
   (its head with the sidebar toggle, "Inbox", the unread count and the
   filter; a search, `?q=`, over sender, subject, body and source; a row per

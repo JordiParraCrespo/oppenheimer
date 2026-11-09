@@ -53,6 +53,25 @@ export function mergeShownOrder(
   return order.map((id) => (shown(id) ? (next.next().value ?? id) : id));
 }
 
+/** Where each view lives. */
+export const PLAN_VIEW_PATHS = {
+  inbox: '/plan/inbox',
+  tasks: '/plan',
+  todo: '/plan/todo',
+  milestones: '/plan/milestones',
+  calendar: '/plan/calendar',
+  projects: '/plan/projects',
+} as const satisfies Record<PlanNavId, string>;
+
+/**
+ * Where Plan opens: the view at the top of the reader's order, so a reader
+ * who dragged Calendar first lands on the calendar; the Inbox for a reader
+ * who never dragged one.
+ */
+export function planLanding(): (typeof PLAN_VIEW_PATHS)[PlanNavId] {
+  return PLAN_VIEW_PATHS[storedPlanNavOrder()[0] ?? 'inbox'];
+}
+
 export function rememberPlanNavOrder(order: readonly PlanNavId[]) {
   try {
     window.localStorage.setItem(PLAN_NAV_ORDER_KEY, JSON.stringify(order));
