@@ -23,6 +23,7 @@ import {
   withSharedFiles,
 } from './session-chat-files';
 import { FirstLoad, linesToCome, Quiet } from './session-chat-history';
+import { typedPrompt } from './session-chat-prompt';
 import { Subagents } from './session-chat-subagents';
 
 /** One item of the agent's task list: the chat module's, which the bots chat reads too. */
@@ -1202,35 +1203,6 @@ function isWorking(turn: ChatTurn): boolean {
   if (turn.steps.some((step) => step.kind === 'tool' && step.call.status === 'running'))
     return true;
   return tail.kind !== 'reply' && tail.kind !== 'notice' && tail.kind !== 'output';
-}
-
-/**
- * The person's words as they typed them, or `null` for a line that is the
- * CLI's own (a caveat, a command's output). A slash command is written as
- * tags; it reads as `/name arguments`.
- */
-function typedPrompt(raw: string): string | null {
-  const value = raw.trim();
-  if (value === '') return null;
-  if (
-    value.startsWith('Caveat:') ||
-    value.startsWith('<local-command-') ||
-    value.startsWith('<bash-stdout') ||
-    value.startsWith('<bash-stderr') ||
-    value.startsWith('<system-reminder>')
-  ) {
-    return null;
-  }
-  if (value.startsWith('<command-')) {
-    const name = /<command-name>([^<]*)<\/command-name>/.exec(value)?.[1]?.trim() ?? '';
-    const args = /<command-args>([\s\S]*?)<\/command-args>/.exec(value)?.[1]?.trim() ?? '';
-    const typed = [name, args].filter(Boolean).join(' ');
-    return typed === '' ? null : typed;
-  }
-  if (value.startsWith('<bash-input>')) {
-    return `! ${value.replace(/<\/?bash-input>/g, '').trim()}`;
-  }
-  return value;
 }
 
 function toolCall(block: Loose): ChatToolCall {
