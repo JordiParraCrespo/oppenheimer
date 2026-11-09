@@ -61,6 +61,7 @@ export function createToolServer(
     const result = await runTool(tool, request.params.arguments ?? {}, {
       signal: AbortSignal.any([turn.signal, extra.signal]),
       apiKey: turn.apiKey,
+      guard: made.loops,
       ...(typeof callId === 'string' ? { callId } : {}),
     });
     made.record(callId, result.data);

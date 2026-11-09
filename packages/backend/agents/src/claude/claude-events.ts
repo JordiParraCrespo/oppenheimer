@@ -91,6 +91,7 @@ export class ClaudeEventTranslator {
             error?: unknown;
             error_status?: unknown;
             retry_delay_ms?: unknown;
+            compact_metadata?: { pre_tokens?: unknown; post_tokens?: unknown };
           },
         );
       case 'rate_limit_event':
@@ -186,14 +187,26 @@ export class ClaudeEventTranslator {
   /**
    * Claude Code retrying a refused call, said as `retrying` so the chat can
    * show the wait rather than "thinking". A rate limit's also says how long
-   * it was told to wait, kept for a failure that follows.
+   * it was told to wait, kept for a failure that follows. Its compaction
+   * mid-turn is `compacted`.
    */
   private fromSystem(message: {
     subtype?: string;
     error?: unknown;
     error_status?: unknown;
     retry_delay_ms?: unknown;
+    compact_metadata?: { pre_tokens?: unknown; post_tokens?: unknown };
   }): BotEngineEvent[] {
+    if (message.subtype === 'compact_boundary') {
+      const { pre_tokens, post_tokens } = message.compact_metadata ?? {};
+      return [
+        {
+          type: 'compacted',
+          tokensBefore: typeof pre_tokens === 'number' ? pre_tokens : 0,
+          tokensAfter: typeof post_tokens === 'number' ? post_tokens : 0,
+        },
+      ];
+    }
     if (message.subtype !== 'api_retry') return [];
     const delayMs =
       typeof message.retry_delay_ms === 'number' && message.retry_delay_ms > 0

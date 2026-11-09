@@ -90,6 +90,7 @@ export class RunBotTurnCommandHandler implements ICommandHandler<RunBotTurnComma
       const write = this.writes.writer(turn);
       const request = { ...shape.request, signal, scratchDir, steering };
       for await (const event of this.engine.run(request)) {
+        watch.saw(event);
         for (const written of transcript.apply(event)) await write(written);
       }
       transcript.endTurn(new Date(), watch.interruption);

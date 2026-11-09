@@ -509,13 +509,21 @@ export type BotTurnStatus = (typeof BOT_TURN_STATUSES)[number];
  * - `refused`: the provider refused this request (its content, the model);
  *   the same request fails the same way.
  * - `unavailable`: the provider was down, overloaded or unreachable; it passes.
- * - `time_limit`: the turn ran past its time; a smaller step fits.
- * - `step_limit`: the turn used all its model round trips; a smaller step fits.
+ * - `time_limit`, `step_limit`: the turn ran past its time or its model
+ *   round trips. Turns have had neither bound since 2026-11-09; older turns
+ *   still carry them.
+ * - `stalled`: the model sent nothing for `BOT_TURN_IDLE_LIMIT_MS` while no
+ *   tool ran; it usually passes.
+ * - `loop`: the turn kept making calls that changed nothing, past what its
+ *   loop guard lets through; the same request goes round the same way.
  * - `interrupted`: the worker running it stopped; sending it again runs it.
  * - `storage`: we could not save what the turn did (a write Postgres
  *   refused); ours, not the provider's, and sending it again may pass.
  * - `other`: none of these, or not known.
  */
+/** How long a turn's model may send nothing, while none of its tools runs, before the turn fails `stalled`. */
+export const BOT_TURN_IDLE_LIMIT_MS = 5 * 60_000;
+
 export const BOT_TURN_FAILURES = [
   'rate_limit',
   'usage_limit',
@@ -524,6 +532,8 @@ export const BOT_TURN_FAILURES = [
   'unavailable',
   'time_limit',
   'step_limit',
+  'stalled',
+  'loop',
   'interrupted',
   'storage',
   'other',
@@ -539,6 +549,8 @@ export const BOT_TURN_FAILURE_RETRIES: Readonly<Record<BotTurnFailure, boolean>>
   unavailable: true,
   time_limit: false,
   step_limit: false,
+  stalled: true,
+  loop: false,
   interrupted: true,
   storage: true,
   other: true,
@@ -740,32 +752,50 @@ export interface BotPullRequestEvent {
 }
 
 /**
- * A goal keeps a bot going (`25-bots.md` §4.1; from Grok Bot's goals,
- * `research/lessons-from-grok-bot.md` §9 row 10, and Claude Code's `/goal`):
- * the person sets one with `/goal <condition>`, or the bot with `set_goal`.
- * After each turn of it a reviewer, the bot's own model with no tools, reads
- * what the turn showed and says whether the condition holds; while it does
- * not, a continuation turn is queued, up to the goal's limit. One goal per
- * bot at a time; an ended goal is deleted. This is the longest condition.
+ * A goal keeps a bot going (`25-bots.md` §4.1; from Codex's and Grok Bot's
+ * goals, `research/lessons-from-long-running-agents.md`): the person sets one
+ * with `/goal <condition>`, or the bot with `set_goal`. It has no limit of
+ * continuations since 2026-11-09: after each turn of it the next is queued,
+ * until the bot calls `end_goal` and a reviewer, the bot's own model with no
+ * tools, finds the condition met. It pauses, keeping its place, when a turn
+ * of it fails, is stopped, goes `BOT_GOAL_IDLE_TURNS` turns without calling a
+ * tool, spends its token budget, or the bot says it is blocked; the owner
+ * resumes it. One goal per bot at a time; an ended goal is deleted. This is
+ * the longest condition.
  */
 export const BOT_GOAL_OBJECTIVE_MAX = 2_000;
-/** The continuations a goal may queue: never more than this, whoever set it. */
-export const BOT_GOAL_CONTINUATIONS_MAX = 20;
-/** What a goal the bot sets takes unless it asks for fewer or more. */
-export const BOT_GOAL_CONTINUATIONS_DEFAULT = 5;
+
+/** Turns of a goal in a row that call no tool before it pauses as `no_progress` (Codex's empty turns). */
+export const BOT_GOAL_IDLE_TURNS = 3;
+
+/** The smallest token budget a goal takes; a smaller one could not fit one turn. */
+export const BOT_GOAL_TOKEN_BUDGET_MIN = 50_000;
+
 /**
- * What a goal the person sets with `/goal` takes: the reviewer ends it once
- * the condition holds, so the limit is only the bound on the spend.
+ * Why a goal is paused: the bot said it cannot go on without the person
+ * (`blocked`); its provider refused for a limit, quota or sign-in
+ * (`usage_limit`); its turns stopped calling tools (`no_progress`); it spent
+ * its token budget (`budget`); the person pressed Stop on a turn of it
+ * (`stopped`); or a turn of it failed otherwise (`failed`).
  */
-export const BOT_GOAL_CONTINUATIONS_PERSON = BOT_GOAL_CONTINUATIONS_MAX;
+export const BOT_GOAL_PAUSE_REASONS = [
+  'blocked',
+  'usage_limit',
+  'no_progress',
+  'budget',
+  'stopped',
+  'failed',
+] as const;
+export type BotGoalPauseReason = (typeof BOT_GOAL_PAUSE_REASONS)[number];
 
 /**
  * What a goal line says: a continuation opens a turn (`continued`, with the
- * reviewer's reason for going on); the others say, outside any turn, how the
- * goal ended when the bot did not end it itself (its `end_goal` call is the
- * record of that): the reviewer found the condition met (`met`) or out of
- * reach (`impossible`), the owner stopped it (`cleared`), its continuations
- * ran out (`exhausted`), or a turn of it failed or was stopped (`stopped`).
+ * reviewer's reason when it found the bot's claim not met yet); the others
+ * say, outside any turn: the reviewer found the condition met (`met`) or out
+ * of reach (`impossible`), the owner stopped it (`cleared`), a goal set
+ * before 2026-11-09 ran out of continuations (`exhausted`), it stopped
+ * (`stopped`, a code), it paused (`paused`, the pause reason) or the owner
+ * resumed it (`resumed`).
  */
 export const BOT_GOAL_ACTIVITIES = [
   'continued',
@@ -774,6 +804,8 @@ export const BOT_GOAL_ACTIVITIES = [
   'cleared',
   'exhausted',
   'stopped',
+  'paused',
+  'resumed',
 ] as const;
 export type BotGoalActivity = (typeof BOT_GOAL_ACTIVITIES)[number];
 
@@ -785,12 +817,12 @@ export interface BotGoalEvent {
   objective: string;
   /** For `continued`, which continuation this is; otherwise how many ran. */
   step: number;
-  /** The goal's limit of continuations. */
-  limit: number;
+  /** The goal's limit of continuations; null for a goal with none (every goal since 2026-11-09). */
+  limit: number | null;
   /**
    * Why: for `continued`, `met` and `impossible` the reviewer's reason in its
    * words (null when it could not say); for `stopped` a code, the status of
-   * the turn that ended it.
+   * the turn that ended it; for `paused` its `BotGoalPauseReason`.
    */
   reason: string | null;
 }
@@ -881,7 +913,13 @@ export interface BotGoal {
   id: string;
   objective: string;
   continuations: number;
-  limit: number;
+  /** Its limit of continuations; null when it has none (every goal since 2026-11-09). */
+  limit: number | null;
+  /** The tokens its turns have spent, and its budget; null when it has none. */
+  tokensUsed: number;
+  tokenBudget: number | null;
+  /** Why it is paused, in the bot's or the reviewer's words where there are some; null while it runs. */
+  paused: { reason: BotGoalPauseReason; note: string | null; at: string } | null;
   createdAt: string;
   /** A turn ended on a system's rate limit, and the goal goes on at `until`; null when nothing holds it. */
   waiting: { system: string; until: string } | null;

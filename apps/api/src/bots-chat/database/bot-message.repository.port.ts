@@ -78,6 +78,8 @@ export interface BotMessageRepositoryPort {
   findOpening(organizationId: string, turnId: string): Promise<BotMessageEntity | null>;
   /** A turn's own text, in the order the bot wrote it: what an ask's answer is drawn from. */
   findTurnTexts(organizationId: string, turnId: string): Promise<string[]>;
+  /** Whether a turn called any tool: what a goal counts as progress (`BotGoalEntity.account`). */
+  turnCalledTools(organizationId: string, turnId: string): Promise<boolean>;
   /**
    * What a turn reads back: the bot's newest `limit` messages before
    * `turnId`'s and after the message `afterMessageId` (the summary's cutoff;

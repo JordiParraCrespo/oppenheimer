@@ -647,6 +647,13 @@ export class BotsRepository {
     });
   }
 
+  /** Resumes the bot's paused goal: its next continuation is queued. */
+  resumeGoal(id: string): Promise<void> {
+    return callApi(BotsErrors.RESUME_GOAL_FAILED, async (api) => {
+      await api.result(heyApiSdk.resumeBotGoal({ path: { id } }));
+    });
+  }
+
   /** The card the bot waits on, if any: at most one is pending. */
   findPendingApproval(id: string): Promise<BotApprovalEntity | null> {
     return callApi(BotsErrors.FETCH_APPROVALS_FAILED, async (api) => {

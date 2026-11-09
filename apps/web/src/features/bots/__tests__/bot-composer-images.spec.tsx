@@ -37,6 +37,7 @@ vi.mock('@oppenheimer/frontend-consumer/react', () => ({
   useCancelBotTurn: () => ({ mutate: vi.fn(), reset: vi.fn(), error: null, isPending: false }),
   useClearBotLoop: () => ({ mutate: vi.fn(), reset: vi.fn(), error: null, isPending: false }),
   useClearBotGoal: () => ({ mutate: vi.fn(), reset: vi.fn(), error: null, isPending: false }),
+  useResumeBotGoal: () => ({ mutate: vi.fn(), reset: vi.fn(), error: null, isPending: false }),
   useVoiceDictation: () => ({ available: false, transcribe: async () => null }),
   useBotSlashCommands: () => ({ data: undefined }),
 }));
