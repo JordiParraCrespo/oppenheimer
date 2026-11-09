@@ -1,13 +1,17 @@
 import { randomUUID } from 'node:crypto';
 import type { AccessScope } from '@oppenheimer/backend-authz';
+import { OutboxMessageSchema, OutboxService } from '@oppenheimer/backend-ddd';
 import { DataSource } from 'typeorm';
 import { useTestDatabase } from '../../__tests__/integration-services';
 import { WhatsappAccountOrmEntity } from '../database/whatsapp-account.orm-entity';
 import { WhatsappAccountRepository } from '../database/whatsapp-account.repository';
 import { WhatsappMessageOrmEntity } from '../database/whatsapp-message.orm-entity';
 import { WhatsappMessageRepository } from '../database/whatsapp-message.repository';
+import type { WhatsappMessagesOwed } from '../database/whatsapp-message.repository.port';
+import { WhatsappOwnerWroteDomainEvent } from '../domain/events/whatsapp-owner-wrote.domain-event';
 import { WhatsappAccountEntity } from '../domain/whatsapp-account.entity';
 import type { WhatsappMessageDraft } from '../domain/whatsapp-message.types';
+import { hashWhatsappOwnerCode } from '../domain/whatsapp-owner-code.policy';
 import { WhatsappAccountMapper } from '../whatsapp-account.mapper';
 import { WhatsappMessageMapper } from '../whatsapp-message.mapper';
 
@@ -18,7 +22,13 @@ import { WhatsappMessageMapper } from '../whatsapp-message.mapper';
  * send that arrives after the host's own copy marks that row rather than
  * adding a twin; chats list newest first with their last message and the name
  * last seen; search takes `%` literally; retention deletes only what is old,
- * in batches; and the messages go with their number.
+ * in batches; and the messages go with their number. For the owner: each of
+ * their new messages is placed in its chat by the stored `/new`s and switches
+ * (by `seq`, never by text or time) and stages its event once, however often
+ * it is delivered; a deleted bot's switches stop counting; the bots' answers
+ * to the owner are not counted as sends; and entering a code is a write
+ * conditional on the code it was checked against, with wrong tries counted
+ * in the row.
  */
 describe('whatsapp (integration)', () => {
   let dataSource: DataSource;
@@ -42,7 +52,7 @@ describe('whatsapp (integration)', () => {
     dataSource = new DataSource({
       type: 'postgres',
       url: db.url,
-      entities: [WhatsappAccountOrmEntity, WhatsappMessageOrmEntity],
+      entities: [WhatsappAccountOrmEntity, WhatsappMessageOrmEntity, OutboxMessageSchema],
       synchronize: false,
     });
     await dataSource.initialize();
@@ -53,6 +63,7 @@ describe('whatsapp (integration)', () => {
     messages = new WhatsappMessageRepository(
       dataSource.getRepository(WhatsappMessageOrmEntity),
       new WhatsappMessageMapper(),
+      new OutboxService(dataSource),
     );
   }, 180000);
 
@@ -112,6 +123,8 @@ describe('whatsapp (integration)', () => {
       quotedId: null,
       sentAt: new Date(),
       sentByBotId: null,
+      switchesToBotId: null,
+      isReply: false,
       ...overrides,
     };
   }
@@ -236,5 +249,226 @@ describe('whatsapp (integration)', () => {
       [mine.id],
     );
     expect(count).toBe(0);
+  });
+
+  describe('the owner’s chat', () => {
+    const OWNER = '34600999888@s.whatsapp.net';
+    let mine: WhatsappAccountEntity;
+    let defaultBot: string;
+    let shop: string;
+
+    async function insertBot(name: string): Promise<string> {
+      const id = randomUUID();
+      await dataSource.query(
+        `INSERT INTO bot ("id", "organizationId", "name") VALUES ($1, $2, $3)`,
+        [id, organizationId, name],
+      );
+      return id;
+    }
+
+    beforeEach(async () => {
+      mine = number(ana);
+      await accounts.insert(mine);
+      defaultBot = await insertBot('Juno');
+      shop = await insertBot('Shop');
+    });
+
+    const fromOwner = (text: string, overrides: Partial<WhatsappMessageDraft> = {}) =>
+      message(mine, { chatId: OWNER, senderId: OWNER, chatName: 'Me', text, ...overrides });
+
+    /** What intake owes the owner's messages: an event for each, carrying its place. */
+    const owed: () => WhatsappMessagesOwed = () => ({
+      ownerPhone: OWNER,
+      answeringBotId: defaultBot,
+      isOwners: (draft) => !draft.fromMe && draft.senderId === OWNER,
+      eventFor: (stored, place) =>
+        new WhatsappOwnerWroteDomainEvent({
+          aggregateId: mine.id,
+          organizationId,
+          userId: ana,
+          accountId: mine.id,
+          chatId: stored.chatId,
+          messageRowId: stored.id,
+          seq: stored.seq,
+          botId: place.botId ?? '',
+          conversationStartsAt: place.startsAt,
+          startsHere: place.startsAt === stored.seq,
+          command: 'message',
+          text: stored.text,
+        }),
+    });
+
+    async function stagedFor(rowId: string): Promise<number> {
+      const [{ count }] = await dataSource.query(
+        `SELECT count(*)::int AS count FROM outbox_message
+          WHERE "aggregateId" = $1 AND payload->>'messageRowId' = $2`,
+        [mine.id, rowId],
+      );
+      return count;
+    }
+
+    // What breaks this: a redelivered batch answered twice, or moving where a conversation starts.
+    it('stores a batch delivered twice once, staging its event once and keeping its seq', async () => {
+      const batch = [fromOwner('what sold?', { externalId: 'A1' })];
+      const [first] = await messages.insertMany(batch, owed());
+      const again = await messages.insertMany(batch, owed());
+
+      expect(again).toEqual([]);
+      expect(first?.place).toEqual({ botId: defaultBot, startsAt: '0' });
+      expect(await stagedFor(first?.id ?? '')).toBe(1);
+      const [{ seq }] = await dataSource.query(
+        `SELECT seq::text AS seq FROM whatsapp_message WHERE id = $1`,
+        [first?.id],
+      );
+      expect(seq).toBe(first?.seq);
+    });
+
+    // What breaks this: a conversation start or a switch lost between batches, or a stranger's /new counted.
+    it('places each message after the later of the last /new and the last switch, with that switch’s bot', async () => {
+      const [hello] = await messages.insertMany([fromOwner('hello')], owed());
+      const [, , afterSwitch] = await messages.insertMany(
+        [
+          fromOwner('/new'),
+          fromOwner('Shop: what sold?', { switchesToBotId: shop }),
+          fromOwner('and yesterday?'),
+        ],
+        owed(),
+      );
+      await messages.insertMany(
+        [message(mine, { chatId: OWNER, senderId: '34600333444@s.whatsapp.net', text: '/new' })],
+        owed(),
+      );
+      const [later] = await messages.insertMany([fromOwner('anything else?')], owed());
+      const [renewed] = await messages.insertMany([fromOwner('/NEW ')], owed());
+
+      expect(hello?.place).toEqual({ botId: defaultBot, startsAt: '0' });
+      const switchSeq = String(BigInt(afterSwitch?.seq ?? '0') - 1n);
+      expect(afterSwitch?.place).toEqual({ botId: shop, startsAt: switchSeq });
+      expect(later?.place).toEqual({ botId: shop, startsAt: switchSeq });
+      expect(renewed?.place).toEqual({ botId: shop, startsAt: renewed?.seq });
+      expect(await messages.findSwitchedBot({ organizationId, accountId: mine.id }, OWNER)).toBe(
+        shop,
+      );
+    });
+
+    // What breaks this: a "Name: …" for the bot already answering counted as a switch, so an
+    // owner who prefixes every message gets a fresh conversation on each one.
+    it('keeps one conversation while the owner names the bot that already answers', async () => {
+      const [first] = await messages.insertMany(
+        [fromOwner('Shop: what sold today?', { switchesToBotId: shop })],
+        owed(),
+      );
+      const [again] = await messages.insertMany(
+        [fromOwner('Shop: and yesterday?', { switchesToBotId: shop })],
+        owed(),
+      );
+      const [juno] = await messages.insertMany(
+        [fromOwner('Juno: hi', { switchesToBotId: defaultBot })],
+        owed(),
+      );
+      const [junoAgain] = await messages.insertMany(
+        [fromOwner('Juno: still you?', { switchesToBotId: defaultBot })],
+        owed(),
+      );
+      const [back] = await messages.insertMany(
+        [fromOwner('Shop: back', { switchesToBotId: shop })],
+        owed(),
+      );
+
+      expect(first?.place).toEqual({ botId: shop, startsAt: first?.seq });
+      expect(again?.place).toEqual({ botId: shop, startsAt: first?.seq });
+      expect(juno?.place).toEqual({ botId: defaultBot, startsAt: juno?.seq });
+      expect(junoAgain?.place).toEqual({ botId: defaultBot, startsAt: juno?.seq });
+      expect(back?.place).toEqual({ botId: shop, startsAt: back?.seq });
+    });
+
+    // What breaks this: naming the number's default bot, with no other bot switched to, starting it afresh.
+    it('keeps the default bot’s conversation when the owner names it', async () => {
+      const [hello] = await messages.insertMany([fromOwner('hello')], owed());
+      const [named] = await messages.insertMany(
+        [fromOwner('Juno: more', { switchesToBotId: defaultBot })],
+        owed(),
+      );
+
+      expect(hello?.place).toEqual({ botId: defaultBot, startsAt: '0' });
+      expect(named?.place).toEqual({ botId: defaultBot, startsAt: '0' });
+    });
+
+    // What breaks this: FK_whatsapp_message_switches_to_bot not SET NULL, or the chat stuck on a deleted bot.
+    it('forgets a deleted bot’s switches, so the chat falls back to the default', async () => {
+      await messages.insertMany([fromOwner('Shop: hi', { switchesToBotId: shop })], owed());
+      await dataSource.query(`DELETE FROM bot WHERE id = $1`, [shop]);
+      const [next] = await messages.insertMany([fromOwner('still there?')], owed());
+
+      expect(next?.place).toEqual({ botId: defaultBot, startsAt: '0' });
+      expect(
+        await messages.findSwitchedBot({ organizationId, accountId: mine.id }, OWNER),
+      ).toBeNull();
+    });
+
+    // What breaks this: the owner's conversation using up the bots' 100 sends a day.
+    it('counts a bot’s sends toward its day, but not its answers to the owner', async () => {
+      const ref = { organizationId, accountId: mine.id };
+      await messages.recordBotSend(
+        message(mine, { externalId: 'S1', fromMe: true, sentByBotId: defaultBot }),
+      );
+      await messages.recordBotSend(
+        message(mine, {
+          externalId: 'R1',
+          chatId: OWNER,
+          fromMe: true,
+          sentByBotId: defaultBot,
+          isReply: true,
+          quotedId: 'A1',
+        }),
+      );
+      expect(await messages.countBotSendsSince(ref, new Date(Date.now() - 60_000))).toBe(1);
+      expect((await messages.findInChat(ref, OWNER, 10, null))[0]?.quotedId).toBe('A1');
+    });
+
+    // What breaks this: a code entered against a replaced one confirming, or parallel guesses past five.
+    it('confirms only against the waiting code, and counts every wrong try in the row', async () => {
+      mine.report({ state: 'connected', phone: '34600111222@s.whatsapp.net' });
+      await accounts.save(mine);
+      const named = mine.nameOwner(OWNER, new Date());
+      await accounts.saveOwnerCode(mine);
+      const usedCodeHash = mine.ownerCodeHash ?? '';
+
+      // A copy loaded before a new code was asked for loses.
+      const stale = (await accounts.findOwnById(scopeOf(ana), mine.id)).unwrap();
+      mine.nameOwner(OWNER, new Date());
+      await accounts.saveOwnerCode(mine);
+      stale.confirmOwner(named?.code ?? '', new Date());
+      expect(await accounts.saveOwner(stale, usedCodeHash)).toBe(false);
+      expect((await accounts.findOwnById(scopeOf(ana), mine.id)).unwrap().ownerPhone).toBeNull();
+
+      // Five wrong tries at once all count, and lock the code.
+      const current = mine.ownerCodeHash ?? '';
+      const tries = await Promise.all(
+        Array.from({ length: 6 }, async () => {
+          const copy = (await accounts.findOwnById(scopeOf(ana), mine.id)).unwrap();
+          copy.confirmOwner('not-it', new Date());
+          return accounts.saveOwner(copy, current);
+        }),
+      );
+      expect(tries.filter(Boolean)).toHaveLength(5);
+      const locked = (await accounts.findOwnById(scopeOf(ana), mine.id)).unwrap();
+      expect(locked.ownerCodeAttempts).toBe(5);
+      expect(locked.ownerCodeHash).not.toBe(hashWhatsappOwnerCode('not-it'));
+    });
+
+    it('confirms the owner with the waiting code, clearing it', async () => {
+      const named = mine.nameOwner(OWNER, new Date());
+      await accounts.saveOwnerCode(mine);
+      const usedCodeHash = mine.ownerCodeHash ?? '';
+      expect(mine.confirmOwner(named?.code ?? '', new Date())).toBe('confirmed');
+      expect(await accounts.saveOwner(mine, usedCodeHash)).toBe(true);
+      expect((await accounts.findOwnById(scopeOf(ana), mine.id)).unwrap()).toMatchObject({
+        ownerPhone: OWNER,
+        ownerPendingPhone: null,
+        ownerCodeHash: null,
+        ownerCodeAttempts: 0,
+      });
+    });
   });
 });

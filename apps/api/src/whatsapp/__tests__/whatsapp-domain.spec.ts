@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { WhatsappAccountEntity } from '../domain/whatsapp-account.entity';
+import { whatsappInboundAction } from '../domain/whatsapp-inbound.policy';
 import type { WhatsappChat, WhatsappMessage } from '../domain/whatsapp-message.types';
 import { pickWhatsappChat, whatsappSendRefusal } from '../domain/whatsapp-send.policy';
 
@@ -81,5 +82,67 @@ describe('pickWhatsappChat', () => {
   it('answers ambiguous for a part two names share, and nothing for none', () => {
     expect(pickWhatsappChat(chats, 'mart')).toBe('ambiguous');
     expect(pickWhatsappChat(chats, 'Pedro')).toBeNull();
+  });
+});
+
+describe('whatsappInboundAction', () => {
+  const SPARE = '34600111222@s.whatsapp.net';
+  const OWNER = '34600999888@s.whatsapp.net';
+  const owned = { phone: SPARE, ownerPhone: OWNER };
+  const fromOwner = (text: string) => ({
+    chatId: OWNER,
+    chatKind: 'direct' as const,
+    fromMe: false,
+    senderId: OWNER,
+    text,
+    media: null,
+  });
+
+  // What breaks this: a stranger answered, or the bot answering itself in a loop.
+  it('ignores a stranger, the number’s own messages, groups, its self-chat and everyone before an owner', () => {
+    const stranger = '34600333444@s.whatsapp.net';
+    expect(
+      whatsappInboundAction(owned, { ...fromOwner('hi'), chatId: stranger, senderId: stranger }),
+    ).toEqual({ kind: 'ignore' });
+    expect(whatsappInboundAction(owned, { ...fromOwner('hi'), fromMe: true })).toEqual({
+      kind: 'ignore',
+    });
+    expect(
+      whatsappInboundAction(owned, { ...fromOwner('hi'), chatId: '1203@g.us', chatKind: 'group' }),
+    ).toEqual({ kind: 'ignore' });
+    expect(
+      whatsappInboundAction(owned, { ...fromOwner('hi'), chatId: SPARE, senderId: SPARE }),
+    ).toEqual({ kind: 'ignore' });
+    expect(whatsappInboundAction({ phone: SPARE, ownerPhone: null }, fromOwner('hi'))).toEqual({
+      kind: 'ignore',
+    });
+  });
+
+  it('reads the owner’s exact /new, /stop and /help as commands, ignoring case', () => {
+    expect(whatsappInboundAction(owned, fromOwner(' /NEW '))).toMatchObject({ command: 'new' });
+    expect(whatsappInboundAction(owned, fromOwner('/stop'))).toMatchObject({ command: 'stop' });
+    expect(whatsappInboundAction(owned, fromOwner('/help'))).toMatchObject({ command: 'help' });
+    expect(whatsappInboundAction(owned, fromOwner('/new please'))).toMatchObject({
+      command: 'message',
+      text: '/new please',
+    });
+  });
+
+  // What breaks this: "Shop: …" reaching the default bot, or the prefix left in what Shop reads.
+  it('takes a leading "Name:" as a switch to match, with what follows as the text', () => {
+    expect(whatsappInboundAction(owned, fromOwner('Shop: what sold?\nand when'))).toEqual({
+      kind: 'owner',
+      command: 'message',
+      text: 'what sold?\nand when',
+      switchName: 'Shop',
+    });
+    expect(whatsappInboundAction(owned, fromOwner('Shop:'))).toMatchObject({
+      text: '',
+      switchName: 'Shop',
+    });
+    expect(whatsappInboundAction(owned, fromOwner('what sold?'))).toMatchObject({
+      text: 'what sold?',
+      switchName: null,
+    });
   });
 });

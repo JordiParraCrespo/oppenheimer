@@ -1,63 +1,79 @@
 import { Injectable } from '@nestjs/common';
 import { DataSource, type EntityManager } from 'typeorm';
 import {
-  type TelegramConversationStart,
-  telegramConversationFor,
-} from '../domain/bot-telegram-turn.policy';
+  type ChannelConversationStart,
+  channelConversationFor,
+} from '../domain/bot-channel-turn.policy';
 import type {
+  BotChannelChat,
   BotConversationRepositoryPort,
-  BotTelegramChat,
 } from './bot-conversation.repository.port';
+
+/**
+ * Each channel's account column, and the partial unique on its chats
+ * (`UQ_bot_conversation_<kind>_chat`), whose predicate `ON CONFLICT` names.
+ */
+const ACCOUNT_COLUMN = {
+  telegram: '"telegramAccountId"',
+  whatsapp: '"whatsappAccountId"',
+} as const satisfies Record<BotChannelChat['kind'], string>;
+
+/** The row a channel conversation is read back as. */
+interface ChannelChatRow {
+  organizationId: string;
+  botId: string;
+  kind: 'console' | BotChannelChat['kind'];
+  telegramAccountId: string | null;
+  whatsappAccountId: string | null;
+  chatId: string | null;
+}
 
 @Injectable()
 export class BotConversationRepository implements BotConversationRepositoryPort {
   constructor(private readonly dataSource: DataSource) {}
 
-  async conversationAt(
-    chat: BotTelegramChat,
-    startsAt: string,
-    messageId: string,
-  ): Promise<string> {
-    const params = [chat.organizationId, chat.telegramAccountId, chat.chatId];
-    // UQ_bot_conversation_telegram_chat's leading columns: a chat's starts are a handful.
-    const [latest]: TelegramConversationStart[] = await this.dataSource.query(
+  async conversationAt(chat: BotChannelChat, startsAt: string, messageId: string): Promise<string> {
+    const account = ACCOUNT_COLUMN[chat.kind];
+    const params = [chat.organizationId, accountIdOf(chat), chat.chatId];
+    // UQ_bot_conversation_<kind>_chat's leading columns: a chat's starts are a handful.
+    const [latest]: ChannelConversationStart[] = await this.dataSource.query(
       `SELECT id, "botId", "startsAtMessageId"::text AS "startsAt" FROM bot_conversation
-        WHERE "telegramAccountId" = $2 AND "chatId" = $3 AND "organizationId" = $1
+        WHERE ${account} = $2 AND "chatId" = $3 AND "organizationId" = $1
           AND "startsAtMessageId" <= $4::bigint
         ORDER BY "startsAtMessageId" DESC, ("botId" = $5) DESC LIMIT 1`,
       [...params, messageId, chat.botId],
     );
-    const decided = telegramConversationFor(latest ?? null, startsAt, messageId, chat.botId);
+    const decided = channelConversationFor(latest ?? null, startsAt, messageId, chat.botId);
     if ('use' in decided) return decided.use;
     const { start } = decided;
     await this.dataSource.query(
-      `INSERT INTO bot_conversation ("organizationId", "botId", kind, "telegramAccountId", "chatId", "startsAtMessageId")
-       VALUES ($1, $4, 'telegram', $2, $3, $5)
-       ON CONFLICT ("telegramAccountId", "chatId", "botId", "startsAtMessageId")
-         WHERE "telegramAccountId" IS NOT NULL DO NOTHING`,
-      [...params, chat.botId, start],
+      `INSERT INTO bot_conversation ("organizationId", "botId", kind, ${account}, "chatId", "startsAtMessageId")
+       VALUES ($1, $4, $6, $2, $3, $5)
+       ON CONFLICT (${account}, "chatId", "botId", "startsAtMessageId")
+         WHERE ${account} IS NOT NULL DO NOTHING`,
+      [...params, chat.botId, start, chat.kind],
     );
     const [opened]: { id: string }[] = await this.dataSource.query(
       `SELECT id FROM bot_conversation
-        WHERE "telegramAccountId" = $2 AND "chatId" = $3 AND "botId" = $4
+        WHERE ${account} = $2 AND "chatId" = $3 AND "botId" = $4
           AND "startsAtMessageId" = $5::bigint AND "organizationId" = $1`,
       [...params, chat.botId, start],
     );
     return opened.id;
   }
 
-  async findTelegram(
+  async findChannelChat(
     organizationId: string,
     conversationId: string,
-  ): Promise<BotTelegramChat | null> {
+  ): Promise<BotChannelChat | null> {
     // PK_bot_conversation.
-    const [row]: BotTelegramChat[] = await this.dataSource.query(
-      `SELECT "organizationId", "botId", "telegramAccountId", "chatId" FROM bot_conversation
-        WHERE "organizationId" = $1 AND id = $2 AND kind = 'telegram'
-          AND "telegramAccountId" IS NOT NULL`,
+    const [row]: ChannelChatRow[] = await this.dataSource.query(
+      `SELECT "organizationId", "botId", kind, "telegramAccountId", "whatsappAccountId", "chatId"
+         FROM bot_conversation
+        WHERE "organizationId" = $1 AND id = $2 AND kind <> 'console'`,
       [organizationId, conversationId],
     );
-    return row ?? null;
+    return row ? channelChatOf(row) : null;
   }
 
   async deleteWithin(manager: EntityManager, organizationId: string, botId: string): Promise<void> {
@@ -76,11 +92,11 @@ export class BotConversationRepository implements BotConversationRepositoryPort 
       `DELETE FROM bot_question WHERE "organizationId" = $1 AND "botId" = $2`,
       params,
     );
-    // A Telegram chat's conversations with no turn at work, their turns and
+    // A channel chat's conversations with no turn at work, their turns and
     // messages with them (FK_bot_turn_conversation, FK_bot_message_conversation).
     await manager.query(
       `DELETE FROM bot_conversation c
-        WHERE c."organizationId" = $1 AND c."botId" = $2 AND c.kind = 'telegram'
+        WHERE c."organizationId" = $1 AND c."botId" = $2 AND c.kind <> 'console'
           AND NOT EXISTS (
             SELECT 1 FROM bot_turn t
              WHERE t."organizationId" = c."organizationId" AND t."conversationId" = c.id
@@ -98,4 +114,33 @@ export class BotConversationRepository implements BotConversationRepositoryPort 
       params,
     );
   }
+}
+
+function accountIdOf(chat: BotChannelChat): string {
+  return chat.kind === 'telegram' ? chat.telegramAccountId : chat.whatsappAccountId;
+}
+
+/** A channel conversation's row as its chat; null once its account was disconnected. */
+function channelChatOf(row: ChannelChatRow): BotChannelChat | null {
+  const { organizationId, botId, chatId } = row;
+  if (chatId === null) return null;
+  if (row.kind === 'telegram' && row.telegramAccountId) {
+    return {
+      kind: 'telegram',
+      organizationId,
+      botId,
+      chatId,
+      telegramAccountId: row.telegramAccountId,
+    };
+  }
+  if (row.kind === 'whatsapp' && row.whatsappAccountId) {
+    return {
+      kind: 'whatsapp',
+      organizationId,
+      botId,
+      chatId,
+      whatsappAccountId: row.whatsappAccountId,
+    };
+  }
+  return null;
 }

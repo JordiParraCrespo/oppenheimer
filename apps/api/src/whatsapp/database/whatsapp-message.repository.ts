@@ -1,16 +1,20 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { OutboxService } from '@oppenheimer/backend-ddd';
+import { type EntityManager, Repository } from 'typeorm';
 import type {
   WhatsappChat,
+  WhatsappChatPlace,
   WhatsappMessage,
   WhatsappMessageDraft,
+  WhatsappStoredMessage,
 } from '../domain/whatsapp-message.types';
 import { WhatsappMessageMapper } from '../whatsapp-message.mapper';
 import { WhatsappMessageOrmEntity } from './whatsapp-message.orm-entity';
 import type {
   WhatsappAccountRef,
   WhatsappMessageRepositoryPort,
+  WhatsappMessagesOwed,
 } from './whatsapp-message.repository.port';
 
 @Injectable()
@@ -19,17 +23,47 @@ export class WhatsappMessageRepository implements WhatsappMessageRepositoryPort 
     @InjectRepository(WhatsappMessageOrmEntity)
     private readonly repository: Repository<WhatsappMessageOrmEntity>,
     private readonly mapper: WhatsappMessageMapper,
+    private readonly outbox: OutboxService,
   ) {}
 
-  async insertMany(messages: readonly WhatsappMessageDraft[]): Promise<void> {
-    if (messages.length === 0) return;
-    await this.repository
-      .createQueryBuilder()
-      .insert()
-      .into(WhatsappMessageOrmEntity)
-      .values(messages.map((message) => this.mapper.toPersistence(message)))
-      .orIgnore()
-      .execute();
+  async insertMany(
+    messages: readonly WhatsappMessageDraft[],
+    owed?: WhatsappMessagesOwed,
+  ): Promise<WhatsappStoredMessage[]> {
+    if (messages.length === 0) return [];
+    return this.outbox.transaction(async (manager) => {
+      // UQ_whatsapp_message_external: what is already kept is skipped, and keeps its seq.
+      const result = await manager
+        .createQueryBuilder()
+        .insert()
+        .into(WhatsappMessageOrmEntity)
+        .values(messages.map((message) => this.mapper.toPersistence(message)))
+        .orIgnore()
+        .returning(['id', 'seq', 'chatId', 'externalId'])
+        .execute();
+      const rows = new Map(
+        (result.raw as { id: string; seq: string; chatId: string; externalId: string }[]).map(
+          (row) => [`${row.chatId}/${row.externalId}`, row],
+        ),
+      );
+      const inserted = messages.flatMap((message) => {
+        const row = rows.get(`${message.chatId}/${message.externalId}`);
+        return row ? [{ message, row }] : [];
+      });
+      const owners = owed
+        ? inserted.filter(({ message }) => owed.isOwners(message)).map(({ row }) => row)
+        : [];
+      const places = owed ? await placesWithin(manager, owners, messages[0], owed) : new Map();
+      const stored = inserted.map(({ message, row }) =>
+        this.mapper.toStored(message, row, places.get(row.id) ?? null),
+      );
+      const events = stored.flatMap((message) => {
+        const event = message.place ? owed?.eventFor(message, message.place) : null;
+        return event ? [event] : [];
+      });
+      if (events.length > 0) await this.outbox.stageEvents(manager, events);
+      return stored;
+    });
   }
 
   async recordBotSend(message: WhatsappMessageDraft): Promise<void> {
@@ -38,8 +72,33 @@ export class WhatsappMessageRepository implements WhatsappMessageRepositoryPort 
       .insert()
       .into(WhatsappMessageOrmEntity)
       .values(this.mapper.toPersistence(message))
-      .orUpdate(['sentByBotId'], ['organizationId', 'accountId', 'chatId', 'externalId'])
+      .orUpdate(
+        ['sentByBotId', 'isReply', 'quotedId'],
+        ['organizationId', 'accountId', 'chatId', 'externalId'],
+      )
       .execute();
+  }
+
+  async findById(account: WhatsappAccountRef, id: string): Promise<WhatsappMessage | null> {
+    const record = await this.repository.findOneBy({
+      id,
+      organizationId: account.organizationId,
+      accountId: account.accountId,
+    });
+    return record ? this.mapper.toDomain(record) : null;
+  }
+
+  async findSwitchedBot(account: WhatsappAccountRef, chatId: string): Promise<string | null> {
+    // IDX_whatsapp_message_switch, walked backward from the chat's last row.
+    const rows: { switchesToBotId: string }[] = await this.repository.query(
+      `SELECT "switchesToBotId" FROM whatsapp_message
+        WHERE "organizationId" = $1 AND "accountId" = $2 AND "chatId" = $3
+          AND "switchesToBotId" IS NOT NULL
+        ORDER BY seq DESC
+        LIMIT 1`,
+      [account.organizationId, account.accountId, chatId],
+    );
+    return rows[0]?.switchesToBotId ?? null;
   }
 
   /** A batch picked through `IDX_whatsapp_message_account_sent`, deleted by `ctid` (`database-design.md`). */
@@ -141,8 +200,85 @@ export class WhatsappMessageRepository implements WhatsappMessageRepositoryPort 
       .andWhere('message.accountId = :accountId', account)
       .andWhere('message.sentAt >= :since', { since })
       .andWhere('message.sentByBotId IS NOT NULL')
+      .andWhere('NOT message.isReply')
       .getCount();
   }
+}
+
+/** The owner's `/new`, as `IDX_whatsapp_message_new` holds it (its predicate, on `n`). */
+const WHATSAPP_NEW_COMMAND_SQL = `NOT n."fromMe" AND n.text ~* '^\\s*/new\\s*$'`;
+
+/**
+ * For each of the owner's new messages, by row id, its place in its chat:
+ * the bot of the last switch at or before its seq (else the default), and
+ * the later of where that bot took the chat over and the owner's last
+ * `/new`. A switch that names the bot already answering ("Shop: …" while
+ * Shop answers) takes nothing over, so the bot took the chat at the first of
+ * the switches to it since one to another bot, and never when it is the
+ * default and no other bot was switched to. The batch is already in, so a
+ * switch or `/new` earlier in the same batch counts.
+ */
+async function placesWithin(
+  manager: EntityManager,
+  owners: readonly { id: string; seq: string; chatId: string }[],
+  first: WhatsappMessageDraft | undefined,
+  owed: WhatsappMessagesOwed,
+): Promise<Map<string, WhatsappChatPlace>> {
+  if (!first || owners.length === 0) return new Map();
+  // IDX_whatsapp_message_switch and IDX_whatsapp_message_new, once per
+  // message: the last switch (sw), the last one before it to another bot
+  // (other), the first of the run between them (took), and the last /new.
+  const rows: { id: string; switchBotId: string | null; startsAt: string }[] = await manager.query(
+    `SELECT m.id,
+              sw."switchesToBotId" AS "switchBotId",
+              GREATEST(CASE
+                WHEN sw.seq IS NULL THEN 0
+                WHEN other.seq IS NULL AND sw."switchesToBotId" = $7::uuid THEN 0
+                ELSE took.seq
+              END, COALESCE((
+                SELECT n.seq FROM whatsapp_message n
+                 WHERE n."organizationId" = $1 AND n."accountId" = $2 AND n."chatId" = m.chat
+                   AND ${WHATSAPP_NEW_COMMAND_SQL}
+                   AND n."senderId" = $3 AND n.seq <= m.seq
+                 ORDER BY n.seq DESC LIMIT 1
+              ), 0))::text AS "startsAt"
+         FROM unnest($4::uuid[], $5::text[], $6::bigint[]) AS m(id, chat, seq)
+         LEFT JOIN LATERAL (
+           SELECT s.seq, s."switchesToBotId" FROM whatsapp_message s
+            WHERE s."organizationId" = $1 AND s."accountId" = $2 AND s."chatId" = m.chat
+              AND s."switchesToBotId" IS NOT NULL AND s.seq <= m.seq
+            ORDER BY s.seq DESC LIMIT 1
+         ) sw ON true
+         LEFT JOIN LATERAL (
+           SELECT p.seq FROM whatsapp_message p
+            WHERE p."organizationId" = $1 AND p."accountId" = $2 AND p."chatId" = m.chat
+              AND p."switchesToBotId" IS NOT NULL AND p.seq < sw.seq
+              AND p."switchesToBotId" <> sw."switchesToBotId"
+            ORDER BY p.seq DESC LIMIT 1
+         ) other ON true
+         LEFT JOIN LATERAL (
+           SELECT r.seq FROM whatsapp_message r
+            WHERE r."organizationId" = $1 AND r."accountId" = $2 AND r."chatId" = m.chat
+              AND r."switchesToBotId" IS NOT NULL
+              AND r.seq > COALESCE(other.seq, 0) AND r.seq <= sw.seq
+            ORDER BY r.seq ASC LIMIT 1
+         ) took ON true`,
+    [
+      first.organizationId,
+      first.accountId,
+      owed.ownerPhone,
+      owners.map((owner) => owner.id),
+      owners.map((owner) => owner.chatId),
+      owners.map((owner) => owner.seq),
+      owed.answeringBotId,
+    ],
+  );
+  return new Map(
+    rows.map((row) => [
+      row.id,
+      { botId: row.switchBotId ?? owed.answeringBotId, startsAt: row.startsAt },
+    ]),
+  );
 }
 
 /** `%`, `_` and the escape itself, taken literally in an `ILIKE`. */

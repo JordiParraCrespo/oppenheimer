@@ -162,6 +162,17 @@ export const whatsappSendSchema = z.object({
   commandId: commandIdSchema,
   chatId: jid(),
   text: z.string().min(1).max(WHATSAPP_TEXT_MAX_CHARS),
+  /**
+   * The message this one answers, shown quoted above it: its WhatsApp id
+   * and who wrote it. Optional, so a runner from before it sends the text
+   * unquoted (`01-protocol.md`, "the link only grows").
+   */
+  replyTo: z
+    .object({
+      id: z.string().min(1).max(128),
+      senderId: jid(),
+    })
+    .optional(),
 });
 
 export type WhatsappSendMessage = z.infer<typeof whatsappSendSchema>;

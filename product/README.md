@@ -1411,3 +1411,10 @@ earlier note:
   §5 and `next-steps/telegram.md` §2 and §3 changed on 2026-11-09, when the
   owner's `/start` went unanswered: the decision is
   `next-steps/answering-on-telegram-and-whatsapp.md`.
+- `next-steps/answering-on-telegram-and-whatsapp.md` §1 (2026-11-09) had the
+  spare WhatsApp number send your personal number a code you send back from
+  it. On 2026-11-09, building slice 3, the code became one you enter in
+  Settings → WhatsApp instead: sent back from the named number, a stranger
+  who owns a mistyped number would receive it and become your line. A bot's
+  reply to your own message there counts only against the host's send
+  budget, not the 100 bot sends a day (`next-steps/whatsapp.md` §4).

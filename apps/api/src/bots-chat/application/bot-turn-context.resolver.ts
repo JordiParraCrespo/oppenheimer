@@ -9,6 +9,7 @@ import { AppError } from '@oppenheimer/backend-core';
 import {
   BOT_MEMORY_LOG_IN_PROMPT_CHARS,
   BOT_MEMORY_PROFILE_IN_PROMPT_CHARS,
+  isChannelOrigin,
 } from '@oppenheimer/shared';
 import {
   BOT_DOCUMENT_REPOSITORY,
@@ -205,7 +206,7 @@ export class BotTurnContextResolver {
           hosts,
           lastContext,
           memory: { log: inMind.log, toRecall: inMind.toRecall },
-          channel: turn.origin === 'telegram' ? 'telegram' : null,
+          channel: isChannelOrigin(turn.origin) ? turn.origin : null,
         }),
         composeTurnMessage(command, withBuiltInSkills(skills), prompt),
       ),

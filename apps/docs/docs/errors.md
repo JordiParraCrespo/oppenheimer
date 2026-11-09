@@ -802,6 +802,7 @@ See `product/versions/mvp/25-bots.md`.
 | `BOTS_040` <a id="bots_040" />       | The bot has as many skills as it can keep | 422  |
 | `BOTS_041` <a id="bots_041" />       | The bot has no dream to undo | 404  |
 | `BOTS_042` <a id="bots_042" />       | The bot answers on a Telegram bot | 409  |
+| `BOTS_043` <a id="bots_043" />       | The bot answers on a WhatsApp number | 409  |
 
 `BOTS_001`, `BOTS_003` and `BOTS_008` are also returned for a bot, group or fact in
 another workspace.
@@ -902,6 +903,10 @@ never dreamed, or its latest dream was undone already: only the latest can be.
 
 `BOTS_042` is a delete of a bot that answers you on a Telegram bot. Choose
 another bot, or none, to answer there (Settings → Telegram), then delete it.
+
+`BOTS_043` is a delete of a bot that is a linked WhatsApp number's default: it
+answers you there. Choose another bot, or none (Settings → WhatsApp), then
+delete it.
 
 A home host the caller may not use answers `HOSTS_001`, as a session's does.
 
@@ -1097,6 +1102,10 @@ one of their hosts, and the messages it sees, kept for their bots. See
 | `WHATSAPP_008` <a id="whatsapp_008" /> | WhatsApp did not take the message                           | 502  |
 | `WHATSAPP_009` <a id="whatsapp_009" /> | That number has sent as many bot messages as it may for now | 429  |
 | `WHATSAPP_010` <a id="whatsapp_010" /> | No such WhatsApp chat                                       | 404  |
+| `WHATSAPP_011` <a id="whatsapp_011" /> | That code is wrong or has expired                           | 422  |
+| `WHATSAPP_012` <a id="whatsapp_012" /> | No number is waiting to be confirmed                        | 409  |
+| `WHATSAPP_013` <a id="whatsapp_013" /> | That number cannot be your own number here                  | 422  |
+| `WHATSAPP_014` <a id="whatsapp_014" /> | Too many wrong codes                                        | 429  |
 
 `WHATSAPP_005` is a runner that predates WhatsApp, or one started with
 `RUNNER_WHATSAPP=off`: update it, or turn it back on. `WHATSAPP_006` is a host
@@ -1104,6 +1113,15 @@ already holding someone else's number: a runner holds one device. A
 `WHATSAPP_008` whose detail says the host did not answer in time may still
 have sent the message. `WHATSAPP_009` is a bot's share of a day (100 messages
 from one number), or the host's own budget (`WA_004`).
+
+`WHATSAPP_011` to `WHATSAPP_014` are the owner's own number
+(`POST /v1/whatsapp/accounts/{id}/owner` and `…/owner/confirm`): the linked
+number sends a six-digit code to the number named, and it is entered in
+Settings, never sent back in WhatsApp. `WHATSAPP_013` is a number that is not
+a phone number, or is the linked number itself. `WHATSAPP_011` is a wrong
+code, or one past its ten minutes; after five wrong codes it is locked
+(`WHATSAPP_014`) and a new one has to be asked for. `WHATSAPP_012` is a
+confirm with no code waiting.
 
 ## Telegram
 

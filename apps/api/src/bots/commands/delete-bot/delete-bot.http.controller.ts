@@ -42,8 +42,8 @@ export class DeleteBotHttpController {
   @ApiProblemResponse({ status: 404, description: 'Bot not found', code: 'BOTS_001' })
   @ApiProblemResponse({
     status: 409,
-    description: 'The bot answers on a Telegram bot',
-    code: 'BOTS_042',
+    description: 'The bot answers on a Telegram bot, or is a WhatsApp number’s default',
+    code: ['BOTS_042', 'BOTS_043'],
   })
   async delete(
     @CurrentAccessScope() scope: AccessScope,

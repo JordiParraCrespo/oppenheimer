@@ -929,8 +929,8 @@ export interface BotGoal {
  * Why a bot turn exists: a message (yours or another bot's), an approval's
  * decision, a card of questions answered or dismissed, a routine's run, a
  * session the bot is subscribed to, a goal it set itself, a loop's run, or a
- * message of yours to the bot's Telegram bot
- * (`product/next-steps/answering-on-telegram-and-whatsapp.md`).
+ * message of yours to the bot on a channel: your Telegram bot, or your spare
+ * WhatsApp number (`product/next-steps/answering-on-telegram-and-whatsapp.md`).
  */
 export const BOT_TURN_ORIGINS = [
   'message',
@@ -941,21 +941,39 @@ export const BOT_TURN_ORIGINS = [
   'goal',
   'loop',
   'telegram',
+  'whatsapp',
 ] as const;
 export type BotTurnOrigin = (typeof BOT_TURN_ORIGINS)[number];
 
 /**
  * The turns a person is waiting on: one they started by writing (in the
- * console or on Telegram), or by deciding a card. A routine's run, a wake
- * and a goal's continuation run with nobody there, so a tool that needs
- * someone to answer is not offered on them.
+ * console, on Telegram or on WhatsApp), or by deciding a card. A routine's
+ * run, a wake and a goal's continuation run with nobody there, so a tool
+ * that needs someone to answer is not offered on them.
  */
 export const BOT_ATTENDED_ORIGINS = [
   'message',
   'approval',
   'question',
   'telegram',
+  'whatsapp',
 ] as const satisfies readonly BotTurnOrigin[];
+
+/**
+ * The origins of a turn asked from outside the console, on a channel: its
+ * conversation is that channel's chat with the bot, and its last words are
+ * sent back there when it ends.
+ */
+export const BOT_CHANNEL_ORIGINS = [
+  'telegram',
+  'whatsapp',
+] as const satisfies readonly BotTurnOrigin[];
+export type BotChannelOrigin = (typeof BOT_CHANNEL_ORIGINS)[number];
+
+/** Whether a turn of this origin answers on a channel rather than in the console. */
+export function isChannelOrigin(origin: BotTurnOrigin): origin is BotChannelOrigin {
+  return (BOT_CHANNEL_ORIGINS as readonly BotTurnOrigin[]).includes(origin);
+}
 
 /**
  * How a bot's answer to another bot's `ask_bot` came back (`25-bots.md`

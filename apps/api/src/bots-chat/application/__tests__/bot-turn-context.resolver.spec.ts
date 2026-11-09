@@ -127,7 +127,7 @@ function setup(
       findLastContext: async () => conversation.lastContext ?? null,
     } satisfies Pick<BotTurnRepositoryPort, 'findLastContext'> as unknown as BotTurnRepositoryPort,
     new BotTurnChannelPolicy({
-      findTelegram: async () => null,
+      findChannelChat: async () => null,
     } as unknown as BotConversationRepositoryPort),
     {
       tools: () => [
