@@ -579,11 +579,14 @@ describe('BotSessionToolsFactory', () => {
     expect(commandBus.execute.mock.calls[0][0]).toMatchObject({ scope: owner, sessionId: HOME });
   });
 
-  it('says a stop is owed to an offline host', async () => {
+  // What breaks this: an offline host's stop was answered "sent when it comes
+  // back", but the API sends again only owed launches and closes, never a stop.
+  it('does not promise a stop to an offline host, and tells the bot to check and stop again', async () => {
     const { commandBus, call, session } = setup('full');
     commandBus.execute.mockResolvedValueOnce({ sessionId: session.id, hints: ['host_offline'] });
     const result = await call('stop_session', { session_id: session.id });
-    expect(result.content).toContain('Its host is offline: the stop is sent when it comes back.');
+    expect(result.content).toContain('the stop did not reach it and is not sent again');
+    expect(result.content).not.toContain('when it comes back');
   });
 
   it('asks before prompting a session, the card naming the session and the words', async () => {
