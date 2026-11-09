@@ -18,9 +18,12 @@ import { Skeleton } from './skeleton';
  * task never opens it. `children` go last on the row: `SortableTodoRow`
  * puts its grip there.
  *
- * `SortableTodoRow` is the row in a `SortableGroup`, reordered by the grip
- * at its right end (six dots), the only part that picks it up; Space on the
- * grip lifts it from the keyboard. While it is dragged its place fades.
+ * `SortableTodoRow` is the row in a `SortableGroup`. The pointer picks it up
+ * anywhere on the card: a press that moves under 5px is still a click, so
+ * the toggle and the title keep working. The grip at its right end (six
+ * dots) is the keyboard's handle, Space on it lifts the row, and on a touch
+ * screen the one part that drags instead of scrolling the page. While it is
+ * dragged its place fades.
  *
  * `TodoRowAdd` is the dashed row under the list that adds a task to the day
  * on Enter; `TodoRowSkeleton` stands in for a row while the day loads.
@@ -102,7 +105,7 @@ function SortableTodoRow({
   /** The grip's name for a screen reader ("Reorder Rotate the API keys"). */
   gripLabel: string;
 }) {
-  const { ref, handleProps, style: slide, isDragging } = useSortableItem({
+  const { ref, handleProps, pointerProps, style: slide, isDragging } = useSortableItem({
     id,
     data: { type: 'todo-row', label: props.title },
   });
@@ -110,6 +113,7 @@ function SortableTodoRow({
     <TodoRow
       {...props}
       ref={ref}
+      {...pointerProps}
       data-dragging={isDragging || undefined}
       style={{ ...style, ...slide }}
       className={cn('pr-2 data-dragging:opacity-45', className)}
