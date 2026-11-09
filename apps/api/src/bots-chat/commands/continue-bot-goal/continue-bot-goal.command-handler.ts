@@ -16,6 +16,7 @@ import {
   type GoalOutcome,
   goalDecision,
   goalOutcome,
+  isDecidedTurn,
   isGoalTurn,
   stoppedAtTurnLimit,
 } from '../../domain/bot-goal.policy';
@@ -23,7 +24,8 @@ import type { BotTurnEntity } from '../../domain/bot-turn.entity';
 import { ContinueBotGoalCommand } from './continue-bot-goal.command';
 
 /**
- * A turn of a goal ended (`25-bots.md` §4.1): load, count what the turn spent
+ * A turn of a goal ended (`25-bots.md` §4.1): load, leave a turn whose end
+ * was already decided (`isDecidedTurn`: this job run twice), count what the turn spent
  * and whether it called a tool (also for a goal the turn itself paused, whose
  * spend is written alone), decide (`goalDecision`), ask the reviewer
  * only when the bot claimed the goal met (`BotGoalReviewResolver`), act. The
@@ -51,7 +53,7 @@ export class ContinueBotGoalCommandHandler
     if (found.isNone() || !found.unwrap().endedAt) return;
     const ended = found.unwrap();
     const goal = await this.goals.findForBot(ended.organizationId, ended.botId);
-    if (!goal || !isGoalTurn(goal, ended)) return;
+    if (!goal || !isGoalTurn(goal, ended) || isDecidedTurn(goal, ended)) return;
     goal.account({
       tokens: ended.inputTokens + ended.outputTokens,
       calledTools: await this.messages.turnCalledTools(ended.organizationId, ended.id),

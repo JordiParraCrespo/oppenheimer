@@ -232,6 +232,19 @@ describe('ContinueBotGoalCommandHandler', () => {
     }
   });
 
+  // What breaks this: the job for one turn's end run twice (a worker that
+  // died mid-job, a redelivery) counting the turn twice and queuing a second
+  // continuation beside the first, since the goal it reads has moved on.
+  it('does nothing for a turn whose end was already decided', async () => {
+    const movedOn = goal({ continuations: 2, tokensUsed: 1_200 });
+    const { goals, goalsOf, run } = setup(movedOn, ended('completed', null, 1));
+    await run();
+    expect(movedOn.tokensUsed).toBe(1_200);
+    expect(goalsOf.queueContinuation).not.toHaveBeenCalled();
+    expect(goalsOf.pause).not.toHaveBeenCalled();
+    expect(goals.recordSpend).not.toHaveBeenCalled();
+  });
+
   it('stops the goal when its owner can no longer act in the workspace', async () => {
     const stored = goal();
     const { goalsOf, run } = setup(stored, ended('completed'), { owned: false });

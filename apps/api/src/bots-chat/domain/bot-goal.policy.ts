@@ -114,6 +114,31 @@ export function isGoalTurn(
 }
 
 /**
+ * Which of the goal's turns this is: 0 for the turn that set it, `n` for its
+ * nth continuation (the number its key carries).
+ */
+function goalStepOf(goal: Pick<BotGoalEntity, 'id'>, turn: Pick<EndedTurn, 'sourceKey'>): number {
+  const prefix = goalKeyPrefix(goal.id);
+  if (!turn.sourceKey?.startsWith(prefix)) return 0;
+  const step = Number(turn.sourceKey.slice(prefix.length));
+  return Number.isInteger(step) && step > 0 ? step : 0;
+}
+
+/**
+ * Whether the end of one of the goal's turns was already decided: the goal
+ * has counted a later continuation than the turn is, so the decision ran and
+ * moved it on. A job for the same end run again (a worker that died
+ * mid-job, a redelivery) then changes nothing: it would count the turn's
+ * spend twice and queue a continuation beside the one already queued.
+ */
+export function isDecidedTurn(
+  goal: Pick<BotGoalEntity, 'id' | 'continuations'>,
+  turn: Pick<EndedTurn, 'sourceKey'>,
+): boolean {
+  return goal.continuations > goalStepOf(goal, turn);
+}
+
+/**
  * Why a failed turn pauses its goal, by the turn's failure: the provider's
  * limit, quota or sign-in waits until it is sorted (`usage_limit`), the loop
  * guard's stop needs the person (`blocked`), and any other failure is

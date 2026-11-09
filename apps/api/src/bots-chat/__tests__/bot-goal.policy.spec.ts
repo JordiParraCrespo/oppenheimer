@@ -20,6 +20,7 @@ import {
   goalOutcome,
   goalPauseLine,
   goalSourceKey,
+  isDecidedTurn,
 } from '../domain/bot-goal.policy';
 import { heldBy } from '../domain/bot-rate-limit.policy';
 
@@ -157,6 +158,19 @@ describe('goalDecision', () => {
       activity: 'exhausted',
       reason: null,
     });
+  });
+});
+
+describe('isDecidedTurn', () => {
+  // What breaks this: a turn's end decided twice (its job run again) queuing
+  // a second continuation, or the latest turn's end skipped as decided.
+  it('is decided only once the goal has counted a later continuation than the turn', () => {
+    const origin = { sourceKey: null };
+    const second = { sourceKey: goalSourceKey('goal-1', 2) };
+    expect(isDecidedTurn(goal({ continuations: 0 }), origin)).toBe(false);
+    expect(isDecidedTurn(goal({ continuations: 1 }), origin)).toBe(true);
+    expect(isDecidedTurn(goal({ continuations: 2 }), second)).toBe(false);
+    expect(isDecidedTurn(goal({ continuations: 3 }), second)).toBe(true);
   });
 });
 
