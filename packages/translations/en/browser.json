@@ -1808,6 +1808,9 @@
         "menu": "Commands and skills you can run",
         "pick": "Use /{{name}}",
         "builtInLabel": "Commands",
+        "builtInSkill": {
+          "recap": "Catch up on your sessions, pull requests and plan. Add a topic to narrow it."
+        },
         "builtIn": {
           "goal": "Keep working until a condition holds, checked after every turn. /goal clear stops it.",
           "usage": "Show what this chat has spent: tokens by model, cache hits, plan windows.",

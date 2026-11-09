@@ -1824,6 +1824,9 @@
         "menu": "Comandos y habilidades que puedes ejecutar",
         "pick": "Usar /{{name}}",
         "builtInLabel": "Comandos",
+        "builtInSkill": {
+          "recap": "Ponte al día con tus sesiones, pull requests y plan. Añade un tema para acotarlo."
+        },
         "builtIn": {
           "goal": "Sigue trabajando hasta que se cumpla una condición, revisada tras cada turno. /goal clear lo detiene.",
           "usage": "Muestra lo que ha gastado este chat: tokens por modelo, aciertos de caché, ventanas del plan.",

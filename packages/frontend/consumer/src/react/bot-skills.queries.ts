@@ -27,17 +27,19 @@ export function useSuspenseBotSkills(id: string) {
 }
 
 /**
- * The skills the person may run, for the composer's `/` menu: it draws
- * nothing while they load or when the read fails, so it is no `QueryState`
- * site, and it is read only while the menu is open.
+ * A bot's skills for the composer's `/` menu, every one of them: the menu
+ * offers those the person may run, and a skill of the bot's own under a
+ * built-in skill's name hides the built-in whether or not they may run it,
+ * since `/<name>` then means the bot's own. It draws nothing while they load
+ * or when the read fails, so it is no `QueryState` site, and it is read only
+ * while the menu is open.
  */
 export function useBotSlashCommands(id: string, enabled: boolean) {
   const app = useConsumerApp();
-  return useQuery<BotSkillEntity[], Error, BotSkillEntity[]>({
+  return useQuery<BotSkillEntity[], Error>({
     queryKey: botsKeys.skillList(id),
     queryFn: () => app.bots.findSkills(id),
     enabled,
-    select: (rows) => rows.filter((skill) => skill.userInvocable),
   });
 }
 
