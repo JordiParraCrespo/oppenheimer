@@ -131,9 +131,8 @@ and the one next move. Say "unknown" for what you could not find.
 
 ## When you finish a task
 
-When you finish a task, end your last message with that same recap, unasked:
-rebuild it the same way and keep it to this session. The person reads the
-recap, not the work before it, so put in it what they would act on.
+When you finish a task, end your last message with the recap above, unasked,
+kept to this session.
 `
 
 // previewNote is how a dev server reaches the console's Browser tab

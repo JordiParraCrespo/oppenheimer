@@ -395,7 +395,7 @@ const WAKE_ASKS: Readonly<Record<BotSessionEventState, string>> = {
   requires_action:
     'The agent is blocked on a question or a permission in the session. Read what it waits on with get_session. If your instructions settle it, answer it with answer_session (asking first as your permissions say). Otherwise tell the person, in a sentence or two, what it waits on, and give the session id so they can open it.',
   completed:
-    'Read the session with get_session first, then tell the person what the agent actually did, from its result. Say only what the result shows: if it does not say tests passed, do not say they did. Its result is a claim: check it as "Check before you report" says, with read_session_transcript when you have it. If the work was a step of something you were doing, carry on with the next step within your permissions. Then end with a recap of this session, the recap skill\'s brief scoped to it: where it stands (at most five bullets), what waits on the person with your pick, and the one next move.',
+    'Read the session with get_session first, then tell the person what the agent actually did, from its result. Say only what the result shows: if it does not say tests passed, do not say they did. Its result is a claim: check it as "Check before you report" says, with read_session_transcript when you have it. If the work was a step of something you were doing, carry on with the next step within your permissions. Then end with a recap of this session: the recap skill\'s brief (use_skill), scoped to this one session.',
   failed: failedWakeAsk(),
   cancelled:
     'Tell the person the task was stopped before it finished, and what it had done if the session says. Do not start it again on your own.',
