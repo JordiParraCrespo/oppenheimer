@@ -110,7 +110,8 @@ func folders(dir string) []string {
 // why a linked worktree's repository is marked too.
 //
 // The file is the person's, often hand-edited, so it is never re-encoded:
-// the new tables are appended to it as text, and a folder Codex already has
+// the new tables are appended to its text, written through a symlink to
+// where it points, and a folder Codex already has
 // an entry for, "trusted" or "untrusted", is an answer already given and is
 // left as it is. The result is parsed before it is written; a file this would
 // break (one with `projects` as an inline table, say) is not touched.
@@ -118,14 +119,20 @@ func (s *Store) trustCodex(dir string) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
+	// A config kept in a dotfiles repository is a symlink to it; the write
+	// goes to the file it names, so the link stays a link.
+	path := s.codexConfig
+	if real, err := filepath.EvalSymlinks(path); err == nil {
+		path = real
+	}
 	mode := fs.FileMode(0o600)
-	raw, err := os.ReadFile(s.codexConfig)
+	raw, err := os.ReadFile(path)
 	switch {
 	case errors.Is(err, fs.ErrNotExist):
 	case err != nil:
 		return err
 	default:
-		if info, statErr := os.Stat(s.codexConfig); statErr == nil {
+		if info, statErr := os.Stat(path); statErr == nil {
 			mode = info.Mode().Perm()
 		}
 	}
@@ -157,12 +164,12 @@ func (s *Store) trustCodex(dir string) error {
 	}
 	out = append(out, add.String()...)
 	if err := toml.Unmarshal(out, &config); err != nil {
-		return fmt.Errorf("adding the folder would leave %s unreadable: %w", s.codexConfig, err)
+		return fmt.Errorf("adding the folder would leave %s unreadable: %w", path, err)
 	}
-	if err := os.MkdirAll(filepath.Dir(s.codexConfig), 0o700); err != nil {
+	if err := os.MkdirAll(filepath.Dir(path), 0o700); err != nil {
 		return err
 	}
-	return writeAtomic(s.codexConfig, out, mode)
+	return writeAtomic(path, out, mode)
 }
 
 func (s *Store) trustClaude(dir string) error {

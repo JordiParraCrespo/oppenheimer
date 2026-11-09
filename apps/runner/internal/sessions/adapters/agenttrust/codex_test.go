@@ -146,3 +146,28 @@ func TestTrustForCodexLeavesClaudeAlone(t *testing.T) {
 		t.Fatal("wrote Codex's file for Claude")
 	}
 }
+
+// A config.toml kept in a dotfiles repository is a symlink into it. Replacing
+// the link with a copy would cut the person's dotfiles off from Codex.
+func TestTrustKeepsASymlinkedCodexConfigALink(t *testing.T) {
+	dotfiles := filepath.Join(t.TempDir(), "codex.toml")
+	if err := os.WriteFile(dotfiles, []byte("model = \"gpt-5\"\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	config := filepath.Join(t.TempDir(), "config.toml")
+	if err := os.Symlink(dotfiles, config); err != nil {
+		t.Fatal(err)
+	}
+	work := workDir(t)
+
+	if err := agenttrust.New(agenttrust.Options{CodexConfig: config}).Trust(domain.AgentCodex, work); err != nil {
+		t.Fatal(err)
+	}
+
+	if info, err := os.Lstat(config); err != nil || info.Mode()&os.ModeSymlink == 0 {
+		t.Fatalf("config.toml is no longer a symlink: %v", err)
+	}
+	if codexProjects(t, dotfiles)[work]["trust_level"] != "trusted" {
+		t.Fatal("the folder was not trusted in the file the link names")
+	}
+}
