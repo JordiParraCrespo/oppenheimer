@@ -6,13 +6,15 @@ import { describe, expect, it, vi } from 'vitest';
 import type { HostAccessPort } from '../../hosts/application/host-access.port';
 import { TelegramAnswerResolver } from '../application/telegram-answer.resolver';
 import type { TelegramDevicePort } from '../application/telegram-device.port';
-import type { TelegramReplyResolver } from '../application/telegram-reply.resolver';
+import { TelegramReplyResolver } from '../application/telegram-reply.resolver';
 import { LinkTelegramCommand } from '../commands/link-telegram/link-telegram.command';
 import { LinkTelegramCommandHandler } from '../commands/link-telegram/link-telegram.command-handler';
 import { ReceiveTelegramMessagesCommand } from '../commands/receive-telegram-messages/receive-telegram-messages.command';
 import { ReceiveTelegramMessagesCommandHandler } from '../commands/receive-telegram-messages/receive-telegram-messages.command-handler';
 import { RecordTelegramStateCommand } from '../commands/record-telegram-state/record-telegram-state.command';
 import { RecordTelegramStateCommandHandler } from '../commands/record-telegram-state/record-telegram-state.command-handler';
+import { ReplyOnTelegramCommand } from '../commands/reply-on-telegram/reply-on-telegram.command';
+import { ReplyOnTelegramCommandHandler } from '../commands/reply-on-telegram/reply-on-telegram.command-handler';
 import { SendTelegramMessageCommand } from '../commands/send-telegram-message/send-telegram-message.command';
 import { SendTelegramMessageCommandHandler } from '../commands/send-telegram-message/send-telegram-message.command-handler';
 import type { TelegramAccountRepositoryPort } from '../database/telegram-account.repository.port';
@@ -503,5 +505,107 @@ describe('SendTelegramMessageCommandHandler', () => {
         ).execute(command(theirs.id)),
       ),
     ).toBe('TELEGRAM_001');
+  });
+});
+
+describe('ReplyOnTelegramCommandHandler', () => {
+  const BOT = '0b3e2a1c-4444-4c5d-8e6f-70819203b4c5';
+  const OTHER_BOT = '0b3e2a1c-5555-4c5d-8e6f-70819203b4c5';
+  // Three paragraphs of 3,000 characters: one Telegram message cannot hold two.
+  const long = ['a', 'b', 'c'].map((letter) => letter.repeat(3_000)).join('\n\n');
+
+  function answering(botId: string | null = BOT, status: 'connected' | 'revoked' = 'connected') {
+    const linked = account({ status });
+    linked.answerAs(botId);
+    return linked;
+  }
+
+  function sentInOrder() {
+    let next = 100;
+    return vi.fn(async () => ({ kind: 'sent' as const, id: String(next++), sentAt: new Date() }));
+  }
+
+  function handlerFor(rows: TelegramAccountEntity[], device: TelegramDevicePort) {
+    const messages = fakeMessages();
+    const mapper = new TelegramMessageMapper();
+    const handler = new ReplyOnTelegramCommandHandler(
+      fakeAccounts(rows).repository,
+      new TelegramReplyResolver(device, messages, mapper),
+    );
+    return { handler, messages };
+  }
+
+  const reply = (accountId: string, botId = BOT, text = long) =>
+    new ReplyOnTelegramCommand({
+      organizationId: ORG,
+      accountId,
+      chatId: '123456789',
+      replyToId: '42',
+      text,
+      botId,
+    });
+
+  // Breaks if every part is threaded (or none), if a long answer goes as one
+  // oversized message the host refuses, or if parts lose sentByBotId and the
+  // console shows them as the person's.
+  it('sends a long answer as several messages in order, only the first threaded under the owner’s message, each kept once as the bot’s', async () => {
+    const linked = answering();
+    const device = fakeDevice({ send: sentInOrder() });
+    const { handler, messages } = handlerFor([linked], device);
+
+    await expect(handler.execute(reply(linked.id))).resolves.toBe(3);
+
+    expect(vi.mocked(device.send).mock.calls).toEqual([
+      [HOST, '123456789', 'a'.repeat(3_000), '42'],
+      [HOST, '123456789', 'b'.repeat(3_000), undefined],
+      [HOST, '123456789', 'c'.repeat(3_000), undefined],
+    ]);
+    const recorded = vi.mocked(messages.recordBotSend).mock.calls.map(([draft]) => draft);
+    expect(recorded).toHaveLength(3);
+    expect(recorded.map((draft) => [draft.externalId, draft.replyToId, draft.sentByBotId])).toEqual(
+      [
+        ['100', '42', BOT],
+        ['101', null, BOT],
+        ['102', null, BOT],
+      ],
+    );
+    expect(recorded.every((draft) => draft.fromBot && draft.text.length <= 4_096)).toBe(true);
+  });
+
+  // Breaks if a refused part is skipped and the rest go out of order.
+  it('stops at the part the host refuses, sending nothing after it', async () => {
+    const linked = answering();
+    const send = vi
+      .fn()
+      .mockResolvedValueOnce({ kind: 'sent', id: '100', sentAt: new Date() })
+      .mockResolvedValueOnce({ kind: 'failed', code: 'TG_004' })
+      .mockResolvedValue({ kind: 'sent', id: '102', sentAt: new Date() });
+    const device = fakeDevice({ send });
+    const { handler, messages } = handlerFor([linked], device);
+
+    await expect(handler.execute(reply(linked.id))).resolves.toBe(1);
+    expect(send).toHaveBeenCalledTimes(2);
+    expect(messages.recordBotSend).toHaveBeenCalledTimes(1);
+  });
+
+  // Breaks if an answer from a bot the owner just unbound or rebound still
+  // reaches Telegram, or a reply goes to a disconnected or deleted account.
+  it('sends nothing once the Telegram bot answers as another bot or none, is disconnected, or is gone', async () => {
+    const rebound = answering(OTHER_BOT);
+    const unbound = answering(null);
+    const disconnected = answering(BOT, 'revoked');
+    const device = fakeDevice({ send: sentInOrder() });
+    const { handler, messages } = handlerFor([rebound, unbound, disconnected], device);
+
+    for (const id of [
+      rebound.id,
+      unbound.id,
+      disconnected.id,
+      '0b3e2a1c-6666-4c5d-8e6f-70819203b4c5',
+    ]) {
+      await expect(handler.execute(reply(id, BOT, 'Green since 10:12.'))).resolves.toBe(0);
+    }
+    expect(device.send).not.toHaveBeenCalled();
+    expect(messages.recordBotSend).not.toHaveBeenCalled();
   });
 });

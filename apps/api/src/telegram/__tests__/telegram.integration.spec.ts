@@ -7,7 +7,7 @@ import { TelegramAccountOrmEntity } from '../database/telegram-account.orm-entit
 import { TelegramAccountRepository } from '../database/telegram-account.repository';
 import { TelegramMessageOrmEntity } from '../database/telegram-message.orm-entity';
 import { TelegramMessageRepository } from '../database/telegram-message.repository';
-import { TelegramAccountEntity } from '../domain/telegram-account.entity';
+import { hashTelegramOwnerCode, TelegramAccountEntity } from '../domain/telegram-account.entity';
 import type { TelegramMessageDraft } from '../domain/telegram-message.types';
 import { TelegramAccountMapper } from '../telegram-account.mapper';
 import { TelegramMessageMapper } from '../telegram-message.mapper';
@@ -18,8 +18,10 @@ import { TelegramMessageMapper } from '../telegram-message.mapper';
  * host holds one; a message the host sends twice is one row, and a bot's send
  * recorded twice marks that row rather than adding a twin; chats list newest
  * first with their last message and the name last seen; search takes `%`
- * literally; retention deletes only what is old, in batches; and the messages
- * go with their Telegram bot.
+ * literally; retention deletes only what is old, in batches; the messages
+ * go with their Telegram bot; an owner link records one owner however many
+ * open it, and none once replaced; and whether the bot has written in a chat
+ * lately reads only its own sends there.
  */
 describe('telegram (integration)', () => {
   let dataSource: DataSource;
@@ -341,5 +343,110 @@ describe('telegram (integration)', () => {
       [mine.id],
     );
     expect(count).toBe(0);
+  });
+  async function ownerRow(id: string) {
+    const [row]: {
+      ownerTelegramId: string | null;
+      ownerLinkCodeHash: string | null;
+      ownerLinkExpiresAt: Date | null;
+    }[] = await dataSource.query(
+      `SELECT "ownerTelegramId", "ownerLinkCodeHash", "ownerLinkExpiresAt" FROM telegram_account WHERE id = $1`,
+      [id],
+    );
+    return row;
+  }
+
+  // What breaks this: the conditional UPDATE losing its ownerLinkCodeHash
+  // predicate, so a leaked or forwarded link makes a second person the owner.
+  it('records one owner from a link opened twice in a row, and clears the link', async () => {
+    const mine = telegramBot(ana);
+    await accounts.insert(mine);
+    const { code } = mine.openOwnerLink(new Date());
+    await accounts.saveOwnerLink(mine);
+    const used = hashTelegramOwnerCode(code);
+
+    const first = (await accounts.findOwnById(scopeOf(ana), mine.id)).unwrap();
+    // A copy loaded before the first claim landed, opened by someone else.
+    const second = (await accounts.findOwnById(scopeOf(ana), mine.id)).unwrap();
+    expect(first.claimOwner(code, '111', new Date())).toBe(true);
+    expect(await accounts.saveOwner(first, used)).toBe(true);
+    expect(second.claimOwner(code, '222', new Date())).toBe(true);
+    expect(await accounts.saveOwner(second, used)).toBe(false);
+    // The same claim sent again is used up too.
+    expect(await accounts.saveOwner(first, used)).toBe(false);
+
+    expect(await ownerRow(mine.id)).toEqual({
+      ownerTelegramId: '111',
+      ownerLinkCodeHash: null,
+      ownerLinkExpiresAt: null,
+    });
+  });
+
+  // What breaks this: a replaced link still working, so the link the owner
+  // thought they had withdrawn (sent to the wrong chat) can still be claimed.
+  it('takes no owner from a link replaced by a new one, and the new link still works', async () => {
+    const mine = telegramBot(ana);
+    await accounts.insert(mine);
+    const old = mine.openOwnerLink(new Date());
+    await accounts.saveOwnerLink(mine);
+    const loadedWithOld = (await accounts.findOwnById(scopeOf(ana), mine.id)).unwrap();
+    const fresh = mine.openOwnerLink(new Date());
+    await accounts.saveOwnerLink(mine);
+
+    expect(loadedWithOld.claimOwner(old.code, '666', new Date())).toBe(true);
+    expect(await accounts.saveOwner(loadedWithOld, hashTelegramOwnerCode(old.code))).toBe(false);
+    expect(await ownerRow(mine.id)).toMatchObject({
+      ownerTelegramId: null,
+      ownerLinkCodeHash: hashTelegramOwnerCode(fresh.code),
+    });
+
+    const current = (await accounts.findOwnById(scopeOf(ana), mine.id)).unwrap();
+    expect(current.claimOwner(fresh.code, '111', new Date())).toBe(true);
+    expect(await accounts.saveOwner(current, hashTelegramOwnerCode(fresh.code))).toBe(true);
+    expect((await ownerRow(mine.id))?.ownerTelegramId).toBe('111');
+  });
+
+  // What breaks this: a stranger told 'This bot only talks to its owner.' on
+  // every message (spam that gets the bot reported), never again once they
+  // have written themselves, or one chat's reply silencing another chat.
+  it('says the bot wrote in a chat lately only for its own send there, in that account, since the time asked', async () => {
+    const mine = telegramBot(ana);
+    await accounts.insert(mine);
+    const otherHost = await insertHost(ben);
+    const theirs = telegramBot(ben, otherHost);
+    await accounts.insert(theirs);
+    const ref = { organizationId, accountId: mine.id };
+    const now = Date.now();
+    const since = new Date(now - 24 * 60 * 60_000);
+    const stranger = '555000111';
+
+    // The stranger's own messages count for nothing.
+    await messages.insertMany([
+      message(mine, { chatId: stranger, senderId: stranger, sentAt: new Date(now - 60_000) }),
+    ]);
+    expect(await messages.wroteInChatSince(ref, stranger, since)).toBe(false);
+
+    // The bot's line 25 hours ago is past the window.
+    await messages.recordBotSend(
+      message(mine, { chatId: stranger, fromBot: true, sentAt: new Date(now - 25 * 3_600_000) }),
+    );
+    expect(await messages.wroteInChatSince(ref, stranger, since)).toBe(false);
+
+    // A send in another chat, or another account's send in this chat id, is not this chat's.
+    await messages.recordBotSend(
+      message(mine, { chatId: '999', fromBot: true, sentAt: new Date(now - 1_000) }),
+    );
+    await messages.recordBotSend(
+      message(theirs, { chatId: stranger, fromBot: true, sentAt: new Date(now - 1_000) }),
+    );
+    expect(await messages.wroteInChatSince(ref, stranger, since)).toBe(false);
+
+    // Exactly at `since` counts.
+    await messages.recordBotSend(message(mine, { chatId: stranger, fromBot: true, sentAt: since }));
+    expect(await messages.wroteInChatSince(ref, stranger, since)).toBe(true);
+    expect(await messages.wroteInChatSince(ref, '999', since)).toBe(true);
+    expect(
+      await messages.wroteInChatSince({ organizationId, accountId: theirs.id }, '999', since),
+    ).toBe(false);
   });
 });

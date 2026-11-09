@@ -5,6 +5,7 @@ import { OutboxMessageSchema, OutboxService } from '@oppenheimer/backend-ddd';
 import { DataSource } from 'typeorm';
 import { useTestDatabase } from '../../__tests__/integration-services';
 import type { ChatgptCredentialResolver } from '../../bots/application/chatgpt-credential.resolver';
+import type { TurnCredentialsPort } from '../../bots/application/turn-credentials.port';
 import { TurnCredentialsResolver } from '../../bots/application/turn-credentials.resolver';
 import { BotMapper } from '../../bots/bot.mapper';
 import { BotDocumentMapper } from '../../bots/bot-document.mapper';
@@ -54,6 +55,8 @@ import { BotQuestionMapper } from '../bot-question.mapper';
 import { BotSubscriptionMapper } from '../bot-subscription.mapper';
 import { BotToolPermissionMapper } from '../bot-tool-permission.mapper';
 import { BotTurnMapper } from '../bot-turn.mapper';
+import { WakeOnTelegramCommand } from '../commands/wake-on-telegram/wake-on-telegram.command';
+import { WakeOnTelegramCommandHandler } from '../commands/wake-on-telegram/wake-on-telegram.command-handler';
 import { BotApprovalOrmEntity } from '../database/bot-approval.orm-entity';
 import { BotApprovalRepository } from '../database/bot-approval.repository';
 import { BotAttachmentOrmEntity } from '../database/bot-attachment.orm-entity';
@@ -99,7 +102,7 @@ import {
   sessionWakeTurn,
 } from '../domain/bot-subscription.policy';
 import { planSummary, type SummarizableMessage } from '../domain/bot-summary.policy';
-import { telegramTurn } from '../domain/bot-telegram-turn.policy';
+import { telegramSourceKey, telegramTurn } from '../domain/bot-telegram-turn.policy';
 import { NO_PERMISSIONS } from '../domain/bot-tool-permission.policy';
 import { BotTurnEntity } from '../domain/bot-turn.entity';
 import type { BotStreamPort } from '../infrastructure/bot-stream.port';
@@ -123,7 +126,10 @@ import { FindBotTurnQueryHandler } from '../queries/find-bot-turn/find-bot-turn.
  * a wake recorded once of two racing ones, gone with the bot, outliving a
  * cleared chat, and one turn per wake however often it is delivered; a
  * steer: taken by the running turn once, moved into it, never with images,
- * and left queued when Stop got it first. The schema is the migrations'.
+ * and left queued when Stop got it first; the owner's Telegram messages:
+ * one turn per message in the conversation its /new starts, /new and /stop
+ * acting on that conversation alone, a disconnect keeping the history, and
+ * one reply job per Telegram turn's end. The schema is the migrations'.
  */
 describe('bots chat (integration)', () => {
   let dataSource: DataSource;
@@ -730,6 +736,203 @@ describe('bots chat (integration)', () => {
       accountId,
     ]);
     expect(await bots.delete(bot)).toBe('deleted');
+  });
+
+  describe('answering on Telegram (answering-on-telegram-and-whatsapp.md)', () => {
+    const chatId = '123456789';
+    let bot: BotEntity;
+    let accountId: string;
+    let wakeOn: WakeOnTelegramCommandHandler;
+
+    beforeEach(async () => {
+      bot = await create('Juno');
+      accountId = await insertTelegramAccount();
+      // The real bot lookup; a wake never reads a credential.
+      const access = new BotModelAccessResolver(bots, {} as TurnCredentialsPort);
+      wakeOn = new WakeOnTelegramCommandHandler(
+        new BotConversationRepository(dataSource),
+        turns,
+        access,
+      );
+    });
+
+    const wake = (
+      messageId: string,
+      overrides: Partial<ConstructorParameters<typeof WakeOnTelegramCommand>[0]> = {},
+    ) =>
+      wakeOn.execute(
+        new WakeOnTelegramCommand({
+          organizationId,
+          userId,
+          botId: bot.id,
+          telegramAccountId: accountId,
+          chatId,
+          messageId,
+          conversationStartsAt: '0',
+          command: 'message',
+          text: `Message ${messageId}`,
+          metadata: { correlationId: randomUUID() },
+          ...overrides,
+        }),
+      );
+
+    async function telegramTurns(): Promise<
+      { id: string; conversationId: string; sourceKey: string; status: string }[]
+    > {
+      return dataSource.query(
+        `SELECT id, "conversationId", "sourceKey", status FROM bot_turn
+          WHERE "botId" = $1 AND origin = 'telegram' ORDER BY "createdAt", id`,
+        [bot.id],
+      );
+    }
+
+    async function startsOf(conversationId: string): Promise<string> {
+      const [{ startsAt }]: { startsAt: string }[] = await dataSource.query(
+        `SELECT "startsAtMessageId"::text AS "startsAt" FROM bot_conversation WHERE id = $1`,
+        [conversationId],
+      );
+      return startsAt;
+    }
+
+    const sourceOf = (messageId: string) =>
+      telegramSourceKey({ telegramAccountId: accountId, chatId, messageId });
+
+    async function claimed(turnId: string): Promise<BotTurnEntity> {
+      const turn = (await turns.findForRun(turnId)).unwrap();
+      turn.start(new Date());
+      expect(await turns.claim(turn)).toBe('claimed');
+      return turn;
+    }
+
+    // What breaks this: a redelivered message running twice, or a message
+    // answered in a conversation other than the one its last /new started.
+    it("queues one Telegram turn per owner's message in the conversation its last /new starts, however often it is delivered", async () => {
+      await wake('9', { conversationStartsAt: '8' });
+      await wake('9', { conversationStartsAt: '8' });
+
+      const queued = await telegramTurns();
+      expect(queued.map((turn) => turn.sourceKey)).toEqual([sourceOf('9')]);
+      expect(await startsOf(queued[0]?.conversationId ?? '')).toBe('8');
+      const opening: { content: string }[] = await dataSource.query(
+        `SELECT content FROM bot_message WHERE "conversationId" = $1`,
+        [queued[0]?.conversationId],
+      );
+      expect(opening.map((message) => message.content)).toEqual(['Message 9']);
+    });
+
+    // What breaks this: /new sent to the model as a message.
+    it('starts a conversation at a /new itself and queues no turn for it', async () => {
+      await wake('20', { command: 'new', conversationStartsAt: '20', text: '/new' });
+
+      expect(await telegramTurns()).toEqual([]);
+      const rows: { startsAt: string }[] = await dataSource.query(
+        `SELECT "startsAtMessageId"::text AS "startsAt" FROM bot_conversation
+          WHERE "botId" = $1 AND kind = 'telegram' AND "telegramAccountId" = $2`,
+        [bot.id, accountId],
+      );
+      expect(rows).toEqual([{ startsAt: '20' }]);
+      // The message after it is answered in that conversation.
+      await wake('21', { conversationStartsAt: '20' });
+      expect(await startsOf((await telegramTurns())[0]?.conversationId ?? '')).toBe('20');
+    });
+
+    // What breaks this: /stop cancelling the console's turn, or nothing;
+    // findRunningIn matching on the bot instead of the conversation.
+    it("stops only the running turn of the Telegram conversation, never the console's", async () => {
+      const inConsole = await runningTurn(bot);
+      await wake('30', { command: 'stop', text: '/stop' });
+      expect(await turns.isCancelRequested(inConsole.id)).toBe(false);
+      expect(await telegramTurns()).toEqual([]);
+
+      await wake('31');
+      inConsole.end('completed', new Date());
+      expect(await turns.finish(inConsole, null)).toBe(true);
+      const [onTelegram] = await telegramTurns();
+      const running = await claimed(onTelegram?.id ?? '');
+
+      await wake('32', { command: 'stop', text: '/stop' });
+
+      expect(await turns.isCancelRequested(running.id)).toBe(true);
+      expect(await turns.isCancelRequested(inConsole.id)).toBe(false);
+      expect((await telegramTurns()).map((turn) => turn.sourceKey)).toEqual([sourceOf('31')]);
+    });
+
+    // What breaks this: a workspace bot that is not the owner's answering them.
+    it('queues nothing for a bot the Telegram bot’s owner did not make', async () => {
+      await wake('50', { userId: randomUUID() });
+      await wake('51', { userId: randomUUID(), command: 'new', conversationStartsAt: '51' });
+
+      expect(await telegramTurns()).toEqual([]);
+      const [{ count }] = await dataSource.query(
+        `SELECT count(*)::int AS count FROM bot_conversation WHERE "botId" = $1 AND kind = 'telegram'`,
+        [bot.id],
+      );
+      expect(count).toBe(0);
+    });
+
+    // What breaks this: FK_bot_conversation_telegram_account turned into ON
+    // DELETE CASCADE, wiping the owner's Telegram conversations on disconnect;
+    // or findTelegram losing its "telegramAccountId" IS NOT NULL filter, so a
+    // queued turn runs and answers on a deleted account.
+    it('keeps the Telegram conversations and their messages when the Telegram bot is disconnected, and its queued turn has nowhere to answer', async () => {
+      const inConsole = sent(bot, 'In the console');
+      await turns.enqueue(inConsole.turn, inConsole.message, null);
+      await wake('60');
+      const [queued] = await telegramTurns();
+      const conversationId = queued?.conversationId ?? '';
+      const conversations = new BotConversationRepository(dataSource);
+      const channel = new BotTurnChannelPolicy(conversations);
+      const onTelegram = (await turns.findForRun(queued?.id ?? '')).unwrap();
+      expect(await channel.answerable(onTelegram)).toBe(true);
+
+      await dataSource.query(`DELETE FROM telegram_account WHERE id = $1`, [accountId]);
+
+      const kept: { telegramAccountId: string | null }[] = await dataSource.query(
+        `SELECT "telegramAccountId" FROM bot_conversation WHERE id = $1`,
+        [conversationId],
+      );
+      expect(kept).toEqual([{ telegramAccountId: null }]);
+      const said: { content: string }[] = await dataSource.query(
+        `SELECT content FROM bot_message WHERE "conversationId" = $1`,
+        [conversationId],
+      );
+      expect(said.map((row) => row.content)).toEqual(['Message 60']);
+      expect(await conversations.findTelegram(organizationId, conversationId)).toBeNull();
+      expect(await channel.answerable((await turns.findForRun(onTelegram.id)).unwrap())).toBe(
+        false,
+      );
+      expect(await channel.answerable((await turns.findForRun(inConsole.turn.id)).unwrap())).toBe(
+        true,
+      );
+    });
+
+    // What breaks this: the answer never sent because its job is not staged,
+    // or sent twice because it is staged on every save or a racing second end.
+    it('stages one reply job when a Telegram turn ends, none for a console turn, and none for a second end', async () => {
+      await wake('70');
+      const [queued] = await telegramTurns();
+      const onTelegram = await claimed(queued?.id ?? '');
+      onTelegram.end('completed', new Date());
+      expect(await turns.finish(onTelegram, null)).toBe(true);
+      const stale = BotTurnEntity.create({
+        id: onTelegram.id,
+        props: { ...onTelegram.getProps(), status: 'running' },
+      });
+      stale.end('failed', new Date());
+      expect(await turns.finish(stale, null)).toBe(false);
+
+      const inConsole = await runningTurn(bot);
+      inConsole.end('completed', new Date());
+      expect(await turns.finish(inConsole, null)).toBe(true);
+
+      const jobs: { payload: { turnId: string } }[] = await dataSource.query(
+        `SELECT payload FROM outbox_message
+          WHERE topic = 'bot-turns' AND "eventName" = 'deliver-telegram-reply'
+            AND payload->>'turnId' = ANY ($1)`,
+        [[onTelegram.id, inConsole.id]],
+      );
+      expect(jobs.map((job) => job.payload.turnId)).toEqual([onTelegram.id]);
+    });
   });
 
   it('stores the chat, makes the last message the sidebar line, and reads back history before a turn', async () => {
