@@ -1356,3 +1356,9 @@ earlier note:
   person, the ones in progress, and Settings. The artboard's Chat and Stats
   tabs on that page are not built: there is no per-project agent or
   per-project statistics yet.
+- The 2026-11-08 line above left the project page's Stats unbuilt, saying
+  there were no per-project statistics; `GET /plan/stats?projectId=`
+  (`versions/mvp/23-plan-milestones-stats-accounts.md` §4) had them. On
+  2026-11-09 the owner asked for it: the page switches between Overview and
+  Stats, which reads that endpoint over a period. Pull requests stay off it
+  until the endpoint carries them (23, decided 4).

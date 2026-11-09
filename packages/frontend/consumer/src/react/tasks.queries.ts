@@ -1,6 +1,11 @@
 'use client';
 
-import { useQuery, useSuspenseQueries, withCacheOnSuccess } from '@oppenheimer/frontend-core/react';
+import {
+  useQuery,
+  useSuspenseQueries,
+  useSuspenseQuery,
+  withCacheOnSuccess,
+} from '@oppenheimer/frontend-core/react';
 import {
   type QueryClient,
   type UseMutationOptions,
@@ -8,6 +13,7 @@ import {
   useMutation,
   useQueryClient,
 } from '@tanstack/react-query';
+import type { PlanStats, PlanStatsQuery } from '../modules/tasks/plan-stats';
 import {
   type MilestoneEntity,
   type MilestoneInput,
@@ -120,6 +126,19 @@ export function useSuspenseTaskBoard() {
     hosts: hosts.data,
     error: tasks.error ?? projects.error ?? milestones.error ?? sessions.error ?? hosts.error,
   };
+}
+
+/**
+ * Plan's statistics for a range under a Suspense `QueryState`: a project's
+ * when the query names one. Each range is its own read, so a range picked
+ * twice is answered from the cache.
+ */
+export function useSuspensePlanStats(query: PlanStatsQuery) {
+  const app = useConsumerApp();
+  return useSuspenseQuery<PlanStats>({
+    queryKey: tasksKeys.statsOf(query),
+    queryFn: () => app.tasks.findStats(query),
+  });
 }
 
 /** The milestones read, for every hook over it: the key and the fetch, once. */

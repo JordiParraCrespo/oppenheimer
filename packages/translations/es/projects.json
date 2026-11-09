@@ -66,7 +66,40 @@
     "nothingNeedsInput": "Nada espera tu respuesta.",
     "nothingInProgress": "Nada en curso.",
     "gone": "Ese proyecto ya no está aquí.",
-    "loadFailed": "No se pudo cargar este proyecto."
+    "loadFailed": "No se pudo cargar este proyecto.",
+    "views": "Vistas del proyecto",
+    "overview": "Resumen",
+    "stats": "Estadísticas"
+  },
+  "stats": {
+    "tasksCompleted": "Tareas completadas",
+    "tasksCreated": "Tareas creadas",
+    "tokens": "Tokens consumidos",
+    "cost": "Coste de los agentes",
+    "vsPrevious": "frente al periodo anterior",
+    "noPrevious": "Aún no hay con qué comparar",
+    "completed": "Completadas",
+    "created": "Creadas",
+    "tasksTitle": "Tareas completadas y creadas, por semana",
+    "tokensTitle": "Tokens consumidos por semana, por modelo",
+    "costTitle": "Coste de los agentes por semana",
+    "usageTitle": "Tokens y coste",
+    "notMeasured": "Aún no se ha registrado consumo. Los tokens y el coste cuentan cuando las sesiones de este proyecto informan de lo que gastaron.",
+    "unknownModel": "Modelo desconocido",
+    "loadFailed": "No se pudieron cargar las estadísticas de este proyecto.",
+    "range": {
+      "lastWeeks_one": "La última semana",
+      "lastWeeks_many": "Las últimas {{count}} semanas",
+      "lastWeeks_other": "Las últimas {{count}} semanas",
+      "custom": "Personalizado",
+      "done": "Listo",
+      "previousMonth": "Mes anterior",
+      "nextMonth": "Mes siguiente",
+      "choose": "Periodo",
+      "days_one": "{{count}} día",
+      "days_many": "{{count}} días",
+      "days_other": "{{count}} días"
+    }
   },
   "unassigned": "Sin asignar"
 }

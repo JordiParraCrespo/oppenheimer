@@ -1,6 +1,7 @@
 import {
   heyApiSdk,
   type MilestoneResponseDto,
+  type PlanStatsResponseDto,
   type TaskResponseDto,
 } from '@oppenheimer/api-client';
 import { callApi } from '@oppenheimer/frontend-core';
@@ -11,6 +12,7 @@ import {
   toCreateSessionRequest,
   toStartCloudSessionRequest,
 } from '../sessions/sessions.repository';
+import type { PlanStats, PlanStatsQuery } from './plan-stats';
 import {
   MilestoneEntity,
   type MilestoneInput,
@@ -21,6 +23,37 @@ import {
   type TaskMove,
 } from './task.entity';
 import { TasksErrors } from './tasks.errors';
+
+function toPlanStats(data: PlanStatsResponseDto): PlanStats {
+  const { current, previous } = data;
+  return {
+    weeks: data.weeks,
+    current: {
+      tasksCompleted: current.tasksCompleted,
+      tasksCreated: current.tasksCreated,
+      tokens: current.tokens ?? null,
+      costUsd: current.costUsd ?? null,
+      completedByWeek: current.completedByWeek,
+      createdByWeek: current.createdByWeek,
+      tokensByModel:
+        current.tokensByModel?.map((row) => ({
+          model: row.model ?? null,
+          total: row.total,
+          byWeek: row.byWeek,
+        })) ?? null,
+      costByWeek: current.costByWeek ?? null,
+    },
+    previous: previous
+      ? {
+          tasksCompleted: previous.tasksCompleted,
+          tasksCreated: previous.tasksCreated,
+          tokens: previous.tokens ?? null,
+          costUsd: previous.costUsd ?? null,
+        }
+      : null,
+    tokensMeasured: data.tokensMeasured,
+  };
+}
 
 function toTask(data: TaskResponseDto): Task {
   return new TaskEntity(
@@ -155,6 +188,15 @@ export class TasksRepository {
     return callApi(TasksErrors.LINK_FAILED, async (api) => {
       const data = await api.body(heyApiSdk.unlinkTaskSession({ path: { id, sessionId } }));
       return toTask(data);
+    });
+  }
+
+  findStats(query: PlanStatsQuery): Promise<PlanStats> {
+    return callApi(TasksErrors.FETCH_STATS_FAILED, async (api) => {
+      const data = await api.body(
+        heyApiSdk.findPlanStats({ query: { ...query, compare: 'true' } }),
+      );
+      return toPlanStats(data);
     });
   }
 
