@@ -10,12 +10,14 @@ import type { BotSkillRepositoryPort } from '../../../bots/database/bot-skill.re
 import type { PersonMemoryRepositoryPort } from '../../../bots/database/person-memory.repository.port';
 import { BotSkillEntity } from '../../../bots/domain/bot-skill.entity';
 import type { BotApprovalRepositoryPort } from '../../database/bot-approval.repository.port';
+import type { BotConversationRepositoryPort } from '../../database/bot-conversation.repository.port';
 import type { BotConversationSummaryRepositoryPort } from '../../database/bot-conversation-summary.repository.port';
 import type { BotMessageRepositoryPort } from '../../database/bot-message.repository.port';
 import type { BotTurnRepositoryPort } from '../../database/bot-turn.repository.port';
 import type { BotApprovalEntity } from '../../domain/bot-approval.entity';
 import { BotConversationSummaryEntity } from '../../domain/bot-conversation-summary.entity';
 import { BotMessageEntity } from '../../domain/bot-message.entity';
+import { telegramTurn } from '../../domain/bot-telegram-turn.policy';
 import { NO_PERMISSIONS } from '../../domain/bot-tool-permission.policy';
 import {
   BOT_TURN_MAX_STEPS,
@@ -124,6 +126,9 @@ function setup(
       findLastContext: async () => conversation.lastContext ?? null,
     } satisfies Pick<BotTurnRepositoryPort, 'findLastContext'> as unknown as BotTurnRepositoryPort,
     {
+      findTelegram: async () => null,
+    } as unknown as BotConversationRepositoryPort,
+    {
       tools: () => [
         {
           name: 'archive_mail',
@@ -169,6 +174,7 @@ function setup(
     resolver.resolve(turnFrom(timeZone), at);
   return {
     shape,
+    resolver,
     /** What the engine is sent, for a turn that runs. */
     resolve: async (at?: Date, timeZone: string | null = null) => {
       const shaped = await shape(at, timeZone);
@@ -224,6 +230,30 @@ describe('BotTurnContextResolver', () => {
 
     const blank = await setup(async () => []).resolve();
     expect(blank.systemPrompt).not.toContain('About the person, in their own words');
+  });
+
+  // What breaks this: a Telegram turn queued before its Telegram bot was
+  // disconnected running anyway, with the owner's tools, for nobody.
+  it('ends a Telegram turn at once when its Telegram bot was disconnected', async () => {
+    const { resolver } = setup(async () => []);
+    const { turn } = telegramTurn(
+      {
+        organizationId: 'org-1',
+        botId: 'bot-1',
+        requestedByUserId: 'owner-1',
+        provider: 'glm',
+        model: 'model-1',
+        effort: null,
+      },
+      {
+        conversationId: '0b3e2a1c-5555-4c5d-8e6f-70819203b4c5',
+        telegramAccountId: '0b3e2a1c-6666-4c5d-8e6f-70819203b4c5',
+        chatId: '1',
+        messageId: '2',
+        text: 'Hi',
+      },
+    );
+    expect(await resolver.resolve(turn, new Date())).toBeNull();
   });
 
   it('names the home host among the owner’s hosts', async () => {

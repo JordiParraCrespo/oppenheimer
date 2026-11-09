@@ -17,23 +17,22 @@ export interface BotTelegramChat {
  */
 export interface BotConversationRepositoryPort {
   /**
-   * Deletes the bot's summary, its approvals (a pending card ends with the
-   * conversation), its messages and its channels' conversations, and empties
-   * its sidebar line, on `manager`. The turns are the caller's.
+   * Deletes the console chat: the bot's summary, its approvals (a pending
+   * card ends with the conversation) and the chat's messages, and empties
+   * the sidebar line, on `manager`. A Telegram chat's conversations are not
+   * the console's to clear (`/new` there starts afresh). The turns are the
+   * caller's.
    */
   deleteWithin(manager: EntityManager, organizationId: string, botId: string): Promise<void>;
   /**
-   * The id of the chat's open conversation with this bot, opened now when it
-   * has none. One the chat had with another bot (the account answered as
-   * that bot before) is closed first.
+   * The id of the chat's conversation with this bot that holds `messageId`:
+   * the one starting at or before it, opened (from 0) when the chat has
+   * none. Telegram numbers a chat's messages in order, so the answer is the
+   * same whatever order the deliveries come in.
    */
-  openTelegram(chat: BotTelegramChat): Promise<string>;
-  /**
-   * Closes the chat's open conversation if it was opened before `sentAt`,
-   * so the chat's next message opens another (`/new`); one opened after is
-   * left, so a `/new` delivered again closes nothing newer.
-   */
-  closeTelegram(chat: BotTelegramChat, sentAt: Date): Promise<void>;
+  conversationFor(chat: BotTelegramChat, messageId: string): Promise<string>;
+  /** Starts a conversation at `messageId` (`/new`); a delivery again starts nothing more. */
+  startTelegram(chat: BotTelegramChat, messageId: string): Promise<void>;
   /**
    * The Telegram chat a conversation is, open or closed; null for any other
    * conversation, and once its Telegram bot was disconnected.

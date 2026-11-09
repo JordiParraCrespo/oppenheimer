@@ -19,8 +19,6 @@ export class TelegramOwnerWroteDomainEvent extends DomainEvent {
   readonly command: 'message' | 'new' | 'stop';
   /** What they wrote; empty for a command. */
   readonly text: string;
-  /** When Telegram says it was sent, ISO 8601. */
-  readonly sentAt: string;
 
   constructor(props: DomainEventProps<TelegramOwnerWroteDomainEvent>) {
     super(props);
@@ -31,6 +29,5 @@ export class TelegramOwnerWroteDomainEvent extends DomainEvent {
     this.messageId = props.messageId;
     this.command = props.command;
     this.text = props.text;
-    this.sentAt = props.sentAt;
   }
 }

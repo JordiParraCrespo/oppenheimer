@@ -97,7 +97,6 @@ export class ReceiveTelegramMessagesCommandHandler
       messageId: draft.externalId,
       command: action.command,
       text: action.text,
-      sentAt: draft.sentAt.toISOString(),
     });
   }
 }

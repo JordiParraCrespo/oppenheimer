@@ -603,18 +603,20 @@ export class BotTurnRepository
     return this.outbox.transaction(async (manager) => {
       // The lock a send takes: no turn can be queued between the check and the deletes.
       if (!(await lockBot(manager, { organizationId, botId }))) return 'missing';
-      // IDX_bot_turn_active.
+      // IDX_bot_turn_active, the console chat's turns only (its
+      // conversation's id is the bot's): a Telegram chat is not cleared here.
       const [{ active }]: { active: number }[] = await manager.query(
         `SELECT count(*)::int AS active FROM bot_turn
-          WHERE "organizationId" = $1 AND "botId" = $2 AND "status" IN ('queued', 'running')`,
+          WHERE "organizationId" = $1 AND "botId" = $2 AND "conversationId" = $2
+            AND "status" IN ('queued', 'running')`,
         [organizationId, botId],
       );
       if (active > 0) return 'busy';
       await this.conversations.deleteWithin(manager, organizationId, botId);
-      await manager.query(`DELETE FROM bot_turn WHERE "organizationId" = $1 AND "botId" = $2`, [
-        organizationId,
-        botId,
-      ]);
+      await manager.query(
+        `DELETE FROM bot_turn WHERE "organizationId" = $1 AND "botId" = $2 AND "conversationId" = $2`,
+        [organizationId, botId],
+      );
       await clearModelCallsWithin(manager, organizationId, botId);
       return 'cleared';
     });

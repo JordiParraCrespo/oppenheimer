@@ -23,12 +23,11 @@ import { RunBotTurnCommand } from './run-bot-turn.command';
  * Runs one turn (`25-bots.md` §2): claims it (one running turn per bot), reads
  * what it needs, runs the engine with its steering (unless what it read says
  * the turn takes none, or has nothing left to say, and so ends at once),
- * hands what the transcript
- * writes to the turn's writer (`TurnWriteFactory`), then records how it ended,
- * makes the bot's next queued turn due and asks whether the conversation needs
- * summarizing. A turn found running was a worker that died under it, and fails
- * rather than running twice.
- * A failure that is ours to fix is reported (`BotTurnFailureReportPolicy`).
+ * hands what the transcript writes to the turn's writer (`TurnWriteFactory`),
+ * then records how it ended, makes the bot's next queued turn due and asks
+ * whether the conversation needs summarizing. A turn found running was a
+ * worker that died under it, and fails rather than running twice. A failure
+ * that is ours to fix is reported (`BotTurnFailureReportPolicy`).
  */
 @CommandHandler(RunBotTurnCommand)
 export class RunBotTurnCommandHandler implements ICommandHandler<RunBotTurnCommand, void> {
@@ -68,10 +67,7 @@ export class RunBotTurnCommandHandler implements ICommandHandler<RunBotTurnComma
     turn.start(new Date());
     // Busy: another turn of the bot runs, and stages this one when it ends.
     if ((await this.turns.claim(turn)) !== 'claimed') return null;
-    // The bot's stream is its console chat's; a channel's turn is not on it.
-    if (turn.inConsole) {
-      await this.stream.publish(turn.botId, { type: 'turn', turnId, status: 'running' });
-    }
+    await this.writes.announce(turn);
     return turn;
   }
 
@@ -115,9 +111,7 @@ export class RunBotTurnCommandHandler implements ICommandHandler<RunBotTurnComma
     // Before it reads as ended: a chat that connects after never gets a snapshot of it.
     await this.stream.forget(turn.botId, turn.id);
     if (!(await this.turns.finish(turn, correlationId))) return;
-    if (turn.inConsole) {
-      await this.stream.publish(turn.botId, { type: 'turn', turnId: turn.id, status: turn.status });
-    }
+    await this.writes.announce(turn);
     await this.summaries.afterTurn(turn, correlationId);
     await this.dreams.afterTurn(turn, correlationId);
   }

@@ -27,7 +27,6 @@ export class BotTelegramWakeDomainEventHandler {
       | 'messageId'
       | 'command'
       | 'text'
-      | 'sentAt'
       | 'metadata'
     >,
   ): Promise<void> {
@@ -41,7 +40,6 @@ export class BotTelegramWakeDomainEventHandler {
         messageId: event.messageId,
         command: event.command,
         text: event.text,
-        sentAt: new Date(event.sentAt),
         metadata: { correlationId: event.metadata?.correlationId ?? undefined },
       }),
     );

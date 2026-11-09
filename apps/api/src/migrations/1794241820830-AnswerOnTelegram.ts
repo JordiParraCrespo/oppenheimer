@@ -6,8 +6,8 @@ import type { MigrationInterface, QueryRunner } from 'typeorm';
  *
  * Access patterns: a turn's history and the console's chat read a
  * conversation's messages in order (`IDX_bot_message_conversation`); a
- * Telegram message finds its chat's open conversation
- * (`UQ_bot_conversation_telegram_chat`); a bot's conversations are listed
+ * Telegram message finds the conversation of its chat with the bot that
+ * starts at or before it (`UQ_bot_conversation_telegram_chat`); a bot's conversations are listed
  * and deleted with it (`IDX_bot_conversation_bot`); an account's are deleted
  * with it (`IDX_bot_conversation_telegram_account`); a bot answering a
  * Telegram bot is found before it is deleted
@@ -15,9 +15,13 @@ import type { MigrationInterface, QueryRunner } from 'typeorm';
  *
  * - `bot_conversation`: a bot's conversations. Its console chat is one, whose
  *   id is the bot's own id, so every turn and line that existed is in it;
- *   a Telegram chat with the bot is another, opened by the first message and
- *   closed (`archivedAt`) by `/new`, which opens the next. At most one open
- *   per Telegram chat (`UQ_bot_conversation_telegram_chat`). Disconnecting
+ *   a Telegram chat with the bot is another, and each `/new` there starts
+ *   the next. A Telegram conversation holds the chat's messages from
+ *   `"startsAtMessageId"` (0 for the first, the `/new`'s id after it) up to
+ *   the next one's: Telegram numbers a chat's messages in order, so a
+ *   message finds its conversation the same way whatever order the
+ *   deliveries arrive in, and a delivery again finds the same one. One
+ *   conversation per start (`UQ_bot_conversation_telegram_chat`). Disconnecting
  *   the Telegram bot keeps the conversation and its turns, a running one
  *   included, and only forgets the account (`SET NULL`); the history goes
  *   with the bot or with Clear history.
@@ -49,7 +53,7 @@ export class AnswerOnTelegram1794241820830 implements MigrationInterface {
         kind character varying(16) NOT NULL,
         "telegramAccountId" uuid,
         "chatId" character varying(21),
-        "archivedAt" timestamp with time zone,
+        "startsAtMessageId" bigint,
         "createdAt" timestamp with time zone DEFAULT now() NOT NULL,
         "updatedAt" timestamp with time zone DEFAULT now() NOT NULL,
         CONSTRAINT "PK_bot_conversation" PRIMARY KEY (id),
@@ -57,7 +61,7 @@ export class AnswerOnTelegram1794241820830 implements MigrationInterface {
         CONSTRAINT "CHK_bot_conversation_console"
           CHECK ((kind = 'console') = (id = "botId")),
         CONSTRAINT "CHK_bot_conversation_telegram"
-          CHECK ((kind = 'telegram') = ("chatId" IS NOT NULL)),
+          CHECK ((kind = 'telegram') = ("chatId" IS NOT NULL AND "startsAtMessageId" IS NOT NULL)),
         CONSTRAINT "CHK_bot_conversation_console_account"
           CHECK (kind = 'telegram' OR "telegramAccountId" IS NULL)
       )`,
@@ -69,7 +73,7 @@ export class AnswerOnTelegram1794241820830 implements MigrationInterface {
       `CREATE INDEX "IDX_bot_conversation_bot" ON bot_conversation USING btree ("organizationId", "botId")`,
     );
     await queryRunner.query(
-      `CREATE UNIQUE INDEX "UQ_bot_conversation_telegram_chat" ON bot_conversation USING btree ("telegramAccountId", "chatId") WHERE "archivedAt" IS NULL`,
+      `CREATE UNIQUE INDEX "UQ_bot_conversation_telegram_chat" ON bot_conversation USING btree ("telegramAccountId", "chatId", "botId", "startsAtMessageId") WHERE "telegramAccountId" IS NOT NULL`,
     );
     await queryRunner.query(
       `CREATE INDEX "IDX_bot_conversation_telegram_account" ON bot_conversation USING btree ("organizationId", "telegramAccountId") WHERE "telegramAccountId" IS NOT NULL`,

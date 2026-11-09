@@ -622,7 +622,7 @@ describe('bots chat (integration)', () => {
   // What breaks this: a Telegram chat reading the console's history (or the
   // other way), `/new` not starting afresh, or Clear history leaving a
   // channel's conversation behind.
-  it('keeps a Telegram chat’s conversation apart from the console chat, until /new or Clear history', async () => {
+  it('keeps a Telegram chat’s conversations apart from the console chat, split by /new in message order', async () => {
     const bot = await create('Telegram Bot');
     const conversations = new BotConversationRepository(dataSource);
     const chat = {
@@ -634,8 +634,8 @@ describe('bots chat (integration)', () => {
     const console1 = sent(bot, 'In the console');
     await turns.enqueue(console1.turn, console1.message, null);
 
-    const conversationId = await conversations.openTelegram(chat);
-    expect(await conversations.openTelegram(chat)).toBe(conversationId);
+    const conversationId = await conversations.conversationFor(chat, '10');
+    expect(await conversations.conversationFor(chat, '11')).toBe(conversationId);
     expect(await conversations.findTelegram(organizationId, conversationId)).toMatchObject(chat);
     const props = {
       organizationId,
@@ -653,13 +653,13 @@ describe('bots chat (integration)', () => {
         messageId,
         text,
       });
-    const first = said(conversationId, '1', 'On Telegram');
+    const first = said(conversationId, '10', 'On Telegram');
     await turns.enqueueOnce(first.turn, first.opening, null, null);
-    const twice = said(conversationId, '1', 'On Telegram');
+    const twice = said(conversationId, '10', 'On Telegram');
     expect((await turns.enqueueOnce(twice.turn, twice.opening, null, null)).outcome).toBe(
       'existing',
     );
-    const second = said(conversationId, '2', 'Again');
+    const second = said(conversationId, '11', 'Again');
     await turns.enqueueOnce(second.turn, second.opening, null, null);
 
     const history = await messages.findHistory(
@@ -674,27 +674,35 @@ describe('bots chat (integration)', () => {
     expect(inConsole.map((message) => message.content)).toEqual(['In the console']);
     expect((await turns.findForRun(second.turn.id)).unwrap().conversationId).toBe(conversationId);
 
-    await conversations.closeTelegram(chat, new Date());
-    const next = await conversations.openTelegram(chat);
+    // /new as message 20: a message after it is in the next conversation, and
+    // one sent before it but delivered after is still in the first, whatever
+    // order they come in; a /new delivered again starts nothing more.
+    expect(await conversations.conversationFor(chat, '21')).toBe(conversationId);
+    await conversations.startTelegram(chat, '20');
+    await conversations.startTelegram(chat, '20');
+    const next = await conversations.conversationFor(chat, '21');
     expect(next).not.toBe(conversationId);
-    // A message delivered again after /new is still the one turn it was.
-    const again = said(next, '1', 'On Telegram');
-    expect((await turns.enqueueOnce(again.turn, again.opening, null, null)).outcome).toBe(
-      'existing',
-    );
-    // A /new delivered again closes nothing opened after it was sent.
-    await conversations.closeTelegram(chat, new Date(Date.now() - 60_000));
-    expect(await conversations.openTelegram(chat)).toBe(next);
-    expect(await conversations.findTelegram(organizationId, conversationId)).toMatchObject(chat);
-
-    await dataSource.query(`UPDATE bot_turn SET status = 'completed' WHERE "botId" = $1`, [bot.id]);
-    expect(await turns.clearConversation(organizationId, bot.id)).toBe('cleared');
-    expect(await conversations.findTelegram(organizationId, next)).toBeNull();
-    const [{ count }] = await dataSource.query(
-      `SELECT count(*)::int AS count FROM bot_conversation WHERE "botId" = $1 AND kind = 'console'`,
+    expect(await conversations.conversationFor(chat, '12')).toBe(conversationId);
+    const [{ count: starts }] = await dataSource.query(
+      `SELECT count(*)::int AS count FROM bot_conversation WHERE "botId" = $1 AND kind = 'telegram'`,
       [bot.id],
     );
-    expect(count).toBe(1);
+    expect(starts).toBe(2);
+
+    // Clear history clears the console chat, and only it; a Telegram turn
+    // still running does not hold it up.
+    expect(await turns.clearConversation(organizationId, bot.id)).toBe('busy');
+    await dataSource.query(
+      `UPDATE bot_turn SET status = 'completed' WHERE "botId" = $1 AND "conversationId" = $1`,
+      [bot.id],
+    );
+    expect(await turns.clearConversation(organizationId, bot.id)).toBe('cleared');
+    expect(await messages.findConversation(scope(), bot.id, 10)).toEqual([]);
+    expect(
+      (await messages.findHistory(organizationId, conversationId, second.turn.id, null, 40)).map(
+        (message) => message.content,
+      ),
+    ).toEqual(['On Telegram']);
   });
 
   // What breaks this: a bot deleted while it answers on Telegram, leaving the
@@ -1006,6 +1014,7 @@ describe('bots chat (integration)', () => {
       owners,
       hosts,
       turns,
+      new BotConversationRepository(dataSource),
       { tools: () => [], catalog: () => [] } as unknown as BotToolboxFactory,
       {} as BotApprovalRequestFactory,
       { heldScopes: async () => new Set() } as unknown as BotOwnerPermissionsResolver,

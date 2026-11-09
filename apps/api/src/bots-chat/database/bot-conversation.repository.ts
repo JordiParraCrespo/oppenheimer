@@ -9,31 +9,33 @@ import type {
 export class BotConversationRepository implements BotConversationRepositoryPort {
   constructor(private readonly dataSource: DataSource) {}
 
-  openTelegram(chat: BotTelegramChat): Promise<string> {
-    return this.dataSource.transaction(async (manager) => {
-      const params = [chat.organizationId, chat.telegramAccountId, chat.chatId];
-      // UQ_bot_conversation_telegram_chat: another bot's is closed, so the
-      // insert below opens this bot's.
-      await manager.query(
-        `UPDATE bot_conversation SET "archivedAt" = now(), "updatedAt" = now()
-          WHERE "organizationId" = $1 AND "telegramAccountId" = $2 AND "chatId" = $3
-            AND "archivedAt" IS NULL AND "botId" <> $4`,
-        [...params, chat.botId],
-      );
-      await manager.query(
-        `INSERT INTO bot_conversation ("organizationId", "botId", kind, "telegramAccountId", "chatId")
-         VALUES ($1, $4, 'telegram', $2, $3)
-         ON CONFLICT ("telegramAccountId", "chatId") WHERE "archivedAt" IS NULL DO NOTHING`,
-        [...params, chat.botId],
-      );
-      const [open]: { id: string }[] = await manager.query(
+  async conversationFor(chat: BotTelegramChat, messageId: string): Promise<string> {
+    const params = [chat.organizationId, chat.telegramAccountId, chat.chatId, chat.botId];
+    // UQ_bot_conversation_telegram_chat, read backwards from the message.
+    const holding = () =>
+      this.dataSource.query(
         `SELECT id FROM bot_conversation
-          WHERE "telegramAccountId" = $2 AND "chatId" = $3 AND "archivedAt" IS NULL
-            AND "organizationId" = $1`,
-        params,
-      );
-      return open.id;
-    });
+          WHERE "telegramAccountId" = $2 AND "chatId" = $3 AND "botId" = $4
+            AND "startsAtMessageId" <= $5 AND "organizationId" = $1
+          ORDER BY "startsAtMessageId" DESC LIMIT 1`,
+        [...params, messageId],
+      ) as Promise<{ id: string }[]>;
+    const [found] = await holding();
+    if (found) return found.id;
+    await this.startTelegram(chat, '0');
+    const [opened] = await holding();
+    return opened.id;
+  }
+
+  async startTelegram(chat: BotTelegramChat, messageId: string): Promise<void> {
+    // UQ_bot_conversation_telegram_chat: a start already made is left as it is.
+    await this.dataSource.query(
+      `INSERT INTO bot_conversation ("organizationId", "botId", kind, "telegramAccountId", "chatId", "startsAtMessageId")
+       VALUES ($1, $4, 'telegram', $2, $3, $5)
+       ON CONFLICT ("telegramAccountId", "chatId", "botId", "startsAtMessageId")
+         WHERE "telegramAccountId" IS NOT NULL DO NOTHING`,
+      [chat.organizationId, chat.telegramAccountId, chat.chatId, chat.botId, messageId],
+    );
   }
 
   async findTelegram(
@@ -48,16 +50,6 @@ export class BotConversationRepository implements BotConversationRepositoryPort 
       [organizationId, conversationId],
     );
     return row ?? null;
-  }
-
-  async closeTelegram(chat: BotTelegramChat, sentAt: Date): Promise<void> {
-    // UQ_bot_conversation_telegram_chat.
-    await this.dataSource.query(
-      `UPDATE bot_conversation SET "archivedAt" = now(), "updatedAt" = now()
-        WHERE "telegramAccountId" = $2 AND "chatId" = $3 AND "archivedAt" IS NULL
-          AND "organizationId" = $1 AND "createdAt" < $4`,
-      [chat.organizationId, chat.telegramAccountId, chat.chatId, sentAt],
-    );
   }
 
   async deleteWithin(manager: EntityManager, organizationId: string, botId: string): Promise<void> {
@@ -76,12 +68,9 @@ export class BotConversationRepository implements BotConversationRepositoryPort 
       `DELETE FROM bot_question WHERE "organizationId" = $1 AND "botId" = $2`,
       params,
     );
+    // The console chat's: its conversation's id is the bot's.
     await manager.query(
-      `DELETE FROM bot_message WHERE "organizationId" = $1 AND "botId" = $2`,
-      params,
-    );
-    await manager.query(
-      `DELETE FROM bot_conversation WHERE "organizationId" = $1 AND "botId" = $2 AND kind <> 'console'`,
+      `DELETE FROM bot_message WHERE "organizationId" = $1 AND "conversationId" = $2`,
       params,
     );
     await manager.query(
