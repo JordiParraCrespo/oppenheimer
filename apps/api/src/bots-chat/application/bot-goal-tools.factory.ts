@@ -93,6 +93,7 @@ export class BotGoalToolsFactory implements BotToolArea {
       run: async (input, context) => {
         const goal = await this.goals.findForBot(context.organizationId, context.botId);
         if (!goal) return 'You have no goal to end.';
+        const ownTurn = context.origin === 'goal' || goal.originTurnId === context.turnId;
         if (input.outcome === 'blocked') {
           goal.pause('blocked', input.reason, new Date());
           if (!(await this.goals.pause(goal, goalPauseLine(goal, 'paused')))) {
@@ -101,14 +102,18 @@ export class BotGoalToolsFactory implements BotToolArea {
           await this.goalsOf.cancelWaiting(goal, null);
           return `Goal paused as blocked: ${goal.objective}. It stays open until the person resumes it.`;
         }
-        const ownTurn = context.origin === 'goal' || goal.originTurnId === context.turnId;
         if (!ownTurn) {
           // No line: the call is the record, in this turn's activity.
           await this.goalsOf.end(goal, null, null);
           return `Goal ended after ${goal.continuations} continuations: ${goal.objective}`;
         }
+        if (goal.paused) {
+          return 'Your goal is paused; the person resumes it. Say in your reply what you found.';
+        }
         goal.claimMet(input.reason);
-        if (!(await this.goals.claim(goal))) return 'Your goal is gone; nothing was done.';
+        if (!(await this.goals.claim(goal))) {
+          return 'Your goal changed meanwhile (it was paused, ended or replaced); nothing was done.';
+        }
         return 'Noted. When this turn ends a reviewer reads what you showed: the goal ends if it holds, otherwise your next turn says why not. Finish the turn by reporting the check and its result.';
       },
     });

@@ -132,6 +132,8 @@ export function BotTurn({
         {block.answer.map((message) =>
           message.role === 'activity' ? (
             <BotActivity key={message.id} steps={message.steps} live={active} />
+          ) : message.role === 'event' ? (
+            <BotEventLine key={message.id} message={message} />
           ) : message.role === 'user' ? (
             <BotSteerMessage
               key={message.id}

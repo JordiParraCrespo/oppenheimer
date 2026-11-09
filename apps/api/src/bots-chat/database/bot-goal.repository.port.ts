@@ -12,19 +12,27 @@ export interface BotGoalRepositoryPort {
    */
   end(goal: BotGoalEntity, line: BotMessageEntity | null): Promise<boolean>;
   /**
-   * Pauses the goal as it now stands (its pause, what it spent, its idle
-   * turns) and writes the line that says why, in one transaction, on the
-   * count it was loaded at while it ran; false, and no line, when another
-   * writer moved it first (ended, paused, continued).
+   * Pauses the goal and writes the line that says why, in one transaction, on
+   * the count it was loaded at while it ran; false, and no line, when another
+   * writer moved it first (ended, paused, continued). What it spent is not
+   * this write's: `countTurnSpend` adds each turn's.
    */
   pause(goal: BotGoalEntity, line: BotMessageEntity): Promise<boolean>;
   /**
-   * Writes what a turn of a goal paused during that turn spent, once: only
-   * while the goal is still paused as it was and nothing has written it since
-   * the pause (whose write leaves `updatedAt` at the pause's time), so a
-   * second delivery of the same end adds nothing. False when it wrote nothing.
+   * Adds what one of the goal's turns spent (its tokens, and whether it went
+   * idle) to the goal, once per turn whatever writes the goal saw since: the
+   * turn is marked counted in the same transaction, and the add is to what
+   * the row holds, never a loaded copy. False when the turn was counted
+   * already, and nothing is added.
    */
-  recordSpend(goal: BotGoalEntity): Promise<boolean>;
-  /** Stores the bot's claim that the goal is met; false when the goal is gone. */
+  countTurnSpend(goal: BotGoalEntity, turn: GoalTurnSpend): Promise<boolean>;
+  /** Stores the bot's claim that the goal is met; false when the goal is gone or paused. */
   claim(goal: BotGoalEntity): Promise<boolean>;
+}
+
+/** What one turn of a goal spent: its tokens, and whether it called a tool. */
+export interface GoalTurnSpend {
+  id: string;
+  tokens: number;
+  calledTools: boolean;
 }

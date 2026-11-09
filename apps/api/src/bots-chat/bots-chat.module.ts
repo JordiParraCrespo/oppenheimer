@@ -191,6 +191,7 @@ import { BotTurnRepository } from './database/bot-turn.repository';
 import { BotUsageRepository } from './database/bot-usage.repository';
 import { BotApprovalsProcessor } from './infrastructure/bot-approvals.processor';
 import { BotAttachmentRetentionProcessor } from './infrastructure/bot-attachment-retention.processor';
+import { BotBackgroundTurnsProcessor } from './infrastructure/bot-background-turns.processor';
 import { BotDreamsProcessor } from './infrastructure/bot-dreams.processor';
 import { BotRoutineTarget } from './infrastructure/bot-routine-target.adapter';
 import { BotStallChecksProcessor } from './infrastructure/bot-stall-checks.processor';
@@ -356,7 +357,7 @@ const queryHandlers: Provider[] = [
       BotToolPermissionOrmEntity,
       BotPermissionRuleOrmEntity,
     ]),
-    // The `bot-turns` queue the outbox stages each due turn on.
+    // The `bot-turns` and `bot-background-turns` queues the outbox stages each due turn on.
     QueueModule,
     BotsModule,
     // A routine is an automation whose run is a turn of its bot: this module
@@ -456,6 +457,7 @@ const queryHandlers: Provider[] = [
     BotSessionWakeDomainEventHandler,
     BotPullRequestWakeDomainEventHandler,
     TurnCancelWatchFactory,
+    BotBackgroundTurnsProcessor,
     BotTurnsProcessor,
     BotApprovalsProcessor,
     BotSummariesProcessor,

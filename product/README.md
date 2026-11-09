@@ -1376,6 +1376,10 @@ earlier note:
   a silent model or the loop guard; a goal has no limit, the bot says when
   it is done and the reviewer checks that claim, and a goal that goes
   wrong pauses for the owner to resume instead of ending.
+- `versions/mvp/25-bots.md` §4.1 paused a goal on a provider's usage limit
+  for the owner to resume. On 2026-11-09, where the provider says when the
+  limit ends, the goal waits for that time and goes on by itself; it pauses
+  only when no time is known.
 - `versions/mvp/11-api-implementation-plan.md` (GitHub slice) had the
   webhook read `request.rawBody`, the copy Better Auth's app-wide JSON
   parser kept, so it needed no bootstrap change. That parser's 100 kB

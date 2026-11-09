@@ -33,6 +33,7 @@ import { ENDED_TURN_STATUSES } from './domain/bot-turn.entity';
 import { BotAttachmentResponseDto } from './dtos/bot-attachment.response.dto';
 import {
   BotApprovalEventResponseDto,
+  BotCompactionEventResponseDto,
   BotDreamEventResponseDto,
   BotGoalEventResponseDto,
   BotLoopEventResponseDto,
@@ -307,6 +308,8 @@ function toEventResponse(event: BotMessageEvent): BotMessageEventResponseDto {
       return Object.assign(new BotLoopEventResponseDto(), event);
     case 'dream':
       return Object.assign(new BotDreamEventResponseDto(), event);
+    case 'compaction':
+      return Object.assign(new BotCompactionEventResponseDto(), event);
   }
 }
 
@@ -425,6 +428,13 @@ function toEvent(raw: Record<string, unknown> | null): BotMessageEvent | null {
       dreamId: raw.dreamId,
       factsBefore: typeof raw.factsBefore === 'number' ? raw.factsBefore : 0,
       factsAfter: typeof raw.factsAfter === 'number' ? raw.factsAfter : 0,
+    };
+  }
+  if (raw.kind === 'compaction') {
+    return {
+      kind: 'compaction',
+      tokensBefore: typeof raw.tokensBefore === 'number' ? raw.tokensBefore : 0,
+      tokensAfter: typeof raw.tokensAfter === 'number' ? raw.tokensAfter : 0,
     };
   }
   return null;
