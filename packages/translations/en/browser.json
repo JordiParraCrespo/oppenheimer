@@ -3799,7 +3799,7 @@
         "noMatch": "No bot matches",
         "link": "Link your Telegram",
         "linkAgain": "Link again",
-        "openLink": "Open in Telegram",
+        "openLink": "Open the link",
         "linked": "Your Telegram is linked: only you are answered here.",
         "notLinked": "Link your Telegram so the bot knows it is you. Until then it answers nobody.",
         "linkReady": "Open the link in Telegram within ten minutes and press Start.",

@@ -3826,7 +3826,7 @@
         "noMatch": "Ningún bot coincide",
         "link": "Vincula tu Telegram",
         "linkAgain": "Vincular de nuevo",
-        "openLink": "Abrir en Telegram",
+        "openLink": "Abrir el enlace",
         "linked": "Tu Telegram está vinculado: aquí solo te responde a ti.",
         "notLinked": "Vincula tu Telegram para que el bot sepa que eres tú. Hasta entonces no responde a nadie.",
         "linkReady": "Abre el enlace en Telegram en los próximos diez minutos y pulsa Iniciar.",
