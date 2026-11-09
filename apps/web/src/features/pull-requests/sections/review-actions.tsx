@@ -9,7 +9,7 @@ import { ErrorAlert, notifySuccess } from '@oppenheimer/frontend-web';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useReviewDeckKeys } from '../hooks/use-review-deck-keys';
-import { DECK_VERB_LABEL, type DeckVerb, deckVerbs } from '../lib/review-deck';
+import { DECK_VERB_LABEL, type DeckVerb, deckVerbs } from '../lib/deck-verbs';
 
 /**
  * What can be done with the card on screen, each with its key, and then the

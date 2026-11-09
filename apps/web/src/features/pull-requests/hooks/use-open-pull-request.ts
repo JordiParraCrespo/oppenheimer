@@ -1,10 +1,7 @@
 import type { PullRequestAddress } from '@oppenheimer/frontend-consumer';
 import { useNavigate, useSearch } from '@tanstack/react-router';
-import {
-  type PullRequestView,
-  type PullsReturn,
-  pullRequestLink,
-} from '../lib/pull-request-search';
+import { type PullRequestView, pullRequestLink } from '../lib/pull-request-search';
+import type { PullsReturn } from '../lib/pulls-return';
 
 declare module '@tanstack/react-router' {
   interface HistoryState {

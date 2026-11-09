@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { DECK_END, deckKey, deckPosition, deckVerbs } from '../lib/review-deck';
+import { deckVerbs } from '../lib/deck-verbs';
+import { DECK_END, deckKey, deckPosition } from '../lib/review-deck';
 
 const rows = [
   { githubRepoId: 1, number: 12 },

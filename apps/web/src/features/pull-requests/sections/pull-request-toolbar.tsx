@@ -14,11 +14,8 @@ import { SidebarToggle } from '@oppenheimer/frontend-web';
 import { Link, useLocation } from '@tanstack/react-router';
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import {
-  PULL_REQUEST_VIEWS,
-  type PullRequestView,
-  pullsReturnLink,
-} from '../lib/pull-request-search';
+import { PULL_REQUEST_VIEWS, type PullRequestView } from '../lib/pull-request-search';
+import { pullsReturnLink } from '../lib/pulls-return';
 
 /**
  * The bar over a pull request, its one header and the page's bar (the
