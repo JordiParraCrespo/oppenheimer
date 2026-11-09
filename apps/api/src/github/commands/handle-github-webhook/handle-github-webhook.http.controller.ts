@@ -1,12 +1,4 @@
-import {
-  Controller,
-  Headers,
-  HttpCode,
-  Post,
-  type RawBodyRequest,
-  Req,
-  Version,
-} from '@nestjs/common';
+import { Controller, Headers, HttpCode, Post, Req, Version } from '@nestjs/common';
 import { CommandBus } from '@nestjs/cqrs';
 import { ApiExcludeEndpoint } from '@nestjs/swagger';
 import { SkipThrottle } from '@nestjs/throttler';
@@ -19,8 +11,10 @@ import { HandleGithubWebhookCommand } from './handle-github-webhook.command';
  * unthrottled, because a throttled webhook is a retried webhook. Authenticity is
  * proven by the `X-Hub-Signature-256` HMAC verified downstream.
  *
- * Reads `req.rawBody` (populated by Better Auth's raw-body parser) so the digest
- * is taken over the exact bytes GitHub signed rather than a re-serialized object.
+ * Reads `req.body` as the raw bytes `githubWebhookBodyParser` left there (the
+ * module applies it to this route), so the digest is taken over exactly what
+ * GitHub signed rather than a re-serialized object. A body past GitHub's 25 MB
+ * cap is refused with 413 before it gets here.
  */
 @Controller('github')
 export class HandleGithubWebhookHttpController {
@@ -33,12 +27,12 @@ export class HandleGithubWebhookHttpController {
   @SkipThrottle()
   @ApiExcludeEndpoint()
   async handle(
-    @Req() request: RawBodyRequest<Request>,
+    @Req() request: Request,
     @Headers('x-hub-signature-256') signature: string,
     @Headers('x-github-event') event: string,
     @Headers('x-github-delivery') deliveryId: string,
   ): Promise<{ received: boolean }> {
-    const payload = request.rawBody ?? Buffer.from('');
+    const payload = Buffer.isBuffer(request.body) ? request.body : Buffer.alloc(0);
     await this.commandBus.execute<HandleGithubWebhookCommand, void>(
       new HandleGithubWebhookCommand({
         payload,

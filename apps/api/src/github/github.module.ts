@@ -1,4 +1,4 @@
-import { Module, type Provider } from '@nestjs/common';
+import { type MiddlewareConsumer, Module, type NestModule, type Provider } from '@nestjs/common';
 import { CqrsModule } from '@nestjs/cqrs';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthzModule as AuthzKernelModule } from '@oppenheimer/backend-authz';
@@ -72,6 +72,7 @@ import { GithubIssuesAdapter } from './infrastructure/github-issues.adapter';
 import { GithubPullsAdapter } from './infrastructure/github-pulls.adapter';
 import { GithubRestAdapter } from './infrastructure/github-rest.adapter';
 import { GithubTokensAdapter } from './infrastructure/github-tokens.adapter';
+import { githubWebhookBodyParser } from './infrastructure/github-webhook-body.util';
 import { FindGithubTokenReadsHttpController } from './queries/find-github-token-reads/find-github-token-reads.http.controller';
 import { FindGithubTokenReadsQueryHandler } from './queries/find-github-token-reads/find-github-token-reads.query-handler';
 import { FindGithubTokensHttpController } from './queries/find-github-tokens/find-github-tokens.http.controller';
@@ -214,4 +215,8 @@ const adapters: Provider[] = [
     ISSUE_ACCESS,
   ],
 })
-export class GithubModule {}
+export class GithubModule implements NestModule {
+  configure(consumer: MiddlewareConsumer): void {
+    consumer.apply(githubWebhookBodyParser()).forRoutes(HandleGithubWebhookHttpController);
+  }
+}

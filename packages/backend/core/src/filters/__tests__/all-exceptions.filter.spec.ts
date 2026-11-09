@@ -178,6 +178,28 @@ describe('AllExceptionsFilter', () => {
     expect(JSON.stringify(problem)).not.toContain('hunter2');
   });
 
+  // body-parser's errors, as `http-errors` builds them: a request refused before
+  // any controller ran. Nest maps only its `SyntaxError`; the rest arrive here.
+  const bodyParserError = (status: number, message: string) =>
+    Object.assign(new Error(message), { status, statusCode: status, expose: status < 500 });
+
+  it('keeps the status of a client error body-parser raised, rather than a 500', () => {
+    // Regression: a webhook past the JSON limit answered 500 and was reported.
+    const problem = handle(bodyParserError(413, 'request entity too large')).problem();
+
+    expect(problem.status).toBe(413);
+    expect(problem.title).toBe('Payload Too Large');
+    expect(problem.detail).toBe('request entity too large');
+  });
+
+  it('trusts no status on an error that does not mark its message as safe to show', () => {
+    const leaky = Object.assign(new Error('postgres://user:hunter2@db'), { status: 404 });
+    const problem = handle(leaky).problem();
+
+    expect(problem.status).toBe(HttpStatus.INTERNAL_SERVER_ERROR);
+    expect(JSON.stringify(problem)).not.toContain('hunter2');
+  });
+
   it('gives a bare HttpException no code — a code requires a catalog entry', () => {
     // Only curated catalog codes are part of the public contract, so the filter
     // never lifts one off an arbitrary exception body.
@@ -307,6 +329,7 @@ describe('AllExceptionsFilter', () => {
     it('reports nothing below 500', () => {
       expect(report(new AppError(USER_NOT_FOUND))).toEqual([]);
       expect(report(new BadRequestException('nope'))).toEqual([]);
+      expect(report(bodyParserError(413, 'request entity too large'))).toEqual([]);
     });
   });
 });

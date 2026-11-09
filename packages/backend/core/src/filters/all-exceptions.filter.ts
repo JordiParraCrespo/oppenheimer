@@ -152,6 +152,18 @@ export class AllExceptionsFilter implements ExceptionFilter {
       );
     }
 
+    const clientError = exposedClientErrorOf(exception);
+    if (clientError) {
+      return buildProblemDetails(
+        {
+          status: clientError.status,
+          title: titleForStatus(clientError.status),
+          detail: clientError.detail,
+        },
+        context,
+      );
+    }
+
     return this.internalProblem(context);
   }
 
@@ -180,6 +192,22 @@ function retryAfterOf(exception: unknown): number | null {
   return seconds !== undefined && Number.isFinite(seconds) && seconds > 0
     ? Math.ceil(seconds)
     : null;
+}
+
+/**
+ * A 4xx raised by Node's HTTP middleware before any controller ran, through
+ * `http-errors`: body-parser's 413 for a body past its limit, its 415 for a
+ * charset it cannot read, its 400 for an aborted or truncated body. Nest maps
+ * only body-parser's `SyntaxError`, so without this every other one became a
+ * 500 and an error report for what was the client's request. `http-errors`
+ * sets `expose` only below 500, where its message is written to be shown.
+ */
+function exposedClientErrorOf(exception: unknown): { status: number; detail: string } | null {
+  if (!(exception instanceof Error)) return null;
+  const { status, expose } = exception as Error & { status?: unknown; expose?: unknown };
+  if (expose !== true || typeof status !== 'number') return null;
+  if (status < HttpStatus.BAD_REQUEST || status >= HttpStatus.INTERNAL_SERVER_ERROR) return null;
+  return { status, detail: exception.message };
 }
 
 /** Flattens Zod issues into RFC 7807's `invalid-params` shape. */
