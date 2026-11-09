@@ -192,12 +192,19 @@ describe('AllExceptionsFilter', () => {
     expect(problem.detail).toBe('request entity too large');
   });
 
-  it('trusts no status on an error that does not mark its message as safe to show', () => {
-    const leaky = Object.assign(new Error('postgres://user:hunter2@db'), { status: 404 });
-    const problem = handle(leaky).problem();
+  it('trusts no status on an error that is not an http-errors error marked safe to show', () => {
+    const notExposed = bodyParserError(404, 'postgres://user:hunter2@db');
+    notExposed.expose = false;
+    const unshaped = Object.assign(new Error('postgres://user:hunter2@db'), {
+      status: 404,
+      expose: true,
+    });
 
-    expect(problem.status).toBe(HttpStatus.INTERNAL_SERVER_ERROR);
-    expect(JSON.stringify(problem)).not.toContain('hunter2');
+    for (const exception of [notExposed, unshaped]) {
+      const problem = handle(exception).problem();
+      expect(problem.status).toBe(HttpStatus.INTERNAL_SERVER_ERROR);
+      expect(JSON.stringify(problem)).not.toContain('hunter2');
+    }
   });
 
   it('gives a bare HttpException no code — a code requires a catalog entry', () => {

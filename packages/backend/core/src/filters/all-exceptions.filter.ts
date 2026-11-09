@@ -194,18 +194,31 @@ function retryAfterOf(exception: unknown): number | null {
     : null;
 }
 
+/** What `http-errors` builds, by the test its own `isHttpError` applies to an error from another copy. */
+interface HttpError extends Error {
+  status: number;
+  statusCode: number;
+  expose: boolean;
+}
+
+function isHttpError(exception: unknown): exception is HttpError {
+  if (!(exception instanceof Error)) return false;
+  const { status, statusCode, expose } = exception as Partial<HttpError>;
+  return typeof expose === 'boolean' && typeof statusCode === 'number' && status === statusCode;
+}
+
 /**
  * A 4xx raised by Node's HTTP middleware before any controller ran, through
  * `http-errors`: body-parser's 413 for a body past its limit, its 415 for a
- * charset it cannot read, its 400 for an aborted or truncated body. Nest maps
- * only body-parser's `SyntaxError`, so without this every other one became a
- * 500 and an error report for what was the client's request. `http-errors`
- * sets `expose` only below 500, where its message is written to be shown.
+ * charset or encoding it will not read, its 400 for an aborted or truncated
+ * body. Nest maps only body-parser's `SyntaxError`, so without this every
+ * other one became a 500 and an error report for what was the client's
+ * request. `http-errors` sets `expose` only below 500, where its message is
+ * written to be shown.
  */
 function exposedClientErrorOf(exception: unknown): { status: number; detail: string } | null {
-  if (!(exception instanceof Error)) return null;
-  const { status, expose } = exception as Error & { status?: unknown; expose?: unknown };
-  if (expose !== true || typeof status !== 'number') return null;
+  if (!isHttpError(exception) || !exception.expose) return null;
+  const { status } = exception;
   if (status < HttpStatus.BAD_REQUEST || status >= HttpStatus.INTERNAL_SERVER_ERROR) return null;
   return { status, detail: exception.message };
 }

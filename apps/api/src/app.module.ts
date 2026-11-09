@@ -70,7 +70,6 @@ import type { ThrottlingConfig } from './config/throttling.config';
 import { TypeOrmQueryLogger } from './config/typeorm-query.logger';
 import { FeatureFlagsModule } from './feature-flags/feature-flags.module';
 import { GithubModule } from './github/github.module';
-import { APP_BODY_PARSER_OPTIONS } from './github/infrastructure/github-webhook-body.util';
 import { HealthModule } from './health/health.module';
 import { HostsModule } from './hosts/hosts.module';
 import { InboundEventsModule } from './inbound-events/inbound-events.module';
@@ -234,9 +233,6 @@ import { WorkspaceEventsModule } from './workspace-events/workspace-events.modul
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => llmConfigFrom(configService),
     }),
-    // `bodyParser` is the app-wide JSON and form parsers (100 kB), minus the
-    // GitHub webhook, which `GithubModule` reads raw at GitHub's own 25 MB cap.
-    //
     // `middleware` is what gets `/api/auth/*` into the request log: Better
     // Auth mounts its handler straight onto the HTTP adapter before Nest
     // binds consumer middleware, so the `nestjs-pino` logger never sees those
@@ -244,7 +240,6 @@ import { WorkspaceEventsModule } from './workspace-events/workspace-events.modul
     BetterAuthModule.forRoot({
       auth,
       disableGlobalAuthGuard: true,
-      bodyParser: APP_BODY_PARSER_OPTIONS,
       // Its lines go to LOG_FILE too, so sign-ins reach Loki with the rest.
       middleware: createAuthRouteLoggingMiddleware({
         pretty: process.env.NODE_ENV !== 'production',

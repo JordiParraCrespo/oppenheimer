@@ -1,28 +1,23 @@
 import 'reflect-metadata';
-import {
-  type INestApplication,
-  type MiddlewareConsumer,
-  Module,
-  type NestModule,
-  VersioningType,
-} from '@nestjs/common';
+import { type INestApplication, Module, type NestModule, VersioningType } from '@nestjs/common';
+import { ApplicationConfig, HttpAdapterHost } from '@nestjs/core';
 import { CommandBus } from '@nestjs/cqrs';
 import { Test } from '@nestjs/testing';
 import { AllExceptionsFilter } from '@oppenheimer/backend-core';
 import { AuthModule as BetterAuthModule } from '@thallesp/nestjs-better-auth';
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
-  APP_BODY_PARSER_OPTIONS,
   GITHUB_WEBHOOK_BODY_LIMIT_BYTES,
-  githubWebhookBodyParser,
+  mountGithubWebhookBodyParser,
 } from '../../../infrastructure/github-webhook-body.util';
 import { HandleGithubWebhookCommand } from '../handle-github-webhook.command';
 import { HandleGithubWebhookHttpController } from '../handle-github-webhook.http.controller';
 
 /**
  * The parsers a delivery goes through before the controller: Better Auth's
- * app-wide JSON parser, configured as `AppModule` configures it, and the
- * webhook's own, applied as `GithubModule` applies it. The bus is stubbed;
+ * app-wide JSON and form parsers with `AppModule`'s options, and the
+ * webhook's own, mounted as `GithubModule` mounts it, so whichever would
+ * read the body first in the app reads it first here. The bus is stubbed;
  * what the handler does with the bytes is its own spec's.
  */
 
@@ -33,15 +28,24 @@ const execute = vi.fn();
     BetterAuthModule.forRoot({
       auth: { options: {}, handler: async () => new Response(null, { status: 404 }) } as never,
       disableGlobalAuthGuard: true,
-      bodyParser: APP_BODY_PARSER_OPTIONS,
     }),
   ],
   controllers: [HandleGithubWebhookHttpController],
   providers: [{ provide: CommandBus, useValue: { execute } }],
 })
 class WebhookPipelineModule implements NestModule {
-  configure(consumer: MiddlewareConsumer): void {
-    consumer.apply(githubWebhookBodyParser()).forRoutes(HandleGithubWebhookHttpController);
+  constructor(
+    private readonly adapterHost: HttpAdapterHost,
+    private readonly appConfig: ApplicationConfig,
+  ) {}
+
+  configure(): void {
+    mountGithubWebhookBodyParser(
+      this.adapterHost,
+      this.appConfig,
+      HandleGithubWebhookHttpController,
+      'handle',
+    );
   }
 }
 
@@ -109,6 +113,13 @@ describe('POST /v1/github/webhook', () => {
 
     expect(response.status).toBe(200);
     expect(handed().payload.equals(sent)).toBe(true);
+  });
+
+  it('refuses a compressed body rather than verifying a signature over inflated bytes', async () => {
+    const response = await deliver(Buffer.from('{}'), { 'content-encoding': 'gzip' });
+
+    expect(response.status).toBe(415);
+    expect(execute).not.toHaveBeenCalled();
   });
 
   it("refuses a body past GitHub's 25 MB cap with 413, before the bus", async () => {

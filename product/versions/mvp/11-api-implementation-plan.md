@@ -149,7 +149,7 @@ apps/api/src/github/
   `billing/commands/handle-stripe-webhook`.~~ Changed 2026-11-09: that
   parser stopped deliveries at its 100 kB default, so the webhook reads its
   own body raw up to GitHub's 25 MB cap (`github-webhook-body.util.ts`,
-  applied by `GithubModule`), and the app-wide parsers skip its path.
+  mounted by `GithubModule` ahead of the app-wide parsers).
 - Tests: scoping spec in the `lead-scoping.spec.ts` shape; webhook
   signature accept/reject; the claim proof refuses an installation the
   caller cannot see; integration: the migration chain runs and a

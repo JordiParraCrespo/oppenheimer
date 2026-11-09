@@ -1372,5 +1372,5 @@ earlier note:
   parser kept, so it needed no bootstrap change. That parser's 100 kB
   default refused ordinary `push` and `pull_request` deliveries with a 500
   (Sentry OPPENHEIMER-API-2, 2026-11-09). The webhook now reads its own body
-  raw, up to GitHub's documented 25 MB cap, the app-wide parsers skip its
-  path, a larger body is a 413, and the `rawBody` copy is gone.
+  raw, up to GitHub's documented 25 MB cap, ahead of the app-wide parsers;
+  a larger body is a 413, and the `rawBody` copy is gone.
