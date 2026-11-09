@@ -46,7 +46,9 @@ export function chatTurns(conversation: BotConversationEntity): ChatTurnBlock[] 
     if (message.turnId && waiting.has(message.turnId)) continue;
     const block = blockOf(message.turnId ?? message.id, message.turnId);
     const steered = message.role === 'user' && block.answer.length > 0;
-    const opens = !steered && (message.role === 'user' || message.role === 'event');
+    // A compaction is the bot's own work folding mid-turn: drawn where it happened.
+    const folded = message.event?.kind === 'compaction';
+    const opens = !steered && !folded && (message.role === 'user' || message.role === 'event');
     (opens ? block.asked : block.answer).push(message);
   }
   for (const turn of conversation.turns) if (!waiting.has(turn.id)) blockOf(turn.id, turn.id);
