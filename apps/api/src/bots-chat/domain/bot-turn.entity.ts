@@ -21,6 +21,12 @@ import type { BotRateLimit } from './bot-rate-limit.policy';
 export interface BotTurnProps {
   organizationId: string;
   botId: string;
+  /**
+   * The conversation it runs in (`bot_conversation`), whose messages are its
+   * history: a Telegram chat's, or the bot's console chat, whose id is the
+   * bot's own, when left out.
+   */
+  conversationId?: string;
   /** Who sent the message; null once that account is gone. */
   requestedByUserId: string | null;
   status: BotTurnStatus;
@@ -108,24 +114,29 @@ export interface BotTurnPlanLimits {
 export const BOT_TURN_ERROR_MAX = 1_000;
 
 /**
- * How long one turn may run before it is stopped (`25-bots.md` §2). A chat
- * turn answers; work that takes longer belongs to a session on a host.
+ * How long a completion a bot's work makes outside a turn may run (a
+ * conversation's summary, a dream). A turn itself has no time limit and no
+ * step limit since 2026-11-09 (`25-bots.md` §2): it runs until the model
+ * answers, held by the compaction and the guards instead
+ * (`BOT_TURN_IDLE_LIMIT_MS`, the engine's loop guard, `BOT_TURN_LOOP_REFUSALS`).
  */
-export const BOT_TURN_TIME_LIMIT_MS = 4 * 60_000;
+export const BOT_COMPLETION_TIME_LIMIT_MS = 4 * 60_000;
 
 /**
- * Model round trips in one chat turn. Below the engine's default: a chat
- * turn answers, and longer work belongs to a session on a host. A turn that
- * uses them all fails with `step_limit`, as one past its time does.
+ * How many calls the engine's loop guard may refuse in one turn before the
+ * turn stops as `loop`: a model that keeps asking for what it was told it
+ * cannot have is going round in circles.
  */
-export const BOT_TURN_MAX_STEPS = 20;
+export const BOT_TURN_LOOP_REFUSALS = 5;
 
 /**
- * The failures that are a bound of one turn, not a fault: its time and its
- * steps. What runs longer than a turn (a goal, a loop) goes on past them,
- * with the turn's work kept; a new bound of a turn is a member here.
+ * The failures that end a turn without being a fault of the work: it was
+ * stopped by a bound (`time_limit`, `step_limit`, on turns before
+ * 2026-11-09), its model went silent (`stalled`), or its worker stopped
+ * (`interrupted`). What runs longer than a turn (a goal, a loop) goes on
+ * past them, with the turn's work kept.
  */
-export const TURN_LIMIT_FAILURES = ['time_limit', 'step_limit'] as const;
+export const TURN_LIMIT_FAILURES = ['time_limit', 'step_limit', 'stalled', 'interrupted'] as const;
 export type TurnLimitFailure = (typeof TURN_LIMIT_FAILURES)[number];
 
 /** Whether a failure is a bound of one turn (`TURN_LIMIT_FAILURES`). */
@@ -158,6 +169,7 @@ export class BotTurnEntity extends AggregateRoot<BotTurnProps> {
   static queue(props: {
     organizationId: string;
     botId: string;
+    conversationId?: string;
     requestedByUserId: string;
     provider: BotProvider;
     model: string;
@@ -253,12 +265,21 @@ export class BotTurnEntity extends AggregateRoot<BotTurnProps> {
       model: string;
       effort: SessionEffort | null;
     },
+    /**
+     * The turn that asked, when it is still there: the answer is picked up in
+     * its conversation, and one asked on Telegram goes on as a Telegram turn,
+     * whose last words are sent back to that chat. The asker's console chat
+     * when it is gone.
+     */
+    asking: BotTurnEntity | null = null,
   ): BotTurnEntity {
     if (!answered.replyRequested || !answered.ended) {
       throw new ArgumentInvalidException('Only an ended ask is answered');
     }
     return BotTurnEntity.queue({
       ...props,
+      ...(asking && { conversationId: asking.conversationId }),
+      ...(asking?.origin === 'telegram' && { origin: 'telegram' as const }),
       organizationId: answered.organizationId,
       requestedByUserId: answered.requireRequester(),
       timeZone: answered.timeZone,
@@ -277,6 +298,13 @@ export class BotTurnEntity extends AggregateRoot<BotTurnProps> {
   }
   get botId(): string {
     return this.props.botId;
+  }
+  get conversationId(): string {
+    return this.props.conversationId ?? this.props.botId;
+  }
+  /** Whether it runs in the bot's console chat rather than a channel's conversation. */
+  get inConsole(): boolean {
+    return this.conversationId === this.botId;
   }
   get requestedByUserId(): string | null {
     return this.props.requestedByUserId;

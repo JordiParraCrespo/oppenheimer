@@ -507,8 +507,8 @@ export const CODING_AGENTS: Readonly<Record<CodingAgentId, CodingAgentDefinition
         effort: levels(CLAUDE_LEVELS, 'medium'),
       }),
       Object.freeze({
-        id: 'claude-fable-5-1',
-        label: 'Fable 5.1',
+        id: 'claude-fable-5-2',
+        label: 'Fable 5.2',
         effort: levels(CLAUDE_LEVELS, 'high'),
       }),
       Object.freeze({
@@ -520,6 +520,12 @@ export const CODING_AGENTS: Readonly<Record<CodingAgentId, CodingAgentDefinition
         id: 'claude-haiku-5-5',
         label: 'Haiku 5.5',
         effort: levels(CLAUDE_LEVELS, 'medium'),
+      }),
+      Object.freeze({
+        id: 'claude-fable-5-1',
+        label: 'Fable 5.1',
+        legacy: true as const,
+        effort: levels(CLAUDE_LEVELS, 'high'),
       }),
       Object.freeze({ id: 'claude-haiku-4-5', label: 'Haiku 4.5', legacy: true as const }),
       Object.freeze({

@@ -51,6 +51,12 @@ describe('takesSteer', () => {
     ).toBe(false);
   });
 
+  // What breaks this: a console message steering a turn that answers on
+  // Telegram, where its words would go to the person's phone.
+  it("leaves a steer sent in another of the bot's conversations", () => {
+    expect(takesSteer(running({ conversationId: randomUUID() }), turn())).toBe(false);
+  });
+
   it('takes a steer only with the reach of the running turn', () => {
     const scopes: Scope[] = ['bots:read', 'bots:write'];
     expect(

@@ -11,9 +11,8 @@ import { ConfirmDialog, ErrorAlert, notifySuccess } from '@oppenheimer/frontend-
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { TaskForm } from '../forms/task-form';
-import { useBoardFilter } from '../hooks/use-board-filter';
 import { useToday } from '../hooks/use-today';
-import { filingOf } from '../lib/board';
+import { type BoardFilter, filingOf } from '../lib/board';
 import { newTaskValues, type TaskFormOutput, taskValues } from '../lib/task-form';
 import { TaskSessionsRow } from './task-sessions-row';
 
@@ -24,12 +23,21 @@ import { TaskSessionsRow } from './task-sessions-row';
  * Suspense, in the dialog's `QueryState`; a refetch that fails keeps the
  * form and says so above it.
  */
-export function TaskEditor({ taskId, onClose }: { taskId?: string; onClose: () => void }) {
+export function TaskEditor({
+  taskId,
+  filter = {},
+  onClose,
+  onStartSession,
+}: {
+  taskId?: string;
+  filter?: BoardFilter;
+  onClose: () => void;
+  onStartSession: (taskId: string) => void;
+}) {
   const { t } = useTranslation();
   const resolveError = useErrorMessage();
   const voice = useVoiceDictation();
   const today = useToday();
-  const filter = useBoardFilter();
   const { tasks, projects, milestones, error } = useSuspensePlan();
   const task = taskId ? tasks.find((row) => row.id === taskId) : undefined;
   const [deleting, setDeleting] = useState(false);
@@ -81,7 +89,7 @@ export function TaskEditor({ taskId, onClose }: { taskId?: string; onClose: () =
         projects={choices}
         milestones={milestones}
         today={today}
-        sessions={task ? <TaskSessionsRow task={task} /> : null}
+        sessions={task ? <TaskSessionsRow task={task} onStartSession={onStartSession} /> : null}
         voice={voice}
         pending={pending}
         error={failure ? resolveError(failure, t('tasks.dialog.saveFailed')) : null}

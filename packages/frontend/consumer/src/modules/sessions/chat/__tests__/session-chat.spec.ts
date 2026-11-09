@@ -251,6 +251,67 @@ describe('toTurns', () => {
     expect(turns[0]?.steps).toEqual([]);
   });
 
+  it('reads pasted text without the tags the CLI wraps it in', () => {
+    const turns = toTurns([
+      user(
+        'p',
+        'Here it is:\n<pasted_content id="0ef4">\nStep 1, api.env\n</pasted_content>\nThoughts?',
+      ),
+    ]);
+    expect(turns[0]?.prompt?.text).toBe('Here it is:\n\nStep 1, api.env\n\nThoughts?');
+  });
+
+  it('keeps a paste that starts like one of the CLI lines as the prompt', () => {
+    const turns = toTurns([
+      user('p', '<pasted_content id="x">Caveat: a sample log</pasted_content>\nExplain this.'),
+    ]);
+    expect(turns[0]?.prompt?.text).toBe('Caveat: a sample log\nExplain this.');
+  });
+
+  it('leaves out the system reminders the CLI puts before or after the words', () => {
+    const reminder = '<system-reminder>\nThe date changed.\n</system-reminder>';
+    const text = (value: string) => ({ type: 'text', text: value });
+    const turns = toTurns([
+      user('a', [text(reminder), text('Fix the picker')]),
+      user('b', [text('Fix the list'), text(reminder)]),
+      user('c', `Fix the menu\n\n${reminder}`),
+      user('d', reminder),
+    ]);
+    expect(turns.map((turn) => turn.prompt?.text)).toEqual([
+      'Fix the picker',
+      'Fix the list',
+      'Fix the menu',
+    ]);
+  });
+
+  it("reads the CLI's own lines as before when a reminder comes first", () => {
+    const reminder = '<system-reminder>r</system-reminder>';
+    const text = (value: string) => ({ type: 'text', text: value });
+    const turns = toTurns([
+      user('u1', 'Go'),
+      assistant('a1', [{ type: 'text', text: 'Starting' }]),
+      user('i', [text(reminder), text('[Request interrupted by user]')]),
+      user('t', [
+        text(reminder),
+        text(
+          '<task-notification>\n<status>completed</status>\n<summary>Done</summary>\n</task-notification>',
+        ),
+      ]),
+    ]);
+    expect(turns).toHaveLength(1);
+    expect(kinds(turns[0]?.steps ?? [])).toEqual(['reply', 'notice', 'task']);
+  });
+
+  it('keeps a reminder quoted inside a paste', () => {
+    const turns = toTurns([
+      user(
+        'p',
+        '<pasted_content id="x">log: <system-reminder>r</system-reminder></pasted_content>\nWhy?',
+      ),
+    ]);
+    expect(turns[0]?.prompt?.text).toBe('log: <system-reminder>r</system-reminder>\nWhy?');
+  });
+
   it('marks an interrupted turn and a compaction where they happened', () => {
     const turns = toTurns([
       user('u1', 'Go'),

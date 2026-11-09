@@ -493,7 +493,8 @@
       "BOTS_038": "No se ha encontrado esa habilidad.",
       "BOTS_039": "Este bot ya tiene una habilidad con ese nombre. Elige otro.",
       "BOTS_040": "Este bot ya tiene tantas habilidades como puede guardar. Borra una primero.",
-      "BOTS_041": "Este bot no tiene ninguna ordenación de su memoria que deshacer."
+      "BOTS_041": "Este bot no tiene ninguna ordenación de su memoria que deshacer.",
+      "BOTS_042": "Este bot responde en un bot de Telegram. Elige otro bot, o ninguno, en Ajustes → Telegram antes de eliminarlo."
     },
     "notFound": {
       "title": "Esta página no existe",
@@ -680,13 +681,60 @@
     "list": {
       "title": "Proyectos",
       "new": "Nuevo proyecto",
-      "edit": "Ajustes de {{name}}",
-      "repositories_one": "{{count}} repositorio",
-      "repositories_many": "{{count}} repositorios",
-      "repositories_other": "{{count}} repositorios",
       "noRepositories": "Sin repositorios",
       "empty": "Aún no hay proyectos. Un proyecto agrupa tus sesiones y empieza las nuevas con sus repositorios, host y agente.",
-      "loadFailed": "No se pudieron cargar tus proyectos."
+      "loadFailed": "No se pudieron cargar tus proyectos.",
+      "status": {
+        "needsInput": "Necesita tu respuesta",
+        "running": "En marcha",
+        "idle": "Inactivo"
+      }
+    },
+    "detail": {
+      "back": "Proyectos",
+      "settings": "Ajustes",
+      "milestones": "Hitos",
+      "needsInput": "Necesita tu respuesta",
+      "inProgress": "En curso",
+      "noMilestones": "Aún no hay hitos.",
+      "nothingNeedsInput": "Nada espera tu respuesta.",
+      "nothingInProgress": "Nada en curso.",
+      "gone": "Ese proyecto ya no está aquí.",
+      "loadFailed": "No se pudo cargar este proyecto.",
+      "views": "Vistas del proyecto",
+      "overview": "Resumen",
+      "stats": "Estadísticas"
+    },
+    "stats": {
+      "tasksCompleted": "Tareas completadas",
+      "tasksCreated": "Tareas creadas",
+      "tokens": "Tokens consumidos",
+      "cost": "Coste de los agentes",
+      "vsPrevious": "frente al periodo anterior",
+      "noPrevious": "Aún no hay con qué comparar",
+      "completed": "Completadas",
+      "created": "Creadas",
+      "tasksTitle": "Tareas completadas y creadas, por semana",
+      "tokensTitle": "Tokens consumidos por semana, por modelo",
+      "costTitle": "Coste de los agentes por semana",
+      "unknownModel": "Modelo desconocido",
+      "loadFailed": "No se pudieron cargar las estadísticas de este proyecto.",
+      "range": {
+        "lastWeeks_one": "La última semana",
+        "lastWeeks_many": "Las últimas {{count}} semanas",
+        "lastWeeks_other": "Las últimas {{count}} semanas",
+        "custom": "Personalizado",
+        "done": "Listo",
+        "previousMonth": "Mes anterior",
+        "nextMonth": "Mes siguiente",
+        "choose": "Periodo",
+        "days_one": "{{count}} día",
+        "days_many": "{{count}} días",
+        "days_other": "{{count}} días"
+      },
+      "otherModels": "Otros modelos",
+      "headlessOnly": "turnos sin terminal",
+      "measuredHeadless": "Medido en los turnos sin terminal"
     },
     "unassigned": "Sin asignar"
   },
@@ -1528,6 +1576,7 @@
       "startFrom": "Prueba a pedir",
       "hello": "{{name}} está listo. ¿En qué trabajamos?",
       "placeholder": "Escribe a {{name}}",
+      "history": "Historial {{position}}/{{total}}",
       "placeholderRunning": "Reconduce a {{name}}: Intro reconduce el turno en curso, Alt+Intro lo pone en cola para después",
       "steered": "Reconducido mientras trabajaba",
       "send": "Enviar",
@@ -1548,6 +1597,8 @@
         "unavailable": "No se ha podido contactar con {{provider}}. Suele ser algo pasajero: vuelve a intentarlo en un momento.",
         "time_limit": "Este turno se ha quedado sin tiempo. Volver a enviarlo no servirá: pide un paso más pequeño o divide la petición.",
         "step_limit": "Este turno ha usado todos sus pasos y se ha detenido antes de terminar. Volver a enviarlo no servirá: pide un paso más pequeño o di que continúe.",
+        "stalled": "{{provider}} no ha enviado nada en 5 minutos, así que este turno se ha detenido. Suele ser temporal: vuelve a intentarlo en un momento.",
+        "loop": "Este turno repetía llamadas que no cambiaban nada, así que se ha detenido. Volver a enviarlo no servirá: di qué hacer de otra forma.",
         "interrupted": "Este turno se interrumpió antes de terminar. Al volver a enviarlo, se ejecuta.",
         "storage": "No pudimos guardar este turno, así que se detuvo: el fallo es nuestro, no de {{provider}}. Vuelve a intentarlo en un momento."
       },
@@ -1582,7 +1633,20 @@
           "rate_limit": "{{provider}} está limitando las peticiones, reintentando…",
           "unavailable": "{{provider}} está saturado, reintentando…"
         },
-        "thinking": "Pensando",
+        "musing": {
+          "pondering": "Cavilando…",
+          "mulling": "Rumiando…",
+          "musing": "Meditando…",
+          "noodling": "Divagando…",
+          "ruminating": "Barruntando…",
+          "cogitating": "Elucubrando…",
+          "brewing": "Cocinando…",
+          "percolating": "Destilando…",
+          "scheming": "Tramando…",
+          "puzzling": "Descifrando…",
+          "tinkering": "Trasteando…",
+          "conjuring": "Urdiendo…"
+        },
         "writing": "Escribiendo",
         "stopped": "Detenido"
       },
@@ -1764,6 +1828,9 @@
         },
         "goal": {
           "continued": "Objetivo · continuación {{step}} de {{limit}}",
+          "continuedOpen": "Objetivo · continuación {{step}}",
+          "paused": "Objetivo «{{objective}}» {{why}}",
+          "resumed": "Has reanudado el objetivo «{{objective}}»",
           "met": "Objetivo cumplido: «{{objective}}»",
           "impossible": "El objetivo «{{objective}}» no se puede cumplir sin ti",
           "cleared": "Has detenido el objetivo «{{objective}}»",
@@ -1777,6 +1844,9 @@
           "stopped": "El bucle «{{prompt}}» se detuvo: una ejecución falló o se detuvo",
           "ended": "El bucle «{{prompt}}» terminó: el bot no dijo cuándo volver a ejecutarlo"
         },
+        "compaction": "Resumió el trabajo anterior para mantener su contexto pequeño · {{before}} → {{after}} tokens",
+        "compactionLine": "Resumió el trabajo anterior",
+        "compactionTokens": "{{before}} → {{after}} tokens",
         "dream": {
           "dreamed": "Ordenó su memoria · {{before}} datos → {{after}}",
           "undone": "Deshiciste el orden · vuelven {{before}} datos"
@@ -1797,6 +1867,19 @@
       "goal": {
         "title": "Objetivo: {{objective}}",
         "progress": "{{step}} de {{limit}} continuaciones",
+        "continuations_one": "{{count}} continuación",
+        "continuations_other": "{{count}} continuaciones",
+        "budget": "{{progress}} · {{used}} de {{budget}} tokens",
+        "resume": "Reanudar",
+        "resumeFailed": "No se ha podido reanudar el objetivo. Inténtalo de nuevo.",
+        "paused": {
+          "blocked": "en pausa, te necesita",
+          "usage_limit": "en pausa, el proveedor del modelo llegó a un límite",
+          "no_progress": "en pausa, sus últimos turnos no hicieron nada",
+          "budget": "en pausa, ha gastado su presupuesto",
+          "stopped": "en pausa, detuviste un turno suyo",
+          "failed": "en pausa, un turno suyo falló"
+        },
         "waiting": "esperando a {{system}} hasta las {{time}}",
         "stop": "Detener objetivo",
         "stopFailed": "No se pudo detener el objetivo. Inténtalo de nuevo.",
@@ -2882,7 +2965,7 @@
       "calendar": "Calendario",
       "milestones": "Hitos",
       "projects": "Proyectos",
-      "todo": "Para hoy"
+      "todo": "TODO"
     },
     "sidebar": {
       "unassigned": "Sin asignar"
@@ -2891,6 +2974,10 @@
       "title": "Tareas",
       "newTask": "Nueva tarea",
       "addTask": "Añadir tarea",
+      "showOlder_one": "Mostrar {{count}} anterior",
+      "showOlder_other": "Mostrar {{count}} anteriores",
+      "showOlder_many": "Mostrar {{count}} anteriores",
+      "hideOlder": "Ocultar anteriores",
       "addTo": "Añadir una tarea a {{column}}",
       "quickPlaceholder": "Título de la tarea",
       "filedUnder": "En {{name}}",
@@ -2992,7 +3079,8 @@
       "deleteFailed": "No se ha podido eliminar la tarea.",
       "loadFailed": "No se ha podido cargar el tablero.",
       "gone": "Esta tarea ya no existe.",
-      "deleting": "Eliminando…"
+      "deleting": "Eliminando…",
+      "focus": "Por hacer"
     },
     "link": {
       "search": "Buscar sesiones",
@@ -3058,20 +3146,33 @@
       "todayWeek": "Hoy · Semana {{week}}",
       "weekNumber": "Semana {{week}}",
       "includeOverdue": "Incluir vencidas",
-      "empty": "Aún no hay nada para este día. Añade una tarea abajo.",
+      "empty": "Aún no hay nada en este día. Añade una tarea abajo o elige algunas con Añadir tareas.",
       "noMatch": "Ninguna tarea coincide con estos filtros.",
       "add": "Añadir una tarea",
       "addLabel": "Añadir una tarea para este día",
       "addFailed": "No se pudo añadir la tarea.",
+      "startSession": "Iniciar una sesión para {{title}}",
       "toggleFailed": "No se pudo actualizar la tarea.",
       "loadFailed": "No se pudieron cargar tus tareas.",
       "state": {
         "todo": "vence hoy",
         "due": "pendiente",
-        "doing": "en curso",
-        "review": "en revisión",
-        "done": "hecha",
-        "overdue": "vencida desde el {{date}}"
+        "overdue": "vencida desde el {{date}}",
+        "since": "en Por hacer desde el {{date}}",
+        "dueOn": "vence el {{date}}"
+      },
+      "schedule": {
+        "button": "Añadir tareas",
+        "title": "Añadir tareas a este día",
+        "for": "Elige las tareas abiertas que quieres poner el {{date}}. Su fecha de vencimiento no cambia.",
+        "search": "Buscar tareas",
+        "noMatch": "Ninguna tarea coincide con «{{query}}».",
+        "none": "Todas las tareas abiertas ya están en este día.",
+        "submit": "Añadir al {{date}}",
+        "failed": "No se pudieron añadir algunas de esas tareas.",
+        "loadFailed": "No se pudieron cargar tus tareas.",
+        "allStatuses": "Todos los estados",
+        "searchStatuses": "Buscar estados"
       },
       "reorder": "Reordenar {{title}}"
     }
@@ -3734,7 +3835,23 @@
       "disconnecting": "Desconectando…",
       "disconnectTitle": "¿Desconectar {{label}}?",
       "disconnectDescription": "Tu host deja de consultar el bot y olvida su token. Tus bots pierden los chats guardados para ellos. El bot sigue siendo tuyo en Telegram; revoca su token en @BotFather para pararlo también allí.",
-      "disconnectFailed": "No se ha podido desconectar el bot."
+      "disconnectFailed": "No se ha podido desconectar el bot.",
+      "answering": {
+        "title": "Te responde",
+        "botLabel": "El bot que te responde en {{label}}",
+        "noBot": "Ningún bot",
+        "search": "Busca un bot",
+        "noMatch": "Ningún bot coincide",
+        "link": "Vincula tu Telegram",
+        "linkAgain": "Vincular de nuevo",
+        "openLink": "Abrir el enlace",
+        "linked": "Tu Telegram está vinculado: aquí solo te responde a ti.",
+        "notLinked": "Vincula tu Telegram para que el bot sepa que eres tú. Hasta entonces no responde a nadie.",
+        "linkReady": "Abre el enlace en Telegram en los próximos diez minutos y pulsa Iniciar. Crea un enlace nuevo si ha caducado.",
+        "failed": "No se ha guardado. Inténtalo de nuevo.",
+        "making": "Creando el enlace…",
+        "newLink": "Nuevo enlace"
+      }
     },
     "about": {
       "title": "Acerca de",

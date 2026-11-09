@@ -394,7 +394,14 @@ export class BotSelfToolsFactory implements BotToolArea {
         const messages = await this.queryBus.execute<
           SearchBotConversationQuery,
           BotMessageEntity[]
-        >(new SearchBotConversationQuery(context.owner, context.botId, input.query, input.limit));
+        >(
+          new SearchBotConversationQuery(
+            context.owner,
+            context.conversationId,
+            input.query,
+            input.limit,
+          ),
+        );
         if (messages.length === 0) {
           return `No message in this chat matches "${input.query}". Try other words, or fewer.`;
         }

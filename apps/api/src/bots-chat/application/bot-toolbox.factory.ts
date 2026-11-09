@@ -9,6 +9,7 @@ import {
 } from '@oppenheimer/shared';
 import { ownerLacksPermission } from '../domain/bot-owner-permission.policy';
 import type { BotPromptTool } from '../domain/bot-prompt.policy';
+import { BotSkillNudge, opensWithSkill, withSkillNudge } from '../domain/bot-skill-learning.policy';
 import { type BotPermissions, toolDecision } from '../domain/bot-tool-permission.policy';
 import { BotAutomationToolsFactory } from './bot-automation-tools.factory';
 import { BotPeerToolsFactory } from './bot-bots-tools.factory';
@@ -142,14 +143,24 @@ export class BotToolboxFactory {
    * let them do now (`BotOwnerPermissionsResolver`), at every call, so a role
    * removed mid-turn stops the next call: a tool outside it stays offered,
    * and its call is refused before it runs or raises a card, in words the
-   * bot passes on.
+   * bot passes on. A turn a person waits on that is offered `save_skill`
+   * is reminded once to save its work as a skill after enough calls
+   * (`BotSkillNudge`).
    */
   tools(
     context: BotToolContext,
     granted: readonly Scope[] | null,
     held: HeldScopes,
   ): BotEngineTool[] {
-    return this.bind(this.offered(granted, standingOf(context)), context, held);
+    const standing = standingOf(context);
+    const offered = this.offered(granted, standing);
+    const tools = this.bind(offered, context, held);
+    if (!offered.some((definition) => definition.name === 'save_skill')) return tools;
+    const nudge = new BotSkillNudge({
+      openedWithSkill: opensWithSkill(context.ranCommand),
+      attended: standing.origin === undefined || isAttended(standing.origin),
+    });
+    return nudging(offered, tools, standing, nudge);
   }
 
   /**
@@ -251,6 +262,36 @@ export class BotToolboxFactory {
     const covered = expandScopes(granted);
     return all.filter((definition) => covered.has(definition.scope));
   }
+}
+
+/**
+ * The turn's tools, each call counted toward the skill reminder
+ * (`25-bots.md` §4.1, 2026-11-09): the one result it is due on carries it
+ * after its words, and the chat takes it back off (`withoutSkillNudge`). One
+ * count for the turn's own tools only: a `delegate` child's are bound apart
+ * (`readOnlyTools`) and never reminded.
+ */
+function nudging(
+  definitions: readonly BotToolDefinition[],
+  tools: readonly BotEngineTool[],
+  standing: BotStanding,
+  nudge: BotSkillNudge,
+): BotEngineTool[] {
+  return tools.map((tool, index) => {
+    const definition = definitions[index];
+    const asked =
+      definition !== undefined &&
+      toolDecision(standing.permissions, definition.traits, standing.preset) === 'ask';
+    return {
+      ...tool,
+      run: async (input, options) => {
+        const result = await tool.run(input, options);
+        return nudge.finished(tool.name, { asked })
+          ? { ...result, content: withSkillNudge(result.content) }
+          : result;
+      },
+    };
+  });
 }
 
 /** Where a bot's tools stand: its preset and what its owner set (`25-bots.md` §5). */

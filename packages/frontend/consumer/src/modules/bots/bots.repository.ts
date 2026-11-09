@@ -350,6 +350,8 @@ function toEvent(dto: NonNullable<BotMessageResponseDto['event']>): BotMessageEv
           }
         : null;
     }
+    case 'compaction':
+      return { kind: 'compaction', tokensBefore: dto.tokensBefore, tokensAfter: dto.tokensAfter };
     case 'loop': {
       const activity = BOT_LOOP_ACTIVITIES.find((candidate) => candidate === dto.activity);
       return activity
@@ -644,6 +646,13 @@ export class BotsRepository {
   clearGoal(id: string): Promise<void> {
     return callApi(BotsErrors.CLEAR_GOAL_FAILED, async (api) => {
       await api.result(heyApiSdk.clearBotGoal({ path: { id } }));
+    });
+  }
+
+  /** Resumes the bot's paused goal: its next continuation is queued. */
+  resumeGoal(id: string): Promise<void> {
+    return callApi(BotsErrors.RESUME_GOAL_FAILED, async (api) => {
+      await api.result(heyApiSdk.resumeBotGoal({ path: { id } }));
     });
   }
 

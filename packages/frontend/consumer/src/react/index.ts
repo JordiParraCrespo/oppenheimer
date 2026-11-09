@@ -35,6 +35,7 @@ export {
   useBotImages,
   useBotLive,
   useBotRoomLeft,
+  useBotSentTexts,
   useBotWaitingMessages,
   useCancelBotTurn,
   useClearBotConversation,
@@ -49,7 +50,7 @@ export {
   useRequestBotMemoryDream,
   useUndoBotMemoryDream,
 } from './bot-dream.queries';
-export { useBotGoal, useClearBotGoal } from './bot-goal.queries';
+export { useBotGoal, useClearBotGoal, useResumeBotGoal } from './bot-goal.queries';
 export { useBotLoop, useClearBotLoop } from './bot-loop.queries';
 export {
   type AddBotPermissionRuleVariables,
@@ -317,6 +318,7 @@ export {
   useSessionTasks,
   useStartTaskSession,
   useSuspensePlan,
+  useSuspensePlanStats,
   useSuspenseStartSession,
   useSuspenseTaskBoard,
   useTasks,
@@ -325,7 +327,9 @@ export {
   useUpdateTask,
 } from './tasks.queries';
 export {
+  useAnswerTelegramAs,
   useLinkTelegram,
+  useOpenTelegramOwnerLink,
   useSuspenseTelegramSettings,
   useUnlinkTelegram,
 } from './telegram.queries';

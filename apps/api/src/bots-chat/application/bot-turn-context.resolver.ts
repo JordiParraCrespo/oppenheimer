@@ -34,7 +34,7 @@ import { withEarlierImages } from '../domain/bot-image.policy';
 import { memoryInMind } from '../domain/bot-memory.policy';
 import { composeBotSystemPrompt } from '../domain/bot-prompt.policy';
 import { composeTurnMessage, withBuiltInSkills } from '../domain/bot-skill.policy';
-import { BOT_TURN_MAX_STEPS, type BotTurnEntity } from '../domain/bot-turn.entity';
+import type { BotTurnEntity } from '../domain/bot-turn.entity';
 import { BotTurnBudget } from '../domain/bot-turn-budget.policy';
 import { composeTurnContext, withTurnContext } from '../domain/bot-turn-context.policy';
 import type { OwnerHost, OwnerHostsPort } from '../infrastructure/owner-hosts.port';
@@ -48,6 +48,7 @@ import { BotRuleReviewerFactory } from './bot-rule-reviewer.factory';
 import { BotSubagentRunnerFactory } from './bot-subagent-runner.factory';
 import type { BotToolContext } from './bot-tool.factory';
 import { BotToolboxFactory } from './bot-toolbox.factory';
+import { BotTurnChannelPolicy } from './bot-turn-channel.policy';
 import { BotTurnOpeningResolver } from './bot-turn-opening.resolver';
 
 const ENGINE_EFFORTS: readonly string[] = ['low', 'medium', 'high', 'xhigh', 'max'];
@@ -83,6 +84,7 @@ export class BotTurnContextResolver {
     private readonly owners: BotOwnerScopeResolver,
     @Inject(OWNER_HOSTS) private readonly hosts: OwnerHostsPort,
     @Inject(BOT_TURN_REPOSITORY) private readonly turns: BotTurnRepositoryPort,
+    private readonly channels: BotTurnChannelPolicy,
     private readonly toolbox: BotToolboxFactory,
     private readonly approvals: BotApprovalRequestFactory,
     private readonly permissions: BotOwnerPermissionsResolver,
@@ -96,12 +98,16 @@ export class BotTurnContextResolver {
   private readonly logger = new Logger(BotTurnContextResolver.name);
 
   async resolve(turn: BotTurnEntity, now: Date): Promise<BotTurnShape<BotTurnContext> | null> {
+    if (!(await this.channels.answerable(turn))) return null;
     const { prompt, images, command, message } = await this.opening.resolve(turn);
     const bot = await this.access.bot(turn.organizationId, turn.botId);
     const credential = await this.access.credential(turn.organizationId, turn.provider, now);
     const owner = await this.owners.resolve(turn.organizationId, bot.createdByUserId);
-    const summarized = await this.summaries.findForBot(turn.organizationId, bot.id);
-    const summary = summarized.isSome() ? summarized.unwrap() : null;
+    // The summary covers the console chat; a channel's conversation is read without one.
+    const summarized = turn.inConsole
+      ? await this.summaries.findForBot(turn.organizationId, bot.id)
+      : null;
+    const summary = summarized?.isSome() ? summarized.unwrap() : null;
     const [documents, facts, skills, earlier, hosts, lastContext, permissions, about] =
       await Promise.all([
         this.documents.findAllForTurn(turn.organizationId, bot.id),
@@ -109,7 +115,7 @@ export class BotTurnContextResolver {
         this.skills.findAllForTurn(turn.organizationId, bot.id),
         this.messages.findHistory(
           turn.organizationId,
-          bot.id,
+          turn.conversationId,
           turn.id,
           summary?.coversThroughMessageId ?? null,
           BOT_HISTORY_READ_MAX,
@@ -133,6 +139,7 @@ export class BotTurnContextResolver {
         owner,
         organizationId: turn.organizationId,
         botId: bot.id,
+        conversationId: turn.conversationId,
         turnId: turn.id,
         homeHostId: bot.homeHostId,
         timeZone: turn.timeZone ?? 'UTC',
@@ -168,8 +175,9 @@ export class BotTurnContextResolver {
       documents.find((document) => document.name === name)?.content ?? '';
     const request: BotTurnContext = {
       ...model,
-      // A bot has one conversation: its id names it to the provider's prompt cache.
-      cacheKey: bot.id,
+      // Each conversation names itself to the provider's prompt cache; the
+      // console chat's id is the bot's.
+      cacheKey: turn.conversationId,
       systemPrompt: composeBotSystemPrompt({
         name: bot.name,
         description: bot.description,
@@ -197,12 +205,15 @@ export class BotTurnContextResolver {
           hosts,
           lastContext,
           memory: { log: inMind.log, toRecall: inMind.toRecall },
+          channel: turn.origin === 'telegram' ? 'telegram' : null,
         }),
         composeTurnMessage(command, withBuiltInSkills(skills), prompt),
       ),
       images,
       tools,
-      maxSteps: BOT_TURN_MAX_STEPS,
+      // No step limit: the turn runs until the model answers, compacting
+      // against the window its last turn reported.
+      contextWindow: lastContext?.window ?? null,
     };
     return this.approvalStarted.shape(message, request);
   }

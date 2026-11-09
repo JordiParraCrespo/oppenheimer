@@ -801,6 +801,7 @@ See `product/versions/mvp/25-bots.md`.
 | `BOTS_039` <a id="bots_039" />       | The bot already has a skill with that name | 409  |
 | `BOTS_040` <a id="bots_040" />       | The bot has as many skills as it can keep | 422  |
 | `BOTS_041` <a id="bots_041" />       | The bot has no dream to undo | 404  |
+| `BOTS_042` <a id="bots_042" />       | The bot answers on a Telegram bot | 409  |
 
 `BOTS_001`, `BOTS_003` and `BOTS_008` are also returned for a bot, group or fact in
 another workspace.
@@ -891,13 +892,16 @@ a card already answered or dismissed, or retired because a message reached
 the bot first.
 
 `BOTS_038` to `BOTS_040` are a bot's skills (Settings → Skills, and the bot's
-own `save_skill`). `BOTS_038` is a skill that is not this bot's or not in the
+own `save_skill` and `patch_skill`). `BOTS_038` is a skill that is not this bot's or not in the
 caller's workspace. `BOTS_039` is a name another of the bot's skills has: a
 skill's name is its slash command, so rename one of them. `BOTS_040` is a
 skill past the bot's fifty: delete one first.
 
 `BOTS_041` is an undo of a bot's dream (Settings → Memory) when its memory was
 never dreamed, or its latest dream was undone already: only the latest can be.
+
+`BOTS_042` is a delete of a bot that answers you on a Telegram bot. Choose
+another bot, or none, to answer there (Settings → Telegram), then delete it.
 
 A home host the caller may not use answers `HOSTS_001`, as a session's does.
 
@@ -1130,6 +1134,10 @@ refused it, often because the person blocked the bot or the bot left the
 group); one whose detail says the host did not answer in time may still have
 sent the message. `TELEGRAM_009` is a bot's share of a day (200 messages
 through one Telegram bot).
+
+Choosing the bot that answers you on a Telegram bot answers `BOTS_001` for a
+bot that is not yours. A one-time owner link for a bot the host has not
+checked yet answers `TELEGRAM_007`: its Telegram name is not known until then.
 
 ## Cloud agents
 

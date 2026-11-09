@@ -7,7 +7,7 @@
     "calendar": "Calendario",
     "milestones": "Hitos",
     "projects": "Proyectos",
-    "todo": "Para hoy"
+    "todo": "TODO"
   },
   "sidebar": {
     "unassigned": "Sin asignar"
@@ -16,6 +16,10 @@
     "title": "Tareas",
     "newTask": "Nueva tarea",
     "addTask": "Añadir tarea",
+    "showOlder_one": "Mostrar {{count}} anterior",
+    "showOlder_other": "Mostrar {{count}} anteriores",
+    "showOlder_many": "Mostrar {{count}} anteriores",
+    "hideOlder": "Ocultar anteriores",
     "addTo": "Añadir una tarea a {{column}}",
     "quickPlaceholder": "Título de la tarea",
     "filedUnder": "En {{name}}",
@@ -117,7 +121,8 @@
     "deleteFailed": "No se ha podido eliminar la tarea.",
     "loadFailed": "No se ha podido cargar el tablero.",
     "gone": "Esta tarea ya no existe.",
-    "deleting": "Eliminando…"
+    "deleting": "Eliminando…",
+    "focus": "Por hacer"
   },
   "link": {
     "search": "Buscar sesiones",
@@ -183,20 +188,33 @@
     "todayWeek": "Hoy · Semana {{week}}",
     "weekNumber": "Semana {{week}}",
     "includeOverdue": "Incluir vencidas",
-    "empty": "Aún no hay nada para este día. Añade una tarea abajo.",
+    "empty": "Aún no hay nada en este día. Añade una tarea abajo o elige algunas con Añadir tareas.",
     "noMatch": "Ninguna tarea coincide con estos filtros.",
     "add": "Añadir una tarea",
     "addLabel": "Añadir una tarea para este día",
     "addFailed": "No se pudo añadir la tarea.",
+    "startSession": "Iniciar una sesión para {{title}}",
     "toggleFailed": "No se pudo actualizar la tarea.",
     "loadFailed": "No se pudieron cargar tus tareas.",
     "state": {
       "todo": "vence hoy",
       "due": "pendiente",
-      "doing": "en curso",
-      "review": "en revisión",
-      "done": "hecha",
-      "overdue": "vencida desde el {{date}}"
+      "overdue": "vencida desde el {{date}}",
+      "since": "en Por hacer desde el {{date}}",
+      "dueOn": "vence el {{date}}"
+    },
+    "schedule": {
+      "button": "Añadir tareas",
+      "title": "Añadir tareas a este día",
+      "for": "Elige las tareas abiertas que quieres poner el {{date}}. Su fecha de vencimiento no cambia.",
+      "search": "Buscar tareas",
+      "noMatch": "Ninguna tarea coincide con «{{query}}».",
+      "none": "Todas las tareas abiertas ya están en este día.",
+      "submit": "Añadir al {{date}}",
+      "failed": "No se pudieron añadir algunas de esas tareas.",
+      "loadFailed": "No se pudieron cargar tus tareas.",
+      "allStatuses": "Todos los estados",
+      "searchStatuses": "Buscar estados"
     },
     "reorder": "Reordenar {{title}}"
   }

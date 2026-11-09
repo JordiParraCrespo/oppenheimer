@@ -1,6 +1,11 @@
 import type { BotEngineEvent, BotEngineFailure } from '@oppenheimer/backend-agents';
 import { AppError } from '@oppenheimer/backend-core';
-import type { BotAttachment, BotTurnFailure } from '@oppenheimer/shared';
+import {
+  BOT_PROVIDER_CATALOG,
+  BOT_TURN_IDLE_LIMIT_MS,
+  type BotAttachment,
+  type BotTurnFailure,
+} from '@oppenheimer/shared';
 import { BotErrors } from '../../bots/domain/bots.errors';
 import { MAIL_DRAFT_DATA_KEY } from '../bot-mail-tool.mapper';
 import { toMailDraft, toShownImages, toSubagentRuns } from '../bot-message.mapper';
@@ -17,15 +22,14 @@ import {
   rateLimitOfData,
 } from '../domain/bot-rate-limit.policy';
 import { SHOWN_IMAGES_DATA_KEY } from '../domain/bot-shown-image.policy';
+import { withoutSkillNudge } from '../domain/bot-skill-learning.policy';
 import { SUBAGENT_DATA_KEY } from '../domain/bot-subagent.policy';
 import { startOf } from '../domain/bot-tool-text.policy';
 import {
-  BOT_TURN_MAX_STEPS,
-  BOT_TURN_TIME_LIMIT_MS,
+  BOT_TURN_LOOP_REFUSALS,
   type BotTurnContext,
   type BotTurnEntity,
   type BotTurnPlanLimits,
-  type TurnLimitFailure,
 } from '../domain/bot-turn.entity';
 import type { BotStreamNudge } from '../infrastructure/bot-stream.port';
 import type { TurnInterruption } from './turn-cancel-watch.factory';
@@ -58,8 +62,32 @@ export interface TranscriptOutcome {
   context: BotTurnContext | null;
   /** A subscription's windows as its last answer said them. */
   planLimits: BotTurnPlanLimits | null;
-  /** The latest moment a system its tools called asked us to wait until; null when none did. */
+  /**
+   * The latest moment a system asked us to wait until: one its tools called,
+   * or the model provider that refused the turn for a limit
+   * (`providerLimitOf`); null when none did.
+   */
   limited: BotRateLimit | null;
+}
+
+/**
+ * When the model provider that refused a turn for a limit may be called
+ * again: the time it named with its refusal, or, for a spent plan, when the
+ * spent window (at 100%) resets; null when it said neither, which only the
+ * person can wait out.
+ */
+export function providerResetOf(
+  done: Extract<BotEngineEvent, { type: 'done' }>,
+  planLimits: BotTurnPlanLimits | null,
+): Date | null {
+  if (done.reason !== 'failed') return null;
+  if (done.rateLimit?.resetAt) return done.rateLimit.resetAt;
+  if (done.failure !== 'usage_limit' && done.failure !== 'rate_limit') return null;
+  const spent = [planLimits?.fiveHour, planLimits?.sevenDay].filter(
+    (window) => window && window.usedPercent >= 100 && window.resetsAt,
+  );
+  const resets = spent.map((window) => window?.resetsAt?.getTime() ?? 0);
+  return resets.length > 0 ? new Date(Math.max(...resets)) : null;
 }
 
 /**
@@ -118,6 +146,8 @@ export class TurnTranscript {
         return this.finished(event);
       case 'retrying':
         return [{ kind: 'retrying', reason: event.reason }];
+      case 'compacted':
+        return [{ kind: 'insert', message: this.compaction(event) }];
       case 'steered':
         this.activity = null;
         return event.steers.map((steer) => ({
@@ -134,6 +164,11 @@ export class TurnTranscript {
         this.outcome.planLimits = event.limits ?? this.outcome.planLimits;
         return [];
       case 'done': {
+        const reset = providerResetOf(event, this.outcome.planLimits);
+        if (reset) {
+          const system = BOT_PROVIDER_CATALOG[this.turn.provider].label;
+          this.outcome.limited = laterLimit(this.outcome.limited, { system, resetAt: reset });
+        }
         this.outcome.reason = event.reason;
         this.outcome.error = event.reason === 'failed' ? (event.error ?? null) : null;
         this.outcome.failure = event.reason === 'failed' ? (event.failure ?? 'other') : null;
@@ -188,13 +223,15 @@ export class TurnTranscript {
   }
 
   /**
-   * A call's end: its words, cut, and what the tool said it made: the
+   * A call's end: its words, cut and without the skill reminder, and what the tool said it made: the
    * session it started, the children it ran, whose tokens are the turn's
    * cost too, the draft it saved, or the images it showed, which follow the
    * line as a message.
    */
   private finished(event: Extract<BotEngineEvent, { type: 'tool.finished' }>): TranscriptWrite[] {
-    const { callId, output, isError, data } = event;
+    const { callId, isError, data } = event;
+    // The skill reminder is for the model; the person's chat keeps the tool's own words.
+    const output = withoutSkillNudge(event.output);
     const line = this.running.get(callId);
     const step = line?.steps.find((candidate) => candidate.callId === callId);
     if (!line || !step) return [];
@@ -226,6 +263,29 @@ export class TurnTranscript {
     return writes;
   }
 
+  /**
+   * The line where the turn folded what it had read: the steps after it go on
+   * a new activity line, so each line's calls read in order around it.
+   */
+  private compaction(event: Extract<BotEngineEvent, { type: 'compacted' }>): BotMessageEntity {
+    this.activity = null;
+    return BotMessageEntity.createNew({
+      organizationId: this.turn.organizationId,
+      botId: this.turn.botId,
+      conversationId: this.turn.conversationId,
+      turnId: this.turn.id,
+      role: 'event',
+      content: `Earlier in this turn, what you had read was summarized to keep your context small (about ${Math.round(event.tokensBefore / 1000)}k tokens down to ${Math.round(event.tokensAfter / 1000)}k).`,
+      event: {
+        kind: 'compaction',
+        tokensBefore: Math.max(0, Math.round(event.tokensBefore)),
+        tokensAfter: Math.max(0, Math.round(event.tokensAfter)),
+      },
+      steps: [],
+      position: this.position++,
+    });
+  }
+
   private message(
     role: 'assistant' | 'activity',
     content: string,
@@ -235,6 +295,7 @@ export class TurnTranscript {
     return BotMessageEntity.createNew({
       organizationId: this.turn.organizationId,
       botId: this.turn.botId,
+      conversationId: this.turn.conversationId,
       turnId: this.turn.id,
       role,
       content,
@@ -260,16 +321,16 @@ export function storedMessageId(
   return write.kind === 'steer' ? write.messageId : write.message.id;
 }
 
-/** Why a turn that used all its steps failed, in words a person can act on. */
-export const STEP_LIMIT_ERROR = `Stopped after ${BOT_TURN_MAX_STEPS} steps, the limit for one turn. Ask for a smaller step, or say go on to continue.`;
+/** Why a turn whose model went silent failed, in words a person can act on. */
+export const STALLED_ERROR = `Stopped: the model sent nothing for ${BOT_TURN_IDLE_LIMIT_MS / 60_000} minutes while no tool ran. This is usually temporary; send it again, or say go on.`;
 
-/** Why a turn the time limit stopped failed, in words a person can act on. */
-export const TIME_LIMIT_ERROR = `Stopped after ${BOT_TURN_TIME_LIMIT_MS / 60_000} minutes, the limit for one turn. Ask for a smaller step, or split the request.`;
+/** Why a turn the loop guard stopped failed, in words a person can act on. */
+export const LOOP_ERROR = `Stopped: the turn kept repeating calls that changed nothing, and ${BOT_TURN_LOOP_REFUSALS} of them were refused. Say what to do differently.`;
 
-/** Each bound of one turn's words to the person (`TURN_LIMIT_FAILURES`). */
-const TURN_LIMIT_ERRORS: Readonly<Record<TurnLimitFailure, string>> = {
-  time_limit: TIME_LIMIT_ERROR,
-  step_limit: STEP_LIMIT_ERROR,
+/** The words of each way a turn is stopped from outside the engine, other than Stop. */
+const INTERRUPTION_ERRORS: Readonly<Record<Exclude<TurnInterruption, 'stop'>, string>> = {
+  stalled: STALLED_ERROR,
+  loop: LOOP_ERROR,
 };
 
 /** How a turn ends: its status, and for a failure its words and kind. */
@@ -280,25 +341,30 @@ export interface TurnEnding {
 }
 
 /**
- * How a turn ends, from what stopped it outside (Stop, its clock) and how its
- * engine said it ended. Stop cancels it. A bound of one turn fails it with its
- * words, whether the clock stopped it from outside or the engine ran out of
- * steps (which completed it, in silence, until 2026-11-08); what it wrote is
- * kept either way. Otherwise it ends as the engine said. A new bound is a
- * member of `TURN_LIMIT_FAILURES` with its words above, not a branch here.
+ * How a turn ends, from what stopped it outside (Stop, a silent model, the
+ * loop guard) and how its engine said it ended. Stop cancels it; a stall or
+ * a loop fails it with its words, and what it wrote is kept. A turn has no
+ * step limit since 2026-11-09; an engine that still ends `max_steps` (a run
+ * that asked for one) fails as `step_limit`. Otherwise it ends as the engine
+ * said. A new way to stop a turn is a member of `TurnInterruption` with its
+ * words above, not a branch here.
  */
 export function turnEnding(
   interruption: TurnInterruption | null,
   engine: Pick<TranscriptOutcome, 'reason' | 'error' | 'failure'>,
 ): TurnEnding {
   if (interruption === 'stop') return { status: 'cancelled', error: null, failure: null };
-  if (interruption === 'time_limit') return limitEnding('time_limit');
-  if (engine.reason === 'max_steps') return limitEnding('step_limit');
+  if (interruption) {
+    return { status: 'failed', error: INTERRUPTION_ERRORS[interruption], failure: interruption };
+  }
+  if (engine.reason === 'max_steps') {
+    return {
+      status: 'failed',
+      error: 'Stopped at the step limit this run was given.',
+      failure: 'step_limit',
+    };
+  }
   return { status: engine.reason, error: engine.error, failure: engine.failure };
-}
-
-function limitEnding(limit: TurnLimitFailure): TurnEnding {
-  return { status: 'failed', error: TURN_LIMIT_ERRORS[limit], failure: limit };
 }
 
 /**

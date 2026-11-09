@@ -1,6 +1,8 @@
 import {
   heyApiSdk,
   type MilestoneResponseDto,
+  type PlanStatsResponseDto,
+  type PlanStatsTotalsDto,
   type TaskResponseDto,
 } from '@oppenheimer/api-client';
 import { callApi } from '@oppenheimer/frontend-core';
@@ -11,6 +13,7 @@ import {
   toCreateSessionRequest,
   toStartCloudSessionRequest,
 } from '../sessions/sessions.repository';
+import type { PlanStats, PlanStatsQuery, PlanStatsTotals } from './plan-stats';
 import {
   MilestoneEntity,
   type MilestoneInput,
@@ -21,6 +24,29 @@ import {
   type TaskMove,
 } from './task.entity';
 import { TasksErrors } from './tasks.errors';
+
+/** A period's totals, with what was not measured as `null` whether the API left it out or sent it. */
+function toTotals(data: PlanStatsTotalsDto): PlanStatsTotals {
+  const { tasksCompleted, tasksCreated, tokens, costUsd } = data;
+  return { tasksCompleted, tasksCreated, tokens: tokens ?? null, costUsd: costUsd ?? null };
+}
+
+function toPlanStats(data: PlanStatsResponseDto): PlanStats {
+  const { current, previous } = data;
+  return {
+    weeks: data.weeks,
+    current: {
+      ...toTotals(current),
+      completedByWeek: current.completedByWeek,
+      createdByWeek: current.createdByWeek,
+      tokensByModel:
+        current.tokensByModel?.map((row) => ({ ...row, model: row.model ?? null })) ?? null,
+      costByWeek: current.costByWeek ?? null,
+    },
+    previous: previous ? toTotals(previous) : null,
+    tokensMeasured: data.tokensMeasured,
+  };
+}
 
 function toTask(data: TaskResponseDto): Task {
   return new TaskEntity(
@@ -43,6 +69,7 @@ function toTask(data: TaskResponseDto): Task {
     new Date(data.updatedAt),
     data.blockedReason ?? null,
     data.version,
+    data.focusDate ?? null,
   );
 }
 
@@ -155,6 +182,15 @@ export class TasksRepository {
     return callApi(TasksErrors.LINK_FAILED, async (api) => {
       const data = await api.body(heyApiSdk.unlinkTaskSession({ path: { id, sessionId } }));
       return toTask(data);
+    });
+  }
+
+  findStats(query: PlanStatsQuery): Promise<PlanStats> {
+    return callApi(TasksErrors.FETCH_STATS_FAILED, async (api) => {
+      const data = await api.body(
+        heyApiSdk.findPlanStats({ query: { ...query, compare: 'true' } }),
+      );
+      return toPlanStats(data);
     });
   }
 

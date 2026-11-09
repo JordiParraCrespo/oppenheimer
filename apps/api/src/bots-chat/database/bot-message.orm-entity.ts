@@ -12,6 +12,7 @@ import {
 /** One thing a bot's chat draws (`1791001800000-AddBotTurns`). */
 @Entity('bot_message')
 @Index('IDX_bot_message_bot', ['organizationId', 'botId', 'createdAt', 'id'])
+@Index('IDX_bot_message_conversation', ['organizationId', 'conversationId', 'createdAt', 'id'])
 @Index('IDX_bot_message_turn', ['organizationId', 'turnId', 'position'])
 // GIN over to_tsvector('simple', "content") for search_chat (`AddBotMessageSearch`).
 @Index('IDX_bot_message_search', { synchronize: false })
@@ -28,6 +29,10 @@ export class BotMessageOrmEntity {
 
   @Column({ type: 'uuid' })
   botId!: string;
+
+  /** Its conversation (`1794241820830-AnswerOnTelegram`): the bot's id for its console chat. */
+  @Column({ type: 'uuid' })
+  conversationId!: string;
 
   /** Null only for an event outside any turn (`1791003100000-AddRoutineActivityLines`). */
   @Column({ type: 'uuid', nullable: true })

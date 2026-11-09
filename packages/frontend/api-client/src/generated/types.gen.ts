@@ -2831,6 +2831,10 @@ export type TaskResponseDto = {
      */
     dueDate?: string | null;
     dueTime?: string | null;
+    /**
+     * The day the person means to work on it, apart from when it is due. To do lists it that day and every later one until it is done.
+     */
+    focusDate?: string | null;
     completedAt?: string | null;
     /**
      * Why the task waits on a person; null when it does not. Done clears it.
@@ -2857,6 +2861,7 @@ export type CreateTaskRequest = {
     milestoneId?: string | null;
     dueDate?: string | null;
     dueTime?: string | null;
+    focusDate?: string | null;
 };
 
 export type UpdateTaskRequest = {
@@ -2866,6 +2871,7 @@ export type UpdateTaskRequest = {
     milestoneId?: string | null;
     dueDate?: string | null;
     dueTime?: string | null;
+    focusDate?: string | null;
     blockedReason?: string | null;
     expectedVersion?: number;
 };
@@ -3325,6 +3331,14 @@ export type TelegramAccountResponseDto = {
      */
     statusReason: string | null;
     /**
+     * The Oppenheimer bot that answers the owner here; null while none does.
+     */
+    answeringBotId: string | null;
+    /**
+     * Whether the owner’s Telegram account is recorded, by the one-time `start` link.
+     */
+    ownerLinked: boolean;
+    /**
      * When it was first connected.
      */
     linkedAt: string;
@@ -3334,6 +3348,21 @@ export type LinkTelegramRequest = {
     hostId: string;
     token: string;
     label?: string;
+};
+
+export type TelegramOwnerLinkResponseDto = {
+    /**
+     * Opens the bot in Telegram and sends it `/start` with the one-time code.
+     */
+    url: string;
+    /**
+     * When the link stops working: ten minutes after it was made.
+     */
+    expiresAt: string;
+};
+
+export type UpdateTelegramAccountRequest = {
+    answeringBotId: string | null;
 };
 
 export type PullRequestLaneReasonDto = {
@@ -4319,7 +4348,7 @@ export type BotGoalEventResponseDto = {
     /**
      * `continued` opens a continuation turn; the others say how the goal ended outside any turn: the reviewer found it met (`met`) or out of reach without the person (`impossible`), stopped by its owner (`cleared`), out of continuations (`exhausted`), or a turn of it failed or was stopped (`stopped`).
      */
-    activity: 'continued' | 'met' | 'impossible' | 'cleared' | 'exhausted' | 'stopped';
+    activity: 'continued' | 'met' | 'impossible' | 'cleared' | 'exhausted' | 'stopped' | 'paused' | 'resumed';
     goalId: string;
     /**
      * The goal's objective at the time.
@@ -4330,9 +4359,9 @@ export type BotGoalEventResponseDto = {
      */
     step: number;
     /**
-     * The continuations the goal may take.
+     * The continuations the goal may take; null for a goal with no limit (every goal since 2026-11-09).
      */
-    limit: number;
+    limit: number | null;
     /**
      * For `continued`, `met`, `impossible` and `exhausted`: the reviewer's reason in its words, null when it gave none. For `stopped`: the status of the turn that ended it, or `access_lost`.
      */
@@ -4379,6 +4408,18 @@ export type BotDreamEventResponseDto = {
      * The facts it wrote in their place.
      */
     factsAfter: number;
+};
+
+export type BotCompactionEventResponseDto = {
+    kind: 'compaction';
+    /**
+     * The tokens the next call would have been sent before the fold, estimated.
+     */
+    tokensBefore: number;
+    /**
+     * The tokens it is sent after it, estimated.
+     */
+    tokensAfter: number;
 };
 
 export type BotSubagentRunResponseDto = {
@@ -4491,7 +4532,7 @@ export type BotMessageResponseDto = {
     /**
      * What an event says happened, by `kind`; null on every other role.
      */
-    event: BotApprovalEventResponseDto | BotQuestionEventResponseDto | BotRoutineEventResponseDto | BotPeerMessageEventResponseDto | BotPeerReplyEventResponseDto | BotSessionEventResponseDto | BotPullRequestEventResponseDto | BotGoalEventResponseDto | BotLoopEventResponseDto | BotDreamEventResponseDto | null;
+    event: BotApprovalEventResponseDto | BotQuestionEventResponseDto | BotRoutineEventResponseDto | BotPeerMessageEventResponseDto | BotPeerReplyEventResponseDto | BotSessionEventResponseDto | BotPullRequestEventResponseDto | BotGoalEventResponseDto | BotLoopEventResponseDto | BotDreamEventResponseDto | BotCompactionEventResponseDto | null;
     /**
      * The images a message of yours carries, in the order attached; read each from `GET /bots/:id/attachments/:attachmentId/content`. Empty on every other role.
      */
@@ -4537,7 +4578,7 @@ export type BotTurnResponseDto = {
     /**
      * What kind of failure it was, so a client can say whether sending it again can help; null unless it failed.
      */
-    failure: 'rate_limit' | 'usage_limit' | 'credential' | 'refused' | 'unavailable' | 'time_limit' | 'step_limit' | 'interrupted' | 'storage' | 'other' | null;
+    failure: 'rate_limit' | 'usage_limit' | 'credential' | 'refused' | 'unavailable' | 'time_limit' | 'step_limit' | 'stalled' | 'loop' | 'interrupted' | 'storage' | 'other' | null;
     inputTokens: number;
     outputTokens: number;
     /**
@@ -4589,6 +4630,17 @@ export type SendBotMessageRequest = {
     steer?: boolean;
 };
 
+export type BotGoalPauseReason = 'blocked' | 'usage_limit' | 'no_progress' | 'budget' | 'stopped' | 'failed';
+
+export type BotGoalPausedResponseDto = {
+    reason: BotGoalPauseReason;
+    /**
+     * Why, in the bot’s or the reviewer’s words; null when only the reason says it.
+     */
+    note: string | null;
+    at: string;
+};
+
 export type BotGoalWaitingResponseDto = {
     /**
      * The system limiting our requests ("Gmail", "GitHub").
@@ -4611,9 +4663,21 @@ export type BotGoalResponseDto = {
      */
     continuations: number;
     /**
-     * The continuation turns it may queue.
+     * The continuation turns it may queue; null when it has no limit (every goal since 2026-11-09).
      */
-    limit: number;
+    limit: number | null;
+    /**
+     * The tokens its turns have spent, input and output.
+     */
+    tokensUsed: number;
+    /**
+     * The tokens it may spend before it pauses; null when it has no budget.
+     */
+    tokenBudget: number | null;
+    /**
+     * Why it is paused; null while it runs. The owner resumes it.
+     */
+    paused: BotGoalPausedResponseDto | null;
     createdAt: string;
     /**
      * A turn of the goal ended on a system’s rate limit, and its next decision waits until then; null when nothing holds it.
@@ -13528,6 +13592,45 @@ export type LinkTelegramResponses = {
 
 export type LinkTelegramResponse = LinkTelegramResponses[keyof LinkTelegramResponses];
 
+export type OpenTelegramOwnerLinkData = {
+    body?: never;
+    path: {
+        /**
+         * The connected Telegram bot.
+         */
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/telegram/accounts/{id}/owner-link';
+};
+
+export type OpenTelegramOwnerLinkErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * TELEGRAM_001 — No such Telegram bot
+     */
+    404: ProblemDetailsDto;
+    /**
+     * TELEGRAM_007 — The host has not checked the bot yet
+     */
+    409: ProblemDetailsDto;
+};
+
+export type OpenTelegramOwnerLinkError = OpenTelegramOwnerLinkErrors[keyof OpenTelegramOwnerLinkErrors];
+
+export type OpenTelegramOwnerLinkResponses = {
+    201: TelegramOwnerLinkResponseDto;
+};
+
+export type OpenTelegramOwnerLinkResponse = OpenTelegramOwnerLinkResponses[keyof OpenTelegramOwnerLinkResponses];
+
 export type RemoveTelegramAccountData = {
     body?: never;
     path: {
@@ -13558,6 +13661,43 @@ export type RemoveTelegramAccountResponses = {
 };
 
 export type RemoveTelegramAccountResponse = RemoveTelegramAccountResponses[keyof RemoveTelegramAccountResponses];
+
+export type UpdateTelegramAccountData = {
+    body: UpdateTelegramAccountRequest;
+    path: {
+        /**
+         * The connected Telegram bot.
+         */
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/telegram/accounts/{id}';
+};
+
+export type UpdateTelegramAccountErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * BOTS_001 — No such bot of the caller’s
+     *
+     * TELEGRAM_001 — No such Telegram bot
+     */
+    404: ProblemDetailsDto;
+};
+
+export type UpdateTelegramAccountError = UpdateTelegramAccountErrors[keyof UpdateTelegramAccountErrors];
+
+export type UpdateTelegramAccountResponses = {
+    200: TelegramAccountResponseDto;
+};
+
+export type UpdateTelegramAccountResponse = UpdateTelegramAccountResponses[keyof UpdateTelegramAccountResponses];
 
 export type FindPullRequestsData = {
     body?: never;
@@ -14395,6 +14535,10 @@ export type DeleteBotErrors = {
      * BOTS_001 — Bot not found
      */
     404: ProblemDetailsDto;
+    /**
+     * BOTS_042 — The bot answers on a Telegram bot
+     */
+    409: ProblemDetailsDto;
 };
 
 export type DeleteBotError = DeleteBotErrors[keyof DeleteBotErrors];
@@ -15714,6 +15858,41 @@ export type FindBotGoalResponses = {
 };
 
 export type FindBotGoalResponse = FindBotGoalResponses[keyof FindBotGoalResponses];
+
+export type ResumeBotGoalData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/bots/{id}/goal/resume';
+};
+
+export type ResumeBotGoalErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * BOTS_001 — Bot not found
+     */
+    404: ProblemDetailsDto;
+};
+
+export type ResumeBotGoalError = ResumeBotGoalErrors[keyof ResumeBotGoalErrors];
+
+export type ResumeBotGoalResponses = {
+    /**
+     * The goal runs, or there was no paused goal.
+     */
+    204: void;
+};
+
+export type ResumeBotGoalResponse = ResumeBotGoalResponses[keyof ResumeBotGoalResponses];
 
 export type ClearBotLoopData = {
     body?: never;

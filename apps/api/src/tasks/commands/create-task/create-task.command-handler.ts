@@ -37,6 +37,7 @@ export class CreateTaskCommandHandler implements ICommandHandler<CreateTaskComma
       notes: input.notes,
       dueDate: input.dueDate,
       dueTime: input.dueTime,
+      focusDate: input.focusDate,
       createdByUserId: userId,
       actor,
       idempotencyKey,

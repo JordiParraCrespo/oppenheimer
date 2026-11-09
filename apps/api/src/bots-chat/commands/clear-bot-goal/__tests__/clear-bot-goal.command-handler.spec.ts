@@ -40,7 +40,7 @@ describe('ClearBotGoalCommandHandler', () => {
       botId: 'bot-1',
       originTurnId: 'turn-0',
       objective: 'Triage the bugs',
-      limit: 3,
+      tokenBudget: null,
       credentialScopes: null,
       timeZone: null,
     });

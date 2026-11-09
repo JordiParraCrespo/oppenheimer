@@ -44,6 +44,10 @@ export function ConsoleDialogs() {
             close();
             request.onSaved?.(project);
           }}
+          onDeleted={() => {
+            close();
+            request.onDeleted?.();
+          }}
         />
       ) : request.kind === 'add-host' ? (
         <AddHostDialog

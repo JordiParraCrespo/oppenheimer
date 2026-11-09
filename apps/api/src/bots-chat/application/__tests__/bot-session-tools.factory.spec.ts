@@ -153,6 +153,7 @@ function cursorSession(): WorkSessionEntity {
 function cloudSession(
   cloudSessionId: string | null,
   agent: 'claude-code' | 'codex' = 'claude-code',
+  origin: 'person' | 'bot' = 'person',
 ): WorkSessionEntity {
   const session = WorkSessionEntity.request({
     organizationId: 'org-1',
@@ -162,6 +163,7 @@ function cloudSession(
     slug: 'bold-otter-3f9a7k',
     agent,
     place: 'cloud',
+    origin,
   });
   if (cloudSessionId) {
     session.recordEvent({
@@ -577,6 +579,16 @@ describe('BotSessionToolsFactory', () => {
     expect(commandBus.execute.mock.calls[0][0]).toMatchObject({ scope: owner, sessionId: HOME });
   });
 
+  // What breaks this: an offline host's stop was answered "sent when it comes
+  // back", but the API sends again only owed launches and closes, never a stop.
+  it('does not promise a stop to an offline host, and tells the bot to check and stop again', async () => {
+    const { commandBus, call, session } = setup('full');
+    commandBus.execute.mockResolvedValueOnce({ sessionId: session.id, hints: ['host_offline'] });
+    const result = await call('stop_session', { session_id: session.id });
+    expect(result.content).toContain('the stop did not reach it and is not sent again');
+    expect(result.content).not.toContain('when it comes back');
+  });
+
   it('asks before prompting a session, the card naming the session and the words', async () => {
     const { commandBus, approvals, call, session } = setup('auto');
     await call('send_to_session', { session_id: session.id, text: 'Now run the tests' });
@@ -665,6 +677,16 @@ describe('BotSessionToolsFactory', () => {
       });
       expect(result.isError).toBeFalsy();
       expect(result.content).toContain(`Asked session ${failed.id} to close.`);
+    });
+
+    // What breaks this: a cloud session's close was answered "closes once its
+    // host hears it", though it has no host and was already closed.
+    it('says a cloud session is closed, not that it waits on a host', async () => {
+      const { queryBus, call } = setup('full');
+      const cloud = cloudSession(null, 'claude-code', 'bot');
+      queryBus.execute.mockResolvedValue(cloud);
+      const result = await call('close_session', { session_id: cloud.id });
+      expect(result.content).toBe(`Session ${cloud.id} is closed.`);
     });
 
     it('refuses a session the person started, under either permission, closing nothing', async () => {

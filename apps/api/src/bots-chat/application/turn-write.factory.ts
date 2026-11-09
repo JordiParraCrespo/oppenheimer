@@ -31,12 +31,30 @@ export class TurnWriteFactory {
     @Inject(BOT_STREAM) private readonly stream: BotStreamPort,
   ) {}
 
+  /**
+   * The turn's status on the bot's stream (running, or how it ended). The
+   * stream is the console chat's, so a channel's turn is not announced there.
+   */
+  async announce(turn: BotTurnEntity): Promise<void> {
+    if (!turn.inConsole) return;
+    await this.stream.publish(turn.botId, { type: 'turn', turnId: turn.id, status: turn.status });
+  }
+
   /** The writer of one running turn. */
   writer(turn: BotTurnEntity): (write: TranscriptWrite) => Promise<void> {
     return (write) => this.apply(turn, write);
   }
 
   private async apply(turn: BotTurnEntity, write: TranscriptWrite): Promise<void> {
+    // The bot's stream is its console chat's; a channel's turn is stored only.
+    if (!turn.inConsole) {
+      if (write.kind === 'text' || write.kind === 'settled' || write.kind === 'retrying') return;
+      try {
+        return await this.store(turn, write);
+      } catch (error) {
+        throw new TurnStorageError(error);
+      }
+    }
     switch (write.kind) {
       case 'text':
         return this.stream.write(turn.botId, turn.id, write.block, write.text);

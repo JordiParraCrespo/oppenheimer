@@ -246,6 +246,53 @@ export function closeSummary(
   return `Close the session "${session.name}" (${session.id}) and remove its worktree${loss}`;
 }
 
+/** What a stop or a close asked, and whether it is already done or waits on the host. */
+export interface SessionActionOutcome {
+  verb: SessionActionVerb;
+  sessionId: string;
+  hints: readonly string[];
+  /** Done here, with no host to wait for (a cloud session's close). */
+  doneHere: boolean;
+}
+
+export type SessionActionVerb = 'stop' | 'close';
+
+/**
+ * Each verb's answers, one per outcome. An offline host is told apart by
+ * what it is owed: a close is kept and sent again when the host comes back,
+ * a stop is not, so the bot is told to try again rather than promised a stop
+ * that never comes.
+ */
+const SESSION_ACTION_ANSWERS: Readonly<
+  Record<SessionActionVerb, Record<'done' | 'sent' | 'offline', (id: string) => string>>
+> = {
+  stop: {
+    done: (id) => `Session ${id} is stopped.`,
+    sent: (id) =>
+      `Asked session ${id} to stop. It stops once its host hears it; get_session shows when it has.`,
+    offline: (id) =>
+      `Session ${id}'s host is offline, so the stop did not reach it and is not sent again: once the host is back, check with get_session and stop it again if its agent still runs.`,
+  },
+  close: {
+    done: (id) => `Session ${id} is closed.`,
+    sent: (id) =>
+      `Asked session ${id} to close. It closes once its host hears it; get_session shows when it has, or why the host refused.`,
+    offline: (id) =>
+      `Asked session ${id} to close. Its host is offline: the close is sent when it comes back. It closes once its host hears it; get_session shows when it has, or why the host refused.`,
+  },
+};
+
+/** `stop_session`'s and `close_session`'s answer: done, sent, or owed to an offline host. */
+export function sessionActionAnswer(outcome: SessionActionOutcome): string {
+  const answers = SESSION_ACTION_ANSWERS[outcome.verb];
+  const kind = outcome.doneHere
+    ? 'done'
+    : outcome.hints.includes('host_offline')
+      ? 'offline'
+      : 'sent';
+  return answers[kind](outcome.sessionId);
+}
+
 /** An `answer_session` call, as its input names it. */
 export interface DecisionAnswerInput {
   decision_id: string;

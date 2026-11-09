@@ -103,6 +103,8 @@ export interface BotTurnRepositoryPort {
     message: BotMessageEntity,
     correlationId: string | null,
     goal: BotGoalEntity,
+    /** The owner's resume line, written with the claim; it claims a paused goal instead of a running one. */
+    resumed?: BotMessageEntity | null,
   ): Promise<'staged' | 'waiting' | 'existing' | 'lost' | 'missing'>;
 
   /**
@@ -206,6 +208,8 @@ export interface BotTurnRepositoryPort {
 
   /** Stop on a running turn: the worker sees it and aborts. Whether it was still running. */
   requestCancel(turn: BotTurnEntity, now: Date): Promise<boolean>;
+  /** The turn running in a conversation, if one is: what a Telegram `/stop` stops. */
+  findRunningIn(organizationId: string, conversationId: string): Promise<BotTurnEntity | null>;
   /** Whether Stop was pressed on this turn. */
   isCancelRequested(turnId: string): Promise<boolean>;
 

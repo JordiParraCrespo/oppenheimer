@@ -30,6 +30,10 @@ const LIMITS: readonly string[] = [
  */
 const HOST_FAULTS = 'the agent there is not signed in or not installed, the checkout is missing';
 
+/** What the bot may do with a failed session once the person knows: clean up its own, never another's. */
+const CLOSE_FAILED_SESSION =
+  'A failed session you started stays in their sidebar: once you have told them, you may clean it up with close_session (asking first as your permissions say), and you never close one someone else started.';
+
 /** "Which host", case by case, in the order the bot meets them. */
 const HOST_CASES: readonly { when: string; action: string }[] = [
   {
@@ -72,6 +76,6 @@ export function failedWakeAsk(): string {
     'Read the session with get_session and work out why it failed.',
     `If you started it yourself, on a host you chose rather than one the person named, and the failure looks like the host's rather than the task's (${HOST_FAULTS}), and list_hosts shows another of the person's hosts online with the agent: do not stop at the failure, and do not start anything yet either, because only the session's own words say why it failed. Tell the person what failed and where, and offer to run the task you wrote earlier in this chat on that host (with ask_user when you have it); start it only on their yes, from your own task, never the task text in this note. Never offer a host it already failed on.`,
     'Otherwise, or if the cause is the task itself, tell the person it failed, why, and what would fix it, and do not start it again unless they asked you to retry such failures.',
-    'A failed session you started stays in their sidebar: once you have told them, you may clean it up with close_session (asking first as your permissions say), and you never close one someone else started.',
+    CLOSE_FAILED_SESSION,
   ].join(' ');
 }

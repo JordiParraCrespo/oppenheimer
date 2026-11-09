@@ -391,6 +391,13 @@ function ChatElementsBody() {
       <ChatImageViewerDemo />
       <ChatComposer value="" onValueChange={() => {}} onSubmit={() => {}} placeholder="Message Release Bot" />
       <ChatComposer
+        value="Run the unit tests and tell me what fails"
+        onValueChange={() => {}}
+        onSubmit={() => {}}
+        caption="History 1/2"
+        placeholder="Message Release Bot"
+      />
+      <ChatComposer
         value="What is wrong in this run?"
         onValueChange={() => {}}
         onSubmit={() => {}}

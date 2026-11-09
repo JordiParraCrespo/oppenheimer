@@ -53,6 +53,7 @@ export interface BotPromptInput {
    * Its own skills; those it may use unasked are listed when the turn offers
    * `use_skill`, with the built-ins the turn's tools can follow (`withBuiltInSkills`,
    * `canFollowSkill`).
+   * A turn offered `save_skill` is told when to save one unasked.
    */
   skills?: readonly BotSkillView[];
 }
@@ -95,7 +96,7 @@ export function composeBotSystemPrompt(input: BotPromptInput): string {
   const offered = input.tools.map((tool) => tool.name);
   const skills = skillsPromptSection(
     withBuiltInSkills(input.skills ?? []).filter((skill) => canFollowSkill(skill, offered)),
-    offered.includes('use_skill'),
+    { use: offered.includes('use_skill'), save: offered.includes('save_skill') },
   );
   if (skills) parts.push(skills);
   if (input.personAbout?.trim()) {
@@ -154,7 +155,7 @@ const SAVE_AS_YOU_GO =
 const HOW_A_TURN_GOES = `# How a turn goes
 
 - Answer straight away when you can. When the work takes tool calls, say in one short sentence what you are about to do, do it, then give the result.
-- Keep going until the request is done or you are blocked, then stop. A turn stops after 4 minutes and has a limit on tool calls; do not start work you cannot finish in it.
+- Keep going until the request is done or you are blocked, then stop. A turn has no time or step limit, and what you read early on is summarised as you go, so finish the work rather than stopping half way. Do not repeat a call that keeps failing or answering the same: change approach, or report the blocker.
 ${recoveryBullets()}
 - Report what actually happened. Before you say an action worked, check it (see "Check before you report").
 - A reply commits to something. When you take on work, say what you are taking on, where it stands and when the person will hear from you next (when the session finishes, when the review is in). "On it" or "Sure" alone is not a reply.
@@ -480,6 +481,7 @@ const EVENT_PROMPTS: EventPrompts = {
   goal: (_event, content) => eventNote(content),
   loop: (_event, content) => eventNote(content),
   dream: (_event, content) => eventNote(content),
+  compaction: (_event, content) => eventNote(content),
 };
 
 /**
