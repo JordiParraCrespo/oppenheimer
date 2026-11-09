@@ -137,4 +137,14 @@ describe('splitTelegramText', () => {
     expect(parts.every((part) => part.length <= 40)).toBe(true);
     expect(parts.join(' ')).toBe(`${'word '.repeat(30)}end`);
   });
+
+  // A hard cut at an odd offset through a run of emoji would leave half a
+  // character at each end, which Telegram shows as two broken glyphs.
+  it('cuts a run with no space between characters, never through an emoji', () => {
+    const run = '😀'.repeat(30);
+    const parts = splitTelegramText(`a${run}`, 40);
+    expect(parts.every((part) => part.length <= 40)).toBe(true);
+    expect(parts.every((part) => part.isWellFormed())).toBe(true);
+    expect(parts.join('')).toBe(`a${run}`);
+  });
 });
