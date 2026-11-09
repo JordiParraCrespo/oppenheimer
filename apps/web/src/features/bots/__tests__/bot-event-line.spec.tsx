@@ -54,7 +54,8 @@ describe('BotEventLine', () => {
         }
       />,
     );
-    expect(screen.getByText('bots.chat.event.compaction')).toBeTruthy();
+    expect(screen.getByText('bots.chat.event.compactionLine')).toBeTruthy();
+    expect(screen.getByText('bots.chat.event.compactionTokens')).toBeTruthy();
     expect(screen.queryByText(/Earlier in this turn/)).toBeNull();
   });
 

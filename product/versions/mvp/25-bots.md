@@ -129,8 +129,9 @@ worker runs it and streams what happens back to the chat.
   cut where no call is parted from its result. A summary that fails sends
   the call as it was, and the next one tries again
   (`research/lessons-from-long-running-agents.md`). Where a turn folded,
-  the chat shows a line between its messages, with the tokens before and
-  after (a `compaction` event, built 2026-11-09), so a long turn says why
+  the chat shows one quiet line among its calls, drawn like them, with the
+  tokens before and after (a `compaction` event, built 2026-11-09; no rule
+  across the chat, as Claude shows none), so a long turn says why
   the bot seems to have forgotten a detail; the model reads it as a note. Between turns the
   summary folds old messages (above). Since
   2026-10-29 the model is told too: the turn context says how full the
