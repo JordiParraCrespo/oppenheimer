@@ -5,6 +5,7 @@ import {
   PLAN_NAV_IDS,
   PLAN_NAV_ORDER_KEY,
   planLanding,
+  planViewShown,
   storedPlanNavOrder,
 } from '../lib/plan-nav-order';
 
@@ -46,18 +47,25 @@ describe('storedPlanNavOrder', () => {
 });
 
 describe('planLanding', () => {
+  const all = planViewShown(true);
+
   it('opens on the Inbox for a reader who never dragged', () => {
-    expect(planLanding()).toBe('/plan/inbox');
+    expect(planLanding(all)).toBe('/plan/inbox');
   });
 
   it('opens on the view the reader dragged to the top', () => {
     store(JSON.stringify(['calendar', 'inbox', 'tasks', 'todo', 'milestones', 'projects']));
-    expect(planLanding()).toBe('/plan/calendar');
+    expect(planLanding(all)).toBe('/plan/calendar');
   });
 
   it('opens on the board when Tasks is on top', () => {
     store(JSON.stringify(['tasks', 'inbox']));
-    expect(planLanding()).toBe('/plan');
+    expect(planLanding(all)).toBe('/plan');
+  });
+
+  it('skips a top view the sidebar hides, as the sidebar does', () => {
+    store(JSON.stringify(['inbox', 'calendar', 'tasks']));
+    expect(planLanding(planViewShown(false))).toBe('/plan/calendar');
   });
 });
 

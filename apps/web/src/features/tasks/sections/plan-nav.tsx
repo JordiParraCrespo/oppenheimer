@@ -15,7 +15,7 @@ import { useTranslation } from 'react-i18next';
 import { PLAN_NAV_GROUP, usePlanNavOrder } from '../hooks/use-plan-nav-order';
 import { useToday } from '../hooks/use-today';
 import { useTodayEventCount } from '../hooks/use-today-event-count';
-import { isPlanNavId, PLAN_VIEW_PATHS, type PlanNavId } from '../lib/plan-nav-order';
+import { isPlanNavId, PLAN_VIEW_PATHS, type PlanNavId, planViewShown } from '../lib/plan-nav-order';
 import { todayOpenCount } from '../lib/todo';
 import { PlanInboxItem } from './plan-inbox-item';
 
@@ -80,7 +80,7 @@ export function PlanNav() {
   const inbox = useFeatureFlag('inbox');
   const matchRoute = useMatchRoute();
   const dragLabels = useDragLabels();
-  const { order, handlers } = usePlanNavOrder((id) => id !== 'inbox' || inbox);
+  const { order, handlers } = usePlanNavOrder(planViewShown(inbox));
   const counts: Record<Exclude<PlanNavId, 'inbox'>, number | undefined> = {
     tasks: open,
     todo: dueNow,

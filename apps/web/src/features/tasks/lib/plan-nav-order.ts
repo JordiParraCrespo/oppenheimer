@@ -64,12 +64,23 @@ export const PLAN_VIEW_PATHS = {
 } as const satisfies Record<PlanNavId, string>;
 
 /**
- * Where Plan opens: the view at the top of the reader's order, so a reader
- * who dragged Calendar first lands on the calendar; the Inbox for a reader
- * who never dragged one.
+ * Which views Plan's sidebar shows: all of them, but the Inbox only while its
+ * flag is on. The sidebar and Plan's landing read the same answer, so "the
+ * top of the sidebar" means one thing.
  */
-export function planLanding(): (typeof PLAN_VIEW_PATHS)[PlanNavId] {
-  return PLAN_VIEW_PATHS[storedPlanNavOrder()[0] ?? 'inbox'];
+export function planViewShown(inboxOn: boolean): (id: PlanNavId) => boolean {
+  return (id) => id !== 'inbox' || inboxOn;
+}
+
+/**
+ * Where Plan opens: the first view the sidebar shows in the reader's order,
+ * so a reader who dragged Calendar first lands on the calendar; the Inbox for
+ * a reader who never dragged one. Tasks is never hidden, so it is the floor.
+ */
+export function planLanding(
+  shown: (id: PlanNavId) => boolean,
+): (typeof PLAN_VIEW_PATHS)[PlanNavId] {
+  return PLAN_VIEW_PATHS[storedPlanNavOrder().find(shown) ?? 'tasks'];
 }
 
 export function rememberPlanNavOrder(order: readonly PlanNavId[]) {
