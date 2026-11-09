@@ -4,8 +4,8 @@ The owner asked what Oppenheimer can bring from Hermes Agent, Nous
 Research's open-source agent (MIT, released February 2026). This note reads
 its published docs; no code is taken, and its repository was not read. What
 was seen on a fetched page is marked as such; the rest is inference and says
-so. What `versions/mvp/25-bots.md` built from it is in §4.1 (Skills) and
-§4.2 (`search_sessions`).
+so. Two of its ideas are proposed for `versions/mvp/25-bots.md`, §4.1
+(Skills) and §4.2 (sessions); that note owns what is decided and built.
 
 Sources: `hermes-agent.nousresearch.com/docs` (the landing page, fetched),
 and third-party write-ups for what that page names without describing
@@ -56,8 +56,8 @@ used here.
 
 | # | Idea | Where it would land | Taken |
 |---|------|---------------------|-------|
-| 1 | Skills the agent writes and fixes unasked | §4.1 Skills: save after a hard task, a nudge, `patch_skill` | 2026-11-09 |
-| 2 | Search across every past session | §4.2: `search_sessions` over the control plane's session logs | 2026-11-09, logs only |
+| 1 | Skills the agent writes and fixes unasked | §4.1, Skills | proposed 2026-11-09 |
+| 2 | Search across every past session | §4.2, sessions | proposed 2026-11-09 |
 | 3 | Sandboxes that sleep when idle as a backend | A kind of host beside the runner on your own machine: one interface, several drivers (`10-sleep-wake-and-pricing.md`, `research/sessions-in-microvms.md`) | no |
 | 4 | Specialist bots in one group chat, answering when mentioned | `versions/mvp/25-bots.md` §7, "group chats with several bots" | no |
 | 5 | Skills in an open format, shared | A library for all of a person's bots (§4.1, "Not built"); `SKILL.md` would let one skill serve a bot, `runner --skill` and the agent in a session | no |
@@ -65,30 +65,23 @@ used here.
 | 7 | Hermes as an agent in a session | An agent kind beside Claude Code and Codex; it takes any model endpoint | no |
 | 8 | `execute_code`; a routine's result sent to a channel; Discord | Bulk tool work in one step; routines that report on Telegram or WhatsApp; the cheapest channel after Telegram | no |
 
-## 4. What 25 takes
+## 4. What is proposed for 25
 
-- **Saving unasked, with a nudge.** A bot saved a skill only when asked.
-  It may now save one after work that took many steps and will come again,
-  and a turn that has run long without using or saving a skill is reminded
-  once. Hermes's nudge is periodic; ours is tied to the turn's steps, since
-  a bot's turn is bounded (20 round trips) and a short turn has nothing
-  worth saving.
-- **`patch_skill`.** Hermes's agent patches a skill in place when a step
-  proves wrong. Ours replaces one exact piece of the body, so fixing a step
-  does not resend the whole skill. A skill the person wrote last is theirs:
-  the bot proposes the change and patches only when asked.
-- **`search_sessions`.** Hermes searches its own session store on one
-  machine. Ours searches what the control plane holds for every host: a
-  session's name, its tasks and prompts, the agent's reports and
-  questions. The agent's full conversation stays on its host and is read
-  with `read_session_transcript` once the session is found.
+Rows 1 and 2 of §3. The rules of each are in `versions/mvp/25-bots.md` and
+nowhere else:
+
+- **§4.1, Skills**: a bot that saves and fixes its skills without being
+  asked.
+- **§4.2, sessions**: a bot that searches every session of the person's,
+  on any host.
 
 ## 5. What it does not take
 
 - **A background review after each turn.** Later Hermes versions are said
   to review a turn with a second model call and write the skill there (not
-  seen on a fetched page). It costs a call on every long turn; the nudge
-  inside the turn is free. Worth another look if bots still save too few.
+  seen on a fetched page). It costs a call on every long turn, where a
+  reminder inside the turn costs none. Worth another look if bots still
+  save too few.
 - **A model's summary of the hits.** The bot that searched is already a
   model reading them.
 - **Searching transcripts on hosts.** It needs a search verb on the runner
