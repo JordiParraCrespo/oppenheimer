@@ -23,7 +23,7 @@ import {
   withSharedFiles,
 } from './session-chat-files';
 import { FirstLoad, linesToCome, Quiet } from './session-chat-history';
-import { typedPrompt } from './session-chat-prompt';
+import { typedPrompt, withoutReminders } from './session-chat-prompt';
 import { Subagents } from './session-chat-subagents';
 
 /** One item of the agent's task list: the chat module's, which the bots chat reads too. */
@@ -981,13 +981,14 @@ export function classify(value: unknown, index: number, sidechain = false): Read
   if (typeof content === 'string' && LOCAL_COMMAND.test(content)) {
     return { kind: 'answered', at, output: localOutput(content, id, at) };
   }
-  const said =
+  const said = withoutReminders(
     typeof content === 'string'
       ? content
       : blocks
           .filter((block) => block?.type === 'text')
           .map((block) => String(block?.text ?? ''))
-          .join('\n');
+          .join('\n'),
+  );
   const system = systemSteps(said, id, at);
   if (system) return { kind: 'steps', steps: system, model: null, at };
   const typed = typedPrompt(said);

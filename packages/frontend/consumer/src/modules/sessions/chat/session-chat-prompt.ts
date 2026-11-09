@@ -16,6 +16,14 @@ const SURROUNDING: readonly RegExp[] = [
   /(?:<system-reminder>(?:(?!<system-reminder>)[\s\S])*?<\/system-reminder>\s*)+$/,
 ];
 
+/**
+ * A user line without the system reminders at either end: what is read for
+ * everything else, a background task's end and an interrupt among it.
+ */
+export function withoutReminders(raw: string): string {
+  return SURROUNDING.reduce((text, around) => text.replace(around, ''), raw);
+}
+
 /** Tags the CLI wraps around part of what was typed; the words inside stay. */
 const UNWRAPPED: readonly RegExp[] = [
   // Text pasted into the prompt.
@@ -56,7 +64,7 @@ const CLI_LINES: readonly string[] = [
  * text that happens to start like one of the CLI's lines stays the person's.
  */
 export function typedPrompt(raw: string): string | null {
-  const value = SURROUNDING.reduce((text, around) => text.replace(around, ''), raw).trim();
+  const value = withoutReminders(raw).trim();
   if (CLI_LINES.some((prefix) => value.startsWith(prefix))) return null;
   const rewrite = REWRITES.find(({ prefix }) => value.startsWith(prefix));
   const typed = UNWRAPPED.reduce(

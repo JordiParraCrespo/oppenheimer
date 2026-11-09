@@ -284,6 +284,24 @@ describe('toTurns', () => {
     ]);
   });
 
+  it("reads the CLI's own lines as before when a reminder comes first", () => {
+    const reminder = '<system-reminder>r</system-reminder>';
+    const text = (value: string) => ({ type: 'text', text: value });
+    const turns = toTurns([
+      user('u1', 'Go'),
+      assistant('a1', [{ type: 'text', text: 'Starting' }]),
+      user('i', [text(reminder), text('[Request interrupted by user]')]),
+      user('t', [
+        text(reminder),
+        text(
+          '<task-notification>\n<status>completed</status>\n<summary>Done</summary>\n</task-notification>',
+        ),
+      ]),
+    ]);
+    expect(turns).toHaveLength(1);
+    expect(kinds(turns[0]?.steps ?? [])).toEqual(['reply', 'notice', 'task']);
+  });
+
   it('keeps a reminder quoted inside a paste', () => {
     const turns = toTurns([
       user(
