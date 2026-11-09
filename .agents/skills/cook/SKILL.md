@@ -11,7 +11,8 @@ The router over the three lanes in `.agents/skills/steward/SKILL.md`,
 
 ## 1. Pick the lane
 
-Read the task, the conversation and, when it names one, the code or pull
+Read `jordi-mode` first: how Jordi wants the work done in every lane. Then
+read the task, the conversation and, when it names one, the code or pull
 request it points at. Then:
 
 | The task is | Lane |
