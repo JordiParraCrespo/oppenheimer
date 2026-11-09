@@ -18,6 +18,7 @@ require (
 	github.com/jordiparracrespo/oppenheimer/packages/go/postgres v0.0.0
 	github.com/jordiparracrespo/oppenheimer/packages/go/selfupdate v0.0.0
 	github.com/jordiparracrespo/oppenheimer/packages/go/ws v0.0.0
+	github.com/pelletier/go-toml/v2 v2.2.4
 	github.com/pion/webrtc/v4 v4.2.23
 	go.mau.fi/whatsmeow v0.0.0-20261106223246-93ce5f1e6023
 	golang.org/x/crypto v0.58.0
