@@ -7,6 +7,12 @@ import {
   deviceInfoSchema,
   deviceInputSchema,
 } from './devices.js';
+import {
+  desktopCloseSchema,
+  desktopControlSchema,
+  desktopOpenedSchema,
+  desktopOpenSchema,
+} from './desktop.js';
 import { hintSchema } from './hint.js';
 import { CHAT_BATCH_MAX_ENTRIES, CHAT_ENTRY_MAX_BYTES } from './link.js';
 import {
@@ -135,6 +141,14 @@ export const RUNNER_CAPABILITIES = [
    * console's Browser tab (`product/versions/mvp/30-session-previews.md`).
    */
   'port.forward',
+  /**
+   * Answers `desktop.open`: the host's own desktop, through the
+   * screen-sharing server on its loopback, as an attachment of RFB bytes the
+   * console draws with a VNC viewer (`desktop.ts`). Named by every runner that
+   * can; whether the host shares its desktop is the host owner's call, and a
+   * host that does not answers `DESKTOP_001`.
+   */
+  'desktop.stream',
   /**
    * Takes a `session.create` with `cloud`: the runner starts the task in
    * Claude Code's cloud (`claude --cloud`) from a checkout of the repository
@@ -1371,6 +1385,10 @@ export const protocolMessageSchema = z.discriminatedUnion('type', [
   portOpenSchema,
   portOpenedSchema,
   portCloseSchema,
+  desktopOpenSchema,
+  desktopOpenedSchema,
+  desktopControlSchema,
+  desktopCloseSchema,
   codexEnvironmentsListSchema,
   codexEnvironmentsSchema,
   whatsappLinkSchema,

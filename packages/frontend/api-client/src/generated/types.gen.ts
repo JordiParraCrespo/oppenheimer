@@ -1091,6 +1091,18 @@ export type RenameHostRequest = {
     name: string;
 };
 
+export type DesktopTicketResponseDto = {
+    /**
+     * Single-use, 60 seconds. Present it in `Sec-WebSocket-Protocol` when opening the desktop socket — never in the URL.
+     */
+    ticket: string;
+    /**
+     * The path to open the WebSocket on, on this API’s own origin.
+     */
+    url: string;
+    expiresAt: string;
+};
+
 export type AdminUserResponseDto = {
     id: string;
     email: string;
@@ -8508,6 +8520,46 @@ export type FindHostTimelineResponses = {
 };
 
 export type FindHostTimelineResponse = FindHostTimelineResponses[keyof FindHostTimelineResponses];
+
+export type IssueDesktopTicketData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/hosts/{id}/desktop-ticket';
+};
+
+export type IssueDesktopTicketErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * FLAG_003 — The "host_desktop" feature is switched off for the caller
+     */
+    403: ProblemDetailsDto;
+    /**
+     * HOSTS_001 — Host not found
+     */
+    404: ProblemDetailsDto;
+    /**
+     * RATE_001 — Rate limit reached
+     */
+    429: ProblemDetailsDto;
+    /**
+     * HOSTS_010 — A desktop ticket could not be issued
+     */
+    503: ProblemDetailsDto;
+};
+
+export type IssueDesktopTicketError = IssueDesktopTicketErrors[keyof IssueDesktopTicketErrors];
+
+export type IssueDesktopTicketResponses = {
+    201: DesktopTicketResponseDto;
+};
+
+export type IssueDesktopTicketResponse = IssueDesktopTicketResponses[keyof IssueDesktopTicketResponses];
 
 export type WipeHostData = {
     body?: never;

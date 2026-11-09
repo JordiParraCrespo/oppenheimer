@@ -8,6 +8,7 @@ import (
 	"net"
 	"sync"
 
+	desktopdomain "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/desktop/domain"
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/link"
 	portsdomain "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/ports/domain"
 )
@@ -38,7 +39,11 @@ type tunnel struct {
 	flow *flowWindow
 	// input is the relay's bytes waiting for the socket.
 	input chan []byte
-	once  sync.Once
+	// viewer is set on a desktop attachment (link_desktop.go): the browser's
+	// half of RFB, which answers its handshake and drops its input while it
+	// only watches. Nil on a port, whose bytes pass untouched.
+	viewer *desktopdomain.Viewer
+	once   sync.Once
 }
 
 func (t *tunnel) credit(bytes int) { t.flow.credit(bytes) }
@@ -91,20 +96,29 @@ func (h *linkHandler) portOpen(m link.PortOpen, epoch uint64) {
 		id: m.AttachmentID, sessionID: m.SessionID, conn: conn, cancel: cancel,
 		flow: newFlowWindow(), input: make(chan []byte, tunnelInput),
 	}
+	if !h.registerTunnel(t, epoch) {
+		return
+	}
+	_ = h.client.Send(link.PortOpened{Type: link.TypePortOpened, AttachmentID: t.id})
+	go h.tunnelUp(ctx, t)
+	go h.tunnelDown(ctx, t)
+}
+
+// registerTunnel puts a dialled tunnel in the table, unless the relay hung
+// it up while it was dialled or the link it was for is gone: then it closes
+// it and reports false.
+func (h *linkHandler) registerTunnel(t *tunnel, epoch uint64) bool {
 	h.mu.Lock()
 	cancelled := h.opening[t.id]
 	delete(h.opening, t.id)
 	if cancelled || !h.linkUp || h.epoch != epoch {
 		h.mu.Unlock()
 		t.close()
-		return
+		return false
 	}
 	h.tunnels[t.id] = t
 	h.mu.Unlock()
-
-	_ = h.client.Send(link.PortOpened{Type: link.TypePortOpened, AttachmentID: t.id})
-	go h.tunnelUp(ctx, t)
-	go h.tunnelDown(ctx, t)
+	return true
 }
 
 // tunnelUp sends what the port says to the relay, a chunk at a time, while
@@ -139,9 +153,18 @@ func (h *linkHandler) tunnelDown(ctx context.Context, t *tunnel) {
 		case <-ctx.Done():
 			return
 		case chunk := <-t.input:
-			if _, err := t.conn.Write(chunk); err != nil {
-				h.endTunnel(t, "port closed")
-				return
+			out := chunk
+			if t.viewer != nil {
+				var ok bool
+				if out, ok = h.desktopFeed(ctx, t, chunk); !ok {
+					return
+				}
+			}
+			if len(out) > 0 {
+				if _, err := t.conn.Write(out); err != nil {
+					h.endTunnel(t, "port closed")
+					return
+				}
 			}
 			_ = h.client.Send(link.AttachmentCredit{Type: "attachment.credit", AttachmentID: t.id, Bytes: len(chunk)})
 		}

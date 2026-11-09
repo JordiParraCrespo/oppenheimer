@@ -3,11 +3,13 @@ import type { Duplex } from 'node:stream';
 import { Injectable, Logger, type OnApplicationBootstrap } from '@nestjs/common';
 import { HttpAdapterHost } from '@nestjs/core';
 import { BROWSER_ATTACH_PATH, BrowserAttachGateway } from './browser-attach.gateway';
+import { DESKTOP_ATTACH_PATH, DesktopAttachGateway } from './desktop-attach.gateway';
 import { RUNNER_LINK_PATH, RunnerLinkGateway } from './runner-link.gateway';
 import { refuseUpgrade } from './upgrade.util';
 
 /**
- * Mounts the two sockets on the API's own HTTP server.
+ * Mounts the relay's sockets on the API's own HTTP server: the runner link,
+ * a terminal's attach socket and a host desktop's.
  *
  * They are `upgrade` listeners rather than Nest gateways because neither is a
  * request/response pair: the runner link is a long-lived multiplexed stream and
@@ -24,6 +26,7 @@ export class RelayUpgradeGateway implements OnApplicationBootstrap {
     private readonly adapterHost: HttpAdapterHost,
     private readonly runners: RunnerLinkGateway,
     private readonly browsers: BrowserAttachGateway,
+    private readonly desktops: DesktopAttachGateway,
   ) {}
 
   onApplicationBootstrap(): void {
@@ -43,6 +46,7 @@ export class RelayUpgradeGateway implements OnApplicationBootstrap {
       message: 'relay mounted',
       runner: RUNNER_LINK_PATH,
       attach: BROWSER_ATTACH_PATH,
+      desktop: DESKTOP_ATTACH_PATH,
     });
   }
 
@@ -62,6 +66,9 @@ export class RelayUpgradeGateway implements OnApplicationBootstrap {
           return;
         case BROWSER_ATTACH_PATH:
           await this.browsers.handleUpgrade(request, socket, head);
+          return;
+        case DESKTOP_ATTACH_PATH:
+          await this.desktops.handleUpgrade(request, socket, head);
           return;
         default:
           refuseUpgrade(socket, 404, 'no such socket');

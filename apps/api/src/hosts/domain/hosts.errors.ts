@@ -75,4 +75,10 @@ export const HostErrors = {
     message: 'The host changed while this was being saved',
     httpStatus: 409,
   },
+  /** The ticket store would not take a desktop ticket; asking again mints another. */
+  DESKTOP_TICKET_UNAVAILABLE: {
+    code: 'HOSTS_010',
+    message: 'A desktop ticket could not be issued',
+    httpStatus: 503,
+  },
 } as const satisfies Record<string, ErrorDefinition>;

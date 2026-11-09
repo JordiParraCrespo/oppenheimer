@@ -24,6 +24,8 @@ import { MintPairingTokenCommandHandler } from './commands/mint-pairing-token/mi
 import { MintPairingTokenHttpController } from './commands/mint-pairing-token/mint-pairing-token.http.controller';
 import { RegisterHostCommandHandler } from './commands/register-host/register-host.command-handler';
 import { RegisterHostHttpController } from './commands/register-host/register-host.http.controller';
+import { IssueDesktopTicketCommandHandler } from './commands/issue-desktop-ticket/issue-desktop-ticket.command-handler';
+import { IssueDesktopTicketHttpController } from './commands/issue-desktop-ticket/issue-desktop-ticket.http.controller';
 import { RenameHostCommandHandler } from './commands/rename-host/rename-host.command-handler';
 import { RenameHostHttpController } from './commands/rename-host/rename-host.http.controller';
 import { RevokePairingTokenCommandHandler } from './commands/revoke-pairing-token/revoke-pairing-token.command-handler';
@@ -63,6 +65,7 @@ import { HostResource } from './hosts.resource';
 import { DbipGeolocationAdapter } from './infrastructure/dbip-geolocation.adapter';
 import { HostRetentionProcessor } from './infrastructure/host-retention.processor';
 import { RedisLegacyReplayMarker } from './infrastructure/redis-legacy-replay-marker.adapter';
+import { DesktopTicketFactory } from './application/desktop-ticket.factory';
 import { RunnerReleaseConfig } from './infrastructure/runner-release.config';
 import { FindHostHttpController } from './queries/find-host/find-host.http.controller';
 import { FindHostQueryHandler } from './queries/find-host/find-host.query-handler';
@@ -92,6 +95,7 @@ const httpControllers = [
   FindHostHttpController,
   FindHostTimelineHttpController,
   RenameHostHttpController,
+  IssueDesktopTicketHttpController,
   UnpairHostHttpController,
   WipeHostHttpController,
   UpdateHostRunnerHttpController,
@@ -102,6 +106,7 @@ const commandHandlers: Provider[] = [
   RevokePairingTokenCommandHandler,
   RegisterHostCommandHandler,
   RenameHostCommandHandler,
+  IssueDesktopTicketCommandHandler,
   UnpairHostCommandHandler,
   UninstallHostCommandHandler,
   CollectSessionImageCommandHandler,
@@ -180,6 +185,7 @@ const resolvers: Provider[] = [
     ...AuthModule.contributeCredentials([HostCredentialResolver]),
     ...UsersModule.contributeAccountErasure([HostAccountErasure]),
     RunnerReleaseConfig,
+    DesktopTicketFactory,
     HostUsageRegistry,
     HostReadResolver,
     HostPrincipalGuard,

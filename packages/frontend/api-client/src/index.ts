@@ -135,6 +135,7 @@ export type {
   DecideBotApprovalRequest,
   DeleteOwnAccountRequest,
   DependencyStatusDto,
+  DesktopTicketResponseDto,
   DismissBotQuestionRequest,
   FeatureFlagConfigResponseDto,
   FeatureFlagResponseDto,

@@ -32,8 +32,9 @@ export interface AttachmentSink {
    */
   device?(message: DeviceInfoMessage): void;
   /**
-   * The runner connected a port attachment to its port (`port.opened`): the
-   * attachment's bytes may flow. Only a port attachment implements it.
+   * The runner connected a port attachment to its port (`port.opened`), or a
+   * desktop attachment to the host's screen-sharing server (`desktop.opened`):
+   * the attachment's bytes may flow. Only those two implement it.
    */
   opened?(): void;
   /**

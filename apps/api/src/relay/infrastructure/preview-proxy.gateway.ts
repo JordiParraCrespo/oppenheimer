@@ -162,7 +162,7 @@ export class PreviewProxyGateway implements OnApplicationBootstrap, OnApplicatio
       refuseUpgrade(socket, 401, 'open this preview from the console');
       return;
     }
-    const stream = new LinkPortStream(reader.link, address.sessionId, address.port);
+    const stream = LinkPortStream.toPort(reader.link, address.sessionId, address.port);
     const origin = this.originOf(address);
     const headers = upstreamHeaders(req.headers, {
       previewOrigin: origin,
@@ -402,7 +402,7 @@ class PortAgent extends Agent {
   }
 
   override createConnection(): Duplex {
-    return new LinkPortStream(this.link, this.address.sessionId, this.address.port);
+    return LinkPortStream.toPort(this.link, this.address.sessionId, this.address.port);
   }
 }
 

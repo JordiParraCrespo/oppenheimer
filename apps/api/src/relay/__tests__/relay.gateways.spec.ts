@@ -22,6 +22,7 @@ import type { AbilityPort } from '../../auth/application/ability.port';
 import type { CredentialOwnerPort } from '../../auth/application/credential-owner.port';
 import type { FlagEvaluatorPort } from '../../feature-flags/application/flag-evaluator.port';
 import type { RepositoryAccessPort } from '../../github/application/repository-access.port';
+import type { DesktopTicket } from '../../hosts/application/desktop-ticket.port';
 import type { HostAccessPort } from '../../hosts/application/host-access.port';
 import type { HostAssertionPort } from '../../hosts/application/host-assertion.port';
 import type { HostKeyPort } from '../../hosts/application/host-key.port';
@@ -44,6 +45,7 @@ import {
   REAUTHORIZE_INTERVAL_MS,
 } from '../infrastructure/browser-attach.gateway';
 import { CredentialsProcessor } from '../infrastructure/credentials.processor';
+import { DesktopAttachGateway } from '../infrastructure/desktop-attach.gateway';
 import { RelayEventsProcessor } from '../infrastructure/relay-events.processor';
 import { RelayUpgradeGateway } from '../infrastructure/relay-upgrade.gateway';
 import {
@@ -99,7 +101,7 @@ interface Harness {
   /** Holds the `valid.slow` bearer's verification until the test releases it. */
   slowAssertion: Held<void>;
   origin: string;
-  tickets: Map<string, AttachTicket>;
+  tickets: Map<string, AttachTicket | DesktopTicket>;
   presence: HostPresencePort;
   reconciliation: SessionReconciliationPort;
   events: RecordSessionEventsPort;
@@ -154,7 +156,7 @@ async function harness(options: { fingerprint?: string | null } = {}): Promise<H
     shareAdmits: vi.fn().mockResolvedValue(false),
     findCredentialTarget: vi.fn().mockResolvedValue(null),
   };
-  const tickets = new Map<string, AttachTicket>();
+  const tickets = new Map<string, AttachTicket | DesktopTicket>();
   const cache = {
     take: vi.fn(async (key: string) => {
       const value = tickets.get(key);
@@ -235,8 +237,18 @@ async function harness(options: { fingerprint?: string | null } = {}): Promise<H
     abilities,
     flags,
   );
+  const desktops = new DesktopAttachGateway(
+    cache,
+    registry,
+    workspaces,
+    config,
+    scopes,
+    hostAccess,
+    owners,
+    flags,
+  );
   const server = createServer((_request, response) => response.writeHead(404).end());
-  const upgrade = new RelayUpgradeGateway({} as HttpAdapterHost, runners, browsers);
+  const upgrade = new RelayUpgradeGateway({} as HttpAdapterHost, runners, browsers, desktops);
   upgrade.mount(server);
   await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
   const { port } = server.address() as AddressInfo;
@@ -2124,5 +2136,138 @@ describe('device attach socket', () => {
     const credit = await nextMessage(runner);
     expect(credit.text).toMatchObject({ type: 'attachment.credit' });
     expect(sent.some((text) => String(text).includes('device.input'))).toBe(false);
+  });
+});
+
+describe('desktop socket', () => {
+  function desktopTicket(): string {
+    const ticket = `k-${Math.random().toString(36).slice(2)}`;
+    h.tickets.set(`desktop:${ticket}`, { hostId: HOST, organizationId: ORG, userId: USER });
+    return ticket;
+  }
+
+  /** A binary frame on the link: the attachment id, big-endian, then the bytes. */
+  function linkFrame(attachmentId: number, bytes: Buffer): Buffer {
+    const head = Buffer.alloc(4);
+    head.writeUInt32BE(attachmentId);
+    return Buffer.concat([head, bytes]);
+  }
+
+  it('opens the host’s desktop watching, carries RFB both ways, hands control over on request, and closes', async () => {
+    vi.mocked(h.flags.isEnabled).mockReturnValue(true);
+    const runner = await runnerUp(h, { capabilities: ['desktop.stream'] });
+    sockets.push(runner);
+    const browser = ws(h.origin, '/api/v1/relay/desktop', {}, [desktopTicket()]);
+    sockets.push(browser);
+    const open = nextMessage(runner);
+    await opened(browser);
+
+    // A desktop is the host's, and starts watching: the browser names neither.
+    expect((await open).text).toMatchObject({
+      type: 'desktop.open',
+      attachmentId: 1,
+      control: false,
+    });
+    const ready = nextMessage(browser);
+    runner.send(JSON.stringify({ type: 'desktop.opened', attachmentId: 1 }));
+    expect((await ready).text).toEqual({ type: 'desktop', control: false });
+
+    // The runner's RFB reaches the browser bare, and is credited to the runner.
+    const version = Buffer.from('RFB 003.008\n');
+    const greeting = nextMessage(browser);
+    const credited = nextMessage(runner);
+    runner.send(linkFrame(1, version), { binary: true });
+    expect((await greeting).bytes).toEqual(version);
+    expect((await credited).text).toEqual({
+      type: 'attachment.credit',
+      attachmentId: 1,
+      bytes: version.length,
+    });
+
+    // The browser's RFB reaches the runner under the attachment id.
+    const answer = nextMessage(runner);
+    browser.send(version);
+    expect((await answer).bytes).toEqual(linkFrame(1, version));
+
+    const control = nextMessage(runner);
+    const told = nextMessage(browser);
+    browser.send(JSON.stringify({ type: 'desktop.control', control: true }));
+    expect((await control).text).toEqual({
+      type: 'desktop.control',
+      attachmentId: 1,
+      control: true,
+    });
+    expect((await told).text).toEqual({ type: 'desktop', control: true });
+
+    const close = nextMessage(runner);
+    browser.close();
+    expect((await close).text).toEqual({ type: 'desktop.close', attachmentId: 1 });
+  });
+
+  it('refuses a desktop on a host whose runner cannot share one, without asking it', async () => {
+    vi.mocked(h.flags.isEnabled).mockReturnValue(true);
+    const runner = await runnerUp(h);
+    sockets.push(runner);
+    const sent = vi.fn();
+    runner.on('message', sent);
+    const browser = ws(h.origin, '/api/v1/relay/desktop', {}, [desktopTicket()]);
+    sockets.push(browser);
+    const refusal = nextMessage(browser);
+    await opened(browser);
+    expect((await refusal).text).toMatchObject({ type: 'refused', code: 'DESKTOP_001' });
+    await expect(closed(browser)).resolves.toMatchObject({ code: ATTACH_CLOSE_CODES.REFUSED });
+    expect(sent).not.toHaveBeenCalled();
+  });
+
+  it('relays the runner’s refusal, so the console can say the host does not share it', async () => {
+    vi.mocked(h.flags.isEnabled).mockReturnValue(true);
+    const runner = await runnerUp(h, { capabilities: ['desktop.stream'] });
+    sockets.push(runner);
+    const browser = ws(h.origin, '/api/v1/relay/desktop', {}, [desktopTicket()]);
+    sockets.push(browser);
+    const open = nextMessage(runner);
+    await opened(browser);
+    const { commandId } = (await open).text as { commandId: string };
+    const refusal = nextMessage(browser);
+    runner.send(
+      JSON.stringify({
+        type: 'command.failed',
+        commandId,
+        code: 'DESKTOP_001',
+        detail: 'turn it on on the host: runner desktop on',
+      }),
+    );
+    expect((await refusal).text).toEqual({
+      type: 'refused',
+      code: 'DESKTOP_001',
+      detail: 'turn it on on the host: runner desktop on',
+    });
+    await expect(closed(browser)).resolves.toMatchObject({ code: ATTACH_CLOSE_CODES.REFUSED });
+  });
+
+  it('refuses a ticket whose holder may no longer use the host, before asking the runner', async () => {
+    vi.mocked(h.flags.isEnabled).mockReturnValue(true);
+    vi.mocked(h.hostAccess.assertUsable).mockRejectedValue(new AppError(HostErrors.NOT_FOUND));
+    const runner = await runnerUp(h, { capabilities: ['desktop.stream'] });
+    sockets.push(runner);
+    const sent = vi.fn();
+    runner.on('message', sent);
+    const browser = ws(h.origin, '/api/v1/relay/desktop', {}, [desktopTicket()]);
+    sockets.push(browser);
+    const verdict = nextMessage(browser);
+    await opened(browser);
+    expect((await verdict).text).toEqual({ type: 'closed', reason: 'missing' });
+    await expect(closed(browser)).resolves.toMatchObject({
+      code: ATTACH_CLOSE_CODES.SESSION_UNAVAILABLE,
+    });
+    expect(sent).not.toHaveBeenCalled();
+  });
+
+  it('refuses a terminal’s attach ticket on the desktop socket', async () => {
+    const browser = ws(h.origin, '/api/v1/relay/desktop', {}, [issueTicket(h)]);
+    sockets.push(browser);
+    const verdict = nextMessage(browser);
+    await opened(browser);
+    expect((await verdict).text).toEqual({ type: 'closed', reason: 'unauthorized' });
   });
 });

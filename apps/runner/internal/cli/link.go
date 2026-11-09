@@ -11,6 +11,7 @@ import (
 	"sync"
 	"time"
 
+	desktopapp "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/desktop/app"
 	devapp "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/devices/app"
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/direct"
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/host/adapters/system"
@@ -103,6 +104,9 @@ type linkHandler struct {
 	// ports is the session's listening ports (link_ports.go); nil is a
 	// platform the runner cannot read them on.
 	ports *portsapp.Service
+	// desktop is the host's own screen (link_desktop.go); nil is a runner
+	// built without it, whose hello does not name the capability.
+	desktop *desktopapp.Service
 	// whatsapp is the host's WhatsApp linked device (link_whatsapp.go); nil
 	// is a host that offers none, and its hello does not name the capability.
 	whatsapp *waapp.Service
@@ -205,6 +209,7 @@ func (a *App) linkLoop(ctx context.Context, logger *slog.Logger, identity pairdo
 		}}),
 		devices: a.Devices, screens: map[uint32]*deviceAttachment{},
 		ports: a.Ports, tunnels: map[uint32]*tunnel{}, opening: map[uint32]bool{},
+		desktop: a.Desktop,
 	}
 	client, err := link.New(link.Options{
 		ControlPlaneURL: identity.ControlPlaneURL,
@@ -335,6 +340,9 @@ func (h *linkHandler) capabilities() []string {
 	}
 	if h.ports != nil {
 		named = append(named, link.CapabilityPortForward)
+	}
+	if h.desktop != nil {
+		named = append(named, link.CapabilityDesktopStream)
 	}
 	if h.whatsapp != nil {
 		named = append(named, link.CapabilityWhatsapp)
@@ -624,6 +632,32 @@ func (h *linkHandler) Message(_ context.Context, msg link.Message) {
 	case link.TypePortClose:
 		var m link.PortClose
 		if msg.Decode(&m) == nil {
+			h.closePort(m.AttachmentID)
+		}
+	case link.TypeDesktopOpen:
+		var m link.DesktopOpen
+		if msg.Decode(&m) == nil {
+			// Signing in to the server is a round trip or two: off the read
+			// loop, and known as opening from here, as a port is.
+			epoch := h.currentEpoch()
+			h.mu.Lock()
+			h.opening[m.AttachmentID] = false
+			h.mu.Unlock()
+			go func() {
+				if h.liveEpoch(epoch) {
+					h.desktopOpen(m, epoch)
+				}
+			}()
+		}
+	case link.TypeDesktopControl:
+		var m link.DesktopControl
+		if msg.Decode(&m) == nil {
+			h.desktopControl(m)
+		}
+	case link.TypeDesktopClose:
+		var m link.DesktopClose
+		if msg.Decode(&m) == nil {
+			// A desktop is a tunnel with a viewer: it closes the same way.
 			h.closePort(m.AttachmentID)
 		}
 	case "credentials.grant":

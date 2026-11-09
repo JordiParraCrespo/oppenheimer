@@ -88,6 +88,7 @@ const (
 	CapabilityAttachmentChatOlder   = "attachment.chat.older"
 	CapabilityDeviceScreen          = "device.screen"
 	CapabilityPortForward           = "port.forward"
+	CapabilityDesktopStream         = "desktop.stream"
 	CapabilitySessionCloud          = "session.cloud"
 	CapabilitySessionCloudCodex     = "session.cloud.codex"
 	CapabilitySessionTeleport       = "session.teleport"
@@ -154,6 +155,10 @@ const (
 	TypePortOpen                = "port.open"
 	TypePortOpened              = "port.opened"
 	TypePortClose               = "port.close"
+	TypeDesktopOpen             = "desktop.open"
+	TypeDesktopOpened           = "desktop.opened"
+	TypeDesktopControl          = "desktop.control"
+	TypeDesktopClose            = "desktop.close"
 	TypeCodexEnvironmentsList   = "codex.environments.list"
 	TypeCodexEnvironments       = "codex.environments"
 	TypeWhatsappLink            = "whatsapp.link"
@@ -229,6 +234,10 @@ var MessageTypes = []string{
 	TypePortOpen,
 	TypePortOpened,
 	TypePortClose,
+	TypeDesktopOpen,
+	TypeDesktopOpened,
+	TypeDesktopControl,
+	TypeDesktopClose,
 	TypeCodexEnvironmentsList,
 	TypeCodexEnvironments,
 	TypeWhatsappLink,
@@ -357,6 +366,14 @@ func NewMessage(messageType string) (any, bool) {
 		return new(PortOpened), true
 	case TypePortClose:
 		return new(PortClose), true
+	case TypeDesktopOpen:
+		return new(DesktopOpen), true
+	case TypeDesktopOpened:
+		return new(DesktopOpened), true
+	case TypeDesktopControl:
+		return new(DesktopControl), true
+	case TypeDesktopClose:
+		return new(DesktopClose), true
 	case TypeCodexEnvironmentsList:
 		return new(CodexEnvironmentsList), true
 	case TypeCodexEnvironments:
@@ -930,6 +947,33 @@ type PortOpened struct {
 
 // PortClose is the `port.close` message.
 type PortClose struct {
+	Type         string `json:"type"`
+	AttachmentID uint32 `json:"attachmentId"`
+}
+
+// DesktopOpen is the `desktop.open` message.
+type DesktopOpen struct {
+	Type         string `json:"type"`
+	CommandID    string `json:"commandId"`
+	AttachmentID uint32 `json:"attachmentId"`
+	Control      bool   `json:"control"`
+}
+
+// DesktopOpened is the `desktop.opened` message.
+type DesktopOpened struct {
+	Type         string `json:"type"`
+	AttachmentID uint32 `json:"attachmentId"`
+}
+
+// DesktopControl is the `desktop.control` message.
+type DesktopControl struct {
+	Type         string `json:"type"`
+	AttachmentID uint32 `json:"attachmentId"`
+	Control      bool   `json:"control"`
+}
+
+// DesktopClose is the `desktop.close` message.
+type DesktopClose struct {
 	Type         string `json:"type"`
 	AttachmentID uint32 `json:"attachmentId"`
 }

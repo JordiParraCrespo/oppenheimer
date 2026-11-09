@@ -68,7 +68,7 @@ const PUBLIC: Record<string, string> = {
  */
 const UPGRADES: Record<string, { how: string; calls: string }> = {
   'relay/infrastructure/relay-upgrade.gateway.ts': {
-    how: "the API server's upgrade listener: hands the two socket paths to their gateways' handleUpgrade, refuses any other with a 404, authenticates nothing itself",
+    how: "the API server's upgrade listener: hands each socket path to its gateway's handleUpgrade, refuses any other with a 404, authenticates nothing itself",
     calls: 'handleUpgrade',
   },
   'relay/infrastructure/runner-link.gateway.ts': {
@@ -77,6 +77,10 @@ const UPGRADES: Record<string, { how: string; calls: string }> = {
   },
   'relay/infrastructure/browser-attach.gateway.ts': {
     how: 'an allowed Origin and a single-use attach ticket as the subprotocol, refused before the upgrade when absent; the ticket is redeemed and judged before any frame is handled, and again every minute',
+    calls: 'redeem',
+  },
+  'relay/infrastructure/desktop-attach.gateway.ts': {
+    how: 'an allowed Origin and a single-use desktop ticket as the subprotocol, refused before the upgrade when absent; the ticket is redeemed and judged before any frame is handled, and again every minute',
     calls: 'redeem',
   },
   'relay/infrastructure/preview-proxy.gateway.ts': {
