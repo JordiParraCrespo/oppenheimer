@@ -22,6 +22,17 @@ export interface ChatTurnBlock {
 }
 
 /**
+ * The kinds of event that are the bot's own work in a turn, not what opened
+ * it: drawn in the answer, where they happened, and never what Retry sends.
+ */
+const WORK_EVENT_KINDS: ReadonlySet<string> = new Set(['compaction']);
+
+/** Whether a message is an event of the bot's own work mid-turn (`WORK_EVENT_KINDS`). */
+function isWorkEvent(message: BotMessageEntity): boolean {
+  return message.role === 'event' && WORK_EVENT_KINDS.has(message.event?.kind ?? '');
+}
+
+/**
  * The conversation as blocks, in the order they happened: each turn's
  * messages under it, your message apart from the bot's work, and each line
  * outside any turn as a block of its own, keyed by its id. An event opens
@@ -46,7 +57,8 @@ export function chatTurns(conversation: BotConversationEntity): ChatTurnBlock[] 
     if (message.turnId && waiting.has(message.turnId)) continue;
     const block = blockOf(message.turnId ?? message.id, message.turnId);
     const steered = message.role === 'user' && block.answer.length > 0;
-    const opens = !steered && (message.role === 'user' || message.role === 'event');
+    const opens =
+      !steered && !isWorkEvent(message) && (message.role === 'user' || message.role === 'event');
     (opens ? block.asked : block.answer).push(message);
   }
   for (const turn of conversation.turns) if (!waiting.has(turn.id)) blockOf(turn.id, turn.id);

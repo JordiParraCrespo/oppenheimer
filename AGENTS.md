@@ -103,6 +103,8 @@ When you add a file that mentions an optional app (CI, compose,
   changes the repository starts with `/cook`**, typed or not: it picks the
   lane, says why, and runs it. Only a lane the user names themselves, or a
   plain question, skips it. The protocol is `/steward`, "Merging".
+  **Every task ends with `/recap`**, typed or not, questions included: its
+  last message is the recap's brief.
 - **Stage files by path.** `.claude/settings.json` and the hooks in
   `.agents/hooks/` refuse `git add -A`/`.`, pushes to `main`, force pushes,
   `git reset --hard` and the like; read them for the exact policy and for

@@ -2,7 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { type AccessScope, ScopedRepositoryBase } from '@oppenheimer/backend-authz';
 import { OutboxService } from '@oppenheimer/backend-ddd';
-import { BOT_ACTIVE_TURN_STATUSES, QUEUE_NAMES } from '@oppenheimer/shared';
+import { BOT_ACTIVE_TURN_STATUSES, type BotTurnLane, QUEUE_NAMES } from '@oppenheimer/shared';
 import { None, type Option, Some } from 'oxide.ts';
 import { type EntityManager, Repository } from 'typeorm';
 import { BotResource } from '../../bots/bots.resource';
@@ -662,7 +662,7 @@ export async function enqueueLocked(
   await manager.getRepository(BotTurnOrmEntity).insert(turns.toPersistence(turn));
   await insertMessageWithin(manager, messages, message);
   if (active > 0) return 'waiting';
-  await stageRun(outbox, manager, turn.botId, turn.id, correlationId);
+  await stageRun(outbox, manager, turn.botId, turn.id, turn.lane, correlationId);
   return 'staged';
 }
 
@@ -740,16 +740,21 @@ export async function waitingCardWithin(
   return rows[0]?.summary ?? null;
 }
 
-/** Stages the job that runs `turnId`, in the transaction that made it due. */
+/**
+ * Stages the job that runs `turnId`, in the transaction that made it due: a
+ * turn nobody waits on (`background`) on a queue of its own, so one that runs
+ * for hours never holds a slot a message from a person or a bot waits on.
+ */
 async function stageRun(
   outbox: OutboxService,
   manager: EntityManager,
   botId: string,
   turnId: string,
+  lane: BotTurnLane,
   correlationId: string | null,
 ): Promise<void> {
   await outbox.stageJob(manager, {
-    queue: QUEUE_NAMES.BOT_TURNS,
+    queue: lane === 'background' ? QUEUE_NAMES.BOT_BACKGROUND_TURNS : QUEUE_NAMES.BOT_TURNS,
     jobName: RUN_BOT_TURN_JOB,
     payload: { turnId },
     reason: `bot ${botId}: turn ${turnId} is next`,
@@ -771,8 +776,8 @@ async function stageNext(
   correlationId: string | null,
 ): Promise<void> {
   // IDX_bot_turn_active.
-  const next: { id: string }[] = await manager.query(
-    `SELECT id FROM bot_turn
+  const next: { id: string; lane: BotTurnLane }[] = await manager.query(
+    `SELECT id, lane FROM bot_turn
       WHERE "organizationId" = $1 AND "botId" = $2 AND "status" = 'queued'
         AND NOT EXISTS (
           SELECT 1 FROM bot_turn r
@@ -781,7 +786,9 @@ async function stageNext(
       ORDER BY ${LANE_ORDER}, "createdAt", id LIMIT 1`,
     [turn.organizationId, turn.botId],
   );
-  if (next[0]) await stageRun(outbox, manager, turn.botId, next[0].id, correlationId);
+  if (next[0]) {
+    await stageRun(outbox, manager, turn.botId, next[0].id, next[0].lane, correlationId);
+  }
 }
 
 /**

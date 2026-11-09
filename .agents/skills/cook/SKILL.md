@@ -40,3 +40,9 @@ with this task. A step you skip stays in the list with its reason.
 
 A lane can still change on the way: `ship` turns into `propose` on its own
 terms, and `research` stops when its proof of concept needs product code.
+
+## 4. Recap
+
+When the task ends (the lane's last step is done, or the work stops),
+the last message is the `recap` skill, in place of the lane's own "tell
+Jordi" message.
