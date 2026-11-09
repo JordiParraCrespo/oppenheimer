@@ -52,8 +52,8 @@ export const OPENCODE_MODELS: readonly CodingAgentModel[] = Object.freeze([
     effort: levels(CLAUDE_LEVELS, 'high'),
   }),
   Object.freeze({
-    id: 'anthropic/claude-fable-5-1',
-    label: 'Fable 5.1',
+    id: 'anthropic/claude-fable-5-2',
+    label: 'Fable 5.2',
     effort: levels(CLAUDE_LEVELS, 'high'),
   }),
   Object.freeze({

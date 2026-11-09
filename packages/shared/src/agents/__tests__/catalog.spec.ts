@@ -48,6 +48,7 @@ describe('coding agent catalog', () => {
       effortFor(agent, model)?.levels;
     expect(levelsOf('claude-code', null)).toEqual(['low', 'medium', 'high', 'xhigh', 'max']);
     expect(effortFor('claude-code', 'claude-opus-5-5')?.default).toBe('medium');
+    expect(effortFor('claude-code', 'claude-fable-5-2')?.default).toBe('high');
     expect(effortFor('claude-code', 'claude-fable-5-1')?.default).toBe('high');
     expect(effortFor('claude-code', 'claude-haiku-4-5')).toBeUndefined();
     expect(effortFor('claude-code', 'claude-haiku-5-5')?.default).toBe('medium');
