@@ -257,6 +257,14 @@ describe('BotToolboxFactory', () => {
       expect(answers.every((answer) => answer === 'ok')).toBe(true);
     });
 
+    it.each(['routine', 'subscription', 'goal', 'loop'] as const)(
+      'stays away from a %s turn, which nobody is waiting on',
+      async (origin) => {
+        const answers = await calls(learning.tools({ ...context, origin }, null, BOTS), 12);
+        expect(answers.every((answer) => answer === 'ok')).toBe(true);
+      },
+    );
+
     it('stays away from a turn opened by a skill the person ran', async () => {
       const ran = { ...context, ranCommand: 'release-notes' };
       const answers = await calls(learning.tools(ran, null, BOTS), 12);

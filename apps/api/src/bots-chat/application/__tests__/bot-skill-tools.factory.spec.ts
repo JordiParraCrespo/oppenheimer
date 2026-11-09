@@ -23,7 +23,8 @@ import type { BotToolContext } from '../bot-tool.factory';
  * query and commands as the owner, on the turn's bot. `use_skill` hands back
  * the body only of a skill the bot may use unasked; `save_skill` creates one
  * or replaces the one of that name, as the bot's; `patch_skill` replaces one
- * passage of a skill the bot wrote, or of the person's only when they asked.
+ * passage of a skill the bot wrote, or of the person's only when they asked,
+ * and neither saves over nor fixes one of Oppenheimer's own.
  * The commands are the bots module's specs; the patch rule's whole table is
  * `bot-skill-learning.policy.spec.ts`.
  */
@@ -135,6 +136,8 @@ describe('BotSkillToolsFactory', () => {
     expect(result).toMatchObject({ isError: false });
     expect(result.content).toContain('<skill name="oppenheimer">');
     expect(result.content).toContain('read_oppenheimer_docs');
+    // Oppenheimer's own text: nothing for the bot to fix.
+    expect(result.content).not.toContain('patch_skill');
   });
 
   it('answers a skill it does not have with BOTS_038', async () => {
@@ -160,7 +163,7 @@ describe('BotSkillToolsFactory', () => {
   });
 
   it('replaces the skill of that name rather than adding a second', async () => {
-    const existing = skill('triage');
+    const existing = skill('triage', {}, 'bot');
     const { call, commandBus } = setup([existing]);
     const result = await call('save_skill', {
       name: 'triage',
@@ -176,6 +179,28 @@ describe('BotSkillToolsFactory', () => {
       author: 'bot',
       change: { description: 'Sorts new issues by area.', userInvocable: false },
     });
+  });
+
+  it('replaces a skill the person wrote only when they asked, and otherwise writes nothing', async () => {
+    const theirs = skill('triage');
+    const { call, commandBus } = setup([theirs]);
+    const input = { name: 'triage', description: 'Sorts issues.', body: 'Label each.' };
+    const unasked = await call('save_skill', input);
+    expect(unasked).toMatchObject({ isError: true });
+    expect(unasked.content).toContain('Propose the change in your answer instead');
+    expect(commandBus.execute).not.toHaveBeenCalled();
+
+    const asked = await call('save_skill', { ...input, asked_by_person: true });
+    expect(asked.content).toMatch(/^Updated skill "triage"/);
+    expect(commandBus.execute.mock.calls[0]?.[0]).toBeInstanceOf(UpdateBotSkillCommand);
+  });
+
+  it('refuses to save under the name of a skill Oppenheimer gives every bot, and saves nothing', async () => {
+    const { call, commandBus } = setup([]);
+    const result = await call('save_skill', { name: 'recap', description: 'x', body: 'y' });
+    expect(result).toMatchObject({ isError: true });
+    expect(result.content).toContain('Oppenheimer uses that name');
+    expect(commandBus.execute).not.toHaveBeenCalled();
   });
 
   it('refuses a name that could not be typed after a slash, and saves nothing', async () => {
@@ -224,6 +249,19 @@ describe('BotSkillToolsFactory', () => {
       });
       expect(asked).toMatchObject({ isError: false });
       expect(commandBus.execute).toHaveBeenCalledTimes(1);
+    });
+
+    it('never changes a skill Oppenheimer gives every bot, asked or not', async () => {
+      const { call, commandBus } = setup([]);
+      const result = await call('patch_skill', {
+        name: 'recap',
+        old_text: 'Recap only reads.',
+        new_text: 'Recap reads.',
+        asked_by_person: true,
+      });
+      expect(result).toMatchObject({ isError: true });
+      expect(result.content).toContain('Oppenheimer uses that name');
+      expect(commandBus.execute).not.toHaveBeenCalled();
     });
 
     it('says why a passage that is not there changes nothing', async () => {

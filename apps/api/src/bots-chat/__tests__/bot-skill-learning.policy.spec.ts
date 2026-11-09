@@ -4,16 +4,18 @@
  * turn that already used or saved a skill, or on a call that raised a card;
  * the reminder left in what the chat stores; a patch that replaces the
  * first of several matches, or saves a body over the limit; and a bot
- * rewriting a skill the person wrote without being asked, or a built-in.
+ * rewriting a skill the person wrote without being asked, or one of
+ * Oppenheimer's own; and the reminder on a turn nobody waits on.
  * The wiring is the toolbox's spec, the tool the skill tools' spec.
  */
 import { BOT_SKILL_BODY_MAX } from '@oppenheimer/shared';
 import {
   BOT_SKILL_NUDGE_AFTER_STEPS,
   BotSkillNudge,
+  isOppenheimersSkillName,
   opensWithSkill,
   patchSkillBody,
-  skillPatchAllowed,
+  skillChangeAllowed,
   withoutSkillNudge,
   withSkillNudge,
 } from '../domain/bot-skill-learning.policy';
@@ -23,31 +25,41 @@ function run(nudge: BotSkillNudge, tools: readonly string[], asked = false): num
   return tools.flatMap((tool, i) => (nudge.finished(tool, { asked }) ? [i + 1] : []));
 }
 
+const WAITED_ON = { openedWithSkill: false, attended: true };
+
 const calls = (count: number, tool = 'get_session') => Array.from({ length: count }, () => tool);
 
 describe('BotSkillNudge', () => {
   it('reminds once, on the call that reaches the threshold, and never again that turn', () => {
-    expect(run(new BotSkillNudge(false), calls(20))).toEqual([BOT_SKILL_NUDGE_AFTER_STEPS]);
+    expect(run(new BotSkillNudge(WAITED_ON), calls(20))).toEqual([BOT_SKILL_NUDGE_AFTER_STEPS]);
   });
 
   it('says nothing on a turn shorter than the threshold', () => {
-    expect(run(new BotSkillNudge(false), calls(BOT_SKILL_NUDGE_AFTER_STEPS - 1))).toEqual([]);
+    expect(run(new BotSkillNudge(WAITED_ON), calls(BOT_SKILL_NUDGE_AFTER_STEPS - 1))).toEqual([]);
   });
 
   it.each(['use_skill', 'save_skill', 'patch_skill'])(
     'says nothing on a turn that called %s',
     (tool) => {
       const tools = [...calls(3), tool, ...calls(10)];
-      expect(run(new BotSkillNudge(false), tools)).toEqual([]);
+      expect(run(new BotSkillNudge(WAITED_ON), tools)).toEqual([]);
     },
   );
 
   it('says nothing on a turn that opened with a skill the person ran', () => {
-    expect(run(new BotSkillNudge(true), calls(20))).toEqual([]);
+    expect(run(new BotSkillNudge({ openedWithSkill: true, attended: true }), calls(20))).toEqual(
+      [],
+    );
+  });
+
+  it('says nothing on a turn nobody is waiting on (a routine, a wake, a goal, a loop)', () => {
+    expect(run(new BotSkillNudge({ openedWithSkill: false, attended: false }), calls(20))).toEqual(
+      [],
+    );
   });
 
   it('skips a call that raised a card, and carries it on the next one', () => {
-    const nudge = new BotSkillNudge(false);
+    const nudge = new BotSkillNudge(WAITED_ON);
     run(nudge, calls(BOT_SKILL_NUDGE_AFTER_STEPS - 1));
     expect(nudge.finished('start_session', { asked: true })).toBe(false);
     expect(nudge.finished('get_session', { asked: false })).toBe(true);
@@ -55,8 +67,9 @@ describe('BotSkillNudge', () => {
 });
 
 describe('opensWithSkill', () => {
-  it('reads a /<name> as a skill run, a built-in or no command as none', () => {
+  it('reads a /<name> as a skill run, a built-in skill’s included, and a built-in command or no command as none', () => {
     expect(opensWithSkill('release-notes')).toBe(true);
+    expect(opensWithSkill('recap')).toBe(true);
     expect(opensWithSkill('goal')).toBe(false);
     expect(opensWithSkill('schedule')).toBe(false);
     expect(opensWithSkill(null)).toBe(false);
@@ -106,25 +119,26 @@ describe('patchSkillBody', () => {
   });
 });
 
-describe('skillPatchAllowed', () => {
-  it('lets the bot fix a skill it wrote last, unasked', () => {
-    expect(skillPatchAllowed({ name: 'triage', source: 'bot', askedByPerson: false })).toBe(
-      'allowed',
-    );
+describe('skillChangeAllowed', () => {
+  it('lets the bot change a skill it wrote last, unasked', () => {
+    expect(skillChangeAllowed({ source: 'bot', askedByPerson: false })).toBe(true);
   });
 
   it('lets it change one the person wrote only when they asked', () => {
-    expect(skillPatchAllowed({ name: 'triage', source: 'user', askedByPerson: false })).toBe(
-      'theirs',
-    );
-    expect(skillPatchAllowed({ name: 'triage', source: 'user', askedByPerson: true })).toBe(
-      'allowed',
-    );
+    expect(skillChangeAllowed({ source: 'user', askedByPerson: false })).toBe(false);
+    expect(skillChangeAllowed({ source: 'user', askedByPerson: true })).toBe(true);
+  });
+});
+
+describe('isOppenheimersSkillName', () => {
+  it('holds a built-in skill’s or command’s name the bot has no row under', () => {
+    expect(isOppenheimersSkillName('recap', false)).toBe(true);
+    expect(isOppenheimersSkillName('oppenheimer', false)).toBe(true);
+    expect(isOppenheimersSkillName('goal', false)).toBe(true);
+    expect(isOppenheimersSkillName('triage', false)).toBe(false);
   });
 
-  it('never lets it change a built-in, asked or not', () => {
-    expect(skillPatchAllowed({ name: 'goal', source: 'bot', askedByPerson: true })).toBe(
-      'built_in',
-    );
+  it('leaves the bot a row it saved under the name before it was reserved', () => {
+    expect(isOppenheimersSkillName('recap', true)).toBe(false);
   });
 });

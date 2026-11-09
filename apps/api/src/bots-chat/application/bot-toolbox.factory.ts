@@ -143,8 +143,9 @@ export class BotToolboxFactory {
    * let them do now (`BotOwnerPermissionsResolver`), at every call, so a role
    * removed mid-turn stops the next call: a tool outside it stays offered,
    * and its call is refused before it runs or raises a card, in words the
-   * bot passes on. A turn offered `save_skill` is reminded once to save
-   * its work as a skill after enough calls (`BotSkillNudge`).
+   * bot passes on. A turn a person waits on that is offered `save_skill`
+   * is reminded once to save its work as a skill after enough calls
+   * (`BotSkillNudge`).
    */
   tools(
     context: BotToolContext,
@@ -155,7 +156,11 @@ export class BotToolboxFactory {
     const offered = this.offered(granted, standing);
     const tools = this.bind(offered, context, held);
     if (!offered.some((definition) => definition.name === 'save_skill')) return tools;
-    return nudging(offered, tools, standing, opensWithSkill(context.ranCommand));
+    const nudge = new BotSkillNudge({
+      openedWithSkill: opensWithSkill(context.ranCommand),
+      attended: standing.origin === undefined || isAttended(standing.origin),
+    });
+    return nudging(offered, tools, standing, nudge);
   }
 
   /**
@@ -270,9 +275,8 @@ function nudging(
   definitions: readonly BotToolDefinition[],
   tools: readonly BotEngineTool[],
   standing: BotStanding,
-  openedWithSkill: boolean,
+  nudge: BotSkillNudge,
 ): BotEngineTool[] {
-  const nudge = new BotSkillNudge(openedWithSkill);
   return tools.map((tool, index) => {
     const definition = definitions[index];
     const asked =

@@ -54,23 +54,28 @@ export function opensWithSkill(ranCommand: string | null | undefined): boolean {
  * own tools is reported in order, and the answer is whether that call's
  * result carries the reminder. It does once a turn, on the first call at or
  * past `BOT_SKILL_NUDGE_AFTER_STEPS` that may carry it, unless the turn
- * opened with a skill or has used, saved or fixed one. A call that raised a
- * card does not carry it: the bot is told to end its turn there.
+ * opened with a skill, has used (a built-in included), saved or fixed one,
+ * or is a turn nobody is waiting on (a routine's run, a wake, a goal's
+ * continuation, a loop's run: `BOT_ATTENDED_ORIGINS`), where nobody would
+ * ask for the work again in words. A call that raised a card does not carry
+ * it: the bot is told to end its turn there.
  */
 export class BotSkillNudge {
   private steps = 0;
   private skilled: boolean;
   private nudged = false;
+  private readonly attended: boolean;
 
-  constructor(opensWithSkill: boolean) {
-    this.skilled = opensWithSkill;
+  constructor(turn: { openedWithSkill: boolean; attended: boolean }) {
+    this.skilled = turn.openedWithSkill;
+    this.attended = turn.attended;
   }
 
   /** A call of `tool` finished; true when its result is the one to carry the reminder. */
   finished(tool: string, options: { asked: boolean }): boolean {
     this.steps += 1;
     if (SKILL_TOOLS.has(tool)) this.skilled = true;
-    if (this.skilled || this.nudged || options.asked) return false;
+    if (!this.attended || this.skilled || this.nudged || options.asked) return false;
     if (this.steps < BOT_SKILL_NUDGE_AFTER_STEPS) return false;
     this.nudged = true;
     return true;
@@ -120,17 +125,37 @@ export function skillPatchRefusal(
 }
 
 /**
- * Whose skill the bot may change on its own: one it wrote last, yes; one
- * the person wrote last, only when they asked for the change in this
- * conversation, since it is their words; a built-in command never, since it
- * is product code and not a skill (`BOT_BUILT_IN_COMMANDS`).
+ * Whether a name is one the product holds (`BOT_SKILL_RESERVED_NAMES`: a
+ * built-in skill such as `recap`, or a built-in command) and the bot has no
+ * row of its own under it: then the name means Oppenheimer's, which the bot
+ * can neither save over nor fix. A row saved under the name before it was
+ * reserved stays the bot's own (`withBuiltInSkills`).
  */
-export function skillPatchAllowed(input: {
-  name: string;
-  source: BotAuthor;
-  askedByPerson: boolean;
-}): 'allowed' | 'built_in' | 'theirs' {
-  if ((BOT_SKILL_RESERVED_NAMES as readonly string[]).includes(input.name)) return 'built_in';
-  if (input.source === 'user' && !input.askedByPerson) return 'theirs';
-  return 'allowed';
+export function isOppenheimersSkillName(name: string, hasOwnRow: boolean): boolean {
+  return !hasOwnRow && (BOT_SKILL_RESERVED_NAMES as readonly string[]).includes(name);
+}
+
+/**
+ * Why a save or a fix under one of Oppenheimer's names does nothing, in the
+ * create command's words ("Oppenheimer uses that name").
+ */
+export function oppenheimersSkillRefusal(name: string, action: 'saved' | 'changed'): string {
+  return action === 'saved'
+    ? `Not saved: a skill cannot be named "${name}": Oppenheimer uses that name. Pick another name.`
+    : `Not changed: "${name}" is Oppenheimer's own (a skill every bot has, or a built-in command), and Oppenheimer uses that name; it cannot be changed. Propose the change in your answer instead, or save your own version under another name.`;
+}
+
+/**
+ * Whether the bot may change an existing skill of its own on its own (a
+ * save over it or a fix): one it wrote last, yes; one the person wrote
+ * last, only when they asked for the change in this conversation, since it
+ * is their words.
+ */
+export function skillChangeAllowed(input: { source: BotAuthor; askedByPerson: boolean }): boolean {
+  return input.source !== 'user' || input.askedByPerson;
+}
+
+/** Why a change to the person's skill was not made, and what to do instead. */
+export function theirSkillRefusal(name: string, action: 'saved' | 'changed'): string {
+  return `Not ${action}: the person wrote skill "${name}" last, and did not ask you to change it. Propose the change in your answer instead; they can make it in Settings → Skills or ask you to.`;
 }
