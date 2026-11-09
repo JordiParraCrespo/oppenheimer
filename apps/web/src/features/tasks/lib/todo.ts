@@ -38,6 +38,28 @@ function doneOn(task: TaskEntity): string | null {
 }
 
 /**
+ * A task put on an earlier day than `day` that comes along to it: still open,
+ * shown on today or a later day (today's comes along to tomorrow), or ticked
+ * done on `day` itself, so finishing it does not make it vanish.
+ */
+function isCarriedTo(task: TaskEntity, day: string, today: string): boolean {
+  if (!task.focusDate || task.focusDate >= day) return false;
+  return task.isDone ? doneOn(task) === day : day >= today;
+}
+
+/**
+ * A task due before today that is on `day` as overdue: still open, shown on
+ * today or a later day, or ticked done on `day` itself. A due date turns
+ * overdue only once today has passed it, whatever day is shown.
+ */
+function isOverdueOn(task: TaskEntity, day: string, today: string): boolean {
+  if (!task.dueDate) return false;
+  return task.isDone
+    ? task.dueDate < day && doneOn(task) === day
+    : day >= today && task.dueDate < today;
+}
+
+/**
  * The day's list (`product/versions/mvp/20-plan-calendar.md` §6). To do is
  * what the reader means to work on, so first come the tasks put on that day
  * (their focus date) and those due on it, timed ones first in time order and
@@ -65,13 +87,6 @@ export function todoEntries(
       listed.add(task.id);
       return [{ task, reason }];
     });
-  const ahead = day >= options.today;
-  // Still open on today or a later day and from before `until`, or finished on this very day.
-  // Work put on a day carries to every later one (today's comes along to tomorrow), while a
-  // due date only turns overdue once today has passed it.
-  const stillHere = (from: string | null, until: string) => (task: TaskEntity) =>
-    from !== null && (task.isDone ? from < day && doneOn(task) === day : ahead && from < until);
-
   const own = take(
     tasks
       .filter((task) => task.dueDate === day || task.focusDate === day)
@@ -86,14 +101,14 @@ export function todoEntries(
   );
   const carried = take(
     tasks
-      .filter((task) => stillHere(task.focusDate, day)(task))
+      .filter((task) => isCarriedTo(task, day, options.today))
       .sort((a, b) => (a.focusDate ?? '').localeCompare(b.focusDate ?? '') || compareRank(a, b)),
     'carried',
   );
   const overdue = options.overdue
     ? take(
         tasks
-          .filter((task) => stillHere(task.dueDate, options.today)(task))
+          .filter((task) => isOverdueOn(task, day, options.today))
           .sort((a, b) => (a.dueDate ?? '').localeCompare(b.dueDate ?? '') || compareRank(a, b)),
         'overdue',
       )
