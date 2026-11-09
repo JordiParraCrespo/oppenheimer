@@ -88,7 +88,9 @@ is the protocol: it says what the pull request waits for, and who merges.
 
 `/cook` picks one of the three for a task and says which (when it runs: `AGENTS.md`, "Hard rules"). A pull request with none of them merges only when Jordi says so. A review
 is never an approval: the bot reviews post from Jordi's account. The
-lanes are the `ship`, `propose` and `research` skills.
+lanes are the `ship`, `propose` and `research` skills; each merges
+through the `merge` skill, which is also `/merge`, Jordi's "merge this one"
+for any pull request.
 
 ## Babysitting
 

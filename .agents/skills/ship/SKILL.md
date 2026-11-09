@@ -58,7 +58,9 @@ Post the verdict on the pull request as one comment naming the SHA. A
 ## 4. Babysit and merge
 
 Keep the pull request mergeable per `steward`, "Babysitting", then merge
-when all of these hold on a fresh fetch:
+it with the `merge` skill (it brings the branch up to date with its target
+when it conflicts, and babysits it until GitHub lets it in) once all of
+these hold on a fresh fetch:
 
 - `steward` calls it ready, and the verdict is `PASS` on this head, or on a
   head whose only change since is a merge of `main` with a green
@@ -67,7 +69,5 @@ when all of these hold on a fresh fetch:
   thread is answered and resolved;
 - no `main-red` issue is open that this pull request does not fix.
 
-Merge pinned to the head SHA with merge commits, never with admin rights.
-Read the pull request back to confirm it merged, unsubscribe, and tell the
-user: the link, the merge commit, the verdict, what shipped, and the
-follow-ups.
+When it has merged, tell the user, beyond what `merge` reports: the
+verdict, what shipped, and the follow-ups.
