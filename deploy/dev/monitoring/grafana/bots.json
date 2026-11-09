@@ -356,7 +356,9 @@
       },
       "fieldConfig": {
         "defaults": {
-          "unit": "percentunit"
+          "unit": "percentunit",
+          "min": 0,
+          "max": 1
         },
         "overrides": []
       },
@@ -665,7 +667,9 @@
       },
       "fieldConfig": {
         "defaults": {
-          "unit": "percentunit"
+          "unit": "percentunit",
+          "min": 0,
+          "max": 1
         },
         "overrides": []
       },
@@ -771,7 +775,10 @@
           "custom": {
             "stacking": {
               "mode": "normal"
-            }
+            },
+            "drawStyle": "bars",
+            "fillOpacity": 80,
+            "lineWidth": 1
           }
         },
         "overrides": []
@@ -792,7 +799,7 @@
             "type": "loki",
             "uid": "${DS_LOKI}"
           },
-          "expr": "sum by (level) (count_over_time({app=\"api\"}[$__auto]))",
+          "expr": "sum by (level) (count_over_time({app=\"api\"}[1m]))",
           "legendFormat": "{{level}}"
         }
       ]
