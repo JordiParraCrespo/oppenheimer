@@ -59,14 +59,12 @@ Post the verdict on the pull request as one comment naming the SHA. A
 
 ## 4. Babysit and merge
 
-Keep the pull request mergeable and merge it. `research` merges through
-this step too, without the verdict. On every event and check-in, fetch it
-fresh (`mergeable` can read unknown while GitHub computes it; read it
-again, it is not a conflict) and:
+On every event and check-in, fetch it fresh (`mergeable` can read unknown
+while GitHub computes it; read it again, it is not a conflict) and:
 
 1. **Merge it if it is clean**, when all of these hold:
    - `steward` calls it ready, and the verdict is `PASS` on this head, or
-     on a head whose only change since is a merge of the target with a
+     on a head whose only change since is a merge of the base with a
      green `pnpm ci:local`;
    - GitHub reports it mergeable, no review requests changes, and every
      review thread is answered and resolved;
@@ -77,28 +75,8 @@ again, it is not a conflict) and:
    not a failure: fetch again. Read it back to confirm it merged,
    unsubscribe, drop the check-in, and tell the user: the link, the merge
    commit, the verdict, what shipped, and the follow-ups.
-2. **Bring it up to date when it conflicts**, or is behind a base that
-   must be current:
-   - check out its head, confirm the SHA, `git fetch origin <base>` and
-     `git merge origin/<base>`; never rebase or force-push;
-   - resolve each conflict by reading both sides and the commits behind
-     them (`git log --merge -p <file>`): keep what each side meant, not
-     one side wholesale. Lockfiles and generated files are never
-     hand-merged: take either side and regenerate them with their tooling
-     (`pnpm install`, `pnpm generate:api-client`, the router's generator,
-     `pnpm generate:guide`, `product/brief.html` from its notes);
-   - a conflict that needs a product call (both sides changed the same
-     behavior, or one deleted what the other built on) goes to Jordi with
-     the file, both sides in a sentence each and your default; leave the
-     merge uncommitted until he answers;
-   - commit the merge staging files by path, then `steward`, "After a
-     merge from main": `pnpm ci:local`, fix red through "The order", push
-     on green, replace the report. A resolution that changed behavior
-     needs the verdict again (and screenshots, for a visual file); a plain
-     merge does not. Then back to 1.
-3. **Otherwise babysit** per `steward`, "Babysitting": answer or fix review
-   comments, keep one check-in armed about every hour while it is open,
-   say once what it waits for, and tell Jordi what only he can clear (a
-   change request, a product call, a `main-red` that is not yours).
+2. **Otherwise babysit it** per `steward`, "Babysitting" (a conflict is
+   its step 1), then back to 1. Tell Jordi what only he can clear: a
+   change request, a product call, a `main-red` that is not yours.
 
 Stop when it merges or closes, or when Jordi says to.
