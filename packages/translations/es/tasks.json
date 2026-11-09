@@ -188,6 +188,7 @@
     "add": "Añadir una tarea",
     "addLabel": "Añadir una tarea para este día",
     "addFailed": "No se pudo añadir la tarea.",
+    "startSession": "Iniciar una sesión para {{title}}",
     "toggleFailed": "No se pudo actualizar la tarea.",
     "loadFailed": "No se pudieron cargar tus tareas.",
     "state": {

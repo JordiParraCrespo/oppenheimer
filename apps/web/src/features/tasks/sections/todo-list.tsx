@@ -1,10 +1,12 @@
 import {
   DragProvider,
   EmptyState,
+  IconButton,
   SortableGroup,
   SortableTodoRow,
   TodoRow,
 } from '@oppenheimer/design-system-web';
+import { Play } from '@oppenheimer/design-system-web/icons';
 import { useMoveTask, useSuspensePlan } from '@oppenheimer/frontend-consumer/react';
 import { ErrorAlert, formatCalendarDay, useDragLabels, useLocale } from '@oppenheimer/frontend-web';
 import { getRouteApi, useNavigate } from '@tanstack/react-router';
@@ -20,10 +22,11 @@ const todo = getRouteApi('/_authenticated/plan/todo');
  * The day's tasks (the 2026-11-08 `Tasks` frame), each a `TodoRow`: its
  * milestone and where it stands under the title, the time it is due at, its
  * project. Ticking one moves it to Done (or back to To do) as the board's
- * tick does; its title opens it on the board; its grip drags it into the
- * reader's own order for the day, kept on this device (`useTodoOrder`). It reads under Suspense, in
- * the screen's `QueryState`; a refetch that fails keeps the list and says so
- * above it.
+ * tick does; its title opens it on the board; its play button opens Start
+ * session for it on this screen (`?start=`), on any task not done; its grip
+ * drags it into the reader's own order for the day, kept on this device
+ * (`useTodoOrder`). It reads under Suspense, in the screen's `QueryState`; a
+ * refetch that fails keeps the list and says so above it.
  */
 export function TodoList() {
   const { t } = useTranslation();
@@ -32,6 +35,7 @@ export function TodoList() {
   const { overdue } = todo.useSearch();
   const { projectIds } = useScopeProject();
   const go = useNavigate();
+  const navigate = todo.useNavigate();
   const read = useSuspensePlan();
   const move = useMoveTask();
   const projects = new Map(read.projects.map((row) => [row.id, row]));
@@ -113,6 +117,21 @@ export function TodoList() {
                     })
                   }
                   onOpen={() => go({ to: '/plan', search: { task: task.id } })}
+                  action={
+                    task.isDone ? undefined : (
+                      <IconButton
+                        type="button"
+                        size="sm"
+                        aria-label={t('tasks.todo.startSession', { title: task.title })}
+                        title={t('tasks.dialog.startSession')}
+                        onClick={() =>
+                          navigate({ search: (previous) => ({ ...previous, start: task.id }) })
+                        }
+                      >
+                        <Play />
+                      </IconButton>
+                    )
+                  }
                 />
               );
             })}

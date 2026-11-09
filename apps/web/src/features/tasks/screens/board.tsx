@@ -21,6 +21,7 @@ const board = getRouteApi('/_authenticated/plan/');
 export function BoardScreen() {
   const { t } = useTranslation();
   const navigate = board.useNavigate();
+  const { start } = board.useSearch();
   const openNew = () => navigate({ search: (previous) => ({ ...previous, task: NEW_TASK }) });
   useNewTaskShortcut(openNew);
 
@@ -40,7 +41,10 @@ export function BoardScreen() {
         </QueryState.Data>
       </QueryState>
       <TaskDialog />
-      <StartSessionDialog />
+      <StartSessionDialog
+        taskId={start}
+        onClose={() => navigate({ search: (previous) => ({ ...previous, start: undefined }) })}
+      />
     </div>
   );
 }

@@ -3040,6 +3040,7 @@
       "add": "Add a task",
       "addLabel": "Add a task for this day",
       "addFailed": "Couldn’t add that task.",
+      "startSession": "Start a session for {{title}}",
       "toggleFailed": "Couldn’t update that task.",
       "loadFailed": "Couldn’t load your tasks.",
       "state": {
