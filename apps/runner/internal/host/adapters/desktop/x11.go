@@ -98,26 +98,27 @@ func (x *X11) Act(ctx context.Context, req domain.ComputerRequest) error {
 	if err != nil {
 		return err
 	}
-	at := []string{"mousemove", strconv.Itoa(req.X), strconv.Itoa(req.Y)}
+	// at is the pointer moved to (X, Y), then whatever follows there.
+	at := func(then ...string) []string {
+		return append([]string{"mousemove", strconv.Itoa(req.X), strconv.Itoa(req.Y)}, then...)
+	}
 	var args []string
 	switch req.Action {
 	case domain.ComputerMove:
-		args = at
+		args = at()
 	case domain.ComputerClick:
-		args = append(at, "click", "1")
+		args = at("click", "1")
 	case domain.ComputerDoubleClick:
-		args = append(at, "click", "--repeat", "2", "--delay", "80", "1")
+		args = at("click", "--repeat", "2", "--delay", "80", "1")
 	case domain.ComputerRightClick:
-		args = append(at, "click", "3")
+		args = at("click", "3")
 	case domain.ComputerMiddleClick:
-		args = append(at, "click", "2")
+		args = at("click", "2")
 	case domain.ComputerDrag:
-		args = append(at, "mousedown", "1", "sleep", "0.15",
+		args = at("mousedown", "1", "sleep", "0.15",
 			"mousemove", strconv.Itoa(req.ToX), strconv.Itoa(req.ToY), "sleep", "0.15", "mouseup", "1")
 	case domain.ComputerScroll:
-		args = at
-		args = append(args, wheel(req.ScrollY, "5", "4")...)
-		args = append(args, wheel(req.ScrollX, "7", "6")...)
+		args = at(append(wheel(req.ScrollY, "5", "4"), wheel(req.ScrollX, "7", "6")...)...)
 	case domain.ComputerType:
 		// Bounded by the text's own length: the longest a bot may type takes
 		// longer than any other action is given.

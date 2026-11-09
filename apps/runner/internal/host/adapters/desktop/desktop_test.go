@@ -60,9 +60,7 @@ func TestEveryProtocolKeyHasAMacKeyCode(t *testing.T) {
 	for c := '0'; c <= '9'; c++ {
 		keys = append(keys, string(c))
 	}
-	for _, f := range []string{"f1", "f2", "f3", "f4", "f5", "f6", "f7", "f8", "f9", "f10", "f11", "f12"} {
-		keys = append(keys, f)
-	}
+	keys = append(keys, "f1", "f2", "f3", "f4", "f5", "f6", "f7", "f8", "f9", "f10", "f11", "f12")
 	seen := map[int]string{}
 	for _, key := range keys {
 		code, ok := macKeyCodes[key]
