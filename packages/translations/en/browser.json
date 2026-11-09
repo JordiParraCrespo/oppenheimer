@@ -405,6 +405,10 @@
       "WHATSAPP_008": "WhatsApp didn't take the message. Try again in a moment.",
       "WHATSAPP_009": "That number has sent as many bot messages as it may for now. Try again later.",
       "WHATSAPP_010": "There's no such WhatsApp chat on that number.",
+      "WHATSAPP_011": "That code is wrong or has expired. Check the latest code sent to your number, or ask for a new one.",
+      "WHATSAPP_012": "No number is waiting for a code. Enter your number first.",
+      "WHATSAPP_013": "That can't be your own number here. Enter the number you write from, not the one linked.",
+      "WHATSAPP_014": "Too many wrong codes. Ask for a new code and try again.",
       "TELEGRAM_001": "That Telegram bot isn't connected any more.",
       "TELEGRAM_002": "Telegram belongs to a workspace. Open one and try again.",
       "TELEGRAM_003": "You've connected three Telegram bots, the most one person connects. Disconnect one to add another.",
@@ -492,7 +496,8 @@
       "BOTS_039": "This bot already has a skill with that name. Pick another.",
       "BOTS_040": "This bot has as many skills as it can keep. Delete one first.",
       "BOTS_041": "This bot has no tidy of its memory to undo.",
-      "BOTS_042": "This bot answers on a Telegram bot. Choose another bot, or none, under Settings → Telegram before you delete it."
+      "BOTS_042": "This bot answers on a Telegram bot. Choose another bot, or none, under Settings → Telegram before you delete it.",
+      "BOTS_043": "This bot answers on a WhatsApp number. Choose another bot, or none, under Settings → WhatsApp before you delete it."
     },
     "notFound": {
       "title": "That page does not exist",
@@ -3739,7 +3744,38 @@
       "qrStep1": "Open WhatsApp on the phone with this number.",
       "qrStep2": "Go to Settings → Linked devices → Link a device.",
       "qrStep3": "Point the phone at this code. It changes every few seconds.",
-      "qrWaiting": "Waiting for the host to issue a code…"
+      "qrWaiting": "Waiting for the host to issue a code…",
+      "answering": {
+        "title": "Answers you",
+        "botLabel": "The bot that answers you on {{label}}",
+        "noBot": "None (doesn’t answer)",
+        "search": "Find a bot",
+        "noMatch": "No bot matches",
+        "none": "No bot answers on this number yet. Pick one to answer your own number.",
+        "chosen": "Answers your own number. Write “Name: …” in the chat to talk to another of your bots.",
+        "failed": "That did not save. Try again."
+      },
+      "owner": {
+        "title": "Your number",
+        "none": "Only your own number is answered. This number sends it a code, and you enter the code here.",
+        "codeSent": "We sent a code to {{number}} from this number. Enter it here. It works until {{time}}.",
+        "expired": "The code sent to {{number}} has expired. Send a new one.",
+        "confirmed": "Only {{number}} is answered here.",
+        "replacing": "{{number}} is still answered until you confirm the new number.",
+        "hostOffline": "The host is offline. Start its runner to send a code.",
+        "numberLabel": "Your own WhatsApp number",
+        "numberPlaceholder": "+34 600 111 222",
+        "send": "Send code",
+        "sending": "Sending…",
+        "codeLabel": "The code your number received",
+        "codePlaceholder": "123456",
+        "confirm": "Confirm",
+        "confirming": "Confirming…",
+        "resend": "Send a new code",
+        "change": "Change",
+        "otherNumber": "Use another number",
+        "failed": "That did not work. Try again."
+      }
     },
     "telegram": {
       "title": "Telegram",

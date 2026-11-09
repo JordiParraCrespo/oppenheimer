@@ -3,22 +3,26 @@ import { MessageCircle } from '@oppenheimer/design-system-web/icons';
 import { useSuspenseWhatsappSettings } from '@oppenheimer/frontend-consumer/react';
 import { ErrorAlert } from '@oppenheimer/frontend-web';
 import { WHATSAPP_ACCOUNTS_MAX } from '@oppenheimer/shared/schemas/whatsapp';
-import { useState } from 'react';
+import { Fragment, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { LinkWhatsappNumberDialog } from '@/features/whatsapp/dialogs/link-whatsapp-number';
 import { whatsappHostsOf } from '@/features/whatsapp/lib/whatsapp-hosts';
 import { WhatsappAccountRow } from '@/features/whatsapp/sections/whatsapp-account-row';
+import { WhatsappAnsweringRow } from '@/features/whatsapp/sections/whatsapp-answering-row';
+import { WhatsappOwnerRow } from '@/features/whatsapp/sections/whatsapp-owner-row';
 
 /**
  * The reader's linked numbers, one row each, and Link a number up to three,
- * under the screen's callout that says to use a spare one. With none yet, the card that
+ * under the screen's callout that says to use a spare one. Under a connected
+ * number, who answers there: the bot that answers by default, and the
+ * reader's own number, the only one answered. With none yet, the card that
  * says what linking gives the bots; with no host paired, Link is off with
  * that as its reason. Read under Suspense, in the screen's `QueryState`; a
  * refetch that fails keeps the rows and says so above them.
  */
 export function WhatsappAccounts() {
   const { t } = useTranslation();
-  const { accounts, hosts, error } = useSuspenseWhatsappSettings();
+  const { accounts, hosts, bots, error } = useSuspenseWhatsappSettings();
   const [linking, setLinking] = useState(false);
   const choices = whatsappHostsOf(hosts);
   const names = new Map(choices.map((host) => [host.id, host.name]));
@@ -63,11 +67,18 @@ export function WhatsappAccounts() {
         <>
           <SettingsGroup>
             {accounts.map((account) => (
-              <WhatsappAccountRow
-                key={account.id}
-                account={account}
-                hostName={names.get(account.hostId) ?? null}
-              />
+              <Fragment key={account.id}>
+                <WhatsappAccountRow
+                  account={account}
+                  hostName={names.get(account.hostId) ?? null}
+                />
+                {account.status === 'connected' ? (
+                  <>
+                    <WhatsappAnsweringRow account={account} bots={bots} />
+                    <WhatsappOwnerRow account={account} />
+                  </>
+                ) : null}
+              </Fragment>
             ))}
           </SettingsGroup>
           <div className="mt-4 flex justify-end">{link}</div>

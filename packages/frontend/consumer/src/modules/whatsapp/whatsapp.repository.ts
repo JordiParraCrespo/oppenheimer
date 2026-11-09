@@ -17,6 +17,10 @@ function toAccount(data: WhatsappAccountResponseDto): WhatsappAccountEntity {
     data.qrExpiresAt ? new Date(data.qrExpiresAt) : null,
     data.statusReason ?? null,
     data.linkedAt,
+    data.answeringBotId ?? null,
+    data.ownerNumber ?? null,
+    data.ownerPendingNumber ?? null,
+    data.ownerCodeExpiresAt ? new Date(data.ownerCodeExpiresAt) : null,
   );
 }
 
@@ -40,6 +44,43 @@ export class WhatsappRepository {
       const data = await api.body(
         heyApiSdk.linkWhatsapp({ body: { hostId, ...(label ? { label } : {}) } }),
       );
+      return toAccount(data);
+    });
+  }
+
+  /** Which of the reader's bots answers them on this number by default; null for none. */
+  answerAs(id: string, answeringBotId: string | null): Promise<WhatsappAccountEntity> {
+    return callApi(WhatsappErrors.UPDATE_FAILED, async (api) => {
+      const data = await api.body(
+        heyApiSdk.updateWhatsappAccount({ path: { id }, body: { answeringBotId } }),
+      );
+      return toAccount(data);
+    });
+  }
+
+  /**
+   * Names the reader's own number: this one sends it a six-digit code, to be
+   * entered with {@link confirmOwner} within ten minutes. Asking again sends
+   * a new code and the old one stops working; a confirmed number stays the
+   * owner until another is confirmed. The code itself never comes back here.
+   */
+  requestOwner(id: string, phone: string): Promise<WhatsappAccountEntity> {
+    return callApi(WhatsappErrors.OWNER_REQUEST_FAILED, async (api) => {
+      const data = await api.body(
+        heyApiSdk.requestWhatsappOwner({ path: { id }, body: { phone } }),
+      );
+      return toAccount(data);
+    });
+  }
+
+  /**
+   * Enters the code the reader's number received, which makes that number
+   * the only one answered here. A wrong or expired code is WHATSAPP_011, no
+   * number waiting WHATSAPP_012, and the fifth wrong one WHATSAPP_014.
+   */
+  confirmOwner(id: string, code: string): Promise<WhatsappAccountEntity> {
+    return callApi(WhatsappErrors.OWNER_CONFIRM_FAILED, async (api) => {
+      const data = await api.body(heyApiSdk.confirmWhatsappOwner({ path: { id }, body: { code } }));
       return toAccount(data);
     });
   }

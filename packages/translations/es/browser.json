@@ -407,6 +407,10 @@
       "WHATSAPP_008": "WhatsApp no aceptó el mensaje. Vuelve a intentarlo en un momento.",
       "WHATSAPP_009": "Ese número ya ha enviado todos los mensajes de bots que puede por ahora. Inténtalo más tarde.",
       "WHATSAPP_010": "No hay ningún chat de WhatsApp así en ese número.",
+      "WHATSAPP_011": "Ese código no es correcto o ha caducado. Revisa el último código enviado a tu número o pide uno nuevo.",
+      "WHATSAPP_012": "Ningún número está esperando un código. Primero escribe tu número.",
+      "WHATSAPP_013": "Ese no puede ser tu número aquí. Escribe el número desde el que escribes, no el vinculado.",
+      "WHATSAPP_014": "Demasiados códigos incorrectos. Pide un código nuevo y vuelve a intentarlo.",
       "TELEGRAM_001": "Ese bot de Telegram ya no está conectado.",
       "TELEGRAM_002": "Telegram pertenece a un espacio de trabajo. Abre uno y vuelve a intentarlo.",
       "TELEGRAM_003": "Ya has conectado tres bots de Telegram, el máximo por persona. Desconecta uno para añadir otro.",
@@ -494,7 +498,8 @@
       "BOTS_039": "Este bot ya tiene una habilidad con ese nombre. Elige otro.",
       "BOTS_040": "Este bot ya tiene tantas habilidades como puede guardar. Borra una primero.",
       "BOTS_041": "Este bot no tiene ninguna ordenación de su memoria que deshacer.",
-      "BOTS_042": "Este bot responde en un bot de Telegram. Elige otro bot, o ninguno, en Ajustes → Telegram antes de eliminarlo."
+      "BOTS_042": "Este bot responde en un bot de Telegram. Elige otro bot, o ninguno, en Ajustes → Telegram antes de eliminarlo.",
+      "BOTS_043": "Este bot responde en un número de WhatsApp. Elige otro bot, o ninguno, en Ajustes → WhatsApp antes de eliminarlo."
     },
     "notFound": {
       "title": "Esta página no existe",
@@ -3766,7 +3771,38 @@
       "qrStep1": "Abre WhatsApp en el teléfono con este número.",
       "qrStep2": "Ve a Ajustes → Dispositivos vinculados → Vincular un dispositivo.",
       "qrStep3": "Apunta el teléfono a este código. Cambia cada pocos segundos.",
-      "qrWaiting": "Esperando a que el host genere un código…"
+      "qrWaiting": "Esperando a que el host genere un código…",
+      "answering": {
+        "title": "Te responde",
+        "botLabel": "El bot que te responde en {{label}}",
+        "noBot": "Ninguno (no responde)",
+        "search": "Busca un bot",
+        "noMatch": "Ningún bot coincide",
+        "none": "Aún no responde ningún bot en este número. Elige uno para que responda a tu propio número.",
+        "chosen": "Responde a tu propio número. Escribe «Nombre: …» en el chat para hablar con otro de tus bots.",
+        "failed": "No se ha guardado. Inténtalo de nuevo."
+      },
+      "owner": {
+        "title": "Tu número",
+        "none": "Solo se responde a tu propio número. Este número le envía un código, y tú lo introduces aquí.",
+        "codeSent": "Hemos enviado un código a {{number}} desde este número. Introdúcelo aquí. Vale hasta las {{time}}.",
+        "expired": "El código enviado a {{number}} ha caducado. Pide uno nuevo.",
+        "confirmed": "Aquí solo se responde a {{number}}.",
+        "replacing": "Se sigue respondiendo a {{number}} hasta que confirmes el número nuevo.",
+        "hostOffline": "El host está desconectado. Inicia su runner para enviar un código.",
+        "numberLabel": "Tu propio número de WhatsApp",
+        "numberPlaceholder": "+34 600 111 222",
+        "send": "Enviar código",
+        "sending": "Enviando…",
+        "codeLabel": "El código que ha recibido tu número",
+        "codePlaceholder": "123456",
+        "confirm": "Confirmar",
+        "confirming": "Confirmando…",
+        "resend": "Enviar un código nuevo",
+        "change": "Cambiar",
+        "otherNumber": "Usar otro número",
+        "failed": "No ha funcionado. Inténtalo de nuevo."
+      }
     },
     "telegram": {
       "title": "Telegram",

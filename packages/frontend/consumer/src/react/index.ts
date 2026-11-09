@@ -338,7 +338,10 @@ export {
   type VoiceDictation,
 } from './voice.queries';
 export {
+  useAnswerWhatsappAs,
+  useConfirmWhatsappOwner,
   useLinkWhatsapp,
+  useRequestWhatsappOwner,
   useSuspenseWhatsappSettings,
   useUnlinkWhatsapp,
 } from './whatsapp.queries';
