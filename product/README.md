@@ -1435,3 +1435,9 @@ earlier note:
   `patch_skill` fixes one passage of a skill. Either tool changes a skill
   the person wrote last only when they asked, and neither touches the
   skills Oppenheimer gives every bot.
+- `versions/mvp/25-bots.md` §4.2 (2026-10-27) had a bot find a session only
+  by listing them, newest first, and read one it already had the id of. On
+  2026-11-09, from Hermes Agent's session search, a bot searches every
+  session of the workspace, on any host and closed ones included, for words
+  in its name and log (`search_sessions`); the agents' transcripts on the
+  hosts are not searched. The `recap` skill searches its topic the same way.

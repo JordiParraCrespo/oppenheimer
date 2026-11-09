@@ -51,7 +51,7 @@ Keys live in **Settings → Model providers**, one per provider for the workspac
 
 A bot answers what its own tools, web search and web fetch can answer. When the work needs a shell or a checkout (tests, a build, a fix) it starts a session: a coding agent on a host, always at Approve for me, in a known project's repository or a folder it was given, on the host you named, else the project's default, else its home host. It follows that session, is woken when the agent needs input, finishes, fails or looks stuck, and reports what the session shows.
 
-It can also prompt a session whose agent waits at its prompt, answer an agent's question or permission dialog, stop a session, close a session a bot started, such as one that failed (`close_session`), read a session's log and conversation, and start cloud sessions.
+It can also prompt a session whose agent waits at its prompt, answer an agent's question or permission dialog, stop a session, close a session a bot started, such as one that failed (`close_session`), read a session's log and conversation, and start cloud sessions. To find a session, it can search every session of your workspace, on any host and closed ones included, for words in its name and log: the tasks and prompts it was given, the agent's results, notes, questions and failures (`search_sessions`). It does not search the agents' own conversations, which stay on the host.
 
 ## What else it can do
 
