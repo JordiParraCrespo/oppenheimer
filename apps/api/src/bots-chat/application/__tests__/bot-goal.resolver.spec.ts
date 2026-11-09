@@ -123,8 +123,6 @@ describe('BotGoalResolver', () => {
     expect(await resolver.pause(goal, 'no_progress', null)).toBe(true);
     expect(goal.paused?.reason).toBe('no_progress');
     expect(goals.pause.mock.calls[0][1].event).toMatchObject({ activity: 'paused' });
-    // Paused at a turn's end, after counting it: the write carries the spend.
-    expect(goals.pause.mock.calls[0][2]).toBe('counted');
     expect(waiting.status).toBe('cancelled');
   });
 

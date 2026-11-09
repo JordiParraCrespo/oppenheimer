@@ -597,9 +597,7 @@ branch"), up to 2,000 characters.
   count and its spend, queues nothing, and shows above the composer with
   why, **Resume** and Stop; `/goal resume` (or `continue`, `unpause`) does
   what Resume does (`POST /bots/:id/goal/resume`), queuing the next
-  continuation with a line saying the owner resumed it; resumed before the
-  turn that paused it has ended, it is resumed in place, and that turn's end
-  counts it and goes on (2026-11-09). It pauses when:
+  continuation with a line saying the owner resumed it. It pauses when:
   - the bot says it is `blocked`, or the reviewer finds it impossible;
   - a turn of it stopped calling tools: 3 in a row (Codex's empty turns,
     `no_progress`);
@@ -626,10 +624,14 @@ branch"), up to 2,000 characters.
   set it, and its continuations. A person's message, a routine or a wake
   ending in between changes nothing. The continuation is keyed by the goal
   and its number, so an end delivered twice queues one, and its count is
-  claimed in the same transaction that queues it. The job that decides a
-  turn's end can run twice (a worker that died mid-job): a turn whose
-  number is behind the goal's count was decided already, and the second
-  run counts nothing and queues nothing (2026-11-09). A Stop that won the race
+  claimed in the same transaction that queues it. Each of its turns is counted
+  once, keyed on the turn (`bot_turn."goalSpendCountedAt"`, set in the
+  transaction that adds its tokens and idleness to the goal's, 2026-11-09):
+  its end counts it first, whatever the goal went through since (paused by
+  the bot, held, resumed, moved on), and a job run twice adds nothing. No
+  other write carries the goal's spend, so none can drop or repeat it. Then
+  a turn whose number is behind the goal's count was decided already and
+  decides nothing. A Stop that won the race
   leaves nothing to queue, and a goal ended or replaced while the reviewer
   answered is left as it is: the goal is read again after the review.
 - **How it ends.** The reviewer finds the bot's claim met; the owner

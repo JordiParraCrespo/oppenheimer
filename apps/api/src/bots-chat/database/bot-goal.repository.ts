@@ -10,7 +10,7 @@ import { GOAL_KEY_PREFIX } from '../domain/bot-goal.policy';
 import type { BotMessageEntity } from '../domain/bot-message.entity';
 import type { BotRateLimit } from '../domain/bot-rate-limit.policy';
 import { BotGoalOrmEntity } from './bot-goal.orm-entity';
-import type { BotGoalRepositoryPort } from './bot-goal.repository.port';
+import type { BotGoalRepositoryPort, GoalTurnSpend } from './bot-goal.repository.port';
 import { insertMessageWithin } from './bot-message.repository';
 
 @Injectable()
@@ -41,36 +41,15 @@ export class BotGoalRepository
     return this.dataSource.transaction((manager) => setGoalWithin(manager, this.mapper, goal));
   }
 
-  pause(goal: BotGoalEntity, line: BotMessageEntity, spend: 'owed' | 'counted'): Promise<boolean> {
+  pause(goal: BotGoalEntity, line: BotMessageEntity): Promise<boolean> {
     return this.dataSource.transaction(async (manager) => {
-      const {
-        pausedAt,
-        pauseReason,
-        pauseNote,
-        tokensUsed,
-        idleTurns,
-        claim,
-        waitingFor,
-        waitingUntil,
-      } = this.mapper.toPersistence(goal);
+      // Its spend is not this write's: `countTurnSpend` adds each turn's once.
+      const { pausedAt, pauseReason, pauseNote, claim, waitingFor, waitingUntil } =
+        this.mapper.toPersistence(goal);
       const result = await manager
         .createQueryBuilder()
         .update(BotGoalOrmEntity)
-        // `updatedAt` at the pause's own time while its turn's spend is owed:
-        // `recordSpend` writes once while they match. Past it, nothing is owed.
-        .set({
-          pausedAt,
-          pauseReason,
-          pauseNote,
-          tokensUsed,
-          idleTurns,
-          claim,
-          waitingFor,
-          waitingUntil,
-          ...(pausedAt
-            ? { updatedAt: spend === 'owed' ? pausedAt : new Date(pausedAt.getTime() + 1) }
-            : {}),
-        })
+        .set({ pausedAt, pauseReason, pauseNote, claim, waitingFor, waitingUntil })
         .where('id = :id AND continuations = :at AND "pausedAt" IS NULL', {
           id: goal.id,
           at: goal.continuationsAtLoad,
@@ -83,23 +62,31 @@ export class BotGoalRepository
     });
   }
 
-  async recordSpend(goal: BotGoalEntity): Promise<boolean> {
-    const { tokensUsed, idleTurns, pausedAt } = this.mapper.toPersistence(goal);
-    const result = await this.repository
-      .createQueryBuilder()
-      .update(BotGoalOrmEntity)
-      .set({ tokensUsed, idleTurns, updatedAt: () => 'now()' })
-      .where('id = :id AND "pausedAt" = :pausedAt AND "updatedAt" = "pausedAt"', {
-        id: goal.id,
-        pausedAt,
-      })
-      .execute();
-    return result.affected === 1;
+  countTurnSpend(goal: BotGoalEntity, turn: GoalTurnSpend): Promise<boolean> {
+    return this.dataSource.transaction(async (manager) => {
+      const [, marked]: [unknown[], number] = await manager.query(
+        `UPDATE "bot_turn" SET "goalSpendCountedAt" = now()
+          WHERE "id" = $1 AND "organizationId" = $2 AND "goalSpendCountedAt" IS NULL`,
+        [turn.id, goal.organizationId],
+      );
+      if (marked !== 1) return false;
+      // Added to what the row holds, never written from a loaded copy, so no
+      // other write to the goal can drop or repeat it.
+      await manager.query(
+        `UPDATE "bot_goal"
+            SET "tokensUsed" = "tokensUsed" + $3,
+                "idleTurns" = CASE WHEN $4 THEN 0 ELSE "idleTurns" + 1 END,
+                "updatedAt" = now()
+          WHERE "id" = $1 AND "organizationId" = $2`,
+        [goal.id, goal.organizationId, Math.max(0, Math.round(turn.tokens)), turn.calledTools],
+      );
+      return true;
+    });
   }
 
   async claim(goal: BotGoalEntity): Promise<boolean> {
-    // Only a running goal takes a claim: a paused one's `updatedAt` marks the
-    // spend its pause still owes, which this write would move past.
+    // Only a running goal takes a claim: one the bot paused in the same turn
+    // is the person's to resume, and its reviewer would read a stale claim.
     const result = await this.repository
       .createQueryBuilder()
       .update(BotGoalOrmEntity)
@@ -110,26 +97,6 @@ export class BotGoalRepository
       })
       .execute();
     return result.affected === 1;
-  }
-
-  resumeOwed(goal: BotGoalEntity, line: BotMessageEntity): Promise<boolean> {
-    const pausedAt = goal.paused?.at;
-    if (!pausedAt) return Promise.resolve(false);
-    return this.dataSource.transaction(async (manager) => {
-      // What `BotGoalEntity.resume` clears, written without the goal's spend.
-      const result = await manager
-        .createQueryBuilder()
-        .update(BotGoalOrmEntity)
-        .set({ pausedAt: null, pauseReason: null, pauseNote: null, idleTurns: 0, claim: null })
-        .where(
-          'id = :id AND continuations = :at AND "pausedAt" = :pausedAt AND "updatedAt" = "pausedAt"',
-          { id: goal.id, at: goal.continuationsAtLoad, pausedAt },
-        )
-        .execute();
-      if (result.affected !== 1) return false;
-      await insertMessageWithin(manager, this.messages, line);
-      return true;
-    });
   }
 
   end(goal: BotGoalEntity, line: BotMessageEntity | null): Promise<boolean> {
@@ -169,8 +136,8 @@ export async function setGoalWithin(
 /**
  * Claims the goal's next continuation inside a transaction that queues it
  * (`BotTurnRepository.enqueueContinuation`): its count, with what the ended
- * turn added to it (tokens, idle turns, a claim the reviewer turned down, a
- * pause the owner lifted), conditional on the count it was loaded at and on
+ * turn changed (a claim the reviewer turned down, a pause the owner lifted;
+ * its spend is `countTurnSpend`'s), conditional on the count it was loaded at and on
  * it still running (or, `resuming`, still paused). False when the goal was
  * deleted (stopped, ended, replaced), paused meanwhile, or another end
  * claimed the count first. The row lock it takes is the one a Stop's delete takes,
@@ -184,11 +151,11 @@ export async function claimContinuationWithin(
   resuming: boolean,
 ): Promise<boolean> {
   // `advance` ended any wait the goal held for: the write carries what it left.
+  // Its spend is not this write's (`countTurnSpend`); a resume clears idleness.
   const {
     continuations,
     waitingFor,
     waitingUntil,
-    tokensUsed,
     idleTurns,
     claim,
     pausedAt,
@@ -202,8 +169,7 @@ export async function claimContinuationWithin(
       continuations,
       waitingFor,
       waitingUntil,
-      tokensUsed,
-      idleTurns,
+      ...(resuming ? { idleTurns } : {}),
       claim,
       pausedAt,
       pauseReason,

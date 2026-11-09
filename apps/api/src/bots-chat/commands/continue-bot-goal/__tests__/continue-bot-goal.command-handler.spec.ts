@@ -77,7 +77,7 @@ function setup(
 ) {
   const goals = {
     findForBot: vi.fn<BotGoalRepositoryPort['findForBot']>(async () => stored),
-    recordSpend: vi.fn<BotGoalRepositoryPort['recordSpend']>(async () => true),
+    countTurnSpend: vi.fn<BotGoalRepositoryPort['countTurnSpend']>(async () => true),
   } satisfies Partial<BotGoalRepositoryPort>;
   const reviewer = {
     review: vi.fn<BotGoalReviewResolver['review']>(async () =>
@@ -116,11 +116,16 @@ function setup(
 describe('ContinueBotGoalCommandHandler', () => {
   it('queues the next continuation without a review, counting what the turn spent', async () => {
     const stored = goal();
-    const { goalsOf, reviewer, run } = setup(stored, ended('completed'));
+    const turn = ended('completed');
+    const { goals, goalsOf, reviewer, run } = setup(stored, turn);
     await run();
 
     expect(reviewer.review).not.toHaveBeenCalled();
-    expect(stored.tokensUsed).toBe(1_200);
+    expect(goals.countTurnSpend).toHaveBeenCalledWith(stored, {
+      id: turn.id,
+      tokens: 1_200,
+      calledTools: true,
+    });
     expect(goalsOf.queueContinuation).toHaveBeenCalledWith(
       stored,
       PROPS,
@@ -177,7 +182,8 @@ describe('ContinueBotGoalCommandHandler', () => {
   });
 
   it('pauses a goal whose turns stopped calling tools', async () => {
-    const stored = goal({ idleTurns: 2 });
+    // The re-read after counting: this turn made it the third without a tool.
+    const stored = goal({ idleTurns: 3 });
     const { goalsOf, run } = setup(stored, ended('completed'), { calledTools: false });
     await run();
     expect(goalsOf.pause).toHaveBeenCalledWith(stored, 'no_progress', null);
@@ -217,48 +223,51 @@ describe('ContinueBotGoalCommandHandler', () => {
   // answered, and the old goal queuing a continuation anyway.
   it('leaves the goal alone when it ended or was replaced while the reviewer answered', async () => {
     const { goals, goalsOf, run } = setup(goal({ claim: 'done' }), ended('completed'));
-    goals.findForBot.mockResolvedValueOnce(goal({ claim: 'done' })).mockResolvedValueOnce(null);
+    goals.findForBot
+      .mockResolvedValueOnce(goal({ claim: 'done' }))
+      .mockResolvedValueOnce(goal({ claim: 'done' }))
+      .mockResolvedValueOnce(null);
     await run();
     expect(goalsOf.queueContinuation).not.toHaveBeenCalled();
     expect(goalsOf.end).not.toHaveBeenCalled();
   });
 
-  // What breaks this: the turn in which the bot said blocked, or a pause
-  // made while its end was held, never counted, so after Resume the budget
-  // reads less than was spent. Whether the pause still owes it is the
-  // repository's (`recordSpend`; the integration spec runs both sides).
-  it('offers a paused goal its turn’s spend and decides nothing else', async () => {
-    for (const at of [new Date(Date.now() - 30_000), new Date(Date.now() + 60_000)]) {
-      const turn = ended('completed');
-      const paused = goal({ paused: { reason: 'blocked', note: null, at } });
-      const { goals, goalsOf, run } = setup(paused, turn);
-      await run();
-      expect(paused.tokensUsed).toBe(1_200);
-      expect(goals.recordSpend).toHaveBeenCalledWith(paused);
-      expect(goalsOf.queueContinuation).not.toHaveBeenCalled();
-      expect(goalsOf.pause).not.toHaveBeenCalled();
-    }
+  // What breaks this: the turn in which the bot said blocked, or one whose
+  // goal was paused or resumed before its end ran, never counted, so after
+  // Resume the budget reads less than was spent. That it counts once is the
+  // repository's (`countTurnSpend`; the integration spec runs the orders).
+  it('counts a paused goal’s turn and decides nothing else', async () => {
+    const turn = ended('completed');
+    const paused = goal({ paused: { reason: 'blocked', note: null, at: new Date() } });
+    const { goals, goalsOf, run } = setup(paused, turn);
+    await run();
+    expect(goals.countTurnSpend).toHaveBeenCalledWith(
+      paused,
+      expect.objectContaining({ id: turn.id }),
+    );
+    expect(goalsOf.queueContinuation).not.toHaveBeenCalled();
+    expect(goalsOf.pause).not.toHaveBeenCalled();
   });
 
   it('does nothing for a bot with no goal', async () => {
     const { goals, goalsOf, run } = setup(null, ended('completed'));
     await run();
+    expect(goals.countTurnSpend).not.toHaveBeenCalled();
     expect(goalsOf.queueContinuation).not.toHaveBeenCalled();
     expect(goalsOf.pause).not.toHaveBeenCalled();
-    expect(goals.recordSpend).not.toHaveBeenCalled();
   });
 
   // What breaks this: the job for one turn's end run twice (a worker that
   // died mid-job, a redelivery) counting the turn twice and queuing a second
   // continuation beside the first, since the goal it reads has moved on.
-  it('does nothing for a turn whose end was already decided', async () => {
+  it('decides nothing for a turn whose end was already decided, but offers its spend', async () => {
     const movedOn = goal({ continuations: 2, tokensUsed: 1_200 });
     const { goals, goalsOf, run } = setup(movedOn, ended('completed', null, 1));
     await run();
-    expect(movedOn.tokensUsed).toBe(1_200);
+    // Counted already, the repository refuses it; resumed past it, it counts it now.
+    expect(goals.countTurnSpend).toHaveBeenCalledTimes(1);
     expect(goalsOf.queueContinuation).not.toHaveBeenCalled();
     expect(goalsOf.pause).not.toHaveBeenCalled();
-    expect(goals.recordSpend).not.toHaveBeenCalled();
   });
 
   it('stops the goal when its owner can no longer act in the workspace', async () => {

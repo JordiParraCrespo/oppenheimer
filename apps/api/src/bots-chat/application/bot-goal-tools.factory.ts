@@ -96,10 +96,7 @@ export class BotGoalToolsFactory implements BotToolArea {
         const ownTurn = context.origin === 'goal' || goal.originTurnId === context.turnId;
         if (input.outcome === 'blocked') {
           goal.pause('blocked', input.reason, new Date());
-          // Mid-turn, in one of the goal's own turns: its spend is not known
-          // yet and its end owes it. Any other turn's end never counts for it.
-          const spend = ownTurn ? 'owed' : 'counted';
-          if (!(await this.goals.pause(goal, goalPauseLine(goal, 'paused'), spend))) {
+          if (!(await this.goals.pause(goal, goalPauseLine(goal, 'paused')))) {
             return 'Your goal changed meanwhile (it was paused, ended or replaced); nothing was done.';
           }
           await this.goalsOf.cancelWaiting(goal, null);

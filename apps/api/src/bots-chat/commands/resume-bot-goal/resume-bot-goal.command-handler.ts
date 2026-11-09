@@ -10,9 +10,9 @@ import { ResumeBotGoalCommand } from './resume-bot-goal.command';
 /**
  * Resume a bot's paused goal from its chat (`25-bots.md` §4.1): it runs again
  * from where it paused, with its count, its spend and its history, and its
- * next continuation is queued with a line saying the owner resumed it. One
- * whose pausing turn has not ended yet is resumed in place, and that turn's
- * end counts it and goes on (`resumeBeforeItsTurnEnds`). A
+ * next continuation is queued with a line saying the owner resumed it. A
+ * turn of it still running when it is resumed is counted at its end all the
+ * same (`countTurnSpend`), and decides nothing, the goal having moved on. A
  * goal that is not paused, or none, changes nothing; one whose budget is
  * spent pauses again after the turn, so the budget still holds. A goal whose
  * owner can no longer act stops, as it would have on its next turn, and one
@@ -30,8 +30,6 @@ export class ResumeBotGoalCommandHandler implements ICommandHandler<ResumeBotGoa
     const bot = await this.lookup.bot(scope, botId);
     const goal = await this.goals.findForBot(bot.organizationId, bot.id);
     if (!goal?.paused) return;
-    // Its pausing turn still owes its end: resumed in place, that end goes on.
-    if (await this.goalsOf.resumeBeforeItsTurnEnds(goal)) return;
     // A goal set with a limit before 2026-11-09 that paused on its last
     // continuation has none left to queue: it ends, as it would have.
     if (goal.exhausted) {

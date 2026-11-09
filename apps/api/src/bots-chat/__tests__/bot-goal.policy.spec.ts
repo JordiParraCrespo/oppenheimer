@@ -183,19 +183,11 @@ describe('goalDecision', () => {
   // What breaks this: a goal whose turns stopped calling tools, or that spent
   // its budget, running on unattended for days.
   it(`pauses after ${BOT_GOAL_IDLE_TURNS} turns in a row with no tool, or a spent budget`, () => {
-    const idle = goal();
-    for (let i = 0; i < BOT_GOAL_IDLE_TURNS; i++) idle.account({ tokens: 10, calledTools: false });
+    const idle = goal({ idleTurns: BOT_GOAL_IDLE_TURNS });
     expect(goalDecision(idle, own('completed'))).toMatchObject({ reason: 'no_progress' });
-
-    const working = goal();
-    working.account({ tokens: 10, calledTools: false });
-    working.account({ tokens: 10, calledTools: false });
-    working.account({ tokens: 10, calledTools: true });
-    expect(working.idleTurns).toBe(0);
+    const working = goal({ idleTurns: BOT_GOAL_IDLE_TURNS - 1 });
     expect(goalDecision(working, own('completed'))).toEqual({ kind: 'continue' });
-
-    const spent = goal({ tokenBudget: 60_000 });
-    spent.account({ tokens: 60_000, calledTools: true });
+    const spent = goal({ tokenBudget: 60_000, tokensUsed: 60_000 });
     expect(goalDecision(spent, own('completed'))).toMatchObject({ reason: 'budget' });
   });
 

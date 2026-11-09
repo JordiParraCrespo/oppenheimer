@@ -2765,15 +2765,21 @@ describe('bots chat (integration)', () => {
         goals.findForBot(bot.organizationId, bot.id),
       ]);
       const pausing = a as BotGoalEntity;
-      pausing.account({ tokens: 1_234_567_890_123, calledTools: false });
+      expect(
+        await goals.countTurnSpend(pausing, {
+          id: turn.id,
+          tokens: 1_234_567_890_123,
+          calledTools: false,
+        }),
+      ).toBe(true);
       pausing.pause('no_progress', null, new Date());
-      expect(await goals.pause(pausing, goalPauseLine(pausing, 'paused'), 'owed')).toBe(true);
+      expect(await goals.pause(pausing, goalPauseLine(pausing, 'paused'))).toBe(true);
       const again = (await goals.findForBot(bot.organizationId, bot.id)) as BotGoalEntity;
       expect(again.paused?.reason).toBe('no_progress');
       expect(again.tokensUsed).toBe(1_234_567_890_123);
       expect(again.idleTurns).toBe(1);
       again.pause('failed', null, new Date());
-      expect(await goals.pause(again, goalPauseLine(again, 'paused'), 'owed')).toBe(false);
+      expect(await goals.pause(again, goalPauseLine(again, 'paused'))).toBe(false);
 
       // The continuation loaded before the pause loses to it.
       const stale = continuation(bot, b as BotGoalEntity);
@@ -2799,36 +2805,59 @@ describe('bots chat (integration)', () => {
       expect(lines.map((row) => row.activity)).toEqual(['paused', 'resumed']);
     });
 
-    // What breaks this: the turn that paused its goal never counted, or a
-    // second delivery of its end counting it twice.
-    it('writes the spend of a turn that paused its goal once, however often its end is delivered', async () => {
+    // What breaks this: a turn's end run twice (a worker that died mid-job,
+    // a redelivery), or twice at once, counting the turn twice; or a turn's
+    // idleness not reset by one that called a tool.
+    it('counts each turn’s spend once, however often or concurrently its end runs', async () => {
       const bot = await create('Spender');
       const turn = await runningTurn(bot);
       await goals.set(goalFor(bot, turn.id));
-      const pausing = (await goals.findForBot(bot.organizationId, bot.id)) as BotGoalEntity;
-      pausing.pause('blocked', 'I need the key', new Date());
-      expect(await goals.pause(pausing, goalPauseLine(pausing, 'paused'), 'owed')).toBe(true);
-      for (const expected of [true, false]) {
-        const loaded = (await goals.findForBot(bot.organizationId, bot.id)) as BotGoalEntity;
-        loaded.account({ tokens: 5_000, calledTools: true });
-        expect(await goals.recordSpend(loaded)).toBe(expected);
-      }
-      expect((await goals.findForBot(bot.organizationId, bot.id))?.tokensUsed).toBe(5_000);
+      const goal = (await goals.findForBot(bot.organizationId, bot.id)) as BotGoalEntity;
+      const spend = { id: turn.id, tokens: 5_000, calledTools: false };
+      const results = await Promise.all([
+        goals.countTurnSpend(goal, spend),
+        goals.countTurnSpend(goal, spend),
+      ]);
+      expect(results.sort()).toEqual([false, true]);
+      expect(await goals.countTurnSpend(goal, spend)).toBe(false);
+      const counted = (await goals.findForBot(bot.organizationId, bot.id)) as BotGoalEntity;
+      expect(counted.tokensUsed).toBe(5_000);
+      expect(counted.idleTurns).toBe(1);
+
+      turn.end('completed', new Date());
+      expect(await turns.finish(turn, null)).toBe(true);
+      const next = await runningTurn(bot);
+      expect(await goals.countTurnSpend(goal, { id: next.id, tokens: 1, calledTools: true })).toBe(
+        true,
+      );
+      const working = (await goals.findForBot(bot.organizationId, bot.id)) as BotGoalEntity;
+      expect(working.tokensUsed).toBe(5_001);
+      expect(working.idleTurns).toBe(0);
     });
 
-    // What breaks this: the end of a turn that paused its goal after counting
-    // it, run again (a worker that died mid-job), counting the turn twice.
-    it('writes no spend after a pause that carried it, however often the end is delivered', async () => {
-      const bot = await create('Counted');
+    // What breaks this: a write to the goal between a turn and its end's count
+    // (the bot's blocked pause, a claim, a hold, the owner's Resume, another
+    // turn's pause) dropping the count, or a write from a copy loaded before
+    // the count putting the old figure back. Each was a lost turn before.
+    it('keeps a turn’s count whatever writes the goal saw before and after it', async () => {
+      const bot = await create('Busy');
       const turn = await runningTurn(bot);
       await goals.set(goalFor(bot, turn.id));
-      const pausing = (await goals.findForBot(bot.organizationId, bot.id)) as BotGoalEntity;
-      pausing.account({ tokens: 5_000, calledTools: true });
-      pausing.pause('usage_limit', 'Weekly limit reached', new Date());
-      expect(await goals.pause(pausing, goalPauseLine(pausing, 'paused'), 'counted')).toBe(true);
-      const again = (await goals.findForBot(bot.organizationId, bot.id)) as BotGoalEntity;
-      again.account({ tokens: 5_000, calledTools: true });
-      expect(await goals.recordSpend(again)).toBe(false);
+      const stale = (await goals.findForBot(bot.organizationId, bot.id)) as BotGoalEntity;
+      stale.pause('blocked', 'I need the key', new Date());
+      expect(await goals.pause(stale, goalPauseLine(stale, 'paused'))).toBe(true);
+
+      const loaded = (await goals.findForBot(bot.organizationId, bot.id)) as BotGoalEntity;
+      expect(
+        await goals.countTurnSpend(loaded, { id: turn.id, tokens: 5_000, calledTools: true }),
+      ).toBe(true);
+      // The owner resumes from a copy loaded before the count: the count stays.
+      loaded.resume();
+      const resume = continuation(bot, loaded);
+      const line = goalPauseLine(loaded, 'resumed');
+      expect(
+        await turns.enqueueContinuation(resume.turn, resume.opening, null, loaded, line),
+      ).not.toBe('lost');
       expect((await goals.findForBot(bot.organizationId, bot.id))?.tokensUsed).toBe(5_000);
     });
 
@@ -2928,75 +2957,35 @@ describe('bots chat (integration)', () => {
       expect(job?.availableAt).toEqual(resetAt);
     });
 
-    // What breaks this: a goal the bot paused as blocked mid-turn, whose turn
-    // then ended on a limit with a known end, marked as waiting by that end,
-    // which moved it past its pause so the turn's owed spend was refused.
-    it('leaves a goal paused mid-turn unheld, and its turn’s spend owed', async () => {
+    // What breaks this: a goal the bot paused as blocked mid-turn marked as
+    // waiting by that turn's end on a rate limit: a paused goal waits on nothing.
+    it('leaves a goal paused mid-turn unheld by its turn’s rate limit', async () => {
       const bot = await create('Blocked');
       const turn = await runningTurn(bot);
       await goals.set(goalFor(bot, turn.id));
       const pausing = (await goals.findForBot(bot.organizationId, bot.id)) as BotGoalEntity;
       pausing.pause('blocked', 'I need the key', new Date());
-      expect(await goals.pause(pausing, goalPauseLine(pausing, 'paused'), 'owed')).toBe(true);
+      expect(await goals.pause(pausing, goalPauseLine(pausing, 'paused'))).toBe(true);
       turn.end('completed', new Date(), {
         limited: { system: 'Gmail', resetAt: new Date(Date.now() + 60_000) },
       });
       expect(await turns.finish(turn, null)).toBe(true);
-
-      const ended = (await goals.findForBot(bot.organizationId, bot.id)) as BotGoalEntity;
-      expect(ended.waiting).toBeNull();
-      ended.account({ tokens: 5_000, calledTools: true });
-      expect(await goals.recordSpend(ended)).toBe(true);
-      expect((await goals.findForBot(bot.organizationId, bot.id))?.tokensUsed).toBe(5_000);
+      expect((await goals.findForBot(bot.organizationId, bot.id))?.waiting).toBeNull();
     });
 
-    // What breaks this: the bot saying blocked, then met, in one turn, the
-    // claim moving the paused goal past its pause so the turn's spend is refused.
-    it('takes no claim on a paused goal, so its turn’s owed spend still lands', async () => {
+    // What breaks this: the bot saying blocked, then met, in one turn, its
+    // claim stored on the paused goal for a reviewer that never runs.
+    it('takes no claim on a paused goal', async () => {
       const bot = await create('Changed mind');
       const turn = await runningTurn(bot);
       await goals.set(goalFor(bot, turn.id));
       const pausing = (await goals.findForBot(bot.organizationId, bot.id)) as BotGoalEntity;
       pausing.pause('blocked', 'I need the key', new Date());
-      expect(await goals.pause(pausing, goalPauseLine(pausing, 'paused'), 'owed')).toBe(true);
+      expect(await goals.pause(pausing, goalPauseLine(pausing, 'paused'))).toBe(true);
       const claiming = (await goals.findForBot(bot.organizationId, bot.id)) as BotGoalEntity;
       claiming.claimMet('Found a workaround');
       expect(await goals.claim(claiming)).toBe(false);
-
-      const ended = (await goals.findForBot(bot.organizationId, bot.id)) as BotGoalEntity;
-      expect(ended.claim).toBeNull();
-      ended.account({ tokens: 5_000, calledTools: true });
-      expect(await goals.recordSpend(ended)).toBe(true);
-      expect((await goals.findForBot(bot.organizationId, bot.id))?.tokensUsed).toBe(5_000);
-    });
-
-    // What breaks this: the owner resuming before the turn that paused the
-    // goal ended, the goal moved on past that turn, so its end reads as
-    // decided and never counts what it spent; or a pause whose turn was
-    // counted resumed in place, with no turn left to go on from.
-    it('resumes in place only a pause whose turn has not been counted yet', async () => {
-      const bot = await create('Resumed early');
-      const turn = await runningTurn(bot);
-      await goals.set(goalFor(bot, turn.id));
-      const pausing = (await goals.findForBot(bot.organizationId, bot.id)) as BotGoalEntity;
-      pausing.pause('blocked', 'I need the key', new Date());
-      expect(await goals.pause(pausing, goalPauseLine(pausing, 'paused'), 'owed')).toBe(true);
-
-      const owed = (await goals.findForBot(bot.organizationId, bot.id)) as BotGoalEntity;
-      expect(await goals.resumeOwed(owed, goalPauseLine(owed, 'resumed'))).toBe(true);
-      const resumed = (await goals.findForBot(bot.organizationId, bot.id)) as BotGoalEntity;
-      expect(resumed.paused).toBeNull();
-      expect(resumed.continuations).toBe(0);
-
-      // Paused again and counted at its turn's end: nothing is owed, so no resume in place.
-      resumed.pause('blocked', 'Still stuck', new Date());
-      expect(await goals.pause(resumed, goalPauseLine(resumed, 'paused'), 'owed')).toBe(true);
-      const counted = (await goals.findForBot(bot.organizationId, bot.id)) as BotGoalEntity;
-      counted.account({ tokens: 5_000, calledTools: true });
-      expect(await goals.recordSpend(counted)).toBe(true);
-      const after = (await goals.findForBot(bot.organizationId, bot.id)) as BotGoalEntity;
-      expect(await goals.resumeOwed(after, goalPauseLine(after, 'resumed'))).toBe(false);
-      expect((await goals.findForBot(bot.organizationId, bot.id))?.paused).not.toBeNull();
+      expect((await goals.findForBot(bot.organizationId, bot.id))?.claim).toBeNull();
     });
 
     // What breaks this: a goal replaced while the old one's continuation ran,

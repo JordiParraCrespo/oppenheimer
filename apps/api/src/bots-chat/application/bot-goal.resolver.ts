@@ -80,8 +80,7 @@ export class BotGoalResolver {
   ): Promise<boolean> {
     goal.pause(reason, note, new Date());
     const line = goalPauseLine(goal, 'paused');
-    // Only the end of a turn pauses here, after counting it: its spend is in this write.
-    if (!(await this.goals.pause(goal, line, 'counted'))) return false;
+    if (!(await this.goals.pause(goal, line))) return false;
     await this.stream.publish(goal.botId, { type: 'message', turnId: null, messageId: line.id });
     await this.cancelWaiting(goal, null);
     this.logger.log({ message: 'A bot goal paused', goalId: goal.id, botId: goal.botId, reason });
@@ -117,19 +116,6 @@ export class BotGoalResolver {
     if (queued === 'staged' || queued === 'waiting') {
       await this.stream.publish(turn.botId, { type: 'turn', turnId: turn.id, status: 'queued' });
     }
-    return true;
-  }
-
-  /**
-   * Resumes a goal whose pausing turn has not ended yet (the bot said blocked
-   * and the owner resumed before the turn was over) in place: that turn's
-   * end then counts it and goes on. False when its turn was counted already.
-   */
-  async resumeBeforeItsTurnEnds(goal: BotGoalEntity): Promise<boolean> {
-    const line = goalPauseLine(goal, 'resumed');
-    if (!(await this.goals.resumeOwed(goal, line))) return false;
-    goal.resume();
-    await this.stream.publish(goal.botId, { type: 'message', turnId: null, messageId: line.id });
     return true;
   }
 

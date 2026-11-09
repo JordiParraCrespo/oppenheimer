@@ -23,10 +23,11 @@ import type { BotTurnEntity } from '../../domain/bot-turn.entity';
 import { ContinueBotGoalCommand } from './continue-bot-goal.command';
 
 /**
- * A turn of a goal ended (`25-bots.md` §4.1): load, leave a turn whose end
- * was already decided (`isDecidedTurn`: this job run twice), count what the turn spent
- * and whether it called a tool (also for a paused goal whose pause still owes
- * it, written alone and once: `recordSpend`), decide (`goalDecision`), ask the reviewer
+ * A turn of a goal ended (`25-bots.md` §4.1): count what it spent and
+ * whether it called a tool, once per turn (`countTurnSpend`), whatever the
+ * goal went through since; then, read again, leave a goal paused or one whose
+ * end was already decided (`isDecidedTurn`: this job run twice, or the owner
+ * resumed it while the turn ran), decide (`goalDecision`), ask the reviewer
  * only when the bot claimed the goal met (`BotGoalReviewResolver`), act. The
  * goal is read again after the review, which takes a model call: one ended,
  * paused, replaced or moved on by another delivery of the same end meanwhile
@@ -48,21 +49,20 @@ export class ContinueBotGoalCommandHandler
   ) {}
 
   async execute({ turnId, metadata }: ContinueBotGoalCommand): Promise<void> {
-    const found = await this.turns.findForRun(turnId);
-    if (found.isNone() || !found.unwrap().endedAt) return;
-    const ended = found.unwrap();
-    const goal = await this.goals.findForBot(ended.organizationId, ended.botId);
-    if (!goal || !isGoalTurn(goal, ended) || isDecidedTurn(goal, ended)) return;
-    goal.account({
+    const run = await this.turns.findForRun(turnId);
+    if (run.isNone() || !run.unwrap().endedAt) return;
+    const ended = run.unwrap();
+    const found = await this.goals.findForBot(ended.organizationId, ended.botId);
+    if (!found || !isGoalTurn(found, ended)) return;
+    // Counted first and once, whatever became of the goal since the turn ran
+    // (paused, resumed, moved on): the add is keyed on the turn.
+    await this.goals.countTurnSpend(found, {
+      id: ended.id,
       tokens: ended.inputTokens + ended.outputTokens,
       calledTools: await this.messages.turnCalledTools(ended.organizationId, ended.id),
     });
-    if (goal.paused) {
-      // A pause that still owes this turn's spend (the bot said blocked) gets
-      // it once; one that carried it (this job's own, run again) refuses it.
-      await this.goals.recordSpend(goal);
-      return;
-    }
+    const goal = await this.goals.findForBot(ended.organizationId, ended.botId);
+    if (goal?.id !== found.id || isDecidedTurn(goal, ended) || goal.paused) return;
 
     const decision = goalDecision(goal, ended);
     if (decision.kind === 'skip') return;
