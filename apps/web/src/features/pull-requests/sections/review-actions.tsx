@@ -1,31 +1,25 @@
-import { Button, Kbd, Textarea, toast } from '@oppenheimer/design-system-web';
-import {
-  ArrowLeft,
-  ArrowRight,
-  GitMerge,
-  MessageSquare,
-} from '@oppenheimer/design-system-web/icons';
-import type { PullRequestEntity, ReviewVerdict } from '@oppenheimer/frontend-consumer';
+import { Button, Kbd, Textarea } from '@oppenheimer/design-system-web';
+import { ArrowLeft, GitMerge, MessageSquare } from '@oppenheimer/design-system-web/icons';
+import type { PullRequestEntity } from '@oppenheimer/frontend-consumer';
 import {
   useMergePullRequest,
   useSubmitPullRequestReview,
 } from '@oppenheimer/frontend-consumer/react';
-import { useErrorMessage } from '@oppenheimer/frontend-core/react';
-import { notifySuccess } from '@oppenheimer/frontend-web';
+import { ErrorAlert, notifySuccess } from '@oppenheimer/frontend-web';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useReviewDeckKeys } from '../hooks/use-review-deck-keys';
+import { DECK_VERB_LABEL, type DeckVerb, deckVerbs } from '../lib/review-deck';
 
 /**
  * What can be done with the card on screen, each with its key, and then the
  * deck moves on (`onActed`): the reader never goes back to a list between two
  * pull requests.
  *
- * Yours and your sessions' are merged; anybody else's is approved, or
- * approved and merged. A merge is armed by its first press and made by the
- * second, since one key must not be all that stands before a merge. A comment
- * is a review of its own: Request changes on somebody else's, Comment on
- * yours, where GitHub takes no verdict. The bar floats at the foot of the pane,
+ * Which press does what is `deckVerbs`, decided once from whose pull request
+ * it is. A merge is armed by its first press and made by the
+ * second, since one key must not be all that stands before a merge. A refusal
+ * from GitHub stays in the bar until the next press. The bar floats at the foot of the pane,
  * so a long card never hides it. The mutations and what is armed are
  * this section's, which the deck keys per card, so nothing carries over.
  */
@@ -41,20 +35,18 @@ export function ReviewActions({
   onOpen: () => void;
 }) {
   const { t } = useTranslation();
-  const resolveError = useErrorMessage();
   const [armed, setArmed] = useState(false);
   const [composing, setComposing] = useState(false);
   const [comment, setComment] = useState('');
-  const mine = pull.scope === 'mine';
+  const verbs = deckVerbs(pull.scope);
   const blocked = pull.blocker ? t(`pullRequests.blocker.${pull.blocker}`) : undefined;
 
+  // A refusal stays beside the actions (below), where it can be read again.
   const merge = useMergePullRequest({
     onSuccess: () => {
       notifySuccess('pullRequestMerged', { reference: pull.reference });
       onActed();
     },
-    onError: (error) =>
-      toast.error(resolveError(error, t('pullRequests.queue.mergeFailed')).message),
   });
   const review = useSubmitPullRequestReview({
     onSuccess: ({ merged, autoMerge }, { review: sent }) => {
@@ -71,31 +63,38 @@ export function ReviewActions({
       );
       onActed();
     },
-    onError: (error) => toast.error(resolveError(error, t('pullRequests.review.failed')).message),
   });
   const busy = merge.isPending || review.isPending;
-  const submit = (verdict: ReviewVerdict, body?: string) =>
-    review.mutate({ address: pull.address, review: { verdict, body, comments: [] } });
+  const running: DeckVerb | undefined = merge.isPending
+    ? 'merge'
+    : review.isPending
+      ? review.variables?.review.verdict
+      : undefined;
+  const run = (verb: DeckVerb, body?: string) => {
+    merge.reset();
+    review.reset();
+    if (verb === 'merge') merge.mutate({ address: pull.address });
+    else review.mutate({ address: pull.address, review: { verdict: verb, body, comments: [] } });
+  };
 
-  // The merging press: yours merges, somebody else's is approved and merged.
-  const canMerge = mine ? !blocked : true;
+  // GitHub merges somebody else's once it can (auto-merge); yours only when nothing holds it.
+  const canMerge = verbs.merges !== 'merge' || !blocked;
   const mergeNow = () => {
     if (busy || !canMerge) return;
     if (!armed) return setArmed(true);
     setArmed(false);
-    if (mine) merge.mutate({ address: pull.address });
-    else submit('approve_and_merge');
+    run(verbs.merges);
   };
-  const approve = () => {
-    if (!busy) submit('approve');
+  const yes = () => {
+    if (verbs.yes === verbs.merges) mergeNow();
+    else if (!busy) run(verbs.yes);
   };
   const send = () => {
-    if (busy || !comment.trim()) return;
-    submit(mine ? 'comment' : 'request_changes', comment.trim());
+    if (!busy && comment.trim()) run(verbs.says, comment.trim());
   };
 
   useReviewDeckKeys({
-    onYes: mine ? mergeNow : approve,
+    onYes: yes,
     onPass: busy ? undefined : onPass,
     onOpen: busy ? undefined : onOpen,
     onComment: () => setComposing(true),
@@ -106,11 +105,8 @@ export function ReviewActions({
     },
   });
 
-  const commentLabel = t(
-    mine
-      ? 'pullRequests.review.verdicts.comment.label'
-      : 'pullRequests.review.verdicts.request_changes.label',
-  );
+  const saysLabel = t(DECK_VERB_LABEL[verbs.says]);
+  const mergeLabel = t(armed ? 'pullRequests.deck.confirmMerge' : DECK_VERB_LABEL[verbs.merges]);
   return (
     <div className="sticky bottom-4 z-10 flex flex-col gap-3 rounded-2xl border border-border-subtle bg-card p-3 shadow-lg">
       {composing ? (
@@ -124,15 +120,20 @@ export function ReviewActions({
               if (event.key === 'Enter' && (event.metaKey || event.ctrlKey)) send();
               if (event.key === 'Escape') setComposing(false);
             }}
-            aria-label={commentLabel}
+            aria-label={saysLabel}
             placeholder={t('pullRequests.review.placeholder')}
           />
           <div className="flex items-center justify-end gap-2">
             <Button variant="ghost" size="sm" onClick={() => setComposing(false)}>
               {t('pullRequests.changes.cancel')}
             </Button>
-            <Button size="sm" onClick={send} disabled={!comment.trim()} pending={review.isPending}>
-              {commentLabel}
+            <Button
+              size="sm"
+              onClick={send}
+              disabled={!comment.trim()}
+              pending={running === verbs.says}
+            >
+              {saysLabel}
               <Kbd className="ml-1">⌘⏎</Kbd>
             </Button>
           </div>
@@ -147,48 +148,35 @@ export function ReviewActions({
         <span className="flex-1" />
         <Button variant="ghost" onClick={() => setComposing(true)} disabled={busy}>
           <MessageSquare />
-          {commentLabel}
+          {saysLabel}
           <Kbd className="ml-1">C</Kbd>
         </Button>
-        {mine ? null : (
+        {verbs.yes === verbs.merges ? null : (
           <Button
             variant="secondary"
             onClick={mergeNow}
-            disabled={busy && !armed}
-            pending={review.isPending && review.variables?.review.verdict === 'approve_and_merge'}
+            disabled={busy}
+            pending={running === verbs.merges}
           >
             <GitMerge />
-            {t(
-              armed
-                ? 'pullRequests.deck.confirmMerge'
-                : 'pullRequests.review.verdicts.approve_and_merge.label',
-            )}
+            {mergeLabel}
             <Kbd className="ml-1">M</Kbd>
           </Button>
         )}
-        {mine ? (
-          <Button
-            onClick={mergeNow}
-            disabled={!canMerge || (busy && !armed)}
-            pending={merge.isPending}
-            title={blocked}
-          >
-            <GitMerge />
-            {t(armed ? 'pullRequests.deck.confirmMerge' : 'pullRequests.queue.mergeButton.merge')}
-            <Kbd className="ml-1">→</Kbd>
-          </Button>
-        ) : (
-          <Button
-            onClick={approve}
-            disabled={busy}
-            pending={review.isPending && review.variables?.review.verdict === 'approve'}
-          >
-            {t('pullRequests.review.verdicts.approve.label')}
-            <ArrowRight />
-            <Kbd className="ml-1">→</Kbd>
-          </Button>
-        )}
+        <Button
+          onClick={yes}
+          disabled={busy || (verbs.yes === verbs.merges && !canMerge)}
+          pending={running === verbs.yes}
+        >
+          {verbs.yes === verbs.merges ? <GitMerge /> : null}
+          {verbs.yes === verbs.merges ? mergeLabel : t(DECK_VERB_LABEL[verbs.yes])}
+          <Kbd className="ml-1">→</Kbd>
+        </Button>
       </div>
+      <ErrorAlert
+        error={merge.error ?? review.error}
+        fallback={t(merge.error ? 'pullRequests.queue.mergeFailed' : 'pullRequests.review.failed')}
+      />
       {blocked ? (
         <p className="m-0 px-1 text-right text-sm text-fg-muted">
           {t('pullRequests.deck.held', { reason: blocked })}

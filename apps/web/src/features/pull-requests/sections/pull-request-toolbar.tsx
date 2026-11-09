@@ -14,7 +14,11 @@ import { SidebarToggle } from '@oppenheimer/frontend-web';
 import { Link, useLocation } from '@tanstack/react-router';
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import { PULL_REQUEST_VIEWS, type PullRequestView } from '../lib/pull-request-search';
+import {
+  PULL_REQUEST_VIEWS,
+  type PullRequestView,
+  pullsReturnLink,
+} from '../lib/pull-request-search';
 
 /**
  * The bar over a pull request, its one header and the page's bar (the
@@ -44,22 +48,15 @@ export function PullRequestToolbar({
 }) {
   const { t } = useTranslation();
   const { data: pull, isPending } = usePullRequest(address);
-  const queue = useLocation({ select: (location) => location.state.pullsQueue });
-  const deck = useLocation({ select: (location) => location.state.pullsDeck });
+  const back = pullsReturnLink(useLocation({ select: (location) => location.state.pullsReturn }));
 
   return (
     <div className="flex h-14 shrink-0 items-center gap-2 border-b border-border-subtle bg-card px-3">
       <SidebarToggle />
       <IconButton
         size="sm"
-        aria-label={t(deck ? 'pullRequests.detail.backToDeck' : 'pullRequests.detail.back')}
-        render={
-          deck ? (
-            <Link to="/pulls/review" search={deck} />
-          ) : (
-            <Link to="/pulls" search={queue ?? {}} />
-          )
-        }
+        aria-label={t(back.label)}
+        render={<Link to={back.to} search={back.search} />}
       >
         <ChevronLeft />
       </IconButton>

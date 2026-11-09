@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { DECK_END, deckKey, deckPosition } from '../lib/review-deck';
+import { DECK_END, deckKey, deckPosition, deckVerbs } from '../lib/review-deck';
 
 const rows = [
   { githubRepoId: 1, number: 12 },
@@ -33,5 +33,21 @@ describe('the review deck’s position', () => {
   it('is done past the last card, and has no card when the queue is empty', () => {
     expect(deckPosition(rows, DECK_END)).toMatchObject({ current: null, index: 3, gone: false });
     expect(deckPosition([], undefined)).toMatchObject({ current: null, index: 0, gone: false });
+  });
+});
+
+describe('what a card’s presses do', () => {
+  it('merges yours, with no verdict GitHub would refuse on your own pull request', () => {
+    expect(deckVerbs('mine')).toEqual({ yes: 'merge', merges: 'merge', says: 'comment' });
+  });
+
+  it('approves anybody else’s, and never merges it on the one-press yes', () => {
+    for (const scope of ['requested', 'watching'] as const) {
+      expect(deckVerbs(scope)).toEqual({
+        yes: 'approve',
+        merges: 'approve_and_merge',
+        says: 'request_changes',
+      });
+    }
   });
 });

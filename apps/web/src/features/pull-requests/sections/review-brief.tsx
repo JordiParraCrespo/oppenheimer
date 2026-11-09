@@ -20,11 +20,9 @@ export function ReviewBrief({ address }: { address: PullRequestAddress }) {
       <ErrorAlert error={error} fallback={t('pullRequests.deck.briefFailed')} />
       <p className="m-0 text-xl leading-snug font-medium text-fg">{brief.headline}</p>
       {brief.images.length ? (
-        <ul className="no-scrollbar m-0 flex list-none gap-3 overflow-x-auto p-0">
+        <ul className="no-scrollbar m-0 flex list-none gap-3 overflow-x-auto p-0 empty:hidden">
           {brief.images.map((image) => (
-            <li key={image.url} className="shrink-0">
-              <BriefImage url={image.url} alt={image.alt} />
-            </li>
+            <BriefImage key={image.url} url={image.url} alt={image.alt} />
           ))}
         </ul>
       ) : null}

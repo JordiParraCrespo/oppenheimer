@@ -85,7 +85,9 @@ export function ReviewDeck() {
   // history, so the pull request's Back returns to it.
   const depth = {
     ...pullRequestLink(current.address, 'changes'),
-    state: { pullsDeck: { ...queueSearch, at: deckKey(current) } },
+    state: {
+      pullsReturn: { to: 'deck' as const, search: { ...queueSearch, at: deckKey(current) } },
+    },
   };
   const openDepth = () => navigate(depth);
   return (
