@@ -74,4 +74,5 @@ export const BotsErrors = {
     message: 'Failed to load what your bots know about you',
   },
   SAVE_PERSON_ABOUT_FAILED: { code: 'BOTS_CLIENT_053', message: 'Failed to save what you wrote' },
+  RESUME_GOAL_FAILED: { code: 'BOTS_CLIENT_054', message: 'Failed to resume the goal' },
 } as const satisfies Record<string, ErrorDefinition>;

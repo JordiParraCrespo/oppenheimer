@@ -1,4 +1,4 @@
-# Lessons from channel gateways: OpenClaw, Grok Bot, Codex and dots
+# Lessons from channel gateways: OpenClaw, Grok Bot, Codex, dots and Hermes
 
 How four products let an agent be reached over WhatsApp, Slack and email,
 read on 2026-10-22 for one question: how do our bots get the same reach?
@@ -278,3 +278,58 @@ recorded, one customer across channels like `identityLinks`, and a bot per
 customer as the isolation. What we change: no config order (a unique match
 per kind of route instead), the route resolved once per conversation, and memory
 tagged by customer for a bot shared by many (`customers-and-routes.md` §5).
+
+## 10. Hermes Agent: who may talk, on Telegram and WhatsApp (read 2026-11-09)
+
+Read at `NousResearch/hermes-agent` `8c1a9c0` (2026-11-09):
+`website/docs/user-guide/messaging/` (`index.md`, `telegram.md`,
+`whatsapp.md`) and `security.md`, the documentation only, for the questions
+the owner asked when their Telegram bot did not answer `/start`: which bot
+answers, and who may talk to it. Hermes is Nous Research's open-source
+agent; one gateway process holds every platform, like OpenClaw's. The
+design it fed is
+[`next-steps/answering-on-telegram-and-whatsapp.md`](../next-steps/answering-on-telegram-and-whatsapp.md).
+
+- **Deny by default.** "By default, the gateway denies all users who are
+  not in an allowlist or paired via DM. This is the safe default for a bot
+  with terminal access." An allowlist per platform
+  (`TELEGRAM_ALLOWED_USERS`, `WHATSAPP_ALLOWED_USERS`) and a global one;
+  allowing everyone is an explicit setting the docs advise against.
+- **The owner is known from setup.** Telegram's **Create with QR** creates
+  the bot, detects the owner's Telegram user id and writes it to the
+  allowlist, so the person who connected the bot is allowed from their
+  first message.
+- **What a stranger gets is a setting**, global with a per-platform
+  override (`unauthorized_dm_behavior`): `pair` (the default for chat
+  platforms) replies with a pairing code; `ignore` drops it; `decline`
+  sends one fixed line ("I can only chat with my owner") and ignores that
+  sender for 24 hours. The WhatsApp docs recommend `ignore`, "usually the
+  better choice for a private number".
+- **The pairing code**: eight characters from a 32-letter alphabet with no
+  0/O/1/I, cryptographically random, one hour, one request per user per ten
+  minutes, three pending per platform, five wrong approvals lock approving
+  out for an hour, files `0600`, never logged. The owner approves with
+  `hermes pairing approve <platform> <code>` and can revoke.
+- **Admitted is not admin.** Per scope (DMs, groups) an `allow_admin_from`
+  list splits admins from regular users; a regular user chats and runs only
+  `/help`, `/whoami` and the commands enabled for them.
+- **Groups.** On WhatsApp `group_policy` defaults to `pairing`, which
+  forwards nothing from groups; a group is let in by its id, and its
+  senders are still checked. `require_mention` answers only mentions,
+  replies and commands. Telegram can keep unmentioned lines as observed
+  context, tagged so the model treats them as context, not instructions.
+- **Other bots** are admitted only through a per-platform setting, and
+  `bot_loop_guard` ends an exchange after four bot messages since a
+  person's last one.
+- **Approvals.** Dangerous commands ask; `approvals.approvers` says who in
+  a shared chat may answer (anyone admitted, by default, or the requester
+  and listed ids). Scheduled and unattended runs deny by default, since no
+  one is there to answer.
+- **WhatsApp** runs through a Baileys bridge (an unofficial linked device,
+  with the ban risk said plainly), in two modes: a dedicated number people
+  write to, or **self-chat**, where the owner messages themselves to talk
+  to the agent. Each profile can pair its own session.
+- **Per-chat overrides** set a room's model, provider and prompt.
+
+What we took from it, and what we changed, is
+[`next-steps/answering-on-telegram-and-whatsapp.md`](../next-steps/answering-on-telegram-and-whatsapp.md).

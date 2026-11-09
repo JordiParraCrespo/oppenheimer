@@ -8,6 +8,7 @@ import {
   todoEntries,
   todoSearchSchema,
   todoStateLabel,
+  undatedTasks,
 } from '../lib/todo';
 
 function task(
@@ -101,14 +102,27 @@ describe("To do's day", () => {
     expect(todoDay(TASKS, '2026-12-01', { today: DAY, overdue: false }).dayHasAny).toBe(false);
   });
 
-  it('says due today only on today', () => {
+  it('says due today only on today, whatever the column', () => {
     const [, open] = todoEntries(TASKS, DAY, { today: DAY, overdue: false });
     expect(todoStateLabel(open, DAY, DAY)).toEqual({ key: 'tasks.todo.state.todo' });
     expect(todoStateLabel(open, DAY, '2026-11-07')).toEqual({ key: 'tasks.todo.state.due' });
+    const doing = { task: open.task, state: 'doing' as const };
+    expect(todoStateLabel(doing, DAY, DAY)).toEqual({ key: 'tasks.todo.state.todo' });
     const overdue = { task: TASKS[3], state: 'overdue' as const };
     expect(todoStateLabel(overdue, DAY, DAY)).toEqual({
       key: 'tasks.todo.state.overdue',
       date: '2026-11-02',
     });
+  });
+
+  it('offers only open tasks with no due date, in the projects in scope', () => {
+    const rows = [
+      task('a'),
+      task('b', { status: 'done' }),
+      task('c', { dueDate: DAY }),
+      task('d', { projectId: 'p-2', status: 'doing' }),
+    ];
+    expect(undatedTasks(rows).map((row) => row.id)).toEqual(['a', 'd']);
+    expect(undatedTasks(rows, ['p-2']).map((row) => row.id)).toEqual(['d']);
   });
 });

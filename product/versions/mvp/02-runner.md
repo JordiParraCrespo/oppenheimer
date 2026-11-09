@@ -373,6 +373,20 @@ Then, in order:
    pre-trusted, Ask included, since the question only stood between them
    and the agent.
 
+   Codex asks the same question ("Trust this folder?"), keyed by the
+   repository's main checkout when the folder is a worktree of one. Since
+   2026-11-09 the runner answers it too: before a Codex launch it appends
+   `[projects."<folder>"] trust_level = "trusted"` to Codex's
+   `~/.codex/config.toml` (`$CODEX_HOME/config.toml` when set) for the
+   folder and that checkout. The file is the person's and often
+   hand-edited, so it is appended to as text, never re-encoded; a folder
+   Codex already has an answer for, trusted or untrusted, is left alone,
+   and a config the new table would break is not touched. Trusting a
+   folder lets Codex (and Claude Code) load the repository's own agent
+   config, whose MCP commands and hooks run before any approval; on
+   2026-11-09 the owner kept pre-trusting every session anyway, for every
+   repository, since the repositories are ones the person added themselves.
+
    **The first task is the last argument, not something typed at a
    running process.** Every CLI here takes it on its command line and
    says so in its own help — `claude [options] [command] [prompt]`

@@ -108,24 +108,29 @@ export interface BotTurnPlanLimits {
 export const BOT_TURN_ERROR_MAX = 1_000;
 
 /**
- * How long one turn may run before it is stopped (`25-bots.md` §2). A chat
- * turn answers; work that takes longer belongs to a session on a host.
+ * How long a completion a bot's work makes outside a turn may run (a
+ * conversation's summary, a dream). A turn itself has no time limit and no
+ * step limit since 2026-11-09 (`25-bots.md` §2): it runs until the model
+ * answers, held by the compaction and the guards instead
+ * (`BOT_TURN_IDLE_LIMIT_MS`, the engine's loop guard, `BOT_TURN_LOOP_REFUSALS`).
  */
-export const BOT_TURN_TIME_LIMIT_MS = 4 * 60_000;
+export const BOT_COMPLETION_TIME_LIMIT_MS = 4 * 60_000;
 
 /**
- * Model round trips in one chat turn. Below the engine's default: a chat
- * turn answers, and longer work belongs to a session on a host. A turn that
- * uses them all fails with `step_limit`, as one past its time does.
+ * How many calls the engine's loop guard may refuse in one turn before the
+ * turn stops as `loop`: a model that keeps asking for what it was told it
+ * cannot have is going round in circles.
  */
-export const BOT_TURN_MAX_STEPS = 20;
+export const BOT_TURN_LOOP_REFUSALS = 5;
 
 /**
- * The failures that are a bound of one turn, not a fault: its time and its
- * steps. What runs longer than a turn (a goal, a loop) goes on past them,
- * with the turn's work kept; a new bound of a turn is a member here.
+ * The failures that end a turn without being a fault of the work: it was
+ * stopped by a bound (`time_limit`, `step_limit`, on turns before
+ * 2026-11-09), its model went silent (`stalled`), or its worker stopped
+ * (`interrupted`). What runs longer than a turn (a goal, a loop) goes on
+ * past them, with the turn's work kept.
  */
-export const TURN_LIMIT_FAILURES = ['time_limit', 'step_limit'] as const;
+export const TURN_LIMIT_FAILURES = ['time_limit', 'step_limit', 'stalled', 'interrupted'] as const;
 export type TurnLimitFailure = (typeof TURN_LIMIT_FAILURES)[number];
 
 /** Whether a failure is a bound of one turn (`TURN_LIMIT_FAILURES`). */

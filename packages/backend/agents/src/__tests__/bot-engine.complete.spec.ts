@@ -9,7 +9,7 @@
  */
 import { LlmRateLimitError } from '@oppenheimer/backend-llm';
 import { describe, expect, it } from 'vitest';
-import type { BotCompletionRequest, BotTurnRequest } from '../bot-engine';
+import { type BotCompletionRequest, type BotTurnRequest, isCompletionRequest } from '../bot-engine';
 import { FakeBotEngine } from '../fake-bot-engine';
 
 const KEY = 'sk-fake-secret-0123456789';
@@ -93,5 +93,26 @@ describe('BotEngine.complete', () => {
     });
     const silent = new FakeBotEngine(() => [{ type: 'text.done', text: 'Done.' }]);
     expect(await silent.completeWithUsage(request())).toEqual({ text: 'Done.', usage: null });
+  });
+
+  // The API's engine metrics label a run `completion` by this test; a change
+  // to what `complete` sends that it does not follow relabels every summary
+  // as a turn.
+  it('sends a request isCompletionRequest recognizes, and a turn is not one', async () => {
+    let seen: BotTurnRequest | undefined;
+    const engine = new FakeBotEngine((turn) => {
+      seen = turn;
+      return [{ type: 'text.done', text: 'ok' }];
+    });
+    await engine.complete(request());
+
+    expect(isCompletionRequest(seen as BotTurnRequest)).toBe(true);
+    expect(
+      isCompletionRequest({
+        ...(seen as BotTurnRequest),
+        maxSteps: undefined,
+        engineTools: undefined,
+      }),
+    ).toBe(false);
   });
 });

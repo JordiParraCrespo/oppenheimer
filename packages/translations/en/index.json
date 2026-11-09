@@ -676,12 +676,58 @@
     "list": {
       "title": "Projects",
       "new": "New project",
-      "edit": "{{name}} settings",
-      "repositories_one": "{{count}} repository",
-      "repositories_other": "{{count}} repositories",
       "noRepositories": "No repositories",
       "empty": "No projects yet. A project groups your sessions and starts new ones with its repositories, host and agent.",
-      "loadFailed": "Could not load your projects."
+      "loadFailed": "Could not load your projects.",
+      "status": {
+        "needsInput": "Needs input",
+        "running": "Running",
+        "idle": "Idle"
+      }
+    },
+    "detail": {
+      "back": "Projects",
+      "settings": "Settings",
+      "milestones": "Milestones",
+      "needsInput": "Needs input",
+      "inProgress": "In progress",
+      "noMilestones": "No milestones yet.",
+      "nothingNeedsInput": "Nothing waits on you.",
+      "nothingInProgress": "Nothing in progress.",
+      "gone": "That project is no longer here.",
+      "loadFailed": "Could not load this project.",
+      "views": "Project views",
+      "overview": "Overview",
+      "stats": "Stats"
+    },
+    "stats": {
+      "tasksCompleted": "Tasks completed",
+      "tasksCreated": "Tasks created",
+      "tokens": "Tokens burned",
+      "cost": "Agent cost",
+      "vsPrevious": "vs previous period",
+      "noPrevious": "Nothing to compare with yet",
+      "completed": "Completed",
+      "created": "Created",
+      "tasksTitle": "Tasks completed and created, per week",
+      "tokensTitle": "Tokens burned per week, by model",
+      "costTitle": "Agent cost per week",
+      "unknownModel": "Unknown model",
+      "loadFailed": "Could not load this project's statistics.",
+      "range": {
+        "lastWeeks_one": "Last week",
+        "lastWeeks_other": "Last {{count}} weeks",
+        "custom": "Custom",
+        "done": "Done",
+        "previousMonth": "Previous month",
+        "nextMonth": "Next month",
+        "choose": "Date range",
+        "days_one": "{{count}} day",
+        "days_other": "{{count}} days"
+      },
+      "otherModels": "Other models",
+      "headlessOnly": "headless turns",
+      "measuredHeadless": "Measured on headless turns"
     },
     "unassigned": "Unassigned"
   },
@@ -1519,6 +1565,7 @@
       "startFrom": "Try asking",
       "hello": "{{name}} is ready. What should we work on?",
       "placeholder": "Message {{name}}",
+      "history": "History {{position}}/{{total}}",
       "placeholderRunning": "Steer {{name}}: Enter steers the turn under way, Alt+Enter queues for after",
       "steered": "Steered in while it worked",
       "send": "Send",
@@ -1539,6 +1586,8 @@
         "unavailable": "{{provider}} could not be reached. This is usually temporary: try again in a moment.",
         "time_limit": "This turn ran out of time. Sending it again won't help: ask for a smaller step, or split the request.",
         "step_limit": "This turn used all its steps and stopped before it finished. Sending it again won't help: ask for a smaller step, or say go on to continue.",
+        "stalled": "{{provider}} sent nothing for 5 minutes, so this turn stopped. This is usually temporary: try again in a moment.",
+        "loop": "This turn kept repeating calls that changed nothing, so it stopped. Sending it again won't help: say what to do differently.",
         "interrupted": "This turn was interrupted before it finished. Sending it again runs it.",
         "storage": "We could not save this turn, so it stopped: the fault is ours, not {{provider}}'s. Try again in a moment."
       },
@@ -1748,6 +1797,9 @@
         },
         "goal": {
           "continued": "Goal · continuation {{step}} of {{limit}}",
+          "continuedOpen": "Goal · continuation {{step}}",
+          "paused": "Goal “{{objective}}” {{why}}",
+          "resumed": "You resumed the goal “{{objective}}”",
           "met": "Goal met: “{{objective}}”",
           "impossible": "Goal “{{objective}}” cannot be met without you",
           "cleared": "You stopped the goal “{{objective}}”",
@@ -1761,6 +1813,9 @@
           "stopped": "Loop “{{prompt}}” stopped: a run of it failed or was stopped",
           "ended": "Loop “{{prompt}}” ended: the bot did not say when to run next"
         },
+        "compaction": "Summarized earlier work to keep its context small · {{before}} → {{after}} tokens",
+        "compactionLine": "Summarized earlier work",
+        "compactionTokens": "{{before}} → {{after}} tokens",
         "dream": {
           "dreamed": "Tidied its memory · {{before}} facts → {{after}}",
           "undone": "You undid the tidy · {{before}} facts are back"
@@ -1781,6 +1836,19 @@
       "goal": {
         "title": "Goal: {{objective}}",
         "progress": "{{step}} of {{limit}} continuations",
+        "continuations_one": "{{count}} continuation",
+        "continuations_other": "{{count}} continuations",
+        "budget": "{{progress}} · {{used}} of {{budget}} tokens",
+        "resume": "Resume",
+        "resumeFailed": "Could not resume the goal. Try again.",
+        "paused": {
+          "blocked": "paused, it needs you",
+          "usage_limit": "paused, the model provider hit a limit",
+          "no_progress": "paused, its last turns did nothing",
+          "budget": "paused, its budget is spent",
+          "stopped": "paused, you stopped a turn of it",
+          "failed": "paused, a turn of it failed"
+        },
         "waiting": "waiting for {{system}} until {{time}}",
         "stop": "Stop goal",
         "stopFailed": "Could not stop the goal. Try again.",
@@ -2859,7 +2927,7 @@
       "calendar": "Calendar",
       "milestones": "Milestones",
       "projects": "Projects",
-      "todo": "To do"
+      "todo": "TODO"
     },
     "sidebar": {
       "unassigned": "Unassigned"
@@ -2868,6 +2936,9 @@
       "title": "Tasks",
       "newTask": "New task",
       "addTask": "Add task",
+      "showOlder_one": "Show {{count}} older",
+      "showOlder_other": "Show {{count}} older",
+      "hideOlder": "Hide older",
       "addTo": "Add a task to {{column}}",
       "quickPlaceholder": "Task title",
       "filedUnder": "In {{name}}",
@@ -3040,15 +3111,24 @@
       "add": "Add a task",
       "addLabel": "Add a task for this day",
       "addFailed": "Couldn’t add that task.",
+      "startSession": "Start a session for {{title}}",
       "toggleFailed": "Couldn’t update that task.",
       "loadFailed": "Couldn’t load your tasks.",
       "state": {
         "todo": "due today",
         "due": "due",
-        "doing": "in progress",
-        "review": "in review",
-        "done": "done",
         "overdue": "overdue since {{date}}"
+      },
+      "schedule": {
+        "button": "Add undated tasks",
+        "title": "Add undated tasks",
+        "for": "Pick the tasks with no due date to put on {{date}}.",
+        "search": "Search tasks",
+        "noMatch": "No task matches “{{query}}”.",
+        "none": "Every open task already has a due date.",
+        "submit": "Add to {{date}}",
+        "failed": "Couldn’t add some of those tasks.",
+        "loadFailed": "Couldn’t load your tasks."
       },
       "reorder": "Reorder {{title}}"
     }

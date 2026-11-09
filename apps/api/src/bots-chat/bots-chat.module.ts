@@ -2,6 +2,7 @@ import { Module, type Provider } from '@nestjs/common';
 import { CqrsModule } from '@nestjs/cqrs';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { createBotEngine } from '@oppenheimer/backend-agents';
+import { createMetricsProvider } from '@oppenheimer/backend-core';
 import { AutomationsModule } from '../automations/automations.module';
 import { BotsModule } from '../bots/bots.module';
 import { OrganizationsModule } from '../organizations/organizations.module';
@@ -140,6 +141,8 @@ import { DreamBotMemoryCommandHandler } from './commands/dream-bot-memory/dream-
 import { FinishBotLoopRunCommandHandler } from './commands/finish-bot-loop-run/finish-bot-loop-run.command-handler';
 import { RequestBotMemoryDreamCommandHandler } from './commands/request-bot-memory-dream/request-bot-memory-dream.command-handler';
 import { RequestBotMemoryDreamHttpController } from './commands/request-bot-memory-dream/request-bot-memory-dream.http.controller';
+import { ResumeBotGoalCommandHandler } from './commands/resume-bot-goal/resume-bot-goal.command-handler';
+import { ResumeBotGoalHttpController } from './commands/resume-bot-goal/resume-bot-goal.http.controller';
 import { RunApprovedCallCommandHandler } from './commands/run-approved-call/run-approved-call.command-handler';
 import { RunBotLoopCommandHandler } from './commands/run-bot-loop/run-bot-loop.command-handler';
 import { RunBotTurnCommandHandler } from './commands/run-bot-turn/run-bot-turn.command-handler';
@@ -188,12 +191,18 @@ import { BotTurnRepository } from './database/bot-turn.repository';
 import { BotUsageRepository } from './database/bot-usage.repository';
 import { BotApprovalsProcessor } from './infrastructure/bot-approvals.processor';
 import { BotAttachmentRetentionProcessor } from './infrastructure/bot-attachment-retention.processor';
+import { BotBackgroundTurnsProcessor } from './infrastructure/bot-background-turns.processor';
 import { BotDreamsProcessor } from './infrastructure/bot-dreams.processor';
 import { BotRoutineTarget } from './infrastructure/bot-routine-target.adapter';
 import { BotStallChecksProcessor } from './infrastructure/bot-stall-checks.processor';
 import { BotSummariesProcessor } from './infrastructure/bot-summaries.processor';
 import { BotTurnsProcessor } from './infrastructure/bot-turns.processor';
 import { GuardedWebPageAdapter } from './infrastructure/guarded-web-page.adapter';
+import {
+  BotEngineMetrics,
+  INNER_BOT_ENGINE,
+  MeteredBotEngine,
+} from './infrastructure/metered-bot-engine.adapter';
 import { OutboxBotStallChecksAdapter } from './infrastructure/outbox-bot-stall-checks.adapter';
 import { QueryBusOwnerHostsAdapter } from './infrastructure/query-bus-owner-hosts.adapter';
 import { RedisBotStreamAdapter } from './infrastructure/redis-bot-stream.adapter';
@@ -239,6 +248,7 @@ const httpControllers = [
   ReadBotAttachmentHttpController,
   CancelBotTurnHttpController,
   ClearBotGoalHttpController,
+  ResumeBotGoalHttpController,
   FindBotGoalHttpController,
   ClearBotLoopHttpController,
   FindBotLoopHttpController,
@@ -284,6 +294,7 @@ const commandHandlers: Provider[] = [
   WakeOnPullRequestCommandHandler,
   ContinueBotGoalCommandHandler,
   ClearBotGoalCommandHandler,
+  ResumeBotGoalCommandHandler,
   FindBotGoalQueryHandler,
   RunBotLoopCommandHandler,
   FinishBotLoopRunCommandHandler,
@@ -346,7 +357,7 @@ const queryHandlers: Provider[] = [
       BotToolPermissionOrmEntity,
       BotPermissionRuleOrmEntity,
     ]),
-    // The `bot-turns` queue the outbox stages each due turn on.
+    // The `bot-turns` and `bot-background-turns` queues the outbox stages each due turn on.
     QueueModule,
     BotsModule,
     // A routine is an automation whose run is a turn of its bot: this module
@@ -446,6 +457,7 @@ const queryHandlers: Provider[] = [
     BotSessionWakeDomainEventHandler,
     BotPullRequestWakeDomainEventHandler,
     TurnCancelWatchFactory,
+    BotBackgroundTurnsProcessor,
     BotTurnsProcessor,
     BotApprovalsProcessor,
     BotSummariesProcessor,
@@ -472,7 +484,11 @@ const queryHandlers: Provider[] = [
     { provide: BOT_ATTACHMENT_FILES, useClass: StorageBotAttachmentFilesAdapter },
     { provide: OWNER_HOSTS, useClass: QueryBusOwnerHostsAdapter },
     // The engines load their SDKs on a turn's first use, so binding them starts nothing.
-    { provide: BOT_ENGINE, useFactory: () => createBotEngine() },
+    // Every run goes through the meter (`bot_engine_*` metrics), the inner
+    // engine being the one the deployment's providers build.
+    { provide: INNER_BOT_ENGINE, useFactory: () => createBotEngine() },
+    ...createMetricsProvider(BotEngineMetrics),
+    { provide: BOT_ENGINE, useClass: MeteredBotEngine },
   ],
 })
 export class BotsChatModule {}

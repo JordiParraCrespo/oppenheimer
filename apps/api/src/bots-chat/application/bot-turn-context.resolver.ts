@@ -34,7 +34,7 @@ import { withEarlierImages } from '../domain/bot-image.policy';
 import { memoryInMind } from '../domain/bot-memory.policy';
 import { composeBotSystemPrompt } from '../domain/bot-prompt.policy';
 import { composeTurnMessage, withBuiltInSkills } from '../domain/bot-skill.policy';
-import { BOT_TURN_MAX_STEPS, type BotTurnEntity } from '../domain/bot-turn.entity';
+import type { BotTurnEntity } from '../domain/bot-turn.entity';
 import { BotTurnBudget } from '../domain/bot-turn-budget.policy';
 import { composeTurnContext, withTurnContext } from '../domain/bot-turn-context.policy';
 import type { OwnerHost, OwnerHostsPort } from '../infrastructure/owner-hosts.port';
@@ -202,7 +202,9 @@ export class BotTurnContextResolver {
       ),
       images,
       tools,
-      maxSteps: BOT_TURN_MAX_STEPS,
+      // No step limit: the turn runs until the model answers, compacting
+      // against the window its last turn reported.
+      contextWindow: lastContext?.window ?? null,
     };
     return this.approvalStarted.shape(message, request);
   }

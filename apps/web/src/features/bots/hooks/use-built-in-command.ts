@@ -1,4 +1,8 @@
-import { useClearBotGoal, useClearBotLoop } from '@oppenheimer/frontend-consumer/react';
+import {
+  useClearBotGoal,
+  useClearBotLoop,
+  useResumeBotGoal,
+} from '@oppenheimer/frontend-consumer/react';
 import { useNavigate } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import {
@@ -14,6 +18,7 @@ const NOTICES = {
 
 const FAILURES = {
   clearGoal: 'bots.chat.goal.stopFailed',
+  resumeGoal: 'bots.chat.goal.resumeFailed',
   clearLoop: 'bots.chat.loop.stopFailed',
 } as const;
 
@@ -21,7 +26,8 @@ const FAILURES = {
  * The composer's side of the built-in commands (`builtInCommandActionOf`):
  * the notice a draft that cannot be sent shows, and `runLocally`, which runs
  * a built-in the console owns instead of sending it and answers whether it
- * did: `/goal clear` stops the goal, `/loop stop` the loop, `/usage` puts the
+ * did: `/goal clear` stops the goal, `/goal resume` runs a paused one again,
+ * `/loop stop` the loop, `/usage` puts the
  * usage card in the chat (`openUsageCard`), `/schedule` alone opens the bot's
  * Routines tab. A local action that fails stays
  * on screen through `error`, with the words to say it in `failure`.
@@ -29,6 +35,7 @@ const FAILURES = {
 export function useBuiltInCommand(botId: string, draft: string) {
   const { t } = useTranslation();
   const clearGoal = useClearBotGoal();
+  const resumeGoal = useResumeBotGoal();
   const clearLoop = useClearBotLoop();
   const navigate = useNavigate();
   const action = builtInCommandActionOf(draft);
@@ -49,6 +56,10 @@ export function useBuiltInCommand(botId: string, draft: string) {
     clearGoal: {
       run: (onDone) => clearGoal.mutate({ id: botId }, { onSuccess: onDone }),
       fails: { request: clearGoal, failure: FAILURES.clearGoal },
+    },
+    resumeGoal: {
+      run: (onDone) => resumeGoal.mutate({ id: botId }, { onSuccess: onDone }),
+      fails: { request: resumeGoal, failure: FAILURES.resumeGoal },
     },
     clearLoop: {
       run: (onDone) => clearLoop.mutate({ id: botId }, { onSuccess: onDone }),

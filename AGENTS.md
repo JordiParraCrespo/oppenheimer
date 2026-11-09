@@ -103,6 +103,8 @@ When you add a file that mentions an optional app (CI, compose,
   changes the repository starts with `/cook`**, typed or not: it picks the
   lane, says why, and runs it. Only a lane the user names themselves, or a
   plain question, skips it. The protocol is `/steward`, "Merging".
+  **Every task ends with `/recap`**, typed or not, questions included: its
+  last message is the recap's brief.
 - **Stage files by path.** `.claude/settings.json` and the hooks in
   `.agents/hooks/` refuse `git add -A`/`.`, pushes to `main`, force pushes,
   `git reset --hard` and the like; read them for the exact policy and for
@@ -151,6 +153,7 @@ frontmatter; this is the index.
 | building a form | `forms.md` |
 | adding or changing a route in `apps/web` | `/tanstack-routing` |
 | checking a change end to end | `/local-stack`; the e2e suites are `e2e/README.md` |
+| reading the API's logs or metrics, or adding a metric | `apps/docs/docs/deployment/monitoring.md` (`pnpm logs` is LogQL over the local Loki), `deploy/dev/monitoring/README.md` (`pnpm monitoring:up`) |
 | deploying | `deploy/dev/README.md`, `apps/docs/docs/deployment/` |
 
 ## Commands

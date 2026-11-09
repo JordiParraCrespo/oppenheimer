@@ -55,12 +55,13 @@ export const OPPENHEIMER_SKILL: BotBuiltInSkill = {
  * going on, adapted from pstack's `recall` (`25-bots.md` §4.1, "A built-in
  * catch-up"). Named `recap`, not `recall`, since `recall` is the bot's tool
  * for reading its own memory. The person runs it with `/recap [topic]`, and
- * the bot uses it unasked when someone asks to be caught up.
+ * the bot uses it unasked when someone asks to be caught up, and to close
+ * the report on a session it follows that finished.
  */
 export const RECAP_SKILL: BotBuiltInSkill = {
   name: 'recap',
   description:
-    'Catch the person up on what is going on: their sessions, pull requests, plan and this chat, in a short brief of where each thread stands, what waits on them and the one next move. Use it when they ask what is happening, where things stand, what they missed or where they left off.',
+    'Catch the person up on what is going on: their sessions, pull requests, plan and this chat, in a short brief of where each thread stands, what waits on them and the one next move. Use it when they ask what is happening, where things stand, what they missed or where they left off, and, scoped to the one session, when a session you follow finishes.',
   body: `Rebuild what the person has been working on and hand back a brief they can act on from your reply alone.
 
 1. Scope. The topic is what they wrote after the command, if anything; without one, cover everything from the last 7 days. Say the scope in one line before the brief. With a topic, leave out what is not about it unless it blocks it.

@@ -7,12 +7,15 @@ import { z } from 'zod';
  * To do's address (the 2026-11-08 `Tasks` frame): the projects it is
  * narrowed to (as on the board), the day it lists (`YYYY-MM-DD`, today when
  * absent) and `overdue=off` to leave out what is overdue, which it includes
- * by default.
+ * by default. `task` opens that task's dialog and `start` Start session for
+ * it, as on the board.
  */
 export const todoSearchSchema = z.object({
   project: searchText,
   date: calendarDateSchema.optional().catch(undefined),
   overdue: z.literal('off').optional().catch(undefined),
+  task: searchText,
+  start: searchText,
 });
 export type TodoSearch = z.infer<typeof todoSearchSchema>;
 
@@ -78,8 +81,9 @@ export function todoDay(
 }
 
 /**
- * The second line's "where it stands", as a translation key: overdue since
- * its day, its column, and "due today" only on today ("due" on another day).
+ * The second line's "when it is due", as a translation key: overdue since
+ * its day, "due today" only on today ("due" on another day). Where the task
+ * stands is the row's status dot, not this line.
  */
 export function todoStateLabel(
   entry: TodoEntry,
@@ -87,11 +91,29 @@ export function todoStateLabel(
   today: string,
 ):
   | { key: 'tasks.todo.state.overdue'; date: string }
-  | { key: `tasks.todo.state.${Exclude<TodoState, 'overdue'> | 'due'}` } {
+  | { key: 'tasks.todo.state.todo' | 'tasks.todo.state.due' } {
   if (entry.state === 'overdue')
     return { key: 'tasks.todo.state.overdue', date: entry.task.dueDate ?? day };
-  if (entry.state === 'todo' && day !== today) return { key: 'tasks.todo.state.due' };
-  return { key: `tasks.todo.state.${entry.state}` };
+  return { key: day === today ? 'tasks.todo.state.todo' : 'tasks.todo.state.due' };
+}
+
+/**
+ * What Add undated tasks offers: the open tasks with no due date, in the
+ * projects To do is narrowed to (every project when `undefined`), in the
+ * board's order.
+ */
+export function undatedTasks(
+  tasks: readonly TaskEntity[],
+  projectIds?: readonly string[],
+): TaskEntity[] {
+  return tasks
+    .filter(
+      (task) =>
+        !task.isDone &&
+        task.dueDate === null &&
+        (!projectIds || projectIds.includes(task.projectId)),
+    )
+    .sort(compareRank);
 }
 
 /** The header's count: how many on the list are left and how many are done. */

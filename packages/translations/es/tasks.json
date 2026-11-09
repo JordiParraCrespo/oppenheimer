@@ -7,7 +7,7 @@
     "calendar": "Calendario",
     "milestones": "Hitos",
     "projects": "Proyectos",
-    "todo": "Para hoy"
+    "todo": "TODO"
   },
   "sidebar": {
     "unassigned": "Sin asignar"
@@ -16,6 +16,10 @@
     "title": "Tareas",
     "newTask": "Nueva tarea",
     "addTask": "Añadir tarea",
+    "showOlder_one": "Mostrar {{count}} anterior",
+    "showOlder_other": "Mostrar {{count}} anteriores",
+    "showOlder_many": "Mostrar {{count}} anteriores",
+    "hideOlder": "Ocultar anteriores",
     "addTo": "Añadir una tarea a {{column}}",
     "quickPlaceholder": "Título de la tarea",
     "filedUnder": "En {{name}}",
@@ -188,15 +192,24 @@
     "add": "Añadir una tarea",
     "addLabel": "Añadir una tarea para este día",
     "addFailed": "No se pudo añadir la tarea.",
+    "startSession": "Iniciar una sesión para {{title}}",
     "toggleFailed": "No se pudo actualizar la tarea.",
     "loadFailed": "No se pudieron cargar tus tareas.",
     "state": {
       "todo": "vence hoy",
       "due": "pendiente",
-      "doing": "en curso",
-      "review": "en revisión",
-      "done": "hecha",
       "overdue": "vencida desde el {{date}}"
+    },
+    "schedule": {
+      "button": "Añadir tareas sin fecha",
+      "title": "Añadir tareas sin fecha",
+      "for": "Elige las tareas sin fecha de vencimiento que quieres poner el {{date}}.",
+      "search": "Buscar tareas",
+      "noMatch": "Ninguna tarea coincide con «{{query}}».",
+      "none": "Todas las tareas abiertas ya tienen fecha de vencimiento.",
+      "submit": "Añadir al {{date}}",
+      "failed": "No se pudieron añadir algunas de esas tareas.",
+      "loadFailed": "No se pudieron cargar tus tareas."
     },
     "reorder": "Reordenar {{title}}"
   }

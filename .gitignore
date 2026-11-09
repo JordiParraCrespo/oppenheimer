@@ -65,6 +65,8 @@ go.work.sum
 
 # pnpm ci:local's report and the dockerd log it may start
 .ci-local/
+# The API's log file for Alloy and Loki (LOG_FILE, pnpm monitoring:up).
+.logs/
 
 # The local stack (scripts/stack/stack.mjs): pids, logs, the host account
 .stack/
