@@ -228,7 +228,7 @@ describe('ContinueBotGoalCommandHandler', () => {
   it('counts the spend of the turn that paused the goal, and queues nothing', async () => {
     const turn = ended('completed');
     const pausedInTurn = goal({
-      paused: { reason: 'blocked', note: null, at: new Date(Date.now() + 1) },
+      paused: { reason: 'blocked', note: null, at: new Date(Date.now() - 30_000) },
     });
     const { goals, goalsOf, run } = setup(pausedInTurn, turn);
     await run();
@@ -236,6 +236,24 @@ describe('ContinueBotGoalCommandHandler', () => {
     expect(goals.recordSpend).toHaveBeenCalledWith(pausedInTurn);
     expect(goalsOf.queueContinuation).not.toHaveBeenCalled();
     expect(goalsOf.pause).not.toHaveBeenCalled();
+  });
+
+  // What breaks this: the job that paused a goal at a turn's end run again,
+  // counting the turn's spend and idleness a second time on the paused goal.
+  it('counts nothing again when its own pause at the turn’s end is run twice', async () => {
+    const turn = ended('failed', 'usage_limit');
+    const stored = goal();
+    const { goals, goalsOf, run } = setup(stored, turn);
+    await run();
+    expect(goalsOf.pause).toHaveBeenCalledTimes(1);
+    const pausedAfter = goal({
+      tokensUsed: 1_200,
+      paused: { reason: 'usage_limit', note: 'It stopped', at: new Date(Date.now() + 1_000) },
+    });
+    goals.findForBot.mockResolvedValue(pausedAfter);
+    await run();
+    expect(goals.recordSpend).not.toHaveBeenCalled();
+    expect(goalsOf.pause).toHaveBeenCalledTimes(1);
   });
 
   it('does nothing for a goal paused before the turn, or a bot with none', async () => {

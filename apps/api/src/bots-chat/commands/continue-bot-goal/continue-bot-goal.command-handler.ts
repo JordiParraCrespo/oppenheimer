@@ -58,8 +58,11 @@ export class ContinueBotGoalCommandHandler
       calledTools: await this.messages.turnCalledTools(ended.organizationId, ended.id),
     });
     if (goal.paused) {
-      // Paused while this turn ran (the bot said blocked): its spend still counts.
-      if (ended.startedAt && goal.paused.at >= ended.startedAt) {
+      // Paused while this turn ran (the bot said blocked): its spend still
+      // counts. A pause after it ended is this job's own, run again, whose
+      // write carried the spend already.
+      const { startedAt, endedAt } = ended;
+      if (startedAt && endedAt && goal.paused.at >= startedAt && goal.paused.at <= endedAt) {
         await this.goals.recordSpend(goal);
       }
       return;
