@@ -27,7 +27,6 @@ const SKILL_TOOLS: ReadonlySet<string> = new Set(['use_skill', 'save_skill', 'pa
  */
 export const SKILL_NUDGE = `\n\n<reminder>You have made ${BOT_SKILL_NUDGE_AFTER_STEPS} tool calls in this turn without a skill. If this is work you will be asked to do again, save how you did it with save_skill before you answer, and say you did; skip it for a one-off.</reminder>`;
 
-/** A tool's result with the reminder after it. */
 export function withSkillNudge(content: string): string {
   return `${content}${SKILL_NUDGE}`;
 }

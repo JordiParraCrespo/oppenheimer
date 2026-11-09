@@ -139,10 +139,6 @@ export function skillsPromptSection(
   return parts.length > 0 ? `# Your skills\n\n${parts.join('\n\n')}` : null;
 }
 
-/**
- * When the bot saves a skill without being asked: after work that took real
- * effort and will come up again, never for a one-off or anything private.
- */
 const SAVING_SKILLS =
   "You may save a skill without being asked, with save_skill, after a task that took real work (many tool calls, or a dead end you worked around) and that you are likely to be asked to do again. Do not save one for a one-off, for anything a few steps long, or for anything holding a secret or the person's private data (mail, messages, keys). Save at most one new skill a turn, and say in your answer that you saved it, by name (/<name>).";
 

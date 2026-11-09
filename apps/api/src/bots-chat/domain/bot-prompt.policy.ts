@@ -53,7 +53,6 @@ export interface BotPromptInput {
    * Its own skills; those it may use unasked are listed when the turn offers
    * `use_skill`, with the built-ins the turn's tools can follow (`withBuiltInSkills`,
    * `canFollowSkill`).
-   * A turn offered `save_skill` is told when to save one unasked.
    */
   skills?: readonly BotSkillView[];
 }
