@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { ThinkingOrb } from 'thinking-orbs';
 import { BotSubagentsLive } from '@/features/bots/components/bot-subagents-live';
 import { BotTurnClock } from '@/features/bots/components/bot-turn-clock';
-import { liveLabel, liveOrbState } from '@/features/bots/lib/tool-activity';
+import { liveLabel } from '@/features/bots/lib/tool-activity';
 
 /**
  * The turn in flight, after what it has done so far (the Bots frame's live
@@ -48,14 +48,7 @@ export function BotTurnLive({
   return (
     <>
       <TraceLive
-        glyph={
-          <ThinkingOrb
-            aria-hidden
-            className="shrink-0"
-            size={20}
-            state={liveOrbState({ queued, waiting: Boolean(waitingOn), step, writing })}
-          />
-        }
+        glyph={<ThinkingOrb aria-hidden className="shrink-0" size={20} state="composing" />}
         elapsed={since && !queued ? <BotTurnClock since={since} /> : undefined}
       >
         {text}
