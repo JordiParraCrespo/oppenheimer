@@ -8,33 +8,27 @@ import {
 } from '@oppenheimer/frontend-consumer/react';
 import { useErrorMessage } from '@oppenheimer/frontend-core/react';
 import { ErrorAlert, notifySuccess, RelativeTime } from '@oppenheimer/frontend-web';
-import { getRouteApi } from '@tanstack/react-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { StartSessionForm } from '../forms/start-session-form';
 import { placeOptions, startDefaults, toStartSession } from '../lib/start-session';
 
-const board = getRouteApi('/_authenticated/plan/');
-
 /**
  * Start session's form, in `StartSessionDialog`'s `QueryState.Data`: it reads
  * the tasks, the projects and the hosts with their presence under Suspense,
- * side by side, and finds the task the address names and its project. Whether
+ * side by side, and finds the task it is given and its project. Whether
  * the reader has a Cursor key is read beside them, without holding the form:
  * until it answers, Cursor is offered disabled. A task
  * or project that is gone says so instead of the form. The idempotency key is
  * this form's, so a retried submit does not start two sessions. A refetch
  * that fails keeps the form and says so above it.
  */
-export function StartSessionDraft() {
+export function StartSessionDraft({ taskId, onClose }: { taskId: string; onClose: () => void }) {
   const { t } = useTranslation();
   const resolveError = useErrorMessage();
-  const { start } = board.useSearch();
-  const navigate = board.useNavigate();
-  const close = () => navigate({ search: (previous) => ({ ...previous, start: undefined }) });
   const { tasks, projects, hosts, error } = useSuspenseStartSession();
   const { data: cloudStatus } = useCloudAgentStatus();
-  const task = tasks.find((row) => row.id === start);
+  const task = tasks.find((row) => row.id === taskId);
   const project = projects.find((row) => row.id === task?.projectId);
   const [idempotencyKey] = useState(() => crypto.randomUUID());
   const voice = useVoiceDictation(() => (project ? [project.name] : []));
@@ -43,7 +37,7 @@ export function StartSessionDraft() {
       notifySuccess(
         started.hints.includes('host_offline') ? 'taskSessionQueued' : 'taskSessionStarted',
       );
-      close();
+      onClose();
     },
   });
   if (!task || !project)
@@ -125,7 +119,7 @@ export function StartSessionDraft() {
         }}
         pending={launch.isPending}
         error={launch.error ? resolveError(launch.error, t('tasks.start.failed')) : null}
-        onCancel={close}
+        onCancel={onClose}
         onSubmit={(values) => {
           const body = toStartSession(values, found.project);
           if (body)
