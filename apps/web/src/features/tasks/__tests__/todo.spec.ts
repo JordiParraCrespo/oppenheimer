@@ -2,7 +2,10 @@ import { TaskEntity } from '@oppenheimer/frontend-consumer';
 import type { TaskStatus } from '@oppenheimer/shared/schemas/task';
 import { describe, expect, it } from 'vitest';
 import {
+  type AddFilter,
+  addableCounts,
   addableTasks,
+  picksInView,
   todayOpenCount,
   todoCounts,
   todoDay,
@@ -197,6 +200,42 @@ describe("To do's day", () => {
       task('d', { projectId: 'p-2', status: 'doing', dueDate: '2026-11-30' }),
     ];
     expect(addableTasks(rows, new Set(['c'])).map((row) => row.id)).toEqual(['a', 'd']);
-    expect(addableTasks(rows, new Set(), ['p-2']).map((row) => row.id)).toEqual(['d']);
+    expect(
+      addableTasks(rows, new Set(), { projectIds: ['p-2'], statuses: [] }).map((row) => row.id),
+    ).toEqual(['d']);
+  });
+
+  it('narrows to the projects and columns picked, both at once', () => {
+    const rows = [
+      task('a'),
+      task('d', { projectId: 'p-2', status: 'doing' }),
+      task('e', { projectId: 'p-2', status: 'review' }),
+    ];
+    const ids = (filter?: Partial<AddFilter>) =>
+      addableTasks(rows, new Set(), { projectIds: [], statuses: [], ...filter }).map(
+        (row) => row.id,
+      );
+    expect(ids()).toEqual(['a', 'd', 'e']);
+    expect(ids({ projectIds: ['p-2'] })).toEqual(['d', 'e']);
+    expect(ids({ statuses: ['todo', 'review'] })).toEqual(['a', 'e']);
+    expect(ids({ projectIds: ['p-2'], statuses: ['doing'] })).toEqual(['d']);
+  });
+
+  it('counts each facet under the other one, so a pick never zeroes its own options', () => {
+    const rows = [
+      task('a'),
+      task('d', { projectId: 'p-2', status: 'doing' }),
+      task('e', { projectId: 'p-2', status: 'review' }),
+    ];
+    expect(
+      addableCounts(rows, new Set(['a']), { projectIds: ['p-2'], statuses: ['doing'] }),
+    ).toEqual({
+      byProject: { 'p-2': 1 },
+      byStatus: { doing: 1, review: 1 },
+    });
+  });
+
+  it('adds only the picks the filtered list still shows', () => {
+    expect(picksInView(['a', 'd', 'x'], [task('d'), task('a')])).toEqual(['a', 'd']);
   });
 });
