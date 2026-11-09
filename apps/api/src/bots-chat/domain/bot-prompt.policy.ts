@@ -480,6 +480,7 @@ const EVENT_PROMPTS: EventPrompts = {
   goal: (_event, content) => eventNote(content),
   loop: (_event, content) => eventNote(content),
   dream: (_event, content) => eventNote(content),
+  compaction: (_event, content) => eventNote(content),
 };
 
 /**

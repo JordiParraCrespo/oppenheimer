@@ -146,7 +146,7 @@ export class TurnTranscript {
       case 'retrying':
         return [{ kind: 'retrying', reason: event.reason }];
       case 'compacted':
-        return [];
+        return [{ kind: 'insert', message: this.compaction(event) }];
       case 'steered':
         this.activity = null;
         return event.steers.map((steer) => ({
@@ -258,6 +258,28 @@ export class TurnTranscript {
       writes.push({ kind: 'insert', message: this.message('assistant', '', [], images) });
     }
     return writes;
+  }
+
+  /**
+   * The line where the turn folded what it had read: the steps after it go on
+   * a new activity line, so each line's calls read in order around it.
+   */
+  private compaction(event: Extract<BotEngineEvent, { type: 'compacted' }>): BotMessageEntity {
+    this.activity = null;
+    return BotMessageEntity.createNew({
+      organizationId: this.turn.organizationId,
+      botId: this.turn.botId,
+      turnId: this.turn.id,
+      role: 'event',
+      content: `Earlier in this turn, what you had read was summarized to keep your context small (about ${Math.round(event.tokensBefore / 1000)}k tokens down to ${Math.round(event.tokensAfter / 1000)}k).`,
+      event: {
+        kind: 'compaction',
+        tokensBefore: Math.max(0, Math.round(event.tokensBefore)),
+        tokensAfter: Math.max(0, Math.round(event.tokensAfter)),
+      },
+      steps: [],
+      position: this.position++,
+    });
   }
 
   private message(

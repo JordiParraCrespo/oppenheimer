@@ -299,6 +299,7 @@
         "stopped": "Loop “{{prompt}}” stopped: a run of it failed or was stopped",
         "ended": "Loop “{{prompt}}” ended: the bot did not say when to run next"
       },
+      "compaction": "Summarized earlier work to keep its context small · {{before}} → {{after}} tokens",
       "dream": {
         "dreamed": "Tidied its memory · {{before}} facts → {{after}}",
         "undone": "You undid the tidy · {{before}} facts are back"

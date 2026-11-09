@@ -263,6 +263,27 @@ describe('TurnTranscript', () => {
     });
   });
 
+  // What breaks this: a turn that folded what it read into a summary saying
+  // nothing about it, so the person cannot tell why the bot forgot a detail;
+  // or the calls after the fold drawn on the same line as those before it.
+  it('stores a line where the turn compacted, and starts a new activity line after it', () => {
+    const subject = turn();
+    const transcript = new TurnTranscript(subject);
+    const writes = [
+      { type: 'tool.started', callId: 'a', name: 'list_mail', input: {} },
+      { type: 'tool.finished', callId: 'a', name: 'list_mail', output: 'ok', isError: false },
+      { type: 'compacted', tokensBefore: 92_000, tokensAfter: 21_000 },
+      { type: 'tool.started', callId: 'b', name: 'list_mail', input: {} },
+    ].flatMap((event) => transcript.apply(event as BotEngineEvent));
+    const messages = inserted(writes);
+    expect(messages.map((message) => message.role)).toEqual(['activity', 'event', 'activity']);
+    expect(messages[1]).toMatchObject({
+      turnId: subject.id,
+      event: { kind: 'compaction', tokensBefore: 92_000, tokensAfter: 21_000 },
+    });
+    expect(messages.map((message) => message.position)).toEqual([1, 2, 3]);
+  });
+
   // What breaks this: a goal whose turn the provider refused for a limit
   // with a known reset pausing for the person, when it could wait the limit
   // out and go on by itself, as it does for a tool's limit.
