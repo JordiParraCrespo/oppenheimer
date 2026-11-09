@@ -306,7 +306,7 @@ test('To do: a task added to today, ticked done, and the overdue switch', async 
   const owner = await provisionedUser('plantodo');
   await signInAs(page, owner.user);
   await page.goto('/plan');
-  await planNav(page, 'To do').click();
+  await planNav(page, 'TODO').click();
   await expect(page).toHaveURL(/\/plan\/todo/);
   await expect(page.getByText('Nothing for this day yet. Add one below.')).toBeVisible();
 
