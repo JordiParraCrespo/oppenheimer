@@ -223,48 +223,29 @@ describe('ContinueBotGoalCommandHandler', () => {
     expect(goalsOf.end).not.toHaveBeenCalled();
   });
 
-  // What breaks this: the turn in which the bot said blocked never counted,
-  // so after Resume the budget reads less than was spent.
-  it('counts the spend of the turn that paused the goal, and queues nothing', async () => {
-    const turn = ended('completed');
-    const pausedInTurn = goal({
-      paused: { reason: 'blocked', note: null, at: new Date(Date.now() - 30_000) },
-    });
-    const { goals, goalsOf, run } = setup(pausedInTurn, turn);
-    await run();
-    expect(pausedInTurn.tokensUsed).toBe(1_200);
-    expect(goals.recordSpend).toHaveBeenCalledWith(pausedInTurn);
-    expect(goalsOf.queueContinuation).not.toHaveBeenCalled();
-    expect(goalsOf.pause).not.toHaveBeenCalled();
-  });
-
-  // What breaks this: the job that paused a goal at a turn's end run again,
-  // counting the turn's spend and idleness a second time on the paused goal.
-  it('counts nothing again when its own pause at the turn’s end is run twice', async () => {
-    const turn = ended('failed', 'usage_limit');
-    const stored = goal();
-    const { goals, goalsOf, run } = setup(stored, turn);
-    await run();
-    expect(goalsOf.pause).toHaveBeenCalledTimes(1);
-    const pausedAfter = goal({
-      tokensUsed: 1_200,
-      paused: { reason: 'usage_limit', note: 'It stopped', at: new Date(Date.now() + 1_000) },
-    });
-    goals.findForBot.mockResolvedValue(pausedAfter);
-    await run();
-    expect(goals.recordSpend).not.toHaveBeenCalled();
-    expect(goalsOf.pause).toHaveBeenCalledTimes(1);
-  });
-
-  it('does nothing for a goal paused before the turn, or a bot with none', async () => {
-    const paused = goal({ paused: { reason: 'blocked', note: null, at: new Date(0) } });
-    for (const stored of [paused, null]) {
-      const { goals, goalsOf, run } = setup(stored, ended('completed'));
+  // What breaks this: the turn in which the bot said blocked, or a pause
+  // made while its end was held, never counted, so after Resume the budget
+  // reads less than was spent. Whether the pause still owes it is the
+  // repository's (`recordSpend`; the integration spec runs both sides).
+  it('offers a paused goal its turn’s spend and decides nothing else', async () => {
+    for (const at of [new Date(Date.now() - 30_000), new Date(Date.now() + 60_000)]) {
+      const turn = ended('completed');
+      const paused = goal({ paused: { reason: 'blocked', note: null, at } });
+      const { goals, goalsOf, run } = setup(paused, turn);
       await run();
+      expect(paused.tokensUsed).toBe(1_200);
+      expect(goals.recordSpend).toHaveBeenCalledWith(paused);
       expect(goalsOf.queueContinuation).not.toHaveBeenCalled();
       expect(goalsOf.pause).not.toHaveBeenCalled();
-      expect(goals.recordSpend).not.toHaveBeenCalled();
     }
+  });
+
+  it('does nothing for a bot with no goal', async () => {
+    const { goals, goalsOf, run } = setup(null, ended('completed'));
+    await run();
+    expect(goalsOf.queueContinuation).not.toHaveBeenCalled();
+    expect(goalsOf.pause).not.toHaveBeenCalled();
+    expect(goals.recordSpend).not.toHaveBeenCalled();
   });
 
   // What breaks this: the job for one turn's end run twice (a worker that

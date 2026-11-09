@@ -1,5 +1,7 @@
 import {
   BOT_GOAL_IDLE_TURNS,
+  BOT_PROVIDER_CATALOG,
+  type BotProvider,
   type BotGoalActivity,
   type BotGoalPauseReason,
   type BotTurnFailure,
@@ -170,14 +172,19 @@ export function pauseReasonOf(failure: BotTurnFailure | null): BotGoalPauseReaso
  * budget or `BOT_GOAL_IDLE_TURNS` turns without a tool pause it; a goal set
  * with a limit before 2026-11-09 ends when it runs out; any other goes on.
  */
-export function goalDecision(goal: BotGoalEntity, ended: EndedTurn): GoalDecision {
+export function goalDecision(
+  goal: BotGoalEntity,
+  ended: EndedTurn & { provider: BotProvider },
+): GoalDecision {
   if (!isGoalTurn(goal, ended) || goal.paused) return { kind: 'skip' };
   if (ended.status === 'cancelled') return { kind: 'pause', reason: 'stopped', note: null };
   if (ended.status === 'failed' && !stoppedAtTurnLimit(ended)) {
     const reason = pauseReasonOf(ended.failure);
-    // Held until the provider's limit passed (`BotGoalEntity.hold`): it has,
-    // so the goal's own bounds below decide, as after any other turn.
-    if (reason !== 'usage_limit' || !goal.waiting) {
+    // Held until the provider's own limit passed (`BotGoalEntity.hold`): it
+    // has, so the goal's own bounds below decide, as after any other turn.
+    // A hold for a tool's limit says nothing of when the provider answers.
+    const heldForProvider = goal.waiting?.system === BOT_PROVIDER_CATALOG[ended.provider].label;
+    if (reason !== 'usage_limit' || !heldForProvider) {
       return { kind: 'pause', reason, note: ended.error };
     }
   }

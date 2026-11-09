@@ -25,8 +25,8 @@ import { ContinueBotGoalCommand } from './continue-bot-goal.command';
 /**
  * A turn of a goal ended (`25-bots.md` §4.1): load, leave a turn whose end
  * was already decided (`isDecidedTurn`: this job run twice), count what the turn spent
- * and whether it called a tool (also for a goal the turn itself paused, whose
- * spend is written alone), decide (`goalDecision`), ask the reviewer
+ * and whether it called a tool (also for a paused goal whose pause still owes
+ * it, written alone and once: `recordSpend`), decide (`goalDecision`), ask the reviewer
  * only when the bot claimed the goal met (`BotGoalReviewResolver`), act. The
  * goal is read again after the review, which takes a model call: one ended,
  * paused, replaced or moved on by another delivery of the same end meanwhile
@@ -58,13 +58,9 @@ export class ContinueBotGoalCommandHandler
       calledTools: await this.messages.turnCalledTools(ended.organizationId, ended.id),
     });
     if (goal.paused) {
-      // Paused while this turn ran (the bot said blocked): its spend still
-      // counts. A pause after it ended is this job's own, run again, whose
-      // write carried the spend already.
-      const { startedAt, endedAt } = ended;
-      if (startedAt && endedAt && goal.paused.at >= startedAt && goal.paused.at <= endedAt) {
-        await this.goals.recordSpend(goal);
-      }
+      // A pause that still owes this turn's spend (the bot said blocked) gets
+      // it once; one that carried it (this job's own, run again) refuses it.
+      await this.goals.recordSpend(goal);
       return;
     }
 

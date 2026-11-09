@@ -95,7 +95,8 @@ export class BotGoalToolsFactory implements BotToolArea {
         if (!goal) return 'You have no goal to end.';
         if (input.outcome === 'blocked') {
           goal.pause('blocked', input.reason, new Date());
-          if (!(await this.goals.pause(goal, goalPauseLine(goal, 'paused')))) {
+          // Mid-turn: this turn's spend is not known yet, and its end owes it.
+          if (!(await this.goals.pause(goal, goalPauseLine(goal, 'paused'), 'owed'))) {
             return 'Your goal changed meanwhile (it was paused, ended or replaced); nothing was done.';
           }
           await this.goalsOf.cancelWaiting(goal, null);

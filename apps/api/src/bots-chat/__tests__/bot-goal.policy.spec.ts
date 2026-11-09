@@ -50,8 +50,9 @@ function own(
   status: 'completed' | 'failed' | 'cancelled',
   failure: BotTurnFailure | null = status === 'failed' ? 'other' : null,
   step = 1,
-): EndedTurn {
+): EndedTurn & { provider: 'anthropic' } {
   return {
+    provider: 'anthropic',
     id: `turn-${step}`,
     sourceKey: goalSourceKey('goal-1', step),
     status,
@@ -130,6 +131,19 @@ describe('goalDecision', () => {
       kind: 'pause',
       reason: 'usage_limit',
     });
+  });
+
+  // What breaks this: a goal that a tool's rate limit held going on by
+  // itself into a provider refusal that named no time, or a failed sign-in.
+  it('pauses on a provider limit with no known end even when a tool’s limit held it', () => {
+    const held = goal();
+    held.hold({ system: 'Gmail', resetAt: new Date('2026-11-09T12:00:00Z') });
+    for (const failure of ['usage_limit', 'credential'] as const) {
+      expect(goalDecision(held, own('failed', failure))).toMatchObject({
+        kind: 'pause',
+        reason: 'usage_limit',
+      });
+    }
   });
 
   // What breaks this: a goal going on past its spent budget, or a goal set

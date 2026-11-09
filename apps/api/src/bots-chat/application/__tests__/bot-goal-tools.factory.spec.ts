@@ -127,6 +127,8 @@ describe('BotGoalToolsFactory', () => {
     expect(goalsOf.end).not.toHaveBeenCalled();
     expect(goal.paused).toMatchObject({ reason: 'blocked', note: 'I need the deploy key' });
     expect(goals.pause.mock.calls[0][1].event).toMatchObject({ activity: 'paused' });
+    // Paused mid-turn: the turn's end still owes its spend.
+    expect(goals.pause.mock.calls[0][2]).toBe('owed');
     expect(goalsOf.cancelWaiting).toHaveBeenCalledWith(goal, null);
   });
 });

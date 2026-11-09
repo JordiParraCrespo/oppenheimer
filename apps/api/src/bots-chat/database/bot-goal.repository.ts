@@ -41,7 +41,7 @@ export class BotGoalRepository
     return this.dataSource.transaction((manager) => setGoalWithin(manager, this.mapper, goal));
   }
 
-  pause(goal: BotGoalEntity, line: BotMessageEntity): Promise<boolean> {
+  pause(goal: BotGoalEntity, line: BotMessageEntity, spend: 'owed' | 'counted'): Promise<boolean> {
     return this.dataSource.transaction(async (manager) => {
       const {
         pausedAt,
@@ -56,7 +56,8 @@ export class BotGoalRepository
       const result = await manager
         .createQueryBuilder()
         .update(BotGoalOrmEntity)
-        // `updatedAt` is the pause's own time: `recordSpend` writes once while they match.
+        // `updatedAt` at the pause's own time while its turn's spend is owed:
+        // `recordSpend` writes once while they match. Past it, nothing is owed.
         .set({
           pausedAt,
           pauseReason,
@@ -66,7 +67,9 @@ export class BotGoalRepository
           claim,
           waitingFor,
           waitingUntil,
-          ...(pausedAt ? { updatedAt: pausedAt } : {}),
+          ...(pausedAt
+            ? { updatedAt: spend === 'owed' ? pausedAt : new Date(pausedAt.getTime() + 1) }
+            : {}),
         })
         .where('id = :id AND continuations = :at AND "pausedAt" IS NULL', {
           id: goal.id,
