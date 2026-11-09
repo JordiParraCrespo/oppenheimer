@@ -21,9 +21,10 @@ var launchCatalog = map[string]launchMap{
 		effort: launchLevel{argv: []string{"--effort", "<effort>"}},
 		effortLevels: map[string][]string{
 			"claude-opus-5-5":   {"low", "medium", "high", "xhigh", "max"},
-			"claude-fable-5-1":  {"low", "medium", "high", "xhigh", "max"},
+			"claude-fable-5-2":  {"low", "medium", "high", "xhigh", "max"},
 			"claude-sonnet-5-5": {"low", "medium", "high", "xhigh", "max"},
 			"claude-haiku-5-5":  {"low", "medium", "high", "xhigh", "max"},
+			"claude-fable-5-1":  {"low", "medium", "high", "xhigh", "max"},
 			"claude-sonnet-5":   {"low", "medium", "high", "xhigh", "max"},
 			"claude-opus-5":     {"low", "medium", "high", "xhigh", "max"},
 			"claude-fable-5":    {"low", "medium", "high", "xhigh", "max"},
@@ -76,7 +77,7 @@ var launchCatalog = map[string]launchMap{
 		effortUnset: "none",
 		effortLevels: map[string][]string{
 			"anthropic/claude-opus-5-5":         {"low", "medium", "high", "xhigh", "max"},
-			"anthropic/claude-fable-5-1":        {"low", "medium", "high", "xhigh", "max"},
+			"anthropic/claude-fable-5-2":        {"low", "medium", "high", "xhigh", "max"},
 			"anthropic/claude-sonnet-5-5":       {"low", "medium", "high", "xhigh", "max"},
 			"anthropic/claude-haiku-5-5":        {"none", "low", "medium", "high", "xhigh", "max"},
 			"openai/gpt-6.1-sol":                {"low", "medium", "high", "xhigh", "max"},
@@ -100,6 +101,7 @@ var launchCatalog = map[string]launchMap{
 			"alibaba/qwen3.8-max":               {"low", "medium", "xhigh"},
 			"alibaba/qwen3.8-flash":             {"low", "medium", "xhigh"},
 			"minimax/MiniMax-M3.1-Flash":        {"low", "medium", "high", "xhigh", "max"},
+			"anthropic/claude-fable-5-1":        {"low", "medium", "high", "xhigh", "max"},
 		},
 		prompt:             []string{"--prompt", "<prompt>"},
 		conversationResume: []string{"--continue"},
