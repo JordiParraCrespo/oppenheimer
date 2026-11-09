@@ -25,6 +25,12 @@ func (r *replays[T]) get(commandID string) (T, bool) {
 }
 
 func (r *replays[T]) put(commandID string, answer T) {
+	r.putWithin(commandID, answer, replaysRemembered)
+}
+
+// putWithin is put for answers kept fewer at a time: a large one (a
+// screenshot) is remembered only among the latest limit.
+func (r *replays[T]) putWithin(commandID string, answer T, limit int) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	if r.answers == nil {
@@ -35,7 +41,7 @@ func (r *replays[T]) put(commandID string, answer T) {
 	}
 	r.answers[commandID] = answer
 	r.order = append(r.order, commandID)
-	if len(r.order) > replaysRemembered {
+	if len(r.order) > limit {
 		delete(r.answers, r.order[0])
 		r.order = r.order[1:]
 	}

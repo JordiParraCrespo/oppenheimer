@@ -14,8 +14,8 @@ The host decides: nothing happens until the person there runs `runner
 computer on` (`runner computer` shows the setting and the screen a bot would
 get). A Mac's main display is driven through `screencapture` and `osascript`
 and needs Screen Recording and Accessibility; a Debian or Ubuntu host needs
-`xdotool` and ImageMagick, and gets a virtual screen (Xvfb) when it has no
-display.
+`xdotool`, ImageMagick and `xauth`, and gets a virtual screen (Xvfb) when it
+has no display; a Wayland session is refused.
 
 On the link this is `computer.act` / `computer.screen`, gated on the new
 `computer.use` capability. Refusals are `COMPUTER_001` (off on the host),

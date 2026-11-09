@@ -1195,9 +1195,12 @@ on a host: its real desktop, on a Mac and on Linux.
   `osascript` (CoreGraphics events and System Events; the runner is built
   without cgo), which needs Screen Recording and Accessibility granted to
   the runner. Linux: an X display through `xdotool` and ImageMagick, the
-  runner's own or one that lets it in, else a virtual one (Xvfb, 1280 by
-  800) the runner starts and keeps. Wayland is not supported.
-  `COMPUTER_002` names what is missing.
+  runner's own or another this account owns, else a virtual one (Xvfb, 1280
+  by 800) the runner starts and keeps, locked with an `xauth` key in the
+  account's `~/.Xauthority` so no other account on the machine can watch or
+  type. A Wayland session is refused (its X displays are XWayland's, which
+  show and take nothing of the desktop). `COMPUTER_002` names what is
+  missing.
 - **One provider-neutral tool, not the vendors' computer tools.** The
   screenshot goes back as an image in the tool's answer, which both engines
   carry (an MCP image block; a Responses function output part), so every

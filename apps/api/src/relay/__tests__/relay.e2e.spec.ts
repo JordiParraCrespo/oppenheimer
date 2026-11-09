@@ -456,8 +456,8 @@ describe('the runner and the relay, end to end', () => {
   // (`25-bots.md` §4.2): the host refuses until its own switch is on, then a
   // click moves the real pointer and the answer is a picture of that screen.
   // The screen is the virtual one the runner starts where there is none, so
-  // it needs xdotool, Xvfb and ImageMagick's import on this machine.
-  it.skipIf(!['xdotool', 'Xvfb', 'import'].every(onPath))(
+  // it needs xdotool, Xvfb, xauth and ImageMagick's import on this machine.
+  it.skipIf(!['xdotool', 'Xvfb', 'xauth', 'import'].every(onPath))(
     'uses the host’s screen for a bot only once the host turns it on, and answers with the screen',
     async () => {
       await until('the runner link', () => w.registry.find(HOST), 30_000);
@@ -480,7 +480,8 @@ describe('the runner and the relay, end to end', () => {
       expect(image.subarray(0, 3)).toEqual(Buffer.from([0xff, 0xd8, 0xff]));
       expect(image.length).toBeLessThanOrEqual(256 * 1024);
       const pointer = execFileSync('xdotool', ['getmouselocation'], {
-        env: { ...process.env, DISPLAY: display },
+        // The virtual screen is locked with a key in the runner's own home.
+        env: { ...process.env, DISPLAY: display, XAUTHORITY: join(w.scratch, '.Xauthority') },
         encoding: 'utf8',
       });
       expect(pointer).toContain('x:321 y:123');

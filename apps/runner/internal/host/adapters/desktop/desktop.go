@@ -13,6 +13,7 @@ import (
 	"image"
 	"image/png"
 	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -23,17 +24,46 @@ import (
 // longer is a screen that is not answering.
 const commandTimeout = 20 * time.Second
 
-// Options are what the composition root knows about the machine.
+// Options are what the composition root knows about the machine. They are
+// read on Linux only.
 type Options struct {
 	// Display is the X display the runner was started with ($DISPLAY), "" for
-	// none. Read on Linux only.
+	// none.
 	Display string
+	// Wayland says this account's desktop session is a Wayland one: its X
+	// displays are XWayland's, which show and take nothing of the real
+	// desktop.
+	Wayland bool
+	// Home is the account's home directory, where the X authority file a
+	// virtual screen is locked with lives (~/.Xauthority).
+	Home string
+}
+
+// WaylandSession reports whether the environment the runner was started in,
+// or the account's runtime directory, shows a Wayland session. A user
+// service often has neither variable, so the session's socket is looked for
+// too.
+func WaylandSession(sessionType, waylandDisplay, runtimeDir string) bool {
+	if sessionType == "wayland" || waylandDisplay != "" {
+		return true
+	}
+	if runtimeDir == "" {
+		runtimeDir = fmt.Sprintf("/run/user/%d", os.Getuid())
+	}
+	sockets, _ := filepath.Glob(filepath.Join(runtimeDir, "wayland-*"))
+	return len(sockets) > 0
 }
 
 // run runs one tool to completion and answers what it printed. env is added
 // to the runner's own environment.
 func run(ctx context.Context, env []string, name string, args ...string) (string, error) {
-	spec := execx.Spec{Name: name, Args: args, Timeout: commandTimeout, KillGroup: true}
+	return runWithin(ctx, commandTimeout, env, name, args...)
+}
+
+// runWithin is run with a bound of the caller's: typing a long text takes
+// longer than a click.
+func runWithin(ctx context.Context, timeout time.Duration, env []string, name string, args ...string) (string, error) {
+	spec := execx.Spec{Name: name, Args: args, Timeout: timeout, KillGroup: true}
 	if len(env) > 0 {
 		spec.Env = append(os.Environ(), env...)
 	}

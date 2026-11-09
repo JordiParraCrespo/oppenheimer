@@ -39,8 +39,9 @@ computer on` here: a second switch, in `~/.oppenheimer/computer.json`, off by
 default and never written by the control plane. On a Mac it drives the main
 screen through `screencapture` and `osascript` (the runner needs Screen
 Recording and Accessibility); on Linux an X display through `xdotool` and
-ImageMagick's `import`, starting a virtual one (Xvfb) on a host that has
-none. The Mac path has not been run on a Mac yet.
+ImageMagick's `import`, starting a virtual one (Xvfb, locked with an `xauth`
+key in `~/.Xauthority`) on a host that has none; a Wayland session is
+refused. The Mac path has not been run on a Mac yet.
 
 A session's Simulator tab streams the iOS simulator or Android emulator its
 host gives it, through Argent (`product/research/device-streaming.md`). A

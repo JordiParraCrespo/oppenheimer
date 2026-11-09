@@ -156,7 +156,10 @@ func New(version string) (*App, error) {
 		ExecPolicies:     execpolicy.File{Path: paths.ExecPolicy()},
 		Executor:         system.Executor{},
 		ComputerPolicies: computerpolicy.File{Path: paths.ComputerPolicy()},
-		Desktop:          desktop.New(desktop.Options{Display: os.Getenv("DISPLAY")}),
+		Desktop: desktop.New(desktop.Options{
+			Display: os.Getenv("DISPLAY"), Home: paths.UserHome,
+			Wayland: desktop.WaylandSession(os.Getenv("XDG_SESSION_TYPE"), os.Getenv("WAYLAND_DISPLAY"), os.Getenv("XDG_RUNTIME_DIR")),
+		}),
 	})
 	pairingSvc := pairapp.New(pairapp.Options{
 		Store:        store,

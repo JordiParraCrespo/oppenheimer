@@ -19,7 +19,7 @@ Nothing in the console and no bot can change this setting. It lives in a file on
 
 **A Mac.** The bot uses the Mac's own main screen, mouse and keyboard, as the account the runner runs as, so you see the pointer move while it works. macOS must also allow the runner twice, in **System Settings → Privacy & Security**: **Screen Recording** (without it a bot sees your desktop picture and no windows) and **Accessibility** (without it clicks and keys are refused). Someone must be logged in at the Mac's screen.
 
-**Debian or Ubuntu.** The runner drives an X display through `xdotool` and ImageMagick: `sudo apt install xdotool imagemagick xvfb`. It uses the display it was started with, or one already on the machine that lets it in. A host with no monitor gets a **virtual screen** (Xvfb, 1280 by 800) that the runner starts and keeps; it starts empty, so a program has to be opened on it (the bot is told the display's name, such as `:99`). A Wayland desktop is not supported.
+**Debian or Ubuntu.** The runner drives an X display through `xdotool` and ImageMagick: `sudo apt install xdotool imagemagick xvfb xauth`. It uses the display it was started with, or one of your own already on the machine. A host with no monitor gets a **virtual screen** (Xvfb, 1280 by 800) that the runner starts and keeps, locked so that only your account can reach it; it starts empty, so a program has to be opened on it (the bot is told the display's name, such as `:99`). A Wayland desktop is refused with `COMPUTER_002`: log in with an Xorg session instead ("Ubuntu on Xorg" at the login screen).
 
 ## How a bot uses it
 
