@@ -73,6 +73,8 @@
       "unavailable": "No se ha podido contactar con {{provider}}. Suele ser algo pasajero: vuelve a intentarlo en un momento.",
       "time_limit": "Este turno se ha quedado sin tiempo. Volver a enviarlo no servirá: pide un paso más pequeño o divide la petición.",
       "step_limit": "Este turno ha usado todos sus pasos y se ha detenido antes de terminar. Volver a enviarlo no servirá: pide un paso más pequeño o di que continúe.",
+      "stalled": "{{provider}} no ha enviado nada en 5 minutos, así que este turno se ha detenido. Suele ser temporal: vuelve a intentarlo en un momento.",
+      "loop": "Este turno repetía llamadas que no cambiaban nada, así que se ha detenido. Volver a enviarlo no servirá: di qué hacer de otra forma.",
       "interrupted": "Este turno se interrumpió antes de terminar. Al volver a enviarlo, se ejecuta.",
       "storage": "No pudimos guardar este turno, así que se detuvo: el fallo es nuestro, no de {{provider}}. Vuelve a intentarlo en un momento."
     },
@@ -289,6 +291,9 @@
       },
       "goal": {
         "continued": "Objetivo · continuación {{step}} de {{limit}}",
+        "continuedOpen": "Objetivo · continuación {{step}}",
+        "paused": "Objetivo «{{objective}}» en pausa: {{why}}",
+        "resumed": "Has reanudado el objetivo «{{objective}}»",
         "met": "Objetivo cumplido: «{{objective}}»",
         "impossible": "El objetivo «{{objective}}» no se puede cumplir sin ti",
         "cleared": "Has detenido el objetivo «{{objective}}»",
@@ -322,6 +327,19 @@
     "goal": {
       "title": "Objetivo: {{objective}}",
       "progress": "{{step}} de {{limit}} continuaciones",
+      "continuations_one": "{{count}} continuación",
+      "continuations_other": "{{count}} continuaciones",
+      "budget": "{{progress}} · {{used}} de {{budget}} tokens",
+      "resume": "Reanudar",
+      "resumeFailed": "No se ha podido reanudar el objetivo. Inténtalo de nuevo.",
+      "paused": {
+        "blocked": "en pausa, te necesita",
+        "usage_limit": "en pausa, el proveedor del modelo llegó a un límite",
+        "no_progress": "en pausa, sus últimos turnos no hicieron nada",
+        "budget": "en pausa, ha gastado su presupuesto",
+        "stopped": "en pausa, detuviste un turno suyo",
+        "failed": "en pausa, un turno suyo falló"
+      },
       "waiting": "esperando a {{system}} hasta las {{time}}",
       "stop": "Detener objetivo",
       "stopFailed": "No se pudo detener el objetivo. Inténtalo de nuevo.",

@@ -1,20 +1,28 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
+import { type BotEngineEvent, LOOP_GUARD_DATA_KEY } from '@oppenheimer/backend-agents';
+import { BOT_TURN_IDLE_LIMIT_MS } from '@oppenheimer/shared';
 import { BOT_TURN_REPOSITORY } from '../bots-chat.di-tokens';
 import type { BotTurnRepositoryPort } from '../database/bot-turn.repository.port';
-import { BOT_TURN_TIME_LIMIT_MS } from '../domain/bot-turn.entity';
+import { BOT_TURN_LOOP_REFUSALS } from '../domain/bot-turn.entity';
 
 /** How long a running turn waits between two looks for Stop. */
 export const CANCEL_POLL_MS = 750;
 
-/** What ended a turn from outside the engine: Stop, or its time limit. */
-export type TurnInterruption = 'stop' | 'time_limit';
+/**
+ * What ended a turn from outside the engine: Stop, its model sending nothing
+ * for `BOT_TURN_IDLE_LIMIT_MS` while none of its tools ran, or the engine's
+ * loop guard refusing `BOT_TURN_LOOP_REFUSALS` of its calls.
+ */
+export type TurnInterruption = 'stop' | 'stalled' | 'loop';
 
-/** A running turn's look-out for Stop and for its time limit. */
+/** A running turn's look-out for Stop, for a model gone silent and for a turn going round in circles. */
 export interface TurnCancelWatch {
-  /** Aborts once Stop is pressed on the turn, or once it runs past its time limit. */
+  /** Aborts once Stop is pressed on the turn, or once it stalls or loops. */
   readonly signal: AbortSignal;
-  /** What aborted the signal, once one of them has; null while neither has. */
+  /** What aborted the signal, once one of them has; null while none has. */
   readonly interruption: TurnInterruption | null;
+  /** Takes in one of the engine's events: it shows the turn is alive, and may show it looping. */
+  saw(event: BotEngineEvent): void;
   /** Stops looking. Safe to call more than once. */
   stop(): void;
 }
@@ -24,8 +32,11 @@ export interface TurnCancelWatch {
  * the turn's cancel request every `CANCEL_POLL_MS`, starting the next read
  * only once the last has settled, so a slow database never stacks reads.
  * A read that fails is logged and the watch keeps looking; Stop aborts the
- * signal and ends the watch. The same signal aborts when the turn has run
- * for `timeLimitMs`, so a turn that would run on is stopped like a Stop.
+ * signal and ends the watch. A turn has no time limit (`25-bots.md` §2,
+ * 2026-11-09); the same signal aborts when the engine has said nothing for
+ * `idleLimitMs` while none of the turn's tools runs (a call of ours may take
+ * as long as it takes; a provider retry stretches the wait by its delay),
+ * and when the loop guard has refused `BOT_TURN_LOOP_REFUSALS` calls.
  */
 @Injectable()
 export class TurnCancelWatchFactory {
@@ -33,18 +44,35 @@ export class TurnCancelWatchFactory {
 
   constructor(@Inject(BOT_TURN_REPOSITORY) private readonly turns: BotTurnRepositoryPort) {}
 
-  watch(turnId: string, timeLimitMs = BOT_TURN_TIME_LIMIT_MS): TurnCancelWatch {
+  watch(turnId: string, idleLimitMs = BOT_TURN_IDLE_LIMIT_MS): TurnCancelWatch {
     const abort = new AbortController();
     let stopped = false;
     let interruption: TurnInterruption | null = null;
     let timer: NodeJS.Timeout | undefined;
+    let idle: NodeJS.Timeout | undefined;
+    let toolsRunning = 0;
+    let refusals = 0;
     const interrupt = (cause: TurnInterruption): void => {
       if (stopped || interruption) return;
       interruption = cause;
       abort.abort();
     };
-    const limit = setTimeout(() => interrupt('time_limit'), timeLimitMs);
-    limit.unref();
+    const awake = (extraMs = 0): void => {
+      clearTimeout(idle);
+      if (stopped || toolsRunning > 0) return;
+      idle = setTimeout(() => interrupt('stalled'), idleLimitMs + extraMs);
+      idle.unref();
+    };
+    const saw = (event: BotEngineEvent): void => {
+      if (event.type === 'tool.started') toolsRunning += 1;
+      if (event.type === 'tool.finished') {
+        toolsRunning = Math.max(0, toolsRunning - 1);
+        if (event.data?.[LOOP_GUARD_DATA_KEY] === 'refused') refusals += 1;
+        if (refusals >= BOT_TURN_LOOP_REFUSALS) interrupt('loop');
+      }
+      awake(event.type === 'retrying' ? (event.delayMs ?? 0) : 0);
+    };
+    awake();
 
     const look = async (): Promise<void> => {
       try {
@@ -73,10 +101,11 @@ export class TurnCancelWatchFactory {
       get interruption() {
         return interruption;
       },
+      saw,
       stop: () => {
         stopped = true;
         clearTimeout(timer);
-        clearTimeout(limit);
+        clearTimeout(idle);
       },
     };
   }

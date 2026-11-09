@@ -6,8 +6,10 @@ import {
   type CreateEntityProps,
 } from '@oppenheimer/backend-ddd';
 import {
-  BOT_GOAL_CONTINUATIONS_MAX,
+  BOT_GOAL_IDLE_TURNS,
   BOT_GOAL_OBJECTIVE_MAX,
+  BOT_GOAL_TOKEN_BUDGET_MIN,
+  type BotGoalPauseReason,
   type Scope,
 } from '@oppenheimer/shared';
 import type { BotRateLimit } from './bot-rate-limit.policy';
@@ -27,10 +29,23 @@ export interface BotGoalProps {
   originTurnId: string;
   /** What the bot keeps working toward, in its words. */
   objective: string;
-  /** The continuations it may queue. */
-  limit: number;
+  /** The continuations it may queue; null for none (every goal since 2026-11-09). */
+  limit: number | null;
   /** The continuations queued so far. */
   continuations: number;
+  /** The tokens its turns spent, input and output. */
+  tokensUsed: number;
+  /** The tokens it may spend before it pauses as `budget`; null for no budget. */
+  tokenBudget: number | null;
+  /** Its turns in a row that called no tool (`BOT_GOAL_IDLE_TURNS`). */
+  idleTurns: number;
+  /**
+   * The bot said the goal is met (`end_goal`), in its words: the reviewer
+   * checks the claim when the turn ends. Null when it has not said so.
+   */
+  claim: string | null;
+  /** Why and since when it is paused; null while it runs. */
+  paused: { reason: BotGoalPauseReason; note: string | null; at: Date } | null;
   /** The setting turn's credential scopes; null for a browser session. */
   credentialScopes: readonly Scope[] | null;
   timeZone: string | null;
@@ -43,10 +58,12 @@ export interface BotGoalProps {
 }
 
 /**
- * A goal a bot set itself (`25-bots.md` §4.1): one per bot, kept until the
- * bot ends it, the owner stops it, a turn of it fails, or its continuations
- * run out. A continuation is claimed on the count it was loaded at, so two
- * turns ending at once queue one.
+ * A goal a bot keeps working toward (`25-bots.md` §4.1): one per bot, kept
+ * until the reviewer finds the bot's claim that it is met holds, or the owner
+ * stops it. Nothing else ends it: what would have (a failed turn, a stopped
+ * one, turns that do nothing, its budget, the bot blocked) pauses it in
+ * place, and the owner resumes it. A continuation is claimed on the count it
+ * was loaded at, so two turns ending at once queue one.
  */
 export class BotGoalEntity extends AggregateRoot<BotGoalProps> {
   private loadedContinuations: number;
@@ -60,10 +77,25 @@ export class BotGoalEntity extends AggregateRoot<BotGoalProps> {
     return new BotGoalEntity(create);
   }
 
-  static set(props: Omit<BotGoalProps, 'continuations' | 'waiting'>): BotGoalEntity {
+  static set(
+    props: Omit<
+      BotGoalProps,
+      'continuations' | 'waiting' | 'limit' | 'tokensUsed' | 'idleTurns' | 'claim' | 'paused'
+    >,
+  ): BotGoalEntity {
     const goal = new BotGoalEntity({
       id: randomUUID(),
-      props: { ...props, objective: props.objective.trim(), continuations: 0, waiting: null },
+      props: {
+        ...props,
+        objective: props.objective.trim(),
+        limit: null,
+        continuations: 0,
+        tokensUsed: 0,
+        idleTurns: 0,
+        claim: null,
+        paused: null,
+        waiting: null,
+      },
     });
     goal.validate();
     return goal;
@@ -81,8 +113,23 @@ export class BotGoalEntity extends AggregateRoot<BotGoalProps> {
   get objective(): string {
     return this.props.objective;
   }
-  get limit(): number {
+  get limit(): number | null {
     return this.props.limit;
+  }
+  get tokensUsed(): number {
+    return this.props.tokensUsed;
+  }
+  get tokenBudget(): number | null {
+    return this.props.tokenBudget;
+  }
+  get idleTurns(): number {
+    return this.props.idleTurns;
+  }
+  get claim(): string | null {
+    return this.props.claim;
+  }
+  get paused(): BotGoalProps['paused'] {
+    return this.props.paused;
   }
   get continuations(): number {
     return this.props.continuations;
@@ -101,9 +148,53 @@ export class BotGoalEntity extends AggregateRoot<BotGoalProps> {
   get continuationsAtLoad(): number {
     return this.loadedContinuations;
   }
-  /** Whether every continuation it may queue has been queued. */
+  /** Whether a goal with a limit (one set before 2026-11-09) has queued every continuation it may. */
   get exhausted(): boolean {
-    return this.props.continuations >= this.props.limit;
+    return this.props.limit !== null && this.props.continuations >= this.props.limit;
+  }
+
+  /** Whether its token budget is spent. */
+  get overBudget(): boolean {
+    return this.props.tokenBudget !== null && this.props.tokensUsed >= this.props.tokenBudget;
+  }
+
+  /** Whether its turns have stopped calling tools for long enough to pause it. */
+  get idle(): boolean {
+    return this.props.idleTurns >= BOT_GOAL_IDLE_TURNS;
+  }
+
+  /**
+   * Counts one of its turns that ended: what it spent, and whether it called
+   * a tool. A turn that did is progress; `BOT_GOAL_IDLE_TURNS` in a row that
+   * did not make the goal `idle`.
+   */
+  account(turn: { tokens: number; calledTools: boolean }): void {
+    this.props.tokensUsed += Math.max(0, Math.round(turn.tokens));
+    this.props.idleTurns = turn.calledTools ? 0 : this.props.idleTurns + 1;
+  }
+
+  /** The bot says the goal is met: the reviewer checks it when the turn ends. */
+  claimMet(words: string): void {
+    this.props.claim = words.trim().slice(0, 1_000) || 'The bot said the goal is met.';
+  }
+
+  /** The reviewer found the claim does not hold yet: the goal goes on, the claim withdrawn. */
+  rejectClaim(): void {
+    this.props.claim = null;
+  }
+
+  /** Pauses it in place; already paused keeps the first reason. */
+  pause(reason: BotGoalPauseReason, note: string | null, now: Date): void {
+    if (this.props.paused) return;
+    this.props.paused = { reason, note: note?.trim().slice(0, 500) || null, at: now };
+    this.props.waiting = null;
+  }
+
+  /** The owner resumes it: it runs again with a fresh count of idle turns. */
+  resume(): void {
+    this.props.paused = null;
+    this.props.idleTurns = 0;
+    this.props.claim = null;
   }
 
   /**
@@ -128,6 +219,11 @@ export class BotGoalEntity extends AggregateRoot<BotGoalProps> {
     if (this.exhausted) {
       throw new ArgumentInvalidException('A goal past its limit queues no more continuations');
     }
+    if (this.props.paused) {
+      throw new ArgumentInvalidException(
+        'A paused goal queues no continuation until it is resumed',
+      );
+    }
     this.props.continuations += 1;
     this.props.waiting = null;
     return this.props.continuations;
@@ -148,13 +244,15 @@ export class BotGoalEntity extends AggregateRoot<BotGoalProps> {
         `A goal says what it is in 1 to ${BOT_GOAL_OBJECTIVE_MAX} characters`,
       );
     }
+    if (props.limit !== null && (!Number.isInteger(props.limit) || props.limit < 1)) {
+      throw new ArgumentInvalidException('A goal with a limit queues at least 1 continuation');
+    }
     if (
-      !Number.isInteger(props.limit) ||
-      props.limit < 1 ||
-      props.limit > BOT_GOAL_CONTINUATIONS_MAX
+      props.tokenBudget !== null &&
+      (!Number.isInteger(props.tokenBudget) || props.tokenBudget < BOT_GOAL_TOKEN_BUDGET_MIN)
     ) {
       throw new ArgumentInvalidException(
-        `A goal queues 1 to ${BOT_GOAL_CONTINUATIONS_MAX} continuations`,
+        `A goal's token budget is at least ${BOT_GOAL_TOKEN_BUDGET_MIN} tokens`,
       );
     }
     if (!Number.isInteger(props.continuations) || props.continuations < 0) {

@@ -1362,3 +1362,12 @@ earlier note:
   empty repository (no ref at all) is the exception: the create pushes an
   empty `Initial commit` to the base and cuts the session from it. A
   prepare leaves it empty; a repository with other branches still fails.
+- `versions/mvp/25-bots.md` §2 bounded a bot's turn at 20 model round
+  trips and 4 minutes, and §4.1 a goal at 20 continuations with a reviewer
+  after each turn. On 2026-11-09 the owner asked for tasks that run for
+  hours: Codex, Grok Bot and OpenClaw cap neither
+  (`research/lessons-from-long-running-agents.md`). A turn now runs until
+  the model answers, compacting mid-turn on every engine, stopped only by
+  a silent model or the loop guard; a goal has no limit, the bot says when
+  it is done and the reviewer checks that claim, and a goal that goes
+  wrong pauses for the owner to resume instead of ending.

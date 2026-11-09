@@ -8,7 +8,7 @@
  */
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { describe, expect, it } from 'vitest';
-import type { BotTurnRequest } from '../../bot-engine';
+import { type BotTurnRequest, compactionThreshold } from '../../bot-engine';
 import {
   BUILT_IN_TOOLS,
   claudeEnv,
@@ -50,9 +50,30 @@ describe('claudeEnv', () => {
 
     for (const name of MODEL_VARIABLES) expect(env[name]).toBe('model-placeholder');
   });
+
+  // What breaks this: a Claude turn compacting only near the model's whole
+  // window (a million tokens on some), while the other engines fold at
+  // compactionThreshold, now that a turn has no step limit to keep it small.
+  it('has Claude Code compact at the same point as the other engines', () => {
+    const env = claudeEnv(
+      { provider: 'anthropic', apiKey: 'sk-placeholder', model: 'm', contextWindow: 1_000_000 },
+      scratchDirs('/scratch'),
+      {},
+    );
+    const window = Number(env.CLAUDE_CODE_AUTO_COMPACT_WINDOW);
+    const percent = Number(env.CLAUDE_AUTOCOMPACT_PCT_OVERRIDE);
+    expect((window * percent) / 100).toBe(compactionThreshold(1_000_000));
+  });
 });
 
 describe('claudeOptions', () => {
+  // What breaks this: a turn stopped mid-work at a step count, which is what
+  // made bots stop after 20 steps (2026-11-09).
+  it('sets no turn limit unless the request names one', () => {
+    expect(options(base).maxTurns).toBeUndefined();
+    expect(options({ ...base, maxSteps: 2 }).maxTurns).toBe(2);
+  });
+
   const base: BotTurnRequest = {
     provider: 'glm',
     apiKey: 'key-placeholder',

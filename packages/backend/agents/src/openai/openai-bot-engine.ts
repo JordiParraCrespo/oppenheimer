@@ -3,10 +3,11 @@ import {
   BotEngine,
   type BotEngineEvent,
   type BotTurnRequest,
-  DEFAULT_MAX_STEPS,
+  compactionThreshold,
 } from '../bot-engine';
 import { deliverSteers, failed, guardTurn, messageParts, runTool, ToolCallData } from '../turn';
 import { CodexLimitsRecorder } from './codex-limits';
+import { type CompactableItem, TurnCompactor } from './openai-compaction';
 import { OpenAiEventTranslator, type OpenAiStreamEvent } from './openai-events';
 
 /**
@@ -168,6 +169,7 @@ export class OpenAiBotEngine extends BotEngine {
             const result = await runTool(tool, input, {
               signal: request.signal,
               apiKey: request.apiKey,
+              guard: made.loops,
               ...(callId ? { callId } : {}),
             });
             if (result.isError && callId) failedCalls.add(callId);
@@ -185,17 +187,50 @@ export class OpenAiBotEngine extends BotEngine {
         ...withCacheKey(endpoint.modelSettings, request.cacheKey),
       },
     });
+    const compactor =
+      request.compaction === false
+        ? null
+        : new TurnCompactor<CompactableItem>(
+            compactionThreshold(request.contextWindow),
+            request.history.length,
+            (message) =>
+              this.completeWithUsage({
+                provider: request.provider,
+                apiKey: request.apiKey,
+                ...(request.accountId ? { accountId: request.accountId } : {}),
+                ...(request.baseUrl ? { baseUrl: request.baseUrl } : {}),
+                model: request.model,
+                effort: 'low',
+                ...(request.cacheKey ? { cacheKey: request.cacheKey } : {}),
+                systemPrompt: 'You write the context summary an agent carries on from.',
+                message,
+                signal: request.signal,
+              }),
+          );
     const run: OpenAiRun = await runner.run(agent, inputItems(request), {
       stream: true,
       signal: request.signal,
-      maxTurns: request.maxSteps ?? DEFAULT_MAX_STEPS,
+      maxTurns: request.maxSteps ?? null,
+      ...(compactor
+        ? {
+            callModelInputFilter: async ({ modelData }) => {
+              const filtered = await compactor.filter({
+                instructions: modelData.instructions,
+                input: modelData.input as unknown as CompactableItem[],
+              });
+              return { ...modelData, input: filtered.input as unknown as AgentInputItem[] };
+            },
+          }
+        : {}),
     });
 
     let error: unknown;
     try {
       for await (const event of run) {
         yield* translator.translate(event);
+        if (compactor) yield* compactor.take();
       }
+      if (compactor) yield* compactor.take();
       await run.completed;
       error = run.error;
     } catch (thrown) {

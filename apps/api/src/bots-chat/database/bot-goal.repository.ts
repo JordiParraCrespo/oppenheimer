@@ -41,6 +41,51 @@ export class BotGoalRepository
     return this.dataSource.transaction((manager) => setGoalWithin(manager, this.mapper, goal));
   }
 
+  pause(goal: BotGoalEntity, line: BotMessageEntity): Promise<boolean> {
+    return this.dataSource.transaction(async (manager) => {
+      const {
+        pausedAt,
+        pauseReason,
+        pauseNote,
+        tokensUsed,
+        idleTurns,
+        claim,
+        waitingFor,
+        waitingUntil,
+      } = this.mapper.toPersistence(goal);
+      const result = await manager
+        .createQueryBuilder()
+        .update(BotGoalOrmEntity)
+        .set({
+          pausedAt,
+          pauseReason,
+          pauseNote,
+          tokensUsed,
+          idleTurns,
+          claim,
+          waitingFor,
+          waitingUntil,
+        })
+        .where('id = :id AND continuations = :at AND "pausedAt" IS NULL', {
+          id: goal.id,
+          at: goal.continuationsAtLoad,
+        })
+        .execute();
+      if (result.affected !== 1) return false;
+      await insertMessageWithin(manager, this.messages, line);
+      goal.markPersisted();
+      return true;
+    });
+  }
+
+  async claim(goal: BotGoalEntity): Promise<boolean> {
+    const result = await this.repository.update(
+      { id: goal.id, organizationId: goal.organizationId },
+      { claim: goal.claim },
+    );
+    return result.affected === 1;
+  }
+
   end(goal: BotGoalEntity, line: BotMessageEntity | null): Promise<boolean> {
     return this.dataSource.transaction(async (manager) => {
       const result = await manager.delete(BotGoalOrmEntity, {
@@ -77,23 +122,51 @@ export async function setGoalWithin(
 
 /**
  * Claims the goal's next continuation inside a transaction that queues it
- * (`BotTurnRepository.enqueueContinuation`): its count, conditional on the
- * count it was loaded at. False when the goal was deleted (stopped, ended,
- * replaced) or another end claimed the count first. The row lock it takes is
- * the one a Stop's delete takes, so the two cannot both win.
+ * (`BotTurnRepository.enqueueContinuation`): its count, with what the ended
+ * turn added to it (tokens, idle turns, a claim the reviewer turned down, a
+ * pause the owner lifted), conditional on the count it was loaded at and on
+ * it still running (or, `resuming`, still paused). False when the goal was
+ * deleted (stopped, ended, replaced), paused meanwhile, or another end
+ * claimed the count first. The row lock it takes is the one a Stop's delete takes,
+ * so the two cannot both win.
  */
 export async function claimContinuationWithin(
   manager: EntityManager,
   mapper: BotGoalMapper,
   goal: BotGoalEntity,
+  /** The owner resumes a paused goal: the claim is on it still being paused, not running. */
+  resuming: boolean,
 ): Promise<boolean> {
   // `advance` ended any wait the goal held for: the write carries what it left.
-  const { continuations, waitingFor, waitingUntil } = mapper.toPersistence(goal);
+  const {
+    continuations,
+    waitingFor,
+    waitingUntil,
+    tokensUsed,
+    idleTurns,
+    claim,
+    pausedAt,
+    pauseReason,
+    pauseNote,
+  } = mapper.toPersistence(goal);
   const result = await manager
     .createQueryBuilder()
     .update(BotGoalOrmEntity)
-    .set({ continuations, waitingFor, waitingUntil })
-    .where('id = :id AND continuations = :at', { id: goal.id, at: goal.continuationsAtLoad })
+    .set({
+      continuations,
+      waitingFor,
+      waitingUntil,
+      tokensUsed,
+      idleTurns,
+      claim,
+      pausedAt,
+      pauseReason,
+      pauseNote,
+    })
+    .where(`id = :id AND continuations = :at AND "pausedAt" IS ${resuming ? 'NOT NULL' : 'NULL'}`, {
+      id: goal.id,
+      at: goal.continuationsAtLoad,
+    })
     .execute();
   if (result.affected !== 1) return false;
   goal.markPersisted();

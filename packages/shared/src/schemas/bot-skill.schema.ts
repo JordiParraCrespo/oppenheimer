@@ -119,19 +119,24 @@ export const BOT_SKILL_RESERVED_NAMES = [
 /** The words after `/goal` that clear it rather than set one (Claude Code's aliases). */
 export const BOT_GOAL_CLEAR_WORDS = ['clear', 'stop', 'off', 'reset', 'none', 'cancel'] as const;
 
+/** The words after `/goal` that resume a paused goal (Codex's `/goal resume`). */
+export const BOT_GOAL_RESUME_WORDS = ['resume', 'continue', 'unpause'] as const;
+
 /**
  * What a `/goal` asks for: nothing after it shows the goal, a clear word
- * stops it, anything else is the condition of a new goal, which replaces the
- * one there is. Null for a command that is not `/goal`.
+ * stops it, a resume word runs a paused one again, anything else is the
+ * condition of a new goal, which replaces the one there is. Null for a
+ * command that is not `/goal`.
  */
 export type BotGoalCommand =
   | { kind: 'show' }
   | { kind: 'clear' }
+  | { kind: 'resume' }
   | { kind: 'set'; condition: string };
 
 /**
  * Whether a message is a built-in the console runs itself and never sends:
- * `/goal` alone, `/goal clear` and `/loop stop` (and their aliases),
+ * `/goal` alone, `/goal clear`, `/goal resume` and `/loop stop` (and their aliases),
  * `/schedule` alone, and `/usage`, whatever follows it. `/goal <condition>`,
  * `/loop …` and `/schedule <request>` are messages: the API sets the goal or
  * the loop, or the bot saves the routine.
@@ -150,6 +155,9 @@ export function botGoalCommandOf(command: BotSlashCommand | null): BotGoalComman
   if (!args) return { kind: 'show' };
   if ((BOT_GOAL_CLEAR_WORDS as readonly string[]).includes(args.toLowerCase())) {
     return { kind: 'clear' };
+  }
+  if ((BOT_GOAL_RESUME_WORDS as readonly string[]).includes(args.toLowerCase())) {
+    return { kind: 'resume' };
   }
   return { kind: 'set', condition: args };
 }

@@ -1,31 +1,37 @@
 import { Inject } from '@nestjs/common';
 import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
-import { BotGoalResolver } from '../../application/bot-goal.resolver';
+import { BotGoalResolver, type GoalContinuationProps } from '../../application/bot-goal.resolver';
 import { BotGoalReviewResolver } from '../../application/bot-goal-review.resolver';
-import { BOT_GOAL_REPOSITORY, BOT_STREAM, BOT_TURN_REPOSITORY } from '../../bots-chat.di-tokens';
-import type { BotGoalRepositoryPort } from '../../database/bot-goal.repository.port';
-import type { BotTurnRepositoryPort } from '../../database/bot-turn.repository.port';
 import {
-  type GoalEnding,
-  goalContinuationTurn,
+  BOT_GOAL_REPOSITORY,
+  BOT_MESSAGE_REPOSITORY,
+  BOT_TURN_REPOSITORY,
+} from '../../bots-chat.di-tokens';
+import type { BotGoalRepositoryPort } from '../../database/bot-goal.repository.port';
+import type { BotMessageRepositoryPort } from '../../database/bot-message.repository.port';
+import type { BotTurnRepositoryPort } from '../../database/bot-turn.repository.port';
+import type { BotGoalEntity } from '../../domain/bot-goal.entity';
+import {
+  continueOrStop,
+  type GoalOutcome,
   goalDecision,
   goalOutcome,
+  isGoalTurn,
   stoppedAtTurnLimit,
 } from '../../domain/bot-goal.policy';
-import type { BotStreamPort } from '../../infrastructure/bot-stream.port';
+import type { BotTurnEntity } from '../../domain/bot-turn.entity';
 import { ContinueBotGoalCommand } from './continue-bot-goal.command';
 
 /**
- * A turn of a goal ended (`25-bots.md` §4.1): load, decide (`goalDecision`),
- * ask the reviewer whether the condition holds (`BotGoalReviewResolver`),
- * decide again on its verdict (`goalOutcome`), act. The goal is read again
- * after the review, which takes a model call: one ended, replaced (the bot's
- * `end_goal`, the owner's Stop, a new `/goal`) or moved on by another
- * delivery of the same end meanwhile is left as it is, and the continuation
- * is still claimed on the count loaded before the review. Going on queues the next continuation as the bot's owner, and the
- * goal's count is claimed in the same transaction as the queued turn, so a
- * Stop that deleted the goal meanwhile queues nothing, and a process that dies
- * leaves either both or neither. Ending goes through `BotGoalResolver`.
+ * A turn of a goal ended (`25-bots.md` §4.1): load, count what the turn spent
+ * and whether it called a tool, decide (`goalDecision`), ask the reviewer
+ * only when the bot claimed the goal met (`BotGoalReviewResolver`), act. The
+ * goal is read again after the review, which takes a model call: one ended,
+ * paused, replaced or moved on by another delivery of the same end meanwhile
+ * is left as it is. Going on queues the next continuation as the bot's
+ * owner, the goal's count claimed in the same transaction as the queued turn;
+ * a pause is one conditional write with its line. Ending goes through
+ * `BotGoalResolver`.
  */
 @CommandHandler(ContinueBotGoalCommand)
 export class ContinueBotGoalCommandHandler
@@ -34,7 +40,7 @@ export class ContinueBotGoalCommandHandler
   constructor(
     @Inject(BOT_TURN_REPOSITORY) private readonly turns: BotTurnRepositoryPort,
     @Inject(BOT_GOAL_REPOSITORY) private readonly goals: BotGoalRepositoryPort,
-    @Inject(BOT_STREAM) private readonly stream: BotStreamPort,
+    @Inject(BOT_MESSAGE_REPOSITORY) private readonly messages: BotMessageRepositoryPort,
     private readonly goalsOf: BotGoalResolver,
     private readonly reviewer: BotGoalReviewResolver,
   ) {}
@@ -44,46 +50,54 @@ export class ContinueBotGoalCommandHandler
     if (found.isNone() || !found.unwrap().endedAt) return;
     const ended = found.unwrap();
     const goal = await this.goals.findForBot(ended.organizationId, ended.botId);
-    if (!goal) return;
+    if (!goal || !isGoalTurn(goal, ended) || goal.paused) return;
+    goal.account({
+      tokens: ended.inputTokens + ended.outputTokens,
+      calledTools: await this.messages.turnCalledTools(ended.organizationId, ended.id),
+    });
 
     const decision = goalDecision(goal, ended);
     if (decision.kind === 'skip') return;
     if (decision.kind === 'end') {
-      await this.goalsOf.end(goal, endingOf(decision), metadata.correlationId);
+      await this.goalsOf.end(goal, decision, metadata.correlationId);
       return;
     }
-    const verdict = await this.reviewer.review(goal, ended.id);
-    // Still this goal at the count it was loaded at: an end delivered twice
-    // that read the count the other one claimed would queue a second
-    // continuation beside the first.
-    const current = await this.goals.findForBot(goal.organizationId, goal.botId);
-    if (current?.id !== goal.id || current.continuations !== goal.continuations) return;
-    const outcome = goalOutcome(goal, verdict, await this.goalsOf.continuationProps(goal));
-    if (outcome.kind === 'end') {
-      await this.goalsOf.end(goal, endingOf(outcome), metadata.correlationId);
-      return;
+    let outcome: GoalOutcome<GoalContinuationProps>;
+    if (decision.kind === 'pause') {
+      outcome = decision;
+    } else if (decision.kind === 'review') {
+      const verdict = await this.reviewer.review(goal, ended.id);
+      // Still this goal at the count it was loaded at: another end, a Stop or
+      // the owner may have moved it while the reviewer answered.
+      const current = await this.goals.findForBot(goal.organizationId, goal.botId);
+      if (current?.id !== goal.id || current.continuations !== goal.continuations) return;
+      outcome = goalOutcome(goal, verdict, await this.goalsOf.continuationProps(goal));
+    } else {
+      outcome = continueOrStop(await this.goalsOf.continuationProps(goal), null);
     }
+    await this.act(goal, ended, outcome, metadata.correlationId);
+  }
 
-    const { turn, opening } = goalContinuationTurn(
-      outcome.props,
+  private async act(
+    goal: BotGoalEntity,
+    ended: BotTurnEntity,
+    outcome: GoalOutcome<GoalContinuationProps>,
+    correlationId: string,
+  ): Promise<void> {
+    if (outcome.kind === 'end') {
+      await this.goalsOf.end(goal, outcome, correlationId);
+      return;
+    }
+    if (outcome.kind === 'pause') {
+      await this.goalsOf.pause(goal, outcome.reason, outcome.note);
+      return;
+    }
+    await this.goalsOf.queueContinuation(
       goal,
-      goal.advance(),
+      outcome.props,
       outcome.reason,
       stoppedAtTurnLimit(ended),
+      correlationId,
     );
-    const queued = await this.turns.enqueueContinuation(
-      turn,
-      opening,
-      metadata.correlationId,
-      goal,
-    );
-    if (queued === 'staged' || queued === 'waiting') {
-      await this.stream.publish(turn.botId, { type: 'turn', turnId: turn.id, status: 'queued' });
-    }
   }
-}
-
-/** A decision to end, as the goal's line takes it. */
-function endingOf({ activity, reason }: GoalEnding): GoalEnding {
-  return { activity, reason };
 }

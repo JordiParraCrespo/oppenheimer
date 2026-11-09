@@ -1,8 +1,10 @@
 /**
- * Every end of a goal (`25-bots.md` §4.1). What breaks this: an end that
- * leaves the goal's continuation waiting, so the bot carries on with work
- * it, or its owner, just stopped; an end said twice; a continuation run as
- * someone the workspace no longer has.
+ * Every end, pause and continuation of a goal (`25-bots.md` §4.1). What
+ * breaks this: an end or a pause that leaves the goal's continuation
+ * waiting, so the bot carries on with work it, or its owner, just stopped;
+ * an end said twice; a resume that queues the turn without its line, or
+ * claims a goal that is running; a continuation run as someone the
+ * workspace no longer has.
  */
 import type { BotEntity } from '../../../bots/domain/bot.entity';
 import type { BotGoalRepositoryPort } from '../../database/bot-goal.repository.port';
@@ -20,7 +22,7 @@ function open(): BotGoalEntity {
     botId: 'bot-1',
     originTurnId: 'turn-0',
     objective: 'Triage the bugs',
-    limit: 3,
+    tokenBudget: null,
     credentialScopes: ['bots:read'],
     timeZone: 'Europe/Madrid',
   });
@@ -39,12 +41,16 @@ function setup(options: { ended?: boolean; owner?: boolean } = {}) {
   });
   const goals = {
     end: vi.fn<BotGoalRepositoryPort['end']>(async () => options.ended ?? true),
+    pause: vi.fn<BotGoalRepositoryPort['pause']>(async () => options.ended !== true),
   } satisfies Partial<BotGoalRepositoryPort>;
   const turns = {
     findQueuedBySourcePrefix: vi.fn<BotTurnRepositoryPort['findQueuedBySourcePrefix']>(async () => [
       waiting,
     ]),
     finish: vi.fn<BotTurnRepositoryPort['finish']>(async () => true),
+    enqueueContinuation: vi.fn<BotTurnRepositoryPort['enqueueContinuation']>(
+      async () => 'staged' as const,
+    ),
   } satisfies Partial<BotTurnRepositoryPort>;
   const stream = { publish: vi.fn<BotStreamPort['publish']>(async () => undefined) };
   const bot = {
@@ -109,5 +115,33 @@ describe('BotGoalResolver', () => {
       timeZone: 'Europe/Madrid',
     });
     expect(await setup({ owner: false }).resolver.continuationProps(open())).toBeNull();
+  });
+
+  it('pauses a goal with its line, and cancels the continuation it left waiting', async () => {
+    const goal = open();
+    const { goals, waiting, resolver } = setup();
+    expect(await resolver.pause(goal, 'no_progress', null)).toBe(true);
+    expect(goal.paused?.reason).toBe('no_progress');
+    expect(goals.pause.mock.calls[0][1].event).toMatchObject({ activity: 'paused' });
+    expect(waiting.status).toBe('cancelled');
+  });
+
+  it('resumes with the owner’s line written beside the claim, then the queued turn', async () => {
+    const goal = open();
+    goal.pause('failed', null, new Date());
+    goal.resume();
+    const { turns, stream, resolver } = setup();
+    const props = await resolver.continuationProps(goal);
+    if (!props) throw new Error('no props');
+    expect(await resolver.queueContinuation(goal, props, null, false, 'c-1', true)).toBe(true);
+    const [, opening, , claimed, line] = turns.enqueueContinuation.mock.calls[0];
+    expect(opening.event).toMatchObject({ activity: 'continued', step: 1 });
+    expect(claimed).toBe(goal);
+    expect(line?.event).toMatchObject({ activity: 'resumed' });
+    expect(stream.publish).toHaveBeenCalledWith('bot-1', {
+      type: 'message',
+      turnId: null,
+      messageId: line?.id,
+    });
   });
 });

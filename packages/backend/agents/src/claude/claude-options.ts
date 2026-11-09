@@ -2,7 +2,7 @@ import { join } from 'node:path';
 import type { Options } from '@anthropic-ai/claude-agent-sdk';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import type { BotTurnRequest } from '../bot-engine';
-import { DEFAULT_MAX_STEPS } from '../bot-engine';
+import { BOT_COMPACTION_PERCENT, compactionThreshold } from '../bot-engine';
 import { type MessagePart, messageParts } from '../turn';
 import { qualifiedToolName, TOOL_SERVER_NAME } from './claude-tool-server';
 
@@ -122,9 +122,14 @@ export function pinAllModels(env: Record<string, string>, model: string): void {
   for (const name of MODEL_VARIABLES) env[name] = model;
 }
 
+/** The window Claude Code compacts against: the one `compactionThreshold` takes its share of. */
+function compactionWindow(window: number | null | undefined): number {
+  return Math.round((compactionThreshold(window) * 100) / BOT_COMPACTION_PERCENT);
+}
+
 /** The whole environment of the Claude Code subprocess, built from nothing. */
 export function claudeEnv(
-  request: Pick<BotTurnRequest, 'provider' | 'apiKey' | 'baseUrl' | 'model'>,
+  request: Pick<BotTurnRequest, 'provider' | 'apiKey' | 'baseUrl' | 'model' | 'contextWindow'>,
   dirs: ScratchDirs,
   parent: NodeJS.ProcessEnv = process.env,
 ): Record<string, string> {
@@ -143,6 +148,10 @@ export function claudeEnv(
     DISABLE_AUTOUPDATER: '1',
     DISABLE_TELEMETRY: '1',
     DISABLE_ERROR_REPORTING: '1',
+    // Claude Code compacts on its own mid-turn; it does so at the same point
+    // as the other engines (`compactionThreshold`): this share of this window.
+    CLAUDE_CODE_AUTO_COMPACT_WINDOW: String(compactionWindow(request.contextWindow)),
+    CLAUDE_AUTOCOMPACT_PCT_OVERRIDE: String(BOT_COMPACTION_PERCENT),
   });
   pinAllModels(env, request.model);
   if (request.provider === 'glm') {
@@ -218,7 +227,7 @@ export function claudeOptions(
     settingSources: [],
     persistSession: false,
     includePartialMessages: true,
-    maxTurns: request.maxSteps ?? DEFAULT_MAX_STEPS,
+    ...(request.maxSteps ? { maxTurns: request.maxSteps } : {}),
     ...(request.effort ? { effort: request.effort } : {}),
     stderr: onStderr,
   };

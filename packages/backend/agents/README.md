@@ -76,7 +76,8 @@ before the model reads it.
 | `text.done { text }`                               | One assistant text block complete                                      |
 | `tool.started { callId, name, input }`             | The model called a tool; `name` is ours, without Claude's `mcp__` prefix |
 | `tool.finished { callId, name, output, isError }`  | Its result, as the model read it                                       |
-| `usage { inputTokens, outputTokens }`              | The turn's totals, once, before `done` (input includes cached tokens)  |
+| `usage { inputTokens, outputTokens }`              | What calls spent, added up by the caller (input includes cached tokens); a summary's own call is one |
+| `compacted { tokensBefore, tokensAfter }`          | What the turn read was folded into a summary mid-turn (estimates)       |
 | `done { reason, error? }`                          | `completed`, `cancelled`, `max_steps` or `failed` with a reason        |
 
 - The stream never throws once iteration starts. Every failure (a refused
@@ -100,8 +101,22 @@ before the model reads it.
   (`.agents/rules/integrations.md`): the caller must not call the provider
   again with that key before `resetAt`, and a queued job is moved to delayed
   until then rather than retried on its own schedule.
-- `maxSteps` (default 25) caps model round trips: Claude Code's `maxTurns`,
-  the Agents SDK's `maxTurns`. Reaching it ends with `max_steps`.
+- `maxSteps` caps model round trips when given: Claude Code's `maxTurns`,
+  the Agents SDK's `maxTurns`; reaching it ends with `max_steps`. Absent,
+  a turn has no limit (`25-bots.md` §2, 2026-11-09).
+- **Every turn compacts mid-turn** past `compactionThreshold(contextWindow)`,
+  70% of `min(contextWindow, BOT_COMPACTION_WINDOW)`: Claude Code by itself,
+  told that window and share; the OpenAI engines through `TurnCompactor`
+  (`openai/openai-compaction.ts`) on the Agents SDK's `callModelInputFilter`,
+  which folds the turn's earlier items into a summary its own model writes,
+  keeps the newest `BOT_COMPACTION_KEEP_TOKENS` and the turn's message, and
+  never cuts a call from its result. `compaction: false` turns it off (a
+  completion does).
+- **Every turn has a loop guard** (`tool-loop-guard.ts`, in `runTool`): the
+  same call (tool and input) that failed the same way 3 times in a row, or
+  that answered the same thing 10 times among the last 30, is not run; its
+  error result's `data` carries `LOOP_GUARD_DATA_KEY: 'refused'`, so the
+  caller can stop a turn that keeps running into it.
 
 ## The Claude engine
 

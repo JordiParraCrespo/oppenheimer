@@ -210,6 +210,7 @@
   "POST /v1/bots/:id/approvals/:approvalId/decision": ["bots:write"],
   "POST /v1/bots/:id/attachments": ["bots:write"],
   "POST /v1/bots/:id/documents/:name/revisions/:revision/revert": ["bots:write"],
+  "POST /v1/bots/:id/goal/resume": ["bots:write"],
   "POST /v1/bots/:id/memory": ["bots:write"],
   "POST /v1/bots/:id/memory/dream": ["bots:write"],
   "POST /v1/bots/:id/memory/dream/undo": ["bots:write"],
