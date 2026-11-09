@@ -19,6 +19,7 @@ COPY packages/backend/core/package.json ./packages/backend/core/
 COPY packages/backend/ddd/package.json ./packages/backend/ddd/
 COPY packages/backend/cache/package.json ./packages/backend/cache/
 COPY packages/backend/email/package.json ./packages/backend/email/
+COPY packages/backend/error-reporting/package.json ./packages/backend/error-reporting/
 COPY packages/backend/i18n/package.json ./packages/backend/i18n/
 COPY packages/backend/llm/package.json ./packages/backend/llm/
 COPY packages/backend/agents/package.json ./packages/backend/agents/

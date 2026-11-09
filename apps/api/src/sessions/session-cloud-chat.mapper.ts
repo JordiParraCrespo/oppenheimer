@@ -18,14 +18,14 @@ export class SessionCloudChatMapper {
 
   /** `next` is where the next read starts: after the last line held, or where this one started. */
   static toChat(
-    after: number,
+    from: number,
     lines: readonly CloudChatLine[],
     replies: readonly CloudChatReply[],
   ): CloudChatResponseDto {
     const last = lines.at(-1);
     return {
       lines: lines.map((each) => each.line),
-      next: last ? last.seq + 1 : after,
+      next: last ? last.seq + 1 : from,
       replies: replies.map((reply) => SessionCloudChatMapper.toReply(reply)),
     };
   }

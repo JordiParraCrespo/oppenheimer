@@ -17,7 +17,11 @@ import type { BotApprovalEntity } from '../../domain/bot-approval.entity';
 import { BotConversationSummaryEntity } from '../../domain/bot-conversation-summary.entity';
 import { BotMessageEntity } from '../../domain/bot-message.entity';
 import { NO_PERMISSIONS } from '../../domain/bot-tool-permission.policy';
-import { type BotTurnContext, BotTurnEntity } from '../../domain/bot-turn.entity';
+import {
+  BOT_TURN_MAX_STEPS,
+  type BotTurnContext,
+  BotTurnEntity,
+} from '../../domain/bot-turn.entity';
 import type { OwnerHostsPort } from '../../infrastructure/owner-hosts.port';
 import type { BotApprovalRequestFactory } from '../bot-approval-request.factory';
 import { BotApprovalStartedPolicy } from '../bot-approval-started.policy';
@@ -28,7 +32,7 @@ import type { BotPermissionsResolver } from '../bot-permissions.resolver';
 import type { BotRuleReviewerFactory } from '../bot-rule-reviewer.factory';
 import type { BotSubagentRunnerFactory } from '../bot-subagent-runner.factory';
 import type { BotToolboxFactory } from '../bot-toolbox.factory';
-import { BOT_TURN_MAX_STEPS, BotTurnContextResolver } from '../bot-turn-context.resolver';
+import { BotTurnContextResolver } from '../bot-turn-context.resolver';
 import type { BotTurnOpeningResolver } from '../bot-turn-opening.resolver';
 
 /**
@@ -327,7 +331,7 @@ describe('BotTurnContextResolver', () => {
         ],
       });
       const { systemPrompt } = await resolve();
-      expect(systemPrompt).toContain('# Your skills\n\nSaved ways of doing a task');
+      expect(systemPrompt).toContain('# Your skills\n\nWays of doing a task');
       expect(systemPrompt).toContain(
         '- `release-notes`: Does release-notes.\n- `triage`: Does triage.',
       );
@@ -361,7 +365,7 @@ describe('BotTurnContextResolver', () => {
       });
       const { message } = await resolve();
       expect(message).toContain(
-        'The message starts with /relase-notes, which is not one of your skills. The skills they can run are /release-notes.',
+        'The message starts with /relase-notes, which is not one of your skills. The skills they can run are /recap, /release-notes.',
       );
       expect(message).not.toContain('<skill');
     });
@@ -373,7 +377,30 @@ describe('BotTurnContextResolver', () => {
       });
       const { message } = await resolve();
       expect(message).not.toContain('<skill');
-      expect(message).toContain('You have no skills they can run.');
+      expect(message).toContain('The skills they can run are /recap.');
+    });
+
+    it('runs the built-in /recap for a bot with no skills of its own, the person’s topic as its input', async () => {
+      const { resolve } = setup(async () => [], { opening: '/recap the billing work' });
+      const { message } = await resolve();
+      expect(message).toContain(
+        'The person ran your skill /recap. Follow it for this request. What they wrote after the command is its input.\n\n<skill name="recap">',
+      );
+      expect(message).toContain('/recap the billing work');
+      expect(message).not.toContain('not one of your skills');
+    });
+
+    it('runs a skill of the bot’s own saved as recap before the name was reserved, not the built-in', async () => {
+      const saved = skill('notes', { modelInvocable: false });
+      const reserved = BotSkillEntity.create({
+        id: saved.id,
+        createdAt: saved.createdAt,
+        updatedAt: saved.updatedAt,
+        props: { ...saved.getProps(), name: 'recap', body: 'Steps for recap.' },
+      });
+      const { resolve } = setup(async () => [], { opening: '/recap', skills: [reserved] });
+      const { message } = await resolve();
+      expect(message).toContain('<skill name="recap">\nSteps for recap.\n</skill>');
     });
   });
 });

@@ -1165,6 +1165,283 @@
       "properties": {
         "type": {
           "type": "string",
+          "const": "fs.find"
+        },
+        "commandId": {
+          "$ref": "#/$defs/commandId"
+        },
+        "query": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 255
+        },
+        "path": {
+          "$ref": "#/$defs/hostPath"
+        }
+      },
+      "required": [
+        "type",
+        "commandId",
+        "query"
+      ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "fs.found"
+        },
+        "commandId": {
+          "$ref": "#/$defs/commandId"
+        },
+        "path": {
+          "$ref": "#/$defs/hostPath"
+        },
+        "home": {
+          "$ref": "#/$defs/hostPath"
+        },
+        "entries": {
+          "maxItems": 50,
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "path": {
+                "$ref": "#/$defs/hostPath"
+              },
+              "branch": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 255
+              }
+            },
+            "required": [
+              "path"
+            ]
+          }
+        },
+        "truncated": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "type",
+        "commandId",
+        "path",
+        "home",
+        "entries"
+      ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "host.exec"
+        },
+        "commandId": {
+          "$ref": "#/$defs/commandId"
+        },
+        "argv": {
+          "minItems": 1,
+          "maxItems": 64,
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 8192
+          }
+        },
+        "cwd": {
+          "$ref": "#/$defs/hostPath"
+        },
+        "home": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64,
+          "pattern": "^[a-z0-9][a-z0-9-]*$"
+        },
+        "timeoutSeconds": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 600
+        }
+      },
+      "required": [
+        "type",
+        "commandId",
+        "argv",
+        "home",
+        "timeoutSeconds"
+      ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "host.exec.result"
+        },
+        "commandId": {
+          "$ref": "#/$defs/commandId"
+        },
+        "exitCode": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": -9007199254740991,
+              "maximum": 9007199254740991
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "timedOut": {
+          "type": "boolean"
+        },
+        "stdout": {
+          "type": "string"
+        },
+        "stderr": {
+          "type": "string"
+        },
+        "stdoutTruncated": {
+          "type": "boolean"
+        },
+        "stderrTruncated": {
+          "type": "boolean"
+        },
+        "cwd": {
+          "$ref": "#/$defs/hostPath"
+        },
+        "durationMs": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        }
+      },
+      "required": [
+        "type",
+        "commandId",
+        "exitCode",
+        "timedOut",
+        "stdout",
+        "stderr",
+        "cwd",
+        "durationMs"
+      ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "terminal.drive"
+        },
+        "commandId": {
+          "$ref": "#/$defs/commandId"
+        },
+        "sessionId": {
+          "$ref": "#/$defs/sessionId"
+        },
+        "window": {
+          "$ref": "#/$defs/windowIndex"
+        },
+        "text": {
+          "type": "string",
+          "maxLength": 8192
+        },
+        "keys": {
+          "maxItems": 32,
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "Enter",
+              "Tab",
+              "Escape",
+              "BSpace",
+              "Space",
+              "Up",
+              "Down",
+              "Left",
+              "Right",
+              "Home",
+              "End",
+              "PageUp",
+              "PageDown",
+              "C-c",
+              "C-d",
+              "C-z",
+              "C-l",
+              "C-a",
+              "C-e",
+              "C-r",
+              "C-u",
+              "C-w"
+            ]
+          }
+        },
+        "waitFor": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "waitSeconds": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 60
+        },
+        "history": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 500
+        }
+      },
+      "required": [
+        "type",
+        "commandId",
+        "sessionId",
+        "waitSeconds"
+      ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "terminal.screen"
+        },
+        "commandId": {
+          "$ref": "#/$defs/commandId"
+        },
+        "screen": {
+          "type": "string"
+        },
+        "matched": {
+          "type": "boolean"
+        },
+        "waitedMs": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        }
+      },
+      "required": [
+        "type",
+        "commandId",
+        "screen",
+        "matched",
+        "waitedMs"
+      ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
           "const": "attachment.direct.offer"
         },
         "attachmentId": {
@@ -1936,6 +2213,268 @@
       "properties": {
         "type": {
           "type": "string",
+          "const": "telegram.link"
+        },
+        "commandId": {
+          "$ref": "#/$defs/commandId"
+        },
+        "token": {
+          "type": "string",
+          "maxLength": 160,
+          "pattern": "^\\d{1,20}:[A-Za-z0-9_-]{20,128}$"
+        }
+      },
+      "required": [
+        "type",
+        "commandId",
+        "token"
+      ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "telegram.unlink"
+        },
+        "commandId": {
+          "$ref": "#/$defs/commandId"
+        }
+      },
+      "required": [
+        "type",
+        "commandId"
+      ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "telegram.state"
+        },
+        "state": {
+          "type": "string",
+          "enum": [
+            "unlinked",
+            "connecting",
+            "connected",
+            "revoked"
+          ]
+        },
+        "botId": {
+          "type": "string",
+          "maxLength": 21,
+          "pattern": "^-?\\d{1,20}$"
+        },
+        "username": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "reason": {
+          "type": "string",
+          "maxLength": 200
+        }
+      },
+      "required": [
+        "type",
+        "state"
+      ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "telegram.messages"
+        },
+        "messages": {
+          "minItems": 1,
+          "maxItems": 50,
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "key": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 256
+              },
+              "id": {
+                "type": "string",
+                "pattern": "^\\d{1,20}$"
+              },
+              "chatId": {
+                "type": "string",
+                "maxLength": 21,
+                "pattern": "^-?\\d{1,20}$"
+              },
+              "chatKind": {
+                "type": "string",
+                "enum": [
+                  "direct",
+                  "group"
+                ]
+              },
+              "chatName": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 200
+              },
+              "senderId": {
+                "type": "string",
+                "maxLength": 21,
+                "pattern": "^-?\\d{1,20}$"
+              },
+              "senderName": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 200
+              },
+              "senderUsername": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 64
+              },
+              "text": {
+                "type": "string",
+                "maxLength": 4096
+              },
+              "media": {
+                "type": "string",
+                "enum": [
+                  "photo",
+                  "video",
+                  "audio",
+                  "voice",
+                  "document",
+                  "sticker",
+                  "animation",
+                  "contact",
+                  "location",
+                  "poll"
+                ]
+              },
+              "replyToId": {
+                "type": "string",
+                "pattern": "^\\d{1,20}$"
+              },
+              "sentAt": {
+                "type": "string",
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+              }
+            },
+            "required": [
+              "key",
+              "id",
+              "chatId",
+              "chatKind",
+              "senderId",
+              "text",
+              "sentAt"
+            ]
+          }
+        }
+      },
+      "required": [
+        "type",
+        "messages"
+      ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "telegram.ack"
+        },
+        "keys": {
+          "minItems": 1,
+          "maxItems": 50,
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          }
+        }
+      },
+      "required": [
+        "type",
+        "keys"
+      ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "telegram.send"
+        },
+        "commandId": {
+          "$ref": "#/$defs/commandId"
+        },
+        "chatId": {
+          "type": "string",
+          "maxLength": 21,
+          "pattern": "^-?\\d{1,20}$"
+        },
+        "text": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 4096
+        },
+        "replyToId": {
+          "type": "string",
+          "pattern": "^\\d{1,20}$"
+        }
+      },
+      "required": [
+        "type",
+        "commandId",
+        "chatId",
+        "text"
+      ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "telegram.sent"
+        },
+        "commandId": {
+          "$ref": "#/$defs/commandId"
+        },
+        "id": {
+          "type": "string",
+          "pattern": "^\\d{1,20}$"
+        },
+        "sentAt": {
+          "type": "string",
+          "format": "date-time",
+          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+        }
+      },
+      "required": [
+        "type",
+        "commandId",
+        "id",
+        "sentAt"
+      ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
           "const": "shared.preview.get"
         },
         "commandId": {
@@ -2424,6 +2963,7 @@
       "attachment.direct.proof",
       "session.folder",
       "fs.list",
+      "fs.find",
       "attachment.chat",
       "attachment.chat.older",
       "device.screen",
@@ -2434,11 +2974,16 @@
       "codex.environments",
       "session.watch",
       "whatsapp",
+      "telegram",
       "shared.preview",
-      "transcript.read"
+      "transcript.read",
+      "host.exec",
+      "terminal.drive"
     ],
     "maxEventPayloadBytes": 8192,
     "chatEntryMaxBytes": 65536,
-    "chatBatchMaxEntries": 256
+    "chatBatchMaxEntries": 256,
+    "execOutputMaxBytes": 32768,
+    "terminalScreenMaxBytes": 32768
   }
 }

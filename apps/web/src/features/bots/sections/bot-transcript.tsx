@@ -58,6 +58,7 @@ export function BotTranscript({ botId, name }: { botId: string; name: string }) 
       <ApprovedCallLive key={turnId} call={call} />,
     ]),
   );
+  const current = conversation.activeTurn?.id;
   const again = retryContent(blocks);
   const newest = newestTurn(blocks)?.turnId;
   useSentGlide(newestSentId(blocks));
@@ -110,6 +111,7 @@ export function BotTranscript({ botId, name }: { botId: string; name: string }) 
                   <BotTurn
                     block={block}
                     live={live.text[block.turnId]}
+                    current={block.turnId === current}
                     working={working.get(block.turnId)}
                     waitingOn={live.retrying[block.turnId]}
                     subagents={live.subagents}

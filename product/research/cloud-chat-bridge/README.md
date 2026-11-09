@@ -24,7 +24,12 @@ Read off a running cloud session (2026-11-06):
 
 ## What it shows
 
-- **The chat streams out.** A `SessionStart` hook (`hooks/session-start.mjs`)
+The hook is one file, `apps/web/public/cloud-chat-hook.mjs` since the
+product took it on (2026-11-07): the console hands it out, and the demo runs
+the same file.
+
+
+- **The chat streams out.** A `SessionStart` hook (`cloud-chat-hook.mjs session-start`)
   starts a detached streamer. It follows the transcript Claude Code names on
   the hook's stdin (`transcript_path`), posts each complete line to
   `POST /api/sessions/{id}/transcript`, keeps its offset so a restart
@@ -33,7 +38,7 @@ Read off a running cloud session (2026-11-06):
   (`CLAUDE_CODE_REMOTE_SESSION_ID`, `cse_…`); the server reads it as the
   console's `session_…` in one place, so it matches the cloud session
   Oppenheimer launched and the hooks know no prefixes.
-- **Your answer goes back in.** A `Stop` hook (`hooks/stop.mjs`) asks
+- **Your answer goes back in.** A `Stop` hook (`cloud-chat-hook.mjs stop`) asks
   `GET /api/sessions/{id}/replies/next?wait=N` when the agent finishes a
   turn. A reply typed in the chat comes back as the hook's
   `{"decision":"block","reason": …}`, Claude Code's documented way for a hook

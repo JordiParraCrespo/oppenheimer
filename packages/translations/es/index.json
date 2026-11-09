@@ -407,6 +407,16 @@
       "WHATSAPP_008": "WhatsApp no aceptó el mensaje. Vuelve a intentarlo en un momento.",
       "WHATSAPP_009": "Ese número ya ha enviado todos los mensajes de bots que puede por ahora. Inténtalo más tarde.",
       "WHATSAPP_010": "No hay ningún chat de WhatsApp así en ese número.",
+      "TELEGRAM_001": "Ese bot de Telegram ya no está conectado.",
+      "TELEGRAM_002": "Telegram pertenece a un espacio de trabajo. Abre uno y vuelve a intentarlo.",
+      "TELEGRAM_003": "Ya has conectado tres bots de Telegram, el máximo por persona. Desconecta uno para añadir otro.",
+      "TELEGRAM_004": "Ese host está desconectado. Arranca su runner y vuelve a intentarlo.",
+      "TELEGRAM_005": "El runner de ese host aún no puede tener bots de Telegram. Actualiza el runner y vuelve a intentarlo.",
+      "TELEGRAM_006": "Ese host ya tiene el bot de Telegram de otra persona.",
+      "TELEGRAM_007": "Ese bot de Telegram no está conectado. Vuelve a conectarlo en Ajustes → Telegram.",
+      "TELEGRAM_008": "Telegram no aceptó el mensaje. Vuelve a intentarlo en un momento.",
+      "TELEGRAM_009": "Ese bot de Telegram ya ha enviado todos los mensajes de bots que puede por ahora. Inténtalo más tarde.",
+      "TELEGRAM_010": "No hay ningún chat de Telegram así en ese bot.",
       "CLOUD_AGENTS_003": "Este servidor no puede guardar claves de agentes en la nube. Pide a quien lo administra que configure CLOUD_AGENTS_KEY.",
       "CLOUD_AGENTS_004": "Conecta primero el proveedor con tu clave de API.",
       "CLOUD_AGENTS_005": "El proveedor rechazó esa clave de API. Comprueba que sea una clave de usuario y que no se haya revocado.",
@@ -507,7 +517,7 @@
           "link": "Abrir la configuración de Codex Cloud"
         }
       },
-      "details": "Detalles del host: {{detail}}"
+      "details": "Detalles del host"
     }
   },
   "auth": {
@@ -839,8 +849,12 @@
         "up": "Carpeta superior",
         "crumbs": "Ruta",
         "emptyMissing": "No hay ninguna carpeta en {{dir}} en {{host}}.",
-        "emptyFiltered": "Ninguna carpeta de {{dir}} empieza por “{{fragment}}”.",
+        "emptyFiltered": "Ninguna carpeta de {{dir}} tiene “{{fragment}}” en el nombre.",
         "emptyNone": "No hay subcarpetas. Usa esta o vuelve atrás.",
+        "searchHeading": "Encontradas en ~",
+        "searching": "Buscando en ~…",
+        "searchTruncated": "Solo se muestran las coincidencias más cercanas. Escribe más del nombre para acotar.",
+        "searchFailed": "No se han podido buscar las carpetas de este host.",
         "footMissing": "Elige una carpeta que exista. No se crea nada.",
         "footRepository": "Repositorio git en {{branch}}. Se abre tal como está, sin rama nueva.",
         "footFolder": "Se abre tal como está. No se clona nada.",
@@ -1010,6 +1024,7 @@
       "renameLabel": "Nombre de la sesión",
       "move": "Mover a un proyecto…",
       "moveTitle": "Mover a un proyecto",
+      "moveCurrent": "Actual",
       "moveNone": "Ningún otro proyecto contiene el repositorio de esta sesión.",
       "delete": "Eliminar",
       "writeFailed": "Ese cambio no se aplicó. Inténtalo de nuevo.",
@@ -1034,7 +1049,7 @@
       "discard": "Descartar también el trabajo sin enviar",
       "keeps": "La eliminación se detiene si la sesión tiene trabajo sin enviar.",
       "descriptionFolder": "Termina el terminal. La carpeta se queda como está.",
-      "descriptionCloud": "La quita de Oppenheimer. La sesión sigue en claude.ai/code, donde puedes archivarla.",
+      "descriptionCloud": "La quita de Oppenheimer. La sesión sigue en claude.ai/code, donde puedes <archive>archivarla</archive>.",
       "refused": "Su host no la eliminó",
       "refusedUnknown": "El host se negó a eliminar la sesión."
     },
@@ -1431,7 +1446,32 @@
       "title": "En directo desde la nube de Claude Code",
       "waiting_one": "Tu respuesta espera a que el agente termine su turno.",
       "waiting_other": "{{count}} respuestas esperan a que el agente termine su turno.",
-      "replyFailed": "La respuesta no llegó a la sesión. Vuelve a intentarlo."
+      "replyFailed": "La respuesta no llegó a la sesión. Vuelve a intentarlo.",
+      "setup": {
+        "title": "Activa el chat de esta sesión",
+        "intro": "Una sesión de Claude Code en la nube envía su chat aquí con un hook en su repositorio. Configúralo una vez por repositorio y entorno de la nube; las sesiones que inicies desde Oppenheimer mostrarán su chat aquí y podrás responderlas.",
+        "keyTitle": "1. Crea una clave",
+        "keyBody": "Permite que las sesiones en la nube envíen su chat a este espacio de trabajo y recojan tus respuestas. No puede iniciar, detener ni borrar una sesión, ni abrir un terminal. Solo se muestra una vez: cópiala ahora.",
+        "createKey": "Crear clave",
+        "creatingKey": "Creando la clave…",
+        "keyLabel": "Tu clave",
+        "hookTitle": "2. Añade el hook al repositorio",
+        "hookBody": "Guarda este archivo en el repositorio como .claude/hooks/oppenheimer-cloud-chat.mjs y añade estas líneas a .claude/settings.json.",
+        "downloadHook": "Descargar el hook",
+        "settingsLabel": ".claude/settings.json",
+        "envTitle": "3. Configura el entorno de la nube",
+        "envBody": "En claude.ai, abre la configuración del entorno de la nube. Añade estas variables de entorno y permite este host en su acceso a la red.",
+        "envLabel": "Variables de entorno",
+        "hostLabel": "Host permitido",
+        "keyPlaceholder": "<tu clave>",
+        "keyFailed": "No se pudo crear la clave. Vuelve a intentarlo.",
+        "readerLabel": "Cómo configurarlo",
+        "readerYou": "Hazlo tú",
+        "readerAgent": "Pídeselo a un agente",
+        "agentTitle": "2. Pídeselo a un agente de código",
+        "agentBody": "Pega esto en Claude Code, u otro agente de código, en una copia del repositorio. Añade el hook y su configuración, y luego te dice qué configurar en claude.ai. Tu clave no va en el prompt: la pegas tú en claude.ai.",
+        "agentLabel": "Prompt para tu agente"
+      }
     }
   },
   "bots": {
@@ -1453,6 +1493,11 @@
       "renameGroup": "Renombrar grupo",
       "deleteGroup": "Eliminar grupo",
       "groupFailed": "No se ha podido guardar el grupo.",
+      "pinned": "Fijados",
+      "pin": "Fijar",
+      "unpin": "Desfijar",
+      "dropToPin": "Suelta un bot aquí para fijarlo.",
+      "allPinned": "Sus bots están en Fijados.",
       "rowActions": "Opciones del bot",
       "settings": "Configuración",
       "move": "Mover a un grupo",
@@ -1460,7 +1505,16 @@
       "moveNone": "Aún no hay otro grupo",
       "moveFailed": "No se ha podido mover el bot.",
       "delete": "Eliminar bot",
-      "loadFailed": "No se han podido cargar tus bots."
+      "loadFailed": "No se han podido cargar tus bots.",
+      "hide": "Ocultar de la barra lateral",
+      "filters": "Filtrar bots",
+      "shown": "Mostrar bots",
+      "shownAll": "Todos",
+      "shownSome": "{{shown}} de {{total}}",
+      "showAll": "Mostrar todos los bots",
+      "allHidden_one": "Su bot está oculto. Muéstralo desde el menú de filtros.",
+      "allHidden_other": "Sus {{count}} bots están ocultos. Muéstralos desde el menú de filtros.",
+      "allHidden_many": "Sus {{count}} de bots están ocultos. Muéstralos desde el menú de filtros."
     },
     "landing": {
       "titleEmpty": "Crea tu primer bot.",
@@ -1494,7 +1548,9 @@
         "refused": "{{provider}} ha rechazado esta petición. Volver a enviarla no servirá: cambia el mensaje o el modelo.",
         "unavailable": "No se ha podido contactar con {{provider}}. Suele ser algo pasajero: vuelve a intentarlo en un momento.",
         "time_limit": "Este turno se ha quedado sin tiempo. Volver a enviarlo no servirá: pide un paso más pequeño o divide la petición.",
-        "interrupted": "Este turno se interrumpió antes de terminar. Al volver a enviarlo, se ejecuta."
+        "step_limit": "Este turno ha usado todos sus pasos y se ha detenido antes de terminar. Volver a enviarlo no servirá: pide un paso más pequeño o di que continúe.",
+        "interrupted": "Este turno se interrumpió antes de terminar. Al volver a enviarlo, se ejecuta.",
+        "storage": "No pudimos guardar este turno, así que se detuvo: el fallo es nuestro, no de {{provider}}. Vuelve a intentarlo en un momento."
       },
       "openProviders": "Abrir Proveedores de modelos",
       "errorDetails": "Mostrar detalles",
@@ -1837,6 +1893,32 @@
           "coral": "Coral",
           "moss": "Musgo"
         },
+        "face": "Cara",
+        "faceHat": "Sombrero",
+        "faceEyes": "Ojos",
+        "faceMouth": "Boca",
+        "faceReset": "Usar su propia cara",
+        "faces": {
+          "hat": {
+            "fedora": "Fedora",
+            "porkpie": "Porkpie",
+            "bowler": "Bombín",
+            "tophat": "Chistera",
+            "cap": "Gorra",
+            "beanie": "Gorro"
+          },
+          "eyes": {
+            "dots": "Puntos",
+            "happy": "Contentos",
+            "wink": "Guiño",
+            "big": "Grandes"
+          },
+          "mouth": {
+            "smile": "Sonrisa",
+            "grin": "Risa",
+            "o": "Sorpresa"
+          }
+        },
         "group": "Grupo de la barra lateral",
         "groupHint": "Dónde aparece en la barra lateral de Empleados",
         "newGroup": "Nuevo grupo en la barra lateral",
@@ -2045,6 +2127,35 @@
         "loadFailed": "No se pudieron cargar los permisos del bot.",
         "saveFailed": "No se pudo cambiar el permiso.",
         "tools": "Herramientas",
+        "search": "Buscar herramientas",
+        "noMatch": "Ninguna herramienta coincide.",
+        "filters": {
+          "decision": "Decisión",
+          "group": "Grupo",
+          "allGroups": "Todos los grupos",
+          "clear": "Borrar"
+        },
+        "views": {
+          "all": "Todas",
+          "allow": "Permitir",
+          "ask": "Preguntar",
+          "off": "Desactivadas",
+          "changed": "Cambiadas por ti"
+        },
+        "summary": {
+          "tools_one": "{{count}} herramienta",
+          "tools_other": "{{count}} herramientas",
+          "tools_many": "{{count}} herramientas",
+          "ask_one": "{{count}} pregunta",
+          "ask_other": "{{count}} preguntan",
+          "ask_many": "{{count}} preguntan",
+          "off_one": "{{count}} desactivada",
+          "off_other": "{{count}} desactivadas",
+          "off_many": "{{count}} desactivadas",
+          "changed_one": "{{count}} cambiada por ti",
+          "changed_other": "{{count}} cambiadas por ti",
+          "changed_many": "{{count}} cambiadas por ti"
+        },
         "preset": {
           "auto": "Las herramientas que dejas en su valor por defecto siguen Aprobar por mí: todo lo que sale de Oppenheimer pregunta antes.",
           "full": "Las herramientas que dejas en su valor por defecto siguen Acceso total: se ejecutan sin preguntar."
@@ -2063,6 +2174,7 @@
           "plan": "Plan",
           "mail": "Correo",
           "whatsapp": "WhatsApp",
+          "telegram": "Telegram",
           "github": "GitHub",
           "automations": "Rutinas y automatizaciones",
           "bots": "Otros bots",
@@ -3250,6 +3362,7 @@
       "cloudAgents": "Agentes en la nube",
       "mail": "Correo",
       "whatsapp": "WhatsApp",
+      "telegram": "Telegram",
       "app": "Oppenheimer",
       "about": "Acerca de"
     },
@@ -3382,6 +3495,10 @@
       "makeDefault": "Hacer predeterminado",
       "makeDefaultLabel": "Empezar los bots nuevos con {{provider}}",
       "makeDefaultFailed": "No se pudo cambiar el proveedor predeterminado.",
+      "groups": {
+        "connected": "Conectados",
+        "notConnected": "Sin conectar"
+      },
       "providers": {
         "anthropic": "Modelos Claude, a través de la API de Anthropic.",
         "glm": "Modelos GLM, a través de z.ai.",
@@ -3531,6 +3648,57 @@
       "qrStep3": "Apunta el teléfono a este código. Cambia cada pocos segundos.",
       "qrWaiting": "Esperando a que el host genere un código…"
     },
+    "telegram": {
+      "title": "Telegram",
+      "description": "Conecta un bot de Telegram que hayas creado con @BotFather, gestionado por el runner de uno de tus hosts. Tus bots podrán leer los chats que la gente tenga con él y responderlos, preguntándote antes. El token del bot se queda en tu host.",
+      "privacy": "En los grupos, Telegram solo muestra a un bot los comandos, las menciones y las respuestas a él. Para que tus bots lean grupos enteros, envía /setprivacy a @BotFather y desactiva el modo privacidad de ese bot.",
+      "loadFailed": "No se han podido cargar tus bots de Telegram.",
+      "emptyTitle": "Ningún bot de Telegram conectado",
+      "emptyDescription": "Conecta uno y pregunta a cualquier bot cosas como «¿algo nuevo en el bot de la tienda?» o «di al grupo del equipo que la build está en verde».",
+      "connect": "Conectar un bot",
+      "connectAnother": "Conectar otro bot",
+      "connectAgain": "Conectar de nuevo",
+      "connectSubmit": "Conectar",
+      "atLimit": "Puedes conectar hasta {{count}} bots.",
+      "noHosts": "Primero vincula un host: el bot lo consulta el runner de un host.",
+      "connectTitle": "Conectar un bot de Telegram",
+      "reconnectTitle": "Dar un token nuevo a {{label}}",
+      "connectDescription": "Elige el host que consultará el bot. Responde mientras ese host esté encendido.",
+      "reconnectDescription": "Pega el nuevo token del bot. Su host y los chats guardados para tus bots se mantienen.",
+      "step1": "En Telegram, abre @BotFather y envía /newbot (o /token para un bot que ya tengas).",
+      "step2": "Copia el token que te da, con el aspecto 123456789:AA….",
+      "step3": "Pégalo abajo. Va a tu host y no se vuelve a mostrar aquí.",
+      "hostField": "Host",
+      "hostPlaceholder": "Elige un host",
+      "searchHosts": "Buscar hosts",
+      "noHost": "Ningún host coincide con «{{query}}»",
+      "hostOfflineOption": "{{name}} · sin conexión",
+      "tokenField": "Token del bot",
+      "tokenHint": "Solo se guarda en el host. Quien lo tenga puede actuar como el bot, así que no lo compartas.",
+      "showToken": "Mostrar token",
+      "hideToken": "Ocultar token",
+      "labelField": "Nombre",
+      "labelPlaceholder": "Tienda",
+      "connecting": "Conectando…",
+      "connectFailed": "No se ha podido conectar el bot.",
+      "status": {
+        "connecting": "Conectando",
+        "connected": "Conectado",
+        "revoked": "Token revocado",
+        "unlinked": "Desconectado"
+      },
+      "hostOffline": "Host sin conexión",
+      "onHost": "En {{host}}",
+      "unknownHost": "un host eliminado",
+      "notCheckedYet": "Comprobando el token",
+      "open": "Abrir en Telegram",
+      "disconnect": "Desconectar",
+      "disconnectLabel": "Desconectar {{label}}",
+      "disconnecting": "Desconectando…",
+      "disconnectTitle": "¿Desconectar {{label}}?",
+      "disconnectDescription": "Tu host deja de consultar el bot y olvida su token. Tus bots pierden los chats guardados para ellos. El bot sigue siendo tuyo en Telegram; revoca su token en @BotFather para pararlo también allí.",
+      "disconnectFailed": "No se ha podido desconectar el bot."
+    },
     "about": {
       "title": "Acerca de",
       "versionsHeading": "Versiones",
@@ -3548,6 +3716,7 @@
     "commandPlaceholder": "Busca páginas y acciones…",
     "goTo": "Ir a",
     "primaryNavigation": "Navegación principal",
+    "home": "Inicio de Oppenheimer",
     "profile": "Perfil",
     "search": "Buscar",
     "team": "Equipo",

@@ -1,5 +1,9 @@
-import { useNow } from '@oppenheimer/design-system-web';
-import { useHostFolders, useHosts } from '@oppenheimer/frontend-consumer/react';
+import { useDebouncedValue, useNow } from '@oppenheimer/design-system-web';
+import {
+  useHostFolderSearch,
+  useHostFolders,
+  useHosts,
+} from '@oppenheimer/frontend-consumer/react';
 import { AppError } from '@oppenheimer/frontend-core';
 import { CORE_CONFIG } from '@oppenheimer/frontend-core/config';
 import { useErrorMessage } from '@oppenheimer/frontend-core/react';
@@ -7,10 +11,23 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { FolderBrowser } from '../components/folder-browser';
 import { rememberedFolder } from '../lib/folder-memory';
-import { expandPath, folderInput, HOME, parseFolderInput, shortenPath } from '../lib/folder-path';
+import {
+  expandPath,
+  folderInput,
+  folderSearchTerm,
+  HOME,
+  parseFolderInput,
+  shortenPath,
+} from '../lib/folder-path';
 
 /** The host's answers that mean "there is no folder there", not "the host could not say". */
 const MISSING = ['SESSIONS_028', 'SESSIONS_029'];
+
+/** The host's answer when its runner predates the search. */
+const UNSUPPORTED = 'SESSIONS_026';
+
+/** How long typing pauses before the host is asked to search: each search walks its disk. */
+const SEARCH_PAUSE_MS = 250;
 
 /**
  * The folder chip's open popup: what is typed, and the host's listing of the
@@ -19,7 +36,10 @@ const MISSING = ['SESSIONS_028', 'SESSIONS_029'];
  *
  * The home listing is read first and always: it is where the picker starts,
  * it says what `~` is, and every answer carries the recent folders. A folder
- * typed under `~` waits for it.
+ * typed under `~` waits for it. A bare name typed is also searched for under
+ * home once typing pauses; a search the host cannot make (an older runner)
+ * leaves the listing as it is, and any other failure is said where the
+ * results would be.
  */
 export function NewSessionFolderBrowser({
   hostId,
@@ -50,6 +70,14 @@ export function NewSessionFolderBrowser({
   const waiting = absolute === undefined;
   const listing = useHostFolders(hostId, absolute ?? null);
 
+  const term = folderSearchTerm(input);
+  const asked = useDebouncedValue(term, SEARCH_PAUSE_MS);
+  const search = useHostFolderSearch(hostId, asked);
+  const settled = term !== null && asked === term;
+  // An older runner cannot search: the listing alone is the answer, said nowhere.
+  const unsupported = search.error instanceof AppError && search.error.code === UNSUPPORTED;
+  const current = settled && !search.error;
+
   const error = waiting ? start.error : listing.error;
   const missing = error instanceof AppError && MISSING.includes(error.code);
 
@@ -65,6 +93,14 @@ export function NewSessionFolderBrowser({
       failure={
         error && !missing ? resolveError(error, t('sessions.new.folder.failed')).message : undefined
       }
+      search={current ? search.data : undefined}
+      searching={term !== null && !search.error && (asked !== term || search.isFetching)}
+      searchFailure={
+        settled && search.error && !unsupported
+          ? resolveError(search.error, t('sessions.new.folder.searchFailed')).message
+          : undefined
+      }
+      onRetrySearch={() => void search.refetch()}
       now={now}
       onUse={(path) => onUse(path, home)}
     />

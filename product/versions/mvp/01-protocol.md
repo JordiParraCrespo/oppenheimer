@@ -284,6 +284,14 @@ runner does with it and point back.
   file is, never its path on the host nor its bytes. The control plane
   keeps the last 20 on the session for bots (`next-steps/agent-tools.md`
   §7).
+- `fs.find` and `fs.found` — the folder picker's search by name
+  (2026-11-08, `24-session-places.md` §4): the control plane sends a
+  `query` of two characters or more, and the runner walks under home and
+  answers with at most 50 absolute paths, each with its branch when it is
+  a repository, best first, and `truncated` when it stopped at its bounds
+  or found more; or `command.failed` with `fs.list`'s codes for where it
+  started. Sent only to a runner whose `hello` names `fs.find`, and waited
+  on like `fs.list`, for 5 seconds.
 - `shared.preview.get` and `shared.preview` — a bot showing a file a
   session's agent shared (2026-11-03): the control plane asks for the file
   by the session and the runner's id for it, and the runner answers with
@@ -310,6 +318,35 @@ runner does with it and point back.
   `restarted`. Sent only to a runner whose `hello` names `transcript.read`,
   and waited on like `fs.list`, for 8 seconds. Nothing is kept by the
   control plane.
+- `host.exec` and `host.exec.result` — one program run for a bot
+  (2026-11-07, `25-bots.md` §4.2, "Commands on a host"): `{ commandId,
+  argv, cwd?, home, timeoutSeconds }`, argv run directly with no shell, in
+  `cwd` or the bot's own folder `<workspaces>/bots/<home>`, at most 600
+  seconds. The runner checks its own exec policy first and answers `{
+  exitCode, timedOut, stdout, stderr, stdoutTruncated?, stderrTruncated?,
+  cwd, durationMs }`, the last 32 KB of each stream, or `command.failed`:
+  `EXEC_001` exec is off on this host, `EXEC_002` the program is not
+  allowed, `EXEC_003` the folder is not usable, `EXEC_004` the program
+  could not be started, `EXEC_005` the policy file cannot be read. Sent only
+  to a runner whose `hello` names `host.exec`, and waited on for the run's
+  timeout and 15 seconds more. A command runs the moment it arrives, never
+  queued (a queued one would outlive that wait); past 8 at once on a host it
+  is refused with `EXEC_004`. A `commandId` the runner ran recently (its
+  last 256) is answered with that run's result rather than run again: the
+  control plane reuses one, derived from the approval, when it retries an
+  approved call.
+- `terminal.drive` and `terminal.screen` — a bot driving a blank-terminal
+  session (2026-11-08, `25-bots.md` §4.2, "Driving a terminal"): `{
+  commandId, sessionId, window?, text?, keys?, waitFor?, waitSeconds,
+  history? }`. The runner types `text` literally, presses each of `keys` by
+  tmux name (the `TERMINAL_KEYS` list), waits until `waitFor` (RE2) matches a
+  line of the screen or for `waitSeconds` (at most 60), and answers `{
+  screen, matched, waitedMs }`, the last 32 KB of the visible screen plus up
+  to 500 lines above it, or `command.failed`: `EXEC_006` the host's exec mode
+  is not `full`, `EXEC_007` the session is not a blank terminal, `SESS_001`,
+  `SESS_003`, `INVALID_PATTERN`. One lane per session, so drives of one
+  terminal keep their order. Sent only to a runner whose `hello` names
+  `terminal.drive`, and waited on for the drive's wait and 10 seconds more.
 - `attachment.credit` — the browser's consumed-byte credit, relayed to
   the runner so it resumes that attachment's PTY reads. Without it the
   window below is a one-way valve: a noisy pane stalls for good rather

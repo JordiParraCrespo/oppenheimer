@@ -30,7 +30,7 @@ const shownImageInput = z.object({
   url: z
     .url()
     .max(2_000)
-    .describe('The image’s own address (a PNG, JPEG, GIF or WebP), with https://.'),
+    .describe("The image's own address (a PNG, JPEG, GIF or WebP), with https://."),
   caption: z
     .string()
     .max(200)

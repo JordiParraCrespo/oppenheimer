@@ -3,6 +3,7 @@ import {
   compactPath,
   crumbsOf,
   expandPath,
+  folderSearchTerm,
   parentOf,
   parseFolderInput,
   shortenPath,
@@ -46,8 +47,19 @@ describe('folder paths', () => {
     ['~/code/at', '~/code', 'at'],
     ['/us', '/', 'us'],
     ['notes', '~', 'notes'],
+    // A slash left out after `~`, not another account's home.
+    ['~billing', '~', 'billing'],
   ])('reads %j as the folder %j and the start %j', (input, dir, fragment) => {
     expect(parseFolderInput(input)).toEqual({ dir, fragment });
+  });
+
+  it('searches the host for a bare name of two letters or more, and browses a path', () => {
+    expect(folderSearchTerm('billing')).toBe('billing');
+    expect(folderSearchTerm(' ~billing ')).toBe('billing');
+    expect(folderSearchTerm('b')).toBeNull();
+    expect(folderSearchTerm('~')).toBeNull();
+    expect(folderSearchTerm('~/code/bill')).toBeNull();
+    expect(folderSearchTerm('/srv')).toBeNull();
   });
 
   it('crumbs a path from its root', () => {

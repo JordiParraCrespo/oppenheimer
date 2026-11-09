@@ -111,6 +111,7 @@ function toBot(dto: BotResponseDto): BotEntity {
     dto.lastMessagePreview,
     dto.sections,
     dto.routineSpendGuard,
+    dto.avatarFace,
   );
 }
 
@@ -774,6 +775,14 @@ export class BotsRepository {
   renameGroup(id: string, name: string): Promise<BotGroupEntity> {
     return callApi(BotsErrors.SAVE_GROUP_FAILED, async (api) => {
       const data = await api.body(heyApiSdk.updateBotGroup({ path: { id }, body: { name } }));
+      return toGroup(data);
+    });
+  }
+
+  /** Places the group at `position` among the groups; the API closes the others up around it. */
+  moveGroup(id: string, position: number): Promise<BotGroupEntity> {
+    return callApi(BotsErrors.SAVE_GROUP_FAILED, async (api) => {
+      const data = await api.body(heyApiSdk.updateBotGroup({ path: { id }, body: { position } }));
       return toGroup(data);
     });
   }

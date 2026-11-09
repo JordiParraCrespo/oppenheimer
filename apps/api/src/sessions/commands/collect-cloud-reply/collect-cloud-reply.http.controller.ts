@@ -37,7 +37,7 @@ export class CollectCloudReplyHttpController {
   @HttpCode(HttpStatus.OK)
   @Version('1')
   @CheckPolicies({ action: 'update', subject: 'Session' })
-  @RequireScopes('sessions:write')
+  @RequireScopes('cloud-chat:write')
   // Once per agent turn, which a long wait keeps few.
   @Throttle({ default: { limit: 60, ttl: 60_000 } })
   @ApiOperation({

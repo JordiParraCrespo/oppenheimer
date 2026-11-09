@@ -5,6 +5,7 @@ export {
   type KeySealer,
 } from './crypto/config-key-sealer';
 export { likeContains } from './database/like-contains';
+export { storableJson, storableText } from './database/storable-text';
 export {
   ApiAuthProblemResponses,
   ApiProblemResponse,

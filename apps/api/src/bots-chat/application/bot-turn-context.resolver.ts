@@ -33,8 +33,8 @@ import { BOT_HISTORY_READ_MAX, botHistory } from '../domain/bot-history.policy';
 import { withEarlierImages } from '../domain/bot-image.policy';
 import { memoryInMind } from '../domain/bot-memory.policy';
 import { composeBotSystemPrompt } from '../domain/bot-prompt.policy';
-import { composeTurnMessage } from '../domain/bot-skill.policy';
-import type { BotTurnEntity } from '../domain/bot-turn.entity';
+import { composeTurnMessage, withBuiltInSkills } from '../domain/bot-skill.policy';
+import { BOT_TURN_MAX_STEPS, type BotTurnEntity } from '../domain/bot-turn.entity';
 import { BotTurnBudget } from '../domain/bot-turn-budget.policy';
 import { composeTurnContext, withTurnContext } from '../domain/bot-turn-context.policy';
 import type { OwnerHost, OwnerHostsPort } from '../infrastructure/owner-hosts.port';
@@ -54,12 +54,6 @@ const ENGINE_EFFORTS: readonly string[] = ['low', 'medium', 'high', 'xhigh', 'ma
 
 /** What a turn is run with, but the abort signal, the scratch directory and the steering its runner owns. */
 export type BotTurnContext = Omit<BotTurnRequest, 'signal' | 'scratchDir' | 'steering'>;
-
-/**
- * Model round trips in one chat turn. Below the engine's default: a chat
- * turn answers, and longer work belongs to a session on a host.
- */
-export const BOT_TURN_MAX_STEPS = 20;
 
 /**
  * Everything a turn needs, read when it starts: the bot as it is now (its
@@ -204,7 +198,7 @@ export class BotTurnContextResolver {
           lastContext,
           memory: { log: inMind.log, toRecall: inMind.toRecall },
         }),
-        composeTurnMessage(command, skills, prompt),
+        composeTurnMessage(command, withBuiltInSkills(skills), prompt),
       ),
       images,
       tools,

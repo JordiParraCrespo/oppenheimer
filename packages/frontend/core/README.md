@@ -21,6 +21,9 @@ nothing imports, and a documented contract with no caller yet carries
 - **di** — `OppenheimerApp`, `OppenheimerAppConfig`, `TOKENS`.
 - **modules/analytics** — `AnalyticsService`, `AnalyticsModule`,
   `ANALYTICS_EVENTS`, `sanitizeUrlProperties`, the `IAnalyticsClient` port.
+- **modules/error-reporting** — `ErrorReportingService` (`app.errors`),
+  `ErrorReportingModule`, the `IErrorReportingClient` port; `useReportError`
+  and `useCaptureError` for a boundary.
 - **modules/auth** — `AuthService`, `AuthModule`, the auth state types
   (`createAuthStore` is at `./state`), the `IAuthClient` port.
 - **modules/capabilities** — `CapabilitiesService`, `CapabilitiesModule`.

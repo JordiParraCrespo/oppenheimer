@@ -86,12 +86,26 @@ export const BOT_BUILT_IN_COMMANDS = ['goal', 'usage', 'loop', 'schedule'] as co
 export type BotBuiltInCommand = (typeof BOT_BUILT_IN_COMMANDS)[number];
 
 /**
- * `skill` is the generic entry point and each built-in is the product's, so
- * no skill may take one as its own name. A skill saved under one before it
+ * `skill` is the generic entry point and each built-in, command or skill, is
+ * the product's, so no skill may take one as its own name. A skill saved under one before it
  * was reserved keeps its row and stays the bot's to use, but its `/<name>`
  * runs the built-in.
  */
-export const BOT_SKILL_RESERVED_NAMES = ['skill', ...BOT_BUILT_IN_COMMANDS] as const;
+/**
+ * The skills Oppenheimer gives every bot (the API's `BOT_BUILT_IN_SKILLS`):
+ * `oppenheimer` reads Oppenheimer's own guide before the bot answers a
+ * question about Oppenheimer, which the bot uses unasked and the person does
+ * not run; `recap` catches the person up on their sessions, pull requests and
+ * plan, which they run with `/recap` and the bot uses when asked.
+ */
+export const BOT_BUILT_IN_SKILL_NAMES = ['oppenheimer', 'recap'] as const;
+export type BotBuiltInSkillName = (typeof BOT_BUILT_IN_SKILL_NAMES)[number];
+
+export const BOT_SKILL_RESERVED_NAMES = [
+  'skill',
+  ...BOT_BUILT_IN_COMMANDS,
+  ...BOT_BUILT_IN_SKILL_NAMES,
+] as const;
 
 /** The words after `/goal` that clear it rather than set one (Claude Code's aliases). */
 export const BOT_GOAL_CLEAR_WORDS = ['clear', 'stop', 'off', 'reset', 'none', 'cancel'] as const;
@@ -217,15 +231,23 @@ export function botScheduleCommandOf(command: BotSlashCommand | null): BotSchedu
   return request ? { kind: 'set', request } : { kind: 'open' };
 }
 
-const skillNameSchema = z
+/** A name a skill can carry: what can be typed after a slash. */
+const skillNameShapeSchema = z
   .string()
   .trim()
   .min(1)
   .max(BOT_SKILL_NAME_MAX)
-  .regex(BOT_SKILL_NAME_PATTERN)
-  .refine((name) => !(BOT_SKILL_RESERVED_NAMES as readonly string[]).includes(name), {
-    params: { i18nKey: 'validation.invalid' },
-  });
+  .regex(BOT_SKILL_NAME_PATTERN);
+/**
+ * A name a skill can be given: never one Oppenheimer holds. Only a new skill
+ * is always given its name; an edit may resend the name a skill already has,
+ * reserved before or not, so the update schema checks the shape alone and the
+ * API refuses a rename onto a reserved name (`BotSkillEntity`).
+ */
+const skillNameSchema = skillNameShapeSchema.refine(
+  (name) => !(BOT_SKILL_RESERVED_NAMES as readonly string[]).includes(name),
+  { params: { i18nKey: 'validation.invalid' } },
+);
 const skillDescriptionSchema = z.string().trim().min(1).max(BOT_SKILL_DESCRIPTION_MAX);
 const skillBodySchema = z.string().trim().min(1).max(BOT_SKILL_BODY_MAX);
 
@@ -244,10 +266,17 @@ export const botSkillSchema = z.object({
 });
 export type BotSkillDto = z.infer<typeof botSkillSchema>;
 
+/**
+ * The console's skill form on a skill that exists: its name may be the one it
+ * already has, reserved after it was saved, so the name is checked for its
+ * shape alone and a rename onto a reserved name is the API's to refuse.
+ */
+export const editBotSkillSchema = botSkillSchema.extend({ name: skillNameShapeSchema });
+
 /** `PATCH /bots/:id/skills/:skillId`: any of its parts, at least one. */
 export const updateBotSkillSchema = z
   .object({
-    name: skillNameSchema.optional(),
+    name: skillNameShapeSchema.optional(),
     description: skillDescriptionSchema.optional(),
     body: skillBodySchema.optional(),
     userInvocable: z.boolean().optional(),

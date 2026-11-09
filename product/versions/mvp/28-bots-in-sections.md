@@ -4,7 +4,7 @@
 (`design/version1/SessionsConsole.dc.html`, its Automations page
 `Routines.dc.html`, `Tasks.dc.html`, `PullRequests.dc.html`) puts a **Bots**
 heading in every console section's sidebar: a plus that makes a bot, then
-rows drawn as in Employees (initials on a colour, name, age, last line).
+rows drawn as in Employees (its drawn face on its colour, name, age, last line).
 Sessions shows a "Session Bot", Automations an "Automation Bot", Plan a
 "Planning Bot", Pull requests a "Release Bot". This note is how a bot gets
 there. The Inbox (`Brain.dc.html`, bot questions and approvals waiting on

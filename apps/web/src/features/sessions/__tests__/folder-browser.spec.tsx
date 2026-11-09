@@ -97,6 +97,75 @@ describe('FolderBrowser', () => {
     expect(screen.getByText('sessions.new.folder.footMissing')).toBeDefined();
   });
 
+  it('narrows to names that hold what is typed, those that start with it first', () => {
+    const listing = {
+      ...HOME_LISTING,
+      entries: [
+        { name: 'my-notes', path: '/home/jordi/my-notes', branch: null },
+        { name: 'code', path: '/home/jordi/code', branch: null },
+        { name: 'notebook', path: '/home/jordi/notebook', branch: null },
+      ],
+    };
+    render(<Harness initial="~/note" listing={listing} />);
+
+    const rows = screen.getAllByRole('option').map((row) => row.textContent);
+    expect(rows).toEqual(['notebook', 'my-notes']);
+  });
+
+  it('shows the folders the host found further down, but not those already listed', () => {
+    render(
+      <Harness
+        initial="~billing"
+        search={{
+          home: '/home/jordi',
+          entries: [
+            { path: '/home/jordi/code/acme/billing', branch: 'main' },
+            { path: '/home/jordi/notes', branch: null },
+          ],
+          truncated: true,
+        }}
+      />,
+    );
+
+    expect(screen.getByText('sessions.new.folder.searchHeading')).toBeDefined();
+    expect(screen.getAllByText('~/notes')).toBeDefined();
+    expect(screen.queryByText(/emptyFiltered/)).toBeNull();
+    expect(screen.getByText('sessions.new.folder.searchTruncated')).toBeDefined();
+
+    fireEvent.click(screen.getByText('~/code/acme/billing'));
+    expect(field().value).toBe('~/code/acme/billing/');
+  });
+
+  it('says it is searching, not that nothing matched, while the host looks', () => {
+    render(<Harness initial="zz" searching />);
+
+    expect(screen.getByText('sessions.new.folder.searching')).toBeDefined();
+    expect(screen.queryByText(/emptyFiltered/)).toBeNull();
+  });
+
+  it('says why the host could not search, beside the listing it still shows', () => {
+    render(<Harness initial="~/no" searchFailure="The host did not answer in time." />);
+
+    expect(screen.getByText('notes')).toBeDefined();
+    expect(screen.getByRole('alert').textContent).toBe('The host did not answer in time.');
+  });
+
+  it('says one thing when nothing is listed and the search failed, and asks again on Retry', () => {
+    const onRetrySearch = vi.fn();
+    render(
+      <Harness
+        initial="~invoices"
+        searchFailure="The host did not answer in time."
+        onRetrySearch={onRetrySearch}
+      />,
+    );
+
+    expect(screen.queryByText(/emptyFiltered/)).toBeNull();
+    expect(screen.queryByText('sessions.new.folder.searchHeading')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'common.retry' }));
+    expect(onRetrySearch).toHaveBeenCalled();
+  });
+
   it('says nothing starts so when the narrowing leaves no row', () => {
     render(<Harness initial="~/zz" />);
 

@@ -51,7 +51,7 @@ packages/    shared (Zod schemas, types, CASL, scope + flag catalogs, the link p
              auth (Better Auth config) · env (root .env loader) · tsconfig
              http-client (the transport cli and mcp call the API through)
              translations (i18n JSON)
-             backend/  agents authz cache core ddd email i18n llm queue storage
+             backend/  agents authz cache core ddd email error-reporting i18n llm queue storage
              frontend/ core (kernel) · consumer (the console's domain) · web (platform kit)
                        api-client (generated) · design-system/web (shadcn/ui + Base UI + Tailwind v4)
              go/       core config httpx auth health ws postgres selfupdate execx
@@ -173,6 +173,9 @@ pnpm ci:local             # CI, locally: what the branch touches (--all for ever
 node scripts/stack/stack.mjs up [--web]  # The stack the e2e suites run against (e2e/README.md)
 # oppenheimer:end e2e
 pnpm generate:api-client  # Regenerate the typed API client (no database needed)
+# oppenheimer:begin docs
+pnpm generate:guide       # Bundle the docs site's user guide for the bots, after editing apps/docs/docs/guide
+# oppenheimer:end docs
 ```
 
 `package.json` lists the rest (`check:compiler`, `check:unused`,

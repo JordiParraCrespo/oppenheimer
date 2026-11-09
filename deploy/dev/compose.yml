@@ -127,6 +127,8 @@ services:
       REDIS_PORT: "6379"
       REDIS_PASSWORD: ""
       UPLOAD_DIR: /data/uploads
+      # The release's commit, so error reports name the deploy they came from.
+      SENTRY_RELEASE: ${RELEASE_SHA:-}
     volumes:
       - uploads:/data/uploads
     # Liveness only: `/health` checks no dependency, so a PostgreSQL or Redis

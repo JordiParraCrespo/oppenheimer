@@ -12,6 +12,7 @@ import { PreviewProxyGateway } from './infrastructure/preview-proxy.gateway';
 import { RelayEventsProcessor } from './infrastructure/relay-events.processor';
 import { RelayUpgradeGateway } from './infrastructure/relay-upgrade.gateway';
 import { RunnerLinkGateway } from './infrastructure/runner-link.gateway';
+import { TelegramLinkProcessor } from './infrastructure/telegram-link.processor';
 import { WhatsappLinkProcessor } from './infrastructure/whatsapp-link.processor';
 
 /**
@@ -36,6 +37,7 @@ import { WhatsappLinkProcessor } from './infrastructure/whatsapp-link.processor'
     RelayEventsProcessor,
     CredentialsProcessor,
     WhatsappLinkProcessor,
+    TelegramLinkProcessor,
     RunnerLinkGateway,
     BrowserAttachGateway,
     PreviewProxyGateway,

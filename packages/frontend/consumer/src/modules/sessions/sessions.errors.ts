@@ -106,4 +106,8 @@ export const SessionsErrors = {
     code: 'SESSIONS_CLIENT_024',
     message: 'Failed to send the reply',
   },
+  CLOUD_KEY_FAILED: {
+    code: 'SESSIONS_CLIENT_025',
+    message: "Failed to create the cloud chat's key",
+  },
 } as const satisfies Record<string, ErrorDefinition>;

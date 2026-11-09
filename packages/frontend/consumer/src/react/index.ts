@@ -93,6 +93,7 @@ export { type ChatgptLoginFlow, useChatgptLogin } from './bots.chatgpt-login';
 export {
   type AddBotFactVariables,
   type DeleteBotFactVariables,
+  type MoveBotGroupVariables,
   type RenameBotGroupVariables,
   type RevertBotDocumentVariables,
   type SaveBotDocumentVariables,
@@ -109,6 +110,7 @@ export {
   useDeleteBot,
   useDeleteBotFact,
   useDeleteBotGroup,
+  useMoveBotGroup,
   useReloadBotDocuments,
   useRenameBotGroup,
   useRevertBotDocument,
@@ -154,6 +156,7 @@ export {
 export { type HostPairingFlow, useHostPairing } from './hosts.pairing';
 export {
   useHostCodexEnvironments,
+  useHostFolderSearch,
   useHostFolders,
   useHostPresence,
   useHosts,
@@ -266,6 +269,7 @@ export {
   type StopSessionShareVariables,
   useAnswerSessionDecision,
   useCloseSession,
+  useCreateCloudChatKey,
   useCreateSession,
   useInvalidateSession,
   useMoveSession,
@@ -320,6 +324,11 @@ export {
   useUpdateMilestone,
   useUpdateTask,
 } from './tasks.queries';
+export {
+  useLinkTelegram,
+  useSuspenseTelegramSettings,
+  useUnlinkTelegram,
+} from './telegram.queries';
 export {
   useVoiceDictation,
   type VoiceDictation,

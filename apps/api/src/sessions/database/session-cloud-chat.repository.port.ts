@@ -28,8 +28,8 @@ export interface SessionCloudChatRepositoryPort {
     from: number,
     lines: readonly string[],
   ): Promise<number>;
-  /** The lines numbered `after` and on, in order, at most `limit`. */
-  findLines(sessionId: string, after: number, limit: number): Promise<CloudChatLine[]>;
+  /** The lines numbered `from` and on, in order, at most `limit`. */
+  findLines(sessionId: string, from: number, limit: number): Promise<CloudChatLine[]>;
   /** A reply for the agent, waiting until the Stop hook collects it. */
   addReply(
     organizationId: string,
@@ -39,6 +39,10 @@ export interface SessionCloudChatRepositoryPort {
   ): Promise<CloudChatReply>;
   /** The session's replies, oldest first, at most `limit`. */
   findReplies(organizationId: string, sessionId: string, limit: number): Promise<CloudChatReply[]>;
-  /** The oldest reply still waiting, now collected; none waiting is null. Two hooks never take one. */
-  collectReply(sessionId: string, at: Date): Promise<CloudChatReply | null>;
+  /**
+   * The oldest reply still waiting, now collected at the database's time (the
+   * clock its `createdAt` came from); none waiting is null. Two hooks never
+   * take one.
+   */
+  collectReply(sessionId: string): Promise<CloudChatReply | null>;
 }

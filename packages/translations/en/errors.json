@@ -238,6 +238,16 @@
     "WHATSAPP_008": "WhatsApp didn't take the message. Try again in a moment.",
     "WHATSAPP_009": "That number has sent as many bot messages as it may for now. Try again later.",
     "WHATSAPP_010": "There's no such WhatsApp chat on that number.",
+    "TELEGRAM_001": "That Telegram bot isn't connected any more.",
+    "TELEGRAM_002": "Telegram belongs to a workspace. Open one and try again.",
+    "TELEGRAM_003": "You've connected three Telegram bots, the most one person connects. Disconnect one to add another.",
+    "TELEGRAM_004": "That host is offline. Start its runner, then try again.",
+    "TELEGRAM_005": "That host's runner can't hold Telegram bots yet. Update the runner, then try again.",
+    "TELEGRAM_006": "That host already holds someone else's Telegram bot.",
+    "TELEGRAM_007": "That Telegram bot isn't connected. Connect it again in Settings → Telegram.",
+    "TELEGRAM_008": "Telegram didn't take the message. Try again in a moment.",
+    "TELEGRAM_009": "That Telegram bot has sent as many bot messages as it may for now. Try again later.",
+    "TELEGRAM_010": "There's no such Telegram chat on that bot.",
     "CLOUD_AGENTS_003": "This server can't keep a cloud agent key. Ask whoever runs it to set CLOUD_AGENTS_KEY.",
     "CLOUD_AGENTS_004": "Connect the provider with your API key first.",
     "CLOUD_AGENTS_005": "The provider refused that API key. Check it's a user API key and hasn't been revoked.",
@@ -338,6 +348,6 @@
         "link": "Open Codex Cloud settings"
       }
     },
-    "details": "Details from the host: {{detail}}"
+    "details": "Details from the host"
   }
 }

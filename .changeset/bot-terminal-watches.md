@@ -5,7 +5,6 @@
 '@oppenheimer/frontend-consumer': minor
 '@oppenheimer/web': minor
 '@oppenheimer/translations': minor
-'@oppenheimer/docs': patch
 ---
 
 A bot can watch what a session's terminal prints. `watch_session` takes a

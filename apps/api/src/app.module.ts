@@ -15,6 +15,7 @@ import {
   RequestContextMiddleware,
 } from '@oppenheimer/backend-core';
 import { EmailModule } from '@oppenheimer/backend-email';
+import { ErrorReportingModule } from '@oppenheimer/backend-error-reporting';
 import { I18nModule } from '@oppenheimer/backend-i18n';
 import { LlmModule } from '@oppenheimer/backend-llm';
 import { StorageModule } from '@oppenheimer/backend-storage';
@@ -85,6 +86,7 @@ import { RelayModule } from './relay/relay.module';
 import { RolesModule } from './roles/roles.module';
 import { SessionsModule } from './sessions/sessions.module';
 import { TasksModule } from './tasks/tasks.module';
+import { TelegramModule } from './telegram/telegram.module';
 import { CredentialThrottlerGuard } from './throttling/guards/credential-throttler.guard';
 import { RedisThrottlerStorage } from './throttling/infrastructure/redis-throttler.adapter';
 import { ThrottlingModule } from './throttling/throttling.module';
@@ -120,6 +122,8 @@ import { WorkspaceEventsModule } from './workspace-events/workspace-events.modul
         voiceConfig,
       ],
     }),
+    // Sentry when `config/instrument.ts` started it, a no-op otherwise.
+    ErrorReportingModule.forRoot(),
     LoggingModule.forRootAsync({
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => ({
@@ -271,6 +275,7 @@ import { WorkspaceEventsModule } from './workspace-events/workspace-events.modul
     CalendarModule,
     MailModule,
     WhatsappModule,
+    TelegramModule,
     CloudAgentsModule,
     PullRequestsModule,
     BotsModule,

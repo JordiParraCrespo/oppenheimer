@@ -17,6 +17,11 @@
     "renameGroup": "Renombrar grupo",
     "deleteGroup": "Eliminar grupo",
     "groupFailed": "No se ha podido guardar el grupo.",
+    "pinned": "Fijados",
+    "pin": "Fijar",
+    "unpin": "Desfijar",
+    "dropToPin": "Suelta un bot aquí para fijarlo.",
+    "allPinned": "Sus bots están en Fijados.",
     "rowActions": "Opciones del bot",
     "settings": "Configuración",
     "move": "Mover a un grupo",
@@ -24,7 +29,16 @@
     "moveNone": "Aún no hay otro grupo",
     "moveFailed": "No se ha podido mover el bot.",
     "delete": "Eliminar bot",
-    "loadFailed": "No se han podido cargar tus bots."
+    "loadFailed": "No se han podido cargar tus bots.",
+    "hide": "Ocultar de la barra lateral",
+    "filters": "Filtrar bots",
+    "shown": "Mostrar bots",
+    "shownAll": "Todos",
+    "shownSome": "{{shown}} de {{total}}",
+    "showAll": "Mostrar todos los bots",
+    "allHidden_one": "Su bot está oculto. Muéstralo desde el menú de filtros.",
+    "allHidden_other": "Sus {{count}} bots están ocultos. Muéstralos desde el menú de filtros.",
+    "allHidden_many": "Sus {{count}} de bots están ocultos. Muéstralos desde el menú de filtros."
   },
   "landing": {
     "titleEmpty": "Crea tu primer bot.",
@@ -58,7 +72,9 @@
       "refused": "{{provider}} ha rechazado esta petición. Volver a enviarla no servirá: cambia el mensaje o el modelo.",
       "unavailable": "No se ha podido contactar con {{provider}}. Suele ser algo pasajero: vuelve a intentarlo en un momento.",
       "time_limit": "Este turno se ha quedado sin tiempo. Volver a enviarlo no servirá: pide un paso más pequeño o divide la petición.",
-      "interrupted": "Este turno se interrumpió antes de terminar. Al volver a enviarlo, se ejecuta."
+      "step_limit": "Este turno ha usado todos sus pasos y se ha detenido antes de terminar. Volver a enviarlo no servirá: pide un paso más pequeño o di que continúe.",
+      "interrupted": "Este turno se interrumpió antes de terminar. Al volver a enviarlo, se ejecuta.",
+      "storage": "No pudimos guardar este turno, así que se detuvo: el fallo es nuestro, no de {{provider}}. Vuelve a intentarlo en un momento."
     },
     "openProviders": "Abrir Proveedores de modelos",
     "errorDetails": "Mostrar detalles",
@@ -401,6 +417,32 @@
         "coral": "Coral",
         "moss": "Musgo"
       },
+      "face": "Cara",
+      "faceHat": "Sombrero",
+      "faceEyes": "Ojos",
+      "faceMouth": "Boca",
+      "faceReset": "Usar su propia cara",
+      "faces": {
+        "hat": {
+          "fedora": "Fedora",
+          "porkpie": "Porkpie",
+          "bowler": "Bombín",
+          "tophat": "Chistera",
+          "cap": "Gorra",
+          "beanie": "Gorro"
+        },
+        "eyes": {
+          "dots": "Puntos",
+          "happy": "Contentos",
+          "wink": "Guiño",
+          "big": "Grandes"
+        },
+        "mouth": {
+          "smile": "Sonrisa",
+          "grin": "Risa",
+          "o": "Sorpresa"
+        }
+      },
       "group": "Grupo de la barra lateral",
       "groupHint": "Dónde aparece en la barra lateral de Empleados",
       "newGroup": "Nuevo grupo en la barra lateral",
@@ -609,6 +651,35 @@
       "loadFailed": "No se pudieron cargar los permisos del bot.",
       "saveFailed": "No se pudo cambiar el permiso.",
       "tools": "Herramientas",
+      "search": "Buscar herramientas",
+      "noMatch": "Ninguna herramienta coincide.",
+      "filters": {
+        "decision": "Decisión",
+        "group": "Grupo",
+        "allGroups": "Todos los grupos",
+        "clear": "Borrar"
+      },
+      "views": {
+        "all": "Todas",
+        "allow": "Permitir",
+        "ask": "Preguntar",
+        "off": "Desactivadas",
+        "changed": "Cambiadas por ti"
+      },
+      "summary": {
+        "tools_one": "{{count}} herramienta",
+        "tools_other": "{{count}} herramientas",
+        "tools_many": "{{count}} herramientas",
+        "ask_one": "{{count}} pregunta",
+        "ask_other": "{{count}} preguntan",
+        "ask_many": "{{count}} preguntan",
+        "off_one": "{{count}} desactivada",
+        "off_other": "{{count}} desactivadas",
+        "off_many": "{{count}} desactivadas",
+        "changed_one": "{{count}} cambiada por ti",
+        "changed_other": "{{count}} cambiadas por ti",
+        "changed_many": "{{count}} cambiadas por ti"
+      },
       "preset": {
         "auto": "Las herramientas que dejas en su valor por defecto siguen Aprobar por mí: todo lo que sale de Oppenheimer pregunta antes.",
         "full": "Las herramientas que dejas en su valor por defecto siguen Acceso total: se ejecutan sin preguntar."
@@ -627,6 +698,7 @@
         "plan": "Plan",
         "mail": "Correo",
         "whatsapp": "WhatsApp",
+        "telegram": "Telegram",
         "github": "GitHub",
         "automations": "Rutinas y automatizaciones",
         "bots": "Otros bots",

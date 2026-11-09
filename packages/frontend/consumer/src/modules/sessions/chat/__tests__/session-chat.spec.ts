@@ -368,6 +368,7 @@ describe('SessionChat', () => {
       files: [],
       older: 'none',
       activity: null,
+      interruptible: true,
     });
     expect(before.turns).toHaveLength(2);
     expect(listener).toHaveBeenCalledTimes(3);
@@ -1240,5 +1241,17 @@ describe('a conversation sent tail first', () => {
     expect(chat.snapshot().older).toBe('none');
     expect(chat.loadOlder()).toBe(false);
     expect(asked).toEqual([]);
+  });
+});
+
+describe('SessionChat.connect', () => {
+  it('keeps what the connection lent now says when an earlier one is given back', () => {
+    const chat = new SessionChat();
+    const releaseFirst = chat.connect(() => {}, undefined, { interruptible: false });
+    chat.connect(() => {}, undefined, { interruptible: false });
+    // Breaks if giving back a connection the chat no longer holds resets
+    // whether the current source can stop a turn.
+    releaseFirst();
+    expect(chat.snapshot().interruptible).toBe(false);
   });
 });

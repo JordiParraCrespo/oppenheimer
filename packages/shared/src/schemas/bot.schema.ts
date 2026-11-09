@@ -19,7 +19,7 @@ import { isValidTimeZone } from '../automations/schedule.js';
 
 /**
  * The eight colours an avatar is drawn on (the design's `AV_COLORS`), by key:
- * an avatar is the bot's initials on one of them, never a photograph.
+ * an avatar is the bot's drawn face on one of them, never a photograph.
  */
 export const BOT_AVATAR_COLORS = [
   'mint',
@@ -32,6 +32,20 @@ export const BOT_AVATAR_COLORS = [
   'moss',
 ] as const;
 export type BotAvatarColor = (typeof BOT_AVATAR_COLORS)[number];
+
+/**
+ * A bot's drawn face, part by part: the hat it wears, its eyes and its mouth
+ * (the design system's `BotFace` draws each). A bot with no face of its own
+ * picked takes the one its id draws.
+ */
+export const BOT_FACE_HATS = ['fedora', 'porkpie', 'bowler', 'tophat', 'cap', 'beanie'] as const;
+export const BOT_FACE_EYES = ['dots', 'happy', 'wink', 'big'] as const;
+export const BOT_FACE_MOUTHS = ['smile', 'grin', 'o'] as const;
+export interface BotFace {
+  hat: (typeof BOT_FACE_HATS)[number];
+  eyes: (typeof BOT_FACE_EYES)[number];
+  mouth: (typeof BOT_FACE_MOUTHS)[number];
+}
 
 /** What a bot is (`SOUL.md`) and what its job is (`INSTRUCTIONS.md`). */
 export const BOT_DOCUMENT_NAMES = ['soul', 'instructions'] as const;
@@ -345,6 +359,11 @@ export const CHATGPT_LOGIN_STATUSES = ['pending', 'connected'] as const;
 export type ChatgptLoginStatus = (typeof CHATGPT_LOGIN_STATUSES)[number];
 
 export const botAvatarColorSchema = z.enum(BOT_AVATAR_COLORS);
+export const botFaceSchema = z.object({
+  hat: z.enum(BOT_FACE_HATS),
+  eyes: z.enum(BOT_FACE_EYES),
+  mouth: z.enum(BOT_FACE_MOUTHS),
+});
 export const botDocumentNameSchema = z.enum(BOT_DOCUMENT_NAMES);
 export const botPermissionSchema = z.enum(BOT_PERMISSIONS);
 export const botSectionSchema = z.enum(BOT_SECTIONS);
@@ -392,6 +411,8 @@ export const updateBotSchema = z.object({
   name: botNameSchema.optional(),
   description: botDescriptionSchema.optional(),
   avatarColor: botAvatarColorSchema.optional(),
+  /** The face it wears; `null` goes back to the one its id draws. */
+  avatarFace: botFaceSchema.nullable().optional(),
   groupId: z.string().uuid().nullable().optional(),
   position: positionSchema.optional(),
   homeHostId: z.string().uuid().nullable().optional(),
@@ -489,7 +510,10 @@ export type BotTurnStatus = (typeof BOT_TURN_STATUSES)[number];
  *   the same request fails the same way.
  * - `unavailable`: the provider was down, overloaded or unreachable; it passes.
  * - `time_limit`: the turn ran past its time; a smaller step fits.
+ * - `step_limit`: the turn used all its model round trips; a smaller step fits.
  * - `interrupted`: the worker running it stopped; sending it again runs it.
+ * - `storage`: we could not save what the turn did (a write Postgres
+ *   refused); ours, not the provider's, and sending it again may pass.
  * - `other`: none of these, or not known.
  */
 export const BOT_TURN_FAILURES = [
@@ -499,7 +523,9 @@ export const BOT_TURN_FAILURES = [
   'refused',
   'unavailable',
   'time_limit',
+  'step_limit',
   'interrupted',
+  'storage',
   'other',
 ] as const;
 export type BotTurnFailure = (typeof BOT_TURN_FAILURES)[number];
@@ -512,7 +538,9 @@ export const BOT_TURN_FAILURE_RETRIES: Readonly<Record<BotTurnFailure, boolean>>
   refused: false,
   unavailable: true,
   time_limit: false,
+  step_limit: false,
   interrupted: true,
+  storage: true,
   other: true,
 };
 
@@ -1248,6 +1276,7 @@ export const BOT_TOOL_GROUPS = [
   'plan',
   'mail',
   'whatsapp',
+  'telegram',
   'github',
   'automations',
   'bots',
