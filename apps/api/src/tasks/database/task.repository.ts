@@ -109,6 +109,7 @@ export class TaskRepository
         notes: task.notes,
         dueDate: task.dueDate,
         dueTime: task.dueTime,
+        focusDate: task.focusDate,
         projectId: task.projectId,
         milestoneId: task.milestoneId,
         blockedReason: task.blockedReason,
