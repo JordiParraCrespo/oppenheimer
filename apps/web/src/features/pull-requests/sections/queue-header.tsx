@@ -10,29 +10,36 @@ import {
 } from '@oppenheimer/design-system-web';
 import { ArrowRight } from '@oppenheimer/design-system-web/icons';
 import { usePullRequestQueue } from '@oppenheimer/frontend-consumer/react';
+import { useNavigate } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
-import { useOpenPullRequest } from '../hooks/use-open-pull-request';
 import { useQueueSearch } from '../hooks/use-queue-search';
 import { useReviewNextShortcut } from '../hooks/use-review-next-shortcut';
 import { filterQueue } from '../lib/queue-filter';
+import { deckKey } from '../lib/review-deck';
 import { formatWait } from '../lib/view';
 
 /**
  * The queue's display header: what can merge, what conflicts and the oldest
  * wait in the scope on screen, and its one action, Review next (`N`), which
- * opens the first pull request the filters leave: the deepest lane, the
- * longest wait. Until the queue answers, each figure is a placeholder rather
+ * opens the review deck on the first pull request the filters leave: the
+ * deepest lane, the longest wait. Until the queue answers, each figure is a placeholder rather
  * than a zero.
  */
 export function QueueHeader() {
   const { t } = useTranslation();
-  const openPull = useOpenPullRequest();
+  const navigate = useNavigate();
   const { scope, filters } = useQueueSearch();
   const { data: queue } = usePullRequestQueue(scope);
   const rows = filterQueue(queue?.items ?? [], { repo: filters.repo });
   const next = filterQueue(rows, filters)[0];
   const oldest = rows.reduce((max, row) => Math.max(max, row.waitingSeconds), 0);
-  const reviewNext = next ? () => openPull(next.address, 'description') : undefined;
+  const reviewNext = next
+    ? () =>
+        navigate({
+          to: '/pulls/review',
+          search: { ...filters, scope: scope === 'all' ? undefined : scope, at: deckKey(next) },
+        })
+    : undefined;
   useReviewNextShortcut(reviewNext);
 
   return (

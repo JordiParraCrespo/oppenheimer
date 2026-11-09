@@ -3,6 +3,7 @@
     "title": "Pull requests",
     "views": "Vistas",
     "queue": "Cola de PR",
+    "review": "Revisar",
     "analytics": "Analítica",
     "forReview": "Para revisar",
     "searchReviews": "Buscar sesiones de revisión",
@@ -114,6 +115,7 @@
   },
   "detail": {
     "back": "Volver a la cola",
+    "backToDeck": "Volver a la revisión",
     "viewLabel": "Vista",
     "views": {
       "description": "Descripción",
@@ -301,5 +303,34 @@
     "stopped": "Esta sesión de revisión se ha detenido. Al reiniciarla Claude Code vuelve con la conversación donde la dejó.",
     "restart": "Reiniciar revisión",
     "restarting": "Reiniciando…"
+  },
+  "deck": {
+    "title": "Revisar",
+    "hint": "Un pull request cada vez. Actúa o pásalo, y aparece el siguiente.",
+    "position": "{{at}} de {{total}}",
+    "progress": "Cuánto llevas del mazo",
+    "lookFirst": "Mira primero:",
+    "source": {
+      "model": "Resumen escrito por el modelo a partir de la descripción y el diff.",
+      "description": "De la descripción del autor."
+    },
+    "briefFailed": "No se pudo cargar el resumen.",
+    "waiting": "esperando",
+    "pass": "Pasar",
+    "open": "Abrir cambios",
+    "comment": "Comentar",
+    "requestChanges": "Pedir cambios",
+    "commentPlaceholder": "Deja un comentario en tu pull request",
+    "requestChangesPlaceholder": "Di qué tiene que cambiar",
+    "approve": "Aprobar",
+    "approveAndMerge": "Aprobar y fusionar",
+    "confirmMerge": "Pulsa otra vez para fusionar",
+    "held": "Aún no se puede fusionar: {{reason}}.",
+    "doneTitle": "Ese era el último",
+    "doneHint_one": "Has pasado por el {{count}} pull request de esta vista.",
+    "doneHint_other": "Has pasado por los {{count}} pull requests de esta vista.",
+    "doneHint_many": "Has pasado por los {{count}} pull requests de esta vista.",
+    "again": "Repasarlos otra vez",
+    "toQueue": "Volver a la cola"
   }
 }

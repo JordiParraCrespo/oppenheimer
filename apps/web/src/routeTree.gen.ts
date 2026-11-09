@@ -47,6 +47,7 @@ import { Route as AuthenticatedPlanProjectsRouteImport } from './routes/_authent
 import { Route as AuthenticatedPlanTodoRouteImport } from './routes/_authenticated/plan/todo'
 import { Route as AuthenticatedPullsIndexRouteImport } from './routes/_authenticated/pulls/index'
 import { Route as AuthenticatedPullsAnalyticsRouteImport } from './routes/_authenticated/pulls/analytics'
+import { Route as AuthenticatedPullsReviewRouteImport } from './routes/_authenticated/pulls/review'
 import { Route as AuthenticatedSessionsIndexRouteImport } from './routes/_authenticated/sessions/index'
 import { Route as AuthenticatedSessionsSessionIdRouteImport } from './routes/_authenticated/sessions/$sessionId'
 import { Route as AuthenticatedSessionsNewRouteImport } from './routes/_authenticated/sessions/new'
@@ -276,6 +277,12 @@ const AuthenticatedPullsAnalyticsRoute =
   AuthenticatedPullsAnalyticsRouteImport.update({
     id: '/analytics',
     path: '/analytics',
+    getParentRoute: () => AuthenticatedPullsRoute,
+  } as any)
+const AuthenticatedPullsReviewRoute =
+  AuthenticatedPullsReviewRouteImport.update({
+    id: '/review',
+    path: '/review',
     getParentRoute: () => AuthenticatedPullsRoute,
   } as any)
 const AuthenticatedSessionsIndexRoute =
@@ -514,6 +521,7 @@ export interface FileRoutesByFullPath {
   '/plan/projects': typeof AuthenticatedPlanProjectsRoute
   '/plan/todo': typeof AuthenticatedPlanTodoRoute
   '/pulls/analytics': typeof AuthenticatedPullsAnalyticsRoute
+  '/pulls/review': typeof AuthenticatedPullsReviewRoute
   '/sessions/$sessionId': typeof AuthenticatedSessionsSessionIdRoute
   '/sessions/new': typeof AuthenticatedSessionsNewRoute
   '/settings/about': typeof AuthenticatedSettingsAboutRoute
@@ -580,6 +588,7 @@ export interface FileRoutesByTo {
   '/plan/projects': typeof AuthenticatedPlanProjectsRoute
   '/plan/todo': typeof AuthenticatedPlanTodoRoute
   '/pulls/analytics': typeof AuthenticatedPullsAnalyticsRoute
+  '/pulls/review': typeof AuthenticatedPullsReviewRoute
   '/sessions/$sessionId': typeof AuthenticatedSessionsSessionIdRoute
   '/sessions/new': typeof AuthenticatedSessionsNewRoute
   '/settings/about': typeof AuthenticatedSettingsAboutRoute
@@ -654,6 +663,7 @@ export interface FileRoutesById {
   '/_authenticated/plan/projects': typeof AuthenticatedPlanProjectsRoute
   '/_authenticated/plan/todo': typeof AuthenticatedPlanTodoRoute
   '/_authenticated/pulls/analytics': typeof AuthenticatedPullsAnalyticsRoute
+  '/_authenticated/pulls/review': typeof AuthenticatedPullsReviewRoute
   '/_authenticated/sessions/$sessionId': typeof AuthenticatedSessionsSessionIdRoute
   '/_authenticated/sessions/new': typeof AuthenticatedSessionsNewRoute
   '/_authenticated/settings/about': typeof AuthenticatedSettingsAboutRoute
@@ -727,6 +737,7 @@ export interface FileRouteTypes {
     | '/plan/projects'
     | '/plan/todo'
     | '/pulls/analytics'
+    | '/pulls/review'
     | '/sessions/$sessionId'
     | '/sessions/new'
     | '/settings/about'
@@ -793,6 +804,7 @@ export interface FileRouteTypes {
     | '/plan/projects'
     | '/plan/todo'
     | '/pulls/analytics'
+    | '/pulls/review'
     | '/sessions/$sessionId'
     | '/sessions/new'
     | '/settings/about'
@@ -866,6 +878,7 @@ export interface FileRouteTypes {
     | '/_authenticated/plan/projects'
     | '/_authenticated/plan/todo'
     | '/_authenticated/pulls/analytics'
+    | '/_authenticated/pulls/review'
     | '/_authenticated/sessions/$sessionId'
     | '/_authenticated/sessions/new'
     | '/_authenticated/settings/about'
@@ -1184,6 +1197,13 @@ declare module '@tanstack/react-router' {
       path: '/analytics'
       fullPath: '/pulls/analytics'
       preLoaderRoute: typeof AuthenticatedPullsAnalyticsRouteImport
+      parentRoute: typeof AuthenticatedPullsRoute
+    }
+    '/_authenticated/pulls/review': {
+      id: '/_authenticated/pulls/review'
+      path: '/review'
+      fullPath: '/pulls/review'
+      preLoaderRoute: typeof AuthenticatedPullsReviewRouteImport
       parentRoute: typeof AuthenticatedPullsRoute
     }
     '/_authenticated/sessions/': {
@@ -1524,11 +1544,13 @@ const AuthenticatedPlanRouteWithChildren =
 
 interface AuthenticatedPullsRouteChildren {
   AuthenticatedPullsAnalyticsRoute: typeof AuthenticatedPullsAnalyticsRoute
+  AuthenticatedPullsReviewRoute: typeof AuthenticatedPullsReviewRoute
   AuthenticatedPullsIndexRoute: typeof AuthenticatedPullsIndexRoute
 }
 
 const AuthenticatedPullsRouteChildren: AuthenticatedPullsRouteChildren = {
   AuthenticatedPullsAnalyticsRoute: AuthenticatedPullsAnalyticsRoute,
+  AuthenticatedPullsReviewRoute: AuthenticatedPullsReviewRoute,
   AuthenticatedPullsIndexRoute: AuthenticatedPullsIndexRoute,
 }
 

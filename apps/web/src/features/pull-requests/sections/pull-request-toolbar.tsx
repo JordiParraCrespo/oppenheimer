@@ -18,7 +18,8 @@ import { PULL_REQUEST_VIEWS, type PullRequestView } from '../lib/pull-request-se
 
 /**
  * The bar over a pull request, its one header and the page's bar (the
- * route's `bar: 'own'`): the sidebar toggle, back to the queue and its three views, GitHub,
+ * route's `bar: 'own'`): the sidebar toggle, back to the queue (or to the review deck's card it
+ * was opened from) and its three views, GitHub,
  * and Submit review. The views stay the same on every view; Changes adds
  * the diff's layout beside them. Submit review is the screen's, which holds the
  * pending comments it posts; the bar only places it while the pull is open.
@@ -44,14 +45,21 @@ export function PullRequestToolbar({
   const { t } = useTranslation();
   const { data: pull, isPending } = usePullRequest(address);
   const queue = useLocation({ select: (location) => location.state.pullsQueue });
+  const deck = useLocation({ select: (location) => location.state.pullsDeck });
 
   return (
     <div className="flex h-14 shrink-0 items-center gap-2 border-b border-border-subtle bg-card px-3">
       <SidebarToggle />
       <IconButton
         size="sm"
-        aria-label={t('pullRequests.detail.back')}
-        render={<Link to="/pulls" search={queue ?? {}} />}
+        aria-label={t(deck ? 'pullRequests.detail.backToDeck' : 'pullRequests.detail.back')}
+        render={
+          deck ? (
+            <Link to="/pulls/review" search={deck} />
+          ) : (
+            <Link to="/pulls" search={queue ?? {}} />
+          )
+        }
       >
         <ChevronLeft />
       </IconButton>

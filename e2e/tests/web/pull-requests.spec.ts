@@ -10,7 +10,8 @@ import { provisionedUser, signInAs } from '../../support/web';
  * facets, a pull request opening on its description and its changes and Back
  * to the description, a review that only approves and one that approves and
  * merges in the user's name, a merge from the queue, watched repositories set
- * in Settings, and analytics.
+ * in Settings, analytics, and the review deck walking the queue a card at a
+ * time.
  *
  * Only GitHub is faked (`support/github-stub.ts`, `github-stub-pulls.ts`). The
  * stub's viewer is `ana-dev`, whose branches and sessions' `oppenheimer/…`
@@ -185,6 +186,86 @@ test.describe('Pull requests', () => {
     await expect(held).toHaveCount(0);
     await analytics.click();
     await expect(merged).toHaveText('0', { timeout: 30_000 });
+  });
+
+  /**
+   * The review deck: the queue one pull request at a time. A card leads with
+   * its brief, written by the model from the pull request it was actually
+   * sent, and each action moves on to the next card without a list between.
+   */
+  test('the review deck walks the queue a card at a time: brief, pass, request changes, merge', async ({
+    page,
+  }) => {
+    test.slow();
+    const owner = await provisionedUser('pulls-deck');
+    await connectInstallation(owner.api);
+    await signInAs(page, owner.user);
+    await page.goto('/settings/repositories');
+    await watch(page, ['acme-labs/xrp-mobile', 'acme-labs/xrp-web']);
+
+    // ── Review next opens the deck on the queue's first pull request ─────────
+    await page.goto('/pulls?scope=mine');
+    await expect(rowButton(page, 'Store wallet tokens in the Keychain')).toBeVisible({
+      timeout: 30_000,
+    });
+    await page.getByRole('button', { name: /Review next/ }).click();
+    await expect(page).toHaveURL(/\/pulls\/review\?.*scope=mine/);
+    const card = page.getByRole('article');
+    await expect(
+      card.getByRole('heading', { name: 'Store wallet tokens in the Keychain' }),
+    ).toBeVisible();
+    await expect(page.getByText('1 of 3')).toBeVisible();
+    // The brief is this pull request's: its title and its files reached the model.
+    await expect(card.getByText('In short: Store wallet tokens in the Keychain.')).toBeVisible({
+      timeout: 30_000,
+    });
+    await expect(card.getByText('Changes src/auth/keychain.ts')).toBeVisible();
+    await expect(card.getByText('Brief written by the model')).toBeVisible();
+    // What holds it is said, and the merge is not offered.
+    await expect(
+      page.getByText('Cannot merge yet: Waiting for a required approval.'),
+    ).toBeVisible();
+    await expect(page.getByRole('button', { name: /^Merge/ })).toBeDisabled();
+
+    // ── Opening its changes and coming Back lands on the same card ───────────
+    await page.keyboard.press('Enter');
+    await expect(page).toHaveURL(/view=changes/);
+    await page.getByRole('button', { name: 'Back to the review' }).click();
+    await expect(
+      card.getByRole('heading', { name: 'Store wallet tokens in the Keychain' }),
+    ).toBeVisible();
+
+    // ── Pass moves on; a merge takes two presses ─────────────────────────────
+    await page.keyboard.press('ArrowLeft');
+    await expect(card.getByRole('heading', { name: 'Dark mode for the dashboard' })).toBeVisible();
+    await page.getByRole('button', { name: /^Pass/ }).click();
+    await expect(
+      card.getByRole('heading', { name: 'Write down the release checklist' }),
+    ).toBeVisible();
+    await expect(page.getByText('3 of 3')).toBeVisible();
+    await page.keyboard.press('ArrowRight');
+    await expect(page.getByText(/Merged .*#16/)).toHaveCount(0);
+    await page.getByRole('button', { name: /Press again to merge/ }).click();
+    await expect(page.getByText(/Merged .*#16/)).toBeVisible({ timeout: 30_000 });
+    // It was the last card.
+    await expect(page.getByText('That was the last one')).toBeVisible({ timeout: 30_000 });
+
+    // ── Somebody else's: request changes, then the next card ─────────────────
+    await page.goto('/pulls/review?scope=requested');
+    await expect(card.getByRole('heading', { name: 'Rework the settings layout' })).toBeVisible({
+      timeout: 30_000,
+    });
+    await page.keyboard.press('c');
+    const words = page.getByRole('textbox', { name: 'Request changes' });
+    await words.fill('The empty state needs a retry button.');
+    await words.press('Control+Enter');
+    await expect(page.getByText('Review submitted.')).toBeVisible({ timeout: 30_000 });
+    await expect(
+      card.getByRole('heading', { name: 'Fix the empty state on the wallet screen' }),
+    ).toBeVisible();
+    // Approve is one press.
+    await page.getByRole('button', { name: /^Approve(?! and)/ }).click();
+    await expect(page.getByText('Approved.', { exact: true })).toBeVisible({ timeout: 30_000 });
   });
 
   /**
