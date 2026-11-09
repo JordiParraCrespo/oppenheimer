@@ -3170,7 +3170,9 @@
         "none": "Todas las tareas abiertas ya están en este día.",
         "submit": "Añadir al {{date}}",
         "failed": "No se pudieron añadir algunas de esas tareas.",
-        "loadFailed": "No se pudieron cargar tus tareas."
+        "loadFailed": "No se pudieron cargar tus tareas.",
+        "allStatuses": "Todos los estados",
+        "searchStatuses": "Buscar estados"
       },
       "reorder": "Reordenar {{title}}"
     }

@@ -211,7 +211,9 @@
       "none": "Every open task is already on this day.",
       "submit": "Add to {{date}}",
       "failed": "Couldn’t add some of those tasks.",
-      "loadFailed": "Couldn’t load your tasks."
+      "loadFailed": "Couldn’t load your tasks.",
+      "allStatuses": "All statuses",
+      "searchStatuses": "Search statuses"
     },
     "reorder": "Reorder {{title}}"
   }
