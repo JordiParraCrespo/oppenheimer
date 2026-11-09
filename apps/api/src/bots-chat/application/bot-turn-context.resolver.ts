@@ -9,6 +9,7 @@ import { AppError } from '@oppenheimer/backend-core';
 import {
   BOT_MEMORY_LOG_IN_PROMPT_CHARS,
   BOT_MEMORY_PROFILE_IN_PROMPT_CHARS,
+  botEffortSent,
 } from '@oppenheimer/shared';
 import {
   BOT_DOCUMENT_REPOSITORY,
@@ -125,11 +126,12 @@ export class BotTurnContextResolver {
         this.settings.forBot(turn.organizationId, bot.id),
         this.aboutOf(turn.organizationId, bot.createdByUserId),
       ]);
+    const effort = botEffortSent(turn.provider, turn.model, turn.effort);
     const model = {
       provider: turn.provider,
       ...credential,
       model: turn.model,
-      effort: ENGINE_EFFORTS.includes(turn.effort ?? '') ? (turn.effort as BotEffort) : null,
+      effort: ENGINE_EFFORTS.includes(effort ?? '') ? (effort as BotEffort) : null,
     };
     // An owner who can no longer act leaves the bot nothing to act through.
     let tools: BotTurnContext['tools'] = [];

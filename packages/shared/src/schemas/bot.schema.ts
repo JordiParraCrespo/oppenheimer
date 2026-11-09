@@ -241,6 +241,25 @@ const GROK_EFFORT = levels(GROK_LEVELS, 'high');
 const GROK_4_5_EFFORT = levels(GROK_4_5_LEVELS, 'high');
 
 /**
+ * Where a bot runs a model at another level than Claude runs it unasked, which
+ * is what a session leaves it at: Fable 5.2 answers a bot's chat at `medium`,
+ * where a session runs it at `high`. A bot with no effort of its own sends
+ * this level (`botEffortSent`), so its slider and its turns agree.
+ */
+const BOT_EFFORT_DEFAULTS: Readonly<Record<string, SessionEffort>> = Object.freeze({
+  'claude-fable-5-2': 'medium',
+});
+
+/** Claude Code's rows, with a bot's own default effort where it has one. */
+const ANTHROPIC_BOT_MODELS: readonly BotModel[] = Object.freeze(
+  CODING_AGENTS['claude-code'].models.map((row) => {
+    const level = BOT_EFFORT_DEFAULTS[row.id];
+    if (!level || !row.effort) return row;
+    return Object.freeze({ ...row, effort: Object.freeze({ ...row.effort, default: level }) });
+  }),
+);
+
+/**
  * The models each provider offers a bot. Anthropic's and OpenAI's are the rows
  * the coding agents already list (Claude Code's, Codex's), so a model offered to
  * a session and to a bot is one row; GLM's are z.ai's, reached through its
@@ -253,7 +272,7 @@ export const BOT_PROVIDER_CATALOG: Readonly<Record<BotProvider, BotProviderDefin
       images: true,
       auth: 'api_key',
       label: 'Anthropic',
-      models: CODING_AGENTS['claude-code'].models,
+      models: ANTHROPIC_BOT_MODELS,
     }),
     glm: Object.freeze({
       id: 'glm',
@@ -331,6 +350,22 @@ export function botEffortLevelFor(
   if (!SESSION_EFFORTS.includes(requested as SessionEffort)) return null;
   const level = requested as SessionEffort;
   return botModelOf(provider, model)?.effort?.levels.includes(level) ? level : null;
+}
+
+/**
+ * The effort a bot's turn sends: its own level, else the level a bot runs its
+ * model at when that differs from the provider's (`BOT_EFFORT_DEFAULTS`), else
+ * none, and the provider runs the model at its own default.
+ */
+export function botEffortSent(
+  provider: BotProvider,
+  model: string | null,
+  effort: SessionEffort | null,
+): SessionEffort | null {
+  if (effort !== null) return effort;
+  if (provider !== 'anthropic') return null;
+  const row = botModelOf(provider, model);
+  return row ? (BOT_EFFORT_DEFAULTS[row.id] ?? null) : null;
 }
 
 /** A provider key's length bounds: wide enough for every provider's format. */
