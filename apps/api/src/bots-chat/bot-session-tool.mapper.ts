@@ -248,30 +248,49 @@ export function closeSummary(
 
 /** What a stop or a close asked, and whether it is already done or waits on the host. */
 export interface SessionActionOutcome {
-  verb: 'stop' | 'close';
+  verb: SessionActionVerb;
   sessionId: string;
   hints: readonly string[];
-  /** A cloud session closes here, with no host to wait for. */
+  /** Done here, with no host to wait for (a cloud session's close). */
   doneHere: boolean;
 }
 
+export type SessionActionVerb = 'stop' | 'close';
+
 /**
- * `stop_session`'s and `close_session`'s answer: done, or sent and waiting on
- * the host to confirm. An offline host is told apart by what it is owed: a
- * close is kept and sent again when the host comes back, a stop is not, so
- * the bot is told to try again rather than promised a stop that never comes.
+ * Each verb's answers, one per outcome. An offline host is told apart by
+ * what it is owed: a close is kept and sent again when the host comes back,
+ * a stop is not, so the bot is told to try again rather than promised a stop
+ * that never comes.
  */
+const SESSION_ACTION_ANSWERS: Readonly<
+  Record<SessionActionVerb, Record<'done' | 'sent' | 'offline', (id: string) => string>>
+> = {
+  stop: {
+    done: (id) => `Session ${id} is stopped.`,
+    sent: (id) =>
+      `Asked session ${id} to stop. It stops once its host hears it; get_session shows when it has.`,
+    offline: (id) =>
+      `Session ${id}'s host is offline, so the stop did not reach it and is not sent again: once the host is back, check with get_session and stop it again if its agent still runs.`,
+  },
+  close: {
+    done: (id) => `Session ${id} is closed.`,
+    sent: (id) =>
+      `Asked session ${id} to close. It closes once its host hears it; get_session shows when it has, or why the host refused.`,
+    offline: (id) =>
+      `Asked session ${id} to close. Its host is offline: the close is sent when it comes back. It closes once its host hears it; get_session shows when it has, or why the host refused.`,
+  },
+};
+
+/** `stop_session`'s and `close_session`'s answer: done, sent, or owed to an offline host. */
 export function sessionActionAnswer(outcome: SessionActionOutcome): string {
-  const { verb, sessionId } = outcome;
-  if (outcome.doneHere) return `Session ${sessionId} is ${verb === 'stop' ? 'stopped' : 'closed'}.`;
-  const offline = outcome.hints.includes('host_offline');
-  if (verb === 'stop') {
-    return offline
-      ? `Session ${sessionId}'s host is offline, so the stop did not reach it and is not sent again: once the host is back, check with get_session and stop it again if its agent still runs.`
-      : `Asked session ${sessionId} to stop. It stops once its host hears it; get_session shows when it has.`;
-  }
-  const owed = offline ? ' Its host is offline: the close is sent when it comes back.' : '';
-  return `Asked session ${sessionId} to close.${owed} It closes once its host hears it; get_session shows when it has, or why the host refused.`;
+  const answers = SESSION_ACTION_ANSWERS[outcome.verb];
+  const kind = outcome.doneHere
+    ? 'done'
+    : outcome.hints.includes('host_offline')
+      ? 'offline'
+      : 'sent';
+  return answers[kind](outcome.sessionId);
 }
 
 /** An `answer_session` call, as its input names it. */

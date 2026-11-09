@@ -22,7 +22,7 @@ import {
   planSession,
   promptSummary,
   readAfterHint,
-  type SessionActionOutcome,
+  type SessionActionVerb,
   sentTurnOf,
   sessionActionAnswer,
   sessionHostId,
@@ -443,6 +443,7 @@ export class BotSessionToolsFactory implements BotToolArea {
           .describe('Remove the worktree even with work never pushed (default false).'),
       }),
       refusal: botSessionRefusal,
+      doneHere: (session) => session.closesWithoutItsHost,
       summary: (session, input) => closeSummary(session, input.accept_unpushed_work === true),
       command: (input, context) =>
         new CloseSessionCommand({
@@ -462,10 +463,12 @@ export class BotSessionToolsFactory implements BotToolArea {
    */
   private sessionAction<Input extends z.ZodObject<{ session_id: z.ZodUUID }>>(spec: {
     name: string;
-    verb: SessionActionOutcome['verb'];
+    verb: SessionActionVerb;
     description: string;
     input: Input;
     refusal?: (session: WorkSessionEntity) => string | null;
+    /** Whether the command finishes here, with no host to wait for. */
+    doneHere?: (session: WorkSessionEntity) => boolean;
     summary: (session: WorkSessionEntity, input: z.output<Input>) => string;
     command: (
       input: z.output<Input>,
@@ -497,7 +500,7 @@ export class BotSessionToolsFactory implements BotToolArea {
           verb: spec.verb,
           sessionId: input.session_id,
           hints: result.hints,
-          doneHere: spec.verb === 'close' && session.closesWithoutItsHost,
+          doneHere: spec.doneHere?.(session) ?? false,
         });
       },
     });
