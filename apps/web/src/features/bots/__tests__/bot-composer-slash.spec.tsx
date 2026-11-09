@@ -60,6 +60,7 @@ vi.mock('@oppenheimer/frontend-consumer/react', () => ({
   useBotGoal: () => ({ data: null }),
   useBotLoop: () => ({ data: null }),
   useBotWaitingMessages: () => [],
+  useBotSentTexts: () => [],
   useModelProviders: () => ({ data: true }),
   useSendBotMessage: () => ({ mutate: state.send, reset: vi.fn(), error: null, isPending: false }),
   useUploadBotImage: () => ({ mutateAsync: vi.fn() }),
