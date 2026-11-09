@@ -20,3 +20,23 @@ export type BoardSearch = z.infer<typeof boardSearchSchema>;
 
 /** `?task=new`: the New task dialog rather than one task's. */
 export const NEW_TASK = 'new';
+
+/** The part of a Plan screen's address the task dialog reads and writes. */
+interface TaskDialogSearch {
+  task?: string;
+  start?: string;
+}
+
+/** Closes the task dialog, keeping the rest of the address. */
+export function closingTask<S extends TaskDialogSearch>(search: S): S {
+  return { ...search, task: undefined };
+}
+
+/** Swaps the task dialog for Start session on that task, on the same screen. */
+export function startingSession(taskId: string) {
+  return <S extends TaskDialogSearch>(search: S): S => ({
+    ...search,
+    task: undefined,
+    start: taskId,
+  });
+}

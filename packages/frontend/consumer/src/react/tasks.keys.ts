@@ -1,5 +1,7 @@
 'use client';
 
+import type { PlanStatsQuery } from '../modules/tasks/plan-stats';
+
 /**
  * One list, the whole board: every column, count and card reads it, and a
  * session's tasks are a `select` over it. A filtered read would be a second
@@ -11,4 +13,6 @@ export const tasksKeys = {
   list: () => [...tasksKeys.lists()] as const,
   milestones: () => [...tasksKeys.all, 'milestones'] as const,
   milestoneList: () => [...tasksKeys.milestones(), 'list'] as const,
+  stats: () => [...tasksKeys.all, 'stats'] as const,
+  statsOf: (query: PlanStatsQuery) => [...tasksKeys.stats(), query] as const,
 };

@@ -75,6 +75,7 @@ This page lives outside `.agents/rules/` on purpose: a file there without a
 | Who a thing is shared with, by name or email | `PeoplePicker` (+ `PersonChip`) | a `ChipSelect` of members, an `Input` and a list of your own |
 | Who can open a shared thing, and until when | `AccessList` + `AccessRow` | a `SummaryCard`, a table |
 | One facet of a list page's filter (Plan's Project, the queue's Checks) | `FacetSelect` (`pill` or `labelled`) | a `DropdownMenu` with a hand-built trigger, `PillTabs` |
+| Plan's Projects, and a project opened from it | `ProjectCard` in a `ProjectCardGrid` (`ProjectCardSkeleton` while it loads); the opened project a `ProjectOverview` of `ProjectOverviewColumn`s of `ProjectPanel`s holding `ProjectMilestoneRow`s and `ProjectTaskRow`s, `ProjectPanelEmpty` when a panel has none, `ProjectOverviewSkeleton` while it loads | a `SettingsListRow` list, a `Card` of `div`s, a `MilestoneCard` in a panel |
 | Milestones on time | `MilestoneTimeline`; `MilestoneGlyph` for the mark elsewhere | a `MonthCalendar`, a hand-drawn diamond |
 | The period a page reports on | `DateRangePicker` | two `DatePicker`s |
 | Volume over time (tokens, cost) | `AreaChart` | `LineChart` with a fill of your own, a chart library |

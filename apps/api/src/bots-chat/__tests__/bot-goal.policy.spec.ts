@@ -20,6 +20,7 @@ import {
   goalOutcome,
   goalPauseLine,
   goalSourceKey,
+  isDecidedTurn,
 } from '../domain/bot-goal.policy';
 import { heldBy } from '../domain/bot-rate-limit.policy';
 
@@ -49,8 +50,9 @@ function own(
   status: 'completed' | 'failed' | 'cancelled',
   failure: BotTurnFailure | null = status === 'failed' ? 'other' : null,
   step = 1,
-): EndedTurn {
+): EndedTurn & { provider: 'anthropic' } {
   return {
+    provider: 'anthropic',
     id: `turn-${step}`,
     sourceKey: goalSourceKey('goal-1', step),
     status,
@@ -118,6 +120,52 @@ describe('goalDecision', () => {
     expect(goalDecision(goal(), own('failed', 'refused'))).toMatchObject({ reason: 'failed' });
   });
 
+  // What breaks this: a goal held for its provider's limit pausing once the
+  // limit has passed, so the person must resume what could go on by itself.
+  it('goes on after a provider limit it was held for, and pauses for one with no known end', () => {
+    const held = goal();
+    held.hold({ system: 'Anthropic', resetAt: new Date('2026-11-09T12:00:00Z') });
+    expect(goalDecision(held, own('failed', 'rate_limit'))).toEqual({ kind: 'continue' });
+    expect(goalDecision(held, own('failed', 'usage_limit'))).toEqual({ kind: 'continue' });
+    expect(goalDecision(goal(), own('failed', 'usage_limit'))).toMatchObject({
+      kind: 'pause',
+      reason: 'usage_limit',
+    });
+  });
+
+  // What breaks this: a goal that a tool's rate limit held going on by
+  // itself into a provider refusal that named no time, or a failed sign-in.
+  it('pauses on a provider limit with no known end even when a tool’s limit held it', () => {
+    const held = goal();
+    held.hold({ system: 'Gmail', resetAt: new Date('2026-11-09T12:00:00Z') });
+    for (const failure of ['usage_limit', 'credential'] as const) {
+      expect(goalDecision(held, own('failed', failure))).toMatchObject({
+        kind: 'pause',
+        reason: 'usage_limit',
+      });
+    }
+  });
+
+  // What breaks this: a goal going on past its spent budget, or a goal set
+  // before 2026-11-09 at its last continuation throwing instead of ending,
+  // because the provider's limit it waited out skipped its own bounds.
+  it('still keeps to its budget and its old limit after waiting out a provider limit', () => {
+    const resetAt = new Date('2026-11-09T12:00:00Z');
+    const spent = goal({ tokenBudget: 60_000, tokensUsed: 60_000 });
+    spent.hold({ system: 'Anthropic', resetAt });
+    expect(goalDecision(spent, own('failed', 'rate_limit'))).toEqual({
+      kind: 'pause',
+      reason: 'budget',
+      note: null,
+    });
+    const last = goal({ limit: 3, continuations: 3 });
+    last.hold({ system: 'Anthropic', resetAt });
+    expect(goalDecision(last, own('failed', 'rate_limit'))).toMatchObject({
+      kind: 'end',
+      activity: 'exhausted',
+    });
+  });
+
   // What breaks this: a long goal pausing every time a deploy restarts the
   // worker or the model goes quiet, when the next continuation would carry on.
   it('goes on after a turn stopped without fault: a silent model, a restarted worker', () => {
@@ -135,19 +183,11 @@ describe('goalDecision', () => {
   // What breaks this: a goal whose turns stopped calling tools, or that spent
   // its budget, running on unattended for days.
   it(`pauses after ${BOT_GOAL_IDLE_TURNS} turns in a row with no tool, or a spent budget`, () => {
-    const idle = goal();
-    for (let i = 0; i < BOT_GOAL_IDLE_TURNS; i++) idle.account({ tokens: 10, calledTools: false });
+    const idle = goal({ idleTurns: BOT_GOAL_IDLE_TURNS });
     expect(goalDecision(idle, own('completed'))).toMatchObject({ reason: 'no_progress' });
-
-    const working = goal();
-    working.account({ tokens: 10, calledTools: false });
-    working.account({ tokens: 10, calledTools: false });
-    working.account({ tokens: 10, calledTools: true });
-    expect(working.idleTurns).toBe(0);
+    const working = goal({ idleTurns: BOT_GOAL_IDLE_TURNS - 1 });
     expect(goalDecision(working, own('completed'))).toEqual({ kind: 'continue' });
-
-    const spent = goal({ tokenBudget: 60_000 });
-    spent.account({ tokens: 60_000, calledTools: true });
+    const spent = goal({ tokenBudget: 60_000, tokensUsed: 60_000 });
     expect(goalDecision(spent, own('completed'))).toMatchObject({ reason: 'budget' });
   });
 
@@ -157,6 +197,19 @@ describe('goalDecision', () => {
       activity: 'exhausted',
       reason: null,
     });
+  });
+});
+
+describe('isDecidedTurn', () => {
+  // What breaks this: a turn's end decided twice (its job run again) queuing
+  // a second continuation, or the latest turn's end skipped as decided.
+  it('is decided only once the goal has counted a later continuation than the turn', () => {
+    const origin = { sourceKey: null };
+    const second = { sourceKey: goalSourceKey('goal-1', 2) };
+    expect(isDecidedTurn(goal({ continuations: 0 }), origin)).toBe(false);
+    expect(isDecidedTurn(goal({ continuations: 1 }), origin)).toBe(true);
+    expect(isDecidedTurn(goal({ continuations: 2 }), second)).toBe(false);
+    expect(isDecidedTurn(goal({ continuations: 3 }), second)).toBe(true);
   });
 });
 

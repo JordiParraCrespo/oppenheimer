@@ -70,13 +70,13 @@ A **skill** is a saved way of doing one task: when it applies, the steps, how to
 
 Every bot also has one built-in skill, `oppenheimer`: before it answers a question about Oppenheimer itself, how to set something up in it, or what bots can do, it reads this guide with `read_oppenheimer_docs`, answers from the pages, and says so when the guide does not cover it. You do not run it; ask your question and the bot reads. No skill of yours can take that name.
 
-A second built-in skill, `recap`, catches you up: type `/recap`, or `/recap` and a topic, or just ask "where are we?", and the bot reads your sessions, your pull requests, your plan and this chat, then answers with where things stand, what is waiting on you and the next move. It only reads. A Claude Code session does the same when you ask it to recall or catch you up; a Codex session does not yet.
+A second built-in skill, `recap`, catches you up: type `/recap`, or `/recap` and a topic, or just ask "where are we?", and the bot reads your sessions, your pull requests, your plan and this chat, then answers with where things stand, what is waiting on you and the next move. It only reads. When a session the bot follows finishes, its report ends with a recap of that session, unasked. A Claude Code session does the same when you ask it to recall or catch you up, and ends each task it finishes with one; a Codex session does not yet.
 
 Built-in commands work for every bot:
 
 | Command | Does |
 | --- | --- |
-| `/goal <condition>` | Keep working across turns, with no limit, until the condition holds. When the bot says it is met, a reviewer on the bot's model checks what it showed. The goal pauses, and keeps its place, when a turn of it fails or is stopped, after 3 turns that call no tool, when it spends its token budget (if the bot set one) or when the bot says it needs you; **Resume** above the composer or `/goal resume` runs it again. Stop or `/goal clear` ends it. |
+| `/goal <condition>` | Keep working across turns, with no limit, until the condition holds. When the bot says it is met, a reviewer on the bot's model checks what it showed. The goal pauses, and keeps its place, when a turn of it fails or is stopped (a provider's usage limit whose end is known is waited out, and the goal goes on by itself), after 3 turns that call no tool, when it spends its token budget (if the bot set one) or when the bot says it needs you; **Resume** above the composer or `/goal resume` runs it again. Stop or `/goal clear` ends it. |
 | `/usage` | A card with this chat's turns, tokens, cache hits, and plan limits where reported. No prices. |
 | `/loop [interval] [prompt]` | Run a prompt now and every 1 minute to 1 day, or when the bot chooses. One per bot; ends after 3 days, on `/loop stop`, or when the bot ends it. |
 | `/schedule <request>` | Save a routine from your words (what and when). `/schedule` alone opens Routines. |
@@ -91,6 +91,6 @@ When a tool asks, the turn ends on a **Needs input** card in the chat and in the
 
 ## Limits
 
-- A turn has no step or time limit: it runs until the bot answers. When it has read about 90,000 tokens it summarises what came before and carries on. It stops if the model sends nothing for 5 minutes while no tool runs, or if it keeps repeating calls that change nothing. Older history is summarised for the model; the chat keeps every message.
+- A turn has no step or time limit: it runs until the bot answers. When it has read about 90,000 tokens it summarises what came before and carries on, and the chat shows a line where it did. It stops if the model sends nothing for 5 minutes while no tool runs, or if it keeps repeating calls that change nothing. Older history is summarised for the model; the chat keeps every message.
 - A bot cannot pair or remove hosts, connect GitHub, Google or Gmail, share sessions, manage API tokens, or delete bots.
 - Not available: calendar tools, files other than images, group chats, bot templates, and writing to a bot from Slack, mail, WhatsApp or Telegram.

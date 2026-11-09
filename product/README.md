@@ -1376,6 +1376,10 @@ earlier note:
   a silent model or the loop guard; a goal has no limit, the bot says when
   it is done and the reviewer checks that claim, and a goal that goes
   wrong pauses for the owner to resume instead of ending.
+- `versions/mvp/25-bots.md` §4.1 paused a goal on a provider's usage limit
+  for the owner to resume. On 2026-11-09, where the provider says when the
+  limit ends, the goal waits for that time and goes on by itself; it pauses
+  only when no time is known.
 - `versions/mvp/11-api-implementation-plan.md` (GitHub slice) had the
   webhook read `request.rawBody`, the copy Better Auth's app-wide JSON
   parser kept, so it needed no bootstrap change. That parser's 100 kB
@@ -1383,3 +1387,23 @@ earlier note:
   (Sentry OPPENHEIMER-API-2, 2026-11-09). The webhook now reads its own body
   raw, up to GitHub's documented 25 MB cap, ahead of the app-wide parsers;
   a larger body is a 413, and the `rawBody` copy is gone.
+- `versions/mvp/18-plan-product.md` §1 (2026-11-05) listed Plan's Projects
+  as a row per project with its settings. On 2026-11-08, following that
+  day's `Tasks` artboards, each project is a card (its repositories, and
+  Needs input, Running or Idle from its sessions) that opens the project's
+  page, `/plan/projects/<id>`: its milestones, the tasks waiting on a
+  person, the ones in progress, and Settings. The artboard's Chat and Stats
+  tabs on that page are not built: there is no per-project agent or
+  per-project statistics yet.
+- The 2026-11-08 line above left the project page's Stats unbuilt, saying
+  there were no per-project statistics; `GET /plan/stats?projectId=`
+  (`versions/mvp/23-plan-milestones-stats-accounts.md` §4) had them. On
+  2026-11-09 the owner asked for it: the page switches between Overview and
+  Stats, which reads that endpoint over a period. Pull requests stay off it
+  until the endpoint carries them (23, decided 4).
+- `versions/mvp/25-bots.md` (2026-11-08) made `recap` something the person
+  asks for: `/recap` in a bot's chat, "recall" in a session. On 2026-11-09
+  the owner asked for it at the end of every finished task as well: a bot's
+  wake for a finished session ends with a recap of it, a session's agent
+  ends each task it finishes with one, and so do agents working in this
+  repository (the `recap` skill).

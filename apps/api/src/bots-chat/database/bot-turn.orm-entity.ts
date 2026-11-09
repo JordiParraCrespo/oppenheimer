@@ -184,6 +184,10 @@ export class BotTurnOrmEntity {
   @Column({ type: TIMESTAMP_COLUMN_TYPE, nullable: true })
   endedAt!: Date | null;
 
+  /** When this turn's tokens were added to its goal; null until then, and for a turn of no goal. */
+  @Column({ type: TIMESTAMP_COLUMN_TYPE, nullable: true })
+  goalSpendCountedAt!: Date | null;
+
   @CreateDateColumn({ type: TIMESTAMP_COLUMN_TYPE })
   createdAt!: Date;
 

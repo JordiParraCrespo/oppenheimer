@@ -274,6 +274,32 @@ describe('BotsRepository', () => {
     ]);
   });
 
+  it('hands the composer what you wrote, newest first, a message sent twice in a row once', async () => {
+    const said = (id: string, role: string, content: string) => ({
+      id,
+      turnId: null,
+      role,
+      content,
+      steps: [],
+      createdAt: '2026-10-15T09:00:00.000Z',
+    });
+    sdk.findBotConversation.mockResolvedValue(
+      ok({
+        messages: [
+          said('m1', 'user', 'Run the tests'),
+          said('m2', 'assistant', 'Done.'),
+          said('m3', 'user', 'Ship it'),
+          said('m4', 'user', 'Ship it'),
+          said('m5', 'user', '  '),
+          said('m6', 'event', 'A routine ran'),
+        ],
+        turns: [],
+      }),
+    );
+    const conversation = await repository.findConversation('bot-1');
+    expect(conversation.sentTexts).toEqual(['Ship it', 'Run the tests']);
+  });
+
   it('keeps the session an approved call started, and which of its lines it is, for the chat to draw', async () => {
     sdk.findBotConversation.mockResolvedValue(
       ok({

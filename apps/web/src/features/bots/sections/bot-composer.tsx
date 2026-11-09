@@ -33,6 +33,7 @@ import { useBotDraft } from '@/features/bots/hooks/use-bot-draft';
 import { useBotImages } from '@/features/bots/hooks/use-bot-images';
 import { useBuiltInCommand } from '@/features/bots/hooks/use-built-in-command';
 import { useComposerFocus } from '@/features/bots/hooks/use-composer-focus';
+import { useSentHistory } from '@/features/bots/hooks/use-sent-history';
 import { useSlashMenu } from '@/features/bots/hooks/use-slash-menu';
 import { botDraft, fillBotDraft, setBotDraft } from '@/features/bots/lib/bot-drafts';
 import { BOT_IMAGE_ACCEPT, heldImagesBlock } from '@/features/bots/lib/bot-images';
@@ -59,7 +60,10 @@ import { BotComposerTop } from '@/features/bots/sections/bot-composer-top';
  * into the draft (`useDictation`), added to its end, to be read before it is
  * sent. A draft that is a `/` command being typed opens the menu of the
  * skills it can run over the box (`useSlashMenu`); picking one writes
- * `/<name> ` for its input to follow.
+ * `/<name> ` for its input to follow. With the menu shut, Up at the start of
+ * the field brings back what you sent before and Down walks back to your
+ * draft (`useSentHistory`); while it does, the box's caption says which
+ * one ("History 1/2").
  *
  * Images ride the message (`25-bots.md` §3.1): the paperclip, a paste, or a
  * drop anywhere on the chat's pane (`usePaneDrop`) holds them as tiles over
@@ -93,6 +97,7 @@ export function BotComposer({
   const [draft, setDraft] = useBotDraft(botId);
   const field = useComposerFocus(botId);
   const slash = useSlashMenu(botId, draft, (next) => fillBotDraft(botId, next));
+  const recall = useSentHistory(botId, draft, setDraft);
   const active = useBotActiveTurn(botId);
   // How many wait decides whether the queue takes the top edge; `BotComposerTop` draws them.
   const waiting = useBotWaitingMessages(botId).length;
@@ -152,6 +157,7 @@ export function BotComposer({
 
   // A built-in the console runs itself (`/goal clear`) sends the bot nothing.
   function submit(steer: boolean) {
+    recall.reset();
     if (builtIn.runLocally(() => setBotDraft(botId, ''))) return;
     send.mutate(message(steer));
   }
@@ -211,7 +217,8 @@ export function BotComposer({
           />
         ) : null}
         <ChatComposer
-          onKeyDownCapture={slash.onKeyDownCapture}
+          // The field's keys belong to the `/` menu while it is open, else to the walk through what you sent.
+          onKeyDownCapture={slash.open ? slash.onKeyDownCapture : recall.onKeyDownCapture}
           value={draft}
           onValueChange={setDraft}
           inputRef={field}
@@ -221,6 +228,7 @@ export function BotComposer({
           busy={
             (active !== null || send.isPending) && draft.trim() === '' && images.images.length === 0
           }
+          caption={recall.at ? t('bots.chat.history', recall.at) : undefined}
           sendBlockedReason={blocked}
           allowEmpty={images.images.length > 0}
           onAttach={() => picker.current?.click()}
