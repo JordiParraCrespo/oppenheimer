@@ -73,7 +73,7 @@ export function ReviewDeck() {
                 render={<Link to="/pulls" search={queueSearch} />}
               >
                 <ListChecks />
-                {t('pullRequests.deck.toQueue')}
+                {t('pullRequests.detail.back')}
               </Button>
             </div>
           </EmptyState.Content>
@@ -103,7 +103,7 @@ export function ReviewDeck() {
           aria-valuemin={0}
           aria-valuemax={rows.length}
           aria-valuenow={index}
-          aria-label={t('pullRequests.deck.progress')}
+          aria-label={t('pullRequests.deck.position', { at: index + 1, total: rows.length })}
         >
           <span
             className="block h-full rounded-pill bg-primary transition-[width] duration-200"

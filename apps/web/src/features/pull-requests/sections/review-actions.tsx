@@ -106,7 +106,11 @@ export function ReviewActions({
     },
   });
 
-  const commentLabel = t(mine ? 'pullRequests.deck.comment' : 'pullRequests.deck.requestChanges');
+  const commentLabel = t(
+    mine
+      ? 'pullRequests.review.verdicts.comment.label'
+      : 'pullRequests.review.verdicts.request_changes.label',
+  );
   return (
     <div className="sticky bottom-4 z-10 flex flex-col gap-3 rounded-2xl border border-border-subtle bg-card p-3 shadow-lg">
       {composing ? (
@@ -121,11 +125,7 @@ export function ReviewActions({
               if (event.key === 'Escape') setComposing(false);
             }}
             aria-label={commentLabel}
-            placeholder={t(
-              mine
-                ? 'pullRequests.deck.commentPlaceholder'
-                : 'pullRequests.deck.requestChangesPlaceholder',
-            )}
+            placeholder={t('pullRequests.review.placeholder')}
           />
           <div className="flex items-center justify-end gap-2">
             <Button variant="ghost" size="sm" onClick={() => setComposing(false)}>
@@ -158,7 +158,11 @@ export function ReviewActions({
             pending={review.isPending && review.variables?.review.verdict === 'approve_and_merge'}
           >
             <GitMerge />
-            {t(armed ? 'pullRequests.deck.confirmMerge' : 'pullRequests.deck.approveAndMerge')}
+            {t(
+              armed
+                ? 'pullRequests.deck.confirmMerge'
+                : 'pullRequests.review.verdicts.approve_and_merge.label',
+            )}
             <Kbd className="ml-1">M</Kbd>
           </Button>
         )}
@@ -179,7 +183,7 @@ export function ReviewActions({
             disabled={busy}
             pending={review.isPending && review.variables?.review.verdict === 'approve'}
           >
-            {t('pullRequests.deck.approve')}
+            {t('pullRequests.review.verdicts.approve.label')}
             <ArrowRight />
             <Kbd className="ml-1">→</Kbd>
           </Button>

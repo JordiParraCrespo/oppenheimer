@@ -2945,9 +2945,7 @@
     },
     "deck": {
       "title": "Revisar",
-      "hint": "Un pull request cada vez. Actúa o pásalo, y aparece el siguiente.",
       "position": "{{at}} de {{total}}",
-      "progress": "Cuánto llevas del mazo",
       "lookFirst": "Mira primero:",
       "source": {
         "model": "Resumen escrito por el modelo a partir de la descripción y el diff.",
@@ -2957,12 +2955,6 @@
       "waiting": "esperando",
       "pass": "Pasar",
       "open": "Revisar a fondo",
-      "comment": "Comentar",
-      "requestChanges": "Pedir cambios",
-      "commentPlaceholder": "Deja un comentario en tu pull request",
-      "requestChangesPlaceholder": "Di qué tiene que cambiar",
-      "approve": "Aprobar",
-      "approveAndMerge": "Aprobar y fusionar",
       "confirmMerge": "Pulsa otra vez para fusionar",
       "held": "Aún no se puede fusionar: {{reason}}.",
       "doneTitle": "Ese era el último",
@@ -2972,8 +2964,7 @@
       "again": "Repasarlos otra vez",
       "goneTitle": "Este ya no está en la cola",
       "goneHint": "Se fusionó o se cerró desde que el mazo lo mostró.",
-      "fromTop": "Seguir desde el principio",
-      "toQueue": "Volver a la cola"
+      "fromTop": "Seguir desde el principio"
     }
   },
   "tasks": {

@@ -306,34 +306,25 @@
   },
   "deck": {
     "title": "Review",
-    "hint": "One pull request at a time. Act on it or pass, and the next one comes up.",
     "position": "{{at}} of {{total}}",
-    "progress": "How far through the deck",
     "lookFirst": "Look first:",
     "source": {
-      "model": "Brief written by the model from the description and the diff.",
+      "model": "Brief written by the model.",
       "description": "From the author’s description."
     },
     "briefFailed": "Could not load the brief.",
     "waiting": "waiting",
     "pass": "Pass",
     "open": "Review in depth",
-    "comment": "Comment",
-    "requestChanges": "Request changes",
-    "commentPlaceholder": "Leave a comment on your pull request",
-    "requestChangesPlaceholder": "Say what has to change",
-    "approve": "Approve",
-    "approveAndMerge": "Approve and merge",
     "confirmMerge": "Press again to merge",
     "held": "Cannot merge yet: {{reason}}.",
     "doneTitle": "That was the last one",
-    "doneHint_one": "You went through the {{count}} pull request in this view.",
-    "doneHint_other": "You went through all {{count}} pull requests in this view.",
-    "doneHint_many": "You went through all {{count}} pull requests in this view.",
+    "doneHint_one": "You went through the one pull request here.",
+    "doneHint_other": "You went through all {{count}} here.",
+    "doneHint_many": "You went through all {{count}} here.",
     "again": "Go through them again",
-    "goneTitle": "This one has left the queue",
-    "goneHint": "It was merged or closed since the deck showed it.",
-    "fromTop": "Carry on from the top",
-    "toQueue": "Back to the queue"
+    "goneTitle": "This one left the queue",
+    "goneHint": "It was merged or closed.",
+    "fromTop": "Start from the top"
   }
 }

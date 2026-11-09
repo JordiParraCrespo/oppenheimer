@@ -21,5 +21,5 @@ The review deck: the PR queue one pull request at a time.
 - `@oppenheimer/frontend-consumer`: `useSuspensePullRequestBrief`,
   `usePrefetchPullRequestBrief` and the `PullRequestBrief` type.
 - `@oppenheimer/api-client`: regenerated.
-- `@oppenheimer/translations`: `pullRequests.deck`, `pullRequests.sidebar.review`
+- `@oppenheimer/translations`: `pullRequests.deck` (its buttons reuse `pullRequests.review`), `pullRequests.sidebar.review`
   and `pullRequests.detail.backToDeck`.

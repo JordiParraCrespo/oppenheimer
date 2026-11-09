@@ -1,4 +1,4 @@
-import { PageHeader, PageHeaderMeta, PageHeaderRow } from '@oppenheimer/design-system-web';
+import { PageHeader, PageHeaderRow } from '@oppenheimer/design-system-web';
 import { QueryState } from '@oppenheimer/frontend-web';
 import { useTranslation } from 'react-i18next';
 import { ReviewDeckSkeleton } from '../components/review-deck-skeleton';
@@ -16,7 +16,6 @@ export function PullRequestReviewScreen() {
     <>
       <PageHeader>
         <PageHeaderRow title={t('pullRequests.deck.title')} />
-        <PageHeaderMeta indent={false}>{t('pullRequests.deck.hint')}</PageHeaderMeta>
       </PageHeader>
       <QueryState>
         <QueryState.Pending>
