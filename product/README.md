@@ -1367,3 +1367,10 @@ earlier note:
   empty repository (no ref at all) is the exception: the create pushes an
   empty `Initial commit` to the base and cuts the session from it. A
   prepare leaves it empty; a repository with other branches still fails.
+- `versions/mvp/11-api-implementation-plan.md` (GitHub slice) had the
+  webhook read `request.rawBody`, the copy Better Auth's app-wide JSON
+  parser kept, so it needed no bootstrap change. That parser's 100 kB
+  default refused ordinary `push` and `pull_request` deliveries with a 500
+  (Sentry OPPENHEIMER-API-2, 2026-11-09). The webhook now reads its own body
+  raw, up to GitHub's documented 25 MB cap, the app-wide parsers skip its
+  path, a larger body is a 413, and the `rawBody` copy is gone.

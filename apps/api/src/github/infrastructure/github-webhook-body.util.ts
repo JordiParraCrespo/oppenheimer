@@ -38,8 +38,9 @@ export const APP_BODY_PARSER_OPTIONS = {
  * Reads the webhook as raw bytes into `req.body`: the signature is an HMAC over
  * exactly what GitHub sent, and nothing is parsed before it is verified. Any
  * content type, since GitHub also sends `application/x-www-form-urlencoded`. A
- * body over the cap is refused with 413, from `Content-Length` before any byte
- * is read or once a chunked body crosses it.
+ * body over the cap is refused with 413 and never held: past the cap,
+ * body-parser discards what is still coming and answers once the client
+ * stops sending (Node's `requestTimeout` bounds how long that can be).
  */
 export function githubWebhookBodyParser(): RequestHandler {
   return bodyParser.raw({ type: () => true, limit: GITHUB_WEBHOOK_BODY_LIMIT_BYTES });

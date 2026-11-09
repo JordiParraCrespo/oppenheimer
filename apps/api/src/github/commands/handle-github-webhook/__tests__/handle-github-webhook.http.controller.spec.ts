@@ -123,12 +123,12 @@ describe('POST /v1/github/webhook', () => {
     expect(execute).not.toHaveBeenCalled();
   });
 
-  it('stops reading a chunked body that never declared a length once it crosses the cap', async () => {
+  it('refuses a chunked body that never declared a length once it passes the cap', async () => {
     const chunk = new Uint8Array(1024 * 1024).fill(0x20);
     let sent = 0;
     const endless = new ReadableStream<Uint8Array>({
       pull(controller) {
-        // Well past the cap, and finite, so a reader that ignored it would still end.
+        // Past the cap the parser discards the rest and answers once the body ends, so it ends.
         if (sent > 2 * GITHUB_WEBHOOK_BODY_LIMIT_BYTES) return controller.close();
         sent += chunk.length;
         controller.enqueue(chunk);
