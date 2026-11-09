@@ -1577,6 +1577,11 @@
       "hello": "{{name}} está listo. ¿En qué trabajamos?",
       "placeholder": "Escribe a {{name}}",
       "history": "Historial {{position}}/{{total}}",
+      "pasted": {
+        "lines": "[Texto pegado #{{n}} +{{lines}} líneas]",
+        "chars": "[Texto pegado #{{n}} {{chars}} caracteres]"
+      },
+      "tooLong": "Este mensaje tiene {{length}} caracteres; un bot admite hasta {{max}}.",
       "placeholderRunning": "Reconduce a {{name}}: Intro reconduce el turno en curso, Alt+Intro lo pone en cola para después",
       "steered": "Reconducido mientras trabajaba",
       "send": "Enviar",
