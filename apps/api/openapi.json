@@ -22448,6 +22448,66 @@
         ]
       }
     },
+    "/api/v1/bots/{id}/goal/resume": {
+      "post": {
+        "description": "Runs a paused goal again from where it paused: its next continuation is queued, with a line in its chat saying you resumed it. A goal that is not paused, or none, changes nothing.",
+        "operationId": "resumeBotGoal",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "The goal runs, or there was no paused goal."
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "BOTS_001 — Bot not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Resume a bot's paused goal",
+        "tags": [
+          "Bots"
+        ]
+      }
+    },
     "/api/v1/bots/{id}/loop": {
       "delete": {
         "description": "Ends the loop set with /loop, with a line in its chat saying you stopped it, and cancels a run still waiting. With no loop, nothing changes.",
@@ -37261,7 +37321,9 @@
               "impossible",
               "cleared",
               "exhausted",
-              "stopped"
+              "stopped",
+              "paused",
+              "resumed"
             ],
             "description": "`continued` opens a continuation turn; the others say how the goal ended outside any turn: the reviewer found it met (`met`) or out of reach without the person (`impossible`), stopped by its owner (`cleared`), out of continuations (`exhausted`), or a turn of it failed or was stopped (`stopped`)."
           },
@@ -37279,7 +37341,8 @@
           },
           "limit": {
             "type": "number",
-            "description": "The continuations the goal may take."
+            "nullable": true,
+            "description": "The continuations the goal may take; null for a goal with no limit (every goal since 2026-11-09)."
           },
           "reason": {
             "type": "string",
@@ -37754,6 +37817,8 @@
               "unavailable",
               "time_limit",
               "step_limit",
+              "stalled",
+              "loop",
               "interrupted",
               "storage",
               "other",
@@ -37890,6 +37955,43 @@
           }
         }
       },
+      "BotGoalPauseReason": {
+        "type": "string",
+        "enum": [
+          "blocked",
+          "usage_limit",
+          "no_progress",
+          "budget",
+          "stopped",
+          "failed"
+        ]
+      },
+      "BotGoalPausedResponseDto": {
+        "type": "object",
+        "properties": {
+          "reason": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/BotGoalPauseReason"
+              }
+            ]
+          },
+          "note": {
+            "type": "string",
+            "nullable": true,
+            "description": "Why, in the bot’s or the reviewer’s words; null when only the reason says it."
+          },
+          "at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "reason",
+          "note",
+          "at"
+        ]
+      },
       "BotGoalWaitingResponseDto": {
         "type": "object",
         "properties": {
@@ -37925,7 +38027,27 @@
           },
           "limit": {
             "type": "number",
-            "description": "The continuation turns it may queue."
+            "nullable": true,
+            "description": "The continuation turns it may queue; null when it has no limit (every goal since 2026-11-09)."
+          },
+          "tokensUsed": {
+            "type": "number",
+            "description": "The tokens its turns have spent, input and output."
+          },
+          "tokenBudget": {
+            "type": "number",
+            "nullable": true,
+            "description": "The tokens it may spend before it pauses; null when it has no budget."
+          },
+          "paused": {
+            "nullable": true,
+            "description": "Why it is paused; null while it runs. The owner resumes it.",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/BotGoalPausedResponseDto"
+              }
+            ]
           },
           "createdAt": {
             "type": "string",
@@ -37947,6 +38069,9 @@
           "objective",
           "continuations",
           "limit",
+          "tokensUsed",
+          "tokenBudget",
+          "paused",
           "createdAt",
           "waiting"
         ]

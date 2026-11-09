@@ -223,6 +223,8 @@ export class BotTurnRepository
     message: BotMessageEntity,
     correlationId: string | null,
     goal: BotGoalEntity,
+    /** The owner's resume line, written with the claim; it claims a paused goal instead of a running one. */
+    resumed?: BotMessageEntity | null,
   ): Promise<'staged' | 'waiting' | 'existing' | 'lost' | 'missing'> {
     return this.outbox.transaction(async (manager) => {
       if (!(await lockBot(manager, turn))) return 'missing';
@@ -233,7 +235,10 @@ export class BotTurnRepository
       );
       if (existing) return 'existing';
       // The goal's count and its turn commit together, or neither does.
-      if (!(await claimContinuationWithin(manager, this.goals, goal))) return 'lost';
+      if (!(await claimContinuationWithin(manager, this.goals, goal, Boolean(resumed)))) {
+        return 'lost';
+      }
+      if (resumed) await insertMessageWithin(manager, this.messages, resumed);
       return enqueueLocked(
         manager,
         this.outbox,

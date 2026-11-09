@@ -50,6 +50,7 @@ function skill(name: string, userInvocable = true) {
 const state = vi.hoisted(() => ({
   send: vi.fn(),
   clearGoal: vi.fn(),
+  resumeGoal: vi.fn(),
   read: vi.fn(),
   skills: [] as BotSkillEntity[] | undefined,
 }));
@@ -66,6 +67,12 @@ vi.mock('@oppenheimer/frontend-consumer/react', () => ({
   useClearBotLoop: () => ({ mutate: vi.fn(), reset: vi.fn(), error: null, isPending: false }),
   useClearBotGoal: () => ({
     mutate: state.clearGoal,
+    reset: vi.fn(),
+    error: null,
+    isPending: false,
+  }),
+  useResumeBotGoal: () => ({
+    mutate: state.resumeGoal,
     reset: vi.fn(),
     error: null,
     isPending: false,
@@ -206,6 +213,16 @@ describe('BotComposer’s / menu', () => {
     type(field, '/goal clear');
     fireEvent.keyDown(field, { key: 'Enter' });
     expect(state.clearGoal).toHaveBeenCalledWith({ id: 'b1' }, expect.anything());
+    expect(state.send).not.toHaveBeenCalled();
+  });
+
+  // What breaks this: /goal resume sent to the bot as a new goal whose
+  // condition is "resume", replacing the paused one it meant to run again.
+  it('resumes the goal on /goal resume without sending the bot anything', () => {
+    const field = composer();
+    type(field, '/goal resume');
+    fireEvent.keyDown(field, { key: 'Enter' });
+    expect(state.resumeGoal).toHaveBeenCalledWith({ id: 'b1' }, expect.anything());
     expect(state.send).not.toHaveBeenCalled();
   });
 

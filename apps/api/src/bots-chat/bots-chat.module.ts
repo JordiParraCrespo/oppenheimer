@@ -141,6 +141,8 @@ import { DreamBotMemoryCommandHandler } from './commands/dream-bot-memory/dream-
 import { FinishBotLoopRunCommandHandler } from './commands/finish-bot-loop-run/finish-bot-loop-run.command-handler';
 import { RequestBotMemoryDreamCommandHandler } from './commands/request-bot-memory-dream/request-bot-memory-dream.command-handler';
 import { RequestBotMemoryDreamHttpController } from './commands/request-bot-memory-dream/request-bot-memory-dream.http.controller';
+import { ResumeBotGoalCommandHandler } from './commands/resume-bot-goal/resume-bot-goal.command-handler';
+import { ResumeBotGoalHttpController } from './commands/resume-bot-goal/resume-bot-goal.http.controller';
 import { RunApprovedCallCommandHandler } from './commands/run-approved-call/run-approved-call.command-handler';
 import { RunBotLoopCommandHandler } from './commands/run-bot-loop/run-bot-loop.command-handler';
 import { RunBotTurnCommandHandler } from './commands/run-bot-turn/run-bot-turn.command-handler';
@@ -245,6 +247,7 @@ const httpControllers = [
   ReadBotAttachmentHttpController,
   CancelBotTurnHttpController,
   ClearBotGoalHttpController,
+  ResumeBotGoalHttpController,
   FindBotGoalHttpController,
   ClearBotLoopHttpController,
   FindBotLoopHttpController,
@@ -290,6 +293,7 @@ const commandHandlers: Provider[] = [
   WakeOnPullRequestCommandHandler,
   ContinueBotGoalCommandHandler,
   ClearBotGoalCommandHandler,
+  ResumeBotGoalCommandHandler,
   FindBotGoalQueryHandler,
   RunBotLoopCommandHandler,
   FinishBotLoopRunCommandHandler,

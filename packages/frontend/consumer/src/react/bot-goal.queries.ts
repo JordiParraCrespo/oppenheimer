@@ -8,8 +8,8 @@ import { mutation } from './mutation';
 
 /**
  * A bot's goal (`product/versions/mvp/25-bots.md` §4.1): what it keeps
- * working toward, a continuation turn at a time, and the owner's Stop. The
- * chat reads it again whenever its stream moves.
+ * working toward, a continuation turn at a time, the owner's Stop, and their
+ * Resume once it paused. The chat reads it again whenever its stream moves.
  */
 
 /**
@@ -29,6 +29,16 @@ export const useClearBotGoal = mutation<void, { id: string }>({
   update: (queryClient, _data, { id }) =>
     Promise.all([
       queryClient.setQueryData(botsKeys.goal(id), null),
+      queryClient.invalidateQueries({ queryKey: botsKeys.conversation(id) }),
+    ]),
+});
+
+/** Runs a paused goal again; the goal and the chat are read again for its line and its turn. */
+export const useResumeBotGoal = mutation<void, { id: string }>({
+  run: (app, { id }) => app.bots.resumeGoal(id),
+  update: (queryClient, _data, { id }) =>
+    Promise.all([
+      queryClient.invalidateQueries({ queryKey: botsKeys.goal(id) }),
       queryClient.invalidateQueries({ queryKey: botsKeys.conversation(id) }),
     ]),
 });

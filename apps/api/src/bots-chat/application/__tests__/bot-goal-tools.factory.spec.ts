@@ -2,8 +2,9 @@
  * The bot's goal tools (`25-bots.md` §4.1). What breaks this: a continuation
  * offered `set_goal`, which would let a goal renew itself forever; a goal
  * that forgets the setting turn's reach, so its continuations reach further
- * than the message that led to them; ending or replacing a goal leaving its
- * waiting continuation to run work the bot just called done.
+ * than the message that led to them; a goal's own turn ending it on its
+ * word without the reviewer; blocked ending a goal the owner could resume;
+ * ending or replacing a goal leaving its waiting continuation to run.
  */
 import { emptyScope } from '@oppenheimer/backend-authz';
 import { BotGoalMapper } from '../../bot-goal.mapper';
@@ -22,19 +23,22 @@ function open(objective = 'Triage the bugs'): BotGoalEntity {
     botId: 'bot-1',
     originTurnId: 'turn-0',
     objective,
-    limit: 3,
+    tokenBudget: null,
     credentialScopes: null,
     timeZone: null,
   });
 }
 
-function setup(stored: BotGoalEntity | null = null) {
+function setup(stored: BotGoalEntity | null = null, origin: BotToolContext['origin'] = 'message') {
   const goals = {
     findForBot: vi.fn<BotGoalRepositoryPort['findForBot']>(async () => stored),
+    pause: vi.fn<BotGoalRepositoryPort['pause']>(async () => true),
+    claim: vi.fn<BotGoalRepositoryPort['claim']>(async () => true),
   } satisfies Partial<BotGoalRepositoryPort>;
   const goalsOf = {
     end: vi.fn<BotGoalResolver['end']>(async () => true),
     set: vi.fn<BotGoalResolver['set']>(async () => stored),
+    cancelWaiting: vi.fn<BotGoalResolver['cancelWaiting']>(async () => undefined),
   };
   const factory = new BotGoalToolsFactory(
     goals as unknown as BotGoalRepositoryPort,
@@ -53,6 +57,7 @@ function setup(stored: BotGoalEntity | null = null) {
     approvals: { request: vi.fn<BotApprovalRequesterPort['request']>() },
     budget: new BotTurnBudget(),
     credentialScopes: ['bots:read', 'bots:write'],
+    origin,
   };
   const definition = (name: string) => {
     const found = factory.definitions().find((candidate) => candidate.name === name);
@@ -65,15 +70,19 @@ function setup(stored: BotGoalEntity | null = null) {
 }
 
 describe('BotGoalToolsFactory', () => {
-  it('sets a goal for the turn that asked, with its reach and the default limit, without a card', async () => {
+  it('sets a goal for the turn that asked, with its reach, no limit and the budget it names', async () => {
     const { goalsOf, call } = setup();
-    const result = await call('set_goal', { objective: 'Get the release branch green' });
+    const result = await call('set_goal', {
+      objective: 'Get the release branch green',
+      token_budget: 2_000_000,
+    });
 
     expect(goalsOf.set.mock.calls[0][0]).toMatchObject({
       botId: 'bot-1',
       originTurnId: 'turn-1',
       objective: 'Get the release branch green',
-      limit: 5,
+      limit: null,
+      tokenBudget: 2_000_000,
       continuations: 0,
       credentialScopes: ['bots:read', 'bots:write'],
       timeZone: 'Europe/Madrid',
@@ -94,10 +103,30 @@ describe('BotGoalToolsFactory', () => {
     expect(JSON.stringify(result)).toContain('Triage the bugs');
   });
 
-  it('ends the goal with no line of its own, through the one end that cancels what waits', async () => {
+  it('ends the goal at once from a turn that is not its own, with no line of its own', async () => {
     const goal = open();
     const { goalsOf, call } = setup(goal);
-    await call('end_goal', {});
+    await call('end_goal', { outcome: 'met', reason: 'The person asked me to stop' });
     expect(goalsOf.end).toHaveBeenCalledWith(goal, null, null);
+  });
+
+  it('only claims the goal met from its own turn, for the reviewer to check', async () => {
+    const goal = open();
+    const { goals, goalsOf, call } = setup(goal, 'goal');
+    const result = await call('end_goal', { outcome: 'met', reason: 'pnpm test exits 0' });
+    expect(goalsOf.end).not.toHaveBeenCalled();
+    expect(goal.claim).toBe('pnpm test exits 0');
+    expect(goals.claim).toHaveBeenCalledWith(goal);
+    expect(JSON.stringify(result)).toContain('reviewer');
+  });
+
+  it('pauses a blocked goal with its line, and cancels what waits, rather than ending it', async () => {
+    const goal = open();
+    const { goals, goalsOf, call } = setup(goal, 'goal');
+    await call('end_goal', { outcome: 'blocked', reason: 'I need the deploy key' });
+    expect(goalsOf.end).not.toHaveBeenCalled();
+    expect(goal.paused).toMatchObject({ reason: 'blocked', note: 'I need the deploy key' });
+    expect(goals.pause.mock.calls[0][1].event).toMatchObject({ activity: 'paused' });
+    expect(goalsOf.cancelWaiting).toHaveBeenCalledWith(goal, null);
   });
 });
