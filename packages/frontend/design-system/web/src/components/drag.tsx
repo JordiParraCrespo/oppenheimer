@@ -507,7 +507,10 @@ function slideOnReorder(live: boolean) {
 
 /**
  * One item of a `SortableGroup`. Returns the ref, the handle's props, and
- * the style that slides it while its neighbours move.
+ * the style that slides it while its neighbours move. `listeners` are the
+ * activators on their own, for a surface that splits them: the pointer's on
+ * a bigger box than the handle (the whole card), the keyboard's on the
+ * handle, so Space or Enter on a control inside the box never lifts it.
  */
 function useSortableItem({ id, data, disabled }: { id: string; data?: DragData; disabled?: boolean }) {
   const reduced = React.useContext(ReducedMotion);
@@ -522,6 +525,7 @@ function useSortableItem({ id, data, disabled }: { id: string; data?: DragData; 
   return {
     ref: setNodeRef,
     handleProps: { ...attributes, ...listeners },
+    listeners,
     style: { transform: CSS.Translate.toString(transform), transition } as React.CSSProperties,
     isDragging,
   };

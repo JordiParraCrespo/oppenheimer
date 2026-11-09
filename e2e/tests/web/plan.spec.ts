@@ -322,14 +322,14 @@ test('To do: a task added to today, ticked done, and the overdue switch', async 
   await expect(row.getByRole('checkbox', { name: 'Mark as not done' })).toBeChecked();
   await expect(page).toHaveURL(/\/plan\/todo/);
 
-  // A second task, dragged by its grip above the first; the order survives a reload.
+  // A second task, dragged by its title (the whole card picks it up, not only
+  // the grip) above the first; the order survives a reload.
   await add.fill('Book the venue');
   await add.press('Enter');
   const second = page.locator('[data-slot="todo-row"]', { hasText: 'Book the venue' });
   await expect(second).toBeVisible();
-  const grip = second.getByRole('button', { name: 'Reorder Book the venue' });
   const target = await row.boundingBox();
-  const from = await grip.boundingBox();
+  const from = await second.getByText('Book the venue', { exact: true }).boundingBox();
   if (!target || !from) throw new Error('rows not laid out');
   await page.mouse.move(from.x + from.width / 2, from.y + from.height / 2);
   await page.mouse.down();
