@@ -82,6 +82,7 @@ import { Route as AuthenticatedBotsBotIdSettingsRoutinesRouteImport } from './ro
 import { Route as AuthenticatedBotsBotIdSettingsRunsOnRouteImport } from './routes/_authenticated/bots_.$botId.settings/runs-on'
 import { Route as AuthenticatedBotsBotIdSettingsSkillsRouteImport } from './routes/_authenticated/bots_.$botId.settings/skills'
 import { Route as AuthenticatedPullsInstallationIdGithubRepoIdNumberRouteImport } from './routes/_authenticated/pulls_.$installationId.$githubRepoId.$number'
+import { Route as AuthenticatedSettingsHostsHostIdDesktopRouteImport } from './routes/_authenticated/settings/hosts/$hostId.desktop'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -488,6 +489,12 @@ const AuthenticatedPullsInstallationIdGithubRepoIdNumberRoute =
     path: '/pulls/$installationId/$githubRepoId/$number',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedSettingsHostsHostIdDesktopRoute =
+  AuthenticatedSettingsHostsHostIdDesktopRouteImport.update({
+    id: '/hosts/$hostId/desktop',
+    path: '/hosts/$hostId/desktop',
+    getParentRoute: () => AuthenticatedSettingsRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -559,6 +566,7 @@ export interface FileRoutesByFullPath {
   '/bots/$botId/settings/runs-on': typeof AuthenticatedBotsBotIdSettingsRunsOnRoute
   '/bots/$botId/settings/skills': typeof AuthenticatedBotsBotIdSettingsSkillsRoute
   '/pulls/$installationId/$githubRepoId/$number': typeof AuthenticatedPullsInstallationIdGithubRepoIdNumberRoute
+  '/settings/hosts/$hostId/desktop': typeof AuthenticatedSettingsHostsHostIdDesktopRoute
   '/bots/$botId/settings/': typeof AuthenticatedBotsBotIdSettingsIndexRoute
 }
 export interface FileRoutesByTo {
@@ -625,6 +633,7 @@ export interface FileRoutesByTo {
   '/bots/$botId/settings/runs-on': typeof AuthenticatedBotsBotIdSettingsRunsOnRoute
   '/bots/$botId/settings/skills': typeof AuthenticatedBotsBotIdSettingsSkillsRoute
   '/pulls/$installationId/$githubRepoId/$number': typeof AuthenticatedPullsInstallationIdGithubRepoIdNumberRoute
+  '/settings/hosts/$hostId/desktop': typeof AuthenticatedSettingsHostsHostIdDesktopRoute
   '/bots/$botId/settings': typeof AuthenticatedBotsBotIdSettingsIndexRoute
 }
 export interface FileRoutesById {
@@ -701,6 +710,7 @@ export interface FileRoutesById {
   '/_authenticated/bots_/$botId/settings/runs-on': typeof AuthenticatedBotsBotIdSettingsRunsOnRoute
   '/_authenticated/bots_/$botId/settings/skills': typeof AuthenticatedBotsBotIdSettingsSkillsRoute
   '/_authenticated/pulls_/$installationId/$githubRepoId/$number': typeof AuthenticatedPullsInstallationIdGithubRepoIdNumberRoute
+  '/_authenticated/settings/hosts/$hostId/desktop': typeof AuthenticatedSettingsHostsHostIdDesktopRoute
   '/_authenticated/bots_/$botId/settings/': typeof AuthenticatedBotsBotIdSettingsIndexRoute
 }
 export interface FileRouteTypes {
@@ -775,6 +785,7 @@ export interface FileRouteTypes {
     | '/bots/$botId/settings/runs-on'
     | '/bots/$botId/settings/skills'
     | '/pulls/$installationId/$githubRepoId/$number'
+    | '/settings/hosts/$hostId/desktop'
     | '/bots/$botId/settings/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -841,6 +852,7 @@ export interface FileRouteTypes {
     | '/bots/$botId/settings/runs-on'
     | '/bots/$botId/settings/skills'
     | '/pulls/$installationId/$githubRepoId/$number'
+    | '/settings/hosts/$hostId/desktop'
     | '/bots/$botId/settings'
   id:
     | '__root__'
@@ -916,6 +928,7 @@ export interface FileRouteTypes {
     | '/_authenticated/bots_/$botId/settings/runs-on'
     | '/_authenticated/bots_/$botId/settings/skills'
     | '/_authenticated/pulls_/$installationId/$githubRepoId/$number'
+    | '/_authenticated/settings/hosts/$hostId/desktop'
     | '/_authenticated/bots_/$botId/settings/'
   fileRoutesById: FileRoutesById
 }
@@ -1443,6 +1456,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedPullsInstallationIdGithubRepoIdNumberRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/settings/hosts/$hostId/desktop': {
+      id: '/_authenticated/settings/hosts/$hostId/desktop'
+      path: '/hosts/$hostId/desktop'
+      fullPath: '/settings/hosts/$hostId/desktop'
+      preLoaderRoute: typeof AuthenticatedSettingsHostsHostIdDesktopRouteImport
+      parentRoute: typeof AuthenticatedSettingsRoute
+    }
   }
 }
 
@@ -1570,6 +1590,7 @@ interface AuthenticatedSettingsRouteChildren {
   AuthenticatedSettingsHostsNewRoute: typeof AuthenticatedSettingsHostsNewRoute
   AuthenticatedSettingsMailGoogleRoute: typeof AuthenticatedSettingsMailGoogleRoute
   AuthenticatedSettingsHostsIndexRoute: typeof AuthenticatedSettingsHostsIndexRoute
+  AuthenticatedSettingsHostsHostIdDesktopRoute: typeof AuthenticatedSettingsHostsHostIdDesktopRoute
 }
 
 const AuthenticatedSettingsRouteChildren: AuthenticatedSettingsRouteChildren = {
@@ -1588,6 +1609,8 @@ const AuthenticatedSettingsRouteChildren: AuthenticatedSettingsRouteChildren = {
   AuthenticatedSettingsHostsNewRoute: AuthenticatedSettingsHostsNewRoute,
   AuthenticatedSettingsMailGoogleRoute: AuthenticatedSettingsMailGoogleRoute,
   AuthenticatedSettingsHostsIndexRoute: AuthenticatedSettingsHostsIndexRoute,
+  AuthenticatedSettingsHostsHostIdDesktopRoute:
+    AuthenticatedSettingsHostsHostIdDesktopRoute,
 }
 
 const AuthenticatedSettingsRouteWithChildren =

@@ -1240,6 +1240,9 @@ importers:
       '@hookform/resolvers':
         specifier: ^5.9.1
         version: 5.9.1(@sinclair/typebox@0.27.12)(@standard-schema/spec@1.1.0)(ajv-formats@2.1.1(ajv@8.20.0))(ajv@8.20.0)(class-transformer@0.5.1)(joi@17.13.4)(react-hook-form@7.88.0(react@19.2.3))(zod@3.25.76)
+      '@novnc/novnc':
+        specifier: 1.7.0
+        version: 1.7.0
       '@oppenheimer/design-system-web':
         specifier: workspace:*
         version: link:../design-system/web
@@ -4547,6 +4550,9 @@ packages:
   '@nodelib/fs.walk@1.2.8':
     resolution: {integrity: sha512-oGB+UxlgWcgQkgwo8GcEGwemoTFt3FIO9ababBmaGwXIoBKZ+GTy0pP185beGg7Llih/NSHSV2XAs1lnznocSg==}
     engines: {node: '>= 8'}
+
+  '@novnc/novnc@1.7.0':
+    resolution: {integrity: sha512-ucEJOx4T2avIRCleodk7YobZj5O2Ga2AeLfQ69A/yjG9HHba2+PDgwSkN3FttrmG+70ZGx21sElNFouK13RzyA==}
 
   '@openai/agents-core@0.20.0':
     resolution: {integrity: sha512-9nJJ3iyQTwO2kmrZJPMqnHI61g3xp2DgtpW4V0cgNtYot5jocDqAMN5+dkjtsBo64U3Wbl7rIAV0q5kvycoIIA==}
@@ -12376,7 +12382,7 @@ packages:
   thinking-orbs@0.3.2:
     resolution: {integrity: sha512-QZFeBaPEzqhjiZoXy961EvDgaXk2WgXacF3Rbz+Sj5IfzDzBvTC86vdREUHniBffYibJFKSwbfllxLUdI/Xv6g==}
     peerDependencies:
-      react: '>=18.0.0'
+      react: 19.2.3
 
   thread-stream@4.2.0:
     resolution: {integrity: sha512-e2zZ96wSChazBsbENf/Pcm/4swHt2cEKQ92rhUjkL9GCKiTDJIaTBenjE/m9DXi0QBmTMDkFDdOomUy20A1tDQ==}
@@ -17412,6 +17418,8 @@ snapshots:
     dependencies:
       '@nodelib/fs.scandir': 2.1.5
       fastq: 1.20.1
+
+  '@novnc/novnc@1.7.0': {}
 
   '@openai/agents-core@0.20.0(@aws-sdk/credential-provider-node@3.972.72)(@smithy/signature-v4@5.6.10)(undici@8.9.0)(ws@8.22.0)(zod@4.6.5)':
     dependencies:
@@ -25833,7 +25841,6 @@ snapshots:
       get-tsconfig: 4.14.3
     optionalDependencies:
       fsevents: 2.3.3
-    optional: true
 
   tsyringe@4.10.0:
     dependencies:

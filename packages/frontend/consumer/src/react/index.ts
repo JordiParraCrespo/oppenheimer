@@ -296,6 +296,7 @@ export {
   useSuspenseSharedSession,
   useUploadSessionAttachment,
 } from './sessions.queries';
+export { useHostDesktop } from './hosts.desktop';
 export {
   useCloudChatFeed,
   useSessionDeviceStream,
