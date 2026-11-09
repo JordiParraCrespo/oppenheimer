@@ -24,7 +24,7 @@ describe('webhook signature', () => {
   });
 
   it('accepts the same bytes as a Buffer', () => {
-    // The controller passes `request.rawBody`, which is a Buffer; a digest over
+    // The controller passes the raw `request.body`, which is a Buffer; a digest over
     // a re-serialized object would not match what GitHub signed.
     const raw = Buffer.from(body, 'utf8');
     expect(verifyWebhookSignature(SECRET, raw, sign(body))).toBe(true);

@@ -144,9 +144,12 @@ apps/api/src/github/
   breaks. The GitHub adapter is `fetch` plus `node:crypto` (RS256 App
   JWT), not Octokit: no dependency to add, and the App API is five
   routes.
-- The raw body already reaches `request.rawBody` (Better Auth's
+- ~~The raw body already reaches `request.rawBody` (Better Auth's
   `bodyParser.rawBody`), so the webhook needs no bootstrap change: copy
-  `billing/commands/handle-stripe-webhook`.
+  `billing/commands/handle-stripe-webhook`.~~ Changed 2026-11-09: that
+  parser stopped deliveries at its 100 kB default, so the webhook reads its
+  own body raw up to GitHub's 25 MB cap (`github-webhook-body.util.ts`,
+  mounted by `GithubModule` ahead of the app-wide parsers).
 - Tests: scoping spec in the `lead-scoping.spec.ts` shape; webhook
   signature accept/reject; the claim proof refuses an installation the
   caller cannot see; integration: the migration chain runs and a
