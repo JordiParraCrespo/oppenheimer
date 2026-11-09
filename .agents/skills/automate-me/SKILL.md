@@ -52,6 +52,8 @@ Sort each into one of two piles:
 - Write the second pile as a brief in the `bro` voice: at most five
   items, each the habit, what it costs with the count, and the one change
   you suggest. Put it in the reply and in the pull request.
+- Add to `.agents/answers.md` each answer the user gave in the mined
+  sessions that is not there yet and could be asked again.
 
 ## 4. Propose
 
