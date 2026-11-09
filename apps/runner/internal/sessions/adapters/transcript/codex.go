@@ -177,7 +177,7 @@ func (h codexHead) spawn() *codexSpawn {
 			ThreadSpawn *codexSpawn `json:"thread_spawn"`
 		} `json:"subagent"`
 	}
-	if len(h.Source) == 0 || h.Source[0] != '{' || json.Unmarshal(h.Source, &source) != nil {
+	if h.sourceIsClientName() || json.Unmarshal(h.Source, &source) != nil {
 		return nil
 	}
 	return source.Subagent.ThreadSpawn
@@ -194,19 +194,26 @@ func (h codexHead) parent() string {
 // child is whether another thread started this one.
 func (h codexHead) child() bool { return h.parent() != "" }
 
-// persons is whether the thread is a conversation the person had, which is
-// what `codex resume` lists: a source that is a client's name (`cli`,
-// `vscode`), never a subagent's or Codex's own (`{"subagent": …}`,
-// `{"internal": "guardian"}`), for the user when it says, and not a fork
-// kept under another thread. Codex writes its threads of its own (an
-// approval's review, a compaction, a memory consolidation) beside the
-// person's, in the same directory and later, so without this the newest is
-// one of them.
+// sourceIsClientName is whether the thread's source is a client's name
+// (`"cli"`, `"vscode"`, or none) rather than an object: a subagent's
+// (`{"subagent": …}`), Codex's own (`{"internal": "guardian"}`) or a
+// desktop app's (`{"custom": "atlas"}`).
+func (h codexHead) sourceIsClientName() bool {
+	return len(h.Source) == 0 || h.Source[0] != '{'
+}
+
+// persons is whether the thread is a conversation the person had in a
+// terminal, as `codex resume` lists them: a client's source, for the user
+// when it says, and not a fork kept under another thread. Unlike `codex
+// resume`, it leaves out the desktop apps' threads, which no session runs.
+// Codex writes threads of its own (an approval's review, a compaction, a
+// memory consolidation) beside the person's, in the same directory and
+// later, so without this the newest is one of them.
 func (h codexHead) persons() bool {
 	if h.child() || h.AttachedThread || (h.ThreadSource != "" && h.ThreadSource != "user") {
 		return false
 	}
-	return len(h.Source) == 0 || h.Source[0] != '{'
+	return h.sourceIsClientName()
 }
 
 // codexHeadOf is a rollout's `session_meta`, off its first line; false when
