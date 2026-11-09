@@ -676,12 +676,58 @@
     "list": {
       "title": "Projects",
       "new": "New project",
-      "edit": "{{name}} settings",
-      "repositories_one": "{{count}} repository",
-      "repositories_other": "{{count}} repositories",
       "noRepositories": "No repositories",
       "empty": "No projects yet. A project groups your sessions and starts new ones with its repositories, host and agent.",
-      "loadFailed": "Could not load your projects."
+      "loadFailed": "Could not load your projects.",
+      "status": {
+        "needsInput": "Needs input",
+        "running": "Running",
+        "idle": "Idle"
+      }
+    },
+    "detail": {
+      "back": "Projects",
+      "settings": "Settings",
+      "milestones": "Milestones",
+      "needsInput": "Needs input",
+      "inProgress": "In progress",
+      "noMilestones": "No milestones yet.",
+      "nothingNeedsInput": "Nothing waits on you.",
+      "nothingInProgress": "Nothing in progress.",
+      "gone": "That project is no longer here.",
+      "loadFailed": "Could not load this project.",
+      "views": "Project views",
+      "overview": "Overview",
+      "stats": "Stats"
+    },
+    "stats": {
+      "tasksCompleted": "Tasks completed",
+      "tasksCreated": "Tasks created",
+      "tokens": "Tokens burned",
+      "cost": "Agent cost",
+      "vsPrevious": "vs previous period",
+      "noPrevious": "Nothing to compare with yet",
+      "completed": "Completed",
+      "created": "Created",
+      "tasksTitle": "Tasks completed and created, per week",
+      "tokensTitle": "Tokens burned per week, by model",
+      "costTitle": "Agent cost per week",
+      "unknownModel": "Unknown model",
+      "loadFailed": "Could not load this project's statistics.",
+      "range": {
+        "lastWeeks_one": "Last week",
+        "lastWeeks_other": "Last {{count}} weeks",
+        "custom": "Custom",
+        "done": "Done",
+        "previousMonth": "Previous month",
+        "nextMonth": "Next month",
+        "choose": "Date range",
+        "days_one": "{{count}} day",
+        "days_other": "{{count}} days"
+      },
+      "otherModels": "Other models",
+      "headlessOnly": "headless turns",
+      "measuredHeadless": "Measured on headless turns"
     },
     "unassigned": "Unassigned"
   },

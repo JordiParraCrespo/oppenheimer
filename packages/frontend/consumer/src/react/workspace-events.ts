@@ -80,6 +80,8 @@ const REFRESHES: RefreshTable = {
   'task.changed': [
     { prefix: tasksKeys.lists(), announcesEvery: true },
     { prefix: tasksKeys.milestones(), announcesEvery: true },
+    // A task made or moved to Done is a count on a project's Stats.
+    { prefix: tasksKeys.stats(), announcesEvery: false },
   ],
   'milestone.changed': [
     { prefix: tasksKeys.milestones(), announcesEvery: true },

@@ -21,10 +21,13 @@ export function ProjectDialog({
   projectId,
   onClose,
   onSaved,
+  onDeleted,
 }: {
   projectId?: string;
   onClose: () => void;
   onSaved: (project: ProjectEntity) => void;
+  /** After the project is deleted; the dialog closes without it. */
+  onDeleted?: () => void;
 }) {
   const { t } = useTranslation();
   if (!projectId)
@@ -61,6 +64,7 @@ export function ProjectDialog({
                 project={project}
                 onClose={onClose}
                 onSaved={onSaved}
+                onDeleted={onDeleted}
               />
             ) : (
               <ProjectDialogShell onClose={onClose}>
