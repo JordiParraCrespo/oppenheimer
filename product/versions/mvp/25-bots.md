@@ -862,7 +862,8 @@ learn fast what is going on.
 
 - **`recap`, a second built-in skill.** Every bot has it, listed under "Your
   skills" when the turn offers `use_skill` and `list_sessions`. It reads this
-  chat (`search_chat`), the sessions (`list_sessions`, `read_session`), the
+  chat (`search_chat`), the sessions (`list_sessions`, `read_session`, and
+  `search_sessions` for a topic since 2026-11-09), the
   person's pull requests (`list_pull_requests`, queue "mine") and the plan
   (`plan_summary`), skipping what the bot cannot use, and answers with where
   things stand, a line per thread, what waits on the person and the one next
@@ -1063,6 +1064,7 @@ agent's, in a session, where Claude Code ships them.
 | `send_to_session` | Type a follow-up prompt into a running session whose agent waits at its prompt; logged as `prompt.sent` with the bot as sender, and it opens a `follow_up` turn the bot then watches (built 2026-10-27) | ask |
 | `answer_session` | Answer the question or permission dialog a session's agent waits on, through the Inbox's own command (built 2026-10-27) | ask |
 | `read_session` | A session's recent log in words: tasks and follow-ups with their sender, the agent working, blocked or done, questions, failures, stops. The log only, never the terminal or the agent's conversation (built 2026-10-27; "recent output" was the plan). `after_seq` reads only what followed an entry; `send_to_session` and `answer_session` name the entry their input followed (2026-10-29) | auto |
+| `search_sessions` | Search every session of the workspace, on any host and closed ones included, for words in its name and log (tasks, follow-ups, the agent's results, notes, questions, failures): web-search syntax, best first, at most 2 excerpts per session, each with the session's id for `read_session`; filters `host_id`, `project_id`, `since`. Not the agents' transcripts (2026-11-09; below) | auto |
 | `stop_session` / `close_session` | Stop it, or close and clean up. `close_session` is the sessions' own close (`CloseSessionCommand`: push each branch, remove the worktree; unpushed work kept unless `accept_unpushed_work`) and only for a session whose origin is `bot`; any other is refused before a card, the person's to close. The `failed` wake offers it once the person is told, so a failed start does not stay in the sidebar (built 2026-11-09) | ask |
 | `list_folders` | Browse a host's folders | auto |
 | `run_command` | Run one program on a host and read its exit code, stdout and stderr in the same turn, only what that host's own policy allows (below; built 2026-11-07) | ask |
@@ -1168,6 +1170,32 @@ bots that run bash or ssh interactively, as a person at a keyboard does.
 
 On the wire it is `terminal.drive` and `terminal.screen`, gated on the
 `terminal.drive` capability (`01-protocol.md`).
+
+**Searching every session** (2026-11-09, from Hermes Agent's session
+search). A bot could list sessions and read one it had the id of, but not
+find the one where "the auth bug" was worked on last week. `search_sessions`
+searches what the control plane's Postgres holds, in the owner's scope like
+every session read:
+
+- **What it searches.** The session's name, and the words of its log
+  entries: the first task and follow-up prompts (`prompt.first`,
+  `prompt.sent`, `turn.requested`), a turn's result (`turn.ended`), a
+  failure's detail, a new name, the agent's notes and wake notes, its status
+  report's title and message, the questions and permission dialogs it raised
+  with their options, and a shared file's name and caption. Ids, hashes,
+  senders and JSON keys are not searched (`session-search.policy.ts`, and
+  `work_session_event_search_vector` in the `AddSessionSearch` migration,
+  which a spec holds to the same kinds).
+- **What it does not.** The agent's own transcript stays on the host and is
+  read only through the runner, so it is not searched; nor are other bots'
+  chats. Closed (resolved) sessions are searched like any other; a session is
+  deleted only with its workspace.
+- **One session, two lines.** Postgres full text with the `simple`
+  configuration and web-search syntax, as `search_chat`; each session keeps
+  its 2 best entries, and sessions come best hit first, the latest on a tie,
+  at most 20 a call, so one chatty session does not fill the page. The hits
+  are fenced as the sessions' data, and a call with none suggests other or
+  fewer words. `recap` uses it for a topic.
 
 ### 4.3 Projects and the plan
 | Tool | Does | Default |
@@ -1976,3 +2004,7 @@ The decisions it produced:
   nobody waits on moved to a queue of their own (`bot-background-turns`,
   §8), a turn's end is decided once however often its job runs, and the
   chat shows where a turn compacted.
+- 2026-11-09: **a bot searches every session** (§4.2, from Hermes Agent's
+  session search). `search_sessions` finds a session by the words of its
+  name and log, on any host and closed ones included, each session cut to
+  its best 2 hits; the agents' transcripts on the hosts are not searched.

@@ -1427,3 +1427,9 @@ earlier note:
   of its sidebar: the rail and the console's landing go through
   `/plan/open`, which redirects there (the Inbox until another is dragged
   above it).
+- `versions/mvp/25-bots.md` §4.2 (2026-10-27) had a bot find a session only
+  by listing them, newest first, and read one it already had the id of. On
+  2026-11-09, from Hermes Agent's session search, a bot searches every
+  session of the workspace, on any host and closed ones included, for words
+  in its name and log (`search_sessions`); the agents' transcripts on the
+  hosts are not searched. The `recap` skill searches its topic the same way.

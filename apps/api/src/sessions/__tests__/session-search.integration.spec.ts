@@ -232,7 +232,7 @@ describe('sessions: searching names and logs (integration)', () => {
     expect(await search('payment -SDK')).toEqual([]);
     expect(await search('nothing OR payment')).toHaveLength(1);
     // A stray quote is not a syntax error.
-    expect(await search('payment "unclosed')).toHaveLength(1);
+    expect(await search('payment "SDK')).toHaveLength(1);
   });
 
   it('keeps each session to its two best hits, sessions best first and the latest on a tie', async () => {

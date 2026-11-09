@@ -6,13 +6,13 @@ import { None, type Option, Some } from 'oxide.ts';
 import { DataSource, type EntityManager, Repository, type SelectQueryBuilder } from 'typeorm';
 import type { SessionCheckoutEntity } from '../domain/session-checkout.entity';
 import type { SessionCloudRunEntity } from '../domain/session-cloud-run.entity';
-import { SESSION_EVENT_KINDS, type SessionFold } from '../domain/session-state.policy';
 import {
   groupSessionHits,
   SESSION_NAME_HIT,
   SESSION_SEARCH_HITS_PER_SESSION,
   SESSION_SEARCH_KINDS,
 } from '../domain/session-search.policy';
+import { SESSION_EVENT_KINDS, type SessionFold } from '../domain/session-state.policy';
 import type { SessionTurnFold } from '../domain/session-turn.policy';
 import type { WorkSessionEntity } from '../domain/work-session.entity';
 import {
