@@ -197,6 +197,7 @@
       "review": "in review",
       "done": "done",
       "overdue": "overdue since {{date}}"
-    }
+    },
+    "reorder": "Reorder {{title}}"
   }
 }

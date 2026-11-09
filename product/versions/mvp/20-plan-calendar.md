@@ -208,12 +208,15 @@ overdue** leaves out (`?overdue=off`); a past day lists only its own. It narrows
 it the same way), ticks a task Done or back, opens it on the board, and
 adds a task due that day from the dashed row under the list.
 
-Two departures from the frame, both because the API has no field for
-them: a task gets no planned slot and length of its own (the frame
-keeps one per task in the browser) — its due time is its slot, and an
-hour its length; and To do's rows do not reorder by dragging (the
-frame keeps that order in the browser too). Both are open questions 4
-and 5.
+A row's grip, six dots at its right end, drags it into the reader's own
+order for that day, kept on this device as Plan's sidebar order is (the
+frame keeps it in the browser too); a task the stored order does not
+name keeps its place after the ones it does.
+
+One departure from the frame, because the API has no field for it: a
+task gets no planned slot and length of its own (the frame keeps one
+per task in the browser) — its due time is its slot, and an hour its
+length. That is open question 4.
 
 ## Open questions
 
@@ -233,3 +236,6 @@ and 5.
    slot.
 5. Should To do's order be the reader's (dragged, per day), and kept
    where: per device, as Plan's sidebar order is, or on the task?
+   > Answered on 2026-11-09: the reader's, dragged by a grip at the
+   > row's right end, kept per device and per day (§6). On the task
+   > would need a field the API does not have.

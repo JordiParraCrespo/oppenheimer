@@ -594,7 +594,7 @@ export {
 export { Textarea } from './components/textarea';
 export type { TimeGridCell, TimeGridGroup } from './components/time-grid';
 export { TimeGrid } from './components/time-grid';
-export { TodoRow, TodoRowAdd, TodoRowSkeleton } from './components/todo-row';
+export { SortableTodoRow, TodoRow, TodoRowAdd, TodoRowSkeleton } from './components/todo-row';
 export {
   Tooltip,
   TooltipContent,

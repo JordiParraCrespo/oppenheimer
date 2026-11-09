@@ -1,10 +1,11 @@
 'use client';
 
-import { PlusIcon } from 'lucide-react';
+import { GripVerticalIcon, PlusIcon } from 'lucide-react';
 import type * as React from 'react';
 
 import { cn } from '../lib/utils';
 import { Checkbox } from './checkbox';
+import { useSortableItem } from './drag';
 import { Skeleton } from './skeleton';
 
 /**
@@ -14,7 +15,12 @@ import { Skeleton } from './skeleton';
  * muted line (its milestone and where it stands), then the time it is due
  * at in mono and its project as a quiet pill. Done strikes the title and
  * mutes the row. The toggle and the title are separate buttons, so ticking a
- * task never opens it.
+ * task never opens it. `children` go last on the row: `SortableTodoRow`
+ * puts its grip there.
+ *
+ * `SortableTodoRow` is the row in a `SortableGroup`, reordered by the grip
+ * at its right end (six dots), the only part that picks it up; Space on the
+ * grip lifts it from the keyboard. While it is dragged its place fades.
  *
  * `TodoRowAdd` is the dashed row under the list that adds a task to the day
  * on Enter; `TodoRowSkeleton` stands in for a row while the day loads.
@@ -29,6 +35,7 @@ function TodoRow({
   onToggle,
   onOpen,
   className,
+  children,
   ...props
 }: Omit<React.ComponentProps<'div'>, 'title'> & {
   title: string;
@@ -79,7 +86,44 @@ function TodoRow({
           {tag}
         </span>
       ) : null}
+      {children}
     </div>
+  );
+}
+
+function SortableTodoRow({
+  id,
+  gripLabel,
+  className,
+  style,
+  ...props
+}: React.ComponentProps<typeof TodoRow> & {
+  id: string;
+  /** The grip's name for a screen reader ("Reorder Rotate the API keys"). */
+  gripLabel: string;
+}) {
+  const { ref, handleProps, style: slide, isDragging } = useSortableItem({
+    id,
+    data: { type: 'todo-row', label: props.title },
+  });
+  return (
+    <TodoRow
+      {...props}
+      ref={ref}
+      data-dragging={isDragging || undefined}
+      style={{ ...style, ...slide }}
+      className={cn('pr-2 data-dragging:opacity-45', className)}
+    >
+      <button
+        type="button"
+        aria-label={gripLabel}
+        title={gripLabel}
+        {...handleProps}
+        className="-ml-1 flex h-11 w-6 shrink-0 cursor-grab touch-none items-center justify-center rounded-xs text-fg-subtle outline-none transition-colors duration-instant ease-standard hover:text-fg-muted focus-visible:outline-2 focus-visible:outline-ring active:cursor-grabbing"
+      >
+        <GripVerticalIcon aria-hidden className="size-4" />
+      </button>
+    </TodoRow>
   );
 }
 
@@ -124,4 +168,4 @@ function TodoRowSkeleton({ className }: { className?: string }) {
   );
 }
 
-export { TodoRow, TodoRowAdd, TodoRowSkeleton };
+export { SortableTodoRow, TodoRow, TodoRowAdd, TodoRowSkeleton };

@@ -53,7 +53,7 @@ This page lives outside `.agents/rules/` on purpose: a file there without a
 | Plan's tasks by status | `TaskBoard`, `TaskColumn`, `TaskCard`, `TaskSessionChip`, `TaskComposer`; `MilestoneCard` above | a `Card` grid, a table |
 | A month with things on its days | `MonthCalendar` (`CalendarEntry` per item) inside the page's `DragProvider` | a grid of `div`s, a calendar library |
 | A day or a week on the hours (Plan's Day and Week) | `AgendaCalendar` inside the page's `DragProvider`; `agendaSlot` reads a drop's day and time | a hand-built hour grid, a `MonthCalendar` per day |
-| A task on a day's list (Plan's To do) | `TodoRow` per task, `TodoRowAdd` under them, `TodoRowSkeleton` while the day loads | a board card, a hand-built row with its own ring |
+| A task on a day's list (Plan's To do) | `SortableTodoRow` per task in a `SortableGroup` (`TodoRow` for the lifted copy), `TodoRowAdd` under them, `TodoRowSkeleton` while the day loads | a board card, a hand-built row with its own ring |
 | Picking a day | `DatePicker` | `<input type="date">`, a `ChipSelect` of dates |
 | A page that opens on its own name with a line of counts | `PageHeaderRow size="display"` + `PageHeaderStat`s in `PageHeaderMeta indent={false}` | a hand-built `h1` and a paragraph |
 | The bar over a session's terminal | `SessionPaneHeader` (and `SessionPaneBack` from a task) | a row of spans over the `Terminal` |

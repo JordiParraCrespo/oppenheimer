@@ -18,7 +18,8 @@ import {
   PageHeaderSep,
   PageHeaderStat,
 } from '@oppenheimer/design-system-web/page-header';
-import { TodoRow, TodoRowAdd, TodoRowSkeleton } from '@oppenheimer/design-system-web/todo-row';
+import { SortableGroup, useSortableGroups } from '@oppenheimer/design-system-web/drag';
+import { SortableTodoRow, TodoRow, TodoRowAdd, TodoRowSkeleton } from '@oppenheimer/design-system-web/todo-row';
 import * as React from 'react';
 
 import { TODAY } from './plan-fixtures';
@@ -194,24 +195,40 @@ const TODOS = [
   { id: 'd3', title: 'Draft the beta waitlist email', detail: 'Atlas public beta · due today', tag: 'Atlas', done: true },
 ];
 
-/** Plan's To do: tick a task (the title opens it), add one under the list on Enter. */
+/** Plan's To do: tick a task (the title opens it), drag one by its grip, add one under the list on Enter. */
 export function TodoListDemo() {
   const [rows, setRows] = React.useState(TODOS);
   const [draft, setDraft] = React.useState('');
+  const byId = new Map(rows.map((row) => [row.id, row]));
+  const handlers = useSortableGroups({ todo: rows.map((row) => row.id) }, (next) =>
+    setRows((current) => (next.todo ?? []).flatMap((id) => current.filter((row) => row.id === id))),
+  );
   return (
     <div className="flex w-full max-w-2xl flex-col gap-2 rounded-xl bg-canvas p-6">
-      {rows.map((row) => (
-        <TodoRow
-          key={row.id}
-          title={row.title}
-          detail={row.detail}
-          time={row.time}
-          tag={row.tag}
-          done={row.done}
-          toggleLabel={row.done ? 'Mark not done' : 'Mark done'}
-          onToggle={() => setRows((current) => current.map((r) => (r.id === row.id ? { ...r, done: !r.done } : r)))}
-        />
-      ))}
+      <DragProvider
+        {...handlers}
+        overlay={(active) => {
+          const row = byId.get(active.id);
+          return row ? <TodoRow {...row} toggleLabel="Mark done" /> : null;
+        }}
+      >
+        <SortableGroup id="todo" items={rows.map((row) => row.id)} accepts={['todo-row']} className="flex flex-col gap-2">
+          {rows.map((row) => (
+            <SortableTodoRow
+              key={row.id}
+              id={row.id}
+              title={row.title}
+              detail={row.detail}
+              time={row.time}
+              tag={row.tag}
+              done={row.done}
+              toggleLabel={row.done ? 'Mark not done' : 'Mark done'}
+              gripLabel={`Reorder ${row.title}`}
+              onToggle={() => setRows((current) => current.map((r) => (r.id === row.id ? { ...r, done: !r.done } : r)))}
+            />
+          ))}
+        </SortableGroup>
+      </DragProvider>
       <TodoRowAdd
         aria-label="Add a task for this day"
         placeholder="Add a task"
@@ -219,7 +236,7 @@ export function TodoListDemo() {
         onChange={(event) => setDraft(event.target.value)}
         onKeyDown={(event) => {
           if (event.key !== 'Enter' || !draft.trim()) return;
-          setRows((current) => [...current, { id: `d${Date.now()}`, title: draft.trim(), detail: 'due today', tag: 'Atlas', done: false }]);
+          setRows((current) => [...current, { id: `d${Date.now()}`, title: draft.trim(), detail: 'due today', tag: 'Atlas', done: false, time: undefined }]);
           setDraft('');
         }}
       />

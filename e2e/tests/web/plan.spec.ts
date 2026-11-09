@@ -322,6 +322,24 @@ test('To do: a task added to today, ticked done, and the overdue switch', async 
   await expect(row.getByRole('checkbox', { name: 'Mark as not done' })).toBeChecked();
   await expect(page).toHaveURL(/\/plan\/todo/);
 
+  // A second task, dragged by its grip above the first; the order survives a reload.
+  await add.fill('Book the venue');
+  await add.press('Enter');
+  const second = page.locator('[data-slot="todo-row"]', { hasText: 'Book the venue' });
+  await expect(second).toBeVisible();
+  const grip = second.getByRole('button', { name: 'Reorder Book the venue' });
+  const target = await row.boundingBox();
+  const from = await grip.boundingBox();
+  if (!target || !from) throw new Error('rows not laid out');
+  await page.mouse.move(from.x + from.width / 2, from.y + from.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(from.x + from.width / 2, target.y + 4, { steps: 12 });
+  await page.mouse.up();
+  const titles = page.locator('[data-slot="todo-row"] button:not([aria-label]) span:first-child');
+  await expect(titles).toHaveText(['Book the venue', 'Pay the hosting invoice']);
+  await page.reload();
+  await expect(titles).toHaveText(['Book the venue', 'Pay the hosting invoice']);
+
   // The next day holds nothing, and Include overdue is a switch in the address.
   await page.getByRole('button', { name: 'Next day' }).click();
   await expect(page).toHaveURL(/date=/);
@@ -330,7 +348,7 @@ test('To do: a task added to today, ticked done, and the overdue switch', async 
   await expect(page).toHaveURL(/overdue=off/);
   await page.getByRole('button', { name: 'Today', exact: true }).click();
   await expect(row).toBeVisible();
-  await row.getByRole('button', { name: /Pay the hosting invoice/ }).click();
+  await row.getByRole('button', { name: /^Pay the hosting invoice/ }).click();
   await expect(page.getByRole('dialog', { name: 'Edit task' })).toBeVisible();
   await owner.api.dispose();
 });
