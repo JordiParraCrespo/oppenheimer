@@ -2,6 +2,8 @@ import { Inject, Injectable } from '@nestjs/common';
 import { QueryBus } from '@nestjs/cqrs';
 import type { BotAttachment } from '@oppenheimer/shared';
 import { z } from 'zod/v4';
+import type { WorkSessionEntity } from '../../sessions/domain/work-session.entity';
+import { FindSessionQuery } from '../../sessions/queries/find-session/find-session.query';
 import {
   FindSessionSharedPreviewQuery,
   type SessionSharedPreviewRead,
@@ -21,6 +23,12 @@ import {
 } from './bot-tool.factory';
 
 /**
+ * What a bot shows the person about a session, under its reply.
+ * `show_session` puts the console's Open session button on the call's line,
+ * the one a session the bot started carries, so the person reaches a session
+ * the bot only found (one stuck on a dialog only its terminal shows) in a
+ * click; the chat draws it from the call's session, never from the words.
+ *
  * A file a session's agent shared, shown to the person under the bot's reply
  * (`product/next-steps/agent-tools.md` §7): `show_session_file`. The bytes
  * live on the host, so the sessions module asks the runner for the JPEG
@@ -42,6 +50,23 @@ export class BotSessionFileToolsFactory implements BotToolArea {
 
   definitions(): readonly BotToolDefinition[] {
     return [
+      defineBotTool({
+        name: 'show_session',
+        readOnly: true,
+        scope: 'sessions:read',
+        description:
+          "Gives the person a button that opens a session in the console, on this call's line in the chat: use it when you point them at a session, above all one that needs them in its terminal (a permission dialog get_session cannot answer). A session you start with start_session already carries one. Do not write the session's address in your reply; this is the link.",
+        input: z.object({ session_id: z.uuid().describe('The session (from list_sessions).') }),
+        run: async (input, context) => {
+          const session = await this.queryBus.execute<FindSessionQuery, WorkSessionEntity>(
+            new FindSessionQuery({ scope: context.owner, sessionId: input.session_id }),
+          );
+          return {
+            content: `The person has a button that opens session ${session.id} "${session.name}" on this call's line.`,
+            sessionId: session.id,
+          };
+        },
+      }),
       defineBotTool({
         name: 'show_session_file',
         scope: 'sessions:read',

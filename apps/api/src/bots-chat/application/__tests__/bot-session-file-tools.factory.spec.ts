@@ -1,6 +1,7 @@
 import type { QueryBus } from '@nestjs/cqrs';
 import { emptyScope } from '@oppenheimer/backend-authz';
 import type { SessionSharedFile } from '@oppenheimer/shared';
+import { FindSessionQuery } from '../../../sessions/queries/find-session/find-session.query';
 import {
   FindSessionSharedPreviewQuery,
   type SessionSharedPreviewRead,
@@ -49,21 +50,54 @@ const file = (overrides: Partial<SessionSharedFile> = {}): SessionSharedFile => 
   ...overrides,
 });
 
-function setup(read: SessionSharedPreviewRead) {
+function setup(read: unknown, name = 'show_session_file') {
   const queryBus = { execute: vi.fn(async () => read) };
   const attachments = { insert: vi.fn<BotAttachmentRepositoryPort['insert']>(async () => {}) };
   const files = {
     store: vi.fn<BotAttachmentFilesPort['store']>(async () => {}),
     remove: vi.fn<BotAttachmentFilesPort['remove']>(async () => {}),
   };
-  const [tool] = new BotSessionFileToolsFactory(
+  const tool = new BotSessionFileToolsFactory(
     queryBus as unknown as QueryBus,
     attachments as unknown as BotAttachmentRepositoryPort,
     files as unknown as BotAttachmentFilesPort,
-  ).definitions();
-  if (!tool) throw new Error('no show_session_file');
+  )
+    .definitions()
+    .find((definition) => definition.name === name);
+  if (!tool) throw new Error(`no ${name}`);
   return { queryBus, attachments, files, tool };
 }
+
+describe('show_session', () => {
+  // The regression: a bot that found a session stuck on a terminal-only
+  // dialog cannot hand the person the Open session button a started session
+  // carries, and says it has no link to give.
+  it('hands the chat the session it names, so its line carries Open session', async () => {
+    const { tool, queryBus } = setup(
+      { id: SESSION, name: 'Oct 2026 invoice PDFs' },
+      'show_session',
+    );
+
+    const result = await tool.bind(context()).run({ session_id: SESSION }, { signal });
+
+    const asked = queryBus.execute.mock.calls[0]?.[0] as unknown;
+    expect(asked).toBeInstanceOf(FindSessionQuery);
+    expect(asked).toMatchObject({ sessionId: SESSION });
+    expect(result.isError).toBeFalsy();
+    expect(result.data?.sessionId).toBe(SESSION);
+  });
+
+  // The regression: a session the owner cannot read still gets a button.
+  it('gives no button for a session it cannot find', async () => {
+    const { tool, queryBus } = setup(null, 'show_session');
+    queryBus.execute.mockRejectedValueOnce(new Error('Session not found'));
+
+    const result = await tool.bind(context()).run({ session_id: SESSION }, { signal });
+
+    expect(result.isError).toBe(true);
+    expect(result.data?.sessionId).toBeUndefined();
+  });
+});
 
 describe('show_session_file', () => {
   // The regression: the bot cannot show the screenshot its agent took, or
