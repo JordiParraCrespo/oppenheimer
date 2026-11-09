@@ -87,8 +87,11 @@ describe('waking a bot on WhatsApp (integration)', () => {
     );
     // The real bot lookup; a wake never reads a credential.
     const wakeOn = new WakeOnWhatsappCommandHandler(
-      new BotChannelWakeResolver(new BotConversationRepository(dataSource), turns),
-      new BotModelAccessResolver(bots, {} as TurnCredentialsPort),
+      new BotChannelWakeResolver(
+        new BotConversationRepository(dataSource),
+        turns,
+        new BotModelAccessResolver(bots, {} as TurnCredentialsPort),
+      ),
     );
     const commands = {
       execute: (command: WakeOnWhatsappCommand) => wakeOn.execute(command),

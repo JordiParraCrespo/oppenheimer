@@ -1,3 +1,45 @@
+import type { BotChannelOrigin } from '@oppenheimer/shared';
+import { BotMessageEntity } from './bot-message.entity';
+import { BotTurnEntity } from './bot-turn.entity';
+
+/** What a channel turn takes from the bot it wakes: everything but where it runs. */
+export type ChannelTurnProps = Omit<
+  Parameters<typeof BotTurnEntity.queue>[0],
+  'origin' | 'sourceKey' | 'lane' | 'conversationId'
+>;
+
+/**
+ * The turn the owner's message on a channel queues
+ * (`product/next-steps/answering-on-telegram-and-whatsapp.md` §3): in the
+ * owner lane, as the owner, in the chat's own conversation, opened by what
+ * they wrote as their message. It is the owner's own direct chat, so it is
+ * theirs as a console message is: the bot's tools and memory. The channel
+ * names its origin and the key that makes the message one turn.
+ */
+export function channelTurn(
+  props: ChannelTurnProps,
+  message: { origin: BotChannelOrigin; sourceKey: string; conversationId: string; text: string },
+): { turn: BotTurnEntity; opening: BotMessageEntity } {
+  const turn = BotTurnEntity.queue({
+    ...props,
+    conversationId: message.conversationId,
+    origin: message.origin,
+    lane: 'owner',
+    sourceKey: message.sourceKey,
+  });
+  const opening = BotMessageEntity.createNew({
+    organizationId: props.organizationId,
+    botId: props.botId,
+    conversationId: message.conversationId,
+    turnId: turn.id,
+    role: 'user',
+    content: message.text,
+    steps: [],
+    position: 0,
+  });
+  return { turn, opening };
+}
+
 /**
  * What a channel's turn (Telegram, WhatsApp) sends back when it ends: its
  * last text, or, with none, what happened to it, so the person on their

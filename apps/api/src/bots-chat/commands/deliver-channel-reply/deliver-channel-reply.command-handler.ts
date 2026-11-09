@@ -8,13 +8,44 @@ import {
   BOT_MESSAGE_REPOSITORY,
   BOT_TURN_REPOSITORY,
 } from '../../bots-chat.di-tokens';
-import type { BotConversationRepositoryPort } from '../../database/bot-conversation.repository.port';
+import type {
+  BotChannelChat,
+  BotConversationRepositoryPort,
+} from '../../database/bot-conversation.repository.port';
 import type { BotMessageRepositoryPort } from '../../database/bot-message.repository.port';
 import type { BotTurnRepositoryPort } from '../../database/bot-turn.repository.port';
 import { channelReplyOf } from '../../domain/bot-channel-turn.policy';
 import { telegramMessageIdOf } from '../../domain/bot-telegram-turn.policy';
 import { whatsappMessageRowIdOf } from '../../domain/bot-whatsapp-turn.policy';
 import { DeliverChannelReplyCommand } from './deliver-channel-reply.command';
+
+/** What every channel's reply carries; the channel adds its chat and what it quotes. */
+type ChannelReply = Omit<
+  ConstructorParameters<typeof ReplyOnTelegramCommand>[0],
+  'accountId' | 'replyToId'
+>;
+
+/** Each channel's reply, for a chat of its kind and the key of the turn that opened it. */
+const REPLY_ON: {
+  [K in BotChannelChat['kind']]: (
+    chat: Extract<BotChannelChat, { kind: K }>,
+    sourceKey: string | null,
+    reply: ChannelReply,
+  ) => ReplyOnTelegramCommand | ReplyOnWhatsappCommand;
+} = {
+  telegram: (chat, sourceKey, reply) =>
+    new ReplyOnTelegramCommand({
+      ...reply,
+      accountId: chat.telegramAccountId,
+      replyToId: telegramMessageIdOf(sourceKey),
+    }),
+  whatsapp: (chat, sourceKey, reply) =>
+    new ReplyOnWhatsappCommand({
+      ...reply,
+      accountId: chat.whatsappAccountId,
+      replyToRowId: whatsappMessageRowIdOf(sourceKey),
+    }),
+};
 
 /**
  * A channel turn's answer goes back to the chat it was asked in
@@ -44,25 +75,18 @@ export class DeliverChannelReplyCommandHandler
     const chat = await this.conversations.findChannelChat(turn.organizationId, turn.conversationId);
     if (!chat) return;
     const texts = await this.messages.findTurnTexts(turn.organizationId, turn.id);
-    const reply = {
+    const reply: ChannelReply = {
       organizationId: turn.organizationId,
       chatId: chat.chatId,
       text: channelReplyOf(turn, texts),
       botId: turn.botId,
       metadata: { correlationId: metadata.correlationId },
     };
-    await this.commands.execute(
-      chat.kind === 'telegram'
-        ? new ReplyOnTelegramCommand({
-            ...reply,
-            accountId: chat.telegramAccountId,
-            replyToId: telegramMessageIdOf(turn.sourceKey),
-          })
-        : new ReplyOnWhatsappCommand({
-            ...reply,
-            accountId: chat.whatsappAccountId,
-            replyToRowId: whatsappMessageRowIdOf(turn.sourceKey),
-          }),
-    );
+    const replyOn = REPLY_ON[chat.kind] as (
+      chat: BotChannelChat,
+      sourceKey: string | null,
+      reply: ChannelReply,
+    ) => ReplyOnTelegramCommand | ReplyOnWhatsappCommand;
+    await this.commands.execute(replyOn(chat, turn.sourceKey, reply));
   }
 }

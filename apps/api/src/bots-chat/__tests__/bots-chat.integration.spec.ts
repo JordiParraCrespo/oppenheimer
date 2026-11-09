@@ -752,8 +752,7 @@ describe('bots chat (integration)', () => {
       // The real bot lookup; a wake never reads a credential.
       const access = new BotModelAccessResolver(bots, {} as TurnCredentialsPort);
       wakeOn = new WakeOnTelegramCommandHandler(
-        new BotChannelWakeResolver(new BotConversationRepository(dataSource), turns),
-        access,
+        new BotChannelWakeResolver(new BotConversationRepository(dataSource), turns, access),
       );
     });
 

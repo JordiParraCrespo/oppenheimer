@@ -1,5 +1,6 @@
-import { BotMessageEntity } from './bot-message.entity';
-import { BotTurnEntity } from './bot-turn.entity';
+import { type ChannelTurnProps, channelTurn } from './bot-channel-turn.policy';
+import type { BotMessageEntity } from './bot-message.entity';
+import type { BotTurnEntity } from './bot-turn.entity';
 
 /** What a message of the owner's on WhatsApp is, for the turn it queues. */
 export interface BotWhatsappMessage {
@@ -33,37 +34,15 @@ export function whatsappMessageRowIdOf(sourceKey: string | null): string | null 
   return match?.[1] ?? null;
 }
 
-/**
- * The turn the owner's message on WhatsApp queues
- * (`product/next-steps/answering-on-telegram-and-whatsapp.md` §3): in the
- * owner lane, as the owner, in the WhatsApp chat's own conversation, opened
- * by what they wrote as their message. It is the owner's own direct chat
- * with their number, so it is theirs as a console message is: the bot's
- * tools and memory.
- */
+/** The turn the owner's message on WhatsApp queues, in the chat's own conversation. */
 export function whatsappTurn(
-  props: Omit<
-    Parameters<typeof BotTurnEntity.queue>[0],
-    'origin' | 'sourceKey' | 'lane' | 'conversationId'
-  >,
+  props: ChannelTurnProps,
   message: BotWhatsappMessage,
 ): { turn: BotTurnEntity; opening: BotMessageEntity } {
-  const turn = BotTurnEntity.queue({
-    ...props,
-    conversationId: message.conversationId,
+  return channelTurn(props, {
     origin: 'whatsapp',
-    lane: 'owner',
     sourceKey: whatsappSourceKey(message),
-  });
-  const opening = BotMessageEntity.createNew({
-    organizationId: props.organizationId,
-    botId: props.botId,
     conversationId: message.conversationId,
-    turnId: turn.id,
-    role: 'user',
-    content: message.text,
-    steps: [],
-    position: 0,
+    text: message.text,
   });
-  return { turn, opening };
 }

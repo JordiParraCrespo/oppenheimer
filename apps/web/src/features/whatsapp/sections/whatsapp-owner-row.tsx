@@ -7,11 +7,11 @@ import {
 import { CORE_CONFIG } from '@oppenheimer/frontend-core/config';
 import { useErrorMessage } from '@oppenheimer/frontend-core/react';
 import { ErrorAlert, useLocale } from '@oppenheimer/frontend-web';
-import { useState } from 'react';
+import { type ReactNode, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { WhatsappOwnerCodeForm } from '@/features/whatsapp/forms/whatsapp-owner-code-form';
 import { WhatsappOwnerNumberForm } from '@/features/whatsapp/forms/whatsapp-owner-number-form';
-import { ownerStep } from '@/features/whatsapp/lib/owner-row';
+import { type OwnerStep, ownerStep } from '@/features/whatsapp/lib/owner-row';
 
 /**
  * The reader's own number on one of theirs
@@ -69,64 +69,71 @@ export function WhatsappOwnerRow({ account }: { account: WhatsappAccountEntity }
       ? t('settings.whatsapp.owner.hostOffline')
       : [line, replacing].filter(Boolean).join(' ');
 
+  // One entry per step: a new step is a new entry, not another arm.
+  const otherNumber = (
+    <Button size="sm" variant="ghost" onClick={change}>
+      {t('settings.whatsapp.owner.otherNumber')}
+    </Button>
+  );
+  const actions: Record<OwnerStep, ReactNode> = {
+    number: (
+      <WhatsappOwnerNumberForm
+        pending={request.isPending}
+        disabled={!account.hostOnline}
+        error={failure(request.error, t('settings.whatsapp.owner.failed'))}
+        onSubmit={send}
+        onCancel={account.ownerState === 'none' ? undefined : () => setChanging(false)}
+      />
+    ),
+    code: (
+      <>
+        <WhatsappOwnerCodeForm
+          key={account.ownerCodeExpiresAt?.getTime()}
+          pending={confirm.isPending}
+          error={failure(confirm.error, t('settings.whatsapp.owner.failed'))}
+          onSubmit={(code) => confirm.mutate({ id: account.id, code })}
+        />
+        <Button
+          size="sm"
+          variant="ghost"
+          pending={request.isPending}
+          pendingLabel={t('settings.whatsapp.owner.sending')}
+          disabled={!account.hostOnline}
+          onClick={() => send(pending)}
+        >
+          {t('settings.whatsapp.owner.resend')}
+        </Button>
+        {otherNumber}
+      </>
+    ),
+    expired: (
+      <>
+        {otherNumber}
+        <Button
+          size="sm"
+          variant="secondary"
+          pending={request.isPending}
+          pendingLabel={t('settings.whatsapp.owner.sending')}
+          disabled={!account.hostOnline}
+          onClick={() => send(pending)}
+        >
+          {t('settings.whatsapp.owner.resend')}
+        </Button>
+      </>
+    ),
+    confirmed: (
+      <Button size="sm" variant="ghost" onClick={change}>
+        {t('settings.whatsapp.owner.change')}
+      </Button>
+    ),
+  };
+
   return (
     <SettingsListRow
       align="center"
       data-testid="whatsapp-owner"
       meta={meta}
-      actions={
-        step === 'number' ? (
-          <WhatsappOwnerNumberForm
-            pending={request.isPending}
-            disabled={!account.hostOnline}
-            error={failure(request.error, t('settings.whatsapp.owner.failed'))}
-            onSubmit={send}
-            onCancel={account.ownerState === 'none' ? undefined : () => setChanging(false)}
-          />
-        ) : step === 'code' ? (
-          <>
-            <WhatsappOwnerCodeForm
-              key={account.ownerCodeExpiresAt?.getTime()}
-              pending={confirm.isPending}
-              error={failure(confirm.error, t('settings.whatsapp.owner.failed'))}
-              onSubmit={(code) => confirm.mutate({ id: account.id, code })}
-            />
-            <Button
-              size="sm"
-              variant="ghost"
-              pending={request.isPending}
-              pendingLabel={t('settings.whatsapp.owner.sending')}
-              disabled={!account.hostOnline}
-              onClick={() => send(pending)}
-            >
-              {t('settings.whatsapp.owner.resend')}
-            </Button>
-            <Button size="sm" variant="ghost" onClick={change}>
-              {t('settings.whatsapp.owner.otherNumber')}
-            </Button>
-          </>
-        ) : step === 'expired' ? (
-          <>
-            <Button size="sm" variant="ghost" onClick={change}>
-              {t('settings.whatsapp.owner.otherNumber')}
-            </Button>
-            <Button
-              size="sm"
-              variant="secondary"
-              pending={request.isPending}
-              pendingLabel={t('settings.whatsapp.owner.sending')}
-              disabled={!account.hostOnline}
-              onClick={() => send(pending)}
-            >
-              {t('settings.whatsapp.owner.resend')}
-            </Button>
-          </>
-        ) : (
-          <Button size="sm" variant="ghost" onClick={change}>
-            {t('settings.whatsapp.owner.change')}
-          </Button>
-        )
-      }
+      actions={actions[step]}
     >
       {t('settings.whatsapp.owner.title')}
       {step === 'number' ? null : (

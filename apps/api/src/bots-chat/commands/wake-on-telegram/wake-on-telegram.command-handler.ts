@@ -1,7 +1,5 @@
 import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
-import { botDefaultModel } from '@oppenheimer/shared';
 import { BotChannelWakeResolver } from '../../application/bot-channel-wake.resolver';
-import { BotModelAccessResolver } from '../../application/bot-model-access.resolver';
 import { telegramTurn } from '../../domain/bot-telegram-turn.policy';
 import { WakeOnTelegramCommand } from './wake-on-telegram.command';
 
@@ -12,38 +10,30 @@ import { WakeOnTelegramCommand } from './wake-on-telegram.command';
  * starts at the owner's last `/new` before it (fixed when the message was
  * stored, so deliveries in any order agree), keyed by the message so a
  * delivery twice is one turn; `/new` starts a conversation at itself; `/stop`
- * asks the conversation's running turn to stop (`BotChannelWakeResolver`). A
- * bot that is gone, or is not the Telegram bot owner's, is woken by nothing.
+ * asks the conversation's running turn to stop (`BotChannelWakeResolver`). The
+ * resolver wakes only a bot the owner made.
  */
 @CommandHandler(WakeOnTelegramCommand)
 export class WakeOnTelegramCommandHandler implements ICommandHandler<WakeOnTelegramCommand, void> {
-  constructor(
-    private readonly channel: BotChannelWakeResolver,
-    private readonly access: BotModelAccessResolver,
-  ) {}
+  constructor(private readonly channel: BotChannelWakeResolver) {}
 
   async execute(command: WakeOnTelegramCommand): Promise<void> {
-    const bot = await this.access.findBot(command.organizationId, command.botId);
-    if (!bot || bot.createdByUserId !== command.userId) return;
     const { organizationId, telegramAccountId, chatId, messageId } = command;
     await this.channel.wake({
-      chat: { kind: 'telegram', organizationId, botId: bot.id, telegramAccountId, chatId },
+      chat: { kind: 'telegram', organizationId, botId: command.botId, telegramAccountId, chatId },
+      userId: command.userId,
       startsAt: command.conversationStartsAt,
       messageId,
       command: command.command,
       correlationId: command.metadata.correlationId,
-      turn: (conversationId) =>
-        telegramTurn(
-          {
-            organizationId,
-            botId: bot.id,
-            requestedByUserId: command.userId,
-            provider: bot.provider,
-            model: bot.model ?? botDefaultModel(bot.provider).id,
-            effort: bot.effort,
-          },
-          { conversationId, telegramAccountId, chatId, messageId, text: command.text },
-        ),
+      turn: (props, conversationId) =>
+        telegramTurn(props, {
+          conversationId,
+          telegramAccountId,
+          chatId,
+          messageId,
+          text: command.text,
+        }),
     });
   }
 }
