@@ -31,9 +31,15 @@ test('a card of questions is answered at its own route, and the bot is told the 
     'SELECT "organizationId" FROM bot WHERE id = $1',
     [bot.id],
   );
+  // The bot's console chat, which its turns run in.
+  await query(
+    `INSERT INTO bot_conversation (id, "organizationId", "botId", kind)
+     VALUES ($2, $1, $2, 'console') ON CONFLICT (id) DO NOTHING`,
+    [organizationId, bot.id],
+  );
   const [{ id: turnId }] = await query<{ id: string }>(
-    `INSERT INTO bot_turn ("organizationId","botId","requestedByUserId",provider,model,status,"startedAt","endedAt")
-     VALUES ($1,$2,$3,'glm','glm-5.3','completed',now(),now()) RETURNING id`,
+    `INSERT INTO bot_turn ("organizationId","botId","conversationId","requestedByUserId",provider,model,status,"startedAt","endedAt")
+     VALUES ($1,$2,$2,$3,'glm','glm-5.3','completed',now(),now()) RETURNING id`,
     [organizationId, bot.id, userId],
   );
   const questions = [

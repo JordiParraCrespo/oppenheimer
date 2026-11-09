@@ -55,6 +55,8 @@ export interface BotToolCallContext {
   owner: AccessScope;
   organizationId: string;
   botId: string;
+  /** The conversation the turn runs in: the bot's id for its console chat. */
+  conversationId: string;
   turnId: string;
   homeHostId: string | null;
   /** The sender's IANA zone; times a tool writes are in it. */

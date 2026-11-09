@@ -207,6 +207,13 @@ per-chat "Always allow" for sends are unchanged.
    owner link, the owner's turns and replies, the commands, the profile
    sync, strangers held with the fixed line, deleting a bound bot refused.
    Your `/start` is answered.
+   *Built 2026-11-09 on today's runner (one Telegram bot per host), the bot
+   chosen in Settings → Telegram; the owner's chat is a conversation of its
+   own (`bot_conversation`). Left for the runner's pull request: a host
+   polling one token per bot, the bot's profile kept in step, Telegram's
+   formatting and the typing action. Left for the Channels pull request:
+   the bot's own Channels section. The turn runs in UTC until the owner's
+   zone is known on Telegram.*
 2. **Contacts on Telegram.** Allowed contacts, Allow and Ignore, the
    contact's turn (§3), groups, the limits and the spend guard, Pause and
    Take over.
