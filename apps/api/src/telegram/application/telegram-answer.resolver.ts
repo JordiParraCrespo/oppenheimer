@@ -8,6 +8,7 @@ import {
   TELEGRAM_STOP_LINE,
   TELEGRAM_STRANGER_LINE,
   type TelegramInboundAction,
+  telegramInboundAction,
 } from '../domain/telegram-inbound.policy';
 import type { TelegramMessageDraft } from '../domain/telegram-message.types';
 import { TELEGRAM_ACCOUNT_REPOSITORY, TELEGRAM_MESSAGE_REPOSITORY } from '../telegram.di-tokens';
@@ -16,9 +17,9 @@ import { TelegramReplyResolver } from './telegram-reply.resolver';
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 /**
- * What new messages to a Telegram bot are answered with, besides a bot's
- * turn (`product/next-steps/answering-on-telegram-and-whatsapp.md` §2): a
- * `start` link's code records its sender as the owner and says so; a
+ * What new messages to a Telegram bot come to, and are answered with besides
+ * a bot's turn (`product/next-steps/answering-on-telegram-and-whatsapp.md`
+ * §2): a `start` link's code records its sender as the owner and says so; a
  * stranger, or a code that records nobody, gets one fixed line a day and
  * nothing else; the owner's `/help`, `/new` and `/stop` get theirs.
  */
@@ -31,6 +32,32 @@ export class TelegramAnswerResolver {
     private readonly messages: TelegramMessageRepositoryPort,
     private readonly replies: TelegramReplyResolver,
   ) {}
+
+  /**
+   * What each message of a batch comes to, in the order they came
+   * (`telegramInboundAction`), keyed `chat/id`. A `start` link's code is
+   * claimed here, before the messages after it are read, so the owner's
+   * first message in the same batch is already theirs; a code that records
+   * nobody is a stranger's message. A batch sent again claims nothing more.
+   */
+  async decide(
+    account: TelegramAccountEntity,
+    drafts: readonly TelegramMessageDraft[],
+  ): Promise<Map<string, TelegramInboundAction>> {
+    const now = new Date();
+    const actions = new Map<string, TelegramInboundAction>();
+    for (const draft of drafts) {
+      const action = telegramInboundAction(account, draft);
+      const decided: TelegramInboundAction =
+        action.kind !== 'link'
+          ? action
+          : (await this.claim(account, action.code, draft, now))
+            ? { kind: 'reply', text: TELEGRAM_LINKED_LINE }
+            : { kind: 'stranger' };
+      actions.set(`${draft.chatId}/${draft.externalId}`, decided);
+    }
+    return actions;
+  }
 
   /** The fixed lines the new messages are owed, in the order they came. */
   async answer(
@@ -46,9 +73,7 @@ export class TelegramAnswerResolver {
         replyToId: draft.externalId,
       };
       const action = actionOf(draft);
-      if (action.kind === 'link' && (await this.claim(account, action.code, draft, now))) {
-        await this.replies.send(account, target, TELEGRAM_LINKED_LINE, null);
-      } else if (action.kind === 'link' || action.kind === 'stranger') {
+      if (action.kind === 'stranger') {
         const ref = { organizationId: account.organizationId, accountId: account.id };
         if (
           await this.messages.wroteInChatSince(ref, draft.chatId, new Date(now.getTime() - DAY_MS))

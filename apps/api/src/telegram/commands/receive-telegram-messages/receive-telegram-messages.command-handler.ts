@@ -6,10 +6,7 @@ import type { TelegramAccountRepositoryPort } from '../../database/telegram-acco
 import type { TelegramMessageRepositoryPort } from '../../database/telegram-message.repository.port';
 import { TelegramOwnerWroteDomainEvent } from '../../domain/events/telegram-owner-wrote.domain-event';
 import type { TelegramAccountEntity } from '../../domain/telegram-account.entity';
-import {
-  type TelegramInboundAction,
-  telegramInboundAction,
-} from '../../domain/telegram-inbound.policy';
+import type { TelegramInboundAction } from '../../domain/telegram-inbound.policy';
 import type { TelegramMessageDraft } from '../../domain/telegram-message.types';
 import { TELEGRAM_ACCOUNT_REPOSITORY, TELEGRAM_MESSAGE_REPOSITORY } from '../../telegram.di-tokens';
 import { TelegramMessageMapper } from '../../telegram-message.mapper';
@@ -55,14 +52,14 @@ export class ReceiveTelegramMessagesCommandHandler
     const found = await this.accounts.findByHostForSystem(hostId);
     if (found.isNone()) return keys;
     const account = found.unwrap();
-    const actionOf = (draft: TelegramMessageDraft) => telegramInboundAction(account, draft);
-    const inserted = await this.messages.insertMany(
-      messages.map((message) => this.mapper.fromInbound(account, message)),
-      {
-        ownerTelegramId: account.ownerTelegramId,
-        eventFor: (draft) => this.owed(account, draft, actionOf(draft)),
-      },
-    );
+    const drafts = messages.map((message) => this.mapper.fromInbound(account, message));
+    const actions = await this.answers.decide(account, drafts);
+    const actionOf = (draft: TelegramMessageDraft): TelegramInboundAction =>
+      actions.get(`${draft.chatId}/${draft.externalId}`) ?? { kind: 'ignore' };
+    const inserted = await this.messages.insertMany(drafts, {
+      ownerTelegramId: account.ownerTelegramId,
+      eventFor: (draft) => this.owed(account, draft, actionOf(draft)),
+    });
     const ref = { organizationId: account.organizationId, accountId: account.id };
     await this.messages.pruneBefore(
       ref,

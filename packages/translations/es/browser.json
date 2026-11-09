@@ -3829,9 +3829,10 @@
         "openLink": "Abrir el enlace",
         "linked": "Tu Telegram está vinculado: aquí solo te responde a ti.",
         "notLinked": "Vincula tu Telegram para que el bot sepa que eres tú. Hasta entonces no responde a nadie.",
-        "linkReady": "Abre el enlace en Telegram en los próximos diez minutos y pulsa Iniciar.",
+        "linkReady": "Abre el enlace en Telegram en los próximos diez minutos y pulsa Iniciar. Crea un enlace nuevo si ha caducado.",
         "failed": "No se ha guardado. Inténtalo de nuevo.",
-        "making": "Creando el enlace…"
+        "making": "Creando el enlace…",
+        "newLink": "Nuevo enlace"
       }
     },
     "about": {

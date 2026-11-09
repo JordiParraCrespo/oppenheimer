@@ -17,7 +17,8 @@ const NO_BOT = '';
  * answers there, or none, saved as it is picked; and the one-time link that
  * records the reader's own Telegram account as the owner, the only person it
  * answers. The link is made on request and opened from here, so its code is
- * never shown; it lasts ten minutes.
+ * never shown; it lasts ten minutes, and New link makes another when it has
+ * expired or been used.
  */
 export function TelegramAnsweringRow({
   account,
@@ -69,19 +70,22 @@ export function TelegramAnsweringRow({
               <ExternalLink />
               {t('settings.telegram.answering.openLink')}
             </Button>
-          ) : account.username && !account.needsToken ? (
+          ) : null}
+          {account.username && !account.needsToken ? (
             <Button
               size="sm"
-              variant={account.ownerLinked ? 'ghost' : 'secondary'}
+              variant={account.ownerLinked || ownerLink.data ? 'ghost' : 'secondary'}
               pending={ownerLink.isPending}
               pendingLabel={t('settings.telegram.answering.making')}
               onClick={() => ownerLink.mutate(account.id)}
             >
-              <ExternalLink />
+              {ownerLink.data ? null : <ExternalLink />}
               {t(
-                account.ownerLinked
-                  ? 'settings.telegram.answering.linkAgain'
-                  : 'settings.telegram.answering.link',
+                ownerLink.data
+                  ? 'settings.telegram.answering.newLink'
+                  : account.ownerLinked
+                    ? 'settings.telegram.answering.linkAgain'
+                    : 'settings.telegram.answering.link',
               )}
             </Button>
           ) : null}

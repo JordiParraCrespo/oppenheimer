@@ -3802,9 +3802,10 @@
         "openLink": "Open the link",
         "linked": "Your Telegram is linked: only you are answered here.",
         "notLinked": "Link your Telegram so the bot knows it is you. Until then it answers nobody.",
-        "linkReady": "Open the link in Telegram within ten minutes and press Start.",
+        "linkReady": "Open the link in Telegram within ten minutes and press Start. Make a new link if it has expired.",
         "failed": "That did not save. Try again.",
-        "making": "Making the link…"
+        "making": "Making the link…",
+        "newLink": "New link"
       }
     },
     "about": {

@@ -4,7 +4,8 @@ import { AppError } from '@oppenheimer/backend-core';
 import { None, Some } from 'oxide.ts';
 import { describe, expect, it, vi } from 'vitest';
 import type { HostAccessPort } from '../../hosts/application/host-access.port';
-import type { TelegramAnswerResolver } from '../application/telegram-answer.resolver';
+import { TelegramAnswerResolver } from '../application/telegram-answer.resolver';
+import type { TelegramReplyResolver } from '../application/telegram-reply.resolver';
 import type { TelegramDevicePort } from '../application/telegram-device.port';
 import { LinkTelegramCommand } from '../commands/link-telegram/link-telegram.command';
 import { LinkTelegramCommandHandler } from '../commands/link-telegram/link-telegram.command-handler';
@@ -105,8 +106,16 @@ function fakeMessages(
   };
 }
 
-function fakeAnswers(): TelegramAnswerResolver {
-  return { answer: vi.fn(async () => {}) } as unknown as TelegramAnswerResolver;
+/** The real decisions over fakes, with the lines it would send recorded, not sent. */
+function fakeAnswers(
+  accounts = fakeAccounts().repository,
+  messages = fakeMessages(),
+): TelegramAnswerResolver {
+  const answers = new TelegramAnswerResolver(accounts, messages, {
+    send: vi.fn(async () => 1),
+  } as unknown as TelegramReplyResolver);
+  vi.spyOn(answers, 'answer').mockResolvedValue(undefined);
+  return answers;
 }
 
 const hosts: HostAccessPort = { assertUsable: vi.fn(async () => ({ probedTools: null })) };
@@ -356,6 +365,33 @@ describe('ReceiveTelegramMessagesCommandHandler', () => {
       text: 'Is the build green?',
     });
     expect(events[1]).toBeNull();
+  });
+
+  // What breaks this: the owner's first message, sent with the /start that
+  // linked them in one batch, read as a stranger's and never answered.
+  it('claims a start link before reading the messages after it in the same batch', async () => {
+    const messages = fakeMessages();
+    const linked = account({ status: 'connected' });
+    linked.answerAs('0b3e2a1c-4444-4c5d-8e6f-70819203b4c5');
+    const { code } = linked.openOwnerLink(new Date());
+    const { repository } = fakeAccounts([linked]);
+    const handler = new ReceiveTelegramMessagesCommandHandler(
+      repository,
+      messages,
+      new TelegramMessageMapper(),
+      fakeAnswers(repository, messages),
+    );
+    const start = { ...inbound, key: '123456789/41', id: '41', text: `/start ${code}` };
+
+    await handler.execute(
+      new ReceiveTelegramMessagesCommand({ hostId: HOST, messages: [start, inbound] }),
+    );
+
+    expect(linked.isOwner('123456789')).toBe(true);
+    const [drafts, owed] = vi.mocked(messages.insertMany).mock.calls[0] ?? [];
+    const events = (drafts ?? []).map((draft) => owed?.eventFor(draft)?.('0') ?? null);
+    expect(events[0]).toBeNull();
+    expect(events[1]).toMatchObject({ messageId: '42', command: 'message' });
   });
 
   it('acks and drops messages for a host with no connected Telegram bot', async () => {

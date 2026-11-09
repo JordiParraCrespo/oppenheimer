@@ -5,6 +5,7 @@ import {
   telegramSourceKey,
   telegramTurn,
 } from '../domain/bot-telegram-turn.policy';
+import { BotTurnEntity } from '../domain/bot-turn.entity';
 
 /**
  * A message of the owner's on Telegram is a turn of its own conversation,
@@ -63,5 +64,38 @@ describe('telegramReplyOf', () => {
     );
     expect(telegramReplyOf({ status: 'cancelled', error: null }, [])).toBe('Stopped.');
     expect(telegramReplyOf({ status: 'completed', error: null }, [])).toMatch(/console/);
+  });
+});
+
+describe('an ask made on Telegram', () => {
+  // What breaks this: the answer of an ask_bot from a Telegram turn picked up
+  // in the console, so the person on their phone never gets the result.
+  it('is answered in the Telegram conversation, as a turn whose words go back there', () => {
+    const { turn: asking } = telegramTurn(props, {
+      conversationId: CONVERSATION,
+      telegramAccountId: ACCOUNT,
+      chatId: '123456789',
+      messageId: '42',
+      text: 'Ask Shop what sold today',
+    });
+    const asked = BotTurnEntity.queueFromBot(asking, {
+      botId: 'shop',
+      provider: 'anthropic',
+      model: 'claude',
+      effort: null,
+      replyRequested: true,
+    });
+    asked.end('completed', new Date());
+
+    const answer = BotTurnEntity.queueAnswer(asked, {
+      botId: 'bot',
+      provider: 'anthropic',
+      model: 'claude',
+      effort: null,
+      asker: { conversationId: asking.conversationId, onTelegram: true },
+    });
+
+    expect(answer.conversationId).toBe(CONVERSATION);
+    expect(answer.origin).toBe('telegram');
   });
 });

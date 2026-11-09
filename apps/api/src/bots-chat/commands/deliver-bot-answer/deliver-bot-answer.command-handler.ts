@@ -52,15 +52,24 @@ export class DeliverBotAnswerCommandHandler
       answered,
       await this.messages.findTurnTexts(organizationId, answered.id),
     );
+    // The asking turn's conversation: an ask made on Telegram is answered there.
+    const asking = await this.turns.findForRun(askedByTurnId);
     const turn = BotTurnEntity.queueAnswer(answered, {
       botId: asker.id,
       provider: asker.provider,
       model: asker.model ?? botDefaultModel(asker.provider).id,
       effort: asker.effort,
+      ...(asking.isSome() && {
+        asker: {
+          conversationId: asking.unwrap().conversationId,
+          onTelegram: asking.unwrap().origin === 'telegram',
+        },
+      }),
     });
     const message = BotMessageEntity.createNew({
       organizationId,
       botId: asker.id,
+      conversationId: turn.conversationId,
       turnId: turn.id,
       role: 'event',
       content: answer.content,
