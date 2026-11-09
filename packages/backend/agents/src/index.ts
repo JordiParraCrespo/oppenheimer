@@ -19,8 +19,10 @@ export {
   type BotTurnContext,
   type BotTurnImage,
   type BotTurnRequest,
+  compactionThreshold,
   isCompletionRequest,
 } from './bot-engine';
 export { createBotEngine, engineCapabilities } from './bot-engine.factory';
 export { type EngineLlmBinding, engineLlm } from './engine-llm';
 export { FakeBotEngine, type FakeScriptEvent, type FakeToolCall } from './fake-bot-engine';
+export { LOOP_GUARD_DATA_KEY } from './tool-loop-guard';

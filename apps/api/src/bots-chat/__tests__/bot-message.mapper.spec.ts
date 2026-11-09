@@ -2,6 +2,8 @@ import { BOT_SUBAGENT_PROGRESS_TASK_MAX, botStreamEventSchema } from '@oppenheim
 import { BotMessageMapper, toQueuedSubagentProgress, toSubagentRuns } from '../bot-message.mapper';
 import { BotApprovalEntity } from '../domain/bot-approval.entity';
 import { stoppedLine } from '../domain/bot-approval.policy';
+import { BotGoalEntity } from '../domain/bot-goal.entity';
+import { goalPauseLine } from '../domain/bot-goal.policy';
 import { SUBAGENT_TASK_MAX } from '../domain/bot-subagent.policy';
 
 /**
@@ -92,6 +94,34 @@ describe('an approval line through the mapper', () => {
       kind: 'approval',
       outcome: 'stopped',
       approvalId: approval.id,
+    });
+  });
+});
+
+describe('a goal line through the mapper', () => {
+  /** The regression: a goal with no limit read back as one of 0, so the chat said "continuation 13 of 0". */
+  it('keeps a goal with no limit as one with none, from the row back to the response', () => {
+    const goal = BotGoalEntity.set({
+      organizationId: 'org-1',
+      botId: 'bot-1',
+      originTurnId: 'turn-0',
+      objective: 'Tag every invoice',
+      tokenBudget: null,
+      credentialScopes: null,
+      timeZone: null,
+    });
+    goal.pause('usage_limit', null, new Date());
+    const mapper = new BotMessageMapper();
+    const record = mapper.toPersistence(goalPauseLine(goal, 'paused'));
+    record.createdAt = new Date();
+    record.updatedAt = record.createdAt;
+    record.event = JSON.parse(JSON.stringify(record.event));
+    const read = mapper.toResponse(mapper.toDomain(record));
+    expect(read.event).toMatchObject({
+      kind: 'goal',
+      activity: 'paused',
+      limit: null,
+      reason: 'usage_limit',
     });
   });
 });

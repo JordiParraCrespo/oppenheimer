@@ -53,6 +53,7 @@ export type {
   BotDreamEventResponseDto,
   BotFaceDto,
   BotGoalEventResponseDto,
+  BotGoalPausedResponseDto,
   BotGoalResponseDto,
   BotGoalStateResponseDto,
   BotGoalWaitingResponseDto,

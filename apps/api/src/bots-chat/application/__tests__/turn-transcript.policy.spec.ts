@@ -9,8 +9,8 @@ import { SUBAGENT_DATA_KEY } from '../../domain/bot-subagent.policy';
 import { BotTurnEntity } from '../../domain/bot-turn.entity';
 import {
   failureKindOf,
-  STEP_LIMIT_ERROR,
-  TIME_LIMIT_ERROR,
+  LOOP_ERROR,
+  STALLED_ERROR,
   type TranscriptWrite,
   TurnTranscript,
 } from '../turn-transcript.policy';
@@ -405,24 +405,31 @@ describe('TurnTranscript', () => {
     ]);
   });
 
-  it('fails a turn its time limit stopped, saying so, and keeps what it wrote', () => {
-    const subject = turn();
-    subject.start(new Date());
-    const transcript = new TurnTranscript(subject);
-    const writes = [
-      { type: 'text.delta', text: 'Working on it' },
-      { type: 'done', reason: 'cancelled' },
-    ].flatMap((event) => transcript.apply(event as BotEngineEvent));
-    transcript.endTurn(new Date(), 'time_limit');
-    expect(inserted(writes).map((message) => message.content)).toEqual(['Working on it']);
-    expect(subject.status).toBe('failed');
-    expect(subject.error).toBe(TIME_LIMIT_ERROR);
-    expect(subject.failure).toBe('time_limit');
+  // What breaks this: a turn the watch stopped ending as cancelled, so the
+  // chat says the person stopped it and a goal reads it as their Stop.
+  it('fails a turn its model left silent, or that looped, saying so, and keeps what it wrote', () => {
+    for (const [interruption, error] of [
+      ['stalled', STALLED_ERROR],
+      ['loop', LOOP_ERROR],
+    ] as const) {
+      const subject = turn();
+      subject.start(new Date());
+      const transcript = new TurnTranscript(subject);
+      const writes = [
+        { type: 'text.delta', text: 'Working on it' },
+        { type: 'done', reason: 'cancelled' },
+      ].flatMap((event) => transcript.apply(event as BotEngineEvent));
+      transcript.endTurn(new Date(), interruption);
+      expect(inserted(writes).map((message) => message.content)).toEqual(['Working on it']);
+      expect(subject.status).toBe('failed');
+      expect(subject.error).toBe(error);
+      expect(subject.failure).toBe(interruption);
+    }
   });
 
-  // What breaks this: a turn that used all its steps ending as completed,
-  // so the bot stopped mid-work and the chat said nothing.
-  it('fails a turn that ran out of steps, saying so, and keeps what it wrote', () => {
+  // What breaks this: a run given a step limit (a subagent) ending as
+  // completed when it ran out, so it stopped mid-work and said nothing.
+  it('fails a run that ran out of the steps it was given, and keeps what it wrote', () => {
     const subject = turn();
     subject.start(new Date());
     const transcript = new TurnTranscript(subject);
@@ -433,7 +440,6 @@ describe('TurnTranscript', () => {
     transcript.endTurn(new Date(), null);
     expect(inserted(writes).map((message) => message.content)).toEqual(['Checking the hosts']);
     expect(subject.status).toBe('failed');
-    expect(subject.error).toBe(STEP_LIMIT_ERROR);
     expect(subject.failure).toBe('step_limit');
   });
 
