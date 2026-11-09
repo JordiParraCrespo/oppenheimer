@@ -44,6 +44,7 @@ import { Route as AuthenticatedPlanCalendarRouteImport } from './routes/_authent
 import { Route as AuthenticatedPlanInboxRouteImport } from './routes/_authenticated/plan/inbox'
 import { Route as AuthenticatedPlanMilestonesRouteImport } from './routes/_authenticated/plan/milestones'
 import { Route as AuthenticatedPlanProjectsRouteImport } from './routes/_authenticated/plan/projects'
+import { Route as AuthenticatedPlanTodoRouteImport } from './routes/_authenticated/plan/todo'
 import { Route as AuthenticatedPullsIndexRouteImport } from './routes/_authenticated/pulls/index'
 import { Route as AuthenticatedPullsAnalyticsRouteImport } from './routes/_authenticated/pulls/analytics'
 import { Route as AuthenticatedSessionsIndexRouteImport } from './routes/_authenticated/sessions/index'
@@ -62,6 +63,7 @@ import { Route as AuthenticatedSettingsWhatsappRouteImport } from './routes/_aut
 import { Route as AuthenticatedAutomationsBotsBotIdRouteImport } from './routes/_authenticated/automations_.bots.$botId'
 import { Route as AuthenticatedBotsBotIdSettingsRouteImport } from './routes/_authenticated/bots_.$botId.settings'
 import { Route as AuthenticatedPlanCalendarGoogleRouteImport } from './routes/_authenticated/plan/calendar_.google'
+import { Route as AuthenticatedPlanProjectsProjectIdRouteImport } from './routes/_authenticated/plan/projects_.$projectId'
 import { Route as AuthenticatedPlanBotsBotIdRouteImport } from './routes/_authenticated/plan_.bots.$botId'
 import { Route as AuthenticatedPullsBotsBotIdRouteImport } from './routes/_authenticated/pulls_.bots.$botId'
 import { Route as AuthenticatedSessionsBotsBotIdRouteImport } from './routes/_authenticated/sessions/bots.$botId'
@@ -260,6 +262,11 @@ const AuthenticatedPlanProjectsRoute =
     path: '/projects',
     getParentRoute: () => AuthenticatedPlanRoute,
   } as any)
+const AuthenticatedPlanTodoRoute = AuthenticatedPlanTodoRouteImport.update({
+  id: '/todo',
+  path: '/todo',
+  getParentRoute: () => AuthenticatedPlanRoute,
+} as any)
 const AuthenticatedPullsIndexRoute = AuthenticatedPullsIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -365,6 +372,12 @@ const AuthenticatedPlanCalendarGoogleRoute =
   AuthenticatedPlanCalendarGoogleRouteImport.update({
     id: '/calendar_/google',
     path: '/calendar/google',
+    getParentRoute: () => AuthenticatedPlanRoute,
+  } as any)
+const AuthenticatedPlanProjectsProjectIdRoute =
+  AuthenticatedPlanProjectsProjectIdRouteImport.update({
+    id: '/projects_/$projectId',
+    path: '/projects/$projectId',
     getParentRoute: () => AuthenticatedPlanRoute,
   } as any)
 const AuthenticatedPlanBotsBotIdRoute =
@@ -499,6 +512,7 @@ export interface FileRoutesByFullPath {
   '/plan/inbox': typeof AuthenticatedPlanInboxRoute
   '/plan/milestones': typeof AuthenticatedPlanMilestonesRoute
   '/plan/projects': typeof AuthenticatedPlanProjectsRoute
+  '/plan/todo': typeof AuthenticatedPlanTodoRoute
   '/pulls/analytics': typeof AuthenticatedPullsAnalyticsRoute
   '/sessions/$sessionId': typeof AuthenticatedSessionsSessionIdRoute
   '/sessions/new': typeof AuthenticatedSessionsNewRoute
@@ -521,6 +535,7 @@ export interface FileRoutesByFullPath {
   '/automations/bots/$botId': typeof AuthenticatedAutomationsBotsBotIdRoute
   '/bots/$botId/settings': typeof AuthenticatedBotsBotIdSettingsRouteWithChildren
   '/plan/calendar/google': typeof AuthenticatedPlanCalendarGoogleRoute
+  '/plan/projects/$projectId': typeof AuthenticatedPlanProjectsProjectIdRoute
   '/plan/bots/$botId': typeof AuthenticatedPlanBotsBotIdRoute
   '/pulls/bots/$botId': typeof AuthenticatedPullsBotsBotIdRoute
   '/sessions/bots/$botId': typeof AuthenticatedSessionsBotsBotIdRoute
@@ -563,6 +578,7 @@ export interface FileRoutesByTo {
   '/plan/inbox': typeof AuthenticatedPlanInboxRoute
   '/plan/milestones': typeof AuthenticatedPlanMilestonesRoute
   '/plan/projects': typeof AuthenticatedPlanProjectsRoute
+  '/plan/todo': typeof AuthenticatedPlanTodoRoute
   '/pulls/analytics': typeof AuthenticatedPullsAnalyticsRoute
   '/sessions/$sessionId': typeof AuthenticatedSessionsSessionIdRoute
   '/sessions/new': typeof AuthenticatedSessionsNewRoute
@@ -584,6 +600,7 @@ export interface FileRoutesByTo {
   '/settings': typeof AuthenticatedSettingsIndexRoute
   '/automations/bots/$botId': typeof AuthenticatedAutomationsBotsBotIdRoute
   '/plan/calendar/google': typeof AuthenticatedPlanCalendarGoogleRoute
+  '/plan/projects/$projectId': typeof AuthenticatedPlanProjectsProjectIdRoute
   '/plan/bots/$botId': typeof AuthenticatedPlanBotsBotIdRoute
   '/pulls/bots/$botId': typeof AuthenticatedPullsBotsBotIdRoute
   '/sessions/bots/$botId': typeof AuthenticatedSessionsBotsBotIdRoute
@@ -635,6 +652,7 @@ export interface FileRoutesById {
   '/_authenticated/plan/inbox': typeof AuthenticatedPlanInboxRoute
   '/_authenticated/plan/milestones': typeof AuthenticatedPlanMilestonesRoute
   '/_authenticated/plan/projects': typeof AuthenticatedPlanProjectsRoute
+  '/_authenticated/plan/todo': typeof AuthenticatedPlanTodoRoute
   '/_authenticated/pulls/analytics': typeof AuthenticatedPullsAnalyticsRoute
   '/_authenticated/sessions/$sessionId': typeof AuthenticatedSessionsSessionIdRoute
   '/_authenticated/sessions/new': typeof AuthenticatedSessionsNewRoute
@@ -657,6 +675,7 @@ export interface FileRoutesById {
   '/_authenticated/automations_/bots/$botId': typeof AuthenticatedAutomationsBotsBotIdRoute
   '/_authenticated/bots_/$botId/settings': typeof AuthenticatedBotsBotIdSettingsRouteWithChildren
   '/_authenticated/plan/calendar_/google': typeof AuthenticatedPlanCalendarGoogleRoute
+  '/_authenticated/plan/projects_/$projectId': typeof AuthenticatedPlanProjectsProjectIdRoute
   '/_authenticated/plan_/bots/$botId': typeof AuthenticatedPlanBotsBotIdRoute
   '/_authenticated/pulls_/bots/$botId': typeof AuthenticatedPullsBotsBotIdRoute
   '/_authenticated/sessions/bots/$botId': typeof AuthenticatedSessionsBotsBotIdRoute
@@ -706,6 +725,7 @@ export interface FileRouteTypes {
     | '/plan/inbox'
     | '/plan/milestones'
     | '/plan/projects'
+    | '/plan/todo'
     | '/pulls/analytics'
     | '/sessions/$sessionId'
     | '/sessions/new'
@@ -728,6 +748,7 @@ export interface FileRouteTypes {
     | '/automations/bots/$botId'
     | '/bots/$botId/settings'
     | '/plan/calendar/google'
+    | '/plan/projects/$projectId'
     | '/plan/bots/$botId'
     | '/pulls/bots/$botId'
     | '/sessions/bots/$botId'
@@ -770,6 +791,7 @@ export interface FileRouteTypes {
     | '/plan/inbox'
     | '/plan/milestones'
     | '/plan/projects'
+    | '/plan/todo'
     | '/pulls/analytics'
     | '/sessions/$sessionId'
     | '/sessions/new'
@@ -791,6 +813,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/automations/bots/$botId'
     | '/plan/calendar/google'
+    | '/plan/projects/$projectId'
     | '/plan/bots/$botId'
     | '/pulls/bots/$botId'
     | '/sessions/bots/$botId'
@@ -841,6 +864,7 @@ export interface FileRouteTypes {
     | '/_authenticated/plan/inbox'
     | '/_authenticated/plan/milestones'
     | '/_authenticated/plan/projects'
+    | '/_authenticated/plan/todo'
     | '/_authenticated/pulls/analytics'
     | '/_authenticated/sessions/$sessionId'
     | '/_authenticated/sessions/new'
@@ -863,6 +887,7 @@ export interface FileRouteTypes {
     | '/_authenticated/automations_/bots/$botId'
     | '/_authenticated/bots_/$botId/settings'
     | '/_authenticated/plan/calendar_/google'
+    | '/_authenticated/plan/projects_/$projectId'
     | '/_authenticated/plan_/bots/$botId'
     | '/_authenticated/pulls_/bots/$botId'
     | '/_authenticated/sessions/bots/$botId'
@@ -1140,6 +1165,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedPlanProjectsRouteImport
       parentRoute: typeof AuthenticatedPlanRoute
     }
+    '/_authenticated/plan/todo': {
+      id: '/_authenticated/plan/todo'
+      path: '/todo'
+      fullPath: '/plan/todo'
+      preLoaderRoute: typeof AuthenticatedPlanTodoRouteImport
+      parentRoute: typeof AuthenticatedPlanRoute
+    }
     '/_authenticated/pulls/': {
       id: '/_authenticated/pulls/'
       path: '/'
@@ -1264,6 +1296,13 @@ declare module '@tanstack/react-router' {
       path: '/calendar/google'
       fullPath: '/plan/calendar/google'
       preLoaderRoute: typeof AuthenticatedPlanCalendarGoogleRouteImport
+      parentRoute: typeof AuthenticatedPlanRoute
+    }
+    '/_authenticated/plan/projects_/$projectId': {
+      id: '/_authenticated/plan/projects_/$projectId'
+      path: '/projects/$projectId'
+      fullPath: '/plan/projects/$projectId'
+      preLoaderRoute: typeof AuthenticatedPlanProjectsProjectIdRouteImport
       parentRoute: typeof AuthenticatedPlanRoute
     }
     '/_authenticated/plan_/bots/$botId': {
@@ -1462,8 +1501,10 @@ interface AuthenticatedPlanRouteChildren {
   AuthenticatedPlanInboxRoute: typeof AuthenticatedPlanInboxRoute
   AuthenticatedPlanMilestonesRoute: typeof AuthenticatedPlanMilestonesRoute
   AuthenticatedPlanProjectsRoute: typeof AuthenticatedPlanProjectsRoute
+  AuthenticatedPlanTodoRoute: typeof AuthenticatedPlanTodoRoute
   AuthenticatedPlanIndexRoute: typeof AuthenticatedPlanIndexRoute
   AuthenticatedPlanCalendarGoogleRoute: typeof AuthenticatedPlanCalendarGoogleRoute
+  AuthenticatedPlanProjectsProjectIdRoute: typeof AuthenticatedPlanProjectsProjectIdRoute
 }
 
 const AuthenticatedPlanRouteChildren: AuthenticatedPlanRouteChildren = {
@@ -1471,8 +1512,11 @@ const AuthenticatedPlanRouteChildren: AuthenticatedPlanRouteChildren = {
   AuthenticatedPlanInboxRoute: AuthenticatedPlanInboxRoute,
   AuthenticatedPlanMilestonesRoute: AuthenticatedPlanMilestonesRoute,
   AuthenticatedPlanProjectsRoute: AuthenticatedPlanProjectsRoute,
+  AuthenticatedPlanTodoRoute: AuthenticatedPlanTodoRoute,
   AuthenticatedPlanIndexRoute: AuthenticatedPlanIndexRoute,
   AuthenticatedPlanCalendarGoogleRoute: AuthenticatedPlanCalendarGoogleRoute,
+  AuthenticatedPlanProjectsProjectIdRoute:
+    AuthenticatedPlanProjectsProjectIdRoute,
 }
 
 const AuthenticatedPlanRouteWithChildren =

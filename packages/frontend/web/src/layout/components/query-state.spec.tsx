@@ -3,6 +3,7 @@ import { OppenheimerProvider } from '@oppenheimer/frontend-core/react';
 import { QueryClient, QueryClientProvider, useSuspenseQuery } from '@tanstack/react-query';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { LoadingAnnouncer } from './loading-status';
 import { QueryState } from './query-state';
 
 // Partial: the forms concern's index also loads the i18n instance, which
@@ -49,6 +50,32 @@ describe('QueryState', () => {
     show(() => new Promise(() => {}));
     expect(await screen.findByText('loading')).toBeTruthy();
     expect(screen.queryByRole('alert')).toBeNull();
+  });
+
+  it('is heard while Pending draws, whether or not its placeholder says so', async () => {
+    // A placeholder that forgot its `LoadingStatus` left a screen reader in silence.
+    let answer: (hosts: string[]) => void = () => {};
+    const client = new QueryClient();
+    render(
+      <LoadingAnnouncer>
+        <QueryClientProvider client={client}>
+          <QueryState>
+            <QueryState.Pending>loading</QueryState.Pending>
+            <QueryState.Error fallback="failed" />
+            <QueryState.Data>
+              <Hosts fetch={() => new Promise((resolve) => (answer = resolve))} />
+            </QueryState.Data>
+          </QueryState>
+        </QueryClientProvider>
+      </LoadingAnnouncer>,
+    );
+    await screen.findByText('loading');
+    expect(screen.getByRole('status').textContent).toBe('common.loading');
+
+    await act(async () => answer(['optimus']));
+
+    expect(await screen.findByText('optimus')).toBeTruthy();
+    expect(screen.getByRole('status').textContent).toBe('');
   });
 
   it('draws a first failure on Error, not Pending', async () => {

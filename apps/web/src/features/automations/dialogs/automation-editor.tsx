@@ -5,10 +5,10 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  Skeleton,
 } from '@oppenheimer/design-system-web';
 import { ErrorAlert, QueryState } from '@oppenheimer/frontend-web';
 import { useTranslation } from 'react-i18next';
+import { AutomationEditorSkeleton } from '../components/automation-editor-skeleton';
 import { EditAutomation } from '../sections/edit-automation';
 import { NewAutomation } from '../sections/new-automation';
 
@@ -49,12 +49,7 @@ export function AutomationEditorDialog({
         <QueryState>
           <QueryState.Pending>
             {header}
-            <DialogBody>
-              <div className="flex flex-col gap-3">
-                <Skeleton className="h-10 w-full" />
-                <Skeleton className="h-28 w-full" />
-              </div>
-            </DialogBody>
+            <AutomationEditorSkeleton />
           </QueryState.Pending>
           <QueryState.Error>
             {(error, retry) => (

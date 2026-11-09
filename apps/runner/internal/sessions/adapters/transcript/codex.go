@@ -123,8 +123,9 @@ func (s *codexScan) find() string {
 				}
 			}
 			// A subagent's rollout runs in the same directory, and is the
-			// conversation's own, under it (`codex_subagents.go`).
-			if !ok || head.child() || !s.dirs[filepath.Clean(head.Cwd)] {
+			// conversation's own, under it (`codex_subagents.go`); Codex's
+			// threads of its own run there too (`codexHead.persons`).
+			if !ok || !head.persons() || !s.dirs[filepath.Clean(head.Cwd)] {
 				continue
 			}
 			if best == "" || info.ModTime().After(bestAt) {
@@ -152,6 +153,12 @@ type codexHead struct {
 	// and an object for a subagent's (`{"subagent": {"thread_spawn": …}}`),
 	// so it is read apart (spawn), and a string never fails the line.
 	Source json.RawMessage `json:"source"`
+	// ThreadSource is who the thread is for (`user`, `subagent`,
+	// `guardian_review`, a feature's name), from Codex 0.167; "" before it.
+	ThreadSource string `json:"thread_source"`
+	// AttachedThread marks a fork Codex keeps under the conversation it was
+	// forked from, never listed as one of its own.
+	AttachedThread bool `json:"attached_thread"`
 }
 
 // codexSpawn is what a subagent's `source` says of the thread that started it.
@@ -170,7 +177,7 @@ func (h codexHead) spawn() *codexSpawn {
 			ThreadSpawn *codexSpawn `json:"thread_spawn"`
 		} `json:"subagent"`
 	}
-	if len(h.Source) == 0 || h.Source[0] != '{' || json.Unmarshal(h.Source, &source) != nil {
+	if h.sourceIsClientName() || json.Unmarshal(h.Source, &source) != nil {
 		return nil
 	}
 	return source.Subagent.ThreadSpawn
@@ -186,6 +193,28 @@ func (h codexHead) parent() string {
 
 // child is whether another thread started this one.
 func (h codexHead) child() bool { return h.parent() != "" }
+
+// sourceIsClientName is whether the thread's source is a client's name
+// (`"cli"`, `"vscode"`, or none) rather than an object: a subagent's
+// (`{"subagent": …}`), Codex's own (`{"internal": "guardian"}`) or a
+// desktop app's (`{"custom": "atlas"}`).
+func (h codexHead) sourceIsClientName() bool {
+	return len(h.Source) == 0 || h.Source[0] != '{'
+}
+
+// persons is whether the thread is a conversation the person had in a
+// terminal, as `codex resume` lists them: a client's source, for the user
+// when it says, and not a fork kept under another thread. Unlike `codex
+// resume`, it leaves out the desktop apps' threads, which no session runs.
+// Codex writes threads of its own (an approval's review, a compaction, a
+// memory consolidation) beside the person's, in the same directory and
+// later, so without this the newest is one of them.
+func (h codexHead) persons() bool {
+	if h.child() || h.AttachedThread || (h.ThreadSource != "" && h.ThreadSource != "user") {
+		return false
+	}
+	return h.sourceIsClientName()
+}
 
 // codexHeadOf is a rollout's `session_meta`, off its first line; false when
 // that line is not one (yet).

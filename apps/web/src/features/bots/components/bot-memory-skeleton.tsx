@@ -2,24 +2,18 @@ import {
   Button,
   SettingsAddRow,
   SettingsGroup,
-  SettingsListRow,
+  SettingsListRowSkeleton,
   Skeleton,
 } from '@oppenheimer/design-system-web';
 import { LoadingStatus } from '@oppenheimer/frontend-web';
 import { useTranslation } from 'react-i18next';
-
-/** Three facts, a sentence and who wrote it when, at the widths remembered facts run to. */
-const FACTS = [
-  { fact: 'w-64', meta: 'w-36' },
-  { fact: 'w-80', meta: 'w-32' },
-  { fact: 'w-52', meta: 'w-36' },
-];
+import { FactRowActionsSkeleton } from './fact-row-actions-skeleton';
 
 /**
  * The bot's facts before they answer: the heading's line with its count still
  * a bar, Clear all as it reads with nothing to clear, then the card with
- * three facts on the row's own frame (the sentence, the meta line, Edit and
- * forget as bars) and the add row's field and Add, which need no data.
+ * three facts on the row's own frame (the sentence and the meta line as
+ * bars, Edit, where it is kept and forget off) and the add row's field and Add, which need no data.
  */
 export function BotMemorySkeleton() {
   const { t } = useTranslation();
@@ -35,25 +29,8 @@ export function BotMemorySkeleton() {
         </Button>
       </div>
       <SettingsGroup aria-hidden>
-        {FACTS.map(({ fact, meta }) => (
-          <SettingsListRow
-            key={fact}
-            meta={
-              <span className="flex h-4.5 items-center">
-                <Skeleton shape="sm" className={`h-2.5 ${meta}`} />
-              </span>
-            }
-            actions={
-              <>
-                <Skeleton shape="pill" className="h-7 w-12" />
-                <Skeleton shape="pill" className="size-7" />
-              </>
-            }
-          >
-            <span className="flex h-5 items-center">
-              <Skeleton shape="sm" className={`h-3 ${fact}`} />
-            </span>
-          </SettingsListRow>
+        {[0, 1, 2].map((index) => (
+          <SettingsListRowSkeleton key={index} index={index} actions={<FactRowActionsSkeleton />} />
         ))}
         <div inert>
           <SettingsAddRow

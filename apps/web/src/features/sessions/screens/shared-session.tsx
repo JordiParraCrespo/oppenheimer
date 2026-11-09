@@ -1,6 +1,6 @@
-import { Skeleton } from '@oppenheimer/design-system-web';
 import { QueryState, RouteError } from '@oppenheimer/frontend-web';
 import { SharedFrame } from '../components/shared-frame';
+import { SharedSessionSkeleton } from '../components/shared-session-skeleton';
 import { shareRefusalOf } from '../lib/share-session';
 import { SharedRefusal } from '../sections/shared-refusal';
 import { SharedSessionPane } from '../sections/shared-session-pane';
@@ -16,7 +16,7 @@ export function SharedSessionScreen({ slug }: { slug: string }) {
     <QueryState>
       <QueryState.Pending>
         <SharedFrame>
-          <Skeleton className="m-6 h-40" />
+          <SharedSessionSkeleton />
         </SharedFrame>
       </QueryState.Pending>
       <QueryState.Error>

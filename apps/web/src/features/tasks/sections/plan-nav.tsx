@@ -5,7 +5,7 @@ import {
   SortableGroup,
   SortableRoutineItem,
 } from '@oppenheimer/design-system-web';
-import { Bell, CalendarDays, CircleCheck, Folder } from '@oppenheimer/design-system-web/icons';
+import { Bell, CalendarDays, CircleCheck, Folder, Sun } from '@oppenheimer/design-system-web/icons';
 import { useMilestones, useProjects, useTasks } from '@oppenheimer/frontend-consumer/react';
 import { useFeatureFlag } from '@oppenheimer/frontend-core/react';
 import { useDragLabels } from '@oppenheimer/frontend-web';
@@ -13,8 +13,10 @@ import { Link, useMatchRoute } from '@tanstack/react-router';
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { PLAN_NAV_GROUP, usePlanNavOrder } from '../hooks/use-plan-nav-order';
+import { useToday } from '../hooks/use-today';
 import { useTodayEventCount } from '../hooks/use-today-event-count';
 import { isPlanNavId, type PlanNavId } from '../lib/plan-nav-order';
+import { todayOpenCount } from '../lib/todo';
 import { PlanInboxItem } from './plan-inbox-item';
 
 /**
@@ -30,6 +32,11 @@ const VIEWS = {
     icon: <CircleCheck />,
     route: { to: '/plan', fuzzy: false },
   },
+  todo: {
+    labelKey: 'tasks.nav.todo',
+    icon: <Sun />,
+    route: { to: '/plan/todo', fuzzy: false },
+  },
   milestones: {
     labelKey: 'tasks.nav.milestones',
     icon: <MilestoneGlyph />,
@@ -43,7 +50,7 @@ const VIEWS = {
   projects: {
     labelKey: 'tasks.nav.projects',
     icon: <Folder />,
-    route: { to: '/plan/projects', fuzzy: false },
+    route: { to: '/plan/projects', fuzzy: true },
   },
 } as const satisfies Record<
   PlanNavId,
@@ -52,7 +59,8 @@ const VIEWS = {
 
 /**
  * The head of Plan's sidebar (the `Tasks` frame): the Inbox with what needs
- * you (while the `inbox` flag is on), Tasks with the open count, Milestones
+ * you (while the `inbox` flag is on), Tasks with the open count, To do with
+ * the open tasks due today or before, Milestones
  * with how many there are, Calendar with today's events, and Projects with
  * how many the workspace holds. The calendar puts its layers and accounts
  * under it.
@@ -64,8 +72,10 @@ const VIEWS = {
 export function PlanNav() {
   const { t } = useTranslation();
   const { data: open } = useTasks({ select: (rows) => rows.filter((row) => !row.isDone).length });
+  const today = useToday();
+  const { data: dueNow } = useTasks({ select: (rows) => todayOpenCount(rows, today) });
   const { data: milestones } = useMilestones({ select: (rows) => rows.length });
-  const today = useTodayEventCount();
+  const todayEvents = useTodayEventCount();
   const { data: projects } = useProjects({ select: (rows) => rows.length });
   const inbox = useFeatureFlag('inbox');
   const matchRoute = useMatchRoute();
@@ -73,8 +83,9 @@ export function PlanNav() {
   const { order, handlers } = usePlanNavOrder((id) => id !== 'inbox' || inbox);
   const counts: Record<Exclude<PlanNavId, 'inbox'>, number | undefined> = {
     tasks: open,
+    todo: dueNow,
     milestones,
-    calendar: today,
+    calendar: todayEvents,
     projects,
   };
 

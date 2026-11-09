@@ -21,6 +21,14 @@ export function weekdayOf(iso: string): number {
   return (new Date(Date.UTC(year, month - 1, day)).getUTCDay() + 6) % 7;
 }
 
+/** The ISO 8601 week number of a day: weeks start on Monday, week 1 holds the year's first Thursday. */
+export function isoWeek(iso: string): number {
+  const thursday = addDays(iso, 3 - weekdayOf(iso));
+  const january4 = `${thursday.slice(0, 4)}-01-04`;
+  const firstThursday = addDays(january4, 3 - weekdayOf(january4));
+  return 1 + Math.round((Date.parse(thursday) - Date.parse(firstThursday)) / (7 * 86_400_000));
+}
+
 /** The `YYYY-MM` a day is in. */
 export function monthOf(iso: string): string {
   return iso.slice(0, 7);

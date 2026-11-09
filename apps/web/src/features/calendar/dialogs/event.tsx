@@ -26,7 +26,9 @@ export function EventDialog() {
   const { event: open } = calendar.useSearch();
   const navigate = calendar.useNavigate();
   const close = () =>
-    navigate({ search: (previous) => ({ ...previous, event: undefined, day: undefined }) });
+    navigate({
+      search: (previous) => ({ ...previous, event: undefined, day: undefined, at: undefined }),
+    });
   if (!open) return null;
   const isNew = open === NEW_EVENT;
 

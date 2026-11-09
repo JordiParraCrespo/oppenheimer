@@ -27,7 +27,7 @@ Open a bot's settings from its menu. Every page saves with **Save**.
 | --- | --- |
 | Profile | Name, description, colour, face (pick a hat, eyes and a mouth, or **Use its own face**), sidebar group, Shows in, and the chat history (Export, Clear history). |
 | Instructions | Two files read before every message: **SOUL.md** (personality and tone) and **INSTRUCTIONS.md** (its job and rules). Each save is a revision; Revision history can Revert. |
-| Memory | Facts it remembers, with who added each. **Learn automatically** lets it save facts without asking. A fact can be kept in mind in every chat, looked up only when needed, or about you, which all your bots read. Up to 500 facts. What every bot knows about you is also one page of its own, **Settings → Memory** at the account: an **About you** text you write (up to 4,000 characters), in every bot's prompt and never changed by a bot, and every fact about you your bots learned, each naming the bot that keeps it. About once a day, after it has saved enough and while Learn automatically is on, the bot **tidies its memory**: its own model merges repeats, drops what is stale or contradicted and rewrites each fact it wrote as one clear sentence, leaving the facts you wrote word for word. The chat shows a line ("Tidied its memory · 40 facts → 22"); **Tidy now** runs one whenever you like, and **Undo** puts the latest tidy back. |
+| Memory | Facts it remembers, with who added each. **Learn automatically** lets it save facts without asking. A bot has two memories: its own, which only it reads and where everything about its job goes (your projects, repositories, folders, hosts, accounts, how you want that work done), and the **general memory** about you, which all your bots read and which only takes what a bot with another job would need too (your name, language, time zone, how you like to work everywhere). A fact can also be kept in mind in every chat or looked up only when needed. Up to 500 facts. What every bot knows about you is also one page of its own, **Settings → Memory** at the account: an **About you** text you write (up to 4,000 characters), in every bot's prompt and never changed by a bot, and every fact about you your bots learned, each naming the bot that keeps it. About once a day, after it has saved enough and while Learn automatically is on, the bot **tidies its memory**: its own model merges repeats, drops what is stale or contradicted and rewrites each fact it wrote as one clear sentence, leaving the facts you wrote word for word. The chat shows a line ("Tidied its memory · 40 facts → 22"); **Tidy now** runs one whenever you like, and **Undo** puts the latest tidy back. |
 | Skills | Saved recipes for a task, at most 50. |
 | Permissions | Each tool set to Allow, Ask or Off; standing grants; plain-language rules. |
 | Routines | Its scheduled and event routines ([Routines and watches](./routines-and-watches.md)). |
@@ -51,7 +51,7 @@ Keys live in **Settings → Model providers**, one per provider for the workspac
 
 A bot answers what its own tools, web search and web fetch can answer. When the work needs a shell or a checkout (tests, a build, a fix) it starts a session: a coding agent on a host, always at Approve for me, in a known project's repository or a folder it was given, on the host you named, else the project's default, else its home host. It follows that session, is woken when the agent needs input, finishes, fails or looks stuck, and reports what the session shows.
 
-It can also prompt a session whose agent waits at its prompt, answer an agent's question or permission dialog, stop a session, read a session's log and conversation, and start cloud sessions.
+It can also prompt a session whose agent waits at its prompt, answer an agent's question or permission dialog, stop a session, close a session it started itself (most often one that failed, so it does not stay in your sidebar; it asks first under Approve for me, keeps work never pushed unless you said it can go, and cannot close a session you, an automation or a review started), read a session's log and conversation, and start cloud sessions.
 
 ## What else it can do
 
@@ -76,7 +76,7 @@ Built-in commands work for every bot:
 
 | Command | Does |
 | --- | --- |
-| `/goal <condition>` | Keep working across turns until the condition holds. After each turn a reviewer on the bot's model judges met, not met or impossible. Up to 20 continuations; Stop above the composer or `/goal clear` ends it. |
+| `/goal <condition>` | Keep working across turns, with no limit, until the condition holds. When the bot says it is met, a reviewer on the bot's model checks what it showed. The goal pauses, and keeps its place, when a turn of it fails or is stopped (a provider's usage limit whose end is known is waited out, and the goal goes on by itself), after 3 turns that call no tool, when it spends its token budget (if the bot set one) or when the bot says it needs you; **Resume** above the composer or `/goal resume` runs it again. Stop or `/goal clear` ends it. |
 | `/usage` | A card with this chat's turns, tokens, cache hits, and plan limits where reported. No prices. |
 | `/loop [interval] [prompt]` | Run a prompt now and every 1 minute to 1 day, or when the bot chooses. One per bot; ends after 3 days, on `/loop stop`, or when the bot ends it. |
 | `/schedule <request>` | Save a routine from your words (what and when). `/schedule` alone opens Routines. |
@@ -91,6 +91,6 @@ When a tool asks, the turn ends on a **Needs input** card in the chat and in the
 
 ## Limits
 
-- A turn stops after 4 minutes and 20 model round trips; longer work is a goal, a loop or a session. Older history is summarised for the model; the chat keeps every message.
+- A turn has no step or time limit: it runs until the bot answers. When it has read about 90,000 tokens it summarises what came before and carries on, and the chat shows a line where it did. It stops if the model sends nothing for 5 minutes while no tool runs, or if it keeps repeating calls that change nothing. Older history is summarised for the model; the chat keeps every message.
 - A bot cannot pair or remove hosts, connect GitHub, Google or Gmail, share sessions, manage API tokens, or delete bots.
 - Not available: calendar tools, files other than images, group chats, bot templates, and writing to a bot from Slack, mail, WhatsApp or Telegram.

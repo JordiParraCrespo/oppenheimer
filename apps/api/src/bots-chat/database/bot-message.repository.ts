@@ -202,6 +202,17 @@ export class BotMessageRepository
     return records.map((record) => record.content);
   }
 
+  async turnCalledTools(organizationId: string, turnId: string): Promise<boolean> {
+    // IDX_bot_message_turn.
+    const rows: unknown[] = await this.repository.query(
+      `SELECT 1 FROM bot_message
+        WHERE "organizationId" = $1 AND "turnId" = $2 AND jsonb_array_length(steps) > 0
+        LIMIT 1`,
+      [organizationId, turnId],
+    );
+    return rows.length > 0;
+  }
+
   async findHistory(
     organizationId: string,
     botId: string,

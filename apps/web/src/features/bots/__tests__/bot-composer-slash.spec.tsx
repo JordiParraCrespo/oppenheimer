@@ -50,8 +50,9 @@ function skill(name: string, userInvocable = true) {
 const state = vi.hoisted(() => ({
   send: vi.fn(),
   clearGoal: vi.fn(),
+  resumeGoal: vi.fn(),
   read: vi.fn(),
-  skills: [] as BotSkillEntity[],
+  skills: [] as BotSkillEntity[] | undefined,
 }));
 
 vi.mock('@oppenheimer/frontend-consumer/react', () => ({
@@ -71,11 +72,16 @@ vi.mock('@oppenheimer/frontend-consumer/react', () => ({
     error: null,
     isPending: false,
   }),
+  useResumeBotGoal: () => ({
+    mutate: state.resumeGoal,
+    reset: vi.fn(),
+    error: null,
+    isPending: false,
+  }),
   useVoiceDictation: () => ({ available: false, transcribe: async () => null }),
-  // The hook's own `select`: only what the person may run.
   useBotSlashCommands: (_id: string, enabled: boolean) => {
     state.read(enabled);
-    return { data: enabled ? state.skills.filter((s) => s.userInvocable) : undefined };
+    return { data: enabled ? state.skills : undefined };
   },
 }));
 
@@ -113,7 +119,7 @@ const type = (field: HTMLElement, value: string) => fireEvent.change(field, { ta
 const options = () => screen.queryAllByRole('option').map((option) => option.textContent);
 
 describe('BotComposer’s / menu', () => {
-  it('opens on a /, listing the built-ins then the skills the person may run, and reads none before', () => {
+  it('opens on a /, listing the built-ins then the skills the person may run, /recap first, and reads none before', () => {
     const field = composer();
     expect(state.read).toHaveBeenLastCalledWith(false);
     type(field, '/');
@@ -124,16 +130,31 @@ describe('BotComposer’s / menu', () => {
       '/usagebots.chat.slash.builtIn.usage',
       '/loopbots.chat.slash.builtIn.loop',
       '/schedulebots.chat.slash.builtIn.schedule',
+      '/recapbots.chat.slash.builtInSkill.recap',
       '/release-notesDoes release-notes.',
       '/reviewDoes review.',
       '/triageDoes triage.',
     ]);
   });
 
+  it('offers no /recap until the bot’s skills are read, since one of its own may take the name', () => {
+    state.skills = undefined;
+    const field = composer();
+    type(field, '/re');
+    expect(screen.queryByRole('listbox')).toBeNull();
+    type(field, '/');
+    expect(options()).toEqual([
+      '/goalbots.chat.slash.builtIn.goal',
+      '/usagebots.chat.slash.builtIn.usage',
+      '/loopbots.chat.slash.builtIn.loop',
+      '/schedulebots.chat.slash.builtIn.schedule',
+    ]);
+  });
+
   it('narrows as the name is typed, and closes once the command has its input or is a plain message', () => {
     const field = composer();
     type(field, '/re');
-    expect(options()).toHaveLength(2);
+    expect(options()).toHaveLength(3);
     type(field, '/tri');
     expect(options()).toEqual(['/triageDoes triage.']);
     type(field, '/triage the build');
@@ -153,7 +174,7 @@ describe('BotComposer’s / menu', () => {
     expect(screen.getAllByRole('option')[1]?.getAttribute('aria-selected')).toBe('true');
     fireEvent.keyDown(field, { key: 'Enter' });
     expect(state.send).not.toHaveBeenCalled();
-    expect(botDraft('b1')).toBe('/review ');
+    expect(botDraft('b1')).toBe('/release-notes ');
   });
 
   it('picks on Tab and on a click, and wraps the highlight from the top', () => {
@@ -193,6 +214,16 @@ describe('BotComposer’s / menu', () => {
     type(field, '/goal clear');
     fireEvent.keyDown(field, { key: 'Enter' });
     expect(state.clearGoal).toHaveBeenCalledWith({ id: 'b1' }, expect.anything());
+    expect(state.send).not.toHaveBeenCalled();
+  });
+
+  // What breaks this: /goal resume sent to the bot as a new goal whose
+  // condition is "resume", replacing the paused one it meant to run again.
+  it('resumes the goal on /goal resume without sending the bot anything', () => {
+    const field = composer();
+    type(field, '/goal resume');
+    fireEvent.keyDown(field, { key: 'Enter' });
+    expect(state.resumeGoal).toHaveBeenCalledWith({ id: 'b1' }, expect.anything());
     expect(state.send).not.toHaveBeenCalled();
   });
 

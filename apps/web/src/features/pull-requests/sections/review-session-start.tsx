@@ -13,7 +13,8 @@ import { reviewHost } from '../lib/review-session';
  * press that starts it. The chip says where it runs, on the host of the
  * reader's latest session while it is online, else the first online one;
  * picking another is the chip's. It reads the hosts and the sessions because
- * it draws the one and picks from the other. A fork's head is not on the
+ * it draws the one and picks from the other; while the hosts are read the
+ * chip is on screen, saying so in its popup. A fork's head is not on the
  * repository a host fetches, so its pull request says so instead.
  */
 export function ReviewSessionStart({ pull }: { pull: PullRequestDetailEntity }) {
@@ -52,7 +53,7 @@ export function ReviewSessionStart({ pull }: { pull: PullRequestDetailEntity }) 
       <ErrorAlert error={review.error} fallback={t('pullRequests.reviewSession.failed')} />
       {pull.fromFork ? null : (
         <EmptyState.Content className="flex-row justify-center">
-          {list.length > 0 ? (
+          {hosts.isPending || list.length > 0 ? (
             <ChipSelect
               value={hostId}
               onValueChange={setPicked}
@@ -67,6 +68,7 @@ export function ReviewSessionStart({ pull }: { pull: PullRequestDetailEntity }) 
               }))}
               icon={<Cpu />}
               loading={hosts.isPending}
+              loadingText={t('common.loading')}
               aria-label={t('pullRequests.reviewSession.host')}
               placeholder={t('pullRequests.reviewSession.host')}
               searchPlaceholder={t('pullRequests.reviewSession.search')}

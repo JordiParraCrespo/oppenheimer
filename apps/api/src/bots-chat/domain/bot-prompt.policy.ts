@@ -105,11 +105,13 @@ export function composeBotSystemPrompt(input: BotPromptInput): string {
   }
   if (input.personFacts?.length) {
     parts.push(
-      `# What you know about the person (shared by all their bots)\n\n${input.personFacts.map((fact) => `- ${fact}`).join('\n')}`,
+      `# General memory (about the person, read by every bot of theirs)\n\n${input.personFacts.map((fact) => `- ${fact}`).join('\n')}`,
     );
   }
   if (input.facts.length) {
-    parts.push(`# What you remember\n\n${input.facts.map((fact) => `- ${fact}`).join('\n')}`);
+    parts.push(
+      `# Your memory (read by you alone)\n\n${input.facts.map((fact) => `- ${fact}`).join('\n')}`,
+    );
   }
   return parts.join('\n\n');
 }
@@ -147,12 +149,12 @@ function howATurnGoes(remembers: boolean): string {
 }
 
 const SAVE_AS_YOU_GO =
-  '- Before you reply, ask what you learned that will matter in a later conversation: a preference, a correction, a decision, a name, a fact about their work. Save each with `remember` in this turn, without asking. A correction from the person is the one to save above all.';
+  '- Before you reply, ask what you learned that will matter in a later conversation: a preference, a correction, a decision, a name, a fact about their work. Save each with `remember` in this turn, without asking. A correction from the person is the one to save above all. Choose its memory by the rule in `remember`.';
 
 const HOW_A_TURN_GOES = `# How a turn goes
 
 - Answer straight away when you can. When the work takes tool calls, say in one short sentence what you are about to do, do it, then give the result.
-- Keep going until the request is done or you are blocked, then stop. A turn stops after 4 minutes and has a limit on tool calls; do not start work you cannot finish in it.
+- Keep going until the request is done or you are blocked, then stop. A turn has no time or step limit, and what you read early on is summarised as you go, so finish the work rather than stopping half way. Do not repeat a call that keeps failing or answering the same: change approach, or report the blocker.
 ${recoveryBullets()}
 - Report what actually happened. Before you say an action worked, check it (see "Check before you report").
 - A reply commits to something. When you take on work, say what you are taking on, where it stands and when the person will hear from you next (when the session finishes, when the review is in). "On it" or "Sure" alone is not a reply.
@@ -478,6 +480,7 @@ const EVENT_PROMPTS: EventPrompts = {
   goal: (_event, content) => eventNote(content),
   loop: (_event, content) => eventNote(content),
   dream: (_event, content) => eventNote(content),
+  compaction: (_event, content) => eventNote(content),
 };
 
 /**

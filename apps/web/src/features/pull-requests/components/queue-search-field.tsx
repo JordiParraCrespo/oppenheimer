@@ -12,11 +12,14 @@ export function QueueSearchField({
   onChange,
   label,
   inputRef,
+  disabled,
 }: {
   onChange: (query: string) => void;
   label: string;
   /** Where `/` puts the focus. */
   inputRef?: Ref<HTMLInputElement>;
+  /** While the queue is read: drawn at its place, taking nothing. */
+  disabled?: boolean;
 }) {
   const [draft, setDraft] = useState('');
   const settle = useDebouncedCallback(onChange, CORE_CONFIG.input.searchDebounceMs);
@@ -37,6 +40,7 @@ export function QueueSearchField({
           type('');
           event.currentTarget.blur();
         }}
+        disabled={disabled}
         placeholder={label}
         aria-label={label}
         className="min-w-0 flex-1 border-0 bg-transparent p-0 text-sm text-fg outline-none placeholder:text-fg-subtle"

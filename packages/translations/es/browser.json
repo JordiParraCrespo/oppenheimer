@@ -680,13 +680,60 @@
     "list": {
       "title": "Proyectos",
       "new": "Nuevo proyecto",
-      "edit": "Ajustes de {{name}}",
-      "repositories_one": "{{count}} repositorio",
-      "repositories_many": "{{count}} repositorios",
-      "repositories_other": "{{count}} repositorios",
       "noRepositories": "Sin repositorios",
       "empty": "Aún no hay proyectos. Un proyecto agrupa tus sesiones y empieza las nuevas con sus repositorios, host y agente.",
-      "loadFailed": "No se pudieron cargar tus proyectos."
+      "loadFailed": "No se pudieron cargar tus proyectos.",
+      "status": {
+        "needsInput": "Necesita tu respuesta",
+        "running": "En marcha",
+        "idle": "Inactivo"
+      }
+    },
+    "detail": {
+      "back": "Proyectos",
+      "settings": "Ajustes",
+      "milestones": "Hitos",
+      "needsInput": "Necesita tu respuesta",
+      "inProgress": "En curso",
+      "noMilestones": "Aún no hay hitos.",
+      "nothingNeedsInput": "Nada espera tu respuesta.",
+      "nothingInProgress": "Nada en curso.",
+      "gone": "Ese proyecto ya no está aquí.",
+      "loadFailed": "No se pudo cargar este proyecto.",
+      "views": "Vistas del proyecto",
+      "overview": "Resumen",
+      "stats": "Estadísticas"
+    },
+    "stats": {
+      "tasksCompleted": "Tareas completadas",
+      "tasksCreated": "Tareas creadas",
+      "tokens": "Tokens consumidos",
+      "cost": "Coste de los agentes",
+      "vsPrevious": "frente al periodo anterior",
+      "noPrevious": "Aún no hay con qué comparar",
+      "completed": "Completadas",
+      "created": "Creadas",
+      "tasksTitle": "Tareas completadas y creadas, por semana",
+      "tokensTitle": "Tokens consumidos por semana, por modelo",
+      "costTitle": "Coste de los agentes por semana",
+      "unknownModel": "Modelo desconocido",
+      "loadFailed": "No se pudieron cargar las estadísticas de este proyecto.",
+      "range": {
+        "lastWeeks_one": "La última semana",
+        "lastWeeks_many": "Las últimas {{count}} semanas",
+        "lastWeeks_other": "Las últimas {{count}} semanas",
+        "custom": "Personalizado",
+        "done": "Listo",
+        "previousMonth": "Mes anterior",
+        "nextMonth": "Mes siguiente",
+        "choose": "Periodo",
+        "days_one": "{{count}} día",
+        "days_many": "{{count}} días",
+        "days_other": "{{count}} días"
+      },
+      "otherModels": "Otros modelos",
+      "headlessOnly": "turnos sin terminal",
+      "measuredHeadless": "Medido en los turnos sin terminal"
     },
     "unassigned": "Sin asignar"
   },
@@ -1549,6 +1596,8 @@
         "unavailable": "No se ha podido contactar con {{provider}}. Suele ser algo pasajero: vuelve a intentarlo en un momento.",
         "time_limit": "Este turno se ha quedado sin tiempo. Volver a enviarlo no servirá: pide un paso más pequeño o divide la petición.",
         "step_limit": "Este turno ha usado todos sus pasos y se ha detenido antes de terminar. Volver a enviarlo no servirá: pide un paso más pequeño o di que continúe.",
+        "stalled": "{{provider}} no ha enviado nada en 5 minutos, así que este turno se ha detenido. Suele ser temporal: vuelve a intentarlo en un momento.",
+        "loop": "Este turno repetía llamadas que no cambiaban nada, así que se ha detenido. Volver a enviarlo no servirá: di qué hacer de otra forma.",
         "interrupted": "Este turno se interrumpió antes de terminar. Al volver a enviarlo, se ejecuta.",
         "storage": "No pudimos guardar este turno, así que se detuvo: el fallo es nuestro, no de {{provider}}. Vuelve a intentarlo en un momento."
       },
@@ -1765,6 +1814,9 @@
         },
         "goal": {
           "continued": "Objetivo · continuación {{step}} de {{limit}}",
+          "continuedOpen": "Objetivo · continuación {{step}}",
+          "paused": "Objetivo «{{objective}}» {{why}}",
+          "resumed": "Has reanudado el objetivo «{{objective}}»",
           "met": "Objetivo cumplido: «{{objective}}»",
           "impossible": "El objetivo «{{objective}}» no se puede cumplir sin ti",
           "cleared": "Has detenido el objetivo «{{objective}}»",
@@ -1778,6 +1830,9 @@
           "stopped": "El bucle «{{prompt}}» se detuvo: una ejecución falló o se detuvo",
           "ended": "El bucle «{{prompt}}» terminó: el bot no dijo cuándo volver a ejecutarlo"
         },
+        "compaction": "Resumió el trabajo anterior para mantener su contexto pequeño · {{before}} → {{after}} tokens",
+        "compactionLine": "Resumió el trabajo anterior",
+        "compactionTokens": "{{before}} → {{after}} tokens",
         "dream": {
           "dreamed": "Ordenó su memoria · {{before}} datos → {{after}}",
           "undone": "Deshiciste el orden · vuelven {{before}} datos"
@@ -1798,6 +1853,19 @@
       "goal": {
         "title": "Objetivo: {{objective}}",
         "progress": "{{step}} de {{limit}} continuaciones",
+        "continuations_one": "{{count}} continuación",
+        "continuations_other": "{{count}} continuaciones",
+        "budget": "{{progress}} · {{used}} de {{budget}} tokens",
+        "resume": "Reanudar",
+        "resumeFailed": "No se ha podido reanudar el objetivo. Inténtalo de nuevo.",
+        "paused": {
+          "blocked": "en pausa, te necesita",
+          "usage_limit": "en pausa, el proveedor del modelo llegó a un límite",
+          "no_progress": "en pausa, sus últimos turnos no hicieron nada",
+          "budget": "en pausa, ha gastado su presupuesto",
+          "stopped": "en pausa, detuviste un turno suyo",
+          "failed": "en pausa, un turno suyo falló"
+        },
         "waiting": "esperando a {{system}} hasta las {{time}}",
         "stop": "Detener objetivo",
         "stopFailed": "No se pudo detener el objetivo. Inténtalo de nuevo.",
@@ -1825,6 +1893,9 @@
         "menu": "Comandos y habilidades que puedes ejecutar",
         "pick": "Usar /{{name}}",
         "builtInLabel": "Comandos",
+        "builtInSkill": {
+          "recap": "Ponte al día con tus sesiones, pull requests y plan. Añade un tema para acotarlo."
+        },
         "builtIn": {
           "goal": "Sigue trabajando hasta que se cumpla una condición, revisada tras cada turno. /goal clear lo detiene.",
           "usage": "Muestra lo que ha gastado este chat: tokens por modelo, aciertos de caché, ventanas del plan.",
@@ -2084,6 +2155,8 @@
         "gmail": "Gmail · {{when}}",
         "last": "Última",
         "next": "Próxima",
+        "more": "Mostrar más",
+        "less": "Mostrar menos",
         "never": "Nunca",
         "switch": "Ejecutar «{{name}}» por su cuenta",
         "pause": "Pausar",
@@ -2877,7 +2950,8 @@
       "tasks": "Tareas",
       "calendar": "Calendario",
       "milestones": "Hitos",
-      "projects": "Proyectos"
+      "projects": "Proyectos",
+      "todo": "TODO"
     },
     "sidebar": {
       "unassigned": "Sin asignar"
@@ -3043,6 +3117,41 @@
       "noProject": "Sin proyecto",
       "allMilestones": "Todos los hitos",
       "clear": "Limpiar"
+    },
+    "todo": {
+      "left": "pendientes",
+      "done": "hechas",
+      "today": "Hoy",
+      "previous": "Día anterior",
+      "next": "Día siguiente",
+      "todayWeek": "Hoy · Semana {{week}}",
+      "weekNumber": "Semana {{week}}",
+      "includeOverdue": "Incluir vencidas",
+      "empty": "Aún no hay nada para este día. Añade una tarea abajo.",
+      "noMatch": "Ninguna tarea coincide con estos filtros.",
+      "add": "Añadir una tarea",
+      "addLabel": "Añadir una tarea para este día",
+      "addFailed": "No se pudo añadir la tarea.",
+      "startSession": "Iniciar una sesión para {{title}}",
+      "toggleFailed": "No se pudo actualizar la tarea.",
+      "loadFailed": "No se pudieron cargar tus tareas.",
+      "state": {
+        "todo": "vence hoy",
+        "due": "pendiente",
+        "overdue": "vencida desde el {{date}}"
+      },
+      "schedule": {
+        "button": "Añadir tareas sin fecha",
+        "title": "Añadir tareas sin fecha",
+        "for": "Elige las tareas sin fecha de vencimiento que quieres poner el {{date}}.",
+        "search": "Buscar tareas",
+        "noMatch": "Ninguna tarea coincide con «{{query}}».",
+        "none": "Todas las tareas abiertas ya tienen fecha de vencimiento.",
+        "submit": "Añadir al {{date}}",
+        "failed": "No se pudieron añadir algunas de esas tareas.",
+        "loadFailed": "No se pudieron cargar tus tareas."
+      },
+      "reorder": "Reordenar {{title}}"
     }
   },
   "calendar": {
@@ -3056,20 +3165,28 @@
       "automations": "Automatizaciones"
     },
     "header": {
-      "previous": "Mes anterior",
-      "next": "Mes siguiente",
+      "previous": "Anterior",
+      "next": "Siguiente",
       "today": "Hoy",
       "newEvent": "Nuevo evento",
       "meetings": "reuniones",
       "tasksDue": "tareas para entregar",
-      "runs": "ejecuciones de automatizaciones"
+      "runs": "ejecuciones de automatizaciones",
+      "views": "Vista del calendario",
+      "day": "Día",
+      "week": "Semana",
+      "month": "Mes",
+      "todayWeek": "Hoy · Semana {{week}}",
+      "weekNumber": "Semana {{week}}",
+      "weeks": "Semanas {{from}}–{{to}}"
     },
     "grid": {
       "more_one": "{{count}} más",
       "more_other": "{{count}} más",
       "eventsFailed": "No se han podido cargar tus eventos.",
       "googleFailed": "No se ha podido leer Google Calendar.",
-      "moveFailed": "No se ha podido mover a otro día."
+      "moveFailed": "No se ha podido mover a otro día.",
+      "allDay": "Todo el día"
     },
     "event": {
       "newTitle": "Nuevo evento",
@@ -3753,7 +3870,8 @@
     "backToSessions": "Volver a las sesiones",
     "sensitiveScope": "Sensible",
     "unknownClient": "Una aplicación",
-    "failed": "No se ha podido completar. Inténtalo de nuevo."
+    "failed": "No se ha podido completar. Inténtalo de nuevo.",
+    "catalogFailed": "No se pudieron cargar los permisos que pide esta aplicación, así que aún no se puede aprobar. Recarga la página para intentarlo de nuevo."
   },
   "onboarding": {
     "flow": {
