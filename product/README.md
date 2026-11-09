@@ -1316,6 +1316,11 @@ earlier note:
   messages at the budget, so up to about 12,000 tokens were in neither. On
   2026-11-08 the fold starts below the budget, with room for the longest
   summary and the notes on earlier images (`BOT_SUMMARY_TRIGGER_TOKENS`).
+- `versions/mvp/20-plan-calendar.md` (2026-10-13) drew the calendar as a
+  month only and asked whether a week view came before Google
+  write-back. On 2026-11-08, after that day's `Tasks` frame, it opens on
+  Day, with Week and Month beside it, a task due at a time standing on
+  the hours at that time, and Plan gains To do, one day's tasks (§6).
 - `versions/mvp/25-bots.md` §2 (2026-10-15) left a turn's tool calls out of
   the history, as the bot's own working, so a later turn knew what its
   tools did only from what it had said. On 2026-11-08 they come back as a
@@ -1348,6 +1353,20 @@ earlier note:
   `read_terminal` type into a blank-terminal session and read its screen,
   only on a host whose `runner exec` mode is `full`. A coding agent is still
   given a task, never typed at.
+- `versions/mvp/25-bots.md` §4.1 (2026-10-29) let a bot file a fact as
+  "about the person (their name, their role, their preferences)", read by
+  all their bots. Bots filed their job there: Facturas read another bot's
+  XRP Mobile project and pull request notification setting. On 2026-11-08
+  the owner asked for two memories made plain, a general one and one per
+  bot: `remember` takes `memory: 'yours' | 'general'`, the prompt names
+  *Your memory* and *General memory*, and general takes only what a bot
+  with a completely different job would need (`scripts/evals/bot-memory`).
+- `versions/mvp/02-runner.md` §5 said a base that is not a branch on the
+  remote fails the create. On 2026-11-08 a project on an empty GitHub
+  repository could not start its first session for that reason, so an
+  empty repository (no ref at all) is the exception: the create pushes an
+  empty `Initial commit` to the base and cuts the session from it. A
+  prepare leaves it empty; a repository with other branches still fails.
 - `versions/mvp/18-plan-product.md` §1 (2026-11-05) listed Plan's Projects
   as a row per project with its settings. On 2026-11-08, following that
   day's `Tasks` artboards, each project is a card (its repositories, and

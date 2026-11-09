@@ -1,4 +1,4 @@
-import { Button, SettingsGroup, SettingsRow } from '@oppenheimer/design-system-web';
+import { Button, SettingsGroup, SettingsRow, Skeleton } from '@oppenheimer/design-system-web';
 import {
   useBotMemoryDream,
   useRequestBotMemoryDream,
@@ -11,7 +11,9 @@ import { useTranslation } from 'react-i18next';
  * Tidy memory (`25-bots.md` §4.1, "Dreaming"): what the bot's last dream
  * did, Undo while it stands, and Tidy now, which queues one. A dream runs in
  * the background and says so in the chat; while the API says it is under
- * way, this row says so.
+ * way, this row says so. Until the state answers, the hint is a bar and
+ * Tidy now waits: "never tidied" would be a guess, and a failed read says so
+ * in its alert instead.
  */
 export function BotDreaming({ botId }: { botId: string }) {
   const { t } = useTranslation();
@@ -21,21 +23,28 @@ export function BotDreaming({ botId }: { botId: string }) {
   const undo = useUndoBotMemoryDream();
   const latest = state?.latest ?? null;
   const requested = state?.pending === true;
+  const known = state !== undefined;
 
-  const hint = requested
-    ? t('bots.settings.memory.dream.queued')
-    : latest
-      ? t(
-          latest.undoneAt
-            ? 'bots.settings.memory.dream.lastUndone'
-            : 'bots.settings.memory.dream.last',
-          {
-            date: formatMediumDate(new Date(latest.createdAt), locale),
-            before: latest.factsBefore,
-            after: latest.factsAfter,
-          },
-        )
-      : t('bots.settings.memory.dream.never');
+  const hint = !known ? (
+    error ? undefined : (
+      <span aria-hidden className="flex h-4.5 items-center">
+        <Skeleton shape="sm" className="h-2.5 w-56" />
+      </span>
+    )
+  ) : requested ? (
+    t('bots.settings.memory.dream.queued')
+  ) : latest ? (
+    t(
+      latest.undoneAt ? 'bots.settings.memory.dream.lastUndone' : 'bots.settings.memory.dream.last',
+      {
+        date: formatMediumDate(new Date(latest.createdAt), locale),
+        before: latest.factsBefore,
+        after: latest.factsAfter,
+      },
+    )
+  ) : (
+    t('bots.settings.memory.dream.never')
+  );
 
   return (
     <div className="flex flex-col gap-2">
@@ -55,7 +64,7 @@ export function BotDreaming({ botId }: { botId: string }) {
             <Button
               variant="secondary"
               size="sm"
-              disabled={request.isPending || requested}
+              disabled={!known || request.isPending || requested}
               onClick={() => request.mutate(botId)}
             >
               {t('bots.settings.memory.dream.tidyNow')}

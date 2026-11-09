@@ -405,6 +405,16 @@
       "WHATSAPP_008": "WhatsApp didn't take the message. Try again in a moment.",
       "WHATSAPP_009": "That number has sent as many bot messages as it may for now. Try again later.",
       "WHATSAPP_010": "There's no such WhatsApp chat on that number.",
+      "TELEGRAM_001": "That Telegram bot isn't connected any more.",
+      "TELEGRAM_002": "Telegram belongs to a workspace. Open one and try again.",
+      "TELEGRAM_003": "You've connected three Telegram bots, the most one person connects. Disconnect one to add another.",
+      "TELEGRAM_004": "That host is offline. Start its runner, then try again.",
+      "TELEGRAM_005": "That host's runner can't hold Telegram bots yet. Update the runner, then try again.",
+      "TELEGRAM_006": "That host already holds someone else's Telegram bot.",
+      "TELEGRAM_007": "That Telegram bot isn't connected. Connect it again in Settings → Telegram.",
+      "TELEGRAM_008": "Telegram didn't take the message. Try again in a moment.",
+      "TELEGRAM_009": "That Telegram bot has sent as many bot messages as it may for now. Try again later.",
+      "TELEGRAM_010": "There's no such Telegram chat on that bot.",
       "CLOUD_AGENTS_003": "This server can't keep a cloud agent key. Ask whoever runs it to set CLOUD_AGENTS_KEY.",
       "CLOUD_AGENTS_004": "Connect the provider with your API key first.",
       "CLOUD_AGENTS_005": "The provider refused that API key. Check it's a user API key and hasn't been revoked.",
@@ -1812,6 +1822,9 @@
         "menu": "Commands and skills you can run",
         "pick": "Use /{{name}}",
         "builtInLabel": "Commands",
+        "builtInSkill": {
+          "recap": "Catch up on your sessions, pull requests and plan. Add a topic to narrow it."
+        },
         "builtIn": {
           "goal": "Keep working until a condition holds, checked after every turn. /goal clear stops it.",
           "usage": "Show what this chat has spent: tokens by model, cache hits, plan windows.",
@@ -2070,6 +2083,8 @@
         "gmail": "Gmail · {{when}}",
         "last": "Last",
         "next": "Next",
+        "more": "Show more",
+        "less": "Show less",
         "never": "Never",
         "switch": "Run “{{name}}” on its own",
         "pause": "Pause",
@@ -2154,6 +2169,7 @@
           "plan": "Plan",
           "mail": "Mail",
           "whatsapp": "WhatsApp",
+          "telegram": "Telegram",
           "github": "GitHub",
           "automations": "Routines and automations",
           "bots": "Other bots",
@@ -2856,7 +2872,8 @@
       "tasks": "Tasks",
       "calendar": "Calendar",
       "milestones": "Milestones",
-      "projects": "Projects"
+      "projects": "Projects",
+      "todo": "To do"
     },
     "sidebar": {
       "unassigned": "Unassigned"
@@ -3022,6 +3039,32 @@
       "noProject": "No project",
       "allMilestones": "All milestones",
       "clear": "Clear"
+    },
+    "todo": {
+      "left": "left",
+      "done": "done",
+      "today": "Today",
+      "previous": "Previous day",
+      "next": "Next day",
+      "todayWeek": "Today · Week {{week}}",
+      "weekNumber": "Week {{week}}",
+      "includeOverdue": "Include overdue",
+      "empty": "Nothing for this day yet. Add one below.",
+      "noMatch": "No tasks match these filters.",
+      "add": "Add a task",
+      "addLabel": "Add a task for this day",
+      "addFailed": "Couldn’t add that task.",
+      "toggleFailed": "Couldn’t update that task.",
+      "loadFailed": "Couldn’t load your tasks.",
+      "state": {
+        "todo": "due today",
+        "due": "due",
+        "doing": "in progress",
+        "review": "in review",
+        "done": "done",
+        "overdue": "overdue since {{date}}"
+      },
+      "reorder": "Reorder {{title}}"
     }
   },
   "calendar": {
@@ -3035,20 +3078,28 @@
       "automations": "Automations"
     },
     "header": {
-      "previous": "Previous month",
-      "next": "Next month",
+      "previous": "Previous",
+      "next": "Next",
       "today": "Today",
       "newEvent": "New event",
       "meetings": "meetings",
       "tasksDue": "tasks due",
-      "runs": "automation runs"
+      "runs": "automation runs",
+      "views": "Calendar view",
+      "day": "Day",
+      "week": "Week",
+      "month": "Month",
+      "todayWeek": "Today · Week {{week}}",
+      "weekNumber": "Week {{week}}",
+      "weeks": "Weeks {{from}}–{{to}}"
     },
     "grid": {
       "more_one": "{{count}} more",
       "more_other": "{{count}} more",
       "eventsFailed": "Couldn’t load your events.",
       "googleFailed": "Couldn’t read Google Calendar.",
-      "moveFailed": "Couldn’t move that to another day."
+      "moveFailed": "Couldn’t move that to another day.",
+      "allDay": "All day"
     },
     "event": {
       "newTitle": "New event",
@@ -3337,6 +3388,7 @@
       "cloudAgents": "Cloud agents",
       "mail": "Mail",
       "whatsapp": "WhatsApp",
+      "telegram": "Telegram",
       "app": "Oppenheimer",
       "about": "About"
     },
@@ -3622,6 +3674,57 @@
       "qrStep3": "Point the phone at this code. It changes every few seconds.",
       "qrWaiting": "Waiting for the host to issue a code…"
     },
+    "telegram": {
+      "title": "Telegram",
+      "description": "Connect a Telegram bot you made with @BotFather, held by the runner on one of your hosts. Your bots can then read the chats people have with it and answer them, asking you first. The bot’s token stays on your host.",
+      "privacy": "In groups, Telegram shows a bot only commands, mentions and replies to it. To let your bots read whole groups, send /setprivacy to @BotFather and turn privacy mode off for that bot.",
+      "loadFailed": "Couldn’t load your Telegram bots.",
+      "emptyTitle": "No Telegram bot connected",
+      "emptyDescription": "Connect one and ask any bot things like “anything new on the shop bot?” or “tell the team group the build is green”.",
+      "connect": "Connect a bot",
+      "connectAnother": "Connect another bot",
+      "connectAgain": "Connect again",
+      "connectSubmit": "Connect",
+      "atLimit": "You can connect up to {{count}} bots.",
+      "noHosts": "Pair a host first: the bot is polled by a host’s runner.",
+      "connectTitle": "Connect a Telegram bot",
+      "reconnectTitle": "Give {{label}} a new token",
+      "connectDescription": "Pick the host that will poll the bot. It answers while that host is on.",
+      "reconnectDescription": "Paste the bot’s new token. Its host and the chats kept for your bots stay as they are.",
+      "step1": "In Telegram, open @BotFather and send /newbot (or /token for a bot you have).",
+      "step2": "Copy the token it gives you, which looks like 123456789:AA….",
+      "step3": "Paste it below. It goes to your host and is never shown here again.",
+      "hostField": "Host",
+      "hostPlaceholder": "Choose a host",
+      "searchHosts": "Search hosts",
+      "noHost": "No host matches “{{query}}”",
+      "hostOfflineOption": "{{name}} · offline",
+      "tokenField": "Bot token",
+      "tokenHint": "Kept on the host only. Anyone with it can act as the bot, so don’t share it.",
+      "showToken": "Show token",
+      "hideToken": "Hide token",
+      "labelField": "Name",
+      "labelPlaceholder": "Shop",
+      "connecting": "Connecting…",
+      "connectFailed": "Couldn’t connect the bot.",
+      "status": {
+        "connecting": "Connecting",
+        "connected": "Connected",
+        "revoked": "Token revoked",
+        "unlinked": "Disconnected"
+      },
+      "hostOffline": "Host offline",
+      "onHost": "On {{host}}",
+      "unknownHost": "a removed host",
+      "notCheckedYet": "Checking the token",
+      "open": "Open in Telegram",
+      "disconnect": "Disconnect",
+      "disconnectLabel": "Disconnect {{label}}",
+      "disconnecting": "Disconnecting…",
+      "disconnectTitle": "Disconnect {{label}}?",
+      "disconnectDescription": "Your host stops polling the bot and forgets its token. Your bots lose the chats kept for them. The bot stays yours on Telegram; revoke its token in @BotFather to stop it there too.",
+      "disconnectFailed": "Couldn’t disconnect the bot."
+    },
     "about": {
       "title": "About",
       "versionsHeading": "Versions",
@@ -3678,7 +3781,8 @@
     "backToSessions": "Back to sessions",
     "sensitiveScope": "Sensitive",
     "unknownClient": "An application",
-    "failed": "That did not go through. Try again."
+    "failed": "That did not go through. Try again.",
+    "catalogFailed": "The permissions this application asked for could not be loaded, so it cannot be approved yet. Reload the page to try again."
   },
   "onboarding": {
     "flow": {

@@ -66,6 +66,8 @@ export function BotRoutineRow({ botId, routine }: { botId: string; routine: BotR
           delete: t('bots.settings.routines.delete'),
           last: t('bots.settings.routines.last'),
           next: t('bots.settings.routines.next'),
+          more: t('bots.settings.routines.more'),
+          less: t('bots.settings.routines.less'),
         }}
       />
       <ErrorAlert

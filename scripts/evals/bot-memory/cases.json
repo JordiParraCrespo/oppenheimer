@@ -1,0 +1,165 @@
+{
+  "general": ["Jordi is a freelance software engineer and writes in English or Spanish."],
+  "bots": {
+    "facturas": {
+      "name": "Facturas",
+      "description": "Collects the person's invoices and keeps the billing folder in order.",
+      "instructions": "Your job: collect Jordi's invoices from his mail and his billing folder on his host Pop-os, check they are complete, and file each month's invoices for his accountant. Only collect when Jordi asks.",
+      "memory": ["Facturas sends the accountant one folder per month."]
+    },
+    "reviewer": {
+      "name": "Reviewer",
+      "description": "Reviews and merges pull requests on Jordi's repositories.",
+      "instructions": "Your job: review open pull requests on Jordi's repositories, start a session to fix what fails, and tell Jordi which ones are ready. Never merge without his OK.",
+      "memory": ["Jordi's repositories are under the JordiParraCrespo account on GitHub."]
+    },
+    "xrp": {
+      "name": "Milo",
+      "description": "Helps build XRP Mobile.",
+      "instructions": "Your job: help Jordi build XRP Mobile. Plan the work, start coding sessions on his hosts, and follow them until they finish.",
+      "memory": ["XRP Mobile sessions start from the main branch."]
+    }
+  },
+  "cases": [
+    {
+      "id": "name",
+      "bot": "facturas",
+      "message": "By the way, call me Jordi, not Jordi Parra. Anyway, nothing to collect today.",
+      "expect": "general",
+      "why": "How to address the person is something every bot needs."
+    },
+    {
+      "id": "language",
+      "bot": "reviewer",
+      "message": "From now on write to me in Spanish please, always, I find it easier on my phone.",
+      "expect": "general",
+      "why": "A language for all chats is about the person."
+    },
+    {
+      "id": "time-zone",
+      "bot": "xrp",
+      "message": "Heads up, I moved to Barcelona last week, so I'm on Madrid time now.",
+      "expect": "general",
+      "why": "A time zone changes when every bot should write."
+    },
+    {
+      "id": "role",
+      "bot": "facturas",
+      "message": "Just so you know, I'm a freelance software engineer, I run my own company called Buenavibra.",
+      "expect": "general",
+      "why": "Who the person is and what they do."
+    },
+    {
+      "id": "brevity",
+      "bot": "reviewer",
+      "message": "Your messages are way too long. In general I want short answers from all of you, two or three lines max.",
+      "expect": "general",
+      "why": "A preference stated for all work, from all bots."
+    },
+    {
+      "id": "no-weekends",
+      "bot": "xrp",
+      "message": "Please don't message me on weekends unless something is on fire. That goes for anything, not just this project.",
+      "expect": "general",
+      "why": "A working preference stated for all work."
+    },
+    {
+      "id": "cloud-sessions",
+      "bot": "reviewer",
+      "message": "Rule for everything you or any other bot of mine does: implementation work runs in cloud sessions, my hosts are only a bridge to launch them.",
+      "expect": "general",
+      "why": "A standing rule the person gave for every bot."
+    },
+    {
+      "id": "invoice-folder",
+      "bot": "facturas",
+      "message": "The invoices are in /home/doctor/Documents/Buenavibra/billing on Pop-os, issued ones are in the earning subfolder.",
+      "expect": "yours",
+      "why": "A folder for this bot's job; screenshot case 1."
+    },
+    {
+      "id": "collect-on-ask",
+      "bot": "facturas",
+      "message": "Don't do it every month on a schedule, only collect invoices when I ask you.",
+      "expect": "yours",
+      "why": "How this bot's job is scheduled."
+    },
+    {
+      "id": "gmail-accounts",
+      "bot": "facturas",
+      "message": "Invoices come into both my Gmail accounts, and some from other places too, not only Gmail.",
+      "expect": "yours",
+      "why": "Where this bot's work comes from."
+    },
+    {
+      "id": "accountant",
+      "bot": "facturas",
+      "message": "My accountant wants the invoices as a single zip per quarter, named like 2026-Q3.zip.",
+      "expect": "yours",
+      "why": "How this kind of work is delivered."
+    },
+    {
+      "id": "pr-notifications",
+      "bot": "reviewer",
+      "message": "Turn off Oppenheimer's built-in 'ready to merge' notifications for me, don't filter them, just off. Leave the automerge routine as it is.",
+      "expect": "yours",
+      "why": "A setting only the PR work touches; screenshot case 2."
+    },
+    {
+      "id": "squash",
+      "bot": "reviewer",
+      "message": "When you get my OK, merge with squash, never a merge commit.",
+      "expect": "yours",
+      "why": "How this bot's kind of work is done, even though it is a preference."
+    },
+    {
+      "id": "repo-ci",
+      "bot": "reviewer",
+      "message": "On the oppenheimer repo CI is local, run pnpm ci:local and paste the report, there are no GitHub checks.",
+      "expect": "yours",
+      "why": "A fact about one repository."
+    },
+    {
+      "id": "xrp-project",
+      "bot": "xrp",
+      "message": "So, I'm building XRP Mobile for Peersyst, it's a fork of Near Mobile. That's what I want your help with.",
+      "expect": "yours",
+      "why": "The project this bot is for; screenshot case 3."
+    },
+    {
+      "id": "xrp-host",
+      "bot": "xrp",
+      "message": "Use the mac-mini host for XRP Mobile, it has Xcode and the simulators.",
+      "expect": "yours",
+      "why": "A host for one project."
+    },
+    {
+      "id": "xrp-stack",
+      "bot": "xrp",
+      "message": "XRP Mobile is React Native with Expo, and we use pnpm, not yarn.",
+      "expect": "yours",
+      "why": "A fact about one project's code."
+    },
+    {
+      "id": "correction-path",
+      "bot": "facturas",
+      "message": "No no, the earning folder is for invoices I issue, the ones I receive go in 'spending'. Fix that.",
+      "expect": "yours",
+      "why": "A correction about this bot's folder."
+    },
+    {
+      "id": "personal-pref-for-job",
+      "bot": "facturas",
+      "message": "I hate when invoices are renamed, keep the original file names always.",
+      "expect": "yours",
+      "why": "A strong preference, but only invoice work touches it."
+    },
+    {
+      "id": "email-signature",
+      "bot": "reviewer",
+      "message": "My work email is jordi@example.com, use that one if anyone ever needs to reach me, not the gmail.",
+      "expect": "general",
+      "why": "How to reach the person, for any bot."
+    }
+  ]
+}

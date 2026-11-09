@@ -1,3 +1,7 @@
+import { mkdtemp, readFile, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import pino from 'pino';
 import { describe, expect, it, vi } from 'vitest';
 import { buildPinoHttpOptions } from '../pino-http-options';
 
@@ -101,5 +105,32 @@ describe('buildPinoHttpOptions', () => {
     expect(buildPinoHttpOptions({ pretty: true }).transport).toEqual({
       target: 'pino-pretty',
     });
+  });
+
+  // The file is what Alloy ships to Loki: a line that never reaches it, or
+  // reaches it pretty-printed, is a log nobody (and no agent) can query.
+  it('also writes JSON lines to the file it is given, with the safety serializers applied', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'pino-file-'));
+    const file = join(dir, 'nested', 'api.log');
+    const options = buildPinoHttpOptions({ pretty: true, file });
+    const logger = pino({
+      transport: options.transport,
+      redact: options.redact,
+      serializers: options.serializers,
+    } as pino.LoggerOptions);
+
+    logger.info({ req: { url: '/x?token=secret', headers: { cookie: 'c' } } }, 'hello');
+    await new Promise<void>((resolve) => logger.flush(() => resolve()));
+    await vi.waitFor(
+      async () => expect(await readFile(file, 'utf8').catch(() => '')).not.toBe(''),
+      {
+        timeout: 5_000,
+      },
+    );
+
+    const line = JSON.parse((await readFile(file, 'utf8')).trim().split('\n')[0] as string);
+    expect(line).toMatchObject({ level: 30, msg: 'hello', req: { url: '/x' } });
+    expect(line.req.headers).toBeUndefined();
+    await rm(dir, { recursive: true, force: true });
   });
 });

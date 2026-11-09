@@ -34,7 +34,9 @@ export function AddHostDialog({
   const { t } = useTranslation();
   const { pairing, expiresAt, expired, host, isPending, error, regenerate, done, availability } =
     usePairing(t('hosts.add.defaultName'), 'registered');
-  const pairs = availability === 'available';
+  // Drawn while availability is still being asked too, Use disabled, so the
+  // footer does not change when the answer is yes.
+  const pairs = availability !== 'unavailable';
 
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>

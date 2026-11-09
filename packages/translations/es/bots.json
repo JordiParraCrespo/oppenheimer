@@ -349,6 +349,9 @@
       "menu": "Comandos y habilidades que puedes ejecutar",
       "pick": "Usar /{{name}}",
       "builtInLabel": "Comandos",
+      "builtInSkill": {
+        "recap": "Ponte al día con tus sesiones, pull requests y plan. Añade un tema para acotarlo."
+      },
       "builtIn": {
         "goal": "Sigue trabajando hasta que se cumpla una condición, revisada tras cada turno. /goal clear lo detiene.",
         "usage": "Muestra lo que ha gastado este chat: tokens por modelo, aciertos de caché, ventanas del plan.",
@@ -608,6 +611,8 @@
       "gmail": "Gmail · {{when}}",
       "last": "Última",
       "next": "Próxima",
+      "more": "Mostrar más",
+      "less": "Mostrar menos",
       "never": "Nunca",
       "switch": "Ejecutar «{{name}}» por su cuenta",
       "pause": "Pausar",
@@ -696,6 +701,7 @@
         "plan": "Plan",
         "mail": "Correo",
         "whatsapp": "WhatsApp",
+        "telegram": "Telegram",
         "github": "GitHub",
         "automations": "Rutinas y automatizaciones",
         "bots": "Otros bots",

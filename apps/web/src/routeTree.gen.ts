@@ -44,6 +44,7 @@ import { Route as AuthenticatedPlanCalendarRouteImport } from './routes/_authent
 import { Route as AuthenticatedPlanInboxRouteImport } from './routes/_authenticated/plan/inbox'
 import { Route as AuthenticatedPlanMilestonesRouteImport } from './routes/_authenticated/plan/milestones'
 import { Route as AuthenticatedPlanProjectsRouteImport } from './routes/_authenticated/plan/projects'
+import { Route as AuthenticatedPlanTodoRouteImport } from './routes/_authenticated/plan/todo'
 import { Route as AuthenticatedPullsIndexRouteImport } from './routes/_authenticated/pulls/index'
 import { Route as AuthenticatedPullsAnalyticsRouteImport } from './routes/_authenticated/pulls/analytics'
 import { Route as AuthenticatedSessionsIndexRouteImport } from './routes/_authenticated/sessions/index'
@@ -57,6 +58,7 @@ import { Route as AuthenticatedSettingsMemoryRouteImport } from './routes/_authe
 import { Route as AuthenticatedSettingsModelProvidersRouteImport } from './routes/_authenticated/settings/model-providers'
 import { Route as AuthenticatedSettingsProfileRouteImport } from './routes/_authenticated/settings/profile'
 import { Route as AuthenticatedSettingsRepositoriesRouteImport } from './routes/_authenticated/settings/repositories'
+import { Route as AuthenticatedSettingsTelegramRouteImport } from './routes/_authenticated/settings/telegram'
 import { Route as AuthenticatedSettingsWhatsappRouteImport } from './routes/_authenticated/settings/whatsapp'
 import { Route as AuthenticatedAutomationsBotsBotIdRouteImport } from './routes/_authenticated/automations_.bots.$botId'
 import { Route as AuthenticatedBotsBotIdSettingsRouteImport } from './routes/_authenticated/bots_.$botId.settings'
@@ -260,6 +262,11 @@ const AuthenticatedPlanProjectsRoute =
     path: '/projects',
     getParentRoute: () => AuthenticatedPlanRoute,
   } as any)
+const AuthenticatedPlanTodoRoute = AuthenticatedPlanTodoRouteImport.update({
+  id: '/todo',
+  path: '/todo',
+  getParentRoute: () => AuthenticatedPlanRoute,
+} as any)
 const AuthenticatedPullsIndexRoute = AuthenticatedPullsIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -335,6 +342,12 @@ const AuthenticatedSettingsRepositoriesRoute =
   AuthenticatedSettingsRepositoriesRouteImport.update({
     id: '/repositories',
     path: '/repositories',
+    getParentRoute: () => AuthenticatedSettingsRoute,
+  } as any)
+const AuthenticatedSettingsTelegramRoute =
+  AuthenticatedSettingsTelegramRouteImport.update({
+    id: '/telegram',
+    path: '/telegram',
     getParentRoute: () => AuthenticatedSettingsRoute,
   } as any)
 const AuthenticatedSettingsWhatsappRoute =
@@ -499,6 +512,7 @@ export interface FileRoutesByFullPath {
   '/plan/inbox': typeof AuthenticatedPlanInboxRoute
   '/plan/milestones': typeof AuthenticatedPlanMilestonesRoute
   '/plan/projects': typeof AuthenticatedPlanProjectsRoute
+  '/plan/todo': typeof AuthenticatedPlanTodoRoute
   '/pulls/analytics': typeof AuthenticatedPullsAnalyticsRoute
   '/sessions/$sessionId': typeof AuthenticatedSessionsSessionIdRoute
   '/sessions/new': typeof AuthenticatedSessionsNewRoute
@@ -509,6 +523,7 @@ export interface FileRoutesByFullPath {
   '/settings/model-providers': typeof AuthenticatedSettingsModelProvidersRoute
   '/settings/profile': typeof AuthenticatedSettingsProfileRoute
   '/settings/repositories': typeof AuthenticatedSettingsRepositoriesRoute
+  '/settings/telegram': typeof AuthenticatedSettingsTelegramRoute
   '/settings/whatsapp': typeof AuthenticatedSettingsWhatsappRoute
   '/onboarding/': typeof AuthOnboardingIndexRoute
   '/automations/': typeof AuthenticatedAutomationsIndexRoute
@@ -563,6 +578,7 @@ export interface FileRoutesByTo {
   '/plan/inbox': typeof AuthenticatedPlanInboxRoute
   '/plan/milestones': typeof AuthenticatedPlanMilestonesRoute
   '/plan/projects': typeof AuthenticatedPlanProjectsRoute
+  '/plan/todo': typeof AuthenticatedPlanTodoRoute
   '/pulls/analytics': typeof AuthenticatedPullsAnalyticsRoute
   '/sessions/$sessionId': typeof AuthenticatedSessionsSessionIdRoute
   '/sessions/new': typeof AuthenticatedSessionsNewRoute
@@ -573,6 +589,7 @@ export interface FileRoutesByTo {
   '/settings/model-providers': typeof AuthenticatedSettingsModelProvidersRoute
   '/settings/profile': typeof AuthenticatedSettingsProfileRoute
   '/settings/repositories': typeof AuthenticatedSettingsRepositoriesRoute
+  '/settings/telegram': typeof AuthenticatedSettingsTelegramRoute
   '/settings/whatsapp': typeof AuthenticatedSettingsWhatsappRoute
   '/onboarding': typeof AuthOnboardingIndexRoute
   '/automations': typeof AuthenticatedAutomationsIndexRoute
@@ -635,6 +652,7 @@ export interface FileRoutesById {
   '/_authenticated/plan/inbox': typeof AuthenticatedPlanInboxRoute
   '/_authenticated/plan/milestones': typeof AuthenticatedPlanMilestonesRoute
   '/_authenticated/plan/projects': typeof AuthenticatedPlanProjectsRoute
+  '/_authenticated/plan/todo': typeof AuthenticatedPlanTodoRoute
   '/_authenticated/pulls/analytics': typeof AuthenticatedPullsAnalyticsRoute
   '/_authenticated/sessions/$sessionId': typeof AuthenticatedSessionsSessionIdRoute
   '/_authenticated/sessions/new': typeof AuthenticatedSessionsNewRoute
@@ -645,6 +663,7 @@ export interface FileRoutesById {
   '/_authenticated/settings/model-providers': typeof AuthenticatedSettingsModelProvidersRoute
   '/_authenticated/settings/profile': typeof AuthenticatedSettingsProfileRoute
   '/_authenticated/settings/repositories': typeof AuthenticatedSettingsRepositoriesRoute
+  '/_authenticated/settings/telegram': typeof AuthenticatedSettingsTelegramRoute
   '/_authenticated/settings/whatsapp': typeof AuthenticatedSettingsWhatsappRoute
   '/_auth/onboarding/': typeof AuthOnboardingIndexRoute
   '/_authenticated/automations/': typeof AuthenticatedAutomationsIndexRoute
@@ -706,6 +725,7 @@ export interface FileRouteTypes {
     | '/plan/inbox'
     | '/plan/milestones'
     | '/plan/projects'
+    | '/plan/todo'
     | '/pulls/analytics'
     | '/sessions/$sessionId'
     | '/sessions/new'
@@ -716,6 +736,7 @@ export interface FileRouteTypes {
     | '/settings/model-providers'
     | '/settings/profile'
     | '/settings/repositories'
+    | '/settings/telegram'
     | '/settings/whatsapp'
     | '/onboarding/'
     | '/automations/'
@@ -770,6 +791,7 @@ export interface FileRouteTypes {
     | '/plan/inbox'
     | '/plan/milestones'
     | '/plan/projects'
+    | '/plan/todo'
     | '/pulls/analytics'
     | '/sessions/$sessionId'
     | '/sessions/new'
@@ -780,6 +802,7 @@ export interface FileRouteTypes {
     | '/settings/model-providers'
     | '/settings/profile'
     | '/settings/repositories'
+    | '/settings/telegram'
     | '/settings/whatsapp'
     | '/onboarding'
     | '/automations'
@@ -841,6 +864,7 @@ export interface FileRouteTypes {
     | '/_authenticated/plan/inbox'
     | '/_authenticated/plan/milestones'
     | '/_authenticated/plan/projects'
+    | '/_authenticated/plan/todo'
     | '/_authenticated/pulls/analytics'
     | '/_authenticated/sessions/$sessionId'
     | '/_authenticated/sessions/new'
@@ -851,6 +875,7 @@ export interface FileRouteTypes {
     | '/_authenticated/settings/model-providers'
     | '/_authenticated/settings/profile'
     | '/_authenticated/settings/repositories'
+    | '/_authenticated/settings/telegram'
     | '/_authenticated/settings/whatsapp'
     | '/_auth/onboarding/'
     | '/_authenticated/automations/'
@@ -1140,6 +1165,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedPlanProjectsRouteImport
       parentRoute: typeof AuthenticatedPlanRoute
     }
+    '/_authenticated/plan/todo': {
+      id: '/_authenticated/plan/todo'
+      path: '/todo'
+      fullPath: '/plan/todo'
+      preLoaderRoute: typeof AuthenticatedPlanTodoRouteImport
+      parentRoute: typeof AuthenticatedPlanRoute
+    }
     '/_authenticated/pulls/': {
       id: '/_authenticated/pulls/'
       path: '/'
@@ -1229,6 +1261,13 @@ declare module '@tanstack/react-router' {
       path: '/repositories'
       fullPath: '/settings/repositories'
       preLoaderRoute: typeof AuthenticatedSettingsRepositoriesRouteImport
+      parentRoute: typeof AuthenticatedSettingsRoute
+    }
+    '/_authenticated/settings/telegram': {
+      id: '/_authenticated/settings/telegram'
+      path: '/telegram'
+      fullPath: '/settings/telegram'
+      preLoaderRoute: typeof AuthenticatedSettingsTelegramRouteImport
       parentRoute: typeof AuthenticatedSettingsRoute
     }
     '/_authenticated/settings/whatsapp': {
@@ -1462,6 +1501,7 @@ interface AuthenticatedPlanRouteChildren {
   AuthenticatedPlanInboxRoute: typeof AuthenticatedPlanInboxRoute
   AuthenticatedPlanMilestonesRoute: typeof AuthenticatedPlanMilestonesRoute
   AuthenticatedPlanProjectsRoute: typeof AuthenticatedPlanProjectsRoute
+  AuthenticatedPlanTodoRoute: typeof AuthenticatedPlanTodoRoute
   AuthenticatedPlanIndexRoute: typeof AuthenticatedPlanIndexRoute
   AuthenticatedPlanCalendarGoogleRoute: typeof AuthenticatedPlanCalendarGoogleRoute
   AuthenticatedPlanProjectsProjectIdRoute: typeof AuthenticatedPlanProjectsProjectIdRoute
@@ -1472,6 +1512,7 @@ const AuthenticatedPlanRouteChildren: AuthenticatedPlanRouteChildren = {
   AuthenticatedPlanInboxRoute: AuthenticatedPlanInboxRoute,
   AuthenticatedPlanMilestonesRoute: AuthenticatedPlanMilestonesRoute,
   AuthenticatedPlanProjectsRoute: AuthenticatedPlanProjectsRoute,
+  AuthenticatedPlanTodoRoute: AuthenticatedPlanTodoRoute,
   AuthenticatedPlanIndexRoute: AuthenticatedPlanIndexRoute,
   AuthenticatedPlanCalendarGoogleRoute: AuthenticatedPlanCalendarGoogleRoute,
   AuthenticatedPlanProjectsProjectIdRoute:
@@ -1502,6 +1543,7 @@ interface AuthenticatedSettingsRouteChildren {
   AuthenticatedSettingsModelProvidersRoute: typeof AuthenticatedSettingsModelProvidersRoute
   AuthenticatedSettingsProfileRoute: typeof AuthenticatedSettingsProfileRoute
   AuthenticatedSettingsRepositoriesRoute: typeof AuthenticatedSettingsRepositoriesRoute
+  AuthenticatedSettingsTelegramRoute: typeof AuthenticatedSettingsTelegramRoute
   AuthenticatedSettingsWhatsappRoute: typeof AuthenticatedSettingsWhatsappRoute
   AuthenticatedSettingsIndexRoute: typeof AuthenticatedSettingsIndexRoute
   AuthenticatedSettingsHostsNewRoute: typeof AuthenticatedSettingsHostsNewRoute
@@ -1519,6 +1561,7 @@ const AuthenticatedSettingsRouteChildren: AuthenticatedSettingsRouteChildren = {
   AuthenticatedSettingsProfileRoute: AuthenticatedSettingsProfileRoute,
   AuthenticatedSettingsRepositoriesRoute:
     AuthenticatedSettingsRepositoriesRoute,
+  AuthenticatedSettingsTelegramRoute: AuthenticatedSettingsTelegramRoute,
   AuthenticatedSettingsWhatsappRoute: AuthenticatedSettingsWhatsappRoute,
   AuthenticatedSettingsIndexRoute: AuthenticatedSettingsIndexRoute,
   AuthenticatedSettingsHostsNewRoute: AuthenticatedSettingsHostsNewRoute,

@@ -1,4 +1,5 @@
-import { Card, CardContent, CardFooter, Skeleton } from '@oppenheimer/design-system-web';
+import { Button, Card, CardContent, CardFooter, Skeleton } from '@oppenheimer/design-system-web';
+import { PencilIcon } from '@oppenheimer/design-system-web/icons';
 import { LoadingStatus } from '@oppenheimer/frontend-web';
 import { useTranslation } from 'react-i18next';
 import { CommentersSkeleton } from './commenters-skeleton';
@@ -51,7 +52,10 @@ export function DescriptionSkeleton() {
             ))}
           </CardContent>
           <CardFooter className="justify-end">
-            <Skeleton shape="pill" className="h-7 w-34" />
+            <Button variant="ghost" size="sm" disabled tabIndex={-1}>
+              <PencilIcon />
+              {t('pullRequests.detail.editOnGithub')}
+            </Button>
           </CardFooter>
         </Card>
       </div>

@@ -105,11 +105,13 @@ export function composeBotSystemPrompt(input: BotPromptInput): string {
   }
   if (input.personFacts?.length) {
     parts.push(
-      `# What you know about the person (shared by all their bots)\n\n${input.personFacts.map((fact) => `- ${fact}`).join('\n')}`,
+      `# General memory (about the person, read by every bot of theirs)\n\n${input.personFacts.map((fact) => `- ${fact}`).join('\n')}`,
     );
   }
   if (input.facts.length) {
-    parts.push(`# What you remember\n\n${input.facts.map((fact) => `- ${fact}`).join('\n')}`);
+    parts.push(
+      `# Your memory (read by you alone)\n\n${input.facts.map((fact) => `- ${fact}`).join('\n')}`,
+    );
   }
   return parts.join('\n\n');
 }
@@ -147,7 +149,7 @@ function howATurnGoes(remembers: boolean): string {
 }
 
 const SAVE_AS_YOU_GO =
-  '- Before you reply, ask what you learned that will matter in a later conversation: a preference, a correction, a decision, a name, a fact about their work. Save each with `remember` in this turn, without asking. A correction from the person is the one to save above all.';
+  '- Before you reply, ask what you learned that will matter in a later conversation: a preference, a correction, a decision, a name, a fact about their work. Save each with `remember` in this turn, without asking. A correction from the person is the one to save above all. Choose its memory by the rule in `remember`.';
 
 const HOW_A_TURN_GOES = `# How a turn goes
 
@@ -189,6 +191,7 @@ const TOOL_GROUP_LABELS: Readonly<Record<BotToolGroup, string>> = {
   automations: 'Automations and routines',
   mail: 'Gmail',
   whatsapp: 'WhatsApp',
+  telegram: 'Telegram',
   bots: 'Other bots',
   web: 'The web and subagents',
 };

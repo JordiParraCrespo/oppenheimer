@@ -278,8 +278,11 @@ is the reference.
   shapes (a terminal or the panel that starts one), choose from what is
   already cached; when nothing tells, draw the quieter one.
 - **Quiet for assistive technology.** `Skeleton` is `aria-hidden` and pulses
-  only under `motion-safe`; the placeholder's root carries `aria-busy` and the
-  kit's `<LoadingStatus />`, the one "Loading…" a screen reader hears.
+  only under `motion-safe`; the placeholder's root carries `aria-busy`. What
+  a screen reader hears is one app-wide "Loading…" (`LoadingAnnouncer`, in
+  `app.tsx`): every `QueryState.Pending` counts itself in, and so does a
+  named placeholder's `<LoadingStatus />` (for one drawn outside a Pending),
+  so several on screen are heard once and none needs to opt out.
 - **A design-system record owns its placeholder.** When the row or card a list
   draws is a design-system component, its placeholder sits beside it in the
   same file on the same frame (`HostCardSkeleton` shares `HostCard`'s
@@ -288,14 +291,17 @@ is the reference.
   feature's `components/` (or a `sections/` one when it must read a cache to
   pick its shape), one component per file.
 
-`pnpm check:structure` fails a `QueryState.Pending` that holds nothing but
-`Skeleton`s with a slab among them: a block 64px tall or more, or one that
-fills its frame (`scripts/skeleton-shape.mjs`). A pane that really is one block
-until it answers says so inside the slot,
-`{/* A block stands in here: <why> */}`. The thirteen files that held slabs when
-the check landed were `SLAB_DEBT` in `scripts/skeleton-slab-debt.mjs`, each
-held to its count; all are redrawn and the list is empty. Nothing is added
-to it: a new slab is fixed where it is written. Whether a named placeholder has the right shape is
+`pnpm check:structure` fails a slab: a `Skeleton` 64px tall or more, or one
+that fills its frame with no height of its own, wherever it is drawn (a
+`QueryState.Pending`, a named `<View>Skeleton`, a pending branch, inside the
+real container or not; `scripts/skeleton-shape.mjs`). A placeholder that
+really is one block (a terminal before its first frame, a field or a chart at
+its own height) says so on one of the three lines above it, or inside its
+`QueryState.Pending`: `{/* A block stands in here: <why> */}`. The check
+first read only a `Pending` made of nothing but `Skeleton`s, and a wrapper
+let sixteen slabs through (a 256px block in the share dialog among them);
+`SLAB_DEBT` in `scripts/skeleton-slab-debt.mjs` is empty and nothing is added
+to it. Whether a named placeholder has the right shape is
 `/frontend-audit`'s `U7`. Before a pull request, photograph each placeholder
 held beside its loaded page (`/local-stack`, "Show a visual change").
 

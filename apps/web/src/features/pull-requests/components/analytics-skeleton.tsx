@@ -1,4 +1,5 @@
 import { ChartHero, Panel, PanelGrid, Skeleton } from '@oppenheimer/design-system-web';
+import { Bot, User } from '@oppenheimer/design-system-web/icons';
 import { LoadingStatus } from '@oppenheimer/frontend-web';
 import { useTranslation } from 'react-i18next';
 import { DELTA_PLACEHOLDER, StatCardSkeleton } from './stat-card-skeleton';
@@ -89,12 +90,29 @@ export function AnalyticsSkeleton({ rangeWord }: { rangeWord: string }) {
       </div>
       <Panel title={t('pullRequests.analytics.waitTitle')} meta={vsPrevious}>
         <div className="grid gap-2 sm:grid-cols-2">
-          <StatCardSkeleton label={t('pullRequests.analytics.agents')} />
-          <StatCardSkeleton label={t('pullRequests.analytics.people')} />
+          <StatCardSkeleton
+            label={
+              <span className="flex items-center gap-2">
+                <span className="size-2 rounded-pill bg-chart-1" />
+                {t('pullRequests.analytics.agents')}
+                <Bot className="ml-auto size-3.5 text-fg-subtle" aria-hidden />
+              </span>
+            }
+          />
+          <StatCardSkeleton
+            label={
+              <span className="flex items-center gap-2">
+                <span className="size-2 rounded-pill bg-chart-2" />
+                {t('pullRequests.analytics.people')}
+                <User className="ml-auto size-3.5 text-fg-subtle" aria-hidden />
+              </span>
+            }
+          />
         </div>
       </Panel>
       <PanelGrid>
         <Panel title={t('pullRequests.analytics.laneMix')} meta={vsPrevious}>
+          {/* A block stands in here: the lane mix's ring chart, one disc at its own size. */}
           <Skeleton aria-hidden shape="pill" className="size-37 self-center" />
           <div aria-hidden className="flex flex-col">
             {['w-16', 'w-20', 'w-14'].map((width) => (

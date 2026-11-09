@@ -2,7 +2,7 @@ import { FieldDescription } from '@oppenheimer/design-system-web';
 import { useSuspenseCalendarEvents } from '@oppenheimer/frontend-consumer/react';
 import { ErrorAlert } from '@oppenheimer/frontend-web';
 import { useTranslation } from 'react-i18next';
-import { useMonth } from '../hooks/use-month';
+import { useCalendarView } from '../hooks/use-calendar-view';
 import { EventEditor } from './event-editor';
 
 /**
@@ -13,7 +13,7 @@ import { EventEditor } from './event-editor';
  */
 export function SavedEventEditor({ eventId }: { eventId: string }) {
   const { t } = useTranslation();
-  const { range } = useMonth();
+  const { range } = useCalendarView();
   const { data: event, error } = useSuspenseCalendarEvents(
     range,
     (rows) => rows.find((row) => row.id === eventId) ?? null,

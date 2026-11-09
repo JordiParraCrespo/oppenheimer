@@ -7,6 +7,7 @@ import {
   dotVariants,
   Popover,
   PopoverTrigger,
+  Skeleton,
 } from '@oppenheimer/design-system-web';
 import { Paperclip } from '@oppenheimer/design-system-web/icons';
 import type { SessionEntity, TaskEntity } from '@oppenheimer/frontend-consumer';
@@ -16,7 +17,7 @@ import {
   useProjects,
   useSessions,
 } from '@oppenheimer/frontend-consumer/react';
-import { ErrorAlert } from '@oppenheimer/frontend-web';
+import { ErrorAlert, LoadingStatus } from '@oppenheimer/frontend-web';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { SessionAge } from '../components/session-age';
@@ -136,7 +137,18 @@ export function LinkSessionPicker({ task }: { task: TaskEntity }) {
           {mine.map(row)}
           {mine.length && others.length ? heading(t('tasks.link.others')) : null}
           {others.map(row)}
-          {matching.length ? null : (
+          {free === undefined ? (
+            // The sessions have not answered: rows to come, not "no sessions".
+            <div aria-busy className="flex flex-col">
+              <LoadingStatus />
+              {['w-40', 'w-28', 'w-36'].map((width) => (
+                <span key={width} aria-hidden className="flex h-6.5 items-center gap-2 px-2.5">
+                  <Skeleton shape="pill" className="size-1.5 shrink-0" />
+                  <Skeleton shape="sm" className={`h-2.5 ${width}`} />
+                </span>
+              ))}
+            </div>
+          ) : matching.length ? null : (
             <ChipSelectEmpty>
               {free?.length
                 ? t('tasks.link.noMatch', { query: query.trim() })
