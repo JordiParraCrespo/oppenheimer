@@ -121,12 +121,9 @@ func (s *Store) trustCodex(dir string) error {
 
 	// A config kept in a dotfiles repository is a symlink to it; the write
 	// goes to the file it names, so the link stays a link.
-	path := s.codexConfig
-	if real, err := filepath.EvalSymlinks(path); err == nil {
-		path = real
-	}
+	path := linkTarget(s.codexConfig)
 	mode := fs.FileMode(0o600)
-	raw, err := os.ReadFile(path)
+	raw, err := os.ReadFile(path) //nolint:gosec // Codex's config, where the runner was told it is
 	switch {
 	case errors.Is(err, fs.ErrNotExist):
 	case err != nil:
@@ -326,6 +323,23 @@ func (s *Store) edit(change func(root map[string]json.RawMessage) (bool, error))
 		return err
 	}
 	return writeAtomic(s.claudeConfig, out, mode)
+}
+
+// linkTarget is the file path names once every symlink on it is followed,
+// whether or not that file exists yet: a link into a dotfiles repository
+// that has no config in it yet is still a link to keep.
+func linkTarget(path string) string {
+	for range 40 {
+		target, err := os.Readlink(path)
+		if err != nil {
+			return path
+		}
+		if !filepath.IsAbs(target) {
+			target = filepath.Join(filepath.Dir(path), target)
+		}
+		path = target
+	}
+	return path
 }
 
 func realPath(dir string) string {
