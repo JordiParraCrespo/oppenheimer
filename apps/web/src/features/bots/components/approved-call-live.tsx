@@ -13,7 +13,7 @@ export function ApprovedCallLive({ call }: { call: RunningApprovedCall }) {
   const { t } = useTranslation();
   return (
     <TraceLive
-      glyph={<ThinkingOrb aria-hidden className="shrink-0" size={20} state="composing" />}
+      glyph={<ThinkingOrb aria-hidden className="shrink-0" size={20} state="solving" />}
       elapsed={<BotTurnClock since={call.since} />}
     >
       {t('bots.chat.event.running', { summary: call.summary })}

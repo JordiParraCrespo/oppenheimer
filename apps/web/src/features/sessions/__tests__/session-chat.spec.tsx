@@ -190,7 +190,9 @@ describe('a settled turn', () => {
     render(<SessionChat chat={chat} agent="claude-code" readOnly />);
     // The settled turn keeps its answer and its card; its thinking folds away.
     expect(screen.getByText('Done.')).toBeTruthy();
-    expect(screen.getByText('sessions.chat.changes{"count":1}')).toBeTruthy();
+    // One file is its row alone, no "1 file changed" head over it.
+    expect(document.querySelector('[data-slot="changed-file-row"]')).toBeTruthy();
+    expect(screen.queryByText('sessions.chat.changes{"count":1}')).toBeNull();
     expect(screen.queryByText('sessions.chat.thoughtFor{"seconds":4}')).toBeNull();
 
     fireEvent.click(screen.getByRole('button', { name: /sessions\.chat\.turn\.worked/ }));
