@@ -716,7 +716,10 @@
         "choose": "Date range",
         "days_one": "{{count}} day",
         "days_other": "{{count}} days"
-      }
+      },
+      "otherModels": "Other models",
+      "headlessOnly": "headless turns",
+      "measuredHeadless": "Measured on headless turns"
     },
     "unassigned": "Unassigned"
   },

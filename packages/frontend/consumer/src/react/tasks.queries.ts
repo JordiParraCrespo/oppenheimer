@@ -170,6 +170,7 @@ async function settleTask(
   if (!boardKnown || movesMilestoneProgress(previous, task)) {
     void queryClient.invalidateQueries({ queryKey: tasksKeys.milestones() });
   }
+  void queryClient.invalidateQueries({ queryKey: tasksKeys.stats() });
 }
 
 /** A task joined or left a milestone, or one on a milestone turned Done or back. */

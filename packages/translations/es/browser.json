@@ -722,7 +722,10 @@
         "days_one": "{{count}} día",
         "days_many": "{{count}} días",
         "days_other": "{{count}} días"
-      }
+      },
+      "otherModels": "Otros modelos",
+      "headlessOnly": "turnos sin terminal",
+      "measuredHeadless": "Medido en los turnos sin terminal"
     },
     "unassigned": "Sin asignar"
   },

@@ -14,9 +14,10 @@ import { useDeferredValue } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useStatsQuery } from '../hooks/use-stats-query';
 import { formatUsd } from '../lib/format-usd';
+import { modelSeriesOf } from '../lib/model-series';
 import { changeOf, niceTicks } from '../lib/stats-range';
 
-const MODEL_TONES = ['chart-1', 'chart-2', 'chart-3'] as const;
+const MODEL_TONES = ['chart-1', 'chart-2', 'chart-3', 'muted'] as const;
 
 /**
  * A project's Stats (the 2026-11-08 `Tasks` frame's project Stats, and
@@ -62,12 +63,16 @@ export function ProjectStatsSection({ projectId }: { projectId: string }) {
   ];
   const taskMax = Math.max(0, ...current.completedByWeek, ...current.createdByWeek);
 
-  const models = (current.tokensByModel ?? []).slice(0, MODEL_TONES.length);
+  const models = modelSeriesOf(current.tokensByModel ?? [], MODEL_TONES.length - 1);
   const modelSeries: ChartSeries[] = models.map((row, index) => ({
     key: String(index),
-    label: row.model ?? t('projects.stats.unknownModel'),
-    tone: MODEL_TONES[index] ?? 'chart-1',
+    label:
+      row.model === 'other'
+        ? t('projects.stats.otherModels')
+        : (row.model ?? t('projects.stats.unknownModel')),
+    tone: MODEL_TONES[index] ?? 'muted',
   }));
+  const headless = t('projects.stats.headlessOnly');
   const tokenMax = Math.max(
     0,
     ...data.weeks.map((_, i) => Math.max(0, ...models.map((m) => m.byWeek[i] ?? 0))),
@@ -92,6 +97,7 @@ export function ProjectStatsSection({ projectId }: { projectId: string }) {
           <StatCard
             label={t('projects.stats.tokens')}
             value={formatTokens(current.tokens, locale)}
+            unit={headless}
             detail={delta(current.tokens, previous?.tokens, null)}
           />
         ) : null}
@@ -99,6 +105,7 @@ export function ProjectStatsSection({ projectId }: { projectId: string }) {
           <StatCard
             label={t('projects.stats.cost')}
             value={formatUsd(current.costUsd, locale)}
+            unit={headless}
             detail={delta(current.costUsd, previous?.costUsd, false)}
           />
         ) : null}
@@ -123,6 +130,7 @@ export function ProjectStatsSection({ projectId }: { projectId: string }) {
             title={t('projects.stats.tokensTitle')}
             meta={<ChartLegend series={modelSeries} />}
           >
+            <span className="text-xs text-fg-muted">{t('projects.stats.measuredHeadless')}</span>
             <AreaChart
               series={modelSeries}
               points={data.weeks.map((_, i) => ({
@@ -136,7 +144,7 @@ export function ProjectStatsSection({ projectId }: { projectId: string }) {
               aria-label={t('projects.stats.tokensTitle')}
             />
           </Panel>
-          <Panel title={t('projects.stats.costTitle')}>
+          <Panel title={t('projects.stats.costTitle')} meta={t('projects.stats.measuredHeadless')}>
             <AreaChart
               series={[{ key: 'cost', label: t('projects.stats.cost'), tone: 'chart-3' }]}
               points={data.weeks.map((_, i) => ({
