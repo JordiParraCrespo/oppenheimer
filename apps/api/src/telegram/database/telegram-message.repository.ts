@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { type DomainEvent, OutboxService } from '@oppenheimer/backend-ddd';
 import { None, type Option, Some } from 'oxide.ts';
-import { Repository } from 'typeorm';
+import { type EntityManager, Repository } from 'typeorm';
 import type {
   TelegramChat,
   TelegramMessage,
@@ -13,6 +13,7 @@ import { TelegramMessageOrmEntity } from './telegram-message.orm-entity';
 import type {
   TelegramAccountRef,
   TelegramMessageRepositoryPort,
+  TelegramMessagesOwed,
 } from './telegram-message.repository.port';
 
 @Injectable()
@@ -26,7 +27,7 @@ export class TelegramMessageRepository implements TelegramMessageRepositoryPort 
 
   async insertMany(
     messages: readonly TelegramMessageDraft[],
-    owed?: (message: TelegramMessageDraft) => DomainEvent | null,
+    owed?: TelegramMessagesOwed,
   ): Promise<TelegramMessageDraft[]> {
     if (messages.length === 0) return [];
     return this.outbox.transaction(async (manager) => {
@@ -47,12 +48,13 @@ export class TelegramMessageRepository implements TelegramMessageRepositoryPort 
       const inserted = messages.filter((message) =>
         stored.has(`${message.chatId}/${message.externalId}`),
       );
-      const events = owed
-        ? inserted.flatMap((message) => {
-            const event = owed(message);
-            return event ? [event] : [];
-          })
-        : [];
+      const events: DomainEvent[] = [];
+      for (const message of inserted) {
+        const event = owed?.eventFor(message);
+        if (!event) continue;
+        const built = event(await lastNewWithin(manager, message, owed?.ownerTelegramId ?? null));
+        if (built) events.push(built);
+      }
       if (events.length > 0) await this.outbox.stageEvents(manager, events);
       return inserted;
     });
@@ -215,4 +217,32 @@ export class TelegramMessageRepository implements TelegramMessageRepositoryPort 
 /** `%`, `_` and the escape itself, taken literally in an `ILIKE`. */
 function escapeLike(value: string): string {
   return value.replace(/[\\%_]/g, (character) => `\\${character}`);
+}
+
+/**
+ * The id of the owner's last `/new` in the message's chat at or before it,
+ * the whole batch included since it is stored in this transaction; '0' for
+ * none. Telegram numbers a chat's messages in order, so this is the same
+ * whatever order the batch's events are later delivered in.
+ */
+async function lastNewWithin(
+  manager: EntityManager,
+  message: TelegramMessageDraft,
+  ownerTelegramId: string | null,
+): Promise<string> {
+  if (!ownerTelegramId) return '0';
+  // IDX_telegram_message_chat.
+  const [{ startsAt }]: { startsAt: string }[] = await manager.query(
+    `SELECT COALESCE(MAX("externalId"::bigint), 0)::text AS "startsAt" FROM telegram_message
+      WHERE "organizationId" = $1 AND "accountId" = $2 AND "chatId" = $3 AND "senderId" = $4
+        AND text ~* '^\\s*/new(@\\w+)?\\s*$' AND "externalId"::bigint <= $5::bigint`,
+    [
+      message.organizationId,
+      message.accountId,
+      message.chatId,
+      ownerTelegramId,
+      message.externalId,
+    ],
+  );
+  return startsAt;
 }

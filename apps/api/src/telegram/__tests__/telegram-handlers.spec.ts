@@ -342,7 +342,8 @@ describe('ReceiveTelegramMessagesCommandHandler', () => {
     );
 
     const [drafts, owed] = vi.mocked(messages.insertMany).mock.calls[0] ?? [];
-    const events = (drafts ?? []).map((draft) => owed?.(draft) ?? null);
+    expect(owed?.ownerTelegramId).toBe('123456789');
+    const events = (drafts ?? []).map((draft) => owed?.eventFor(draft)?.('7') ?? null);
     expect(events[0]).toBeInstanceOf(TelegramOwnerWroteDomainEvent);
     expect(events[0]).toMatchObject({
       aggregateId: linked.id,
@@ -350,6 +351,7 @@ describe('ReceiveTelegramMessagesCommandHandler', () => {
       answeringBotId: '0b3e2a1c-4444-4c5d-8e6f-70819203b4c5',
       chatId: '123456789',
       messageId: '42',
+      conversationStartsAt: '7',
       command: 'message',
       text: 'Is the build green?',
     });

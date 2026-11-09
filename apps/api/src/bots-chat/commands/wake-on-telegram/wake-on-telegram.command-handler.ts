@@ -11,10 +11,10 @@ import { WakeOnTelegramCommand } from './wake-on-telegram.command';
 /**
  * The owner's message to their Telegram bot, for the Oppenheimer bot that
  * answers there (`product/next-steps/answering-on-telegram-and-whatsapp.md`):
- * a turn in the chat's conversation that holds the message (by Telegram's
- * own numbering, so deliveries in any order agree), keyed by the message so
- * a delivery twice is one turn; `/new` starts a conversation at itself, so
- * the messages after it are read without what came before; `/stop` asks the conversation's running turn to stop. A bot
+ * a turn in the chat's conversation that holds the message, the one that
+ * starts at the owner's last `/new` before it (fixed when the message was
+ * stored, so deliveries in any order agree), keyed by the message so a
+ * delivery twice is one turn; `/new` starts a conversation at itself; `/stop` asks the conversation's running turn to stop. A bot
  * that is gone, or is not the Telegram bot owner's, is woken by nothing.
  */
 @CommandHandler(WakeOnTelegramCommand)
@@ -35,8 +35,13 @@ export class WakeOnTelegramCommandHandler implements ICommandHandler<WakeOnTeleg
       telegramAccountId: command.telegramAccountId,
       chatId: command.chatId,
     };
-    if (command.command === 'new') return this.conversations.startTelegram(chat, command.messageId);
-    const conversationId = await this.conversations.conversationFor(chat, command.messageId);
+    const conversationId = await this.conversations.conversationAt(
+      chat,
+      command.conversationStartsAt,
+      command.messageId,
+    );
+    // `/new` is the start of its own conversation, made above.
+    if (command.command === 'new') return;
     if (command.command === 'stop') {
       const running = await this.turns.findRunningIn(command.organizationId, conversationId);
       if (running) await this.turns.requestCancel(running, new Date());

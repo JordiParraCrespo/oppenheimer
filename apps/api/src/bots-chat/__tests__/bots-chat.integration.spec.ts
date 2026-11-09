@@ -634,8 +634,8 @@ describe('bots chat (integration)', () => {
     const console1 = sent(bot, 'In the console');
     await turns.enqueue(console1.turn, console1.message, null);
 
-    const conversationId = await conversations.conversationFor(chat, '10');
-    expect(await conversations.conversationFor(chat, '11')).toBe(conversationId);
+    const conversationId = await conversations.conversationAt(chat, '0', '10');
+    expect(await conversations.conversationAt(chat, '0', '11')).toBe(conversationId);
     expect(await conversations.findTelegram(organizationId, conversationId)).toMatchObject(chat);
     const props = {
       organizationId,
@@ -674,23 +674,31 @@ describe('bots chat (integration)', () => {
     expect(inConsole.map((message) => message.content)).toEqual(['In the console']);
     expect((await turns.findForRun(second.turn.id)).unwrap().conversationId).toBe(conversationId);
 
-    // /new as message 20: a message after it is in the next conversation, and
-    // one sent before it but delivered after is still in the first, whatever
-    // order they come in; a /new delivered again starts nothing more.
-    expect(await conversations.conversationFor(chat, '21')).toBe(conversationId);
-    await conversations.startTelegram(chat, '20');
-    await conversations.startTelegram(chat, '20');
-    const next = await conversations.conversationFor(chat, '21');
+    // /new as message 20, stored with the message 21 after it: whichever is
+    // delivered first, 21 is in the conversation starting at 20, 12 (sent
+    // before the /new) in the first, and a /new delivered again starts
+    // nothing more.
+    const next = await conversations.conversationAt(chat, '20', '21');
     expect(next).not.toBe(conversationId);
-    expect(await conversations.conversationFor(chat, '12')).toBe(conversationId);
+    expect(await conversations.conversationAt(chat, '20', '20')).toBe(next);
+    expect(await conversations.conversationAt(chat, '20', '20')).toBe(next);
+    expect(await conversations.conversationAt(chat, '0', '12')).toBe(conversationId);
     const [{ count: starts }] = await dataSource.query(
       `SELECT count(*)::int AS count FROM bot_conversation WHERE "botId" = $1 AND kind = 'telegram'`,
       [bot.id],
     );
     expect(starts).toBe(2);
 
-    // Clear history clears the console chat, and only it; a Telegram turn
-    // still running does not hold it up.
+    // Bound to another bot and back: the first bot starts afresh, not where it left off.
+    const other = await create('Other Bot');
+    const elsewhere = await conversations.conversationAt({ ...chat, botId: other.id }, '20', '30');
+    expect(elsewhere).not.toBe(next);
+    const back = await conversations.conversationAt(chat, '20', '40');
+    expect([conversationId, next]).not.toContain(back);
+    expect(await conversations.conversationAt(chat, '20', '41')).toBe(back);
+
+    // Clear history clears the console chat and the Telegram conversations
+    // with no turn at work; a Telegram turn at work does not hold it up.
     expect(await turns.clearConversation(organizationId, bot.id)).toBe('busy');
     await dataSource.query(
       `UPDATE bot_turn SET status = 'completed' WHERE "botId" = $1 AND "conversationId" = $1`,
@@ -698,11 +706,12 @@ describe('bots chat (integration)', () => {
     );
     expect(await turns.clearConversation(organizationId, bot.id)).toBe('cleared');
     expect(await messages.findConversation(scope(), bot.id, 10)).toEqual([]);
-    expect(
-      (await messages.findHistory(organizationId, conversationId, second.turn.id, null, 40)).map(
-        (message) => message.content,
-      ),
-    ).toEqual(['On Telegram']);
+    // The Telegram conversation with a turn at work stays; the idle ones go.
+    expect(await conversations.findTelegram(organizationId, conversationId)).toMatchObject(chat);
+    expect(await conversations.findTelegram(organizationId, next)).toBeNull();
+    await dataSource.query(`UPDATE bot_turn SET status = 'completed' WHERE "botId" = $1`, [bot.id]);
+    expect(await turns.clearConversation(organizationId, bot.id)).toBe('cleared');
+    expect(await conversations.findTelegram(organizationId, conversationId)).toBeNull();
   });
 
   // What breaks this: a bot deleted while it answers on Telegram, leaving the

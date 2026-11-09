@@ -16,6 +16,11 @@ export class TelegramOwnerWroteDomainEvent extends DomainEvent {
   readonly chatId: string;
   /** Telegram's id of the message, unique in its chat: what the reply answers. */
   readonly messageId: string;
+  /**
+   * The id of the owner's last `/new` in the chat at or before this message,
+   * '0' for none: the conversation the message belongs to starts there.
+   */
+  readonly conversationStartsAt: string;
   readonly command: 'message' | 'new' | 'stop';
   /** What they wrote; empty for a command. */
   readonly text: string;
@@ -27,6 +32,7 @@ export class TelegramOwnerWroteDomainEvent extends DomainEvent {
     this.answeringBotId = props.answeringBotId;
     this.chatId = props.chatId;
     this.messageId = props.messageId;
+    this.conversationStartsAt = props.conversationStartsAt;
     this.command = props.command;
     this.text = props.text;
   }

@@ -152,6 +152,33 @@ describe('telegram (integration)', () => {
     });
   });
 
+  // What breaks this: the first message after a /new answered in the old
+  // conversation because the two came in one batch and were delivered out of order.
+  it('tells each owner message the last /new of its chat at or before it, the batch included', async () => {
+    const mine = telegramBot(ana);
+    await accounts.insert(mine);
+    const owner = '123456789';
+    const told: Record<string, string> = {};
+    const owed = {
+      ownerTelegramId: owner,
+      eventFor: (draft: TelegramMessageDraft) => (lastNewId: string) => {
+        told[draft.externalId] = lastNewId;
+        return null;
+      },
+    };
+    await messages.insertMany(
+      [
+        message(mine, { externalId: '5', text: 'Hi' }),
+        message(mine, { externalId: '8', text: '/new' }),
+        message(mine, { externalId: '9', text: 'Fresh start' }),
+        message(mine, { externalId: '10', text: '/new', senderId: '555' }),
+        message(mine, { externalId: '11', text: 'Still fresh' }),
+      ],
+      owed,
+    );
+    expect(told).toEqual({ '5': '0', '8': '8', '9': '8', '10': '8', '11': '8' });
+  });
+
   it('stores a message the host sends twice once, and marks a bot’s send recorded twice once', async () => {
     const mine = telegramBot(ana);
     await accounts.insert(mine);

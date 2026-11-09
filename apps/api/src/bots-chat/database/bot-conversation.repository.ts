@@ -9,33 +9,37 @@ import type {
 export class BotConversationRepository implements BotConversationRepositoryPort {
   constructor(private readonly dataSource: DataSource) {}
 
-  async conversationFor(chat: BotTelegramChat, messageId: string): Promise<string> {
-    const params = [chat.organizationId, chat.telegramAccountId, chat.chatId, chat.botId];
-    // UQ_bot_conversation_telegram_chat, read backwards from the message.
-    const holding = () =>
-      this.dataSource.query(
-        `SELECT id FROM bot_conversation
-          WHERE "telegramAccountId" = $2 AND "chatId" = $3 AND "botId" = $4
-            AND "startsAtMessageId" <= $5 AND "organizationId" = $1
-          ORDER BY "startsAtMessageId" DESC LIMIT 1`,
-        [...params, messageId],
-      ) as Promise<{ id: string }[]>;
-    const [found] = await holding();
-    if (found) return found.id;
-    await this.startTelegram(chat, '0');
-    const [opened] = await holding();
-    return opened.id;
-  }
-
-  async startTelegram(chat: BotTelegramChat, messageId: string): Promise<void> {
-    // UQ_bot_conversation_telegram_chat: a start already made is left as it is.
+  async conversationAt(
+    chat: BotTelegramChat,
+    startsAt: string,
+    messageId: string,
+  ): Promise<string> {
+    const params = [chat.organizationId, chat.telegramAccountId, chat.chatId];
+    // UQ_bot_conversation_telegram_chat's leading columns: a chat's starts are a handful.
+    const [latest]: { id: string; botId: string; startsAt: string }[] = await this.dataSource.query(
+      `SELECT id, "botId", "startsAtMessageId"::text AS "startsAt" FROM bot_conversation
+        WHERE "telegramAccountId" = $2 AND "chatId" = $3 AND "organizationId" = $1
+          AND "startsAtMessageId" <= $4::bigint
+        ORDER BY "startsAtMessageId" DESC LIMIT 1`,
+      [...params, messageId],
+    );
+    const current = latest && BigInt(latest.startsAt) >= BigInt(startsAt) ? latest : null;
+    if (current?.botId === chat.botId) return current.id;
+    const start = current ? messageId : startsAt;
     await this.dataSource.query(
       `INSERT INTO bot_conversation ("organizationId", "botId", kind, "telegramAccountId", "chatId", "startsAtMessageId")
        VALUES ($1, $4, 'telegram', $2, $3, $5)
        ON CONFLICT ("telegramAccountId", "chatId", "botId", "startsAtMessageId")
          WHERE "telegramAccountId" IS NOT NULL DO NOTHING`,
-      [chat.organizationId, chat.telegramAccountId, chat.chatId, chat.botId, messageId],
+      [...params, chat.botId, start],
     );
+    const [opened]: { id: string }[] = await this.dataSource.query(
+      `SELECT id FROM bot_conversation
+        WHERE "telegramAccountId" = $2 AND "chatId" = $3 AND "botId" = $4
+          AND "startsAtMessageId" = $5::bigint AND "organizationId" = $1`,
+      [...params, chat.botId, start],
+    );
+    return opened.id;
   }
 
   async findTelegram(
@@ -66,6 +70,17 @@ export class BotConversationRepository implements BotConversationRepositoryPort 
     );
     await manager.query(
       `DELETE FROM bot_question WHERE "organizationId" = $1 AND "botId" = $2`,
+      params,
+    );
+    // A Telegram chat's conversations with no turn at work, their turns and
+    // messages with them (FK_bot_turn_conversation, FK_bot_message_conversation).
+    await manager.query(
+      `DELETE FROM bot_conversation c
+        WHERE c."organizationId" = $1 AND c."botId" = $2 AND c.kind = 'telegram'
+          AND NOT EXISTS (
+            SELECT 1 FROM bot_turn t
+             WHERE t."organizationId" = c."organizationId" AND t."conversationId" = c.id
+               AND t.status IN ('queued', 'running'))`,
       params,
     );
     // The console chat's: its conversation's id is the bot's.

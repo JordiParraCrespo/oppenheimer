@@ -58,7 +58,10 @@ export class ReceiveTelegramMessagesCommandHandler
     const actionOf = (draft: TelegramMessageDraft) => telegramInboundAction(account, draft);
     const inserted = await this.messages.insertMany(
       messages.map((message) => this.mapper.fromInbound(account, message)),
-      (draft) => this.owed(account, draft, actionOf(draft)),
+      {
+        ownerTelegramId: account.ownerTelegramId,
+        eventFor: (draft) => this.owed(account, draft, actionOf(draft)),
+      },
     );
     const ref = { organizationId: account.organizationId, accountId: account.id };
     await this.messages.pruneBefore(
@@ -80,23 +83,29 @@ export class ReceiveTelegramMessagesCommandHandler
     return keys;
   }
 
-  /** The event a new message owes: the owner wrote to the bot that answers here. */
+  /**
+   * The event a new message owes, given the id of the owner's last `/new` at
+   * or before it: the owner wrote to the bot that answers here.
+   */
   private owed(
     account: TelegramAccountEntity,
     draft: TelegramMessageDraft,
     action: TelegramInboundAction,
-  ): TelegramOwnerWroteDomainEvent | null {
-    if (action.kind !== 'owner' || !account.answeringBotId) return null;
-    return new TelegramOwnerWroteDomainEvent({
-      aggregateId: account.id,
-      reason: `the owner of Telegram bot ${account.id} wrote to it (${action.command}) and bot ${account.answeringBotId} answers there`,
-      organizationId: account.organizationId,
-      userId: account.userId,
-      answeringBotId: account.answeringBotId,
-      chatId: draft.chatId,
-      messageId: draft.externalId,
-      command: action.command,
-      text: action.text,
-    });
+  ): ((lastNewId: string) => TelegramOwnerWroteDomainEvent) | null {
+    const answeringBotId = account.answeringBotId;
+    if (action.kind !== 'owner' || !answeringBotId) return null;
+    return (lastNewId) =>
+      new TelegramOwnerWroteDomainEvent({
+        aggregateId: account.id,
+        reason: `the owner of Telegram bot ${account.id} wrote to it (${action.command}) and bot ${answeringBotId} answers there`,
+        organizationId: account.organizationId,
+        userId: account.userId,
+        answeringBotId,
+        chatId: draft.chatId,
+        messageId: draft.externalId,
+        conversationStartsAt: lastNewId,
+        command: action.command,
+        text: action.text,
+      });
   }
 }

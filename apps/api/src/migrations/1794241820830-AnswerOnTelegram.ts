@@ -24,7 +24,8 @@ import type { MigrationInterface, QueryRunner } from 'typeorm';
  *   conversation per start (`UQ_bot_conversation_telegram_chat`). Disconnecting
  *   the Telegram bot keeps the conversation and its turns, a running one
  *   included, and only forgets the account (`SET NULL`); the history goes
- *   with the bot or with Clear history.
+ *   with the bot, or with Clear history, which deletes every Telegram
+ *   conversation with no turn at work besides the console chat.
  * - Lines a deleted bot left behind (written outside any turn, so with no
  *   key to the bot) are deleted first: they would point at no conversation.
  * - `bot_turn."conversationId"` and `bot_message."conversationId"`: the

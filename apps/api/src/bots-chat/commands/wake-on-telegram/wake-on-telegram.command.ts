@@ -14,6 +14,8 @@ export class WakeOnTelegramCommand extends CommandBase {
   readonly telegramAccountId: string;
   readonly chatId: string;
   readonly messageId: string;
+  /** The id of the owner's last `/new` at or before it, '0' for none. */
+  readonly conversationStartsAt: string;
   readonly command: 'message' | 'new' | 'stop';
   readonly text: string;
 
@@ -25,6 +27,7 @@ export class WakeOnTelegramCommand extends CommandBase {
     this.telegramAccountId = props.telegramAccountId;
     this.chatId = props.chatId;
     this.messageId = props.messageId;
+    this.conversationStartsAt = props.conversationStartsAt;
     this.command = props.command;
     this.text = props.text;
   }

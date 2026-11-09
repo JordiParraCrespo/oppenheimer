@@ -25,6 +25,7 @@ export class BotTelegramWakeDomainEventHandler {
       | 'answeringBotId'
       | 'chatId'
       | 'messageId'
+      | 'conversationStartsAt'
       | 'command'
       | 'text'
       | 'metadata'
@@ -38,6 +39,8 @@ export class BotTelegramWakeDomainEventHandler {
         telegramAccountId: event.aggregateId,
         chatId: event.chatId,
         messageId: event.messageId,
+        // An event staged before the start was carried reads as the chat's first.
+        conversationStartsAt: event.conversationStartsAt ?? '0',
         command: event.command,
         text: event.text,
         metadata: { correlationId: event.metadata?.correlationId ?? undefined },
