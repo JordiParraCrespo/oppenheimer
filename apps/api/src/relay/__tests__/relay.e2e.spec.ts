@@ -496,9 +496,9 @@ describe('the runner and the relay, end to end', () => {
   it('removed with a clean-up, closes the stopped session and deletes its worktree', async () => {
     const worktrees = () =>
       readdirSync(join(w.scratch, 'workspaces'), { recursive: true, encoding: 'utf8' }).filter(
-        // The bare store under repos/ stays, branch refs and all: a fresh clone
-        // later is what the clean-up spares.
-        (path) => path.endsWith('hello-world') && !path.includes('/repos/'),
+        // The bare store under repos.noindex/ stays, branch refs and all: a
+        // fresh clone later is what the clean-up spares.
+        (path) => path.endsWith('hello-world') && !path.includes('/repos.noindex/'),
       );
     // The stop above kept the worktree for a Restart.
     expect(worktrees()).not.toEqual([]);
