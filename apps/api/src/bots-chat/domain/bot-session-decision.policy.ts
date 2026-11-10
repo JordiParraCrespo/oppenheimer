@@ -4,10 +4,11 @@ import type { SessionDecision } from '@oppenheimer/shared';
  * What a bot may answer on its own when a session it follows is blocked
  * (`25-bots.md` §4.2, `answer_session`). A bot unblocks a session as a person
  * who delegated the work would: questions about how to do the task and
- * permissions for the steps it needs. One kind of answer is never the bot's
- * alone, whatever its preset or grants say: letting the agent run something
- * destructive. Such a call goes on a card of its own, so the person decides
- * it from the chat instead of having to open the session.
+ * permissions for the steps it needs, each with its reason. Who decides is
+ * the bot's preset: under Full access the bot does, destructive approvals
+ * included; under Approve for me the person does, and letting the agent run
+ * something destructive is put to them on a card of its own even past what
+ * they allowed before.
  */
 
 /**
@@ -16,7 +17,7 @@ import type { SessionDecision } from '@oppenheimer/shared';
  * `answerNeedsPerson`'s; this only tells the bot.
  */
 export const SESSION_UNBLOCK_RULE =
-  "You may approve its permissions and answer its questions yourself, with care: you are a chef in this kitchen, not a waiter who carries every order back to the person. Answer what the session's task and the person's instructions point to, and turn down (the No option) what goes against the task. Letting a destructive dialog through (a recursive delete, a forced push, a history rewrite, dropping data, sudo) always goes to the person on a card of its own, whatever your permissions: still call answer_session with the option you recommend, and say in a sentence what it asks and why you recommend it.";
+  "You may approve its permissions and answer its questions yourself, with care: you are a chef in this kitchen, not a waiter who carries every order back to the person. Answer what the session's task and the person's instructions point to, and turn down (the No option) what goes against the task. Think each answer through against the task before you send it, and say in a sentence what it asked and why you answered as you did. Whether the person approves first is your permissions' call, not yours: when they ask first, letting a destructive dialog through (a recursive delete, a forced push, a history rewrite, dropping data, sudo) goes to them on a card of its own even past what they allowed before; when they let you act, it is yours, so weigh it with extra care. Either way, call answer_session with the option you recommend.";
 
 /**
  * What a permission dialog asks about when it names something that cannot
@@ -78,8 +79,8 @@ export function isDestructiveDecision(decision: SessionDecision): boolean {
 }
 
 /**
- * Whether an answer must be the person's own call: it lets a destructive
- * dialog through. Turning one down, or answering a question, is the bot's
+ * Whether an answer must be the person's own call under Approve for me, past
+ * any grant: it lets a destructive dialog through. Turning one down, or answering a question, is the bot's
  * to make within its permissions. An answer to a decision the session no
  * longer waits on is refused before this matters.
  */

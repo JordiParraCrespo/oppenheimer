@@ -729,10 +729,12 @@ describe('BotSessionToolsFactory', () => {
       answer: { id: 'perm-1', option: 0 },
     });
   });
-  // What breaks this: Full access or a standing grant letting a bot approve
-  // a recursive delete in a session nobody watched.
-  it('puts letting a destructive dialog through on a card of its own, under Full access too', async () => {
-    const { queryBus, commandBus, approvals, call } = setup('full');
+  // Who decides is the bot's preset (Jordi, 2026-11-10): under Approve for
+  // me the person, on a card of its own past every grant; under Full access
+  // the bot. What breaks this: a grant given for answering tests letting a
+  // recursive delete through unseen, or a card stopping a Full access bot.
+  it('under Approve for me, puts letting a destructive dialog through on a card offering only this call', async () => {
+    const { queryBus, commandBus, approvals, call } = setup('auto');
     const destructive = destructiveSession();
     queryBus.execute.mockResolvedValue(destructive);
     await call('answer_session', { session_id: destructive.id, decision_id: 'perm-2', option: 0 });
@@ -740,6 +742,17 @@ describe('BotSessionToolsFactory', () => {
       expect.objectContaining({ tool: 'answer_session', perCallOnly: true }),
     );
     expect(commandBus.execute).not.toHaveBeenCalled();
+  });
+
+  it('under Full access, lets a destructive dialog through on its own', async () => {
+    const { queryBus, commandBus, approvals, call } = setup('full');
+    const destructive = destructiveSession();
+    queryBus.execute.mockResolvedValue(destructive);
+    await call('answer_session', { session_id: destructive.id, decision_id: 'perm-2', option: 0 });
+    expect(approvals.request).not.toHaveBeenCalled();
+    expect(commandBus.execute.mock.calls[0][0]).toMatchObject({
+      answer: { id: 'perm-2', option: 0 },
+    });
   });
 
   it('turns a destructive dialog down on its own under Full access', async () => {
@@ -753,10 +766,10 @@ describe('BotSessionToolsFactory', () => {
     });
   });
 
-  // What breaks this: a lookup that fails here and succeeds in the command
-  // lets a destructive approval through unseen.
-  it('puts an answer whose decision it cannot read on a card, under Full access too', async () => {
-    const { queryBus, commandBus, approvals, call, session } = setup('full');
+  // What breaks this: under Approve for me, a lookup that fails here and
+  // succeeds in the command lets a destructive approval through on a grant.
+  it('under Approve for me, puts an answer whose decision it cannot read on a card of its own', async () => {
+    const { queryBus, commandBus, approvals, call, session } = setup('auto');
     queryBus.execute.mockRejectedValueOnce(new Error('connection reset'));
     await call('answer_session', { session_id: session.id, decision_id: 'perm-1', option: 0 });
     expect(commandBus.execute).not.toHaveBeenCalled();
