@@ -20,6 +20,9 @@ import type { SessionEventSource } from '../domain/work-session-event.entity';
 @Index('IDX_work_session_event_session_seq', ['sessionId', 'seq'], { unique: true })
 @Index('IDX_work_session_event_first_prompt', ['sessionId'], { where: `"kind" = 'prompt.first'` })
 @Unique('UQ_work_session_event_session_key', ['sessionId', 'idempotencyKey'])
+// GIN over work_session_event_search_vector("kind", "payload"), partial on the
+// kinds with words, for search_sessions (`AddSessionSearch`).
+@Index('IDX_work_session_event_search', { synchronize: false })
 export class WorkSessionEventOrmEntity {
   @PrimaryGeneratedColumn('uuid')
   id!: string;

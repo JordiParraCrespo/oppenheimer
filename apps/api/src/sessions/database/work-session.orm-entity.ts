@@ -69,6 +69,8 @@ import type { AgentObservedState, SessionNameSource } from '../domain/session-st
 @Index('IDX_work_session_watching_pulls', ['organizationId'], {
   where: `"watchedPulls" <> '[]'::jsonb`,
 })
+// GIN over to_tsvector('simple', "name"), for search_sessions (`AddSessionSearch`).
+@Index('IDX_work_session_name_search', { synchronize: false })
 @Unique('UQ_work_session_organization_slug', ['organizationId', 'slug'])
 @Unique('UQ_work_session_organization_id', ['organizationId', 'id'])
 export class WorkSessionOrmEntity {
