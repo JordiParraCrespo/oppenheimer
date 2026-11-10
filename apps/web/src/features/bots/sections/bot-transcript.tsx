@@ -24,7 +24,7 @@ import { useToolCallsShownInChat } from '@/features/bots/hooks/use-tool-calls-sh
 import { runningApprovedCalls } from '@/features/bots/lib/approval-event';
 import {
   chatTurns,
-  isQuietRun,
+  drawsNothing,
   markersBefore,
   newestSentId,
   newestTurn,
@@ -53,7 +53,7 @@ export function BotTranscript({ botId, name }: { botId: string; name: string }) 
   const retry = useSendBotMessage();
   const navigate = useNavigate();
   const toolCallsShown = useToolCallsShownInChat();
-  const blocks = chatTurns(conversation).filter((block) => !isQuietRun(block, toolCallsShown));
+  const blocks = chatTurns(conversation).filter((block) => !drawsNothing(block, toolCallsShown));
   // The approved calls still running, each held under the turn its yes opened.
   const working = new Map(
     [...runningApprovedCalls(conversation.messages)].map(([turnId, call]) => [

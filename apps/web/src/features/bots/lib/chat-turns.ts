@@ -79,12 +79,11 @@ export function chatTurns(conversation: BotConversationEntity): ChatTurnBlock[] 
   };
   for (const message of conversation.messages) {
     if (message.turnId && waiting.has(message.turnId)) continue;
-    if (message.event && !isShownEvent(message.event)) {
-      // Its turn still stands where the event opened it, with no line of its own.
-      if (message.turnId) blockOf(message.turnId, message.turnId);
-      continue;
-    }
+    const shown = !message.event || isShownEvent(message.event);
+    if (!shown && !message.turnId) continue;
+    // A turn stands where its first message is, shown or not.
     const block = blockOf(message.turnId ?? message.id, message.turnId);
+    if (!shown) continue;
     const steered = message.role === 'user' && block.answer.length > 0;
     const opens = !steered && (message.role === 'user' || message.role === 'event');
     (opens ? block.asked : block.answer).push(message);
@@ -94,12 +93,12 @@ export function chatTurns(conversation: BotConversationEntity): ChatTurnBlock[] 
 }
 
 /**
- * Whether a turn has nothing to draw: one nothing you see opened (a routine's
- * run), that completed having only run tools, while the chat hides its tool
- * calls. A heartbeat that found nothing is this, every hour, and is left out
- * of the chat rather than drawn as a gap.
+ * Whether a turn has nothing to draw: nothing shown opened it, and it
+ * completed having only run tools, while the chat hides its tool calls. Left
+ * out of the chat rather than drawn as a gap (a heartbeat that found nothing
+ * would be one every hour).
  */
-export function isQuietRun(block: ChatTurnBlock, toolCallsShown: boolean): boolean {
+export function drawsNothing(block: ChatTurnBlock, toolCallsShown: boolean): boolean {
   if (toolCallsShown || block.asked.length > 0) return false;
   return (
     block.turn?.status === 'completed' &&

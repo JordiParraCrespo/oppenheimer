@@ -8,7 +8,7 @@ import {
   type ChatTurnBlock,
   chatTurns,
   compactTokens,
-  isQuietRun,
+  drawsNothing,
   markersBefore,
   replyText,
   retryContent,
@@ -118,8 +118,8 @@ describe('chatTurns', () => {
       ),
     );
     expect(blocks.map((block) => block.turnId)).toEqual(['t1', 't2', 't3']);
-    expect(blocks.map((block) => isQuietRun(block, false))).toEqual([false, false, true]);
-    expect(blocks.map((block) => isQuietRun(block, true))).toEqual([false, false, false]);
+    expect(blocks.map((block) => drawsNothing(block, false))).toEqual([false, false, true]);
+    expect(blocks.map((block) => drawsNothing(block, true))).toEqual([false, false, false]);
   });
 
   it('groups each turn’s messages under it, your message apart from the bot’s work', () => {

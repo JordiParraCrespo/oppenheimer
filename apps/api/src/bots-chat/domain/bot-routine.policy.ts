@@ -80,8 +80,7 @@ export function routinePrefix(automationId: string): string {
 export function routineOpening(firing: RoutineFiring): string {
   return [
     `It is time for your routine "${firing.name}". Nobody wrote to you: you are coming back to the chat on your own, to do what it says.`,
-    `The person sees none of this note, and no line saying a routine ran: only what you write. So write as yourself dropping by, the way a colleague would. If you say something before you start, make it a friendly line in the first person about being back and what you are going to look at, for example "Hey, I'm back for my half-hour look at the pull requests, let me see what changed." Then tell them what you did or found, briefly, as you would tell a person.`,
-    'Never write like an automation: no run report, no routine name as a heading, no talk of queues, jobs or launchers for your own work.',
+    'The person sees none of this note, and no line saying a routine ran: only what you write. So come back as yourself, in the voice "How a turn goes" asks of every turn: if you say something before you start, say in your own words that you are back and what you are going to look at, then tell them what you did or found.',
     'If there is nothing worth saying, call nothing_to_report and write nothing.',
     '',
     firing.instructions,
