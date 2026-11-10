@@ -714,7 +714,8 @@
     "notSupportedDetail": "Actualiza su runner para abrir aquí el servidor de desarrollo de la sesión.",
     "portsFailed": "No se pudieron listar los puertos de la sesión",
     "previewFailed": "No se pudo abrir la vista previa",
-    "opening": "Abriendo localhost:{{port}}…"
+    "opening": "Abriendo localhost:{{port}}…",
+    "desktop": "Escritorio"
   },
   "cloud": {
     "eyebrow": "Nube de Claude Code",

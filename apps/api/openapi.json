@@ -6712,6 +6712,93 @@
         ]
       }
     },
+    "/api/v1/hosts/{id}/desktop-ticket": {
+      "post": {
+        "description": "Single use, 60 seconds. Present it as a WebSocket subprotocol on the returned path, never in the query string; binary frames on that socket are RFB (VNC) both ways. The host shares its desktop only if its owner turned it on there (`runner desktop on`); a host that does not is refused on the socket with `DESKTOP_001`. The relay re-checks at consume, and every minute after, that the caller may still use the host.",
+        "operationId": "issueDesktopTicket",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DesktopTicketResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FLAG_003 — The \"host_desktop\" feature is switched off for the caller",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "HOSTS_001 — Host not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "RATE_001 — Rate limit reached",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "HOSTS_010 — A desktop ticket could not be issued",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Mint a ticket for this host's desktop",
+        "tags": [
+          "Hosts"
+        ]
+      }
+    },
     "/api/v1/hosts/{id}/wipe": {
       "post": {
         "description": "Unpairs the host as `DELETE /hosts/{id}` does, and tells its runner to close every session instead of stopping it: each worktree and session folder is removed, uncommitted work included, and nothing is pushed. Reaches only a host whose link is open now.",
@@ -26308,6 +26395,8 @@
                 "tokens:write",
                 "hosts:read",
                 "hosts:write",
+                "host-desktops:read",
+                "host-desktops:write",
                 "projects:read",
                 "projects:write",
                 "sessions:read",
@@ -26369,6 +26458,8 @@
                 "tokens:write",
                 "hosts:read",
                 "hosts:write",
+                "host-desktops:read",
+                "host-desktops:write",
                 "projects:read",
                 "projects:write",
                 "sessions:read",
@@ -26472,6 +26563,8 @@
                 "tokens:write",
                 "hosts:read",
                 "hosts:write",
+                "host-desktops:read",
+                "host-desktops:write",
                 "projects:read",
                 "projects:write",
                 "sessions:read",
@@ -26599,6 +26692,8 @@
               "tokens:write",
               "hosts:read",
               "hosts:write",
+              "host-desktops:read",
+              "host-desktops:write",
               "projects:read",
               "projects:write",
               "sessions:read",
@@ -26688,6 +26783,7 @@
               "workspaces",
               "tokens",
               "hosts",
+              "host-desktops",
               "projects",
               "sessions",
               "cloud-chat",
@@ -26770,6 +26866,8 @@
                 "tokens:write",
                 "hosts:read",
                 "hosts:write",
+                "host-desktops:read",
+                "host-desktops:write",
                 "projects:read",
                 "projects:write",
                 "sessions:read",
@@ -26845,6 +26943,8 @@
                 "tokens:write",
                 "hosts:read",
                 "hosts:write",
+                "host-desktops:read",
+                "host-desktops:write",
                 "projects:read",
                 "projects:write",
                 "sessions:read",
@@ -26955,6 +27055,8 @@
                 "tokens:write",
                 "hosts:read",
                 "hosts:write",
+                "host-desktops:read",
+                "host-desktops:write",
                 "projects:read",
                 "projects:write",
                 "sessions:read",
@@ -28900,6 +29002,29 @@
         },
         "required": [
           "name"
+        ]
+      },
+      "DesktopTicketResponseDto": {
+        "type": "object",
+        "properties": {
+          "ticket": {
+            "type": "string",
+            "description": "Single-use, 60 seconds. Present it in `Sec-WebSocket-Protocol` when opening the desktop socket — never in the URL."
+          },
+          "url": {
+            "type": "string",
+            "description": "The path to open the WebSocket on, on this API’s own origin.",
+            "example": "/api/v1/relay/desktop"
+          },
+          "expiresAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "ticket",
+          "url",
+          "expiresAt"
         ]
       },
       "AdminUserResponseDto": {

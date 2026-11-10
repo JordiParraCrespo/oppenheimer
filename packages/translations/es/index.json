@@ -325,6 +325,7 @@
       "HOSTS_007": "No hay ningún archivo esperando para esa orden.",
       "HOSTS_008": "El host no está conectado, así que su runner no se puede actualizar ahora. Busca actualizaciones por su cuenta al volver a conectarse.",
       "HOSTS_009": "Alguien cambió este host mientras lo guardabas. Vuelve a cargarlo e inténtalo de nuevo.",
+      "HOSTS_010": "No se pudo abrir el escritorio ahora mismo. Vuelve a intentarlo en un momento.",
       "INBOX_002": "Ese elemento de la bandeja de entrada no se puede marcar. Recarga la bandeja e inténtalo de nuevo.",
       "INBOX_003": "Una posposición tiene que terminar en el futuro. Elige una hora posterior.",
       "INBOX_004": "Ese elemento ya no tiene marca. Recarga la bandeja de entrada.",
@@ -1464,7 +1465,8 @@
       "notSupportedDetail": "Actualiza su runner para abrir aquí el servidor de desarrollo de la sesión.",
       "portsFailed": "No se pudieron listar los puertos de la sesión",
       "previewFailed": "No se pudo abrir la vista previa",
-      "opening": "Abriendo localhost:{{port}}…"
+      "opening": "Abriendo localhost:{{port}}…",
+      "desktop": "Escritorio"
     },
     "cloud": {
       "eyebrow": "Nube de Claude Code",
@@ -3397,6 +3399,52 @@
       "wipeOffline": "{{name}} está desconectado, así que no se puede limpiar desde aquí.",
       "openTerminal": "Abrir terminal",
       "openTerminalTitle": "Terminal en blanco en ~ de {{host}}"
+    },
+    "desktop": {
+      "label": "Escritorio",
+      "open": "Abrir escritorio",
+      "title": "Escritorio de {{name}}",
+      "screen": "Pantalla de {{name}}",
+      "watching": "Viendo {{name}}",
+      "inControl": "Controlas {{name}}",
+      "takeControl": "Tomar el control",
+      "releaseControl": "Dejar de controlar",
+      "fullscreen": "Pantalla completa",
+      "exitFullscreen": "Salir de pantalla completa",
+      "tryAgain": "Volver a intentarlo",
+      "connecting": "Conectando con el escritorio…",
+      "connectingDetail": "La pantalla aparece cuando el host inicia sesión en su servidor de pantalla compartida.",
+      "dropped": "Reconectando…",
+      "droppedDetail": "Se cortó la conexión con el escritorio. Volviendo a intentarlo.",
+      "offline": "El host está desconectado",
+      "offlineDetail": "El escritorio vuelve cuando el host se reconecta.",
+      "ended": "Ya no puedes abrir este escritorio",
+      "endedDetail": "Se eliminó el host o ya no puedes usarlo.",
+      "refused": {
+        "DESKTOP_001": {
+          "title": "Este host no comparte su escritorio",
+          "detail": "Si su pantalla se puede ver y manejar desde aquí se decide en el host. Para compartirla, ejecuta esto allí y vuelve a intentarlo:"
+        },
+        "DESKTOP_002": {
+          "title": "Ningún servidor de pantalla compartida responde en el host",
+          "detail": "Activa Compartir pantalla (en un Mac: Ajustes del Sistema, General, Compartir) o inicia un servidor VNC en 127.0.0.1:5900 y vuelve a intentarlo."
+        },
+        "DESKTOP_003": {
+          "title": "El servidor de pantalla compartida rechazó el inicio de sesión del host",
+          "detail": "Dale al host la cuenta y la contraseña que espera el servidor: runner desktop on --username <cuenta> --password-file <archivo>."
+        },
+        "DESKTOP_004": {
+          "title": "El servidor de pantalla compartida pide un inicio de sesión que el runner no sabe hacer",
+          "detail": "Deja que el servidor acepte una contraseña VNC, o ninguna en el loopback, y vuelve a intentarlo."
+        },
+        "other": {
+          "title": "No se pudo abrir el escritorio",
+          "detail": "El host no pudo llegar a su servidor de pantalla compartida."
+        }
+      },
+      "pageTitle": "Escritorio",
+      "pageLead": "La pantalla de {{name}}, en directo. Miras hasta que tomas el control; entonces tus clics y teclas le llegan, la misma pantalla en la que trabajan sus agentes.",
+      "back": "Hosts"
     }
   },
   "inbox": {

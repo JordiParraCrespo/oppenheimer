@@ -126,6 +126,23 @@ export const FEATURE_FLAGS = {
     expiresAt: '2027-04-30',
   },
   /**
+   * A host's own desktop in the console (`product/research/device-streaming.md`,
+   * "A host's desktop"): the session pane's Desktop tab and a host's Desktop
+   * in Settings, through the screen-sharing server its owner shared with
+   * `runner desktop on`. Read by the console, which offers both, and by the
+   * API, which refuses the ticket and the socket when off.
+   */
+  host_desktop: {
+    description: "Show a host's own desktop, live, in the session pane and in Settings.",
+    kind: 'release',
+    owner: 'console',
+    type: 'boolean',
+    defaultValue: true,
+    client: true,
+    bucketBy: 'user',
+    expiresAt: '2027-05-31',
+  },
+  /**
    * The session pane's Browser tab (`product/versions/mvp/30-session-previews.md`):
    * a session's dev server, served through the runner's link on a preview
    * domain of the deployment's. Read by the console, which offers the tab,

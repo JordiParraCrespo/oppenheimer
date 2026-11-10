@@ -85,7 +85,7 @@ describe('the control plane’s scopes', () => {
   });
 
   it.each([
-    ['hosts', 'Host', []],
+    ['hosts', 'Host', ['host-desktops:read']],
     ['projects', 'Project', []],
     // A cloud session's chat is read on the same rule as the session.
     ['sessions', 'Session', ['cloud-chat:read']],
@@ -160,6 +160,14 @@ describe('the control plane’s scopes', () => {
 });
 
 describe('expandScopes', () => {
+  it('never lets a credential that manages hosts open their screens', () => {
+    // A desktop is the machine's mouse and keyboard: its own grant, never one
+    // a `hosts:write` token made before desktops existed already carries.
+    expect([...expandScopes(['hosts:write'])].sort()).toEqual(['hosts:read', 'hosts:write']);
+    const desktops = PERMISSION_GROUPS.find((group) => group.resource === 'host-desktops');
+    expect(desktops?.sensitive).toBe(true);
+  });
+
   it('makes write imply read on the same resource', () => {
     expect([...expandScopes(['users:write'])].sort()).toEqual(['users:read', 'users:write']);
   });

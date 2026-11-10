@@ -1496,3 +1496,9 @@ earlier note:
   "The review deck"), whose card leads with a brief of the head commit that
   the deployment's model writes, or the description gives when there is no
   model. The queue, the description page and Analytics are unchanged.
+- `research/lessons-from-grok-bot.md` §3 left "VNC inside the box for
+  computer use" for later. On 2026-11-09 the owner asked to watch and click
+  the machine an agent runs on: a host's own desktop streams to the console
+  through the screen-sharing server on its loopback, shared by its owner
+  with `runner desktop on` (`research/device-streaming.md`, "A host's
+  desktop"; the note's §11 is the read that led to it).

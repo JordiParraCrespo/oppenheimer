@@ -214,6 +214,7 @@ would confirm the id.
 | `HOSTS_007` <a id="hosts_007" /> | No file is waiting for that command          | 404  |
 | `HOSTS_008` <a id="hosts_008" /> | The host is not connected                    | 409  |
 | `HOSTS_009` <a id="hosts_009" /> | The host changed while this was being saved  | 409  |
+| `HOSTS_010` <a id="hosts_010" /> | A desktop ticket could not be issued         | 503  |
 
 Two of these are deliberately opaque, and both would otherwise be an oracle for
 guessing a credential:
@@ -1293,6 +1294,12 @@ for a 404 or 428, 6 for a 502, 503 or 504, 7 for `PAIR_009`, and 1 for anything 
 | `PORT_001` <a id="port_001" />         | The session does not listen on that port     | 404  |
 | `PORT_002` <a id="port_002" />         | Nothing answers on that port                 | 502  |
 | `PORT_003` <a id="port_003" />         | This host cannot list a session's ports      | 501  |
+| `DESKTOP_001` <a id="desktop_001" /> | This host does not share its desktop | 409  |
+| `DESKTOP_002` <a id="desktop_002" /> | No screen-sharing server answers on this host | 502  |
+| `DESKTOP_003` <a id="desktop_003" /> | The screen-sharing server refused this host's credentials | 502  |
+| `DESKTOP_004` <a id="desktop_004" /> | The screen-sharing server asks for a kind of sign-in the runner does not speak | 502  |
+| `DESKTOP_005` <a id="desktop_005" /> | This host's desktop settings could not be read or written | 500  |
+| `DESKTOP_006` <a id="desktop_006" /> | That is not a valid desktop setting | 400  |
 | `WA_001` <a id="wa_001" />           | This host already holds a WhatsApp device    | 409  |
 | `WA_002` <a id="wa_002" />           | No WhatsApp device is connected on this host | 503  |
 | `WA_003` <a id="wa_003" />           | WhatsApp refused the message                 | 502  |

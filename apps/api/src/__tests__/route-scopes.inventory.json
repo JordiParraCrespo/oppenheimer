@@ -244,6 +244,7 @@
   "POST /v1/github/tokens/:id/check": ["pulls:write"],
   "POST /v1/github/webhook": "session-only",
   "POST /v1/hosts/pairing": ["hosts:write"],
+  "POST /v1/hosts/:id/desktop-ticket": ["host-desktops:write"],
   "POST /v1/inbox/reports": ["inbox-reports:write"],
   "POST /v1/inbox/reports/:id/answer": ["inbox:write"],
   "POST /v1/hosts/:id/update": ["hosts:write"],

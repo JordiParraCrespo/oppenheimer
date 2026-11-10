@@ -92,6 +92,17 @@ export const attachChatOlderSchema = z.object({
   before: z.number().int().positive(),
 });
 
+/**
+ * On a desktop socket (a ticket from `POST /hosts/{id}/desktop-ticket`), the
+ * reader takes control of the host's desktop or goes back to watching.
+ * Relayed as `desktop.control`. Binary frames on that socket are RFB, both
+ * ways.
+ */
+export const attachDesktopControlSchema = z.object({
+  type: z.literal('desktop.control'),
+  control: z.boolean(),
+});
+
 export const attachClientMessageSchema = z.discriminatedUnion('type', [
   attachResizeSchema,
   attachCreditSchema,
@@ -99,6 +110,7 @@ export const attachClientMessageSchema = z.discriminatedUnion('type', [
   attachDirectPathSchema,
   attachDeviceInputSchema,
   attachChatOlderSchema,
+  attachDesktopControlSchema,
 ]);
 
 export type AttachClientMessage = z.infer<typeof attachClientMessageSchema>;
@@ -193,6 +205,18 @@ export const attachDeviceSchema = z.object({
   platform: z.enum(['android', 'ios']),
 });
 
+/**
+ * On a desktop socket, the runner reached the host's desktop and
+ * authenticated with it (`desktop.opened`): RFB follows as binary frames,
+ * starting with the server's version, and asks the browser for no password.
+ * Sent again after each `desktop.control`, with whether the reader now
+ * controls it.
+ */
+export const attachDesktopSchema = z.object({
+  type: z.literal('desktop'),
+  control: z.boolean(),
+});
+
 export const attachServerMessageSchema = z.discriminatedUnion('type', [
   attachAttachedSchema,
   attachHintSchema,
@@ -203,6 +227,7 @@ export const attachServerMessageSchema = z.discriminatedUnion('type', [
   attachDirectPathSchema,
   attachChatSchema,
   attachDeviceSchema,
+  attachDesktopSchema,
 ]);
 
 export type AttachServerMessage = z.infer<typeof attachServerMessageSchema>;

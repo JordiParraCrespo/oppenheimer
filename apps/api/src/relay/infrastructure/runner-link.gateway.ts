@@ -454,7 +454,8 @@ export class RunnerLinkGateway {
         link.attachment(message.attachmentId)?.device?.(message);
         return;
       case 'port.opened':
-        // A port attachment's connection is up; its bytes may flow (28).
+      case 'desktop.opened':
+        // A port's or a desktop's connection is up; its bytes may flow (28).
         link.attachment(message.attachmentId)?.opened?.();
         return;
       case 'attachment.credit':

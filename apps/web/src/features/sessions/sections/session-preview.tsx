@@ -1,9 +1,15 @@
 import { IconButton, PillTab, PillTabs } from '@oppenheimer/design-system-web';
-import { GlobeIcon, SmartphoneIcon, XIcon } from '@oppenheimer/design-system-web/icons';
+import {
+  GlobeIcon,
+  MonitorIcon,
+  SmartphoneIcon,
+  XIcon,
+} from '@oppenheimer/design-system-web/icons';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { type PreviewTab, rememberPreviewTab, storedPreviewTab } from '../lib/preview-open';
 import { SessionBrowser } from './session-browser';
+import { SessionDesktop } from './session-desktop';
 import { SessionDevice } from './session-device';
 
 /**
@@ -11,16 +17,19 @@ import { SessionDevice } from './session-device';
  * pill tabs, Browser and Simulator, over what the chosen one shows, and
  * Close. Browser is the session's dev server through its host's runner
  * (`product/versions/mvp/30-session-previews.md`); Simulator its device, the
- * one its agent drives through Argent. Each tab opens its own connection only
- * while it is the one shown. `offered` is what this console and deployment
- * can show, never empty.
+ * one its agent drives through Argent; Desktop the host's own screen. Each
+ * tab opens its own connection only while it is the one shown. `offered` is
+ * what this console and deployment can show, never empty; Desktop is offered
+ * only with `hostId`, a session a host started.
  */
 export function SessionPreview({
   sessionId,
+  hostId,
   offered,
   onClose,
 }: {
   sessionId: string;
+  hostId: string | null;
   offered: readonly PreviewTab[];
   onClose: () => void;
 }) {
@@ -58,6 +67,12 @@ export function SessionPreview({
               {t('sessions.preview.simulator')}
             </PillTab>
           ) : null}
+          {offered.includes('desktop') ? (
+            <PillTab value="desktop">
+              <MonitorIcon className="size-3.5" />
+              {t('sessions.preview.desktop')}
+            </PillTab>
+          ) : null}
         </PillTabs>
         <span className="flex-1" />
         <IconButton size="sm" aria-label={t('sessions.preview.close')} onClick={onClose}>
@@ -66,6 +81,7 @@ export function SessionPreview({
       </header>
       {shown === 'browser' ? <SessionBrowser sessionId={sessionId} /> : null}
       {shown === 'simulator' ? <SessionDevice sessionId={sessionId} /> : null}
+      {shown === 'desktop' && hostId ? <SessionDesktop hostId={hostId} /> : null}
     </aside>
   );
 }

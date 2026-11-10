@@ -709,7 +709,8 @@
     "notSupportedDetail": "Update its runner to open the session's dev server here.",
     "portsFailed": "Couldn't list the session's ports",
     "previewFailed": "Couldn't open the preview",
-    "opening": "Opening localhost:{{port}}…"
+    "opening": "Opening localhost:{{port}}…",
+    "desktop": "Desktop"
   },
   "cloud": {
     "eyebrow": "Claude Code cloud",

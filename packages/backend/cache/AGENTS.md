@@ -13,6 +13,7 @@ src/
 ├── cache.service.ts             # abstract CacheService (the port)
 ├── redis-cache.service.ts       # Redis-backed implementation
 ├── redis-cache.service.spec.ts  # against a fake client
+├── single-use-ticket.ts         # issueSingleUseTicket: a random key claimed with setIfAbsent
 └── index.ts
 ```
 
