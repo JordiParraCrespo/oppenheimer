@@ -28,7 +28,8 @@ export interface InboxFacetOption {
 /**
  * The filter button beside the count and its menu (the frame's
  * `.op-filtermenu`): Type and Project, each option with its count, then Show
- * done and Clear filters. Lit while open or while anything is narrowed.
+ * done, Show pull requests and Clear filters. Type offers Pull requests only
+ * while they are shown. Lit while open or while anything is narrowed.
  * Props only: the list owns the filter, because it draws what it narrows.
  */
 export function InboxFilterMenu({
@@ -36,10 +37,12 @@ export function InboxFilterMenu({
   typeCounts,
   projects,
   showDone,
+  pullsShown,
   dirty,
   onTypeChange,
   onProjectChange,
   onShowDoneChange,
+  onPullsShownChange,
   onClear,
 }: {
   filter: InboxFilter;
@@ -47,13 +50,16 @@ export function InboxFilterMenu({
   /** Every project with an item, No project last, and All first. */
   projects: InboxFacetOption[];
   showDone: boolean;
+  pullsShown: boolean;
   dirty: boolean;
   onTypeChange: (type: InboxTypeFilter) => void;
   onProjectChange: (project: string | null) => void;
   onShowDoneChange: (show: boolean) => void;
+  onPullsShownChange: (shown: boolean) => void;
   onClear: () => void;
 }) {
   const { t } = useTranslation();
+  const types = pullsShown ? INBOX_TYPES : INBOX_TYPES.filter((type) => type !== 'pull');
   const projectValue = filter.project ?? ALL_PROJECTS;
   const projectLabel =
     filter.project === null
@@ -88,7 +94,7 @@ export function InboxFilterMenu({
               value={filter.type}
               onValueChange={(next) => onTypeChange(next as InboxTypeFilter)}
             >
-              {INBOX_TYPES.map((type) => (
+              {types.map((type) => (
                 <DropdownMenuRadioItem key={type} value={type} count={typeCounts[type]}>
                   {t(`inbox.type.${type}`)}
                 </DropdownMenuRadioItem>
@@ -120,6 +126,9 @@ export function InboxFilterMenu({
 
         <DropdownMenuCheckboxItem checked={showDone} onCheckedChange={onShowDoneChange}>
           {t('inbox.filter.showDone')}
+        </DropdownMenuCheckboxItem>
+        <DropdownMenuCheckboxItem checked={pullsShown} onCheckedChange={onPullsShownChange}>
+          {t('inbox.filter.showPulls')}
         </DropdownMenuCheckboxItem>
 
         <DropdownMenuSeparator />

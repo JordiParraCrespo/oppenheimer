@@ -16,12 +16,14 @@ Items are not stored, with one exception: an item is there while its source says
 | --- | --- | --- | --- |
 | A session waiting on you | Sessions | its agent has been blocked 30 seconds or more, it failed to start, or it has been starting for over a minute | **Open session**. An agent's permission prompt or multiple-choice question can be answered right in the Inbox (**Send answers**); your answer is typed into its terminal |
 | A bot approval | Bots | a bot stopped on a tool set to ask | **Approve**, **Deny**, or **Open chat** |
-| A review request | Pull requests | someone asked for your review | **Open**, **View on GitHub** |
-| A pull request ready to merge | Pull requests | your pull request has nothing holding it | **Merge**, **Open**, **View on GitHub** |
+| A review request (when shown) | Pull requests | someone asked for your review | **Open**, **View on GitHub** |
+| A pull request ready to merge (when shown) | Pull requests | your pull request has nothing holding it | **Merge**, **Open**, **View on GitHub** |
 | A failed automation run | Automations | a run failed in the last 24 hours | **Run again**, **Open run** |
 | A session's notice | an agent in a session | the agent ran `runner sessions notify "…"` | **Done** |
 | A bot's notice | a bot | the bot used its `notify` tool | **Open chat**, **Done** |
 | A report | any agent with a token | it posted a problem, with up to four pictures | Write an answer and **Send answer**; the agent reads it. **Done** hides it without answering |
+
+Pull requests are off by default: agents open theirs under your GitHub account, so every one would wait here as yours to merge. Turn on **Show pull requests** in the filter menu to list review requests and ready merges; the choice is kept in this browser. The **Pull requests** page lists them either way.
 
 A session or bot keeps one notice at a time: a newer one replaces the last. Questions a bot asks you with a question card are answered in its chat, not in the Inbox.
 
@@ -42,7 +44,7 @@ A mark applies to one occurrence: if the same session blocks again later, or new
 
 **Unread** is kept per item in this browser: an item is read once shown in the reading pane. It does not sync between devices.
 
-**Filters**: Type (All, Pull requests, Bots, Sessions, Automations), Project, Show done, and a search over sender, subject, body and source.
+**Filters**: Type (All, Pull requests while they are shown, Bots, Sessions, Automations), Project, Show done, Show pull requests, and a search over sender, subject, body and source.
 
 When nothing needs you, the pane says so and counts the sessions still running.
 

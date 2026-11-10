@@ -64,6 +64,53 @@ function useAnsweredKeys(): ReadonlySet<string> {
   );
 }
 
+/**
+ * Whether the Inbox lists pull requests (a review asked of you, yours ready
+ * to merge), kept on this device. Off unless the reader turns it on: the
+ * agents open pull requests under the reader's account, so every one of
+ * them would wait here as theirs to merge (`29-inbox.md`, "Pull requests
+ * are opt-in"). Off, their two reads are not made at all. One value for the
+ * page, so the list and every count agree the moment it flips.
+ */
+const PULLS_KEY = 'oppenheimer.inbox.pulls';
+let pullsShown: boolean | undefined;
+const pullsListeners = new Set<() => void>();
+
+function readPullsShown(): boolean {
+  if (pullsShown === undefined) {
+    try {
+      pullsShown = globalThis.localStorage?.getItem(PULLS_KEY) === 'true';
+    } catch {
+      pullsShown = false;
+    }
+  }
+  return pullsShown;
+}
+
+function setPullsShown(shown: boolean): void {
+  if (readPullsShown() === shown) return;
+  pullsShown = shown;
+  try {
+    globalThis.localStorage?.setItem(PULLS_KEY, String(shown));
+  } catch {
+    // Kept in memory above; storage refused it.
+  }
+  for (const listener of pullsListeners) listener();
+}
+
+/** Whether the Inbox lists pull requests, and the switch the filter menu flips. */
+export function useInboxPullsShown(): [shown: boolean, setShown: (shown: boolean) => void] {
+  const shown = useSyncExternalStore(
+    (listener) => {
+      pullsListeners.add(listener);
+      return () => pullsListeners.delete(listener);
+    },
+    readPullsShown,
+    () => false,
+  );
+  return [shown, setPullsShown];
+}
+
 function useInboxMarksQuery() {
   const app = useConsumerApp();
   return { queryKey: inboxKeys.marks(), queryFn: () => app.inbox.findMarks() };
@@ -84,18 +131,16 @@ function useFailedRunsQuery() {
 }
 
 /**
- * The Inbox's nine reads, side by side: the six sources, the two pull
- * request scopes counted as one, the projects every item is filed under, and
- * the caller's marks. Each keeps its own key, poll and stream coverage, so a
- * session, a run, an approval, a bot's notice or a report that changes moves
- * the Inbox with it.
+ * The Inbox's reads, side by side: the sources, the projects every item is
+ * filed under, and the caller's marks. The two pull request scopes, counted
+ * as one source, follow on only while pull requests are shown. Each keeps
+ * its own key, poll and stream coverage, so a session, a run, an approval, a
+ * bot's notice or a report that changes moves the Inbox with it.
  */
 function useInboxQueries() {
   return [
     { ...useSessionListQuery(), ...useSessionListPoll() },
     usePendingBotApprovalsQuery(),
-    usePullRequestQueueQuery('requested'),
-    usePullRequestQueueQuery('mine'),
     useFailedRunsQuery(),
     useBotNoticesQuery(),
     useInboxReportsQuery(),
@@ -104,14 +149,22 @@ function useInboxQueries() {
   ] as const;
 }
 
+/** The pull request scopes the Inbox reads: none while they are hidden. */
+function usePullQueries(shown: boolean) {
+  const requested = usePullRequestQueueQuery('requested');
+  const mine = usePullRequestQueueQuery('mine');
+  return shown ? [requested, mine] : [];
+}
+
 /**
- * The `inbox` poll over the nine reads, as observers of their own: a read's
+ * The `inbox` poll over every read, as observers of their own: a read's
  * own poll keeps its pace and its hidden-tab bit, and this one pauses on a
  * hidden tab whatever those say. It draws nothing, so it never re-renders.
  */
-function useInboxPoll() {
+function useInboxPoll(pulls: boolean) {
+  const pullQueries = usePullQueries(pulls);
   useQueries({
-    queries: useInboxQueries().map(({ queryKey, queryFn }) => ({
+    queries: [...useInboxQueries(), ...pullQueries].map(({ queryKey, queryFn }) => ({
       queryKey,
       queryFn,
       ...pollWhile('inbox', true),
@@ -122,23 +175,23 @@ function useInboxPoll() {
 
 type InboxReads = ReturnType<typeof useInboxQueries>;
 type Answer<I extends number> = Awaited<ReturnType<InboxReads[I]['queryFn']>>;
+type PullAnswer = Awaited<ReturnType<ReturnType<typeof usePullQueries>[number]['queryFn']>>;
 
-/** The reads' answers as the composition takes them. */
+/** The reads' answers as the composition takes them; no pull request while they are hidden. */
 function sourcesOf(
   sessions: Answer<0>,
   approvals: Answer<1>,
-  requested: Answer<2>,
-  mine: Answer<3>,
-  runs: Answer<4>,
-  botNotices: Answer<5>,
-  reports: Answer<6>,
-  projects: Answer<7>,
+  runs: Answer<2>,
+  botNotices: Answer<3>,
+  reports: Answer<4>,
+  projects: Answer<5>,
+  pulls: readonly (PullAnswer | undefined)[],
 ): InboxSources {
   return {
     sessions,
     approvals,
-    requested: requested.items,
-    mine: mine.items,
+    requested: pulls[0]?.items ?? [],
+    mine: pulls[1]?.items ?? [],
     failedRuns: runs.items,
     botNotices,
     reports,
@@ -160,11 +213,15 @@ function sourcesOf(
 export function useSuspenseInbox(
   now: number,
 ): InboxView & { projects: ProjectEntity[]; answered: ReadonlySet<string>; error: Error | null } {
-  useInboxPoll();
-  const [sessions, approvals, requested, mine, runs, botNotices, reports, projects, marks] =
-    useSuspenseQueries({
-      queries: useInboxQueries(),
-    });
+  const [pullsShown] = useInboxPullsShown();
+  useInboxPoll(pullsShown);
+  const pullQueries = usePullQueries(pullsShown);
+  const [sessions, approvals, runs, botNotices, reports, projects, marks] = useSuspenseQueries({
+    queries: useInboxQueries(),
+  });
+  const pullResults = useSuspenseQueries({ queries: pullQueries });
+  const requested = pullResults[0];
+  const mine = pullResults[1];
   const answered = useAnsweredKeys();
   const view = useMemo(
     () =>
@@ -172,12 +229,11 @@ export function useSuspenseInbox(
         sourcesOf(
           sessions.data,
           approvals.data,
-          requested.data,
-          mine.data,
           runs.data,
           botNotices.data,
           reports.data,
           projects.data,
+          [requested?.data, mine?.data],
         ),
         marks.data,
         now,
@@ -186,12 +242,12 @@ export function useSuspenseInbox(
     [
       sessions.data,
       approvals.data,
-      requested.data,
-      mine.data,
       runs.data,
       botNotices.data,
       reports.data,
       projects.data,
+      requested?.data,
+      mine?.data,
       marks.data,
       now,
       answered,
@@ -200,8 +256,8 @@ export function useSuspenseInbox(
   const error =
     sessions.error ??
     approvals.error ??
-    requested.error ??
-    mine.error ??
+    requested?.error ??
+    mine?.error ??
     runs.error ??
     botNotices.error ??
     reports.error ??
@@ -215,20 +271,20 @@ export function useSuspenseInbox(
  * answered, so no count is drawn before it is known.
  */
 export function useInboxCount(now: number): number | undefined {
+  const [pullsShown] = useInboxPullsShown();
   const results = useQueries({ queries: useInboxQueries() });
+  const pullResults = useQueries({ queries: usePullQueries(pullsShown) });
   const answered = useAnsweredKeys();
-  const [sessions, approvals, requested, mine, runs, botNotices, reports, projects, marks] =
-    results;
+  const [sessions, approvals, runs, botNotices, reports, projects, marks] = results;
   if (
     !sessions?.data ||
     !approvals?.data ||
-    !requested?.data ||
-    !mine?.data ||
     !runs?.data ||
     !botNotices?.data ||
     !reports?.data ||
     !projects?.data ||
-    !marks?.data
+    !marks?.data ||
+    pullResults.some((result) => !result.data)
   ) {
     return undefined;
   }
@@ -236,12 +292,11 @@ export function useInboxCount(now: number): number | undefined {
     sourcesOf(
       sessions.data as Answer<0>,
       approvals.data as Answer<1>,
-      requested.data as Answer<2>,
-      mine.data as Answer<3>,
-      runs.data as Answer<4>,
-      botNotices.data as Answer<5>,
-      reports.data as Answer<6>,
-      projects.data as Answer<7>,
+      runs.data as Answer<2>,
+      botNotices.data as Answer<3>,
+      reports.data as Answer<4>,
+      projects.data as Answer<5>,
+      pullResults.map((result) => result.data as PullAnswer),
     ),
     marks.data as InboxMarkEntity[],
     now,
@@ -256,7 +311,9 @@ export function useInboxCount(now: number): number | undefined {
  */
 export function useRefreshInbox(): { refresh: () => void; refreshing: boolean } {
   const queryClient = useQueryClient();
-  const keys = useInboxQueries().map((query) => query.queryKey);
+  const [pullsShown] = useInboxPullsShown();
+  const pullQueries = usePullQueries(pullsShown);
+  const keys = [...useInboxQueries(), ...pullQueries].map((query) => query.queryKey);
   const [refreshing, setRefreshing] = useState(false);
   const refresh = () => {
     if (refreshing) return;
