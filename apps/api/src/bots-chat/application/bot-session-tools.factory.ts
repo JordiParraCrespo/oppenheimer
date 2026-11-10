@@ -1,12 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
 import { FIELD_BOUNDS, fitsPromptBound } from '@oppenheimer/shared';
-import {
-  CODING_AGENT_IDS,
-  CODING_AGENTS,
-  SESSION_EFFORTS,
-  SESSION_PERMISSIONS,
-} from '@oppenheimer/shared/agents';
+import { CODING_AGENT_IDS, SESSION_EFFORTS, SESSION_PERMISSIONS } from '@oppenheimer/shared/agents';
 import { z } from 'zod/v4';
 import { FindHostQuery } from '../../hosts/queries/find-host/find-host.query';
 import type { ProjectEntity } from '../../projects/domain/project.entity';
@@ -22,6 +17,7 @@ import type { WorkSessionEntity } from '../../sessions/domain/work-session.entit
 import { FindSessionQuery } from '../../sessions/queries/find-session/find-session.query';
 import {
   closeSummary,
+  currentModelChoices,
   decisionAnswerOf,
   decisionAnswerSummary,
   planSession,
@@ -54,20 +50,6 @@ import {
   BotToolRefusal,
   defineBotTool,
 } from './bot-tool.factory';
-
-/**
- * The current models of each agent that has any, for `start_session`'s
- * `model` field: what the console's engine button offers first, so the model
- * matches the person's words to an id without a round trip.
- */
-const MODEL_CHOICES = CODING_AGENT_IDS.flatMap((agent) => {
-  const current = CODING_AGENTS[agent].models.filter((model) => !model.legacy);
-  if (current.length === 0 || current.length > 8) return [];
-  const listed = current
-    .map((model) => `${model.label} (${model.id}${model.default ? ', default' : ''})`)
-    .join(', ');
-  return [`${CODING_AGENTS[agent].label}: ${listed}.`];
-}).join(' ');
 
 /** How long `start_cloud_session` waits for the cloud session's id: the runner's own start limit. */
 const CLOUD_START_WAIT_MAX_SECONDS = 120;
@@ -166,7 +148,7 @@ export class BotSessionToolsFactory implements BotToolArea {
           .max(128)
           .optional()
           .describe(
-            `The agent's model, by id or by name as the person said it. ${MODEL_CHOICES} A model the agent does not have is refused with the list it has.`,
+            `The agent's model, by id or by name as the person said it. ${currentModelChoices()} A model the agent does not have is refused with the list it has.`,
           ),
         effort: z
           .enum(SESSION_EFFORTS)
