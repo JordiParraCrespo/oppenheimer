@@ -1129,7 +1129,7 @@ agent's, in a session, where Claude Code ships them.
 | `watch_pull_request` / `unwatch_pull_request` | Follow an open pull request of a repository the owner can read, so a check failing or passing, a review, a comment or the merge wakes the bot with the event's metadata, never anyone's words; a merge ends it; built 2026-11-03, note 27 §7.1. `list_watches` lists them too | auto |
 | `wait_for_session` | Wait up to 120 s inside the turn for a session's task to need input or end, at most 3 times a turn (2026-10-29) | auto |
 | `send_to_session` | Type a follow-up prompt into a running session whose agent waits at its prompt; logged as `prompt.sent` with the bot as sender, and it opens a `follow_up` turn the bot then watches (built 2026-10-27) | ask |
-| `answer_session` | Answer the question or permission dialog a session's agent waits on, through the Inbox's own command (built 2026-10-27) | ask |
+| `answer_session` | Answer the question or permission dialog a session's agent waits on, through the Inbox's own command (built 2026-10-27). The bot unblocks a session it follows with it rather than sending the person to the session; letting a destructive dialog through (a recursive delete, a forced push, a history rewrite, dropping data, `sudo`) is a card of its own offering only that call, under every preset and past every grant, while turning one down is the bot's (2026-11-10) | ask |
 | `read_session` | A session's recent log in words: tasks and follow-ups with their sender, the agent working, blocked or done, questions, failures, stops. The log only, never the terminal or the agent's conversation (built 2026-10-27; "recent output" was the plan). `after_seq` reads only what followed an entry; `send_to_session` and `answer_session` name the entry their input followed (2026-10-29) | auto |
 | `search_sessions` | Search every session of the workspace, on any host and closed ones included, for words in its name and log (tasks, follow-ups, the agent's results, notes, questions, failures): web-search syntax, best first, at most 2 excerpts per session, each with the session's id for `read_session`; filters `host_id`, `project_id`, `since`. Not the agents' transcripts (2026-11-09; below) | auto |
 | `stop_session` / `close_session` | Stop it, or close and clean up. `close_session` is the sessions' own close (`CloseSessionCommand`: push each branch, remove the worktree; unpushed work kept unless `accept_unpushed_work`) and only for a session whose origin is `bot`; any other is refused before a card, the person's to close. The `failed` wake offers it once the person is told, so a failed start does not stay in the sidebar (built 2026-11-09) | ask |
@@ -2114,3 +2114,22 @@ The decisions it produced:
   is reason enough to save, and the reminder comes after 6 tool calls, not
   8. `search_sessions` says to pass a named project's or host's id, and
   `show_session` that its button is never the answer (§4.2).
+- 2026-11-10: **a bot unblocks the sessions it follows** (§4.2,
+  `answer_session`). The owner saw a routine's bot find a session waiting on
+  a permission for a recursive delete and tell him to open the session and
+  decide it there. The needs-input wake, `get_session` and `answer_session`
+  now have the bot answer the agent itself (what the session's task and the
+  person's instructions point to, No to what goes against it) instead of
+  only what its instructions settle (2026-11-07). Letting a destructive
+  dialog through is never the bot's alone: `answer_session` escalates it to
+  a card of its own, Full access and standing grants included, so the
+  person decides it from the chat; the bot recommends an option and says
+  why. Turning one down, and every other answer, follow the bot's
+  permissions as before.
+  The rule opens with the owner's stance: a bot may approve and answer with
+  care, "a chef in this kitchen, not a waiter who carries every order back
+  to the person". `scripts/evals/bot-session-unblock` holds it: on the old
+  wording 12 of 27 runs sent the person to a session the bot could have
+  answered (Oppie's case among them); on the new one 45 of 45 runs were
+  right, the payout account and off-task deploys still left to the person
+  or turned down.
