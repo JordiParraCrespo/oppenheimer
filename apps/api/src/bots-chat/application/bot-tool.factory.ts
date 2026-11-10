@@ -207,6 +207,14 @@ export interface BotToolSpec<Input extends z.ZodType> {
    * Allow in Settings, and a card offers only "this call". Only with `asks`.
    */
   perCallOnly?: boolean;
+  /**
+   * Whether this call reaches further than the tool's standing grants were
+   * given for (a session at full access, where the tool's default is approve
+   * for me): such a call is decided on its own, under every preset and past
+   * every grant, Settings' Allow and rule, on a card that offers only this
+   * call. Only with `asks`.
+   */
+  escalates?(input: z.output<Input>): boolean;
   /** A call sends what it carries out of Oppenheimer (a comment on GitHub); the card says so. */
   sharesOutside?: boolean;
   /**
@@ -313,6 +321,9 @@ export function defineBotTool<Input extends z.ZodType>(
   if (spec.perCallOnly && !spec.asks) {
     throw new Error(`${spec.name} is per call only, so it must ask first.`);
   }
+  if (spec.escalates && !spec.asks) {
+    throw new Error(`${spec.name} can escalate a call, so it must ask first.`);
+  }
   // A tool that always asks does so under Full access too, until the owner allows it.
   const always = spec.asks === 'always';
   const traits: BotToolTraits = {
@@ -370,12 +381,14 @@ export function defineBotTool<Input extends z.ZodType>(
       };
       // Off never reaches here: the toolbox does not offer it.
       const asks = toolDecision(context.permissions, traits, context.permission) === 'ask';
-      if (asks) return askingFirst(tool, spec, traits, context);
       // An asking tool that would run: an ask rule may still stop the call.
       const stops = traits.asks ? rulesToReview(context.permissions, 'allow') : [];
-      return stops.length > 0 && context.reviewer
-        ? reviewedFirst(tool, spec, { ...context, reviewer: context.reviewer })
-        : tool;
+      const decided = asks
+        ? askingFirst(tool, spec, traits, context)
+        : stops.length > 0 && context.reviewer
+          ? reviewedFirst(tool, spec, { ...context, reviewer: context.reviewer })
+          : tool;
+      return spec.escalates ? escalatingFirst(decided, spec, spec.escalates, context) : decided;
     },
     runApproved: (input, context, signal) => call(input as z.output<Input>, context, signal),
   };
@@ -415,6 +428,34 @@ function askingFirst<Input extends z.ZodType>(
           reviewNote = verdict.note;
         }
         return { content: await askOwner(spec, context, call, subject, reviewNote) };
+      } catch (error) {
+        return toEngineResult(failureOf(error));
+      }
+    },
+  };
+}
+
+/**
+ * A call that reaches further than the tool's grants were given for
+ * (`escalates`): it raises a card of its own, offering only this call,
+ * whatever the preset, Settings, a standing grant or a rule would let run.
+ * Any other call goes the way the tool's decision says.
+ */
+function escalatingFirst<Input extends z.ZodType>(
+  decided: BotEngineTool,
+  spec: BotToolSpec<Input>,
+  escalates: (input: z.output<Input>) => boolean,
+  context: BotToolContext,
+): BotEngineTool {
+  return {
+    ...decided,
+    run: async (input, options) => {
+      const parsed = spec.input.safeParse(input ?? {});
+      if (!parsed.success || !escalates(parsed.data)) return decided.run(input, options);
+      try {
+        const call = spec.normalize ? await spec.normalize(parsed.data, context) : parsed.data;
+        const subject = await subjectOf(spec, call, context);
+        return { content: await askOwner({ ...spec, perCallOnly: true }, context, call, subject) };
       } catch (error) {
         return toEngineResult(failureOf(error));
       }

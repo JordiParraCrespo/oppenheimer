@@ -1450,7 +1450,8 @@ earlier note:
   a bot told the owner it could not start a session on Opus 5.5: the tool
   now takes everything the composer offers (model by id or name, effort,
   permission, base branch), refuses what the agent does not take with what
-  it does, and names each choice on the card. `auto` stays the default.
+  it does, and names each choice on the card. `auto` stays the default,
+  and a session at full access is approved on its own card, every time.
   An eval holds it (`scripts/evals/bot-session-launch/`).
 - `next-steps/0.2-pull-requests.md` ("The screens as built", 2026-10-13)
   left a pull request with no generated summary until the chat came, and

@@ -336,14 +336,25 @@ describe('BotSessionToolsFactory', () => {
       project_id: PROJECT,
       model: 'Opus 5.5',
       effort: 'high',
-      permission: 'full',
+      permission: 'ask',
       base_branch: 'develop',
     });
     const command = commandBus.execute.mock.calls[0][0] as CreateSessionCommand;
     expect(command.input).toMatchObject({
-      launch: { model: 'claude-opus-5-5', effort: 'high', permission: 'full' },
+      launch: { model: 'claude-opus-5-5', effort: 'high', permission: 'ask' },
       checkouts: [{ githubRepoId: 42, baseBranch: 'develop' }],
     });
+  });
+
+  // What breaks this: a grant given for sessions at approve for me, or the
+  // Full access preset, starting an agent with every check off unseen.
+  it('asks for a session at full access on a card of its own, offering only this call, under Full access too', async () => {
+    const { commandBus, approvals, call } = setup('full');
+    await call('start_session', { task: 'x', project_id: PROJECT, permission: 'full' });
+    expect(approvals.request).toHaveBeenCalledWith(
+      expect.objectContaining({ tool: 'start_session', perCallOnly: true }),
+    );
+    expect(commandBus.execute).not.toHaveBeenCalled();
   });
 
   it('refuses a model the agent does not have before any card, naming the ones it has', async () => {

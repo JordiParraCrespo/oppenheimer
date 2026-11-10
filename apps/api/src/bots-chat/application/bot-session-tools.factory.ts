@@ -109,6 +109,9 @@ export class BotSessionToolsFactory implements BotToolArea {
       name: 'start_session',
       scope: 'sessions:write',
       asks: true,
+      // A session at full access runs with every check off: the owner says yes
+      // to that session alone, whatever they allowed start_session before.
+      escalates: (input) => input.permission === 'full',
       subject: async (input, context) => {
         if (!input.project_id) return null;
         const project = await this.project(context, input.project_id).catch(() => null);
@@ -175,7 +178,7 @@ export class BotSessionToolsFactory implements BotToolArea {
           .enum(SESSION_PERMISSIONS)
           .optional()
           .describe(
-            'What the agent may do without asking: auto (default; approve for me, still checking each action), full (no checks at all, only when the person asks for it), or ask (it stops at every approval, which the person or answer_session must answer).',
+            'What the agent may do without asking: auto (default; approve for me, still checking each action), full (no checks at all, only when the person asks for it; the person always approves such a session on its own card), or ask (it stops at every approval, which the person or answer_session must answer).',
           ),
         base_branch: z
           .string()
