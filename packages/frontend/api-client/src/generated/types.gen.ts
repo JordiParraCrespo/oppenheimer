@@ -3286,6 +3286,22 @@ export type WhatsappAccountResponseDto = {
      */
     statusReason: string | null;
     /**
+     * The caller’s Oppenheimer bot that answers them on this number by default; null while none does. "Name: …" in the chat switches to another of their bots.
+     */
+    answeringBotId: string | null;
+    /**
+     * The owner’s own number, confirmed by the code it received; the only number this one answers. Null until confirmed.
+     */
+    ownerNumber: string | null;
+    /**
+     * The number a code was sent to, waiting for the code to be entered.
+     */
+    ownerPendingNumber: string | null;
+    /**
+     * When the waiting code stops working.
+     */
+    ownerCodeExpiresAt: string | null;
+    /**
      * When it was first linked.
      */
     linkedAt: string;
@@ -3294,6 +3310,18 @@ export type WhatsappAccountResponseDto = {
 export type LinkWhatsappRequest = {
     hostId: string;
     label?: string;
+};
+
+export type UpdateWhatsappAccountRequest = {
+    answeringBotId: string | null;
+};
+
+export type RequestWhatsappOwnerRequest = {
+    phone: string;
+};
+
+export type ConfirmWhatsappOwnerRequest = {
+    code: string;
 };
 
 export type TelegramAccountResponseDto = {
@@ -13603,6 +13631,141 @@ export type RemoveWhatsappAccountResponses = {
 
 export type RemoveWhatsappAccountResponse = RemoveWhatsappAccountResponses[keyof RemoveWhatsappAccountResponses];
 
+export type UpdateWhatsappAccountData = {
+    body: UpdateWhatsappAccountRequest;
+    path: {
+        /**
+         * The linked number.
+         */
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/whatsapp/accounts/{id}';
+};
+
+export type UpdateWhatsappAccountErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * BOTS_001 — No such bot of the caller’s
+     *
+     * WHATSAPP_001 — No such linked number
+     */
+    404: ProblemDetailsDto;
+};
+
+export type UpdateWhatsappAccountError = UpdateWhatsappAccountErrors[keyof UpdateWhatsappAccountErrors];
+
+export type UpdateWhatsappAccountResponses = {
+    200: WhatsappAccountResponseDto;
+};
+
+export type UpdateWhatsappAccountResponse = UpdateWhatsappAccountResponses[keyof UpdateWhatsappAccountResponses];
+
+export type RequestWhatsappOwnerData = {
+    body: RequestWhatsappOwnerRequest;
+    path: {
+        /**
+         * The linked number.
+         */
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/whatsapp/accounts/{id}/owner';
+};
+
+export type RequestWhatsappOwnerErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * WHATSAPP_001 — No such linked number
+     */
+    404: ProblemDetailsDto;
+    /**
+     * WHATSAPP_004 / WHATSAPP_005 / WHATSAPP_007 — The host, older or offline, or the number, not connected, cannot send the code
+     */
+    409: ProblemDetailsDto;
+    /**
+     * WHATSAPP_013 — Not a phone number, or the linked number itself
+     */
+    422: ProblemDetailsDto;
+    /**
+     * WHATSAPP_009 — The host’s send budget is spent
+     */
+    429: ProblemDetailsDto;
+    /**
+     * WHATSAPP_008 — WhatsApp did not take the code
+     */
+    502: ProblemDetailsDto;
+};
+
+export type RequestWhatsappOwnerError = RequestWhatsappOwnerErrors[keyof RequestWhatsappOwnerErrors];
+
+export type RequestWhatsappOwnerResponses = {
+    202: WhatsappAccountResponseDto;
+};
+
+export type RequestWhatsappOwnerResponse = RequestWhatsappOwnerResponses[keyof RequestWhatsappOwnerResponses];
+
+export type ConfirmWhatsappOwnerData = {
+    body: ConfirmWhatsappOwnerRequest;
+    path: {
+        /**
+         * The linked number.
+         */
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/whatsapp/accounts/{id}/owner/confirm';
+};
+
+export type ConfirmWhatsappOwnerErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * WHATSAPP_001 — No such linked number
+     */
+    404: ProblemDetailsDto;
+    /**
+     * WHATSAPP_012 — No number is waiting for its code
+     */
+    409: ProblemDetailsDto;
+    /**
+     * WHATSAPP_011 — The code is wrong or has expired
+     */
+    422: ProblemDetailsDto;
+    /**
+     * WHATSAPP_014 — Too many wrong codes: ask for a new one
+     */
+    429: ProblemDetailsDto;
+};
+
+export type ConfirmWhatsappOwnerError = ConfirmWhatsappOwnerErrors[keyof ConfirmWhatsappOwnerErrors];
+
+export type ConfirmWhatsappOwnerResponses = {
+    200: WhatsappAccountResponseDto;
+};
+
+export type ConfirmWhatsappOwnerResponse = ConfirmWhatsappOwnerResponses[keyof ConfirmWhatsappOwnerResponses];
+
 export type FindTelegramAccountsData = {
     body?: never;
     path?: never;
@@ -14672,7 +14835,7 @@ export type DeleteBotErrors = {
      */
     404: ProblemDetailsDto;
     /**
-     * BOTS_042 — The bot answers on a Telegram bot
+     * BOTS_042 / BOTS_043 — The bot answers on a Telegram bot, or is a WhatsApp number’s default
      */
     409: ProblemDetailsDto;
 };

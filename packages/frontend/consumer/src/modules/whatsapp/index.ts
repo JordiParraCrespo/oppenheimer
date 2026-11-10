@@ -1,3 +1,7 @@
 export { WhatsappModule } from './whatsapp.module';
 export { WhatsappRepository } from './whatsapp.repository';
-export { WhatsappAccountEntity, type WhatsappAccountStatus } from './whatsapp-account.entity';
+export {
+  WhatsappAccountEntity,
+  type WhatsappAccountStatus,
+  type WhatsappOwnerState,
+} from './whatsapp-account.entity';

@@ -205,6 +205,7 @@ export const SAMPLES: Record<ProtocolMessageType, ProtocolMessage> = {
     commandId,
     chatId: '34600333444@s.whatsapp.net',
     text: 'Tuesday works.',
+    replyTo: { id: '3EB0C7A1F2', senderId: '34600333444@s.whatsapp.net' },
   },
   'whatsapp.sent': { type: 'whatsapp.sent', commandId, id: '3EB0C7A1F3', sentAt: occurredAt },
   'telegram.link': {

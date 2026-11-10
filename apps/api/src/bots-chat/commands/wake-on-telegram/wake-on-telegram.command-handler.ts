@@ -1,10 +1,5 @@
-import { Inject } from '@nestjs/common';
 import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
-import { botDefaultModel } from '@oppenheimer/shared';
-import { BotModelAccessResolver } from '../../application/bot-model-access.resolver';
-import { BOT_CONVERSATION_REPOSITORY, BOT_TURN_REPOSITORY } from '../../bots-chat.di-tokens';
-import type { BotConversationRepositoryPort } from '../../database/bot-conversation.repository.port';
-import type { BotTurnRepositoryPort } from '../../database/bot-turn.repository.port';
+import { BotChannelWakeResolver } from '../../application/bot-channel-wake.resolver';
 import { telegramTurn } from '../../domain/bot-telegram-turn.policy';
 import { WakeOnTelegramCommand } from './wake-on-telegram.command';
 
@@ -14,57 +9,31 @@ import { WakeOnTelegramCommand } from './wake-on-telegram.command';
  * a turn in the chat's conversation that holds the message, the one that
  * starts at the owner's last `/new` before it (fixed when the message was
  * stored, so deliveries in any order agree), keyed by the message so a
- * delivery twice is one turn; `/new` starts a conversation at itself; `/stop` asks the conversation's running turn to stop. A bot
- * that is gone, or is not the Telegram bot owner's, is woken by nothing.
+ * delivery twice is one turn; `/new` starts a conversation at itself; `/stop`
+ * asks the conversation's running turn to stop (`BotChannelWakeResolver`). The
+ * resolver wakes only a bot the owner made.
  */
 @CommandHandler(WakeOnTelegramCommand)
 export class WakeOnTelegramCommandHandler implements ICommandHandler<WakeOnTelegramCommand, void> {
-  constructor(
-    @Inject(BOT_CONVERSATION_REPOSITORY)
-    private readonly conversations: BotConversationRepositoryPort,
-    @Inject(BOT_TURN_REPOSITORY) private readonly turns: BotTurnRepositoryPort,
-    private readonly access: BotModelAccessResolver,
-  ) {}
+  constructor(private readonly channel: BotChannelWakeResolver) {}
 
   async execute(command: WakeOnTelegramCommand): Promise<void> {
-    const bot = await this.access.findBot(command.organizationId, command.botId);
-    if (!bot || bot.createdByUserId !== command.userId) return;
-    const chat = {
-      organizationId: command.organizationId,
-      botId: bot.id,
-      telegramAccountId: command.telegramAccountId,
-      chatId: command.chatId,
-    };
-    const conversationId = await this.conversations.conversationAt(
-      chat,
-      command.conversationStartsAt,
-      command.messageId,
-    );
-    // `/new` is the start of its own conversation, made above.
-    if (command.command === 'new') return;
-    if (command.command === 'stop') {
-      const running = await this.turns.findRunningIn(command.organizationId, conversationId);
-      if (running) await this.turns.requestCancel(running, new Date());
-      return;
-    }
-    const { turn, opening } = telegramTurn(
-      {
-        organizationId: command.organizationId,
-        botId: bot.id,
-        requestedByUserId: command.userId,
-        provider: bot.provider,
-        model: bot.model ?? botDefaultModel(bot.provider).id,
-        effort: bot.effort,
-      },
-      {
-        conversationId,
-        telegramAccountId: command.telegramAccountId,
-        chatId: command.chatId,
-        messageId: command.messageId,
-        text: command.text,
-      },
-    );
-    // Not on the bot's stream, which is its console chat's.
-    await this.turns.enqueueOnce(turn, opening, command.metadata.correlationId, null);
+    const { organizationId, telegramAccountId, chatId, messageId } = command;
+    await this.channel.wake({
+      chat: { kind: 'telegram', organizationId, botId: command.botId, telegramAccountId, chatId },
+      userId: command.userId,
+      startsAt: command.conversationStartsAt,
+      messageId,
+      command: command.command,
+      correlationId: command.metadata.correlationId,
+      turn: (props, conversationId) =>
+        telegramTurn(props, {
+          conversationId,
+          telegramAccountId,
+          chatId,
+          messageId,
+          text: command.text,
+        }),
+    });
   }
 }

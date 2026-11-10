@@ -6,6 +6,9 @@ export type WhatsappAccountStatus =
   | 'logged_out'
   | 'unlinked';
 
+/** Where naming the reader's own number stands; see {@link WhatsappAccountEntity.ownerState}. */
+export type WhatsappOwnerState = 'none' | 'codeSent' | 'confirmed';
+
 /**
  * One of the reader's own WhatsApp numbers, linked as a device on one of
  * their hosts for their bots (`product/next-steps/whatsapp.md` §1). Its keys
@@ -28,7 +31,34 @@ export class WhatsappAccountEntity {
     public readonly qrExpiresAt: Date | null,
     public readonly statusReason: string | null,
     public readonly linkedAt: string,
+    /**
+     * The reader's Oppenheimer bot that answers them on this number by
+     * default (`product/next-steps/answering-on-telegram-and-whatsapp.md` §1);
+     * null while none does. "Name: …" in the chat switches to another.
+     */
+    public readonly answeringBotId: string | null = null,
+    /** The reader's own number, confirmed by a code, as `+digits`: the only one answered here. */
+    public readonly ownerNumber: string | null = null,
+    /** The number a code was sent to and waits to be entered, as `+digits`. */
+    public readonly ownerPendingNumber: string | null = null,
+    /** When that code stops working; the API keeps it past then, so the console decides. */
+    public readonly ownerCodeExpiresAt: Date | null = null,
   ) {}
+
+  /**
+   * Where naming the reader's own number stands: a code is waiting to be
+   * entered (even while an earlier number is still the owner, until the new
+   * one is confirmed), a number is confirmed, or neither.
+   */
+  get ownerState(): WhatsappOwnerState {
+    if (this.ownerPendingNumber !== null && this.ownerCodeExpiresAt !== null) return 'codeSent';
+    return this.ownerNumber !== null ? 'confirmed' : 'none';
+  }
+
+  /** Whether the waiting code has stopped working at `now` (ms); false when none waits. */
+  codeExpired(now: number): boolean {
+    return this.ownerCodeExpiresAt !== null && this.ownerCodeExpiresAt.getTime() <= now;
+  }
 
   /** The number as a person writes it (`+34600111222`), or null before it is paired. */
   get number(): string | null {

@@ -3,6 +3,7 @@ import type { AccessScope } from '@oppenheimer/backend-authz';
 import { OutboxMessageSchema, OutboxService } from '@oppenheimer/backend-ddd';
 import { DataSource } from 'typeorm';
 import { useTestDatabase } from '../../__tests__/integration-services';
+import { BotLookupResolver } from '../application/bot-lookup.resolver';
 import { NewBotProviderResolver } from '../application/new-bot-provider.resolver';
 import { BotMapper } from '../bot.mapper';
 import { BotDocumentMapper } from '../bot-document.mapper';
@@ -11,6 +12,8 @@ import { BotMemoryFactMapper } from '../bot-memory-fact.mapper';
 import { BotSkillMapper } from '../bot-skill.mapper';
 import { CreateBotCommand } from '../commands/create-bot/create-bot.command';
 import { CreateBotCommandHandler } from '../commands/create-bot/create-bot.command-handler';
+import { DeleteBotCommand } from '../commands/delete-bot/delete-bot.command';
+import { DeleteBotCommandHandler } from '../commands/delete-bot/delete-bot.command-handler';
 import { BotOrmEntity } from '../database/bot.orm-entity';
 import { BotRepository } from '../database/bot.repository';
 import { BotDocumentOrmEntity } from '../database/bot-document.orm-entity';
@@ -621,6 +624,50 @@ describe('bots (integration)', () => {
       [bot.id],
     );
     expect(left).toEqual({ documents: 0, revisions: 0, facts: 0 });
+  });
+
+  // What breaks this: a bot deleted while a channel answers with it, or the
+  // refusal naming the wrong setting (the console's message comes from the
+  // code). FK_telegram_account_answering_bot and
+  // FK_whatsapp_account_answering_bot are the guard; the code is the handler's.
+  it('refuses to delete a bot a channel answers with: BOTS_042 for Telegram, BOTS_043 for WhatsApp', async () => {
+    const remove = new DeleteBotCommandHandler(new BotLookupResolver(bots), bots);
+    const deleting = (bot: BotEntity) =>
+      remove.execute(new DeleteBotCommand({ scope: scope(), botId: bot.id }));
+    const host = async () => {
+      const hostId = randomUUID();
+      await dataSource.query(
+        `INSERT INTO "host" ("id", "ownerUserId", "name", "publicKey", "publicKeyFingerprint")
+         VALUES ($1, $2, 'devbox', 'key', $3)`,
+        [hostId, userId, randomUUID()],
+      );
+      return hostId;
+    };
+    const onTelegram = await create('Juno');
+    const onWhatsapp = await create('Shop');
+    await dataSource.query(
+      `INSERT INTO telegram_account ("organizationId", "userId", "hostId", label, "answeringBotId")
+       VALUES ($1, $2, $3, 'Bot', $4)`,
+      [organizationId, userId, await host(), onTelegram.id],
+    );
+    await dataSource.query(
+      `INSERT INTO whatsapp_account ("organizationId", "userId", "hostId", label, "answeringBotId")
+       VALUES ($1, $2, $3, 'Spare', $4)`,
+      [organizationId, userId, await host(), onWhatsapp.id],
+    );
+
+    await expect(deleting(onTelegram)).rejects.toMatchObject({
+      code: 'BOTS_042',
+      detail: expect.stringContaining('Settings → Telegram'),
+    });
+    await expect(deleting(onWhatsapp)).rejects.toMatchObject({
+      code: 'BOTS_043',
+      detail: expect.stringContaining('Settings → WhatsApp'),
+    });
+    expect((await bots.findOneById(scope(), onWhatsapp.id)).isSome()).toBe(true);
+
+    await dataSource.query(`UPDATE whatsapp_account SET "answeringBotId" = NULL`);
+    expect(await deleting(onWhatsapp)).toBe(onWhatsapp.id);
   });
 
   describe('skills', () => {

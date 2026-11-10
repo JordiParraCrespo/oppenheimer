@@ -2171,6 +2171,25 @@
           "type": "string",
           "minLength": 1,
           "maxLength": 8000
+        },
+        "replyTo": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128
+            },
+            "senderId": {
+              "type": "string",
+              "minLength": 3,
+              "maxLength": 128
+            }
+          },
+          "required": [
+            "id",
+            "senderId"
+          ]
         }
       },
       "required": [

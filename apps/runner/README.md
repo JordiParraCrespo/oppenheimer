@@ -39,6 +39,14 @@ host with Argent installed needs no setup: each new session takes one of the
 simulators and emulators running at the time, and keeps it for its life.
 `RUNNER_DEVICES` names them instead, or turns it `off` (`.env.example`).
 
+A host can hold one WhatsApp linked device (`product/next-steps/whatsapp.md`):
+it pairs by QR from the console, keeps what arrives in an on-disk outbox
+until the control plane acks it, and sends inside the host's own budget (20
+a minute, 300 a day). A reply quotes the message it answers when the control
+plane names one (`whatsapp.send`'s `replyTo`). A sender or direct chat that
+WhatsApp addresses by `@lid` is reported by its phone number whenever the
+device knows it, so a bot's owner, named by number, is recognised either way.
+
 `runner serve` and the `apikeys` context are the template this grew from:
 an inbound API-key surface on a TCP port, which is what the container
 image runs and what the API talks to today. **Nothing product-shaped

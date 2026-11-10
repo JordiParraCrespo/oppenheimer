@@ -34,8 +34,9 @@ type Device interface {
 	// Logout removes the device from the phone's linked devices and deletes
 	// its keys, which it does even when WhatsApp cannot be reached.
 	Logout(ctx context.Context) error
-	// Send sends a text message to a chat; the id and time are WhatsApp's.
-	Send(ctx context.Context, chatID, text string) (id string, at time.Time, err error)
+	// Send sends a text message to a chat, as a reply to quote when there is
+	// one; the id and time are WhatsApp's.
+	Send(ctx context.Context, chatID, text string, quote *domain.Quote) (id string, at time.Time, err error)
 	Close()
 }
 
