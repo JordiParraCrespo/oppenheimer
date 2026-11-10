@@ -1153,6 +1153,18 @@ as the person does and act on them. Three rules hold it:
   cancels the turn the prompt opened. The console does not draw the log
   yet; until it does, the bot's chat (the call's activity line and the
   approval card) and the log are where the person sees it.
+- **A turn reads only so much of its sessions.** `read_session` and
+  `read_session_transcript` share one per-turn budget, counted in the
+  characters they return (`bot-session-read-budget.policy.ts`); once a turn
+  has read about 300,000 of them, further reads are refused with a note to
+  answer from what it has or read a narrower slice. Each page is already cut
+  to `BOT_TOOL_OUTPUT_MAX`, so one call is bounded, but a broad turn — a
+  recap over a day — calls the two across dozens of sessions, some huge, and
+  the pages pile into the bot's own context faster than its autocompaction
+  sheds them, until the provider refuses the whole turn ("change the message
+  or the model") and the turn's work is lost, not just a read (2026-11-10,
+  seen on a Facturas bot's recap turns on dev). The budget spends a read to
+  save the turn.
 
 #### Commands on a host
 
