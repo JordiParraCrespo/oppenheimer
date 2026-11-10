@@ -7,6 +7,7 @@ import {
 import { eventNote } from './bot-history.policy';
 import { BotMessageEntity } from './bot-message.entity';
 import { failedWakeAsk } from './bot-recovery.policy';
+import { SESSION_UNBLOCK_RULE } from './bot-session-decision.policy';
 import { fenceUntrusted } from './bot-tool-text.policy';
 import { BotTurnEntity } from './bot-turn.entity';
 
@@ -449,8 +450,7 @@ function taskLines(cause: Extract<SessionWakeCause, { kind: 'state' }>): string[
 
 /** What the turn a wake opens is asked to do, by what the event says. */
 const WAKE_ASKS: Readonly<Record<BotSessionEventState, string>> = {
-  requires_action:
-    "The agent is blocked on a question or a permission in the session. Read what it waits on with get_session, then unblock it with answer_session rather than sending the person to the session: answer what the session's task and your instructions point to, and turn down (the No option) what goes against the task. A dialog that lets something destructive run goes to the person on a card of its own whatever your permissions say, so still call answer_session with the option you recommend, and say in a sentence what it asks and why you recommend it. Only when get_session shows no decision to answer (the agent waits on something it could not read), tell the person in a sentence or two what it waits on and point them at the session with show_session.",
+  requires_action: `The agent is blocked on a question or a permission in the session. Read what it waits on with get_session, then unblock it with answer_session rather than sending the person to the session. ${SESSION_UNBLOCK_RULE} Only when get_session shows no decision to answer (the agent waits on something it could not read), tell the person in a sentence or two what it waits on and point them at the session with show_session.`,
   completed:
     'Read the session with get_session first, then tell the person what the agent actually did, from its result. Say only what the result shows: if it does not say tests passed, do not say they did. Its result is a claim: check it as "Check before you report" says, with read_session_transcript when you have it. If the work was a step of something you were doing, carry on with the next step within your permissions. Then end with a recap of this session: the recap skill\'s brief (use_skill), scoped to this one session.',
   failed: failedWakeAsk(),

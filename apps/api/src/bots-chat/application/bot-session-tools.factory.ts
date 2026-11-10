@@ -29,7 +29,7 @@ import {
   sessionLaunchRefusal,
   sessionSummary,
 } from '../bot-session-tool.mapper';
-import { answerNeedsPerson } from '../domain/bot-session-decision.policy';
+import { answerNeedsPerson, SESSION_UNBLOCK_RULE } from '../domain/bot-session-decision.policy';
 import { modelChoicesByAgent } from '../domain/bot-session-launch.policy';
 import { botSessionRefusal } from '../domain/bot-session-ownership.policy';
 import { idempotencyKeyOf } from '../domain/bot-tool-idempotency.policy';
@@ -400,8 +400,7 @@ export class BotSessionToolsFactory implements BotToolArea {
         });
       },
       subject: (input, context) => this.sessionSubject(context, input.session_id),
-      description:
-        "Answers what a session's agent is waiting on, so it carries on: a question it asked (answers, one per question, picks by index and/or words of your own) or a permission dialog (option, by index). get_session shows the decision, its id and its options. Use it to unblock a session rather than sending the person to it: pick what the session's task and the person's instructions point to (a question about how to do the task, a permission for a step the task needs such as reading, building, testing or editing in its checkout), and turn down (the No option) what goes against the task. A dialog that lets something destructive run (a recursive delete, a forced push, a history rewrite, dropping data, sudo) is always put to the person on a card of its own, whatever your permissions: pick the option you recommend and say why in your reply, and they decide it in the chat. Afterwards get_session shows whether the decision cleared.",
+      description: `Answers what a session's agent is waiting on, so it carries on: a question it asked (answers, one per question, picks by index and/or words of your own) or a permission dialog (option, by index). get_session shows the decision, its id and its options. Use it to unblock a session rather than sending the person to it. ${SESSION_UNBLOCK_RULE} Afterwards get_session shows whether the decision cleared.`,
       input: z.object({
         session_id: z.uuid().describe('The session (from list_sessions).'),
         decision_id: z.string().min(1).max(128).describe("The decision's id, from get_session."),

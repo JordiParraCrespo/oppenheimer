@@ -11,6 +11,14 @@ import type { SessionDecision } from '@oppenheimer/shared';
  */
 
 /**
+ * How a bot answers a session it unblocks, said once for every place that
+ * asks it to (the needs-input wake, `answer_session`). What escalates is
+ * `answerNeedsPerson`'s; this only tells the bot.
+ */
+export const SESSION_UNBLOCK_RULE =
+  "Answer what the session's task and the person's instructions point to, and turn down (the No option) what goes against the task. Letting a destructive dialog through (a recursive delete, a forced push, a history rewrite, dropping data, sudo) always goes to the person on a card of its own, whatever your permissions: still call answer_session with the option you recommend, and say in a sentence what it asks and why you recommend it.";
+
+/**
  * What a permission dialog asks about when it names something that cannot
  * be taken back: a recursive delete, a history rewrite or a forced
  * push, wiping a disk or a database, root. Read on the dialog's title and
