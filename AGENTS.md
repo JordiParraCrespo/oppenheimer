@@ -105,6 +105,9 @@ When you add a file that mentions an optional app (CI, compose,
   plain question, skips it. The protocol is `/steward`, "Merging".
   **Every task ends with `/recap`**, typed or not, questions included: its
   last message is the recap's brief.
+- **Ask the user once.** Before asking the user anything, read
+  `.agents/answers.md`; when the user answers a question that could come up
+  again, add it there. The file says how.
 - **Stage files by path.** `.claude/settings.json` and the hooks in
   `.agents/hooks/` refuse `git add -A`/`.`, pushes to `main`, force pushes,
   `git reset --hard` and the like; read them for the exact policy and for
