@@ -348,13 +348,9 @@ before this get no heartbeat until asked.
   `HEARTBEAT_OK` reply that is dropped, and skipping a heartbeat with nothing
   to do. So routines run on their schedule until the owner pauses them, and
   what bounds their cost is the run budget, the overlap guard and quiet
-  turns. Gone with it: the policy, the `unattended` pause, the bot's
-  `ownerSeenAt` and `routineSpendGuard`, `POST /bots/:id/seen`, the
-  workspace's `unattendedReports` and `unattendedAwaySeconds`, the Inbox line
-  and the Routines tab's switch (migration `RemoveRoutineSpendGuard`, which
-  resumes every routine paused as `unattended`). Runs already skipped as
-  `unattended` keep that reason in their history. If cost needs a bound
-  again, active hours per routine is the shape to reach for first.
+  turns. What was removed is migration `RemoveRoutineSpendGuard` and the
+  decision log below. If cost needs a bound again, active hours per routine
+  is the shape to reach for first.
 - A routine **runs as its owner** (note 16 §Q5), re-checked at dispatch,
   with the bot's permissions as they are at the run; a routine never
   widens them. A routine created **by the bot** goes through
