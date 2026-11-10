@@ -387,6 +387,9 @@ describe('BotHostToolsFactory', () => {
       expect(asked).toMatchObject({ scope: owner, sessionId: found.id });
       expect(result.isError).toBeFalsy();
       expect(result.data?.sessionId).toBe(found.id);
+      // 2026-11-10: a bot answered with the button alone, its finding left
+      // in its thinking; the result says the reply still answers.
+      expect(result.content).toContain('now write your reply as if there were no button');
     });
 
     // The regression: a session the owner cannot read still gets a button.

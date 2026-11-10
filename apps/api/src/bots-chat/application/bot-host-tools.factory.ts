@@ -177,11 +177,15 @@ export class BotHostToolsFactory implements BotToolArea {
         project_id: z
           .uuid()
           .optional()
-          .describe('Only sessions in this project (an id from list_projects).'),
+          .describe(
+            'Only sessions in this project (an id from list_projects). Pass it when the person names a project.',
+          ),
         host_id: z
           .uuid()
           .optional()
-          .describe('Only sessions on this host (an id from list_hosts).'),
+          .describe(
+            'Only sessions on this host (an id from list_hosts). Pass it when the person names a host.',
+          ),
         state: z
           .enum(SESSION_STATES)
           .optional()
@@ -292,14 +296,14 @@ export class BotHostToolsFactory implements BotToolArea {
       readOnly: true,
       scope: 'sessions:read',
       description:
-        "Gives the person a button that opens a session in the console, on this call's line in the chat: use it when you point them at a session, above all one that needs them in its terminal (a permission dialog get_session cannot answer). A session you start with start_session already carries one. Do not write the session's address in your reply; this is the link.",
+        "Gives the person a button that opens a session in the console, on this call's line in the chat: use it when you point them at a session, above all one that needs them in its terminal (a permission dialog get_session cannot answer). A session you start with start_session already carries one. Do not write the session's address in your reply; this is the link. The button adds to your answer and is never the answer: still say in your reply, in words, what you found (what the session did, why it failed, what it waits on).",
       input: z.object({ session_id: z.uuid().describe('A session id from list_sessions.') }),
       run: async (input, context) => {
         const session = await this.queryBus.execute<FindSessionQuery, WorkSessionEntity>(
           new FindSessionQuery({ scope: context.owner, sessionId: input.session_id }),
         );
         return {
-          content: `The person has a button that opens session ${session.id} "${session.name}" on this call's line.`,
+          content: `The person has a button that opens session ${session.id} "${session.name}" on this call's line. It only opens the session and answers nothing: now write your reply as if there were no button, with what you found in words (what the session did, why it failed, what it waits on). The person reads your reply, never your thinking.`,
           sessionId: session.id,
         };
       },
@@ -389,7 +393,7 @@ export class BotHostToolsFactory implements BotToolArea {
       name: 'search_sessions',
       readOnly: true,
       scope: 'sessions:read',
-      description: `Searches every session of the person's workspace, on any host and closed ones too, for words in its name and its log: the tasks and follow-up prompts it was given, the agent's results, notes, questions and failures. Use it before saying you do not know whether or how something was done, and to find the session where a task, a bug or a decision was worked on; then read it with read_session or read_session_transcript. It does not search the agents' conversations. Takes web-search syntax: "exact phrase", -excluded, OR. Best matches first, at most ${SESSION_SEARCH_HITS_PER_SESSION} excerpts per session and ${SESSION_SEARCH_LIMIT_MAX} sessions per call.`,
+      description: `Searches every session of the person's workspace, on any host and closed ones too, for words in its name and its log: the tasks and follow-up prompts it was given, the agent's results, notes, questions and failures. Use it before saying you do not know whether or how something was done, and to find the session where a task, a bug or a decision was worked on; then read it with read_session or read_session_transcript. When the person names a project or a host, pass its id (project_id from list_projects, host_id from list_hosts), so other projects' or hosts' sessions do not crowd the hits. It does not search the agents' conversations. Takes web-search syntax: "exact phrase", -excluded, OR. Best matches first, at most ${SESSION_SEARCH_HITS_PER_SESSION} excerpts per session and ${SESSION_SEARCH_LIMIT_MAX} sessions per call.`,
       input: z.strictObject({
         query: z
           .string()
@@ -402,11 +406,15 @@ export class BotHostToolsFactory implements BotToolArea {
         host_id: z
           .uuid()
           .optional()
-          .describe('Only sessions on this host (an id from list_hosts).'),
+          .describe(
+            'Only sessions on this host (an id from list_hosts). Pass it when the person names a host.',
+          ),
         project_id: z
           .uuid()
           .optional()
-          .describe('Only sessions in this project (an id from list_projects).'),
+          .describe(
+            'Only sessions in this project (an id from list_projects). Pass it when the person names a project.',
+          ),
         since: z
           .union([z.iso.date(), z.iso.datetime({ offset: true })])
           .optional()

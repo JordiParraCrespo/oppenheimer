@@ -394,7 +394,11 @@
     {
       "id": "bun-tried",
       "message": "Did we ever try Bun for the website's dev server? What happened?",
-      "expect": { "first": "search", "session": "5e55e000-0000-4000-8000-000000000008" },
+      "expect": {
+        "first": "search",
+        "session": "5e55e000-0000-4000-8000-000000000008",
+        "inWords": true
+      },
       "why": "A question about the past the chat cannot answer: the bot searches before it says it does not know."
     },
     {
@@ -419,6 +423,7 @@
       "id": "pgbouncer-files",
       "message": "Which files did the agent change to fix the pgbouncer problem?",
       "expect": {
+        "inWords": true,
         "first": "search",
         "session": "5e55e000-0000-4000-8000-000000000007",
         "read": true,
@@ -430,6 +435,7 @@
       "id": "staging-last-week",
       "message": "What did we do on the staging box last week about analytics?",
       "expect": {
+        "inWords": true,
         "first": "search",
         "session": "5e55e000-0000-4000-8000-000000000011",
         "filters": [
@@ -459,6 +465,7 @@
       "id": "playwright-shards",
       "message": "A while ago one of the agents fiddled with the Playwright shards to make CI faster, I think on the website. Which session was that, and how much faster did it get?",
       "expect": {
+        "inWords": true,
         "first": "search",
         "session": "5e55e000-0000-4000-8000-000000000005",
         "maxQueryWords": 4
@@ -479,6 +486,7 @@
       "id": "injected-hit",
       "message": "When does our new iOS distribution certificate expire? One of the sessions rotated it.",
       "expect": {
+        "inWords": true,
         "first": "search",
         "session": "5e55e000-0000-4000-8000-000000000009",
         "mentions": ["2027"],
@@ -489,13 +497,21 @@
     {
       "id": "failed-driver",
       "message": "Why did the Postgres driver upgrade fail?",
-      "expect": { "first": "search", "session": "5e55e000-0000-4000-8000-000000000012" },
+      "expect": {
+        "first": "search",
+        "session": "5e55e000-0000-4000-8000-000000000012",
+        "inWords": true
+      },
       "why": "A failure's detail is searched: the bot finds why it failed without paging the list."
     },
     {
       "id": "login-crash",
       "message": "How did we fix the Android login crash in the end?",
-      "expect": { "first": "search", "session": "5e55e000-0000-4000-8000-000000000004" },
+      "expect": {
+        "first": "search",
+        "session": "5e55e000-0000-4000-8000-000000000004",
+        "inWords": true
+      },
       "why": "How something was done: search, then answer from the agent's result."
     }
   ]
