@@ -28,7 +28,6 @@ import { PROJECTS_GROUP, useSidebarOrder } from '../hooks/use-sidebar-order';
 import { listedProjects } from '../lib/hidden-projects';
 import { listedSessions } from '../lib/hidden-sessions';
 import {
-  ALL,
   activeFilters,
   agentOptions,
   applyFilters,
@@ -38,6 +37,7 @@ import {
   projectOptions,
   repositoryOptions,
   type SessionFilters,
+  withoutChip,
 } from '../lib/session-filters';
 import { matchesQuery, sidebarList } from '../lib/session-groups';
 import { splitPinned } from '../lib/session-pins';
@@ -132,7 +132,7 @@ export function SessionsSidebarBody() {
   const narrowed = dirty || query.trim().length > 0;
   const pins = useSessionPins();
   const { pinned, rest } = splitPinned(visible, pins.pins);
-  const picked = filters.project === ALL ? null : filters.project;
+  const picked = filters.project[0] ?? null;
   const listing = listedProjects(projects, rest, hidden, picked);
   const {
     groups,
@@ -198,7 +198,7 @@ export function SessionsSidebarBody() {
           onFiltersClear={() =>
             setFilters((current) => ({ ...DEFAULT_FILTERS, sort: current.sort }))
           }
-          onFacetClear={(key) => setFilters((current) => ({ ...current, [key]: ALL }))}
+          onFacetClear={(chip) => setFilters((current) => withoutChip(current, chip))}
           onNewProject={() => dialogs.open({ kind: 'project' })}
           query={query}
           onQueryChange={setQuery}
