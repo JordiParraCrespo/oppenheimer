@@ -779,6 +779,7 @@ one row of `bot_skill`, the bot's own, at most 50 a bot.
 |------|------|---------|
 | `use_skill` | Read one of its skills in full, to follow it | auto |
 | `save_skill` | Save a skill, or replace the one of that name, as the bot's | auto |
+| `patch_skill` | Replace one exact passage of a skill's body, as the bot's (below) | auto |
 | `delete_skill` | Delete a skill and its command | auto |
 
 - **Its name is its command.** Lowercase letters, digits and hyphens, at
@@ -807,9 +808,60 @@ one row of `bot_skill`, the bot's own, at most 50 a bot.
   adds, edits and deletes. The composer's `/` menu offers the ones the
   person may run as the command is typed: arrows move, Tab or Enter picks,
   Escape closes it.
+- **The bot learns on its own** (2026-11-09, from Hermes Agent's learning
+  loop). A turn offered `save_skill` is told, in the same words every turn
+  and after its skills list, that it may save a skill unasked after a task
+  that took real work (several tool calls, a dead end worked around) and is
+  likely to come again, the person saying it comes back (every week, before
+  every release) being reason enough: never for a one-off or a lookup of a
+  call or two; at most one new skill a turn, named in its answer. A skill
+  never holds a secret or anyone's personal data (a key, token or password,
+  bank or card details, a mail address, phone number or messages): the bot
+  leaves them out of the body and says where the person keeps them. (Until
+  2026-11-10 it said "many tool calls" and "anything a few steps long",
+  which kept a six-call release checklist from ever being saved, and "the
+  person's private data (mail, messages, keys)", under which one eval run
+  in about eighteen saved a skill with the person's IBAN in it.)
+  - *The reminder.* A turn someone is waiting on (`BOT_ATTENDED_ORIGINS`:
+    never a routine's run, a wake, a goal's continuation or a loop's run)
+    that has run 6 of its own tool calls (`BOT_SKILL_NUDGE_AFTER_STEPS`;
+    8 until 2026-11-10) with no skill used (a built-in included), saved or
+    fixed, and that did not open with one, is reminded once: a line after
+    that call's result, which the chat's stored step does not keep. A call
+    that raised a card does not carry it, and a `delegate` child or a turn
+    not offered `save_skill` never gets it. Since 2026-11-10 the skills
+    paragraph announces it, in the same bytes every turn: Oppenheimer
+    itself adds it at the end of a tool's result, after anything fenced,
+    in an `<oppenheimer_reminder>` tag, and that line is Oppenheimer's,
+    not the tool's or its data. The reminder says so too, and every result
+    of a turn that can be reminded has that tag neutralised
+    (`carrySkillNudge`), so a page, a command's output or a session's log
+    cannot forge it. Before, one run read the reminder after a command's
+    fenced output as an injection and ignored it.
+  - *Fixing.* `use_skill` says who wrote the skill last (2026-11-10;
+    before, the bot was never told, so it left its own stale step alone
+    "not sure I was the last to edit it", and tried `patch_skill` on the
+    person's). On one of the bot's own it ends by telling it so and to fix
+    a step it found wrong or stale with `patch_skill` once the task is
+    done, and say so; on the person's, that it is their words: say what it
+    would change and change it only if they ask; a built-in skill's ends
+    with neither. The prompt's skills list does not mark authorship. `patch_skill`
+    replaces one exact, unique passage (none, or more than one, changes
+    nothing and says why), and the result stays within the body's limit.
+  - *Whose.* A skill the bot wrote last it replaces (`save_skill`) or fixes
+    unasked; one the person wrote last only when they asked in this
+    conversation (`asked_by_person`), otherwise it proposes the change in
+    its answer. A new skill needs no ask. Oppenheimer's own skills and
+    commands are neither saved over nor fixed: a name the product holds,
+    with no row of the bot's under it, is refused in the create command's
+    words ("Oppenheimer uses that name").
+  - *What the person sees.* Each save, fix or delete is a line in the
+    chat's activity like any other call ("Save skill", "Patch skill" and
+    the name), and the skill shows in Settings → Skills as the bot's.
 - **Not built.** Grok Bot's library shared by all of a person's bots, a
   registry like OpenClaw's ClawHub, and skills that dispatch straight to a
-  tool.
+  tool; Hermes Agent's review pass after a turn, with a model call of its
+  own, and a skill's history to undo a fix.
 
 **Oppenheimer's own guide** (2026-11-07, from how Claude Code knows Claude
 Code: its docs are published, with an `llms.txt`, and it reads them before
@@ -867,7 +919,8 @@ learn fast what is going on.
 
 - **`recap`, a second built-in skill.** Every bot has it, listed under "Your
   skills" when the turn offers `use_skill` and `list_sessions`. It reads this
-  chat (`search_chat`), the sessions (`list_sessions`, `read_session`), the
+  chat (`search_chat`), the sessions (`list_sessions`, `read_session`, and
+  `search_sessions` for a topic since 2026-11-09), the
   person's pull requests (`list_pull_requests`, queue "mine") and the plan
   (`plan_summary`), skipping what the bot cannot use, and answers with where
   things stand, a line per thread, what waits on the person and the one next
@@ -1060,7 +1113,7 @@ agent's, in a session, where Claude Code ships them.
 | `list_hosts` | Hosts, online or not, their runner version, and the agents they can run | auto |
 | `update_host_runner` | Ask a connected host's runner to install the newest release now, through the console's own Update runner (`UpdateHostRunnerCommand`, `POST /hosts/{id}/update`); scope `hosts:write`. The tools that hit a runner too old (a transcript, a shared file's preview, a terminal watch) name it, so a bot offers the update rather than asking the person to do it (added 2026-11-08) | ask |
 | `list_sessions` / `get_session` | Sessions and their state, each with its project and the group the console's dot shows; filtered by project, host, state or group; `get_session` also shows a pending question or permission dialog with its id and options (built 2026-10-27, issue #493) | auto |
-| `show_session` | Gives the person the console's Open session button for a session the bot names, on the call's line in the chat: the same button a session `start_session` started carries, drawn from the call's session and never from the reply's words, so a bot can point the person at a session it only found (one waiting on a dialog only its terminal shows). Scope `sessions:read` (added 2026-11-09) | auto |
+| `show_session` | Gives the person the console's Open session button for a session the bot names, on the call's line in the chat: the same button a session `start_session` started carries, drawn from the call's session and never from the reply's words, so a bot can point the person at a session it only found (one waiting on a dialog only its terminal shows). The button adds to the answer and is never it: the description and the call's result say so, and that the person reads the reply, never the bot's thinking (2026-11-10; before, a bot often answered only "The button above opens the session", its finding left in its thinking). Scope `sessions:read` (added 2026-11-09) | auto |
 | `start_session` | Start an agent on a host, in a new worktree or a folder, with a task; the session's origin is `bot`. It launched at `auto` on the host's default model until 2026-11-10 (decided 2026-10-18: nobody sits at a bot's terminal, so `ask` would wait forever); since then it takes the composer's foot row and branch (`model`, `effort`, `permission`, `base_branch`), read by `bots-chat/domain/bot-session-launch.policy.ts`, which is the contract: what each field accepts, what is refused, and that a call at `full` always asks on a card of its own for that call alone. The eval is `scripts/evals/bot-session-launch/` | ask |
 | `start_cloud_session` | Start a session in a vendor's cloud on a project's repository; `agent` picks the cloud. `claude-code` (default, claude.ai/code) and `codex` (chatgpt.com/codex, with an optional `codex_environment`) go through the sessions' own create with `cloud`, so a host's runner runs `claude --cloud` or `codex cloud exec` in a scratch checkout, exactly as the console's cloud place and a `claude-cloud` automation do; host chosen as `start_session`'s. It waits (at most 120 s, the runner's own limit) for the host to report the session's id and answers with its URL. `cursor` goes through `StartCloudSessionCommand` (`POST /sessions/cloud`'s), on the owner's own Cursor key with no host and an optional `model`; the card says it runs on that key, and a missing key is the call's error (`CLOUD_AGENTS_004`). Scope `sessions:write`, origin `bot`; `get_session` shows the URL after. Watched as `start_session`'s unless `watch` is false (2026-11-07; it was not watched, as followed at its vendor, until a start that failed went unreported); an answer with no link is not a start (added 2026-10-30; Codex and Cursor 2026-11-02) | ask |
 | `watch_session` / `unwatch_session` / `list_watches` | Follow a session, so its task needing input or ending wakes the bot (`start_session` follows its own session); built 2026-10-22, note 27. A `pattern` wakes it when the terminal prints a matching line, matched on the host (2026-10-29) | auto |
@@ -1069,6 +1122,7 @@ agent's, in a session, where Claude Code ships them.
 | `send_to_session` | Type a follow-up prompt into a running session whose agent waits at its prompt; logged as `prompt.sent` with the bot as sender, and it opens a `follow_up` turn the bot then watches (built 2026-10-27) | ask |
 | `answer_session` | Answer the question or permission dialog a session's agent waits on, through the Inbox's own command (built 2026-10-27) | ask |
 | `read_session` | A session's recent log in words: tasks and follow-ups with their sender, the agent working, blocked or done, questions, failures, stops. The log only, never the terminal or the agent's conversation (built 2026-10-27; "recent output" was the plan). `after_seq` reads only what followed an entry; `send_to_session` and `answer_session` name the entry their input followed (2026-10-29) | auto |
+| `search_sessions` | Search every session of the workspace, on any host and closed ones included, for words in its name and log (tasks, follow-ups, the agent's results, notes, questions, failures): web-search syntax, best first, at most 2 excerpts per session, each with the session's id for `read_session`; filters `host_id`, `project_id`, `since`. Not the agents' transcripts (2026-11-09; below) | auto |
 | `stop_session` / `close_session` | Stop it, or close and clean up. `close_session` is the sessions' own close (`CloseSessionCommand`: push each branch, remove the worktree; unpushed work kept unless `accept_unpushed_work`) and only for a session whose origin is `bot`; any other is refused before a card, the person's to close. The `failed` wake offers it once the person is told, so a failed start does not stay in the sidebar (built 2026-11-09) | ask |
 | `list_folders` | Browse a host's folders | auto |
 | `run_command` | Run one program on a host and read its exit code, stdout and stderr in the same turn, only what that host's own policy allows (below; built 2026-11-07) | ask |
@@ -1174,6 +1228,36 @@ bots that run bash or ssh interactively, as a person at a keyboard does.
 
 On the wire it is `terminal.drive` and `terminal.screen`, gated on the
 `terminal.drive` capability (`01-protocol.md`).
+
+**Searching every session** (2026-11-09, from Hermes Agent's session
+search). A bot could list sessions and read one it had the id of, but not
+find the one where "the auth bug" was worked on last week. `search_sessions`
+searches what the control plane's Postgres holds, in the owner's scope like
+every session read:
+
+- **What it searches.** The session's name, and the words of its log
+  entries: the first task and follow-up prompts (`prompt.first`,
+  `prompt.sent`, `turn.requested`), a turn's result (`turn.ended`), a
+  failure's detail, a new name, the agent's notes and wake notes, its status
+  report's title and message, the questions and permission dialogs it raised
+  with their options, and a shared file's name and caption. Ids, hashes,
+  senders and JSON keys are not searched (`session-search.policy.ts`, and
+  `work_session_event_search_vector` in the `AddSessionSearch` migration,
+  which a spec holds to the same kinds).
+- **What it does not.** The agent's own transcript stays on the host and is
+  read only through the runner, so it is not searched; nor are other bots'
+  chats. Closed (resolved) sessions are searched like any other; a session is
+  deleted only with its workspace.
+- **One session, two lines.** Postgres full text with the `simple`
+  configuration and web-search syntax, as `search_chat`; each session keeps
+  its 2 best entries, and sessions come best hit first, the latest on a tie,
+  at most 20 a call, so one chatty session does not fill the page. The hits
+  are fenced as the sessions' data, and a call with none suggests other or
+  fewer words. `recap` uses it for a topic.
+- **The filters when the person names one** (2026-11-10). The description
+  and the `project_id`/`host_id` parameters say to pass the id when the
+  person names a project or a host; before, a bot read `list_projects` for
+  the id and then searched the whole workspace.
 
 ### 4.3 Projects and the plan
 | Tool | Does | Default |
@@ -1982,3 +2066,25 @@ The decisions it produced:
   nobody waits on moved to a queue of their own (`bot-background-turns`,
   §8), a turn's end is decided once however often its job runs, and the
   chat shows where a turn compacted.
+- 2026-11-09: **a bot saves and fixes its own skills** (§4.1, Skills), from
+  Hermes Agent's learning loop. It may save one unasked after hard work
+  likely to come again, is reminded once on a turn someone waits on after 8
+  tool calls with no skill, and fixes a stale step with `patch_skill`. A
+  skill the person wrote last it replaces or fixes only when they asked
+  (`save_skill` too), and Oppenheimer's own skills never. It refines
+  2026-10-31's skills, which the bot saved only when asked.
+  `scripts/evals/bot-skills` measures it.
+- 2026-11-09: **a bot searches every session** (§4.2, from Hermes Agent's
+  session search). `search_sessions` finds a session by the words of its
+  name and log, on any host and closed ones included, each session cut to
+  its best 2 hits; the agents' transcripts on the hosts are not searched.
+  `scripts/evals/bot-session-search` measures when a bot reaches for it.
+- 2026-11-10: **the skill reminder is announced, `use_skill` says whose a
+  skill is, and the reminder comes after 6 calls** (§4.1, Skills). The
+  skills paragraph says Oppenheimer adds one `<oppenheimer_reminder>` line
+  at the end of a tool's result, and a tool's own output cannot forge it;
+  `use_skill` ends with a fix note on the bot's own skill and "propose,
+  change only if asked" on the person's; work the person says comes back
+  is reason enough to save, and the reminder comes after 6 tool calls, not
+  8. `search_sessions` says to pass a named project's or host's id, and
+  `show_session` that its button is never the answer (§4.2).

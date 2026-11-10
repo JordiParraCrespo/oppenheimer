@@ -24595,6 +24595,469 @@
         ]
       }
     },
+    "/api/v1/inbox/reports": {
+      "get": {
+        "description": "The workspace's reports in one status, the newest first, at most 100: the open ones, which wait on the owner, unless `status=answered`.",
+        "operationId": "findInboxReports",
+        "parameters": [
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "enum": [
+                "open",
+                "answered"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/InboxReportResponseDto"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "TENANT_001 — No active workspace",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FLAG_003 — The \"inbox\" feature is switched off for the caller",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Inbox reports",
+        "tags": [
+          "Inbox"
+        ]
+      },
+      "post": {
+        "description": "A problem for the workspace’s owner, with up to 4 PNG, JPEG, GIF or WebP pictures of up to 5 MB each under `images`, judged by their bytes. The owner answers it in the Inbox; read the answer with `GET /inbox/reports/:id`.",
+        "operationId": "postInboxReport",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "title": {
+                    "type": "string",
+                    "maxLength": 200
+                  },
+                  "body": {
+                    "type": "string",
+                    "maxLength": 4000
+                  },
+                  "source": {
+                    "type": "string",
+                    "maxLength": 80,
+                    "description": "Who is sending it."
+                  },
+                  "link": {
+                    "type": "string",
+                    "format": "uri",
+                    "description": "Where the problem can be seen."
+                  },
+                  "images": {
+                    "type": "array",
+                    "maxItems": 4,
+                    "items": {
+                      "type": "string",
+                      "format": "binary"
+                    }
+                  }
+                },
+                "required": [
+                  "title"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InboxReportResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "TENANT_001 — No active workspace",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FLAG_003 — The \"inbox\" feature is switched off for the caller",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "INBOX_008 — Picture too large",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "INBOX_009 — Not a picture",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "INBOX_007 — Too many pictures",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "RATE_001 — Rate limit reached",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Send a report to the Inbox",
+        "tags": [
+          "Inbox"
+        ]
+      }
+    },
+    "/api/v1/inbox/reports/{id}": {
+      "get": {
+        "description": "One report with its `status` and, once the owner has answered, its `answer`. This is what a report’s sender asks to learn the answer.",
+        "operationId": "findInboxReport",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InboxReportResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "TENANT_001 — No active workspace",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FLAG_003 — The \"inbox\" feature is switched off for the caller",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "INBOX_005 — Report not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Read an Inbox report",
+        "tags": [
+          "Inbox"
+        ]
+      }
+    },
+    "/api/v1/inbox/reports/{id}/images/{imageId}/content": {
+      "get": {
+        "description": "The bytes of a picture a report carries, with its type.",
+        "operationId": "readInboxReportImage",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "imageId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The picture’s bytes"
+          },
+          "400": {
+            "description": "TENANT_001 — No active workspace",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FLAG_003 — The \"inbox\" feature is switched off for the caller",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "INBOX_005 — Report or picture not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Read a picture of an Inbox report",
+        "tags": [
+          "Inbox"
+        ]
+      }
+    },
+    "/api/v1/inbox/reports/{id}/answer": {
+      "post": {
+        "description": "What the person tells the agent that sent the report, once: the report leaves the Inbox, and its sender reads the answer with `GET /inbox/reports/:id`.",
+        "operationId": "answerInboxReport",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AnswerInboxReportRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InboxReportResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "TENANT_001 — No active workspace",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FLAG_003 — The \"inbox\" feature is switched off for the caller",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "INBOX_005 — Report not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "INBOX_006 — Already answered",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Answer an Inbox report",
+        "tags": [
+          "Inbox"
+        ]
+      }
+    },
     "/api/v1/health": {
       "get": {
         "description": "Answers 200 while the process can serve HTTP. Says nothing about PostgreSQL, Redis or any other dependency: that is `/ready`.",
@@ -25569,7 +26032,9 @@
                 "flags:read",
                 "flags:write",
                 "inbox:read",
-                "inbox:write"
+                "inbox:write",
+                "inbox-reports:read",
+                "inbox-reports:write"
               ]
             }
           },
@@ -25628,7 +26093,9 @@
                 "flags:read",
                 "flags:write",
                 "inbox:read",
-                "inbox:write"
+                "inbox:write",
+                "inbox-reports:read",
+                "inbox-reports:write"
               ]
             }
           },
@@ -25729,7 +26196,9 @@
                 "flags:read",
                 "flags:write",
                 "inbox:read",
-                "inbox:write"
+                "inbox:write",
+                "inbox-reports:read",
+                "inbox-reports:write"
               ]
             }
           },
@@ -25854,7 +26323,9 @@
               "flags:read",
               "flags:write",
               "inbox:read",
-              "inbox:write"
+              "inbox:write",
+              "inbox-reports:read",
+              "inbox-reports:write"
             ],
             "example": "users:read"
           },
@@ -25926,7 +26397,8 @@
               "pulls",
               "repositories",
               "flags",
-              "inbox"
+              "inbox",
+              "inbox-reports"
             ],
             "example": "users"
           },
@@ -26022,7 +26494,9 @@
                 "flags:read",
                 "flags:write",
                 "inbox:read",
-                "inbox:write"
+                "inbox:write",
+                "inbox-reports:read",
+                "inbox-reports:write"
               ]
             }
           }
@@ -26095,7 +26569,9 @@
                 "flags:read",
                 "flags:write",
                 "inbox:read",
-                "inbox:write"
+                "inbox:write",
+                "inbox-reports:read",
+                "inbox-reports:write"
               ]
             }
           },
@@ -26203,7 +26679,9 @@
                 "flags:read",
                 "flags:write",
                 "inbox:read",
-                "inbox:write"
+                "inbox:write",
+                "inbox-reports:read",
+                "inbox-reports:write"
               ]
             }
           },
@@ -39667,6 +40145,116 @@
         },
         "required": [
           "mark"
+        ]
+      },
+      "InboxReportImageResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "mimeType": {
+            "type": "string",
+            "enum": [
+              "image/png",
+              "image/jpeg",
+              "image/gif",
+              "image/webp"
+            ],
+            "description": "Judged by the file’s bytes."
+          },
+          "sizeBytes": {
+            "type": "integer"
+          },
+          "name": {
+            "type": "string",
+            "description": "The file’s name as it was sent; only shown."
+          }
+        },
+        "required": [
+          "id",
+          "mimeType",
+          "sizeBytes",
+          "name"
+        ]
+      },
+      "InboxReportResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "title": {
+            "type": "string"
+          },
+          "body": {
+            "type": "string",
+            "description": "Empty when the report has none."
+          },
+          "source": {
+            "type": "string",
+            "description": "Who sent it, in the sender’s own words; empty when not said."
+          },
+          "link": {
+            "type": "string",
+            "nullable": true,
+            "format": "uri",
+            "description": "Where the problem can be seen."
+          },
+          "images": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/InboxReportImageResponseDto"
+            }
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "open",
+              "answered"
+            ]
+          },
+          "answer": {
+            "type": "string",
+            "nullable": true,
+            "description": "What the person answered; null while the report is open."
+          },
+          "answeredAt": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "body",
+          "source",
+          "link",
+          "images",
+          "status",
+          "answer",
+          "answeredAt",
+          "createdAt"
+        ]
+      },
+      "AnswerInboxReportRequest": {
+        "type": "object",
+        "properties": {
+          "text": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2000
+          }
+        },
+        "required": [
+          "text"
         ]
       },
       "LivenessResponseDto": {

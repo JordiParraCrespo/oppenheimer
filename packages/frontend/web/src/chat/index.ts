@@ -7,6 +7,7 @@ export { ChatQueuedRow } from './components/chat-queued-row';
 export { ChatToolOutput } from './components/chat-tool-output';
 export { ChatUsage } from './components/chat-usage';
 export { useExploredLine } from './hooks/use-explored-line';
+export { useObjectUrls } from './hooks/use-object-urls';
 export type { ChatGalleryImage } from './lib/chat-images';
 export type { ChatUsageContext, ChatUsageLimit } from './lib/chat-usage';
 export { formatTokens } from './lib/format-tokens';

@@ -49,7 +49,8 @@ The model is `BOT_MEMORY_EVAL_MODEL` (default `claude-sonnet-5-5`). With
 `ANTHROPIC_API_KEY` set it calls the Messages API; without it, it runs each
 turn through the Claude Agent SDK on the machine's Claude Code login, with
 the tool served the way the Claude bot engine serves it
-(`packages/backend/agents/src/claude/claude-tool-server.ts`).
+(`packages/backend/agents/src/claude/claude-tool-server.ts`). The transport
+is `../bot-turn.ts`, shared with the other bot evals.
 
 It prints a line per case (`G` general, `Y` yours, `?` a value the tool
 refuses, `-` saved nothing, one mark per run), then how many runs leaked a job fact into the general memory and how many
@@ -63,5 +64,6 @@ and writes every save to `reports/` (ignored by git).
 | --- | --- | --- | --- | --- |
 | 2026-11-08 | before (`about: "person"`) | claude-sonnet-5-5 | 75/100 (5 cases fail) | 25 |
 | 2026-11-08 | `MEMORY_CHOICE_RULE` | claude-sonnet-5-5 | 100/100 | 0 |
+| 2026-11-09 | the same, on the shared `../bot-turn.ts` | claude-sonnet-5-5 | 60/60 (3 runs a case) | 0 |
 
 Five runs a case, through the Claude Code login.

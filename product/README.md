@@ -1417,6 +1417,13 @@ earlier note:
   §5 and `next-steps/telegram.md` §2 and §3 changed on 2026-11-09, when the
   owner's `/start` went unanswered: the decision is
   `next-steps/answering-on-telegram-and-whatsapp.md`.
+- `versions/mvp/29-inbox.md` said, from 2026-10-25, that the Inbox stores
+  nothing but your marks and that no agent posts into it. On 2026-11-09 the
+  owner asked for the unattended agents to send him problems with images
+  and to answer them only in the Inbox: a report is now stored
+  (`inbox_report`, up to four pictures), sent by anything holding a token
+  with `inbox-reports:write`, answered from its card, and read back by the
+  agent that sent it (29, "Reports").
 - `versions/mvp/05-screens.md` listed Fable 5.1 among Claude Code's four
   current models. On 2026-11-09 the owner asked for Fable 5.2 in new
   sessions and in bots: it takes Fable 5.1's place, and Fable 5.1 heads
@@ -1427,6 +1434,27 @@ earlier note:
   of its sidebar: the rail and the console's landing go through
   `/plan/open`, which redirects there (the Inbox until another is dragged
   above it).
+- `versions/mvp/25-bots.md` §4.1 (2026-10-31) had a bot save a skill only
+  when the person asked. On 2026-11-09, from Hermes Agent's learning loop,
+  a bot may save one on its own after hard work likely to come again (at
+  most one a turn, never anything private), a turn someone waits on that
+  has run 8 tool calls with no skill used or saved reminds it once, and
+  `patch_skill` fixes one passage of a skill. Either tool changes a skill
+  the person wrote last only when they asked, and neither touches the
+  skills Oppenheimer gives every bot.
+- `versions/mvp/25-bots.md` §4.1 (2026-11-09) reminded a bot after 8 tool
+  calls, in a line it was never told about, and `use_skill` did not say
+  who wrote a skill. On 2026-11-10 the skills paragraph announces the
+  reminder (Oppenheimer's own `<oppenheimer_reminder>` line at the end of
+  a tool's result, which a tool's output cannot forge), the reminder comes
+  after 6 calls, work the person says comes back is reason enough to save,
+  and `use_skill` says whether the bot or the person wrote the skill last.
+- `versions/mvp/25-bots.md` §4.2 (2026-10-27) had a bot find a session only
+  by listing them, newest first, and read one it already had the id of. On
+  2026-11-09, from Hermes Agent's session search, a bot searches every
+  session of the workspace, on any host and closed ones included, for words
+  in its name and log (`search_sessions`); the agents' transcripts on the
+  hosts are not searched. The `recap` skill searches its topic the same way.
 - `versions/mvp/25-bots.md` drew a turn's compaction as a quiet line among
   its calls, the trace at the reply's 15px in muted ink, and the live
   line's orb as `composing`. On 2026-11-09 the owner asked to stop seeing
