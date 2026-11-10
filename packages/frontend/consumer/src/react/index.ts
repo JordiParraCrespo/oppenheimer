@@ -305,6 +305,8 @@ export {
   useSharedSessionStream,
 } from './sessions.stream';
 export {
+  HOST_HOME,
+  type HostHomeSessionInput,
   type LinkTaskSessionVariables,
   type MoveTaskVariables,
   type StartTaskSessionVariables,

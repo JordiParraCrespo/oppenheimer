@@ -5,10 +5,12 @@ export interface StallCheck {
   sessionId: string;
   /** The task handed off. */
   turn: number;
+  /** Which check of the task, from 1 (§4.2). */
+  check: number;
 }
 
 /**
- * Owes a hand-off its stall check at `at` (`27-bot-subscriptions.md` §4.1),
+ * Owes a hand-off a check at `at` (`27-bot-subscriptions.md` §4.1, §4.2),
  * durably: the check runs once the time comes, across a restart.
  */
 export interface BotStallChecksPort {

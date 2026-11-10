@@ -4345,9 +4345,9 @@ export type BotSessionEventResponseDto = {
      */
     turn: number;
     /**
-     * What became of the task, `matched` when its terminal printed a line matching the pattern the bot watches for, or `stalled` when its stall check found it stuck.
+     * What became of the task, `matched` when its terminal printed a line matching the pattern the bot watches for, `stalled` when its stall check found it stuck, or `progress` for the regular look at a task still running.
      */
-    state: 'requires_action' | 'completed' | 'failed' | 'cancelled' | 'expired' | 'matched' | 'stalled' | 'notice';
+    state: 'requires_action' | 'completed' | 'failed' | 'cancelled' | 'expired' | 'matched' | 'stalled' | 'progress' | 'notice';
     /**
      * For `matched`: the pattern and how many lines matched so far; never the text.
      */
