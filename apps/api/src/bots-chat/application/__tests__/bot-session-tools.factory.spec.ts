@@ -98,6 +98,30 @@ function blockedSession(): WorkSessionEntity {
   return session;
 }
 
+/** A running session whose agent asks to delete a folder recursively. */
+function destructiveSession(): WorkSessionEntity {
+  const session = blockedSession();
+  session.recordEvent({
+    seq: 4,
+    kind: SESSION_EVENT_KINDS.AGENT_DECISION,
+    payload: {
+      decision: {
+        kind: 'permission',
+        id: 'perm-2',
+        title: 'Do you want to proceed?',
+        detail: 'Bash command\n  rm -rf ./node_modules ../shared',
+        options: [
+          { label: 'Yes' },
+          { label: "Yes, and don't ask again for rm commands" },
+          { label: 'No, and tell Claude what to do differently (esc)' },
+        ],
+      },
+    },
+    occurredAt: new Date(),
+  });
+  return session;
+}
+
 /** A session a bot started whose host could not start it. */
 function failedBotSession(): WorkSessionEntity {
   const session = WorkSessionEntity.request({
@@ -705,6 +729,42 @@ describe('BotSessionToolsFactory', () => {
       answer: { id: 'perm-1', option: 0 },
     });
   });
+  // What breaks this: Full access or a standing grant letting a bot approve
+  // a recursive delete in a session nobody watched.
+  it('puts letting a destructive dialog through on a card of its own, under Full access too', async () => {
+    const { queryBus, commandBus, approvals, call } = setup('full');
+    const destructive = destructiveSession();
+    queryBus.execute.mockResolvedValue(destructive);
+    await call('answer_session', { session_id: destructive.id, decision_id: 'perm-2', option: 0 });
+    expect(approvals.request).toHaveBeenCalledWith(
+      expect.objectContaining({ tool: 'answer_session', perCallOnly: true }),
+    );
+    expect(commandBus.execute).not.toHaveBeenCalled();
+  });
+
+  it('turns a destructive dialog down on its own under Full access', async () => {
+    const { queryBus, commandBus, approvals, call } = setup('full');
+    const destructive = destructiveSession();
+    queryBus.execute.mockResolvedValue(destructive);
+    await call('answer_session', { session_id: destructive.id, decision_id: 'perm-2', option: 2 });
+    expect(approvals.request).not.toHaveBeenCalled();
+    expect(commandBus.execute.mock.calls[0][0]).toMatchObject({
+      answer: { id: 'perm-2', option: 2 },
+    });
+  });
+
+  // What breaks this: a lookup that fails here and succeeds in the command
+  // lets a destructive approval through unseen.
+  it('puts an answer whose decision it cannot read on a card, under Full access too', async () => {
+    const { queryBus, commandBus, approvals, call, session } = setup('full');
+    queryBus.execute.mockRejectedValueOnce(new Error('connection reset'));
+    await call('answer_session', { session_id: session.id, decision_id: 'perm-1', option: 0 });
+    expect(commandBus.execute).not.toHaveBeenCalled();
+    expect(approvals.request).toHaveBeenCalledWith(
+      expect.objectContaining({ tool: 'answer_session', perCallOnly: true }),
+    );
+  });
+
   describe('close_session', () => {
     it('asks first, the card naming the session and that its worktree goes, nothing closed', async () => {
       const { queryBus, commandBus, approvals, call } = setup('auto');

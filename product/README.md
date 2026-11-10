@@ -814,7 +814,10 @@ earlier note:
   event log in words, never the terminal or the agent's conversation, which
   stay on the host; `send_to_session` came with it, gated on the agent
   waiting at its prompt and logged with the bot as sender, and so did
-  `answer_session`, which the table did not have.
+  `answer_session`, which the table did not have. On 2026-11-07 a bot
+  answered only what its instructions settled; on 2026-11-10 it unblocks
+  the sessions it follows itself, and letting a destructive dialog through
+  is always a card of its own (`versions/mvp/25-bots.md`).
 - `research/cloud-agents.md` §5B ordered cloud places Cursor first, then
   Claude, and said Claude would give no status. On 2026-10-27 the owner
   asked for Claude end to end first: a `cloud` place started by the host's
