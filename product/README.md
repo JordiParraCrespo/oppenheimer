@@ -1435,6 +1435,13 @@ earlier note:
   `patch_skill` fixes one passage of a skill. Either tool changes a skill
   the person wrote last only when they asked, and neither touches the
   skills Oppenheimer gives every bot.
+- `versions/mvp/25-bots.md` §4.1 (2026-11-09) reminded a bot after 8 tool
+  calls, in a line it was never told about, and `use_skill` did not say
+  who wrote a skill. On 2026-11-10 the skills paragraph announces the
+  reminder (Oppenheimer's own `<oppenheimer_reminder>` line at the end of
+  a tool's result, which a tool's output cannot forge), the reminder comes
+  after 6 calls, work the person says comes back is reason enough to save,
+  and `use_skill` says whether the bot or the person wrote the skill last.
 - `versions/mvp/25-bots.md` §4.2 (2026-10-27) had a bot find a session only
   by listing them, newest first, and read one it already had the id of. On
   2026-11-09, from Hermes Agent's session search, a bot searches every
