@@ -137,6 +137,11 @@ describe('useWorkspaceEvents', () => {
     await send({ type: 'inboxMark.changed', itemKey: 'approval:ap-1' });
     expect(invalidated).toEqual([inboxKeys.marks()]);
 
+    // A report posted while the Inbox is open, or answered in another tab.
+    invalidated.length = 0;
+    await send({ type: 'inboxReport.changed', id: 'rep-1' });
+    expect(invalidated).toEqual([inboxKeys.reports()]);
+
     // A project a bot made from chat reaches the sidebar without a reload.
     invalidated.length = 0;
     await send({ type: 'project.changed', id: 'pr-1' });

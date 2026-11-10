@@ -4,6 +4,7 @@ import { InboxApprovalCard } from '@/features/inbox/sections/inbox-approval-card
 import { InboxBotNoticeCard } from '@/features/inbox/sections/inbox-bot-notice-card';
 import { InboxNoticeCard } from '@/features/inbox/sections/inbox-notice-card';
 import { InboxPullCard } from '@/features/inbox/sections/inbox-pull-card';
+import { InboxReportCard } from '@/features/inbox/sections/inbox-report-card';
 import { InboxRunCard } from '@/features/inbox/sections/inbox-run-card';
 import { InboxSessionCard } from '@/features/inbox/sections/inbox-session-card';
 
@@ -35,6 +36,8 @@ export function InboxItemMessage({
       return <InboxBotNoticeCard key={item.key} item={item} copy={copy} from={from} age={age} />;
     case 'run':
       return <InboxRunCard key={item.key} item={item} copy={copy} from={from} age={age} />;
+    case 'report':
+      return <InboxReportCard key={item.key} item={item} copy={copy} from={from} age={age} />;
     case 'session':
       return (
         <InboxSessionCard

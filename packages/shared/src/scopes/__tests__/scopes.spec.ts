@@ -23,8 +23,11 @@ import {
   ungrantableScopes,
 } from '../index.js';
 
-/** A person's own Inbox, which every caller may grant, like their profile. */
-const INBOX = ['inbox:read', 'inbox:write'] as const;
+/**
+ * A person's own Inbox and the reports sent to it, which every caller may
+ * grant, like their profile.
+ */
+const INBOX = ['inbox:read', 'inbox:write', 'inbox-reports:read', 'inbox-reports:write'] as const;
 
 describe('scope catalog', () => {
   it('exposes one group per resource, each with both access levels', () => {
@@ -47,7 +50,7 @@ describe('scope catalog', () => {
   });
 
   it('backs every level with at least one CASL rule, except the caller’s own profile and Inbox', () => {
-    const own: readonly string[] = ['profile', 'inbox'];
+    const own: readonly string[] = ['profile', 'inbox', 'inbox-reports'];
     for (const group of PERMISSION_GROUPS) {
       for (const level of SCOPE_ACCESS_LEVELS) {
         const { policies } = group.levels[level];

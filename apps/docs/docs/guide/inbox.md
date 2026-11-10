@@ -1,6 +1,6 @@
 ---
 title: Inbox
-description: The Inbox in Plan, what lands there (waiting or failed sessions, bot approvals, review requests, mergeable pull requests, failed automation runs, notices from sessions and bots), what you can do with each item, filters, unread, snooze and done, and how agents and bots post to it.
+description: The Inbox in Plan, what lands there (waiting or failed sessions, bot approvals, review requests, mergeable pull requests, failed automation runs, notices from sessions and bots, reports with pictures from any agent), what you can do with each item, filters, unread, snooze and done, and how agents and bots post to it.
 sidebar_position: 8
 ---
 
@@ -10,7 +10,7 @@ It looks like a mail client: a list column (search, unread rows with the sender,
 
 ## What lands there
 
-Items are not stored: an item is there while its source says it needs you, and leaves when it no longer does.
+Items are not stored, with one exception: an item is there while its source says it needs you, and leaves when it no longer does. The exception is a **report**, which an agent sends and Oppenheimer keeps until you answer it.
 
 | Item | From | When | What you can do |
 | --- | --- | --- | --- |
@@ -21,6 +21,7 @@ Items are not stored: an item is there while its source says it needs you, and l
 | A failed automation run | Automations | a run failed in the last 24 hours | **Run again**, **Open run** |
 | A session's notice | an agent in a session | the agent ran `runner sessions notify "…"` | **Done** |
 | A bot's notice | a bot | the bot used its `notify` tool | **Open chat**, **Done** |
+| A report | any agent with a token | it posted a problem, with up to four pictures | Write an answer and **Send answer**; the agent reads it. **Done** hides it without answering |
 
 A session or bot keeps one notice at a time: a newer one replaces the last. Questions a bot asks you with a question card are answered in its chat, not in the Inbox.
 
@@ -49,6 +50,34 @@ When nothing needs you, the pane says so and counts the sessions still running.
 
 - **An agent in a session** runs `runner sessions notify "The migration ran; all tests pass"` (one line, at most 500 bytes). Use it when the agent finishes something you asked to hear about, or needs you while you may not be watching. A bot that follows that session is woken by the notice too.
 - **A bot** calls its `notify` tool: one line, at most 500 characters, for a bot whose chat nobody is watching (a routine's result, a long goal).
+
+- **Any agent with a token** sends a **report**: a problem with its pictures, which you answer in the Inbox. This is the way for an agent that is not in a session on one of your hosts, such as a scheduled routine in a vendor's cloud.
+
+## Reports: a problem with pictures, and your answer
+
+A report has a title, an optional body, the sender's name for itself, an optional link to where the problem can be seen, and up to four pictures (PNG, JPEG, GIF or WebP, 5 MB each). The agent needs an [API token](./cli-and-mcp.md) with the **Inbox reports** permissions (`inbox-reports:write` to send, `inbox-reports:read` to read the answer), pinned to your workspace as `opp tokens create` pins it; a token pinned to no workspace is refused with `TENANT_001`:
+
+```bash
+curl -sS -X POST "$OPPENHEIMER_API_URL/v1/inbox/reports" \
+  -H "Authorization: Bearer $OPPENHEIMER_API_TOKEN" \
+  -F title="Sign-up shows a blank page on a phone" \
+  -F body="Opened /sign-up at 390 px wide; the form never renders. Should I fix it or is this known?" \
+  -F source="qa-explorer" \
+  -F link="https://github.com/acme/app/pull/123" \
+  -F images=@before.png -F images=@console-error.png
+```
+
+The answer comes back on the report itself. The agent asks for it when it next runs:
+
+```bash
+curl -sS "$OPPENHEIMER_API_URL/v1/inbox/reports/<id>" \
+  -H "Authorization: Bearer $OPPENHEIMER_API_TOKEN"
+# "status": "answered", "answer": "Fix it, and add a test at phone width."
+```
+
+`GET /v1/inbox/reports?status=answered` lists every answered report, and `?status=open` those still waiting on you.
+
+In the Inbox a report shows its pictures (select one to see it whole), its link, and a box for your answer. Once you send an answer the report leaves the Inbox; nothing is typed into a terminal and nobody is woken, so an agent that runs once a day sees your answer on its next run. A token that holds only the Inbox reports permissions cannot answer a report: answering takes the **Inbox** permission, which is yours.
 
 ## Notifications elsewhere
 

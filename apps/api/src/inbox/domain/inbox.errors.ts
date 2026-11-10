@@ -19,4 +19,32 @@ export const InboxErrors = {
     message: 'Inbox mark not found',
     httpStatus: 404,
   },
+  /** No such report in the workspace, or no such picture on it. */
+  REPORT_NOT_FOUND: {
+    code: 'INBOX_005',
+    message: 'Inbox report not found',
+    httpStatus: 404,
+  },
+  /** A report takes one answer; a follow-up is a new report. */
+  REPORT_ALREADY_ANSWERED: {
+    code: 'INBOX_006',
+    message: 'This report is already answered',
+    httpStatus: 409,
+  },
+  TOO_MANY_REPORT_IMAGES: {
+    code: 'INBOX_007',
+    message: 'Too many pictures on one report',
+    httpStatus: 422,
+  },
+  REPORT_IMAGE_TOO_LARGE: {
+    code: 'INBOX_008',
+    message: 'That picture is too large',
+    httpStatus: 413,
+  },
+  /** Judged by the file's bytes, never by the type it was sent as. */
+  REPORT_IMAGE_TYPE_UNSUPPORTED: {
+    code: 'INBOX_009',
+    message: 'A report takes PNG, JPEG, GIF or WebP pictures',
+    httpStatus: 415,
+  },
 } as const satisfies Record<string, ErrorDefinition>;

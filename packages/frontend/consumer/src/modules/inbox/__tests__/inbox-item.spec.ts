@@ -11,6 +11,7 @@ import { PullRequestEntity } from '../../pull-requests/pull-request.entity';
 import { SessionEntity, type SessionGroup, type SessionState } from '../../sessions/session.entity';
 import { composeInbox, type InboxSources, inboxSubject, sessionItemKey } from '../inbox-item';
 import { InboxMarkEntity } from '../inbox-mark.entity';
+import { InboxReportEntity } from '../inbox-report.entity';
 
 /**
  * The Inbox (`product/versions/mvp/29-inbox.md`): an item per occurrence of a
@@ -208,6 +209,7 @@ function sources(overrides: Partial<InboxSources> = {}): InboxSources {
     mine: [],
     failedRuns: [],
     botNotices: [],
+    reports: [],
     projects: [project('p-app', ['42']), project('p-web', ['42']), project('p-none', [], true)],
     ...overrides,
   };
@@ -396,6 +398,7 @@ describe('inboxSubject: what an occurrence is an occurrence of', () => {
     expect(inboxSubject('pull:821374923#14@30f52fcb')).toBe('pull:821374923#14');
     expect(inboxSubject('approval:a1')).toBe('approval:a1');
     expect(inboxSubject('run:r1')).toBe('run:r1');
+    expect(inboxSubject('report:rep1')).toBe('report:rep1');
   });
 });
 
@@ -463,5 +466,56 @@ describe('composeInbox: what a bot told you', () => {
       ),
     ).toEqual(['botnotice:bot-1:n2']);
     expect(inboxSubject('botnotice:bot-1:n2')).toBe('botnotice:bot-1');
+  });
+});
+
+describe('composeInbox: a problem an agent reported', () => {
+  const reported = (id: string, minutesAgo: number, status: 'open' | 'answered' = 'open') =>
+    new InboxReportEntity(
+      id,
+      'Checkout shows a blank page',
+      'Seen on the nightly run.',
+      'qa-explorer',
+      null,
+      [],
+      status,
+      at(minutesAgo),
+    );
+
+  it('lists an open report among the other items, by when it was sent, under no project', () => {
+    const view = composeInbox(
+      sources({
+        reports: [reported('rep1', 3)],
+        sessions: [session('s2', { observedSince: at(1) })],
+      }),
+      [],
+      NOW,
+    );
+    expect(view.open.map((item) => item.key)).toEqual([
+      expect.stringMatching(/^session:s2:/),
+      'report:rep1',
+    ]);
+    expect(view.open[1]).toMatchObject({ kind: 'report', since: at(3), projectIds: [] });
+  });
+
+  // An answered report has left the Inbox: the row the answer returns replaces
+  // the open one in the cache, and must not be drawn as still waiting.
+  it('leaves out a report that was answered', () => {
+    const view = composeInbox(
+      sources({ reports: [reported('rep1', 3, 'answered'), reported('rep2', 2)] }),
+      [],
+      NOW,
+    );
+    expect(view.open.map((item) => item.key)).toEqual(['report:rep2']);
+  });
+
+  it('hides a report marked done without an answer, and keeps it for Show done', () => {
+    const view = composeInbox(
+      sources({ reports: [reported('rep1', 3)] }),
+      [mark('report:rep1', 'done')],
+      NOW,
+    );
+    expect(view.open).toEqual([]);
+    expect(view.done.map((item) => item.key)).toEqual(['report:rep1']);
   });
 });

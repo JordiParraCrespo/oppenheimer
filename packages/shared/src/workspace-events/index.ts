@@ -7,10 +7,10 @@
  * every read keeps its cache key, its authorization and its shape, and a
  * missed event costs one refetch rather than a wrong screen.
  *
- * A session's and a run's changes go to the streams of their workspace. A
- * host and its pairing tokens belong to the person who paired them, not to a
- * workspace, so theirs go to that person's streams; so do a person's Inbox
- * marks, which are theirs alone.
+ * A session's and a run's changes go to the streams of their workspace, and
+ * so does a report sent to its Inbox. A host and its pairing tokens belong to
+ * the person who paired them, not to a workspace, so theirs go to that
+ * person's streams; so do a person's Inbox marks, which are theirs alone.
  */
 export const WORKSPACE_EVENT_TYPES = [
   /** A session's row changed: created, a start step landed, opened, failed, stopped, restarted, closed. */
@@ -33,6 +33,8 @@ export const WORKSPACE_EVENT_TYPES = [
   'botNotice.changed',
   /** One of the person's Inbox marks was set or removed; sent to that person only. */
   'inboxMark.changed',
+  /** A report was sent to the workspace's Inbox, or answered there; `id` is the report. */
+  'inboxReport.changed',
 ] as const;
 
 export type WorkspaceEventType = (typeof WORKSPACE_EVENT_TYPES)[number];
@@ -47,7 +49,8 @@ export type WorkspaceEvent =
   | { type: 'project.changed'; id: string }
   | { type: 'botApproval.changed'; id: string; botId: string }
   | { type: 'botNotice.changed'; id: string; botId: string }
-  | { type: 'inboxMark.changed'; itemKey: string };
+  | { type: 'inboxMark.changed'; itemKey: string }
+  | { type: 'inboxReport.changed'; id: string };
 
 /**
  * The SSE `event:` name of the frame the API sends once a stream is
@@ -70,6 +73,7 @@ export function isWorkspaceEvent(value: unknown): value is WorkspaceEvent {
     case 'task.changed':
     case 'milestone.changed':
     case 'project.changed':
+    case 'inboxReport.changed':
       return true;
     case 'pairing.spent':
       return typeof event.hostId === 'string';
