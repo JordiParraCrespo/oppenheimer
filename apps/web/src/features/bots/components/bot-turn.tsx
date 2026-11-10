@@ -96,10 +96,15 @@ export function BotTurn({
   // A turn that ended without a word or a token never reached its model: nothing to trail.
   const tokens = turn ? turn.inputTokens + turn.outputTokens : 0;
   const silent = phase === 'completed' && block.answer.length === 0 && tokens === 0;
-  // With the tool calls hidden, a turn that only ran tools has said nothing to trail.
+  // With the tool calls hidden, a finished turn that only ran tools has said
+  // nothing to trail: its model and time go, and only Retry stays on the newest.
+  // A stopped turn keeps its Stopped and Retry.
   const toolCallsShown = useToolCallsShownInChat();
   const toolsOnly =
-    !toolCallsShown && block.answer.every((message) => message.role === 'activity') && !live;
+    !toolCallsShown &&
+    phase === 'completed' &&
+    block.answer.length > 0 &&
+    block.answer.every((message) => message.role === 'activity');
   const ran = turn ? turnDurationMs(turn) : null;
   const meta = turn
     ? [
@@ -177,7 +182,7 @@ export function BotTurn({
             onOpenProviders={onOpenProviders}
           />
         ) : null}
-        {turn && !active && !silent && !toolsOnly ? (
+        {turn && !active && !silent && (!toolsOnly || onRetry) ? (
           <MessageTrail
             actions={
               <>
@@ -196,7 +201,7 @@ export function BotTurn({
                 ) : null}
               </>
             }
-            meta={meta}
+            meta={toolsOnly ? undefined : meta}
           />
         ) : null}
       </div>
