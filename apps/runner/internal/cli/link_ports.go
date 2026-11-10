@@ -8,7 +8,6 @@ import (
 	"net"
 	"sync"
 
-	desktopdomain "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/desktop/domain"
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/link"
 	portsdomain "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/ports/domain"
 )
@@ -39,11 +38,17 @@ type tunnel struct {
 	flow *flowWindow
 	// input is the relay's bytes waiting for the socket.
 	input chan []byte
-	// viewer is set on a desktop attachment (link_desktop.go): the browser's
-	// half of RFB, which answers its handshake and drops its input while it
-	// only watches. Nil on a port, whose bytes pass untouched.
-	viewer *desktopdomain.Viewer
+	// filter, when set, sees what the relay sent before the socket does and
+	// says what the socket gets instead (a desktop's, link_desktop.go). Nil on
+	// a port, whose bytes pass untouched.
+	filter tunnelFilter
 	once   sync.Once
+}
+
+// tunnelFilter rewrites the relay's bytes for a tunnel's socket: forward is
+// what the socket takes, which may be nothing; false is a tunnel that ended.
+type tunnelFilter interface {
+	filter(ctx context.Context, chunk []byte) (forward []byte, ok bool)
 }
 
 func (t *tunnel) credit(bytes int) { t.flow.credit(bytes) }
@@ -154,9 +159,9 @@ func (h *linkHandler) tunnelDown(ctx context.Context, t *tunnel) {
 			return
 		case chunk := <-t.input:
 			out := chunk
-			if t.viewer != nil {
+			if t.filter != nil {
 				var ok bool
-				if out, ok = h.desktopFeed(ctx, t, chunk); !ok {
+				if out, ok = t.filter.filter(ctx, chunk); !ok {
 					return
 				}
 			}

@@ -1,6 +1,5 @@
-import { randomBytes } from 'node:crypto';
 import { Injectable } from '@nestjs/common';
-import { CacheService } from '@oppenheimer/backend-cache';
+import { CacheService, issueSingleUseTicket } from '@oppenheimer/backend-cache';
 import { AppError } from '@oppenheimer/backend-core';
 import { SessionErrors } from '../domain/sessions.errors';
 import { ATTACH_TICKET_PREFIX, type AttachTicket } from './session-lookup.port';
@@ -40,24 +39,17 @@ export class AttachTicketFactory {
   constructor(private readonly cache: CacheService) {}
 
   async issue(claim: AttachTicket): Promise<IssuedAttachTicket> {
-    // 32 bytes of `node:crypto`, base64url: unguessable, and URL-safe because it
-    // travels as a subprotocol token.
-    const ticket = randomBytes(32).toString('base64url');
-    const claimed = await this.cache.setIfAbsent<AttachTicket>(
-      `${ATTACH_TICKET_PREFIX}${ticket}`,
+    const issued = await issueSingleUseTicket(
+      this.cache,
+      ATTACH_TICKET_PREFIX,
       claim,
       ATTACH_TICKET_TTL_SECONDS,
     );
-    if (!claimed) throw new AppError(SessionErrors.ATTACH_TICKET_UNAVAILABLE);
+    if (!issued) throw new AppError(SessionErrors.ATTACH_TICKET_UNAVAILABLE);
 
     // No hint here, deliberately: this never asks a dispatcher, so any hint it
     // invented would be a guess about a link it cannot see. Whether the host is
     // reachable is the relay's answer, on the socket that tries.
-    return {
-      ticket,
-      url: ATTACH_URL,
-      expiresAt: new Date(Date.now() + ATTACH_TICKET_TTL_SECONDS * 1000),
-      window: claim.window,
-    };
+    return { ...issued, url: ATTACH_URL, window: claim.window };
   }
 }

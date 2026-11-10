@@ -1285,9 +1285,7 @@ describe('browser attach socket', () => {
     browser.send(Buffer.alloc(65 * 1024));
     await expect(gone).resolves.toMatchObject({ code: 1009 });
     membership.release();
-    expect(warn).toHaveBeenCalledWith(
-      expect.objectContaining({ message: 'browser attach socket error' }),
-    );
+    expect(warn).toHaveBeenCalledWith(expect.objectContaining({ message: 'attach socket error' }));
     expect(JSON.stringify(warn.mock.calls)).not.toContain(ticket);
     await stillServing();
   });
@@ -1320,9 +1318,7 @@ describe('browser attach socket', () => {
     rawSocket(browser).write(INVALID_UTF8_FRAME);
     await expect(gone).resolves.toMatchObject({ code: 1007 });
     membership.release();
-    expect(warn).toHaveBeenCalledWith(
-      expect.objectContaining({ message: 'browser attach socket error' }),
-    );
+    expect(warn).toHaveBeenCalledWith(expect.objectContaining({ message: 'attach socket error' }));
     await stillServing();
   });
 

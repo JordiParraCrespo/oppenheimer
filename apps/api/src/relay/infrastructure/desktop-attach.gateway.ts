@@ -6,7 +6,7 @@ import { SCOPE_RESOLVER, type ScopeResolverPort } from '@oppenheimer/backend-aut
 import { CacheService } from '@oppenheimer/backend-cache';
 import { AppError } from '@oppenheimer/backend-core';
 import { ATTACH_CLOSE_CODES, type AttachServerMessage } from '@oppenheimer/shared/protocol';
-import { type WebSocket, WebSocketServer } from 'ws';
+import type { WebSocket } from 'ws';
 import type { CredentialOwnerPort } from '../../auth/application/credential-owner.port';
 import { CREDENTIAL_OWNER } from '../../auth/auth.di-tokens';
 import type { FlagEvaluatorPort } from '../../feature-flags/application/flag-evaluator.port';
@@ -24,8 +24,7 @@ import type { WorkspaceLookupPort } from '../../organizations/application/worksp
 import { WORKSPACE_LOOKUP } from '../../organizations/organizations.di-tokens';
 import { ATTACH_PING_INTERVAL_MS, REAUTHORIZE_INTERVAL_MS } from './browser-attach.gateway';
 import { DesktopAttachment, type DesktopVerdict } from './desktop-attachment.util';
-import { keepSocketAlive } from './socket-keepalive.util';
-import { refuseUpgrade } from './upgrade.util';
+import { type EarlyFrame, endSocket, TicketSocket, tellSocket } from './ticket-socket.util';
 
 /** The path the console opens, the one `POST /hosts/{id}/desktop-ticket` names. */
 export const DESKTOP_ATTACH_PATH = DESKTOP_SOCKET_PATH;
@@ -33,17 +32,13 @@ export const DESKTOP_ATTACH_PATH = DESKTOP_SOCKET_PATH;
 /** The largest frame a browser sends: one RFB message, a clipboard's text at most. */
 const MAX_INPUT_BYTES = 1024 * 1024 + 64;
 
-/** Frames held while a ticket is redeemed; noVNC sends none before the server's version. */
-const MAX_EARLY_FRAMES = 8;
-
 type AttachClosedReason = Extract<AttachServerMessage, { type: 'closed' }>['reason'];
 
 /**
- * The desktop socket: one per browser watching a host's desktop, its ticket
- * presented as the subprotocol and redeemed with a read-and-delete, as an
- * attach ticket is (`BrowserAttachGateway` says why each of those holds). A
- * ticket names a host, not a session, so the Desktop tab beside a session and
- * a host's Desktop in Settings open the same socket.
+ * The desktop socket: one per browser watching a host's desktop, on the same
+ * ticket lifecycle as the attach socket (`TicketSocket`). A ticket names a
+ * host, not a session, so the Desktop tab beside a session and a host's
+ * Desktop in Settings open the same socket.
  *
  * What it re-checks at redemption and every `REAUTHORIZE_INTERVAL_MS`: the
  * person is still a member of the workspace the ticket was minted in, their
@@ -58,10 +53,13 @@ export class DesktopAttachGateway {
   /** `ATTACH_PING_INTERVAL_MS`; a field only so a test can shorten it. */
   pingIntervalMs = ATTACH_PING_INTERVAL_MS;
   private readonly logger = new Logger(DesktopAttachGateway.name);
-  private readonly server = new WebSocketServer({
-    noServer: true,
+  private readonly socket = new TicketSocket({
+    name: 'desktop',
     maxPayload: MAX_INPUT_BYTES,
-    handleProtocols: (protocols) => protocols.values().next().value ?? false,
+    pingIntervalMs: () => this.pingIntervalMs,
+    frontendUrl: () => this.configService.get<string>('app.frontendUrl'),
+    logger: this.logger,
+    redeem: (ws, ticket, early) => this.judge(ws, ticket, early),
   });
 
   constructor(
@@ -81,61 +79,24 @@ export class DesktopAttachGateway {
     private readonly flags: FlagEvaluatorPort,
   ) {}
 
-  async handleUpgrade(request: IncomingMessage, socket: Duplex, head: Buffer): Promise<void> {
-    if (!this.originAllowed(request.headers.origin)) {
-      refuseUpgrade(socket, 403, 'origin not allowed');
-      return;
-    }
-    const offered = request.headers['sec-websocket-protocol'];
-    const ticket = typeof offered === 'string' ? offered.split(',')[0]?.trim() : undefined;
-    if (!ticket) {
-      refuseUpgrade(socket, 401, 'a desktop ticket is presented as the subprotocol');
-      return;
-    }
-    this.server.handleUpgrade(request, socket, head, (ws) => {
-      ws.on('error', (error) => {
-        this.logger.warn({ message: 'desktop socket error', error: error.message });
-      });
-      keepSocketAlive(ws, this.pingIntervalMs);
-      void this.redeem(ws, ticket).catch((error: unknown) => {
-        this.logger.error({ message: 'desktop ticket could not be judged', error: String(error) });
-        if (ws.readyState === ws.OPEN) ws.close(1011, 'try again');
-      });
-    });
+  handleUpgrade(request: IncomingMessage, socket: Duplex, head: Buffer): Promise<void> {
+    return this.socket.handleUpgrade(request, socket, head);
   }
 
-  private async redeem(ws: WebSocket, ticket: string): Promise<void> {
-    const early: { data: Buffer; isBinary: boolean }[] = [];
-    const hold = (data: unknown, isBinary: boolean) => {
-      if (early.length < MAX_EARLY_FRAMES) early.push({ data: data as Buffer, isBinary });
-    };
-    ws.on('message', hold);
-    try {
-      await this.judge(ws, ticket, early);
-    } finally {
-      ws.off('message', hold);
-      early.length = 0;
-    }
-  }
-
-  private async judge(
-    ws: WebSocket,
-    ticket: string,
-    early: { data: Buffer; isBinary: boolean }[],
-  ): Promise<void> {
+  private async judge(ws: WebSocket, ticket: string, early: EarlyFrame[]): Promise<void> {
     const claim = await this.cache.take<DesktopTicket>(`${DESKTOP_TICKET_PREFIX}${ticket}`);
     if (!claim) {
-      this.end(ws, 'unauthorized', ATTACH_CLOSE_CODES.UNAUTHORIZED);
+      endSocket(ws, 'unauthorized', ATTACH_CLOSE_CODES.UNAUTHORIZED);
       return;
     }
     const verdict = await this.authorize(claim);
     if (!verdict.allowed) {
-      this.end(ws, verdict.reason, verdict.code);
+      endSocket(ws, verdict.reason, verdict.code);
       return;
     }
     const link = this.links.find(claim.hostId);
     if (!link) {
-      this.tell(ws, { type: 'hint', kind: 'host_offline' });
+      tellSocket(ws, { type: 'hint', kind: 'host_offline' });
       ws.close(ATTACH_CLOSE_CODES.HOST_OFFLINE, 'host offline');
       return;
     }
@@ -147,7 +108,7 @@ export class DesktopAttachGateway {
       organizationId: claim.organizationId,
     });
     if (!enabled || !link.capabilities.includes('desktop.stream')) {
-      this.tell(ws, {
+      tellSocket(ws, {
         type: 'refused',
         code: 'DESKTOP_001',
         detail: enabled ? "This host's runner cannot share its desktop." : 'Desktop is off.',
@@ -191,26 +152,6 @@ export class DesktopAttachGateway {
       throw error;
     }
     return { allowed: true, hostId: claim.hostId };
-  }
-
-  private end(ws: WebSocket, reason: AttachClosedReason, code: number): void {
-    this.tell(ws, { type: 'closed', reason });
-    ws.close(code, reason);
-  }
-
-  private tell(ws: WebSocket, message: AttachServerMessage): void {
-    if (ws.readyState === ws.OPEN) ws.send(JSON.stringify(message));
-  }
-
-  private originAllowed(origin: string | undefined): boolean {
-    if (!origin) return true;
-    const allowed = this.configService.get<string>('app.frontendUrl');
-    if (!allowed) return false;
-    try {
-      return new URL(allowed).origin === new URL(origin).origin;
-    } catch {
-      return false;
-    }
   }
 }
 

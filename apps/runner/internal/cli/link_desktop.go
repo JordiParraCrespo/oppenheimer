@@ -40,8 +40,9 @@ func (h *linkHandler) desktopOpen(m link.DesktopOpen, epoch uint64) {
 	t := &tunnel{
 		id: m.AttachmentID, conn: conn, cancel: cancel,
 		flow: newFlowWindow(), input: make(chan []byte, tunnelInput),
-		viewer: desktopdomain.NewViewer(m.Control),
 	}
+	viewer := &desktopViewer{h: h, t: t, viewer: desktopdomain.NewViewer(m.Control)}
+	t.filter = viewer
 	if !h.registerTunnel(t, epoch) {
 		return
 	}
@@ -49,7 +50,7 @@ func (h *linkHandler) desktopOpen(m link.DesktopOpen, epoch uint64) {
 	// The browser reads the version first. The server says nothing more
 	// until the browser's ClientInit reaches it, so this cannot interleave
 	// with what tunnelUp reads.
-	if !h.desktopSend(ctx, t, t.viewer.Greeting()) {
+	if !h.desktopSend(ctx, t, viewer.viewer.Greeting()) {
 		return
 	}
 	go h.tunnelUp(ctx, t)
@@ -82,23 +83,32 @@ func (h *linkHandler) desktopWatch(ctx context.Context, t *tunnel) {
 
 // desktopControl lets the browser click and type, or takes that away.
 func (h *linkHandler) desktopControl(m link.DesktopControl) {
-	if t := h.tunnelByID(m.AttachmentID); t != nil && t.viewer != nil {
-		t.viewer.SetControl(m.Control)
+	if t := h.tunnelByID(m.AttachmentID); t != nil {
+		if d, ok := t.filter.(*desktopViewer); ok {
+			d.viewer.SetControl(m.Control)
+		}
 	}
 }
 
-// desktopFeed runs what the browser sent through its Viewer: the
-// handshake's answers go back to the browser, the rest on to the server.
-// false is a stream that ended.
-func (h *linkHandler) desktopFeed(ctx context.Context, t *tunnel, chunk []byte) ([]byte, bool) {
-	answer, forward, err := t.viewer.Feed(chunk)
+// desktopViewer is a desktop tunnel's filter: the browser's half of RFB,
+// which answers its handshake and drops its input while it only watches.
+type desktopViewer struct {
+	h      *linkHandler
+	t      *tunnel
+	viewer *desktopdomain.Viewer
+}
+
+// filter runs what the browser sent through the Viewer: the handshake's
+// answers go back to the browser, the rest on to the server.
+func (d *desktopViewer) filter(ctx context.Context, chunk []byte) ([]byte, bool) {
+	answer, forward, err := d.viewer.Feed(chunk)
 	if err != nil {
-		h.logger.Warn("a browser broke RFB on the desktop; closing it",
-			slog.Uint64("attachment", uint64(t.id)), slog.Any("error", err))
-		h.endTunnel(t, "the browser broke RFB")
+		d.h.logger.Warn("a browser broke RFB on the desktop; closing it",
+			slog.Uint64("attachment", uint64(d.t.id)), slog.Any("error", err))
+		d.h.endTunnel(d.t, "the browser broke RFB")
 		return nil, false
 	}
-	if len(answer) > 0 && !h.desktopSend(ctx, t, answer) {
+	if len(answer) > 0 && !d.h.desktopSend(ctx, d.t, answer) {
 		return nil, false
 	}
 	return forward, true

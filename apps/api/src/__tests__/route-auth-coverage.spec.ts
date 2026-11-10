@@ -75,12 +75,8 @@ const UPGRADES: Record<string, { how: string; calls: string }> = {
     how: "a runner's boot assertion as the bearer, verified (its jti burned) before the upgrade is accepted",
     calls: 'verify',
   },
-  'relay/infrastructure/browser-attach.gateway.ts': {
-    how: 'an allowed Origin and a single-use attach ticket as the subprotocol, refused before the upgrade when absent; the ticket is redeemed and judged before any frame is handled, and again every minute',
-    calls: 'redeem',
-  },
-  'relay/infrastructure/desktop-attach.gateway.ts': {
-    how: 'an allowed Origin and a single-use desktop ticket as the subprotocol, refused before the upgrade when absent; the ticket is redeemed and judged before any frame is handled, and again every minute',
+  'relay/infrastructure/ticket-socket.util.ts': {
+    how: "the attach and desktop sockets' shared handshake: an allowed Origin and a single-use ticket as the subprotocol, refused before the upgrade when absent; each gateway's redeem judges the ticket (take, then authorize) before any frame is handled, and its attachment again every minute",
     calls: 'redeem',
   },
   'relay/infrastructure/preview-proxy.gateway.ts': {
