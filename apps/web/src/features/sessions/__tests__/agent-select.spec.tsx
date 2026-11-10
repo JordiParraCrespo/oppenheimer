@@ -20,7 +20,7 @@ function open(model: string) {
   const onValueChange = vi.fn();
   render(
     <AgentSelect
-      agents={toEngineAgents(false, null)}
+      agents={toEngineAgents(false, null, [], 'claude-code')}
       value={{ agent: 'claude-code', model }}
       onValueChange={onValueChange}
       favourites={[]}

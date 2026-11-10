@@ -1,4 +1,5 @@
 import { useCloudAgentModels, useCloudAgentStatus } from '@oppenheimer/frontend-consumer/react';
+import { useStoredList } from '@oppenheimer/frontend-web';
 import { isCodingAgentId } from '@oppenheimer/shared/agents';
 import { CLOUD_AGENT_PROVIDERS } from '@oppenheimer/shared/schemas/cloud-agent';
 import { useController, useWatch } from 'react-hook-form';
@@ -6,6 +7,7 @@ import { useTranslation } from 'react-i18next';
 import { AgentSelect } from '../components/agent-select';
 import { useModelFavourites } from '../hooks/use-model-favourites';
 import { useNewSessionDraft } from '../hooks/use-new-session-form';
+import { HIDDEN_AGENTS_KEY } from '../lib/hidden-agents';
 import {
   CLOUD_DEFAULT_MODEL,
   defaultModelFor,
@@ -34,6 +36,9 @@ import {
  * (`isHostCloud`), so there the button offers those two alone, and switching
  * between them switches whose cloud it is; the place chip picks the place
  * with its engine (`engineForPlace`).
+ *
+ * The agents the reader hid in Settings → Agents are left out, except the
+ * one the draft is on (`hidden-agents.ts`).
  */
 export function NewSessionAgent() {
   const { t } = useTranslation();
@@ -49,6 +54,7 @@ export function NewSessionAgent() {
   });
   const { field: efforts } = useController({ control, name: 'efforts' });
   const [favourites, setFavourites] = useModelFavourites();
+  const [hidden] = useStoredList(HIDDEN_AGENTS_KEY);
   const status = useCloudAgentStatus();
   // The vendor whose tab the button shows: the one picked, or else the first
   // the reader holds a key for.
@@ -70,7 +76,7 @@ export function NewSessionAgent() {
 
   return (
     <AgentSelect
-      agents={toEngineAgents(atHostCloud, cloudAgent)}
+      agents={toEngineAgents(atHostCloud, cloudAgent, hidden, agent)}
       value={
         inCloud
           ? { agent: cloudAgent.id, model: cloudModel ?? CLOUD_DEFAULT_MODEL }

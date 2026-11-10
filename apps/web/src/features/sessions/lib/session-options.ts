@@ -37,6 +37,7 @@ import {
   type CloudAgentProviderId,
 } from '@oppenheimer/shared/schemas/cloud-agent';
 import { MAX_SESSION_CHECKOUTS, type SessionPlace } from '@oppenheimer/shared/schemas/session';
+import { isAgentDrawn } from './hidden-agents';
 import type { NewSessionDraft } from './new-session-draft';
 
 // The key a picker's row is named by is the console's, kept in the product
@@ -367,14 +368,22 @@ function toAgentOptions(): AgentOption[] {
 }
 
 /**
- * The engine button's tabs: every agent a host runs, then the vendor's cloud
- * agent when the reader holds its key. In a host's cloud, the agents whose
- * own cloud a host starts (Claude Code, Codex) alone.
+ * The engine button's tabs: every agent a host runs that the reader has not
+ * hidden (`hidden-agents.ts`; the draft's own `current` agent always), then
+ * the vendor's cloud agent when the reader holds its key. In a host's cloud,
+ * the agents whose own cloud a host starts (Claude Code, Codex) alone, hidden
+ * or not, since there are only two and the place chip picks between them.
  */
-export function toEngineAgents(hostCloud: boolean, cloudAgent: AgentOption | null): AgentOption[] {
+export function toEngineAgents(
+  hostCloud: boolean,
+  cloudAgent: AgentOption | null,
+  hidden: readonly string[],
+  current: string,
+): AgentOption[] {
   const agents = toAgentOptions();
   if (hostCloud) return agents.filter((option) => isHostCloudAgent(option.id));
-  return cloudAgent ? [...agents, cloudAgent] : agents;
+  const drawn = agents.filter((option) => isAgentDrawn(hidden, option.id, current));
+  return cloudAgent ? [...drawn, cloudAgent] : drawn;
 }
 
 export function defaultModelFor(agent: CodingAgentId): string | null {
