@@ -1,6 +1,5 @@
 ---
 '@oppenheimer/api': minor
-'@oppenheimer/docs': patch
 '@oppenheimer/shared': patch
 ---
 
