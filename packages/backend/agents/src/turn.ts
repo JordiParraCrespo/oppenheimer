@@ -167,8 +167,9 @@ export function failed(
 /**
  * The kind of failure an error thrown by a provider's client is, read from
  * the HTTP status it carries (both SDKs' API errors have `status`) or, with
- * none, from a network failure's name or code. A `429` that names a spent
- * quota (`insufficient_quota`) is the account's limit, not a rate limit; a
+ * none, from the provider's own error code or a network failure's name or
+ * code. A `429` that names a spent quota (`insufficient_quota`) is the
+ * account's limit, not a rate limit; a
  * `400` that says the body could not be parsed is our request broken, not
  * one the provider refused.
  */
@@ -190,6 +191,11 @@ export function failureOf(error: unknown): BotEngineFailure {
     return 'other';
   }
   if (typeof name === 'string' && /Connection|Timeout/.test(name)) return 'unavailable';
+  // A stream the provider opened with a 200 and then failed has no status;
+  // its own error says whose failure it was.
+  const { type } = error as { type?: unknown };
+  if ([code, type].some((said) => typeof said === 'string' && PROVIDER_FAILURES.has(said)))
+    return 'unavailable';
   const network = typeof code === 'string' ? code : (cause as { code?: unknown } | null)?.code;
   if (typeof network === 'string' && NETWORK_CODES.has(network)) return 'unavailable';
   // Some clients only say it in words ("connect ECONNREFUSED 10.0.0.1:443").
@@ -211,6 +217,9 @@ function isMalformedRequest(error: unknown): boolean {
 
 const MALFORMED_REQUEST =
   /failed to (?:parse|deserialize)|could not parse|unable to parse|malformed|invalid json/i;
+
+/** What OpenAI's error `code` or `type` says when the failure was on its side, not the request's. */
+const PROVIDER_FAILURES = new Set(['server_error']);
 
 const NETWORK_CODES = new Set([
   'ECONNREFUSED',

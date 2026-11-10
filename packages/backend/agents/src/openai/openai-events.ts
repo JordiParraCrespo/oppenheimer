@@ -11,6 +11,8 @@ export type OpenAiStreamEvent =
       data: {
         type: string;
         delta?: string;
+        /** The Responses API's own event, on a `model` event. */
+        event?: { type?: string; response?: { error?: unknown } };
         response?: {
           usage?: {
             inputTokens?: number;
@@ -88,6 +90,8 @@ export class OpenAiEventTranslator {
   private cachedTokens = 0;
   private sawUsage = false;
   private lastInput = 0;
+  /** The error a `response.failed` event carried: the SDK's own error for it keeps none of it. */
+  private providerError: { code?: unknown; message?: unknown } | null = null;
 
   constructor(
     private readonly toolFailed: (callId: string) => boolean,
@@ -97,6 +101,9 @@ export class OpenAiEventTranslator {
   translate(event: OpenAiStreamEvent): BotEngineEvent[] {
     if (event.type === 'raw_model_stream_event') {
       const { data } = event;
+      const failure = data.type === 'model' ? data.event?.response?.error : undefined;
+      if (data.event?.type === 'response.failed' && failure && typeof failure === 'object')
+        this.providerError = failure;
       if (data.type === 'output_text_delta' && data.delta)
         return [{ type: 'text.delta', text: data.delta }];
       if (data.type === 'response_done' && data.response?.usage) {
@@ -161,6 +168,14 @@ export class OpenAiEventTranslator {
       events.push({ type: 'done', reason: 'completed' });
     } else if (error instanceof Error && error.name === 'MaxTurnsExceededError') {
       events.push({ type: 'done', reason: 'max_steps' });
+    } else if (this.providerError) {
+      const { message } = this.providerError;
+      events.push(
+        failed(
+          typeof message === 'string' && message ? message : describeError(error),
+          failureOf(this.providerError),
+        ),
+      );
     } else {
       const failure = failureOf(error);
       // A spent quota is a 429 too, but waiting for Retry-After does not bring it back.
