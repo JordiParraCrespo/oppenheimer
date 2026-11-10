@@ -18,11 +18,12 @@ import {
   type BotSubscriptionUntil,
   type BotWatchFrom,
   checkDelayMs,
+  requestedCheckNumber,
 } from '../domain/bot-subscription.policy';
 import type { BotStallChecksPort } from '../infrastructure/bot-stall-checks.port';
 import { type BotToolCallContext, BotToolRefusal } from './bot-tool.factory';
 
-/** What `start_session` and `send_to_session` answer once the task they handed off is followed. */
+/** What `start_session`, `send_to_session` and `answer_session` answer once the task they set going is followed. */
 const HANDED_OFF =
   'You are subscribed to it and will be woken when the task needs input or ends, if it has not got going in a few minutes, and every few minutes while it runs so you can look at how it is going: end your turn now, and report when you are.';
 
@@ -54,8 +55,10 @@ export class BotSessionWatchResolver {
 
   /**
    * Follows the task a bot just set going, for the answer of the tool that
-   * did it: a session it started, from its first task (`start_session`), or
-   * the task its follow-up prompt opened, by number (`send_to_session`). The
+   * did it: a session it started, from its first task (`start_session`), the
+   * task its follow-up prompt opened, by number (`send_to_session`), or the
+   * live task it unblocked (`answer_session`, `now`: the input it answered
+   * counts as known, so only what follows wakes it). The
    * task may already have ended or blocked by the time the watch is stored
    * (a launch that failed at once), and its event then found nobody, so the
    * wake is asked for once now: it reads the session and wakes the bot if
@@ -66,7 +69,7 @@ export class BotSessionWatchResolver {
   async follow(
     context: BotToolCallContext,
     sessionId: string,
-    from: Extract<BotWatchFrom, 'first_task' | { turn: number }>,
+    from: BotWatchFrom,
   ): Promise<string> {
     try {
       const { subscription } = await this.watch(context, sessionId, {
@@ -77,7 +80,9 @@ export class BotSessionWatchResolver {
       await this.commands.execute(
         new WakeSubscribedBotCommand({ subscriptionId: subscription.id }),
       );
-      await this.checkLater(subscription, sessionId, from === 'first_task' ? 1 : from.turn);
+      if (subscription.watchedTurn !== null) {
+        await this.checkLater(subscription, sessionId, subscription.watchedTurn);
+      }
       return HANDED_OFF;
     } catch (error) {
       const reason = error instanceof Error ? error.message : String(error);
@@ -86,13 +91,40 @@ export class BotSessionWatchResolver {
   }
 
   /**
-   * Owes the task its first check (the stall check, then the looks at its progress). The watch is stored either way, and its
-   * wakes still come, so a check that cannot be staged is logged, not said.
+   * Owes the task its first check (the stall check, then the looks at its
+   * progress), `checkDelayMs(1)` from now. The watch is stored either way,
+   * and its wakes still come, so a check that cannot be staged is logged,
+   * not said.
    */
-  private async checkLater(
+  async checkLater(
     subscription: BotSubscriptionEntity,
     sessionId: string,
     turn: number,
+  ): Promise<void> {
+    await this.stageCheck(subscription, sessionId, turn, 1, new Date(Date.now() + checkDelayMs(1)));
+  }
+
+  /**
+   * Owes the task one look the bot asked for itself (`watch_session`'s
+   * `check_in_minutes`), at `at`, numbered by the minute it is due
+   * (`requestedCheckNumber`): it shares no key with the regular checks, so
+   * one of those already delivered never swallows it.
+   */
+  async checkInAt(
+    subscription: BotSubscriptionEntity,
+    sessionId: string,
+    turn: number,
+    at: Date,
+  ): Promise<void> {
+    await this.stageCheck(subscription, sessionId, turn, requestedCheckNumber(at), at);
+  }
+
+  private async stageCheck(
+    subscription: BotSubscriptionEntity,
+    sessionId: string,
+    turn: number,
+    check: number,
+    at: Date,
   ): Promise<void> {
     try {
       await this.stallChecks.schedule(
@@ -101,9 +133,9 @@ export class BotSessionWatchResolver {
           botId: subscription.botId,
           sessionId,
           turn,
-          check: 1,
+          check,
         },
-        new Date(Date.now() + checkDelayMs(1)),
+        at,
         RequestContextService.getCorrelationId() ?? null,
       );
     } catch (error) {

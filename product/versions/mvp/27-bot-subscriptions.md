@@ -97,6 +97,8 @@ turn stops after 4 minutes. A longer wait is a watch.
 | How | Watches | Ends |
 |---|---|---|
 | `start_session` (subscribes by default; `watch: false` opts out) | the session's first task, even one that ended before the watch was stored: the wake is asked for once at once, so a launch that failed straight away is told | when that task ends |
+| `send_to_session` (subscribes by default; `watch: false` opts out) | the task its prompt opened, by number | when that task ends |
+| `answer_session` (subscribes by default; `watch: false` opts out; 2026-11-10) | the live task it unblocked, from now: the input it answered counts as known, so only what follows wakes it | when that task ends |
 | `watch_session` with `until: "task"` (the default) | the live task, or the next one if none is live | when that task ends |
 | `watch_session` with `until: "closed"` | every task of the session | when the session is closed, or after the wake limit |
 | `unwatch_session` | — | now |
@@ -224,7 +226,27 @@ done: they look over the work every so often. So does a bot now:
   as always. It never stops or restarts the session on its own.
 - **Asked.** "Monitor it" or "how is it going" is a look now, not "I already
   follow it": the prompt no longer says checking adds nothing.
-- **Cost.** Up to six short turns per task handed off, most ending quiet.
+- **Which tasks** (2026-11-10). Every task the bot followed while it runs:
+  one it handed off (`start_session`, `send_to_session`), one it unblocked
+  (`answer_session`), and one it chose to `watch_session` while that task is
+  queued or running (`liveTaskOf`). Until then a watched task was looked at
+  only at its end, so a bot that read a session it had not started and
+  told the owner it would check once the agent pushed was never woken for
+  it (Facturas, the same evening).
+- **A look the bot asks for** (2026-11-10). `watch_session` takes
+  `check_in_minutes` (1 to 60): one more look at the running task at that
+  time, for when it told the person it would check back then. It is a
+  check like the others, numbered by the minute it is due
+  (`requestedCheckNumber`), so it never shares a key with a regular check
+  already delivered and stages none after it. A task not running sets
+  none, and the answer says so: its end or its next question wakes the bot.
+- **Promises** (2026-11-10). The prompt says never to tell the person the
+  bot will check back, report or carry on once something finishes unless
+  something will wake it for it: the sessions it started, prompted or
+  unblocked are followed already, any other it `watch_session`s before its
+  turn ends. Nothing else brings a bot back but the hourly heartbeat.
+- **Cost.** Up to six short turns per task followed, most ending quiet,
+  and one per look the bot asks for.
 
 Codex, for comparison (`codex-rs`, 2026-11-10): its parent pulls, with
 `wait_agent` (30 s by default, up to an hour) and `list_agents`, and learns a

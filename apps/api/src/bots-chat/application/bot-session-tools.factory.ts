@@ -414,7 +414,7 @@ export class BotSessionToolsFactory implements BotToolArea {
         });
       },
       subject: (input, context) => this.sessionSubject(context, input.session_id),
-      description: `Answers what a session's agent is waiting on, so it carries on: a question it asked (answers, one per question, picks by index and/or words of your own) or a permission dialog (option, by index). get_session shows the decision, its id and its options. Use it to unblock a session rather than sending the person to it. ${SESSION_UNBLOCK_RULE} Afterwards get_session shows whether the decision cleared.`,
+      description: `Answers what a session's agent is waiting on, so it carries on: a question it asked (answers, one per question, picks by index and/or words of your own) or a permission dialog (option, by index). get_session shows the decision, its id and its options. Use it to unblock a session rather than sending the person to it. ${SESSION_UNBLOCK_RULE} Afterwards get_session shows whether the decision cleared. You are subscribed to the task you unblocked unless watch is false.`,
       input: z.object({
         session_id: z.uuid().describe('The session (from list_sessions).'),
         decision_id: z.string().min(1).max(128).describe("The decision's id, from get_session."),
@@ -444,6 +444,12 @@ export class BotSessionToolsFactory implements BotToolArea {
           .max(8)
           .optional()
           .describe("For a permission dialog: the option's index."),
+        watch: z
+          .boolean()
+          .optional()
+          .describe(
+            'Be woken when the task you unblocked needs input again or ends (default true).',
+          ),
       }),
       summarize: async (input, context) => {
         const summary = decisionAnswerSummary(input, await this.session(context, input.session_id));
@@ -466,7 +472,11 @@ export class BotSessionToolsFactory implements BotToolArea {
             answer: decisionAnswerOf(input),
           }),
         );
-        return `Answered session ${input.session_id}. The agent takes it from here; get_session shows what it does next.${readAfterHint(answered.seq)}`;
+        const watched =
+          input.watch === false
+            ? 'get_session shows what it does next.'
+            : await this.watches.follow(context, input.session_id, 'now');
+        return `Answered session ${input.session_id}. The agent takes it from here. ${watched}${readAfterHint(answered.seq)}`;
       },
     });
   }

@@ -729,6 +729,26 @@ describe('BotSessionToolsFactory', () => {
       answer: { id: 'perm-1', option: 0 },
     });
   });
+  it('follows the task it unblocked, unless told not to watch', async () => {
+    const { watches, call, session } = setup('full');
+    const result = await call('answer_session', {
+      session_id: session.id,
+      decision_id: 'perm-1',
+      option: 0,
+    });
+    expect(watches.follow).toHaveBeenCalledWith(expect.anything(), session.id, 'now');
+    expect(result.content).toContain('You follow its task.');
+
+    watches.follow.mockClear();
+    await call('answer_session', {
+      session_id: session.id,
+      decision_id: 'perm-1',
+      option: 0,
+      watch: false,
+    });
+    expect(watches.follow).not.toHaveBeenCalled();
+  });
+
   // What breaks this: Full access or a standing grant letting a bot approve
   // a recursive delete in a session nobody watched.
   it('puts letting a destructive dialog through on a card of its own, under Full access too', async () => {

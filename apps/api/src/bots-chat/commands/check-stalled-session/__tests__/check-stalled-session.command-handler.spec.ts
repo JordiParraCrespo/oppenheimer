@@ -20,6 +20,7 @@ import { BotSubscriptionMapper } from '../../../bot-subscription.mapper';
 import type { BotSubscriptionRepositoryPort } from '../../../database/bot-subscription.repository.port';
 import type { BotTurnRepositoryPort } from '../../../database/bot-turn.repository.port';
 import { BotSubscriptionEntity } from '../../../domain/bot-subscription.entity';
+import { requestedCheckNumber } from '../../../domain/bot-subscription.policy';
 import type { BotStallChecksPort } from '../../../infrastructure/bot-stall-checks.port';
 import type { BotStreamPort } from '../../../infrastructure/bot-stream.port';
 import { CheckStalledSessionCommand } from '../check-stalled-session.command';
@@ -167,7 +168,9 @@ describe('CheckStalledSessionCommandHandler', () => {
     const [turn, opening] = turns.enqueueOnce.mock.calls[0];
     expect(turn.sourceKey).toBe('subscription:sub-1:1:progress:2');
     expect(opening.event).toMatchObject({ kind: 'session', state: 'progress', turn: 1 });
-    expect(opening.content).toContain('is still running, about 15 minutes after you handed it off');
+    expect(opening.content).toContain(
+      'is still running, about 15 minutes after you started following it',
+    );
     expect(checks.schedule).toHaveBeenCalledWith(
       expect.objectContaining({ subscriptionId: 'sub-1', turn: 1, check: 3 }),
       expect.any(Date),
@@ -186,6 +189,19 @@ describe('CheckStalledSessionCommandHandler', () => {
     await ended.run();
     expect(ended.turns.enqueueOnce).not.toHaveBeenCalled();
     expect(ended.checks.schedule).not.toHaveBeenCalled();
+  });
+
+  // What breaks this: a bot that said "I'll look again in 20 minutes" is
+  // never woken, because its look shares a key with a regular check already
+  // delivered, or it restarts the regular checks over again.
+  it('wakes the bot for a look it asked for, under a key of its own, and stages nothing after', async () => {
+    const check = requestedCheckNumber(new Date('2026-11-10T22:30:00Z'));
+    const { turns, checks, run } = setup({ read: session('in_progress', true), check });
+    await run();
+    const [turn, opening] = turns.enqueueOnce.mock.calls[0];
+    expect(turn.sourceKey).toBe(`subscription:sub-1:1:progress:${check}`);
+    expect(opening.content).toContain('the look at how it is going you asked for');
+    expect(checks.schedule).not.toHaveBeenCalled();
   });
 
   // What breaks this: the person told twice that the agent waits on them.

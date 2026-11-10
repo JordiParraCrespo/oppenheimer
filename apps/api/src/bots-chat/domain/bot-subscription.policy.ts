@@ -159,6 +159,48 @@ export const BOT_PROGRESS_CHECK_INTERVAL_MS = 10 * 60_000;
  */
 export const BOT_PROGRESS_CHECKS_PER_TASK = 6;
 
+/**
+ * The task a new watch has to look in on: the one it follows, when that is
+ * the session's latest and still queued or running. Null when the task it
+ * follows has not begun or is waiting on a person, whose own wake tells the bot.
+ */
+export function liveTaskOf(
+  watchedTurn: number | null,
+  latest: Pick<WatchedTask, 'seq' | 'state'> | null,
+): number | null {
+  if (watchedTurn === null || !latest || latest.seq !== watchedTurn) return null;
+  return latest.state === 'queued' || latest.state === 'in_progress' ? latest.seq : null;
+}
+
+/** What `watch_session` adds about the looks it owes the task it follows, if that task runs. */
+export function checkInAnswer(running: boolean, minutes: number | null): string {
+  if (!running) {
+    return minutes === null
+      ? ''
+      : 'Its task is not running, so no look was set: you are woken when it next needs input or ends.';
+  }
+  const asked = minutes === null ? '' : ` and once in ${minutes} minutes, as you asked`;
+  return `While it runs you are also woken every few minutes${asked} to look at how it is going.`;
+}
+
+/** The soonest and latest a bot may ask to look at a task it follows again (`watch_session`'s `check_in_minutes`). */
+export const BOT_CHECK_IN_MINUTES = { min: 1, max: 60 } as const;
+
+/**
+ * The number of a look the bot asked for itself: the minute it is due, since
+ * the epoch. Far above `BOT_PROGRESS_CHECKS_PER_TASK`, so it is never a
+ * regular check's key and stages no further check; two asked for the same
+ * minute are one wake.
+ */
+export function requestedCheckNumber(at: Date): number {
+  return Math.floor(at.getTime() / 60_000);
+}
+
+/** Whether a check is one the bot asked for, rather than one of a hand-off's regular checks. */
+export function isRequestedCheck(check: number): boolean {
+  return check > BOT_PROGRESS_CHECKS_PER_TASK;
+}
+
 /** When check number `check` (from 1) runs, in milliseconds after the hand-off. */
 export function checkDelayMs(check: number): number {
   return BOT_STALL_CHECK_DELAY_MS + (check - 1) * BOT_PROGRESS_CHECK_INTERVAL_MS;
@@ -408,7 +450,9 @@ function headline(session: string, cause: SessionWakeCause): string {
     case 'stall':
       return `${session} its task #${cause.task.seq} looks stuck: it ${STALL_PHRASES[cause.reason]}.`;
     case 'progress':
-      return `${session} its task #${cause.task.seq} is still running, about ${checkDelayMs(cause.check) / 60_000} minutes after you handed it off. This is your regular look at how it is going.`;
+      return isRequestedCheck(cause.check)
+        ? `${session} its task #${cause.task.seq} is still running. This is the look at how it is going you asked for.`
+        : `${session} its task #${cause.task.seq} is still running, about ${checkDelayMs(cause.check) / 60_000} minutes after you started following it. This is your regular look at how it is going.`;
     case 'match':
       return `${session} its terminal printed a line matching ${quotePattern(cause.pattern)} (${cause.count} matching line${cause.count === 1 ? '' : 's'} so far).`;
     case 'notice':
