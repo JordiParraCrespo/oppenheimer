@@ -3,6 +3,7 @@ import { CqrsModule } from '@nestjs/cqrs';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthzModule as AuthzKernelModule } from '@oppenheimer/backend-authz';
 import { GithubModule } from '../github/github.module';
+import { PullRequestBriefResolver } from './application/pull-request-brief.resolver';
 import { WatchedRepositoriesResolver } from './application/watched-repositories.resolver';
 import { CiFindingMapper } from './ci-finding.mapper';
 import { AddPullRequestCommentCommandHandler } from './commands/add-pull-request-comment/add-pull-request-comment.command-handler';
@@ -24,6 +25,7 @@ import { ReviewSessionRepository } from './database/review-session.repository';
 import { WatchedRepositoryOrmEntity } from './database/watched-repository.orm-entity';
 import { WatchedRepositoryRepository } from './database/watched-repository.repository';
 import { PullRequestMapper } from './pull-request.mapper';
+import { PullRequestBriefMapper } from './pull-request-brief.mapper';
 import {
   CI_FINDING_REPOSITORY,
   REVIEW_SESSION_REPOSITORY,
@@ -36,6 +38,8 @@ import { FindPullRequestActivityHttpController } from './queries/find-pull-reque
 import { FindPullRequestActivityQueryHandler } from './queries/find-pull-request-activity/find-pull-request-activity.query-handler';
 import { FindPullRequestAnalyticsHttpController } from './queries/find-pull-request-analytics/find-pull-request-analytics.http.controller';
 import { FindPullRequestAnalyticsQueryHandler } from './queries/find-pull-request-analytics/find-pull-request-analytics.query-handler';
+import { FindPullRequestBriefHttpController } from './queries/find-pull-request-brief/find-pull-request-brief.http.controller';
+import { FindPullRequestBriefQueryHandler } from './queries/find-pull-request-brief/find-pull-request-brief.query-handler';
 import { FindPullRequestCommentsHttpController } from './queries/find-pull-request-comments/find-pull-request-comments.http.controller';
 import { FindPullRequestCommentsQueryHandler } from './queries/find-pull-request-comments/find-pull-request-comments.query-handler';
 import { FindPullRequestFilesHttpController } from './queries/find-pull-request-files/find-pull-request-files.http.controller';
@@ -56,6 +60,7 @@ const httpControllers = [
   SetRepositoryWatchHttpController,
   FindPullRequestHttpController,
   FindPullRequestFilesHttpController,
+  FindPullRequestBriefHttpController,
   FindPullRequestCommentsHttpController,
   FindPullRequestActivityHttpController,
   SubmitPullRequestReviewHttpController,
@@ -78,6 +83,7 @@ const queryHandlers: Provider[] = [
   FindPullRequestsQueryHandler,
   FindPullRequestQueryHandler,
   FindPullRequestFilesQueryHandler,
+  FindPullRequestBriefQueryHandler,
   FindPullRequestCommentsQueryHandler,
   FindPullRequestActivityQueryHandler,
   FindWatchedRepositoriesQueryHandler,
@@ -110,6 +116,8 @@ const queryHandlers: Provider[] = [
     ...commandHandlers,
     ...queryHandlers,
     PullRequestMapper,
+    PullRequestBriefMapper,
+    PullRequestBriefResolver,
     CiFindingMapper,
     WatchedRepositoriesResolver,
     { provide: WATCHED_REPOSITORY_REPOSITORY, useClass: WatchedRepositoryRepository },

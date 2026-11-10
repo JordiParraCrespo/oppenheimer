@@ -1424,6 +1424,13 @@ earlier note:
   who owns a mistyped number would receive it and become your line. A bot's
   reply to your own message there counts only against the host's send
   budget, not the 100 bot sends a day (`next-steps/whatsapp.md` §4).
+- `versions/mvp/29-inbox.md` said, from 2026-10-25, that the Inbox stores
+  nothing but your marks and that no agent posts into it. On 2026-11-09 the
+  owner asked for the unattended agents to send him problems with images
+  and to answer them only in the Inbox: a report is now stored
+  (`inbox_report`, up to four pictures), sent by anything holding a token
+  with `inbox-reports:write`, answered from its card, and read back by the
+  agent that sent it (29, "Reports").
 - `versions/mvp/05-screens.md` listed Fable 5.1 among Claude Code's four
   current models. On 2026-11-09 the owner asked for Fable 5.2 in new
   sessions and in bots: it takes Fable 5.1's place, and Fable 5.1 heads
@@ -1452,3 +1459,11 @@ earlier note:
   idle: a bot now looks at a task still running every ten minutes after the
   first check, up to an hour, staying quiet when it is on track, and checks
   at once when asked (§4.2).
+- `next-steps/0.2-pull-requests.md` ("The screens as built", 2026-10-13)
+  left a pull request with no generated summary until the chat came, and
+  the queue as a table. On 2026-11-09 the owner asked for the queue one pull
+  request at a time, summarized and with its pictures, the next one coming
+  up after each action: the **review deck** (`/pulls/review`, the same note,
+  "The review deck"), whose card leads with a brief of the head commit that
+  the deployment's model writes, or the description gives when there is no
+  model. The queue, the description page and Analytics are unchanged.

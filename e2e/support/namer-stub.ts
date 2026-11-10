@@ -1,7 +1,8 @@
 import { createServer, type Server, type ServerResponse } from 'node:http';
 
 /**
- * A stand-in for the model that names a session from its first prompt, and
+ * A stand-in for the model that names a session from its first prompt and
+ * briefs a pull request for the review deck, and
  * for the deployment's speech-to-text server (`VOICE_STT_*`).
  *
  * The namer is an OpenAI-compatible server — Groq, Together, vLLM, a local
@@ -41,6 +42,26 @@ export const STUB_TRANSCRIPT = 'um so fix the login redirect loop in apps web';
 
 /** The tidy's brief, which the stub answers by tidying rather than naming. */
 const POLISH_MARKER = 'You turn dictated speech';
+
+/** How a pull request's brief asks: its system prompt opens with this. */
+const BRIEF_MARKER = 'You brief a busy reviewer';
+
+/**
+ * What the stub briefs a pull request as: made from the title and the file
+ * list it was actually sent, so a request that carried the wrong pull request
+ * shows a visibly wrong card rather than a canned one.
+ */
+export function briefFor(prompt: string): string {
+  const title = /<title>\n([\s\S]*?)\n<\/title>/.exec(prompt)?.[1] ?? '';
+  const files = [...prompt.matchAll(/^(?:added|modified|removed|renamed) (\S+) \(/gm)].map(
+    (match) => match[1],
+  );
+  return JSON.stringify({
+    headline: `In short: ${title}.`,
+    points: files.slice(0, 4).map((path) => `Changes ${path}`),
+    lookFirst: files[0] ? `Start with ${files[0]}.` : null,
+  });
+}
 
 /** What the stub's tidy makes of a transcript: fillers gone, a capital and a full stop. */
 export function tidied(transcript: string): string {
@@ -92,6 +113,11 @@ export async function startNamerStub(port = 0): Promise<NamerStub> {
         const transcript = /<transcript>\n([\s\S]*)\n<\/transcript>/.exec(prompt)?.[1] ?? '';
         return json(response, 200, {
           choices: [{ message: { role: 'assistant', content: tidied(transcript) } }],
+        });
+      }
+      if (system.startsWith(BRIEF_MARKER)) {
+        return json(response, 200, {
+          choices: [{ message: { role: 'assistant', content: briefFor(prompt) } }],
         });
       }
       prompts.push(prompt);

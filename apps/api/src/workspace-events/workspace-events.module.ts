@@ -6,6 +6,7 @@ import { BotApprovalChangesDomainEventHandler } from './application/event-handle
 import { BotNoticeChangesDomainEventHandler } from './application/event-handlers/bot-notice-changes.domain-event-handler';
 import { HostChangesDomainEventHandler } from './application/event-handlers/host-changes.domain-event-handler';
 import { InboxMarkChangesDomainEventHandler } from './application/event-handlers/inbox-mark-changes.domain-event-handler';
+import { InboxReportChangesDomainEventHandler } from './application/event-handlers/inbox-report-changes.domain-event-handler';
 import { PlanChangesDomainEventHandler } from './application/event-handlers/plan-changes.domain-event-handler';
 import { ProjectChangesDomainEventHandler } from './application/event-handlers/project-changes.domain-event-handler';
 import { SessionChangesDomainEventHandler } from './application/event-handlers/session-changes.domain-event-handler';
@@ -39,6 +40,7 @@ import { WORKSPACE_EVENT_BUS } from './workspace-events.di-tokens';
     BotApprovalChangesDomainEventHandler,
     BotNoticeChangesDomainEventHandler,
     InboxMarkChangesDomainEventHandler,
+    InboxReportChangesDomainEventHandler,
   ],
 })
 export class WorkspaceEventsModule {}

@@ -3,7 +3,7 @@ import type { TFunction } from 'i18next';
 
 /** What a row and the message say about an item, in the reader's language. */
 export interface InboxCopy {
-  /** Who it is from: the session, the bot, the pull request's author, the automation. */
+  /** Who it is from: the session, the bot, the pull request's author, the automation, a report's sender. */
   sender: string;
   /** The row's subject. */
   short: string;
@@ -136,6 +136,16 @@ export function inboxCopy(item: InboxItem, t: TFunction): InboxCopy {
         body:
           run.turn?.failureDetail?.trim() ||
           t(isAnswerableRun(run) ? 'inbox.run.body' : 'inbox.run.plainBody'),
+      };
+    }
+    case 'report': {
+      const { report } = item;
+      return {
+        sender: report.source || t('inbox.report.sender'),
+        short: report.title,
+        source: t('inbox.from.report'),
+        title: report.title,
+        body: report.body,
       };
     }
   }

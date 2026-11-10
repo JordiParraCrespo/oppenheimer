@@ -11,7 +11,8 @@ export interface InboxFilter {
 /**
  * The Type facet each kind is counted under, one kind to one option but for
  * the notices: a session's counts with its sessions, a bot's with the bots'
- * approvals under Bots.
+ * approvals under Bots. A report comes from an agent that is neither a
+ * session nor a bot of the workspace, so it has an option of its own.
  */
 const TYPE_OF: Record<InboxItem['kind'], Exclude<InboxTypeFilter, 'all'>> = {
   session: 'session',
@@ -20,6 +21,7 @@ const TYPE_OF: Record<InboxItem['kind'], Exclude<InboxTypeFilter, 'all'>> = {
   approval: 'bots',
   pull: 'pull',
   run: 'run',
+  report: 'report',
 };
 
 function matchesType(item: InboxItem, type: InboxTypeFilter): boolean {

@@ -29,7 +29,8 @@
     "pull": "Pull requests",
     "bots": "Bots",
     "session": "Sesiones",
-    "run": "Automatizaciones"
+    "run": "Automatizaciones",
+    "report": "Informes"
   },
   "project": {
     "all": "Todos los proyectos",
@@ -48,7 +49,8 @@
     "session": "Sesión",
     "approval": "Aprobación de bot",
     "run": "Automatización",
-    "botNotice": "Bot"
+    "botNotice": "Bot",
+    "report": "Informe"
   },
   "session": {
     "blockedShort": "{{name}} te está esperando",
@@ -133,5 +135,17 @@
     "title": "{{bot}} tiene novedades para ti",
     "openChat": "Abrir chat",
     "done": "Hecho"
+  },
+  "report": {
+    "sender": "Un agente",
+    "images": "Imágenes",
+    "image": "Imagen {{n}}",
+    "openLink": "Abrir enlace",
+    "answerLabel": "Tu respuesta",
+    "answerPlaceholder": "¿Qué debería hacer?",
+    "send": "Enviar respuesta",
+    "sending": "Enviando…",
+    "done": "Hecho",
+    "answerFailed": "No se pudo enviar la respuesta. Inténtalo de nuevo."
   }
 }
