@@ -371,7 +371,9 @@
   in every window: **Ctrl+C** copies when text is selected and
   interrupts otherwise; **⌥←/⌥→** (Alt) move by word and
   **Ctrl+Backspace** deletes one. Off the Mac, **Ctrl+←/→** also move by
-  word, **Ctrl+Shift+C** copies, **Ctrl+Shift+V** pastes and
+  word, **Ctrl+Shift+C** copies, **Ctrl+V** and **Ctrl+Shift+V** paste (an
+  image or a file pasted is uploaded to the host, since the agent reads
+  the host's clipboard, never the browser's) and
   **Ctrl+Shift+A** selects all. On the Mac, **⌘←/⌘→** go to the start
   and end of the line, **⌘⌫** deletes to its start, **⌘⌦** (fn+⌘⌫) to
   its end, and **⌘A** selects all. A copy with nothing selected, or one

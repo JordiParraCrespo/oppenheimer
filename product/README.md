@@ -1502,3 +1502,9 @@ earlier note:
   through the screen-sharing server on its loopback, shared by its owner
   with `runner desktop on` (`research/device-streaming.md`, "A host's
   desktop"; the note's §11 is the read that led to it).
+- `versions/mvp/05-screens.md` left plain **Ctrl+V** to the program off
+  the Mac, pasting only on Ctrl+Shift+V. On 2026-11-10 the owner pasted a
+  screenshot into the terminal with Ctrl+V and Claude Code, reading the
+  host's clipboard, said "No image found in clipboard". Ctrl+V now pastes
+  off the Mac too, as ⌘V does on it, so a pasted image is uploaded to the
+  host; a program that wanted a literal ^V no longer gets one from it.

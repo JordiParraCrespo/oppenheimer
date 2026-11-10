@@ -54,6 +54,10 @@ const CHORDS: ChordRow[] = [
   { mods: ['ctrl'], key: 'c', selection: true, verdict: BROWSER },
   { platform: 'other', mods: ['ctrl', 'shift'], key: 'c', verdict: { kind: 'copy' } },
   { mods: ['ctrl', 'shift'], key: 'v', verdict: BROWSER },
+  // Off the Mac, Ctrl+V is the reader's paste, as ⌘V is on it: as a ^V to
+  // the PTY the agent would read its host's clipboard, never the browser's,
+  // and an image copied here would never arrive (`bindFilePaste` uploads it).
+  { platform: 'other', mods: ['ctrl'], key: 'v', verdict: BROWSER },
   { platform: 'other', mods: ['ctrl', 'shift'], key: 'a', verdict: { kind: 'selectAll' } },
   { platform: 'mac', mods: ['meta'], key: 'a', verdict: { kind: 'selectAll' } },
   { platform: 'mac', mods: ['meta'], key: 'ArrowLeft', verdict: { kind: 'send', data: '\x01' } },
