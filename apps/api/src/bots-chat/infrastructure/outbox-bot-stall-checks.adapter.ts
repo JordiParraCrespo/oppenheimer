@@ -3,7 +3,7 @@ import { OutboxService } from '@oppenheimer/backend-ddd';
 import { QUEUE_NAMES } from '@oppenheimer/shared';
 import type { BotStallChecksPort, StallCheck } from './bot-stall-checks.port';
 
-/** The job that checks a handed-off task got going; its payload is `{ subscriptionId, turn }`. */
+/** The job that checks a handed-off task got going; its payload is `{ subscriptionId, turn, check }`. */
 export const CHECK_STALLED_SESSION_JOB = 'check-stalled-session';
 
 /**
@@ -19,8 +19,8 @@ export class OutboxBotStallChecksAdapter implements BotStallChecksPort {
       this.outbox.stageJob(manager, {
         queue: QUEUE_NAMES.BOT_STALL_CHECKS,
         jobName: CHECK_STALLED_SESSION_JOB,
-        payload: { subscriptionId: check.subscriptionId, turn: check.turn },
-        reason: `bot ${check.botId} handed session ${check.sessionId} task #${check.turn}: check it got going`,
+        payload: { subscriptionId: check.subscriptionId, turn: check.turn, check: check.check },
+        reason: `bot ${check.botId} handed session ${check.sessionId} task #${check.turn}: check ${check.check} on how it is going`,
         aggregateId: check.subscriptionId,
         correlationId,
         availableAt: at,

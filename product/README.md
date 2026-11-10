@@ -1407,6 +1407,12 @@ earlier note:
   wake for a finished session ends with a recap of it, a session's agent
   ends each task it finishes with one, and so do agents working in this
   repository (the `recap` skill).
+- `versions/mvp/20-plan-calendar.md` §6 (2026-11-08) had To do list a
+  day's tasks by their due date. On 2026-11-09 the owner asked for it to be
+  what they mean to work on: a task has a focus date apart from its due
+  date, To do lists what is put on the day and what is due on it, keeps
+  unfinished work from earlier days until it is done, and opens a task's
+  dialog on To do rather than on the board (§6, "Changed on 2026-11-09").
 - `next-steps/channels.md` §5 and §6, `next-steps/customers-and-routes.md`
   §5 and `next-steps/telegram.md` §2 and §3 changed on 2026-11-09, when the
   owner's `/start` went unanswered: the decision is
@@ -1428,3 +1434,29 @@ earlier note:
   of its sidebar: the rail and the console's landing go through
   `/plan/open`, which redirects there (the Inbox until another is dragged
   above it).
+- `versions/mvp/25-bots.md` drew a turn's compaction as a quiet line among
+  its calls, the trace at the reply's 15px in muted ink, and the live
+  line's orb as `composing`. On 2026-11-09 the owner asked to stop seeing
+  compactions, for quieter tool calls and for the solving and searching
+  orbs: the chat draws no compaction (the export keeps it), the trace is
+  13px in subtle ink, and the orb solves, or searches while the running
+  call only looks around (`versions/mvp/25-bots.md` §2 and §3).
+- `versions/mvp/18-plan-product.md` §4 had Start session always start from
+  one of the project's repositories. On 2026-11-09 the owner asked to start
+  one with only a host: the Repository chip offers No repository, which on
+  a host opens the session in the host's home folder.
+- `versions/mvp/27-bot-subscriptions.md` gave a task a bot hands off one
+  stall check and "no progress update", and its prompt told a bot asked to
+  monitor that "checking now adds nothing". On 2026-11-10 the owner had to
+  tell Facturas "you should be babysitting this" while two of its agents sat
+  idle: a bot now looks at a task still running every ten minutes after the
+  first check, up to an hour, staying quiet when it is on track, and checks
+  at once when asked (§4.2).
+- `next-steps/0.2-pull-requests.md` ("The screens as built", 2026-10-13)
+  left a pull request with no generated summary until the chat came, and
+  the queue as a table. On 2026-11-09 the owner asked for the queue one pull
+  request at a time, summarized and with its pictures, the next one coming
+  up after each action: the **review deck** (`/pulls/review`, the same note,
+  "The review deck"), whose card leads with a brief of the head commit that
+  the deployment's model writes, or the description gives when there is no
+  model. The queue, the description page and Analytics are unchanged.

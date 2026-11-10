@@ -69,6 +69,7 @@ function toTask(data: TaskResponseDto): Task {
     new Date(data.updatedAt),
     data.blockedReason ?? null,
     data.version,
+    data.focusDate ?? null,
   );
 }
 

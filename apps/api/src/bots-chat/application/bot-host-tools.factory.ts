@@ -105,6 +105,7 @@ export class BotHostToolsFactory implements BotToolArea {
       this.updateHostRunner(),
       this.listSessions(),
       this.getSession(),
+      this.showSession(),
       this.readSession(),
       this.readSessionTranscript(),
     ];
@@ -266,6 +267,31 @@ export class BotHostToolsFactory implements BotToolArea {
         }
         lines.push(...describeSharedFiles(session.sharedFiles));
         return lines.join('\n');
+      },
+    });
+  }
+
+  /**
+   * The console's Open session button on the call's line, for a session the
+   * bot only found: the chat draws it from the call's session, never from
+   * the words, as it does for one `start_session` started.
+   */
+  private showSession(): BotToolDefinition {
+    return defineBotTool({
+      name: 'show_session',
+      readOnly: true,
+      scope: 'sessions:read',
+      description:
+        "Gives the person a button that opens a session in the console, on this call's line in the chat: use it when you point them at a session, above all one that needs them in its terminal (a permission dialog get_session cannot answer). A session you start with start_session already carries one. Do not write the session's address in your reply; this is the link.",
+      input: z.object({ session_id: z.uuid().describe('A session id from list_sessions.') }),
+      run: async (input, context) => {
+        const session = await this.queryBus.execute<FindSessionQuery, WorkSessionEntity>(
+          new FindSessionQuery({ scope: context.owner, sessionId: input.session_id }),
+        );
+        return {
+          content: `The person has a button that opens session ${session.id} "${session.name}" on this call's line.`,
+          sessionId: session.id,
+        };
       },
     });
   }

@@ -120,7 +120,8 @@
     "deleteFailed": "Couldn’t delete the task.",
     "loadFailed": "Couldn’t load the board.",
     "gone": "This task no longer exists.",
-    "deleting": "Deleting…"
+    "deleting": "Deleting…",
+    "focus": "To do"
   },
   "link": {
     "search": "Search sessions",
@@ -136,6 +137,8 @@
     "prompt": "Prompt",
     "repository": "Repository",
     "repositoryPlaceholder": "Pick a repository",
+    "noRepository": "No repository",
+    "noRepositoryDesc": "Opens in the host’s home folder",
     "repositorySearch": "Search repositories",
     "noRepositories": "This project has no repositories. Add one in its settings.",
     "where": "Where it runs",
@@ -149,6 +152,8 @@
     "placeCursorDesc": "Cursor’s cloud, on your Cursor key; no host",
     "placeCursorConnect": "Connect Cursor in Settings → Cloud agents first",
     "cloudNeedsTask": "A cloud session starts on a task: write what it should do.",
+    "cloudNeedsRepository": "A cloud session starts from a repository.",
+    "homeOffline": "{{host}} is offline, and only it knows its home folder: pick a repository, or wait for it.",
     "cloudAccount": "Runs on claude.ai as {{account}}, the account {{host}}’s Claude Code is signed in to.",
     "cloudAccountUnknown": "{{host}} hasn’t said which claude.ai account its Claude Code is signed in to.",
     "accountUnknown": "Account not reported yet",
@@ -186,7 +191,7 @@
     "todayWeek": "Today · Week {{week}}",
     "weekNumber": "Week {{week}}",
     "includeOverdue": "Include overdue",
-    "empty": "Nothing for this day yet. Add one below.",
+    "empty": "Nothing on this day yet. Add a task below, or pick some with Add tasks.",
     "noMatch": "No tasks match these filters.",
     "add": "Add a task",
     "addLabel": "Add a task for this day",
@@ -197,18 +202,22 @@
     "state": {
       "todo": "due today",
       "due": "due",
-      "overdue": "overdue since {{date}}"
+      "overdue": "overdue since {{date}}",
+      "since": "on To do since {{date}}",
+      "dueOn": "due {{date}}"
     },
     "schedule": {
-      "button": "Add undated tasks",
-      "title": "Add undated tasks",
-      "for": "Pick the tasks with no due date to put on {{date}}.",
+      "button": "Add tasks",
+      "title": "Add tasks to this day",
+      "for": "Pick the open tasks to put on {{date}}. Their due dates stay as they are.",
       "search": "Search tasks",
       "noMatch": "No task matches “{{query}}”.",
-      "none": "Every open task already has a due date.",
+      "none": "Every open task is already on this day.",
       "submit": "Add to {{date}}",
       "failed": "Couldn’t add some of those tasks.",
-      "loadFailed": "Couldn’t load your tasks."
+      "loadFailed": "Couldn’t load your tasks.",
+      "allStatuses": "All statuses",
+      "searchStatuses": "Search statuses"
     },
     "reorder": "Reorder {{title}}"
   }

@@ -227,6 +227,8 @@ export type {
   ProjectResponseDto,
   PullRequestActivityItemDto,
   PullRequestAnalyticsResponseDto,
+  PullRequestBriefImageDto,
+  PullRequestBriefResponseDto,
   PullRequestChecksDto,
   PullRequestCommentDto,
   PullRequestDetailResponseDto,

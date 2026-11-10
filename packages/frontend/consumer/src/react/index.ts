@@ -245,6 +245,7 @@ export {
   useAddPullRequestComment,
   useCloseReviewSession,
   useMergePullRequest,
+  usePrefetchPullRequestBrief,
   usePullRequest,
   usePullRequestComments,
   usePullRequestQueue,
@@ -256,6 +257,7 @@ export {
   useSuspensePullRequestActivity,
   useSuspensePullRequestAnalytics,
   useSuspensePullRequestAndReviewSessions,
+  useSuspensePullRequestBrief,
   useSuspensePullRequestFiles,
   useSuspensePullRequestQueue,
   useSuspenseWatchedRepositories,
@@ -305,6 +307,8 @@ export {
   useSharedSessionStream,
 } from './sessions.stream';
 export {
+  HOST_HOME,
+  type HostHomeSessionInput,
   type LinkTaskSessionVariables,
   type MoveTaskVariables,
   type StartTaskSessionVariables,

@@ -1,9 +1,11 @@
 /**
- * The silent stall check a few minutes after a bot hands a session a task
- * (`27-bot-subscriptions.md` §4.1): the session read again as the owner, the
- * bot woken once, keyed by the task, only when it is stuck short of every
- * state that wakes it, and the subscription left as it was so the task's end
- * still wakes the bot. The decision table is `bot-subscription.policy.spec.ts`.
+ * The checks of a task a bot handed a session (`27-bot-subscriptions.md`
+ * §4.1, §4.2): the session read again as the owner; the bot woken once,
+ * keyed by the task, when it is stuck short of every state that wakes it,
+ * and once per check for a look at a task still running; the next check
+ * staged while the task is live; and the subscription left as it was so the
+ * task's end still wakes the bot. The decision table is
+ * `bot-subscription.policy.spec.ts`.
  */
 import type { QueryBus } from '@nestjs/cqrs';
 import { emptyScope } from '@oppenheimer/backend-authz';
@@ -18,6 +20,7 @@ import { BotSubscriptionMapper } from '../../../bot-subscription.mapper';
 import type { BotSubscriptionRepositoryPort } from '../../../database/bot-subscription.repository.port';
 import type { BotTurnRepositoryPort } from '../../../database/bot-turn.repository.port';
 import { BotSubscriptionEntity } from '../../../domain/bot-subscription.entity';
+import type { BotStallChecksPort } from '../../../infrastructure/bot-stall-checks.port';
 import type { BotStreamPort } from '../../../infrastructure/bot-stream.port';
 import { CheckStalledSessionCommand } from '../check-stalled-session.command';
 import { CheckStalledSessionCommandHandler } from '../check-stalled-session.command-handler';
@@ -70,6 +73,7 @@ function setup(options: {
   stored?: BotSubscriptionEntity | null;
   read?: WorkSessionEntity | Error;
   queued?: 'staged' | 'existing';
+  check?: number;
 }) {
   const stored = options.stored === undefined ? subscription() : options.stored;
   const subscriptions = {
@@ -84,6 +88,7 @@ function setup(options: {
     })),
   } satisfies Partial<BotTurnRepositoryPort>;
   const stream = { publish: vi.fn<BotStreamPort['publish']>(async () => undefined) };
+  const checks = { schedule: vi.fn<BotStallChecksPort['schedule']>(async () => undefined) };
   const bot = {
     id: 'bot-1',
     createdByUserId: 'owner-1',
@@ -112,10 +117,17 @@ function setup(options: {
       queries as unknown as QueryBus,
     ),
     new BotSubscriptionMapper(),
+    checks,
   );
   const run = () =>
-    handler.execute(new CheckStalledSessionCommand({ subscriptionId: 'sub-1', turn: 1 }));
-  return { subscriptions, turns, stream, queries, run };
+    handler.execute(
+      new CheckStalledSessionCommand({
+        subscriptionId: 'sub-1',
+        turn: 1,
+        check: options.check ?? 1,
+      }),
+    );
+  return { subscriptions, turns, stream, queries, checks, run };
 }
 
 describe('CheckStalledSessionCommandHandler', () => {
@@ -144,12 +156,44 @@ describe('CheckStalledSessionCommandHandler', () => {
     );
   });
 
-  // What breaks this: the check posting "still running" for every task.
-  it('stays silent for an agent seen working', async () => {
-    const { turns, stream, run } = setup({ read: session('in_progress', true) });
+  // What breaks this: a bot that hands work off and only hears back when it
+  // ends, so an agent gone idle or off track sits unseen until the person asks.
+  it('wakes the bot for a look at an agent seen working, and stages the next check', async () => {
+    const { turns, checks, subscriptions, run } = setup({
+      read: session('in_progress', true),
+      check: 2,
+    });
+    await run();
+    const [turn, opening] = turns.enqueueOnce.mock.calls[0];
+    expect(turn.sourceKey).toBe('subscription:sub-1:1:progress:2');
+    expect(opening.event).toMatchObject({ kind: 'session', state: 'progress', turn: 1 });
+    expect(opening.content).toContain('is still running, about 15 minutes after you handed it off');
+    expect(checks.schedule).toHaveBeenCalledWith(
+      expect.objectContaining({ subscriptionId: 'sub-1', turn: 1, check: 3 }),
+      expect.any(Date),
+      expect.any(String),
+    );
+    expect(subscriptions.recordWake).not.toHaveBeenCalled();
+  });
+
+  it('stops checking after the last check, and once the task is over', async () => {
+    const last = setup({ read: session('in_progress', true), check: 6 });
+    await last.run();
+    expect(last.turns.enqueueOnce).toHaveBeenCalledTimes(1);
+    expect(last.checks.schedule).not.toHaveBeenCalled();
+
+    const ended = setup({ read: session('completed', true) });
+    await ended.run();
+    expect(ended.turns.enqueueOnce).not.toHaveBeenCalled();
+    expect(ended.checks.schedule).not.toHaveBeenCalled();
+  });
+
+  // What breaks this: the person told twice that the agent waits on them.
+  it('looks again later, without a wake, at a task waiting on a person', async () => {
+    const { turns, checks, run } = setup({ read: session('requires_action', true) });
     await run();
     expect(turns.enqueueOnce).not.toHaveBeenCalled();
-    expect(stream.publish).not.toHaveBeenCalled();
+    expect(checks.schedule).toHaveBeenCalledTimes(1);
   });
 
   it('publishes nothing when a retried job finds its wake already queued', async () => {

@@ -15,6 +15,7 @@ import {
   type PullRequestAddress,
   type PullRequestAnalytics,
   type PullRequestAnalyticsRange,
+  type PullRequestBrief,
   type PullRequestComment,
   PullRequestDetailEntity,
   PullRequestEntity,
@@ -180,6 +181,13 @@ export class PullRequestsRepository {
         previousPath: file.previousPath ?? null,
         patch: file.patch ?? null,
       }));
+    });
+  }
+
+  brief(address: PullRequestAddress): Promise<PullRequestBrief> {
+    return callApi(PullRequestsErrors.FETCH_BRIEF_FAILED, async (api) => {
+      const data = await api.body(heyApiSdk.findPullRequestBrief({ path: address }));
+      return { ...data, lookFirst: data.lookFirst ?? null };
     });
   }
 

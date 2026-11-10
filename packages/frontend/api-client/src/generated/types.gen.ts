@@ -2831,6 +2831,10 @@ export type TaskResponseDto = {
      */
     dueDate?: string | null;
     dueTime?: string | null;
+    /**
+     * The day the person means to work on it, apart from when it is due. To do lists it that day and every later one until it is done.
+     */
+    focusDate?: string | null;
     completedAt?: string | null;
     /**
      * Why the task waits on a person; null when it does not. Done clears it.
@@ -2857,6 +2861,7 @@ export type CreateTaskRequest = {
     milestoneId?: string | null;
     dueDate?: string | null;
     dueTime?: string | null;
+    focusDate?: string | null;
 };
 
 export type UpdateTaskRequest = {
@@ -2866,6 +2871,7 @@ export type UpdateTaskRequest = {
     milestoneId?: string | null;
     dueDate?: string | null;
     dueTime?: string | null;
+    focusDate?: string | null;
     blockedReason?: string | null;
     expectedVersion?: number;
 };
@@ -3774,6 +3780,41 @@ export type PullRequestFileDto = {
     patch?: string | null;
 };
 
+export type PullRequestBriefImageDto = {
+    /**
+     * The picture’s `https` address, as the description wrote it.
+     */
+    url: string;
+    /**
+     * Its alternative text; empty when the author gave none.
+     */
+    alt: string;
+};
+
+export type PullRequestBriefResponseDto = {
+    /**
+     * The head commit the brief was written for.
+     */
+    headSha: string;
+    /**
+     * `model`: written by the deployment’s language model from the description and the diff. `description`: taken from the author’s own description, when no model is configured or it did not answer.
+     */
+    source: 'model' | 'description';
+    /**
+     * One sentence: what the pull request changes.
+     */
+    headline: string;
+    points: Array<string>;
+    /**
+     * The riskiest part, or where to start reading; null when nothing stands out.
+     */
+    lookFirst: string | null;
+    /**
+     * The pictures in the description, in the order written.
+     */
+    images: Array<PullRequestBriefImageDto>;
+};
+
 export type PullRequestCommentDto = {
     id: number;
     path: string;
@@ -4304,9 +4345,9 @@ export type BotSessionEventResponseDto = {
      */
     turn: number;
     /**
-     * What became of the task, `matched` when its terminal printed a line matching the pattern the bot watches for, or `stalled` when its stall check found it stuck.
+     * What became of the task, `matched` when its terminal printed a line matching the pattern the bot watches for, `stalled` when its stall check found it stuck, or `progress` for the regular look at a task still running.
      */
-    state: 'requires_action' | 'completed' | 'failed' | 'cancelled' | 'expired' | 'matched' | 'stalled' | 'notice';
+    state: 'requires_action' | 'completed' | 'failed' | 'cancelled' | 'expired' | 'matched' | 'stalled' | 'progress' | 'notice';
     /**
      * For `matched`: the pattern and how many lines matched so far; never the text.
      */
@@ -14128,6 +14169,65 @@ export type FindPullRequestFilesResponses = {
 };
 
 export type FindPullRequestFilesResponse = FindPullRequestFilesResponses[keyof FindPullRequestFilesResponses];
+
+export type FindPullRequestBriefData = {
+    body?: never;
+    path: {
+        githubRepoId: number;
+        number: number;
+        /**
+         * The installation that reaches the repository, or `tokens` for one read through your own GitHub tokens.
+         */
+        installationId: string;
+    };
+    query?: never;
+    url: '/api/v1/pulls/{installationId}/{githubRepoId}/{number}/brief';
+};
+
+export type FindPullRequestBriefErrors = {
+    /**
+     * PULLS_001 — No active workspace
+     */
+    400: ProblemDetailsDto;
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * GITHUB_001 / GITHUB_010 / GITHUB_013 / GITHUB_023 — The installation, the repository or the pull request is not there, or none of your tokens opens the repository
+     */
+    404: ProblemDetailsDto;
+    /**
+     * GITHUB_008 — The installation is suspended or no longer installed
+     */
+    409: ProblemDetailsDto;
+    /**
+     * GITHUB_015 — GitHub's rate limit was reached; try again after Retry-After
+     *
+     * GITHUB_015 — GitHub asked to wait; `retryAfterSeconds` says how long
+     */
+    429: ProblemDetailsDto;
+    /**
+     * GITHUB_009 — GitHub could not be reached or rejected the request
+     */
+    502: ProblemDetailsDto;
+    /**
+     * GITHUB_002 — The GitHub App is not configured on this server
+     */
+    503: ProblemDetailsDto;
+};
+
+export type FindPullRequestBriefError = FindPullRequestBriefErrors[keyof FindPullRequestBriefErrors];
+
+export type FindPullRequestBriefResponses = {
+    200: PullRequestBriefResponseDto;
+};
+
+export type FindPullRequestBriefResponse = FindPullRequestBriefResponses[keyof FindPullRequestBriefResponses];
 
 export type FindPullRequestCommentsData = {
     body?: never;

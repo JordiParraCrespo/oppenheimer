@@ -129,10 +129,11 @@ worker runs it and streams what happens back to the chat.
   cut where no call is parted from its result. A summary that fails sends
   the call as it was, and the next one tries again
   (`research/lessons-from-long-running-agents.md`). Where a turn folded,
-  the chat shows one quiet line among its calls, drawn like them, with the
-  tokens before and after (a `compaction` event, built 2026-11-09; no rule
-  across the chat, as Claude shows none), so a long turn says why
-  the bot seems to have forgotten a detail; the model reads it as a note. Between turns the
+  the turn stores a `compaction` event with the tokens before and after,
+  which the model reads as a note and the chat's export keeps. The chat
+  drew it as a quiet line among the calls (built 2026-11-09); the same day
+  the owner asked not to see compactions, so the chat draws nothing for it:
+  it is the engine's housekeeping, not something the reader acts on. Between turns the
   summary folds old messages (above). Since
   2026-10-29 the model is told too: the turn context says how full the
   context was when the bot's last turn ended, against its window, and from
@@ -349,7 +350,9 @@ The chat shows what the bot says, not everything it does:
 
 - the bot's text, streamed;
 - one activity line per run of tool calls ("Read 2 documents, searched the
-  web"), which opens to the steps;
+  web"), which opens to the steps; the lines are smaller and quieter than
+  the reply (13px in subtle ink, since 2026-11-09) so the work never
+  competes with the answer;
 - cards for what needs you or changed something: a **Needs input** card
   (§5), "Updated INSTRUCTIONS.md" with a link to the revision, "Created
   *Researcher*" with an Open link;
@@ -358,7 +361,9 @@ The chat shows what the bot says, not everything it does:
   fact"), with the old and new value, and a link to the Settings tab
   where you change it back.
 
-While a turn runs, its live line says what it is doing: waiting its turn,
+While a turn runs, its live line says what it is doing, beside a thinking
+orb that solves while it works and searches while the running call only
+looks around (a web search, a read, a list; 2026-11-09): waiting its turn,
 thinking, the call running ("Searching the web for …"), writing, or, while
 the engine waits out a provider that refused a call, "Anthropic is limiting
 requests, retrying…" (the stream's `retrying` event, until the turn writes
@@ -1055,6 +1060,7 @@ agent's, in a session, where Claude Code ships them.
 | `list_hosts` | Hosts, online or not, their runner version, and the agents they can run | auto |
 | `update_host_runner` | Ask a connected host's runner to install the newest release now, through the console's own Update runner (`UpdateHostRunnerCommand`, `POST /hosts/{id}/update`); scope `hosts:write`. The tools that hit a runner too old (a transcript, a shared file's preview, a terminal watch) name it, so a bot offers the update rather than asking the person to do it (added 2026-11-08) | ask |
 | `list_sessions` / `get_session` | Sessions and their state, each with its project and the group the console's dot shows; filtered by project, host, state or group; `get_session` also shows a pending question or permission dialog with its id and options (built 2026-10-27, issue #493) | auto |
+| `show_session` | Gives the person the console's Open session button for a session the bot names, on the call's line in the chat: the same button a session `start_session` started carries, drawn from the call's session and never from the reply's words, so a bot can point the person at a session it only found (one waiting on a dialog only its terminal shows). Scope `sessions:read` (added 2026-11-09) | auto |
 | `start_session` | Start an agent on a host, in a new worktree or a folder, with a task; the session's origin is `bot` and it always launches at `auto` (decided 2026-10-18: nobody sits at a bot's terminal, so `ask` would wait forever) | ask |
 | `start_cloud_session` | Start a session in a vendor's cloud on a project's repository; `agent` picks the cloud. `claude-code` (default, claude.ai/code) and `codex` (chatgpt.com/codex, with an optional `codex_environment`) go through the sessions' own create with `cloud`, so a host's runner runs `claude --cloud` or `codex cloud exec` in a scratch checkout, exactly as the console's cloud place and a `claude-cloud` automation do; host chosen as `start_session`'s. It waits (at most 120 s, the runner's own limit) for the host to report the session's id and answers with its URL. `cursor` goes through `StartCloudSessionCommand` (`POST /sessions/cloud`'s), on the owner's own Cursor key with no host and an optional `model`; the card says it runs on that key, and a missing key is the call's error (`CLOUD_AGENTS_004`). Scope `sessions:write`, origin `bot`; `get_session` shows the URL after. Watched as `start_session`'s unless `watch` is false (2026-11-07; it was not watched, as followed at its vendor, until a start that failed went unreported); an answer with no link is not a start (added 2026-10-30; Codex and Cursor 2026-11-02) | ask |
 | `watch_session` / `unwatch_session` / `list_watches` | Follow a session, so its task needing input or ending wakes the bot (`start_session` follows its own session); built 2026-10-22, note 27. A `pattern` wakes it when the terminal prints a matching line, matched on the host (2026-10-29) | auto |
