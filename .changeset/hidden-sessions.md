@@ -5,6 +5,7 @@
 "@oppenheimer/mcp": minor
 "@oppenheimer/shared": minor
 "@oppenheimer/frontend-consumer": minor
+"@oppenheimer/frontend-web": minor
 "@oppenheimer/api-client": minor
 "@oppenheimer/translations": minor
 ---
@@ -23,6 +24,7 @@ shown again, and it runs the same either way
   `hidden`.
 - `@oppenheimer/frontend-consumer`: `SessionEntity.hidden`,
   `sessions.setHidden` and `useSetSessionHidden`.
+- `@oppenheimer/frontend-web`: `useStoredBoolean`, a boolean kept on this device; Pinned only and Show hidden sessions read through it.
 - `@oppenheimer/web`: Hide / Show in a session row's menu. The filter menu
   gains Show hidden sessions, with a count. While it is on, hidden sessions
   are listed marked Hidden.

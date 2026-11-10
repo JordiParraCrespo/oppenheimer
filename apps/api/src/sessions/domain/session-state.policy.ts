@@ -393,7 +393,8 @@ function stringField(payload: unknown, field: string): string | null {
   return typeof value === 'string' && value.trim() ? value : null;
 }
 
-function hiddenOf(payload: unknown): boolean | null {
+/** A `session.visibility_set` payload's `hidden`, or null when it carries none. */
+export function hiddenOf(payload: unknown): boolean | null {
   if (typeof payload !== 'object' || payload === null) return null;
   const value = (payload as Record<string, unknown>).hidden;
   return typeof value === 'boolean' ? value : null;

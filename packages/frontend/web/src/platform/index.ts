@@ -1,5 +1,6 @@
 export { useManageRepositoryAccess } from './hooks/use-manage-repository-access';
 export { type MintAddress, useOpenMinted } from './hooks/use-open-minted';
+export { useStoredBoolean } from './hooks/use-stored-boolean';
 export { useStoredFold } from './hooks/use-stored-fold';
 export { useStoredList } from './hooks/use-stored-list';
 export { useStoredText } from './hooks/use-stored-text';
