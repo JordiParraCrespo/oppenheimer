@@ -1191,6 +1191,12 @@ earlier note:
   the most recent first, so the list is newest first across every kind,
   Low items still last; the order is held by the consumer's
   `composeInbox` test, no longer by the fleet stress suite.
+- `versions/mvp/29-inbox.md` §1 listed pull requests for you (a review
+  asked of you, yours ready to merge) in the Inbox. On 2026-11-10 the
+  owner asked to stop: agents open pull requests under the owner's account,
+  so each one waited there as theirs to merge. They are off by default
+  and come back with Show pull requests in the Inbox's filter menu, kept
+  on the device (the note's "Pull requests are opt-in").
 - `next-steps/0.6-mcp-cli-and-agent.md` asked whether the CLI is a new app
   or `runner` grows user commands, and noted the starter's CLI and MCP apps
   were pruned. On 2026-11-02 both came back as their own apps, `apps/cli`

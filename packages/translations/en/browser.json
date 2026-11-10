@@ -3438,6 +3438,7 @@
       "project": "Project",
       "any": "Any",
       "showDone": "Show done",
+      "showPulls": "Show pull requests",
       "clear": "Clear filters",
       "remove": "Clear filter",
       "typeChip": "Type: {{value}}",
