@@ -43,6 +43,10 @@ function resultText(content: unknown): string {
  *   that message's own usage (the run's usage sums every call, which is
  *   not what the context held), against the window the run's `modelUsage`
  *   gives the model it ran on.
+ * - A run Claude Code ended because the context was full (its
+ *   `terminal_reason`) is `context`, whatever code its synthetic error
+ *   carried: autocompact thrashing comes as `invalid_request`, which
+ *   would otherwise read as the provider refusing the request.
  * - A failure the provider refused for rate or quota (the SDK's
  *   `rate_limit` error, a `429` status, a rejected rate-limit event) ends
  *   with `rateLimit`, and with when it may be called again when the SDK
@@ -121,7 +125,9 @@ export class ClaudeEventTranslator {
         this.failed(this.lastError ?? diagnostics ?? 'Claude Code stopped without a result.'),
       ];
     }
-    if (result.subtype === 'success' && typeof result.api_error_status === 'number') {
+    if (result.terminal_reason && CONTEXT_FULL.has(result.terminal_reason)) {
+      this.lastFailure = 'context';
+    } else if (result.subtype === 'success' && typeof result.api_error_status === 'number') {
       if (result.api_error_status === 429) this.rateLimited = true;
       else if (this.lastFailure === 'other')
         this.lastFailure = failureOf({ status: result.api_error_status });
@@ -301,6 +307,18 @@ export class ClaudeEventTranslator {
     return events;
   }
 }
+
+/**
+ * The `terminal_reason`s with which Claude Code ends a run whose context is
+ * full: compaction kept refilling it (`rapid_refill_breaker`), it hit the
+ * hard limit with autocompact off (`blocking_limit`), or the API said the
+ * prompt was too long even after compacting (`prompt_too_long`).
+ */
+const CONTEXT_FULL: ReadonlySet<string> = new Set([
+  'rapid_refill_breaker',
+  'blocking_limit',
+  'prompt_too_long',
+]);
 
 /**
  * The Claude Agent SDK's code for a failed model call (`SDKAssistantMessageError`)

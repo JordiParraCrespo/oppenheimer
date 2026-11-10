@@ -712,6 +712,30 @@ describe('ClaudeBotEngine', () => {
     expect(done).not.toHaveProperty('rateLimit');
   });
 
+  // Claude Code reports a context it could not compact as a synthetic
+  // `invalid_request`; read as that, the chat told the person the provider
+  // refused the request and to change the message or the model.
+  it.each(['rapid_refill_breaker', 'blocking_limit', 'prompt_too_long'])(
+    'reads a run Claude Code ended for %s as a full context, not a refusal',
+    async (terminalReason) => {
+      const thrashing =
+        'Autocompact is thrashing: the context refilled to the limit within 3 turns of the previous compact, 3 times in a row.';
+      scripted(() => [
+        assistant([{ type: 'text', text: thrashing }], { error: 'invalid_request' }),
+        success({ is_error: true, result: thrashing, terminal_reason: terminalReason }),
+      ]);
+
+      const done = (await collect(new ClaudeBotEngine().run(request()))).at(-1);
+
+      expect(done).toMatchObject({
+        type: 'done',
+        reason: 'failed',
+        failure: 'context',
+        error: thrashing,
+      });
+    },
+  );
+
   // The chat shows the wait while Claude Code retries, rather than "thinking"
   // for the minutes a backoff can take.
   it('says it is retrying when Claude Code retries a refused call, and why', async () => {

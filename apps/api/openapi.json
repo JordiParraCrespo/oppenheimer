@@ -38070,6 +38070,7 @@
               "credential",
               "refused",
               "unavailable",
+              "context",
               "time_limit",
               "step_limit",
               "stalled",

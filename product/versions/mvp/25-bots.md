@@ -343,6 +343,15 @@ worker runs it and streams what happens back to the chat.
   refused, that call is stored as failed and the turn goes on; any other
   refused write ends the turn as `storage`, whose card says the fault is
   ours, not the provider's.
+- **A turn whose context filled up fails as `context`, not `refused`**
+  (2026-11-10). Claude Code ends a run whose context kept refilling right
+  after each compaction (autocompact thrashing), or that hit the window's
+  hard limit, with the error code it uses for an invalid request, so the
+  chat said the provider had refused the request and to change the message
+  or the model. The engine reads the run's `terminal_reason` instead; the
+  card says the context filled up and that the provider refused nothing,
+  and sending it again does not help (the earlier turns go back in as the
+  same transcript).
 
 ## 3. The chat
 
