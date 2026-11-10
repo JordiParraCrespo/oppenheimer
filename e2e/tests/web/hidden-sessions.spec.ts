@@ -23,7 +23,8 @@ test('a session started hidden is listed only once hidden sessions are shown', a
 
   await signInAs(page, owner.user);
   await page.goto('/sessions');
-  const row = (name: string) => page.getByRole('link', { name, exact: true });
+  // A hidden row's name carries its Hidden mark, so a row is found by how its name starts.
+  const row = (name: string) => page.getByRole('link', { name: new RegExp(`^${name}`) });
   await expect(row(shownName)).toBeVisible();
   await expect(row(hiddenName)).toHaveCount(0);
 
