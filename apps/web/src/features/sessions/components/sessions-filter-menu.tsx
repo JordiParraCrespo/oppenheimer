@@ -1,5 +1,6 @@
 import {
   DropdownMenu,
+  DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuRadioGroup,
@@ -29,8 +30,8 @@ const SORTS: SessionSort[] = ['custom', 'recent', 'oldest', 'name'];
 
 /**
  * Which projects the sidebar draws: every project in the Project facet's
- * options with a check, the ones in `hidden` without. Hiding is not
- * filtering, so Clear filters leaves it.
+ * options with a check, the ones in `hidden` without, or none under Pinned
+ * only. Hiding is not filtering, so Clear filters leaves it.
  */
 export interface ProjectVisibility {
   hidden: readonly string[];
@@ -38,12 +39,15 @@ export interface ProjectVisibility {
   hiddenCount: number;
   onShownChange: (id: string, shown: boolean) => void;
   onShowAll: () => void;
+  pinnedOnly: boolean;
+  onPinnedOnlyChange: (pinnedOnly: boolean) => void;
 }
 
 /**
  * The filter button beside the session count and its menu (the artboard's
  * `.op-iconbtn-sm` and `.op-filtermenu`). The button is lit while the menu is
- * open *or* while anything is hidden, by a filter or a hidden project. Props
+ * open *or* while anything is hidden, by a filter, a hidden project or
+ * Pinned only. Props
  * only: the sidebar owns the filters and the hidden projects, because it
  * renders what they narrow.
  */
@@ -78,7 +82,7 @@ export function SessionsFilterMenu({
             size="xs"
             variant="quiet"
             aria-label={t('sessions.filters.label')}
-            data-dirty={dirty || visibility.hiddenCount > 0 || undefined}
+            data-dirty={dirty || visibility.hiddenCount > 0 || visibility.pinnedOnly || undefined}
           />
         }
       >
@@ -176,6 +180,12 @@ export function SessionsFilterMenu({
             </SearchListFoot>
           </DropdownMenuSubContent>
         </DropdownMenuSub>
+        <DropdownMenuCheckboxItem
+          checked={visibility.pinnedOnly}
+          onCheckedChange={(checked) => visibility.onPinnedOnlyChange(checked)}
+        >
+          {t('sessions.filters.pinnedOnly')}
+        </DropdownMenuCheckboxItem>
 
         <DropdownMenuSeparator />
 

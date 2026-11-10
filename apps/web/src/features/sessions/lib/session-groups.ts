@@ -67,7 +67,7 @@ export function emptyMessage(t: TFunction, narrowed: boolean, query: string): st
  * project at all, nothing that matches the search or the filters, every
  * project hidden, or no session in any project.
  */
-export function emptyListMessage(
+function emptyListMessage(
   t: TFunction,
   {
     groups,
@@ -128,4 +128,40 @@ export function moveProjectOptions(
 export function matchesQuery(session: SessionEntity, query: string): boolean {
   const term = query.trim().toLowerCase();
   return term ? session.name.toLowerCase().includes(term) : true;
+}
+
+/**
+ * What the list draws below Pinned, how many sessions that is with the pinned
+ * ones, and what it says instead when it draws nothing. Under Pinned only no
+ * project is drawn, and an empty Pinned says how to pin a session.
+ */
+export function sidebarList<T extends ProjectGroup>(
+  t: TFunction,
+  {
+    pinnedOnly,
+    groups,
+    occupied,
+    picked,
+    pinned,
+    hiddenCount,
+    narrowed,
+    query,
+  }: {
+    pinnedOnly: boolean;
+    groups: readonly T[];
+    occupied: ReadonlySet<string>;
+    picked: string | null;
+    pinned: readonly SessionEntity[];
+    hiddenCount: number;
+    narrowed: boolean;
+    query: string;
+  },
+): { shown: T[]; count: number; empty: string | null } {
+  const shown = pinnedOnly ? [] : shownGroups(groups, occupied, picked);
+  const count = pinned.length + shown.reduce((sum, group) => sum + group.sessions.length, 0);
+  const empty =
+    pinnedOnly && pinned.length === 0 && !narrowed && (groups.length > 0 || hiddenCount > 0)
+      ? t('sessions.sidebar.noPinned')
+      : emptyListMessage(t, { groups, shown, pinned, hiddenCount, narrowed, query });
+  return { shown, count, empty };
 }

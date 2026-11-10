@@ -1096,7 +1096,8 @@
       "selected": "Seleccionada",
       "openAtVendor": "Se abre en {{vendor}}",
       "allHidden": "Todos los proyectos están ocultos. Vuelve a mostrarlos desde el menú de filtros.",
-      "noSessions": "Todavía no hay sesiones. Empieza una con Nueva sesión, arriba."
+      "noSessions": "Todavía no hay sesiones. Empieza una con Nueva sesión, arriba.",
+      "noPinned": "No hay sesiones fijadas. Fija una desde su menú, o desactiva Solo fijadas en el menú de filtros."
     },
     "deleteSession": {
       "title": "¿Eliminar «{{name}}»?",
@@ -1149,6 +1150,7 @@
       "shownAll": "Todos",
       "shownSome": "{{shown}} de {{total}}",
       "showAll": "Mostrar todos los proyectos",
+      "pinnedOnly": "Solo fijadas",
       "newProject": "Nuevo proyecto…"
     },
     "sort": {
