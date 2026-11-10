@@ -8,7 +8,7 @@ import { useTranslation } from 'react-i18next';
 import { AgentSelect } from '../components/agent-select';
 import { useModelFavourites } from '../hooks/use-model-favourites';
 import { useNewSessionDraft } from '../hooks/use-new-session-form';
-import { HIDDEN_AGENTS_KEY, withoutHidden } from '../lib/hidden-agents';
+import { AGENT_CHOICES_KEY, withoutHidden } from '../lib/agent-choices';
 import {
   CLOUD_DEFAULT_MODEL,
   defaultModelFor,
@@ -38,8 +38,9 @@ import {
  * between them switches whose cloud it is; the place chip picks the place
  * with its engine (`engineForPlace`).
  *
- * The agents the reader hid in Settings → Agents are left out, in a host's
- * cloud too, except the one the draft is on (`withoutHidden`); the gear at
+ * Only the agents offered on this device are drawn (`agent-choices.ts`: four
+ * and the blank terminal by default, the rest switched on in Settings →
+ * Agents), in a host's cloud too, plus the one the draft is on; the gear at
  * the end of the popup's strip opens that page.
  */
 export function NewSessionAgent() {
@@ -56,7 +57,7 @@ export function NewSessionAgent() {
   });
   const { field: efforts } = useController({ control, name: 'efforts' });
   const [favourites, setFavourites] = useModelFavourites();
-  const [hidden] = useStoredList(HIDDEN_AGENTS_KEY);
+  const [agentChoices] = useStoredList(AGENT_CHOICES_KEY);
   const navigate = useNavigate();
   const status = useCloudAgentStatus();
   // The vendor whose tab the button shows: the one picked, or else the first
@@ -79,7 +80,7 @@ export function NewSessionAgent() {
 
   return (
     <AgentSelect
-      agents={withoutHidden(toEngineAgents(atHostCloud, cloudAgent), hidden, agent)}
+      agents={withoutHidden(toEngineAgents(atHostCloud, cloudAgent), agentChoices, agent)}
       value={
         inCloud
           ? { agent: cloudAgent.id, model: cloudModel ?? CLOUD_DEFAULT_MODEL }

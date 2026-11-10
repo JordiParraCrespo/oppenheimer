@@ -2,7 +2,7 @@ import { AgentMark, SettingsGroup, SettingsRow, Switch } from '@oppenheimer/desi
 import { useStoredList } from '@oppenheimer/frontend-web';
 import { CODING_AGENT_IDS, CODING_AGENTS } from '@oppenheimer/shared/agents';
 import { useTranslation } from 'react-i18next';
-import { HIDDEN_AGENTS_KEY, shownAgents, withAgentShown } from '../lib/hidden-agents';
+import { AGENT_CHOICES_KEY, shownAgents, withAgentShown } from '../lib/agent-choices';
 
 /**
  * One switch per agent the catalog has: whether New session's engine picker
@@ -12,8 +12,8 @@ import { HIDDEN_AGENTS_KEY, shownAgents, withAgentShown } from '../lib/hidden-ag
  */
 export function AgentVisibility() {
   const { t } = useTranslation();
-  const [hidden, setHidden] = useStoredList(HIDDEN_AGENTS_KEY);
-  const shown = shownAgents(hidden);
+  const [choices, setChoices] = useStoredList(AGENT_CHOICES_KEY);
+  const shown = shownAgents(choices);
 
   return (
     <SettingsGroup>
@@ -34,7 +34,7 @@ export function AgentVisibility() {
             <Switch
               checked={visible}
               disabled={visible && shown.length === 1}
-              onCheckedChange={(next) => setHidden(withAgentShown(hidden, id, next))}
+              onCheckedChange={(next) => setChoices(withAgentShown(choices, id, next))}
               aria-label={t('settings.agents.show', { agent: label })}
             />
           </SettingsRow>
