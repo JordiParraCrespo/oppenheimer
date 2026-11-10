@@ -155,45 +155,41 @@ ${steps.map((step, i) => `${i + 1}. ${step}`).join('\n')}`;
  * tools its turn offers (2026-11-10), so a person who knows nothing yet hears
  * what Oppenheimer's bots are for and a tool the turn lacks is never promised.
  */
-const WHAT_AN_AREA_DOES: Readonly<Record<BotToolGroup, string | null>> = {
-  self: null,
-  sessions:
-    'work on their own computers (hosts): start coding agents such as Claude Code and Codex in sessions, orchestrate several at once, run commands and report back',
-  plan: 'keep their plan, projects and tasks up to date',
-  mail: 'read, sort and answer their email in Gmail',
-  whatsapp: 'talk with them and others on WhatsApp',
-  telegram: 'talk with them on Telegram',
-  github: 'follow, review and fix pull requests and issues on GitHub',
-  automations: 'run automations and routines on a schedule or when something happens',
-  bots: 'work with their other bots and create new ones',
-  web: 'search the web and research a topic',
-};
+interface AreaIntro {
+  /** What the bot can do there, in the greeting's list. */
+  does: string;
+  /** What the person may still have to connect for it, named in the offer to help. */
+  connects?: string;
+}
 
-/** What the person may still have to connect for an area, named in the offer to help. */
-const WHAT_AN_AREA_CONNECTS: Readonly<Partial<Record<BotToolGroup, string>>> = {
-  sessions: 'a computer',
-  mail: 'Gmail',
-  whatsapp: 'WhatsApp',
-  telegram: 'Telegram',
-  github: 'GitHub',
+const AREA_INTROS: Readonly<Partial<Record<BotToolGroup, AreaIntro>>> = {
+  sessions: {
+    does: 'work on their own computers (hosts): start coding agents such as Claude Code and Codex in sessions, orchestrate several at once, run commands and report back',
+    connects: 'a computer',
+  },
+  plan: { does: 'keep their plan, projects and tasks up to date' },
+  mail: { does: 'read, sort and answer their email in Gmail', connects: 'Gmail' },
+  whatsapp: { does: 'talk with them and others on WhatsApp', connects: 'WhatsApp' },
+  telegram: { does: 'talk with them on Telegram', connects: 'Telegram' },
+  github: { does: 'follow, review and fix pull requests and issues on GitHub', connects: 'GitHub' },
+  automations: { does: 'run automations and routines on a schedule or when something happens' },
+  bots: { does: 'work with their other bots and create new ones' },
+  web: { does: 'search the web and research a topic' },
 };
 
 function whatYouCanDoForThem(tools: readonly BotPromptTool[]): string[] {
   const offered = new Set(tools.flatMap((tool) => (tool.group ? [tool.group] : [])));
-  const phrases = BOT_TOOL_GROUPS.flatMap((group) => {
-    const phrase = WHAT_AN_AREA_DOES[group];
-    return offered.has(group) && phrase ? [phrase] : [];
+  const areas = BOT_TOOL_GROUPS.flatMap((group) => {
+    const intro = AREA_INTROS[group];
+    return intro && offered.has(group) ? [intro] : [];
   });
-  if (phrases.length === 0) return [];
-  const connects = BOT_TOOL_GROUPS.flatMap((group) => {
-    const thing = WHAT_AN_AREA_CONNECTS[group];
-    return offered.has(group) && thing ? [thing] : [];
-  });
+  if (areas.length === 0) return [];
+  const connects = areas.flatMap((area) => (area.connects ? [area.connects] : []));
   const offer = connects.length
     ? ` Say that anything not connected yet (${connects.join(', ')}) you can help them connect.`
     : '';
   return [
-    `In the same message, show them in a short list what you can do for them here, in your own words: ${phrases.join('; ')}.${offer}`,
+    `In the same message, show them in a short list what you can do for them here, in your own words and only as far as your tools under "What you can do" allow: ${areas.map((area) => area.does).join('; ')}.${offer}`,
   ];
 }
 
@@ -208,7 +204,7 @@ function howATurnGoes(remembers: boolean): string {
 
 const SAVE_AS_YOU_GO = [
   '- Before you reply, ask what you learned that will matter in a later conversation: a preference, a correction, a decision, a name, a fact about their work. Save each with `remember` in this turn, without asking. A correction from the person is the one to save above all. Choose its memory by the rule in `remember`.',
-  '- Ask also whether you learned who the person is or how they want any bot to treat them: their name, what they do for a living and for whom, their language and time zone, how to address them. Save that to the general memory, so every bot of theirs knows them a little better each time; their projects and work stay in yours, by the rule in `remember`. When a general fact in your prompt is out of date, remember the new one and tell them.',
+  '- Ask also whether you learned who the person is or how they want any bot to treat them: their name, what they do for a living and for whom, their language and time zone, how to address them. Save that to the general memory when the rule in `remember` puts it there, so every bot of theirs knows them a little better each time. When a general fact in your prompt is out of date, remember the new one and tell them.',
 ].join('\n');
 
 const HOW_A_TURN_GOES = `# How a turn goes

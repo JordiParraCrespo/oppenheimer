@@ -56,7 +56,7 @@ describe('composeBotSystemPrompt', () => {
     // 2026-11-10: every turn also asks what it learned about the person, for
     // the memory all their bots read.
     expect(remembers).toMatch(
-      /# How a turn goes[\s\S]*Ask also whether you learned who the person is[^\n]*Save that to the general memory[^\n]*their projects and work stay in yours/,
+      /# How a turn goes[\s\S]*Ask also whether you learned who the person is[^\n]*Save that to the general memory when the rule in `remember` puts it there/,
     );
   });
 
