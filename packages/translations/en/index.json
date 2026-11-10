@@ -3379,6 +3379,7 @@
       "back": "Back {{when}}",
       "unread": "{{count}} unread",
       "search": "Search inbox",
+      "refresh": "Refresh",
       "clearSearch": "Clear search"
     },
     "filter": {

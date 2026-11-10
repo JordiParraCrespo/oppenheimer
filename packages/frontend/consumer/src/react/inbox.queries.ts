@@ -6,7 +6,7 @@ import {
   withCacheOnSuccess,
 } from '@oppenheimer/frontend-core/react';
 import { type UseMutationOptions, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useMemo, useSyncExternalStore } from 'react';
+import { useMemo, useState, useSyncExternalStore } from 'react';
 import type { RunsFilter } from '../modules/automations/automation.entity';
 import { composeInbox, type InboxSources, type InboxView } from '../modules/inbox/inbox-item';
 import { type InboxMark, InboxMarkEntity } from '../modules/inbox/inbox-mark.entity';
@@ -228,6 +228,25 @@ export function useInboxCount(now: number): number | undefined {
     now,
     answered,
   ).open.length;
+}
+
+/**
+ * Reads the Inbox again now, every source at once, for its Refresh button;
+ * `refreshing` holds while any of them is still answering. A read that fails
+ * shows as the Inbox's `error`, as a poll's would.
+ */
+export function useRefreshInbox(): { refresh: () => void; refreshing: boolean } {
+  const queryClient = useQueryClient();
+  const keys = useInboxQueries().map((query) => query.queryKey);
+  const [refreshing, setRefreshing] = useState(false);
+  const refresh = () => {
+    if (refreshing) return;
+    setRefreshing(true);
+    void Promise.all(
+      keys.map((queryKey) => queryClient.refetchQueries({ queryKey, exact: true })),
+    ).finally(() => setRefreshing(false));
+  };
+  return { refresh, refreshing };
 }
 
 export interface PutInboxMarkVariables {

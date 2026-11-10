@@ -1,5 +1,6 @@
 import {
   Button,
+  IconButton,
   InboxListHead,
   InboxList as InboxRows,
   InboxSnoozedRow,
@@ -8,6 +9,8 @@ import {
   useIsMobile,
   useNow,
 } from '@oppenheimer/design-system-web';
+import { RotateCwIcon } from '@oppenheimer/design-system-web/icons';
+import { useRefreshInbox } from '@oppenheimer/frontend-consumer/react';
 import {
   dateFormatter,
   ErrorAlert,
@@ -29,7 +32,7 @@ import { InboxRow } from '@/features/inbox/sections/inbox-row';
 
 /**
  * The Inbox's list column (`29-inbox.md` §5, the 2026-10-29 frame): its head
- * with the unread count and the filter, the search, a mail row per item with
+ * with the unread count, Refresh and the filter, the search, a mail row per item with
  * its age (one minute tick for the list), the done ones of this visit under
  * Show done, and Snoozed with when each comes back. It reads the Inbox itself
  * because it draws it; the reading pane reads the same cache.
@@ -42,6 +45,7 @@ export function InboxList() {
   const { inbox, search, open, done } = listing;
   const read = useInboxRead();
   const marks = useInboxMarks();
+  const reload = useRefreshInbox();
   // On a phone nothing is in the reading pane until an item is opened.
   const phone = useIsMobile();
   const current = phone && search.item === null ? null : listing.current;
@@ -105,6 +109,16 @@ export function InboxList() {
         title={t('inbox.title')}
         count={unread.length ? t('inbox.list.unread', { count: unread.length }) : undefined}
       >
+        <IconButton
+          size="xs"
+          variant="quiet"
+          aria-label={t('inbox.list.refresh')}
+          title={t('inbox.list.refresh')}
+          aria-busy={reload.refreshing || undefined}
+          onClick={reload.refresh}
+        >
+          <RotateCwIcon className={reload.refreshing ? 'motion-safe:animate-spin' : undefined} />
+        </IconButton>
         <InboxFilterMenu
           filter={search.filter}
           typeCounts={counts.types}

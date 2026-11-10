@@ -11,6 +11,7 @@
     "back": "Vuelve {{when}}",
     "unread": "{{count}} sin leer",
     "search": "Buscar en la bandeja",
+    "refresh": "Actualizar",
     "clearSearch": "Borrar búsqueda"
   },
   "filter": {
