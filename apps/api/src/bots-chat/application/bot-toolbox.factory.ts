@@ -9,7 +9,11 @@ import {
 } from '@oppenheimer/shared';
 import { ownerLacksPermission } from '../domain/bot-owner-permission.policy';
 import type { BotPromptTool } from '../domain/bot-prompt.policy';
-import { BotSkillNudge, opensWithSkill, withSkillNudge } from '../domain/bot-skill-learning.policy';
+import {
+  BotSkillNudge,
+  carrySkillNudge,
+  opensWithSkill,
+} from '../domain/bot-skill-learning.policy';
 import { type BotPermissions, toolDecision } from '../domain/bot-tool-permission.policy';
 import { BotAutomationToolsFactory } from './bot-automation-tools.factory';
 import { BotPeerToolsFactory } from './bot-bots-tools.factory';
@@ -268,7 +272,9 @@ export class BotToolboxFactory {
 /**
  * The turn's tools, each call counted toward the skill reminder
  * (`25-bots.md` §4.1, 2026-11-09): the one result it is due on carries it
- * after its words, and the chat takes it back off (`withoutSkillNudge`). One
+ * after its words, and the chat takes it back off (`withoutSkillNudge`).
+ * Every result of such a turn has the reminder's tag neutralised, so only
+ * Oppenheimer's own line can carry it (`carrySkillNudge`). One
  * count for the turn's own tools only: a `delegate` child's are bound apart
  * (`readOnlyTools`) and never reminded.
  */
@@ -277,9 +283,8 @@ function nudging(tools: readonly BotEngineTool[], nudge: BotSkillNudge): BotEngi
     ...tool,
     run: async (input, options) => {
       const result = await tool.run(input, options);
-      return nudge.finished(tool.name, { asked: raisedCard(result) })
-        ? { ...result, content: withSkillNudge(result.content) }
-        : result;
+      const due = nudge.finished(tool.name, { asked: raisedCard(result) });
+      return { ...result, content: carrySkillNudge(result.content, due) };
     },
   }));
 }

@@ -15,6 +15,7 @@ import type { BotSkillEntity } from '../../bots/domain/bot-skill.entity';
 import { FindBotSkillQuery } from '../../bots/queries/find-bot-skill/find-bot-skill.query';
 import { FindBotSkillsQuery } from '../../bots/queries/find-bot-skills/find-bot-skills.query';
 import {
+  type BotBuiltInSkill,
   describeSkillUse,
   isBuiltInSkill,
   skillBlock,
@@ -24,7 +25,7 @@ import {
   isOppenheimersSkillName,
   oppenheimersSkillRefusal,
   patchSkillBody,
-  SKILL_FIX_NOTE,
+  skillAuthorNote,
   skillChangeAllowed,
   skillPatchRefusal,
   theirSkillRefusal,
@@ -81,7 +82,7 @@ export class BotSkillToolsFactory implements BotToolArea {
         }
         const read = `${describeSkillUse(skill)}\n\n${skillBlock(skill)}`;
         // Oppenheimer's own skills are product text: nothing for the bot to fix.
-        return isBuiltInSkill(skill) ? read : `${read}\n\n${SKILL_FIX_NOTE}`;
+        return isBuiltInSkill(skill) ? read : `${read}\n\n${skillAuthorNote(skill.source)}`;
       },
     });
   }
@@ -90,7 +91,7 @@ export class BotSkillToolsFactory implements BotToolArea {
     return defineBotTool({
       name: 'save_skill',
       scope: 'bots:write',
-      description: `Saves a skill: a reusable way of doing one task, under a short name the person can run as /<name>. Use it when the person asks you to save how you did something ("save that as a skill called…"), or on your own after a task that took real work (many tool calls, or a dead end you worked around) and is likely to come up again: never for a one-off, anything a few steps long, or anything holding a secret or the person's private data; at most one new skill a turn, and say in your answer that you saved it, by name. A skill of yours with that name is replaced: one the person wrote last only when they asked (set asked_by_person), and to fix one step use patch_skill rather than resending the whole body. The names of the skills Oppenheimer gives every bot are taken. The body says when it applies, what it needs, the steps, how to check the result and what to report, and what needs the person's OK. Name 1 to ${BOT_SKILL_NAME_MAX} of a-z, 0-9 and -; description at most ${BOT_SKILL_DESCRIPTION_MAX}; body at most ${BOT_SKILL_BODY_MAX}; at most ${BOT_SKILLS_MAX} skills. The person sees and edits it in Settings → Skills.`,
+      description: `Saves a skill: a reusable way of doing one task, under a short name the person can run as /<name>. Use it when the person asks you to save how you did something ("save that as a skill called…"), or on your own after a task that took real work (several tool calls, or a dead end you worked around) and is likely to come up again, which the person saying they do it regularly is reason enough for: never for a one-off, a lookup of a call or two, or anything holding a secret or the person's private data; at most one new skill a turn, and say in your answer that you saved it, by name. A skill of yours with that name is replaced: one the person wrote last only when they asked (set asked_by_person), and to fix one step use patch_skill rather than resending the whole body. The names of the skills Oppenheimer gives every bot are taken. The body says when it applies, what it needs, the steps, how to check the result and what to report, and what needs the person's OK. Name 1 to ${BOT_SKILL_NAME_MAX} of a-z, 0-9 and -; description at most ${BOT_SKILL_DESCRIPTION_MAX}; body at most ${BOT_SKILL_BODY_MAX}; at most ${BOT_SKILLS_MAX} skills. The person sees and edits it in Settings → Skills.`,
       input: z.strictObject({
         name: skillName,
         description: z
@@ -258,7 +259,7 @@ export class BotSkillToolsFactory implements BotToolArea {
   private async skillToUse(
     context: BotToolCallContext,
     name: string,
-  ): Promise<Pick<BotSkillEntity, 'name' | 'description' | 'body' | 'modelInvocable'>> {
+  ): Promise<BotSkillEntity | BotBuiltInSkill> {
     const found = withBuiltInSkills(await this.skills(context)).find(
       (skill) => skill.name === name,
     );

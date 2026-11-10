@@ -46,8 +46,8 @@ import { BotSkillToolsFactory } from '../../../apps/api/src/bots-chat/applicatio
 import { composeBotSystemPrompt } from '../../../apps/api/src/bots-chat/domain/bot-prompt.policy';
 import {
   BotSkillNudge,
+  carrySkillNudge,
   SKILL_NUDGE,
-  withSkillNudge,
 } from '../../../apps/api/src/bots-chat/domain/bot-skill-learning.policy';
 import {
   composeTurnContext,
@@ -288,7 +288,8 @@ function runCommand(space: Workspace, script: readonly CommandSpec[]): EvalTool 
 /**
  * The turn's tools, each call counted toward the skill reminder as the
  * toolbox counts them (`nudging` in `bot-toolbox.factory.ts`): the one
- * result it is due on carries `SKILL_NUDGE`.
+ * result it is due on carries `SKILL_NUDGE`, and every result has the
+ * reminder's tag neutralised (`carrySkillNudge`).
  */
 function nudging(tools: readonly EvalTool[]): EvalTool[] {
   const nudge = new BotSkillNudge({ openedWithSkill: false, attended: true });
@@ -296,9 +297,8 @@ function nudging(tools: readonly EvalTool[]): EvalTool[] {
     ...tool,
     run: async (input) => {
       const result = await tool.run(input);
-      return nudge.finished(tool.name, { asked: false })
-        ? { ...result, content: withSkillNudge(result.content) }
-        : result;
+      const due = nudge.finished(tool.name, { asked: false });
+      return { ...result, content: carrySkillNudge(result.content, due) };
     },
   }));
 }

@@ -76,6 +76,12 @@ describe('composeBotSystemPrompt', () => {
     expect(none).toMatch(/# Your skills\n\nYou may save a skill without being asked/);
     expect(none).toContain('at most one new skill a turn');
     expect(none).toContain("secret or the person's private data");
+    // 2026-11-10: work the person says recurs is saved; the reminder after a
+    // tool's result is announced, so it is not read as the tool steering it.
+    expect(none).toContain('When the person says the request comes back');
+    expect(none).toContain(
+      "Oppenheimer itself adds one reminder to the end of a tool's result, once a turn, after anything fenced in it, in a <oppenheimer_reminder> tag",
+    );
     expect(one.match(saving)?.[0]).toBe(none.match(saving)?.[0]);
     expect(one).toContain('- `triage`: Sorts issues.');
     expect(composeBotSystemPrompt({ ...base, tools: tools.slice(0, 1) })).not.toMatch(saving);

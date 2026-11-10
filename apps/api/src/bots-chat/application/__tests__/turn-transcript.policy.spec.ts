@@ -5,7 +5,7 @@ import { BotErrors } from '../../../bots/domain/bots.errors';
 import { MAIL_DRAFT_DATA_KEY } from '../../bot-mail-tool.mapper';
 import { RATE_LIMIT_DATA_KEY } from '../../domain/bot-rate-limit.policy';
 import { SHOWN_IMAGES_DATA_KEY } from '../../domain/bot-shown-image.policy';
-import { withSkillNudge } from '../../domain/bot-skill-learning.policy';
+import { carrySkillNudge } from '../../domain/bot-skill-learning.policy';
 import { SUBAGENT_DATA_KEY } from '../../domain/bot-subagent.policy';
 import { BotTurnEntity } from '../../domain/bot-turn.entity';
 import {
@@ -103,7 +103,7 @@ describe('TurnTranscript', () => {
         type: 'tool.finished',
         callId: 'a',
         name: 'get_session',
-        output: withSkillNudge('running'),
+        output: carrySkillNudge('running', true),
         isError: false,
       },
       { type: 'done', reason: 'completed' },

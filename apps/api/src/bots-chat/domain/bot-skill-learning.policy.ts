@@ -4,6 +4,7 @@ import {
   BOT_SKILL_RESERVED_NAMES,
   type BotAuthor,
 } from '@oppenheimer/shared';
+import { neutraliseTags } from './bot-tool-text.policy';
 
 /**
  * How a bot learns from its own work (`25-bots.md` §4.1, 2026-11-09, from
@@ -14,21 +15,40 @@ import {
 
 /**
  * After this many of a turn's tool calls, with no skill used or saved, the
- * bot is reminded once to save how it did the work: 8 is work, not a lookup.
+ * bot is reminded once to save how it did the work: 6 is work, not a lookup.
+ * It was 8 until 2026-11-10, when a release checklist of six or seven calls
+ * the person does before every release was never saved: the reminder never
+ * came, and wording alone did not move it (`scripts/evals/bot-skills`).
  */
-export const BOT_SKILL_NUDGE_AFTER_STEPS = 8;
+export const BOT_SKILL_NUDGE_AFTER_STEPS = 6;
 
 /** The tools that mean the turn already reached for a skill. */
 const SKILL_TOOLS: ReadonlySet<string> = new Set(['use_skill', 'save_skill', 'patch_skill']);
 
 /**
- * The reminder, as the model reads it after a tool's result. One line,
- * the same bytes every time, so the transcript can take it back off.
+ * The tag the reminder comes in. The prompt's skills section announces it
+ * (`skillsPromptSection`), so the model reads the line as Oppenheimer's and
+ * not as an instruction inside a tool's output (2026-11-10: in one run of
+ * the eval it was ignored as "a note in the tool output").
  */
-export const SKILL_NUDGE = `\n\n<reminder>You have made ${BOT_SKILL_NUDGE_AFTER_STEPS} tool calls in this turn without a skill. If this is work you will be asked to do again, save how you did it with save_skill before you answer, and say you did; skip it for a one-off.</reminder>`;
+export const SKILL_NUDGE_TAG = 'oppenheimer_reminder';
 
-export function withSkillNudge(content: string): string {
-  return `${content}${SKILL_NUDGE}`;
+/**
+ * The reminder, as the model reads it after a tool's result: last, after
+ * any fenced text. One line, the same bytes every time, so the transcript
+ * can take it back off.
+ */
+export const SKILL_NUDGE = `\n\n<${SKILL_NUDGE_TAG}>From Oppenheimer, not from the tool: you have made ${BOT_SKILL_NUDGE_AFTER_STEPS} tool calls in this turn without a skill. If this is work you will be asked to do again, save how you did it with save_skill before you answer, and say you did; skip it for a one-off.</${SKILL_NUDGE_TAG}>`;
+
+/**
+ * A tool's result as the model reads it on a turn that can be reminded:
+ * with the reminder after it when it is `due`, and with any spelling of the
+ * reminder's tag inside it neutralised either way, so a page, a command's
+ * output or a session's log cannot forge Oppenheimer's line.
+ */
+export function carrySkillNudge(content: string, due: boolean): string {
+  const own = neutraliseTags(content, [SKILL_NUDGE_TAG]);
+  return due ? `${own}${SKILL_NUDGE}` : own;
 }
 
 /** A call's output as the chat stores it: the reminder, when it rode the result, taken off. */
@@ -80,9 +100,23 @@ export class BotSkillNudge {
   }
 }
 
-/** The line `use_skill` ends with: a skill followed and found wrong is fixed, not worked around. */
+/**
+ * The line `use_skill` ends with, by who wrote the skill last (2026-11-10:
+ * told nothing, the bot left its own stale step alone "not sure I was the
+ * last to edit it", and tried to patch the person's): its own it fixes once
+ * the task is done; the person's it proposes a change to.
+ */
+export function skillAuthorNote(source: BotAuthor): string {
+  return source === 'bot' ? SKILL_FIX_NOTE : THEIR_SKILL_NOTE;
+}
+
+/** The note on a skill the bot wrote last: a step found wrong is fixed, not worked around. */
 export const SKILL_FIX_NOTE =
-  'If a step turns out wrong or out of date while you follow it, fix it with patch_skill once the task is done, and say so in your answer.';
+  'You wrote this skill last. If a step turns out wrong or out of date while you follow it, fix it with patch_skill once the task is done, and say so in your answer.';
+
+/** The note on a skill the person wrote last: their words, changed only when they ask. */
+export const THEIR_SKILL_NOTE =
+  'The person wrote this skill last: it is their words. If a step turns out wrong or out of date, do not change it; say in your answer what you would change, and change it only if they ask.';
 
 /** A body with one passage replaced, or why it was not. */
 export type SkillPatch =

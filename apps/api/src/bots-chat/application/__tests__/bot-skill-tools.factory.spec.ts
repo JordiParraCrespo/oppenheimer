@@ -100,12 +100,23 @@ function setup(kept: BotSkillEntity[]) {
 
 describe('BotSkillToolsFactory', () => {
   it('reads a skill the bot may use in full, fenced and named', async () => {
-    const { call } = setup([skill('triage')]);
+    const { call } = setup([skill('triage', {}, 'bot')]);
     const result = await call('use_skill', { name: 'triage' });
     expect(result).toMatchObject({ isError: false });
     expect(result.content).toBe(
-      'Skill "triage": Does triage. Follow it for this request.\n\n<skill name="triage">\nSteps for triage.\n</skill>\n\nIf a step turns out wrong or out of date while you follow it, fix it with patch_skill once the task is done, and say so in your answer.',
+      'Skill "triage": Does triage. Follow it for this request.\n\n<skill name="triage">\nSteps for triage.\n</skill>\n\nYou wrote this skill last. If a step turns out wrong or out of date while you follow it, fix it with patch_skill once the task is done, and say so in your answer.',
     );
+  });
+
+  // The regression (2026-11-10): told nothing of who wrote it, the bot left
+  // its own stale step alone and tried to patch the person's.
+  it('says a skill the person wrote last is theirs, to propose a change to rather than fix', async () => {
+    const { call } = setup([skill('triage', {}, 'user')]);
+    const result = await call('use_skill', { name: 'triage' });
+    expect(result.content).toMatch(
+      /<\/skill>\n\nThe person wrote this skill last: it is their words\. .*change it only if they ask\.$/,
+    );
+    expect(result.content).not.toContain('patch_skill');
   });
 
   it('hands back a skill of the longest body allowed whole, never cut to fit a tool answer', async () => {
