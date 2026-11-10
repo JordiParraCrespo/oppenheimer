@@ -177,6 +177,7 @@ export {
   useInboxCount,
   useInboxReportImages,
   usePutInboxMark,
+  useRefreshInbox,
   useSuspenseInbox,
 } from './inbox.queries';
 export {
