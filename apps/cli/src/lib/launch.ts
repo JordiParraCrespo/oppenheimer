@@ -23,6 +23,7 @@ export interface LaunchOptions {
   permission?: 'ask' | 'auto' | 'full';
   model?: string;
   name?: string;
+  hidden?: boolean;
 }
 
 export interface LaunchPlan {
@@ -69,6 +70,7 @@ export async function planLaunch(
       name: options.name,
       permission: options.permission,
       model: options.model,
+      hidden: options.hidden,
     }),
   };
 }

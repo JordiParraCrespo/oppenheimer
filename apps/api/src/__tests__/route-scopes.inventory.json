@@ -318,6 +318,7 @@
   "PUT /v1/pulls/repositories/:installationId/:githubRepoId": ["pulls:write"],
   "PUT /v1/roles/:id/permissions": ["roles:write"],
   "PUT /v1/sessions/:id/share": ["sessions:write"],
+  "PUT /v1/sessions/:id/visibility": ["sessions:write"],
   "PUT /v1/tasks/:id/sessions/:sessionId": ["tasks:write"],
   "PUT /v1/users/:userId/roles": ["roles:write"]
 }

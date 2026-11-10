@@ -41,6 +41,8 @@ export interface StartSessionInput {
   /** The branch the session's branch is created from; the repository's base branch when omitted. */
   base_branch?: string;
   name?: string;
+  /** Start it hidden from the console's sidebar; shown when omitted. */
+  hidden?: boolean;
   /** Subscribe the bot to it (`27-bot-subscriptions.md` §3); true when omitted. */
   watch?: boolean;
 }
@@ -82,6 +84,7 @@ export function planSession(
     name: input.name,
     prompt: input.task,
     launch: launch.launch,
+    ...(input.hidden ? { hidden: true } : {}),
     ...(input.folder
       ? { folder: input.folder }
       : { checkouts: [checkout], cwdGithubRepoId: checkout?.githubRepoId }),
@@ -158,7 +161,8 @@ export function sessionSummary(
         : '';
   const from = input.base_branch && !input.folder ? ` from ${input.base_branch}` : '';
   const hearBack = input.watch === false ? '' : ', and hear back when it ends';
-  return `Start ${CODING_AGENTS[agent].label}${how} on ${hostName ?? 'no host yet'}${where}${from}${hearBack}: ${clippedTask(input.task)}`;
+  const hidden = input.hidden ? ', hidden from your sidebar' : '';
+  return `Start ${CODING_AGENTS[agent].label}${how} on ${hostName ?? 'no host yet'}${where}${from}${hidden}${hearBack}: ${clippedTask(input.task)}`;
 }
 
 /** Why the launch a `start_session` call asks for cannot start, or null when the agent takes it. */

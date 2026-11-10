@@ -63,6 +63,18 @@ const CLOUD_START_WAIT_MAX_SECONDS = 120;
  * the card what it will do, by name. A bot's session is the owner's, started
  * in their scope, marked `bot`; a prompt it sends is logged as the bot's.
  */
+
+/**
+ * `start_session`'s and `start_cloud_session`'s `hidden`: one contract for
+ * both, so the wording a bot reads cannot drift between them.
+ */
+const HIDDEN_SESSION_INPUT = z
+  .boolean()
+  .optional()
+  .describe(
+    "Start it hidden from the person's sidebar in the console (default false): for work they need not watch. It runs like any other, and they can show hidden sessions whenever they want.",
+  );
+
 @Injectable()
 export class BotSessionToolsFactory implements BotToolArea {
   /** Where Settings → Permissions lists these tools. */
@@ -172,6 +184,7 @@ export class BotSessionToolsFactory implements BotToolArea {
             "The branch the session's own branch starts from; the repository's base branch when omitted. Not with folder.",
           ),
         name: z.string().min(1).max(80).optional().describe('A short name for the session.'),
+        hidden: HIDDEN_SESSION_INPUT,
         watch: z
           .boolean()
           .optional()
@@ -291,6 +304,7 @@ export class BotSessionToolsFactory implements BotToolArea {
           .optional()
           .describe("cursor only: one of Cursor's models; Cursor's own pick when omitted."),
         name: z.string().min(1).max(80).optional().describe('A short name for the session.'),
+        hidden: HIDDEN_SESSION_INPUT,
         watch: z
           .boolean()
           .optional()

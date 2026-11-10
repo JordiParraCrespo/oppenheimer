@@ -64,6 +64,7 @@ opp sessions close <id>
 | `opp hosts list \| get` | Your machines, and which are online |
 | `opp projects list` | Projects: repositories, default host and agent |
 | `opp sessions list \| get \| run \| send \| wait \| stop \| close` | Sessions on your hosts |
+| `opp sessions run --hidden`, `opp sessions hide \| show <id>` | Keep a session out of the console's sidebar, or show it again; it runs the same |
 | `opp automations list \| create \| run \| pause \| resume \| delete` | Tasks that start a session on a schedule |
 | `opp bots list \| chat` | Your bots (the console's Employees): `chat` waits for the answer |
 | `opp tasks list \| add \| move` | Plan's board |
