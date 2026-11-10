@@ -49,8 +49,9 @@ export function BotChat({ botId }: { botId: string }) {
   useMarkSeen(bot.id);
   // Starts the documents' read beside the conversation's, so a chat with no
   // messages yet greets with its hello as the transcript lands, not a round
-  // trip later. Nothing here reads the result, so it renders nothing again.
-  useBotDocuments(bot.id);
+  // trip later. Nothing here reads the result, and an empty
+  // `notifyOnChangeProps` keeps the read's fetch states from redrawing the chat.
+  useBotDocuments(bot.id, { notifyOnChangeProps: [] });
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
