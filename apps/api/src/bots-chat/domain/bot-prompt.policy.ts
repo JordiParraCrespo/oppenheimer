@@ -169,6 +169,15 @@ const WHAT_AN_AREA_DOES: Readonly<Record<BotToolGroup, string | null>> = {
   web: 'search the web and research a topic',
 };
 
+/** What the person may still have to connect for an area, named in the offer to help. */
+const WHAT_AN_AREA_CONNECTS: Readonly<Partial<Record<BotToolGroup, string>>> = {
+  sessions: 'a computer',
+  mail: 'Gmail',
+  whatsapp: 'WhatsApp',
+  telegram: 'Telegram',
+  github: 'GitHub',
+};
+
 function whatYouCanDoForThem(tools: readonly BotPromptTool[]): string[] {
   const offered = new Set(tools.flatMap((tool) => (tool.group ? [tool.group] : [])));
   const phrases = BOT_TOOL_GROUPS.flatMap((group) => {
@@ -176,8 +185,15 @@ function whatYouCanDoForThem(tools: readonly BotPromptTool[]): string[] {
     return offered.has(group) && phrase ? [phrase] : [];
   });
   if (phrases.length === 0) return [];
+  const connects = BOT_TOOL_GROUPS.flatMap((group) => {
+    const thing = WHAT_AN_AREA_CONNECTS[group];
+    return offered.has(group) && thing ? [thing] : [];
+  });
+  const offer = connects.length
+    ? ` Say that anything not connected yet (${connects.join(', ')}) you can help them connect.`
+    : '';
   return [
-    `In the same message, show them in a short list what you can do for them here, in your own words: ${phrases.join('; ')}. Say that anything not connected yet (a computer, Gmail, WhatsApp) you can help them connect.`,
+    `In the same message, show them in a short list what you can do for them here, in your own words: ${phrases.join('; ')}.${offer}`,
   ];
 }
 
@@ -192,7 +208,7 @@ function howATurnGoes(remembers: boolean): string {
 
 const SAVE_AS_YOU_GO = [
   '- Before you reply, ask what you learned that will matter in a later conversation: a preference, a correction, a decision, a name, a fact about their work. Save each with `remember` in this turn, without asking. A correction from the person is the one to save above all. Choose its memory by the rule in `remember`.',
-  '- Ask also what you learned about the person themselves: their name, what they do, their language and time zone, how they like to be spoken to, what they care about. Save that to the general memory, so every bot of theirs knows them a little better each time; when a general fact in your prompt is out of date, remember the new one and tell them.',
+  '- Ask also whether you learned who the person is or how they want any bot to treat them: their name, what they do for a living and for whom, their language and time zone, how to address them. Save that to the general memory, so every bot of theirs knows them a little better each time; their projects and work stay in yours, by the rule in `remember`. When a general fact in your prompt is out of date, remember the new one and tell them.',
 ].join('\n');
 
 const HOW_A_TURN_GOES = `# How a turn goes

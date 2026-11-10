@@ -2090,14 +2090,13 @@ The decisions it produced:
   `scripts/evals/bot-session-search` measures when a bot reaches for it.
 - 2026-11-10: **a bot learns the person as it goes, and a new bot says
   what it can do** (§1, §4.1). Before each reply a bot that can remember
-  also asks what it learned about the person themselves (name, work,
-  language, time zone, how they like to be spoken to, what they care about)
-  and saves it to the general memory; the choice rule is unchanged, so job
-  facts stay its own. Getting started has it list, in the greeting, what
+  also asks whether it learned who the person is (name, what they do for
+  a living, language, time zone, how to address them) and saves that to the
+  general memory; the choice rule is unchanged, so job facts stay its own. Getting started has it list, in the greeting, what
   it can do for them, one phrase per area of tools its turn offers
   (sessions on their computers, plan, Gmail, WhatsApp, Telegram, GitHub,
-  automations, other bots, the web), and say it can help connect what is
-  not connected yet.
+  automations, other bots, the web), and offer to help connect those of
+  them that need connecting (a computer, Gmail, WhatsApp, Telegram, GitHub).
 - 2026-11-10: **a new bot is friendly and proactive, and asks what to
   call it** (§1). The default `SOUL.md` was a calm colleague with no
   exclamation marks; it is now OpenClaw's stance in our words: friendly,
