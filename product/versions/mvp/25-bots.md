@@ -2049,7 +2049,9 @@ The decisions it produced:
   skill the person wrote last it replaces or fixes only when they asked
   (`save_skill` too), and Oppenheimer's own skills never. It refines
   2026-10-31's skills, which the bot saved only when asked.
+  `scripts/evals/bot-skills` measures it.
 - 2026-11-09: **a bot searches every session** (§4.2, from Hermes Agent's
   session search). `search_sessions` finds a session by the words of its
   name and log, on any host and closed ones included, each session cut to
   its best 2 hits; the agents' transcripts on the hosts are not searched.
+  `scripts/evals/bot-session-search` measures when a bot reaches for it.
