@@ -7,12 +7,14 @@ import {
   agentOptions,
   applyFilters,
   DEFAULT_FILTERS,
+  facetLabel,
   hostOptions,
   isFiltered,
+  pickFacet,
   projectOptions,
   repositoryOptions,
+  type SessionFacet,
   type SessionFilters,
-  toggleRepository,
   withoutChip,
 } from '../lib/session-filters';
 
@@ -54,7 +56,7 @@ describe('isFiltered', () => {
   it('is on only when a facet narrows, never for the order', () => {
     expect(isFiltered(DEFAULT_FILTERS)).toBe(false);
     expect(isFiltered(filters({ sort: 'name' }))).toBe(false);
-    expect(isFiltered(filters({ host: 'h1' }))).toBe(true);
+    expect(isFiltered(filters({ host: ['h1'] }))).toBe(true);
     expect(isFiltered(filters({ repository: ['acme/api'] }))).toBe(true);
   });
 });
@@ -127,19 +129,19 @@ describe('applyFilters', () => {
   });
 
   it('narrows by each facet, matching a repository on any checkout', () => {
-    expect(ids(applyFilters(sessions, filters({ project: 'p2' })))).toEqual(['new']);
+    expect(ids(applyFilters(sessions, filters({ project: ['p2'] })))).toEqual(['new']);
     expect(ids(applyFilters(sessions, filters({ repository: ['acme/api'] })))).toEqual([
       'new',
       'old',
     ]);
-    expect(ids(applyFilters(sessions, filters({ agent: 'codex' })))).toEqual(['new']);
-    expect(ids(applyFilters(sessions, filters({ host: 'h1' })))).toEqual(['mid', 'old']);
+    expect(ids(applyFilters(sessions, filters({ agent: ['codex'] })))).toEqual(['new']);
+    expect(ids(applyFilters(sessions, filters({ host: ['h1'] })))).toEqual(['mid', 'old']);
   });
 
   it('combines facets', () => {
-    expect(ids(applyFilters(sessions, filters({ repository: ['acme/web'], host: 'h1' })))).toEqual([
-      'mid',
-    ]);
+    expect(
+      ids(applyFilters(sessions, filters({ repository: ['acme/web'], host: ['h1'] }))),
+    ).toEqual(['mid']);
   });
 
   it('shows a session when any of its checkouts is one of several picked repositories', () => {
@@ -168,7 +170,10 @@ describe('activeFilters', () => {
     };
 
     expect(
-      activeFilters(filters({ host: 'h1', project: 'p1', agent: 'codex', sort: 'name' }), options),
+      activeFilters(
+        filters({ host: ['h1'], project: ['p1'], agent: ['codex'], sort: 'name' }),
+        options,
+      ),
     ).toEqual([
       { key: 'project', value: 'p1', label: 'Web' },
       { key: 'agent', value: 'codex', label: 'codex' },
@@ -177,16 +182,51 @@ describe('activeFilters', () => {
   });
 });
 
-describe('repository set', () => {
-  it('adds and drops repositories one at a time, and "all" empties it', () => {
-    const one = toggleRepository([], 'acme/api', true);
-    const two = toggleRepository(one, 'acme/web', true);
-    expect(two).toEqual(['acme/api', 'acme/web']);
-    expect(toggleRepository(two, 'acme/api', false)).toEqual(['acme/web']);
-    expect(toggleRepository(two, ALL, true)).toEqual([]);
+describe('picking', () => {
+  const apply = (from: SessionFilters, ...picks: [SessionFacet, string, boolean][]) => {
+    let current = from;
+    for (const [facet, value, selected] of picks) {
+      current = { ...current, ...pickFacet(current, facet, value, selected) };
+    }
+    return current;
+  };
+
+  it('adds and drops repositories one at a time, and "all" empties the set', () => {
+    const two = apply(
+      DEFAULT_FILTERS,
+      ['repository', 'acme/api', true],
+      ['repository', 'acme/web', true],
+    );
+    expect(two.repository).toEqual(['acme/api', 'acme/web']);
+    expect(apply(two, ['repository', 'acme/api', false]).repository).toEqual(['acme/web']);
+    expect(apply(two, ['repository', ALL, true]).repository).toEqual([]);
   });
 
-  it('draws a chip per picked repository, and each chip drops only its own', () => {
+  it('replaces the pick on a single-value facet rather than adding to it', () => {
+    expect(apply(DEFAULT_FILTERS, ['host', 'h1', true], ['host', 'h2', true]).host).toEqual(['h2']);
+  });
+
+  it('labels a facet by its "all" row, its one pick, or a count', () => {
+    const options = {
+      project: [{ value: ALL, label: 'All projects' }],
+      repository: [
+        { value: ALL, label: 'All repositories' },
+        { value: 'acme/api', label: 'api' },
+      ],
+      agent: [],
+      host: [],
+    };
+    const several = (count: number) => `${count} picked`;
+    expect(facetLabel(DEFAULT_FILTERS, 'project', options, several)).toBe('All projects');
+    expect(facetLabel(filters({ repository: ['acme/api'] }), 'repository', options, several)).toBe(
+      'api',
+    );
+    expect(
+      facetLabel(filters({ repository: ['acme/api', 'acme/web'] }), 'repository', options, several),
+    ).toBe('2 picked');
+  });
+
+  it('draws a chip per picked value, and each chip drops only its own', () => {
     const options = {
       project: [],
       repository: [

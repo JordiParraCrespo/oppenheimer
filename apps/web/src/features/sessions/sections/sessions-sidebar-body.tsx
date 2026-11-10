@@ -26,7 +26,6 @@ import {
 import { PROJECTS_GROUP, useSidebarOrder } from '../hooks/use-sidebar-order';
 import { listedProjects } from '../lib/hidden-projects';
 import {
-  ALL,
   activeFilters,
   agentOptions,
   applyFilters,
@@ -124,7 +123,7 @@ export function SessionsSidebarBody() {
   const narrowed = dirty || query.trim().length > 0;
   const pins = useSessionPins();
   const { pinned, rest } = splitPinned(visible, pins.pins);
-  const picked = filters.project === ALL ? null : filters.project;
+  const picked = filters.project[0] ?? null;
   const listing = listedProjects(projects, rest, hidden, picked);
   const {
     groups,

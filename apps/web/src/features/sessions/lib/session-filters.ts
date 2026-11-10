@@ -12,23 +12,18 @@ export type SessionSort = 'custom' | 'recent' | 'oldest' | 'name';
 /**
  * What the sidebar's filter menu holds
  * (`product/versions/mvp/design/version1/SessionsConsole.dc.html`): four
- * facets that narrow the list and one order that does not. Repository is a
- * set, empty for all of them: a session shows when any of its checkouts is
- * one of the picked repositories.
+ * facets that narrow the list and one order that does not. Every facet is a
+ * set of picked values, empty for "do not narrow"; a session shows when it
+ * matches any value of every non-empty facet. Which facets take more than
+ * one value is `MULTI_FACETS`, the one place that decides it.
  */
-export interface SessionFilters {
-  project: string;
-  repository: readonly string[];
-  agent: string;
-  host: string;
-  sort: SessionSort;
-}
+export type SessionFilters = Record<SessionFacet, readonly string[]> & { sort: SessionSort };
 
 export const DEFAULT_FILTERS: SessionFilters = {
-  project: ALL,
+  project: [],
   repository: [],
-  agent: ALL,
-  host: ALL,
+  agent: [],
+  host: [],
   sort: 'custom',
 };
 
@@ -42,35 +37,62 @@ const FACETS = ['project', 'repository', 'agent', 'host'] as const;
 export type SessionFacet = (typeof FACETS)[number];
 
 /**
+ * The facets a reader can pick several values of. The others keep one: the
+ * menu draws them as a single pick and `pickFacet` replaces rather than adds.
+ */
+const MULTI_FACETS: ReadonlySet<SessionFacet> = new Set(['repository']);
+
+export function isMultiFacet(facet: SessionFacet): boolean {
+  return MULTI_FACETS.has(facet);
+}
+
+/**
  * Whether anything is being hidden. Sort is deliberately not part of it: the
  * artboard lights the filter button and draws the chips for what is *missing*
  * from the list, and re-ordering hides nothing.
  */
 export function isFiltered(filters: SessionFilters): boolean {
-  return FACETS.some((facet) => isNarrowing(filters, facet));
-}
-
-function isNarrowing(filters: SessionFilters, facet: SessionFacet): boolean {
-  return facet === 'repository' ? filters.repository.length > 0 : filters[facet] !== ALL;
+  return FACETS.some((facet) => filters[facet].length > 0);
 }
 
 /**
- * The Repository facet after a pick in its list: "All repositories" empties
- * the set, any other row is toggled in or out of it.
+ * A facet after a pick in its list. The "all" row empties it; on a facet
+ * that takes several values a row is toggled in or out, on any other it
+ * replaces the pick.
  */
-export function toggleRepository(
-  picked: readonly string[],
-  repository: string,
+export function pickFacet(
+  filters: SessionFilters,
+  facet: SessionFacet,
+  value: string,
   selected: boolean,
-): string[] {
-  if (repository === ALL) return [];
-  const rest = picked.filter((item) => item !== repository);
-  return selected ? [...rest, repository] : rest;
+): Partial<SessionFilters> {
+  if (value === ALL) return { [facet]: [] };
+  if (!isMultiFacet(facet)) return { [facet]: [value] };
+  const rest = filters[facet].filter((item) => item !== value);
+  return { [facet]: selected ? [...rest, value] : rest };
 }
 
-/** The set the Repository list checks: "All repositories" while none is picked. */
-export function checkedRepositories(picked: readonly string[]): readonly string[] {
-  return picked.length > 0 ? picked : [ALL];
+/**
+ * What a facet's row in the menu says beside its name: the "all" option's
+ * label, the one pick's, or `several(count)` past one.
+ */
+export function facetLabel(
+  filters: SessionFilters,
+  facet: SessionFacet,
+  options: Record<SessionFacet, FilterOption[]>,
+  several: (count: number) => string,
+): string {
+  const picked = filters[facet];
+  if (picked.length > 1) return several(picked.length);
+  return optionLabel(options, facet, picked[0] ?? ALL);
+}
+
+function optionLabel(
+  options: Record<SessionFacet, FilterOption[]>,
+  facet: SessionFacet,
+  value: string,
+): string {
+  return options[facet].find((option) => option.value === value)?.label ?? value;
 }
 
 export function projectOptions(
@@ -153,19 +175,30 @@ export function hostOptions(
   ];
 }
 
+/**
+ * The values a session offers each facet. Repository is every checkout, not
+ * the one the agent is launched in.
+ */
+function facetValues(session: SessionEntity): Record<SessionFacet, readonly string[]> {
+  return {
+    project: [session.projectId],
+    repository: session.checkouts.map((checkout) => checkout.repositoryFullName),
+    agent: [session.agent],
+    host: [runsOn(session)],
+  };
+}
+
 /** Narrow, then order. Never mutates the query's array. */
 export function applyFilters(sessions: SessionEntity[], filters: SessionFilters): SessionEntity[] {
   return sessions
-    .filter(
-      (session) =>
-        (filters.project === ALL || session.projectId === filters.project) &&
-        (filters.repository.length === 0 ||
-          session.checkouts.some((checkout) =>
-            filters.repository.includes(checkout.repositoryFullName),
-          )) &&
-        (filters.agent === ALL || session.agent === filters.agent) &&
-        (filters.host === ALL || runsOn(session) === filters.host),
-    )
+    .filter((session) => {
+      const values = facetValues(session);
+      return FACETS.every(
+        (facet) =>
+          filters[facet].length === 0 ||
+          values[facet].some((value) => filters[facet].includes(value)),
+      );
+    })
     .sort((a, b) => {
       if (filters.sort === 'name') return a.name.localeCompare(b.name);
       // Custom starts from the newest; what the reader placed is put in place after.
@@ -174,37 +207,26 @@ export function applyFilters(sessions: SessionEntity[], filters: SessionFilters)
     });
 }
 
-/**
- * A chip under the header: one per narrowing facet, and one per picked
- * repository so each can be dropped on its own. `value` is that repository.
- */
+/** A chip under the header: one per picked value, so each can be dropped on its own. */
 export interface FilterChipEntry {
   key: SessionFacet;
   value: string;
   label: string;
 }
 
-/** The facets that are narrowing right now, for the chip row under the header. */
+/** The values narrowing right now, for the chip row under the header. */
 export function activeFilters(
   filters: SessionFilters,
   options: Record<SessionFacet, FilterOption[]>,
 ): FilterChipEntry[] {
-  const labelOf = (key: SessionFacet, value: string) =>
-    options[key].find((option) => option.value === value)?.label ?? value;
-  return FACETS.flatMap((key): FilterChipEntry[] => {
-    if (key === 'repository') {
-      return filters.repository.map((value) => ({ key, value, label: labelOf(key, value) }));
-    }
-    const value = filters[key];
-    return value === ALL ? [] : [{ key, value, label: labelOf(key, value) }];
-  });
+  return FACETS.flatMap((key) =>
+    filters[key].map((value) => ({ key, value, label: optionLabel(options, key, value) })),
+  );
 }
 
-/** The filters with one chip's narrowing taken off. */
+/** The filters with one chip's value taken off. */
 export function withoutChip(filters: SessionFilters, chip: FilterChipEntry): SessionFilters {
-  return chip.key === 'repository'
-    ? { ...filters, repository: toggleRepository(filters.repository, chip.value, false) }
-    : { ...filters, [chip.key]: ALL };
+  return { ...filters, [chip.key]: filters[chip.key].filter((value) => value !== chip.value) };
 }
 
 /** Where a session runs, as one key a filter compares: its host, or `cloud:<vendor>`. */

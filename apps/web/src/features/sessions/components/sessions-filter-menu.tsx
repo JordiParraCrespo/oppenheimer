@@ -18,12 +18,13 @@ import { Plus, SlidersVertical } from '@oppenheimer/design-system-web/icons';
 import { useTranslation } from 'react-i18next';
 import {
   ALL,
-  checkedRepositories,
   type FilterOption,
+  facetLabel,
+  isMultiFacet,
+  pickFacet,
   type SessionFacet,
   type SessionFilters,
   type SessionSort,
-  toggleRepository,
 } from '../lib/session-filters';
 import { FacetSearchSub } from './facet-search-sub';
 import { SearchListFoot } from './search-list-foot';
@@ -73,15 +74,10 @@ export function SessionsFilterMenu({
 }) {
   const { t } = useTranslation();
   const projects = options.project.filter((option) => option.value !== ALL);
-  const labelFor = (facet: Exclude<SessionFacet, 'repository'>) =>
-    options[facet].find((option) => option.value === filters[facet])?.label ?? '';
-  const repositoryLabel =
-    filters.repository.length === 1
-      ? (options.repository.find((option) => option.value === filters.repository[0])?.label ??
-        filters.repository[0])
-      : filters.repository.length > 1
-        ? t('sessions.filters.repositoriesSome', { count: filters.repository.length })
-        : (options.repository.find((option) => option.value === ALL)?.label ?? '');
+  const labelFor = (facet: SessionFacet) =>
+    facetLabel(filters, facet, options, (count) => t('sessions.filters.several', { count }));
+  const pick = (facet: SessionFacet) => (value: string, selected: boolean) =>
+    onChange(pickFacet(filters, facet, value, selected));
 
   return (
     <DropdownMenu>
@@ -101,14 +97,15 @@ export function SessionsFilterMenu({
       <DropdownMenuContent align="end" sideOffset={6} className="min-w-57.5">
         {/* Project, Repository and Host grow with the workspace and are
             searched; the agents are a short fixed list of radio rows.
-            Repository takes several: each row is a check. */}
+            A facet that takes several values draws each row as a check. */}
         <FacetSearchSub
           label={t('sessions.filters.project')}
           current={labelFor('project')}
           options={options.project}
           value={filters.project}
+          multiple={isMultiFacet('project')}
           searchPlaceholder={t('common.search.projects')}
-          onPick={(project) => onChange({ project })}
+          onPick={pick('project')}
         >
           <SearchListFoot>
             <DropdownMenuItem onClick={onNewProject}>
@@ -119,13 +116,12 @@ export function SessionsFilterMenu({
         </FacetSearchSub>
         <FacetSearchSub
           label={t('sessions.filters.repository')}
-          current={repositoryLabel}
+          current={labelFor('repository')}
           options={options.repository}
-          value={checkedRepositories(filters.repository)}
+          value={filters.repository}
+          multiple={isMultiFacet('repository')}
           searchPlaceholder={t('common.search.repositories')}
-          onPick={(repository, selected) =>
-            onChange({ repository: toggleRepository(filters.repository, repository, selected) })
-          }
+          onPick={pick('repository')}
         />
         <DropdownMenuSub>
           <DropdownMenuSubTrigger>
@@ -134,8 +130,8 @@ export function SessionsFilterMenu({
           </DropdownMenuSubTrigger>
           <DropdownMenuSubContent>
             <DropdownMenuRadioGroup
-              value={filters.agent}
-              onValueChange={(agent) => onChange({ agent: agent as string })}
+              value={filters.agent[0] ?? ALL}
+              onValueChange={(agent) => pick('agent')(agent as string, true)}
             >
               {options.agent.map((option) => (
                 <DropdownMenuRadioItem key={option.value} value={option.value}>
@@ -150,8 +146,9 @@ export function SessionsFilterMenu({
           current={labelFor('host')}
           options={options.host}
           value={filters.host}
+          multiple={isMultiFacet('host')}
           searchPlaceholder={t('common.search.hosts')}
-          onPick={(host) => onChange({ host })}
+          onPick={pick('host')}
         />
 
         <DropdownMenuSeparator />
