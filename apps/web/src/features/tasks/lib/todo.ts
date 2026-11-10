@@ -163,22 +163,73 @@ export function todoLabels(entry: TodoEntry, day: string, today: string): TodoLa
   return labels;
 }
 
+/** The columns Add tasks offers from: every open one. */
+export const OPEN_STATUSES = [
+  'todo',
+  'doing',
+  'review',
+] as const satisfies readonly TaskEntity['status'][];
+export type OpenStatus = (typeof OPEN_STATUSES)[number];
+
+/** Whether a facet's value is one of `OPEN_STATUSES`, so a string pick reads back typed. */
+export function isOpenStatus(value: string): value is OpenStatus {
+  return (OPEN_STATUSES as readonly string[]).includes(value);
+}
+
+/** What Add tasks' own filters narrow it to; empty is every one. */
+export interface AddFilter {
+  projectIds: readonly string[];
+  statuses: readonly OpenStatus[];
+}
+
+export const NO_ADD_FILTER: AddFilter = { projectIds: [], statuses: [] };
+
 /**
  * What Add tasks offers for a day: the open tasks not already on its list,
- * in the projects To do is narrowed to (every project when `undefined`), in
+ * in the projects and columns the filter picks (every one when unset), in
  * the board's order. Adding one puts it on that day; its due date stays.
  */
 export function addableTasks(
   tasks: readonly TaskEntity[],
   onDay: ReadonlySet<string>,
-  projectIds?: readonly string[],
+  filter: AddFilter = NO_ADD_FILTER,
 ): TaskEntity[] {
   return tasks
     .filter(
       (task) =>
-        !task.isDone && !onDay.has(task.id) && (!projectIds || projectIds.includes(task.projectId)),
+        !task.isDone && !onDay.has(task.id) && inProjects(task, filter) && inStatuses(task, filter),
     )
     .sort(compareRank);
+}
+
+const inProjects = (task: TaskEntity, filter: AddFilter) =>
+  !filter.projectIds.length || filter.projectIds.includes(task.projectId);
+const inStatuses = (task: TaskEntity, filter: AddFilter) =>
+  !filter.statuses.length || (filter.statuses as readonly string[]).includes(task.status);
+
+/**
+ * Add tasks' facet counts: each task it could offer counts toward its
+ * project when the picked columns keep it, and toward its column when the
+ * picked projects keep it, so a facet's own pick never zeroes its options.
+ */
+export function addableCounts(
+  tasks: readonly TaskEntity[],
+  onDay: ReadonlySet<string>,
+  filter: AddFilter,
+): { byProject: Record<string, number>; byStatus: Record<string, number> } {
+  const byProject: Record<string, number> = {};
+  const byStatus: Record<string, number> = {};
+  for (const task of addableTasks(tasks, onDay)) {
+    if (inStatuses(task, filter)) byProject[task.projectId] = (byProject[task.projectId] ?? 0) + 1;
+    if (inProjects(task, filter)) byStatus[task.status] = (byStatus[task.status] ?? 0) + 1;
+  }
+  return { byProject, byStatus };
+}
+
+/** The picks Add puts on the day: those the filtered list still shows, so a hidden pick waits. */
+export function picksInView(picked: readonly string[], shown: readonly TaskEntity[]): string[] {
+  const ids = new Set(shown.map((task) => task.id));
+  return picked.filter((id) => ids.has(id));
 }
 
 /** The header's count: how many on the list are left and how many are done. */

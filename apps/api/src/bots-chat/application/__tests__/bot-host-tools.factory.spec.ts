@@ -373,6 +373,34 @@ describe('BotHostToolsFactory', () => {
     expect(result.content).toContain('More follows: read_session with after_seq 9.');
   });
 
+  describe('show_session', () => {
+    // The regression: a bot that found a session stuck on a terminal-only
+    // dialog cannot hand the person the Open session button a started
+    // session carries, and says it has no link to give.
+    it('hands the chat the session it names, so its line carries Open session', async () => {
+      const found = working();
+      const { queryBus, call } = setup(() => found);
+      const result = await call('show_session', { session_id: found.id });
+      const asked = queryBus.execute.mock.calls[0]?.[0] as unknown;
+      expect(asked).toBeInstanceOf(FindSessionQuery);
+      expect(asked).toMatchObject({ scope: owner, sessionId: found.id });
+      expect(result.isError).toBeFalsy();
+      expect(result.data?.sessionId).toBe(found.id);
+    });
+
+    // The regression: a session the owner cannot read still gets a button.
+    it('gives no button for a session the owner cannot read', async () => {
+      const { call } = setup(() => {
+        throw new AppError({ code: 'SESSIONS_001', message: 'Session not found', httpStatus: 404 });
+      });
+      const result = await call('show_session', {
+        session_id: '33333333-3333-4333-8333-333333333333',
+      });
+      expect(result.isError).toBe(true);
+      expect(result.data?.sessionId).toBeUndefined();
+    });
+  });
+
   describe('read_session_transcript', () => {
     const work = WorkSessionEntity.request({
       organizationId: 'org-1',

@@ -1820,6 +1820,7 @@
           "cancelled": "La sesión «{{name}}» se detuvo",
           "expired": "La sesión «{{name}}» caducó sin ejecutarse",
           "stalled": "La sesión «{{name}}» parece atascada",
+          "progress": "Revisé la sesión «{{name}}»",
           "notice": "La sesión «{{name}}» envió un mensaje",
           "matched_one": "La sesión «{{name}}» imprimió una línea que coincide con «{{pattern}}»",
           "matched_other": "La sesión «{{name}}» imprimió {{count}} líneas que coinciden con «{{pattern}}»"
@@ -1850,8 +1851,6 @@
           "ended": "El bucle «{{prompt}}» terminó: el bot no dijo cuándo volver a ejecutarlo"
         },
         "compaction": "Resumió el trabajo anterior para mantener su contexto pequeño · {{before}} → {{after}} tokens",
-        "compactionLine": "Resumió el trabajo anterior",
-        "compactionTokens": "{{before}} → {{after}} tokens",
         "dream": {
           "dreamed": "Ordenó su memoria · {{before}} datos → {{after}}",
           "undone": "Deshiciste el orden · vuelven {{before}} datos"
@@ -3101,6 +3100,8 @@
       "prompt": "Instrucciones",
       "repository": "Repositorio",
       "repositoryPlaceholder": "Elige un repositorio",
+      "noRepository": "Sin repositorio",
+      "noRepositoryDesc": "Se abre en la carpeta personal del host",
       "repositorySearch": "Buscar repositorios",
       "noRepositories": "Este proyecto no tiene repositorios. Añade uno en sus ajustes.",
       "where": "Dónde se ejecuta",
@@ -3114,6 +3115,8 @@
       "placeCursorDesc": "La nube de Cursor, con tu clave de Cursor; sin host",
       "placeCursorConnect": "Conecta Cursor primero en Ajustes → Agentes en la nube",
       "cloudNeedsTask": "Una sesión en la nube empieza con una tarea: escribe qué debe hacer.",
+      "cloudNeedsRepository": "Una sesión en la nube parte de un repositorio.",
+      "homeOffline": "{{host}} está desconectado y solo él conoce su carpeta personal: elige un repositorio o espera a que vuelva.",
       "cloudAccount": "Se ejecuta en claude.ai como {{account}}, la cuenta con la que ha iniciado sesión Claude Code en {{host}}.",
       "cloudAccountUnknown": "{{host}} aún no ha dicho con qué cuenta de claude.ai ha iniciado sesión su Claude Code.",
       "accountUnknown": "Cuenta aún no informada",
@@ -3175,7 +3178,9 @@
         "none": "Todas las tareas abiertas ya están en este día.",
         "submit": "Añadir al {{date}}",
         "failed": "No se pudieron añadir algunas de esas tareas.",
-        "loadFailed": "No se pudieron cargar tus tareas."
+        "loadFailed": "No se pudieron cargar tus tareas.",
+        "allStatuses": "Todos los estados",
+        "searchStatuses": "Buscar estados"
       },
       "reorder": "Reordenar {{title}}"
     }

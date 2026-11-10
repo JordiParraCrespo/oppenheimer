@@ -1803,6 +1803,7 @@
           "cancelled": "Session “{{name}}” was stopped",
           "expired": "Session “{{name}}” expired before it ran",
           "stalled": "Session “{{name}}” looks stuck",
+          "progress": "Checked on session “{{name}}”",
           "notice": "Session “{{name}}” sent a message",
           "matched_one": "Session “{{name}}” printed a line matching “{{pattern}}”",
           "matched_other": "Session “{{name}}” printed {{count}} lines matching “{{pattern}}”"
@@ -1833,8 +1834,6 @@
           "ended": "Loop “{{prompt}}” ended: the bot did not say when to run next"
         },
         "compaction": "Summarized earlier work to keep its context small · {{before}} → {{after}} tokens",
-        "compactionLine": "Summarized earlier work",
-        "compactionTokens": "{{before}} → {{after}} tokens",
         "dream": {
           "dreamed": "Tidied its memory · {{before}} facts → {{after}}",
           "undone": "You undid the tidy · {{before}} facts are back"
@@ -3076,6 +3075,8 @@
       "prompt": "Prompt",
       "repository": "Repository",
       "repositoryPlaceholder": "Pick a repository",
+      "noRepository": "No repository",
+      "noRepositoryDesc": "Opens in the host’s home folder",
       "repositorySearch": "Search repositories",
       "noRepositories": "This project has no repositories. Add one in its settings.",
       "where": "Where it runs",
@@ -3089,6 +3090,8 @@
       "placeCursorDesc": "Cursor’s cloud, on your Cursor key; no host",
       "placeCursorConnect": "Connect Cursor in Settings → Cloud agents first",
       "cloudNeedsTask": "A cloud session starts on a task: write what it should do.",
+      "cloudNeedsRepository": "A cloud session starts from a repository.",
+      "homeOffline": "{{host}} is offline, and only it knows its home folder: pick a repository, or wait for it.",
       "cloudAccount": "Runs on claude.ai as {{account}}, the account {{host}}’s Claude Code is signed in to.",
       "cloudAccountUnknown": "{{host}} hasn’t said which claude.ai account its Claude Code is signed in to.",
       "accountUnknown": "Account not reported yet",
@@ -3150,7 +3153,9 @@
         "none": "Every open task is already on this day.",
         "submit": "Add to {{date}}",
         "failed": "Couldn’t add some of those tasks.",
-        "loadFailed": "Couldn’t load your tasks."
+        "loadFailed": "Couldn’t load your tasks.",
+        "allStatuses": "All statuses",
+        "searchStatuses": "Search statuses"
       },
       "reorder": "Reorder {{title}}"
     }
