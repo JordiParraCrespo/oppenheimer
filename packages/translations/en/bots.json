@@ -332,6 +332,8 @@
       "unknown": "something went wrong"
     },
     "openSession": "Open session",
+    "hideToolCalls": "Hide tool calls",
+    "showToolCalls": "Show tool calls",
     "goal": {
       "title": "Goal: {{objective}}",
       "progress": "{{step}} of {{limit}} continuations",

@@ -187,3 +187,8 @@ export function readableOutput(output: string): string {
     return output;
   }
 }
+
+/** The sessions these calls started or pointed at, each once, in the order the calls ran. */
+export function sessionsOf(steps: readonly Pick<BotToolStep, 'sessionId'>[]): string[] {
+  return [...new Set(steps.flatMap((step) => step.sessionId ?? []))];
+}
