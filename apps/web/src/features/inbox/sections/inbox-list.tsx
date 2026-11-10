@@ -47,11 +47,6 @@ export function InboxList() {
   const marks = useInboxMarks();
   const reload = useRefreshInbox();
   const [pullsShown, setPullsShown] = useInboxPullsShown();
-  const showPulls = (shown: boolean) => {
-    // Hidden, Pull requests is no Type to narrow to.
-    if (!shown && search.filter.type === 'pull') search.setType('all');
-    setPullsShown(shown);
-  };
   // On a phone nothing is in the reading pane until an item is opened.
   const phone = useIsMobile();
   const current = phone && search.item === null ? null : listing.current;
@@ -135,7 +130,7 @@ export function InboxList() {
           onTypeChange={search.setType}
           onProjectChange={search.setProject}
           onShowDoneChange={search.setShowDone}
-          onPullsShownChange={showPulls}
+          onPullsShownChange={setPullsShown}
           onClear={search.clear}
         />
       </InboxListHead>

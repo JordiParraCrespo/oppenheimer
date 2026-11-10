@@ -177,7 +177,19 @@ type InboxReads = ReturnType<typeof useInboxQueries>;
 type Answer<I extends number> = Awaited<ReturnType<InboxReads[I]['queryFn']>>;
 type PullAnswer = Awaited<ReturnType<ReturnType<typeof usePullQueries>[number]['queryFn']>>;
 
-/** The reads' answers as the composition takes them; no pull request while they are hidden. */
+/** What the pull request reads answered, by scope: none while they are hidden or still out. */
+interface PullSources {
+  requested: InboxSources['requested'];
+  mine: InboxSources['mine'];
+}
+
+/** The pull request reads' answers by scope, in `usePullQueries`'s order; the one place that order is read. */
+function pullSources(answers: readonly (PullAnswer | undefined)[]): PullSources {
+  const [requested, mine] = answers;
+  return { requested: requested?.items ?? [], mine: mine?.items ?? [] };
+}
+
+/** The reads' answers as the composition takes them. */
 function sourcesOf(
   sessions: Answer<0>,
   approvals: Answer<1>,
@@ -185,13 +197,12 @@ function sourcesOf(
   botNotices: Answer<3>,
   reports: Answer<4>,
   projects: Answer<5>,
-  pulls: readonly (PullAnswer | undefined)[],
+  pulls: PullSources,
 ): InboxSources {
   return {
     sessions,
     approvals,
-    requested: pulls[0]?.items ?? [],
-    mine: pulls[1]?.items ?? [],
+    ...pulls,
     failedRuns: runs.items,
     botNotices,
     reports,
@@ -220,8 +231,7 @@ export function useSuspenseInbox(
     queries: useInboxQueries(),
   });
   const pullResults = useSuspenseQueries({ queries: pullQueries });
-  const requested = pullResults[0];
-  const mine = pullResults[1];
+  const [requested, mine] = pullResults.map((result) => result.data);
   const answered = useAnsweredKeys();
   const view = useMemo(
     () =>
@@ -233,7 +243,7 @@ export function useSuspenseInbox(
           botNotices.data,
           reports.data,
           projects.data,
-          [requested?.data, mine?.data],
+          pullSources([requested, mine]),
         ),
         marks.data,
         now,
@@ -246,8 +256,8 @@ export function useSuspenseInbox(
       botNotices.data,
       reports.data,
       projects.data,
-      requested?.data,
-      mine?.data,
+      requested,
+      mine,
       marks.data,
       now,
       answered,
@@ -256,8 +266,7 @@ export function useSuspenseInbox(
   const error =
     sessions.error ??
     approvals.error ??
-    requested?.error ??
-    mine?.error ??
+    pullResults.find((result) => result.error)?.error ??
     runs.error ??
     botNotices.error ??
     reports.error ??
@@ -296,7 +305,7 @@ export function useInboxCount(now: number): number | undefined {
       botNotices.data as Answer<3>,
       reports.data as Answer<4>,
       projects.data as Answer<5>,
-      pullResults.map((result) => result.data as PullAnswer),
+      pullSources(pullResults.map((result) => result.data as PullAnswer)),
     ),
     marks.data as InboxMarkEntity[],
     now,

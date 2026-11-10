@@ -1,15 +1,15 @@
 import { useInboxPullsShown } from '@oppenheimer/frontend-consumer/react';
 import { getRouteApi } from '@tanstack/react-router';
 import type { InboxFilter } from '../lib/inbox-filter';
-import type { InboxSearch, InboxTypeFilter } from '../lib/inbox-search';
+import { type InboxSearch, type InboxTypeFilter, offeredType } from '../lib/inbox-search';
 
 const route = getRouteApi('/_authenticated/plan/inbox');
 
 /**
  * The Inbox's search, as `inboxSearchSchema` left it: the item in the
  * reading pane, the list's words and its facets. A default is no key, and a facet replaces the
- * history entry: a filter is not a page to go Back to. A link narrowed to
- * Pull requests reads as All while they are hidden, since none is listed.
+ * history entry: a filter is not a page to go Back to. A Type the Inbox
+ * does not offer now reads as All (`offeredType`).
  */
 export function useInboxSearch() {
   const search: InboxSearch = route.useSearch();
@@ -18,8 +18,10 @@ export function useInboxSearch() {
     navigate({ search: (previous) => ({ ...previous, ...patch }), replace: true });
 
   const [pullsShown] = useInboxPullsShown();
-  const type = search.type === 'pull' && !pullsShown ? undefined : search.type;
-  const filter: InboxFilter = { type: type ?? 'all', project: search.project ?? null };
+  const filter: InboxFilter = {
+    type: offeredType(search.type ?? 'all', pullsShown),
+    project: search.project ?? null,
+  };
   return {
     item: search.item ?? null,
     query: search.q ?? '',

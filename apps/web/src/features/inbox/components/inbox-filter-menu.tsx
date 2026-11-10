@@ -17,7 +17,7 @@ import {
 import { SlidersVertical } from '@oppenheimer/design-system-web/icons';
 import { useTranslation } from 'react-i18next';
 import type { InboxFilter } from '../lib/inbox-filter';
-import { ALL_PROJECTS, INBOX_TYPES, type InboxTypeFilter } from '../lib/inbox-search';
+import { ALL_PROJECTS, type InboxTypeFilter, typesFor } from '../lib/inbox-search';
 
 export interface InboxFacetOption {
   value: string;
@@ -59,7 +59,6 @@ export function InboxFilterMenu({
   onClear: () => void;
 }) {
   const { t } = useTranslation();
-  const types = pullsShown ? INBOX_TYPES : INBOX_TYPES.filter((type) => type !== 'pull');
   const projectValue = filter.project ?? ALL_PROJECTS;
   const projectLabel =
     filter.project === null
@@ -94,7 +93,7 @@ export function InboxFilterMenu({
               value={filter.type}
               onValueChange={(next) => onTypeChange(next as InboxTypeFilter)}
             >
-              {types.map((type) => (
+              {typesFor(pullsShown).map((type) => (
                 <DropdownMenuRadioItem key={type} value={type} count={typeCounts[type]}>
                   {t(`inbox.type.${type}`)}
                 </DropdownMenuRadioItem>
