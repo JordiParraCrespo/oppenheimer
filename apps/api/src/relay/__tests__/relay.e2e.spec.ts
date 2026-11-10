@@ -302,7 +302,13 @@ describe('the runner and the relay, end to end', () => {
     const link = await until('the runner link', () => w.registry.find(HOST), 30_000);
     expect(link.hostId).toBe(HOST);
     expect(link.epoch).toBe(1);
-    expect(w.log.join('')).toContain('control-plane link up');
+    // The relay registers the link on the runner's hello; the runner logs
+    // once the welcome reaches it, a moment later.
+    await until(
+      'the runner to log the link up',
+      () => (w.log.join('').includes('control-plane link up') ? true : undefined),
+      10_000,
+    );
   });
 
   it('creates a session from session.create: a clone, a worktree, and window 0 running the launch argv', async () => {
