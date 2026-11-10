@@ -22,19 +22,31 @@ export const SESSION_UNBLOCK_RULE =
  * What a permission dialog asks about when it names something that cannot
  * be taken back: a recursive delete, a history rewrite or a forced
  * push, wiping a disk or a database, root. Read on the dialog's title and
- * the command or file it shows. A git command is matched past its global
- * options (`git -C <path> push --force`).
+ * the command or file it shows. A command's flags are found anywhere in
+ * it, before or after its operands (`rm dir -rf`, `git reset HEAD~3
+ * --hard`), and a git command past its global options (`git -C <path>
+ * push --force`); a command ends at a line, `;`, `&` or `|`.
  */
+const ARGS = String.raw`[^\n;&|]*`;
+const GIT = String.raw`\bgit\b${ARGS}?\s`;
 const DESTRUCTIVE: readonly RegExp[] = [
-  /\brm\s+(?:-[a-z]*\s+)*-[a-z]*r/i,
-  /\brm\s+(?:\S+\s+)*--recursive\b/i,
+  new RegExp(String.raw`\brm\b${ARGS}\s(?:-[a-z]*r[a-z]*\b|--recursive\b)`, 'i'),
   /\b(?:rimraf|shred|mkfs(?:\.\w+)?|wipefs)\b/i,
-  /\bfind\b[^\n]*\s-delete\b/i,
-  /\bgit\b[^\n]*?\spush\b[^\n]*(?:\s--force(?:-with-lease)?\b|\s-f\b|\s\+\S)/i,
-  /\bgit\b[^\n]*?\s(?:reset\s+--hard\b|clean\s+-[a-z]*f|branch\s+-D\b|filter-(?:branch|repo)\b)/i,
+  new RegExp(String.raw`\bfind\b${ARGS}\s-delete\b`, 'i'),
+  new RegExp(
+    String.raw`${GIT}push\b${ARGS}(?:\s--force(?:-with-lease)?\b|\s-[a-z]*f[a-z]*\b|\s\+\S)`,
+    'i',
+  ),
+  new RegExp(String.raw`${GIT}reset\b${ARGS}\s--hard\b`, 'i'),
+  new RegExp(String.raw`${GIT}clean\b${ARGS}\s(?:-[a-z]*f[a-z]*\b|--force\b)`, 'i'),
+  // `-D` is the forced delete; `-d` refuses an unmerged branch, so this one is case-sensitive.
+  new RegExp(
+    String.raw`${GIT}branch\b${ARGS}\s(?:-[a-zA-Z]*D[a-zA-Z]*\b|--delete\s+--force\b|--force\s+--delete\b)`,
+  ),
+  new RegExp(String.raw`${GIT}filter-(?:branch|repo)\b`, 'i'),
   /\bdrop\s+(?:table|database|schema)\b/i,
   /\btruncate\s+table\b/i,
-  /\bdd\s+[^\n]*\bof=/i,
+  new RegExp(String.raw`\bdd\b${ARGS}\bof=`, 'i'),
   /\bsudo\b/i,
   /\brecursive(?:ly)?\s+delet/i,
 ];
