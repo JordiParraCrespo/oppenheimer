@@ -187,6 +187,9 @@ event line, and the owner read a bot's chat as an automation's log):
   ("Hey, I'm back for my half-hour look at the pull requests") and never
   writes a run report. The same voice is a rule of every turn (the
   prompt's "How a turn goes").
+  A run that ends quiet (§6, `nothing_to_report`) draws nothing at all
+  while the chat hides tool calls, so an hourly heartbeat leaves no gap;
+  a run that failed before the bot wrote keeps its place, with why.
 - `failed` is drawn as a notice, "Routine *Morning PR digest* did not
   run" with the reason, and **Open routines**: a run that expired, or one
   skipped by a run limit, a missed slot or an agent that cannot start. A

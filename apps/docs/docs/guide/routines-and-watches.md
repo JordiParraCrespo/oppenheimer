@@ -4,7 +4,7 @@ description: How a bot works when nobody writes to it, routines on a schedule or
 sidebar_position: 6
 ---
 
-A bot only runs when something gives it a **turn**. Your message is one. This page covers the others: routines, loops, goals and watches. Every one of them is a queued turn of the bot, runs as you with the bot's permissions as they are at that moment, and shows in the chat as a line saying why it ran.
+A bot only runs when something gives it a **turn**. Your message is one. This page covers the others: routines, loops, goals and watches. Every one of them is a queued turn of the bot, runs as you with the bot's permissions as they are at that moment, and shows in the chat as a line saying why it ran. A routine's run is the exception: it has no line, so the bot's message reads as the bot coming back to you on its own.
 
 ## Routines
 
@@ -26,7 +26,7 @@ A routine is skipped and paused when it cannot run, with the reason in the chat:
 
 **The heartbeat.** Once a bot has a job (its `INSTRUCTIONS.md` is written), it is given one routine of its own, **Heartbeat**: hourly, at a minute past the hour that differs from bot to bot, so your bots do not all wake at once. Each run the bot rereads its instructions and the plan, looks at the sessions, pull requests and mail it looks after, acts on what needs it and tells you what you must know; when nothing does, it stays quiet. It is an ordinary routine: pause, edit or delete it on the Routines tab or in chat. A bot that already had a job before heartbeats existed has none until you ask for one.
 
-**Quiet runs.** A turn nobody is waiting on (a routine, a wake, a goal, a loop) can end with nothing to report: the chat shows only a collapsed line, and you get no message.
+**Quiet runs.** A turn nobody is waiting on (a routine, a wake, a goal, a loop) can end with nothing to report: the chat shows only a collapsed line, and you get no message. A routine's quiet run shows nothing at all, unless the chat is set to show tool calls.
 
 **While you're away.** A bot's routines stop on their own when you stop reading them: after 3 routine reports you have not seen (quiet runs do not count), or 72 hours since you were last in the bot's chat. You are told once in the Inbox, and every routine stopped that way starts again as soon as you are back: you open or look at the bot's chat, write to it, or decide one of its cards. A routine you paused yourself, or one paused for a missing key, stays paused. Your own **Run now** always runs. The two numbers are workspace settings for automations, and **Pause while you're away**, a switch on the bot's Routines tab, turns this off for a bot that should run unattended.
 

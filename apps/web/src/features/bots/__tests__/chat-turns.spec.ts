@@ -8,6 +8,7 @@ import {
   type ChatTurnBlock,
   chatTurns,
   compactTokens,
+  isQuietRun,
   markersBefore,
   replyText,
   retryContent,
@@ -92,6 +93,33 @@ describe('chatTurns', () => {
       [['r4'], []],
       [['r5'], []],
     ]);
+  });
+
+  // What breaks this: a routine's turn that failed before the bot wrote, or a
+  // heartbeat that found nothing, losing its place with its line: the first
+  // drawn under everything said since, the second as an empty gap every hour.
+  it('keeps a routine’s turn where it ran, and leaves out one that only ran tools', () => {
+    const ran = {
+      ...message('r1', 't1', 'event'),
+      event: { kind: 'routine', activity: 'ran', automationId: 'a-1', runId: 'r', name: 'PRs' },
+    } as unknown as BotMessageEntity;
+    const failed = { id: 't1', status: 'failed' } as BotTurnEntity;
+    const quiet = { id: 't3', status: 'completed' } as BotTurnEntity;
+    const blocks = chatTurns(
+      conversation(
+        [
+          ran,
+          message('m1', 't2', 'user'),
+          message('m2', 't2', 'assistant'),
+          { ...ran, id: 'r2', turnId: 't3' } as BotMessageEntity,
+          message('m3', 't3', 'activity'),
+        ],
+        [failed, turn('t2'), quiet],
+      ),
+    );
+    expect(blocks.map((block) => block.turnId)).toEqual(['t1', 't2', 't3']);
+    expect(blocks.map((block) => isQuietRun(block, false))).toEqual([false, false, true]);
+    expect(blocks.map((block) => isQuietRun(block, true))).toEqual([false, false, false]);
   });
 
   it('groups each turn’s messages under it, your message apart from the bot’s work', () => {

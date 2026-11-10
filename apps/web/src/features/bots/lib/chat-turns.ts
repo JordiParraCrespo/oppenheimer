@@ -78,8 +78,12 @@ export function chatTurns(conversation: BotConversationEntity): ChatTurnBlock[] 
     return block;
   };
   for (const message of conversation.messages) {
-    if (message.event && !isShownEvent(message.event)) continue;
     if (message.turnId && waiting.has(message.turnId)) continue;
+    if (message.event && !isShownEvent(message.event)) {
+      // Its turn still stands where the event opened it, with no line of its own.
+      if (message.turnId) blockOf(message.turnId, message.turnId);
+      continue;
+    }
     const block = blockOf(message.turnId ?? message.id, message.turnId);
     const steered = message.role === 'user' && block.answer.length > 0;
     const opens = !steered && (message.role === 'user' || message.role === 'event');
@@ -87,6 +91,20 @@ export function chatTurns(conversation: BotConversationEntity): ChatTurnBlock[] 
   }
   for (const turn of conversation.turns) if (!waiting.has(turn.id)) blockOf(turn.id, turn.id);
   return [...blocks.values()];
+}
+
+/**
+ * Whether a turn has nothing to draw: one nothing you see opened (a routine's
+ * run), that completed having only run tools, while the chat hides its tool
+ * calls. A heartbeat that found nothing is this, every hour, and is left out
+ * of the chat rather than drawn as a gap.
+ */
+export function isQuietRun(block: ChatTurnBlock, toolCallsShown: boolean): boolean {
+  if (toolCallsShown || block.asked.length > 0) return false;
+  return (
+    block.turn?.status === 'completed' &&
+    block.answer.every((message) => message.role === 'activity')
+  );
 }
 
 /** How long a turn ran, once it has ended; `null` for one that never started. */
