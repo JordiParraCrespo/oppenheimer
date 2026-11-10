@@ -12,7 +12,7 @@ import {
   type BotWatchFrom,
   knownStateOf,
   type SessionWake,
-  type StallDecision,
+  type StallReason,
   type sessionWakeTurn,
   type WakeDecision,
   type WatchedTask,
@@ -223,30 +223,14 @@ export class BotSubscriptionMapper {
     };
   }
 
-  /** What a stall check tells the bot: the task as read now, still followed. */
-  toStallWake(
+  /** What a check of a handed-off task tells the bot (§4.1, §4.2): the task as read now, still followed. */
+  toCheckWake(
     subscription: BotSubscriptionEntity,
     session: WorkSessionEntity,
     task: WatchedTask,
-    decision: Extract<StallDecision, { kind: 'stalled' }>,
+    found: { kind: 'stall'; reason: StallReason } | { kind: 'progress'; check: number },
   ): SessionWake {
-    return {
-      ...this.wakeOf(subscription, session, false),
-      cause: { kind: 'stall', task, reason: decision.reason },
-    };
-  }
-
-  /** The regular look at a task still running (§4.2), check number `check`. */
-  toProgressWake(
-    subscription: BotSubscriptionEntity,
-    session: WorkSessionEntity,
-    task: WatchedTask,
-    check: number,
-  ): SessionWake {
-    return {
-      ...this.wakeOf(subscription, session, false),
-      cause: { kind: 'progress', task, check },
-    };
+    return { ...this.wakeOf(subscription, session, false), cause: { ...found, task } };
   }
 
   /** What `watch_session` answers: what is followed now, and what the session is doing. */

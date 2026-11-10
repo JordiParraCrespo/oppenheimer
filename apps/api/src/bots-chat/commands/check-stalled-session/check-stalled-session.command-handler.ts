@@ -10,13 +10,7 @@ import {
 } from '../../bots-chat.di-tokens';
 import type { BotSubscriptionRepositoryPort } from '../../database/bot-subscription.repository.port';
 import type { BotTurnRepositoryPort } from '../../database/bot-turn.repository.port';
-import {
-  type CheckDecision,
-  checkDelayMs,
-  checkFor,
-  type SessionWake,
-  sessionWakeTurn,
-} from '../../domain/bot-subscription.policy';
+import { checkDelayMs, checkFor, sessionWakeTurn } from '../../domain/bot-subscription.policy';
 import type { BotStallChecksPort } from '../../infrastructure/bot-stall-checks.port';
 import type { BotStreamPort } from '../../infrastructure/bot-stream.port';
 import { CheckStalledSessionCommand } from './check-stalled-session.command';
@@ -67,7 +61,13 @@ export class CheckStalledSessionCommandHandler
     });
     if (decision.kind === 'skip' || !task) return;
 
-    const wake = this.wakeOf(decision, subscription, session, task, check);
+    const found =
+      decision.kind === 'stalled'
+        ? ({ kind: 'stall', reason: decision.reason } as const)
+        : decision.kind === 'progress'
+          ? ({ kind: 'progress', check } as const)
+          : null;
+    const wake = found && this.mapper.toCheckWake(subscription, session, task, found);
     if (wake) {
       const { turn, opening } = sessionWakeTurn(
         this.mapper.toWakeTurnProps(subscription, bot, ownerUserId),
@@ -89,18 +89,5 @@ export class CheckStalledSessionCommandHandler
         metadata.correlationId ?? null,
       );
     }
-  }
-
-  private wakeOf(
-    decision: Exclude<CheckDecision, { kind: 'skip' }>,
-    ...[subscription, session, task, check]: Parameters<BotSubscriptionMapper['toProgressWake']>
-  ): SessionWake | null {
-    if (decision.kind === 'stalled') {
-      return this.mapper.toStallWake(subscription, session, task, decision);
-    }
-    if (decision.kind === 'progress') {
-      return this.mapper.toProgressWake(subscription, session, task, check);
-    }
-    return null;
   }
 }
