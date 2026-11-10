@@ -813,11 +813,15 @@ one row of `bot_skill`, the bot's own, at most 50 a bot.
   and after its skills list, that it may save a skill unasked after a task
   that took real work (several tool calls, a dead end worked around) and is
   likely to come again, the person saying it comes back (every week, before
-  every release) being reason enough: never for a one-off, a lookup of a
-  call or two, or anything holding a secret or the person's private data;
-  at most one new skill a turn, named in its answer. (Until 2026-11-10 it
-  said "many tool calls" and "anything a few steps long", which kept a
-  six-call release checklist from ever being saved.)
+  every release) being reason enough: never for a one-off or a lookup of a
+  call or two; at most one new skill a turn, named in its answer. A skill
+  never holds a secret or anyone's personal data (a key, token or password,
+  bank or card details, a mail address, phone number or messages): the bot
+  leaves them out of the body and says where the person keeps them. (Until
+  2026-11-10 it said "many tool calls" and "anything a few steps long",
+  which kept a six-call release checklist from ever being saved, and "the
+  person's private data (mail, messages, keys)", under which one eval run
+  in about eighteen saved a skill with the person's IBAN in it.)
   - *The reminder.* A turn someone is waiting on (`BOT_ATTENDED_ORIGINS`:
     never a routine's run, a wake, a goal's continuation or a loop's run)
     that has run 6 of its own tool calls (`BOT_SKILL_NUDGE_AFTER_STEPS`;
