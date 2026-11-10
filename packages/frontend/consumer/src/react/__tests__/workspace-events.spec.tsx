@@ -18,7 +18,7 @@ import { pullRequestsKeys } from '../pull-requests.keys';
 import { sessionsKeys } from '../sessions.keys';
 import { useSessionStartProgress, useSessions, useSuspenseSession } from '../sessions.queries';
 import { tasksKeys } from '../tasks.keys';
-import { useWorkspaceEvents } from '../workspace-events';
+import { STREAM_REFETCH_GAP_MS, useWorkspaceEvents } from '../workspace-events';
 import { fakeKernel } from './fake-kernel';
 
 const flag = vi.hoisted(() => ({ on: true }));
@@ -82,7 +82,11 @@ function pollInterval(queryClient: QueryClient, queryKey: readonly unknown[]) {
 
 afterEach(() => {
   flag.on = true;
+  vi.useRealTimers();
 });
+
+/** Lets the stream's refetch gap pass, so the next event refetches at once. */
+const quiet = () => act(() => vi.advanceTimersByTime(STREAM_REFETCH_GAP_MS));
 
 describe('useWorkspaceEvents', () => {
   it('opens nothing while the flag is off or there is no workspace', () => {
@@ -98,6 +102,7 @@ describe('useWorkspaceEvents', () => {
   });
 
   it('refetches the reads an event names, and never mints a pairing token', async () => {
+    vi.useFakeTimers({ toFake: ['Date', 'setTimeout', 'clearTimeout'] });
     const { status, send, wrapper, invalidated } = setup();
     renderHook(() => useWorkspaceEvents('org-1'), { wrapper });
     await status('live');
@@ -111,11 +116,13 @@ describe('useWorkspaceEvents', () => {
       pullRequestsKeys.reviewSessions(),
     ]);
 
+    quiet();
     invalidated.length = 0;
     await send({ type: 'pairing.spent', id: 'p-1', hostId: 'h-1' });
     expect(invalidated).toEqual([hostsKeys.pairingLists(), hostsKeys.lists()]);
     expect(invalidated).not.toContainEqual(hostsKeys.pairings());
 
+    quiet();
     invalidated.length = 0;
     await send({ type: 'automationRun.changed', id: 'r-1', automationId: 'a-1' });
     expect(invalidated).toEqual([
@@ -124,28 +131,66 @@ describe('useWorkspaceEvents', () => {
       automationsKeys.detail('a-1'),
     ]);
 
+    quiet();
     invalidated.length = 0;
     await send({ type: 'botApproval.changed', id: 'ap-1', botId: 'b-1' });
     expect(invalidated).toEqual([botsKeys.pendingApprovals(), botsKeys.approvals('b-1')]);
     expect(botsKeys.pendingApprovals()).toEqual(['bots', 'approvals', 'pending']);
 
+    quiet();
     invalidated.length = 0;
     await send({ type: 'botNotice.changed', id: 'n-1', botId: 'b-1' });
     expect(invalidated).toEqual([botsKeys.workspaceNotices()]);
 
+    quiet();
     invalidated.length = 0;
     await send({ type: 'inboxMark.changed', itemKey: 'approval:ap-1' });
     expect(invalidated).toEqual([inboxKeys.marks()]);
 
     // A report posted while the Inbox is open, or answered in another tab.
+    quiet();
     invalidated.length = 0;
     await send({ type: 'inboxReport.changed', id: 'rep-1' });
     expect(invalidated).toEqual([inboxKeys.reports()]);
 
     // A project a bot made from chat reaches the sidebar without a reload.
+    quiet();
     invalidated.length = 0;
     await send({ type: 'project.changed', id: 'pr-1' });
     expect(invalidated).toEqual([projectsKeys.lists()]);
+  });
+
+  /**
+   * A working agent reports each state and each rewording of its status, and
+   * every report names the session list and the host list. Refetching on each
+   * sent a list read per event from every tab, and past the API's per-route
+   * limit the sidebar said "You're sending requests too quickly".
+   */
+  it('refetches a read at most once per gap however many events name it, and never drops the last', async () => {
+    vi.useFakeTimers({ toFake: ['Date', 'setTimeout', 'clearTimeout'] });
+    const { status, send, wrapper, invalidated } = setup();
+    const { unmount } = renderHook(() => useWorkspaceEvents('org-1'), { wrapper });
+    await status('live');
+    invalidated.length = 0;
+    const lists = () => invalidated.filter((key) => key.join() === sessionsKeys.lists().join());
+
+    // The first after a quiet spell lands at once.
+    await send({ type: 'session.changed', id: 's-1' });
+    expect(lists()).toHaveLength(1);
+
+    // A burst inside the gap waits for its end, and is one refetch there.
+    for (let i = 0; i < 20; i++) await send({ type: 'session.changed', id: `s-${i % 3}` });
+    expect(lists()).toHaveLength(1);
+    await quiet();
+    expect(lists()).toHaveLength(2);
+    // Each session's own read is paced on its own key, not on its neighbours'.
+    expect(invalidated).toContainEqual(sessionsKeys.detail('s-2'));
+
+    // Unmounting drops a refetch still waiting on its gap.
+    await send({ type: 'session.changed', id: 's-1' });
+    unmount();
+    await quiet();
+    expect(lists()).toHaveLength(2);
   });
 
   /**
