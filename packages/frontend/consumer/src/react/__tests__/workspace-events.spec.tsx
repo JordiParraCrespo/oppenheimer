@@ -187,9 +187,12 @@ describe('useWorkspaceEvents', () => {
     // Each session's own read is paced on its own key, not on its neighbours'.
     expect(invalidated).toContainEqual(sessionsKeys.detail('s-2'));
 
-    // Unmounting drops a refetch still waiting on its gap.
+    // The trailing refetch opened a new gap, so this event is owed one at its
+    // end. Unmounting before it cancels the gap's timers, and the refetch with them.
     await send({ type: 'session.changed', id: 's-1' });
+    expect(lists()).toHaveLength(2);
     unmount();
+    expect(vi.getTimerCount()).toBe(0);
     await quiet();
     expect(lists()).toHaveLength(2);
   });

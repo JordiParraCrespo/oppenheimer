@@ -124,8 +124,11 @@ function keysFor(event: WorkspaceEvent): readonly QueryKey[] {
   return refreshes.map((r) => r.key?.(event) ?? r.prefix);
 }
 
+/** A query key's identity, for telling two keys apart: the console's keys are plain data. */
+const keyId = (key: QueryKey): string => JSON.stringify(key);
+
 function unique(keys: readonly QueryKey[]): readonly QueryKey[] {
-  const seen = new Map(keys.map((key) => [JSON.stringify(key), key]));
+  const seen = new Map(keys.map((key) => [keyId(key), key]));
   return [...seen.values()];
 }
 
@@ -157,25 +160,32 @@ function invalidate(queryClient: QueryClient, keys: readonly (readonly unknown[]
  */
 function throttledInvalidate(queryClient: QueryClient) {
   // A read refetched within the gap, and whether another event named it since.
-  // Cleared on dispose, so a refetch still waiting on its gap is dropped.
   const cooling = new Map<string, boolean>();
+  const timers = new Set<ReturnType<typeof setTimeout>>();
   const run = (id: string, queryKey: QueryKey) => {
     cooling.set(id, false);
     invalidate(queryClient, [queryKey]);
-    setTimeout(() => {
+    const timer = setTimeout(() => {
+      timers.delete(timer);
       if (cooling.get(id)) run(id, queryKey);
       else cooling.delete(id);
     }, CONSUMER_CONFIG.workspaceEvents.refetchGapMs);
+    timers.add(timer);
   };
   return {
     invalidate(keys: readonly QueryKey[]): void {
       for (const queryKey of keys) {
-        const id = JSON.stringify(queryKey);
+        const id = keyId(queryKey);
         if (cooling.has(id)) cooling.set(id, true);
         else run(id, queryKey);
       }
     },
-    dispose: () => cooling.clear(),
+    /** Cancels every gap still running, a trailing refetch it owes included. */
+    dispose(): void {
+      for (const timer of timers) clearTimeout(timer);
+      timers.clear();
+      cooling.clear();
+    },
   };
 }
 
