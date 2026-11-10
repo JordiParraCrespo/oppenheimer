@@ -1,0 +1,94 @@
+import type { SessionDecision } from '@oppenheimer/shared';
+import { answerNeedsPerson, isDestructiveDecision } from '../domain/bot-session-decision.policy';
+
+/**
+ * A bot unblocks the sessions it follows on its own, except one answer:
+ * letting the agent run something destructive is the person's call, on a
+ * card. What breaks this: a pattern that misses a recursive delete lets a
+ * bot under Full access approve it unseen; one that catches `pnpm test`
+ * sends every dialog back to the person, which is what this replaced.
+ */
+const permission = (detail: string, title = 'Do you want to proceed?'): SessionDecision => ({
+  kind: 'permission',
+  id: 'perm-1',
+  title,
+  detail,
+  options: [
+    { label: 'Yes' },
+    { label: "Yes, and don't ask again for this command" },
+    { label: 'No, and tell Claude what to do differently (esc)' },
+  ],
+});
+
+describe('isDestructiveDecision', () => {
+  it.each([
+    'rm -rf ./dist ../shared',
+    'rm -r build',
+    'rm -fr /tmp/x',
+    'rm --recursive out',
+    'git push --force origin main',
+    'git push -f',
+    'git reset --hard HEAD~3',
+    'git clean -fdx',
+    'psql -c "DROP TABLE users"',
+    'sudo apt-get remove nodejs',
+    'find . -name "*.log" -delete',
+  ])('reads %s as destructive', (command) => {
+    expect(isDestructiveDecision(permission(`Bash command\n  ${command}`))).toBe(true);
+  });
+
+  it.each([
+    'pnpm test',
+    'rm dist/index.js',
+    'git push origin feature',
+    'git status',
+    'Edit file src/app.ts',
+  ])('lets %s through to the bot', (command) => {
+    expect(isDestructiveDecision(permission(`Bash command\n  ${command}`))).toBe(false);
+  });
+
+  it('reads a recursive deletion named in words', () => {
+    expect(isDestructiveDecision(permission('', 'Allow recursive deletion of ./cache?'))).toBe(
+      true,
+    );
+  });
+
+  it('never calls a question destructive', () => {
+    const question: SessionDecision = {
+      kind: 'question',
+      id: 'toolu_1',
+      questions: [
+        {
+          header: null,
+          question: 'Should I rm -rf the build folder?',
+          multiSelect: false,
+          options: [{ label: 'Yes', description: null }],
+        },
+      ],
+    };
+    expect(isDestructiveDecision(question)).toBe(false);
+  });
+});
+
+describe('answerNeedsPerson', () => {
+  const destructive = permission('Bash command\n  rm -rf ../shared');
+
+  it('puts letting a destructive dialog through to the person', () => {
+    expect(answerNeedsPerson(destructive, { decisionId: 'perm-1', option: 0 })).toBe(true);
+    expect(answerNeedsPerson(destructive, { decisionId: 'perm-1', option: 1 })).toBe(true);
+  });
+
+  it('lets the bot turn a destructive dialog down', () => {
+    expect(answerNeedsPerson(destructive, { decisionId: 'perm-1', option: 2 })).toBe(false);
+  });
+
+  it('leaves an ordinary dialog to the bot', () => {
+    const ordinary = permission('Bash command\n  pnpm test');
+    expect(answerNeedsPerson(ordinary, { decisionId: 'perm-1', option: 0 })).toBe(false);
+  });
+
+  it('leaves a stale answer to the refusal that names the current decision', () => {
+    expect(answerNeedsPerson(destructive, { decisionId: 'perm-0', option: 0 })).toBe(false);
+    expect(answerNeedsPerson(null, { decisionId: 'perm-1', option: 0 })).toBe(false);
+  });
+});
