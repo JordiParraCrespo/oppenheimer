@@ -6,9 +6,9 @@ import type { BotTurnEntity } from '../domain/bot-turn.entity';
 /**
  * Whether a turn still has somewhere to answer
  * (`product/next-steps/answering-on-telegram-and-whatsapp.md`): the console
- * chat always does; a Telegram turn only while its chat's Telegram bot is
- * still connected, since its answer is sent there. A turn with nowhere to
- * answer ends without running. The next channel answers here, once.
+ * chat always does; a channel's conversation (Telegram, WhatsApp) only while
+ * its account is still connected, since its answer is sent there. A turn
+ * with nowhere to answer ends without running.
  */
 @Injectable()
 export class BotTurnChannelPolicy {
@@ -18,9 +18,9 @@ export class BotTurnChannelPolicy {
   ) {}
 
   async answerable(turn: BotTurnEntity): Promise<boolean> {
-    if (turn.origin !== 'telegram') return true;
+    if (turn.inConsole) return true;
     return (
-      (await this.conversations.findTelegram(turn.organizationId, turn.conversationId)) !== null
+      (await this.conversations.findChannelChat(turn.organizationId, turn.conversationId)) !== null
     );
   }
 }

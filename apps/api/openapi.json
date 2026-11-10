@@ -17579,6 +17579,83 @@
       }
     },
     "/api/v1/whatsapp/accounts/{id}": {
+      "patch": {
+        "description": "Sets the caller’s Oppenheimer bot that answers them by default when they write to this number from their own confirmed number, or none (`null`). \"Name: …\" in the chat switches it to another of their bots. A bot that is a number’s default cannot be deleted until it is unbound.",
+        "operationId": "updateWhatsappAccount",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "The linked number.",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateWhatsappAccountRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WhatsappAccountResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "BOTS_001 — No such bot of the caller’s\n\nWHATSAPP_001 — No such linked number",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Choose which bot answers on a WhatsApp number",
+        "tags": [
+          "WhatsApp"
+        ]
+      },
       "delete": {
         "description": "Logs the device out of WhatsApp, deletes its keys from the host, and forgets the number and the messages kept for its bots. An offline host is told when it comes back. An id that is not one of the caller’s does nothing.",
         "operationId": "removeWhatsappAccount",
@@ -17625,6 +17702,234 @@
           }
         ],
         "summary": "Unlink a WhatsApp number",
+        "tags": [
+          "WhatsApp"
+        ]
+      }
+    },
+    "/api/v1/whatsapp/accounts/{id}/owner": {
+      "post": {
+        "description": "The linked number sends a six-digit code to the caller’s own number, which they enter with `POST …/owner/confirm` within ten minutes. Once confirmed, it is the only number this one answers. A new request replaces a waiting code; the confirmed number stays until another is confirmed. Only the code’s hash is kept.",
+        "operationId": "requestWhatsappOwner",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "The linked number.",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RequestWhatsappOwnerRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WhatsappAccountResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "WHATSAPP_001 — No such linked number",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "WHATSAPP_004 / WHATSAPP_005 / WHATSAPP_007 — The host, older or offline, or the number, not connected, cannot send the code",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "WHATSAPP_013 — Not a phone number, or the linked number itself",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "WHATSAPP_009 — The host’s send budget is spent",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "WHATSAPP_008 — WhatsApp did not take the code",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Name your own number, and get a code on it",
+        "tags": [
+          "WhatsApp"
+        ]
+      }
+    },
+    "/api/v1/whatsapp/accounts/{id}/owner/confirm": {
+      "post": {
+        "description": "Enters the six-digit code the linked number sent to the caller’s own number. The right code, within ten minutes, makes that number the owner: the only one this number answers, in its own chat. Five wrong codes lock it until a new one is asked for.",
+        "operationId": "confirmWhatsappOwner",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "The linked number.",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConfirmWhatsappOwnerRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WhatsappAccountResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "WHATSAPP_001 — No such linked number",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "WHATSAPP_012 — No number is waiting for its code",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "WHATSAPP_011 — The code is wrong or has expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "WHATSAPP_014 — Too many wrong codes: ask for a new one",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Confirm your own number with the code it received",
         "tags": [
           "WhatsApp"
         ]
@@ -20154,7 +20459,7 @@
             }
           },
           "409": {
-            "description": "BOTS_042 — The bot answers on a Telegram bot",
+            "description": "BOTS_042 / BOTS_043 — The bot answers on a Telegram bot, or is a WhatsApp number’s default",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -35375,6 +35680,30 @@
             "nullable": true,
             "description": "Why the device is logged out or unlinked, in the host’s words."
           },
+          "answeringBotId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true,
+            "description": "The caller’s Oppenheimer bot that answers them on this number by default; null while none does. \"Name: …\" in the chat switches to another of their bots."
+          },
+          "ownerNumber": {
+            "type": "string",
+            "nullable": true,
+            "example": "+34600111222",
+            "description": "The owner’s own number, confirmed by the code it received; the only number this one answers. Null until confirmed."
+          },
+          "ownerPendingNumber": {
+            "type": "string",
+            "nullable": true,
+            "example": "+34600111222",
+            "description": "The number a code was sent to, waiting for the code to be entered."
+          },
+          "ownerCodeExpiresAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true,
+            "description": "When the waiting code stops working."
+          },
           "linkedAt": {
             "type": "string",
             "format": "date-time",
@@ -35392,6 +35721,10 @@
           "qr",
           "qrExpiresAt",
           "statusReason",
+          "answeringBotId",
+          "ownerNumber",
+          "ownerPendingNumber",
+          "ownerCodeExpiresAt",
           "linkedAt"
         ]
       },
@@ -35409,6 +35742,43 @@
         },
         "required": [
           "hostId"
+        ]
+      },
+      "UpdateWhatsappAccountRequest": {
+        "type": "object",
+        "properties": {
+          "answeringBotId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          }
+        },
+        "required": [
+          "answeringBotId"
+        ]
+      },
+      "RequestWhatsappOwnerRequest": {
+        "type": "object",
+        "properties": {
+          "phone": {
+            "type": "string",
+            "pattern": "^\\+?[1-9](?:[\\s-]?\\d){6,14}$"
+          }
+        },
+        "required": [
+          "phone"
+        ]
+      },
+      "ConfirmWhatsappOwnerRequest": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "pattern": "^\\d{6}$"
+          }
+        },
+        "required": [
+          "code"
         ]
       },
       "TelegramAccountResponseDto": {

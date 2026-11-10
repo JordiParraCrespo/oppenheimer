@@ -58,7 +58,10 @@ OpenClaw's rules for keeping a number safe, kept in the runner:
 - **Never shown as online**, no read receipts, no typing.
 - **No history sync.** The device sees what arrives from the moment it is
   paired; nothing older, and nothing older than ten minutes when it
-  arrives (a reconnect's backlog).
+  arrives (a reconnect's backlog). So a message you write to the number while its host
+  is offline for longer than that gets no answer from your bot when it
+  comes back (answering-on-telegram-and-whatsapp.md, slice 3), unlike
+  Telegram's, which keeps it.
 - Status updates, broadcast lists and channels are dropped.
 - **A send budget of our own**: at most 20 a minute and 300 a day per host,
   and every send paused for ten minutes after WhatsApp's own
@@ -118,7 +121,9 @@ A group of its own in Settings → Permissions, **WhatsApp**:
   grant for the chat, Approve everything) resolves its chat again on the
   server: only a card's stored call carries a plan.
 - **Limits:** 100 bot sends per number per day, on top of the host's
-  budget (§2). Text only, 8,000 characters, WhatsApp's own `*bold*` and
+  budget (§2). A bot's reply to your own message in your chat with the
+  number (answering-on-telegram-and-whatsapp.md, slice 3) is not a send:
+  it counts only against the host's budget. Text only, 8,000 characters, WhatsApp's own `*bold*` and
   `_italic_`.
 - The bot resolves "Marta" to the one chat of that name (a part of a name
   when only one matches); two chats with one name make it use the id.

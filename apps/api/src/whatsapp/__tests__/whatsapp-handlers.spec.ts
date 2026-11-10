@@ -1,21 +1,34 @@
 import 'reflect-metadata';
-import type { AccessScope } from '@oppenheimer/backend-authz';
+import type { QueryBus } from '@nestjs/cqrs';
+import type { AccessScope, ScopeResolverPort } from '@oppenheimer/backend-authz';
 import { AppError } from '@oppenheimer/backend-core';
 import { None, Some } from 'oxide.ts';
 import { describe, expect, it, vi } from 'vitest';
+import type { BotEntity } from '../../bots/domain/bot.entity';
 import type { HostAccessPort } from '../../hosts/application/host-access.port';
+import { WhatsappAnswerResolver } from '../application/whatsapp-answer.resolver';
 import type { WhatsappDevicePort } from '../application/whatsapp-device.port';
+import { WhatsappReplyResolver } from '../application/whatsapp-reply.resolver';
 import { LinkWhatsappCommand } from '../commands/link-whatsapp/link-whatsapp.command';
 import { LinkWhatsappCommandHandler } from '../commands/link-whatsapp/link-whatsapp.command-handler';
 import { ReceiveWhatsappMessagesCommand } from '../commands/receive-whatsapp-messages/receive-whatsapp-messages.command';
 import { ReceiveWhatsappMessagesCommandHandler } from '../commands/receive-whatsapp-messages/receive-whatsapp-messages.command-handler';
 import { RecordWhatsappStateCommand } from '../commands/record-whatsapp-state/record-whatsapp-state.command';
 import { RecordWhatsappStateCommandHandler } from '../commands/record-whatsapp-state/record-whatsapp-state.command-handler';
+import { ReplyOnWhatsappCommand } from '../commands/reply-on-whatsapp/reply-on-whatsapp.command';
+import { ReplyOnWhatsappCommandHandler } from '../commands/reply-on-whatsapp/reply-on-whatsapp.command-handler';
 import { SendWhatsappMessageCommand } from '../commands/send-whatsapp-message/send-whatsapp-message.command';
 import { SendWhatsappMessageCommandHandler } from '../commands/send-whatsapp-message/send-whatsapp-message.command-handler';
+import { UpdateWhatsappAccountCommand } from '../commands/update-whatsapp-account/update-whatsapp-account.command';
+import { UpdateWhatsappAccountCommandHandler } from '../commands/update-whatsapp-account/update-whatsapp-account.command-handler';
 import type { WhatsappAccountRepositoryPort } from '../database/whatsapp-account.repository.port';
-import type { WhatsappMessageRepositoryPort } from '../database/whatsapp-message.repository.port';
+import type {
+  WhatsappMessageRepositoryPort,
+  WhatsappMessagesOwed,
+} from '../database/whatsapp-message.repository.port';
+import type { WhatsappOwnerWroteDomainEvent } from '../domain/events/whatsapp-owner-wrote.domain-event';
 import { WhatsappAccountEntity } from '../domain/whatsapp-account.entity';
+import type { WhatsappMessageDraft, WhatsappStoredMessage } from '../domain/whatsapp-message.types';
 import { WhatsappAccountMapper } from '../whatsapp-account.mapper';
 import { WhatsappMessageMapper } from '../whatsapp-message.mapper';
 
@@ -55,10 +68,17 @@ function fakeAccounts(rows: WhatsappAccountEntity[] = []) {
       const row = rows.find((item) => item.hostId === hostId);
       return row ? Some(row) : None;
     },
+    findByIdForSystem: async (organizationId, id) => {
+      const row = rows.find((item) => item.id === id && item.organizationId === organizationId);
+      return row ? Some(row) : None;
+    },
     insert: vi.fn(async (account) => {
       rows.push(account);
     }),
     save: vi.fn(async () => {}),
+    saveAnswering: vi.fn(async () => {}),
+    saveOwnerCode: vi.fn(async () => {}),
+    saveOwner: vi.fn(async () => true),
     delete: vi.fn(async (account) => {
       rows.splice(rows.indexOf(account), 1);
     }),
@@ -80,8 +100,10 @@ function fakeMessages(
   overrides: Partial<WhatsappMessageRepositoryPort> = {},
 ): WhatsappMessageRepositoryPort {
   return {
-    insertMany: vi.fn(async () => {}),
+    insertMany: vi.fn(async () => []),
     recordBotSend: vi.fn(async () => {}),
+    findById: vi.fn(async () => null),
+    findSwitchedBot: vi.fn(async () => null),
     pruneBefore: vi.fn(async () => 0),
     pruneBeyond: vi.fn(async () => 0),
     findChats: vi.fn(async () => []),
@@ -90,6 +112,26 @@ function fakeMessages(
     countBotSendsSince: vi.fn(async () => 0),
     ...overrides,
   };
+}
+
+/** The owner's bots, as `FindBotsQuery` answers them. */
+function bots(...named: Array<{ id: string; name: string }>) {
+  return named.map((bot) => ({ ...bot, createdByUserId: USER }) as unknown as BotEntity);
+}
+
+/** The answering path over a query bus that lists `owned`, sending through `device`. */
+function answersOf(
+  messages: WhatsappMessageRepositoryPort,
+  owned: BotEntity[] = [],
+  device: WhatsappDevicePort = fakeDevice(),
+) {
+  const queryBus = { execute: vi.fn(async () => owned) } as unknown as QueryBus;
+  const scopes = { resolve: vi.fn(async () => scopeOf()) } as unknown as ScopeResolverPort;
+  return new WhatsappAnswerResolver(
+    queryBus,
+    scopes,
+    new WhatsappReplyResolver(device, messages, new WhatsappMessageMapper()),
+  );
 }
 
 const hosts: HostAccessPort = { assertUsable: vi.fn(async () => ({ probedTools: null })) };
@@ -244,6 +286,7 @@ describe('ReceiveWhatsappMessagesCommandHandler', () => {
       fakeAccounts([linked]).repository,
       messages,
       new WhatsappMessageMapper(),
+      answersOf(messages),
     );
 
     const keys = await handler.execute(
@@ -277,6 +320,7 @@ describe('ReceiveWhatsappMessagesCommandHandler', () => {
       fakeAccounts().repository,
       messages,
       new WhatsappMessageMapper(),
+      answersOf(messages),
     );
     await expect(
       handler.execute(new ReceiveWhatsappMessagesCommand({ hostId: HOST, messages: [inbound] })),
@@ -377,5 +421,229 @@ describe('SendWhatsappMessageCommandHandler', () => {
         ).execute(command(theirs.id)),
       ),
     ).toBe('WHATSAPP_001');
+  });
+});
+
+describe('ReceiveWhatsappMessagesCommandHandler, the owner’s messages', () => {
+  const OWNER = '34600999888@s.whatsapp.net';
+  const DEFAULT_BOT = 'bot-default';
+  const SHOP = { id: 'bot-shop', name: 'Shop' };
+
+  function owned() {
+    const linked = account({ status: 'connected' });
+    const named = linked.nameOwner(OWNER, new Date());
+    linked.confirmOwner(named?.code ?? '', new Date());
+    linked.answerAs(DEFAULT_BOT);
+    return linked;
+  }
+
+  const fromOwner = (id: string, text: string) => ({
+    key: `${OWNER}/${id}`,
+    id,
+    chatId: OWNER,
+    chatKind: 'direct' as const,
+    senderId: OWNER,
+    fromMe: false,
+    text,
+    sentAt: '2026-11-09T10:00:00Z',
+  });
+
+  /**
+   * The store, faked: each new message gets a row and a seq, and the owner's
+   * are placed as the stored switches would place them (the SQL itself is
+   * `whatsapp.integration.spec.ts`'s); the events staged are kept.
+   */
+  function storing() {
+    const staged: WhatsappOwnerWroteDomainEvent[] = [];
+    const messages = fakeMessages({
+      insertMany: vi.fn(
+        async (drafts: readonly WhatsappMessageDraft[], owed?: WhatsappMessagesOwed) =>
+          drafts.map((draft, index) => {
+            const seq = String(index + 1);
+            const place =
+              owed?.isOwners(draft) === true
+                ? {
+                    botId: draft.switchesToBotId ?? owed.answeringBotId,
+                    startsAt: draft.switchesToBotId ? seq : '0',
+                  }
+                : null;
+            const stored: WhatsappStoredMessage = { ...draft, id: `row-${seq}`, seq, place };
+            const event = place ? owed?.eventFor(stored, place) : null;
+            if (event) staged.push(event as WhatsappOwnerWroteDomainEvent);
+            return stored;
+          }),
+      ),
+    });
+    return { messages, staged };
+  }
+
+  async function receive(owners: BotEntity[], ...texts: string[]) {
+    const { messages, staged } = storing();
+    const device = fakeDevice({
+      send: vi.fn(async () => ({ kind: 'sent' as const, id: 'out', sentAt: new Date() })),
+    });
+    const answers = answersOf(messages, owners, device);
+    await new ReceiveWhatsappMessagesCommandHandler(
+      fakeAccounts([owned()]).repository,
+      messages,
+      new WhatsappMessageMapper(),
+      answers,
+    ).execute(
+      new ReceiveWhatsappMessagesCommand({
+        hostId: HOST,
+        messages: texts.map((text, index) => fromOwner(`M${index}`, text)),
+      }),
+    );
+    const drafts = vi.mocked(messages.insertMany).mock.calls[0]?.[0] ?? [];
+    return { staged, drafts, device };
+  }
+
+  // What breaks this: the owner's message never waking a bot, or "Shop:" reaching the default.
+  it('stages one event per message, for the bot a "Name:" switched to, without the prefix', async () => {
+    const { staged, drafts } = await receive(bots(SHOP), 'Shop: what sold?', 'and yesterday?');
+    expect(drafts[0]?.switchesToBotId).toBe(SHOP.id);
+    expect(staged.map((event) => [event.botId, event.text, event.startsHere])).toEqual([
+      [SHOP.id, 'what sold?', true],
+      [DEFAULT_BOT, 'and yesterday?', false],
+    ]);
+  });
+
+  // What breaks this: "Note: …" or "Re: …" eaten as a switch to nobody.
+  it('keeps a "Name:" that names no bot as an ordinary message, prefix and all', async () => {
+    const { staged, drafts } = await receive(bots(SHOP), 'Note: buy milk');
+    expect(drafts[0]?.switchesToBotId).toBeNull();
+    expect(staged[0]).toMatchObject({ botId: DEFAULT_BOT, text: 'Note: buy milk' });
+  });
+
+  // What breaks this: an ambiguous name silently picking one of two bots.
+  it('switches to neither of two bots that share the name', async () => {
+    const { staged, drafts } = await receive(
+      bots(SHOP, { id: 'bot-shop-2', name: 'shop' }),
+      'Shop: what sold?',
+    );
+    expect(drafts[0]?.switchesToBotId).toBeNull();
+    expect(staged[0]).toMatchObject({ botId: DEFAULT_BOT, text: 'Shop: what sold?' });
+  });
+
+  it('answers a bare "Name:" with who the chat talks to now, and wakes nobody', async () => {
+    const { staged, drafts, device } = await receive(bots(SHOP), 'Shop:');
+    expect(drafts[0]?.switchesToBotId).toBe(SHOP.id);
+    expect(staged).toEqual([]);
+    // The fixed line goes out after intake, unawaited.
+    await vi.waitFor(() =>
+      expect(device.send).toHaveBeenCalledWith(HOST, OWNER, 'Now talking to Shop.', {
+        id: 'M0',
+        senderId: OWNER,
+      }),
+    );
+  });
+});
+
+describe('ReplyOnWhatsappCommandHandler', () => {
+  const OWNER = '34600999888@s.whatsapp.net';
+  const BOT = 'bot-1';
+
+  function owned(status: 'connected' | 'logged_out' = 'connected') {
+    const linked = account({ status: 'connected' });
+    const named = linked.nameOwner(OWNER, new Date());
+    linked.confirmOwner(named?.code ?? '', new Date());
+    linked.answerAs(BOT);
+    if (status !== 'connected') linked.report({ state: status });
+    return linked;
+  }
+
+  function reply(
+    linked: WhatsappAccountEntity,
+    overrides: Partial<WhatsappMessageRepositoryPort> = {},
+  ) {
+    const device = fakeDevice({
+      send: vi.fn(async () => ({ kind: 'sent' as const, id: 'out', sentAt: new Date() })),
+    });
+    const messages = fakeMessages({
+      findById: vi.fn(async () => ({ externalId: '3EB0', senderId: OWNER }) as never),
+      ...overrides,
+    });
+    const handler = new ReplyOnWhatsappCommandHandler(
+      fakeAccounts([linked]).repository,
+      messages,
+      new WhatsappReplyResolver(device, messages, new WhatsappMessageMapper()),
+    );
+    const run = (text: string, botId = BOT) =>
+      handler.execute(
+        new ReplyOnWhatsappCommand({
+          organizationId: ORG,
+          accountId: linked.id,
+          chatId: OWNER,
+          replyToRowId: '0b3e2a1c-9999-4c5d-8e6f-70819203b4c5',
+          text,
+          botId,
+        }),
+      );
+    return { device, messages, run };
+  }
+
+  // What breaks this: an unquoted answer, or every part of a long one quoting.
+  it('quotes the owner’s message on the first part only, and records the parts as replies', async () => {
+    const { device, messages, run } = reply(owned());
+    await expect(run(`${'a'.repeat(7_000)}\n\n${'b'.repeat(2_000)}`)).resolves.toBe(2);
+    const calls = vi.mocked(device.send).mock.calls;
+    expect(calls[0]?.[3]).toEqual({ id: '3EB0', senderId: OWNER });
+    expect(calls[1]?.[3]).toBeUndefined();
+    expect(vi.mocked(messages.recordBotSend).mock.calls[0]?.[0]).toMatchObject({
+      sentByBotId: BOT,
+      isReply: true,
+      quotedId: '3EB0',
+    });
+  });
+
+  // What breaks this: an answer delivered after the owner switched, re-defaulted or unlinked.
+  it('sends nothing once the bot no longer answers the chat or the number is not connected', async () => {
+    const switched = reply(owned(), { findSwitchedBot: vi.fn(async () => 'bot-shop') });
+    await expect(switched.run('hello')).resolves.toBe(0);
+    expect(switched.device.send).not.toHaveBeenCalled();
+
+    const shop = reply(owned(), { findSwitchedBot: vi.fn(async () => 'bot-shop') });
+    await expect(shop.run('hello', 'bot-shop')).resolves.toBe(1);
+
+    const offline = reply(owned('logged_out'));
+    await expect(offline.run('hello')).resolves.toBe(0);
+    expect(offline.device.send).not.toHaveBeenCalled();
+  });
+});
+
+describe('UpdateWhatsappAccountCommandHandler', () => {
+  // What breaks this: someone else's bot answering on the caller's number.
+  it('chooses the caller’s own bot, and refuses one the bots module does not find for them with BOTS_001', async () => {
+    const linked = account({ status: 'connected' });
+    const accounts = fakeAccounts([linked]);
+    const found = { execute: vi.fn(async () => ({})) } as unknown as QueryBus;
+    await new UpdateWhatsappAccountCommandHandler(accounts.repository, found).execute(
+      new UpdateWhatsappAccountCommand({
+        scope: scopeOf(),
+        accountId: linked.id,
+        answeringBotId: 'bot-1',
+      }),
+    );
+    expect(linked.answeringBotId).toBe('bot-1');
+    expect(accounts.repository.saveAnswering).toHaveBeenCalledTimes(1);
+
+    const notTheirs = {
+      execute: vi.fn(async () => {
+        throw new AppError({ code: 'BOTS_001', message: 'Bot not found', httpStatus: 404 });
+      }),
+    } as unknown as QueryBus;
+    expect(
+      await codeOf(
+        new UpdateWhatsappAccountCommandHandler(accounts.repository, notTheirs).execute(
+          new UpdateWhatsappAccountCommand({
+            scope: scopeOf(),
+            accountId: linked.id,
+            answeringBotId: 'bot-2',
+          }),
+        ),
+      ),
+    ).toBe('BOTS_001');
+    expect(linked.answeringBotId).toBe('bot-1');
+    expect(accounts.repository.saveAnswering).toHaveBeenCalledTimes(1);
   });
 });

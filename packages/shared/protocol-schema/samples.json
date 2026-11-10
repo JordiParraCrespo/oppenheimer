@@ -397,7 +397,11 @@
     "type": "whatsapp.send",
     "commandId": "b2c3d4e5-6f7a-4b8c-9d0e-1f2a3b4c5d6e",
     "chatId": "34600333444@s.whatsapp.net",
-    "text": "Tuesday works."
+    "text": "Tuesday works.",
+    "replyTo": {
+      "id": "3EB0C7A1F2",
+      "senderId": "34600333444@s.whatsapp.net"
+    }
   },
   "whatsapp.sent": {
     "type": "whatsapp.sent",

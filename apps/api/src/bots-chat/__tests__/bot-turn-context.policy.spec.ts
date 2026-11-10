@@ -53,6 +53,22 @@ describe('composeTurnContext', () => {
     );
   });
 
+  // What breaks this: a turn asked on a channel answering as if in the
+  // console (tables, headings, a pointer to a screen the person cannot see),
+  // or a console turn told its words go to a phone.
+  it('tells a channel turn where its last words go, and a console turn nothing', () => {
+    const whatsapp = composeTurnContext({ ...base, channel: 'whatsapp' });
+    expect(whatsapp).toContain('writing to you on WhatsApp');
+    expect(whatsapp).toContain('*bold* and _italic_');
+    expect(whatsapp).not.toContain('Telegram');
+    expect(composeTurnContext({ ...base, channel: 'telegram' })).toContain(
+      'writing to you on Telegram',
+    );
+    const console = composeTurnContext({ ...base, channel: null });
+    expect(console).not.toContain('WhatsApp');
+    expect(console).not.toContain('Telegram');
+  });
+
   it('names its home host and the owner’s hosts with whether each is online', () => {
     const home = { name: 'build-01', online: true, runningSessions: 1 };
     const block = composeTurnContext({

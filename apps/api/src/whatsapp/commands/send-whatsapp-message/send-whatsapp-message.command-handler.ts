@@ -2,10 +2,8 @@ import { Inject } from '@nestjs/common';
 import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
 import { AppError } from '@oppenheimer/backend-core';
 import { WHATSAPP_SENDS_PER_DAY } from '@oppenheimer/shared';
-import type {
-  WhatsappDevicePort,
-  WhatsappSendOutcome,
-} from '../../application/whatsapp-device.port';
+import type { WhatsappDevicePort } from '../../application/whatsapp-device.port';
+import { whatsappSentOrThrow } from '../../application/whatsapp-send-outcome.policy';
 import type { WhatsappAccountRepositoryPort } from '../../database/whatsapp-account.repository.port';
 import type { WhatsappMessageRepositoryPort } from '../../database/whatsapp-message.repository.port';
 import { WhatsappErrors } from '../../domain/whatsapp.errors';
@@ -59,7 +57,7 @@ export class SendWhatsappMessageCommandHandler
       });
     }
 
-    const sent = sentOrThrow(
+    const sent = whatsappSentOrThrow(
       await this.device.send(account.hostId, command.chat.chatId, command.text),
     );
     await this.messages.recordBotSend(
@@ -72,32 +70,5 @@ export class SendWhatsappMessageCommandHandler
       }),
     );
     return sent.id;
-  }
-}
-
-/** The host's answer, or the problem a bot is told. */
-function sentOrThrow(outcome: WhatsappSendOutcome): { id: string; sentAt: Date } {
-  switch (outcome.kind) {
-    case 'sent':
-      return outcome;
-    case 'host_offline':
-      throw new AppError(WhatsappErrors.HOST_OFFLINE);
-    case 'not_supported':
-      throw new AppError(WhatsappErrors.HOST_UNSUPPORTED);
-    case 'timed_out':
-      throw new AppError(WhatsappErrors.SEND_FAILED, {
-        detail: 'The host did not answer in time; the message may still have gone.',
-      });
-    case 'failed':
-      if (outcome.code === 'WA_002') throw new AppError(WhatsappErrors.NOT_CONNECTED);
-      if (outcome.code === 'WA_004') {
-        throw new AppError(WhatsappErrors.SEND_LIMIT_REACHED, {
-          detail: 'The host’s own send budget is spent.',
-        });
-      }
-      throw new AppError(WhatsappErrors.SEND_FAILED, {
-        detail: outcome.detail ?? outcome.code,
-        extensions: { upstreamCode: outcome.code },
-      });
   }
 }

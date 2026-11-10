@@ -1055,10 +1055,17 @@ type WhatsappAck struct {
 
 // WhatsappSend is the `whatsapp.send` message.
 type WhatsappSend struct {
-	Type      string `json:"type"`
-	CommandID string `json:"commandId"`
-	ChatID    string `json:"chatId"`
-	Text      string `json:"text"`
+	Type      string               `json:"type"`
+	CommandID string               `json:"commandId"`
+	ChatID    string               `json:"chatId"`
+	Text      string               `json:"text"`
+	ReplyTo   *WhatsappSendReplyTo `json:"replyTo,omitempty"`
+}
+
+// WhatsappSendReplyTo is WhatsappSend.ReplyTo.
+type WhatsappSendReplyTo struct {
+	ID       string `json:"id"`
+	SenderID string `json:"senderId"`
 }
 
 // WhatsappSent is the `whatsapp.sent` message.

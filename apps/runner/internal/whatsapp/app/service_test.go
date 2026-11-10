@@ -47,11 +47,14 @@ func (d *fakeDevice) Pair(_ context.Context, onCode func(string, time.Time)) (ap
 }
 
 func (d *fakeDevice) Logout(context.Context) error { d.loggedOut = true; return nil }
-func (d *fakeDevice) Send(_ context.Context, chatID, text string) (string, time.Time, error) {
+func (d *fakeDevice) Send(_ context.Context, chatID, text string, quote *domain.Quote) (string, time.Time, error) {
 	d.mu.Lock()
 	defer d.mu.Unlock()
 	if d.sendErr != nil {
 		return "", time.Time{}, d.sendErr
+	}
+	if quote != nil {
+		text = "> " + quote.ID + " " + text
 	}
 	d.sent = append(d.sent, chatID+": "+text)
 	return fmt.Sprintf("ID%d", len(d.sent)), now, nil
@@ -231,26 +234,59 @@ func TestLinkThatTimesOutIsUnlinked(t *testing.T) {
 func TestSendRefusals(t *testing.T) {
 	device := &fakeDevice{}
 	svc, _, _ := started(t, device, domain.NewBudget(1, 10))
-	if _, _, err := svc.Send(context.Background(), "34600333444@s.whatsapp.net", "hi"); codeOf(err) != "WA_002" {
+	if _, _, err := svc.Send(context.Background(), "34600333444@s.whatsapp.net", "hi", nil); codeOf(err) != "WA_002" {
 		t.Fatalf("send without a device: %v", err)
 	}
 	svc.Connected("34600111222@s.whatsapp.net", "Jordi")
-	if id, _, err := svc.Send(context.Background(), "34600333444@s.whatsapp.net", "hi"); err != nil || id != "ID1" {
+	if id, _, err := svc.Send(context.Background(), "34600333444@s.whatsapp.net", "hi", nil); err != nil || id != "ID1" {
 		t.Fatalf("send: %q %v", id, err)
 	}
-	if _, _, err := svc.Send(context.Background(), "34600333444@s.whatsapp.net", "again"); codeOf(err) != "WA_004" {
+	if _, _, err := svc.Send(context.Background(), "34600333444@s.whatsapp.net", "again", nil); codeOf(err) != "WA_004" {
 		t.Fatalf("send past the budget: %v", err)
 	}
 
 	limited := &fakeDevice{sendErr: fmt.Errorf("%w: 429", domain.ErrRateLimited)}
 	svc, _, _ = started(t, limited, domain.NewBudget(5, 10))
 	svc.Connected("34600111222@s.whatsapp.net", "Jordi")
-	if _, _, err := svc.Send(context.Background(), "34600333444@s.whatsapp.net", "hi"); codeOf(err) != "WA_003" {
+	if _, _, err := svc.Send(context.Background(), "34600333444@s.whatsapp.net", "hi", nil); codeOf(err) != "WA_003" {
 		t.Fatalf("rate-limited send: %v", err)
 	}
 	limited.sendErr = nil
-	if _, _, err := svc.Send(context.Background(), "34600333444@s.whatsapp.net", "hi"); codeOf(err) != "WA_004" {
+	if _, _, err := svc.Send(context.Background(), "34600333444@s.whatsapp.net", "hi", nil); codeOf(err) != "WA_004" {
 		t.Fatalf("send during WhatsApp's pause: %v", err)
+	}
+}
+
+// A reply that quotes the owner's message reaches the device with its quote,
+// and spends the same host budget as any send: it is refused past the
+// budget (WA_004) and during WhatsApp's pause (WA_003, then 004). A quoted
+// reply that skipped the budget would let answering burn the number's
+// 20 a minute and 300 a day.
+func TestQuotedSendSpendsTheBudget(t *testing.T) {
+	owner := "34600333444@s.whatsapp.net"
+	quote := &domain.Quote{ID: "3EB0A1", SenderID: owner}
+	device := &fakeDevice{}
+	svc, _, _ := started(t, device, domain.NewBudget(1, 10))
+	svc.Connected("34600111222@s.whatsapp.net", "Jordi")
+	if _, _, err := svc.Send(context.Background(), owner, "hi", quote); err != nil {
+		t.Fatalf("quoted send: %v", err)
+	}
+	if len(device.sent) != 1 || device.sent[0] != owner+": > 3EB0A1 hi" {
+		t.Fatalf("sent %q, want the reply with its quote", device.sent)
+	}
+	if _, _, err := svc.Send(context.Background(), owner, "again", quote); codeOf(err) != "WA_004" {
+		t.Fatalf("quoted send past the budget: %v", err)
+	}
+
+	limited := &fakeDevice{sendErr: fmt.Errorf("%w: 429", domain.ErrRateLimited)}
+	svc, _, _ = started(t, limited, domain.NewBudget(5, 10))
+	svc.Connected("34600111222@s.whatsapp.net", "Jordi")
+	if _, _, err := svc.Send(context.Background(), owner, "hi", quote); codeOf(err) != "WA_003" {
+		t.Fatalf("rate-limited quoted send: %v", err)
+	}
+	limited.sendErr = nil
+	if _, _, err := svc.Send(context.Background(), owner, "hi", quote); codeOf(err) != "WA_004" {
+		t.Fatalf("quoted send during WhatsApp's pause: %v", err)
 	}
 }
 

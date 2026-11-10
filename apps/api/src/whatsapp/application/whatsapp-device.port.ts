@@ -1,6 +1,12 @@
 /** Whether a host can be asked anything about its WhatsApp device now. */
 export type WhatsappDeviceReach = 'online' | 'offline' | 'unsupported';
 
+/** The message a send quotes. */
+export interface WhatsappQuote {
+  id: string;
+  senderId: string;
+}
+
 /** What a send came to on the host. */
 export type WhatsappSendOutcome =
   | { kind: 'sent'; id: string; sentAt: Date }
@@ -23,5 +29,14 @@ export interface WhatsappDevicePort {
   link(hostId: string): boolean;
   /** Ask the host to log its device out and delete its keys; false when nothing reached it. */
   unlink(hostId: string): boolean;
-  send(hostId: string, chatId: string, text: string): Promise<WhatsappSendOutcome>;
+  /**
+   * Send a text; with `replyTo`, quoting that message (its WhatsApp id and
+   * who wrote it). A runner from before quoting sends it unquoted.
+   */
+  send(
+    hostId: string,
+    chatId: string,
+    text: string,
+    replyTo?: WhatsappQuote,
+  ): Promise<WhatsappSendOutcome>;
 }
