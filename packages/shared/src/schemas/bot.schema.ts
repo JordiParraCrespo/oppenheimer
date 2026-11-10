@@ -524,6 +524,9 @@ export type BotTurnStatus = (typeof BOT_TURN_STATUSES)[number];
  * - `refused`: the provider refused this request (its content, the model);
  *   the same request fails the same way.
  * - `unavailable`: the provider was down, overloaded or unreachable; it passes.
+ * - `context`: the turn's context filled up past what compaction could free
+ *   (a tool output or file too large for the window); the provider refused
+ *   nothing, and the same request fills it the same way.
  * - `time_limit`, `step_limit`: the turn ran past its time or its model
  *   round trips. Turns have had neither bound since 2026-11-09; older turns
  *   still carry them.
@@ -545,6 +548,7 @@ export const BOT_TURN_FAILURES = [
   'credential',
   'refused',
   'unavailable',
+  'context',
   'time_limit',
   'step_limit',
   'stalled',
@@ -562,6 +566,7 @@ export const BOT_TURN_FAILURE_RETRIES: Readonly<Record<BotTurnFailure, boolean>>
   credential: false,
   refused: false,
   unavailable: true,
+  context: false,
   time_limit: false,
   step_limit: false,
   stalled: true,
