@@ -156,27 +156,26 @@ function invalidate(queryClient: QueryClient, keys: readonly (readonly unknown[]
  * change is never missed.
  */
 function throttledInvalidate(queryClient: QueryClient) {
-  const lastAt = new Map<string, number>();
-  const pending = new Map<string, ReturnType<typeof setTimeout>>();
+  // A read refetched within the gap, and whether another event named it since.
+  // Cleared on dispose, so a refetch still waiting on its gap is dropped.
+  const cooling = new Map<string, boolean>();
   const run = (id: string, queryKey: QueryKey) => {
-    pending.delete(id);
-    lastAt.set(id, Date.now());
+    cooling.set(id, false);
     invalidate(queryClient, [queryKey]);
+    setTimeout(() => {
+      if (cooling.get(id)) run(id, queryKey);
+      else cooling.delete(id);
+    }, CONSUMER_CONFIG.workspaceEvents.refetchGapMs);
   };
   return {
     invalidate(keys: readonly QueryKey[]): void {
       for (const queryKey of keys) {
         const id = JSON.stringify(queryKey);
-        if (pending.has(id)) continue;
-        const wait =
-          (lastAt.get(id) ?? 0) + CONSUMER_CONFIG.workspaceEvents.refetchGapMs - Date.now();
-        if (wait > 0) pending.set(id, setTimeout(run, wait, id, queryKey));
+        if (cooling.has(id)) cooling.set(id, true);
         else run(id, queryKey);
       }
     },
-    dispose(): void {
-      for (const timer of pending.values()) clearTimeout(timer);
-    },
+    dispose: () => cooling.clear(),
   };
 }
 
