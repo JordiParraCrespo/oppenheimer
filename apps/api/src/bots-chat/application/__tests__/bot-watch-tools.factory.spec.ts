@@ -300,6 +300,19 @@ describe('BotWatchToolsFactory', () => {
     expect(result.content).toContain('and once in 20 minutes, as you asked');
   });
 
+  // What breaks this: a watch until the session closes names no task, so
+  // its running task got no looks and was reported as not running.
+  it('owes the running task of a watch until the session closes its looks too', async () => {
+    const { stallChecks, call } = setup({ read: liveSession('in_progress', 4) });
+    const result = await call('watch_session', {
+      session_id: SESSION,
+      until: 'closed',
+      check_in_minutes: 15,
+    });
+    expect(stallChecks.schedule.mock.calls.map(([check]) => check.turn)).toEqual([4, 4]);
+    expect(result.content).toContain('and once in 15 minutes, as you asked');
+  });
+
   it('owes no look at a task that is not running, and says the asked-for one was not set', async () => {
     const waiting = setup({ read: liveSession('requires_action', 2) });
     await waiting.call('watch_session', { session_id: SESSION });

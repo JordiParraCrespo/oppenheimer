@@ -222,15 +222,16 @@ export function checkTurnOf(
 }
 
 /**
- * The task a new watch has to look in on: the one it follows, when that is
- * the session's latest and still queued or running. Null when the task it
+ * The task a new watch has to look in on: the one it follows (any, for a
+ * watch until the session closes, which names none), when that is the
+ * session's latest and still queued or running. Null when the task it
  * follows has not begun or is waiting on a person, whose own wake tells the bot.
  */
 export function liveTaskOf(
   watchedTurn: number | null,
   latest: Pick<WatchedTask, 'seq' | 'state'> | null,
 ): number | null {
-  if (watchedTurn === null || !latest || latest.seq !== watchedTurn) return null;
+  if (!latest || (watchedTurn !== null && latest.seq !== watchedTurn)) return null;
   return latest.state === 'queued' || latest.state === 'in_progress' ? latest.seq : null;
 }
 
