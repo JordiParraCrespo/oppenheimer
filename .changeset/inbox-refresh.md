@@ -4,4 +4,4 @@
 '@oppenheimer/translations': minor
 ---
 
-The Inbox's head has a Refresh button that reads every source again now, instead of waiting for the next poll or stream event.
+The Inbox's head has a Refresh button that reads every source again now, and while the Inbox is open it reads them all again every minute on its own, instead of waiting on a poll or a stream event that may never come.
