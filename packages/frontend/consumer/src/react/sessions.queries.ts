@@ -438,6 +438,11 @@ export interface RenameSessionVariables {
   name: string;
 }
 
+export interface SetSessionHiddenVariables {
+  id: string;
+  hidden: boolean;
+}
+
 export interface MoveSessionVariables {
   id: string;
   projectId: string;
@@ -469,6 +474,13 @@ export function useRenameSession(
   options?: UseMutationOptions<SessionEntity, Error, RenameSessionVariables>,
 ) {
   return useSessionPatch(({ sessions }, { id, name }) => sessions.rename(id, name), options);
+}
+
+/** Hide a session from the sidebar, or show it again; every list takes the answered row. */
+export function useSetSessionHidden(
+  options?: UseMutationOptions<SessionEntity, Error, SetSessionHiddenVariables>,
+) {
+  return useSessionPatch(({ sessions }, { id, hidden }) => sessions.setHidden(id, hidden), options);
 }
 
 export function useMoveSession(

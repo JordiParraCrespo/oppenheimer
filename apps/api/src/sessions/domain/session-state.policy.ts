@@ -110,6 +110,11 @@ export const SESSION_EVENT_KINDS = {
   /** The display name changed — by a person, or by the namer reading the first prompt. */
   NAMED: 'session.named',
   /**
+   * Hidden from the console's sidebar, or shown again. Payload `{ hidden }`.
+   * Display only: nothing on the host hears of it.
+   */
+  VISIBILITY_SET: 'session.visibility_set',
+  /**
    * The session is listed under another project. Payload `{ from, to }`. Nothing
    * moves on disk: a session's directory and branch never name a project.
    */
@@ -328,6 +333,11 @@ export interface SessionFold {
    * the session lives; cleared when it closes, when the host's copy goes.
    */
   sharedFiles: SessionSharedFile[];
+  /**
+   * Whether the console's sidebar leaves the session out until the person
+   * shows hidden sessions. Display only; kept when it closes.
+   */
+  hidden: boolean;
 }
 
 export const INITIAL_SESSION_FOLD: SessionFold = {
@@ -352,6 +362,7 @@ export const INITIAL_SESSION_FOLD: SessionFold = {
   notice: null,
   watchedPulls: [],
   sharedFiles: [],
+  hidden: false,
 };
 
 /**
@@ -380,6 +391,13 @@ function stringField(payload: unknown, field: string): string | null {
   if (typeof payload !== 'object' || payload === null) return null;
   const value = (payload as Record<string, unknown>)[field];
   return typeof value === 'string' && value.trim() ? value : null;
+}
+
+/** A `session.visibility_set` payload's `hidden`, or null when it carries none. */
+export function hiddenOf(payload: unknown): boolean | null {
+  if (typeof payload !== 'object' || payload === null) return null;
+  const value = (payload as Record<string, unknown>).hidden;
+  return typeof value === 'boolean' ? value : null;
 }
 
 /**
@@ -589,6 +607,12 @@ export function foldSessionEvent(fold: SessionFold, event: SessionLogEntry): Ses
       if (source !== 'user' && next.nameSource === 'user') return next;
       next.name = name;
       next.nameSource = source;
+      return next;
+    }
+    case SESSION_EVENT_KINDS.VISIBILITY_SET: {
+      const hidden = hiddenOf(event.payload);
+      if (hidden === null) return next;
+      next.hidden = hidden;
       return next;
     }
     case SESSION_EVENT_KINDS.MOVED:

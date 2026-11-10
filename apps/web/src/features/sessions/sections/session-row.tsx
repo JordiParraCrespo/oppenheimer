@@ -5,6 +5,7 @@ import {
   useMoveSession,
   useProjectsSnapshot,
   useRenameSession,
+  useSetSessionHidden,
 } from '@oppenheimer/frontend-consumer/react';
 import { compactAge, notifySuccess } from '@oppenheimer/frontend-web';
 import { Link, useRouterState } from '@tanstack/react-router';
@@ -100,6 +101,13 @@ export function SessionRow({
     },
     onError: onWrite,
   });
+  const visibility = useSetSessionHidden({
+    onSuccess: (changed, { hidden }) => {
+      onWrite(null);
+      notifySuccess(hidden ? 'sessionHidden' : 'sessionShown', { name: changed.name });
+    },
+    onError: onWrite,
+  });
   const age = compactAge(session.createdAt, now);
   const glyph = sessionGlyph(session);
   // A deleted row back in the list is never back as it was (`useCloseSession`).
@@ -107,7 +115,9 @@ export function SessionRow({
     ? t('sessions.sidebar.notDeleted')
     : session.isClosing
       ? t('sessions.sidebar.deleting')
-      : undefined;
+      : session.hidden
+        ? t('sessions.sidebar.hidden')
+        : undefined;
   const cloudUrl = session.cloud?.url ?? null;
   // The row has a menu unless the list is selecting (the bar acts) or its name
   // is being typed; every way of opening the menu reads this.
@@ -186,6 +196,8 @@ export function SessionRow({
             onOpenChange={setMenuOpen}
             pinned={pin.pinned}
             onPinChange={pin.setPinned}
+            hidden={session.hidden}
+            onHiddenChange={(hidden) => visibility.mutate({ id: session.id, hidden })}
             onSelect={() => selection.pick('toggle')}
             onRename={() => setDraft(session.name)}
             onMove={(projectId) => move.mutate({ id: session.id, projectId })}

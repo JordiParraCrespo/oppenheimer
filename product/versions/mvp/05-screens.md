@@ -34,7 +34,8 @@
   pulsing grey glyph; New session on top, the primary button while a
   session is open and secondary on New session itself, where send is; a filter menu (project,
   repository, agent, host, sort) with the active filters as chips under
-  the header; the account menu at the bottom with appearance, language
+  the header (since 2026-11-10 the Repository facet takes several
+  repositories, a chip each, and lists a session with any of them); the account menu at the bottom with appearance, language
   and Settings. Since the 2026-09-26 export the
   list is **grouped by project**: a rail left of the sidebar switches the
   console's lists — Sessions and Automations, both links, the one under
@@ -371,7 +372,9 @@
   in every window: **Ctrl+C** copies when text is selected and
   interrupts otherwise; **⌥←/⌥→** (Alt) move by word and
   **Ctrl+Backspace** deletes one. Off the Mac, **Ctrl+←/→** also move by
-  word, **Ctrl+Shift+C** copies, **Ctrl+Shift+V** pastes and
+  word, **Ctrl+Shift+C** copies, **Ctrl+V** and **Ctrl+Shift+V** paste (an
+  image or a file pasted is uploaded to the host, since the agent reads
+  the host's clipboard, never the browser's) and
   **Ctrl+Shift+A** selects all. On the Mac, **⌘←/⌘→** go to the start
   and end of the line, **⌘⌫** deletes to its start, **⌘⌦** (fn+⌘⌫) to
   its end, and **⌘A** selects all. A copy with nothing selected, or one

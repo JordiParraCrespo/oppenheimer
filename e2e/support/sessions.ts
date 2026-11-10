@@ -249,6 +249,8 @@ export interface SessionChoices {
   prompt?: string;
   /** Start it in its agent's cloud (Claude Code's, Codex's) from the host, rather than in a terminal on it. */
   cloud?: boolean;
+  /** Start it hidden from the console's sidebar. */
+  hidden?: boolean;
 }
 
 /**

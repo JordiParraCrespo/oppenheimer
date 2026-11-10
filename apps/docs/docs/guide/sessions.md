@@ -30,7 +30,11 @@ A **folder session** works in your own folder, on whatever branch it is on, with
 
 ## The sidebar
 
-The Sessions sidebar lists sessions under their projects, with **Pinned** at the top, a search, filters (project, repository, agent, host) and a sort. A row's menu has **Rename**, **Move to project…**, **Pin**, **Share…** and **Delete**; Select acts on several rows at once.
+The Sessions sidebar lists sessions under their projects, with **Pinned** at the top, a search, filters (project, repository, agent, host) and a sort. The repository filter takes several repositories at once and lists a session that checks out any of them; each one shows as its own chip. A row's menu has **Rename**, **Hide**, **Move to project…**, **Pin**, **Share…** and **Delete**; Select acts on several rows at once.
+
+### Hidden sessions
+
+A hidden session keeps running but stays out of the sidebar. You hide one from its row's menu. A bot, a script or an agent can also start one hidden: `start_session` with `hidden` for a bot or over MCP, `opp sessions run --hidden` from the CLI. To see hidden sessions, turn on **Show hidden sessions** in the filter menu, which also counts them. They are listed marked **Hidden**, and **Show** in a row's menu brings that session back for good. Every device sees the same hidden sessions, and the toggle is kept per device.
 
 ## The state dot
 

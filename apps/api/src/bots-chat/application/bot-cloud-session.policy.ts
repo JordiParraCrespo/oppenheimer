@@ -53,6 +53,8 @@ export interface StartCloudSessionInput {
   host_id?: string;
   codex_environment?: string;
   model?: string;
+  /** Start it hidden from the console's sidebar; shown when omitted. */
+  hidden?: boolean;
 }
 
 /**
@@ -124,7 +126,12 @@ export function planCloudSession(
   if (misfit) return { refusal: misfit };
   const checkout = pickRepository(project, input.repository);
   if ('reason' in checkout) return { refusal: checkout.reason };
-  const common = { projectId: project.id, name: input.name, prompt: input.task };
+  const common = {
+    projectId: project.id,
+    name: input.name,
+    prompt: input.task,
+    ...(input.hidden ? { hidden: true } : {}),
+  };
 
   if (isLaunchedCloud(agent)) {
     const parsed = startCloudSessionSchema.safeParse({

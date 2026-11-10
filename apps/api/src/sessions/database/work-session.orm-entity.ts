@@ -273,6 +273,13 @@ export class WorkSessionOrmEntity {
   sharedFiles!: unknown;
 
   /**
+   * Left out of the console's sidebar until the person shows hidden sessions,
+   * folded from `session.visibility_set`. Display only.
+   */
+  @Column({ type: 'boolean', default: false })
+  hidden!: boolean;
+
+  /**
    * Who asked for the session: `person`, `automation` (whose run points back
    * here), `review` (a pull request's review session, which the Sessions
    * list leaves out) or `bot` (a bot acting for its owner).

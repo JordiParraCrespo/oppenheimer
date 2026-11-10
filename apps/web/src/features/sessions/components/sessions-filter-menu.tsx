@@ -19,6 +19,9 @@ import { useTranslation } from 'react-i18next';
 import {
   ALL,
   type FilterOption,
+  facetLabel,
+  isMultiFacet,
+  pickFacet,
   type SessionFacet,
   type SessionFilters,
   type SessionSort,
@@ -41,6 +44,11 @@ export interface ProjectVisibility {
   onShowAll: () => void;
   pinnedOnly: boolean;
   onPinnedOnlyChange: (pinnedOnly: boolean) => void;
+  /** Whether the sessions hidden by a bot, a script or the reader are drawn. */
+  showHidden: boolean;
+  onShowHiddenChange: (showHidden: boolean) => void;
+  /** How many sessions are hidden, drawn beside the toggle so they are never lost. */
+  hiddenSessionCount: number;
 }
 
 /**
@@ -72,7 +80,9 @@ export function SessionsFilterMenu({
   const { t } = useTranslation();
   const projects = options.project.filter((option) => option.value !== ALL);
   const labelFor = (facet: SessionFacet) =>
-    options[facet].find((option) => option.value === filters[facet])?.label ?? '';
+    facetLabel(filters, facet, options, (count) => t('sessions.filters.several', { count }));
+  const pick = (facet: SessionFacet) => (value: string, selected: boolean) =>
+    onChange(pickFacet(filters, facet, value, selected));
 
   return (
     <DropdownMenu>
@@ -91,14 +101,16 @@ export function SessionsFilterMenu({
 
       <DropdownMenuContent align="end" sideOffset={6} className="min-w-57.5">
         {/* Project, Repository and Host grow with the workspace and are
-            searched; the agents are a short fixed list of radio rows. */}
+            searched; the agents are a short fixed list of radio rows.
+            A facet that takes several values draws each row as a check. */}
         <FacetSearchSub
           label={t('sessions.filters.project')}
           current={labelFor('project')}
           options={options.project}
           value={filters.project}
+          multiple={isMultiFacet('project')}
           searchPlaceholder={t('common.search.projects')}
-          onValueChange={(project) => onChange({ project })}
+          onPick={pick('project')}
         >
           <SearchListFoot>
             <DropdownMenuItem onClick={onNewProject}>
@@ -112,8 +124,9 @@ export function SessionsFilterMenu({
           current={labelFor('repository')}
           options={options.repository}
           value={filters.repository}
+          multiple={isMultiFacet('repository')}
           searchPlaceholder={t('common.search.repositories')}
-          onValueChange={(repository) => onChange({ repository })}
+          onPick={pick('repository')}
         />
         <DropdownMenuSub>
           <DropdownMenuSubTrigger>
@@ -122,8 +135,8 @@ export function SessionsFilterMenu({
           </DropdownMenuSubTrigger>
           <DropdownMenuSubContent>
             <DropdownMenuRadioGroup
-              value={filters.agent}
-              onValueChange={(agent) => onChange({ agent: agent as string })}
+              value={filters.agent[0] ?? ALL}
+              onValueChange={(agent) => pick('agent')(agent as string, true)}
             >
               {options.agent.map((option) => (
                 <DropdownMenuRadioItem key={option.value} value={option.value}>
@@ -138,8 +151,9 @@ export function SessionsFilterMenu({
           current={labelFor('host')}
           options={options.host}
           value={filters.host}
+          multiple={isMultiFacet('host')}
           searchPlaceholder={t('common.search.hosts')}
-          onValueChange={(host) => onChange({ host })}
+          onPick={pick('host')}
         />
 
         <DropdownMenuSeparator />
@@ -185,6 +199,15 @@ export function SessionsFilterMenu({
           onCheckedChange={(checked) => visibility.onPinnedOnlyChange(checked)}
         >
           {t('sessions.filters.pinnedOnly')}
+        </DropdownMenuCheckboxItem>
+        <DropdownMenuCheckboxItem
+          checked={visibility.showHidden}
+          onCheckedChange={(checked) => visibility.onShowHiddenChange(checked)}
+        >
+          {t('sessions.filters.showHidden')}
+          {visibility.hiddenSessionCount > 0 ? (
+            <DropdownMenuValue>{visibility.hiddenSessionCount}</DropdownMenuValue>
+          ) : null}
         </DropdownMenuCheckboxItem>
 
         <DropdownMenuSeparator />

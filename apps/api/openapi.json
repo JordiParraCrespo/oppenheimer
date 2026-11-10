@@ -12485,6 +12485,83 @@
         ]
       }
     },
+    "/api/v1/sessions/{id}/visibility": {
+      "put": {
+        "description": "Display only: a hidden session runs, wakes and answers like any other, and the list endpoint still returns it with `hidden` set. The console leaves it out of the sidebar until the person shows hidden sessions. Idempotent: asking for what the session already is changes nothing.",
+        "operationId": "setSessionVisibility",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetSessionVisibilityRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "SESSIONS_001 — Session not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Hide a session from the console’s sidebar, or show it again",
+        "tags": [
+          "Sessions"
+        ]
+      }
+    },
     "/api/v1/sessions/{id}/move": {
       "post": {
         "description": "Nothing moves on disk: a project is metadata, and a session’s directory and branch never name it. Any active project in the workspace can take any session.",
@@ -30949,6 +31026,11 @@
               }
             ]
           },
+          "hidden": {
+            "type": "boolean",
+            "description": "Hidden from the console’s sidebar until the person shows hidden sessions (`PUT /sessions/{id}/visibility`, or `hidden` at create). Display only: a hidden session runs like any other.",
+            "example": false
+          },
           "hints": {
             "description": "What the control plane could not do for this request. Empty on a read; `host_offline` means the command was recorded but no link to the host exists, so the work is owed.",
             "example": [],
@@ -31034,6 +31116,7 @@
           "stateSeq",
           "checkouts",
           "cloud",
+          "hidden",
           "hints",
           "decision",
           "agentReport",
@@ -31215,6 +31298,9 @@
               "type": "string",
               "format": "uuid"
             }
+          },
+          "hidden": {
+            "type": "boolean"
           }
         },
         "required": [
@@ -31272,6 +31358,9 @@
             "type": "string",
             "minLength": 1,
             "maxLength": 128
+          },
+          "hidden": {
+            "type": "boolean"
           }
         },
         "required": [
@@ -32142,6 +32231,17 @@
         },
         "required": [
           "name"
+        ]
+      },
+      "SetSessionVisibilityRequest": {
+        "type": "object",
+        "properties": {
+          "hidden": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "hidden"
         ]
       },
       "MoveSessionRequest": {
@@ -34704,6 +34804,9 @@
                   "type": "string",
                   "format": "uuid"
                 }
+              },
+              "hidden": {
+                "type": "boolean"
               }
             },
             "required": [
@@ -34799,6 +34902,9 @@
                 "type": "string",
                 "minLength": 1,
                 "maxLength": 128
+              },
+              "hidden": {
+                "type": "boolean"
               }
             },
             "required": [
@@ -39245,6 +39351,7 @@
               "credential",
               "refused",
               "unavailable",
+              "context",
               "time_limit",
               "step_limit",
               "stalled",
