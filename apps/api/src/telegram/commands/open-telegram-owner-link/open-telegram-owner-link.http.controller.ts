@@ -12,7 +12,6 @@ import { ApiBearerAuth, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@ne
 import type { AccessScope } from '@oppenheimer/backend-authz';
 import { ApiAuthProblemResponses, ApiProblemResponse } from '@oppenheimer/backend-core';
 import { CheckPolicies } from '../../../auth/decorators/check-policies.decorator';
-import { RequireScopes } from '../../../auth/decorators/require-scopes.decorator';
 import { ApiAuthGuard } from '../../../auth/guards/api-auth.guard';
 import { PoliciesGuard } from '../../../auth/guards/policies.guard';
 import { CurrentAccessScope } from '../../../authz/decorators/current-access-scope.decorator';
@@ -35,7 +34,8 @@ export class OpenTelegramOwnerLinkHttpController {
   @Post('accounts/:id/owner-link')
   @Version('1')
   @CheckPolicies({ action: 'update', subject: 'Telegram' })
-  @RequireScopes('telegram:write')
+  // Session-only: the owner's line starts turns with the bot's full tools and
+  // memory, so no API token or OAuth grant may name it, whatever its scopes.
   @ApiOperation({
     summary: 'Make a one-time link that records the owner',
     description:

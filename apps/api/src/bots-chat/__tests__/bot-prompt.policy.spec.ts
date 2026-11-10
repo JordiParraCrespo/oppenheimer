@@ -55,6 +55,39 @@ describe('composeBotSystemPrompt', () => {
     expect(composeBotSystemPrompt(base)).not.toContain('Save each with `remember`');
   });
 
+  // What breaks this (2026-11-09, Hermes Agent's learning loop): a bot that
+  // only saves a skill when asked, one told to save with no `save_skill` to
+  // save with, or a section whose bytes move with the skills it lists.
+  it('tells a bot that can save a skill when to save one unasked, in the same words whatever its skills', () => {
+    const tools = [
+      { name: 'use_skill', description: 'Reads a skill.' },
+      { name: 'save_skill', description: 'Saves a skill.' },
+    ];
+    const skill = {
+      name: 'triage',
+      description: 'Sorts issues.',
+      body: 'Label each.',
+      userInvocable: true,
+      modelInvocable: true,
+    };
+    const none = composeBotSystemPrompt({ ...base, tools });
+    const one = composeBotSystemPrompt({ ...base, tools, skills: [skill] });
+    const saving = /You may save a skill without being asked[^\n]*/;
+    expect(none).toMatch(/# Your skills\n\nYou may save a skill without being asked/);
+    expect(none).toContain('at most one new skill a turn');
+    expect(none).toContain("A skill never holds a secret or anyone's personal data");
+    expect(none).toContain('no bank or card details');
+    // 2026-11-10: work the person says recurs is saved; the reminder after a
+    // tool's result is announced, so it is not read as the tool steering it.
+    expect(none).toContain('When the person says the request comes back');
+    expect(none).toContain(
+      "Oppenheimer itself adds one reminder to the end of a tool's result, once a turn, after anything fenced in it, in a <oppenheimer_reminder> tag",
+    );
+    expect(one.match(saving)?.[0]).toBe(none.match(saving)?.[0]);
+    expect(one).toContain('- `triage`: Sorts issues.');
+    expect(composeBotSystemPrompt({ ...base, tools: tools.slice(0, 1) })).not.toMatch(saving);
+  });
+
   it('walks a new bot through learning its job while INSTRUCTIONS.md is empty, and drops it once written', () => {
     expect(composeBotSystemPrompt(base)).toContain('# Getting started');
     const written = composeBotSystemPrompt({ ...base, instructions: 'Review every PR.' });

@@ -325,9 +325,15 @@
       "HOSTS_007": "No hay ningún archivo esperando para esa orden.",
       "HOSTS_008": "El host no está conectado, así que su runner no se puede actualizar ahora. Busca actualizaciones por su cuenta al volver a conectarse.",
       "HOSTS_009": "Alguien cambió este host mientras lo guardabas. Vuelve a cargarlo e inténtalo de nuevo.",
+      "HOSTS_010": "No se pudo abrir el escritorio ahora mismo. Vuelve a intentarlo en un momento.",
       "INBOX_002": "Ese elemento de la bandeja de entrada no se puede marcar. Recarga la bandeja e inténtalo de nuevo.",
       "INBOX_003": "Una posposición tiene que terminar en el futuro. Elige una hora posterior.",
       "INBOX_004": "Ese elemento ya no tiene marca. Recarga la bandeja de entrada.",
+      "INBOX_005": "Ese informe ya no está aquí. Recarga la bandeja de entrada.",
+      "INBOX_006": "Este informe ya tiene respuesta.",
+      "INBOX_007": "Un informe admite como máximo 4 imágenes.",
+      "INBOX_008": "Esa imagen es demasiado grande. El límite es de 5 MB.",
+      "INBOX_009": "Un informe admite imágenes PNG, JPEG, GIF o WebP.",
       "AUTOMATIONS_001": "Esa automatización no existe o se ha eliminado.",
       "AUTOMATIONS_003": "Alguien guardó esta automatización después de que la abrieras. Vuelve a cargarla e inténtalo de nuevo.",
       "AUTOMATIONS_004": "Uno de los repositorios no está disponible en este espacio de trabajo.",
@@ -407,6 +413,10 @@
       "WHATSAPP_008": "WhatsApp no aceptó el mensaje. Vuelve a intentarlo en un momento.",
       "WHATSAPP_009": "Ese número ya ha enviado todos los mensajes de bots que puede por ahora. Inténtalo más tarde.",
       "WHATSAPP_010": "No hay ningún chat de WhatsApp así en ese número.",
+      "WHATSAPP_011": "Ese código no es correcto o ha caducado. Revisa el último código enviado a tu número o pide uno nuevo.",
+      "WHATSAPP_012": "Ningún número está esperando un código. Primero escribe tu número.",
+      "WHATSAPP_013": "Ese no puede ser tu número aquí. Escribe el número desde el que escribes, no el vinculado.",
+      "WHATSAPP_014": "Demasiados códigos incorrectos. Pide un código nuevo y vuelve a intentarlo.",
       "TELEGRAM_001": "Ese bot de Telegram ya no está conectado.",
       "TELEGRAM_002": "Telegram pertenece a un espacio de trabajo. Abre uno y vuelve a intentarlo.",
       "TELEGRAM_003": "Ya has conectado tres bots de Telegram, el máximo por persona. Desconecta uno para añadir otro.",
@@ -494,7 +504,8 @@
       "BOTS_039": "Este bot ya tiene una habilidad con ese nombre. Elige otro.",
       "BOTS_040": "Este bot ya tiene tantas habilidades como puede guardar. Borra una primero.",
       "BOTS_041": "Este bot no tiene ninguna ordenación de su memoria que deshacer.",
-      "BOTS_042": "Este bot responde en un bot de Telegram. Elige otro bot, o ninguno, en Ajustes → Telegram antes de eliminarlo."
+      "BOTS_042": "Este bot responde en un bot de Telegram. Elige otro bot, o ninguno, en Ajustes → Telegram antes de eliminarlo.",
+      "BOTS_043": "Este bot responde en un número de WhatsApp. Elige otro bot, o ninguno, en Ajustes → WhatsApp antes de eliminarlo."
     },
     "notFound": {
       "title": "Esta página no existe",
@@ -1086,7 +1097,8 @@
       "selected": "Seleccionada",
       "openAtVendor": "Se abre en {{vendor}}",
       "allHidden": "Todos los proyectos están ocultos. Vuelve a mostrarlos desde el menú de filtros.",
-      "noSessions": "Todavía no hay sesiones. Empieza una con Nueva sesión, arriba."
+      "noSessions": "Todavía no hay sesiones. Empieza una con Nueva sesión, arriba.",
+      "noPinned": "No hay sesiones fijadas. Fija una desde su menú, o desactiva Solo fijadas en el menú de filtros."
     },
     "deleteSession": {
       "title": "¿Eliminar «{{name}}»?",
@@ -1139,6 +1151,7 @@
       "shownAll": "Todos",
       "shownSome": "{{shown}} de {{total}}",
       "showAll": "Mostrar todos los proyectos",
+      "pinnedOnly": "Solo fijadas",
       "newProject": "Nuevo proyecto…"
     },
     "sort": {
@@ -1322,6 +1335,7 @@
       "failedCall": "falló",
       "failed_one": "{{count}} falló",
       "failed_other": "{{count}} fallaron",
+      "failed_many": "{{count}} fallaron",
       "files_one": "{{count}} archivo adjunto",
       "files_other": "{{count}} archivos adjuntos",
       "tasks_one": "{{done}} de {{count}} tarea hecha",
@@ -1404,7 +1418,9 @@
         "count_one": "{{count}} subagente",
         "count_other": "{{count}} subagentes",
         "running": "{{count}} en marcha",
-        "failed": "{{count}} fallidos",
+        "failed_one": "{{count}} fallido",
+        "failed_other": "{{count}} fallidos",
+        "failed_many": "{{count}} fallidos",
         "untitled": "Subagente",
         "calls_one": "{{count}} llamada",
         "calls_other": "{{count}} llamadas",
@@ -1449,7 +1465,8 @@
       "notSupportedDetail": "Actualiza su runner para abrir aquí el servidor de desarrollo de la sesión.",
       "portsFailed": "No se pudieron listar los puertos de la sesión",
       "previewFailed": "No se pudo abrir la vista previa",
-      "opening": "Abriendo localhost:{{port}}…"
+      "opening": "Abriendo localhost:{{port}}…",
+      "desktop": "Escritorio"
     },
     "cloud": {
       "eyebrow": "Nube de Claude Code",
@@ -1493,6 +1510,7 @@
       "title": "En directo desde la nube de Claude Code",
       "waiting_one": "Tu respuesta espera a que el agente termine su turno.",
       "waiting_other": "{{count}} respuestas esperan a que el agente termine su turno.",
+      "waiting_many": "{{count}} de respuestas esperan a que el agente termine su turno.",
       "replyFailed": "La respuesta no llegó a la sesión. Vuelve a intentarlo.",
       "setup": {
         "title": "Activa el chat de esta sesión",
@@ -1863,11 +1881,14 @@
         "unknown": "algo salió mal"
       },
       "openSession": "Abrir sesión",
+      "hideToolCalls": "Ocultar llamadas a herramientas",
+      "showToolCalls": "Mostrar llamadas a herramientas",
       "goal": {
         "title": "Objetivo: {{objective}}",
         "progress": "{{step}} de {{limit}} continuaciones",
         "continuations_one": "{{count}} continuación",
         "continuations_other": "{{count}} continuaciones",
+        "continuations_many": "{{count}} continuaciones",
         "budget": "{{progress}} · {{used}} de {{budget}} tokens",
         "resume": "Reanudar",
         "resumeFailed": "No se ha podido reanudar el objetivo. Inténtalo de nuevo.",
@@ -2112,7 +2133,9 @@
           "lastUndone": "El último orden, del {{date}}, se deshizo",
           "queued": "Ordenando en segundo plano. El chat avisará cuando termine.",
           "tidyNow": "Ordenar ahora",
+          "tidying": "Ordenando…",
           "undo": "Deshacer",
+          "undoing": "Deshaciendo…",
           "loadFailed": "No se pudo cargar el último orden de la memoria.",
           "requestFailed": "No se pudo empezar a ordenar la memoria.",
           "undoFailed": "No se pudo deshacer el orden."
@@ -3231,6 +3254,7 @@
     "grid": {
       "more_one": "{{count}} más",
       "more_other": "{{count}} más",
+      "more_many": "{{count}} más",
       "eventsFailed": "No se han podido cargar tus eventos.",
       "googleFailed": "No se ha podido leer Google Calendar.",
       "moveFailed": "No se ha podido mover a otro día.",
@@ -3259,7 +3283,9 @@
       "description": "Muestra tus eventos de Google junto a los tuyos. Solo lectura: no se escribe nada en Google.",
       "connect": "Conectar Google Calendar",
       "add": "Añadir cuenta",
-      "atLimit": "Puedes conectar hasta {{count}} cuentas de Google.",
+      "atLimit_one": "Puedes conectar hasta {{count}} cuenta de Google.",
+      "atLimit_other": "Puedes conectar hasta {{count}} cuentas de Google.",
+      "atLimit_many": "Puedes conectar hasta {{count}} de cuentas de Google.",
       "reconnect": "Volver a conectar",
       "connected": "Conectada",
       "updatedNow": "Actualizado ahora mismo",
@@ -3373,6 +3399,52 @@
       "wipeOffline": "{{name}} está desconectado, así que no se puede limpiar desde aquí.",
       "openTerminal": "Abrir terminal",
       "openTerminalTitle": "Terminal en blanco en ~ de {{host}}"
+    },
+    "desktop": {
+      "label": "Escritorio",
+      "open": "Abrir escritorio",
+      "title": "Escritorio de {{name}}",
+      "screen": "Pantalla de {{name}}",
+      "watching": "Viendo {{name}}",
+      "inControl": "Controlas {{name}}",
+      "takeControl": "Tomar el control",
+      "releaseControl": "Dejar de controlar",
+      "fullscreen": "Pantalla completa",
+      "exitFullscreen": "Salir de pantalla completa",
+      "tryAgain": "Volver a intentarlo",
+      "connecting": "Conectando con el escritorio…",
+      "connectingDetail": "La pantalla aparece cuando el host inicia sesión en su servidor de pantalla compartida.",
+      "dropped": "Reconectando…",
+      "droppedDetail": "Se cortó la conexión con el escritorio. Volviendo a intentarlo.",
+      "offline": "El host está desconectado",
+      "offlineDetail": "El escritorio vuelve cuando el host se reconecta.",
+      "ended": "Ya no puedes abrir este escritorio",
+      "endedDetail": "Se eliminó el host o ya no puedes usarlo.",
+      "refused": {
+        "DESKTOP_001": {
+          "title": "Este host no comparte su escritorio",
+          "detail": "Si su pantalla se puede ver y manejar desde aquí se decide en el host. Para compartirla, ejecuta esto allí y vuelve a intentarlo:"
+        },
+        "DESKTOP_002": {
+          "title": "Ningún servidor de pantalla compartida responde en el host",
+          "detail": "Activa Compartir pantalla (en un Mac: Ajustes del Sistema, General, Compartir) o inicia un servidor VNC en 127.0.0.1:5900 y vuelve a intentarlo."
+        },
+        "DESKTOP_003": {
+          "title": "El servidor de pantalla compartida rechazó el inicio de sesión del host",
+          "detail": "Dale al host la cuenta y la contraseña que espera el servidor: runner desktop on --username <cuenta> --password-file <archivo>."
+        },
+        "DESKTOP_004": {
+          "title": "El servidor de pantalla compartida pide un inicio de sesión que el runner no sabe hacer",
+          "detail": "Deja que el servidor acepte una contraseña VNC, o ninguna en el loopback, y vuelve a intentarlo."
+        },
+        "other": {
+          "title": "No se pudo abrir el escritorio",
+          "detail": "El host no pudo llegar a su servidor de pantalla compartida."
+        }
+      },
+      "pageTitle": "Escritorio",
+      "pageLead": "La pantalla de {{name}}, en directo. Miras hasta que tomas el control; entonces tus clics y teclas le llegan, la misma pantalla en la que trabajan sus agentes.",
+      "back": "Hosts"
     }
   },
   "inbox": {
@@ -3388,6 +3460,7 @@
       "back": "Vuelve {{when}}",
       "unread": "{{count}} sin leer",
       "search": "Buscar en la bandeja",
+      "refresh": "Actualizar",
       "clearSearch": "Borrar búsqueda"
     },
     "filter": {
@@ -3406,7 +3479,8 @@
       "pull": "Pull requests",
       "bots": "Bots",
       "session": "Sesiones",
-      "run": "Automatizaciones"
+      "run": "Automatizaciones",
+      "report": "Informes"
     },
     "project": {
       "all": "Todos los proyectos",
@@ -3425,7 +3499,8 @@
       "session": "Sesión",
       "approval": "Aprobación de bot",
       "run": "Automatización",
-      "botNotice": "Bot"
+      "botNotice": "Bot",
+      "report": "Informe"
     },
     "session": {
       "blockedShort": "{{name}} te está esperando",
@@ -3510,6 +3585,18 @@
       "title": "{{bot}} tiene novedades para ti",
       "openChat": "Abrir chat",
       "done": "Hecho"
+    },
+    "report": {
+      "sender": "Un agente",
+      "images": "Imágenes",
+      "image": "Imagen {{n}}",
+      "openLink": "Abrir enlace",
+      "answerLabel": "Tu respuesta",
+      "answerPlaceholder": "¿Qué debería hacer?",
+      "send": "Enviar respuesta",
+      "sending": "Enviando…",
+      "done": "Hecho",
+      "answerFailed": "No se pudo enviar la respuesta. Inténtalo de nuevo."
     }
   },
   "settings": {
@@ -3732,7 +3819,9 @@
       "emptyDescription": "Conecta una y pregunta a cualquier bot cosas como «¿qué envió la gestoría la semana pasada?» o «resume el correo sin leer de hoy». Google avisará de que la app aún no está verificada; es lo esperado.",
       "connect": "Conectar Gmail",
       "connectAnother": "Conectar otra cuenta",
-      "atLimit": "Puedes conectar hasta {{count}} cuentas.",
+      "atLimit_one": "Puedes conectar hasta {{count}} cuenta.",
+      "atLimit_other": "Puedes conectar hasta {{count}} cuentas.",
+      "atLimit_many": "Puedes conectar hasta {{count}} de cuentas.",
       "startFailed": "No se pudo abrir el inicio de sesión de Google.",
       "connected": "Conectada",
       "needsReconnect": "Hay que volver a conectarla",
@@ -3809,7 +3898,38 @@
       "qrStep1": "Abre WhatsApp en el teléfono con este número.",
       "qrStep2": "Ve a Ajustes → Dispositivos vinculados → Vincular un dispositivo.",
       "qrStep3": "Apunta el teléfono a este código. Cambia cada pocos segundos.",
-      "qrWaiting": "Esperando a que el host genere un código…"
+      "qrWaiting": "Esperando a que el host genere un código…",
+      "answering": {
+        "title": "Te responde",
+        "botLabel": "El bot que te responde en {{label}}",
+        "noBot": "Ninguno (no responde)",
+        "search": "Busca un bot",
+        "noMatch": "Ningún bot coincide",
+        "none": "Aún no responde ningún bot en este número. Elige uno para que responda a tu propio número.",
+        "chosen": "Responde a tu propio número. Escribe «Nombre: …» en el chat para hablar con otro de tus bots.",
+        "failed": "No se ha guardado. Inténtalo de nuevo."
+      },
+      "owner": {
+        "title": "Tu número",
+        "none": "Solo se responde a tu propio número. Este número le envía un código, y tú lo introduces aquí.",
+        "codeSent": "Hemos enviado un código a {{number}} desde este número. Introdúcelo aquí. Vale hasta las {{time}}.",
+        "expired": "El código enviado a {{number}} ha caducado. Pide uno nuevo.",
+        "confirmed": "Aquí solo se responde a {{number}}.",
+        "replacing": "Se sigue respondiendo a {{number}} hasta que confirmes el número nuevo.",
+        "hostOffline": "El host está desconectado. Inicia su runner para enviar un código.",
+        "numberLabel": "Tu propio número de WhatsApp",
+        "numberPlaceholder": "+34 600 111 222",
+        "send": "Enviar código",
+        "sending": "Enviando…",
+        "codeLabel": "El código que ha recibido tu número",
+        "codePlaceholder": "123456",
+        "confirm": "Confirmar",
+        "confirming": "Confirmando…",
+        "resend": "Enviar un código nuevo",
+        "change": "Cambiar",
+        "otherNumber": "Usar otro número",
+        "failed": "No ha funcionado. Inténtalo de nuevo."
+      }
     },
     "telegram": {
       "title": "Telegram",
@@ -3822,7 +3942,9 @@
       "connectAnother": "Conectar otro bot",
       "connectAgain": "Conectar de nuevo",
       "connectSubmit": "Conectar",
-      "atLimit": "Puedes conectar hasta {{count}} bots.",
+      "atLimit_one": "Puedes conectar hasta {{count}} bot.",
+      "atLimit_other": "Puedes conectar hasta {{count}} bots.",
+      "atLimit_many": "Puedes conectar hasta {{count}} de bots.",
       "noHosts": "Primero vincula un host: el bot lo consulta el runner de un host.",
       "connectTitle": "Conectar un bot de Telegram",
       "reconnectTitle": "Dar un token nuevo a {{label}}",

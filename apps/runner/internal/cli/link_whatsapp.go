@@ -104,7 +104,12 @@ func (h *linkHandler) whatsAppSend(m link.WhatsappSend) {
 	}
 	ctx, cancel := context.WithTimeout(h.life, whatsAppSendTimeout)
 	defer cancel()
-	id, at, err := h.whatsapp.Send(ctx, m.ChatID, m.Text)
+	// An older control plane sends no replyTo, and the message goes unquoted.
+	var quote *wadomain.Quote
+	if m.ReplyTo != nil {
+		quote = &wadomain.Quote{ID: m.ReplyTo.ID, SenderID: m.ReplyTo.SenderID}
+	}
+	id, at, err := h.whatsapp.Send(ctx, m.ChatID, m.Text, quote)
 	if err != nil {
 		h.fail(m.CommandID, err)
 		return

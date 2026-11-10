@@ -15,7 +15,18 @@ import { Check, Column, CreateDateColumn, Entity, Index, PrimaryGeneratedColumn 
 @Index('IDX_whatsapp_message_chat', ['organizationId', 'accountId', 'chatId', 'sentAt'])
 @Index('IDX_whatsapp_message_account_sent', ['organizationId', 'accountId', 'sentAt'])
 @Index('IDX_whatsapp_message_bot', ['sentByBotId'], { where: '"sentByBotId" IS NOT NULL' })
+/** A chat's switches to a bot by name, by `seq` (`1794256897181-AnswerOnWhatsapp`). */
+@Index('IDX_whatsapp_message_switch', ['organizationId', 'accountId', 'chatId', 'seq'], {
+  where: '"switchesToBotId" IS NOT NULL',
+})
+/** A chat's `/new` commands, by `seq`. */
+@Index('IDX_whatsapp_message_new', { synchronize: false })
+@Index('IDX_whatsapp_message_switches_to_bot', ['switchesToBotId'], {
+  where: '"switchesToBotId" IS NOT NULL',
+})
 @Check('CHK_whatsapp_message_chat_kind', `"chatKind" IN ('direct', 'group')`)
+// Not on `sentByBotId`: deleting the bot sets it null and keeps the reply.
+@Check('CHK_whatsapp_message_reply', `NOT "isReply" OR "fromMe"`)
 export class WhatsappMessageOrmEntity {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
@@ -61,6 +72,22 @@ export class WhatsappMessageOrmEntity {
 
   @Column({ type: 'uuid', nullable: true })
   sentByBotId!: string | null;
+
+  /**
+   * The order the control plane stored it in (`GENERATED ALWAYS AS
+   * IDENTITY`): what a WhatsApp conversation starts at, since WhatsApp's own
+   * ids are not ordered. `bigint` comes back from `pg` as a string.
+   */
+  @Column({ type: 'bigint', generated: 'identity', generatedIdentity: 'ALWAYS' })
+  seq!: string;
+
+  /** The bot the owner's "Name: …" switched the chat to, resolved when it was stored. */
+  @Column({ type: 'uuid', nullable: true })
+  switchesToBotId!: string | null;
+
+  /** The bot's answer to the owner's message, which does not count toward its sends a day. */
+  @Column({ type: 'boolean', default: false })
+  isReply!: boolean;
 
   @CreateDateColumn({ type: TIMESTAMP_COLUMN_TYPE })
   createdAt!: Date;

@@ -7,7 +7,7 @@ import type { CalendarRepository } from '../modules/calendar';
 import { CalendarModule } from '../modules/calendar';
 import type { CloudAgentsRepository } from '../modules/cloud-agents';
 import { CloudAgentsModule } from '../modules/cloud-agents';
-import type { HostsRepository } from '../modules/hosts';
+import type { HostsRepository, HostsService } from '../modules/hosts';
 import { HostsModule } from '../modules/hosts';
 import type { InboxRepository } from '../modules/inbox';
 import { InboxModule } from '../modules/inbox';
@@ -159,6 +159,11 @@ export class ConsumerApp {
 
   get hosts(): HostsRepository {
     return this.kernel.container.get(TOKENS.HostsRepository);
+  }
+
+  /** What a host offers beyond its rows: its own desktop, live. */
+  get hostDesktops(): HostsService {
+    return this.kernel.container.get(TOKENS.HostsService);
   }
 
   /** The GitHub App installations this workspace has connected. */

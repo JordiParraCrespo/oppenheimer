@@ -332,6 +332,8 @@
       "unknown": "something went wrong"
     },
     "openSession": "Open session",
+    "hideToolCalls": "Hide tool calls",
+    "showToolCalls": "Show tool calls",
     "goal": {
       "title": "Goal: {{objective}}",
       "progress": "{{step}} of {{limit}} continuations",
@@ -580,7 +582,9 @@
         "lastUndone": "Last tidy, {{date}}, was undone",
         "queued": "Tidying in the background. The chat says when it’s done.",
         "tidyNow": "Tidy now",
+        "tidying": "Tidying…",
         "undo": "Undo",
+        "undoing": "Undoing…",
         "loadFailed": "Could not load the memory’s last tidy.",
         "requestFailed": "Could not start tidying the memory.",
         "undoFailed": "Could not undo the tidy."

@@ -13,9 +13,11 @@ import (
 	"sync"
 	"time"
 
+	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/desktop"
+	desktopapp "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/desktop/app"
 	devapp "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/devices/app"
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/host/adapters/computerpolicy"
-	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/host/adapters/desktop"
+	hostdesktop "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/host/adapters/desktop"
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/host/adapters/execpolicy"
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/host/adapters/folders"
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/host/adapters/system"
@@ -102,6 +104,9 @@ type App struct {
 	// Ports is the TCP ports sessions' processes listen on, for the
 	// console's preview; nil where the runner cannot read them.
 	Ports *portsapp.Service
+	// Desktop is the host's own screen, through the screen-sharing server
+	// on its loopback, when its owner shares it (`runner desktop`).
+	Desktop *desktopapp.Service
 	// WhatsApp is the host's WhatsApp linked device (link_whatsapp.go),
 	// built by the daemon's link; nil is a host that offers none
 	// (RUNNER_WHATSAPP=off), or a subcommand that holds no link.
@@ -156,9 +161,9 @@ func New(version string) (*App, error) {
 		ExecPolicies:     execpolicy.File{Path: paths.ExecPolicy()},
 		Executor:         system.Executor{},
 		ComputerPolicies: computerpolicy.File{Path: paths.ComputerPolicy()},
-		Desktop: desktop.New(desktop.Options{
+		Desktop: hostdesktop.New(hostdesktop.Options{
 			Display: os.Getenv("DISPLAY"), Home: paths.UserHome,
-			Wayland: desktop.WaylandSession(os.Getenv("XDG_SESSION_TYPE"), os.Getenv("WAYLAND_DISPLAY"), os.Getenv("XDG_RUNTIME_DIR")),
+			Wayland: hostdesktop.WaylandSession(os.Getenv("XDG_SESSION_TYPE"), os.Getenv("WAYLAND_DISPLAY"), os.Getenv("XDG_RUNTIME_DIR")),
 		}),
 	})
 	pairingSvc := pairapp.New(pairapp.Options{
@@ -199,6 +204,7 @@ func New(version string) (*App, error) {
 	}
 	app.Devices = devices
 	app.Ports = ports.New()
+	app.Desktop = desktop.New(paths.Desktop())
 	programStatus := statuspty.New(statuspty.Options{Executable: runnerExecutable(), Dir: programStatusDir(paths)})
 	trust := agenttrust.New(agenttrust.Options{
 		ClaudeConfig: claudeConfigPath(paths), ClaudeProjects: claudeProjectsPath(paths),

@@ -135,6 +135,7 @@ import { FindSharedSessionHttpController } from './queries/find-shared-session/f
 import { FindSharedSessionQueryHandler } from './queries/find-shared-session/find-shared-session.query-handler';
 import { SearchHostFoldersHttpController } from './queries/search-host-folders/search-host-folders.http.controller';
 import { SearchHostFoldersQueryHandler } from './queries/search-host-folders/search-host-folders.query-handler';
+import { SearchSessionsQueryHandler } from './queries/search-sessions/search-sessions.query-handler';
 import { SessionShareMapper } from './session-share.mapper';
 import { SessionTerminalWatchMapper } from './session-terminal-watch.mapper';
 import {
@@ -250,6 +251,7 @@ const queryHandlers: Provider[] = [
   FindSessionTranscriptQueryHandler,
   FindCloudFileQueryHandler,
   FindCloudChatQueryHandler,
+  SearchSessionsQueryHandler,
 ];
 
 const adapters: Provider[] = [

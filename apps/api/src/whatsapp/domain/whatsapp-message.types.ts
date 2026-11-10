@@ -25,8 +25,35 @@ export interface WhatsappMessage {
   sentByBotId: string | null;
 }
 
-/** A message as intake writes it: everything but the row's own id. */
-export type WhatsappMessageDraft = Omit<WhatsappMessage, 'id'>;
+/**
+ * A message as intake writes it: everything but the row's own id and
+ * order, and what only the answering path sets on it.
+ */
+export type WhatsappMessageDraft = Omit<WhatsappMessage, 'id'> & {
+  /** The bot the owner's "Name: …" switched the chat to, resolved at intake. */
+  switchesToBotId: string | null;
+  /** A bot's answer to the owner's own message: not counted as one of its sends. */
+  isReply: boolean;
+};
+
+/**
+ * Where an owner's message falls in their chat, read from the stored
+ * messages once the batch is in: the chat's bot at it (the last switch at
+ * or before it, else the number's default; null for none) and the `seq` its
+ * conversation starts at (the later of the last `/new` and the last switch,
+ * '0' for neither).
+ */
+export interface WhatsappChatPlace {
+  botId: string | null;
+  startsAt: string;
+}
+
+/** A message intake just stored: its row, its order, and for the owner's, its place. */
+export type WhatsappStoredMessage = WhatsappMessageDraft & {
+  id: string;
+  seq: string;
+  place: WhatsappChatPlace | null;
+};
 
 /** One chat of a number, as the bots list them: its last message and how many there are. */
 export interface WhatsappChat {

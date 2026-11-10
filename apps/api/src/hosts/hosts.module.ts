@@ -6,6 +6,7 @@ import { AuthModule } from '../auth/auth.module';
 import { LinksModule } from '../links/links.module';
 import { QueueModule } from '../queue/queue.module';
 import { UsersModule } from '../users/user.module';
+import { DesktopTicketFactory } from './application/desktop-ticket.factory';
 import { HostNetworkChangedDomainEventHandler } from './application/event-handlers/host-network-changed.domain-event-handler';
 import { HostRegisteredDomainEventHandler } from './application/event-handlers/host-registered.domain-event-handler';
 import { HostAccessResolver } from './application/host-access.resolver';
@@ -20,6 +21,8 @@ import { HostUsageRegistry } from './application/host-usage.registry';
 import { HostVitalsResolver } from './application/host-vitals.resolver';
 import { CollectSessionImageCommandHandler } from './commands/collect-session-image/collect-session-image.command-handler';
 import { CollectSessionImageHttpController } from './commands/collect-session-image/collect-session-image.http.controller';
+import { IssueDesktopTicketCommandHandler } from './commands/issue-desktop-ticket/issue-desktop-ticket.command-handler';
+import { IssueDesktopTicketHttpController } from './commands/issue-desktop-ticket/issue-desktop-ticket.http.controller';
 import { MintPairingTokenCommandHandler } from './commands/mint-pairing-token/mint-pairing-token.command-handler';
 import { MintPairingTokenHttpController } from './commands/mint-pairing-token/mint-pairing-token.http.controller';
 import { RegisterHostCommandHandler } from './commands/register-host/register-host.command-handler';
@@ -92,6 +95,7 @@ const httpControllers = [
   FindHostHttpController,
   FindHostTimelineHttpController,
   RenameHostHttpController,
+  IssueDesktopTicketHttpController,
   UnpairHostHttpController,
   WipeHostHttpController,
   UpdateHostRunnerHttpController,
@@ -102,6 +106,7 @@ const commandHandlers: Provider[] = [
   RevokePairingTokenCommandHandler,
   RegisterHostCommandHandler,
   RenameHostCommandHandler,
+  IssueDesktopTicketCommandHandler,
   UnpairHostCommandHandler,
   UninstallHostCommandHandler,
   CollectSessionImageCommandHandler,
@@ -180,6 +185,7 @@ const resolvers: Provider[] = [
     ...AuthModule.contributeCredentials([HostCredentialResolver]),
     ...UsersModule.contributeAccountErasure([HostAccountErasure]),
     RunnerReleaseConfig,
+    DesktopTicketFactory,
     HostUsageRegistry,
     HostReadResolver,
     HostPrincipalGuard,

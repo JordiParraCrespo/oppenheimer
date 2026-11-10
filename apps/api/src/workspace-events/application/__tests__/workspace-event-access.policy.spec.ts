@@ -16,20 +16,24 @@ describe('readableTypes', () => {
     expect([...readableTypes(ability(['Session']), null)]).toEqual([
       'session.changed',
       'inboxMark.changed',
+      'inboxReport.changed',
     ]);
     expect([...readableTypes(ability(['Host']), null)]).toEqual([
       'host.changed',
       'pairing.spent',
       'inboxMark.changed',
+      'inboxReport.changed',
     ]);
     expect([...readableTypes(ability(['Project']), null)]).toEqual([
       'project.changed',
       'inboxMark.changed',
+      'inboxReport.changed',
     ]);
     expect([...readableTypes(ability(['Bot']), null)]).toEqual([
       'botApproval.changed',
       'botNotice.changed',
       'inboxMark.changed',
+      'inboxReport.changed',
     ]);
   });
 
@@ -42,9 +46,18 @@ describe('readableTypes', () => {
 
   /** No role grants a person their own Inbox, so none can take it away; a credential can. */
   it('carries the Inbox to any person, and to a credential only with inbox:read', () => {
-    expect([...readableTypes(ability([]), null)]).toEqual(['inboxMark.changed']);
+    expect([...readableTypes(ability([]), null)]).toEqual([
+      'inboxMark.changed',
+      'inboxReport.changed',
+    ]);
     const credential = { scopes: ['inbox:write'] } as unknown as ScopeContext;
     expect([...readableTypes(ability([]), credential)]).toEqual(['inboxMark.changed']);
+  });
+
+  /** The key an agent holds hears of its reports, and of nothing the owner did to their own Inbox. */
+  it('carries a report to a credential with inbox-reports:read, and no mark with it', () => {
+    const credential = { scopes: ['inbox-reports:write'] } as unknown as ScopeContext;
+    expect([...readableTypes(ability([]), credential)]).toEqual(['inboxReport.changed']);
   });
 
   it('answers none for a credential that may read nothing it carries', () => {

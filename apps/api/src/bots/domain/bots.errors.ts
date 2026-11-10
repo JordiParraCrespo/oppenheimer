@@ -247,4 +247,13 @@ export const BotErrors = {
     message: 'The bot answers on a Telegram bot',
     httpStatus: 409,
   },
+  /**
+   * A bot that is a linked WhatsApp number's default is not deleted: the
+   * owner first picks another bot, or none, in Settings → WhatsApp.
+   */
+  ANSWERS_ON_WHATSAPP: {
+    code: 'BOTS_043',
+    message: 'The bot answers on a WhatsApp number',
+    httpStatus: 409,
+  },
 } as const satisfies Record<string, ErrorDefinition>;

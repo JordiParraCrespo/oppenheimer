@@ -26,3 +26,10 @@ type Status struct {
 	Name        string
 	Reason      string
 }
+
+// Quote is the message a sent one replies to, which WhatsApp shows above the
+// reply: its WhatsApp id and the JID of who sent it.
+type Quote struct {
+	ID       string
+	SenderID string
+}

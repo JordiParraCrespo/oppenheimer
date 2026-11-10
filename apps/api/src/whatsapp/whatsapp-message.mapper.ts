@@ -2,7 +2,12 @@ import { Injectable } from '@nestjs/common';
 import type { WhatsappInbound } from '@oppenheimer/shared/protocol';
 import { WhatsappMessageOrmEntity } from './database/whatsapp-message.orm-entity';
 import type { WhatsappAccountEntity } from './domain/whatsapp-account.entity';
-import type { WhatsappMessage, WhatsappMessageDraft } from './domain/whatsapp-message.types';
+import type {
+  WhatsappChatPlace,
+  WhatsappMessage,
+  WhatsappMessageDraft,
+  WhatsappStoredMessage,
+} from './domain/whatsapp-message.types';
 
 /** A number's messages between the wire, the table and the bots' reads. */
 @Injectable()
@@ -24,16 +29,25 @@ export class WhatsappMessageMapper {
       quotedId: inbound.quotedId ?? null,
       sentAt: new Date(inbound.sentAt),
       sentByBotId: null,
+      switchesToBotId: null,
+      isReply: false,
     };
   }
 
-  /** What a bot sent, as the host answered it, kept beside what the number received. */
+  /**
+   * What went out from the number, as the host answered it, kept beside what
+   * it received: a bot's send (`botId`), a bot's answer to the owner
+   * (`botId` and `isReply`), or a fixed line Oppenheimer sent itself (no
+   * bot), each with the message it quotes, if any.
+   */
   fromBotSend(props: {
     account: WhatsappAccountEntity;
     chat: { chatId: string; chatKind: 'direct' | 'group'; chatName: string | null };
     text: string;
     sent: { id: string; sentAt: Date };
-    botId: string;
+    botId: string | null;
+    isReply?: boolean;
+    quotedId?: string | null;
   }): WhatsappMessageDraft {
     const { account, chat, sent } = props;
     return {
@@ -48,14 +62,27 @@ export class WhatsappMessageMapper {
       fromMe: true,
       text: props.text,
       media: null,
-      quotedId: null,
+      quotedId: props.quotedId ?? null,
       sentAt: sent.sentAt,
       sentByBotId: props.botId,
+      switchesToBotId: null,
+      isReply: (props.isReply ?? false) && props.botId !== null,
     };
   }
 
-  toPersistence(draft: WhatsappMessageDraft): Omit<WhatsappMessageOrmEntity, 'id' | 'createdAt'> {
+  toPersistence(
+    draft: WhatsappMessageDraft,
+  ): Omit<WhatsappMessageOrmEntity, 'id' | 'createdAt' | 'seq'> {
     return { ...draft };
+  }
+
+  /** A row intake just stored, from the draft it wrote and what the insert returned. */
+  toStored(
+    draft: WhatsappMessageDraft,
+    row: { id: string; seq: string },
+    place: WhatsappChatPlace | null,
+  ): WhatsappStoredMessage {
+    return { ...draft, id: row.id, seq: String(row.seq), place };
   }
 
   toDomain(record: WhatsappMessageOrmEntity): WhatsappMessage {

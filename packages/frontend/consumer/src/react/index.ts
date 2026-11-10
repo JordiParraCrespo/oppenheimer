@@ -154,6 +154,7 @@ export {
   useDisconnectCloudAgentProvider,
   useSuspenseCloudAgentStatus,
 } from './cloud-agents.queries';
+export { useHostDesktop } from './hosts.desktop';
 export { type HostPairingFlow, useHostPairing } from './hosts.pairing';
 export {
   useHostCodexEnvironments,
@@ -171,9 +172,12 @@ export {
 export {
   inboxAnswered,
   type PutInboxMarkVariables,
+  useAnswerInboxReport,
   useDeleteInboxMark,
   useInboxCount,
+  useInboxReportImages,
   usePutInboxMark,
+  useRefreshInbox,
   useSuspenseInbox,
 } from './inbox.queries';
 export {
@@ -342,7 +346,10 @@ export {
   type VoiceDictation,
 } from './voice.queries';
 export {
+  useAnswerWhatsappAs,
+  useConfirmWhatsappOwner,
   useLinkWhatsapp,
+  useRequestWhatsappOwner,
   useSuspenseWhatsappSettings,
   useUnlinkWhatsapp,
 } from './whatsapp.queries';

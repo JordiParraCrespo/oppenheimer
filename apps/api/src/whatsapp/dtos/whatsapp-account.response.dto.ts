@@ -57,6 +57,40 @@ export class WhatsappAccountResponseDto {
   })
   statusReason!: string | null;
 
+  @ApiProperty({
+    type: String,
+    format: 'uuid',
+    nullable: true,
+    description:
+      'The caller’s Oppenheimer bot that answers them on this number by default; null while none does. "Name: …" in the chat switches to another of their bots.',
+  })
+  answeringBotId!: string | null;
+
+  @ApiProperty({
+    type: String,
+    nullable: true,
+    example: '+34600111222',
+    description:
+      'The owner’s own number, confirmed by the code it received; the only number this one answers. Null until confirmed.',
+  })
+  ownerNumber!: string | null;
+
+  @ApiProperty({
+    type: String,
+    nullable: true,
+    example: '+34600111222',
+    description: 'The number a code was sent to, waiting for the code to be entered.',
+  })
+  ownerPendingNumber!: string | null;
+
+  @ApiProperty({
+    type: String,
+    format: 'date-time',
+    nullable: true,
+    description: 'When the waiting code stops working.',
+  })
+  ownerCodeExpiresAt!: string | null;
+
   @ApiProperty({ type: String, format: 'date-time', description: 'When it was first linked.' })
   linkedAt!: string;
 }

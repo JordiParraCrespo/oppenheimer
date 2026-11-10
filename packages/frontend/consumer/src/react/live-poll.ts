@@ -93,6 +93,14 @@ export const LIVE_POLL = {
    * and the workspace stream carries no dream.
    */
   memoryDream: { interval: 5000, inBackground: false },
+  /**
+   * Every read the Inbox draws, while the Inbox is open, so what changed
+   * where the stream does not reach (GitHub's queues, a vendor's session)
+   * lands without a click on Refresh. A minute: the queues spend GitHub's
+   * budget. Not in the background, and never stood down by the stream, which
+   * carries none of GitHub's news.
+   */
+  inbox: { interval: 60_000, inBackground: false },
 } as const;
 
 export type LivePollKind = keyof typeof LIVE_POLL;

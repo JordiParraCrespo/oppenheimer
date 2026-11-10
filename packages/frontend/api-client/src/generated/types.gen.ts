@@ -278,11 +278,11 @@ export type CurrentCredentialResponseDto = {
     /**
      * Scopes the credential carries. Null for a browser session, which is not scope-restricted.
      */
-    grantedScopes: Array<'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'hosts:read' | 'hosts:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'cloud-chat:read' | 'cloud-chat:write' | 'automations:read' | 'automations:write' | 'bots:read' | 'bots:write' | 'tasks:read' | 'tasks:write' | 'calendar:read' | 'calendar:write' | 'mail:read' | 'mail:write' | 'whatsapp:read' | 'whatsapp:write' | 'telegram:read' | 'telegram:write' | 'cloud-agents:read' | 'cloud-agents:write' | 'pulls:read' | 'pulls:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write' | 'inbox:read' | 'inbox:write'> | null;
+    grantedScopes: Array<'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'hosts:read' | 'hosts:write' | 'host-desktops:read' | 'host-desktops:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'cloud-chat:read' | 'cloud-chat:write' | 'automations:read' | 'automations:write' | 'bots:read' | 'bots:write' | 'tasks:read' | 'tasks:write' | 'calendar:read' | 'calendar:write' | 'mail:read' | 'mail:write' | 'whatsapp:read' | 'whatsapp:write' | 'telegram:read' | 'telegram:write' | 'cloud-agents:read' | 'cloud-agents:write' | 'pulls:read' | 'pulls:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write' | 'inbox:read' | 'inbox:write' | 'inbox-reports:read' | 'inbox-reports:write'> | null;
     /**
      * What the credential can actually do: its scopes intersected with the owner’s current roles.
      */
-    effectiveScopes: Array<'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'hosts:read' | 'hosts:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'cloud-chat:read' | 'cloud-chat:write' | 'automations:read' | 'automations:write' | 'bots:read' | 'bots:write' | 'tasks:read' | 'tasks:write' | 'calendar:read' | 'calendar:write' | 'mail:read' | 'mail:write' | 'whatsapp:read' | 'whatsapp:write' | 'telegram:read' | 'telegram:write' | 'cloud-agents:read' | 'cloud-agents:write' | 'pulls:read' | 'pulls:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write' | 'inbox:read' | 'inbox:write'>;
+    effectiveScopes: Array<'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'hosts:read' | 'hosts:write' | 'host-desktops:read' | 'host-desktops:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'cloud-chat:read' | 'cloud-chat:write' | 'automations:read' | 'automations:write' | 'bots:read' | 'bots:write' | 'tasks:read' | 'tasks:write' | 'calendar:read' | 'calendar:write' | 'mail:read' | 'mail:write' | 'whatsapp:read' | 'whatsapp:write' | 'telegram:read' | 'telegram:write' | 'cloud-agents:read' | 'cloud-agents:write' | 'pulls:read' | 'pulls:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write' | 'inbox:read' | 'inbox:write' | 'inbox-reports:read' | 'inbox-reports:write'>;
     /**
      * Organizations the credential is restricted to, or null when unrestricted.
      */
@@ -300,7 +300,7 @@ export type ApiTokenResponseDto = {
     /**
      * Granted permissions.
      */
-    scopes: Array<'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'hosts:read' | 'hosts:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'cloud-chat:read' | 'cloud-chat:write' | 'automations:read' | 'automations:write' | 'bots:read' | 'bots:write' | 'tasks:read' | 'tasks:write' | 'calendar:read' | 'calendar:write' | 'mail:read' | 'mail:write' | 'whatsapp:read' | 'whatsapp:write' | 'telegram:read' | 'telegram:write' | 'cloud-agents:read' | 'cloud-agents:write' | 'pulls:read' | 'pulls:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write' | 'inbox:read' | 'inbox:write'>;
+    scopes: Array<'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'hosts:read' | 'hosts:write' | 'host-desktops:read' | 'host-desktops:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'cloud-chat:read' | 'cloud-chat:write' | 'automations:read' | 'automations:write' | 'bots:read' | 'bots:write' | 'tasks:read' | 'tasks:write' | 'calendar:read' | 'calendar:write' | 'mail:read' | 'mail:write' | 'whatsapp:read' | 'whatsapp:write' | 'telegram:read' | 'telegram:write' | 'cloud-agents:read' | 'cloud-agents:write' | 'pulls:read' | 'pulls:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write' | 'inbox:read' | 'inbox:write' | 'inbox-reports:read' | 'inbox-reports:write'>;
     /**
      * Organizations this token is restricted to. Null means it follows the owner’s memberships.
      */
@@ -321,7 +321,7 @@ export type ScopePolicyDto = {
 };
 
 export type ScopeLevelDto = {
-    scope: 'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'hosts:read' | 'hosts:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'cloud-chat:read' | 'cloud-chat:write' | 'automations:read' | 'automations:write' | 'bots:read' | 'bots:write' | 'tasks:read' | 'tasks:write' | 'calendar:read' | 'calendar:write' | 'mail:read' | 'mail:write' | 'whatsapp:read' | 'whatsapp:write' | 'telegram:read' | 'telegram:write' | 'cloud-agents:read' | 'cloud-agents:write' | 'pulls:read' | 'pulls:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write' | 'inbox:read' | 'inbox:write';
+    scope: 'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'hosts:read' | 'hosts:write' | 'host-desktops:read' | 'host-desktops:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'cloud-chat:read' | 'cloud-chat:write' | 'automations:read' | 'automations:write' | 'bots:read' | 'bots:write' | 'tasks:read' | 'tasks:write' | 'calendar:read' | 'calendar:write' | 'mail:read' | 'mail:write' | 'whatsapp:read' | 'whatsapp:write' | 'telegram:read' | 'telegram:write' | 'cloud-agents:read' | 'cloud-agents:write' | 'pulls:read' | 'pulls:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write' | 'inbox:read' | 'inbox:write' | 'inbox-reports:read' | 'inbox-reports:write';
     label: string;
     description: string;
     /**
@@ -336,7 +336,7 @@ export type ScopeLevelsDto = {
 };
 
 export type PermissionGroupDto = {
-    resource: 'profile' | 'users' | 'admin' | 'roles' | 'organizations' | 'members' | 'invitations' | 'workspaces' | 'tokens' | 'hosts' | 'projects' | 'sessions' | 'cloud-chat' | 'automations' | 'bots' | 'tasks' | 'calendar' | 'mail' | 'whatsapp' | 'telegram' | 'cloud-agents' | 'pulls' | 'repositories' | 'flags' | 'inbox';
+    resource: 'profile' | 'users' | 'admin' | 'roles' | 'organizations' | 'members' | 'invitations' | 'workspaces' | 'tokens' | 'hosts' | 'host-desktops' | 'projects' | 'sessions' | 'cloud-chat' | 'automations' | 'bots' | 'tasks' | 'calendar' | 'mail' | 'whatsapp' | 'telegram' | 'cloud-agents' | 'pulls' | 'repositories' | 'flags' | 'inbox' | 'inbox-reports';
     label: string;
     description: string;
     /**
@@ -354,12 +354,12 @@ export type PermissionCatalogResponseDto = {
     /**
      * Scopes the caller may put on a token. Anything outside this list is refused at creation.
      */
-    grantable: Array<'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'hosts:read' | 'hosts:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'cloud-chat:read' | 'cloud-chat:write' | 'automations:read' | 'automations:write' | 'bots:read' | 'bots:write' | 'tasks:read' | 'tasks:write' | 'calendar:read' | 'calendar:write' | 'mail:read' | 'mail:write' | 'whatsapp:read' | 'whatsapp:write' | 'telegram:read' | 'telegram:write' | 'cloud-agents:read' | 'cloud-agents:write' | 'pulls:read' | 'pulls:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write' | 'inbox:read' | 'inbox:write'>;
+    grantable: Array<'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'hosts:read' | 'hosts:write' | 'host-desktops:read' | 'host-desktops:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'cloud-chat:read' | 'cloud-chat:write' | 'automations:read' | 'automations:write' | 'bots:read' | 'bots:write' | 'tasks:read' | 'tasks:write' | 'calendar:read' | 'calendar:write' | 'mail:read' | 'mail:write' | 'whatsapp:read' | 'whatsapp:write' | 'telegram:read' | 'telegram:write' | 'cloud-agents:read' | 'cloud-agents:write' | 'pulls:read' | 'pulls:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write' | 'inbox:read' | 'inbox:write' | 'inbox-reports:read' | 'inbox-reports:write'>;
 };
 
 export type CreateApiTokenRequest = {
     name: string;
-    scopes: Array<'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'hosts:read' | 'hosts:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'cloud-chat:read' | 'cloud-chat:write' | 'automations:read' | 'automations:write' | 'bots:read' | 'bots:write' | 'tasks:read' | 'tasks:write' | 'calendar:read' | 'calendar:write' | 'mail:read' | 'mail:write' | 'whatsapp:read' | 'whatsapp:write' | 'telegram:read' | 'telegram:write' | 'cloud-agents:read' | 'cloud-agents:write' | 'pulls:read' | 'pulls:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write' | 'inbox:read' | 'inbox:write'>;
+    scopes: Array<'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'hosts:read' | 'hosts:write' | 'host-desktops:read' | 'host-desktops:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'cloud-chat:read' | 'cloud-chat:write' | 'automations:read' | 'automations:write' | 'bots:read' | 'bots:write' | 'tasks:read' | 'tasks:write' | 'calendar:read' | 'calendar:write' | 'mail:read' | 'mail:write' | 'whatsapp:read' | 'whatsapp:write' | 'telegram:read' | 'telegram:write' | 'cloud-agents:read' | 'cloud-agents:write' | 'pulls:read' | 'pulls:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write' | 'inbox:read' | 'inbox:write' | 'inbox-reports:read' | 'inbox-reports:write'>;
     organizationIds?: Array<string>;
     expiresInDays?: number | null;
     ipAllowlist?: Array<string>;
@@ -375,7 +375,7 @@ export type CreatedApiTokenResponseDto = {
     /**
      * Granted permissions.
      */
-    scopes: Array<'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'hosts:read' | 'hosts:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'cloud-chat:read' | 'cloud-chat:write' | 'automations:read' | 'automations:write' | 'bots:read' | 'bots:write' | 'tasks:read' | 'tasks:write' | 'calendar:read' | 'calendar:write' | 'mail:read' | 'mail:write' | 'whatsapp:read' | 'whatsapp:write' | 'telegram:read' | 'telegram:write' | 'cloud-agents:read' | 'cloud-agents:write' | 'pulls:read' | 'pulls:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write' | 'inbox:read' | 'inbox:write'>;
+    scopes: Array<'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'hosts:read' | 'hosts:write' | 'host-desktops:read' | 'host-desktops:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'cloud-chat:read' | 'cloud-chat:write' | 'automations:read' | 'automations:write' | 'bots:read' | 'bots:write' | 'tasks:read' | 'tasks:write' | 'calendar:read' | 'calendar:write' | 'mail:read' | 'mail:write' | 'whatsapp:read' | 'whatsapp:write' | 'telegram:read' | 'telegram:write' | 'cloud-agents:read' | 'cloud-agents:write' | 'pulls:read' | 'pulls:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write' | 'inbox:read' | 'inbox:write' | 'inbox-reports:read' | 'inbox-reports:write'>;
     /**
      * Organizations this token is restricted to. Null means it follows the owner’s memberships.
      */
@@ -1089,6 +1089,18 @@ export type HostTimelinePageResponseDto = {
 
 export type RenameHostRequest = {
     name: string;
+};
+
+export type DesktopTicketResponseDto = {
+    /**
+     * Single-use, 60 seconds. Present it in `Sec-WebSocket-Protocol` when opening the desktop socket — never in the URL.
+     */
+    ticket: string;
+    /**
+     * The path to open the WebSocket on, on this API’s own origin.
+     */
+    url: string;
+    expiresAt: string;
 };
 
 export type AdminUserResponseDto = {
@@ -3286,6 +3298,22 @@ export type WhatsappAccountResponseDto = {
      */
     statusReason: string | null;
     /**
+     * The caller’s Oppenheimer bot that answers them on this number by default; null while none does. "Name: …" in the chat switches to another of their bots.
+     */
+    answeringBotId: string | null;
+    /**
+     * The owner’s own number, confirmed by the code it received; the only number this one answers. Null until confirmed.
+     */
+    ownerNumber: string | null;
+    /**
+     * The number a code was sent to, waiting for the code to be entered.
+     */
+    ownerPendingNumber: string | null;
+    /**
+     * When the waiting code stops working.
+     */
+    ownerCodeExpiresAt: string | null;
+    /**
      * When it was first linked.
      */
     linkedAt: string;
@@ -3294,6 +3322,18 @@ export type WhatsappAccountResponseDto = {
 export type LinkWhatsappRequest = {
     hostId: string;
     label?: string;
+};
+
+export type UpdateWhatsappAccountRequest = {
+    answeringBotId: string | null;
+};
+
+export type RequestWhatsappOwnerRequest = {
+    phone: string;
+};
+
+export type ConfirmWhatsappOwnerRequest = {
+    code: string;
 };
 
 export type TelegramAccountResponseDto = {
@@ -5201,6 +5241,48 @@ export type InboxMarkResponseDto = {
 export type PutInboxMarkRequest = {
     mark: 'done' | 'low' | 'snoozed' | 'deleted';
     until?: string;
+};
+
+export type InboxReportImageResponseDto = {
+    id: string;
+    /**
+     * Judged by the file’s bytes.
+     */
+    mimeType: 'image/png' | 'image/jpeg' | 'image/gif' | 'image/webp';
+    sizeBytes: number;
+    /**
+     * The file’s name as it was sent; only shown.
+     */
+    name: string;
+};
+
+export type InboxReportResponseDto = {
+    id: string;
+    title: string;
+    /**
+     * Empty when the report has none.
+     */
+    body: string;
+    /**
+     * Who sent it, in the sender’s own words; empty when not said.
+     */
+    source: string;
+    /**
+     * Where the problem can be seen.
+     */
+    link: string | null;
+    images: Array<InboxReportImageResponseDto>;
+    status: 'open' | 'answered';
+    /**
+     * What the person answered; null while the report is open.
+     */
+    answer: string | null;
+    answeredAt: string | null;
+    createdAt: string;
+};
+
+export type AnswerInboxReportRequest = {
+    text: string;
 };
 
 export type LivenessResponseDto = {
@@ -8549,6 +8631,46 @@ export type FindHostTimelineResponses = {
 };
 
 export type FindHostTimelineResponse = FindHostTimelineResponses[keyof FindHostTimelineResponses];
+
+export type IssueDesktopTicketData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/hosts/{id}/desktop-ticket';
+};
+
+export type IssueDesktopTicketErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * FLAG_003 — The "host_desktop" feature is switched off for the caller
+     */
+    403: ProblemDetailsDto;
+    /**
+     * HOSTS_001 — Host not found
+     */
+    404: ProblemDetailsDto;
+    /**
+     * RATE_001 — Rate limit reached
+     */
+    429: ProblemDetailsDto;
+    /**
+     * HOSTS_010 — A desktop ticket could not be issued
+     */
+    503: ProblemDetailsDto;
+};
+
+export type IssueDesktopTicketError = IssueDesktopTicketErrors[keyof IssueDesktopTicketErrors];
+
+export type IssueDesktopTicketResponses = {
+    201: DesktopTicketResponseDto;
+};
+
+export type IssueDesktopTicketResponse = IssueDesktopTicketResponses[keyof IssueDesktopTicketResponses];
 
 export type WipeHostData = {
     body?: never;
@@ -13561,6 +13683,141 @@ export type RemoveWhatsappAccountResponses = {
 
 export type RemoveWhatsappAccountResponse = RemoveWhatsappAccountResponses[keyof RemoveWhatsappAccountResponses];
 
+export type UpdateWhatsappAccountData = {
+    body: UpdateWhatsappAccountRequest;
+    path: {
+        /**
+         * The linked number.
+         */
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/whatsapp/accounts/{id}';
+};
+
+export type UpdateWhatsappAccountErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * BOTS_001 — No such bot of the caller’s
+     *
+     * WHATSAPP_001 — No such linked number
+     */
+    404: ProblemDetailsDto;
+};
+
+export type UpdateWhatsappAccountError = UpdateWhatsappAccountErrors[keyof UpdateWhatsappAccountErrors];
+
+export type UpdateWhatsappAccountResponses = {
+    200: WhatsappAccountResponseDto;
+};
+
+export type UpdateWhatsappAccountResponse = UpdateWhatsappAccountResponses[keyof UpdateWhatsappAccountResponses];
+
+export type RequestWhatsappOwnerData = {
+    body: RequestWhatsappOwnerRequest;
+    path: {
+        /**
+         * The linked number.
+         */
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/whatsapp/accounts/{id}/owner';
+};
+
+export type RequestWhatsappOwnerErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * WHATSAPP_001 — No such linked number
+     */
+    404: ProblemDetailsDto;
+    /**
+     * WHATSAPP_004 / WHATSAPP_005 / WHATSAPP_007 — The host, older or offline, or the number, not connected, cannot send the code
+     */
+    409: ProblemDetailsDto;
+    /**
+     * WHATSAPP_013 — Not a phone number, or the linked number itself
+     */
+    422: ProblemDetailsDto;
+    /**
+     * WHATSAPP_009 — The host’s send budget is spent
+     */
+    429: ProblemDetailsDto;
+    /**
+     * WHATSAPP_008 — WhatsApp did not take the code
+     */
+    502: ProblemDetailsDto;
+};
+
+export type RequestWhatsappOwnerError = RequestWhatsappOwnerErrors[keyof RequestWhatsappOwnerErrors];
+
+export type RequestWhatsappOwnerResponses = {
+    202: WhatsappAccountResponseDto;
+};
+
+export type RequestWhatsappOwnerResponse = RequestWhatsappOwnerResponses[keyof RequestWhatsappOwnerResponses];
+
+export type ConfirmWhatsappOwnerData = {
+    body: ConfirmWhatsappOwnerRequest;
+    path: {
+        /**
+         * The linked number.
+         */
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/whatsapp/accounts/{id}/owner/confirm';
+};
+
+export type ConfirmWhatsappOwnerErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * WHATSAPP_001 — No such linked number
+     */
+    404: ProblemDetailsDto;
+    /**
+     * WHATSAPP_012 — No number is waiting for its code
+     */
+    409: ProblemDetailsDto;
+    /**
+     * WHATSAPP_011 — The code is wrong or has expired
+     */
+    422: ProblemDetailsDto;
+    /**
+     * WHATSAPP_014 — Too many wrong codes: ask for a new one
+     */
+    429: ProblemDetailsDto;
+};
+
+export type ConfirmWhatsappOwnerError = ConfirmWhatsappOwnerErrors[keyof ConfirmWhatsappOwnerErrors];
+
+export type ConfirmWhatsappOwnerResponses = {
+    200: WhatsappAccountResponseDto;
+};
+
+export type ConfirmWhatsappOwnerResponse = ConfirmWhatsappOwnerResponses[keyof ConfirmWhatsappOwnerResponses];
+
 export type FindTelegramAccountsData = {
     body?: never;
     path?: never;
@@ -14630,7 +14887,7 @@ export type DeleteBotErrors = {
      */
     404: ProblemDetailsDto;
     /**
-     * BOTS_042 — The bot answers on a Telegram bot
+     * BOTS_042 / BOTS_043 — The bot answers on a Telegram bot, or is a WhatsApp number’s default
      */
     409: ProblemDetailsDto;
 };
@@ -16840,6 +17097,210 @@ export type PutInboxMarkResponses = {
 };
 
 export type PutInboxMarkResponse = PutInboxMarkResponses[keyof PutInboxMarkResponses];
+
+export type FindInboxReportsData = {
+    body?: never;
+    path?: never;
+    query?: {
+        status?: 'open' | 'answered';
+    };
+    url: '/api/v1/inbox/reports';
+};
+
+export type FindInboxReportsErrors = {
+    /**
+     * TENANT_001 — No active workspace
+     */
+    400: ProblemDetailsDto;
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * FLAG_003 — The "inbox" feature is switched off for the caller
+     */
+    403: ProblemDetailsDto;
+};
+
+export type FindInboxReportsError = FindInboxReportsErrors[keyof FindInboxReportsErrors];
+
+export type FindInboxReportsResponses = {
+    200: Array<InboxReportResponseDto>;
+};
+
+export type FindInboxReportsResponse = FindInboxReportsResponses[keyof FindInboxReportsResponses];
+
+export type PostInboxReportData = {
+    body: {
+        title: string;
+        body?: string;
+        /**
+         * Who is sending it.
+         */
+        source?: string;
+        /**
+         * Where the problem can be seen.
+         */
+        link?: string;
+        images?: Array<Blob | File>;
+    };
+    path?: never;
+    query?: never;
+    url: '/api/v1/inbox/reports';
+};
+
+export type PostInboxReportErrors = {
+    /**
+     * TENANT_001 — No active workspace
+     */
+    400: ProblemDetailsDto;
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * FLAG_003 — The "inbox" feature is switched off for the caller
+     */
+    403: ProblemDetailsDto;
+    /**
+     * INBOX_008 — Picture too large
+     */
+    413: ProblemDetailsDto;
+    /**
+     * INBOX_009 — Not a picture
+     */
+    415: ProblemDetailsDto;
+    /**
+     * INBOX_007 — Too many pictures
+     */
+    422: ProblemDetailsDto;
+    /**
+     * RATE_001 — Rate limit reached
+     */
+    429: ProblemDetailsDto;
+};
+
+export type PostInboxReportError = PostInboxReportErrors[keyof PostInboxReportErrors];
+
+export type PostInboxReportResponses = {
+    201: InboxReportResponseDto;
+};
+
+export type PostInboxReportResponse = PostInboxReportResponses[keyof PostInboxReportResponses];
+
+export type FindInboxReportData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/inbox/reports/{id}';
+};
+
+export type FindInboxReportErrors = {
+    /**
+     * TENANT_001 — No active workspace
+     */
+    400: ProblemDetailsDto;
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * FLAG_003 — The "inbox" feature is switched off for the caller
+     */
+    403: ProblemDetailsDto;
+    /**
+     * INBOX_005 — Report not found
+     */
+    404: ProblemDetailsDto;
+};
+
+export type FindInboxReportError = FindInboxReportErrors[keyof FindInboxReportErrors];
+
+export type FindInboxReportResponses = {
+    200: InboxReportResponseDto;
+};
+
+export type FindInboxReportResponse = FindInboxReportResponses[keyof FindInboxReportResponses];
+
+export type ReadInboxReportImageData = {
+    body?: never;
+    path: {
+        id: string;
+        imageId: string;
+    };
+    query?: never;
+    url: '/api/v1/inbox/reports/{id}/images/{imageId}/content';
+};
+
+export type ReadInboxReportImageErrors = {
+    /**
+     * TENANT_001 — No active workspace
+     */
+    400: ProblemDetailsDto;
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * FLAG_003 — The "inbox" feature is switched off for the caller
+     */
+    403: ProblemDetailsDto;
+    /**
+     * INBOX_005 — Report or picture not found
+     */
+    404: ProblemDetailsDto;
+};
+
+export type ReadInboxReportImageError = ReadInboxReportImageErrors[keyof ReadInboxReportImageErrors];
+
+export type ReadInboxReportImageResponses = {
+    /**
+     * The picture’s bytes
+     */
+    200: unknown;
+};
+
+export type AnswerInboxReportData = {
+    body: AnswerInboxReportRequest;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/inbox/reports/{id}/answer';
+};
+
+export type AnswerInboxReportErrors = {
+    /**
+     * TENANT_001 — No active workspace
+     */
+    400: ProblemDetailsDto;
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * FLAG_003 — The "inbox" feature is switched off for the caller
+     */
+    403: ProblemDetailsDto;
+    /**
+     * INBOX_005 — Report not found
+     */
+    404: ProblemDetailsDto;
+    /**
+     * INBOX_006 — Already answered
+     */
+    409: ProblemDetailsDto;
+};
+
+export type AnswerInboxReportError = AnswerInboxReportErrors[keyof AnswerInboxReportErrors];
+
+export type AnswerInboxReportResponses = {
+    200: InboxReportResponseDto;
+};
+
+export type AnswerInboxReportResponse = AnswerInboxReportResponses[keyof AnswerInboxReportResponses];
 
 export type CheckData = {
     body?: never;

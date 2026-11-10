@@ -97,6 +97,8 @@ func dispatch(ctx context.Context, args []string) (int, error) {
 		return execPolicy(ctx, args)
 	case "computer":
 		return computerPolicy(ctx, args)
+	case "desktop":
+		return desktopSharing(ctx, args)
 	case "credential-helper":
 		// git calls this with the operation as its one argument.
 		operation := ""
@@ -360,6 +362,29 @@ func execPolicy(ctx context.Context, args []string) (int, error) {
 		"runner exec allow <program|/abs/path|/abs/glob/*> [more] | runner exec deny <entry> [more]")
 }
 
+// desktopSharing dispatches `runner desktop`: whether the console may watch
+// and drive this host's screen, decided here and never over the link.
+func desktopSharing(ctx context.Context, args []string) (int, error) {
+	switch {
+	case len(args) == 0 || (len(args) == 1 && args[0] == "status"):
+		return withApp(ctx, func(_ context.Context, app *cli.App) error { return app.DesktopShow(os.Stdout) })
+	case args[0] == "on":
+		fs := flag.NewFlagSet("desktop on", flag.ContinueOnError)
+		opts := cli.DesktopOptions{}
+		fs.IntVar(&opts.Port, "port", 0, "the screen-sharing server's loopback port (default 5900)")
+		fs.StringVar(&opts.Username, "username", "", "the macOS account Screen Sharing signs in")
+		fs.StringVar(&opts.PasswordFile, "password-file", "", "a file, readable by this account only, holding the server's password")
+		if err := fs.Parse(args[1:]); err != nil {
+			return cli.ExitUsage, err
+		}
+		return withApp(ctx, func(_ context.Context, app *cli.App) error { return app.DesktopOn(os.Stdout, opts) })
+	case len(args) == 1 && args[0] == "off":
+		return withApp(ctx, func(_ context.Context, app *cli.App) error { return app.DesktopOff(os.Stdout) })
+	}
+	usage(os.Stderr)
+	return cli.ExitUsage, errors.New("usage: runner desktop [status] | runner desktop on [--port N] [--username U] [--password-file F] | runner desktop off")
+}
+
 // sessions dispatches the session subcommands. They are what a person uses on
 // the host itself; the console drives the same use cases over the link.
 func sessions(ctx context.Context, args []string) (int, error) {
@@ -617,6 +642,9 @@ func usage(w *os.File) {
   runner tools [ls]               git, tmux, gh and the agents: versions, and how to get what is missing
   runner tools install gh         install GitHub's CLI into ~/.local/bin (git and tmux: the package
                                   manager's command is printed, the runner never uses sudo)
+  runner desktop [status]         whether the console may watch and drive this screen (off unless you say so)
+  runner desktop on [--port N] [--username U] [--password-file F]
+  runner desktop off              share this host's screen-sharing server (127.0.0.1:5900) with the console, or stop
   runner exec [status]            what bots may run on this host (off unless you say so)
   runner exec mode off|allowlist|full
                                   off runs nothing, allowlist runs the programs listed, full runs anything

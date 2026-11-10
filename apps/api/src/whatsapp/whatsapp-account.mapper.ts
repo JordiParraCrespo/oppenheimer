@@ -3,6 +3,7 @@ import type { Mapper } from '@oppenheimer/backend-ddd';
 import type { WhatsappStateMessage } from '@oppenheimer/shared/protocol';
 import { WhatsappAccountOrmEntity } from './database/whatsapp-account.orm-entity';
 import { WhatsappAccountEntity, type WhatsappDeviceReport } from './domain/whatsapp-account.entity';
+import { whatsappNumberOf } from './domain/whatsapp-owner-code.policy';
 import { WhatsappAccountResponseDto } from './dtos/whatsapp-account.response.dto';
 import type { WhatsappAccountView } from './queries/find-whatsapp-accounts/find-whatsapp-accounts.query';
 
@@ -23,6 +24,12 @@ export class WhatsappAccountMapper
     record.qr = entity.qr;
     record.qrExpiresAt = entity.qrExpiresAt;
     record.statusReason = entity.statusReason;
+    record.answeringBotId = entity.answeringBotId;
+    record.ownerPhone = entity.ownerPhone;
+    record.ownerPendingPhone = entity.ownerPendingPhone;
+    record.ownerCodeHash = entity.ownerCodeHash;
+    record.ownerCodeExpiresAt = entity.ownerCodeExpiresAt;
+    record.ownerCodeAttempts = entity.ownerCodeAttempts;
     return record;
   }
 
@@ -42,11 +49,21 @@ export class WhatsappAccountMapper
         qr: record.qr,
         qrExpiresAt: record.qrExpiresAt,
         statusReason: record.statusReason,
+        answeringBotId: record.answeringBotId,
+        ownerPhone: record.ownerPhone,
+        ownerPendingPhone: record.ownerPendingPhone,
+        ownerCodeHash: record.ownerCodeHash,
+        ownerCodeExpiresAt: record.ownerCodeExpiresAt,
+        ownerCodeAttempts: record.ownerCodeAttempts,
       },
     });
   }
 
-  /** The QR goes out only while pairing and still valid; `hostOnline` is the link's, read now. */
+  /**
+   * The QR goes out only while pairing and still valid; `hostOnline` is the
+   * link's, read now. The owner's numbers go out as `+digits`, never the
+   * waiting code's hash.
+   */
   toResponse(
     entity: WhatsappAccountEntity,
     hostOnline = false,
@@ -67,6 +84,10 @@ export class WhatsappAccountMapper
     dto.qr = qrValid ? entity.qr : null;
     dto.qrExpiresAt = qrValid ? (entity.qrExpiresAt?.toISOString() ?? null) : null;
     dto.statusReason = entity.statusReason;
+    dto.answeringBotId = entity.answeringBotId;
+    dto.ownerNumber = whatsappNumberOf(entity.ownerPhone);
+    dto.ownerPendingNumber = whatsappNumberOf(entity.ownerPendingPhone);
+    dto.ownerCodeExpiresAt = entity.ownerCodeExpiresAt?.toISOString() ?? null;
     dto.linkedAt = entity.createdAt.toISOString();
     return dto;
   }

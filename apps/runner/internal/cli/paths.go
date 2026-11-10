@@ -244,6 +244,10 @@ func (p Paths) ExecPolicy() string { return filepath.Join(p.Home, "exec.json") }
 // computer`): a file in the runner home, beside the exec policy.
 func (p Paths) ComputerPolicy() string { return filepath.Join(p.Home, "computer.json") }
 
+// Desktop is whether and how this host shares its screen (`runner desktop`):
+// a file in the runner home, written on the host and never over the link.
+func (p Paths) Desktop() string { return filepath.Join(p.Home, "desktop.json") }
+
 // Socket is the local Unix socket: the runner's only listener.
 func (p Paths) Socket() string { return filepath.Join(p.Run(), "runner.sock") }
 

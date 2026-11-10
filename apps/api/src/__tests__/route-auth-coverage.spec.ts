@@ -68,15 +68,15 @@ const PUBLIC: Record<string, string> = {
  */
 const UPGRADES: Record<string, { how: string; calls: string }> = {
   'relay/infrastructure/relay-upgrade.gateway.ts': {
-    how: "the API server's upgrade listener: hands the two socket paths to their gateways' handleUpgrade, refuses any other with a 404, authenticates nothing itself",
+    how: "the API server's upgrade listener: hands each socket path to its gateway's handleUpgrade, refuses any other with a 404, authenticates nothing itself",
     calls: 'handleUpgrade',
   },
   'relay/infrastructure/runner-link.gateway.ts': {
     how: "a runner's boot assertion as the bearer, verified (its jti burned) before the upgrade is accepted",
     calls: 'verify',
   },
-  'relay/infrastructure/browser-attach.gateway.ts': {
-    how: 'an allowed Origin and a single-use attach ticket as the subprotocol, refused before the upgrade when absent; the ticket is redeemed and judged before any frame is handled, and again every minute',
+  'relay/infrastructure/ticket-socket.util.ts': {
+    how: "the attach and desktop sockets' shared handshake: an allowed Origin and a single-use ticket as the subprotocol, refused before the upgrade when absent; each gateway's redeem judges the ticket (take, then authorize) before any frame is handled, and its attachment again every minute",
     calls: 'redeem',
   },
   'relay/infrastructure/preview-proxy.gateway.ts': {

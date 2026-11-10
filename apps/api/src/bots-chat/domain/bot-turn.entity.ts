@@ -13,6 +13,7 @@ import {
   type BotTurnLane,
   type BotTurnOrigin,
   type BotTurnStatus,
+  isChannelOrigin,
   type Scope,
 } from '@oppenheimer/shared';
 import type { SessionEffort } from '@oppenheimer/shared/agents';
@@ -267,9 +268,9 @@ export class BotTurnEntity extends AggregateRoot<BotTurnProps> {
     },
     /**
      * The turn that asked, when it is still there: the answer is picked up in
-     * its conversation, and one asked on Telegram goes on as a Telegram turn,
-     * whose last words are sent back to that chat. The asker's console chat
-     * when it is gone.
+     * its conversation, and one asked on a channel (Telegram, WhatsApp) goes
+     * on as a turn of that channel, whose last words are sent back to that
+     * chat. The asker's console chat when it is gone.
      */
     asking: BotTurnEntity | null = null,
   ): BotTurnEntity {
@@ -279,7 +280,7 @@ export class BotTurnEntity extends AggregateRoot<BotTurnProps> {
     return BotTurnEntity.queue({
       ...props,
       ...(asking && { conversationId: asking.conversationId }),
-      ...(asking?.origin === 'telegram' && { origin: 'telegram' as const }),
+      ...(asking && isChannelOrigin(asking.origin) && { origin: asking.origin }),
       organizationId: answered.organizationId,
       requestedByUserId: answered.requireRequester(),
       timeZone: answered.timeZone,

@@ -39,6 +39,7 @@ import type { SessionReconciliationPort } from '../../sessions/application/sessi
 import { HostUnpairedDomainEventHandler } from '../application/event-handlers/host-unpaired.domain-event-handler';
 import { BrowserAttachGateway } from '../infrastructure/browser-attach.gateway';
 import { CredentialsProcessor } from '../infrastructure/credentials.processor';
+import { DesktopAttachGateway } from '../infrastructure/desktop-attach.gateway';
 import { RelayEventsProcessor } from '../infrastructure/relay-events.processor';
 import { RelayUpgradeGateway } from '../infrastructure/relay-upgrade.gateway';
 import { RunnerLinkGateway } from '../infrastructure/runner-link.gateway';
@@ -229,7 +230,17 @@ async function boot(): Promise<World> {
     // The direct path (22) stays off here: this suite proves the relay's.
     { isEnabled: () => false } as unknown as FlagEvaluatorPort,
   );
-  new RelayUpgradeGateway({} as never, runners, browsers).mount(server);
+  const desktops = new DesktopAttachGateway(
+    cache,
+    registry,
+    workspaces_,
+    config,
+    { resolve: vi.fn().mockResolvedValue({}) } as unknown as ScopeResolverPort,
+    { assertUsable: vi.fn().mockResolvedValue({ probedTools: null }) } as HostAccessPort,
+    owners,
+    { isEnabled: () => true } as unknown as FlagEvaluatorPort,
+  );
+  new RelayUpgradeGateway({} as never, runners, browsers, desktops).mount(server);
 
   const log: string[] = [];
   const runner = spawn(join(bin, 'runner'), ['run'], {

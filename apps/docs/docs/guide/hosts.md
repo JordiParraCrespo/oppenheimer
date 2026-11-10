@@ -60,6 +60,25 @@ Each host is a card with:
 
 The card's menu also has **Update runner**, **Open terminal** (a blank terminal in your home directory on that host, as a session) and **Remove host**.
 
+An online host's card also has **Desktop**, which opens the host's own screen (below).
+
+## A host's desktop
+
+You can watch and drive a host's own screen from the console: from **Settings → Hosts → Desktop** on the host's card, or from a session's preview pane (the panel button in the session's bar), in its **Desktop** tab, which shows the screen of the session's host.
+
+The host's owner decides whether its screen is shared, on the host itself:
+
+- `runner desktop on` shares it; `runner desktop off` stops, and closes a desktop already open in the console within a couple of seconds; `runner desktop` says how it stands. Nothing in the console turns it on.
+- The runner does not start a screen: it uses the screen-sharing server the machine already runs on its loopback, `127.0.0.1:5900` unless `--port` names another. On a Mac that is **Screen Sharing** (System Settings → General → Sharing); on Linux a VNC server such as TigerVNC or x11vnc listening on `127.0.0.1`.
+- If the server asks for a password, give the runner a file holding it, readable by that account only: `runner desktop on --password-file <file>`. macOS Screen Sharing signs in a macOS account: add `--username <account>`. The password stays on the host; the browser is never asked for one.
+
+The desktop opens **watching**: you see the screen, and your clicks and keys reach nothing. **Take control** lets them through, until **Stop controlling**; the host itself drops your input while you only watch. Your session on the screen is shared, so watching never disconnects anyone else using it. **Full screen** gives the desktop the whole window; Escape leaves it.
+
+In the console you open a desktop as yourself. An [API token](./cli-and-mcp.md) needs the **Host desktops** permission (`host-desktops:write`), which no other permission includes: a token that manages hosts (`hosts:write`) cannot open their screens.
+
+When the desktop cannot open, it says why: the host does not share its desktop (with the command to run there), no screen-sharing server answers on the host, or the server refused the host's sign-in. Fix it on the host, then **Try again**. An offline host's desktop comes back when the host reconnects.
+
+
 ## Agents on a host
 
 Each agent runs from the host's own installation and its own login. You sign in once per host by starting a session with that agent and following its sign-in in the terminal; a sign-in link the agent prints becomes a button. Oppenheimer never stores an agent's credentials.

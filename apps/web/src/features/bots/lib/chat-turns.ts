@@ -94,6 +94,27 @@ export function turnPhase(turn: BotTurnEntity, wrote: boolean): TurnPhase {
   return turn.status;
 }
 
+/**
+ * What a finished turn's trail carries: `full` (its model, time and tokens,
+ * Copy, Retry), `retry` (Retry alone), or `none`. While the chat hides its
+ * tool calls, a completed turn that did nothing but run tools has said
+ * nothing to trail, and only the newest keeps Retry; a stopped or empty turn
+ * keeps all of it.
+ */
+export function turnTrail(
+  block: ChatTurnBlock,
+  phase: TurnPhase | null,
+  toolCallsShown: boolean,
+  retryable: boolean,
+): 'full' | 'retry' | 'none' {
+  const onlyRanTools =
+    phase === 'completed' &&
+    block.answer.length > 0 &&
+    block.answer.every((message) => message.role === 'activity');
+  if (toolCallsShown || !onlyRanTools) return 'full';
+  return retryable ? 'retry' : 'none';
+}
+
 /** What the bot said in a turn, as one text to copy: its replies, a blank line apart. */
 export function replyText(block: ChatTurnBlock): string {
   return block.answer

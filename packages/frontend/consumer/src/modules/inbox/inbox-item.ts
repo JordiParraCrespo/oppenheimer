@@ -1,3 +1,4 @@
+import { inboxReportItemKey } from '@oppenheimer/shared/schemas/inbox';
 import type { AutomationRunEntity } from '../automations/automation.entity';
 import type {
   WorkspaceBotApprovalEntity,
@@ -7,16 +8,26 @@ import type { ProjectEntity } from '../projects/project.entity';
 import type { PullRequestEntity } from '../pull-requests/pull-request.entity';
 import type { SessionEntity, SessionNotice } from '../sessions/session.entity';
 import type { InboxMarkEntity } from './inbox-mark.entity';
+import type { InboxReportEntity } from './inbox-report.entity';
 
 /**
  * The Inbox (`product/versions/mvp/29-inbox.md`): what needs you, composed
- * from five reads the API already serves. Nothing here is stored but the
- * marks; an item is there while its source says it needs you. A `notice` is
- * a line a session's agent sent you (`runner sessions notify`), read off the
- * same sessions as a waiting session is; a `botNotice` is a bot's own line
- * (its `notify` tool), each bot's latest.
+ * from six reads the API already serves. Nothing here is stored but the
+ * marks and the reports; an item is there while its source says it needs
+ * you. A `notice` is a line a session's agent sent you (`runner sessions
+ * notify`), read off the same sessions as a waiting session is; a
+ * `botNotice` is a bot's own line (its `notify` tool), each bot's latest; a
+ * `report` is a problem an unattended agent sent with its pictures, there
+ * until it is answered.
  */
-export type InboxItemKind = 'session' | 'notice' | 'botNotice' | 'approval' | 'pull' | 'run';
+export type InboxItemKind =
+  | 'session'
+  | 'notice'
+  | 'botNotice'
+  | 'approval'
+  | 'pull'
+  | 'run'
+  | 'report';
 
 /** Why a pull request is in the Inbox: a review asked of you, or yours, ready to merge. */
 export type InboxPullReason = 'requested' | 'ready';
@@ -38,9 +49,10 @@ export type InboxItem =
   | (InboxItemBase & { kind: 'botNotice'; notice: WorkspaceBotNoticeEntity })
   | (InboxItemBase & { kind: 'approval'; approval: WorkspaceBotApprovalEntity })
   | (InboxItemBase & { kind: 'pull'; pull: PullRequestEntity; reason: InboxPullReason })
-  | (InboxItemBase & { kind: 'run'; run: AutomationRunEntity });
+  | (InboxItemBase & { kind: 'run'; run: AutomationRunEntity })
+  | (InboxItemBase & { kind: 'report'; report: InboxReportEntity });
 
-/** The five reads, as their hooks answer them. */
+/** The six reads, as their hooks answer them. */
 export interface InboxSources {
   /** Every unresolved session; those `waiting-on-you` become items, and so does each one's notice. */
   sessions: readonly SessionEntity[];
@@ -54,6 +66,8 @@ export interface InboxSources {
   failedRuns: readonly AutomationRunEntity[];
   /** Each bot's latest notice, on the bots the caller may read. */
   botNotices: readonly WorkspaceBotNoticeEntity[];
+  /** The workspace's reports; those still open become items. */
+  reports: readonly InboxReportEntity[];
   projects: readonly ProjectEntity[];
 }
 
@@ -93,7 +107,7 @@ export function sessionItemKey(
 /**
  * What an occurrence key is an occurrence of: a session (`session:<id>`), a
  * bot's notices (`botnotice:<bot>`), a pull request (`pull:<repo>#<number>`),
- * or the approval or run itself, whose key names one wait already. A
+ * or the approval, run or report itself, whose key names one wait already. A
  * session's next wait, a bot's next notice, or a pull request's next push, is
  * the same subject under a new key.
  */
@@ -238,6 +252,17 @@ function inboxItems(sources: InboxSources): InboxItem[] {
       key: runItemKey(run),
       since: run.endedAt ?? run.createdAt,
       projectIds: projectOf(run.projectId),
+      low: false,
+    });
+  }
+  for (const report of sources.reports) {
+    if (!report.isOpen) continue;
+    items.push({
+      kind: 'report',
+      report,
+      key: inboxReportItemKey(report.id),
+      since: report.createdAt,
+      projectIds: [],
       low: false,
     });
   }

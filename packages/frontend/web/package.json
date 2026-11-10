@@ -18,6 +18,7 @@
   },
   "dependencies": {
     "@hookform/resolvers": "^5.9.1",
+    "@novnc/novnc": "1.7.0",
     "@oppenheimer/design-system-web": "workspace:*",
     "@oppenheimer/frontend-core": "workspace:*",
     "@oppenheimer/shared": "workspace:*",

@@ -94,6 +94,12 @@ export function plan(
   // The agent git guard (`.agents/hooks/git-guard.mjs`): its policy, case by case.
   add('lint', 'Agent git guard', 'pnpm', ['check:hooks']);
   add('lint', 'Dev bootstrap', 'pnpm', ['check:bootstrap']);
+  // The bot launch eval's grader and cases (`scripts/evals/bot-session-launch/`):
+  // the eval itself needs a bot on a model, so it runs by hand.
+  add('lint', 'Bot launch eval grader', 'node', [
+    '--test',
+    'scripts/evals/bot-session-launch/run.test.mjs',
+  ]);
   // This pipeline's own selection and runner.
   add('lint', 'CI selection and runner', 'pnpm', ['check:ci']);
   // The pending changesets assemble into the plan the Release workflow builds
