@@ -1353,6 +1353,13 @@ earlier note:
   `read_terminal` type into a blank-terminal session and read its screen,
   only on a host whose `runner exec` mode is `full`. A coding agent is still
   given a task, never typed at.
+- `versions/mvp/25-bots.md` §2 said the engines' computer tools are off and
+  `research/lessons-from-grok-bot.md` left computer use out. On 2026-11-09
+  the owner asked that a bot can use a computer on a host remotely:
+  `use_computer` looks at a host's screen and uses its mouse and keyboard
+  through the runner, on a Mac's own desktop or a Linux X display (a virtual
+  one where there is none), only after `runner computer on` on that host.
+  Nothing runs on the control plane, which is what §2 was protecting.
 - `versions/mvp/25-bots.md` §4.1 (2026-10-29) let a bot file a fact as
   "about the person (their name, their role, their preferences)", read by
   all their bots. Bots filed their job there: Facturas read another bot's
@@ -1445,10 +1452,11 @@ earlier note:
   idle: a bot now looks at a task still running every ten minutes after the
   first check, up to an hour, staying quiet when it is on track, and checks
   at once when asked (§4.2).
-- `versions/mvp/25-bots.md` §2 said the engines' computer tools are off and
-  `research/lessons-from-grok-bot.md` left computer use out. On 2026-11-09
-  the owner asked that a bot can use a computer on a host remotely:
-  `use_computer` looks at a host's screen and uses its mouse and keyboard
-  through the runner, on a Mac's own desktop or a Linux X display (a virtual
-  one where there is none), only after `runner computer on` on that host.
-  Nothing runs on the control plane, which is what §2 was protecting.
+- `next-steps/0.2-pull-requests.md` ("The screens as built", 2026-10-13)
+  left a pull request with no generated summary until the chat came, and
+  the queue as a table. On 2026-11-09 the owner asked for the queue one pull
+  request at a time, summarized and with its pictures, the next one coming
+  up after each action: the **review deck** (`/pulls/review`, the same note,
+  "The review deck"), whose card leads with a brief of the head commit that
+  the deployment's model writes, or the description gives when there is no
+  model. The queue, the description page and Analytics are unchanged.

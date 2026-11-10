@@ -136,6 +136,7 @@
   "GET /v1/pulls": ["pulls:read"],
   "GET /v1/pulls/:installationId/:githubRepoId/:number": ["pulls:read"],
   "GET /v1/pulls/:installationId/:githubRepoId/:number/activity": ["pulls:read"],
+  "GET /v1/pulls/:installationId/:githubRepoId/:number/brief": ["pulls:read"],
   "GET /v1/pulls/:installationId/:githubRepoId/:number/comments": ["pulls:read"],
   "GET /v1/pulls/:installationId/:githubRepoId/:number/files": ["pulls:read"],
   "GET /v1/pulls/analytics": ["pulls:read"],
