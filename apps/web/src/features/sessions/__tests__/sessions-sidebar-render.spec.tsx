@@ -6,6 +6,7 @@ import { useSyncExternalStore } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ConsoleDialogProvider } from '@/lib/console';
 import { FOLDED_SESSIONS_KEY } from '../hooks/use-folded-sessions';
+import { PINNED_ONLY_KEY } from '../hooks/use-pinned-only';
 import { SESSION_PINS_KEY } from '../lib/session-pins';
 import { SessionsSidebar } from '../sections/sessions-sidebar';
 
@@ -265,6 +266,37 @@ describe('SessionsSidebar', () => {
     });
     expect(screen.getByRole('button', { name: 'alpha' })).toBeTruthy();
     window.localStorage.clear();
+  });
+
+  /**
+   * Pinned only, kept on this device, draws the pinned rows and no project
+   * group; with nothing pinned, the list says how to pin one.
+   */
+  it('draws only the pinned rows under Pinned only', () => {
+    window.localStorage.setItem(SESSION_PINS_KEY, JSON.stringify(['bravo']));
+    window.localStorage.setItem(PINNED_ONLY_KEY, JSON.stringify(['projects']));
+    try {
+      cleanup();
+      render(
+        <ConsoleDialogProvider>
+          <SessionsSidebar />
+        </ConsoleDialogProvider>,
+      );
+      expect(screen.getByRole('button', { name: 'bravo' })).toBeTruthy();
+      expect(screen.queryByRole('button', { name: 'alpha' })).toBeNull();
+
+      cleanup();
+      window.localStorage.setItem(SESSION_PINS_KEY, '[]');
+      render(
+        <ConsoleDialogProvider>
+          <SessionsSidebar />
+        </ConsoleDialogProvider>,
+      );
+      expect(screen.getByText('sessions.sidebar.noPinned')).toBeTruthy();
+      expect(screen.queryByRole('button', { name: 'alpha' })).toBeNull();
+    } finally {
+      window.localStorage.clear();
+    }
   });
 
   /** A search outlives a fold: the box comes back holding what still narrows the list. */

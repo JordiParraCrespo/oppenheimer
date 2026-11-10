@@ -16,6 +16,7 @@ import { SidebarDragCopy } from '../components/sidebar-drag-copy';
 import { useFoldedGroups } from '../hooks/use-folded-groups';
 import { useFoldedSessions } from '../hooks/use-folded-sessions';
 import { useHiddenProjects } from '../hooks/use-hidden-projects';
+import { usePinnedOnly } from '../hooks/use-pinned-only';
 import { SessionPinsContext, useSessionPins } from '../hooks/use-session-pins';
 import {
   SessionSelectionContext,
@@ -75,7 +76,8 @@ const DeleteSessionsDialog = lazy(() =>
  * folded on the next visit (`useFoldedGroups`), and so do the projects the
  * reader hid from the filter menu (`useHiddenProjects`): a
  * hidden project's group and sessions are not drawn, unless the project
- * filter picks it, and its pinned sessions stay pinned.
+ * filter picks it, and its pinned sessions stay pinned. Pinned only
+ * (`usePinnedOnly`), kept on this device too, draws Pinned and no project.
  *
  * Rows can be picked to act on together (`useSessionSelectionStore`): the
  * store is the sidebar's, each row subscribes to its own pick, and the sidebar
@@ -95,6 +97,7 @@ export function SessionsSidebarBody() {
   const { folded: closed, setOpen } = useFoldedGroups();
   const list = useFoldedSessions();
   const { hidden, setShown, showAll } = useHiddenProjects();
+  const { pinnedOnly, setPinnedOnly } = usePinnedOnly();
   const [deleting, setDeleting] = useState<SessionEntity | null>(null);
   const [deletingMany, setDeletingMany] = useState<SessionEntity[] | null>(null);
   // A later write that lands clears it, and so does Dismiss.
@@ -138,7 +141,8 @@ export function SessionsSidebarBody() {
     onWrite: setFailure,
   });
   const occupied = new Set(listing.sessions.map((session) => session.projectId));
-  const shown = shownGroups(groups, occupied, picked);
+  // Pinned only draws no project below Pinned, however the filters stand.
+  const shown = pinnedOnly ? [] : shownGroups(groups, occupied, picked);
   const empty = emptyListMessage(t, {
     groups,
     shown,
@@ -146,6 +150,7 @@ export function SessionsSidebarBody() {
     hiddenCount: listing.hiddenCount,
     narrowed,
     query,
+    pinnedOnly,
   });
   // A folded group's rows are not drawn, so a Shift-click does not reach them;
   // nor are any while the whole list is folded.
@@ -165,7 +170,7 @@ export function SessionsSidebarBody() {
       {/* The pins reach the head too: the selection bar pins what is picked. */}
       <SessionPinsContext value={pins}>
         <SessionsSidebarHead
-          sessionCount={pinned.length + listing.sessions.length}
+          sessionCount={pinned.length + (pinnedOnly ? 0 : listing.sessions.length)}
           filters={filters}
           options={options}
           dirty={dirty}
@@ -175,6 +180,8 @@ export function SessionsSidebarBody() {
             onShownChange: setShown,
             onShowAll: showAll,
           }}
+          pinnedOnly={pinnedOnly}
+          onPinnedOnlyChange={setPinnedOnly}
           chips={activeFilters(filters, options)}
           onFiltersChange={(patch) => setFilters((current) => ({ ...current, ...patch }))}
           onFiltersClear={() =>

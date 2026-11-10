@@ -1,5 +1,6 @@
 import {
   DropdownMenu,
+  DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuRadioGroup,
@@ -43,7 +44,8 @@ export interface ProjectVisibility {
 /**
  * The filter button beside the session count and its menu (the artboard's
  * `.op-iconbtn-sm` and `.op-filtermenu`). The button is lit while the menu is
- * open *or* while anything is hidden, by a filter or a hidden project. Props
+ * open *or* while anything is hidden, by a filter, a hidden project or
+ * Pinned only. Props
  * only: the sidebar owns the filters and the hidden projects, because it
  * renders what they narrow.
  */
@@ -52,6 +54,8 @@ export function SessionsFilterMenu({
   options,
   dirty,
   visibility,
+  pinnedOnly,
+  onPinnedOnlyChange,
   onChange,
   onClear,
   onNewProject,
@@ -60,6 +64,9 @@ export function SessionsFilterMenu({
   options: Record<SessionFacet, FilterOption[]>;
   dirty: boolean;
   visibility: ProjectVisibility;
+  /** Whether only the pinned sessions are drawn; like a hidden project, Clear filters leaves it. */
+  pinnedOnly: boolean;
+  onPinnedOnlyChange: (pinnedOnly: boolean) => void;
   onChange: (patch: Partial<SessionFilters>) => void;
   onClear: () => void;
   /** Opens the New project dialog, from the foot of the Project facet. */
@@ -78,7 +85,7 @@ export function SessionsFilterMenu({
             size="xs"
             variant="quiet"
             aria-label={t('sessions.filters.label')}
-            data-dirty={dirty || visibility.hiddenCount > 0 || undefined}
+            data-dirty={dirty || visibility.hiddenCount > 0 || pinnedOnly || undefined}
           />
         }
       >
@@ -176,6 +183,12 @@ export function SessionsFilterMenu({
             </SearchListFoot>
           </DropdownMenuSubContent>
         </DropdownMenuSub>
+        <DropdownMenuCheckboxItem
+          checked={pinnedOnly}
+          onCheckedChange={(checked) => onPinnedOnlyChange(checked)}
+        >
+          {t('sessions.filters.pinnedOnly')}
+        </DropdownMenuCheckboxItem>
 
         <DropdownMenuSeparator />
 

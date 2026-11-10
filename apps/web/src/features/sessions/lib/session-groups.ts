@@ -65,7 +65,8 @@ export function emptyMessage(t: TFunction, narrowed: boolean, query: string): st
 /**
  * What the sidebar says in place of its list, or null when it draws one: no
  * project at all, nothing that matches the search or the filters, every
- * project hidden, or no session in any project.
+ * project hidden, nothing pinned under Pinned only, or no session in any
+ * project.
  */
 export function emptyListMessage(
   t: TFunction,
@@ -76,6 +77,7 @@ export function emptyListMessage(
     hiddenCount,
     narrowed,
     query,
+    pinnedOnly = false,
   }: {
     groups: readonly ProjectGroup[];
     shown: readonly ProjectGroup[];
@@ -83,11 +85,13 @@ export function emptyListMessage(
     hiddenCount: number;
     narrowed: boolean;
     query: string;
+    pinnedOnly?: boolean;
   },
 ): string | null {
   if (groups.length === 0 && hiddenCount === 0) return t('sessions.sidebar.empty');
   if (shown.length > 0 || pinned.length > 0) return null;
   if (narrowed) return emptyMessage(t, true, query);
+  if (pinnedOnly) return t('sessions.sidebar.noPinned');
   return groups.length === 0 ? t('sessions.sidebar.allHidden') : t('sessions.sidebar.noSessions');
 }
 
