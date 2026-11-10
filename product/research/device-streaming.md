@@ -112,13 +112,15 @@ Linux it can also start a TigerVNC and XFCE desktop of its own.
   tools. noVNC's `viewOnly` follows, but it is not what holds.
 - **On the link it is a port tunnel with a viewer.** `desktop.open`,
   `desktop.opened`, `desktop.control`, `desktop.close`, and RFB as binary
-  frames under each direction's credit window (`desktop.stream`). The
-  relay judges a host-scoped ticket (`POST /hosts/{id}/desktop-ticket`,
-  `update Host`, the `host_desktop` flag, and for a token its own sensitive
-  scope, `host-desktops:write`, which `hosts:write` never carries) at
-  redemption and
-  every minute, and carries bytes with back-pressure both ways; it reads no
-  RFB.
+  frames under each direction's credit window (`desktop.stream`). A
+  host-scoped ticket (`POST /hosts/{id}/desktop-ticket`) is minted only for
+  `update Host`, the `host_desktop` flag and, for a token, its own sensitive
+  scope, `host-desktops:write`, which `hosts:write` never carries. The relay
+  redeems it once (the flag again, and the runner's capability), re-checks
+  workspace membership, the account and the host's own-or-granted access at
+  redemption and every minute, and carries bytes with back-pressure both
+  ways; it reads no RFB. Revoking a token does not end a desktop it already
+  opened, as it does not end a terminal.
 - **The console draws it with noVNC** (1.7.0, MPL-2.0, loaded with the
   first desktop shown) over a channel of a WebSocket's shape, scaled to the
   room it has. Full screen is the browser's own, or the view pinned over the
