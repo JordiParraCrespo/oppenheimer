@@ -5,7 +5,9 @@ import { reloadOnStaleBuild, type StaleBuildWindow } from './stale-build-reload'
  * A tab opened before a deploy asks for chunks the deploy removed. Without the
  * reload, the row menu's Delete threw into the session list's boundary and
  * emptied it under "Could not reach the server"; with a reload on every
- * failure, a chunk that is really gone would reload the page for ever.
+ * failure, a chunk that is really gone would reload the page for ever; and
+ * with the failure swallowed, the import resolved to nothing and the router
+ * crashed on it before the reload landed.
  */
 function fakeWindow({ storageRefused = false } = {}) {
   const target = new EventTarget();
@@ -29,19 +31,42 @@ function fakeWindow({ storageRefused = false } = {}) {
     target.dispatchEvent(event);
     return event;
   };
-  return { win, reload, fail };
+  /**
+   * A route's lazy `import()` as a Vite build compiles it: on a failure the
+   * helper fires `vite:preloadError` and rethrows only when nobody cancelled
+   * the event; a cancelled one resolves the import to `undefined`.
+   */
+  const importStaleChunk = async (): Promise<{ component: unknown } | undefined> => {
+    const failure = new TypeError(
+      'Failed to fetch dynamically imported module: https://console.test/assets/bots.queries-BAiNbrnn.js',
+    );
+    const event = new Event('vite:preloadError', { cancelable: true });
+    target.dispatchEvent(event);
+    if (!event.defaultPrevented) throw failure;
+    return undefined;
+  };
+  return { win, reload, fail, importStaleChunk };
 }
 
 describe('reloadOnStaleBuild', () => {
   beforeEach(() => vi.useFakeTimers());
   afterEach(() => vi.useRealTimers());
 
-  it('reloads on a chunk that failed to load, and keeps the error from surfacing', () => {
+  it('reloads on a chunk that failed to load', () => {
     const { win, reload, fail } = fakeWindow();
     reloadOnStaleBuild(win);
-    const event = fail();
+    fail();
     expect(reload).toHaveBeenCalledOnce();
-    expect(event.defaultPrevented).toBe(true);
+  });
+
+  it('lets the import reject with the loader error while the reload is on its way', async () => {
+    // Cancelling the event made the import resolve to nothing, and the router
+    // threw "Cannot read properties of undefined (reading 'component')" before
+    // the page went (Sentry OPPENHEIMER-WEB-4).
+    const { win, reload, importStaleChunk } = fakeWindow();
+    reloadOnStaleBuild(win);
+    await expect(importStaleChunk()).rejects.toThrow(/Failed to fetch dynamically imported module/);
+    expect(reload).toHaveBeenCalledOnce();
   });
 
   it('lets a second failure right after a reload through, instead of looping', () => {
@@ -49,17 +74,15 @@ describe('reloadOnStaleBuild', () => {
     reloadOnStaleBuild(win);
     fail();
     vi.advanceTimersByTime(2_000);
-    const again = fail();
+    fail();
     expect(reload).toHaveBeenCalledOnce();
-    expect(again.defaultPrevented).toBe(false);
   });
 
   it('never reloads when storage refuses the guard, which would loop on a chunk every load asks for', () => {
     const { win, reload, fail } = fakeWindow({ storageRefused: true });
     reloadOnStaleBuild(win);
-    const event = fail();
+    fail();
     expect(reload).not.toHaveBeenCalled();
-    expect(event.defaultPrevented).toBe(false);
   });
 
   it('restarts the quiet window on every failure, so a burst reloads once', () => {
