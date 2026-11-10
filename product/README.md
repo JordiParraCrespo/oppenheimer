@@ -1438,3 +1438,10 @@ earlier note:
   one of the project's repositories. On 2026-11-09 the owner asked to start
   one with only a host: the Repository chip offers No repository, which on
   a host opens the session in the host's home folder.
+- `versions/mvp/27-bot-subscriptions.md` gave a task a bot hands off one
+  stall check and "no progress update", and its prompt told a bot asked to
+  monitor that "checking now adds nothing". On 2026-11-10 the owner had to
+  tell Facturas "you should be babysitting this" while two of its agents sat
+  idle: a bot now looks at a task still running every ten minutes after the
+  first check, up to an hour, staying quiet when it is on track, and checks
+  at once when asked (§4.2).

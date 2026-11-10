@@ -1798,6 +1798,7 @@
           "cancelled": "Session “{{name}}” was stopped",
           "expired": "Session “{{name}}” expired before it ran",
           "stalled": "Session “{{name}}” looks stuck",
+          "progress": "Checked on session “{{name}}”",
           "notice": "Session “{{name}}” sent a message",
           "matched_one": "Session “{{name}}” printed a line matching “{{pattern}}”",
           "matched_other": "Session “{{name}}” printed {{count}} lines matching “{{pattern}}”"
