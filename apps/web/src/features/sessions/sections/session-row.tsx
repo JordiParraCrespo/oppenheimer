@@ -9,6 +9,7 @@ import {
 } from '@oppenheimer/frontend-consumer/react';
 import { compactAge, notifySuccess } from '@oppenheimer/frontend-web';
 import { Link, useRouterState } from '@tanstack/react-router';
+import type { TFunction } from 'i18next';
 import { type ComponentProps, type ReactNode, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { SessionRowMenu } from '../components/session-row-menu';
@@ -51,6 +52,20 @@ const GLYPHS: Record<Exclude<SessionGlyph, 'vendor'>, ReactNode> = {
  * box, does not drag and hides its menu, since what it acts on is the bar's.
  * Otherwise a right-click opens the row's menu at its ellipsis.
  */
+/**
+ * What the row says in its age's place, first match wins: a delete the host
+ * refused, a delete under way, then the eye of a hidden session. A deleted
+ * row back in the list is never back as it was (`useCloseSession`).
+ */
+function rowStatus(session: SessionEntity, t: TFunction): ReactNode {
+  if (session.closeRefusal) return t('sessions.sidebar.notDeleted');
+  if (session.isClosing) return t('sessions.sidebar.deleting');
+  if (session.hidden) {
+    return <EyeOff role="img" aria-label={t('sessions.sidebar.hidden')} className="size-3.5" />;
+  }
+  return undefined;
+}
+
 export function SessionRow({
   session,
   now,
@@ -110,14 +125,7 @@ export function SessionRow({
   });
   const age = compactAge(session.createdAt, now);
   const glyph = sessionGlyph(session);
-  // A deleted row back in the list is never back as it was (`useCloseSession`).
-  const status = session.closeRefusal ? (
-    t('sessions.sidebar.notDeleted')
-  ) : session.isClosing ? (
-    t('sessions.sidebar.deleting')
-  ) : session.hidden ? (
-    <EyeOff role="img" aria-label={t('sessions.sidebar.hidden')} className="size-3.5" />
-  ) : undefined;
+  const status = rowStatus(session, t);
   const cloudUrl = session.cloud?.url ?? null;
   // The row has a menu unless the list is selecting (the bar acts) or its name
   // is being typed; every way of opening the menu reads this.
